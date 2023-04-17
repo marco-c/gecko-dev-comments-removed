@@ -5,23 +5,6 @@
 
 package org.mozilla.geckoview;
 
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.mozilla.gecko.GeckoEditableChild;
-import org.mozilla.gecko.IGeckoEditableChild;
-import org.mozilla.gecko.IGeckoEditableParent;
-import org.mozilla.gecko.InputMethods;
-import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
-
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.Handler;
@@ -29,8 +12,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -50,131 +31,292 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.mozilla.gecko.GeckoEditableChild;
+import org.mozilla.gecko.IGeckoEditableChild;
+import org.mozilla.gecko.IGeckoEditableParent;
+import org.mozilla.gecko.InputMethods;
+import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
 
 
 
 
+ final class GeckoEditable extends IGeckoEditableParent.Stub
+    implements InvocationHandler, Editable, SessionTextInput.EditableClient {
 
- final class GeckoEditable
-    extends IGeckoEditableParent.Stub
-    implements InvocationHandler,
-               Editable,
-               SessionTextInput.EditableClient {
+  private static final boolean DEBUG = false;
+  private static final String LOGTAG = "GeckoEditable";
 
-    private static final boolean DEBUG = false;
-    private static final String LOGTAG = "GeckoEditable";
+  
+  private InputFilter[] mFilters;
+
+  
+
+
+
+   final WeakReference<GeckoSession> mSession;
+
+  private final AsyncText mText;
+  private final Editable mProxy;
+  private final ConcurrentLinkedQueue<Action> mActions;
+  private KeyCharacterMap mKeyMap;
+
+  
+  
+  
+  private Handler mIcRunHandler;
+  private Handler mIcPostHandler;
+
+  
+   IGeckoEditableChild mDefaultChild; 
+  
+   IGeckoEditableChild mFocusedChild; 
+   IBinder mFocusedToken; 
+   SessionTextInput.EditableListener mListener;
+
+   boolean mInBatchMode; 
+   boolean mNeedSync; 
+  
+  private boolean mNeedUpdateComposition; 
+  private boolean mSuppressKeyUp; 
+
+  private int mIMEState = 
+      SessionTextInput.EditableListener.IME_STATE_DISABLED;
+  private String mIMETypeHint = ""; 
+  private String mIMEModeHint = ""; 
+  private String mIMEActionHint = ""; 
+  private String mIMEAutocapitalize = ""; 
+  private int mIMEFlags; 
+
+  private boolean mIgnoreSelectionChange; 
+  
+  
+  private int mLastTextChangeStart = Integer.MAX_VALUE; 
+  private int mLastTextChangeOldEnd = -1; 
+  private int mLastTextChangeNewEnd = -1; 
+  private boolean mLastTextChangeReplacedSelection; 
+
+  
+  
+   final AtomicInteger mSoftInputReentrancyGuard = new AtomicInteger();
+
+  private static final int IME_RANGE_CARETPOSITION = 1;
+  private static final int IME_RANGE_RAWINPUT = 2;
+  private static final int IME_RANGE_SELECTEDRAWTEXT = 3;
+  private static final int IME_RANGE_CONVERTEDTEXT = 4;
+  private static final int IME_RANGE_SELECTEDCONVERTEDTEXT = 5;
+
+  private static final int IME_RANGE_LINE_NONE = 0;
+  private static final int IME_RANGE_LINE_SOLID = 1;
+  private static final int IME_RANGE_LINE_DOTTED = 2;
+  private static final int IME_RANGE_LINE_DASHED = 3;
+  private static final int IME_RANGE_LINE_DOUBLE = 4;
+  private static final int IME_RANGE_LINE_WAVY = 5;
+
+  private static final int IME_RANGE_UNDERLINE = 1;
+  private static final int IME_RANGE_FORECOLOR = 2;
+  private static final int IME_RANGE_BACKCOLOR = 4;
+  private static final int IME_RANGE_LINECOLOR = 8;
+
+  private void onKeyEvent(
+      final IGeckoEditableChild child,
+      final KeyEvent event,
+      final int action,
+      final int savedMetaState,
+      final boolean isSynthesizedImeKey)
+      throws RemoteException {
+    
+    
+    
+    
+    
+    
+    
+    
+    final int metaState = event.getMetaState() | savedMetaState;
+    final int unmodifiedMetaState =
+        metaState & ~(KeyEvent.META_ALT_MASK | KeyEvent.META_CTRL_MASK | KeyEvent.META_META_MASK);
+
+    final int unicodeChar = event.getUnicodeChar(metaState);
+    final int unmodifiedUnicodeChar = event.getUnicodeChar(unmodifiedMetaState);
+    final int domPrintableKeyValue =
+        unicodeChar >= ' '
+            ? unicodeChar
+            : unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
 
     
-    private InputFilter[] mFilters;
-
     
-
-
-
-
-
-     final WeakReference<GeckoSession> mSession;
-    private final AsyncText mText;
-    private final Editable mProxy;
-    private final ConcurrentLinkedQueue<Action> mActions;
-    private KeyCharacterMap mKeyMap;
+    final int keyPressMetaState =
+        (unicodeChar >= ' ' && unicodeChar != unmodifiedUnicodeChar)
+            ? unmodifiedMetaState
+            : metaState;
 
     
     
     
-    private Handler mIcRunHandler;
-    private Handler mIcPostHandler;
-
-    
-     IGeckoEditableChild mDefaultChild; 
-    
-     IGeckoEditableChild mFocusedChild; 
-     IBinder mFocusedToken; 
-     SessionTextInput.EditableListener mListener;
-
-     boolean mInBatchMode; 
-     boolean mNeedSync; 
-    
-    private boolean mNeedUpdateComposition; 
-    private boolean mSuppressKeyUp; 
-
-    private int mIMEState = 
-            SessionTextInput.EditableListener.IME_STATE_DISABLED;
-    private String mIMETypeHint = ""; 
-    private String mIMEModeHint = ""; 
-    private String mIMEActionHint = ""; 
-    private String mIMEAutocapitalize = ""; 
-    private int mIMEFlags; 
-
-    private boolean mIgnoreSelectionChange; 
     
     
-    private int mLastTextChangeStart = Integer.MAX_VALUE; 
-    private int mLastTextChangeOldEnd = -1; 
-    private int mLastTextChangeNewEnd = -1; 
-    private boolean mLastTextChangeReplacedSelection; 
+    final int keyUpDownMetaState =
+        isSynthesizedImeKey ? (unmodifiedMetaState | savedMetaState) : metaState;
+
+    child.onKeyEvent(
+        action,
+        event.getKeyCode(),
+        event.getScanCode(),
+        keyUpDownMetaState,
+        keyPressMetaState,
+        event.getEventTime(),
+        domPrintableKeyValue,
+        event.getRepeatCount(),
+        event.getFlags(),
+        isSynthesizedImeKey,
+        event);
+  }
+
+  
+
+
+
+
+
+
+
+
+  private final class AsyncText {
+    
+    
+    private final SpannableStringBuilder mCurrentText = new SpannableStringBuilder();
+    
+    
+    private int mCurrentStart = Integer.MAX_VALUE;
+    
+    private int mCurrentOldEnd;
+    
+    private int mCurrentNewEnd;
+    
+    private boolean mCurrentSelectionChanged;
 
     
     
-     final AtomicInteger mSoftInputReentrancyGuard = new AtomicInteger();
+    private final SpannableStringBuilder mShadowText = new SpannableStringBuilder();
+    
+    
+    private int mShadowStart = Integer.MAX_VALUE;
+    
+    private int mShadowOldEnd;
+    
+    private int mShadowNewEnd;
 
-    private static final int IME_RANGE_CARETPOSITION = 1;
-    private static final int IME_RANGE_RAWINPUT = 2;
-    private static final int IME_RANGE_SELECTEDRAWTEXT = 3;
-    private static final int IME_RANGE_CONVERTEDTEXT = 4;
-    private static final int IME_RANGE_SELECTEDCONVERTEDTEXT = 5;
+    private void addCurrentChangeLocked(final int start, final int oldEnd, final int newEnd) {
+      
+      mCurrentStart = Math.min(mCurrentStart, start);
+      mCurrentOldEnd += Math.max(0, oldEnd - mCurrentNewEnd);
+      mCurrentNewEnd = newEnd + Math.max(0, mCurrentNewEnd - oldEnd);
+    }
 
-    private static final int IME_RANGE_LINE_NONE = 0;
-    private static final int IME_RANGE_LINE_SOLID = 1;
-    private static final int IME_RANGE_LINE_DOTTED = 2;
-    private static final int IME_RANGE_LINE_DASHED = 3;
-    private static final int IME_RANGE_LINE_DOUBLE = 4;
-    private static final int IME_RANGE_LINE_WAVY = 5;
+    public synchronized void currentReplace(
+        final int start, final int end, final CharSequence newText) {
+      
+      mCurrentText.replace(start, end, newText);
+      addCurrentChangeLocked(start, end, start + newText.length());
+    }
 
-    private static final int IME_RANGE_UNDERLINE = 1;
-    private static final int IME_RANGE_FORECOLOR = 2;
-    private static final int IME_RANGE_BACKCOLOR = 4;
-    private static final int IME_RANGE_LINECOLOR = 8;
+    public synchronized void currentSetSelection(final int start, final int end) {
+      
+      Selection.setSelection(mCurrentText, start, end);
+      mCurrentSelectionChanged = true;
+    }
 
-    private void onKeyEvent(final IGeckoEditableChild child, final KeyEvent event, final int action,
-                            final int savedMetaState, final boolean isSynthesizedImeKey)
-            throws RemoteException {
-        
-        
-        
-        
-        
-        
-        
-        
-        final int metaState = event.getMetaState() | savedMetaState;
-        final int unmodifiedMetaState = metaState &
-                ~(KeyEvent.META_ALT_MASK | KeyEvent.META_CTRL_MASK | KeyEvent.META_META_MASK);
+    public synchronized void currentSetSpan(
+        final Object obj, final int start, final int end, final int flags) {
+      
+      mCurrentText.setSpan(obj, start, end, flags);
+      addCurrentChangeLocked(start, end, end);
+    }
 
-        final int unicodeChar = event.getUnicodeChar(metaState);
-        final int unmodifiedUnicodeChar = event.getUnicodeChar(unmodifiedMetaState);
-        final int domPrintableKeyValue =
-                unicodeChar >= ' '               ? unicodeChar :
-                unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
+    public synchronized void currentRemoveSpan(final Object obj) {
+      
+      if (obj == null) {
+        mCurrentText.clearSpans();
+        addCurrentChangeLocked(0, mCurrentText.length(), mCurrentText.length());
+        return;
+      }
+      final int start = mCurrentText.getSpanStart(obj);
+      final int end = mCurrentText.getSpanEnd(obj);
+      if (start < 0 || end < 0) {
+        return;
+      }
+      mCurrentText.removeSpan(obj);
+      addCurrentChangeLocked(start, end, end);
+    }
 
-        
-        
-        final int keyPressMetaState = (unicodeChar >= ' ' &&
-                unicodeChar != unmodifiedUnicodeChar) ? unmodifiedMetaState : metaState;
+    
+    
+    public Spanned getCurrentText() {
+      
+      return mCurrentText;
+    }
 
-        
-        
-        
-        
-        
-        final int keyUpDownMetaState =
-                isSynthesizedImeKey ? (unmodifiedMetaState | savedMetaState) : metaState;
+    private void addShadowChange(final int start, final int oldEnd, final int newEnd) {
+      
+      mShadowStart = Math.min(mShadowStart, start);
+      mShadowOldEnd += Math.max(0, oldEnd - mShadowNewEnd);
+      mShadowNewEnd = newEnd + Math.max(0, mShadowNewEnd - oldEnd);
+    }
 
-        child.onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
-                   keyUpDownMetaState, keyPressMetaState, event.getEventTime(),
-                   domPrintableKeyValue, event.getRepeatCount(), event.getFlags(),
-                   isSynthesizedImeKey, event);
+    public void shadowReplace(final int start, final int end, final CharSequence newText) {
+      if (DEBUG) {
+        assertOnIcThread();
+      }
+      mShadowText.replace(start, end, newText);
+      addShadowChange(start, end, start + newText.length());
+    }
+
+    public void shadowSetSpan(final Object obj, final int start, final int end, final int flags) {
+      if (DEBUG) {
+        assertOnIcThread();
+      }
+      mShadowText.setSpan(obj, start, end, flags);
+      addShadowChange(start, end, end);
+    }
+
+    public void shadowRemoveSpan(final Object obj) {
+      if (DEBUG) {
+        assertOnIcThread();
+      }
+      if (obj == null) {
+        mShadowText.clearSpans();
+        addShadowChange(0, mShadowText.length(), mShadowText.length());
+        return;
+      }
+      final int start = mShadowText.getSpanStart(obj);
+      final int end = mShadowText.getSpanEnd(obj);
+      if (start < 0 || end < 0) {
+        return;
+      }
+      mShadowText.removeSpan(obj);
+      addShadowChange(start, end, end);
+    }
+
+    
+    
+    public Spanned getShadowText() {
+      if (DEBUG) {
+        assertOnIcThread();
+      }
+      return mShadowText;
     }
 
     
@@ -183,2280 +325,2247 @@ import android.view.inputmethod.EditorInfo;
 
 
 
+    private boolean isDiscardingComposition() {
+      if (!isComposing(mShadowText)) {
+        return false;
+      }
+
+      return !isComposing(mCurrentText);
+    }
+
+    public synchronized void syncShadowText(final SessionTextInput.EditableListener listener) {
+      if (DEBUG) {
+        assertOnIcThread();
+      }
+
+      if (mCurrentStart > mCurrentOldEnd && mShadowStart > mShadowOldEnd) {
+        
+        if (!mCurrentSelectionChanged) {
+          return;
+        }
+        final int start = Selection.getSelectionStart(mCurrentText);
+        final int end = Selection.getSelectionEnd(mCurrentText);
+        Selection.setSelection(mShadowText, start, end);
+        mCurrentSelectionChanged = false;
+
+        if (listener != null) {
+          listener.onSelectionChange();
+        }
+        return;
+      }
+
+      if (isDiscardingComposition()) {
+        if (listener != null) {
+          listener.onDiscardComposition();
+        }
+      }
+
+      
+      
+      final int start = Math.min(mShadowStart, mCurrentStart);
+      final int shadowEnd = mShadowNewEnd + Math.max(0, mCurrentOldEnd - mShadowOldEnd);
+      final int currentEnd = mCurrentNewEnd + Math.max(0, mShadowOldEnd - mCurrentOldEnd);
+
+      
+      Object[] spans = mShadowText.getSpans(start, shadowEnd, Object.class);
+      for (final Object span : spans) {
+        mShadowText.removeSpan(span);
+      }
+
+      mShadowText.replace(start, shadowEnd, mCurrentText, start, currentEnd);
+
+      
+      
+      spans =
+          mCurrentText.getSpans(
+              Math.max(start - 1, 0),
+              Math.min(currentEnd + 1, mCurrentText.length()),
+              Object.class);
+      for (final Object span : spans) {
+        if (span == Selection.SELECTION_START || span == Selection.SELECTION_END) {
+          continue;
+        }
+        mShadowText.setSpan(
+            span,
+            mCurrentText.getSpanStart(span),
+            mCurrentText.getSpanEnd(span),
+            mCurrentText.getSpanFlags(span));
+      }
+
+      
+      
+      final int selStart = Selection.getSelectionStart(mCurrentText);
+      final int selEnd = Selection.getSelectionEnd(mCurrentText);
+      Selection.setSelection(mShadowText, selStart, selEnd);
+
+      if (DEBUG && !checkEqualText(mShadowText, mCurrentText)) {
+        
+        throw new IllegalStateException(
+            "Failed to sync: "
+                + mShadowStart
+                + '-'
+                + mShadowOldEnd
+                + '-'
+                + mShadowNewEnd
+                + '/'
+                + mCurrentStart
+                + '-'
+                + mCurrentOldEnd
+                + '-'
+                + mCurrentNewEnd);
+      }
+
+      if (listener != null) {
+        
+        
+        listener.onTextChange();
+
+        if (mCurrentSelectionChanged
+            || (mCurrentOldEnd != mCurrentNewEnd
+                && (selStart >= mCurrentStart || selEnd >= mCurrentStart))) {
+          listener.onSelectionChange();
+        }
+      }
+
+      
+      mCurrentStart = mShadowStart = Integer.MAX_VALUE;
+      mCurrentOldEnd = mShadowOldEnd = 0;
+      mCurrentNewEnd = mShadowNewEnd = 0;
+      mCurrentSelectionChanged = false;
+    }
+  }
+
+  private static boolean checkEqualText(final Spanned s1, final Spanned s2) {
+    if (!s1.toString().equals(s2.toString())) {
+      return false;
+    }
+
+    final Object[] o1s = s1.getSpans(0, s1.length(), Object.class);
+    final Object[] o2s = s2.getSpans(0, s2.length(), Object.class);
+
+    if (o1s.length != o2s.length) {
+      return false;
+    }
+
+    o1loop:
+    for (final Object o1 : o1s) {
+      for (final Object o2 : o2s) {
+        if (o1 != o2) {
+          continue;
+        }
+        if (s1.getSpanStart(o1) != s2.getSpanStart(o2)
+            || s1.getSpanEnd(o1) != s2.getSpanEnd(o2)
+            || s1.getSpanFlags(o1) != s2.getSpanFlags(o2)) {
+          return false;
+        }
+        continue o1loop;
+      }
+      
+      return false;
+    }
+    return true;
+  }
+
+  
 
 
 
 
-    private final class AsyncText {
+
+  private static final class Action {
+    
+    static final int TYPE_EVENT = 0;
+    
+    static final int TYPE_REPLACE_TEXT = 1;
+    
+    static final int TYPE_SET_SPAN = 2;
+    
+    static final int TYPE_REMOVE_SPAN = 3;
+    
+    static final int TYPE_SET_HANDLER = 4;
+
+    final int mType;
+    int mStart;
+    int mEnd;
+    CharSequence mSequence;
+    Object mSpanObject;
+    int mSpanFlags;
+    Handler mHandler;
+
+    Action(final int type) {
+      mType = type;
+    }
+
+    static Action newReplaceText(final CharSequence text, final int start, final int end) {
+      if (start < 0 || start > end) {
+        Log.e(LOGTAG, "invalid replace text offsets: " + start + " to " + end);
+        throw new IllegalArgumentException("invalid replace text offsets");
+      }
+
+      final Action action = new Action(TYPE_REPLACE_TEXT);
+      action.mSequence = text;
+      action.mStart = start;
+      action.mEnd = end;
+      return action;
+    }
+
+    static Action newSetSpan(final Object object, final int start, final int end, final int flags) {
+      if (start < 0 || start > end) {
+        Log.e(LOGTAG, "invalid span offsets: " + start + " to " + end);
+        throw new IllegalArgumentException("invalid span offsets");
+      }
+      final Action action = new Action(TYPE_SET_SPAN);
+      action.mSpanObject = object;
+      action.mStart = start;
+      action.mEnd = end;
+      action.mSpanFlags = flags;
+      return action;
+    }
+
+    static Action newRemoveSpan(final Object object) {
+      final Action action = new Action(TYPE_REMOVE_SPAN);
+      action.mSpanObject = object;
+      return action;
+    }
+
+    static Action newSetHandler(final Handler handler) {
+      final Action action = new Action(TYPE_SET_HANDLER);
+      action.mHandler = handler;
+      return action;
+    }
+  }
+
+  private void icOfferAction(final Action action) {
+    if (DEBUG) {
+      assertOnIcThread();
+      Log.d(LOGTAG, "offer: Action(" + getConstantName(Action.class, "TYPE_", action.mType) + ")");
+    }
+
+    switch (action.mType) {
+      case Action.TYPE_EVENT:
+      case Action.TYPE_SET_HANDLER:
+        break;
+
+      case Action.TYPE_SET_SPAN:
+        mText.shadowSetSpan(
+            action.mSpanObject, action.mStart,
+            action.mEnd, action.mSpanFlags);
+        break;
+
+      case Action.TYPE_REMOVE_SPAN:
+        action.mSpanFlags = mText.getShadowText().getSpanFlags(action.mSpanObject);
+        mText.shadowRemoveSpan(action.mSpanObject);
+        break;
+
+      case Action.TYPE_REPLACE_TEXT:
+        mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
+        break;
+
+      default:
+        throw new IllegalStateException("Action not processed");
+    }
+
+    
+    
+    
+    if (mFocusedChild == null || mListener == null) {
+      return;
+    }
+
+    mActions.offer(action);
+
+    try {
+      icPerformAction(action);
+    } catch (final RemoteException e) {
+      Log.e(LOGTAG, "Remote call failed", e);
+      
+      mActions.remove(action);
+    }
+  }
+
+  private void icPerformAction(final Action action) throws RemoteException {
+    switch (action.mType) {
+      case Action.TYPE_EVENT:
+      case Action.TYPE_SET_HANDLER:
+        mFocusedChild.onImeSynchronize();
+        break;
+
+      case Action.TYPE_SET_SPAN:
+        {
+          final boolean needUpdate =
+              (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0
+                  && ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0
+                      || action.mSpanObject == Selection.SELECTION_START
+                      || action.mSpanObject == Selection.SELECTION_END);
+
+          action.mSequence = TextUtils.substring(mText.getShadowText(), action.mStart, action.mEnd);
+
+          mNeedUpdateComposition |= needUpdate;
+          if (needUpdate) {
+            icMaybeSendComposition(
+                mText.getShadowText(),
+                SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+          }
+
+          mFocusedChild.onImeSynchronize();
+          break;
+        }
+      case Action.TYPE_REMOVE_SPAN:
+        {
+          final boolean needUpdate =
+              (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0
+                  && (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
+
+          mNeedUpdateComposition |= needUpdate;
+          if (needUpdate) {
+            icMaybeSendComposition(
+                mText.getShadowText(),
+                SEND_COMPOSITION_NOTIFY_GECKO | SEND_COMPOSITION_KEEP_CURRENT);
+          }
+
+          mFocusedChild.onImeSynchronize();
+          break;
+        }
+      case Action.TYPE_REPLACE_TEXT:
         
         
-        private final SpannableStringBuilder mCurrentText = new SpannableStringBuilder();
-        
-        
-        private int mCurrentStart = Integer.MAX_VALUE;
-        
-        private int mCurrentOldEnd;
-        
-        private int mCurrentNewEnd;
-        
-        private boolean mCurrentSelectionChanged;
+        mNeedSync = true;
 
         
         
-        private final SpannableStringBuilder mShadowText = new SpannableStringBuilder();
-        
-        
-        private int mShadowStart = Integer.MAX_VALUE;
-        
-        private int mShadowOldEnd;
-        
-        private int mShadowNewEnd;
-
-        private void addCurrentChangeLocked(final int start, final int oldEnd, final int newEnd) {
-            
-            mCurrentStart = Math.min(mCurrentStart, start);
-            mCurrentOldEnd += Math.max(0, oldEnd - mCurrentNewEnd);
-            mCurrentNewEnd = newEnd + Math.max(0, mCurrentNewEnd - oldEnd);
+        if (icMaybeSendComposition(action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
+          mFocusedChild.onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
+          break;
         }
 
-        public synchronized void currentReplace(final int start, final int end,
-                                                final CharSequence newText) {
-            
-            mCurrentText.replace(start, end, newText);
-            addCurrentChangeLocked(start, end, start + newText.length());
-        }
-
-        public synchronized void currentSetSelection(final int start, final int end) {
-            
-            Selection.setSelection(mCurrentText, start, end);
-            mCurrentSelectionChanged = true;
-        }
-
-        public synchronized void currentSetSpan(final Object obj, final int start,
-                                                final int end, final int flags) {
-            
-            mCurrentText.setSpan(obj, start, end, flags);
-            addCurrentChangeLocked(start, end, end);
-        }
-
-        public synchronized void currentRemoveSpan(final Object obj) {
-            
-            if (obj == null) {
-                mCurrentText.clearSpans();
-                addCurrentChangeLocked(0, mCurrentText.length(), mCurrentText.length());
-                return;
-            }
-            final int start = mCurrentText.getSpanStart(obj);
-            final int end = mCurrentText.getSpanEnd(obj);
-            if (start < 0 || end < 0) {
-                return;
-            }
-            mCurrentText.removeSpan(obj);
-            addCurrentChangeLocked(start, end, end);
-        }
+        
+        sendCharKeyEvents(action);
 
         
         
-        public Spanned getCurrentText() {
-            
-            return mCurrentText;
+        
+        
+        
+        final int selStartOnShadow = Selection.getSelectionStart(mText.getShadowText());
+        final int selEndOnShadow = Selection.getSelectionEnd(mText.getShadowText());
+        int actionStart = action.mStart;
+        int actionEnd = action.mEnd;
+        
+        
+        
+        
+        
+        if (action.mStart == action.mEnd
+            && selStartOnShadow == selEndOnShadow
+            && action.mStart == selStartOnShadow + action.mSequence.toString().length()) {
+          
+          
+          actionStart = -1;
+          actionEnd = -1;
         }
+        mFocusedChild.onImeReplaceText(actionStart, actionEnd, action.mSequence.toString());
+        break;
 
-        private void addShadowChange(final int start, final int oldEnd, final int newEnd) {
-            
-            mShadowStart = Math.min(mShadowStart, start);
-            mShadowOldEnd += Math.max(0, oldEnd - mShadowNewEnd);
-            mShadowNewEnd = newEnd + Math.max(0, mShadowNewEnd - oldEnd);
-        }
+      default:
+        throw new IllegalStateException("Action not processed");
+    }
+  }
 
-        public void shadowReplace(final int start, final int end,
-                                  final CharSequence newText) {
+  private KeyEvent[] synthesizeKeyEvents(final CharSequence cs) {
+    try {
+      if (mKeyMap == null) {
+        mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
+      }
+    } catch (final Exception e) {
+      
+      
+      
+      return null;
+    }
+    final KeyEvent[] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
+    if (keyEvents == null || keyEvents.length == 0) {
+      return null;
+    }
+    return keyEvents;
+  }
+
+  private void sendCharKeyEvents(final Action action) throws RemoteException {
+    if (action.mSequence.length() != 1
+        || (action.mSequence instanceof Spannable
+            && ((Spannable) action.mSequence).nextSpanTransition(-1, Integer.MAX_VALUE, null)
+                < Integer.MAX_VALUE)) {
+      
+      
+      return;
+    }
+    final KeyEvent[] keyEvents = synthesizeKeyEvents(action.mSequence);
+    if (keyEvents == null) {
+      return;
+    }
+    for (final KeyEvent event : keyEvents) {
+      if (KeyEvent.isModifierKey(event.getKeyCode())) {
+        continue;
+      }
+      if (event.getAction() == KeyEvent.ACTION_UP && mSuppressKeyUp) {
+        continue;
+      }
+      if (DEBUG) {
+        Log.d(LOGTAG, "sending: " + event);
+      }
+      onKeyEvent(
+          mFocusedChild,
+          event,
+          event.getAction(),
+           0, 
+          true);
+    }
+  }
+
+  public GeckoEditable(@NonNull final GeckoSession session) {
+    if (DEBUG) {
+      
+      ThreadUtils.assertOnUiThread();
+    }
+
+    mSession = new WeakReference<>(session);
+    mText = new AsyncText();
+    mActions = new ConcurrentLinkedQueue<Action>();
+
+    final Class<?>[] PROXY_INTERFACES = {Editable.class};
+    mProxy =
+        (Editable) Proxy.newProxyInstance(Editable.class.getClassLoader(), PROXY_INTERFACES, this);
+
+    mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
+  }
+
+  @Override 
+  public void setDefaultChild(final IGeckoEditableChild child) {
+    if (DEBUG) {
+      
+      Log.d(LOGTAG, "setDefaultEditableChild " + child);
+    }
+    mDefaultChild = child;
+  }
+
+  public void setListener(final SessionTextInput.EditableListener newListener) {
+    if (DEBUG) {
+      
+      ThreadUtils.assertOnUiThread();
+      Log.d(LOGTAG, "setListener " + newListener);
+    }
+
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
             if (DEBUG) {
-                assertOnIcThread();
-            }
-            mShadowText.replace(start, end, newText);
-            addShadowChange(start, end, start + newText.length());
-        }
-
-        public void shadowSetSpan(final Object obj, final int start,
-                                  final int end, final int flags) {
-            if (DEBUG) {
-                assertOnIcThread();
-            }
-            mShadowText.setSpan(obj, start, end, flags);
-            addShadowChange(start, end, end);
-        }
-
-        public void shadowRemoveSpan(final Object obj) {
-            if (DEBUG) {
-                assertOnIcThread();
-            }
-            if (obj == null) {
-                mShadowText.clearSpans();
-                addShadowChange(0, mShadowText.length(), mShadowText.length());
-                return;
-            }
-            final int start = mShadowText.getSpanStart(obj);
-            final int end = mShadowText.getSpanEnd(obj);
-            if (start < 0 || end < 0) {
-                return;
-            }
-            mShadowText.removeSpan(obj);
-            addShadowChange(start, end, end);
-        }
-
-        
-        
-        public Spanned getShadowText() {
-            if (DEBUG) {
-                assertOnIcThread();
-            }
-            return mShadowText;
-        }
-
-        
-
-
-
-
-
-        private boolean isDiscardingComposition() {
-            if (!isComposing(mShadowText)) {
-                return false;
+              Log.d(LOGTAG, "onViewChange (set listener)");
             }
 
-            return !isComposing(mCurrentText);
-        }
-
-        public synchronized void syncShadowText(
-                final SessionTextInput.EditableListener listener) {
-            if (DEBUG) {
-                assertOnIcThread();
-            }
-
-            if (mCurrentStart > mCurrentOldEnd && mShadowStart > mShadowOldEnd) {
-                
-                if (!mCurrentSelectionChanged) {
-                    return;
-                }
-                final int start = Selection.getSelectionStart(mCurrentText);
-                final int end = Selection.getSelectionEnd(mCurrentText);
-                Selection.setSelection(mShadowText, start, end);
-                mCurrentSelectionChanged = false;
-
-                if (listener != null) {
-                    listener.onSelectionChange();
-                }
-                return;
-            }
-
-            if (isDiscardingComposition()) {
-                if (listener != null) {
-                    listener.onDiscardComposition();
-                }
-            }
-
-            
-            
-            final int start = Math.min(mShadowStart, mCurrentStart);
-            final int shadowEnd = mShadowNewEnd + Math.max(0, mCurrentOldEnd - mShadowOldEnd);
-            final int currentEnd = mCurrentNewEnd + Math.max(0, mShadowOldEnd - mCurrentOldEnd);
-
-            
-            Object[] spans = mShadowText.getSpans(start, shadowEnd, Object.class);
-            for (final Object span : spans) {
-                mShadowText.removeSpan(span);
-            }
-
-            mShadowText.replace(start, shadowEnd, mCurrentText, start, currentEnd);
-
-            
-            
-            spans = mCurrentText.getSpans(Math.max(start - 1, 0),
-                                          Math.min(currentEnd + 1, mCurrentText.length()),
-                                          Object.class);
-            for (final Object span : spans) {
-                if (span == Selection.SELECTION_START || span == Selection.SELECTION_END) {
-                    continue;
-                }
-                mShadowText.setSpan(span,
-                                    mCurrentText.getSpanStart(span),
-                                    mCurrentText.getSpanEnd(span),
-                                    mCurrentText.getSpanFlags(span));
-            }
-
-            
-            
-            final int selStart = Selection.getSelectionStart(mCurrentText);
-            final int selEnd = Selection.getSelectionEnd(mCurrentText);
-            Selection.setSelection(mShadowText, selStart, selEnd);
-
-            if (DEBUG && !checkEqualText(mShadowText, mCurrentText)) {
-                
-                throw new IllegalStateException("Failed to sync: " +
-                        mShadowStart + '-' + mShadowOldEnd + '-' + mShadowNewEnd + '/' +
-                        mCurrentStart + '-' + mCurrentOldEnd + '-' + mCurrentNewEnd);
-            }
-
-            if (listener != null) {
-                
-                
-                listener.onTextChange();
-
-                if (mCurrentSelectionChanged || (mCurrentOldEnd != mCurrentNewEnd &&
-                        (selStart >= mCurrentStart || selEnd >= mCurrentStart))) {
-                    listener.onSelectionChange();
-                }
-            }
-
-            
-            mCurrentStart = mShadowStart = Integer.MAX_VALUE;
-            mCurrentOldEnd = mShadowOldEnd = 0;
-            mCurrentNewEnd = mShadowNewEnd = 0;
-            mCurrentSelectionChanged = false;
-        }
-    }
-
-    private static boolean checkEqualText(final Spanned s1, final Spanned s2) {
-        if (!s1.toString().equals(s2.toString())) {
-            return false;
-        }
-
-        final Object[] o1s = s1.getSpans(0, s1.length(), Object.class);
-        final Object[] o2s = s2.getSpans(0, s2.length(), Object.class);
-
-        if (o1s.length != o2s.length) {
-            return false;
-        }
-
-        o1loop: for (final Object o1 : o1s) {
-            for (final Object o2 : o2s)  {
-                if (o1 != o2) {
-                    continue;
-                }
-                if (s1.getSpanStart(o1) != s2.getSpanStart(o2) ||
-                        s1.getSpanEnd(o1) != s2.getSpanEnd(o2) ||
-                        s1.getSpanFlags(o1) != s2.getSpanFlags(o2)) {
-                    return false;
-                }
-                continue o1loop;
-            }
-            
-            return false;
-        }
-        return true;
-    }
-
-    
-
-
-
-
-
-    private static final class Action {
-        
-        static final int TYPE_EVENT = 0;
-        
-        static final int TYPE_REPLACE_TEXT = 1;
-        
-        static final int TYPE_SET_SPAN = 2;
-        
-        static final int TYPE_REMOVE_SPAN = 3;
-        
-        static final int TYPE_SET_HANDLER = 4;
-
-        final int mType;
-        int mStart;
-        int mEnd;
-        CharSequence mSequence;
-        Object mSpanObject;
-        int mSpanFlags;
-        Handler mHandler;
-
-        Action(final int type) {
-            mType = type;
-        }
-
-        static Action newReplaceText(final CharSequence text, final int start, final int end) {
-            if (start < 0 || start > end) {
-                Log.e(LOGTAG, "invalid replace text offsets: " + start + " to " + end);
-                throw new IllegalArgumentException("invalid replace text offsets");
-            }
-
-            final Action action = new Action(TYPE_REPLACE_TEXT);
-            action.mSequence = text;
-            action.mStart = start;
-            action.mEnd = end;
-            return action;
-        }
-
-        static Action newSetSpan(final Object object, final int start, final int end,
-                                 final int flags) {
-            if (start < 0 || start > end) {
-                Log.e(LOGTAG, "invalid span offsets: " + start + " to " + end);
-                throw new IllegalArgumentException("invalid span offsets");
-            }
-            final Action action = new Action(TYPE_SET_SPAN);
-            action.mSpanObject = object;
-            action.mStart = start;
-            action.mEnd = end;
-            action.mSpanFlags = flags;
-            return action;
-        }
-
-        static Action newRemoveSpan(final Object object) {
-            final Action action = new Action(TYPE_REMOVE_SPAN);
-            action.mSpanObject = object;
-            return action;
-        }
-
-        static Action newSetHandler(final Handler handler) {
-            final Action action = new Action(TYPE_SET_HANDLER);
-            action.mHandler = handler;
-            return action;
-        }
-    }
-
-    private void icOfferAction(final Action action) {
-        if (DEBUG) {
-            assertOnIcThread();
-            Log.d(LOGTAG, "offer: Action(" +
-                          getConstantName(Action.class, "TYPE_", action.mType) + ")");
-        }
-
-        switch (action.mType) {
-            case Action.TYPE_EVENT:
-            case Action.TYPE_SET_HANDLER:
-                break;
-
-            case Action.TYPE_SET_SPAN:
-                mText.shadowSetSpan(action.mSpanObject, action.mStart,
-                                    action.mEnd, action.mSpanFlags);
-                break;
-
-            case Action.TYPE_REMOVE_SPAN:
-                action.mSpanFlags = mText.getShadowText().getSpanFlags(action.mSpanObject);
-                mText.shadowRemoveSpan(action.mSpanObject);
-                break;
-
-            case Action.TYPE_REPLACE_TEXT:
-                mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
-                break;
-
-            default:
-                throw new IllegalStateException("Action not processed");
-        }
-
-        
-        
-        
-        if (mFocusedChild == null || mListener == null) {
-            return;
-        }
-
-        mActions.offer(action);
-
-        try {
-            icPerformAction(action);
-        } catch (final RemoteException e) {
-            Log.e(LOGTAG, "Remote call failed", e);
-            
-            mActions.remove(action);
-        }
-    }
-
-    private void icPerformAction(final Action action) throws RemoteException {
-        switch (action.mType) {
-            case Action.TYPE_EVENT:
-            case Action.TYPE_SET_HANDLER:
-                mFocusedChild.onImeSynchronize();
-                break;
-
-            case Action.TYPE_SET_SPAN: {
-                final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                        ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
-                                action.mSpanObject == Selection.SELECTION_START ||
-                                action.mSpanObject == Selection.SELECTION_END);
-
-                action.mSequence = TextUtils.substring(
-                        mText.getShadowText(), action.mStart, action.mEnd);
-
-                mNeedUpdateComposition |= needUpdate;
-                if (needUpdate) {
-                    icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
-                            SEND_COMPOSITION_KEEP_CURRENT);
-                }
-
-                mFocusedChild.onImeSynchronize();
-                break;
-            }
-            case Action.TYPE_REMOVE_SPAN: {
-                final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                        (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0;
-
-                mNeedUpdateComposition |= needUpdate;
-                if (needUpdate) {
-                    icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
-                            SEND_COMPOSITION_KEEP_CURRENT);
-                }
-
-                mFocusedChild.onImeSynchronize();
-                break;
-            }
-            case Action.TYPE_REPLACE_TEXT:
-                
-                
-                mNeedSync = true;
-
-                
-                
-                if (icMaybeSendComposition(
-                        action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
-                    mFocusedChild.onImeReplaceText(
-                            action.mStart, action.mEnd, action.mSequence.toString());
-                    break;
-                }
-
-                
-                sendCharKeyEvents(action);
-
-                
-                
-                
-                
-                
-                final int selStartOnShadow = Selection.getSelectionStart(mText.getShadowText());
-                final int selEndOnShadow = Selection.getSelectionEnd(mText.getShadowText());
-                int actionStart = action.mStart;
-                int actionEnd = action.mEnd;
-                
-                
-                
-                
-                
-                if (action.mStart == action.mEnd && selStartOnShadow == selEndOnShadow &&
-                    action.mStart == selStartOnShadow + action.mSequence.toString().length()) {
-                    
-                    
-                    actionStart = -1;
-                    actionEnd = -1;
-                }
-                mFocusedChild.onImeReplaceText(
-                        actionStart, actionEnd, action.mSequence.toString());
-                break;
-
-            default:
-                throw new IllegalStateException("Action not processed");
-        }
-    }
-
-    private KeyEvent [] synthesizeKeyEvents(final CharSequence cs) {
-        try {
-            if (mKeyMap == null) {
-                mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-            }
-        } catch (final Exception e) {
-            
-            
-            
-            return null;
-        }
-        final KeyEvent [] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
-        if (keyEvents == null || keyEvents.length == 0) {
-            return null;
-        }
-        return keyEvents;
-    }
-
-    private void sendCharKeyEvents(final Action action) throws RemoteException {
-        if (action.mSequence.length() != 1 ||
-            (action.mSequence instanceof Spannable &&
-            ((Spannable)action.mSequence).nextSpanTransition(
-                -1, Integer.MAX_VALUE, null) < Integer.MAX_VALUE)) {
-            
-            
-            return;
-        }
-        final KeyEvent [] keyEvents = synthesizeKeyEvents(action.mSequence);
-        if (keyEvents == null) {
-            return;
-        }
-        for (final KeyEvent event : keyEvents) {
-            if (KeyEvent.isModifierKey(event.getKeyCode())) {
-                continue;
-            }
-            if (event.getAction() == KeyEvent.ACTION_UP && mSuppressKeyUp) {
-                continue;
-            }
-            if (DEBUG) {
-                Log.d(LOGTAG, "sending: " + event);
-            }
-            onKeyEvent(mFocusedChild, event, event.getAction(),
-                        0,  true);
-        }
-    }
-
-    public GeckoEditable(@NonNull final GeckoSession session) {
-        if (DEBUG) {
-            
-            ThreadUtils.assertOnUiThread();
-        }
-
-        mSession = new WeakReference<>(session);
-        mText = new AsyncText();
-        mActions = new ConcurrentLinkedQueue<Action>();
-
-        final Class<?>[] PROXY_INTERFACES = { Editable.class };
-        mProxy = (Editable) Proxy.newProxyInstance(Editable.class.getClassLoader(),
-                                                   PROXY_INTERFACES, this);
-
-        mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
-    }
-
-    @Override 
-    public void setDefaultChild(final IGeckoEditableChild child) {
-        if (DEBUG) {
-            
-            Log.d(LOGTAG, "setDefaultEditableChild " + child);
-        }
-        mDefaultChild = child;
-    }
-
-    public void setListener(final SessionTextInput.EditableListener newListener) {
-        if (DEBUG) {
-            
-            ThreadUtils.assertOnUiThread();
-            Log.d(LOGTAG, "setListener " + newListener);
-        }
-
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "onViewChange (set listener)");
-                }
-
-                mListener = newListener;
-            }
+            mListener = newListener;
+          }
         });
+  }
+
+  private boolean onIcThread() {
+    return mIcRunHandler.getLooper() == Looper.myLooper();
+  }
+
+  private void assertOnIcThread() {
+    ThreadUtils.assertOnThread(mIcRunHandler.getLooper().getThread(), AssertBehavior.THROW);
+  }
+
+  private Object getField(final Object obj, final String field, final Object def) {
+    try {
+      return obj.getClass().getField(field).get(obj);
+    } catch (final Exception e) {
+      return def;
+    }
+  }
+
+  
+  
+  
+  private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1;
+  
+  
+  private static final int SEND_COMPOSITION_NOTIFY_GECKO = 2;
+  
+  
+  private static final int SEND_COMPOSITION_KEEP_CURRENT = 4;
+
+  
+
+
+
+
+
+
+  private boolean icMaybeSendComposition(final CharSequence sequence, final int flags)
+      throws RemoteException {
+    final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
+    final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
+    final boolean keepCurrent = (flags & SEND_COMPOSITION_KEEP_CURRENT) != 0;
+    final int updateFlags = keepCurrent ? GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
+
+    if (!keepCurrent) {
+      
+      
+      mNeedUpdateComposition = false;
     }
 
-    private boolean onIcThread() {
-        return mIcRunHandler.getLooper() == Looper.myLooper();
-    }
+    int selStart = Selection.getSelectionStart(sequence);
+    int selEnd = Selection.getSelectionEnd(sequence);
 
-    private void assertOnIcThread() {
-        ThreadUtils.assertOnThread(mIcRunHandler.getLooper().getThread(), AssertBehavior.THROW);
-    }
+    if (sequence instanceof Spanned) {
+      final Spanned text = (Spanned) sequence;
+      final Object[] spans = text.getSpans(0, text.length(), Object.class);
+      boolean found = false;
+      int composingStart = useEntireText ? 0 : Integer.MAX_VALUE;
+      int composingEnd = useEntireText ? text.length() : 0;
 
-    private Object getField(final Object obj, final String field, final Object def) {
-        try {
-            return obj.getClass().getField(field).get(obj);
-        } catch (final Exception e) {
-            return def;
+      
+      
+      for (final Object span : spans) {
+        if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) == 0) {
+          continue;
         }
-    }
-
-    
-    
-    
-    private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1;
-    
-    
-    private static final int SEND_COMPOSITION_NOTIFY_GECKO = 2;
-    
-    
-    private static final int SEND_COMPOSITION_KEEP_CURRENT = 4;
-
-    
-
-
-
-
-
-
-    private boolean icMaybeSendComposition(final CharSequence sequence,
-                                           final int flags) throws RemoteException {
-        final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
-        final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
-        final boolean keepCurrent = (flags & SEND_COMPOSITION_KEEP_CURRENT) != 0;
-        final int updateFlags = keepCurrent ?
-                                GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
-
-        if (!keepCurrent) {
-            
-            
-            mNeedUpdateComposition = false;
+        found = true;
+        if (useEntireText) {
+          break;
         }
+        composingStart = Math.min(composingStart, text.getSpanStart(span));
+        composingEnd = Math.max(composingEnd, text.getSpanEnd(span));
+      }
 
-        int selStart = Selection.getSelectionStart(sequence);
-        int selEnd = Selection.getSelectionEnd(sequence);
+      if (useEntireText && (selStart < 0 || selEnd < 0)) {
+        selStart = composingEnd;
+        selEnd = composingEnd;
+      }
 
-        if (sequence instanceof Spanned) {
-            final Spanned text = (Spanned) sequence;
-            final Object[] spans = text.getSpans(0, text.length(), Object.class);
-            boolean found = false;
-            int composingStart = useEntireText ? 0 : Integer.MAX_VALUE;
-            int composingEnd = useEntireText ? text.length() : 0;
-
-            
-            
-            for (final Object span : spans) {
-                if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) == 0) {
-                    continue;
-                }
-                found = true;
-                if (useEntireText) {
-                    break;
-                }
-                composingStart = Math.min(composingStart, text.getSpanStart(span));
-                composingEnd = Math.max(composingEnd, text.getSpanEnd(span));
-            }
-
-            if (useEntireText && (selStart < 0 || selEnd < 0)) {
-                selStart = composingEnd;
-                selEnd = composingEnd;
-            }
-
-            if (found) {
-                if (selStart < composingStart || selEnd > composingEnd) {
-                    
-                    
-                    
-                    
-                    
-                    if (DEBUG) {
-                        final StringBuilder sb = new StringBuilder("icSendComposition(): invalid caret position. ");
-                        sb.append("composing = ").append(composingStart).append("-").append(composingEnd)
-                          .append(", selection = ").append(selStart).append("-").append(selEnd);
-                        Log.d(LOGTAG, sb.toString());
-                    }
-                } else {
-                    icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
-                    if (notifyGecko) {
-                        mFocusedChild.onImeUpdateComposition(
-                                composingStart, composingEnd, updateFlags);
-                    }
-                    return true;
-                }
-            }
-        }
-
-        if (notifyGecko) {
-            
-            final Spanned currentText = mText.getCurrentText();
-            if (Selection.getSelectionStart(currentText) != selStart ||
-                Selection.getSelectionEnd(currentText) != selEnd) {
-                
-                
-                
-                
-                
-                
-                mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
-            }
-        }
-
-        if (DEBUG) {
-            Log.d(LOGTAG, "icSendComposition(): no composition");
-        }
-        return false;
-    }
-
-    private void icSendComposition(final Spanned text,
-                                   final int selStart, final int selEnd,
-                                   final int composingStart, final int composingEnd)
-            throws RemoteException {
-        if (DEBUG) {
-            assertOnIcThread();
-            final StringBuilder sb = new StringBuilder("icSendComposition(");
-            sb.append("\"").append(text).append("\"")
-              .append(", range = ").append(composingStart).append("-").append(composingEnd)
-              .append(", selection = ").append(selStart).append("-").append(selEnd).append(")");
+      if (found) {
+        if (selStart < composingStart || selEnd > composingEnd) {
+          
+          
+          
+          
+          
+          if (DEBUG) {
+            final StringBuilder sb =
+                new StringBuilder("icSendComposition(): invalid caret position. ");
+            sb.append("composing = ")
+                .append(composingStart)
+                .append("-")
+                .append(composingEnd)
+                .append(", selection = ")
+                .append(selStart)
+                .append("-")
+                .append(selEnd);
             Log.d(LOGTAG, sb.toString());
-        }
-
-        if (selEnd >= composingStart && selEnd <= composingEnd) {
-            mFocusedChild.onImeAddCompositionRange(
-                    selEnd - composingStart, selEnd - composingStart,
-                    IME_RANGE_CARETPOSITION, 0, 0, false, 0, 0, 0);
-        }
-
-        int rangeStart = composingStart;
-        final TextPaint tp = new TextPaint();
-        final TextPaint emptyTp = new TextPaint();
-        
-        
-        emptyTp.setColor(0);
-        do {
-            final int rangeType;
-            int rangeStyles = 0;
-            int rangeLineStyle = IME_RANGE_LINE_NONE;
-            boolean rangeBoldLine = false;
-            int rangeForeColor = 0, rangeBackColor = 0, rangeLineColor = 0;
-            int rangeEnd = text.nextSpanTransition(rangeStart, composingEnd, Object.class);
-
-            if (selStart > rangeStart && selStart < rangeEnd) {
-                rangeEnd = selStart;
-            } else if (selEnd > rangeStart && selEnd < rangeEnd) {
-                rangeEnd = selEnd;
-            }
-            final CharacterStyle[] styleSpans =
-                    text.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
-
-            if (DEBUG) {
-                Log.d(LOGTAG, " found " + styleSpans.length + " spans @ " +
-                              rangeStart + "-" + rangeEnd);
-            }
-
-            if (styleSpans.length == 0) {
-                rangeType = (selStart == rangeStart && selEnd == rangeEnd)
-                            ? IME_RANGE_SELECTEDRAWTEXT
-                            : IME_RANGE_RAWINPUT;
-            } else {
-                rangeType = (selStart == rangeStart && selEnd == rangeEnd)
-                            ? IME_RANGE_SELECTEDCONVERTEDTEXT
-                            : IME_RANGE_CONVERTEDTEXT;
-                tp.set(emptyTp);
-                for (final CharacterStyle span : styleSpans) {
-                    span.updateDrawState(tp);
-                }
-                int tpUnderlineColor = 0;
-                float tpUnderlineThickness = 0.0f;
-
-                
-                tpUnderlineColor = (Integer)getField(tp, "underlineColor", 0);
-                tpUnderlineThickness = (Float)getField(tp, "underlineThickness", 0.0f);
-                if (tpUnderlineColor != 0) {
-                    rangeStyles |= IME_RANGE_UNDERLINE | IME_RANGE_LINECOLOR;
-                    rangeLineColor = tpUnderlineColor;
-                    
-                    if (tpUnderlineThickness <= 0.5f) {
-                        rangeLineStyle = IME_RANGE_LINE_DOTTED;
-                    } else {
-                        rangeLineStyle = IME_RANGE_LINE_SOLID;
-                        if (tpUnderlineThickness >= 2.0f) {
-                            rangeBoldLine = true;
-                        }
-                    }
-                } else if (tp.isUnderlineText()) {
-                    rangeStyles |= IME_RANGE_UNDERLINE;
-                    rangeLineStyle = IME_RANGE_LINE_SOLID;
-                }
-                if (tp.getColor() != 0) {
-                    rangeStyles |= IME_RANGE_FORECOLOR;
-                    rangeForeColor = tp.getColor();
-                }
-                if (tp.bgColor != 0) {
-                    rangeStyles |= IME_RANGE_BACKCOLOR;
-                    rangeBackColor = tp.bgColor;
-                }
-            }
-            mFocusedChild.onImeAddCompositionRange(
-                    rangeStart - composingStart, rangeEnd - composingStart,
-                    rangeType, rangeStyles, rangeLineStyle, rangeBoldLine,
-                    rangeForeColor, rangeBackColor, rangeLineColor);
-            rangeStart = rangeEnd;
-
-            if (DEBUG) {
-                Log.d(LOGTAG, " added " + rangeType +
-                              " : " + Integer.toHexString(rangeStyles) +
-                              " : " + Integer.toHexString(rangeForeColor) +
-                              " : " + Integer.toHexString(rangeBackColor));
-            }
-        } while (rangeStart < composingEnd);
-    }
-
-    @Override 
-    public void sendKeyEvent(final @Nullable View view, final int action,
-                             final @NonNull KeyEvent event) {
-        final Editable editable = mProxy;
-        final KeyListener keyListener = TextKeyListener.getInstance();
-        final KeyEvent translatedEvent = translateKey(event.getKeyCode(), event);
-
-        
-        final View v = ThreadUtils.isOnUiThread() ? view : null;
-        final int keyCode = translatedEvent.getKeyCode();
-        final boolean handled;
-
-        if (shouldSkipKeyListener(keyCode, translatedEvent)) {
-            handled = false;
-        } else if (action == KeyEvent.ACTION_DOWN) {
-            setSuppressKeyUp(true);
-            handled = keyListener.onKeyDown(v, editable, keyCode, translatedEvent);
-        } else if (action == KeyEvent.ACTION_UP) {
-            handled = keyListener.onKeyUp(v, editable, keyCode, translatedEvent);
+          }
         } else {
-            handled = keyListener.onKeyOther(v, editable, translatedEvent);
+          icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
+          if (notifyGecko) {
+            mFocusedChild.onImeUpdateComposition(composingStart, composingEnd, updateFlags);
+          }
+          return true;
         }
+      }
+    }
 
-        if (!handled) {
-            sendKeyEvent(translatedEvent, action, TextKeyListener.getMetaState(editable));
+    if (notifyGecko) {
+      
+      final Spanned currentText = mText.getCurrentText();
+      if (Selection.getSelectionStart(currentText) != selStart
+          || Selection.getSelectionEnd(currentText) != selEnd) {
+        
+        
+        
+        
+        
+        
+        mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
+      }
+    }
+
+    if (DEBUG) {
+      Log.d(LOGTAG, "icSendComposition(): no composition");
+    }
+    return false;
+  }
+
+  private void icSendComposition(
+      final Spanned text,
+      final int selStart,
+      final int selEnd,
+      final int composingStart,
+      final int composingEnd)
+      throws RemoteException {
+    if (DEBUG) {
+      assertOnIcThread();
+      final StringBuilder sb = new StringBuilder("icSendComposition(");
+      sb.append("\"")
+          .append(text)
+          .append("\"")
+          .append(", range = ")
+          .append(composingStart)
+          .append("-")
+          .append(composingEnd)
+          .append(", selection = ")
+          .append(selStart)
+          .append("-")
+          .append(selEnd)
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
+    }
+
+    if (selEnd >= composingStart && selEnd <= composingEnd) {
+      mFocusedChild.onImeAddCompositionRange(
+          selEnd - composingStart,
+          selEnd - composingStart,
+          IME_RANGE_CARETPOSITION,
+          0,
+          0,
+          false,
+          0,
+          0,
+          0);
+    }
+
+    int rangeStart = composingStart;
+    final TextPaint tp = new TextPaint();
+    final TextPaint emptyTp = new TextPaint();
+    
+    
+    emptyTp.setColor(0);
+    do {
+      final int rangeType;
+      int rangeStyles = 0;
+      int rangeLineStyle = IME_RANGE_LINE_NONE;
+      boolean rangeBoldLine = false;
+      int rangeForeColor = 0, rangeBackColor = 0, rangeLineColor = 0;
+      int rangeEnd = text.nextSpanTransition(rangeStart, composingEnd, Object.class);
+
+      if (selStart > rangeStart && selStart < rangeEnd) {
+        rangeEnd = selStart;
+      } else if (selEnd > rangeStart && selEnd < rangeEnd) {
+        rangeEnd = selEnd;
+      }
+      final CharacterStyle[] styleSpans = text.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
+
+      if (DEBUG) {
+        Log.d(LOGTAG, " found " + styleSpans.length + " spans @ " + rangeStart + "-" + rangeEnd);
+      }
+
+      if (styleSpans.length == 0) {
+        rangeType =
+            (selStart == rangeStart && selEnd == rangeEnd)
+                ? IME_RANGE_SELECTEDRAWTEXT
+                : IME_RANGE_RAWINPUT;
+      } else {
+        rangeType =
+            (selStart == rangeStart && selEnd == rangeEnd)
+                ? IME_RANGE_SELECTEDCONVERTEDTEXT
+                : IME_RANGE_CONVERTEDTEXT;
+        tp.set(emptyTp);
+        for (final CharacterStyle span : styleSpans) {
+          span.updateDrawState(tp);
         }
+        int tpUnderlineColor = 0;
+        float tpUnderlineThickness = 0.0f;
 
-        if (action == KeyEvent.ACTION_DOWN) {
-            if (!handled) {
+        
+        tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
+        tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
+        if (tpUnderlineColor != 0) {
+          rangeStyles |= IME_RANGE_UNDERLINE | IME_RANGE_LINECOLOR;
+          rangeLineColor = tpUnderlineColor;
+          
+          if (tpUnderlineThickness <= 0.5f) {
+            rangeLineStyle = IME_RANGE_LINE_DOTTED;
+          } else {
+            rangeLineStyle = IME_RANGE_LINE_SOLID;
+            if (tpUnderlineThickness >= 2.0f) {
+              rangeBoldLine = true;
+            }
+          }
+        } else if (tp.isUnderlineText()) {
+          rangeStyles |= IME_RANGE_UNDERLINE;
+          rangeLineStyle = IME_RANGE_LINE_SOLID;
+        }
+        if (tp.getColor() != 0) {
+          rangeStyles |= IME_RANGE_FORECOLOR;
+          rangeForeColor = tp.getColor();
+        }
+        if (tp.bgColor != 0) {
+          rangeStyles |= IME_RANGE_BACKCOLOR;
+          rangeBackColor = tp.bgColor;
+        }
+      }
+      mFocusedChild.onImeAddCompositionRange(
+          rangeStart - composingStart,
+          rangeEnd - composingStart,
+          rangeType,
+          rangeStyles,
+          rangeLineStyle,
+          rangeBoldLine,
+          rangeForeColor,
+          rangeBackColor,
+          rangeLineColor);
+      rangeStart = rangeEnd;
+
+      if (DEBUG) {
+        Log.d(
+            LOGTAG,
+            " added "
+                + rangeType
+                + " : "
+                + Integer.toHexString(rangeStyles)
+                + " : "
+                + Integer.toHexString(rangeForeColor)
+                + " : "
+                + Integer.toHexString(rangeBackColor));
+      }
+    } while (rangeStart < composingEnd);
+  }
+
+  @Override 
+  public void sendKeyEvent(
+      final @Nullable View view, final int action, final @NonNull KeyEvent event) {
+    final Editable editable = mProxy;
+    final KeyListener keyListener = TextKeyListener.getInstance();
+    final KeyEvent translatedEvent = translateKey(event.getKeyCode(), event);
+
+    
+    final View v = ThreadUtils.isOnUiThread() ? view : null;
+    final int keyCode = translatedEvent.getKeyCode();
+    final boolean handled;
+
+    if (shouldSkipKeyListener(keyCode, translatedEvent)) {
+      handled = false;
+    } else if (action == KeyEvent.ACTION_DOWN) {
+      setSuppressKeyUp(true);
+      handled = keyListener.onKeyDown(v, editable, keyCode, translatedEvent);
+    } else if (action == KeyEvent.ACTION_UP) {
+      handled = keyListener.onKeyUp(v, editable, keyCode, translatedEvent);
+    } else {
+      handled = keyListener.onKeyOther(v, editable, translatedEvent);
+    }
+
+    if (!handled) {
+      sendKeyEvent(translatedEvent, action, TextKeyListener.getMetaState(editable));
+    }
+
+    if (action == KeyEvent.ACTION_DOWN) {
+      if (!handled) {
+        
+        
+        
+        TextKeyListener.adjustMetaAfterKeypress(editable);
+      }
+      setSuppressKeyUp(false);
+    }
+  }
+
+  private void sendKeyEvent(final @NonNull KeyEvent event, final int action, final int metaState) {
+    if (DEBUG) {
+      assertOnIcThread();
+      Log.d(LOGTAG, "sendKeyEvent(" + event + ", " + action + ", " + metaState + ")");
+    }
+    
+
+
+
+
+
+
+
+    try {
+      if (mFocusedChild == null) {
+        if (mDefaultChild == null) {
+          Log.w(LOGTAG, "Discarding key event");
+          return;
+        }
+        
+        onKeyEvent(mDefaultChild, event, action, metaState,  false);
+        return;
+      }
+
+      
+      
+      
+      
+      
+      boolean commitCompositionBeforeKeyEvent = action == KeyEvent.ACTION_DOWN;
+      if (isComposing(mText.getShadowText())
+          && action == KeyEvent.ACTION_DOWN
+          && event.hasNoModifiers()) {
+        final int selStart = Selection.getSelectionStart(mText.getShadowText());
+        final int selEnd = Selection.getSelectionEnd(mText.getShadowText());
+        if (selStart == selEnd) {
+          
+          
+          switch (event.getKeyCode()) {
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+              if (getComposingStart(mText.getShadowText()) < selStart) {
+                Selection.setSelection(getEditable(), selStart - 1, selStart - 1);
+                mNeedUpdateComposition = true;
+                commitCompositionBeforeKeyEvent = false;
+              } else if (selStart == 0) {
                 
+                commitCompositionBeforeKeyEvent = false;
+              }
+              break;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+              if (getComposingEnd(mText.getShadowText()) > selEnd) {
+                Selection.setSelection(getEditable(), selStart + 1, selStart + 1);
+                mNeedUpdateComposition = true;
+                commitCompositionBeforeKeyEvent = false;
+              } else if (selEnd == mText.getShadowText().length()) {
                 
-                
-                TextKeyListener.adjustMetaAfterKeypress(editable);
-            }
-            setSuppressKeyUp(false);
+                commitCompositionBeforeKeyEvent = false;
+              }
+              break;
+          }
         }
+      }
+
+      
+      if (mNeedUpdateComposition) {
+        icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO);
+      }
+
+      if (commitCompositionBeforeKeyEvent) {
+        mFocusedChild.onImeRequestCommit();
+      }
+      onKeyEvent(mFocusedChild, event, action, metaState,  false);
+      icOfferAction(new Action(Action.TYPE_EVENT));
+    } catch (final RemoteException e) {
+      Log.e(LOGTAG, "Remote call failed", e);
+    }
+  }
+
+  private boolean shouldSkipKeyListener(final int keyCode, final @NonNull KeyEvent event) {
+    if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+      return true;
     }
 
-    private void sendKeyEvent(final @NonNull KeyEvent event, final int action,
-                              final int metaState) {
-        if (DEBUG) {
-            assertOnIcThread();
-            Log.d(LOGTAG, "sendKeyEvent(" + event + ", " + action + ", " + metaState + ")");
-        }
-        
-
-
-
-
-
-
-
-        try {
-            if (mFocusedChild == null) {
-                if (mDefaultChild == null) {
-                    Log.w(LOGTAG, "Discarding key event");
-                    return;
-                }
-                
-                onKeyEvent(mDefaultChild, event, action, metaState,
-                            false);
-                return;
-            }
-
-            
-            
-            
-            
-            
-            boolean commitCompositionBeforeKeyEvent = action == KeyEvent.ACTION_DOWN;
-            if (isComposing(mText.getShadowText()) &&
-                action == KeyEvent.ACTION_DOWN && event.hasNoModifiers()) {
-                final int selStart = Selection.getSelectionStart(mText.getShadowText());
-                final int selEnd = Selection.getSelectionEnd(mText.getShadowText());
-                if (selStart == selEnd) {
-                    
-                    
-                    switch (event.getKeyCode()) {
-                        case KeyEvent.KEYCODE_DPAD_LEFT:
-                            if (getComposingStart(mText.getShadowText()) < selStart) {
-                                Selection.setSelection(getEditable(), selStart - 1, selStart - 1);
-                                mNeedUpdateComposition = true;
-                                commitCompositionBeforeKeyEvent = false;
-                            } else if (selStart == 0) {
-                                
-                                commitCompositionBeforeKeyEvent = false;
-                            }
-                            break;
-                        case KeyEvent.KEYCODE_DPAD_RIGHT:
-                            if (getComposingEnd(mText.getShadowText()) > selEnd) {
-                                Selection.setSelection(getEditable(), selStart + 1, selStart + 1);
-                                mNeedUpdateComposition = true;
-                                commitCompositionBeforeKeyEvent = false;
-                            } else if (selEnd == mText.getShadowText().length()) {
-                                
-                                commitCompositionBeforeKeyEvent = false;
-                            }
-                            break;
-                    }
-                }
-            }
-
-            
-            if (mNeedUpdateComposition) {
-                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO);
-            }
-
-            if (commitCompositionBeforeKeyEvent) {
-                mFocusedChild.onImeRequestCommit();
-            }
-            onKeyEvent(mFocusedChild, event, action, metaState,
-                        false);
-            icOfferAction(new Action(Action.TYPE_EVENT));
-        } catch (final RemoteException e) {
-            Log.e(LOGTAG, "Remote call failed", e);
-        }
+    
+    if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_TAB) {
+      return true;
     }
-
-    private boolean shouldSkipKeyListener(final int keyCode, final @NonNull KeyEvent event) {
-        if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            return true;
-        }
-
-        
-        if (keyCode == KeyEvent.KEYCODE_ENTER ||
-            keyCode == KeyEvent.KEYCODE_TAB) {
-            return true;
-        }
-        
-        
-        if (keyCode == KeyEvent.KEYCODE_DEL ||
-            keyCode == KeyEvent.KEYCODE_FORWARD_DEL) {
-            return true;
-        }
-        return false;
+    
+    
+    if (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL) {
+      return true;
     }
+    return false;
+  }
 
-    private static KeyEvent translateSonyXperiaGamepadKeys(final int keyCode, final KeyEvent event) {
-        
-        
-        final boolean areKeysSwapped = areSonyXperiaGamepadKeysSwapped();
+  private static KeyEvent translateSonyXperiaGamepadKeys(final int keyCode, final KeyEvent event) {
+    
+    
+    final boolean areKeysSwapped = areSonyXperiaGamepadKeysSwapped();
 
-        int translatedKeyCode = keyCode;
-        
-        
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_BACK:
-                translatedKeyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_A
-                        : KeyEvent.KEYCODE_BUTTON_B);
-                break;
+    int translatedKeyCode = keyCode;
+    
+    
+    switch (keyCode) {
+      case KeyEvent.KEYCODE_BACK:
+        translatedKeyCode =
+            (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_A : KeyEvent.KEYCODE_BUTTON_B);
+        break;
 
-            case KeyEvent.KEYCODE_DPAD_CENTER:
-                translatedKeyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_B
-                        : KeyEvent.KEYCODE_BUTTON_A);
-                break;
+      case KeyEvent.KEYCODE_DPAD_CENTER:
+        translatedKeyCode =
+            (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_B : KeyEvent.KEYCODE_BUTTON_A);
+        break;
 
-            default:
-                return event;
-        }
-
-        return new KeyEvent(event.getAction(), translatedKeyCode);
-    }
-
-    private static final int SONY_XPERIA_GAMEPAD_DEVICE_ID = 196611;
-
-    private static boolean isSonyXperiaGamepadKeyEvent(final KeyEvent event) {
-        return (event.getDeviceId() == SONY_XPERIA_GAMEPAD_DEVICE_ID &&
-                "Sony Ericsson".equals(Build.MANUFACTURER) &&
-                ("R800".equals(Build.MODEL) || "R800i".equals(Build.MODEL)));
-    }
-
-    private static boolean areSonyXperiaGamepadKeysSwapped() {
-        
-        
-        
-        final char DEFAULT_O_BUTTON_LABEL = 0x25CB;
-
-        boolean swapped = false;
-        final int[] deviceIds = InputDevice.getDeviceIds();
-
-        for (int i = 0; deviceIds != null && i < deviceIds.length; i++) {
-            final KeyCharacterMap keyCharacterMap = KeyCharacterMap.load(deviceIds[i]);
-            if (keyCharacterMap != null && DEFAULT_O_BUTTON_LABEL ==
-                    keyCharacterMap.getDisplayLabel(KeyEvent.KEYCODE_DPAD_CENTER)) {
-                swapped = true;
-                break;
-            }
-        }
-        return swapped;
-    }
-
-    private KeyEvent translateKey(final int keyCode, final @NonNull KeyEvent event) {
-        if (isSonyXperiaGamepadKeyEvent(event)) {
-            return translateSonyXperiaGamepadKeys(keyCode, event);
-        }
+      default:
         return event;
     }
 
-    @Override 
-    public Editable getEditable() {
-        if (!onIcThread()) {
-            
-            if (DEBUG) {
-                Log.i(LOGTAG, "getEditable() called on non-IC thread");
-            }
-            return null;
-        }
-        if (mListener == null) {
-            
-            return null;
-        }
-        return mProxy;
+    return new KeyEvent(event.getAction(), translatedKeyCode);
+  }
+
+  private static final int SONY_XPERIA_GAMEPAD_DEVICE_ID = 196611;
+
+  private static boolean isSonyXperiaGamepadKeyEvent(final KeyEvent event) {
+    return (event.getDeviceId() == SONY_XPERIA_GAMEPAD_DEVICE_ID
+        && "Sony Ericsson".equals(Build.MANUFACTURER)
+        && ("R800".equals(Build.MODEL) || "R800i".equals(Build.MODEL)));
+  }
+
+  private static boolean areSonyXperiaGamepadKeysSwapped() {
+    
+    
+    
+    final char DEFAULT_O_BUTTON_LABEL = 0x25CB;
+
+    boolean swapped = false;
+    final int[] deviceIds = InputDevice.getDeviceIds();
+
+    for (int i = 0; deviceIds != null && i < deviceIds.length; i++) {
+      final KeyCharacterMap keyCharacterMap = KeyCharacterMap.load(deviceIds[i]);
+      if (keyCharacterMap != null
+          && DEFAULT_O_BUTTON_LABEL
+              == keyCharacterMap.getDisplayLabel(KeyEvent.KEYCODE_DPAD_CENTER)) {
+        swapped = true;
+        break;
+      }
+    }
+    return swapped;
+  }
+
+  private KeyEvent translateKey(final int keyCode, final @NonNull KeyEvent event) {
+    if (isSonyXperiaGamepadKeyEvent(event)) {
+      return translateSonyXperiaGamepadKeys(keyCode, event);
+    }
+    return event;
+  }
+
+  @Override 
+  public Editable getEditable() {
+    if (!onIcThread()) {
+      
+      if (DEBUG) {
+        Log.i(LOGTAG, "getEditable() called on non-IC thread");
+      }
+      return null;
+    }
+    if (mListener == null) {
+      
+      return null;
+    }
+    return mProxy;
+  }
+
+  @Override 
+  public void setBatchMode(final boolean inBatchMode) {
+    if (!onIcThread()) {
+      
+      if (DEBUG) {
+        Log.i(LOGTAG, "setBatchMode() called on non-IC thread");
+      }
+      return;
     }
 
-    @Override 
-    public void setBatchMode(final boolean inBatchMode) {
-        if (!onIcThread()) {
-            
-            if (DEBUG) {
-                Log.i(LOGTAG, "setBatchMode() called on non-IC thread");
-            }
-            return;
-        }
+    mInBatchMode = inBatchMode;
 
-        mInBatchMode = inBatchMode;
-
-        if (!inBatchMode && mFocusedChild != null) {
-            
-            
-            
-            
-            
-            
-            final Editable editable = getEditable();
-            if (editable != null && !isComposing(editable)) {
-                try {
-                    mFocusedChild.onImeRequestCommit();
-                } catch (final RemoteException e) {
-                    Log.e(LOGTAG, "Remote call failed", e);
-                }
-            }
-            
-        }
-
-        if (!inBatchMode && mNeedSync) {
-            icSyncShadowText();
-        }
-    }
-
-     void icSyncShadowText() {
-        if (mListener == null) {
-            
-            return;
-        }
-
-        if (mInBatchMode || !mActions.isEmpty()) {
-            mNeedSync = true;
-            return;
-        }
-
-        mNeedSync = false;
-        mText.syncShadowText(mListener);
-    }
-
-    private void setSuppressKeyUp(final boolean suppress) {
-        if (DEBUG) {
-            assertOnIcThread();
-        }
-        
-        
-        mSuppressKeyUp = suppress;
-    }
-
-    @Override 
-    public Handler setInputConnectionHandler(final Handler handler) {
-        if (handler == mIcRunHandler) {
-            return mIcRunHandler;
-        }
-        if (DEBUG) {
-            assertOnIcThread();
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        handler.post(new Runnable() { 
-            @Override
-            public void run() {
-                synchronized (handler) {
-                    while (mIcRunHandler != handler) {
-                        try {
-                            handler.wait();
-                        } catch (final InterruptedException e) {
-                        }
-                    }
-                }
-            }
-        });
-
-        icOfferAction(Action.newSetHandler(handler));
-        return handler;
-    }
-
-    @Override 
-    public void postToInputConnection(final Runnable runnable) {
-        mIcPostHandler.post(runnable);
-    }
-
-    @Override 
-    public void requestCursorUpdates(final int requestMode) {
+    if (!inBatchMode && mFocusedChild != null) {
+      
+      
+      
+      
+      
+      
+      final Editable editable = getEditable();
+      if (editable != null && !isComposing(editable)) {
         try {
-            if (mFocusedChild != null) {
-                mFocusedChild.onImeRequestCursorUpdates(requestMode);
-            }
+          mFocusedChild.onImeRequestCommit();
         } catch (final RemoteException e) {
-            Log.e(LOGTAG, "Remote call failed", e);
+          Log.e(LOGTAG, "Remote call failed", e);
         }
+      }
+      
     }
 
-    private void geckoSetIcHandler(final Handler newHandler) {
-        
-        mIcPostHandler.post(new Runnable() { 
-            @Override
-            public void run() {
-                synchronized (newHandler) {
-                    mIcRunHandler = newHandler;
-                    newHandler.notify();
-                }
-            }
-        });
+    if (!inBatchMode && mNeedSync) {
+      icSyncShadowText();
+    }
+  }
 
-        
-        
-        
-        mIcPostHandler = newHandler;
+   void icSyncShadowText() {
+    if (mListener == null) {
+      
+      return;
     }
 
-    private void geckoActionReply(final Action action) {
-        
-        if (action == null) {
-            Log.w(LOGTAG, "Mismatched reply");
-            return;
-        }
-        if (DEBUG) {
-            Log.d(LOGTAG, "reply: Action(" +
-                          getConstantName(Action.class, "TYPE_", action.mType) + ")");
-        }
-        switch (action.mType) {
-            case Action.TYPE_REPLACE_TEXT: {
-                final Spanned currentText = mText.getCurrentText();
-                final int actionNewEnd = action.mStart + action.mSequence.length();
-                if (mLastTextChangeStart > mLastTextChangeNewEnd ||
-                        mLastTextChangeNewEnd > currentText.length() ||
-                        action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeNewEnd) {
-                    
-                    break;
-                }
-
-                int indexInText = TextUtils.indexOf(currentText, action.mSequence,
-                        action.mStart, mLastTextChangeNewEnd);
-                if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
-                    final String changedText = TextUtils.substring(
-                            currentText, mLastTextChangeStart, actionNewEnd);
-                    indexInText = changedText.lastIndexOf(action.mSequence.toString());
-                    if (indexInText >= 0) {
-                        indexInText += mLastTextChangeStart;
-                    }
-                }
-                if (indexInText < 0) {
-                    
-                    break;
-                }
-
-                final int selStart = Selection.getSelectionStart(currentText);
-                final int selEnd = Selection.getSelectionEnd(currentText);
-
-                
-                
-                mText.currentReplace(indexInText,
-                        indexInText + action.mSequence.length(),
-                        action.mSequence);
-                
-                mText.currentSetSelection(selStart, selEnd);
-
-                
-                
-                
-                
-                
-                mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
-                break;
-            }
-
-            case Action.TYPE_SET_SPAN:
-                final int len = mText.getCurrentText().length();
-                if (action.mStart > len || action.mEnd > len ||
-                        !TextUtils.substring(mText.getCurrentText(), action.mStart,
-                                action.mEnd).equals(action.mSequence)) {
-                    if (DEBUG) {
-                        Log.d(LOGTAG, "discarding stale set span call");
-                    }
-                    break;
-                }
-                if ((action.mSpanObject == Selection.SELECTION_START ||
-                        action.mSpanObject == Selection.SELECTION_END) &&
-                        (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart ||
-                                action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
-                    
-                    
-                    mLastTextChangeReplacedSelection = false;
-                }
-                mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
-                break;
-
-            case Action.TYPE_REMOVE_SPAN:
-                mText.currentRemoveSpan(action.mSpanObject);
-                break;
-
-            case Action.TYPE_SET_HANDLER:
-                geckoSetIcHandler(action.mHandler);
-                break;
-        }
+    if (mInBatchMode || !mActions.isEmpty()) {
+      mNeedSync = true;
+      return;
     }
 
-    private synchronized boolean binderCheckToken(final IBinder token,
-                                                  final boolean allowNull) {
-        
-        if (mFocusedToken == token || (mFocusedToken == null && allowNull)) {
-            return true;
-        }
-        Log.w(LOGTAG, "Invalid token");
-        return false;
+    mNeedSync = false;
+    mText.syncShadowText(mListener);
+  }
+
+  private void setSuppressKeyUp(final boolean suppress) {
+    if (DEBUG) {
+      assertOnIcThread();
+    }
+    
+    
+    mSuppressKeyUp = suppress;
+  }
+
+  @Override 
+  public Handler setInputConnectionHandler(final Handler handler) {
+    if (handler == mIcRunHandler) {
+      return mIcRunHandler;
+    }
+    if (DEBUG) {
+      assertOnIcThread();
     }
 
-    @Override 
-    public void notifyIME(final IGeckoEditableChild child, final int type) {
-        
-        if (DEBUG) {
-            
-            if (type != SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
-                Log.d(LOGTAG, "notifyIME(" +
-                              getConstantName(SessionTextInput.EditableListener.class,
-                                              "NOTIFY_IME_", type) +
-                              ")");
-            }
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-        final IBinder token = child.asBinder();
-        if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN) {
-            synchronized (this) {
-                if (mFocusedToken != null && mFocusedToken != token &&
-                        mFocusedToken.pingBinder()) {
-                    
-                    Log.w(LOGTAG, "Already focused");
-                    return;
-                }
-                mFocusedToken = token;
-                return;
-            }
-        } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB) {
-            
-            ThreadUtils.assertOnGeckoThread();
-        } else if (!binderCheckToken(token,  false)) {
-            return;
-        }
-
-        if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
-            synchronized (this) {
-                onTextChange(token, "", 0, Integer.MAX_VALUE);
-                mActions.clear();
-                mFocusedToken = null;
-            }
-        } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
-            geckoActionReply(mActions.poll());
-            if (!mActions.isEmpty()) {
-                
-                return;
-            }
-        }
-
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                icNotifyIME(child, type);
-            }
-        });
-    }
-
-     void icNotifyIME(final IGeckoEditableChild child, final int type) {
-        if (DEBUG) {
-            assertOnIcThread();
-        }
-
-        if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
-            if (mNeedSync) {
-                icSyncShadowText();
-            }
-            return;
-        }
-
-        switch (type) {
-            case SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS:
-                if (mFocusedChild != null) {
-                    
-                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,
-                                    false);
-                }
-
-                mFocusedChild = child;
-                mNeedSync = false;
-                mText.syncShadowText( null);
-
-                
-                
-                
-                if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                    mIMEState = SessionTextInput.EditableListener.IME_STATE_UNKNOWN;
-                } else {
-                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,
-                                    true);
-                }
-                break;
-
-            case SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR:
-                if (mFocusedChild != null) {
-                    mFocusedChild = null;
-                    icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,
-                                    true);
-                }
-                break;
-
-            case SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB:
-                toggleSoftInput( true, mIMEState);
-                return; 
-
-            case SessionTextInput.EditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION: {
-                
-                
-                
-                
-                
-                
-                
-                if (isComposing(mText.getShadowText())) {
-                    
-                    return; 
-                }
-                
-                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-                                false);
-                return; 
-            }
-
-            default:
-                throw new IllegalArgumentException("Invalid notifyIME type: " + type);
-        }
-
-        if (mListener != null) {
-            mListener.notifyIME(type);
-        }
-    }
-
-    @Override 
-    public void notifyIMEContext(final IBinder token, final int state, final String typeHint,
-                                 final String modeHint, final String actionHint,
-                                 final String autocapitalize,
-                                 final int flags) {
-        
-        if (DEBUG) {
-            final StringBuilder sb = new StringBuilder("notifyIMEContext(");
-            sb.append(getConstantName(SessionTextInput.EditableListener.class, "IME_STATE_", state))
-                .append(", type=\""). append(typeHint)
-                .append("\", inputmode=\"").append(modeHint)
-                .append("\", autocapitalize=\"").append(autocapitalize)
-                .append("\", flags=0x").append(Integer.toHexString(flags))
-                .append(")");
-            Log.d(LOGTAG, sb.toString());
-        }
-
-        
-        
-        
-        
-        if (token != mDefaultChild.asBinder() &&
-            !binderCheckToken(token,  false)) {
-            return;
-        }
-
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                icNotifyIMEContext(state, typeHint, modeHint, actionHint, autocapitalize, flags);
-            }
-        });
-    }
-
-     void icNotifyIMEContext(final int originalState, final String typeHint,
-                                          final String modeHint, final String actionHint,
-                                          final String autocapitalize,
-                                          final int flags) {
-        if (DEBUG) {
-            assertOnIcThread();
-        }
-
-        
-        
-        
-        final int state;
-        if ((typeHint != null && (typeHint.equalsIgnoreCase("date") ||
-                                  typeHint.equalsIgnoreCase("time") ||
-                                  typeHint.equalsIgnoreCase("month") ||
-                                  typeHint.equalsIgnoreCase("week") ||
-                                  typeHint.equalsIgnoreCase("datetime-local"))) ||
-            (modeHint != null && modeHint.equals("none"))) {
-            state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
-        } else {
-            state = originalState;
-        }
-
-        final int oldState = mIMEState;
-        mIMEState = state;
-        mIMETypeHint = (typeHint == null) ? "" : typeHint;
-        mIMEModeHint = (modeHint == null) ? "" : modeHint;
-        mIMEActionHint = (actionHint == null) ? "" : actionHint;
-        mIMEAutocapitalize = (autocapitalize == null) ? "" : autocapitalize;
-        mIMEFlags = flags;
-
-        if (mListener != null) {
-            mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
-        }
-
-        if (mFocusedChild == null) {
-            
-            return;
-        }
-
-        if ((flags & SessionTextInput.EditableListener.IME_FOCUS_NOT_CHANGED) != 0) {
-            if (DEBUG) {
-                final StringBuilder sb = new StringBuilder("icNotifyIMEContext: ");
-                sb.append("focus isn't changed. oldState=").append(oldState)
-                    .append(", newState=").append(state);
-                Log.d(LOGTAG, sb.toString());
-            }
-            if (((oldState == SessionTextInput.EditableListener.IME_STATE_ENABLED ||
-                  oldState == SessionTextInput.EditableListener.IME_STATE_PASSWORD) &&
-                 state == SessionTextInput.EditableListener.IME_STATE_DISABLED) ||
-                (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED &&
-                 (state == SessionTextInput.EditableListener.IME_STATE_ENABLED ||
-                  state == SessionTextInput.EditableListener.IME_STATE_PASSWORD))) {
-                
-                
-                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-                                true);
-                return;
-            }
-        }
-
-        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            
-            
-            
-            return;
-        }
-
-        
-        
-        
-        
-        if (oldState == SessionTextInput.EditableListener.IME_STATE_UNKNOWN) {
-            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,
-                            true);
-        } else if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
-                            false);
-        }
-    }
-
-    private void icRestartInput(@GeckoSession.RestartReason final int reason,
-                                final boolean toggleSoftInput) {
-        if (DEBUG) {
-            assertOnIcThread();
-        }
-
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
-                }
-
-                final GeckoSession session = mSession.get();
-                if (session != null) {
-                    session.getTextInput().getDelegate().restartInput(session, reason);
-                }
-
-                if (!toggleSoftInput) {
-                    return;
-                }
-                postToInputConnection(new Runnable() {
-                    @Override
-                    public void run() {
-                        int state = mIMEState;
-                        if (reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR &&
-                                    mFocusedChild == null) {
-                            
-                            
-                            state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
-                        }
-                        toggleSoftInput( false, state);
-                    }
-                });
-            }
-        });
-    }
-
-    public void onCreateInputConnection(final EditorInfo outAttrs) {
-        final int state = mIMEState;
-        final String typeHint = mIMETypeHint;
-        final String modeHint = mIMEModeHint;
-        final String actionHint = mIMEActionHint;
-        final String autocapitalize = mIMEAutocapitalize;
-        final int flags = mIMEFlags;
-
-        
-        outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
-        outAttrs.actionLabel = null;
-
-        if (modeHint.equals("none")) {
-            
-            outAttrs.inputType = InputType.TYPE_NULL;
-            toggleSoftInput( true, SessionTextInput.EditableListener.IME_STATE_DISABLED);
-            return;
-        }
-
-        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-            outAttrs.inputType = InputType.TYPE_NULL;
-            toggleSoftInput( false, state);
-            return;
-        }
-
-        
-        
-        
-        outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
-        if (state == SessionTextInput.EditableListener.IME_STATE_PASSWORD ||
-                "password".equalsIgnoreCase(typeHint)) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
-        } else if (typeHint.equalsIgnoreCase("url") ||
-                modeHint.equals("mozAwesomebar")) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_URI;
-        } else if (typeHint.equalsIgnoreCase("email")) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-        } else if (typeHint.equalsIgnoreCase("tel")) {
-            outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
-        } else if (typeHint.equalsIgnoreCase("number") ||
-                typeHint.equalsIgnoreCase("range")) {
-            outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
-                                 InputType.TYPE_NUMBER_VARIATION_NORMAL | InputType.TYPE_NUMBER_FLAG_DECIMAL;
-        } else {
-            
-            if (modeHint.equals("tel")) {
-                outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
-            } else if (modeHint.equals("url")) {
-                outAttrs.inputType = InputType.TYPE_TEXT_VARIATION_URI;
-            } else if (modeHint.equals("email")) {
-                outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
-            } else if (modeHint.equals("numeric")) {
-                outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
-                                     InputType.TYPE_NUMBER_VARIATION_NORMAL;
-            } else if (modeHint.equals("decimal")) {
-                outAttrs.inputType = InputType.TYPE_CLASS_NUMBER |
-                                     InputType.TYPE_NUMBER_FLAG_DECIMAL;
-            } else {
-                
-                outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
-                        InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
-            }
-        }
-
-        if (autocapitalize.equals("characters")) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
-        } else if (autocapitalize.equals("none")) {
-            
-        } else if (autocapitalize.equals("sentences")) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
-        } else if (autocapitalize.equals("words")) {
-            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
-        } else if (modeHint.length() == 0 &&
-                   (outAttrs.inputType & InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE) != 0 &&
-                   !typeHint.equalsIgnoreCase("text")) {
-            
-            
-            outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
-        }
-
-        if (actionHint.equals("enter")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
-        } else if (actionHint.equals("go")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_GO;
-        } else if (actionHint.equals("done")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE;
-        } else if (actionHint.equals("next") || actionHint.equals("maybenext")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_NEXT;
-        } else if (actionHint.equals("previous")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_PREVIOUS;
-        } else if (actionHint.equals("search") ||
-                typeHint.equals("search")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_SEARCH;
-        } else if (actionHint.equals("send")) {
-            outAttrs.imeOptions = EditorInfo.IME_ACTION_SEND;
-        } else if (actionHint.length() > 0) {
-            if (DEBUG)
-                Log.w(LOGTAG, "Unexpected actionHint=\"" + actionHint + "\"");
-            outAttrs.actionLabel = actionHint;
-        }
-
-        if ((flags & SessionTextInput.EditableListener.IME_FLAG_PRIVATE_BROWSING) != 0) {
-            outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            final Spanned currentText = mText.getCurrentText();
-            outAttrs.initialSelStart =  Selection.getSelectionStart(currentText);
-            outAttrs.initialSelEnd = Selection.getSelectionEnd(currentText);
-            outAttrs.setInitialSurroundingText(currentText);
-        }
-
-        toggleSoftInput( false, state);
-    }
-
-     void toggleSoftInput(final boolean force, final int state) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "toggleSoftInput");
-        }
-        
-        final int flags = mIMEFlags;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+    handler.post(
+        new Runnable() { 
+          @Override
+          public void run() {
+            synchronized (handler) {
+              while (mIcRunHandler != handler) {
                 try {
-                    final int reentrancyGuard = mSoftInputReentrancyGuard.incrementAndGet();
-                    final boolean isReentrant =  reentrancyGuard > 1;
-
-                    
-                    
-                    
-                    
-                    final GeckoSession session = mSession.get();
-
-                    if (session == null) {
-                        return;
-                    }
-
-                    final View view = session.getTextInput().getView();
-                    final boolean isFocused = (view == null) || view.hasFocus();
-
-                    final boolean isUserAction = ((flags &
-                            SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
-
-                    if (!force && (isReentrant || !isFocused || !isUserAction)) {
-                        if (DEBUG) {
-                            Log.d(LOGTAG, "toggleSoftInput: no-op, reentrant=" + isReentrant +
-                                    ", focused=" + isFocused + ", user=" + isUserAction);
-                        }
-                        return;
-                    }
-                    if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
-                        session.getTextInput().getDelegate().hideSoftInput(session);
-                        return;
-                    }
-                    {
-                        final GeckoBundle bundle = new GeckoBundle();
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        bundle.putBoolean("force", !force);
-                        session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
-                    }
-                    session.getTextInput().getDelegate().showSoftInput(session);
-                } finally {
-                    mSoftInputReentrancyGuard.decrementAndGet();
+                  handler.wait();
+                } catch (final InterruptedException e) {
                 }
+              }
             }
+          }
         });
+
+    icOfferAction(Action.newSetHandler(handler));
+    return handler;
+  }
+
+  @Override 
+  public void postToInputConnection(final Runnable runnable) {
+    mIcPostHandler.post(runnable);
+  }
+
+  @Override 
+  public void requestCursorUpdates(final int requestMode) {
+    try {
+      if (mFocusedChild != null) {
+        mFocusedChild.onImeRequestCursorUpdates(requestMode);
+      }
+    } catch (final RemoteException e) {
+      Log.e(LOGTAG, "Remote call failed", e);
+    }
+  }
+
+  private void geckoSetIcHandler(final Handler newHandler) {
+    
+    mIcPostHandler.post(
+        new Runnable() { 
+          @Override
+          public void run() {
+            synchronized (newHandler) {
+              mIcRunHandler = newHandler;
+              newHandler.notify();
+            }
+          }
+        });
+
+    
+    
+    
+    mIcPostHandler = newHandler;
+  }
+
+  private void geckoActionReply(final Action action) {
+    
+    if (action == null) {
+      Log.w(LOGTAG, "Mismatched reply");
+      return;
+    }
+    if (DEBUG) {
+      Log.d(LOGTAG, "reply: Action(" + getConstantName(Action.class, "TYPE_", action.mType) + ")");
+    }
+    switch (action.mType) {
+      case Action.TYPE_REPLACE_TEXT:
+        {
+          final Spanned currentText = mText.getCurrentText();
+          final int actionNewEnd = action.mStart + action.mSequence.length();
+          if (mLastTextChangeStart > mLastTextChangeNewEnd
+              || mLastTextChangeNewEnd > currentText.length()
+              || action.mStart < mLastTextChangeStart
+              || actionNewEnd > mLastTextChangeNewEnd) {
+            
+            break;
+          }
+
+          int indexInText =
+              TextUtils.indexOf(
+                  currentText, action.mSequence, action.mStart, mLastTextChangeNewEnd);
+          if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
+            final String changedText =
+                TextUtils.substring(currentText, mLastTextChangeStart, actionNewEnd);
+            indexInText = changedText.lastIndexOf(action.mSequence.toString());
+            if (indexInText >= 0) {
+              indexInText += mLastTextChangeStart;
+            }
+          }
+          if (indexInText < 0) {
+            
+            break;
+          }
+
+          final int selStart = Selection.getSelectionStart(currentText);
+          final int selEnd = Selection.getSelectionEnd(currentText);
+
+          
+          
+          mText.currentReplace(
+              indexInText, indexInText + action.mSequence.length(), action.mSequence);
+          
+          mText.currentSetSelection(selStart, selEnd);
+
+          
+          
+          
+          
+          
+          mIgnoreSelectionChange = !mLastTextChangeReplacedSelection;
+          break;
+        }
+
+      case Action.TYPE_SET_SPAN:
+        final int len = mText.getCurrentText().length();
+        if (action.mStart > len
+            || action.mEnd > len
+            || !TextUtils.substring(mText.getCurrentText(), action.mStart, action.mEnd)
+                .equals(action.mSequence)) {
+          if (DEBUG) {
+            Log.d(LOGTAG, "discarding stale set span call");
+          }
+          break;
+        }
+        if ((action.mSpanObject == Selection.SELECTION_START
+                || action.mSpanObject == Selection.SELECTION_END)
+            && (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart
+                || action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
+          
+          
+          mLastTextChangeReplacedSelection = false;
+        }
+        mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
+        break;
+
+      case Action.TYPE_REMOVE_SPAN:
+        mText.currentRemoveSpan(action.mSpanObject);
+        break;
+
+      case Action.TYPE_SET_HANDLER:
+        geckoSetIcHandler(action.mHandler);
+        break;
+    }
+  }
+
+  private synchronized boolean binderCheckToken(final IBinder token, final boolean allowNull) {
+    
+    if (mFocusedToken == token || (mFocusedToken == null && allowNull)) {
+      return true;
+    }
+    Log.w(LOGTAG, "Invalid token");
+    return false;
+  }
+
+  @Override 
+  public void notifyIME(final IGeckoEditableChild child, final int type) {
+    
+    if (DEBUG) {
+      
+      if (type != SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+        Log.d(
+            LOGTAG,
+            "notifyIME("
+                + getConstantName(SessionTextInput.EditableListener.class, "NOTIFY_IME_", type)
+                + ")");
+      }
     }
 
-    @Override 
-    public void onSelectionChange(final IBinder token,
-                                  final int start, final int end, final boolean causedOnlyByComposition) {
+    final IBinder token = child.asBinder();
+    if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN) {
+      synchronized (this) {
+        if (mFocusedToken != null && mFocusedToken != token && mFocusedToken.pingBinder()) {
+          
+          Log.w(LOGTAG, "Already focused");
+          return;
+        }
+        mFocusedToken = token;
+        return;
+      }
+    } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB) {
+      
+      ThreadUtils.assertOnGeckoThread();
+    } else if (!binderCheckToken(token,  false)) {
+      return;
+    }
+
+    if (type == SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR) {
+      synchronized (this) {
+        onTextChange(token, "", 0, Integer.MAX_VALUE);
+        mActions.clear();
+        mFocusedToken = null;
+      }
+    } else if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+      geckoActionReply(mActions.poll());
+      if (!mActions.isEmpty()) {
         
-        if (DEBUG) {
-            final StringBuilder sb = new StringBuilder("onSelectionChange(");
-            sb.append(start).append(", ").append(end).append(", ")
-                .append(causedOnlyByComposition).append(")");
-            Log.d(LOGTAG, sb.toString());
+        return;
+      }
+    }
+
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            icNotifyIME(child, type);
+          }
+        });
+  }
+
+   void icNotifyIME(final IGeckoEditableChild child, final int type) {
+    if (DEBUG) {
+      assertOnIcThread();
+    }
+
+    if (type == SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT) {
+      if (mNeedSync) {
+        icSyncShadowText();
+      }
+      return;
+    }
+
+    switch (type) {
+      case SessionTextInput.EditableListener.NOTIFY_IME_OF_FOCUS:
+        if (mFocusedChild != null) {
+          
+          icRestartInput(
+              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,  false);
         }
 
-        if (!binderCheckToken(token,  false)) {
-            return;
-        }
+        mFocusedChild = child;
+        mNeedSync = false;
+        mText.syncShadowText( null);
 
-        if (mIgnoreSelectionChange) {
-            mIgnoreSelectionChange = false;
+        
+        
+        
+        if (mIMEState == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+          mIMEState = SessionTextInput.EditableListener.IME_STATE_UNKNOWN;
         } else {
-            mText.currentSetSelection(start, end);
+          icRestartInput(
+              GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,  true);
+        }
+        break;
+
+      case SessionTextInput.EditableListener.NOTIFY_IME_OF_BLUR:
+        if (mFocusedChild != null) {
+          mFocusedChild = null;
+          icRestartInput(
+              GeckoSession.TextInputDelegate.RESTART_REASON_BLUR,  true);
+        }
+        break;
+
+      case SessionTextInput.EditableListener.NOTIFY_IME_OPEN_VKB:
+        toggleSoftInput( true, mIMEState);
+        return; 
+
+      case SessionTextInput.EditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION:
+        {
+          
+          
+          
+          
+          
+          
+          
+          if (isComposing(mText.getShadowText())) {
+            
+            return; 
+          }
+          
+          icRestartInput(
+              GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+               false);
+          return; 
         }
 
-        
-        
-        mLastTextChangeStart = Integer.MAX_VALUE;
-        mLastTextChangeOldEnd = -1;
-        mLastTextChangeNewEnd = -1;
-        mLastTextChangeReplacedSelection = false;
-
-        if (causedOnlyByComposition) {
-            
-            
-            return;
-        }
-
-        
-        
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                icSyncShadowText();
-            }
-        });
+      default:
+        throw new IllegalArgumentException("Invalid notifyIME type: " + type);
     }
 
-    private boolean geckoIsSameText(final int start, final int oldEnd, final CharSequence newText) {
-        return oldEnd - start == newText.length() && TextUtils.regionMatches(
-                mText.getCurrentText(), start, newText, 0, oldEnd - start);
+    if (mListener != null) {
+      mListener.notifyIME(type);
     }
+  }
 
-    @Override 
-    public void onTextChange(final IBinder token, final CharSequence text,
-                             final int start, final int unboundedOldEnd) {
-        
-        if (DEBUG) {
-            final StringBuilder sb = new StringBuilder("onTextChange(");
-            debugAppend(sb, text).append(", ").append(start).append(", ")
-                                 .append(unboundedOldEnd).append(")");
-            Log.d(LOGTAG, sb.toString());
-        }
-
-        if (!binderCheckToken(token,  false)) {
-            return;
-        }
-
-        if (unboundedOldEnd >= Integer.MAX_VALUE / 2) {
-            
-            
-            
-            mActions.clear();
-        }
-
-        final int currentLength = mText.getCurrentText().length();
-        final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
-        final int newEnd = start + text.length();
-
-        if (start == 0 && unboundedOldEnd > currentLength) {
-            
-            
-            
-            mText.currentReplace(0, currentLength, "");
-            mText.currentReplace(0, 0, text);
-
-            
-            mIgnoreSelectionChange = false;
-
-            mLastTextChangeStart = Integer.MAX_VALUE;
-            mLastTextChangeOldEnd = -1;
-            mLastTextChangeNewEnd = -1;
-            mLastTextChangeReplacedSelection = false;
-
-        } else if (!geckoIsSameText(start, oldEnd, text)) {
-            final Spanned currentText = mText.getCurrentText();
-            final int selStart = Selection.getSelectionStart(currentText);
-            final int selEnd = Selection.getSelectionEnd(currentText);
-
-            
-            
-            
-            mLastTextChangeReplacedSelection |=
-                (selStart >= start && selStart <= oldEnd) ||
-                (selEnd >= start && selEnd <= oldEnd);
-
-            
-            
-            mText.currentReplace(start, oldEnd, "");
-            mText.currentReplace(start, start, text);
-
-            mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
-            mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
-            mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
-
-        } else {
-            
-            
-            
-            final Action action = mActions.peek();
-            mIgnoreSelectionChange = mIgnoreSelectionChange || (action != null &&
-                    (action.mType == Action.TYPE_REPLACE_TEXT ||
-                     action.mType == Action.TYPE_SET_SPAN ||
-                     action.mType == Action.TYPE_REMOVE_SPAN));
-
-            mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
-            mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
-            mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
-        }
-
-        
-        
-    }
-
-    @Override 
-    public void onDefaultKeyEvent(final IBinder token, final KeyEvent event) {
-        
-        if (DEBUG) {
-            final StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
-            sb.append("action=").append(event.getAction()).append(", ")
-                .append("keyCode=").append(event.getKeyCode()).append(", ")
-                .append("metaState=").append(event.getMetaState()).append(", ")
-                .append("time=").append(event.getEventTime()).append(", ")
-                .append("repeatCount=").append(event.getRepeatCount()).append(")");
-            Log.d(LOGTAG, sb.toString());
-        }
-
-        
-        if (!binderCheckToken(token,  true)) {
-            return;
-        }
-
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mListener == null) {
-                    return;
-                }
-                mListener.onDefaultKeyEvent(event);
-            }
-        });
-    }
-
-    @Override 
-    public void updateCompositionRects(final IBinder token, final RectF[] rects) {
-        
-        if (DEBUG) {
-            Log.d(LOGTAG, "updateCompositionRects(rects.length = " + rects.length + ")");
-        }
-
-        if (!binderCheckToken(token,  false)) {
-            return;
-        }
-
-        mIcPostHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (mListener == null) {
-                    return;
-                }
-                mListener.updateCompositionRects(rects);
-            }
-        });
+  @Override 
+  public void notifyIMEContext(
+      final IBinder token,
+      final int state,
+      final String typeHint,
+      final String modeHint,
+      final String actionHint,
+      final String autocapitalize,
+      final int flags) {
+    
+    if (DEBUG) {
+      final StringBuilder sb = new StringBuilder("notifyIMEContext(");
+      sb.append(getConstantName(SessionTextInput.EditableListener.class, "IME_STATE_", state))
+          .append(", type=\"")
+          .append(typeHint)
+          .append("\", inputmode=\"")
+          .append(modeHint)
+          .append("\", autocapitalize=\"")
+          .append(autocapitalize)
+          .append("\", flags=0x")
+          .append(Integer.toHexString(flags))
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
     }
 
     
+    
+    
+    
+    if (token != mDefaultChild.asBinder() && !binderCheckToken(token,  false)) {
+      return;
+    }
 
-    static String getConstantName(final Class<?> cls, final String prefix, final Object value) {
-        for (final Field fld : cls.getDeclaredFields()) {
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            icNotifyIMEContext(state, typeHint, modeHint, actionHint, autocapitalize, flags);
+          }
+        });
+  }
+
+   void icNotifyIMEContext(
+      final int originalState,
+      final String typeHint,
+      final String modeHint,
+      final String actionHint,
+      final String autocapitalize,
+      final int flags) {
+    if (DEBUG) {
+      assertOnIcThread();
+    }
+
+    
+    
+    
+    final int state;
+    if ((typeHint != null
+            && (typeHint.equalsIgnoreCase("date")
+                || typeHint.equalsIgnoreCase("time")
+                || typeHint.equalsIgnoreCase("month")
+                || typeHint.equalsIgnoreCase("week")
+                || typeHint.equalsIgnoreCase("datetime-local")))
+        || (modeHint != null && modeHint.equals("none"))) {
+      state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
+    } else {
+      state = originalState;
+    }
+
+    final int oldState = mIMEState;
+    mIMEState = state;
+    mIMETypeHint = (typeHint == null) ? "" : typeHint;
+    mIMEModeHint = (modeHint == null) ? "" : modeHint;
+    mIMEActionHint = (actionHint == null) ? "" : actionHint;
+    mIMEAutocapitalize = (autocapitalize == null) ? "" : autocapitalize;
+    mIMEFlags = flags;
+
+    if (mListener != null) {
+      mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+    }
+
+    if (mFocusedChild == null) {
+      
+      return;
+    }
+
+    if ((flags & SessionTextInput.EditableListener.IME_FOCUS_NOT_CHANGED) != 0) {
+      if (DEBUG) {
+        final StringBuilder sb = new StringBuilder("icNotifyIMEContext: ");
+        sb.append("focus isn't changed. oldState=")
+            .append(oldState)
+            .append(", newState=")
+            .append(state);
+        Log.d(LOGTAG, sb.toString());
+      }
+      if (((oldState == SessionTextInput.EditableListener.IME_STATE_ENABLED
+                  || oldState == SessionTextInput.EditableListener.IME_STATE_PASSWORD)
+              && state == SessionTextInput.EditableListener.IME_STATE_DISABLED)
+          || (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED
+              && (state == SessionTextInput.EditableListener.IME_STATE_ENABLED
+                  || state == SessionTextInput.EditableListener.IME_STATE_PASSWORD))) {
+        
+        
+        icRestartInput(
+            GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+             true);
+        return;
+      }
+    }
+
+    if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+      
+      
+      
+      return;
+    }
+
+    
+    
+    
+    
+    if (oldState == SessionTextInput.EditableListener.IME_STATE_UNKNOWN) {
+      icRestartInput(
+          GeckoSession.TextInputDelegate.RESTART_REASON_FOCUS,  true);
+    } else if (oldState != SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+      icRestartInput(
+          GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+           false);
+    }
+  }
+
+  private void icRestartInput(
+      @GeckoSession.RestartReason final int reason, final boolean toggleSoftInput) {
+    if (DEBUG) {
+      assertOnIcThread();
+    }
+
+    ThreadUtils.runOnUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (DEBUG) {
+              Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
+            }
+
+            final GeckoSession session = mSession.get();
+            if (session != null) {
+              session.getTextInput().getDelegate().restartInput(session, reason);
+            }
+
+            if (!toggleSoftInput) {
+              return;
+            }
+            postToInputConnection(
+                new Runnable() {
+                  @Override
+                  public void run() {
+                    int state = mIMEState;
+                    if (reason == GeckoSession.TextInputDelegate.RESTART_REASON_BLUR
+                        && mFocusedChild == null) {
+                      
+                      
+                      state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
+                    }
+                    toggleSoftInput( false, state);
+                  }
+                });
+          }
+        });
+  }
+
+  public void onCreateInputConnection(final EditorInfo outAttrs) {
+    final int state = mIMEState;
+    final String typeHint = mIMETypeHint;
+    final String modeHint = mIMEModeHint;
+    final String actionHint = mIMEActionHint;
+    final String autocapitalize = mIMEAutocapitalize;
+    final int flags = mIMEFlags;
+
+    
+    outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
+    outAttrs.actionLabel = null;
+
+    if (modeHint.equals("none")) {
+      
+      outAttrs.inputType = InputType.TYPE_NULL;
+      toggleSoftInput( true, SessionTextInput.EditableListener.IME_STATE_DISABLED);
+      return;
+    }
+
+    if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+      outAttrs.inputType = InputType.TYPE_NULL;
+      toggleSoftInput( false, state);
+      return;
+    }
+
+    
+    
+    
+    outAttrs.inputType = InputType.TYPE_CLASS_TEXT;
+    if (state == SessionTextInput.EditableListener.IME_STATE_PASSWORD
+        || "password".equalsIgnoreCase(typeHint)) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_PASSWORD;
+    } else if (typeHint.equalsIgnoreCase("url") || modeHint.equals("mozAwesomebar")) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_URI;
+    } else if (typeHint.equalsIgnoreCase("email")) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+    } else if (typeHint.equalsIgnoreCase("tel")) {
+      outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
+    } else if (typeHint.equalsIgnoreCase("number") || typeHint.equalsIgnoreCase("range")) {
+      outAttrs.inputType =
+          InputType.TYPE_CLASS_NUMBER
+              | InputType.TYPE_NUMBER_VARIATION_NORMAL
+              | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+    } else {
+      
+      if (modeHint.equals("tel")) {
+        outAttrs.inputType = InputType.TYPE_CLASS_PHONE;
+      } else if (modeHint.equals("url")) {
+        outAttrs.inputType = InputType.TYPE_TEXT_VARIATION_URI;
+      } else if (modeHint.equals("email")) {
+        outAttrs.inputType |= InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS;
+      } else if (modeHint.equals("numeric")) {
+        outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_NORMAL;
+      } else if (modeHint.equals("decimal")) {
+        outAttrs.inputType = InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL;
+      } else {
+        
+        outAttrs.inputType |=
+            InputType.TYPE_TEXT_FLAG_AUTO_CORRECT | InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
+      }
+    }
+
+    if (autocapitalize.equals("characters")) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS;
+    } else if (autocapitalize.equals("none")) {
+      
+    } else if (autocapitalize.equals("sentences")) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+    } else if (autocapitalize.equals("words")) {
+      outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
+    } else if (modeHint.length() == 0
+        && (outAttrs.inputType & InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE) != 0
+        && !typeHint.equalsIgnoreCase("text")) {
+      
+      
+      outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
+    }
+
+    if (actionHint.equals("enter")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
+    } else if (actionHint.equals("go")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_GO;
+    } else if (actionHint.equals("done")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE;
+    } else if (actionHint.equals("next") || actionHint.equals("maybenext")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_NEXT;
+    } else if (actionHint.equals("previous")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_PREVIOUS;
+    } else if (actionHint.equals("search") || typeHint.equals("search")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_SEARCH;
+    } else if (actionHint.equals("send")) {
+      outAttrs.imeOptions = EditorInfo.IME_ACTION_SEND;
+    } else if (actionHint.length() > 0) {
+      if (DEBUG) Log.w(LOGTAG, "Unexpected actionHint=\"" + actionHint + "\"");
+      outAttrs.actionLabel = actionHint;
+    }
+
+    if ((flags & SessionTextInput.EditableListener.IME_FLAG_PRIVATE_BROWSING) != 0) {
+      outAttrs.imeOptions |= InputMethods.IME_FLAG_NO_PERSONALIZED_LEARNING;
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      final Spanned currentText = mText.getCurrentText();
+      outAttrs.initialSelStart = Selection.getSelectionStart(currentText);
+      outAttrs.initialSelEnd = Selection.getSelectionEnd(currentText);
+      outAttrs.setInitialSurroundingText(currentText);
+    }
+
+    toggleSoftInput( false, state);
+  }
+
+   void toggleSoftInput(final boolean force, final int state) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "toggleSoftInput");
+    }
+    
+    final int flags = mIMEFlags;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    ThreadUtils.runOnUiThread(
+        new Runnable() {
+          @Override
+          public void run() {
             try {
-                if (fld.getName().startsWith(prefix) &&
-                    fld.get(null).equals(value)) {
-                    return fld.getName();
+              final int reentrancyGuard = mSoftInputReentrancyGuard.incrementAndGet();
+              final boolean isReentrant = reentrancyGuard > 1;
+
+              
+              
+              
+              
+              final GeckoSession session = mSession.get();
+
+              if (session == null) {
+                return;
+              }
+
+              final View view = session.getTextInput().getView();
+              final boolean isFocused = (view == null) || view.hasFocus();
+
+              final boolean isUserAction =
+                  ((flags & SessionTextInput.EditableListener.IME_FLAG_USER_ACTION) != 0);
+
+              if (!force && (isReentrant || !isFocused || !isUserAction)) {
+                if (DEBUG) {
+                  Log.d(
+                      LOGTAG,
+                      "toggleSoftInput: no-op, reentrant="
+                          + isReentrant
+                          + ", focused="
+                          + isFocused
+                          + ", user="
+                          + isUserAction);
                 }
-            } catch (final IllegalAccessException e) {
-            }
-        }
-        return String.valueOf(value);
-    }
-
-    private static String getPrintableChar(final char chr) {
-        if (chr >= 0x20 && chr <= 0x7e) {
-            return String.valueOf(chr);
-        } else if (chr == '\n') {
-            return "\u21b2";
-        }
-        return String.format("\\u%04x", (int) chr);
-    }
-
-    static StringBuilder debugAppend(final StringBuilder sb, final Object obj) {
-        if (obj == null) {
-            sb.append("null");
-        } else if (obj instanceof GeckoEditable) {
-            sb.append("GeckoEditable");
-        } else if (obj instanceof GeckoEditableChild) {
-            sb.append("GeckoEditableChild");
-        } else if (Proxy.isProxyClass(obj.getClass())) {
-            debugAppend(sb, Proxy.getInvocationHandler(obj));
-        } else if (obj instanceof Character) {
-            sb.append('\'').append(getPrintableChar((Character) obj)).append('\'');
-        } else if (obj instanceof CharSequence) {
-            final String str = obj.toString();
-            sb.append('"');
-            for (int i = 0; i < str.length(); i++) {
-                final char chr = str.charAt(i);
-                if (chr >= 0x20 && chr <= 0x7e) {
-                    sb.append(chr);
-                } else {
-                    sb.append(getPrintableChar(chr));
-                }
-            }
-            sb.append('"');
-        } else if (obj.getClass().isArray()) {
-            sb.append(obj.getClass().getComponentType().getSimpleName()).append('[')
-              .append(Array.getLength(obj)).append(']');
-        } else {
-            sb.append(obj);
-        }
-        return sb;
-    }
-
-    @Override
-    public Object invoke(final Object proxy, final Method method, final Object[] args)
-            throws Throwable {
-        final Object target;
-        final Class<?> methodInterface = method.getDeclaringClass();
-        if (DEBUG) {
-            
-            assertOnIcThread();
-        }
-        if (methodInterface == Editable.class ||
-                methodInterface == Appendable.class ||
-                methodInterface == Spannable.class) {
-            
-            target = this;
-        } else {
-            target = mText.getShadowText();
-        }
-
-        final Object ret = method.invoke(target, args);
-        if (DEBUG) {
-            final StringBuilder log = new StringBuilder(method.getName());
-            log.append("(");
-            if (args != null) {
-                for (final Object arg : args) {
-                    debugAppend(log, arg).append(", ");
-                }
-                if (args.length > 0) {
-                    log.setLength(log.length() - 2);
-                }
-            }
-            if (method.getReturnType().equals(Void.TYPE)) {
-                log.append(")");
-            } else {
-                debugAppend(log.append(") = "), ret);
-            }
-            Log.d(LOGTAG, log.toString());
-        }
-        return ret;
-    }
-
-    
-
-    @Override
-    public void removeSpan(final Object what) {
-        if (what == null) {
-            return;
-        }
-
-        if (what == Selection.SELECTION_START ||
-                what == Selection.SELECTION_END) {
-            Log.w(LOGTAG, "selection removed with removeSpan()");
-        }
-
-        icOfferAction(Action.newRemoveSpan(what));
-    }
-
-    @Override
-    public void setSpan(final Object what, final int start, final int end, final int flags) {
-        icOfferAction(Action.newSetSpan(what, start, end, flags));
-    }
-
-    
-
-    @Override
-    public Editable append(final CharSequence text) {
-        return replace(mProxy.length(), mProxy.length(), text, 0, text.length());
-    }
-
-    @Override
-    public Editable append(final CharSequence text, final int start, final int end) {
-        return replace(mProxy.length(), mProxy.length(), text, start, end);
-    }
-
-    @Override
-    public Editable append(final char text) {
-        return replace(mProxy.length(), mProxy.length(), String.valueOf(text), 0, 1);
-    }
-
-    
-
-    @Override
-    public InputFilter[] getFilters() {
-        return mFilters;
-    }
-
-    @Override
-    public void setFilters(final InputFilter[] filters) {
-        mFilters = filters;
-    }
-
-    @Override
-    public void clearSpans() {
-        
-
-        Log.w(LOGTAG, "selection cleared with clearSpans()");
-        icOfferAction(Action.newRemoveSpan( null));
-    }
-
-    @Override
-    public Editable replace(final int st, final int en, final CharSequence source,
-                            final int start, final int end) {
-        CharSequence text = source;
-        if (start < 0 || start > end || end > text.length()) {
-            Log.e(LOGTAG, "invalid replace offsets: " +
-                  start + " to " + end + ", length: " + text.length());
-            throw new IllegalArgumentException("invalid replace offsets");
-        }
-        if (start != 0 || end != text.length()) {
-            text = text.subSequence(start, end);
-        }
-        if (mFilters != null) {
-            
-            for (int i = 0; i < mFilters.length; ++i) {
-                final CharSequence cs = mFilters[i].filter(
-                        text, 0, text.length(), mProxy, st, en);
-                if (cs != null) {
-                    text = cs;
-                }
-            }
-        }
-        if (text == source) {
-            
-            text = new SpannableString(source);
-        }
-        icOfferAction(Action.newReplaceText(text, Math.min(st, en), Math.max(st, en)));
-        return mProxy;
-    }
-
-    @Override
-    public void clear() {
-        replace(0, mProxy.length(), "", 0, 0);
-    }
-
-    @Override
-    public Editable delete(final int st, final int en) {
-        return replace(st, en, "", 0, 0);
-    }
-
-    @Override
-    public Editable insert(final int where, final CharSequence text, final int start,
-                           final int end) {
-        return replace(where, where, text, start, end);
-    }
-
-    @Override
-    public Editable insert(final int where, final CharSequence text) {
-        return replace(where, where, text, 0, text.length());
-    }
-
-    @Override
-    public Editable replace(final int st, final int en, final CharSequence text) {
-        return replace(st, en, text, 0, text.length());
-    }
-
-    
-
-    @Override
-    public void getChars(final int start, final int end, final char[] dest, final int destoff) {
-        
-
-
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    
-
-    @Override
-    public int getSpanEnd(final Object tag) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public int getSpanFlags(final Object tag) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public int getSpanStart(final Object tag) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public <T> T[] getSpans(final int start, final int end, final Class<T> type) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    @SuppressWarnings("rawtypes") 
-    public int nextSpanTransition(final int start, final int limit, final Class type) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    
-
-    @Override
-    public char charAt(final int index) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public int length() {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public CharSequence subSequence(final int start, final int end) {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    @Override
-    public String toString() {
-        throw new UnsupportedOperationException("method must be called through mProxy");
-    }
-
-    public boolean onKeyPreIme(final @Nullable View view, final int keyCode,
-                               final @NonNull KeyEvent event) {
-        return false;
-    }
-
-    public boolean onKeyDown(final @Nullable View view, final int keyCode,
-                             final @NonNull KeyEvent event) {
-        return processKey(view, KeyEvent.ACTION_DOWN, keyCode, event);
-    }
-
-    public boolean onKeyUp(final @Nullable View view, final int keyCode,
-                           final @NonNull KeyEvent event) {
-        return processKey(view, KeyEvent.ACTION_UP, keyCode, event);
-    }
-
-    public boolean onKeyMultiple(final @Nullable View view, final int keyCode,
-                                 final int repeatCount, final @NonNull KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
-            
-            final String str = event.getCharacters();
-            for (int i = 0; i < str.length(); i++) {
-                final KeyEvent charEvent = getCharKeyEvent(str.charAt(i));
-                if (!processKey(view, KeyEvent.ACTION_DOWN,
-                                KeyEvent.KEYCODE_UNKNOWN, charEvent) ||
-                    !processKey(view, KeyEvent.ACTION_UP,
-                                KeyEvent.KEYCODE_UNKNOWN, charEvent)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        for (int i = 0; i < repeatCount; i++) {
-            if (!processKey(view, KeyEvent.ACTION_DOWN, keyCode, event) ||
-                !processKey(view, KeyEvent.ACTION_UP, keyCode, event)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public boolean onKeyLongPress(final @Nullable View view, final int keyCode,
-                                  final @NonNull KeyEvent event) {
-        return false;
-    }
-
-    
-
-
-    private static KeyEvent getCharKeyEvent(final char c) {
-        final long time = SystemClock.uptimeMillis();
-        return new KeyEvent(time, time, KeyEvent.ACTION_MULTIPLE,
-                            KeyEvent.KEYCODE_UNKNOWN,  0) {
-            @Override
-            public int getUnicodeChar() {
-                return c;
-            }
-
-            @Override
-            public int getUnicodeChar(final int metaState) {
-                return c;
-            }
-        };
-    }
-
-    private boolean processKey(final @Nullable View view, final int action, final int keyCode,
-                               final @NonNull KeyEvent event) {
-        if (keyCode > KeyEvent.getMaxKeyCode() || !shouldProcessKey(keyCode, event)) {
-            return false;
-        }
-
-        postToInputConnection(new Runnable() {
-            @Override
-            public void run() {
-                sendKeyEvent(view, action, event);
-            }
-        });
-        return true;
-    }
-
-    private static boolean shouldProcessKey(final int keyCode, final KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_MENU:
-            case KeyEvent.KEYCODE_BACK:
-            case KeyEvent.KEYCODE_VOLUME_UP:
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-            case KeyEvent.KEYCODE_SEARCH:
+                return;
+              }
+              if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+                session.getTextInput().getDelegate().hideSoftInput(session);
+                return;
+              }
+              {
+                final GeckoBundle bundle = new GeckoBundle();
                 
-            case KeyEvent.KEYCODE_HEADSETHOOK:
-                return false;
-        }
-        return true;
+                
+                
+                
+                
+                
+                
+                bundle.putBoolean("force", !force);
+                session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
+              }
+              session.getTextInput().getDelegate().showSoftInput(session);
+            } finally {
+              mSoftInputReentrancyGuard.decrementAndGet();
+            }
+          }
+        });
+  }
+
+  @Override 
+  public void onSelectionChange(
+      final IBinder token, final int start, final int end, final boolean causedOnlyByComposition) {
+    
+    if (DEBUG) {
+      final StringBuilder sb = new StringBuilder("onSelectionChange(");
+      sb.append(start)
+          .append(", ")
+          .append(end)
+          .append(", ")
+          .append(causedOnlyByComposition)
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
     }
 
-    private static boolean isComposing(final Spanned text) {
-        final Object[] spans = text.getSpans(0, text.length(), Object.class);
-        for (final Object span : spans) {
-            if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                return true;
-            }
-        }
+    if (!binderCheckToken(token,  false)) {
+      return;
+    }
 
+    if (mIgnoreSelectionChange) {
+      mIgnoreSelectionChange = false;
+    } else {
+      mText.currentSetSelection(start, end);
+    }
+
+    
+    
+    mLastTextChangeStart = Integer.MAX_VALUE;
+    mLastTextChangeOldEnd = -1;
+    mLastTextChangeNewEnd = -1;
+    mLastTextChangeReplacedSelection = false;
+
+    if (causedOnlyByComposition) {
+      
+      
+      return;
+    }
+
+    
+    
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            icSyncShadowText();
+          }
+        });
+  }
+
+  private boolean geckoIsSameText(final int start, final int oldEnd, final CharSequence newText) {
+    return oldEnd - start == newText.length()
+        && TextUtils.regionMatches(mText.getCurrentText(), start, newText, 0, oldEnd - start);
+  }
+
+  @Override 
+  public void onTextChange(
+      final IBinder token, final CharSequence text, final int start, final int unboundedOldEnd) {
+    
+    if (DEBUG) {
+      final StringBuilder sb = new StringBuilder("onTextChange(");
+      debugAppend(sb, text)
+          .append(", ")
+          .append(start)
+          .append(", ")
+          .append(unboundedOldEnd)
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
+    }
+
+    if (!binderCheckToken(token,  false)) {
+      return;
+    }
+
+    if (unboundedOldEnd >= Integer.MAX_VALUE / 2) {
+      
+      
+      
+      mActions.clear();
+    }
+
+    final int currentLength = mText.getCurrentText().length();
+    final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
+    final int newEnd = start + text.length();
+
+    if (start == 0 && unboundedOldEnd > currentLength) {
+      
+      
+      
+      mText.currentReplace(0, currentLength, "");
+      mText.currentReplace(0, 0, text);
+
+      
+      mIgnoreSelectionChange = false;
+
+      mLastTextChangeStart = Integer.MAX_VALUE;
+      mLastTextChangeOldEnd = -1;
+      mLastTextChangeNewEnd = -1;
+      mLastTextChangeReplacedSelection = false;
+
+    } else if (!geckoIsSameText(start, oldEnd, text)) {
+      final Spanned currentText = mText.getCurrentText();
+      final int selStart = Selection.getSelectionStart(currentText);
+      final int selEnd = Selection.getSelectionEnd(currentText);
+
+      
+      
+      
+      mLastTextChangeReplacedSelection |=
+          (selStart >= start && selStart <= oldEnd) || (selEnd >= start && selEnd <= oldEnd);
+
+      
+      
+      mText.currentReplace(start, oldEnd, "");
+      mText.currentReplace(start, start, text);
+
+      mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
+      mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
+      mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
+
+    } else {
+      
+      
+      
+      final Action action = mActions.peek();
+      mIgnoreSelectionChange =
+          mIgnoreSelectionChange
+              || (action != null
+                  && (action.mType == Action.TYPE_REPLACE_TEXT
+                      || action.mType == Action.TYPE_SET_SPAN
+                      || action.mType == Action.TYPE_REMOVE_SPAN));
+
+      mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
+      mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
+      mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
+    }
+
+    
+    
+  }
+
+  @Override 
+  public void onDefaultKeyEvent(final IBinder token, final KeyEvent event) {
+    
+    if (DEBUG) {
+      final StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
+      sb.append("action=")
+          .append(event.getAction())
+          .append(", ")
+          .append("keyCode=")
+          .append(event.getKeyCode())
+          .append(", ")
+          .append("metaState=")
+          .append(event.getMetaState())
+          .append(", ")
+          .append("time=")
+          .append(event.getEventTime())
+          .append(", ")
+          .append("repeatCount=")
+          .append(event.getRepeatCount())
+          .append(")");
+      Log.d(LOGTAG, sb.toString());
+    }
+
+    
+    if (!binderCheckToken(token,  true)) {
+      return;
+    }
+
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (mListener == null) {
+              return;
+            }
+            mListener.onDefaultKeyEvent(event);
+          }
+        });
+  }
+
+  @Override 
+  public void updateCompositionRects(final IBinder token, final RectF[] rects) {
+    
+    if (DEBUG) {
+      Log.d(LOGTAG, "updateCompositionRects(rects.length = " + rects.length + ")");
+    }
+
+    if (!binderCheckToken(token,  false)) {
+      return;
+    }
+
+    mIcPostHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (mListener == null) {
+              return;
+            }
+            mListener.updateCompositionRects(rects);
+          }
+        });
+  }
+
+  
+
+  static String getConstantName(final Class<?> cls, final String prefix, final Object value) {
+    for (final Field fld : cls.getDeclaredFields()) {
+      try {
+        if (fld.getName().startsWith(prefix) && fld.get(null).equals(value)) {
+          return fld.getName();
+        }
+      } catch (final IllegalAccessException e) {
+      }
+    }
+    return String.valueOf(value);
+  }
+
+  private static String getPrintableChar(final char chr) {
+    if (chr >= 0x20 && chr <= 0x7e) {
+      return String.valueOf(chr);
+    } else if (chr == '\n') {
+      return "\u21b2";
+    }
+    return String.format("\\u%04x", (int) chr);
+  }
+
+  static StringBuilder debugAppend(final StringBuilder sb, final Object obj) {
+    if (obj == null) {
+      sb.append("null");
+    } else if (obj instanceof GeckoEditable) {
+      sb.append("GeckoEditable");
+    } else if (obj instanceof GeckoEditableChild) {
+      sb.append("GeckoEditableChild");
+    } else if (Proxy.isProxyClass(obj.getClass())) {
+      debugAppend(sb, Proxy.getInvocationHandler(obj));
+    } else if (obj instanceof Character) {
+      sb.append('\'').append(getPrintableChar((Character) obj)).append('\'');
+    } else if (obj instanceof CharSequence) {
+      final String str = obj.toString();
+      sb.append('"');
+      for (int i = 0; i < str.length(); i++) {
+        final char chr = str.charAt(i);
+        if (chr >= 0x20 && chr <= 0x7e) {
+          sb.append(chr);
+        } else {
+          sb.append(getPrintableChar(chr));
+        }
+      }
+      sb.append('"');
+    } else if (obj.getClass().isArray()) {
+      sb.append(obj.getClass().getComponentType().getSimpleName())
+          .append('[')
+          .append(Array.getLength(obj))
+          .append(']');
+    } else {
+      sb.append(obj);
+    }
+    return sb;
+  }
+
+  @Override
+  public Object invoke(final Object proxy, final Method method, final Object[] args)
+      throws Throwable {
+    final Object target;
+    final Class<?> methodInterface = method.getDeclaringClass();
+    if (DEBUG) {
+      
+      assertOnIcThread();
+    }
+    if (methodInterface == Editable.class
+        || methodInterface == Appendable.class
+        || methodInterface == Spannable.class) {
+      
+      target = this;
+    } else {
+      target = mText.getShadowText();
+    }
+
+    final Object ret = method.invoke(target, args);
+    if (DEBUG) {
+      final StringBuilder log = new StringBuilder(method.getName());
+      log.append("(");
+      if (args != null) {
+        for (final Object arg : args) {
+          debugAppend(log, arg).append(", ");
+        }
+        if (args.length > 0) {
+          log.setLength(log.length() - 2);
+        }
+      }
+      if (method.getReturnType().equals(Void.TYPE)) {
+        log.append(")");
+      } else {
+        debugAppend(log.append(") = "), ret);
+      }
+      Log.d(LOGTAG, log.toString());
+    }
+    return ret;
+  }
+
+  
+
+  @Override
+  public void removeSpan(final Object what) {
+    if (what == null) {
+      return;
+    }
+
+    if (what == Selection.SELECTION_START || what == Selection.SELECTION_END) {
+      Log.w(LOGTAG, "selection removed with removeSpan()");
+    }
+
+    icOfferAction(Action.newRemoveSpan(what));
+  }
+
+  @Override
+  public void setSpan(final Object what, final int start, final int end, final int flags) {
+    icOfferAction(Action.newSetSpan(what, start, end, flags));
+  }
+
+  
+
+  @Override
+  public Editable append(final CharSequence text) {
+    return replace(mProxy.length(), mProxy.length(), text, 0, text.length());
+  }
+
+  @Override
+  public Editable append(final CharSequence text, final int start, final int end) {
+    return replace(mProxy.length(), mProxy.length(), text, start, end);
+  }
+
+  @Override
+  public Editable append(final char text) {
+    return replace(mProxy.length(), mProxy.length(), String.valueOf(text), 0, 1);
+  }
+
+  
+
+  @Override
+  public InputFilter[] getFilters() {
+    return mFilters;
+  }
+
+  @Override
+  public void setFilters(final InputFilter[] filters) {
+    mFilters = filters;
+  }
+
+  @Override
+  public void clearSpans() {
+    
+
+    Log.w(LOGTAG, "selection cleared with clearSpans()");
+    icOfferAction(Action.newRemoveSpan( null));
+  }
+
+  @Override
+  public Editable replace(
+      final int st, final int en, final CharSequence source, final int start, final int end) {
+    CharSequence text = source;
+    if (start < 0 || start > end || end > text.length()) {
+      Log.e(
+          LOGTAG,
+          "invalid replace offsets: " + start + " to " + end + ", length: " + text.length());
+      throw new IllegalArgumentException("invalid replace offsets");
+    }
+    if (start != 0 || end != text.length()) {
+      text = text.subSequence(start, end);
+    }
+    if (mFilters != null) {
+      
+      for (int i = 0; i < mFilters.length; ++i) {
+        final CharSequence cs = mFilters[i].filter(text, 0, text.length(), mProxy, st, en);
+        if (cs != null) {
+          text = cs;
+        }
+      }
+    }
+    if (text == source) {
+      
+      text = new SpannableString(source);
+    }
+    icOfferAction(Action.newReplaceText(text, Math.min(st, en), Math.max(st, en)));
+    return mProxy;
+  }
+
+  @Override
+  public void clear() {
+    replace(0, mProxy.length(), "", 0, 0);
+  }
+
+  @Override
+  public Editable delete(final int st, final int en) {
+    return replace(st, en, "", 0, 0);
+  }
+
+  @Override
+  public Editable insert(final int where, final CharSequence text, final int start, final int end) {
+    return replace(where, where, text, start, end);
+  }
+
+  @Override
+  public Editable insert(final int where, final CharSequence text) {
+    return replace(where, where, text, 0, text.length());
+  }
+
+  @Override
+  public Editable replace(final int st, final int en, final CharSequence text) {
+    return replace(st, en, text, 0, text.length());
+  }
+
+  
+
+  @Override
+  public void getChars(final int start, final int end, final char[] dest, final int destoff) {
+    
+
+
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  
+
+  @Override
+  public int getSpanEnd(final Object tag) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public int getSpanFlags(final Object tag) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public int getSpanStart(final Object tag) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public <T> T[] getSpans(final int start, final int end, final Class<T> type) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes") 
+  public int nextSpanTransition(final int start, final int limit, final Class type) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  
+
+  @Override
+  public char charAt(final int index) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public int length() {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public CharSequence subSequence(final int start, final int end) {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  @Override
+  public String toString() {
+    throw new UnsupportedOperationException("method must be called through mProxy");
+  }
+
+  public boolean onKeyPreIme(
+      final @Nullable View view, final int keyCode, final @NonNull KeyEvent event) {
+    return false;
+  }
+
+  public boolean onKeyDown(
+      final @Nullable View view, final int keyCode, final @NonNull KeyEvent event) {
+    return processKey(view, KeyEvent.ACTION_DOWN, keyCode, event);
+  }
+
+  public boolean onKeyUp(
+      final @Nullable View view, final int keyCode, final @NonNull KeyEvent event) {
+    return processKey(view, KeyEvent.ACTION_UP, keyCode, event);
+  }
+
+  public boolean onKeyMultiple(
+      final @Nullable View view,
+      final int keyCode,
+      final int repeatCount,
+      final @NonNull KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
+      
+      final String str = event.getCharacters();
+      for (int i = 0; i < str.length(); i++) {
+        final KeyEvent charEvent = getCharKeyEvent(str.charAt(i));
+        if (!processKey(view, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_UNKNOWN, charEvent)
+            || !processKey(view, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_UNKNOWN, charEvent)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    for (int i = 0; i < repeatCount; i++) {
+      if (!processKey(view, KeyEvent.ACTION_DOWN, keyCode, event)
+          || !processKey(view, KeyEvent.ACTION_UP, keyCode, event)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public boolean onKeyLongPress(
+      final @Nullable View view, final int keyCode, final @NonNull KeyEvent event) {
+    return false;
+  }
+
+  
+  private static KeyEvent getCharKeyEvent(final char c) {
+    final long time = SystemClock.uptimeMillis();
+    return new KeyEvent(
+        time, time, KeyEvent.ACTION_MULTIPLE, KeyEvent.KEYCODE_UNKNOWN,  0) {
+      @Override
+      public int getUnicodeChar() {
+        return c;
+      }
+
+      @Override
+      public int getUnicodeChar(final int metaState) {
+        return c;
+      }
+    };
+  }
+
+  private boolean processKey(
+      final @Nullable View view,
+      final int action,
+      final int keyCode,
+      final @NonNull KeyEvent event) {
+    if (keyCode > KeyEvent.getMaxKeyCode() || !shouldProcessKey(keyCode, event)) {
+      return false;
+    }
+
+    postToInputConnection(
+        new Runnable() {
+          @Override
+          public void run() {
+            sendKeyEvent(view, action, event);
+          }
+        });
+    return true;
+  }
+
+  private static boolean shouldProcessKey(final int keyCode, final KeyEvent event) {
+    switch (keyCode) {
+      case KeyEvent.KEYCODE_MENU:
+      case KeyEvent.KEYCODE_BACK:
+      case KeyEvent.KEYCODE_VOLUME_UP:
+      case KeyEvent.KEYCODE_VOLUME_DOWN:
+      case KeyEvent.KEYCODE_SEARCH:
+        
+      case KeyEvent.KEYCODE_HEADSETHOOK:
         return false;
     }
+    return true;
+  }
 
-    private static int getComposingStart(final Spanned text) {
-        int composingStart = Integer.MAX_VALUE;
-        final Object[] spans = text.getSpans(0, text.length(), Object.class);
-        for (final Object span : spans) {
-            if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                composingStart = Math.min(composingStart, text.getSpanStart(span));
-            }
-        }
-
-        return composingStart;
+  private static boolean isComposing(final Spanned text) {
+    final Object[] spans = text.getSpans(0, text.length(), Object.class);
+    for (final Object span : spans) {
+      if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+        return true;
+      }
     }
 
-    private static int getComposingEnd(final Spanned text) {
-        int composingEnd = -1;
-        final Object[] spans = text.getSpans(0, text.length(), Object.class);
-        for (final Object span : spans) {
-            if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                composingEnd = Math.max(composingEnd, text.getSpanEnd(span));
-            }
-        }
+    return false;
+  }
 
-        return composingEnd;
+  private static int getComposingStart(final Spanned text) {
+    int composingStart = Integer.MAX_VALUE;
+    final Object[] spans = text.getSpans(0, text.length(), Object.class);
+    for (final Object span : spans) {
+      if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+        composingStart = Math.min(composingStart, text.getSpanStart(span));
+      }
     }
+
+    return composingStart;
+  }
+
+  private static int getComposingEnd(final Spanned text) {
+    int composingEnd = -1;
+    final Object[] spans = text.getSpans(0, text.length(), Object.class);
+    for (final Object span : spans) {
+      if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+        composingEnd = Math.max(composingEnd, text.getSpanEnd(span));
+      }
+    }
+
+    return composingEnd;
+  }
 }
-

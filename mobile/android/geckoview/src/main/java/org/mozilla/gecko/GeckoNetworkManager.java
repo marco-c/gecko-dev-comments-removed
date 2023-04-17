@@ -5,12 +5,6 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.util.NetworkUtils;
-import org.mozilla.gecko.util.NetworkUtils.ConnectionSubType;
-import org.mozilla.gecko.util.NetworkUtils.ConnectionType;
-import org.mozilla.gecko.util.NetworkUtils.NetworkStatus;
-
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,9 +13,15 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
 import android.net.wifi.WifiManager;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Log;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.util.NetworkUtils;
+import org.mozilla.gecko.util.NetworkUtils.ConnectionSubType;
+import org.mozilla.gecko.util.NetworkUtils.ConnectionType;
+import org.mozilla.gecko.util.NetworkUtils.NetworkStatus;
+
 
 
 
@@ -37,359 +37,377 @@ import android.util.Log;
 
 
 public class GeckoNetworkManager extends BroadcastReceiver {
-    private static final String LOGTAG = "GeckoNetworkManager";
+  private static final String LOGTAG = "GeckoNetworkManager";
 
-    
-    
-    
-    private static final String LINK_DATA_CHANGED = "changed";
+  
+  
+  
+  private static final String LINK_DATA_CHANGED = "changed";
 
-    private static GeckoNetworkManager instance;
+  private static GeckoNetworkManager instance;
 
-    
-    
-    private Context mContext;
+  
+  
+  
+  private Context mContext;
 
-    public static void destroy() {
-        if (instance != null) {
-            instance.onDestroy();
-            instance = null;
-        }
+  public static void destroy() {
+    if (instance != null) {
+      instance.onDestroy();
+      instance = null;
+    }
+  }
+
+  public enum ManagerState {
+    OffNoListeners,
+    OffWithListeners,
+    OnNoListeners,
+    OnWithListeners
+  }
+
+  public enum ManagerEvent {
+    start,
+    stop,
+    enableNotifications,
+    disableNotifications,
+    receivedUpdate
+  }
+
+  private ManagerState mCurrentState = ManagerState.OffNoListeners;
+  private ConnectionType mCurrentConnectionType = ConnectionType.NONE;
+  private ConnectionType mPreviousConnectionType = ConnectionType.NONE;
+  private ConnectionSubType mCurrentConnectionSubtype = ConnectionSubType.UNKNOWN;
+  private ConnectionSubType mPreviousConnectionSubtype = ConnectionSubType.UNKNOWN;
+  private NetworkStatus mCurrentNetworkStatus = NetworkStatus.UNKNOWN;
+  private NetworkStatus mPreviousNetworkStatus = NetworkStatus.UNKNOWN;
+
+  private GeckoNetworkManager() {}
+
+  private void onDestroy() {
+    handleManagerEvent(ManagerEvent.stop);
+  }
+
+  public static GeckoNetworkManager getInstance() {
+    if (instance == null) {
+      instance = new GeckoNetworkManager();
     }
 
-    public enum ManagerState {
-        OffNoListeners,
-        OffWithListeners,
-        OnNoListeners,
-        OnWithListeners
-    }
+    return instance;
+  }
 
-    public enum ManagerEvent {
-        start,
-        stop,
-        enableNotifications,
-        disableNotifications,
-        receivedUpdate
-    }
+  public double[] getCurrentInformation() {
+    final Context applicationContext = GeckoAppShell.getApplicationContext();
+    final ConnectionType connectionType = mCurrentConnectionType;
+    return new double[] {
+      connectionType.value,
+      connectionType == ConnectionType.WIFI ? 1.0 : 0.0,
+      connectionType == ConnectionType.WIFI ? wifiDhcpGatewayAddress(applicationContext) : 0.0
+    };
+  }
 
-    private ManagerState mCurrentState = ManagerState.OffNoListeners;
-    private ConnectionType mCurrentConnectionType = ConnectionType.NONE;
-    private ConnectionType mPreviousConnectionType = ConnectionType.NONE;
-    private ConnectionSubType mCurrentConnectionSubtype = ConnectionSubType.UNKNOWN;
-    private ConnectionSubType mPreviousConnectionSubtype = ConnectionSubType.UNKNOWN;
-    private NetworkStatus mCurrentNetworkStatus = NetworkStatus.UNKNOWN;
-    private NetworkStatus mPreviousNetworkStatus = NetworkStatus.UNKNOWN;
+  @Override
+  public void onReceive(final Context aContext, final Intent aIntent) {
+    handleManagerEvent(ManagerEvent.receivedUpdate);
+  }
 
-    private GeckoNetworkManager() {
-    }
+  public void start(final Context context) {
+    mContext = context;
+    handleManagerEvent(ManagerEvent.start);
+  }
 
-    private void onDestroy() {
-        handleManagerEvent(ManagerEvent.stop);
-    }
+  public void stop() {
+    handleManagerEvent(ManagerEvent.stop);
+  }
 
-    public static GeckoNetworkManager getInstance() {
-        if (instance == null) {
-            instance = new GeckoNetworkManager();
-        }
+  public void enableNotifications() {
+    handleManagerEvent(ManagerEvent.enableNotifications);
+  }
 
-        return instance;
-    }
+  public void disableNotifications() {
+    handleManagerEvent(ManagerEvent.disableNotifications);
+  }
 
-    public double[] getCurrentInformation() {
-        final Context applicationContext = GeckoAppShell.getApplicationContext();
-        final ConnectionType connectionType = mCurrentConnectionType;
-        return new double[] {
-            connectionType.value,
-            connectionType == ConnectionType.WIFI ? 1.0 : 0.0,
-            connectionType == ConnectionType.WIFI ? wifiDhcpGatewayAddress(applicationContext) : 0.0
-        };
-    }
-
-    @Override
-    public void onReceive(final Context aContext, final Intent aIntent) {
-        handleManagerEvent(ManagerEvent.receivedUpdate);
-    }
-
-    public void start(final Context context) {
-        mContext = context;
-        handleManagerEvent(ManagerEvent.start);
-    }
-
-    public void stop() {
-        handleManagerEvent(ManagerEvent.stop);
-    }
-
-    public void enableNotifications() {
-        handleManagerEvent(ManagerEvent.enableNotifications);
-    }
-
-    public void disableNotifications() {
-        handleManagerEvent(ManagerEvent.disableNotifications);
-    }
-
-    
+  
 
 
 
 
 
 
-    private synchronized boolean handleManagerEvent(final ManagerEvent event) {
-        final ManagerState nextState = getNextState(mCurrentState, event);
+  private synchronized boolean handleManagerEvent(final ManagerEvent event) {
+    final ManagerState nextState = getNextState(mCurrentState, event);
 
-        Log.d(LOGTAG, "Incoming event " + event + " for state " + mCurrentState + " -> " + nextState);
-        if (nextState == null) {
-            Log.w(LOGTAG, "Invalid event " + event + " for state " + mCurrentState);
-            return false;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        final Context contextForAction;
-        if (mContext != null) {
-            contextForAction = mContext;
-        } else {
-            contextForAction = GeckoAppShell.getApplicationContext();
-        }
-
-        if (contextForAction == null) {
-            Log.w(LOGTAG, "Context is not available while processing event " + event + " for state " + mCurrentState);
-            return false;
-        }
-
-        performActionsForStateEvent(contextForAction, mCurrentState, event);
-        mCurrentState = nextState;
-
-        return true;
+    Log.d(LOGTAG, "Incoming event " + event + " for state " + mCurrentState + " -> " + nextState);
+    if (nextState == null) {
+      Log.w(LOGTAG, "Invalid event " + event + " for state " + mCurrentState);
+      return false;
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    final Context contextForAction;
+    if (mContext != null) {
+      contextForAction = mContext;
+    } else {
+      contextForAction = GeckoAppShell.getApplicationContext();
+    }
+
+    if (contextForAction == null) {
+      Log.w(
+          LOGTAG,
+          "Context is not available while processing event "
+              + event
+              + " for state "
+              + mCurrentState);
+      return false;
+    }
+
+    performActionsForStateEvent(contextForAction, mCurrentState, event);
+    mCurrentState = nextState;
+
+    return true;
+  }
+
+  
 
 
 
 
 
 
-    @Nullable
-    public static ManagerState getNextState(final @NonNull ManagerState currentState,
-                                            final @NonNull ManagerEvent event) {
-        switch (currentState) {
-            case OffNoListeners:
-                switch (event) {
-                    case start:
-                        return ManagerState.OnNoListeners;
-                    case enableNotifications:
-                        return ManagerState.OffWithListeners;
-                    default:
-                        return null;
-                }
-            case OnNoListeners:
-                switch (event) {
-                    case stop:
-                        return ManagerState.OffNoListeners;
-                    case enableNotifications:
-                        return ManagerState.OnWithListeners;
-                    case receivedUpdate:
-                        return ManagerState.OnNoListeners;
-                    default:
-                        return null;
-                }
-            case OnWithListeners:
-                switch (event) {
-                    case stop:
-                        return ManagerState.OffWithListeners;
-                    case disableNotifications:
-                        return ManagerState.OnNoListeners;
-                    case receivedUpdate:
-                        return ManagerState.OnWithListeners;
-                    default:
-                        return null;
-                }
-            case OffWithListeners:
-                switch (event) {
-                    case start:
-                        return ManagerState.OnWithListeners;
-                    case disableNotifications:
-                        return ManagerState.OffNoListeners;
-                    default:
-                        return null;
-                }
-            default:
-                throw new IllegalStateException("Unknown current state: " + currentState.name());
+
+  @Nullable
+  public static ManagerState getNextState(
+      final @NonNull ManagerState currentState, final @NonNull ManagerEvent event) {
+    switch (currentState) {
+      case OffNoListeners:
+        switch (event) {
+          case start:
+            return ManagerState.OnNoListeners;
+          case enableNotifications:
+            return ManagerState.OffWithListeners;
+          default:
+            return null;
         }
+      case OnNoListeners:
+        switch (event) {
+          case stop:
+            return ManagerState.OffNoListeners;
+          case enableNotifications:
+            return ManagerState.OnWithListeners;
+          case receivedUpdate:
+            return ManagerState.OnNoListeners;
+          default:
+            return null;
+        }
+      case OnWithListeners:
+        switch (event) {
+          case stop:
+            return ManagerState.OffWithListeners;
+          case disableNotifications:
+            return ManagerState.OnNoListeners;
+          case receivedUpdate:
+            return ManagerState.OnWithListeners;
+          default:
+            return null;
+        }
+      case OffWithListeners:
+        switch (event) {
+          case start:
+            return ManagerState.OnWithListeners;
+          case disableNotifications:
+            return ManagerState.OffNoListeners;
+          default:
+            return null;
+        }
+      default:
+        throw new IllegalStateException("Unknown current state: " + currentState.name());
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  private void performActionsForStateEvent(
+      final Context context, final ManagerState currentState, final ManagerEvent event) {
+    
+    
+    
+    
+    
+    
+    switch (currentState) {
+      case OffNoListeners:
+        if (event == ManagerEvent.start) {
+          updateNetworkStateAndConnectionType(context);
+          registerBroadcastReceiver(context, this);
+        }
+        if (event == ManagerEvent.enableNotifications) {
+          updateNetworkStateAndConnectionType(context);
+        }
+        break;
+      case OnNoListeners:
+        if (event == ManagerEvent.receivedUpdate) {
+          updateNetworkStateAndConnectionType(context);
+          sendNetworkStateToListeners(context);
+        }
+        if (event == ManagerEvent.enableNotifications) {
+          updateNetworkStateAndConnectionType(context);
+          registerBroadcastReceiver(context, this);
+        }
+        if (event == ManagerEvent.stop) {
+          unregisterBroadcastReceiver(context, this);
+        }
+        break;
+      case OnWithListeners:
+        if (event == ManagerEvent.receivedUpdate) {
+          updateNetworkStateAndConnectionType(context);
+          sendNetworkStateToListeners(context);
+        }
+        if (event == ManagerEvent.stop) {
+          unregisterBroadcastReceiver(context, this);
+        }
+        
+        break;
+      case OffWithListeners:
+        if (event == ManagerEvent.start) {
+          registerBroadcastReceiver(context, this);
+        }
+        
+        break;
+      default:
+        throw new IllegalStateException("Unknown current state: " + currentState.name());
+    }
+  }
+
+  
+  private void updateNetworkStateAndConnectionType(final Context context) {
+    final ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    
+    if (connectivityManager == null) {
+      Log.e(LOGTAG, "ConnectivityManager does not exist.");
+    }
+    mCurrentConnectionType = NetworkUtils.getConnectionType(connectivityManager);
+    mCurrentNetworkStatus = NetworkUtils.getNetworkStatus(connectivityManager);
+    mCurrentConnectionSubtype = NetworkUtils.getConnectionSubType(connectivityManager);
+    Log.d(
+        LOGTAG,
+        "New network state: "
+            + mCurrentNetworkStatus
+            + ", "
+            + mCurrentConnectionType
+            + ", "
+            + mCurrentConnectionSubtype);
+  }
+
+  @WrapForJNI(dispatchTo = "gecko")
+  private static native void onConnectionChanged(
+      int type, String subType, boolean isWifi, int dhcpGateway);
+
+  @WrapForJNI(dispatchTo = "gecko")
+  private static native void onStatusChanged(String status);
+
+  
+  private void sendNetworkStateToListeners(final Context context) {
+    final boolean connectionTypeOrSubtypeChanged =
+        mCurrentConnectionType != mPreviousConnectionType
+            || mCurrentConnectionSubtype != mPreviousConnectionSubtype;
+    if (connectionTypeOrSubtypeChanged) {
+      mPreviousConnectionType = mCurrentConnectionType;
+      mPreviousConnectionSubtype = mCurrentConnectionSubtype;
+
+      final boolean isWifi = mCurrentConnectionType == ConnectionType.WIFI;
+      final int gateway = !isWifi ? 0 : wifiDhcpGatewayAddress(context);
+
+      if (GeckoThread.isRunning()) {
+        onConnectionChanged(
+            mCurrentConnectionType.value, mCurrentConnectionSubtype.value, isWifi, gateway);
+      } else {
+        GeckoThread.queueNativeCall(
+            GeckoNetworkManager.class,
+            "onConnectionChanged",
+            mCurrentConnectionType.value,
+            String.class,
+            mCurrentConnectionSubtype.value,
+            isWifi,
+            gateway);
+      }
     }
 
     
-
-
-
-
-
-
-
-    private void performActionsForStateEvent(final Context context, final ManagerState currentState, final ManagerEvent event) {
-        
-        
-        
-        
-        switch (currentState) {
-            case OffNoListeners:
-                if (event == ManagerEvent.start) {
-                    updateNetworkStateAndConnectionType(context);
-                    registerBroadcastReceiver(context, this);
-                }
-                if (event == ManagerEvent.enableNotifications) {
-                    updateNetworkStateAndConnectionType(context);
-                }
-                break;
-            case OnNoListeners:
-                if (event == ManagerEvent.receivedUpdate) {
-                    updateNetworkStateAndConnectionType(context);
-                    sendNetworkStateToListeners(context);
-                }
-                if (event == ManagerEvent.enableNotifications) {
-                    updateNetworkStateAndConnectionType(context);
-                    registerBroadcastReceiver(context, this);
-                }
-                if (event == ManagerEvent.stop) {
-                    unregisterBroadcastReceiver(context, this);
-                }
-                break;
-            case OnWithListeners:
-                if (event == ManagerEvent.receivedUpdate) {
-                    updateNetworkStateAndConnectionType(context);
-                    sendNetworkStateToListeners(context);
-                }
-                if (event == ManagerEvent.stop) {
-                    unregisterBroadcastReceiver(context, this);
-                }
-                
-                break;
-            case OffWithListeners:
-                if (event == ManagerEvent.start) {
-                    registerBroadcastReceiver(context, this);
-                }
-                
-                break;
-            default:
-                throw new IllegalStateException("Unknown current state: " + currentState.name());
-        }
+    if (mCurrentNetworkStatus == mPreviousNetworkStatus && !connectionTypeOrSubtypeChanged) {
+      return;
     }
 
     
-
-
-    private void updateNetworkStateAndConnectionType(final Context context) {
-        final ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(
-                Context.CONNECTIVITY_SERVICE);
-        
-        if (connectivityManager == null) {
-            Log.e(LOGTAG, "ConnectivityManager does not exist.");
-        }
-        mCurrentConnectionType = NetworkUtils.getConnectionType(connectivityManager);
-        mCurrentNetworkStatus = NetworkUtils.getNetworkStatus(connectivityManager);
-        mCurrentConnectionSubtype = NetworkUtils.getConnectionSubType(connectivityManager);
-        Log.d(LOGTAG, "New network state: " + mCurrentNetworkStatus + ", " + mCurrentConnectionType + ", " + mCurrentConnectionSubtype);
-    }
-
-    @WrapForJNI(dispatchTo = "gecko")
-    private static native void onConnectionChanged(int type, String subType,
-                                                   boolean isWifi, int dhcpGateway);
-
-    @WrapForJNI(dispatchTo = "gecko")
-    private static native void onStatusChanged(String status);
-
     
-
-
-    private void sendNetworkStateToListeners(final Context context) {
-        final boolean connectionTypeOrSubtypeChanged = mCurrentConnectionType != mPreviousConnectionType ||
-                mCurrentConnectionSubtype != mPreviousConnectionSubtype;
-        if (connectionTypeOrSubtypeChanged) {
-            mPreviousConnectionType = mCurrentConnectionType;
-            mPreviousConnectionSubtype = mCurrentConnectionSubtype;
-
-            final boolean isWifi = mCurrentConnectionType == ConnectionType.WIFI;
-            final int gateway = !isWifi ? 0 :
-                    wifiDhcpGatewayAddress(context);
-
-            if (GeckoThread.isRunning()) {
-                onConnectionChanged(mCurrentConnectionType.value,
-                                    mCurrentConnectionSubtype.value, isWifi, gateway);
-            } else {
-                GeckoThread.queueNativeCall(GeckoNetworkManager.class, "onConnectionChanged",
-                                            mCurrentConnectionType.value,
-                                            String.class, mCurrentConnectionSubtype.value,
-                                            isWifi, gateway);
-            }
-        }
-
-        
-        if (mCurrentNetworkStatus == mPreviousNetworkStatus && !connectionTypeOrSubtypeChanged) {
-            return;
-        }
-
-        
-        
-        final String status;
-        if (mCurrentNetworkStatus == mPreviousNetworkStatus) {
-            status = LINK_DATA_CHANGED;
-        } else {
-            mPreviousNetworkStatus = mCurrentNetworkStatus;
-            status = mCurrentNetworkStatus.value;
-        }
-
-        if (GeckoThread.isRunning()) {
-            onStatusChanged(status);
-        } else {
-            GeckoThread.queueNativeCall(GeckoNetworkManager.class, "onStatusChanged",
-                    String.class, status);
-        }
+    final String status;
+    if (mCurrentNetworkStatus == mPreviousNetworkStatus) {
+      status = LINK_DATA_CHANGED;
+    } else {
+      mPreviousNetworkStatus = mCurrentNetworkStatus;
+      status = mCurrentNetworkStatus.value;
     }
 
-    
+    if (GeckoThread.isRunning()) {
+      onStatusChanged(status);
+    } else {
+      GeckoThread.queueNativeCall(
+          GeckoNetworkManager.class, "onStatusChanged", String.class, status);
+    }
+  }
 
+  
+  private static void unregisterBroadcastReceiver(
+      final Context context, final BroadcastReceiver receiver) {
+    context.unregisterReceiver(receiver);
+  }
 
-    private static void unregisterBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
-        context.unregisterReceiver(receiver);
+  
+  private static void registerBroadcastReceiver(
+      final Context context, final BroadcastReceiver receiver) {
+    final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+    context.registerReceiver(receiver, filter);
+  }
+
+  private static int wifiDhcpGatewayAddress(final Context context) {
+    if (context == null) {
+      return 0;
     }
 
-    
+    try {
+      final WifiManager mgr =
+          (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+      if (mgr == null) {
+        return 0;
+      }
 
+      @SuppressLint("MissingPermission")
+      final DhcpInfo d = mgr.getDhcpInfo();
+      if (d == null) {
+        return 0;
+      }
 
-    private static void registerBroadcastReceiver(final Context context, final BroadcastReceiver receiver) {
-        final IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        context.registerReceiver(receiver, filter);
+      return d.gateway;
+
+    } catch (final Exception ex) {
+      
+      
+      
+      return 0;
     }
-
-    private static int wifiDhcpGatewayAddress(final Context context) {
-        if (context == null) {
-            return 0;
-        }
-
-        try {
-            final WifiManager mgr = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            if (mgr == null) {
-                return 0;
-            }
-
-            @SuppressLint("MissingPermission") final DhcpInfo d = mgr.getDhcpInfo();
-            if (d == null) {
-                return 0;
-            }
-
-            return d.gateway;
-
-        } catch (final Exception ex) {
-            
-            
-            
-            return 0;
-        }
-    }
+  }
 }

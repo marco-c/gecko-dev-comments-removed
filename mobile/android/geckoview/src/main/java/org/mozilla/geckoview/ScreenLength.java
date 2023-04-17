@@ -6,7 +6,6 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -16,141 +15,146 @@ import java.lang.annotation.RetentionPolicy;
 
 
 public class ScreenLength {
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({PIXEL, VISUAL_VIEWPORT_WIDTH, VISUAL_VIEWPORT_HEIGHT, DOCUMENT_WIDTH, DOCUMENT_HEIGHT})
-     @interface ScreenLengthType {}
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({PIXEL, VISUAL_VIEWPORT_WIDTH, VISUAL_VIEWPORT_HEIGHT, DOCUMENT_WIDTH, DOCUMENT_HEIGHT})
+   @interface ScreenLengthType {}
 
-    
+  
+  public static final int PIXEL = 0;
+  
 
 
-    public static final int PIXEL = 0;
-    
 
 
 
 
-    public static final int VISUAL_VIEWPORT_WIDTH = 1;
-    
+  public static final int VISUAL_VIEWPORT_WIDTH = 1;
+  
 
 
 
 
-    public static final int VISUAL_VIEWPORT_HEIGHT = 2;
-    
 
 
+  public static final int VISUAL_VIEWPORT_HEIGHT = 2;
+  
 
-    public static final int DOCUMENT_WIDTH = 3;
-    
 
 
+  public static final int DOCUMENT_WIDTH = 3;
+  
 
-    public static final int DOCUMENT_HEIGHT = 4;
 
-    
 
+  public static final int DOCUMENT_HEIGHT = 4;
 
+  
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength zero() {
-        return new ScreenLength(0.0, PIXEL);
-    }
 
-    
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength zero() {
+    return new ScreenLength(0.0, PIXEL);
+  }
 
+  
 
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength top() {
-        return zero();
-    }
 
-    
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength top() {
+    return zero();
+  }
 
+  
 
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength bottom() {
-        return new ScreenLength(1.0, DOCUMENT_HEIGHT);
-    }
 
-    
 
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength bottom() {
+    return new ScreenLength(1.0, DOCUMENT_HEIGHT);
+  }
 
+  
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength fromPixels(final double value) {
-        return new ScreenLength(value, PIXEL);
-    }
 
-    
 
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength fromPixels(final double value) {
+    return new ScreenLength(value, PIXEL);
+  }
 
+  
 
 
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength fromVisualViewportWidth(final double value) {
-        return new ScreenLength(value, VISUAL_VIEWPORT_WIDTH);
-    }
 
-    
 
 
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength fromVisualViewportWidth(final double value) {
+    return new ScreenLength(value, VISUAL_VIEWPORT_WIDTH);
+  }
 
+  
 
 
 
-    @NonNull
-    @AnyThread
-    public static ScreenLength fromVisualViewportHeight(final double value) {
-        return new ScreenLength(value, VISUAL_VIEWPORT_HEIGHT);
-    }
 
-    private final double mValue;
-    @ScreenLengthType private final int mType;
 
-     ScreenLength(final double value, @ScreenLengthType final int type) {
-        mValue = value;
-        mType = type;
-    }
 
-    
 
 
+  @NonNull
+  @AnyThread
+  public static ScreenLength fromVisualViewportHeight(final double value) {
+    return new ScreenLength(value, VISUAL_VIEWPORT_HEIGHT);
+  }
 
+  private final double mValue;
+  @ScreenLengthType private final int mType;
 
+   ScreenLength(final double value, @ScreenLengthType final int type) {
+    mValue = value;
+    mType = type;
+  }
 
-    @AnyThread
-    public double getValue() {
-        return mValue;
-    }
+  
 
-    
 
 
 
 
+  @AnyThread
+  public double getValue() {
+    return mValue;
+  }
 
+  
 
-    @AnyThread
-    @ScreenLengthType
-    public int getType() {
-        return mType;
-    }
+
+
+
+
+
+  @AnyThread
+  @ScreenLengthType
+  public int getType() {
+    return mType;
+  }
 }

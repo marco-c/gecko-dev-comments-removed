@@ -6,16 +6,14 @@
 
 package org.mozilla.geckoview;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
+import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import android.util.Log;
-
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ImageResource;
@@ -29,714 +27,613 @@ import org.mozilla.gecko.util.ImageResource;
 
 @UiThread
 public class MediaSession {
-    private static final String LOGTAG = "MediaSession";
-    private static final boolean DEBUG = false;
+  private static final String LOGTAG = "MediaSession";
+  private static final boolean DEBUG = false;
+
+  private final GeckoSession mSession;
+  private boolean mIsActive;
+
+  protected MediaSession(final GeckoSession session) {
+    mSession = session;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public boolean isActive() {
+    return mIsActive;
+  }
+
+   void setActive(final boolean active) {
+    mIsActive = active;
+  }
+
+  
+  public void pause() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "pause");
+    }
+    mSession.getEventDispatcher().dispatch(PAUSE_EVENT, null);
+  }
+
+  
+  public void stop() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "stop");
+    }
+    mSession.getEventDispatcher().dispatch(STOP_EVENT, null);
+  }
+
+  
+  public void play() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "play");
+    }
+    mSession.getEventDispatcher().dispatch(PLAY_EVENT, null);
+  }
+
+  
+
+
+
+
+
+
+  public void seekTo(final double time, final boolean fast) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "seekTo: time=" + time + ", fast=" + fast);
+    }
+    final GeckoBundle bundle = new GeckoBundle(2);
+    bundle.putDouble("time", time);
+    bundle.putBoolean("fast", fast);
+    mSession.getEventDispatcher().dispatch(SEEK_TO_EVENT, bundle);
+  }
+
+  
+  public void seekForward() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "seekForward");
+    }
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putDouble("offset", 0.0);
+    mSession.getEventDispatcher().dispatch(SEEK_FORWARD_EVENT, bundle);
+  }
+
+  
+  public void seekBackward() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "seekBackward");
+    }
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putDouble("offset", 0.0);
+    mSession.getEventDispatcher().dispatch(SEEK_BACKWARD_EVENT, bundle);
+  }
+
+  
+
+
+  public void nextTrack() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "nextTrack");
+    }
+    mSession.getEventDispatcher().dispatch(NEXT_TRACK_EVENT, null);
+  }
+
+  
+
+
+
+  public void previousTrack() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "previousTrack");
+    }
+    mSession.getEventDispatcher().dispatch(PREV_TRACK_EVENT, null);
+  }
+
+  
+  public void skipAd() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "skipAd");
+    }
+    mSession.getEventDispatcher().dispatch(SKIP_AD_EVENT, null);
+  }
+
+  
+
+
+
+
+
+  public void muteAudio(final boolean mute) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "muteAudio=" + mute);
+    }
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putBoolean("mute", mute);
+    mSession.getEventDispatcher().dispatch(MUTE_AUDIO_EVENT, bundle);
+  }
+
+  
+  @UiThread
+  public interface Delegate {
+    
+
+
+
+
+
+
+    default void onActivated(
+        @NonNull final GeckoSession session, @NonNull final MediaSession mediaSession) {}
+
+    
+
+
+
+
+
+
+
+
+    default void onDeactivated(
+        @NonNull final GeckoSession session, @NonNull final MediaSession mediaSession) {}
+
+    
+
+
+
+
+
+
+
+    default void onMetadata(
+        @NonNull final GeckoSession session,
+        @NonNull final MediaSession mediaSession,
+        @NonNull final Metadata meta) {}
+
+    
+
+
+
+
+
+
+    default void onFeatures(
+        @NonNull final GeckoSession session,
+        @NonNull final MediaSession mediaSession,
+        @MSFeature final long features) {}
+
+    
+
+
+
+
+
+    default void onPlay(
+        @NonNull final GeckoSession session, @NonNull final MediaSession mediaSession) {}
+
+    
+
+
+
+
+
+    default void onPause(
+        @NonNull final GeckoSession session, @NonNull final MediaSession mediaSession) {}
+
+    
+
+
+
+
+
+    default void onStop(
+        @NonNull final GeckoSession session, @NonNull final MediaSession mediaSession) {}
+
+    
+
+
+
+
+
+
+    default void onPositionState(
+        @NonNull final GeckoSession session,
+        @NonNull final MediaSession mediaSession,
+        @NonNull final PositionState state) {}
+
+    
+
+
+
+
+
+
+
+    default void onFullscreen(
+        @NonNull final GeckoSession session,
+        @NonNull final MediaSession mediaSession,
+        final boolean enabled,
+        @Nullable final ElementMetadata meta) {}
+  }
+
+  
+  public static class ElementMetadata {
+    
+    public final @Nullable String source;
+
+    
+    public final double duration;
+
+    
+    public final long width;
+
+    
+    public final long height;
+
+    
+    public final int audioTrackCount;
+
+    
+    public final int videoTrackCount;
+
+    
+
+
+
+
+
+
+
+
+
+    public ElementMetadata(
+        @Nullable final String source,
+        final double duration,
+        final long width,
+        final long height,
+        final int audioTrackCount,
+        final int videoTrackCount) {
+      this.source = source;
+      this.duration = duration;
+      this.width = width;
+      this.height = height;
+      this.audioTrackCount = audioTrackCount;
+      this.videoTrackCount = videoTrackCount;
+    }
+
+     static @NonNull ElementMetadata fromBundle(final GeckoBundle bundle) {
+      
+      return new ElementMetadata(
+          bundle.getString("src"),
+          bundle.getDouble("duration", 0.0),
+          bundle.getLong("width", 0),
+          bundle.getLong("height", 0),
+          bundle.getInt("audioTrackCount", 0),
+          bundle.getInt("videoTrackCount", 0));
+    }
+  }
+
+  
+  public static class Metadata {
+    
+    public final @Nullable String title;
+
+    
+    public final @Nullable String artist;
+
+    
+    public final @Nullable String album;
+
+    
+    public final @Nullable Image artwork;
+
+    
+
+
+
+
+
+
+
+    protected Metadata(
+        final @Nullable String title,
+        final @Nullable String artist,
+        final @Nullable String album,
+        final @Nullable Image artwork) {
+      this.title = title;
+      this.artist = artist;
+      this.album = album;
+      this.artwork = artwork;
+    }
+
+    @AnyThread
+     static final class Builder {
+      private final GeckoBundle mBundle;
+
+      public Builder(final GeckoBundle bundle) {
+        mBundle = new GeckoBundle(bundle);
+      }
+
+      public Builder(final Metadata meta) {
+        mBundle = meta.toBundle();
+      }
+
+      @NonNull
+      Builder title(final @Nullable String title) {
+        mBundle.putString("title", title);
+        return this;
+      }
+
+      @NonNull
+      Builder artist(final @Nullable String artist) {
+        mBundle.putString("artist", artist);
+        return this;
+      }
+
+      @NonNull
+      Builder album(final @Nullable String album) {
+        mBundle.putString("album", album);
+        return this;
+      }
+    }
+
+     static @NonNull Metadata fromBundle(final GeckoBundle bundle) {
+      final GeckoBundle[] artworkBundles = bundle.getBundleArray("artwork");
+
+      final ImageResource.Collection.Builder artworkBuilder =
+          new ImageResource.Collection.Builder();
+
+      for (final GeckoBundle artworkBundle : artworkBundles) {
+        artworkBuilder.add(ImageResource.fromBundle(artworkBundle));
+      }
+
+      return new Metadata(
+          bundle.getString("title"),
+          bundle.getString("artist"),
+          bundle.getString("album"),
+          new Image(artworkBuilder.build()));
+    }
+
+     @NonNull
+    GeckoBundle toBundle() {
+      final GeckoBundle bundle = new GeckoBundle(3);
+      bundle.putString("title", title);
+      bundle.putString("artist", artist);
+      bundle.putString("album", album);
+      return bundle;
+    }
+
+    @Override
+    public String toString() {
+      final StringBuilder builder = new StringBuilder("Metadata {");
+      builder
+          .append(", title=")
+          .append(title)
+          .append(", artist=")
+          .append(artist)
+          .append(", album=")
+          .append(album)
+          .append(", artwork=")
+          .append(artwork)
+          .append("}");
+      return builder.toString();
+    }
+  }
+
+  
+  public static class PositionState {
+    
+    public final double duration;
+
+    
+    public final double position;
+
+    
+
+
+
+    public final double playbackRate;
+
+    
+
+
+
+
+
+
+    protected PositionState(
+        final double duration, final double position, final double playbackRate) {
+      this.duration = duration;
+      this.position = position;
+      this.playbackRate = playbackRate;
+    }
+
+     static @NonNull PositionState fromBundle(final GeckoBundle bundle) {
+      return new PositionState(
+          bundle.getDouble("duration"),
+          bundle.getDouble("position"),
+          bundle.getDouble("playbackRate"));
+    }
+
+    @Override
+    public String toString() {
+      final StringBuilder builder = new StringBuilder("PositionState {");
+      builder
+          .append("duration=")
+          .append(duration)
+          .append(", position=")
+          .append(position)
+          .append(", playbackRate=")
+          .append(playbackRate)
+          .append("}");
+      return builder.toString();
+    }
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @LongDef(
+      flag = true,
+      value = {
+        Feature.NONE,
+        Feature.PLAY,
+        Feature.PAUSE,
+        Feature.STOP,
+        Feature.SEEK_TO,
+        Feature.SEEK_FORWARD,
+        Feature.SEEK_BACKWARD,
+        Feature.SKIP_AD,
+        Feature.NEXT_TRACK,
+        Feature.PREVIOUS_TRACK,
+        
+      })
+   @interface MSFeature {}
+
+  
+  public static class Feature {
+    public static final long NONE = 0;
+
+    
+    public static final long PLAY = 1 << 0;
+
+    
+    public static final long PAUSE = 1 << 1;
+
+    
+    public static final long STOP = 1 << 2;
+
+    
+    public static final long SEEK_TO = 1 << 3;
+
+    
+    public static final long SEEK_FORWARD = 1 << 4;
+
+    
+    public static final long SEEK_BACKWARD = 1 << 5;
+
+    
+    public static final long SKIP_AD = 1 << 6;
+
+    
+    public static final long NEXT_TRACK = 1 << 7;
+
+    
+    public static final long PREVIOUS_TRACK = 1 << 8;
+
+    
+    public static final long FOCUS = 1 << 9;
+
+    
+    
+    
+    
+
+     static long fromBundle(final GeckoBundle bundle) {
+      
+      final long features =
+          NONE
+              | (bundle.getBoolean("play") ? PLAY : NONE)
+              | (bundle.getBoolean("pause") ? PAUSE : NONE)
+              | (bundle.getBoolean("stop") ? STOP : NONE)
+              | (bundle.getBoolean("seekto") ? SEEK_TO : NONE)
+              | (bundle.getBoolean("seekforward") ? SEEK_FORWARD : NONE)
+              | (bundle.getBoolean("seekbackward") ? SEEK_BACKWARD : NONE)
+              | (bundle.getBoolean("nexttrack") ? NEXT_TRACK : NONE)
+              | (bundle.getBoolean("previoustrack") ? PREVIOUS_TRACK : NONE)
+              | (bundle.getBoolean("skipad") ? SKIP_AD : NONE)
+              | (bundle.getBoolean("focus") ? FOCUS : NONE);
+      return features;
+    }
+  }
+
+  private static final String ACTIVATED_EVENT = "GeckoView:MediaSession:Activated";
+  private static final String DEACTIVATED_EVENT = "GeckoView:MediaSession:Deactivated";
+  private static final String METADATA_EVENT = "GeckoView:MediaSession:Metadata";
+  private static final String POSITION_STATE_EVENT = "GeckoView:MediaSession:PositionState";
+  private static final String FEATURES_EVENT = "GeckoView:MediaSession:Features";
+  private static final String FULLSCREEN_EVENT = "GeckoView:MediaSession:Fullscreen";
+  private static final String PLAYBACK_NONE_EVENT = "GeckoView:MediaSession:Playback:None";
+  private static final String PLAYBACK_PAUSED_EVENT = "GeckoView:MediaSession:Playback:Paused";
+  private static final String PLAYBACK_PLAYING_EVENT = "GeckoView:MediaSession:Playback:Playing";
+
+  private static final String PLAY_EVENT = "GeckoView:MediaSession:Play";
+  private static final String PAUSE_EVENT = "GeckoView:MediaSession:Pause";
+  private static final String STOP_EVENT = "GeckoView:MediaSession:Stop";
+  private static final String NEXT_TRACK_EVENT = "GeckoView:MediaSession:NextTrack";
+  private static final String PREV_TRACK_EVENT = "GeckoView:MediaSession:PrevTrack";
+  private static final String SEEK_FORWARD_EVENT = "GeckoView:MediaSession:SeekForward";
+  private static final String SEEK_BACKWARD_EVENT = "GeckoView:MediaSession:SeekBackward";
+  private static final String SKIP_AD_EVENT = "GeckoView:MediaSession:SkipAd";
+  private static final String SEEK_TO_EVENT = "GeckoView:MediaSession:SeekTo";
+  private static final String MUTE_AUDIO_EVENT = "GeckoView:MediaSession:MuteAudio";
+
+   static class Handler extends GeckoSessionHandler<MediaSession.Delegate> {
 
     private final GeckoSession mSession;
-    private boolean mIsActive;
+    private final MediaSession mMediaSession;
 
-    protected MediaSession(final GeckoSession session) {
-        mSession = session;
+    public Handler(final GeckoSession session) {
+      super(
+          "GeckoViewMediaControl",
+          session,
+          new String[] {
+            ACTIVATED_EVENT,
+            DEACTIVATED_EVENT,
+            METADATA_EVENT,
+            FULLSCREEN_EVENT,
+            POSITION_STATE_EVENT,
+            PLAYBACK_NONE_EVENT,
+            PLAYBACK_PAUSED_EVENT,
+            PLAYBACK_PLAYING_EVENT,
+            FEATURES_EVENT,
+          });
+      mSession = session;
+      mMediaSession = new MediaSession(session);
     }
 
-    
+    @Override
+    public void handleMessage(
+        final Delegate delegate,
+        final String event,
+        final GeckoBundle message,
+        final EventCallback callback) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "handleMessage " + event);
+      }
 
-
-
-
-
-
-
-
-
-
-
-    public boolean isActive() {
-        return mIsActive;
+      if (ACTIVATED_EVENT.equals(event)) {
+        mMediaSession.setActive(true);
+        delegate.onActivated(mSession, mMediaSession);
+      } else if (DEACTIVATED_EVENT.equals(event)) {
+        mMediaSession.setActive(false);
+        delegate.onDeactivated(mSession, mMediaSession);
+      } else if (METADATA_EVENT.equals(event)) {
+        final Metadata meta = Metadata.fromBundle(message.getBundle("metadata"));
+        delegate.onMetadata(mSession, mMediaSession, meta);
+      } else if (POSITION_STATE_EVENT.equals(event)) {
+        final PositionState state = PositionState.fromBundle(message.getBundle("state"));
+        delegate.onPositionState(mSession, mMediaSession, state);
+      } else if (PLAYBACK_NONE_EVENT.equals(event)) {
+        delegate.onStop(mSession, mMediaSession);
+      } else if (PLAYBACK_PAUSED_EVENT.equals(event)) {
+        delegate.onPause(mSession, mMediaSession);
+      } else if (PLAYBACK_PLAYING_EVENT.equals(event)) {
+        delegate.onPlay(mSession, mMediaSession);
+      } else if (FEATURES_EVENT.equals(event)) {
+        final long features = Feature.fromBundle(message.getBundle("features"));
+        delegate.onFeatures(mSession, mMediaSession, features);
+      } else if (FULLSCREEN_EVENT.equals(event) && mMediaSession.isActive()) {
+        final boolean enabled = message.getBoolean("enabled");
+        final ElementMetadata meta = ElementMetadata.fromBundle(message.getBundle("metadata"));
+        delegate.onFullscreen(mSession, mMediaSession, enabled, meta);
+      }
     }
-
-     void setActive(final boolean active) {
-        mIsActive = active;
-    }
-
-    
-
-
-    public void pause() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "pause");
-        }
-        mSession.getEventDispatcher().dispatch(PAUSE_EVENT, null);
-    }
-
-    
-
-
-    public void stop() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "stop");
-        }
-        mSession.getEventDispatcher().dispatch(STOP_EVENT, null);
-    }
-
-    
-
-
-    public void play() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "play");
-        }
-        mSession.getEventDispatcher().dispatch(PLAY_EVENT, null);
-    }
-
-    
-
-
-
-
-
-
-
-    public void seekTo(final double time, final boolean fast) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "seekTo: time=" + time + ", fast=" + fast);
-        }
-        final GeckoBundle bundle = new GeckoBundle(2);
-        bundle.putDouble("time", time);
-        bundle.putBoolean("fast", fast);
-        mSession.getEventDispatcher().dispatch(SEEK_TO_EVENT, bundle);
-    }
-
-    
-
-
-    public void seekForward() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "seekForward");
-        }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putDouble("offset", 0.0);
-        mSession.getEventDispatcher().dispatch(SEEK_FORWARD_EVENT, bundle);
-    }
-
-    
-
-
-    public void seekBackward() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "seekBackward");
-        }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putDouble("offset", 0.0);
-        mSession.getEventDispatcher().dispatch(SEEK_BACKWARD_EVENT, bundle);
-    }
-
-    
-
-
-
-    public void nextTrack() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "nextTrack");
-        }
-        mSession.getEventDispatcher().dispatch(NEXT_TRACK_EVENT, null);
-    }
-
-    
-
-
-
-    public void previousTrack() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "previousTrack");
-        }
-        mSession.getEventDispatcher().dispatch(PREV_TRACK_EVENT, null);
-    }
-
-    
-
-
-    public void skipAd() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "skipAd");
-        }
-        mSession.getEventDispatcher().dispatch(SKIP_AD_EVENT, null);
-    }
-
-    
-
-
-
-
-
-
-    public void muteAudio(final boolean mute) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "muteAudio=" + mute);
-        }
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putBoolean("mute", mute);
-        mSession.getEventDispatcher().dispatch(MUTE_AUDIO_EVENT, bundle);
-    }
-
-    
-
-
-    @UiThread
-    public interface Delegate {
-        
-
-
-
-
-
-
-
-        default void onActivated(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession) {}
-
-        
-
-
-
-
-
-
-
-
-        default void onDeactivated(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession) {}
-
-        
-
-
-
-
-
-
-
-
-        default void onMetadata(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession,
-                @NonNull final Metadata meta) {}
-
-        
-
-
-
-
-
-
-
-        default void onFeatures(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession,
-                @MSFeature final long features) {}
-
-        
-
-
-
-
-
-        default void onPlay(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession) {}
-
-        
-
-
-
-
-
-        default void onPause(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession) {}
-
-        
-
-
-
-
-
-        default void onStop(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession) {}
-
-        
-
-
-
-
-
-
-        default void onPositionState(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession,
-                @NonNull final PositionState state) {}
-
-        
-
-
-
-
-
-
-
-        default void onFullscreen(
-                @NonNull final GeckoSession session,
-                @NonNull final MediaSession mediaSession,
-                final boolean enabled,
-                @Nullable final ElementMetadata meta) {}
-    }
-
-
-    
-
-
-    public static class ElementMetadata {
-        
-
-
-        public final @Nullable String source;
-
-        
-
-
-
-        public final double duration;
-
-        
-
-
-
-        public final long width;
-
-        
-
-
-
-        public final long height;
-
-        
-
-
-        public final int audioTrackCount;
-
-        
-
-
-        public final int videoTrackCount;
-
-        
-
-
-
-
-
-
-
-
-
-        public ElementMetadata(
-                @Nullable final String source,
-                final double duration,
-                final long width,
-                final long height,
-                final int audioTrackCount,
-                final int videoTrackCount) {
-            this.source = source;
-            this.duration = duration;
-            this.width = width;
-            this.height = height;
-            this.audioTrackCount = audioTrackCount;
-            this.videoTrackCount = videoTrackCount;
-        }
-
-         static @NonNull ElementMetadata fromBundle(
-                final GeckoBundle bundle) {
-            
-            return new ElementMetadata(
-                    bundle.getString("src"),
-                    bundle.getDouble("duration", 0.0),
-                    bundle.getLong("width", 0),
-                    bundle.getLong("height", 0),
-                    bundle.getInt("audioTrackCount", 0),
-                    bundle.getInt("videoTrackCount", 0));
-        }
-    }
-
-    
-
-
-    public static class Metadata {
-        
-
-
-
-
-        public final @Nullable String title;
-
-        
-
-
-
-        public final @Nullable String artist;
-
-        
-
-
-
-        public final @Nullable String album;
-
-        
-
-
-
-        public final @Nullable Image artwork;
-
-        
-
-
-
-
-
-
-
-        protected Metadata(
-                final @Nullable String title,
-                final @Nullable String artist,
-                final @Nullable String album,
-                final @Nullable Image artwork) {
-            this.title = title;
-            this.artist = artist;
-            this.album = album;
-            this.artwork = artwork;
-        }
-
-        @AnyThread
-         static final class Builder {
-            private final GeckoBundle mBundle;
-
-            public Builder(final GeckoBundle bundle) {
-                mBundle = new GeckoBundle(bundle);
-            }
-
-            public Builder(final Metadata meta) {
-                mBundle = meta.toBundle();
-            }
-
-            @NonNull Builder title(final @Nullable String title) {
-                mBundle.putString("title", title);
-                return this;
-            }
-
-            @NonNull Builder artist(final @Nullable String artist) {
-                mBundle.putString("artist", artist);
-                return this;
-            }
-
-            @NonNull Builder album(final @Nullable String album) {
-                mBundle.putString("album", album);
-                return this;
-            }
-        }
-
-         static @NonNull Metadata fromBundle(
-                final GeckoBundle bundle) {
-            final GeckoBundle[] artworkBundles =
-                    bundle.getBundleArray("artwork");
-
-            final ImageResource.Collection.Builder artworkBuilder =
-                    new ImageResource.Collection.Builder();
-
-            for (final GeckoBundle artworkBundle: artworkBundles) {
-                artworkBuilder.add(ImageResource.fromBundle(artworkBundle));
-            }
-
-            return new Metadata(
-                  bundle.getString("title"),
-                  bundle.getString("artist"),
-                  bundle.getString("album"),
-                  new Image(artworkBuilder.build()));
-        }
-
-         @NonNull GeckoBundle toBundle() {
-            final GeckoBundle bundle = new GeckoBundle(3);
-            bundle.putString("title", title);
-            bundle.putString("artist", artist);
-            bundle.putString("album", album);
-            return bundle;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder builder = new StringBuilder("Metadata {");
-            builder
-                .append(", title=").append(title)
-                .append(", artist=").append(artist)
-                .append(", album=").append(album)
-                .append(", artwork=").append(artwork)
-                .append("}");
-            return builder.toString();
-        }
-    }
-
-    
-
-
-    public static class PositionState {
-        
-
-
-        public final double duration;
-
-        
-
-
-        public final double position;
-
-        
-
-
-
-        public final double playbackRate;
-
-        
-
-
-
-
-
-
-        protected PositionState(
-                final double duration,
-                final double position,
-                final double playbackRate) {
-            this.duration = duration;
-            this.position = position;
-            this.playbackRate = playbackRate;
-        }
-
-         static @NonNull PositionState fromBundle(
-                final GeckoBundle bundle) {
-            return new PositionState(
-                  bundle.getDouble("duration"),
-                  bundle.getDouble("position"),
-                  bundle.getDouble("playbackRate"));
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder builder = new StringBuilder("PositionState {");
-            builder
-                .append("duration=").append(duration)
-                .append(", position=").append(position)
-                .append(", playbackRate=").append(playbackRate)
-                .append("}");
-            return builder.toString();
-        }
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @LongDef(flag = true,
-             value = {
-                 Feature.NONE, Feature.PLAY, Feature.PAUSE, Feature.STOP,
-                 Feature.SEEK_TO, Feature.SEEK_FORWARD, Feature.SEEK_BACKWARD,
-                 Feature.SKIP_AD, Feature.NEXT_TRACK, Feature.PREVIOUS_TRACK,
-                 
-             })
-     @interface MSFeature {}
-
-    
-
-
-    public static class Feature {
-        public static final long NONE = 0;
-
-        
-
-
-        public static final long PLAY = 1 << 0;
-
-        
-
-
-        public static final long PAUSE = 1 << 1;
-
-        
-
-
-        public static final long STOP = 1 << 2;
-
-        
-
-
-        public static final long SEEK_TO = 1 << 3;
-
-        
-
-
-        public static final long SEEK_FORWARD = 1 << 4;
-
-        
-
-
-        public static final long SEEK_BACKWARD = 1 << 5;
-
-        
-
-
-        public static final long SKIP_AD = 1 << 6;
-
-        
-
-
-        public static final long NEXT_TRACK = 1 << 7;
-
-        
-
-
-        public static final long PREVIOUS_TRACK = 1 << 8;
-
-        
-
-
-        public static final long FOCUS = 1 << 9;
-
-        
-        
-        
-        
-
-         static long fromBundle(final GeckoBundle bundle) {
-            
-            final long features =
-                    NONE |
-                    (bundle.getBoolean("play") ? PLAY : NONE) |
-                    (bundle.getBoolean("pause") ? PAUSE : NONE) |
-                    (bundle.getBoolean("stop") ? STOP : NONE) |
-                    (bundle.getBoolean("seekto") ? SEEK_TO : NONE) |
-                    (bundle.getBoolean("seekforward") ? SEEK_FORWARD : NONE) |
-                    (bundle.getBoolean("seekbackward") ? SEEK_BACKWARD : NONE) |
-                    (bundle.getBoolean("nexttrack") ? NEXT_TRACK : NONE) |
-                    (bundle.getBoolean("previoustrack") ? PREVIOUS_TRACK : NONE) |
-                    (bundle.getBoolean("skipad") ? SKIP_AD : NONE) |
-                    (bundle.getBoolean("focus") ? FOCUS : NONE);
-            return features;
-        }
-    }
-
-    private static final String ACTIVATED_EVENT =
-        "GeckoView:MediaSession:Activated";
-    private static final String DEACTIVATED_EVENT =
-        "GeckoView:MediaSession:Deactivated";
-    private static final String METADATA_EVENT =
-        "GeckoView:MediaSession:Metadata";
-    private static final String POSITION_STATE_EVENT =
-        "GeckoView:MediaSession:PositionState";
-    private static final String FEATURES_EVENT =
-        "GeckoView:MediaSession:Features";
-    private static final String FULLSCREEN_EVENT =
-        "GeckoView:MediaSession:Fullscreen";
-    private static final String PLAYBACK_NONE_EVENT =
-        "GeckoView:MediaSession:Playback:None";
-    private static final String PLAYBACK_PAUSED_EVENT =
-        "GeckoView:MediaSession:Playback:Paused";
-    private static final String PLAYBACK_PLAYING_EVENT =
-        "GeckoView:MediaSession:Playback:Playing";
-
-    private static final String PLAY_EVENT =
-        "GeckoView:MediaSession:Play";
-    private static final String PAUSE_EVENT =
-        "GeckoView:MediaSession:Pause";
-    private static final String STOP_EVENT =
-        "GeckoView:MediaSession:Stop";
-    private static final String NEXT_TRACK_EVENT =
-        "GeckoView:MediaSession:NextTrack";
-    private static final String PREV_TRACK_EVENT =
-        "GeckoView:MediaSession:PrevTrack";
-    private static final String SEEK_FORWARD_EVENT =
-        "GeckoView:MediaSession:SeekForward";
-    private static final String SEEK_BACKWARD_EVENT =
-        "GeckoView:MediaSession:SeekBackward";
-    private static final String SKIP_AD_EVENT =
-        "GeckoView:MediaSession:SkipAd";
-    private static final String SEEK_TO_EVENT =
-        "GeckoView:MediaSession:SeekTo";
-    private static final String MUTE_AUDIO_EVENT =
-        "GeckoView:MediaSession:MuteAudio";
-
-     static class Handler
-            extends GeckoSessionHandler<MediaSession.Delegate> {
-
-        private final GeckoSession mSession;
-        private final MediaSession mMediaSession;
-
-        public Handler(final GeckoSession session) {
-            super(
-                "GeckoViewMediaControl",
-                session,
-                new String[]{
-                    ACTIVATED_EVENT,
-                    DEACTIVATED_EVENT,
-                    METADATA_EVENT,
-                    FULLSCREEN_EVENT,
-                    POSITION_STATE_EVENT,
-                    PLAYBACK_NONE_EVENT,
-                    PLAYBACK_PAUSED_EVENT,
-                    PLAYBACK_PLAYING_EVENT,
-                    FEATURES_EVENT,
-                });
-            mSession = session;
-            mMediaSession = new MediaSession(session);
-        }
-
-        @Override
-        public void handleMessage(
-                final Delegate delegate,
-                final String event,
-                final GeckoBundle message,
-                final EventCallback callback) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "handleMessage " + event);
-            }
-
-            if (ACTIVATED_EVENT.equals(event)) {
-                mMediaSession.setActive(true);
-                delegate.onActivated(mSession, mMediaSession);
-            } else if (DEACTIVATED_EVENT.equals(event)) {
-                mMediaSession.setActive(false);
-                delegate.onDeactivated(mSession, mMediaSession);
-            } else if (METADATA_EVENT.equals(event)) {
-                final Metadata meta =
-                        Metadata.fromBundle(message.getBundle("metadata"));
-                delegate.onMetadata(mSession, mMediaSession, meta);
-            } else if (POSITION_STATE_EVENT.equals(event)) {
-                final PositionState state =
-                        PositionState.fromBundle(message.getBundle("state"));
-                delegate.onPositionState(mSession, mMediaSession, state);
-            } else if (PLAYBACK_NONE_EVENT.equals(event)) {
-                delegate.onStop(mSession, mMediaSession);
-            } else if (PLAYBACK_PAUSED_EVENT.equals(event)) {
-                delegate.onPause(mSession, mMediaSession);
-            } else if (PLAYBACK_PLAYING_EVENT.equals(event)) {
-                delegate.onPlay(mSession, mMediaSession);
-            } else if (FEATURES_EVENT.equals(event)) {
-                final long features = Feature.fromBundle(
-                        message.getBundle("features"));
-                delegate.onFeatures(mSession, mMediaSession, features);
-            } else if (FULLSCREEN_EVENT.equals(event) &&
-                    mMediaSession.isActive()) {
-                final boolean enabled = message.getBoolean("enabled");
-                final ElementMetadata meta =
-                        ElementMetadata.fromBundle(
-                                message.getBundle("metadata"));
-                delegate.onFullscreen(mSession, mMediaSession, enabled, meta);
-            }
-        }
-    }
+  }
 }

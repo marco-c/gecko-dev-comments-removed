@@ -8,12 +8,11 @@ package org.mozilla.geckoview;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
+import android.view.Surface;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import android.view.Surface;
-
 import org.mozilla.gecko.util.ThreadUtils;
 
 
@@ -22,16 +21,313 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 
+
 public class GeckoDisplay {
+  private final GeckoSession mSession;
+
+  protected GeckoDisplay(final GeckoSession session) {
+    mSession = session;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void surfaceChanged(@NonNull final Surface surface, final int width, final int height) {
+    surfaceChanged(surface, 0, 0, width, height);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void surfaceChanged(
+      @NonNull final Surface surface,
+      final int left,
+      final int top,
+      final int width,
+      final int height) {
+    ThreadUtils.assertOnUiThread();
+
+    if ((left < 0) || (top < 0)) {
+      throw new IllegalArgumentException("Parameters can not be negative.");
+    }
+    if (mSession.getDisplay() == this) {
+      mSession.onSurfaceChanged(surface, left, top, width, height);
+    }
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void surfaceDestroyed() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession.getDisplay() == this) {
+      mSession.onSurfaceDestroyed();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void screenOriginChanged(final int left, final int top) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession.getDisplay() == this) {
+      mSession.onScreenOriginChanged(left, top);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  public void safeAreaInsetsChanged(
+      final int top, final int right, final int bottom, final int left) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession.getDisplay() == this) {
+      mSession.onSafeAreaInsetsChanged(top, right, bottom, left);
+    }
+  }
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void setDynamicToolbarMaxHeight(final int height) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession != null) {
+      mSession.setDynamicToolbarMaxHeight(height);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void setVerticalClipping(final int clippingHeight) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession != null) {
+      mSession.setFixedBottomOffset(clippingHeight);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public boolean shouldPinOnScreen() {
+    ThreadUtils.assertOnUiThread();
+    return mSession.getDisplay() == this && mSession.shouldPinOnScreen();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<Bitmap> capturePixels() {
+    return screenshot().capture();
+  }
+
+  
+  public static final class ScreenshotBuilder {
+    private static final int NONE = 0;
+    private static final int SCALE = 1;
+    private static final int ASPECT = 2;
+    private static final int FULL = 3;
+    private static final int RECYCLE = 4;
+
     private final GeckoSession mSession;
+    private int mOffsetX;
+    private int mOffsetY;
+    private int mSrcWidth;
+    private int mSrcHeight;
+    private int mOutWidth;
+    private int mOutHeight;
+    private int mAspectPreservingWidth;
+    private float mScale;
+    private Bitmap mRecycle;
+    private int mSizeType;
 
-    protected GeckoDisplay(final GeckoSession session) {
-        mSession = session;
+     ScreenshotBuilder(final GeckoSession session) {
+      this.mSizeType = NONE;
+      this.mSession = session;
     }
 
     
 
 
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder source(
+        final int x, final int y, final int width, final int height) {
+      mOffsetX = x;
+      mOffsetY = y;
+      mSrcWidth = width;
+      mSrcHeight = height;
+      return this;
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder source(final @NonNull Rect source) {
+      mOffsetX = source.left;
+      mOffsetY = source.top;
+      mSrcWidth = source.width();
+      mSrcHeight = source.height();
+      return this;
+    }
+
+    private void checkAndSetSizeType(final int sizeType) {
+      if (mSizeType != NONE) {
+        throw new IllegalStateException("Size has already been set.");
+      }
+      mSizeType = sizeType;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder aspectPreservingSize(final int width) {
+      checkAndSetSizeType(ASPECT);
+      mAspectPreservingWidth = width;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder scale(final float scale) {
+      checkAndSetSizeType(SCALE);
+      mScale = scale;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder size(final int width, final int height) {
+      checkAndSetSizeType(FULL);
+      mOutWidth = width;
+      mOutHeight = height;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull ScreenshotBuilder bitmap(final @Nullable Bitmap bitmap) {
+      checkAndSetSizeType(RECYCLE);
+      mRecycle = bitmap;
+      return this;
+    }
+
+    
 
 
 
@@ -41,359 +337,73 @@ public class GeckoDisplay {
 
 
     @UiThread
-    public void surfaceChanged(@NonNull final Surface surface, final int width, final int height) {
-        surfaceChanged(surface, 0, 0, width, height);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public void surfaceChanged(@NonNull final Surface surface, final int left, final int top,
-                               final int width, final int height) {
-        ThreadUtils.assertOnUiThread();
-
-        if ((left < 0) || (top < 0)) {
-            throw new IllegalArgumentException("Parameters can not be negative.");
-        }
-        if (mSession.getDisplay() == this) {
-            mSession.onSurfaceChanged(surface, left, top, width, height);
-        }
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void surfaceDestroyed() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession.getDisplay() == this) {
-            mSession.onSurfaceDestroyed();
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void screenOriginChanged(final int left, final int top) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession.getDisplay() == this) {
-            mSession.onScreenOriginChanged(left, top);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
-    public void safeAreaInsetsChanged(final int top, final int right, final int bottom, final int left) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession.getDisplay() == this) {
-            mSession.onSafeAreaInsetsChanged(top, right, bottom, left);
-        }
-    }
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void setDynamicToolbarMaxHeight(final int height) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession != null) {
-            mSession.setDynamicToolbarMaxHeight(height);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void setVerticalClipping(final int clippingHeight) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession != null) {
-            mSession.setFixedBottomOffset(clippingHeight);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public boolean shouldPinOnScreen() {
-        ThreadUtils.assertOnUiThread();
-        return mSession.getDisplay() == this && mSession.shouldPinOnScreen();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public @NonNull GeckoResult<Bitmap> capturePixels() {
-        return screenshot().capture();
-    }
-
-    
-
-
-    final static public class ScreenshotBuilder {
-        private static final int NONE = 0;
-        private static final int SCALE = 1;
-        private static final int ASPECT = 2;
-        private static final int FULL = 3;
-        private static final int RECYCLE = 4;
-
-        private final GeckoSession mSession;
-        private int mOffsetX;
-        private int mOffsetY;
-        private int mSrcWidth;
-        private int mSrcHeight;
-        private int mOutWidth;
-        private int mOutHeight;
-        private int mAspectPreservingWidth;
-        private float mScale;
-        private Bitmap mRecycle;
-        private int mSizeType;
-
-         ScreenshotBuilder(final GeckoSession session) {
-            this.mSizeType = NONE;
-            this.mSession = session;
-        }
-
+    public @NonNull GeckoResult<Bitmap> capture() {
+      ThreadUtils.assertOnUiThread();
+      if (!mSession.isCompositorReady()) {
+        throw new IllegalStateException("Compositor must be ready before pixels can be captured");
+      }
+
+      final GeckoResult<Bitmap> result = new GeckoResult<>();
+      final Bitmap target;
+      final Rect rect = new Rect();
+
+      if (mSrcWidth == 0 || mSrcHeight == 0) {
         
+        mSession.getSurfaceBounds(rect);
+        mSrcWidth = rect.width();
+        mSrcHeight = rect.height();
+      }
 
+      switch (mSizeType) {
+        case NONE:
+          mOutWidth = mSrcWidth;
+          mOutHeight = mSrcHeight;
+          break;
+        case SCALE:
+          mSession.getSurfaceBounds(rect);
+          mOutWidth = (int) (rect.width() * mScale);
+          mOutHeight = (int) (rect.height() * mScale);
+          break;
+        case ASPECT:
+          mSession.getSurfaceBounds(rect);
+          mOutWidth = mAspectPreservingWidth;
+          mOutHeight = (int) (rect.height() * (mAspectPreservingWidth / (double) rect.width()));
+          break;
+        case RECYCLE:
+          mOutWidth = mRecycle.getWidth();
+          mOutHeight = mRecycle.getHeight();
+          break;
+          
+      }
 
-
-
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder source(final int x, final int y, final int width, final int height) {
-            mOffsetX = x;
-            mOffsetY = y;
-            mSrcWidth = width;
-            mSrcHeight = height;
-            return this;
+      if (mRecycle == null) {
+        try {
+          target = Bitmap.createBitmap(mOutWidth, mOutHeight, Bitmap.Config.ARGB_8888);
+        } catch (final Throwable e) {
+          if (e instanceof NullPointerException || e instanceof OutOfMemoryError) {
+            return GeckoResult.fromException(
+                new OutOfMemoryError("Not enough memory to allocate for bitmap"));
+          }
+          return GeckoResult.fromException(new Throwable("Failed to create bitmap", e));
         }
+      } else {
+        target = mRecycle;
+      }
 
-        
+      mSession.mCompositor.requestScreenPixels(
+          result, target, mOffsetX, mOffsetY, mSrcWidth, mSrcHeight, mOutWidth, mOutHeight);
 
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder source(final @NonNull Rect source) {
-            mOffsetX = source.left;
-            mOffsetY = source.top;
-            mSrcWidth = source.width();
-            mSrcHeight = source.height();
-            return this;
-        }
-
-        private void checkAndSetSizeType(final int sizeType) {
-            if (mSizeType != NONE) {
-                throw new IllegalStateException("Size has already been set.");
-            }
-            mSizeType = sizeType;
-        }
-
-        
-
-
-
-
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder aspectPreservingSize(final int width) {
-            checkAndSetSizeType(ASPECT);
-            mAspectPreservingWidth = width;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder scale(final float scale) {
-            checkAndSetSizeType(SCALE);
-            mScale = scale;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder size(final int width, final int height) {
-            checkAndSetSizeType(FULL);
-            mOutWidth = width;
-            mOutHeight = height;
-            return this;
-        }
-
-        
-
-
-
-
-
-        @AnyThread
-        public @NonNull ScreenshotBuilder bitmap(final @Nullable Bitmap bitmap) {
-            checkAndSetSizeType(RECYCLE);
-            mRecycle = bitmap;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        public @NonNull GeckoResult<Bitmap> capture() {
-            ThreadUtils.assertOnUiThread();
-            if (!mSession.isCompositorReady()) {
-                throw new IllegalStateException("Compositor must be ready before pixels can be captured");
-            }
-
-            final GeckoResult<Bitmap> result = new GeckoResult<>();
-            final Bitmap target;
-            final Rect rect = new Rect();
-
-            if (mSrcWidth == 0 || mSrcHeight == 0) {
-                
-                mSession.getSurfaceBounds(rect);
-                mSrcWidth = rect.width();
-                mSrcHeight = rect.height();
-            }
-
-            switch (mSizeType) {
-                case NONE:
-                    mOutWidth = mSrcWidth;
-                    mOutHeight = mSrcHeight;
-                    break;
-                case SCALE:
-                    mSession.getSurfaceBounds(rect);
-                    mOutWidth = (int) (rect.width() * mScale);
-                    mOutHeight = (int) (rect.height() * mScale);
-                    break;
-                case ASPECT:
-                    mSession.getSurfaceBounds(rect);
-                    mOutWidth = mAspectPreservingWidth;
-                    mOutHeight = (int) (rect.height() * (mAspectPreservingWidth / (double) rect.width()));
-                    break;
-                case RECYCLE:
-                    mOutWidth = mRecycle.getWidth();
-                    mOutHeight = mRecycle.getHeight();
-                    break;
-                
-            }
-
-            if (mRecycle == null) {
-                try {
-                    target = Bitmap.createBitmap(mOutWidth, mOutHeight, Bitmap.Config.ARGB_8888);
-                } catch (final Throwable e) {
-                    if (e instanceof NullPointerException || e instanceof OutOfMemoryError) {
-                        return GeckoResult.fromException(new OutOfMemoryError("Not enough memory to allocate for bitmap"));
-                    }
-                    return GeckoResult.fromException(new Throwable("Failed to create bitmap", e));
-                }
-            } else {
-                target = mRecycle;
-            }
-
-            mSession.mCompositor.requestScreenPixels(result, target, mOffsetX, mOffsetY,
-                                                     mSrcWidth, mSrcHeight, mOutWidth, mOutHeight);
-
-            return result;
-        }
+      return result;
     }
+  }
 
-    
+  
 
 
 
-    @UiThread
-    public @NonNull ScreenshotBuilder screenshot() {
-        return new ScreenshotBuilder(mSession);
-    }
+
+  @UiThread
+  public @NonNull ScreenshotBuilder screenshot() {
+    return new ScreenshotBuilder(mSession);
+  }
 }

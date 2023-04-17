@@ -6,6 +6,16 @@
 
 package org.mozilla.gecko;
 
+import android.os.Handler;
+import android.util.Log;
+import androidx.annotation.AnyThread;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import org.mozilla.gecko.annotation.ReflectionTarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -17,563 +27,562 @@ import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.GeckoResult;
 
-import android.os.Handler;
-import androidx.annotation.AnyThread;
-import android.util.Log;
-
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 @RobocopTarget
 public final class EventDispatcher extends JNIObject {
-    private static final String LOGTAG = "GeckoEventDispatcher";
+  private static final String LOGTAG = "GeckoEventDispatcher";
 
-    private static final EventDispatcher INSTANCE = new EventDispatcher();
+  private static final EventDispatcher INSTANCE = new EventDispatcher();
 
-    
-
-
+  
 
 
 
-    private static final int DEFAULT_UI_EVENTS_COUNT = 128; 
 
-    private static class Message {
-        final String type;
-        final GeckoBundle bundle;
-        final EventCallback callback;
 
-        Message(final String type, final GeckoBundle bundle, final EventCallback callback) {
-            this.type = type;
-            this.bundle = bundle;
-            this.callback = callback;
-        }
+  private static final int DEFAULT_UI_EVENTS_COUNT = 128; 
+
+  private static class Message {
+    final String type;
+    final GeckoBundle bundle;
+    final EventCallback callback;
+
+    Message(final String type, final GeckoBundle bundle, final EventCallback callback) {
+      this.type = type;
+      this.bundle = bundle;
+      this.callback = callback;
+    }
+  }
+
+  
+  private final MultiMap<String, BundleEventListener> mListeners =
+      new MultiMap<>(DEFAULT_UI_EVENTS_COUNT);
+  private Deque<Message> mPendingMessages = new ArrayDeque<>();
+
+  private boolean mAttachedToGecko;
+  private final NativeQueue mNativeQueue;
+  private final String mName;
+
+  private static Map<String, EventDispatcher> sDispatchers = new HashMap<>();
+
+  @ReflectionTarget
+  @WrapForJNI(calledFrom = "gecko")
+  public static EventDispatcher getInstance() {
+    return INSTANCE;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @ReflectionTarget
+  @WrapForJNI(calledFrom = "gecko")
+  public static EventDispatcher byName(final String name) {
+    synchronized (sDispatchers) {
+      EventDispatcher dispatcher = sDispatchers.get(name);
+
+      if (dispatcher == null) {
+        dispatcher = new EventDispatcher(name);
+        sDispatchers.put(name, dispatcher);
+      }
+
+      return dispatcher;
+    }
+  }
+
+   EventDispatcher() {
+    mNativeQueue = GeckoThread.getNativeQueue();
+    mName = null;
+  }
+
+   EventDispatcher(final String name) {
+    mNativeQueue = GeckoThread.getNativeQueue();
+    mName = name;
+  }
+
+  public EventDispatcher(final NativeQueue queue) {
+    mNativeQueue = queue;
+    mName = null;
+  }
+
+  private boolean isReadyForDispatchingToGecko() {
+    return mNativeQueue.isReady();
+  }
+
+  @WrapForJNI
+  @Override 
+  protected native void disposeNative();
+
+  @WrapForJNI(stubName = "Shutdown")
+  protected native void shutdownNative();
+
+  @WrapForJNI private static final int DETACHED = 0;
+  @WrapForJNI private static final int ATTACHED = 1;
+  @WrapForJNI private static final int REATTACHING = 2;
+
+  @WrapForJNI(calledFrom = "gecko")
+  private synchronized void setAttachedToGecko(final int state) {
+    if (mAttachedToGecko && state == DETACHED) {
+      dispose(false);
+    }
+    mAttachedToGecko = (state == ATTACHED);
+  }
+
+  
+
+
+
+
+
+  public void shutdown() {
+    if (mName == null) {
+      throw new RuntimeException("Only named EventDispatcher's can be shut down.");
     }
 
-    
-    private final MultiMap<String, BundleEventListener> mListeners =
-        new MultiMap<>(DEFAULT_UI_EVENTS_COUNT);
-    private Deque<Message> mPendingMessages = new ArrayDeque<>();
+    mAttachedToGecko = false;
+    shutdownNative();
+    dispose(false);
 
-    private boolean mAttachedToGecko;
-    private final NativeQueue mNativeQueue;
-    private final String mName;
+    synchronized (sDispatchers) {
+      sDispatchers.put(mName, null);
+    }
+  }
 
-    private static Map<String, EventDispatcher> sDispatchers = new HashMap<>();
-
-    @ReflectionTarget
-    @WrapForJNI(calledFrom = "gecko")
-    public static EventDispatcher getInstance() {
-        return INSTANCE;
+  private void dispose(final boolean force) {
+    final Handler geckoHandler = ThreadUtils.sGeckoHandler;
+    if (geckoHandler == null) {
+      return;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @ReflectionTarget
-    @WrapForJNI(calledFrom = "gecko")
-    public static EventDispatcher byName(final String name) {
-        synchronized (sDispatchers) {
-            EventDispatcher dispatcher = sDispatchers.get(name);
-
-            if (dispatcher == null) {
-                dispatcher = new EventDispatcher(name);
-                sDispatchers.put(name, dispatcher);
+    geckoHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (force || !mAttachedToGecko) {
+              disposeNative();
             }
-
-            return dispatcher;
-        }
-    }
-
-     EventDispatcher() {
-        mNativeQueue = GeckoThread.getNativeQueue();
-        mName = null;
-    }
-
-     EventDispatcher(final String name) {
-        mNativeQueue = GeckoThread.getNativeQueue();
-        mName = name;
-    }
-
-    public EventDispatcher(final NativeQueue queue) {
-        mNativeQueue = queue;
-        mName = null;
-    }
-
-    private boolean isReadyForDispatchingToGecko() {
-        return mNativeQueue.isReady();
-    }
-
-    @WrapForJNI @Override 
-    protected native void disposeNative();
-
-    @WrapForJNI(stubName = "Shutdown")
-    protected native void shutdownNative();
-
-    @WrapForJNI private static final int DETACHED = 0;
-    @WrapForJNI private static final int ATTACHED = 1;
-    @WrapForJNI private static final int REATTACHING = 2;
-
-    @WrapForJNI(calledFrom = "gecko")
-    private synchronized void setAttachedToGecko(final int state) {
-        if (mAttachedToGecko && state == DETACHED) {
-            dispose(false);
-        }
-        mAttachedToGecko = (state == ATTACHED);
-    }
-
-    
-
-
-
-
-
-    public void shutdown() {
-        if (mName == null) {
-            throw new RuntimeException("Only named EventDispatcher's can be shut down.");
-        }
-
-        mAttachedToGecko = false;
-        shutdownNative();
-        dispose(false);
-
-        synchronized (sDispatchers) {
-            sDispatchers.put(mName, null);
-        }
-    }
-
-    private void dispose(final boolean force) {
-        final Handler geckoHandler = ThreadUtils.sGeckoHandler;
-        if (geckoHandler == null) {
-            return;
-        }
-
-        geckoHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (force || !mAttachedToGecko) {
-                    disposeNative();
-                }
-            }
+          }
         });
-    }
+  }
 
-    public void registerUiThreadListener(final BundleEventListener listener,
-                                         final String... events) {
-        try {
-            synchronized (mListeners) {
-                for (final String event : events) {
-                    if (!BuildConfig.RELEASE_OR_BETA
-                            && mListeners.containsEntry(event, listener)) {
-                        throw new IllegalStateException("Already registered " + event);
-                    }
-                    mListeners.add(event, listener);
-                }
-                flush(events);
-            }
-        } catch (final Exception e) {
-            throw new IllegalArgumentException("Invalid new list type", e);
+  public void registerUiThreadListener(final BundleEventListener listener, final String... events) {
+    try {
+      synchronized (mListeners) {
+        for (final String event : events) {
+          if (!BuildConfig.RELEASE_OR_BETA && mListeners.containsEntry(event, listener)) {
+            throw new IllegalStateException("Already registered " + event);
+          }
+          mListeners.add(event, listener);
         }
+        flush(events);
+      }
+    } catch (final Exception e) {
+      throw new IllegalArgumentException("Invalid new list type", e);
     }
+  }
 
-    public void unregisterUiThreadListener(final BundleEventListener listener,
-                                           final String... events) {
-        synchronized (mListeners) {
-            for (final String event : events) {
-                if (!mListeners.remove(event, listener) && !BuildConfig.RELEASE_OR_BETA) {
-                    throw new IllegalArgumentException(event + " was not registered");
-                }
-            }
+  public void unregisterUiThreadListener(
+      final BundleEventListener listener, final String... events) {
+    synchronized (mListeners) {
+      for (final String event : events) {
+        if (!mListeners.remove(event, listener) && !BuildConfig.RELEASE_OR_BETA) {
+          throw new IllegalArgumentException(event + " was not registered");
         }
+      }
     }
+  }
 
-    @WrapForJNI
-    private native boolean hasGeckoListener(final String event);
+  @WrapForJNI
+  private native boolean hasGeckoListener(final String event);
 
-    @WrapForJNI(dispatchTo = "gecko")
-    private native void dispatchToGecko(final String event, final GeckoBundle data,
-                                        final EventCallback callback);
+  @WrapForJNI(dispatchTo = "gecko")
+  private native void dispatchToGecko(
+      final String event, final GeckoBundle data, final EventCallback callback);
 
-    
-
-
-
+  
 
 
-    public void dispatch(final String type, final GeckoBundle message) {
-        dispatch(type, message,  null);
+
+
+
+  public void dispatch(final String type, final GeckoBundle message) {
+    dispatch(type, message,  null);
+  }
+
+  private abstract class CallbackResult<T> extends GeckoResult<T> implements EventCallback {
+    @Override
+    public void sendError(final Object response) {
+      completeExceptionally(new QueryException(response));
     }
+  }
 
-    private abstract class CallbackResult<T> extends GeckoResult<T>
-            implements EventCallback {
-        @Override
-        public void sendError(final Object response) {
-            completeExceptionally(new QueryException(response));
-        }
+  public class QueryException extends Exception {
+    public final Object data;
+
+    public QueryException(final Object data) {
+      this.data = data;
     }
+  }
 
-    public class QueryException extends Exception {
-        public final Object data;
+  
 
-        public QueryException(final Object data) {
-            this.data = data;
-        }
-    }
 
-    
 
 
 
 
+  public GeckoResult<Void> queryVoid(final String type) {
+    return queryVoid(type, null);
+  }
 
+  
 
-    public GeckoResult<Void> queryVoid(final String type) {
-        return queryVoid(type, null);
-    }
 
-    
 
 
 
 
 
+  public GeckoResult<Void> queryVoid(final String type, final GeckoBundle message) {
+    return query(type, message);
+  }
 
+  
 
-    public GeckoResult<Void> queryVoid(final String type, final GeckoBundle message) {
-        return query(type, message);
-    }
 
-    
 
 
 
 
+  public GeckoResult<Boolean> queryBoolean(final String type) {
+    return queryBoolean(type, null);
+  }
 
+  
 
-    public GeckoResult<Boolean> queryBoolean(final String type) {
-        return queryBoolean(type, null);
-    }
 
-    
 
 
 
 
 
+  public GeckoResult<Boolean> queryBoolean(final String type, final GeckoBundle message) {
+    return query(type, message);
+  }
 
+  
 
-    public GeckoResult<Boolean> queryBoolean(final String type, final GeckoBundle message) {
-        return query(type, message);
-    }
 
-    
 
 
 
 
+  public GeckoResult<String> queryString(final String type) {
+    return queryString(type, null);
+  }
 
+  
 
-    public GeckoResult<String> queryString(final String type) {
-        return queryString(type, null);
-    }
 
-    
 
 
 
 
 
+  public GeckoResult<String> queryString(final String type, final GeckoBundle message) {
+    return query(type, message);
+  }
 
+  
 
-    public GeckoResult<String> queryString(final String type, final GeckoBundle message) {
-        return query(type, message);
-    }
 
-    
 
 
 
 
 
+  public GeckoResult<GeckoBundle> queryBundle(final String type) {
+    return queryBundle(type, null);
+  }
 
+  
 
-    public GeckoResult<GeckoBundle> queryBundle(final String type) {
-        return queryBundle(type, null);
-    }
 
-    
 
 
 
 
 
 
+  public GeckoResult<GeckoBundle> queryBundle(final String type, final GeckoBundle message) {
+    return query(type, message);
+  }
 
-
-    public GeckoResult<GeckoBundle> queryBundle(final String type, final GeckoBundle message) {
-        return query(type, message);
-    }
-
-    private <T> GeckoResult<T> query(final String type, final GeckoBundle message) {
-        final CallbackResult<T> result = new CallbackResult<T>() {
-            @Override
-            @SuppressWarnings("unchecked") 
-            public void sendSuccess(final Object response) {
-                complete((T) response);
-            }
+  private <T> GeckoResult<T> query(final String type, final GeckoBundle message) {
+    final CallbackResult<T> result =
+        new CallbackResult<T>() {
+          @Override
+          @SuppressWarnings("unchecked") 
+          public void sendSuccess(final Object response) {
+            complete((T) response);
+          }
         };
 
-        dispatch(type, message, result);
-        return result;
+    dispatch(type, message, result);
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+  private void flush(final String[] types) {
+    final Set<String> typeSet = new HashSet<>(Arrays.asList(types));
+
+    final Deque<Message> pendingMessages;
+    synchronized (mPendingMessages) {
+      pendingMessages = mPendingMessages;
+      mPendingMessages = new ArrayDeque<>(pendingMessages.size());
     }
 
-    
-
-
-
-
-
-
-
-    private void flush(final String[] types) {
-        final Set<String> typeSet = new HashSet<>(Arrays.asList(types));
-
-        final Deque<Message> pendingMessages;
+    Message message;
+    while (!pendingMessages.isEmpty()) {
+      message = pendingMessages.removeFirst();
+      if (typeSet.contains(message.type)) {
+        dispatchToThreads(message.type, message.bundle, message.callback);
+      } else {
         synchronized (mPendingMessages) {
-            pendingMessages = mPendingMessages;
-            mPendingMessages = new ArrayDeque<>(pendingMessages.size());
+          mPendingMessages.addLast(message);
         }
+      }
+    }
+  }
 
-        Message message;
-        while (!pendingMessages.isEmpty()) {
-            message = pendingMessages.removeFirst();
-            if (typeSet.contains(message.type)) {
-                dispatchToThreads(message.type, message.bundle, message.callback);
-            } else {
-                synchronized (mPendingMessages) {
-                    mPendingMessages.addLast(message);
-                }
-            }
+  
+
+
+
+
+
+
+  @AnyThread
+  private void dispatch(
+      final String type, final GeckoBundle message, final EventCallback callback) {
+    final boolean isGeckoReady;
+    synchronized (this) {
+      isGeckoReady = isReadyForDispatchingToGecko();
+      if (isGeckoReady && mAttachedToGecko && hasGeckoListener(type)) {
+        dispatchToGecko(type, message, JavaCallbackDelegate.wrap(callback));
+        return;
+      }
+    }
+
+    dispatchToThreads(type, message, callback, isGeckoReady);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private boolean dispatchToThreads(
+      final String type, final GeckoBundle message, final EventCallback callback) {
+    return dispatchToThreads(type, message, callback,  true);
+  }
+
+  private boolean dispatchToThreads(
+      final String type,
+      final GeckoBundle message,
+      final EventCallback callback,
+      final boolean isGeckoReady) {
+    
+    
+    
+    
+    synchronized (mListeners) {
+      if (mListeners.containsKey(type)) {
+        
+        final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
+
+        
+        for (final BundleEventListener listener : mListeners.get(type)) {
+          ThreadUtils.getUiHandler()
+              .post(
+                  new Runnable() {
+                    @Override
+                    public void run() {
+                      final Double startTime = GeckoJavaSampler.tryToGetProfilerTime();
+                      listener.handleMessage(type, message, wrappedCallback);
+                      GeckoJavaSampler.addMarker(
+                          "EventDispatcher handleMessage", startTime, null, type);
+                    }
+                  });
         }
+        return true;
+      }
+    }
+
+    if (!isGeckoReady) {
+      
+      
+      
+      
+      
+      
+      mNativeQueue.queueUntilReady(
+          this,
+          "dispatchToGecko",
+          String.class,
+          type,
+          GeckoBundle.class,
+          message,
+          EventCallback.class,
+          JavaCallbackDelegate.wrap(callback));
+      return true;
     }
 
     
-
-
-
-
-
-
-    @AnyThread
-    private void dispatch(final String type, final GeckoBundle message,
-                          final EventCallback callback) {
-        final boolean isGeckoReady;
-        synchronized (this) {
-            isGeckoReady = isReadyForDispatchingToGecko();
-            if (isGeckoReady && mAttachedToGecko && hasGeckoListener(type)) {
-                dispatchToGecko(type, message, JavaCallbackDelegate.wrap(callback));
-                return;
-            }
-        }
-
-        dispatchToThreads(type, message, callback, isGeckoReady);
+    if (mName != null) {
+      synchronized (mPendingMessages) {
+        mPendingMessages.addLast(new Message(type, message, callback));
+      }
+      return true;
     }
 
+    final String error = "No listener for " + type;
+    if (callback != null) {
+      callback.sendError(error);
+    }
+
+    Log.w(LOGTAG, error);
+    return false;
+  }
+
+  @WrapForJNI
+  public boolean hasListener(final String event) {
+    synchronized (mListeners) {
+      return mListeners.containsKey(event);
+    }
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    dispose(true);
+  }
+
+  private static class NativeCallbackDelegate extends JNIObject implements EventCallback {
     @WrapForJNI(calledFrom = "gecko")
-    private boolean dispatchToThreads(final String type,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-        return dispatchToThreads(type, message, callback,  true);
+    private NativeCallbackDelegate() {}
+
+    @Override 
+    protected void disposeNative() {
+      
+      throw new UnsupportedOperationException();
     }
 
-    private boolean dispatchToThreads(final String type,
-                                      final GeckoBundle message,
-                                      final EventCallback callback,
-                                      final boolean isGeckoReady) {
+    @WrapForJNI(dispatchTo = "proxy")
+    @Override 
+    public native void sendSuccess(Object response);
+
+    @WrapForJNI(dispatchTo = "proxy")
+    @Override 
+    public native void sendError(Object response);
+
+    @WrapForJNI(dispatchTo = "gecko")
+    @Override 
+    protected native void finalize();
+  }
+
+  private static class JavaCallbackDelegate implements EventCallback {
+    private final Thread mOriginalThread = Thread.currentThread();
+    private final EventCallback mCallback;
+
+    public static EventCallback wrap(final EventCallback callback) {
+      if (callback == null) {
+        return null;
+      }
+      if (callback instanceof NativeCallbackDelegate) {
+        
+        return callback;
+      }
+      return new JavaCallbackDelegate(callback);
+    }
+
+    JavaCallbackDelegate(final EventCallback callback) {
+      mCallback = callback;
+    }
+
+    private void makeCallback(final boolean callSuccess, final Object rawResponse) {
+      final Object response;
+      if (rawResponse instanceof Number) {
         
         
         
         
-        synchronized (mListeners) {
-            if (mListeners.containsKey(type)) {
-                
-                final EventCallback wrappedCallback = JavaCallbackDelegate.wrap(callback);
-
-                
-                for (final BundleEventListener listener : mListeners.get(type)) {
-                    ThreadUtils.getUiHandler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            final Double startTime = GeckoJavaSampler.tryToGetProfilerTime();
-                            listener.handleMessage(type, message, wrappedCallback);
-                            GeckoJavaSampler.addMarker("EventDispatcher handleMessage", startTime, null, type);
-                        }
-                    });
-                }
-                return true;
-            }
-        }
-
-        if (!isGeckoReady) {
-            
-            
-            
-            
-            
-            
-            mNativeQueue.queueUntilReady(this, "dispatchToGecko",
-                String.class, type,
-                GeckoBundle.class, message,
-                EventCallback.class, JavaCallbackDelegate.wrap(callback));
-            return true;
-        }
-
         
-        if (mName != null) {
-            synchronized (mPendingMessages) {
-                mPendingMessages.addLast(new Message(type, message, callback));
+        throw new UnsupportedOperationException("Cannot use number as Java callback result");
+      } else if (rawResponse != null && rawResponse.getClass().isArray()) {
+        
+        throw new UnsupportedOperationException("Cannot use arrays as Java callback result");
+      } else if (rawResponse instanceof Character) {
+        response = rawResponse.toString();
+      } else {
+        response = rawResponse;
+      }
+
+      
+      
+      if (ThreadUtils.isOnThread(mOriginalThread)) {
+        if (callSuccess) {
+          mCallback.sendSuccess(response);
+        } else {
+          mCallback.sendError(response);
+        }
+        return;
+      }
+
+      
+      
+      final Handler handler =
+          mOriginalThread == ThreadUtils.getUiThread()
+              ? ThreadUtils.getUiHandler()
+              : mOriginalThread == ThreadUtils.sGeckoThread
+                  ? ThreadUtils.sGeckoHandler
+                  : ThreadUtils.getBackgroundHandler();
+      final EventCallback callback = mCallback;
+
+      handler.post(
+          new Runnable() {
+            @Override
+            public void run() {
+              if (callSuccess) {
+                callback.sendSuccess(response);
+              } else {
+                callback.sendError(response);
+              }
             }
-            return true;
-        }
-
-        final String error = "No listener for " + type;
-        if (callback != null) {
-            callback.sendError(error);
-        }
-
-        Log.w(LOGTAG, error);
-        return false;
+          });
     }
 
-    @WrapForJNI
-    public boolean hasListener(final String event) {
-        synchronized (mListeners) {
-            return mListeners.containsKey(event);
-        }
+    @Override 
+    public void sendSuccess(final Object response) {
+      makeCallback( true, response);
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        dispose(true);
+    @Override 
+    public void sendError(final Object response) {
+      makeCallback( false, response);
     }
-
-    private static class NativeCallbackDelegate extends JNIObject implements EventCallback {
-        @WrapForJNI(calledFrom = "gecko")
-        private NativeCallbackDelegate() {
-        }
-
-        @Override 
-        protected void disposeNative() {
-            
-            throw new UnsupportedOperationException();
-        }
-
-        @WrapForJNI(dispatchTo = "proxy") @Override 
-        public native void sendSuccess(Object response);
-
-        @WrapForJNI(dispatchTo = "proxy") @Override 
-        public native void sendError(Object response);
-
-        @WrapForJNI(dispatchTo = "gecko") @Override 
-        protected native void finalize();
-    }
-
-    private static class JavaCallbackDelegate implements EventCallback {
-        private final Thread mOriginalThread = Thread.currentThread();
-        private final EventCallback mCallback;
-
-        public static EventCallback wrap(final EventCallback callback) {
-            if (callback == null) {
-                return null;
-            }
-            if (callback instanceof NativeCallbackDelegate) {
-                
-                return callback;
-            }
-            return new JavaCallbackDelegate(callback);
-        }
-
-        JavaCallbackDelegate(final EventCallback callback) {
-            mCallback = callback;
-        }
-
-        private void makeCallback(final boolean callSuccess, final Object rawResponse) {
-            final Object response;
-            if (rawResponse instanceof Number) {
-                
-                
-                
-                
-                
-                throw new UnsupportedOperationException(
-                        "Cannot use number as Java callback result");
-            } else if (rawResponse != null && rawResponse.getClass().isArray()) {
-                
-                throw new UnsupportedOperationException(
-                        "Cannot use arrays as Java callback result");
-            } else if (rawResponse instanceof Character) {
-                response = rawResponse.toString();
-            } else {
-                response = rawResponse;
-            }
-
-            
-            
-            if (ThreadUtils.isOnThread(mOriginalThread)) {
-                if (callSuccess) {
-                    mCallback.sendSuccess(response);
-                } else {
-                    mCallback.sendError(response);
-                }
-                return;
-            }
-
-            
-            
-            final Handler handler =
-                    mOriginalThread == ThreadUtils.getUiThread() ? ThreadUtils.getUiHandler() :
-                    mOriginalThread == ThreadUtils.sGeckoThread ? ThreadUtils.sGeckoHandler :
-                                                                 ThreadUtils.getBackgroundHandler();
-            final EventCallback callback = mCallback;
-
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (callSuccess) {
-                        callback.sendSuccess(response);
-                    } else {
-                        callback.sendError(response);
-                    }
-                }
-            });
-        }
-
-        @Override 
-        public void sendSuccess(final Object response) {
-            makeCallback( true, response);
-        }
-
-        @Override 
-        public void sendError(final Object response) {
-            makeCallback( false, response);
-        }
-    }
+  }
 }

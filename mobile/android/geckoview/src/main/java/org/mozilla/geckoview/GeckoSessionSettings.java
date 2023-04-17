@@ -6,729 +6,685 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.util.GeckoBundle;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.util.Arrays;
 import java.util.Collection;
+import org.mozilla.gecko.util.GeckoBundle;
 
 @AnyThread
 public final class GeckoSessionSettings implements Parcelable {
 
-    
-
-
-    @AnyThread
-    public static final class Builder {
-        private final GeckoSessionSettings mSettings;
-
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public Builder() {
-            mSettings = new GeckoSessionSettings();
-        }
-
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public Builder(final GeckoSessionSettings settings) {
-            mSettings = new GeckoSessionSettings(settings);
-        }
-
-        
-
-
-
-
-        public @NonNull GeckoSessionSettings build() {
-            return new GeckoSessionSettings(mSettings);
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder chromeUri(final @NonNull String uri) {
-            mSettings.setChromeUri(uri);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder screenId(final int id) {
-            mSettings.setScreenId(id);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder usePrivateMode(final boolean flag) {
-            mSettings.setUsePrivateMode(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder contextId(final @Nullable String value) {
-            mSettings.setContextId(value);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder useTrackingProtection(final boolean flag) {
-            mSettings.setUseTrackingProtection(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder userAgentMode(final int mode) {
-            mSettings.setUserAgentMode(mode);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder userAgentOverride(final @NonNull String agent) {
-            mSettings.setUserAgentOverride(agent);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder displayMode(final int mode) {
-            mSettings.setDisplayMode(mode);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder suspendMediaWhenInactive(final boolean flag) {
-            mSettings.setSuspendMediaWhenInactive(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder allowJavascript(final boolean flag) {
-            mSettings.setAllowJavascript(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder fullAccessibilityTree(final boolean flag) {
-            mSettings.setFullAccessibilityTree(flag);
-            return this;
-        }
-
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder viewportMode(final int mode) {
-            mSettings.setViewportMode(mode);
-            return this;
-        }
-    }
-
-    private static final String LOGTAG = "GeckoSessionSettings";
-    private static final boolean DEBUG = false;
-
-    
-    public static final int DISPLAY_MODE_BROWSER = 0;
-    public static final int DISPLAY_MODE_MINIMAL_UI = 1;
-    public static final int DISPLAY_MODE_STANDALONE = 2;
-    public static final int DISPLAY_MODE_FULLSCREEN = 3;
-
-    
-    public static final int USER_AGENT_MODE_MOBILE = 0;
-    public static final int USER_AGENT_MODE_DESKTOP = 1;
-    public static final int USER_AGENT_MODE_VR = 2;
-
-    
-    
-
-
-
-
-    public static final int VIEWPORT_MODE_MOBILE = 0;
-
-    
-
-
-
-    public static final int VIEWPORT_MODE_DESKTOP = 1;
-
-    public static class Key<T> {
-         final String name;
-         final boolean initOnly;
-         final Collection<T> values;
-
-         Key(final String name) {
-            this(name,  false,  null);
-        }
-
-         Key(final String name, final boolean initOnly,
-                          final Collection<T> values) {
-            this.name = name;
-            this.initOnly = initOnly;
-            this.values = values;
-        }
-    }
-
-    
-
-
-
-    private static final Key<String> CHROME_URI =
-        new Key<String>("chromeUri",  true,  null);
-    
-
-
-
-    private static final Key<Integer> SCREEN_ID =
-        new Key<Integer>("screenId",  true,  null);
-
-    
-
-
-    private static final Key<Boolean> USE_TRACKING_PROTECTION =
-        new Key<Boolean>("useTrackingProtection");
-    
-
-
-
-    private static final Key<Boolean> USE_PRIVATE_MODE =
-        new Key<Boolean>("usePrivateMode",  true,  null);
-
-    
-
-
-    private static final Key<Integer> USER_AGENT_MODE =
-        new Key<Integer>("userAgentMode",  false,
-                         Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
-
-    
-
-
-
-    private static final Key<String> USER_AGENT_OVERRIDE =
-        new Key<String>("userAgentOverride",  false,  null);
-
-    
-
-
-    private static final Key<Integer> VIEWPORT_MODE =
-        new Key<Integer>("viewportMode",  false,
-                         Arrays.asList(VIEWPORT_MODE_MOBILE, VIEWPORT_MODE_DESKTOP));
-
-    
-
-
-    private static final Key<Integer> DISPLAY_MODE =
-        new Key<Integer>("displayMode",  false,
-                         Arrays.asList(DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
-                                       DISPLAY_MODE_STANDALONE, DISPLAY_MODE_FULLSCREEN));
-
-    
-
-
-    private static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
-        new Key<Boolean>("suspendMediaWhenInactive",  false,  null);
-
-    
-
-
-    private static final Key<Boolean> ALLOW_JAVASCRIPT =
-            new Key<Boolean>("allowJavascript",  false,  null);
-    
-
-
-    private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
-            new Key<Boolean>("fullAccessibilityTree",  false,  null);
-
-    
-
-
-
-    private static final Key<Boolean> IS_POPUP =
-            new Key<Boolean>("isPopup",  false,  null);
-
-    
-
-
-
-    private static final Key<String> CONTEXT_ID =
-        new Key<String>("sessionContextId",  true,  null);
-
-    
-
-
-    private static final Key<String> UNSAFE_CONTEXT_ID =
-        new Key<String>("unsafeSessionContextId",  true,  null);
-
-    private final GeckoSession mSession;
-    private final GeckoBundle mBundle;
+  
+  @AnyThread
+  public static final class Builder {
+    private final GeckoSessionSettings mSettings;
 
     @SuppressWarnings("checkstyle:javadocmethod")
-    public GeckoSessionSettings() {
-        this(null, null);
+    public Builder() {
+      mSettings = new GeckoSessionSettings();
     }
 
     @SuppressWarnings("checkstyle:javadocmethod")
-    public GeckoSessionSettings(final @NonNull GeckoSessionSettings settings) {
-        this(settings, null);
+    public Builder(final GeckoSessionSettings settings) {
+      mSettings = new GeckoSessionSettings(settings);
     }
 
-     GeckoSessionSettings(final @Nullable GeckoSessionSettings settings,
-                                       final @Nullable GeckoSession session) {
-        mSession = session;
+    
 
-        if (settings != null) {
-            mBundle = new GeckoBundle(settings.mBundle);
-            return;
+
+
+
+    public @NonNull GeckoSessionSettings build() {
+      return new GeckoSessionSettings(mSettings);
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder chromeUri(final @NonNull String uri) {
+      mSettings.setChromeUri(uri);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder screenId(final int id) {
+      mSettings.setScreenId(id);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder usePrivateMode(final boolean flag) {
+      mSettings.setUsePrivateMode(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder contextId(final @Nullable String value) {
+      mSettings.setContextId(value);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder useTrackingProtection(final boolean flag) {
+      mSettings.setUseTrackingProtection(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder userAgentMode(final int mode) {
+      mSettings.setUserAgentMode(mode);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder userAgentOverride(final @NonNull String agent) {
+      mSettings.setUserAgentOverride(agent);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder displayMode(final int mode) {
+      mSettings.setDisplayMode(mode);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder suspendMediaWhenInactive(final boolean flag) {
+      mSettings.setSuspendMediaWhenInactive(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder allowJavascript(final boolean flag) {
+      mSettings.setAllowJavascript(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder fullAccessibilityTree(final boolean flag) {
+      mSettings.setFullAccessibilityTree(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder viewportMode(final int mode) {
+      mSettings.setViewportMode(mode);
+      return this;
+    }
+  }
+
+  private static final String LOGTAG = "GeckoSessionSettings";
+  private static final boolean DEBUG = false;
+
+  
+  public static final int DISPLAY_MODE_BROWSER = 0;
+  public static final int DISPLAY_MODE_MINIMAL_UI = 1;
+  public static final int DISPLAY_MODE_STANDALONE = 2;
+  public static final int DISPLAY_MODE_FULLSCREEN = 3;
+
+  
+  public static final int USER_AGENT_MODE_MOBILE = 0;
+  public static final int USER_AGENT_MODE_DESKTOP = 1;
+  public static final int USER_AGENT_MODE_VR = 2;
+
+  
+  
+
+
+
+
+  public static final int VIEWPORT_MODE_MOBILE = 0;
+
+  
+
+
+
+  public static final int VIEWPORT_MODE_DESKTOP = 1;
+
+  public static class Key<T> {
+     final String name;
+     final boolean initOnly;
+     final Collection<T> values;
+
+     Key(final String name) {
+      this(name,  false,  null);
+    }
+
+     Key(final String name, final boolean initOnly, final Collection<T> values) {
+      this.name = name;
+      this.initOnly = initOnly;
+      this.values = values;
+    }
+  }
+
+  
+
+
+  private static final Key<String> CHROME_URI =
+      new Key<String>("chromeUri",  true,  null);
+  
+  private static final Key<Integer> SCREEN_ID =
+      new Key<Integer>("screenId",  true,  null);
+
+  
+  private static final Key<Boolean> USE_TRACKING_PROTECTION =
+      new Key<Boolean>("useTrackingProtection");
+  
+  private static final Key<Boolean> USE_PRIVATE_MODE =
+      new Key<Boolean>("usePrivateMode",  true,  null);
+
+  
+  private static final Key<Integer> USER_AGENT_MODE =
+      new Key<Integer>(
+          "userAgentMode", 
+          false,
+          Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
+
+  
+
+
+
+  private static final Key<String> USER_AGENT_OVERRIDE =
+      new Key<String>("userAgentOverride",  false,  null);
+
+  
+  private static final Key<Integer> VIEWPORT_MODE =
+      new Key<Integer>(
+          "viewportMode", 
+          false,
+          Arrays.asList(VIEWPORT_MODE_MOBILE, VIEWPORT_MODE_DESKTOP));
+
+  
+  private static final Key<Integer> DISPLAY_MODE =
+      new Key<Integer>(
+          "displayMode", 
+          false,
+          Arrays.asList(
+              DISPLAY_MODE_BROWSER, DISPLAY_MODE_MINIMAL_UI,
+              DISPLAY_MODE_STANDALONE, DISPLAY_MODE_FULLSCREEN));
+
+  
+  private static final Key<Boolean> SUSPEND_MEDIA_WHEN_INACTIVE =
+      new Key<Boolean>("suspendMediaWhenInactive",  false,  null);
+
+  
+  private static final Key<Boolean> ALLOW_JAVASCRIPT =
+      new Key<Boolean>("allowJavascript",  false,  null);
+  
+  private static final Key<Boolean> FULL_ACCESSIBILITY_TREE =
+      new Key<Boolean>("fullAccessibilityTree",  false,  null);
+
+  
+
+
+
+  private static final Key<Boolean> IS_POPUP =
+      new Key<Boolean>("isPopup",  false,  null);
+
+  
+  private static final Key<String> CONTEXT_ID =
+      new Key<String>("sessionContextId",  true,  null);
+
+  
+  private static final Key<String> UNSAFE_CONTEXT_ID =
+      new Key<String>("unsafeSessionContextId",  true,  null);
+
+  private final GeckoSession mSession;
+  private final GeckoBundle mBundle;
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public GeckoSessionSettings() {
+    this(null, null);
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public GeckoSessionSettings(final @NonNull GeckoSessionSettings settings) {
+    this(settings, null);
+  }
+
+   GeckoSessionSettings(
+      final @Nullable GeckoSessionSettings settings, final @Nullable GeckoSession session) {
+    mSession = session;
+
+    if (settings != null) {
+      mBundle = new GeckoBundle(settings.mBundle);
+      return;
+    }
+
+    mBundle = new GeckoBundle();
+    mBundle.putString(CHROME_URI.name, null);
+    mBundle.putInt(SCREEN_ID.name, 0);
+    mBundle.putBoolean(USE_TRACKING_PROTECTION.name, false);
+    mBundle.putBoolean(USE_PRIVATE_MODE.name, false);
+    mBundle.putBoolean(SUSPEND_MEDIA_WHEN_INACTIVE.name, false);
+    mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
+    mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
+    mBundle.putBoolean(IS_POPUP.name, false);
+    mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
+    mBundle.putString(USER_AGENT_OVERRIDE.name, null);
+    mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
+    mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
+    mBundle.putString(CONTEXT_ID.name, null);
+    mBundle.putString(UNSAFE_CONTEXT_ID.name, null);
+  }
+
+  
+
+
+
+
+
+  public void setUseTrackingProtection(final boolean value) {
+    setBoolean(USE_TRACKING_PROTECTION, value);
+  }
+
+  
+
+
+
+
+  private void setUsePrivateMode(final boolean value) {
+    setBoolean(USE_PRIVATE_MODE, value);
+  }
+
+  
+
+
+
+
+  public void setSuspendMediaWhenInactive(final boolean value) {
+    setBoolean(SUSPEND_MEDIA_WHEN_INACTIVE, value);
+  }
+
+  
+
+
+
+
+  public void setAllowJavascript(final boolean value) {
+    setBoolean(ALLOW_JAVASCRIPT, value);
+  }
+
+  
+
+
+
+
+  public void setFullAccessibilityTree(final boolean value) {
+    setBoolean(FULL_ACCESSIBILITY_TREE, value);
+  }
+
+   void setIsPopup(final boolean value) {
+    setBoolean(IS_POPUP, value);
+  }
+
+  private void setBoolean(final Key<Boolean> key, final boolean value) {
+    synchronized (mBundle) {
+      if (valueChangedLocked(key, value)) {
+        mBundle.putBoolean(key.name, value);
+        dispatchUpdate();
+      }
+    }
+  }
+
+  
+
+
+
+
+  public boolean getUseTrackingProtection() {
+    return getBoolean(USE_TRACKING_PROTECTION);
+  }
+
+  
+
+
+
+
+  public boolean getUsePrivateMode() {
+    return getBoolean(USE_PRIVATE_MODE);
+  }
+
+  
+
+
+
+
+  public @Nullable String getContextId() {
+    
+    return getString(UNSAFE_CONTEXT_ID);
+  }
+
+  
+
+
+
+
+  public boolean getSuspendMediaWhenInactive() {
+    return getBoolean(SUSPEND_MEDIA_WHEN_INACTIVE);
+  }
+
+  
+
+
+
+
+  public boolean getAllowJavascript() {
+    return getBoolean(ALLOW_JAVASCRIPT);
+  }
+
+  
+
+
+
+
+  public boolean getFullAccessibilityTree() {
+    return getBoolean(FULL_ACCESSIBILITY_TREE);
+  }
+
+   boolean getIsPopup() {
+    return getBoolean(IS_POPUP);
+  }
+
+  private boolean getBoolean(final Key<Boolean> key) {
+    synchronized (mBundle) {
+      return mBundle.getBoolean(key.name);
+    }
+  }
+
+  
+
+
+
+
+  private void setScreenId(final int value) {
+    setInt(SCREEN_ID, value);
+  }
+
+  
+
+
+
+
+
+  public void setUserAgentMode(final int value) {
+    setInt(USER_AGENT_MODE, value);
+  }
+
+  
+
+
+
+
+
+  public void setDisplayMode(final int value) {
+    setInt(DISPLAY_MODE, value);
+  }
+
+  
+
+
+
+
+
+  public void setViewportMode(final int value) {
+    setInt(VIEWPORT_MODE, value);
+  }
+
+  private void setInt(final Key<Integer> key, final int value) {
+    synchronized (mBundle) {
+      if (valueChangedLocked(key, value)) {
+        mBundle.putInt(key.name, value);
+        dispatchUpdate();
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  public int getScreenId() {
+    return getInt(SCREEN_ID);
+  }
+
+  
+
+
+
+
+
+  public int getUserAgentMode() {
+    return getInt(USER_AGENT_MODE);
+  }
+
+  
+
+
+
+
+
+  public int getDisplayMode() {
+    return getInt(DISPLAY_MODE);
+  }
+
+  
+
+
+
+
+
+  public int getViewportMode() {
+    return getInt(VIEWPORT_MODE);
+  }
+
+  private int getInt(final Key<Integer> key) {
+    synchronized (mBundle) {
+      return mBundle.getInt(key.name);
+    }
+  }
+
+  
+
+
+
+
+  private void setChromeUri(final @NonNull String value) {
+    setString(CHROME_URI, value);
+  }
+
+  
+
+
+
+
+
+  public void setUserAgentOverride(final @Nullable String value) {
+    setString(USER_AGENT_OVERRIDE, value);
+  }
+
+  private void setContextId(final @Nullable String value) {
+    setString(UNSAFE_CONTEXT_ID, value);
+    setString(CONTEXT_ID, StorageController.createSafeSessionContextId(value));
+  }
+
+  private void setString(final Key<String> key, final String value) {
+    synchronized (mBundle) {
+      if (valueChangedLocked(key, value)) {
+        mBundle.putString(key.name, value);
+        dispatchUpdate();
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  public @Nullable String getChromeUri() {
+    return getString(CHROME_URI);
+  }
+
+  
+
+
+
+
+
+  public @Nullable String getUserAgentOverride() {
+    return getString(USER_AGENT_OVERRIDE);
+  }
+
+  private String getString(final Key<String> key) {
+    synchronized (mBundle) {
+      return mBundle.getString(key.name);
+    }
+  }
+
+   @NonNull
+  GeckoBundle toBundle() {
+    return new GeckoBundle(mBundle);
+  }
+
+  @Override
+  public String toString() {
+    return mBundle.toString();
+  }
+
+  @Override
+  public boolean equals(final Object other) {
+    return other instanceof GeckoSessionSettings
+        && mBundle.equals(((GeckoSessionSettings) other).mBundle);
+  }
+
+  @Override
+  public int hashCode() {
+    return mBundle.hashCode();
+  }
+
+  private <T> boolean valueChangedLocked(final Key<T> key, final T value) {
+    if (key.initOnly && mSession != null && mSession.isOpen()) {
+      throw new IllegalStateException("Read-only property");
+    } else if (key.values != null && !key.values.contains(value)) {
+      throw new IllegalArgumentException("Invalid value");
+    }
+
+    final Object old = mBundle.get(key.name);
+    return (old != value) && (old == null || !old.equals(value));
+  }
+
+  private void dispatchUpdate() {
+    if (mSession != null && mSession.isOpen()) {
+      mSession.getEventDispatcher().dispatch("GeckoView:UpdateSettings", toBundle());
+    }
+  }
+
+  @Override 
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override 
+  public void writeToParcel(final @NonNull Parcel out, final int flags) {
+    mBundle.writeToParcel(out, flags);
+  }
+
+  
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public void readFromParcel(final @NonNull Parcel source) {
+    mBundle.readFromParcel(source);
+  }
+
+  public static final Parcelable.Creator<GeckoSessionSettings> CREATOR =
+      new Parcelable.Creator<GeckoSessionSettings>() {
+        @Override
+        public GeckoSessionSettings createFromParcel(final Parcel in) {
+          final GeckoSessionSettings settings = new GeckoSessionSettings();
+          settings.readFromParcel(in);
+          return settings;
         }
 
-        mBundle = new GeckoBundle();
-        mBundle.putString(CHROME_URI.name, null);
-        mBundle.putInt(SCREEN_ID.name, 0);
-        mBundle.putBoolean(USE_TRACKING_PROTECTION.name, false);
-        mBundle.putBoolean(USE_PRIVATE_MODE.name, false);
-        mBundle.putBoolean(SUSPEND_MEDIA_WHEN_INACTIVE.name, false);
-        mBundle.putBoolean(ALLOW_JAVASCRIPT.name, true);
-        mBundle.putBoolean(FULL_ACCESSIBILITY_TREE.name, false);
-        mBundle.putBoolean(IS_POPUP.name, false);
-        mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
-        mBundle.putString(USER_AGENT_OVERRIDE.name, null);
-        mBundle.putInt(VIEWPORT_MODE.name, VIEWPORT_MODE_MOBILE);
-        mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
-        mBundle.putString(CONTEXT_ID.name, null);
-        mBundle.putString(UNSAFE_CONTEXT_ID.name, null);
-    }
-
-    
-
-
-
-
-
-    public void setUseTrackingProtection(final boolean value) {
-        setBoolean(USE_TRACKING_PROTECTION, value);
-    }
-
-    
-
-
-
-
-
-    private void setUsePrivateMode(final boolean value) {
-        setBoolean(USE_PRIVATE_MODE, value);
-    }
-
-    
-
-
-
-
-
-    public void setSuspendMediaWhenInactive(final boolean value) {
-        setBoolean(SUSPEND_MEDIA_WHEN_INACTIVE, value);
-    }
-
-
-    
-
-
-
-
-
-    public void setAllowJavascript(final boolean value) {
-        setBoolean(ALLOW_JAVASCRIPT, value);
-    }
-
-
-    
-
-
-
-
-
-    public void setFullAccessibilityTree(final boolean value) {
-        setBoolean(FULL_ACCESSIBILITY_TREE, value);
-    }
-
-     void setIsPopup(final boolean value) {
-        setBoolean(IS_POPUP, value);
-    }
-
-    private void setBoolean(final Key<Boolean> key, final boolean value) {
-        synchronized (mBundle) {
-            if (valueChangedLocked(key, value)) {
-                mBundle.putBoolean(key.name, value);
-                dispatchUpdate();
-            }
+        @Override
+        public GeckoSessionSettings[] newArray(final int size) {
+          return new GeckoSessionSettings[size];
         }
-    }
-
-    
-
-
-
-
-    public boolean getUseTrackingProtection() {
-        return getBoolean(USE_TRACKING_PROTECTION);
-    }
-
-    
-
-
-
-
-    public boolean getUsePrivateMode() {
-        return getBoolean(USE_PRIVATE_MODE);
-    }
-
-    
-
-
-
-
-    public @Nullable String getContextId() {
-        
-        return getString(UNSAFE_CONTEXT_ID);
-    }
-
-    
-
-
-
-
-    public boolean getSuspendMediaWhenInactive() {
-        return getBoolean(SUSPEND_MEDIA_WHEN_INACTIVE);
-    }
-
-    
-
-
-
-
-    public boolean getAllowJavascript() {
-        return getBoolean(ALLOW_JAVASCRIPT);
-    }
-
-    
-
-
-
-
-    public boolean getFullAccessibilityTree() {
-        return getBoolean(FULL_ACCESSIBILITY_TREE);
-    }
-
-     boolean getIsPopup() {
-        return getBoolean(IS_POPUP);
-    }
-
-    private boolean getBoolean(final Key<Boolean> key) {
-        synchronized (mBundle) {
-            return mBundle.getBoolean(key.name);
-        }
-    }
-
-    
-
-
-
-
-    private void setScreenId(final int value) {
-        setInt(SCREEN_ID, value);
-    }
-
-
-    
-
-
-
-
-
-    public void setUserAgentMode(final int value) {
-        setInt(USER_AGENT_MODE, value);
-    }
-
-
-    
-
-
-
-
-
-
-    public void setDisplayMode(final int value) {
-        setInt(DISPLAY_MODE, value);
-    }
-
-
-    
-
-
-
-
-
-    public void setViewportMode(final int value) {
-        setInt(VIEWPORT_MODE, value);
-    }
-
-    private void setInt(final Key<Integer> key, final int value) {
-        synchronized (mBundle) {
-            if (valueChangedLocked(key, value)) {
-                mBundle.putInt(key.name, value);
-                dispatchUpdate();
-            }
-        }
-    }
-
-    
-
-
-
-
-
-
-    public int getScreenId() {
-        return getInt(SCREEN_ID);
-    }
-
-    
-
-
-
-
-    public int getUserAgentMode() {
-        return getInt(USER_AGENT_MODE);
-    }
-
-    
-
-
-
-
-    public int getDisplayMode() {
-        return getInt(DISPLAY_MODE);
-    }
-
-    
-
-
-
-
-    public int getViewportMode() {
-        return getInt(VIEWPORT_MODE);
-    }
-
-    private int getInt(final Key<Integer> key) {
-        synchronized (mBundle) {
-            return mBundle.getInt(key.name);
-        }
-    }
-
-    
-
-
-
-
-
-    private void setChromeUri(final @NonNull String value) {
-        setString(CHROME_URI, value);
-    }
-
-
-    
-
-
-
-
-    public void setUserAgentOverride(final @Nullable String value) {
-        setString(USER_AGENT_OVERRIDE, value);
-    }
-
-    private void setContextId(final @Nullable String value) {
-        setString(UNSAFE_CONTEXT_ID, value);
-        setString(CONTEXT_ID, StorageController.createSafeSessionContextId(value));
-    }
-
-    private void setString(final Key<String> key, final String value) {
-        synchronized (mBundle) {
-            if (valueChangedLocked(key, value)) {
-                mBundle.putString(key.name, value);
-                dispatchUpdate();
-            }
-        }
-    }
-
-    
-
-
-
-
-
-
-    public @Nullable String getChromeUri() {
-        return getString(CHROME_URI);
-    }
-
-    
-
-
-
-
-    public @Nullable String getUserAgentOverride() {
-        return getString(USER_AGENT_OVERRIDE);
-    }
-
-    private String getString(final Key<String> key) {
-        synchronized (mBundle) {
-            return mBundle.getString(key.name);
-        }
-    }
-
-     @NonNull GeckoBundle toBundle() {
-        return new GeckoBundle(mBundle);
-    }
-
-    @Override
-    public String toString() {
-        return mBundle.toString();
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-        return other instanceof GeckoSessionSettings &&
-                mBundle.equals(((GeckoSessionSettings) other).mBundle);
-    }
-
-    @Override
-    public int hashCode() {
-        return mBundle.hashCode();
-    }
-
-    private <T> boolean valueChangedLocked(final Key<T> key, final T value) {
-        if (key.initOnly && mSession != null && mSession.isOpen()) {
-            throw new IllegalStateException("Read-only property");
-        } else if (key.values != null && !key.values.contains(value)) {
-            throw new IllegalArgumentException("Invalid value");
-        }
-
-        final Object old = mBundle.get(key.name);
-        return (old != value) && (old == null || !old.equals(value));
-    }
-
-    private void dispatchUpdate() {
-        if (mSession != null && mSession.isOpen()) {
-            mSession.getEventDispatcher().dispatch("GeckoView:UpdateSettings", toBundle());
-        }
-    }
-
-    @Override 
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override 
-    public void writeToParcel(final @NonNull Parcel out, final int flags) {
-        mBundle.writeToParcel(out, flags);
-    }
-
-    
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public void readFromParcel(final @NonNull Parcel source) {
-        mBundle.readFromParcel(source);
-    }
-
-    public static final Parcelable.Creator<GeckoSessionSettings> CREATOR
-            = new Parcelable.Creator<GeckoSessionSettings>() {
-                @Override
-                public GeckoSessionSettings createFromParcel(final Parcel in) {
-                    final GeckoSessionSettings settings = new GeckoSessionSettings();
-                    settings.readFromParcel(in);
-                    return settings;
-                }
-
-                @Override
-                public GeckoSessionSettings[] newArray(final int size) {
-                    return new GeckoSessionSettings[size];
-                }
-            };
+      };
 }

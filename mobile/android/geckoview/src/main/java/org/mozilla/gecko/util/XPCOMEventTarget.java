@@ -5,161 +5,166 @@
 
 package org.mozilla.gecko.util;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
+import androidx.annotation.NonNull;
 import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.geckoview.BuildConfig;
-
-import androidx.annotation.NonNull;
-
 
 
 
 
 @WrapForJNI
 public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarget {
-    @Override
-    public void execute(final Runnable runnable) {
-        dispatchNative(new JNIRunnable(runnable));
+  @Override
+  public void execute(final Runnable runnable) {
+    dispatchNative(new JNIRunnable(runnable));
+  }
+
+  public static synchronized IXPCOMEventTarget mainThread() {
+    if (mMainThread == null) {
+      mMainThread = new AsyncProxy("main");
+    }
+    return mMainThread;
+  }
+
+  private static IXPCOMEventTarget mMainThread = null;
+
+  public static synchronized IXPCOMEventTarget launcherThread() {
+    if (mLauncherThread == null) {
+      mLauncherThread = new AsyncProxy("launcher");
+    }
+    return mLauncherThread;
+  }
+
+  private static IXPCOMEventTarget mLauncherThread = null;
+
+  
+
+
+
+  public static void runOnLauncherThread(@NonNull final Runnable runnable) {
+    final IXPCOMEventTarget launcherThread = launcherThread();
+    if (launcherThread.isOnCurrentThread()) {
+      
+      runnable.run();
+      return;
     }
 
-    public static synchronized IXPCOMEventTarget mainThread() {
-        if (mMainThread == null) {
-            mMainThread = new AsyncProxy("main");
-        }
-        return mMainThread;
-    }
-    private static IXPCOMEventTarget mMainThread = null;
+    launcherThread.execute(runnable);
+  }
 
-    public static synchronized IXPCOMEventTarget launcherThread() {
-        if (mLauncherThread == null) {
-            mLauncherThread = new AsyncProxy("launcher");
-        }
-        return mLauncherThread;
+  public static void assertOnLauncherThread() {
+    if (BuildConfig.DEBUG && !launcherThread().isOnCurrentThread()) {
+      throw new AssertionError("Expected to be running on XPCOM launcher thread");
     }
-    private static IXPCOMEventTarget mLauncherThread = null;
+  }
+
+  public static void assertNotOnLauncherThread() {
+    if (BuildConfig.DEBUG && launcherThread().isOnCurrentThread()) {
+      throw new AssertionError("Expected to not be running on XPCOM launcher thread");
+    }
+  }
+
+  private static synchronized IXPCOMEventTarget getTarget(final String name) {
+    if (name.equals("launcher")) {
+      return mLauncherThread;
+    } else if (name.equals("main")) {
+      return mMainThread;
+    } else {
+      throw new RuntimeException("Attempt to assign to unknown thread named " + name);
+    }
+  }
+
+  @WrapForJNI
+  private static synchronized void setTarget(final String name, final XPCOMEventTarget target) {
+    if (name.equals("main")) {
+      mMainThread = target;
+    } else if (name.equals("launcher")) {
+      mLauncherThread = target;
+    } else {
+      throw new RuntimeException("Attempt to assign to unknown thread named " + name);
+    }
 
     
-
-
-
-    public static void runOnLauncherThread(@NonNull final Runnable runnable) {
-        final IXPCOMEventTarget launcherThread = launcherThread();
-        if (launcherThread.isOnCurrentThread()) {
-            
-            runnable.run();
-            return;
-        }
-
-        launcherThread.execute(runnable);
+    
+    if (mMainThread != target) {
+      target.execute(
+          () -> {
+            Thread.currentThread().setName(name);
+          });
     }
+  }
 
-    public static void assertOnLauncherThread() {
-        if (BuildConfig.DEBUG && !launcherThread().isOnCurrentThread()) {
-            throw new AssertionError("Expected to be running on XPCOM launcher thread");
-        }
-    }
+  @Override
+  public native boolean isOnCurrentThread();
 
-    public static void assertNotOnLauncherThread() {
-        if (BuildConfig.DEBUG && launcherThread().isOnCurrentThread()) {
-            throw new AssertionError("Expected to not be running on XPCOM launcher thread");
-        }
-    }
+  private native void dispatchNative(final JNIRunnable runnable);
 
-    private static synchronized IXPCOMEventTarget getTarget(final String name) {
-        if (name.equals("launcher")) {
-            return mLauncherThread;
-        } else if (name.equals("main")) {
-            return mMainThread;
-        } else {
-            throw new RuntimeException("Attempt to assign to unknown thread named " + name);
-        }
+  @WrapForJNI
+  private static synchronized void resolveAndDispatch(final String name, final Runnable runnable) {
+    getTarget(name).execute(runnable);
+  }
+
+  private static native void resolveAndDispatchNative(final String name, final Runnable runnable);
+
+  @Override
+  protected native void disposeNative();
+
+  @WrapForJNI
+  private static final class JNIRunnable {
+    JNIRunnable(final Runnable inner) {
+      mInner = inner;
     }
 
     @WrapForJNI
-    private static synchronized void setTarget(final String name, final XPCOMEventTarget target) {
-        if (name.equals("main")) {
-            mMainThread = target;
-        } else if (name.equals("launcher")) {
-            mLauncherThread = target;
-        } else {
-            throw new RuntimeException("Attempt to assign to unknown thread named " + name);
-        }
+    void run() {
+      mInner.run();
+    }
 
-        
-        
-        if (mMainThread != target) {
-            target.execute(() -> {
-                Thread.currentThread().setName(name);
-            });
-        }
+    private Runnable mInner;
+  }
+
+  private static final class AsyncProxy implements IXPCOMEventTarget {
+    private String mTargetName;
+
+    public AsyncProxy(final String targetName) {
+      mTargetName = targetName;
     }
 
     @Override
-    public native boolean isOnCurrentThread();
+    public void execute(final Runnable runnable) {
+      final IXPCOMEventTarget target = XPCOMEventTarget.getTarget(mTargetName);
 
-    private native void dispatchNative(final JNIRunnable runnable);
+      if (target != null && target instanceof XPCOMEventTarget) {
+        target.execute(runnable);
+        return;
+      }
 
-    @WrapForJNI
-    private static synchronized void resolveAndDispatch(final String name, final Runnable runnable) {
-        getTarget(name).execute(runnable);
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.JNI_READY,
+          XPCOMEventTarget.class,
+          "resolveAndDispatchNative",
+          String.class,
+          mTargetName,
+          Runnable.class,
+          runnable);
     }
-
-    private static native void resolveAndDispatchNative(final String name, final Runnable runnable);
 
     @Override
-    protected native void disposeNative();
+    public boolean isOnCurrentThread() {
+      final IXPCOMEventTarget target = XPCOMEventTarget.getTarget(mTargetName);
 
-    @WrapForJNI
-    private static final class JNIRunnable {
-        JNIRunnable(final Runnable inner) {
-            mInner = inner;
-        }
+      
+      
+      
+      if (target == null || !(target instanceof XPCOMEventTarget)) {
+        return false;
+      }
 
-        @WrapForJNI
-        void run() {
-            mInner.run();
-        }
-
-        private Runnable mInner;
+      
+      
+      return target.isOnCurrentThread();
     }
-
-    private static final class AsyncProxy implements IXPCOMEventTarget {
-        private String mTargetName;
-
-        public AsyncProxy(final String targetName) {
-            mTargetName = targetName;
-        }
-
-        @Override
-        public void execute(final Runnable runnable) {
-            final IXPCOMEventTarget target = XPCOMEventTarget.getTarget(mTargetName);
-
-            if (target != null && target instanceof XPCOMEventTarget) {
-                target.execute(runnable);
-                return;
-            }
-
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.JNI_READY,
-                                             XPCOMEventTarget.class, "resolveAndDispatchNative",
-                                             String.class, mTargetName, Runnable.class, runnable);
-        }
-
-        @Override
-        public boolean isOnCurrentThread() {
-            final IXPCOMEventTarget target = XPCOMEventTarget.getTarget(mTargetName);
-
-            
-            
-            
-            if (target == null || !(target instanceof XPCOMEventTarget)) {
-                return false;
-            }
-
-            
-            
-            return target.isOnCurrentThread();
-        }
-    }
+  }
 }
-

@@ -5,11 +5,9 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
 import android.os.SystemClock;
 import android.util.Log;
-
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
@@ -21,84 +19,84 @@ import android.util.Log;
 
 
 public class TelemetryUtils {
-    private static final String LOGTAG = "TelemetryUtils";
+  private static final String LOGTAG = "TelemetryUtils";
 
-    @WrapForJNI(stubName = "AddHistogram", dispatchTo = "gecko")
-    private static native void nativeAddHistogram(String name, int value);
+  @WrapForJNI(stubName = "AddHistogram", dispatchTo = "gecko")
+  private static native void nativeAddHistogram(String name, int value);
 
-    public static long uptime() {
-        return SystemClock.uptimeMillis();
+  public static long uptime() {
+    return SystemClock.uptimeMillis();
+  }
+
+  public static long realtime() {
+    return SystemClock.elapsedRealtime();
+  }
+
+  
+  
+  public static void addToHistogram(final String name, final int value) {
+    if (GeckoThread.isRunning()) {
+      nativeAddHistogram(name, value);
+    } else {
+      GeckoThread.queueNativeCall(
+          TelemetryUtils.class, "nativeAddHistogram", String.class, name, value);
+    }
+  }
+
+  public abstract static class Timer {
+    private final long mStartTime;
+    private final String mName;
+
+    private volatile boolean mHasFinished;
+    private volatile long mElapsed = -1;
+
+    protected abstract long now();
+
+    public Timer(final String name) {
+      mName = name;
+      mStartTime = now();
     }
 
-    public static long realtime() {
-        return SystemClock.elapsedRealtime();
+    public void cancel() {
+      mHasFinished = true;
     }
 
-    
-    
-    public static void addToHistogram(final String name, final int value) {
-        if (GeckoThread.isRunning()) {
-            nativeAddHistogram(name, value);
-        } else {
-            GeckoThread.queueNativeCall(TelemetryUtils.class, "nativeAddHistogram",
-                                        String.class, name, value);
-        }
+    public long getElapsed() {
+      return mElapsed;
     }
 
-    public abstract static class Timer {
-        private final long mStartTime;
-        private final String mName;
+    public void stop() {
+      
+      if (mHasFinished) {
+        return;
+      }
 
-        private volatile boolean mHasFinished;
-        private volatile long mElapsed = -1;
+      mHasFinished = true;
 
-        protected abstract long now();
+      final long elapsed = now() - mStartTime;
+      if (elapsed < 0) {
+        Log.e(LOGTAG, "Current time less than start time -- clock shenanigans?");
+        return;
+      }
 
-        public Timer(final String name) {
-            mName = name;
-            mStartTime = now();
-        }
+      mElapsed = elapsed;
+      if (elapsed > Integer.MAX_VALUE) {
+        Log.e(LOGTAG, "Duration of " + elapsed + "ms is too great to add to histogram.");
+        return;
+      }
 
-        public void cancel() {
-            mHasFinished = true;
-        }
+      addToHistogram(mName, (int) (elapsed));
+    }
+  }
 
-        public long getElapsed() {
-            return mElapsed;
-        }
-
-        public void stop() {
-            
-            if (mHasFinished) {
-                return;
-            }
-
-            mHasFinished = true;
-
-            final long elapsed = now() - mStartTime;
-            if (elapsed < 0) {
-                Log.e(LOGTAG, "Current time less than start time -- clock shenanigans?");
-                return;
-            }
-
-            mElapsed = elapsed;
-            if (elapsed > Integer.MAX_VALUE) {
-                Log.e(LOGTAG, "Duration of " + elapsed + "ms is too great to add to histogram.");
-                return;
-            }
-
-            addToHistogram(mName, (int) (elapsed));
-        }
+  public static class UptimeTimer extends Timer {
+    public UptimeTimer(final String name) {
+      super(name);
     }
 
-    public static class UptimeTimer extends Timer {
-        public UptimeTimer(final String name) {
-            super(name);
-        }
-
-        @Override
-        protected long now() {
-            return TelemetryUtils.uptime();
-        }
+    @Override
+    protected long now() {
+      return TelemetryUtils.uptime();
     }
+  }
 }

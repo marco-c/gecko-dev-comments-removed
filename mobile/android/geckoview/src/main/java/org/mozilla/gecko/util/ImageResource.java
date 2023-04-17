@@ -7,18 +7,15 @@
 package org.mozilla.gecko.util;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-
 import org.mozilla.geckoview.GeckoResult;
-
 
 
 
@@ -27,138 +24,237 @@ import org.mozilla.geckoview.GeckoResult;
 
 @AnyThread
 public class ImageResource {
-    private static final String LOGTAG = "ImageResource";
-    private static final boolean DEBUG = false;
+  private static final String LOGTAG = "ImageResource";
+  private static final boolean DEBUG = false;
+
+  
+  public static class Size {
+    
+    public final int width;
+
+    
+    public final int height;
 
     
 
 
-    public static class Size {
+
+
+
+    public Size(final int width, final int height) {
+      this.width = width;
+      this.height = height;
+    }
+  }
+
+  
+  public final @NonNull String src;
+
+  
+  public final @Nullable String type;
+
+  
+  public final @Nullable Size[] sizes;
+
+  
+
+
+
+
+
+
+  public ImageResource(
+      final @NonNull String src, final @Nullable String type, final @Nullable Size[] sizes) {
+    this.src = src.toLowerCase(Locale.ROOT);
+    this.type = type != null ? type.toLowerCase(Locale.ROOT) : null;
+    this.sizes = sizes;
+  }
+
+  
+
+
+
+
+
+
+
+
+  public ImageResource(
+      final @NonNull String src, final @Nullable String type, final @Nullable String sizes) {
+    this(src, type, parseSizes(sizes));
+  }
+
+  private static @Nullable Size[] parseSizes(final @Nullable String sizesStr) {
+    if (sizesStr == null || sizesStr.isEmpty()) {
+      return null;
+    }
+
+    final String[] sizesStrs = sizesStr.toLowerCase(Locale.ROOT).split(" ");
+    final List<Size> sizes = new ArrayList<Size>();
+
+    for (final String sizeStr : sizesStrs) {
+      if (sizesStr.equals("any")) {
         
-
-
-        public final int width;
-
+        sizes.add(new Size(0, 0));
+        continue;
+      }
+      final String[] widthHeight = sizeStr.split("x");
+      if (widthHeight.length != 2) {
         
+        continue;
+      }
+      try {
+        sizes.add(new Size(Integer.valueOf(widthHeight[0]), Integer.valueOf(widthHeight[1])));
+      } catch (final NumberFormatException e) {
+        Log.e(LOGTAG, "Invalid image resource size", e);
+      }
+    }
+    if (sizes.isEmpty()) {
+      return null;
+    }
+    return sizes.toArray(new Size[0]);
+  }
+
+  public static @NonNull ImageResource fromBundle(final GeckoBundle bundle) {
+    return new ImageResource(
+        bundle.getString("src"), bundle.getString("type"), bundle.getString("sizes"));
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder builder = new StringBuilder("ImageResource {");
+    builder
+        .append("src=")
+        .append(src)
+        .append("type=")
+        .append(type)
+        .append("sizes=")
+        .append(sizes)
+        .append("}");
+    return builder.toString();
+  }
+
+  
 
 
-        public final int height;
-
-        
 
 
 
 
+  @NonNull
+  public GeckoResult<Bitmap> getBitmap(final int size) {
+    return ImageDecoder.instance().decode(src, size);
+  }
 
-        public Size(final int width, final int height) {
-            this.width = width;
-            this.height = height;
-        }
+  
+
+
+
+
+  public static class Collection {
+    private static class SizeIndexPair {
+      public final int width;
+      public final int idx;
+
+      public SizeIndexPair(final int width, final int idx) {
+        this.width = width;
+        this.idx = idx;
+      }
     }
 
     
-
-
-    public final @NonNull String src;
+    private final List<ImageResource> mImages;
 
     
-
-
-    public final @Nullable String type;
-
     
+    private final List<SizeIndexPair> mSizeIndex;
 
-
-    public final @Nullable Size[] sizes;
-
-    
-
-
-
-
-
-
-
-    public ImageResource(
-            final @NonNull String src,
-            final @Nullable String type,
-            final @Nullable Size[] sizes) {
-        this.src = src.toLowerCase(Locale.ROOT);
-        this.type = type != null ? type.toLowerCase(Locale.ROOT) : null;
-        this.sizes = sizes;
+     Collection() {
+      mImages = new ArrayList<>();
+      mSizeIndex = new ArrayList<>();
     }
 
     
+    public static class Builder {
+      final Collection mCollection;
+
+      public Builder() {
+        mCollection = new Collection();
+      }
+
+      
 
 
 
 
 
+      public @NonNull Builder add(final ImageResource image) {
+        final int index = mCollection.mImages.size();
 
-
-
-    public ImageResource(
-            final @NonNull String src,
-            final @Nullable String type,
-            final @Nullable String sizes) {
-        this(src, type, parseSizes(sizes));
-    }
-
-    private static @Nullable Size[] parseSizes(final @Nullable String sizesStr) {
-        if (sizesStr == null || sizesStr.isEmpty()) {
-            return null;
+        if (image.sizes == null) {
+          
+          mCollection.mSizeIndex.add(new SizeIndexPair(0, index));
+        } else {
+          for (final Size size : image.sizes) {
+            mCollection.mSizeIndex.add(new SizeIndexPair(size.width, index));
+          }
         }
+        mCollection.mImages.add(image);
+        return this;
+      }
 
-        final String[] sizesStrs = sizesStr.toLowerCase(Locale.ROOT).split(" ");
-        final List<Size> sizes = new ArrayList<Size>();
+      
 
-        for (final String sizeStr: sizesStrs) {
-            if (sizesStr.equals("any")) {
-                
-                sizes.add(new Size(0, 0));
-                continue;
-            }
-            final String[] widthHeight = sizeStr.split("x");
-            if (widthHeight.length != 2) {
-                
-                continue;
-            }
-            try {
-                sizes.add(new Size(
-                        Integer.valueOf(widthHeight[0]),
-                        Integer.valueOf(widthHeight[1])));
-            } catch (final NumberFormatException e) {
-                Log.e(LOGTAG, "Invalid image resource size", e);
-            }
-        }
-        if (sizes.isEmpty()) {
-            return null;
-        }
-        return sizes.toArray(new Size[0]);
-    }
 
-    public static @NonNull ImageResource fromBundle(
-            final GeckoBundle bundle) {
-        return new ImageResource(
-              bundle.getString("src"),
-              bundle.getString("type"),
-              bundle.getString("sizes"));
+
+
+      public @NonNull Collection build() {
+        Collections.sort(mCollection.mSizeIndex, (a, b) -> Integer.compare(a.width, b.width));
+        return mCollection;
+      }
     }
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder("ImageResource {");
-        builder
-            .append("src=").append(src)
-            .append("type=").append(type)
-            .append("sizes=").append(sizes)
-            .append("}");
-        return builder.toString();
+      final StringBuilder builder = new StringBuilder("ImageResource.Collection {");
+      builder.append("images=[");
+
+      for (final ImageResource image : mImages) {
+        builder.append(image).append(", ");
+      }
+      builder.append("]}");
+      return builder.toString();
     }
 
     
 
 
+
+
+
+
+
+    public @Nullable ImageResource getBest(final int size) {
+      if (mSizeIndex.isEmpty()) {
+        return null;
+      }
+      int bestMatchIdx = mSizeIndex.get(0).idx;
+      int lastDiff = size;
+      for (final SizeIndexPair sizeIndex : mSizeIndex) {
+        final int diff = Math.abs(sizeIndex.width - size);
+        if (lastDiff <= diff) {
+          
+          
+          
+          break;
+        }
+        lastDiff = diff;
+        bestMatchIdx = sizeIndex.idx;
+      }
+      return mImages.get(bestMatchIdx);
+    }
+
+    
 
 
 
@@ -167,208 +263,72 @@ public class ImageResource {
 
     @NonNull
     public GeckoResult<Bitmap> getBitmap(final int size) {
-        return ImageDecoder.instance().decode(src, size);
+      final ImageResource image = getBest(size);
+      if (image == null) {
+        return GeckoResult.fromValue(null);
+      }
+      return image.getBitmap(size);
     }
 
-    
+    public static Collection fromSizeSrcBundle(final GeckoBundle bundle) {
+      final Builder builder = new Builder();
 
+      for (final String key : bundle.keys()) {
+        final Integer intKey = Integer.valueOf(key);
+        if (intKey == null) {
+          Log.e(LOGTAG, "Non-integer image key: " + intKey);
 
-
-
-
-
-    public static class Collection {
-        private static class SizeIndexPair {
-            public final int width;
-            public final int idx;
-
-            public SizeIndexPair(final int width, final int idx) {
-                this.width = width;
-                this.idx = idx;
-            }
+          if (DEBUG) {
+            throw new RuntimeException("Non-integer image key: " + key);
+          }
+          continue;
         }
 
-        
-        private final List<ImageResource> mImages;
-
-        
-        
-        private final List<SizeIndexPair> mSizeIndex;
-
-         Collection() {
-            mImages = new ArrayList<>();
-            mSizeIndex = new ArrayList<>();
+        final String src = getImageValue(bundle.get(key));
+        if (src != null) {
+          
+          
+          
+          final ImageResource image =
+              new ImageResource(src, null, new Size[] {new Size(intKey, intKey)});
+          builder.add(image);
         }
-
-        
-
-
-        public static class Builder {
-            final Collection mCollection;
-
-            public Builder() {
-                mCollection = new Collection();
-            }
-
-            
-
-
-
-
-
-            public @NonNull Builder add(final ImageResource image) {
-                final int index = mCollection.mImages.size();
-
-                if (image.sizes == null) {
-                    
-                    mCollection.mSizeIndex.add(new SizeIndexPair(0, index));
-                } else {
-                    for (final Size size: image.sizes) {
-                        mCollection.mSizeIndex.add(
-                                new SizeIndexPair(size.width, index));
-                    }
-                }
-                mCollection.mImages.add(image);
-                return this;
-            }
-
-            
-
-
-
-
-            public @NonNull Collection build() {
-                Collections.sort(
-                    mCollection.mSizeIndex,
-                    (a, b) -> Integer.compare(a.width, b.width));
-                return mCollection;
-            }
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder builder = new StringBuilder(
-                "ImageResource.Collection {");
-            builder.append("images=[");
-
-            for (final ImageResource image : mImages) {
-                builder.append(image).append(", ");
-            }
-            builder.append("]}");
-            return builder.toString();
-        }
-
-        
-
-
-
-
-
-
-
-
-        public @Nullable ImageResource getBest(final int size) {
-            if (mSizeIndex.isEmpty()) {
-                return null;
-            }
-            int bestMatchIdx = mSizeIndex.get(0).idx;
-            int lastDiff = size;
-            for (final SizeIndexPair sizeIndex: mSizeIndex) {
-                final int diff = Math.abs(sizeIndex.width - size);
-                if (lastDiff <= diff) {
-                    
-                    
-                    
-                    break;
-                }
-                lastDiff = diff;
-                bestMatchIdx = sizeIndex.idx;
-            }
-            return mImages.get(bestMatchIdx);
-        }
-
-        
-
-
-
-
-
-
-
-
-        @NonNull
-        public GeckoResult<Bitmap> getBitmap(final int size) {
-            final ImageResource image = getBest(size);
-            if (image == null) {
-                return GeckoResult.fromValue(null);
-            }
-            return image.getBitmap(size);
-        }
-
-        public static Collection fromSizeSrcBundle(
-                final GeckoBundle bundle) {
-            final Builder builder = new Builder();
-
-            for (final String key: bundle.keys()) {
-                final Integer intKey = Integer.valueOf(key);
-                if (intKey == null) {
-                    Log.e(LOGTAG, "Non-integer image key: " + intKey);
-
-                    if (DEBUG) {
-                        throw new RuntimeException(
-                            "Non-integer image key: " + key);
-                    }
-                    continue;
-                }
-
-                final String src = getImageValue(bundle.get(key));
-                if (src != null) {
-                    
-                    
-                    
-                    final ImageResource image = new ImageResource(
-                            src,
-                            null,
-                            new Size[] { new Size(intKey, intKey) });
-                    builder.add(image);
-                }
-            }
-            return builder.build();
-        }
-
-        private static String getImageValue(final Object value) {
-            
-            
-            if (value instanceof GeckoBundle) {
-                
-                
-                final GeckoBundle themeImages = (GeckoBundle) value;
-                final Object defaultImages = themeImages.get("default");
-
-                if (!(defaultImages instanceof String)) {
-                    if (DEBUG) {
-                        throw new RuntimeException(
-                            "Unexpected themed_icon value.");
-                    }
-                    Log.e(LOGTAG, "Unexpected themed_icon value.");
-                    return null;
-                }
-
-                return (String) defaultImages;
-            }
-
-            
-            if (value instanceof String) {
-                return (String) value;
-            }
-
-            
-            if (DEBUG) {
-                throw new RuntimeException("Unexpected image value: " + value);
-            }
-
-            Log.e(LOGTAG, "Unexpected image value.");
-            return null;
-        }
+      }
+      return builder.build();
     }
+
+    private static String getImageValue(final Object value) {
+      
+      
+      if (value instanceof GeckoBundle) {
+        
+        
+        final GeckoBundle themeImages = (GeckoBundle) value;
+        final Object defaultImages = themeImages.get("default");
+
+        if (!(defaultImages instanceof String)) {
+          if (DEBUG) {
+            throw new RuntimeException("Unexpected themed_icon value.");
+          }
+          Log.e(LOGTAG, "Unexpected themed_icon value.");
+          return null;
+        }
+
+        return (String) defaultImages;
+      }
+
+      
+      if (value instanceof String) {
+        return (String) value;
+      }
+
+      
+      if (DEBUG) {
+        throw new RuntimeException("Unexpected image value: " + value);
+      }
+
+      Log.e(LOGTAG, "Unexpected image value.");
+      return null;
+    }
+  }
 }

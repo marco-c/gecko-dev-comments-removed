@@ -4,133 +4,129 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
-import android.content.ClipboardManager;
 import android.content.ClipData;
 import android.content.ClipDescription;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 public final class Clipboard {
-    private final static String HTML_MIME = "text/html";
-    private final static String UNICODE_MIME = "text/unicode";
-    private final static String LOGTAG = "GeckoClipboard";
+  private static final String HTML_MIME = "text/html";
+  private static final String UNICODE_MIME = "text/unicode";
+  private static final String LOGTAG = "GeckoClipboard";
 
-    private Clipboard() {
-    }
+  private Clipboard() {}
 
-    
-
+  
 
 
 
 
-    public static String getText(final Context context) {
-        return getData(context, UNICODE_MIME);
-    }
 
-    
+  public static String getText(final Context context) {
+    return getData(context, UNICODE_MIME);
+  }
 
+  
 
 
 
 
 
 
-    @WrapForJNI(calledFrom = "gecko")
-    public static String getData(final Context context, final String mimeType) {
-        final ClipboardManager cm = (ClipboardManager)
-                context.getSystemService(Context.CLIPBOARD_SERVICE);
-        if (cm.hasPrimaryClip()) {
-            final ClipData clip = cm.getPrimaryClip();
-            if (clip == null || clip.getItemCount() == 0) {
-                return null;
-            }
 
-            final ClipDescription description = clip.getDescription();
-            if (HTML_MIME.equals(mimeType) && description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)) {
-                final CharSequence data = clip.getItemAt(0).getHtmlText();
-                if (data == null) {
-                    return null;
-                }
-                return data.toString();
-            }
-            if (UNICODE_MIME.equals(mimeType)) {
-                return clip.getItemAt(0).coerceToText(context).toString();
-            }
-        }
+  @WrapForJNI(calledFrom = "gecko")
+  public static String getData(final Context context, final String mimeType) {
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    if (cm.hasPrimaryClip()) {
+      final ClipData clip = cm.getPrimaryClip();
+      if (clip == null || clip.getItemCount() == 0) {
         return null;
-    }
+      }
 
-    
-
-
-
-
-
-
-    @WrapForJNI(calledFrom = "gecko")
-    public static boolean setText(final Context context, final CharSequence text) {
-        return setData(context, ClipData.newPlainText("text", text));
-    }
-
-    
-
-
-
-
-
-
-
-    @WrapForJNI(calledFrom = "gecko")
-    public static boolean setHTML(final Context context, final CharSequence text, final String htmlText) {
-        return setData(context, ClipData.newHtmlText("html", text, htmlText));
-    }
-
-    
-
-
-
-
-
-
-    private static boolean setData(final Context context, final ClipData clipData) {
-        
-        
-        final ClipboardManager cm = (ClipboardManager)
-                context.getSystemService(Context.CLIPBOARD_SERVICE);
-        try {
-            cm.setPrimaryClip(clipData);
-        } catch (final NullPointerException e) {
-            
-            
-            
-        } catch (final RuntimeException e) {
-            
-            Log.e(LOGTAG, "Couldn't set clip data to clipboard", e);
-            return false;
+      final ClipDescription description = clip.getDescription();
+      if (HTML_MIME.equals(mimeType)
+          && description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)) {
+        final CharSequence data = clip.getItemAt(0).getHtmlText();
+        if (data == null) {
+          return null;
         }
-        return true;
+        return data.toString();
+      }
+      if (UNICODE_MIME.equals(mimeType)) {
+        return clip.getItemAt(0).coerceToText(context).toString();
+      }
     }
+    return null;
+  }
 
+  
+
+
+
+
+
+
+  @WrapForJNI(calledFrom = "gecko")
+  public static boolean setText(final Context context, final CharSequence text) {
+    return setData(context, ClipData.newPlainText("text", text));
+  }
+
+  
+
+
+
+
+
+
+
+  @WrapForJNI(calledFrom = "gecko")
+  public static boolean setHTML(
+      final Context context, final CharSequence text, final String htmlText) {
+    return setData(context, ClipData.newHtmlText("html", text, htmlText));
+  }
+
+  
+
+
+
+
+
+
+  private static boolean setData(final Context context, final ClipData clipData) {
     
-
-
-    @WrapForJNI(calledFrom = "gecko")
-    public static boolean hasData(final Context context, final String mimeType) {
-        if (HTML_MIME.equals(mimeType) || UNICODE_MIME.equals(mimeType)) {
-            return !TextUtils.isEmpty(getData(context, mimeType));
-        }
-        return false;
-    }
-
     
-
-
-    @WrapForJNI(calledFrom = "gecko")
-    public static void clearText(final Context context) {
-        setText(context, null);
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    try {
+      cm.setPrimaryClip(clipData);
+    } catch (final NullPointerException e) {
+      
+      
+      
+    } catch (final RuntimeException e) {
+      
+      Log.e(LOGTAG, "Couldn't set clip data to clipboard", e);
+      return false;
     }
+    return true;
+  }
+
+  
+  @WrapForJNI(calledFrom = "gecko")
+  public static boolean hasData(final Context context, final String mimeType) {
+    if (HTML_MIME.equals(mimeType) || UNICODE_MIME.equals(mimeType)) {
+      return !TextUtils.isEmpty(getData(context, mimeType));
+    }
+    return false;
+  }
+
+  
+  @WrapForJNI(calledFrom = "gecko")
+  public static void clearText(final Context context) {
+    setText(context, null);
+  }
 }

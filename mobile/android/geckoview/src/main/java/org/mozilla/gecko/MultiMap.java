@@ -2,7 +2,6 @@ package org.mozilla.gecko;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,173 +16,159 @@ import java.util.Set;
 
 
 public class MultiMap<K, T> {
-    private HashMap<K, List<T>> mMap;
-    private final List<T> mEmptyList = Collections.unmodifiableList(new ArrayList<>());
+  private HashMap<K, List<T>> mMap;
+  private final List<T> mEmptyList = Collections.unmodifiableList(new ArrayList<>());
 
-    
-
-
+  
 
 
-    public MultiMap(final int count) {
-        mMap = new HashMap<>(count);
+
+
+  public MultiMap(final int count) {
+    mMap = new HashMap<>(count);
+  }
+
+  
+  public MultiMap() {
+    mMap = new HashMap<>();
+  }
+
+  private void ensure(final K key) {
+    if (!mMap.containsKey(key)) {
+      mMap.put(key, new ArrayList<>());
+    }
+  }
+
+  
+  public Map<K, List<T>> asMap() {
+    return mMap;
+  }
+
+  
+  public int size() {
+    return mMap.size();
+  }
+
+  
+  public boolean isEmpty() {
+    return mMap.isEmpty();
+  }
+
+  
+
+
+
+
+
+  public boolean containsKey(final @Nullable K key) {
+    return mMap.containsKey(key);
+  }
+
+  
+
+
+
+
+
+
+  public boolean containsEntry(final @Nullable K key, final @Nullable T value) {
+    if (!mMap.containsKey(key)) {
+      return false;
     }
 
-    
+    return mMap.get(key).contains(value);
+  }
+
+  
 
 
-    public MultiMap() {
-        mMap = new HashMap<>();
+
+
+
+
+  @NonNull
+  public List<T> get(final @Nullable K key) {
+    if (!mMap.containsKey(key)) {
+      return mEmptyList;
     }
 
-    private void ensure(final K key) {
-        if (!mMap.containsKey(key)) {
-            mMap.put(key, new ArrayList<>());
-        }
+    return mMap.get(key);
+  }
+
+  
+
+
+
+
+
+  @Nullable
+  public void add(final @NonNull K key, final @NonNull T value) {
+    ensure(key);
+    mMap.get(key).add(value);
+  }
+
+  
+
+
+
+
+
+
+  @Nullable
+  public List<T> addAll(final @NonNull K key, final @NonNull List<T> values) {
+    if (values == null || values.isEmpty()) {
+      return null;
     }
 
-    
+    ensure(key);
+
+    final List<T> result = mMap.get(key);
+    result.addAll(values);
+    return result;
+  }
+
+  
 
 
-    public Map<K, List<T>> asMap() {
-        return mMap;
+
+
+
+  @Nullable
+  public List<T> remove(final @Nullable K key) {
+    return mMap.remove(key);
+  }
+
+  
+
+
+
+
+
+
+  @Nullable
+  public boolean remove(final @Nullable K key, final @Nullable T value) {
+    if (!mMap.containsKey(key)) {
+      return false;
     }
 
-    
+    final List<T> values = mMap.get(key);
+    final boolean wasPresent = values.remove(value);
 
-
-    public int size() {
-        return mMap.size();
+    if (values.isEmpty()) {
+      mMap.remove(key);
     }
 
-    
+    return wasPresent;
+  }
 
+  
+  public void clear() {
+    mMap.clear();
+  }
 
-    public boolean isEmpty() {
-        return mMap.isEmpty();
-    }
-
-    
-
-
-
-
-
-    public boolean containsKey(final @Nullable K key) {
-        return mMap.containsKey(key);
-    }
-
-    
-
-
-
-
-
-
-    public boolean containsEntry(final @Nullable K key, final @Nullable T value) {
-        if (!mMap.containsKey(key)) {
-            return false;
-        }
-
-        return mMap.get(key).contains(value);
-    }
-
-    
-
-
-
-
-
-
-    @NonNull
-    public List<T> get(final @Nullable K key) {
-        if (!mMap.containsKey(key)) {
-            return mEmptyList;
-        }
-
-        return mMap.get(key);
-    }
-
-    
-
-
-
-
-
-    @Nullable
-    public void add(final @NonNull K key, final @NonNull T value) {
-        ensure(key);
-        mMap.get(key).add(value);
-    }
-
-    
-
-
-
-
-
-
-    @Nullable
-    public List<T> addAll(final @NonNull K key, final @NonNull List<T> values) {
-        if (values == null || values.isEmpty()) {
-            return null;
-        }
-
-        ensure(key);
-
-        final List<T> result = mMap.get(key);
-        result.addAll(values);
-        return result;
-    }
-
-    
-
-
-
-
-
-
-    @Nullable
-    public List<T> remove(final @Nullable K key) {
-        return mMap.remove(key);
-    }
-
-    
-
-
-
-
-
-
-
-    @Nullable
-    public boolean remove(final @Nullable K key, final @Nullable T value) {
-        if (!mMap.containsKey(key)) {
-            return false;
-        }
-
-        final List<T> values = mMap.get(key);
-        final boolean wasPresent = values.remove(value);
-
-        if (values.isEmpty()) {
-            mMap.remove(key);
-        }
-
-        return wasPresent;
-    }
-
-    
-
-
-    public void clear() {
-        mMap.clear();
-    }
-
-    
-
-
-    @NonNull
-    public Set<K> keySet() {
-        return mMap.keySet();
-    }
+  
+  @NonNull
+  public Set<K> keySet() {
+    return mMap.keySet();
+  }
 }

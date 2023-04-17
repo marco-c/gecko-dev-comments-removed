@@ -14,93 +14,92 @@ import java.util.Iterator;
 
 
 public class JarClassIterator implements Iterator<ClassWithOptions> {
-    private IterableJarLoadingURLClassLoader mTarget;
-    private Iterator<String> mTargetClassListIterator;
+  private IterableJarLoadingURLClassLoader mTarget;
+  private Iterator<String> mTargetClassListIterator;
 
-    private ClassWithOptions lookAhead;
+  private ClassWithOptions lookAhead;
 
-    public JarClassIterator(IterableJarLoadingURLClassLoader aTarget) {
-        mTarget = aTarget;
-        mTargetClassListIterator = aTarget.classNames.iterator();
+  public JarClassIterator(IterableJarLoadingURLClassLoader aTarget) {
+    mTarget = aTarget;
+    mTargetClassListIterator = aTarget.classNames.iterator();
+  }
+
+  @Override
+  public boolean hasNext() {
+    return fillLookAheadIfPossible();
+  }
+
+  @Override
+  public ClassWithOptions next() {
+    if (!fillLookAheadIfPossible()) {
+      throw new IllegalStateException("Failed to look ahead in next()!");
+    }
+    ClassWithOptions next = lookAhead;
+    lookAhead = null;
+    return next;
+  }
+
+  private boolean fillLookAheadIfPossible() {
+    if (lookAhead != null) {
+      return true;
     }
 
-    @Override
-    public boolean hasNext() {
+    if (!mTargetClassListIterator.hasNext()) {
+      return false;
+    }
+
+    String className = mTargetClassListIterator.next();
+    try {
+      Class<?> ret = mTarget.loadClass(className);
+
+      
+      
+      
+      
+      final Class<?> enclosingClass;
+      try {
+        enclosingClass = ret.getEnclosingClass();
+      } catch (IncompatibleClassChangeError e) {
         return fillLookAheadIfPossible();
-    }
+      }
 
-    @Override
-    public ClassWithOptions next() {
-        if (!fillLookAheadIfPossible()) {
-            throw new IllegalStateException("Failed to look ahead in next()!");
-        }
-        ClassWithOptions next = lookAhead;
-        lookAhead = null;
-        return next;
-    }
+      if (enclosingClass != null) {
+        
+        
+        return fillLookAheadIfPossible();
+      }
 
-    private boolean fillLookAheadIfPossible() {
-        if (lookAhead != null) {
-            return true;
+      String ifdef = "";
+      for (final Annotation annotation : ret.getDeclaredAnnotations()) {
+        Class<? extends Annotation> annotationType = annotation.annotationType();
+        if (!annotationType.getName().equals("org.mozilla.gecko.annotation.BuildFlag")) {
+          continue;
         }
 
-        if (!mTargetClassListIterator.hasNext()) {
-            return false;
-        }
-
-        String className = mTargetClassListIterator.next();
         try {
-            Class<?> ret = mTarget.loadClass(className);
-
-            
-            
-            
-            
-            final Class<?> enclosingClass;
-            try {
-                enclosingClass = ret.getEnclosingClass();
-            } catch (IncompatibleClassChangeError e) {
-                return fillLookAheadIfPossible();
-            }
-
-            if (enclosingClass != null) {
-                
-                
-                return fillLookAheadIfPossible();
-            }
-
-            String ifdef = "";
-            for (final Annotation annotation : ret.getDeclaredAnnotations()) {
-                Class<? extends Annotation> annotationType = annotation.annotationType();
-                if (!annotationType.getName().equals(
-                        "org.mozilla.gecko.annotation.BuildFlag")) {
-                    continue;
-                }
-
-                try {
-                    final Method valueMethod = annotationType.getDeclaredMethod("value");
-                    valueMethod.setAccessible(true);
-                    ifdef = (String) valueMethod.invoke(annotation);
-                    break;
-                } catch (final Exception e) {
-                    System.err.println("Unable to read BuildFlag annotation.");
-                    e.printStackTrace(System.err);
-                    System.exit(1);
-                }
-            }
-
-            lookAhead = new ClassWithOptions(ret, ret.getSimpleName(), ifdef);
-            return true;
-        } catch (ClassNotFoundException e) {
-            System.err.println("Unable to enumerate class: " + className + ". Corrupted jar file?");
-            e.printStackTrace();
-            System.exit(2);
+          final Method valueMethod = annotationType.getDeclaredMethod("value");
+          valueMethod.setAccessible(true);
+          ifdef = (String) valueMethod.invoke(annotation);
+          break;
+        } catch (final Exception e) {
+          System.err.println("Unable to read BuildFlag annotation.");
+          e.printStackTrace(System.err);
+          System.exit(1);
         }
-        return false;
-    }
+      }
 
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException("Removal of classes from iterator not supported.");
+      lookAhead = new ClassWithOptions(ret, ret.getSimpleName(), ifdef);
+      return true;
+    } catch (ClassNotFoundException e) {
+      System.err.println("Unable to enumerate class: " + className + ". Corrupted jar file?");
+      e.printStackTrace();
+      System.exit(2);
     }
+    return false;
+  }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException("Removal of classes from iterator not supported.");
+  }
 }

@@ -6,17 +6,15 @@
 
 package org.mozilla.geckoview;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-
 import android.os.Parcel;
 import android.os.Parcelable;
-import androidx.collection.ArrayMap;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
+import androidx.collection.ArrayMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
 
@@ -26,248 +24,243 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 
-
 public abstract class RuntimeSettings implements Parcelable {
-    
+  
 
 
 
 
+  public abstract static class Builder<Settings extends RuntimeSettings> {
+    private final Settings mSettings;
 
-    public abstract static class Builder<Settings extends RuntimeSettings> {
-        private final Settings mSettings;
-
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public Builder() {
-            mSettings = newSettings(null);
-        }
-
-        
-
-
-
-
-        @AnyThread
-        public @NonNull Settings build() {
-            return newSettings(mSettings);
-        }
-
-        @AnyThread
-        protected @NonNull Settings getSettings() {
-            return mSettings;
-        }
-
-        
-
-
-
-
-
-        @AnyThread
-        protected abstract @NonNull Settings newSettings(
-                final @Nullable Settings settings);
-    }
-
-    
-
-
-     class Pref<T> {
-        public final String name;
-        public final T defaultValue;
-        private T mValue;
-        private boolean mIsSet;
-
-        public Pref(@NonNull final String name, final T defaultValue) {
-            this.name = name;
-            this.defaultValue = defaultValue;
-            mValue = defaultValue;
-
-            RuntimeSettings.this.addPref(this);
-        }
-
-        public void set(final T newValue) {
-            mValue = newValue;
-            mIsSet = true;
-        }
-
-        public void commit(final T newValue) {
-            if (newValue.equals(mValue)) {
-                return;
-            }
-            set(newValue);
-            commit();
-        }
-
-        public void commit() {
-            final GeckoRuntime runtime = RuntimeSettings.this.getRuntime();
-            if (runtime == null) {
-                return;
-            }
-            final GeckoBundle prefs = new GeckoBundle(1);
-            addToBundle(prefs);
-            runtime.setDefaultPrefs(prefs);
-        }
-
-        public T get() {
-            return mValue;
-        }
-
-        public boolean isSet() {
-            return mIsSet;
-        }
-
-        public void reset() {
-            mValue = defaultValue;
-            mIsSet = false;
-        }
-
-        private void addToBundle(final GeckoBundle bundle) {
-            final T value = mIsSet ? mValue : defaultValue;
-            if (value instanceof String) {
-                bundle.putString(name, (String)value);
-            } else if (value instanceof Integer) {
-                bundle.putInt(name, (Integer)value);
-            } else if (value instanceof Boolean) {
-                bundle.putBoolean(name, (Boolean)value);
-            } else {
-                throw new UnsupportedOperationException("Unhandled pref type for " + name);
-            }
-        }
-    }
-
-    private RuntimeSettings mParent;
-    private final ArrayList<RuntimeSettings> mChildren;
-    private final ArrayList<Pref<?>> mPrefs;
-
-    protected RuntimeSettings() {
-        this(null );
-    }
-
-    
-
-
-
-
-    protected RuntimeSettings(final @Nullable RuntimeSettings parent) {
-        mPrefs = new ArrayList<Pref<?>>();
-        mChildren = new ArrayList<RuntimeSettings>();
-
-        setParent(parent);
-    }
-
-    
-
-
-
-
-    @AnyThread
-    protected void updatePrefs(final @NonNull RuntimeSettings settings) {
-        if (mPrefs.size() != settings.mPrefs.size()) {
-            throw new IllegalArgumentException("Settings must be compatible");
-        }
-
-        for (int i = 0; i < mPrefs.size(); ++i) {
-            if (!mPrefs.get(i).name.equals(settings.mPrefs.get(i).name)) {
-                throw new IllegalArgumentException("Settings must be compatible");
-            }
-            if (!settings.mPrefs.get(i).isSet()) {
-                continue;
-            }
-            
-            @SuppressWarnings("unchecked")
-            final Pref<Object> uncheckedPref = (Pref<Object>) mPrefs.get(i);
-            uncheckedPref.commit(settings.mPrefs.get(i).get());
-        }
-    }
-
-     @Nullable GeckoRuntime getRuntime() {
-        if (mParent != null) {
-            return mParent.getRuntime();
-        }
-        return null;
-    }
-
-    private void setParent(final @Nullable RuntimeSettings parent) {
-        mParent = parent;
-        if (mParent != null) {
-            mParent.addChild(this);
-        }
-    }
-
-    private void addChild(final @NonNull RuntimeSettings child) {
-        mChildren.add(child);
-    }
-
-     void addPref(final Pref<?> pref) {
-        mPrefs.add(pref);
-    }
-
-    
-
-
-
-
-
-     @NonNull Map<String, Object> getPrefsMap() {
-        final ArrayMap<String, Object> prefs = new ArrayMap<>();
-        forAllPrefs(pref -> prefs.put(pref.name, pref.get()));
-
-        return Collections.unmodifiableMap(prefs);
-    }
-
-    
-
-
-
-    private void forAllPrefs(final GeckoResult.Consumer<Pref<?>> visitor) {
-        for (final RuntimeSettings child : mChildren) {
-            child.forAllPrefs(visitor);
-        }
-
-        for (final Pref<?> pref : mPrefs) {
-            visitor.accept(pref);
-        }
-    }
-
-    
-
-
-
-
-
-
-     void commitResetPrefs() {
-        final ArrayList<String> names = new ArrayList<String>();
-        forAllPrefs(pref -> names.add(pref.name));
-
-        final GeckoBundle data = new GeckoBundle(1);
-        data.putStringArray("names", names);
-        EventDispatcher.getInstance().dispatch("GeckoView:ResetUserPrefs", data);
-    }
-
-    @Override 
-    @AnyThread
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override 
-    @AnyThread
-    public void writeToParcel(final Parcel out, final int flags) {
-        for (final Pref<?> pref : mPrefs) {
-            out.writeValue(pref.get());
-        }
-    }
-
-    @AnyThread
-    
     @SuppressWarnings("checkstyle:javadocmethod")
-    public void readFromParcel(final @NonNull Parcel source) {
-        for (final Pref<?> pref : mPrefs) {
-            
-            @SuppressWarnings("unchecked")
-            final Pref<Object> uncheckedPref = (Pref<Object>) pref;
-            uncheckedPref.commit(source.readValue(getClass().getClassLoader()));
-        }
+    public Builder() {
+      mSettings = newSettings(null);
     }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull Settings build() {
+      return newSettings(mSettings);
+    }
+
+    @AnyThread
+    protected @NonNull Settings getSettings() {
+      return mSettings;
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    protected abstract @NonNull Settings newSettings(final @Nullable Settings settings);
+  }
+
+  
+   class Pref<T> {
+    public final String name;
+    public final T defaultValue;
+    private T mValue;
+    private boolean mIsSet;
+
+    public Pref(@NonNull final String name, final T defaultValue) {
+      this.name = name;
+      this.defaultValue = defaultValue;
+      mValue = defaultValue;
+
+      RuntimeSettings.this.addPref(this);
+    }
+
+    public void set(final T newValue) {
+      mValue = newValue;
+      mIsSet = true;
+    }
+
+    public void commit(final T newValue) {
+      if (newValue.equals(mValue)) {
+        return;
+      }
+      set(newValue);
+      commit();
+    }
+
+    public void commit() {
+      final GeckoRuntime runtime = RuntimeSettings.this.getRuntime();
+      if (runtime == null) {
+        return;
+      }
+      final GeckoBundle prefs = new GeckoBundle(1);
+      addToBundle(prefs);
+      runtime.setDefaultPrefs(prefs);
+    }
+
+    public T get() {
+      return mValue;
+    }
+
+    public boolean isSet() {
+      return mIsSet;
+    }
+
+    public void reset() {
+      mValue = defaultValue;
+      mIsSet = false;
+    }
+
+    private void addToBundle(final GeckoBundle bundle) {
+      final T value = mIsSet ? mValue : defaultValue;
+      if (value instanceof String) {
+        bundle.putString(name, (String) value);
+      } else if (value instanceof Integer) {
+        bundle.putInt(name, (Integer) value);
+      } else if (value instanceof Boolean) {
+        bundle.putBoolean(name, (Boolean) value);
+      } else {
+        throw new UnsupportedOperationException("Unhandled pref type for " + name);
+      }
+    }
+  }
+
+  private RuntimeSettings mParent;
+  private final ArrayList<RuntimeSettings> mChildren;
+  private final ArrayList<Pref<?>> mPrefs;
+
+  protected RuntimeSettings() {
+    this(null );
+  }
+
+  
+
+
+
+
+  protected RuntimeSettings(final @Nullable RuntimeSettings parent) {
+    mPrefs = new ArrayList<Pref<?>>();
+    mChildren = new ArrayList<RuntimeSettings>();
+
+    setParent(parent);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  protected void updatePrefs(final @NonNull RuntimeSettings settings) {
+    if (mPrefs.size() != settings.mPrefs.size()) {
+      throw new IllegalArgumentException("Settings must be compatible");
+    }
+
+    for (int i = 0; i < mPrefs.size(); ++i) {
+      if (!mPrefs.get(i).name.equals(settings.mPrefs.get(i).name)) {
+        throw new IllegalArgumentException("Settings must be compatible");
+      }
+      if (!settings.mPrefs.get(i).isSet()) {
+        continue;
+      }
+      
+      @SuppressWarnings("unchecked")
+      final Pref<Object> uncheckedPref = (Pref<Object>) mPrefs.get(i);
+      uncheckedPref.commit(settings.mPrefs.get(i).get());
+    }
+  }
+
+   @Nullable
+  GeckoRuntime getRuntime() {
+    if (mParent != null) {
+      return mParent.getRuntime();
+    }
+    return null;
+  }
+
+  private void setParent(final @Nullable RuntimeSettings parent) {
+    mParent = parent;
+    if (mParent != null) {
+      mParent.addChild(this);
+    }
+  }
+
+  private void addChild(final @NonNull RuntimeSettings child) {
+    mChildren.add(child);
+  }
+
+   void addPref(final Pref<?> pref) {
+    mPrefs.add(pref);
+  }
+
+  
+
+
+
+
+   @NonNull
+  Map<String, Object> getPrefsMap() {
+    final ArrayMap<String, Object> prefs = new ArrayMap<>();
+    forAllPrefs(pref -> prefs.put(pref.name, pref.get()));
+
+    return Collections.unmodifiableMap(prefs);
+  }
+
+  
+
+
+
+  private void forAllPrefs(final GeckoResult.Consumer<Pref<?>> visitor) {
+    for (final RuntimeSettings child : mChildren) {
+      child.forAllPrefs(visitor);
+    }
+
+    for (final Pref<?> pref : mPrefs) {
+      visitor.accept(pref);
+    }
+  }
+
+  
+
+
+
+
+
+   void commitResetPrefs() {
+    final ArrayList<String> names = new ArrayList<String>();
+    forAllPrefs(pref -> names.add(pref.name));
+
+    final GeckoBundle data = new GeckoBundle(1);
+    data.putStringArray("names", names);
+    EventDispatcher.getInstance().dispatch("GeckoView:ResetUserPrefs", data);
+  }
+
+  @Override 
+  @AnyThread
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override 
+  @AnyThread
+  public void writeToParcel(final Parcel out, final int flags) {
+    for (final Pref<?> pref : mPrefs) {
+      out.writeValue(pref.get());
+    }
+  }
+
+  @AnyThread
+  
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public void readFromParcel(final @NonNull Parcel source) {
+    for (final Pref<?> pref : mPrefs) {
+      
+      @SuppressWarnings("unchecked")
+      final Pref<Object> uncheckedPref = (Pref<Object>) pref;
+      uncheckedPref.commit(source.readValue(getClass().getClassLoader()));
+    }
+  }
 }

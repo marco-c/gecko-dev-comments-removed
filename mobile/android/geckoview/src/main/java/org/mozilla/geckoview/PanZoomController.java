@@ -5,137 +5,129 @@
 
 package org.mozilla.geckoview;
 
+import android.app.UiModeManager;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Rect;
+import android.os.SystemClock;
+import android.util.Log;
+import android.util.Pair;
+import android.view.InputDevice;
+import android.view.MotionEvent;
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import android.app.UiModeManager;
-import android.content.Context;
-import android.content.res.Configuration;
-import android.graphics.Rect;
-import android.os.SystemClock;
-import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.UiThread;
-import androidx.annotation.IntDef;
-import android.util.Log;
-import android.util.Pair;
-import android.view.MotionEvent;
-import android.view.InputDevice;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-import java.util.ArrayList;
-
 @UiThread
 public class PanZoomController {
-    private static final String LOGTAG = "GeckoNPZC";
-    private static final int EVENT_SOURCE_SCROLL = 0;
-    private static final int EVENT_SOURCE_MOTION = 1;
-    private static final int EVENT_SOURCE_MOUSE = 2;
-    private static Boolean sTreatMouseAsTouch = null;
+  private static final String LOGTAG = "GeckoNPZC";
+  private static final int EVENT_SOURCE_SCROLL = 0;
+  private static final int EVENT_SOURCE_MOTION = 1;
+  private static final int EVENT_SOURCE_MOUSE = 2;
+  private static Boolean sTreatMouseAsTouch = null;
 
-    private final GeckoSession mSession;
-    private final Rect mTempRect = new Rect();
-    private boolean mAttached;
-    private float mPointerScrollFactor = 64.0f;
-    private long mLastDownTime;
+  private final GeckoSession mSession;
+  private final Rect mTempRect = new Rect();
+  private boolean mAttached;
+  private float mPointerScrollFactor = 64.0f;
+  private long mLastDownTime;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({SCROLL_BEHAVIOR_SMOOTH, SCROLL_BEHAVIOR_AUTO})
-     @interface ScrollBehaviorType {}
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({SCROLL_BEHAVIOR_SMOOTH, SCROLL_BEHAVIOR_AUTO})
+   @interface ScrollBehaviorType {}
 
-    
+  
+  public static final int SCROLL_BEHAVIOR_SMOOTH = 0;
+  
+  public static final int SCROLL_BEHAVIOR_AUTO = 1;
 
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    INPUT_RESULT_UNHANDLED,
+    INPUT_RESULT_HANDLED,
+    INPUT_RESULT_HANDLED_CONTENT,
+    INPUT_RESULT_IGNORED
+  })
+   @interface InputResult {}
 
-    public static final int SCROLL_BEHAVIOR_SMOOTH = 0;
-    
-
-
-    public static final int SCROLL_BEHAVIOR_AUTO = 1;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({INPUT_RESULT_UNHANDLED, INPUT_RESULT_HANDLED, INPUT_RESULT_HANDLED_CONTENT, INPUT_RESULT_IGNORED})
-     @interface InputResult {}
-
-    
-
-
-
-
-    @WrapForJNI
-    public static final int INPUT_RESULT_UNHANDLED = 0;
-
-    
+  
 
 
 
-    @WrapForJNI
-    public static final int INPUT_RESULT_HANDLED = 1;
+  @WrapForJNI public static final int INPUT_RESULT_UNHANDLED = 0;
 
-    
-
-
-
-    @WrapForJNI
-    public static final int INPUT_RESULT_HANDLED_CONTENT = 2;
-
-    
+  
 
 
 
-    @WrapForJNI
-    public static final int INPUT_RESULT_IGNORED = 3;
+  @WrapForJNI public static final int INPUT_RESULT_HANDLED = 1;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { SCROLLABLE_FLAG_NONE, SCROLLABLE_FLAG_TOP, SCROLLABLE_FLAG_RIGHT,
-                      SCROLLABLE_FLAG_BOTTOM, SCROLLABLE_FLAG_LEFT })
-     @interface ScrollableDirections {}
-    
+  
 
 
 
+  @WrapForJNI public static final int INPUT_RESULT_HANDLED_CONTENT = 2;
 
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_NONE = 0;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_TOP = 1 << 0;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_RIGHT = 1 << 1;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_BOTTOM = 1 << 2;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_LEFT = 1 << 3;
+  
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { OVERSCROLL_FLAG_NONE, OVERSCROLL_FLAG_HORIZONTAL, OVERSCROLL_FLAG_VERTICAL })
-     @interface OverscrollDirections {}
-    
+
+
+  @WrapForJNI public static final int INPUT_RESULT_IGNORED = 3;
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        SCROLLABLE_FLAG_NONE,
+        SCROLLABLE_FLAG_TOP,
+        SCROLLABLE_FLAG_RIGHT,
+        SCROLLABLE_FLAG_BOTTOM,
+        SCROLLABLE_FLAG_LEFT
+      })
+   @interface ScrollableDirections {}
+  
 
 
 
 
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_NONE = 0;
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_HORIZONTAL = 1 << 0;
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_VERTICAL = 1 << 1;
+  
+  @WrapForJNI public static final int SCROLLABLE_FLAG_NONE = 0;
+  
+  @WrapForJNI public static final int SCROLLABLE_FLAG_TOP = 1 << 0;
+  
+  @WrapForJNI public static final int SCROLLABLE_FLAG_RIGHT = 1 << 1;
+  
+  @WrapForJNI public static final int SCROLLABLE_FLAG_BOTTOM = 1 << 2;
+  
+  @WrapForJNI public static final int SCROLLABLE_FLAG_LEFT = 1 << 3;
 
-    
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {OVERSCROLL_FLAG_NONE, OVERSCROLL_FLAG_HORIZONTAL, OVERSCROLL_FLAG_VERTICAL})
+   @interface OverscrollDirections {}
+  
+
+
+
+
+  
+  @WrapForJNI public static final int OVERSCROLL_FLAG_NONE = 0;
+  
+  @WrapForJNI public static final int OVERSCROLL_FLAG_HORIZONTAL = 1 << 0;
+  
+  @WrapForJNI public static final int OVERSCROLL_FLAG_VERTICAL = 1 << 1;
+
+  
 
 
 
@@ -148,670 +140,696 @@ public class PanZoomController {
 
 
 
-    @WrapForJNI
-    public static class InputResultDetail {
-        protected InputResultDetail(final @InputResult int handledResult,
-                                    final @ScrollableDirections int scrollableDirections,
-                                    final @OverscrollDirections int overscrollDirections) {
-            mHandledResult = handledResult;
-            mScrollableDirections = scrollableDirections;
-            mOverscrollDirections = overscrollDirections;
-        }
-
-        
-
-
-
-        @AnyThread
-        public @InputResult int handledResult() {
-            return mHandledResult;
-        }
-        
-
-
-
-        @AnyThread
-        public @ScrollableDirections int scrollableDirections() {
-            return mScrollableDirections;
-        }
-        
-
-
-
-        @AnyThread
-        public @OverscrollDirections int overscrollDirections() {
-            return mOverscrollDirections;
-        }
-
-        private final @InputResult int mHandledResult;
-        private final @ScrollableDirections int mScrollableDirections;
-        private final @OverscrollDirections int mOverscrollDirections;
+  @WrapForJNI
+  public static class InputResultDetail {
+    protected InputResultDetail(
+        final @InputResult int handledResult,
+        final @ScrollableDirections int scrollableDirections,
+        final @OverscrollDirections int overscrollDirections) {
+      mHandledResult = handledResult;
+      mScrollableDirections = scrollableDirections;
+      mOverscrollDirections = overscrollDirections;
     }
 
-    private SynthesizedEventState mPointerState;
-
-    private ArrayList<Pair<Integer, MotionEvent>> mQueuedEvents;
-
-    private boolean mSynthesizedEvent = false;
-
-    @WrapForJNI
-    private static class MotionEventData {
-        public final int action;
-        public final int actionIndex;
-        public final long time;
-        public final int metaState;
-        public final int pointerId[];
-        public final int historySize;
-        public final long historicalTime[];
-        public final float historicalX[];
-        public final float historicalY[];
-        public final float historicalOrientation[];
-        public final float historicalPressure[];
-        public final float historicalToolMajor[];
-        public final float historicalToolMinor[];
-        public final float x[];
-        public final float y[];
-        public final float orientation[];
-        public final float pressure[];
-        public final float toolMajor[];
-        public final float toolMinor[];
-
-        public MotionEventData(final MotionEvent event) {
-            final int count = event.getPointerCount();
-            action = event.getActionMasked();
-            actionIndex = event.getActionIndex();
-            time = event.getEventTime();
-            metaState = event.getMetaState();
-            historySize = event.getHistorySize();
-            historicalTime = new long[historySize];
-            historicalX = new float[historySize * count];
-            historicalY = new float[historySize * count];
-            historicalOrientation = new float[historySize * count];
-            historicalPressure = new float[historySize * count];
-            historicalToolMajor = new float[historySize * count];
-            historicalToolMinor = new float[historySize * count];
-            pointerId = new int[count];
-            x = new float[count];
-            y = new float[count];
-            orientation = new float[count];
-            pressure = new float[count];
-            toolMajor = new float[count];
-            toolMinor = new float[count];
+    
 
 
-            for (int historyIndex = 0; historyIndex < historySize; historyIndex++) {
-                historicalTime[historyIndex] = event.getHistoricalEventTime(historyIndex);
-            }
 
-            final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
-            for (int i = 0; i < count; i++) {
-                pointerId[i] = event.getPointerId(i);
+    @AnyThread
+    public @InputResult int handledResult() {
+      return mHandledResult;
+    }
+    
 
-                for (int historyIndex = 0; historyIndex < historySize; historyIndex++) {
-                    event.getHistoricalPointerCoords(i, historyIndex, coords);
 
-                    final int historicalI = historyIndex * count + i;
-                    historicalX[historicalI] = coords.x;
-                    historicalY[historicalI] = coords.y;
 
-                    historicalOrientation[historicalI] = coords.orientation;
-                    historicalPressure[historicalI] = coords.pressure;
+    @AnyThread
+    public @ScrollableDirections int scrollableDirections() {
+      return mScrollableDirections;
+    }
+    
 
-                    
-                    historicalToolMajor[historicalI] = coords.toolMajor;
-                    historicalToolMinor[historicalI] = coords.toolMinor;
-                }
 
-                event.getPointerCoords(i, coords);
 
-                x[i] = coords.x;
-                y[i] = coords.y;
-
-                orientation[i] = coords.orientation;
-                pressure[i] = coords.pressure;
-
-                
-                toolMajor[i] = coords.toolMajor;
-                toolMinor[i] = coords.toolMinor;
-            }
-        }
+    @AnyThread
+    public @OverscrollDirections int overscrollDirections() {
+      return mOverscrollDirections;
     }
 
-     final class NativeProvider extends JNIObject {
-        @Override 
-        protected void disposeNative() {
-            
-            throw new UnsupportedOperationException();
+    private final @InputResult int mHandledResult;
+    private final @ScrollableDirections int mScrollableDirections;
+    private final @OverscrollDirections int mOverscrollDirections;
+  }
+
+  private SynthesizedEventState mPointerState;
+
+  private ArrayList<Pair<Integer, MotionEvent>> mQueuedEvents;
+
+  private boolean mSynthesizedEvent = false;
+
+  @WrapForJNI
+  private static class MotionEventData {
+    public final int action;
+    public final int actionIndex;
+    public final long time;
+    public final int metaState;
+    public final int pointerId[];
+    public final int historySize;
+    public final long historicalTime[];
+    public final float historicalX[];
+    public final float historicalY[];
+    public final float historicalOrientation[];
+    public final float historicalPressure[];
+    public final float historicalToolMajor[];
+    public final float historicalToolMinor[];
+    public final float x[];
+    public final float y[];
+    public final float orientation[];
+    public final float pressure[];
+    public final float toolMajor[];
+    public final float toolMinor[];
+
+    public MotionEventData(final MotionEvent event) {
+      final int count = event.getPointerCount();
+      action = event.getActionMasked();
+      actionIndex = event.getActionIndex();
+      time = event.getEventTime();
+      metaState = event.getMetaState();
+      historySize = event.getHistorySize();
+      historicalTime = new long[historySize];
+      historicalX = new float[historySize * count];
+      historicalY = new float[historySize * count];
+      historicalOrientation = new float[historySize * count];
+      historicalPressure = new float[historySize * count];
+      historicalToolMajor = new float[historySize * count];
+      historicalToolMinor = new float[historySize * count];
+      pointerId = new int[count];
+      x = new float[count];
+      y = new float[count];
+      orientation = new float[count];
+      pressure = new float[count];
+      toolMajor = new float[count];
+      toolMinor = new float[count];
+
+      for (int historyIndex = 0; historyIndex < historySize; historyIndex++) {
+        historicalTime[historyIndex] = event.getHistoricalEventTime(historyIndex);
+      }
+
+      final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+      for (int i = 0; i < count; i++) {
+        pointerId[i] = event.getPointerId(i);
+
+        for (int historyIndex = 0; historyIndex < historySize; historyIndex++) {
+          event.getHistoricalPointerCoords(i, historyIndex, coords);
+
+          final int historicalI = historyIndex * count + i;
+          historicalX[historicalI] = coords.x;
+          historicalY[historicalI] = coords.y;
+
+          historicalOrientation[historicalI] = coords.orientation;
+          historicalPressure[historicalI] = coords.pressure;
+
+          
+          historicalToolMajor[historicalI] = coords.toolMajor;
+          historicalToolMinor[historicalI] = coords.toolMinor;
         }
 
-        @WrapForJNI(calledFrom = "ui")
-        private native void handleMotionEvent(
-               MotionEventData eventData, float screenX, float screenY,
-               GeckoResult<InputResultDetail> result);
+        event.getPointerCoords(i, coords);
 
-        @WrapForJNI(calledFrom = "ui")
-        private native @InputResult int handleScrollEvent(
-                long time, int metaState,
-                float x, float y,
-                float hScroll, float vScroll);
+        x[i] = coords.x;
+        y[i] = coords.y;
 
-        @WrapForJNI(calledFrom = "ui")
-        private native @InputResult int handleMouseEvent(
-                int action, long time, int metaState,
-                float x, float y, int buttons);
-
-        @WrapForJNI(stubName = "SetIsLongpressEnabled") 
-        private native void nativeSetIsLongpressEnabled(boolean isLongpressEnabled);
-
-        @WrapForJNI(calledFrom = "ui")
-        private void synthesizeNativeTouchPoint(final int pointerId, final int eventType,
-                                                final int clientX, final int clientY,
-                                                final double pressure, final int orientation) {
-            if (pointerId == PointerInfo.RESERVED_MOUSE_POINTER_ID) {
-                throw new IllegalArgumentException("Pointer ID reserved for mouse");
-            }
-            synthesizeNativePointer(InputDevice.SOURCE_TOUCHSCREEN, pointerId,
-                    eventType, clientX, clientY, pressure, orientation, 0);
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void synthesizeNativeMouseEvent(final int eventType, final int clientX,
-                                                final int clientY, final int button) {
-            synthesizeNativePointer(InputDevice.SOURCE_MOUSE,
-                    PointerInfo.RESERVED_MOUSE_POINTER_ID,
-                    eventType, clientX, clientY, 0, 0, button);
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void setAttached(final boolean attached) {
-            if (attached) {
-                mAttached = true;
-                flushEventQueue();
-            } else if (mAttached) {
-                mAttached = false;
-                enableEventQueue();
-            }
-        }
-    }
-
-     final NativeProvider mNative = new NativeProvider();
-
-    private void handleMotionEvent(final MotionEvent event) {
-        handleMotionEvent(event, null);
-    }
-
-    private void handleMotionEvent(final MotionEvent event, final GeckoResult<InputResultDetail> result) {
-        if (!mAttached) {
-            mQueuedEvents.add(new Pair<>(EVENT_SOURCE_MOTION, event));
-            if (result != null) {
-                result.complete(
-                    new InputResultDetail(INPUT_RESULT_HANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
-            }
-            return;
-        }
-
-        final int action = event.getActionMasked();
-
-        if (action == MotionEvent.ACTION_DOWN) {
-            mLastDownTime = event.getDownTime();
-        } else if (mLastDownTime != event.getDownTime()) {
-            if (result != null) {
-                result.complete(
-                    new InputResultDetail(INPUT_RESULT_UNHANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
-            }
-            return;
-        }
-
-        final float screenX = event.getRawX() - event.getX();
-        final float screenY = event.getRawY() - event.getY();
+        orientation[i] = coords.orientation;
+        pressure[i] = coords.pressure;
 
         
-        
-        
-        if (!mSynthesizedEvent) {
-            mSession.onScreenOriginChanged((int)screenX, (int)screenY);
-        }
+        toolMajor[i] = coords.toolMajor;
+        toolMinor[i] = coords.toolMinor;
+      }
+    }
+  }
 
-        final MotionEventData data = new MotionEventData(event);
-        mNative.handleMotionEvent(data, screenX, screenY, result);
+   final class NativeProvider extends JNIObject {
+    @Override 
+    protected void disposeNative() {
+      
+      throw new UnsupportedOperationException();
     }
 
-    private @InputResult int handleScrollEvent(final MotionEvent event) {
-        if (!mAttached) {
-            mQueuedEvents.add(new Pair<>(EVENT_SOURCE_SCROLL, event));
-            return INPUT_RESULT_HANDLED;
-        }
+    @WrapForJNI(calledFrom = "ui")
+    private native void handleMotionEvent(
+        MotionEventData eventData,
+        float screenX,
+        float screenY,
+        GeckoResult<InputResultDetail> result);
 
-        final int count = event.getPointerCount();
+    @WrapForJNI(calledFrom = "ui")
+    private native @InputResult int handleScrollEvent(
+        long time, int metaState, float x, float y, float hScroll, float vScroll);
 
-        if (count <= 0) {
-            return INPUT_RESULT_UNHANDLED;
-        }
+    @WrapForJNI(calledFrom = "ui")
+    private native @InputResult int handleMouseEvent(
+        int action, long time, int metaState, float x, float y, int buttons);
 
-        final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
-        event.getPointerCoords(0, coords);
+    @WrapForJNI(stubName = "SetIsLongpressEnabled") 
+    private native void nativeSetIsLongpressEnabled(boolean isLongpressEnabled);
 
-        
-        mSession.getSurfaceBounds(mTempRect);
-        final float x = coords.x - mTempRect.left;
-        final float y = coords.y - mTempRect.top;
-
-        final float hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL) *
-                              mPointerScrollFactor;
-        final float vScroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL) *
-                              mPointerScrollFactor;
-
-        return mNative.handleScrollEvent(event.getEventTime(), event.getMetaState(), x, y,
-                                         hScroll, vScroll);
+    @WrapForJNI(calledFrom = "ui")
+    private void synthesizeNativeTouchPoint(
+        final int pointerId,
+        final int eventType,
+        final int clientX,
+        final int clientY,
+        final double pressure,
+        final int orientation) {
+      if (pointerId == PointerInfo.RESERVED_MOUSE_POINTER_ID) {
+        throw new IllegalArgumentException("Pointer ID reserved for mouse");
+      }
+      synthesizeNativePointer(
+          InputDevice.SOURCE_TOUCHSCREEN,
+          pointerId,
+          eventType,
+          clientX,
+          clientY,
+          pressure,
+          orientation,
+          0);
     }
 
-    private @InputResult int handleMouseEvent(final MotionEvent event) {
-        if (!mAttached) {
-            mQueuedEvents.add(new Pair<>(EVENT_SOURCE_MOUSE, event));
-            return INPUT_RESULT_UNHANDLED;
-        }
-
-        final int count = event.getPointerCount();
-
-        if (count <= 0) {
-            return INPUT_RESULT_UNHANDLED;
-        }
-
-        final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
-        event.getPointerCoords(0, coords);
-
-        
-        mSession.getSurfaceBounds(mTempRect);
-        final float x = coords.x - mTempRect.left;
-        final float y = coords.y - mTempRect.top;
-
-        return mNative.handleMouseEvent(event.getActionMasked(), event.getEventTime(),
-                                        event.getMetaState(), x, y, event.getButtonState());
+    @WrapForJNI(calledFrom = "ui")
+    private void synthesizeNativeMouseEvent(
+        final int eventType, final int clientX, final int clientY, final int button) {
+      synthesizeNativePointer(
+          InputDevice.SOURCE_MOUSE,
+          PointerInfo.RESERVED_MOUSE_POINTER_ID,
+          eventType,
+          clientX,
+          clientY,
+          0,
+          0,
+          button);
     }
 
-    protected PanZoomController(final GeckoSession session) {
-        mSession = session;
+    @WrapForJNI(calledFrom = "ui")
+    private void setAttached(final boolean attached) {
+      if (attached) {
+        mAttached = true;
+        flushEventQueue();
+      } else if (mAttached) {
+        mAttached = false;
         enableEventQueue();
+      }
+    }
+  }
+
+   final NativeProvider mNative = new NativeProvider();
+
+  private void handleMotionEvent(final MotionEvent event) {
+    handleMotionEvent(event, null);
+  }
+
+  private void handleMotionEvent(
+      final MotionEvent event, final GeckoResult<InputResultDetail> result) {
+    if (!mAttached) {
+      mQueuedEvents.add(new Pair<>(EVENT_SOURCE_MOTION, event));
+      if (result != null) {
+        result.complete(
+            new InputResultDetail(
+                INPUT_RESULT_HANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+      }
+      return;
     }
 
-    private boolean treatMouseAsTouch() {
-        if (sTreatMouseAsTouch == null) {
-            final Context c = GeckoAppShell.getApplicationContext();
-            if (c == null) {
-                
-                return false;
-            }
-            final UiModeManager m = (UiModeManager) c.getSystemService(Context.UI_MODE_SERVICE);
+    final int action = event.getActionMasked();
+
+    if (action == MotionEvent.ACTION_DOWN) {
+      mLastDownTime = event.getDownTime();
+    } else if (mLastDownTime != event.getDownTime()) {
+      if (result != null) {
+        result.complete(
+            new InputResultDetail(
+                INPUT_RESULT_UNHANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+      }
+      return;
+    }
+
+    final float screenX = event.getRawX() - event.getX();
+    final float screenY = event.getRawY() - event.getY();
+
+    
+    
+    
+    if (!mSynthesizedEvent) {
+      mSession.onScreenOriginChanged((int) screenX, (int) screenY);
+    }
+
+    final MotionEventData data = new MotionEventData(event);
+    mNative.handleMotionEvent(data, screenX, screenY, result);
+  }
+
+  private @InputResult int handleScrollEvent(final MotionEvent event) {
+    if (!mAttached) {
+      mQueuedEvents.add(new Pair<>(EVENT_SOURCE_SCROLL, event));
+      return INPUT_RESULT_HANDLED;
+    }
+
+    final int count = event.getPointerCount();
+
+    if (count <= 0) {
+      return INPUT_RESULT_UNHANDLED;
+    }
+
+    final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+    event.getPointerCoords(0, coords);
+
+    
+    mSession.getSurfaceBounds(mTempRect);
+    final float x = coords.x - mTempRect.left;
+    final float y = coords.y - mTempRect.top;
+
+    final float hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL) * mPointerScrollFactor;
+    final float vScroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL) * mPointerScrollFactor;
+
+    return mNative.handleScrollEvent(
+        event.getEventTime(), event.getMetaState(), x, y, hScroll, vScroll);
+  }
+
+  private @InputResult int handleMouseEvent(final MotionEvent event) {
+    if (!mAttached) {
+      mQueuedEvents.add(new Pair<>(EVENT_SOURCE_MOUSE, event));
+      return INPUT_RESULT_UNHANDLED;
+    }
+
+    final int count = event.getPointerCount();
+
+    if (count <= 0) {
+      return INPUT_RESULT_UNHANDLED;
+    }
+
+    final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+    event.getPointerCoords(0, coords);
+
+    
+    mSession.getSurfaceBounds(mTempRect);
+    final float x = coords.x - mTempRect.left;
+    final float y = coords.y - mTempRect.top;
+
+    return mNative.handleMouseEvent(
+        event.getActionMasked(),
+        event.getEventTime(),
+        event.getMetaState(),
+        x,
+        y,
+        event.getButtonState());
+  }
+
+  protected PanZoomController(final GeckoSession session) {
+    mSession = session;
+    enableEventQueue();
+  }
+
+  private boolean treatMouseAsTouch() {
+    if (sTreatMouseAsTouch == null) {
+      final Context c = GeckoAppShell.getApplicationContext();
+      if (c == null) {
+        
+        return false;
+      }
+      final UiModeManager m = (UiModeManager) c.getSystemService(Context.UI_MODE_SERVICE);
+      
+      sTreatMouseAsTouch = (m.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION);
+    }
+
+    return sTreatMouseAsTouch;
+  }
+
+  
+
+
+
+
+
+  public void setScrollFactor(final float factor) {
+    ThreadUtils.assertOnUiThread();
+    mPointerScrollFactor = factor;
+  }
+
+  
+
+
+
+
+  public float getScrollFactor() {
+    ThreadUtils.assertOnUiThread();
+    return mPointerScrollFactor;
+  }
+
+  
+
+
+
+  private boolean mayTouchpadScroll(final @NonNull MotionEvent event) {
+    final int action = event.getActionMasked();
+    return event.getButtonState() == 0
+        && (action == MotionEvent.ACTION_DOWN
+            || (mLastDownTime == event.getDownTime()
+                && (action == MotionEvent.ACTION_MOVE
+                    || action == MotionEvent.ACTION_UP
+                    || action == MotionEvent.ACTION_CANCEL)));
+  }
+
+  
+
+
+
+
+
+  public void onTouchEvent(final @NonNull MotionEvent event) {
+    ThreadUtils.assertOnUiThread();
+
+    if (!treatMouseAsTouch()
+        && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE
+        && !mayTouchpadScroll(event)) {
+      handleMouseEvent(event);
+      return;
+    }
+    handleMotionEvent(event);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(
+      final @NonNull MotionEvent event) {
+    ThreadUtils.assertOnUiThread();
+
+    if (!treatMouseAsTouch()
+        && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE
+        && !mayTouchpadScroll(event)) {
+      return GeckoResult.fromValue(
+          new InputResultDetail(
+              handleMouseEvent(event), SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+    }
+
+    final GeckoResult<InputResultDetail> result = new GeckoResult<>();
+    handleMotionEvent(event, result);
+    return result;
+  }
+
+  
+
+
+
+
+
+  public void onMouseEvent(final @NonNull MotionEvent event) {
+    ThreadUtils.assertOnUiThread();
+
+    if (event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
+      return;
+    }
+    handleMotionEvent(event);
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    mNative.setAttached(false);
+  }
+
+  
+
+
+
+
+
+  public void onMotionEvent(final @NonNull MotionEvent event) {
+    ThreadUtils.assertOnUiThread();
+
+    final int action = event.getActionMasked();
+    if (action == MotionEvent.ACTION_SCROLL) {
+      if (event.getDownTime() >= mLastDownTime) {
+        mLastDownTime = event.getDownTime();
+      } else if ((InputDevice.getDevice(event.getDeviceId()) != null)
+          && (InputDevice.getDevice(event.getDeviceId()).getSources() & InputDevice.SOURCE_TOUCHPAD)
+              == InputDevice.SOURCE_TOUCHPAD) {
+        return;
+      }
+      handleScrollEvent(event);
+    } else if ((action == MotionEvent.ACTION_HOVER_MOVE)
+        || (action == MotionEvent.ACTION_HOVER_ENTER)
+        || (action == MotionEvent.ACTION_HOVER_EXIT)) {
+      handleMouseEvent(event);
+    }
+  }
+
+  private void enableEventQueue() {
+    if (mQueuedEvents != null) {
+      throw new IllegalStateException("Already have an event queue");
+    }
+    mQueuedEvents = new ArrayList<>();
+  }
+
+  private void flushEventQueue() {
+    if (mQueuedEvents == null) {
+      return;
+    }
+
+    final ArrayList<Pair<Integer, MotionEvent>> events = mQueuedEvents;
+    mQueuedEvents = null;
+    for (final Pair<Integer, MotionEvent> pair : events) {
+      switch (pair.first) {
+        case EVENT_SOURCE_MOTION:
+          handleMotionEvent(pair.second);
+          break;
+        case EVENT_SOURCE_SCROLL:
+          handleScrollEvent(pair.second);
+          break;
+        case EVENT_SOURCE_MOUSE:
+          handleMouseEvent(pair.second);
+          break;
+      }
+    }
+  }
+
+  
+
+
+
+
+  public void setIsLongpressEnabled(final boolean isLongpressEnabled) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mAttached) {
+      mNative.nativeSetIsLongpressEnabled(isLongpressEnabled);
+    }
+  }
+
+  private static class PointerInfo {
+    
+    
+    
+    
+    public static final int RESERVED_MOUSE_POINTER_ID = 100000;
+
+    public int pointerId;
+    public int source;
+    public int surfaceX;
+    public int surfaceY;
+    public double pressure;
+    public int orientation;
+    public int buttonState;
+
+    public MotionEvent.PointerCoords getCoords() {
+      final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
+      coords.orientation = orientation;
+      coords.pressure = (float) pressure;
+      coords.x = surfaceX;
+      coords.y = surfaceY;
+      return coords;
+    }
+  }
+
+  private static class SynthesizedEventState {
+    public final ArrayList<PointerInfo> pointers;
+    public long downTime;
+
+    SynthesizedEventState() {
+      pointers = new ArrayList<PointerInfo>();
+    }
+
+    int getPointerIndex(final int pointerId) {
+      for (int i = 0; i < pointers.size(); i++) {
+        if (pointers.get(i).pointerId == pointerId) {
+          return i;
+        }
+      }
+      return -1;
+    }
+
+    int addPointer(final int pointerId, final int source) {
+      final PointerInfo info = new PointerInfo();
+      info.pointerId = pointerId;
+      info.source = source;
+      pointers.add(info);
+      return pointers.size() - 1;
+    }
+
+    int getPointerCount(final int source) {
+      int count = 0;
+      for (int i = 0; i < pointers.size(); i++) {
+        if (pointers.get(i).source == source) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    int getPointerButtonState(final int source) {
+      for (int i = 0; i < pointers.size(); i++) {
+        if (pointers.get(i).source == source) {
+          return pointers.get(i).buttonState;
+        }
+      }
+      return 0;
+    }
+
+    MotionEvent.PointerProperties[] getPointerProperties(final int source) {
+      final MotionEvent.PointerProperties[] props =
+          new MotionEvent.PointerProperties[getPointerCount(source)];
+      int index = 0;
+      for (int i = 0; i < pointers.size(); i++) {
+        if (pointers.get(i).source == source) {
+          final MotionEvent.PointerProperties p = new MotionEvent.PointerProperties();
+          p.id = pointers.get(i).pointerId;
+          switch (source) {
+            case InputDevice.SOURCE_TOUCHSCREEN:
+              p.toolType = MotionEvent.TOOL_TYPE_FINGER;
+              break;
+            case InputDevice.SOURCE_MOUSE:
+              p.toolType = MotionEvent.TOOL_TYPE_MOUSE;
+              break;
+          }
+          props[index++] = p;
+        }
+      }
+      return props;
+    }
+
+    MotionEvent.PointerCoords[] getPointerCoords(final int source) {
+      final MotionEvent.PointerCoords[] coords =
+          new MotionEvent.PointerCoords[getPointerCount(source)];
+      int index = 0;
+      for (int i = 0; i < pointers.size(); i++) {
+        if (pointers.get(i).source == source) {
+          coords[index++] = pointers.get(i).getCoords();
+        }
+      }
+      return coords;
+    }
+  }
+
+  private void synthesizeNativePointer(
+      final int source,
+      final int pointerId,
+      final int originalEventType,
+      final int clientX,
+      final int clientY,
+      final double pressure,
+      final int orientation,
+      final int button) {
+    if (mPointerState == null) {
+      mPointerState = new SynthesizedEventState();
+    }
+
+    
+    int pointerIndex = mPointerState.getPointerIndex(pointerId);
+
+    
+    int eventType = originalEventType;
+    switch (originalEventType) {
+      case MotionEvent.ACTION_POINTER_UP:
+        if (pointerIndex < 0) {
+          Log.w(LOGTAG, "Pointer-up for invalid pointer");
+          return;
+        }
+        if (mPointerState.pointers.size() == 1) {
+          
+          eventType = MotionEvent.ACTION_UP;
+        }
+        break;
+      case MotionEvent.ACTION_CANCEL:
+        if (pointerIndex < 0) {
+          Log.w(LOGTAG, "Pointer-cancel for invalid pointer");
+          return;
+        }
+        break;
+      case MotionEvent.ACTION_POINTER_DOWN:
+        if (pointerIndex < 0) {
+          
+          pointerIndex = mPointerState.addPointer(pointerId, source);
+          if (pointerIndex == 0) {
             
-            sTreatMouseAsTouch = (m.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION);
+            eventType = MotionEvent.ACTION_DOWN;
+            mPointerState.downTime = SystemClock.uptimeMillis();
+          }
+        } else {
+          
+          eventType = MotionEvent.ACTION_MOVE;
         }
-
-        return sTreatMouseAsTouch;
+        break;
+      case MotionEvent.ACTION_HOVER_MOVE:
+        if (pointerIndex < 0) {
+          
+          
+          
+          
+          pointerIndex = mPointerState.addPointer(pointerId, source);
+        } else {
+          
+          eventType = MotionEvent.ACTION_MOVE;
+        }
+        break;
     }
 
     
+    mSession.getSurfaceBounds(mTempRect);
+    final int surfaceX = clientX + mTempRect.left;
+    final int surfaceY = clientY + mTempRect.top;
 
-
-
-
-
-    public void setScrollFactor(final float factor) {
-        ThreadUtils.assertOnUiThread();
-        mPointerScrollFactor = factor;
+    
+    final PointerInfo info = mPointerState.pointers.get(pointerIndex);
+    info.surfaceX = surfaceX;
+    info.surfaceY = surfaceY;
+    info.pressure = pressure;
+    info.orientation = orientation;
+    if (source == InputDevice.SOURCE_MOUSE) {
+      if (eventType == MotionEvent.ACTION_DOWN || eventType == MotionEvent.ACTION_MOVE) {
+        info.buttonState |= button;
+      } else if (eventType == MotionEvent.ACTION_UP) {
+        info.buttonState &= button;
+      }
     }
 
     
-
-
-
-
-    public float getScrollFactor() {
-        ThreadUtils.assertOnUiThread();
-        return mPointerScrollFactor;
+    int action = 0;
+    if (eventType == MotionEvent.ACTION_POINTER_DOWN
+        || eventType == MotionEvent.ACTION_POINTER_UP) {
+      
+      
+      action = (pointerIndex << MotionEvent.ACTION_POINTER_INDEX_SHIFT);
+      action &= MotionEvent.ACTION_POINTER_INDEX_MASK;
     }
-
-    
-
-
-
-
-    private boolean mayTouchpadScroll(final @NonNull MotionEvent event) {
-        final int action = event.getActionMasked();
-        return event.getButtonState() == 0 &&
-               (action == MotionEvent.ACTION_DOWN ||
-                (mLastDownTime == event.getDownTime() &&
-                 (action == MotionEvent.ACTION_MOVE ||
-                  action == MotionEvent.ACTION_UP ||
-                  action == MotionEvent.ACTION_CANCEL)));
-    }
-
-    
-
-
-
-
-
-
-    public void onTouchEvent(final @NonNull MotionEvent event) {
-        ThreadUtils.assertOnUiThread();
-
-        if (!treatMouseAsTouch() && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE && !mayTouchpadScroll(event)) {
-            handleMouseEvent(event);
-            return;
-        }
-        handleMotionEvent(event);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
-        ThreadUtils.assertOnUiThread();
-
-        if (!treatMouseAsTouch() && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE && !mayTouchpadScroll(event)) {
-            return GeckoResult.fromValue(
-                new InputResultDetail(handleMouseEvent(event), SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
-        }
-
-        final GeckoResult<InputResultDetail> result = new GeckoResult<>();
-        handleMotionEvent(event, result);
-        return result;
-    }
-
-    
-
-
-
-
-
-
-    public void onMouseEvent(final @NonNull MotionEvent event) {
-        ThreadUtils.assertOnUiThread();
-
-        if (event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
-            return;
-        }
-        handleMotionEvent(event);
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        mNative.setAttached(false);
-    }
-
-    
-
-
-
-
-
-
-    public void onMotionEvent(final @NonNull MotionEvent event) {
-        ThreadUtils.assertOnUiThread();
-
-        final int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_SCROLL) {
-            if (event.getDownTime() >= mLastDownTime) {
-                mLastDownTime = event.getDownTime();
-            } else if ((InputDevice.getDevice(event.getDeviceId()) != null) &&
-                       (InputDevice.getDevice(event.getDeviceId()).getSources() &
-                        InputDevice.SOURCE_TOUCHPAD) == InputDevice.SOURCE_TOUCHPAD) {
-                return;
-            }
-            handleScrollEvent(event);
-        } else if ((action == MotionEvent.ACTION_HOVER_MOVE) ||
-                   (action == MotionEvent.ACTION_HOVER_ENTER) ||
-                   (action == MotionEvent.ACTION_HOVER_EXIT)) {
-            handleMouseEvent(event);
-        }
-    }
-
-    private void enableEventQueue() {
-        if (mQueuedEvents != null) {
-            throw new IllegalStateException("Already have an event queue");
-        }
-        mQueuedEvents = new ArrayList<>();
-    }
-
-    private void flushEventQueue() {
-        if (mQueuedEvents == null) {
-            return;
-        }
-
-        final ArrayList<Pair<Integer, MotionEvent>> events = mQueuedEvents;
-        mQueuedEvents = null;
-        for (final Pair<Integer, MotionEvent> pair : events) {
-            switch (pair.first) {
-                case EVENT_SOURCE_MOTION:
-                    handleMotionEvent(pair.second);
-                    break;
-                case EVENT_SOURCE_SCROLL:
-                    handleScrollEvent(pair.second);
-                    break;
-                case EVENT_SOURCE_MOUSE:
-                    handleMouseEvent(pair.second);
-                    break;
-            }
-        }
-    }
-
-    
-
-
-
-
-    public void setIsLongpressEnabled(final boolean isLongpressEnabled) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mAttached) {
-            mNative.nativeSetIsLongpressEnabled(isLongpressEnabled);
-        }
-    }
-
-    private static class PointerInfo {
-        
-        
-        
-        
-        public static final int RESERVED_MOUSE_POINTER_ID = 100000;
-
-        public int pointerId;
-        public int source;
-        public int surfaceX;
-        public int surfaceY;
-        public double pressure;
-        public int orientation;
-        public int buttonState;
-
-        public MotionEvent.PointerCoords getCoords() {
-            final MotionEvent.PointerCoords coords = new MotionEvent.PointerCoords();
-            coords.orientation = orientation;
-            coords.pressure = (float)pressure;
-            coords.x = surfaceX;
-            coords.y = surfaceY;
-            return coords;
-        }
-    }
-
-    private static class SynthesizedEventState {
-        public final ArrayList<PointerInfo> pointers;
-        public long downTime;
-
-        SynthesizedEventState() {
-            pointers = new ArrayList<PointerInfo>();
-        }
-
-        int getPointerIndex(final int pointerId) {
-            for (int i = 0; i < pointers.size(); i++) {
-                if (pointers.get(i).pointerId == pointerId) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        int addPointer(final int pointerId, final int source) {
-            final PointerInfo info = new PointerInfo();
-            info.pointerId = pointerId;
-            info.source = source;
-            pointers.add(info);
-            return pointers.size() - 1;
-        }
-
-        int getPointerCount(final int source) {
-            int count = 0;
-            for (int i = 0; i < pointers.size(); i++) {
-                if (pointers.get(i).source == source) {
-                    count++;
-                }
-            }
-            return count;
-        }
-
-        int getPointerButtonState(final int source) {
-            for (int i = 0; i < pointers.size(); i++) {
-                if (pointers.get(i).source == source) {
-                    return pointers.get(i).buttonState;
-                }
-            }
-            return 0;
-        }
-
-        MotionEvent.PointerProperties[] getPointerProperties(final int source) {
-            final MotionEvent.PointerProperties[] props =
-                    new MotionEvent.PointerProperties[getPointerCount(source)];
-            int index = 0;
-            for (int i = 0; i < pointers.size(); i++) {
-                if (pointers.get(i).source == source) {
-                    final MotionEvent.PointerProperties p = new MotionEvent.PointerProperties();
-                    p.id = pointers.get(i).pointerId;
-                    switch (source) {
-                        case InputDevice.SOURCE_TOUCHSCREEN:
-                            p.toolType = MotionEvent.TOOL_TYPE_FINGER;
-                            break;
-                        case InputDevice.SOURCE_MOUSE:
-                            p.toolType = MotionEvent.TOOL_TYPE_MOUSE;
-                            break;
-                    }
-                    props[index++] = p;
-                }
-            }
-            return props;
-        }
-
-        MotionEvent.PointerCoords[] getPointerCoords(final int source) {
-            final MotionEvent.PointerCoords[] coords =
-                    new MotionEvent.PointerCoords[getPointerCount(source)];
-            int index = 0;
-            for (int i = 0; i < pointers.size(); i++) {
-                if (pointers.get(i).source == source) {
-                    coords[index++] = pointers.get(i).getCoords();
-                }
-            }
-            return coords;
-        }
-    }
-
-    private void synthesizeNativePointer(final int source, final int pointerId,
-                                         final int originalEventType,
-                                         final int clientX, final int clientY,
-                                         final double pressure, final int orientation,
-                                         final int button) {
-        if (mPointerState == null) {
-            mPointerState = new SynthesizedEventState();
-        }
-
-        
-        int pointerIndex = mPointerState.getPointerIndex(pointerId);
-
-        
-        int eventType = originalEventType;
-        switch (originalEventType) {
-            case MotionEvent.ACTION_POINTER_UP:
-                if (pointerIndex < 0) {
-                    Log.w(LOGTAG, "Pointer-up for invalid pointer");
-                    return;
-                }
-                if (mPointerState.pointers.size() == 1) {
-                    
-                    eventType = MotionEvent.ACTION_UP;
-                }
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                if (pointerIndex < 0) {
-                    Log.w(LOGTAG, "Pointer-cancel for invalid pointer");
-                    return;
-                }
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                if (pointerIndex < 0) {
-                    
-                    pointerIndex = mPointerState.addPointer(pointerId, source);
-                    if (pointerIndex == 0) {
-                        
-                        eventType = MotionEvent.ACTION_DOWN;
-                        mPointerState.downTime = SystemClock.uptimeMillis();
-                    }
-                } else {
-                    
-                    eventType = MotionEvent.ACTION_MOVE;
-                }
-                break;
-            case MotionEvent.ACTION_HOVER_MOVE:
-                if (pointerIndex < 0) {
-                    
-                    
-                    
-                    
-                    pointerIndex = mPointerState.addPointer(pointerId, source);
-                } else {
-                    
-                    eventType = MotionEvent.ACTION_MOVE;
-                }
-                break;
-        }
-
-        
-        mSession.getSurfaceBounds(mTempRect);
-        final int surfaceX = clientX + mTempRect.left;
-        final int surfaceY = clientY + mTempRect.top;
-
-        
-        final PointerInfo info = mPointerState.pointers.get(pointerIndex);
-        info.surfaceX = surfaceX;
-        info.surfaceY = surfaceY;
-        info.pressure = pressure;
-        info.orientation = orientation;
-        if (source == InputDevice.SOURCE_MOUSE) {
-            if (eventType == MotionEvent.ACTION_DOWN ||
-                eventType == MotionEvent.ACTION_MOVE) {
-                info.buttonState |= button;
-            } else if (eventType == MotionEvent.ACTION_UP) {
-                info.buttonState &= button;
-            }
-        }
-
-        
-        int action = 0;
-        if (eventType == MotionEvent.ACTION_POINTER_DOWN ||
-            eventType == MotionEvent.ACTION_POINTER_UP) {
-            
-            
-            action = (pointerIndex << MotionEvent.ACTION_POINTER_INDEX_SHIFT);
-            action &= MotionEvent.ACTION_POINTER_INDEX_MASK;
-        }
-        action |= (eventType & MotionEvent.ACTION_MASK);
-        final MotionEvent event = MotionEvent.obtain(
+    action |= (eventType & MotionEvent.ACTION_MASK);
+    final MotionEvent event =
+        MotionEvent.obtain(
              mPointerState.downTime,
              SystemClock.uptimeMillis(),
              action,
@@ -827,59 +845,32 @@ public class PanZoomController {
              source,
              0);
 
-        mSynthesizedEvent = true;
-        onTouchEvent(event);
-        mSynthesizedEvent = false;
-
-        
-        if (eventType == MotionEvent.ACTION_POINTER_UP ||
-            eventType == MotionEvent.ACTION_UP ||
-            eventType == MotionEvent.ACTION_CANCEL ||
-            eventType == MotionEvent.ACTION_HOVER_MOVE) {
-            mPointerState.pointers.remove(pointerIndex);
-        }
-    }
+    mSynthesizedEvent = true;
+    onTouchEvent(event);
+    mSynthesizedEvent = false;
 
     
-
-
-
-
-
-
-    @UiThread
-    public void scrollBy(final @NonNull ScreenLength width, final @NonNull ScreenLength height) {
-        scrollBy(width, height, SCROLL_BEHAVIOR_SMOOTH);
+    if (eventType == MotionEvent.ACTION_POINTER_UP
+        || eventType == MotionEvent.ACTION_UP
+        || eventType == MotionEvent.ACTION_CANCEL
+        || eventType == MotionEvent.ACTION_HOVER_MOVE) {
+      mPointerState.pointers.remove(pointerIndex);
     }
+  }
 
-    
-
-
-
-
-
-
-
-    @UiThread
-    public void scrollBy(final @NonNull ScreenLength width, final @NonNull ScreenLength height,
-                         final @ScrollBehaviorType int behavior) {
-        final GeckoBundle msg = buildScrollMessage(width, height, behavior);
-        mSession.getEventDispatcher().dispatch("GeckoView:ScrollBy", msg);
-    }
-
-    
+  
 
 
 
 
 
 
-    @UiThread
-    public void scrollTo(final @NonNull ScreenLength width, final @NonNull ScreenLength height) {
-        scrollTo(width, height, SCROLL_BEHAVIOR_SMOOTH);
-    }
+  @UiThread
+  public void scrollBy(final @NonNull ScreenLength width, final @NonNull ScreenLength height) {
+    scrollBy(width, height, SCROLL_BEHAVIOR_SMOOTH);
+  }
 
-    
+  
 
 
 
@@ -887,40 +878,65 @@ public class PanZoomController {
 
 
 
-    @UiThread
-    public void scrollTo(final @NonNull ScreenLength width, final @NonNull ScreenLength height,
-                         final @ScrollBehaviorType int behavior) {
-        final GeckoBundle msg = buildScrollMessage(width, height, behavior);
-        mSession.getEventDispatcher().dispatch("GeckoView:ScrollTo", msg);
-    }
+  @UiThread
+  public void scrollBy(
+      final @NonNull ScreenLength width,
+      final @NonNull ScreenLength height,
+      final @ScrollBehaviorType int behavior) {
+    final GeckoBundle msg = buildScrollMessage(width, height, behavior);
+    mSession.getEventDispatcher().dispatch("GeckoView:ScrollBy", msg);
+  }
 
-    
-
-
-
-    @UiThread
-    public void scrollToTop() {
-        scrollTo(ScreenLength.zero(), ScreenLength.top(), SCROLL_BEHAVIOR_SMOOTH);
-    }
-
-    
+  
 
 
 
-    @UiThread
-    public void scrollToBottom() {
-        scrollTo(ScreenLength.zero(), ScreenLength.bottom(), SCROLL_BEHAVIOR_SMOOTH);
-    }
 
-    private GeckoBundle buildScrollMessage(final @NonNull ScreenLength width,
-                                           final @NonNull ScreenLength height,
-                                           final @ScrollBehaviorType int behavior) {
-        final GeckoBundle msg = new GeckoBundle();
-        msg.putDouble("widthValue", width.getValue());
-        msg.putInt("widthType", width.getType());
-        msg.putDouble("heightValue", height.getValue());
-        msg.putInt("heightType", height.getType());
-        msg.putInt("behavior", behavior);
-        return msg;
-    }
+
+  @UiThread
+  public void scrollTo(final @NonNull ScreenLength width, final @NonNull ScreenLength height) {
+    scrollTo(width, height, SCROLL_BEHAVIOR_SMOOTH);
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  public void scrollTo(
+      final @NonNull ScreenLength width,
+      final @NonNull ScreenLength height,
+      final @ScrollBehaviorType int behavior) {
+    final GeckoBundle msg = buildScrollMessage(width, height, behavior);
+    mSession.getEventDispatcher().dispatch("GeckoView:ScrollTo", msg);
+  }
+
+  
+  @UiThread
+  public void scrollToTop() {
+    scrollTo(ScreenLength.zero(), ScreenLength.top(), SCROLL_BEHAVIOR_SMOOTH);
+  }
+
+  
+  @UiThread
+  public void scrollToBottom() {
+    scrollTo(ScreenLength.zero(), ScreenLength.bottom(), SCROLL_BEHAVIOR_SMOOTH);
+  }
+
+  private GeckoBundle buildScrollMessage(
+      final @NonNull ScreenLength width,
+      final @NonNull ScreenLength height,
+      final @ScrollBehaviorType int behavior) {
+    final GeckoBundle msg = new GeckoBundle();
+    msg.putDouble("widthValue", width.getValue());
+    msg.putInt("widthType", width.getType());
+    msg.putDouble("heightValue", height.getValue());
+    msg.putInt("heightType", height.getType());
+    msg.putInt("behavior", behavior);
+    return msg;
+  }
 }

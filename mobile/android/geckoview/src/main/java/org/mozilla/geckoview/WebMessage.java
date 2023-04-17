@@ -6,83 +6,91 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-
 import java.nio.ByteBuffer;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
-
-
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 @WrapForJNI
 @AnyThread
 public abstract class WebMessage {
 
+  
+  public final @NonNull String uri;
+
+  
+  public final @NonNull Map<String, String> headers;
+
+  protected WebMessage(final @NonNull Builder builder) {
+    uri = builder.mUri;
+    headers = Collections.unmodifiableMap(builder.mHeaders);
+  }
+
+  
+  private String[] getHeaderKeys() {
+    final String[] keys = new String[headers.size()];
+    headers.keySet().toArray(keys);
+    return keys;
+  }
+
+  
+  private String[] getHeaderValues() {
+    final String[] values = new String[headers.size()];
+    headers.values().toArray(values);
+    return values;
+  }
+
+  
+  @AnyThread
+  public abstract static class Builder {
+     String mUri;
+     Map<String, String> mHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+     ByteBuffer mBody;
+
     
 
 
-    public final @NonNull String uri;
-
-    
 
 
-    public final @NonNull Map<String, String> headers;
-
-    protected WebMessage(final @NonNull Builder builder) {
-        uri = builder.mUri;
-        headers = Collections.unmodifiableMap(builder.mHeaders);
+     Builder(final @NonNull String uri) {
+      uri(uri);
     }
 
     
-    private String[] getHeaderKeys() {
-        final String[] keys = new String[headers.size()];
-        headers.keySet().toArray(keys);
-        return keys;
+
+
+
+
+
+    public @NonNull Builder uri(final @NonNull String uri) {
+      mUri = uri;
+      return this;
     }
 
     
-    private String[] getHeaderValues() {
-        final String[] values = new String[headers.size()];
-        headers.values().toArray(values);
-        return values;
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
+      mHeaders.put(key, value);
+      return this;
     }
 
     
 
 
-    @AnyThread
-    public static abstract class Builder {
-         String mUri;
-         Map<String, String> mHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-         ByteBuffer mBody;
-
-        
-
-
-
-
-         Builder(final @NonNull String uri) {
-            uri(uri);
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder uri(final @NonNull String uri) {
-            mUri = uri;
-            return this;
-        }
-
-        
 
 
 
@@ -92,40 +100,18 @@ public abstract class WebMessage {
 
 
 
+    public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
+      final String existingValue = mHeaders.get(key);
+      if (existingValue != null) {
+        final StringBuilder builder = new StringBuilder(existingValue);
+        builder.append(", ");
+        builder.append(value);
+        mHeaders.put(key, builder.toString());
+      } else {
+        mHeaders.put(key, value);
+      }
 
-
-
-        public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
-            mHeaders.put(key, value);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
-            final String existingValue = mHeaders.get(key);
-            if (existingValue != null) {
-                final StringBuilder builder = new StringBuilder(existingValue);
-                builder.append(", ");
-                builder.append(value);
-                mHeaders.put(key, builder.toString());
-            } else {
-                mHeaders.put(key, value);
-            }
-
-            return this;
-        }
+      return this;
     }
+  }
 }
-

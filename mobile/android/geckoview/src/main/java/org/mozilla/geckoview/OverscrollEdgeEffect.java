@@ -5,8 +5,6 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.util.ThreadUtils;
-
 import android.content.Context;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
@@ -15,231 +13,235 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
+import android.widget.EdgeEffect;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-
-import android.widget.EdgeEffect;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import org.mozilla.gecko.util.ThreadUtils;
 
 @UiThread
 public final class OverscrollEdgeEffect {
-    
-    private static final int TOP = 0;
-    private static final int BOTTOM = 1;
-    private static final int LEFT = 2;
-    private static final int RIGHT = 3;
+  
+  private static final int TOP = 0;
+  private static final int BOTTOM = 1;
+  private static final int LEFT = 2;
+  private static final int RIGHT = 3;
 
-     static final int AXIS_X = 0;
-     static final int AXIS_Y = 1;
+   static final int AXIS_X = 0;
+   static final int AXIS_Y = 1;
 
-    
-    private final EdgeEffect[] mEdges = new EdgeEffect[4];
+  
+  private final EdgeEffect[] mEdges = new EdgeEffect[4];
 
-    private final GeckoSession mSession;
-    private Runnable mInvalidationCallback;
-    private int mWidth;
-    private int mHeight;
+  private final GeckoSession mSession;
+  private Runnable mInvalidationCallback;
+  private int mWidth;
+  private int mHeight;
 
-     OverscrollEdgeEffect(final GeckoSession session) {
-        mSession = session;
+   OverscrollEdgeEffect(final GeckoSession session) {
+    mSession = session;
+  }
+
+  private static Field sPaintField;
+  private static Method sSetType;
+
+  
+  
+  
+  
+  private void setType(final EdgeEffect edgeEffect) {
+    if (Build.VERSION.SDK_INT < 31 && !Build.VERSION.CODENAME.equals("S")) {
+      
+      
+      return;
     }
 
-    private static Field sPaintField;
-    private static Method sSetType;
-
     
-    
-    
-    
-    private void setType(final EdgeEffect edgeEffect) {
-        if (Build.VERSION.SDK_INT < 31 && !Build.VERSION.CODENAME.equals("S")) {
-            
-            
-            return;
-        }
-
+    if (sSetType == null) {
+      try {
+        sSetType = EdgeEffect.class.getDeclaredMethod("setType", int.class);
+      } catch (final NoSuchMethodException e) {
         
-        if (sSetType == null) {
-            try {
-                sSetType = EdgeEffect.class.getDeclaredMethod("setType", int.class);
-            } catch (final NoSuchMethodException e) {
-                
-                return;
-            }
-        }
-
-        try {
-            sSetType.invoke(edgeEffect,  0);
-        } catch (final Exception ex) {
-        }
+        return;
+      }
     }
 
-    private void setBlendMode(final EdgeEffect edgeEffect) {
-        if (Build.VERSION.SDK_INT >= 29) {
-            edgeEffect.setBlendMode(BlendMode.SRC);
-            return;
-        }
+    try {
+      sSetType.invoke(edgeEffect,  0);
+    } catch (final Exception ex) {
+    }
+  }
 
-        if (sPaintField == null) {
-            try {
-                sPaintField = EdgeEffect.class.getDeclaredField("mPaint");
-                sPaintField.setAccessible(true);
-            } catch (final NoSuchFieldException e) {
-                
-                return;
-            }
-        }
+  private void setBlendMode(final EdgeEffect edgeEffect) {
+    if (Build.VERSION.SDK_INT >= 29) {
+      edgeEffect.setBlendMode(BlendMode.SRC);
+      return;
+    }
 
-        try {
-            final Paint paint = (Paint) sPaintField.get(edgeEffect);
-            final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
-            paint.setXfermode(mode);
-        } catch (final IllegalAccessException ex) {
-            
-        }
+    if (sPaintField == null) {
+      try {
+        sPaintField = EdgeEffect.class.getDeclaredField("mPaint");
+        sPaintField.setAccessible(true);
+      } catch (final NoSuchFieldException e) {
+        
+        return;
+      }
+    }
+
+    try {
+      final Paint paint = (Paint) sPaintField.get(edgeEffect);
+      final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
+      paint.setXfermode(mode);
+    } catch (final IllegalAccessException ex) {
+      
+    }
+  }
+
+  
+
+
+
+
+  public void setTheme(final @NonNull Context context) {
+    ThreadUtils.assertOnUiThread();
+
+    for (int i = 0; i < mEdges.length; i++) {
+      final EdgeEffect edgeEffect = new EdgeEffect(context);
+      setBlendMode(edgeEffect);
+      setType(edgeEffect);
+      mEdges[i] = edgeEffect;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  public void setInvalidationCallback(final @Nullable Runnable runnable) {
+    ThreadUtils.assertOnUiThread();
+    mInvalidationCallback = runnable;
+  }
+
+  
+
+
+
+
+
+  public @Nullable Runnable getInvalidationCallback() {
+    ThreadUtils.assertOnUiThread();
+    return mInvalidationCallback;
+  }
+
+   void setSize(final int width, final int height) {
+    mEdges[LEFT].setSize(height, width);
+    mEdges[RIGHT].setSize(height, width);
+    mEdges[TOP].setSize(width, height);
+    mEdges[BOTTOM].setSize(width, height);
+
+    mWidth = width;
+    mHeight = height;
+  }
+
+  private EdgeEffect getEdgeForAxisAndSide(final int axis, final float side) {
+    if (axis == AXIS_Y) {
+      if (side < 0) {
+        return mEdges[TOP];
+      } else {
+        return mEdges[BOTTOM];
+      }
+    } else {
+      if (side < 0) {
+        return mEdges[LEFT];
+      } else {
+        return mEdges[RIGHT];
+      }
+    }
+  }
+
+   void setVelocity(final float velocity, final int axis) {
+    final EdgeEffect edge = getEdgeForAxisAndSide(axis, velocity);
+
+    
+    if (!edge.isFinished()) {
+      edge.onRelease();
+    } else {
+      
+      edge.onAbsorb((int) velocity);
+    }
+
+    if (mInvalidationCallback != null) {
+      mInvalidationCallback.run();
+    }
+  }
+
+   void setDistance(final float distance, final int axis) {
+    
+    if (distance == 0.0f) {
+      return;
+    }
+
+    final EdgeEffect edge = getEdgeForAxisAndSide(axis, (int) distance);
+    edge.onPull(distance / (axis == AXIS_X ? mWidth : mHeight));
+
+    if (mInvalidationCallback != null) {
+      mInvalidationCallback.run();
+    }
+  }
+
+  
+
+
+
+
+  public void draw(final @NonNull Canvas canvas) {
+    ThreadUtils.assertOnUiThread();
+
+    final Rect pageRect = new Rect();
+    mSession.getSurfaceBounds(pageRect);
+
+    
+    boolean invalidate = false;
+    if (!mEdges[TOP].isFinished()) {
+      invalidate |= draw(mEdges[TOP], canvas, pageRect.left, pageRect.top, 0);
+    }
+
+    if (!mEdges[BOTTOM].isFinished()) {
+      invalidate |= draw(mEdges[BOTTOM], canvas, pageRect.right, pageRect.bottom, 180);
+    }
+
+    if (!mEdges[LEFT].isFinished()) {
+      invalidate |= draw(mEdges[LEFT], canvas, pageRect.left, pageRect.bottom, 270);
+    }
+
+    if (!mEdges[RIGHT].isFinished()) {
+      invalidate |= draw(mEdges[RIGHT], canvas, pageRect.right, pageRect.top, 90);
     }
 
     
-
-
-
-
-    public void setTheme(final @NonNull Context context) {
-        ThreadUtils.assertOnUiThread();
-
-        for (int i = 0; i < mEdges.length; i++) {
-            final EdgeEffect edgeEffect = new EdgeEffect(context);
-            setBlendMode(edgeEffect);
-            setType(edgeEffect);
-            mEdges[i] = edgeEffect;
-        }
+    if (invalidate && mInvalidationCallback != null) {
+      mInvalidationCallback.run();
     }
+  }
 
-    
+  private static boolean draw(
+      final EdgeEffect edge,
+      final Canvas canvas,
+      final float translateX,
+      final float translateY,
+      final float rotation) {
+    final int state = canvas.save();
+    canvas.translate(translateX, translateY);
+    canvas.rotate(rotation);
+    final boolean invalidate = edge.draw(canvas);
+    canvas.restoreToCount(state);
 
-
-
-
-
-
-
-    public void setInvalidationCallback(final @Nullable Runnable runnable) {
-        ThreadUtils.assertOnUiThread();
-        mInvalidationCallback = runnable;
-    }
-
-    
-
-
-
-
-
-    public @Nullable Runnable getInvalidationCallback() {
-        ThreadUtils.assertOnUiThread();
-        return mInvalidationCallback;
-    }
-
-     void setSize(final int width, final int height) {
-        mEdges[LEFT].setSize(height, width);
-        mEdges[RIGHT].setSize(height, width);
-        mEdges[TOP].setSize(width, height);
-        mEdges[BOTTOM].setSize(width, height);
-
-        mWidth = width;
-        mHeight = height;
-    }
-
-    private EdgeEffect getEdgeForAxisAndSide(final int axis, final float side) {
-        if (axis == AXIS_Y) {
-            if (side < 0) {
-                return mEdges[TOP];
-            } else {
-                return mEdges[BOTTOM];
-            }
-        } else {
-            if (side < 0) {
-                return mEdges[LEFT];
-            } else {
-                return mEdges[RIGHT];
-            }
-        }
-    }
-
-     void setVelocity(final float velocity, final int axis) {
-        final EdgeEffect edge = getEdgeForAxisAndSide(axis, velocity);
-
-        
-        if (!edge.isFinished()) {
-            edge.onRelease();
-        } else {
-            
-            edge.onAbsorb((int)velocity);
-        }
-
-        if (mInvalidationCallback != null) {
-            mInvalidationCallback.run();
-        }
-    }
-
-     void setDistance(final float distance, final int axis) {
-        
-        if (distance == 0.0f) {
-            return;
-        }
-
-        final EdgeEffect edge = getEdgeForAxisAndSide(axis, (int)distance);
-        edge.onPull(distance / (axis == AXIS_X ? mWidth : mHeight));
-
-        if (mInvalidationCallback != null) {
-            mInvalidationCallback.run();
-        }
-    }
-
-    
-
-
-
-
-    public void draw(final @NonNull Canvas canvas) {
-        ThreadUtils.assertOnUiThread();
-
-        final Rect pageRect = new Rect();
-        mSession.getSurfaceBounds(pageRect);
-
-        
-        boolean invalidate = false;
-        if (!mEdges[TOP].isFinished()) {
-            invalidate |= draw(mEdges[TOP], canvas, pageRect.left, pageRect.top, 0);
-        }
-
-        if (!mEdges[BOTTOM].isFinished()) {
-            invalidate |= draw(mEdges[BOTTOM], canvas, pageRect.right, pageRect.bottom, 180);
-        }
-
-        if (!mEdges[LEFT].isFinished()) {
-            invalidate |= draw(mEdges[LEFT], canvas, pageRect.left, pageRect.bottom, 270);
-        }
-
-        if (!mEdges[RIGHT].isFinished()) {
-            invalidate |= draw(mEdges[RIGHT], canvas, pageRect.right, pageRect.top, 90);
-        }
-
-        
-        if (invalidate && mInvalidationCallback != null) {
-            mInvalidationCallback.run();
-        }
-    }
-
-    private static boolean draw(final EdgeEffect edge, final Canvas canvas, final float translateX, final float translateY, final float rotation) {
-        final int state = canvas.save();
-        canvas.translate(translateX, translateY);
-        canvas.rotate(rotation);
-        final boolean invalidate = edge.draw(canvas);
-        canvas.restoreToCount(state);
-
-        return invalidate;
-    }
+    return invalidate;
+  }
 }

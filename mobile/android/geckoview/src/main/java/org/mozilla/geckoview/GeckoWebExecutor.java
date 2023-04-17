@@ -9,15 +9,12 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Locale;
-
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
@@ -37,129 +34,123 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
+
 @AnyThread
 public class GeckoWebExecutor {
-    
-    
-    private final GeckoRuntime mRuntime;
+  
+  
+  private final GeckoRuntime mRuntime;
 
-    @WrapForJNI(dispatchTo = "gecko", stubName = "Fetch")
-    private static native void nativeFetch(WebRequest request, int flags, GeckoResult<WebResponse> result);
+  @WrapForJNI(dispatchTo = "gecko", stubName = "Fetch")
+  private static native void nativeFetch(
+      WebRequest request, int flags, GeckoResult<WebResponse> result);
 
-    @WrapForJNI(dispatchTo = "gecko", stubName = "Resolve")
-    private static native void nativeResolve(String host, GeckoResult<InetAddress[]> result);
+  @WrapForJNI(dispatchTo = "gecko", stubName = "Resolve")
+  private static native void nativeResolve(String host, GeckoResult<InetAddress[]> result);
 
-    @WrapForJNI(calledFrom = "gecko", exceptionMode = "nsresult")
-    private static ByteBuffer createByteBuffer(final int capacity) {
-        return ByteBuffer.allocateDirect(capacity);
+  @WrapForJNI(calledFrom = "gecko", exceptionMode = "nsresult")
+  private static ByteBuffer createByteBuffer(final int capacity) {
+    return ByteBuffer.allocateDirect(capacity);
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    FETCH_FLAGS_NONE,
+    FETCH_FLAGS_ANONYMOUS,
+    FETCH_FLAGS_NO_REDIRECTS,
+    FETCH_FLAGS_PRIVATE,
+    FETCH_FLAGS_STREAM_FAILURE_TEST,
+  })
+   @interface FetchFlags {}
+
+  
+  public static final int FETCH_FLAGS_NONE = 0;
+
+  
+  @WrapForJNI public static final int FETCH_FLAGS_ANONYMOUS = 1;
+
+  
+  @WrapForJNI public static final int FETCH_FLAGS_NO_REDIRECTS = 1 << 1;
+
+  
+  
+
+  
+  @WrapForJNI public static final int FETCH_FLAGS_PRIVATE = 1 << 3;
+
+  
+  @WrapForJNI public static final int FETCH_FLAGS_STREAM_FAILURE_TEST = 1 << 10;
+
+  
+
+
+
+
+  public GeckoWebExecutor(final @NonNull GeckoRuntime runtime) {
+    mRuntime = runtime;
+  }
+
+  
+
+
+
+
+
+
+
+
+  public @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebRequest request) {
+    return fetch(request, FETCH_FLAGS_NONE);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoResult<WebResponse> fetch(
+      final @NonNull WebRequest request, final @FetchFlags int flags) {
+    if (request.body != null && !request.body.isDirect()) {
+      throw new IllegalArgumentException("Request body must be a direct ByteBuffer");
     }
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({
-            FETCH_FLAGS_NONE,
-            FETCH_FLAGS_ANONYMOUS,
-            FETCH_FLAGS_NO_REDIRECTS,
-            FETCH_FLAGS_PRIVATE,
-            FETCH_FLAGS_STREAM_FAILURE_TEST,
-    })
-     @interface FetchFlags {}
-
-    
-
-
-    public static final int FETCH_FLAGS_NONE = 0;
-
-    
-
-
-    @WrapForJNI
-    public static final int FETCH_FLAGS_ANONYMOUS = 1;
-
-    
-
-
-    @WrapForJNI
-    public static final int FETCH_FLAGS_NO_REDIRECTS = 1 << 1;
-
-    
-    
-
-    
-
-
-    @WrapForJNI
-    public static final int FETCH_FLAGS_PRIVATE = 1 << 3;
-
-    
-
-
-    @WrapForJNI
-    public static final int FETCH_FLAGS_STREAM_FAILURE_TEST = 1 << 10;
-
-    
-
-
-
-
-    public GeckoWebExecutor(final @NonNull GeckoRuntime runtime) {
-        mRuntime = runtime;
+    if (request.cacheMode < WebRequest.CACHE_MODE_FIRST
+        || request.cacheMode > WebRequest.CACHE_MODE_LAST) {
+      throw new IllegalArgumentException("Unknown cache mode");
     }
 
+    final String uri = request.uri.toLowerCase(Locale.ROOT);
     
-
-
-
-
-
-
-
-
-    public @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebRequest request) {
-        return fetch(request, FETCH_FLAGS_NONE);
+    if (!uri.startsWith("http") && !uri.startsWith("blob")) {
+      throw new IllegalArgumentException(
+          "Unsupported URI scheme: " + (uri.length() > 10 ? uri.substring(0, 10) : uri));
     }
 
-    
+    final GeckoResult<WebResponse> result = new GeckoResult<>();
 
-
-
-
-
-
-
-
-
-    public @NonNull GeckoResult<WebResponse> fetch(final @NonNull WebRequest request,
-                                                   final @FetchFlags int flags) {
-        if (request.body != null && !request.body.isDirect()) {
-            throw new IllegalArgumentException("Request body must be a direct ByteBuffer");
-        }
-
-        if (request.cacheMode < WebRequest.CACHE_MODE_FIRST ||
-            request.cacheMode > WebRequest.CACHE_MODE_LAST) {
-            throw new IllegalArgumentException("Unknown cache mode");
-        }
-
-        final String uri = request.uri.toLowerCase(Locale.ROOT);
-        
-        if (!uri.startsWith("http") && !uri.startsWith("blob")) {
-            throw new IllegalArgumentException("Unsupported URI scheme: " +
-                    (uri.length() > 10 ? uri.substring(0, 10) : uri));
-        }
-
-        final GeckoResult<WebResponse> result = new GeckoResult<>();
-
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            nativeFetch(request, flags, result);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, this,
-                    "nativeFetch", WebRequest.class, request, flags,
-                    GeckoResult.class, result);
-        }
-
-        return result;
+    if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+      nativeFetch(request, flags, result);
+    } else {
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.PROFILE_READY,
+          this,
+          "nativeFetch",
+          WebRequest.class,
+          request,
+          flags,
+          GeckoResult.class,
+          result);
     }
 
-    
+    return result;
+  }
+
+  
 
 
 
@@ -167,29 +158,32 @@ public class GeckoWebExecutor {
 
 
 
-    public @NonNull GeckoResult<InetAddress[]> resolve(final @NonNull String host) {
-        final GeckoResult<InetAddress[]> result = new GeckoResult<>();
+  public @NonNull GeckoResult<InetAddress[]> resolve(final @NonNull String host) {
+    final GeckoResult<InetAddress[]> result = new GeckoResult<>();
 
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            nativeResolve(host, result);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, this,
-                    "nativeResolve", String.class, host,
-                    GeckoResult.class, result);
-        }
-        return result;
+    if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+      nativeResolve(host, result);
+    } else {
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.PROFILE_READY,
+          this,
+          "nativeResolve",
+          String.class,
+          host,
+          GeckoResult.class,
+          result);
     }
+    return result;
+  }
 
-    
-
-
-
-
+  
 
 
 
 
-    public void speculativeConnect(final @NonNull String uri) {
-        GeckoThread.speculativeConnect(uri);
-    }
+
+
+  public void speculativeConnect(final @NonNull String uri) {
+    GeckoThread.speculativeConnect(uri);
+  }
 }

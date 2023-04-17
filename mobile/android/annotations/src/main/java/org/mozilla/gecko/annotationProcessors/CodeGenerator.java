@@ -4,706 +4,836 @@
 
 package org.mozilla.gecko.annotationProcessors;
 
-import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
-import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
-import org.mozilla.gecko.annotationProcessors.utils.Utils;
-
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.Locale;
+import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
+import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
+import org.mozilla.gecko.annotationProcessors.utils.Utils;
 
 public class CodeGenerator {
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+  private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
+
+  
+  private final StringBuilder cpp = new StringBuilder();
+  private final StringBuilder header = new StringBuilder();
+  private final StringBuilder natives = new StringBuilder();
+  private final StringBuilder nativesInits = new StringBuilder();
+
+  private final Class<?> cls;
+  private final String clsName;
+  private final ClassWithOptions options;
+  private AnnotationInfo.CallingThread callingThread = null;
+  private int numNativesInits;
+
+  private final HashSet<String> takenMethodNames = new HashSet<String>();
+
+  public CodeGenerator(ClassWithOptions annotatedClass) {
+    this.cls = annotatedClass.wrappedClass;
+    this.clsName = annotatedClass.generatedName;
+    this.options = annotatedClass;
+
+    final String unqualifiedName = Utils.getUnqualifiedName(clsName);
+    header.append(
+        Utils.getIfdefHeader(annotatedClass.ifdef)
+            + "class "
+            + clsName
+            + " : public mozilla::jni::ObjectBase<"
+            + unqualifiedName
+            + ">\n"
+            + "{\n"
+            + "public:\n"
+            + "    static const char name[];\n"
+            + "\n"
+            + "    explicit "
+            + unqualifiedName
+            + "(const Context& ctx) : ObjectBase<"
+            + unqualifiedName
+            + ">(ctx) {}\n"
+            + "\n");
+
+    cpp.append(
+        Utils.getIfdefHeader(annotatedClass.ifdef)
+            + "const char "
+            + clsName
+            + "::name[] =\n"
+            + "        \""
+            + cls.getName().replace('.', '/')
+            + "\";\n"
+            + "\n");
+
+    natives.append(
+        Utils.getIfdefHeader(annotatedClass.ifdef)
+            + "template<class Impl>\n"
+            + "class "
+            + clsName
+            + "::Natives : "
+            + "public mozilla::jni::NativeImpl<"
+            + unqualifiedName
+            + ", Impl>\n"
+            + "{\n"
+            + "public:\n");
+  }
+
+  private String getTraitsName(String uniqueName, boolean includeScope) {
+    return (includeScope ? clsName + "::" : "") + uniqueName + "_t";
+  }
+
+  
+
+
+
+
+
+  private String getMatchingClassType(final Class<?> type) {
+    Class<?> cls = this.cls;
+    String clsName = this.clsName;
+
+    while (cls != null) {
+      if (type.equals(cls)) {
+        return clsName;
+      }
+      cls = cls.getDeclaringClass();
+      clsName = clsName.substring(0, Math.max(0, clsName.lastIndexOf("::")));
+    }
+    return null;
+  }
+
+  private String getNativeParameterType(Class<?> type, AnnotationInfo info) {
+    final String clsName = getMatchingClassType(type);
+    if (clsName != null) {
+      return Utils.getUnqualifiedName(clsName) + "::Param";
+    }
+    return Utils.getNativeParameterType(type, info);
+  }
+
+  private String getNativeReturnType(Class<?> type, AnnotationInfo info) {
+    final String clsName = getMatchingClassType(type);
+    if (clsName != null) {
+      return Utils.getUnqualifiedName(clsName) + "::LocalRef";
+    }
+    return Utils.getNativeReturnType(type, info);
+  }
+
+  private void generateMember(
+      AnnotationInfo info, Member member, String uniqueName, Class<?> type, Class<?>[] argTypes) {
+    
+    if (info.noLiteral
+        && !(member instanceof Field && Utils.isStatic(member) && Utils.isFinal(member))) {
+      throw new IllegalStateException(clsName + "::" + uniqueName + " is not a static final field");
+    }
+
+    final StringBuilder args = new StringBuilder();
+    for (Class<?> argType : argTypes) {
+      args.append("\n                " + getNativeParameterType(argType, info) + ",");
+    }
+    if (args.length() > 0) {
+      args.setLength(args.length() - 1);
+    }
+
+    header.append(
+        "    struct "
+            + getTraitsName(uniqueName,  false)
+            + " {\n"
+            + "        typedef "
+            + Utils.getUnqualifiedName(clsName)
+            + " Owner;\n"
+            + "        typedef "
+            + getNativeReturnType(type, info)
+            + " ReturnType;\n"
+            + "        typedef "
+            + getNativeParameterType(type, info)
+            + " SetterType;\n"
+            + "        typedef mozilla::jni::Args<"
+            + args
+            + "> Args;\n"
+            + "        static constexpr char name[] = \""
+            + Utils.getMemberName(member)
+            + "\";\n"
+            + "        static constexpr char signature[] =\n"
+            + "                \""
+            + Utils.getSignature(member)
+            + "\";\n"
+            + "        static const bool isStatic = "
+            + Utils.isStatic(member)
+            + ";\n"
+            + "        static const mozilla::jni::ExceptionMode exceptionMode =\n"
+            + "                "
+            + info.exceptionMode.nativeValue()
+            + ";\n"
+            + "        static const mozilla::jni::CallingThread callingThread =\n"
+            + "                "
+            + info.callingThread.nativeValue()
+            + ";\n"
+            + "        static const mozilla::jni::DispatchTarget dispatchTarget =\n"
+            + "                "
+            + info.dispatchTarget.nativeValue()
+            + ";\n"
+            + "    };\n"
+            + "\n");
+
+    cpp.append(
+        "constexpr char "
+            + getTraitsName(uniqueName,  true)
+            + "::name[];\n"
+            + "constexpr char "
+            + getTraitsName(uniqueName,  true)
+            + "::signature[];\n"
+            + "\n");
+
+    if (this.callingThread == null) {
+      this.callingThread = info.callingThread;
+    } else if (this.callingThread != info.callingThread) {
+      
+      this.callingThread = AnnotationInfo.CallingThread.ANY;
+    }
+  }
+
+  private String getUniqueMethodName(String basename) {
+    String newName = basename;
+    int index = 1;
+
+    while (takenMethodNames.contains(newName)) {
+      newName = basename + (++index);
+    }
+
+    takenMethodNames.add(newName);
+    return newName;
+  }
+
+  
+
+
+
+  private String generatePrototype(
+      String name,
+      Class<?>[] argTypes,
+      Class<?> returnType,
+      AnnotationInfo info,
+      boolean includeScope,
+      boolean includeArgName,
+      boolean isConst) {
+
+    final StringBuilder proto = new StringBuilder();
+    int argIndex = 0;
+
+    proto.append("auto ");
+
+    if (includeScope) {
+      proto.append(clsName).append("::");
+    }
+
+    proto.append(name).append('(');
+
+    for (Class<?> argType : argTypes) {
+      proto.append(getNativeParameterType(argType, info));
+      if (includeArgName) {
+        proto.append(" a").append(argIndex++);
+      }
+      proto.append(", ");
+    }
+
+    if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT
+        && !returnType.equals(void.class)) {
+      proto.append(getNativeReturnType(returnType, info)).append('*');
+      if (includeArgName) {
+        proto.append(" a").append(argIndex++);
+      }
+      proto.append(", ");
+    }
+
+    if (proto.substring(proto.length() - 2).equals(", ")) {
+      proto.setLength(proto.length() - 2);
+    }
+
+    proto.append(')');
+
+    if (isConst) {
+      proto.append(" const");
+    }
+
+    if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
+      proto.append(" -> nsresult");
+    } else {
+      proto.append(" -> ").append(getNativeReturnType(returnType, info));
+    }
+    return proto.toString();
+  }
+
+  
+
+
+
+  private String generateDeclaration(
+      String name,
+      Class<?>[] argTypes,
+      Class<?> returnType,
+      AnnotationInfo info,
+      boolean isStatic) {
+
+    return (isStatic ? "static " : "")
+        + generatePrototype(
+            name,
+            argTypes,
+            returnType,
+            info,
+             false, 
+            false,
+             !isStatic)
+        + ';';
+  }
+
+  
+
+
+
+  private String generateDefinition(
+      String accessorName,
+      String name,
+      Class<?>[] argTypes,
+      Class<?> returnType,
+      AnnotationInfo info,
+      boolean isStatic) {
+
+    final StringBuilder def =
+        new StringBuilder(
+            generatePrototype(
+                name,
+                argTypes,
+                returnType,
+                info,
+                 true, 
+                true,
+                 !isStatic));
+    def.append("\n{\n");
 
     
-    private final StringBuilder cpp = new StringBuilder();
-    private final StringBuilder header = new StringBuilder();
-    private final StringBuilder natives = new StringBuilder();
-    private final StringBuilder nativesInits = new StringBuilder();
+    
+    
 
-    private final Class<?> cls;
-    private final String clsName;
-    private final ClassWithOptions options;
-    private AnnotationInfo.CallingThread callingThread = null;
-    private int numNativesInits;
+    if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT
+        && returnType.equals(void.class)) {
+      def.append("    nsresult rv = NS_OK;\n" + "    ");
 
-    private final HashSet<String> takenMethodNames = new HashSet<String>();
+    } else if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
+      
+      final String resultArg = "a" + argTypes.length;
+      def.append(
+          "    MOZ_ASSERT("
+              + resultArg
+              + ");\n"
+              + "    nsresult rv = NS_OK;\n"
+              + "    *"
+              + resultArg
+              + " = ");
 
-    public CodeGenerator(ClassWithOptions annotatedClass) {
-        this.cls = annotatedClass.wrappedClass;
-        this.clsName = annotatedClass.generatedName;
-        this.options = annotatedClass;
-
-        final String unqualifiedName = Utils.getUnqualifiedName(clsName);
-        header.append(
-                Utils.getIfdefHeader(annotatedClass.ifdef) +
-                "class " + clsName + " : public mozilla::jni::ObjectBase<" +
-                        unqualifiedName + ">\n" +
-                "{\n" +
-                "public:\n" +
-                "    static const char name[];\n" +
-                "\n" +
-                "    explicit " + unqualifiedName + "(const Context& ctx) : ObjectBase<" +
-                        unqualifiedName + ">(ctx) {}\n" +
-                "\n");
-
-        cpp.append(
-                Utils.getIfdefHeader(annotatedClass.ifdef) +
-                "const char " + clsName + "::name[] =\n" +
-                "        \"" + cls.getName().replace('.', '/') + "\";\n" +
-                "\n");
-
-        natives.append(
-                Utils.getIfdefHeader(annotatedClass.ifdef) +
-                "template<class Impl>\n" +
-                "class " + clsName + "::Natives : " +
-                        "public mozilla::jni::NativeImpl<" + unqualifiedName + ", Impl>\n" +
-                "{\n" +
-                "public:\n");
-    }
-
-    private String getTraitsName(String uniqueName, boolean includeScope) {
-        return (includeScope ? clsName + "::" : "") + uniqueName + "_t";
+    } else {
+      def.append("    return ");
     }
 
     
 
+    def.append(accessorName)
+        .append("(")
+        .append(Utils.getUnqualifiedName(clsName) + (isStatic ? "::Context()" : "::mCtx"));
 
-
-
-
-    private String getMatchingClassType(final Class<?> type) {
-        Class<?> cls = this.cls;
-        String clsName = this.clsName;
-
-        while (cls != null) {
-            if (type.equals(cls)) {
-                return clsName;
-            }
-            cls = cls.getDeclaringClass();
-            clsName = clsName.substring(0, Math.max(0, clsName.lastIndexOf("::")));
-        }
-        return null;
-    }
-
-    private String getNativeParameterType(Class<?> type, AnnotationInfo info) {
-        final String clsName = getMatchingClassType(type);
-        if (clsName != null) {
-            return Utils.getUnqualifiedName(clsName) + "::Param";
-        }
-        return Utils.getNativeParameterType(type, info);
-    }
-
-    private String getNativeReturnType(Class<?> type, AnnotationInfo info) {
-        final String clsName = getMatchingClassType(type);
-        if (clsName != null) {
-            return Utils.getUnqualifiedName(clsName) + "::LocalRef";
-        }
-        return Utils.getNativeReturnType(type, info);
-    }
-
-    private void generateMember(AnnotationInfo info, Member member,
-                                String uniqueName, Class<?> type, Class<?>[] argTypes) {
-        
-        if (info.noLiteral && !(member instanceof Field &&
-                                Utils.isStatic(member) && Utils.isFinal(member))) {
-            throw new IllegalStateException(clsName + "::" + uniqueName +
-                                            " is not a static final field");
-        }
-
-        final StringBuilder args = new StringBuilder();
-        for (Class<?> argType : argTypes) {
-            args.append("\n                " + getNativeParameterType(argType, info) + ",");
-        }
-        if (args.length() > 0) {
-            args.setLength(args.length() - 1);
-        }
-
-        header.append(
-                "    struct " + getTraitsName(uniqueName,  false) + " {\n" +
-                "        typedef " + Utils.getUnqualifiedName(clsName) + " Owner;\n" +
-                "        typedef " + getNativeReturnType(type, info) + " ReturnType;\n" +
-                "        typedef " + getNativeParameterType(type, info) + " SetterType;\n" +
-                "        typedef mozilla::jni::Args<" + args + "> Args;\n" +
-                "        static constexpr char name[] = \"" +
-                        Utils.getMemberName(member) + "\";\n" +
-                "        static constexpr char signature[] =\n" +
-                "                \"" + Utils.getSignature(member) + "\";\n" +
-                "        static const bool isStatic = " + Utils.isStatic(member) + ";\n" +
-                "        static const mozilla::jni::ExceptionMode exceptionMode =\n" +
-                "                " + info.exceptionMode.nativeValue() + ";\n" +
-                "        static const mozilla::jni::CallingThread callingThread =\n" +
-                "                " + info.callingThread.nativeValue() + ";\n" +
-                "        static const mozilla::jni::DispatchTarget dispatchTarget =\n" +
-                "                " + info.dispatchTarget.nativeValue() + ";\n" +
-                "    };\n" +
-                "\n");
-
-        cpp.append(
-                "constexpr char " + getTraitsName(uniqueName,  true) +
-                        "::name[];\n" +
-                "constexpr char " + getTraitsName(uniqueName,  true) +
-                        "::signature[];\n" +
-                "\n");
-
-        if (this.callingThread == null) {
-            this.callingThread = info.callingThread;
-        } else if (this.callingThread != info.callingThread) {
-            
-            this.callingThread = AnnotationInfo.CallingThread.ANY;
-        }
-    }
-
-    private String getUniqueMethodName(String basename) {
-        String newName = basename;
-        int index = 1;
-
-        while (takenMethodNames.contains(newName)) {
-            newName = basename + (++index);
-        }
-
-        takenMethodNames.add(newName);
-        return newName;
+    if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
+      def.append(", &rv");
+    } else {
+      def.append(", nullptr");
     }
 
     
+    for (int argIndex = 0; argIndex < argTypes.length; argIndex++) {
+      def.append(", a").append(argIndex);
+    }
+
+    def.append(");\n");
+
+    if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
+      def.append("    return rv;\n");
+    }
+
+    return def.append("}").toString();
+  }
+
+  private static void appendParameterList(
+      final StringBuilder builder, final Class<?> genScope, final Class<?> paramTypes[]) {
+    builder.append("(");
+
+    final int maxParamIndex = paramTypes.length - 1;
+
+    for (int i = 0; i < paramTypes.length; ++i) {
+      builder.append(Utils.getSimplifiedJavaClassName(genScope, paramTypes[i]));
+      if (i < maxParamIndex) {
+        builder.append(", ");
+      }
+    }
+
+    builder.append(")");
+  }
+
+  
 
 
 
-    private String generatePrototype(String name, Class<?>[] argTypes,
-                                     Class<?> returnType, AnnotationInfo info,
-                                     boolean includeScope, boolean includeArgName,
-                                     boolean isConst) {
 
-        final StringBuilder proto = new StringBuilder();
-        int argIndex = 0;
+  private static String generateJavaStyleMethodSignatureHint(
+      final Method method, final boolean isStatic) {
+    final StringBuilder builder = new StringBuilder("    // ");
 
-        proto.append("auto ");
+    if (isStatic) {
+      builder.append("static ");
+    }
 
-        if (includeScope) {
-            proto.append(clsName).append("::");
-        }
+    final Class<?> declaringClass = method.getDeclaringClass();
 
-        proto.append(name).append('(');
+    builder
+        .append(Utils.getSimplifiedJavaClassName(declaringClass, method.getReturnType()))
+        .append(" ")
+        .append(method.getName());
 
-        for (Class<?> argType : argTypes) {
-            proto.append(getNativeParameterType(argType, info));
-            if (includeArgName) {
-                proto.append(" a").append(argIndex++);
-            }
-            proto.append(", ");
-        }
+    appendParameterList(builder, declaringClass, method.getParameterTypes());
 
-        if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT &&
-                !returnType.equals(void.class)) {
-            proto.append(getNativeReturnType(returnType, info)).append('*');
-            if (includeArgName) {
-                proto.append(" a").append(argIndex++);
-            }
-            proto.append(", ");
-        }
+    builder.append("\n");
+    return builder.toString();
+  }
 
-        if (proto.substring(proto.length() - 2).equals(", ")) {
-            proto.setLength(proto.length() - 2);
-        }
+  
 
-        proto.append(')');
 
-        if (isConst) {
-            proto.append(" const");
-        }
 
-        if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
-            proto.append(" -> nsresult");
+
+  private static String generateJavaStyleConstructorSignatureHint(
+      final Constructor<?> constructor) {
+    final StringBuilder builder = new StringBuilder("    // ");
+
+    final Class<?> declaringClass = constructor.getDeclaringClass();
+
+    builder.append(declaringClass.getSimpleName());
+
+    appendParameterList(builder, declaringClass, constructor.getParameterTypes());
+
+    builder.append("\n");
+    return builder.toString();
+  }
+
+  
+
+
+
+
+  public void generateMethod(AnnotatableEntity annotatedMethod) {
+    
+    final Method method = annotatedMethod.getMethod();
+    final AnnotationInfo info = annotatedMethod.mAnnotationInfo;
+    final String uniqueName = getUniqueMethodName(info.wrapperName);
+    final Class<?>[] argTypes = method.getParameterTypes();
+    final Class<?> returnType = method.getReturnType();
+
+    if (method.isSynthetic()) {
+      return;
+    }
+
+    
+    if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
+      throw new IllegalStateException(
+          "Invalid dispatch target \""
+              + info.dispatchTarget.name().toLowerCase(Locale.ROOT)
+              + "\" for non-native method "
+              + clsName
+              + "::"
+              + uniqueName);
+    }
+
+    generateMember(info, method, uniqueName, returnType, argTypes);
+
+    final boolean isStatic = Utils.isStatic(method);
+
+    header.append(generateJavaStyleMethodSignatureHint(method, isStatic));
+
+    header.append(
+        "    "
+            + generateDeclaration(info.wrapperName, argTypes, returnType, info, isStatic)
+            + "\n"
+            + "\n");
+
+    cpp.append(
+        generateDefinition(
+                "mozilla::jni::Method<"
+                    + getTraitsName(uniqueName,  false)
+                    + ">::Call",
+                info.wrapperName,
+                argTypes,
+                returnType,
+                info,
+                isStatic)
+            + "\n"
+            + "\n");
+  }
+
+  
+
+
+
+
+  public void generateNative(AnnotatableEntity annotatedMethod) {
+    
+    final Method method = annotatedMethod.getMethod();
+    final AnnotationInfo info = annotatedMethod.mAnnotationInfo;
+    final String uniqueName = getUniqueMethodName(info.wrapperName);
+    final Class<?>[] argTypes = method.getParameterTypes();
+    final Class<?> returnType = method.getReturnType();
+
+    
+    if (info.exceptionMode != AnnotationInfo.ExceptionMode.ABORT
+        && info.exceptionMode != AnnotationInfo.ExceptionMode.IGNORE) {
+      throw new IllegalStateException(
+          "Invalid exception mode \""
+              + info.exceptionMode.name().toLowerCase(Locale.ROOT)
+              + "\" for native method "
+              + clsName
+              + "::"
+              + uniqueName);
+    }
+    if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT && returnType != void.class) {
+      throw new IllegalStateException(
+          "Must return void when not dispatching to current thread for native method "
+              + clsName
+              + "::"
+              + uniqueName);
+    }
+
+    generateNativeSignatureHint(info, method, uniqueName, returnType, argTypes);
+    generateMember(info, method, uniqueName, returnType, argTypes);
+
+    final String traits = getTraitsName(uniqueName,  true);
+
+    if (nativesInits.length() > 0) {
+      nativesInits.append(',');
+    }
+
+    nativesInits.append(
+        "\n"
+            + "\n"
+            + "    mozilla::jni::MakeNativeMethod<"
+            + traits
+            + ">(\n"
+            + "            mozilla::jni::NativeStub<"
+            + traits
+            + ", Impl>\n"
+            + "            ::template Wrap<&Impl::"
+            + info.wrapperName
+            + ">)");
+    numNativesInits++;
+  }
+
+  private void generateNativeSignatureHint(
+      AnnotationInfo info,
+      Member member,
+      String uniqueName,
+      Class<?> returnType,
+      Class<?>[] argTypes) {
+    final StringBuilder hint =
+        new StringBuilder("    // Suggested header signature for native method:\n    // ");
+
+    if (Utils.isStatic(member)) {
+      hint.append("static ");
+    }
+
+    hint.append(Utils.getNativeReturnTypeHint(returnType, info))
+        .append(" ")
+        .append(uniqueName)
+        .append("(");
+
+    final int maxParamIndex = argTypes.length - 1;
+
+    for (int i = 0; i < argTypes.length; ++i) {
+      hint.append(Utils.getNativeParameterTypeHint(argTypes[i], info));
+      if (i < maxParamIndex) {
+        hint.append(", ");
+      }
+    }
+
+    hint.append(");\n");
+
+    header.append(hint.toString());
+  }
+
+  private String getLiteral(Object val, AnnotationInfo info) {
+    final Class<?> type = val.getClass();
+
+    if (type.equals(char.class) || type.equals(Character.class)) {
+      final char c = (char) val;
+      if (c >= 0x20 && c < 0x7F) {
+        return "'" + c + '\'';
+      }
+      return "u'\\u" + Integer.toHexString(0x10000 | (int) c).substring(1) + '\'';
+
+    } else if (type.equals(CharSequence.class) || type.equals(String.class)) {
+      final CharSequence str = (CharSequence) val;
+      final StringBuilder out = new StringBuilder("u\"");
+      for (int i = 0; i < str.length(); i++) {
+        final char c = str.charAt(i);
+        if (c >= 0x20 && c < 0x7F) {
+          out.append(c);
         } else {
-            proto.append(" -> ").append(getNativeReturnType(returnType, info));
+          out.append("\\u").append(Integer.toHexString(0x10000 | (int) c).substring(1));
         }
-        return proto.toString();
+      }
+      return out.append('"').toString();
+    }
+
+    return String.valueOf(val);
+  }
+
+  public void generateField(AnnotatableEntity annotatedField) {
+    final Field field = annotatedField.getField();
+    final AnnotationInfo info = annotatedField.mAnnotationInfo;
+    final String uniqueName = info.wrapperName;
+    final Class<?> type = field.getType();
+
+    
+    if (field.isSynthetic()
+        || field.getName().equals("$VALUES")
+        || field.getName().equals("CREATOR")) {
+      return;
     }
 
     
-
-
-
-    private String generateDeclaration(String name, Class<?>[] argTypes,
-                                       Class<?> returnType, AnnotationInfo info,
-                                       boolean isStatic) {
-
-        return (isStatic ? "static " : "") +
-            generatePrototype(name, argTypes, returnType, info,
-                               false,  false,
-                               !isStatic) + ';';
+    if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
+      throw new IllegalStateException(
+          "Invalid dispatch target \""
+              + info.dispatchTarget.name().toLowerCase(Locale.ROOT)
+              + "\" for field "
+              + clsName
+              + "::"
+              + uniqueName);
     }
 
-    
+    final boolean isStatic = Utils.isStatic(field);
+    final boolean isFinal = Utils.isFinal(field);
 
+    if (!info.noLiteral
+        && isStatic
+        && isFinal
+        && (type.isPrimitive() || type.equals(String.class))) {
+      Object val = null;
+      try {
+        field.setAccessible(true);
+        val = field.get(null);
+      } catch (final IllegalAccessException e) {
+      }
 
-
-    private String generateDefinition(String accessorName, String name, Class<?>[] argTypes,
-                                      Class<?> returnType, AnnotationInfo info, boolean isStatic) {
-
-        final StringBuilder def = new StringBuilder(
-                generatePrototype(name, argTypes, returnType, info,
-                                   true,  true,
-                                   !isStatic));
-        def.append("\n{\n");
-
-
+      if (val != null && type.isPrimitive()) {
         
-        
-        
-
-        if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT &&
-                returnType.equals(void.class)) {
-            def.append(
-                    "    nsresult rv = NS_OK;\n" +
-                    "    ");
-
-        } else if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
-            
-            final String resultArg = "a" + argTypes.length;
-            def.append(
-                    "    MOZ_ASSERT(" + resultArg + ");\n" +
-                    "    nsresult rv = NS_OK;\n" +
-                    "    *" + resultArg + " = ");
-
-        } else {
-            def.append(
-                    "    return ");
-        }
-
-
-        
-
-        def.append(accessorName).append("(")
-           .append(Utils.getUnqualifiedName(clsName) +
-                   (isStatic ? "::Context()" : "::mCtx"));
-
-        if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
-            def.append(", &rv");
-        } else {
-            def.append(", nullptr");
-        }
-
-        
-        for (int argIndex = 0; argIndex < argTypes.length; argIndex++) {
-            def.append(", a").append(argIndex);
-        }
-
-        def.append(");\n");
-
-
-        if (info.exceptionMode == AnnotationInfo.ExceptionMode.NSRESULT) {
-            def.append("    return rv;\n");
-        }
-
-        return def.append("}").toString();
-    }
-
-    private static void appendParameterList(final StringBuilder builder, final Class<?> genScope, final Class<?> paramTypes[]) {
-        builder.append("(");
-
-        final int maxParamIndex = paramTypes.length - 1;
-
-        for (int i = 0; i < paramTypes.length; ++i) {
-            builder.append(Utils.getSimplifiedJavaClassName(genScope, paramTypes[i]));
-            if (i < maxParamIndex) {
-                builder.append(", ");
-            }
-        }
-
-        builder.append(")");
-    }
-
-    
-
-
-
-
-    private static String generateJavaStyleMethodSignatureHint(final Method method, final boolean isStatic) {
-        final StringBuilder builder = new StringBuilder("    // ");
-
-        if (isStatic) {
-            builder.append("static ");
-        }
-
-        final Class<?> declaringClass = method.getDeclaringClass();
-
-        builder.append(Utils.getSimplifiedJavaClassName(declaringClass, method.getReturnType()))
-               .append(" ")
-               .append(method.getName());
-
-        appendParameterList(builder, declaringClass, method.getParameterTypes());
-
-        builder.append("\n");
-        return builder.toString();
-    }
-
-    
-
-
-
-
-    private static String generateJavaStyleConstructorSignatureHint(final Constructor<?> constructor) {
-        final StringBuilder builder = new StringBuilder("    // ");
-
-        final Class<?> declaringClass = constructor.getDeclaringClass();
-
-        builder.append(declaringClass.getSimpleName());
-
-        appendParameterList(builder, declaringClass, constructor.getParameterTypes());
-
-        builder.append("\n");
-        return builder.toString();
-    }
-
-    
-
-
-
-
-    public void generateMethod(AnnotatableEntity annotatedMethod) {
-        
-        final Method method = annotatedMethod.getMethod();
-        final AnnotationInfo info = annotatedMethod.mAnnotationInfo;
-        final String uniqueName = getUniqueMethodName(info.wrapperName);
-        final Class<?>[] argTypes = method.getParameterTypes();
-        final Class<?> returnType = method.getReturnType();
-
-        if (method.isSynthetic()) {
-            return;
-        }
-
-        
-        if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
-            throw new IllegalStateException("Invalid dispatch target \"" +
-                    info.dispatchTarget.name().toLowerCase(Locale.ROOT) +
-                    "\" for non-native method " + clsName + "::" + uniqueName);
-        }
-
-        generateMember(info, method, uniqueName, returnType, argTypes);
-
-        final boolean isStatic = Utils.isStatic(method);
-
-        header.append(generateJavaStyleMethodSignatureHint(method, isStatic));
-
         header.append(
-                "    " + generateDeclaration(info.wrapperName, argTypes,
-                                             returnType, info, isStatic) + "\n" +
-                "\n");
+            "    static const "
+                + Utils.getNativeReturnType(type, info)
+                + ' '
+                + info.wrapperName
+                + " = "
+                + getLiteral(val, info)
+                + ";\n"
+                + "\n");
+        return;
+
+      } else if (val != null && type.equals(String.class)) {
+        final String nativeType = "char16_t";
+
+        header.append("    static const " + nativeType + ' ' + info.wrapperName + "[];\n" + "\n");
 
         cpp.append(
-                generateDefinition(
-                        "mozilla::jni::Method<" +
-                                getTraitsName(uniqueName,  false) + ">::Call",
-                        info.wrapperName, argTypes, returnType, info, isStatic) + "\n" +
-                "\n");
+            "const "
+                + nativeType
+                + ' '
+                + clsName
+                + "::"
+                + info.wrapperName
+                + "[] = "
+                + getLiteral(val, info)
+                + ";\n"
+                + "\n");
+        return;
+      }
+
+      
+    }
+
+    generateMember(info, field, uniqueName, type, EMPTY_CLASS_ARRAY);
+
+    final Class<?>[] getterArgs = EMPTY_CLASS_ARRAY;
+
+    header.append(
+        "    "
+            + generateDeclaration(info.wrapperName, getterArgs, type, info, isStatic)
+            + "\n"
+            + "\n");
+
+    cpp.append(
+        generateDefinition(
+                "mozilla::jni::Field<"
+                    + getTraitsName(uniqueName,  false)
+                    + ">::Get",
+                info.wrapperName,
+                getterArgs,
+                type,
+                info,
+                isStatic)
+            + "\n"
+            + "\n");
+
+    if (isFinal) {
+      return;
+    }
+
+    final Class<?>[] setterArgs = new Class<?>[] {type};
+
+    header.append(
+        "    "
+            + generateDeclaration(info.wrapperName, setterArgs, void.class, info, isStatic)
+            + "\n"
+            + "\n");
+
+    cpp.append(
+        generateDefinition(
+                "mozilla::jni::Field<"
+                    + getTraitsName(uniqueName,  false)
+                    + ">::Set",
+                info.wrapperName,
+                setterArgs,
+                void.class,
+                info,
+                isStatic)
+            + "\n"
+            + "\n");
+  }
+
+  public void generateConstructor(AnnotatableEntity annotatedConstructor) {
+    
+    final Constructor<?> method = annotatedConstructor.getConstructor();
+    final AnnotationInfo info = annotatedConstructor.mAnnotationInfo;
+    final String wrapperName = "New";
+    final String uniqueName = getUniqueMethodName(wrapperName);
+    final Class<?>[] argTypes = method.getParameterTypes();
+    final Class<?> returnType = cls;
+
+    if (method.isSynthetic()) {
+      return;
     }
 
     
-
-
-
-
-    public void generateNative(AnnotatableEntity annotatedMethod) {
-        
-        final Method method = annotatedMethod.getMethod();
-        final AnnotationInfo info = annotatedMethod.mAnnotationInfo;
-        final String uniqueName = getUniqueMethodName(info.wrapperName);
-        final Class<?>[] argTypes = method.getParameterTypes();
-        final Class<?> returnType = method.getReturnType();
-
-        
-        if (info.exceptionMode != AnnotationInfo.ExceptionMode.ABORT &&
-                info.exceptionMode != AnnotationInfo.ExceptionMode.IGNORE) {
-            throw new IllegalStateException("Invalid exception mode \"" +
-                    info.exceptionMode.name().toLowerCase(Locale.ROOT) +
-                    "\" for native method " + clsName + "::" + uniqueName);
-        }
-        if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT &&
-                returnType != void.class) {
-            throw new IllegalStateException(
-                    "Must return void when not dispatching to current thread for native method " +
-                     clsName + "::" + uniqueName);
-        }
-
-        generateNativeSignatureHint(info, method, uniqueName, returnType, argTypes);
-        generateMember(info, method, uniqueName, returnType, argTypes);
-
-        final String traits = getTraitsName(uniqueName,  true);
-
-        if (nativesInits.length() > 0) {
-            nativesInits.append(',');
-        }
-
-        nativesInits.append(
-                "\n" +
-                "\n" +
-                "    mozilla::jni::MakeNativeMethod<" + traits + ">(\n" +
-                "            mozilla::jni::NativeStub<" + traits + ", Impl>\n" +
-                "            ::template Wrap<&Impl::" + info.wrapperName + ">)");
-        numNativesInits++;
+    if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
+      throw new IllegalStateException(
+          "Invalid dispatch target \""
+              + info.dispatchTarget.name().toLowerCase(Locale.ROOT)
+              + "\" for constructor "
+              + clsName
+              + "::"
+              + uniqueName);
     }
 
-    private void generateNativeSignatureHint(AnnotationInfo info, Member member,
-                                             String uniqueName, Class<?> returnType, Class<?>[] argTypes) {
-        final StringBuilder hint = new StringBuilder("    // Suggested header signature for native method:\n    // ");
+    generateMember(info, method, uniqueName, returnType, argTypes);
 
-        if (Utils.isStatic(member)) {
-            hint.append("static ");
-        }
+    header.append(generateJavaStyleConstructorSignatureHint(method));
 
-        hint.append(Utils.getNativeReturnTypeHint(returnType, info))
-            .append(" ")
-            .append(uniqueName)
-            .append("(");
+    header.append(
+        "    "
+            + generateDeclaration(wrapperName, argTypes, returnType, info,  true)
+            + "\n"
+            + "\n");
 
-        final int maxParamIndex = argTypes.length - 1;
+    cpp.append(
+        generateDefinition(
+                "mozilla::jni::Constructor<"
+                    + getTraitsName(uniqueName,  false)
+                    + ">::Call",
+                wrapperName,
+                argTypes,
+                returnType,
+                info, 
+                true)
+            + "\n"
+            + "\n");
+  }
 
-        for (int i = 0; i < argTypes.length; ++i) {
-            hint.append(Utils.getNativeParameterTypeHint(argTypes[i], info));
-            if (i < maxParamIndex) {
-                hint.append(", ");
-            }
-        }
-
-        hint.append(");\n");
-
-        header.append(hint.toString());
+  public void generateClasses(final ClassWithOptions[] classes) {
+    if (classes.length == 0) {
+      return;
     }
 
-    private String getLiteral(Object val, AnnotationInfo info) {
-        final Class<?> type = val.getClass();
+    for (final ClassWithOptions cls : classes) {
+      
+      header.append("    class " + Utils.getUnqualifiedName(cls.generatedName) + ";\n");
+    }
+    header.append('\n');
+  }
 
-        if (type.equals(char.class) || type.equals(Character.class)) {
-            final char c = (char) val;
-            if (c >= 0x20 && c < 0x7F) {
-                return "'" + c + '\'';
-            }
-            return "u'\\u" + Integer.toHexString(0x10000 | (int) c).substring(1) + '\'';
+  
 
-        } else if (type.equals(CharSequence.class) || type.equals(String.class)) {
-            final CharSequence str = (CharSequence) val;
-            final StringBuilder out = new StringBuilder("u\"");
-            for (int i = 0; i < str.length(); i++) {
-                final char c = str.charAt(i);
-                if (c >= 0x20 && c < 0x7F) {
-                    out.append(c);
-                } else {
-                    out.append("\\u").append(Integer.toHexString(0x10000 | (int) c).substring(1));
-                }
-            }
-            return out.append('"').toString();
-        }
 
-        return String.valueOf(val);
+
+
+  public String getWrapperFileContents() {
+    cpp.append(Utils.getIfdefFooter(options.ifdef));
+    return cpp.toString();
+  }
+
+  private boolean haveNatives() {
+    return nativesInits.length() > 0 || Utils.isJNIObject(cls);
+  }
+
+  
+
+
+
+
+  public String getHeaderFileContents() {
+    if (this.callingThread == null) {
+      this.callingThread = AnnotationInfo.CallingThread.ANY;
     }
 
-    public void generateField(AnnotatableEntity annotatedField) {
-        final Field field = annotatedField.getField();
-        final AnnotationInfo info = annotatedField.mAnnotationInfo;
-        final String uniqueName = info.wrapperName;
-        final Class<?> type = field.getType();
+    header.append(
+        "    static const mozilla::jni::CallingThread callingThread =\n"
+            + "            "
+            + this.callingThread.nativeValue()
+            + ";\n"
+            + "\n");
 
-        
-        if (field.isSynthetic() || field.getName().equals("$VALUES") ||
-                field.getName().equals("CREATOR")) {
-            return;
-        }
-
-        
-        if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
-            throw new IllegalStateException("Invalid dispatch target \"" +
-                    info.dispatchTarget.name().toLowerCase(Locale.ROOT) +
-                    "\" for field " + clsName + "::" + uniqueName);
-        }
-
-        final boolean isStatic = Utils.isStatic(field);
-        final boolean isFinal = Utils.isFinal(field);
-
-        if (!info.noLiteral && isStatic && isFinal &&
-                (type.isPrimitive() || type.equals(String.class))) {
-            Object val = null;
-            try {
-                field.setAccessible(true);
-                val = field.get(null);
-            } catch (final IllegalAccessException e) {
-            }
-
-            if (val != null && type.isPrimitive()) {
-                
-                header.append(
-                    "    static const " + Utils.getNativeReturnType(type, info) +
-                            ' ' + info.wrapperName + " = " + getLiteral(val, info) + ";\n" +
-                    "\n");
-                return;
-
-            } else if (val != null && type.equals(String.class)) {
-                final String nativeType = "char16_t";
-
-                header.append(
-                    "    static const " + nativeType + ' ' + info.wrapperName + "[];\n" +
-                    "\n");
-
-                cpp.append(
-                    "const " + nativeType + ' ' + clsName + "::" + info.wrapperName +
-                            "[] = " + getLiteral(val, info) + ";\n" +
-                    "\n");
-                return;
-            }
-
-            
-        }
-
-        generateMember(info, field, uniqueName, type, EMPTY_CLASS_ARRAY);
-
-        final Class<?>[] getterArgs = EMPTY_CLASS_ARRAY;
-
-        header.append(
-                "    " + generateDeclaration(info.wrapperName, getterArgs,
-                                             type, info, isStatic) + "\n" +
-                "\n");
-
-        cpp.append(
-                generateDefinition(
-                        "mozilla::jni::Field<" +
-                                getTraitsName(uniqueName,  false) + ">::Get",
-                        info.wrapperName, getterArgs, type, info, isStatic) + "\n" +
-                "\n");
-
-        if (isFinal) {
-            return;
-        }
-
-        final Class<?>[] setterArgs = new Class<?>[] { type };
-
-        header.append(
-                "    " + generateDeclaration(info.wrapperName, setterArgs,
-                                             void.class, info, isStatic) + "\n" +
-                "\n");
-
-        cpp.append(
-                generateDefinition(
-                        "mozilla::jni::Field<" +
-                                getTraitsName(uniqueName,  false) + ">::Set",
-                        info.wrapperName, setterArgs, void.class, info, isStatic) + "\n" +
-                "\n");
+    if (haveNatives()) {
+      header.append("    template<class Impl> class Natives;\n");
     }
+    header.append("};\n" + "\n" + Utils.getIfdefFooter(options.ifdef));
+    return header.toString();
+  }
 
-    public void generateConstructor(AnnotatableEntity annotatedConstructor) {
-        
-        final Constructor<?> method = annotatedConstructor.getConstructor();
-        final AnnotationInfo info = annotatedConstructor.mAnnotationInfo;
-        final String wrapperName = "New";
-        final String uniqueName = getUniqueMethodName(wrapperName);
-        final Class<?>[] argTypes = method.getParameterTypes();
-        final Class<?> returnType = cls;
+  
 
-        if (method.isSynthetic()) {
-            return;
-        }
 
-        
-        if (info.dispatchTarget != AnnotationInfo.DispatchTarget.CURRENT) {
-            throw new IllegalStateException("Invalid dispatch target \"" +
-                    info.dispatchTarget.name().toLowerCase(Locale.ROOT) +
-                    "\" for constructor " + clsName + "::" + uniqueName);
-        }
 
-        generateMember(info, method, uniqueName, returnType, argTypes);
 
-        header.append(generateJavaStyleConstructorSignatureHint(method));
-
-        header.append(
-                "    " + generateDeclaration(wrapperName, argTypes,
-                                             returnType, info,  true) + "\n" +
-                "\n");
-
-        cpp.append(
-                generateDefinition(
-                        "mozilla::jni::Constructor<" +
-                                getTraitsName(uniqueName,  false) + ">::Call",
-                        wrapperName, argTypes, returnType, info,  true) + "\n" +
-                "\n");
+  public String getNativesFileContents() {
+    if (!haveNatives()) {
+      return "";
     }
-
-    public void generateClasses(final ClassWithOptions[] classes) {
-        if (classes.length == 0) {
-            return;
-        }
-
-        for (final ClassWithOptions cls : classes) {
-            
-            header.append(
-                    "    class " + Utils.getUnqualifiedName(cls.generatedName) + ";\n");
-        }
-        header.append('\n');
-    }
-
-    
-
-
-
-
-    public String getWrapperFileContents() {
-        cpp.append(
-                Utils.getIfdefFooter(options.ifdef));
-        return cpp.toString();
-    }
-
-    private boolean haveNatives() {
-        return nativesInits.length() > 0 || Utils.isJNIObject(cls);
-    }
-
-    
-
-
-
-
-    public String getHeaderFileContents() {
-        if (this.callingThread == null) {
-            this.callingThread = AnnotationInfo.CallingThread.ANY;
-        }
-
-        header.append(
-                "    static const mozilla::jni::CallingThread callingThread =\n" +
-                "            " + this.callingThread.nativeValue() + ";\n" +
-                "\n");
-
-        if (haveNatives()) {
-            header.append(
-                    "    template<class Impl> class Natives;\n");
-        }
-        header.append(
-                "};\n" +
-                "\n" +
-                Utils.getIfdefFooter(options.ifdef));
-        return header.toString();
-    }
-
-    
-
-
-
-
-    public String getNativesFileContents() {
-        if (!haveNatives()) {
-            return "";
-        }
-        natives.append(
-                "    static const JNINativeMethod methods[" + numNativesInits + "];\n" +
-                "};\n" +
-                "\n" +
-                "template<class Impl>\n" +
-                "const JNINativeMethod " + clsName + "::Natives<Impl>::methods[] = {" + nativesInits + '\n' +
-                "};\n" +
-                "\n" +
-                Utils.getIfdefFooter(options.ifdef));
-        return natives.toString();
-    }
+    natives.append(
+        "    static const JNINativeMethod methods["
+            + numNativesInits
+            + "];\n"
+            + "};\n"
+            + "\n"
+            + "template<class Impl>\n"
+            + "const JNINativeMethod "
+            + clsName
+            + "::Natives<Impl>::methods[] = {"
+            + nativesInits
+            + '\n'
+            + "};\n"
+            + "\n"
+            + Utils.getIfdefFooter(options.ifdef));
+    return natives.toString();
+  }
 }

@@ -11,7 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 
 public interface WebPushDelegate {
-    
+  
 
 
 
@@ -26,26 +26,13 @@ public interface WebPushDelegate {
 
 
 
-    @UiThread
-    default @Nullable GeckoResult<WebPushSubscription> onSubscribe(@NonNull final String scope,
-                                                                   @Nullable final byte[] appServerKey) {
-        return null;
-    }
+  @UiThread
+  default @Nullable GeckoResult<WebPushSubscription> onSubscribe(
+      @NonNull final String scope, @Nullable final byte[] appServerKey) {
+    return null;
+  }
 
-    
-
-
-
-
-
-
-
-    @UiThread
-    default @Nullable GeckoResult<WebPushSubscription> onGetSubscription(@NonNull final String scope) {
-        return null;
-    }
-
-    
+  
 
 
 
@@ -53,9 +40,23 @@ public interface WebPushDelegate {
 
 
 
+  @UiThread
+  default @Nullable GeckoResult<WebPushSubscription> onGetSubscription(
+      @NonNull final String scope) {
+    return null;
+  }
 
-    @UiThread
-    default @Nullable GeckoResult<Void> onUnsubscribe(@NonNull final String scope) {
-        return null;
-    }
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  default @Nullable GeckoResult<Void> onUnsubscribe(@NonNull final String scope) {
+    return null;
+  }
 }

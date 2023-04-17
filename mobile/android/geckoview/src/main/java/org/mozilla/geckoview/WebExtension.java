@@ -5,14 +5,19 @@
 package org.mozilla.geckoview;
 
 import android.graphics.Color;
+import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import android.util.Log;
-
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.EventDispatcher;
@@ -20,17 +25,183 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-
-
-
 
 public class WebExtension {
+  
+
+
+
+
+
+
+
+
+
+
+  public final @NonNull String location;
+  
+  public final @NonNull String id;
+  
+  public final @WebExtensionFlags long flags;
+
+  
+  public final @NonNull MetaData metaData;
+
+  
+
+
+
+  public final boolean isBuiltIn;
+
+  
+
+
+  interface DelegateController {
+    void onMessageDelegate(final String nativeApp, final MessageDelegate delegate);
+
+    void onActionDelegate(final ActionDelegate delegate);
+
+    void onBrowsingDataDelegate(final BrowsingDataDelegate delegate);
+
+    void onTabDelegate(final TabDelegate delegate);
+
+    void onDownloadDelegate(final DownloadDelegate delegate);
+
+    ActionDelegate getActionDelegate();
+
+    BrowsingDataDelegate getBrowsingDataDelegate();
+
+    TabDelegate getTabDelegate();
+
+    DownloadDelegate getDownloadDelegate();
+  }
+
+   interface DelegateControllerProvider {
+    @NonNull
+    DelegateController controllerFor(final WebExtension extension);
+  }
+
+  private final DelegateController mDelegateController;
+
+  @Override
+  public String toString() {
+    return "WebExtension {"
+        + "location="
+        + location
+        + ", "
+        + "id="
+        + id
+        + ", "
+        + "flags="
+        + flags
+        + "}";
+  }
+
+  private static final String LOGTAG = "WebExtension";
+
+  
+  public static class Flags {
+    
+
+
+    public static final long NONE = 0;
+    
+
+
+
+    public static final long ALLOW_CONTENT_MESSAGING = 1 << 0;
+
+    
+    protected Flags() {}
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @LongDef(
+      flag = true,
+      value = {Flags.NONE, Flags.ALLOW_CONTENT_MESSAGING})
+   @interface WebExtensionFlags {}
+
+   WebExtension(final DelegateControllerProvider provider, final GeckoBundle bundle) {
+    location = bundle.getString("locationURI");
+    id = bundle.getString("webExtensionId");
+    flags = bundle.getInt("webExtensionFlags", 0);
+    isBuiltIn = bundle.getBoolean("isBuiltIn", false);
+    if (bundle.containsKey("metaData")) {
+      metaData = new MetaData(bundle.getBundle("metaData"));
+    } else {
+      metaData = null;
+    }
+    mDelegateController = provider.controllerFor(this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void setMessageDelegate(
+      final @Nullable MessageDelegate messageDelegate, final @NonNull String nativeApp) {
+    mDelegateController.onMessageDelegate(nativeApp, messageDelegate);
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @LongDef(
+      value = {
+        BrowsingDataDelegate.Type.CACHE,
+        BrowsingDataDelegate.Type.COOKIES,
+        BrowsingDataDelegate.Type.DOWNLOADS,
+        BrowsingDataDelegate.Type.FORM_DATA,
+        BrowsingDataDelegate.Type.HISTORY,
+        BrowsingDataDelegate.Type.LOCAL_STORAGE,
+        BrowsingDataDelegate.Type.PASSWORDS
+      },
+      flag = true)
+  @interface BrowsingDataTypes {}
+
+  
+
+
+
+
+
+
+  @UiThread
+  public interface BrowsingDataDelegate {
     
 
 
@@ -39,93 +210,1129 @@ public class WebExtension {
 
 
 
+    @UiThread
+    class Settings {
+      
+
+
+
+      public final int sinceUnixTimestamp;
+      
+
+
+
+      public final @BrowsingDataTypes long toggleableTypes;
+
+      
+
+
+
+      public final @BrowsingDataTypes long selectedTypes;
+
+      
 
 
 
 
 
-    public final @NonNull String location;
-    
-
-
-    public final @NonNull String id;
-    
-
-
-    public final @WebExtensionFlags long flags;
-
-    
-    public final @NonNull MetaData metaData;
-
-    
 
 
 
-    public final boolean isBuiltIn;
 
-    
- interface DelegateController {
-        void onMessageDelegate(final String nativeApp, final MessageDelegate delegate);
-        void onActionDelegate(final ActionDelegate delegate);
-        void onBrowsingDataDelegate(final BrowsingDataDelegate delegate);
-        void onTabDelegate(final TabDelegate delegate);
-        void onDownloadDelegate(final DownloadDelegate delegate);
-        ActionDelegate getActionDelegate();
-        BrowsingDataDelegate getBrowsingDataDelegate();
-        TabDelegate getTabDelegate();
-        DownloadDelegate getDownloadDelegate();
+
+
+
+      @UiThread
+      public Settings(
+          final int since,
+          final @BrowsingDataTypes long toggleableTypes,
+          final @BrowsingDataTypes long selectedTypes) {
+        this.toggleableTypes = toggleableTypes;
+        this.selectedTypes = selectedTypes;
+        this.sinceUnixTimestamp = since;
+      }
+
+      private GeckoBundle fromBrowsingDataType(final @BrowsingDataTypes long types) {
+        final GeckoBundle result = new GeckoBundle(7);
+        result.putBoolean("cache", (types & Type.CACHE) != 0);
+        result.putBoolean("cookies", (types & Type.COOKIES) != 0);
+        result.putBoolean("downloads", (types & Type.DOWNLOADS) != 0);
+        result.putBoolean("formData", (types & Type.FORM_DATA) != 0);
+        result.putBoolean("history", (types & Type.HISTORY) != 0);
+        result.putBoolean("localStorage", (types & Type.LOCAL_STORAGE) != 0);
+        result.putBoolean("passwords", (types & Type.PASSWORDS) != 0);
+        return result;
+      }
+
+       GeckoBundle toGeckoBundle() {
+        final GeckoBundle options = new GeckoBundle(1);
+        options.putLong("since", sinceUnixTimestamp);
+
+        final GeckoBundle result = new GeckoBundle(3);
+        result.putBundle("options", options);
+        result.putBundle("dataToRemove", fromBrowsingDataType(selectedTypes));
+        result.putBundle("dataRemovalPermitted", fromBrowsingDataType(toggleableTypes));
+        return result;
+      }
     }
 
-     interface DelegateControllerProvider {
-        @NonNull DelegateController controllerFor(final WebExtension extension);
+    
+    class Type {
+      protected Type() {}
+
+      public static final long CACHE = 1 << 0;
+      public static final long COOKIES = 1 << 1;
+      public static final long DOWNLOADS = 1 << 2;
+      public static final long FORM_DATA = 1 << 3;
+      public static final long HISTORY = 1 << 4;
+      public static final long LOCAL_STORAGE = 1 << 5;
+      public static final long PASSWORDS = 1 << 6;
     }
 
-    private final DelegateController mDelegateController;
+    
+
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Settings> onGetSettings() {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Void> onClearFormData(final long sinceUnixTimestamp) {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Void> onClearPasswords(final long sinceUnixTimestamp) {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Void> onClearHistory(final long sinceUnixTimestamp) {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Void> onClearDownloads(final long sinceUnixTimestamp) {
+      return null;
+    }
+  }
+
+  
+  @UiThread
+  public interface MessageDelegate {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @Nullable
+    default GeckoResult<Object> onMessage(
+        final @NonNull String nativeApp,
+        final @NonNull Object message,
+        final @NonNull MessageSender sender) {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @Nullable
+    default void onConnect(final @NonNull Port port) {}
+  }
+
+  
+
+
+  @UiThread
+  public interface PortDelegate {
+    
+
+
+
+
+
+
+    default void onPortMessage(final @NonNull Object message, final @NonNull Port port) {}
+
+    
+
+
+
+
+
+
+    @NonNull
+    default void onDisconnect(final @NonNull Port port) {}
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public static class Port {
+     final long id;
+     PortDelegate delegate;
+     boolean disconnected = false;
+     final EventDispatcher mEventDispatcher;
+     boolean mListenersRegistered = false;
+
+    
+    public @NonNull final MessageSender sender;
+
+    
+    public @NonNull final String name;
+
+    
+    protected Port() {
+      this.id = -1;
+      this.delegate = null;
+      this.sender = null;
+      this.name = null;
+      mEventDispatcher = null;
+    }
+
+     Port(final String name, final long id, final MessageSender sender) {
+      this.id = id;
+      this.delegate = null;
+      this.sender = sender;
+      this.name = name;
+      mEventDispatcher = EventDispatcher.byName("port:" + id);
+    }
+
+    private BundleEventListener mEventListener =
+        new BundleEventListener() {
+          @Override
+          public void handleMessage(
+              final String event, final GeckoBundle message, final EventCallback callback) {
+            if ("GeckoView:WebExtension:Disconnect".equals(event)) {
+              disconnectFromExtension(callback);
+            } else if ("GeckoView:WebExtension:PortMessage".equals(event)) {
+              portMessage(message, callback);
+            }
+          }
+        };
+
+    private void disconnectFromExtension(final EventCallback callback) {
+      delegate.onDisconnect(this);
+      disconnected();
+    }
+
+    private void portMessage(final GeckoBundle bundle, final EventCallback callback) {
+      final Object content;
+      try {
+        content = bundle.toJSONObject().get("data");
+      } catch (final JSONException ex) {
+        callback.sendError(ex);
+        return;
+      }
+
+      delegate.onPortMessage(content, this);
+    }
+
+    
+
+
+
+
+    public void postMessage(final @NonNull JSONObject message) {
+      final GeckoBundle args = new GeckoBundle(1);
+      try {
+        args.putBundle("message", GeckoBundle.fromJSONObject(message));
+      } catch (final JSONException ex) {
+        throw new RuntimeException(ex);
+      }
+
+      mEventDispatcher.dispatch("GeckoView:WebExtension:PortMessageFromApp", args);
+    }
+
+    
+    public void disconnect() {
+      if (this.disconnected) {
+        return;
+      }
+
+      final GeckoBundle args = new GeckoBundle(1);
+      args.putLong("portId", id);
+
+      mEventDispatcher.dispatch("GeckoView:WebExtension:PortDisconnect", args);
+      disconnected();
+    }
+
+    private void disconnected() {
+      unregisterListeners();
+      mEventDispatcher.shutdown();
+      this.disconnected = true;
+    }
+
+    
+
+
+
+
+    public void setDelegate(final @Nullable PortDelegate delegate) {
+      this.delegate = delegate;
+
+      if (delegate != null) {
+        registerListeners();
+      } else {
+        unregisterListeners();
+      }
+    }
+
+    private void unregisterListeners() {
+      if (!mListenersRegistered) {
+        return;
+      }
+
+      mEventDispatcher.unregisterUiThreadListener(
+          mEventListener,
+          "GeckoView:WebExtension:Disconnect",
+          "GeckoView:WebExtension:PortMessage");
+      mListenersRegistered = false;
+    }
+
+    private void registerListeners() {
+      if (mListenersRegistered) {
+        return;
+      }
+
+      mEventDispatcher.registerUiThreadListener(
+          mEventListener,
+          "GeckoView:WebExtension:Disconnect",
+          "GeckoView:WebExtension:PortMessage");
+      mListenersRegistered = true;
+    }
+  }
+
+  
+
+
+
+
+  public interface SessionTabDelegate {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    @NonNull
+    default GeckoResult<AllowOrDeny> onCloseTab(
+        @Nullable final WebExtension source, @NonNull final GeckoSession session) {
+      return GeckoResult.deny();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    @NonNull
+    default GeckoResult<AllowOrDeny> onUpdateTab(
+        final @NonNull WebExtension extension,
+        final @NonNull GeckoSession session,
+        final @NonNull UpdateTabDetails details) {
+      return GeckoResult.deny();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static class UpdateTabDetails {
+    
+
+
+
+    @Nullable public final Boolean active;
+    
+    @Nullable public final Boolean autoDiscardable;
+    
+    @Nullable public final Boolean highlighted;
+    
+    @Nullable public final Boolean muted;
+    
+    @Nullable public final Boolean pinned;
+    
+
+
+
+
+
+    @Nullable public final String url;
+
+    
+    protected UpdateTabDetails() {
+      active = null;
+      autoDiscardable = null;
+      highlighted = null;
+      muted = null;
+      pinned = null;
+      url = null;
+    }
+
+     UpdateTabDetails(final GeckoBundle bundle) {
+      active = bundle.getBooleanObject("active");
+      autoDiscardable = bundle.getBooleanObject("autoDiscardable");
+      highlighted = bundle.getBooleanObject("highlighted");
+      muted = bundle.getBooleanObject("muted");
+      pinned = bundle.getBooleanObject("pinned");
+      url = bundle.getString("url");
+    }
+  }
+
+  
+
+
+
+
+
+
+  public static class CreateTabDetails {
+    
+
+
+
+    @Nullable public final Boolean active;
+    
+
+
+
+    @Nullable public final String cookieStoreId;
+    
+
+
+
+
+    @Nullable public final Boolean discarded;
+    
+    @Nullable public final Integer index;
+    
+    @Nullable public final Boolean openInReaderMode;
+    
+    @Nullable public final Boolean pinned;
+    
+
+
+
+
+
+    @Nullable public final String url;
+
+    
+    protected CreateTabDetails() {
+      active = null;
+      cookieStoreId = null;
+      discarded = null;
+      index = null;
+      openInReaderMode = null;
+      pinned = null;
+      url = null;
+    }
+
+     CreateTabDetails(final GeckoBundle bundle) {
+      active = bundle.getBooleanObject("active");
+      cookieStoreId = bundle.getString("cookieStoreId");
+      discarded = bundle.getBooleanObject("discarded");
+      index = bundle.getInteger("index");
+      openInReaderMode = bundle.getBooleanObject("openInReaderMode");
+      pinned = bundle.getBooleanObject("pinned");
+      url = bundle.getString("url");
+    }
+  }
+
+  
+
+
+
+
+  public interface TabDelegate {
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    @Nullable
+    default GeckoResult<GeckoSession> onNewTab(
+        @NonNull final WebExtension source, @NonNull final CreateTabDetails createDetails) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void onOpenOptionsPage(@NonNull final WebExtension source) {}
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  @Nullable
+  public WebExtension.TabDelegate getTabDelegate() {
+    return mDelegateController.getTabDelegate();
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void setTabDelegate(final @Nullable TabDelegate delegate) {
+    mDelegateController.onTabDelegate(delegate);
+  }
+
+  @UiThread
+  @Nullable
+  public BrowsingDataDelegate getBrowsingDataDelegate() {
+    return mDelegateController.getBrowsingDataDelegate();
+  }
+
+  @UiThread
+  public void setBrowsingDataDelegate(final @Nullable BrowsingDataDelegate delegate) {
+    mDelegateController.onBrowsingDataDelegate(delegate);
+  }
+
+  private static class Sender {
+    public String webExtensionId;
+    public String nativeApp;
+
+    public Sender(final String webExtensionId, final String nativeApp) {
+      this.webExtensionId = webExtensionId;
+      this.nativeApp = nativeApp;
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      if (!(other instanceof Sender)) {
+        return false;
+      }
+
+      final Sender o = (Sender) other;
+      return webExtensionId.equals(o.webExtensionId) && nativeApp.equals(o.nativeApp);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = 17;
+      result = 31 * result + (webExtensionId != null ? webExtensionId.hashCode() : 0);
+      result = 31 * result + (nativeApp != null ? nativeApp.hashCode() : 0);
+      return result;
+    }
+  }
+
+  
+  public static class SessionController {
+    private final Listener<SessionTabDelegate> mListener;
+
+     void setRuntime(final GeckoRuntime runtime) {
+      mListener.runtime = runtime;
+    }
+
+     SessionController(final GeckoSession session) {
+      mListener = new Listener<>(session);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setMessageDelegate(
+        final @NonNull WebExtension webExtension,
+        final @Nullable WebExtension.MessageDelegate delegate,
+        final @NonNull String nativeApp) {
+      mListener.setMessageDelegate(webExtension, delegate, nativeApp);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public @Nullable WebExtension.MessageDelegate getMessageDelegate(
+        final @NonNull WebExtension extension, final @NonNull String nativeApp) {
+      return mListener.getMessageDelegate(extension, nativeApp);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setActionDelegate(
+        final @NonNull WebExtension extension, final @Nullable ActionDelegate delegate) {
+      mListener.setActionDelegate(extension, delegate);
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    @Nullable
+    public ActionDelegate getActionDelegate(final @NonNull WebExtension extension) {
+      return mListener.getActionDelegate(extension);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setTabDelegate(
+        final @NonNull WebExtension extension, final @Nullable SessionTabDelegate delegate) {
+      mListener.setTabDelegate(extension, delegate);
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    @Nullable
+    public SessionTabDelegate getTabDelegate(final @NonNull WebExtension extension) {
+      return mListener.getTabDelegate(extension);
+    }
+  }
+
+   static final class Listener<TabDelegate> implements BundleEventListener {
+    private final HashMap<Sender, MessageDelegate> mMessageDelegates;
+    private final HashMap<String, ActionDelegate> mActionDelegates;
+    private final HashMap<String, BrowsingDataDelegate> mBrowsingDataDelegates;
+    private final HashMap<String, TabDelegate> mTabDelegates;
+    private final HashMap<String, DownloadDelegate> mDownloadDelegates;
+
+    private final GeckoSession mSession;
+    private final EventDispatcher mEventDispatcher;
+
+    private boolean mActionDelegateRegistered = false;
+    private boolean mBrowsingDataDelegateRegistered = false;
+    private boolean mTabDelegateRegistered = false;
+
+    public GeckoRuntime runtime;
+
+    public Listener(final GeckoRuntime runtime) {
+      this(null, runtime);
+    }
+
+    public Listener(final GeckoSession session) {
+      this(session, null);
+
+      
+      
+      mEventDispatcher.registerUiThreadListener(
+          this,
+          "GeckoView:WebExtension:NewTab",
+          "GeckoView:WebExtension:UpdateTab",
+          "GeckoView:WebExtension:CloseTab",
+          "GeckoView:WebExtension:OpenOptionsPage");
+      mTabDelegateRegistered = true;
+    }
+
+    private Listener(final GeckoSession session, final GeckoRuntime runtime) {
+      mMessageDelegates = new HashMap<>();
+      mActionDelegates = new HashMap<>();
+      mBrowsingDataDelegates = new HashMap<>();
+      mTabDelegates = new HashMap<>();
+      mDownloadDelegates = new HashMap<>();
+      mEventDispatcher =
+          session != null ? session.getEventDispatcher() : EventDispatcher.getInstance();
+      mSession = session;
+      this.runtime = runtime;
+
+      
+      
+      mEventDispatcher.registerUiThreadListener(
+          this,
+          "GeckoView:WebExtension:Message",
+          "GeckoView:WebExtension:PortMessage",
+          "GeckoView:WebExtension:Connect",
+          "GeckoView:WebExtension:Disconnect",
+          "GeckoView:BrowsingData:GetSettings",
+          "GeckoView:BrowsingData:Clear",
+          "GeckoView:WebExtension:Download");
+    }
+
+    public void unregisterWebExtension(final WebExtension extension) {
+      mMessageDelegates.remove(extension.id);
+      mActionDelegates.remove(extension.id);
+      mBrowsingDataDelegates.remove(extension.id);
+      mTabDelegates.remove(extension.id);
+      mDownloadDelegates.remove(extension.id);
+    }
+
+    public void setTabDelegate(final WebExtension webExtension, final TabDelegate delegate) {
+      if (!mTabDelegateRegistered && delegate != null) {
+        mEventDispatcher.registerUiThreadListener(
+            this,
+            "GeckoView:WebExtension:NewTab",
+            "GeckoView:WebExtension:UpdateTab",
+            "GeckoView:WebExtension:CloseTab",
+            "GeckoView:WebExtension:OpenOptionsPage");
+        mTabDelegateRegistered = true;
+      }
+
+      mTabDelegates.put(webExtension.id, delegate);
+    }
+
+    public TabDelegate getTabDelegate(final WebExtension webExtension) {
+      return mTabDelegates.get(webExtension.id);
+    }
+
+    public void setBrowsingDataDelegate(
+        final WebExtension webExtension, final BrowsingDataDelegate delegate) {
+      mBrowsingDataDelegates.put(webExtension.id, delegate);
+    }
+
+    public BrowsingDataDelegate getBrowsingDataDelegate(final WebExtension webExtension) {
+      return mBrowsingDataDelegates.get(webExtension.id);
+    }
+
+    public void setActionDelegate(
+        final WebExtension webExtension, final WebExtension.ActionDelegate delegate) {
+      if (!mActionDelegateRegistered && delegate != null) {
+        mEventDispatcher.registerUiThreadListener(
+            this,
+            "GeckoView:BrowserAction:Update",
+            "GeckoView:BrowserAction:OpenPopup",
+            "GeckoView:PageAction:Update",
+            "GeckoView:PageAction:OpenPopup");
+        mActionDelegateRegistered = true;
+      }
+
+      mActionDelegates.put(webExtension.id, delegate);
+    }
+
+    public WebExtension.ActionDelegate getActionDelegate(final WebExtension webExtension) {
+      return mActionDelegates.get(webExtension.id);
+    }
+
+    public void setMessageDelegate(
+        final WebExtension webExtension,
+        final WebExtension.MessageDelegate delegate,
+        final String nativeApp) {
+      mMessageDelegates.put(new Sender(webExtension.id, nativeApp), delegate);
+
+      if (runtime != null && delegate != null) {
+        runtime
+            .getWebExtensionController()
+            .releasePendingMessages(webExtension, nativeApp, mSession);
+      }
+    }
+
+    public WebExtension.MessageDelegate getMessageDelegate(
+        final WebExtension webExtension, final String nativeApp) {
+      return mMessageDelegates.get(new Sender(webExtension.id, nativeApp));
+    }
+
+    @Override
+    public void handleMessage(
+        final String event, final GeckoBundle message, final EventCallback callback) {
+      if (runtime == null) {
+        return;
+      }
+
+      runtime.getWebExtensionController().handleMessage(event, message, callback, mSession);
+    }
+
+    public void setDownloadDelegate(
+        final @NonNull WebExtension extension, final @Nullable DownloadDelegate delegate) {
+      mDownloadDelegates.put(extension.id, delegate);
+    }
+
+    public WebExtension.DownloadDelegate getDownloadDelegate(final WebExtension extension) {
+      return mDownloadDelegates.get(extension.id);
+    }
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public static class MessageSender {
+    
+    public final @NonNull WebExtension webExtension;
+
+    
+
+
+
+    public final @Nullable GeckoSession session;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ENV_TYPE_UNKNOWN, ENV_TYPE_EXTENSION, ENV_TYPE_CONTENT_SCRIPT})
+     @interface EnvType {}
+     static final int ENV_TYPE_UNKNOWN = 0;
+    
+    public static final int ENV_TYPE_EXTENSION = 1;
+
+    
+    public static final int ENV_TYPE_CONTENT_SCRIPT = 2;
+
+    
+
+
+
+
+
+
+
+
+    
+    public final @EnvType int environmentType;
+
+    
+
+
+
+
+
+    public final @NonNull String url;
+
+     final boolean isTopLevel;
+
+     MessageSender(
+        final @NonNull WebExtension webExtension,
+        final @Nullable GeckoSession session,
+        final @Nullable String url,
+        final @EnvType int environmentType,
+        final boolean isTopLevel) {
+      this.webExtension = webExtension;
+      this.session = session;
+      this.isTopLevel = isTopLevel;
+      this.url = url;
+      this.environmentType = environmentType;
+    }
+
+    
+    protected MessageSender() {
+      this.webExtension = null;
+      this.session = null;
+      this.isTopLevel = false;
+      this.url = null;
+      this.environmentType = ENV_TYPE_UNKNOWN;
+    }
+
+    
+
+
+
+
+    public boolean isTopLevel() {
+      return this.isTopLevel;
+    }
+  }
+
+   static WebExtension fromBundle(
+      final DelegateControllerProvider provider, final GeckoBundle bundle) {
+    if (bundle == null) {
+      return null;
+    }
+    return new WebExtension(provider, bundle.getBundle("extension"));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public static class Action {
+    
+
+
+
+
+
+
+
+
+    public final @Nullable String title;
+    
+
+
+
+
+
+
+
+
+    public final @Nullable Image icon;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public final @Nullable Boolean enabled;
+    
+
+
+
+
+
+
+    public final @Nullable String badgeText;
+    
+
+
+
+
+
+
+
+
+
+    public final @Nullable Integer badgeBackgroundColor;
+    
+
+
+
+
+
+
+
+
+
+    public final @Nullable Integer badgeTextColor;
+
+    private final WebExtension mExtension;
+
+     static final int TYPE_BROWSER_ACTION = 1;
+     static final int TYPE_PAGE_ACTION = 2;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({TYPE_BROWSER_ACTION, TYPE_PAGE_ACTION})
+     @interface ActionType {}
+
+     final @ActionType int type;
+
+     Action(
+        final @ActionType int type, final GeckoBundle bundle, final WebExtension extension) {
+      mExtension = extension;
+
+      this.type = type;
+
+      title = bundle.getString("title");
+      badgeText = bundle.getString("badgeText");
+      badgeBackgroundColor = colorFromRgbaArray(bundle.getDoubleArray("badgeBackgroundColor"));
+      badgeTextColor = colorFromRgbaArray(bundle.getDoubleArray("badgeTextColor"));
+
+      if (bundle.containsKey("icon")) {
+        icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
+      } else {
+        icon = null;
+      }
+
+      if (bundle.getBoolean("patternMatching", false)) {
+        
+        enabled = true;
+      } else if (bundle.containsKey("enabled")) {
+        enabled = bundle.getBoolean("enabled");
+      } else {
+        enabled = null;
+      }
+    }
+
+    private Integer colorFromRgbaArray(final double[] c) {
+      if (c == null) {
+        return null;
+      }
+
+      return Color.argb((int) c[3], (int) c[0], (int) c[1], (int) c[2]);
+    }
 
     @Override
     public String toString() {
-        return "WebExtension {" +
-                "location=" + location + ", " +
-                "id=" + id + ", " +
-                "flags=" + flags + "}";
+      return "Action {\n"
+          + "\ttitle: "
+          + this.title
+          + ",\n"
+          + "\ticon: "
+          + this.icon
+          + ",\n"
+          + "\tenabled: "
+          + this.enabled
+          + ",\n"
+          + "\tbadgeText: "
+          + this.badgeText
+          + ",\n"
+          + "\tbadgeTextColor: "
+          + this.badgeTextColor
+          + ",\n"
+          + "\tbadgeBackgroundColor: "
+          + this.badgeBackgroundColor
+          + ",\n"
+          + "}";
     }
-
-    private final static String LOGTAG = "WebExtension";
 
     
-    public static class Flags {
-        
-
-
-        public static final long NONE = 0;
-        
-
-
-
-
-        public static final long ALLOW_CONTENT_MESSAGING = 1 << 0;
-
-        
-        protected Flags() {}
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @LongDef(flag = true,
-            value = { Flags.NONE, Flags.ALLOW_CONTENT_MESSAGING })
-     @interface WebExtensionFlags {}
-
-     WebExtension(final DelegateControllerProvider provider,
-                               final GeckoBundle bundle) {
-        location = bundle.getString("locationURI");
-        id = bundle.getString("webExtensionId");
-        flags = bundle.getInt("webExtensionFlags", 0);
-        isBuiltIn = bundle.getBoolean("isBuiltIn", false);
-        if (bundle.containsKey("metaData")) {
-            metaData = new MetaData(bundle.getBundle("metaData"));
-        } else {
-            metaData = null;
-        }
-        mDelegateController = provider.controllerFor(this);
+    protected Action() {
+      type = TYPE_BROWSER_ACTION;
+      mExtension = null;
+      title = null;
+      icon = null;
+      enabled = null;
+      badgeText = null;
+      badgeTextColor = null;
+      badgeBackgroundColor = null;
     }
 
     
@@ -138,27 +1345,92 @@ public class WebExtension {
 
 
 
+    @NonNull
+    public Action withDefault(final @NonNull Action defaultValue) {
+      return new Action(this, defaultValue);
+    }
+
+    
+    private Action(final Action source, final Action defaultValue) {
+      if (source.type != defaultValue.type) {
+        throw new IllegalArgumentException("defaultValue must be of the same type.");
+      }
+
+      type = source.type;
+      mExtension = source.mExtension;
+
+      title = source.title != null ? source.title : defaultValue.title;
+      icon = source.icon != null ? source.icon : defaultValue.icon;
+      enabled = source.enabled != null ? source.enabled : defaultValue.enabled;
+      badgeText = source.badgeText != null ? source.badgeText : defaultValue.badgeText;
+      badgeTextColor =
+          source.badgeTextColor != null ? source.badgeTextColor : defaultValue.badgeTextColor;
+      badgeBackgroundColor =
+          source.badgeBackgroundColor != null
+              ? source.badgeBackgroundColor
+              : defaultValue.badgeBackgroundColor;
+    }
+
+    
+    @UiThread
+    public void click() {
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putString("extensionId", mExtension.id);
+
+      
+      
+      final GeckoResult<String> popupUri;
+      if (type == TYPE_BROWSER_ACTION) {
+        popupUri =
+            EventDispatcher.getInstance().queryString("GeckoView:BrowserAction:Click", bundle);
+      } else if (type == TYPE_PAGE_ACTION) {
+        popupUri = EventDispatcher.getInstance().queryString("GeckoView:PageAction:Click", bundle);
+      } else {
+        throw new IllegalStateException("Unknown Action type");
+      }
+
+      popupUri.accept(
+          uri -> {
+            if (uri == null || uri.isEmpty()) {
+              return;
+            }
+
+            final ActionDelegate delegate = mExtension.mDelegateController.getActionDelegate();
+            if (delegate == null) {
+              return;
+            }
+
+            final GeckoResult<GeckoSession> popup = delegate.onTogglePopup(mExtension, this);
+            openPopup(popup, uri);
+          });
+    }
+
+     void openPopup(final GeckoResult<GeckoSession> popup, final String popupUri) {
+      if (popup == null) {
+        return;
+      }
+
+      popup.accept(
+          session -> {
+            if (session == null) {
+              return;
+            }
+
+            session.getSettings().setIsPopup(true);
+            session.loadUri(popupUri);
+          });
+    }
+  }
+
+  
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  public interface ActionDelegate {
+    
 
 
 
@@ -177,23 +1449,10 @@ public class WebExtension {
 
 
     @UiThread
-    public void setMessageDelegate(final @Nullable MessageDelegate messageDelegate,
-                                   final @NonNull String nativeApp) {
-        mDelegateController.onMessageDelegate(nativeApp, messageDelegate);
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @LongDef(value = {
-            BrowsingDataDelegate.Type.CACHE,
-            BrowsingDataDelegate.Type.COOKIES,
-            BrowsingDataDelegate.Type.DOWNLOADS,
-            BrowsingDataDelegate.Type.FORM_DATA,
-            BrowsingDataDelegate.Type.HISTORY,
-            BrowsingDataDelegate.Type.LOCAL_STORAGE,
-            BrowsingDataDelegate.Type.PASSWORDS
-    }, flag = true)
-    @interface BrowsingDataTypes {}
-
+    default void onBrowserAction(
+        final @NonNull WebExtension extension,
+        final @Nullable GeckoSession session,
+        final @NonNull Action action) {}
     
 
 
@@ -201,223 +1460,8 @@ public class WebExtension {
 
 
 
-    @UiThread
-    public interface BrowsingDataDelegate {
-        
 
 
-
-
-
-
-
-        @UiThread
-        class Settings {
-            
-
-
-
-
-            final public int sinceUnixTimestamp;
-            
-
-
-
-            final public @BrowsingDataTypes long toggleableTypes;
-
-            
-
-
-
-            final public @BrowsingDataTypes long selectedTypes;
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-            @UiThread
-            public Settings(final int since,
-                            final @BrowsingDataTypes long toggleableTypes,
-                            final @BrowsingDataTypes long selectedTypes) {
-                this.toggleableTypes = toggleableTypes;
-                this.selectedTypes = selectedTypes;
-                this.sinceUnixTimestamp = since;
-            }
-
-            private GeckoBundle fromBrowsingDataType(final @BrowsingDataTypes long types) {
-                final GeckoBundle result = new GeckoBundle(7);
-                result.putBoolean("cache", (types & Type.CACHE) != 0);
-                result.putBoolean("cookies", (types & Type.COOKIES) != 0);
-                result.putBoolean("downloads", (types & Type.DOWNLOADS) != 0);
-                result.putBoolean("formData", (types & Type.FORM_DATA) != 0);
-                result.putBoolean("history", (types & Type.HISTORY) != 0);
-                result.putBoolean("localStorage", (types & Type.LOCAL_STORAGE) != 0);
-                result.putBoolean("passwords", (types & Type.PASSWORDS) != 0);
-                return result;
-            }
-
-             GeckoBundle toGeckoBundle() {
-                final GeckoBundle options = new GeckoBundle(1);
-                options.putLong("since", sinceUnixTimestamp);
-
-                final GeckoBundle result = new GeckoBundle(3);
-                result.putBundle("options", options);
-                result.putBundle("dataToRemove", fromBrowsingDataType(selectedTypes));
-                result.putBundle("dataRemovalPermitted", fromBrowsingDataType(toggleableTypes));
-                return result;
-            }
-        }
-
-        
-
-
-        class Type {
-            protected Type() {}
-            final public static long CACHE = 1 << 0;
-            final public static long COOKIES = 1 << 1;
-            final public static long DOWNLOADS = 1 << 2;
-            final public static long FORM_DATA = 1 << 3;
-            final public static long HISTORY = 1 << 4;
-            final public static long LOCAL_STORAGE = 1 << 5;
-            final public static long PASSWORDS = 1 << 6;
-        }
-
-        
-
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Settings> onGetSettings() {
-            return null;
-        }
-
-        
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Void> onClearFormData(final long sinceUnixTimestamp) {
-            return null;
-        }
-
-        
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Void> onClearPasswords(final long sinceUnixTimestamp) {
-            return null;
-        }
-
-        
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Void> onClearHistory(final long sinceUnixTimestamp) {
-            return null;
-        }
-
-        
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Void> onClearDownloads(final long sinceUnixTimestamp) {
-            return null;
-        }
-    }
-
-    
-
-
-    @UiThread
-    public interface MessageDelegate {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @Nullable
-        default GeckoResult<Object> onMessage(final @NonNull String nativeApp,
-                                              final @NonNull Object message,
-                                              final @NonNull MessageSender sender) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @Nullable
-        default void onConnect(final @NonNull Port port) {}
-    }
-
-    
-
-
-
-    @UiThread
-    public interface PortDelegate {
-        
-
-
-
-
-
-
-
-        default void onPortMessage(final @NonNull Object message, final @NonNull Port port) {}
-
-        
-
-
-
-
-
-
-        @NonNull
-        default void onDisconnect(final @NonNull Port port) {}
-    }
-
-    
 
 
 
@@ -428,189 +1472,10 @@ public class WebExtension {
 
 
     @UiThread
-    public static class Port {
-         final long id;
-         PortDelegate delegate;
-         boolean disconnected = false;
-         final EventDispatcher mEventDispatcher;
-         boolean mListenersRegistered = false;
-
-        
-        public @NonNull final MessageSender sender;
-
-        
-        public @NonNull final String name;
-
-        
-        protected Port() {
-            this.id = -1;
-            this.delegate = null;
-            this.sender = null;
-            this.name = null;
-            mEventDispatcher = null;
-        }
-
-         Port(final String name, final long id, final MessageSender sender) {
-            this.id = id;
-            this.delegate = null;
-            this.sender = sender;
-            this.name = name;
-            mEventDispatcher = EventDispatcher.byName("port:" + id);
-        }
-
-        private BundleEventListener mEventListener = new BundleEventListener() {
-            @Override
-            public void handleMessage(final String event, final GeckoBundle message,
-                                      final EventCallback callback) {
-                if ("GeckoView:WebExtension:Disconnect".equals(event)) {
-                    disconnectFromExtension(callback);
-                } else if ("GeckoView:WebExtension:PortMessage".equals(event)) {
-                    portMessage(message, callback);
-                }
-            }
-        };
-
-        private void disconnectFromExtension(final EventCallback callback) {
-            delegate.onDisconnect(this);
-            disconnected();
-        }
-
-        private void portMessage(final GeckoBundle bundle, final EventCallback callback) {
-            final Object content;
-            try {
-                content = bundle.toJSONObject().get("data");
-            } catch (final JSONException ex) {
-                callback.sendError(ex);
-                return;
-            }
-
-            delegate.onPortMessage(content, this);
-        }
-
-        
-
-
-
-
-        public void postMessage(final @NonNull JSONObject message) {
-            final GeckoBundle args = new GeckoBundle(1);
-            try {
-                args.putBundle("message", GeckoBundle.fromJSONObject(message));
-            } catch (final JSONException ex) {
-                throw new RuntimeException(ex);
-            }
-
-            mEventDispatcher.dispatch("GeckoView:WebExtension:PortMessageFromApp", args);
-        }
-
-        
-
-
-        public void disconnect() {
-            if (this.disconnected) {
-                return;
-            }
-
-            final GeckoBundle args = new GeckoBundle(1);
-            args.putLong("portId", id);
-
-            mEventDispatcher.dispatch("GeckoView:WebExtension:PortDisconnect", args);
-            disconnected();
-        }
-
-        private void disconnected() {
-            unregisterListeners();
-            mEventDispatcher.shutdown();
-            this.disconnected = true;
-        }
-
-        
-
-
-
-
-
-        public void setDelegate(final @Nullable PortDelegate delegate) {
-            this.delegate = delegate;
-
-            if (delegate != null) {
-                registerListeners();
-            } else {
-                unregisterListeners();
-            }
-        }
-
-        private void unregisterListeners() {
-            if (!mListenersRegistered) {
-                return;
-            }
-
-            mEventDispatcher.unregisterUiThreadListener(mEventListener,
-                    "GeckoView:WebExtension:Disconnect",
-                    "GeckoView:WebExtension:PortMessage");
-            mListenersRegistered = false;
-        }
-
-        private void registerListeners() {
-            if (mListenersRegistered) {
-                return;
-            }
-
-            mEventDispatcher.registerUiThreadListener(mEventListener,
-                    "GeckoView:WebExtension:Disconnect",
-                    "GeckoView:WebExtension:PortMessage");
-            mListenersRegistered = true;
-        }
-    }
-
-    
-
-
-
-
-    public interface SessionTabDelegate {
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        @NonNull
-        default GeckoResult<AllowOrDeny> onCloseTab(@Nullable final WebExtension source,
-                                                    @NonNull final GeckoSession session)  {
-            return GeckoResult.deny();
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        @NonNull
-        default GeckoResult<AllowOrDeny> onUpdateTab(final @NonNull WebExtension extension,
-                                                     final @NonNull GeckoSession session,
-                                                     final @NonNull UpdateTabDetails details) {
-            return GeckoResult.deny();
-        }
-    }
+    default void onPageAction(
+        final @NonNull WebExtension extension,
+        final @Nullable GeckoSession session,
+        final @NonNull Action action) {}
 
     
 
@@ -620,180 +1485,11 @@ public class WebExtension {
 
 
 
-
-    public static class UpdateTabDetails {
-        
-
-
-
-
-        @Nullable
-        public final Boolean active;
-        
-
-
-
-        @Nullable
-        public final Boolean autoDiscardable;
-        
-
-
-
-        @Nullable
-        public final Boolean highlighted;
-        
-
-
-        @Nullable
-        public final Boolean muted;
-        
-
-
-        @Nullable
-        public final Boolean pinned;
-        
-
-
-
-
-
-
-        @Nullable
-        public final String url;
-
-        
-        protected UpdateTabDetails() {
-            active = null;
-            autoDiscardable = null;
-            highlighted = null;
-            muted = null;
-            pinned = null;
-            url = null;
-        }
-
-         UpdateTabDetails(final GeckoBundle bundle) {
-            active = bundle.getBooleanObject("active");
-            autoDiscardable = bundle.getBooleanObject("autoDiscardable");
-            highlighted = bundle.getBooleanObject("highlighted");
-            muted = bundle.getBooleanObject("muted");
-            pinned = bundle.getBooleanObject("pinned");
-            url = bundle.getString("url");
-        }
-    }
-
-    
-
-
-
-
-
-
-
-    public static class CreateTabDetails {
-        
-
-
-
-
-        @Nullable
-        public final Boolean active;
-        
-
-
-
-        @Nullable
-        public final String cookieStoreId;
-        
-
-
-
-
-
-        @Nullable
-        public final Boolean discarded;
-        
-
-
-        @Nullable
-        public final Integer index;
-        
-
-
-        @Nullable
-        public final Boolean openInReaderMode;
-        
-
-
-        @Nullable
-        public final Boolean pinned;
-        
-
-
-
-
-
-
-        @Nullable
-        public final String url;
-
-        
-        protected CreateTabDetails() {
-            active = null;
-            cookieStoreId = null;
-            discarded = null;
-            index = null;
-            openInReaderMode = null;
-            pinned = null;
-            url = null;
-        }
-
-         CreateTabDetails(final GeckoBundle bundle) {
-            active = bundle.getBooleanObject("active");
-            cookieStoreId = bundle.getString("cookieStoreId");
-            discarded = bundle.getBooleanObject("discarded");
-            index = bundle.getInteger("index");
-            openInReaderMode = bundle.getBooleanObject("openInReaderMode");
-            pinned = bundle.getBooleanObject("pinned");
-            url = bundle.getString("url");
-        }
-    }
-
-    
-
-
-
-
-    public interface TabDelegate {
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        @Nullable
-        default GeckoResult<GeckoSession> onNewTab(@NonNull final WebExtension source,
-                                                   @NonNull final CreateTabDetails createDetails) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onOpenOptionsPage(@NonNull final WebExtension source) {}
+    @UiThread
+    @Nullable
+    default GeckoResult<GeckoSession> onTogglePopup(
+        final @NonNull WebExtension extension, final @NonNull Action action) {
+      return null;
     }
 
     
@@ -806,865 +1502,665 @@ public class WebExtension {
 
     @UiThread
     @Nullable
-    public WebExtension.TabDelegate getTabDelegate() {
-        return mDelegateController.getTabDelegate();
+    default GeckoResult<GeckoSession> onOpenPopup(
+        final @NonNull WebExtension extension, final @NonNull Action action) {
+      return null;
+    }
+  }
+
+  
+  public static class InstallException extends Exception {
+    public static class ErrorCodes {
+      
+      public static final int ERROR_NETWORK_FAILURE = -1;
+      
+      public static final int ERROR_INCORRECT_HASH = -2;
+      
+      public static final int ERROR_CORRUPT_FILE = -3;
+      
+      public static final int ERROR_FILE_ACCESS = -4;
+      
+      public static final int ERROR_SIGNEDSTATE_REQUIRED = -5;
+      
+      public static final int ERROR_UNEXPECTED_ADDON_TYPE = -6;
+      
+      public static final int ERROR_INCORRECT_ID = -7;
+      
+      public static final int ERROR_USER_CANCELED = -100;
+      
+      public static final int ERROR_POSTPONED = -101;
+
+      
+      protected ErrorCodes() {}
     }
 
     
-
-
-
-
-
-
-
-
-    @UiThread
-    public void setTabDelegate(final @Nullable TabDelegate delegate) {
-        mDelegateController.onTabDelegate(delegate);
+    private static class StateCodes {
+      public static final int STATE_POSTPONED = 7;
+      public static final int STATE_CANCELED = 12;
     }
 
-    @UiThread
-    @Nullable
-    public BrowsingDataDelegate getBrowsingDataDelegate() {
-        return mDelegateController.getBrowsingDataDelegate();
+     static Throwable fromQueryException(final Throwable exception) {
+      final EventDispatcher.QueryException queryException =
+          (EventDispatcher.QueryException) exception;
+      final Object response = queryException.data;
+      if (response instanceof GeckoBundle && ((GeckoBundle) response).containsKey("installError")) {
+        final GeckoBundle bundle = (GeckoBundle) response;
+        int errorCode = bundle.getInt("installError");
+        final int installState = bundle.getInt("state");
+        if (errorCode == 0 && installState == StateCodes.STATE_CANCELED) {
+          errorCode = ErrorCodes.ERROR_USER_CANCELED;
+        } else if (errorCode == 0 && installState == StateCodes.STATE_POSTPONED) {
+          errorCode = ErrorCodes.ERROR_POSTPONED;
+        }
+        return new WebExtension.InstallException(errorCode);
+      } else {
+        return new Exception(response.toString());
+      }
     }
 
-    @UiThread
-    public void setBrowsingDataDelegate(final @Nullable BrowsingDataDelegate delegate) {
-        mDelegateController.onBrowsingDataDelegate(delegate);
-    }
-
-    private static class Sender {
-        public String webExtensionId;
-        public String nativeApp;
-
-        public Sender(final String webExtensionId, final String nativeApp) {
-            this.webExtensionId = webExtensionId;
-            this.nativeApp = nativeApp;
-        }
-
-        @Override
-        public boolean equals(final Object other) {
-            if (!(other instanceof Sender)) {
-                return false;
-            }
-
-            final Sender o = (Sender) other;
-            return webExtensionId.equals(o.webExtensionId) &&
-                    nativeApp.equals(o.nativeApp);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = 17;
-            result = 31 * result + (webExtensionId != null ? webExtensionId.hashCode() : 0);
-            result = 31 * result + (nativeApp != null ? nativeApp.hashCode() : 0);
-            return result;
-        }
-    }
-
-    
-    public static class SessionController {
-        private final Listener<SessionTabDelegate> mListener;
-
-         void setRuntime(final GeckoRuntime runtime) {
-            mListener.runtime = runtime;
-        }
-
-         SessionController(final GeckoSession session) {
-            mListener = new Listener<>(session);
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @AnyThread
-        public void setMessageDelegate(final @NonNull WebExtension webExtension,
-                                       final @Nullable WebExtension.MessageDelegate delegate,
-                                       final @NonNull String nativeApp) {
-            mListener.setMessageDelegate(webExtension, delegate, nativeApp);
-        }
-
-        
-
-
-
-
-
-
-
-
-        @AnyThread
-        public @Nullable WebExtension.MessageDelegate getMessageDelegate(
-                final @NonNull WebExtension extension,
-                final @NonNull String nativeApp) {
-            return mListener.getMessageDelegate(extension, nativeApp);
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        @AnyThread
-        public void setActionDelegate(final @NonNull WebExtension extension,
-                                      final @Nullable ActionDelegate delegate) {
-            mListener.setActionDelegate(extension, delegate);
-        }
-
-        
-
-
-
-
-
-
-
-        @AnyThread
-        @Nullable
-        public ActionDelegate getActionDelegate(
-                final @NonNull WebExtension extension) {
-            return mListener.getActionDelegate(extension);
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        @AnyThread
-        public void setTabDelegate(final @NonNull WebExtension extension,
-                                   final @Nullable SessionTabDelegate delegate) {
-            mListener.setTabDelegate(extension, delegate);
-        }
-
-        
-
-
-
-
-
-
-        @AnyThread
-        @Nullable
-        public SessionTabDelegate getTabDelegate(final @NonNull WebExtension extension) {
-            return mListener.getTabDelegate(extension);
-        }
-    }
-
-     final static class Listener<TabDelegate> implements BundleEventListener {
-        final private HashMap<Sender, MessageDelegate> mMessageDelegates;
-        final private HashMap<String, ActionDelegate> mActionDelegates;
-        final private HashMap<String, BrowsingDataDelegate> mBrowsingDataDelegates;
-        final private HashMap<String, TabDelegate> mTabDelegates;
-        final private HashMap<String, DownloadDelegate> mDownloadDelegates;
-
-        final private GeckoSession mSession;
-        final private EventDispatcher mEventDispatcher;
-
-        private boolean mActionDelegateRegistered = false;
-        private boolean mBrowsingDataDelegateRegistered = false;
-        private boolean mTabDelegateRegistered = false;
-
-        public GeckoRuntime runtime;
-
-        public Listener(final GeckoRuntime runtime) {
-            this(null, runtime);
-        }
-
-        public Listener(final GeckoSession session) {
-            this(session, null);
-
-            
-            
-            mEventDispatcher.registerUiThreadListener(
-                    this,
-                    "GeckoView:WebExtension:NewTab",
-                    "GeckoView:WebExtension:UpdateTab",
-                    "GeckoView:WebExtension:CloseTab",
-                    "GeckoView:WebExtension:OpenOptionsPage"
-            );
-            mTabDelegateRegistered = true;
-        }
-
-        private Listener(final GeckoSession session, final GeckoRuntime runtime) {
-            mMessageDelegates = new HashMap<>();
-            mActionDelegates = new HashMap<>();
-            mBrowsingDataDelegates = new HashMap<>();
-            mTabDelegates = new HashMap<>();
-            mDownloadDelegates = new HashMap<>();
-            mEventDispatcher = session != null
-                    ? session.getEventDispatcher()
-                    : EventDispatcher.getInstance();
-            mSession = session;
-            this.runtime = runtime;
-
-            
-            
-            mEventDispatcher.registerUiThreadListener(this,
-                    "GeckoView:WebExtension:Message",
-                    "GeckoView:WebExtension:PortMessage",
-                    "GeckoView:WebExtension:Connect",
-                    "GeckoView:WebExtension:Disconnect",
-                    "GeckoView:BrowsingData:GetSettings",
-                    "GeckoView:BrowsingData:Clear",
-                    "GeckoView:WebExtension:Download");
-        }
-
-        public void unregisterWebExtension(final WebExtension extension) {
-            mMessageDelegates.remove(extension.id);
-            mActionDelegates.remove(extension.id);
-            mBrowsingDataDelegates.remove(extension.id);
-            mTabDelegates.remove(extension.id);
-            mDownloadDelegates.remove(extension.id);
-        }
-
-        public void setTabDelegate(final WebExtension webExtension,
-                                   final TabDelegate delegate) {
-            if (!mTabDelegateRegistered && delegate != null) {
-                mEventDispatcher.registerUiThreadListener(
-                        this,
-                        "GeckoView:WebExtension:NewTab",
-                        "GeckoView:WebExtension:UpdateTab",
-                        "GeckoView:WebExtension:CloseTab",
-                        "GeckoView:WebExtension:OpenOptionsPage"
-                );
-                mTabDelegateRegistered = true;
-            }
-
-            mTabDelegates.put(webExtension.id, delegate);
-        }
-
-        public TabDelegate getTabDelegate(final WebExtension webExtension) {
-            return mTabDelegates.get(webExtension.id);
-        }
-
-        public void setBrowsingDataDelegate(final WebExtension webExtension,
-                                            final BrowsingDataDelegate delegate) {
-            mBrowsingDataDelegates.put(webExtension.id, delegate);
-        }
-
-        public BrowsingDataDelegate getBrowsingDataDelegate(final WebExtension webExtension) {
-            return mBrowsingDataDelegates.get(webExtension.id);
-        }
-
-        public void setActionDelegate(final WebExtension webExtension,
-                                      final WebExtension.ActionDelegate delegate) {
-            if (!mActionDelegateRegistered && delegate != null) {
-                mEventDispatcher.registerUiThreadListener(this,
-                        "GeckoView:BrowserAction:Update",
-                        "GeckoView:BrowserAction:OpenPopup",
-                        "GeckoView:PageAction:Update",
-                        "GeckoView:PageAction:OpenPopup");
-                mActionDelegateRegistered = true;
-            }
-
-            mActionDelegates.put(webExtension.id, delegate);
-        }
-
-        public WebExtension.ActionDelegate getActionDelegate(final WebExtension webExtension) {
-            return mActionDelegates.get(webExtension.id);
-        }
-
-        public void setMessageDelegate(final WebExtension webExtension,
-                                       final WebExtension.MessageDelegate delegate,
-                                       final String nativeApp) {
-            mMessageDelegates.put(new Sender(webExtension.id, nativeApp), delegate);
-
-            if (runtime != null && delegate != null) {
-                runtime.getWebExtensionController()
-                        .releasePendingMessages(webExtension, nativeApp, mSession);
-            }
-        }
-
-        public WebExtension.MessageDelegate getMessageDelegate(final WebExtension webExtension,
-                                                               final String nativeApp) {
-            return mMessageDelegates.get(new Sender(webExtension.id, nativeApp));
-        }
-
-        @Override
-        public void handleMessage(final String event, final GeckoBundle message,
-                                  final EventCallback callback) {
-            if (runtime == null) {
-                return;
-            }
-
-            runtime.getWebExtensionController().handleMessage(event, message, callback, mSession);
-        }
-
-        public void setDownloadDelegate(final @NonNull WebExtension extension,
-                                        final @Nullable DownloadDelegate delegate) {
-            mDownloadDelegates.put(extension.id, delegate);
-        }
-
-        public WebExtension.DownloadDelegate getDownloadDelegate(final WebExtension extension) {
-            return mDownloadDelegates.get(extension.id);
-        }
-    }
-
-    
-
-
-
-
-
-    @UiThread
-    public static class MessageSender {
-        
-        public final @NonNull WebExtension webExtension;
-
-        
-
-
-        public final @Nullable GeckoSession session;
-
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef({ENV_TYPE_UNKNOWN, ENV_TYPE_EXTENSION, ENV_TYPE_CONTENT_SCRIPT})
-         @interface EnvType {}
-         static final int ENV_TYPE_UNKNOWN = 0;
-        
-
-        public static final int ENV_TYPE_EXTENSION = 1;
-
-        
-        public static final int ENV_TYPE_CONTENT_SCRIPT = 2;
-
-        
-
-
-
-
-
-
-
-
-
-        
-        public final @EnvType int environmentType;
-
-        
-
-
-
-
-
-        public final @NonNull String url;
-
-         final boolean isTopLevel;
-
-         MessageSender(final @NonNull WebExtension webExtension,
-                                    final @Nullable GeckoSession session,
-                                    final @Nullable String url,
-                                    final @EnvType int environmentType,
-                                    final boolean isTopLevel) {
-            this.webExtension = webExtension;
-            this.session = session;
-            this.isTopLevel = isTopLevel;
-            this.url = url;
-            this.environmentType = environmentType;
-        }
-
-        
-        protected MessageSender() {
-            this.webExtension = null;
-            this.session = null;
-            this.isTopLevel = false;
-            this.url = null;
-            this.environmentType = ENV_TYPE_UNKNOWN;
-        }
-
-        
-
-
-
-
-        public boolean isTopLevel() {
-            return this.isTopLevel;
-        }
-    }
-
-     static WebExtension fromBundle(final DelegateControllerProvider provider,
-                                                 final GeckoBundle bundle) {
-        if (bundle == null) {
-            return null;
-        }
-        return new WebExtension(provider, bundle.getBundle("extension"));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @AnyThread
-    public static class Action {
-        
-
-
-
-
-
-
-
-
-        final public @Nullable String title;
-        
-
-
-
-
-
-
-
-
-        final public @Nullable Image icon;
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        final public @Nullable Boolean enabled;
-        
-
-
-
-
-
-
-        final public @Nullable String badgeText;
-        
-
-
-
-
-
-
-
-
-
-
-        final public @Nullable Integer badgeBackgroundColor;
-        
-
-
-
-
-
-
-
-
-
-
-        final public @Nullable Integer badgeTextColor;
-
-        final private WebExtension mExtension;
-
-         final static int TYPE_BROWSER_ACTION = 1;
-         final static int TYPE_PAGE_ACTION = 2;
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef({TYPE_BROWSER_ACTION, TYPE_PAGE_ACTION})
-         @interface ActionType {}
-
-         final @ActionType int type;
-
-         Action(final @ActionType int type,
-                             final GeckoBundle bundle, final WebExtension extension) {
-            mExtension = extension;
-
-            this.type = type;
-
-            title = bundle.getString("title");
-            badgeText = bundle.getString("badgeText");
-            badgeBackgroundColor = colorFromRgbaArray(
-                    bundle.getDoubleArray("badgeBackgroundColor"));
-            badgeTextColor = colorFromRgbaArray(
-                    bundle.getDoubleArray("badgeTextColor"));
-
-            if (bundle.containsKey("icon")) {
-                icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
-            } else {
-                icon = null;
-            }
-
-            if (bundle.getBoolean("patternMatching", false)) {
-                
-                enabled = true;
-            } else if (bundle.containsKey("enabled")) {
-                enabled = bundle.getBoolean("enabled");
-            } else {
-                enabled = null;
-            }
-        }
-
-        private Integer colorFromRgbaArray(final double[] c) {
-            if (c == null) {
-                return null;
-            }
-
-            return Color.argb((int) c[3], (int) c[0], (int) c[1], (int) c[2]);
-        }
-
-        @Override
-        public String toString() {
-            return "Action {\n"
-                    + "\ttitle: " + this.title + ",\n"
-                    + "\ticon: " + this.icon + ",\n"
-                    + "\tenabled: " + this.enabled + ",\n"
-                    + "\tbadgeText: " + this.badgeText + ",\n"
-                    + "\tbadgeTextColor: " + this.badgeTextColor + ",\n"
-                    + "\tbadgeBackgroundColor: " + this.badgeBackgroundColor + ",\n"
-                    + "}";
-        }
-
-        
-        protected Action() {
-            type = TYPE_BROWSER_ACTION;
-            mExtension = null;
-            title = null;
-            icon = null;
-            enabled = null;
-            badgeText = null;
-            badgeTextColor = null;
-            badgeBackgroundColor = null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @NonNull
-        public Action withDefault(final @NonNull Action defaultValue) {
-            return new Action(this, defaultValue);
-        }
-
-        
-        private Action(final Action source, final Action defaultValue) {
-            if (source.type != defaultValue.type) {
-                throw new IllegalArgumentException(
-                        "defaultValue must be of the same type.");
-            }
-
-            type = source.type;
-            mExtension = source.mExtension;
-
-            title = source.title != null ? source.title : defaultValue.title;
-            icon = source.icon != null ? source.icon : defaultValue.icon;
-            enabled = source.enabled != null  ? source.enabled : defaultValue.enabled;
-            badgeText = source.badgeText != null ? source.badgeText : defaultValue.badgeText;
-            badgeTextColor = source.badgeTextColor != null
-                    ? source.badgeTextColor : defaultValue.badgeTextColor;
-            badgeBackgroundColor = source.badgeBackgroundColor != null
-                    ? source.badgeBackgroundColor : defaultValue.badgeBackgroundColor;
-        }
-
-        
-
-
-        @UiThread
-        public void click() {
-            final GeckoBundle bundle = new GeckoBundle(1);
-            bundle.putString("extensionId", mExtension.id);
-
-            
-            
-            final GeckoResult<String> popupUri;
-            if (type == TYPE_BROWSER_ACTION) {
-                popupUri = EventDispatcher.getInstance()
-                        .queryString("GeckoView:BrowserAction:Click", bundle);
-            } else if (type == TYPE_PAGE_ACTION) {
-                popupUri = EventDispatcher.getInstance()
-                        .queryString("GeckoView:PageAction:Click", bundle);
-            } else {
-                throw new IllegalStateException("Unknown Action type");
-            }
-
-            popupUri.accept(uri -> {
-                if (uri == null || uri.isEmpty()) {
-                    return;
-                }
-
-                final ActionDelegate delegate = mExtension.mDelegateController.getActionDelegate();
-                if (delegate == null) {
-                    return;
-                }
-
-                final GeckoResult<GeckoSession> popup = delegate.onTogglePopup(mExtension, this);
-                openPopup(popup, uri);
-            });
-        }
-
-         void openPopup(final GeckoResult<GeckoSession> popup,
-                                     final String popupUri) {
-            if (popup == null) {
-                return;
-            }
-
-            popup.accept(session -> {
-                if (session == null) {
-                    return;
-                }
-
-                session.getSettings().setIsPopup(true);
-                session.loadUri(popupUri);
-            });
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    public interface ActionDelegate {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onBrowserAction(final @NonNull WebExtension extension,
-                                     final @Nullable GeckoSession session,
-                                     final @NonNull Action action) {}
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onPageAction(final @NonNull WebExtension extension,
-                                  final @Nullable GeckoSession session,
-                                  final @NonNull Action action) {}
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        @Nullable
-        default GeckoResult<GeckoSession> onTogglePopup(final @NonNull WebExtension extension,
-                                                        final @NonNull Action action) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        @Nullable
-        default GeckoResult<GeckoSession> onOpenPopup(final @NonNull WebExtension extension,
-                                                      final @NonNull Action action) {
-            return null;
-        }
-    }
-
-    
-    public static class InstallException extends Exception {
-        public static class ErrorCodes {
-            
-            public static final int ERROR_NETWORK_FAILURE = -1;
-            
-            public static final int ERROR_INCORRECT_HASH = -2;
-            
-            public static final int ERROR_CORRUPT_FILE = -3;
-            
-            public static final int ERROR_FILE_ACCESS = -4;
-            
-            public static final int ERROR_SIGNEDSTATE_REQUIRED = -5;
-            
-            public static final int ERROR_UNEXPECTED_ADDON_TYPE = -6;
-            
-            public static final int ERROR_INCORRECT_ID = -7;
-            
-            public static final int ERROR_USER_CANCELED = -100;
-            
-            public static final int ERROR_POSTPONED = -101;
-
-            
-            protected ErrorCodes() {}
-        }
-
-        
-        private static class StateCodes {
-            public static final int STATE_POSTPONED = 7;
-            public static final int STATE_CANCELED = 12;
-        }
-
-         static Throwable fromQueryException(final Throwable exception) {
-            final EventDispatcher.QueryException queryException =
-                    (EventDispatcher.QueryException) exception;
-            final Object response = queryException.data;
-            if (response instanceof GeckoBundle
-                    && ((GeckoBundle) response).containsKey("installError")) {
-                final GeckoBundle bundle = (GeckoBundle) response;
-                int errorCode = bundle.getInt("installError");
-                final int installState = bundle.getInt("state");
-                if (errorCode == 0 && installState ==
-                        StateCodes.STATE_CANCELED) {
-                    errorCode = ErrorCodes.ERROR_USER_CANCELED;
-                } else if (errorCode == 0 && installState == StateCodes.STATE_POSTPONED) {
-                    errorCode = ErrorCodes.ERROR_POSTPONED;
-                }
-                return new WebExtension.InstallException(errorCode);
-            } else {
-                return new Exception(response.toString());
-            }
-        }
-
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef(value = {
-                ErrorCodes.ERROR_NETWORK_FAILURE,
-                ErrorCodes.ERROR_INCORRECT_HASH,
-                ErrorCodes.ERROR_CORRUPT_FILE,
-                ErrorCodes.ERROR_FILE_ACCESS,
-                ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED,
-                ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
-                ErrorCodes.ERROR_INCORRECT_ID,
-                ErrorCodes.ERROR_USER_CANCELED,
-                ErrorCodes.ERROR_POSTPONED,
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+        value = {
+          ErrorCodes.ERROR_NETWORK_FAILURE,
+          ErrorCodes.ERROR_INCORRECT_HASH,
+          ErrorCodes.ERROR_CORRUPT_FILE,
+          ErrorCodes.ERROR_FILE_ACCESS,
+          ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED,
+          ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
+          ErrorCodes.ERROR_INCORRECT_ID,
+          ErrorCodes.ERROR_USER_CANCELED,
+          ErrorCodes.ERROR_POSTPONED,
         })
-         @interface Codes {}
+     @interface Codes {}
 
-        
-        public final @Codes int code;
+    
+    public final @Codes int code;
 
-        
-        protected InstallException() {
-            this.code = ErrorCodes.ERROR_NETWORK_FAILURE;
+    
+    protected InstallException() {
+      this.code = ErrorCodes.ERROR_NETWORK_FAILURE;
+    }
+
+    @Override
+    public String toString() {
+      return "InstallException: " + code;
+    }
+
+     InstallException(final @Codes int code) {
+      this.code = code;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public void setActionDelegate(final @Nullable ActionDelegate delegate) {
+    mDelegateController.onActionDelegate(delegate);
+
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("extensionId", id);
+
+    if (delegate != null) {
+      EventDispatcher.getInstance().dispatch("GeckoView:ActionDelegate:Attached", bundle);
+    }
+  }
+
+  
+
+
+
+
+
+  public static class SignedStateFlags {
+    
+    
+
+
+
+    public static final int UNKNOWN = -1;
+    
+    public static final int MISSING = 0;
+    
+    public static final int PRELIMINARY = 1;
+    
+    public static final int SIGNED = 2;
+    
+    public static final int SYSTEM = 3;
+    
+    public static final int PRIVILEGED = 4;
+
+     static final int LAST = PRIVILEGED;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    SignedStateFlags.UNKNOWN,
+    SignedStateFlags.MISSING,
+    SignedStateFlags.PRELIMINARY,
+    SignedStateFlags.SIGNED,
+    SignedStateFlags.SYSTEM,
+    SignedStateFlags.PRIVILEGED
+  })
+  @interface SignedState {}
+
+  
+
+
+
+
+  public static class BlocklistStateFlags {
+    
+    
+    public static final int NOT_BLOCKED = 0;
+    
+
+
+
+    public static final int SOFTBLOCKED = 1;
+    
+    public static final int BLOCKED = 2;
+    
+    public static final int OUTDATED = 3;
+    
+    public static final int VULNERABLE_UPDATE_AVAILABLE = 4;
+    
+    public static final int VULNERABLE_NO_UPDATE = 5;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    BlocklistStateFlags.NOT_BLOCKED,
+    BlocklistStateFlags.SOFTBLOCKED,
+    BlocklistStateFlags.BLOCKED,
+    BlocklistStateFlags.OUTDATED,
+    BlocklistStateFlags.VULNERABLE_UPDATE_AVAILABLE,
+    BlocklistStateFlags.VULNERABLE_NO_UPDATE
+  })
+  @interface BlocklistState {}
+
+  public static class DisabledFlags {
+    
+    public static final int USER = 1 << 1;
+
+    
+
+
+
+    public static final int BLOCKLIST = 1 << 2;
+
+    
+
+
+
+
+    public static final int APP = 1 << 3;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {DisabledFlags.USER, DisabledFlags.BLOCKLIST, DisabledFlags.APP})
+  @interface EnabledFlags {}
+
+  
+  public class MetaData {
+    
+
+
+
+    public final @NonNull Image icon;
+    
+
+
+
+
+
+
+    public final @NonNull String[] permissions;
+    
+
+
+
+
+
+
+    public final @NonNull String[] origins;
+    
+
+
+
+
+
+
+    public final @Nullable String name;
+    
+
+
+
+
+
+
+
+    public final @Nullable String description;
+    
+
+
+
+
+
+
+    public final @NonNull String version;
+    
+
+
+
+
+
+
+    public final @Nullable String creatorName;
+    
+
+
+
+
+
+
+    public final @Nullable String creatorUrl;
+    
+
+
+
+
+
+
+    public final @Nullable String homepageUrl;
+    
+
+
+
+
+
+
+    public final @Nullable String optionsPageUrl;
+    
+
+
+
+
+
+
+    public final boolean openOptionsPageInTab;
+    
+
+
+
+
+
+    public final boolean isRecommended;
+    
+
+
+
+
+
+    public final @BlocklistState int blocklistState;
+    
+
+
+
+
+
+    public final @SignedState int signedState;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public final @EnabledFlags int disabledFlags;
+
+    
+
+
+
+    public final @NonNull String baseUrl;
+
+    
+
+
+
+    public final boolean allowedInPrivateBrowsing;
+
+    
+    public final boolean enabled;
+
+    
+
+
+
+    public final boolean temporary;
+
+    
+    protected MetaData() {
+      icon = null;
+      permissions = null;
+      origins = null;
+      name = null;
+      description = null;
+      version = null;
+      creatorName = null;
+      creatorUrl = null;
+      homepageUrl = null;
+      optionsPageUrl = null;
+      openOptionsPageInTab = false;
+      isRecommended = false;
+      blocklistState = BlocklistStateFlags.NOT_BLOCKED;
+      signedState = SignedStateFlags.UNKNOWN;
+      disabledFlags = 0;
+      enabled = true;
+      temporary = false;
+      baseUrl = null;
+      allowedInPrivateBrowsing = false;
+    }
+
+     MetaData(final GeckoBundle bundle) {
+      
+      permissions = bundle.getStringArray("promptPermissions");
+      origins = bundle.getStringArray("origins");
+      description = bundle.getString("description");
+      version = bundle.getString("version");
+      creatorName = bundle.getString("creatorName");
+      creatorUrl = bundle.getString("creatorURL");
+      homepageUrl = bundle.getString("homepageURL");
+      name = bundle.getString("name");
+      optionsPageUrl = bundle.getString("optionsPageURL");
+      openOptionsPageInTab = bundle.getBoolean("openOptionsPageInTab");
+      isRecommended = bundle.getBoolean("isRecommended");
+      blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
+      enabled = bundle.getBoolean("enabled", false);
+      temporary = bundle.getBoolean("temporary", false);
+      baseUrl = bundle.getString("baseURL");
+      allowedInPrivateBrowsing = bundle.getBoolean("privateBrowsingAllowed", false);
+
+      final int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
+      if (signedState <= SignedStateFlags.LAST) {
+        this.signedState = signedState;
+      } else {
+        Log.e(LOGTAG, "Unrecognized signed state: " + signedState);
+        this.signedState = SignedStateFlags.UNKNOWN;
+      }
+
+      int disabledFlags = 0;
+      final String[] disabledFlagsString = bundle.getStringArray("disabledFlags");
+
+      for (final String flag : disabledFlagsString) {
+        if (flag.equals("userDisabled")) {
+          disabledFlags |= DisabledFlags.USER;
+        } else if (flag.equals("blocklistDisabled")) {
+          disabledFlags |= DisabledFlags.BLOCKLIST;
+        } else if (flag.equals("appDisabled")) {
+          disabledFlags |= DisabledFlags.APP;
+        } else {
+          Log.e(LOGTAG, "Unrecognized disabledFlag state: " + flag);
         }
+      }
+      this.disabledFlags = disabledFlags;
 
-        @Override
-        public String toString() {
-            return "InstallException: " + code;
-        }
+      if (bundle.containsKey("icons")) {
+        icon = Image.fromSizeSrcBundle(bundle.getBundle("icons"));
+      } else {
+        icon = null;
+      }
+    }
+  }
 
-         InstallException(final @Codes int code) {
-            this.code = code;
+  
+
+  @IntDef(
+      flag = true,
+      value = {
+        Context.NONE,
+        Context.BOOKMARK,
+        Context.BROWSER_ACTION,
+        Context.PAGE_ACTION,
+        Context.TAB,
+        Context.TOOLS_MENU
+      })
+
+   @interface ContextFlags {}
+
+  
+
+
+
+
+  static class Context {
+    
+    static final int NONE = 0;
+
+    
+
+
+
+    static final int BOOKMARK = 1 << 1;
+
+    
+    static final int BROWSER_ACTION = 1 << 2;
+
+    
+    static final int PAGE_ACTION = 1 << 3;
+
+    
+    static final int TAB = 1 << 4;
+
+    
+    static final int TOOLS_MENU = 1 << 5;
+  }
+
+  
+
+  
+
+
+
+
+
+
+
+
+  static class Menu {
+    
+    final @NonNull List<MenuItem> items;
+
+    
+    final @Nullable Image icon;
+
+    
+    final @Nullable String title;
+
+    
+    final @NonNull WebExtension extension;
+
+     Menu(final @NonNull WebExtension extension, final GeckoBundle bundle) {
+      this.extension = extension;
+      title = bundle.getString("title", "");
+      final GeckoBundle[] items = bundle.getBundleArray("items");
+      this.items = new ArrayList<>();
+      if (items != null) {
+        for (final GeckoBundle item : items) {
+          this.items.add(new MenuItem(this.extension, item));
         }
+      }
+
+      if (bundle.containsKey("icon")) {
+        icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
+      } else {
+        icon = null;
+      }
+    }
+
+    
+    void show() {
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putString("extensionId", extension.id);
+
+      EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:MenuShow", bundle);
+    }
+
+    
+    void hide() {
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putString("extensionId", extension.id);
+
+      EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:MenuHide", bundle);
+    }
+  }
+
+  
+  
+
+
+
+
+
+  static class MenuItem {
+
+    @IntDef(
+        flag = false,
+        value = {MenuType.NORMAL, MenuType.CHECKBOX, MenuType.RADIO, MenuType.SEPARATOR})
+
+     @interface Type {}
+
+    
+    static class MenuType {
+      
+
+
+
+
+
+
+      static final int NORMAL = 0;
+
+      
+
+
+
+
+
+
+      static final int CHECKBOX = 1;
+
+      
+
+
+
+
+
+
+
+      static final int RADIO = 2;
+
+      
+
+
+
+
+
+
+      static final int SEPARATOR = 3;
     }
 
     
 
 
 
+
+
+
+    final @Nullable List<MenuItem> children;
+
+    
+    final @Type int type;
+
+    
+
+
+
+
+    final @Nullable String id;
+
+    
+    final boolean visible;
+
+    
+    final @Nullable String title;
+
+    
+    final boolean checked;
+
+    
+    final @ContextFlags int contexts;
+
+    
+    final @Nullable Image icon;
+
+    final WebExtension mExtension;
+
+    
+
+
+
+
+
+
+     MenuItem(final WebExtension extension, final GeckoBundle bundle) {
+      title = bundle.getString("title");
+      mExtension = extension;
+      checked = bundle.getBoolean("checked", false);
+      visible = bundle.getBoolean("visible", true);
+      id = bundle.getString("id");
+      contexts = bundle.getInt("contexts");
+      type = bundle.getInt("type");
+      children = new ArrayList<>();
+
+      if (bundle.containsKey("icon")) {
+        icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
+      } else {
+        icon = null;
+      }
+    }
+
+    
+    void click() {
+      final GeckoBundle bundle = new GeckoBundle(2);
+      bundle.putString("menuId", this.id);
+      bundle.putString("extensionId", mExtension.id);
+
+      EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:MenuClick", bundle);
+    }
+  }
+
+  public interface DownloadDelegate {
+    
 
 
 
@@ -1673,631 +2169,66 @@ public class WebExtension {
 
 
     @AnyThread
-    public void setActionDelegate(final @Nullable ActionDelegate delegate) {
-        mDelegateController.onActionDelegate(delegate);
-
-        final GeckoBundle bundle = new GeckoBundle(1);
-        bundle.putString("extensionId", id);
-
-        if (delegate != null) {
-            EventDispatcher.getInstance().dispatch(
-                    "GeckoView:ActionDelegate:Attached", bundle);
-        }
-    }
-
-    
-
-
-
-
-
-    public static class SignedStateFlags {
-        
-        
-
-        public final static int UNKNOWN = -1;
-        
-        public final static int MISSING = 0;
-        
-        public final static int PRELIMINARY = 1;
-        
-        public final static int SIGNED = 2;
-        
-        public final static int SYSTEM = 3;
-        
-        public final static int PRIVILEGED = 4;
-
-         final static int LAST = PRIVILEGED;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ SignedStateFlags.UNKNOWN, SignedStateFlags.MISSING, SignedStateFlags.PRELIMINARY,
-        SignedStateFlags.SIGNED, SignedStateFlags.SYSTEM, SignedStateFlags.PRIVILEGED})
-    @interface SignedState {}
-
-    
-
-
-
-
-    public static class BlocklistStateFlags {
-        
-        
-        public final static int NOT_BLOCKED = 0;
-        
-
-        public final static int SOFTBLOCKED = 1;
-        
-        public final static int BLOCKED = 2;
-        
-
-        public final static int OUTDATED = 3;
-        
-        public final static int VULNERABLE_UPDATE_AVAILABLE = 4;
-        
-        public final static int VULNERABLE_NO_UPDATE = 5;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ BlocklistStateFlags.NOT_BLOCKED, BlocklistStateFlags.SOFTBLOCKED,
-            BlocklistStateFlags.BLOCKED, BlocklistStateFlags.OUTDATED,
-            BlocklistStateFlags.VULNERABLE_UPDATE_AVAILABLE,
-            BlocklistStateFlags.VULNERABLE_NO_UPDATE})
-    @interface BlocklistState {}
-
-    public static class DisabledFlags {
-        
-        public final static int USER = 1 << 1;
-
-        
-
-        public final static int BLOCKLIST = 1 << 2;
-
-        
-
-
-        public final static int APP = 1 << 3;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { DisabledFlags.USER, DisabledFlags.BLOCKLIST,
-                      DisabledFlags.APP })
-    @interface EnabledFlags {}
-
-    
-    public class MetaData {
-        
-
-        public final @NonNull Image icon;
-        
-
-
-
-
-
-
-        public final @NonNull String[] permissions;
-        
-
-
-
-
-
-        public final @NonNull String[] origins;
-        
-
-
-
-
-
-        public final @Nullable String name;
-        
-
-
-
-
-
-
-        public final @Nullable String description;
-        
-
-
-
-
-
-        public final @NonNull String version;
-        
-
-
-
-
-
-        public final @Nullable String creatorName;
-        
-
-
-
-
-
-        public final @Nullable String creatorUrl;
-        
-
-
-
-
-
-        public final @Nullable String homepageUrl;
-        
-
-
-
-
-
-        public final @Nullable String optionsPageUrl;
-        
-
-
-
-
-
-        public final boolean openOptionsPageInTab;
-        
-
-
-
-
-
-        public final boolean isRecommended;
-        
-
-
-
-
-
-        public final @BlocklistState int blocklistState;
-        
-
-
-
-
-
-        public final @SignedState int signedState;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public final @EnabledFlags int disabledFlags;
-
-        
-
-
-
-        public final @NonNull String baseUrl;
-
-        
-
-
-
-        public final boolean allowedInPrivateBrowsing;
-
-        
-
-
-        public final boolean enabled;
-
-        
-
-
-
-        public final boolean temporary;
-
-        
-        protected MetaData() {
-            icon = null;
-            permissions = null;
-            origins = null;
-            name = null;
-            description = null;
-            version = null;
-            creatorName = null;
-            creatorUrl = null;
-            homepageUrl = null;
-            optionsPageUrl = null;
-            openOptionsPageInTab = false;
-            isRecommended = false;
-            blocklistState = BlocklistStateFlags.NOT_BLOCKED;
-            signedState = SignedStateFlags.UNKNOWN;
-            disabledFlags = 0;
-            enabled = true;
-            temporary = false;
-            baseUrl = null;
-            allowedInPrivateBrowsing = false;
-        }
-
-         MetaData(final GeckoBundle bundle) {
-            
-            permissions = bundle.getStringArray("promptPermissions");
-            origins = bundle.getStringArray("origins");
-            description = bundle.getString("description");
-            version = bundle.getString("version");
-            creatorName = bundle.getString("creatorName");
-            creatorUrl = bundle.getString("creatorURL");
-            homepageUrl = bundle.getString("homepageURL");
-            name = bundle.getString("name");
-            optionsPageUrl = bundle.getString("optionsPageURL");
-            openOptionsPageInTab = bundle.getBoolean("openOptionsPageInTab");
-            isRecommended = bundle.getBoolean("isRecommended");
-            blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
-            enabled = bundle.getBoolean("enabled", false);
-            temporary = bundle.getBoolean("temporary", false);
-            baseUrl = bundle.getString("baseURL");
-            allowedInPrivateBrowsing = bundle.getBoolean("privateBrowsingAllowed", false);
-
-            final int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
-            if (signedState <= SignedStateFlags.LAST) {
-                this.signedState = signedState;
-            } else {
-                Log.e(LOGTAG, "Unrecognized signed state: " + signedState);
-                this.signedState = SignedStateFlags.UNKNOWN;
-            }
-
-            int disabledFlags = 0;
-            final String[] disabledFlagsString = bundle.getStringArray("disabledFlags");
-
-            for (final String flag : disabledFlagsString) {
-                if (flag.equals("userDisabled")) {
-                    disabledFlags |= DisabledFlags.USER;
-                } else if (flag.equals("blocklistDisabled")) {
-                    disabledFlags |= DisabledFlags.BLOCKLIST;
-                } else if (flag.equals("appDisabled")) {
-                    disabledFlags |= DisabledFlags.APP;
-                } else {
-                    Log.e(LOGTAG, "Unrecognized disabledFlag state: " + flag);
-                }
-            }
-            this.disabledFlags = disabledFlags;
-
-            if (bundle.containsKey("icons")) {
-                icon = Image.fromSizeSrcBundle(bundle.getBundle("icons"));
-            } else {
-                icon = null;
-            }
-        }
-    }
-
-    
-
-    @IntDef(flag = true,
-            value = {Context.NONE, Context.BOOKMARK, Context.BROWSER_ACTION,
-                    Context.PAGE_ACTION, Context.TAB, Context.TOOLS_MENU})
-
-     @interface ContextFlags {}
-
-    
-
-
-
-
-    static class Context {
-        
-
-
-        static final int NONE = 0;
-
-        
-
-
-
-        static final int BOOKMARK = 1 << 1;
-
-        
-
-
-        static final int BROWSER_ACTION = 1 << 2;
-
-        
-
-
-        static final int PAGE_ACTION = 1 << 3;
-
-        
-
-
-        static final int TAB = 1 << 4;
-
-        
-
-
-        static final int TOOLS_MENU = 1 << 5;
-
-    }
-
-    
-
-    
-
-
-
-
-
-
-
-    static class Menu {
-        
-
-
-        final @NonNull List<MenuItem> items;
-
-        
-
-
-        final @Nullable Image icon;
-
-        
-
-
-        final @Nullable String title;
-
-        
-
-
-        final @NonNull WebExtension extension;
-
-         Menu(final @NonNull WebExtension extension, final GeckoBundle bundle) {
-            this.extension = extension;
-            title = bundle.getString("title", "");
-            final GeckoBundle[] items = bundle.getBundleArray("items");
-            this.items = new ArrayList<>();
-            if (items != null) {
-                for (final GeckoBundle item : items) {
-                    this.items.add(new MenuItem(this.extension, item));
-                }
-            }
-
-            if (bundle.containsKey("icon")) {
-                icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
-            } else {
-                icon = null;
-            }
-        }
-
-        
-
-
-        void show() {
-            final GeckoBundle bundle = new GeckoBundle(1);
-            bundle.putString("extensionId", extension.id);
-
-            EventDispatcher.getInstance().dispatch(
-                    "GeckoView:WebExtension:MenuShow", bundle);
-        }
-
-        
-
-
-        void hide() {
-            final GeckoBundle bundle = new GeckoBundle(1);
-            bundle.putString("extensionId", extension.id);
-
-            EventDispatcher.getInstance().dispatch(
-                     "GeckoView:WebExtension:MenuHide", bundle);
-        }
-    }
-
-    
-    
-
-
-
-
-
-    static class MenuItem {
-
-        @IntDef(flag = false,
-                value = {MenuType.NORMAL, MenuType.CHECKBOX, MenuType.RADIO, MenuType.SEPARATOR})
-
-         @interface Type {}
-
-        
-
-
-        static class MenuType {
-            
-
-
-
-
-
-            static final int NORMAL = 0;
-
-            
-
-
-
-
-
-            static final int CHECKBOX = 1;
-
-            
-
-
-
-
-
-
-            static final int RADIO = 2;
-
-            
-
-
-
-
-
-            static final int SEPARATOR = 3;
-        }
-
-
-
-        
-
-
-
-
-
-        final @Nullable  List<MenuItem> children;
-
-        
-
-
-        final @Type int type;
-
-        
-
-
-        final @Nullable String id;
-
-        
-
-
-        final boolean visible;
-
-        
-
-
-        final @Nullable String title;
-
-        
-
-
-        final boolean checked;
-
-        
-
-
-        final @ContextFlags int contexts;
-
-        
-
-
-        final @Nullable Image icon;
-
-        final WebExtension mExtension;
-
-        
-
-
-
-
-
-
-         MenuItem(final WebExtension extension, final GeckoBundle bundle) {
-            title = bundle.getString("title");
-            mExtension = extension;
-            checked = bundle.getBoolean("checked", false);
-            visible = bundle.getBoolean("visible", true);
-            id = bundle.getString("id");
-            contexts  = bundle.getInt("contexts");
-            type = bundle.getInt("type");
-            children = new ArrayList<>();
-
-            if (bundle.containsKey("icon")) {
-                icon = Image.fromSizeSrcBundle(bundle.getBundle("icon"));
-            } else {
-                icon = null;
-            }
-        }
-
-        
-
-
-        void click() {
-            final GeckoBundle bundle = new GeckoBundle(2);
-            bundle.putString("menuId", this.id);
-            bundle.putString("extensionId", mExtension.id);
-
-            EventDispatcher.getInstance().dispatch(
-                    "GeckoView:WebExtension:MenuClick", bundle);
-        }
-    }
-
-    public interface DownloadDelegate {
-        
-
-
-
-
-
-
-
-        @AnyThread
-        @Nullable
-        default GeckoResult<WebExtension.DownloadInitData> onDownload(@NonNull final WebExtension source, @NonNull final DownloadRequest request) {
-            return null;
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void setDownloadDelegate(final @Nullable DownloadDelegate delegate) {
-        mDelegateController.onDownloadDelegate(delegate);
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
     @Nullable
-    public DownloadDelegate getDownloadDelegate() {
-        return mDelegateController.getDownloadDelegate();
+    default GeckoResult<WebExtension.DownloadInitData> onDownload(
+        @NonNull final WebExtension source, @NonNull final DownloadRequest request) {
+      return null;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void setDownloadDelegate(final @Nullable DownloadDelegate delegate) {
+    mDelegateController.onDownloadDelegate(delegate);
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  @Nullable
+  public DownloadDelegate getDownloadDelegate() {
+    return mDelegateController.getDownloadDelegate();
+  }
+
+  
+
+
+
+
+  public static class Download {
+    
+
+
+
+    public final int id;
 
     
 
 
 
-    public static class Download {
-        
 
+    protected Download(final int id) {
+      this.id = id;
+    }
 
+     void setDelegate(final Delegate delegate) {}
 
-        public final int id;
-
-        
-
-
-
-        protected Download(final int id) {
-            this.id = id;
-        }
-
-         void setDelegate(final Delegate delegate) { }
-
-        
+    
 
 
 
@@ -2305,509 +2236,493 @@ public class WebExtension {
 
 
 
-        @Nullable
-        @UiThread
-        public GeckoResult<Void> update(final @NonNull Download.Info data) {
-            final GeckoBundle bundle = new GeckoBundle(12);
 
-            bundle.putInt("downloadItemId", this.id);
+    @Nullable
+    @UiThread
+    public GeckoResult<Void> update(final @NonNull Download.Info data) {
+      final GeckoBundle bundle = new GeckoBundle(12);
 
-            bundle.putString("filename", data.filename());
-            bundle.putString("mime", data.mime());
-            bundle.putString("startTime", String.valueOf(data.startTime()));
-            bundle.putString("endTime", data.endTime() == null ? null : String.valueOf(data.endTime()));
-            bundle.putInt("state", data.state());
-            bundle.putBoolean("canResume", data.canResume());
-            bundle.putBoolean("paused", data.paused());
-            final Integer error = data.error();
-            if (error != null) {
-                bundle.putInt("error",  error);
-            }
-            bundle.putLong("totalBytes", data.totalBytes());
-            bundle.putLong("fileSize", data.fileSize());
-            bundle.putBoolean("exists", data.fileExists());
+      bundle.putInt("downloadItemId", this.id);
 
-            return EventDispatcher.getInstance().queryVoid(
-                    "GeckoView:WebExtension:DownloadChanged", bundle
-            ).map(null, e -> {
+      bundle.putString("filename", data.filename());
+      bundle.putString("mime", data.mime());
+      bundle.putString("startTime", String.valueOf(data.startTime()));
+      bundle.putString("endTime", data.endTime() == null ? null : String.valueOf(data.endTime()));
+      bundle.putInt("state", data.state());
+      bundle.putBoolean("canResume", data.canResume());
+      bundle.putBoolean("paused", data.paused());
+      final Integer error = data.error();
+      if (error != null) {
+        bundle.putInt("error", error);
+      }
+      bundle.putLong("totalBytes", data.totalBytes());
+      bundle.putLong("fileSize", data.fileSize());
+      bundle.putBoolean("exists", data.fileExists());
+
+      return EventDispatcher.getInstance()
+          .queryVoid("GeckoView:WebExtension:DownloadChanged", bundle)
+          .map(
+              null,
+              e -> {
                 if (e instanceof EventDispatcher.QueryException) {
-                    final EventDispatcher.QueryException queryException = (EventDispatcher.QueryException) e;
-                    if (queryException.data instanceof String) {
-                        return new IllegalArgumentException((String) queryException.data);
-                    }
+                  final EventDispatcher.QueryException queryException =
+                      (EventDispatcher.QueryException) e;
+                  if (queryException.data instanceof String) {
+                    return new IllegalArgumentException((String) queryException.data);
+                  }
                 }
                 return e;
-            });
-        }
-
-         interface Delegate {
-
-            default GeckoResult<Void> onPause(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-
-            default GeckoResult<Void> onResume(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-
-            default GeckoResult<Void> onCancel(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-
-            default GeckoResult<Void> onErase(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-
-            default GeckoResult<Void> onOpen(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-
-            default GeckoResult<Void> onRemoveFile(final WebExtension source, final WebExtension.Download download) {
-                return null;
-            }
-        }
-
-        
-
-
-        @IntDef({STATE_IN_PROGRESS, STATE_INTERRUPTED, STATE_COMPLETE})
-        public @interface DownloadState {}
-
-        
-
-
-        public static final int STATE_IN_PROGRESS = 0;
-
-        
-
-
-        public static final int STATE_INTERRUPTED = 1;
-
-        
-
-
-        public static final int STATE_COMPLETE = 2;
-
-        
-
-
-        @IntDef({
-                INTERRUPT_REASON_NO_INTERRUPT,
-                INTERRUPT_REASON_FILE_FAILED,
-                INTERRUPT_REASON_FILE_ACCESS_DENIED,
-                INTERRUPT_REASON_FILE_NO_SPACE,
-                INTERRUPT_REASON_FILE_NAME_TOO_LONG,
-                INTERRUPT_REASON_FILE_TOO_LARGE,
-                INTERRUPT_REASON_FILE_VIRUS_INFECTED,
-                INTERRUPT_REASON_FILE_TRANSIENT_ERROR,
-                INTERRUPT_REASON_FILE_BLOCKED,
-                INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED,
-                INTERRUPT_REASON_FILE_TOO_SHORT,
-                INTERRUPT_REASON_NETWORK_FAILED,
-                INTERRUPT_REASON_NETWORK_TIMEOUT,
-                INTERRUPT_REASON_NETWORK_DISCONNECTED,
-                INTERRUPT_REASON_NETWORK_SERVER_DOWN,
-                INTERRUPT_REASON_NETWORK_INVALID_REQUEST,
-                INTERRUPT_REASON_SERVER_FAILED,
-                INTERRUPT_REASON_SERVER_NO_RANGE,
-                INTERRUPT_REASON_SERVER_BAD_CONTENT,
-                INTERRUPT_REASON_SERVER_UNAUTHORIZED,
-                INTERRUPT_REASON_SERVER_CERT_PROBLEM,
-                INTERRUPT_REASON_SERVER_FORBIDDEN,
-                INTERRUPT_REASON_USER_CANCELED,
-                INTERRUPT_REASON_USER_SHUTDOWN,
-                INTERRUPT_REASON_CRASH
-        })
-        public @interface DownloadInterruptReason {}
-
-        
-        public static final int INTERRUPT_REASON_NO_INTERRUPT = 0;
-        public static final int INTERRUPT_REASON_FILE_FAILED = 1;
-        public static final int INTERRUPT_REASON_FILE_ACCESS_DENIED = 2;
-        public static final int INTERRUPT_REASON_FILE_NO_SPACE = 3;
-        public static final int INTERRUPT_REASON_FILE_NAME_TOO_LONG = 4;
-        public static final int INTERRUPT_REASON_FILE_TOO_LARGE = 5;
-        public static final int INTERRUPT_REASON_FILE_VIRUS_INFECTED = 6;
-        public static final int INTERRUPT_REASON_FILE_TRANSIENT_ERROR = 7;
-        public static final int INTERRUPT_REASON_FILE_BLOCKED = 8;
-        public static final int INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED = 9;
-        public static final int INTERRUPT_REASON_FILE_TOO_SHORT = 10;
-        
-        public static final int INTERRUPT_REASON_NETWORK_FAILED = 11;
-        public static final int INTERRUPT_REASON_NETWORK_TIMEOUT = 12;
-        public static final int INTERRUPT_REASON_NETWORK_DISCONNECTED = 13;
-        public static final int INTERRUPT_REASON_NETWORK_SERVER_DOWN = 14;
-        public static final int INTERRUPT_REASON_NETWORK_INVALID_REQUEST = 15;
-        
-        public static final int INTERRUPT_REASON_SERVER_FAILED = 16;
-        public static final int INTERRUPT_REASON_SERVER_NO_RANGE = 17;
-        public static final int INTERRUPT_REASON_SERVER_BAD_CONTENT = 18;
-        public static final int INTERRUPT_REASON_SERVER_UNAUTHORIZED = 19;
-        public static final int INTERRUPT_REASON_SERVER_CERT_PROBLEM = 20;
-        public static final int INTERRUPT_REASON_SERVER_FORBIDDEN = 21;
-        
-        public static final int INTERRUPT_REASON_USER_CANCELED = 22;
-        public static final int INTERRUPT_REASON_USER_SHUTDOWN = 23;
-        
-        public static final int INTERRUPT_REASON_CRASH = 24;
-
-        
-
-
-
-        public interface Info {
-
-            
-
-
-
-            @UiThread
-            default long bytesReceived() {
-                return 0;
-            }
-
-            
-
-
-
-            @UiThread
-            default boolean canResume() {
-                return false;
-            }
-
-            
-
-
-
-            @Nullable
-            @UiThread
-            default Long endTime() {
-                return null;
-            }
-
-            
-
-
-            @Nullable
-            @UiThread
-            default @DownloadInterruptReason Integer error() {
-                return null;
-            }
-
-            
-
-
-
-            @Nullable
-            @UiThread
-            default Long estimatedEndTime() {
-                return null;
-            }
-
-            
-
-
-            @UiThread
-            default boolean fileExists() {
-                return false;
-            }
-
-            
-
-
-            @NonNull
-            @UiThread
-            default String filename() {
-                return "";
-            }
-
-            
-
-
-
-            @UiThread
-            default long fileSize() {
-                return -1;
-            }
-
-            
-
-
-            @NonNull
-            @UiThread
-            default String mime() {
-                return "";
-            }
-
-            
-
-
-
-
-            @UiThread
-            default boolean paused() {
-                return false;
-            }
-
-            
-
-
-            @NonNull
-            @UiThread
-            default String referrer() {
-                return "";
-            }
-
-            
-
-
-            @UiThread
-            default long startTime() {
-                return -1;
-            }
-
-            
-
-
-
-            @UiThread
-            default @DownloadState int state() {
-                return STATE_IN_PROGRESS;
-            }
-
-            
-
-
-
-
-            @UiThread
-            default long totalBytes() {
-                return -1;
-            }
-        }
-
-        @NonNull
-        @UiThread
-         static GeckoBundle downloadInfoToBundle(final @NonNull Info data) {
-            final GeckoBundle dataBundle = new GeckoBundle();
-
-            dataBundle.putLong("bytesReceived", data.bytesReceived());
-            dataBundle.putBoolean("canResume", data.canResume());
-            dataBundle.putBoolean("exists", data.fileExists());
-            dataBundle.putString("filename", data.filename());
-            dataBundle.putLong("fileSize", data.fileSize());
-            dataBundle.putString("mime", data.mime());
-            dataBundle.putBoolean("paused", data.paused());
-            dataBundle.putString("referrer", data.referrer());
-            dataBundle.putString("startTime", String.valueOf(data.startTime()));
-            dataBundle.putInt("state", data.state());
-            dataBundle.putLong("totalBytes", data.totalBytes());
-
-            final Long endTime = data.endTime();
-            if (endTime != null) {
-                dataBundle.putString("endTime", endTime.toString());
-            }
-            final Integer error = data.error();
-            if (error != null) {
-                dataBundle.putInt("error", error);
-            }
-            final Long estimatedEndTime = data.estimatedEndTime();
-            if (estimatedEndTime != null) {
-                dataBundle.putString("estimatedEndTime", estimatedEndTime.toString());
-            }
-
-            return dataBundle;
-        }
+              });
+    }
+
+     interface Delegate {
+
+      default GeckoResult<Void> onPause(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
+
+      default GeckoResult<Void> onResume(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
+
+      default GeckoResult<Void> onCancel(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
+
+      default GeckoResult<Void> onErase(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
+
+      default GeckoResult<Void> onOpen(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
+
+      default GeckoResult<Void> onRemoveFile(
+          final WebExtension source, final WebExtension.Download download) {
+        return null;
+      }
     }
 
     
 
 
-    public static class DownloadRequest {
-        
+
+    @IntDef({STATE_IN_PROGRESS, STATE_INTERRUPTED, STATE_COMPLETE})
+    public @interface DownloadState {}
+
+    
+    public static final int STATE_IN_PROGRESS = 0;
+
+    
+    public static final int STATE_INTERRUPTED = 1;
+
+    
+    public static final int STATE_COMPLETE = 2;
+
+    
 
 
-        public final @NonNull WebRequest request;
+    @IntDef({
+      INTERRUPT_REASON_NO_INTERRUPT,
+      INTERRUPT_REASON_FILE_FAILED,
+      INTERRUPT_REASON_FILE_ACCESS_DENIED,
+      INTERRUPT_REASON_FILE_NO_SPACE,
+      INTERRUPT_REASON_FILE_NAME_TOO_LONG,
+      INTERRUPT_REASON_FILE_TOO_LARGE,
+      INTERRUPT_REASON_FILE_VIRUS_INFECTED,
+      INTERRUPT_REASON_FILE_TRANSIENT_ERROR,
+      INTERRUPT_REASON_FILE_BLOCKED,
+      INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED,
+      INTERRUPT_REASON_FILE_TOO_SHORT,
+      INTERRUPT_REASON_NETWORK_FAILED,
+      INTERRUPT_REASON_NETWORK_TIMEOUT,
+      INTERRUPT_REASON_NETWORK_DISCONNECTED,
+      INTERRUPT_REASON_NETWORK_SERVER_DOWN,
+      INTERRUPT_REASON_NETWORK_INVALID_REQUEST,
+      INTERRUPT_REASON_SERVER_FAILED,
+      INTERRUPT_REASON_SERVER_NO_RANGE,
+      INTERRUPT_REASON_SERVER_BAD_CONTENT,
+      INTERRUPT_REASON_SERVER_UNAUTHORIZED,
+      INTERRUPT_REASON_SERVER_CERT_PROBLEM,
+      INTERRUPT_REASON_SERVER_FORBIDDEN,
+      INTERRUPT_REASON_USER_CANCELED,
+      INTERRUPT_REASON_USER_SHUTDOWN,
+      INTERRUPT_REASON_CRASH
+    })
+    public @interface DownloadInterruptReason {}
 
-        
+    
+    public static final int INTERRUPT_REASON_NO_INTERRUPT = 0;
+    public static final int INTERRUPT_REASON_FILE_FAILED = 1;
+    public static final int INTERRUPT_REASON_FILE_ACCESS_DENIED = 2;
+    public static final int INTERRUPT_REASON_FILE_NO_SPACE = 3;
+    public static final int INTERRUPT_REASON_FILE_NAME_TOO_LONG = 4;
+    public static final int INTERRUPT_REASON_FILE_TOO_LARGE = 5;
+    public static final int INTERRUPT_REASON_FILE_VIRUS_INFECTED = 6;
+    public static final int INTERRUPT_REASON_FILE_TRANSIENT_ERROR = 7;
+    public static final int INTERRUPT_REASON_FILE_BLOCKED = 8;
+    public static final int INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED = 9;
+    public static final int INTERRUPT_REASON_FILE_TOO_SHORT = 10;
+    
+    public static final int INTERRUPT_REASON_NETWORK_FAILED = 11;
+    public static final int INTERRUPT_REASON_NETWORK_TIMEOUT = 12;
+    public static final int INTERRUPT_REASON_NETWORK_DISCONNECTED = 13;
+    public static final int INTERRUPT_REASON_NETWORK_SERVER_DOWN = 14;
+    public static final int INTERRUPT_REASON_NETWORK_INVALID_REQUEST = 15;
+    
+    public static final int INTERRUPT_REASON_SERVER_FAILED = 16;
+    public static final int INTERRUPT_REASON_SERVER_NO_RANGE = 17;
+    public static final int INTERRUPT_REASON_SERVER_BAD_CONTENT = 18;
+    public static final int INTERRUPT_REASON_SERVER_UNAUTHORIZED = 19;
+    public static final int INTERRUPT_REASON_SERVER_CERT_PROBLEM = 20;
+    public static final int INTERRUPT_REASON_SERVER_FORBIDDEN = 21;
+    
+    public static final int INTERRUPT_REASON_USER_CANCELED = 22;
+    public static final int INTERRUPT_REASON_USER_SHUTDOWN = 23;
+    
+    public static final int INTERRUPT_REASON_CRASH = 24;
 
-
-        public final @GeckoWebExecutor.FetchFlags int downloadFlags;
-
-        
-
-
-        public final @Nullable String filename;
-
-        
-
-
-
-        public final @ConflictActionFlags int conflictActionFlag;
-
-        
-
-
-
-        public final boolean saveAs;
-
-        
-
-
-
-
-
-
-        public final boolean allowHttpErrors;
-
-        @IntDef(flag = true, value = {CONFLICT_ACTION_UNIQUIFY, CONFLICT_ACTION_OVERWRITE, CONFLICT_ACTION_PROMPT})
-         @interface ConflictActionFlags {}
-
-        
-
-
-        public static final int CONFLICT_ACTION_UNIQUIFY = 0;
-
-        
-
-
-        public static final int CONFLICT_ACTION_OVERWRITE = 1;
-
-        
-
-
-        public static final int CONFLICT_ACTION_PROMPT = 1 << 1;
-
-        protected DownloadRequest(final DownloadRequest.Builder builder) {
-            this.request = builder.mRequest;
-            this.downloadFlags = builder.mDownloadFlags;
-            this.filename = builder.mFilename;
-            this.conflictActionFlag = builder.mConflictActionFlag;
-            this.saveAs = builder.mSaveAs;
-            this.allowHttpErrors = builder.mAllowHttpErrors;
-        }
-
-        
-
-
+    
 
 
 
-         static DownloadRequest fromBundle(final GeckoBundle optionsBundle) {
-            final String uri = optionsBundle.getString("url");
+    public interface Info {
 
-            final WebRequest.Builder mainRequestBuilder = new WebRequest.Builder(uri);
+      
 
-            final String method = optionsBundle.getString("method");
-            if (method != null) {
-                mainRequestBuilder.method(method);
 
-                if (method.equals("POST")) {
-                    final String body = optionsBundle.getString("body");
-                    mainRequestBuilder.body(body);
-                }
-            }
 
-            final GeckoBundle[] headers = optionsBundle.getBundleArray("headers");
-            if (headers != null) {
-                for (final GeckoBundle header : headers) {
-                    String value = header.getString("value");
-                    if (value == null) {
-                        value = header.getString("binaryValue");
-                    }
-                    mainRequestBuilder.addHeader(header.getString("name"), value);
-                }
-            }
+      @UiThread
+      default long bytesReceived() {
+        return 0;
+      }
 
-            final WebRequest mainRequest = mainRequestBuilder.build();
+      
 
-            int downloadFlags = GeckoWebExecutor.FETCH_FLAGS_NONE;
-            final boolean incognito = optionsBundle.getBoolean("incognito");
-            if (incognito) {
-                downloadFlags |= GeckoWebExecutor.FETCH_FLAGS_PRIVATE;
-            }
 
-            final boolean allowHttpErrors = optionsBundle.getBoolean("allowHttpErrors");
 
-            int conflictActionFlags = CONFLICT_ACTION_UNIQUIFY;
-            final String conflictActionString = optionsBundle.getString("conflictAction");
-            if (conflictActionString != null) {
-                switch (conflictActionString.toLowerCase(Locale.ROOT)) {
-                    case "overwrite":
-                        conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_OVERWRITE;
-                        break;
-                    case "prompt":
-                        conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_PROMPT;
-                        break;
-                }
-            }
+      @UiThread
+      default boolean canResume() {
+        return false;
+      }
 
-            final boolean saveAs = optionsBundle.getBoolean("saveAs");
+      
 
-            final WebExtension.DownloadRequest request = new WebExtension.DownloadRequest.Builder(mainRequest)
-                    .filename(optionsBundle.getString("filename"))
-                    .downloadFlags(downloadFlags)
-                    .conflictAction(conflictActionFlags)
-                    .saveAs(saveAs)
-                    .allowHttpErrors(allowHttpErrors)
-                    .build();
 
-            return request;
-        }
 
-         static class Builder {
-            private final WebRequest mRequest;
-            private @GeckoWebExecutor.FetchFlags int mDownloadFlags = 0;
-            private String mFilename = null;
-            private @ConflictActionFlags int mConflictActionFlag = CONFLICT_ACTION_UNIQUIFY;
-            private boolean mSaveAs = false;
-            private boolean mAllowHttpErrors = false;
+      @Nullable
+      @UiThread
+      default Long endTime() {
+        return null;
+      }
 
-             Builder(final WebRequest request) {
-                this.mRequest = request;
-            }
+      
 
-             Builder downloadFlags(final @GeckoWebExecutor.FetchFlags int flags) {
-                this.mDownloadFlags = flags;
-                return this;
-            }
 
-             Builder filename(final String filename) {
-                this.mFilename = filename;
-                return this;
-            }
 
-             Builder conflictAction(final @ConflictActionFlags int conflictActionFlag) {
-                this.mConflictActionFlag = conflictActionFlag;
-                return this;
-            }
 
-             Builder saveAs(final boolean saveAs) {
-                this.mSaveAs = saveAs;
-                return this;
-            }
+      @Nullable
+      @UiThread
+      default @DownloadInterruptReason Integer error() {
+        return null;
+      }
 
-             Builder allowHttpErrors(final boolean allowHttpErrors) {
-                this.mAllowHttpErrors = allowHttpErrors;
-                return this;
-            }
+      
 
-             DownloadRequest build() {
-                return new DownloadRequest(this);
-            }
-        }
+
+
+      @Nullable
+      @UiThread
+      default Long estimatedEndTime() {
+        return null;
+      }
+
+      
+      @UiThread
+      default boolean fileExists() {
+        return false;
+      }
+
+      
+      @NonNull
+      @UiThread
+      default String filename() {
+        return "";
+      }
+
+      
+
+
+
+      @UiThread
+      default long fileSize() {
+        return -1;
+      }
+
+      
+      @NonNull
+      @UiThread
+      default String mime() {
+        return "";
+      }
+
+      
+
+
+
+      @UiThread
+      default boolean paused() {
+        return false;
+      }
+
+      
+      @NonNull
+      @UiThread
+      default String referrer() {
+        return "";
+      }
+
+      
+      @UiThread
+      default long startTime() {
+        return -1;
+      }
+
+      
+
+
+
+      @UiThread
+      default @DownloadState int state() {
+        return STATE_IN_PROGRESS;
+      }
+
+      
+
+
+
+
+      @UiThread
+      default long totalBytes() {
+        return -1;
+      }
+    }
+
+    @NonNull
+    @UiThread
+     static GeckoBundle downloadInfoToBundle(final @NonNull Info data) {
+      final GeckoBundle dataBundle = new GeckoBundle();
+
+      dataBundle.putLong("bytesReceived", data.bytesReceived());
+      dataBundle.putBoolean("canResume", data.canResume());
+      dataBundle.putBoolean("exists", data.fileExists());
+      dataBundle.putString("filename", data.filename());
+      dataBundle.putLong("fileSize", data.fileSize());
+      dataBundle.putString("mime", data.mime());
+      dataBundle.putBoolean("paused", data.paused());
+      dataBundle.putString("referrer", data.referrer());
+      dataBundle.putString("startTime", String.valueOf(data.startTime()));
+      dataBundle.putInt("state", data.state());
+      dataBundle.putLong("totalBytes", data.totalBytes());
+
+      final Long endTime = data.endTime();
+      if (endTime != null) {
+        dataBundle.putString("endTime", endTime.toString());
+      }
+      final Integer error = data.error();
+      if (error != null) {
+        dataBundle.putInt("error", error);
+      }
+      final Long estimatedEndTime = data.estimatedEndTime();
+      if (estimatedEndTime != null) {
+        dataBundle.putString("estimatedEndTime", estimatedEndTime.toString());
+      }
+
+      return dataBundle;
+    }
+  }
+
+  
+  public static class DownloadRequest {
+    
+    public final @NonNull WebRequest request;
+
+    
+    public final @GeckoWebExecutor.FetchFlags int downloadFlags;
+
+    
+    public final @Nullable String filename;
+
+    
+
+
+
+    public final @ConflictActionFlags int conflictActionFlag;
+
+    
+
+
+
+    public final boolean saveAs;
+
+    
+
+
+
+
+
+
+    public final boolean allowHttpErrors;
+
+    @IntDef(
+        flag = true,
+        value = {CONFLICT_ACTION_UNIQUIFY, CONFLICT_ACTION_OVERWRITE, CONFLICT_ACTION_PROMPT})
+     @interface ConflictActionFlags {}
+
+    
+    public static final int CONFLICT_ACTION_UNIQUIFY = 0;
+
+    
+    public static final int CONFLICT_ACTION_OVERWRITE = 1;
+
+    
+    public static final int CONFLICT_ACTION_PROMPT = 1 << 1;
+
+    protected DownloadRequest(final DownloadRequest.Builder builder) {
+      this.request = builder.mRequest;
+      this.downloadFlags = builder.mDownloadFlags;
+      this.filename = builder.mFilename;
+      this.conflictActionFlag = builder.mConflictActionFlag;
+      this.saveAs = builder.mSaveAs;
+      this.allowHttpErrors = builder.mAllowHttpErrors;
     }
 
     
 
 
-    public static class DownloadInitData {
-        @NonNull public final WebExtension.Download download;
-        @NonNull public final Download.Info initData;
 
-        public DownloadInitData(final Download download, final Download.Info initData) {
-            this.download = download;
-            this.initData = initData;
+
+
+
+     static DownloadRequest fromBundle(final GeckoBundle optionsBundle) {
+      final String uri = optionsBundle.getString("url");
+
+      final WebRequest.Builder mainRequestBuilder = new WebRequest.Builder(uri);
+
+      final String method = optionsBundle.getString("method");
+      if (method != null) {
+        mainRequestBuilder.method(method);
+
+        if (method.equals("POST")) {
+          final String body = optionsBundle.getString("body");
+          mainRequestBuilder.body(body);
         }
+      }
+
+      final GeckoBundle[] headers = optionsBundle.getBundleArray("headers");
+      if (headers != null) {
+        for (final GeckoBundle header : headers) {
+          String value = header.getString("value");
+          if (value == null) {
+            value = header.getString("binaryValue");
+          }
+          mainRequestBuilder.addHeader(header.getString("name"), value);
+        }
+      }
+
+      final WebRequest mainRequest = mainRequestBuilder.build();
+
+      int downloadFlags = GeckoWebExecutor.FETCH_FLAGS_NONE;
+      final boolean incognito = optionsBundle.getBoolean("incognito");
+      if (incognito) {
+        downloadFlags |= GeckoWebExecutor.FETCH_FLAGS_PRIVATE;
+      }
+
+      final boolean allowHttpErrors = optionsBundle.getBoolean("allowHttpErrors");
+
+      int conflictActionFlags = CONFLICT_ACTION_UNIQUIFY;
+      final String conflictActionString = optionsBundle.getString("conflictAction");
+      if (conflictActionString != null) {
+        switch (conflictActionString.toLowerCase(Locale.ROOT)) {
+          case "overwrite":
+            conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_OVERWRITE;
+            break;
+          case "prompt":
+            conflictActionFlags |= WebExtension.DownloadRequest.CONFLICT_ACTION_PROMPT;
+            break;
+        }
+      }
+
+      final boolean saveAs = optionsBundle.getBoolean("saveAs");
+
+      final WebExtension.DownloadRequest request =
+          new WebExtension.DownloadRequest.Builder(mainRequest)
+              .filename(optionsBundle.getString("filename"))
+              .downloadFlags(downloadFlags)
+              .conflictAction(conflictActionFlags)
+              .saveAs(saveAs)
+              .allowHttpErrors(allowHttpErrors)
+              .build();
+
+      return request;
     }
+
+     static class Builder {
+      private final WebRequest mRequest;
+      private @GeckoWebExecutor.FetchFlags int mDownloadFlags = 0;
+      private String mFilename = null;
+      private @ConflictActionFlags int mConflictActionFlag = CONFLICT_ACTION_UNIQUIFY;
+      private boolean mSaveAs = false;
+      private boolean mAllowHttpErrors = false;
+
+       Builder(final WebRequest request) {
+        this.mRequest = request;
+      }
+
+       Builder downloadFlags(final @GeckoWebExecutor.FetchFlags int flags) {
+        this.mDownloadFlags = flags;
+        return this;
+      }
+
+       Builder filename(final String filename) {
+        this.mFilename = filename;
+        return this;
+      }
+
+       Builder conflictAction(final @ConflictActionFlags int conflictActionFlag) {
+        this.mConflictActionFlag = conflictActionFlag;
+        return this;
+      }
+
+       Builder saveAs(final boolean saveAs) {
+        this.mSaveAs = saveAs;
+        return this;
+      }
+
+       Builder allowHttpErrors(final boolean allowHttpErrors) {
+        this.mAllowHttpErrors = allowHttpErrors;
+        return this;
+      }
+
+       DownloadRequest build() {
+        return new DownloadRequest(this);
+      }
+    }
+  }
+
+  
+  public static class DownloadInitData {
+    @NonNull public final WebExtension.Download download;
+    @NonNull public final Download.Info initData;
+
+    public DownloadInitData(final Download download, final Download.Info initData) {
+      this.download = download;
+      this.initData = initData;
+    }
+  }
 }

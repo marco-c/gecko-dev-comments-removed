@@ -6,19 +6,17 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import org.mozilla.gecko.annotation.WrapForJNI;
+
 
 
 
@@ -27,213 +25,202 @@ import java.nio.charset.Charset;
 @WrapForJNI
 @AnyThread
 public class WebRequest extends WebMessage {
+  
+  public final @NonNull String method;
+
+  
+  public final @Nullable ByteBuffer body;
+
+  
+
+
+
+
+
+
+  public final @CacheMode int cacheMode;
+
+  
+  public final @Nullable String referrer;
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    CACHE_MODE_DEFAULT,
+    CACHE_MODE_NO_STORE,
+    CACHE_MODE_RELOAD,
+    CACHE_MODE_NO_CACHE,
+    CACHE_MODE_FORCE_CACHE,
+    CACHE_MODE_ONLY_IF_CACHED
+  })
+   @interface CacheMode {};
+
+  
+  public static final int CACHE_MODE_DEFAULT = 1;
+
+  
+
+
+
+  public static final int CACHE_MODE_NO_STORE = 2;
+
+  
+
+
+
+  public static final int CACHE_MODE_RELOAD = 3;
+
+  
+  public static final int CACHE_MODE_NO_CACHE = 4;
+
+  
+
+
+
+
+  public static final int CACHE_MODE_FORCE_CACHE = 5;
+
+  
+
+
+
+  public static final int CACHE_MODE_ONLY_IF_CACHED = 6;
+
+   static final int CACHE_MODE_FIRST = CACHE_MODE_DEFAULT;
+   static final int CACHE_MODE_LAST = CACHE_MODE_ONLY_IF_CACHED;
+
+  
+
+
+
+
+  public WebRequest(final @NonNull String uri) {
+    this(new Builder(uri));
+  }
+
+  
+   WebRequest(final @NonNull Builder builder) {
+    super(builder);
+    method = builder.mMethod;
+    cacheMode = builder.mCacheMode;
+    referrer = builder.mReferrer;
+
+    if (builder.mBody != null) {
+      body = builder.mBody.asReadOnlyBuffer();
+    } else {
+      body = null;
+    }
+  }
+
+  
+  @AnyThread
+  public static class Builder extends WebMessage.Builder {
+     String mMethod = "GET";
+     int mCacheMode = CACHE_MODE_DEFAULT;
+     String mReferrer;
+
     
 
 
-    public final @NonNull String method;
-
-    
 
 
+    public Builder(final @NonNull String uri) {
+      super(uri);
+    }
 
-    public final @Nullable ByteBuffer body;
+    @Override
+    public @NonNull Builder uri(final @NonNull String uri) {
+      super.uri(uri);
+      return this;
+    }
 
-    
+    @Override
+    public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
+      super.header(key, value);
+      return this;
+    }
 
-
-
-
-
-    public final @CacheMode int cacheMode;
-
-    
-
-
-    public final @Nullable String referrer;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({CACHE_MODE_DEFAULT, CACHE_MODE_NO_STORE,
-            CACHE_MODE_RELOAD, CACHE_MODE_NO_CACHE,
-            CACHE_MODE_FORCE_CACHE, CACHE_MODE_ONLY_IF_CACHED})
-     @interface CacheMode {};
-
-    
-
-
-    public static final int CACHE_MODE_DEFAULT = 1;
-
-    
-
-
-
-    public static final int CACHE_MODE_NO_STORE = 2;
-
-    
-
-
-
-    public static final int CACHE_MODE_RELOAD = 3;
-
-    
-
-
-    public static final int CACHE_MODE_NO_CACHE = 4;
-
-    
-
-
-
-
-    public static final int CACHE_MODE_FORCE_CACHE = 5;
-
-    
-
-
-
-
-    public static final int CACHE_MODE_ONLY_IF_CACHED = 6;
-
-     static final int CACHE_MODE_FIRST = CACHE_MODE_DEFAULT;
-     static final int CACHE_MODE_LAST = CACHE_MODE_ONLY_IF_CACHED;
-
-    
-
-
-
-    public WebRequest(final @NonNull String uri) {
-        this(new Builder(uri));
+    @Override
+    public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
+      super.addHeader(key, value);
+      return this;
     }
 
     
 
 
-     WebRequest(final @NonNull Builder builder) {
-        super(builder);
-        method = builder.mMethod;
-        cacheMode = builder.mCacheMode;
-        referrer = builder.mReferrer;
 
-        if (builder.mBody != null) {
-            body = builder.mBody.asReadOnlyBuffer();
-        } else {
-            body = null;
-        }
+
+
+
+    public @NonNull Builder body(final @Nullable ByteBuffer buffer) {
+      if (buffer != null && !buffer.isDirect()) {
+        throw new IllegalArgumentException("body must be directly allocated");
+      }
+      mBody = buffer;
+      return this;
     }
 
     
 
 
-    @AnyThread
-    public static class Builder extends WebMessage.Builder {
-         String mMethod = "GET";
-         int mCacheMode = CACHE_MODE_DEFAULT;
-         String mReferrer;
-
-        
 
 
 
+    public @NonNull Builder body(final @Nullable String bodyString) {
+      if (bodyString == null) {
+        mBody = null;
+        return this;
+      }
+      final CharBuffer chars = CharBuffer.wrap(bodyString);
+      final ByteBuffer buffer = ByteBuffer.allocateDirect(bodyString.length());
+      Charset.forName("UTF-8").newEncoder().encode(chars, buffer, true);
 
-        public Builder(final @NonNull String uri) {
-            super(uri);
-        }
-
-        @Override
-        public @NonNull Builder uri(final @NonNull String uri) {
-            super.uri(uri);
-            return this;
-        }
-
-        @Override
-        public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
-            super.header(key, value);
-            return this;
-        }
-
-        @Override
-        public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
-            super.addHeader(key, value);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder body(final @Nullable ByteBuffer buffer) {
-            if (buffer != null && !buffer.isDirect()) {
-                throw new IllegalArgumentException("body must be directly allocated");
-            }
-            mBody = buffer;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder body(final @Nullable String bodyString) {
-            if (bodyString == null) {
-                mBody = null;
-                return this;
-            }
-            final CharBuffer chars = CharBuffer.wrap(bodyString);
-            final ByteBuffer buffer = ByteBuffer.allocateDirect(bodyString.length());
-            Charset.forName("UTF-8").newEncoder().encode(chars, buffer, true);
-
-            mBody = buffer;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder method(final @NonNull String method) {
-            mMethod = method;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder cacheMode(final @CacheMode int mode) {
-            if (mode < CACHE_MODE_FIRST || mode > CACHE_MODE_LAST) {
-                throw new IllegalArgumentException("Unknown cache mode");
-            }
-            mCacheMode = mode;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder referrer(final @Nullable String referrer) {
-            mReferrer = referrer;
-            return this;
-        }
-
-        
-
-
-        public @NonNull WebRequest build() {
-            if (mUri == null) {
-                throw new IllegalStateException("Must set URI");
-            }
-            return new WebRequest(this);
-        }
+      mBody = buffer;
+      return this;
     }
+
+    
+
+
+
+
+
+    public @NonNull Builder method(final @NonNull String method) {
+      mMethod = method;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder cacheMode(final @CacheMode int mode) {
+      if (mode < CACHE_MODE_FIRST || mode > CACHE_MODE_LAST) {
+        throw new IllegalArgumentException("Unknown cache mode");
+      }
+      mCacheMode = mode;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder referrer(final @Nullable String referrer) {
+      mReferrer = referrer;
+      return this;
+    }
+
+    
+    public @NonNull WebRequest build() {
+      if (mUri == null) {
+        throw new IllegalStateException("Must set URI");
+      }
+      return new WebRequest(this);
+    }
+  }
 }

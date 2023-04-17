@@ -5,134 +5,129 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.annotation.RobocopTarget;
-import org.mozilla.gecko.util.ThreadUtils;
-
 import android.graphics.Color;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.util.ThreadUtils;
 
 @UiThread
 public final class CompositorController {
-    private final GeckoSession.Compositor mCompositor;
+  private final GeckoSession.Compositor mCompositor;
 
-    private List<Runnable> mDrawCallbacks;
-    private int mDefaultClearColor = Color.WHITE;
-    private Runnable mFirstPaintCallback;
+  private List<Runnable> mDrawCallbacks;
+  private int mDefaultClearColor = Color.WHITE;
+  private Runnable mFirstPaintCallback;
 
-     CompositorController(final GeckoSession session) {
-        mCompositor = session.mCompositor;
+   CompositorController(final GeckoSession session) {
+    mCompositor = session.mCompositor;
+  }
+
+   void onCompositorReady() {
+    mCompositor.setDefaultClearColor(mDefaultClearColor);
+    mCompositor.enableLayerUpdateNotifications(mDrawCallbacks != null && !mDrawCallbacks.isEmpty());
+  }
+
+   void onCompositorDetached() {
+    if (mDrawCallbacks != null) {
+      mDrawCallbacks.clear();
+    }
+  }
+
+   void notifyDrawCallbacks() {
+    if (mDrawCallbacks != null) {
+      for (final Runnable callback : mDrawCallbacks) {
+        callback.run();
+      }
+    }
+  }
+
+  
+
+
+
+
+  @RobocopTarget
+  public void addDrawCallback(final @NonNull Runnable callback) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mDrawCallbacks == null) {
+      mDrawCallbacks = new ArrayList<Runnable>(2);
     }
 
-     void onCompositorReady() {
-        mCompositor.setDefaultClearColor(mDefaultClearColor);
-        mCompositor.enableLayerUpdateNotifications(
-                mDrawCallbacks != null && !mDrawCallbacks.isEmpty());
+    if (mDrawCallbacks.add(callback) && mDrawCallbacks.size() == 1 && mCompositor.isReady()) {
+      mCompositor.enableLayerUpdateNotifications(true);
+    }
+  }
+
+  
+
+
+
+
+  @RobocopTarget
+  public void removeDrawCallback(final @NonNull Runnable callback) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mDrawCallbacks == null) {
+      return;
     }
 
-     void onCompositorDetached() {
-        if (mDrawCallbacks != null) {
-            mDrawCallbacks.clear();
-        }
+    if (mDrawCallbacks.remove(callback) && mDrawCallbacks.isEmpty() && mCompositor.isReady()) {
+      mCompositor.enableLayerUpdateNotifications(false);
     }
+  }
 
-     void notifyDrawCallbacks() {
-        if (mDrawCallbacks != null) {
-            for (final Runnable callback : mDrawCallbacks) {
-                callback.run();
-            }
-        }
+  
+
+
+
+
+  public int getClearColor() {
+    ThreadUtils.assertOnUiThread();
+    return mDefaultClearColor;
+  }
+
+  
+
+
+
+
+  public void setClearColor(final int color) {
+    ThreadUtils.assertOnUiThread();
+
+    mDefaultClearColor = color;
+    if (mCompositor.isReady()) {
+      mCompositor.setDefaultClearColor(mDefaultClearColor);
     }
+  }
 
-    
+  
 
 
 
 
-    @RobocopTarget
-    public void addDrawCallback(final @NonNull Runnable callback) {
-        ThreadUtils.assertOnUiThread();
+  public @Nullable Runnable getFirstPaintCallback() {
+    ThreadUtils.assertOnUiThread();
+    return mFirstPaintCallback;
+  }
 
-        if (mDrawCallbacks == null) {
-            mDrawCallbacks = new ArrayList<Runnable>(2);
-        }
+  
 
-        if (mDrawCallbacks.add(callback) && mDrawCallbacks.size() == 1 &&
-                mCompositor.isReady()) {
-            mCompositor.enableLayerUpdateNotifications(true);
-        }
+
+
+
+  public void setFirstPaintCallback(final @Nullable Runnable callback) {
+    ThreadUtils.assertOnUiThread();
+    mFirstPaintCallback = callback;
+  }
+
+   void onFirstPaint() {
+    if (mFirstPaintCallback != null) {
+      mFirstPaintCallback.run();
     }
-
-    
-
-
-
-
-    @RobocopTarget
-    public void removeDrawCallback(final @NonNull Runnable callback) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mDrawCallbacks == null) {
-            return;
-        }
-
-        if (mDrawCallbacks.remove(callback) && mDrawCallbacks.isEmpty() &&
-                mCompositor.isReady()) {
-            mCompositor.enableLayerUpdateNotifications(false);
-        }
-    }
-
-    
-
-
-
-
-    public int getClearColor() {
-        ThreadUtils.assertOnUiThread();
-        return mDefaultClearColor;
-    }
-
-    
-
-
-
-
-    public void setClearColor(final int color) {
-        ThreadUtils.assertOnUiThread();
-
-        mDefaultClearColor = color;
-        if (mCompositor.isReady()) {
-            mCompositor.setDefaultClearColor(mDefaultClearColor);
-        }
-    }
-
-    
-
-
-
-
-    public @Nullable Runnable getFirstPaintCallback() {
-        ThreadUtils.assertOnUiThread();
-        return mFirstPaintCallback;
-    }
-
-    
-
-
-
-
-    public void setFirstPaintCallback(final @Nullable Runnable callback) {
-        ThreadUtils.assertOnUiThread();
-        mFirstPaintCallback = callback;
-    }
-
-     void onFirstPaint() {
-        if (mFirstPaintCallback != null) {
-            mFirstPaintCallback.run();
-        }
-    }
+  }
 }

@@ -6,19 +6,17 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
 import android.annotation.SuppressLint;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
-
 import java.io.ByteArrayInputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
@@ -26,385 +24,345 @@ import java.security.cert.X509Certificate;
 
 @AnyThread
 public class WebRequestError extends Exception {
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ERROR_CATEGORY_UNKNOWN, ERROR_CATEGORY_SECURITY,
-            ERROR_CATEGORY_NETWORK, ERROR_CATEGORY_CONTENT,
-            ERROR_CATEGORY_URI, ERROR_CATEGORY_PROXY,
-            ERROR_CATEGORY_SAFEBROWSING})
-     @interface ErrorCategory {}
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    ERROR_CATEGORY_UNKNOWN,
+    ERROR_CATEGORY_SECURITY,
+    ERROR_CATEGORY_NETWORK,
+    ERROR_CATEGORY_CONTENT,
+    ERROR_CATEGORY_URI,
+    ERROR_CATEGORY_PROXY,
+    ERROR_CATEGORY_SAFEBROWSING
+  })
+   @interface ErrorCategory {}
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ERROR_UNKNOWN, ERROR_SECURITY_SSL, ERROR_SECURITY_BAD_CERT,
-            ERROR_NET_RESET, ERROR_NET_INTERRUPT, ERROR_NET_TIMEOUT,
-            ERROR_CONNECTION_REFUSED, ERROR_UNKNOWN_PROTOCOL,
-            ERROR_UNKNOWN_HOST, ERROR_UNKNOWN_SOCKET_TYPE,
-            ERROR_UNKNOWN_PROXY_HOST, ERROR_MALFORMED_URI,
-            ERROR_REDIRECT_LOOP, ERROR_SAFEBROWSING_PHISHING_URI,
-            ERROR_SAFEBROWSING_MALWARE_URI, ERROR_SAFEBROWSING_UNWANTED_URI,
-            ERROR_SAFEBROWSING_HARMFUL_URI, ERROR_CONTENT_CRASHED,
-            ERROR_OFFLINE, ERROR_PORT_BLOCKED,
-            ERROR_PROXY_CONNECTION_REFUSED, ERROR_FILE_NOT_FOUND,
-            ERROR_FILE_ACCESS_DENIED, ERROR_INVALID_CONTENT_ENCODING,
-            ERROR_UNSAFE_CONTENT_TYPE, ERROR_CORRUPTED_CONTENT,
-            ERROR_DATA_URI_TOO_LONG, ERROR_HTTPS_ONLY})
-     @interface Error {}
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    ERROR_UNKNOWN,
+    ERROR_SECURITY_SSL,
+    ERROR_SECURITY_BAD_CERT,
+    ERROR_NET_RESET,
+    ERROR_NET_INTERRUPT,
+    ERROR_NET_TIMEOUT,
+    ERROR_CONNECTION_REFUSED,
+    ERROR_UNKNOWN_PROTOCOL,
+    ERROR_UNKNOWN_HOST,
+    ERROR_UNKNOWN_SOCKET_TYPE,
+    ERROR_UNKNOWN_PROXY_HOST,
+    ERROR_MALFORMED_URI,
+    ERROR_REDIRECT_LOOP,
+    ERROR_SAFEBROWSING_PHISHING_URI,
+    ERROR_SAFEBROWSING_MALWARE_URI,
+    ERROR_SAFEBROWSING_UNWANTED_URI,
+    ERROR_SAFEBROWSING_HARMFUL_URI,
+    ERROR_CONTENT_CRASHED,
+    ERROR_OFFLINE,
+    ERROR_PORT_BLOCKED,
+    ERROR_PROXY_CONNECTION_REFUSED,
+    ERROR_FILE_NOT_FOUND,
+    ERROR_FILE_ACCESS_DENIED,
+    ERROR_INVALID_CONTENT_ENCODING,
+    ERROR_UNSAFE_CONTENT_TYPE,
+    ERROR_CORRUPTED_CONTENT,
+    ERROR_DATA_URI_TOO_LONG,
+    ERROR_HTTPS_ONLY
+  })
+   @interface Error {}
 
-    
+  
 
 
 
-    public static final int ERROR_CATEGORY_UNKNOWN = 0x1;
+  public static final int ERROR_CATEGORY_UNKNOWN = 0x1;
 
-    
+  
+  public static final int ERROR_CATEGORY_SECURITY = 0x2;
 
+  
+  public static final int ERROR_CATEGORY_NETWORK = 0x3;
 
+  
+  public static final int ERROR_CATEGORY_CONTENT = 0x4;
 
-    public static final int ERROR_CATEGORY_SECURITY = 0x2;
+  public static final int ERROR_CATEGORY_URI = 0x5;
+  public static final int ERROR_CATEGORY_PROXY = 0x6;
+  public static final int ERROR_CATEGORY_SAFEBROWSING = 0x7;
 
-    
+  
+  public static final int ERROR_UNKNOWN = 0x11;
 
+  
+  
+  public static final int ERROR_SECURITY_SSL = 0x22;
 
+  
+  public static final int ERROR_SECURITY_BAD_CERT = 0x32;
 
-    public static final int ERROR_CATEGORY_NETWORK = 0x3;
+  
+  
+  public static final int ERROR_NET_INTERRUPT = 0x23;
 
-    
+  
+  public static final int ERROR_NET_TIMEOUT = 0x33;
 
+  
+  public static final int ERROR_CONNECTION_REFUSED = 0x43;
 
+  
+  public static final int ERROR_UNKNOWN_SOCKET_TYPE = 0x53;
 
-    public static final int ERROR_CATEGORY_CONTENT = 0x4;
-    public static final int ERROR_CATEGORY_URI = 0x5;
-    public static final int ERROR_CATEGORY_PROXY = 0x6;
-    public static final int ERROR_CATEGORY_SAFEBROWSING = 0x7;
+  
+  public static final int ERROR_REDIRECT_LOOP = 0x63;
 
-    
+  
+  public static final int ERROR_OFFLINE = 0x73;
 
+  
+  public static final int ERROR_PORT_BLOCKED = 0x83;
 
-    public static final int ERROR_UNKNOWN = 0x11;
+  
+  public static final int ERROR_NET_RESET = 0x93;
 
-    
-    
+  
 
 
-    public static final int ERROR_SECURITY_SSL = 0x22;
 
-    
 
 
 
-    public static final int ERROR_SECURITY_BAD_CERT = 0x32;
+  public static final int ERROR_HTTPS_ONLY = 0xA3;
 
-    
-    
+  
+  
+  public static final int ERROR_UNSAFE_CONTENT_TYPE = 0x24;
 
+  
+  public static final int ERROR_CORRUPTED_CONTENT = 0x34;
 
-    public static final int ERROR_NET_INTERRUPT = 0x23;
+  
+  public static final int ERROR_CONTENT_CRASHED = 0x44;
 
-    
+  
+  public static final int ERROR_INVALID_CONTENT_ENCODING = 0x54;
 
+  
+  
+  public static final int ERROR_UNKNOWN_HOST = 0x25;
 
-    public static final int ERROR_NET_TIMEOUT = 0x33;
+  
+  public static final int ERROR_MALFORMED_URI = 0x35;
 
-    
+  
+  public static final int ERROR_UNKNOWN_PROTOCOL = 0x45;
 
+  
+  public static final int ERROR_FILE_NOT_FOUND = 0x55;
 
-    public static final int ERROR_CONNECTION_REFUSED = 0x43;
+  
+  public static final int ERROR_FILE_ACCESS_DENIED = 0x65;
 
-    
+  
+  public static final int ERROR_DATA_URI_TOO_LONG = 0x75;
 
+  
+  
+  public static final int ERROR_PROXY_CONNECTION_REFUSED = 0x26;
 
-    public static final int ERROR_UNKNOWN_SOCKET_TYPE = 0x53;
+  
+  public static final int ERROR_UNKNOWN_PROXY_HOST = 0x36;
 
-    
+  
+  
+  public static final int ERROR_SAFEBROWSING_MALWARE_URI = 0x27;
 
+  
+  public static final int ERROR_SAFEBROWSING_UNWANTED_URI = 0x37;
 
-    public static final int ERROR_REDIRECT_LOOP = 0x63;
+  
+  public static final int ERROR_SAFEBROWSING_HARMFUL_URI = 0x47;
 
-    
+  
+  public static final int ERROR_SAFEBROWSING_PHISHING_URI = 0x57;
 
+  
+  public final int code;
 
-    public static final int ERROR_OFFLINE = 0x73;
+  
+  public final int category;
 
-    
+  
 
 
-    public static final int ERROR_PORT_BLOCKED = 0x83;
 
-    
+  public final @Nullable X509Certificate certificate;
 
+  
 
-    public static final int ERROR_NET_RESET = 0x93;
 
-    
 
 
 
+  public WebRequestError(final @Error int code, final @ErrorCategory int category) {
+    this(code, category, null);
+  }
 
+  
 
 
-    public static final int ERROR_HTTPS_ONLY = 0xA3;
 
-    
-    
 
 
-    public static final int ERROR_UNSAFE_CONTENT_TYPE = 0x24;
 
-    
+  public WebRequestError(
+      final @Error int code, final @ErrorCategory int category, final X509Certificate certificate) {
+    super(String.format("Request failed, error=0x%x, category=0x%x", code, category));
+    this.code = code;
+    this.category = category;
+    this.certificate = certificate;
+  }
 
-
-    public static final int ERROR_CORRUPTED_CONTENT = 0x34;
-
-    
-
-
-    public static final int ERROR_CONTENT_CRASHED = 0x44;
-
-    
-
-
-    public static final int ERROR_INVALID_CONTENT_ENCODING = 0x54;
-
-    
-    
-
-
-    public static final int ERROR_UNKNOWN_HOST = 0x25;
-
-    
-
-
-    public static final int ERROR_MALFORMED_URI = 0x35;
-
-    
-
-
-    public static final int ERROR_UNKNOWN_PROTOCOL = 0x45;
-
-    
-
-
-    public static final int ERROR_FILE_NOT_FOUND = 0x55;
-
-    
-
-
-    public static final int ERROR_FILE_ACCESS_DENIED = 0x65;
-
-    
-
-
-    public static final int ERROR_DATA_URI_TOO_LONG = 0x75;
-
-    
-    
-
-
-    public static final int ERROR_PROXY_CONNECTION_REFUSED = 0x26;
-
-    
-
-
-    public static final int ERROR_UNKNOWN_PROXY_HOST = 0x36;
-
-    
-    
-
-
-    public static final int ERROR_SAFEBROWSING_MALWARE_URI = 0x27;
-
-    
-
-
-    public static final int ERROR_SAFEBROWSING_UNWANTED_URI = 0x37;
-
-    
-
-
-    public static final int ERROR_SAFEBROWSING_HARMFUL_URI = 0x47;
-
-    
-
-
-    public static final int ERROR_SAFEBROWSING_PHISHING_URI = 0x57;
-
-    
-
-
-    public final int code;
-
-    
-
-
-    public final int category;
-
-    
-
-
-
-    public final @Nullable X509Certificate certificate;
-
-    
-
-
-
-
-    public WebRequestError(final @Error int code, final @ErrorCategory int category) {
-        this(code, category, null);
+  @Override
+  public boolean equals(final Object other) {
+    if (other == null || !(other instanceof WebRequestError)) {
+      return false;
     }
 
+    final WebRequestError otherError = (WebRequestError) other;
+
     
+    return otherError.code == this.code && otherError.category == this.category;
+  }
 
+  @Override
+  public int hashCode() {
+    return (category << 16) + code;
+  }
 
-
-
-
-    public WebRequestError(final @Error int code, final @ErrorCategory int category, final X509Certificate certificate) {
-        super(String.format("Request failed, error=0x%x, category=0x%x", code, category));
-        this.code = code;
-        this.category = category;
-        this.certificate = certificate;
+  @WrapForJNI
+   static WebRequestError fromGeckoError(
+      final long geckoError,
+      final int geckoErrorModule,
+      final int geckoErrorClass,
+      final byte[] certificateBytes) {
+    final int code = convertGeckoError(geckoError, geckoErrorModule, geckoErrorClass);
+    final int category = getErrorCategory(geckoErrorModule, code);
+    X509Certificate certificate = null;
+    if (certificateBytes != null) {
+      try {
+        final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        certificate =
+            (X509Certificate)
+                factory.generateCertificate(new ByteArrayInputStream(certificateBytes));
+      } catch (final CertificateException e) {
+        throw new IllegalArgumentException("Unable to parse DER certificate");
+      }
     }
 
-    @Override
-    public boolean equals(final Object other) {
-        if (other == null || !(other instanceof WebRequestError)) {
-            return false;
-        }
+    return new WebRequestError(code, category, certificate);
+  }
 
-        final WebRequestError otherError = (WebRequestError)other;
+  @SuppressLint("WrongConstant")
+  @WrapForJNI
+   static @ErrorCategory int getErrorCategory(
+      final long errorModule, final @Error int error) {
+    
+    if (errorModule == 21) {
+      return ERROR_CATEGORY_SECURITY;
+    }
+    return error & 0xF;
+  }
 
-        
-        return otherError.code == this.code &&
-                otherError.category == this.category;
+  @WrapForJNI
+   static @Error int convertGeckoError(
+      final long geckoError, final int geckoErrorModule, final int geckoErrorClass) {
+    
+    
+    if (geckoError == 0x805D001FL) {
+      return ERROR_SAFEBROWSING_PHISHING_URI;
+    }
+    if (geckoError == 0x805D001EL) {
+      return ERROR_SAFEBROWSING_MALWARE_URI;
+    }
+    if (geckoError == 0x805D0023L) {
+      return ERROR_SAFEBROWSING_UNWANTED_URI;
+    }
+    if (geckoError == 0x805D0026L) {
+      return ERROR_SAFEBROWSING_HARMFUL_URI;
+    }
+    
+    if (geckoError == 0x805E0010L) {
+      return ERROR_CONTENT_CRASHED;
+    }
+    if (geckoError == 0x804B001BL) {
+      return ERROR_INVALID_CONTENT_ENCODING;
+    }
+    if (geckoError == 0x804B004AL) {
+      return ERROR_UNSAFE_CONTENT_TYPE;
+    }
+    if (geckoError == 0x804B001DL) {
+      return ERROR_CORRUPTED_CONTENT;
+    }
+    
+    if (geckoError == 0x804B0014L) {
+      return ERROR_NET_RESET;
+    }
+    if (geckoError == 0x804B0047L) {
+      return ERROR_NET_INTERRUPT;
+    }
+    if (geckoError == 0x804B000EL) {
+      return ERROR_NET_TIMEOUT;
+    }
+    if (geckoError == 0x804B000DL) {
+      return ERROR_CONNECTION_REFUSED;
+    }
+    if (geckoError == 0x804B0033L) {
+      return ERROR_UNKNOWN_SOCKET_TYPE;
+    }
+    if (geckoError == 0x804B001FL) {
+      return ERROR_REDIRECT_LOOP;
+    }
+    if (geckoError == 0x804B0056L) {
+      return ERROR_HTTPS_ONLY;
+    }
+    if (geckoError == 0x804B0010L) {
+      return ERROR_OFFLINE;
+    }
+    if (geckoError == 0x804B0013L) {
+      return ERROR_PORT_BLOCKED;
+    }
+    
+    if (geckoError == 0x804B0012L) {
+      return ERROR_UNKNOWN_PROTOCOL;
+    }
+    if (geckoError == 0x804B001EL) {
+      return ERROR_UNKNOWN_HOST;
+    }
+    if (geckoError == 0x804B000AL) {
+      return ERROR_MALFORMED_URI;
+    }
+    if (geckoError == 0x80520012L) {
+      return ERROR_FILE_NOT_FOUND;
+    }
+    if (geckoError == 0x80520015L) {
+      return ERROR_FILE_ACCESS_DENIED;
+    }
+    
+    if (geckoError == 0x804B002AL) {
+      return ERROR_UNKNOWN_PROXY_HOST;
+    }
+    if (geckoError == 0x804B0048L) {
+      return ERROR_PROXY_CONNECTION_REFUSED;
     }
 
-    @Override
-    public int hashCode() {
-        return (category << 16) + code;
+    if (geckoErrorModule == 21) {
+      if (geckoErrorClass == 1) {
+        return ERROR_SECURITY_SSL;
+      }
+      if (geckoErrorClass == 2) {
+        return ERROR_SECURITY_BAD_CERT;
+      }
     }
 
-    @WrapForJNI
-     static WebRequestError fromGeckoError(final long geckoError,
-                                                        final int geckoErrorModule,
-                                                        final int geckoErrorClass,
-                                                        final byte[] certificateBytes) {
-        final int code = convertGeckoError(geckoError, geckoErrorModule, geckoErrorClass);
-        final int category = getErrorCategory(geckoErrorModule, code);
-        X509Certificate certificate = null;
-        if (certificateBytes != null) {
-            try {
-                final CertificateFactory factory = CertificateFactory.getInstance("X.509");
-                certificate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certificateBytes));
-            } catch (final CertificateException e) {
-                throw new IllegalArgumentException("Unable to parse DER certificate");
-            }
-        }
-
-        return new WebRequestError(code, category, certificate);
-    }
-
-    @SuppressLint("WrongConstant")
-    @WrapForJNI
-     static @ErrorCategory int getErrorCategory(
-            final long errorModule, final @Error int error) {
-        
-        if (errorModule == 21) {
-            return ERROR_CATEGORY_SECURITY;
-        }
-        return error & 0xF;
-    }
-
-    @WrapForJNI
-     static @Error int convertGeckoError(
-            final long geckoError, final int geckoErrorModule, final int geckoErrorClass) {
-        
-        
-        if (geckoError == 0x805D001FL) {
-            return ERROR_SAFEBROWSING_PHISHING_URI;
-        }
-        if (geckoError == 0x805D001EL) {
-            return ERROR_SAFEBROWSING_MALWARE_URI;
-        }
-        if (geckoError == 0x805D0023L) {
-            return ERROR_SAFEBROWSING_UNWANTED_URI;
-        }
-        if (geckoError == 0x805D0026L) {
-            return ERROR_SAFEBROWSING_HARMFUL_URI;
-        }
-        
-        if (geckoError == 0x805E0010L) {
-            return ERROR_CONTENT_CRASHED;
-        }
-        if (geckoError == 0x804B001BL) {
-            return ERROR_INVALID_CONTENT_ENCODING;
-        }
-        if (geckoError == 0x804B004AL) {
-            return ERROR_UNSAFE_CONTENT_TYPE;
-        }
-        if (geckoError == 0x804B001DL) {
-            return ERROR_CORRUPTED_CONTENT;
-        }
-        
-        if (geckoError == 0x804B0014L) {
-            return ERROR_NET_RESET;
-        }
-        if (geckoError == 0x804B0047L) {
-            return ERROR_NET_INTERRUPT;
-        }
-        if (geckoError == 0x804B000EL) {
-            return ERROR_NET_TIMEOUT;
-        }
-        if (geckoError == 0x804B000DL) {
-            return ERROR_CONNECTION_REFUSED;
-        }
-        if (geckoError == 0x804B0033L) {
-            return ERROR_UNKNOWN_SOCKET_TYPE;
-        }
-        if (geckoError == 0x804B001FL) {
-            return ERROR_REDIRECT_LOOP;
-        }
-        if (geckoError == 0x804B0056L) {
-            return ERROR_HTTPS_ONLY;
-        }
-        if (geckoError == 0x804B0010L) {
-            return ERROR_OFFLINE;
-        }
-        if (geckoError == 0x804B0013L) {
-            return ERROR_PORT_BLOCKED;
-        }
-        
-        if (geckoError == 0x804B0012L) {
-            return ERROR_UNKNOWN_PROTOCOL;
-        }
-        if (geckoError == 0x804B001EL) {
-            return ERROR_UNKNOWN_HOST;
-        }
-        if (geckoError == 0x804B000AL) {
-            return ERROR_MALFORMED_URI;
-        }
-        if (geckoError == 0x80520012L) {
-            return ERROR_FILE_NOT_FOUND;
-        }
-        if (geckoError == 0x80520015L) {
-            return ERROR_FILE_ACCESS_DENIED;
-        }
-        
-        if (geckoError == 0x804B002AL) {
-            return ERROR_UNKNOWN_PROXY_HOST;
-        }
-        if (geckoError == 0x804B0048L) {
-            return ERROR_PROXY_CONNECTION_REFUSED;
-        }
-
-        if (geckoErrorModule == 21) {
-            if (geckoErrorClass == 1) {
-                return ERROR_SECURITY_SSL;
-            }
-            if (geckoErrorClass == 2) {
-                return ERROR_SECURITY_BAD_CERT;
-            }
-        }
-
-        return ERROR_UNKNOWN;
-    }
+    return ERROR_UNKNOWN;
+  }
 }

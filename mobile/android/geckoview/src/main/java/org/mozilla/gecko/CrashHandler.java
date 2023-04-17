@@ -16,12 +16,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
-import org.json.JSONObject;
-import org.json.JSONException;
-
-import org.mozilla.geckoview.BuildConfig;
-import org.mozilla.geckoview.GeckoRuntime;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,485 +26,511 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.UUID;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mozilla.geckoview.BuildConfig;
+import org.mozilla.geckoview.GeckoRuntime;
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
-    private static final String LOGTAG = "GeckoCrashHandler";
-    private static final Thread MAIN_THREAD = Thread.currentThread();
-    private static final String DEFAULT_SERVER_URL =
-        "https://crash-reports.mozilla.com/submit?id=%1$s&version=%2$s&buildid=%3$s";
+  private static final String LOGTAG = "GeckoCrashHandler";
+  private static final Thread MAIN_THREAD = Thread.currentThread();
+  private static final String DEFAULT_SERVER_URL =
+      "https://crash-reports.mozilla.com/submit?id=%1$s&version=%2$s&buildid=%3$s";
+
+  
+  protected final Context appContext;
+  
+  protected final Thread handlerThread;
+  protected final Thread.UncaughtExceptionHandler systemUncaughtHandler;
+
+  protected boolean crashing;
+  protected boolean unregistered;
+
+  protected final Class<? extends Service> handlerService;
+
+  
+
+
+
+
+
+  public static Throwable getRootException(final Throwable exc) {
+    Throwable cause;
+    Throwable result = exc;
+    for (cause = exc; cause != null; cause = cause.getCause()) {
+      result = cause;
+    }
+
+    return result;
+  }
+
+  
+
+
+
+
+
+  public static String getExceptionStackTrace(final Throwable exc) {
+    final StringWriter sw = new StringWriter();
+    final PrintWriter pw = new PrintWriter(sw);
+    exc.printStackTrace(pw);
+    pw.flush();
+    return sw.toString();
+  }
+
+  
+  public static void terminateProcess() {
+    Process.killProcess(Process.myPid());
+  }
+
+  
+  public CrashHandler(final Class<? extends Service> handlerService) {
+    this((Context) null, handlerService);
+  }
+
+  
+
+
+
+
+  public CrashHandler(final Context appContext, final Class<? extends Service> handlerService) {
+    this.appContext = appContext;
+    this.handlerThread = null;
+    this.handlerService = handlerService;
+    this.systemUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler();
+    Thread.setDefaultUncaughtExceptionHandler(this);
+  }
+
+  
+
+
+
+
+  public CrashHandler(final Thread thread, final Class<? extends Service> handlerService) {
+    this(thread, null, handlerService);
+  }
+
+  
+
+
+
+
+
+  public CrashHandler(
+      final Thread thread,
+      final Context appContext,
+      final Class<? extends Service> handlerService) {
+    this.appContext = appContext;
+    this.handlerThread = thread;
+    this.handlerService = handlerService;
+    this.systemUncaughtHandler = thread.getUncaughtExceptionHandler();
+    thread.setUncaughtExceptionHandler(this);
+  }
+
+  
+  public void unregister() {
+    unregistered = true;
 
     
-    protected final Context appContext;
     
-    protected final Thread handlerThread;
-    protected final Thread.UncaughtExceptionHandler systemUncaughtHandler;
-
-    protected boolean crashing;
-    protected boolean unregistered;
-
-    protected final Class<? extends Service> handlerService;
-
     
 
+    if (handlerThread != null) {
+      if (handlerThread.getUncaughtExceptionHandler() == this) {
+        handlerThread.setUncaughtExceptionHandler(systemUncaughtHandler);
+      }
+    } else {
+      if (Thread.getDefaultUncaughtExceptionHandler() == this) {
+        Thread.setDefaultUncaughtExceptionHandler(systemUncaughtHandler);
+      }
+    }
+  }
+
+  
 
 
 
 
-    public static Throwable getRootException(final Throwable exc) {
-        Throwable cause;
-        Throwable result = exc;
-        for (cause = exc; cause != null; cause = cause.getCause()) {
-            result = cause;
+
+  public static void logException(final Thread thread, final Throwable exc) {
+    try {
+      Log.e(
+          LOGTAG,
+          ">>> REPORTING UNCAUGHT EXCEPTION FROM THREAD "
+              + thread.getId()
+              + " (\""
+              + thread.getName()
+              + "\")",
+          exc);
+
+      if (MAIN_THREAD != thread) {
+        Log.e(LOGTAG, "Main thread (" + MAIN_THREAD.getId() + ") stack:");
+        for (final StackTraceElement ste : MAIN_THREAD.getStackTrace()) {
+          Log.e(LOGTAG, "    " + ste.toString());
         }
+      }
+    } catch (final Throwable e) {
+      
+      
+    }
+  }
 
-        return result;
+  private static long getCrashTime() {
+    return System.currentTimeMillis() / 1000;
+  }
+
+  private static long getStartupTime() {
+    
+    final long uptimeMins = (new File("/proc/self/cmdline")).lastModified();
+    if (uptimeMins == 0L) {
+      return getCrashTime();
+    }
+    return uptimeMins / 1000;
+  }
+
+  private static String getJavaPackageName() {
+    return CrashHandler.class.getPackage().getName();
+  }
+
+  private static String getProcessName() {
+    try {
+      final FileReader reader = new FileReader("/proc/self/cmdline");
+      final char[] buffer = new char[64];
+      try {
+        if (reader.read(buffer) > 0) {
+          
+          final int nul = Arrays.asList(buffer).indexOf('\0');
+          return (new String(buffer, 0, nul < 0 ? buffer.length : nul)).trim();
+        }
+      } finally {
+        reader.close();
+      }
+    } catch (final IOException e) {
+    }
+
+    return null;
+  }
+
+  protected String getAppPackageName() {
+    final Context context = getAppContext();
+
+    if (context != null) {
+      return context.getPackageName();
     }
 
     
-
-
-
-
-
-    public static String getExceptionStackTrace(final Throwable exc) {
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw);
-        exc.printStackTrace(pw);
-        pw.flush();
-        return sw.toString();
+    final String processName = getProcessName();
+    if (processName != null) {
+      return processName;
     }
 
     
+    return getJavaPackageName();
+  }
+
+  protected Context getAppContext() {
+    return appContext;
+  }
+
+  
 
 
-    public static void terminateProcess() {
-        Process.killProcess(Process.myPid());
+
+
+
+
+  protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
+    final Context context = getAppContext();
+    final Bundle extras = new Bundle();
+    final String pkgName = getAppPackageName();
+
+    extras.putLong("CrashTime", getCrashTime());
+    extras.putLong("StartupTime", getStartupTime());
+    extras.putString("Android_ProcessName", getProcessName());
+    extras.putString("Android_PackageName", pkgName);
+
+    final String notes = GeckoAppShell.getAppNotes();
+    if (notes != null) {
+      extras.putString("Notes", notes);
     }
 
-    
-
-
-    public CrashHandler(final Class<? extends Service> handlerService) {
-        this((Context) null, handlerService);
+    if (context != null) {
+      final PackageManager pkgMgr = context.getPackageManager();
+      try {
+        final PackageInfo pkgInfo = pkgMgr.getPackageInfo(pkgName, 0);
+        extras.putString("Version", pkgInfo.versionName);
+        extras.putInt("BuildID", pkgInfo.versionCode);
+        extras.putLong("InstallTime", pkgInfo.lastUpdateTime / 1000);
+      } catch (final PackageManager.NameNotFoundException e) {
+        Log.i(LOGTAG, "Error getting package info", e);
+      }
     }
 
-    
+    extras.putString("JavaStackTrace", getExceptionStackTrace(exc));
+    return extras;
+  }
+
+  
 
 
 
 
-    public CrashHandler(final Context appContext, final Class<? extends Service> handlerService) {
-        this.appContext = appContext;
-        this.handlerThread = null;
-        this.handlerService = handlerService;
-        this.systemUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler();
-        Thread.setDefaultUncaughtExceptionHandler(this);
+
+
+  protected byte[] getCrashDump(final Thread thread, final Throwable exc) {
+    return new byte[0]; 
+  }
+
+  protected static String normalizeUrlString(final String str) {
+    if (str == null) {
+      return "";
     }
+    return Uri.encode(str);
+  }
 
-    
-
-
-
-
-    public CrashHandler(final Thread thread, final Class<? extends Service> handlerService) {
-        this(thread, null, handlerService);
-    }
-
-    
+  
 
 
 
 
+  protected String getServerUrl(final Bundle extras) {
+    return String.format(
+        DEFAULT_SERVER_URL,
+        normalizeUrlString(extras.getString("ProductID")),
+        normalizeUrlString(extras.getString("Version")),
+        normalizeUrlString(extras.getString("BuildID")));
+  }
 
-    public CrashHandler(final Thread thread, final Context appContext,
-                        final Class<? extends Service> handlerService) {
-        this.appContext = appContext;
-        this.handlerThread = thread;
-        this.handlerService = handlerService;
-        this.systemUncaughtHandler = thread.getUncaughtExceptionHandler();
-        thread.setUncaughtExceptionHandler(this);
-    }
-
-    
+  
 
 
-    public void unregister() {
-        unregistered = true;
 
-        
-        
-        
 
-        if (handlerThread != null) {
-            if (handlerThread.getUncaughtExceptionHandler() == this) {
-                handlerThread.setUncaughtExceptionHandler(systemUncaughtHandler);
-            }
+
+
+  protected boolean launchCrashReporter(final String dumpFile, final String extraFile) {
+    try {
+      final Context context = getAppContext();
+      final ProcessBuilder pb;
+
+      if (handlerService == null) {
+        Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
+        return false;
+      }
+
+      if (context != null) {
+        final Intent intent = new Intent(GeckoRuntime.ACTION_CRASHED);
+        intent.putExtra(GeckoRuntime.EXTRA_MINIDUMP_PATH, dumpFile);
+        intent.putExtra(GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile);
+        intent.putExtra(GeckoRuntime.EXTRA_CRASH_FATAL, true);
+        intent.setClass(context, handlerService);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          context.startForegroundService(intent);
         } else {
-            if (Thread.getDefaultUncaughtExceptionHandler() == this) {
-                Thread.setDefaultUncaughtExceptionHandler(systemUncaughtHandler);
-            }
-        }
-    }
-
-    
-
-
-
-
-
-    public static void logException(final Thread thread, final Throwable exc) {
-        try {
-            Log.e(LOGTAG, ">>> REPORTING UNCAUGHT EXCEPTION FROM THREAD "
-                          + thread.getId() + " (\"" + thread.getName() + "\")", exc);
-
-            if (MAIN_THREAD != thread) {
-                Log.e(LOGTAG, "Main thread (" + MAIN_THREAD.getId() + ") stack:");
-                for (final StackTraceElement ste : MAIN_THREAD.getStackTrace()) {
-                    Log.e(LOGTAG, "    " + ste.toString());
-                }
-            }
-        } catch (final Throwable e) {
-            
-            
-        }
-    }
-
-    private static long getCrashTime() {
-        return System.currentTimeMillis() / 1000;
-    }
-
-    private static long getStartupTime() {
-        
-        final long uptimeMins = (new File("/proc/self/cmdline")).lastModified();
-        if (uptimeMins == 0L) {
-            return getCrashTime();
-        }
-        return uptimeMins / 1000;
-    }
-
-    private static String getJavaPackageName() {
-        return CrashHandler.class.getPackage().getName();
-    }
-
-    private static String getProcessName() {
-        try {
-            final FileReader reader = new FileReader("/proc/self/cmdline");
-            final char[] buffer = new char[64];
-            try {
-                if (reader.read(buffer) > 0) {
-                    
-                    final int nul = Arrays.asList(buffer).indexOf('\0');
-                    return (new String(buffer, 0, nul < 0 ? buffer.length : nul)).trim();
-                }
-            } finally {
-                reader.close();
-            }
-        } catch (final IOException e) {
-        }
-
-        return null;
-    }
-
-    protected String getAppPackageName() {
-        final Context context = getAppContext();
-
-        if (context != null) {
-            return context.getPackageName();
-        }
-
-        
-        final String processName = getProcessName();
-        if (processName != null) {
-            return processName;
-        }
-
-        
-        return getJavaPackageName();
-    }
-
-    protected Context getAppContext() {
-        return appContext;
-    }
-
-    
-
-
-
-
-
-
-    protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
-        final Context context = getAppContext();
-        final Bundle extras = new Bundle();
-        final String pkgName = getAppPackageName();
-
-        extras.putLong("CrashTime", getCrashTime());
-        extras.putLong("StartupTime", getStartupTime());
-        extras.putString("Android_ProcessName", getProcessName());
-        extras.putString("Android_PackageName", pkgName);
-
-        final String notes = GeckoAppShell.getAppNotes();
-        if (notes != null) {
-            extras.putString("Notes", notes);
-        }
-
-        if (context != null) {
-            final PackageManager pkgMgr = context.getPackageManager();
-            try {
-                final PackageInfo pkgInfo = pkgMgr.getPackageInfo(pkgName, 0);
-                extras.putString("Version", pkgInfo.versionName);
-                extras.putInt("BuildID", pkgInfo.versionCode);
-                extras.putLong("InstallTime", pkgInfo.lastUpdateTime / 1000);
-            } catch (final PackageManager.NameNotFoundException e) {
-                Log.i(LOGTAG, "Error getting package info", e);
-            }
-        }
-
-        extras.putString("JavaStackTrace", getExceptionStackTrace(exc));
-        return extras;
-    }
-
-    
-
-
-
-
-
-
-    protected byte[] getCrashDump(final Thread thread, final Throwable exc) {
-        return new byte[0]; 
-    }
-
-    protected static String normalizeUrlString(final String str) {
-        if (str == null) {
-            return "";
-        }
-        return Uri.encode(str);
-    }
-
-    
-
-
-
-
-    protected String getServerUrl(final Bundle extras) {
-        return String.format(DEFAULT_SERVER_URL,
-            normalizeUrlString(extras.getString("ProductID")),
-            normalizeUrlString(extras.getString("Version")),
-            normalizeUrlString(extras.getString("BuildID")));
-    }
-
-    
-
-
-
-
-
-
-    protected boolean launchCrashReporter(final String dumpFile, final String extraFile) {
-        try {
-            final Context context = getAppContext();
-            final ProcessBuilder pb;
-
-            if (handlerService == null) {
-                Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
-                return false;
-            }
-
-            if (context != null) {
-                final Intent intent = new Intent(GeckoRuntime.ACTION_CRASHED);
-                intent.putExtra(GeckoRuntime.EXTRA_MINIDUMP_PATH, dumpFile);
-                intent.putExtra(GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile);
-                intent.putExtra(GeckoRuntime.EXTRA_CRASH_FATAL, true);
-                intent.setClass(context, handlerService);
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent);
-                } else {
-                    context.startService(intent);
-                }
-                return true;
-            }
-
-            final int deviceSdkVersion = Build.VERSION.SDK_INT;
-            if (deviceSdkVersion < 17) {
-                pb = new ProcessBuilder(
-                        "/system/bin/am",
-                        "startservice",
-                        "-a", GeckoRuntime.ACTION_CRASHED,
-                        "-n", getAppPackageName() + '/' + handlerService.getName(),
-                        "--es", GeckoRuntime.EXTRA_MINIDUMP_PATH, dumpFile,
-                        "--es", GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile,
-                        "--ez", GeckoRuntime.EXTRA_CRASH_FATAL, "true");
-            } else {
-                final String startServiceCommand;
-                if (deviceSdkVersion >= 26) {
-                    startServiceCommand = "start-foreground-service";
-                } else {
-                    startServiceCommand = "startservice";
-                }
-
-                pb = new ProcessBuilder(
-                        "/system/bin/am",
-                        startServiceCommand,
-                        "--user",  "-3",
-                        "-a", GeckoRuntime.ACTION_CRASHED,
-                        "-n", getAppPackageName() + '/' + handlerService.getName(),
-                        "--es", GeckoRuntime.EXTRA_MINIDUMP_PATH, dumpFile,
-                        "--es", GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile,
-                        "--ez", GeckoRuntime.EXTRA_CRASH_FATAL, "true");
-            }
-
-            pb.start().waitFor();
-
-        } catch (final IOException e) {
-            Log.e(LOGTAG, "Error launching crash reporter", e);
-            return false;
-
-        } catch (final InterruptedException e) {
-            Log.i(LOGTAG, "Interrupted while waiting to launch crash reporter", e);
-            
+          context.startService(intent);
         }
         return true;
-    }
+      }
 
-    
-
-
-
-
-
-
-    @SuppressLint("SdCardPath")
-    protected boolean reportException(final Thread thread, final Throwable exc) {
-        final Context context = getAppContext();
-        final String id = UUID.randomUUID().toString();
-
-        
-        final File dir;
-        if (context != null) {
-            dir = context.getCacheDir();
+      final int deviceSdkVersion = Build.VERSION.SDK_INT;
+      if (deviceSdkVersion < 17) {
+        pb =
+            new ProcessBuilder(
+                "/system/bin/am",
+                "startservice",
+                "-a",
+                GeckoRuntime.ACTION_CRASHED,
+                "-n",
+                getAppPackageName() + '/' + handlerService.getName(),
+                "--es",
+                GeckoRuntime.EXTRA_MINIDUMP_PATH,
+                dumpFile,
+                "--es",
+                GeckoRuntime.EXTRA_EXTRAS_PATH,
+                extraFile,
+                "--ez",
+                GeckoRuntime.EXTRA_CRASH_FATAL,
+                "true");
+      } else {
+        final String startServiceCommand;
+        if (deviceSdkVersion >= 26) {
+          startServiceCommand = "start-foreground-service";
         } else {
-            dir = new File("/data/data/" + getAppPackageName() + "/cache");
+          startServiceCommand = "startservice";
         }
 
-        dir.mkdirs();
-        if (!dir.exists()) {
-            return false;
-        }
+        pb =
+            new ProcessBuilder(
+                "/system/bin/am",
+                startServiceCommand,
+                "--user", 
+                "-3",
+                "-a",
+                GeckoRuntime.ACTION_CRASHED,
+                "-n",
+                getAppPackageName() + '/' + handlerService.getName(),
+                "--es",
+                GeckoRuntime.EXTRA_MINIDUMP_PATH,
+                dumpFile,
+                "--es",
+                GeckoRuntime.EXTRA_EXTRAS_PATH,
+                extraFile,
+                "--ez",
+                GeckoRuntime.EXTRA_CRASH_FATAL,
+                "true");
+      }
 
-        final File dmpFile = new File(dir, id + ".dmp");
-        final File extraFile = new File(dir, id + ".extra");
+      pb.start().waitFor();
 
-        try {
-            
+    } catch (final IOException e) {
+      Log.e(LOGTAG, "Error launching crash reporter", e);
+      return false;
 
-            final byte[] minidump = getCrashDump(thread, exc);
-            final FileOutputStream dmpStream = new FileOutputStream(dmpFile);
-            try {
-                dmpStream.write(minidump);
-            } finally {
-                dmpStream.close();
-            }
-
-        } catch (final IOException e) {
-            Log.e(LOGTAG, "Error writing minidump file", e);
-            return false;
-        }
-
-        try {
-            
-
-            final Bundle extras = getCrashExtras(thread, exc);
-            final String url = getServerUrl(extras);
-            extras.putString("ServerURL", url);
-
-            final JSONObject json = new JSONObject();
-            for (final String key : extras.keySet()) {
-                json.put(key, extras.get(key));
-            }
-
-            final BufferedWriter extraWriter = new BufferedWriter(new FileWriter(extraFile));
-            try {
-                extraWriter.write(json.toString());
-            } finally {
-                extraWriter.close();
-            }
-        } catch (final IOException | JSONException e) {
-            Log.e(LOGTAG, "Error writing extra file", e);
-            return false;
-        }
-
-        return launchCrashReporter(dmpFile.getAbsolutePath(), extraFile.getAbsolutePath());
+    } catch (final InterruptedException e) {
+      Log.i(LOGTAG, "Interrupted while waiting to launch crash reporter", e);
+      
     }
+    return true;
+  }
+
+  
+
+
+
+
+
+
+  @SuppressLint("SdCardPath")
+  protected boolean reportException(final Thread thread, final Throwable exc) {
+    final Context context = getAppContext();
+    final String id = UUID.randomUUID().toString();
 
     
-
-
-
-
-
-    @Override
-    public void uncaughtException(final Thread thread, final Throwable exc) {
-        if (this.crashing) {
-            
-            return;
-        }
-
-        Thread resolvedThread = thread;
-        if (resolvedThread == null) {
-            
-            resolvedThread = Thread.currentThread();
-        }
-
-        try {
-            Throwable rootException = exc;
-            if (!this.unregistered) {
-                
-
-                this.crashing = true;
-                rootException = getRootException(exc);
-                logException(resolvedThread, rootException);
-
-                if (reportException(resolvedThread, rootException)) {
-                    
-                    return;
-                }
-            }
-
-            if (systemUncaughtHandler != null) {
-                
-                systemUncaughtHandler.uncaughtException(resolvedThread, rootException);
-            }
-        } finally {
-            terminateProcess();
-        }
+    final File dir;
+    if (context != null) {
+      dir = context.getCacheDir();
+    } else {
+      dir = new File("/data/data/" + getAppPackageName() + "/cache");
     }
 
-    public static CrashHandler createDefaultCrashHandler(final Context context) {
-        return new CrashHandler(context, null) {
-            @Override
-            protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
-                final Bundle extras = super.getCrashExtras(thread, exc);
-
-                extras.putString("ProductName", BuildConfig.MOZ_APP_BASENAME);
-                extras.putString("ProductID", BuildConfig.MOZ_APP_ID);
-                extras.putString("Version", BuildConfig.MOZ_APP_VERSION);
-                extras.putString("BuildID", BuildConfig.MOZ_APP_BUILDID);
-                extras.putString("Vendor", BuildConfig.MOZ_APP_VENDOR);
-                extras.putString("ReleaseChannel", BuildConfig.MOZ_UPDATE_CHANNEL);
-                return extras;
-            }
-
-            @Override
-            public boolean reportException(final Thread thread, final Throwable exc) {
-                if (BuildConfig.MOZ_CRASHREPORTER && BuildConfig.MOZILLA_OFFICIAL) {
-                    
-                    return super.reportException(thread, exc);
-                }
-                return false;
-            }
-        };
+    dir.mkdirs();
+    if (!dir.exists()) {
+      return false;
     }
+
+    final File dmpFile = new File(dir, id + ".dmp");
+    final File extraFile = new File(dir, id + ".extra");
+
+    try {
+      
+
+      final byte[] minidump = getCrashDump(thread, exc);
+      final FileOutputStream dmpStream = new FileOutputStream(dmpFile);
+      try {
+        dmpStream.write(minidump);
+      } finally {
+        dmpStream.close();
+      }
+
+    } catch (final IOException e) {
+      Log.e(LOGTAG, "Error writing minidump file", e);
+      return false;
+    }
+
+    try {
+      
+
+      final Bundle extras = getCrashExtras(thread, exc);
+      final String url = getServerUrl(extras);
+      extras.putString("ServerURL", url);
+
+      final JSONObject json = new JSONObject();
+      for (final String key : extras.keySet()) {
+        json.put(key, extras.get(key));
+      }
+
+      final BufferedWriter extraWriter = new BufferedWriter(new FileWriter(extraFile));
+      try {
+        extraWriter.write(json.toString());
+      } finally {
+        extraWriter.close();
+      }
+    } catch (final IOException | JSONException e) {
+      Log.e(LOGTAG, "Error writing extra file", e);
+      return false;
+    }
+
+    return launchCrashReporter(dmpFile.getAbsolutePath(), extraFile.getAbsolutePath());
+  }
+
+  
+
+
+
+
+
+  @Override
+  public void uncaughtException(final Thread thread, final Throwable exc) {
+    if (this.crashing) {
+      
+      return;
+    }
+
+    Thread resolvedThread = thread;
+    if (resolvedThread == null) {
+      
+      resolvedThread = Thread.currentThread();
+    }
+
+    try {
+      Throwable rootException = exc;
+      if (!this.unregistered) {
+        
+
+        this.crashing = true;
+        rootException = getRootException(exc);
+        logException(resolvedThread, rootException);
+
+        if (reportException(resolvedThread, rootException)) {
+          
+          return;
+        }
+      }
+
+      if (systemUncaughtHandler != null) {
+        
+        systemUncaughtHandler.uncaughtException(resolvedThread, rootException);
+      }
+    } finally {
+      terminateProcess();
+    }
+  }
+
+  public static CrashHandler createDefaultCrashHandler(final Context context) {
+    return new CrashHandler(context, null) {
+      @Override
+      protected Bundle getCrashExtras(final Thread thread, final Throwable exc) {
+        final Bundle extras = super.getCrashExtras(thread, exc);
+
+        extras.putString("ProductName", BuildConfig.MOZ_APP_BASENAME);
+        extras.putString("ProductID", BuildConfig.MOZ_APP_ID);
+        extras.putString("Version", BuildConfig.MOZ_APP_VERSION);
+        extras.putString("BuildID", BuildConfig.MOZ_APP_BUILDID);
+        extras.putString("Vendor", BuildConfig.MOZ_APP_VENDOR);
+        extras.putString("ReleaseChannel", BuildConfig.MOZ_UPDATE_CHANNEL);
+        return extras;
+      }
+
+      @Override
+      public boolean reportException(final Thread thread, final Throwable exc) {
+        if (BuildConfig.MOZ_CRASHREPORTER && BuildConfig.MOZILLA_OFFICIAL) {
+          
+          return super.reportException(thread, exc);
+        }
+        return false;
+      }
+    };
+  }
 }

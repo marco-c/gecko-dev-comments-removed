@@ -6,15 +6,15 @@ package org.mozilla.gecko.mozglue;
 
 
 public abstract class JNIObject {
-    
-    
-    private volatile long mHandle;
+  
+  
+  private volatile long mHandle;
 
-    
-    
-    
-    
-    
-    
-    protected abstract void disposeNative();
+  
+  
+  
+  
+  
+  
+  protected abstract void disposeNative();
 }

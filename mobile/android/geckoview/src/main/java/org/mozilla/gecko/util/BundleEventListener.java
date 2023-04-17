@@ -9,7 +9,7 @@ import org.mozilla.gecko.annotation.RobocopTarget;
 
 @RobocopTarget
 public interface BundleEventListener {
-    
+  
 
 
 
@@ -17,6 +17,5 @@ public interface BundleEventListener {
 
 
 
-
-    void handleMessage(String event, GeckoBundle message, EventCallback callback);
+  void handleMessage(String event, GeckoBundle message, EventCallback callback);
 }

@@ -4,10 +4,8 @@
 package org.mozilla.geckoview.test.rule;
 
 
-
-
 public class TestHarnessException extends RuntimeException {
-    public TestHarnessException(final Throwable cause) {
-        super(cause);
-    }
+  public TestHarnessException(final Throwable cause) {
+    super(cause);
+  }
 }

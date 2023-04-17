@@ -10,72 +10,73 @@ import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import androidx.annotation.RequiresApi;
 import android.view.Choreographer;
 import android.view.Display;
-import org.mozilla.gecko.annotation.WrapForJNI;
+import androidx.annotation.RequiresApi;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
-
-
 
 
 @WrapForJNI
  final class AndroidVsync extends JNIObject implements Choreographer.FrameCallback {
-    @WrapForJNI @Override 
-    protected native void disposeNative();
+  @WrapForJNI
+  @Override 
+  protected native void disposeNative();
 
-    private static final String LOGTAG = "AndroidVsync";
+  private static final String LOGTAG = "AndroidVsync";
 
-     Choreographer mChoreographer;
-    private volatile boolean mObservingVsync;
+   Choreographer mChoreographer;
+  private volatile boolean mObservingVsync;
 
-    public AndroidVsync() {
-        final Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mChoreographer = Choreographer.getInstance();
-                if (mObservingVsync) {
-                    mChoreographer.postFrameCallback(AndroidVsync.this);
-                }
+  public AndroidVsync() {
+    final Handler mainHandler = new Handler(Looper.getMainLooper());
+    mainHandler.post(
+        new Runnable() {
+          @Override
+          public void run() {
+            mChoreographer = Choreographer.getInstance();
+            if (mObservingVsync) {
+              mChoreographer.postFrameCallback(AndroidVsync.this);
             }
+          }
         });
+  }
+
+  @WrapForJNI(stubName = "NotifyVsync")
+  private native void nativeNotifyVsync(final long frameTimeNanos);
+
+  
+  public void doFrame(final long frameTimeNanos) {
+    if (mObservingVsync) {
+      mChoreographer.postFrameCallback(this);
+      nativeNotifyVsync(frameTimeNanos);
     }
+  }
 
-    @WrapForJNI(stubName = "NotifyVsync")
-    private native void nativeNotifyVsync(final long frameTimeNanos);
+  
 
-    
-    public void doFrame(final long frameTimeNanos) {
-        if (mObservingVsync) {
-            mChoreographer.postFrameCallback(this);
-            nativeNotifyVsync(frameTimeNanos);
+
+
+
+
+  @WrapForJNI
+  public synchronized boolean observeVsync(final boolean enable) {
+    if (mObservingVsync != enable) {
+      mObservingVsync = enable;
+
+      if (mChoreographer != null) {
+        if (enable) {
+          mChoreographer.postFrameCallback(this);
+        } else {
+          mChoreographer.removeFrameCallback(this);
         }
+      }
     }
+    return mObservingVsync;
+  }
 
-    
-
-
-
-
-    @WrapForJNI
-    public synchronized boolean observeVsync(final boolean enable) {
-        if (mObservingVsync != enable) {
-            mObservingVsync = enable;
-
-            if (mChoreographer != null) {
-                if (enable) {
-                    mChoreographer.postFrameCallback(this);
-                } else {
-                    mChoreographer.removeFrameCallback(this);
-                }
-            }
-        }
-        return mObservingVsync;
-    }
-
-    
+  
 
 
 
@@ -83,11 +84,12 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    @WrapForJNI
-    public float getRefreshRate() {
-        final DisplayManager dm = (DisplayManager)
+  @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+  @WrapForJNI
+  public float getRefreshRate() {
+    final DisplayManager dm =
+        (DisplayManager)
             GeckoAppShell.getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
-        return dm.getDisplay(Display.DEFAULT_DISPLAY).getRefreshRate();
-    }
+    return dm.getDisplay(Display.DEFAULT_DISPLAY).getRefreshRate();
+  }
 }

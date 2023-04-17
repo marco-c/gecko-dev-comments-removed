@@ -6,12 +6,10 @@ package org.mozilla.geckoview;
 
 import org.mozilla.gecko.util.EventCallback;
 
- abstract class CallbackResult<T> extends GeckoResult<T>
-        implements EventCallback {
-    @Override
-    public void sendError(final Object response) {
-        completeExceptionally(response != null ?
-                new Exception(response.toString()) :
-                new UnknownError());
-    }
+ abstract class CallbackResult<T> extends GeckoResult<T> implements EventCallback {
+  @Override
+  public void sendError(final Object response) {
+    completeExceptionally(
+        response != null ? new Exception(response.toString()) : new UnknownError());
+  }
 }

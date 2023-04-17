@@ -6,6 +6,10 @@
 
 package org.mozilla.geckoview;
 
+import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.util.BundleEventListener;
@@ -13,141 +17,149 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-import android.util.Log;
-
 public class WebPushController {
-    private static final String LOGTAG = "WebPushController";
+  private static final String LOGTAG = "WebPushController";
 
-    private WebPushDelegate mDelegate;
-    private BundleEventListener mEventListener;
+  private WebPushDelegate mDelegate;
+  private BundleEventListener mEventListener;
 
-     WebPushController() {
-        mEventListener = new EventListener();
-        EventDispatcher.getInstance().registerUiThreadListener(mEventListener,
-                "GeckoView:PushSubscribe",
-                "GeckoView:PushUnsubscribe",
-                "GeckoView:PushGetSubscription");
-    }
+   WebPushController() {
+    mEventListener = new EventListener();
+    EventDispatcher.getInstance()
+        .registerUiThreadListener(
+            mEventListener,
+            "GeckoView:PushSubscribe",
+            "GeckoView:PushUnsubscribe",
+            "GeckoView:PushGetSubscription");
+  }
 
-    
-
-
-
-
-    @UiThread
-    public void setDelegate(final @Nullable WebPushDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mDelegate = delegate;
-    }
-
-    
+  
 
 
 
 
-    @UiThread
-    @Nullable
-    public WebPushDelegate getDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mDelegate;
-    }
+  @UiThread
+  public void setDelegate(final @Nullable WebPushDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mDelegate = delegate;
+  }
 
-    
-
-
-
-
-    @UiThread
-    public void onPushEvent(final @NonNull String scope) {
-        ThreadUtils.assertOnUiThread();
-        onPushEvent(scope, null);
-    }
-
-    
+  
 
 
 
 
-    @UiThread
-    public void onPushEvent(final @NonNull String scope, final @Nullable byte[] data) {
-        ThreadUtils.assertOnUiThread();
+  @UiThread
+  @Nullable
+  public WebPushDelegate getDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mDelegate;
+  }
 
-        GeckoThread.waitForState(GeckoThread.State.JNI_READY).accept(val -> {
-            final GeckoBundle msg = new GeckoBundle(2);
-            msg.putString("scope", scope);
-            msg.putString("data", Base64Utils.encode(data));
-            EventDispatcher.getInstance().dispatch("GeckoView:PushEvent", msg);
-        }, e -> Log.e(LOGTAG, "Unable to deliver Web Push message", e));
-    }
+  
 
-    
+
+
+
+  @UiThread
+  public void onPushEvent(final @NonNull String scope) {
+    ThreadUtils.assertOnUiThread();
+    onPushEvent(scope, null);
+  }
+
+  
 
 
 
 
 
-    @UiThread
-    public void onSubscriptionChanged(final @NonNull String scope) {
-        ThreadUtils.assertOnUiThread();
+  @UiThread
+  public void onPushEvent(final @NonNull String scope, final @Nullable byte[] data) {
+    ThreadUtils.assertOnUiThread();
 
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putString("scope", scope);
-        EventDispatcher.getInstance().dispatch("GeckoView:PushSubscriptionChanged", msg);
-    }
+    GeckoThread.waitForState(GeckoThread.State.JNI_READY)
+        .accept(
+            val -> {
+              final GeckoBundle msg = new GeckoBundle(2);
+              msg.putString("scope", scope);
+              msg.putString("data", Base64Utils.encode(data));
+              EventDispatcher.getInstance().dispatch("GeckoView:PushEvent", msg);
+            },
+            e -> Log.e(LOGTAG, "Unable to deliver Web Push message", e));
+  }
 
-    private class EventListener implements BundleEventListener {
+  
 
-        @Override
-        public void handleMessage(final String event, final GeckoBundle message, final EventCallback callback) {
-            if (mDelegate == null) {
-                callback.sendError("Not allowed");
-                return;
+
+
+
+
+  @UiThread
+  public void onSubscriptionChanged(final @NonNull String scope) {
+    ThreadUtils.assertOnUiThread();
+
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putString("scope", scope);
+    EventDispatcher.getInstance().dispatch("GeckoView:PushSubscriptionChanged", msg);
+  }
+
+  private class EventListener implements BundleEventListener {
+
+    @Override
+    public void handleMessage(
+        final String event, final GeckoBundle message, final EventCallback callback) {
+      if (mDelegate == null) {
+        callback.sendError("Not allowed");
+        return;
+      }
+
+      switch (event) {
+        case "GeckoView:PushSubscribe":
+          {
+            byte[] appServerKey = null;
+            if (message.containsKey("appServerKey")) {
+              appServerKey = Base64Utils.decode(message.getString("appServerKey"));
             }
 
-            switch (event) {
-                case "GeckoView:PushSubscribe": {
-                    byte[] appServerKey = null;
-                    if (message.containsKey("appServerKey")) {
-                        appServerKey = Base64Utils.decode(message.getString("appServerKey"));
-                    }
+            final GeckoResult<WebPushSubscription> result =
+                mDelegate.onSubscribe(message.getString("scope"), appServerKey);
 
-                    final GeckoResult<WebPushSubscription> result =
-                            mDelegate.onSubscribe(message.getString("scope"), appServerKey);
-
-                    if (result == null) {
-                        callback.sendSuccess(null);
-                        return;
-                    }
-
-                    result.accept(subscription -> callback.sendSuccess(subscription != null ? subscription.toBundle() : null),
-                        error -> callback.sendSuccess(null));
-                    break;
-                }
-                case "GeckoView:PushUnsubscribe": {
-                    final GeckoResult<Void> result = mDelegate.onUnsubscribe(message.getString("scope"));
-                    if (result == null) {
-                        callback.sendSuccess(null);
-                        return;
-                    }
-
-                    callback.resolveTo(result.map(val -> null));
-                    break;
-                }
-                case "GeckoView:PushGetSubscription": {
-                    final GeckoResult<WebPushSubscription> result = mDelegate.onGetSubscription(message.getString("scope"));
-                    if (result == null) {
-                        callback.sendSuccess(null);
-                        return;
-                    }
-
-                    callback.resolveTo(result.map(subscription ->
-                            subscription != null ? subscription.toBundle() : null));
-                    break;
-                }
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
             }
-        }
+
+            result.accept(
+                subscription ->
+                    callback.sendSuccess(subscription != null ? subscription.toBundle() : null),
+                error -> callback.sendSuccess(null));
+            break;
+          }
+        case "GeckoView:PushUnsubscribe":
+          {
+            final GeckoResult<Void> result = mDelegate.onUnsubscribe(message.getString("scope"));
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
+            }
+
+            callback.resolveTo(result.map(val -> null));
+            break;
+          }
+        case "GeckoView:PushGetSubscription":
+          {
+            final GeckoResult<WebPushSubscription> result =
+                mDelegate.onGetSubscription(message.getString("scope"));
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
+            }
+
+            callback.resolveTo(
+                result.map(subscription -> subscription != null ? subscription.toBundle() : null));
+            break;
+          }
+      }
     }
+  }
 }

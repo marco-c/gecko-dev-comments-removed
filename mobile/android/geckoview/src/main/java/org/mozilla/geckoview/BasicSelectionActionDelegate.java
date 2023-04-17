@@ -16,16 +16,15 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.os.TransactionTooLargeException;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import org.mozilla.gecko.util.ThreadUtils;
 
 
@@ -43,422 +42,418 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 
+
 @UiThread
-public class BasicSelectionActionDelegate implements ActionMode.Callback,
-                                                     GeckoSession.SelectionActionDelegate {
-    private static final String LOGTAG = "BasicSelectionAction";
+public class BasicSelectionActionDelegate
+    implements ActionMode.Callback, GeckoSession.SelectionActionDelegate {
+  private static final String LOGTAG = "BasicSelectionAction";
 
-    protected static final String ACTION_PROCESS_TEXT = Intent.ACTION_PROCESS_TEXT;
+  protected static final String ACTION_PROCESS_TEXT = Intent.ACTION_PROCESS_TEXT;
 
-    private static final String[] FLOATING_TOOLBAR_ACTIONS = new String[] {
-        ACTION_CUT, ACTION_COPY, ACTION_PASTE, ACTION_SELECT_ALL, ACTION_PROCESS_TEXT
-    };
-    private static final String[] FIXED_TOOLBAR_ACTIONS = new String[] {
-        ACTION_SELECT_ALL, ACTION_CUT, ACTION_COPY, ACTION_PASTE
-    };
+  private static final String[] FLOATING_TOOLBAR_ACTIONS =
+      new String[] {ACTION_CUT, ACTION_COPY, ACTION_PASTE, ACTION_SELECT_ALL, ACTION_PROCESS_TEXT};
+  private static final String[] FIXED_TOOLBAR_ACTIONS =
+      new String[] {ACTION_SELECT_ALL, ACTION_CUT, ACTION_COPY, ACTION_PASTE};
 
-    
-    private static final int MAX_INTENT_TEXT_LENGTH = 100000;
+  
+  private static final int MAX_INTENT_TEXT_LENGTH = 100000;
 
-    protected final @NonNull Activity mActivity;
-    protected final boolean mUseFloatingToolbar;
-    protected final @NonNull Matrix mTempMatrix = new Matrix();
-    protected final @NonNull RectF mTempRect = new RectF();
+  protected final @NonNull Activity mActivity;
+  protected final boolean mUseFloatingToolbar;
+  protected final @NonNull Matrix mTempMatrix = new Matrix();
+  protected final @NonNull RectF mTempRect = new RectF();
 
-    private boolean mExternalActionsEnabled;
+  private boolean mExternalActionsEnabled;
 
-    protected @Nullable ActionMode mActionMode;
-    protected @Nullable GeckoSession mSession;
-    protected @Nullable Selection mSelection;
-    protected boolean mRepopulatedMenu;
+  protected @Nullable ActionMode mActionMode;
+  protected @Nullable GeckoSession mSession;
+  protected @Nullable Selection mSelection;
+  protected boolean mRepopulatedMenu;
 
-    @TargetApi(Build.VERSION_CODES.M)
-    private class Callback2Wrapper extends ActionMode.Callback2 {
-        @Override
-        public boolean onCreateActionMode(final ActionMode actionMode, final Menu menu) {
-            return BasicSelectionActionDelegate.this.onCreateActionMode(actionMode, menu);
-        }
-
-        @Override
-        public boolean onPrepareActionMode(final ActionMode actionMode, final Menu menu) {
-            return BasicSelectionActionDelegate.this.onPrepareActionMode(actionMode, menu);
-        }
-
-        @Override
-        public boolean onActionItemClicked(final ActionMode actionMode, final MenuItem menuItem) {
-            return BasicSelectionActionDelegate.this.onActionItemClicked(actionMode, menuItem);
-        }
-
-        @Override
-        public void onDestroyActionMode(final ActionMode actionMode) {
-            BasicSelectionActionDelegate.this.onDestroyActionMode(actionMode);
-        }
-
-        @Override
-        public void onGetContentRect(final ActionMode mode, final View view, final Rect outRect) {
-            super.onGetContentRect(mode, view, outRect);
-            BasicSelectionActionDelegate.this.onGetContentRect(mode, view, outRect);
-        }
-    }
-
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public BasicSelectionActionDelegate(final @NonNull Activity activity) {
-        this(activity, Build.VERSION.SDK_INT >= 23);
-    }
-
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public BasicSelectionActionDelegate(final @NonNull Activity activity,
-                                        final boolean useFloatingToolbar) {
-        mActivity = activity;
-        mUseFloatingToolbar = useFloatingToolbar;
-        mExternalActionsEnabled = true;
-    }
-
-    
-
-
-
-
-    public void enableExternalActions(final boolean enable) {
-        ThreadUtils.assertOnUiThread();
-        mExternalActionsEnabled = enable;
-
-        if (mActionMode != null) {
-            mActionMode.invalidate();
-        }
-    }
-
-    
-
-
-
-
-    public boolean areExternalActionsEnabled() {
-        return mExternalActionsEnabled;
-    }
-
-    
-
-
-
-
-
-    protected @NonNull String[] getAllActions() {
-        return mUseFloatingToolbar ? FLOATING_TOOLBAR_ACTIONS
-                                   : FIXED_TOOLBAR_ACTIONS;
-    }
-
-    
-
-
-
-
-
-
-    protected boolean isActionAvailable(final @NonNull String id) {
-        if (mSelection == null) {
-            return false;
-        }
-
-        if (mExternalActionsEnabled && !mSelection.text.isEmpty() &&
-                ACTION_PROCESS_TEXT.equals(id)) {
-            final PackageManager pm = mActivity.getPackageManager();
-            return pm.resolveActivity(getProcessTextIntent(),
-                                      PackageManager.MATCH_DEFAULT_ONLY) != null;
-        }
-        return mSelection.isActionAvailable(id);
-    }
-
-    
-
-
-
-
-
-    public boolean isActionAvailable() {
-        if (mSelection == null) {
-            return false;
-        }
-
-        return isActionAvailable(ACTION_PROCESS_TEXT) ||
-                !mSelection.availableActions.isEmpty();
-    }
-
-    
-
-
-
-
-
-
-    protected void prepareAction(final @NonNull String id, final @NonNull MenuItem item) {
-        switch (id) {
-            case ACTION_CUT:
-                item.setTitle(android.R.string.cut);
-                break;
-            case ACTION_COPY:
-                item.setTitle(android.R.string.copy);
-                break;
-            case ACTION_PASTE:
-                item.setTitle(android.R.string.paste);
-                break;
-            case ACTION_SELECT_ALL:
-                item.setTitle(android.R.string.selectAll);
-                break;
-            case ACTION_PROCESS_TEXT:
-                throw new IllegalStateException("Unexpected action");
-        }
-    }
-
-    
-
-
-
-
-
-
-    protected boolean performAction(final @NonNull String id, final @NonNull MenuItem item) {
-        if (ACTION_PROCESS_TEXT.equals(id)) {
-            try {
-                mActivity.startActivity(item.getIntent());
-            } catch (final ActivityNotFoundException e) {
-                Log.e(LOGTAG, "Cannot perform action", e);
-                return false;
-            }
-            return true;
-        }
-
-        if (mSelection == null) {
-            return false;
-        }
-        mSelection.execute(id);
-
-        
-        if (ACTION_COPY.equals(id)) {
-            if (mUseFloatingToolbar) {
-                clearSelection();
-            } else {
-                mActionMode.finish();
-            }
-        }
-        return true;
-    }
-
-    
-
-
-
-
-
-
-    public @Nullable Selection getSelection() {
-        return mSelection;
-    }
-
-    
-
-
-    public void clearSelection() {
-        if (mSelection == null) {
-            return;
-        }
-
-        if (isActionAvailable(ACTION_COLLAPSE_TO_END)) {
-            mSelection.collapseToEnd();
-        } else if (isActionAvailable(ACTION_UNSELECT)) {
-            mSelection.unselect();
-        } else {
-            mSelection.hide();
-        }
-    }
-
-    private String getSelectedText(final int maxLength) {
-        if (mSelection == null) {
-            return "";
-        }
-
-        if (TextUtils.isEmpty(mSelection.text) || mSelection.text.length() < maxLength) {
-            return mSelection.text;
-        }
-
-        return mSelection.text.substring(0, maxLength);
-    }
-
-    private Intent getProcessTextIntent() {
-        final Intent intent = new Intent(Intent.ACTION_PROCESS_TEXT);
-        intent.addCategory(Intent.CATEGORY_DEFAULT);
-        intent.setType("text/plain");
-        
-        intent.putExtra(Intent.EXTRA_PROCESS_TEXT, getSelectedText(MAX_INTENT_TEXT_LENGTH));
-        
-        intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true);
-        return intent;
-    }
-
+  @TargetApi(Build.VERSION_CODES.M)
+  private class Callback2Wrapper extends ActionMode.Callback2 {
     @Override
     public boolean onCreateActionMode(final ActionMode actionMode, final Menu menu) {
-        ThreadUtils.assertOnUiThread();
-        final String[] allActions = getAllActions();
-        for (final String actionId : allActions) {
-            if (isActionAvailable(actionId)) {
-                if (!mUseFloatingToolbar && (
-                        Build.VERSION.SDK_INT == 22 || Build.VERSION.SDK_INT == 23)) {
-                    
-                    onPrepareActionMode(actionMode, menu);
-                }
-                return true;
-            }
-        }
-        return false;
+      return BasicSelectionActionDelegate.this.onCreateActionMode(actionMode, menu);
     }
 
     @Override
     public boolean onPrepareActionMode(final ActionMode actionMode, final Menu menu) {
-        ThreadUtils.assertOnUiThread();
-        final String[] allActions = getAllActions();
-        boolean changed = false;
-
-        
-        mRepopulatedMenu = menu.size() != 0;
-
-        
-        
-        for (int i = 0; i < allActions.length; i++) {
-            final String actionId = allActions[i];
-            final int menuId = i + Menu.FIRST;
-
-            if (ACTION_PROCESS_TEXT.equals(actionId)) {
-                if (mExternalActionsEnabled && !mSelection.text.isEmpty()) {
-                    try {
-                        menu.addIntentOptions(menuId, menuId, menuId,
-                                              mActivity.getComponentName(),
-                                               null, getProcessTextIntent(),
-                                               0,  null);
-                        changed = true;
-                    } catch (final RuntimeException e) {
-                        if (e.getCause() instanceof TransactionTooLargeException) {
-                            
-                            Log.e(LOGTAG, "Cannot add intent option", e);
-                        } else {
-                            throw e;
-                        }
-                    }
-                } else if (menu.findItem(menuId) != null) {
-                    menu.removeGroup(menuId);
-                    changed = true;
-                }
-                continue;
-            }
-
-            if (isActionAvailable(actionId)) {
-                if (menu.findItem(menuId) == null) {
-                    prepareAction(actionId, menu.add( Menu.NONE, menuId,
-                                                     menuId,  ""));
-                    changed = true;
-                }
-            } else if (menu.findItem(menuId) != null) {
-                menu.removeItem(menuId);
-                changed = true;
-            }
-        }
-        return changed;
+      return BasicSelectionActionDelegate.this.onPrepareActionMode(actionMode, menu);
     }
 
     @Override
     public boolean onActionItemClicked(final ActionMode actionMode, final MenuItem menuItem) {
-        ThreadUtils.assertOnUiThread();
-        MenuItem realMenuItem = null;
-        if (mRepopulatedMenu) {
-            
-            
-            final Menu menu = actionMode.getMenu();
-            final int size = menu.size();
-            for (int i = 0; i < size; i++) {
-                final MenuItem item = menu.getItem(i);
-                if (item == menuItem || (item.getItemId() == menuItem.getItemId() &&
-                        item.getTitle().equals(menuItem.getTitle()))) {
-                    realMenuItem = item;
-                    break;
-                }
-            }
-        } else {
-            realMenuItem = menuItem;
-        }
-
-        if (realMenuItem == null) {
-            return false;
-        }
-        final String[] allActions = getAllActions();
-        return performAction(allActions[realMenuItem.getItemId() - Menu.FIRST], realMenuItem);
+      return BasicSelectionActionDelegate.this.onActionItemClicked(actionMode, menuItem);
     }
 
     @Override
     public void onDestroyActionMode(final ActionMode actionMode) {
-        ThreadUtils.assertOnUiThread();
-        if (!mUseFloatingToolbar) {
-            clearSelection();
-        }
-        mSession = null;
-        mSelection = null;
-        mActionMode = null;
+      BasicSelectionActionDelegate.this.onDestroyActionMode(actionMode);
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public void onGetContentRect(final @Nullable ActionMode mode, final @Nullable View view,
-                                 final @NonNull Rect outRect) {
-        ThreadUtils.assertOnUiThread();
-        if (mSelection == null || mSelection.clientRect == null) {
-            return;
-        }
-        mSession.getClientToScreenMatrix(mTempMatrix);
-        mTempMatrix.mapRect(mTempRect, mSelection.clientRect);
-        mTempRect.roundOut(outRect);
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
     @Override
-    public void onShowActionRequest(final GeckoSession session, final Selection selection) {
-        ThreadUtils.assertOnUiThread();
-        mSession = session;
-        mSelection = selection;
+    public void onGetContentRect(final ActionMode mode, final View view, final Rect outRect) {
+      super.onGetContentRect(mode, view, outRect);
+      BasicSelectionActionDelegate.this.onGetContentRect(mode, view, outRect);
+    }
+  }
 
-        if (mActionMode != null) {
-            if (isActionAvailable()) {
-                mActionMode.invalidate();
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public BasicSelectionActionDelegate(final @NonNull Activity activity) {
+    this(activity, Build.VERSION.SDK_INT >= 23);
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public BasicSelectionActionDelegate(
+      final @NonNull Activity activity, final boolean useFloatingToolbar) {
+    mActivity = activity;
+    mUseFloatingToolbar = useFloatingToolbar;
+    mExternalActionsEnabled = true;
+  }
+
+  
+
+
+
+
+  public void enableExternalActions(final boolean enable) {
+    ThreadUtils.assertOnUiThread();
+    mExternalActionsEnabled = enable;
+
+    if (mActionMode != null) {
+      mActionMode.invalidate();
+    }
+  }
+
+  
+
+
+
+
+  public boolean areExternalActionsEnabled() {
+    return mExternalActionsEnabled;
+  }
+
+  
+
+
+
+
+
+  protected @NonNull String[] getAllActions() {
+    return mUseFloatingToolbar ? FLOATING_TOOLBAR_ACTIONS : FIXED_TOOLBAR_ACTIONS;
+  }
+
+  
+
+
+
+
+
+
+  protected boolean isActionAvailable(final @NonNull String id) {
+    if (mSelection == null) {
+      return false;
+    }
+
+    if (mExternalActionsEnabled && !mSelection.text.isEmpty() && ACTION_PROCESS_TEXT.equals(id)) {
+      final PackageManager pm = mActivity.getPackageManager();
+      return pm.resolveActivity(getProcessTextIntent(), PackageManager.MATCH_DEFAULT_ONLY) != null;
+    }
+    return mSelection.isActionAvailable(id);
+  }
+
+  
+
+
+
+
+
+  public boolean isActionAvailable() {
+    if (mSelection == null) {
+      return false;
+    }
+
+    return isActionAvailable(ACTION_PROCESS_TEXT) || !mSelection.availableActions.isEmpty();
+  }
+
+  
+
+
+
+
+
+
+  protected void prepareAction(final @NonNull String id, final @NonNull MenuItem item) {
+    switch (id) {
+      case ACTION_CUT:
+        item.setTitle(android.R.string.cut);
+        break;
+      case ACTION_COPY:
+        item.setTitle(android.R.string.copy);
+        break;
+      case ACTION_PASTE:
+        item.setTitle(android.R.string.paste);
+        break;
+      case ACTION_SELECT_ALL:
+        item.setTitle(android.R.string.selectAll);
+        break;
+      case ACTION_PROCESS_TEXT:
+        throw new IllegalStateException("Unexpected action");
+    }
+  }
+
+  
+
+
+
+
+
+
+  protected boolean performAction(final @NonNull String id, final @NonNull MenuItem item) {
+    if (ACTION_PROCESS_TEXT.equals(id)) {
+      try {
+        mActivity.startActivity(item.getIntent());
+      } catch (final ActivityNotFoundException e) {
+        Log.e(LOGTAG, "Cannot perform action", e);
+        return false;
+      }
+      return true;
+    }
+
+    if (mSelection == null) {
+      return false;
+    }
+    mSelection.execute(id);
+
+    
+    if (ACTION_COPY.equals(id)) {
+      if (mUseFloatingToolbar) {
+        clearSelection();
+      } else {
+        mActionMode.finish();
+      }
+    }
+    return true;
+  }
+
+  
+
+
+
+
+
+
+  public @Nullable Selection getSelection() {
+    return mSelection;
+  }
+
+  
+  public void clearSelection() {
+    if (mSelection == null) {
+      return;
+    }
+
+    if (isActionAvailable(ACTION_COLLAPSE_TO_END)) {
+      mSelection.collapseToEnd();
+    } else if (isActionAvailable(ACTION_UNSELECT)) {
+      mSelection.unselect();
+    } else {
+      mSelection.hide();
+    }
+  }
+
+  private String getSelectedText(final int maxLength) {
+    if (mSelection == null) {
+      return "";
+    }
+
+    if (TextUtils.isEmpty(mSelection.text) || mSelection.text.length() < maxLength) {
+      return mSelection.text;
+    }
+
+    return mSelection.text.substring(0, maxLength);
+  }
+
+  private Intent getProcessTextIntent() {
+    final Intent intent = new Intent(Intent.ACTION_PROCESS_TEXT);
+    intent.addCategory(Intent.CATEGORY_DEFAULT);
+    intent.setType("text/plain");
+    
+    intent.putExtra(Intent.EXTRA_PROCESS_TEXT, getSelectedText(MAX_INTENT_TEXT_LENGTH));
+    
+    intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true);
+    return intent;
+  }
+
+  @Override
+  public boolean onCreateActionMode(final ActionMode actionMode, final Menu menu) {
+    ThreadUtils.assertOnUiThread();
+    final String[] allActions = getAllActions();
+    for (final String actionId : allActions) {
+      if (isActionAvailable(actionId)) {
+        if (!mUseFloatingToolbar && (Build.VERSION.SDK_INT == 22 || Build.VERSION.SDK_INT == 23)) {
+          
+          onPrepareActionMode(actionMode, menu);
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public boolean onPrepareActionMode(final ActionMode actionMode, final Menu menu) {
+    ThreadUtils.assertOnUiThread();
+    final String[] allActions = getAllActions();
+    boolean changed = false;
+
+    
+    mRepopulatedMenu = menu.size() != 0;
+
+    
+    
+    for (int i = 0; i < allActions.length; i++) {
+      final String actionId = allActions[i];
+      final int menuId = i + Menu.FIRST;
+
+      if (ACTION_PROCESS_TEXT.equals(actionId)) {
+        if (mExternalActionsEnabled && !mSelection.text.isEmpty()) {
+          try {
+            menu.addIntentOptions(
+                menuId,
+                menuId,
+                menuId,
+                mActivity.getComponentName(),
+                 null,
+                getProcessTextIntent(),
+                 0, 
+                null);
+            changed = true;
+          } catch (final RuntimeException e) {
+            if (e.getCause() instanceof TransactionTooLargeException) {
+              
+              Log.e(LOGTAG, "Cannot add intent option", e);
             } else {
-                mActionMode.finish();
+              throw e;
             }
-            return;
+          }
+        } else if (menu.findItem(menuId) != null) {
+          menu.removeGroup(menuId);
+          changed = true;
         }
+        continue;
+      }
 
+      if (isActionAvailable(actionId)) {
+        if (menu.findItem(menuId) == null) {
+          prepareAction(actionId, menu.add( Menu.NONE, menuId, menuId,  ""));
+          changed = true;
+        }
+      } else if (menu.findItem(menuId) != null) {
+        menu.removeItem(menuId);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
+  @Override
+  public boolean onActionItemClicked(final ActionMode actionMode, final MenuItem menuItem) {
+    ThreadUtils.assertOnUiThread();
+    MenuItem realMenuItem = null;
+    if (mRepopulatedMenu) {
+      
+      
+      final Menu menu = actionMode.getMenu();
+      final int size = menu.size();
+      for (int i = 0; i < size; i++) {
+        final MenuItem item = menu.getItem(i);
+        if (item == menuItem
+            || (item.getItemId() == menuItem.getItemId()
+                && item.getTitle().equals(menuItem.getTitle()))) {
+          realMenuItem = item;
+          break;
+        }
+      }
+    } else {
+      realMenuItem = menuItem;
+    }
+
+    if (realMenuItem == null) {
+      return false;
+    }
+    final String[] allActions = getAllActions();
+    return performAction(allActions[realMenuItem.getItemId() - Menu.FIRST], realMenuItem);
+  }
+
+  @Override
+  public void onDestroyActionMode(final ActionMode actionMode) {
+    ThreadUtils.assertOnUiThread();
+    if (!mUseFloatingToolbar) {
+      clearSelection();
+    }
+    mSession = null;
+    mSelection = null;
+    mActionMode = null;
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public void onGetContentRect(
+      final @Nullable ActionMode mode, final @Nullable View view, final @NonNull Rect outRect) {
+    ThreadUtils.assertOnUiThread();
+    if (mSelection == null || mSelection.clientRect == null) {
+      return;
+    }
+    mSession.getClientToScreenMatrix(mTempMatrix);
+    mTempMatrix.mapRect(mTempRect, mSelection.clientRect);
+    mTempRect.roundOut(outRect);
+  }
+
+  @TargetApi(Build.VERSION_CODES.M)
+  @Override
+  public void onShowActionRequest(final GeckoSession session, final Selection selection) {
+    ThreadUtils.assertOnUiThread();
+    mSession = session;
+    mSelection = selection;
+
+    if (mActionMode != null) {
+      if (isActionAvailable()) {
+        mActionMode.invalidate();
+      } else {
+        mActionMode.finish();
+      }
+      return;
+    }
+
+    if (mUseFloatingToolbar) {
+      mActionMode = mActivity.startActionMode(new Callback2Wrapper(), ActionMode.TYPE_FLOATING);
+    } else {
+      mActionMode = mActivity.startActionMode(this);
+    }
+  }
+
+  @Override
+  public void onHideAction(final GeckoSession session, final int reason) {
+    ThreadUtils.assertOnUiThread();
+    if (mActionMode == null) {
+      return;
+    }
+
+    switch (reason) {
+      case HIDE_REASON_ACTIVE_SCROLL:
+      case HIDE_REASON_ACTIVE_SELECTION:
+      case HIDE_REASON_INVISIBLE_SELECTION:
         if (mUseFloatingToolbar) {
-            mActionMode = mActivity.startActionMode(new Callback2Wrapper(),
-                                                    ActionMode.TYPE_FLOATING);
-        } else {
-            mActionMode = mActivity.startActionMode(this);
+          
+          mActionMode.finish();
         }
+        break;
+
+      case HIDE_REASON_NO_SELECTION:
+        mActionMode.finish();
+        break;
     }
-
-    @Override
-    public void onHideAction(final GeckoSession session, final int reason) {
-        ThreadUtils.assertOnUiThread();
-        if (mActionMode == null) {
-            return;
-        }
-
-        switch (reason) {
-            case HIDE_REASON_ACTIVE_SCROLL:
-            case HIDE_REASON_ACTIVE_SELECTION:
-            case HIDE_REASON_INVISIBLE_SELECTION:
-                if (mUseFloatingToolbar) {
-                    
-                    mActionMode.finish();
-                }
-                break;
-
-            case HIDE_REASON_NO_SELECTION:
-                mActionMode.finish();
-                break;
-        }
-    }
+  }
 }

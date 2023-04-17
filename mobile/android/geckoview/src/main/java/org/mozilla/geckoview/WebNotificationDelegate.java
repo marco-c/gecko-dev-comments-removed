@@ -6,26 +6,24 @@ package org.mozilla.geckoview;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 public interface WebNotificationDelegate {
-    
+  
 
 
 
 
-    @AnyThread
-    @WrapForJNI
-    default void onShowNotification(@NonNull final WebNotification notification) {}
+  @AnyThread
+  @WrapForJNI
+  default void onShowNotification(@NonNull final WebNotification notification) {}
 
-    
-
-
+  
 
 
-    @AnyThread
-    @WrapForJNI
-    default void onCloseNotification(@NonNull final WebNotification notification) {}
+
+
+  @AnyThread
+  @WrapForJNI
+  default void onCloseNotification(@NonNull final WebNotification notification) {}
 }
-

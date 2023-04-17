@@ -7,82 +7,82 @@ package org.mozilla.gecko.util;
 import android.graphics.Bitmap;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
-
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.annotation.WrapForJNI;
-
 import org.mozilla.geckoview.GeckoResult;
-
-
 
 
 @AnyThread
 public class ImageDecoder {
-    private static ImageDecoder instance;
+  private static ImageDecoder instance;
 
-    private ImageDecoder() {}
+  private ImageDecoder() {}
 
-    public static ImageDecoder instance() {
-        if (instance == null) {
-            instance = new ImageDecoder();
-        }
-
-        return instance;
+  public static ImageDecoder instance() {
+    if (instance == null) {
+      instance = new ImageDecoder();
     }
 
-    @WrapForJNI(dispatchTo = "gecko", stubName = "Decode")
-    private static native void nativeDecode(final String uri, final int desiredLength,
-                                            GeckoResult<Bitmap> result);
+    return instance;
+  }
 
-    
+  @WrapForJNI(dispatchTo = "gecko", stubName = "Decode")
+  private static native void nativeDecode(
+      final String uri, final int desiredLength, GeckoResult<Bitmap> result);
 
-
-
-
-
+  
 
 
 
 
 
-    @NonNull
-    public GeckoResult<Bitmap> decode(final @NonNull String uri) {
-        return decode(uri, 0);
+
+
+
+
+  @NonNull
+  public GeckoResult<Bitmap> decode(final @NonNull String uri) {
+    return decode(uri, 0);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @NonNull
+  public GeckoResult<Bitmap> decode(final @NonNull String uri, final int desiredLength) {
+    if (uri == null) {
+      throw new IllegalArgumentException("Uri cannot be null");
     }
 
-    
+    final GeckoResult<Bitmap> result = new GeckoResult<>();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @NonNull
-    public GeckoResult<Bitmap> decode(final @NonNull String uri, final int desiredLength) {
-        if (uri == null) {
-            throw new IllegalArgumentException("Uri cannot be null");
-        }
-
-        final GeckoResult<Bitmap> result = new GeckoResult<>();
-
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            nativeDecode(uri, desiredLength, result);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, this,
-                    "nativeDecode", String.class, uri, int.class, desiredLength,
-                    GeckoResult.class, result);
-        }
-
-        return result;
+    if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+      nativeDecode(uri, desiredLength, result);
+    } else {
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.PROFILE_READY,
+          this,
+          "nativeDecode",
+          String.class,
+          uri,
+          int.class,
+          desiredLength,
+          GeckoResult.class,
+          result);
     }
+
+    return result;
+  }
 }

@@ -6,21 +6,10 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.GeckoJavaSampler;
-
-import androidx.annotation.Nullable;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-
-
-
-
-
-
-
-
-
-
+import org.mozilla.gecko.GeckoJavaSampler;
 
 
 
@@ -67,21 +56,21 @@ import androidx.annotation.UiThread;
 
 @UiThread
 public class ProfilerController {
-    private static final String LOGTAG = "ProfilerController";
+  private static final String LOGTAG = "ProfilerController";
 
-    
+  
 
 
 
 
 
 
+  public boolean isProfilerActive() {
+    return GeckoJavaSampler.isProfilerActive();
+  }
 
-    public boolean isProfilerActive() {
-        return GeckoJavaSampler.isProfilerActive();
-    }
+  
 
-    
 
 
 
@@ -90,81 +79,79 @@ public class ProfilerController {
 
 
 
+  public @Nullable Double getProfilerTime() {
+    return GeckoJavaSampler.tryToGetProfilerTime();
+  }
 
+  
 
 
-    public @Nullable Double getProfilerTime() {
-        return GeckoJavaSampler.tryToGetProfilerTime();
-    }
 
-    
 
 
 
 
 
+  public void addMarker(
+      @NonNull final String aMarkerName,
+      @Nullable final Double aStartTime,
+      @Nullable final Double aEndTime,
+      @Nullable final String aText) {
+    GeckoJavaSampler.addMarker(aMarkerName, aStartTime, aEndTime, aText);
+  }
 
+  
 
 
-    public void addMarker(@NonNull final String aMarkerName,
-                          @Nullable final Double aStartTime,
-                          @Nullable final Double aEndTime,
-                          @Nullable final String aText) {
-        GeckoJavaSampler.addMarker(aMarkerName, aStartTime, aEndTime, aText);
-    }
 
-    
 
 
 
 
 
 
+  public void addMarker(
+      @NonNull final String aMarkerName,
+      @Nullable final Double aStartTime,
+      @Nullable final String aText) {
+    GeckoJavaSampler.addMarker(aMarkerName, aStartTime, null, aText);
+  }
 
+  
 
 
-    public void addMarker(@NonNull final String aMarkerName,
-                          @Nullable final Double aStartTime,
-                          @Nullable final String aText) {
-        GeckoJavaSampler.addMarker(aMarkerName, aStartTime, null, aText);
-    }
 
-    
 
 
 
 
 
+  public void addMarker(@NonNull final String aMarkerName, @Nullable final Double aStartTime) {
+    addMarker(aMarkerName, aStartTime, null, null);
+  }
 
+  
 
 
-    public void addMarker(@NonNull final String aMarkerName,
-                          @Nullable final Double aStartTime) {
-        addMarker(aMarkerName, aStartTime, null, null);
-    }
 
-    
 
 
 
 
 
+  public void addMarker(@NonNull final String aMarkerName, @Nullable final String aText) {
+    addMarker(aMarkerName, null, null, aText);
+  }
 
+  
 
 
-    public void addMarker(@NonNull final String aMarkerName, @Nullable final String aText) {
-        addMarker(aMarkerName, null, null, aText);
-    }
 
-    
 
 
 
 
-
-
-
-    public void addMarker(@NonNull final String aMarkerName) {
-        addMarker(aMarkerName, null, null, null);
-    }
+  public void addMarker(@NonNull final String aMarkerName) {
+    addMarker(aMarkerName, null, null, null);
+  }
 }

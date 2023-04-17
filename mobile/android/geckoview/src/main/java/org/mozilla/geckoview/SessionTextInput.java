@@ -9,10 +9,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.RectF;
 import android.os.Handler;
-import androidx.annotation.AnyThread;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
 import android.text.Editable;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -23,7 +19,10 @@ import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
-
+import androidx.annotation.AnyThread;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import org.mozilla.gecko.IGeckoEditableParent;
 import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.NativeQueue;
@@ -43,371 +42,386 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 public final class SessionTextInput {
-     static final String LOGTAG = "GeckoSessionTextInput";
-    private static final boolean DEBUG = false;
+   static final String LOGTAG = "GeckoSessionTextInput";
+  private static final boolean DEBUG = false;
+
+  
+   interface InputConnectionClient {
+    View getView();
+
+    Handler getHandler(Handler defHandler);
+
+    InputConnection onCreateInputConnection(EditorInfo attrs);
+  }
+
+  
+   interface EditableClient {
+    
+    
+    
+    @WrapForJNI final int ONE_SHOT = 1;
+    
+    
+    @WrapForJNI final int START_MONITOR = 2;
+    
+    @WrapForJNI final int END_MONITOR = 3;
+
+    void sendKeyEvent(@Nullable View view, int action, @NonNull KeyEvent event);
+
+    Editable getEditable();
+
+    void setBatchMode(boolean isBatchMode);
+
+    Handler setInputConnectionHandler(@NonNull Handler handler);
+
+    void postToInputConnection(@NonNull Runnable runnable);
+
+    void requestCursorUpdates(int requestMode);
+  }
+
+  
+   interface EditableListener {
+    
+    @WrapForJNI final int NOTIFY_IME_OF_TOKEN = -3;
+    @WrapForJNI final int NOTIFY_IME_OPEN_VKB = -2;
+    @WrapForJNI final int NOTIFY_IME_REPLY_EVENT = -1;
+    @WrapForJNI final int NOTIFY_IME_OF_FOCUS = 1;
+    @WrapForJNI final int NOTIFY_IME_OF_BLUR = 2;
+    @WrapForJNI final int NOTIFY_IME_TO_COMMIT_COMPOSITION = 8;
+    @WrapForJNI final int NOTIFY_IME_TO_CANCEL_COMPOSITION = 9;
 
     
-     interface InputConnectionClient {
-        View getView();
-        Handler getHandler(Handler defHandler);
-        InputConnection onCreateInputConnection(EditorInfo attrs);
+    final int IME_STATE_UNKNOWN = -1;
+    final int IME_STATE_DISABLED = 0;
+    final int IME_STATE_ENABLED = 1;
+    final int IME_STATE_PASSWORD = 2;
+
+    
+    @WrapForJNI final int IME_FLAG_PRIVATE_BROWSING = 1;
+    @WrapForJNI final int IME_FLAG_USER_ACTION = 2;
+    @WrapForJNI final int IME_FOCUS_NOT_CHANGED = 4;
+
+    void notifyIME(int type);
+
+    void notifyIMEContext(int state, String typeHint, String modeHint, String actionHint, int flag);
+
+    void onSelectionChange();
+
+    void onTextChange();
+
+    void onDiscardComposition();
+
+    void onDefaultKeyEvent(KeyEvent event);
+
+    void updateCompositionRects(final RectF[] aRects);
+  }
+
+  private static final class DefaultDelegate implements GeckoSession.TextInputDelegate {
+    public static final DefaultDelegate INSTANCE = new DefaultDelegate();
+
+    private InputMethodManager getInputMethodManager(@Nullable final View view) {
+      if (view == null) {
+        return null;
+      }
+      return (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     }
 
-    
-     interface EditableClient {
+    @Override
+    public void restartInput(@NonNull final GeckoSession session, final int reason) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm == null) {
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (InputMethods.needsSoftResetWorkaround(
+          InputMethods.getCurrentInputMethod(view.getContext()))) {
         
         
         
-        @WrapForJNI final int ONE_SHOT = 1;
+        
+        imm.updateSelection(view, -1, -1, -1, -1);
+      }
+
+      try {
+        imm.restartInput(view);
+      } catch (final RuntimeException e) {
+        Log.e(LOGTAG, "Error restarting input", e);
+      }
+    }
+
+    @Override
+    public void showSoftInput(@NonNull final GeckoSession session) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm != null) {
+        if (view.hasFocus() && !imm.isActive(view)) {
+          
+          
+          view.clearFocus();
+          view.requestFocus();
+        }
+        imm.showSoftInput(view, 0);
+      }
+    }
+
+    @Override
+    public void hideSoftInput(@NonNull final GeckoSession session) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm != null) {
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+      }
+    }
+
+    @Override
+    public void updateSelection(
+        @NonNull final GeckoSession session,
+        final int selStart,
+        final int selEnd,
+        final int compositionStart,
+        final int compositionEnd) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm != null) {
         
         
-        @WrapForJNI final int START_MONITOR = 2;
         
-        @WrapForJNI final int END_MONITOR = 3;
-
-        void sendKeyEvent(@Nullable View view, int action, @NonNull KeyEvent event);
-        Editable getEditable();
-        void setBatchMode(boolean isBatchMode);
-        Handler setInputConnectionHandler(@NonNull Handler handler);
-        void postToInputConnection(@NonNull Runnable runnable);
-        void requestCursorUpdates(int requestMode);
-    }
-
-    
-     interface EditableListener {
         
-        @WrapForJNI final int NOTIFY_IME_OF_TOKEN = -3;
-        @WrapForJNI final int NOTIFY_IME_OPEN_VKB = -2;
-        @WrapForJNI final int NOTIFY_IME_REPLY_EVENT = -1;
-        @WrapForJNI final int NOTIFY_IME_OF_FOCUS = 1;
-        @WrapForJNI final int NOTIFY_IME_OF_BLUR = 2;
-        @WrapForJNI final int NOTIFY_IME_TO_COMMIT_COMPOSITION = 8;
-        @WrapForJNI final int NOTIFY_IME_TO_CANCEL_COMPOSITION = 9;
-
-        
-        final int IME_STATE_UNKNOWN = -1;
-        final int IME_STATE_DISABLED = 0;
-        final int IME_STATE_ENABLED = 1;
-        final int IME_STATE_PASSWORD = 2;
-
-        
-        @WrapForJNI final int IME_FLAG_PRIVATE_BROWSING = 1;
-        @WrapForJNI final int IME_FLAG_USER_ACTION = 2;
-        @WrapForJNI final int IME_FOCUS_NOT_CHANGED = 4;
-
-        void notifyIME(int type);
-        void notifyIMEContext(int state, String typeHint, String modeHint,
-                              String actionHint, int flag);
-        void onSelectionChange();
-        void onTextChange();
-        void onDiscardComposition();
-        void onDefaultKeyEvent(KeyEvent event);
-        void updateCompositionRects(final RectF[] aRects);
+        imm.updateSelection(view, selStart, selEnd, compositionStart, compositionEnd);
+      }
     }
 
-    private static final class DefaultDelegate implements GeckoSession.TextInputDelegate {
-        public static final DefaultDelegate INSTANCE = new DefaultDelegate();
-
-        private InputMethodManager getInputMethodManager(@Nullable final View view) {
-            if (view == null) {
-                return null;
-            }
-            return (InputMethodManager) view.getContext()
-                                            .getSystemService(Context.INPUT_METHOD_SERVICE);
-        }
-
-        @Override
-        public void restartInput(@NonNull final GeckoSession session, final int reason) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm == null) {
-                return;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            if (InputMethods.needsSoftResetWorkaround(
-                    InputMethods.getCurrentInputMethod(view.getContext()))) {
-                
-                
-                
-                
-                imm.updateSelection(view, -1, -1, -1, -1);
-            }
-
-            try {
-                imm.restartInput(view);
-            } catch (final RuntimeException e) {
-                Log.e(LOGTAG, "Error restarting input", e);
-            }
-        }
-
-        @Override
-        public void showSoftInput(@NonNull final GeckoSession session) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm != null) {
-                if (view.hasFocus() && !imm.isActive(view)) {
-                    
-                    
-                    view.clearFocus();
-                    view.requestFocus();
-                }
-                imm.showSoftInput(view, 0);
-            }
-        }
-
-        @Override
-        public void hideSoftInput(@NonNull final GeckoSession session) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm != null) {
-                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-            }
-        }
-
-        @Override
-        public void updateSelection(@NonNull final GeckoSession session,
-                                    final int selStart, final int selEnd,
-                                    final int compositionStart, final int compositionEnd) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm != null) {
-                
-                
-                
-                
-                imm.updateSelection(view, selStart, selEnd, compositionStart, compositionEnd);
-            }
-        }
-
-        @Override
-        public void updateExtractedText(@NonNull final GeckoSession session,
-                                        @NonNull final ExtractedTextRequest request,
-                                        @NonNull final ExtractedText text) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm != null) {
-                imm.updateExtractedText(view, request.token, text);
-            }
-        }
-
-        @TargetApi(21)
-        @Override
-        public void updateCursorAnchorInfo(@NonNull final GeckoSession session,
-                                           @NonNull final CursorAnchorInfo info) {
-            ThreadUtils.assertOnUiThread();
-            final View view = session.getTextInput().getView();
-            final InputMethodManager imm = getInputMethodManager(view);
-            if (imm != null) {
-                imm.updateCursorAnchorInfo(view, info);
-            }
-        }
+    @Override
+    public void updateExtractedText(
+        @NonNull final GeckoSession session,
+        @NonNull final ExtractedTextRequest request,
+        @NonNull final ExtractedText text) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm != null) {
+        imm.updateExtractedText(view, request.token, text);
+      }
     }
 
-    private final GeckoSession mSession;
-    private final NativeQueue mQueue;
-    private final GeckoEditable mEditable;
-    private InputConnectionClient mInputConnection;
-    private GeckoSession.TextInputDelegate mDelegate;
-
-     SessionTextInput(final @NonNull GeckoSession session,
-                                   final @NonNull NativeQueue queue) {
-        mSession = session;
-        mQueue = queue;
-        mEditable = new GeckoEditable(session);
+    @TargetApi(21)
+    @Override
+    public void updateCursorAnchorInfo(
+        @NonNull final GeckoSession session, @NonNull final CursorAnchorInfo info) {
+      ThreadUtils.assertOnUiThread();
+      final View view = session.getTextInput().getView();
+      final InputMethodManager imm = getInputMethodManager(view);
+      if (imm != null) {
+        imm.updateCursorAnchorInfo(view, info);
+      }
     }
+  }
 
-     void onWindowChanged(final GeckoSession.Window window) {
-        if (mQueue.isReady()) {
-            window.attachEditable(mEditable);
-        } else {
-            mQueue.queueUntilReady(window, "attachEditable",
-                                   IGeckoEditableParent.class, mEditable);
-        }
+  private final GeckoSession mSession;
+  private final NativeQueue mQueue;
+  private final GeckoEditable mEditable;
+  private InputConnectionClient mInputConnection;
+  private GeckoSession.TextInputDelegate mDelegate;
+
+   SessionTextInput(
+      final @NonNull GeckoSession session, final @NonNull NativeQueue queue) {
+    mSession = session;
+    mQueue = queue;
+    mEditable = new GeckoEditable(session);
+  }
+
+   void onWindowChanged(final GeckoSession.Window window) {
+    if (mQueue.isReady()) {
+      window.attachEditable(mEditable);
+    } else {
+      mQueue.queueUntilReady(window, "attachEditable", IGeckoEditableParent.class, mEditable);
     }
+  }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public synchronized @NonNull Handler getHandler(final @NonNull Handler defHandler) {
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @AnyThread
-    public synchronized @NonNull Handler getHandler(final @NonNull Handler defHandler) {
-        
-        if (mInputConnection != null) {
-            return mInputConnection.getHandler(defHandler);
-        }
-        return defHandler;
+    if (mInputConnection != null) {
+      return mInputConnection.getHandler(defHandler);
     }
+    return defHandler;
+  }
 
+  
+
+
+
+
+
+  @UiThread
+  public @Nullable View getView() {
+    ThreadUtils.assertOnUiThread();
+    return mInputConnection != null ? mInputConnection.getView() : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public synchronized void setView(final @Nullable View view) {
+    ThreadUtils.assertOnUiThread();
+
+    if (view == null) {
+      mInputConnection = null;
+    } else if (mInputConnection == null || mInputConnection.getView() != view) {
+      mInputConnection = GeckoInputConnection.create(mSession, view, mEditable);
+    }
+    mEditable.setListener((EditableListener) mInputConnection);
+  }
+
+  
+
+
+
+
+
+
+
+  @AnyThread
+  public synchronized @Nullable InputConnection onCreateInputConnection(
+      final @NonNull EditorInfo attrs) {
     
+    mEditable.onCreateInputConnection(attrs);
 
-
-
-
-
-    @UiThread
-    public @Nullable View getView() {
-        ThreadUtils.assertOnUiThread();
-        return mInputConnection != null ? mInputConnection.getView() : null;
+    if (!mQueue.isReady() || mInputConnection == null) {
+      return null;
     }
+    return mInputConnection.onCreateInputConnection(attrs);
+  }
 
-    
-
-
-
-
+  
 
 
 
 
-    @UiThread
-    public synchronized void setView(final @Nullable View view) {
-        ThreadUtils.assertOnUiThread();
 
-        if (view == null) {
-            mInputConnection = null;
-        } else if (mInputConnection == null || mInputConnection.getView() != view) {
-            mInputConnection = GeckoInputConnection.create(mSession, view, mEditable);
-        }
-        mEditable.setListener((EditableListener) mInputConnection);
+
+  @UiThread
+  public boolean onKeyPreIme(final int keyCode, final @NonNull KeyEvent event) {
+    ThreadUtils.assertOnUiThread();
+    return mEditable.onKeyPreIme(getView(), keyCode, event);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public boolean onKeyDown(final int keyCode, final @NonNull KeyEvent event) {
+    ThreadUtils.assertOnUiThread();
+    return mEditable.onKeyDown(getView(), keyCode, event);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public boolean onKeyUp(final int keyCode, final @NonNull KeyEvent event) {
+    ThreadUtils.assertOnUiThread();
+    return mEditable.onKeyUp(getView(), keyCode, event);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public boolean onKeyLongPress(final int keyCode, final @NonNull KeyEvent event) {
+    ThreadUtils.assertOnUiThread();
+    return mEditable.onKeyLongPress(getView(), keyCode, event);
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  public boolean onKeyMultiple(
+      final int keyCode, final int repeatCount, final @NonNull KeyEvent event) {
+    ThreadUtils.assertOnUiThread();
+    return mEditable.onKeyMultiple(getView(), keyCode, repeatCount, event);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setDelegate(@Nullable final GeckoSession.TextInputDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mDelegate = delegate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull GeckoSession.TextInputDelegate getDelegate() {
+    ThreadUtils.assertOnUiThread();
+    if (mDelegate == null) {
+      mDelegate = DefaultDelegate.INSTANCE;
     }
-
-    
-
-
-
-
-
-
-
-
-    @AnyThread
-    public synchronized @Nullable InputConnection onCreateInputConnection(
-            final @NonNull EditorInfo attrs) {
-        
-        mEditable.onCreateInputConnection(attrs);
-
-        if (!mQueue.isReady() || mInputConnection == null) {
-            return null;
-        }
-        return mInputConnection.onCreateInputConnection(attrs);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public boolean onKeyPreIme(final int keyCode, final @NonNull KeyEvent event) {
-        ThreadUtils.assertOnUiThread();
-        return mEditable.onKeyPreIme(getView(), keyCode, event);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public boolean onKeyDown(final int keyCode, final @NonNull KeyEvent event) {
-        ThreadUtils.assertOnUiThread();
-        return mEditable.onKeyDown(getView(), keyCode, event);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public boolean onKeyUp(final int keyCode, final @NonNull KeyEvent event) {
-        ThreadUtils.assertOnUiThread();
-        return mEditable.onKeyUp(getView(), keyCode, event);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public boolean onKeyLongPress(final int keyCode, final @NonNull KeyEvent event) {
-        ThreadUtils.assertOnUiThread();
-        return mEditable.onKeyLongPress(getView(), keyCode, event);
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
-    public boolean onKeyMultiple(final int keyCode, final int repeatCount,
-                                 final @NonNull KeyEvent event) {
-        ThreadUtils.assertOnUiThread();
-        return mEditable.onKeyMultiple(getView(), keyCode, repeatCount, event);
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setDelegate(@Nullable final GeckoSession.TextInputDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mDelegate = delegate;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull GeckoSession.TextInputDelegate getDelegate() {
-        ThreadUtils.assertOnUiThread();
-        if (mDelegate == null) {
-            mDelegate = DefaultDelegate.INSTANCE;
-        }
-        return mDelegate;
-    }
+    return mDelegate;
+  }
 }

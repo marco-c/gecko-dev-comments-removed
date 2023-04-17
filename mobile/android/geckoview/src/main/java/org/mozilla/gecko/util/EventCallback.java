@@ -4,11 +4,10 @@
 
 package org.mozilla.gecko.util;
 
+import javax.annotation.Nullable;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.geckoview.GeckoResult;
-
-import javax.annotation.Nullable;
 
 
 
@@ -20,38 +19,40 @@ import javax.annotation.Nullable;
 @RobocopTarget
 @WrapForJNI(calledFrom = "gecko")
 public interface EventCallback {
-    
+  
 
 
 
 
 
-    void sendSuccess(Object response);
+  void sendSuccess(Object response);
 
-    
-
-
-
-
-
-    void sendError(Object response);
-
-    
+  
 
 
 
 
-    default <T> void resolveTo(final @Nullable GeckoResult<T> response) {
-        if (response == null) {
-            sendSuccess(null);
-            return;
-        }
-        response.accept(this::sendSuccess, throwable -> {
-            
-            if (!(throwable instanceof Exception)) {
-                throw new GeckoResult.UncaughtException(throwable);
-            }
-            sendError(throwable.getMessage());
-        });
+
+  void sendError(Object response);
+
+  
+
+
+
+
+  default <T> void resolveTo(final @Nullable GeckoResult<T> response) {
+    if (response == null) {
+      sendSuccess(null);
+      return;
     }
+    response.accept(
+        this::sendSuccess,
+        throwable -> {
+          
+          if (!(throwable instanceof Exception)) {
+            throw new GeckoResult.UncaughtException(throwable);
+          }
+          sendError(throwable.getMessage());
+        });
+  }
 }

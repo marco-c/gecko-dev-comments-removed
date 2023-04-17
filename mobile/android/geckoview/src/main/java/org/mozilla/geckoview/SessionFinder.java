@@ -5,19 +5,17 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.geckoview.GeckoSession.FinderFindFlags;
-import org.mozilla.geckoview.GeckoSession.FinderDisplayFlags;
-import org.mozilla.geckoview.GeckoSession.FinderResult;
-
+import android.util.Pair;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Pair;
-
 import java.util.Arrays;
 import java.util.List;
+import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.geckoview.GeckoSession.FinderDisplayFlags;
+import org.mozilla.geckoview.GeckoSession.FinderFindFlags;
+import org.mozilla.geckoview.GeckoSession.FinderResult;
 
 
 
@@ -25,51 +23,47 @@ import java.util.List;
 
 @AnyThread
 public final class SessionFinder {
-    private static final String LOGTAG = "GeckoSessionFinder";
+  private static final String LOGTAG = "GeckoSessionFinder";
 
-    private static final List<Pair<Integer, String>> sFlagNames = Arrays.asList(
-            new Pair<>(GeckoSession.FINDER_FIND_BACKWARDS, "backwards"),
-            new Pair<>(GeckoSession.FINDER_FIND_LINKS_ONLY, "linksOnly"),
-            new Pair<>(GeckoSession.FINDER_FIND_MATCH_CASE, "matchCase"),
-            new Pair<>(GeckoSession.FINDER_FIND_WHOLE_WORD, "wholeWord")
-    );
+  private static final List<Pair<Integer, String>> sFlagNames =
+      Arrays.asList(
+          new Pair<>(GeckoSession.FINDER_FIND_BACKWARDS, "backwards"),
+          new Pair<>(GeckoSession.FINDER_FIND_LINKS_ONLY, "linksOnly"),
+          new Pair<>(GeckoSession.FINDER_FIND_MATCH_CASE, "matchCase"),
+          new Pair<>(GeckoSession.FINDER_FIND_WHOLE_WORD, "wholeWord"));
 
-    private static void addFlagsToBundle(@FinderFindFlags final int flags,
-                                         @NonNull final GeckoBundle bundle) {
-        for (final Pair<Integer, String> name : sFlagNames) {
-            if ((flags & name.first) != 0) {
-                bundle.putBoolean(name.second, true);
-            }
-        }
+  private static void addFlagsToBundle(
+      @FinderFindFlags final int flags, @NonNull final GeckoBundle bundle) {
+    for (final Pair<Integer, String> name : sFlagNames) {
+      if ((flags & name.first) != 0) {
+        bundle.putBoolean(name.second, true);
+      }
+    }
+  }
+
+   static int getFlagsFromBundle(@Nullable final GeckoBundle bundle) {
+    if (bundle == null) {
+      return 0;
     }
 
-     static int getFlagsFromBundle(@Nullable final GeckoBundle bundle) {
-        if (bundle == null) {
-            return 0;
-        }
-
-        int flags = 0;
-        for (final Pair<Integer, String> name : sFlagNames) {
-            if (bundle.getBoolean(name.second)) {
-                flags |= name.first;
-            }
-        }
-        return flags;
+    int flags = 0;
+    for (final Pair<Integer, String> name : sFlagNames) {
+      if (bundle.getBoolean(name.second)) {
+        flags |= name.first;
+      }
     }
+    return flags;
+  }
 
-    private final EventDispatcher mDispatcher;
-    @FinderDisplayFlags private int mDisplayFlags;
+  private final EventDispatcher mDispatcher;
+  @FinderDisplayFlags private int mDisplayFlags;
 
-     SessionFinder(@NonNull final EventDispatcher dispatcher) {
-        mDispatcher = dispatcher;
-        setDisplayFlags(0);
-    }
+   SessionFinder(@NonNull final EventDispatcher dispatcher) {
+    mDispatcher = dispatcher;
+    setDisplayFlags(0);
+  }
 
-    
-
-
-
-
+  
 
 
 
@@ -78,40 +72,33 @@ public final class SessionFinder {
 
 
 
-    @NonNull
-    public GeckoResult<FinderResult> find(@Nullable final String searchString,
-                                          @FinderFindFlags final int flags) {
-        final GeckoBundle bundle = new GeckoBundle(sFlagNames.size() + 1);
-        bundle.putString("searchString", searchString);
-        addFlagsToBundle(flags, bundle);
-
-        return mDispatcher.queryBundle("GeckoView:FindInPage", bundle)
-                .map(response -> new FinderResult(response));
-    }
-
-    
 
 
 
 
+  @NonNull
+  public GeckoResult<FinderResult> find(
+      @Nullable final String searchString, @FinderFindFlags final int flags) {
+    final GeckoBundle bundle = new GeckoBundle(sFlagNames.size() + 1);
+    bundle.putString("searchString", searchString);
+    addFlagsToBundle(flags, bundle);
 
-    public void clear() {
-        mDispatcher.dispatch("GeckoView:ClearMatches", null);
-    }
+    return mDispatcher
+        .queryBundle("GeckoView:FindInPage", bundle)
+        .map(response -> new FinderResult(response));
+  }
 
-    
+  
 
 
 
 
 
+  public void clear() {
+    mDispatcher.dispatch("GeckoView:ClearMatches", null);
+  }
 
-
-    @FinderDisplayFlags public int getDisplayFlags() {
-        return mDisplayFlags;
-    }
-
-    
+  
 
 
 
@@ -119,16 +106,26 @@ public final class SessionFinder {
 
 
 
-    public void setDisplayFlags(@FinderDisplayFlags final int flags) {
-        mDisplayFlags = flags;
+  @FinderDisplayFlags
+  public int getDisplayFlags() {
+    return mDisplayFlags;
+  }
 
-        final GeckoBundle bundle = new GeckoBundle(3);
-        bundle.putBoolean("highlightAll",
-                          (flags & GeckoSession.FINDER_DISPLAY_HIGHLIGHT_ALL) != 0);
-        bundle.putBoolean("dimPage",
-                          (flags & GeckoSession.FINDER_DISPLAY_DIM_PAGE) != 0);
-        bundle.putBoolean("drawOutline",
-                          (flags & GeckoSession.FINDER_DISPLAY_DRAW_LINK_OUTLINE) != 0);
-        mDispatcher.dispatch("GeckoView:DisplayMatches", bundle);
-    }
+  
+
+
+
+
+
+
+
+  public void setDisplayFlags(@FinderDisplayFlags final int flags) {
+    mDisplayFlags = flags;
+
+    final GeckoBundle bundle = new GeckoBundle(3);
+    bundle.putBoolean("highlightAll", (flags & GeckoSession.FINDER_DISPLAY_HIGHLIGHT_ALL) != 0);
+    bundle.putBoolean("dimPage", (flags & GeckoSession.FINDER_DISPLAY_DIM_PAGE) != 0);
+    bundle.putBoolean("drawOutline", (flags & GeckoSession.FINDER_DISPLAY_DRAW_LINK_OUTLINE) != 0);
+    mDispatcher.dispatch("GeckoView:DisplayMatches", bundle);
+  }
 }

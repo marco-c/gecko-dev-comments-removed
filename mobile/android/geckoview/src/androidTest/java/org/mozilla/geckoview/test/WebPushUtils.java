@@ -3,10 +3,9 @@
 
 package org.mozilla.geckoview.test;
 
+import android.util.Base64;
 import androidx.annotation.AnyThread;
 import androidx.annotation.Nullable;
-import android.util.Base64;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
@@ -26,140 +25,139 @@ import java.security.spec.InvalidKeySpecException;
 
 
  class WebPushUtils {
-    public static final int P256_PUBLIC_KEY_LENGTH = 65; 
-    private static final byte NIST_HEADER = 0x04; 
+  public static final int P256_PUBLIC_KEY_LENGTH = 65; 
+  private static final byte NIST_HEADER = 0x04; 
 
-    private static ECParameterSpec sSpec;
+  private static ECParameterSpec sSpec;
 
-    private WebPushUtils() {
+  private WebPushUtils() {}
+
+  
+
+
+
+
+
+  @AnyThread
+  public static @Nullable byte[] keyToBytes(final @Nullable ECPublicKey key) {
+    if (key == null) {
+      return null;
     }
 
-    
+    final ByteBuffer buffer = ByteBuffer.allocate(P256_PUBLIC_KEY_LENGTH);
+    buffer.put(NIST_HEADER);
 
+    putUnsignedBigInteger(buffer, key.getW().getAffineX());
+    putUnsignedBigInteger(buffer, key.getW().getAffineY());
 
-
-
-
-
-    @AnyThread
-    public static @Nullable byte[] keyToBytes(final @Nullable ECPublicKey key) {
-        if (key == null) {
-            return null;
-        }
-
-        final ByteBuffer buffer = ByteBuffer.allocate(P256_PUBLIC_KEY_LENGTH);
-        buffer.put(NIST_HEADER);
-
-        putUnsignedBigInteger(buffer, key.getW().getAffineX());
-        putUnsignedBigInteger(buffer, key.getW().getAffineY());
-
-        if (buffer.position() != P256_PUBLIC_KEY_LENGTH) {
-            throw new RuntimeException("Unexpected key length " + buffer.position());
-        }
-
-        return buffer.array();
+    if (buffer.position() != P256_PUBLIC_KEY_LENGTH) {
+      throw new RuntimeException("Unexpected key length " + buffer.position());
     }
 
-    private static void putUnsignedBigInteger(final ByteBuffer buffer, final BigInteger value) {
-        final byte[] bytes = value.toByteArray();
-        if (bytes.length < 32) {
-            buffer.put(new byte[32 - bytes.length]);
-            buffer.put(bytes);
-        } else {
-            buffer.put(bytes, bytes.length - 32, 32);
-        }
+    return buffer.array();
+  }
+
+  private static void putUnsignedBigInteger(final ByteBuffer buffer, final BigInteger value) {
+    final byte[] bytes = value.toByteArray();
+    if (bytes.length < 32) {
+      buffer.put(new byte[32 - bytes.length]);
+      buffer.put(bytes);
+    } else {
+      buffer.put(bytes, bytes.length - 32, 32);
+    }
+  }
+
+  
+
+
+
+
+
+
+  @AnyThread
+  public static @Nullable String keyToString(final @Nullable ECPublicKey key) {
+    return Base64.encodeToString(
+        keyToBytes(key), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+  }
+
+  
+  public static ECParameterSpec getP256Spec() {
+    if (sSpec == null) {
+      try {
+        final KeyPairGenerator gen = KeyPairGenerator.getInstance("EC");
+        final ECGenParameterSpec genSpec = new ECGenParameterSpec("secp256r1");
+        gen.initialize(genSpec);
+        sSpec = ((ECPublicKey) gen.generateKeyPair().getPublic()).getParams();
+      } catch (final NoSuchAlgorithmException e) {
+        throw new RuntimeException(e);
+      } catch (final InvalidAlgorithmParameterException e) {
+        throw new RuntimeException(e);
+      }
     }
 
-    
+    return sSpec;
+  }
+
+  
 
 
 
 
 
-
-    @AnyThread
-    public static @Nullable String keyToString(final @Nullable ECPublicKey key) {
-        return Base64.encodeToString(keyToBytes(key), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+  @AnyThread
+  public static @Nullable ECPublicKey keyFromString(final @Nullable String base64Bytes) {
+    if (base64Bytes == null) {
+      return null;
     }
 
-    
+    return keyFromBytes(Base64.decode(base64Bytes, Base64.URL_SAFE));
+  }
+
+  private static BigInteger readUnsignedBigInteger(
+      final byte[] bytes, final int offset, final int length) {
+    byte[] mag = bytes;
+    if (offset != 0 || length != bytes.length) {
+      mag = new byte[length];
+      System.arraycopy(bytes, offset, mag, 0, length);
+    }
+    return new BigInteger(1, mag);
+  }
+
+  
 
 
-    public static ECParameterSpec getP256Spec() {
-        if (sSpec == null) {
-            try {
-                final KeyPairGenerator gen = KeyPairGenerator.getInstance("EC");
-                final ECGenParameterSpec genSpec = new ECGenParameterSpec("secp256r1");
-                gen.initialize(genSpec);
-                sSpec = ((ECPublicKey) gen.generateKeyPair().getPublic()).getParams();
-            } catch (final NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            } catch (final InvalidAlgorithmParameterException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
-        return sSpec;
+
+
+  @AnyThread
+  public static @Nullable ECPublicKey keyFromBytes(final @Nullable byte[] bytes) {
+    if (bytes == null) {
+      return null;
     }
 
-    
-
-
-
-
-
-    @AnyThread
-    public static @Nullable ECPublicKey keyFromString(final @Nullable String base64Bytes) {
-        if (base64Bytes == null) {
-            return null;
-        }
-
-        return keyFromBytes(Base64.decode(base64Bytes, Base64.URL_SAFE));
+    if (bytes.length != P256_PUBLIC_KEY_LENGTH) {
+      throw new IllegalArgumentException(
+          String.format("Expected exactly %d bytes", P256_PUBLIC_KEY_LENGTH));
     }
 
-    private static BigInteger readUnsignedBigInteger(final byte[] bytes, final int offset, final int length) {
-        byte[] mag = bytes;
-        if (offset != 0 || length != bytes.length) {
-            mag = new byte[length];
-            System.arraycopy(bytes, offset, mag, 0, length);
-        }
-        return new BigInteger(1, mag);
+    if (bytes[0] != NIST_HEADER) {
+      throw new IllegalArgumentException("Expected uncompressed NIST format");
     }
 
-    
+    try {
+      final BigInteger x = readUnsignedBigInteger(bytes, 1, 32);
+      final BigInteger y = readUnsignedBigInteger(bytes, 33, 32);
 
+      final ECPoint point = new ECPoint(x, y);
+      final ECPublicKeySpec spec = new ECPublicKeySpec(point, getP256Spec());
+      final KeyFactory factory = KeyFactory.getInstance("EC");
+      final ECPublicKey key = (ECPublicKey) factory.generatePublic(spec);
 
-
-
-
-    @AnyThread
-    public static @Nullable ECPublicKey keyFromBytes(final @Nullable byte[] bytes) {
-        if (bytes == null) {
-            return null;
-        }
-
-        if (bytes.length != P256_PUBLIC_KEY_LENGTH) {
-            throw new IllegalArgumentException(String.format("Expected exactly %d bytes", P256_PUBLIC_KEY_LENGTH));
-        }
-
-        if (bytes[0] != NIST_HEADER) {
-            throw new IllegalArgumentException("Expected uncompressed NIST format");
-        }
-
-        try {
-            final BigInteger x = readUnsignedBigInteger(bytes, 1, 32);
-            final BigInteger y = readUnsignedBigInteger(bytes, 33, 32);
-
-            final ECPoint point = new ECPoint(x, y);
-            final ECPublicKeySpec spec = new ECPublicKeySpec(point, getP256Spec());
-            final KeyFactory factory = KeyFactory.getInstance("EC");
-            final ECPublicKey key = (ECPublicKey) factory.generatePublic(spec);
-
-            return key;
-        } catch (final NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (final InvalidKeySpecException e) {
-            throw new RuntimeException(e);
-        }
+      return key;
+    } catch (final NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    } catch (final InvalidKeySpecException e) {
+      throw new RuntimeException(e);
     }
+  }
 }

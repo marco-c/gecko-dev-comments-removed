@@ -12,126 +12,130 @@ import android.content.pm.ServiceInfo;
 import androidx.annotation.NonNull;
 
  final class ServiceUtils {
-    private static final String DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX = "0";
+  private static final String DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX = "0";
 
-    private ServiceUtils() {}
+  private ServiceUtils() {}
 
-    
+  
 
 
 
-    private static StringBuilder startSvcName(@NonNull final GeckoProcessType type) {
-        final StringBuilder builder = new StringBuilder(GeckoChildProcessServices.class.getName());
-        builder.append("$").append(type);
-        return builder;
+  private static StringBuilder startSvcName(@NonNull final GeckoProcessType type) {
+    final StringBuilder builder = new StringBuilder(GeckoChildProcessServices.class.getName());
+    builder.append("$").append(type);
+    return builder;
+  }
+
+  
+
+
+
+  public static String buildSvcName(
+      @NonNull final GeckoProcessType type, final String... suffixes) {
+    final StringBuilder builder = startSvcName(type);
+
+    for (final String suffix : suffixes) {
+      builder.append(suffix);
+    }
+
+    return builder.toString();
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static String buildIsolatedSvcName(@NonNull final GeckoProcessType type) {
+    if (type == GeckoProcessType.CONTENT) {
+      return buildSvcName(type, DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX);
     }
 
     
+    return buildSvcName(type);
+  }
+
+  
 
 
 
-    public static String buildSvcName(@NonNull final GeckoProcessType type, final String... suffixes) {
-        final StringBuilder builder = startSvcName(type);
 
-        for (final String suffix : suffixes) {
-            builder.append(suffix);
-        }
 
-        return builder.toString();
+  private static String buildSvcNamePrefix(@NonNull final GeckoProcessType type) {
+    return startSvcName(type).toString();
+  }
+
+  
+
+
+
+
+
+
+
+  public static int getServiceFlags(
+      @NonNull final Context context, @NonNull final GeckoProcessType type) {
+    final ComponentName component = new ComponentName(context, buildIsolatedSvcName(type));
+    final PackageManager pkgMgr = context.getPackageManager();
+
+    try {
+      final ServiceInfo svcInfo = pkgMgr.getServiceInfo(component, 0);
+      
+      return svcInfo.flags;
+    } catch (final PackageManager.NameNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  
+  private static ServiceInfo[] getServiceList(@NonNull final Context context) {
+    final PackageInfo packageInfo;
+    try {
+      packageInfo =
+          context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), PackageManager.GET_SERVICES);
+    } catch (final PackageManager.NameNotFoundException e) {
+      throw new AssertionError("Should not happen: Can't get package info of own package");
+    }
+    return packageInfo.services;
+  }
+
+  
+
+
+
+
+
+
+
+  public static int getServiceCount(
+      @NonNull final Context context, @NonNull final GeckoProcessType type) {
+    final ServiceInfo[] svcList = getServiceList(context);
+    final String serviceNamePrefix = buildSvcNamePrefix(type);
+
+    int result = 0;
+    for (final ServiceInfo svc : svcList) {
+      final String svcName = svc.name;
+      
+      
+      
+      
+      if (svcName.startsWith(serviceNamePrefix)
+          && (svcName.length() == serviceNamePrefix.length()
+              || Character.isDigit(svcName.codePointAt(serviceNamePrefix.length())))) {
+        ++result;
+      }
     }
 
-    
-
-
-
-
-
-
-
-
-    public static String buildIsolatedSvcName(@NonNull final GeckoProcessType type) {
-        if (type == GeckoProcessType.CONTENT) {
-            return buildSvcName(type, DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX);
-        }
-
-        
-        return buildSvcName(type);
+    if (result <= 0) {
+      throw new RuntimeException("Could not count " + serviceNamePrefix + " services in manifest");
     }
 
-    
-
-
-
-
-    private static String buildSvcNamePrefix(@NonNull final GeckoProcessType type) {
-        return startSvcName(type).toString();
-    }
-
-    
-
-
-
-
-
-
-    public static int getServiceFlags(@NonNull final Context context, @NonNull final GeckoProcessType type) {
-        final ComponentName component = new ComponentName(context, buildIsolatedSvcName(type));
-        final PackageManager pkgMgr = context.getPackageManager();
-
-        try {
-            final ServiceInfo svcInfo = pkgMgr.getServiceInfo(component, 0);
-            
-            return svcInfo.flags;
-        } catch (final PackageManager.NameNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    
-
-
-    private static ServiceInfo[] getServiceList(@NonNull final Context context) {
-        final PackageInfo packageInfo;
-        try {
-            packageInfo = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), PackageManager.GET_SERVICES);
-        } catch (final PackageManager.NameNotFoundException e) {
-            throw new AssertionError("Should not happen: Can't get package info of own package");
-        }
-        return packageInfo.services;
-    }
-
-    
-
-
-
-
-
-
-    public static int getServiceCount(@NonNull final Context context, @NonNull final GeckoProcessType type) {
-        final ServiceInfo[] svcList = getServiceList(context);
-        final String serviceNamePrefix = buildSvcNamePrefix(type);
-
-        int result = 0;
-        for (final ServiceInfo svc : svcList) {
-            final String svcName = svc.name;
-            
-            
-            
-            
-            if (svcName.startsWith(serviceNamePrefix) &&
-                (svcName.length() == serviceNamePrefix.length() ||
-                 Character.isDigit(svcName.codePointAt(serviceNamePrefix.length())))) {
-                ++result;
-            }
-        }
-
-        if (result <= 0) {
-            throw new RuntimeException("Could not count " + serviceNamePrefix + " services in manifest");
-        }
-
-        return result;
-    }
-
+    return result;
+  }
 }
-

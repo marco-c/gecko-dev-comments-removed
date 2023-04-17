@@ -17,34 +17,30 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface WrapForJNI {
-    
+  
+  boolean skip() default false;
 
-
-    boolean skip() default false;
-
-    
+  
 
 
 
-    String stubName() default "";
+  String stubName() default "";
 
-    
-
+  
 
 
 
 
 
+  String exceptionMode() default "abort";
 
-    String exceptionMode() default "abort";
-
-    
-
+  
 
 
-    String calledFrom() default "any";
 
-    
+  String calledFrom() default "any";
+
+  
 
 
 
@@ -53,13 +49,8 @@ public @interface WrapForJNI {
 
 
 
+  String dispatchTo() default "current";
 
-
-
-    String dispatchTo() default "current";
-
-    
-
-
-    boolean noLiteral() default false;
+  
+  boolean noLiteral() default false;
 }

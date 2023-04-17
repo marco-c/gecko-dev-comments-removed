@@ -9,9 +9,9 @@ import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodec.CryptoInfo;
 import android.os.Build;
 import android.util.Log;
-
+import java.nio.ByteBuffer;
+import java.util.List;
 import org.mozilla.geckoview.BuildConfig;
-
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlaybackException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
@@ -22,147 +22,149 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.mediacodec.MediaCode
 import org.mozilla.thirdparty.com.google.android.exoplayer2.mediacodec.MediaCodecUtil;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-
 public class GeckoHlsAudioRenderer extends GeckoHlsRendererBase {
-    public GeckoHlsAudioRenderer(final GeckoHlsPlayer.ComponentEventDispatcher eventDispatcher) {
-        super(C.TRACK_TYPE_AUDIO, eventDispatcher);
-        assertTrue(Build.VERSION.SDK_INT >= 16);
-        LOGTAG = getClass().getSimpleName();
-        DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
+  public GeckoHlsAudioRenderer(final GeckoHlsPlayer.ComponentEventDispatcher eventDispatcher) {
+    super(C.TRACK_TYPE_AUDIO, eventDispatcher);
+    assertTrue(Build.VERSION.SDK_INT >= 16);
+    LOGTAG = getClass().getSimpleName();
+    DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
+  }
+
+  @Override
+  public final int supportsFormat(final Format format) {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    final String mimeType = format.sampleMimeType;
+    if (!MimeTypes.isAudio(mimeType)) {
+      return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
     }
-
-    @Override
-    public final int supportsFormat(final Format format) {
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        final String mimeType = format.sampleMimeType;
-        if (!MimeTypes.isAudio(mimeType)) {
-            return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
-        }
-        List<MediaCodecInfo> decoderInfos = null;
-        try {
-            final MediaCodecSelector mediaCodecSelector = MediaCodecSelector.DEFAULT;
-            decoderInfos = mediaCodecSelector.getDecoderInfos(mimeType, false, false);
-        } catch (final MediaCodecUtil.DecoderQueryException e) {
-            Log.e(LOGTAG, e.getMessage());
-        }
-        if (decoderInfos == null || decoderInfos.isEmpty()) {
-            return RendererCapabilities.create(FORMAT_UNSUPPORTED_SUBTYPE);
-        }
-        final MediaCodecInfo info = decoderInfos.get(0);
-        
-
-
-
-
-
-        final boolean decoderCapable = (Build.VERSION.SDK_INT < 21) ||
-                                 ((format.sampleRate == Format.NO_VALUE ||
-                                 info.isAudioSampleRateSupportedV21(format.sampleRate)) &&
-                                 (format.channelCount == Format.NO_VALUE ||
-                                 info.isAudioChannelCountSupportedV21(format.channelCount)));
-        return RendererCapabilities.create(
-                decoderCapable ? FORMAT_HANDLED : FORMAT_EXCEEDS_CAPABILITIES,
-                ADAPTIVE_NOT_SEAMLESS,
-                TUNNELING_NOT_SUPPORTED);
+    List<MediaCodecInfo> decoderInfos = null;
+    try {
+      final MediaCodecSelector mediaCodecSelector = MediaCodecSelector.DEFAULT;
+      decoderInfos = mediaCodecSelector.getDecoderInfos(mimeType, false, false);
+    } catch (final MediaCodecUtil.DecoderQueryException e) {
+      Log.e(LOGTAG, e.getMessage());
     }
-
-    @Override
-    protected final void createInputBuffer() {
-        
-        
-        mInputBuffer = null;
+    if (decoderInfos == null || decoderInfos.isEmpty()) {
+      return RendererCapabilities.create(FORMAT_UNSUPPORTED_SUBTYPE);
     }
+    final MediaCodecInfo info = decoderInfos.get(0);
+    
 
-    @Override
-    protected void resetRenderer() {
-        mInputBuffer = null;
-        mInitialized = false;
+
+
+
+
+    final boolean decoderCapable =
+        (Build.VERSION.SDK_INT < 21)
+            || ((format.sampleRate == Format.NO_VALUE
+                    || info.isAudioSampleRateSupportedV21(format.sampleRate))
+                && (format.channelCount == Format.NO_VALUE
+                    || info.isAudioChannelCountSupportedV21(format.channelCount)));
+    return RendererCapabilities.create(
+        decoderCapable ? FORMAT_HANDLED : FORMAT_EXCEEDS_CAPABILITIES,
+        ADAPTIVE_NOT_SEAMLESS,
+        TUNNELING_NOT_SUPPORTED);
+  }
+
+  @Override
+  protected final void createInputBuffer() {
+    
+    
+    mInputBuffer = null;
+  }
+
+  @Override
+  protected void resetRenderer() {
+    mInputBuffer = null;
+    mInitialized = false;
+  }
+
+  @Override
+  protected void handleReconfiguration(final DecoderInputBuffer bufferForRead) {
+    
+  }
+
+  @Override
+  protected void handleFormatRead(final DecoderInputBuffer bufferForRead)
+      throws ExoPlaybackException {
+    onInputFormatChanged(mFormatHolder.format);
+  }
+
+  @Override
+  protected void handleEndOfStream(final DecoderInputBuffer bufferForRead) {
+    mInputStreamEnded = true;
+    mDemuxedInputSamples.offer(GeckoHLSSample.EOS);
+  }
+
+  @Override
+  protected void handleSamplePreparation(final DecoderInputBuffer bufferForRead) {
+    final int size = bufferForRead.data.limit();
+    final byte[] realData = new byte[size];
+    bufferForRead.data.get(realData, 0, size);
+    final ByteBuffer buffer = ByteBuffer.wrap(realData);
+    mInputBuffer = bufferForRead.data;
+    mInputBuffer.clear();
+
+    final CryptoInfo cryptoInfo =
+        bufferForRead.isEncrypted() ? bufferForRead.cryptoInfo.getFrameworkCryptoInfoV16() : null;
+    final BufferInfo bufferInfo = new BufferInfo();
+    
+    int flags = 0;
+    flags |= bufferForRead.isKeyFrame() ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
+    flags |= bufferForRead.isEndOfStream() ? MediaCodec.BUFFER_FLAG_END_OF_STREAM : 0;
+    bufferInfo.set(0, size, bufferForRead.timeUs, flags);
+
+    assertTrue(mFormats.size() >= 0);
+    
+    
+    final GeckoHLSSample sample =
+        GeckoHLSSample.create(buffer, bufferInfo, cryptoInfo, mFormats.size() - 1);
+
+    mDemuxedInputSamples.offer(sample);
+
+    if (BuildConfig.DEBUG_BUILD) {
+      Log.d(
+          LOGTAG,
+          "Demuxed sample PTS : "
+              + sample.info.presentationTimeUs
+              + ", duration :"
+              + sample.duration
+              + ", formatIndex("
+              + sample.formatIndex
+              + "), queue size : "
+              + mDemuxedInputSamples.size());
     }
+  }
 
-    @Override
-    protected void handleReconfiguration(final DecoderInputBuffer bufferForRead) {
-        
+  @Override
+  protected boolean clearInputSamplesQueue() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "clearInputSamplesQueue");
     }
+    mDemuxedInputSamples.clear();
+    return true;
+  }
 
-    @Override
-    protected void handleFormatRead(final DecoderInputBuffer bufferForRead)
-            throws ExoPlaybackException {
-        onInputFormatChanged(mFormatHolder.format);
-    }
-
-    @Override
-    protected void handleEndOfStream(final DecoderInputBuffer bufferForRead) {
-        mInputStreamEnded = true;
-        mDemuxedInputSamples.offer(GeckoHLSSample.EOS);
-    }
-
-    @Override
-    protected void handleSamplePreparation(final DecoderInputBuffer bufferForRead) {
-        final int size = bufferForRead.data.limit();
-        final byte[] realData = new byte[size];
-        bufferForRead.data.get(realData, 0, size);
-        final ByteBuffer buffer = ByteBuffer.wrap(realData);
-        mInputBuffer = bufferForRead.data;
-        mInputBuffer.clear();
-
-        final CryptoInfo cryptoInfo = bufferForRead.isEncrypted() ? bufferForRead.cryptoInfo.getFrameworkCryptoInfoV16() : null;
-        final BufferInfo bufferInfo = new BufferInfo();
-        
-        int flags = 0;
-        flags |= bufferForRead.isKeyFrame() ? MediaCodec.BUFFER_FLAG_KEY_FRAME : 0;
-        flags |= bufferForRead.isEndOfStream() ? MediaCodec.BUFFER_FLAG_END_OF_STREAM : 0;
-        bufferInfo.set(0, size, bufferForRead.timeUs, flags);
-
-        assertTrue(mFormats.size() >= 0);
-        
-        
-        final GeckoHLSSample sample = GeckoHLSSample.create(buffer,
-                                                      bufferInfo,
-                                                      cryptoInfo,
-                                                      mFormats.size() - 1);
-
-        mDemuxedInputSamples.offer(sample);
-
-        if (BuildConfig.DEBUG_BUILD) {
-            Log.d(LOGTAG, "Demuxed sample PTS : " +
-                          sample.info.presentationTimeUs + ", duration :" +
-                          sample.duration + ", formatIndex(" +
-                          sample.formatIndex + "), queue size : " +
-                          mDemuxedInputSamples.size());
-        }
-    }
-
-    @Override
-    protected boolean clearInputSamplesQueue() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "clearInputSamplesQueue");
-        }
-        mDemuxedInputSamples.clear();
-        return true;
-    }
-
-    @Override
-    protected void notifyPlayerInputFormatChanged(final Format newFormat) {
-        mPlayerEventDispatcher.onAudioInputFormatChanged(newFormat);
-    }
+  @Override
+  protected void notifyPlayerInputFormatChanged(final Format newFormat) {
+    mPlayerEventDispatcher.onAudioInputFormatChanged(newFormat);
+  }
 }

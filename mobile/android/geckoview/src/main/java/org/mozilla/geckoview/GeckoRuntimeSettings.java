@@ -6,10 +6,7 @@
 
 package org.mozilla.geckoview;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
-import java.util.Locale;
+import static android.os.Build.VERSION;
 
 import android.app.Service;
 import android.graphics.Rect;
@@ -17,1347 +14,1309 @@ import android.os.Bundle;
 import android.os.LocaleList;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
+import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.text.TextUtils;
-import android.util.Log;
-
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.Locale;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.util.GeckoBundle;
 
-import static android.os.Build.VERSION;
-
 @AnyThread
 public final class GeckoRuntimeSettings extends RuntimeSettings {
-    private static final String LOGTAG = "GeckoRuntimeSettings";
+  private static final String LOGTAG = "GeckoRuntimeSettings";
+
+  
+  @AnyThread
+  public static final class Builder extends RuntimeSettings.Builder<GeckoRuntimeSettings> {
+    @Override
+    protected @NonNull GeckoRuntimeSettings newSettings(
+        final @Nullable GeckoRuntimeSettings settings) {
+      return new GeckoRuntimeSettings(settings);
+    }
 
     
 
 
-    @AnyThread
-    public static final class Builder
-            extends RuntimeSettings.Builder<GeckoRuntimeSettings> {
+
+
+
+    public @NonNull Builder arguments(final @NonNull String[] args) {
+      if (args == null) {
+        throw new IllegalArgumentException("Arguments must not  be null");
+      }
+      getSettings().mArgs = args;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder extras(final @NonNull Bundle extras) {
+      if (extras == null) {
+        throw new IllegalArgumentException("Extras must not  be null");
+      }
+      getSettings().mExtras = extras;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder configFilePath(final @Nullable String configFilePath) {
+      getSettings().mConfigFilePath = configFilePath;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder javaScriptEnabled(final boolean flag) {
+      getSettings().mJavaScript.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder remoteDebuggingEnabled(final boolean enabled) {
+      getSettings().mRemoteDebugging.set(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder webFontsEnabled(final boolean flag) {
+      getSettings().mWebFonts.set(flag ? 1 : 0);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder pauseForDebugger(final boolean enabled) {
+      getSettings().mDebugPause = enabled;
+      return this;
+    }
+    
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder useMaxScreenDepth(final boolean enable) {
+      getSettings().mUseMaxScreenDepth = enable;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull Builder webManifest(final boolean enabled) {
+      getSettings().mWebManifest.set(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder consoleOutput(final boolean enabled) {
+      getSettings().mConsoleOutput.set(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder automaticFontSizeAdjustment(final boolean enabled) {
+      getSettings().setAutomaticFontSizeAdjustment(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder fontSizeFactor(final float fontSizeFactor) {
+      getSettings().setFontSizeFactor(fontSizeFactor);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    @DeprecationSchedule(version = 98, id = "runtime-settings-typo")
+    public @NonNull Builder enterpiseRootsEnabled(final boolean enabled) {
+      getSettings().setEnterpriseRootsEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull Builder enterpriseRootsEnabled(final boolean enabled) {
+      getSettings().setEnterpriseRootsEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder fontInflation(final boolean enabled) {
+      getSettings().setFontInflationEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder displayDensityOverride(final float density) {
+      getSettings().mDisplayDensityOverride = density;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder displayDpiOverride(final int dpi) {
+      getSettings().mDisplayDpiOverride = dpi;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder screenSizeOverride(final int width, final int height) {
+      getSettings().mScreenWidthOverride = width;
+      getSettings().mScreenHeightOverride = height;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder loginAutofillEnabled(final boolean enabled) {
+      getSettings().setLoginAutofillEnabled(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull Builder crashHandler(final @Nullable Class<? extends Service> handler) {
+      getSettings().mCrashHandler = handler;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder locales(final @Nullable String[] requestedLocales) {
+      getSettings().mRequestedLocales = requestedLocales;
+      return this;
+    }
+
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public @NonNull Builder contentBlocking(final @NonNull ContentBlocking.Settings cb) {
+      getSettings().mContentBlocking = cb;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder preferredColorScheme(final @ColorScheme int scheme) {
+      getSettings().setPreferredColorScheme(scheme);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder inputAutoZoomEnabled(final boolean flag) {
+      getSettings().mInputAutoZoom.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder doubleTapZoomingEnabled(final boolean flag) {
+      getSettings().mDoubleTapZooming.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder glMsaaLevel(final int level) {
+      getSettings().mGlMsaaLevel.set(level);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder telemetryDelegate(final @NonNull RuntimeTelemetry.Delegate delegate) {
+      getSettings().mTelemetryProxy = new RuntimeTelemetry.Proxy(delegate);
+      getSettings().mTelemetryEnabled.set(true);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder debugLogging(final boolean enable) {
+      getSettings().mDevToolsConsoleToLogcat.set(enable);
+      getSettings().mConsoleServiceToLogcat.set(enable);
+      getSettings().mGeckoViewLogLevel.set(enable ? "Debug" : "Fatal");
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull Builder aboutConfigEnabled(final boolean flag) {
+      getSettings().mAboutConfig.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder forceUserScalableEnabled(final boolean flag) {
+      getSettings().mForceUserScalable.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder allowInsecureConnections(final @HttpsOnlyMode int level) {
+      getSettings().setAllowInsecureConnections(level);
+      return this;
+    }
+  }
+
+  private GeckoRuntime mRuntime;
+   String[] mArgs;
+   Bundle mExtras;
+   String mConfigFilePath;
+
+   ContentBlocking.Settings mContentBlocking;
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @NonNull ContentBlocking.Settings getContentBlocking() {
+    return mContentBlocking;
+  }
+
+   final Pref<Boolean> mWebManifest = new Pref<Boolean>("dom.manifest.enabled", true);
+   final Pref<Boolean> mJavaScript = new Pref<Boolean>("javascript.enabled", true);
+   final Pref<Boolean> mRemoteDebugging =
+      new Pref<Boolean>("devtools.debugger.remote-enabled", false);
+   final Pref<Integer> mWebFonts =
+      new Pref<Integer>("browser.display.use_document_fonts", 1);
+   final Pref<Boolean> mConsoleOutput =
+      new Pref<Boolean>("geckoview.console.enabled", false);
+   final Pref<Integer> mFontSizeFactor = new Pref<>("font.size.systemFontScale", 100);
+   final Pref<Boolean> mEnterpriseRootsEnabled =
+      new Pref<>("security.enterprise_roots.enabled", false);
+   final Pref<Integer> mFontInflationMinTwips =
+      new Pref<>("font.size.inflation.minTwips", 0);
+   final Pref<Boolean> mInputAutoZoom = new Pref<>("formhelper.autozoom", true);
+   final Pref<Boolean> mDoubleTapZooming =
+      new Pref<>("apz.allow_double_tap_zooming", true);
+   final Pref<Integer> mGlMsaaLevel = new Pref<>("gl.msaa-level", 0);
+   final Pref<Boolean> mTelemetryEnabled =
+      new Pref<>("toolkit.telemetry.geckoview.streaming", false);
+   final Pref<String> mGeckoViewLogLevel = new Pref<>("geckoview.logging", "Debug");
+   final Pref<Boolean> mConsoleServiceToLogcat =
+      new Pref<>("consoleservice.logcat", true);
+   final Pref<Boolean> mDevToolsConsoleToLogcat =
+      new Pref<>("devtools.console.stdout.chrome", true);
+   final Pref<Boolean> mAboutConfig = new Pref<>("general.aboutConfig.enable", false);
+   final Pref<Boolean> mForceUserScalable =
+      new Pref<>("browser.ui.zoom.force-user-scalable", false);
+   final Pref<Boolean> mAutofillLogins =
+      new Pref<Boolean>("signon.autofillForms", true);
+   final Pref<Boolean> mHttpsOnly =
+      new Pref<Boolean>("dom.security.https_only_mode", false);
+   final Pref<Boolean> mHttpsOnlyPrivateMode =
+      new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
+   final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
+
+   int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
+
+   boolean mForceEnableAccessibility;
+   boolean mDebugPause;
+   boolean mUseMaxScreenDepth;
+   float mDisplayDensityOverride = -1.0f;
+   int mDisplayDpiOverride;
+   int mScreenWidthOverride;
+   int mScreenHeightOverride;
+   Class<? extends Service> mCrashHandler;
+   String[] mRequestedLocales;
+   RuntimeTelemetry.Proxy mTelemetryProxy;
+
+  
+
+
+
+
+   void attachTo(final @NonNull GeckoRuntime runtime) {
+    mRuntime = runtime;
+    commit();
+
+    if (mTelemetryProxy != null) {
+      mTelemetryProxy.attach();
+    }
+  }
+
+  @Override 
+  public @Nullable GeckoRuntime getRuntime() {
+    return mRuntime;
+  }
+
+   GeckoRuntimeSettings() {
+    this(null);
+  }
+
+   GeckoRuntimeSettings(final @Nullable GeckoRuntimeSettings settings) {
+    super( null);
+
+    if (settings == null) {
+      mArgs = new String[0];
+      mExtras = new Bundle();
+      mContentBlocking = new ContentBlocking.Settings(this , null );
+      return;
+    }
+
+    updateSettings(settings);
+  }
+
+  private void updateSettings(final @NonNull GeckoRuntimeSettings settings) {
+    updatePrefs(settings);
+
+    mArgs = settings.getArguments().clone();
+    mExtras = new Bundle(settings.getExtras());
+    mContentBlocking = new ContentBlocking.Settings(this , settings.mContentBlocking);
+
+    mForceEnableAccessibility = settings.mForceEnableAccessibility;
+    mDebugPause = settings.mDebugPause;
+    mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
+    mDisplayDensityOverride = settings.mDisplayDensityOverride;
+    mDisplayDpiOverride = settings.mDisplayDpiOverride;
+    mScreenWidthOverride = settings.mScreenWidthOverride;
+    mScreenHeightOverride = settings.mScreenHeightOverride;
+    mCrashHandler = settings.mCrashHandler;
+    mRequestedLocales = settings.mRequestedLocales;
+    mConfigFilePath = settings.mConfigFilePath;
+    mTelemetryProxy = settings.mTelemetryProxy;
+  }
+
+   void commit() {
+    commitLocales();
+    commitResetPrefs();
+  }
+
+  
+
+
+
+
+  public @NonNull String[] getArguments() {
+    return mArgs;
+  }
+
+  
+
+
+
+
+  public @NonNull Bundle getExtras() {
+    return mExtras;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public @Nullable String getConfigFilePath() {
+    return mConfigFilePath;
+  }
+
+  
+
+
+
+
+  public boolean getJavaScriptEnabled() {
+    return mJavaScript.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setJavaScriptEnabled(final boolean flag) {
+    mJavaScript.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getRemoteDebuggingEnabled() {
+    return mRemoteDebugging.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setRemoteDebuggingEnabled(final boolean enabled) {
+    mRemoteDebugging.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getWebFontsEnabled() {
+    return mWebFonts.get() != 0 ? true : false;
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setWebFontsEnabled(final boolean flag) {
+    mWebFonts.commit(flag ? 1 : 0);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getPauseForDebuggerEnabled() {
+    return mDebugPause;
+  }
+
+  
+
+
+
+
+  public boolean getForceEnableAccessibility() {
+    return mForceEnableAccessibility;
+  }
+
+  
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setForceEnableAccessibility(final boolean value) {
+    mForceEnableAccessibility = value;
+    SessionAccessibility.setForceEnabled(value);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getUseMaxScreenDepth() {
+    return mUseMaxScreenDepth;
+  }
+
+  
+
+
+
+
+  public @Nullable Float getDisplayDensityOverride() {
+    if (mDisplayDensityOverride > 0.0f) {
+      return mDisplayDensityOverride;
+    }
+    return null;
+  }
+
+  
+
+
+
+
+  public @Nullable Integer getDisplayDpiOverride() {
+    if (mDisplayDpiOverride > 0) {
+      return mDisplayDpiOverride;
+    }
+    return null;
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @Nullable Class<? extends Service> getCrashHandler() {
+    return mCrashHandler;
+  }
+
+  
+
+
+
+
+
+  public @Nullable Rect getScreenSizeOverride() {
+    if ((mScreenWidthOverride > 0) && (mScreenHeightOverride > 0)) {
+      return new Rect(0, 0, mScreenWidthOverride, mScreenHeightOverride);
+    }
+    return null;
+  }
+
+  
+
+
+
+
+  public @Nullable String[] getLocales() {
+    return mRequestedLocales;
+  }
+
+  
+
+
+
+
+  public void setLocales(final @Nullable String[] requestedLocales) {
+    mRequestedLocales = requestedLocales;
+    commitLocales();
+  }
+
+  private void commitLocales() {
+    final GeckoBundle data = new GeckoBundle(1);
+    data.putStringArray("requestedLocales", mRequestedLocales);
+    data.putString("acceptLanguages", computeAcceptLanguages());
+    EventDispatcher.getInstance().dispatch("GeckoView:SetLocale", data);
+  }
+
+  private String computeAcceptLanguages() {
+    final ArrayList<String> locales = new ArrayList<String>();
+
+    
+    if (mRequestedLocales != null) {
+      for (final String locale : mRequestedLocales) {
+        locales.add(locale.toLowerCase(Locale.ROOT));
+      }
+    }
+    
+    for (final String locale : getDefaultLocales()) {
+      final String localeLowerCase = locale.toLowerCase(Locale.ROOT);
+      if (!locales.contains(localeLowerCase)) {
+        locales.add(localeLowerCase);
+      }
+    }
+
+    return TextUtils.join(",", locales);
+  }
+
+  private static String[] getDefaultLocales() {
+    if (VERSION.SDK_INT >= 24) {
+      final LocaleList localeList = LocaleList.getDefault();
+      final String[] locales = new String[localeList.size()];
+      for (int i = 0; i < localeList.size(); i++) {
+        locales[i] = localeList.get(i).toLanguageTag();
+      }
+      return locales;
+    }
+    final String[] locales = new String[1];
+    final Locale locale = Locale.getDefault();
+    if (VERSION.SDK_INT >= 21) {
+      locales[0] = locale.toLanguageTag();
+      return locales;
+    }
+
+    locales[0] = getLanguageTag(locale);
+    return locales;
+  }
+
+  private static String getLanguageTag(final Locale locale) {
+    final StringBuilder out = new StringBuilder(locale.getLanguage());
+    final String country = locale.getCountry();
+    final String variant = locale.getVariant();
+    if (!TextUtils.isEmpty(country)) {
+      out.append('-').append(country);
+    }
+    if (!TextUtils.isEmpty(variant)) {
+      out.append('-').append(variant);
+    }
+    
+    return out.toString();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setWebManifestEnabled(final boolean enabled) {
+    mWebManifest.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getWebManifestEnabled() {
+    return mWebManifest.get();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setConsoleOutputEnabled(final boolean enabled) {
+    mConsoleOutput.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getConsoleOutputEnabled() {
+    return mConsoleOutput.get();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setAutomaticFontSizeAdjustment(final boolean enabled) {
+    GeckoFontScaleListener.getInstance().setEnabled(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+
+  public boolean getAutomaticFontSizeAdjustment() {
+    return GeckoFontScaleListener.getInstance().getEnabled();
+  }
+
+  private static final int FONT_INFLATION_BASE_VALUE = 120;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setFontSizeFactor(final float fontSizeFactor) {
+    if (getAutomaticFontSizeAdjustment()) {
+      throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
+    }
+    return setFontSizeFactorInternal(fontSizeFactor);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setEnterpriseRootsEnabled(final boolean enabled) {
+    mEnterpriseRootsEnabled.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getEnterpriseRootsEnabled() {
+    return mEnterpriseRootsEnabled.get();
+  }
+
+  private static final float DEFAULT_FONT_SIZE_FACTOR = 1f;
+
+  private float sanitizeFontSizeFactor(final float fontSizeFactor) {
+    if (fontSizeFactor < 0) {
+      if (BuildConfig.DEBUG) {
+        throw new IllegalArgumentException("fontSizeFactor cannot be < 0");
+      } else {
+        Log.e(LOGTAG, "fontSizeFactor cannot be < 0");
+        return DEFAULT_FONT_SIZE_FACTOR;
+      }
+    }
+
+    return fontSizeFactor;
+  }
+
+   @NonNull
+  GeckoRuntimeSettings setFontSizeFactorInternal(final float fontSizeFactor) {
+    final int fontSizePercentage = Math.round(sanitizeFontSizeFactor(fontSizeFactor) * 100);
+    mFontSizeFactor.commit(fontSizePercentage);
+    if (getFontInflationEnabled()) {
+      final int scaledFontInflation = Math.round(FONT_INFLATION_BASE_VALUE * fontSizeFactor);
+      mFontInflationMinTwips.commit(scaledFontInflation);
+    }
+    return this;
+  }
+
+  
+
+
+
+
+  public float getFontSizeFactor() {
+    return mFontSizeFactor.get() / 100f;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setFontInflationEnabled(final boolean enabled) {
+    final int minTwips = enabled ? Math.round(FONT_INFLATION_BASE_VALUE * getFontSizeFactor()) : 0;
+    mFontInflationMinTwips.commit(minTwips);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getFontInflationEnabled() {
+    return mFontInflationMinTwips.get() > 0;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({COLOR_SCHEME_LIGHT, COLOR_SCHEME_DARK, COLOR_SCHEME_SYSTEM})
+   @interface ColorScheme {}
+
+  
+  public static final int COLOR_SCHEME_LIGHT = 0;
+  
+  public static final int COLOR_SCHEME_DARK = 1;
+  
+  public static final int COLOR_SCHEME_SYSTEM = -1;
+
+  
+
+
+
+
+  public @ColorScheme int getPreferredColorScheme() {
+    return mPreferredColorScheme;
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setPreferredColorScheme(final @ColorScheme int scheme) {
+    if (mPreferredColorScheme != scheme) {
+      mPreferredColorScheme = scheme;
+      GeckoSystemStateListener.onDeviceChanged();
+    }
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getInputAutoZoomEnabled() {
+    return mInputAutoZoom.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setInputAutoZoomEnabled(final boolean flag) {
+    mInputAutoZoom.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getDoubleTapZoomingEnabled() {
+    return mDoubleTapZooming.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setDoubleTapZoomingEnabled(final boolean flag) {
+    mDoubleTapZooming.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public int getGlMsaaLevel() {
+    return mGlMsaaLevel.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setGlMsaaLevel(final int level) {
+    mGlMsaaLevel.commit(level);
+    return this;
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
+    return mTelemetryProxy.getDelegate();
+  }
+
+  
+
+
+
+
+  public boolean getAboutConfigEnabled() {
+    return mAboutConfig.get();
+  }
+
+  
+
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setAboutConfigEnabled(final boolean flag) {
+    mAboutConfig.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getForceUserScalableEnabled() {
+    return mForceUserScalable.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setForceUserScalableEnabled(final boolean flag) {
+    mForceUserScalable.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getLoginAutofillEnabled() {
+    return mAutofillLogins.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(final boolean enabled) {
+    mAutofillLogins.commit(enabled);
+    return this;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({ALLOW_ALL, HTTPS_ONLY_PRIVATE, HTTPS_ONLY})
+   @interface HttpsOnlyMode {}
+
+  
+  public static final int ALLOW_ALL = 0;
+  
+  public static final int HTTPS_ONLY_PRIVATE = 1;
+  
+  public static final int HTTPS_ONLY = 2;
+
+  
+
+
+
+
+  public @HttpsOnlyMode int getAllowInsecureConnections() {
+    final boolean httpsOnly = mHttpsOnly.get();
+    final boolean httpsOnlyPrivate = mHttpsOnlyPrivateMode.get();
+    if (httpsOnly) {
+      return HTTPS_ONLY;
+    } else if (httpsOnlyPrivate) {
+      return HTTPS_ONLY_PRIVATE;
+    }
+    return ALLOW_ALL;
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setAllowInsecureConnections(final @HttpsOnlyMode int level) {
+    switch (level) {
+      case ALLOW_ALL:
+        mHttpsOnly.commit(false);
+        mHttpsOnlyPrivateMode.commit(false);
+        break;
+      case HTTPS_ONLY_PRIVATE:
+        mHttpsOnly.commit(false);
+        mHttpsOnlyPrivateMode.commit(true);
+        break;
+      case HTTPS_ONLY:
+        mHttpsOnly.commit(true);
+        mHttpsOnlyPrivateMode.commit(false);
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid setting for setAllowInsecureConnections");
+    }
+    return this;
+  }
+
+  
+   @NonNull
+  GeckoRuntimeSettings setProcessCount(final int processCount) {
+    mProcessCount.commit(processCount);
+    return this;
+  }
+
+  @Override 
+  public void writeToParcel(final Parcel out, final int flags) {
+    super.writeToParcel(out, flags);
+
+    out.writeStringArray(mArgs);
+    mExtras.writeToParcel(out, flags);
+    ParcelableUtils.writeBoolean(out, mForceEnableAccessibility);
+    ParcelableUtils.writeBoolean(out, mDebugPause);
+    ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
+    out.writeFloat(mDisplayDensityOverride);
+    out.writeInt(mDisplayDpiOverride);
+    out.writeInt(mScreenWidthOverride);
+    out.writeInt(mScreenHeightOverride);
+    out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
+    out.writeStringArray(mRequestedLocales);
+    out.writeString(mConfigFilePath);
+  }
+
+  
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public void readFromParcel(final @NonNull Parcel source) {
+    super.readFromParcel(source);
+
+    mArgs = source.createStringArray();
+    mExtras.readFromParcel(source);
+    mForceEnableAccessibility = ParcelableUtils.readBoolean(source);
+    mDebugPause = ParcelableUtils.readBoolean(source);
+    mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
+    mDisplayDensityOverride = source.readFloat();
+    mDisplayDpiOverride = source.readInt();
+    mScreenWidthOverride = source.readInt();
+    mScreenHeightOverride = source.readInt();
+
+    final String crashHandlerName = source.readString();
+    if (crashHandlerName != null) {
+      try {
+        @SuppressWarnings("unchecked")
+        final Class<? extends Service> handler =
+            (Class<? extends Service>) Class.forName(crashHandlerName);
+
+        mCrashHandler = handler;
+      } catch (final ClassNotFoundException e) {
+      }
+    }
+
+    mRequestedLocales = source.createStringArray();
+    mConfigFilePath = source.readString();
+  }
+
+  public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR =
+      new Parcelable.Creator<GeckoRuntimeSettings>() {
         @Override
-        protected @NonNull GeckoRuntimeSettings newSettings(
-                final @Nullable GeckoRuntimeSettings settings) {
-            return new GeckoRuntimeSettings(settings);
+        public GeckoRuntimeSettings createFromParcel(final Parcel in) {
+          final GeckoRuntimeSettings settings = new GeckoRuntimeSettings();
+          settings.readFromParcel(in);
+          return settings;
         }
 
-        
-
-
-
-
-
-        public @NonNull Builder arguments(final @NonNull String[] args) {
-            if (args == null) {
-                throw new IllegalArgumentException("Arguments must not  be null");
-            }
-            getSettings().mArgs = args;
-            return this;
+        @Override
+        public GeckoRuntimeSettings[] newArray(final int size) {
+          return new GeckoRuntimeSettings[size];
         }
-
-        
-
-
-
-
-
-        public @NonNull Builder extras(final @NonNull Bundle extras) {
-            if (extras == null) {
-                throw new IllegalArgumentException("Extras must not  be null");
-            }
-            getSettings().mExtras = extras;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder configFilePath(final @Nullable String configFilePath) {
-            getSettings().mConfigFilePath = configFilePath;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder javaScriptEnabled(final boolean flag) {
-            getSettings().mJavaScript.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder remoteDebuggingEnabled(final boolean enabled) {
-            getSettings().mRemoteDebugging.set(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder webFontsEnabled(final boolean flag) {
-            getSettings().mWebFonts.set(flag ? 1 : 0);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder pauseForDebugger(final boolean enabled) {
-            getSettings().mDebugPause = enabled;
-            return this;
-        }
-        
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder useMaxScreenDepth(final boolean enable) {
-            getSettings().mUseMaxScreenDepth = enable;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder webManifest(final boolean enabled) {
-            getSettings().mWebManifest.set(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder consoleOutput(final boolean enabled) {
-            getSettings().mConsoleOutput.set(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder automaticFontSizeAdjustment(final boolean enabled) {
-            getSettings().setAutomaticFontSizeAdjustment(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder fontSizeFactor(final float fontSizeFactor) {
-            getSettings().setFontSizeFactor(fontSizeFactor);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        @Deprecated
-        @DeprecationSchedule(version = 98, id = "runtime-settings-typo")
-        public @NonNull Builder enterpiseRootsEnabled(final boolean enabled) {
-            getSettings().setEnterpriseRootsEnabled(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-        public @NonNull Builder enterpriseRootsEnabled(final boolean enabled) {
-            getSettings().setEnterpriseRootsEnabled(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder fontInflation(final boolean enabled) {
-            getSettings().setFontInflationEnabled(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder displayDensityOverride(final float density) {
-            getSettings().mDisplayDensityOverride = density;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder displayDpiOverride(final int dpi) {
-            getSettings().mDisplayDpiOverride = dpi;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder screenSizeOverride(final int width, final int height) {
-            getSettings().mScreenWidthOverride = width;
-            getSettings().mScreenHeightOverride = height;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-        public @NonNull Builder loginAutofillEnabled(final boolean enabled) {
-            getSettings().setLoginAutofillEnabled(enabled);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public @NonNull Builder crashHandler(final @Nullable Class<? extends Service> handler) {
-            getSettings().mCrashHandler = handler;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder locales(final @Nullable String[] requestedLocales) {
-            getSettings().mRequestedLocales = requestedLocales;
-            return this;
-        }
-
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public @NonNull Builder contentBlocking(
-                final @NonNull ContentBlocking.Settings cb) {
-            getSettings().mContentBlocking = cb;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder preferredColorScheme(final @ColorScheme int scheme) {
-            getSettings().setPreferredColorScheme(scheme);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder inputAutoZoomEnabled(final boolean flag) {
-            getSettings().mInputAutoZoom.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder doubleTapZoomingEnabled(final boolean flag) {
-            getSettings().mDoubleTapZooming.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder glMsaaLevel(final int level) {
-            getSettings().mGlMsaaLevel.set(level);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder telemetryDelegate(
-                final @NonNull RuntimeTelemetry.Delegate delegate) {
-            getSettings().mTelemetryProxy = new RuntimeTelemetry.Proxy(delegate);
-            getSettings().mTelemetryEnabled.set(true);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        public @NonNull Builder debugLogging(final boolean enable) {
-            getSettings().mDevToolsConsoleToLogcat.set(enable);
-            getSettings().mConsoleServiceToLogcat.set(enable);
-            getSettings().mGeckoViewLogLevel.set(enable ? "Debug" : "Fatal");
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-        public @NonNull Builder aboutConfigEnabled(final boolean flag) {
-            getSettings().mAboutConfig.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder forceUserScalableEnabled(final boolean flag) {
-            getSettings().mForceUserScalable.set(flag);
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull Builder allowInsecureConnections(final @HttpsOnlyMode int level) {
-            getSettings().setAllowInsecureConnections(level);
-            return this;
-        }
-    }
-
-    private GeckoRuntime mRuntime;
-     String[] mArgs;
-     Bundle mExtras;
-     String mConfigFilePath;
-
-     ContentBlocking.Settings mContentBlocking;
-
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @NonNull ContentBlocking.Settings getContentBlocking() {
-        return mContentBlocking;
-    }
-
-     final Pref<Boolean> mWebManifest = new Pref<Boolean>(
-        "dom.manifest.enabled", true);
-     final Pref<Boolean> mJavaScript = new Pref<Boolean>(
-        "javascript.enabled", true);
-     final Pref<Boolean> mRemoteDebugging = new Pref<Boolean>(
-        "devtools.debugger.remote-enabled", false);
-     final Pref<Integer> mWebFonts = new Pref<Integer>(
-        "browser.display.use_document_fonts", 1);
-     final Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
-        "geckoview.console.enabled", false);
-     final Pref<Integer> mFontSizeFactor = new Pref<>(
-        "font.size.systemFontScale", 100);
-     final Pref<Boolean> mEnterpriseRootsEnabled = new Pref<>(
-            "security.enterprise_roots.enabled", false);
-     final Pref<Integer> mFontInflationMinTwips = new Pref<>(
-        "font.size.inflation.minTwips", 0);
-     final Pref<Boolean> mInputAutoZoom = new Pref<>(
-            "formhelper.autozoom", true);
-     final Pref<Boolean> mDoubleTapZooming = new Pref<>(
-            "apz.allow_double_tap_zooming", true);
-     final Pref<Integer> mGlMsaaLevel = new Pref<>(
-            "gl.msaa-level", 0);
-     final Pref<Boolean> mTelemetryEnabled = new Pref<>(
-            "toolkit.telemetry.geckoview.streaming", false);
-     final Pref<String> mGeckoViewLogLevel = new Pref<>(
-            "geckoview.logging", "Debug");
-     final Pref<Boolean> mConsoleServiceToLogcat = new Pref<>(
-            "consoleservice.logcat", true);
-     final Pref<Boolean> mDevToolsConsoleToLogcat = new Pref<>(
-            "devtools.console.stdout.chrome", true);
-     final Pref<Boolean> mAboutConfig = new Pref<>(
-            "general.aboutConfig.enable", false);
-     final Pref<Boolean> mForceUserScalable = new Pref<>(
-            "browser.ui.zoom.force-user-scalable", false);
-     final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
-        "signon.autofillForms", true);
-     final Pref<Boolean> mHttpsOnly = new Pref<Boolean>(
-        "dom.security.https_only_mode", false);
-     final Pref<Boolean> mHttpsOnlyPrivateMode = new Pref<Boolean>(
-        "dom.security.https_only_mode_pbm", false);
-     final Pref<Integer> mProcessCount = new Pref<>(
-            "dom.ipc.processCount", 2);
-
-     int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
-
-     boolean mForceEnableAccessibility;
-     boolean mDebugPause;
-     boolean mUseMaxScreenDepth;
-     float mDisplayDensityOverride = -1.0f;
-     int mDisplayDpiOverride;
-     int mScreenWidthOverride;
-     int mScreenHeightOverride;
-     Class<? extends Service> mCrashHandler;
-     String[] mRequestedLocales;
-     RuntimeTelemetry.Proxy mTelemetryProxy;
-
-    
-
-
-
-     void attachTo(final @NonNull GeckoRuntime runtime) {
-        mRuntime = runtime;
-        commit();
-
-        if (mTelemetryProxy != null) {
-            mTelemetryProxy.attach();
-        }
-    }
-
-    @Override 
-    public @Nullable GeckoRuntime getRuntime() {
-        return mRuntime;
-    }
-
-     GeckoRuntimeSettings() {
-        this(null);
-    }
-
-     GeckoRuntimeSettings(final @Nullable GeckoRuntimeSettings settings) {
-        super( null);
-
-        if (settings == null) {
-            mArgs = new String[0];
-            mExtras = new Bundle();
-            mContentBlocking = new ContentBlocking.Settings(
-                    this , null );
-            return;
-        }
-
-        updateSettings(settings);
-    }
-
-    private void updateSettings(final @NonNull GeckoRuntimeSettings settings) {
-        updatePrefs(settings);
-
-        mArgs = settings.getArguments().clone();
-        mExtras = new Bundle(settings.getExtras());
-        mContentBlocking = new ContentBlocking.Settings(
-                this , settings.mContentBlocking);
-
-        mForceEnableAccessibility = settings.mForceEnableAccessibility;
-        mDebugPause = settings.mDebugPause;
-        mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
-        mDisplayDensityOverride = settings.mDisplayDensityOverride;
-        mDisplayDpiOverride = settings.mDisplayDpiOverride;
-        mScreenWidthOverride = settings.mScreenWidthOverride;
-        mScreenHeightOverride = settings.mScreenHeightOverride;
-        mCrashHandler = settings.mCrashHandler;
-        mRequestedLocales = settings.mRequestedLocales;
-        mConfigFilePath = settings.mConfigFilePath;
-        mTelemetryProxy = settings.mTelemetryProxy;
-    }
-
-     void commit() {
-        commitLocales();
-        commitResetPrefs();
-    }
-
-    
-
-
-
-
-    public @NonNull String[] getArguments() {
-        return mArgs;
-    }
-
-    
-
-
-
-
-    public @NonNull Bundle getExtras() {
-        return mExtras;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    public @Nullable String getConfigFilePath() {
-        return mConfigFilePath;
-    }
-
-    
-
-
-
-
-    public boolean getJavaScriptEnabled() {
-        return mJavaScript.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setJavaScriptEnabled(final boolean flag) {
-        mJavaScript.commit(flag);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getRemoteDebuggingEnabled() {
-        return mRemoteDebugging.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setRemoteDebuggingEnabled(final boolean enabled) {
-        mRemoteDebugging.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getWebFontsEnabled() {
-        return mWebFonts.get() != 0 ? true : false;
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setWebFontsEnabled(final boolean flag) {
-        mWebFonts.commit(flag ? 1 : 0);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getPauseForDebuggerEnabled() {
-        return mDebugPause;
-    }
-
-    
-
-
-
-
-    public boolean getForceEnableAccessibility() {
-        return mForceEnableAccessibility;
-    }
-
-    
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setForceEnableAccessibility(final boolean value) {
-        mForceEnableAccessibility = value;
-        SessionAccessibility.setForceEnabled(value);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getUseMaxScreenDepth() {
-        return mUseMaxScreenDepth;
-    }
-
-    
-
-
-
-
-    public @Nullable Float getDisplayDensityOverride() {
-        if (mDisplayDensityOverride > 0.0f) {
-            return mDisplayDensityOverride;
-        }
-        return null;
-    }
-
-    
-
-
-
-
-    public @Nullable Integer getDisplayDpiOverride() {
-        if (mDisplayDpiOverride > 0) {
-            return mDisplayDpiOverride;
-        }
-        return null;
-    }
-
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @Nullable Class<? extends Service> getCrashHandler() {
-        return mCrashHandler;
-    }
-
-    
-
-
-
-
-
-    public @Nullable Rect getScreenSizeOverride() {
-        if ((mScreenWidthOverride > 0) && (mScreenHeightOverride > 0)) {
-            return new Rect(0, 0, mScreenWidthOverride, mScreenHeightOverride);
-        }
-        return null;
-    }
-
-    
-
-
-
-
-    public @Nullable String[] getLocales() {
-        return mRequestedLocales;
-    }
-
-    
-
-
-
-
-    public void setLocales(final @Nullable String[] requestedLocales) {
-        mRequestedLocales = requestedLocales;
-        commitLocales();
-    }
-
-    private void commitLocales() {
-        final GeckoBundle data = new GeckoBundle(1);
-        data.putStringArray("requestedLocales", mRequestedLocales);
-        data.putString("acceptLanguages", computeAcceptLanguages());
-        EventDispatcher.getInstance().dispatch("GeckoView:SetLocale", data);
-    }
-
-    private String computeAcceptLanguages() {
-        final ArrayList<String> locales = new ArrayList<String>();
-
-        
-        if (mRequestedLocales != null) {
-            for (final String locale : mRequestedLocales) {
-                locales.add(locale.toLowerCase(Locale.ROOT));
-            }
-        }
-        
-        for (final String locale : getDefaultLocales()) {
-            final String localeLowerCase = locale.toLowerCase(Locale.ROOT);
-            if (!locales.contains(localeLowerCase)) {
-                locales.add(localeLowerCase);
-            }
-        }
-
-        return TextUtils.join(",", locales);
-    }
-
-    private static String[] getDefaultLocales() {
-        if (VERSION.SDK_INT >= 24) {
-            final LocaleList localeList = LocaleList.getDefault();
-            final String[] locales = new String[localeList.size()];
-            for (int i = 0; i < localeList.size(); i++) {
-                locales[i] = localeList.get(i).toLanguageTag();
-            }
-            return locales;
-        }
-        final String[] locales = new String[1];
-        final Locale locale = Locale.getDefault();
-        if (VERSION.SDK_INT >= 21) {
-            locales[0] = locale.toLanguageTag();
-            return locales;
-        }
-
-        locales[0] = getLanguageTag(locale);
-        return locales;
-    }
-
-    private static String getLanguageTag(final Locale locale) {
-        final StringBuilder out = new StringBuilder(locale.getLanguage());
-        final String country = locale.getCountry();
-        final String variant = locale.getVariant();
-        if (!TextUtils.isEmpty(country)) {
-            out.append('-').append(country);
-        }
-        if (!TextUtils.isEmpty(variant)) {
-            out.append('-').append(variant);
-        }
-        
-        return out.toString();
-    }
-
-    
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setWebManifestEnabled(final boolean enabled) {
-        mWebManifest.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getWebManifestEnabled() {
-        return mWebManifest.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setConsoleOutputEnabled(final boolean enabled) {
-        mConsoleOutput.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getConsoleOutputEnabled() {
-        return mConsoleOutput.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setAutomaticFontSizeAdjustment(final boolean enabled) {
-        GeckoFontScaleListener.getInstance().setEnabled(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-
-    public boolean getAutomaticFontSizeAdjustment() {
-        return GeckoFontScaleListener.getInstance().getEnabled();
-    }
-
-    private static final int FONT_INFLATION_BASE_VALUE = 120;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setFontSizeFactor(final float fontSizeFactor) {
-        if (getAutomaticFontSizeAdjustment()) {
-            throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
-        }
-        return setFontSizeFactorInternal(fontSizeFactor);
-    }
-
-    
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setEnterpriseRootsEnabled(final boolean enabled) {
-        mEnterpriseRootsEnabled.commit(enabled);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getEnterpriseRootsEnabled() {
-        return mEnterpriseRootsEnabled.get();
-    }
-
-    private final static float DEFAULT_FONT_SIZE_FACTOR = 1f;
-
-    private float sanitizeFontSizeFactor(final float fontSizeFactor) {
-        if (fontSizeFactor < 0) {
-            if (BuildConfig.DEBUG) {
-                throw new IllegalArgumentException("fontSizeFactor cannot be < 0");
-            } else {
-                Log.e(LOGTAG, "fontSizeFactor cannot be < 0");
-                return DEFAULT_FONT_SIZE_FACTOR;
-            }
-        }
-
-        return fontSizeFactor;
-    }
-
-     @NonNull GeckoRuntimeSettings setFontSizeFactorInternal(
-            final float fontSizeFactor) {
-        final int fontSizePercentage = Math.round(sanitizeFontSizeFactor(fontSizeFactor) * 100);
-        mFontSizeFactor.commit(fontSizePercentage);
-        if (getFontInflationEnabled()) {
-            final int scaledFontInflation = Math.round(FONT_INFLATION_BASE_VALUE * fontSizeFactor);
-            mFontInflationMinTwips.commit(scaledFontInflation);
-        }
-        return this;
-    }
-
-    
-
-
-
-
-    public float getFontSizeFactor() {
-        return mFontSizeFactor.get() / 100f;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setFontInflationEnabled(final boolean enabled) {
-        final int minTwips =
-                enabled ? Math.round(FONT_INFLATION_BASE_VALUE * getFontSizeFactor()) : 0;
-        mFontInflationMinTwips.commit(minTwips);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getFontInflationEnabled() {
-        return mFontInflationMinTwips.get() > 0;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({COLOR_SCHEME_LIGHT,
-             COLOR_SCHEME_DARK,
-             COLOR_SCHEME_SYSTEM})
-     @interface ColorScheme {}
-
-    
-    public static final int COLOR_SCHEME_LIGHT = 0;
-    
-    public static final int COLOR_SCHEME_DARK = 1;
-    
-    public static final int COLOR_SCHEME_SYSTEM = -1;
-
-    
-
-
-
-
-    public @ColorScheme int getPreferredColorScheme() {
-        return mPreferredColorScheme;
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setPreferredColorScheme(final @ColorScheme int scheme) {
-        if (mPreferredColorScheme != scheme) {
-            mPreferredColorScheme = scheme;
-            GeckoSystemStateListener.onDeviceChanged();
-        }
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getInputAutoZoomEnabled() {
-        return mInputAutoZoom.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setInputAutoZoomEnabled(final boolean flag) {
-        mInputAutoZoom.commit(flag);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getDoubleTapZoomingEnabled() {
-        return mDoubleTapZooming.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setDoubleTapZoomingEnabled(final boolean flag) {
-        mDoubleTapZooming.commit(flag);
-        return this;
-    }
-
-    
-
-
-
-
-    public int getGlMsaaLevel() {
-        return mGlMsaaLevel.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setGlMsaaLevel(final int level) {
-        mGlMsaaLevel.commit(level);
-        return this;
-    }
-
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
-        return mTelemetryProxy.getDelegate();
-    }
-
-    
-
-
-
-
-    public boolean getAboutConfigEnabled() {
-        return mAboutConfig.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setAboutConfigEnabled(final boolean flag) {
-        mAboutConfig.commit(flag);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getForceUserScalableEnabled() {
-        return mForceUserScalable.get();
-    }
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setForceUserScalableEnabled(final boolean flag) {
-        mForceUserScalable.commit(flag);
-        return this;
-    }
-
-    
-
-
-
-
-    public boolean getLoginAutofillEnabled() {
-        return mAutofillLogins.get();
-    }
-
-    
-
-
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(
-            final boolean enabled) {
-        mAutofillLogins.commit(enabled);
-        return this;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ALLOW_ALL,
-             HTTPS_ONLY_PRIVATE,
-             HTTPS_ONLY})
-     @interface HttpsOnlyMode {}
-
-    
-    public static final int ALLOW_ALL = 0;
-    
-    public static final int HTTPS_ONLY_PRIVATE = 1;
-    
-    public static final int HTTPS_ONLY = 2;
-
-    
-
-
-
-
-    public @HttpsOnlyMode int getAllowInsecureConnections() {
-        final boolean httpsOnly = mHttpsOnly.get();
-        final boolean httpsOnlyPrivate = mHttpsOnlyPrivateMode.get();
-        if (httpsOnly) {
-            return HTTPS_ONLY;
-        } else if (httpsOnlyPrivate) {
-            return HTTPS_ONLY_PRIVATE;
-        }
-        return ALLOW_ALL;
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setAllowInsecureConnections(final @HttpsOnlyMode int level) {
-        switch (level) {
-            case ALLOW_ALL:
-                mHttpsOnly.commit(false);
-                mHttpsOnlyPrivateMode.commit(false);
-                break;
-            case HTTPS_ONLY_PRIVATE:
-                mHttpsOnly.commit(false);
-                mHttpsOnlyPrivateMode.commit(true);
-                break;
-            case HTTPS_ONLY:
-                mHttpsOnly.commit(true);
-                mHttpsOnlyPrivateMode.commit(false);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid setting for setAllowInsecureConnections");
-        }
-        return this;
-    }
-
-    
-     @NonNull GeckoRuntimeSettings setProcessCount(final int processCount) {
-        mProcessCount.commit(processCount);
-        return this;
-    }
-
-    @Override 
-    public void writeToParcel(final Parcel out, final int flags) {
-        super.writeToParcel(out, flags);
-
-        out.writeStringArray(mArgs);
-        mExtras.writeToParcel(out, flags);
-        ParcelableUtils.writeBoolean(out, mForceEnableAccessibility);
-        ParcelableUtils.writeBoolean(out, mDebugPause);
-        ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
-        out.writeFloat(mDisplayDensityOverride);
-        out.writeInt(mDisplayDpiOverride);
-        out.writeInt(mScreenWidthOverride);
-        out.writeInt(mScreenHeightOverride);
-        out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
-        out.writeStringArray(mRequestedLocales);
-        out.writeString(mConfigFilePath);
-    }
-
-    
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public void readFromParcel(final @NonNull Parcel source) {
-        super.readFromParcel(source);
-
-        mArgs = source.createStringArray();
-        mExtras.readFromParcel(source);
-        mForceEnableAccessibility = ParcelableUtils.readBoolean(source);
-        mDebugPause = ParcelableUtils.readBoolean(source);
-        mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
-        mDisplayDensityOverride = source.readFloat();
-        mDisplayDpiOverride = source.readInt();
-        mScreenWidthOverride = source.readInt();
-        mScreenHeightOverride = source.readInt();
-
-        final String crashHandlerName = source.readString();
-        if (crashHandlerName != null) {
-            try {
-                @SuppressWarnings("unchecked")
-                final Class<? extends Service> handler =
-                        (Class<? extends Service>) Class.forName(crashHandlerName);
-
-                mCrashHandler = handler;
-            } catch (final ClassNotFoundException e) {
-            }
-        }
-
-        mRequestedLocales = source.createStringArray();
-        mConfigFilePath = source.readString();
-    }
-
-    public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
-            = new Parcelable.Creator<GeckoRuntimeSettings>() {
-                @Override
-                public GeckoRuntimeSettings createFromParcel(final Parcel in) {
-                    final GeckoRuntimeSettings settings = new GeckoRuntimeSettings();
-                    settings.readFromParcel(in);
-                    return settings;
-                }
-
-                @Override
-                public GeckoRuntimeSettings[] newArray(final int size) {
-                    return new GeckoRuntimeSettings[size];
-                }
-            };
+      };
 }

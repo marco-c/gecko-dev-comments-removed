@@ -10,17 +10,15 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 class ScreenManagerHelper {
 
+  
+  public static void refreshScreenInfo() {
     
-
-
-    public static void refreshScreenInfo() {
-        
-        
-        if (GeckoThread.isRunning()) {
-            nativeRefreshScreenInfo();
-        }
+    
+    if (GeckoThread.isRunning()) {
+      nativeRefreshScreenInfo();
     }
+  }
 
-    @WrapForJNI(stubName = "RefreshScreenInfo", dispatchTo = "gecko")
-    private native static void nativeRefreshScreenInfo();
+  @WrapForJNI(stubName = "RefreshScreenInfo", dispatchTo = "gecko")
+  private static native void nativeRefreshScreenInfo();
 }

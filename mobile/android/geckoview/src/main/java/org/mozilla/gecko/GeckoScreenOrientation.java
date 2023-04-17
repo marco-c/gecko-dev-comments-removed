@@ -10,12 +10,10 @@ import android.content.res.Configuration;
 import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
-
-import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.util.ThreadUtils;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -24,257 +22,257 @@ import java.util.List;
 
 
 public class GeckoScreenOrientation {
-    private static final String LOGTAG = "GeckoScreenOrientation";
+  private static final String LOGTAG = "GeckoScreenOrientation";
 
-    
-    public enum ScreenOrientation {
-        NONE(0),
-        PORTRAIT_PRIMARY(1 << 0),
-        PORTRAIT_SECONDARY(1 << 1),
-        PORTRAIT(PORTRAIT_PRIMARY.value | PORTRAIT_SECONDARY.value),
-        LANDSCAPE_PRIMARY(1 << 2),
-        LANDSCAPE_SECONDARY(1 << 3),
-        LANDSCAPE(LANDSCAPE_PRIMARY.value | LANDSCAPE_SECONDARY.value),
-        DEFAULT(1 << 4);
+  
+  public enum ScreenOrientation {
+    NONE(0),
+    PORTRAIT_PRIMARY(1 << 0),
+    PORTRAIT_SECONDARY(1 << 1),
+    PORTRAIT(PORTRAIT_PRIMARY.value | PORTRAIT_SECONDARY.value),
+    LANDSCAPE_PRIMARY(1 << 2),
+    LANDSCAPE_SECONDARY(1 << 3),
+    LANDSCAPE(LANDSCAPE_PRIMARY.value | LANDSCAPE_SECONDARY.value),
+    DEFAULT(1 << 4);
 
-        public final short value;
+    public final short value;
 
-        private ScreenOrientation(final int value) {
-            this.value = (short)value;
+    private ScreenOrientation(final int value) {
+      this.value = (short) value;
+    }
+
+    private static final ScreenOrientation[] sValues = ScreenOrientation.values();
+
+    public static ScreenOrientation get(final int value) {
+      for (final ScreenOrientation orient : sValues) {
+        if (orient.value == value) {
+          return orient;
         }
+      }
+      return NONE;
+    }
+  }
 
-        private final static ScreenOrientation[] sValues = ScreenOrientation.values();
+  
+  private static GeckoScreenOrientation sInstance;
+  
+  private static final int DEFAULT_ROTATION = Surface.ROTATION_0;
+  
+  private ScreenOrientation mScreenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+  
+  private boolean mShouldNotify = true;
 
-        public static ScreenOrientation get(final int value) {
-            for (final ScreenOrientation orient: sValues) {
-                if (orient.value == value) {
-                    return orient;
-                }
+  public interface OrientationChangeListener {
+    void onScreenOrientationChanged(ScreenOrientation newOrientation);
+  }
+
+  private final List<OrientationChangeListener> mListeners;
+
+  public static GeckoScreenOrientation getInstance() {
+    if (sInstance == null) {
+      sInstance = new GeckoScreenOrientation();
+    }
+    return sInstance;
+  }
+
+  private GeckoScreenOrientation() {
+    mListeners = new ArrayList<>();
+    update();
+  }
+
+  
+  public void addListener(final OrientationChangeListener aListener) {
+    ThreadUtils.assertOnUiThread();
+    mListeners.add(aListener);
+  }
+
+  
+  public void removeListener(final OrientationChangeListener aListener) {
+    ThreadUtils.assertOnUiThread();
+    mListeners.remove(aListener);
+  }
+
+  
+
+
+  public void enableNotifications() {
+    update();
+    mShouldNotify = true;
+  }
+
+  
+
+
+  public void disableNotifications() {
+    mShouldNotify = false;
+  }
+
+  
+
+
+
+
+
+  public boolean update() {
+    final Context appContext = GeckoAppShell.getApplicationContext();
+    if (appContext == null) {
+      return false;
+    }
+    final Configuration config = appContext.getResources().getConfiguration();
+    return update(config.orientation);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public boolean update(final int aAndroidOrientation) {
+    return update(getScreenOrientation(aAndroidOrientation, getRotation()));
+  }
+
+  @WrapForJNI(dispatchTo = "gecko")
+  private static native void onOrientationChange(short screenOrientation, short angle);
+
+  
+
+
+
+
+
+
+
+  public synchronized boolean update(final ScreenOrientation aScreenOrientation) {
+    
+    
+    final ScreenOrientation screenOrientation;
+    if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_PRIMARY.value) != 0) {
+      screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+    } else if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_SECONDARY.value) != 0) {
+      screenOrientation = ScreenOrientation.PORTRAIT_SECONDARY;
+    } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_PRIMARY.value) != 0) {
+      screenOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
+    } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_SECONDARY.value) != 0) {
+      screenOrientation = ScreenOrientation.LANDSCAPE_SECONDARY;
+    } else {
+      screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+    }
+    if (mScreenOrientation == screenOrientation) {
+      return false;
+    }
+    mScreenOrientation = screenOrientation;
+    Log.d(LOGTAG, "updating to new orientation " + mScreenOrientation);
+    notifyListeners(mScreenOrientation);
+    if (mShouldNotify) {
+      if (aScreenOrientation == ScreenOrientation.NONE) {
+        return false;
+      }
+
+      if (GeckoThread.isRunning()) {
+        onOrientationChange(screenOrientation.value, getAngle());
+      } else {
+        GeckoThread.queueNativeCall(
+            GeckoScreenOrientation.class,
+            "onOrientationChange",
+            screenOrientation.value,
+            getAngle());
+      }
+    }
+    ScreenManagerHelper.refreshScreenInfo();
+    return true;
+  }
+
+  private void notifyListeners(final ScreenOrientation newOrientation) {
+    final Runnable notifier =
+        new Runnable() {
+          @Override
+          public void run() {
+            for (final OrientationChangeListener listener : mListeners) {
+              listener.onScreenOrientationChanged(newOrientation);
             }
-            return NONE;
-        }
-    }
-
-    
-    private static GeckoScreenOrientation sInstance;
-    
-    private static final int DEFAULT_ROTATION = Surface.ROTATION_0;
-    
-    private ScreenOrientation mScreenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
-    
-    private boolean mShouldNotify = true;
-
-    public interface OrientationChangeListener {
-        void onScreenOrientationChanged(ScreenOrientation newOrientation);
-    }
-
-    private final List<OrientationChangeListener> mListeners;
-
-    public static GeckoScreenOrientation getInstance() {
-        if (sInstance == null) {
-            sInstance = new GeckoScreenOrientation();
-        }
-        return sInstance;
-    }
-
-    private GeckoScreenOrientation() {
-        mListeners = new ArrayList<>();
-        update();
-    }
-
-    
-
-
-    public void addListener(final OrientationChangeListener aListener) {
-        ThreadUtils.assertOnUiThread();
-        mListeners.add(aListener);
-    }
-
-    
-
-
-    public void removeListener(final OrientationChangeListener aListener) {
-        ThreadUtils.assertOnUiThread();
-        mListeners.remove(aListener);
-    }
-
-    
-
-
-    public void enableNotifications() {
-        update();
-        mShouldNotify = true;
-    }
-
-    
-
-
-    public void disableNotifications() {
-        mShouldNotify = false;
-    }
-
-    
-
-
-
-
-
-    public boolean update() {
-        final Context appContext = GeckoAppShell.getApplicationContext();
-        if (appContext == null) {
-            return false;
-        }
-        final Configuration config = appContext.getResources().getConfiguration();
-        return update(config.orientation);
-    }
-
-    
-
-
-
-
-
-
-
-
-    public boolean update(final int aAndroidOrientation) {
-        return update(getScreenOrientation(aAndroidOrientation, getRotation()));
-    }
-
-    @WrapForJNI(dispatchTo = "gecko")
-    private static native void onOrientationChange(short screenOrientation, short angle);
-
-    
-
-
-
-
-
-
-
-    public synchronized boolean update(final ScreenOrientation aScreenOrientation) {
-        
-        
-        final ScreenOrientation screenOrientation;
-        if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_PRIMARY.value) != 0) {
-            screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
-        } else if ((aScreenOrientation.value & ScreenOrientation.PORTRAIT_SECONDARY.value) != 0) {
-            screenOrientation = ScreenOrientation.PORTRAIT_SECONDARY;
-        } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_PRIMARY.value) != 0) {
-            screenOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
-        } else if ((aScreenOrientation.value & ScreenOrientation.LANDSCAPE_SECONDARY.value) != 0) {
-            screenOrientation = ScreenOrientation.LANDSCAPE_SECONDARY;
-        } else {
-            screenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
-        }
-        if (mScreenOrientation == screenOrientation) {
-            return false;
-        }
-        mScreenOrientation = screenOrientation;
-        Log.d(LOGTAG, "updating to new orientation " + mScreenOrientation);
-        notifyListeners(mScreenOrientation);
-        if (mShouldNotify) {
-            if (aScreenOrientation == ScreenOrientation.NONE) {
-                return false;
-            }
-
-            if (GeckoThread.isRunning()) {
-                onOrientationChange(screenOrientation.value, getAngle());
-            } else {
-                GeckoThread.queueNativeCall(GeckoScreenOrientation.class, "onOrientationChange",
-                                            screenOrientation.value, getAngle());
-            }
-        }
-        ScreenManagerHelper.refreshScreenInfo();
-        return true;
-    }
-
-    private void notifyListeners(final ScreenOrientation newOrientation) {
-        final Runnable notifier = new Runnable() {
-            @Override
-            public void run() {
-                for (final OrientationChangeListener listener : mListeners) {
-                    listener.onScreenOrientationChanged(newOrientation);
-                }
-            }
+          }
         };
 
-        if (ThreadUtils.isOnUiThread()) {
-            notifier.run();
-        } else {
-            ThreadUtils.runOnUiThread(notifier);
-        }
+    if (ThreadUtils.isOnUiThread()) {
+      notifier.run();
+    } else {
+      ThreadUtils.runOnUiThread(notifier);
     }
+  }
 
-    
+  
 
 
 
-    public ScreenOrientation getScreenOrientation() {
-        return mScreenOrientation;
+  public ScreenOrientation getScreenOrientation() {
+    return mScreenOrientation;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  private ScreenOrientation getScreenOrientation(
+      final int aAndroidOrientation, final int aRotation) {
+    final boolean isPrimary = aRotation == Surface.ROTATION_0 || aRotation == Surface.ROTATION_90;
+    if (aAndroidOrientation == Configuration.ORIENTATION_PORTRAIT) {
+      if (isPrimary) {
+        
+        
+        return ScreenOrientation.PORTRAIT_PRIMARY;
+      }
+      return ScreenOrientation.PORTRAIT_SECONDARY;
     }
-
-    
-
-
-
-
-
-
-
-
-
-    private ScreenOrientation getScreenOrientation(final int aAndroidOrientation,
-                                                   final int aRotation) {
-        final boolean isPrimary = aRotation == Surface.ROTATION_0 || aRotation == Surface.ROTATION_90;
-        if (aAndroidOrientation == Configuration.ORIENTATION_PORTRAIT) {
-            if (isPrimary) {
-                
-                
-                return ScreenOrientation.PORTRAIT_PRIMARY;
-            }
-            return ScreenOrientation.PORTRAIT_SECONDARY;
-        }
-        if (aAndroidOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if (isPrimary) {
-                
-                
-                return ScreenOrientation.LANDSCAPE_PRIMARY;
-            }
-            return ScreenOrientation.LANDSCAPE_SECONDARY;
-        }
-        return ScreenOrientation.NONE;
+    if (aAndroidOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+      if (isPrimary) {
+        
+        
+        return ScreenOrientation.LANDSCAPE_PRIMARY;
+      }
+      return ScreenOrientation.LANDSCAPE_SECONDARY;
     }
+    return ScreenOrientation.NONE;
+  }
 
-    
+  
 
 
-    public short getAngle() {
-        switch (getRotation()) {
-            case Surface.ROTATION_0:
-                return 0;
-            case Surface.ROTATION_90:
-                return 90;
-            case Surface.ROTATION_180:
-                return 180;
-            case Surface.ROTATION_270:
-                return 270;
-            default:
-                Log.w(LOGTAG, "getAngle: unexpected rotation value");
-                return 0;
-        }
+  public short getAngle() {
+    switch (getRotation()) {
+      case Surface.ROTATION_0:
+        return 0;
+      case Surface.ROTATION_90:
+        return 90;
+      case Surface.ROTATION_180:
+        return 180;
+      case Surface.ROTATION_270:
+        return 270;
+      default:
+        Log.w(LOGTAG, "getAngle: unexpected rotation value");
+        return 0;
     }
+  }
 
-    
+  
 
 
-    private int getRotation() {
-        final Context appContext = GeckoAppShell.getApplicationContext();
-        if (appContext == null) {
-            return DEFAULT_ROTATION;
-        }
-        final WindowManager windowManager =
-                (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
-        return windowManager.getDefaultDisplay().getRotation();
+  private int getRotation() {
+    final Context appContext = GeckoAppShell.getApplicationContext();
+    if (appContext == null) {
+      return DEFAULT_ROTATION;
     }
+    final WindowManager windowManager =
+        (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
+    return windowManager.getDefaultDisplay().getRotation();
+  }
 }

@@ -21,55 +21,56 @@ import java.util.jar.JarFile;
 
 
 
-
 public class IterableJarLoadingURLClassLoader extends URLClassLoader {
-    LinkedList<String> classNames = new LinkedList<String>();
+  LinkedList<String> classNames = new LinkedList<String>();
 
-    
-
-
+  
 
 
 
 
 
-    public static Iterator<ClassWithOptions> getIteratorOverJars(String[] args) {
-        URL[] urlArray = new URL[args.length];
-        LinkedList<String> aClassNames = new LinkedList<String>();
 
-        for (int i = 0; i < args.length; i++) {
-            try {
-                urlArray[i] = (new File(args[i])).toURI().toURL();
+  public static Iterator<ClassWithOptions> getIteratorOverJars(String[] args) {
+    URL[] urlArray = new URL[args.length];
+    LinkedList<String> aClassNames = new LinkedList<String>();
 
-                Enumeration<JarEntry> entries = new JarFile(args[i]).entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry e = entries.nextElement();
-                    String fName = e.getName();
-                    if (!fName.endsWith(".class")) {
-                        continue;
-                    }
-                    final String className = fName.substring(0, fName.length() - 6).replace('/', '.');
+    for (int i = 0; i < args.length; i++) {
+      try {
+        urlArray[i] = (new File(args[i])).toURI().toURL();
 
-                    aClassNames.add(className);
-                }
-            } catch (IOException e) {
-                System.err.println("Error loading jar file \"" + args[i] + '"');
-                e.printStackTrace(System.err);
-            }
+        Enumeration<JarEntry> entries = new JarFile(args[i]).entries();
+        while (entries.hasMoreElements()) {
+          JarEntry e = entries.nextElement();
+          String fName = e.getName();
+          if (!fName.endsWith(".class")) {
+            continue;
+          }
+          final String className = fName.substring(0, fName.length() - 6).replace('/', '.');
+
+          aClassNames.add(className);
         }
-        Collections.sort(aClassNames);
-        return new JarClassIterator(new IterableJarLoadingURLClassLoader(urlArray, aClassNames));
+      } catch (IOException e) {
+        System.err.println("Error loading jar file \"" + args[i] + '"');
+        e.printStackTrace(System.err);
+      }
     }
+    Collections.sort(aClassNames);
+    return new JarClassIterator(new IterableJarLoadingURLClassLoader(urlArray, aClassNames));
+  }
 
-    
+  
 
 
 
 
 
 
-    protected IterableJarLoadingURLClassLoader(URL[] urls, LinkedList<String> aClassNames) {
-        super(urls);
-        classNames = aClassNames;
-    }
+  protected IterableJarLoadingURLClassLoader(
+      URL[] urls,
+      LinkedList<String>
+          aClassNames) { 
+    super(urls);
+    classNames = aClassNames;
+  }
 }

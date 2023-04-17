@@ -5,97 +5,92 @@
 
 package org.mozilla.gecko;
 
+import android.util.Log;
 import java.io.IOException;
-
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-
 import java.util.ArrayList;
 import java.util.Enumeration;
-
 import org.mozilla.gecko.annotation.WrapForJNI;
-
-import android.util.Log;
 
 
 
 public class EnterpriseRoots {
-    private static final String LOGTAG = "EnterpriseRoots";
+  private static final String LOGTAG = "EnterpriseRoots";
+
+  
+  
+  @WrapForJNI
+  private static byte[][] gatherEnterpriseRoots() {
 
     
     
-    @WrapForJNI
-    private static byte[][] gatherEnterpriseRoots() {
-
-        
-        
-        final KeyStore ks;
-        try {
-            ks = KeyStore.getInstance("AndroidCAStore");
-        } catch (final KeyStoreException kse) {
-            Log.e(LOGTAG, "getInstance() failed", kse);
-            return new byte[0][0];
-        }
-        try {
-            ks.load(null);
-        } catch (final CertificateException ce) {
-            Log.e(LOGTAG, "load() failed", ce);
-            return new byte[0][0];
-        } catch (final IOException ioe) {
-            Log.e(LOGTAG, "load() failed", ioe);
-            return new byte[0][0];
-        } catch (final NoSuchAlgorithmException nsae) {
-            Log.e(LOGTAG, "load() failed", nsae);
-            return new byte[0][0];
-        }
-        
-        
-        
-        
-        
-        final Enumeration<String> aliases;
-        try {
-            aliases = ks.aliases();
-        } catch (final KeyStoreException kse) {
-            Log.e(LOGTAG, "aliases() failed", kse);
-            return new byte[0][0];
-        }
-        final ArrayList<byte[]> roots = new ArrayList<byte[]>();
-        while (aliases.hasMoreElements()) {
-            final String alias = aliases.nextElement();
-            final boolean isCertificate;
-            try {
-                isCertificate = ks.isCertificateEntry(alias);
-            } catch (final KeyStoreException kse) {
-                Log.e(LOGTAG, "isCertificateEntry() failed", kse);
-                continue;
-            }
-            
-            
-            
-            
-            
-            if (isCertificate && alias.startsWith("user:")) {
-                final Certificate certificate;
-                try {
-                    certificate = ks.getCertificate(alias);
-                } catch (final KeyStoreException kse) {
-                    Log.e(LOGTAG, "getCertificate() failed", kse);
-                    continue;
-                }
-                try {
-                    roots.add(certificate.getEncoded());
-                } catch (final CertificateEncodingException cee) {
-                    Log.e(LOGTAG, "getEncoded() failed", cee);
-                }
-            }
-        }
-        Log.d(LOGTAG, "found " + roots.size() + " enterprise roots");
-        return roots.toArray(new byte[0][0]);
+    final KeyStore ks;
+    try {
+      ks = KeyStore.getInstance("AndroidCAStore");
+    } catch (final KeyStoreException kse) {
+      Log.e(LOGTAG, "getInstance() failed", kse);
+      return new byte[0][0];
     }
+    try {
+      ks.load(null);
+    } catch (final CertificateException ce) {
+      Log.e(LOGTAG, "load() failed", ce);
+      return new byte[0][0];
+    } catch (final IOException ioe) {
+      Log.e(LOGTAG, "load() failed", ioe);
+      return new byte[0][0];
+    } catch (final NoSuchAlgorithmException nsae) {
+      Log.e(LOGTAG, "load() failed", nsae);
+      return new byte[0][0];
+    }
+    
+    
+    
+    
+    
+    final Enumeration<String> aliases;
+    try {
+      aliases = ks.aliases();
+    } catch (final KeyStoreException kse) {
+      Log.e(LOGTAG, "aliases() failed", kse);
+      return new byte[0][0];
+    }
+    final ArrayList<byte[]> roots = new ArrayList<byte[]>();
+    while (aliases.hasMoreElements()) {
+      final String alias = aliases.nextElement();
+      final boolean isCertificate;
+      try {
+        isCertificate = ks.isCertificateEntry(alias);
+      } catch (final KeyStoreException kse) {
+        Log.e(LOGTAG, "isCertificateEntry() failed", kse);
+        continue;
+      }
+      
+      
+      
+      
+      
+      if (isCertificate && alias.startsWith("user:")) {
+        final Certificate certificate;
+        try {
+          certificate = ks.getCertificate(alias);
+        } catch (final KeyStoreException kse) {
+          Log.e(LOGTAG, "getCertificate() failed", kse);
+          continue;
+        }
+        try {
+          roots.add(certificate.getEncoded());
+        } catch (final CertificateEncodingException cee) {
+          Log.e(LOGTAG, "getEncoded() failed", cee);
+        }
+      }
+    }
+    Log.d(LOGTAG, "found " + roots.size() + " enterprise roots");
+    return roots.toArray(new byte[0][0]);
+  }
 }

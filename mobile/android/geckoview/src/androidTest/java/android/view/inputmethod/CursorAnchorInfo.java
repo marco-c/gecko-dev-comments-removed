@@ -11,5 +11,4 @@ package android.view.inputmethod;
 
 
 
-public class CursorAnchorInfo {
-}
+public class CursorAnchorInfo {}

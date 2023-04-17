@@ -7,7 +7,6 @@ package org.mozilla.geckoview;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
@@ -17,132 +16,145 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 
+
 public class WebNotification {
 
-    
+  
 
 
 
 
-    public final @Nullable String title;
 
-    
+  public final @Nullable String title;
 
+  
 
 
 
-    public final @NonNull String tag;
 
-    private final @Nullable String mCookie;
 
-    
+  public final @NonNull String tag;
 
+  private final @Nullable String mCookie;
 
+  
 
 
-    public final @Nullable String text;
 
-    
 
 
+  public final @Nullable String text;
 
+  
 
-    public final @Nullable String imageUrl;
 
-    
 
 
 
+  public final @Nullable String imageUrl;
 
+  
 
 
 
 
-    public final @Nullable String textDirection;
 
-    
 
 
+  public final @Nullable String textDirection;
 
+  
 
 
 
 
-    public final @Nullable String lang;
 
-    
 
 
 
+  public final @Nullable String lang;
 
+  
 
-    public final @NonNull boolean requireInteraction;
 
-    
 
 
 
 
 
-    public final @Nullable String source;
+  public final @NonNull boolean requireInteraction;
 
-    
+  
 
 
 
-    public final boolean silent;
 
-    
 
+  public final @Nullable String source;
 
+  
 
 
 
 
 
+  public final boolean silent;
 
-    public final @NonNull int[] vibrate;
+  
 
-    @WrapForJNI
-     WebNotification(@Nullable final String title, @NonNull final String tag,
-                        @Nullable final String cookie, @Nullable final String text,
-                        @Nullable final String imageUrl, @Nullable final String textDirection,
-                        @Nullable final String lang, @NonNull final boolean requireInteraction,
-                        @NonNull final String source, final boolean silent,
-                        @NonNull final int[] vibrate) {
-        this.tag = tag;
-        this.mCookie = cookie;
-        this.title = title;
-        this.text = text;
-        this.imageUrl = imageUrl;
-        this.textDirection = textDirection;
-        this.lang = lang;
-        this.requireInteraction = requireInteraction;
-        this.source = "".equals(source) ? null : source;
-        this.silent = silent;
-        this.vibrate = vibrate;
-    }
 
-    
 
 
 
 
-    @UiThread
-    public void click() {
-        ThreadUtils.assertOnUiThread();
-        GeckoAppShell.onNotificationClick(tag, mCookie);
 
-    }
 
-    
+  public final @NonNull int[] vibrate;
 
-
-
-
-    @UiThread
-    public void dismiss() {
-        ThreadUtils.assertOnUiThread();
-        GeckoAppShell.onNotificationClose(tag, mCookie);
-    }
+  @WrapForJNI
+   WebNotification(
+      @Nullable final String title,
+      @NonNull final String tag,
+      @Nullable final String cookie,
+      @Nullable final String text,
+      @Nullable final String imageUrl,
+      @Nullable final String textDirection,
+      @Nullable final String lang,
+      @NonNull final boolean requireInteraction,
+      @NonNull final String source,
+      final boolean silent,
+      @NonNull final int[] vibrate) {
+    this.tag = tag;
+    this.mCookie = cookie;
+    this.title = title;
+    this.text = text;
+    this.imageUrl = imageUrl;
+    this.textDirection = textDirection;
+    this.lang = lang;
+    this.requireInteraction = requireInteraction;
+    this.source = "".equals(source) ? null : source;
+    this.silent = silent;
+    this.vibrate = vibrate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void click() {
+    ThreadUtils.assertOnUiThread();
+    GeckoAppShell.onNotificationClick(tag, mCookie);
+  }
+
+  
+
+
+
+  @UiThread
+  public void dismiss() {
+    ThreadUtils.assertOnUiThread();
+    GeckoAppShell.onNotificationClose(tag, mCookie);
+  }
 }

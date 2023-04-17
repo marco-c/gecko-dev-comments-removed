@@ -5,12 +5,6 @@
 
 package org.mozilla.gecko.process;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.IGeckoEditableChild;
-import org.mozilla.gecko.GeckoThread;
-import org.mozilla.gecko.util.ThreadUtils;
-
 import android.app.Service;
 import android.content.ComponentCallbacks2;
 import android.content.Intent;
@@ -21,173 +15,184 @@ import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
+import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.GeckoThread;
+import org.mozilla.gecko.IGeckoEditableChild;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.util.ThreadUtils;
 
 public class GeckoServiceChildProcess extends Service {
-    private static final String LOGTAG = "ServiceChildProcess";
-    
-    private static final long LOW_MEMORY_ONGOING_RESET_TIME_MS = 10000;
+  private static final String LOGTAG = "ServiceChildProcess";
+  
+  private static final long LOW_MEMORY_ONGOING_RESET_TIME_MS = 10000;
 
-    private static IProcessManager sProcessManager;
-    private static String sOwnerProcessId;
+  private static IProcessManager sProcessManager;
+  private static String sOwnerProcessId;
 
-    private long mLastLowMemoryNotificationTime = 0;
-    
-    private static boolean sCreateCalled;
+  private long mLastLowMemoryNotificationTime = 0;
+  
+  private static boolean sCreateCalled;
 
-    @WrapForJNI(calledFrom = "gecko")
-    private static void getEditableParent(final IGeckoEditableChild child,
-                                          final long contentId,
-                                          final long tabId) {
-        try {
-            sProcessManager.getEditableParent(child, contentId, tabId);
-        } catch (final RemoteException e) {
-            Log.e(LOGTAG, "Cannot get editable", e);
-        }
+  @WrapForJNI(calledFrom = "gecko")
+  private static void getEditableParent(
+      final IGeckoEditableChild child, final long contentId, final long tabId) {
+    try {
+      sProcessManager.getEditableParent(child, contentId, tabId);
+    } catch (final RemoteException e) {
+      Log.e(LOGTAG, "Cannot get editable", e);
     }
+  }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        Log.i(LOGTAG, "onCreate");
+  @Override
+  public void onCreate() {
+    super.onCreate();
+    Log.i(LOGTAG, "onCreate");
 
-        if (sCreateCalled) {
-            
-            
-            throw new RuntimeException("Cannot reuse process.");
-        }
-        sCreateCalled = true;
-
-        GeckoAppShell.setApplicationContext(getApplicationContext());
-        GeckoThread.launch(); 
+    if (sCreateCalled) {
+      
+      
+      throw new RuntimeException("Cannot reuse process.");
     }
+    sCreateCalled = true;
 
-    private final Binder mBinder = new IChildProcess.Stub() {
+    GeckoAppShell.setApplicationContext(getApplicationContext());
+    GeckoThread.launch(); 
+  }
+
+  private final Binder mBinder =
+      new IChildProcess.Stub() {
         @Override
         public int getPid() {
-            return Process.myPid();
+          return Process.myPid();
         }
 
         @Override
-        public int start(final IProcessManager procMan,
-                             final String mainProcessId,
-                             final String[] args,
-                             final Bundle extras,
-                             final int flags,
-                             final String userSerialNumber,
-                             final String crashHandlerService,
-                             final ParcelFileDescriptor prefsPfd,
-                             final ParcelFileDescriptor prefMapPfd,
-                             final ParcelFileDescriptor ipcPfd,
-                             final ParcelFileDescriptor crashReporterPfd,
-                             final ParcelFileDescriptor crashAnnotationPfd) {
-            synchronized (GeckoServiceChildProcess.class) {
-                if (sOwnerProcessId != null && !sOwnerProcessId.equals(mainProcessId)) {
-                    Log.w(LOGTAG, "This process belongs to a different GeckoRuntime owner: "
-                            + sOwnerProcessId + " process: " + mainProcessId);
-                    return IChildProcess.STARTED_BUSY;
-                }
-                if (sProcessManager != null) {
-                    Log.e(LOGTAG, "Child process already started");
-                    return IChildProcess.STARTED_FAIL;
-                }
-                sProcessManager = procMan;
-                sOwnerProcessId = mainProcessId;
+        public int start(
+            final IProcessManager procMan,
+            final String mainProcessId,
+            final String[] args,
+            final Bundle extras,
+            final int flags,
+            final String userSerialNumber,
+            final String crashHandlerService,
+            final ParcelFileDescriptor prefsPfd,
+            final ParcelFileDescriptor prefMapPfd,
+            final ParcelFileDescriptor ipcPfd,
+            final ParcelFileDescriptor crashReporterPfd,
+            final ParcelFileDescriptor crashAnnotationPfd) {
+          synchronized (GeckoServiceChildProcess.class) {
+            if (sOwnerProcessId != null && !sOwnerProcessId.equals(mainProcessId)) {
+              Log.w(
+                  LOGTAG,
+                  "This process belongs to a different GeckoRuntime owner: "
+                      + sOwnerProcessId
+                      + " process: "
+                      + mainProcessId);
+              return IChildProcess.STARTED_BUSY;
             }
+            if (sProcessManager != null) {
+              Log.e(LOGTAG, "Child process already started");
+              return IChildProcess.STARTED_FAIL;
+            }
+            sProcessManager = procMan;
+            sOwnerProcessId = mainProcessId;
+          }
 
-            final int prefsFd = prefsPfd != null ?
-                                prefsPfd.detachFd() : -1;
-            final int prefMapFd = prefMapPfd != null ?
-                                  prefMapPfd.detachFd() : -1;
-            final int ipcFd = ipcPfd.detachFd();
-            final int crashReporterFd = crashReporterPfd != null ?
-                                        crashReporterPfd.detachFd() : -1;
-            final int crashAnnotationFd = crashAnnotationPfd != null ?
-                                          crashAnnotationPfd.detachFd() : -1;
+          final int prefsFd = prefsPfd != null ? prefsPfd.detachFd() : -1;
+          final int prefMapFd = prefMapPfd != null ? prefMapPfd.detachFd() : -1;
+          final int ipcFd = ipcPfd.detachFd();
+          final int crashReporterFd = crashReporterPfd != null ? crashReporterPfd.detachFd() : -1;
+          final int crashAnnotationFd =
+              crashAnnotationPfd != null ? crashAnnotationPfd.detachFd() : -1;
 
-            ThreadUtils.runOnUiThread(new Runnable() {
+          ThreadUtils.runOnUiThread(
+              new Runnable() {
                 @Override
                 public void run() {
-                    if (crashHandlerService != null) {
-                        try {
-                            @SuppressWarnings("unchecked")
-                            final Class<? extends Service> crashHandler = (Class<? extends Service>) Class.forName(crashHandlerService);
+                  if (crashHandlerService != null) {
+                    try {
+                      @SuppressWarnings("unchecked")
+                      final Class<? extends Service> crashHandler =
+                          (Class<? extends Service>) Class.forName(crashHandlerService);
 
-                            
-                            
-                            GeckoAppShell.setCrashHandlerService(crashHandler);
-                            GeckoAppShell.ensureCrashHandling(crashHandler);
-                        } catch (final ClassNotFoundException e) {
-                            Log.w(LOGTAG, "Couldn't find crash handler service " + crashHandlerService);
-                        }
+                      
+                      
+                      GeckoAppShell.setCrashHandlerService(crashHandler);
+                      GeckoAppShell.ensureCrashHandling(crashHandler);
+                    } catch (final ClassNotFoundException e) {
+                      Log.w(LOGTAG, "Couldn't find crash handler service " + crashHandlerService);
                     }
+                  }
 
-                    final GeckoThread.InitInfo info = new GeckoThread.InitInfo();
-                    info.args = args;
-                    info.extras = extras;
-                    info.flags = flags;
-                    info.prefsFd = prefsFd;
-                    info.prefMapFd = prefMapFd;
-                    info.ipcFd = ipcFd;
-                    info.crashFd = crashReporterFd;
-                    info.crashAnnotationFd = crashAnnotationFd;
-                    info.userSerialNumber = userSerialNumber;
+                  final GeckoThread.InitInfo info = new GeckoThread.InitInfo();
+                  info.args = args;
+                  info.extras = extras;
+                  info.flags = flags;
+                  info.prefsFd = prefsFd;
+                  info.prefMapFd = prefMapFd;
+                  info.ipcFd = ipcFd;
+                  info.crashFd = crashReporterFd;
+                  info.crashAnnotationFd = crashAnnotationFd;
+                  info.userSerialNumber = userSerialNumber;
 
-                    if (GeckoThread.init(info)) {
-                        GeckoThread.launch();
-                    }
+                  if (GeckoThread.init(info)) {
+                    GeckoThread.launch();
+                  }
                 }
-            });
-            return IChildProcess.STARTED_OK;
+              });
+          return IChildProcess.STARTED_OK;
         }
 
         @Override
         public void crash() {
-            GeckoThread.crash();
+          GeckoThread.crash();
         }
-    };
+      };
 
-    @Override
-    public void onDestroy() {
-        Log.i(LOGTAG, "Destroying GeckoServiceChildProcess");
-        System.exit(0);
+  @Override
+  public void onDestroy() {
+    Log.i(LOGTAG, "Destroying GeckoServiceChildProcess");
+    System.exit(0);
+  }
+
+  @Override
+  public IBinder onBind(final Intent intent) {
+    
+    stopSelf();
+    return mBinder;
+  }
+
+  @Override
+  public void onTrimMemory(final int level) {
+    Log.i(LOGTAG, "onTrimMemory(" + level + ")");
+
+    
+    super.onTrimMemory(level);
+
+    if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+      
+      return;
     }
 
-    @Override
-    public IBinder onBind(final Intent intent) {
-        
-        stopSelf();
-        return mBinder;
+    
+    
+    String observerArg = null;
+
+    final long currentNotificationTime = System.currentTimeMillis();
+    if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE
+        || (currentNotificationTime - mLastLowMemoryNotificationTime)
+            >= LOW_MEMORY_ONGOING_RESET_TIME_MS) {
+      
+      observerArg = "low-memory";
+      mLastLowMemoryNotificationTime = currentNotificationTime;
+    } else {
+      
+      
+      
+      
+      observerArg = "low-memory-ongoing";
     }
 
-    @Override
-    public void onTrimMemory(final int level) {
-        Log.i(LOGTAG, "onTrimMemory(" + level + ")");
-
-        
-        super.onTrimMemory(level);
-
-        if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
-            
-            return;
-        }
-
-        
-        String observerArg = null;
-
-        final long currentNotificationTime = System.currentTimeMillis();
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE ||
-            (currentNotificationTime - mLastLowMemoryNotificationTime) >= LOW_MEMORY_ONGOING_RESET_TIME_MS) {
-            
-            observerArg = "low-memory";
-            mLastLowMemoryNotificationTime = currentNotificationTime;
-        } else {
-            
-            
-            
-            
-            observerArg = "low-memory-ongoing";
-        }
-
-        GeckoAppShell.notifyObservers("memory-pressure", observerArg);
-    }
+    GeckoAppShell.notifyObservers("memory-pressure", observerArg);
+  }
 }

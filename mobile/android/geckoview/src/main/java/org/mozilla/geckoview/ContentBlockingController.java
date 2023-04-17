@@ -6,22 +6,19 @@
 
 package org.mozilla.geckoview;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.util.GeckoBundle;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.util.GeckoBundle;
 
 
 
@@ -29,53 +26,21 @@ import java.util.List;
 
 @AnyThread
 public class ContentBlockingController {
-    private static final String LOGTAG = "GeckoContentBlocking";
+  private static final String LOGTAG = "GeckoContentBlocking";
 
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @AnyThread
-    public static class ContentBlockingException {
-        private final @NonNull String mEncodedPrincipal;
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @AnyThread
+  public static class ContentBlockingException {
+    private final @NonNull String mEncodedPrincipal;
 
-        
+    
+    public final @NonNull String uri;
 
-
-        public final @NonNull String uri;
-
-         ContentBlockingException(final @NonNull String encodedPrincipal,
-                                               final @NonNull String uri) {
-            mEncodedPrincipal = encodedPrincipal;
-            this.uri = uri;
-        }
-
-        
-
-
-
-
-
-
-        public @NonNull JSONObject toJson() throws JSONException {
-            final JSONObject res = new JSONObject();
-            res.put("principal", mEncodedPrincipal);
-            res.put("uri", uri);
-            return res;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        public static @NonNull ContentBlockingException fromJson(final @NonNull JSONObject savedException) throws JSONException {
-            return new ContentBlockingException(savedException.getString("principal"), savedException.getString("uri"));
-        }
+     ContentBlockingException(
+        final @NonNull String encodedPrincipal, final @NonNull String uri) {
+      mEncodedPrincipal = encodedPrincipal;
+      this.uri = uri;
     }
 
     
@@ -84,14 +49,11 @@ public class ContentBlockingController {
 
 
 
-
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @UiThread
-    public void addException(final @NonNull GeckoSession session) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putString("sessionId", session.getId());
-        EventDispatcher.getInstance().dispatch("ContentBlocking:AddException", msg);
+    public @NonNull JSONObject toJson() throws JSONException {
+      final JSONObject res = new JSONObject();
+      res.put("principal", mEncodedPrincipal);
+      res.put("uri", uri);
+      return res;
     }
 
     
@@ -102,340 +64,320 @@ public class ContentBlockingController {
 
 
 
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @UiThread
-    public void removeException(final @NonNull GeckoSession session) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putString("sessionId", session.getId());
-        EventDispatcher.getInstance().dispatch("ContentBlocking:RemoveException", msg);
+    public static @NonNull ContentBlockingException fromJson(
+        final @NonNull JSONObject savedException) throws JSONException {
+      return new ContentBlockingException(
+          savedException.getString("principal"), savedException.getString("uri"));
     }
+  }
+
+  
+
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @UiThread
+  public void addException(final @NonNull GeckoSession session) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putString("sessionId", session.getId());
+    EventDispatcher.getInstance().dispatch("ContentBlocking:AddException", msg);
+  }
+
+  
+
+
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @UiThread
+  public void removeException(final @NonNull GeckoSession session) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putString("sessionId", session.getId());
+    EventDispatcher.getInstance().dispatch("ContentBlocking:RemoveException", msg);
+  }
+
+  
+
+
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @AnyThread
+  public void removeException(final @NonNull ContentBlockingException exception) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putString("principal", exception.mEncodedPrincipal);
+    EventDispatcher.getInstance().dispatch("ContentBlocking:RemoveExceptionByPrincipal", msg);
+  }
+
+  
+
+
+
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @UiThread
+  public @NonNull GeckoResult<Boolean> checkException(final @NonNull GeckoSession session) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putString("sessionId", session.getId());
+    return EventDispatcher.getInstance().queryBoolean("ContentBlocking:CheckException", msg);
+  }
+
+  private List<ContentBlockingException> exceptionListFromBundle(final GeckoBundle value) {
+    final String[] principals = value.getStringArray("principals");
+    final String[] uris = value.getStringArray("uris");
+
+    if (principals == null || uris == null) {
+      throw new RuntimeException("Received invalid content blocking exception list");
+    }
+
+    final ArrayList<ContentBlockingException> res = new ArrayList<>(principals.length);
+
+    for (int i = 0; i < principals.length; i++) {
+      res.add(new ContentBlockingException(principals[i], uris[i]));
+    }
+
+    return Collections.unmodifiableList(res);
+  }
+
+  
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @UiThread
+  public @NonNull GeckoResult<List<ContentBlockingException>> saveExceptionList() {
+    return EventDispatcher.getInstance()
+        .queryBundle("ContentBlocking:SaveList")
+        .map(this::exceptionListFromBundle);
+  }
+
+  
+
+
+
+
+
+
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @AnyThread
+  public void restoreExceptionList(final @NonNull List<ContentBlockingException> list) {
+    final GeckoBundle bundle = new GeckoBundle(2);
+    final String[] principals = new String[list.size()];
+    final String[] uris = new String[list.size()];
+
+    for (int i = 0; i < list.size(); i++) {
+      principals[i] = list.get(i).mEncodedPrincipal;
+      uris[i] = list.get(i).uri;
+    }
+
+    bundle.putStringArray("principals", principals);
+    bundle.putStringArray("uris", uris);
+
+    EventDispatcher.getInstance().dispatch("ContentBlocking:RestoreList", bundle);
+  }
+
+  
+  @Deprecated
+  @DeprecationSchedule(version = 96, id = "content-blocking-exception")
+  @UiThread
+  public void clearExceptionList() {
+    EventDispatcher.getInstance().dispatch("ContentBlocking:ClearList", null);
+  }
+
+  public static class Event {
+    
+    
+    
+    public static final int BLOCKED_TRACKING_CONTENT = 0x00001000;
+
+    
+    public static final int LOADED_LEVEL_1_TRACKING_CONTENT = 0x00002000;
+
+    
+    public static final int LOADED_LEVEL_2_TRACKING_CONTENT = 0x00100000;
+
+    
+    public static final int BLOCKED_FINGERPRINTING_CONTENT = 0x00000040;
+
+    
+    public static final int LOADED_FINGERPRINTING_CONTENT = 0x00000400;
+
+    
+    public static final int BLOCKED_CRYPTOMINING_CONTENT = 0x00000800;
+
+    
+    public static final int LOADED_CRYPTOMINING_CONTENT = 0x00200000;
+
+    
+    public static final int BLOCKED_UNSAFE_CONTENT = 0x00004000;
 
     
 
 
 
 
+    public static final int COOKIES_LOADED = 0x00008000;
+
+    
 
 
 
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @AnyThread
-    public void removeException(final @NonNull ContentBlockingException exception) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putString("principal", exception.mEncodedPrincipal);
-        EventDispatcher.getInstance().dispatch("ContentBlocking:RemoveExceptionByPrincipal", msg);
-    }
+    public static final int COOKIES_LOADED_TRACKER = 0x00040000;
 
     
 
 
 
 
+    public static final int COOKIES_LOADED_SOCIALTRACKER = 0x00080000;
 
+    
+    public static final int COOKIES_BLOCKED_BY_PERMISSION = 0x10000000;
 
-
-
-
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @UiThread
-    public @NonNull GeckoResult<Boolean> checkException(final @NonNull GeckoSession session) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putString("sessionId", session.getId());
-        return EventDispatcher.getInstance()
-                .queryBoolean("ContentBlocking:CheckException", msg);
-    }
-
-    private List<ContentBlockingException> exceptionListFromBundle(final GeckoBundle value) {
-        final String[] principals = value.getStringArray("principals");
-        final String[] uris = value.getStringArray("uris");
-
-        if (principals == null || uris == null) {
-            throw new RuntimeException("Received invalid content blocking exception list");
-        }
-
-        final ArrayList<ContentBlockingException> res = new ArrayList<>(principals.length);
-
-        for (int i = 0; i < principals.length; i++) {
-            res.add(new ContentBlockingException(principals[i], uris[i]));
-        }
-
-        return Collections.unmodifiableList(res);
-    }
+    
+    public static final int COOKIES_BLOCKED_TRACKER = 0x20000000;
 
     
 
 
 
+    public static final int COOKIES_BLOCKED_SOCIALTRACKER = 0x01000000;
 
-
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @UiThread
-    public @NonNull GeckoResult<List<ContentBlockingException>> saveExceptionList() {
-        return EventDispatcher.getInstance()
-                .queryBundle("ContentBlocking:SaveList")
-                .map(this::exceptionListFromBundle);
-    }
+    
+    public static final int COOKIES_BLOCKED_ALL = 0x40000000;
 
     
 
 
 
+    public static final int COOKIES_PARTITIONED_FOREIGN = 0x80000000;
 
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @AnyThread
-    public void restoreExceptionList(final @NonNull List<ContentBlockingException> list) {
-        final GeckoBundle bundle = new GeckoBundle(2);
-        final String[] principals = new String[list.size()];
-        final String[] uris = new String[list.size()];
+    
+    public static final int COOKIES_BLOCKED_FOREIGN = 0x00000080;
 
-        for (int i = 0; i < list.size(); i++) {
-            principals[i] = list.get(i).mEncodedPrincipal;
-            uris[i] = list.get(i).uri;
-        }
+    
+    public static final int BLOCKED_SOCIALTRACKING_CONTENT = 0x00010000;
 
-        bundle.putStringArray("principals", principals);
-        bundle.putStringArray("uris", uris);
-
-        EventDispatcher.getInstance().dispatch("ContentBlocking:RestoreList", bundle);
-    }
+    
+    public static final int LOADED_SOCIALTRACKING_CONTENT = 0x00020000;
 
     
 
 
-    @Deprecated
-    @DeprecationSchedule(version = 96, id = "content-blocking-exception")
-    @UiThread
-    public void clearExceptionList() {
-        EventDispatcher.getInstance().dispatch("ContentBlocking:ClearList", null);
-    }
-
-    public static class Event {
-        
-        
-        
-
-
-        public static final int BLOCKED_TRACKING_CONTENT        = 0x00001000;
-
-        
-
-
-        public static final int LOADED_LEVEL_1_TRACKING_CONTENT = 0x00002000;
-
-        
-
-
-        public static final int LOADED_LEVEL_2_TRACKING_CONTENT = 0x00100000;
-
-        
-
-
-        public static final int BLOCKED_FINGERPRINTING_CONTENT  = 0x00000040;
-
-        
-
-
-        public static final int LOADED_FINGERPRINTING_CONTENT   = 0x00000400;
-
-        
-
-
-        public static final int BLOCKED_CRYPTOMINING_CONTENT    = 0x00000800;
-
-        
-
-
-        public static final int LOADED_CRYPTOMINING_CONTENT     = 0x00200000;
-
-        
-
-
-        public static final int BLOCKED_UNSAFE_CONTENT          = 0x00004000;
-
-        
-
-
-
-
-
-
-        public static final int COOKIES_LOADED                  = 0x00008000;
-
-        
-
-
-
-
-        public static final int COOKIES_LOADED_TRACKER          = 0x00040000;
-
-        
-
-
-
-
-        public static final int COOKIES_LOADED_SOCIALTRACKER    = 0x00080000;
-
-        
-
-
-        public static final int COOKIES_BLOCKED_BY_PERMISSION   = 0x10000000;
-
-        
-
-
-
-        public static final int COOKIES_BLOCKED_TRACKER         = 0x20000000;
-
-        
-
-
-
-        public static final int COOKIES_BLOCKED_SOCIALTRACKER   = 0x01000000;
-
-        
-
-
-        public static final int COOKIES_BLOCKED_ALL             = 0x40000000;
-
-        
-
-
-
-        public static final int COOKIES_PARTITIONED_FOREIGN     = 0x80000000;
-
-        
-
-
-        public static final int COOKIES_BLOCKED_FOREIGN         = 0x00000080;
-
-        
-
-
-        public static final int BLOCKED_SOCIALTRACKING_CONTENT  = 0x00010000;
-
-        
-
-
-        public static final int LOADED_SOCIALTRACKING_CONTENT   = 0x00020000;
-
-        
-
-
-
-        public static final int REPLACED_TRACKING_CONTENT       = 0x00000010;
-
-        
-
-
-
-        public static final int ALLOWED_TRACKING_CONTENT        = 0x00000020;
-
-        protected Event() {}
+    public static final int REPLACED_TRACKING_CONTENT = 0x00000010;
+
+    
+    public static final int ALLOWED_TRACKING_CONTENT = 0x00000020;
+
+    protected Event() {}
+  }
+
+  
+  @AnyThread
+  public static class LogEntry {
+    
+    public static class BlockingData {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({
+        Event.BLOCKED_TRACKING_CONTENT, Event.LOADED_LEVEL_1_TRACKING_CONTENT,
+        Event.LOADED_LEVEL_2_TRACKING_CONTENT, Event.BLOCKED_FINGERPRINTING_CONTENT,
+        Event.LOADED_FINGERPRINTING_CONTENT, Event.BLOCKED_CRYPTOMINING_CONTENT,
+        Event.LOADED_CRYPTOMINING_CONTENT, Event.BLOCKED_UNSAFE_CONTENT,
+        Event.COOKIES_LOADED, Event.COOKIES_LOADED_TRACKER,
+        Event.COOKIES_LOADED_SOCIALTRACKER, Event.COOKIES_BLOCKED_BY_PERMISSION,
+        Event.COOKIES_BLOCKED_TRACKER, Event.COOKIES_BLOCKED_SOCIALTRACKER,
+        Event.COOKIES_BLOCKED_ALL, Event.COOKIES_PARTITIONED_FOREIGN,
+        Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
+        Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT
+      })
+       @interface LogEvent {}
+
+      
+      public final @LogEvent int category;
+
+      
+      public final boolean blocked;
+
+      
+      public final int count;
+
+       BlockingData(final @NonNull GeckoBundle bundle) {
+        category = bundle.getInt("category");
+        blocked = bundle.getBoolean("blocked");
+        count = bundle.getInt("count");
+      }
+
+      protected BlockingData() {
+        category = 0;
+        blocked = false;
+        count = 0;
+      }
     }
 
     
-
-
-    @AnyThread
-    public static class LogEntry {
-        
-
-
-        public static class BlockingData {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({ Event.BLOCKED_TRACKING_CONTENT, Event.LOADED_LEVEL_1_TRACKING_CONTENT,
-                      Event.LOADED_LEVEL_2_TRACKING_CONTENT, Event.BLOCKED_FINGERPRINTING_CONTENT,
-                      Event.LOADED_FINGERPRINTING_CONTENT, Event.BLOCKED_CRYPTOMINING_CONTENT,
-                      Event.LOADED_CRYPTOMINING_CONTENT, Event.BLOCKED_UNSAFE_CONTENT,
-                      Event.COOKIES_LOADED, Event.COOKIES_LOADED_TRACKER,
-                      Event.COOKIES_LOADED_SOCIALTRACKER, Event.COOKIES_BLOCKED_BY_PERMISSION,
-                      Event.COOKIES_BLOCKED_TRACKER, Event.COOKIES_BLOCKED_SOCIALTRACKER,
-                      Event.COOKIES_BLOCKED_ALL, Event.COOKIES_PARTITIONED_FOREIGN,
-                      Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
-                      Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT })
-             @interface LogEvent {}
-
-            
-
-
-            public final @LogEvent int category;
-
-            
-
-
-
-            public final boolean blocked;
-
-            
-
-
-            public final int count;
-
-             BlockingData(final @NonNull GeckoBundle bundle) {
-                category = bundle.getInt("category");
-                blocked = bundle.getBoolean("blocked");
-                count = bundle.getInt("count");
-            }
-
-            protected BlockingData() {
-                category = 0;
-                blocked = false;
-                count = 0;
-            }
-        }
-
-        
-
-
-        public final @NonNull String origin;
-
-        
-
-
-        public final @NonNull List<BlockingData> blockingData;
-
-         LogEntry(final @NonNull GeckoBundle bundle) {
-            origin = bundle.getString("origin");
-            final GeckoBundle[] data = bundle.getBundleArray("blockData");
-            final ArrayList<BlockingData> dataArray = new ArrayList<BlockingData>(data.length);
-            for (final GeckoBundle b : data) {
-                dataArray.add(new BlockingData(b));
-            }
-            blockingData = Collections.unmodifiableList(dataArray);
-        }
-
-        protected LogEntry() {
-            origin = null;
-            blockingData = null;
-        }
-    }
-
-    private List<LogEntry> logFromBundle(final GeckoBundle value) {
-        final GeckoBundle[] bundles = value.getBundleArray("log");
-        final ArrayList<LogEntry> logArray = new ArrayList<>(bundles.length);
-        for (final GeckoBundle b : bundles) {
-            logArray.add(new LogEntry(b));
-        }
-        return Collections.unmodifiableList(logArray);
-    }
+    public final @NonNull String origin;
 
     
+    public final @NonNull List<BlockingData> blockingData;
 
-
-
-
-
-
-
-    @UiThread
-    public @NonNull GeckoResult<List<LogEntry>> getLog(final @NonNull GeckoSession session) {
-        return session.getEventDispatcher()
-                .queryBundle("ContentBlocking:RequestLog")
-                .map(this::logFromBundle);
+     LogEntry(final @NonNull GeckoBundle bundle) {
+      origin = bundle.getString("origin");
+      final GeckoBundle[] data = bundle.getBundleArray("blockData");
+      final ArrayList<BlockingData> dataArray = new ArrayList<BlockingData>(data.length);
+      for (final GeckoBundle b : data) {
+        dataArray.add(new BlockingData(b));
+      }
+      blockingData = Collections.unmodifiableList(dataArray);
     }
+
+    protected LogEntry() {
+      origin = null;
+      blockingData = null;
+    }
+  }
+
+  private List<LogEntry> logFromBundle(final GeckoBundle value) {
+    final GeckoBundle[] bundles = value.getBundleArray("log");
+    final ArrayList<LogEntry> logArray = new ArrayList<>(bundles.length);
+    for (final GeckoBundle b : bundles) {
+      logArray.add(new LogEntry(b));
+    }
+    return Collections.unmodifiableList(logArray);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoResult<List<LogEntry>> getLog(final @NonNull GeckoSession session) {
+    return session
+        .getEventDispatcher()
+        .queryBundle("ContentBlocking:RequestLog")
+        .map(this::logFromBundle);
+  }
 }

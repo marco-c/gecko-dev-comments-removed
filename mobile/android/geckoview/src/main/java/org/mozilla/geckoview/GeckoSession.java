@@ -6,6 +6,39 @@
 
 package org.mozilla.geckoview;
 
+import android.annotation.TargetApi;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.net.Uri;
+import android.os.Binder;
+import android.os.Build;
+import android.os.IInterface;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.SystemClock;
+import android.text.TextUtils;
+import android.util.Base64;
+import android.util.Log;
+import android.util.SparseArray;
+import android.view.PointerIcon;
+import android.view.Surface;
+import android.view.View;
+import android.view.ViewStructure;
+import android.view.inputmethod.CursorAnchorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
+import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
+import androidx.annotation.LongDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
+import androidx.annotation.UiThread;
 import java.io.ByteArrayInputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,1169 +59,1535 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.IGeckoEditableParent;
-import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.NativeQueue;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import android.annotation.TargetApi;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.Matrix;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.net.Uri;
-import android.os.Binder;
-import android.os.Build;
-import android.os.IInterface;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.os.SystemClock;
-import androidx.annotation.AnyThread;
-import androidx.annotation.IntDef;
-import androidx.annotation.LongDef;
-import androidx.annotation.Nullable;
-import androidx.annotation.NonNull;
-import androidx.annotation.StringDef;
-import androidx.annotation.UiThread;
-import android.text.TextUtils;
-import android.util.Base64;
-import android.util.Log;
-import android.util.SparseArray;
-import android.view.PointerIcon;
-import android.view.Surface;
-import android.view.inputmethod.CursorAnchorInfo;
-import android.view.inputmethod.ExtractedText;
-import android.view.inputmethod.ExtractedTextRequest;
-import android.view.View;
-import android.view.ViewStructure;
-
 public class GeckoSession {
-    private static final String LOGTAG = "GeckoSession";
-    private static final boolean DEBUG = false;
+  private static final String LOGTAG = "GeckoSession";
+  private static final boolean DEBUG = false;
+
+  
+  
+  private static final int WINDOW_CLOSE = 0;
+  
+  private static final int WINDOW_OPEN = 1; 
+  
+  private static final int WINDOW_TRANSFER_OUT = 2; 
+  
+  private static final int WINDOW_TRANSFER_IN = 3;
+
+  private static final int DATA_URI_MAX_LENGTH = 2 * 1024 * 1024;
+
+  private enum State implements NativeQueue.State {
+    INITIAL(0),
+    READY(1);
+
+    private final int mRank;
+
+    private State(final int rank) {
+      mRank = rank;
+    }
+
+    @Override
+    public boolean is(final NativeQueue.State other) {
+      return this == other;
+    }
+
+    @Override
+    public boolean isAtLeast(final NativeQueue.State other) {
+      return (other instanceof State) && mRank >= ((State) other).mRank;
+    }
+  }
+
+  private final NativeQueue mNativeQueue = new NativeQueue(State.INITIAL, State.READY);
+
+  private final EventDispatcher mEventDispatcher = new EventDispatcher(mNativeQueue);
+
+  private final SessionTextInput mTextInput = new SessionTextInput(this, mNativeQueue);
+  private SessionAccessibility mAccessibility;
+  private SessionFinder mFinder;
+
+  private String mId;
+   String getId() {
+    return mId;
+  }
+
+  private boolean mShouldPinOnScreen;
+
+  
+  private PanZoomController mPanZoomController = new PanZoomController(this);
+  private OverscrollEdgeEffect mOverscroll;
+  private CompositorController mController;
+  private Autofill.Support mAutofillSupport;
+
+  private boolean mAttachedCompositor;
+  private boolean mCompositorReady;
+  private Surface mSurface;
+
+  
+  private int mLeft;
+  private int mTop; 
+  private int mClientTop; 
+  private int mOffsetX;
+  private int mOffsetY;
+  private int mWidth;
+  private int mHeight; 
+  private int mClientHeight; 
+  private int mFixedBottomOffset =
+      0; 
+  private int mDynamicToolbarMaxHeight = 0; 
+  private float mViewportLeft;
+  private float mViewportTop;
+  private float mViewportZoom = 1.0f;
+
+  
+  
+  
+  
+  
+  
+   static final int FIRST_PAINT = 0;
+  
+   static final int LAYERS_UPDATED = 1;
+  
+   static final int COMPOSITOR_CONTROLLER_OPEN = 2;
+  
+   static final int IS_COMPOSITOR_CONTROLLER_OPEN = 3;
+
+   class Compositor extends JNIObject {
+    public boolean isReady() {
+      return GeckoSession.this.isCompositorReady();
+    }
+
+    @WrapForJNI(calledFrom = "ui")
+    private void onCompositorAttached() {
+      GeckoSession.this.onCompositorAttached();
+    }
+
+    @WrapForJNI(calledFrom = "ui")
+    private void onCompositorDetached() {
+      
+      GeckoSession.this.onCompositorDetached();
+    }
+
+    @WrapForJNI(dispatchTo = "gecko")
+    @Override
+    protected native void disposeNative();
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void attachNPZC(PanZoomController.NativeProvider npzc);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void onBoundsChanged(int left, int top, int width, int height);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void setDynamicToolbarMaxHeight(int height);
+
+    
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void syncPauseCompositor();
+
+    
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void syncResumeResizeCompositor(
+        int x, int y, int width, int height, Object surface);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void setMaxToolbarHeight(int height);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void setFixedBottomOffset(int offset);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void sendToolbarAnimatorMessage(int message);
+
+    @WrapForJNI(calledFrom = "ui")
+    private void recvToolbarAnimatorMessage(final int message) {
+      GeckoSession.this.handleCompositorMessage(message);
+    }
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void setDefaultClearColor(int color);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+     native void requestScreenPixels(
+        final GeckoResult<Bitmap> result,
+        final Bitmap target,
+        final int x,
+        final int y,
+        final int srcWidth,
+        final int srcHeight,
+        final int outWidth,
+        final int outHeight);
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
+    public native void enableLayerUpdateNotifications(boolean enable);
 
     
     
-    private static final int WINDOW_CLOSE = 0;
     
-    private static final int WINDOW_OPEN = 1; 
     
-    private static final int WINDOW_TRANSFER_OUT = 2; 
+    @WrapForJNI(calledFrom = "ui")
+    private void updateRootFrameMetrics(
+        final float scrollX, final float scrollY, final float zoom) {
+      GeckoSession.this.onMetricsChanged(scrollX, scrollY, zoom);
+    }
+
+    @WrapForJNI(calledFrom = "ui")
+    private void updateOverscrollVelocity(final float x, final float y) {
+      GeckoSession.this.updateOverscrollVelocity(x, y);
+    }
+
+    @WrapForJNI(calledFrom = "ui")
+    private void updateOverscrollOffset(final float x, final float y) {
+      GeckoSession.this.updateOverscrollOffset(x, y);
+    }
+
+    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+    public native void onSafeAreaInsetsChanged(int top, int right, int bottom, int left);
+
+    @WrapForJNI(calledFrom = "ui")
+    public void setPointerIcon(
+        final int defaultCursor, final Bitmap customCursor, final float x, final float y) {
+      GeckoSession.this.setPointerIcon(defaultCursor, customCursor, x, y);
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+      disposeNative();
+    }
+  }
+
+   final Compositor mCompositor = new Compositor();
+
+  @WrapForJNI(stubName = "GetCompositor", calledFrom = "ui")
+  private Object getCompositorFromNative() {
     
-    private static final int WINDOW_TRANSFER_IN = 3;
+    return mCompositorReady ? mCompositor : null;
+  }
 
-    private static final int DATA_URI_MAX_LENGTH = 2 * 1024 * 1024;
-
-    private enum State implements NativeQueue.State {
-        INITIAL(0),
-        READY(1);
-
-        private final int mRank;
-
-        private State(final int rank) {
-            mRank = rank;
-        }
-
+  private final GeckoSessionHandler<HistoryDelegate> mHistoryHandler =
+      new GeckoSessionHandler<HistoryDelegate>(
+          "GeckoViewHistory",
+          this,
+          new String[] {
+            "GeckoView:OnVisited", "GeckoView:GetVisited", "GeckoView:StateUpdated",
+          }) {
         @Override
-        public boolean is(final NativeQueue.State other) {
-            return this == other;
-        }
+        public void handleMessage(
+            final HistoryDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          if ("GeckoView:OnVisited".equals(event)) {
+            final GeckoResult<Boolean> result =
+                delegate.onVisited(
+                    GeckoSession.this,
+                    message.getString("url"),
+                    message.getString("lastVisitedURL"),
+                    message.getInt("flags"));
 
+            if (result == null) {
+              callback.sendSuccess(false);
+              return;
+            }
+
+            result.accept(
+                visited -> callback.sendSuccess(visited.booleanValue()),
+                exception -> callback.sendSuccess(false));
+          } else if ("GeckoView:GetVisited".equals(event)) {
+            final String[] urls = message.getStringArray("urls");
+
+            final GeckoResult<boolean[]> result = delegate.getVisited(GeckoSession.this, urls);
+
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
+            }
+
+            result.accept(
+                visited -> callback.sendSuccess(visited),
+                exception -> callback.sendError("Failed to fetch visited statuses for URIs"));
+          } else if ("GeckoView:StateUpdated".equals(event)) {
+
+            final GeckoBundle update = message.getBundle("data");
+
+            if (update == null) {
+              return;
+            }
+            final int previousHistorySize = mStateCache.size();
+            mStateCache.updateSessionState(update);
+
+            final ProgressDelegate progressDelegate = getProgressDelegate();
+            if (progressDelegate != null) {
+              final SessionState state = new SessionState(mStateCache);
+              if (!state.isEmpty()) {
+                progressDelegate.onSessionStateChange(GeckoSession.this, state);
+              }
+            }
+
+            if (update.getBundle("historychange") != null) {
+              final SessionState state = new SessionState(mStateCache);
+
+              delegate.onHistoryStateChange(GeckoSession.this, state);
+
+              
+              
+              
+              if ((previousHistorySize > 1)
+                  && (state.size() == 1)
+                  && mNavigationHandler.getDelegate() != null) {
+                mNavigationHandler.getDelegate().onCanGoForward(GeckoSession.this, false);
+                mNavigationHandler.getDelegate().onCanGoBack(GeckoSession.this, false);
+              }
+            }
+          }
+        }
+      };
+
+  private final WebExtension.SessionController mWebExtensionController;
+
+  private final GeckoSessionHandler<ContentDelegate> mContentHandler =
+      new GeckoSessionHandler<ContentDelegate>(
+          "GeckoViewContent",
+          this,
+          new String[] {
+            "GeckoView:ContentCrash",
+            "GeckoView:ContentKill",
+            "GeckoView:ContextMenu",
+            "GeckoView:DOMMetaViewportFit",
+            "GeckoView:PageTitleChanged",
+            "GeckoView:DOMWindowClose",
+            "GeckoView:ExternalResponse",
+            "GeckoView:FocusRequest",
+            "GeckoView:FullScreenEnter",
+            "GeckoView:FullScreenExit",
+            "GeckoView:WebAppManifest",
+            "GeckoView:FirstContentfulPaint",
+            "GeckoView:PaintStatusReset",
+          }) {
         @Override
-        public boolean isAtLeast(final NativeQueue.State other) {
-            return (other instanceof State) &&
-                   mRank >= ((State) other).mRank;
-        }
-    }
-
-    private final NativeQueue mNativeQueue =
-        new NativeQueue(State.INITIAL, State.READY);
-
-    private final EventDispatcher mEventDispatcher =
-        new EventDispatcher(mNativeQueue);
-
-    private final SessionTextInput mTextInput = new SessionTextInput(this, mNativeQueue);
-    private SessionAccessibility mAccessibility;
-    private SessionFinder mFinder;
-
-    private String mId;
-     String getId() {
-        return mId;
-    }
-
-    private boolean mShouldPinOnScreen;
-
-    
-    private PanZoomController mPanZoomController = new PanZoomController(this);
-    private OverscrollEdgeEffect mOverscroll;
-    private CompositorController mController;
-    private Autofill.Support mAutofillSupport;
-
-    private boolean mAttachedCompositor;
-    private boolean mCompositorReady;
-    private Surface mSurface;
-
-    
-    private int mLeft;
-    private int mTop; 
-    private int mClientTop; 
-    private int mOffsetX;
-    private int mOffsetY;
-    private int mWidth;
-    private int mHeight; 
-    private int mClientHeight; 
-    private int mFixedBottomOffset = 0; 
-    private int mDynamicToolbarMaxHeight = 0; 
-    private float mViewportLeft;
-    private float mViewportTop;
-    private float mViewportZoom = 1.0f;
-
-    
-    
-    
-    
-    
-    
-     final static int FIRST_PAINT                      = 0;
-    
-     final static int LAYERS_UPDATED                   = 1;
-    
-     final static int COMPOSITOR_CONTROLLER_OPEN       = 2;
-    
-     final static int IS_COMPOSITOR_CONTROLLER_OPEN    = 3;
-
-     class Compositor extends JNIObject {
-        public boolean isReady() {
-            return GeckoSession.this.isCompositorReady();
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void onCompositorAttached() {
-            GeckoSession.this.onCompositorAttached();
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void onCompositorDetached() {
-            
-            GeckoSession.this.onCompositorDetached();
-        }
-
-        @WrapForJNI(dispatchTo = "gecko")
-        @Override protected native void disposeNative();
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        public native void attachNPZC(PanZoomController.NativeProvider npzc);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        public native void onBoundsChanged(int left, int top, int width, int height);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        public native void setDynamicToolbarMaxHeight(int height);
-
-        
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void syncPauseCompositor();
-
-        
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void syncResumeResizeCompositor(int x, int y, int width, int height, Object surface);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void setMaxToolbarHeight(int height);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        public native void setFixedBottomOffset(int offset);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void sendToolbarAnimatorMessage(int message);
-
-        @WrapForJNI(calledFrom = "ui")
-        private void recvToolbarAnimatorMessage(final int message) {
-            GeckoSession.this.handleCompositorMessage(message);
-        }
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void setDefaultClearColor(int color);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-         native void requestScreenPixels(final GeckoResult<Bitmap> result,
-                                                      final Bitmap target,
-                                                      final int x, final int y,
-                                                      final int srcWidth, final int srcHeight,
-                                                      final int outWidth, final int outHeight);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void enableLayerUpdateNotifications(boolean enable);
-
-        
-        
-        
-        
-        @WrapForJNI(calledFrom = "ui")
-        private void updateRootFrameMetrics(final float scrollX, final float scrollY,
-                                            final float zoom) {
-            GeckoSession.this.onMetricsChanged(scrollX, scrollY, zoom);
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void updateOverscrollVelocity(final float x, final float y) {
-            GeckoSession.this.updateOverscrollVelocity(x, y);
-        }
-
-        @WrapForJNI(calledFrom = "ui")
-        private void updateOverscrollOffset(final float x, final float y) {
-            GeckoSession.this.updateOverscrollOffset(x, y);
-        }
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-        public native void onSafeAreaInsetsChanged(int top, int right, int bottom, int left);
-
-        @WrapForJNI(calledFrom = "ui")
-        public void setPointerIcon(final int defaultCursor, final Bitmap customCursor, final float x, final float y) {
-            GeckoSession.this.setPointerIcon(defaultCursor, customCursor, x, y);
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
-            disposeNative();
-        }
-    }
-
-     final Compositor mCompositor = new Compositor();
-
-    @WrapForJNI(stubName = "GetCompositor", calledFrom = "ui")
-    private Object getCompositorFromNative() {
-        
-        return mCompositorReady ? mCompositor : null;
-    }
-
-    private final GeckoSessionHandler<HistoryDelegate> mHistoryHandler =
-        new GeckoSessionHandler<HistoryDelegate>(
-            "GeckoViewHistory", this,
-            new String[]{
-                "GeckoView:OnVisited",
-                "GeckoView:GetVisited",
-                "GeckoView:StateUpdated",
-            }
-        ) {
-            @Override
-            public void handleMessage(final HistoryDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                if ("GeckoView:OnVisited".equals(event)) {
-                    final GeckoResult<Boolean> result =
-                        delegate.onVisited(GeckoSession.this, message.getString("url"),
-                                           message.getString("lastVisitedURL"),
-                                           message.getInt("flags"));
-
-                    if (result == null) {
-                        callback.sendSuccess(false);
-                        return;
-                    }
-
-                    result.accept(
-                        visited -> callback.sendSuccess(visited.booleanValue()),
-                        exception -> callback.sendSuccess(false));
-                } else if ("GeckoView:GetVisited".equals(event)) {
-                    final String[] urls = message.getStringArray("urls");
-
-                    final GeckoResult<boolean[]> result =
-                        delegate.getVisited(GeckoSession.this, urls);
-
-                    if (result == null) {
-                        callback.sendSuccess(null);
-                        return;
-                    }
-
-                    result.accept(
-                        visited -> callback.sendSuccess(visited),
-                        exception -> callback.sendError("Failed to fetch visited statuses for URIs"));
-                } else if ("GeckoView:StateUpdated".equals(event)) {
-
-                    final GeckoBundle update = message.getBundle("data");
-
-                    if (update == null) {
-                        return;
-                    }
-                    final int previousHistorySize = mStateCache.size();
-                    mStateCache.updateSessionState(update);
-
-                    final ProgressDelegate progressDelegate = getProgressDelegate();
-                    if (progressDelegate != null) {
-                        final SessionState state = new SessionState(mStateCache);
-                        if (!state.isEmpty()) {
-                            progressDelegate.onSessionStateChange(GeckoSession.this, state);
-                        }
-                    }
-
-                    if (update.getBundle("historychange") != null) {
-                        final SessionState state = new SessionState(mStateCache);
-
-                        delegate.onHistoryStateChange(GeckoSession.this, state);
-
-                        
-                        
-                        if ((previousHistorySize > 1) && (state.size() == 1) && mNavigationHandler.getDelegate() != null) {
-                            mNavigationHandler.getDelegate().onCanGoForward(GeckoSession.this, false);
-                            mNavigationHandler.getDelegate().onCanGoBack(GeckoSession.this, false);
-                        }
-                    }
-                }
-            }
-        };
-
-    private final WebExtension.SessionController mWebExtensionController;
-
-    private final GeckoSessionHandler<ContentDelegate> mContentHandler =
-        new GeckoSessionHandler<ContentDelegate>(
-            "GeckoViewContent", this,
-            new String[]{
-                "GeckoView:ContentCrash",
-                "GeckoView:ContentKill",
-                "GeckoView:ContextMenu",
-                "GeckoView:DOMMetaViewportFit",
-                "GeckoView:PageTitleChanged",
-                "GeckoView:DOMWindowClose",
-                "GeckoView:ExternalResponse",
-                "GeckoView:FocusRequest",
-                "GeckoView:FullScreenEnter",
-                "GeckoView:FullScreenExit",
-                "GeckoView:WebAppManifest",
-                "GeckoView:FirstContentfulPaint",
-                "GeckoView:PaintStatusReset",
-            }
-        ) {
-            @Override
-            public void handleMessage(final ContentDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                if ("GeckoView:ContentCrash".equals(event)) {
-                    close();
-                    delegate.onCrash(GeckoSession.this);
-                } else if ("GeckoView:ContentKill".equals(event)) {
-                    close();
-                    delegate.onKill(GeckoSession.this);
-                } else if ("GeckoView:ContextMenu".equals(event)) {
-                    final ContentDelegate.ContextElement elem =
-                        new ContentDelegate.ContextElement(
-                            message.getString("baseUri"),
-                            message.getString("uri"),
-                            message.getString("title"),
-                            message.getString("alt"),
-                            message.getString("elementType"),
-                            message.getString("elementSrc"));
-
-                    delegate.onContextMenu(GeckoSession.this,
-                                           message.getInt("screenX"),
-                                           message.getInt("screenY"),
-                                           elem);
-
-                } else if ("GeckoView:DOMMetaViewportFit".equals(event)) {
-                    delegate.onMetaViewportFitChange(GeckoSession.this,
-                                                     message.getString("viewportfit"));
-                } else if ("GeckoView:PageTitleChanged".equals(event)) {
-                    delegate.onTitleChange(GeckoSession.this,
-                                           message.getString("title"));
-                } else if ("GeckoView:FocusRequest".equals(event)) {
-                    delegate.onFocusRequest(GeckoSession.this);
-                } else if ("GeckoView:DOMWindowClose".equals(event)) {
-                    delegate.onCloseRequest(GeckoSession.this);
-                } else if ("GeckoView:FullScreenEnter".equals(event)) {
-                    delegate.onFullScreen(GeckoSession.this, true);
-                } else if ("GeckoView:FullScreenExit".equals(event)) {
-                    delegate.onFullScreen(GeckoSession.this, false);
-                } else if ("GeckoView:WebAppManifest".equals(event)) {
-                    final GeckoBundle manifest = message.getBundle("manifest");
-                    if (manifest == null) {
-                        return;
-                    }
-
-                    try {
-                        delegate.onWebAppManifest(GeckoSession.this, fixupWebAppManifest(manifest.toJSONObject()));
-                    } catch (final JSONException e) {
-                        Log.e(LOGTAG, "Failed to convert web app manifest to JSON", e);
-                    }
-                } else if ("GeckoView:FirstContentfulPaint".equals(event)) {
-                    delegate.onFirstContentfulPaint(GeckoSession.this);
-                } else if ("GeckoView:PaintStatusReset".equals(event)) {
-                    delegate.onPaintStatusReset(GeckoSession.this);
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<NavigationDelegate> mNavigationHandler =
-        new GeckoSessionHandler<NavigationDelegate>(
-            "GeckoViewNavigation", this,
-            new String[]{
-                "GeckoView:LocationChange",
-                "GeckoView:OnNewSession"
-            },
-            new String[] {
-                "GeckoView:OnLoadError",
-                "GeckoView:OnLoadRequest",
-            }
-        ) {
-            
-            private int convertGeckoTarget(final int geckoTarget) {
-                switch (geckoTarget) {
-                    case 0: 
-                    case 1: 
-                        return NavigationDelegate.TARGET_WINDOW_CURRENT;
-                    default: 
-                        return NavigationDelegate.TARGET_WINDOW_NEW;
-                }
-            }
-
-            @Override
-            public void handleDefaultMessage(final String event,
-                                             final GeckoBundle message,
-                                             final EventCallback callback) {
-
-                if ("GeckoView:OnLoadRequest".equals(event)) {
-                    callback.sendSuccess(false);
-                } else if ("GeckoView:OnLoadError".equals(event)) {
-                    callback.sendSuccess(null);
-                } else {
-                    super.handleDefaultMessage(event, message, callback);
-                }
-            }
-
-            @Override
-            public void handleMessage(final NavigationDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
-                if ("GeckoView:LocationChange".equals(event)) {
-                    if (message.getBoolean("isTopLevel")) {
-                        final GeckoBundle[] perms = message.getBundleArray("permissions");
-                        final List<PermissionDelegate.ContentPermission> permList =
-                            PermissionDelegate.ContentPermission.fromBundleArray(perms);
-                        delegate.onLocationChange(GeckoSession.this,
-                                                  message.getString("uri"), permList);
-                    }
-                    delegate.onCanGoBack(GeckoSession.this,
-                                         message.getBoolean("canGoBack"));
-                    delegate.onCanGoForward(GeckoSession.this,
-                                            message.getBoolean("canGoForward"));
-                } else if ("GeckoView:OnLoadRequest".equals(event)) {
-                    final NavigationDelegate.LoadRequest request =
-                        new NavigationDelegate.LoadRequest(
-                              message.getString("uri"),
-                              message.getString("triggerUri"),
-                              message.getInt("where"),
-                              message.getInt("flags"),
-                              message.getBoolean("hasUserGesture"),
-                               false);
-
-                    if (!IntentUtils.isUriSafeForScheme(request.uri)) {
-                        callback.sendError("Blocked unsafe intent URI");
-
-                        delegate.onLoadError(GeckoSession.this, request.uri,
-                                             new WebRequestError(WebRequestError.ERROR_MALFORMED_URI,
-                                                                 WebRequestError.ERROR_CATEGORY_URI,
-                                                                 null));
-
-                        return;
-                    }
-
-                    final GeckoResult<AllowOrDeny> result =
-                        delegate.onLoadRequest(GeckoSession.this, request);
-
-                    if (result == null) {
-                        callback.sendSuccess(null);
-                        return;
-                    }
-
-                    callback.resolveTo(result.map(value -> {
-                        ThreadUtils.assertOnUiThread();
-                        if (value == AllowOrDeny.ALLOW) {
-                            return false;
-                        }
-                        if (value == AllowOrDeny.DENY) {
-                            return true;
-                        }
-                        throw new IllegalArgumentException("Invalid response");
-                    }));
-                } else if ("GeckoView:OnLoadError".equals(event)) {
-                    final String uri = message.getString("uri");
-                    final long errorCode = message.getLong("error");
-                    final int errorModule = message.getInt("errorModule");
-                    final int errorClass = message.getInt("errorClass");
-
-                    final WebRequestError err = WebRequestError.fromGeckoError(errorCode, errorModule, errorClass, null);
-
-                    final GeckoResult<String> result = delegate.onLoadError(GeckoSession.this, uri, err);
-                    if (result == null) {
-                        callback.sendError("abort");
-                        return;
-                    }
-
-                    callback.resolveTo(result.map(url -> {
-                        if (url == null) {
-                            throw new IllegalArgumentException("abort");
-                        }
-                        return url;
-                    }));
-                } else if ("GeckoView:OnNewSession".equals(event)) {
-                    final String uri = message.getString("uri");
-                    final GeckoResult<GeckoSession> result = delegate.onNewSession(GeckoSession.this, uri);
-                    if (result == null) {
-                        callback.sendSuccess(false);
-                        return;
-                    }
-
-                    final String newSessionId = message.getString("newSessionId");
-                    callback.resolveTo(result.map(session -> {
-                        ThreadUtils.assertOnUiThread();
-                        if (session == null) {
-                            return false;
-                        }
-
-                        if (session.isOpen()) {
-                            throw new AssertionError("Must use an unopened GeckoSession instance");
-                        }
-
-                        if (GeckoSession.this.mWindow == null) {
-                            throw new IllegalArgumentException("Session is not attached to a window");
-                        }
-
-                        session.open(GeckoSession.this.mWindow.runtime, newSessionId);
-                        return true;
-                    }));
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<ContentDelegate> mProcessHangHandler =
-        new GeckoSessionHandler<ContentDelegate>(
-                "GeckoViewProcessHangMonitor", this,
-                new String[]{"GeckoView:HangReport"}) {
-
-
-            @Override
-            protected void handleMessage(final ContentDelegate delegate,
-                                         final String event,
-                                         final GeckoBundle message,
-                                         final EventCallback eventCallback) {
-                Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
-
-                final GeckoResult<SlowScriptResponse> result = delegate.onSlowScript(GeckoSession.this,
-                        message.getString("scriptFileName"));
-                if (result != null) {
-                    final int mReportId = message.getInt("hangId");
-                    result.accept(stopOrContinue -> {
-                        if (stopOrContinue != null) {
-                            final GeckoBundle bundle = new GeckoBundle();
-                            bundle.putInt("hangId", mReportId);
-                            switch (stopOrContinue) {
-                                case STOP:
-                                    mEventDispatcher.dispatch("GeckoView:HangReportStop", bundle);
-                                    break;
-                                case CONTINUE:
-                                    mEventDispatcher.dispatch("GeckoView:HangReportWait", bundle);
-                                    break;
-                            }
-                        }
-                    });
-                } else {
-                    
-                    final GeckoBundle bundle = new GeckoBundle();
-                    bundle.putInt("hangId", message.getInt("hangId"));
-                    mEventDispatcher.dispatch("GeckoView:HangReportStop", bundle);
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<ProgressDelegate> mProgressHandler =
-        new GeckoSessionHandler<ProgressDelegate>(
-            "GeckoViewProgress", this,
-            new String[]{
-                "GeckoView:PageStart",
-                "GeckoView:PageStop",
-                "GeckoView:ProgressChanged",
-                "GeckoView:SecurityChanged",
-                "GeckoView:StateUpdated",
-            }
-        ) {
-            @Override
-            public void handleMessage(final ProgressDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
-                if ("GeckoView:PageStart".equals(event)) {
-                    delegate.onPageStart(GeckoSession.this,
-                                         message.getString("uri"));
-                } else if ("GeckoView:PageStop".equals(event)) {
-                    delegate.onPageStop(GeckoSession.this,
-                                        message.getBoolean("success"));
-                } else if ("GeckoView:ProgressChanged".equals(event)) {
-                    delegate.onProgressChange(GeckoSession.this,
-                                              message.getInt("progress"));
-                } else if ("GeckoView:SecurityChanged".equals(event)) {
-                    final GeckoBundle identity = message.getBundle("identity");
-                    delegate.onSecurityChange(GeckoSession.this, new ProgressDelegate.SecurityInformation(identity));
-                } else if ("GeckoView:StateUpdated".equals(event)) {
-                    final GeckoBundle update = message.getBundle("data");
-                    if (update != null) {
-                        if (getHistoryDelegate() == null) {
-                            mStateCache.updateSessionState(update);
-                            final SessionState state = new SessionState(mStateCache);
-                            if (!state.isEmpty()) {
-                                delegate.onSessionStateChange(GeckoSession.this, state);
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<ScrollDelegate> mScrollHandler =
-        new GeckoSessionHandler<ScrollDelegate>(
-            "GeckoViewScroll", this,
-            new String[]{ "GeckoView:ScrollChanged" }
-        ) {
-            @Override
-            public void handleMessage(final ScrollDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-
-                if ("GeckoView:ScrollChanged".equals(event)) {
-                    delegate.onScrollChanged(GeckoSession.this,
-                                             message.getInt("scrollX"),
-                                             message.getInt("scrollY"));
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<ContentBlocking.Delegate> mContentBlockingHandler =
-        new GeckoSessionHandler<ContentBlocking.Delegate>(
-            "GeckoViewContentBlocking", this,
-            new String[]{ "GeckoView:ContentBlockingEvent" }
-        ) {
-            @Override
-            public void handleMessage(final ContentBlocking.Delegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-
-                if ("GeckoView:ContentBlockingEvent".equals(event)) {
-                    final ContentBlocking.BlockEvent be =
-                        ContentBlocking.BlockEvent.fromBundle(message);
-                    if (be.isBlocking()) {
-                        delegate.onContentBlocked(GeckoSession.this, be);
-                    } else {
-                        delegate.onContentLoaded(GeckoSession.this, be);
-                    }
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<PermissionDelegate> mPermissionHandler =
-        new GeckoSessionHandler<PermissionDelegate>(
-            "GeckoViewPermission", this,
-            new String[] {
-                "GeckoView:AndroidPermission",
-                "GeckoView:ContentPermission",
-                "GeckoView:MediaPermission"
-            }
-        ) {
-            @Override
-            public void handleMessage(final PermissionDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                if (delegate == null) {
-                    callback.sendSuccess( false);
-                    return;
-                }
-                if ("GeckoView:AndroidPermission".equals(event)) {
-                    delegate.onAndroidPermissionsRequest(
-                            GeckoSession.this, message.getStringArray("perms"),
-                            new PermissionCallback("android", callback));
-                } else if ("GeckoView:ContentPermission".equals(event)) {
-                    final GeckoResult<Integer> res = delegate.onContentPermissionRequest(GeckoSession.this, new PermissionDelegate.ContentPermission(message));
-                    if (res == null) {
-                        callback.sendSuccess(PermissionDelegate.ContentPermission.VALUE_PROMPT);
-                        return;
-                    }
-
-                    callback.resolveTo(res);
-                } else if ("GeckoView:MediaPermission".equals(event)) {
-                    final GeckoBundle[] videoBundles = message.getBundleArray("video");
-                    final GeckoBundle[] audioBundles = message.getBundleArray("audio");
-                    PermissionDelegate.MediaSource[] videos = null;
-                    PermissionDelegate.MediaSource[] audios = null;
-
-                    if (videoBundles != null) {
-                        videos = new PermissionDelegate.MediaSource[videoBundles.length];
-                        for (int i = 0; i < videoBundles.length; i++) {
-                            videos[i] = new PermissionDelegate.MediaSource(videoBundles[i]);
-                        }
-                    }
-
-                    if (audioBundles != null) {
-                        audios = new PermissionDelegate.MediaSource[audioBundles.length];
-                        for (int i = 0; i < audioBundles.length; i++) {
-                            audios[i] = new PermissionDelegate.MediaSource(audioBundles[i]);
-                        }
-                    }
-
-                    delegate.onMediaPermissionRequest(
-                            GeckoSession.this, message.getString("uri"),
-                            videos, audios, new PermissionCallback("media", callback));
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<SelectionActionDelegate> mSelectionActionDelegate =
-        new GeckoSessionHandler<SelectionActionDelegate>(
-            "GeckoViewSelectionAction", this,
-            new String[] {
-                "GeckoView:HideSelectionAction",
-                "GeckoView:ShowSelectionAction",
-            }
-        ) {
-            @Override
-            public void handleMessage(final SelectionActionDelegate delegate,
-                                      final String event,
-                                      final GeckoBundle message,
-                                      final EventCallback callback) {
-                if ("GeckoView:ShowSelectionAction".equals(event)) {
-                    final @SelectionActionDelegateAction HashSet<String> actionsSet =
-                            new HashSet<>(Arrays.asList(message.getStringArray("actions")));
-                    final SelectionActionDelegate.Selection selection =
-                            new SelectionActionDelegate.Selection(message, actionsSet, callback);
-
-                    delegate.onShowActionRequest(GeckoSession.this, selection);
-
-                } else if ("GeckoView:HideSelectionAction".equals(event)) {
-                    final String reasonString = message.getString("reason");
-                    final int reason;
-                    if ("invisibleselection".equals(reasonString)) {
-                        reason = SelectionActionDelegate.HIDE_REASON_INVISIBLE_SELECTION;
-                    } else if ("presscaret".equals(reasonString)) {
-                        reason = SelectionActionDelegate.HIDE_REASON_ACTIVE_SELECTION;
-                    } else if ("scroll".equals(reasonString)) {
-                        reason = SelectionActionDelegate.HIDE_REASON_ACTIVE_SCROLL;
-                    } else if ("visibilitychange".equals(reasonString)) {
-                        reason = SelectionActionDelegate.HIDE_REASON_NO_SELECTION;
-                    } else {
-                        throw new IllegalArgumentException();
-                    }
-
-                    delegate.onHideAction(GeckoSession.this, reason);
-                }
-            }
-        };
-
-    private final GeckoSessionHandler<MediaDelegate> mMediaHandler =
-            new GeckoSessionHandler<MediaDelegate>(
-                    "GeckoViewMedia", this,
-                    new String[]{
-                        "GeckoView:MediaRecordingStatusChanged",
-                    }
-            ) {
-        @Override
-        public void handleMessage(final MediaDelegate delegate,
-                                  final String event,
-                                  final GeckoBundle message,
-                                  final EventCallback callback) {
-            if ("GeckoView:MediaRecordingStatusChanged".equals(event)) {
-                final GeckoBundle[] deviceBundles = message.getBundleArray("devices");
-                final MediaDelegate.RecordingDevice[] devices = new MediaDelegate.RecordingDevice[deviceBundles.length];
-                for (int i = 0; i < deviceBundles.length; i++) {
-                    devices[i] = new MediaDelegate.RecordingDevice(deviceBundles[i]);
-                }
-                delegate.onRecordingStatusChanged(GeckoSession.this, devices);
-                return;
-            }
-        }
-    };
-
-    private final MediaSession.Handler mMediaSessionHandler =
-            new MediaSession.Handler(this);
-
-     int handlersCount;
-
-    private final GeckoSessionHandler<?>[] mSessionHandlers =
-            new GeckoSessionHandler<?>[] {
-                mContentHandler, mHistoryHandler, mMediaHandler,
-                mNavigationHandler, mPermissionHandler, mProcessHangHandler,
-                mProgressHandler, mScrollHandler, mSelectionActionDelegate,
-                mContentBlockingHandler, mMediaSessionHandler
-            };
-
-    private static class PermissionCallback implements
-        PermissionDelegate.Callback, PermissionDelegate.MediaCallback {
-
-        private final String mType;
-        private EventCallback mCallback;
-
-        public PermissionCallback(final String type, final EventCallback callback) {
-            mType = type;
-            mCallback = callback;
-        }
-
-        private void submit(final Object response) {
-            if (mCallback != null) {
-                mCallback.sendSuccess(response);
-                mCallback = null;
-            }
-        }
-
-        @Override 
-        public void grant() {
-            if ("media".equals(mType)) {
-                throw new UnsupportedOperationException();
-            }
-            submit( true);
-        }
-
-        @Override 
-        public void reject() {
-            submit( false);
-        }
-
-        @Override 
-        public void grant(final String video, final String audio) {
-            if (!"media".equals(mType)) {
-                throw new UnsupportedOperationException();
-            }
-            final GeckoBundle response = new GeckoBundle(2);
-            response.putString("video", video);
-            response.putString("audio", audio);
-            submit(response);
-        }
-
-        @Override 
-        public void grant(final PermissionDelegate.MediaSource video, final PermissionDelegate.MediaSource audio) {
-            grant(video != null ? video.id : null,
-                  audio != null ? audio.id : null);
-        }
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull GeckoResult<String> getUserAgent() {
-        return mEventDispatcher.queryString("GeckoView:GetUserAgent");
-    }
-
-    
-
-
-
-
-
-
-
-    @AnyThread
-    public static @NonNull String getDefaultUserAgent() {
-        return BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
-    }
-
-    
-
-
-
-    @UiThread
-    public @Nullable PermissionDelegate getPermissionDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mPermissionHandler.getDelegate();
-    }
-
-    
-
-
-
-    @UiThread
-    public void setPermissionDelegate(final @Nullable PermissionDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mPermissionHandler.setDelegate(delegate, this);
-    }
-
-    private PromptDelegate mPromptDelegate;
-
-    private final Listener mListener = new Listener();
-
-     static final class Window extends JNIObject implements IInterface {
-        public final GeckoRuntime runtime;
-        private WeakReference<GeckoSession> mOwner;
-        private NativeQueue mNativeQueue;
-        private Binder mBinder;
-
-        public Window(final @NonNull GeckoRuntime runtime,
-                      final @NonNull GeckoSession owner,
-                      final @NonNull NativeQueue nativeQueue) {
-            this.runtime = runtime;
-            mOwner = new WeakReference<>(owner);
-            mNativeQueue = nativeQueue;
-        }
-
-        @Override 
-        public Binder asBinder() {
-            if (mBinder == null) {
-                mBinder = new Binder();
-                mBinder.attachInterface(this, Window.class.getName());
-            }
-            return mBinder;
-        }
-
-        
-        @WrapForJNI(dispatchTo = "proxy")
-        public static native void open(Window instance, NativeQueue queue,
-                                       Compositor compositor, EventDispatcher dispatcher,
-                                       SessionAccessibility.NativeProvider sessionAccessibility,
-                                       GeckoBundle initData, String id, String chromeUri,
-                                       int screenId, boolean privateMode);
-
-        @Override 
-        public void disposeNative() {
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                nativeDisposeNative();
-            } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                        this, "nativeDisposeNative");
-            }
-        }
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "DisposeNative")
-        private native void nativeDisposeNative();
-
-        
-        public void close() {
-            
-            synchronized (this) {
-                if (mNativeQueue == null) {
-                    
-                    return;
-                }
-                mNativeQueue.reset(State.INITIAL);
-                mNativeQueue = null;
-                mOwner = new WeakReference<>(null);
-            }
-
-            
-            
-            asBinder().attachInterface(null, Window.class.getName());
-
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                nativeClose();
-            } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                        this, "nativeClose");
-            }
-        }
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "Close")
-        private native void nativeClose();
-
-        @WrapForJNI(dispatchTo = "proxy", stubName = "Transfer")
-        private native void nativeTransfer(NativeQueue queue, Compositor compositor,
-                                           EventDispatcher dispatcher,
-                                           SessionAccessibility.NativeProvider sessionAccessibility,
-                                           GeckoBundle initData);
-
-        @WrapForJNI(dispatchTo = "proxy")
-        public native void attachEditable(IGeckoEditableParent parent);
-
-        @WrapForJNI(dispatchTo = "proxy")
-        public native void attachAccessibility(SessionAccessibility.NativeProvider sessionAccessibility);
-
-        @WrapForJNI(calledFrom = "gecko")
-        private synchronized void onReady(final @Nullable NativeQueue queue) {
-            
-            
-            
-            
-            
-            
-            
-
-            if ((queue == null && mNativeQueue == null) ||
-                (queue != null && mNativeQueue != queue)) {
-                return;
-            }
-
-            if (mNativeQueue.checkAndSetState(State.INITIAL, State.READY) &&
-                    queue == null) {
-                Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
-                      " - chrome startup finished");
-            }
-        }
-
-        @Override
-        protected void finalize() throws Throwable {
+        public void handleMessage(
+            final ContentDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          if ("GeckoView:ContentCrash".equals(event)) {
             close();
-            disposeNative();
-        }
+            delegate.onCrash(GeckoSession.this);
+          } else if ("GeckoView:ContentKill".equals(event)) {
+            close();
+            delegate.onKill(GeckoSession.this);
+          } else if ("GeckoView:ContextMenu".equals(event)) {
+            final ContentDelegate.ContextElement elem =
+                new ContentDelegate.ContextElement(
+                    message.getString("baseUri"),
+                    message.getString("uri"),
+                    message.getString("title"),
+                    message.getString("alt"),
+                    message.getString("elementType"),
+                    message.getString("elementSrc"));
 
-        @WrapForJNI(calledFrom = "gecko")
-        private GeckoResult<Boolean> onLoadRequest(final @NonNull String uri, final int windowType,
-                                                   final int flags, final @Nullable String triggeringUri,
-                                                   final boolean hasUserGesture, final boolean isTopLevel) {
-            final GeckoSession session = mOwner.get();
-            if (session == null) {
-                
-                return GeckoResult.fromValue(false);
+            delegate.onContextMenu(
+                GeckoSession.this, message.getInt("screenX"), message.getInt("screenY"), elem);
+
+          } else if ("GeckoView:DOMMetaViewportFit".equals(event)) {
+            delegate.onMetaViewportFitChange(GeckoSession.this, message.getString("viewportfit"));
+          } else if ("GeckoView:PageTitleChanged".equals(event)) {
+            delegate.onTitleChange(GeckoSession.this, message.getString("title"));
+          } else if ("GeckoView:FocusRequest".equals(event)) {
+            delegate.onFocusRequest(GeckoSession.this);
+          } else if ("GeckoView:DOMWindowClose".equals(event)) {
+            delegate.onCloseRequest(GeckoSession.this);
+          } else if ("GeckoView:FullScreenEnter".equals(event)) {
+            delegate.onFullScreen(GeckoSession.this, true);
+          } else if ("GeckoView:FullScreenExit".equals(event)) {
+            delegate.onFullScreen(GeckoSession.this, false);
+          } else if ("GeckoView:WebAppManifest".equals(event)) {
+            final GeckoBundle manifest = message.getBundle("manifest");
+            if (manifest == null) {
+              return;
             }
-            final GeckoResult<Boolean> res = new GeckoResult<>();
 
-            ThreadUtils.postToUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    final NavigationDelegate delegate = session.getNavigationDelegate();
+            try {
+              delegate.onWebAppManifest(
+                  GeckoSession.this, fixupWebAppManifest(manifest.toJSONObject()));
+            } catch (final JSONException e) {
+              Log.e(LOGTAG, "Failed to convert web app manifest to JSON", e);
+            }
+          } else if ("GeckoView:FirstContentfulPaint".equals(event)) {
+            delegate.onFirstContentfulPaint(GeckoSession.this);
+          } else if ("GeckoView:PaintStatusReset".equals(event)) {
+            delegate.onPaintStatusReset(GeckoSession.this);
+          }
+        }
+      };
 
-                    if (delegate == null) {
-                        res.complete(false);
-                        return;
-                    }
-
-                    final String trigger = TextUtils.isEmpty(triggeringUri) ? null : triggeringUri;
-                    final NavigationDelegate.LoadRequest req = new NavigationDelegate.LoadRequest(uri,
-                            trigger, windowType, flags, hasUserGesture, false );
-                    final GeckoResult<AllowOrDeny> reqResponse = isTopLevel ?
-                            delegate.onLoadRequest(session, req) :
-                            delegate.onSubframeLoadRequest(session, req);
-
-                    if (reqResponse == null) {
-                        res.complete(false);
-                        return;
-                    }
-
-                    reqResponse.accept(value -> {
-                        if (value == AllowOrDeny.DENY) {
-                            res.complete(true);
-                        } else {
-                            res.complete(false);
-                        }
-                    }, ex -> {
-                        
-                            res.complete(false);
-                        });
-                }
-            });
-
-            return res;
+  private final GeckoSessionHandler<NavigationDelegate> mNavigationHandler =
+      new GeckoSessionHandler<NavigationDelegate>(
+          "GeckoViewNavigation",
+          this,
+          new String[] {"GeckoView:LocationChange", "GeckoView:OnNewSession"},
+          new String[] {
+            "GeckoView:OnLoadError", "GeckoView:OnLoadRequest",
+          }) {
+        
+        private int convertGeckoTarget(final int geckoTarget) {
+          switch (geckoTarget) {
+            case 0: 
+            case 1: 
+              return NavigationDelegate.TARGET_WINDOW_CURRENT;
+            default: 
+              return NavigationDelegate.TARGET_WINDOW_NEW;
+          }
         }
 
-        @WrapForJNI(calledFrom = "ui")
-        private void passExternalWebResponse(final WebResponse response) {
-            final GeckoSession session = mOwner.get();
-            if (session == null) {
+        @Override
+        public void handleDefaultMessage(
+            final String event, final GeckoBundle message, final EventCallback callback) {
+
+          if ("GeckoView:OnLoadRequest".equals(event)) {
+            callback.sendSuccess(false);
+          } else if ("GeckoView:OnLoadError".equals(event)) {
+            callback.sendSuccess(null);
+          } else {
+            super.handleDefaultMessage(event, message, callback);
+          }
+        }
+
+        @Override
+        public void handleMessage(
+            final NavigationDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
+          if ("GeckoView:LocationChange".equals(event)) {
+            if (message.getBoolean("isTopLevel")) {
+              final GeckoBundle[] perms = message.getBundleArray("permissions");
+              final List<PermissionDelegate.ContentPermission> permList =
+                  PermissionDelegate.ContentPermission.fromBundleArray(perms);
+              delegate.onLocationChange(GeckoSession.this, message.getString("uri"), permList);
+            }
+            delegate.onCanGoBack(GeckoSession.this, message.getBoolean("canGoBack"));
+            delegate.onCanGoForward(GeckoSession.this, message.getBoolean("canGoForward"));
+          } else if ("GeckoView:OnLoadRequest".equals(event)) {
+            final NavigationDelegate.LoadRequest request =
+                new NavigationDelegate.LoadRequest(
+                    message.getString("uri"),
+                    message.getString("triggerUri"),
+                    message.getInt("where"),
+                    message.getInt("flags"),
+                    message.getBoolean("hasUserGesture"),
+                     false);
+
+            if (!IntentUtils.isUriSafeForScheme(request.uri)) {
+              callback.sendError("Blocked unsafe intent URI");
+
+              delegate.onLoadError(
+                  GeckoSession.this,
+                  request.uri,
+                  new WebRequestError(
+                      WebRequestError.ERROR_MALFORMED_URI,
+                      WebRequestError.ERROR_CATEGORY_URI,
+                      null));
+
+              return;
+            }
+
+            final GeckoResult<AllowOrDeny> result =
+                delegate.onLoadRequest(GeckoSession.this, request);
+
+            if (result == null) {
+              callback.sendSuccess(null);
+              return;
+            }
+
+            callback.resolveTo(
+                result.map(
+                    value -> {
+                      ThreadUtils.assertOnUiThread();
+                      if (value == AllowOrDeny.ALLOW) {
+                        return false;
+                      }
+                      if (value == AllowOrDeny.DENY) {
+                        return true;
+                      }
+                      throw new IllegalArgumentException("Invalid response");
+                    }));
+          } else if ("GeckoView:OnLoadError".equals(event)) {
+            final String uri = message.getString("uri");
+            final long errorCode = message.getLong("error");
+            final int errorModule = message.getInt("errorModule");
+            final int errorClass = message.getInt("errorClass");
+
+            final WebRequestError err =
+                WebRequestError.fromGeckoError(errorCode, errorModule, errorClass, null);
+
+            final GeckoResult<String> result = delegate.onLoadError(GeckoSession.this, uri, err);
+            if (result == null) {
+              callback.sendError("abort");
+              return;
+            }
+
+            callback.resolveTo(
+                result.map(
+                    url -> {
+                      if (url == null) {
+                        throw new IllegalArgumentException("abort");
+                      }
+                      return url;
+                    }));
+          } else if ("GeckoView:OnNewSession".equals(event)) {
+            final String uri = message.getString("uri");
+            final GeckoResult<GeckoSession> result = delegate.onNewSession(GeckoSession.this, uri);
+            if (result == null) {
+              callback.sendSuccess(false);
+              return;
+            }
+
+            final String newSessionId = message.getString("newSessionId");
+            callback.resolveTo(
+                result.map(
+                    session -> {
+                      ThreadUtils.assertOnUiThread();
+                      if (session == null) {
+                        return false;
+                      }
+
+                      if (session.isOpen()) {
+                        throw new AssertionError("Must use an unopened GeckoSession instance");
+                      }
+
+                      if (GeckoSession.this.mWindow == null) {
+                        throw new IllegalArgumentException("Session is not attached to a window");
+                      }
+
+                      session.open(GeckoSession.this.mWindow.runtime, newSessionId);
+                      return true;
+                    }));
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<ContentDelegate> mProcessHangHandler =
+      new GeckoSessionHandler<ContentDelegate>(
+          "GeckoViewProcessHangMonitor", this, new String[] {"GeckoView:HangReport"}) {
+
+        @Override
+        protected void handleMessage(
+            final ContentDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback eventCallback) {
+          Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
+
+          final GeckoResult<SlowScriptResponse> result =
+              delegate.onSlowScript(GeckoSession.this, message.getString("scriptFileName"));
+          if (result != null) {
+            final int mReportId = message.getInt("hangId");
+            result.accept(
+                stopOrContinue -> {
+                  if (stopOrContinue != null) {
+                    final GeckoBundle bundle = new GeckoBundle();
+                    bundle.putInt("hangId", mReportId);
+                    switch (stopOrContinue) {
+                      case STOP:
+                        mEventDispatcher.dispatch("GeckoView:HangReportStop", bundle);
+                        break;
+                      case CONTINUE:
+                        mEventDispatcher.dispatch("GeckoView:HangReportWait", bundle);
+                        break;
+                    }
+                  }
+                });
+          } else {
+            
+            final GeckoBundle bundle = new GeckoBundle();
+            bundle.putInt("hangId", message.getInt("hangId"));
+            mEventDispatcher.dispatch("GeckoView:HangReportStop", bundle);
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<ProgressDelegate> mProgressHandler =
+      new GeckoSessionHandler<ProgressDelegate>(
+          "GeckoViewProgress",
+          this,
+          new String[] {
+            "GeckoView:PageStart",
+            "GeckoView:PageStop",
+            "GeckoView:ProgressChanged",
+            "GeckoView:SecurityChanged",
+            "GeckoView:StateUpdated",
+          }) {
+        @Override
+        public void handleMessage(
+            final ProgressDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
+          if ("GeckoView:PageStart".equals(event)) {
+            delegate.onPageStart(GeckoSession.this, message.getString("uri"));
+          } else if ("GeckoView:PageStop".equals(event)) {
+            delegate.onPageStop(GeckoSession.this, message.getBoolean("success"));
+          } else if ("GeckoView:ProgressChanged".equals(event)) {
+            delegate.onProgressChange(GeckoSession.this, message.getInt("progress"));
+          } else if ("GeckoView:SecurityChanged".equals(event)) {
+            final GeckoBundle identity = message.getBundle("identity");
+            delegate.onSecurityChange(
+                GeckoSession.this, new ProgressDelegate.SecurityInformation(identity));
+          } else if ("GeckoView:StateUpdated".equals(event)) {
+            final GeckoBundle update = message.getBundle("data");
+            if (update != null) {
+              if (getHistoryDelegate() == null) {
+                mStateCache.updateSessionState(update);
+                final SessionState state = new SessionState(mStateCache);
+                if (!state.isEmpty()) {
+                  delegate.onSessionStateChange(GeckoSession.this, state);
+                }
+              }
+            }
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<ScrollDelegate> mScrollHandler =
+      new GeckoSessionHandler<ScrollDelegate>(
+          "GeckoViewScroll", this, new String[] {"GeckoView:ScrollChanged"}) {
+        @Override
+        public void handleMessage(
+            final ScrollDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+
+          if ("GeckoView:ScrollChanged".equals(event)) {
+            delegate.onScrollChanged(
+                GeckoSession.this, message.getInt("scrollX"), message.getInt("scrollY"));
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<ContentBlocking.Delegate> mContentBlockingHandler =
+      new GeckoSessionHandler<ContentBlocking.Delegate>(
+          "GeckoViewContentBlocking", this, new String[] {"GeckoView:ContentBlockingEvent"}) {
+        @Override
+        public void handleMessage(
+            final ContentBlocking.Delegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+
+          if ("GeckoView:ContentBlockingEvent".equals(event)) {
+            final ContentBlocking.BlockEvent be = ContentBlocking.BlockEvent.fromBundle(message);
+            if (be.isBlocking()) {
+              delegate.onContentBlocked(GeckoSession.this, be);
+            } else {
+              delegate.onContentLoaded(GeckoSession.this, be);
+            }
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<PermissionDelegate> mPermissionHandler =
+      new GeckoSessionHandler<PermissionDelegate>(
+          "GeckoViewPermission",
+          this,
+          new String[] {
+            "GeckoView:AndroidPermission",
+            "GeckoView:ContentPermission",
+            "GeckoView:MediaPermission"
+          }) {
+        @Override
+        public void handleMessage(
+            final PermissionDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          if (delegate == null) {
+            callback.sendSuccess( false);
+            return;
+          }
+          if ("GeckoView:AndroidPermission".equals(event)) {
+            delegate.onAndroidPermissionsRequest(
+                GeckoSession.this,
+                message.getStringArray("perms"),
+                new PermissionCallback("android", callback));
+          } else if ("GeckoView:ContentPermission".equals(event)) {
+            final GeckoResult<Integer> res =
+                delegate.onContentPermissionRequest(
+                    GeckoSession.this, new PermissionDelegate.ContentPermission(message));
+            if (res == null) {
+              callback.sendSuccess(PermissionDelegate.ContentPermission.VALUE_PROMPT);
+              return;
+            }
+
+            callback.resolveTo(res);
+          } else if ("GeckoView:MediaPermission".equals(event)) {
+            final GeckoBundle[] videoBundles = message.getBundleArray("video");
+            final GeckoBundle[] audioBundles = message.getBundleArray("audio");
+            PermissionDelegate.MediaSource[] videos = null;
+            PermissionDelegate.MediaSource[] audios = null;
+
+            if (videoBundles != null) {
+              videos = new PermissionDelegate.MediaSource[videoBundles.length];
+              for (int i = 0; i < videoBundles.length; i++) {
+                videos[i] = new PermissionDelegate.MediaSource(videoBundles[i]);
+              }
+            }
+
+            if (audioBundles != null) {
+              audios = new PermissionDelegate.MediaSource[audioBundles.length];
+              for (int i = 0; i < audioBundles.length; i++) {
+                audios[i] = new PermissionDelegate.MediaSource(audioBundles[i]);
+              }
+            }
+
+            delegate.onMediaPermissionRequest(
+                GeckoSession.this,
+                message.getString("uri"),
+                videos,
+                audios,
+                new PermissionCallback("media", callback));
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<SelectionActionDelegate> mSelectionActionDelegate =
+      new GeckoSessionHandler<SelectionActionDelegate>(
+          "GeckoViewSelectionAction",
+          this,
+          new String[] {
+            "GeckoView:HideSelectionAction", "GeckoView:ShowSelectionAction",
+          }) {
+        @Override
+        public void handleMessage(
+            final SelectionActionDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          if ("GeckoView:ShowSelectionAction".equals(event)) {
+            final @SelectionActionDelegateAction HashSet<String> actionsSet =
+                new HashSet<>(Arrays.asList(message.getStringArray("actions")));
+            final SelectionActionDelegate.Selection selection =
+                new SelectionActionDelegate.Selection(message, actionsSet, callback);
+
+            delegate.onShowActionRequest(GeckoSession.this, selection);
+
+          } else if ("GeckoView:HideSelectionAction".equals(event)) {
+            final String reasonString = message.getString("reason");
+            final int reason;
+            if ("invisibleselection".equals(reasonString)) {
+              reason = SelectionActionDelegate.HIDE_REASON_INVISIBLE_SELECTION;
+            } else if ("presscaret".equals(reasonString)) {
+              reason = SelectionActionDelegate.HIDE_REASON_ACTIVE_SELECTION;
+            } else if ("scroll".equals(reasonString)) {
+              reason = SelectionActionDelegate.HIDE_REASON_ACTIVE_SCROLL;
+            } else if ("visibilitychange".equals(reasonString)) {
+              reason = SelectionActionDelegate.HIDE_REASON_NO_SELECTION;
+            } else {
+              throw new IllegalArgumentException();
+            }
+
+            delegate.onHideAction(GeckoSession.this, reason);
+          }
+        }
+      };
+
+  private final GeckoSessionHandler<MediaDelegate> mMediaHandler =
+      new GeckoSessionHandler<MediaDelegate>(
+          "GeckoViewMedia",
+          this,
+          new String[] {
+            "GeckoView:MediaRecordingStatusChanged",
+          }) {
+        @Override
+        public void handleMessage(
+            final MediaDelegate delegate,
+            final String event,
+            final GeckoBundle message,
+            final EventCallback callback) {
+          if ("GeckoView:MediaRecordingStatusChanged".equals(event)) {
+            final GeckoBundle[] deviceBundles = message.getBundleArray("devices");
+            final MediaDelegate.RecordingDevice[] devices =
+                new MediaDelegate.RecordingDevice[deviceBundles.length];
+            for (int i = 0; i < deviceBundles.length; i++) {
+              devices[i] = new MediaDelegate.RecordingDevice(deviceBundles[i]);
+            }
+            delegate.onRecordingStatusChanged(GeckoSession.this, devices);
+            return;
+          }
+        }
+      };
+
+  private final MediaSession.Handler mMediaSessionHandler = new MediaSession.Handler(this);
+
+   int handlersCount;
+
+  private final GeckoSessionHandler<?>[] mSessionHandlers =
+      new GeckoSessionHandler<?>[] {
+        mContentHandler, mHistoryHandler, mMediaHandler,
+        mNavigationHandler, mPermissionHandler, mProcessHangHandler,
+        mProgressHandler, mScrollHandler, mSelectionActionDelegate,
+        mContentBlockingHandler, mMediaSessionHandler
+      };
+
+  private static class PermissionCallback
+      implements PermissionDelegate.Callback, PermissionDelegate.MediaCallback {
+
+    private final String mType;
+    private EventCallback mCallback;
+
+    public PermissionCallback(final String type, final EventCallback callback) {
+      mType = type;
+      mCallback = callback;
+    }
+
+    private void submit(final Object response) {
+      if (mCallback != null) {
+        mCallback.sendSuccess(response);
+        mCallback = null;
+      }
+    }
+
+    @Override 
+    public void grant() {
+      if ("media".equals(mType)) {
+        throw new UnsupportedOperationException();
+      }
+      submit( true);
+    }
+
+    @Override 
+    public void reject() {
+      submit( false);
+    }
+
+    @Override 
+    public void grant(final String video, final String audio) {
+      if (!"media".equals(mType)) {
+        throw new UnsupportedOperationException();
+      }
+      final GeckoBundle response = new GeckoBundle(2);
+      response.putString("video", video);
+      response.putString("audio", audio);
+      submit(response);
+    }
+
+    @Override 
+    public void grant(
+        final PermissionDelegate.MediaSource video, final PermissionDelegate.MediaSource audio) {
+      grant(video != null ? video.id : null, audio != null ? audio.id : null);
+    }
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<String> getUserAgent() {
+    return mEventDispatcher.queryString("GeckoView:GetUserAgent");
+  }
+
+  
+
+
+
+
+
+
+
+  @AnyThread
+  public static @NonNull String getDefaultUserAgent() {
+    return BuildConfig.USER_AGENT_GECKOVIEW_MOBILE;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable PermissionDelegate getPermissionDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mPermissionHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setPermissionDelegate(final @Nullable PermissionDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mPermissionHandler.setDelegate(delegate, this);
+  }
+
+  private PromptDelegate mPromptDelegate;
+
+  private final Listener mListener = new Listener();
+
+   static final class Window extends JNIObject implements IInterface {
+    public final GeckoRuntime runtime;
+    private WeakReference<GeckoSession> mOwner;
+    private NativeQueue mNativeQueue;
+    private Binder mBinder;
+
+    public Window(
+        final @NonNull GeckoRuntime runtime,
+        final @NonNull GeckoSession owner,
+        final @NonNull NativeQueue nativeQueue) {
+      this.runtime = runtime;
+      mOwner = new WeakReference<>(owner);
+      mNativeQueue = nativeQueue;
+    }
+
+    @Override 
+    public Binder asBinder() {
+      if (mBinder == null) {
+        mBinder = new Binder();
+        mBinder.attachInterface(this, Window.class.getName());
+      }
+      return mBinder;
+    }
+
+    
+    @WrapForJNI(dispatchTo = "proxy")
+    public static native void open(
+        Window instance,
+        NativeQueue queue,
+        Compositor compositor,
+        EventDispatcher dispatcher,
+        SessionAccessibility.NativeProvider sessionAccessibility,
+        GeckoBundle initData,
+        String id,
+        String chromeUri,
+        int screenId,
+        boolean privateMode);
+
+    @Override 
+    public void disposeNative() {
+      if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+        nativeDisposeNative();
+      } else {
+        GeckoThread.queueNativeCallUntil(
+            GeckoThread.State.PROFILE_READY, this, "nativeDisposeNative");
+      }
+    }
+
+    @WrapForJNI(dispatchTo = "proxy", stubName = "DisposeNative")
+    private native void nativeDisposeNative();
+
+    
+    public void close() {
+      
+      synchronized (this) {
+        if (mNativeQueue == null) {
+          
+          return;
+        }
+        mNativeQueue.reset(State.INITIAL);
+        mNativeQueue = null;
+        mOwner = new WeakReference<>(null);
+      }
+
+      
+      
+      asBinder().attachInterface(null, Window.class.getName());
+
+      if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+        nativeClose();
+      } else {
+        GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, this, "nativeClose");
+      }
+    }
+
+    @WrapForJNI(dispatchTo = "proxy", stubName = "Close")
+    private native void nativeClose();
+
+    @WrapForJNI(dispatchTo = "proxy", stubName = "Transfer")
+    private native void nativeTransfer(
+        NativeQueue queue,
+        Compositor compositor,
+        EventDispatcher dispatcher,
+        SessionAccessibility.NativeProvider sessionAccessibility,
+        GeckoBundle initData);
+
+    @WrapForJNI(dispatchTo = "proxy")
+    public native void attachEditable(IGeckoEditableParent parent);
+
+    @WrapForJNI(dispatchTo = "proxy")
+    public native void attachAccessibility(
+        SessionAccessibility.NativeProvider sessionAccessibility);
+
+    @WrapForJNI(calledFrom = "gecko")
+    private synchronized void onReady(final @Nullable NativeQueue queue) {
+      
+      
+      
+      
+      
+      
+      
+
+      if ((queue == null && mNativeQueue == null) || (queue != null && mNativeQueue != queue)) {
+        return;
+      }
+
+      if (mNativeQueue.checkAndSetState(State.INITIAL, State.READY) && queue == null) {
+        Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() + " - chrome startup finished");
+      }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+      close();
+      disposeNative();
+    }
+
+    @WrapForJNI(calledFrom = "gecko")
+    private GeckoResult<Boolean> onLoadRequest(
+        final @NonNull String uri,
+        final int windowType,
+        final int flags,
+        final @Nullable String triggeringUri,
+        final boolean hasUserGesture,
+        final boolean isTopLevel) {
+      final GeckoSession session = mOwner.get();
+      if (session == null) {
+        
+        return GeckoResult.fromValue(false);
+      }
+      final GeckoResult<Boolean> res = new GeckoResult<>();
+
+      ThreadUtils.postToUiThread(
+          new Runnable() {
+            @Override
+            public void run() {
+              final NavigationDelegate delegate = session.getNavigationDelegate();
+
+              if (delegate == null) {
+                res.complete(false);
                 return;
+              }
+
+              final String trigger = TextUtils.isEmpty(triggeringUri) ? null : triggeringUri;
+              final NavigationDelegate.LoadRequest req =
+                  new NavigationDelegate.LoadRequest(
+                      uri,
+                      trigger,
+                      windowType,
+                      flags,
+                      hasUserGesture,
+                      false );
+              final GeckoResult<AllowOrDeny> reqResponse =
+                  isTopLevel
+                      ? delegate.onLoadRequest(session, req)
+                      : delegate.onSubframeLoadRequest(session, req);
+
+              if (reqResponse == null) {
+                res.complete(false);
+                return;
+              }
+
+              reqResponse.accept(
+                  value -> {
+                    if (value == AllowOrDeny.DENY) {
+                      res.complete(true);
+                    } else {
+                      res.complete(false);
+                    }
+                  },
+                  ex -> {
+                    
+                    res.complete(false);
+                  });
+            }
+          });
+
+      return res;
+    }
+
+    @WrapForJNI(calledFrom = "ui")
+    private void passExternalWebResponse(final WebResponse response) {
+      final GeckoSession session = mOwner.get();
+      if (session == null) {
+        return;
+      }
+      final ContentDelegate delegate = session.getContentDelegate();
+      if (delegate != null) {
+        delegate.onExternalResponse(session, response);
+      }
+    }
+
+    @WrapForJNI(calledFrom = "gecko")
+    private void onShowDynamicToolbar() {
+      final Window self = this;
+      ThreadUtils.runOnUiThread(
+          () -> {
+            final GeckoSession session = self.mOwner.get();
+            if (session == null) {
+              return;
             }
             final ContentDelegate delegate = session.getContentDelegate();
             if (delegate != null) {
-                delegate.onExternalResponse(session, response);
+              delegate.onShowDynamicToolbar(session);
             }
-        }
+          });
+    }
+  }
 
-        @WrapForJNI(calledFrom = "gecko")
-        private void onShowDynamicToolbar() {
-            final Window self = this;
-            ThreadUtils.runOnUiThread(() -> {
-                final GeckoSession session = self.mOwner.get();
-                if (session == null) {
-                    return;
-                }
-                final ContentDelegate delegate = session.getContentDelegate();
-                if (delegate != null) {
-                    delegate.onShowDynamicToolbar(session);
-                }
-            });
-        }
+  private class Listener implements BundleEventListener {
+     void registerListeners() {
+      getEventDispatcher()
+          .registerUiThreadListener(
+              this, "GeckoView:PinOnScreen", "GeckoView:Prompt", "GeckoView:Prompt:Dismiss", null);
     }
 
-    private class Listener implements BundleEventListener {
-         void registerListeners() {
-            getEventDispatcher().registerUiThreadListener(this,
-                "GeckoView:PinOnScreen",
-                "GeckoView:Prompt",
-                "GeckoView:Prompt:Dismiss",
-                null);
-        }
+    @Override
+    public void handleMessage(
+        final String event, final GeckoBundle message, final EventCallback callback) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "handleMessage: event = " + event);
+      }
 
-        @Override
-        public void handleMessage(final String event, final GeckoBundle message,
-                                  final EventCallback callback) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "handleMessage: event = " + event);
-            }
+      if ("GeckoView:PinOnScreen".equals(event)) {
+        GeckoSession.this.setShouldPinOnScreen(message.getBoolean("pinned"));
+      } else if ("GeckoView:Prompt".equals(event)) {
+        mPromptController.handleEvent(GeckoSession.this, message, callback);
+      } else if ("GeckoView:Prompt:Dismiss".equals(event)) {
+        mPromptController.dismissPrompt(message.getString("id"));
+      }
+    }
+  }
 
-            if ("GeckoView:PinOnScreen".equals(event)) {
-                GeckoSession.this.setShouldPinOnScreen(message.getBoolean("pinned"));
-            } else if ("GeckoView:Prompt".equals(event)) {
-                mPromptController.handleEvent(
-                        GeckoSession.this, message, callback);
-            } else if ("GeckoView:Prompt:Dismiss".equals(event)) {
-                mPromptController.dismissPrompt(message.getString("id"));
-            }
-        }
+  private final PromptController mPromptController;
+
+  protected @Nullable Window mWindow;
+  private GeckoSessionSettings mSettings;
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public GeckoSession() {
+    this(null);
+  }
+
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public GeckoSession(final @Nullable GeckoSessionSettings settings) {
+    mSettings = new GeckoSessionSettings(settings, this);
+    mListener.registerListeners();
+
+    mWebExtensionController = new WebExtension.SessionController(this);
+    mPromptController = new PromptController();
+
+    mAutofillSupport = new Autofill.Support(this);
+    mAutofillSupport.registerListeners();
+
+    if (BuildConfig.DEBUG && handlersCount != mSessionHandlers.length) {
+      throw new AssertionError("Add new handler to handlers list");
+    }
+  }
+
+   @Nullable
+  GeckoRuntime getRuntime() {
+    if (mWindow == null) {
+      return null;
+    }
+    return mWindow.runtime;
+  }
+
+   synchronized void abandonWindow() {
+    if (mWindow == null) {
+      return;
     }
 
-    private final PromptController mPromptController;
+    onWindowChanged(WINDOW_TRANSFER_OUT,  true);
+    mWindow = null;
+    onWindowChanged(WINDOW_TRANSFER_OUT,  false);
+  }
 
-    protected @Nullable Window mWindow;
-    private GeckoSessionSettings mSettings;
+  
 
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public GeckoSession() {
-        this(null);
+
+
+
+
+
+  @AnyThread
+  public boolean isOpen() {
+    return mWindow != null;
+  }
+
+   boolean isReady() {
+    return mNativeQueue.isReady();
+  }
+
+  private GeckoBundle createInitData() {
+    final GeckoBundle initData = new GeckoBundle(2);
+    initData.putBundle("settings", mSettings.toBundle());
+
+    final GeckoBundle modules = new GeckoBundle(mSessionHandlers.length);
+    for (final GeckoSessionHandler<?> handler : mSessionHandlers) {
+      modules.putBoolean(handler.getName(), handler.isEnabled());
+    }
+    initData.putBundle("modules", modules);
+    return initData;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void open(final @NonNull GeckoRuntime runtime) {
+    open(runtime, UUID.randomUUID().toString().replace("-", ""));
+  }
+
+   void open(final @NonNull GeckoRuntime runtime, final String id) {
+    ThreadUtils.assertOnUiThread();
+
+    if (isOpen()) {
+      
+      throw new IllegalStateException("Session is open");
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public GeckoSession(final @Nullable GeckoSessionSettings settings) {
-        mSettings = new GeckoSessionSettings(settings, this);
-        mListener.registerListeners();
+    final String chromeUri = mSettings.getChromeUri();
+    final int screenId = mSettings.getScreenId();
+    final boolean isPrivate = mSettings.getUsePrivateMode();
 
-        mWebExtensionController = new WebExtension.SessionController(this);
-        mPromptController = new PromptController();
+    mId = id;
+    mWindow = new Window(runtime, this, mNativeQueue);
+    mWebExtensionController.setRuntime(runtime);
 
-        mAutofillSupport = new Autofill.Support(this);
-        mAutofillSupport.registerListeners();
+    onWindowChanged(WINDOW_OPEN,  true);
 
-        if (BuildConfig.DEBUG && handlersCount != mSessionHandlers.length) {
-            throw new AssertionError("Add new handler to handlers list");
-        }
+    if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+      Window.open(
+          mWindow,
+          mNativeQueue,
+          mCompositor,
+          mEventDispatcher,
+          mAccessibility != null ? mAccessibility.nativeProvider : null,
+          createInitData(),
+          mId,
+          chromeUri,
+          screenId,
+          isPrivate);
+    } else {
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.PROFILE_READY,
+          Window.class,
+          "open",
+          Window.class,
+          mWindow,
+          NativeQueue.class,
+          mNativeQueue,
+          Compositor.class,
+          mCompositor,
+          EventDispatcher.class,
+          mEventDispatcher,
+          SessionAccessibility.NativeProvider.class,
+          mAccessibility != null ? mAccessibility.nativeProvider : null,
+          GeckoBundle.class,
+          createInitData(),
+          String.class,
+          mId,
+          String.class,
+          chromeUri,
+          screenId,
+          isPrivate);
     }
 
-     @Nullable GeckoRuntime getRuntime() {
-        if (mWindow == null) {
-            return null;
-        }
-        return mWindow.runtime;
+    onWindowChanged(WINDOW_OPEN,  false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void close() {
+    ThreadUtils.assertOnUiThread();
+
+    if (!isOpen()) {
+      Log.w(LOGTAG, "Attempted to close a GeckoSession that was already closed.");
+      return;
     }
 
-     synchronized void abandonWindow() {
-        if (mWindow == null) {
-            return;
-        }
+    onWindowChanged(WINDOW_CLOSE,  true);
 
-        onWindowChanged(WINDOW_TRANSFER_OUT,  true);
-        mWindow = null;
-        onWindowChanged(WINDOW_TRANSFER_OUT,  false);
+    
+    onSurfaceDestroyed();
+
+    mWindow.close();
+    mWindow.disposeNative();
+    
+    mCompositorReady = false;
+    mWindow = null;
+
+    onWindowChanged(WINDOW_CLOSE,  false);
+  }
+
+  private void onWindowChanged(final int change, final boolean inProgress) {
+    if ((change == WINDOW_OPEN || change == WINDOW_TRANSFER_IN) && !inProgress) {
+      mTextInput.onWindowChanged(mWindow);
+    }
+    if ((change == WINDOW_CLOSE || change == WINDOW_TRANSFER_OUT) && !inProgress) {
+      getAutofillSupport().clear();
+    }
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @NonNull SessionTextInput getTextInput() {
+    
+    return mTextInput;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull SessionAccessibility getAccessibility() {
+    ThreadUtils.assertOnUiThread();
+    if (mAccessibility != null) {
+      return mAccessibility;
+    }
+
+    mAccessibility = new SessionAccessibility(this);
+    if (mWindow != null) {
+      if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+        mWindow.attachAccessibility(mAccessibility.nativeProvider);
+      } else {
+        GeckoThread.queueNativeCallUntil(
+            GeckoThread.State.PROFILE_READY,
+            mWindow,
+            "attachAccessibility",
+            SessionAccessibility.NativeProvider.class,
+            mAccessibility.nativeProvider);
+      }
+    }
+    return mAccessibility;
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        LOAD_FLAGS_NONE,
+        LOAD_FLAGS_BYPASS_CACHE,
+        LOAD_FLAGS_BYPASS_PROXY,
+        LOAD_FLAGS_EXTERNAL,
+        LOAD_FLAGS_ALLOW_POPUPS,
+        LOAD_FLAGS_FORCE_ALLOW_DATA_URI,
+        LOAD_FLAGS_REPLACE_HISTORY
+      })
+   @interface LoadFlags {}
+
+  
+  
+  
+  
+  
+
+  
+  public static final int LOAD_FLAGS_NONE = 0;
+
+  
+  public static final int LOAD_FLAGS_BYPASS_CACHE = 1 << 0;
+
+  
+  public static final int LOAD_FLAGS_BYPASS_PROXY = 1 << 1;
+
+  
+  public static final int LOAD_FLAGS_EXTERNAL = 1 << 2;
+
+  
+  public static final int LOAD_FLAGS_ALLOW_POPUPS = 1 << 3;
+
+  
+  public static final int LOAD_FLAGS_BYPASS_CLASSIFIER = 1 << 4;
+
+  
+
+
+
+  public static final int LOAD_FLAGS_FORCE_ALLOW_DATA_URI = 1 << 5;
+
+  
+  public static final int LOAD_FLAGS_REPLACE_HISTORY = 1 << 6;
+
+  
+
+
+
+
+
+
+  public static final int HEADER_FILTER_CORS_SAFELISTED = 1;
+  
+
+
+
+
+
+
+
+
+
+  public static final int HEADER_FILTER_UNRESTRICTED_UNSAFE = 2;
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(value = {HEADER_FILTER_CORS_SAFELISTED, HEADER_FILTER_UNRESTRICTED_UNSAFE})
+   @interface HeaderFilter {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public static class Loader {
+    private String mUri;
+    private GeckoSession mReferrerSession;
+    private String mReferrerUri;
+    private GeckoBundle mHeaders;
+    private @LoadFlags int mLoadFlags = LOAD_FLAGS_NONE;
+    private boolean mIsDataUri;
+    private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
+
+    private static @NonNull String createDataUri(
+        @NonNull final byte[] bytes, @Nullable final String mimeType) {
+      return String.format(
+          "data:%s;base64,%s",
+          mimeType != null ? mimeType : "", Base64.encodeToString(bytes, Base64.NO_WRAP));
+    }
+
+    private static @NonNull String createDataUri(
+        @NonNull final String data, @Nullable final String mimeType) {
+      return String.format("data:%s,%s", mimeType != null ? mimeType : "", data);
+    }
+
+    @Override
+    public int hashCode() {
+      
+      return Arrays.hashCode(
+          new Object[] {
+            mUri, mReferrerSession, mReferrerUri, mHeaders, mLoadFlags, mIsDataUri, mHeaderFilter
+          });
+    }
+
+    private static boolean equals(final Object a, final Object b) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        return Objects.equals(a, b);
+      }
+
+      return (a == b) || (a != null && a.equals(b));
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object obj) {
+      if (!(obj instanceof Loader)) {
+        return false;
+      }
+
+      final Loader other = (Loader) obj;
+      return equals(mUri, other.mUri)
+          && equals(mReferrerSession, other.mReferrerSession)
+          && equals(mReferrerUri, other.mReferrerUri)
+          && equals(mHeaders, other.mHeaders)
+          && equals(mLoadFlags, other.mLoadFlags)
+          && equals(mIsDataUri, other.mIsDataUri)
+          && equals(mHeaderFilter, other.mHeaderFilter);
+    }
+
+    
+
+
+
+
+
+    @NonNull
+    public Loader uri(final @NonNull String uri) {
+      mUri = uri;
+      mIsDataUri = false;
+      return this;
+    }
+
+    
+
+
+
+
+
+    @NonNull
+    public Loader uri(final @NonNull Uri uri) {
+      mUri = uri.toString();
+      mIsDataUri = false;
+      return this;
     }
 
     
@@ -1198,25 +1597,63 @@ public class GeckoSession {
 
 
 
-    @AnyThread
-    public boolean isOpen() {
-        return mWindow != null;
+
+    @NonNull
+    public Loader data(final @NonNull byte[] bytes, final @Nullable String mimeType) {
+      mUri = createDataUri(bytes, mimeType);
+      mIsDataUri = true;
+      return this;
     }
 
-     boolean isReady() {
-        return mNativeQueue.isReady();
+    
+
+
+
+
+
+
+
+    @NonNull
+    public Loader data(final @NonNull String data, final @Nullable String mimeType) {
+      mUri = createDataUri(data, mimeType);
+      mIsDataUri = true;
+      return this;
     }
 
-    private GeckoBundle createInitData() {
-        final GeckoBundle initData = new GeckoBundle(2);
-        initData.putBundle("settings", mSettings.toBundle());
+    
 
-        final GeckoBundle modules = new GeckoBundle(mSessionHandlers.length);
-        for (final GeckoSessionHandler<?> handler : mSessionHandlers) {
-            modules.putBoolean(handler.getName(), handler.isEnabled());
-        }
-        initData.putBundle("modules", modules);
-        return initData;
+
+
+
+
+    @NonNull
+    public Loader referrer(final @NonNull GeckoSession referrer) {
+      mReferrerSession = referrer;
+      return this;
+    }
+
+    
+
+
+
+
+
+    @NonNull
+    public Loader referrer(final @NonNull Uri referrerUri) {
+      mReferrerUri = referrerUri != null ? referrerUri.toString() : null;
+      return this;
+    }
+
+    
+
+
+
+
+
+    @NonNull
+    public Loader referrer(final @NonNull String referrerUri) {
+      mReferrerUri = referrerUri;
+      return this;
     }
 
     
@@ -1232,518 +1669,544 @@ public class GeckoSession {
 
 
 
-
-    @UiThread
-    public void open(final @NonNull GeckoRuntime runtime) {
-        open(runtime, UUID.randomUUID().toString().replace("-", ""));
+    @NonNull
+    public Loader additionalHeaders(final @NonNull Map<String, String> headers) {
+      final GeckoBundle bundle = new GeckoBundle(headers.size());
+      for (final Map.Entry<String, String> entry : headers.entrySet()) {
+        if (entry.getKey() == null) {
+          
+          continue;
+        }
+        bundle.putString(entry.getKey(), entry.getValue());
+      }
+      mHeaders = bundle;
+      return this;
     }
 
-     void open(final @NonNull GeckoRuntime runtime, final String id) {
-        ThreadUtils.assertOnUiThread();
+    
 
-        if (isOpen()) {
+
+
+
+
+
+    @NonNull
+    public Loader headerFilter(final @HeaderFilter int filter) {
+      mHeaderFilter = filter;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    @NonNull
+    public Loader flags(final @LoadFlags int flags) {
+      mLoadFlags = flags;
+      return this;
+    }
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public void load(final @NonNull Loader request) {
+    if (request.mUri == null) {
+      throw new IllegalArgumentException(
+          "You need to specify at least one between `uri` and `data`.");
+    }
+
+    if (request.mReferrerUri != null && request.mReferrerSession != null) {
+      throw new IllegalArgumentException(
+          "Cannot specify both a referrer session and a referrer URI.");
+    }
+
+    final NavigationDelegate navDelegate = mNavigationHandler.getDelegate();
+    final boolean isDataUriTooLong = !maybeCheckDataUriLength(request);
+    if (navDelegate == null && isDataUriTooLong) {
+      throw new IllegalArgumentException("data URI is too long");
+    }
+
+    final int loadFlags =
+        request.mIsDataUri
             
-            throw new IllegalStateException("Session is open");
-        }
-
-        final String chromeUri = mSettings.getChromeUri();
-        final int screenId = mSettings.getScreenId();
-        final boolean isPrivate = mSettings.getUsePrivateMode();
-
-        mId = id;
-        mWindow = new Window(runtime, this, mNativeQueue);
-        mWebExtensionController.setRuntime(runtime);
-
-        onWindowChanged(WINDOW_OPEN,  true);
-
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            Window.open(mWindow, mNativeQueue, mCompositor, mEventDispatcher,
-                        mAccessibility != null ? mAccessibility.nativeProvider : null,
-                        createInitData(), mId, chromeUri, screenId, isPrivate);
-        } else {
-            GeckoThread.queueNativeCallUntil(
-                GeckoThread.State.PROFILE_READY,
-                Window.class, "open",
-                Window.class, mWindow,
-                NativeQueue.class, mNativeQueue,
-                Compositor.class, mCompositor,
-                EventDispatcher.class, mEventDispatcher,
-                SessionAccessibility.NativeProvider.class,
-                mAccessibility != null ? mAccessibility.nativeProvider : null,
-                GeckoBundle.class, createInitData(),
-                String.class, mId,
-                String.class, chromeUri,
-                screenId, isPrivate);
-        }
-
-        onWindowChanged(WINDOW_OPEN,  false);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public void close() {
-        ThreadUtils.assertOnUiThread();
-
-        if (!isOpen()) {
-            Log.w(LOGTAG, "Attempted to close a GeckoSession that was already closed.");
-            return;
-        }
-
-        onWindowChanged(WINDOW_CLOSE,  true);
-
-        
-        onSurfaceDestroyed();
-
-        mWindow.close();
-        mWindow.disposeNative();
-        
-        mCompositorReady = false;
-        mWindow = null;
-
-        onWindowChanged(WINDOW_CLOSE,  false);
-    }
-
-    private void onWindowChanged(final int change, final boolean inProgress) {
-        if ((change == WINDOW_OPEN || change == WINDOW_TRANSFER_IN) && !inProgress) {
-            mTextInput.onWindowChanged(mWindow);
-        }
-        if ((change == WINDOW_CLOSE || change == WINDOW_TRANSFER_OUT) && !inProgress) {
-            getAutofillSupport().clear();
-        }
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull SessionTextInput getTextInput() {
-        
-        return mTextInput;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull SessionAccessibility getAccessibility() {
-        ThreadUtils.assertOnUiThread();
-        if (mAccessibility != null) {
-            return mAccessibility;
-        }
-
-        mAccessibility = new SessionAccessibility(this);
-        if (mWindow != null) {
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-                mWindow.attachAccessibility(mAccessibility.nativeProvider);
-            } else {
-                GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY,
-                        mWindow, "attachAccessibility",
-                        SessionAccessibility.NativeProvider.class, mAccessibility.nativeProvider);
-            }
-        }
-        return mAccessibility;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { LOAD_FLAGS_NONE, LOAD_FLAGS_BYPASS_CACHE, LOAD_FLAGS_BYPASS_PROXY,
-                      LOAD_FLAGS_EXTERNAL, LOAD_FLAGS_ALLOW_POPUPS, LOAD_FLAGS_FORCE_ALLOW_DATA_URI, LOAD_FLAGS_REPLACE_HISTORY })
-     @interface LoadFlags {}
+            ? request.mLoadFlags | LOAD_FLAGS_FORCE_ALLOW_DATA_URI
+            : request.mLoadFlags;
 
     
     
-    
-    
-    
-
-    
-
-
-    public static final int LOAD_FLAGS_NONE = 0;
-
-    
-
-
-    public static final int LOAD_FLAGS_BYPASS_CACHE = 1 << 0;
-
-    
-
-
-    public static final int LOAD_FLAGS_BYPASS_PROXY = 1 << 1;
-
-    
-
-
-    public static final int LOAD_FLAGS_EXTERNAL = 1 << 2;
-
-    
-
-
-    public static final int LOAD_FLAGS_ALLOW_POPUPS = 1 << 3;
-
-    
-
-
-    public static final int LOAD_FLAGS_BYPASS_CLASSIFIER = 1 << 4;
-
-    
-
-
-
-    public static final int LOAD_FLAGS_FORCE_ALLOW_DATA_URI = 1 << 5;
-
-    
-
-
-    public static final int LOAD_FLAGS_REPLACE_HISTORY = 1 << 6;
-
-    
-
-
-
-
-
-
-    public static final int HEADER_FILTER_CORS_SAFELISTED = 1;
-    
-
-
-
-
-
-
-
-
-
-
-
-    public static final int HEADER_FILTER_UNRESTRICTED_UNSAFE = 2;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(value = {HEADER_FILTER_CORS_SAFELISTED, HEADER_FILTER_UNRESTRICTED_UNSAFE})
-             @interface HeaderFilter {}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @AnyThread
-    public static class Loader {
-        private String mUri;
-        private GeckoSession mReferrerSession;
-        private String mReferrerUri;
-        private GeckoBundle mHeaders;
-        private @LoadFlags int mLoadFlags = LOAD_FLAGS_NONE;
-        private boolean mIsDataUri;
-        private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
-
-        private static @NonNull String createDataUri(@NonNull final byte[] bytes,
-                                                    @Nullable final String mimeType) {
-            return String.format("data:%s;base64,%s", mimeType != null ? mimeType : "",
-                    Base64.encodeToString(bytes, Base64.NO_WRAP));
-        }
-
-        private static @NonNull String createDataUri(@NonNull final String data,
-                                                    @Nullable final String mimeType) {
-            return String.format("data:%s,%s", mimeType != null ? mimeType : "", data);
-        }
-
-        @Override
-        public int hashCode() {
-            
-            return Arrays.hashCode(new Object[]{
-                mUri,
-                mReferrerSession,
-                mReferrerUri,
-                mHeaders,
-                mLoadFlags,
-                mIsDataUri,
-                mHeaderFilter
-            });
-        }
-
-        private static boolean equals(final Object a, final Object b) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                return Objects.equals(a, b);
-            }
-
-            return (a == b) || (a != null && a.equals(b));
-        }
-
-        @Override
-        public boolean equals(final @Nullable Object obj) {
-            if (!(obj instanceof Loader)) {
-                return false;
-            }
-
-            final Loader other = (Loader) obj;
-            return equals(mUri, other.mUri)
-                    && equals(mReferrerSession, other.mReferrerSession)
-                    && equals(mReferrerUri, other.mReferrerUri)
-                    && equals(mHeaders, other.mHeaders)
-                    && equals(mLoadFlags, other.mLoadFlags)
-                    && equals(mIsDataUri, other.mIsDataUri)
-                    && equals(mHeaderFilter, other.mHeaderFilter);
-        }
-
-        
-
-
-
-
-        @NonNull
-        public Loader uri(final @NonNull String uri) {
-            mUri = uri;
-            mIsDataUri = false;
-            return this;
-        }
-
-        
-
-
-
-
-        @NonNull
-        public Loader uri(final @NonNull Uri uri) {
-            mUri = uri.toString();
-            mIsDataUri = false;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        @NonNull
-        public Loader data(final @NonNull byte[] bytes, final @Nullable String mimeType) {
-            mUri = createDataUri(bytes, mimeType);
-            mIsDataUri = true;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-        @NonNull
-        public Loader data(final @NonNull String data, final @Nullable String mimeType) {
-            mUri = createDataUri(data, mimeType);
-            mIsDataUri = true;
-            return this;
-        }
-
-        
-
-
-
-
-        @NonNull
-        public Loader referrer(final @NonNull GeckoSession referrer) {
-            mReferrerSession = referrer;
-            return this;
-        }
-
-        
-
-
-
-
-        @NonNull
-        public Loader referrer(final @NonNull Uri referrerUri) {
-            mReferrerUri = referrerUri != null ? referrerUri.toString() : null;
-            return this;
-        }
-
-        
-
-
-
-
-
-        @NonNull
-        public Loader referrer(final @NonNull String referrerUri) {
-            mReferrerUri = referrerUri;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @NonNull
-        public Loader additionalHeaders(final @NonNull Map<String, String> headers) {
-            final GeckoBundle bundle = new GeckoBundle(headers.size());
-            for (final Map.Entry<String, String> entry : headers.entrySet()) {
-                if (entry.getKey() == null) {
-                    
-                    continue;
-                }
-                bundle.putString(entry.getKey(), entry.getValue());
-            }
-            mHeaders = bundle;
-            return this;
-        }
-
-        
-
-
-
-
-
-
-
-        @NonNull
-        public Loader headerFilter(final @HeaderFilter int filter) {
-            mHeaderFilter = filter;
-            return this;
-        }
-
-        
-
-
-
-
-
-        @NonNull
-        public Loader flags(final @LoadFlags int flags) {
-            mLoadFlags = flags;
-            return this;
-        }
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public void load(final @NonNull Loader request) {
-        if (request.mUri == null) {
-            throw new IllegalArgumentException(
-                    "You need to specify at least one between `uri` and `data`.");
-        }
-
-        if (request.mReferrerUri != null && request.mReferrerSession != null) {
-            throw new IllegalArgumentException(
-                    "Cannot specify both a referrer session and a referrer URI.");
-        }
-
-        final NavigationDelegate navDelegate = mNavigationHandler.getDelegate();
-        final boolean isDataUriTooLong = !maybeCheckDataUriLength(request);
-        if (navDelegate == null && isDataUriTooLong) {
-            throw new IllegalArgumentException("data URI is too long");
-        }
-
-        final int loadFlags = request.mIsDataUri
-                
-                ? request.mLoadFlags | LOAD_FLAGS_FORCE_ALLOW_DATA_URI
-                : request.mLoadFlags;
-
-        
-        
-        final NavigationDelegate.LoadRequest loadRequest =
-                new NavigationDelegate.LoadRequest(
-                        request.mUri,
-                        null, 
-                        1, 
-                        0, 
-                        false, 
-                        true );
-
-        shouldLoadUri(loadRequest).getOrAccept(allowOrDeny -> {
-            if (allowOrDeny == AllowOrDeny.DENY) {
+    final NavigationDelegate.LoadRequest loadRequest =
+        new NavigationDelegate.LoadRequest(
+            request.mUri,
+            null, 
+            1, 
+            0, 
+            false, 
+            true );
+
+    shouldLoadUri(loadRequest)
+        .getOrAccept(
+            allowOrDeny -> {
+              if (allowOrDeny == AllowOrDeny.DENY) {
                 return;
-            }
+              }
 
-            if (isDataUriTooLong) {
-                ThreadUtils.runOnUiThread(() -> {
-                    navDelegate.onLoadError(this, request.mUri,
-                                            new WebRequestError(WebRequestError.ERROR_DATA_URI_TOO_LONG,
-                                                                WebRequestError.ERROR_CATEGORY_URI,
-                                                                null));
-                });
+              if (isDataUriTooLong) {
+                ThreadUtils.runOnUiThread(
+                    () -> {
+                      navDelegate.onLoadError(
+                          this,
+                          request.mUri,
+                          new WebRequestError(
+                              WebRequestError.ERROR_DATA_URI_TOO_LONG,
+                              WebRequestError.ERROR_CATEGORY_URI,
+                              null));
+                    });
                 return;
-            }
+              }
 
-            final GeckoBundle msg = new GeckoBundle();
-            msg.putString("uri", request.mUri);
-            msg.putInt("flags", loadFlags);
-            msg.putInt("headerFilter", request.mHeaderFilter);
+              final GeckoBundle msg = new GeckoBundle();
+              msg.putString("uri", request.mUri);
+              msg.putInt("flags", loadFlags);
+              msg.putInt("headerFilter", request.mHeaderFilter);
 
-            if (request.mReferrerUri != null) {
+              if (request.mReferrerUri != null) {
                 msg.putString("referrerUri", request.mReferrerUri);
-            }
+              }
 
-            if (request.mReferrerSession != null) {
+              if (request.mReferrerSession != null) {
                 msg.putString("referrerSessionId", request.mReferrerSession.mId);
-            }
+              }
 
-            if (request.mHeaders != null) {
+              if (request.mHeaders != null) {
                 msg.putBundle("headers", request.mHeaders);
-            }
+              }
 
-            mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
+              mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
+            });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public void loadUri(final @NonNull String uri) {
+    load(new Loader().uri(uri));
+  }
+
+  private GeckoResult<AllowOrDeny> shouldLoadUri(final NavigationDelegate.LoadRequest request) {
+    final NavigationDelegate delegate = mNavigationHandler.getDelegate();
+    if (delegate == null) {
+      return GeckoResult.allow();
+    }
+
+    final GeckoResult<AllowOrDeny> result = new GeckoResult<>();
+
+    ThreadUtils.runOnUiThread(
+        () -> {
+          final GeckoResult<AllowOrDeny> delegateResult = delegate.onLoadRequest(this, request);
+
+          if (delegateResult == null) {
+            result.complete(AllowOrDeny.ALLOW);
+          } else {
+            delegateResult.getOrAccept(
+                allowOrDeny -> result.complete(allowOrDeny),
+                error -> result.completeExceptionally(error));
+          }
         });
+
+    return result;
+  }
+
+  
+  @AnyThread
+  public void reload() {
+    reload(LOAD_FLAGS_NONE);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void reload(final @LoadFlags int flags) {
+    final GeckoBundle msg = new GeckoBundle();
+    msg.putInt("flags", flags);
+    mEventDispatcher.dispatch("GeckoView:Reload", msg);
+  }
+
+  
+  @AnyThread
+  public void stop() {
+    mEventDispatcher.dispatch("GeckoView:Stop", null);
+  }
+
+  
+  @AnyThread
+  public void goBack() {
+    mEventDispatcher.dispatch("GeckoView:GoBack", null);
+  }
+
+  
+  @AnyThread
+  public void goForward() {
+    mEventDispatcher.dispatch("GeckoView:GoForward", null);
+  }
+
+  
+
+
+
+
+
+
+  @AnyThread
+  public void gotoHistoryIndex(final int index) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putInt("index", index);
+    mEventDispatcher.dispatch("GeckoView:GotoHistoryIndex", msg);
+  }
+
+  
+
+
+
+
+
+  @UiThread
+  public @NonNull WebExtension.SessionController getWebExtensionController() {
+    return mWebExtensionController;
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void purgeHistory() {
+    mEventDispatcher.dispatch("GeckoView:PurgeHistory", null);
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        FINDER_FIND_BACKWARDS,
+        FINDER_FIND_LINKS_ONLY,
+        FINDER_FIND_MATCH_CASE,
+        FINDER_FIND_WHOLE_WORD
+      })
+   @interface FinderFindFlags {}
+
+  
+  public static final int FINDER_FIND_BACKWARDS = 1;
+  
+  public static final int FINDER_FIND_MATCH_CASE = 1 << 1;
+  
+  public static final int FINDER_FIND_WHOLE_WORD = 1 << 2;
+  
+  public static final int FINDER_FIND_LINKS_ONLY = 1 << 3;
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        FINDER_DISPLAY_HIGHLIGHT_ALL,
+        FINDER_DISPLAY_DIM_PAGE,
+        FINDER_DISPLAY_DRAW_LINK_OUTLINE
+      })
+   @interface FinderDisplayFlags {}
+
+  
+  public static final int FINDER_DISPLAY_HIGHLIGHT_ALL = 1;
+  
+  public static final int FINDER_DISPLAY_DIM_PAGE = 1 << 1;
+  
+  public static final int FINDER_DISPLAY_DRAW_LINK_OUTLINE = 1 << 2;
+
+  
+  @AnyThread
+  public static class FinderResult {
+    
+    public final boolean found;
+    
+    public final boolean wrapped;
+    
+    public final int current;
+    
+    public final int total;
+    
+    @NonNull public final String searchString;
+    
+
+
+
+    @FinderFindFlags public final int flags;
+    
+    @Nullable public final String linkUri;
+    
+    @Nullable public final RectF clientRect;
+
+     FinderResult(@NonNull final GeckoBundle bundle) {
+      found = bundle.getBoolean("found");
+      wrapped = bundle.getBoolean("wrapped");
+      current = bundle.getInt("current", 0);
+      total = bundle.getInt("total", -1);
+      searchString = bundle.getString("searchString");
+      flags = SessionFinder.getFlagsFromBundle(bundle.getBundle("flags"));
+      linkUri = bundle.getString("linkURL");
+
+      final GeckoBundle rectBundle = bundle.getBundle("clientRect");
+      if (rectBundle == null) {
+        clientRect = null;
+      } else {
+        clientRect =
+            new RectF(
+                (float) rectBundle.getDouble("left"),
+                (float) rectBundle.getDouble("top"),
+                (float) rectBundle.getDouble("right"),
+                (float) rectBundle.getDouble("bottom"));
+      }
+    }
+
+    
+    protected FinderResult() {
+      found = false;
+      wrapped = false;
+      current = 0;
+      total = 0;
+      flags = 0;
+      searchString = "";
+      linkUri = "";
+      clientRect = null;
+    }
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @NonNull SessionFinder getFinder() {
+    if (mFinder == null) {
+      mFinder = new SessionFinder(getEventDispatcher());
+    }
+    return mFinder;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public void setActive(final boolean active) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putBoolean("active", active);
+    mEventDispatcher.dispatch("GeckoView:SetActive", msg);
+
+    if (!active) {
+      mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
+    }
+
+    ThreadUtils.runOnUiThread(() -> getAutofillSupport().onActiveChanged(active));
+  }
+
+  
+
+
+
+
+
+
+  @AnyThread
+  public void setFocused(final boolean focused) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putBoolean("focused", focused);
+    mEventDispatcher.dispatch("GeckoView:SetFocused", msg);
+  }
+
+  
+  @AnyThread
+  public static class SessionState extends AbstractSequentialList<HistoryDelegate.HistoryItem>
+      implements HistoryDelegate.HistoryList, Parcelable {
+    private GeckoBundle mState;
+
+    private class SessionStateItem implements HistoryDelegate.HistoryItem {
+      private final GeckoBundle mItem;
+
+      private SessionStateItem(final @NonNull GeckoBundle item) {
+        mItem = item;
+      }
+
+      @Override 
+      public String getUri() {
+        return mItem.getString("url");
+      }
+
+      @Override 
+      public String getTitle() {
+        return mItem.getString("title");
+      }
+    }
+
+    private class SessionStateIterator implements ListIterator<HistoryDelegate.HistoryItem> {
+      private final SessionState mState;
+      private int mIndex;
+
+      private SessionStateIterator(final @NonNull SessionState state) {
+        this(state, 0);
+      }
+
+      private SessionStateIterator(final @NonNull SessionState state, final int index) {
+        mIndex = index;
+        mState = state;
+      }
+
+      @Override 
+      public void add(final HistoryDelegate.HistoryItem item) {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override 
+      public boolean hasNext() {
+        final GeckoBundle[] entries = mState.getHistoryEntries();
+
+        if (entries == null) {
+          Log.w(LOGTAG, "No history entries found.");
+          return false;
+        }
+
+        if (mIndex >= mState.getHistoryEntries().length) {
+          return false;
+        }
+        return true;
+      }
+
+      @Override 
+      public boolean hasPrevious() {
+        if (mIndex <= 0) {
+          return false;
+        }
+        return true;
+      }
+
+      @Override 
+      public HistoryDelegate.HistoryItem next() {
+        if (hasNext()) {
+          mIndex++;
+          return new SessionStateItem(mState.getHistoryEntries()[mIndex - 1]);
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+
+      @Override 
+      public int nextIndex() {
+        return mIndex;
+      }
+
+      @Override 
+      public HistoryDelegate.HistoryItem previous() {
+        if (hasPrevious()) {
+          mIndex--;
+          return new SessionStateItem(mState.getHistoryEntries()[mIndex]);
+        } else {
+          throw new NoSuchElementException();
+        }
+      }
+
+      @Override 
+      public int previousIndex() {
+        return mIndex - 1;
+      }
+
+      @Override 
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+
+      @Override 
+      public void set(final @NonNull HistoryDelegate.HistoryItem item) {
+        throw new UnsupportedOperationException();
+      }
+    }
+
+    private SessionState() {
+      mState = new GeckoBundle(3);
+    }
+
+    private SessionState(final @NonNull GeckoBundle state) {
+      mState = new GeckoBundle(state);
+    }
+
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public SessionState(final @NonNull SessionState state) {
+      mState = new GeckoBundle(state.mState);
+    }
+
+     void updateSessionState(final @NonNull GeckoBundle updateData) {
+      if (updateData == null) {
+        Log.w(LOGTAG, "Session state update has no data field.");
+        return;
+      }
+
+      final GeckoBundle history = updateData.getBundle("historychange");
+      final GeckoBundle scroll = updateData.getBundle("scroll");
+      final GeckoBundle formdata = updateData.getBundle("formdata");
+
+      if (history != null) {
+        mState.putBundle("history", history);
+      }
+
+      if (scroll != null) {
+        mState.putBundle("scrolldata", scroll);
+      }
+
+      if (formdata != null) {
+        mState.putBundle("formdata", formdata);
+      }
+
+      return;
+    }
+
+    @Override
+    public int hashCode() {
+      return mState.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      if (other == null || !(other instanceof SessionState)) {
+        return false;
+      }
+
+      final SessionState otherState = (SessionState) other;
+
+      return this.mState.equals(otherState.mState);
     }
 
     
@@ -1752,4746 +2215,4005 @@ public class GeckoSession {
 
 
 
+    public static @Nullable SessionState fromString(final @Nullable String value) {
+      final GeckoBundle bundleState;
+      try {
+        bundleState = GeckoBundle.fromJSONObject(new JSONObject(value));
+      } catch (final Exception e) {
+        Log.e(LOGTAG, "String does not represent valid session state.");
+        return null;
+      }
 
+      if (bundleState == null) {
+        return null;
+      }
 
-
-    @AnyThread
-    public void loadUri(final @NonNull String uri) {
-        load(new Loader().uri(uri));
+      return new SessionState(bundleState);
     }
 
-    private GeckoResult<AllowOrDeny> shouldLoadUri(final NavigationDelegate.LoadRequest request) {
-        final NavigationDelegate delegate = mNavigationHandler.getDelegate();
-        if (delegate == null) {
-            return GeckoResult.allow();
-        }
+    @Override
+    public @Nullable String toString() {
+      if (mState == null) {
+        Log.w(LOGTAG, "Can't convert SessionState with null state to string");
+        return null;
+      }
 
-        final GeckoResult<AllowOrDeny> result = new GeckoResult<>();
+      String res;
+      try {
+        res = mState.toJSONObject().toString();
+      } catch (final JSONException e) {
+        Log.e(LOGTAG, "Could not convert session state to string.");
+        res = null;
+      }
 
-        ThreadUtils.runOnUiThread(() -> {
-            final GeckoResult<AllowOrDeny> delegateResult =
-                    delegate.onLoadRequest(this, request);
-
-            if (delegateResult == null) {
-                result.complete(AllowOrDeny.ALLOW);
-            } else {
-                delegateResult.getOrAccept(
-                    allowOrDeny -> result.complete(allowOrDeny),
-                    error -> result.completeExceptionally(error)
-                );
-            }
-        });
-
-        return result;
+      return res;
     }
 
-    
-
-
-    @AnyThread
-    public void reload() {
-        reload(LOAD_FLAGS_NONE);
+    @Override 
+    public int describeContents() {
+      return 0;
     }
 
-    
-
-
-
-
-    @AnyThread
-    public void reload(final @LoadFlags int flags) {
-        final GeckoBundle msg = new GeckoBundle();
-        msg.putInt("flags", flags);
-        mEventDispatcher.dispatch("GeckoView:Reload", msg);
+    @Override 
+    public void writeToParcel(final Parcel dest, final int flags) {
+      dest.writeString(toString());
     }
 
     
+    @SuppressWarnings("checkstyle:javadocmethod")
+    public void readFromParcel(final @NonNull Parcel source) {
+      if (source.readString() == null) {
+        Log.w(LOGTAG, "Can't reproduce session state from Parcel");
+      }
 
-
-    @AnyThread
-    public void stop() {
-        mEventDispatcher.dispatch("GeckoView:Stop", null);
+      try {
+        mState = GeckoBundle.fromJSONObject(new JSONObject(source.readString()));
+      } catch (final JSONException e) {
+        Log.e(LOGTAG, "Could not convert string to session state.");
+        mState = null;
+      }
     }
 
-    
-
-
-    @AnyThread
-    public void goBack() {
-        mEventDispatcher.dispatch("GeckoView:GoBack", null);
-    }
-
-    
-
-
-    @AnyThread
-    public void goForward() {
-        mEventDispatcher.dispatch("GeckoView:GoForward", null);
-    }
-
-    
-
-
-
-
-
-
-
-    @AnyThread
-    public void gotoHistoryIndex(final int index) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putInt("index", index);
-        mEventDispatcher.dispatch("GeckoView:GotoHistoryIndex", msg);
-    }
-
-    
-
-
-
-
-
-    @UiThread
-    public @NonNull WebExtension.SessionController getWebExtensionController() {
-        return mWebExtensionController;
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public void purgeHistory() {
-        mEventDispatcher.dispatch("GeckoView:PurgeHistory", null);
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = {FINDER_FIND_BACKWARDS, FINDER_FIND_LINKS_ONLY,
-                    FINDER_FIND_MATCH_CASE, FINDER_FIND_WHOLE_WORD})
-     @interface FinderFindFlags {}
-
-    
-    public static final int FINDER_FIND_BACKWARDS = 1;
-    
-    public static final int FINDER_FIND_MATCH_CASE = 1 << 1;
-    
-    public static final int FINDER_FIND_WHOLE_WORD = 1 << 2;
-    
-    public static final int FINDER_FIND_LINKS_ONLY = 1 << 3;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = {FINDER_DISPLAY_HIGHLIGHT_ALL, FINDER_DISPLAY_DIM_PAGE,
-                    FINDER_DISPLAY_DRAW_LINK_OUTLINE})
-     @interface FinderDisplayFlags {}
-
-    
-    public static final int FINDER_DISPLAY_HIGHLIGHT_ALL = 1;
-    
-    public static final int FINDER_DISPLAY_DIM_PAGE = 1 << 1;
-    
-    public static final int FINDER_DISPLAY_DRAW_LINK_OUTLINE = 1 << 2;
-
-    
-
-
-    @AnyThread
-    public static class FinderResult {
-        
-        public final boolean found;
-        
-        public final boolean wrapped;
-        
-        public final int current;
-        
-        public final int total;
-        
-        @NonNull public final String searchString;
-        
-
-        @FinderFindFlags public final int flags;
-        
-        @Nullable public final String linkUri;
-        
-        @Nullable public final RectF clientRect;
-
-         FinderResult(@NonNull final GeckoBundle bundle) {
-            found = bundle.getBoolean("found");
-            wrapped = bundle.getBoolean("wrapped");
-            current = bundle.getInt("current", 0);
-            total = bundle.getInt("total", -1);
-            searchString = bundle.getString("searchString");
-            flags = SessionFinder.getFlagsFromBundle(bundle.getBundle("flags"));
-            linkUri = bundle.getString("linkURL");
-
-            final GeckoBundle rectBundle = bundle.getBundle("clientRect");
-            if (rectBundle == null) {
-                clientRect = null;
-            } else {
-                clientRect = new RectF((float) rectBundle.getDouble("left"),
-                                       (float) rectBundle.getDouble("top"),
-                                       (float) rectBundle.getDouble("right"),
-                                       (float) rectBundle.getDouble("bottom"));
-            }
-        }
-
-        
-
-
-        protected FinderResult() {
-            found = false;
-            wrapped = false;
-            current = 0;
-            total = 0;
-            flags = 0;
-            searchString = "";
-            linkUri = "";
-            clientRect = null;
-        }
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @NonNull SessionFinder getFinder() {
-        if (mFinder == null) {
-            mFinder = new SessionFinder(getEventDispatcher());
-        }
-        return mFinder;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    @AnyThread
-    public void setActive(final boolean active) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putBoolean("active", active);
-        mEventDispatcher.dispatch("GeckoView:SetActive", msg);
-
-        if (!active) {
-            mEventDispatcher.dispatch("GeckoView:FlushSessionState", null);
-        }
-
-        ThreadUtils.runOnUiThread(
-            () -> getAutofillSupport().onActiveChanged(active)
-        );
-    }
-
-    
-
-
-
-
-
-
-
-
-    @AnyThread
-    public void setFocused(final boolean focused) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putBoolean("focused", focused);
-        mEventDispatcher.dispatch("GeckoView:SetFocused", msg);
-    }
-
-    
-
-
-    @AnyThread
-    public static class SessionState extends AbstractSequentialList<HistoryDelegate.HistoryItem>
-                                     implements HistoryDelegate.HistoryList, Parcelable {
-        private GeckoBundle mState;
-
-        private class SessionStateItem implements HistoryDelegate.HistoryItem {
-            private final GeckoBundle mItem;
-
-            private SessionStateItem(final @NonNull GeckoBundle item) {
-                mItem = item;
-            }
-
-            @Override 
-            public String getUri() {
-                return mItem.getString("url");
-            }
-
-            @Override 
-            public String getTitle() {
-                return mItem.getString("title");
-            }
-        }
-
-        private class SessionStateIterator implements ListIterator<HistoryDelegate.HistoryItem> {
-            private final SessionState mState;
-            private int mIndex;
-
-            private SessionStateIterator(final @NonNull SessionState state) {
-                this(state, 0);
-            }
-
-            private SessionStateIterator(final @NonNull SessionState state, final int index) {
-                mIndex = index;
-                mState = state;
-            }
-
-            @Override 
-            public void add(final HistoryDelegate.HistoryItem item) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override 
-            public boolean hasNext() {
-                final GeckoBundle[] entries = mState.getHistoryEntries();
-
-                if (entries == null) {
-                    Log.w(LOGTAG, "No history entries found.");
-                    return false;
-                }
-
-                if (mIndex >= mState.getHistoryEntries().length) {
-                    return false;
-                }
-                return true;
-            }
-
-            @Override 
-            public boolean hasPrevious() {
-                if (mIndex <= 0) {
-                    return false;
-                }
-                return true;
-            }
-
-            @Override 
-            public HistoryDelegate.HistoryItem next() {
-                if (hasNext()) {
-                    mIndex++;
-                    return new SessionStateItem(mState.getHistoryEntries()[mIndex - 1]);
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-
-            @Override 
-            public int nextIndex() {
-                return mIndex;
-            }
-
-            @Override 
-            public HistoryDelegate.HistoryItem previous() {
-                if (hasPrevious()) {
-                    mIndex--;
-                    return new SessionStateItem(mState.getHistoryEntries()[mIndex]);
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-
-            @Override 
-            public int previousIndex() {
-                return mIndex - 1;
-            }
-
-            @Override 
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override 
-            public void set(final @NonNull HistoryDelegate.HistoryItem item) {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        private SessionState() {
-            mState = new GeckoBundle(3);
-        }
-
-        private SessionState(final @NonNull GeckoBundle state) {
-            mState = new GeckoBundle(state);
-        }
-
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public SessionState(final @NonNull SessionState state) {
-            mState = new GeckoBundle(state.mState);
-        }
-
-         void updateSessionState(final @NonNull GeckoBundle updateData) {
-            if (updateData == null) {
-                Log.w(LOGTAG, "Session state update has no data field.");
-                return;
-            }
-
-            final GeckoBundle history = updateData.getBundle("historychange");
-            final GeckoBundle scroll = updateData.getBundle("scroll");
-            final GeckoBundle formdata = updateData.getBundle("formdata");
-
-            if (history != null) {
-                mState.putBundle("history", history);
-            }
-
-            if (scroll != null) {
-                mState.putBundle("scrolldata", scroll);
-            }
-
-            if (formdata != null) {
-                mState.putBundle("formdata", formdata);
-            }
-
-            return;
-        }
-
-        @Override
-        public int hashCode() {
-            return mState.hashCode();
-        }
-
-        @Override
-        public boolean equals(final Object other) {
-            if (other == null || !(other instanceof SessionState)) {
-                return false;
-            }
-
-            final SessionState otherState = (SessionState)other;
-
-            return this.mState.equals(otherState.mState);
-        }
-
-        
-
-
-
-
-
-
-        public static @Nullable SessionState fromString(final @Nullable String value) {
-            final GeckoBundle bundleState;
-            try {
-                bundleState = GeckoBundle.fromJSONObject(new JSONObject(value));
-            } catch (final Exception e) {
-                Log.e(LOGTAG, "String does not represent valid session state.");
-                return null;
-            }
-
-            if (bundleState == null) {
-                return null;
-            }
-
-            return new SessionState(bundleState);
-        }
-
-        @Override
-        public @Nullable String toString() {
-            if (mState == null) {
-                Log.w(LOGTAG, "Can't convert SessionState with null state to string");
-                return null;
-            }
-
-            String res;
-            try {
-                res = mState.toJSONObject().toString();
-            } catch (final JSONException e) {
-                Log.e(LOGTAG, "Could not convert session state to string.");
-                res = null;
-            }
-
-            return res;
-        }
-
-        @Override 
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override 
-        public void writeToParcel(final Parcel dest, final int flags) {
-            dest.writeString(toString());
-        }
-
-        
-        @SuppressWarnings("checkstyle:javadocmethod")
-        public void readFromParcel(final @NonNull Parcel source) {
+    public static final Parcelable.Creator<SessionState> CREATOR =
+        new Parcelable.Creator<SessionState>() {
+          @Override
+          public SessionState createFromParcel(final Parcel source) {
             if (source.readString() == null) {
-                Log.w(LOGTAG, "Can't reproduce session state from Parcel");
+              Log.w(LOGTAG, "Can't create session state from Parcel");
             }
 
+            GeckoBundle res;
             try {
-                mState = GeckoBundle.fromJSONObject(new JSONObject(source.readString()));
+              res = GeckoBundle.fromJSONObject(new JSONObject(source.readString()));
             } catch (final JSONException e) {
-                Log.e(LOGTAG, "Could not convert string to session state.");
-                mState = null;
-            }
-        }
-
-        public static final Parcelable.Creator<SessionState> CREATOR =
-                new Parcelable.Creator<SessionState>() {
-            @Override
-            public SessionState createFromParcel(final Parcel source) {
-                if (source.readString() == null) {
-                    Log.w(LOGTAG, "Can't create session state from Parcel");
-                }
-
-                GeckoBundle res;
-                try {
-                    res = GeckoBundle.fromJSONObject(new JSONObject(source.readString()));
-                } catch (final JSONException e) {
-                    Log.e(LOGTAG, "Could not convert parcel to session state.");
-                    res = null;
-                }
-
-                return new SessionState(res);
+              Log.e(LOGTAG, "Could not convert parcel to session state.");
+              res = null;
             }
 
-            @Override
-            public SessionState[] newArray(final int size) {
-                return new SessionState[size];
-            }
+            return new SessionState(res);
+          }
+
+          @Override
+          public SessionState[] newArray(final int size) {
+            return new SessionState[size];
+          }
         };
 
-        @Override 
-        public @NonNull HistoryDelegate.HistoryItem get(final int index) {
-            final GeckoBundle[] entries = getHistoryEntries();
+    @Override 
+    public @NonNull HistoryDelegate.HistoryItem get(final int index) {
+      final GeckoBundle[] entries = getHistoryEntries();
 
-            if (entries == null || index < 0 || index >= entries.length) {
-                throw new NoSuchElementException();
-            }
+      if (entries == null || index < 0 || index >= entries.length) {
+        throw new NoSuchElementException();
+      }
 
-            return new SessionStateItem(entries[index]);
-        }
-
-        @Override 
-        public @NonNull Iterator<HistoryDelegate.HistoryItem> iterator() {
-            return listIterator(0);
-        }
-
-        @Override 
-        public @NonNull ListIterator<HistoryDelegate.HistoryItem> listIterator(final int index) {
-            return new SessionStateIterator(this, index);
-        }
-
-        @Override 
-        public int size() {
-            final GeckoBundle[] entries = getHistoryEntries();
-
-            if (entries == null) {
-                Log.w(LOGTAG, "No history entries found.");
-                return 0;
-            }
-
-            return entries.length;
-        }
-
-        @Override 
-        public int getCurrentIndex() {
-            final GeckoBundle history = getHistory();
-
-            if (history == null) {
-                throw new IllegalStateException("No history state exists.");
-            }
-
-            return history.getInt("index") + history.getInt("fromIdx");
-        }
-
-        
-        private GeckoBundle getHistory() {
-            if (mState == null) {
-                return null;
-            }
-
-            return mState.getBundle("history");
-        }
-
-        private GeckoBundle[] getHistoryEntries() {
-            final GeckoBundle history = getHistory();
-
-            if (history == null) {
-                return null;
-            }
-
-            return history.getBundleArray("entries");
-        }
+      return new SessionStateItem(entries[index]);
     }
 
-    private SessionState mStateCache = new SessionState();
+    @Override 
+    public @NonNull Iterator<HistoryDelegate.HistoryItem> iterator() {
+      return listIterator(0);
+    }
 
-    
+    @Override 
+    public @NonNull ListIterator<HistoryDelegate.HistoryItem> listIterator(final int index) {
+      return new SessionStateIterator(this, index);
+    }
 
+    @Override 
+    public int size() {
+      final GeckoBundle[] entries = getHistoryEntries();
 
+      if (entries == null) {
+        Log.w(LOGTAG, "No history entries found.");
+        return 0;
+      }
 
+      return entries.length;
+    }
 
+    @Override 
+    public int getCurrentIndex() {
+      final GeckoBundle history = getHistory();
 
+      if (history == null) {
+        throw new IllegalStateException("No history state exists.");
+      }
 
-    @AnyThread
-    public void restoreState(final @NonNull SessionState state) {
-        mEventDispatcher.dispatch("GeckoView:RestoreState", state.mState);
+      return history.getInt("index") + history.getInt("fromIdx");
     }
 
     
-    private GeckoDisplay mDisplay;
-     GeckoDisplay getDisplay() {
-        return mDisplay;
+    private GeckoBundle getHistory() {
+      if (mState == null) {
+        return null;
+      }
+
+      return mState.getBundle("history");
     }
 
+    private GeckoBundle[] getHistoryEntries() {
+      final GeckoBundle history = getHistory();
+
+      if (history == null) {
+        return null;
+      }
+
+      return history.getBundleArray("entries");
+    }
+  }
+
+  private SessionState mStateCache = new SessionState();
+
+  
+
+
+
+
+
+
+  @AnyThread
+  public void restoreState(final @NonNull SessionState state) {
+    mEventDispatcher.dispatch("GeckoView:RestoreState", state.mState);
+  }
+
+  
+  private GeckoDisplay mDisplay;
+   GeckoDisplay getDisplay() {
+    return mDisplay;
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  public @NonNull GeckoDisplay acquireDisplay() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mDisplay != null) {
+      throw new IllegalStateException("Display already acquired");
+    }
+
+    mDisplay = new GeckoDisplay(this);
+    return mDisplay;
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void releaseDisplay(final @NonNull GeckoDisplay display) {
+    ThreadUtils.assertOnUiThread();
+
+    if (display != mDisplay) {
+      throw new IllegalArgumentException("Display not attached");
+    }
+
+    mDisplay = null;
+  }
+
+  @AnyThread
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @NonNull GeckoSessionSettings getSettings() {
+    return mSettings;
+  }
+
+  
+  @AnyThread
+  public void exitFullScreen() {
+    mEventDispatcher.dispatch("GeckoViewContent:ExitFullScreen", null);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setContentDelegate(final @Nullable ContentDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mContentHandler.setDelegate(delegate, this);
+    mProcessHangHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable ContentDelegate getContentDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mContentHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setProgressDelegate(final @Nullable ProgressDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mProgressHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable ProgressDelegate getProgressDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mProgressHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setNavigationDelegate(final @Nullable NavigationDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mNavigationHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable NavigationDelegate getNavigationDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mNavigationHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setScrollDelegate(final @Nullable ScrollDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mScrollHandler.setDelegate(delegate, this);
+  }
+
+  @UiThread
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @Nullable ScrollDelegate getScrollDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mScrollHandler.getDelegate();
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public void setHistoryDelegate(final @Nullable HistoryDelegate delegate) {
+    mHistoryHandler.setDelegate(delegate, this);
+  }
+
+  
+  @AnyThread
+  public @Nullable HistoryDelegate getHistoryDelegate() {
+    return mHistoryHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setContentBlockingDelegate(final @Nullable ContentBlocking.Delegate delegate) {
+    mContentBlockingHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable ContentBlocking.Delegate getContentBlockingDelegate() {
+    return mContentBlockingHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setPromptDelegate(final @Nullable PromptDelegate delegate) {
+    mPromptDelegate = delegate;
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable PromptDelegate getPromptDelegate() {
+    return mPromptDelegate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setSelectionActionDelegate(final @Nullable SelectionActionDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+
+    if (getSelectionActionDelegate() != null) {
+      
+      
+      
+      getSelectionActionDelegate()
+          .onHideAction(this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+    }
+    mSelectionActionDelegate.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setMediaDelegate(final @Nullable MediaDelegate delegate) {
+    mMediaHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable MediaDelegate getMediaDelegate() {
+    return mMediaHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setMediaSessionDelegate(final @Nullable MediaSession.Delegate delegate) {
+    mMediaSessionHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable MediaSession.Delegate getMediaSessionDelegate() {
+    return mMediaSessionHandler.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable SelectionActionDelegate getSelectionActionDelegate() {
+    return mSelectionActionDelegate.getDelegate();
+  }
+
+  @UiThread
+  protected void setShouldPinOnScreen(final boolean pinned) {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    mShouldPinOnScreen = pinned;
+  }
+
+   boolean shouldPinOnScreen() {
+    ThreadUtils.assertOnUiThread();
+    return mShouldPinOnScreen;
+  }
+
+  @AnyThread
+   @NonNull
+  EventDispatcher getEventDispatcher() {
+    return mEventDispatcher;
+  }
+
+  public interface ProgressDelegate {
     
+    public class SecurityInformation {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({SECURITY_MODE_UNKNOWN, SECURITY_MODE_IDENTIFIED, SECURITY_MODE_VERIFIED})
+       @interface SecurityMode {}
 
+      public static final int SECURITY_MODE_UNKNOWN = 0;
+      public static final int SECURITY_MODE_IDENTIFIED = 1;
+      public static final int SECURITY_MODE_VERIFIED = 2;
 
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({CONTENT_UNKNOWN, CONTENT_BLOCKED, CONTENT_LOADED})
+       @interface ContentType {}
 
+      public static final int CONTENT_UNKNOWN = 0;
+      public static final int CONTENT_BLOCKED = 1;
+      public static final int CONTENT_LOADED = 2;
+      
+      public final boolean isSecure;
+      
+      public final boolean isException;
+      
+      public final @Nullable String origin;
+      
+      public final @NonNull String host;
 
+      
+      public final @Nullable X509Certificate certificate;
 
+      
 
 
-    @UiThread
-    public @NonNull GeckoDisplay acquireDisplay() {
-        ThreadUtils.assertOnUiThread();
 
-        if (mDisplay != null) {
-            throw new IllegalStateException("Display already acquired");
-        }
 
-        mDisplay = new GeckoDisplay(this);
-        return mDisplay;
-    }
+      public final @SecurityMode int securityMode;
+      
 
-    
 
 
+      public final @ContentType int mixedModePassive;
+      
 
 
 
+      public final @ContentType int mixedModeActive;
 
+       SecurityInformation(final GeckoBundle identityData) {
+        final GeckoBundle mode = identityData.getBundle("mode");
 
-    @UiThread
-    public void releaseDisplay(final @NonNull GeckoDisplay display) {
-        ThreadUtils.assertOnUiThread();
+        mixedModePassive = mode.getInt("mixed_display");
+        mixedModeActive = mode.getInt("mixed_active");
 
-        if (display != mDisplay) {
-            throw new IllegalArgumentException("Display not attached");
-        }
+        securityMode = mode.getInt("identity");
 
-        mDisplay = null;
-    }
+        isSecure = identityData.getBoolean("secure");
+        isException = identityData.getBoolean("securityException");
+        origin = identityData.getString("origin");
+        host = identityData.getString("host");
 
-    @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @NonNull GeckoSessionSettings getSettings() {
-        return mSettings;
-    }
-
-    
-
-
-    @AnyThread
-    public void exitFullScreen() {
-        mEventDispatcher.dispatch("GeckoViewContent:ExitFullScreen", null);
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setContentDelegate(final @Nullable ContentDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mContentHandler.setDelegate(delegate, this);
-        mProcessHangHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @UiThread
-    public @Nullable ContentDelegate getContentDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mContentHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setProgressDelegate(final @Nullable ProgressDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mProgressHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @UiThread
-    public @Nullable ProgressDelegate getProgressDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mProgressHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setNavigationDelegate(final @Nullable NavigationDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mNavigationHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @UiThread
-    public @Nullable NavigationDelegate getNavigationDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mNavigationHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setScrollDelegate(final @Nullable ScrollDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mScrollHandler.setDelegate(delegate, this);
-    }
-
-    @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @Nullable ScrollDelegate getScrollDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mScrollHandler.getDelegate();
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public void setHistoryDelegate(final @Nullable HistoryDelegate delegate) {
-        mHistoryHandler.setDelegate(delegate, this);
-    }
-
-    
-    @AnyThread
-    public @Nullable HistoryDelegate getHistoryDelegate() {
-        return mHistoryHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public void setContentBlockingDelegate(final @Nullable ContentBlocking.Delegate delegate) {
-        mContentBlockingHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @AnyThread
-    public @Nullable ContentBlocking.Delegate getContentBlockingDelegate() {
-        return mContentBlockingHandler.getDelegate();
-    }
-
-    
-
-
-
-    @AnyThread
-    public void setPromptDelegate(final @Nullable PromptDelegate delegate) {
-        mPromptDelegate = delegate;
-    }
-
-    
-
-
-
-    @AnyThread
-    public @Nullable PromptDelegate getPromptDelegate() {
-        return mPromptDelegate;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setSelectionActionDelegate(final @Nullable SelectionActionDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-
-        if (getSelectionActionDelegate() != null) {
-            
-            
-            
-            getSelectionActionDelegate().onHideAction(
-                    this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
-        }
-        mSelectionActionDelegate.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public void setMediaDelegate(final @Nullable MediaDelegate delegate) {
-        mMediaHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @AnyThread
-    public @Nullable MediaDelegate getMediaDelegate() {
-        return mMediaHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public void setMediaSessionDelegate(
-            final @Nullable MediaSession.Delegate delegate) {
-        mMediaSessionHandler.setDelegate(delegate, this);
-    }
-
-    
-
-
-
-    @AnyThread
-    public @Nullable MediaSession.Delegate getMediaSessionDelegate() {
-        return mMediaSessionHandler.getDelegate();
-    }
-
-    
-
-
-
-
-    @AnyThread
-    public @Nullable SelectionActionDelegate getSelectionActionDelegate() {
-        return mSelectionActionDelegate.getDelegate();
-    }
-
-    @UiThread
-    protected void setShouldPinOnScreen(final boolean pinned) {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        mShouldPinOnScreen = pinned;
-    }
-
-     boolean shouldPinOnScreen() {
-        ThreadUtils.assertOnUiThread();
-        return mShouldPinOnScreen;
-    }
-
-    @AnyThread
-     @NonNull EventDispatcher getEventDispatcher() {
-        return mEventDispatcher;
-    }
-
-    public interface ProgressDelegate {
-        
-
-
-        public class SecurityInformation {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({SECURITY_MODE_UNKNOWN, SECURITY_MODE_IDENTIFIED,
-                     SECURITY_MODE_VERIFIED})
-             @interface SecurityMode {}
-            public static final int SECURITY_MODE_UNKNOWN = 0;
-            public static final int SECURITY_MODE_IDENTIFIED = 1;
-            public static final int SECURITY_MODE_VERIFIED = 2;
-
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({CONTENT_UNKNOWN, CONTENT_BLOCKED, CONTENT_LOADED})
-             @interface ContentType {}
-            public static final int CONTENT_UNKNOWN = 0;
-            public static final int CONTENT_BLOCKED = 1;
-            public static final int CONTENT_LOADED = 2;
-            
-
-
-            public final boolean isSecure;
-            
-
-
-            public final boolean isException;
-            
-
-
-            public final @Nullable String origin;
-            
-
-
-            public final @NonNull String host;
-
-            
-
-
-            public final @Nullable X509Certificate certificate;
-
-            
-
-
-
-
-            public final @SecurityMode int securityMode;
-            
-
-
-
-            public final @ContentType int mixedModePassive;
-            
-
-
-
-            public final @ContentType int mixedModeActive;
-
-             SecurityInformation(final GeckoBundle identityData) {
-                final GeckoBundle mode = identityData.getBundle("mode");
-
-                mixedModePassive = mode.getInt("mixed_display");
-                mixedModeActive = mode.getInt("mixed_active");
-
-                securityMode = mode.getInt("identity");
-
-                isSecure = identityData.getBoolean("secure");
-                isException = identityData.getBoolean("securityException");
-                origin = identityData.getString("origin");
-                host = identityData.getString("host");
-
-                X509Certificate decodedCert = null;
-                try {
-                    final CertificateFactory factory = CertificateFactory.getInstance("X.509");
-                    final String certString = identityData.getString("certificate");
-                    if (certString != null) {
-                        final byte[] certBytes = Base64.decode(certString, Base64.NO_WRAP);
-                        decodedCert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
-                    }
-                } catch (final CertificateException e) {
-                    Log.e(LOGTAG, "Failed to decode certificate", e);
-                }
-
-                certificate = decodedCert;
-            }
-
-            
-
-
-            protected SecurityInformation() {
-                mixedModePassive = 0;
-                mixedModeActive = 0;
-                securityMode = 0;
-                isSecure = false;
-                isException = false;
-                origin = "";
-                host = "";
-                certificate = null;
-            }
-        }
-
-        
-
-
-
-
-        @UiThread
-        default void onPageStart(@NonNull final GeckoSession session, @NonNull final String url) {}
-
-        
-
-
-
-
-        @UiThread
-        default void onPageStop(@NonNull final GeckoSession session, final boolean success) {}
-
-        
-
-
-
-
-        @UiThread
-        default void onProgressChange(@NonNull final GeckoSession session, final int progress) {}
-
-        
-
-
-
-
-        @UiThread
-        default void onSecurityChange(@NonNull final GeckoSession session,
-                                      @NonNull final SecurityInformation securityInfo) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void onSessionStateChange(@NonNull final GeckoSession session,
-                                          @NonNull final SessionState sessionState) {}
-    }
-
-    
-
-
-    @AnyThread
-    static public class WebResponseInfo {
-        
-
-
-        @NonNull public final String uri;
-
-        
-
-
-        @Nullable public final String contentType;
-
-        
-
-
-        @Nullable public final long contentLength;
-
-        
-
-
-
-        @Nullable public final String filename;
-
-         WebResponseInfo(final GeckoBundle message) {
-            uri = message.getString("uri");
-            if (uri == null) {
-                throw new IllegalArgumentException("URI cannot be null");
-            }
-
-            contentType = message.getString("contentType");
-            contentLength = message.getLong("contentLength");
-            filename = message.getString("filename");
-        }
-
-        
-
-
-        protected WebResponseInfo() {
-            uri = "";
-            contentType = "";
-            contentLength = 0;
-            filename = "";
-        }
-    }
-
-    public interface ContentDelegate {
-        
-
-
-
-
-
-        @UiThread
-        default void onTitleChange(@NonNull final GeckoSession session, @Nullable final String title) {}
-
-        
-
-
-
-
-        @UiThread
-        default void onFocusRequest(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-        @UiThread
-        default void onCloseRequest(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        default void onFullScreen(@NonNull final GeckoSession session, final boolean fullScreen) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void onMetaViewportFitChange(@NonNull final GeckoSession session, @NonNull final String viewportFit) {}
-
-        
-
-
-        public static class ContextElement {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
-             @interface Type {}
-            public static final int TYPE_NONE = 0;
-            public static final int TYPE_IMAGE = 1;
-            public static final int TYPE_VIDEO = 2;
-            public static final int TYPE_AUDIO = 3;
-
-            
-
-
-            public final @Nullable String baseUri;
-
-            
-
-
-            public final @Nullable String linkUri;
-
-            
-
-
-            public final @Nullable String title;
-
-            
-
-
-            public final @Nullable String altText;
-
-            
-
-
-
-            public final @Type int type;
-
-            
-
-
-
-            public final @Nullable String srcUri;
-
-            
-            final List<WebExtension.Menu> extensionMenus;
-
-            protected ContextElement(
-                    final @Nullable String baseUri,
-                    final @Nullable String linkUri,
-                    final @Nullable String title,
-                    final @Nullable String altText,
-                    final @NonNull String typeStr,
-                    final @Nullable String srcUri) {
-                this.baseUri = baseUri;
-                this.linkUri = linkUri;
-                this.title = title;
-                this.altText = altText;
-                this.type = getType(typeStr);
-                this.srcUri = srcUri;
-                this.extensionMenus = null;
-            }
-
-            private static int getType(final String name) {
-                if ("HTMLImageElement".equals(name)) {
-                    return TYPE_IMAGE;
-                } else if ("HTMLVideoElement".equals(name)) {
-                    return TYPE_VIDEO;
-                } else if ("HTMLAudioElement".equals(name)) {
-                    return TYPE_AUDIO;
-                }
-                return TYPE_NONE;
-            }
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onContextMenu(@NonNull final GeckoSession session,
-                                   final int screenX, final int screenY,
-                                   @NonNull final ContextElement element) {}
-
-        
-
-
-
-
-
-        @UiThread
-        default void onExternalResponse(@NonNull final GeckoSession session,
-                                        @NonNull final WebResponse response) {}
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onCrash(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onKill(@NonNull final GeckoSession session) {}
-
-
-        
-
-
-
-
-
-        @UiThread
-        default void onFirstComposite(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onFirstContentfulPaint(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onPaintStatusReset(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-
-        @TargetApi(Build.VERSION_CODES.N)
-        @UiThread
-        default void onPointerIconChange(@NonNull final GeckoSession session, @NonNull final PointerIcon icon) {
-            final View view = session.getTextInput().getView();
-            if (view != null) {
-                view.setPointerIcon(icon);
-            }
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onWebAppManifest(@NonNull final GeckoSession session, @NonNull final JSONObject manifest) {}
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<SlowScriptResponse> onSlowScript(@NonNull final GeckoSession geckoSession,
-                                                                       @NonNull final String scriptFileName) {
-            return null;
-        }
-
-        
-
-
-
-
-        @UiThread
-        default void onShowDynamicToolbar(@NonNull final GeckoSession geckoSession) {}
-    }
-
-    public interface SelectionActionDelegate {
-        
-
-
-        final int FLAG_IS_COLLAPSED = 1;
-        
-
-
-
-        final int FLAG_IS_EDITABLE = 2;
-        
-
-
-        final int FLAG_IS_PASSWORD = 4;
-
-        
-
-
-        final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
-        
-
-
-
-        final String ACTION_CUT = "org.mozilla.geckoview.CUT";
-        
-
-
-        final String ACTION_COPY = "org.mozilla.geckoview.COPY";
-        
-
-
-        final String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
-        
-
-
-
-        final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
-        
-
-
-        final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
-        
-
-
-        final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
-        
-
-
-
-        final String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
-        
-
-
-
-        final String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
-
-        
-
-
-        class Selection {
-            
-
-
-
-            public final @SelectionActionDelegateFlag int flags;
-
-            
-
-
-
-            public final @NonNull String text;
-
-            
-
-
-
-
-            public final @Nullable RectF clientRect;
-
-            
-
-
-            public final @NonNull @SelectionActionDelegateAction Collection<String> availableActions;
-
-            private final int mSeqNo;
-
-            private final EventCallback mEventCallback;
-
-             Selection(final GeckoBundle bundle,
-                                    final @NonNull @SelectionActionDelegateAction Set<String> actions,
-                                    final EventCallback callback) {
-                flags = (bundle.getBoolean("collapsed") ?
-                         SelectionActionDelegate.FLAG_IS_COLLAPSED : 0) |
-                        (bundle.getBoolean("editable") ?
-                         SelectionActionDelegate.FLAG_IS_EDITABLE : 0) |
-                        (bundle.getBoolean("password") ?
-                         SelectionActionDelegate.FLAG_IS_PASSWORD : 0);
-                text = bundle.getString("selection");
-
-                final GeckoBundle rectBundle = bundle.getBundle("clientRect");
-                if (rectBundle == null) {
-                    clientRect = null;
-                } else {
-                    clientRect = new RectF((float) rectBundle.getDouble("left"),
-                                           (float) rectBundle.getDouble("top"),
-                                           (float) rectBundle.getDouble("right"),
-                                           (float) rectBundle.getDouble("bottom"));
-                }
-
-                availableActions = actions;
-                mSeqNo = bundle.getInt("seqNo");
-                mEventCallback = callback;
-            }
-
-            
-
-
-            protected Selection() {
-                flags = 0;
-                text = "";
-                clientRect = null;
-                availableActions = new HashSet<>();
-                mSeqNo = 0;
-                mEventCallback = null;
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public boolean isActionAvailable(@NonNull @SelectionActionDelegateAction final String action) {
-                return availableActions.contains(action);
-            }
-
-            
-
-
-
-
-
-            @AnyThread
-            public void execute(@NonNull @SelectionActionDelegateAction final String action) {
-                if (!isActionAvailable(action)) {
-                    throw new IllegalStateException("Action not available");
-                }
-                final GeckoBundle response = new GeckoBundle(2);
-                response.putString("id", action);
-                response.putInt("seqNo", mSeqNo);
-                mEventCallback.sendSuccess(response);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void hide() {
-                execute(ACTION_HIDE);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void cut() {
-                execute(ACTION_CUT);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void copy() {
-                execute(ACTION_COPY);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void delete() {
-                execute(ACTION_DELETE);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void paste() {
-                execute(ACTION_PASTE);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void selectAll() {
-                execute(ACTION_SELECT_ALL);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void unselect() {
-                execute(ACTION_UNSELECT);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void collapseToStart() {
-                execute(ACTION_COLLAPSE_TO_START);
-            }
-
-            
-
-
-
-
-            @AnyThread
-            public void collapseToEnd() {
-                execute(ACTION_COLLAPSE_TO_END);
-            }
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onShowActionRequest(@NonNull final GeckoSession session,
-                                         @NonNull final Selection selection) {}
-
-        
-
-
-        final int HIDE_REASON_NO_SELECTION = 0;
-        
-
-
-
-        final int HIDE_REASON_INVISIBLE_SELECTION = 1;
-        
-
-
-
-
-        final int HIDE_REASON_ACTIVE_SELECTION = 2;
-        
-
-
-
-
-
-        final int HIDE_REASON_ACTIVE_SCROLL = 3;
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        default void onHideAction(@NonNull final GeckoSession session,
-                                  @SelectionActionDelegateHideReason final int reason) {}
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @StringDef({
-            SelectionActionDelegate.ACTION_HIDE,
-            SelectionActionDelegate.ACTION_CUT,
-            SelectionActionDelegate.ACTION_COPY,
-            SelectionActionDelegate.ACTION_DELETE,
-            SelectionActionDelegate.ACTION_PASTE,
-            SelectionActionDelegate.ACTION_SELECT_ALL,
-            SelectionActionDelegate.ACTION_UNSELECT,
-            SelectionActionDelegate.ACTION_COLLAPSE_TO_START,
-            SelectionActionDelegate.ACTION_COLLAPSE_TO_END})
-     @interface SelectionActionDelegateAction {}
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true, value = {
-            SelectionActionDelegate.FLAG_IS_COLLAPSED,
-            SelectionActionDelegate.FLAG_IS_EDITABLE})
-             @interface SelectionActionDelegateFlag {}
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({
-            SelectionActionDelegate.HIDE_REASON_NO_SELECTION,
-            SelectionActionDelegate.HIDE_REASON_INVISIBLE_SELECTION,
-            SelectionActionDelegate.HIDE_REASON_ACTIVE_SELECTION,
-            SelectionActionDelegate.HIDE_REASON_ACTIVE_SCROLL})
-     @interface SelectionActionDelegateHideReason {}
-
-    public interface NavigationDelegate {
-        
-
-
-
-
-        @UiThread
-        @DeprecationSchedule(id = "location-permissions", version = 92)
-        default void onLocationChange(@NonNull final GeckoSession session, @Nullable final String url) {}
-
-        
-
-
-
-
-
-        @UiThread
-        default void onLocationChange(@NonNull GeckoSession session, @Nullable String url, final @NonNull List<PermissionDelegate.ContentPermission> perms) {
-            session.getNavigationDelegate().onLocationChange(session, url);
-        }
-
-        
-
-
-
-
-        @UiThread
-        default void onCanGoBack(@NonNull final GeckoSession session, final boolean canGoBack) {}
-
-        
-
-
-
-
-        @UiThread
-        default void onCanGoForward(@NonNull final GeckoSession session, final boolean canGoForward) {}
-
-        public static final int TARGET_WINDOW_NONE = 0;
-        public static final int TARGET_WINDOW_CURRENT = 1;
-        public static final int TARGET_WINDOW_NEW = 2;
-
-        
-        
-
-
-        static final int LOAD_REQUEST_IS_REDIRECT = 0x800000;
-
-        
-
-
-        public static class LoadRequest {
-             LoadRequest(@NonNull final String uri,
-                                      @Nullable final String triggerUri,
-                                      final int geckoTarget,
-                                      final int flags,
-                                      final boolean hasUserGesture,
-                                      final boolean isDirectNavigation) {
-                this.uri = uri;
-                this.triggerUri = triggerUri;
-                this.target = convertGeckoTarget(geckoTarget);
-                this.isRedirect = (flags & LOAD_REQUEST_IS_REDIRECT) != 0;
-                this.hasUserGesture = hasUserGesture;
-                this.isDirectNavigation = isDirectNavigation;
-            }
-
-            
-
-
-            protected LoadRequest() {
-                uri = "";
-                triggerUri = null;
-                target = 0;
-                isRedirect = false;
-                hasUserGesture = false;
-                isDirectNavigation = false;
-            }
-
-            
-            private @TargetWindow int convertGeckoTarget(final int geckoTarget) {
-                switch (geckoTarget) {
-                    case 0: 
-                    case 1: 
-                        return TARGET_WINDOW_CURRENT;
-                    default: 
-                        return TARGET_WINDOW_NEW;
-                }
-            }
-
-            
-
-
-            public final @NonNull String uri;
-
-            
-
-
-
-            public final @Nullable String triggerUri;
-
-            
-
-
-
-            public final @TargetWindow int target;
-
-            
-
-
-
-
-
-
-
-            public final boolean isRedirect;
-
-            
-
-
-            public final boolean hasUserGesture;
-
-            
-
-
-
-            public final boolean isDirectNavigation;
-
-            @Override
-            public String toString() {
-                final StringBuilder out = new StringBuilder("LoadRequest { ");
-                out
-                    .append("uri: " + uri)
-                    .append(", triggerUri: " + triggerUri)
-                    .append(", target: " + target)
-                    .append(", isRedirect: " + isRedirect)
-                    .append(", hasUserGesture: " + hasUserGesture)
-                    .append(", fromLoadUri: " + hasUserGesture)
-                    .append(" }");
-                return out.toString();
-            }
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<AllowOrDeny> onLoadRequest(@NonNull final GeckoSession session,
-                                                                 @NonNull final LoadRequest request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<AllowOrDeny> onSubframeLoadRequest(@NonNull final GeckoSession session,
-                                                                         @NonNull final LoadRequest request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<GeckoSession> onNewSession(@NonNull final GeckoSession session,
-                                                                 @NonNull final String uri) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<String> onLoadError(@NonNull final GeckoSession session,
-                                                          @Nullable final String uri,
-                                                          @NonNull final WebRequestError error) {
-            return null;
-        }
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({NavigationDelegate.TARGET_WINDOW_NONE, NavigationDelegate.TARGET_WINDOW_CURRENT,
-            NavigationDelegate.TARGET_WINDOW_NEW})
-     @interface TargetWindow {}
-
-    
-
-
-
-
-    public interface PromptDelegate {
-        
-
-
-
-        public class PromptResponse {
-            private final BasePrompt mPrompt;
-
-             PromptResponse(@NonNull final BasePrompt prompt) {
-                mPrompt = prompt;
-            }
-
-             void dispatch(@NonNull final EventCallback callback) {
-                if (mPrompt == null) {
-                    throw new RuntimeException("Trying to confirm/dismiss a null prompt.");
-                }
-                mPrompt.dispatch(callback);
-            }
-        }
-
-        interface PromptInstanceDelegate {
-            
-
-
-
-
-
-
-
-
-
-            @UiThread
-            default void onPromptDismiss(final @NonNull BasePrompt prompt) {}
-        }
-
-        
-        public class BasePrompt {
-            private boolean mIsCompleted;
-            private boolean mIsConfirmed;
-            private GeckoBundle mResult;
-            private final WeakReference<Observer> mObserver;
-            private PromptInstanceDelegate mDelegate;
-
-            protected interface Observer {
-                @AnyThread
-                default void onPromptCompleted(@NonNull BasePrompt prompt) {}
-            }
-
-            private void complete() {
-                mIsCompleted = true;
-                final Observer observer = mObserver.get();
-                if (observer != null) {
-                    observer.onPromptCompleted(this);
-                }
-            }
-
-            
-
-
-            public final @Nullable String title;
-             String id;
-
-            private BasePrompt(
-                    @NonNull final String id,
-                    @Nullable final String title,
-                    final Observer observer) {
-                this.title = title;
-                this.id = id;
-                mIsConfirmed = false;
-                mIsCompleted = false;
-                mObserver = new WeakReference<>(observer);
-            }
-
-            @UiThread
-            protected @NonNull PromptResponse confirm() {
-                if (mIsCompleted) {
-                    throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
-                }
-
-                mIsConfirmed = true;
-                complete();
-                return new PromptResponse(this);
-            }
-
-            
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse dismiss() {
-                if (mIsCompleted) {
-                    throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
-                }
-
-                complete();
-                return new PromptResponse(this);
-            }
-
-            
-
-
-
-
-            @UiThread
-            public void setDelegate(final @Nullable PromptInstanceDelegate delegate) {
-                mDelegate = delegate;
-            }
-
-            
-
-
-
-
-            @UiThread
-            @Nullable
-            public PromptInstanceDelegate getDelegate() {
-                return mDelegate;
-            }
-
-             GeckoBundle ensureResult() {
-                if (mResult == null) {
-                    
-                    mResult = new GeckoBundle(2);
-                }
-                return mResult;
-            }
-
-            
-
-
-
-
-
-            @UiThread
-            public boolean isComplete() {
-                return mIsCompleted;
-            }
-
-             void dispatch(@NonNull final EventCallback callback) {
-                if (!mIsCompleted) {
-                    throw new RuntimeException("Trying to dispatch an incomplete prompt.");
-                }
-
-                if (!mIsConfirmed) {
-                    callback.sendSuccess(null);
-                } else {
-                    callback.sendSuccess(mResult);
-                }
-            }
-        }
-
-        
-
-
-
-        class BeforeUnloadPrompt extends BasePrompt {
-            protected BeforeUnloadPrompt(
-                    @NonNull final String id,
-                    @NonNull final Observer observer) {
-                super(id, null, observer);
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
-                ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        class RepostConfirmPrompt extends BasePrompt {
-            protected RepostConfirmPrompt(
-                    @NonNull final String id,
-                    @NonNull final Observer observer) {
-                super(id, null, observer);
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
-                ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class AlertPrompt extends BasePrompt {
-            
-
-
-            public final @Nullable String message;
-
-            protected AlertPrompt(@NonNull final String id,
-                                  @Nullable final String title,
-                                  @Nullable final String message,
-                                  @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.message = message;
-            }
-        }
-
-        
-
-
-
-        public class ButtonPrompt extends BasePrompt {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Type.POSITIVE, Type.NEGATIVE})
-             @interface ButtonType {}
-
-            public static class Type {
-                
-
-
-                public static final int POSITIVE = 0;
-
-                
-
-
-                public static final int NEGATIVE = 2;
-
-                protected Type() {}
-            }
-
-            
-
-
-            public final @Nullable String message;
-
-            protected ButtonPrompt(@NonNull final String id,
-                                   @Nullable final String title,
-                                   @Nullable final String message,
-                                   @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.message = message;
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@ButtonType final int selection) {
-                ensureResult().putInt("button", selection);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class TextPrompt extends BasePrompt {
-            
-
-
-            public final @Nullable String message;
-
-            
-
-
-            public final @Nullable String defaultValue;
-
-            protected TextPrompt(@NonNull final String id,
-                                 @Nullable final String title,
-                                 @Nullable final String message,
-                                 @Nullable final String defaultValue,
-                                 @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.message = message;
-                this.defaultValue = defaultValue;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String text) {
-                ensureResult().putString("text", text);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class AuthPrompt extends BasePrompt {
-            public static class AuthOptions {
-                @Retention(RetentionPolicy.SOURCE)
-                @IntDef(flag = true,
-                        value = {Flags.HOST, Flags.PROXY, Flags.ONLY_PASSWORD,
-                                 Flags.PREVIOUS_FAILED, Flags.CROSS_ORIGIN_SUB_RESOURCE})
-                 @interface AuthFlag {}
-
-                
-
-
-                public static class Flags {
-                    
-
-
-                    public static final int HOST = 1;
-                    
-
-
-                    public static final int PROXY = 2;
-                    
-
-
-                    public static final int ONLY_PASSWORD = 8;
-                    
-
-
-                    public static final int PREVIOUS_FAILED = 16;
-                    
-
-
-                    public static final int CROSS_ORIGIN_SUB_RESOURCE = 32;
-
-                    protected Flags() {}
-                }
-
-                @Retention(RetentionPolicy.SOURCE)
-                @IntDef({Level.NONE, Level.PW_ENCRYPTED, Level.SECURE})
-                 @interface AuthLevel {}
-
-                
-
-
-                public static class Level {
-                    
-
-
-                    public static final int NONE = 0;
-                    
-
-
-                    public static final int PW_ENCRYPTED = 1;
-                    
-
-
-                    public static final int SECURE = 2;
-
-                    protected Level() {}
-                }
-
-                
-
-
-                public @AuthFlag final int flags;
-
-                
-
-
-                public @Nullable final String uri;
-
-                
-
-
-                public @AuthLevel final int level;
-
-                
-
-
-                public @Nullable final String username;
-
-                
-
-
-                public @Nullable final String password;
-
-                 AuthOptions(final GeckoBundle options) {
-                    flags = options.getInt("flags");
-                    uri = options.getString("uri");
-                    level = options.getInt("level");
-                    username = options.getString("username");
-                    password = options.getString("password");
-                }
-
-                
-
-
-                protected AuthOptions() {
-                    flags = 0;
-                    uri = "";
-                    level = 0;
-                    username = "";
-                    password = "";
-                }
-            }
-
-            
-
-
-            public final @Nullable String message;
-
-            
-
-
-            public final @NonNull AuthOptions authOptions;
-
-            protected AuthPrompt(@NonNull final String id,
-                                 @Nullable final String title,
-                                 @Nullable final String message,
-                                 @NonNull final AuthOptions authOptions,
-                                 @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.message = message;
-                this.authOptions = authOptions;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String password) {
-                ensureResult().putString("password", password);
-                return super.confirm();
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String username,
-                                                   @NonNull final String password) {
-                ensureResult().putString("username", username);
-                ensureResult().putString("password", password);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class ChoicePrompt extends BasePrompt {
-            public static class Choice {
-                
-
-
-
-                public final boolean disabled;
-
-                
-
-
-
-                public final @Nullable String icon;
-
-                
-
-
-                public final @NonNull String id;
-
-                
-
-
-                public final @Nullable Choice[] items;
-
-                
-
-
-                public final @NonNull String label;
-
-                
-
-
-
-                public final boolean selected;
-
-                
-
-
-
-                public final boolean separator;
-
-                 Choice(final GeckoBundle choice) {
-                    disabled = choice.getBoolean("disabled");
-                    icon = choice.getString("icon");
-                    id = choice.getString("id");
-                    label = choice.getString("label");
-                    selected = choice.getBoolean("selected");
-                    separator = choice.getBoolean("separator");
-
-                    final GeckoBundle[] choices = choice.getBundleArray("items");
-                    if (choices == null) {
-                        items = null;
-                    } else {
-                        items = new Choice[choices.length];
-                        for (int i = 0; i < choices.length; i++) {
-                            items[i] = new Choice(choices[i]);
-                        }
-                    }
-                }
-
-                
-
-
-                protected Choice() {
-                    disabled = false;
-                    icon = "";
-                    id = "";
-                    label = "";
-                    selected = false;
-                    separator = false;
-                    items = null;
-                }
-            }
-
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Type.MENU, Type.SINGLE, Type.MULTIPLE})
-             @interface ChoiceType {}
-
-            public static class Type {
-                
-
-
-                public static final int MENU = 1;
-
-                
-
-
-                public static final int SINGLE = 2;
-
-                
-
-
-                public static final int MULTIPLE = 3;
-
-                protected Type() {}
-            }
-
-            
-
-
-            public final @Nullable String message;
-
-            
-
-
-            public final @ChoiceType int type;
-
-            
-
-
-            public final @NonNull Choice[] choices;
-
-            protected ChoicePrompt(@NonNull final String id,
-                                   @Nullable final String title,
-                                   @Nullable final String message,
-                                   @ChoiceType final int type,
-                                   @NonNull final Choice[] choices,
-                                   @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.message = message;
-                this.type = type;
-                this.choices = choices;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String selectedId) {
-                return confirm(new String[] { selectedId });
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String[] selectedIds) {
-                if ((Type.MENU == type || Type.SINGLE == type) &&
-                    (selectedIds == null || selectedIds.length != 1)) {
-                    throw new IllegalArgumentException();
-                }
-                ensureResult().putStringArray("choices", selectedIds);
-                return super.confirm();
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final Choice selectedChoice) {
-                return confirm(selectedChoice == null ? null : selectedChoice.id);
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final Choice[] selectedChoices) {
-                if ((Type.MENU == type || Type.SINGLE == type) &&
-                    (selectedChoices == null || selectedChoices.length != 1)) {
-                    throw new IllegalArgumentException();
-                }
-
-                if (selectedChoices == null) {
-                    return confirm((String[]) null);
-                }
-
-                final String[] ids = new String[selectedChoices.length];
-                for (int i = 0; i < ids.length; i++) {
-                    ids[i] = (selectedChoices[i] == null) ? null : selectedChoices[i].id;
-                }
-
-                return confirm(ids);
-            }
-        }
-
-        
-
-
-
-        public class ColorPrompt extends BasePrompt {
-            
-
-
-            public final @Nullable String defaultValue;
-
-            protected ColorPrompt(@NonNull final String id,
-                                  @Nullable final String title,
-                                  @Nullable final String defaultValue,
-                                  @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.defaultValue = defaultValue;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String color) {
-                ensureResult().putString("color", color);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class DateTimePrompt extends BasePrompt {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Type.DATE, Type.MONTH, Type.WEEK, Type.TIME, Type.DATETIME_LOCAL})
-             @interface DatetimeType {}
-
-            public static class Type {
-                
-
-
-                public static final int DATE = 1;
-
-                
-
-
-                public static final int MONTH = 2;
-
-                
-
-
-                public static final int WEEK = 3;
-
-                
-
-
-                public static final int TIME = 4;
-
-                
-
-
-                public static final int DATETIME_LOCAL = 5;
-
-                protected Type() {}
-            }
-
-            
-
-
-            public final @DatetimeType int type;
-
-            
-
-
-            public final @Nullable String defaultValue;
-
-            
-
-
-            public final @Nullable String minValue;
-
-            
-
-
-            public final @Nullable String maxValue;
-
-            protected DateTimePrompt(@NonNull final String id,
-                                     @Nullable final String title,
-                                     @DatetimeType final int type,
-                                     @Nullable final String defaultValue,
-                                     @Nullable final String minValue,
-                                     @Nullable final String maxValue,
-                                     @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.type = type;
-                this.defaultValue = defaultValue;
-                this.minValue = minValue;
-                this.maxValue = maxValue;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final String datetime) {
-                ensureResult().putString("datetime", datetime);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-
-        public class FilePrompt extends BasePrompt {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Type.SINGLE, Type.MULTIPLE})
-             @interface FileType {}
-
-            
-
-
-            public static class Type {
-                
-
-
-                public static final int SINGLE = 1;
-
-                
-
-
-                public static final int MULTIPLE = 2;
-
-                protected Type() {}
-            }
-
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Capture.NONE, Capture.ANY, Capture.USER, Capture.ENVIRONMENT})
-             @interface CaptureType {}
-
-            
-
-
-            public static class Capture {
-                
-                
-
-
-                public static final int NONE = 0;
-
-                
-
-
-                public static final int ANY = 1;
-
-                
-
-
-                public static final int USER = 2;
-
-                
-
-
-                public static final int ENVIRONMENT = 3;
-
-                protected Capture() {}
-            }
-
-            
-
-
-            public final @FileType int type;
-
-            
-
-
-
-            public final @Nullable String[] mimeTypes;
-
-            
-
-
-            public final @CaptureType int capture;
-
-            protected FilePrompt(@NonNull final String id,
-                                 @Nullable final String title,
-                                 @FileType final int type,
-                                 @CaptureType final int capture,
-                                 @Nullable final String[] mimeTypes,
-                                 @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.type = type;
-                this.capture = capture;
-                this.mimeTypes = mimeTypes;
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final Context context,
-                                                   @NonNull final Uri uri) {
-                return confirm(context, new Uri[] { uri });
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final Context context,
-                                                   @NonNull final Uri[] uris) {
-                if (Type.SINGLE == type && (uris == null || uris.length != 1)) {
-                    throw new IllegalArgumentException();
-                }
-
-                final String[] paths = new String[uris != null ? uris.length : 0];
-                for (int i = 0; i < paths.length; i++) {
-                    paths[i] = getFile(context, uris[i]);
-                    if (paths[i] == null) {
-                        Log.e(LOGTAG, "Only file URIs are supported: " + uris[i]);
-                    }
-                }
-                ensureResult().putStringArray("files", paths);
-
-                return super.confirm();
-            }
-
-            private static String getFile(final @NonNull Context context, final @NonNull Uri uri) {
-                if (uri == null) {
-                    return null;
-                }
-                if ("file".equals(uri.getScheme())) {
-                    return uri.getPath();
-                }
-                final ContentResolver cr = context.getContentResolver();
-                final Cursor cur = cr.query(uri, new String[] { "_data" },  null,
-                                             null,  null);
-                if (cur == null) {
-                    return null;
-                }
-                try {
-                    final int idx = cur.getColumnIndex("_data");
-                    if (idx < 0 || !cur.moveToFirst()) {
-                        return null;
-                    }
-                    do {
-                        try {
-                            final String path = cur.getString(idx);
-                            if (path != null && !path.isEmpty()) {
-                                return path;
-                            }
-                        } catch (final Exception e) {
-                        }
-                    } while (cur.moveToNext());
-                } finally {
-                    cur.close();
-                }
-                return null;
-            }
-        }
-
-        
-
-
-
-        public class PopupPrompt extends BasePrompt {
-            
-
-
-            public final @Nullable String targetUri;
-
-            protected PopupPrompt(
-                    @NonNull final String id,
-                    @Nullable final String targetUri,
-                    @NonNull final Observer observer) {
-                super(id, null, observer);
-                this.targetUri = targetUri;
-            }
-
-            
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@NonNull final AllowOrDeny response) {
-                boolean res = false;
-                if (AllowOrDeny.ALLOW == response) {
-                    res = true;
-                }
-                ensureResult().putBoolean("response", res);
-                return super.confirm();
-            }
-        }
-
-        
-
-
-        public class SharePrompt extends BasePrompt {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({Result.SUCCESS, Result.FAILURE, Result.ABORT})
-             @interface ShareResult {}
-
-            
-
-
-            public static class Result {
-                
-
-
-                public static final int SUCCESS = 0;
-
-                
-
-
-                public static final int FAILURE = 1;
-
-                
-
-
-                public static final int ABORT = 2;
-
-                protected Result() {}
-            }
-
-            
-
-
-            public final @Nullable String text;
-
-            
-
-
-            public final @Nullable String uri;
-
-            protected SharePrompt(@NonNull final String id,
-                                  @Nullable final String title,
-                                  @Nullable final String text,
-                                  @Nullable final String uri,
-                                  @NonNull final Observer observer) {
-                super(id, title, observer);
-                this.text = text;
-                this.uri = uri;
-            }
-
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(@ShareResult final int response) {
-                ensureResult().putInt("response", response);
-                return super.confirm();
-            }
-
-            
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse dismiss() {
-                ensureResult().putInt("response", Result.ABORT);
-                return super.dismiss();
-            }
-        }
-
-        
-
-
-
-        public class AutocompleteRequest<T extends Autocomplete.Option<?>>
-                extends BasePrompt {
-            
-
-
-
-            public final @NonNull T[] options;
-
-            protected AutocompleteRequest(final @NonNull String id,
-                                          final @NonNull T[] options,
-                                          final Observer observer) {
-                super(id, null, observer);
-                this.options = options;
-            }
-
-            
-
-
-
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse confirm(
-                    final @NonNull Autocomplete.Option<?> selection) {
-                ensureResult().putBundle("selection", selection.toBundle());
-                return super.confirm();
-            }
-
-            
-
-
-
-
-
-
-            @UiThread
-            public @NonNull PromptResponse dismiss() {
-                return super.dismiss();
-            }
-        }
-
-        
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onAlertPrompt(@NonNull final GeckoSession session,
-                                                                    @NonNull final AlertPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onBeforeUnloadPrompt(
-                @NonNull final GeckoSession session,
-                @NonNull final BeforeUnloadPrompt prompt
-        ) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onRepostConfirmPrompt(
-                @NonNull final GeckoSession session,
-                @NonNull final RepostConfirmPrompt prompt
-        ) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onButtonPrompt(@NonNull final GeckoSession session,
-                                                                     @NonNull final ButtonPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onTextPrompt(@NonNull final GeckoSession session,
-                                                                   @NonNull final TextPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onAuthPrompt(@NonNull final GeckoSession session,
-                                                                   @NonNull final AuthPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onChoicePrompt(@NonNull final GeckoSession session,
-                                                                     @NonNull final ChoicePrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onColorPrompt(@NonNull final GeckoSession session,
-                                                                    @NonNull final ColorPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onDateTimePrompt(@NonNull final GeckoSession session,
-                                                                       @NonNull final DateTimePrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onFilePrompt(@NonNull final GeckoSession session,
-                                                                   @NonNull final FilePrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onPopupPrompt(@NonNull final GeckoSession session,
-                                                                    @NonNull final PopupPrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onSharePrompt(@NonNull final GeckoSession session,
-                                                                    @NonNull final SharePrompt prompt) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onLoginSave(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.LoginSaveOption>
-                    request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onAddressSave(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.AddressSaveOption>
-                        request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onCreditCardSave(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.CreditCardSaveOption>
-                    request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onLoginSelect(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.LoginSelectOption>
-                    request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onCreditCardSelect(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.CreditCardSelectOption>
-                    request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onAddressSelect(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.AddressSelectOption>
-                        request) {
-            return null;
-        }
-    }
-
-    
-
-
-
-    public interface ScrollDelegate {
-        
-
-
-
-
-
-
-        @UiThread
-        default void onScrollChanged(@NonNull final GeckoSession session, final int scrollX, final int scrollY) {}
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull PanZoomController getPanZoomController() {
-        ThreadUtils.assertOnUiThread();
-
-        return mPanZoomController;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull OverscrollEdgeEffect getOverscrollEdgeEffect() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mOverscroll == null) {
-            mOverscroll = new OverscrollEdgeEffect(this);
-        }
-        return mOverscroll;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull CompositorController getCompositorController() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mController == null) {
-            mController = new CompositorController(this);
-            if (mCompositorReady) {
-                mController.onCompositorReady();
-            }
-        }
-        return mController;
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void getClientToSurfaceMatrix(@NonNull final Matrix matrix) {
-        ThreadUtils.assertOnUiThread();
-
-        matrix.setScale(mViewportZoom, mViewportZoom);
-        if (mClientTop != mTop) {
-            matrix.postTranslate(0, mClientTop - mTop);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void getClientToScreenMatrix(@NonNull final Matrix matrix) {
-        ThreadUtils.assertOnUiThread();
-
-        getClientToSurfaceMatrix(matrix);
-        matrix.postTranslate(mLeft, mTop);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public void getPageToScreenMatrix(@NonNull final Matrix matrix) {
-        ThreadUtils.assertOnUiThread();
-
-        getPageToSurfaceMatrix(matrix);
-        matrix.postTranslate(mLeft, mTop);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void getPageToSurfaceMatrix(@NonNull final Matrix matrix) {
-        ThreadUtils.assertOnUiThread();
-
-        getClientToSurfaceMatrix(matrix);
-        matrix.postTranslate(-mViewportLeft, -mViewportTop);
-    }
-
-    
-
-
-
-
-
-
-
-
-    @UiThread
-    public void getClientBounds(@NonNull final RectF rect) {
-        ThreadUtils.assertOnUiThread();
-
-        rect.set(0.0f, 0.0f, (float) mWidth / mViewportZoom,
-                (float) mClientHeight / mViewportZoom);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void getSurfaceBounds(@NonNull final Rect rect) {
-        ThreadUtils.assertOnUiThread();
-
-        rect.set(0, mClientTop - mTop, mWidth, mHeight);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    public interface PermissionDelegate {
-        
-
-
-
-        int PERMISSION_GEOLOCATION = 0;
-
-        
-
-
-
-        int PERMISSION_DESKTOP_NOTIFICATION = 1;
-
-        
-
-
-
-        int PERMISSION_PERSISTENT_STORAGE = 2;
-
-        
-
-
-
-        int PERMISSION_XR = 3;
-
-        
-
-
-        int PERMISSION_AUTOPLAY_INAUDIBLE = 4;
-
-        
-
-
-        int PERMISSION_AUTOPLAY_AUDIBLE = 5;
-
-        
-
-
-        int PERMISSION_MEDIA_KEY_SYSTEM_ACCESS = 6;
-
-        
-
-
-
-        int PERMISSION_TRACKING = 7;
-
-        
-
-
-
-        int PERMISSION_STORAGE_ACCESS = 8;
-
-        
-
-
-
-
-        class ContentPermission {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({VALUE_PROMPT, VALUE_DENY, VALUE_ALLOW})
-             @interface Value {}
-
-            
-
-
-            final public static int VALUE_PROMPT = 3;
-
-            
-
-
-            final public static int VALUE_DENY = 2;
-
-            
-
-
-            final public static int VALUE_ALLOW = 1;
-
-            
-
-
-            final public @NonNull String uri;
-
-            
-
-
-
-            final public @Nullable String thirdPartyOrigin;
-
-            
-
-
-
-            final public boolean privateMode;
-
-            
-
-
-            final public int permission;
-
-            
-
-
-            final public @Value int value;
-
-            
-
-
-
-            final public @Nullable String contextId;
-
-            final private String mPrincipal;
-
-            protected ContentPermission() {
-                this.uri = "";
-                this.thirdPartyOrigin = null;
-                this.privateMode = false;
-                this.permission = PERMISSION_GEOLOCATION;
-                this.value = VALUE_ALLOW;
-                this.mPrincipal = "";
-                this.contextId = null;
-            }
-
-            private ContentPermission(final @NonNull GeckoBundle bundle) {
-                this.uri = bundle.getString("uri");
-                this.mPrincipal = bundle.getString("principal");
-                this.privateMode = bundle.getBoolean("privateMode");
-
-                final String permission = bundle.getString("perm");
-                this.permission = convertType(permission);
-                if (permission.startsWith("3rdPartyStorage^")) {
-                    
-                    
-                    this.thirdPartyOrigin = permission.substring(16);
-                } else {
-                    this.thirdPartyOrigin = bundle.getString("thirdPartyOrigin");
-                }
-
-                this.value = bundle.getInt("value");
-                this.contextId = StorageController.retrieveUnsafeSessionContextId(bundle.getString("contextId"));
-            }
-
-            
-
-
-
-
-
-
-
-            @AnyThread
-            public static @Nullable ContentPermission fromJson(final @NonNull JSONObject perm) {
-                ContentPermission res = null;
-                try {
-                    res = new ContentPermission(GeckoBundle.fromJSONObject(perm));
-                } catch (final JSONException e) {
-                    Log.w(LOGTAG, "Failed to create ContentPermission; invalid JSONObject.", e);
-                }
-                return res;
-            }
-
-            
-
-
-
-
-
-
-
-
-
-            @AnyThread
-            public @NonNull JSONObject toJson() throws JSONException {
-                return toGeckoBundle().toJSONObject();
-            }
-
-            private static int convertType(final @NonNull String type) {
-                if ("geolocation".equals(type)) {
-                    return PERMISSION_GEOLOCATION;
-                } else if ("desktop-notification".equals(type)) {
-                    return PERMISSION_DESKTOP_NOTIFICATION;
-                } else if ("persistent-storage".equals(type)) {
-                    return PERMISSION_PERSISTENT_STORAGE;
-                } else if ("xr".equals(type)) {
-                    return PERMISSION_XR;
-                } else if ("autoplay-media-inaudible".equals(type)) {
-                    return PERMISSION_AUTOPLAY_INAUDIBLE;
-                } else if ("autoplay-media-audible".equals(type)) {
-                    return PERMISSION_AUTOPLAY_AUDIBLE;
-                } else if ("media-key-system-access".equals(type)) {
-                    return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
-                } else if ("trackingprotection".equals(type) || "trackingprotection-pb".equals(type)) {
-                    return PERMISSION_TRACKING;
-                } else if ("storage-access".equals(type) || type.startsWith("3rdPartyStorage^")) {
-                    return PERMISSION_STORAGE_ACCESS;
-                } else {
-                    return -1;
-                }
-            }
-
-            
-             static String convertType(final int type, final boolean privateMode) {
-                switch (type) {
-                    case PERMISSION_GEOLOCATION:
-                        return "geolocation";
-                    case PERMISSION_DESKTOP_NOTIFICATION:
-                        return "desktop-notification";
-                    case PERMISSION_PERSISTENT_STORAGE:
-                        return "persistent-storage";
-                    case PERMISSION_XR:
-                        return "xr";
-                    case PERMISSION_AUTOPLAY_INAUDIBLE:
-                        return "autoplay-media-inaudible";
-                    case PERMISSION_AUTOPLAY_AUDIBLE:
-                        return "autoplay-media-audible";
-                    case PERMISSION_MEDIA_KEY_SYSTEM_ACCESS:
-                        return "media-key-system-access";
-                    case PERMISSION_TRACKING:
-                        return privateMode ? "trackingprotection-pb" : "trackingprotection";
-                    case PERMISSION_STORAGE_ACCESS:
-                        return "storage-access";
-                    default:
-                        return "";
-                }
-            }
-
-             static @NonNull ArrayList<ContentPermission> fromBundleArray(final @NonNull GeckoBundle[] bundleArray) {
-                final ArrayList<ContentPermission> res = new ArrayList<ContentPermission>();
-                if (bundleArray == null) {
-                    return res;
-                }
-
-                for (final GeckoBundle bundle : bundleArray) {
-                    final ContentPermission temp = new ContentPermission(bundle);
-                    if (temp.permission == -1 || temp.value < 1 || temp.value > 3) {
-                        continue;
-                    }
-                    res.add(temp);
-                }
-                return res;
-            }
-
-             @NonNull GeckoBundle toGeckoBundle() {
-                final GeckoBundle res = new GeckoBundle(7);
-                res.putString("uri", uri);
-                res.putString("thirdPartyOrigin", thirdPartyOrigin);
-                res.putString("principal", mPrincipal);
-                res.putBoolean("privateMode", privateMode);
-                res.putString("perm", convertType(permission, privateMode));
-                res.putInt("value", value);
-                res.putString("contextId", contextId);
-                return res;
-            }
-        }
-
-        
-
-
-        interface Callback {
-            
-
-
-
-            @UiThread
-            default void grant() {}
-
-            
-
-
-
-            @UiThread
-            default void reject() {}
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onAndroidPermissionsRequest(@NonNull final GeckoSession session,
-                                                 @Nullable final String[] permissions,
-                                                 @NonNull final Callback callback) {
-            callback.reject();
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<Integer> onContentPermissionRequest(@NonNull final GeckoSession session, @NonNull ContentPermission perm) {
-            return GeckoResult.fromValue(ContentPermission.VALUE_PROMPT);
-        }
-
-        class MediaSource {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({SOURCE_CAMERA, SOURCE_SCREEN,
-                     SOURCE_MICROPHONE, SOURCE_AUDIOCAPTURE,
-                     SOURCE_OTHER})
-             @interface Source {}
-
-            
-
-
-            public static final int SOURCE_CAMERA = 0;
-
-            
-
-
-            public static final int SOURCE_SCREEN  = 1;
-
-            
-
-
-            public static final int SOURCE_MICROPHONE = 2;
-
-            
-
-
-            public static final int SOURCE_AUDIOCAPTURE = 3;
-
-            
-
-
-            public static final int SOURCE_OTHER = 4;
-
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({TYPE_VIDEO, TYPE_AUDIO})
-             @interface Type {}
-
-            
-
-
-            public static final int TYPE_VIDEO = 0;
-
-            
-
-
-            public static final int TYPE_AUDIO = 1;
-
-            
-
-
-            public final @NonNull String id;
-
-            
-
-
-            public final @NonNull String rawId;
-
-            
-
-
-
-
-            public final @Nullable String name;
-
-            
-
-
-
-
-
-
-            public final @Source int source;
-
-            
-
-
-            public final @Type int type;
-
-            private static @Source int getSourceFromString(final String src) {
-                
-                if ("camera".equals(src)) {
-                    return SOURCE_CAMERA;
-                } else if ("screen".equals(src) || "window".equals(src) || "browser".equals(src)) {
-                    return SOURCE_SCREEN;
-                } else if ("microphone".equals(src)) {
-                    return SOURCE_MICROPHONE;
-                } else if ("audioCapture".equals(src)) {
-                    return SOURCE_AUDIOCAPTURE;
-                } else if ("other".equals(src) || "application".equals(src)) {
-                    return SOURCE_OTHER;
-                } else {
-                    throw new IllegalArgumentException("String: " + src + " is not a valid media source string");
-                }
-            }
-
-            private static @Type int getTypeFromString(final String type) {
-                
-                if ("videoinput".equals(type)) {
-                    return TYPE_VIDEO;
-                } else if ("audioinput".equals(type)) {
-                    return TYPE_AUDIO;
-                } else {
-                    throw new IllegalArgumentException("String: " + type + " is not a valid media type string");
-                }
-            }
-
-             MediaSource(final GeckoBundle media) {
-                id = media.getString("id");
-                rawId = media.getString("rawId");
-                name = media.getString("name");
-                source = getSourceFromString(media.getString("mediaSource"));
-                type = getTypeFromString(media.getString("type"));
-            }
-
-            
-
-
-            protected MediaSource() {
-                id = null;
-                rawId = null;
-                name = null;
-                source = 0;
-                type = 0;
-            }
-        }
-
-        
-
-
-
-        interface MediaCallback {
-            
-
-
-
-
-
-
-
-
-            @UiThread
-            default void grant(final @Nullable String video, final @Nullable String audio) {}
-
-            
-
-
-
-
-
-
-
-
-
-
-            @UiThread
-            default void grant(final @Nullable MediaSource video, final @Nullable MediaSource audio) {}
-
-            
-
-
-
-            @UiThread
-            default void reject() {}
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void onMediaPermissionRequest(@NonNull final GeckoSession session, @NonNull final String uri,
-                                              @Nullable final MediaSource[] video, @Nullable final MediaSource[] audio,
-                                              @NonNull final MediaCallback callback) {
-            callback.reject();
-        }
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({PermissionDelegate.PERMISSION_GEOLOCATION,
-            PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION,
-            PermissionDelegate.PERMISSION_PERSISTENT_STORAGE,
-            PermissionDelegate.PERMISSION_XR,
-            PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE,
-            PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE,
-            PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS,
-            PermissionDelegate.PERMISSION_TRACKING,
-            PermissionDelegate.PERMISSION_STORAGE_ACCESS})
-     @interface Permission {}
-
-    
-
-
-
-
-    public interface TextInputDelegate {
-        
-        int RESTART_REASON_FOCUS = 0;
-        
-        int RESTART_REASON_BLUR = 1;
-        
-
-
-
-
-        int RESTART_REASON_CONTENT_CHANGE = 2;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void restartInput(@NonNull final GeckoSession session, @RestartReason final int reason) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void showSoftInput(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void hideSoftInput(@NonNull final GeckoSession session) {}
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default void updateSelection(@NonNull final GeckoSession session, final int selStart, final int selEnd,
-                                     final int compositionStart, final int compositionEnd) {}
-
-        
-
-
-
-
-
-
-
-
-        @UiThread
-        default void updateExtractedText(@NonNull final GeckoSession session,
-                                         @NonNull final ExtractedTextRequest request,
-                                         @NonNull final ExtractedText text) {}
-
-        
-
-
-
-
-
-
-
-        @UiThread
-        default void updateCursorAnchorInfo(@NonNull final GeckoSession session,
-                                            @NonNull final CursorAnchorInfo info) {}
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({TextInputDelegate.RESTART_REASON_FOCUS, TextInputDelegate.RESTART_REASON_BLUR,
-            TextInputDelegate.RESTART_REASON_CONTENT_CHANGE})
-             @interface RestartReason {}
-
-     void onSurfaceChanged(final Surface surface, final int x, final int y, final int width,
-                                        final int height) {
-        ThreadUtils.assertOnUiThread();
-
-        mOffsetX = x;
-        mOffsetY = y;
-        mWidth = width;
-        mHeight = height;
-
-        if (mCompositorReady) {
-            mCompositor.syncResumeResizeCompositor(x, y, width, height, surface);
-            onWindowBoundsChanged();
-            return;
-        }
-
-        
-        
-        mSurface = surface;
-
-        
-        onWindowBoundsChanged();
-    }
-
-     void onSurfaceDestroyed() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mCompositorReady) {
-            mCompositor.syncPauseCompositor();
-            return;
-        }
-
-        
-        
-        mSurface = null;
-    }
-
-     void onScreenOriginChanged(final int left, final int top) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mLeft == left && mTop == top) {
-            return;
-        }
-
-        mLeft = left;
-        mTop = top;
-        onWindowBoundsChanged();
-    }
-
-     void setDynamicToolbarMaxHeight(final int height) {
-        if (mDynamicToolbarMaxHeight == height) {
-            return;
-        }
-
-        if (mHeight != 0 && height != 0 && mHeight < height) {
-            Log.w(LOGTAG, new AssertionError(
-                    "The maximum height of the dynamic toolbar (" +
-                    height +
-                    ") should be smaller than GeckoView height (" +
-                    mHeight + ")"));
-        }
-
-        mDynamicToolbarMaxHeight = height;
-
-        if (mAttachedCompositor) {
-            mCompositor.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
-        }
-    }
-
-
-     void setFixedBottomOffset(final int offset) {
-        if (mFixedBottomOffset == offset) {
-            return;
-        }
-
-        mFixedBottomOffset = offset;
-
-        if (mCompositorReady) {
-            mCompositor.setFixedBottomOffset(mFixedBottomOffset);
-        }
-    }
-
-
-     void onCompositorAttached() {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        mAttachedCompositor = true;
-        mCompositor.attachNPZC(mPanZoomController.mNative);
-
-        if (mSurface != null) {
-            
-            
-            onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
-        }
-
-        mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
-        mCompositor.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
-    }
-
-     void onCompositorDetached() {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        if (mController != null) {
-            mController.onCompositorDetached();
-        }
-
-        mAttachedCompositor = false;
-        mCompositorReady = false;
-    }
-
-     void handleCompositorMessage(final int message) {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        switch (message) {
-            case COMPOSITOR_CONTROLLER_OPEN: {
-                if (isCompositorReady()) {
-                    return;
-                }
-
-                
-                
-                ThreadUtils.postToUiThread(this::onCompositorReady);
-                break;
-            }
-
-            case FIRST_PAINT: {
-                if (mController != null) {
-                    mController.onFirstPaint();
-                }
-                final ContentDelegate delegate = mContentHandler.getDelegate();
-                if (delegate != null) {
-                    delegate.onFirstComposite(this);
-                }
-                break;
-            }
-
-            case LAYERS_UPDATED: {
-                if (mController != null) {
-                    mController.notifyDrawCallbacks();
-                }
-                break;
-            }
-
-            default: {
-                Log.w(LOGTAG, "Unexpected message: " + message);
-                break;
-            }
-        }
-    }
-
-     boolean isCompositorReady() {
-        return mCompositorReady;
-    }
-
-     void onCompositorReady() {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        if (!mAttachedCompositor) {
-            return;
-        }
-
-        mCompositorReady = true;
-
-        if (mController != null) {
-            mController.onCompositorReady();
-        }
-
-        if (mSurface != null) {
-            
-            
-            onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
-            mSurface = null;
-        }
-
-        if (mFixedBottomOffset != 0) {
-            mCompositor.setFixedBottomOffset(mFixedBottomOffset);
-        }
-    }
-
-     void updateOverscrollVelocity(final float x, final float y) {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        if (mOverscroll == null) {
-            return;
-        }
-
-        
-        mOverscroll.setVelocity(x * 1000.0f, OverscrollEdgeEffect.AXIS_X);
-        mOverscroll.setVelocity(y * 1000.0f, OverscrollEdgeEffect.AXIS_Y);
-    }
-
-     void updateOverscrollOffset(final float x, final float y) {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        if (mOverscroll == null) {
-            return;
-        }
-
-        mOverscroll.setDistance(x, OverscrollEdgeEffect.AXIS_X);
-        mOverscroll.setDistance(y, OverscrollEdgeEffect.AXIS_Y);
-    }
-
-     void onMetricsChanged(final float scrollX, final float scrollY,
-                                        final float zoom) {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        mViewportLeft = scrollX;
-        mViewportTop = scrollY;
-        mViewportZoom = zoom;
-    }
-
-     void onWindowBoundsChanged() {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-
-        if (mHeight != 0 && mDynamicToolbarMaxHeight != 0 &&
-            mHeight < mDynamicToolbarMaxHeight) {
-            Log.w(LOGTAG, new AssertionError( "The maximum height of the dynamic toolbar (" +
-                          mDynamicToolbarMaxHeight +
-                          ") should be smaller than GeckoView height (" +
-                          mHeight + ")"));
-        }
-
-        final int toolbarHeight = 0;
-
-        mClientTop = mTop + toolbarHeight;
-        
-        
-        mClientHeight = Math.max(mHeight - toolbarHeight, 0);
-
-        if (mAttachedCompositor) {
-            mCompositor.onBoundsChanged(mLeft, mClientTop, mWidth, mClientHeight);
-        }
-
-        if (mOverscroll != null) {
-            mOverscroll.setSize(mWidth, mClientHeight);
-        }
-    }
-
-     void onSafeAreaInsetsChanged(final int top, final int right, final int bottom, final int left) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mAttachedCompositor) {
-            mCompositor.onSafeAreaInsetsChanged(top, right, bottom, left);
-        }
-    }
-
-     void setPointerIcon(final int defaultCursor, final @Nullable Bitmap customCursor, final float x, final float y) {
-        ThreadUtils.assertOnUiThread();
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            return;
-        }
-
-        final PointerIcon icon;
-        if (customCursor != null) {
-            try {
-                icon = PointerIcon.create(customCursor, x, y);
-            } catch (final IllegalArgumentException e) {
-                
-                return;
-            }
-        } else {
-            final Context context = GeckoAppShell.getApplicationContext();
-            icon = PointerIcon.getSystemIcon(context, defaultCursor);
-        }
-
-        final ContentDelegate delegate = getContentDelegate();
-        delegate.onPointerIconChange(this, icon);
-    }
-
-    
-
-
-    public interface MediaDelegate {
-
-        class RecordingDevice {
-
-            
-
-
-            public static class Status {
-                public static final long RECORDING = 0;
-                public static final long INACTIVE = 1 << 0;
-
-                
-                protected Status() {}
-            }
-
-            
-
-
-            public static class Type {
-                public static final long CAMERA = 0;
-                public static final long MICROPHONE = 1 << 0;
-
-                
-                protected Type() {}
-            }
-
-            @Retention(RetentionPolicy.SOURCE)
-            @LongDef(flag = true,
-                    value = { Status.RECORDING, Status.INACTIVE })
-             @interface RecordingStatus {}
-
-            @Retention(RetentionPolicy.SOURCE)
-            @LongDef(flag = true,
-                    value = {Type.CAMERA, Type.MICROPHONE})
-             @interface DeviceType {}
-
-            
-
-
-
-            public final @RecordingStatus long status;
-
-            
-
-
-            public final @DeviceType long type;
-
-            private static @DeviceType long getTypeFromString(final String type) {
-                if ("microphone".equals(type)) {
-                    return Type.MICROPHONE;
-                } else if ("camera".equals(type)) {
-                    return Type.CAMERA;
-                } else {
-                    throw new IllegalArgumentException("String: " + type + " is not a valid recording device string");
-                }
-            }
-
-            private static @RecordingStatus long getStatusFromString(final String type) {
-                if ("recording".equals(type)) {
-                    return Status.RECORDING;
-                } else {
-                    return Status.INACTIVE;
-                }
-            }
-
-             RecordingDevice(final GeckoBundle media) {
-                status = getStatusFromString(media.getString("status"));
-                type = getTypeFromString(media.getString("type"));
-            }
-
-            
-
-
-            protected RecordingDevice() {
-                status = Status.INACTIVE;
-                type = Type.CAMERA;
-            }
-        }
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void onRecordingStatusChanged(@NonNull final GeckoSession session, @NonNull final RecordingDevice[] devices) {}
-    }
-
-    
-
-
-
-    public interface HistoryDelegate {
-        
-
-
-        public interface HistoryItem {
-            
-
-
-
-
-            @AnyThread
-            default @NonNull String getUri() {
-                throw new UnsupportedOperationException("HistoryItem.getUri() called on invalid object.");
-            }
-
-            
-
-
-
-
-            @AnyThread
-            default @NonNull String getTitle() {
-                throw new UnsupportedOperationException("HistoryItem.getString() called on invalid object.");
-            }
-        }
-
-        
-
-
-
-
-        public interface HistoryList extends List<HistoryItem> {
-            
-
-
-
-
-            @AnyThread
-            default int getCurrentIndex() {
-                throw new UnsupportedOperationException("HistoryList.getCurrentIndex() called on invalid object.");
-            }
-        }
-
-        
-        
-        
-
-        
-        final int VISIT_TOP_LEVEL = 1 << 0;
-        
-        final int VISIT_REDIRECT_TEMPORARY = 1 << 1;
-        
-        final int VISIT_REDIRECT_PERMANENT = 1 << 2;
-        
-        final int VISIT_REDIRECT_SOURCE = 1 << 3;
-        
-        final int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
-        
-        final int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<Boolean> onVisited(@NonNull final GeckoSession session,
-                                                         @NonNull final String url,
-                                                         @Nullable final String lastVisitedURL,
-                                                         @VisitFlags final int flags) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        default @Nullable GeckoResult<boolean[]> getVisited(@NonNull final GeckoSession session,
-                                                            @NonNull final String[] urls) {
-            return null;
-        }
-
-        @UiThread
-        @SuppressWarnings("checkstyle:javadocmethod")
-        default void onHistoryStateChange(@NonNull final GeckoSession session, @NonNull final HistoryList historyList) {}
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = {
-                HistoryDelegate.VISIT_TOP_LEVEL,
-                HistoryDelegate.VISIT_REDIRECT_TEMPORARY,
-                HistoryDelegate.VISIT_REDIRECT_PERMANENT,
-                HistoryDelegate.VISIT_REDIRECT_SOURCE,
-                HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT,
-                HistoryDelegate.VISIT_UNRECOVERABLE_ERROR
-            })
-     @interface VisitFlags {}
-
-
-    private Autofill.Support getAutofillSupport() {
-        return mAutofillSupport;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setAutofillDelegate(final @Nullable Autofill.Delegate delegate) {
-        getAutofillSupport().setDelegate(delegate);
-    }
-
-    
-
-
-    @UiThread
-    public @Nullable Autofill.Delegate getAutofillDelegate() {
-        return getAutofillSupport().getDelegate();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void autofill(final @NonNull SparseArray<CharSequence> values) {
-        getAutofillSupport().autofill(values);
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
-    public @NonNull Autofill.Session getAutofillSession() {
-        return getAutofillSupport().getAutofillSession();
-    }
-
-    private static String rgbaToArgb(final String color) {
-        
-        if (color.length() != 9 || !color.startsWith("#")) {
-            throw new IllegalArgumentException("Invalid color format");
-        }
-
-        return "#" + color.substring(7) + color.substring(1, 7);
-    }
-
-    private static void fixupManifestColor(final JSONObject manifest, final String name) throws JSONException {
-        if (manifest.isNull(name)) {
-            return;
-        }
-
-        manifest.put(name, rgbaToArgb(manifest.getString(name)));
-    }
-
-    private static JSONObject fixupWebAppManifest(final JSONObject manifest) {
-        
-        
+        X509Certificate decodedCert = null;
         try {
-            fixupManifestColor(manifest, "theme_color");
-            fixupManifestColor(manifest, "background_color");
+          final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+          final String certString = identityData.getString("certificate");
+          if (certString != null) {
+            final byte[] certBytes = Base64.decode(certString, Base64.NO_WRAP);
+            decodedCert =
+                (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));
+          }
+        } catch (final CertificateException e) {
+          Log.e(LOGTAG, "Failed to decode certificate", e);
+        }
+
+        certificate = decodedCert;
+      }
+
+      
+      protected SecurityInformation() {
+        mixedModePassive = 0;
+        mixedModeActive = 0;
+        securityMode = 0;
+        isSecure = false;
+        isException = false;
+        origin = "";
+        host = "";
+        certificate = null;
+      }
+    }
+
+    
+
+
+
+
+
+    @UiThread
+    default void onPageStart(@NonNull final GeckoSession session, @NonNull final String url) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onPageStop(@NonNull final GeckoSession session, final boolean success) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onProgressChange(@NonNull final GeckoSession session, final int progress) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onSecurityChange(
+        @NonNull final GeckoSession session, @NonNull final SecurityInformation securityInfo) {}
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onSessionStateChange(
+        @NonNull final GeckoSession session, @NonNull final SessionState sessionState) {}
+  }
+
+  
+  @AnyThread
+  public static class WebResponseInfo {
+    
+    @NonNull public final String uri;
+
+    
+    @Nullable public final String contentType;
+
+    
+    @Nullable public final long contentLength;
+
+    
+    @Nullable public final String filename;
+
+     WebResponseInfo(final GeckoBundle message) {
+      uri = message.getString("uri");
+      if (uri == null) {
+        throw new IllegalArgumentException("URI cannot be null");
+      }
+
+      contentType = message.getString("contentType");
+      contentLength = message.getLong("contentLength");
+      filename = message.getString("filename");
+    }
+
+    
+    protected WebResponseInfo() {
+      uri = "";
+      contentType = "";
+      contentLength = 0;
+      filename = "";
+    }
+  }
+
+  public interface ContentDelegate {
+    
+
+
+
+
+
+    @UiThread
+    default void onTitleChange(@NonNull final GeckoSession session, @Nullable final String title) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onFocusRequest(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+    @UiThread
+    default void onCloseRequest(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void onFullScreen(@NonNull final GeckoSession session, final boolean fullScreen) {}
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onMetaViewportFitChange(
+        @NonNull final GeckoSession session, @NonNull final String viewportFit) {}
+
+    
+    public static class ContextElement {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
+       @interface Type {}
+
+      public static final int TYPE_NONE = 0;
+      public static final int TYPE_IMAGE = 1;
+      public static final int TYPE_VIDEO = 2;
+      public static final int TYPE_AUDIO = 3;
+
+      
+      public final @Nullable String baseUri;
+
+      
+      public final @Nullable String linkUri;
+
+      
+      public final @Nullable String title;
+
+      
+      public final @Nullable String altText;
+
+      
+      public final @Type int type;
+
+      
+      public final @Nullable String srcUri;
+
+      
+      final List<WebExtension.Menu> extensionMenus;
+
+      protected ContextElement(
+          final @Nullable String baseUri,
+          final @Nullable String linkUri,
+          final @Nullable String title,
+          final @Nullable String altText,
+          final @NonNull String typeStr,
+          final @Nullable String srcUri) {
+        this.baseUri = baseUri;
+        this.linkUri = linkUri;
+        this.title = title;
+        this.altText = altText;
+        this.type = getType(typeStr);
+        this.srcUri = srcUri;
+        this.extensionMenus = null;
+      }
+
+      private static int getType(final String name) {
+        if ("HTMLImageElement".equals(name)) {
+          return TYPE_IMAGE;
+        } else if ("HTMLVideoElement".equals(name)) {
+          return TYPE_VIDEO;
+        } else if ("HTMLAudioElement".equals(name)) {
+          return TYPE_AUDIO;
+        }
+        return TYPE_NONE;
+      }
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onContextMenu(
+        @NonNull final GeckoSession session,
+        final int screenX,
+        final int screenY,
+        @NonNull final ContextElement element) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onExternalResponse(
+        @NonNull final GeckoSession session, @NonNull final WebResponse response) {}
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onCrash(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onKill(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onFirstComposite(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onFirstContentfulPaint(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onPaintStatusReset(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+
+    @TargetApi(Build.VERSION_CODES.N)
+    @UiThread
+    default void onPointerIconChange(
+        @NonNull final GeckoSession session, @NonNull final PointerIcon icon) {
+      final View view = session.getTextInput().getView();
+      if (view != null) {
+        view.setPointerIcon(icon);
+      }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onWebAppManifest(
+        @NonNull final GeckoSession session, @NonNull final JSONObject manifest) {}
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<SlowScriptResponse> onSlowScript(
+        @NonNull final GeckoSession geckoSession, @NonNull final String scriptFileName) {
+      return null;
+    }
+
+    
+
+
+
+
+
+    @UiThread
+    default void onShowDynamicToolbar(@NonNull final GeckoSession geckoSession) {}
+  }
+
+  public interface SelectionActionDelegate {
+    
+    final int FLAG_IS_COLLAPSED = 1;
+    
+
+
+    final int FLAG_IS_EDITABLE = 2;
+    
+    final int FLAG_IS_PASSWORD = 4;
+
+    
+    final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
+    
+    final String ACTION_CUT = "org.mozilla.geckoview.CUT";
+    
+    final String ACTION_COPY = "org.mozilla.geckoview.COPY";
+    
+    final String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
+    
+    final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
+    
+    final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
+    
+    final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
+    
+    final String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
+    
+    final String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
+
+    
+    class Selection {
+      
+
+
+
+      public final @SelectionActionDelegateFlag int flags;
+
+      
+
+
+
+      public final @NonNull String text;
+
+      
+
+
+
+      public final @Nullable RectF clientRect;
+
+      
+      public final @NonNull @SelectionActionDelegateAction Collection<String> availableActions;
+
+      private final int mSeqNo;
+
+      private final EventCallback mEventCallback;
+
+       Selection(
+          final GeckoBundle bundle,
+          final @NonNull @SelectionActionDelegateAction Set<String> actions,
+          final EventCallback callback) {
+        flags =
+            (bundle.getBoolean("collapsed") ? SelectionActionDelegate.FLAG_IS_COLLAPSED : 0)
+                | (bundle.getBoolean("editable") ? SelectionActionDelegate.FLAG_IS_EDITABLE : 0)
+                | (bundle.getBoolean("password") ? SelectionActionDelegate.FLAG_IS_PASSWORD : 0);
+        text = bundle.getString("selection");
+
+        final GeckoBundle rectBundle = bundle.getBundle("clientRect");
+        if (rectBundle == null) {
+          clientRect = null;
+        } else {
+          clientRect =
+              new RectF(
+                  (float) rectBundle.getDouble("left"),
+                  (float) rectBundle.getDouble("top"),
+                  (float) rectBundle.getDouble("right"),
+                  (float) rectBundle.getDouble("bottom"));
+        }
+
+        availableActions = actions;
+        mSeqNo = bundle.getInt("seqNo");
+        mEventCallback = callback;
+      }
+
+      
+      protected Selection() {
+        flags = 0;
+        text = "";
+        clientRect = null;
+        availableActions = new HashSet<>();
+        mSeqNo = 0;
+        mEventCallback = null;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public boolean isActionAvailable(
+          @NonNull @SelectionActionDelegateAction final String action) {
+        return availableActions.contains(action);
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public void execute(@NonNull @SelectionActionDelegateAction final String action) {
+        if (!isActionAvailable(action)) {
+          throw new IllegalStateException("Action not available");
+        }
+        final GeckoBundle response = new GeckoBundle(2);
+        response.putString("id", action);
+        response.putInt("seqNo", mSeqNo);
+        mEventCallback.sendSuccess(response);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void hide() {
+        execute(ACTION_HIDE);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void cut() {
+        execute(ACTION_CUT);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void copy() {
+        execute(ACTION_COPY);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void delete() {
+        execute(ACTION_DELETE);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void paste() {
+        execute(ACTION_PASTE);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void selectAll() {
+        execute(ACTION_SELECT_ALL);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void unselect() {
+        execute(ACTION_UNSELECT);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void collapseToStart() {
+        execute(ACTION_COLLAPSE_TO_START);
+      }
+
+      
+
+
+
+
+      @AnyThread
+      public void collapseToEnd() {
+        execute(ACTION_COLLAPSE_TO_END);
+      }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onShowActionRequest(
+        @NonNull final GeckoSession session, @NonNull final Selection selection) {}
+
+    
+    final int HIDE_REASON_NO_SELECTION = 0;
+    
+
+
+
+    final int HIDE_REASON_INVISIBLE_SELECTION = 1;
+    
+
+
+
+
+    final int HIDE_REASON_ACTIVE_SELECTION = 2;
+    
+
+
+
+
+
+    final int HIDE_REASON_ACTIVE_SCROLL = 3;
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onHideAction(
+        @NonNull final GeckoSession session, @SelectionActionDelegateHideReason final int reason) {}
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef({
+    SelectionActionDelegate.ACTION_HIDE,
+    SelectionActionDelegate.ACTION_CUT,
+    SelectionActionDelegate.ACTION_COPY,
+    SelectionActionDelegate.ACTION_DELETE,
+    SelectionActionDelegate.ACTION_PASTE,
+    SelectionActionDelegate.ACTION_SELECT_ALL,
+    SelectionActionDelegate.ACTION_UNSELECT,
+    SelectionActionDelegate.ACTION_COLLAPSE_TO_START,
+    SelectionActionDelegate.ACTION_COLLAPSE_TO_END
+  })
+   @interface SelectionActionDelegateAction {}
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {SelectionActionDelegate.FLAG_IS_COLLAPSED, SelectionActionDelegate.FLAG_IS_EDITABLE})
+   @interface SelectionActionDelegateFlag {}
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    SelectionActionDelegate.HIDE_REASON_NO_SELECTION,
+    SelectionActionDelegate.HIDE_REASON_INVISIBLE_SELECTION,
+    SelectionActionDelegate.HIDE_REASON_ACTIVE_SELECTION,
+    SelectionActionDelegate.HIDE_REASON_ACTIVE_SCROLL
+  })
+   @interface SelectionActionDelegateHideReason {}
+
+  public interface NavigationDelegate {
+    
+
+
+
+
+
+    @UiThread
+    @DeprecationSchedule(id = "location-permissions", version = 92)
+    default void onLocationChange(
+        @NonNull final GeckoSession session, @Nullable final String url) {}
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void onLocationChange(
+        @NonNull GeckoSession session,
+        @Nullable String url,
+        final @NonNull List<PermissionDelegate.ContentPermission> perms) {
+      session.getNavigationDelegate().onLocationChange(session, url);
+    }
+
+    
+
+
+
+
+
+    @UiThread
+    default void onCanGoBack(@NonNull final GeckoSession session, final boolean canGoBack) {}
+
+    
+
+
+
+
+
+    @UiThread
+    default void onCanGoForward(@NonNull final GeckoSession session, final boolean canGoForward) {}
+
+    public static final int TARGET_WINDOW_NONE = 0;
+    public static final int TARGET_WINDOW_CURRENT = 1;
+    public static final int TARGET_WINDOW_NEW = 2;
+
+    
+    
+    static final int LOAD_REQUEST_IS_REDIRECT = 0x800000;
+
+    
+    public static class LoadRequest {
+       LoadRequest(
+          @NonNull final String uri,
+          @Nullable final String triggerUri,
+          final int geckoTarget,
+          final int flags,
+          final boolean hasUserGesture,
+          final boolean isDirectNavigation) {
+        this.uri = uri;
+        this.triggerUri = triggerUri;
+        this.target = convertGeckoTarget(geckoTarget);
+        this.isRedirect = (flags & LOAD_REQUEST_IS_REDIRECT) != 0;
+        this.hasUserGesture = hasUserGesture;
+        this.isDirectNavigation = isDirectNavigation;
+      }
+
+      
+      protected LoadRequest() {
+        uri = "";
+        triggerUri = null;
+        target = 0;
+        isRedirect = false;
+        hasUserGesture = false;
+        isDirectNavigation = false;
+      }
+
+      
+      private @TargetWindow int convertGeckoTarget(final int geckoTarget) {
+        switch (geckoTarget) {
+          case 0: 
+          case 1: 
+            return TARGET_WINDOW_CURRENT;
+          default: 
+            return TARGET_WINDOW_NEW;
+        }
+      }
+
+      
+      public final @NonNull String uri;
+
+      
+
+
+
+      public final @Nullable String triggerUri;
+
+      
+
+
+
+      public final @TargetWindow int target;
+
+      
+
+
+
+
+
+
+      public final boolean isRedirect;
+
+      
+      public final boolean hasUserGesture;
+
+      
+
+
+
+      public final boolean isDirectNavigation;
+
+      @Override
+      public String toString() {
+        final StringBuilder out = new StringBuilder("LoadRequest { ");
+        out.append("uri: " + uri)
+            .append(", triggerUri: " + triggerUri)
+            .append(", target: " + target)
+            .append(", isRedirect: " + isRedirect)
+            .append(", hasUserGesture: " + hasUserGesture)
+            .append(", fromLoadUri: " + hasUserGesture)
+            .append(" }");
+        return out.toString();
+      }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<AllowOrDeny> onLoadRequest(
+        @NonNull final GeckoSession session, @NonNull final LoadRequest request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<AllowOrDeny> onSubframeLoadRequest(
+        @NonNull final GeckoSession session, @NonNull final LoadRequest request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<GeckoSession> onNewSession(
+        @NonNull final GeckoSession session, @NonNull final String uri) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<String> onLoadError(
+        @NonNull final GeckoSession session,
+        @Nullable final String uri,
+        @NonNull final WebRequestError error) {
+      return null;
+    }
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    NavigationDelegate.TARGET_WINDOW_NONE,
+    NavigationDelegate.TARGET_WINDOW_CURRENT,
+    NavigationDelegate.TARGET_WINDOW_NEW
+  })
+   @interface TargetWindow {}
+
+  
+
+
+
+  public interface PromptDelegate {
+    
+    public class PromptResponse {
+      private final BasePrompt mPrompt;
+
+       PromptResponse(@NonNull final BasePrompt prompt) {
+        mPrompt = prompt;
+      }
+
+       void dispatch(@NonNull final EventCallback callback) {
+        if (mPrompt == null) {
+          throw new RuntimeException("Trying to confirm/dismiss a null prompt.");
+        }
+        mPrompt.dispatch(callback);
+      }
+    }
+
+    interface PromptInstanceDelegate {
+      
+
+
+
+
+
+
+
+
+
+      @UiThread
+      default void onPromptDismiss(final @NonNull BasePrompt prompt) {}
+    }
+
+    
+    public class BasePrompt {
+      private boolean mIsCompleted;
+      private boolean mIsConfirmed;
+      private GeckoBundle mResult;
+      private final WeakReference<Observer> mObserver;
+      private PromptInstanceDelegate mDelegate;
+
+      protected interface Observer {
+        @AnyThread
+        default void onPromptCompleted(@NonNull BasePrompt prompt) {}
+      }
+
+      private void complete() {
+        mIsCompleted = true;
+        final Observer observer = mObserver.get();
+        if (observer != null) {
+          observer.onPromptCompleted(this);
+        }
+      }
+
+      
+      public final @Nullable String title;
+       String id;
+
+      private BasePrompt(
+          @NonNull final String id, @Nullable final String title, final Observer observer) {
+        this.title = title;
+        this.id = id;
+        mIsConfirmed = false;
+        mIsCompleted = false;
+        mObserver = new WeakReference<>(observer);
+      }
+
+      @UiThread
+      protected @NonNull PromptResponse confirm() {
+        if (mIsCompleted) {
+          throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
+        }
+
+        mIsConfirmed = true;
+        complete();
+        return new PromptResponse(this);
+      }
+
+      
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse dismiss() {
+        if (mIsCompleted) {
+          throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
+        }
+
+        complete();
+        return new PromptResponse(this);
+      }
+
+      
+
+
+
+
+      @UiThread
+      public void setDelegate(final @Nullable PromptInstanceDelegate delegate) {
+        mDelegate = delegate;
+      }
+
+      
+
+
+
+
+      @UiThread
+      @Nullable
+      public PromptInstanceDelegate getDelegate() {
+        return mDelegate;
+      }
+
+       GeckoBundle ensureResult() {
+        if (mResult == null) {
+          
+          mResult = new GeckoBundle(2);
+        }
+        return mResult;
+      }
+
+      
+
+
+
+
+
+      @UiThread
+      public boolean isComplete() {
+        return mIsCompleted;
+      }
+
+       void dispatch(@NonNull final EventCallback callback) {
+        if (!mIsCompleted) {
+          throw new RuntimeException("Trying to dispatch an incomplete prompt.");
+        }
+
+        if (!mIsConfirmed) {
+          callback.sendSuccess(null);
+        } else {
+          callback.sendSuccess(mResult);
+        }
+      }
+    }
+
+    
+
+
+
+    class BeforeUnloadPrompt extends BasePrompt {
+      protected BeforeUnloadPrompt(@NonNull final String id, @NonNull final Observer observer) {
+        super(id, null, observer);
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    class RepostConfirmPrompt extends BasePrompt {
+      protected RepostConfirmPrompt(@NonNull final String id, @NonNull final Observer observer) {
+        super(id, null, observer);
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class AlertPrompt extends BasePrompt {
+      
+      public final @Nullable String message;
+
+      protected AlertPrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String message,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.message = message;
+      }
+    }
+
+    
+
+
+
+    public class ButtonPrompt extends BasePrompt {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Type.POSITIVE, Type.NEGATIVE})
+       @interface ButtonType {}
+
+      public static class Type {
+        
+        public static final int POSITIVE = 0;
+
+        
+        public static final int NEGATIVE = 2;
+
+        protected Type() {}
+      }
+
+      
+      public final @Nullable String message;
+
+      protected ButtonPrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String message,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.message = message;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@ButtonType final int selection) {
+        ensureResult().putInt("button", selection);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class TextPrompt extends BasePrompt {
+      
+      public final @Nullable String message;
+
+      
+      public final @Nullable String defaultValue;
+
+      protected TextPrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String message,
+          @Nullable final String defaultValue,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.message = message;
+        this.defaultValue = defaultValue;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String text) {
+        ensureResult().putString("text", text);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class AuthPrompt extends BasePrompt {
+      public static class AuthOptions {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(
+            flag = true,
+            value = {
+              Flags.HOST,
+              Flags.PROXY,
+              Flags.ONLY_PASSWORD,
+              Flags.PREVIOUS_FAILED,
+              Flags.CROSS_ORIGIN_SUB_RESOURCE
+            })
+         @interface AuthFlag {}
+
+        
+        public static class Flags {
+          
+          public static final int HOST = 1;
+          
+          public static final int PROXY = 2;
+          
+          public static final int ONLY_PASSWORD = 8;
+          
+          public static final int PREVIOUS_FAILED = 16;
+          
+          public static final int CROSS_ORIGIN_SUB_RESOURCE = 32;
+
+          protected Flags() {}
+        }
+
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef({Level.NONE, Level.PW_ENCRYPTED, Level.SECURE})
+         @interface AuthLevel {}
+
+        
+        public static class Level {
+          
+          public static final int NONE = 0;
+          
+          public static final int PW_ENCRYPTED = 1;
+          
+          public static final int SECURE = 2;
+
+          protected Level() {}
+        }
+
+        
+        public @AuthFlag final int flags;
+
+        
+        public @Nullable final String uri;
+
+        
+        public @AuthLevel final int level;
+
+        
+        public @Nullable final String username;
+
+        
+        public @Nullable final String password;
+
+         AuthOptions(final GeckoBundle options) {
+          flags = options.getInt("flags");
+          uri = options.getString("uri");
+          level = options.getInt("level");
+          username = options.getString("username");
+          password = options.getString("password");
+        }
+
+        
+        protected AuthOptions() {
+          flags = 0;
+          uri = "";
+          level = 0;
+          username = "";
+          password = "";
+        }
+      }
+
+      
+      public final @Nullable String message;
+
+      
+      public final @NonNull AuthOptions authOptions;
+
+      protected AuthPrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String message,
+          @NonNull final AuthOptions authOptions,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.message = message;
+        this.authOptions = authOptions;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String password) {
+        ensureResult().putString("password", password);
+        return super.confirm();
+      }
+
+      
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(
+          @NonNull final String username, @NonNull final String password) {
+        ensureResult().putString("username", username);
+        ensureResult().putString("password", password);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class ChoicePrompt extends BasePrompt {
+      public static class Choice {
+        
+
+
+
+        public final boolean disabled;
+
+        
+
+
+        public final @Nullable String icon;
+
+        
+        public final @NonNull String id;
+
+        
+        public final @Nullable Choice[] items;
+
+        
+        public final @NonNull String label;
+
+        
+        public final boolean selected;
+
+        
+        public final boolean separator;
+
+         Choice(final GeckoBundle choice) {
+          disabled = choice.getBoolean("disabled");
+          icon = choice.getString("icon");
+          id = choice.getString("id");
+          label = choice.getString("label");
+          selected = choice.getBoolean("selected");
+          separator = choice.getBoolean("separator");
+
+          final GeckoBundle[] choices = choice.getBundleArray("items");
+          if (choices == null) {
+            items = null;
+          } else {
+            items = new Choice[choices.length];
+            for (int i = 0; i < choices.length; i++) {
+              items[i] = new Choice(choices[i]);
+            }
+          }
+        }
+
+        
+        protected Choice() {
+          disabled = false;
+          icon = "";
+          id = "";
+          label = "";
+          selected = false;
+          separator = false;
+          items = null;
+        }
+      }
+
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Type.MENU, Type.SINGLE, Type.MULTIPLE})
+       @interface ChoiceType {}
+
+      public static class Type {
+        
+        public static final int MENU = 1;
+
+        
+        public static final int SINGLE = 2;
+
+        
+        public static final int MULTIPLE = 3;
+
+        protected Type() {}
+      }
+
+      
+      public final @Nullable String message;
+
+      
+      public final @ChoiceType int type;
+
+      
+      public final @NonNull Choice[] choices;
+
+      protected ChoicePrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String message,
+          @ChoiceType final int type,
+          @NonNull final Choice[] choices,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.message = message;
+        this.type = type;
+        this.choices = choices;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String selectedId) {
+        return confirm(new String[] {selectedId});
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String[] selectedIds) {
+        if ((Type.MENU == type || Type.SINGLE == type)
+            && (selectedIds == null || selectedIds.length != 1)) {
+          throw new IllegalArgumentException();
+        }
+        ensureResult().putStringArray("choices", selectedIds);
+        return super.confirm();
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final Choice selectedChoice) {
+        return confirm(selectedChoice == null ? null : selectedChoice.id);
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final Choice[] selectedChoices) {
+        if ((Type.MENU == type || Type.SINGLE == type)
+            && (selectedChoices == null || selectedChoices.length != 1)) {
+          throw new IllegalArgumentException();
+        }
+
+        if (selectedChoices == null) {
+          return confirm((String[]) null);
+        }
+
+        final String[] ids = new String[selectedChoices.length];
+        for (int i = 0; i < ids.length; i++) {
+          ids[i] = (selectedChoices[i] == null) ? null : selectedChoices[i].id;
+        }
+
+        return confirm(ids);
+      }
+    }
+
+    
+
+
+
+    public class ColorPrompt extends BasePrompt {
+      
+      public final @Nullable String defaultValue;
+
+      protected ColorPrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String defaultValue,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.defaultValue = defaultValue;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String color) {
+        ensureResult().putString("color", color);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class DateTimePrompt extends BasePrompt {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Type.DATE, Type.MONTH, Type.WEEK, Type.TIME, Type.DATETIME_LOCAL})
+       @interface DatetimeType {}
+
+      public static class Type {
+        
+        public static final int DATE = 1;
+
+        
+        public static final int MONTH = 2;
+
+        
+        public static final int WEEK = 3;
+
+        
+        public static final int TIME = 4;
+
+        
+        public static final int DATETIME_LOCAL = 5;
+
+        protected Type() {}
+      }
+
+      
+      public final @DatetimeType int type;
+
+      
+      public final @Nullable String defaultValue;
+
+      
+      public final @Nullable String minValue;
+
+      
+      public final @Nullable String maxValue;
+
+      protected DateTimePrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @DatetimeType final int type,
+          @Nullable final String defaultValue,
+          @Nullable final String minValue,
+          @Nullable final String maxValue,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.type = type;
+        this.defaultValue = defaultValue;
+        this.minValue = minValue;
+        this.maxValue = maxValue;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final String datetime) {
+        ensureResult().putString("datetime", datetime);
+        return super.confirm();
+      }
+    }
+
+    
+
+
+
+    public class FilePrompt extends BasePrompt {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Type.SINGLE, Type.MULTIPLE})
+       @interface FileType {}
+
+      
+      public static class Type {
+        
+        public static final int SINGLE = 1;
+
+        
+        public static final int MULTIPLE = 2;
+
+        protected Type() {}
+      }
+
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Capture.NONE, Capture.ANY, Capture.USER, Capture.ENVIRONMENT})
+       @interface CaptureType {}
+
+      
+      public static class Capture {
+        
+        
+        public static final int NONE = 0;
+
+        
+        public static final int ANY = 1;
+
+        
+        public static final int USER = 2;
+
+        
+        public static final int ENVIRONMENT = 3;
+
+        protected Capture() {}
+      }
+
+      
+      public final @FileType int type;
+
+      
+
+
+
+      public final @Nullable String[] mimeTypes;
+
+      
+      public final @CaptureType int capture;
+
+      protected FilePrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @FileType final int type,
+          @CaptureType final int capture,
+          @Nullable final String[] mimeTypes,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.type = type;
+        this.capture = capture;
+        this.mimeTypes = mimeTypes;
+      }
+
+      
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(
+          @NonNull final Context context, @NonNull final Uri uri) {
+        return confirm(context, new Uri[] {uri});
+      }
+
+      
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(
+          @NonNull final Context context, @NonNull final Uri[] uris) {
+        if (Type.SINGLE == type && (uris == null || uris.length != 1)) {
+          throw new IllegalArgumentException();
+        }
+
+        final String[] paths = new String[uris != null ? uris.length : 0];
+        for (int i = 0; i < paths.length; i++) {
+          paths[i] = getFile(context, uris[i]);
+          if (paths[i] == null) {
+            Log.e(LOGTAG, "Only file URIs are supported: " + uris[i]);
+          }
+        }
+        ensureResult().putStringArray("files", paths);
+
+        return super.confirm();
+      }
+
+      private static String getFile(final @NonNull Context context, final @NonNull Uri uri) {
+        if (uri == null) {
+          return null;
+        }
+        if ("file".equals(uri.getScheme())) {
+          return uri.getPath();
+        }
+        final ContentResolver cr = context.getContentResolver();
+        final Cursor cur =
+            cr.query(
+                uri,
+                new String[] {"_data"}, 
+                null,
+                 null, 
+                null);
+        if (cur == null) {
+          return null;
+        }
+        try {
+          final int idx = cur.getColumnIndex("_data");
+          if (idx < 0 || !cur.moveToFirst()) {
+            return null;
+          }
+          do {
+            try {
+              final String path = cur.getString(idx);
+              if (path != null && !path.isEmpty()) {
+                return path;
+              }
+            } catch (final Exception e) {
+            }
+          } while (cur.moveToNext());
+        } finally {
+          cur.close();
+        }
+        return null;
+      }
+    }
+
+    
+    public class PopupPrompt extends BasePrompt {
+      
+      public final @Nullable String targetUri;
+
+      protected PopupPrompt(
+          @NonNull final String id,
+          @Nullable final String targetUri,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.targetUri = targetUri;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final AllowOrDeny response) {
+        boolean res = false;
+        if (AllowOrDeny.ALLOW == response) {
+          res = true;
+        }
+        ensureResult().putBoolean("response", res);
+        return super.confirm();
+      }
+    }
+
+    
+    public class SharePrompt extends BasePrompt {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({Result.SUCCESS, Result.FAILURE, Result.ABORT})
+       @interface ShareResult {}
+
+      
+      public static class Result {
+        
+        public static final int SUCCESS = 0;
+
+        
+        public static final int FAILURE = 1;
+
+        
+        public static final int ABORT = 2;
+
+        protected Result() {}
+      }
+
+      
+      public final @Nullable String text;
+
+      
+      public final @Nullable String uri;
+
+      protected SharePrompt(
+          @NonNull final String id,
+          @Nullable final String title,
+          @Nullable final String text,
+          @Nullable final String uri,
+          @NonNull final Observer observer) {
+        super(id, title, observer);
+        this.text = text;
+        this.uri = uri;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(@ShareResult final int response) {
+        ensureResult().putInt("response", response);
+        return super.confirm();
+      }
+
+      
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse dismiss() {
+        ensureResult().putInt("response", Result.ABORT);
+        return super.dismiss();
+      }
+    }
+
+    
+    public class AutocompleteRequest<T extends Autocomplete.Option<?>> extends BasePrompt {
+      
+
+
+      public final @NonNull T[] options;
+
+      protected AutocompleteRequest(
+          final @NonNull String id, final @NonNull T[] options, final Observer observer) {
+        super(id, null, observer);
+        this.options = options;
+      }
+
+      
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse confirm(final @NonNull Autocomplete.Option<?> selection) {
+        ensureResult().putBundle("selection", selection.toBundle());
+        return super.confirm();
+      }
+
+      
+
+
+
+
+
+      @UiThread
+      public @NonNull PromptResponse dismiss() {
+        return super.dismiss();
+      }
+    }
+
+    
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onAlertPrompt(
+        @NonNull final GeckoSession session, @NonNull final AlertPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onBeforeUnloadPrompt(
+        @NonNull final GeckoSession session, @NonNull final BeforeUnloadPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onRepostConfirmPrompt(
+        @NonNull final GeckoSession session, @NonNull final RepostConfirmPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onButtonPrompt(
+        @NonNull final GeckoSession session, @NonNull final ButtonPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onTextPrompt(
+        @NonNull final GeckoSession session, @NonNull final TextPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onAuthPrompt(
+        @NonNull final GeckoSession session, @NonNull final AuthPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onChoicePrompt(
+        @NonNull final GeckoSession session, @NonNull final ChoicePrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onColorPrompt(
+        @NonNull final GeckoSession session, @NonNull final ColorPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onDateTimePrompt(
+        @NonNull final GeckoSession session, @NonNull final DateTimePrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onFilePrompt(
+        @NonNull final GeckoSession session, @NonNull final FilePrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onPopupPrompt(
+        @NonNull final GeckoSession session, @NonNull final PopupPrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onSharePrompt(
+        @NonNull final GeckoSession session, @NonNull final SharePrompt prompt) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onLoginSave(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.LoginSaveOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onAddressSave(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.AddressSaveOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onCreditCardSave(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.CreditCardSaveOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onLoginSelect(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.LoginSelectOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onCreditCardSelect(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.CreditCardSelectOption> request) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onAddressSelect(
+        @NonNull final GeckoSession session,
+        @NonNull final AutocompleteRequest<Autocomplete.AddressSelectOption> request) {
+      return null;
+    }
+  }
+
+  
+  public interface ScrollDelegate {
+    
+
+
+
+
+
+
+    @UiThread
+    default void onScrollChanged(
+        @NonNull final GeckoSession session, final int scrollX, final int scrollY) {}
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull PanZoomController getPanZoomController() {
+    ThreadUtils.assertOnUiThread();
+
+    return mPanZoomController;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull OverscrollEdgeEffect getOverscrollEdgeEffect() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mOverscroll == null) {
+      mOverscroll = new OverscrollEdgeEffect(this);
+    }
+    return mOverscroll;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull CompositorController getCompositorController() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mController == null) {
+      mController = new CompositorController(this);
+      if (mCompositorReady) {
+        mController.onCompositorReady();
+      }
+    }
+    return mController;
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void getClientToSurfaceMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    matrix.setScale(mViewportZoom, mViewportZoom);
+    if (mClientTop != mTop) {
+      matrix.postTranslate(0, mClientTop - mTop);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void getClientToScreenMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    getClientToSurfaceMatrix(matrix);
+    matrix.postTranslate(mLeft, mTop);
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void getPageToScreenMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    getPageToSurfaceMatrix(matrix);
+    matrix.postTranslate(mLeft, mTop);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void getPageToSurfaceMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    getClientToSurfaceMatrix(matrix);
+    matrix.postTranslate(-mViewportLeft, -mViewportTop);
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public void getClientBounds(@NonNull final RectF rect) {
+    ThreadUtils.assertOnUiThread();
+
+    rect.set(0.0f, 0.0f, (float) mWidth / mViewportZoom, (float) mClientHeight / mViewportZoom);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void getSurfaceBounds(@NonNull final Rect rect) {
+    ThreadUtils.assertOnUiThread();
+
+    rect.set(0, mClientTop - mTop, mWidth, mHeight);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  public interface PermissionDelegate {
+    
+
+
+
+    int PERMISSION_GEOLOCATION = 0;
+
+    
+
+
+
+    int PERMISSION_DESKTOP_NOTIFICATION = 1;
+
+    
+
+
+
+    int PERMISSION_PERSISTENT_STORAGE = 2;
+
+    
+    int PERMISSION_XR = 3;
+
+    
+    int PERMISSION_AUTOPLAY_INAUDIBLE = 4;
+
+    
+    int PERMISSION_AUTOPLAY_AUDIBLE = 5;
+
+    
+    int PERMISSION_MEDIA_KEY_SYSTEM_ACCESS = 6;
+
+    
+
+
+
+    int PERMISSION_TRACKING = 7;
+
+    
+
+
+
+    int PERMISSION_STORAGE_ACCESS = 8;
+
+    
+
+
+
+    class ContentPermission {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({VALUE_PROMPT, VALUE_DENY, VALUE_ALLOW})
+       @interface Value {}
+
+      
+      public static final int VALUE_PROMPT = 3;
+
+      
+      public static final int VALUE_DENY = 2;
+
+      
+      public static final int VALUE_ALLOW = 1;
+
+      
+      public final @NonNull String uri;
+
+      
+
+
+
+      public final @Nullable String thirdPartyOrigin;
+
+      
+
+
+      public final boolean privateMode;
+
+      
+      public final int permission;
+
+      
+      public final @Value int value;
+
+      
+
+
+
+
+      public final @Nullable String contextId;
+
+      private final String mPrincipal;
+
+      protected ContentPermission() {
+        this.uri = "";
+        this.thirdPartyOrigin = null;
+        this.privateMode = false;
+        this.permission = PERMISSION_GEOLOCATION;
+        this.value = VALUE_ALLOW;
+        this.mPrincipal = "";
+        this.contextId = null;
+      }
+
+      private ContentPermission(final @NonNull GeckoBundle bundle) {
+        this.uri = bundle.getString("uri");
+        this.mPrincipal = bundle.getString("principal");
+        this.privateMode = bundle.getBoolean("privateMode");
+
+        final String permission = bundle.getString("perm");
+        this.permission = convertType(permission);
+        if (permission.startsWith("3rdPartyStorage^")) {
+          
+          
+          this.thirdPartyOrigin = permission.substring(16);
+        } else {
+          this.thirdPartyOrigin = bundle.getString("thirdPartyOrigin");
+        }
+
+        this.value = bundle.getInt("value");
+        this.contextId =
+            StorageController.retrieveUnsafeSessionContextId(bundle.getString("contextId"));
+      }
+
+      
+
+
+
+
+
+
+      @AnyThread
+      public static @Nullable ContentPermission fromJson(final @NonNull JSONObject perm) {
+        ContentPermission res = null;
+        try {
+          res = new ContentPermission(GeckoBundle.fromJSONObject(perm));
         } catch (final JSONException e) {
-            Log.w(LOGTAG, "Failed to fixup web app manifest", e);
+          Log.w(LOGTAG, "Failed to create ContentPermission; invalid JSONObject.", e);
+        }
+        return res;
+      }
+
+      
+
+
+
+
+
+
+
+      @AnyThread
+      public @NonNull JSONObject toJson() throws JSONException {
+        return toGeckoBundle().toJSONObject();
+      }
+
+      private static int convertType(final @NonNull String type) {
+        if ("geolocation".equals(type)) {
+          return PERMISSION_GEOLOCATION;
+        } else if ("desktop-notification".equals(type)) {
+          return PERMISSION_DESKTOP_NOTIFICATION;
+        } else if ("persistent-storage".equals(type)) {
+          return PERMISSION_PERSISTENT_STORAGE;
+        } else if ("xr".equals(type)) {
+          return PERMISSION_XR;
+        } else if ("autoplay-media-inaudible".equals(type)) {
+          return PERMISSION_AUTOPLAY_INAUDIBLE;
+        } else if ("autoplay-media-audible".equals(type)) {
+          return PERMISSION_AUTOPLAY_AUDIBLE;
+        } else if ("media-key-system-access".equals(type)) {
+          return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
+        } else if ("trackingprotection".equals(type) || "trackingprotection-pb".equals(type)) {
+          return PERMISSION_TRACKING;
+        } else if ("storage-access".equals(type) || type.startsWith("3rdPartyStorage^")) {
+          return PERMISSION_STORAGE_ACCESS;
+        } else {
+          return -1;
+        }
+      }
+
+      
+       static String convertType(final int type, final boolean privateMode) {
+        switch (type) {
+          case PERMISSION_GEOLOCATION:
+            return "geolocation";
+          case PERMISSION_DESKTOP_NOTIFICATION:
+            return "desktop-notification";
+          case PERMISSION_PERSISTENT_STORAGE:
+            return "persistent-storage";
+          case PERMISSION_XR:
+            return "xr";
+          case PERMISSION_AUTOPLAY_INAUDIBLE:
+            return "autoplay-media-inaudible";
+          case PERMISSION_AUTOPLAY_AUDIBLE:
+            return "autoplay-media-audible";
+          case PERMISSION_MEDIA_KEY_SYSTEM_ACCESS:
+            return "media-key-system-access";
+          case PERMISSION_TRACKING:
+            return privateMode ? "trackingprotection-pb" : "trackingprotection";
+          case PERMISSION_STORAGE_ACCESS:
+            return "storage-access";
+          default:
+            return "";
+        }
+      }
+
+       static @NonNull ArrayList<ContentPermission> fromBundleArray(
+          final @NonNull GeckoBundle[] bundleArray) {
+        final ArrayList<ContentPermission> res = new ArrayList<ContentPermission>();
+        if (bundleArray == null) {
+          return res;
         }
 
-        return manifest;
+        for (final GeckoBundle bundle : bundleArray) {
+          final ContentPermission temp = new ContentPermission(bundle);
+          if (temp.permission == -1 || temp.value < 1 || temp.value > 3) {
+            continue;
+          }
+          res.add(temp);
+        }
+        return res;
+      }
+
+       @NonNull
+      GeckoBundle toGeckoBundle() {
+        final GeckoBundle res = new GeckoBundle(7);
+        res.putString("uri", uri);
+        res.putString("thirdPartyOrigin", thirdPartyOrigin);
+        res.putString("principal", mPrincipal);
+        res.putBoolean("privateMode", privateMode);
+        res.putString("perm", convertType(permission, privateMode));
+        res.putInt("value", value);
+        res.putString("contextId", contextId);
+        return res;
+      }
     }
 
-    private static boolean maybeCheckDataUriLength(final @NonNull Loader request) {
-        if (!request.mIsDataUri) {
-            return true;
+    
+    interface Callback {
+      
+
+
+
+      @UiThread
+      default void grant() {}
+
+      
+
+
+
+      @UiThread
+      default void reject() {}
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onAndroidPermissionsRequest(
+        @NonNull final GeckoSession session,
+        @Nullable final String[] permissions,
+        @NonNull final Callback callback) {
+      callback.reject();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<Integer> onContentPermissionRequest(
+        @NonNull final GeckoSession session, @NonNull ContentPermission perm) {
+      return GeckoResult.fromValue(ContentPermission.VALUE_PROMPT);
+    }
+
+    class MediaSource {
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({
+        SOURCE_CAMERA, SOURCE_SCREEN,
+        SOURCE_MICROPHONE, SOURCE_AUDIOCAPTURE,
+        SOURCE_OTHER
+      })
+       @interface Source {}
+
+      
+      public static final int SOURCE_CAMERA = 0;
+
+      
+      public static final int SOURCE_SCREEN = 1;
+
+      
+      public static final int SOURCE_MICROPHONE = 2;
+
+      
+      public static final int SOURCE_AUDIOCAPTURE = 3;
+
+      
+      public static final int SOURCE_OTHER = 4;
+
+      @Retention(RetentionPolicy.SOURCE)
+      @IntDef({TYPE_VIDEO, TYPE_AUDIO})
+       @interface Type {}
+
+      
+      public static final int TYPE_VIDEO = 0;
+
+      
+      public static final int TYPE_AUDIO = 1;
+
+      
+      public final @NonNull String id;
+
+      
+      public final @NonNull String rawId;
+
+      
+
+
+
+      public final @Nullable String name;
+
+      
+
+
+
+
+      public final @Source int source;
+
+      
+      public final @Type int type;
+
+      private static @Source int getSourceFromString(final String src) {
+        
+        if ("camera".equals(src)) {
+          return SOURCE_CAMERA;
+        } else if ("screen".equals(src) || "window".equals(src) || "browser".equals(src)) {
+          return SOURCE_SCREEN;
+        } else if ("microphone".equals(src)) {
+          return SOURCE_MICROPHONE;
+        } else if ("audioCapture".equals(src)) {
+          return SOURCE_AUDIOCAPTURE;
+        } else if ("other".equals(src) || "application".equals(src)) {
+          return SOURCE_OTHER;
+        } else {
+          throw new IllegalArgumentException(
+              "String: " + src + " is not a valid media source string");
+        }
+      }
+
+      private static @Type int getTypeFromString(final String type) {
+        
+        
+        if ("videoinput".equals(type)) {
+          return TYPE_VIDEO;
+        } else if ("audioinput".equals(type)) {
+          return TYPE_AUDIO;
+        } else {
+          throw new IllegalArgumentException(
+              "String: " + type + " is not a valid media type string");
+        }
+      }
+
+       MediaSource(final GeckoBundle media) {
+        id = media.getString("id");
+        rawId = media.getString("rawId");
+        name = media.getString("name");
+        source = getSourceFromString(media.getString("mediaSource"));
+        type = getTypeFromString(media.getString("type"));
+      }
+
+      
+      protected MediaSource() {
+        id = null;
+        rawId = null;
+        name = null;
+        source = 0;
+        type = 0;
+      }
+    }
+
+    
+
+
+
+    interface MediaCallback {
+      
+
+
+
+
+
+
+
+
+      @UiThread
+      default void grant(final @Nullable String video, final @Nullable String audio) {}
+
+      
+
+
+
+
+
+
+
+
+      @UiThread
+      default void grant(final @Nullable MediaSource video, final @Nullable MediaSource audio) {}
+
+      
+
+
+
+      @UiThread
+      default void reject() {}
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void onMediaPermissionRequest(
+        @NonNull final GeckoSession session,
+        @NonNull final String uri,
+        @Nullable final MediaSource[] video,
+        @Nullable final MediaSource[] audio,
+        @NonNull final MediaCallback callback) {
+      callback.reject();
+    }
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    PermissionDelegate.PERMISSION_GEOLOCATION,
+    PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION,
+    PermissionDelegate.PERMISSION_PERSISTENT_STORAGE,
+    PermissionDelegate.PERMISSION_XR,
+    PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE,
+    PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE,
+    PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS,
+    PermissionDelegate.PERMISSION_TRACKING,
+    PermissionDelegate.PERMISSION_STORAGE_ACCESS
+  })
+   @interface Permission {}
+
+  
+
+
+
+
+  public interface TextInputDelegate {
+    
+    int RESTART_REASON_FOCUS = 0;
+    
+    int RESTART_REASON_BLUR = 1;
+    
+
+
+
+
+    int RESTART_REASON_CONTENT_CHANGE = 2;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void restartInput(
+        @NonNull final GeckoSession session, @RestartReason final int reason) {}
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void showSoftInput(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void hideSoftInput(@NonNull final GeckoSession session) {}
+
+    
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default void updateSelection(
+        @NonNull final GeckoSession session,
+        final int selStart,
+        final int selEnd,
+        final int compositionStart,
+        final int compositionEnd) {}
+
+    
+
+
+
+
+
+
+
+
+    @UiThread
+    default void updateExtractedText(
+        @NonNull final GeckoSession session,
+        @NonNull final ExtractedTextRequest request,
+        @NonNull final ExtractedText text) {}
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void updateCursorAnchorInfo(
+        @NonNull final GeckoSession session, @NonNull final CursorAnchorInfo info) {}
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    TextInputDelegate.RESTART_REASON_FOCUS,
+    TextInputDelegate.RESTART_REASON_BLUR,
+    TextInputDelegate.RESTART_REASON_CONTENT_CHANGE
+  })
+   @interface RestartReason {}
+
+   void onSurfaceChanged(
+      final Surface surface, final int x, final int y, final int width, final int height) {
+    ThreadUtils.assertOnUiThread();
+
+    mOffsetX = x;
+    mOffsetY = y;
+    mWidth = width;
+    mHeight = height;
+
+    if (mCompositorReady) {
+      mCompositor.syncResumeResizeCompositor(x, y, width, height, surface);
+      onWindowBoundsChanged();
+      return;
+    }
+
+    
+    
+    mSurface = surface;
+
+    
+    onWindowBoundsChanged();
+  }
+
+   void onSurfaceDestroyed() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mCompositorReady) {
+      mCompositor.syncPauseCompositor();
+      return;
+    }
+
+    
+    
+    mSurface = null;
+  }
+
+   void onScreenOriginChanged(final int left, final int top) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mLeft == left && mTop == top) {
+      return;
+    }
+
+    mLeft = left;
+    mTop = top;
+    onWindowBoundsChanged();
+  }
+
+   void setDynamicToolbarMaxHeight(final int height) {
+    if (mDynamicToolbarMaxHeight == height) {
+      return;
+    }
+
+    if (mHeight != 0 && height != 0 && mHeight < height) {
+      Log.w(
+          LOGTAG,
+          new AssertionError(
+              "The maximum height of the dynamic toolbar ("
+                  + height
+                  + ") should be smaller than GeckoView height ("
+                  + mHeight
+                  + ")"));
+    }
+
+    mDynamicToolbarMaxHeight = height;
+
+    if (mAttachedCompositor) {
+      mCompositor.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
+    }
+  }
+
+   void setFixedBottomOffset(final int offset) {
+    if (mFixedBottomOffset == offset) {
+      return;
+    }
+
+    mFixedBottomOffset = offset;
+
+    if (mCompositorReady) {
+      mCompositor.setFixedBottomOffset(mFixedBottomOffset);
+    }
+  }
+
+   void onCompositorAttached() {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    mAttachedCompositor = true;
+    mCompositor.attachNPZC(mPanZoomController.mNative);
+
+    if (mSurface != null) {
+      
+      
+      onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
+    }
+
+    mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
+    mCompositor.setDynamicToolbarMaxHeight(mDynamicToolbarMaxHeight);
+  }
+
+   void onCompositorDetached() {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    if (mController != null) {
+      mController.onCompositorDetached();
+    }
+
+    mAttachedCompositor = false;
+    mCompositorReady = false;
+  }
+
+   void handleCompositorMessage(final int message) {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    switch (message) {
+      case COMPOSITOR_CONTROLLER_OPEN:
+        {
+          if (isCompositorReady()) {
+            return;
+          }
+
+          
+          
+          ThreadUtils.postToUiThread(this::onCompositorReady);
+          break;
         }
 
-        return request.mUri.length() <= DATA_URI_MAX_LENGTH;
+      case FIRST_PAINT:
+        {
+          if (mController != null) {
+            mController.onFirstPaint();
+          }
+          final ContentDelegate delegate = mContentHandler.getDelegate();
+          if (delegate != null) {
+            delegate.onFirstComposite(this);
+          }
+          break;
+        }
+
+      case LAYERS_UPDATED:
+        {
+          if (mController != null) {
+            mController.notifyDrawCallbacks();
+          }
+          break;
+        }
+
+      default:
+        {
+          Log.w(LOGTAG, "Unexpected message: " + message);
+          break;
+        }
     }
+  }
+
+   boolean isCompositorReady() {
+    return mCompositorReady;
+  }
+
+   void onCompositorReady() {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    if (!mAttachedCompositor) {
+      return;
+    }
+
+    mCompositorReady = true;
+
+    if (mController != null) {
+      mController.onCompositorReady();
+    }
+
+    if (mSurface != null) {
+      
+      
+      onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
+      mSurface = null;
+    }
+
+    if (mFixedBottomOffset != 0) {
+      mCompositor.setFixedBottomOffset(mFixedBottomOffset);
+    }
+  }
+
+   void updateOverscrollVelocity(final float x, final float y) {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    if (mOverscroll == null) {
+      return;
+    }
+
+    
+    mOverscroll.setVelocity(x * 1000.0f, OverscrollEdgeEffect.AXIS_X);
+    mOverscroll.setVelocity(y * 1000.0f, OverscrollEdgeEffect.AXIS_Y);
+  }
+
+   void updateOverscrollOffset(final float x, final float y) {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    if (mOverscroll == null) {
+      return;
+    }
+
+    mOverscroll.setDistance(x, OverscrollEdgeEffect.AXIS_X);
+    mOverscroll.setDistance(y, OverscrollEdgeEffect.AXIS_Y);
+  }
+
+   void onMetricsChanged(final float scrollX, final float scrollY, final float zoom) {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    mViewportLeft = scrollX;
+    mViewportTop = scrollY;
+    mViewportZoom = zoom;
+  }
+
+   void onWindowBoundsChanged() {
+    if (DEBUG) {
+      ThreadUtils.assertOnUiThread();
+    }
+
+    if (mHeight != 0 && mDynamicToolbarMaxHeight != 0 && mHeight < mDynamicToolbarMaxHeight) {
+      Log.w(
+          LOGTAG,
+          new AssertionError(
+              "The maximum height of the dynamic toolbar ("
+                  + mDynamicToolbarMaxHeight
+                  + ") should be smaller than GeckoView height ("
+                  + mHeight
+                  + ")"));
+    }
+
+    final int toolbarHeight = 0;
+
+    mClientTop = mTop + toolbarHeight;
+    
+    
+    mClientHeight = Math.max(mHeight - toolbarHeight, 0);
+
+    if (mAttachedCompositor) {
+      mCompositor.onBoundsChanged(mLeft, mClientTop, mWidth, mClientHeight);
+    }
+
+    if (mOverscroll != null) {
+      mOverscroll.setSize(mWidth, mClientHeight);
+    }
+  }
+
+   void onSafeAreaInsetsChanged(
+      final int top, final int right, final int bottom, final int left) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mAttachedCompositor) {
+      mCompositor.onSafeAreaInsetsChanged(top, right, bottom, left);
+    }
+  }
+
+   void setPointerIcon(
+      final int defaultCursor, final @Nullable Bitmap customCursor, final float x, final float y) {
+    ThreadUtils.assertOnUiThread();
+
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return;
+    }
+
+    final PointerIcon icon;
+    if (customCursor != null) {
+      try {
+        icon = PointerIcon.create(customCursor, x, y);
+      } catch (final IllegalArgumentException e) {
+        
+        return;
+      }
+    } else {
+      final Context context = GeckoAppShell.getApplicationContext();
+      icon = PointerIcon.getSystemIcon(context, defaultCursor);
+    }
+
+    final ContentDelegate delegate = getContentDelegate();
+    delegate.onPointerIconChange(this, icon);
+  }
+
+  
+  public interface MediaDelegate {
+
+    class RecordingDevice {
+
+      
+
+
+      public static class Status {
+        public static final long RECORDING = 0;
+        public static final long INACTIVE = 1 << 0;
+
+        
+        protected Status() {}
+      }
+
+      
+
+
+      public static class Type {
+        public static final long CAMERA = 0;
+        public static final long MICROPHONE = 1 << 0;
+
+        
+        protected Type() {}
+      }
+
+      @Retention(RetentionPolicy.SOURCE)
+      @LongDef(
+          flag = true,
+          value = {Status.RECORDING, Status.INACTIVE})
+       @interface RecordingStatus {}
+
+      @Retention(RetentionPolicy.SOURCE)
+      @LongDef(
+          flag = true,
+          value = {Type.CAMERA, Type.MICROPHONE})
+       @interface DeviceType {}
+
+      
+
+
+
+      public final @RecordingStatus long status;
+
+      
+
+
+
+      public final @DeviceType long type;
+
+      private static @DeviceType long getTypeFromString(final String type) {
+        if ("microphone".equals(type)) {
+          return Type.MICROPHONE;
+        } else if ("camera".equals(type)) {
+          return Type.CAMERA;
+        } else {
+          throw new IllegalArgumentException(
+              "String: " + type + " is not a valid recording device string");
+        }
+      }
+
+      private static @RecordingStatus long getStatusFromString(final String type) {
+        if ("recording".equals(type)) {
+          return Status.RECORDING;
+        } else {
+          return Status.INACTIVE;
+        }
+      }
+
+       RecordingDevice(final GeckoBundle media) {
+        status = getStatusFromString(media.getString("status"));
+        type = getTypeFromString(media.getString("type"));
+      }
+
+      
+      protected RecordingDevice() {
+        status = Status.INACTIVE;
+        type = Type.CAMERA;
+      }
+    }
+
+    
+
+
+
+
+
+
+
+    @UiThread
+    default void onRecordingStatusChanged(
+        @NonNull final GeckoSession session, @NonNull final RecordingDevice[] devices) {}
+  }
+
+  
+  public interface HistoryDelegate {
+    
+    public interface HistoryItem {
+      
+
+
+
+
+      @AnyThread
+      default @NonNull String getUri() {
+        throw new UnsupportedOperationException("HistoryItem.getUri() called on invalid object.");
+      }
+
+      
+
+
+
+
+      @AnyThread
+      default @NonNull String getTitle() {
+        throw new UnsupportedOperationException(
+            "HistoryItem.getString() called on invalid object.");
+      }
+    }
+
+    
+
+
+
+    public interface HistoryList extends List<HistoryItem> {
+      
+
+
+
+
+      @AnyThread
+      default int getCurrentIndex() {
+        throw new UnsupportedOperationException(
+            "HistoryList.getCurrentIndex() called on invalid object.");
+      }
+    }
+
+    
+    
+    
+
+    
+    final int VISIT_TOP_LEVEL = 1 << 0;
+    
+    final int VISIT_REDIRECT_TEMPORARY = 1 << 1;
+    
+    final int VISIT_REDIRECT_PERMANENT = 1 << 2;
+    
+    final int VISIT_REDIRECT_SOURCE = 1 << 3;
+    
+    final int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
+    
+    final int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
+
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<Boolean> onVisited(
+        @NonNull final GeckoSession session,
+        @NonNull final String url,
+        @Nullable final String lastVisitedURL,
+        @VisitFlags final int flags) {
+      return null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    @UiThread
+    default @Nullable GeckoResult<boolean[]> getVisited(
+        @NonNull final GeckoSession session, @NonNull final String[] urls) {
+      return null;
+    }
+
+    @UiThread
+    @SuppressWarnings("checkstyle:javadocmethod")
+    default void onHistoryStateChange(
+        @NonNull final GeckoSession session, @NonNull final HistoryList historyList) {}
+  }
+
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        HistoryDelegate.VISIT_TOP_LEVEL,
+        HistoryDelegate.VISIT_REDIRECT_TEMPORARY,
+        HistoryDelegate.VISIT_REDIRECT_PERMANENT,
+        HistoryDelegate.VISIT_REDIRECT_SOURCE,
+        HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT,
+        HistoryDelegate.VISIT_UNRECOVERABLE_ERROR
+      })
+   @interface VisitFlags {}
+
+  private Autofill.Support getAutofillSupport() {
+    return mAutofillSupport;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setAutofillDelegate(final @Nullable Autofill.Delegate delegate) {
+    getAutofillSupport().setDelegate(delegate);
+  }
+
+  
+  @UiThread
+  public @Nullable Autofill.Delegate getAutofillDelegate() {
+    return getAutofillSupport().getDelegate();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void autofill(final @NonNull SparseArray<CharSequence> values) {
+    getAutofillSupport().autofill(values);
+  }
+
+  
+
+
+
+
+
+
+
+  @UiThread
+  public @NonNull Autofill.Session getAutofillSession() {
+    return getAutofillSupport().getAutofillSession();
+  }
+
+  private static String rgbaToArgb(final String color) {
+    
+    if (color.length() != 9 || !color.startsWith("#")) {
+      throw new IllegalArgumentException("Invalid color format");
+    }
+
+    return "#" + color.substring(7) + color.substring(1, 7);
+  }
+
+  private static void fixupManifestColor(final JSONObject manifest, final String name)
+      throws JSONException {
+    if (manifest.isNull(name)) {
+      return;
+    }
+
+    manifest.put(name, rgbaToArgb(manifest.getString(name)));
+  }
+
+  private static JSONObject fixupWebAppManifest(final JSONObject manifest) {
+    
+    
+    try {
+      fixupManifestColor(manifest, "theme_color");
+      fixupManifestColor(manifest, "background_color");
+    } catch (final JSONException e) {
+      Log.w(LOGTAG, "Failed to fixup web app manifest", e);
+    }
+
+    return manifest;
+  }
+
+  private static boolean maybeCheckDataUriLength(final @NonNull Loader request) {
+    if (!request.mIsDataUri) {
+      return true;
+    }
+
+    return request.mUri.length() <= DATA_URI_MAX_LENGTH;
+  }
 }

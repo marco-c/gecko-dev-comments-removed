@@ -11,209 +11,101 @@ import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.util.Queue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
 public class GeckoJavaSampler {
-    private static final String LOGTAG = "GeckoJavaSampler";
-    private static SamplingRunnable sSamplingRunnable;
-    private static ScheduledExecutorService sSamplingScheduler;
-    private static ScheduledFuture<?> sSamplingFuture;
-    private static final MarkerStorage sMarkerStorage = new MarkerStorage();
+  private static final String LOGTAG = "GeckoJavaSampler";
+  private static SamplingRunnable sSamplingRunnable;
+  private static ScheduledExecutorService sSamplingScheduler;
+  private static ScheduledFuture<?> sSamplingFuture;
+  private static final MarkerStorage sMarkerStorage = new MarkerStorage();
 
+  
+
+
+
+  public static boolean isProfilerActive() {
+    
+    
+    return sSamplingRunnable != null && sSamplingFuture != null;
+  }
+
+  
+  
+  @WrapForJNI
+  private static native double getProfilerTime();
+
+  
+  public static @Nullable Double tryToGetProfilerTime() {
+    if (!isProfilerActive()) {
+      
+      return null;
+    }
+    if (!GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+      
+      
+      return null;
+    }
+
+    return getProfilerTime();
+  }
+
+  private static class Sample {
+    public Frame[] mFrames;
+    public double mTime;
+    public long mJavaTime; 
+
+    public Sample(final StackTraceElement[] aStack) {
+      mFrames = new Frame[aStack.length];
+      if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+        mTime = getProfilerTime();
+      }
+      if (mTime == 0.0d) {
+        
+        
+        mJavaTime = SystemClock.elapsedRealtime();
+      }
+      for (int i = 0; i < aStack.length; i++) {
+        mFrames[aStack.length - 1 - i] = new Frame();
+        mFrames[aStack.length - 1 - i].methodName = aStack[i].getMethodName();
+        mFrames[aStack.length - 1 - i].className = aStack[i].getClassName();
+      }
+    }
+  }
+
+  private static class Frame {
+    public String methodName;
+    public String className;
+  }
+
+  private static class Marker extends JNIObject {
+    
+    private String mMarkerName;
+    
+    private double mTime;
     
 
 
 
-    public static boolean isProfilerActive() {
-        
-        
-        return sSamplingRunnable != null && sSamplingFuture != null;
-    }
-
+    private long mJavaTime;
     
-    
-    @WrapForJNI
-    private static native double getProfilerTime();
-
+    private double mEndTime;
     
 
 
-    public static @Nullable Double tryToGetProfilerTime() {
-        if (!isProfilerActive()) {
-            
-            return null;
-        }
-        if (!GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-            
-            
-            return null;
-        }
 
-        return getProfilerTime();
-    }
-
-    private static class Sample {
-        public Frame[] mFrames;
-        public double mTime;
-        public long mJavaTime; 
-        public Sample(final StackTraceElement[] aStack) {
-            mFrames = new Frame[aStack.length];
-            if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-                mTime = getProfilerTime();
-            }
-            if (mTime == 0.0d) {
-                
-                
-                mJavaTime = SystemClock.elapsedRealtime();
-            }
-            for (int i = 0; i < aStack.length; i++) {
-                mFrames[aStack.length - 1 - i] = new Frame();
-                mFrames[aStack.length - 1 - i].methodName = aStack[i].getMethodName();
-                mFrames[aStack.length - 1 - i].className = aStack[i].getClassName();
-            }
-        }
-    }
-
-    private static class Frame {
-        public String methodName;
-        public String className;
-    }
-
-    private static class Marker extends JNIObject {
-        
-
-
-        private String mMarkerName;
-        
-
-
-        private double mTime;
-        
-
-
-
-        private long mJavaTime;
-        
-
-
-
-        private double mEndTime;
-        
-
-
-
-        private long mEndJavaTime;
-        
-
-
-        private @Nullable String mText;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        public Marker(@NonNull final String aMarkerName,
-                      @Nullable final Double aStartTime,
-                      @Nullable final Double aEndTime,
-                      @Nullable final String aText) {
-            mMarkerName = aMarkerName;
-            mText = aText;
-            if (aStartTime != null) {
-                
-                mTime = aStartTime;
-                if (aEndTime != null) {
-                    
-                    mEndTime = aEndTime;
-                } else {
-                    
-                    if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-                        mEndTime = getProfilerTime();
-                    }
-                    if (mEndTime == 0.0d) {
-                        
-                        
-                        mEndJavaTime = SystemClock.elapsedRealtime();
-                    }
-                }
-            } else {
-                
-                if (aEndTime != null) {
-                    
-                    mTime = aEndTime;
-                } else {
-                    if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
-                        mTime = getProfilerTime();
-                    }
-                    if (mTime == 0.0d) {
-                        
-                        
-                        mJavaTime = SystemClock.elapsedRealtime();
-                    }
-                }
-            }
-        }
-
-        @WrapForJNI @Override 
-        protected native void disposeNative();
-
-        @WrapForJNI
-        public double getStartTime() {
-            if (mJavaTime != 0) {
-                return (mJavaTime -
-                    SystemClock.elapsedRealtime()) + getProfilerTime();
-            }
-            return mTime;
-        }
-
-        @WrapForJNI
-        public double getEndTime() {
-            if (mEndJavaTime != 0) {
-                return (mEndJavaTime -
-                    SystemClock.elapsedRealtime()) + getProfilerTime();
-            }
-            return mEndTime;
-        }
-
-        @WrapForJNI
-        public @NonNull String getMarkerName() {
-            return mMarkerName;
-        }
-
-        @WrapForJNI
-        public @Nullable String getMarkerText() {
-            return mText;
-        }
-    }
+    private long mEndJavaTime;
+    
+    private @Nullable String mText;
 
     
 
@@ -221,241 +113,337 @@ public class GeckoJavaSampler {
 
 
 
-    public static void addMarker(@NonNull final String aMarkerName,
-                                 @Nullable final Double aStartTime,
-                                 @Nullable final Double aEndTime,
-                                 @Nullable final String aText) {
-        sMarkerStorage.addMarker(aMarkerName, aStartTime, aEndTime, aText);
-    }
 
-    private static class SamplingRunnable implements Runnable {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Marker(
+        @NonNull final String aMarkerName,
+        @Nullable final Double aStartTime,
+        @Nullable final Double aEndTime,
+        @Nullable final String aText) {
+      mMarkerName = aMarkerName;
+      mText = aText;
+      if (aStartTime != null) {
         
-        public final int mInterval;
-        private final int mSampleCount;
-
-        private boolean mBufferOverflowed = false;
-
-        private Thread mMainThread;
-        private Sample[] mSamples;
-        private int mSamplePos;
-
-        public SamplingRunnable(final int aInterval, final int aSampleCount) {
+        mTime = aStartTime;
+        if (aEndTime != null) {
+          
+          mEndTime = aEndTime;
+        } else {
+          
+          if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+            mEndTime = getProfilerTime();
+          }
+          if (mEndTime == 0.0d) {
             
-            mInterval = Math.max(1, aInterval);
-            mSampleCount = aSampleCount;
-            mSamples = new Sample[mSampleCount];
-            mSamplePos = 0;
-
             
-            mMainThread = Looper.getMainLooper().getThread();
-            if (mMainThread == null) {
-                Log.e(LOGTAG, "Main thread not found");
-            }
+            mEndJavaTime = SystemClock.elapsedRealtime();
+          }
         }
-
-        @Override
-        public void run() {
-            synchronized (GeckoJavaSampler.class) {
-                if (mMainThread == null) {
-                    return;
-                }
-                final StackTraceElement[] bt = mMainThread.getStackTrace();
-                mSamples[mSamplePos] = new Sample(bt);
-                mSamplePos += 1;
-                if (mSamplePos == mSampleCount) {
-                    
-                    
-                    mSamplePos = 0;
-                    mBufferOverflowed = true;
-                }
-            }
+      } else {
+        
+        if (aEndTime != null) {
+          
+          mTime = aEndTime;
+        } else {
+          if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+            mTime = getProfilerTime();
+          }
+          if (mTime == 0.0d) {
+            
+            
+            mJavaTime = SystemClock.elapsedRealtime();
+          }
         }
-
-        private Sample getSample(final int aSampleId) {
-            if (aSampleId >= mSampleCount) {
-                
-                return null;
-            }
-
-            int samplePos = aSampleId;
-            if (mBufferOverflowed) {
-                
-                
-                samplePos = (samplePos + mSamplePos) % mSampleCount;
-            }
-
-            
-            
-            
-            return mSamples[samplePos];
-        }
-    }
-
-    private synchronized static Sample getSample(final int aSampleId) {
-        return sSamplingRunnable.getSample(aSampleId);
+      }
     }
 
     @WrapForJNI
-    public static Marker pollNextMarker() {
-        return sMarkerStorage.pollNextMarker();
+    @Override 
+    protected native void disposeNative();
+
+    @WrapForJNI
+    public double getStartTime() {
+      if (mJavaTime != 0) {
+        return (mJavaTime - SystemClock.elapsedRealtime()) + getProfilerTime();
+      }
+      return mTime;
     }
 
     @WrapForJNI
-    public synchronized static double getSampleTime(final int aSampleId) {
-        final Sample sample = getSample(aSampleId);
-        if (sample != null) {
-            if (sample.mJavaTime != 0) {
-                return (sample.mJavaTime -
-                    SystemClock.elapsedRealtime()) + getProfilerTime();
-            }
-            return sample.mTime;
-        }
-        return 0;
+    public double getEndTime() {
+      if (mEndJavaTime != 0) {
+        return (mEndJavaTime - SystemClock.elapsedRealtime()) + getProfilerTime();
+      }
+      return mEndTime;
     }
 
     @WrapForJNI
-    public synchronized static String getFrameName(final int aSampleId, final int aFrameId) {
-        final Sample sample = getSample(aSampleId);
-        if (sample != null && aFrameId < sample.mFrames.length) {
-            final Frame frame = sample.mFrames[aFrameId];
-            if (frame == null) {
-                return null;
-            }
-            return frame.className + "." + frame.methodName + "()";
+    public @NonNull String getMarkerName() {
+      return mMarkerName;
+    }
+
+    @WrapForJNI
+    public @Nullable String getMarkerText() {
+      return mText;
+    }
+  }
+
+  
+
+
+
+
+
+  public static void addMarker(
+      @NonNull final String aMarkerName,
+      @Nullable final Double aStartTime,
+      @Nullable final Double aEndTime,
+      @Nullable final String aText) {
+    sMarkerStorage.addMarker(aMarkerName, aStartTime, aEndTime, aText);
+  }
+
+  private static class SamplingRunnable implements Runnable {
+    
+    public final int mInterval;
+    private final int mSampleCount;
+
+    private boolean mBufferOverflowed = false;
+
+    private Thread mMainThread;
+    private Sample[] mSamples;
+    private int mSamplePos;
+
+    public SamplingRunnable(final int aInterval, final int aSampleCount) {
+      
+      mInterval = Math.max(1, aInterval);
+      mSampleCount = aSampleCount;
+      mSamples = new Sample[mSampleCount];
+      mSamplePos = 0;
+
+      
+      mMainThread = Looper.getMainLooper().getThread();
+      if (mMainThread == null) {
+        Log.e(LOGTAG, "Main thread not found");
+      }
+    }
+
+    @Override
+    public void run() {
+      synchronized (GeckoJavaSampler.class) {
+        if (mMainThread == null) {
+          return;
         }
+        final StackTraceElement[] bt = mMainThread.getStackTrace();
+        mSamples[mSamplePos] = new Sample(bt);
+        mSamplePos += 1;
+        if (mSamplePos == mSampleCount) {
+          
+          
+          mSamplePos = 0;
+          mBufferOverflowed = true;
+        }
+      }
+    }
+
+    private Sample getSample(final int aSampleId) {
+      if (aSampleId >= mSampleCount) {
+        
         return null;
+      }
+
+      int samplePos = aSampleId;
+      if (mBufferOverflowed) {
+        
+        
+        samplePos = (samplePos + mSamplePos) % mSampleCount;
+      }
+
+      
+      
+      
+      return mSamples[samplePos];
+    }
+  }
+
+  private static synchronized Sample getSample(final int aSampleId) {
+    return sSamplingRunnable.getSample(aSampleId);
+  }
+
+  @WrapForJNI
+  public static Marker pollNextMarker() {
+    return sMarkerStorage.pollNextMarker();
+  }
+
+  @WrapForJNI
+  public static synchronized double getSampleTime(final int aSampleId) {
+    final Sample sample = getSample(aSampleId);
+    if (sample != null) {
+      if (sample.mJavaTime != 0) {
+        return (sample.mJavaTime - SystemClock.elapsedRealtime()) + getProfilerTime();
+      }
+      return sample.mTime;
+    }
+    return 0;
+  }
+
+  @WrapForJNI
+  public static synchronized String getFrameName(final int aSampleId, final int aFrameId) {
+    final Sample sample = getSample(aSampleId);
+    if (sample != null && aFrameId < sample.mFrames.length) {
+      final Frame frame = sample.mFrames[aFrameId];
+      if (frame == null) {
+        return null;
+      }
+      return frame.className + "." + frame.methodName + "()";
+    }
+    return null;
+  }
+
+  private static class MarkerStorage {
+    private volatile Queue<Marker> mMarkers;
+
+    MarkerStorage() {}
+
+    public synchronized void start(final int aMarkerCount) {
+      if (this.mMarkers != null) {
+        return;
+      }
+      this.mMarkers = new LinkedBlockingQueue<>(aMarkerCount);
     }
 
-
-    private static class MarkerStorage {
-        private volatile Queue<Marker> mMarkers;
-
-        MarkerStorage() {}
-
-        public synchronized void start(final int aMarkerCount) {
-            if (this.mMarkers != null) {
-                return;
-            }
-            this.mMarkers = new LinkedBlockingQueue<>(aMarkerCount);
-        }
-
-        public synchronized void stop() {
-            if (this.mMarkers == null) {
-                return;
-            }
-            this.mMarkers = null;
-        }
-
-        private void addMarker(@NonNull final String aMarkerName,
-                               @Nullable final Double aStartTime,
-                               @Nullable final Double aEndTime,
-                               @Nullable final String aText) {
-            final Queue<Marker> markersQueue = this.mMarkers;
-            if (markersQueue == null) {
-                
-                return;
-            }
-
-            
-            
-            if (Looper.myLooper() != Looper.getMainLooper()) {
-                
-                
-                throw new AssertionError("Currently only main thread is supported for markers.");
-            }
-
-            final Marker newMarker = new Marker(aMarkerName, aStartTime, aEndTime, aText);
-
-            boolean successful = markersQueue.offer(newMarker);
-            while (!successful) {
-                
-                markersQueue.poll();
-                successful = markersQueue.offer(newMarker);
-            }
-        }
-
-        private Marker pollNextMarker() {
-            final Queue<Marker> markersQueue = this.mMarkers;
-            if (markersQueue == null) {
-                
-                return null;
-            }
-            
-            
-            return markersQueue.poll();
-        }
+    public synchronized void stop() {
+      if (this.mMarkers == null) {
+        return;
+      }
+      this.mMarkers = null;
     }
 
+    private void addMarker(
+        @NonNull final String aMarkerName,
+        @Nullable final Double aStartTime,
+        @Nullable final Double aEndTime,
+        @Nullable final String aText) {
+      final Queue<Marker> markersQueue = this.mMarkers;
+      if (markersQueue == null) {
+        
+        return;
+      }
 
-    @WrapForJNI
-    public static void start(final int aInterval, final int aEntryCount) {
-        synchronized (GeckoJavaSampler.class) {
-            if (sSamplingRunnable != null) {
-                return;
-            }
+      
+      
+      if (Looper.myLooper() != Looper.getMainLooper()) {
+        
+        
+        throw new AssertionError("Currently only main thread is supported for markers.");
+      }
 
-            if (sSamplingFuture != null && !sSamplingFuture.isDone()) {
-                return;
-            }
+      final Marker newMarker = new Marker(aMarkerName, aStartTime, aEndTime, aText);
 
-            
-            
-            final int limitedEntryCount = Math.min(aEntryCount, 120000);
-            sSamplingRunnable = new SamplingRunnable(aInterval, limitedEntryCount);
-            sMarkerStorage.start(limitedEntryCount);
-            sSamplingScheduler = Executors.newSingleThreadScheduledExecutor();
-            sSamplingFuture = sSamplingScheduler.scheduleAtFixedRate(sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
-        }
+      boolean successful = markersQueue.offer(newMarker);
+      while (!successful) {
+        
+        markersQueue.poll();
+        successful = markersQueue.offer(newMarker);
+      }
     }
 
-    @WrapForJNI
-    public static void pauseSampling() {
-        synchronized (GeckoJavaSampler.class) {
-            sSamplingFuture.cancel(false  );
-            sSamplingFuture = null;
-        }
+    private Marker pollNextMarker() {
+      final Queue<Marker> markersQueue = this.mMarkers;
+      if (markersQueue == null) {
+        
+        return null;
+      }
+      
+      
+      return markersQueue.poll();
     }
+  }
 
-    @WrapForJNI
-    public static void unpauseSampling() {
-        synchronized (GeckoJavaSampler.class) {
-            if (sSamplingFuture != null) {
-                return;
-            }
-            sSamplingFuture = sSamplingScheduler.scheduleAtFixedRate(sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
-        }
+  @WrapForJNI
+  public static void start(final int aInterval, final int aEntryCount) {
+    synchronized (GeckoJavaSampler.class) {
+      if (sSamplingRunnable != null) {
+        return;
+      }
+
+      if (sSamplingFuture != null && !sSamplingFuture.isDone()) {
+        return;
+      }
+
+      
+      
+      final int limitedEntryCount = Math.min(aEntryCount, 120000);
+      sSamplingRunnable = new SamplingRunnable(aInterval, limitedEntryCount);
+      sMarkerStorage.start(limitedEntryCount);
+      sSamplingScheduler = Executors.newSingleThreadScheduledExecutor();
+      sSamplingFuture =
+          sSamplingScheduler.scheduleAtFixedRate(
+              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
     }
+  }
 
-    @WrapForJNI
-    public static void stop() {
-        synchronized (GeckoJavaSampler.class) {
-            if (sSamplingRunnable == null) {
-                return;
-            }
-
-            try {
-                sSamplingScheduler.shutdown();
-                
-                sSamplingScheduler.awaitTermination(1000, TimeUnit.MILLISECONDS);
-            } catch (final InterruptedException e) {
-                Log.e(LOGTAG, "Sampling scheduler isn't terminated. Last sampling data might be broken.");
-                sSamplingScheduler.shutdownNow();
-            }
-            sSamplingScheduler = null;
-            sSamplingRunnable = null;
-            sSamplingFuture = null;
-            sMarkerStorage.stop();
-        }
+  @WrapForJNI
+  public static void pauseSampling() {
+    synchronized (GeckoJavaSampler.class) {
+      sSamplingFuture.cancel(false );
+      sSamplingFuture = null;
     }
+  }
 
-    
-
-
-    @WrapForJNI
-    public static String getDeviceInformation() {
-        final StringBuilder sb = new StringBuilder(Build.BRAND);
-        sb.append(" ");
-        sb.append(Build.MODEL);
-        return sb.toString();
+  @WrapForJNI
+  public static void unpauseSampling() {
+    synchronized (GeckoJavaSampler.class) {
+      if (sSamplingFuture != null) {
+        return;
+      }
+      sSamplingFuture =
+          sSamplingScheduler.scheduleAtFixedRate(
+              sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
     }
+  }
+
+  @WrapForJNI
+  public static void stop() {
+    synchronized (GeckoJavaSampler.class) {
+      if (sSamplingRunnable == null) {
+        return;
+      }
+
+      try {
+        sSamplingScheduler.shutdown();
+        
+        sSamplingScheduler.awaitTermination(1000, TimeUnit.MILLISECONDS);
+      } catch (final InterruptedException e) {
+        Log.e(LOGTAG, "Sampling scheduler isn't terminated. Last sampling data might be broken.");
+        sSamplingScheduler.shutdownNow();
+      }
+      sSamplingScheduler = null;
+      sSamplingRunnable = null;
+      sSamplingFuture = null;
+      sMarkerStorage.stop();
+    }
+  }
+
+  
+  @WrapForJNI
+  public static String getDeviceInformation() {
+    final StringBuilder sb = new StringBuilder(Build.BRAND);
+    sb.append(" ");
+    sb.append(Build.MODEL);
+    return sb.toString();
+  }
 }

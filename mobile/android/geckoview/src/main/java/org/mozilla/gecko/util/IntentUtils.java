@@ -9,122 +9,109 @@ package org.mozilla.gecko.util;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.net.Uri;
-
 import java.net.URISyntaxException;
 import java.util.Locale;
 
 
-
-
 public class IntentUtils {
-    private IntentUtils() {}
+  private IntentUtils() {}
 
-    
-
-
-
-
-
-
-
-    private static Uri normalizeUriScheme(final Uri uri) {
-        final String scheme = uri.getScheme();
-        final String lower  = scheme.toLowerCase(Locale.ROOT);
-        if (lower.equals(scheme)) {
-            return uri;
-        }
-
-        
-        return uri.buildUpon().scheme(lower).build();
-    }
-
-
-    
+  
 
 
 
 
 
 
-    public static Uri normalizeUri(final String aUri) {
-        final Uri normUri = normalizeUriScheme(
-            aUri.indexOf(':') >= 0
-            ? Uri.parse(aUri)
-            : new Uri.Builder().scheme(aUri).build());
-        return normUri;
-    }
-
-    public static boolean isUriSafeForScheme(final String aUri) {
-        return isUriSafeForScheme(normalizeUri(aUri));
+  private static Uri normalizeUriScheme(final Uri uri) {
+    final String scheme = uri.getScheme();
+    final String lower = scheme.toLowerCase(Locale.ROOT);
+    if (lower.equals(scheme)) {
+      return uri;
     }
 
     
+    return uri.buildUpon().scheme(lower).build();
+  }
+
+  
 
 
 
 
 
 
+  public static Uri normalizeUri(final String aUri) {
+    final Uri normUri =
+        normalizeUriScheme(
+            aUri.indexOf(':') >= 0 ? Uri.parse(aUri) : new Uri.Builder().scheme(aUri).build());
+    return normUri;
+  }
+
+  public static boolean isUriSafeForScheme(final String aUri) {
+    return isUriSafeForScheme(normalizeUri(aUri));
+  }
+
+  
 
 
-    public static boolean isUriSafeForScheme(final Uri aUri) {
-        final String scheme = aUri.getScheme();
-        if ("tel".equals(scheme) || "sms".equals(scheme)) {
-            
-            
-            
-            final String number = aUri.getSchemeSpecificPart();
-            if (number.contains("#") || number.contains("*") ||
-                aUri.getFragment() != null) {
-                return false;
-            }
-        }
 
-        if (("intent".equals(scheme) || "android-app".equals(scheme))) {
-            
-            return getSafeIntent(aUri) != null;
-        }
 
-        return true;
+
+
+  public static boolean isUriSafeForScheme(final Uri aUri) {
+    final String scheme = aUri.getScheme();
+    if ("tel".equals(scheme) || "sms".equals(scheme)) {
+      
+      
+      
+      final String number = aUri.getSchemeSpecificPart();
+      if (number.contains("#") || number.contains("*") || aUri.getFragment() != null) {
+        return false;
+      }
+    }
+
+    if (("intent".equals(scheme) || "android-app".equals(scheme))) {
+      
+      return getSafeIntent(aUri) != null;
+    }
+
+    return true;
+  }
+
+  
+
+
+
+
+
+  public static Intent getSafeIntent(final Uri aUri) {
+    final Intent intent;
+    try {
+      intent = Intent.parseUri(aUri.toString(), 0);
+    } catch (final URISyntaxException e) {
+      return null;
+    }
+
+    final Uri data = intent.getData();
+    if (data != null && "file".equals(normalizeUriScheme(data).getScheme())) {
+      return null;
     }
 
     
-
-
-
-
-
-
-
-    public static Intent getSafeIntent(final Uri aUri) {
-        final Intent intent;
-        try {
-            intent = Intent.parseUri(aUri.toString(), 0);
-        } catch (final URISyntaxException e) {
-            return null;
-        }
-
-        final Uri data = intent.getData();
-        if (data != null &&
-            "file".equals(normalizeUriScheme(data).getScheme())) {
-            return null;
-        }
-
-        
-        intent.addCategory(Intent.CATEGORY_BROWSABLE);
-
-        
-        
-        intent.setComponent(null);
-        nullIntentSelector(intent);
-
-        return intent;
-    }
+    intent.addCategory(Intent.CATEGORY_BROWSABLE);
 
     
-    @TargetApi(15)
-    private static void nullIntentSelector(final Intent intent) {
-        intent.setSelector(null);
-    }
+    
+    intent.setComponent(null);
+    nullIntentSelector(intent);
 
+    return intent;
+  }
+
+  
+  @TargetApi(15)
+  private static void nullIntentSelector(final Intent intent) {
+    intent.setSelector(null);
+  }
 }

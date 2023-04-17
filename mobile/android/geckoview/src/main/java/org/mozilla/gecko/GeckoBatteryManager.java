@@ -13,190 +13,188 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
-
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 public class GeckoBatteryManager extends BroadcastReceiver {
-    private static final String LOGTAG = "GeckoBatteryManager";
+  private static final String LOGTAG = "GeckoBatteryManager";
+
+  
+  
+  private static final double kDefaultLevel = 1.0;
+  private static final boolean kDefaultCharging = true;
+  private static final double kDefaultRemainingTime = 0.0;
+  private static final double kUnknownRemainingTime = -1.0;
+
+  private static long sLastLevelChange;
+  private static boolean sNotificationsEnabled;
+  private static double sLevel = kDefaultLevel;
+  private static boolean sCharging = kDefaultCharging;
+  private static double sRemainingTime = kDefaultRemainingTime;
+
+  private static final GeckoBatteryManager sInstance = new GeckoBatteryManager();
+
+  private final IntentFilter mFilter;
+  private Context mApplicationContext;
+  private boolean mIsEnabled;
+
+  public static GeckoBatteryManager getInstance() {
+    return sInstance;
+  }
+
+  private GeckoBatteryManager() {
+    mFilter = new IntentFilter();
+    mFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+  }
+
+  public synchronized void start(final Context context) {
+    if (mIsEnabled) {
+      Log.w(LOGTAG, "Already started!");
+      return;
+    }
+
+    mApplicationContext = context.getApplicationContext();
+    
+    if (mApplicationContext.registerReceiver(this, mFilter) == null) {
+      Log.e(LOGTAG, "Registering receiver failed");
+    } else {
+      mIsEnabled = true;
+    }
+  }
+
+  public synchronized void stop() {
+    if (!mIsEnabled) {
+      Log.w(LOGTAG, "Already stopped!");
+      return;
+    }
+
+    mApplicationContext.unregisterReceiver(this);
+    mApplicationContext = null;
+    mIsEnabled = false;
+  }
+
+  @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
+  private static native void onBatteryChange(double level, boolean charging, double remainingTime);
+
+  @Override
+  public void onReceive(final Context context, final Intent intent) {
+    if (!intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
+      Log.e(LOGTAG, "Got an unexpected intent!");
+      return;
+    }
+
+    final boolean previousCharging = isCharging();
+    final double previousLevel = getLevel();
 
     
     
-    private final static double  kDefaultLevel         = 1.0;
-    private final static boolean kDefaultCharging      = true;
-    private final static double  kDefaultRemainingTime = 0.0;
-    private final static double  kUnknownRemainingTime = -1.0;
-
-    private static long    sLastLevelChange;
-    private static boolean sNotificationsEnabled;
-    private static double  sLevel                      = kDefaultLevel;
-    private static boolean sCharging                   = kDefaultCharging;
-    private static double  sRemainingTime              = kDefaultRemainingTime;
-
-    private static final GeckoBatteryManager sInstance = new GeckoBatteryManager();
-
-    private final IntentFilter mFilter;
-    private Context mApplicationContext;
-    private boolean mIsEnabled;
-
-    public static GeckoBatteryManager getInstance() {
-        return sInstance;
-    }
-
-    private GeckoBatteryManager() {
-        mFilter = new IntentFilter();
-        mFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-    }
-
-    public synchronized void start(final Context context) {
-        if (mIsEnabled) {
-            Log.w(LOGTAG, "Already started!");
-            return;
-        }
-
-        mApplicationContext = context.getApplicationContext();
-        
-        if (mApplicationContext.registerReceiver(this, mFilter) == null) {
-            Log.e(LOGTAG, "Registering receiver failed");
-        } else {
-            mIsEnabled = true;
-        }
-    }
-
-    public synchronized void stop() {
-        if (!mIsEnabled) {
-            Log.w(LOGTAG, "Already stopped!");
-            return;
-        }
-
-        mApplicationContext.unregisterReceiver(this);
-        mApplicationContext = null;
-        mIsEnabled = false;
-    }
-
-    @WrapForJNI(calledFrom = "ui", dispatchTo = "gecko")
-    private static native void onBatteryChange(double level, boolean charging,
-                                               double remainingTime);
-
-    @Override
-    public void onReceive(final Context context, final Intent intent) {
-        if (!intent.getAction().equals(Intent.ACTION_BATTERY_CHANGED)) {
-            Log.e(LOGTAG, "Got an unexpected intent!");
-            return;
-        }
-
-        final boolean previousCharging = isCharging();
-        final double previousLevel = getLevel();
-
+    
+    
+    
+    
+    if (intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, false)
+        || Build.MODEL.equals("Galaxy Nexus")) {
+      final int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+      if (plugged == -1) {
+        sCharging = kDefaultCharging;
+        Log.e(LOGTAG, "Failed to get the plugged status!");
+      } else {
         
         
+        sCharging = plugged != 0;
+      }
+
+      if (sCharging != previousCharging) {
+        sRemainingTime = kUnknownRemainingTime;
         
         
+        sLastLevelChange = 0;
+      }
+
+      
+      final double current = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+      final double max = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+      if (current == -1 || max == -1) {
+        Log.e(LOGTAG, "Failed to get battery level!");
+        sLevel = kDefaultLevel;
+      } else {
+        sLevel = current / max;
+      }
+
+      if (sLevel == 1.0 && sCharging) {
+        sRemainingTime = kDefaultRemainingTime;
+      } else if (sLevel != previousLevel) {
         
-        
-        if (intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, false) ||
-                Build.MODEL.equals("Galaxy Nexus")) {
-            final int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-            if (plugged == -1) {
-                sCharging = kDefaultCharging;
-                Log.e(LOGTAG, "Failed to get the plugged status!");
+        if (sLastLevelChange != 0) {
+          
+          final long currentTime = SystemClock.elapsedRealtime();
+          final long dt = (currentTime - sLastLevelChange) / 1000;
+          final double dLevel = sLevel - previousLevel;
+
+          if (sCharging) {
+            if (dLevel < 0) {
+              sRemainingTime = kUnknownRemainingTime;
             } else {
-                
-                
-                sCharging = plugged != 0;
+              sRemainingTime = Math.round(dt / dLevel * (1.0 - sLevel));
             }
-
-            if (sCharging != previousCharging) {
-                sRemainingTime = kUnknownRemainingTime;
-                
-                
-                sLastLevelChange = 0;
-            }
-
-            
-            final double current = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            final double max = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-            if (current == -1 || max == -1) {
-                Log.e(LOGTAG, "Failed to get battery level!");
-                sLevel = kDefaultLevel;
+          } else {
+            if (dLevel > 0) {
+              Log.w(LOGTAG, "When discharging, level should decrease!");
+              sRemainingTime = kUnknownRemainingTime;
             } else {
-                sLevel = current / max;
+              sRemainingTime = Math.round(dt / -dLevel * sLevel);
             }
+          }
 
-            if (sLevel == 1.0 && sCharging) {
-                sRemainingTime = kDefaultRemainingTime;
-            } else if (sLevel != previousLevel) {
-                
-                if (sLastLevelChange != 0) {
-                    
-                    final long currentTime = SystemClock.elapsedRealtime();
-                    final long dt = (currentTime - sLastLevelChange) / 1000;
-                    final double dLevel = sLevel - previousLevel;
-
-                    if (sCharging) {
-                        if (dLevel < 0) {
-                            sRemainingTime = kUnknownRemainingTime;
-                        } else {
-                            sRemainingTime = Math.round(dt / dLevel * (1.0 - sLevel));
-                        }
-                    } else {
-                        if (dLevel > 0) {
-                            Log.w(LOGTAG, "When discharging, level should decrease!");
-                            sRemainingTime = kUnknownRemainingTime;
-                        } else {
-                            sRemainingTime = Math.round(dt / -dLevel * sLevel);
-                        }
-                    }
-
-                    sLastLevelChange = currentTime;
-                } else {
-                    
-                    sLastLevelChange = SystemClock.elapsedRealtime();
-                }
-            }
+          sLastLevelChange = currentTime;
         } else {
-            sLevel = kDefaultLevel;
-            sCharging = kDefaultCharging;
-            sRemainingTime = kDefaultRemainingTime;
+          
+          sLastLevelChange = SystemClock.elapsedRealtime();
         }
-
-        
-
-
-
-
-
-
-
-
-
-
-        if (sNotificationsEnabled &&
-                (previousCharging != isCharging() || previousLevel != getLevel())) {
-            onBatteryChange(getLevel(), isCharging(), getRemainingTime());
-        }
+      }
+    } else {
+      sLevel = kDefaultLevel;
+      sCharging = kDefaultCharging;
+      sRemainingTime = kDefaultRemainingTime;
     }
 
-    public static boolean isCharging() {
-        return sCharging;
-    }
+    
 
-    public static double getLevel() {
-        return sLevel;
-    }
 
-    public static double getRemainingTime() {
-        return sRemainingTime;
-    }
 
-    public static void enableNotifications() {
-        sNotificationsEnabled = true;
-    }
 
-    public static void disableNotifications() {
-        sNotificationsEnabled = false;
-    }
 
-    public static double[] getCurrentInformation() {
-        return new double[] { getLevel(), isCharging() ? 1.0 : 0.0, getRemainingTime() };
+
+
+
+
+
+    if (sNotificationsEnabled
+        && (previousCharging != isCharging() || previousLevel != getLevel())) {
+      onBatteryChange(getLevel(), isCharging(), getRemainingTime());
     }
+  }
+
+  public static boolean isCharging() {
+    return sCharging;
+  }
+
+  public static double getLevel() {
+    return sLevel;
+  }
+
+  public static double getRemainingTime() {
+    return sRemainingTime;
+  }
+
+  public static void enableNotifications() {
+    sNotificationsEnabled = true;
+  }
+
+  public static void disableNotifications() {
+    sNotificationsEnabled = false;
+  }
+
+  public static double[] getCurrentInformation() {
+    return new double[] {getLevel(), isCharging() ? 1.0 : 0.0, getRemainingTime()};
+  }
 }

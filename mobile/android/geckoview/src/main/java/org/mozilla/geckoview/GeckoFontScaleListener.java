@@ -5,16 +5,15 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.util.ThreadUtils;
-
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.net.Uri;
 import android.provider.Settings;
-import androidx.annotation.UiThread;
 import android.util.Log;
+import androidx.annotation.UiThread;
+import org.mozilla.gecko.util.ThreadUtils;
 
 
 
@@ -22,153 +21,152 @@ import android.util.Log;
 
 
 
- final class GeckoFontScaleListener
-        extends ContentObserver {
-    private static final String LOGTAG = "GeckoFontScaleListener";
+ final class GeckoFontScaleListener extends ContentObserver {
+  private static final String LOGTAG = "GeckoFontScaleListener";
 
-    private static final float DEFAULT_FONT_SCALE = 1.0f;
+  private static final float DEFAULT_FONT_SCALE = 1.0f;
 
+  
+  @SuppressLint("StaticFieldLeak")
+  private static final GeckoFontScaleListener sInstance = new GeckoFontScaleListener();
+
+  private Context mApplicationContext;
+  private GeckoRuntimeSettings mSettings;
+
+  private boolean mAttached;
+  private boolean mEnabled;
+  private boolean mRunning;
+
+  private float mPrevGeckoFontScale;
+
+  public static GeckoFontScaleListener getInstance() {
+    return sInstance;
+  }
+
+  private GeckoFontScaleListener() {
     
-    @SuppressLint("StaticFieldLeak")
-    private static final GeckoFontScaleListener sInstance = new GeckoFontScaleListener();
+    super(ThreadUtils.getUiHandler());
+  }
 
-    private Context mApplicationContext;
-    private GeckoRuntimeSettings mSettings;
+  
 
-    private boolean mAttached;
-    private boolean mEnabled;
-    private boolean mRunning;
 
-    private float mPrevGeckoFontScale;
 
-    public static GeckoFontScaleListener getInstance() {
-        return sInstance;
+  public void attachToContext(final Context context, final GeckoRuntimeSettings settings) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mAttached) {
+      Log.w(LOGTAG, "Already attached!");
+      return;
     }
 
-    private GeckoFontScaleListener() {
-        
-        super(ThreadUtils.getUiHandler());
+    mAttached = true;
+    mSettings = settings;
+    mApplicationContext = context.getApplicationContext();
+    onEnabledChange();
+  }
+
+  
+
+
+
+  public void detachFromContext() {
+    ThreadUtils.assertOnUiThread();
+
+    if (!mAttached) {
+      Log.w(LOGTAG, "Already detached!");
+      return;
     }
 
-    
+    stop();
+    mApplicationContext = null;
+    mSettings = null;
+    mAttached = false;
+  }
+
+  
 
 
 
-    public void attachToContext(final Context context,
-                                final GeckoRuntimeSettings settings) {
-        ThreadUtils.assertOnUiThread();
 
-        if (mAttached) {
-            Log.w(LOGTAG, "Already attached!");
-            return;
-        }
 
-        mAttached = true;
-        mSettings = settings;
-        mApplicationContext = context.getApplicationContext();
-        onEnabledChange();
+
+
+
+  public void setEnabled(final boolean enabled) {
+    ThreadUtils.assertOnUiThread();
+    mEnabled = enabled;
+    onEnabledChange();
+  }
+
+  
+
+
+
+
+  public boolean getEnabled() {
+    return mEnabled;
+  }
+
+  private void onEnabledChange() {
+    if (!mAttached) {
+      return;
     }
 
-    
+    if (mEnabled) {
+      start();
+    } else {
+      stop();
+    }
+  }
 
-
-
-    public void detachFromContext() {
-        ThreadUtils.assertOnUiThread();
-
-        if (!mAttached) {
-            Log.w(LOGTAG, "Already detached!");
-            return;
-        }
-
-        stop();
-        mApplicationContext = null;
-        mSettings = null;
-        mAttached = false;
+  private void start() {
+    if (mRunning) {
+      return;
     }
 
-    
+    mPrevGeckoFontScale = mSettings.getFontSizeFactor();
+    final ContentResolver contentResolver = mApplicationContext.getContentResolver();
+    final Uri fontSizeSetting = Settings.System.getUriFor(Settings.System.FONT_SCALE);
+    contentResolver.registerContentObserver(fontSizeSetting, false, this);
+    onSystemFontScaleChange(contentResolver, false);
 
+    mRunning = true;
+  }
 
-
-
-
-
-
-
-    public void setEnabled(final boolean enabled) {
-        ThreadUtils.assertOnUiThread();
-        mEnabled = enabled;
-        onEnabledChange();
+  private void stop() {
+    if (!mRunning) {
+      return;
     }
 
-    
+    final ContentResolver contentResolver = mApplicationContext.getContentResolver();
+    contentResolver.unregisterContentObserver(this);
+    onSystemFontScaleChange(contentResolver,  true);
 
+    mRunning = false;
+  }
 
+  private void onSystemFontScaleChange(
+      final ContentResolver contentResolver, final boolean stopping) {
+    float fontScale;
 
-
-    public boolean getEnabled() {
-        return mEnabled;
+    if (!stopping) { 
+      fontScale =
+          Settings.System.getFloat(contentResolver, Settings.System.FONT_SCALE, DEFAULT_FONT_SCALE);
+      
+      if (fontScale < 0) {
+        fontScale = DEFAULT_FONT_SCALE;
+      }
+    } else { 
+      fontScale = mPrevGeckoFontScale;
     }
 
-    private void onEnabledChange() {
-        if (!mAttached) {
-            return;
-        }
+    mSettings.setFontSizeFactorInternal(fontScale);
+  }
 
-        if (mEnabled) {
-            start();
-        } else {
-            stop();
-        }
-    }
-
-    private void start() {
-        if (mRunning) {
-            return;
-        }
-
-        mPrevGeckoFontScale = mSettings.getFontSizeFactor();
-        final ContentResolver contentResolver = mApplicationContext.getContentResolver();
-        final Uri fontSizeSetting = Settings.System.getUriFor(Settings.System.FONT_SCALE);
-        contentResolver.registerContentObserver(fontSizeSetting, false, this);
-        onSystemFontScaleChange(contentResolver, false);
-
-        mRunning = true;
-    }
-
-    private void stop() {
-        if (!mRunning) {
-            return;
-        }
-
-        final ContentResolver contentResolver = mApplicationContext.getContentResolver();
-        contentResolver.unregisterContentObserver(this);
-        onSystemFontScaleChange(contentResolver,  true);
-
-        mRunning = false;
-    }
-
-    private void onSystemFontScaleChange(final ContentResolver contentResolver,
-                                         final boolean stopping) {
-        float fontScale;
-
-        if (!stopping) { 
-            fontScale = Settings.System.getFloat(contentResolver, Settings.System.FONT_SCALE, DEFAULT_FONT_SCALE);
-            
-            if (fontScale < 0) {
-                fontScale = DEFAULT_FONT_SCALE;
-            }
-        } else { 
-            fontScale = mPrevGeckoFontScale;
-        }
-
-        mSettings.setFontSizeFactorInternal(fontScale);
-    }
-
-    @UiThread 
-    @Override
-    public void onChange(final boolean selfChange) {
-        onSystemFontScaleChange(mApplicationContext.getContentResolver(), false);
-    }
+  @UiThread 
+  @Override
+  public void onChange(final boolean selfChange) {
+    onSystemFontScaleChange(mApplicationContext.getContentResolver(), false);
+  }
 }

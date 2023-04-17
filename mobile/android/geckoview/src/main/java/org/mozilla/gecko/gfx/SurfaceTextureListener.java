@@ -5,35 +5,34 @@
 
 package org.mozilla.gecko;
 
+import android.graphics.SurfaceTexture;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
-import android.graphics.SurfaceTexture;
+ final class SurfaceTextureListener extends JNIObject
+    implements SurfaceTexture.OnFrameAvailableListener {
+  @WrapForJNI(calledFrom = "gecko")
+  private SurfaceTextureListener() {}
 
- final class SurfaceTextureListener
-    extends JNIObject implements SurfaceTexture.OnFrameAvailableListener {
-    @WrapForJNI(calledFrom = "gecko")
-    private SurfaceTextureListener() {
+  @WrapForJNI(dispatchTo = "gecko")
+  @Override 
+  protected native void disposeNative();
+
+  @Override
+  protected void finalize() {
+    disposeNative();
+  }
+
+  @WrapForJNI(stubName = "OnFrameAvailable")
+  private native void nativeOnFrameAvailable();
+
+  @Override 
+  public void onFrameAvailable(final SurfaceTexture surfaceTexture) {
+    try {
+      nativeOnFrameAvailable();
+    } catch (final NullPointerException e) {
+      
+      
     }
-
-    @WrapForJNI(dispatchTo = "gecko") @Override 
-    protected native void disposeNative();
-
-    @Override
-    protected void finalize() {
-        disposeNative();
-    }
-
-    @WrapForJNI(stubName = "OnFrameAvailable")
-    private native void nativeOnFrameAvailable();
-
-    @Override 
-    public void onFrameAvailable(final SurfaceTexture surfaceTexture) {
-        try {
-            nativeOnFrameAvailable();
-        } catch (final NullPointerException e) {
-            
-            
-        }
-    }
+  }
 }

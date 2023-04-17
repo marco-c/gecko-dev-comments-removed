@@ -9,7 +9,13 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
-
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.annotation.ReflectionTarget;
+import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.DefaultLoadControl;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlaybackException;
@@ -37,988 +43,1068 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.HttpDataSou
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 
-import org.mozilla.gecko.GeckoAppShell;
-import org.mozilla.gecko.annotation.ReflectionTarget;
-import org.mozilla.geckoview.BuildConfig;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.atomic.AtomicInteger;
-
 @ReflectionTarget
 public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.EventListener {
-    private static final String LOGTAG = "GeckoHlsPlayer";
-    private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter.Builder(null).build();
-    private static final int MAX_TIMELINE_ITEM_LINES = 3;
-    private static final boolean DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
+  private static final String LOGTAG = "GeckoHlsPlayer";
+  private static final DefaultBandwidthMeter BANDWIDTH_METER =
+      new DefaultBandwidthMeter.Builder(null).build();
+  private static final int MAX_TIMELINE_ITEM_LINES = 3;
+  private static final boolean DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
 
-    private static final AtomicInteger sPlayerId = new AtomicInteger(0);
-    
-
-
-
+  private static final AtomicInteger sPlayerId = new AtomicInteger(0);
+  
 
 
 
 
-    private final int mPlayerId;
-    
-    private boolean mExoplayerSuspended = false;
 
-    private static final int DEFAULT_MIN_BUFFER_MS = 5 * 1000;
-    private static final int DEFAULT_MAX_BUFFER_MS = 10 * 1000;
 
-    private enum MediaDecoderPlayState {
-        PLAY_STATE_PREPARING,
-        PLAY_STATE_PAUSED,
-        PLAY_STATE_PLAYING
-    }
-    
-    
-    
-    private MediaDecoderPlayState mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PREPARING;
 
-    private Handler mMainHandler;
-    private HandlerThread mThread;
-    private ExoPlayer mPlayer;
-    private GeckoHlsRendererBase[] mRenderers;
-    private DefaultTrackSelector mTrackSelector;
-    private MediaSource mMediaSource;
-    private SourceEventListener mSourceEventListener;
-    private ComponentListener mComponentListener;
-    private ComponentEventDispatcher mComponentEventDispatcher;
+  private final int mPlayerId;
+  
+  private boolean mExoplayerSuspended = false;
 
-    private volatile boolean mIsTimelineStatic = false;
-    private long mDurationUs;
+  private static final int DEFAULT_MIN_BUFFER_MS = 5 * 1000;
+  private static final int DEFAULT_MAX_BUFFER_MS = 10 * 1000;
 
-    private GeckoHlsVideoRenderer mVRenderer = null;
-    private GeckoHlsAudioRenderer mARenderer = null;
+  private enum MediaDecoderPlayState {
+    PLAY_STATE_PREPARING,
+    PLAY_STATE_PAUSED,
+    PLAY_STATE_PLAYING
+  }
+  
+  
+  
+  private MediaDecoderPlayState mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PREPARING;
 
-    
-    private class RendererController {
-        private final boolean mEnableV;
-        private final boolean mEnableA;
-        RendererController(final boolean enableVideoRenderer, final boolean enableAudioRenderer) {
-            this.mEnableV = enableVideoRenderer;
-            this.mEnableA = enableAudioRenderer;
-        }
-        boolean isVideoRendererEnabled() {
-            return mEnableV;
-        }
-        boolean isAudioRendererEnabled() {
-            return mEnableA;
-        }
-    }
-    private RendererController mRendererController = new RendererController(true, true);
+  private Handler mMainHandler;
+  private HandlerThread mThread;
+  private ExoPlayer mPlayer;
+  private GeckoHlsRendererBase[] mRenderers;
+  private DefaultTrackSelector mTrackSelector;
+  private MediaSource mMediaSource;
+  private SourceEventListener mSourceEventListener;
+  private ComponentListener mComponentListener;
+  private ComponentEventDispatcher mComponentEventDispatcher;
 
-    
-    private class HlsMediaTracksInfo {
-        private int mNumVideoTracks = 0;
-        private int mNumAudioTracks = 0;
-        private boolean mVideoInfoUpdated = false;
-        private boolean mAudioInfoUpdated = false;
-        private boolean mVideoDataArrived = false;
-        private boolean mAudioDataArrived = false;
-        HlsMediaTracksInfo() {}
-        public void reset() {
-            mNumVideoTracks = 0;
-            mNumAudioTracks = 0;
-            mVideoInfoUpdated = false;
-            mAudioInfoUpdated = false;
-            mVideoDataArrived = false;
-            mAudioDataArrived = false;
-        }
-        public void updateNumOfVideoTracks(final int numOfTracks) {
-            mNumVideoTracks = numOfTracks;
-        }
-        public void updateNumOfAudioTracks(final int numOfTracks) {
-            mNumAudioTracks = numOfTracks;
-        }
-        public boolean hasVideo() {
-            return mNumVideoTracks > 0;
-        }
-        public boolean hasAudio() {
-            return mNumAudioTracks > 0;
-        }
-        public int getNumOfVideoTracks() {
-            return mNumVideoTracks;
-        }
-        public int getNumOfAudioTracks() {
-            return mNumAudioTracks;
-        }
-        public void onVideoInfoUpdated() {
-            mVideoInfoUpdated = true;
-        }
-        public void onAudioInfoUpdated() {
-            mAudioInfoUpdated = true;
-        }
-        public void onDataArrived(final int trackType) {
-            if (trackType == C.TRACK_TYPE_VIDEO) {
-                mVideoDataArrived = true;
-            } else if (trackType == C.TRACK_TYPE_AUDIO) {
-                mAudioDataArrived = true;
-            }
-        }
-        public boolean videoReady() {
-            return !hasVideo() || (mVideoInfoUpdated && mVideoDataArrived);
-        }
-        public boolean audioReady() {
-            return !hasAudio() || (mAudioInfoUpdated && mAudioDataArrived);
-        }
-    }
-    private HlsMediaTracksInfo mTracksInfo = new HlsMediaTracksInfo();
+  private volatile boolean mIsTimelineStatic = false;
+  private long mDurationUs;
 
-    
-    private boolean mIsPlayerInitDone = false;
-    private boolean mIsDemuxerInitDone = false;
-    private BaseHlsPlayer.DemuxerCallbacks mDemuxerCallbacks;
-    private BaseHlsPlayer.ResourceCallbacks mResourceCallbacks;
+  private GeckoHlsVideoRenderer mVRenderer = null;
+  private GeckoHlsAudioRenderer mARenderer = null;
 
-    private boolean mReleasing = false; 
+  
+  private class RendererController {
+    private final boolean mEnableV;
+    private final boolean mEnableA;
 
-    private static void assertTrue(final boolean condition) {
-        if (DEBUG && !condition) {
-            throw new AssertionError("Expected condition to be true");
-        }
+    RendererController(final boolean enableVideoRenderer, final boolean enableAudioRenderer) {
+      this.mEnableV = enableVideoRenderer;
+      this.mEnableA = enableAudioRenderer;
     }
 
-    protected void checkInitDone() {
-        if (mIsDemuxerInitDone) {
-            return;
+    boolean isVideoRendererEnabled() {
+      return mEnableV;
+    }
+
+    boolean isAudioRendererEnabled() {
+      return mEnableA;
+    }
+  }
+
+  private RendererController mRendererController = new RendererController(true, true);
+
+  
+  private class HlsMediaTracksInfo {
+    private int mNumVideoTracks = 0;
+    private int mNumAudioTracks = 0;
+    private boolean mVideoInfoUpdated = false;
+    private boolean mAudioInfoUpdated = false;
+    private boolean mVideoDataArrived = false;
+    private boolean mAudioDataArrived = false;
+
+    HlsMediaTracksInfo() {}
+
+    public void reset() {
+      mNumVideoTracks = 0;
+      mNumAudioTracks = 0;
+      mVideoInfoUpdated = false;
+      mAudioInfoUpdated = false;
+      mVideoDataArrived = false;
+      mAudioDataArrived = false;
+    }
+
+    public void updateNumOfVideoTracks(final int numOfTracks) {
+      mNumVideoTracks = numOfTracks;
+    }
+
+    public void updateNumOfAudioTracks(final int numOfTracks) {
+      mNumAudioTracks = numOfTracks;
+    }
+
+    public boolean hasVideo() {
+      return mNumVideoTracks > 0;
+    }
+
+    public boolean hasAudio() {
+      return mNumAudioTracks > 0;
+    }
+
+    public int getNumOfVideoTracks() {
+      return mNumVideoTracks;
+    }
+
+    public int getNumOfAudioTracks() {
+      return mNumAudioTracks;
+    }
+
+    public void onVideoInfoUpdated() {
+      mVideoInfoUpdated = true;
+    }
+
+    public void onAudioInfoUpdated() {
+      mAudioInfoUpdated = true;
+    }
+
+    public void onDataArrived(final int trackType) {
+      if (trackType == C.TRACK_TYPE_VIDEO) {
+        mVideoDataArrived = true;
+      } else if (trackType == C.TRACK_TYPE_AUDIO) {
+        mAudioDataArrived = true;
+      }
+    }
+
+    public boolean videoReady() {
+      return !hasVideo() || (mVideoInfoUpdated && mVideoDataArrived);
+    }
+
+    public boolean audioReady() {
+      return !hasAudio() || (mAudioInfoUpdated && mAudioDataArrived);
+    }
+  }
+
+  private HlsMediaTracksInfo mTracksInfo = new HlsMediaTracksInfo();
+
+  
+  private boolean mIsPlayerInitDone = false;
+  private boolean mIsDemuxerInitDone = false;
+  private BaseHlsPlayer.DemuxerCallbacks mDemuxerCallbacks;
+  private BaseHlsPlayer.ResourceCallbacks mResourceCallbacks;
+
+  private boolean mReleasing = false; 
+
+  private static void assertTrue(final boolean condition) {
+    if (DEBUG && !condition) {
+      throw new AssertionError("Expected condition to be true");
+    }
+  }
+
+  protected void checkInitDone() {
+    if (mIsDemuxerInitDone) {
+      return;
+    }
+    assertTrue(mDemuxerCallbacks != null);
+
+    if (DEBUG) {
+      Log.d(
+          LOGTAG,
+          "[checkInitDone] VReady:"
+              + mTracksInfo.videoReady()
+              + ",AReady:"
+              + mTracksInfo.audioReady()
+              + ",hasV:"
+              + mTracksInfo.hasVideo()
+              + ",hasA:"
+              + mTracksInfo.hasAudio());
+    }
+    if (mTracksInfo.videoReady() && mTracksInfo.audioReady()) {
+      if (mDemuxerCallbacks != null) {
+        mDemuxerCallbacks.onInitialized(mTracksInfo.hasAudio(), mTracksInfo.hasVideo());
+      }
+      mIsDemuxerInitDone = true;
+    }
+  }
+
+  private final class SourceEventListener implements MediaSourceEventListener {
+    public void onLoadStarted(
+        final int windowIndex,
+        final MediaSource.MediaPeriodId mediaPeriodId,
+        final LoadEventInfo loadEventInfo,
+        final MediaLoadData mediaLoadData) {
+      assertTrue(isPlayerThread());
+
+      synchronized (GeckoHlsPlayer.this) {
+        if (mediaLoadData.dataType != C.DATA_TYPE_MEDIA) {
+          
+          return;
         }
-        assertTrue(mDemuxerCallbacks != null);
+        if (mResourceCallbacks == null || loadEventInfo.uri == null || mReleasing) {
+          return;
+        }
 
         if (DEBUG) {
-            Log.d(LOGTAG, "[checkInitDone] VReady:" + mTracksInfo.videoReady() +
-                    ",AReady:" + mTracksInfo.audioReady() +
-                    ",hasV:" + mTracksInfo.hasVideo() +
-                    ",hasA:" + mTracksInfo.hasAudio());
+          Log.d(LOGTAG, "on-load: url=" + loadEventInfo.uri);
         }
-        if (mTracksInfo.videoReady() && mTracksInfo.audioReady()) {
-            if (mDemuxerCallbacks != null) {
-                mDemuxerCallbacks.onInitialized(mTracksInfo.hasAudio(), mTracksInfo.hasVideo());
-            }
-            mIsDemuxerInitDone = true;
-        }
+        mResourceCallbacks.onLoad(loadEventInfo.uri.toString());
+      }
+    }
+  }
+
+  public final class ComponentEventDispatcher {
+    
+    
+    public void onDataArrived(final int trackType) {
+      assertTrue(mComponentListener != null);
+
+      if (mComponentListener != null) {
+        runOnPlayerThread(() -> mComponentListener.onDataArrived(trackType));
+      }
     }
 
-    private final class SourceEventListener implements MediaSourceEventListener {
-        public void onLoadStarted(
-                final int windowIndex,
-                final MediaSource.MediaPeriodId mediaPeriodId,
-                final LoadEventInfo loadEventInfo,
-                final MediaLoadData mediaLoadData) {
-            assertTrue(isPlayerThread());
+    
+    public void onVideoInputFormatChanged(final Format format) {
+      assertTrue(mComponentListener != null);
 
-            synchronized (GeckoHlsPlayer.this) {
-                if (mediaLoadData.dataType != C.DATA_TYPE_MEDIA) {
-                    
-                    return;
-                }
-                if (mResourceCallbacks == null || loadEventInfo.uri == null || mReleasing) {
-                    return;
-                }
-
-                if (DEBUG) {
-                    Log.d(LOGTAG, "on-load: url=" + loadEventInfo.uri);
-                }
-                mResourceCallbacks.onLoad(loadEventInfo.uri.toString());
-            }
-        }
+      if (mComponentListener != null) {
+        runOnPlayerThread(() -> mComponentListener.onVideoInputFormatChanged(format));
+      }
     }
 
-    public final class ComponentEventDispatcher {
-        
-        
-        public void onDataArrived(final int trackType) {
-            assertTrue(mComponentListener != null);
+    
+    public void onAudioInputFormatChanged(final Format format) {
+      assertTrue(mComponentListener != null);
 
-            if (mComponentListener != null) {
-                runOnPlayerThread(() -> mComponentListener.onDataArrived(trackType));
-            }
+      if (mComponentListener != null) {
+        runOnPlayerThread(() -> mComponentListener.onAudioInputFormatChanged(format));
+      }
+    }
+  }
+
+  public final class ComponentListener {
+
+    
+    
+    public void onDataArrived(final int trackType) {
+      assertTrue(isPlayerThread());
+
+      synchronized (GeckoHlsPlayer.this) {
+        if (DEBUG) {
+          Log.d(LOGTAG, "[CB][onDataArrived] id " + mPlayerId);
+        }
+        if (!mIsPlayerInitDone) {
+          return;
         }
 
-        
-        public void onVideoInputFormatChanged(final Format format) {
-            assertTrue(mComponentListener != null);
-
-            if (mComponentListener != null) {
-                runOnPlayerThread(() -> mComponentListener.onVideoInputFormatChanged(format));
-            }
+        mTracksInfo.onDataArrived(trackType);
+        if (!mReleasing) {
+          mResourceCallbacks.onDataArrived();
         }
-
-        
-        public void onAudioInputFormatChanged(final Format format) {
-            assertTrue(mComponentListener != null);
-
-            if (mComponentListener != null) {
-                runOnPlayerThread(() -> mComponentListener.onAudioInputFormatChanged(format));
-            }
-        }
+        checkInitDone();
+      }
     }
 
-    public final class ComponentListener {
+    
+    public void onVideoInputFormatChanged(final Format format) {
+      assertTrue(isPlayerThread());
 
-        
-        
-        public void onDataArrived(final int trackType) {
-            assertTrue(isPlayerThread());
-
-            synchronized (GeckoHlsPlayer.this) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "[CB][onDataArrived] id " + mPlayerId);
-                }
-                if (!mIsPlayerInitDone) {
-                    return;
-                }
-
-                mTracksInfo.onDataArrived(trackType);
-                if (!mReleasing) {
-                    mResourceCallbacks.onDataArrived();
-                }
-                checkInitDone();
-            }
+      synchronized (GeckoHlsPlayer.this) {
+        if (DEBUG) {
+          Log.d(LOGTAG, "[CB] onVideoInputFormatChanged [" + format + "]");
+          Log.d(
+              LOGTAG,
+              "[CB] SampleMIMEType ["
+                  + format.sampleMimeType
+                  + "], ContainerMIMEType ["
+                  + format.containerMimeType
+                  + "], id : "
+                  + mPlayerId);
         }
-
-        
-        public void onVideoInputFormatChanged(final Format format) {
-            assertTrue(isPlayerThread());
-
-            synchronized (GeckoHlsPlayer.this) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "[CB] onVideoInputFormatChanged [" + format + "]");
-                    Log.d(LOGTAG, "[CB] SampleMIMEType [" +
-                            format.sampleMimeType + "], ContainerMIMEType [" +
-                            format.containerMimeType + "], id : " + mPlayerId);
-                }
-                if (!mIsPlayerInitDone) {
-                    return;
-                }
-                mTracksInfo.onVideoInfoUpdated();
-                checkInitDone();
-            }
+        if (!mIsPlayerInitDone) {
+          return;
         }
-
-        
-        public void onAudioInputFormatChanged(final Format format) {
-            assertTrue(isPlayerThread());
-
-            synchronized (GeckoHlsPlayer.this) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "[CB] onAudioInputFormatChanged [" + format + "], mPlayerId :" + mPlayerId);
-                }
-                if (!mIsPlayerInitDone) {
-                    return;
-                }
-                mTracksInfo.onAudioInfoUpdated();
-                checkInitDone();
-            }
-        }
+        mTracksInfo.onVideoInfoUpdated();
+        checkInitDone();
+      }
     }
 
-    private HlsMediaSource.Factory buildDataSourceFactory(final Context ctx,
-                                                      final DefaultBandwidthMeter bandwidthMeter) {
-        return new HlsMediaSource.Factory(new DefaultDataSourceFactory(ctx, bandwidthMeter,
-                buildHttpDataSourceFactory(bandwidthMeter)));
-    }
+    
+    public void onAudioInputFormatChanged(final Format format) {
+      assertTrue(isPlayerThread());
 
-    private HttpDataSource.Factory buildHttpDataSourceFactory(
-            final DefaultBandwidthMeter bandwidthMeter) {
-        return new DefaultHttpDataSourceFactory(
-            BuildConfig.USER_AGENT_GECKOVIEW_MOBILE,
-            bandwidthMeter ,
-            DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-            DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-            true 
-        );
+      synchronized (GeckoHlsPlayer.this) {
+        if (DEBUG) {
+          Log.d(LOGTAG, "[CB] onAudioInputFormatChanged [" + format + "], mPlayerId :" + mPlayerId);
+        }
+        if (!mIsPlayerInitDone) {
+          return;
+        }
+        mTracksInfo.onAudioInfoUpdated();
+        checkInitDone();
+      }
     }
+  }
 
-    private long getDuration() {
-        return awaitPlayerThread(() -> {
-            long duration = 0L;
-            
-            if (mPlayer != null && !isLiveStream()) {
-                duration = Math.max(0L, mPlayer.getDuration() * 1000L);
-            }
-            if (DEBUG) {
-                Log.d(LOGTAG, "getDuration : " + duration  + "(Us)");
-            }
-            return duration;
+  private HlsMediaSource.Factory buildDataSourceFactory(
+      final Context ctx, final DefaultBandwidthMeter bandwidthMeter) {
+    return new HlsMediaSource.Factory(
+        new DefaultDataSourceFactory(
+            ctx, bandwidthMeter, buildHttpDataSourceFactory(bandwidthMeter)));
+  }
+
+  private HttpDataSource.Factory buildHttpDataSourceFactory(
+      final DefaultBandwidthMeter bandwidthMeter) {
+    return new DefaultHttpDataSourceFactory(
+        BuildConfig.USER_AGENT_GECKOVIEW_MOBILE,
+        bandwidthMeter ,
+        DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+        DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+        true );
+  }
+
+  private long getDuration() {
+    return awaitPlayerThread(
+        () -> {
+          long duration = 0L;
+          
+          if (mPlayer != null && !isLiveStream()) {
+            duration = Math.max(0L, mPlayer.getDuration() * 1000L);
+          }
+          if (DEBUG) {
+            Log.d(LOGTAG, "getDuration : " + duration + "(Us)");
+          }
+          return duration;
         });
+  }
+
+  
+  
+  public GeckoHlsPlayer() {
+    mPlayerId = sPlayerId.incrementAndGet();
+    if (DEBUG) {
+      Log.d(LOGTAG, " construct player with id(" + mPlayerId + ")");
     }
+  }
 
-    
-    
-    public GeckoHlsPlayer() {
-        mPlayerId = sPlayerId.incrementAndGet();
-        if (DEBUG) {
-            Log.d(LOGTAG, " construct player with id(" + mPlayerId + ")");
-        }
+  
+  
+  
+  
+  @Override
+  public int getId() {
+    return mPlayerId;
+  }
+
+  
+  @Override
+  public synchronized void addDemuxerWrapperCallbackListener(
+      final BaseHlsPlayer.DemuxerCallbacks callback) {
+    if (DEBUG) {
+      Log.d(LOGTAG, " addDemuxerWrapperCallbackListener ...");
     }
+    mDemuxerCallbacks = callback;
+  }
 
-    
-    
-    
-    
-    @Override
-    public int getId() {
-        return mPlayerId;
+  
+  @Override
+  public synchronized void onLoadingChanged(final boolean isLoading) {
+    assertTrue(isPlayerThread());
+
+    if (DEBUG) {
+      Log.d(LOGTAG, "loading [" + isLoading + "]");
     }
-
-    
-    @Override
-    public synchronized void addDemuxerWrapperCallbackListener(
-            final BaseHlsPlayer.DemuxerCallbacks callback) {
-        if (DEBUG) {
-            Log.d(LOGTAG, " addDemuxerWrapperCallbackListener ...");
-        }
-        mDemuxerCallbacks = callback;
+    if (!isLoading) {
+      if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+        suspendExoplayer();
+      }
+      
+      mComponentEventDispatcher.onDataArrived(C.TRACK_TYPE_DEFAULT);
     }
+  }
 
-    
-    @Override
-    public synchronized void onLoadingChanged(final boolean isLoading) {
-        assertTrue(isPlayerThread());
+  
+  @Override
+  public synchronized void onPlayerStateChanged(final boolean playWhenReady, final int state) {
+    assertTrue(isPlayerThread());
 
-        if (DEBUG) {
-            Log.d(LOGTAG, "loading [" + isLoading + "]");
-        }
-        if (!isLoading) {
-            if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
-                suspendExoplayer();
+    if (DEBUG) {
+      Log.d(LOGTAG, "state [" + playWhenReady + ", " + getStateString(state) + "]");
+    }
+    if (state == ExoPlayer.STATE_READY
+        && !mExoplayerSuspended
+        && mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+      resumeExoplayer();
+    }
+  }
+
+  
+  @Override
+  public void onPositionDiscontinuity(final int reason) {
+    assertTrue(isPlayerThread());
+
+    if (DEBUG) {
+      Log.d(LOGTAG, "positionDiscontinuity: reason=" + reason);
+    }
+  }
+
+  
+  @Override
+  public void onPlaybackParametersChanged(final PlaybackParameters playbackParameters) {
+    assertTrue(isPlayerThread());
+
+    if (DEBUG) {
+      Log.d(
+          LOGTAG,
+          "playbackParameters "
+              + String.format(
+                  "[speed=%.2f, pitch=%.2f]", playbackParameters.speed, playbackParameters.pitch));
+    }
+  }
+
+  
+  @Override
+  public synchronized void onPlayerError(final ExoPlaybackException e) {
+    assertTrue(isPlayerThread());
+
+    if (DEBUG) {
+      Log.e(LOGTAG, "playerFailed", e);
+    }
+    mIsPlayerInitDone = false;
+    if (mReleasing) {
+      return;
+    }
+    if (mResourceCallbacks != null) {
+      mResourceCallbacks.onError(ResourceError.PLAYER.code());
+    }
+    if (mDemuxerCallbacks != null) {
+      mDemuxerCallbacks.onError(DemuxerError.PLAYER.code());
+    }
+  }
+
+  
+  @Override
+  public synchronized void onTracksChanged(
+      final TrackGroupArray ignored, final TrackSelectionArray trackSelections) {
+    assertTrue(isPlayerThread());
+
+    if (DEBUG) {
+      Log.d(LOGTAG, "onTracksChanged : TGA[" + ignored + "], TSA[" + trackSelections + "]");
+
+      final MappedTrackInfo mappedTrackInfo = mTrackSelector.getCurrentMappedTrackInfo();
+      if (mappedTrackInfo == null) {
+        Log.d(LOGTAG, "Tracks []");
+        return;
+      }
+      Log.d(LOGTAG, "Tracks [");
+      
+      for (int rendererIndex = 0; rendererIndex < mappedTrackInfo.length; rendererIndex++) {
+        final TrackGroupArray rendererTrackGroups = mappedTrackInfo.getTrackGroups(rendererIndex);
+        final TrackSelection trackSelection = trackSelections.get(rendererIndex);
+        if (rendererTrackGroups.length > 0) {
+          Log.d(LOGTAG, "  Renderer:" + rendererIndex + " [");
+          for (int groupIndex = 0; groupIndex < rendererTrackGroups.length; groupIndex++) {
+            final TrackGroup trackGroup = rendererTrackGroups.get(groupIndex);
+            final String adaptiveSupport =
+                getAdaptiveSupportString(
+                    trackGroup.length,
+                    mappedTrackInfo.getAdaptiveSupport(rendererIndex, groupIndex, false));
+            Log.d(
+                LOGTAG,
+                "    Group:" + groupIndex + ", adaptive_supported=" + adaptiveSupport + " [");
+            for (int trackIndex = 0; trackIndex < trackGroup.length; trackIndex++) {
+              final String status = getTrackStatusString(trackSelection, trackGroup, trackIndex);
+              final String formatSupport =
+                  getFormatSupportString(
+                      mappedTrackInfo.getTrackFormatSupport(rendererIndex, groupIndex, trackIndex));
+              Log.d(
+                  LOGTAG,
+                  "      "
+                      + status
+                      + " Track:"
+                      + trackIndex
+                      + ", "
+                      + Format.toLogString(trackGroup.getFormat(trackIndex))
+                      + ", supported="
+                      + formatSupport);
             }
-            
-            mComponentEventDispatcher.onDataArrived(C.TRACK_TYPE_DEFAULT);
+            Log.d(LOGTAG, "    ]");
+          }
+          Log.d(LOGTAG, "  ]");
         }
+      }
+      
+      final TrackGroupArray unassociatedTrackGroups = mappedTrackInfo.getUnassociatedTrackGroups();
+      if (unassociatedTrackGroups.length > 0) {
+        Log.d(LOGTAG, "  Renderer:None [");
+        for (int groupIndex = 0; groupIndex < unassociatedTrackGroups.length; groupIndex++) {
+          Log.d(LOGTAG, "    Group:" + groupIndex + " [");
+          final TrackGroup trackGroup = unassociatedTrackGroups.get(groupIndex);
+          for (int trackIndex = 0; trackIndex < trackGroup.length; trackIndex++) {
+            final String status = getTrackStatusString(false);
+            final String formatSupport =
+                getFormatSupportString(RendererCapabilities.FORMAT_UNSUPPORTED_TYPE);
+            Log.d(
+                LOGTAG,
+                "      "
+                    + status
+                    + " Track:"
+                    + trackIndex
+                    + ", "
+                    + Format.toLogString(trackGroup.getFormat(trackIndex))
+                    + ", supported="
+                    + formatSupport);
+          }
+          Log.d(LOGTAG, "    ]");
+        }
+        Log.d(LOGTAG, "  ]");
+      }
+      Log.d(LOGTAG, "]");
     }
+    mTracksInfo.reset();
+    int numVideoTracks = 0;
+    int numAudioTracks = 0;
+    for (int j = 0; j < ignored.length; j++) {
+      final TrackGroup tg = ignored.get(j);
+      for (int i = 0; i < tg.length; i++) {
+        final Format fmt = tg.getFormat(i);
+        if (fmt.sampleMimeType != null) {
+          if (mRendererController.isVideoRendererEnabled()
+              && fmt.sampleMimeType.startsWith(new String("video"))) {
+            numVideoTracks++;
+          } else if (mRendererController.isAudioRendererEnabled()
+              && fmt.sampleMimeType.startsWith(new String("audio"))) {
+            numAudioTracks++;
+          }
+        }
+      }
+    }
+    mTracksInfo.updateNumOfVideoTracks(numVideoTracks);
+    mTracksInfo.updateNumOfAudioTracks(numAudioTracks);
+  }
+
+  
+  @Override
+  public synchronized void onTimelineChanged(final Timeline timeline, final int reason) {
+    assertTrue(isPlayerThread());
 
     
-    @Override
-    public synchronized void onPlayerStateChanged(final boolean playWhenReady, final int state) {
-        assertTrue(isPlayerThread());
+    
+    
+    
+    
+    
+    final Timeline.Window window = new Timeline.Window();
+    mIsTimelineStatic =
+        !timeline.isEmpty() && !timeline.getWindow(timeline.getWindowCount() - 1, window).isDynamic;
 
-        if (DEBUG) {
-            Log.d(LOGTAG, "state [" + playWhenReady + ", " + getStateString(state) + "]");
-        }
-        if (state == ExoPlayer.STATE_READY &&
-            !mExoplayerSuspended &&
-            mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+    final int periodCount = timeline.getPeriodCount();
+    final int windowCount = timeline.getWindowCount();
+    if (DEBUG) {
+      Log.d(LOGTAG, "sourceInfo [periodCount=" + periodCount + ", windowCount=" + windowCount);
+    }
+    final Timeline.Period period = new Timeline.Period();
+    for (int i = 0; i < Math.min(periodCount, MAX_TIMELINE_ITEM_LINES); i++) {
+      timeline.getPeriod(i, period);
+      if (mDurationUs < period.getDurationUs()) {
+        mDurationUs = period.getDurationUs();
+      }
+    }
+    for (int i = 0; i < Math.min(windowCount, MAX_TIMELINE_ITEM_LINES); i++) {
+      timeline.getWindow(i, window);
+      if (mDurationUs < window.getDurationUs()) {
+        mDurationUs = window.getDurationUs();
+      }
+    }
+    
+    
+    if (DEBUG) {
+      Log.d(
+          LOGTAG,
+          "Media duration (from Timeline) = "
+              + mDurationUs
+              + "(us)"
+              + " player.getDuration() = "
+              + mPlayer.getDuration()
+              + "(ms)");
+    }
+  }
+
+  private static String getStateString(final int state) {
+    switch (state) {
+      case ExoPlayer.STATE_BUFFERING:
+        return "B";
+      case ExoPlayer.STATE_ENDED:
+        return "E";
+      case ExoPlayer.STATE_IDLE:
+        return "I";
+      case ExoPlayer.STATE_READY:
+        return "R";
+      default:
+        return "?";
+    }
+  }
+
+  private static String getFormatSupportString(final int formatSupport) {
+    switch (formatSupport) {
+      case RendererCapabilities.FORMAT_HANDLED:
+        return "YES";
+      case RendererCapabilities.FORMAT_EXCEEDS_CAPABILITIES:
+        return "NO_EXCEEDS_CAPABILITIES";
+      case RendererCapabilities.FORMAT_UNSUPPORTED_SUBTYPE:
+        return "NO_UNSUPPORTED_TYPE";
+      case RendererCapabilities.FORMAT_UNSUPPORTED_TYPE:
+        return "NO";
+      default:
+        return "?";
+    }
+  }
+
+  private static String getAdaptiveSupportString(final int trackCount, final int adaptiveSupport) {
+    if (trackCount < 2) {
+      return "N/A";
+    }
+    switch (adaptiveSupport) {
+      case RendererCapabilities.ADAPTIVE_SEAMLESS:
+        return "YES";
+      case RendererCapabilities.ADAPTIVE_NOT_SEAMLESS:
+        return "YES_NOT_SEAMLESS";
+      case RendererCapabilities.ADAPTIVE_NOT_SUPPORTED:
+        return "NO";
+      default:
+        return "?";
+    }
+  }
+
+  private static String getTrackStatusString(
+      final TrackSelection selection, final TrackGroup group, final int trackIndex) {
+    return getTrackStatusString(
+        selection != null
+            && selection.getTrackGroup() == group
+            && selection.indexOf(trackIndex) != C.INDEX_UNSET);
+  }
+
+  private static String getTrackStatusString(final boolean enabled) {
+    return enabled ? "[X]" : "[ ]";
+  }
+
+  
+  private void createExoPlayer(final String url) {
+    assertTrue(isPlayerThread());
+
+    final Context ctx = GeckoAppShell.getApplicationContext();
+    mComponentListener = new ComponentListener();
+    mComponentEventDispatcher = new ComponentEventDispatcher();
+    mDurationUs = 0;
+
+    
+    final TrackSelection.Factory videoTrackSelectionFactory =
+        new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
+    mTrackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
+
+    
+    mRenderers = new GeckoHlsRendererBase[2];
+    mVRenderer = new GeckoHlsVideoRenderer(mComponentEventDispatcher);
+    mARenderer = new GeckoHlsAudioRenderer(mComponentEventDispatcher);
+    mRenderers[0] = mVRenderer;
+    mRenderers[1] = mARenderer;
+
+    final DefaultLoadControl dlc =
+        new DefaultLoadControl.Builder()
+            .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
+            .setBufferDurationsMs(
+                DEFAULT_MIN_BUFFER_MS,
+                DEFAULT_MAX_BUFFER_MS,
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
+            .createDefaultLoadControl();
+    
+    mPlayer =
+        new ExoPlayer.Builder(ctx, mRenderers)
+            .setTrackSelector(mTrackSelector)
+            .setLoadControl(dlc)
+            .build();
+    mPlayer.addListener(this);
+
+    final Uri uri = Uri.parse(url);
+    mMediaSource = buildDataSourceFactory(ctx, BANDWIDTH_METER).createMediaSource(uri);
+    mSourceEventListener = new SourceEventListener();
+    mMediaSource.addEventListener(mMainHandler, mSourceEventListener);
+    if (DEBUG) {
+      Log.d(
+          LOGTAG,
+          "Uri is " + uri + ", ContentType is " + Util.inferContentType(uri.getLastPathSegment()));
+    }
+    mPlayer.setPlayWhenReady(false);
+    mPlayer.prepare(mMediaSource);
+    mIsPlayerInitDone = true;
+  }
+  
+  
+  
+  
+  @Override
+  public synchronized void init(final String url, final BaseHlsPlayer.ResourceCallbacks callback) {
+    if (DEBUG) {
+      Log.d(LOGTAG, " init");
+    }
+    assertTrue(callback != null);
+    assertTrue(!mIsPlayerInitDone);
+
+    mThread = new HandlerThread("GeckoHlsPlayerThread");
+    mThread.start();
+    mMainHandler = new Handler(mThread.getLooper());
+
+    mMainHandler.post(
+        () -> {
+          mResourceCallbacks = callback;
+          createExoPlayer(url);
+        });
+  }
+
+  
+  @Override
+  public boolean isLiveStream() {
+    return !mIsTimelineStatic;
+  }
+  
+  
+  
+  
+  @Override
+  public synchronized ConcurrentLinkedQueue<GeckoHLSSample> getSamples(
+      final TrackType trackType, final int number) {
+    if (trackType == TrackType.VIDEO) {
+      return mVRenderer != null
+          ? mVRenderer.getQueuedSamples(number)
+          : new ConcurrentLinkedQueue<GeckoHLSSample>();
+    } else if (trackType == TrackType.AUDIO) {
+      return mARenderer != null
+          ? mARenderer.getQueuedSamples(number)
+          : new ConcurrentLinkedQueue<GeckoHLSSample>();
+    } else {
+      return new ConcurrentLinkedQueue<GeckoHLSSample>();
+    }
+  }
+
+  
+  @Override
+  public long getBufferedPosition() {
+    return awaitPlayerThread(
+        () -> {
+          
+          final long bufferedPos =
+              mPlayer == null ? 0L : Math.max(0L, mPlayer.getBufferedPosition() * 1000L);
+          if (DEBUG) {
+            Log.d(LOGTAG, "getBufferedPosition : " + bufferedPos + "(Us)");
+          }
+          return bufferedPos;
+        });
+  }
+
+  
+  @Override
+  public synchronized int getNumberOfTracks(final TrackType trackType) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "getNumberOfTracks : type " + trackType);
+    }
+    if (trackType == TrackType.VIDEO) {
+      return mTracksInfo.getNumOfVideoTracks();
+    } else if (trackType == TrackType.AUDIO) {
+      return mTracksInfo.getNumOfAudioTracks();
+    }
+    return 0;
+  }
+
+  
+  @Override
+  public GeckoVideoInfo getVideoInfo(final int index) {
+    final Format fmt;
+    synchronized (this) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "getVideoInfo");
+      }
+      if (mVRenderer == null) {
+        Log.e(LOGTAG, "no render to get video info from. Index : " + index);
+        return null;
+      }
+      if (!mTracksInfo.hasVideo()) {
+        return null;
+      }
+      fmt = mVRenderer.getFormat(index);
+      if (fmt == null) {
+        return null;
+      }
+    }
+    final GeckoVideoInfo vInfo =
+        new GeckoVideoInfo(
+            fmt.width,
+            fmt.height,
+            fmt.width,
+            fmt.height,
+            fmt.rotationDegrees,
+            fmt.stereoMode,
+            getDuration(),
+            fmt.sampleMimeType,
+            null,
+            null);
+    return vInfo;
+  }
+
+  
+  @Override
+  public GeckoAudioInfo getAudioInfo(final int index) {
+    final Format fmt;
+    synchronized (this) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "getAudioInfo");
+      }
+      if (mARenderer == null) {
+        Log.e(LOGTAG, "no render to get audio info from. Index : " + index);
+        return null;
+      }
+      if (!mTracksInfo.hasAudio()) {
+        return null;
+      }
+      fmt = mARenderer.getFormat(index);
+      if (fmt == null) {
+        return null;
+      }
+    }
+    
+
+
+
+
+
+
+    assertTrue(!MimeTypes.AUDIO_RAW.equals(fmt.sampleMimeType));
+    
+    final byte[] csd = fmt.initializationData.isEmpty() ? null : fmt.initializationData.get(0);
+    final GeckoAudioInfo aInfo =
+        new GeckoAudioInfo(
+            fmt.sampleRate, fmt.channelCount, 16, 0, getDuration(), fmt.sampleMimeType, csd);
+    return aInfo;
+  }
+
+  
+  @Override
+  public boolean seek(final long positionUs) {
+    synchronized (this) {
+      if (mPlayer == null) {
+        Log.d(LOGTAG, "Seek operation won't be performed as no player exists!");
+        return false;
+      }
+    }
+    return awaitPlayerThread(
+        () -> {
+          
+          
+          
+          
+          if (mExoplayerSuspended) {
             resumeExoplayer();
-        }
-    }
-
-    
-    @Override
-    public void onPositionDiscontinuity(final int reason) {
-        assertTrue(isPlayerThread());
-
-        if (DEBUG) {
-            Log.d(LOGTAG, "positionDiscontinuity: reason=" + reason);
-        }
-    }
-
-    
-    @Override
-    public void onPlaybackParametersChanged(final PlaybackParameters playbackParameters) {
-        assertTrue(isPlayerThread());
-
-        if (DEBUG) {
-            Log.d(LOGTAG, "playbackParameters " +
-                  String.format("[speed=%.2f, pitch=%.2f]", playbackParameters.speed, playbackParameters.pitch));
-        }
-    }
-
-    
-    @Override
-    public synchronized void onPlayerError(final ExoPlaybackException e) {
-        assertTrue(isPlayerThread());
-
-        if (DEBUG) {
-            Log.e(LOGTAG, "playerFailed" , e);
-        }
-        mIsPlayerInitDone = false;
-        if (mReleasing) {
-            return;
-        }
-        if (mResourceCallbacks != null) {
-            mResourceCallbacks.onError(ResourceError.PLAYER.code());
-        }
-        if (mDemuxerCallbacks != null) {
-            mDemuxerCallbacks.onError(DemuxerError.PLAYER.code());
-        }
-    }
-
-    
-    @Override
-    public synchronized void onTracksChanged(final TrackGroupArray ignored,
-                                             final TrackSelectionArray trackSelections) {
-        assertTrue(isPlayerThread());
-
-        if (DEBUG) {
-            Log.d(LOGTAG, "onTracksChanged : TGA[" + ignored +
-                          "], TSA[" + trackSelections + "]");
-
-            final MappedTrackInfo mappedTrackInfo = mTrackSelector.getCurrentMappedTrackInfo();
-            if (mappedTrackInfo == null) {
-                Log.d(LOGTAG, "Tracks []");
-                return;
-            }
-            Log.d(LOGTAG, "Tracks [");
-            
-            for (int rendererIndex = 0; rendererIndex < mappedTrackInfo.length; rendererIndex++) {
-                final TrackGroupArray rendererTrackGroups = mappedTrackInfo.getTrackGroups(rendererIndex);
-                final TrackSelection trackSelection = trackSelections.get(rendererIndex);
-                if (rendererTrackGroups.length > 0) {
-                    Log.d(LOGTAG, "  Renderer:" + rendererIndex + " [");
-                    for (int groupIndex = 0; groupIndex < rendererTrackGroups.length; groupIndex++) {
-                        final TrackGroup trackGroup = rendererTrackGroups.get(groupIndex);
-                        final String adaptiveSupport = getAdaptiveSupportString(trackGroup.length,
-                                mappedTrackInfo.getAdaptiveSupport(rendererIndex, groupIndex, false));
-                        Log.d(LOGTAG, "    Group:" + groupIndex + ", adaptive_supported=" + adaptiveSupport + " [");
-                        for (int trackIndex = 0; trackIndex < trackGroup.length; trackIndex++) {
-                            final String status = getTrackStatusString(trackSelection, trackGroup, trackIndex);
-                            final String formatSupport = getFormatSupportString(
-                                    mappedTrackInfo.getTrackFormatSupport(rendererIndex, groupIndex, trackIndex));
-                            Log.d(LOGTAG, "      " + status + " Track:" + trackIndex + ", " +
-                                    Format.toLogString(trackGroup.getFormat(trackIndex)) +
-                                    ", supported=" + formatSupport);
-                        }
-                        Log.d(LOGTAG, "    ]");
-                    }
-                    Log.d(LOGTAG, "  ]");
-                }
-            }
-            
-            final TrackGroupArray unassociatedTrackGroups = mappedTrackInfo.getUnassociatedTrackGroups();
-            if (unassociatedTrackGroups.length > 0) {
-                Log.d(LOGTAG, "  Renderer:None [");
-                for (int groupIndex = 0; groupIndex < unassociatedTrackGroups.length; groupIndex++) {
-                    Log.d(LOGTAG, "    Group:" + groupIndex + " [");
-                    final TrackGroup trackGroup = unassociatedTrackGroups.get(groupIndex);
-                    for (int trackIndex = 0; trackIndex < trackGroup.length; trackIndex++) {
-                        final String status = getTrackStatusString(false);
-                        final String formatSupport = getFormatSupportString(
-                                RendererCapabilities.FORMAT_UNSUPPORTED_TYPE);
-                        Log.d(LOGTAG, "      " + status + " Track:" + trackIndex +
-                                ", " + Format.toLogString(trackGroup.getFormat(trackIndex)) +
-                                ", supported=" + formatSupport);
-                    }
-                    Log.d(LOGTAG, "    ]");
-                }
-                Log.d(LOGTAG, "  ]");
-            }
-            Log.d(LOGTAG, "]");
-        }
-        mTracksInfo.reset();
-        int numVideoTracks = 0;
-        int numAudioTracks = 0;
-        for (int j = 0; j < ignored.length; j++) {
-            final TrackGroup tg = ignored.get(j);
-            for (int i = 0; i < tg.length; i++) {
-                final Format fmt = tg.getFormat(i);
-                if (fmt.sampleMimeType != null) {
-                    if (mRendererController.isVideoRendererEnabled() &&
-                        fmt.sampleMimeType.startsWith(new String("video"))) {
-                        numVideoTracks++;
-                    } else if (mRendererController.isAudioRendererEnabled() &&
-                               fmt.sampleMimeType.startsWith(new String("audio"))) {
-                        numAudioTracks++;
-                    }
-                }
-            }
-        }
-        mTracksInfo.updateNumOfVideoTracks(numVideoTracks);
-        mTracksInfo.updateNumOfAudioTracks(numAudioTracks);
-    }
-
-    
-    @Override
-    public synchronized void onTimelineChanged(final Timeline timeline, final int reason) {
-        assertTrue(isPlayerThread());
-
-        
-        
-        
-        
-        
-        final Timeline.Window window = new Timeline.Window();
-        mIsTimelineStatic = !timeline.isEmpty()
-                && !timeline.getWindow(timeline.getWindowCount() - 1, window).isDynamic;
-
-        final int periodCount = timeline.getPeriodCount();
-        final int windowCount = timeline.getWindowCount();
-        if (DEBUG) {
-            Log.d(LOGTAG, "sourceInfo [periodCount=" + periodCount + ", windowCount=" + windowCount);
-        }
-        final Timeline.Period period = new Timeline.Period();
-        for (int i = 0; i < Math.min(periodCount, MAX_TIMELINE_ITEM_LINES); i++) {
-            timeline.getPeriod(i, period);
-            if (mDurationUs < period.getDurationUs()) {
-                mDurationUs = period.getDurationUs();
-            }
-        }
-        for (int i = 0; i < Math.min(windowCount, MAX_TIMELINE_ITEM_LINES); i++) {
-            timeline.getWindow(i, window);
-            if (mDurationUs < window.getDurationUs()) {
-                mDurationUs = window.getDurationUs();
-            }
-        }
-        
-        
-        if (DEBUG) {
-            Log.d(LOGTAG, "Media duration (from Timeline) = " + mDurationUs +
-                    "(us)" + " player.getDuration() = " + mPlayer.getDuration() +
-                    "(ms)");
-        }
-    }
-
-    private static String getStateString(final int state) {
-        switch (state) {
-            case ExoPlayer.STATE_BUFFERING:
-                return "B";
-            case ExoPlayer.STATE_ENDED:
-                return "E";
-            case ExoPlayer.STATE_IDLE:
-                return "I";
-            case ExoPlayer.STATE_READY:
-                return "R";
-            default:
-                return "?";
-        }
-    }
-
-    private static String getFormatSupportString(final int formatSupport) {
-        switch (formatSupport) {
-            case RendererCapabilities.FORMAT_HANDLED:
-                return "YES";
-            case RendererCapabilities.FORMAT_EXCEEDS_CAPABILITIES:
-                return "NO_EXCEEDS_CAPABILITIES";
-            case RendererCapabilities.FORMAT_UNSUPPORTED_SUBTYPE:
-                return "NO_UNSUPPORTED_TYPE";
-            case RendererCapabilities.FORMAT_UNSUPPORTED_TYPE:
-                return "NO";
-            default:
-                return "?";
-        }
-    }
-
-    private static String getAdaptiveSupportString(final int trackCount,
-                                                   final int adaptiveSupport) {
-        if (trackCount < 2) {
-            return "N/A";
-        }
-        switch (adaptiveSupport) {
-            case RendererCapabilities.ADAPTIVE_SEAMLESS:
-                return "YES";
-            case RendererCapabilities.ADAPTIVE_NOT_SEAMLESS:
-                return "YES_NOT_SEAMLESS";
-            case RendererCapabilities.ADAPTIVE_NOT_SUPPORTED:
-                return "NO";
-            default:
-                return "?";
-        }
-    }
-
-    private static String getTrackStatusString(final TrackSelection selection,
-                                               final TrackGroup group, final int trackIndex) {
-        return getTrackStatusString(selection != null && selection.getTrackGroup() == group
-                && selection.indexOf(trackIndex) != C.INDEX_UNSET);
-    }
-
-    private static String getTrackStatusString(final boolean enabled) {
-        return enabled ? "[X]" : "[ ]";
-    }
-
-    
-    private void createExoPlayer(final String url) {
-        assertTrue(isPlayerThread());
-
-        final Context ctx = GeckoAppShell.getApplicationContext();
-        mComponentListener = new ComponentListener();
-        mComponentEventDispatcher = new ComponentEventDispatcher();
-        mDurationUs = 0;
-
-        
-        final TrackSelection.Factory videoTrackSelectionFactory =
-                new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
-        mTrackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
-
-        
-        mRenderers = new GeckoHlsRendererBase[2];
-        mVRenderer = new GeckoHlsVideoRenderer(mComponentEventDispatcher);
-        mARenderer = new GeckoHlsAudioRenderer(mComponentEventDispatcher);
-        mRenderers[0] = mVRenderer;
-        mRenderers[1] = mARenderer;
-
-        final DefaultLoadControl dlc = new DefaultLoadControl.Builder()
-                .setAllocator(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE))
-                .setBufferDurationsMs(DEFAULT_MIN_BUFFER_MS,
-                        DEFAULT_MAX_BUFFER_MS,
-                        DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                        DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
-                .createDefaultLoadControl();
-        
-        mPlayer = new ExoPlayer.Builder(ctx, mRenderers)
-                .setTrackSelector(mTrackSelector)
-                .setLoadControl(dlc)
-                .build();
-        mPlayer.addListener(this);
-
-        final Uri uri = Uri.parse(url);
-        mMediaSource = buildDataSourceFactory(ctx, BANDWIDTH_METER).createMediaSource(uri);
-        mSourceEventListener = new SourceEventListener();
-        mMediaSource.addEventListener(mMainHandler, mSourceEventListener);
-        if (DEBUG) {
-            Log.d(LOGTAG, "Uri is " + uri +
-                          ", ContentType is " + Util.inferContentType(uri.getLastPathSegment()));
-        }
-        mPlayer.setPlayWhenReady(false);
-        mPlayer.prepare(mMediaSource);
-        mIsPlayerInitDone = true;
-    }
-    
-    
-    
-    
-    @Override
-    public synchronized void init(final String url,
-                                  final BaseHlsPlayer.ResourceCallbacks callback) {
-        if (DEBUG) {
-            Log.d(LOGTAG, " init");
-        }
-        assertTrue(callback != null);
-        assertTrue(!mIsPlayerInitDone);
-
-        mThread = new HandlerThread("GeckoHlsPlayerThread");
-        mThread.start();
-        mMainHandler = new Handler(mThread.getLooper());
-
-        mMainHandler.post(() -> {
-            mResourceCallbacks = callback;
-            createExoPlayer(url);
-        });
-    }
-
-    
-    @Override
-    public boolean isLiveStream() {
-        return !mIsTimelineStatic;
-    }
-    
-    
-    
-    
-    @Override
-    public synchronized ConcurrentLinkedQueue<GeckoHLSSample> getSamples(
-            final TrackType trackType, final int number) {
-        if (trackType == TrackType.VIDEO) {
-            return mVRenderer != null ? mVRenderer.getQueuedSamples(number) :
-                                        new ConcurrentLinkedQueue<GeckoHLSSample>();
-        } else if (trackType == TrackType.AUDIO) {
-            return mARenderer != null ? mARenderer.getQueuedSamples(number) :
-                                        new ConcurrentLinkedQueue<GeckoHLSSample>();
-        } else {
-            return new ConcurrentLinkedQueue<GeckoHLSSample>();
-        }
-    }
-
-    
-    @Override
-    public long getBufferedPosition() {
-        return awaitPlayerThread(() -> {
-            
-            final long bufferedPos = mPlayer == null ? 0L : Math.max(0L, mPlayer.getBufferedPosition() * 1000L);
-            if (DEBUG) {
-                Log.d(LOGTAG, "getBufferedPosition : " + bufferedPos + "(Us)");
-            }
-            return bufferedPos;
-        });
-    }
-
-    
-    @Override
-    public synchronized int getNumberOfTracks(final TrackType trackType) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "getNumberOfTracks : type " + trackType);
-        }
-        if (trackType == TrackType.VIDEO) {
-            return mTracksInfo.getNumOfVideoTracks();
-        } else if (trackType == TrackType.AUDIO) {
-            return mTracksInfo.getNumOfAudioTracks();
-        }
-        return 0;
-    }
-
-    
-    @Override
-    public GeckoVideoInfo getVideoInfo(final int index) {
-        final Format fmt;
-        synchronized (this) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "getVideoInfo");
-            }
-            if (mVRenderer == null) {
-                Log.e(LOGTAG, "no render to get video info from. Index : " + index);
-                return null;
-            }
-            if (!mTracksInfo.hasVideo()) {
-                return null;
-            }
-            fmt = mVRenderer.getFormat(index);
-            if (fmt == null) {
-                return null;
-            }
-        }
-        final GeckoVideoInfo vInfo = new GeckoVideoInfo(fmt.width, fmt.height,
-                                                  fmt.width, fmt.height,
-                                                  fmt.rotationDegrees, fmt.stereoMode,
-                                                  getDuration(), fmt.sampleMimeType,
-                                                  null, null);
-        return vInfo;
-    }
-
-    
-    @Override
-    public GeckoAudioInfo getAudioInfo(final int index) {
-        final Format fmt;
-        synchronized (this) {
-            if (DEBUG) {
-                Log.d(LOGTAG, "getAudioInfo");
-            }
-            if (mARenderer == null) {
-                Log.e(LOGTAG, "no render to get audio info from. Index : " + index);
-                return null;
-            }
-            if (!mTracksInfo.hasAudio()) {
-                return null;
-            }
-            fmt = mARenderer.getFormat(index);
-            if (fmt == null) {
-                return null;
-            }
-        }
-        
-
-
-
-
-
-
-        assertTrue(!MimeTypes.AUDIO_RAW.equals(fmt.sampleMimeType));
-        
-        final byte[] csd = fmt.initializationData.isEmpty() ? null : fmt.initializationData.get(0);
-        final GeckoAudioInfo aInfo = new GeckoAudioInfo(fmt.sampleRate, fmt.channelCount,
-                                                  16, 0, getDuration(),
-                                                  fmt.sampleMimeType, csd);
-        return aInfo;
-    }
-
-    
-    @Override
-    public boolean seek(final long positionUs) {
-        synchronized (this) {
-            if (mPlayer == null) {
-                Log.d(LOGTAG, "Seek operation won't be performed as no player exists!");
-                return false;
-            }
-        }
-        return awaitPlayerThread(() -> {
+          }
+          
+          
+          
+          
+          
+          try {
             
             
-            
-            if (mExoplayerSuspended) {
-                resumeExoplayer();
-            }
-            
-            
-            
-            
-            
-            try {
+            Long startTime = Long.MAX_VALUE;
+            for (final GeckoHlsRendererBase r : mRenderers) {
+              if (r == mVRenderer
+                      && mRendererController.isVideoRendererEnabled()
+                      && mTracksInfo.hasVideo()
+                  || r == mARenderer
+                      && mRendererController.isAudioRendererEnabled()
+                      && mTracksInfo.hasAudio()) {
                 
-                
-                Long startTime = Long.MAX_VALUE;
-                for (final GeckoHlsRendererBase r : mRenderers) {
-                    if (r == mVRenderer && mRendererController.isVideoRendererEnabled() && mTracksInfo.hasVideo() ||
-                        r == mARenderer && mRendererController.isAudioRendererEnabled() && mTracksInfo.hasAudio()) {
-                    
-                        startTime = Math.min(startTime, r.getFirstSamplePTS());
-                    }
-                }
-                if (DEBUG) {
-                    Log.d(LOGTAG, "seeking  : " + positionUs / 1000 +
-                                " (ms); startTime : " + startTime / 1000 + " (ms)");
-                }
-                assertTrue(startTime != Long.MAX_VALUE && startTime != Long.MIN_VALUE);
-                mPlayer.seekTo(positionUs / 1000 - startTime / 1000);
-            } catch (final Exception e) {
-                if (mReleasing) {
-                    return false;
-                }
-                if (mDemuxerCallbacks != null) {
-                    mDemuxerCallbacks.onError(DemuxerError.UNKNOWN.code());
-                }
-                return false;
-            }
-            return true;
-        });
-    }
-
-    
-    @Override
-    public synchronized long getNextKeyFrameTime() {
-        final long nextKeyFrameTime = mVRenderer != null
-            ? mVRenderer.getNextKeyFrameTime()
-            : Long.MAX_VALUE;
-        return nextKeyFrameTime;
-    }
-
-    
-    @Override
-    public synchronized void suspend() {
-        runOnPlayerThread(() -> {
-            if (mExoplayerSuspended) {
-                return;
-            }
-            if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "suspend player id : " + mPlayerId);
-                }
-                suspendExoplayer();
-            }
-        });
-    }
-
-    
-    @Override
-    public synchronized void resume() {
-        runOnPlayerThread(() -> {
-            if (!mExoplayerSuspended) {
-                return;
-            }
-            if (mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "resume player id : " + mPlayerId);
-                }
-                resumeExoplayer();
-            }
-        });
-    }
-
-    
-    @Override
-    public synchronized void play() {
-        runOnPlayerThread(() -> {
-            if (mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
-                return;
+                startTime = Math.min(startTime, r.getFirstSamplePTS());
+              }
             }
             if (DEBUG) {
-                Log.d(LOGTAG, "MediaDecoder played.");
+              Log.d(
+                  LOGTAG,
+                  "seeking  : "
+                      + positionUs / 1000
+                      + " (ms); startTime : "
+                      + startTime / 1000
+                      + " (ms)");
             }
-            mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PLAYING;
-            resumeExoplayer();
-        });
-    }
-
-    
-    @Override
-    public synchronized void pause() {
-        runOnPlayerThread(() -> {
-            if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
-                return;
-            }
-            if (DEBUG) {
-                Log.d(LOGTAG, "MediaDecoder paused.");
-            }
-            mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PAUSED;
-            suspendExoplayer();
-        });
-    }
-
-    private void suspendExoplayer() {
-        assertTrue(isPlayerThread());
-
-        if (mPlayer == null) {
-            return;
-        }
-        mExoplayerSuspended = true;
-        if (DEBUG) {
-            Log.d(LOGTAG, "suspend Exoplayer");
-        }
-        mPlayer.setPlayWhenReady(false);
-    }
-
-    private void resumeExoplayer() {
-        assertTrue(isPlayerThread());
-
-        if (mPlayer == null) {
-            return;
-        }
-        mExoplayerSuspended = false;
-        if (DEBUG) {
-            Log.d(LOGTAG, "resume Exoplayer");
-        }
-        mPlayer.setPlayWhenReady(true);
-    }
-
-    
-    @Override
-    public void release() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "releasing  ... id : " + mPlayerId);
-        }
-
-        synchronized (this) {
+            assertTrue(startTime != Long.MAX_VALUE && startTime != Long.MIN_VALUE);
+            mPlayer.seekTo(positionUs / 1000 - startTime / 1000);
+          } catch (final Exception e) {
             if (mReleasing) {
-                return;
-            } else {
-                mReleasing = true;
+              return false;
             }
-        }
-
-        runOnPlayerThread(() -> {
-            if (mPlayer != null) {
-                mPlayer.removeListener(this);
-                mPlayer.stop();
-                mPlayer.release();
-                mVRenderer = null;
-                mARenderer = null;
-                mPlayer = null;
+            if (mDemuxerCallbacks != null) {
+              mDemuxerCallbacks.onError(DemuxerError.UNKNOWN.code());
             }
-            if (mThread != null) {
-                mThread.quit();
-                mThread = null;
-            }
-            mDemuxerCallbacks = null;
-            mResourceCallbacks = null;
-            mIsPlayerInitDone = false;
-            mIsDemuxerInitDone = false;
+            return false;
+          }
+          return true;
         });
+  }
+
+  
+  @Override
+  public synchronized long getNextKeyFrameTime() {
+    final long nextKeyFrameTime =
+        mVRenderer != null ? mVRenderer.getNextKeyFrameTime() : Long.MAX_VALUE;
+    return nextKeyFrameTime;
+  }
+
+  
+  @Override
+  public synchronized void suspend() {
+    runOnPlayerThread(
+        () -> {
+          if (mExoplayerSuspended) {
+            return;
+          }
+          if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+            if (DEBUG) {
+              Log.d(LOGTAG, "suspend player id : " + mPlayerId);
+            }
+            suspendExoplayer();
+          }
+        });
+  }
+
+  
+  @Override
+  public synchronized void resume() {
+    runOnPlayerThread(
+        () -> {
+          if (!mExoplayerSuspended) {
+            return;
+          }
+          if (mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+            if (DEBUG) {
+              Log.d(LOGTAG, "resume player id : " + mPlayerId);
+            }
+            resumeExoplayer();
+          }
+        });
+  }
+
+  
+  @Override
+  public synchronized void play() {
+    runOnPlayerThread(
+        () -> {
+          if (mMediaDecoderPlayState == MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+            return;
+          }
+          if (DEBUG) {
+            Log.d(LOGTAG, "MediaDecoder played.");
+          }
+          mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PLAYING;
+          resumeExoplayer();
+        });
+  }
+
+  
+  @Override
+  public synchronized void pause() {
+    runOnPlayerThread(
+        () -> {
+          if (mMediaDecoderPlayState != MediaDecoderPlayState.PLAY_STATE_PLAYING) {
+            return;
+          }
+          if (DEBUG) {
+            Log.d(LOGTAG, "MediaDecoder paused.");
+          }
+          mMediaDecoderPlayState = MediaDecoderPlayState.PLAY_STATE_PAUSED;
+          suspendExoplayer();
+        });
+  }
+
+  private void suspendExoplayer() {
+    assertTrue(isPlayerThread());
+
+    if (mPlayer == null) {
+      return;
+    }
+    mExoplayerSuspended = true;
+    if (DEBUG) {
+      Log.d(LOGTAG, "suspend Exoplayer");
+    }
+    mPlayer.setPlayWhenReady(false);
+  }
+
+  private void resumeExoplayer() {
+    assertTrue(isPlayerThread());
+
+    if (mPlayer == null) {
+      return;
+    }
+    mExoplayerSuspended = false;
+    if (DEBUG) {
+      Log.d(LOGTAG, "resume Exoplayer");
+    }
+    mPlayer.setPlayWhenReady(true);
+  }
+
+  
+  @Override
+  public void release() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "releasing  ... id : " + mPlayerId);
     }
 
-    private void runOnPlayerThread(final Runnable task) {
-        assertTrue(mMainHandler != null);
-        if (isPlayerThread()) {
-            task.run();
-        } else {
-            mMainHandler.post(task);
-        }
+    synchronized (this) {
+      if (mReleasing) {
+        return;
+      } else {
+        mReleasing = true;
+      }
     }
 
-    private boolean isPlayerThread() {
-        return Thread.currentThread() == mMainHandler.getLooper().getThread();
-    }
+    runOnPlayerThread(
+        () -> {
+          if (mPlayer != null) {
+            mPlayer.removeListener(this);
+            mPlayer.stop();
+            mPlayer.release();
+            mVRenderer = null;
+            mARenderer = null;
+            mPlayer = null;
+          }
+          if (mThread != null) {
+            mThread.quit();
+            mThread = null;
+          }
+          mDemuxerCallbacks = null;
+          mResourceCallbacks = null;
+          mIsPlayerInitDone = false;
+          mIsDemuxerInitDone = false;
+        });
+  }
 
-    private <T> T awaitPlayerThread(final Callable<T> task) {
-        assertTrue(!isPlayerThread());
-
-        try {
-            final FutureTask<T> wait = new FutureTask<T>(task);
-            mMainHandler.post(wait);
-            return wait.get();
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
+  private void runOnPlayerThread(final Runnable task) {
+    assertTrue(mMainHandler != null);
+    if (isPlayerThread()) {
+      task.run();
+    } else {
+      mMainHandler.post(task);
     }
+  }
+
+  private boolean isPlayerThread() {
+    return Thread.currentThread() == mMainHandler.getLooper().getThread();
+  }
+
+  private <T> T awaitPlayerThread(final Callable<T> task) {
+    assertTrue(!isPlayerThread());
+
+    try {
+      final FutureTask<T> wait = new FutureTask<T>(task);
+      mMainHandler.post(wait);
+      return wait.get();
+    } catch (final Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

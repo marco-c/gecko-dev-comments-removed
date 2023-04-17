@@ -4,8 +4,6 @@
 
 package org.mozilla.gecko.annotationProcessors.utils;
 
-import org.mozilla.gecko.annotationProcessors.AnnotationInfo;
-
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -17,66 +15,65 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-
-
+import org.mozilla.gecko.annotationProcessors.AnnotationInfo;
 
 
 public class Utils {
 
+  
+  private static final HashMap<String, String> NATIVE_TYPES = new HashMap<String, String>();
+
+  static {
+    NATIVE_TYPES.put("void", "void");
+    NATIVE_TYPES.put("boolean", "bool");
+    NATIVE_TYPES.put("byte", "int8_t");
+    NATIVE_TYPES.put("char", "char16_t");
+    NATIVE_TYPES.put("short", "int16_t");
+    NATIVE_TYPES.put("int", "int32_t");
+    NATIVE_TYPES.put("long", "int64_t");
+    NATIVE_TYPES.put("float", "float");
+    NATIVE_TYPES.put("double", "double");
+  }
+
+  private static final HashMap<String, String> NATIVE_ARRAY_TYPES = new HashMap<String, String>();
+
+  static {
+    NATIVE_ARRAY_TYPES.put("boolean", "mozilla::jni::BooleanArray");
+    NATIVE_ARRAY_TYPES.put("byte", "mozilla::jni::ByteArray");
+    NATIVE_ARRAY_TYPES.put("char", "mozilla::jni::CharArray");
+    NATIVE_ARRAY_TYPES.put("short", "mozilla::jni::ShortArray");
+    NATIVE_ARRAY_TYPES.put("int", "mozilla::jni::IntArray");
+    NATIVE_ARRAY_TYPES.put("long", "mozilla::jni::LongArray");
+    NATIVE_ARRAY_TYPES.put("float", "mozilla::jni::FloatArray");
+    NATIVE_ARRAY_TYPES.put("double", "mozilla::jni::DoubleArray");
+  }
+
+  private static final HashMap<String, String> CLASS_DESCRIPTORS = new HashMap<String, String>();
+
+  static {
+    CLASS_DESCRIPTORS.put("void", "V");
+    CLASS_DESCRIPTORS.put("boolean", "Z");
+    CLASS_DESCRIPTORS.put("byte", "B");
+    CLASS_DESCRIPTORS.put("char", "C");
+    CLASS_DESCRIPTORS.put("short", "S");
+    CLASS_DESCRIPTORS.put("int", "I");
+    CLASS_DESCRIPTORS.put("long", "J");
+    CLASS_DESCRIPTORS.put("float", "F");
+    CLASS_DESCRIPTORS.put("double", "D");
+  }
+
+  private static boolean isMozClass(final Class<?> type) {
+    return type.getName().startsWith("org.mozilla.");
+  }
+
+  private static boolean useObjectForType(final Class<?> type, final boolean isHint) {
     
-    private static final HashMap<String, String> NATIVE_TYPES = new HashMap<String, String>();
-
-    static {
-        NATIVE_TYPES.put("void", "void");
-        NATIVE_TYPES.put("boolean", "bool");
-        NATIVE_TYPES.put("byte", "int8_t");
-        NATIVE_TYPES.put("char", "char16_t");
-        NATIVE_TYPES.put("short", "int16_t");
-        NATIVE_TYPES.put("int", "int32_t");
-        NATIVE_TYPES.put("long", "int64_t");
-        NATIVE_TYPES.put("float", "float");
-        NATIVE_TYPES.put("double", "double");
-    }
-
-    private static final HashMap<String, String> NATIVE_ARRAY_TYPES = new HashMap<String, String>();
-
-    static {
-        NATIVE_ARRAY_TYPES.put("boolean", "mozilla::jni::BooleanArray");
-        NATIVE_ARRAY_TYPES.put("byte", "mozilla::jni::ByteArray");
-        NATIVE_ARRAY_TYPES.put("char", "mozilla::jni::CharArray");
-        NATIVE_ARRAY_TYPES.put("short", "mozilla::jni::ShortArray");
-        NATIVE_ARRAY_TYPES.put("int", "mozilla::jni::IntArray");
-        NATIVE_ARRAY_TYPES.put("long", "mozilla::jni::LongArray");
-        NATIVE_ARRAY_TYPES.put("float", "mozilla::jni::FloatArray");
-        NATIVE_ARRAY_TYPES.put("double", "mozilla::jni::DoubleArray");
-    }
-
-    private static final HashMap<String, String> CLASS_DESCRIPTORS = new HashMap<String, String>();
-
-    static {
-        CLASS_DESCRIPTORS.put("void", "V");
-        CLASS_DESCRIPTORS.put("boolean", "Z");
-        CLASS_DESCRIPTORS.put("byte", "B");
-        CLASS_DESCRIPTORS.put("char", "C");
-        CLASS_DESCRIPTORS.put("short", "S");
-        CLASS_DESCRIPTORS.put("int", "I");
-        CLASS_DESCRIPTORS.put("long", "J");
-        CLASS_DESCRIPTORS.put("float", "F");
-        CLASS_DESCRIPTORS.put("double", "D");
-    }
-
-    private static boolean isMozClass(final Class<?> type) {
-        return type.getName().startsWith("org.mozilla.");
-    }
-
-    private static boolean useObjectForType(final Class<?> type, final boolean isHint) {
-        
-        
-        
-        return !isHint || type.equals(Object.class) || !isMozClass(type) || type.isInterface();
-    }
-
     
+    
+    return !isHint || type.equals(Object.class) || !isMozClass(type) || type.isInterface();
+  }
+
+  
 
 
 
@@ -85,396 +82,399 @@ public class Utils {
 
 
 
-    private static String getSimplifiedClassName(final Class<?> genScope, final Class<?> type, final String connector) {
-        final ArrayList<String> names = new ArrayList<>();
-
-        
-        
-        
-        Class<?> c = type;
-        do {
-            names.add(c.getSimpleName());
-            c = c.getEnclosingClass();
-        } while (c != null && (genScope == null || !genScope.equals(c)));
-
-        
-        final StringBuilder builder = new StringBuilder();
-        for (int i = names.size() - 1; i >= 0; --i) {
-            builder.append(names.get(i));
-            if (i > 0) {
-                builder.append(connector);
-            }
-        }
-
-        return builder.toString();
-    }
+  private static String getSimplifiedClassName(
+      final Class<?> genScope, final Class<?> type, final String connector) {
+    final ArrayList<String> names = new ArrayList<>();
 
     
-
-
-
-
-
-
-
-    public static String getSimplifiedJavaClassName(final Class<?> genScope, final Class<?> type) {
-        return getSimplifiedClassName(genScope, type, ".");
-    }
+    
+    
+    Class<?> c = type;
+    do {
+      names.add(c.getSimpleName());
+      c = c.getEnclosingClass();
+    } while (c != null && (genScope == null || !genScope.equals(c)));
 
     
-
-
-    public static String getWrappedNativeClassName(final Class<?> type) {
-        return "mozilla::java::" + getSimplifiedClassName(null, type, "::");
+    final StringBuilder builder = new StringBuilder();
+    for (int i = names.size() - 1; i >= 0; --i) {
+      builder.append(names.get(i));
+      if (i > 0) {
+        builder.append(connector);
+      }
     }
 
-    
+    return builder.toString();
+  }
+
+  
 
 
 
 
 
-    public static String getNativeParameterType(Class<?> type, AnnotationInfo info) {
-        return getNativeParameterType(type, info, false);
+
+
+  public static String getSimplifiedJavaClassName(final Class<?> genScope, final Class<?> type) {
+    return getSimplifiedClassName(genScope, type, ".");
+  }
+
+  
+  public static String getWrappedNativeClassName(final Class<?> type) {
+    return "mozilla::java::" + getSimplifiedClassName(null, type, "::");
+  }
+
+  
+
+
+
+
+
+  public static String getNativeParameterType(Class<?> type, AnnotationInfo info) {
+    return getNativeParameterType(type, info, false);
+  }
+
+  
+
+
+
+
+
+
+
+  public static String getNativeParameterTypeHint(Class<?> type, AnnotationInfo info) {
+    return getNativeParameterType(type, info, true);
+  }
+
+  private static String getNativeParameterType(
+      final Class<?> type, final AnnotationInfo info, final boolean isHint) {
+    final String name = type.getName().replace('.', '/');
+
+    String value = NATIVE_TYPES.get(name);
+    if (value != null) {
+      return value;
     }
 
-    
-
-
-
-
-
-
-
-    public static String getNativeParameterTypeHint(Class<?> type, AnnotationInfo info) {
-        return getNativeParameterType(type, info, true);
+    if (type.isArray()) {
+      final String compName = type.getComponentType().getName();
+      value = NATIVE_ARRAY_TYPES.get(compName);
+      if (value != null) {
+        return value + "::Param";
+      }
+      return "mozilla::jni::ObjectArray::Param";
     }
 
-    private static String getNativeParameterType(final Class<?> type, final AnnotationInfo info, final boolean isHint) {
-        final String name = type.getName().replace('.', '/');
+    if (type.equals(String.class) || type.equals(CharSequence.class)) {
+      return "mozilla::jni::String::Param";
+    }
 
-        String value = NATIVE_TYPES.get(name);
-        if (value != null) {
-            return value;
+    if (type.equals(Class.class)) {
+      
+      
+      return "mozilla::jni::Class::Param";
+    }
+
+    if (type.equals(Throwable.class)) {
+      return "mozilla::jni::Throwable::Param";
+    }
+
+    if (type.equals(ByteBuffer.class)) {
+      return "mozilla::jni::ByteBuffer::Param";
+    }
+
+    if (useObjectForType(type, isHint)) {
+      return "mozilla::jni::Object::Param";
+    }
+
+    return getWrappedNativeClassName(type) + "::Param";
+  }
+
+  
+
+
+
+
+
+  public static String getNativeReturnType(Class<?> type, AnnotationInfo info) {
+    return getNativeReturnType(type, info, false);
+  }
+
+  
+
+
+
+
+
+
+
+  public static String getNativeReturnTypeHint(Class<?> type, AnnotationInfo info) {
+    return getNativeReturnType(type, info, true);
+  }
+
+  private static String getNativeReturnType(
+      final Class<?> type, final AnnotationInfo info, final boolean isHint) {
+    final String name = type.getName().replace('.', '/');
+
+    String value = NATIVE_TYPES.get(name);
+    if (value != null) {
+      return value;
+    }
+
+    if (type.isArray()) {
+      final String compName = type.getComponentType().getName();
+      value = NATIVE_ARRAY_TYPES.get(compName);
+      if (value != null) {
+        return value + "::LocalRef";
+      }
+      return "mozilla::jni::ObjectArray::LocalRef";
+    }
+
+    if (type.equals(String.class)) {
+      return "mozilla::jni::String::LocalRef";
+    }
+
+    if (type.equals(Class.class)) {
+      
+      
+      return "mozilla::jni::Class::LocalRef";
+    }
+
+    if (type.equals(Throwable.class)) {
+      return "mozilla::jni::Throwable::LocalRef";
+    }
+
+    if (type.equals(ByteBuffer.class)) {
+      return "mozilla::jni::ByteBuffer::LocalRef";
+    }
+
+    if (useObjectForType(type, isHint)) {
+      return "mozilla::jni::Object::LocalRef";
+    }
+
+    return getWrappedNativeClassName(type) + "::LocalRef";
+  }
+
+  
+
+
+
+
+
+  public static String getClassDescriptor(Class<?> type) {
+    final String name = type.getName().replace('.', '/');
+
+    final String classDescriptor = CLASS_DESCRIPTORS.get(name);
+    if (classDescriptor != null) {
+      return classDescriptor;
+    }
+
+    if (type.isArray()) {
+      
+      return name;
+    }
+
+    return "L" + name + ';';
+  }
+
+  
+
+
+
+
+
+  public static String getSignature(Member member) {
+    return member instanceof Field
+        ? getSignature((Field) member)
+        : member instanceof Method
+            ? getSignature((Method) member)
+            : getSignature((Constructor<?>) member);
+  }
+
+  
+
+
+
+
+
+  public static String getSignature(Field member) {
+    return getClassDescriptor(member.getType());
+  }
+
+  private static String getSignature(Class<?>[] args, Class<?> ret) {
+    final StringBuilder sig = new StringBuilder("(");
+    for (int i = 0; i < args.length; i++) {
+      sig.append(getClassDescriptor(args[i]));
+    }
+    return sig.append(')').append(getClassDescriptor(ret)).toString();
+  }
+
+  
+
+
+
+
+
+  public static String getSignature(Method member) {
+    return getSignature(member.getParameterTypes(), member.getReturnType());
+  }
+
+  
+
+
+
+
+
+  public static String getSignature(Constructor<?> member) {
+    return getSignature(member.getParameterTypes(), void.class);
+  }
+
+  
+
+
+
+
+
+  public static String getNativeName(Member member) {
+    final String name = getMemberName(member);
+    return name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
+  }
+
+  
+
+
+
+
+
+  public static String getNativeName(Class<?> clz) {
+    final String name = clz.getName();
+    return name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
+  }
+
+  
+
+
+
+
+
+  public static String getNativeName(AnnotatedElement element) {
+    if (element instanceof Class<?>) {
+      return getNativeName((Class<?>) element);
+    } else if (element instanceof Member) {
+      return getNativeName((Member) element);
+    } else {
+      return null;
+    }
+  }
+
+  
+
+
+
+
+
+  public static String getMemberName(Member member) {
+    if (member instanceof Constructor) {
+      return "<init>";
+    }
+    return member.getName();
+  }
+
+  public static String getUnqualifiedName(String name) {
+    return name.substring(name.lastIndexOf(':') + 1);
+  }
+
+  
+
+
+
+
+
+  public static boolean isStatic(final Member member) {
+    return Modifier.isStatic(member.getModifiers());
+  }
+
+  
+
+
+
+
+
+  public static boolean isFinal(final Member member) {
+    return Modifier.isFinal(member.getModifiers());
+  }
+
+  
+
+
+
+
+
+  public static boolean isPublic(final Member member) {
+    return Modifier.isPublic(member.getModifiers());
+  }
+
+  
+
+
+
+
+
+
+  public static <T extends Enum<T>> T getEnumValue(Class<T> type, String name) {
+    try {
+      return Enum.valueOf(type, name.toUpperCase(Locale.ROOT));
+
+    } catch (IllegalArgumentException e) {
+      final Object[] values;
+      try {
+        values = (Object[]) type.getDeclaredMethod("values").invoke(null);
+      } catch (final NoSuchMethodException
+          | IllegalAccessException
+          | InvocationTargetException exception) {
+        throw new RuntimeException("Cannot access enum: " + type, exception);
+      }
+
+      StringBuilder names = new StringBuilder();
+
+      for (int i = 0; i < values.length; i++) {
+        if (i != 0) {
+          names.append(", ");
         }
+        names.append(values[i].toString().toLowerCase(Locale.ROOT));
+      }
 
-        if (type.isArray()) {
-            final String compName = type.getComponentType().getName();
-            value = NATIVE_ARRAY_TYPES.get(compName);
-            if (value != null) {
-                return value + "::Param";
-            }
-            return "mozilla::jni::ObjectArray::Param";
-        }
-
-        if (type.equals(String.class) || type.equals(CharSequence.class)) {
-            return "mozilla::jni::String::Param";
-        }
-
-        if (type.equals(Class.class)) {
-            
-            
-            return "mozilla::jni::Class::Param";
-        }
-
-        if (type.equals(Throwable.class)) {
-            return "mozilla::jni::Throwable::Param";
-        }
-
-        if (type.equals(ByteBuffer.class)) {
-            return "mozilla::jni::ByteBuffer::Param";
-        }
-
-        if (useObjectForType(type, isHint)) {
-            return "mozilla::jni::Object::Param";
-        }
-
-        return getWrappedNativeClassName(type) + "::Param";
+      System.err.println("***");
+      System.err.println("*** Invalid value \"" + name + "\" for " + type.getSimpleName());
+      System.err.println("*** Specify one of " + names.toString());
+      System.err.println("***");
+      e.printStackTrace(System.err);
+      System.exit(1);
+      return null;
     }
+  }
 
-    
-
-
-
-
-
-    public static String getNativeReturnType(Class<?> type, AnnotationInfo info) {
-        return getNativeReturnType(type, info, false);
+  public static String getIfdefHeader(String ifdef) {
+    if (ifdef.isEmpty()) {
+      return "";
+    } else if (ifdef.startsWith("!")) {
+      return "#ifndef " + ifdef.substring(1) + "\n";
     }
+    return "#ifdef " + ifdef + "\n";
+  }
 
-    
-
-
-
-
-
-
-
-    public static String getNativeReturnTypeHint(Class<?> type, AnnotationInfo info) {
-        return getNativeReturnType(type, info, true);
+  public static String getIfdefFooter(String ifdef) {
+    if (ifdef.isEmpty()) {
+      return "";
     }
+    return "#endif // " + ifdef + "\n";
+  }
 
-    private static String getNativeReturnType(final Class<?> type, final AnnotationInfo info, final boolean isHint) {
-        final String name = type.getName().replace('.', '/');
-
-        String value = NATIVE_TYPES.get(name);
-        if (value != null) {
-            return value;
-        }
-
-        if (type.isArray()) {
-            final String compName = type.getComponentType().getName();
-            value = NATIVE_ARRAY_TYPES.get(compName);
-            if (value != null) {
-                return value + "::LocalRef";
-            }
-            return "mozilla::jni::ObjectArray::LocalRef";
-        }
-
-        if (type.equals(String.class)) {
-            return "mozilla::jni::String::LocalRef";
-        }
-
-        if (type.equals(Class.class)) {
-            
-            
-            return "mozilla::jni::Class::LocalRef";
-        }
-
-        if (type.equals(Throwable.class)) {
-            return "mozilla::jni::Throwable::LocalRef";
-        }
-
-        if (type.equals(ByteBuffer.class)) {
-            return "mozilla::jni::ByteBuffer::LocalRef";
-        }
-
-        if (useObjectForType(type, isHint)) {
-            return "mozilla::jni::Object::LocalRef";
-        }
-
-        return getWrappedNativeClassName(type) + "::LocalRef";
+  public static boolean isJNIObject(Class<?> cls) {
+    for (; cls != null; cls = cls.getSuperclass()) {
+      if (cls.getName().equals("org.mozilla.gecko.mozglue.JNIObject")) {
+        return true;
+      }
     }
-
-    
-
-
-
-
-
-    public static String getClassDescriptor(Class<?> type) {
-        final String name = type.getName().replace('.', '/');
-
-        final String classDescriptor = CLASS_DESCRIPTORS.get(name);
-        if (classDescriptor != null) {
-            return classDescriptor;
-        }
-
-        if (type.isArray()) {
-            
-            return name;
-        }
-
-        return "L" + name + ';';
-    }
-
-    
-
-
-
-
-
-    public static String getSignature(Member member) {
-        return member instanceof Field ?  getSignature((Field) member) :
-               member instanceof Method ? getSignature((Method) member) :
-                                          getSignature((Constructor<?>) member);
-    }
-
-    
-
-
-
-
-
-    public static String getSignature(Field member) {
-        return getClassDescriptor(member.getType());
-    }
-
-    private static String getSignature(Class<?>[] args, Class<?> ret) {
-        final StringBuilder sig = new StringBuilder("(");
-        for (int i = 0; i < args.length; i++) {
-            sig.append(getClassDescriptor(args[i]));
-        }
-        return sig.append(')').append(getClassDescriptor(ret)).toString();
-    }
-
-    
-
-
-
-
-
-    public static String getSignature(Method member) {
-        return getSignature(member.getParameterTypes(), member.getReturnType());
-    }
-
-    
-
-
-
-
-
-    public static String getSignature(Constructor<?> member) {
-        return getSignature(member.getParameterTypes(), void.class);
-    }
-
-    
-
-
-
-
-
-    public static String getNativeName(Member member) {
-        final String name = getMemberName(member);
-        return name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
-    }
-
-    
-
-
-
-
-
-    public static String getNativeName(Class<?> clz) {
-        final String name = clz.getName();
-        return name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
-    }
-
-    
-
-
-
-
-
-    public static String getNativeName(AnnotatedElement element) {
-        if (element instanceof Class<?>) {
-            return getNativeName((Class<?>)element);
-        } else if (element instanceof Member) {
-            return getNativeName((Member)element);
-        } else {
-            return null;
-        }
-    }
-
-    
-
-
-
-
-
-    public static String getMemberName(Member member) {
-        if (member instanceof Constructor) {
-            return "<init>";
-        }
-        return member.getName();
-    }
-
-    public static String getUnqualifiedName(String name) {
-        return name.substring(name.lastIndexOf(':') + 1);
-    }
-
-    
-
-
-
-
-
-    public static boolean isStatic(final Member member) {
-        return Modifier.isStatic(member.getModifiers());
-    }
-
-    
-
-
-
-
-
-    public static boolean isFinal(final Member member) {
-        return Modifier.isFinal(member.getModifiers());
-    }
-
-    
-
-
-
-
-
-    public static boolean isPublic(final Member member) {
-        return Modifier.isPublic(member.getModifiers());
-    }
-
-    
-
-
-
-
-
-
-    public static <T extends Enum<T>> T getEnumValue(Class<T> type, String name) {
-        try {
-            return Enum.valueOf(type, name.toUpperCase(Locale.ROOT));
-
-        } catch (IllegalArgumentException e) {
-            final Object[] values;
-            try {
-                values = (Object[]) type.getDeclaredMethod("values").invoke(null);
-            } catch (final NoSuchMethodException |
-                           IllegalAccessException |
-                           InvocationTargetException exception) {
-                throw new RuntimeException("Cannot access enum: " + type, exception);
-            }
-
-            StringBuilder names = new StringBuilder();
-
-            for (int i = 0; i < values.length; i++) {
-                if (i != 0) {
-                    names.append(", ");
-                }
-                names.append(values[i].toString().toLowerCase(Locale.ROOT));
-            }
-
-            System.err.println("***");
-            System.err.println("*** Invalid value \"" + name + "\" for " + type.getSimpleName());
-            System.err.println("*** Specify one of " + names.toString());
-            System.err.println("***");
-            e.printStackTrace(System.err);
-            System.exit(1);
-            return null;
-        }
-    }
-
-    public static String getIfdefHeader(String ifdef) {
-        if (ifdef.isEmpty()) {
-            return "";
-        } else if (ifdef.startsWith("!")) {
-            return "#ifndef " + ifdef.substring(1) + "\n";
-        }
-        return "#ifdef " + ifdef + "\n";
-    }
-
-    public static String getIfdefFooter(String ifdef) {
-        if (ifdef.isEmpty()) {
-            return "";
-        }
-        return "#endif // " + ifdef + "\n";
-    }
-
-    public static boolean isJNIObject(Class<?> cls) {
-        for (; cls != null; cls = cls.getSuperclass()) {
-            if (cls.getName().equals("org.mozilla.gecko.mozglue.JNIObject")) {
-                return true;
-            }
-        }
-        return false;
-    }
+    return false;
+  }
 }

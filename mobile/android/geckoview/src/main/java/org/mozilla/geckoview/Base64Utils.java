@@ -11,8 +11,10 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
-
  class Base64Utils {
-    @WrapForJNI public static native byte[] decode(final String data);
-    @WrapForJNI public static native String encode(final byte[] data);
+  @WrapForJNI
+  public static native byte[] decode(final String data);
+
+  @WrapForJNI
+  public static native String encode(final byte[] data);
 }

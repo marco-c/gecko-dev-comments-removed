@@ -6,11 +6,6 @@
 
 package org.mozilla.geckoview;
 
-import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleObserver;
-import androidx.lifecycle.OnLifecycleEvent;
-
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
@@ -26,12 +21,19 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Process;
 import android.provider.Settings;
+import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import android.util.Log;
-
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
+import androidx.lifecycle.ProcessLifecycleOwner;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoNetworkManager;
@@ -45,28 +47,21 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-
 public final class GeckoRuntime implements Parcelable {
-    private static final String LOGTAG = "GeckoRuntime";
-    private static final boolean DEBUG = false;
+  private static final String LOGTAG = "GeckoRuntime";
+  private static final boolean DEBUG = false;
 
-    private static final String CONFIG_FILE_PATH_TEMPLATE = "/data/local/tmp/%s-geckoview-config.yaml";
+  private static final String CONFIG_FILE_PATH_TEMPLATE =
+      "/data/local/tmp/%s-geckoview-config.yaml";
 
-    
-
-
-
-    public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
-
-    
+  
 
 
 
 
+  public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
+
+  
 
 
 
@@ -74,364 +69,624 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-    public static final String EXTRA_MINIDUMP_PATH = "minidumpPath";
-
-    
 
 
 
 
+  public static final String EXTRA_MINIDUMP_PATH = "minidumpPath";
 
-
-
-    public static final String EXTRA_EXTRAS_PATH = "extrasPath";
-
-    
+  
 
 
 
 
 
 
-    public static final String EXTRA_CRASH_FATAL = "fatal";
 
-    private final class LifecycleListener implements LifecycleObserver {
-        private boolean mPaused = false;
-        public LifecycleListener() {
-        }
 
-        @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
-        void onCreate() {
-            Log.d(LOGTAG, "Lifecycle: onCreate");
-        }
 
-        @OnLifecycleEvent(Lifecycle.Event.ON_START)
-        void onStart() {
-            Log.d(LOGTAG, "Lifecycle: onStart");
-        }
+  public static final String EXTRA_EXTRAS_PATH = "extrasPath";
 
-        @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-        void onResume() {
-            Log.d(LOGTAG, "Lifecycle: onResume");
-            if (mPaused) {
-                
-                GeckoThread.onResume();
-            }
-            mPaused = false;
-            
-            
-            GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
-        }
+  
 
-        @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        void onPause() {
-            Log.d(LOGTAG, "Lifecycle: onPause");
-            mPaused = true;
-            
-            GeckoNetworkManager.getInstance().stop();
-            GeckoThread.onPause();
-        }
+
+
+
+
+
+
+  public static final String EXTRA_CRASH_FATAL = "fatal";
+
+  private final class LifecycleListener implements LifecycleObserver {
+    private boolean mPaused = false;
+
+    public LifecycleListener() {}
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+    void onCreate() {
+      Log.d(LOGTAG, "Lifecycle: onCreate");
     }
 
-    private static GeckoRuntime sDefaultRuntime;
-
-    
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public static synchronized @NonNull GeckoRuntime getDefault(final @NonNull Context context) {
-        ThreadUtils.assertOnUiThread();
-        if (DEBUG) {
-            Log.d(LOGTAG, "getDefault");
-        }
-        if (sDefaultRuntime == null) {
-            sDefaultRuntime = new GeckoRuntime();
-            sDefaultRuntime.attachTo(context);
-            sDefaultRuntime.init(context, new GeckoRuntimeSettings());
-        }
-
-        return sDefaultRuntime;
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    void onStart() {
+      Log.d(LOGTAG, "Lifecycle: onStart");
     }
 
-    private static GeckoRuntime sRuntime;
-    private GeckoRuntimeSettings mSettings;
-    private Delegate mDelegate;
-    private ServiceWorkerDelegate mServiceWorkerDelegate;
-    private WebNotificationDelegate mNotificationDelegate;
-    private ActivityDelegate mActivityDelegate;
-    private StorageController mStorageController;
-    private final WebExtensionController mWebExtensionController;
-    private WebPushController mPushController;
-    private final ContentBlockingController mContentBlockingController;
-    private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
-    private final ProfilerController mProfilerController;
-
-    private GeckoRuntime() {
-        mWebExtensionController = new WebExtensionController(this);
-        mContentBlockingController = new ContentBlockingController();
-        mAutocompleteStorageProxy = new Autocomplete.StorageProxy();
-        mProfilerController = new ProfilerController();
-
-        if (sRuntime != null) {
-            throw new IllegalStateException("Only one GeckoRuntime instance is allowed");
-        }
-        sRuntime = this;
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    void onResume() {
+      Log.d(LOGTAG, "Lifecycle: onResume");
+      if (mPaused) {
+        
+        
+        GeckoThread.onResume();
+      }
+      mPaused = false;
+      
+      
+      GeckoNetworkManager.getInstance().start(GeckoAppShell.getApplicationContext());
     }
 
-    @WrapForJNI
-    @UiThread
-     @Nullable static GeckoRuntime getInstance() {
-        return sRuntime;
+    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+    void onPause() {
+      Log.d(LOGTAG, "Lifecycle: onPause");
+      mPaused = true;
+      
+      GeckoNetworkManager.getInstance().stop();
+      GeckoThread.onPause();
+    }
+  }
+
+  private static GeckoRuntime sDefaultRuntime;
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public static synchronized @NonNull GeckoRuntime getDefault(final @NonNull Context context) {
+    ThreadUtils.assertOnUiThread();
+    if (DEBUG) {
+      Log.d(LOGTAG, "getDefault");
+    }
+    if (sDefaultRuntime == null) {
+      sDefaultRuntime = new GeckoRuntime();
+      sDefaultRuntime.attachTo(context);
+      sDefaultRuntime.init(context, new GeckoRuntimeSettings());
     }
 
+    return sDefaultRuntime;
+  }
 
-    
+  private static GeckoRuntime sRuntime;
+  private GeckoRuntimeSettings mSettings;
+  private Delegate mDelegate;
+  private ServiceWorkerDelegate mServiceWorkerDelegate;
+  private WebNotificationDelegate mNotificationDelegate;
+  private ActivityDelegate mActivityDelegate;
+  private StorageController mStorageController;
+  private final WebExtensionController mWebExtensionController;
+  private WebPushController mPushController;
+  private final ContentBlockingController mContentBlockingController;
+  private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
+  private final ProfilerController mProfilerController;
+
+  private GeckoRuntime() {
+    mWebExtensionController = new WebExtensionController(this);
+    mContentBlockingController = new ContentBlockingController();
+    mAutocompleteStorageProxy = new Autocomplete.StorageProxy();
+    mProfilerController = new ProfilerController();
+
+    if (sRuntime != null) {
+      throw new IllegalStateException("Only one GeckoRuntime instance is allowed");
+    }
+    sRuntime = this;
+  }
+
+  @WrapForJNI
+  @UiThread
+   @Nullable
+  static GeckoRuntime getInstance() {
+    return sRuntime;
+  }
+
+  
 
 
 
 
 
-    @WrapForJNI(calledFrom = "gecko")
-    private static @NonNull GeckoResult<String> serviceWorkerOpenWindow(final @NonNull String url) {
-        if (sRuntime != null && sRuntime.mServiceWorkerDelegate != null) {
-            final GeckoResult<String> result = new GeckoResult<>();
-            
-            ThreadUtils.runOnUiThread(() -> {
-                sRuntime
-                    .mServiceWorkerDelegate
-                    .onOpenWindow(url)
-                    .accept( session -> {
-                        if (session != null) {
-                            if (!session.isOpen()) {
-                                result.completeExceptionally(new RuntimeException("Returned GeckoSession must be open."));
-                            } else {
-                                session.loadUri(url);
-                                result.complete(session.getId());
-                            }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static @NonNull GeckoResult<String> serviceWorkerOpenWindow(final @NonNull String url) {
+    if (sRuntime != null && sRuntime.mServiceWorkerDelegate != null) {
+      final GeckoResult<String> result = new GeckoResult<>();
+      
+      ThreadUtils.runOnUiThread(
+          () -> {
+            sRuntime
+                .mServiceWorkerDelegate
+                .onOpenWindow(url)
+                .accept(
+                    session -> {
+                      if (session != null) {
+                        if (!session.isOpen()) {
+                          result.completeExceptionally(
+                              new RuntimeException("Returned GeckoSession must be open."));
                         } else {
-                            result.complete(null);
+                          session.loadUri(url);
+                          result.complete(session.getId());
                         }
+                      } else {
+                        result.complete(null);
+                      }
                     });
-            });
-            return result;
-        } else {
-            return GeckoResult.fromException(new java.lang.RuntimeException("No available Service Worker delegate."));
-        }
+          });
+      return result;
+    } else {
+      return GeckoResult.fromException(
+          new java.lang.RuntimeException("No available Service Worker delegate."));
     }
+  }
+
+  
 
 
-    
 
 
-
-
-    @UiThread
-    public void attachTo(final @NonNull Context context) {
-        ThreadUtils.assertOnUiThread();
-        if (DEBUG) {
-            Log.d(LOGTAG, "attachTo " + context.getApplicationContext());
-        }
-        final Context appContext = context.getApplicationContext();
-        if (!appContext.equals(GeckoAppShell.getApplicationContext())) {
-            GeckoAppShell.setApplicationContext(appContext);
-        }
+  @UiThread
+  public void attachTo(final @NonNull Context context) {
+    ThreadUtils.assertOnUiThread();
+    if (DEBUG) {
+      Log.d(LOGTAG, "attachTo " + context.getApplicationContext());
     }
+    final Context appContext = context.getApplicationContext();
+    if (!appContext.equals(GeckoAppShell.getApplicationContext())) {
+      GeckoAppShell.setApplicationContext(appContext);
+    }
+  }
 
-    private final BundleEventListener mEventListener = new BundleEventListener() {
+  private final BundleEventListener mEventListener =
+      new BundleEventListener() {
         @Override
-        public void handleMessage(final String event, final GeckoBundle message,
-                                  final EventCallback callback) {
-            final Class<?> crashHandler = GeckoRuntime.this.getSettings().mCrashHandler;
+        public void handleMessage(
+            final String event, final GeckoBundle message, final EventCallback callback) {
+          final Class<?> crashHandler = GeckoRuntime.this.getSettings().mCrashHandler;
 
-            if ("Gecko:Exited".equals(event) && mDelegate != null) {
-                mDelegate.onShutdown();
-                EventDispatcher.getInstance().unregisterUiThreadListener(mEventListener, "Gecko:Exited");
-            } else if ("GeckoView:ContentCrashReport".equals(event) && crashHandler != null) {
-                final Context context = GeckoAppShell.getApplicationContext();
-                final Intent i = new Intent(ACTION_CRASHED, null,
-                        context, crashHandler);
-                i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
-                i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
-                i.putExtra(EXTRA_CRASH_FATAL, message.getBoolean(EXTRA_CRASH_FATAL, true));
+          if ("Gecko:Exited".equals(event) && mDelegate != null) {
+            mDelegate.onShutdown();
+            EventDispatcher.getInstance()
+                .unregisterUiThreadListener(mEventListener, "Gecko:Exited");
+          } else if ("GeckoView:ContentCrashReport".equals(event) && crashHandler != null) {
+            final Context context = GeckoAppShell.getApplicationContext();
+            final Intent i = new Intent(ACTION_CRASHED, null, context, crashHandler);
+            i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
+            i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
+            i.putExtra(EXTRA_CRASH_FATAL, message.getBoolean(EXTRA_CRASH_FATAL, true));
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(i);
-                } else {
-                    context.startService(i);
-                }
-            }
-        }
-    };
-
-    private static String getProcessName(final Context context) {
-        final ActivityManager manager =
-                (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
-        final List<ActivityManager.RunningAppProcessInfo> infos =
-                manager.getRunningAppProcesses();
-        if (infos == null) {
-            return null;
-        }
-        for (final ActivityManager.RunningAppProcessInfo info : infos) {
-            if (info.pid == Process.myPid()) {
-                return info.processName;
-            }
-        }
-
-        return null;
-    }
-
-    private void setArguments(final Context context, final GeckoThread.InitInfo initInfo,
-                              final String[] arguments) {
-        final List<String> result = new ArrayList<>(arguments.length);
-        for (final String argument : arguments) {
-            if ("-xpcshell".equals(argument)) {
-                
-                if (!BuildConfig.DEBUG
-                        || !"org.mozilla.geckoview.test".equals(
-                                context.getApplicationContext().getPackageName())) {
-                    throw new IllegalArgumentException("Only the test app can run -xpcshell.");
-                }
-
-                initInfo.xpcshell = true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              context.startForegroundService(i);
             } else {
-                result.add(argument);
+              context.startService(i);
             }
+          }
         }
+      };
 
-        initInfo.args = result.toArray(new String[]{});
+  private static String getProcessName(final Context context) {
+    final ActivityManager manager =
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    final List<ActivityManager.RunningAppProcessInfo> infos = manager.getRunningAppProcesses();
+    if (infos == null) {
+      return null;
+    }
+    for (final ActivityManager.RunningAppProcessInfo info : infos) {
+      if (info.pid == Process.myPid()) {
+        return info.processName;
+      }
     }
 
-     boolean init(final @NonNull Context context, final @NonNull GeckoRuntimeSettings settings) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "init");
-        }
-        int flags = GeckoThread.FLAG_PRELOAD_CHILD;
+    return null;
+  }
 
-        if (settings.getPauseForDebuggerEnabled()) {
-            flags |= GeckoThread.FLAG_DEBUGGING;
-        }
-
-        final Class<?> crashHandler = settings.getCrashHandler();
-        if (crashHandler != null) {
-            try {
-                final ServiceInfo info =
-                        context.getPackageManager()
-                        .getServiceInfo(
-                                new ComponentName(context, crashHandler), 0);
-                if (info.processName.equals(getProcessName(context))) {
-                    throw new IllegalArgumentException(
-                            "Crash handler service must run in a separate process");
-                }
-
-                EventDispatcher.getInstance().registerUiThreadListener(
-                        mEventListener, "GeckoView:ContentCrashReport");
-
-                flags |= GeckoThread.FLAG_ENABLE_NATIVE_CRASHREPORTER;
-            } catch (final PackageManager.NameNotFoundException e) {
-                throw new IllegalArgumentException(
-                        "Crash handler must be registered as a service");
-            }
-        }
-
-        GeckoAppShell.useMaxScreenDepth(settings.getUseMaxScreenDepth());
-        GeckoAppShell.setDisplayDensityOverride(settings.getDisplayDensityOverride());
-        GeckoAppShell.setDisplayDpiOverride(settings.getDisplayDpiOverride());
-        GeckoAppShell.setScreenSizeOverride(settings.getScreenSizeOverride());
-        GeckoAppShell.setCrashHandlerService(settings.getCrashHandler());
-        GeckoFontScaleListener.getInstance().attachToContext(context, settings);
-
-        final GeckoThread.InitInfo info = new GeckoThread.InitInfo();
-        setArguments(context, info, settings.getArguments());
-        if (info.xpcshell) {
-            info.outFilePath = settings.getExtras().getString("out_file");
-            
-            settings.setProcessCount(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_COUNT);
-        }
-        info.extras = settings.getExtras();
-        info.flags = flags;
-        info.prefs = settings.getPrefsMap();
-
+  private void setArguments(
+      final Context context, final GeckoThread.InitInfo initInfo, final String[] arguments) {
+    final List<String> result = new ArrayList<>(arguments.length);
+    for (final String argument : arguments) {
+      if ("-xpcshell".equals(argument)) {
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            String configFilePath = settings.getConfigFilePath();
-            if (configFilePath == null) {
-                
-                
-                
-                if (isApplicationDebuggable(context) || isApplicationCurrentDebugApp(context)) {
-                    configFilePath = String.format(CONFIG_FILE_PATH_TEMPLATE, context.getApplicationInfo().packageName);
-                }
-            }
-
-            if (configFilePath != null && !configFilePath.isEmpty()) {
-                try {
-                    final DebugConfig debugConfig = DebugConfig.fromFile(new File(configFilePath));
-                    Log.i(LOGTAG, "Adding debug configuration from: " + configFilePath);
-                    debugConfig.mergeIntoInitInfo(info);
-                } catch (final DebugConfig.ConfigException e) {
-                    Log.w(LOGTAG, "Failed to add debug configuration from: " + configFilePath, e);
-                } catch (final FileNotFoundException e) {
-                }
-            }
+        if (!BuildConfig.DEBUG
+            || !"org.mozilla.geckoview.test"
+                .equals(context.getApplicationContext().getPackageName())) {
+          throw new IllegalArgumentException("Only the test app can run -xpcshell.");
         }
 
-        if (!GeckoThread.init(info)) {
-            Log.w(LOGTAG, "init failed (could not initiate GeckoThread)");
-            return false;
+        initInfo.xpcshell = true;
+      } else {
+        result.add(argument);
+      }
+    }
+
+    initInfo.args = result.toArray(new String[] {});
+  }
+
+   boolean init(
+      final @NonNull Context context, final @NonNull GeckoRuntimeSettings settings) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "init");
+    }
+    int flags = GeckoThread.FLAG_PRELOAD_CHILD;
+
+    if (settings.getPauseForDebuggerEnabled()) {
+      flags |= GeckoThread.FLAG_DEBUGGING;
+    }
+
+    final Class<?> crashHandler = settings.getCrashHandler();
+    if (crashHandler != null) {
+      try {
+        final ServiceInfo info =
+            context.getPackageManager().getServiceInfo(new ComponentName(context, crashHandler), 0);
+        if (info.processName.equals(getProcessName(context))) {
+          throw new IllegalArgumentException(
+              "Crash handler service must run in a separate process");
         }
 
-        if (!GeckoThread.launch()) {
-            Log.w(LOGTAG, "init failed (GeckoThread already launched)");
-            return false;
+        EventDispatcher.getInstance()
+            .registerUiThreadListener(mEventListener, "GeckoView:ContentCrashReport");
+
+        flags |= GeckoThread.FLAG_ENABLE_NATIVE_CRASHREPORTER;
+      } catch (final PackageManager.NameNotFoundException e) {
+        throw new IllegalArgumentException("Crash handler must be registered as a service");
+      }
+    }
+
+    GeckoAppShell.useMaxScreenDepth(settings.getUseMaxScreenDepth());
+    GeckoAppShell.setDisplayDensityOverride(settings.getDisplayDensityOverride());
+    GeckoAppShell.setDisplayDpiOverride(settings.getDisplayDpiOverride());
+    GeckoAppShell.setScreenSizeOverride(settings.getScreenSizeOverride());
+    GeckoAppShell.setCrashHandlerService(settings.getCrashHandler());
+    GeckoFontScaleListener.getInstance().attachToContext(context, settings);
+
+    final GeckoThread.InitInfo info = new GeckoThread.InitInfo();
+    setArguments(context, info, settings.getArguments());
+    if (info.xpcshell) {
+      info.outFilePath = settings.getExtras().getString("out_file");
+      
+      settings.setProcessCount(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_COUNT);
+    }
+    info.extras = settings.getExtras();
+    info.flags = flags;
+    info.prefs = settings.getPrefsMap();
+
+    
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+      String configFilePath = settings.getConfigFilePath();
+      if (configFilePath == null) {
+        
+        
+        
+        if (isApplicationDebuggable(context) || isApplicationCurrentDebugApp(context)) {
+          configFilePath =
+              String.format(CONFIG_FILE_PATH_TEMPLATE, context.getApplicationInfo().packageName);
         }
+      }
 
-        mSettings = settings;
+      if (configFilePath != null && !configFilePath.isEmpty()) {
+        try {
+          final DebugConfig debugConfig = DebugConfig.fromFile(new File(configFilePath));
+          Log.i(LOGTAG, "Adding debug configuration from: " + configFilePath);
+          debugConfig.mergeIntoInitInfo(info);
+        } catch (final DebugConfig.ConfigException e) {
+          Log.w(LOGTAG, "Failed to add debug configuration from: " + configFilePath, e);
+        } catch (final FileNotFoundException e) {
+        }
+      }
+    }
 
-        
-        EventDispatcher.getInstance().registerUiThreadListener(mEventListener, "Gecko:Exited");
+    if (!GeckoThread.init(info)) {
+      Log.w(LOGTAG, "init failed (could not initiate GeckoThread)");
+      return false;
+    }
 
-        
-        mSettings.attachTo(this);
+    if (!GeckoThread.launch()) {
+      Log.w(LOGTAG, "init failed (GeckoThread already launched)");
+      return false;
+    }
 
-        
-        GeckoAppShell.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    mSettings = settings;
 
-        
-        ProcessLifecycleOwner.get().getLifecycle().addObserver(new LifecycleListener());
-        mProfilerController.addMarker("GeckoView Initialization START", mProfilerController.getProfilerTime());
+    
+    EventDispatcher.getInstance().registerUiThreadListener(mEventListener, "Gecko:Exited");
+
+    
+    mSettings.attachTo(this);
+
+    
+    GeckoAppShell.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
+
+    
+    ProcessLifecycleOwner.get().getLifecycle().addObserver(new LifecycleListener());
+    mProfilerController.addMarker(
+        "GeckoView Initialization START", mProfilerController.getProfilerTime());
+    return true;
+  }
+
+  private boolean isApplicationDebuggable(final @NonNull Context context) {
+    final ApplicationInfo applicationInfo = context.getApplicationInfo();
+    return (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+  }
+
+  private boolean isApplicationCurrentDebugApp(final @NonNull Context context) {
+    final ApplicationInfo applicationInfo = context.getApplicationInfo();
+
+    final String currentDebugApp;
+    if (Build.VERSION.SDK_INT >= 17) {
+      currentDebugApp =
+          Settings.Global.getString(context.getContentResolver(), Settings.Global.DEBUG_APP);
+    } else {
+      currentDebugApp =
+          Settings.System.getString(context.getContentResolver(), Settings.System.DEBUG_APP);
+    }
+    return applicationInfo.packageName.equals(currentDebugApp);
+  }
+
+   void setDefaultPrefs(final GeckoBundle prefs) {
+    EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs);
+  }
+
+  
+
+
+
+
+
+
+
+
+  @UiThread
+  public static @NonNull GeckoRuntime create(final @NonNull Context context) {
+    ThreadUtils.assertOnUiThread();
+    return create(context, new GeckoRuntimeSettings());
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull WebExtensionController getWebExtensionController() {
+    return mWebExtensionController;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull ContentBlockingController getContentBlockingController() {
+    return mContentBlockingController;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @NonNull ProfilerController getProfilerController() {
+    return mProfilerController;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public static @NonNull GeckoRuntime create(
+      final @NonNull Context context, final @NonNull GeckoRuntimeSettings settings) {
+    ThreadUtils.assertOnUiThread();
+    if (DEBUG) {
+      Log.d(LOGTAG, "create " + context);
+    }
+
+    final GeckoRuntime runtime = new GeckoRuntime();
+    runtime.attachTo(context);
+
+    if (!runtime.init(context, settings)) {
+      throw new IllegalStateException("Failed to initialize GeckoRuntime");
+    }
+
+    return runtime;
+  }
+
+  
+  @AnyThread
+  public void shutdown() {
+    if (DEBUG) {
+      Log.d(LOGTAG, "shutdown");
+    }
+
+    GeckoSystemStateListener.getInstance().shutdown();
+    GeckoThread.forceQuit();
+  }
+
+  public interface Delegate {
+    
+
+
+
+    @UiThread
+    void onShutdown();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void setDelegate(final @Nullable Delegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mDelegate = delegate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable Delegate getDelegate() {
+    return mDelegate;
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void setAutocompleteStorageDelegate(
+      final @Nullable Autocomplete.StorageDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mAutocompleteStorageProxy.setDelegate(delegate);
+  }
+
+  
+
+
+
+
+  @UiThread
+  public @Nullable Autocomplete.StorageDelegate getAutocompleteStorageDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mAutocompleteStorageProxy.getDelegate();
+  }
+
+  @UiThread
+  public interface ServiceWorkerDelegate {
+
+    
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    @NonNull
+    GeckoResult<GeckoSession> onOpenWindow(@NonNull String url);
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void setServiceWorkerDelegate(
+      final @Nullable ServiceWorkerDelegate serviceWorkerDelegate) {
+    mServiceWorkerDelegate = serviceWorkerDelegate;
+  }
+
+  
+
+
+
+
+  @UiThread
+  @Nullable
+  public ServiceWorkerDelegate getServiceWorkerDelegate() {
+    return mServiceWorkerDelegate;
+  }
+
+  
+
+
+
+
+
+
+  @UiThread
+  public void setWebNotificationDelegate(final @Nullable WebNotificationDelegate delegate) {
+    mNotificationDelegate = delegate;
+  }
+
+  @WrapForJNI
+   boolean usesDarkTheme() {
+    switch (getSettings().getPreferredColorScheme()) {
+      case GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM:
+        return GeckoSystemStateListener.getInstance().isNightMode();
+      case GeckoRuntimeSettings.COLOR_SCHEME_DARK:
         return true;
+      case GeckoRuntimeSettings.COLOR_SCHEME_LIGHT:
+      default:
+        return false;
     }
+  }
 
-    private boolean isApplicationDebuggable(final @NonNull Context context) {
-        final ApplicationInfo applicationInfo = context.getApplicationInfo();
-        return (applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-    }
+  
 
-    private boolean isApplicationCurrentDebugApp(final @NonNull Context context) {
-        final ApplicationInfo applicationInfo = context.getApplicationInfo();
 
-        final String currentDebugApp;
-        if (Build.VERSION.SDK_INT >= 17) {
-            currentDebugApp = Settings.Global.getString(context.getContentResolver(),
-                    Settings.Global.DEBUG_APP);
-        } else {
-            currentDebugApp = Settings.System.getString(context.getContentResolver(),
-                    Settings.System.DEBUG_APP);
-        }
-        return applicationInfo.packageName.equals(currentDebugApp);
-    }
 
-     void setDefaultPrefs(final GeckoBundle prefs) {
-        EventDispatcher.getInstance().dispatch("GeckoView:SetDefaultPrefs", prefs);
-    }
 
+  @WrapForJNI
+  @UiThread
+  public @Nullable WebNotificationDelegate getWebNotificationDelegate() {
+    return mNotificationDelegate;
+  }
+
+  @WrapForJNI
+  @AnyThread
+  private void notifyOnShow(final WebNotification notification) {
+    ThreadUtils.runOnUiThread(
+        () -> {
+          if (mNotificationDelegate != null) {
+            mNotificationDelegate.onShowNotification(notification);
+          }
+        });
+  }
+
+  @WrapForJNI
+  @AnyThread
+  private void notifyOnClose(final WebNotification notification) {
+    ThreadUtils.runOnUiThread(
+        () -> {
+          if (mNotificationDelegate != null) {
+            mNotificationDelegate.onCloseNotification(notification);
+          }
+        });
+  }
+
+  
+
+
+
+
+
+
+
+  public interface ActivityDelegate {
     
 
 
@@ -439,444 +694,196 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-
-
-
-
-    @UiThread
-    public static @NonNull GeckoRuntime create(final @NonNull Context context) {
-        ThreadUtils.assertOnUiThread();
-        return create(context, new GeckoRuntimeSettings());
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull WebExtensionController getWebExtensionController() {
-        return mWebExtensionController;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull ContentBlockingController getContentBlockingController() {
-        return mContentBlockingController;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull ProfilerController getProfilerController() {
-        return mProfilerController;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    @UiThread
-    public static @NonNull GeckoRuntime create(final @NonNull Context context,
-                                               final @NonNull GeckoRuntimeSettings settings) {
-        ThreadUtils.assertOnUiThread();
-        if (DEBUG) {
-            Log.d(LOGTAG, "create " + context);
-        }
-
-        final GeckoRuntime runtime = new GeckoRuntime();
-        runtime.attachTo(context);
-
-        if (!runtime.init(context, settings)) {
-            throw new IllegalStateException("Failed to initialize GeckoRuntime");
-        }
-
-        return runtime;
-    }
-
-    
-
-
-    @AnyThread
-    public void shutdown() {
-        if (DEBUG) {
-            Log.d(LOGTAG, "shutdown");
-        }
-
-        GeckoSystemStateListener.getInstance().shutdown();
-        GeckoThread.forceQuit();
-    }
-
-    public interface Delegate {
-        
-
-
-
-        @UiThread
-        void onShutdown();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void setDelegate(final @Nullable Delegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mDelegate = delegate;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @Nullable Delegate getDelegate() {
-        return mDelegate;
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void setAutocompleteStorageDelegate(
-            final @Nullable Autocomplete.StorageDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mAutocompleteStorageProxy.setDelegate(delegate);
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @Nullable Autocomplete.StorageDelegate getAutocompleteStorageDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mAutocompleteStorageProxy.getDelegate();
-    }
-
-    @UiThread
-    public interface ServiceWorkerDelegate {
-
-        
-
-
-
-
-
-
-
-
-
-        @UiThread
-        @NonNull
-        GeckoResult<GeckoSession> onOpenWindow(@NonNull String url);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void setServiceWorkerDelegate(final @Nullable ServiceWorkerDelegate serviceWorkerDelegate) {
-        mServiceWorkerDelegate = serviceWorkerDelegate;
-    }
-
-    
 
 
 
 
     @UiThread
     @Nullable
-    public ServiceWorkerDelegate getServiceWorkerDelegate() {
-        return mServiceWorkerDelegate;
-    }
+    GeckoResult<Intent> onStartActivityForResult(@NonNull PendingIntent intent);
+  }
 
-    
-
+  
 
 
 
 
 
-    @UiThread
-    public void setWebNotificationDelegate(final @Nullable WebNotificationDelegate delegate) {
-        mNotificationDelegate = delegate;
-    }
 
-    @WrapForJNI
-     boolean usesDarkTheme() {
-        switch (getSettings().getPreferredColorScheme()) {
-            case GeckoRuntimeSettings.COLOR_SCHEME_SYSTEM:
-                return GeckoSystemStateListener.getInstance().isNightMode();
-            case GeckoRuntimeSettings.COLOR_SCHEME_DARK:
-                return true;
-            case GeckoRuntimeSettings.COLOR_SCHEME_LIGHT:
-            default:
-                return false;
-        }
-    }
+  @UiThread
+  public void setActivityDelegate(final @Nullable ActivityDelegate delegate) {
+    ThreadUtils.assertOnUiThread();
+    mActivityDelegate = delegate;
+  }
 
-    
+  
 
 
 
 
-    @WrapForJNI
-    @UiThread
-    public @Nullable WebNotificationDelegate getWebNotificationDelegate() {
-        return mNotificationDelegate;
-    }
+  @UiThread
+  public @Nullable ActivityDelegate getActivityDelegate() {
+    ThreadUtils.assertOnUiThread();
+    return mActivityDelegate;
+  }
 
-    @WrapForJNI
-    @AnyThread
-    private void notifyOnShow(final WebNotification notification) {
-        ThreadUtils.runOnUiThread(() -> {
-            if (mNotificationDelegate != null) {
-                mNotificationDelegate.onShowNotification(notification);
+  @AnyThread
+   GeckoResult<Intent> startActivityForResult(final @NonNull PendingIntent intent) {
+    if (!ThreadUtils.isOnUiThread()) {
+      
+      final GeckoResult<Intent> result = new GeckoResult<>();
+
+      ThreadUtils.runOnUiThread(
+          () -> {
+            final GeckoResult<Intent> delegateResult = startActivityForResult(intent);
+            if (delegateResult != null) {
+              delegateResult.accept(
+                  val -> result.complete(val), e -> result.completeExceptionally(e));
+            } else {
+              result.completeExceptionally(new IllegalStateException("No result"));
             }
-        });
+          });
+
+      return result;
     }
 
-    @WrapForJNI
-    @AnyThread
-    private void notifyOnClose(final WebNotification notification) {
-        ThreadUtils.runOnUiThread(() -> {
-            if (mNotificationDelegate != null) {
-                mNotificationDelegate.onCloseNotification(notification);
-            }
-        });
+    if (mActivityDelegate == null) {
+      return GeckoResult.fromException(new IllegalStateException("No delegate attached"));
     }
 
+    @SuppressLint("WrongThread")
+    GeckoResult<Intent> result = mActivityDelegate.onStartActivityForResult(intent);
+    if (result == null) {
+      result = GeckoResult.fromException(new IllegalStateException("No result"));
+    }
+
+    return result;
+  }
+
+  @AnyThread
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public @NonNull GeckoRuntimeSettings getSettings() {
+    return mSettings;
+  }
+
+  
+  @UiThread
+  public void orientationChanged() {
+    ThreadUtils.assertOnUiThread();
+    GeckoScreenOrientation.getInstance().update();
+  }
+
+  
+
+
+
+
+  @UiThread
+  public void configurationChanged(final @NonNull Configuration newConfig) {
+    ThreadUtils.assertOnUiThread();
+    GeckoSystemStateListener.getInstance().updateNightMode(newConfig.uiMode);
+  }
+
+  
+
+
+
+
+
+  @UiThread
+  public void orientationChanged(final int newOrientation) {
+    ThreadUtils.assertOnUiThread();
+    GeckoScreenOrientation.getInstance().update(newOrientation);
+  }
+
+  
+
+
+
+
+
+  @UiThread
+  public @NonNull StorageController getStorageController() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mStorageController == null) {
+      mStorageController = new StorageController();
+    }
+    return mStorageController;
+  }
+
+  
+
+
+
+
+
+  @UiThread
+  public @NonNull WebPushController getWebPushController() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mPushController == null) {
+      mPushController = new WebPushController();
+    }
+
+    return mPushController;
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void appendAppNotesToCrashReport(@NonNull final String notes) {
+    final String notesWithNewLine = notes + "\n";
+    if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
+      GeckoAppShell.nativeAppendAppNotesToCrashReport(notesWithNewLine);
+    } else {
+      GeckoThread.queueNativeCallUntil(
+          GeckoThread.State.PROFILE_READY,
+          GeckoAppShell.class,
+          "nativeAppendAppNotesToCrashReport",
+          String.class,
+          notesWithNewLine);
+    }
     
-
-
-
-
-
-
-    public interface ActivityDelegate {
-        
-
-
-
-
-
-
-
-
-
-
-
-        @UiThread
-        @Nullable GeckoResult<Intent> onStartActivityForResult(@NonNull PendingIntent intent);
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public void setActivityDelegate(
-            final @Nullable ActivityDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mActivityDelegate = delegate;
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @Nullable ActivityDelegate getActivityDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mActivityDelegate;
-    }
-
-    @AnyThread
-     GeckoResult<Intent> startActivityForResult(final @NonNull PendingIntent intent) {
-        if (!ThreadUtils.isOnUiThread()) {
-            
-            final GeckoResult<Intent> result = new GeckoResult<>();
-
-            ThreadUtils.runOnUiThread(() -> {
-                final GeckoResult<Intent> delegateResult = startActivityForResult(intent);
-                if (delegateResult != null) {
-                    delegateResult.accept(val -> result.complete(val), e -> result.completeExceptionally(e));
-                } else {
-                    result.completeExceptionally(new IllegalStateException("No result"));
-                }
-            });
-
-            return result;
-        }
-
-        if (mActivityDelegate == null) {
-            return GeckoResult.fromException(new IllegalStateException("No delegate attached"));
-        }
-
-        @SuppressLint("WrongThread")
-        GeckoResult<Intent> result = mActivityDelegate.onStartActivityForResult(intent);
-        if (result == null) {
-            result = GeckoResult.fromException(new IllegalStateException("No result"));
-        }
-
-        return result;
-    }
-
-    @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public @NonNull GeckoRuntimeSettings getSettings() {
-        return mSettings;
-    }
-
-    
-
-
-    @UiThread
-    public void orientationChanged() {
-        ThreadUtils.assertOnUiThread();
-        GeckoScreenOrientation.getInstance().update();
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void configurationChanged(final @NonNull Configuration newConfig) {
-        ThreadUtils.assertOnUiThread();
-        GeckoSystemStateListener.getInstance().updateNightMode(newConfig.uiMode);
-    }
-
-    
-
-
-
-
-    @UiThread
-    public void orientationChanged(final int newOrientation) {
-        ThreadUtils.assertOnUiThread();
-        GeckoScreenOrientation.getInstance().update(newOrientation);
-    }
-
-
-    
-
-
-
-
-
-
-    @UiThread
-    public @NonNull StorageController getStorageController() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mStorageController == null) {
-            mStorageController = new StorageController();
-        }
-        return mStorageController;
-    }
-
-    
-
-
-
-
-
-
-    @UiThread
-    public @NonNull WebPushController getWebPushController() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mPushController == null) {
-            mPushController = new WebPushController();
-        }
-
-        return mPushController;
-    }
-
-    
-
-
-
-    @AnyThread
-    public void appendAppNotesToCrashReport(@NonNull final String notes) {
-        final String notesWithNewLine = notes + "\n";
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            GeckoAppShell.nativeAppendAppNotesToCrashReport(notesWithNewLine);
-        } else {
-            GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, GeckoAppShell.class,
-                    "nativeAppendAppNotesToCrashReport", String.class, notesWithNewLine);
-        }
-        
-        GeckoAppShell.appendAppNotesToCrashReport(notes);
-    }
-
-    @Override 
-    @AnyThread
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override 
-    @AnyThread
-    public void writeToParcel(final Parcel out, final int flags) {
-        out.writeParcelable(mSettings, flags);
-    }
-
-    
-    @AnyThread
-    @SuppressWarnings("checkstyle:javadocmethod")
-    public void readFromParcel(final @NonNull Parcel source) {
-        mSettings = source.readParcelable(getClass().getClassLoader());
-    }
-
-    public static final Parcelable.Creator<GeckoRuntime> CREATOR =
-            new Parcelable.Creator<GeckoRuntime>() {
+    GeckoAppShell.appendAppNotesToCrashReport(notes);
+  }
+
+  @Override 
+  @AnyThread
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override 
+  @AnyThread
+  public void writeToParcel(final Parcel out, final int flags) {
+    out.writeParcelable(mSettings, flags);
+  }
+
+  
+  @AnyThread
+  @SuppressWarnings("checkstyle:javadocmethod")
+  public void readFromParcel(final @NonNull Parcel source) {
+    mSettings = source.readParcelable(getClass().getClassLoader());
+  }
+
+  public static final Parcelable.Creator<GeckoRuntime> CREATOR =
+      new Parcelable.Creator<GeckoRuntime>() {
         @Override
         @AnyThread
         public GeckoRuntime createFromParcel(final Parcel in) {
-            final GeckoRuntime runtime = new GeckoRuntime();
-            runtime.readFromParcel(in);
-            return runtime;
+          final GeckoRuntime runtime = new GeckoRuntime();
+          runtime.readFromParcel(in);
+          return runtime;
         }
 
         @Override
         @AnyThread
         public GeckoRuntime[] newArray(final int size) {
-            return new GeckoRuntime[size];
+          return new GeckoRuntime[size];
         }
-    };
+      };
 }

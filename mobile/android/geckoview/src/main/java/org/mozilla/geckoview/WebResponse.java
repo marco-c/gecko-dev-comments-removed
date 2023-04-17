@@ -6,17 +6,15 @@
 
 package org.mozilla.geckoview;
 
-import org.mozilla.gecko.annotation.WrapForJNI;
-
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
@@ -25,49 +23,88 @@ import java.security.cert.X509Certificate;
 @WrapForJNI
 @AnyThread
 public class WebResponse extends WebMessage {
+  
+  public static final long DEFAULT_READ_TIMEOUT_MS = 30000;
+
+  
+  public final int statusCode;
+
+  
+  public final boolean redirected;
+
+  
+  public final boolean isSecure;
+
+  
+  public final @Nullable X509Certificate certificate;
+
+  
+
+
+
+
+  public final @Nullable InputStream body;
+
+  protected WebResponse(final @NonNull Builder builder) {
+    super(builder);
+    this.statusCode = builder.mStatusCode;
+    this.redirected = builder.mRedirected;
+    this.body = builder.mBody;
+    this.isSecure = builder.mIsSecure;
+    this.certificate = builder.mCertificate;
+
+    this.setReadTimeoutMillis(DEFAULT_READ_TIMEOUT_MS);
+  }
+
+  
+
+
+
+
+
+
+
+  public void setReadTimeoutMillis(final long millis) {
+    if (this.body != null && this.body instanceof GeckoInputStream) {
+      ((GeckoInputStream) this.body).setReadTimeoutMillis(millis);
+    }
+  }
+
+  
+  @WrapForJNI
+  @AnyThread
+  public static class Builder extends WebMessage.Builder {
+     int mStatusCode;
+     boolean mRedirected;
+     InputStream mBody;
+     boolean mIsSecure;
+     X509Certificate mCertificate;
+
     
 
 
-    public static final long DEFAULT_READ_TIMEOUT_MS = 30000;
-
-    
 
 
-    public final int statusCode;
+    public Builder(final @NonNull String uri) {
+      super(uri);
+    }
 
-    
+    @Override
+    public @NonNull Builder uri(final @NonNull String uri) {
+      super.uri(uri);
+      return this;
+    }
 
+    @Override
+    public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
+      super.header(key, value);
+      return this;
+    }
 
-
-    public final boolean redirected;
-
-    
-
-
-    public final boolean isSecure;
-
-    
-
-
-    public final @Nullable X509Certificate certificate;
-
-    
-
-
-
-
-
-    public final @Nullable InputStream body;
-
-    protected WebResponse(final @NonNull Builder builder) {
-        super(builder);
-        this.statusCode = builder.mStatusCode;
-        this.redirected = builder.mRedirected;
-        this.body = builder.mBody;
-        this.isSecure = builder.mIsSecure;
-        this.certificate = builder.mCertificate;
-
-        this.setReadTimeoutMillis(DEFAULT_READ_TIMEOUT_MS);
+    @Override
+    public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
+      super.addHeader(key, value);
+      return this;
     }
 
     
@@ -76,123 +113,67 @@ public class WebResponse extends WebMessage {
 
 
 
-
-
-    public void setReadTimeoutMillis(final long millis) {
-        if (this.body != null && this.body instanceof GeckoInputStream) {
-            ((GeckoInputStream)this.body).setReadTimeoutMillis(millis);
-        }
+    public @NonNull Builder body(final @NonNull InputStream stream) {
+      mBody = stream;
+      return this;
     }
 
     
 
 
-    @WrapForJNI
-    @AnyThread
-    public static class Builder extends WebMessage.Builder {
-         int mStatusCode;
-         boolean mRedirected;
-         InputStream mBody;
-         boolean mIsSecure;
-         X509Certificate mCertificate;
 
-        
-
-
-
-
-        public Builder(final @NonNull String uri) {
-            super(uri);
-        }
-
-        @Override
-        public @NonNull Builder uri(final @NonNull String uri) {
-            super.uri(uri);
-            return this;
-        }
-
-        @Override
-        public @NonNull Builder header(final @NonNull String key, final @NonNull String value) {
-            super.header(key, value);
-            return this;
-        }
-
-        @Override
-        public @NonNull Builder addHeader(final @NonNull String key, final @NonNull String value) {
-            super.addHeader(key, value);
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder body(final @NonNull InputStream stream) {
-            mBody = stream;
-            return this;
-        }
-
-        
-
-
-
-        public @NonNull Builder isSecure(final boolean isSecure) {
-            mIsSecure = isSecure;
-            return this;
-        }
-
-        
-
-
-
-        public @NonNull Builder certificate(final @NonNull X509Certificate certificate) {
-            mCertificate = certificate;
-            return this;
-        }
-
-        
-
-
-        @WrapForJNI(exceptionMode = "nsresult")
-        private void certificateBytes(final @NonNull byte[] encodedCert) {
-            try {
-                final CertificateFactory factory = CertificateFactory.getInstance("X.509");
-                final X509Certificate cert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(encodedCert));
-                certificate(cert);
-            } catch (final CertificateException e) {
-                throw new IllegalArgumentException("Unable to parse DER certificate");
-            }
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder statusCode(final int code) {
-            mStatusCode = code;
-            return this;
-        }
-
-        
-
-
-
-
-
-        public @NonNull Builder redirected(final boolean redirected) {
-            mRedirected = redirected;
-            return this;
-        }
-
-        
-
-
-        public @NonNull WebResponse build() {
-            return new WebResponse(this);
-        }
+    public @NonNull Builder isSecure(final boolean isSecure) {
+      mIsSecure = isSecure;
+      return this;
     }
+
+    
+
+
+
+    public @NonNull Builder certificate(final @NonNull X509Certificate certificate) {
+      mCertificate = certificate;
+      return this;
+    }
+
+    
+    @WrapForJNI(exceptionMode = "nsresult")
+    private void certificateBytes(final @NonNull byte[] encodedCert) {
+      try {
+        final CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        final X509Certificate cert =
+            (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(encodedCert));
+        certificate(cert);
+      } catch (final CertificateException e) {
+        throw new IllegalArgumentException("Unable to parse DER certificate");
+      }
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder statusCode(final int code) {
+      mStatusCode = code;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Builder redirected(final boolean redirected) {
+      mRedirected = redirected;
+      return this;
+    }
+
+    
+    public @NonNull WebResponse build() {
+      return new WebResponse(this);
+    }
+  }
 }

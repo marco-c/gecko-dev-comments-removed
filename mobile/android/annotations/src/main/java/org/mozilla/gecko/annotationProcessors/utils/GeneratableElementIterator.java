@@ -4,19 +4,18 @@
 
 package org.mozilla.gecko.annotationProcessors.utils;
 
-import org.mozilla.gecko.annotationProcessors.AnnotationInfo;
-import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
-import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import org.mozilla.gecko.annotationProcessors.AnnotationInfo;
+import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
+import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
 
 
 
@@ -24,263 +23,269 @@ import java.util.Iterator;
 
 
 public class GeneratableElementIterator implements Iterator<AnnotatableEntity> {
-    private final ClassWithOptions mClass;
-    private final Member[] mObjects;
-    private AnnotatableEntity mNextReturnValue;
-    private int mElementIndex;
-    private AnnotationInfo mClassInfo;
+  private final ClassWithOptions mClass;
+  private final Member[] mObjects;
+  private AnnotatableEntity mNextReturnValue;
+  private int mElementIndex;
+  private AnnotationInfo mClassInfo;
 
-    private boolean mIterateEveryEntry;
-    private boolean mIterateEnumValues;
-    private boolean mSkipCurrentEntry;
+  private boolean mIterateEveryEntry;
+  private boolean mIterateEnumValues;
+  private boolean mSkipCurrentEntry;
 
-    public GeneratableElementIterator(ClassWithOptions annotatedClass) {
-        mClass = annotatedClass;
+  public GeneratableElementIterator(ClassWithOptions annotatedClass) {
+    mClass = annotatedClass;
 
-        final Class<?> aClass = annotatedClass.wrappedClass;
-        
-        Member[] aMethods = aClass.getDeclaredMethods();
-        Member[] aFields = aClass.getDeclaredFields();
-        Member[] aCtors = aClass.getDeclaredConstructors();
+    final Class<?> aClass = annotatedClass.wrappedClass;
+    
+    Member[] aMethods = aClass.getDeclaredMethods();
+    Member[] aFields = aClass.getDeclaredFields();
+    Member[] aCtors = aClass.getDeclaredConstructors();
 
-        
-        Member[] objs = new Member[aMethods.length + aFields.length + aCtors.length];
+    
+    Member[] objs = new Member[aMethods.length + aFields.length + aCtors.length];
 
-        int offset = 0;
-        System.arraycopy(aMethods, 0, objs, 0, aMethods.length);
-        offset += aMethods.length;
-        System.arraycopy(aFields, 0, objs, offset, aFields.length);
-        offset += aFields.length;
-        System.arraycopy(aCtors, 0, objs, offset, aCtors.length);
+    int offset = 0;
+    System.arraycopy(aMethods, 0, objs, 0, aMethods.length);
+    offset += aMethods.length;
+    System.arraycopy(aFields, 0, objs, offset, aFields.length);
+    offset += aFields.length;
+    System.arraycopy(aCtors, 0, objs, offset, aCtors.length);
 
-        
-        Arrays.sort(objs, new AlphabeticAnnotatableEntityComparator<Member>());
-        mObjects = objs;
+    
+    Arrays.sort(objs, new AlphabeticAnnotatableEntityComparator<Member>());
+    mObjects = objs;
 
-        
-        for (Annotation annotation : aClass.getDeclaredAnnotations()) {
-            mClassInfo = buildAnnotationInfo(aClass, annotation);
-            if (mClassInfo != null) {
-                if (aClass.isEnum()) {
-                    
-                    
-                    mIterateEnumValues = true;
-                } else {
-                    mIterateEveryEntry = true;
-                }
-                break;
-            }
+    
+    for (Annotation annotation : aClass.getDeclaredAnnotations()) {
+      mClassInfo = buildAnnotationInfo(aClass, annotation);
+      if (mClassInfo != null) {
+        if (aClass.isEnum()) {
+          
+          
+          mIterateEnumValues = true;
+        } else {
+          mIterateEveryEntry = true;
         }
-
-        if (mSkipCurrentEntry) {
-            throw new IllegalArgumentException("Cannot skip entire class");
-        }
-
-        findNextValue();
+        break;
+      }
     }
 
-    private Class<?>[] getFilteredInnerClasses() {
-        
-        final Class<?>[] candidates = mClass.wrappedClass.getDeclaredClasses();
-        int count = 0;
-
-        for (int i = 0; i < candidates.length; ++i) {
-            final GeneratableElementIterator testIterator = new GeneratableElementIterator(
-                    new ClassWithOptions(candidates[i], null,  ""));
-            if (testIterator.hasNext()
-                    || testIterator.getFilteredInnerClasses() != null) {
-                count++;
-                continue;
-            }
-            
-            candidates[i] = null;
-        }
-        return count > 0 ? candidates : null;
+    if (mSkipCurrentEntry) {
+      throw new IllegalArgumentException("Cannot skip entire class");
     }
 
-    public ClassWithOptions[] getInnerClasses() {
-        final Class<?>[] candidates = getFilteredInnerClasses();
-        if (candidates == null) {
-            return new ClassWithOptions[0];
-        }
+    findNextValue();
+  }
 
-        int count = 0;
-        for (Class<?> candidate : candidates) {
-            if (candidate != null) {
-                count++;
-            }
-        }
+  private Class<?>[] getFilteredInnerClasses() {
+    
+    final Class<?>[] candidates = mClass.wrappedClass.getDeclaredClasses();
+    int count = 0;
 
-        final ClassWithOptions[] ret = new ClassWithOptions[count];
-        count = 0;
-        for (Class<?> candidate : candidates) {
-            if (candidate != null) {
-                ret[count++] = new ClassWithOptions(
-                        candidate,
-                        mClass.generatedName + "::" + candidate.getSimpleName(),
-                         "");
-            }
-        }
-        assert ret.length == count;
+    for (int i = 0; i < candidates.length; ++i) {
+      final GeneratableElementIterator testIterator =
+          new GeneratableElementIterator(new ClassWithOptions(candidates[i], null,  ""));
+      if (testIterator.hasNext() || testIterator.getFilteredInnerClasses() != null) {
+        count++;
+        continue;
+      }
+      
+      candidates[i] = null;
+    }
+    return count > 0 ? candidates : null;
+  }
 
-        Arrays.sort(ret, new Comparator<ClassWithOptions>() {
-            @Override public int compare(ClassWithOptions lhs, ClassWithOptions rhs) {
-                return lhs.generatedName.compareTo(rhs.generatedName);
-            }
+  public ClassWithOptions[] getInnerClasses() {
+    final Class<?>[] candidates = getFilteredInnerClasses();
+    if (candidates == null) {
+      return new ClassWithOptions[0];
+    }
+
+    int count = 0;
+    for (Class<?> candidate : candidates) {
+      if (candidate != null) {
+        count++;
+      }
+    }
+
+    final ClassWithOptions[] ret = new ClassWithOptions[count];
+    count = 0;
+    for (Class<?> candidate : candidates) {
+      if (candidate != null) {
+        ret[count++] =
+            new ClassWithOptions(
+                candidate, mClass.generatedName + "::" + candidate.getSimpleName(),  "");
+      }
+    }
+    assert ret.length == count;
+
+    Arrays.sort(
+        ret,
+        new Comparator<ClassWithOptions>() {
+          @Override
+          public int compare(ClassWithOptions lhs, ClassWithOptions rhs) {
+            return lhs.generatedName.compareTo(rhs.generatedName);
+          }
         });
-        return ret;
+    return ret;
+  }
+
+  private AnnotationInfo buildAnnotationInfo(AnnotatedElement element, Annotation annotation) {
+    Class<? extends Annotation> annotationType = annotation.annotationType();
+    final String annotationTypeName = annotationType.getName();
+    if (!annotationTypeName.equals("org.mozilla.gecko.annotation.WrapForJNI")) {
+      return null;
     }
 
-    private AnnotationInfo buildAnnotationInfo(AnnotatedElement element, Annotation annotation) {
-        Class<? extends Annotation> annotationType = annotation.annotationType();
-        final String annotationTypeName = annotationType.getName();
-        if (!annotationTypeName.equals("org.mozilla.gecko.annotation.WrapForJNI")) {
-            return null;
-        }
+    String stubName = null;
+    AnnotationInfo.ExceptionMode exceptionMode = null;
+    AnnotationInfo.CallingThread callingThread = null;
+    AnnotationInfo.DispatchTarget dispatchTarget = null;
+    boolean noLiteral = false;
 
-        String stubName = null;
-        AnnotationInfo.ExceptionMode exceptionMode = null;
-        AnnotationInfo.CallingThread callingThread = null;
-        AnnotationInfo.DispatchTarget dispatchTarget = null;
-        boolean noLiteral = false;
+    try {
+      final Method skipMethod = annotationType.getDeclaredMethod("skip");
+      skipMethod.setAccessible(true);
+      if ((Boolean) skipMethod.invoke(annotation)) {
+        mSkipCurrentEntry = true;
+        return null;
+      }
 
-        try {
-            final Method skipMethod = annotationType.getDeclaredMethod("skip");
-            skipMethod.setAccessible(true);
-            if ((Boolean) skipMethod.invoke(annotation)) {
-                mSkipCurrentEntry = true;
-                return null;
-            }
+      
+      final Method stubNameMethod = annotationType.getDeclaredMethod("stubName");
+      stubNameMethod.setAccessible(true);
+      stubName = (String) stubNameMethod.invoke(annotation);
 
-            
-            final Method stubNameMethod = annotationType.getDeclaredMethod("stubName");
-            stubNameMethod.setAccessible(true);
-            stubName = (String) stubNameMethod.invoke(annotation);
+      final Method exceptionModeMethod = annotationType.getDeclaredMethod("exceptionMode");
+      exceptionModeMethod.setAccessible(true);
+      exceptionMode =
+          Utils.getEnumValue(
+              AnnotationInfo.ExceptionMode.class, (String) exceptionModeMethod.invoke(annotation));
 
-            final Method exceptionModeMethod = annotationType.getDeclaredMethod("exceptionMode");
-            exceptionModeMethod.setAccessible(true);
-            exceptionMode = Utils.getEnumValue(
-                    AnnotationInfo.ExceptionMode.class,
-                    (String) exceptionModeMethod.invoke(annotation));
+      final Method calledFromMethod = annotationType.getDeclaredMethod("calledFrom");
+      calledFromMethod.setAccessible(true);
+      callingThread =
+          Utils.getEnumValue(
+              AnnotationInfo.CallingThread.class, (String) calledFromMethod.invoke(annotation));
 
-            final Method calledFromMethod = annotationType.getDeclaredMethod("calledFrom");
-            calledFromMethod.setAccessible(true);
-            callingThread = Utils.getEnumValue(
-                    AnnotationInfo.CallingThread.class,
-                    (String) calledFromMethod.invoke(annotation));
+      final Method dispatchToMethod = annotationType.getDeclaredMethod("dispatchTo");
+      dispatchToMethod.setAccessible(true);
+      dispatchTarget =
+          Utils.getEnumValue(
+              AnnotationInfo.DispatchTarget.class, (String) dispatchToMethod.invoke(annotation));
 
-            final Method dispatchToMethod = annotationType.getDeclaredMethod("dispatchTo");
-            dispatchToMethod.setAccessible(true);
-            dispatchTarget = Utils.getEnumValue(
-                    AnnotationInfo.DispatchTarget.class,
-                    (String) dispatchToMethod.invoke(annotation));
+      final Method noLiteralMethod = annotationType.getDeclaredMethod("noLiteral");
+      noLiteralMethod.setAccessible(true);
+      noLiteral = (Boolean) noLiteralMethod.invoke(annotation);
 
-            final Method noLiteralMethod = annotationType.getDeclaredMethod("noLiteral");
-            noLiteralMethod.setAccessible(true);
-            noLiteral = (Boolean) noLiteralMethod.invoke(annotation);
-
-        } catch (NoSuchMethodException e) {
-            System.err.println("Unable to find expected field on WrapForJNI annotation. Did the signature change?");
-            e.printStackTrace(System.err);
-            System.exit(3);
-        } catch (IllegalAccessException e) {
-            System.err.println("IllegalAccessException reading fields on WrapForJNI annotation. Seems the semantics of Reflection have changed...");
-            e.printStackTrace(System.err);
-            System.exit(4);
-        } catch (InvocationTargetException e) {
-            System.err.println("InvocationTargetException reading fields on WrapForJNI annotation. This really shouldn't happen.");
-            e.printStackTrace(System.err);
-            System.exit(5);
-        }
-
-        
-        if (stubName.isEmpty()) {
-            stubName = Utils.getNativeName(element);
-        }
-
-        return new AnnotationInfo(stubName, exceptionMode, callingThread, dispatchTarget,
-                                  noLiteral);
+    } catch (NoSuchMethodException e) {
+      System.err.println(
+          "Unable to find expected field on WrapForJNI annotation. Did the signature change?");
+      e.printStackTrace(System.err);
+      System.exit(3);
+    } catch (IllegalAccessException e) {
+      System.err.println(
+          "IllegalAccessException reading fields on WrapForJNI annotation. Seems the semantics of Reflection have changed...");
+      e.printStackTrace(System.err);
+      System.exit(4);
+    } catch (InvocationTargetException e) {
+      System.err.println(
+          "InvocationTargetException reading fields on WrapForJNI annotation. This really shouldn't happen.");
+      e.printStackTrace(System.err);
+      System.exit(5);
     }
 
     
+    if (stubName.isEmpty()) {
+      stubName = Utils.getNativeName(element);
+    }
+
+    return new AnnotationInfo(stubName, exceptionMode, callingThread, dispatchTarget, noLiteral);
+  }
+
+  
 
 
 
-    private void findNextValue() {
-        while (mElementIndex < mObjects.length) {
-            Member candidateElement = mObjects[mElementIndex];
-            mElementIndex++;
-            for (Annotation annotation : ((AnnotatedElement) candidateElement).getDeclaredAnnotations()) {
-                AnnotationInfo info = buildAnnotationInfo((AnnotatedElement)candidateElement, annotation);
-                if (info != null) {
-                    mNextReturnValue = new AnnotatableEntity(candidateElement, info);
-                    return;
-                }
-            }
-
-            if (mSkipCurrentEntry) {
-                mSkipCurrentEntry = false;
-                continue;
-            }
-
-            
-            
-            if (mIterateEveryEntry || isAnnotatedEnumField(candidateElement)) {
-                AnnotationInfo annotationInfo = new AnnotationInfo(
-                    Utils.getNativeName(candidateElement),
-                    mClassInfo.exceptionMode,
-                    mClassInfo.callingThread,
-                    mClassInfo.dispatchTarget,
-                    mClassInfo.noLiteral);
-                mNextReturnValue = new AnnotatableEntity(candidateElement, annotationInfo);
-                return;
-            }
+  private void findNextValue() {
+    while (mElementIndex < mObjects.length) {
+      Member candidateElement = mObjects[mElementIndex];
+      mElementIndex++;
+      for (Annotation annotation : ((AnnotatedElement) candidateElement).getDeclaredAnnotations()) {
+        AnnotationInfo info = buildAnnotationInfo((AnnotatedElement) candidateElement, annotation);
+        if (info != null) {
+          mNextReturnValue = new AnnotatableEntity(candidateElement, info);
+          return;
         }
-        mNextReturnValue = null;
+      }
+
+      if (mSkipCurrentEntry) {
+        mSkipCurrentEntry = false;
+        continue;
+      }
+
+      
+      
+      if (mIterateEveryEntry || isAnnotatedEnumField(candidateElement)) {
+        AnnotationInfo annotationInfo =
+            new AnnotationInfo(
+                Utils.getNativeName(candidateElement),
+                mClassInfo.exceptionMode,
+                mClassInfo.callingThread,
+                mClassInfo.dispatchTarget,
+                mClassInfo.noLiteral);
+        mNextReturnValue = new AnnotatableEntity(candidateElement, annotationInfo);
+        return;
+      }
+    }
+    mNextReturnValue = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  private boolean isAnnotatedEnumField(final Member member) {
+    if (!mIterateEnumValues) {
+      return false;
     }
 
-    
-
-
-
-
-
-
-
-
-    private boolean isAnnotatedEnumField(final Member member)
-    {
-        if (!mIterateEnumValues) {
-            return false;
-        }
-
-        if (!Utils.isPublic(member) || !Utils.isStatic(member) || !Utils.isFinal(member) ||
-            !(member instanceof Field)) {
-            return false;
-        }
-
-        final Class<?> enumClass = mClass.wrappedClass;
-
-        final Field field = (Field) member;
-        final Class<?> fieldClass = field.getType();
-
-        return enumClass.equals(fieldClass);
+    if (!Utils.isPublic(member)
+        || !Utils.isStatic(member)
+        || !Utils.isFinal(member)
+        || !(member instanceof Field)) {
+      return false;
     }
 
-    @Override
-    public boolean hasNext() {
-        return mNextReturnValue != null;
-    }
+    final Class<?> enumClass = mClass.wrappedClass;
 
-    @Override
-    public AnnotatableEntity next() {
-        AnnotatableEntity ret = mNextReturnValue;
-        findNextValue();
-        return ret;
-    }
+    final Field field = (Field) member;
+    final Class<?> fieldClass = field.getType();
 
-    @Override
-    public void remove() {
-        throw new UnsupportedOperationException("Removal of methods from GeneratableElementIterator not supported.");
-    }
+    return enumClass.equals(fieldClass);
+  }
+
+  @Override
+  public boolean hasNext() {
+    return mNextReturnValue != null;
+  }
+
+  @Override
+  public AnnotatableEntity next() {
+    AnnotatableEntity ret = mNextReturnValue;
+    findNextValue();
+    return ret;
+  }
+
+  @Override
+  public void remove() {
+    throw new UnsupportedOperationException(
+        "Removal of methods from GeneratableElementIterator not supported.");
+  }
 }

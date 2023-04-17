@@ -5,16 +5,6 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.annotation.RobocopTarget;
-import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.mozglue.GeckoLoader;
-import org.mozilla.gecko.process.GeckoProcessManager;
-import org.mozilla.gecko.process.GeckoProcessType;
-import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.geckoview.BuildConfig;
-import org.mozilla.geckoview.GeckoResult;
-
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -25,12 +15,11 @@ import android.os.Message;
 import android.os.MessageQueue;
 import android.os.Process;
 import android.os.SystemClock;
+import android.text.TextUtils;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import android.text.TextUtils;
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -38,698 +27,718 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
+import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.annotation.WrapForJNI;
+import org.mozilla.gecko.mozglue.GeckoLoader;
+import org.mozilla.gecko.process.GeckoProcessManager;
+import org.mozilla.gecko.process.GeckoProcessType;
+import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.geckoview.BuildConfig;
+import org.mozilla.geckoview.GeckoResult;
 
 public class GeckoThread extends Thread {
-    private static final String LOGTAG = "GeckoThread";
+  private static final String LOGTAG = "GeckoThread";
 
-    public enum State implements NativeQueue.State {
-        
-        @WrapForJNI INITIAL(0),
-        
-        @WrapForJNI LAUNCHED(1),
-        
-        @WrapForJNI MOZGLUE_READY(2),
-        
-        @WrapForJNI LIBS_READY(3),
-        
-        @WrapForJNI JNI_READY(4),
-        
-        @WrapForJNI PROFILE_READY(5),
-        
-        @WrapForJNI RUNNING(6),
-        
-        @WrapForJNI EXITING(3),
-        
-        @WrapForJNI RESTARTING(3),
-        
-        CORRUPT_APK(2),
-        
-        @WrapForJNI EXITED(0);
-
-        
-
-
-
-
-
-
-        private final int mRank;
-
-        private State(final int rank) {
-            mRank = rank;
-        }
-
-        @Override
-        public boolean is(final NativeQueue.State other) {
-            return this == other;
-        }
-
-        @Override
-        public boolean isAtLeast(final NativeQueue.State other) {
-            if (other instanceof State) {
-                return mRank >= ((State) other).mRank;
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return name();
-        }
-    }
-
-    private static final NativeQueue sNativeQueue =
-        new NativeQueue(State.INITIAL, State.RUNNING);
-
-     static NativeQueue getNativeQueue() {
-        return sNativeQueue;
-    }
-
-    public static final State MIN_STATE = State.INITIAL;
-    public static final State MAX_STATE = State.EXITED;
-
-    private static final Runnable UI_THREAD_CALLBACK = new Runnable() {
-        @Override
-        public void run() {
-            ThreadUtils.assertOnUiThread();
-            final long nextDelay = runUiThreadCallback();
-            if (nextDelay >= 0) {
-                ThreadUtils.getUiHandler().postDelayed(this, nextDelay);
-            }
-        }
-    };
-
-    private static final GeckoThread INSTANCE = new GeckoThread();
-
+  public enum State implements NativeQueue.State {
+    
     @WrapForJNI
-    private static final ClassLoader clsLoader = GeckoThread.class.getClassLoader();
+    INITIAL(0),
+    
     @WrapForJNI
-    private static MessageQueue msgQueue;
+    LAUNCHED(1),
+    
     @WrapForJNI
-    private static int uiThreadId;
-
-    private static TelemetryUtils.Timer sInitTimer;
-    private static LinkedList<StateGeckoResult> sStateListeners = new LinkedList<>();
+    MOZGLUE_READY(2),
+    
+    @WrapForJNI
+    LIBS_READY(3),
+    
+    @WrapForJNI
+    JNI_READY(4),
+    
+    @WrapForJNI
+    PROFILE_READY(5),
+    
+    @WrapForJNI
+    RUNNING(6),
+    
+    @WrapForJNI
+    EXITING(3),
+    
+    @WrapForJNI
+    RESTARTING(3),
+    
+    CORRUPT_APK(2),
+    
+    @WrapForJNI
+    EXITED(0);
 
     
-    public static final int FLAG_DEBUGGING = 1 << 0; 
-    public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
-    public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER = 1 << 2; 
 
-     static final String EXTRA_ARGS = "args";
-    private static final String EXTRA_PREFS_FD = "prefsFd";
-    private static final String EXTRA_PREF_MAP_FD = "prefMapFd";
-    private static final String EXTRA_IPC_FD = "ipcFd";
-    private static final String EXTRA_CRASH_FD = "crashFd";
-    private static final String EXTRA_CRASH_ANNOTATION_FD = "crashAnnotationFd";
 
-    private boolean mInitialized;
-    private InitInfo mInitInfo;
 
-    public static class InitInfo {
-        public String[] args;
-        public Bundle extras;
-        public int flags;
-        public Map<String, Object> prefs;
-        public String userSerialNumber;
 
-        public boolean xpcshell;
-        public String outFilePath;
-        public int prefsFd;
-        public int prefMapFd;
-        public int ipcFd;
-        public int crashFd;
-        public int crashAnnotationFd;
-    }
 
-    private static class StateGeckoResult extends GeckoResult<Void> {
-        final State state;
-        public StateGeckoResult(final State state) {
-            this.state = state;
-        }
-    }
 
-    GeckoThread() {
-        
-        
-        super(null, null, "Gecko", 8 * 1024 * 1024);
-    }
+    private final int mRank;
 
-    @WrapForJNI
-    private static boolean isChildProcess() {
-        final InitInfo info = INSTANCE.mInitInfo;
-        return info != null && info.extras.getInt(EXTRA_IPC_FD, -1) != -1;
-    }
-
-    public static boolean init(final InitInfo info) {
-        return INSTANCE.initInternal(info);
-    }
-
-    private synchronized boolean initInternal(final InitInfo info) {
-        ThreadUtils.assertOnUiThread();
-        uiThreadId = Process.myTid();
-
-        if (mInitialized) {
-            return false;
-        }
-
-        sInitTimer = new TelemetryUtils.UptimeTimer("GV_STARTUP_RUNTIME_MS");
-
-        mInitInfo = info;
-
-        mInitInfo.extras = (info.extras != null) ? new Bundle(info.extras) : new Bundle(3);
-
-        if (info.prefsFd > 0) {
-            mInitInfo.extras.putInt(EXTRA_PREFS_FD, info.prefsFd);
-        }
-
-        if (info.prefMapFd > 0) {
-            mInitInfo.extras.putInt(EXTRA_PREF_MAP_FD, info.prefMapFd);
-        }
-
-        if (info.ipcFd > 0) {
-            mInitInfo.extras.putInt(EXTRA_IPC_FD, info.ipcFd);
-        }
-
-        if (info.crashFd > 0) {
-            mInitInfo.extras.putInt(EXTRA_CRASH_FD, info.crashFd);
-        }
-
-        if (info.crashAnnotationFd > 0) {
-            mInitInfo.extras.putInt(EXTRA_CRASH_ANNOTATION_FD, info.crashAnnotationFd);
-        }
-
-        mInitialized = true;
-        notifyAll();
-        return true;
-    }
-
-    public static boolean launch() {
-        ThreadUtils.assertOnUiThread();
-
-        if (checkAndSetState(State.INITIAL, State.LAUNCHED)) {
-            INSTANCE.start();
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean isLaunched() {
-        return !isState(State.INITIAL);
-    }
-
-    @RobocopTarget
-    public static boolean isRunning() {
-        return isState(State.RUNNING);
-    }
-
-    private static void loadGeckoLibs(final Context context) {
-        GeckoLoader.loadSQLiteLibs(context);
-        GeckoLoader.loadNSSLibs(context);
-        GeckoLoader.loadGeckoLibs(context);
-        setState(State.LIBS_READY);
-    }
-
-    private static void initGeckoEnvironment() {
-        final Context context = GeckoAppShell.getApplicationContext();
-        final Locale locale = Locale.getDefault();
-        final Resources res = context.getResources();
-        if (locale.toString().equalsIgnoreCase("zh_hk")) {
-            final Locale mappedLocale = Locale.TRADITIONAL_CHINESE;
-            Locale.setDefault(mappedLocale);
-            final Configuration config = res.getConfiguration();
-            config.locale = mappedLocale;
-            res.updateConfiguration(config, null);
-        }
-
-        if (!isChildProcess()) {
-            GeckoSystemStateListener.getInstance().initialize(context);
-        }
-
-        loadGeckoLibs(context);
-    }
-
-    private String[] getMainProcessArgs() {
-        final Context context = GeckoAppShell.getApplicationContext();
-        final ArrayList<String> args = new ArrayList<String>();
-
-        
-        args.add(context.getPackageName());
-
-        if (!mInitInfo.xpcshell) {
-            args.add("-greomni");
-            args.add(context.getPackageResourcePath());
-        }
-
-        if (mInitInfo.args != null) {
-            args.addAll(Arrays.asList(mInitInfo.args));
-        }
-
-        
-        final String extraArgs = mInitInfo.extras.getString(EXTRA_ARGS, null);
-        if (extraArgs != null) {
-            final StringTokenizer st = new StringTokenizer(extraArgs);
-            while (st.hasMoreTokens()) {
-                args.add(st.nextToken());
-            }
-        }
-
-        
-        for (int i = 0; mInitInfo.extras.containsKey("arg" + i); i++) {
-            final String arg = mInitInfo.extras.getString("arg" + i);
-            args.add(arg);
-        }
-
-        return args.toArray(new String[args.size()]);
-    }
-
-    public static @Nullable Bundle getActiveExtras() {
-        synchronized (INSTANCE) {
-            if (!INSTANCE.mInitialized) {
-                return null;
-            }
-            return new Bundle(INSTANCE.mInitInfo.extras);
-        }
-    }
-
-    public static int getActiveFlags() {
-        synchronized (INSTANCE) {
-            if (!INSTANCE.mInitialized) {
-                return 0;
-            }
-
-            return INSTANCE.mInitInfo.flags;
-        }
-    }
-
-    private static ArrayList<String> getEnvFromExtras(final Bundle extras) {
-        if (extras == null) {
-            return new ArrayList<>();
-        }
-
-        final ArrayList<String> result = new ArrayList<>();
-        if (extras != null) {
-            String env = extras.getString("env0");
-            for (int c = 1; env != null; c++) {
-                if (BuildConfig.DEBUG) {
-                    Log.d(LOGTAG, "env var: " + env);
-                }
-                result.add(env);
-                env = extras.getString("env" + c);
-            }
-        }
-
-        return result;
+    private State(final int rank) {
+      mRank = rank;
     }
 
     @Override
-    public void run() {
-        Log.i(LOGTAG, "preparing to run Gecko");
+    public boolean is(final NativeQueue.State other) {
+      return this == other;
+    }
 
-        Looper.prepare();
-        GeckoThread.msgQueue = Looper.myQueue();
-        ThreadUtils.sGeckoThread = this;
-        ThreadUtils.sGeckoHandler = new Handler();
+    @Override
+    public boolean isAtLeast(final NativeQueue.State other) {
+      if (other instanceof State) {
+        return mRank >= ((State) other).mRank;
+      }
+      return false;
+    }
 
-        
-        final MessageQueue.IdleHandler idleHandler = new MessageQueue.IdleHandler() {
-            @Override public boolean queueIdle() {
-                final Handler geckoHandler = ThreadUtils.sGeckoHandler;
-                final Message idleMsg = Message.obtain(geckoHandler);
-                
-                idleMsg.obj = geckoHandler;
-                geckoHandler.sendMessageAtFrontOfQueue(idleMsg);
-                
-                return true;
-            }
+    @Override
+    public String toString() {
+      return name();
+    }
+  }
+
+  private static final NativeQueue sNativeQueue = new NativeQueue(State.INITIAL, State.RUNNING);
+
+   static NativeQueue getNativeQueue() {
+    return sNativeQueue;
+  }
+
+  public static final State MIN_STATE = State.INITIAL;
+  public static final State MAX_STATE = State.EXITED;
+
+  private static final Runnable UI_THREAD_CALLBACK =
+      new Runnable() {
+        @Override
+        public void run() {
+          ThreadUtils.assertOnUiThread();
+          final long nextDelay = runUiThreadCallback();
+          if (nextDelay >= 0) {
+            ThreadUtils.getUiHandler().postDelayed(this, nextDelay);
+          }
+        }
+      };
+
+  private static final GeckoThread INSTANCE = new GeckoThread();
+
+  @WrapForJNI private static final ClassLoader clsLoader = GeckoThread.class.getClassLoader();
+  @WrapForJNI private static MessageQueue msgQueue;
+  @WrapForJNI private static int uiThreadId;
+
+  private static TelemetryUtils.Timer sInitTimer;
+  private static LinkedList<StateGeckoResult> sStateListeners = new LinkedList<>();
+
+  
+  public static final int FLAG_DEBUGGING = 1 << 0; 
+  public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
+  public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER =
+      1 << 2; 
+
+   static final String EXTRA_ARGS = "args";
+  private static final String EXTRA_PREFS_FD = "prefsFd";
+  private static final String EXTRA_PREF_MAP_FD = "prefMapFd";
+  private static final String EXTRA_IPC_FD = "ipcFd";
+  private static final String EXTRA_CRASH_FD = "crashFd";
+  private static final String EXTRA_CRASH_ANNOTATION_FD = "crashAnnotationFd";
+
+  private boolean mInitialized;
+  private InitInfo mInitInfo;
+
+  public static class InitInfo {
+    public String[] args;
+    public Bundle extras;
+    public int flags;
+    public Map<String, Object> prefs;
+    public String userSerialNumber;
+
+    public boolean xpcshell;
+    public String outFilePath;
+    public int prefsFd;
+    public int prefMapFd;
+    public int ipcFd;
+    public int crashFd;
+    public int crashAnnotationFd;
+  }
+
+  private static class StateGeckoResult extends GeckoResult<Void> {
+    final State state;
+
+    public StateGeckoResult(final State state) {
+      this.state = state;
+    }
+  }
+
+  GeckoThread() {
+    
+    
+    super(null, null, "Gecko", 8 * 1024 * 1024);
+  }
+
+  @WrapForJNI
+  private static boolean isChildProcess() {
+    final InitInfo info = INSTANCE.mInitInfo;
+    return info != null && info.extras.getInt(EXTRA_IPC_FD, -1) != -1;
+  }
+
+  public static boolean init(final InitInfo info) {
+    return INSTANCE.initInternal(info);
+  }
+
+  private synchronized boolean initInternal(final InitInfo info) {
+    ThreadUtils.assertOnUiThread();
+    uiThreadId = Process.myTid();
+
+    if (mInitialized) {
+      return false;
+    }
+
+    sInitTimer = new TelemetryUtils.UptimeTimer("GV_STARTUP_RUNTIME_MS");
+
+    mInitInfo = info;
+
+    mInitInfo.extras = (info.extras != null) ? new Bundle(info.extras) : new Bundle(3);
+
+    if (info.prefsFd > 0) {
+      mInitInfo.extras.putInt(EXTRA_PREFS_FD, info.prefsFd);
+    }
+
+    if (info.prefMapFd > 0) {
+      mInitInfo.extras.putInt(EXTRA_PREF_MAP_FD, info.prefMapFd);
+    }
+
+    if (info.ipcFd > 0) {
+      mInitInfo.extras.putInt(EXTRA_IPC_FD, info.ipcFd);
+    }
+
+    if (info.crashFd > 0) {
+      mInitInfo.extras.putInt(EXTRA_CRASH_FD, info.crashFd);
+    }
+
+    if (info.crashAnnotationFd > 0) {
+      mInitInfo.extras.putInt(EXTRA_CRASH_ANNOTATION_FD, info.crashAnnotationFd);
+    }
+
+    mInitialized = true;
+    notifyAll();
+    return true;
+  }
+
+  public static boolean launch() {
+    ThreadUtils.assertOnUiThread();
+
+    if (checkAndSetState(State.INITIAL, State.LAUNCHED)) {
+      INSTANCE.start();
+      return true;
+    }
+    return false;
+  }
+
+  public static boolean isLaunched() {
+    return !isState(State.INITIAL);
+  }
+
+  @RobocopTarget
+  public static boolean isRunning() {
+    return isState(State.RUNNING);
+  }
+
+  private static void loadGeckoLibs(final Context context) {
+    GeckoLoader.loadSQLiteLibs(context);
+    GeckoLoader.loadNSSLibs(context);
+    GeckoLoader.loadGeckoLibs(context);
+    setState(State.LIBS_READY);
+  }
+
+  private static void initGeckoEnvironment() {
+    final Context context = GeckoAppShell.getApplicationContext();
+    final Locale locale = Locale.getDefault();
+    final Resources res = context.getResources();
+    if (locale.toString().equalsIgnoreCase("zh_hk")) {
+      final Locale mappedLocale = Locale.TRADITIONAL_CHINESE;
+      Locale.setDefault(mappedLocale);
+      final Configuration config = res.getConfiguration();
+      config.locale = mappedLocale;
+      res.updateConfiguration(config, null);
+    }
+
+    if (!isChildProcess()) {
+      GeckoSystemStateListener.getInstance().initialize(context);
+    }
+
+    loadGeckoLibs(context);
+  }
+
+  private String[] getMainProcessArgs() {
+    final Context context = GeckoAppShell.getApplicationContext();
+    final ArrayList<String> args = new ArrayList<String>();
+
+    
+    args.add(context.getPackageName());
+
+    if (!mInitInfo.xpcshell) {
+      args.add("-greomni");
+      args.add(context.getPackageResourcePath());
+    }
+
+    if (mInitInfo.args != null) {
+      args.addAll(Arrays.asList(mInitInfo.args));
+    }
+
+    
+    final String extraArgs = mInitInfo.extras.getString(EXTRA_ARGS, null);
+    if (extraArgs != null) {
+      final StringTokenizer st = new StringTokenizer(extraArgs);
+      while (st.hasMoreTokens()) {
+        args.add(st.nextToken());
+      }
+    }
+
+    
+    for (int i = 0; mInitInfo.extras.containsKey("arg" + i); i++) {
+      final String arg = mInitInfo.extras.getString("arg" + i);
+      args.add(arg);
+    }
+
+    return args.toArray(new String[args.size()]);
+  }
+
+  public static @Nullable Bundle getActiveExtras() {
+    synchronized (INSTANCE) {
+      if (!INSTANCE.mInitialized) {
+        return null;
+      }
+      return new Bundle(INSTANCE.mInitInfo.extras);
+    }
+  }
+
+  public static int getActiveFlags() {
+    synchronized (INSTANCE) {
+      if (!INSTANCE.mInitialized) {
+        return 0;
+      }
+
+      return INSTANCE.mInitInfo.flags;
+    }
+  }
+
+  private static ArrayList<String> getEnvFromExtras(final Bundle extras) {
+    if (extras == null) {
+      return new ArrayList<>();
+    }
+
+    final ArrayList<String> result = new ArrayList<>();
+    if (extras != null) {
+      String env = extras.getString("env0");
+      for (int c = 1; env != null; c++) {
+        if (BuildConfig.DEBUG) {
+          Log.d(LOGTAG, "env var: " + env);
+        }
+        result.add(env);
+        env = extras.getString("env" + c);
+      }
+    }
+
+    return result;
+  }
+
+  @Override
+  public void run() {
+    Log.i(LOGTAG, "preparing to run Gecko");
+
+    Looper.prepare();
+    GeckoThread.msgQueue = Looper.myQueue();
+    ThreadUtils.sGeckoThread = this;
+    ThreadUtils.sGeckoHandler = new Handler();
+
+    
+    final MessageQueue.IdleHandler idleHandler =
+        new MessageQueue.IdleHandler() {
+          @Override
+          public boolean queueIdle() {
+            final Handler geckoHandler = ThreadUtils.sGeckoHandler;
+            final Message idleMsg = Message.obtain(geckoHandler);
+            
+            idleMsg.obj = geckoHandler;
+            geckoHandler.sendMessageAtFrontOfQueue(idleMsg);
+            
+            return true;
+          }
         };
-        Looper.myQueue().addIdleHandler(idleHandler);
+    Looper.myQueue().addIdleHandler(idleHandler);
 
-        
-        synchronized (this) {
-            while (!mInitialized) {
-                try {
-                    wait();
-                } catch (final InterruptedException e) {
-                }
-            }
+    
+    synchronized (this) {
+      while (!mInitialized) {
+        try {
+          wait();
+        } catch (final InterruptedException e) {
         }
+      }
+    }
 
-        final Context context = GeckoAppShell.getApplicationContext();
-        final List<String> env = getEnvFromExtras(mInitInfo.extras);
+    final Context context = GeckoAppShell.getApplicationContext();
+    final List<String> env = getEnvFromExtras(mInitInfo.extras);
 
-        
-        
-        if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
-            env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
-        } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0 && BuildConfig.DEBUG_BUILD) {
-            env.add(0, "MOZ_CRASHREPORTER=1");
-        }
+    
+    
+    if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
+      env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
+    } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0
+        && BuildConfig.DEBUG_BUILD) {
+      env.add(0, "MOZ_CRASHREPORTER=1");
+    }
 
-        if (mInitInfo.userSerialNumber != null) {
-            env.add(0, "MOZ_ANDROID_USER_SERIAL_NUMBER=" + mInitInfo.userSerialNumber);
-        }
-
-        
-        
-        maybeStartGeckoProfiler(env);
-
-        GeckoLoader.loadMozGlue(context);
-        setState(State.MOZGLUE_READY);
-
-        final boolean isChildProcess = isChildProcess();
-
-        GeckoLoader.setupGeckoEnvironment(context, isChildProcess,
-                                          context.getFilesDir().getPath(), env, mInitInfo.prefs,
-                                          mInitInfo.xpcshell);
-
-        initGeckoEnvironment();
-
-        if ((mInitInfo.flags & FLAG_PRELOAD_CHILD) != 0) {
-            
-            GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
-        }
-
-        if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
-            try {
-                Thread.sleep(5 * 1000 );
-            } catch (final InterruptedException e) {
-            }
-        }
-
-        Log.w(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() + " - runGecko");
-
-        final String[] args = isChildProcess ? mInitInfo.args : getMainProcessArgs();
-
-        if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
-            Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
-        }
-
-        
-        GeckoLoader.nativeRun(args,
-                              mInitInfo.extras.getInt(EXTRA_PREFS_FD, -1),
-                              mInitInfo.extras.getInt(EXTRA_PREF_MAP_FD, -1),
-                              mInitInfo.extras.getInt(EXTRA_IPC_FD, -1),
-                              mInitInfo.extras.getInt(EXTRA_CRASH_FD, -1),
-                              mInitInfo.extras.getInt(EXTRA_CRASH_ANNOTATION_FD, -1),
-                              isChildProcess ? false : mInitInfo.xpcshell,
-                              isChildProcess ? null : mInitInfo.outFilePath);
-
-        
-        final boolean restarting = isState(State.RESTARTING);
-        setState(State.EXITED);
-
-        final GeckoBundle data = new GeckoBundle(1);
-        data.putBoolean("restart", restarting);
-        EventDispatcher.getInstance().dispatch("Gecko:Exited", data);
-
-        
-        Looper.myQueue().removeIdleHandler(idleHandler);
-
-        if (isChildProcess) {
-            
-            
-            System.exit(0);
-        }
+    if (mInitInfo.userSerialNumber != null) {
+      env.add(0, "MOZ_ANDROID_USER_SERIAL_NUMBER=" + mInitInfo.userSerialNumber);
     }
 
     
     
-    
-    private static void maybeStartGeckoProfiler(final @NonNull List<String> env) {
-        final String startupEnv = "MOZ_PROFILER_STARTUP=";
-        final String intervalEnv = "MOZ_PROFILER_STARTUP_INTERVAL=";
-        final String capacityEnv = "MOZ_PROFILER_STARTUP_ENTRIES=";
-        boolean isStartupProfiling = false;
-        
-        
-        int interval = 1;
-        
-        int capacity = 8 * 1024 * 1024;
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        final int minCapacity = 65536;
+    maybeStartGeckoProfiler(env);
 
-        
-        for (final String envItem : env) {
-            if (envItem == null) {
-                continue;
-            }
+    GeckoLoader.loadMozGlue(context);
+    setState(State.MOZGLUE_READY);
 
-            if (envItem.startsWith(startupEnv)) {
-                
-                final String value = envItem.substring(startupEnv.length());
-                if (value.isEmpty() || value.equals("0") || value.equals("n") || value.equals("N")) {
-                    
-                    
-                    
-                    break;
-                }
+    final boolean isChildProcess = isChildProcess();
 
-                isStartupProfiling = true;
-            } else if (envItem.startsWith(intervalEnv)) {
-                
-                final String value = envItem.substring(intervalEnv.length());
+    GeckoLoader.setupGeckoEnvironment(
+        context,
+        isChildProcess,
+        context.getFilesDir().getPath(),
+        env,
+        mInitInfo.prefs,
+        mInitInfo.xpcshell);
 
-                try {
-                    final int intValue = Integer.parseInt(value);
-                    interval = Math.max(intValue, interval);
-                } catch (final NumberFormatException err) {
-                    
-                }
-            } else if (envItem.startsWith(capacityEnv)) {
-                
-                final String value = envItem.substring(capacityEnv.length());
+    initGeckoEnvironment();
 
-                try {
-                    final int intValue = Integer.parseInt(value);
-                    
-                    capacity = Math.max(intValue, minCapacity);
-                } catch (final NumberFormatException err) {
-                    
-                }
-            }
-        }
-
-        if (isStartupProfiling) {
-            GeckoJavaSampler.start(interval, capacity);
-        }
+    if ((mInitInfo.flags & FLAG_PRELOAD_CHILD) != 0) {
+      
+      GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
     }
 
-    @WrapForJNI(calledFrom = "gecko")
-    private static boolean pumpMessageLoop(final Message msg) {
-        final Handler geckoHandler = ThreadUtils.sGeckoHandler;
+    if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
+      try {
+        Thread.sleep(5 * 1000 );
+      } catch (final InterruptedException e) {
+      }
+    }
 
-        if (msg.obj == geckoHandler && msg.getTarget() == geckoHandler) {
-            
-            return false;
-        }
+    Log.w(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() + " - runGecko");
 
-        if (msg.getTarget() == null) {
-            Looper.myLooper().quit();
-        } else {
-            msg.getTarget().dispatchMessage(msg);
-        }
+    final String[] args = isChildProcess ? mInitInfo.args : getMainProcessArgs();
 
-        return true;
+    if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {
+      Log.i(LOGTAG, "RunGecko - args = " + TextUtils.join(" ", args));
     }
 
     
-
-
-
-
-
-    public static boolean isState(final State state) {
-        return sNativeQueue.getState().is(state);
-    }
-
-    
-
-
-
-
-
-
-    public static boolean isStateAtLeast(final State state) {
-        return sNativeQueue.getState().isAtLeast(state);
-    }
+    GeckoLoader.nativeRun(
+        args,
+        mInitInfo.extras.getInt(EXTRA_PREFS_FD, -1),
+        mInitInfo.extras.getInt(EXTRA_PREF_MAP_FD, -1),
+        mInitInfo.extras.getInt(EXTRA_IPC_FD, -1),
+        mInitInfo.extras.getInt(EXTRA_CRASH_FD, -1),
+        mInitInfo.extras.getInt(EXTRA_CRASH_ANNOTATION_FD, -1),
+        isChildProcess ? false : mInitInfo.xpcshell,
+        isChildProcess ? null : mInitInfo.outFilePath);
 
     
+    final boolean restarting = isState(State.RESTARTING);
+    setState(State.EXITED);
 
-
-
-
-
-
-    public static boolean isStateAtMost(final State state) {
-        return state.isAtLeast(sNativeQueue.getState());
-    }
+    final GeckoBundle data = new GeckoBundle(1);
+    data.putBoolean("restart", restarting);
+    EventDispatcher.getInstance().dispatch("Gecko:Exited", data);
 
     
+    Looper.myQueue().removeIdleHandler(idleHandler);
 
-
-
-
-
-
-
-    public static boolean isStateBetween(final State minState, final State maxState) {
-        return isStateAtLeast(minState) && isStateAtMost(maxState);
+    if (isChildProcess) {
+      
+      
+      System.exit(0);
     }
+  }
 
-    @WrapForJNI(calledFrom = "gecko")
-    private static void setState(final State newState) {
-        checkAndSetState(null, newState);
-    }
+  
+  
+  
+  private static void maybeStartGeckoProfiler(final @NonNull List<String> env) {
+    final String startupEnv = "MOZ_PROFILER_STARTUP=";
+    final String intervalEnv = "MOZ_PROFILER_STARTUP_INTERVAL=";
+    final String capacityEnv = "MOZ_PROFILER_STARTUP_ENTRIES=";
+    boolean isStartupProfiling = false;
+    
+    
+    int interval = 1;
+    
+    int capacity = 8 * 1024 * 1024;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    final int minCapacity = 65536;
 
-    @WrapForJNI(calledFrom = "gecko")
-    private static boolean checkAndSetState(final State expectedState,
-                                            final State newState) {
-        final boolean result = sNativeQueue.checkAndSetState(expectedState, newState);
-        if (result) {
-            Log.d(LOGTAG, "State changed to " + newState);
+    
+    for (final String envItem : env) {
+      if (envItem == null) {
+        continue;
+      }
 
-            if (sInitTimer != null && isRunning()) {
-                sInitTimer.stop();
-                sInitTimer = null;
-            }
-
-            notifyStateListeners();
-        }
-        return result;
-    }
-
-    @WrapForJNI(stubName = "SpeculativeConnect")
-    private static native void speculativeConnectNative(String uri);
-
-    public static void speculativeConnect(final String uri) {
+      if (envItem.startsWith(startupEnv)) {
         
+        final String value = envItem.substring(startupEnv.length());
+        if (value.isEmpty() || value.equals("0") || value.equals("n") || value.equals("N")) {
+          
+          
+          
+          break;
+        }
+
+        isStartupProfiling = true;
+      } else if (envItem.startsWith(intervalEnv)) {
         
+        final String value = envItem.substring(intervalEnv.length());
+
+        try {
+          final int intValue = Integer.parseInt(value);
+          interval = Math.max(intValue, interval);
+        } catch (final NumberFormatException err) {
+          
+        }
+      } else if (envItem.startsWith(capacityEnv)) {
         
-        
-        queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class,
-                             "speculativeConnectNative", uri);
-    }
+        final String value = envItem.substring(capacityEnv.length());
 
-    @UiThread
-    public static GeckoResult<Void> waitForState(final State state) {
-        final StateGeckoResult result = new StateGeckoResult(state);
-        if (isStateAtLeast(state)) {
-            result.complete(null);
-            return result;
+        try {
+          final int intValue = Integer.parseInt(value);
+          
+          capacity = Math.max(intValue, minCapacity);
+        } catch (final NumberFormatException err) {
+          
         }
-
-        synchronized (sStateListeners) {
-            sStateListeners.add(result);
-        }
-        return result;
+      }
     }
 
-    private static void notifyStateListeners() {
-        synchronized (sStateListeners) {
-            final LinkedList<StateGeckoResult> newListeners = new LinkedList<>();
-            for (final StateGeckoResult result : sStateListeners) {
-                if (!isStateAtLeast(result.state)) {
-                    newListeners.add(result);
-                    continue;
-                }
+    if (isStartupProfiling) {
+      GeckoJavaSampler.start(interval, capacity);
+    }
+  }
 
-                result.complete(null);
-            }
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean pumpMessageLoop(final Message msg) {
+    final Handler geckoHandler = ThreadUtils.sGeckoHandler;
 
-            sStateListeners = newListeners;
-        }
+    if (msg.obj == geckoHandler && msg.getTarget() == geckoHandler) {
+      
+      return false;
     }
 
-    @WrapForJNI(stubName = "OnPause", dispatchTo = "gecko")
-    private static native void nativeOnPause();
-
-    public static void onPause() {
-        if (isStateAtLeast(State.PROFILE_READY)) {
-            nativeOnPause();
-        } else {
-            queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class,
-                                 "nativeOnPause");
-        }
+    if (msg.getTarget() == null) {
+      Looper.myLooper().quit();
+    } else {
+      msg.getTarget().dispatchMessage(msg);
     }
 
-    @WrapForJNI(stubName = "OnResume", dispatchTo = "gecko")
-    private static native void nativeOnResume();
+    return true;
+  }
 
-    public static void onResume() {
-        if (isStateAtLeast(State.PROFILE_READY)) {
-            nativeOnResume();
-        } else {
-            queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class,
-                                 "nativeOnResume");
-        }
+  
+
+
+
+
+
+  public static boolean isState(final State state) {
+    return sNativeQueue.getState().is(state);
+  }
+
+  
+
+
+
+
+
+
+  public static boolean isStateAtLeast(final State state) {
+    return sNativeQueue.getState().isAtLeast(state);
+  }
+
+  
+
+
+
+
+
+
+  public static boolean isStateAtMost(final State state) {
+    return state.isAtLeast(sNativeQueue.getState());
+  }
+
+  
+
+
+
+
+
+
+
+  public static boolean isStateBetween(final State minState, final State maxState) {
+    return isStateAtLeast(minState) && isStateAtMost(maxState);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static void setState(final State newState) {
+    checkAndSetState(null, newState);
+  }
+
+  @WrapForJNI(calledFrom = "gecko")
+  private static boolean checkAndSetState(final State expectedState, final State newState) {
+    final boolean result = sNativeQueue.checkAndSetState(expectedState, newState);
+    if (result) {
+      Log.d(LOGTAG, "State changed to " + newState);
+
+      if (sInitTimer != null && isRunning()) {
+        sInitTimer.stop();
+        sInitTimer = null;
+      }
+
+      notifyStateListeners();
     }
+    return result;
+  }
 
-    @WrapForJNI(stubName = "CreateServices", dispatchTo = "gecko")
-    private static native void nativeCreateServices(String category, String data);
+  @WrapForJNI(stubName = "SpeculativeConnect")
+  private static native void speculativeConnectNative(String uri);
 
-    public static void createServices(final String category, final String data) {
-        if (isStateAtLeast(State.PROFILE_READY)) {
-            nativeCreateServices(category, data);
-        } else {
-            queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class, "nativeCreateServices",
-                                 String.class, category, String.class, data);
-        }
-    }
-
-    @WrapForJNI(calledFrom = "ui")
-     static native long runUiThreadCallback();
-
-    @WrapForJNI(dispatchTo = "gecko")
-    public static native void forceQuit();
-
-    @WrapForJNI(dispatchTo = "gecko")
-    public static native void crash();
-
-    @WrapForJNI
-    private static void requestUiThreadCallback(final long delay) {
-        ThreadUtils.getUiHandler().postDelayed(UI_THREAD_CALLBACK, delay);
-    }
-
+  public static void speculativeConnect(final String uri) {
     
-
-
-    public static void queueNativeCall(final Class<?> cls, final String methodName,
-                                       final Object... args) {
-        sNativeQueue.queueUntilReady(cls, methodName, args);
-    }
-
     
-
-
-    public static void queueNativeCall(final Object obj, final String methodName,
-                                       final Object... args) {
-        sNativeQueue.queueUntilReady(obj, methodName, args);
-    }
-
     
-
-
-    public static void queueNativeCallUntil(final State state, final Object obj, final String methodName,
-                                       final Object... args) {
-        sNativeQueue.queueUntil(state, obj, methodName, args);
-    }
-
     
+    queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class, "speculativeConnectNative", uri);
+  }
 
-
-    public static void queueNativeCallUntil(final State state, final Class<?> cls, final String methodName,
-                                       final Object... args) {
-        sNativeQueue.queueUntil(state, cls, methodName, args);
+  @UiThread
+  public static GeckoResult<Void> waitForState(final State state) {
+    final StateGeckoResult result = new StateGeckoResult(state);
+    if (isStateAtLeast(state)) {
+      result.complete(null);
+      return result;
     }
+
+    synchronized (sStateListeners) {
+      sStateListeners.add(result);
+    }
+    return result;
+  }
+
+  private static void notifyStateListeners() {
+    synchronized (sStateListeners) {
+      final LinkedList<StateGeckoResult> newListeners = new LinkedList<>();
+      for (final StateGeckoResult result : sStateListeners) {
+        if (!isStateAtLeast(result.state)) {
+          newListeners.add(result);
+          continue;
+        }
+
+        result.complete(null);
+      }
+
+      sStateListeners = newListeners;
+    }
+  }
+
+  @WrapForJNI(stubName = "OnPause", dispatchTo = "gecko")
+  private static native void nativeOnPause();
+
+  public static void onPause() {
+    if (isStateAtLeast(State.PROFILE_READY)) {
+      nativeOnPause();
+    } else {
+      queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class, "nativeOnPause");
+    }
+  }
+
+  @WrapForJNI(stubName = "OnResume", dispatchTo = "gecko")
+  private static native void nativeOnResume();
+
+  public static void onResume() {
+    if (isStateAtLeast(State.PROFILE_READY)) {
+      nativeOnResume();
+    } else {
+      queueNativeCallUntil(State.PROFILE_READY, GeckoThread.class, "nativeOnResume");
+    }
+  }
+
+  @WrapForJNI(stubName = "CreateServices", dispatchTo = "gecko")
+  private static native void nativeCreateServices(String category, String data);
+
+  public static void createServices(final String category, final String data) {
+    if (isStateAtLeast(State.PROFILE_READY)) {
+      nativeCreateServices(category, data);
+    } else {
+      queueNativeCallUntil(
+          State.PROFILE_READY,
+          GeckoThread.class,
+          "nativeCreateServices",
+          String.class,
+          category,
+          String.class,
+          data);
+    }
+  }
+
+  @WrapForJNI(calledFrom = "ui")
+   static native long runUiThreadCallback();
+
+  @WrapForJNI(dispatchTo = "gecko")
+  public static native void forceQuit();
+
+  @WrapForJNI(dispatchTo = "gecko")
+  public static native void crash();
+
+  @WrapForJNI
+  private static void requestUiThreadCallback(final long delay) {
+    ThreadUtils.getUiHandler().postDelayed(UI_THREAD_CALLBACK, delay);
+  }
+
+  
+  public static void queueNativeCall(
+      final Class<?> cls, final String methodName, final Object... args) {
+    sNativeQueue.queueUntilReady(cls, methodName, args);
+  }
+
+  
+  public static void queueNativeCall(
+      final Object obj, final String methodName, final Object... args) {
+    sNativeQueue.queueUntilReady(obj, methodName, args);
+  }
+
+  
+  public static void queueNativeCallUntil(
+      final State state, final Object obj, final String methodName, final Object... args) {
+    sNativeQueue.queueUntil(state, obj, methodName, args);
+  }
+
+  
+  public static void queueNativeCallUntil(
+      final State state, final Class<?> cls, final String methodName, final Object... args) {
+    sNativeQueue.queueUntil(state, cls, methodName, args);
+  }
 }
