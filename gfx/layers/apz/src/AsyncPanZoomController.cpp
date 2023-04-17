@@ -2681,7 +2681,7 @@ nsEventStatus AsyncPanZoomController::OnPan(
     
     
     MOZ_ASSERT(mAnimation->AsOverscrollAnimation());
-    if (OverscrollAnimation* overscrollAnimation =
+    if (RefPtr<OverscrollAnimation> overscrollAnimation =
             mAnimation->AsOverscrollAnimation()) {
       overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
       
