@@ -81,6 +81,14 @@ enum class ResumeKind { Normal, Throw };
 
 
 
+
+
+
+
+
+
+
+
 static bool AsyncFunctionResume(JSContext* cx,
                                 Handle<AsyncFunctionGeneratorObject*> generator,
                                 ResumeKind kind, HandleValue valueOrReason) {
@@ -120,6 +128,21 @@ static bool AsyncFunctionResume(JSContext* cx,
              "non-suspended generator when resuming async function");
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   HandlePropertyName funName = kind == ResumeKind::Normal
                                    ? cx->names().AsyncFunctionNext
                                    : cx->names().AsyncFunctionThrow;
@@ -144,6 +167,10 @@ static bool AsyncFunctionResume(JSContext* cx,
     return false;
   }
 
+  
+  
+  
+  
   MOZ_ASSERT_IF(generator->isClosed(), generatorOrValue.isObject());
   MOZ_ASSERT_IF(generator->isClosed(),
                 &generatorOrValue.toObject() == resultPromise);
@@ -154,11 +181,23 @@ static bool AsyncFunctionResume(JSContext* cx,
 
 
 
+
+
+
+
+
+
 [[nodiscard]] bool js::AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue value) {
   return AsyncFunctionResume(cx, generator, ResumeKind::Normal, value);
 }
+
+
+
+
+
+
 
 
 

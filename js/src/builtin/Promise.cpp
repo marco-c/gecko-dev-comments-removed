@@ -1974,6 +1974,15 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
                            reaction->unhandledRejectionBehavior());
 }
 
+
+
+
+
+
+
+
+
+
 [[nodiscard]] static bool AsyncFunctionPromiseReactionJob(
     JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->isAsyncFunction());
@@ -1987,9 +1996,11 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   
 
   if (handler == PromiseHandlerAsyncFunctionAwaitedFulfilled) {
+    
     return AsyncFunctionAwaitedFulfilled(cx, generator, argument);
   }
 
+  
   MOZ_ASSERT(handler == PromiseHandlerAsyncFunctionAwaitedRejected);
   return AsyncFunctionAwaitedRejected(cx, generator, argument);
 }
@@ -5254,6 +5265,16 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
 
 
 
+
+
+
+
+
+
+
+
+
+
 [[nodiscard]] PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
   
   PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
@@ -5283,6 +5304,12 @@ bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
 
 
 
+
+
+
+
+
+
 [[nodiscard]] bool js::AsyncFunctionThrown(JSContext* cx,
                                            Handle<PromiseObject*> resultPromise,
                                            HandleValue reason) {
@@ -5297,15 +5324,36 @@ bool js::IsPromiseForAsyncFunctionOrGenerator(JSObject* promise) {
     return true;
   }
 
+  
+  
+  
+  
+  
+  
   return RejectPromiseInternal(cx, resultPromise, reason);
 }
 
 
 
+
+
+
+
+
+
 [[nodiscard]] bool js::AsyncFunctionReturned(
     JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value) {
+  
+  
+  
+  
   return ResolvePromiseInternal(cx, resultPromise, value);
 }
+
+
+
+
+
 
 
 
@@ -5348,6 +5396,8 @@ template <typename T>
   extraStep(reaction);
   return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
+
+
 
 
 
