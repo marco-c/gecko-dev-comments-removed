@@ -55,32 +55,29 @@ SuggestAutoComplete.prototype = {
 
   onResultsReturned(results) {
     let finalResults = [];
-    let finalComments = [];
 
     
     for (let i = 0; i < results.local.length; ++i) {
       finalResults.push(results.local[i].value);
-      finalComments.push("");
     }
 
     
     if (results.remote.length) {
-      
-      let comments = new Array(results.remote.length).fill("");
       
       
       let nonTailEntries = results.remote.filter(
         e => !e.matchPrefix && !e.tail
       );
       finalResults = finalResults.concat(nonTailEntries.map(e => e.value));
-      finalComments = finalComments.concat(comments);
     }
 
     
     this.onResultsReady(
       results.term,
       finalResults,
-      finalComments,
+      
+      
+      [...finalResults],
       results.formHistoryResult
     );
   },
