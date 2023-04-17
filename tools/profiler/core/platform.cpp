@@ -5687,10 +5687,10 @@ void profiler_clear_js_context() {
 }
 
 static void profiler_suspend_and_sample_thread(
-    PSLockRef aLock,
+    const PSAutoLock* aLockIfAsynchronousSampling,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
-    JsFrame* aJsFrames, bool aIsSynchronous, uint32_t aFeatures,
-    ProfilerStackCollector& aCollector, bool aSampleNative) {
+    JsFrame* aJsFrames, uint32_t aFeatures, ProfilerStackCollector& aCollector,
+    bool aSampleNative) {
   const ThreadRegistrationInfo& info = aThreadData.Info();
 
   if (info.IsMainThread()) {
@@ -5713,10 +5713,10 @@ static void profiler_suspend_and_sample_thread(
     }
 #endif
     const uint32_t jsFramesCount =
-        aJsFrames
-            ? ExtractJsFrames(aIsSynchronous, aThreadData, aRegs, aCollector,
-                              aJsFrames, stackWalkControlIfSupported)
-            : 0;
+        aJsFrames ? ExtractJsFrames(!aLockIfAsynchronousSampling, aThreadData,
+                                    aRegs, aCollector, aJsFrames,
+                                    stackWalkControlIfSupported)
+                  : 0;
 
 #if defined(HAVE_FASTINIT_NATIVE_UNWIND)
     if (aSampleNative) {
@@ -5733,13 +5733,13 @@ static void profiler_suspend_and_sample_thread(
 #    error "Invalid configuration"
 #  endif
 
-      MergeStacks(aFeatures, aIsSynchronous, aThreadData, aRegs, nativeStack,
-                  aCollector, aJsFrames, jsFramesCount);
+      MergeStacks(aFeatures, !aLockIfAsynchronousSampling, aThreadData, aRegs,
+                  nativeStack, aCollector, aJsFrames, jsFramesCount);
     } else
 #endif
     {
-      MergeStacks(aFeatures, aIsSynchronous, aThreadData, aRegs, nativeStack,
-                  aCollector, aJsFrames, jsFramesCount);
+      MergeStacks(aFeatures, !aLockIfAsynchronousSampling, aThreadData, aRegs,
+                  nativeStack, aCollector, aJsFrames, jsFramesCount);
 
       if (ProfilerFeature::HasLeaf(aFeatures)) {
         aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
@@ -5747,7 +5747,7 @@ static void profiler_suspend_and_sample_thread(
     }
   };
 
-  if (aIsSynchronous) {
+  if (!aLockIfAsynchronousSampling) {
     
     Registers regs;
 #if defined(HAVE_NATIVE_UNWIND)
@@ -5758,14 +5758,14 @@ static void profiler_suspend_and_sample_thread(
     collectStack(regs, TimeStamp::Now());
   } else {
     
-    Sampler sampler(aLock);
+    Sampler sampler(*aLockIfAsynchronousSampling);
     TimeStamp now = TimeStamp::Now();
-    sampler.SuspendAndSampleAndResumeThread(aLock, aThreadData, now,
-                                            collectStack);
+    sampler.SuspendAndSampleAndResumeThread(*aLockIfAsynchronousSampling,
+                                            aThreadData, now, collectStack);
 
     
     
-    sampler.Disable(aLock);
+    sampler.Disable(*aLockIfAsynchronousSampling);
   }
 }
 
@@ -5784,15 +5784,12 @@ void profiler_suspend_and_sample_thread(ProfilerThreadId aThreadId,
           aOnThreadRef.WithUnlockedReaderAndAtomicRWOnThread(
               [&](const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread&
                       aThreadData) {
-                
-                
-                PSAutoLock lock;
                 if (!aThreadData.GetJSContext()) {
                   
                   
                   profiler_suspend_and_sample_thread(
-                      lock, aThreadData,  nullptr,
-                       true, aFeatures, aCollector,
+                       nullptr, aThreadData,
+                       nullptr, aFeatures, aCollector,
                       aSampleNative);
                 } else {
                   
@@ -5801,10 +5798,9 @@ void profiler_suspend_and_sample_thread(ProfilerThreadId aThreadId,
                       [&](const ThreadRegistration::LockedRWOnThread&
                               aLockedThreadData) {
                         profiler_suspend_and_sample_thread(
-                            lock, aThreadData,
-                            aLockedThreadData.GetJsFrameBuffer(),
-                             true, aFeatures, aCollector,
-                            aSampleNative);
+                             nullptr,
+                            aThreadData, aLockedThreadData.GetJsFrameBuffer(),
+                            aFeatures, aCollector, aSampleNative);
                       });
                 }
               });
@@ -5818,8 +5814,7 @@ void profiler_suspend_and_sample_thread(ProfilerThreadId aThreadId,
               [&](const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread&
                       aThreadData) {
                 JsFrameBuffer& jsFrames = CorePS::JsFrames(lock);
-                profiler_suspend_and_sample_thread(lock, aThreadData, jsFrames,
-                                                    false,
+                profiler_suspend_and_sample_thread(&lock, aThreadData, jsFrames,
                                                    aFeatures, aCollector,
                                                    aSampleNative);
               });
