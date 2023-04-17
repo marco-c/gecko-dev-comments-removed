@@ -2162,13 +2162,8 @@ WebRenderCommandBuilder::GenerateFallbackData(
                            ? itemBounds
                            : aItem->GetClippedBounds(aDisplayListBuilder);
 
-  
-  
-  
-  
   nsRegion visibleRegion(paintBounds);
   aItem->SetPaintRect(paintBounds);
-  aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel =
       aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
