@@ -256,8 +256,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-
-
   onPrefChanged(pref) {
     switch (pref) {
       case SUGGEST_PREF:
