@@ -83,7 +83,8 @@ class ExtensionAPIRequestForwarder {
  private:
   already_AddRefed<ExtensionAPIRequest> CreateAPIRequest(
       nsIGlobalObject* aGlobal, JSContext* aCx,
-      const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv);
+      const dom::Sequence<JS::Value>& aArgs, ExtensionEventListener* aListener,
+      ErrorResult& aRv);
 
   APIRequestType mRequestType;
   ExtensionAPIRequestTarget mRequestTarget;
@@ -113,8 +114,28 @@ class RequestWorkerRunnable : public dom::WorkerMainThreadRunnable {
   RequestWorkerRunnable(dom::WorkerPrivate* aWorkerPrivate,
                         ExtensionAPIRequestForwarder* aOuterAPIRequest);
 
+  
+
+
+
+
   void Init(nsIGlobalObject* aGlobal, JSContext* aCx,
-            const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv);
+            const dom::Sequence<JS::Value>& aArgs,
+            ExtensionEventListener* aListener, ErrorResult& aRv);
+
+  
+
+
+
+  void Init(nsIGlobalObject* aGlobal, JSContext* aCx,
+            const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv) {
+    Init(aGlobal, aCx, aArgs, nullptr, aRv);
+  }
+
+  
+
+
+
   void Init(nsIGlobalObject* aGlobal, JSContext* aCx,
             const dom::Sequence<JS::Value>& aArgs,
             const RefPtr<dom::Promise>& aPromiseRetval, ErrorResult& aRv);
@@ -149,6 +170,9 @@ class RequestWorkerRunnable : public dom::WorkerMainThreadRunnable {
   Maybe<UniquePtr<dom::StructuredCloneHolder>> mArgsHolder;
   Maybe<UniquePtr<dom::SerializedStackHolder>> mStackHolder;
   Maybe<dom::ClientInfo> mClientInfo;
+
+  
+  RefPtr<ExtensionEventListener> mEventListener;
 
   
   
