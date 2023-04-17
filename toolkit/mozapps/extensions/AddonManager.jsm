@@ -490,17 +490,7 @@ AddonScreenshot.prototype = {
 
 
 
-
-
-
-function AddonType(
-  aID,
-  aLocaleURI,
-  aLocaleKey,
-  aViewType,
-  aUIPriority,
-  aFlags
-) {
+function AddonType(aID, aLocaleURI, aLocaleKey, aViewType, aUIPriority) {
   if (!aID) {
     throw Components.Exception(
       "An AddonType must have an ID",
@@ -525,7 +515,6 @@ function AddonType(
   this.id = aID;
   this.uiPriority = aUIPriority;
   this.viewType = aViewType;
-  this.flags = aFlags;
 
   if (aLocaleURI) {
     XPCOMUtils.defineLazyGetter(this, "name", () => {
@@ -3884,9 +3873,6 @@ var AddonManager = {
   PERM_CAN_UPGRADE: 8,
   
   
-  PERM_CAN_ASK_TO_ACTIVATE: 16,
-  
-  
   PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS: 32,
   
   
@@ -3908,20 +3894,6 @@ var AddonManager = {
 
   
   VIEW_TYPE_LIST: "list",
-
-  
-
-  
-  
-  TYPE_UI_HIDE_EMPTY: 16,
-  
-  
-  
-  TYPE_SUPPORTS_ASK_TO_ACTIVATE: 32,
-  
-  
-  
-  TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL: 64,
 
   
   
@@ -3985,12 +3957,6 @@ var AddonManager = {
   SIGNEDSTATE_SYSTEM: 3,
   
   SIGNEDSTATE_PRIVILEGED: 4,
-
-  
-  
-  
-  
-  STATE_ASK_TO_ACTIVATE: "askToActivate",
 
   get __AddonManagerInternal__() {
     return AppConstants.DEBUG ? AddonManagerInternal : undefined;
