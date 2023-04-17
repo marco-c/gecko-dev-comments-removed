@@ -84,6 +84,10 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
     }
 
     
+    internalProps.trailingZeroDisplay = lazyNumberFormatData.trailingZeroDisplay;
+    internalProps.roundingIncrement = lazyNumberFormatData.roundingIncrement;
+
+    
     if (notation === "compact")
         internalProps.compactDisplay = lazyNumberFormatData.compactDisplay;
 
@@ -92,6 +96,9 @@ function resolveNumberFormatInternals(lazyNumberFormatData) {
 
     
     internalProps.signDisplay = lazyNumberFormatData.signDisplay;
+
+    
+    internalProps.roundingMode = lazyNumberFormatData.roundingMode;
 
     
     
@@ -347,11 +354,22 @@ For example "speed/kilometer-per-hour" is implied by "length/kilometer" and
 
 
 
+
 function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     assert(IsObject(numberFormat), "InitializeNumberFormat called with non-object");
     assert(intl_GuardToNumberFormat(numberFormat) !== null,
            "InitializeNumberFormat called with non-NumberFormat");
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -508,6 +526,49 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     SetNumberFormatDigitOptions(lazyNumberFormatData, options, mnfdDefault, mxfdDefault, notation);
 
+#ifdef NIGHTLY_BUILD
+    
+    var roundingIncrement = GetNumberOption(options, "roundingIncrement", 1, 5000, 1);
+    switch (roundingIncrement) {
+      case 1:
+      case 2:
+      case 5:
+      case 10:
+      case 20:
+      case 25:
+      case 50:
+      case 100:
+      case 200:
+      case 250:
+      case 500:
+      case 1000:
+      case 2000:
+      case 2500:
+      case 5000:
+        break;
+      default:
+        ThrowRangeError(JSMSG_INVALID_DIGITS_VALUE, roundingIncrement);
+    }
+    lazyNumberFormatData.roundingIncrement = roundingIncrement;
+
+    if (roundingIncrement !== 1) {
+      if (hasOwn("minimumSignificantDigits", lazyNumberFormatData)) {
+        ThrowRangeError(JSMSG_INVALID_DIGITS_VALUE, roundingIncrement);
+      }
+    }
+#else
+    lazyNumberFormatData.roundingIncrement = 1;
+#endif
+
+#ifdef NIGHTLY_BUILD
+    
+    var trailingZeroDisplay = GetOption(options, "trailingZeroDisplay", "string",
+                                        ["auto", "stripIfInteger"], "auto");
+    lazyNumberFormatData.trailingZeroDisplay = trailingZeroDisplay;
+#else
+    lazyNumberFormatData.trailingZeroDisplay = "auto";
+#endif
+
     
     var compactDisplay = GetOption(options, "compactDisplay", "string",
                                    ["short", "long"], "short");
@@ -520,8 +581,24 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
 
     
     var signDisplay = GetOption(options, "signDisplay", "string",
-                                ["auto", "never", "always", "exceptZero"], "auto");
+#ifdef NIGHTLY_BUILD
+                                ["auto", "never", "always", "exceptZero", "negative"],
+#else
+                                ["auto", "never", "always", "exceptZero"],
+#endif
+                                "auto");
     lazyNumberFormatData.signDisplay = signDisplay;
+
+#ifdef NIGHTLY_BUILD
+    
+    var roundingMode = GetOption(options, "roundingMode", "string",
+                                 ["ceil", "floor", "expand", "trunc",
+                                  "halfCeil", "halfFloor", "halfExpand", "halfTrunc", "halfEven"],
+                                 "halfExpand");
+    lazyNumberFormatData.roundingMode = roundingMode;
+#else
+    lazyNumberFormatData.roundingMode = "halfExpand";
+#endif
 
     
     
@@ -542,6 +619,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     return numberFormat;
 }
+
 
 
 
@@ -760,6 +838,12 @@ function Intl_NumberFormat_resolvedOptions() {
         DefineDataProperty(result, "compactDisplay", internals.compactDisplay);
 
     DefineDataProperty(result, "signDisplay", internals.signDisplay);
+
+#ifdef NIGHTLY_BUILD
+    DefineDataProperty(result, "roundingMode", internals.roundingMode);
+    DefineDataProperty(result, "roundingIncrement", internals.roundingIncrement);
+    DefineDataProperty(result, "trailingZeroDisplay", internals.trailingZeroDisplay);
+#endif
 
     
     return result;
