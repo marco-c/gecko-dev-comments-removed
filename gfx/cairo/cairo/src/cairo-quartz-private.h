@@ -71,11 +71,6 @@ typedef struct cairo_quartz_surface {
 
     CGImageRef bitmapContextImage;
 
-    
-
-
-    CGLayerRef cgLayer;
-
     cairo_rectangle_int_t extents;
 
     cairo_bool_t ownsData;
