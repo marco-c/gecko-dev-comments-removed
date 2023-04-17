@@ -670,6 +670,21 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
+  bool maybeWebAccessible = false;
+  NS_URIChainHasFlags(targetBaseURI,
+                      nsIProtocolHandler::WEBEXT_URI_WEB_ACCESSIBLE,
+                      &maybeWebAccessible);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (maybeWebAccessible) {
+    bool isWebAccessible = false;
+    rv = ExtensionPolicyService::GetSingleton().SourceMayLoadExtensionURI(
+        sourceURI, targetBaseURI, &isWebAccessible);
+    if (!(NS_SUCCEEDED(rv) && isWebAccessible)) {
+      return NS_ERROR_DOM_BAD_URI;
+    }
+  }
+
+  
   bool targetURIIsLoadableBySubsumers = false;
   rv = NS_URIChainHasFlags(targetBaseURI,
                            nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,

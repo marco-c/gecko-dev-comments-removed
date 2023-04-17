@@ -60,7 +60,8 @@ interface nsIAddonPolicyService : nsISupports
   
 
 
-  boolean extensionURILoadableByAnyone(in nsIURI aURI);
+
+  boolean sourceMayLoadExtensionURI(in nsIURI aSourceURI, in nsIURI aExtensionURI);
 
   
 
