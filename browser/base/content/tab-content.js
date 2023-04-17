@@ -27,22 +27,6 @@ var WebBrowserChrome = {
       isAppTab
     );
   },
-
-  
-  shouldLoadURI(
-    aDocShell,
-    aURI,
-    aReferrerInfo,
-    aHasPostData,
-    aTriggeringPrincipal,
-    aCsp
-  ) {
-    return true;
-  },
-
-  shouldLoadURIInThisProcess(aURI) {
-    return true;
-  },
 };
 
 if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {

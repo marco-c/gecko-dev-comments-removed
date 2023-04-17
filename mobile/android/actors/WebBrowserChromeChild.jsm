@@ -29,23 +29,6 @@ class WebBrowserChromeChild extends GeckoViewActorChild {
       aIsAppTab
     );
   }
-
-  
-  shouldLoadURI(
-    aDocShell,
-    aURI,
-    aReferrerInfo,
-    aHasPostData,
-    aTriggeringPrincipal,
-    aCsp
-  ) {
-    return true;
-  }
-
-  
-  shouldLoadURIInThisProcess(aURI) {
-    return true;
-  }
 }
 
 WebBrowserChromeChild.prototype.QueryInterface = ChromeUtils.generateQI([

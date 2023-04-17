@@ -903,21 +903,8 @@ nsresult ContentChild::ProvideWindowCommon(
   if (!cannotLoadInDifferentProcess) {
     
     
-    
     bool loadInDifferentProcess =
         aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled();
-    if (!loadInDifferentProcess && aURI) {
-      nsCOMPtr<nsIWebBrowserChrome3> browserChrome3;
-      rv = aTabOpener->GetWebBrowserChrome(getter_AddRefs(browserChrome3));
-      if (NS_SUCCEEDED(rv) && browserChrome3) {
-        bool shouldLoad;
-        rv = browserChrome3->ShouldLoadURIInThisProcess(aURI, &shouldLoad);
-        loadInDifferentProcess = NS_SUCCEEDED(rv) && !shouldLoad;
-      }
-    }
-
-    
-    
     if (loadInDifferentProcess) {
       float fullZoom;
       nsCOMPtr<nsIPrincipal> triggeringPrincipal;
