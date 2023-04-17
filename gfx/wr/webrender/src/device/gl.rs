@@ -1121,7 +1121,10 @@ pub struct Device {
     
     texture_storage_usage: TexStorageUsage,
 
-    optimal_pbo_stride: StrideAlignment,
+    
+    
+    
+    required_pbo_stride: StrideAlignment,
 
     
     
@@ -1646,10 +1649,17 @@ impl Device {
              
 
         let is_angle = renderer_name.starts_with("ANGLE");
+        let is_adreno_3xx = renderer_name.starts_with("Adreno (TM) 3");
 
         
         
-        let optimal_pbo_stride = if is_adreno {
+        
+        let required_pbo_stride = if is_adreno_3xx {
+            
+            
+            StrideAlignment::Bytes(NonZeroUsize::new(128).unwrap())
+        } else if is_adreno {
+            
             
             
             StrideAlignment::Pixels(NonZeroUsize::new(64).unwrap())
@@ -1789,7 +1799,7 @@ impl Device {
             requires_null_terminated_shader_source,
             requires_unique_shader_source,
             requires_texture_external_unbind,
-            optimal_pbo_stride,
+            required_pbo_stride,
             dump_shader_source,
             surface_origin_is_top_left,
 
@@ -1860,8 +1870,8 @@ impl Device {
         return (self.max_depth_ids() - 1) as f32;
     }
 
-    pub fn optimal_pbo_stride(&self) -> StrideAlignment {
-        self.optimal_pbo_stride
+    pub fn required_pbo_stride(&self) -> StrideAlignment {
+        self.required_pbo_stride
     }
 
     pub fn upload_method(&self) -> &UploadMethod {
@@ -3068,7 +3078,7 @@ impl Device {
         let bytes_pp = format.bytes_per_pixel() as usize;
         let width_bytes = size.width as usize * bytes_pp;
 
-        let dst_stride = round_up_to_multiple(width_bytes, self.optimal_pbo_stride.num_bytes(format));
+        let dst_stride = round_up_to_multiple(width_bytes, self.required_pbo_stride.num_bytes(format));
 
         
         
