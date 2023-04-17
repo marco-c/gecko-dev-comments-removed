@@ -5,9 +5,6 @@
 
 
 
-const DOC = toDataURL("default-test-page");
-const DOC_IFRAME = toDataURL(`<iframe src="data:text/html,${DOC}"></iframe>`);
-
 const WORLD_NAME_1 = "testWorld1";
 const WORLD_NAME_2 = "testWorld2";
 
@@ -59,7 +56,7 @@ add_task(async function worldNameInvalidTypes({ client }) {
   info("Page notifications are enabled");
 
   const loadEvent = Page.loadEventFired();
-  const { frameId } = await Page.navigate({ url: DOC });
+  const { frameId } = await Page.navigate({ url: PAGE_URL });
   await loadEvent;
 
   for (const worldName of [null, true, 1, [], {}]) {
@@ -87,7 +84,7 @@ add_task(async function noEventsWhenRuntimeDomainDisabled({ client }) {
 
   const history = recordEvents(Runtime, 0);
   const loadEvent = Page.loadEventFired();
-  const { frameId } = await Page.navigate({ url: DOC });
+  const { frameId } = await Page.navigate({ url: PAGE_URL });
   await loadEvent;
 
   let errorThrown = "";
@@ -119,7 +116,7 @@ add_task(async function noEventsAfterRuntimeDomainDisabled({ client }) {
 
   const history = recordEvents(Runtime, 0);
   const loadEvent = Page.loadEventFired();
-  const { frameId } = await Page.navigate({ url: DOC });
+  const { frameId } = await Page.navigate({ url: PAGE_URL });
   await loadEvent;
 
   await Page.createIsolatedWorld({
@@ -140,7 +137,7 @@ add_task(async function contextCreatedAfterNavigation({ client }) {
 
   const history = recordEvents(Runtime, 3);
   const loadEvent = Page.loadEventFired();
-  const { frameId } = await Page.navigate({ url: DOC });
+  const { frameId } = await Page.navigate({ url: PAGE_URL });
   await loadEvent;
 
   const { executionContextId: isolatedId } = await Page.createIsolatedWorld({
@@ -168,7 +165,7 @@ add_task(async function contextCreatedAfterNavigation({ client }) {
     "default",
     "Default context has type 'default'"
   );
-  is(defaultContext.origin, DOC, "Default context has expected origin");
+  is(defaultContext.origin, PAGE_URL, "Default context has expected origin");
   checkIsolated(isolatedContext, isolatedId, WORLD_NAME_1, frameId);
   compareContexts(isolatedContext, defaultContext);
 });
@@ -183,7 +180,7 @@ add_task(async function contextDestroyedForNavigation({ client }) {
 
   const history = recordEvents(Runtime, 4, true);
   const frameNavigated = Page.frameNavigated();
-  await Page.navigate({ url: DOC });
+  await Page.navigate({ url: PAGE_URL });
   await frameNavigated;
 
   await assertEventOrder({
@@ -222,7 +219,9 @@ add_task(async function contextsForFramesetNavigation({ client }) {
   
   const historyTo = recordEvents(Runtime, 5);
   const loadEventTo = Page.loadEventFired();
-  const { frameId: frameIdTo } = await Page.navigate({ url: DOC_IFRAME });
+  const { frameId: frameIdTo } = await Page.navigate({
+    url: FRAMESET_SINGLE_URL,
+  });
   await loadEventTo;
 
   const { frameTree } = await Page.getFrameTree();
@@ -281,7 +280,7 @@ add_task(async function contextsForFramesetNavigation({ client }) {
   
   const historyFrom = recordEvents(Runtime, 6);
   const loadEventFrom = Page.loadEventFired();
-  await Page.navigate({ url: DOC });
+  await Page.navigate({ url: PAGE_URL });
   await loadEventFrom;
 
   await assertEventOrder({
