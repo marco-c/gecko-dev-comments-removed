@@ -74,26 +74,24 @@ void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
   
   
   
-  if (numValueSlots == 0) {
-    return;
-  }
+  if (numValueSlots > 0) {
+    MOZ_ASSERT(nfixed <= numValueSlots);
 
-  MOZ_ASSERT(nfixed <= numValueSlots);
+    if (nfixed == nlivefixed) {
+      
+      TraceLocals(this, trc, 0, numValueSlots);
+    } else {
+      
+      TraceLocals(this, trc, nfixed, numValueSlots);
 
-  if (nfixed == nlivefixed) {
-    
-    TraceLocals(this, trc, 0, numValueSlots);
-  } else {
-    
-    TraceLocals(this, trc, nfixed, numValueSlots);
+      
+      while (nfixed > nlivefixed) {
+        unaliasedLocal(--nfixed).setUndefined();
+      }
 
-    
-    while (nfixed > nlivefixed) {
-      unaliasedLocal(--nfixed).setUndefined();
+      
+      TraceLocals(this, trc, 0, nlivefixed);
     }
-
-    
-    TraceLocals(this, trc, 0, nlivefixed);
   }
 
   if (auto* debugEnvs = script->realm()->debugEnvs()) {
