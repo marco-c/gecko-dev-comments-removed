@@ -69,6 +69,7 @@ static void GetCookieLifetimePolicyFromCookieJarSettings(
 
 
 
+
 static StorageAccess InternalStorageAllowedCheck(
     nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
     nsIChannel* aChannel, nsICookieJarSettings* aCookieJarSettings,
@@ -179,6 +180,43 @@ static StorageAccess InternalStorageAllowedCheck(
   return StorageAccess::eDeny;
 }
 
+
+
+
+
+
+
+static StorageAccess InternalStorageAllowedCheckCached(
+    nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aWindow, nsIURI* aURI,
+    nsIChannel* aChannel, nsICookieJarSettings* aCookieJarSettings,
+    uint32_t& aRejectedReason) {
+  
+  
+  
+  nsGlobalWindowInner* win = nullptr;
+  if (aWindow &&
+      StaticPrefs::privacy_antitracking_cacheStorageAllowedForWindow()) {
+    win = nsGlobalWindowInner::Cast(aWindow);
+
+    Maybe<StorageAccess> storageAccess =
+        win->GetStorageAllowedCache(aRejectedReason);
+    if (storageAccess.isSome()) {
+      return storageAccess.value();
+    }
+  }
+
+  StorageAccess result = InternalStorageAllowedCheck(
+      aPrincipal, aWindow, aURI, aChannel, aCookieJarSettings, aRejectedReason);
+  if (win) {
+    
+    
+    
+    win->SetStorageAllowedCache(result, aRejectedReason);
+  }
+
+  return result;
+}
+
 static bool StorageDisabledByAntiTrackingInternal(
     nsPIDOMWindowInner* aWindow, nsIChannel* aChannel, nsIPrincipal* aPrincipal,
     nsIURI* aURI, nsICookieJarSettings* aCookieJarSettings,
@@ -223,9 +261,9 @@ StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
     
     
     nsIChannel* channel = document->GetChannel();
-    return InternalStorageAllowedCheck(principal, aWindow, nullptr, channel,
-                                       document->CookieJarSettings(),
-                                       *aRejectedReason);
+    return InternalStorageAllowedCheckCached(
+        principal, aWindow, nullptr, channel, document->CookieJarSettings(),
+        *aRejectedReason);
   }
 
   
@@ -243,7 +281,7 @@ StorageAccess StorageAllowedForDocument(const Document* aDoc) {
     nsIChannel* channel = aDoc->GetChannel();
 
     uint32_t rejectedReason = 0;
-    return InternalStorageAllowedCheck(
+    return InternalStorageAllowedCheckCached(
         principal, inner, nullptr, channel,
         const_cast<Document*>(aDoc)->CookieJarSettings(), rejectedReason);
   }

@@ -2405,6 +2405,11 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     if (reUseInnerWindow) {
       
       
+      
+      newInnerWindow->ClearStorageAllowedCache();
+
+      
+      
       newInnerWindow->mLocalStorage = nullptr;
       newInnerWindow->mSessionStorage = nullptr;
       newInnerWindow->mPerformance = nullptr;
