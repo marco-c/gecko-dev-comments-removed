@@ -1051,6 +1051,13 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
   }
 
   const rect = target?.getBoundingClientRect();
+  let resolution = 1.0;
+  try {
+    resolution = _getDOMWindowUtils(win.top).getResolution();
+  } catch (e) {
+    
+    
+  }
   const scaleValue = (() => {
     if (scale === "inScreenPixels") {
       return 1.0;
@@ -1063,14 +1070,26 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
     }
     throw Error(`invalid scale value (${scale}) is specified`);
   })();
+  
+  
+  
+  
   const x = (() => {
     if (screenX != undefined) {
       return screenX * scaleValue;
     }
+    let winInnerOffsetX = win.mozInnerScreenX;
+    try {
+      winInnerOffsetX =
+        win.top.mozInnerScreenX +
+        (win.mozInnerScreenX - win.top.mozInnerScreenX) * resolution;
+    } catch (e) {
+      
+      
+    }
     return (
-      ((atCenter ? rect.width / 2 : offsetX) +
-        win.mozInnerScreenX +
-        rect.left) *
+      (((atCenter ? rect.width / 2 : offsetX) + rect.left) * resolution +
+        winInnerOffsetX) *
       scaleValue
     );
   })();
@@ -1078,10 +1097,18 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
     if (screenY != undefined) {
       return screenY * scaleValue;
     }
+    let winInnerOffsetY = win.mozInnerScreenY;
+    try {
+      winInnerOffsetY =
+        win.top.mozInnerScreenY +
+        (win.mozInnerScreenY - win.top.mozInnerScreenY) * resolution;
+    } catch (e) {
+      
+      
+    }
     return (
-      ((atCenter ? rect.height / 2 : offsetY) +
-        win.mozInnerScreenY +
-        rect.top) *
+      (((atCenter ? rect.height / 2 : offsetY) + rect.top) * resolution +
+        winInnerOffsetY) *
       scaleValue
     );
   })();
