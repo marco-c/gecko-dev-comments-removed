@@ -121,14 +121,10 @@ class Calendar final {
 
   ~Calendar();
 
-  
-
-
-
-
-  UCalendar* UnsafeGetUCalendar() const { return mCalendar; }
-
  private:
+  friend class DateIntervalFormat;
+  UCalendar* GetUCalendar() const { return mCalendar; }
+
   UCalendar* mCalendar = nullptr;
 };
 
