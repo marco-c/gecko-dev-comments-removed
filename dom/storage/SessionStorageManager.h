@@ -19,6 +19,7 @@
 #include "mozilla/ipc/PBackgroundParent.h"
 
 class nsIPrincipal;
+class nsITimer;
 
 namespace mozilla {
 class OriginAttributesPattern;
@@ -31,7 +32,7 @@ void RecvPropagateBackgroundSessionStorageManager(uint64_t aCurrentTopContextId,
 bool RecvRemoveBackgroundSessionStorageManager(uint64_t aTopContextId);
 
 bool RecvGetSessionStorageData(
-    uint64_t aTopContextId, uint32_t aSizeLimit,
+    uint64_t aTopContextId, uint32_t aSizeLimit, bool aCancelSessionStoreTimer,
     ::mozilla::ipc::PBackgroundParent::GetSessionStorageManagerDataResolver&&
         aResolver);
 
@@ -182,7 +183,8 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
   using DataPromise =
       ::mozilla::ipc::PBackgroundChild::GetSessionStorageManagerDataPromise;
   static RefPtr<DataPromise> GetData(BrowsingContext* aContext,
-                                     uint32_t aSizeLimit);
+                                     uint32_t aSizeLimit,
+                                     bool aClearSessionStoreTimer = false);
 
   void GetData(uint32_t aSizeLimit, nsTArray<SSCacheCopy>& aCacheCopyList);
 
@@ -195,11 +197,56 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
                   const nsTArray<SSWriteInfo>& aDefaultWriteInfos,
                   const nsTArray<SSWriteInfo>& aSessionWriteInfos);
 
+  void SetCurrentBrowsingContextId(uint64_t aBrowsingContextId);
+
+  void MaybeDispatchSessionStoreUpdate();
+
+  void CancelSessionStoreUpdate();
+
  private:
   
-  explicit BackgroundSessionStorageManager();
+  explicit BackgroundSessionStorageManager(uint64_t aBrowsingContextId);
 
   ~BackgroundSessionStorageManager();
+
+  
+  
+  void MaybeScheduleSessionStoreUpdate();
+
+  void DispatchSessionStoreUpdate();
+
+  
+  uint64_t mCurrentBrowsingContextId;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsITimer> mSessionStoreCallbackTimer;
 };
 
 }  
