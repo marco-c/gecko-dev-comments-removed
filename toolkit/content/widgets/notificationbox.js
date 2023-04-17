@@ -587,7 +587,8 @@
         
         messageContent.textContent = "";
 
-        this.messageText = document.createElement("span");
+        
+        this.messageText = document.createElement("label");
         this.messageText.classList.add("notification-message");
         this.buttonContainer = document.createElement("span");
         this.buttonContainer.classList.add("notification-button-container");
