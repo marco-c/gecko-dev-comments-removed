@@ -729,7 +729,6 @@ AsyncPanZoomController::AsyncPanZoomController(
       mInputQueue(aInputQueue),
       mPinchPaintTimerSet(false),
       mTestAttributeAppliers(0),
-      mAsyncTransformAppliedToContent(false),
       mTestHasAsyncKeyScrolled(false),
       mCheckerboardEventLock("APZCBELock") {
   if (aGestures == USE_GESTURE_DETECTOR) {
@@ -4447,7 +4446,6 @@ bool AsyncPanZoomController::AdvanceAnimations(const SampleTime& aSampleTime) {
   
   
   
-  mAsyncTransformAppliedToContent = false;
   bool requestAnimationFrame = false;
   nsTArray<RefPtr<Runnable>> deferredTasks;
 

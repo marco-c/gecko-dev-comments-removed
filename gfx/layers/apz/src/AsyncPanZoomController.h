@@ -1700,14 +1700,6 @@ class AsyncPanZoomController {
 
   void SetTestAsyncZoom(const LayerToParentLayerScale& aZoom);
 
-  void MarkAsyncTransformAppliedToContent() {
-    mAsyncTransformAppliedToContent = true;
-  }
-
-  bool GetAsyncTransformAppliedToContent() const {
-    return mAsyncTransformAppliedToContent;
-  }
-
   LayersId GetLayersId() const { return mLayersId; }
 
   bool IsAsyncZooming() const {
@@ -1729,9 +1721,6 @@ class AsyncPanZoomController {
   
   LayerToParentLayerScale mTestAsyncZoom;
   uint8_t mTestAttributeAppliers;
-  
-  
-  bool mAsyncTransformAppliedToContent;
   
   bool mTestHasAsyncKeyScrolled;
 
