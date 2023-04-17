@@ -1,0 +1,17 @@
+
+
+
+
+
+
+#include "VsyncTaskManager.h"
+#include "InputTaskManager.h"
+
+namespace mozilla {
+
+StaticRefPtr<VsyncTaskManager> VsyncTaskManager::gHighPriorityTaskManager;
+
+void VsyncTaskManager::Init() {
+  gHighPriorityTaskManager = new VsyncTaskManager();
+}
+}  
