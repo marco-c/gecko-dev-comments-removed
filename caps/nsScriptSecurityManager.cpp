@@ -925,12 +925,6 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
       if (sourceIsUIResource) {
         
         
-        if (StaticPrefs::
-                security_caps_allow_uri_is_ui_resource_in_checkloaduriflags()) {
-          return NS_OK;
-        }
-        
-        
         if (targetScheme.EqualsLiteral("moz-icon")) {
           return NS_OK;
         }
