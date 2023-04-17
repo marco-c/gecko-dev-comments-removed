@@ -884,7 +884,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
         if (mWordBreaker || inWhitespace) {
           int32_t nextfindex = findex + incr;
 
-          char16_t nextChar;
+          char32_t nextChar;
           
           if (mFindBackward ? (nextfindex >= 0) : (nextfindex < fragLen)) {
             if (t2b) {
