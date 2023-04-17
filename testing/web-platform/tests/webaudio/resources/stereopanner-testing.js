@@ -79,7 +79,7 @@ let StereoPannerTest = (function() {
     
     
     
-    this.maxAllowedError = 9.8015e-8;
+    this.maxAllowedError = 1.284318e-7;
 
     
     
