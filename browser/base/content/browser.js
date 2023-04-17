@@ -5079,16 +5079,6 @@ var XULBrowserWindow = {
     return gBrowser.tabs.length;
   },
 
-  
-  onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
-    return BrowserUtils.onBeforeLinkTraversal(
-      originalTarget,
-      linkURI,
-      linkNode,
-      isAppTab
-    );
-  },
-
   onProgressChange(
     aWebProgress,
     aRequest,

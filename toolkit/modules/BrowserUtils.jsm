@@ -54,42 +54,6 @@ var BrowserUtils = {
     );
   },
 
-  onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
-    
-    
-    if (originalTarget != "" || !isAppTab) {
-      return originalTarget;
-    }
-
-    
-    
-    let linkHost;
-    let docHost;
-    try {
-      linkHost = linkURI.host;
-      docHost = linkNode.ownerDocument.documentURIObject.host;
-    } catch (e) {
-      
-      
-      return originalTarget;
-    }
-
-    if (docHost == linkHost) {
-      return originalTarget;
-    }
-
-    
-    let [longHost, shortHost] =
-      linkHost.length > docHost.length
-        ? [linkHost, docHost]
-        : [docHost, linkHost];
-    if (longHost == "www." + shortHost) {
-      return originalTarget;
-    }
-
-    return "_blank";
-  },
-
   
 
 

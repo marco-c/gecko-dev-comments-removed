@@ -1076,6 +1076,9 @@ class nsDocShell final : public nsDocLoader,
 
   bool NoopenerForceEnabled();
 
+  bool ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
+                               nsIURI* aLinkURI, nsIContent* aContent);
+
  private:  
   nsString mTitle;
   nsCString mOriginalUriString;
