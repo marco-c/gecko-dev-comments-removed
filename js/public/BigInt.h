@@ -113,7 +113,7 @@ extern JS_PUBLIC_API BigInt* StringToBigInt(
 
 
 extern JS_PUBLIC_API BigInt* SimpleStringToBigInt(
-    JSContext* cx, mozilla::Span<const char> chars, unsigned radix);
+    JSContext* cx, mozilla::Span<const char> chars, uint8_t radix);
 
 
 
