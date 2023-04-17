@@ -15,7 +15,7 @@ function promiseElementVisible(element) {
   
   
   
-  return BrowserTestUtils.waitForCondition(
+  return TestUtils.waitForCondition(
     () => element.offsetParent !== null,
     "Waiting for element to be visible"
   );
