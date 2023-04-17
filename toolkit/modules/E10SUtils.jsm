@@ -57,19 +57,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIExternalProtocolService"
 );
 
-function getAboutModule(aURL) {
-  
-  let moduleName = aURL.pathQueryRef.replace(/[#?].*/, "").toLowerCase();
-  let contract = "@mozilla.org/network/protocol/about;1?what=" + moduleName;
-  try {
-    return Cc[contract].getService(Ci.nsIAboutModule);
-  } catch (e) {
-    
-    
-    return null;
-  }
-}
-
 function getOriginalReaderModeURI(aURI) {
   try {
     let searchParams = new URLSearchParams(aURI.query);
@@ -278,6 +265,23 @@ var E10SUtils = {
   LARGE_ALLOCATION_REMOTE_TYPE,
   FISSION_WEB_REMOTE_TYPE,
 
+  
+
+
+
+  getAboutModule(aURL) {
+    
+    let moduleName = aURL.pathQueryRef.replace(/[#?].*/, "").toLowerCase();
+    let contract = "@mozilla.org/network/protocol/about;1?what=" + moduleName;
+    try {
+      return Cc[contract].getService(Ci.nsIAboutModule);
+    } catch (e) {
+      
+      
+      return null;
+    }
+  },
+
   useCrossOriginOpenerPolicy() {
     return useCrossOriginOpenerPolicy;
   },
@@ -442,7 +446,7 @@ var E10SUtils = {
           : DEFAULT_REMOTE_TYPE;
 
       case "about":
-        let module = getAboutModule(aURI);
+        let module = this.getAboutModule(aURI);
         
         
         if (!module) {
