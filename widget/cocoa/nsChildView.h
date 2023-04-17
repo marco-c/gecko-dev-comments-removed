@@ -511,6 +511,9 @@ class nsChildView final : public nsBaseWidget {
   
   void UnsuspendAsyncCATransactions();
 
+  
+  void UpdateFullscreen(bool aFullscreen);
+
  protected:
   virtual ~nsChildView();
 

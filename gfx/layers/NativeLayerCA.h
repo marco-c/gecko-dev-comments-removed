@@ -118,6 +118,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
   already_AddRefed<NativeLayer> CreateLayerForExternalTexture(
       bool aIsOpaque) override;
 
+  void SetWindowIsFullscreen(bool aFullscreen);
+
  protected:
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
@@ -153,6 +155,10 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   bool mCommitPending = false;
+
+  
+  
+  bool mWindowIsFullscreen = false;
 };
 
 class RenderSourceNLRS;
