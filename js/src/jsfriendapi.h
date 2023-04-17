@@ -17,6 +17,7 @@
 #include "js/Class.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
+#include "js/friend/PerformanceHint.h"
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"           
@@ -774,20 +775,6 @@ class JS_FRIEND_API CompartmentTransplantCallback {
 extern JS_FRIEND_API void RemapRemoteWindowProxies(
     JSContext* cx, CompartmentTransplantCallback* callback,
     JS::MutableHandleObject newTarget);
-
-namespace gc {
-
-
-
-
-
-
-enum class PerformanceHint { Normal, InPageLoad };
-
-extern JS_FRIEND_API void SetPerformanceHint(JSContext* cx,
-                                             PerformanceHint hint);
-
-} 
 
 extern JS_FRIEND_API JS::Zone* GetObjectZoneFromAnyThread(const JSObject* obj);
 
