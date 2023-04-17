@@ -117,13 +117,19 @@ class FileAndPathHelper {
     
     
     for (const objdirPath of this._objdirs) {
-      
-      candidatePaths.push(OS.Path.join(objdirPath, "dist", "bin", name));
-      
-      
-      
-      
-      candidatePaths.push(OS.Path.join(objdirPath, name));
+      try {
+        
+        candidatePaths.push(PathUtils.join(objdirPath, "dist", "bin", name));
+
+        
+        
+        
+        
+        candidatePaths.push(PathUtils.join(objdirPath, name));
+      } catch (e) {
+        
+        
+      }
     }
 
     
