@@ -22,7 +22,6 @@
 #include <stdint.h>  
 #include <utility>   
 
-#include "jsapi.h"             
 #include "jstypes.h"           
 #include "NamespaceImports.h"  
 
@@ -35,6 +34,7 @@
 #include "gc/Tracer.h"              
 #include "gc/WeakMap.h"             
 #include "gc/ZoneAllocator.h"       
+#include "js/Debug.h"               
 #include "js/GCAPI.h"               
 #include "js/Proxy.h"               
 #include "js/RootingAPI.h"          
