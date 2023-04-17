@@ -391,64 +391,6 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     documentNode.reparent(parentNode);
   }
 
-  
-
-
-
-
-
-
-
-
-
-  async findNodeFront(nodeSelectors) {
-    const querySelectors = async nodeFront => {
-      const selector = nodeSelectors.shift();
-      if (!selector) {
-        return nodeFront;
-      }
-      nodeFront = await nodeFront.walkerFront.querySelector(
-        nodeFront,
-        selector
-      );
-      
-      
-      
-      
-      if (!nodeFront) {
-        return null;
-      }
-
-      if (nodeSelectors.length > 0) {
-        await nodeFront.waitForFrameLoad();
-
-        const { nodes } = await this.children(nodeFront);
-
-        
-        
-        
-        
-        nodeFront = nodes.find(node => {
-          const { nodeType } = node;
-          return (
-            nodeType === Node.DOCUMENT_FRAGMENT_NODE ||
-            nodeType === Node.DOCUMENT_NODE
-          );
-        });
-
-        
-        
-        
-        if (!nodeFront) {
-          return null;
-        }
-      }
-      return querySelectors(nodeFront) || nodeFront;
-    };
-    const nodeFront = await this.getRootNode();
-    return querySelectors(nodeFront);
-  }
-
   _onRootNodeAvailable(rootNode) {
     if (rootNode.isTopLevelDocument) {
       this.rootNode = rootNode;

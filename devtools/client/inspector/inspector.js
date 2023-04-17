@@ -571,7 +571,12 @@ Inspector.prototype = {
     
     const defaultNodeSelectors = [
       
-      () => (cssSelectors.length ? walker.findNodeFront(cssSelectors) : null),
+      () =>
+        cssSelectors.length
+          ? this.commands.inspectorCommand.findNodeFrontFromSelectors(
+              cssSelectors
+            )
+          : null,
       
       () => walker.querySelector(rootNodeFront, "body"),
       
