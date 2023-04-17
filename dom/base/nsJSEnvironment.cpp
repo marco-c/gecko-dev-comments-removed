@@ -556,7 +556,7 @@ nsJSContext::~nsJSContext() {
 
 void nsJSContext::Destroy() {
   if (mGCOnDestruction) {
-    PokeGC(JS::GCReason::NSJSCONTEXT_DESTROY, mWindowProxy);
+    sScheduler.PokeGC(JS::GCReason::NSJSCONTEXT_DESTROY, mWindowProxy);
   }
 
   DropJSObjects(this);
@@ -1500,9 +1500,10 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
                    kMaxICCDuration.ToMilliseconds(),
                "A max duration ICC shouldn't reduce GC delay to 0");
 
-    PokeGC(JS::GCReason::CC_FINISHED, nullptr,
-           StaticPrefs::javascript_options_gc_delay() -
-               std::min(ccNowDuration, kMaxICCDuration).ToMilliseconds());
+    sScheduler.PokeGC(
+        JS::GCReason::CC_FINISHED, nullptr,
+        StaticPrefs::javascript_options_gc_delay() -
+            std::min(ccNowDuration, kMaxICCDuration).ToMilliseconds());
   }
 
   
@@ -1645,48 +1646,7 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
 
 void nsJSContext::PokeGC(JS::GCReason aReason, JSObject* aObj,
                          uint32_t aDelay) {
-  if (sShuttingDown) {
-    return;
-  }
-
-  if (aObj) {
-    JS::Zone* zone = JS::GetObjectZone(aObj);
-    CycleCollectedJSRuntime::Get()->AddZoneWaitingForGC(zone);
-  } else if (aReason != JS::GCReason::CC_FINISHED) {
-    sScheduler.SetNeedsFullGC();
-  }
-
-  if (sScheduler.mGCRunner) {
-    
-    return;
-  }
-
-  sScheduler.SetWantMajorGC(aReason);
-
-  if (sScheduler.mCCRunner) {
-    
-    
-    sScheduler.EnsureCCThenGC();
-    return;
-  }
-
-  static bool first = true;
-
-  uint32_t delay =
-      aDelay ? aDelay
-             : (first ? StaticPrefs::javascript_options_gc_delay_first()
-                      : StaticPrefs::javascript_options_gc_delay());
-  first = false;
-
-  sScheduler.mGCRunner = IdleTaskRunner::Create(
-      [](TimeStamp aDeadline) { return sScheduler.GCRunnerFired(aDeadline); },
-      "GCRunnerFired",
-      
-      
-      
-      delay, StaticPrefs::javascript_options_gc_delay_interslice(),
-      sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
-      [] { return sShuttingDown; });
+  sScheduler.PokeGC(aReason, aObj, aDelay);
 }
 
 
@@ -1721,22 +1681,7 @@ void nsJSContext::LowMemoryGC() {
 }
 
 
-void nsJSContext::MaybePokeCC() {
-  if (sScheduler.mCCRunner || sShuttingDown) {
-    return;
-  }
-
-  if (sScheduler.ShouldScheduleCC()) {
-    
-    nsCycleCollector_dispatchDeferredDeletion();
-
-    if (!sScheduler.mCCRunner) {
-      sScheduler.InitCCRunnerStateMachine(
-          mozilla::CCGCScheduler::CCRunnerState::ReducePurple);
-    }
-    sScheduler.EnsureCCRunner(kCCSkippableDelay, kForgetSkippableSliceDuration);
-  }
-}
+void nsJSContext::MaybePokeCC() { sScheduler.MaybePokeCC(); }
 
 static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
                                const JS::GCDescription& aDesc) {
@@ -1783,7 +1728,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       
       sScheduler.KillGCRunner();
 
-      nsJSContext::MaybePokeCC();
+      sScheduler.MaybePokeCC();
 
       if (aDesc.isZone_) {
         sScheduler.PokeFullGC();
@@ -1810,20 +1755,11 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
 
       if (sShuttingDown || aDesc.isComplete_) {
         sScheduler.KillGCRunner();
-      } else if (!sScheduler.mGCRunner) {
+      } else {
         
         
         
-        sScheduler.mGCRunner = IdleTaskRunner::Create(
-            [](TimeStamp aDeadline) {
-              return sScheduler.GCRunnerFired(aDeadline);
-            },
-            "DOMGCSliceCallback::GCRunnerFired",
-            
-            
-            0, StaticPrefs::javascript_options_gc_delay_interslice(),
-            sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
-            [] { return sShuttingDown; });
+        sScheduler.EnsureGCRunner();
       }
 
       if (sScheduler.IsCCNeeded()) {
