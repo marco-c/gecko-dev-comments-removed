@@ -595,39 +595,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     }
 
     if (aFeature == FEATURE_WEBRENDER) {
-      bool isUnblocked = false;
-      const nsCString& gpu = mGLStrings->Renderer();
-      NS_LossyConvertUTF16toASCII model(mModel);
-
-      
-      isUnblocked |= gpu.Find("Adreno (TM) 3",  true) >= 0 ||
-                     gpu.Find("Adreno (TM) 4",  true) >= 0 ||
-                     gpu.Find("Adreno (TM) 5",  true) >= 0 ||
-                     gpu.Find("Adreno (TM) 6",  true) >= 0;
-
-      
-      isUnblocked |= gpu.Find("Mali-T",  true) >= 0;
-
-      
-      isUnblocked |= gpu.Find("Mali-G",  true) >= 0 &&
-                     
-                     gpu.Find("Mali-G31",  true) == kNotFound;
-
-      
-      isUnblocked |= gpu.Find("PowerVR Rogue",  true) >= 0;
-
-      
-      isUnblocked |= gpu.Find("NVIDIA Tegra",  true) >= 0;
-
-      
-      isUnblocked |= gpu.Find("Mesa DRI Intel",  true) >= 0;
-
-      if (!isUnblocked) {
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_WEBRENDER_BLOCKED_DEVICE";
-      } else {
-        *aStatus = nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
-      }
+      *aStatus = nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
       return NS_OK;
     }
 
@@ -679,19 +647,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       return NS_OK;
     }
 
-#ifdef NIGHTLY_BUILD
     if (aFeature == FEATURE_WEBRENDER_SOFTWARE) {
-      const bool isMali4xx =
-          mGLStrings->Renderer().Find("Mali-4",  true) >= 0;
-      if (isMali4xx) {
-        *aStatus = nsIGfxInfo::FEATURE_ALLOW_ALWAYS;
-      } else {
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_BUG_1703140";
-      }
+      *aStatus = nsIGfxInfo::FEATURE_ALLOW_ALWAYS;
       return NS_OK;
     }
-#endif
   }
 
   if (aFeature == FEATURE_GL_SWIZZLE) {
