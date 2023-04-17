@@ -989,7 +989,7 @@ bool GlobalObject::getSelfHostedFunction(JSContext* cx,
       
       
       
-      fun->initAtom(name);
+      fun->setAtom(name);
       return true;
     }
 
