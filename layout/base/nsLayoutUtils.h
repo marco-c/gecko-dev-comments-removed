@@ -1241,9 +1241,13 @@ class nsLayoutUtils {
 
   class BoxCallback {
    public:
-    BoxCallback() : mIncludeCaptionBoxForTable(true) {}
+    BoxCallback() = default;
     virtual void AddBox(nsIFrame* aFrame) = 0;
-    bool mIncludeCaptionBoxForTable;
+    bool mIncludeCaptionBoxForTable = true;
+    
+    
+    
+    bool mInTargetContinuation = false;
   };
   
 
