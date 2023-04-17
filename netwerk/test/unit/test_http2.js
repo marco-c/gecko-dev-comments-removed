@@ -1202,7 +1202,7 @@ Http2DiskCachePushListener.onStopRequest = function(request, status) {
   chan.asyncOpen(listener);
 };
 
-function continue_test_http2_disk_cache_push(status, entry, appCache) {
+function continue_test_http2_disk_cache_push(status, entry) {
   
   
   
