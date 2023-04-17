@@ -1291,13 +1291,6 @@ var gKeywordURIFixup = {
     let hostName = fixedURI.displayHost;
     
     let asciiHost = fixedURI.asciiHost;
-    
-    
-    
-    
-    if (asciiHost.indexOf(".") == asciiHost.length - 1) {
-      asciiHost = asciiHost.slice(0, -1);
-    }
 
     let isIPv4Address = host => {
       let parts = host.split(".");
@@ -1363,7 +1356,15 @@ var gKeywordURIFixup = {
             callback() {
               
               if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
-                let pref = "browser.fixup.domainwhitelist." + asciiHost;
+                let prefHost = asciiHost;
+                
+                
+                
+                
+                if (prefHost.indexOf(".") == prefHost.length - 1) {
+                  prefHost = prefHost.slice(0, -1);
+                }
+                let pref = "browser.fixup.domainwhitelist." + prefHost;
                 Services.prefs.setBoolPref(pref, true);
               }
               openTrustedLinkIn(fixedURI.spec, "current");
@@ -1381,9 +1382,19 @@ var gKeywordURIFixup = {
       },
     };
 
+    
+    
+    
+    let lookupName = hostName;
+    if (
+      UrlbarPrefs.get("dnsResolveFullyQualifiedNames") &&
+      !lookupName.includes(".")
+    ) {
+      lookupName += ".";
+    }
     try {
       gDNSService.asyncResolve(
-        hostName,
+        lookupName,
         Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
         0,
         null,

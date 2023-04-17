@@ -73,6 +73,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["dnsResolveFullyQualifiedNames", true],
+
+  
+  
   
   
   ["dnsResolveSingleWordsAfterSearch", 1],
