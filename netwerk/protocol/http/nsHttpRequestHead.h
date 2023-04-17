@@ -69,25 +69,24 @@ class nsHttpRequestHead {
 
   [[nodiscard]] nsresult SetHeader(const nsACString& h, const nsACString& v,
                                    bool m = false);
-  [[nodiscard]] nsresult SetHeader(const nsHttpAtom& h, const nsACString& v,
+  [[nodiscard]] nsresult SetHeader(nsHttpAtom h, const nsACString& v,
                                    bool m = false);
-  [[nodiscard]] nsresult SetHeader(const nsHttpAtom& h, const nsACString& v,
-                                   bool m,
+  [[nodiscard]] nsresult SetHeader(nsHttpAtom h, const nsACString& v, bool m,
                                    nsHttpHeaderArray::HeaderVariety variety);
   [[nodiscard]] nsresult SetEmptyHeader(const nsACString& h);
-  [[nodiscard]] nsresult GetHeader(const nsHttpAtom& h, nsACString& v);
+  [[nodiscard]] nsresult GetHeader(nsHttpAtom h, nsACString& v);
 
-  [[nodiscard]] nsresult ClearHeader(const nsHttpAtom& h);
+  [[nodiscard]] nsresult ClearHeader(nsHttpAtom h);
   void ClearHeaders();
 
-  bool HasHeaderValue(const nsHttpAtom& h, const char* v);
+  bool HasHeaderValue(nsHttpAtom h, const char* v);
   
   
-  bool HasHeader(const nsHttpAtom& h);
+  bool HasHeader(nsHttpAtom h);
   void Flatten(nsACString&, bool pruneProxyHeaders = false);
 
   
-  [[nodiscard]] nsresult SetHeaderOnce(const nsHttpAtom& h, const char* v,
+  [[nodiscard]] nsresult SetHeaderOnce(nsHttpAtom h, const char* v,
                                        bool merge = false);
 
   bool IsSafeMethod();
@@ -120,8 +119,8 @@ class nsHttpRequestHead {
  private:
   
   nsHttpHeaderArray mHeaders;
-  nsCString mMethod{"GET"_ns};
-  HttpVersion mVersion{HttpVersion::v1_1};
+  nsCString mMethod;
+  HttpVersion mVersion;
 
   
   
@@ -129,15 +128,15 @@ class nsHttpRequestHead {
   nsCString mPath;
 
   nsCString mOrigin;
-  ParsedMethodType mParsedMethod{kMethod_Get};
-  bool mHTTPS{false};
+  ParsedMethodType mParsedMethod;
+  bool mHTTPS;
 
   
   
-  RecursiveMutex mRecursiveMutex{"nsHttpRequestHead.mRecursiveMutex"};
+  RecursiveMutex mRecursiveMutex;
 
   
-  bool mInVisitHeaders{false};
+  bool mInVisitHeaders;
 
   friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };

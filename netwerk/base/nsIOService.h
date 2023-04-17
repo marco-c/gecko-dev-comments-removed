@@ -25,7 +25,6 @@
 #include "nsIObserverService.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
-#include "nsNetCID.h"
 
 #define NS_N(x) (sizeof(x) / sizeof(*(x)))
 
@@ -200,39 +199,38 @@ class nsIOService final : public nsIIOService,
   void DestroySocketProcess();
 
  private:
-  mozilla::Atomic<bool, mozilla::Relaxed> mOffline{true};
-  mozilla::Atomic<bool, mozilla::Relaxed> mOfflineForProfileChange{false};
-  bool mManageLinkStatus{false};
-  mozilla::Atomic<bool, mozilla::Relaxed> mConnectivity{true};
+  mozilla::Atomic<bool, mozilla::Relaxed> mOffline;
+  mozilla::Atomic<bool, mozilla::Relaxed> mOfflineForProfileChange;
+  bool mManageLinkStatus;
+  mozilla::Atomic<bool, mozilla::Relaxed> mConnectivity;
 
   
   
-  bool mSettingOffline{false};
-  bool mSetOfflineValue{false};
+  bool mSettingOffline;
+  bool mSetOfflineValue;
 
-  bool mSocketProcessLaunchComplete{false};
+  bool mSocketProcessLaunchComplete;
 
-  mozilla::Atomic<bool, mozilla::Relaxed> mShutdown{false};
-  mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown{false};
+  mozilla::Atomic<bool, mozilla::Relaxed> mShutdown;
+  mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown;
 
   nsCOMPtr<nsPISocketTransportService> mSocketTransportService;
   nsCOMPtr<nsICaptivePortalService> mCaptivePortalService;
   nsCOMPtr<nsINetworkLinkService> mNetworkLinkService;
-  bool mNetworkLinkServiceInitialized{false};
+  bool mNetworkLinkServiceInitialized;
 
   
   nsWeakPtr mWeakHandler[NS_N(gScheme)];
 
   
-  nsCategoryCache<nsIChannelEventSink> mChannelEventSinks{
-      NS_CHANNEL_EVENT_SINK_CATEGORY};
+  nsCategoryCache<nsIChannelEventSink> mChannelEventSinks;
 
-  Mutex mMutex{"nsIOService::mMutex"};
+  Mutex mMutex;
   nsTArray<int32_t> mRestrictedPortList;
 
-  uint32_t mTotalRequests{0};
-  uint32_t mCacheWon{0};
-  uint32_t mNetWon{0};
+  uint32_t mTotalRequests;
+  uint32_t mCacheWon;
+  uint32_t mNetWon;
 
   
   
@@ -243,9 +241,9 @@ class nsIOService final : public nsIIOService,
   mozilla::Atomic<PRIntervalTime> mLastNetworkLinkChange;
 
   
-  mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted{0};
+  mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
 
-  SocketProcessHost* mSocketProcess{nullptr};
+  SocketProcessHost* mSocketProcess;
 
   
   

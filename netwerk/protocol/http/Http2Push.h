@@ -75,9 +75,9 @@ class Http2PushedStream final : public Http2Stream {
 
  private:
   virtual ~Http2PushedStream() = default;
-  
-  
-  Http2Stream* mConsumerStream{nullptr};
+  Http2Stream*
+      mConsumerStream;  
+                        
 
   nsCOMPtr<nsIRequestContext> mRequestContext;
 
@@ -87,9 +87,9 @@ class Http2PushedStream final : public Http2Stream {
   mozilla::TimeStamp mLastRead;
 
   nsCString mHashKey;
-  nsresult mStatus{NS_OK};
-  bool mPushCompleted{false};  
-  bool mDeferCleanupOnSuccess{true};
+  nsresult mStatus;
+  bool mPushCompleted;  
+  bool mDeferCleanupOnSuccess;
 
   
   
@@ -97,8 +97,8 @@ class Http2PushedStream final : public Http2Stream {
   
   
   
-  bool mDeferCleanupOnPush{false};
-  bool mOnPushFailed{false};
+  bool mDeferCleanupOnPush;
+  bool mOnPushFailed;
   nsCString mRequestString;
   nsCString mResourceUrl;
 
@@ -122,15 +122,15 @@ class Http2PushTransactionBuffer final : public nsAHttpTransaction {
 
   const static uint32_t kDefaultBufferSize = 4096;
 
-  nsresult mStatus{NS_OK};
-  nsHttpRequestHead* mRequestHead{nullptr};
-  Http2PushedStream* mPushStream{nullptr};
-  bool mIsDone{false};
+  nsresult mStatus;
+  nsHttpRequestHead* mRequestHead;
+  Http2PushedStream* mPushStream;
+  bool mIsDone;
 
   UniquePtr<char[]> mBufferedHTTP1;
-  uint32_t mBufferedHTTP1Size{kDefaultBufferSize};
-  uint32_t mBufferedHTTP1Used{0};
-  uint32_t mBufferedHTTP1Consumed{0};
+  uint32_t mBufferedHTTP1Size;
+  uint32_t mBufferedHTTP1Used;
+  uint32_t mBufferedHTTP1Consumed;
 };
 
 class Http2PushedStreamWrapper : public nsISupports {

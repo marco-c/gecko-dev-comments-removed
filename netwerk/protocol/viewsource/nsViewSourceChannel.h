@@ -49,7 +49,8 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
   NS_FORWARD_SAFE_NSIHTTPCHANNELINTERNAL(mHttpChannelInternal)
 
   
-  nsViewSourceChannel() = default;
+  nsViewSourceChannel()
+      : mIsDocument(false), mOpened(false), mIsSrcdocChannel(false) {}
 
   [[nodiscard]] nsresult Init(nsIURI* uri, nsILoadInfo* aLoadInfo);
 
@@ -90,9 +91,9 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
   nsCOMPtr<nsIURI> mOriginalURI;
   nsCOMPtr<nsIURI> mBaseURI;
   nsCString mContentType;
-  bool mIsDocument{false};  
-  bool mOpened{false};
-  bool mIsSrcdocChannel{false};
+  bool mIsDocument;  
+  bool mOpened;
+  bool mIsSrcdocChannel;
 };
 
 #endif 

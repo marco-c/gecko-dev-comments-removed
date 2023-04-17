@@ -25,7 +25,15 @@ nsPartChannel::nsPartChannel(nsIChannel* aMultipartChannel, uint32_t aPartID,
                              nsIStreamListener* aListener)
     : mMultipartChannel(aMultipartChannel),
       mListener(aListener),
-      mPartID(aPartID) {
+      mStatus(NS_OK),
+      mLoadFlags(0),
+      mContentDisposition(0),
+      mContentLength(UINT64_MAX),
+      mIsByteRangeRequest(false),
+      mByteRangeStart(0),
+      mByteRangeEnd(0),
+      mPartID(aPartID),
+      mIsLastPart(false) {
   
   mMultipartChannel->GetLoadFlags(&mLoadFlags);
 
@@ -763,15 +771,27 @@ void nsMultiMixedConv::SwitchToControlParsing() {
 
 
 nsMultiMixedConv::nsMultiMixedConv()
-    
-    
-    
-    
-    
-    
-    
-    : mTokenizer(std::bind(&nsMultiMixedConv::ConsumeToken, this,
-                           std::placeholders::_1)) {}
+    : mCurrentPartID(0),
+      mInOnDataAvailable(false),
+      mResponseHeader(HEADER_UNKNOWN),
+      
+      
+      
+      
+      
+      
+      
+      mTokenizer(std::bind(&nsMultiMixedConv::ConsumeToken, this,
+                           std::placeholders::_1)) {
+  mContentLength = UINT64_MAX;
+  mByteRangeStart = 0;
+  mByteRangeEnd = 0;
+  mTotalSent = 0;
+  mIsByteRangeRequest = false;
+  mParserState = INIT;
+  mRawData = nullptr;
+  mRequestListenerNotified = false;
+}
 
 nsresult nsMultiMixedConv::SendStart() {
   nsresult rv = NS_OK;

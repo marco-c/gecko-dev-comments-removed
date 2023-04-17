@@ -567,58 +567,58 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
 
-  enum HttpVersion mHttpVersion { HttpVersion::v1_1 };
-  enum HttpVersion mProxyHttpVersion { HttpVersion::v1_1 };
-  uint32_t mCapabilities{NS_HTTP_ALLOW_KEEPALIVE};
+  enum HttpVersion mHttpVersion;
+  enum HttpVersion mProxyHttpVersion;
+  uint32_t mCapabilities;
 
-  bool mFastFallbackToIPv4{false};
+  bool mFastFallbackToIPv4;
   PRIntervalTime mIdleTimeout;
   PRIntervalTime mSpdyTimeout;
   PRIntervalTime mResponseTimeout;
-  Atomic<bool, Relaxed> mResponseTimeoutEnabled{false};
-  uint32_t mNetworkChangedTimeout{5000};  
-  uint16_t mMaxRequestAttempts{6};
-  uint16_t mMaxRequestDelay{10};
-  uint16_t mIdleSynTimeout{250};
-  uint16_t mFallbackSynTimeout{5};  
+  Atomic<bool, Relaxed> mResponseTimeoutEnabled;
+  uint32_t mNetworkChangedTimeout;  
+  uint16_t mMaxRequestAttempts;
+  uint16_t mMaxRequestDelay;
+  uint16_t mIdleSynTimeout;
+  uint16_t mFallbackSynTimeout;  
 
-  bool mH2MandatorySuiteEnabled{false};
-  uint16_t mMaxUrgentExcessiveConns{3};
-  uint16_t mMaxConnections{24};
-  uint8_t mMaxPersistentConnectionsPerServer{2};
-  uint8_t mMaxPersistentConnectionsPerProxy{4};
+  bool mH2MandatorySuiteEnabled;
+  uint16_t mMaxUrgentExcessiveConns;
+  uint16_t mMaxConnections;
+  uint8_t mMaxPersistentConnectionsPerServer;
+  uint8_t mMaxPersistentConnectionsPerProxy;
 
-  bool mThrottleEnabled{true};
-  uint32_t mThrottleVersion{2};
-  uint32_t mThrottleSuspendFor{3000};
-  uint32_t mThrottleResumeFor{200};
-  uint32_t mThrottleReadLimit{8000};
-  uint32_t mThrottleReadInterval{500};
-  uint32_t mThrottleHoldTime{600};
-  uint32_t mThrottleMaxTime{3000};
+  bool mThrottleEnabled;
+  uint32_t mThrottleVersion;
+  uint32_t mThrottleSuspendFor;
+  uint32_t mThrottleResumeFor;
+  uint32_t mThrottleReadLimit;
+  uint32_t mThrottleReadInterval;
+  uint32_t mThrottleHoldTime;
+  uint32_t mThrottleMaxTime;
 
-  int32_t mSendWindowSize{1024};
+  int32_t mSendWindowSize;
 
-  bool mUrgentStartEnabled{true};
-  bool mTailBlockingEnabled{true};
-  uint32_t mTailDelayQuantum{600};
-  uint32_t mTailDelayQuantumAfterDCL{100};
-  uint32_t mTailDelayMax{6000};
-  uint32_t mTailTotalMax{0};
+  bool mUrgentStartEnabled;
+  bool mTailBlockingEnabled;
+  uint32_t mTailDelayQuantum;
+  uint32_t mTailDelayQuantumAfterDCL;
+  uint32_t mTailDelayMax;
+  uint32_t mTailTotalMax;
 
-  uint8_t mRedirectionLimit{10};
+  uint8_t mRedirectionLimit;
 
-  bool mBeConservativeForProxy{true};
+  bool mBeConservativeForProxy;
 
   
   
   
   
-  uint8_t mPhishyUserPassLength{1};
+  uint8_t mPhishyUserPassLength;
 
-  uint8_t mQoSBits{0x00};
+  uint8_t mQoSBits;
 
-  bool mEnforceAssocReq{false};
+  bool mEnforceAssocReq;
 
   nsCString mImageAcceptHeader;
   nsCString mDocumentAcceptHeader;
@@ -631,40 +631,40 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   uint32_t mLastUniqueID;
-  uint32_t mSessionStartTime{0};
+  uint32_t mSessionStartTime;
 
   
-  nsCString mLegacyAppName{"Mozilla"};
-  nsCString mLegacyAppVersion{"5.0"};
+  nsCString mLegacyAppName;
+  nsCString mLegacyAppVersion;
   nsCString mPlatform;
   nsCString mOscpu;
   nsCString mMisc;
-  nsCString mProduct{"Gecko"};
+  nsCString mProduct;
   nsCString mProductSub;
   nsCString mAppName;
   nsCString mAppVersion;
   nsCString mCompatFirefox;
-  bool mCompatFirefoxEnabled{false};
+  bool mCompatFirefoxEnabled;
   nsCString mCompatDevice;
   nsCString mDeviceModelId;
 
   nsCString mUserAgent;
   nsCString mSpoofedUserAgent;
   nsCString mUserAgentOverride;
-  bool mUserAgentIsDirty{true};  
-  bool mAcceptLanguagesIsDirty{true};
+  bool mUserAgentIsDirty;  
+  bool mAcceptLanguagesIsDirty;
 
-  bool mPromptTempRedirect{true};
-
-  
-  bool mEnablePersistentHttpsCaching{false};
+  bool mPromptTempRedirect;
 
   
-  bool mSafeHintEnabled{false};
-  bool mParentalControlEnabled{false};
+  bool mEnablePersistentHttpsCaching;
 
   
-  Atomic<bool, Relaxed> mHandlerActive{false};
+  bool mSafeHintEnabled;
+  bool mParentalControlEnabled;
+
+  
+  Atomic<bool, Relaxed> mHandlerActive;
 
   
   uint32_t mDebugObservations : 1;
@@ -685,83 +685,83 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   SpdyInformation mSpdyInfo;
 
-  uint32_t mSpdySendingChunkSize{ASpdySession::kSendingChunkSize};
-  uint32_t mSpdySendBufferSize{ASpdySession::kTCPSendBufferSize};
-  uint32_t mSpdyPushAllowance{131072};  
-  uint32_t mSpdyPullAllowance{ASpdySession::kInitialRwin};
-  uint32_t mDefaultSpdyConcurrent{ASpdySession::kDefaultMaxConcurrent};
+  uint32_t mSpdySendingChunkSize;
+  uint32_t mSpdySendBufferSize;
+  uint32_t mSpdyPushAllowance;
+  uint32_t mSpdyPullAllowance;
+  uint32_t mDefaultSpdyConcurrent;
   PRIntervalTime mSpdyPingThreshold;
   PRIntervalTime mSpdyPingTimeout;
 
   
   
-  uint32_t mConnectTimeout{90000};
+  uint32_t mConnectTimeout;
 
   
   
-  uint32_t mTLSHandshakeTimeout{30000};
+  uint32_t mTLSHandshakeTimeout;
 
   
   
-  uint32_t mParallelSpeculativeConnectLimit{6};
+  uint32_t mParallelSpeculativeConnectLimit;
 
   
   
-  bool mRequestTokenBucketEnabled{true};
-  uint16_t mRequestTokenBucketMinParallelism{6};
-  uint32_t mRequestTokenBucketHz{100};    
-  uint32_t mRequestTokenBucketBurst{32};  
+  bool mRequestTokenBucketEnabled;
+  uint16_t mRequestTokenBucketMinParallelism;
+  uint32_t mRequestTokenBucketHz;     
+  uint32_t mRequestTokenBucketBurst;  
 
   
   
-  bool mCriticalRequestPrioritization{true};
+  bool mCriticalRequestPrioritization;
 
   
 
   
-  bool mTCPKeepaliveShortLivedEnabled{false};
+  bool mTCPKeepaliveShortLivedEnabled;
   
-  int32_t mTCPKeepaliveShortLivedTimeS{60};
+  int32_t mTCPKeepaliveShortLivedTimeS;
   
-  int32_t mTCPKeepaliveShortLivedIdleTimeS{10};
+  int32_t mTCPKeepaliveShortLivedIdleTimeS;
 
   
-  bool mTCPKeepaliveLongLivedEnabled{false};
+  bool mTCPKeepaliveLongLivedEnabled;
   
-  int32_t mTCPKeepaliveLongLivedIdleTimeS{600};
+  int32_t mTCPKeepaliveLongLivedIdleTimeS;
 
   
   
-  FrameCheckLevel mEnforceH1Framing{FRAMECHECK_BARELY};
+  FrameCheckLevel mEnforceH1Framing;
 
   nsCOMPtr<nsIRequestContextService> mRequestContextService;
 
   
-  uint32_t mDefaultHpackBuffer{4096};
+  uint32_t mDefaultHpackBuffer;
 
   
-  Atomic<bool, Relaxed> mBug1563538{true};
+  Atomic<bool, Relaxed> mBug1563538;
 
-  Atomic<bool, Relaxed> mHttp3Enabled{true};
+  Atomic<bool, Relaxed> mHttp3Enabled;
   
-  Atomic<uint32_t, Relaxed> mQpackTableSize{4096};
-  
-  Atomic<uint32_t, Relaxed> mHttp3MaxBlockedStreams{10};
-
+  Atomic<uint32_t, Relaxed> mQpackTableSize;
+  Atomic<uint32_t, Relaxed>
+      mHttp3MaxBlockedStreams;  
+                                
   nsCString mHttp3QlogDir;
 
   
-  uint32_t mMaxHttpResponseHeaderSize{393216};
+  uint32_t mMaxHttpResponseHeaderSize;
 
   
-  float mFocusedWindowTransactionRatio{0.9f};
+  float mFocusedWindowTransactionRatio;
 
   
   
-  Atomic<bool, Relaxed> mSpeculativeConnectEnabled{false};
+  Atomic<bool, Relaxed> mSpeculativeConnectEnabled;
 
   
-  bool mActiveTabPriority{true};
+  bool mActiveTabPriority;
 
   HttpTrafficAnalyzer mHttpTrafficAnalyzer;
 
@@ -806,8 +806,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
       bool anonymous);
 
   
-  uint32_t mProcessId{0};
-  Atomic<uint32_t, Relaxed> mNextChannelId{1};
+  uint32_t mProcessId;
+  Atomic<uint32_t, Relaxed> mNextChannelId;
 
   
   
@@ -818,11 +818,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   
-  Mutex mLastActiveTabLoadOptimizationLock{
-      "nsHttpConnectionMgr::LastActiveTabLoadOptimization"};
+  Mutex mLastActiveTabLoadOptimizationLock;
   TimeStamp mLastActiveTabLoadOptimizationHit;
 
-  Mutex mHttpExclusionLock{"nsHttpHandler::HttpExclusion"};
+  Mutex mHttpExclusionLock;
 
  public:
   [[nodiscard]] nsresult NewChannelId(uint64_t& channelId);
@@ -844,7 +843,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   nsTHashSet<nsCString> mExcludedHostsForHTTPSRRUpgrade;
 
-  Atomic<bool, Relaxed> mThroughCaptivePortal{false};
+  Atomic<bool, Relaxed> mThroughCaptivePortal;
 
   
   nsTHashMap<nsUint64HashKey, nsWeakPtr> mIDToHttpChannelMap;

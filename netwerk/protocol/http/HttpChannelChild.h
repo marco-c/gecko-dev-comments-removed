@@ -21,7 +21,6 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIProgressEventSink.h"
-#include "nsICacheEntry.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIResumableChannel.h"
 #include "nsIProxiedChannel.h"
@@ -278,7 +277,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsCOMPtr<nsIInputStreamReceiver> mAltDataInputStreamReceiver;
 
   
-  Mutex mBgChildMutex{"HttpChannelChild::BgChildMutex"};
+  Mutex mBgChildMutex;
 
   
   RefPtr<HttpBackgroundChannelChild> mBgChild;
@@ -293,36 +292,34 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   nsCOMPtr<nsIEventTarget> mODATarget;
   
-  Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
+  Mutex mEventTargetMutex;
 
   TimeStamp mLastStatusReported;
 
-  uint64_t mCacheEntryId{0};
+  uint64_t mCacheEntryId;
 
   
   
   LABELS_HTTP_CHILD_OMT_STATS mOMTResult =
       LABELS_HTTP_CHILD_OMT_STATS::notRequested;
 
-  uint32_t mCacheKey{0};
-  int32_t mCacheFetchCount{0};
-  uint32_t mCacheExpirationTime{
-      static_cast<uint32_t>(nsICacheEntry::NO_EXPIRATION_TIME)};
+  uint32_t mCacheKey;
+  int32_t mCacheFetchCount;
+  uint32_t mCacheExpirationTime;
 
   
   
   Maybe<uint32_t> mMultiPartID;
 
   
-  Atomic<bool> mDeletingChannelSent{false};
+  Atomic<bool> mDeletingChannelSent;
 
-  Atomic<bool, SequentiallyConsistent> mIsFromCache{false};
-  Atomic<bool, SequentiallyConsistent> mIsRacing{false};
+  Atomic<bool, SequentiallyConsistent> mIsFromCache;
+  Atomic<bool, SequentiallyConsistent> mIsRacing;
   
-  Atomic<bool, SequentiallyConsistent> mCacheNeedToReportBytesReadInitialized{
-      false};
+  Atomic<bool, SequentiallyConsistent> mCacheNeedToReportBytesReadInitialized;
   
-  Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead{true};
+  Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy = false;
@@ -343,7 +340,7 @@ class HttpChannelChild final : public PHttpChannelChild,
     
     BCKCHILD_NON_EMPTY
   };
-  Atomic<BckChildQueueStatus> mBackgroundChildQueueFinalState{BCKCHILD_UNKNOWN};
+  Atomic<BckChildQueueStatus> mBackgroundChildQueueFinalState;
   Maybe<ActorDestroyReason> mActorDestroyReason;
 #endif
 

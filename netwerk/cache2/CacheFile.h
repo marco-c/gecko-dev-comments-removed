@@ -189,27 +189,26 @@ class CacheFile final : public CacheFileChunkListener,
 
   nsresult InitIndexEntry();
 
-  mozilla::Mutex mLock{"CacheFile.mLock"};
-  bool mOpeningFile{false};
-  bool mReady{false};
-  bool mMemoryOnly{false};
-  bool mSkipSizeCheck{false};
-  bool mOpenAsMemoryOnly{false};
-  bool mPinned{false};
-  bool mPriority{false};
-  bool mDataAccessed{false};
-  bool mDataIsDirty{false};
-  bool mWritingMetadata{false};
-  bool mPreloadWithoutInputStreams{true};
-  uint32_t mPreloadChunkCount{0};
-  nsresult mStatus{NS_OK};
-  
-  int64_t mDataSize{-1};
-
-  
-  
-  int64_t mAltDataOffset{-1};
-
+  mozilla::Mutex mLock;
+  bool mOpeningFile;
+  bool mReady;
+  bool mMemoryOnly;
+  bool mSkipSizeCheck;
+  bool mOpenAsMemoryOnly;
+  bool mPinned;
+  bool mPriority;
+  bool mDataAccessed;
+  bool mDataIsDirty;
+  bool mWritingMetadata;
+  bool mPreloadWithoutInputStreams;
+  uint32_t mPreloadChunkCount;
+  nsresult mStatus;
+  int64_t mDataSize;       
+                           
+  int64_t mAltDataOffset;  
+                           
+                           
+                           
   nsCString mKey;
   nsCString mAltDataType;  
 
@@ -217,7 +216,7 @@ class CacheFile final : public CacheFileChunkListener,
   RefPtr<CacheFileMetadata> mMetadata;
   nsCOMPtr<CacheFileListener> mListener;
   nsCOMPtr<CacheFileIOListener> mDoomAfterOpenListener;
-  Atomic<bool, Relaxed> mKill{false};
+  Atomic<bool, Relaxed> mKill;
 
   nsRefPtrHashtable<nsUint32HashKey, CacheFileChunk> mChunks;
   nsClassHashtable<nsUint32HashKey, ChunkListeners> mChunkListeners;
@@ -232,7 +231,7 @@ class CacheFile final : public CacheFileChunkListener,
   nsTArray<RefPtr<CacheFileChunk>> mDiscardedChunks;
 
   nsTArray<CacheFileInputStream*> mInputs;
-  CacheFileOutputStream* mOutput{nullptr};
+  CacheFileOutputStream* mOutput;
 
   nsTArray<RefPtr<nsISupports>> mObjsToRelease;
 };

@@ -58,18 +58,18 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
 
   
   
-  Mutex mLock{"nsUDPSocket.mLock"};
-  PRFileDesc* mFD{nullptr};
+  Mutex mLock;
+  PRFileDesc* mFD;
   NetAddr mAddr;
   OriginAttributes mOriginAttributes;
   nsCOMPtr<nsIUDPSocketListener> mListener;
   nsCOMPtr<nsIUDPSocketSyncListener> mSyncListener;
   nsCOMPtr<nsIEventTarget> mListenerTarget;
-  bool mAttached{false};
+  bool mAttached;
   RefPtr<nsSocketTransportService> mSts;
 
-  uint64_t mByteReadCount{0};
-  uint64_t mByteWriteCount{0};
+  uint64_t mByteReadCount;
+  uint64_t mByteWriteCount;
 };
 
 

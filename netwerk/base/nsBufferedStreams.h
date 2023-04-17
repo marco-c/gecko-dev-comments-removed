@@ -27,7 +27,7 @@ class nsBufferedStream : public nsISeekableStream {
   NS_DECL_NSISEEKABLESTREAM
   NS_DECL_NSITELLABLESTREAM
 
-  nsBufferedStream() = default;
+  nsBufferedStream();
 
   void Close();
 
@@ -39,26 +39,26 @@ class nsBufferedStream : public nsISeekableStream {
   NS_IMETHOD Fill() = 0;
   NS_IMETHOD Flush() = 0;
 
-  uint32_t mBufferSize{0};
-  char* mBuffer{nullptr};
+  uint32_t mBufferSize;
+  char* mBuffer;
 
   
-  int64_t mBufferStartOffset{0};
-
-  
-  
-  uint32_t mCursor{0};
+  int64_t mBufferStartOffset;
 
   
   
+  uint32_t mCursor;
+
   
-  uint32_t mFillPoint{0};
+  
+  
+  uint32_t mFillPoint;
 
   nsCOMPtr<nsISupports> mStream;  
 
-  bool mBufferDisabled{false};
-  bool mEOF{false};  
-  uint8_t mGetBufferCount{0};
+  bool mBufferDisabled;
+  bool mEOF;  
+  uint8_t mGetBufferCount;
 };
 
 
@@ -86,7 +86,7 @@ class nsBufferedInputStream final : public nsBufferedStream,
   NS_DECL_NSIASYNCINPUTSTREAMLENGTH
   NS_DECL_NSIINPUTSTREAMLENGTHCALLBACK
 
-  nsBufferedInputStream() : nsBufferedStream() {}
+  nsBufferedInputStream();
 
   static nsresult Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
@@ -120,7 +120,7 @@ class nsBufferedInputStream final : public nsBufferedStream,
   NS_IMETHOD Fill() override;
   NS_IMETHOD Flush() override { return NS_OK; }  
 
-  mozilla::Mutex mMutex{"nsBufferedInputStream::mMutex"};
+  mozilla::Mutex mMutex;
 
   
   nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
@@ -128,11 +128,11 @@ class nsBufferedInputStream final : public nsBufferedStream,
   
   nsCOMPtr<nsIInputStreamLengthCallback> mAsyncInputStreamLengthCallback;
 
-  bool mIsIPCSerializable{true};
-  bool mIsAsyncInputStream{false};
-  bool mIsCloneableInputStream{false};
-  bool mIsInputStreamLength{false};
-  bool mIsAsyncInputStreamLength{false};
+  bool mIsIPCSerializable;
+  bool mIsAsyncInputStream;
+  bool mIsCloneableInputStream;
+  bool mIsInputStreamLength;
+  bool mIsAsyncInputStreamLength;
 };
 
 

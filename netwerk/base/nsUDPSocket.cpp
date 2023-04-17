@@ -221,7 +221,15 @@ FallibleTArray<uint8_t>& nsUDPMessage::GetDataAsTArray() { return mData; }
 
 
 
-nsUDPSocket::nsUDPSocket() {
+nsUDPSocket::nsUDPSocket()
+    : mLock("nsUDPSocket.mLock"),
+      mFD(nullptr),
+      mOriginAttributes(),
+      mAttached(false),
+      mByteReadCount(0),
+      mByteWriteCount(0) {
+  this->mAddr.inet = {};
+  mAddr.raw.family = PR_AF_UNSPEC;
   
   
   if (!gSocketTransportService) {

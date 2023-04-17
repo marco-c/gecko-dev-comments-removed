@@ -189,7 +189,7 @@ class ExtensionProtocolHandler final
 
   
   
-  bool mAlreadyCheckedDevRepo{false};
+  bool mAlreadyCheckedDevRepo;
 #endif 
 
 #if !defined(XP_WIN)
@@ -214,7 +214,7 @@ class ExtensionProtocolHandler final
 
   
   
-  bool mAlreadyCheckedAppDir{false};
+  bool mAlreadyCheckedAppDir;
 #endif 
 
   

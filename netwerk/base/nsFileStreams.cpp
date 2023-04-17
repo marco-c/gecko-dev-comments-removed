@@ -43,6 +43,12 @@ using mozilla::Some;
 
 
 
+nsFileStreamBase::nsFileStreamBase()
+    : mFD(nullptr),
+      mBehaviorFlags(0),
+      mState(eUnitialized),
+      mErrorValue(NS_ERROR_FAILURE) {}
+
 nsFileStreamBase::~nsFileStreamBase() {
   
   mBehaviorFlags &= ~nsIFileInputStream::REOPEN_ON_REWIND;

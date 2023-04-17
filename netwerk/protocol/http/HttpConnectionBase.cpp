@@ -31,7 +31,12 @@ namespace net {
 
 
 
-HttpConnectionBase::HttpConnectionBase() {
+HttpConnectionBase::HttpConnectionBase()
+    : mTransactionCaps(0),
+      mExperienced(false),
+      mBootstrappedTimingsSet(false),
+      mCallbacksLock("nsHttpConnection::mCallbacksLock"),
+      mRtt(0) {
   LOG(("Creating HttpConnectionBase @%p\n", this));
 }
 

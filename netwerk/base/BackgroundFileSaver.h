@@ -117,36 +117,36 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  mozilla::Mutex mLock{"BackgroundFileSaver.mLock"};
+  mozilla::Mutex mLock;
 
   
 
 
-  bool mWorkerThreadAttentionRequested{false};
+  bool mWorkerThreadAttentionRequested;
 
   
 
 
-  bool mFinishRequested{false};
+  bool mFinishRequested;
 
   
 
 
-  bool mComplete{false};
-
-  
-
-
-
-
-
-  nsresult mStatus{NS_OK};
+  bool mComplete;
 
   
 
 
 
-  bool mAppend{false};
+
+
+  nsresult mStatus;
+
+  
+
+
+
+  bool mAppend;
 
   
 
@@ -161,7 +161,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  bool mInitialTargetKeepPartial{false};
+  bool mInitialTargetKeepPartial;
 
   
 
@@ -179,7 +179,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  bool mRenamedTargetKeepPartial{false};
+  bool mRenamedTargetKeepPartial;
 
   
 
@@ -197,7 +197,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  bool mSha256Enabled{false};
+  bool mSha256Enabled;
 
   
 
@@ -208,7 +208,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  bool mSignatureInfoEnabled{false};
+  bool mSignatureInfoEnabled;
 
   
   
@@ -222,7 +222,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  bool mActualTargetKeepPartial{false};
+  bool mActualTargetKeepPartial;
 
   
 
@@ -327,7 +327,7 @@ class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
-  BackgroundFileSaverStreamListener() = default;
+  BackgroundFileSaverStreamListener();
 
  protected:
   virtual bool HasInfiniteBuffer() override;
@@ -339,13 +339,12 @@ class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
   
 
 
-  mozilla::Mutex mSuspensionLock{
-      "BackgroundFileSaverStreamListener.mSuspensionLock"};
+  mozilla::Mutex mSuspensionLock;
 
   
 
 
-  bool mReceivedTooMuchData{false};
+  bool mReceivedTooMuchData;
 
   
 
@@ -356,7 +355,7 @@ class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
   
 
 
-  bool mRequestSuspended{false};
+  bool mRequestSuspended;
 
   
 

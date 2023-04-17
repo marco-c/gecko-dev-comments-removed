@@ -62,7 +62,7 @@ class NetlinkService : public nsIRunnable {
   void EnqueueRtMsg(uint8_t aFamily, void* aAddress);
   void RemovePendingMsg();
 
-  mozilla::Mutex mMutex{"NetlinkService::mMutex"};
+  mozilla::Mutex mMutex;
 
   void OnNetlinkMessage(int aNetlinkSocket);
   void OnLinkMessage(struct nlmsghdr* aNlh);
@@ -83,28 +83,28 @@ class NetlinkService : public nsIRunnable {
 
   nsCOMPtr<nsIThread> mThread;
 
-  bool mInitialScanFinished{false};
+  bool mInitialScanFinished;
 
   
-  int mShutdownPipe[2]{-1, -1};
+  int mShutdownPipe[2]{};
 
   
   struct in_addr mRouteCheckIPv4 {};
   struct in6_addr mRouteCheckIPv6 {};
 
   pid_t mPid;
-  uint32_t mMsgId{0};
+  uint32_t mMsgId;
 
-  bool mLinkUp{true};
-
-  
-  
-  
-  bool mRecalculateNetworkId{false};
+  bool mLinkUp;
 
   
   
-  bool mSendNetworkChangeEvent{false};
+  
+  bool mRecalculateNetworkId;
+
+  
+  
+  bool mSendNetworkChangeEvent;
 
   
   mozilla::TimeStamp mTriggerTime;

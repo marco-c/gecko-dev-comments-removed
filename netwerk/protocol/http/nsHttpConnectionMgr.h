@@ -200,25 +200,25 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  ReentrantMonitor mReentrantMonitor{"nsHttpConnectionMgr.mReentrantMonitor"};
+  ReentrantMonitor mReentrantMonitor;
   nsCOMPtr<nsIEventTarget> mSocketThreadTarget;
 
   
-  uint16_t mMaxUrgentExcessiveConns{0};
-  uint16_t mMaxConns{0};
-  uint16_t mMaxPersistConnsPerHost{0};
-  uint16_t mMaxPersistConnsPerProxy{0};
-  uint16_t mMaxRequestDelay{0};  
-  bool mThrottleEnabled{false};
-  uint32_t mThrottleVersion{2};
-  uint32_t mThrottleSuspendFor{0};
-  uint32_t mThrottleResumeFor{0};
-  uint32_t mThrottleReadLimit{0};
-  uint32_t mThrottleReadInterval{0};
-  uint32_t mThrottleHoldTime{0};
+  uint16_t mMaxUrgentExcessiveConns;
+  uint16_t mMaxConns;
+  uint16_t mMaxPersistConnsPerHost;
+  uint16_t mMaxPersistConnsPerProxy;
+  uint16_t mMaxRequestDelay;  
+  bool mThrottleEnabled;
+  uint32_t mThrottleVersion;
+  uint32_t mThrottleSuspendFor;
+  uint32_t mThrottleResumeFor;
+  uint32_t mThrottleReadLimit;
+  uint32_t mThrottleReadInterval;
+  uint32_t mThrottleHoldTime;
   TimeDuration mThrottleMaxTime;
-  bool mBeConservativeForProxy{true};
-  Atomic<bool, mozilla::Relaxed> mIsShuttingDown{false};
+  bool mBeConservativeForProxy;
+  Atomic<bool, mozilla::Relaxed> mIsShuttingDown;
 
   
   
@@ -324,31 +324,31 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  uint16_t mNumActiveConns{0};
+  uint16_t mNumActiveConns;
   
   
-  uint16_t mNumIdleConns{0};
+  uint16_t mNumIdleConns;
   
   
-  uint16_t mNumSpdyHttp3ActiveConns{0};
+  uint16_t mNumSpdyHttp3ActiveConns;
   
   
-  uint32_t mNumDnsAndConnectSockets{0};
+  uint32_t mNumDnsAndConnectSockets;
 
   
-  uint64_t mTimeOfNextWakeUp{UINT64_MAX};
+  uint64_t mTimeOfNextWakeUp;
   
   nsCOMPtr<nsITimer> mTimer;
   
   nsCOMPtr<nsITimer> mTrafficTimer;
-  bool mPruningNoTraffic{false};
+  bool mPruningNoTraffic;
 
   
   
   
   nsCOMPtr<nsITimer> mTimeoutTick;
-  bool mTimeoutTickArmed{false};
-  uint32_t mTimeoutTickNext{1};
+  bool mTimeoutTickArmed;
+  uint32_t mTimeoutTickNext;
 
   
   
@@ -366,7 +366,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void OnMsgPrintDiagnostics(int32_t, ARefBase*);
 
   nsCString mLogData;
-  uint64_t mCurrentTopBrowsingContextId{0};
+  uint64_t mCurrentTopBrowsingContextId;
 
   
   void SetThrottlingEnabled(bool aEnable);
@@ -388,7 +388,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  bool mThrottlingInhibitsReading{false};
+  bool mThrottlingInhibitsReading;
 
   TimeStamp mThrottlingWindowEndsAt;
 
@@ -436,8 +436,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  bool mActiveTabTransactionsExist{false};
-  bool mActiveTabUnthrottledTransactionsExist{false};
+  bool mActiveTabTransactionsExist;
+  bool mActiveTabUnthrottledTransactionsExist;
 
   void LogActiveTransactions(char);
 

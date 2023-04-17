@@ -64,25 +64,25 @@ class nsPartChannel final : public nsIChannel,
   nsCOMPtr<nsIStreamListener> mListener;
   UniquePtr<mozilla::net::nsHttpResponseHead> mResponseHead;
 
-  nsresult mStatus{NS_OK};
-  nsLoadFlags mLoadFlags{0};
+  nsresult mStatus;
+  nsLoadFlags mLoadFlags;
 
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
   nsCString mContentType;
   nsCString mContentCharset;
-  uint32_t mContentDisposition{0};
+  uint32_t mContentDisposition;
   nsString mContentDispositionFilename;
   nsCString mContentDispositionHeader;
-  uint64_t mContentLength{UINT64_MAX};
+  uint64_t mContentLength;
 
-  bool mIsByteRangeRequest{false};
-  int64_t mByteRangeStart{0};
-  int64_t mByteRangeEnd{0};
+  bool mIsByteRangeRequest;
+  int64_t mByteRangeStart;
+  int64_t mByteRangeEnd;
 
   uint32_t mPartID;  
                      
-  bool mIsLastPart{false};
+  bool mIsLastPart;
 };
 
 
@@ -157,26 +157,26 @@ class nsMultiMixedConv : public nsIStreamConverter {
   nsCString mContentDisposition;
   nsCString mContentSecurityPolicy;
   nsCString mRootContentSecurityPolicy;
-  uint64_t mContentLength{UINT64_MAX};
-  uint64_t mTotalSent{0};
+  uint64_t mContentLength;
+  uint64_t mTotalSent;
 
   
   
   
-  int64_t mByteRangeStart{0};
-  int64_t mByteRangeEnd{0};
-  bool mIsByteRangeRequest{false};
+  int64_t mByteRangeStart;
+  int64_t mByteRangeEnd;
+  bool mIsByteRangeRequest;
   
   
   
   
-  bool mRequestListenerNotified{false};
+  bool mRequestListenerNotified;
 
-  uint32_t mCurrentPartID{0};
+  uint32_t mCurrentPartID;
 
   
   
-  bool mInOnDataAvailable{false};
+  bool mInOnDataAvailable;
 
   
   enum EParserState {
@@ -192,7 +192,7 @@ class nsMultiMixedConv : public nsIStreamConverter {
     EPILOGUE,
 
     INIT = PREAMBLE
-  } mParserState{INIT};
+  } mParserState;
 
   
   
@@ -206,7 +206,7 @@ class nsMultiMixedConv : public nsIStreamConverter {
     HEADER_RANGE,
     HEADER_CONTENT_SECURITY_POLICY,
     HEADER_UNKNOWN
-  } mResponseHeader{HEADER_UNKNOWN};
+  } mResponseHeader;
   
   nsCString mResponseHeaderValue;
 
@@ -219,7 +219,7 @@ class nsMultiMixedConv : public nsIStreamConverter {
   
   
   
-  nsACString::const_char_iterator mRawData{nullptr};
+  nsACString::const_char_iterator mRawData;
   nsACString::size_type mRawDataLength{0};
 
   

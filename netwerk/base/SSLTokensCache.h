@@ -65,7 +65,7 @@ class SSLTokensCache : public nsIMemoryReporter {
   static mozilla::StaticRefPtr<SSLTokensCache> gInstance;
   static StaticMutex sLock;
 
-  uint32_t mCacheSize{0};  
+  uint32_t mCacheSize;  
 
   class TokenCacheRecord {
    public:

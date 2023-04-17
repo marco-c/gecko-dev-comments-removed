@@ -75,11 +75,11 @@ static_assert(sizeof(CacheIndexHeader::mVersion) +
 #pragma pack(push, 1)
 struct CacheIndexRecord {
   SHA1Sum::Hash mHash{};
-  uint32_t mFrecency{0};
-  OriginAttrsHash mOriginAttrsHash{0};
-  uint16_t mOnStartTime{kIndexTimeNotAvailable};
-  uint16_t mOnStopTime{kIndexTimeNotAvailable};
-  uint8_t mContentType{nsICacheEntry::CONTENT_TYPE_UNKNOWN};
+  uint32_t mFrecency;
+  OriginAttrsHash mOriginAttrsHash;
+  uint16_t mOnStartTime;
+  uint16_t mOnStopTime;
+  uint8_t mContentType;
 
   
 
@@ -92,9 +92,15 @@ struct CacheIndexRecord {
 
 
 
-  uint32_t mFlags{0};
+  uint32_t mFlags;
 
-  CacheIndexRecord() = default;
+  CacheIndexRecord()
+      : mFrecency(0),
+        mOriginAttrsHash(0),
+        mOnStartTime(kIndexTimeNotAvailable),
+        mOnStopTime(kIndexTimeNotAvailable),
+        mContentType(nsICacheEntry::CONTENT_TYPE_UNKNOWN),
+        mFlags(0) {}
 };
 #pragma pack(pop)
 
@@ -485,7 +491,20 @@ class CacheIndexEntryUpdate : public CacheIndexEntry {
 
 class CacheIndexStats {
  public:
-  CacheIndexStats() {
+  CacheIndexStats()
+      : mCount(0),
+        mNotInitialized(0),
+        mRemoved(0),
+        mDirty(0),
+        mFresh(0),
+        mEmpty(0),
+        mSize(0)
+#ifdef DEBUG
+        ,
+        mStateLogged(false),
+        mDisableLogging(false)
+#endif
+  {
     for (uint32_t i = 0; i < nsICacheEntry::CONTENT_TYPE_LAST; ++i) {
       mCountByType[i] = 0;
       mSizeByType[i] = 0;
@@ -670,14 +689,14 @@ class CacheIndexStats {
   }
 
  private:
-  uint32_t mCount{0};
+  uint32_t mCount;
   uint32_t mCountByType[nsICacheEntry::CONTENT_TYPE_LAST]{0};
-  uint32_t mNotInitialized{0};
-  uint32_t mRemoved{0};
-  uint32_t mDirty{0};
-  uint32_t mFresh{0};
-  uint32_t mEmpty{0};
-  uint32_t mSize{0};
+  uint32_t mNotInitialized;
+  uint32_t mRemoved;
+  uint32_t mDirty;
+  uint32_t mFresh;
+  uint32_t mEmpty;
+  uint32_t mSize;
   uint32_t mSizeByType[nsICacheEntry::CONTENT_TYPE_LAST]{0};
 #ifdef DEBUG
   
@@ -685,10 +704,10 @@ class CacheIndexStats {
   
   
   
-  bool mStateLogged{false};
+  bool mStateLogged;
 
   
-  bool mDisableLogging{false};
+  bool mDisableLogging;
 #endif
 };
 
@@ -1047,35 +1066,35 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   nsCOMPtr<nsIFile> mCacheDirectory;
 
-  EState mState{INITIAL};
+  EState mState;
   
   
   TimeStamp mStartTime;
   
   
-  bool mShuttingDown{false};
+  bool mShuttingDown;
   
   
   
   
   
   
-  bool mIndexNeedsUpdate{false};
+  bool mIndexNeedsUpdate;
   
   
   
   
   
-  bool mRemovingAll{false};
+  bool mRemovingAll;
   
-  bool mIndexOnDiskIsValid{false};
-  
-  
-  
-  bool mDontMarkIndexClean{false};
+  bool mIndexOnDiskIsValid;
   
   
-  uint32_t mIndexTimeStamp{0};
+  
+  bool mDontMarkIndexClean;
+  
+  
+  uint32_t mIndexTimeStamp;
   
   
   
@@ -1084,28 +1103,28 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   nsCOMPtr<nsITimer> mUpdateTimer;
   
-  bool mUpdateEventPending{false};
+  bool mUpdateEventPending;
 
   
   
   
   
-  uint32_t mSkipEntries{0};
+  uint32_t mSkipEntries;
   
   
   
-  uint32_t mProcessEntries{0};
-  char* mRWBuf{nullptr};
-  uint32_t mRWBufSize{0};
-  uint32_t mRWBufPos{0};
+  uint32_t mProcessEntries;
+  char* mRWBuf;
+  uint32_t mRWBufSize;
+  uint32_t mRWBufPos;
   RefPtr<CacheHash> mRWHash;
 
   
   
-  bool mRWPending{false};
+  bool mRWPending;
 
   
-  bool mJournalReadSuccessfully{false};
+  bool mJournalReadSuccessfully;
 
   
   RefPtr<CacheFileHandle> mIndexHandle;
@@ -1178,7 +1197,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
    public:
     Iterator Iter() { return Iterator(&mRecs); }
 
-    FrecencyArray() = default;
+    FrecencyArray() : mUnsortedElements(0), mRemovedElements(0) {}
 
     
     void AppendRecord(CacheIndexRecordWrapper* aRecord);
@@ -1194,12 +1213,12 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
     friend class CacheIndex;
 
     nsTArray<RefPtr<CacheIndexRecordWrapper>> mRecs;
-    uint32_t mUnsortedElements{0};
+    uint32_t mUnsortedElements;
     
     
     
     
-    uint32_t mRemovedElements{0};
+    uint32_t mRemovedElements;
   };
 
   FrecencyArray mFrecencyArray;
@@ -1209,7 +1228,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  bool mAsyncGetDiskConsumptionBlocked{false};
+  bool mAsyncGetDiskConsumptionBlocked;
 
   class DiskConsumptionObserver : public Runnable {
    public:
@@ -1261,7 +1280,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   nsTArray<RefPtr<DiskConsumptionObserver>> mDiskConsumptionObservers;
 
   
-  uint64_t mTotalBytesWritten{0};
+  uint64_t mTotalBytesWritten;
 };
 
 }  

@@ -31,7 +31,13 @@ namespace mozilla {
 namespace net {
 
 GIOChannelChild::GIOChannelChild(nsIURI* aUri)
-    : mEventQ(new ChannelEventQueue(static_cast<nsIChildChannel*>(this))) {
+    : mIPCOpen(false),
+      mEventQ(new ChannelEventQueue(static_cast<nsIChildChannel*>(this))),
+      mCanceled(false),
+      mSuspendCount(0),
+      mIsPending(false),
+      mStartPos(0),
+      mSuspendSent(false) {
   SetURI(aUri);
   
   

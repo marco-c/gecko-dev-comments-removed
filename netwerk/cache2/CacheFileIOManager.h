@@ -442,7 +442,7 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   TimeStamp mStartTime;
   
   
-  bool mShuttingDown{false};
+  bool mShuttingDown;
   RefPtr<CacheIOThread> mIOThread;
   nsCOMPtr<nsIFile> mCacheDirectory;
 #if defined(MOZ_WIDGET_ANDROID)
@@ -452,19 +452,19 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   
   nsCOMPtr<nsIFile> mCacheProfilelessDirectory;
 #endif
-  bool mTreeCreated{false};
-  bool mTreeCreationFailed{false};
+  bool mTreeCreated;
+  bool mTreeCreationFailed;
   CacheFileHandles mHandles;
   nsTArray<CacheFileHandle*> mHandlesByLastUsed;
   nsTArray<CacheFileHandle*> mSpecialHandles;
   nsTArray<RefPtr<CacheFile> > mScheduledMetadataWrites;
   nsCOMPtr<nsITimer> mMetadataWritesTimer;
-  bool mOverLimitEvicting{false};
+  bool mOverLimitEvicting;
   
   
   
-  bool mCacheSizeOnHardLimit{false};
-  bool mRemovingTrashDirs{false};
+  bool mCacheSizeOnHardLimit;
+  bool mRemovingTrashDirs;
   nsCOMPtr<nsITimer> mTrashTimer;
   nsCOMPtr<nsIFile> mTrashDir;
   nsCOMPtr<nsIDirectoryEnumerator> mTrashDirEnumerator;

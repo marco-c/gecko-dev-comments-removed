@@ -99,12 +99,12 @@ class HttpTransactionChild final : public PHttpTransactionChild,
 
   
   
-  Atomic<bool, ReleaseAcquire> mCanceled{false};
-  Atomic<nsresult, ReleaseAcquire> mStatus{NS_OK};
-  uint64_t mChannelId{0};
+  Atomic<bool, ReleaseAcquire> mCanceled;
+  Atomic<nsresult, ReleaseAcquire> mStatus;
+  uint64_t mChannelId;
   nsHttpRequestHead mRequestHead;
-  bool mIsDocumentLoad{false};
-  uint64_t mLogicalOffset{0};
+  bool mIsDocumentLoad;
+  uint64_t mLogicalOffset;
   TimeStamp mRedirectStart;
   TimeStamp mRedirectEnd;
   nsCString mProtocolVersion;

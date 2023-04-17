@@ -27,7 +27,9 @@ namespace net {
 
 
 
-nsHttpResponseHead::nsHttpResponseHead(const nsHttpResponseHead& aOther) {
+nsHttpResponseHead::nsHttpResponseHead(const nsHttpResponseHead& aOther)
+    : mRecursiveMutex("nsHttpResponseHead.mRecursiveMutex"),
+      mInVisitHeaders(false) {
   nsHttpResponseHead& other = const_cast<nsHttpResponseHead&>(aOther);
   RecursiveMutexAutoLock monitor(other.mRecursiveMutex);
 

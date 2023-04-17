@@ -46,16 +46,16 @@ class PollableEvent {
   PRFileDesc* PollableFD() { return mReadFD; }
 
  private:
-  PRFileDesc* mWriteFD{nullptr};
-  PRFileDesc* mReadFD{nullptr};
-  bool mSignaled{false};
+  PRFileDesc* mWriteFD;
+  PRFileDesc* mReadFD;
+  bool mSignaled;
   
-  bool mWriteFailed{false};
-  
-  
+  bool mWriteFailed;
   
   
-  bool mSignalTimestampAdjusted{false};
+  
+  
+  bool mSignalTimestampAdjusted;
   
   
   TimeStamp mFirstSignalAfterClear;
