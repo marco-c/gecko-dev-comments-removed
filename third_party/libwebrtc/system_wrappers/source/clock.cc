@@ -94,7 +94,7 @@ class WinUwpRealTimeClock final : public RealTimeClock {
     
     
     
-    auto nanos = rtc::SystemTimeNanos();
+    auto nanos = rtc::WinUwpSystemTimeNanos();
 
     struct timeval tv;
 
