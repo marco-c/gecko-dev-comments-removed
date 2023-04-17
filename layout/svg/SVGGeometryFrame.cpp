@@ -479,7 +479,18 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   } else {
     
     RefPtr<DrawTarget> tmpDT;
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    RefPtr<gfxASurface> refSurf =
+        gfxPlatform::GetPlatform()->ScreenReferenceSurface();
+    tmpDT = gfxPlatform::CreateDrawTargetForSurface(refSurf, IntSize(1, 1));
+#else
     tmpDT = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+#endif
 
     FillRule fillRule = SVGUtils::ToFillRule(
         HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
