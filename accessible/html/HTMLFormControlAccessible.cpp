@@ -262,15 +262,7 @@ already_AddRefed<AccAttributes> HTMLTextFieldAccessible::NativeAttributes() {
   
   
   nsString type;
-  
-  
-  
-  
-  
-  nsIContent* widgetElm = BindingOrWidgetParent();
-  if ((widgetElm && widgetElm->AsElement()->GetAttr(kNameSpaceID_None,
-                                                    nsGkAtoms::type, type)) ||
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
+  if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
                                      type)) {
     if (!ARIARoleMap() && type.EqualsLiteral("search")) {
       attributes->SetAttribute(nsGkAtoms::xmlroles, nsGkAtoms::searchbox);
@@ -297,10 +289,6 @@ already_AddRefed<AccAttributes> HTMLTextFieldAccessible::NativeAttributes() {
 ENameValueFlag HTMLTextFieldAccessible::NativeName(nsString& aName) const {
   ENameValueFlag nameFlag = LocalAccessible::NativeName(aName);
   if (!aName.IsEmpty()) return nameFlag;
-
-  
-  nsIContent* widgetElm = BindingOrWidgetParent();
-  if (widgetElm) XULElmName(mDoc, widgetElm, aName);
 
   if (!aName.IsEmpty()) return eNameOK;
 
@@ -341,13 +329,6 @@ bool HTMLTextFieldAccessible::AttributeChangesState(nsAtom* aAttribute) {
 void HTMLTextFieldAccessible::ApplyARIAState(uint64_t* aState) const {
   HyperTextAccessibleWrap::ApplyARIAState(aState);
   aria::MapToState(aria::eARIAAutoComplete, mContent->AsElement(), aState);
-
-  
-  
-  nsIContent* widgetElm = BindingOrWidgetParent();
-  if (widgetElm) {
-    aria::MapToState(aria::eARIAAutoComplete, widgetElm->AsElement(), aState);
-  }
 }
 
 uint64_t HTMLTextFieldAccessible::NativeState() const {
@@ -382,9 +363,7 @@ uint64_t HTMLTextFieldAccessible::NativeState() const {
     return state | states::SUPPORTS_AUTOCOMPLETION | states::HASPOPUP;
   }
 
-  
-  if (!BindingOrWidgetParent() &&
-      Preferences::GetBool("browser.formfill.enable")) {
+  if (Preferences::GetBool("browser.formfill.enable")) {
     
     
     

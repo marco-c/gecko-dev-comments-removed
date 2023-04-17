@@ -111,19 +111,6 @@ class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
 
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
-
-  
-
-
-
-
-  nsIContent* BindingOrWidgetParent() const {
-    if (auto* el = mContent->GetClosestNativeAnonymousSubtreeRootParent()) {
-      return el;
-    }
-    
-    return Elm()->Closest("search-textbox"_ns, IgnoreErrors());
-  }
 };
 
 
