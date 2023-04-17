@@ -945,7 +945,20 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   virtual bool IsInSyncOperation() override;
 
-  bool IsSharedMemoryAllowed() const override;
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsSharedMemoryAllowed() const override {
+    return IsSharedMemoryAllowedInternal(
+        const_cast<nsGlobalWindowInner*>(this)->GetPrincipal());
+  }
+
+  bool IsSharedMemoryAllowedInternal(nsIPrincipal* aPrincipal = nullptr) const;
 
   
   bool CrossOriginIsolated() const override;

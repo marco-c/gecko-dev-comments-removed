@@ -1354,6 +1354,15 @@ class WorkerPrivate : public RelativeTimeline {
   
   Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicy;
   Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mOwnerEmbedderPolicy;
+
+  
+
+
+
+
+
+
+  bool mIsPrivilegedAddonGlobal;
 };
 
 class AutoSyncLoopHolder {
