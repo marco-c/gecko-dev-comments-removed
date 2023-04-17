@@ -522,9 +522,6 @@ class AsyncPanZoomController {
   ScrollDirections GetOverscrollableDirections() const;
 
   
-  ScrollDirections GetScrollableDirections() const;
-
-  
   
   bool CanScroll(const ParentLayerPoint& aDelta) const;
 

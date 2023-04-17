@@ -152,68 +152,6 @@ bool OverscrollHandoffChain::HasAutoscrollApzc() const {
   return AnyApzc(&AsyncPanZoomController::IsAutoscroll);
 }
 
-static ScrollDirections ScrollDirectionsForDelta(
-    const ParentLayerPoint& aDelta) {
-  ScrollDirections result = EitherScrollDirection;
-
-  if (FuzzyEqualsAdditive(aDelta.x, 0.0f, COORDINATE_EPSILON)) {
-    result -= ScrollDirection::eHorizontal;
-  }
-  if (FuzzyEqualsAdditive(aDelta.y, 0.0f, COORDINATE_EPSILON)) {
-    result -= ScrollDirection::eVertical;
-  }
-
-  return result;
-}
-
-
-
-
-
-
-
-static ScrollDirections ScrollableDirectionsForDelta(
-    const AsyncPanZoomController* aTarget, const ParentLayerPoint& aDelta) {
-  return ScrollDirectionsForDelta(aDelta) & aTarget->GetScrollableDirections();
-}
-
-
-bool OverscrollHandoffChain::AllowHandoffToRoot(
-    const AsyncPanZoomController* aChild, const AsyncPanZoomController* aRoot,
-    const InputData& aInput) {
-  MOZ_ASSERT(aChild && !aChild->IsRootContent() && !aChild->CanScroll(aInput),
-             "This function is supposed to be called with a child subframe "
-             "which should NOT be scrollable to the given input direction");
-  MOZ_ASSERT(
-      aRoot && aRoot->IsRootContent() && !aRoot->CanScroll(aInput),
-      "This function is supposed to be called with the root content "
-      "frame which should NOT be scrollable to the given input direction");
-
-  
-  
-  ScrollDirections scrollableDirectionsOnSubframe =
-      ScrollableDirectionsForDelta(aChild, aChild->GetDeltaForEvent(aInput));
-  if (scrollableDirectionsOnSubframe.isEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return true;
-  }
-
-  
-  
-  
-  ScrollDirections scrollDirectionsOnRoot =
-      ScrollableDirectionsForDelta(aRoot, aRoot->GetDeltaForEvent(aInput));
-  return !(scrollableDirectionsOnSubframe & scrollDirectionsOnRoot).isEmpty();
-}
-
 RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
     const InputData& aInput,
     ScrollDirections* aOutAllowedScrollDirections) const {
@@ -227,15 +165,33 @@ RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
       return mChain[i];
     }
 
+    
+    
+    
+    
+    
     if (StaticPrefs::apz_overscroll_enabled() &&
         
         aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
       
       
-      if (i > 0 && AllowHandoffToRoot(mChain[i - 1], mChain[i], aInput)) {
-        *aOutAllowedScrollDirections &=
-            mChain[i]->GetOverscrollableDirections() &
-            ScrollDirectionsForDelta(mChain[i]->GetDeltaForEvent(aInput));
+      
+      
+      
+      
+      ScrollDirections allowedOverscrollDirections =
+          mChain[i]->GetOverscrollableDirections();
+      ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
+      if (FuzzyEqualsAdditive(delta.x, 0.0f, COORDINATE_EPSILON)) {
+        allowedOverscrollDirections -= ScrollDirection::eHorizontal;
+      }
+      if (FuzzyEqualsAdditive(delta.y, 0.0f, COORDINATE_EPSILON)) {
+        allowedOverscrollDirections -= ScrollDirection::eVertical;
+      }
+
+      allowedOverscrollDirections &= *aOutAllowedScrollDirections;
+      if (!allowedOverscrollDirections.isEmpty()) {
+        *aOutAllowedScrollDirections = allowedOverscrollDirections;
         return mChain[i];
       }
     }
