@@ -1036,7 +1036,7 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
 
   
   if (shape->hasSlot()) {
-    obj->freeSlot(cx, shape->slot());
+    obj->freeDictionarySlot(table, shape->slot());
   }
 
   

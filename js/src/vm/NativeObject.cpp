@@ -1106,37 +1106,27 @@ bool NativeObject::allocDictionarySlot(JSContext* cx, HandleNativeObject obj,
   return obj->ensureSlotsForDictionaryObject(cx, slot + 1);
 }
 
-void NativeObject::freeSlot(JSContext* cx, uint32_t slot) {
+void NativeObject::freeDictionarySlot(ShapeTable* table, uint32_t slot) {
+  MOZ_ASSERT(inDictionaryMode());
   MOZ_ASSERT(slot < slotSpan());
 
-  if (inDictionaryMode()) {
-    
-    
-    AutoCheckCannotGC nogc;
-    if (ShapeTable* table =
-            lastProperty()->ensureTableForDictionary(cx, nogc)) {
-      uint32_t last = table->freeList();
+  AutoCheckCannotGC nogc;
+  MOZ_ASSERT(lastProperty()->maybeTable(nogc) == table);
 
-      
-      MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT,
-                    last < slotSpan() && last != slot);
+  uint32_t last = table->freeList();
 
-      
-      
-      if (JSSLOT_FREE(getClass()) <= slot) {
-        MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
-        setSlot(slot, PrivateUint32Value(last));
-        table->setFreeList(slot);
-        return;
-      }
-    } else {
-      
-      
-      
-      cx->recoverFromOutOfMemory();
-    }
+  
+  MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan() && last != slot);
+
+  
+  
+  if (JSSLOT_FREE(getClass()) <= slot) {
+    MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
+    setSlot(slot, PrivateUint32Value(last));
+    table->setFreeList(slot);
+  } else {
+    setSlot(slot, UndefinedValue());
   }
-  setSlot(slot, UndefinedValue());
 }
 
 template <AllowGC allowGC>
