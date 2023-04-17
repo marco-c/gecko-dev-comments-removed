@@ -36,13 +36,6 @@
 
 @end
 
-@interface MOXSummaryAccessible : mozAccessible
-
-
-- (NSNumber*)moxExpanded;
-
-@end
-
 @interface MOXListItemAccessible : mozAccessible
 
 
