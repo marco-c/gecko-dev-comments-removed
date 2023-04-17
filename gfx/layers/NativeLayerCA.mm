@@ -238,7 +238,7 @@ bool NativeLayerRootCA::CommitToScreen() {
       return false;
     }
 
-    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers);
+    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers, mWindowIsFullscreen);
 
     mCommitPending = false;
   }
@@ -286,7 +286,7 @@ void NativeLayerRootCA::OnNativeLayerRootSnapshotterDestroyed(
 
 void NativeLayerRootCA::CommitOffscreen() {
   MutexAutoLock lock(mMutex);
-  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers);
+  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers, mWindowIsFullscreen);
 }
 
 template <typename F>
@@ -310,7 +310,8 @@ NativeLayerRootCA::Representation::~Representation() {
 }
 
 void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentation,
-                                               const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
+                                               const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+                                               bool aWindowIsFullscreen) {
   if (!mMutated &&
       std::none_of(aSublayers.begin(), aSublayers.end(), [=](const RefPtr<NativeLayerCA>& layer) {
         return layer->HasUpdate(aRepresentation);
@@ -334,8 +335,98 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
       [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
     }
     mRootCALayer.sublayers = sublayers;
+
+    
+    
+    
+    
+    if (aWindowIsFullscreen && aRepresentation == WhichRepresentation::ONSCREEN &&
+        StaticPrefs::gfx_core_animation_specialize_video()) {
+      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers);
+      if (isolatedLayer) {
+        
+        CGFloat rootWidth = mRootCALayer.bounds.size.width;
+        CGFloat rootHeight = mRootCALayer.bounds.size.height;
+
+        
+        
+        CALayer* blackLayer = [CALayer layer];
+        blackLayer.position = NSZeroPoint;
+        blackLayer.anchorPoint = NSZeroPoint;
+        blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
+        blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
+
+        mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
+      }
+    }
+
     mMutated = false;
   }
+}
+
+CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
+    WhichRepresentation aRepresentation, const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  auto topLayer = aSublayers.LastElement();
+  if (!topLayer || !topLayer->IsVideo()) {
+    
+    return nil;
+  }
+
+  CALayer* candidateLayer = topLayer->UnderlyingCALayer(aRepresentation);
+  MOZ_ASSERT(candidateLayer);
+
+  
+  
+  CGFloat rootWidth = mRootCALayer.bounds.size.width;
+  CGFloat rootHeight = mRootCALayer.bounds.size.height;
+  CGFloat rootArea = rootWidth * rootHeight;
+  CGFloat minimumRootArea = rootArea * 0.8;
+
+  
+  CGRect candidateBoundsInRoot = [mRootCALayer convertRect:candidateLayer.bounds
+                                                 fromLayer:candidateLayer];
+  CGFloat candidateArea = candidateBoundsInRoot.size.width * candidateBoundsInRoot.size.height;
+  if (candidateArea < minimumRootArea) {
+    
+    return nil;
+  }
+
+  
+  CGFloat centerZoneWidth = rootWidth * 0.05;
+  CGFloat centerZoneHeight = rootHeight * 0.05;
+  CGRect centerZone =
+      CGRectMake((rootWidth * 0.5) - (centerZoneWidth * 0.5),
+                 (rootHeight * 0.5) - (centerZoneHeight * 0.5), centerZoneWidth, centerZoneHeight);
+  CGPoint candidateCenterInRoot =
+      CGPointMake(candidateBoundsInRoot.origin.x + (candidateBoundsInRoot.size.width * 0.5),
+                  candidateBoundsInRoot.origin.y + (candidateBoundsInRoot.size.height * 0.5));
+  if (!CGRectContainsPoint(centerZone, candidateCenterInRoot)) {
+    
+    return nil;
+  }
+
+  
+  for (auto layer : aSublayers) {
+    if (layer->IsVideo() && layer != topLayer) {
+      
+      return nil;
+    }
+  }
+
+  return candidateLayer;
 }
 
  UniquePtr<NativeLayerRootSnapshotterCA> NativeLayerRootSnapshotterCA::Create(
