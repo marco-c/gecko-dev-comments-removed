@@ -191,7 +191,7 @@ test_newtab({
     const searchTopSites = content.document.querySelectorAll(".title.pinned");
     ok(
       searchTopSites.length >= 1,
-      "There should be at least 2 search topsites"
+      "There should be at least 1 search topsites"
     );
 
     searchTopSites[0].click();
@@ -222,4 +222,78 @@ test_newtab({
       "The Urlbar has the searchmode attribute."
     );
   },
+});
+
+
+
+add_task(async function test_search_topsite_remove_engine() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:newtab",
+    false
+  );
+
+  
+  let browser = tab.linkedBrowser;
+  await waitForPreloaded(browser);
+
+  
+  SpecialPowers.spawn(browser, [], addContentHelpers);
+
+  
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      SpecialPowers.spawn(
+        browser,
+        [],
+        () => content.document.getElementById("root").children.length
+      ),
+    "Should render activity stream content"
+  );
+
+  await setDefaultTopSites();
+
+  let [topSiteAlias, numTopSites] = await SpecialPowers.spawn(
+    browser,
+    [],
+    async () => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.document.querySelector(".search-shortcut .title.pinned"),
+        "Wait for pinned search topsites"
+      );
+
+      const searchTopSites = content.document.querySelectorAll(".title.pinned");
+      ok(searchTopSites.length >= 1, "There should be at least one topsite");
+      return [searchTopSites[0].innerText.trim(), searchTopSites.length];
+    }
+  );
+
+  await Services.search.removeEngine(
+    await Services.search.getEngineByAlias(topSiteAlias)
+  );
+
+  registerCleanupFunction(() => {
+    Services.search.restoreDefaultEngines();
+  });
+
+  await SpecialPowers.spawn(
+    browser,
+    [numTopSites],
+    async originalNumTopSites => {
+      await ContentTaskUtils.waitForCondition(
+        () => !content.document.querySelector(".search-shortcut .title.pinned"),
+        "Wait for pinned search topsites"
+      );
+
+      const searchTopSites = content.document.querySelectorAll(".title.pinned");
+      is(
+        searchTopSites.length,
+        originalNumTopSites - 1,
+        "There should be one less search topsites"
+      );
+    }
+  );
+
+  BrowserTestUtils.removeTab(tab);
 });
