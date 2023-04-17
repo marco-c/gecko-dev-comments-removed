@@ -315,7 +315,10 @@ static void UpdateCodecSpecificInfo(webrtc::CodecSpecificInfo& aInfo,
       webrtc::CodecSpecificInfoVP8& vp8 = aInfo.codecSpecific.VP8;
       vp8.keyIdx = webrtc::kNoKeyIdx;
       
-      vp8.temporalIdx = 1;
+      
+      vp8.nonReference = false;
+      
+      vp8.temporalIdx = webrtc::kNoTemporalIdx;
       vp8.layerSync = false;
       break;
     }
