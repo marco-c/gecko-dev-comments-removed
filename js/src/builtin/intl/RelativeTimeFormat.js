@@ -197,11 +197,7 @@ function Intl_RelativeTimeFormat_format(value, unit) {
     let u = ToString(unit);
 
     
-    var internals = getRelativeTimeFormatInternals(relativeTimeFormat);
-
-    
-    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric,
-                                   false);
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u, false);
 }
 
 
@@ -230,11 +226,7 @@ function Intl_RelativeTimeFormat_formatToParts(value, unit) {
     let u = ToString(unit);
 
     
-    var internals = getRelativeTimeFormatInternals(relativeTimeFormat);
-
-    
-    return intl_FormatRelativeTime(relativeTimeFormat, t, u, internals.numeric,
-                                   true);
+    return intl_FormatRelativeTime(relativeTimeFormat, t, u, true);
 }
 
 
