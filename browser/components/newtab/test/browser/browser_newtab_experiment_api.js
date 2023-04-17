@@ -1,7 +1,7 @@
 "use strict";
 
-const { ExperimentAPI } = ChromeUtils.import(
-  "resource://nimbus/ExperimentAPI.jsm"
+const { ExperimentFakes } = ChromeUtils.import(
+  "resource://testing-common/NimbusTestUtils.jsm"
 );
 
 
@@ -13,38 +13,25 @@ const { ExperimentAPI } = ChromeUtils.import(
 
 
 async function testWithExperimentFeatureValue(slug, featureValue, test) {
+  let doExperimentCleanup;
   test_newtab({
     async before() {
       Services.prefs.setBoolPref(
         "browser.newtabpage.activity-stream.newNewtabExperience.enabled",
         false
       );
-      let updatePromise = new Promise(resolve =>
-        ExperimentAPI._store.once(`update:${slug}`, resolve)
-      );
-
-      ExperimentAPI._store.addExperiment({
-        slug,
-        branch: {
-          slug: `${slug}-treatment`,
-          feature: {
-            enabled: true,
-            featureId: "newtab",
-            value: featureValue,
-          },
-        },
-        active: true,
+      doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+        featureId: "newtab",
+        enabled: true,
+        value: featureValue,
       });
-
-      await updatePromise;
     },
     test,
     async after() {
       Services.prefs.clearUserPref(
         "browser.newtabpage.activity-stream.newNewtabExperience.enabled"
       );
-      ExperimentAPI._store._deleteForTests(slug);
-      is(ExperimentAPI._store.getAll().includes(slug), false, "Cleanup done");
+      await doExperimentCleanup();
     },
   });
 }
