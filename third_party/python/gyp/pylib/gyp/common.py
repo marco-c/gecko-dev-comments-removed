@@ -494,7 +494,7 @@ def uniquer(seq, idfun=None):
 
 
 
-class OrderedSet(collections.abc.MutableSet):
+class OrderedSet(collections.MutableSet):
   def __init__(self, iterable=None):
     self.end = end = []
     end += [None, end, end]         
