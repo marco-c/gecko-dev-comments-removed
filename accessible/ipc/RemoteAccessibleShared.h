@@ -26,7 +26,7 @@ uint64_t NativeState() const;
 
 
 
-uint32_t Name(nsString& aName) const;
+ENameValueFlag Name(nsString& aName) const override;
 
 
 

@@ -6,9 +6,9 @@
 #ifndef _Accessible_H_
 #define _Accessible_H_
 
-#include <stdint.h>
 #include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/AccTypes.h"
+#include "nsString.h"
 
 class nsAtom;
 
@@ -19,6 +19,34 @@ namespace a11y {
 
 class LocalAccessible;
 class RemoteAccessible;
+
+
+
+
+enum ENameValueFlag {
+  
+
+
+
+
+  eNameOK,
+
+  
+
+
+
+  eNoNameOnPurpose,
+
+  
+
+
+  eNameFromSubtree,
+
+  
+
+
+  eNameFromTooltip
+};
 
 class Accessible {
  protected:
@@ -79,6 +107,13 @@ class Accessible {
 
 
   bool HasGenericType(AccGenericType aType) const;
+
+  
+
+  
+
+
+  virtual ENameValueFlag Name(nsString& aName) const = 0;
 
   
 

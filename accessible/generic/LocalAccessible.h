@@ -68,34 +68,6 @@ void TreeSize(const char* aTitle, const char* aMsgText, LocalAccessible* aRoot);
 
 
 
-enum ENameValueFlag {
-  
-
-
-
-
-  eNameOK,
-
-  
-
-
-
-  eNoNameOnPurpose,
-
-  
-
-
-  eNameFromSubtree,
-
-  
-
-
-  eNameFromTooltip
-};
-
-
-
-
 struct GroupPos {
   GroupPos() : level(0), posInSet(0), setSize(0) {}
   GroupPos(int32_t aLevel, int32_t aPosInSet, int32_t aSetSize)
@@ -205,7 +177,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  virtual ENameValueFlag Name(nsString& aName) const;
+  virtual ENameValueFlag Name(nsString& aName) const override;
 
   
 
