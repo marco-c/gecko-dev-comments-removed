@@ -735,8 +735,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   ~nsPIDOMWindowOuter();
 
-  void RefreshMediaElementsSuspend(SuspendTypes aSuspend);
-  void MaybeNotifyMediaResumedFromBlock(SuspendTypes aSuspend);
+  void NotifyResumingDelayedMedia();
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWOUTER_IID)
@@ -782,11 +781,12 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   SuspendTypes GetMediaSuspend() const;
-  void SetMediaSuspend(SuspendTypes aSuspend);
 
   bool GetAudioMuted() const;
 
-  void MaybeActiveMediaComponents();
+  
+  void ActivateMediaComponents();
+  bool ShouldDelayMediaFromStart() const;
 
   void RefreshMediaElementsVolume();
 
@@ -1139,19 +1139,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   
   bool mIsBackground;
-
-  
-
-
-
-
-
-
-
-
-
-
-  SuspendTypes mMediaSuspend;
 
   
   bool mDesktopModeViewport;
