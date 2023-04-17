@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/dom/ContentChild.h"
 #include "nsStyleConsts.h"
 #include "nsXULAppAPI.h"
 #include "nsLookAndFeel.h"
@@ -16,21 +15,12 @@
 #include "mozilla/java/GeckoSystemStateListenerWrappers.h"
 
 using namespace mozilla;
-using mozilla::dom::ContentChild;
 
 static const char16_t UNICODE_BULLET = 0x2022;
 
 nsLookAndFeel::nsLookAndFeel() = default;
 
-nsLookAndFeel::~nsLookAndFeel() {}
-
-#define BG_PRELIGHT_COLOR NS_RGB(0xee, 0xee, 0xee)
-#define FG_PRELIGHT_COLOR NS_RGB(0x77, 0x77, 0x77)
-#define BLACK_COLOR NS_RGB(0x00, 0x00, 0x00)
-#define DARK_GRAY_COLOR NS_RGB(0x40, 0x40, 0x40)
-#define GRAY_COLOR NS_RGB(0x80, 0x80, 0x80)
-#define LIGHT_GRAY_COLOR NS_RGB(0xa0, 0xa0, 0xa0)
-#define RED_COLOR NS_RGB(0xff, 0x00, 0x00)
+nsLookAndFeel::~nsLookAndFeel() = default;
 
 nsresult nsLookAndFeel::GetSystemColors() {
   if (!jni::IsAvailable()) {
@@ -71,7 +61,6 @@ void nsLookAndFeel::NativeInit() {
   RecordTelemetry();
 }
 
-
 void nsLookAndFeel::RefreshImpl() {
   nsXPLookAndFeel::RefreshImpl();
 
@@ -81,8 +70,6 @@ void nsLookAndFeel::RefreshImpl() {
 
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
                                        nscolor& aColor) {
-  nsresult rv = NS_OK;
-
   EnsureInitSystemColors();
   if (!mInitializedSystemColors) {
     
@@ -97,33 +84,18 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       
       
       
-    case ColorID::WindowBackground:
-      aColor = NS_RGB(0xFF, 0xFF, 0xFF);
-      break;
     case ColorID::WindowForeground:
       aColor = mSystemColors.textColorPrimary;
       break;
-    case ColorID::WidgetBackground:
-      aColor = mSystemColors.colorBackground;
-      break;
     case ColorID::WidgetForeground:
+    case ColorID::MozMenubartext:
       aColor = mSystemColors.colorForeground;
       break;
-    case ColorID::WidgetSelectBackground:
-      aColor = mSystemColors.textColorHighlight;
-      break;
-    case ColorID::WidgetSelectForeground:
-      aColor = mSystemColors.textColorPrimaryInverse;
-      break;
     case ColorID::Widget3DHighlight:
-      aColor = LIGHT_GRAY_COLOR;
+      aColor = NS_RGB(0xa0, 0xa0, 0xa0);
       break;
     case ColorID::Widget3DShadow:
-      aColor = DARK_GRAY_COLOR;
-      break;
-    case ColorID::TextBackground:
-      
-      aColor = mSystemColors.colorBackground;
+      aColor = NS_RGB(0x40, 0x40, 0x40);
       break;
     case ColorID::TextForeground:
       
@@ -138,12 +110,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       break;
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
-      
+    case ColorID::WidgetSelectBackground:
       aColor = mSystemColors.textColorHighlight;
       break;
     case ColorID::IMESelectedRawTextForeground:
     case ColorID::IMESelectedConvertedTextForeground:
-      
       aColor = mSystemColors.textColorPrimaryInverse;
       break;
     case ColorID::IMERawInputBackground:
@@ -152,8 +123,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       break;
     case ColorID::IMERawInputForeground:
     case ColorID::IMEConvertedTextForeground:
-      aColor = NS_SAME_AS_FOREGROUND_COLOR;
-      break;
     case ColorID::IMERawInputUnderline:
     case ColorID::IMEConvertedTextUnderline:
       aColor = NS_SAME_AS_FOREGROUND_COLOR;
@@ -163,28 +132,22 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       aColor = NS_TRANSPARENT;
       break;
     case ColorID::SpellCheckerUnderline:
-      aColor = RED_COLOR;
+      aColor = NS_RGB(0xff, 0x00, 0x00);
       break;
 
       
-    case ColorID::Activeborder:
-      
+    case ColorID::Activeborder:     
+    case ColorID::Appworkspace:     
+    case ColorID::Activecaption:    
+    case ColorID::Background:       
+    case ColorID::Inactiveborder:   
+    case ColorID::Inactivecaption:  
+    case ColorID::Scrollbar:        
+    case ColorID::TextBackground:   
+    case ColorID::WidgetBackground:
       aColor = mSystemColors.colorBackground;
       break;
-    case ColorID::Activecaption:
-      
-      aColor = mSystemColors.colorBackground;
-      break;
-    case ColorID::Appworkspace:
-      
-      aColor = mSystemColors.colorBackground;
-      break;
-    case ColorID::Background:
-      
-      aColor = mSystemColors.colorBackground;
-      break;
-    case ColorID::Graytext:
-      
+    case ColorID::Graytext:  
       aColor = NS_RGB(0xb1, 0xa5, 0x98);
       break;
     case ColorID::MozCellhighlight:
@@ -201,14 +164,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::Fieldtext:
       aColor = NS_RGB(0x1a, 0x1a, 0x1a);
       break;
-    case ColorID::Inactiveborder:
-      
-      aColor = mSystemColors.colorBackground;
-      break;
-    case ColorID::Inactivecaption:
-      
-      aColor = mSystemColors.colorBackground;
-      break;
     case ColorID::Inactivecaptiontext:
       
       aColor = mSystemColors.textColorTertiary;
@@ -217,14 +172,12 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       aColor = NS_RGB(0xf5, 0xf5, 0xb5);
       break;
     case ColorID::Infotext:
-      aColor = BLACK_COLOR;
+    case ColorID::Threeddarkshadow:  
+    case ColorID::MozButtondefault:  
+      aColor = NS_RGB(0x00, 0x00, 0x00);
       break;
     case ColorID::Menu:
       aColor = NS_RGB(0xf7, 0xf5, 0xf3);
-      break;
-    case ColorID::Scrollbar:
-      
-      aColor = mSystemColors.colorBackground;
       break;
 
     case ColorID::Threedface:
@@ -233,6 +186,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       aColor = NS_RGB(0xec, 0xe7, 0xe2);
       break;
 
+    case ColorID::WindowBackground:
     case ColorID::Buttonhighlight:
     case ColorID::Field:
     case ColorID::Threedhighlight:
@@ -244,11 +198,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::Buttonshadow:
     case ColorID::Threedshadow:
       aColor = NS_RGB(0xae, 0xa1, 0x94);
-      break;
-
-    case ColorID::Threeddarkshadow:
-      
-      aColor = BLACK_COLOR;
       break;
 
     case ColorID::MozDialog:
@@ -270,18 +219,15 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::MozDragtargetzone:
       aColor = mSystemColors.textColorHighlight;
       break;
-    case ColorID::MozButtondefault:
-      
-      aColor = BLACK_COLOR;
-      break;
     case ColorID::MozButtonhoverface:
       aColor = NS_RGB(0xf3, 0xf0, 0xed);
       break;
     case ColorID::MozMenuhover:
-      aColor = BG_PRELIGHT_COLOR;
+      aColor = NS_RGB(0xee, 0xee, 0xee);
       break;
+    case ColorID::MozMenubarhovertext:
     case ColorID::MozMenuhovertext:
-      aColor = FG_PRELIGHT_COLOR;
+      aColor = NS_RGB(0x77, 0x77, 0x77);
       break;
     case ColorID::MozOddtreerow:
       aColor = NS_TRANSPARENT;
@@ -289,20 +235,13 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::MozNativehyperlinktext:
       aColor = NS_RGB(0, 0, 0xee);
       break;
-    case ColorID::MozMenubartext:
-      aColor = mSystemColors.colorForeground;
-      break;
-    case ColorID::MozMenubarhovertext:
-      aColor = FG_PRELIGHT_COLOR;
-      break;
     default:
       
       aColor = 0;
-      rv = NS_ERROR_FAILURE;
-      break;
+      return NS_ERROR_FAILURE;
   }
 
-  return rv;
+  return NS_OK;
 }
 
 nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
@@ -428,10 +367,9 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
   return rv;
 }
 
-
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
-  aFontName.AssignLiteral("\"Roboto\"");
+  aFontName.AssignLiteral("Roboto");
   aFontStyle.style = FontSlantStyle::Normal();
   aFontStyle.weight = FontWeight::Normal();
   aFontStyle.stretch = FontStretch::Normal();
@@ -439,7 +377,6 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
   aFontStyle.systemFont = true;
   return true;
 }
-
 
 bool nsLookAndFeel::GetEchoPasswordImpl() {
   EnsureInitShowPassword();
@@ -450,7 +387,6 @@ uint32_t nsLookAndFeel::GetPasswordMaskDelayImpl() {
   
   return 1500;
 }
-
 
 char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
   
