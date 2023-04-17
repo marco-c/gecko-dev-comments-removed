@@ -383,6 +383,33 @@ class ResourceCommand {
         )
       );
     }
+
+    
+    
+    
+    
+    if (
+      !this.targetCommand.hasTargetWatcherSupport(
+        "supportsDocumentEventWillNavigate"
+      )
+    ) {
+      const offWillNavigate2 = targetFront.on(
+        "will-navigate",
+        ({ url, isFrameSwitching }) => {
+          targetFront.emit("resource-available-form", [
+            {
+              resourceType: this.TYPES.DOCUMENT_EVENT,
+              name: "will-navigate",
+              time: Date.now(), 
+              shouldBeIgnoredAsRedundantWithTargetAvailable: false,
+              isFrameSwitching,
+              newURI: url,
+            },
+          ]);
+        }
+      );
+      this._offTargetFrontListeners.push(offWillNavigate2);
+    }
   }
 
   _shouldRestartListenerOnTargetSwitching(resourceType) {

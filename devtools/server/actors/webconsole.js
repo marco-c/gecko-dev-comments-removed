@@ -1809,7 +1809,13 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  onDocumentEvent: function(name, time) {
+  onDocumentEvent: function(name, { time }) {
+    
+    
+    
+    if (name == "will-navigate") {
+      return;
+    }
     this.emit("documentEvent", {
       name,
       time,
