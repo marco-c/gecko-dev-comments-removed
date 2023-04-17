@@ -8,6 +8,7 @@
 #define mozilla_layers_APZChild_h
 
 #include "mozilla/layers/PAPZChild.h"
+#include "mozilla/layers/APZTaskRunnable.h"
 
 namespace mozilla {
 namespace layers {
@@ -60,7 +61,16 @@ class APZChild final : public PAPZChild {
   mozilla::ipc::IPCResult RecvDestroy();
 
  private:
+  void EnsureAPZTaskRunnable() {
+    if (!mAPZTaskRunnable) {
+      mAPZTaskRunnable = new APZTaskRunnable(mController);
+    }
+  }
+
   RefPtr<GeckoContentController> mController;
+  
+  
+  RefPtr<APZTaskRunnable> mAPZTaskRunnable;
 };
 
 }  
