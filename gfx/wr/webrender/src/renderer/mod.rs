@@ -3544,7 +3544,11 @@ impl Renderer {
 
         match partial_present_mode {
             Some(PartialPresentMode::Single { dirty_rect }) => {
-                if occlusion.test(&dirty_rect.to_box2d()) {
+                
+                
+                
+                
+                if !dirty_rect.is_empty() && occlusion.test(&dirty_rect.to_box2d()) {
                     
                     self.device.clear_target(clear_color,
                                              None,
