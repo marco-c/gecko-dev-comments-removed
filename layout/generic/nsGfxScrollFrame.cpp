@@ -1520,7 +1520,6 @@ nscoord ScrollFrameHelper::GetNondisappearingScrollbarWidth(
   bool verticalWM = aWM.IsVertical();
   
   
-  
   nsIFrame* box = verticalWM ? mHScrollbarBox : mVScrollbarBox;
   if (box) {
     auto sizes = aState->PresContext()->Theme()->GetScrollbarSizes(
