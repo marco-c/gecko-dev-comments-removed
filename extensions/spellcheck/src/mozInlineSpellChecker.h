@@ -220,10 +220,6 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   static void UpdateCanEnableInlineSpellChecking();
 
-  nsresult OnBlur(mozilla::dom::Event* aEvent);
-  nsresult OnMouseClick(mozilla::dom::Event* aMouseEvent);
-  nsresult OnKeyPress(mozilla::dom::Event* aKeyEvent);
-
   mozInlineSpellChecker();
 
   
@@ -336,6 +332,10 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   void StartToListenToEditSubActions() { mIsListeningToEditSubActions = true; }
   void EndListeningToEditSubActions() { mIsListeningToEditSubActions = false; }
+
+  void OnBlur(mozilla::dom::Event& aEvent);
+  void OnMouseClick(mozilla::dom::Event& aMouseEvent);
+  void OnKeyDown(mozilla::dom::Event& aKeyEvent);
 };
 
 #endif  
