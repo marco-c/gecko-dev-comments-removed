@@ -64,15 +64,6 @@ class RegisteredThread final {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  void SetJSContext(JSContext* aContext);
-
-  void ClearJSContext() {
-    
-    mRacyRegisteredThread.mThreadRegistration.mData.mJSContext = nullptr;
-  }
-
   JSContext* GetJSContext() const {
     return mRacyRegisteredThread.mThreadRegistration.mData.mJSContext;
   }

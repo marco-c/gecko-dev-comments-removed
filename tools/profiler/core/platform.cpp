@@ -1038,20 +1038,6 @@ class ActivePS {
     return array;
   }
 
-  
-  
-  static ProfiledThreadData* GetProfiledThreadData(
-      PSLockRef, RegisteredThread* aRegisteredThread) {
-    MOZ_ASSERT(sInstance);
-    for (const LiveProfiledThreadData& thread :
-         sInstance->mLiveProfiledThreads) {
-      if (thread.mRegisteredThread == aRegisteredThread) {
-        return thread.mProfiledThreadData.get();
-      }
-    }
-    return nullptr;
-  }
-
   static ProfiledThreadData* AddLiveProfiledThread(
       PSLockRef, RegisteredThread* aRegisteredThread,
       UniquePtr<ProfiledThreadData>&& aProfiledThreadData) {
@@ -5721,70 +5707,68 @@ bool profiler_is_locked_on_current_thread() {
 
 void profiler_set_js_context(JSContext* aCx) {
   MOZ_ASSERT(aCx);
+  ThreadRegistration::WithOnThreadRef(
+      [&](ThreadRegistration::OnThreadRef aOnThreadRef) {
+        
+        PSAutoLock lock;
+        aOnThreadRef.WithLockedRWOnThread(
+            [&](ThreadRegistration::LockedRWOnThread& aThreadData) {
+              aThreadData.SetJSContext(aCx);
 
-  PSAutoLock lock;
+              
+              
+              aThreadData.PollJSSampling();
 
-  RegisteredThread* registeredThread =
-      TLSRegisteredThread::RegisteredThread(lock);
-  if (!registeredThread) {
-    return;
-  }
-
-  registeredThread->SetJSContext(aCx);
-
-  
-  
-  registeredThread->PollJSSampling();
-
-  if (ActivePS::Exists(lock)) {
-    ProfiledThreadData* profiledThreadData =
-        ActivePS::GetProfiledThreadData(lock, registeredThread);
-    if (profiledThreadData) {
-      profiledThreadData->NotifyReceivedJSContext(
-          ActivePS::Buffer(lock).BufferRangeEnd());
-    }
-  }
+              if (ProfiledThreadData* profiledThreadData =
+                      aThreadData.GetProfiledThreadData(lock);
+                  profiledThreadData) {
+                profiledThreadData->NotifyReceivedJSContext(
+                    ActivePS::Buffer(lock).BufferRangeEnd());
+              }
+            });
+      });
 }
 
 void profiler_clear_js_context() {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PSAutoLock lock;
+  ThreadRegistration::WithOnThreadRef(
+      [](ThreadRegistration::OnThreadRef aOnThreadRef) {
+        JSContext* cx =
+            aOnThreadRef.UnlockedReaderAndAtomicRWOnThreadCRef().GetJSContext();
+        if (!cx) {
+          return;
+        }
 
-  RegisteredThread* registeredThread =
-      TLSRegisteredThread::RegisteredThread(lock);
-  if (!registeredThread) {
-    return;
-  }
+        
+        PSAutoLock lock;
+        ThreadRegistration::OnThreadRef::RWOnThreadWithLock lockedThreadData =
+            aOnThreadRef.LockedRWOnThread();
 
-  JSContext* cx = registeredThread->GetJSContext();
-  if (!cx) {
-    return;
-  }
+        if (ProfiledThreadData* profiledThreadData =
+                lockedThreadData->GetProfiledThreadData(lock);
+            profiledThreadData && ActivePS::Exists(lock) &&
+            ActivePS::FeatureJS(lock)) {
+          profiledThreadData->NotifyAboutToLoseJSContext(
+              cx, CorePS::ProcessStartTime(), ActivePS::Buffer(lock));
 
-  if (ActivePS::Exists(lock) && ActivePS::FeatureJS(lock)) {
-    ProfiledThreadData* profiledThreadData =
-        ActivePS::GetProfiledThreadData(lock, registeredThread);
-    if (profiledThreadData) {
-      profiledThreadData->NotifyAboutToLoseJSContext(
-          cx, CorePS::ProcessStartTime(), ActivePS::Buffer(lock));
+          
+          
+          
+          lockedThreadData->StopJSSampling();
+          lockedThreadData->PollJSSampling();
 
-      
-      
-      
-      registeredThread->StopJSSampling();
-      registeredThread->PollJSSampling();
+          lockedThreadData->ClearJSContext();
 
-      registeredThread->ClearJSContext();
-
-      
-      
-      registeredThread->StartJSSampling(ActivePS::JSFlags(lock));
-      return;
-    }
-  }
-
-  registeredThread->ClearJSContext();
+          
+          
+          lockedThreadData->StartJSSampling(ActivePS::JSFlags(lock));
+        } else {
+          
+          
+          lockedThreadData->ClearJSContext();
+        }
+      });
 }
 
 static void profiler_suspend_and_sample_thread(
