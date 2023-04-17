@@ -9,6 +9,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/DownloadsCommon.jsm"
 );
 
+const HandlerService = Cc[
+  "@mozilla.org/uriloader/handler-service;1"
+].getService(Ci.nsIHandlerService);
+
+const MIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+
 let INSECURE_BASE_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content/",
@@ -41,6 +47,18 @@ async function task_openPanel() {
   await promise;
 }
 
+const downloadMonitoringView = {
+  _listeners: [],
+  onDownloadAdded(download) {
+    for (let listener of this._listeners) {
+      listener(download);
+    }
+    this._listeners = [];
+  },
+  waitForDownload(listener) {
+    this._listeners.push(listener);
+  },
+};
 
 
 
@@ -49,7 +67,20 @@ async function task_openPanel() {
 
 
 
-function shouldPromptDownload(action = "save") {
+
+
+
+
+function shouldTriggerDownload(action = "save") {
+  if (
+    Services.prefs.getBoolPref(
+      "browser.download.improvements_to_download_panel"
+    )
+  ) {
+    return new Promise(res => {
+      downloadMonitoringView.waitForDownload(res);
+    });
+  }
   return new Promise((resolve, reject) => {
     Services.wm.addListener({
       onOpenWindow(xulWin) {
@@ -94,44 +125,52 @@ function shouldConsoleError() {
 
 async function resetDownloads() {
   
+  const types = new Set();
   let publicList = await Downloads.getList(Downloads.PUBLIC);
   let downloads = await publicList.getAll();
   for (let download of downloads) {
+    if (download.contentType) {
+      types.add(download.contentType);
+    }
     publicList.remove(download);
     await download.finalize(true);
   }
+
+  if (types.size) {
+    
+    for (let type of types) {
+      const mimeInfo = MIMEService.getFromTypeAndExtension(type, "");
+      info("resetting handler for type: " + type);
+      HandlerService.remove(mimeInfo);
+    }
+  }
 }
 
-async function shouldNotifyDownloadUI() {
-  
-  
-  let list = await Downloads.getList(Downloads.ALL);
-  return new Promise((res, err) => {
-    const view = {
-      onDownloadAdded: async aDownload => {
-        let { error } = aDownload;
-        if (
-          error.becauseBlockedByReputationCheck &&
-          error.reputationCheckVerdict == Downloads.Error.BLOCK_VERDICT_INSECURE
-        ) {
-          
-          if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
-            throw new Error(`Download target is not empty!`);
-          }
-          if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
-            throw new Error(`Download partFile was not cleaned up properly`);
-          }
-          
-          if (!aDownload.source.referrerInfo) {
-            throw new Error("The Blocked download is missing the ReferrerInfo");
-          }
-
-          res(aDownload);
-          list.removeView(view);
+function shouldNotifyDownloadUI() {
+  return new Promise(res => {
+    downloadMonitoringView.waitForDownload(async aDownload => {
+      let { error } = aDownload;
+      if (
+        error.becauseBlockedByReputationCheck &&
+        error.reputationCheckVerdict == Downloads.Error.BLOCK_VERDICT_INSECURE
+      ) {
+        
+        if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
+          throw new Error(`Download target is not empty!`);
         }
-      },
-    };
-    list.addView(view);
+        if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
+          throw new Error(`Download partFile was not cleaned up properly`);
+        }
+        
+        if (!aDownload.source.referrerInfo) {
+          throw new Error("The Blocked download is missing the ReferrerInfo");
+        }
+
+        res(aDownload);
+      } else {
+        ok(false, "No error for download that was expected to error!");
+      }
+    });
   });
 }
 
@@ -163,100 +202,133 @@ async function runTest(url, link, checkFunction, description) {
   await SpecialPowers.popPrefEnv();
 }
 
-
-add_task(async function() {
-  await runTest(
-    INSECURE_BASE_URL,
-    "insecure",
-    shouldPromptDownload,
-    "Insecure -> Insecure should download"
-  );
-  await runTest(
-    INSECURE_BASE_URL,
-    "secure",
-    shouldPromptDownload,
-    "Insecure -> Secure should download"
-  );
-  await runTest(
-    SECURE_BASE_URL,
-    "insecure",
-    () =>
-      Promise.all([
-        shouldPromptDownload(),
-        shouldNotifyDownloadUI(),
-        shouldConsoleError(),
-      ]),
-    "Secure -> Insecure should Error"
-  );
-  await runTest(
-    SECURE_BASE_URL,
-    "secure",
-    shouldPromptDownload,
-    "Secure -> Secure should Download"
-  );
-});
-
-add_task(async function() {
-  await runTest(
-    SECURE_BASE_URL,
-    "insecure",
-    async () => {
-      await shouldPromptDownload();
-      let download = await shouldNotifyDownloadUI();
-      await download.unblock();
-      ok(download.error == null, "There should be no error after unblocking");
-    },
-    "A Blocked Download Should succeeded to Download after a Manual unblock"
-  );
+add_task(async function setup() {
+  let list = await Downloads.getList(Downloads.ALL);
+  list.addView(downloadMonitoringView);
+  registerCleanupFunction(() => list.removeView(downloadMonitoringView));
 });
 
 
-add_task(async function() {
-  
-  
-  await promiseFocus();
-  await runTest(
-    SECURE_BASE_URL,
-    "insecure",
-    async () => {
-      let panelHasOpened = promisePanelOpened();
-      info("awaiting that the Download Prompt is shown");
-      await shouldPromptDownload();
-      info("awaiting that the Download list adds the new download");
-      await shouldNotifyDownloadUI();
-      info("awaiting that the Download list shows itself");
-      await panelHasOpened;
-      DownloadsPanel.hidePanel();
-      ok(true, "The Download Panel should have opened on blocked download");
-    },
-    "A Blocked Download Should open the Download Panel"
-  );
+add_task(async function test_blocking() {
+  for (let prefVal of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.download.improvements_to_download_panel", prefVal]],
+    });
+    await runTest(
+      INSECURE_BASE_URL,
+      "insecure",
+      shouldTriggerDownload,
+      "Insecure -> Insecure should download"
+    );
+    await runTest(
+      INSECURE_BASE_URL,
+      "secure",
+      shouldTriggerDownload,
+      "Insecure -> Secure should download"
+    );
+    await runTest(
+      SECURE_BASE_URL,
+      "insecure",
+      () =>
+        Promise.all([
+          shouldTriggerDownload(),
+          shouldNotifyDownloadUI(),
+          shouldConsoleError(),
+        ]),
+      "Secure -> Insecure should Error"
+    );
+    await runTest(
+      SECURE_BASE_URL,
+      "secure",
+      shouldTriggerDownload,
+      "Secure -> Secure should Download"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+
+add_task(async function test_manual_unblocking() {
+  for (let prefVal of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.download.improvements_to_download_panel", prefVal]],
+    });
+    await runTest(
+      SECURE_BASE_URL,
+      "insecure",
+      async () => {
+        let [, download] = await Promise.all([
+          shouldTriggerDownload(),
+          shouldNotifyDownloadUI(),
+        ]);
+        await download.unblock();
+        ok(download.error == null, "There should be no error after unblocking");
+      },
+      "A Blocked Download Should succeeded to Download after a Manual unblock"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+
+add_task(async function test_unblock_download_visible() {
+  for (let prefVal of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.download.improvements_to_download_panel", prefVal]],
+    });
+    
+    
+    await promiseFocus();
+    await runTest(
+      SECURE_BASE_URL,
+      "insecure",
+      async () => {
+        let panelHasOpened = promisePanelOpened();
+        info("awaiting that the a download is triggered and added to the list");
+        await Promise.all([shouldTriggerDownload(), shouldNotifyDownloadUI()]);
+        info("awaiting that the Download list shows itself");
+        await panelHasOpened;
+        DownloadsPanel.hidePanel();
+        ok(true, "The Download Panel should have opened on blocked download");
+      },
+      "A Blocked Download Should open the Download Panel"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 
 add_task(async function download_open_insecure_pdf() {
-  await promiseFocus();
-  await runTest(
-    SECURE_BASE_URL,
-    "insecurePDF",
-    async () => {
-      info("awaiting that the Download Prompt is shown");
-      await shouldPromptDownload("handleInternally");
-      let download = await shouldNotifyDownloadUI();
-      let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-      await download.unblock();
-      ok(download.error == null, "There should be no error after unblocking");
-      let tab = await newTabPromise;
+  for (let prefVal of [true, false]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.download.improvements_to_download_panel", prefVal]],
+    });
+    await promiseFocus();
+    await runTest(
+      SECURE_BASE_URL,
+      "insecurePDF",
+      async () => {
+        info("awaiting that the a download is triggered and added to the list");
+        let [_, download] = await Promise.all([
+          shouldTriggerDownload("handleInternally"),
+          shouldNotifyDownloadUI(),
+        ]);
 
-      
-      let usablePath = download.target.path.replace("\\", "/");
-      ok(
-        tab.linkedBrowser._documentURI.filePath.includes(".pdf"),
-        "The download target was opened"
-      );
-      BrowserTestUtils.removeTab(tab);
-      ok(true, "The Content was opened in a new tab");
-    },
-    "A Blocked PDF can be opened internally"
-  );
+        let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+        await download.unblock();
+        ok(download.error == null, "There should be no error after unblocking");
+
+        let tab = await newTabPromise;
+
+        ok(
+          tab.linkedBrowser._documentURI.filePath.includes(".pdf"),
+          "The download target was opened"
+        );
+        BrowserTestUtils.removeTab(tab);
+        ok(true, "The Content was opened in a new tab");
+        await SpecialPowers.popPrefEnv();
+      },
+      "A Blocked PDF can be opened internally"
+    );
+  }
 });
