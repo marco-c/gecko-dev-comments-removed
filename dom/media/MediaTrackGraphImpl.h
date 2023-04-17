@@ -11,7 +11,6 @@
 #include "AudioMixer.h"
 #include "GraphDriver.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -34,79 +33,6 @@ class AudioContextOperationControlMessage;
 template <typename T>
 class LinkedList;
 class GraphRunner;
-
-
-class NativeInputTrack : public ProcessedMediaTrack {
-  ~NativeInputTrack() = default;
-  explicit NativeInputTrack(TrackRate aSampleRate)
-      : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
-                            new AudioSegment()) {}
-
- public:
-  
-  static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph);
-
-  size_t AddUser();
-  size_t RemoveUser();
-
-  
-  void DestroyImpl() override;
-  void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
-  uint32_t NumberOfChannels() const override;
-
-  
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate, uint32_t aChannels);
-  void NotifyInputStopped(MediaTrackGraphImpl* aGraph);
-  void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels,
-                       uint32_t aAlreadyBuffered);
-  void DeviceChanged(MediaTrackGraphImpl* aGraph);
-
-  
-  void InitDataHolderIfNeeded();
-
-  
-  NativeInputTrack* AsNativeInputTrack() override { return this; }
-
- public:
-  
-  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
-
- private:
-  class AudioDataBuffers {
-   public:
-    AudioDataBuffers() = default;
-    void SetOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                       uint32_t aChannels, TrackRate aRate);
-    void SetInputData(AudioDataValue* aBuffer, size_t aFrames,
-                      uint32_t aChannels, TrackRate aRate);
-
-    enum Scope : unsigned char {
-      Input = 0x01,
-      Output = 0x02,
-    };
-    void Clear(Scope aScope);
-
-    typedef AudioDataListenerInterface::BufferInfo BufferInfo;
-    
-    Maybe<BufferInfo> mOutputData;
-    
-    Maybe<BufferInfo> mInputData;
-  };
-
-  
-  
-  Maybe<AudioDataBuffers> mDataHolder;
-
-  
-  uint32_t mInputChannels = 0;
-
-  
-  
-  int32_t mUserCount = 0;
-};
 
 
 
@@ -462,28 +388,20 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   };
   TrackTime PlayAudio(AudioMixer* aMixer, const TrackKeyAndVolume& aTkv,
                       GraphTime aPlayedTime);
-
-  
-
-  ProcessedMediaTrack* GetDeviceTrack(CubebUtils::AudioDeviceID aID);
-
   
 
 
   void OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                          AudioDataListener* aListener,
-                          NativeInputTrack* aInputTrack);
+                          AudioDataListener* aListener);
   
 
   virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
                                   AudioDataListener* aListener) override;
-
   
 
 
   void CloseAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                           AudioDataListener* aListener,
-                           NativeInputTrack* aInputTrack);
+                           AudioDataListener* aListener);
   
 
 
@@ -578,12 +496,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
 
 #ifdef ANDROID
-    if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
+    if (!mInputDeviceUsers.Contains(mInputDeviceID)) {
       return 0;
     }
 #else
     if (!mInputDeviceID) {
-      MOZ_ASSERT(mDeviceTrackMap.Count() == 0,
+      MOZ_ASSERT(mInputDeviceUsers.Count() == 0,
                  "If running on a platform other than android,"
                  "an explicit device id should be present");
       return 0;
@@ -592,12 +510,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
     uint32_t maxInputChannels = 0;
     
     
-    auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
-    MOZ_ASSERT(result);
-    if (!result) {
-      return maxInputChannels;
-    }
-    for (const auto& listener : result.Data()->mDataUsers) {
+    for (const auto& listener : *mInputDeviceUsers.Lookup(mInputDeviceID)) {
       maxInputChannels = std::max(maxInputChannels,
                                   listener->RequestedInputChannelCount(this));
     }
@@ -607,8 +520,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   AudioInputType AudioInputDevicePreference() {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
 
-    auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
-    if (!result) {
+    auto listeners = mInputDeviceUsers.Lookup(mInputDeviceID);
+    if (!listeners) {
       return AudioInputType::Unknown;
     }
     bool voiceInput = false;
@@ -617,7 +530,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
     
     
-    for (const auto& listener : result.Data()->mDataUsers) {
+    for (const auto& listener : *listeners) {
       voiceInput |= listener->IsVoiceInput(this);
     }
     if (voiceInput) {
@@ -853,13 +766,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   std::atomic<CubebUtils::AudioDeviceID> mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
-
   
   
   
   
-  
-  nsTHashMap<CubebUtils::AudioDeviceID, NativeInputTrack*> mDeviceTrackMap;
+  nsTHashMap<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
+      mInputDeviceUsers;
 
   
 
@@ -1131,11 +1043,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   uint32_t mMaxOutputChannelCount;
-
-  
-
-
-  nsTHashMap<CubebUtils::AudioDeviceID, RefPtr<NativeInputTrack>> mDeviceTracks;
 };
 
 }  
