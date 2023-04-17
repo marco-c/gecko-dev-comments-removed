@@ -457,12 +457,12 @@ function TargetMixin(parentClass) {
 
 
 
-    attachAndInitThread(targetList) {
+    attachAndInitThread(targetCommand) {
       if (this._onThreadInitialized) {
         return this._onThreadInitialized;
       }
 
-      this._onThreadInitialized = this._attachAndInitThread(targetList);
+      this._onThreadInitialized = this._attachAndInitThread(targetCommand);
       return this._onThreadInitialized;
     }
 
@@ -474,7 +474,7 @@ function TargetMixin(parentClass) {
 
 
 
-    async _attachAndInitThread(targetList) {
+    async _attachAndInitThread(targetCommand) {
       
       if (this.isDestroyedOrBeingDestroyed()) {
         return;
@@ -486,9 +486,9 @@ function TargetMixin(parentClass) {
         await this.attach();
       }
 
-      const isBrowserToolbox = targetList.targetFront.isParentProcess;
+      const isBrowserToolbox = targetCommand.targetFront.isParentProcess;
       const isNonTopLevelFrameTarget =
-        !this.isTopLevel && this.targetType === targetList.TYPES.FRAME;
+        !this.isTopLevel && this.targetType === targetCommand.TYPES.FRAME;
 
       if (isBrowserToolbox && isNonTopLevelFrameTarget) {
         
@@ -500,7 +500,7 @@ function TargetMixin(parentClass) {
 
       
       
-      if (targetList.descriptorFront.createdForBrowserConsole) {
+      if (targetCommand.descriptorFront.createdForBrowserConsole) {
         return;
       }
 
@@ -524,7 +524,7 @@ function TargetMixin(parentClass) {
         await threadFront.resume();
       } catch (ex) {
         if (ex.error === "wrongOrder") {
-          targetList.emit("target-thread-wrong-order-on-resume");
+          targetCommand.emit("target-thread-wrong-order-on-resume");
         } else {
           throw ex;
         }

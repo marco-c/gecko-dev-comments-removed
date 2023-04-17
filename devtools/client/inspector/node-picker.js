@@ -22,10 +22,10 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
 class NodePicker extends EventEmitter {
-  constructor(targetList, selection) {
+  constructor(targetCommand, selection) {
     super();
 
-    this.targetList = targetList;
+    this.targetCommand = targetCommand;
 
     
     this.isPicking = false;
@@ -148,8 +148,8 @@ class NodePicker extends EventEmitter {
 
     this.emit("picker-starting");
 
-    this.targetList.watchTargets(
-      this.targetList.ALL_TYPES,
+    this.targetCommand.watchTargets(
+      this.targetCommand.ALL_TYPES,
       this._onTargetAvailable
     );
 
@@ -167,8 +167,8 @@ class NodePicker extends EventEmitter {
     this.isPicking = false;
     this.doFocus = false;
 
-    this.targetList.unwatchTargets(
-      this.targetList.ALL_TYPES,
+    this.targetCommand.unwatchTargets(
+      this.targetCommand.ALL_TYPES,
       this._onTargetAvailable
     );
 

@@ -113,7 +113,7 @@ class ResponsiveUI {
   }
 
   get currentTarget() {
-    return this.targetList.targetFront;
+    return this.commands.targetCommand.targetFront;
   }
 
   get watcherFront() {
@@ -327,8 +327,8 @@ class ResponsiveUI {
       
       
       
-      this.targetList.unwatchTargets(
-        [this.targetList.TYPES.FRAME],
+      this.commands.targetCommand.unwatchTargets(
+        [this.commands.targetCommand.TYPES.FRAME],
         this.onTargetAvailable
       );
 
@@ -337,7 +337,7 @@ class ResponsiveUI {
         { onAvailable: this.onNetworkResourceAvailable }
       );
 
-      this.targetList.destroy();
+      this.commands.targetCommand.destroy();
     }
 
     
@@ -370,13 +370,12 @@ class ResponsiveUI {
 
   async connectToServer() {
     this.commands = await CommandsFactory.forTab(this.tab);
-    this.targetList = this.commands.targetCommand;
-    this.resourceWatcher = new ResourceWatcher(this.targetList);
+    this.resourceWatcher = new ResourceWatcher(this.commands.targetCommand);
 
-    await this.targetList.startListening();
+    await this.commands.targetCommand.startListening();
 
-    await this.targetList.watchTargets(
-      [this.targetList.TYPES.FRAME],
+    await this.commands.targetCommand.watchTargets(
+      [this.commands.targetCommand.TYPES.FRAME],
       this.onTargetAvailable
     );
 
