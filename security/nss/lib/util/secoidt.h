@@ -1,36 +1,36 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef _SECOIDT_H_
 #define _SECOIDT_H_
 
 #include "utilrename.h"
 
-/*
- * secoidt.h - public data structures for ASN.1 OID functions
- */
+
+
+
 
 #include "secitem.h"
 
 typedef struct SECOidDataStr SECOidData;
 typedef struct SECAlgorithmIDStr SECAlgorithmID;
 
-/*
-** An X.500 algorithm identifier
-*/
+
+
+
 struct SECAlgorithmIDStr {
     SECItem algorithm;
     SECItem parameters;
 };
 
-/*
- * Misc object IDs - these numbers are for convenient handling.
- * They are mapped into real object IDs
- *
- * NOTE: the order of these entries must mach the array "oids" of SECOidData
- * in util/secoid.c.
- */
+
+
+
+
+
+
+
 typedef enum {
     SEC_OID_UNKNOWN = 0,
     SEC_OID_MD2 = 1,
@@ -94,7 +94,7 @@ typedef enum {
     SEC_OID_MISSI_KEA = 58,
     SEC_OID_MISSI_ALT_KEA = 59,
 
-    /* Netscape private certificate extensions */
+    
     SEC_OID_NS_CERT_EXT_NETSCAPE_OK = 60,
     SEC_OID_NS_CERT_EXT_ISSUER_LOGO = 61,
     SEC_OID_NS_CERT_EXT_SUBJECT_LOGO = 62,
@@ -115,7 +115,7 @@ typedef enum {
     SEC_OID_NS_CERT_EXT_CERT_RENEWAL_TIME = 77,
     SEC_OID_NS_KEY_USAGE_GOVT_APPROVED = 78,
 
-    /* x.509 v3 Extensions */
+    
     SEC_OID_X509_SUBJECT_DIRECTORY_ATTR = 79,
     SEC_OID_X509_SUBJECT_KEY_ID = 80,
     SEC_OID_X509_KEY_USAGE = 81,
@@ -135,15 +135,15 @@ typedef enum {
     SEC_OID_X509_CRL_NUMBER = 94,
     SEC_OID_X509_REASON_CODE = 95,
     SEC_OID_X509_INVALID_DATE = 96,
-    /* End of x.509 v3 Extensions */
+    
 
     SEC_OID_X500_RSA_ENCRYPTION = 97,
 
-    /* alg 1485 additions */
+    
     SEC_OID_RFC1274_UID = 98,
     SEC_OID_RFC1274_MAIL = 99,
 
-    /* PKCS 12 additions */
+    
     SEC_OID_PKCS12 = 100,
     SEC_OID_PKCS12_MODE_IDS = 101,
     SEC_OID_PKCS12_ESPVK_IDS = 102,
@@ -153,8 +153,8 @@ typedef enum {
     SEC_OID_PKCS12_PBE_IDS = 106,
     SEC_OID_PKCS12_SIGNATURE_IDS = 107,
     SEC_OID_PKCS12_ENVELOPING_IDS = 108,
-    /* SEC_OID_PKCS12_OFFLINE_TRANSPORT_MODE,
-    SEC_OID_PKCS12_ONLINE_TRANSPORT_MODE, */
+    
+
     SEC_OID_PKCS12_PKCS8_KEY_SHROUDING = 109,
     SEC_OID_PKCS12_KEY_BAG_ID = 110,
     SEC_OID_PKCS12_CERT_AND_CRL_BAG_ID = 111,
@@ -170,17 +170,17 @@ typedef enum {
     SEC_OID_PKCS12_RSA_ENCRYPTION_WITH_40_BIT_RC4 = 121,
     SEC_OID_PKCS12_RSA_ENCRYPTION_WITH_TRIPLE_DES = 122,
     SEC_OID_PKCS12_RSA_SIGNATURE_WITH_SHA1_DIGEST = 123,
-    /* end of PKCS 12 additions */
+    
 
-    /* DSA signatures */
+    
     SEC_OID_ANSIX9_DSA_SIGNATURE = 124,
     SEC_OID_ANSIX9_DSA_SIGNATURE_WITH_SHA1_DIGEST = 125,
     SEC_OID_BOGUS_DSA_SIGNATURE_WITH_SHA1_DIGEST = 126,
 
-    /* Verisign OIDs */
+    
     SEC_OID_VERISIGN_USER_NOTICES = 127,
 
-    /* PKIX OIDs */
+    
     SEC_OID_PKIX_CPS_POINTER_QUALIFIER = 128,
     SEC_OID_PKIX_USER_NOTICE_QUALIFIER = 129,
     SEC_OID_PKIX_OCSP = 130,
@@ -206,13 +206,13 @@ typedef enum {
     SEC_OID_EXT_KEY_USAGE_TIME_STAMP = 150,
     SEC_OID_OCSP_RESPONDER = 151,
 
-    /* Netscape Algorithm OIDs */
+    
     SEC_OID_NETSCAPE_SMIME_KEA = 152,
 
-    /* Skipjack OID -- ### mwelch temporary */
+    
     SEC_OID_FORTEZZA_SKIPJACK = 153,
 
-    /* PKCS 12 V2 oids */
+    
     SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_128_BIT_RC4 = 154,
     SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_40_BIT_RC4 = 155,
     SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_3KEY_TRIPLE_DES_CBC = 156,
@@ -235,31 +235,31 @@ typedef enum {
     SEC_OID_PKCS9_LOCAL_KEY_ID = 172,
     SEC_OID_BOGUS_KEY_USAGE = 173,
 
-    /*Diffe Helman OIDS */
+    
     SEC_OID_X942_DIFFIE_HELMAN_KEY = 174,
 
-    /* Netscape other name types */
-    /* SEC_OID_NETSCAPE_NICKNAME is an otherName field of type IA5String
-     * in the subjectAltName certificate extension.  NSS dropped support
-     * for SEC_OID_NETSCAPE_NICKNAME in NSS 3.13. */
+    
+    
+
+
     SEC_OID_NETSCAPE_NICKNAME = 175,
 
-    /* Cert Server OIDS */
+    
     SEC_OID_NETSCAPE_RECOVERY_REQUEST = 176,
 
-    /* New PSM certificate management OIDs */
+    
     SEC_OID_CERT_RENEWAL_LOCATOR = 177,
     SEC_OID_NS_CERT_EXT_SCOPE_OF_USE = 178,
 
-    /* CMS (RFC2630) OIDs */
+    
     SEC_OID_CMS_EPHEMERAL_STATIC_DIFFIE_HELLMAN = 179,
     SEC_OID_CMS_3DES_KEY_WRAP = 180,
     SEC_OID_CMS_RC2_KEY_WRAP = 181,
 
-    /* SMIME attributes */
+    
     SEC_OID_SMIME_ENCRYPTION_KEY_PREFERENCE = 182,
 
-    /* AES OIDs */
+    
     SEC_OID_AES_128_ECB = 183,
     SEC_OID_AES_128_CBC = 184,
     SEC_OID_AES_192_ECB = 185,
@@ -283,14 +283,14 @@ typedef enum {
     SEC_OID_AES_192_KEY_WRAP = 198,
     SEC_OID_AES_256_KEY_WRAP = 199,
 
-    /* Elliptic Curve Cryptography (ECC) OIDs */
+    
     SEC_OID_ANSIX962_EC_PUBLIC_KEY = 200,
     SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE = 201,
 
 #define SEC_OID_ANSIX962_ECDSA_SIGNATURE_WITH_SHA1_DIGEST \
     SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE
 
-    /* ANSI X9.62 named elliptic curves (prime field) */
+    
     SEC_OID_ANSIX962_EC_PRIME192V1 = 202,
     SEC_OID_ANSIX962_EC_PRIME192V2 = 203,
     SEC_OID_ANSIX962_EC_PRIME192V3 = 204,
@@ -299,7 +299,7 @@ typedef enum {
     SEC_OID_ANSIX962_EC_PRIME239V3 = 207,
     SEC_OID_ANSIX962_EC_PRIME256V1 = 208,
 
-    /* SECG named elliptic curves (prime field) */
+    
     SEC_OID_SECG_EC_SECP112R1 = 209,
     SEC_OID_SECG_EC_SECP112R2 = 210,
     SEC_OID_SECG_EC_SECP128R1 = 211,
@@ -308,15 +308,15 @@ typedef enum {
     SEC_OID_SECG_EC_SECP160R1 = 214,
     SEC_OID_SECG_EC_SECP160R2 = 215,
     SEC_OID_SECG_EC_SECP192K1 = 216,
-    /* SEC_OID_SECG_EC_SECP192R1 is SEC_OID_ANSIX962_EC_PRIME192V1 */
+    
     SEC_OID_SECG_EC_SECP224K1 = 217,
     SEC_OID_SECG_EC_SECP224R1 = 218,
     SEC_OID_SECG_EC_SECP256K1 = 219,
-    /* SEC_OID_SECG_EC_SECP256R1 is SEC_OID_ANSIX962_EC_PRIME256V1 */
+    
     SEC_OID_SECG_EC_SECP384R1 = 220,
     SEC_OID_SECG_EC_SECP521R1 = 221,
 
-    /* ANSI X9.62 named elliptic curves (characteristic two field) */
+    
     SEC_OID_ANSIX962_EC_C2PNB163V1 = 222,
     SEC_OID_ANSIX962_EC_C2PNB163V2 = 223,
     SEC_OID_ANSIX962_EC_C2PNB163V3 = 224,
@@ -338,7 +338,7 @@ typedef enum {
     SEC_OID_ANSIX962_EC_C2PNB368W1 = 240,
     SEC_OID_ANSIX962_EC_C2TNB431R1 = 241,
 
-    /* SECG named elliptic curves (characteristic two field) */
+    
     SEC_OID_SECG_EC_SECT113R1 = 242,
     SEC_OID_SECG_EC_SECT113R2 = 243,
     SEC_OID_SECG_EC_SECT131R1 = 244,
@@ -373,11 +373,11 @@ typedef enum {
     SEC_OID_AVA_HOUSE_IDENTIFIER = 271,
     SEC_OID_AVA_PSEUDONYM = 272,
 
-    /* More OIDs */
+    
     SEC_OID_PKIX_CA_ISSUERS = 273,
     SEC_OID_PKCS9_EXTENSION_REQUEST = 274,
 
-    /* new EC Signature oids */
+    
     SEC_OID_ANSIX962_ECDSA_SIGNATURE_RECOMMENDED_DIGEST = 275,
     SEC_OID_ANSIX962_ECDSA_SIGNATURE_SPECIFIED_DIGEST = 276,
     SEC_OID_ANSIX962_ECDSA_SHA224_SIGNATURE = 277,
@@ -385,7 +385,7 @@ typedef enum {
     SEC_OID_ANSIX962_ECDSA_SHA384_SIGNATURE = 279,
     SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE = 280,
 
-    /* More id-ce and id-pe OIDs from RFC 3280 */
+    
     SEC_OID_X509_HOLD_INSTRUCTION_CODE = 281,
     SEC_OID_X509_DELTA_CRL_INDICATOR = 282,
     SEC_OID_X509_ISSUING_DISTRIBUTION_POINT = 283,
@@ -394,12 +394,12 @@ typedef enum {
     SEC_OID_X509_INHIBIT_ANY_POLICY = 286,
     SEC_OID_X509_SUBJECT_INFO_ACCESS = 287,
 
-    /* Camellia OIDs (RFC3657)*/
+    
     SEC_OID_CAMELLIA_128_CBC = 288,
     SEC_OID_CAMELLIA_192_CBC = 289,
     SEC_OID_CAMELLIA_256_CBC = 290,
 
-    /* PKCS 5 V2 OIDS */
+    
     SEC_OID_PKCS5_PBKDF2 = 291,
     SEC_OID_PKCS5_PBES2 = 292,
     SEC_OID_PKCS5_PBMAC1 = 293,
@@ -434,13 +434,13 @@ typedef enum {
     SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA224_DIGEST = 314,
     SEC_OID_NIST_DSA_SIGNATURE_WITH_SHA256_DIGEST = 315,
 
-    /* Microsoft Trust List Signing
-     * szOID_KP_CTL_USAGE_SIGNING
-     * where KP stands for Key Purpose
-     */
+    
+
+
+
     SEC_OID_MS_EXT_KEY_USAGE_CTL_SIGNING = 316,
 
-    /* The 'name' attribute type in X.520 */
+    
     SEC_OID_AVA_NAME = 317,
 
     SEC_OID_AES_128_GCM = 318,
@@ -448,7 +448,7 @@ typedef enum {
     SEC_OID_AES_256_GCM = 320,
     SEC_OID_IDEA_CBC = 321,
 
-    /* pseudo - OIDs */
+    
 
     SEC_OID_RC2_40_CBC = 322,
     SEC_OID_DES_40_CBC = 323,
@@ -509,7 +509,7 @@ typedef enum {
 #define SEC_OID_SECG_EC_SECP256R1 SEC_OID_ANSIX962_EC_PRIME256V1
 #define SEC_OID_PKCS12_KEY_USAGE SEC_OID_X509_KEY_USAGE
 
-/* fake OID for DSS sign/verify */
+
 #define SEC_OID_SHA SEC_OID_MISS_DSS
 
 typedef enum {
@@ -524,42 +524,43 @@ struct SECOidDataStr {
     const char* desc;
     unsigned long mechanism;
     SECSupportExtenTag supportedExtension;
-    /* only used for x.509 v3 extensions, so
-       that we can print the names of those
-       extensions that we don't even support */
+    
+
+
 };
 
-/* New Opaque extended OID table API.
- * These are algorithm policy Flags, used with functions
- * NSS_SetAlgorithmPolicy & NSS_GetAlgorithmPolicy.
- */
+
+
+
+
 #define NSS_USE_ALG_IN_CERT_SIGNATURE 0x00000001 /* CRLs and OCSP, too */
 #define NSS_USE_ALG_IN_CMS_SIGNATURE 0x00000002  /* used in S/MIME */
 #define NSS_USE_ALG_IN_SSL_KX 0x00000004         /* used in SSL key exchange */
 #define NSS_USE_ALG_IN_SSL 0x00000008            /* used in SSL record protocol */
 #define NSS_USE_POLICY_IN_SSL 0x00000010         /* enable policy in SSL protocol */
-#define NSS_USE_ALG_IN_ANY_SIGNATURE 0x00000020  /* used in S/MIME */
+#define NSS_USE_ALG_IN_ANY_SIGNATURE 0x00000020  /* used in any signature */
+#define NSS_USE_ALG_IN_PKCS12 0x00000040         /* used in pkcs12 */
 #define NSS_USE_DEFAULT_NOT_VALID 0x80000000     /* clear to make the default flag valid */
 #define NSS_USE_DEFAULT_SSL_ENABLE 0x40000000    /* default cipher suite setting 1=enable */
 
-/* Combo policy bites */
+
 #define NSS_USE_ALG_RESERVED 0x3fffffc0 /* may be used in future */
-/* Alias of all the signature values. */
+
 #define NSS_USE_ALG_IN_SIGNATURE (NSS_USE_ALG_IN_CERT_SIGNATURE | \
                                   NSS_USE_ALG_IN_CMS_SIGNATURE |  \
                                   NSS_USE_ALG_IN_ANY_SIGNATURE)
-/* all the bits needed for a certificate signature
- * and only the bits needed for a certificate signature */
+
+
 #define NSS_USE_CERT_SIGNATURE_OK (NSS_USE_ALG_IN_CERT_SIGNATURE | \
                                    NSS_USE_ALG_IN_ANY_SIGNATURE)
-/* all the bits needed for an SMIME signature
- * and only the bits needed for an SMIME signature */
+
+
 #define NSS_USE_CMS_SIGNATURE_OK (NSS_USE_ALG_IN_CMS_SIGNATURE | \
                                   NSS_USE_ALG_IN_ANY_SIGNATURE)
 
-/* Code MUST NOT SET or CLEAR reserved bits, and must NOT depend on them
- * being all zeros or having any other known value.  The reserved bits
- * must be ignored.
- */
 
-#endif /* _SECOIDT_H_ */
+
+
+
+
+#endif 

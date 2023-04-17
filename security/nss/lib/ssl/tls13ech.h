@@ -21,7 +21,7 @@
 
 
 
-#define TLS13_ECH_VERSION 0xfe09
+#define TLS13_ECH_VERSION 0xfe0a
 #define TLS13_ECH_SIGNAL_LEN 8
 
 static const char kHpkeInfoEch[] = "tls ech";
@@ -29,21 +29,21 @@ static const char hHkdfInfoEchConfigID[] = "tls ech config id";
 static const char kHkdfInfoEchConfirm[] = "ech accept confirmation";
 
 struct sslEchConfigContentsStr {
-    char *publicName;
-    SECItem publicKey; 
+    PRUint8 configId;
     HpkeKemId kemId;
+    SECItem publicKey; 
     HpkeKdfId kdfId;
     HpkeAeadId aeadId;
     SECItem suites; 
 
     PRUint16 maxNameLen;
+    char *publicName;
     
 };
 
 struct sslEchConfigStr {
     PRCList link;
     SECItem raw;
-    PRUint8 configId[8];
     PRUint16 version;
     sslEchConfigContents contents;
 };
@@ -51,7 +51,7 @@ struct sslEchConfigStr {
 struct sslEchXtnStateStr {
     SECItem innerCh;          
     SECItem senderPubKey;     
-    SECItem configId;         
+    PRUint8 configId;         
     HpkeKdfId kdfId;          
     HpkeAeadId aeadId;        
     SECItem retryConfigs;     
@@ -60,10 +60,10 @@ struct sslEchXtnStateStr {
 
 };
 
-SECStatus SSLExp_EncodeEchConfig(const char *publicName, const PRUint32 *hpkeSuites,
-                                 unsigned int hpkeSuiteCount, HpkeKemId kemId,
-                                 const SECKEYPublicKey *pubKey, PRUint16 maxNameLen,
-                                 PRUint8 *out, unsigned int *outlen, unsigned int maxlen);
+SECStatus SSLExp_EncodeEchConfigId(PRUint8 configId, const char *publicName, unsigned int maxNameLen,
+                                   HpkeKemId kemId, const SECKEYPublicKey *pubKey,
+                                   const HpkeSymmetricSuite *hpkeSuites, unsigned int hpkeSuiteCount,
+                                   PRUint8 *out, unsigned int *outlen, unsigned int maxlen);
 SECStatus SSLExp_GetEchRetryConfigs(PRFileDesc *fd, SECItem *retryConfigs);
 SECStatus SSLExp_SetClientEchConfigs(PRFileDesc *fd, const PRUint8 *echConfigs,
                                      unsigned int echConfigsLen);

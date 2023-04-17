@@ -26,6 +26,7 @@
 #define SEC_CT_CERTIFICATE_REQUEST "certificate-request"
 #define SEC_CT_CERTIFICATE_ID "certificate-identity"
 #define SEC_CT_PKCS7 "pkcs7"
+#define SEC_CT_PKCS12 "pkcs12"
 #define SEC_CT_CRL "crl"
 #define SEC_CT_NAME "name"
 
@@ -235,10 +236,8 @@ extern void SECU_PrintTrustFlags(FILE *out, CERTCertTrust *trust, char *m,
 extern int SECU_PrintSubjectPublicKeyInfo(FILE *out, SECItem *der, char *m,
                                           int level);
 
-#ifdef HAVE_EPV_TEMPLATE
 
 extern int SECU_PrintPrivateKey(FILE *out, SECItem *der, char *m, int level);
-#endif
 
 
 extern void SECU_PrintRSAPublicKey(FILE *out, SECKEYPublicKey *pk, char *m, int level);
@@ -254,6 +253,7 @@ extern int SECU_PrintFingerprints(FILE *out, SECItem *derCert, char *m,
 extern int SECU_PrintPKCS7ContentInfo(FILE *out, SECItem *der, char *m,
                                       int level);
 
+extern SECStatus SECU_PrintPKCS12(FILE *out, const SECItem *der, char *m, int level);
 
 extern SECStatus SECU_PKCS11Init(PRBool readOnly);
 

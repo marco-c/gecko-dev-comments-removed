@@ -627,10 +627,20 @@ SECKEYPrivateKeyInfo *PK11_ExportPrivateKeyInfo(
     CERTCertificate *cert, void *wincx);
 SECKEYEncryptedPrivateKeyInfo *PK11_ExportEncryptedPrivKeyInfo(
     PK11SlotInfo *slot, SECOidTag algTag, SECItem *pwitem,
-    SECKEYPrivateKey *pk, int iteration, void *wincx);
+    SECKEYPrivateKey *pk, int iteration, void *pwArg);
 SECKEYEncryptedPrivateKeyInfo *PK11_ExportEncryptedPrivateKeyInfo(
     PK11SlotInfo *slot, SECOidTag algTag, SECItem *pwitem,
-    CERTCertificate *cert, int iteration, void *wincx);
+    CERTCertificate *cert, int iteration, void *pwArg);
+
+
+
+
+SECKEYEncryptedPrivateKeyInfo *PK11_ExportEncryptedPrivKeyInfoV2(
+    PK11SlotInfo *slot, SECOidTag pbeTag, SECOidTag encTag, SECOidTag prfTag,
+    SECItem *pwitem, SECKEYPrivateKey *pk, int iteration, void *pwArg);
+SECKEYEncryptedPrivateKeyInfo *PK11_ExportEncryptedPrivateKeyInfoV2(
+    PK11SlotInfo *slot, SECOidTag pbeTag, SECOidTag encTag, SECOidTag prfTag,
+    SECItem *pwitem, CERTCertificate *cert, int iteration, void *pwArg);
 SECKEYPrivateKey *PK11_FindKeyByDERCert(PK11SlotInfo *slot,
                                         CERTCertificate *cert, void *wincx);
 SECKEYPublicKey *PK11_MakeKEAPubKey(unsigned char *data, int length);
@@ -726,12 +736,6 @@ CK_BBOOL PK11_HasAttributeSet(PK11SlotInfo *slot,
                               CK_OBJECT_HANDLE id,
                               CK_ATTRIBUTE_TYPE type,
                               PRBool haslock );
-
-
-
-
-
-
 
 
 

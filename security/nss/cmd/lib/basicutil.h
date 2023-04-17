@@ -54,10 +54,8 @@ extern void SECU_PrintAsHex(FILE *out, const SECItem *i, const char *m,
 
 extern void SECU_PrintBuf(FILE *out, const char *msg, const void *vp, int len);
 
-#ifdef HAVE_EPV_TEMPLATE
 
 extern int SECU_PrintPrivateKey(FILE *out, SECItem *der, char *m, int level);
-#endif
 
 
 extern SECStatus SECU_PKCS11Init(PRBool readOnly);

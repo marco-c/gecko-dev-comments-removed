@@ -63,20 +63,23 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
     }
 
     if (ss->xtnData.ech) {
+        
+        rv = sslBuffer_AppendNumber(&cookieBuf, PR_TRUE, 1);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+
+        rv = sslBuffer_AppendNumber(&cookieBuf, ss->xtnData.ech->configId,
+                                    1);
+        if (rv != SECSuccess) {
+            return SECFailure;
+        }
+
         rv = sslBuffer_AppendNumber(&cookieBuf, ss->xtnData.ech->kdfId, 2);
         if (rv != SECSuccess) {
             return SECFailure;
         }
         rv = sslBuffer_AppendNumber(&cookieBuf, ss->xtnData.ech->aeadId, 2);
-        if (rv != SECSuccess) {
-            return SECFailure;
-        }
-
-        
-
-        PORT_Assert(ss->xtnData.ech->configId.len == 8);
-        rv = sslBuffer_AppendVariable(&cookieBuf, ss->xtnData.ech->configId.data,
-                                      ss->xtnData.ech->configId.len, 1);
         if (rv != SECSuccess) {
             return SECFailure;
         }
@@ -97,7 +100,7 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
             return SECFailure;
         }
     } else {
-        rv = sslBuffer_AppendNumber(&cookieBuf, 0, 7);
+        rv = sslBuffer_AppendNumber(&cookieBuf, PR_FALSE, 1);
         if (rv != SECSuccess) {
             return SECFailure;
         }
@@ -133,6 +136,8 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
 
 
 
+
+
 SECStatus
 tls13_HandleHrrCookie(sslSocket *ss,
                       unsigned char *cookie, unsigned int cookieLen,
@@ -141,7 +146,7 @@ tls13_HandleHrrCookie(sslSocket *ss,
                       PRBool *previousEchOffered,
                       HpkeKdfId *previousEchKdfId,
                       HpkeAeadId *previousEchAeadId,
-                      SECItem *previousEchConfigId,
+                      PRUint8 *previousEchConfigId,
                       HpkeContext **previousEchHpkeCtx,
                       PRBool recoverState)
 {
@@ -150,12 +155,13 @@ tls13_HandleHrrCookie(sslSocket *ss,
     unsigned int plaintextLen = 0;
     sslBuffer messageBuf = SSL_BUFFER_EMPTY;
     sslReadBuffer echHpkeBuf = { 0 };
-    sslReadBuffer echConfigIdBuf = { 0 };
+    PRBool receivedEch;
+    PRUint8 echConfigId = 0;
     PRUint64 sentinel;
     PRUint64 cipherSuite;
     HpkeContext *hpkeContext = NULL;
-    HpkeKdfId echKdfId;
-    HpkeAeadId echAeadId;
+    HpkeKdfId echKdfId = 0;
+    HpkeAeadId echAeadId = 0;
     PRUint64 group;
     PRUint64 tmp64;
     const sslNamedGroupDef *selectedGroup;
@@ -191,30 +197,53 @@ tls13_HandleHrrCookie(sslSocket *ss,
     selectedGroup = ssl_LookupNamedGroup(group);
 
     
-    rv = sslRead_ReadNumber(&reader, 2, &tmp64);
+    rv = sslRead_ReadNumber(&reader, 1, &tmp64);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
         return SECFailure;
     }
-    echKdfId = (HpkeKdfId)tmp64;
+    receivedEch = tmp64 == PR_TRUE;
 
-    rv = sslRead_ReadNumber(&reader, 2, &tmp64);
-    if (rv != SECSuccess) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
-        return SECFailure;
-    }
-    echAeadId = (HpkeAeadId)tmp64;
+    if (receivedEch) {
+        
+        rv = sslRead_ReadNumber(&reader, 1, &tmp64);
+        if (rv != SECSuccess) {
+            FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+            return SECFailure;
+        }
+        echConfigId = tmp64;
 
-    
-    rv = sslRead_ReadVariable(&reader, 1, &echConfigIdBuf);
-    if (rv != SECSuccess) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
-        return SECFailure;
-    }
-    rv = sslRead_ReadVariable(&reader, 2, &echHpkeBuf);
-    if (rv != SECSuccess) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
-        return SECFailure;
+        
+        rv = sslRead_ReadNumber(&reader, 2, &tmp64);
+        if (rv != SECSuccess) {
+            FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+            return SECFailure;
+        }
+        echKdfId = (HpkeKdfId)tmp64;
+
+        rv = sslRead_ReadNumber(&reader, 2, &tmp64);
+        if (rv != SECSuccess) {
+            FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+            return SECFailure;
+        }
+        echAeadId = (HpkeAeadId)tmp64;
+
+        
+        rv = sslRead_ReadVariable(&reader, 2, &echHpkeBuf);
+        if (rv != SECSuccess) {
+            FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
+            return SECFailure;
+        }
+
+        if (previousEchHpkeCtx && echHpkeBuf.len) {
+            const SECItem hpkeItem = { siBuffer, CONST_CAST(unsigned char, echHpkeBuf.buf),
+                                       echHpkeBuf.len };
+            hpkeContext = PK11_HPKE_ImportContext(&hpkeItem, NULL);
+            if (!hpkeContext) {
+                FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
+                return SECFailure;
+            }
+        }
     }
 
     
@@ -276,36 +305,6 @@ tls13_HandleHrrCookie(sslSocket *ss,
         }
     }
 
-    if (previousEchHpkeCtx && echHpkeBuf.len) {
-        const SECItem hpkeItem = { siBuffer, CONST_CAST(unsigned char, echHpkeBuf.buf),
-                                   echHpkeBuf.len };
-        hpkeContext = PK11_HPKE_ImportContext(&hpkeItem, NULL);
-        if (!hpkeContext) {
-            FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
-            return SECFailure;
-        }
-    }
-
-    if (previousEchConfigId && echConfigIdBuf.len) {
-        SECItem tmp = { siBuffer, NULL, 0 };
-        rv = SECITEM_MakeItem(NULL, &tmp, echConfigIdBuf.buf, echConfigIdBuf.len);
-        if (rv != SECSuccess) {
-            PK11_HPKE_DestroyContext(hpkeContext, PR_TRUE);
-            FATAL_ERROR(ss, PORT_GetError(), internal_error);
-            return SECFailure;
-        }
-        *previousEchConfigId = tmp;
-    }
-
-    if (previousEchKdfId) {
-        *previousEchKdfId = echKdfId;
-    }
-    if (previousEchAeadId) {
-        *previousEchAeadId = echAeadId;
-    }
-    if (previousEchHpkeCtx) {
-        *previousEchHpkeCtx = hpkeContext;
-    }
     if (previousCipherSuite) {
         *previousCipherSuite = cipherSuite;
     }
@@ -313,7 +312,21 @@ tls13_HandleHrrCookie(sslSocket *ss,
         *previousGroup = selectedGroup;
     }
     if (previousEchOffered) {
-        *previousEchOffered = echConfigIdBuf.len > 0;
+        *previousEchOffered = receivedEch;
+    }
+    if (receivedEch) {
+        if (previousEchConfigId) {
+            *previousEchConfigId = echConfigId;
+        }
+        if (previousEchKdfId) {
+            *previousEchKdfId = echKdfId;
+        }
+        if (previousEchAeadId) {
+            *previousEchAeadId = echAeadId;
+        }
+        if (previousEchHpkeCtx) {
+            *previousEchHpkeCtx = hpkeContext;
+        }
     }
     return SECSuccess;
 }
