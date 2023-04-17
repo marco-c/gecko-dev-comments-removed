@@ -227,8 +227,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   NameLocation lookupName(TaggedParserAtomIndex name);
 
   
-  NameLocation lookupPrivate(TaggedParserAtomIndex name,
-                             mozilla::Maybe<NameLocation>& brandLoc);
+  bool lookupPrivate(TaggedParserAtomIndex name, NameLocation& loc,
+                     mozilla::Maybe<NameLocation>& brandLoc);
 
   
   
