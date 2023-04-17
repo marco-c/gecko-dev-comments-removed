@@ -572,9 +572,7 @@ function TargetMixin(parentClass) {
       
       
       
-      const isAttached =
-        this.getTrait("supportsThreadActorIsAttached") &&
-        (await this.threadFront.isAttached());
+      const isAttached = await this.threadFront.isAttached();
 
       const isDestroyed =
         this.isDestroyedOrBeingDestroyed() || this.threadFront.isDestroyed();
