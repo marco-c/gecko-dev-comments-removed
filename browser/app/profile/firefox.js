@@ -179,12 +179,7 @@ pref("app.update.langpack.enabled", true);
   
   
   
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
-  pref("app.update.background.scheduling.enabled", true);
-  pref("app.update.background.experimental", true);
-#else
   pref("app.update.background.scheduling.enabled", false);
-#endif
   
   pref("app.update.background.interval", 25200);
 #endif
