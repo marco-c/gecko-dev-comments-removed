@@ -1,16 +1,10 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>File constructor</title>
-<link rel=help href="http://dev.w3.org/2006/webapi/FileAPI/#dfn-file">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<div id="log"></div>
-<script>
+
+
 const to_string_obj = { toString: () => 'a string' };
 const to_string_throws = { toString: () => { throw new Error('expected'); } };
 
 test(function() {
-  assert_true("File" in window, "window should have a File property.");
+  assert_true("File" in globalThis, "globalThis should have a File property.");
 }, "File interface object exists");
 
 test(t => {
@@ -27,7 +21,7 @@ function test_first_argument(arg1, expectedSize, testName) {
     assert_equals(file.name, "dummy");
     assert_equals(file.size, expectedSize);
     assert_equals(file.type, "");
-    // assert_false(file.isClosed); XXX: File.isClosed doesn't seem to be implemented
+    
     assert_not_equals(file.lastModified, "");
   }, testName);
 }
@@ -46,8 +40,8 @@ test_first_argument(["bits", new Blob(["bits"]), new Blob(), new Uint8Array([0x5
                      new Uint16Array([0x5353]), new Uint32Array([0x53534150])], 16, "Various fileBits");
 test_first_argument([12], 2, "Number in fileBits");
 test_first_argument([[1,2,3]], 5, "Array in fileBits");
-test_first_argument([{}], 15, "Object in fileBits"); // "[object Object]"
-test_first_argument([document.body], 24, "HTMLBodyElement in fileBits"); // "[object HTMLBodyElement]"
+test_first_argument([{}], 15, "Object in fileBits"); 
+test_first_argument([document.body], 24, "HTMLBodyElement in fileBits"); 
 test_first_argument([to_string_obj], 8, "Object with toString in fileBits");
 test_first_argument({[Symbol.iterator]() {
   let i = 0;
@@ -91,7 +85,7 @@ test_second_argument(1, "1", "Using number fileName");
 test_second_argument('', '', "Using empty string fileName");
 test_second_argument(document.body, '[object HTMLBodyElement]', "Using object fileName");
 
-// testing the third argument
+
 [
   {type: 'text/plain', expected: 'text/plain'},
   {type: 'text/plain;charset=UTF-8', expected: 'text/plain;charset=utf-8'},
@@ -155,5 +149,3 @@ test(t => {
                    () => new File(['bits'], 'name.txt', {type: to_string_throws}),
                    'Constructor should propagate exceptions');
 }, 'Property bag propagates exceptions');
-
-</script>
