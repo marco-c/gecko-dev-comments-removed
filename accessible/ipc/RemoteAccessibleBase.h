@@ -164,7 +164,14 @@ class RemoteAccessibleBase : public Accessible {
     return HasGenericType(eNumericValue);
   }
 
+  
+
   virtual ENameValueFlag Name(nsString& aName) const override;
+
+  virtual double CurValue() const override;
+  virtual double MinValue() const override;
+  virtual double MaxValue() const override;
+  virtual double Step() const override;
 
   
 
