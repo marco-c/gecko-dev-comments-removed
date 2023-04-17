@@ -483,12 +483,30 @@ JSHolderMap::Entry::Entry(void* aHolder, nsScriptObjectTracer* aTracer,
 {
 }
 
+void JSHolderMap::EntryVectorIter::Settle() {
+  if (Done()) {
+    return;
+  }
+
+  Entry* entry = &mIter.Get();
+
+  
+  if (!entry->mHolder && !mHolderMap.RemoveEntry(mVector, entry)) {
+    
+    mIter = EntryVector().Iter();
+    MOZ_ASSERT(Done());
+  }
+}
+
 JSHolderMap::JSHolderMap() : mJSHolderMap(256) {}
 
 template <typename F>
 inline void JSHolderMap::ForEach(F&& f, WhichHolders aWhich) {
   
-  ForEach(mAnyZoneJSHolders, f, nullptr);
+  for (EntryVectorIter entry(*this, mAnyZoneJSHolders); !entry.Done();
+       entry.Next()) {
+    f(entry->mHolder, entry->mTracer, nullptr);
+  }
 
   for (auto i = mPerZoneJSHolders.modIter(); !i.done(); i.next()) {
     if (aWhich == HoldersInGrayMarkingZones &&
@@ -496,27 +514,16 @@ inline void JSHolderMap::ForEach(F&& f, WhichHolders aWhich) {
       continue;
     }
 
+    JS::Zone* zone = i.get().key();
     EntryVector* holders = i.get().value().get();
-    ForEach(*holders, f, i.get().key());
+    for (EntryVectorIter entry(*this, *holders); !entry.Done(); entry.Next()) {
+      MOZ_ASSERT(entry->mZone == zone);
+      f(entry->mHolder, entry->mTracer, zone);
+    }
+
     if (holders->IsEmpty()) {
       i.remove();
     }
-  }
-}
-
-template <typename F>
-inline void JSHolderMap::ForEach(EntryVector& aJSHolders, const F& f,
-                                 JS::Zone* aZone) {
-  for (auto iter = aJSHolders.Iter(); !iter.Done(); iter.Next()) {
-    Entry* entry = &iter.Get();
-
-    
-    if (!entry->mHolder && !RemoveEntry(aJSHolders, entry)) {
-      break;  
-    }
-
-    MOZ_ASSERT_IF(aZone, entry->mZone == aZone);
-    f(entry->mHolder, entry->mTracer, aZone);
   }
 }
 
