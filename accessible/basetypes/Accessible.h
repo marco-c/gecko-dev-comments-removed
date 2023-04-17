@@ -149,6 +149,11 @@ class Accessible {
 
   
 
+
+  virtual uint64_t State() = 0;
+
+  
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }

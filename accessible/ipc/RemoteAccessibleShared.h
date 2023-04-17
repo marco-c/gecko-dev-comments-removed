@@ -15,7 +15,7 @@
 
 
 
-uint64_t State() const;
+virtual uint64_t State() override;
 
 
 

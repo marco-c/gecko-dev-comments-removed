@@ -195,10 +195,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual mozilla::a11y::role NativeRole() const;
 
-  
-
-
-  virtual uint64_t State();
+  virtual uint64_t State() override;
 
   
 
