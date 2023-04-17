@@ -264,7 +264,7 @@ nsresult mozInlineSpellWordUtil::SetPositionAndEnd(nsINode* aPositionNode,
 
 nsresult mozInlineSpellWordUtil::EnsureWords() {
   if (mSoftText.mIsValid) return NS_OK;
-  AdjustSoftBeginAndBuildSoftText();
+  mSoftText.AdjustBeginAndBuildText(mRootNode);
 
   mRealWords.Clear();
   Result<RealWords, nsresult> realWords = BuildRealWords();
@@ -765,19 +765,20 @@ void mozInlineSpellWordUtil::NormalizeWord(nsAString& aWord) {
   aWord = result;
 }
 
-void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
+void mozInlineSpellWordUtil::SoftText::AdjustBeginAndBuildText(
+    const nsINode* aRootNode) {
   MOZ_LOG(sInlineSpellWordUtilLog, LogLevel::Debug, ("%s", __FUNCTION__));
 
   
   
   
   
-  nsINode* node = mSoftText.mBegin.mNode;
+  nsINode* node = mBegin.mNode;
   int32_t firstOffsetInNode = 0;
-  int32_t checkBeforeOffset = mSoftText.mBegin.mOffset;
+  int32_t checkBeforeOffset = mBegin.mOffset;
   while (node) {
     if (ContainsDOMWordSeparator(node, checkBeforeOffset, &firstOffsetInNode)) {
-      if (node == mSoftText.mBegin.mNode) {
+      if (node == mBegin.mNode) {
         
         
         if (firstOffsetInNode > 0) {
@@ -795,7 +796,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
                                         &newOffset)) {
             nsIContent* prevNode = node->GetPreviousSibling();
             while (prevNode && IsSpellCheckingTextNode(prevNode)) {
-              mSoftText.mBegin.mNode = prevNode;
+              mBegin.mNode = prevNode;
               const Maybe<int32_t> separatorOffset =
                   FindOffsetOfLastDOMWordSeparatorSequence(prevNode, INT32_MAX);
               if (separatorOffset) {
@@ -810,7 +811,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
           firstOffsetInNode = 0;
         }
 
-        mSoftText.mBegin.mOffset = firstOffsetInNode;
+        mBegin.mOffset = firstOffsetInNode;
       }
       break;
     }
@@ -822,22 +823,22 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
       break;
     }
     
-    if (!node->IsInclusiveDescendantOf(mRootNode)) {
+    if (!node->IsInclusiveDescendantOf(aRootNode)) {
       break;
     }
-    node = node->GetPreviousContent(mRootNode);
+    node = node->GetPreviousContent(aRootNode);
   }
 
   
   
   
-  mSoftText.mValue.Truncate();
-  mSoftText.mDOMMapping.Clear();
+  mValue.Truncate();
+  mDOMMapping.Clear();
   bool seenSoftEnd = false;
   
   
   while (node) {
-    if (node == mSoftText.mEnd.mNode) {
+    if (node == mEnd.mNode) {
       seenSoftEnd = true;
     }
 
@@ -851,8 +852,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
 
       if (seenSoftEnd) {
         
-        for (int32_t i = node == mSoftText.mEnd.mNode ? mSoftText.mEnd.mOffset
-                                                      : 0;
+        for (int32_t i = node == mEnd.mNode ? mEnd.mOffset : 0;
              i < int32_t(textFragment->GetLength()); ++i) {
           if (IsDOMWordSeparator(textFragment->CharAt(i))) {
             exit = true;
@@ -865,15 +865,14 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
 
       if (firstOffsetInNode < lastOffsetInNode) {
         int32_t len = lastOffsetInNode - firstOffsetInNode;
-        mSoftText.mDOMMapping.AppendElement(
-            DOMTextMapping(NodeOffset(node, firstOffsetInNode),
-                           mSoftText.mValue.Length(), len));
+        mDOMMapping.AppendElement(DOMTextMapping(
+            NodeOffset(node, firstOffsetInNode), mValue.Length(), len));
 
-        bool ok = textFragment->AppendTo(mSoftText.mValue, firstOffsetInNode,
-                                         len, mozilla::fallible);
+        bool ok = textFragment->AppendTo(mValue, firstOffsetInNode, len,
+                                         mozilla::fallible);
         if (!ok) {
           
-          mSoftText.mDOMMapping.RemoveLastElement();
+          mDOMMapping.RemoveLastElement();
           exit = true;
         }
       }
@@ -884,19 +883,19 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
     if (exit) break;
 
     CheckLeavingBreakElementClosure closure = {false};
-    node = FindNextNode(node, mRootNode, CheckLeavingBreakElement, &closure);
+    node = FindNextNode(node, aRootNode, CheckLeavingBreakElement, &closure);
     if (closure.mLeftBreakElement || (node && IsBreakElement(node))) {
       
       
       if (seenSoftEnd) break;
       
-      mSoftText.mValue.Append(' ');
+      mValue.Append(' ');
     }
   }
 
   MOZ_LOG(sInlineSpellWordUtilLog, LogLevel::Debug,
           ("%s: got DOM string: %s", __FUNCTION__,
-           NS_ConvertUTF16toUTF8(mSoftText.mValue).get()));
+           NS_ConvertUTF16toUTF8(mValue).get()));
 }
 
 auto mozInlineSpellWordUtil::BuildRealWords() const
