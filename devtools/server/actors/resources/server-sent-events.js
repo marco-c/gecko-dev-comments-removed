@@ -81,6 +81,13 @@ class ServerSentEventWatcher {
   stopListening(innerWindowId) {
     if (this.windowIds.has(innerWindowId)) {
       this.windowIds.delete(innerWindowId);
+      
+      if (!eventSourceEventService.hasListenerFor(innerWindowId)) {
+        console.warn(
+          "Already stopped listening to server sent events for this window."
+        );
+        return;
+      }
       eventSourceEventService.removeListener(innerWindowId, this);
     }
   }
