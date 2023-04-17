@@ -3039,6 +3039,12 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
                               : "no_https_rr"_ns,
                           mHTTPSRRQueryStart, TimeStamp::Now());
     }
+
+    
+    
+    if (!mHTTPSSVCRecord) {
+      gHttpHandler->ConnMgr()->ProcessPendingQ(mConnInfo);
+    }
   });
 
   nsCOMPtr<nsIDNSHTTPSSVCRecord> record = aHTTPSSVCRecord;
