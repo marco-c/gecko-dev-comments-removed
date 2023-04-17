@@ -1100,9 +1100,7 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
   
   TopLevelEditSubActionDataRef().mDidDeleteSelection = true;
 
-  
-  
-  if (mPaddingBRElementForEmptyEditor) {
+  if (IsEmpty()) {
     return EditActionCanceled();
   }
 
@@ -1400,9 +1398,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::Run(
   mOriginalDirectionAndAmount = aDirectionAndAmount;
   mOriginalStripWrappers = aStripWrappers;
 
-  
-  
-  if (aHTMLEditor.mPaddingBRElementForEmptyEditor) {
+  if (aHTMLEditor.IsEmpty()) {
     return EditActionCanceled();
   }
 
