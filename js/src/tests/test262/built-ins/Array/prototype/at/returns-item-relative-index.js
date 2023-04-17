@@ -19,7 +19,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.at, 'function');
 
 let a = [1, 2, 3, 4, ,5];

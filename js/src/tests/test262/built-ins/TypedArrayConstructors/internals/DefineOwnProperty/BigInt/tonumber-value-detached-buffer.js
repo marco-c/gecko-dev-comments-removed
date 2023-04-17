@@ -51,8 +51,8 @@ testWithBigIntTypedArrayConstructors(function(TA) {
 
   assert.sameValue(
     Reflect.defineProperty(ta, 0, desc),
-    false,
-    'Reflect.defineProperty(ta, 0, {value: {valueOf() {$DETACHBUFFER(ta.buffer); return 42n;}}}) must return false'
+    true,
+    'Reflect.defineProperty(ta, 0, {value: {valueOf() {$DETACHBUFFER(ta.buffer); return 42n;}}}) must return true'
   );
 
   assert.sameValue(ta[0], undefined, 'The value of ta[0] is expected to equal `undefined`');

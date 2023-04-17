@@ -33,8 +33,9 @@
 
 
 
+
 $DONOTEVALUATE();
 
 do {
-  import('', '');
+  import('./empty_FIXTURE.js', {}, '');
 } while (false);

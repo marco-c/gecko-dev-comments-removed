@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.at, 'function');
 
 let valueOfCallCount = 0;

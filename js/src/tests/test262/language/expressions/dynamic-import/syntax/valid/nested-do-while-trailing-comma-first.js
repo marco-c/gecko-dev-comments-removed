@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+do {
+  import('./empty_FIXTURE.js',);
+} while (false);
+
+reportCompare(0, 0);

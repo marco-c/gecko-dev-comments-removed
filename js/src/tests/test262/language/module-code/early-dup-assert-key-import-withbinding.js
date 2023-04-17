@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+import x from './import-assertion-1_FIXTURE.js' assert {
+  test262_a: '',
+  test262_b: '',
+  'test262_\u0061': ''
+};

@@ -33,8 +33,9 @@
 
 
 
+
 $DONOTEVALUATE();
 
 label: {
-  import('', '');
+  import('./empty_FIXTURE.js', {}, '');
 };

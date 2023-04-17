@@ -10,7 +10,6 @@
 
 
 
-
 assert.sameValue(typeof String.prototype.at, 'function');
 
 let s = "";

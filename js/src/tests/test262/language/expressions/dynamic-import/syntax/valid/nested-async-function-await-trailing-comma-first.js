@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function f() {
+  await import('./empty_FIXTURE.js',);
+}
+
+reportCompare(0, 0);

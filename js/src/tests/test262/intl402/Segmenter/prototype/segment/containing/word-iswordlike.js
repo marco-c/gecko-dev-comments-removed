@@ -18,6 +18,7 @@
 
 
 
+
 const inputs = [
     "Hello world!", 
     "Jedovatou mambu objevila žena v zahrádkářské kolonii.", 
@@ -49,6 +50,8 @@ inputs.forEach(function(input) {
     assert.sameValue("string", typeof result.input, msg + "input");
     assert.sameValue("boolean", typeof result.isWordLike,
         msg + "isWordLike should be boolean");
+    assert.compareArray(Object.getOwnPropertyNames(result),
+      ["segment", "index", "input", "isWordLike"]);
   }
 });
 

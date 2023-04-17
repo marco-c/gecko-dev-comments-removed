@@ -17,6 +17,7 @@
 
 
 
+
 const other_granularities = [undefined, "grapheme", "sentence"];
 
 const inputs = [
@@ -50,6 +51,7 @@ other_granularities.forEach(
           assert.sameValue("string", typeof result.input, `${msg} input`);
           assert.sameValue(undefined, result.isWordLike,
               `${msg} isWordLike should be undefined`);
+          assert.compareArray(Object.getOwnPropertyNames(result), ["segment", "index", "input"]);
         }
       });
     });

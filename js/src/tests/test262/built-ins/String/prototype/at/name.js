@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof String.prototype.at, 'function');
 
 assert.sameValue(

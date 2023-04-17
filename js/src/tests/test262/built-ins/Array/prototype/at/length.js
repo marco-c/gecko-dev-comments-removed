@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof Array.prototype.at, 'function');
 
 assert.sameValue(

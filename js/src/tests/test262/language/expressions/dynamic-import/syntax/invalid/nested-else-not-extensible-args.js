@@ -33,10 +33,11 @@
 
 
 
+
 $DONOTEVALUATE();
 
 if (false) {
 
 } else {
-  import('', '');
+  import('./empty_FIXTURE.js', {}, '');
 }
