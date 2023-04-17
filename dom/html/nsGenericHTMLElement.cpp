@@ -1856,7 +1856,7 @@ nsresult nsGenericHTMLFormElement::AfterSetAttr(
 }
 
 void nsGenericHTMLFormElement::ForgetFieldSet(nsIContent* aFieldset) {
-  if (GetFieldSetInternal() == aFieldset) {
+  if (IsFormAssociatedElement() && GetFieldSetInternal() == aFieldset) {
     SetFieldSetInternal(nullptr);
   }
 }
@@ -2034,7 +2034,7 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 
 void nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify) {
   if (IsInNativeAnonymousSubtree() || !IsFormAssociatedElement()) {
-    MOZ_ASSERT(!GetFieldSetInternal());
+    MOZ_ASSERT_IF(IsFormAssociatedElement(), !GetFieldSetInternal());
     return;
   }
 
@@ -2988,83 +2988,18 @@ void nsGenericHTMLElement::SetInnerText(const nsAString& aValue) {
   mb.NodesAdded();
 }
 
-
 already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(
     ErrorResult& aRv) {
-  CustomElementData* ceData = GetCustomElementData();
-
-  
-  
-  nsAtom* isAtom = ceData ? ceData->GetIs(this) : nullptr;
-  nsAtom* nameAtom = NodeInfo()->NameAtom();
-  if (isAtom) {
-    aRv.ThrowNotSupportedError(nsPrintfCString(
-        "Cannot attach ElementInternals to a customized built-in element "
-        "'%s'",
-        NS_ConvertUTF16toUTF8(isAtom->GetUTF16String()).get()));
-    return nullptr;
-  }
-
   
   
   
-  CustomElementDefinition* definition = nullptr;
-  if (ceData) {
-    definition = ceData->GetCustomElementDefinition();
-
-    
-    
-    if (!definition) {
-      definition = nsContentUtils::LookupCustomElementDefinition(
-          NodeInfo()->GetDocument(), nameAtom, NodeInfo()->NamespaceID(),
-          ceData->GetCustomElementType());
-    }
-  }
-
   
-  if (!definition) {
-    aRv.ThrowNotSupportedError(nsPrintfCString(
-        "Cannot attach ElementInternals to a non-custom element '%s'",
-        NS_ConvertUTF16toUTF8(nameAtom->GetUTF16String()).get()));
-    return nullptr;
-  }
-
-  
-  
-  if (definition->mDisableInternals) {
-    aRv.ThrowNotSupportedError(nsPrintfCString(
-        "AttachInternal() to '%s' is disabled by disabledFeatures",
-        NS_ConvertUTF16toUTF8(nameAtom->GetUTF16String()).get()));
-    return nullptr;
-  }
-
-  
-  
-  MOZ_ASSERT(ceData);
-
-  
-  
-  if (ceData->HasAttachedInternals()) {
-    aRv.ThrowNotSupportedError(nsPrintfCString(
-        "AttachInternals() has already been called from '%s'",
-        NS_ConvertUTF16toUTF8(nameAtom->GetUTF16String()).get()));
-    return nullptr;
-  }
-
-  
-  
-  if (ceData->mState != CustomElementData::State::ePrecustomized &&
-      ceData->mState != CustomElementData::State::eCustom) {
-    aRv.ThrowNotSupportedError(
-        R"(Custom element state is not "precustomized" or "custom".)");
-    return nullptr;
-  }
-
-  
-  ceData->AttachedInternals();
-
-  
-  return MakeAndAddRef<ElementInternals>(this);
+  aRv.ThrowNotSupportedError(nsPrintfCString(
+      "Cannot attach ElementInternals to a customized built-in or non-custom "
+      "element "
+      "'%s'",
+      NS_ConvertUTF16toUTF8(NodeInfo()->NameAtom()->GetUTF16String()).get()));
+  return nullptr;
 }
 
 void nsGenericHTMLElement::GetAutocapitalize(nsAString& aValue) const {

@@ -259,7 +259,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   }
 
   
-  already_AddRefed<mozilla::dom::ElementInternals> AttachInternals(
+  virtual already_AddRefed<mozilla::dom::ElementInternals> AttachInternals(
       ErrorResult& aRv);
 
   

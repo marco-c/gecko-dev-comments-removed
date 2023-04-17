@@ -57,6 +57,7 @@ bool HTMLFormControlsCollection::ShouldBeInElements(
     case FormControlType::Fieldset:
     case FormControlType::Object:
     case FormControlType::Output:
+    case FormControlType::FormAssociatedCustomElement:
       return true;
 
     
