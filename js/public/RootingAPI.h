@@ -114,12 +114,10 @@
 
 namespace js {
 
-
-
-template <typename T, typename Enable = void>
+template <typename T>
 struct BarrierMethods {};
 
-template <typename Element, typename Wrapper, typename Enable = void>
+template <typename Element, typename Wrapper>
 class WrappedPtrOperations {};
 
 template <typename Element, typename Wrapper>
@@ -141,20 +139,18 @@ class HeapOperations : public MutableWrappedPtrOperations<T, Wrapper> {};
 
 
 
-
-
-
-template <typename T, typename Enable = void>
-struct IsHeapConstructibleType : public std::false_type {};
-
-#define JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE(T) \
-  template <>                                    \
-  struct IsHeapConstructibleType<T> : public std::true_type {};
-JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
-JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
-
-
-
+template <typename T>
+struct IsHeapConstructibleType {
+  static constexpr bool value = false;
+};
+#define DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE(T) \
+  template <>                                 \
+  struct IsHeapConstructibleType<T> {         \
+    static constexpr bool value = true;       \
+  };
+JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+#undef DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE
 
 namespace gc {
 struct Cell;
@@ -220,38 +216,34 @@ JS_PUBLIC_API void HeapScriptWriteBarriers(JSScript** objp, JSScript* prev,
 
 
 
-
-
-template <typename T, typename Enable = void>
-struct SafelyInitialized {
-  static T create() {
-    
-    
-    
+template <typename T>
+inline T SafelyInitialized() {
+  
+  
+  
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || \
     (defined(XP_UNIX) && !defined(__clang__))
 
-    
-    
-    constexpr bool IsPointer = std::is_pointer_v<T>;
+  
+  
+  constexpr bool IsPointer = std::is_pointer_v<T>;
 
-    
-    
-    
-    
-    constexpr bool IsNonTriviallyDefaultConstructibleClassOrUnion =
-        (std::is_class_v<T> ||
-         std::is_union_v<T>)&&!std::is_trivially_default_constructible_v<T>;
+  
+  
+  
+  
+  constexpr bool IsNonTriviallyDefaultConstructibleClassOrUnion =
+      (std::is_class_v<T> ||
+       std::is_union_v<T>)&&!std::is_trivially_default_constructible_v<T>;
 
-    static_assert(IsPointer || IsNonTriviallyDefaultConstructibleClassOrUnion,
-                  "T() must evaluate to a safely-initialized T");
+  static_assert(IsPointer || IsNonTriviallyDefaultConstructibleClassOrUnion,
+                "T() must evaluate to a safely-initialized T");
 
 #endif
 
-    return T();
-  }
-};
+  return T();
+}
 
 #ifdef JS_DEBUG
 
@@ -307,14 +299,12 @@ class MOZ_NON_MEMMOVABLE Heap : public js::HeapOperations<T, Heap<T>> {
  public:
   using ElementType = T;
 
-  Heap() : ptr(SafelyInitialized<T>::create()) {
+  Heap() : ptr(SafelyInitialized<T>()) {
     
     static_assert(sizeof(T) == sizeof(Heap<T>),
                   "Heap<T> must be binary compatible with T.");
   }
-  explicit Heap(const T& p) : ptr(p) {
-    postWriteBarrier(SafelyInitialized<T>::create(), ptr);
-  }
+  explicit Heap(const T& p) { init(p); }
 
   
 
@@ -322,20 +312,16 @@ class MOZ_NON_MEMMOVABLE Heap : public js::HeapOperations<T, Heap<T>> {
 
 
 
-  explicit Heap(const Heap<T>& other) : ptr(other.getWithoutExpose()) {
-    postWriteBarrier(SafelyInitialized<T>::create(), ptr);
-  }
-  Heap(Heap<T>&& other) : ptr(other.getWithoutExpose()) {
-    postWriteBarrier(SafelyInitialized<T>::create(), ptr);
-  }
+  explicit Heap(const Heap<T>& other) { init(other.getWithoutExpose()); }
+  Heap(Heap<T>&& other) { init(other.getWithoutExpose()); }
 
   Heap& operator=(Heap<T>&& other) {
     set(other.getWithoutExpose());
-    other.set(SafelyInitialized<T>::create());
+    other.set(SafelyInitialized<T>());
     return *this;
   }
 
-  ~Heap() { postWriteBarrier(ptr, SafelyInitialized<T>::create()); }
+  ~Heap() { postWriteBarrier(ptr, SafelyInitialized<T>()); }
 
   DECLARE_POINTER_CONSTREF_OPS(T);
   DECLARE_POINTER_ASSIGN_OPS(Heap, T);
@@ -372,6 +358,11 @@ class MOZ_NON_MEMMOVABLE Heap : public js::HeapOperations<T, Heap<T>> {
   }
 
  private:
+  void init(const T& newPtr) {
+    ptr = newPtr;
+    postWriteBarrier(SafelyInitialized<T>(), ptr);
+  }
+
   void postWriteBarrier(const T& prev, const T& next) {
     js::BarrierMethods<T>::postWriteBarrier(&ptr, prev, next);
   }
@@ -1152,8 +1143,7 @@ class MOZ_RAII Rooted : public detail::RootedTraits<T>::StackBase,
   template <typename RootingContext,
             typename = std::enable_if_t<std::is_copy_constructible_v<T>,
                                         RootingContext>>
-  explicit Rooted(const RootingContext& cx)
-      : ptr(SafelyInitialized<T>::create()) {
+  explicit Rooted(const RootingContext& cx) : ptr(SafelyInitialized<T>()) {
     registerWithRootLists(rootLists(cx));
   }
 
@@ -1401,13 +1391,13 @@ class PersistentRooted : public detail::RootedTraits<T>::PersistentBase,
  public:
   using ElementType = T;
 
-  PersistentRooted() : ptr(SafelyInitialized<T>::create()) {}
+  PersistentRooted() : ptr(SafelyInitialized<T>()) {}
 
   template <
       typename RootHolder,
       typename = std::enable_if_t<std::is_copy_constructible_v<T>, RootHolder>>
   explicit PersistentRooted(const RootHolder& cx)
-      : ptr(SafelyInitialized<T>::create()) {
+      : ptr(SafelyInitialized<T>()) {
     registerWithRootLists(cx);
   }
 
@@ -1440,7 +1430,7 @@ class PersistentRooted : public detail::RootedTraits<T>::PersistentBase,
 
   bool initialized() const { return this->isInList(); }
 
-  void init(RootingContext* cx) { init(cx, SafelyInitialized<T>::create()); }
+  void init(RootingContext* cx) { init(cx, SafelyInitialized<T>()); }
   void init(JSContext* cx) { init(RootingContext::get(cx)); }
 
   template <typename U>
@@ -1456,7 +1446,7 @@ class PersistentRooted : public detail::RootedTraits<T>::PersistentBase,
 
   void reset() {
     if (initialized()) {
-      set(SafelyInitialized<T>::create());
+      set(SafelyInitialized<T>());
       this->remove();
     }
   }
