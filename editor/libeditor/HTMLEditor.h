@@ -4306,6 +4306,10 @@ class HTMLEditor final : public EditorBase,
   RefPtr<Runnable> mPendingRootElementUpdatedRunner;
   RefPtr<Runnable> mPendingDocumentModifiedRunner;
 
+  
+  
+  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
+
   bool mCRInParagraphCreatesParagraph;
 
   bool mCSSAware;
