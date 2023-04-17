@@ -5495,7 +5495,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     } else {
       if (rect.IsEmpty()) {
         if (currentZoom == localMinZoom &&
-            (aFlags & ZOOM_IN_IF_CANT_ZOOM_OUT) &&
+            aZoomTarget.cantZoomOutBehavior == CantZoomOutBehavior::ZoomIn &&
             (defaultZoomInAmount != 1.f)) {
           zoomInDefaultAmount = true;
         } else {
@@ -5508,7 +5508,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
     
     if (!zoomOut && currentZoom == localMinZoom && targetZoom <= localMinZoom &&
-        (aFlags & ZOOM_IN_IF_CANT_ZOOM_OUT) && (defaultZoomInAmount != 1.f)) {
+        aZoomTarget.cantZoomOutBehavior == CantZoomOutBehavior::ZoomIn &&
+        (defaultZoomInAmount != 1.f)) {
       zoomInDefaultAmount = true;
     }
     MOZ_ASSERT(!(zoomInDefaultAmount && zoomOut));

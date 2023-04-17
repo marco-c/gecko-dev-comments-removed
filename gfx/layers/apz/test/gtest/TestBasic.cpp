@@ -380,7 +380,7 @@ TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {
   MakeApzcZoomable();
 
   
-  ZoomTarget zoomTarget{CSSRect(75, 25, 25, 25), Nothing()};
+  ZoomTarget zoomTarget{CSSRect(75, 25, 25, 25)};
   apzc->ZoomToRect(zoomTarget, 0);
 
   
@@ -392,7 +392,7 @@ TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {
   EXPECT_FALSE(apzc->IsAsyncZooming());
 
   
-  ZoomTarget zoomTarget2{CSSRect(0, 0, 100, 100), Nothing()};
+  ZoomTarget zoomTarget2{CSSRect(0, 0, 100, 100)};
   apzc->ZoomToRect(zoomTarget2, 0);
 
   
@@ -449,7 +449,7 @@ TEST_F(APZCBasicTester, ZoomToRectAndCompositionBoundsChange) {
   MakeApzcZoomable();
 
   
-  ZoomTarget zoomTarget{CSSRect(25, 25, 25, 25), Nothing()};
+  ZoomTarget zoomTarget{CSSRect(25, 25, 25, 25)};
   apzc->ZoomToRect(zoomTarget, 0);
 
   

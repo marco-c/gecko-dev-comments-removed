@@ -19,10 +19,16 @@ class Document;
 
 namespace layers {
 
+enum class CantZoomOutBehavior : int8_t { Nothing = 0, ZoomIn };
+
 struct ZoomTarget {
   
   
   CSSRect targetRect;
+
+  
+  
+  CantZoomOutBehavior cantZoomOutBehavior = CantZoomOutBehavior::Nothing;
 
   
   
