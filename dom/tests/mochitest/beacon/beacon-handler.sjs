@@ -5,23 +5,17 @@
 
 
 const CC = Components.Constructor;
-const BinaryInputStream = CC(
-  "@mozilla.org/binaryinputstream;1",
-  "nsIBinaryInputStream",
-  "setInputStream"
-);
+const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
+                             "nsIBinaryInputStream",
+                             "setInputStream");
 
-function DEBUG(str) {
+function DEBUG(str)
+{
   
 }
 
 function setOurState(data) {
-  x = {
-    data,
-    QueryInterface(iid) {
-      return this;
-    },
-  };
+  x = { data: data, QueryInterface: function(iid) { return this } };
   x.wrappedJSObject = x;
   setObjectState("beacon-handler", x);
   DEBUG("our state is " + data);
@@ -49,8 +43,8 @@ function handleRequest(request, response) {
     DEBUG("GET was sending : " + data + "\n");
     DEBUG("GET was sending : " + mimetype + "\n");
     var result = {
-      data,
-      mimetype,
+      "data": data,
+      "mimetype": mimetype,
     };
     response.write(JSON.stringify(result));
     setOurState(null);
@@ -60,30 +54,26 @@ function handleRequest(request, response) {
     DEBUG(" ------------ GET --------------- ");
     response.setHeader("Content-Type", "application/json", false);
     switch (request.queryString) {
-      case "getLastBeaconCors":
-        
-        var originHeader = request.getHeader("origin");
-        response.setHeader(
-          "Access-Control-Allow-Headers",
-          "content-type",
-          false
-        );
-        response.setHeader("Access-Control-Allow-Methods", "POST, GET", false);
-        response.setHeader("Access-Control-Allow-Origin", originHeader, false);
-        response.setHeader("Access-Control-Allow-Credentials", "true", false);
-      case "getLastBeacon":
-        var state = getOurState();
-        if (state === "unblocked") {
-          finishControlResponse(response);
-        } else {
-          DEBUG("GET has  arrived, but POST has not, blocking response!");
-          setOurState(response);
-          response.processAsync();
-        }
-        break;
-      default:
-        response.setStatusLine(request.httpVersion, 400, "Bad Request");
-        break;
+    case "getLastBeaconCors":
+      
+      var originHeader = request.getHeader("origin");
+      response.setHeader("Access-Control-Allow-Headers", "content-type", false);
+      response.setHeader("Access-Control-Allow-Methods", "POST, GET", false);
+      response.setHeader("Access-Control-Allow-Origin", originHeader, false);
+      response.setHeader("Access-Control-Allow-Credentials", "true", false);
+    case "getLastBeacon":
+      var state = getOurState();
+      if (state === "unblocked") {
+        finishControlResponse(response);
+      } else {
+        DEBUG("GET has  arrived, but POST has not, blocking response!");
+        setOurState(response);
+        response.processAsync();
+      }
+      break;
+    default:
+      response.setStatusLine(request.httpVersion, 400, "Bad Request");
+      break;
     }
     return;
   }
@@ -99,11 +89,9 @@ function handleRequest(request, response) {
     }
 
     var data = "";
-    for (var i = 0; i < bytes.length; i++) {
+    for (var i=0; i < bytes.length; i++) {
       
-      if (bytes[i] < 32) {
-        continue;
-      }
+      if (bytes[i] < 32) continue;
       var charcode = String.fromCharCode(bytes[i]);
       data += charcode;
     }
@@ -115,6 +103,7 @@ function handleRequest(request, response) {
 
     
     if (mimetype.indexOf("multipart/form-data") != -1) {
+
       
       mimetype = "multipart/form-data";
       
@@ -129,10 +118,10 @@ function handleRequest(request, response) {
     setState("beaconMimetype", mimetype);
 
     response.setHeader("Content-Type", "text/plain", false);
-    response.write("ok");
+    response.write('ok');
 
     var blockedResponse = getOurState();
-    if (typeof blockedResponse == "object" && blockedResponse) {
+    if (typeof(blockedResponse) == "object" && blockedResponse) {
       DEBUG("GET is already pending, finishing!");
       finishControlResponse(blockedResponse);
       blockedResponse.finish();
