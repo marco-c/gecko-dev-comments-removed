@@ -230,9 +230,6 @@ class nsAccUtils {
 
   static bool MustPrune(AccessibleOrProxy aAccessible);
 
-  static bool PersistentPropertiesToArray(AccAttributes* aProps,
-                                          nsTArray<Attribute>* aAttributes);
-
   
 
 

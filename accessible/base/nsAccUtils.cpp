@@ -415,22 +415,6 @@ bool nsAccUtils::MustPrune(AccessibleOrProxy aAccessible) {
   return childRole == roles::TEXT_LEAF || childRole == roles::STATICTEXT;
 }
 
-bool nsAccUtils::PersistentPropertiesToArray(AccAttributes* aProps,
-                                             nsTArray<Attribute>* aAttributes) {
-  for (auto iter : *aProps) {
-    nsAutoString name;
-    iter.NameAsString(name);
-
-    nsAutoString value;
-    iter.ValueAsString(value);
-
-    aAttributes->AppendElement(
-        Attribute(NS_ConvertUTF16toUTF8(name), value));
-  }
-
-  return true;
-}
-
 bool nsAccUtils::IsARIALive(const LocalAccessible* aAccessible) {
   
   

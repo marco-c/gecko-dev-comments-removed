@@ -76,43 +76,25 @@ inline NSString* ToNSString(id aValue) {
     
     
     
+    RefPtr<AccAttributes> attributes;
     if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
       HyperTextAccessible* text = acc->AsHyperText();
-      if (!text || !text->IsTextRole()) {
-        
-        
-        return @"true";
+      if (text && text->IsTextRole()) {
+        attributes = text->DefaultTextAttributes();
       }
-      nsAutoString invalidStr;
-      RefPtr<AccAttributes> attributes = text->DefaultTextAttributes();
-      attributes->GetAttribute(nsGkAtoms::invalid, invalidStr);
-      if (invalidStr.IsEmpty()) {
-        
-        
-        return @"true";
-      }
-      return nsCocoaUtils::ToNSString(invalidStr);
     } else {
       RemoteAccessible* proxy = mGeckoAccessible.AsProxy();
-      
-      
-      AutoTArray<Attribute, 10> attrs;
-      proxy->DefaultTextAttributes(&attrs);
-      for (size_t i = 0; i < attrs.Length(); i++) {
-        if (attrs.ElementAt(i).Name() == "invalid") {
-          nsString invalidStr = attrs.ElementAt(i).Value();
-          if (invalidStr.IsEmpty()) {
-            break;
-          }
-          return nsCocoaUtils::ToNSString(invalidStr);
-        }
-      }
-      
-      
-      
+      proxy->DefaultTextAttributes(&attributes);
+    }
+
+    nsAutoString invalidStr;
+    if (!attributes ||
+        !attributes->GetAttribute(nsGkAtoms::invalid, invalidStr)) {
       return @"true";
     }
+    return nsCocoaUtils::ToNSString(invalidStr);
   }
+
   
   return @"false";
 }
