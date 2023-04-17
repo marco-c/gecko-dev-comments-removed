@@ -12,10 +12,11 @@ const {
 } = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
-  constructor(targetCommand, onTargetAvailable, onTargetDestroyed) {
+  constructor(targetCommand, onTargetAvailable, onTargetDestroyed, commands) {
     super(targetCommand, onTargetAvailable, onTargetDestroyed);
     this._registrations = [];
     this._processTargets = new Set();
+    this.commands = commands;
 
     
     
@@ -42,7 +43,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     this._onRegistrationListChanged = this._onRegistrationListChanged.bind(
       this
     );
-    this._onNavigate = this._onNavigate.bind(this);
+    this._onDocumentEvent = this._onDocumentEvent.bind(this);
 
     
     
@@ -83,10 +84,13 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     await this._onRegistrationListChanged();
 
     if (this.targetCommand.descriptorFront.isLocalTab) {
-      
-      
-      
-      this.target.on("navigate", this._onNavigate);
+      await this.commands.resourceCommand.watchResources(
+        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this._onDocumentEvent,
+          ignoreExistingResources: true,
+        }
+      );
     }
 
     await super.listen();
@@ -97,7 +101,12 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     this._workersListener.removeListener(this._onRegistrationListChanged);
 
     if (this.targetCommand.descriptorFront.isLocalTab) {
-      this.target.off("navigate", this._onNavigate);
+      this.commands.resourceCommand.unwatchResources(
+        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+        {
+          onAvailable: this._onDocumentEvent,
+        }
+      );
     }
 
     super.unlisten();
@@ -140,27 +149,47 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     return super._onProcessDestroyed({ targetFront });
   }
 
-  _onNavigate() {
-    const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
-    const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
-
-    for (const target of allServiceWorkerTargets) {
-      const isRegisteredBefore = this.targetCommand.isTargetRegistered(target);
-      if (shouldDestroy && isRegisteredBefore) {
-        
-        
-        
-        this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
+  _onDocumentEvent(resources) {
+    for (const resource of resources) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (
+        resource.resourceType !==
+          this.commands.resourceCommand.TYPES.DOCUMENT_EVENT ||
+        resource.name !== "dom-loading"
+      ) {
+        continue;
       }
 
-      
-      
-      const isRegisteredAfter = this.targetCommand.isTargetRegistered(target);
-      const isValidTarget = this._supportWorkerTarget(target);
-      if (isValidTarget && !isRegisteredAfter) {
+      const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
+      const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
+
+      for (const target of allServiceWorkerTargets) {
+        const isRegisteredBefore = this.targetCommand.isTargetRegistered(
+          target
+        );
+        if (shouldDestroy && isRegisteredBefore) {
+          
+          
+          
+          this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
+        }
+
         
         
-        this.onTargetAvailable(target);
+        const isRegisteredAfter = this.targetCommand.isTargetRegistered(target);
+        const isValidTarget = this._supportWorkerTarget(target);
+        if (isValidTarget && !isRegisteredAfter) {
+          
+          
+          this.onTargetAvailable(target);
+        }
       }
     }
   }
