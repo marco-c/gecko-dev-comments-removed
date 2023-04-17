@@ -8,6 +8,7 @@
 #define mozilla_BinarySearch_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/CompactPair.h"
 
 #include <stddef.h>
 
@@ -126,6 +127,121 @@ bool BinarySearch(const Container& aContainer, size_t aBegin, size_t aEnd,
   return BinarySearchIf(aContainer, aBegin, aEnd,
                         detail::BinarySearchDefaultComparator<T>(aTarget),
                         aMatchOrInsertionPoint);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Container, typename Comparator>
+size_t LowerBound(const Container& aContainer, size_t aBegin, size_t aEnd,
+                  const Comparator& aCompare) {
+  MOZ_ASSERT(aBegin <= aEnd);
+
+  size_t low = aBegin;
+  size_t high = aEnd;
+  while (high != low) {
+    size_t middle = low + (high - low) / 2;
+
+    
+    
+    const int result = aCompare(aContainer[middle]);
+
+    
+    
+    if (result <= 0) {
+      high = middle;
+    } else {
+      low = middle + 1;
+    }
+  }
+
+  return low;
+}
+
+template <typename Container, typename Comparator>
+size_t UpperBound(const Container& aContainer, size_t aBegin, size_t aEnd,
+                  const Comparator& aCompare) {
+  MOZ_ASSERT(aBegin <= aEnd);
+
+  size_t low = aBegin;
+  size_t high = aEnd;
+  while (high != low) {
+    size_t middle = low + (high - low) / 2;
+
+    
+    
+    const int result = aCompare(aContainer[middle]);
+
+    
+    
+    if (result < 0) {
+      high = middle;
+    } else {
+      low = middle + 1;
+    }
+  }
+
+  return high;
+}
+
+template <typename Container, typename Comparator>
+CompactPair<size_t, size_t> EqualRange(const Container& aContainer,
+                                       size_t aBegin, size_t aEnd,
+                                       const Comparator& aCompare) {
+  MOZ_ASSERT(aBegin <= aEnd);
+
+  size_t low = aBegin;
+  size_t high = aEnd;
+  while (high != low) {
+    size_t middle = low + (high - low) / 2;
+
+    
+    
+    const int result = aCompare(aContainer[middle]);
+
+    if (result < 0) {
+      high = middle;
+    } else if (result > 0) {
+      low = middle + 1;
+    } else {
+      return MakeCompactPair(
+          LowerBound(aContainer, low, middle, aCompare),
+          UpperBound(aContainer, middle + 1, high, aCompare));
+    }
+  }
+
+  return MakeCompactPair(low, high);
 }
 
 }  
