@@ -4697,6 +4697,24 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     return NS_ERROR_FAILURE;
   }
 
+  if (aMouseEvent->mMessage == eMouseDown &&
+      aMouseEvent->mButton == MouseButton::eMiddle &&
+      !offsets.content->IsEditable()) {
+    
+    
+    
+    
+    
+    
+    if (!Preferences::GetBool("middlemouse.paste", false) &&
+        Preferences::GetBool("general.autoScroll", false) &&
+        Preferences::GetBool("general.autoscroll.prevent_to_collapse_selection_"
+                             "by_middle_mouse_down",
+                             false)) {
+      return NS_OK;
+    }
+  }
+
   if (isPrimaryButtonDown) {
     
     

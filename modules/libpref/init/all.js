@@ -230,6 +230,17 @@ pref("general.autoscroll.prevent_to_start.metaKey", false);
 pref("general.autoscroll.prevent_to_start.osKey", false);   
 
 
+
+
+
+
+
+
+
+
+pref("general.autoscroll.prevent_to_collapse_selection_by_middle_mouse_down", false);
+
+
 pref("browser.bookmarks.max_backups",       5);
 
 pref("browser.cache.disk_cache_ssl",        true);
