@@ -1435,6 +1435,13 @@ bool nsRefreshDriver::CanDoCatchUpTick() {
     return false;
   }
 
+  if (mTickVsyncTime.IsNull()) {
+    
+    
+    
+    return false;
+  }
+
   return true;
 }
 
