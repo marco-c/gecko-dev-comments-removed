@@ -15,4 +15,23 @@
 void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                              uint8_t* aBreakBefore);
 
+class ComplexBreaker {
+ public:
+  static void Initialize();
+
+  static void Shutdown();
+
+  
+
+
+
+
+
+
+
+
+  static void GetBreaks(const char16_t* aText, uint32_t aLength,
+                        uint8_t* aBreakBefore);
+};
+
 #endif 
