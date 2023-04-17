@@ -115,7 +115,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct TreeBuildingState;
 
  public:
-  APZCTreeManager(LayersId aRootLayersId, bool aIsUsingWebRender);
+  enum class HitTestKind { WebRender, Internal };
+  APZCTreeManager(LayersId aRootLayersId, HitTestKind aHitTestKind);
 
   void SetSampler(APZSampler* aSampler);
   void SetUpdater(APZUpdater* aUpdater);
@@ -1046,7 +1047,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   float mDPI;
 
-  bool mIsUsingWebRender;
+  HitTestKind mHitTestKind;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:
