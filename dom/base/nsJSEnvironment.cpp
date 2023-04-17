@@ -1612,15 +1612,7 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
     return;
   }
 
-  
-  uint32_t lastEventTime = 0;
-  vm->GetLastUserEventTime(lastEventTime);
-  uint32_t currentTime = PR_IntervalToMicroseconds(PR_IntervalNow());
-  
-  
-  if ((currentTime - lastEventTime) >
-      (StaticPrefs::dom_events_user_interaction_interval() *
-       PR_USEC_PER_MSEC)) {
+  if (!sScheduler.IsUserActive()) {
     Maybe<TimeStamp> next = nsRefreshDriver::GetNextTickHint();
     
     
