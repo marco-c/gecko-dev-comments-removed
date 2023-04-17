@@ -169,7 +169,16 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   typedef nsTArray<FontFamily> PrefFontList;
 
-  static gfxPlatformFontList* PlatformFontList() { return sPlatformFontList; }
+  static gfxPlatformFontList* PlatformFontList() {
+    
+    
+    if (!sPlatformFontList) {
+      if (!gfxPlatform::GetPlatform()->CreatePlatformFontList()) {
+        MOZ_CRASH("Could not initialize gfxPlatformFontList");
+      }
+    }
+    return sPlatformFontList;
+  }
 
   static bool Initialize(gfxPlatformFontList* aList) {
     sPlatformFontList = aList;
