@@ -296,6 +296,14 @@ var gBITSInUseByAnotherUser = false;
 
 let gStagingInProgress = false;
 
+
+
+
+
+
+
+let gOnlyDownloadUpdatesThisSession = false;
+
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return (
     Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
@@ -4016,6 +4024,20 @@ UpdateService.prototype = {
     LOG("End of UpdateService status");
   },
 
+  
+
+
+  get onlyDownloadUpdatesThisSession() {
+    return gOnlyDownloadUpdatesThisSession;
+  },
+
+  
+
+
+  set onlyDownloadUpdatesThisSession(newValue) {
+    gOnlyDownloadUpdatesThisSession = newValue;
+  },
+
   classID: UPDATESERVICE_CID,
 
   _xpcom_factory: UpdateServiceFactory,
@@ -4999,6 +5021,14 @@ Downloader.prototype = {
 
 
 
+  _pretendingDownloadIsNotDone: false,
+
+  
+
+
+
+
+
 
   cancel: async function Downloader_cancel(cancelError) {
     LOG("Downloader: cancel");
@@ -5033,7 +5063,21 @@ Downloader.prototype = {
         throw e;
       }
     } else if (this._request && this._request instanceof Ci.nsIRequest) {
-      this._request.cancel(cancelError);
+      
+      
+      
+      
+      
+      
+      
+      
+      if (this._pretendingDownloadIsNotDone) {
+        LOG(
+          "Downloader: cancel - Ignoring cancel request of finished download"
+        );
+      } else {
+        this._request.cancel(cancelError);
+      }
     }
   },
 
@@ -5715,6 +5759,22 @@ Downloader.prototype = {
 
   
   onStopRequest: async function Downloader_onStopRequest(request, status) {
+    if (gOnlyDownloadUpdatesThisSession) {
+      LOG(
+        "Downloader:onStopRequest - End of update download detected and " +
+          "ignored because we are restricted to update downloads this " +
+          "session. We will continue with this update next session."
+      );
+      
+      
+      
+      
+      this._pretendingDownloadIsNotDone = true;
+      
+      Services.obs.notifyObservers(null, "update-download-restriction-hit");
+      return;
+    }
+
     if (!this.usingBits) {
       LOG(
         "Downloader:onStopRequest - downloader: nsIIncrementalDownload, " +
