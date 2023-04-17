@@ -3777,6 +3777,9 @@ void JSObject::debugCheckNewObject(Shape* shape, js::gc::AllocKind allocKind,
   }
 
   
+  MOZ_ASSERT(!CanChangeToBackgroundAllocKind(allocKind, clasp));
+
+  
   
   
   static const uint32_t FinalizeMask =
