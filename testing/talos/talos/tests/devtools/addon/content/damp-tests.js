@@ -4,6 +4,8 @@
 
 "use strict";
 
+const Services = require("Services");
+const isWindows = Services.appinfo.OS === "WINNT";
 
 
 
@@ -90,6 +92,8 @@ module.exports = [
     path: "accessibility/simple.js",
     description:
       "Measure open/close toolbox on accessibility panel against simple document",
+    
+    disabled: isWindows,
   },
   
   {
