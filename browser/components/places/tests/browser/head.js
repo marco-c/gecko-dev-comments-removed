@@ -214,13 +214,11 @@ var withBookmarksDialog = async function(
   skipOverlayWait = false
 ) {
   let closed = false;
-  let protonModal =
-    Services.prefs.getBoolPref("browser.proton.modals.enabled", false) &&
-    
-    
-    Services.wm.getMostRecentWindow("").gDialogBox;
+  
+  
+  let hasDialogBox = !!Services.wm.getMostRecentWindow("").gDialogBox;
   let dialogPromise;
-  if (protonModal) {
+  if (hasDialogBox) {
     dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(null, dialogUrl, {
       isSubDialog: true,
     });
@@ -237,7 +235,7 @@ var withBookmarksDialog = async function(
     });
   }
   let dialogClosePromise = dialogPromise.then(win => {
-    if (!protonModal) {
+    if (!hasDialogBox) {
       return BrowserTestUtils.domWindowClosed(win);
     }
     let container = win.top.document.getElementById("window-modal-dialog");
