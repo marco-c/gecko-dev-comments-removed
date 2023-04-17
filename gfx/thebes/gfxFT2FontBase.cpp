@@ -212,14 +212,15 @@ static double FindClosestSize(FT_Face aFace, double aSize) {
 void gfxFT2FontBase::InitMetrics() {
   mFUnitsConvFactor = 0.0;
 
-  if (MOZ_UNLIKELY(GetStyle()->size <= 0.0) ||
-      MOZ_UNLIKELY(GetStyle()->sizeAdjust == 0.0)) {
+  if (MOZ_UNLIKELY(mStyle.AdjustedSizeMustBeZero())) {
     memset(&mMetrics, 0, sizeof(mMetrics));  
     mSpaceGlyph = GetGlyph(' ');
     return;
   }
 
-  if (GetStyle()->sizeAdjust > 0.0 && mFTSize == 0.0) {
+  if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
+          FontSizeAdjust::Tag::None &&
+      mStyle.sizeAdjust >= 0.0 && mFTSize == 0.0) {
     
     
     
@@ -228,11 +229,37 @@ void gfxFT2FontBase::InitMetrics() {
     mFTSize = 1.0;
     InitMetrics();
     
-    gfxFloat aspect = mMetrics.xHeight / mMetrics.emHeight;
-    mAdjustedSize = GetStyle()->GetAdjustedSize(aspect);
-    
-    
-    mFTFace->ForgetLockOwner(this);
+    gfxFloat aspect;
+    switch (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis)) {
+      default:
+        MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
+        aspect = 0.0;
+        break;
+      case FontSizeAdjust::Tag::Ex:
+        aspect = mMetrics.xHeight / mAdjustedSize;
+        break;
+      case FontSizeAdjust::Tag::Cap:
+        aspect = mMetrics.capHeight / mAdjustedSize;
+        break;
+      case FontSizeAdjust::Tag::Ch:
+        aspect =
+            mMetrics.zeroWidth > 0.0 ? mMetrics.zeroWidth / mAdjustedSize : 0.5;
+        break;
+      case FontSizeAdjust::Tag::Ic: {
+        
+        
+        
+        gfxFloat advance = GetCharAdvance(0x6C34);
+        aspect = advance > 0 ? advance / mAdjustedSize : 1.0;
+        break;
+      }
+    }
+    if (aspect > 0.0) {
+      mAdjustedSize = mStyle.GetAdjustedSize(aspect);
+      
+      
+      mFTFace->ForgetLockOwner(this);
+    }
   }
 
   
@@ -442,15 +469,23 @@ void gfxFT2FontBase::InitMetrics() {
   
   
   
+  
+  
+  
+  
   gfxFloat xWidth;
   gfxRect xBounds;
-  if (GetCharExtents('x', &xWidth, &xBounds) && xBounds.y < 0.0) {
-    mMetrics.xHeight = -xBounds.y;
-    mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
+  if (mMetrics.xHeight == 0.0) {
+    if (GetCharExtents('x', &xWidth, &xBounds) && xBounds.y < 0.0) {
+      mMetrics.xHeight = -xBounds.y;
+      mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, xWidth);
+    }
   }
 
-  if (GetCharExtents('H', nullptr, &xBounds) && xBounds.y < 0.0) {
-    mMetrics.capHeight = -xBounds.y;
+  if (mMetrics.capHeight == 0.0) {
+    if (GetCharExtents('H', nullptr, &xBounds) && xBounds.y < 0.0) {
+      mMetrics.capHeight = -xBounds.y;
+    }
   }
 
   mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, mMetrics.zeroWidth);
