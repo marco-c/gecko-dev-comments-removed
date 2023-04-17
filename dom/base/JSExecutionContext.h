@@ -10,6 +10,7 @@
 #include "GeckoProfiler.h"
 #include "js/GCVector.h"
 #include "js/TypeDecls.h"
+#include "js/Value.h"
 #include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -49,6 +50,14 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 
   
   
+  
+  
+  
+  JS::Rooted<JS::Value> mDebuggerPrivateValue;
+  JS::Rooted<JSScript*> mDebuggerIntroductionScript;
+
+  
+  
   nsresult mRv;
 
   
@@ -68,6 +77,8 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   bool mScriptUsed;
 #endif
 
+  bool UpdateDebugMetadata();
+
  private:
   
   template <typename Unit>
@@ -76,8 +87,14 @@ class MOZ_STACK_CLASS JSExecutionContext final {
  public:
   
   
-  JSExecutionContext(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-                     JS::CompileOptions& aCompileOptions);
+  
+  
+  
+  JSExecutionContext(
+      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+      JS::CompileOptions& aCompileOptions,
+      JS::Handle<JS::Value> aDebuggerPrivateValue = JS::UndefinedHandleValue,
+      JS::Handle<JSScript*> aDebuggerIntroductionScript = nullptr);
 
   JSExecutionContext(const JSExecutionContext&) = delete;
   JSExecutionContext(JSExecutionContext&&) = delete;

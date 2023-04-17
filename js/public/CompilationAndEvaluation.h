@@ -242,6 +242,30 @@ extern JS_PUBLIC_API JSFunction* CompileFunctionUtf8(
 extern JS_PUBLIC_API void ExposeScriptToDebugger(JSContext* cx,
                                                  Handle<JSScript*> script);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool UpdateDebugMetadata(
+    JSContext* cx, Handle<JSScript*> script,
+    const ReadOnlyCompileOptions& options, HandleValue privateValue,
+    HandleString elementAttributeName, HandleScript introScript,
+    HandleScript scriptOrModule);
+
 extern JS_PUBLIC_API void SetGetElementCallback(JSContext* cx,
                                                 JSGetElementCallback callback);
 

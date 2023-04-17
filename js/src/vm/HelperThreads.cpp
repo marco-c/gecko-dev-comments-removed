@@ -2109,7 +2109,7 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
 
     
     
-    if (!parseTask->options.hideScriptFromDebugger) {
+    if (!parseTask->options.hideFromNewScriptInitial()) {
       DebugAPI::onNewScript(cx, script);
     }
   } else {
@@ -2187,7 +2187,7 @@ bool GlobalHelperThreadState::finishMultiParseTask(
 
   
   
-  if (!parseTask->options.hideScriptFromDebugger) {
+  if (!parseTask->options.hideFromNewScriptInitial()) {
     JS::RootedScript rooted(cx);
     for (auto& script : scripts) {
       MOZ_ASSERT(script->isGlobalCode());

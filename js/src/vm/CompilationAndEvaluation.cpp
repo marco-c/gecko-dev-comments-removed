@@ -421,6 +421,55 @@ JS_PUBLIC_API void JS::ExposeScriptToDebugger(JSContext* cx,
   DebugAPI::onNewScript(cx, script);
 }
 
+JS_PUBLIC_API bool JS::UpdateDebugMetadata(
+    JSContext* cx, Handle<JSScript*> script,
+    const ReadOnlyCompileOptions& options, HandleValue privateValue,
+    HandleString elementAttributeName, HandleScript introScript,
+    HandleScript scriptOrModule) {
+  RootedScriptSourceObject sso(cx, script->sourceObject());
+
+  if (!ScriptSourceObject::initElementProperties(cx, sso,
+                                                 elementAttributeName)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  RootedValue introductionScript(cx);
+  if (introScript) {
+    if (introScript->compartment() == cx->compartment()) {
+      introductionScript.setPrivateGCThing(introScript);
+    }
+  }
+  sso->setIntroductionScript(introductionScript);
+
+  RootedValue privateValueStore(cx, UndefinedValue());
+  if (privateValue.isUndefined()) {
+    
+    
+    if (scriptOrModule) {
+      privateValueStore = scriptOrModule->sourceObject()->canonicalPrivate();
+    }
+  } else {
+    privateValueStore = privateValue;
+  }
+
+  if (!privateValueStore.isUndefined()) {
+    if (!JS_WrapValue(cx, &privateValueStore)) {
+      return false;
+    }
+  }
+  sso->setPrivate(cx->runtime(), privateValueStore);
+
+  if (!options.hideScriptFromDebugger) {
+    JS::ExposeScriptToDebugger(cx, script);
+  }
+
+  return true;
+}
+
 JS_PUBLIC_API void JS::SetGetElementCallback(JSContext* cx,
                                              JSGetElementCallback callback) {
   MOZ_ASSERT(cx->runtime());

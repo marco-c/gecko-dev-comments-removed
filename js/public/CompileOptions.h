@@ -128,6 +128,17 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
   bool hideScriptFromDebugger = false;
+
+  
+  
+  
+  
+  bool deferDebugMetadata = false;
+
+  bool hideFromNewScriptInitial() const {
+    return deferDebugMetadata || hideScriptFromDebugger;
+  }
+
   bool nonSyntacticScope = false;
   bool privateClassFields = false;
   bool privateClassMethods = false;
@@ -172,18 +183,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   const char* filename() const { return filename_; }
   const char* introducerFilename() const { return introducerFilename_; }
   const char16_t* sourceMapURL() const { return sourceMapURL_; }
-  virtual Value privateValue() const = 0;
-  virtual JSString* elementAttributeName() const = 0;
-  virtual JSScript* introductionScript() const = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual JSScript* scriptOrModule() const = 0;
 
   TransitiveCompileOptions(const TransitiveCompileOptions&) = delete;
   TransitiveCompileOptions& operator=(const TransitiveCompileOptions&) = delete;
@@ -243,24 +242,10 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
 
 
 class JS_PUBLIC_API OwningCompileOptions final : public ReadOnlyCompileOptions {
-  PersistentRooted<JSString*> elementAttributeNameRoot;
-  PersistentRooted<JSScript*> introductionScriptRoot;
-  PersistentRooted<JSScript*> scriptOrModuleRoot;
-  PersistentRooted<Value> privateValueRoot;
-
  public:
   
   explicit OwningCompileOptions(JSContext* cx);
   ~OwningCompileOptions();
-
-  Value privateValue() const override { return privateValueRoot; }
-  JSString* elementAttributeName() const override {
-    return elementAttributeNameRoot;
-  }
-  JSScript* introductionScript() const override {
-    return introductionScriptRoot;
-  }
-  JSScript* scriptOrModule() const override { return scriptOrModuleRoot; }
 
   
   bool copy(JSContext* cx, const ReadOnlyCompileOptions& rhs);
@@ -301,12 +286,6 @@ class JS_PUBLIC_API OwningCompileOptions final : public ReadOnlyCompileOptions {
 
 class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     : public ReadOnlyCompileOptions {
- private:
-  Rooted<JSString*> elementAttributeNameRoot;
-  Rooted<JSScript*> introductionScriptRoot;
-  Rooted<JSScript*> scriptOrModuleRoot;
-  Rooted<Value> privateValueRoot;
-
  public:
   
   explicit CompileOptions(JSContext* cx);
@@ -314,34 +293,14 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
   
   
   CompileOptions(JSContext* cx, const ReadOnlyCompileOptions& rhs)
-      : ReadOnlyCompileOptions(),
-        elementAttributeNameRoot(cx),
-        introductionScriptRoot(cx),
-        scriptOrModuleRoot(cx),
-        privateValueRoot(cx) {
+      : ReadOnlyCompileOptions() {
     copyPODNonTransitiveOptions(rhs);
     copyPODTransitiveOptions(rhs);
 
     filename_ = rhs.filename();
     introducerFilename_ = rhs.introducerFilename();
     sourceMapURL_ = rhs.sourceMapURL();
-    privateValueRoot = rhs.privateValue();
-    elementAttributeNameRoot = rhs.elementAttributeName();
-    introductionScriptRoot = rhs.introductionScript();
-    scriptOrModuleRoot = rhs.scriptOrModule();
   }
-
-  Value privateValue() const override { return privateValueRoot; }
-
-  JSString* elementAttributeName() const override {
-    return elementAttributeNameRoot;
-  }
-
-  JSScript* introductionScript() const override {
-    return introductionScriptRoot;
-  }
-
-  JSScript* scriptOrModule() const override { return scriptOrModuleRoot; }
 
   CompileOptions& setFile(const char* f) {
     filename_ = f;
@@ -361,21 +320,6 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
 
   CompileOptions& setSourceMapURL(const char16_t* s) {
     sourceMapURL_ = s;
-    return *this;
-  }
-
-  CompileOptions& setPrivateValue(const Value& v) {
-    privateValueRoot = v;
-    return *this;
-  }
-
-  CompileOptions& setElementAttributeName(JSString* p) {
-    elementAttributeNameRoot = p;
-    return *this;
-  }
-
-  CompileOptions& setScriptOrModule(JSScript* s) {
-    scriptOrModuleRoot = s;
     return *this;
   }
 
@@ -429,21 +373,26 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
+  CompileOptions& setdeferDebugMetadata(bool v = true) {
+    deferDebugMetadata = v;
+    return *this;
+  }
+
   CompileOptions& setIntroductionInfo(const char* introducerFn,
                                       const char* intro, unsigned line,
-                                      JSScript* script, uint32_t offset) {
+                                      uint32_t offset) {
     introducerFilename_ = introducerFn;
     introductionType = intro;
     introductionLineno = line;
-    introductionScriptRoot = script;
     introductionOffset = offset;
     hasIntroductionInfo = true;
     return *this;
   }
 
   
-  CompileOptions& setIntroductionInfoToCaller(JSContext* cx,
-                                              const char* introductionType);
+  CompileOptions& setIntroductionInfoToCaller(
+      JSContext* cx, const char* introductionType,
+      JS::MutableHandle<JSScript*> introductionScript);
 
   CompileOptions& setForceFullParse() {
     forceFullParse_ = true;
