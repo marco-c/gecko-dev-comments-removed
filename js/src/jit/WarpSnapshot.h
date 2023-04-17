@@ -14,6 +14,7 @@
 #include "gc/Policy.h"
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitContext.h"
+#include "jit/TypeData.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/Printer.h"
 
@@ -43,7 +44,8 @@ class WarpScriptSnapshot;
   _(WarpBindGName)               \
   _(WarpBailout)                 \
   _(WarpCacheIR)                 \
-  _(WarpInlinedCall)
+  _(WarpInlinedCall)             \
+  _(WarpPolymorphicTypes)
 
 
 
@@ -367,6 +369,25 @@ class WarpInlinedCall : public WarpOpSnapshot {
   WarpCacheIR* cacheIRSnapshot() const { return cacheIRSnapshot_; }
   WarpScriptSnapshot* scriptSnapshot() const { return scriptSnapshot_; }
   CompileInfo* info() const { return info_; }
+
+  void traceData(JSTracer* trc);
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
+};
+
+
+class WarpPolymorphicTypes : public WarpOpSnapshot {
+  TypeDataList list_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpPolymorphicTypes;
+
+  WarpPolymorphicTypes(uint32_t offset, TypeDataList list)
+      : WarpOpSnapshot(ThisKind, offset), list_(list) {}
+
+  const TypeDataList& list() const { return list_; }
 
   void traceData(JSTracer* trc);
 
