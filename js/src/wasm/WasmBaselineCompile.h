@@ -36,6 +36,11 @@ namespace wasm {
     LifoAlloc& lifo, const FuncCompileInputVector& inputs, CompiledCode* code,
     UniqueChars* error);
 
+
+
+
+
+
 class BaseLocalIter {
  private:
   using ConstValTypeRange = mozilla::Range<const ValType>;
