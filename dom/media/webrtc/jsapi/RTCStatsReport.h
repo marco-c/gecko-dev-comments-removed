@@ -45,6 +45,8 @@ namespace dom {
 
 
 
+
+
 class RTCStatsTimestampMaker {
  public:
   RTCStatsTimestampMaker();
@@ -53,6 +55,7 @@ class RTCStatsTimestampMaker {
   DOMHighResTimeStamp GetNow() const;
 
   webrtc::Timestamp GetNowRealtime() const;
+  webrtc::Timestamp ConvertMozTimeToRealtime(TimeStamp aMozTime) const;
   webrtc::Timestamp ConvertRealtimeTo1Jan1970(
       webrtc::Timestamp aRealtime) const;
   DOMHighResTimeStamp ConvertNtpToDomTime(webrtc::Timestamp aNtpTime) const;
