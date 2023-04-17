@@ -26,7 +26,7 @@ const links = {
     "America/Porto_Acre": "America/Rio_Branco",
     "America/Santa_Isabel": "America/Tijuana",
     "America/Shiprock": "America/Denver",
-    "America/Virgin": "America/Port_of_Spain",
+    "America/Virgin": "America/St_Thomas",
     "Antarctica/South_Pole": "Antarctica/McMurdo",
     "Asia/Ashkhabad": "Asia/Ashgabat",
     "Asia/Calcutta": "Asia/Kolkata",

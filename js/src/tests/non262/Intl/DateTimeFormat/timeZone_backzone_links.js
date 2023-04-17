@@ -17,6 +17,11 @@ const tzMapper = [
 
 const links = {
     "Africa/Asmera": "Africa/Asmara",
+    "America/Kralendijk": "America/Curacao",
+    "America/Lower_Princes": "America/Curacao",
+    "America/Marigot": "America/Port_of_Spain",
+    "America/St_Barthelemy": "America/Port_of_Spain",
+    "America/Virgin": "America/St_Thomas",
     "Antarctica/South_Pole": "Antarctica/McMurdo",
     "Asia/Chungking": "Asia/Chongqing",
 };

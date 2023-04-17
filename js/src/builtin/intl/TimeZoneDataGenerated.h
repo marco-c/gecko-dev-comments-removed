@@ -40,6 +40,7 @@ const char* const ianaZonesTreatedAsLinksByICU[] = {
     "HST", 
     "MST", 
     "Pacific/Chuuk", 
+    "Pacific/Kanton", 
     "Pacific/Pohnpei", 
 };
 
@@ -67,7 +68,6 @@ const LinkAndTarget ianaLinksCanonicalizedDifferentlyByICU[] = {
     { "America/Mendoza", "America/Argentina/Mendoza" }, 
     { "America/Santa_Isabel", "America/Tijuana" }, 
     { "America/St_Barthelemy", "America/Port_of_Spain" }, 
-    { "America/Virgin", "America/Port_of_Spain" }, 
     { "Antarctica/South_Pole", "Antarctica/McMurdo" }, 
     { "Arctic/Longyearbyen", "Europe/Oslo" }, 
     { "Asia/Calcutta", "Asia/Kolkata" }, 
