@@ -36,16 +36,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 (function(){
 "use strict";
 

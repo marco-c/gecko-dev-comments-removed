@@ -2,15 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 var VISIBILITY_STATES =
 {
     HIDDEN: "hidden",

@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 var HTML5_ELEMENTS = [ 'a', 'abbr', 'address', 'area', 'article', 'aside',

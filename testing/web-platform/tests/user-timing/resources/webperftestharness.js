@@ -2,19 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 var timingAttributes = [
     "navigationStart",
     "unloadEventStart",

@@ -2,19 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 var timingAttributes = [
     'connectEnd',
     'connectStart',

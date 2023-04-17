@@ -4,15 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 (function (global_scope)
 {
     
