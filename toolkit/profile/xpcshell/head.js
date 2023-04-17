@@ -78,6 +78,19 @@ function simulateSnapEnvironment() {
   gIsLegacy = true;
 }
 
+
+
+
+
+function simulateWinPackageEnvironment() {
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  env.set("MOZ_TEST_EMULATE_PACKAGE", "1");
+
+  gIsLegacy = false;
+}
+
 function enableLegacyProfiles() {
   let env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
@@ -182,7 +195,8 @@ function safeGet(ini, section, key) {
 function writeCompatibilityIni(
   dir,
   appDir = FileUtils.getDir("CurProcD", []),
-  greDir = FileUtils.getDir("GreD", [])
+  greDir = FileUtils.getDir("GreD", []),
+  options = { downgrade: false }
 ) {
   let target = dir.clone();
   target.append("compatibility.ini");
@@ -192,12 +206,23 @@ function writeCompatibilityIni(
   );
   let ini = factory.createINIParser().QueryInterface(Ci.nsIINIParserWriter);
 
+  if (options.downgrade) {
+    
+    ini.setString(
+      "Compatibility",
+      "LastVersion",
+      "9999.0a1_99991231235959/99991231235959"
+    );
+  } else {
+    
+    ini.setString(
+      "Compatibility",
+      "LastVersion",
+      "64.0a1_20180919123806/20180919123806"
+    );
+  }
+
   
-  ini.setString(
-    "Compatibility",
-    "LastVersion",
-    "64.0a1_20180919123806/20180919123806"
-  );
   ini.setString("Compatibility", "LastOSABI", "Darwin_x86_64-gcc3");
 
   ini.setString(

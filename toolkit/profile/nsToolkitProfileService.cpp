@@ -19,6 +19,7 @@
 #  include <windows.h>
 #  include <shlobj.h>
 #  include "mozilla/PolicyChecks.h"
+#  include "WinUtils.h"
 #endif
 #ifdef XP_UNIX
 #  include <unistd.h>
@@ -54,8 +55,11 @@
 #include "nsProxyRelease.h"
 #include "prinrval.h"
 #include "prthread.h"
+#include "mozilla/XREAppData.h"
 
 using namespace mozilla;
+
+extern const char gToolkitBuildID[];
 
 #define DEV_EDITION_NAME "dev-edition-default"
 #define DEFAULT_NAME "default"
@@ -1531,6 +1535,114 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
     }
   }
 
+  if (IsWinPackageEnvironment() && mIsFirstRun && !mProfiles.isEmpty()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIToolkitProfile> oldProfile;
+
+    
+    
+    
+    
+    PRTime latestTime = 0;
+
+    
+    
+    bool allowDowngrade =
+        EnvHasValue("MOZ_ALLOW_DOWNGRADE") ||
+        CheckArg(*aArgc, aArgv, "allow-downgrade",
+                 static_cast<const char**>(nullptr), CheckArgFlag::None);
+
+    for (nsCOMPtr<nsIToolkitProfile> profile : mProfiles) {
+      
+      
+      
+      
+      nsCOMPtr<nsIFile> rootDir;
+      profile->GetRootDir(getter_AddRefs(rootDir));
+      nsCOMPtr<nsIFile> lockFile;
+      rootDir->Clone(getter_AddRefs(lockFile));
+      lockFile->Append(u"parent.lock"_ns);
+
+      PRTime lastLockTime = 0;
+      lockFile->GetLastModifiedTime(&lastLockTime);
+
+      if (lastLockTime <= latestTime) {
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      if (allowDowngrade) {
+        oldProfile = profile;
+        latestTime = lastLockTime;
+        continue;
+      }
+
+      nsCOMPtr<nsIFile> compatIniFile;
+      rootDir->Clone(getter_AddRefs(compatIniFile));
+      if (!compatIniFile) {
+        continue;
+      }
+
+      compatIniFile->Append(COMPAT_FILE);
+      nsINIParser compatIniParser;
+      if (NS_FAILED(compatIniParser.Init(compatIniFile))) {
+        continue;
+      }
+
+      nsAutoCString lastVersion;
+      if (NS_FAILED(compatIniParser.GetString("Compatibility", "LastVersion",
+                                              lastVersion))) {
+        continue;
+      }
+
+      nsAutoCString currentVersion;
+      if (gAppData) {
+        BuildCompatVersion(gAppData->version, gAppData->buildID,
+                           gToolkitBuildID, currentVersion);
+      } else {
+        
+        
+        
+        
+        BuildCompatVersion(MOZILLA_VERSION, gToolkitBuildID, gToolkitBuildID,
+                           currentVersion);
+      }
+      if (CompareCompatVersions(lastVersion, currentVersion) > 0) {
+        continue;
+      }
+
+      oldProfile = profile;
+      latestTime = lastLockTime;
+    }
+
+    
+    
+    
+    
+    if (oldProfile) {
+      mCurrent = oldProfile.forget();
+      mCurrent->GetRootDir(aRootDir);
+      mCurrent->GetLocalDir(aLocalDir);
+      NS_ADDREF(*aProfile = mCurrent);
+      mStartupReason = u"firstrun-migrated-default"_ns;
+      return NS_MIGRATE_INTO_PACKAGE;
+    }
+  }
+
   
   if (mIsFirstRun) {
     
@@ -1678,14 +1790,22 @@ nsresult nsToolkitProfileService::CreateResetProfile(
 
 
 nsresult nsToolkitProfileService::ApplyResetProfile(
-    nsIToolkitProfile* aOldProfile) {
+    nsIToolkitProfile* aOldProfile, bool aDeleteOldProfile) {
   
   
   if (mNormalDefault == aOldProfile) {
     SetNormalDefault(mCurrent);
   }
 
-  if (mUseDedicatedProfile && mDedicatedProfile == aOldProfile) {
+  
+  
+  
+  
+  
+  
+  
+  if (mUseDedicatedProfile &&
+      (mDedicatedProfile == aOldProfile || !aDeleteOldProfile)) {
     bool wasLocked = false;
     nsCString val;
     if (NS_SUCCEEDED(
@@ -1701,27 +1821,31 @@ nsresult nsToolkitProfileService::ApplyResetProfile(
     }
   }
 
-  nsCString name;
-  nsresult rv = aOldProfile->GetName(name);
+  if (aDeleteOldProfile) {
+    nsCString name;
+    nsresult rv = aOldProfile->GetName(name);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    rv = aOldProfile->Remove(false);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    rv = mCurrent->SetName(name);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  nsresult rv = Flush();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  rv = aOldProfile->Remove(false);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  rv = mCurrent->SetName(name);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = Flush();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  RemoveProfileFiles(aOldProfile, true);
+  if (aDeleteOldProfile) {
+    
+    
+    
+    RemoveProfileFiles(aOldProfile, true);
+  }
 
   return NS_OK;
 }
@@ -1931,6 +2055,25 @@ bool nsToolkitProfileService::IsSnapEnvironment() {
 
   
   return (strcmp(snapName, "firefox") == 0);
+}
+
+
+
+
+
+
+
+
+
+
+bool nsToolkitProfileService::IsWinPackageEnvironment() {
+#ifdef XP_WIN
+  if (EnvHasValue("MOZ_TEST_EMULATE_PACKAGE") ||
+      mozilla::widget::WinUtils::HasPackageIdentity()) {
+    return true;
+  }
+#endif
+  return false;
 }
 
 
