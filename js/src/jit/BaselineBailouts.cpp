@@ -1717,7 +1717,8 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     overRecursed = true;
   }
 #else
-  if (!CheckRecursionLimitWithStackPointerDontReport(cx, newsp)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkWithStackPointerDontReport(cx, newsp)) {
     overRecursed = true;
   }
 #endif
