@@ -163,7 +163,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  virtual void AppendMessage(UniquePtr<ControlMessage> aMessage);
+  void AppendMessage(UniquePtr<ControlMessage> aMessage);
 
   
 
