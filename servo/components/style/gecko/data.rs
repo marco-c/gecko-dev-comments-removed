@@ -56,8 +56,15 @@ impl GeckoStyleSheet {
     
     #[inline]
     pub unsafe fn from_addrefed(s: *const DomStyleSheet) -> Self {
-        debug_assert!(!s.is_null());
+        assert!(!s.is_null());
         GeckoStyleSheet(s)
+    }
+
+    
+    
+    #[inline]
+    pub fn hack_is_null(&self) -> bool {
+        self.0.is_null()
     }
 
     
