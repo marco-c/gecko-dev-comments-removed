@@ -38,7 +38,8 @@ const assert_positive_ = (entry, attributes) => {
 const invariants = {
   
   
-  assert_http_resource: entry => {
+  
+  assert_tao_pass_no_redirect: entry => {
     assert_ordered_(entry, [
       "fetchStart",
       "domainLookupStart",
