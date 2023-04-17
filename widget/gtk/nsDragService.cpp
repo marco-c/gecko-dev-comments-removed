@@ -154,7 +154,9 @@ nsDragService::nsDragService()
 
   
   LOGDRAGSERVICE(("nsDragService::nsDragService"));
-  mCanDrop = false;
+  
+  
+  mCanDrop = widget::GdkIsWaylandDisplay();
   mTargetDragDataReceived = false;
   mTargetDragData = 0;
   mTargetDragDataLen = 0;
@@ -2066,14 +2068,7 @@ gboolean nsDragService::RunScheduledTask() {
       } else {
         
         
-        if (mTargetDragContext) {
-          ReplyToDragMotion(mTargetDragContext);
-        }
-#ifdef MOZ_WAYLAND
-        else if (mTargetWaylandDataOffer) {
-          ReplyToDragMotion(mTargetWaylandDataOffer);
-        }
-#endif
+        ReplyToDragMotion();
       }
     }
   }
@@ -2180,11 +2175,19 @@ nsDragService::UpdateDragEffect() {
   return NS_OK;
 }
 
+void nsDragService::ReplyToDragMotion() {
+  if (mTargetDragContext) {
+    ReplyToDragMotion(mTargetDragContext);
+  }
+#ifdef MOZ_WAYLAND
+  else if (mTargetWaylandDataOffer) {
+    ReplyToDragMotion(mTargetWaylandDataOffer);
+  }
+#endif
+}
+
 void nsDragService::DispatchMotionEvents() {
-  mCanDrop = false;
-
   FireDragEventAtSource(eDrag, GetCurrentModifiers());
-
   if (mTargetWindow) {
     mTargetWindow->DispatchDragEvent(eDragOver, mTargetWindowPoint,
                                      mTargetTime);

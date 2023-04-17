@@ -63,6 +63,10 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor,
                                    bool* _retval) override;
 
+  
+  
+  
+  
   NS_IMETHOD UpdateDragEffect() override;
 
   
@@ -102,6 +106,11 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   void SetDragIcon(GdkDragContext* aContext);
   gboolean IsDragActive() { return mScheduledTask != eDragTaskNone; }
+
+  
+  
+  
+  void ReplyToDragMotion();
 
  protected:
   virtual ~nsDragService();

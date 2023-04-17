@@ -8141,8 +8141,16 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
   LayoutDeviceIntPoint point = window->GdkPointToDevicePixels({retx, rety});
 
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
-  return dragService->ScheduleMotionEvent(innerMostWindow, aDragContext,
-                                          aDataOffer, point, aTime);
+  if (!dragService->ScheduleMotionEvent(innerMostWindow, aDragContext,
+                                        aDataOffer, point, aTime)) {
+    return FALSE;
+  }
+  
+  
+  if (GdkIsWaylandDisplay()) {
+    dragService->ReplyToDragMotion();
+  }
+  return TRUE;
 }
 
 static gboolean drag_motion_event_cb(GtkWidget* aWidget,
