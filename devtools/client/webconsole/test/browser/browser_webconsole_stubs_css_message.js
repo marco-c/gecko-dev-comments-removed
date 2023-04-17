@@ -6,7 +6,6 @@
 const {
   STUBS_UPDATE_ENV,
   createCommandsForTab,
-  createResourceWatcherForCommands,
   getCleanedPacket,
   getStubFile,
   writeStubsToFile,
@@ -63,7 +62,8 @@ async function generateCssMessageStubs() {
 
   const tab = await addTab(TEST_URI);
   const commands = await createCommandsForTab(tab);
-  const resourceWatcher = await createResourceWatcherForCommands(commands);
+  await commands.targetCommand.startListening();
+  const resourceCommand = commands.resourceCommand;
 
   
   
@@ -76,7 +76,7 @@ async function generateCssMessageStubs() {
     }
   };
 
-  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable: onCSSMessageAvailable,
   });
 
@@ -101,7 +101,7 @@ async function generateCssMessageStubs() {
     await received;
   }
 
-  resourceWatcher.unwatchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+  resourceCommand.unwatchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable: onCSSMessageAvailable,
   });
 

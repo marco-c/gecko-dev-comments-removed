@@ -6,7 +6,6 @@
 const {
   STUBS_UPDATE_ENV,
   createCommandsForMainProcess,
-  createResourceWatcherForCommands,
   getCleanedPacket,
   getSerializedPacket,
   getStubFile,
@@ -61,7 +60,8 @@ async function generatePlatformMessagesStubs() {
   const stubs = new Map();
 
   const commands = await createCommandsForMainProcess();
-  const resourceWatcher = await createResourceWatcherForCommands(commands);
+  await commands.targetCommand.startListening();
+  const resourceCommand = commands.resourceCommand;
 
   
   
@@ -73,8 +73,8 @@ async function generatePlatformMessagesStubs() {
       handlePlatformMessage(resource);
     }
   };
-  await resourceWatcher.watchResources(
-    [resourceWatcher.TYPES.PLATFORM_MESSAGE],
+  await resourceCommand.watchResources(
+    [resourceCommand.TYPES.PLATFORM_MESSAGE],
     {
       onAvailable: onPlatformMessageAvailable,
     }

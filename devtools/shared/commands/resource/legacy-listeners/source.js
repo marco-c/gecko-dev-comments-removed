@@ -4,9 +4,7 @@
 
 "use strict";
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
+const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
 
 
 
@@ -52,7 +50,7 @@ module.exports = async function({ targetCommand, targetFront, onAvailable }) {
     }
     sourcesActorIDCache.add(source.actor);
     
-    source.resourceType = ResourceWatcher.TYPES.SOURCE;
+    source.resourceType = ResourceCommand.TYPES.SOURCE;
     onAvailable([source]);
   });
 
@@ -83,7 +81,7 @@ module.exports = async function({ targetCommand, targetFront, onAvailable }) {
   for (const source of sources) {
     sourcesActorIDCache.add(source.actor);
     
-    source.resourceType = ResourceWatcher.TYPES.SOURCE;
+    source.resourceType = ResourceCommand.TYPES.SOURCE;
   }
   onAvailable(sources);
 };

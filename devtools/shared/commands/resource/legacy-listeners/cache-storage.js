@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
+
+const {
+  makeStorageLegacyListener,
+} = require("devtools/shared/commands/resource/legacy-listeners/storage-utils");
+
+module.exports = makeStorageLegacyListener(
+  "Cache",
+  ResourceCommand.TYPES.CACHE_STORAGE
+);

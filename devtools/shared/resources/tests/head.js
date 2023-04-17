@@ -15,14 +15,10 @@ Services.scriptloader.loadSubScript(
 const { DevToolsClient } = require("devtools/client/devtools-client");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 
-async function _initResourceWatcherFromCommands(
+async function _initResourceCommandFromCommands(
   commands,
   { listenForWorkers = false } = {}
 ) {
-  const {
-    ResourceWatcher,
-  } = require("devtools/shared/resources/resource-watcher");
-
   const targetCommand = commands.targetCommand;
   if (listenForWorkers) {
     targetCommand.listenForWorkers = true;
@@ -30,9 +26,13 @@ async function _initResourceWatcherFromCommands(
   await targetCommand.startListening();
 
   
-  const resourceWatcher = new ResourceWatcher(targetCommand);
-
-  return { client: commands.client, commands, resourceWatcher, targetCommand };
+  
+  return {
+    client: commands.client,
+    commands,
+    resourceCommand: commands.resourceCommand,
+    targetCommand,
+  };
 }
 
 
@@ -52,9 +52,9 @@ async function _initResourceWatcherFromCommands(
 
 
 
-async function initResourceWatcher(tab, options) {
+async function initResourceCommand(tab, options) {
   const commands = await CommandsFactory.forTab(tab);
-  return _initResourceWatcherFromCommands(commands, options);
+  return _initResourceCommandFromCommands(commands, options);
 }
 
 
@@ -70,9 +70,9 @@ async function initResourceWatcher(tab, options) {
 
 
 
-async function initMultiProcessResourceWatcher() {
+async function initMultiProcessResourceCommand() {
   const commands = await CommandsFactory.forMainProcess();
-  return _initResourceWatcherFromCommands(commands);
+  return _initResourceCommandFromCommands(commands);
 }
 
 

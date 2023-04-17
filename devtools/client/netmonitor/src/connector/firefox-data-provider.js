@@ -31,13 +31,13 @@ class FirefoxDataProvider {
 
 
 
-  constructor({ webConsoleFront, actions, owner, resourceWatcher }) {
+  constructor({ webConsoleFront, actions, owner, resourceCommand }) {
     
     this.webConsoleFront = webConsoleFront;
     this.actions = actions || {};
     this.actionsEnabled = true;
     this.owner = owner;
-    this.resourceWatcher = resourceWatcher;
+    this.resourceCommand = resourceCommand;
     
     this.stackTraces = new Map();
     
@@ -521,8 +521,8 @@ class FirefoxDataProvider {
     let response;
     if (
       clientMethodName == "getStackTrace" &&
-      this.resourceWatcher.hasResourceWatcherSupport(
-        this.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE
+      this.resourceCommand.hasResourceCommandSupport(
+        this.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
       )
     ) {
       const requestInfo = this.stackTraceRequestInfoByActorID.get(

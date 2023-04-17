@@ -3,10 +3,6 @@
 
 "use strict";
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 
 
 
@@ -23,13 +19,13 @@ add_task(async function() {
 
   const {
     client,
-    resourceWatcher,
+    resourceCommand,
     targetCommand,
-  } = await initMultiProcessResourceWatcher();
+  } = await initMultiProcessResourceCommand();
 
   const expectedPlatformMessage = "expectedMessage";
 
-  info("Log a message *before* calling ResourceWatcher.watchResources");
+  info("Log a message *before* calling ResourceCommand.watchResources");
   Services.console.logStringMessage(expectedPlatformMessage);
 
   info("Call watchResources from 2 separate call sites consecutively");
@@ -42,8 +38,8 @@ add_task(async function() {
   
   
   
-  const initialWatchPromise = resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.CSS_MESSAGE],
+  const initialWatchPromise = resourceCommand.watchResources(
+    [resourceCommand.TYPES.CSS_MESSAGE],
     {
       onAvailable: onCssMessageAvailable,
     }
@@ -51,8 +47,8 @@ add_task(async function() {
 
   
   const onMessageReceived = waitForNextResource(
-    resourceWatcher,
-    ResourceWatcher.TYPES.PLATFORM_MESSAGE,
+    resourceCommand,
+    resourceCommand.TYPES.PLATFORM_MESSAGE,
     {
       ignoreExistingResources: false,
       predicate: r => r.message === expectedPlatformMessage,
@@ -67,7 +63,7 @@ add_task(async function() {
   await initialWatchPromise;
 
   
-  resourceWatcher.unwatchResources([ResourceWatcher.TYPES.CSS_MESSAGE], {
+  resourceCommand.unwatchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable: onCssMessageAvailable,
   });
 

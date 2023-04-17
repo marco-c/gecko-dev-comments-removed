@@ -36,9 +36,6 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
 const { createCommandsDictionary } = require("devtools/shared/commands/index");
 
 const { BrowserLoader } = ChromeUtils.import(
@@ -787,7 +784,8 @@ Toolbox.prototype = {
         this._onTargetThreadFrontResumeWrongOrder.bind(this)
       );
 
-      this.resourceWatcher = new ResourceWatcher(this.commands.targetCommand);
+      
+      this.resourceCommand = this.commands.resourceCommand;
 
       
       
@@ -805,16 +803,16 @@ Toolbox.prototype = {
 
       
       
-      const onResourcesWatched = this.resourceWatcher.watchResources(
+      const onResourcesWatched = this.resourceCommand.watchResources(
         [
-          this.resourceWatcher.TYPES.CONSOLE_MESSAGE,
-          this.resourceWatcher.TYPES.ERROR_MESSAGE,
+          this.resourceCommand.TYPES.CONSOLE_MESSAGE,
+          this.resourceCommand.TYPES.ERROR_MESSAGE,
           
           
           
           
           
-          this.resourceWatcher.TYPES.NETWORK_EVENT,
+          this.resourceCommand.TYPES.NETWORK_EVENT,
         ],
         {
           onAvailable: this._onResourceAvailable,
@@ -3763,11 +3761,11 @@ Toolbox.prototype = {
       this._onTargetAvailable,
       this._onTargetDestroyed
     );
-    this.resourceWatcher.unwatchResources(
+    this.resourceCommand.unwatchResources(
       [
-        this.resourceWatcher.TYPES.CONSOLE_MESSAGE,
-        this.resourceWatcher.TYPES.ERROR_MESSAGE,
-        this.resourceWatcher.TYPES.NETWORK_EVENT,
+        this.resourceCommand.TYPES.CONSOLE_MESSAGE,
+        this.resourceCommand.TYPES.ERROR_MESSAGE,
+        this.resourceCommand.TYPES.NETWORK_EVENT,
       ],
       { onAvailable: this._onResourceAvailable }
     );
@@ -4310,7 +4308,7 @@ Toolbox.prototype = {
 
     for (const resource of resources) {
       if (
-        resource.resourceType === this.resourceWatcher.TYPES.ERROR_MESSAGE &&
+        resource.resourceType === this.resourceCommand.TYPES.ERROR_MESSAGE &&
         
         resource.pageError.error
       ) {
@@ -4319,7 +4317,7 @@ Toolbox.prototype = {
       }
 
       if (
-        resource.resourceType === this.resourceWatcher.TYPES.CONSOLE_MESSAGE
+        resource.resourceType === this.resourceCommand.TYPES.CONSOLE_MESSAGE
       ) {
         const { level } = resource.message;
         if (level === "error" || level === "exception" || level === "assert") {
@@ -4342,7 +4340,7 @@ Toolbox.prototype = {
     for (const { update } of resources) {
       
       if (
-        update.resourceType === this.resourceWatcher.TYPES.NETWORK_EVENT &&
+        update.resourceType === this.resourceCommand.TYPES.NETWORK_EVENT &&
         update.resourceUpdates.status &&
         update.resourceUpdates.status.toString().match(REGEX_4XX_5XX)
       ) {

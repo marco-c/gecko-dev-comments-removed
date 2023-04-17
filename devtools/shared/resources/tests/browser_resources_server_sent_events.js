@@ -4,9 +4,8 @@
 "use strict";
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
+
+const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
 
 const targets = {
   TOP_LEVEL_DOCUMENT: "top-level-document",
@@ -26,7 +25,7 @@ add_task(async function() {
 async function testServerSentEventResources(target) {
   const tab = await addTab(URL_ROOT + "sse_frontend.html");
 
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -36,8 +35,8 @@ async function testServerSentEventResources(target) {
     availableResources.push(...resources);
   }
 
-  await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.SERVER_SENT_EVENT],
+  await resourceCommand.watchResources(
+    [resourceCommand.TYPES.SERVER_SENT_EVENT],
     { onAvailable: onResourceAvailable }
   );
 
@@ -70,8 +69,8 @@ async function testServerSentEventResources(target) {
     httpChannelId,
   });
 
-  await resourceWatcher.unwatchResources(
-    [ResourceWatcher.TYPES.SERVER_SENT_EVENT],
+  await resourceCommand.unwatchResources(
+    [resourceCommand.TYPES.SERVER_SENT_EVENT],
     { onAvailable: onResourceAvailable }
   );
 
@@ -83,7 +82,7 @@ async function testServerSentEventResources(target) {
 function assertResource(resource, expected) {
   is(
     resource.resourceType,
-    ResourceWatcher.TYPES.SERVER_SENT_EVENT,
+    ResourceCommand.TYPES.SERVER_SENT_EVENT,
     "Resource type is correct"
   );
 

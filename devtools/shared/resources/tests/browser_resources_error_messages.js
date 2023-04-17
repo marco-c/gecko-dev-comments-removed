@@ -6,10 +6,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 
 const httpServer = createTestHTTPServer();
 httpServer.registerPathHandler(`/test_page_errors.html`, (req, res) => {
@@ -32,7 +28,7 @@ async function testErrorMessagesResources() {
   
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -43,7 +39,7 @@ async function testErrorMessagesResources() {
   );
 
   info(
-    "Log some errors *before* calling ResourceWatcher.watchResources in order to assert" +
+    "Log some errors *before* calling ResourceCommand.watchResources in order to assert" +
       " the behavior of already existing messages."
   );
   await triggerErrors(tab);
@@ -86,7 +82,7 @@ async function testErrorMessagesResources() {
     }
   };
 
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.ERROR_MESSAGE], {
     onAvailable,
   });
 
@@ -95,7 +91,7 @@ async function testErrorMessagesResources() {
   );
 
   info(
-    "Now log errors *after* the call to ResourceWatcher.watchResources and after having" +
+    "Now log errors *after* the call to ResourceCommand.watchResources and after having" +
       " received all existing messages"
   );
   await triggerErrors(tab);
@@ -113,7 +109,7 @@ async function testErrorMessagesResourcesWithIgnoreExistingResources() {
   info("Test ignoreExistingResources option for ERROR_MESSAGE");
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -123,7 +119,7 @@ async function testErrorMessagesResourcesWithIgnoreExistingResources() {
   await triggerErrors(tab);
 
   const availableResources = [];
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.ERROR_MESSAGE], {
     onAvailable: resources => availableResources.push(...resources),
     ignoreExistingResources: true,
   });
