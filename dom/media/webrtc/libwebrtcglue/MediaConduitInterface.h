@@ -380,11 +380,13 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
 };
 
 
+
+
 class CodecPluginID {
  public:
+  virtual MediaEventSource<uint64_t>* InitPluginEvent() { return nullptr; }
+  virtual MediaEventSource<uint64_t>* ReleasePluginEvent() { return nullptr; }
   virtual ~CodecPluginID() {}
-
-  virtual uint64_t PluginID() const = 0;
 };
 
 class VideoEncoder : public CodecPluginID {
