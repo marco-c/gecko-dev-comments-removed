@@ -49,21 +49,11 @@ class NodePicker {
 
 
 
-  _isEventAllowed({ target, view }) {
-    
-    
-    
-    
-    
-    
-    
-    if (isRemoteBrowserElement(target)) {
-      return false;
-    }
 
+  _isEventAllowed({ view }) {
     
     
-    if (view instanceof Ci.nsIDOMChromeWindow) {
+    if (this._targetActor.window instanceof Ci.nsIDOMChromeWindow) {
       return true;
     }
 
@@ -81,11 +71,16 @@ class NodePicker {
 
 
   _onPick(event) {
-    if (!this._isEventAllowed(event)) {
+    
+    
+    if (isRemoteBrowserElement(event.target)) {
       return;
     }
 
     this._preventContentEvent(event);
+    if (!this._isEventAllowed(event)) {
+      return;
+    }
 
     
     
@@ -107,10 +102,16 @@ class NodePicker {
   }
 
   _onHovered(event) {
+    
+    
+    if (isRemoteBrowserElement(event.target)) {
+      return;
+    }
+
+    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
-    this._preventContentEvent(event);
 
     this._currentNode = this._findAndAttachElement(event);
     if (this._hoveredNode !== this._currentNode.node) {
@@ -124,10 +125,10 @@ class NodePicker {
       return;
     }
 
+    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
-    this._preventContentEvent(event);
 
     let currentNode = this._currentNode.node.rawNode;
 
@@ -213,7 +214,7 @@ class NodePicker {
   
   
   _preventContentEvent(event) {
-    if (!this._isEventAllowed(event)) {
+    if (isRemoteBrowserElement(event.target)) {
       return;
     }
     event.stopPropagation();

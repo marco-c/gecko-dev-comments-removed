@@ -75,53 +75,22 @@ add_task(async function() {
     "The color property of the <div> within a tab isn't red"
   );
 
-  await ToolboxTask.spawn(null, async () => {
-    const onPickerStarted = gToolbox.nodePicker.once("picker-started");
-
-    
-    
-    
-    
-    const onPickerReady = new Promise(resolve => {
-      gToolbox.nodePicker.on(
-        "inspector-front-ready-for-picker",
-        async function onFrontReady(walker) {
-          if (await walker.querySelector(walker.rootNode, "#second-div")) {
-            gToolbox.nodePicker.off(
-              "inspector-front-ready-for-picker",
-              onFrontReady
-            );
-            resolve();
-          }
-        }
-      );
-    });
-
-    gToolbox.nodePicker.start();
-    await onPickerStarted;
-    await onPickerReady;
-
-    const inspector = gToolbox.getPanel("inspector");
-
-    
-    
-    this.onPickerStopped = gToolbox.nodePicker.once("picker-stopped");
-    this.onInspectorUpdated = inspector.once("inspector-updated");
-  });
-
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#second-div",
-    {},
-    tab.linkedBrowser
+  info("Check that the node picker can be used on element in the content page");
+  await pickNodeInContentPage(
+    ToolboxTask,
+    tab,
+    "browser[test-tab]",
+    "#second-div"
   );
-
   const secondColor = await ToolboxTask.spawn(null, async () => {
-    info(" # Waiting for picker stop");
-    await this.onPickerStopped;
-    info(" # Waiting for inspector-updated");
-    await this.onInspectorUpdated;
-
     const inspector = gToolbox.getPanel("inspector");
+
+    is(
+      inspector.selection.nodeFront.id,
+      "second-div",
+      "The expected element is selected in the inspector"
+    );
+
     const view = inspector.getPanel("computedview").computedView;
     function getProperty(name) {
       const propertyViews = view.propertyViews;
@@ -142,5 +111,114 @@ add_task(async function() {
     "The color property of the <div> within a tab isn't blue"
   );
 
+  info(
+    "Check that the node picker can be used for element in non-remote <browser>"
+  );
+  const nonRemoteUrl = "about:robots";
+  const nonRemoteTab = await addTab(nonRemoteUrl);
+  
+  nonRemoteTab.linkedBrowser.setAttribute("test-tab-non-remote", "");
+
+  
+  
+  is(
+    nonRemoteTab.linkedBrowser.hasAttribute("remote"),
+    false,
+    "The <browser> element for about:robots is not remote"
+  );
+
+  await pickNodeInContentPage(
+    ToolboxTask,
+    nonRemoteTab,
+    "browser[test-tab-non-remote]",
+    "#errorTryAgain"
+  );
+
+  await ToolboxTask.spawn(null, async () => {
+    const inspector = gToolbox.getPanel("inspector");
+    is(
+      inspector.selection.nodeFront.id,
+      "errorTryAgain",
+      "The element inside a non-remote <browser> element is selected in the inspector"
+    );
+  });
+
   await ToolboxTask.destroy();
 });
+
+async function pickNodeInContentPage(
+  ToolboxTask,
+  tab,
+  browserElementSelector,
+  contentElementSelector
+) {
+  await ToolboxTask.spawn(
+    JSON.stringify(contentElementSelector),
+    async _selector => {
+      const onPickerStarted = gToolbox.nodePicker.once("picker-started");
+
+      
+      
+      
+      
+      const onPickerReady = new Promise(resolve => {
+        gToolbox.nodePicker.on(
+          "inspector-front-ready-for-picker",
+          async function onFrontReady(walker) {
+            if (await walker.querySelector(walker.rootNode, _selector)) {
+              gToolbox.nodePicker.off(
+                "inspector-front-ready-for-picker",
+                onFrontReady
+              );
+              resolve();
+            }
+          }
+        );
+      });
+
+      gToolbox.nodePicker.start();
+      await onPickerStarted;
+      await onPickerReady;
+
+      const inspector = gToolbox.getPanel("inspector");
+
+      
+      
+      this.onPickerStopped = gToolbox.nodePicker.once("picker-stopped");
+      this.onInspectorUpdated = inspector.once("inspector-updated");
+    }
+  );
+
+  
+  const { x, y } = await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [contentElementSelector],
+    _selector => {
+      const rect = content.document
+        .querySelector(_selector)
+        .getBoundingClientRect();
+      return { x: rect.x, y: rect.y };
+    }
+  );
+
+  
+  
+  
+  
+  await EventUtils.synthesizeMouse(
+    document.querySelector(browserElementSelector),
+    x + 5,
+    y + 5,
+    {}
+  );
+
+  await ToolboxTask.spawn(null, async () => {
+    info(" # Waiting for picker stop");
+    await this.onPickerStopped;
+    info(" # Waiting for inspector-updated");
+    await this.onInspectorUpdated;
+
+    delete this.onPickerStopped;
+    delete this.onInspectorUpdated;
+  });
+}
