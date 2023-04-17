@@ -38,10 +38,12 @@ add_task(async function runRTPTestAnimation() {
     }
 
     let expectedPrecision = data.precision;
+    var isRounded = function() {
+      return "Placeholder for eslint";
+    };
+    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    
-    
-    let isRounded = eval(data.isRoundedFunc);
+    eval(evalStr);
 
     const testDiv = content.document.getElementById("testDiv");
     const animation = testDiv.animate({ opacity: [0, 1] }, 100000);

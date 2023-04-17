@@ -12,10 +12,12 @@
 add_task(async function runRTPTestDOM() {
   let runTests = async function(data) {
     let expectedPrecision = data.precision;
+    var isRounded = function() {
+      return "Placeholder for eslint";
+    };
+    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    
-    
-    let isRounded = eval(data.isRoundedFunc);
+    eval(evalStr);
 
     
     
@@ -75,10 +77,12 @@ add_task(async function runRTPTestDOM() {
 let runWorkerTest = async function(data) {
   let expectedPrecision = data.precision;
   await new Promise(resolve => {
+    var isRounded = function() {
+      return "Placeholder for eslint";
+    };
+    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    
-    
-    let isRounded = eval(data.isRoundedFunc);
+    eval(evalStr);
 
     let worker = new content.Worker(
       "coop_header.sjs?crossOriginIsolated=true&worker=true"

@@ -4,10 +4,12 @@ add_task(async function runRPTests() {
   let runTests = async function(data) {
     let timerlist = data.list;
     let expectedPrecision = data.precision;
+    var isRounded = function() {
+      return "Placeholder for eslint";
+    };
+    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    
-    
-    let isRounded = eval(data.isRoundedFunc);
+    eval(evalStr);
 
     ok(
       isRounded(content.performance.timeOrigin, expectedPrecision),
@@ -104,10 +106,12 @@ add_task(async function runRTPTests() {
   let runTests = async function(data) {
     let timerlist = data.list;
     let expectedPrecision = data.precision;
+    var isRounded = function() {
+      return "Placeholder for eslint";
+    };
+    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    
-    
-    let isRounded = eval(data.isRoundedFunc);
+    eval(evalStr);
 
     ok(
       isRounded(content.performance.timeOrigin, expectedPrecision),
