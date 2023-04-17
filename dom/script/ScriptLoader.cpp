@@ -3143,6 +3143,13 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
 
   
   
+  
+  nsIScriptElement* currentScript =
+      aRequest->IsModuleRequest() ? nullptr : aRequest->GetScriptElement();
+  AutoCurrentScriptUpdater scriptUpdater(this, currentScript);
+
+  
+  
   nsAutoMicroTask mt;
   AutoEntryScript aes(globalObject, profilerLabelString.get(), true);
   JSContext* cx = aes.cx();
@@ -3251,10 +3258,6 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
                           "scriptloader_no_encode");
       aRequest->mCacheInfo = nullptr;
     } else {
-      
-      AutoCurrentScriptUpdater scriptUpdater(this,
-                                             aRequest->GetScriptElement());
-
       
       RefPtr<ClassicScript> classicScript =
           new ClassicScript(aRequest->mFetchOptions, aRequest->mBaseURL);
