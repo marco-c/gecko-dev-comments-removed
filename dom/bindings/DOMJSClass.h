@@ -384,6 +384,11 @@ typedef NativePropertiesN<7> NativeProperties;
 struct NativePropertiesHolder {
   const NativeProperties* regular;
   const NativeProperties* chromeOnly;
+  
+  
+  
+  
+  bool* inited;
 };
 
 
