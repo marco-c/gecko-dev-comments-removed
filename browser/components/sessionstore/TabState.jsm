@@ -26,8 +26,8 @@ ChromeUtils.defineModuleGetter(
 
 
 var TabState = Object.freeze({
-  update(browser, data) {
-    TabStateInternal.update(browser, data);
+  update(permanentKey, data) {
+    TabStateInternal.update(permanentKey, data);
   },
 
   collect(tab, extData) {
@@ -38,8 +38,8 @@ var TabState = Object.freeze({
     return TabStateInternal.clone(tab, extData);
   },
 
-  copyFromCache(browser, tabData, options) {
-    TabStateInternal.copyFromCache(browser, tabData, options);
+  copyFromCache(permanentKey, tabData, options) {
+    TabStateInternal.copyFromCache(permanentKey, tabData, options);
   },
 });
 
@@ -47,8 +47,8 @@ var TabStateInternal = {
   
 
 
-  update(browser, { data }) {
-    TabStateCache.update(browser, data);
+  update(permanentKey, { data }) {
+    TabStateCache.update(permanentKey, data);
   },
 
   
@@ -123,7 +123,7 @@ var TabStateInternal = {
 
     
     
-    this.copyFromCache(browser, tabData, options);
+    this.copyFromCache(browser.permanentKey, tabData, options);
 
     
     
@@ -165,8 +165,8 @@ var TabStateInternal = {
 
 
 
-  copyFromCache(browser, tabData, options = {}) {
-    let data = TabStateCache.get(browser);
+  copyFromCache(permanentKey, tabData, options = {}) {
+    let data = TabStateCache.get(permanentKey);
     if (!data) {
       return;
     }
