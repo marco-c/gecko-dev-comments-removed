@@ -62,9 +62,6 @@ class nsAppStartup final : public nsIAppStartup,
 
 #if defined(XP_WIN)
   
-  bool mAllowWindowless;
-
-  
   typedef mozilla::probes::ProbeManager ProbeManager;
   typedef mozilla::probes::Probe Probe;
   RefPtr<ProbeManager> mProbesManager;

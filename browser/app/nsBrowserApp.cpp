@@ -346,12 +346,6 @@ int main(int argc, char* argv[], char* envp[]) {
 #if defined(XP_WIN) || defined(XP_MACOSX)
   if (argc > 1 && IsArg(argv[1], "silentmode")) {
     ::putenv(const_cast<char*>("MOZ_APP_SILENT_START=1"));
-#  if defined(XP_WIN)
-    
-    
-    
-    ::putenv(const_cast<char*>("MOZ_APP_ALLOW_WINDOWLESS=1"));
-#  endif
   }
 #endif
 
