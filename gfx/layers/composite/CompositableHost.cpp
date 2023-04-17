@@ -12,7 +12,6 @@
 #include "gfxUtils.h"
 #include "ImageHost.h"  
 #include "Layers.h"
-#include "TiledContentHost.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"     
@@ -110,9 +109,6 @@ already_AddRefed<CompositableHost> CompositableHost::Create(
     const TextureInfo& aTextureInfo, bool aUseWebRender) {
   RefPtr<CompositableHost> result;
   switch (aTextureInfo.mCompositableType) {
-    case CompositableType::CONTENT_TILED:
-      result = new TiledContentHost(aTextureInfo);
-      break;
     case CompositableType::IMAGE:
       if (aUseWebRender) {
         result = new WebRenderImageHost(aTextureInfo);
