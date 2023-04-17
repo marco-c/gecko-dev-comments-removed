@@ -89,9 +89,11 @@ Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
   
   CACHE_TRY(cacheDir->Append(IntToString(aId.m3[7])));
 
-  QM_TRY(
-      QM_OR_ELSE_WARN(ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-                      ErrToDefaultOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS>));
+  
+  
+  
+  QM_TRY(ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755))
+             .orElse(ErrToDefaultOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS>));
 
   return WrapNotNullUnchecked(std::move(cacheDir));
 }
