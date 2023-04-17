@@ -176,8 +176,20 @@ class VirtualenvManager(VirtualenvHelper):
             return False
 
         env_requirements = self._requirements()
-        deps = [__file__] + env_requirements.requirements_paths
 
+        virtualenv_package = os.path.join(
+            self.topsrcdir,
+            "third_party",
+            "python",
+            "virtualenv",
+            "virtualenv",
+            "version.py",
+        )
+        deps = [__file__, virtualenv_package] + env_requirements.requirements_paths
+
+        
+        
+        
         
         
         activate_mtime = os.path.getmtime(self.activate_path)
