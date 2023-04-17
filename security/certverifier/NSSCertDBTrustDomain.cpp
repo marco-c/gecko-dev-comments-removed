@@ -48,7 +48,6 @@
 
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-AppleGoogleDigiCertData.inc"
-#include "TrustOverride-StartComAndWoSignData.inc"
 #include "TrustOverride-SymantecData.inc"
 
 using namespace mozilla;
@@ -1106,49 +1105,6 @@ Result NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
   return rv;
 }
 
-
-
-
-
-
-
-
-
-static Result CheckForStartComOrWoSign(const UniqueCERTCertList& certChain) {
-  if (CERT_LIST_EMPTY(certChain)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  const CERTCertListNode* endEntityNode = CERT_LIST_HEAD(certChain);
-  if (!endEntityNode || !endEntityNode->cert) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  PRTime notBefore;
-  PRTime notAfter;
-  if (CERT_GetCertTimes(endEntityNode->cert, &notBefore, &notAfter) !=
-      SECSuccess) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-  
-  
-  static const PRTime OCTOBER_21_2016 = 1477008000000000;
-  if (notBefore <= OCTOBER_21_2016) {
-    return Success;
-  }
-
-  for (const CERTCertListNode* node = CERT_LIST_HEAD(certChain);
-       !CERT_LIST_END(node, certChain); node = CERT_LIST_NEXT(node)) {
-    if (!node || !node->cert) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE;
-    }
-    nsTArray<uint8_t> certDER(node->cert->derCert.data,
-                              node->cert->derCert.len);
-    if (CertDNIsInList(certDER, StartComAndWoSignDNs)) {
-      return Result::ERROR_REVOKED_CERTIFICATE;
-    }
-  }
-  return Success;
-}
-
 SECStatus GetCertDistrustAfterValue(const SECItem* distrustItem,
                                     PRTime& distrustTime) {
   if (!distrustItem || !distrustItem->data || distrustItem->len != 13) {
@@ -1231,11 +1187,6 @@ Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   }
   if (CERT_LIST_EMPTY(certList)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
-  Result rv = CheckForStartComOrWoSign(certList);
-  if (rv != Success) {
-    return rv;
   }
 
   
