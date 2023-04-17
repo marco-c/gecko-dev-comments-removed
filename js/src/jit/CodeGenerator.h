@@ -254,6 +254,12 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   IonScriptCounts* maybeCreateScriptCounts();
 
+  void testValueTruthyForType(JSValueType type, ScratchTagScope& tag,
+                              const ValueOperand& value, Register scratch1,
+                              Register scratch2, FloatRegister fr,
+                              Label* ifTruthy, Label* ifFalsy,
+                              OutOfLineTestObject* ool, bool skipTypeTest);
+
   
   
   
@@ -261,8 +267,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void testValueTruthyKernel(const ValueOperand& value,
                              const LDefinition* scratch1,
                              const LDefinition* scratch2, FloatRegister fr,
-                             Label* ifTruthy, Label* ifFalsy,
-                             OutOfLineTestObject* ool, MDefinition* valueMIR);
+                             TypeDataList observedTypes, Label* ifTruthy,
+                             Label* ifFalsy, OutOfLineTestObject* ool);
 
   
   
@@ -271,8 +277,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   
   void testValueTruthy(const ValueOperand& value, const LDefinition* scratch1,
                        const LDefinition* scratch2, FloatRegister fr,
-                       Label* ifTruthy, Label* ifFalsy,
-                       OutOfLineTestObject* ool, MDefinition* valueMIR);
+                       TypeDataList observedTypes, Label* ifTruthy,
+                       Label* ifFalsy, OutOfLineTestObject* ool);
 
   
   

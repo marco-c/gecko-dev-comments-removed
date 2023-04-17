@@ -1410,83 +1410,139 @@ void CodeGenerator::testObjectEmulatesUndefined(Register objreg,
   masm.jump(ifDoesntEmulateUndefined);
 }
 
+void CodeGenerator::testValueTruthyForType(
+    JSValueType type, ScratchTagScope& tag, const ValueOperand& value,
+    Register scratch1, Register scratch2, FloatRegister fr, Label* ifTruthy,
+    Label* ifFalsy, OutOfLineTestObject* ool, bool skipTypeTest) {
+#ifdef DEBUG
+  if (skipTypeTest) {
+    Label expected;
+    masm.branchTestType(Assembler::Equal, tag, type, &expected);
+    masm.assumeUnreachable("Unexpected Value type in testValueTruthyForType");
+    masm.bind(&expected);
+  }
+#endif
+
+  
+  switch (type) {
+    case JSVAL_TYPE_UNDEFINED:
+    case JSVAL_TYPE_NULL:
+      
+      if (!skipTypeTest) {
+        masm.branchTestType(Assembler::Equal, tag, type, ifFalsy);
+      } else {
+        masm.jump(ifFalsy);
+      }
+      return;
+    case JSVAL_TYPE_SYMBOL:
+      
+      if (!skipTypeTest) {
+        masm.branchTestSymbol(Assembler::Equal, tag, ifTruthy);
+      } else {
+        masm.jump(ifTruthy);
+      }
+      return;
+    case JSVAL_TYPE_OBJECT: {
+      Label notObject;
+      if (!skipTypeTest) {
+        masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
+      }
+      ScratchTagScopeRelease _(&tag);
+      Register objreg = masm.extractObject(value, scratch1);
+      testObjectEmulatesUndefined(objreg, ifFalsy, ifTruthy, scratch2, ool);
+      masm.bind(&notObject);
+      return;
+    }
+    default:
+      break;
+  }
+
+  
+  Label differentType;
+  if (!skipTypeTest) {
+    masm.branchTestType(Assembler::NotEqual, tag, type, &differentType);
+  }
+
+  
+  ScratchTagScopeRelease _(&tag);
+  switch (type) {
+    case JSVAL_TYPE_BOOLEAN: {
+      masm.branchTestBooleanTruthy(false, value, ifFalsy);
+      break;
+    }
+    case JSVAL_TYPE_INT32: {
+      masm.branchTestInt32Truthy(false, value, ifFalsy);
+      break;
+    }
+    case JSVAL_TYPE_STRING: {
+      masm.branchTestStringTruthy(false, value, ifFalsy);
+      break;
+    }
+    case JSVAL_TYPE_BIGINT: {
+      masm.branchTestBigIntTruthy(false, value, ifFalsy);
+      break;
+    }
+    case JSVAL_TYPE_DOUBLE: {
+      masm.unboxDouble(value, fr);
+      masm.branchTestDoubleTruthy(false, fr, ifFalsy);
+      break;
+    }
+    default:
+      MOZ_CRASH("Unexpected value type");
+  }
+
+  
+  
+  if (!skipTypeTest) {
+    masm.jump(ifTruthy);
+  }
+
+  masm.bind(&differentType);
+}
+
 void CodeGenerator::testValueTruthyKernel(
     const ValueOperand& value, const LDefinition* scratch1,
-    const LDefinition* scratch2, FloatRegister fr, Label* ifTruthy,
-    Label* ifFalsy, OutOfLineTestObject* ool, MDefinition* valueMIR) {
+    const LDefinition* scratch2, FloatRegister fr, TypeDataList observedTypes,
+    Label* ifTruthy, Label* ifFalsy, OutOfLineTestObject* ool) {
+  Register scratch1Reg = ToRegister(scratch1);
+  Register scratch2Reg = ToRegister(scratch2);
   ScratchTagScope tag(masm, value);
   masm.splitTagForTest(value, tag);
 
-  masm.branchTestUndefined(Assembler::Equal, tag, ifFalsy);
-  masm.branchTestNull(Assembler::Equal, tag, ifFalsy);
+  const uint32_t NumTypes = 9;
+  const auto& defaultOrder = {
+      JSVAL_TYPE_UNDEFINED, JSVAL_TYPE_NULL,   JSVAL_TYPE_BOOLEAN,
+      JSVAL_TYPE_INT32,     JSVAL_TYPE_OBJECT, JSVAL_TYPE_STRING,
+      JSVAL_TYPE_DOUBLE,    JSVAL_TYPE_SYMBOL, JSVAL_TYPE_BIGINT};
+  MOZ_ASSERT(defaultOrder.size() == NumTypes);
 
-  Label notBoolean;
-  masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
-  {
-    ScratchTagScopeRelease _(&tag);
-    masm.branchTestBooleanTruthy(false, value, ifFalsy);
-  }
-  masm.jump(ifTruthy);
-  masm.bind(&notBoolean);
+  Vector<JSValueType, NumTypes, SystemAllocPolicy> remaining;
+  MOZ_ALWAYS_TRUE(remaining.reserve(defaultOrder.size()));
+  remaining.infallibleAppend(defaultOrder.begin(), defaultOrder.end());
 
-  Label notInt32;
-  masm.branchTestInt32(Assembler::NotEqual, tag, &notInt32);
-  {
-    ScratchTagScopeRelease _(&tag);
-    masm.branchTestInt32Truthy(false, value, ifFalsy);
-  }
-  masm.jump(ifTruthy);
-  masm.bind(&notInt32);
-
-  if (ool) {
-    Label notObject;
-    masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
-
-    {
-      ScratchTagScopeRelease _(&tag);
-      Register objreg = masm.extractObject(value, ToRegister(scratch1));
-      testObjectEmulatesUndefined(objreg, ifFalsy, ifTruthy,
-                                  ToRegister(scratch2), ool);
-    }
-
-    masm.bind(&notObject);
-  } else {
-    masm.branchTestObject(Assembler::Equal, tag, ifTruthy);
-  }
-
-  Label notString;
-  masm.branchTestString(Assembler::NotEqual, tag, &notString);
-  {
-    ScratchTagScopeRelease _(&tag);
-    masm.branchTestStringTruthy(false, value, ifFalsy);
-  }
-  masm.jump(ifTruthy);
-  masm.bind(&notString);
-
-  Label notBigInt;
-  masm.branchTestBigInt(Assembler::NotEqual, tag, &notBigInt);
-  {
-    ScratchTagScopeRelease _(&tag);
-    masm.branchTestBigIntTruthy(false, value, ifFalsy);
-  }
-  masm.jump(ifTruthy);
-  masm.bind(&notBigInt);
+  uint32_t numRemaining = remaining.length();
 
   
-  masm.branchTestSymbol(Assembler::Equal, tag, ifTruthy);
+  
+  for (auto& observed : observedTypes) {
+    JSValueType type = observed.type();
+
+    testValueTruthyForType(type, tag, value, scratch1Reg, scratch2Reg, fr,
+                           ifTruthy, ifFalsy, ool,  false);
+    MOZ_ASSERT(std::count(remaining.begin(), remaining.end(), type) == 1);
+    remaining.eraseIfEqual(type);
+    numRemaining--;
+  }
 
   
-#ifdef DEBUG
-  Label isDouble;
-  masm.branchTestDouble(Assembler::Equal, tag, &isDouble);
-  masm.assumeUnreachable("Unexpected Value type in testValueTruthyKernel");
-  masm.bind(&isDouble);
-#endif
-  {
-    ScratchTagScopeRelease _(&tag);
-    masm.unboxDouble(value, fr);
-    masm.branchTestDoubleTruthy(false, fr, ifFalsy);
+  for (auto type : remaining) {
+    
+    bool skipTypeTest = numRemaining == 1;
+    testValueTruthyForType(type, tag, value, scratch1Reg, scratch2Reg, fr,
+                           ifTruthy, ifFalsy, ool, skipTypeTest);
+    numRemaining--;
   }
+  MOZ_ASSERT(numRemaining == 0);
 
   
 }
@@ -1494,11 +1550,11 @@ void CodeGenerator::testValueTruthyKernel(
 void CodeGenerator::testValueTruthy(const ValueOperand& value,
                                     const LDefinition* scratch1,
                                     const LDefinition* scratch2,
-                                    FloatRegister fr, Label* ifTruthy,
-                                    Label* ifFalsy, OutOfLineTestObject* ool,
-                                    MDefinition* valueMIR) {
-  testValueTruthyKernel(value, scratch1, scratch2, fr, ifTruthy, ifFalsy, ool,
-                        valueMIR);
+                                    FloatRegister fr,
+                                    TypeDataList observedTypes, Label* ifTruthy,
+                                    Label* ifFalsy, OutOfLineTestObject* ool) {
+  testValueTruthyKernel(value, scratch1, scratch2, fr, observedTypes, ifTruthy,
+                        ifFalsy, ool);
   masm.jump(ifTruthy);
 }
 
@@ -1530,8 +1586,6 @@ void CodeGenerator::visitTestOAndBranch(LTestOAndBranch* lir) {
 }
 
 void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
-  MDefinition* input = lir->mir()->input();
-
   auto* ool = new (alloc()) OutOfLineTestObject();
   addOutOfLineCode(ool, lir->mir());
 
@@ -1539,8 +1593,8 @@ void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
   Label* falsy = getJumpLabelForBranch(lir->ifFalsy());
 
   testValueTruthy(ToValue(lir, LTestVAndBranch::Input), lir->temp1(),
-                  lir->temp2(), ToFloatRegister(lir->tempFloat()), truthy,
-                  falsy, ool, input);
+                  lir->temp2(), ToFloatRegister(lir->tempFloat()),
+                  lir->mir()->observedTypes(), truthy, falsy, ool);
 }
 
 void CodeGenerator::visitBooleanToString(LBooleanToString* lir) {
@@ -10508,17 +10562,17 @@ void CodeGenerator::visitNotO(LNotO* lir) {
 }
 
 void CodeGenerator::visitNotV(LNotV* lir) {
-  MDefinition* operand = lir->mir()->input();
-
   auto* ool = new (alloc()) OutOfLineTestObjectWithLabels();
   addOutOfLineCode(ool, lir->mir());
 
   Label* ifTruthy = ool->label1();
   Label* ifFalsy = ool->label2();
 
+  
+  TypeDataList dummy;
   testValueTruthyKernel(ToValue(lir, LNotV::Input), lir->temp1(), lir->temp2(),
-                        ToFloatRegister(lir->tempFloat()), ifTruthy, ifFalsy,
-                        ool, operand);
+                        ToFloatRegister(lir->tempFloat()), dummy, ifTruthy,
+                        ifFalsy, ool);
 
   Label join;
   Register output = ToRegister(lir->output());
