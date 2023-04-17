@@ -3,6 +3,7 @@
 
 #ifndef intl_components_DateTimeFormat_h_
 #define intl_components_DateTimeFormat_h_
+#include <functional>
 #include "unicode/udat.h"
 
 #include "mozilla/Assertions.h"
@@ -14,13 +15,24 @@
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Utf8.h"
+#include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
 namespace mozilla::intl {
 
-enum class DateTimeStyle { Full, Long, Medium, Short, None };
-
+class DateTimePatternGenerator;
 class Calendar;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -110,10 +122,117 @@ class Calendar;
 class DateTimeFormat final {
  public:
   
+
+
+  enum class HourCycle {
+    H11,
+    H12,
+    H23,
+    H24,
+  };
+
+  
+
+
+  enum class Style {
+    Full,
+    Long,
+    Medium,
+    Short,
+  };
+
+  
+
+
+
+  struct StyleBag {
+    Maybe<Style> date = Nothing();
+    Maybe<Style> time = Nothing();
+    Maybe<HourCycle> hourCycle = Nothing();
+    Maybe<bool> hour12 = Nothing();
+  };
+
+  
+
+
+  enum class Numeric {
+    Numeric,
+    TwoDigit,
+  };
+
+  
+
+
+  enum class Text {
+    Long,
+    Short,
+    Narrow,
+  };
+
+  
+
+
+  enum class Month {
+    Numeric,
+    TwoDigit,
+    Long,
+    Short,
+    Narrow,
+  };
+
+  
+
+
+  enum class TimeZoneName {
+    Long,
+    Short,
+    ShortOffset,
+    LongOffset,
+    ShortGeneric,
+    LongGeneric,
+  };
+
+  
+
+
+
+
+  static const char* ToString(DateTimeFormat::HourCycle aHourCycle);
+  static const char* ToString(DateTimeFormat::Style aStyle);
+  static const char* ToString(DateTimeFormat::Numeric aNumeric);
+  static const char* ToString(DateTimeFormat::Text aText);
+  static const char* ToString(DateTimeFormat::Month aMonth);
+  static const char* ToString(DateTimeFormat::TimeZoneName aTimeZoneName);
+
+  
+
+
+
+
+  struct ComponentsBag {
+    Maybe<Text> era = Nothing();
+    Maybe<Numeric> year = Nothing();
+    Maybe<Month> month = Nothing();
+    Maybe<Numeric> day = Nothing();
+    Maybe<Text> weekday = Nothing();
+    Maybe<Numeric> hour = Nothing();
+    Maybe<Numeric> minute = Nothing();
+    Maybe<Numeric> second = Nothing();
+    Maybe<TimeZoneName> timeZoneName = Nothing();
+    Maybe<bool> hour12 = Nothing();
+    Maybe<HourCycle> hourCycle = Nothing();
+    Maybe<Text> dayPeriod = Nothing();
+    Maybe<uint8_t> fractionalSecondDigits = Nothing();
+  };
+
+  
   
   
   DateTimeFormat(const DateTimeFormat&) = delete;
   DateTimeFormat& operator=(const DateTimeFormat&) = delete;
+
+  
+  using PatternVector = Vector<char16_t, 128>;
 
   
 
@@ -127,18 +246,9 @@ class DateTimeFormat final {
 
 
   static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromStyle(
-      Span<const char> aLocale, DateTimeStyle aDateStyle,
-      DateTimeStyle aTimeStyle,
+      Span<const char> aLocale, const StyleBag& aStyleBag,
+      DateTimePatternGenerator* aDateTimePatternGenerator,
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
-
-  
-
-
-
-
-  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
-      Span<const char> aLocale, Span<const char> aSkeleton,
-      Maybe<Span<const char>> aTimeZoneOverride = Nothing{});
 
   
 
@@ -154,7 +264,40 @@ class DateTimeFormat final {
 
   static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
       Span<const char> aLocale, Span<const char16_t> aSkeleton,
+      DateTimePatternGenerator* aDateTimePatternGenerator,
+      Maybe<DateTimeFormat::HourCycle> aHourCycle = Nothing{},
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
+
+  
+
+
+
+
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
+      Span<const char> aLocale, Span<const char> aSkeleton,
+      DateTimePatternGenerator* aDateTimePatternGenerator,
+      Maybe<DateTimeFormat::HourCycle> aHourCycle = Nothing{},
+      Maybe<Span<const char>> aTimeZoneOverride = Nothing{});
+
+  
+
+
+
+
+
+
+
+
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromComponents(
+      Span<const char> aLocale, const ComponentsBag& bag,
+      DateTimePatternGenerator* aDateTimePatternGenerator,
+      Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
+
+  
+
+
+
+
 
   static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromPattern(
       Span<const char> aLocale, Span<const char16_t> aPattern,
@@ -182,7 +325,7 @@ class DateTimeFormat final {
       
 
       
-      mozilla::Vector<char16_t, StackU16VectorSize> u16Vec;
+      PatternVector u16Vec;
 
       auto result = FillVectorWithICUCall(
           u16Vec, [this, &aUnixEpoch](UChar* target, int32_t length,
@@ -213,6 +356,9 @@ class DateTimeFormat final {
   
 
 
+
+
+
   template <typename B>
   ICUResult GetPattern(B& aBuffer) const {
     return FillBufferWithICUCall(
@@ -228,6 +374,18 @@ class DateTimeFormat final {
 
 
   void SetStartTimeIfGregorian(double aTime);
+
+  
+
+
+
+
+
+
+
+
+
+  Result<ComponentsBag, ICUError> ResolveComponents();
 
   ~DateTimeFormat();
 
@@ -245,11 +403,15 @@ class DateTimeFormat final {
   Result<UniquePtr<Calendar>, InternalError> CloneCalendar(
       double aUnixEpoch) const;
 
+  
+
+
+
+  static Maybe<DateTimeFormat::HourCycle> HourCycleFromPattern(
+      Span<const char16_t> aPattern);
+
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);
-
-  
-  static constexpr size_t StackU16VectorSize = 128;
 
   UDateFormat* mDateFormat = nullptr;
 };
