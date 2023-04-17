@@ -101,6 +101,28 @@ class NativeInputTrack;
 class ProcessedMediaTrack;
 class SourceMediaTrack;
 
+
+class AudioInputSamples {
+ public:
+  AudioInputSamples() = default;
+  ~AudioInputSamples() = default;
+
+  const AudioDataValue* Data() const;
+  size_t FrameCount() const;
+  TrackRate Rate() const;
+  uint32_t Channels() const;
+
+  bool IsEmpty() const;
+  void Push(const AudioDataValue* aBuffer, size_t aFrames, TrackRate aRate,
+            uint32_t aChannels);
+  void Clear();
+
+ private:
+  nsTArray<AudioDataValue> mData;
+  TrackRate mRate = 0;
+  uint32_t mChannels = 0;
+};
+
 class AudioDataListenerInterface {
  protected:
   
@@ -108,33 +130,28 @@ class AudioDataListenerInterface {
 
  public:
   
-  struct BufferInfo {
-    AudioDataValue* mBuffer = nullptr;
-    size_t mFrames = 0;
-    uint32_t mChannels = 0;
-    TrackRate mRate = 0;
-  };
-
-  
   
 
 
 
 
   virtual void NotifyOutputData(MediaTrackGraphImpl* aGraph,
-                                BufferInfo aInfo) = 0;
+                                AudioDataValue* aBuffer, size_t aFrames,
+                                TrackRate aRate, uint32_t aChannels) = 0;
   
 
 
 
 
   virtual void NotifyInputStopped(MediaTrackGraphImpl* aGraph) = 0;
+
   
 
 
 
   virtual void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                               const BufferInfo aInfo,
+                               const AudioDataValue* aBuffer, size_t aFrames,
+                               TrackRate aRate, uint32_t aChannels,
                                uint32_t aAlreadyBuffered) = 0;
 
   

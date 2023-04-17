@@ -72,13 +72,9 @@ class NativeInputTrack : public ProcessedMediaTrack {
   nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 
  private:
-  typedef AudioDataListenerInterface::BufferInfo BufferInfo;
   
   
-  Maybe<BufferInfo> mOutputData;
-  
-  
-  Maybe<BufferInfo> mInputData;
+  AudioInputSamples mInputData;
 
   
   uint32_t mInputChannels = 0;
