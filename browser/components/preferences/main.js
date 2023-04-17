@@ -11,6 +11,10 @@
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var { Downloads } = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
 var { FileUtils } = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+var { ShortcutUtils } = ChromeUtils.import(
+  "resource://gre/modules/ShortcutUtils.jsm"
+);
+
 var { TransientPrefs } = ChromeUtils.import(
   "resource:///modules/TransientPrefs.jsm"
 );
@@ -126,9 +130,12 @@ Preferences.addAll([
 
 
 
+
+
   { id: "browser.link.open_newwindow", type: "int" },
   { id: "browser.tabs.loadInBackground", type: "bool", inverted: true },
   { id: "browser.tabs.warnOnClose", type: "bool" },
+  { id: "browser.warnOnQuitShortcut", type: "bool" },
   { id: "browser.tabs.warnOnOpen", type: "bool" },
   { id: "browser.ctrlTab.sortByRecentlyUsed", type: "bool" },
 
@@ -427,6 +434,18 @@ var gMainPane = {
     
     if (!TransientPrefs.prefShouldBeVisible("browser.tabs.warnOnOpen")) {
       document.getElementById("warnOpenMany").hidden = true;
+    }
+
+    if (AppConstants.platform != "win") {
+      let quitKeyElement = window.browsingContext.topChromeWindow.document.getElementById(
+        "key_quitApplication"
+      );
+      let quitKey = ShortcutUtils.prettifyShortcut(quitKeyElement);
+      document.l10n.setAttributes(
+        document.getElementById("warnOnQuitKey"),
+        "confirm-on-quit-with-key",
+        { quitKey }
+      );
     }
 
     setEventListener("ctrlTabRecentlyUsedOrder", "command", function() {
@@ -1236,6 +1255,9 @@ var gMainPane = {
   
 
   
+
+
+
 
 
 
