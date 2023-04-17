@@ -9762,35 +9762,13 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchT(
   testObjectEmulatesUndefined(input, ifTrueLabel, ifFalseLabel, scratch, ool);
 }
 
-void CodeGenerator::visitSameValueDouble(LSameValueDouble* lir) {
+void CodeGenerator::visitSameValueD(LSameValueD* lir) {
   FloatRegister left = ToFloatRegister(lir->left());
   FloatRegister right = ToFloatRegister(lir->right());
   FloatRegister temp = ToFloatRegister(lir->tempFloat());
   Register output = ToRegister(lir->output());
 
   masm.sameValueDouble(left, right, temp, output);
-}
-
-void CodeGenerator::visitSameValue(LSameValue* lir) {
-  ValueOperand lhs = ToValue(lir, LSameValue::LhsIndex);
-  ValueOperand rhs = ToValue(lir, LSameValue::RhsIndex);
-  Register output = ToRegister(lir->output());
-
-  Label call, done;
-
-  using Fn = bool (*)(JSContext*, HandleValue, HandleValue, bool*);
-  OutOfLineCode* ool =
-      oolCallVM<Fn, SameValue>(lir, ArgList(lhs, rhs), StoreRegisterTo(output));
-
-  
-  
-  
-  masm.branch64(Assembler::NotEqual, lhs.toRegister64(), rhs.toRegister64(),
-                ool->entry());
-  masm.move32(Imm32(1), output);
-
-  
-  masm.bind(ool->rejoin());
 }
 
 void CodeGenerator::emitConcat(LInstruction* lir, Register lhs, Register rhs,
