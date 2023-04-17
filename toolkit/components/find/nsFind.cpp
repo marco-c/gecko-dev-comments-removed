@@ -604,14 +604,16 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     return NS_OK;
   }
 
+  const int32_t patternStart = mFindBackward ? patLen : 0;
+
   
-  int32_t pindex = (mFindBackward ? patLen : 0);
+  int32_t pindex = patternStart;
 
   
   int32_t findex = 0;
 
   
-  int incr = (mFindBackward ? -1 : 1);
+  int incr = mFindBackward ? -1 : 1;
 
   const nsTextFragment* frag = nullptr;
   int32_t fragLen = 0;
@@ -641,10 +643,14 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
   Text* current = nullptr;
 
   auto EndPartialMatch = [&]() -> bool {
-    bool hadAnchorNode = !!matchAnchorNode;
     
     
-    if (matchAnchorNode) {  
+    
+    
+    
+    
+    const bool restart = !!matchAnchorNode && pindex != patternStart;
+    if (restart) {  
       findex = matchAnchorOffset;
       state.mIterOffset = matchAnchorOffset;
       c = matchAnchorChar;
@@ -665,10 +671,10 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
     matchAnchorChar = 0;
     inWhitespace = false;
     prevCharInMatch = 0;
-    pindex = mFindBackward ? patLen : 0;
+    pindex = patternStart;
     DEBUG_FIND_PRINTF("Setting findex back to %d, pindex to %d\n", findex,
                       pindex);
-    return hadAnchorNode;
+    return restart;
   };
 
   while (true) {
@@ -816,7 +822,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       continue;
     }
 
-    if (pindex != (mFindBackward ? patLen : 0) && c != patc && !inWhitespace) {
+    if (pindex != patternStart && c != patc && !inWhitespace) {
       
       if (c == '\n' && t2b && IS_CJ_CHAR(prevCharInMatch)) {
         int32_t nindex = findex + incr;
