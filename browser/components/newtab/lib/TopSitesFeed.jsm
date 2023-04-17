@@ -162,6 +162,13 @@ class ContileIntegration {
         );
       }
 
+      
+      
+      
+      
+      if (response.status === 204) {
+        return false;
+      }
       const body = await response.json();
       if (body?.tiles && Array.isArray(body.tiles)) {
         let { tiles } = body;
