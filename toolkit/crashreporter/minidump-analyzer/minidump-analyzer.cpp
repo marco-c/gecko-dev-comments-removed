@@ -276,6 +276,36 @@ static int ConvertModulesToJSON(const ProcessState& aProcessState,
 
 
 
+
+static size_t ConvertUnloadedModulesToJSON(const ProcessState& aProcessState,
+                                           Json::Value& aNode) {
+  const CodeModules* unloadedModules = aProcessState.unloaded_modules();
+  if (!unloadedModules) {
+    return 0;
+  }
+
+  const size_t unloadedModulesLen = unloadedModules->module_count();
+  for (size_t i = 0; i < unloadedModulesLen; i++) {
+    const CodeModule* unloadedModule = unloadedModules->GetModuleAtIndex(i);
+
+    Json::Value unloadedModuleNode;
+    unloadedModuleNode["filename"] =
+        PathnameStripper::File(unloadedModule->code_file());
+    unloadedModuleNode["code_id"] =
+        PathnameStripper::File(unloadedModule->code_identifier());
+    unloadedModuleNode["base_addr"] = ToHex(unloadedModule->base_address());
+    unloadedModuleNode["end_addr"] =
+        ToHex(unloadedModule->base_address() + unloadedModule->size());
+
+    aNode.append(unloadedModuleNode);
+  }
+
+  return unloadedModulesLen;
+}
+
+
+
+
 static void ConvertProcessStateToJSON(const ProcessState& aProcessState,
                                       Json::Value& aStackTraces,
                                       const bool aFullStacks,
@@ -319,6 +349,14 @@ static void ConvertProcessStateToJSON(const ProcessState& aProcessState,
   }
 
   aStackTraces["modules"] = modules;
+
+  Json::Value unloadedModules(Json::arrayValue);
+  size_t unloadedModulesLen =
+      ConvertUnloadedModulesToJSON(aProcessState, unloadedModules);
+
+  if (unloadedModulesLen > 0) {
+    aStackTraces["unloaded_modules"] = unloadedModules;
+  }
 
   
   Json::Value threads(Json::arrayValue);
