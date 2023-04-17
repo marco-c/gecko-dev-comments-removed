@@ -219,21 +219,6 @@ void gfxConfigManager::ConfigureWebRenderQualified() {
                                    "Not controlled by rollout", failureId);
       break;
   }
-
-  if (!mIsNightly) {
-    
-    nsAutoString adapterVendorID;
-    mGfxInfo->GetAdapterVendorID(adapterVendorID);
-    if (adapterVendorID == u"0x10de") {
-      bool mixed = false;
-      int32_t maxRefreshRate = mGfxInfo->GetMaxRefreshRate(&mixed);
-      if (maxRefreshRate > 60 && mixed) {
-        mFeatureWrQualified->Disable(FeatureStatus::Blocked,
-                                     "Monitor refresh rate too high/mixed",
-                                     "NVIDIA_REFRESH_RATE_MIXED"_ns);
-      }
-    }
-  }
 }
 
 void gfxConfigManager::ConfigureWebRender() {
@@ -399,6 +384,22 @@ void gfxConfigManager::ConfigureWebRender() {
     mFeatureWrDComp->Disable(FeatureStatus::Unavailable,
                              "Requires Windows 10 or later",
                              "FEATURE_FAILURE_DCOMP_NOT_WIN10"_ns);
+  }
+
+  if (!mIsNightly) {
+    
+    
+    nsAutoString adapterVendorID;
+    mGfxInfo->GetAdapterVendorID(adapterVendorID);
+    if (adapterVendorID == u"0x10de") {
+      bool mixed = false;
+      int32_t maxRefreshRate = mGfxInfo->GetMaxRefreshRate(&mixed);
+      if (maxRefreshRate > 60 && mixed) {
+        mFeatureWrDComp->Disable(FeatureStatus::Blocked,
+                                 "Monitor refresh rate too high/mixed",
+                                 "NVIDIA_REFRESH_RATE_MIXED"_ns);
+      }
+    }
   }
 
   mFeatureWrDComp->MaybeSetFailed(
