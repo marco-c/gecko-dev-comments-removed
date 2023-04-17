@@ -141,6 +141,9 @@ bool jit::ReorderInstructions(MIRGraph& graph) {
         if (prev->isInterruptCheck()) {
           break;
         }
+        if (prev->isSetInitializedLength()) {
+          break;
+        }
 
         
         bool isUse = false;
