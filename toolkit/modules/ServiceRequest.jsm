@@ -9,6 +9,7 @@
 
 
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -47,7 +48,23 @@ class ServiceRequest extends XMLHttpRequest {
       
       internal.beConservative = true;
       
-      internal.bypassProxy = options?.bypassProxy;
+      if (options?.bypassProxy && this.bypassProxyEnabled) {
+        internal.bypassProxy = true;
+      }
     }
+  }
+
+  get bypassProxy() {
+    let { channel } = this;
+    return channel.QueryInterface(Ci.nsIHttpChannelInternal).bypassProxy;
+  }
+
+  get isProxied() {
+    let { channel } = this;
+    return !!(channel instanceof Ci.nsIProxiedChannel && channel.proxyInfo);
+  }
+
+  get bypassProxyEnabled() {
+    return Services.prefs.getBoolPref("network.proxy.allow_bypass", true);
   }
 }
