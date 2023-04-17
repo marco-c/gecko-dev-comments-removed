@@ -2147,6 +2147,13 @@ class EditorBase : public nsIEditor,
                                            const EditorDOMPoint& aPointToInsert,
                                            bool aDoDeleteSelection);
 
+  
+
+
+
+
+  bool IsSafeToInsertData(const Document* aSourceDoc) const;
+
  protected:  
   
 

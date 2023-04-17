@@ -65,6 +65,7 @@
 #include "mozilla/Tuple.h"
 #include "mozilla/dom/AbstractRange.h"    
 #include "mozilla/dom/Attr.h"             
+#include "mozilla/dom/BrowsingContext.h"  
 #include "mozilla/dom/CharacterData.h"    
 #include "mozilla/dom/DataTransfer.h"     
 #include "mozilla/dom/Document.h"         
@@ -96,6 +97,7 @@
 #include "nsIContent.h"                
 #include "nsIDocumentEncoder.h"        
 #include "nsIDocumentStateListener.h"  
+#include "nsIDocShell.h"               
 #include "nsIEditActionListener.h"     
 #include "nsIEditorObserver.h"         
 #include "nsIFrame.h"                  
@@ -1780,6 +1782,37 @@ nsresult EditorBase::InsertTextAt(const nsAString& aStringToInsert,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return rv;
+}
+
+bool EditorBase::IsSafeToInsertData(const Document* aSourceDoc) const {
+  
+  bool isSafe = false;
+
+  RefPtr<Document> destdoc = GetDocument();
+  NS_ASSERTION(destdoc, "Where is our destination doc?");
+
+  nsIDocShell* docShell = nullptr;
+  if (RefPtr<BrowsingContext> bc = destdoc->GetBrowsingContext()) {
+    RefPtr<BrowsingContext> root = bc->Top();
+    MOZ_ASSERT(root, "root should not be null");
+
+    docShell = root->GetDocShell();
+  }
+
+  isSafe = docShell && docShell->GetAppType() == nsIDocShell::APP_TYPE_EDITOR;
+
+  if (!isSafe && aSourceDoc) {
+    nsIPrincipal* srcPrincipal = aSourceDoc->NodePrincipal();
+    nsIPrincipal* destPrincipal = destdoc->NodePrincipal();
+    NS_ASSERTION(srcPrincipal && destPrincipal,
+                 "How come we don't have a principal?");
+    DebugOnly<nsresult> rvIgnored =
+        srcPrincipal->Subsumes(destPrincipal, &isSafe);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "nsIPrincipal::Subsumes() failed, but ignored");
+  }
+
+  return isSafe;
 }
 
 NS_IMETHODIMP EditorBase::PasteTransferable(nsITransferable* aTransferable) {

@@ -489,13 +489,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-  bool IsSafeToInsertData(const Document* aSourceDoc) const;
-
-  
-
-
-
   virtual nsresult PrepareTransferable(nsITransferable** transferable);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
