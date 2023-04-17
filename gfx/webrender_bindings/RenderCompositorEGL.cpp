@@ -202,18 +202,8 @@ gl::GLContext* RenderCompositorEGL::gl() const {
 }
 
 bool RenderCompositorEGL::MakeCurrent() {
-  const auto& gle = gl::GLContextEGL::Cast(gl());
-
-  gle->SetEGLSurfaceOverride(mEGLSurface);
-  bool ok = gl()->MakeCurrent();
-  if ((kIsWayland || kIsX11) && ok && mEGLSurface != EGL_NO_SURFACE) {
-    
-    
-    
-    gl()->fDrawBuffer(gl()->IsDoubleBuffered() ? LOCAL_GL_BACK
-                                               : LOCAL_GL_FRONT);
-  }
-  return ok;
+  gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
+  return gl()->MakeCurrent();
 }
 
 void RenderCompositorEGL::DestroyEGLSurface() {
