@@ -25,14 +25,42 @@
 
 
 [[nodiscard]] inline bool profiler_thread_is_being_profiled() {
-  return profiler_is_active() &&
+  return profiler_is_active_and_unpaused() &&
          mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
              [](mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
                return aTR.UnlockedConstReaderAndAtomicRWCRef()
                    .IsBeingProfiled();
              },
              false);
-  ;
+}
+
+
+
+
+
+[[nodiscard]] inline bool profiler_thread_is_being_profiled(
+    const ProfilerThreadId& aThreadId) {
+  if (!profiler_is_active_and_unpaused()) {
+    return false;
+  }
+
+  if (!aThreadId.IsSpecified() || aThreadId == profiler_current_thread_id()) {
+    
+    
+    return mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
+        [](mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
+          return aTR.UnlockedConstReaderAndAtomicRWCRef().IsBeingProfiled();
+        },
+        false);
+  }
+
+  
+  return mozilla::profiler::ThreadRegistry::WithOffThreadRefOr(
+      aThreadId,
+      [](mozilla::profiler::ThreadRegistry::OffThreadRef aTR) {
+        return aTR.UnlockedConstReaderAndAtomicRWCRef().IsBeingProfiled();
+      },
+      false);
 }
 
 

@@ -31,6 +31,7 @@
 namespace mozilla::baseprofiler {
 
 [[nodiscard]] inline bool profiler_is_active() { return false; }
+[[nodiscard]] inline bool profiler_is_active_and_unpaused() { return false; }
 
 }  
 
@@ -310,6 +311,11 @@ MFBT_API bool IsThreadBeingProfiled();
 }
 
 
+[[nodiscard]] inline bool profiler_is_active_and_unpaused() {
+  return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused();
+}
+
+
 
 
 
@@ -323,7 +329,8 @@ MFBT_API bool IsThreadBeingProfiled();
 
 
 [[nodiscard]] inline bool profiler_thread_is_being_profiled() {
-  return profiler_is_active() && baseprofiler::detail::IsThreadBeingProfiled();
+  return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused() &&
+         baseprofiler::detail::IsThreadBeingProfiled();
 }
 
 
