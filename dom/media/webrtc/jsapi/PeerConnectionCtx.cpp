@@ -338,33 +338,6 @@ static void RecordCommonRtpTelemetry(const T& list, const T& lastList,
                                       : WEBRTC_VIDEO_QUALITY_INBOUND_JITTER);
       Accumulate(id, s.mJitter.Value() * 1000);
     }
-    
-    if (s.mBytesReceived.WasPassed()) {
-      for (const auto& lastS : lastList) {
-        if (lastS.mId == s.mId) {
-          int32_t deltaMs = s.mTimestamp.Value() - lastS.mTimestamp.Value();
-          
-          
-          if (deltaMs < 500 || deltaMs > 60000 ||
-              !lastS.mBytesReceived.WasPassed()) {
-            break;
-          }
-          HistogramID id =
-              isRemote
-                  ? (isAudio ? WEBRTC_AUDIO_QUALITY_OUTBOUND_BANDWIDTH_KBITS
-                             : WEBRTC_VIDEO_QUALITY_OUTBOUND_BANDWIDTH_KBITS)
-                  : (isAudio ? WEBRTC_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS
-                             : WEBRTC_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS);
-          
-          
-          Accumulate(
-              id,
-              ((s.mBytesReceived.Value() - lastS.mBytesReceived.Value()) * 8) /
-                  deltaMs);
-          break;
-        }
-      }
-    }
   }
 }
 
@@ -392,6 +365,33 @@ void PeerConnectionCtx::DeliverStats(
   
   RecordCommonRtpTelemetry(aReport->mInboundRtpStreamStats,
                            lastReport->mInboundRtpStreamStats, false);
+  
+  for (const auto& s : aReport->mInboundRtpStreamStats) {
+    if (s.mBytesReceived.WasPassed()) {
+      const bool isAudio = s.mKind.Value().Find("audio") != -1;
+      for (const auto& lastS : lastReport->mInboundRtpStreamStats) {
+        if (lastS.mId == s.mId) {
+          int32_t deltaMs = s.mTimestamp.Value() - lastS.mTimestamp.Value();
+          
+          
+          if (deltaMs < 500 || deltaMs > 60000 ||
+              !lastS.mBytesReceived.WasPassed()) {
+            break;
+          }
+          HistogramID id = isAudio
+                               ? WEBRTC_AUDIO_QUALITY_INBOUND_BANDWIDTH_KBITS
+                               : WEBRTC_VIDEO_QUALITY_INBOUND_BANDWIDTH_KBITS;
+          
+          
+          Accumulate(
+              id,
+              ((s.mBytesReceived.Value() - lastS.mBytesReceived.Value()) * 8) /
+                  deltaMs);
+          break;
+        }
+      }
+    }
+  }
   RecordCommonRtpTelemetry(aReport->mRemoteInboundRtpStreamStats,
                            lastReport->mRemoteInboundRtpStreamStats, true);
   for (const auto& s : aReport->mRemoteInboundRtpStreamStats) {
