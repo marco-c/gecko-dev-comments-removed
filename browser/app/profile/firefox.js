@@ -676,6 +676,10 @@ pref("security.allow_parent_unrestricted_js_loads", false);
 
 pref("browser.tabs.unloadOnLowMemory", true);
 
+
+
+pref("browser.tabs.min_inactive_duration_before_unload", 600000);
+
 #if defined(XP_MACOSX)
   
   

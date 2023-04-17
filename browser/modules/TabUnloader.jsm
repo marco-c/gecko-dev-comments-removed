@@ -31,7 +31,9 @@ const NEVER_DISCARD = 100000;
 
 
 
-const kMinInactiveDurationInMs = 600000; 
+const kMinInactiveDurationInMs = Services.prefs.getIntPref(
+  "browser.tabs.min_inactive_duration_before_unload"
+);
 
 let criteriaTypes = [
   ["isNonDiscardable", NEVER_DISCARD],
