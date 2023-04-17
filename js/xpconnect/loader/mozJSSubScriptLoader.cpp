@@ -135,8 +135,8 @@ static JSScript* PrepareScript(nsIURI* uri, JSContext* cx,
 
 static bool EvalScript(JSContext* cx, HandleObject targetObj,
                        HandleObject loadScope, MutableHandleValue retval,
-                       nsIURI* uri, bool startupCache, bool preloadCache,
-                       MutableHandleScript script) {
+                       nsIURI* uri, bool storeIntoStartupCache,
+                       bool storeIntoPreloadCache, MutableHandleScript script) {
   MOZ_ASSERT(!js::IsWrapper(targetObj));
 
   if (JS_IsGlobalObject(targetObj)) {
@@ -188,12 +188,12 @@ static bool EvalScript(JSContext* cx, HandleObject targetObj,
     return false;
   }
 
-  if (script && (startupCache || preloadCache)) {
+  if (script && (storeIntoStartupCache || storeIntoPreloadCache)) {
     nsAutoCString cachePath;
     SubscriptCachePath(cx, uri, targetObj, cachePath);
 
     nsCString uriStr;
-    if (preloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
+    if (storeIntoPreloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
       
       
       
@@ -219,7 +219,7 @@ static bool EvalScript(JSContext* cx, HandleObject targetObj,
       ScriptPreloader::GetSingleton().NoteScript(uriStr, cachePath, script);
     }
 
-    if (startupCache) {
+    if (storeIntoStartupCache) {
       JSAutoRealm ar(cx, script);
       WriteCachedScript(StartupCache::GetSingleton(), cachePath, cx, script);
     }
@@ -479,18 +479,21 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
     }
   }
 
-  if (script) {
+  bool storeIntoStartupCache = false;
+  if (!script) {
     
-    
-    cache = nullptr;
-  } else {
+    storeIntoStartupCache = cache;
     if (!ReadScript(&script, uri, cx, compileOptions, serv,
                     useCompilationScope)) {
       return NS_OK;
     }
   }
 
-  Unused << EvalScript(cx, targetObj, loadScope, retval, uri, !!cache,
-                       !ignoreCache && !options.wantReturnValue, &script);
+  
+  
+  bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
+
+  Unused << EvalScript(cx, targetObj, loadScope, retval, uri,
+                       storeIntoStartupCache, storeIntoPreloadCache, &script);
   return NS_OK;
 }

@@ -741,8 +741,9 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   
   
   
+  
 
-  bool writeToCache = false;
+  bool storeIntoStartupCache = false;
   StartupCache* cache = StartupCache::GetSingleton();
 
   aInfo.EnsureResolvedURI();
@@ -761,20 +762,16 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       ScriptPreloader::GetSingleton().GetCachedScript(cx, options, cachePath);
   if (!script && cache) {
     ReadCachedScript(cache, cachePath, cx, options, &script);
+    if (!script) {
+      JS_ClearPendingException(cx);
+
+      storeIntoStartupCache = true;
+    }
   }
 
   if (script) {
-    LOG(("Successfully loaded %s from startupcache\n", nativePath.get()));
-  } else if (cache) {
-    
-    
-    
-    writeToCache = true;
-    
-    JS_ClearPendingException(cx);
-  }
-
-  if (!script) {
+    LOG(("Successfully loaded %s from cache\n", nativePath.get()));
+  } else {
     
     LOG(("Slow loading %s\n", nativePath.get()));
 
@@ -782,7 +779,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     
     
     
-    if (!cache && !ScriptPreloader::GetSingleton().Active()) {
+    if (!storeIntoStartupCache && !ScriptPreloader::GetSingleton().Active()) {
       options.setSourceIsLazy(false);
     }
 
@@ -813,23 +810,27 @@ nsresult mozJSComponentLoader::ObjectForLocation(
         MOZ_ASSERT(!script);
       }
     }
-    
-    
-    if (!script && aPropagateExceptions && jsapi.HasException()) {
-      if (!jsapi.StealException(aException)) {
-        return NS_ERROR_OUT_OF_MEMORY;
+
+    if (!script) {
+      
+      
+      if (aPropagateExceptions && jsapi.HasException()) {
+        if (!jsapi.StealException(aException)) {
+          return NS_ERROR_OUT_OF_MEMORY;
+        }
       }
+      return NS_ERROR_FAILURE;
     }
   }
 
-  if (!script) {
-    return NS_ERROR_FAILURE;
-  }
-
+  
+  
   MOZ_ASSERT_IF(ScriptPreloader::GetSingleton().Active(), options.sourceIsLazy);
   ScriptPreloader::GetSingleton().NoteScript(nativePath, cachePath, script);
 
-  if (writeToCache) {
+  
+  
+  if (storeIntoStartupCache) {
     MOZ_ASSERT(options.sourceIsLazy);
 
     
