@@ -2646,8 +2646,7 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 NS_IMETHODIMP
 nsNativeThemeCocoa::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                          StyleAppearance aAppearance, const nsRect& aRect,
-                                         const nsRect& aDirtyRect,
-                                         DrawOverflow) {
+                                         const nsRect& aDirtyRect, DrawOverflow) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   Maybe<WidgetInfo> widgetInfo = ComputeWidgetInfo(aFrame, aAppearance, aRect);
@@ -2674,6 +2673,16 @@ nsNativeThemeCocoa::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
 void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget& aDrawTarget,
                                       const gfx::Rect& aWidgetRect, const gfx::Rect& aDirtyRect,
                                       float aScale) {
+  if (@available(macOS 10.14, *)) {
+    
+    
+    
+    
+    
+    
+    NSAppearance.currentAppearance = NSApp.effectiveAppearance;
+  }
+
   const Widget widget = aWidgetInfo.Widget();
 
   
