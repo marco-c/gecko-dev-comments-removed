@@ -673,6 +673,19 @@ class ParserAtomsTable {
   TaggedParserAtomIndex internExternalParserAtom(JSContext* cx,
                                                  const ParserAtom* atom);
 
+  
+  
+  
+  TaggedParserAtomIndex internExternalParserAtomIndex(
+      JSContext* cx, const CompilationStencil& context,
+      TaggedParserAtomIndex atomIndex);
+
+  
+  
+  bool isEqualToExternalParserAtomIndex(TaggedParserAtomIndex internal,
+                                        const CompilationStencil& context,
+                                        TaggedParserAtomIndex external) const;
+
   bool addPlaceholder(JSContext* cx);
 
  private:

@@ -59,6 +59,7 @@ struct CompilationStencil;
 struct CompilationGCOutput;
 class ScriptStencilIterable;
 class ParserAtomsTable;
+struct InputName;
 
 
 struct ScopeStencilRef {
@@ -276,6 +277,7 @@ class InputScript {
         });
   }
 
+  InputName displayAtom() const;
   void trace(JSTracer* trc);
   bool isNull() const {
     return script_.match([](const BaseScript* ptr) { return !ptr; },
@@ -327,6 +329,55 @@ class MOZ_STACK_CLASS InputScopeIter {
   }
 
   void trace(JSTracer* trc) { scope_.trace(trc); }
+};
+
+
+
+
+struct NameStencilRef {
+  const CompilationStencil& context_;
+  const TaggedParserAtomIndex atomIndex_;
+};
+
+
+
+
+
+
+
+struct InputName {
+  using InputNameStorage = mozilla::Variant<JSAtom*, NameStencilRef>;
+  InputNameStorage variant_;
+
+  InputName(Scope*, JSAtom* ptr) : variant_(ptr) {}
+  InputName(const ScopeStencilRef& scope, TaggedParserAtomIndex index)
+      : variant_(NameStencilRef{scope.context_, index}) {}
+  InputName(BaseScript*, JSAtom* ptr) : variant_(ptr) {}
+  InputName(const ScriptStencilRef& script, TaggedParserAtomIndex index)
+      : variant_(NameStencilRef{script.context_, index}) {}
+
+  
+  
+  
+  TaggedParserAtomIndex internInto(JSContext* cx, ParserAtomsTable& parserAtoms,
+                                   CompilationAtomCache& atomCache);
+
+  
+  
+  
+  
+  
+  
+  
+  bool isEqualTo(JSContext* cx, ParserAtomsTable& parserAtoms,
+                 CompilationAtomCache& atomCache, TaggedParserAtomIndex other,
+                 JSAtom** otherCached) const;
+
+  bool isNull() const {
+    return variant_.match(
+        [](JSAtom* ptr) { return !ptr; },
+        [](const NameStencilRef& ref) { return !ref.atomIndex_; });
+  }
 };
 
 
