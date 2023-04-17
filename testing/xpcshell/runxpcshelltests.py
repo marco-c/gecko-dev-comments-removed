@@ -415,7 +415,6 @@ class XPCShellTestThread(Thread):
             filename = "user.js"
             interpolation = {"server": "dummyserver"}
             profile = Profile(profile=localTempDir, restore=False)
-            
             profile.merge(self._rootTempDir, interpolation=interpolation)
 
             prefs = self.test_object["prefs"].strip().split()
@@ -436,7 +435,6 @@ class XPCShellTestThread(Thread):
             )
             return os.path.join(profile.profile, filename)
 
-        
         
         return self.rootPrefsFile
 
@@ -1149,12 +1147,6 @@ class XPCShellTests(object):
         }
 
         profile = Profile(profile=self.tempDir, restore=False)
-        prefsFile = os.path.join(profile.profile, "user.js")
-
-        
-        with open(prefsFile, "w"):
-            pass
-
         for name in base_profiles:
             path = os.path.join(profile_data_dir, name)
             profile.merge(path, interpolation=interpolation)
@@ -1163,7 +1155,7 @@ class XPCShellTests(object):
         prefs = parse_preferences(extraPrefs)
         profile.set_preferences(prefs)
 
-        self.prefsFile = prefsFile
+        self.prefsFile = os.path.join(profile.profile, "user.js")
         return prefs
 
     def buildCoreEnvironment(self):
