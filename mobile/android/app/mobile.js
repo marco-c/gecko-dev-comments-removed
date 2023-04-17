@@ -103,6 +103,9 @@ pref("network.predictor.preserve", 50);
 pref("network.mdns.use_js_fallback", false);
 
 
+pref("network.cookie.cookieBehavior.pbmode", 4);
+
+
 pref("browser.display.remotetabs.timeout", 10);
 
 
