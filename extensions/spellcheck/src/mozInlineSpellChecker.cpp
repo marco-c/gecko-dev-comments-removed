@@ -1397,7 +1397,7 @@ nsresult mozInlineSpellChecker::SpellCheckerSlice::Execute() {
   
   
   
-  int32_t originalRangeCount = mSpellCheckSelection.RangeCount();
+  const int32_t originalRangeCount = mSpellCheckSelection.RangeCount();
 
   
   if (nsresult rv = mWordUtil.SetPositionAndEnd(
@@ -1457,11 +1457,11 @@ nsresult mozInlineSpellChecker::SpellCheckerSlice::Execute() {
              NS_ConvertUTF16toUTF8(word.mText).get(),
              word.mSkipChecking ? " (not checking)" : ""));
 
-    ErrorResult erv;
     
     
     
     if (originalRangeCount > 0) {
+      ErrorResult erv;
       
       if (!mStatus->GetCreatedRange() ||
           !mStatus->GetCreatedRange()->IsPointInRange(*beginNode, beginOffset,
