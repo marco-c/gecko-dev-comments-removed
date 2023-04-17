@@ -703,10 +703,10 @@ PKT_PANEL_OVERLAY.prototype = {
     document
       .querySelector(`body`)
       .append(
-        parser.parseFromString(
+        ...parser.parseFromString(
           Handlebars.templates.saved_shell(templateData),
           `text/html`
-        ).documentElement
+        ).body.childNodes
       );
 
     
@@ -716,12 +716,17 @@ PKT_PANEL_OVERLAY.prototype = {
     ) {
       let elSubshell = document.querySelector(`body .pkt_ext_subshell`);
 
-      let elPremiumShell = parser.parseFromString(
+      let elPremiumShellElements = parser.parseFromString(
         Handlebars.templates.saved_premiumshell(templateData),
         `text/html`
-      ).documentElement;
+      ).body.childNodes;
 
-      elSubshell.insertBefore(elPremiumShell, elSubshell.firstChild);
+      
+      elPremiumShellElements = [].slice.call(elPremiumShellElements).reverse();
+
+      elPremiumShellElements.forEach(el => {
+        elSubshell.insertBefore(el, elSubshell.firstChild);
+      });
     }
 
     
