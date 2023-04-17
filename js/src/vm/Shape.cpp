@@ -1165,29 +1165,6 @@ Shape* SharedShape::getInitialOrPropMapShape(
   return getPropMapShape(cx, nbase, nfixed, map, mapLength, objectFlags);
 }
 
-void NewObjectCache::invalidateEntriesForShape(Shape* shape) {
-  const JSClass* clasp = shape->getObjectClass();
-
-  gc::AllocKind kind = gc::GetGCObjectKind(shape->numFixedSlots());
-  if (CanChangeToBackgroundAllocKind(kind, clasp)) {
-    kind = ForegroundToBackgroundAllocKind(kind);
-  }
-
-  EntryIndex entry;
-  for (RealmsInZoneIter realm(shape->zone()); !realm.done(); realm.next()) {
-    if (GlobalObject* global = realm->unsafeUnbarrieredMaybeGlobal()) {
-      if (lookupGlobal(clasp, global, kind, &entry)) {
-        PodZero(&entries[entry]);
-      }
-    }
-  }
-
-  JSObject* proto = shape->proto().toObject();
-  if (!proto->is<GlobalObject>() && lookupProto(clasp, proto, kind, &entry)) {
-    PodZero(&entries[entry]);
-  }
-}
-
 
 void SharedShape::insertInitialShape(JSContext* cx, HandleShape shape) {
   using Lookup = InitialShapeHasher::Lookup;
@@ -1217,20 +1194,6 @@ void SharedShape::insertInitialShape(JSContext* cx, HandleShape shape) {
     if (protoObj->shape()->cache().isShapeWithProto()) {
       protoObj->shape()->cacheRef().setNone();
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  if (!cx->isHelperThreadContext()) {
-    cx->caches().newObjectCache.invalidateEntriesForShape(shape);
   }
 }
 
