@@ -158,6 +158,9 @@ interface nsINetUtil : nsISupports
   const unsigned long ESCAPE_URL_SKIP_CONTROL = 1 << 15;
 
   
+  const unsigned long ESCAPE_URL_EXT_HANDLER = 1 << 17;
+
+  
 
 
 
