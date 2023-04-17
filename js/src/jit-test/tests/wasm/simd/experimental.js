@@ -2,8 +2,6 @@
 
 
 
-
-
 load(libdir + "wasm-binary.js");
 
 function wasmEval(bytes, imports) {
