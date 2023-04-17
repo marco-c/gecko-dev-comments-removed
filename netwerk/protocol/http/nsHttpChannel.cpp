@@ -6713,7 +6713,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
       Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_ONSTART_SUCCESS_ODOH,
                             NS_SUCCEEDED(mStatus));
     }
-  } else if (gTRRService && gTRRService->IsConfirmed()) {
+  } else if (TRRService::Get() && TRRService::Get()->IsConfirmed()) {
     
     
     Telemetry::Accumulate(Telemetry::HTTP_CHANNEL_ONSTART_SUCCESS_TRR2,
