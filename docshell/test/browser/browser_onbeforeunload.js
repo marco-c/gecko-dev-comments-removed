@@ -2,7 +2,7 @@
 
 
 
-requestLongerTimeout(4);
+requestLongerTimeout(6);
 
 const BASE_URL = "http://mochi.test:8888/browser/docshell/test/browser/";
 

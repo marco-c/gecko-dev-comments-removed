@@ -209,6 +209,12 @@ SubDialog.prototype = {
       detail: { dialog: this, abort: true },
     });
     this._frame.contentWindow.close();
+    
+    
+    
+    
+    
+    this.close(this._closingEvent);
   },
 
   close(aEvent = null) {
