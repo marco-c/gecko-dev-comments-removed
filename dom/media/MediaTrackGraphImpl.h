@@ -400,12 +400,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  void CloseAudioInputImpl(Maybe<CubebUtils::AudioDeviceID>& aID,
+  void CloseAudioInputImpl(CubebUtils::AudioDeviceID aID,
                            AudioDataListener* aListener);
   
 
 
-  virtual void CloseAudioInput(Maybe<CubebUtils::AudioDeviceID>& aID,
+  virtual void CloseAudioInput(CubebUtils::AudioDeviceID aID,
                                AudioDataListener* aListener) override;
 
   
