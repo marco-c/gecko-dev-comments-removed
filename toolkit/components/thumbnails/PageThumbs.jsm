@@ -33,7 +33,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["FileReader"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
-  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   PageThumbUtils: "resource://gre/modules/PageThumbUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
@@ -686,12 +685,12 @@ var PageThumbsStorage = {
     
     
 
-    let blocker = () => promise;
+    let blocker = () => undefined;
 
     
     
     
-    AsyncShutdown.profileBeforeChange.addBlocker(
+    IOUtils.profileBeforeChange.addBlocker(
       "PageThumbs: removing all thumbnails",
       blocker
     );
@@ -707,12 +706,7 @@ var PageThumbsStorage = {
     } finally {
       
       
-      if ("removeBlocker" in AsyncShutdown.profileBeforeChange) {
-        
-        
-        
-        AsyncShutdown.profileBeforeChange.removeBlocker(blocker);
-      }
+      IOUtils.profileBeforeChange.removeBlocker(blocker);
     }
   },
 

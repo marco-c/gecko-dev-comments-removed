@@ -134,18 +134,16 @@ var Agent = {
 
   async wipe(path) {
     let children = await IOUtils.getChildren(path);
-    for (let entry of children) {
-      try {
-        await IOUtils.remove(entry);
-      } catch (ex) {
-        
-        
-        
-        
-        
-        
-        
-      }
+    try {
+      await Promise.all(children.map(entry => IOUtils.remove(entry)));
+    } catch (ex) {
+      
+      
+      
+      
+      
+      
+      
     }
   },
 
