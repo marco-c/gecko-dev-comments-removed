@@ -490,21 +490,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult PrepareToInsertContent(
-      const EditorDOMPoint& aPointToInsert, bool aDoDeleteSelection);
-
-  
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult InsertTextAt(const nsAString& aStringToInsert,
                                            const EditorDOMPoint& aPointToInsert,
                                            bool aDoDeleteSelection);

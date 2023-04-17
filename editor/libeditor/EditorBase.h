@@ -2120,6 +2120,21 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
   InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) = 0;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult PrepareToInsertContent(
+      const EditorDOMPoint& aPointToInsert, bool aDoDeleteSelection);
+
  protected:  
   
 
