@@ -1450,32 +1450,42 @@ void nsXULPopupManager::UpdateFollowAnchor(nsMenuPopupFrame* aPopup) {
   }
 }
 
-void nsXULPopupManager::ExecuteMenu(nsIContent* aMenu,
-                                    nsXULMenuCommandEvent* aEvent) {
-  
-  
-  
-  
-  
-  CloseMenuMode cmm = GetCloseMenuMode(aMenu);
-  if (cmm != CloseMenuMode_None) {
-    nsTArray<nsMenuPopupFrame*> popupsToHide;
-    nsMenuChainItem* item = GetTopVisibleMenu();
-    while (item) {
-      
-      if (!item->IsMenu()) break;
-      nsMenuChainItem* next = item->GetParent();
-      popupsToHide.AppendElement(item->Frame());
-      if (cmm == CloseMenuMode_Single)  
-        break;
-      item = next;
-    }
-
-    
-    
-    HidePopupsInList(popupsToHide);
+void nsXULPopupManager::HideOpenMenusBeforeExecutingMenu(CloseMenuMode aMode) {
+  if (aMode == CloseMenuMode_None) {
+    return;
   }
 
+  
+  
+  
+  
+  
+  nsTArray<nsMenuPopupFrame*> popupsToHide;
+  nsMenuChainItem* item = GetTopVisibleMenu();
+  while (item) {
+    
+    if (!item->IsMenu()) {
+      break;
+    }
+
+    nsMenuChainItem* next = item->GetParent();
+    popupsToHide.AppendElement(item->Frame());
+    if (aMode == CloseMenuMode_Single) {
+      
+      break;
+    }
+    item = next;
+  }
+
+  
+  
+  HidePopupsInList(popupsToHide);
+}
+
+void nsXULPopupManager::ExecuteMenu(nsIContent* aMenu,
+                                    nsXULMenuCommandEvent* aEvent) {
+  CloseMenuMode cmm = GetCloseMenuMode(aMenu);
+  HideOpenMenusBeforeExecutingMenu(cmm);
   aEvent->SetCloseMenuMode(cmm);
   nsCOMPtr<nsIRunnable> event = aEvent;
   aMenu->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
