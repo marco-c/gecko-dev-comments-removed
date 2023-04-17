@@ -39,7 +39,7 @@ DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
   
   
   DOMHighResTimeStamp msSinceStart =
-      (TimeStamp::NowUnfuzzed() - mStartMonotonic).ToMilliseconds();
+      (TimeStamp::Now() - mStartMonotonic).ToMilliseconds();
   
   if (mRandomTimelineSeed) {
     msSinceStart = nsRFPService::ReduceTimePrecisionAsMSecs(

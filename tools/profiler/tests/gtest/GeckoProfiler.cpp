@@ -802,14 +802,14 @@ TEST(GeckoProfiler, Markers)
       ::geckoprofiler::markers::NoPayload{}));
 
   
-  TimeStamp ts1 = TimeStamp::NowUnfuzzed();
+  TimeStamp ts1 = TimeStamp::Now();
 
   
   
   PR_Sleep(PR_MillisecondsToInterval(500));
 
   
-  TimeStamp ts2 = TimeStamp::NowUnfuzzed();
+  TimeStamp ts2 = TimeStamp::Now();
   
   EXPECT_NE(ts1, ts2);
 

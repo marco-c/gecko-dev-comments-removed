@@ -52,7 +52,7 @@ void CompositionRecorder::WriteCollectedFrames() {
   
   std::stringstream str;
   nsCString recordingStartTime;
-  TimeDuration delta = TimeStamp::NowUnfuzzed() - mRecordingStart;
+  TimeDuration delta = TimeStamp::Now() - mRecordingStart;
   recordingStartTime.AppendFloat(
       static_cast<double>(PR_Now() / 1000.0 - delta.ToMilliseconds()));
   str << gfxVars::LayersWindowRecordingPath() << "windowrecording-"
@@ -81,7 +81,7 @@ void CompositionRecorder::WriteCollectedFrames() {
 CollectedFrames CompositionRecorder::GetCollectedFrames() {
   nsTArray<CollectedFrame> frames;
 
-  TimeDuration delta = TimeStamp::NowUnfuzzed() - mRecordingStart;
+  TimeDuration delta = TimeStamp::Now() - mRecordingStart;
   double recordingStart = PR_Now() / 1000.0 - delta.ToMilliseconds();
 
   for (RefPtr<RecordedFrame>& frame : mCollectedFrames) {

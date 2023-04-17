@@ -870,7 +870,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
   mWriter.emplace();
 
-  TimeStamp streamingStart = TimeStamp::NowUnfuzzed();
+  TimeStamp streamingStart = TimeStamp::Now();
 
   UniquePtr<ProfilerCodeAddressService> service =
       profiler_code_address_service_for_presymbolication();
@@ -912,7 +912,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
     
     
     const uint32_t parentTimeMs = static_cast<uint32_t>(
-        (TimeStamp::NowUnfuzzed() - streamingStart).ToMilliseconds());
+        (TimeStamp::Now() - streamingStart).ToMilliseconds());
     
     
     

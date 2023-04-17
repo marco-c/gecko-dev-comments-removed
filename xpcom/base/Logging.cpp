@@ -678,7 +678,7 @@ class LogModuleManager {
         
         
         PRTime prnow = PR_Now();
-        TimeStamp tmnow = TimeStamp::NowUnfuzzed();
+        TimeStamp tmnow = TimeStamp::Now();
         TimeDuration duration = tmnow - *aStart;
         PRTime prstart = prnow - duration.ToMicroseconds();
 

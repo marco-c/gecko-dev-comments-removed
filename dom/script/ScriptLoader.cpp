@@ -2510,8 +2510,7 @@ static void OffThreadScriptLoaderCallback(JS::OffThreadToken* aToken,
       static_cast<NotifyOffThreadScriptLoadCompletedRunnable*>(aCallbackData));
   MOZ_ASSERT(aRunnable.get() == aRunnable->GetScriptLoadRequest()->mRunnable);
 
-  aRunnable->GetScriptLoadRequest()->mOffThreadParseStopTime =
-      TimeStamp::NowUnfuzzed();
+  aRunnable->GetScriptLoadRequest()->mOffThreadParseStopTime = TimeStamp::Now();
 
   LogRunnable::Run run(aRunnable);
 
@@ -2587,7 +2586,7 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
   
   LogRunnable::LogDispatch(runnable);
 
-  aRequest->mOffThreadParseStartTime = TimeStamp::NowUnfuzzed();
+  aRequest->mOffThreadParseStartTime = TimeStamp::Now();
 
   
   aRequest->mRunnable = runnable.get();
