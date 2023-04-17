@@ -66,6 +66,17 @@ class WMFVideoMFTManager : public MFTManager {
   bool CanUseDXVA(IMFMediaType* aType, float aFramerate);
 
   
+  
+  
+  
+  
+  
+  
+  
+  media::TimeUnit GetSampleDurationOrLastKnownDuration(
+      IMFSample* aSample) const;
+
+  
   const VideoInfo mVideoInfo;
   const gfx::IntSize mImageSize;
   gfx::IntSize mDecodedImageSize;

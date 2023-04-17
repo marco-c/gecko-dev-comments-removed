@@ -508,6 +508,32 @@ bool WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType, float aFramerate) {
   return mDXVA2Manager->SupportsConfig(aType, aFramerate);
 }
 
+TimeUnit WMFVideoMFTManager::GetSampleDurationOrLastKnownDuration(
+    IMFSample* aSample) const {
+  TimeUnit duration = GetSampleDuration(aSample);
+  if (!duration.IsValid()) {
+    
+    
+    LOG("Got unknown sample duration -- bad return code. Using mLastDuration.");
+  } else if (duration == TimeUnit::Zero()) {
+    
+    LOG("Got unknown sample duration -- zero duration returned. Using "
+        "mLastDuration.");
+  } else if (duration.IsNegative()) {
+    
+    
+    
+    LOG("Got negative sample duration: %d seconds. Using mLastDuration "
+        "instead.",
+        duration.ToSeconds());
+  } else {
+    
+    return duration;
+  }
+
+  return mLastDuration;
+}
+
 HRESULT
 WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
                                           int64_t aStreamOffset,
@@ -612,7 +638,7 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
 
   TimeUnit pts = GetSampleTime(aSample);
   NS_ENSURE_TRUE(pts.IsValid(), E_FAIL);
-  TimeUnit duration = GetSampleDuration(aSample);
+  TimeUnit duration = GetSampleDurationOrLastKnownDuration(aSample);
   NS_ENSURE_TRUE(duration.IsValid(), E_FAIL);
   gfx::IntRect pictureRegion =
       mVideoInfo.ScaledImageRect(videoWidth, videoHeight);
@@ -666,7 +692,7 @@ WMFVideoMFTManager::CreateD3DVideoFrame(IMFSample* aSample,
 
   TimeUnit pts = GetSampleTime(aSample);
   NS_ENSURE_TRUE(pts.IsValid(), E_FAIL);
-  TimeUnit duration = GetSampleDuration(aSample);
+  TimeUnit duration = GetSampleDurationOrLastKnownDuration(aSample);
   NS_ENSURE_TRUE(duration.IsValid(), E_FAIL);
   RefPtr<VideoData> v = VideoData::CreateFromImage(
       mVideoInfo.mDisplay, aStreamOffset, pts, duration, image.forget(), false,
@@ -768,7 +794,7 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
         continue;
       }
       TimeUnit pts = GetSampleTime(sample);
-      TimeUnit duration = GetSampleDuration(sample);
+      TimeUnit duration = GetSampleDurationOrLastKnownDuration(sample);
       if (!pts.IsValid() || !duration.IsValid()) {
         return E_FAIL;
       }
@@ -801,12 +827,6 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
   NS_ENSURE_TRUE(frame, E_FAIL);
 
   aOutData = frame;
-  
-  
-  
-  if (mStreamType == VP9 && aOutData->mDuration == TimeUnit::Zero()) {
-    aOutData->mDuration = mLastDuration;
-  }
 
   if (mNullOutputCount) {
     mGotValidOutputAfterNullOutput = true;
