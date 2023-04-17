@@ -67,7 +67,7 @@ included_inclnames_to_ignore = set(
         "gc/StatsPhasesGenerated.inc",  
         "jit/CacheIROpsGenerated.h",  
         "jit/LOpcodesGenerated.h",  
-        "jit/MOpcodesGenerated.h",  
+        "jit/MIROpsGenerated.h",  
         "js/ProfilingCategoryList.h",  
         "jscustomallocator.h",  
         "js-config.h",  

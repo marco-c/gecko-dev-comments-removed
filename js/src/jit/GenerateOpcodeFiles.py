@@ -54,13 +54,6 @@ def generate_header(c_out, inputs, pat, includeguard, listname):
     )
 
 
-def generate_mir_header(c_out, *inputs):
-    pat = re.compile(
-        r"^\s*INSTRUCTION_HEADER(_WITHOUT_TYPEPOLICY)?\((?P<name>\w+)\);?$"
-    )
-    generate_header(c_out, inputs, pat, "jit_MOpcodesGenerated_h", "MIR_OPCODE_LIST")
-
-
 def generate_lir_header(c_out, *inputs):
     pat = re.compile(r"^\s*LIR_HEADER\((?P<name>\w+)\);?$")
     generate_header(c_out, inputs, pat, "jit_LOpcodesGenerated_h", "LIR_OPCODE_LIST")
