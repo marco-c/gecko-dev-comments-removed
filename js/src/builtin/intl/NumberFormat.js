@@ -739,8 +739,12 @@ function createNumberFormatFormat(nf) {
         assert(intl_GuardToNumberFormat(nf) !== null,
                "InitializeNumberFormat called with non-NumberFormat");
 
+#ifdef NIGHTLY_BUILD
+        var x = value;
+#else
         
         var x = ToNumeric(value);
+#endif
 
         
         return intl_FormatNumber(nf, x,  false);
@@ -791,8 +795,12 @@ function Intl_NumberFormat_formatToParts(value) {
                             "Intl_NumberFormat_formatToParts");
     }
 
+#ifdef NIGHTLY_BUILD
+    var x = value;
+#else
     
     var x = ToNumeric(value);
+#endif
 
     
     return intl_FormatNumber(nf, x,  true);
