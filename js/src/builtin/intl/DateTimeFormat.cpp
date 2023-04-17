@@ -985,6 +985,25 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
   return df.release();
 }
 
+static mozilla::intl::DateTimeFormat* GetOrCreateDateTimeFormat(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat) {
+  
+  mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
+  if (df) {
+    return df;
+  }
+
+  df = NewDateTimeFormat(cx, dateTimeFormat);
+  if (!df) {
+    return nullptr;
+  }
+  dateTimeFormat->setDateFormat(df);
+
+  intl::AddICUCellMemory(dateTimeFormat,
+                         DateTimeFormatObject::UDateFormatEstimatedMemoryUse);
+  return df;
+}
+
 template <typename T>
 static bool SetResolvedProperty(JSContext* cx, HandleObject resolved,
                                 HandlePropertyName name,
@@ -1016,17 +1035,10 @@ bool js::intl_resolveDateTimeFormatComponents(JSContext* cx, unsigned argc,
 
   bool includeDateTimeFields = args[2].toBoolean();
 
-  
-  mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
+  mozilla::intl::DateTimeFormat* df =
+      GetOrCreateDateTimeFormat(cx, dateTimeFormat);
   if (!df) {
-    df = NewDateTimeFormat(cx, dateTimeFormat);
-    if (!df) {
-      return false;
-    }
-    dateTimeFormat->setDateFormat(df);
-
-    intl::AddICUCellMemory(dateTimeFormat,
-                           DateTimeFormatObject::UDateFormatEstimatedMemoryUse);
+    return false;
   }
 
   auto result = df->ResolveComponents();
@@ -1295,17 +1307,10 @@ bool js::intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
-  mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
+  mozilla::intl::DateTimeFormat* df =
+      GetOrCreateDateTimeFormat(cx, dateTimeFormat);
   if (!df) {
-    df = NewDateTimeFormat(cx, dateTimeFormat);
-    if (!df) {
-      return false;
-    }
-    dateTimeFormat->setDateFormat(df);
-
-    intl::AddICUCellMemory(dateTimeFormat,
-                           DateTimeFormatObject::UDateFormatEstimatedMemoryUse);
+    return false;
   }
 
   
@@ -1371,6 +1376,28 @@ static mozilla::intl::DateIntervalFormat* NewDateIntervalFormat(
   }
 
   return dif.unwrap().release();
+}
+
+static mozilla::intl::DateIntervalFormat* GetOrCreateDateIntervalFormat(
+    JSContext* cx, Handle<DateTimeFormatObject*> dateTimeFormat,
+    mozilla::intl::DateTimeFormat& mozDtf) {
+  
+  mozilla::intl::DateIntervalFormat* dif =
+      dateTimeFormat->getDateIntervalFormat();
+  if (dif) {
+    return dif;
+  }
+
+  dif = NewDateIntervalFormat(cx, dateTimeFormat, mozDtf);
+  if (!dif) {
+    return nullptr;
+  }
+  dateTimeFormat->setDateIntervalFormat(dif);
+
+  intl::AddICUCellMemory(
+      dateTimeFormat,
+      DateTimeFormatObject::UDateIntervalFormatEstimatedMemoryUse);
+  return dif;
 }
 
 
@@ -1545,32 +1572,16 @@ bool js::intl_FormatDateTimeRange(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(x.toDouble() <= y.toDouble(),
              "start date mustn't be after the end date");
 
-  
-  mozilla::intl::DateTimeFormat* df = dateTimeFormat->getDateFormat();
+  mozilla::intl::DateTimeFormat* df =
+      GetOrCreateDateTimeFormat(cx, dateTimeFormat);
   if (!df) {
-    df = NewDateTimeFormat(cx, dateTimeFormat);
-    if (!df) {
-      return false;
-    }
-    dateTimeFormat->setDateFormat(df);
-
-    intl::AddICUCellMemory(dateTimeFormat,
-                           DateTimeFormatObject::UDateFormatEstimatedMemoryUse);
+    return false;
   }
 
-  
   mozilla::intl::DateIntervalFormat* dif =
-      dateTimeFormat->getDateIntervalFormat();
+      GetOrCreateDateIntervalFormat(cx, dateTimeFormat, *df);
   if (!dif) {
-    dif = NewDateIntervalFormat(cx, dateTimeFormat, *df);
-    if (!dif) {
-      return false;
-    }
-    dateTimeFormat->setDateIntervalFormat(dif);
-
-    intl::AddICUCellMemory(
-        dateTimeFormat,
-        DateTimeFormatObject::UDateIntervalFormatEstimatedMemoryUse);
+    return false;
   }
 
   
