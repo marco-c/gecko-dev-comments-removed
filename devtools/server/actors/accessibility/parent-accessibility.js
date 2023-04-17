@@ -146,10 +146,10 @@ const ParentAccessibilityActor = ActorClassWithSpec(parentAccessibilitySpec, {
 
 
   destroy() {
+    this.disable();
     Actor.prototype.destroy.call(this);
     Services.obs.removeObserver(this, "a11y-consumers-changed");
     Services.prefs.removeObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
-    this.accService = null;
   },
 });
 
