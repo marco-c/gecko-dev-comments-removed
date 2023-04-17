@@ -3359,6 +3359,17 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::StyleMaxSize& aStyleMaxSize) const;
 
   
+  enum class SizeProperty { Size, MinSize, MaxSize };
+  
+
+
+
+
+
+  bool IsPercentageResolvedAgainstZero(const mozilla::LengthPercentage& aSize,
+                                       SizeProperty aProperty) const;
+
+  
 
 
   bool IsBlockWrapper() const;

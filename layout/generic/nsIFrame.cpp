@@ -7754,6 +7754,33 @@ bool nsIFrame::IsPercentageResolvedAgainstZero(
          (sizeHasPercent && FormControlShrinksForPercentSize(this));
 }
 
+
+
+
+
+
+
+
+
+
+bool nsIFrame::IsPercentageResolvedAgainstZero(const LengthPercentage& aSize,
+                                               SizeProperty aProperty) const {
+  
+  if (aProperty == SizeProperty::MinSize) {
+    return true;
+  }
+
+  const bool hasPercentOnReplaced =
+      aSize.HasPercent() && IsFrameOfType(nsIFrame::eReplacedSizing);
+  if (aProperty == SizeProperty::MaxSize) {
+    return hasPercentOnReplaced;
+  }
+
+  MOZ_ASSERT(aProperty == SizeProperty::Size);
+  return hasPercentOnReplaced ||
+         (aSize.HasPercent() && FormControlShrinksForPercentSize(this));
+}
+
 bool nsIFrame::IsBlockWrapper() const {
   auto pseudoType = Style()->GetPseudoType();
   return pseudoType == PseudoStyleType::mozBlockInsideInlineWrapper ||
