@@ -1771,9 +1771,9 @@ pref("browser.contentblocking.report.show_mobile_app", true);
 
 pref("browser.contentblocking.report.vpn.enabled", true);
 
-pref("browser.contentblocking.report.vpn_regions", "us,ca,nz,sg,my,gb");
+pref("browser.contentblocking.report.vpn_regions", "us,ca,nz,sg,my,gb,de,fr");
 
-pref("browser.contentblocking.report.vpn_platforms", "win");
+pref("browser.contentblocking.report.vpn_platforms", "win,mac,linux");
 pref("browser.contentblocking.report.hide_vpn_banner", false);
 pref("browser.contentblocking.report.vpn_sub_id", "sub_HrfCZF7VPHzZkA");
 
