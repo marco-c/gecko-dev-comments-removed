@@ -191,10 +191,6 @@ class Context9 : public ContextD3D
     gl::GraphicsResetStatus getResetStatus() override;
 
     
-    std::string getVendorString() const override;
-    std::string getRendererDescription() const override;
-
-    
     angle::Result insertEventMarker(GLsizei length, const char *marker) override;
     angle::Result pushGroupMarker(GLsizei length, const char *marker) override;
     angle::Result popGroupMarker() override;

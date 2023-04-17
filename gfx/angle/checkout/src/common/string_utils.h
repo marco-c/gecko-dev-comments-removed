@@ -105,6 +105,8 @@ std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
     const char *propertyName,
     const char *separator);
 
+
+bool NamesMatchWithWildcard(const char *ref, const char *testName);
 }  
 
 #endif  

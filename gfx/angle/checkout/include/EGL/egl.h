@@ -17,25 +17,6 @@ extern "C" {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include <EGL/eglplatform.h>
 
 #ifndef EGL_EGL_PROTOTYPES
