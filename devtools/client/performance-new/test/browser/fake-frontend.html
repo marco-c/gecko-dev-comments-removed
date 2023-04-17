@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <html>
   <head>
     <meta charset="utf-8"/>
@@ -45,7 +45,7 @@
               (profile instanceof ArrayBuffer) ||
               // DevTools injects the profile as just the plain object, although
               // maybe in the future it could also do it as a compressed profile
-              // to make this faster.
+              // to make this faster (bug 1581963).
               Object.keys(profile).includes("threads")
             )
           ) {

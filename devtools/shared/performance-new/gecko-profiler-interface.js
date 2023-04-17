@@ -35,6 +35,8 @@ const IS_SUPPORTED_PLATFORM = "nsIProfiler" in Ci;
 
 
 
+
+
 class ActorReadyGeckoProfilerInterface {
   constructor() {
     

@@ -112,6 +112,7 @@ exports.changeFeatures = features => {
     if (selectors.getPageContext(getState()) === "aboutprofiling") {
       
       
+      
       if (
         !getEnvironmentVariable("JS_TRACE_LOGGING") &&
         features.includes("jstracer")

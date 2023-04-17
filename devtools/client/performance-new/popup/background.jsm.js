@@ -233,6 +233,7 @@ function getProfilerViewModeForCurrentPreset(pageContext) {
 
 
 
+
 async function captureProfile(pageContext) {
   if (!Services.profiler.IsActive()) {
     
@@ -264,6 +265,7 @@ async function captureProfile(pageContext) {
 
   Services.profiler.StopProfiler();
 }
+
 
 
 

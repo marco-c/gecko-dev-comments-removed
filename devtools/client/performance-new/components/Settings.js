@@ -576,7 +576,6 @@ function _entriesTextDisplay(value) {
 
 
 
-
 function renderSection(id, title, children) {
   return div(
     { className: "perf-settings-sections" },
