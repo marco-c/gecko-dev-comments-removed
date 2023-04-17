@@ -197,6 +197,37 @@ class RaptorRunner(MozbuildObject):
                 }
             )
 
+            def _get_browsertime_package():
+                with open(
+                    os.path.join(
+                        self.topsrcdir,
+                        "tools",
+                        "browsertime",
+                        "node_modules",
+                        "browsertime",
+                        "package.json",
+                    )
+                ) as package:
+                    return json.load(package)
+
+            def _get_browsertime_resolved():
+                try:
+                    with open(
+                        os.path.join(
+                            self.topsrcdir,
+                            "tools",
+                            "browsertime",
+                            "node_modules",
+                            ".package-lock.json",
+                        )
+                    ) as package_lock:
+                        return json.load(package_lock)["packages"][
+                            "node_modules/browsertime"
+                        ]["resolved"]
+                except FileNotFoundError:
+                    
+                    return _get_browsertime_package()["_from"]
+
             def _should_install():
                 
                 if not os.path.exists(
@@ -207,37 +238,19 @@ class RaptorRunner(MozbuildObject):
                 
                 with open(
                     os.path.join(self.topsrcdir, "tools", "browsertime", "package.json")
-                ) as new, open(
-                    os.path.join(
-                        self.topsrcdir,
-                        "tools",
-                        "browsertime",
-                        "node_modules",
-                        "browsertime",
-                        "package.json",
-                    )
-                ) as old:
-                    old_pkg = json.load(old)
+                ) as new:
                     new_pkg = json.load(new)
 
-                return not old_pkg["_from"].endswith(
+                return not _get_browsertime_resolved().endswith(
                     new_pkg["devDependencies"]["browsertime"]
                 )
 
             def _get_browsertime_version():
                 
-                with open(
-                    os.path.join(
-                        self.topsrcdir,
-                        "tools",
-                        "browsertime",
-                        "node_modules",
-                        "browsertime",
-                        "package.json",
-                    )
-                ) as existing:
-                    package = json.load(existing)
-                return package["version"], package["_from"]
+                return (
+                    _get_browsertime_package()["version"],
+                    _get_browsertime_resolved(),
+                )
 
             
             
