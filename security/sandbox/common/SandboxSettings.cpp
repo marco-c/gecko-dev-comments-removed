@@ -17,7 +17,7 @@
 #ifdef XP_WIN
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/WindowsVersion.h"
-
+#  include "nsExceptionHandler.h"
 #endif  
 
 using namespace mozilla;
@@ -46,28 +46,37 @@ const char* ContentWin32kLockdownStateToString(
 ContentWin32kLockdownState GetContentWin32kLockdownState() {
 #ifdef XP_WIN
   static ContentWin32kLockdownState result = [] {
-    if (!IsWin8OrLater()) {
-      return ContentWin32kLockdownState::OperatingSystemNotSupported;
-    }
+    ContentWin32kLockdownState state = [] {
+      if (!IsWin8OrLater()) {
+        return ContentWin32kLockdownState::OperatingSystemNotSupported;
+      }
 
-    
-    
-    
-    
-    
-    
-    if (!gfx::gfxVars::UseWebRender()) {
-      return ContentWin32kLockdownState::MissingWebRender;
-    }
+      
+      
+      
+      
+      
+      
+      if (!gfx::gfxVars::UseWebRender()) {
+        return ContentWin32kLockdownState::MissingWebRender;
+      }
 
-    
-    
-    
-    if (!StaticPrefs::security_sandbox_content_win32k_disable()) {
-      return ContentWin32kLockdownState::PrefNotSet;
-    }
+      
+      
+      
+      if (!StaticPrefs::security_sandbox_content_win32k_disable()) {
+        return ContentWin32kLockdownState::PrefNotSet;
+      }
 
-    return ContentWin32kLockdownState::LockdownEnabled;
+      return ContentWin32kLockdownState::LockdownEnabled;
+    }();
+
+    const char* stateStr = ContentWin32kLockdownStateToString(state);
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::ContentSandboxWin32kState,
+        nsDependentCString(stateStr));
+
+    return state;
   }();
 
   return result;
@@ -146,6 +155,20 @@ NS_IMPL_ISUPPORTS(SandboxSettings, mozISandboxSettings)
 NS_IMETHODIMP SandboxSettings::GetEffectiveContentSandboxLevel(
     int32_t* aRetVal) {
   *aRetVal = mozilla::GetEffectiveContentSandboxLevel();
+  return NS_OK;
+}
+
+NS_IMETHODIMP SandboxSettings::GetContentWin32kLockdownState(int32_t* aRetVal) {
+  *aRetVal = static_cast<int32_t>(mozilla::GetContentWin32kLockdownState());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SandboxSettings::GetContentWin32kLockdownStateString(nsAString& aString) {
+  ContentWin32kLockdownState lockdownState =
+      mozilla::GetContentWin32kLockdownState();
+  aString = NS_ConvertASCIItoUTF16(
+      mozilla::ContentWin32kLockdownStateToString(lockdownState));
   return NS_OK;
 }
 
