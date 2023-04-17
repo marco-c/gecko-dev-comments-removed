@@ -665,14 +665,6 @@ nsresult HTMLFormElement::DoSubmit(Event* aEvent) {
     mSubmitPopupState = PopupBlocker::openAbused;
   }
 
-  if (mDeferSubmission) {
-    
-    
-    
-    mPendingSubmission = std::move(submission);
-    return NS_OK;
-  }
-
   
   
   
@@ -695,6 +687,15 @@ nsresult HTMLFormElement::DoSubmit(Event* aEvent) {
           submission->GetAsDialogSubmission()) {
     return SubmitDialog(dialogSubmission);
   }
+
+  if (mDeferSubmission) {
+    
+    
+    
+    mPendingSubmission = std::move(submission);
+    return NS_OK;
+  }
+
   return SubmitSubmission(submission.get());
 }
 
