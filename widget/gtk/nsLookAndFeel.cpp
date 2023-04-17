@@ -1541,7 +1541,25 @@ void nsLookAndFeel::PerThemeData::Init() {
   }
 
   style = GetStyleContext(MOZ_GTK_MENUPOPUP);
-  mMenuBackground = GetBackgroundColor(style, mMenuText);
+  mMenuBackground = [&] {
+    nscolor color = GetBackgroundColor(style, mMenuText);
+    if (NS_GET_A(color)) {
+      return color;
+    }
+    
+    
+    
+    color = GetBackgroundColor(style, mMenuText, GTK_STATE_FLAG_BACKDROP);
+    if (NS_GET_A(color)) {
+      return color;
+    }
+    
+    
+    NS_WARNING(
+        "Couldn't find menu background color, falling back to window "
+        "background");
+    return mMozWindowBackground;
+  }();
 
   style = GetStyleContext(MOZ_GTK_MENUITEM);
   gtk_style_context_get_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
