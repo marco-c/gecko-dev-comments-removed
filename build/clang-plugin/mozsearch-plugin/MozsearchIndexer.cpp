@@ -1612,7 +1612,8 @@ public:
         wasTemplate = true;
         D = D2->getTemplateInstantiationPattern();
       }
-      Kind = D2->isThisDeclarationADefinition() ? "def" : "decl";
+      
+      Kind = (D2->isThisDeclarationADefinition() || D2->isPure()) ? "def" : "decl";
       PrettyKind = "function";
       PeekRange = getFunctionPeekRange(D2);
 
@@ -1740,7 +1741,7 @@ public:
       }
     }
     if (FunctionDecl *D2 = dyn_cast<FunctionDecl>(D)) {
-      if (D2->isThisDeclarationADefinition() &&
+      if ((D2->isThisDeclarationADefinition() || D2->isPure()) &&
           
           
           !D2->isTemplateInstantiation() &&
