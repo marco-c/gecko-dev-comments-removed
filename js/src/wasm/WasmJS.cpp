@@ -36,6 +36,7 @@
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"        
+#include "js/StreamConsumer.h"
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/ErrorObject.h"

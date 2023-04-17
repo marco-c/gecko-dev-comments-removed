@@ -24,6 +24,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
 #include "js/PropertyAndElement.h"  
+#include "js/StreamConsumer.h"
 #include "threading/LockGuard.h"
 #include "vm/HelperThreadState.h"  
 #include "vm/PlainObject.h"        
