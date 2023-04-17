@@ -275,21 +275,9 @@ var DateTimePickerPanel = class {
     
     
     let firstDayOfWeek = calendarInfo.firstDayOfWeek - 1,
-      weekendStart = calendarInfo.weekendStart - 1,
-      weekendEnd = calendarInfo.weekendEnd - 1;
+      weekend = calendarInfo.weekend;
 
-    let weekends = [];
-
-    
-    if (weekendEnd < weekendStart) {
-      weekendEnd += 7;
-    }
-
-    
-    
-    for (let day = weekendStart; day <= weekendEnd; day++) {
-      weekends.push(day % 7);
-    }
+    let weekends = weekend.map(day => day - 1);
 
     return {
       firstDayOfWeek,

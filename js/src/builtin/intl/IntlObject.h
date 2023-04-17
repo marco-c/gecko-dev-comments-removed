@@ -35,9 +35,6 @@ extern const JSClass IntlClass;
 
 
 
-
-
-
 [[nodiscard]] extern bool intl_GetCalendarInfo(JSContext* cx, unsigned argc,
                                                JS::Value* vp);
 
