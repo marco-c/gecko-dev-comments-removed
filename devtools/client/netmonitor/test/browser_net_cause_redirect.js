@@ -9,6 +9,9 @@
 
 
 add_task(async function() {
+  
+  await pushPref("dom.security.https_first", false);
+
   const EXPECTED_REQUESTS = [
     
     { status: 302 },

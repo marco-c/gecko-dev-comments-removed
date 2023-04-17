@@ -8,6 +8,11 @@
 
 
 add_task(async function() {
+  
+  
+  
+  await pushPref("dom.security.https_first", false);
+
   const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });

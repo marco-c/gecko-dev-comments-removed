@@ -8,6 +8,10 @@
 
 
 add_task(async function() {
+  
+  
+  await pushPref("dom.security.https_first", false);
+
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
   const { tab, monitor } = await initNetMonitor(STATUS_CODES_URL, {

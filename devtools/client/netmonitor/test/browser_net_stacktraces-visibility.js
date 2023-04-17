@@ -9,6 +9,11 @@
 
 
 add_task(async function() {
+  
+  
+  
+  await pushPref("dom.security.https_first", false);
+
   const URL = EXAMPLE_URL + "html_single-get-page.html";
   const REQUEST =
     "http://example.com/browser/devtools/client/netmonitor/test/request_0";

@@ -9,6 +9,9 @@
 
 
 add_task(async function() {
+  
+  await pushPref("dom.security.https_first", false);
+
   const EXPECTED_SECURITY_STATES = {
     "test1.example.com": "security-state-insecure",
     "example.com": "security-state-secure",

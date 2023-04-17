@@ -10,6 +10,11 @@ add_task(async function() {
   
   
   
+  await pushPref("dom.security.https_first", false);
+
+  
+  
+  
   await pushPref("network.tcp.tcp_fastopen_enable", false);
   const { tab, monitor, toolbox } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,

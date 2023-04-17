@@ -8,6 +8,9 @@
 
 
 add_task(async function() {
+  
+  await pushPref("dom.security.https_first", false);
+
   const { tab, monitor } = await initNetMonitor(CYRILLIC_URL, {
     requestCount: 1,
   });

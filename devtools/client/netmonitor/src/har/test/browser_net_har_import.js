@@ -7,6 +7,7 @@
 
 
 add_task(async () => {
+  
   await pushPref("dom.security.https_first", false);
 
   const { tab, monitor } = await initNetMonitor(
