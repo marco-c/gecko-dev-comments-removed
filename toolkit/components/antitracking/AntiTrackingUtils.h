@@ -121,10 +121,6 @@ class AntiTrackingUtils final {
   
   static bool IsThirdPartyWindow(nsPIDOMWindowInner* aWindow, nsIURI* aURI);
 
-  
-  
-  static bool IsThirdPartyContext(dom::BrowsingContext* aBrowsingContext);
-
   static nsCString GrantedReasonToString(
       ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason);
 
