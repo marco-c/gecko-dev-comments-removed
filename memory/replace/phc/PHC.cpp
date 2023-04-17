@@ -317,7 +317,9 @@ static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 
 
 
+#ifdef DEBUG
 const uint8_t kAllocJunk = 0xe4;
+#endif
 
 
 static const Time kMaxTime = ~(Time(0));
