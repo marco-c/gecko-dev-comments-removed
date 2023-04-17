@@ -370,13 +370,6 @@ uint64_t HTMLTextFieldAccessible::NativeState() const {
   }
 
   
-  LocalAccessible* widget = ContainerWidget();
-  if (widget && widget - IsAutoComplete()) {
-    state |= states::HASPOPUP | states::SUPPORTS_AUTOCOMPLETION;
-    return state;
-  }
-
-  
   if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::list_)) {
     return state | states::SUPPORTS_AUTOCOMPLETION | states::HASPOPUP;
   }

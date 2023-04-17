@@ -411,16 +411,8 @@ role XULMenupopupAccessible::NativeRole() const {
   }
 
   if (mParent) {
-    if (mParent->IsCombobox() || mParent->IsAutoComplete()) {
+    if (mParent->IsCombobox()) {
       return roles::COMBOBOX_LIST;
-    }
-
-    if (mParent->Role() == roles::PUSHBUTTON) {
-      
-      LocalAccessible* grandParent = mParent->LocalParent();
-      if (grandParent && grandParent->IsAutoComplete()) {
-        return roles::COMBOBOX_LIST;
-      }
     }
   }
 

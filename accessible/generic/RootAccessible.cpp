@@ -515,7 +515,7 @@ void RootAccessible::HandlePopupShownEvent(LocalAccessible* aAccessible) {
     LocalAccessible* combobox = aAccessible->LocalParent();
     if (!combobox) return;
 
-    if (combobox->IsCombobox() || combobox->IsAutoComplete()) {
+    if (combobox->IsCombobox()) {
       RefPtr<AccEvent> event =
           new AccStateChangeEvent(combobox, states::EXPANDED, true);
       nsEventShell::FireEvent(event);
@@ -601,28 +601,14 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
     }
   }
 
-  if (popup->IsAutoCompletePopup()) {
-    
-    
-    if (widget->IsAutoComplete()) notifyOf = kNotifyOfState;
-
-  } else if (widget->IsCombobox()) {
+  if (widget->IsCombobox()) {
     
     
     if (widget->IsActiveWidget()) notifyOf = kNotifyOfFocus;
     notifyOf |= kNotifyOfState;
-
   } else if (widget->IsMenuButton()) {
     
-    LocalAccessible* compositeWidget = widget->ContainerWidget();
-    if (compositeWidget && compositeWidget->IsAutoComplete()) {
-      widget = compositeWidget;
-      notifyOf = kNotifyOfState;
-    }
-
-    
     notifyOf |= kNotifyOfFocus;
-
   } else if (widget == popup) {
     
     
