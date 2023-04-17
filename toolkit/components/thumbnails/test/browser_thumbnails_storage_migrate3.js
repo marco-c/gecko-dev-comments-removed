@@ -14,13 +14,6 @@ Services.scriptloader.loadSubScript(
 );
 var { PageThumbsStorageMigrator } = tmp;
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "gDirSvc",
-  "@mozilla.org/file/directory_service;1",
-  "nsIProperties"
-);
-
 
 
 
@@ -76,13 +69,13 @@ function* runTests() {
 }
 
 function changeLocation(aLocation, aNewDir) {
-  let oldDir = gDirSvc.get(aLocation, Ci.nsIFile);
-  gDirSvc.undefine(aLocation);
-  gDirSvc.set(aLocation, aNewDir);
+  let oldDir = Services.dirsvc.get(aLocation, Ci.nsIFile);
+  Services.dirsvc.undefine(aLocation);
+  Services.dirsvc.set(aLocation, aNewDir);
 
   registerCleanupFunction(function() {
-    gDirSvc.undefine(aLocation);
-    gDirSvc.set(aLocation, oldDir);
+    Services.dirsvc.undefine(aLocation);
+    Services.dirsvc.set(aLocation, oldDir);
   });
 }
 
