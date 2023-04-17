@@ -1565,7 +1565,6 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
   
 
   
-  MOZ_ASSERT(stencil.canLazilyParse == CanLazilyParse(input.options));
   if (stencil.canLazilyParse) {
     UpdateEmittedInnerFunctions(cx, input.atomCache, stencil, gcOutput);
 
