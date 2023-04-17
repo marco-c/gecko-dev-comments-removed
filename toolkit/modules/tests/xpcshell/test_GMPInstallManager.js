@@ -36,9 +36,17 @@ var ProductAddonCheckerScope = ChromeUtils.import(
 
 Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
 Services.prefs.setBoolPref("media.gmp-manager.updateEnabled", true);
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
   Services.prefs.clearUserPref("media.gmp-manager.updateEnabled");
+  Services.prefs.clearUserPref(
+    "toolkit.telemetry.testing.overrideProductsCheck"
+  );
 });
 
 
