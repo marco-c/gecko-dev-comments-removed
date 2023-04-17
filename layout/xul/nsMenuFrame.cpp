@@ -28,6 +28,7 @@
 #include "nsDisplayList.h"
 #include "nsIReflowCallback.h"
 #include "nsISound.h"
+#include "nsLayoutUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Likely.h"
@@ -269,6 +270,8 @@ void nsMenuFrame::SetInitialChildList(ChildListID aListID,
 
 void nsMenuFrame::DestroyFrom(nsIFrame* aDestructRoot,
                               PostDestroyData& aPostDestroyData) {
+  MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
+
   if (mReflowCallbackPosted) {
     PresShell()->CancelReflowCallback(this);
     mReflowCallbackPosted = false;
@@ -289,8 +292,8 @@ void nsMenuFrame::DestroyFrom(nsIFrame* aDestructRoot,
 
   
   
-  mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::menuactive,
-                                   false);
+  nsContentUtils::AddScriptRunner(
+      new nsUnsetAttrRunnable(mContent->AsElement(), nsGkAtoms::menuactive));
 
   
   nsMenuParent* menuParent = GetMenuParent();

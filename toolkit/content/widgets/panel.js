@@ -14,7 +14,7 @@
         <box class="panel-arrowbox" part="arrowbox">
           <image class="panel-arrow" part="arrow"/>
         </box>
-        <html:slot part="content" />
+        <html:slot part="content" style="display: none" />
       </vbox>
       `;
     }
@@ -69,6 +69,7 @@
       if (!this.isArrowPanel) {
         let slot = document.createElement("slot");
         slot.part = "content";
+        slot.style.display = "none";
         this.shadowRoot.appendChild(slot);
       } else {
         this.shadowRoot.appendChild(this.constructor.fragment);
@@ -158,6 +159,9 @@
     }
 
     on_popupshowing(event) {
+      if (event.target == this) {
+        this.panelContent.style.display = "";
+      }
       if (this.isArrowPanel && event.target == this) {
         if (this.isAnchored && this.anchorNode) {
           let anchorRoot =
@@ -252,6 +256,9 @@
     }
 
     on_popuphidden(event) {
+      if (event.target == this) {
+        this.panelContent.style.display = "none";
+      }
       if (this.isArrowPanel && event.target == this) {
         this.removeAttribute("panelopen");
         if (this.getAttribute("animate") != "false") {
