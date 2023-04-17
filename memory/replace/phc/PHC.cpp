@@ -224,11 +224,10 @@ void StackTrace::Fill() {
   
   
   
-  void** fp;
-  asm(
-      
-      "movq (%%rbp), %0\n\t"
-      : "=r"(fp));
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wframe-address"
+  void** fp = reinterpret_cast<void**>(__builtin_frame_address(1));
+#  pragma GCC diagnostic pop
   void* stackEnd = pthread_get_stackaddr_np(pthread_self());
   FramePointerStackWalk(StackWalkCallback, kMaxFrames, this, fp, stackEnd);
 #else

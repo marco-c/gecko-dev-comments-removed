@@ -651,15 +651,10 @@ static uint32_t gGCStackTraceTableWhenSizeExceeds = 4 * 1024;
     
     
     
-    void** fp;
-#  if defined(__x86_64__)
-    asm(
-        
-        "movq (%%rbp), %0\n\t"
-        : "=r"(fp));
-#  else
-    asm("ldr %0, [x29]\n\t" : "=r"(fp));
-#  endif
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wframe-address"
+    void** fp = reinterpret_cast<void**>(__builtin_frame_address(1));
+#  pragma GCC diagnostic pop
     void* stackEnd = pthread_get_stackaddr_np(pthread_self());
     FramePointerStackWalk(StackWalkCallback, MaxFrames, &tmp, fp, stackEnd);
 #else

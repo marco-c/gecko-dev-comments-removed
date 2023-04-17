@@ -201,25 +201,15 @@ static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
 void Registers::SyncPopulate() {
-#  if defined(__x86_64__)
-  asm(
-      
-      
-      "leaq 0x10(%%rbp), %0\n\t"
-      
-      "movq (%%rbp), %1\n\t"
-      : "=r"(mSP), "=r"(mFP));
-#  elif defined(__aarch64__)
-  asm(
-      
-      
-      "add %0, x29, #0x10\n\t"
-      
-      "ldr %1, [x29]\n\t"
-      : "=r"(mSP), "=r"(mFP));
-#  else
-#    error "unknown architecture"
-#  endif
+  
+  
+  
+  
+  mSP = reinterpret_cast<Address>(__builtin_frame_address(0)) + 0x10;
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wframe-address"
+  mFP = reinterpret_cast<Address>(__builtin_frame_address(1));
+#  pragma GCC diagnostic pop
   mPC = reinterpret_cast<Address>(
       __builtin_extract_return_addr(__builtin_return_address(0)));
   mLR = 0;
