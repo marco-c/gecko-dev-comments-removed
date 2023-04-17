@@ -453,16 +453,6 @@
         if (this.multiselected) {
           gBrowser.toggleMuteAudioOnMultiSelectedTabs(this);
         } else {
-          if (
-            event.target.classList.contains("tab-icon-sound") &&
-            this.pictureinpicture
-          ) {
-            
-            
-            
-            
-            return;
-          }
           this.toggleMuteAudio();
         }
         return;

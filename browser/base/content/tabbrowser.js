@@ -5392,11 +5392,7 @@
               affectedTabsLength,
               gTabBrowserBundle.GetStringFromName("tabs.closeTabs.tooltip")
             ).replace("#1", affectedTabsLength);
-      }
-      
-      
-      
-      else if (tab._overPlayingIcon && !tab.pictureinpicture) {
+      } else if (tab._overPlayingIcon) {
         let stringID;
         if (tab.selected) {
           stringID = tab.linkedBrowser.audioMuted
