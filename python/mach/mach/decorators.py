@@ -43,6 +43,8 @@ class _MachCommand(object):
         
         
         "decl_order",
+        
+        "no_auto_log",
     )
 
     def __init__(
@@ -56,6 +58,7 @@ class _MachCommand(object):
         order=None,
         virtualenv_name=None,
         ok_if_tests_disabled=False,
+        no_auto_log=False,
     ):
         self.name = name
         self.subcommand = subcommand
@@ -77,6 +80,7 @@ class _MachCommand(object):
         self.metrics_path = None
         self.subcommand_handlers = {}
         self.decl_order = None
+        self.no_auto_log = no_auto_log
 
     def create_instance(self, context, virtualenv_name):
         metrics = None
@@ -86,7 +90,12 @@ class _MachCommand(object):
         
         
         subclass = type(self.name, (MachCommandBase,), {})
-        return subclass(context, virtualenv_name=virtualenv_name, metrics=metrics)
+        return subclass(
+            context,
+            virtualenv_name=virtualenv_name,
+            metrics=metrics,
+            no_auto_log=self.no_auto_log,
+        )
 
     @property
     def parser(self):
