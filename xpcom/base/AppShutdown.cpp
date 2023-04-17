@@ -60,6 +60,7 @@ const char* sPhaseObserverKeys[] = {
     "xpcom-shutdown-threads",           
     nullptr,                            
     nullptr,                            
+    nullptr,                            
     nullptr                             
 };
 

@@ -733,6 +733,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     sInitializedJS = false;
   }
 
+  mozilla::KillClearOnShutdown(ShutdownPhase::JSPostShutDown);
+
   
   xpc::SelfHostedShmem::Shutdown();
 
