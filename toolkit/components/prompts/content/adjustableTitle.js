@@ -167,7 +167,7 @@ const AdjustableTitle = {
 
   init() {
     
-    if (!window.docShell.chromeEventHandler || !PromptUtils.protonModals) {
+    if (!window.docShell.chromeEventHandler) {
       return;
     }
 
