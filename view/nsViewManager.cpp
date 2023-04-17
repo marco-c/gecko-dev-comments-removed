@@ -286,22 +286,7 @@ void nsViewManager::Refresh(nsView* aView,
     return;
   }
 
-  
-  nsRegion damageRegion = aRegion.ToAppUnits(AppUnitsPerDevPixel());
-
-  
-  damageRegion.MoveBy(-aView->ViewToWidgetOffset());
-
-  if (damageRegion.IsEmpty()) {
-#ifdef DEBUG_roc
-    nsRect viewRect = aView->GetDimensions();
-    nsRect damageRect = damageRegion.GetBounds();
-    printf_stderr(
-        "XXX Damage rectangle (%d,%d,%d,%d) does not intersect the widget's "
-        "view (%d,%d,%d,%d)!\n",
-        damageRect.x, damageRect.y, damageRect.width, damageRect.height,
-        viewRect.x, viewRect.y, viewRect.width, viewRect.height);
-#endif
+  if (aRegion.IsEmpty()) {
     return;
   }
 
@@ -340,7 +325,7 @@ void nsViewManager::Refresh(nsView* aView,
         
         
         if (!presShell->Composite(aView)) {
-          presShell->Paint(aView, damageRegion, PaintFlags::PaintComposite);
+          presShell->Paint(aView, PaintFlags::PaintComposite);
         }
       }
 #ifdef MOZ_DUMP_PAINTING
@@ -464,7 +449,7 @@ void nsViewManager::ProcessPendingUpdatesPaint(nsIWidget* aWidget) {
       }
 #endif
 
-      presShell->Paint(view, nsRegion(), PaintFlags::None);
+      presShell->Paint(view, PaintFlags::None);
       view->SetForcedRepaint(false);
 
 #ifdef MOZ_DUMP_PAINTING
