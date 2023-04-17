@@ -158,22 +158,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   void NotifyOwnerDocumentActivityChanged();
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  void SetupProtoChain(JSContext* aCx, JS::Handle<JSObject*> aObject);
-
-  
   bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
                  JS::Handle<jsid> aId,
                  JS::MutableHandle<JS::PropertyDescriptor> aDesc);
@@ -428,8 +412,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void QueueCheckPluginStopEvent();
 
-  void NotifyContentObjectWrapper();
-
   
 
 
@@ -575,32 +557,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
                                 nsIURI** aRewrittenURI);
-
-  
-  class SetupProtoChainRunner final : public nsIRunnable {
-    ~SetupProtoChainRunner() = default;
-
-   public:
-    NS_DECL_ISUPPORTS
-
-    explicit SetupProtoChainRunner(nsObjectLoadingContent* aContent);
-
-    NS_IMETHOD Run() override;
-
-   private:
-    
-    
-    RefPtr<nsIObjectLoadingContent> mContent;
-  };
-
-  
-  nsNPAPIPluginInstance* ScriptRequestPluginInstance(JSContext* aCx);
-
-  
-  static nsresult GetPluginJSObject(JSContext* cx,
-                                    nsNPAPIPluginInstance* plugin_inst,
-                                    JS::MutableHandle<JSObject*> plugin_obj,
-                                    JS::MutableHandle<JSObject*> plugin_proto);
 
   
   void MaybeFireErrorEvent();

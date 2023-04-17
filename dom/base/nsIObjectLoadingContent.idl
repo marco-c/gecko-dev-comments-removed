@@ -8,16 +8,10 @@
 interface nsIChannel;
 interface nsIRequest;
 interface nsIFrame;
-interface nsIObjectFrame;
 interface nsIPluginTag;
 interface nsIURI;
 
 webidl BrowsingContext;
-
-%{C++
-class nsNPAPIPluginInstance;
-%}
-[ptr] native nsNPAPIPluginInstancePtr(nsNPAPIPluginInstance);
 
 
 
@@ -97,29 +91,6 @@ interface nsIObjectLoadingContent : nsISupports
 
   
 
-
-
-
-  [notxpcom,nostdcall] readonly attribute nsNPAPIPluginInstancePtr pluginInstance;
-
-  
-
-
-
-
-
-
-  [noscript] void hasNewFrame(in nsIObjectFrame aFrame);
-
-  
-
-
-
-
-
-  [noscript] nsIFrame getPrintFrame();
-
-  
 
 
   [noscript] void pluginDestroyed();
