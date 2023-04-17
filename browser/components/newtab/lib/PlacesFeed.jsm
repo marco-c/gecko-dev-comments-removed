@@ -396,7 +396,7 @@ class PlacesFeed {
       
       if (isFirstChange) {
         isFirstChange = false;
-        urlBar.removeHiddenFocus(true);
+        urlBar.removeHiddenFocus();
         urlBar.search("");
         this.store.dispatch(
           ac.OnlyToOneContent({ type: at.DISABLE_SEARCH }, meta.fromTarget)
@@ -417,14 +417,12 @@ class PlacesFeed {
       }
     };
 
-    const onDone = ev => {
+    const onDone = () => {
       
       this.store.dispatch(
         ac.OnlyToOneContent({ type: at.SHOW_SEARCH }, meta.fromTarget)
       );
-
-      const forceSuppressFocusBorder = ev?.type === "mousedown";
-      urlBar.removeHiddenFocus(forceSuppressFocusBorder);
+      urlBar.removeHiddenFocus();
 
       urlBar.removeEventListener("keydown", onKeydown);
       urlBar.removeEventListener("mousedown", onDone);

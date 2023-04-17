@@ -1415,18 +1415,10 @@ class UrlbarInput {
 
 
 
-
-
-
-  removeHiddenFocus(forceSuppressFocusBorder = false) {
+  removeHiddenFocus() {
     this._hideFocus = false;
     if (this.focused) {
       this.setAttribute("focused", "true");
-
-      if (forceSuppressFocusBorder) {
-        this.toggleAttribute("suppress-focus-border", true);
-      }
-
       if (!protonEnabled) {
         this.startLayoutExtend();
       }
