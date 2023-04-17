@@ -1467,19 +1467,18 @@ bool nsWindow::IsPopupInLayoutPopupChain(
   return false;
 }
 
-void nsWindow::WaylandPopupHierarchyUpdateByLayout() {
-  LOG_POPUP(("nsWindow::WaylandPopupHierarchyUpdateByLayout"));
-  MOZ_ASSERT(mWaylandToplevel == nullptr, "Should be called on toplevel only!");
 
-  AutoTArray<nsIWidget*, 5> layoutPopupWidgetChain;
-  GetLayoutPopupWidgetChain(&layoutPopupWidgetChain);
+void nsWindow::WaylandPopupHierarchyHideByLayout(
+    nsTArray<nsIWidget*>* aLayoutWidgetHierarchy) {
+  LOG_POPUP(("nsWindow::WaylandPopupHierarchyMarkByLayout"));
+  MOZ_ASSERT(mWaylandToplevel == nullptr, "Should be called on toplevel only!");
 
   
   nsWindow* popup = mWaylandPopupNext;
   while (popup) {
     
     if (!popup->mPopupClosed && popup->mPopupType != ePopupTypeTooltip) {
-      if (!popup->IsPopupInLayoutPopupChain(&layoutPopupWidgetChain,
+      if (!popup->IsPopupInLayoutPopupChain(aLayoutWidgetHierarchy,
                                              false)) {
         LOG_POPUP(("  hidding popup [%p]", popup));
         popup->WaylandPopupMarkAsClosed();
@@ -1487,16 +1486,18 @@ void nsWindow::WaylandPopupHierarchyUpdateByLayout() {
     }
     popup = popup->mWaylandPopupNext;
   }
+}
 
-  
-  
-  popup = mWaylandPopupNext;
+
+void nsWindow::WaylandPopupHierarchyMarkByLayout(
+    nsTArray<nsIWidget*>* aLayoutWidgetHierarchy) {
+  nsWindow* popup = mWaylandPopupNext;
   while (popup) {
     if (popup->mPopupType == ePopupTypeTooltip) {
       popup->mPopupMatchesLayout = true;
     } else if (!popup->mPopupClosed) {
-      popup->mPopupMatchesLayout =
-          popup->IsPopupInLayoutPopupChain(&layoutPopupWidgetChain, true);
+      popup->mPopupMatchesLayout = popup->IsPopupInLayoutPopupChain(
+          aLayoutWidgetHierarchy,  true);
       LOG_POPUP(("  popup [%p] parent window [%p] matches layout %d\n",
                  (void*)popup, (void*)popup->mWaylandPopupPrev,
                  popup->mPopupMatchesLayout));
@@ -1798,7 +1799,11 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
   
   
   
-  mWaylandToplevel->WaylandPopupHierarchyUpdateByLayout();
+  AutoTArray<nsIWidget*, 5> layoutPopupWidgetChain;
+  GetLayoutPopupWidgetChain(&layoutPopupWidgetChain);
+
+  mWaylandToplevel->WaylandPopupHierarchyHideByLayout(&layoutPopupWidgetChain);
+  mWaylandToplevel->WaylandPopupHierarchyMarkByLayout(&layoutPopupWidgetChain);
 
   
   
@@ -1845,24 +1850,31 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
     changedPopup = parentOfchangedPopup->mWaylandPopupNext;
   }
 
+  GetLayoutPopupWidgetChain(&layoutPopupWidgetChain);
+  mWaylandToplevel->WaylandPopupHierarchyMarkByLayout(&layoutPopupWidgetChain);
+
   changedPopup->WaylandPopupHierarchyCalculatePositions();
 
-  
-  nsWindow* popup = mWaylandToplevel->mWaylandPopupNext;
+  nsWindow* popup = changedPopup;
   while (popup) {
-    if (!popup->mPopupMatchesLayout) {
-      break;
+    
+    
+    
+    bool useMoveToRect = popup->mPopupMatchesLayout;
+    if (useMoveToRect) {
+      
+      
+      
+      
+      useMoveToRect = (popup->mPopupAnchored ||
+                       (!popup->mPopupAnchored &&
+                        popup->mWaylandPopupPrev->mWaylandToplevel == nullptr));
     }
-    popup = popup->mWaylandPopupNext;
-  }
-
-  
-  
-  
-  bool useMoveToRect = (popup == nullptr);
-  popup = changedPopup;
-  while (popup) {
-    LOG_POPUP(("  popup [%p] use move-to-rect %d\n", popup, useMoveToRect));
+    LOG_POPUP(
+        ("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
+         "move-to-rect %d\n",
+         popup, popup->mPopupMatchesLayout, popup->mPopupAnchored,
+         popup->mWaylandPopupPrev->mWaylandToplevel == nullptr, useMoveToRect));
     popup->WaylandPopupMove(useMoveToRect);
     popup->mPopupChanged = false;
     popup = popup->mWaylandPopupNext;
