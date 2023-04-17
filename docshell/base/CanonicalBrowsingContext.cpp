@@ -559,6 +559,15 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
 
       bool addEntry = ShouldUpdateSessionHistory(aLoadType);
       if (IsTop()) {
+        if (mActiveEntry && !mActiveEntry->GetFrameLoader()) {
+          bool sharesDocument = true;
+          mActiveEntry->SharesDocumentWith(newActiveEntry, &sharesDocument);
+          if (!sharesDocument) {
+            
+            
+            RemoveDynEntriesFromActiveSessionHistoryEntry();
+          }
+        }
         mActiveEntry = newActiveEntry;
 
         if (LOAD_TYPE_HAS_FLAGS(aLoadType,
