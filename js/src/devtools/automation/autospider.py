@@ -659,4 +659,14 @@ if use_minidump:
 for name, st in results:
     print("exit status %d for '%s'" % (st, name))
 
-sys.exit(max((st for _, st in results), key=abs))
+
+
+exit_status = max((st for _, st in results), key=abs)
+
+
+
+
+if exit_status & 0xFF:
+    sys.exit(exit_status & 0xFF)
+else:
+    sys.exit(1 if exit_status else 0)
