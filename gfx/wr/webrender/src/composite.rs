@@ -590,7 +590,8 @@ impl CompositeState {
                         (CompositeTileSurface::Color { color: *color }, true)
                     }
                     TileSurface::Clear => {
-                        (CompositeTileSurface::Clear, true)
+                        
+                        (CompositeTileSurface::Clear, false)
                     }
                     TileSurface::Texture { descriptor, .. } => {
                         let surface = descriptor.resolve(resource_cache, tile_cache.current_tile_size);
