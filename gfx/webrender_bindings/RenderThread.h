@@ -34,6 +34,7 @@ class GLContext;
 }  
 namespace layers {
 class CompositorBridgeParent;
+class ShaderProgramOGLsHolder;
 class SurfacePool;
 }  
 namespace wr {
@@ -261,6 +262,8 @@ class RenderThread final {
   RefPtr<layers::SurfacePool> SharedSurfacePool();
   void ClearSharedSurfacePool();
 
+  RefPtr<layers::ShaderProgramOGLsHolder> GetProgramsForCompositorOGL();
+
   
   void HandleDeviceReset(const char* aWhere, GLenum aReason);
   
@@ -319,6 +322,7 @@ class RenderThread final {
 
   UniquePtr<WebRenderProgramCache> mProgramCache;
   UniquePtr<WebRenderShaders> mShaders;
+  RefPtr<layers::ShaderProgramOGLsHolder> mProgramsForCompositorOGL;
 
   
   
