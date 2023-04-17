@@ -101,7 +101,7 @@ namespace JS {
 
 
 
-using SelfHostedCache = mozilla::Span<uint8_t>;
+using SelfHostedCache = mozilla::Span<const uint8_t>;
 
 
 using SelfHostedWriter = bool (*)(JSContext*, SelfHostedCache);

@@ -31,7 +31,7 @@ class SelfHostedShmem final : public nsIMemoryReporter {
 
   
   
-  using ContentType = mozilla::Span<uint8_t>;
+  using ContentType = mozilla::Span<const uint8_t>;
 
   static SelfHostedShmem& GetSingleton();
 
