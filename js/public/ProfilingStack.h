@@ -17,7 +17,7 @@
 #include "js/TypeDecls.h"
 
 class JS_PUBLIC_API JSTracer;
-class JS_FRIEND_API ProfilingStack;
+class JS_PUBLIC_API ProfilingStack;
 
 
 
@@ -338,7 +338,7 @@ class ProfilingStackFrame {
   }
 
   
-  JS_FRIEND_API jsbytecode* pc() const;
+  JS_PUBLIC_API jsbytecode* pc() const;
   void setPC(jsbytecode* pc);
 
   void trace(JSTracer* trc);
@@ -349,14 +349,14 @@ class ProfilingStackFrame {
   static const int32_t NullPCOffset = -1;
 };
 
-JS_FRIEND_API void SetContextProfilingStack(JSContext* cx,
+JS_PUBLIC_API void SetContextProfilingStack(JSContext* cx,
                                             ProfilingStack* profilingStack);
 
 
 
-JS_FRIEND_API void EnableContextProfilingStack(JSContext* cx, bool enabled);
+JS_PUBLIC_API void EnableContextProfilingStack(JSContext* cx, bool enabled);
 
-JS_FRIEND_API void RegisterContextProfilingEventMarker(JSContext* cx,
+JS_PUBLIC_API void RegisterContextProfilingEventMarker(JSContext* cx,
                                                        void (*fn)(const char*,
                                                                   const char*));
 
@@ -371,7 +371,7 @@ typedef void (*UnregisterThreadCallback)();
 
 
 
-JS_FRIEND_API void SetProfilingThreadCallbacks(
+JS_PUBLIC_API void SetProfilingThreadCallbacks(
     RegisterThreadCallback registerThread,
     UnregisterThreadCallback unregisterThread);
 
@@ -396,7 +396,7 @@ JS_FRIEND_API void SetProfilingThreadCallbacks(
 
 
 
-class JS_FRIEND_API ProfilingStack final {
+class JS_PUBLIC_API ProfilingStack final {
  public:
   ProfilingStack() = default;
 

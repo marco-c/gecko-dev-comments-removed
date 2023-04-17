@@ -19,7 +19,7 @@ namespace js {
 
 
 
-extern JS_FRIEND_API void EnableCodeCoverage();
+extern JS_PUBLIC_API void EnableCodeCoverage();
 
 
 
@@ -30,9 +30,9 @@ extern JS_FRIEND_API void EnableCodeCoverage();
 
 
 
-extern JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummary(JSContext* cx,
+extern JS_PUBLIC_API JS::UniqueChars GetCodeCoverageSummary(JSContext* cx,
                                                             size_t* length);
-extern JS_FRIEND_API JS::UniqueChars GetCodeCoverageSummaryAll(JSContext* cx,
+extern JS_PUBLIC_API JS::UniqueChars GetCodeCoverageSummaryAll(JSContext* cx,
                                                                size_t* length);
 
 }  

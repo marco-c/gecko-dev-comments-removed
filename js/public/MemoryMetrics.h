@@ -130,7 +130,7 @@ namespace js {
 
 
 
-JS_FRIEND_API size_t MemoryReportingSundriesThreshold();
+JS_PUBLIC_API size_t MemoryReportingSundriesThreshold();
 
 
 

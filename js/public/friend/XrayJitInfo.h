@@ -22,7 +22,7 @@ class JS_PUBLIC_API JSObject;
 
 namespace js {
 
-class JS_FRIEND_API BaseProxyHandler;
+class JS_PUBLIC_API BaseProxyHandler;
 
 }  
 
@@ -50,7 +50,7 @@ struct XrayJitInfo {
   size_t expandoProtoSlot;
 };
 
-extern JS_FRIEND_API void SetXrayJitInfo(XrayJitInfo* info);
+extern JS_PUBLIC_API void SetXrayJitInfo(XrayJitInfo* info);
 
 }  
 

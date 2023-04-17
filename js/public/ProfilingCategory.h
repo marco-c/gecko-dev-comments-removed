@@ -57,7 +57,7 @@ struct ProfilingCategoryPairInfo {
   const char* mLabel;
 };
 
-JS_FRIEND_API const ProfilingCategoryPairInfo& GetProfilingCategoryPairInfo(
+JS_PUBLIC_API const ProfilingCategoryPairInfo& GetProfilingCategoryPairInfo(
     ProfilingCategoryPair aCategoryPair);
 
 }  

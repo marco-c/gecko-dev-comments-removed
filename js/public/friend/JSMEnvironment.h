@@ -49,7 +49,7 @@ namespace JS {
 
 
 
-extern JS_FRIEND_API JSObject* NewJSMEnvironment(JSContext* cx);
+extern JS_PUBLIC_API JSObject* NewJSMEnvironment(JSContext* cx);
 
 
 
@@ -59,7 +59,7 @@ extern JS_FRIEND_API JSObject* NewJSMEnvironment(JSContext* cx);
 
 
 
-extern JS_FRIEND_API bool ExecuteInJSMEnvironment(JSContext* cx,
+extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(JSContext* cx,
                                                   Handle<JSScript*> script,
                                                   Handle<JSObject*> jsmEnv);
 
@@ -68,7 +68,7 @@ extern JS_FRIEND_API bool ExecuteInJSMEnvironment(JSContext* cx,
 
 
 
-extern JS_FRIEND_API bool ExecuteInJSMEnvironment(
+extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(
     JSContext* cx, Handle<JSScript*> script, Handle<JSObject*> jsmEnv,
     Handle<StackGCVector<JSObject*>> targetObj);
 
@@ -78,7 +78,7 @@ extern JS_FRIEND_API bool ExecuteInJSMEnvironment(
 
 
 
-extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 
 
 
@@ -86,7 +86,7 @@ extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 
 
 
-extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
+extern JS_PUBLIC_API bool IsJSMEnvironment(JSObject* obj);
 
 }  
 

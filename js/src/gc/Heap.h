@@ -157,9 +157,9 @@ class FreeSpan {
 
 
 class alignas(ArenaSize) Arena {
-  static JS_FRIEND_DATA const uint8_t ThingSizes[];
-  static JS_FRIEND_DATA const uint8_t FirstThingOffsets[];
-  static JS_FRIEND_DATA const uint8_t ThingsPerArena[];
+  static JS_PUBLIC_DATA const uint8_t ThingSizes[];
+  static JS_PUBLIC_DATA const uint8_t FirstThingOffsets[];
+  static JS_PUBLIC_DATA const uint8_t ThingsPerArena[];
   
 
 

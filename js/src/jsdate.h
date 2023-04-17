@@ -37,7 +37,7 @@ extern JSObject* NewDateObjectMsec(JSContext* cx, JS::ClippedTime t,
 
 
 
-extern JS_FRIEND_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
+extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, int year, int mon,
                                              int mday, int hour, int min,
                                              int sec);
 

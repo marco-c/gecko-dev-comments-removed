@@ -81,7 +81,7 @@ using DOMProxyShadowsCheck = DOMProxyShadowsResult (*)(JSContext*,
                                                        Handle<JSObject*>,
                                                        Handle<JS::PropertyKey>);
 
-extern JS_FRIEND_API void SetDOMProxyInformation(
+extern JS_PUBLIC_API void SetDOMProxyInformation(
     const void* domProxyHandlerFamily,
     DOMProxyShadowsCheck domProxyShadowsCheck,
     const void* domRemoteProxyHandlerFamily);

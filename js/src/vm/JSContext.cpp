@@ -247,7 +247,7 @@ bool AutoResolving::alreadyStartedSlow() const {
 
 
 
-JS_FRIEND_API void js::ReportOutOfMemory(JSContext* cx) {
+JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   
 
 
@@ -310,7 +310,7 @@ void js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber) {
   }
 }
 
-JS_FRIEND_API void js::ReportOverRecursed(JSContext* maybecx) {
+JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
   ReportOverRecursed(maybecx, JSMSG_OVER_RECURSED);
 }
 
@@ -677,7 +677,7 @@ void JSContext::recoverFromOutOfMemory() {
   }
 }
 
-JS_FRIEND_API bool js::UseInternalJobQueues(JSContext* cx) {
+JS_PUBLIC_API bool js::UseInternalJobQueues(JSContext* cx) {
   
   
   MOZ_RELEASE_ASSERT(
@@ -698,17 +698,17 @@ JS_FRIEND_API bool js::UseInternalJobQueues(JSContext* cx) {
   return true;
 }
 
-JS_FRIEND_API bool js::EnqueueJob(JSContext* cx, JS::HandleObject job) {
+JS_PUBLIC_API bool js::EnqueueJob(JSContext* cx, JS::HandleObject job) {
   MOZ_ASSERT(cx->jobQueue);
   return cx->jobQueue->enqueuePromiseJob(cx, nullptr, job, nullptr, nullptr);
 }
 
-JS_FRIEND_API void js::StopDrainingJobQueue(JSContext* cx) {
+JS_PUBLIC_API void js::StopDrainingJobQueue(JSContext* cx) {
   MOZ_ASSERT(cx->internalJobQueue.ref());
   cx->internalJobQueue->interrupt();
 }
 
-JS_FRIEND_API void js::RunJobs(JSContext* cx) {
+JS_PUBLIC_API void js::RunJobs(JSContext* cx) {
   MOZ_ASSERT(cx->jobQueue);
   cx->jobQueue->runJobs(cx);
   JS::ClearKeptObjects(cx);

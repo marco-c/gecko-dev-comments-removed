@@ -39,7 +39,7 @@ namespace js {
 
 
 
-extern JS_FRIEND_API const JSErrorFormatString* GetErrorMessage(
+extern JS_PUBLIC_API const JSErrorFormatString* GetErrorMessage(
     void* userRef, unsigned errorNumber);
 
 }  

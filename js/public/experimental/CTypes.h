@@ -48,10 +48,10 @@ using CTypesActivityCallback = void (*)(JSContext*, CTypesActivityType);
 
 
 
-extern JS_FRIEND_API void SetCTypesActivityCallback(JSContext* cx,
+extern JS_PUBLIC_API void SetCTypesActivityCallback(JSContext* cx,
                                                     CTypesActivityCallback cb);
 
-class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
+class MOZ_RAII JS_PUBLIC_API AutoCTypesActivityCallback {
  private:
   JSContext* cx;
   CTypesActivityCallback callback;

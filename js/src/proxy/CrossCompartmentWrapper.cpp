@@ -362,7 +362,7 @@ bool CrossCompartmentWrapper::boxedValue_unbox(JSContext* cx,
 
 const CrossCompartmentWrapper CrossCompartmentWrapper::singleton(0u);
 
-JS_FRIEND_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
+JS_PUBLIC_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
                                                    JSObject* wrapper) {
   JS::Compartment* comp = wrapper->compartment();
   auto ptr = comp->lookupWrapper(Wrapper::wrappedObject(wrapper));
@@ -372,7 +372,7 @@ JS_FRIEND_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
   NukeRemovedCrossCompartmentWrapper(cx, wrapper);
 }
 
-JS_FRIEND_API void js::NukeCrossCompartmentWrapperIfExists(
+JS_PUBLIC_API void js::NukeCrossCompartmentWrapperIfExists(
     JSContext* cx, JS::Compartment* source, JSObject* target) {
   MOZ_ASSERT(source != target->compartment());
   MOZ_ASSERT(!target->is<CrossCompartmentWrapperObject>());
@@ -401,7 +401,7 @@ static bool NukedAllRealms(JS::Compartment* comp) {
 
 
 
-JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
+JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
     JSContext* cx, const CompartmentFilter& sourceFilter, JS::Realm* target,
     js::NukeReferencesToWindow nukeReferencesToWindow,
     js::NukeReferencesFromTarget nukeReferencesFromTarget) {
@@ -474,7 +474,7 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
   return true;
 }
 
-JS_FRIEND_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
+JS_PUBLIC_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
   
   
   
@@ -495,7 +495,7 @@ JS_FRIEND_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
   return true;
 }
 
-JS_FRIEND_API bool js::NukedObjectRealm(JSObject* obj) {
+JS_PUBLIC_API bool js::NukedObjectRealm(JSObject* obj) {
   return obj->nonCCWRealm()->nukedIncomingWrappers;
 }
 
@@ -603,7 +603,7 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
 
 
 
-JS_FRIEND_API bool js::RemapAllWrappersForObject(JSContext* cx,
+JS_PUBLIC_API bool js::RemapAllWrappersForObject(JSContext* cx,
                                                  HandleObject oldTarget,
                                                  HandleObject newTarget) {
   MOZ_ASSERT(!IsInsideNursery(oldTarget));
@@ -627,7 +627,7 @@ JS_FRIEND_API bool js::RemapAllWrappersForObject(JSContext* cx,
   return true;
 }
 
-JS_FRIEND_API bool js::RecomputeWrappers(
+JS_PUBLIC_API bool js::RecomputeWrappers(
     JSContext* cx, const CompartmentFilter& sourceFilter,
     const CompartmentFilter& targetFilter) {
   bool evictedNursery = false;

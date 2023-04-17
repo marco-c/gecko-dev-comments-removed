@@ -148,7 +148,7 @@ namespace js {
 
 
 
-extern JS_FRIEND_API JSObject* GetFirstSubsumedSavedFrame(
+extern JS_PUBLIC_API JSObject* GetFirstSubsumedSavedFrame(
     JSContext* cx, JSPrincipals* principals, JS::Handle<JSObject*> savedFrame,
     JS::SavedFrameSelfHosted selfHosted);
 

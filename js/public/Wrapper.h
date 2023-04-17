@@ -41,7 +41,7 @@ class MOZ_STACK_CLASS WrapperOptions : public ProxyOptions {
 
 
 
-class JS_FRIEND_API ForwardingProxyHandler : public BaseProxyHandler {
+class JS_PUBLIC_API ForwardingProxyHandler : public BaseProxyHandler {
  public:
   using BaseProxyHandler::BaseProxyHandler;
 
@@ -132,7 +132,7 @@ class JS_FRIEND_API ForwardingProxyHandler : public BaseProxyHandler {
 
 
 
-class JS_FRIEND_API Wrapper : public ForwardingProxyHandler {
+class JS_PUBLIC_API Wrapper : public ForwardingProxyHandler {
   unsigned mFlags;
 
  public:
@@ -186,7 +186,7 @@ inline JSObject* WrapperOptions::proto() const {
 }
 
 
-class JS_FRIEND_API CrossCompartmentWrapper : public Wrapper {
+class JS_PUBLIC_API CrossCompartmentWrapper : public Wrapper {
  public:
   explicit constexpr CrossCompartmentWrapper(unsigned aFlags,
                                              bool aHasPrototype = false,
@@ -264,7 +264,7 @@ class JS_FRIEND_API CrossCompartmentWrapper : public Wrapper {
   static const CrossCompartmentWrapper singletonWithPrototype;
 };
 
-class JS_FRIEND_API OpaqueCrossCompartmentWrapper
+class JS_PUBLIC_API OpaqueCrossCompartmentWrapper
     : public CrossCompartmentWrapper {
  public:
   explicit constexpr OpaqueCrossCompartmentWrapper()
@@ -342,7 +342,7 @@ class JS_FRIEND_API OpaqueCrossCompartmentWrapper
 
 
 template <class Base>
-class JS_FRIEND_API SecurityWrapper : public Base {
+class JS_PUBLIC_API SecurityWrapper : public Base {
  public:
   explicit constexpr SecurityWrapper(unsigned flags, bool hasPrototype = false)
       : Base(flags, hasPrototype,  true) {}
@@ -418,7 +418,7 @@ inline bool IsCrossCompartmentWrapper(const JSObject* obj) {
 
 
 
-JS_FRIEND_API JSObject* UncheckedUnwrap(JSObject* obj,
+JS_PUBLIC_API JSObject* UncheckedUnwrap(JSObject* obj,
                                         bool stopAtWindowProxy = true,
                                         unsigned* flagsp = nullptr);
 
@@ -438,15 +438,11 @@ JS_FRIEND_API JSObject* UncheckedUnwrap(JSObject* obj,
 
 
 
-JS_FRIEND_API JSObject* CheckedUnwrapStatic(JSObject* obj);
+JS_PUBLIC_API JSObject* CheckedUnwrapStatic(JSObject* obj);
 
 
 
-JS_FRIEND_API JSObject* UnwrapOneCheckedStatic(JSObject* obj);
-
-
-
-
+JS_PUBLIC_API JSObject* UnwrapOneCheckedStatic(JSObject* obj);
 
 
 
@@ -466,12 +462,16 @@ JS_FRIEND_API JSObject* UnwrapOneCheckedStatic(JSObject* obj);
 
 
 
-JS_FRIEND_API JSObject* CheckedUnwrapDynamic(JSObject* obj, JSContext* cx,
+
+
+
+
+JS_PUBLIC_API JSObject* CheckedUnwrapDynamic(JSObject* obj, JSContext* cx,
                                              bool stopAtWindowProxy = true);
 
 
 
-JS_FRIEND_API JSObject* UnwrapOneCheckedDynamic(JS::HandleObject obj,
+JS_PUBLIC_API JSObject* UnwrapOneCheckedDynamic(JS::HandleObject obj,
                                                 JSContext* cx,
                                                 bool stopAtWindowProxy = true);
 
@@ -480,15 +480,15 @@ JS_FRIEND_API JSObject* UnwrapOneCheckedDynamic(JS::HandleObject obj,
 
 
 
-JS_FRIEND_API JSObject* UncheckedUnwrapWithoutExpose(JSObject* obj);
+JS_PUBLIC_API JSObject* UncheckedUnwrapWithoutExpose(JSObject* obj);
 
 void ReportAccessDenied(JSContext* cx);
 
-JS_FRIEND_API void NukeCrossCompartmentWrapper(JSContext* cx,
+JS_PUBLIC_API void NukeCrossCompartmentWrapper(JSContext* cx,
                                                JSObject* wrapper);
 
 
-JS_FRIEND_API void NukeCrossCompartmentWrapperIfExists(JSContext* cx,
+JS_PUBLIC_API void NukeCrossCompartmentWrapperIfExists(JSContext* cx,
                                                        JS::Compartment* source,
                                                        JSObject* target);
 
@@ -496,16 +496,16 @@ void RemapWrapper(JSContext* cx, JSObject* wobj, JSObject* newTarget);
 void RemapDeadWrapper(JSContext* cx, JS::HandleObject wobj,
                       JS::HandleObject newTarget);
 
-JS_FRIEND_API bool RemapAllWrappersForObject(JSContext* cx,
+JS_PUBLIC_API bool RemapAllWrappersForObject(JSContext* cx,
                                              JS::HandleObject oldTarget,
                                              JS::HandleObject newTarget);
 
 
 
-JS_FRIEND_API bool RecomputeWrappers(JSContext* cx,
+JS_PUBLIC_API bool RecomputeWrappers(JSContext* cx,
                                      const CompartmentFilter& sourceFilter,
                                      const CompartmentFilter& targetFilter);
 
 } 
 
-#endif
+#endif 

@@ -59,7 +59,7 @@ class MOZ_RAII AutoCheckRecursionLimit {
                                                   JS::StackKind kind,
                                                   int extraAllowance) const;
 
-  JS_FRIEND_API bool runningWithTrustedPrincipals(JSContext* cx) const;
+  JS_PUBLIC_API bool runningWithTrustedPrincipals(JSContext* cx) const;
 
 #ifdef __wasi__
   
@@ -101,7 +101,7 @@ class MOZ_RAII AutoCheckRecursionLimit {
       JSContext* cx) const;
 };
 
-extern MOZ_COLD JS_FRIEND_API void ReportOverRecursed(JSContext* maybecx);
+extern MOZ_COLD JS_PUBLIC_API void ReportOverRecursed(JSContext* maybecx);
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimitImpl(uintptr_t limit,
                                                                void* sp) const {

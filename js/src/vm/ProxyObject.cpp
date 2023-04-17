@@ -198,7 +198,7 @@ void ProxyObject::nuke() {
   
 }
 
-JS_FRIEND_API void js::detail::SetValueInProxy(Value* slot,
+JS_PUBLIC_API void js::detail::SetValueInProxy(Value* slot,
                                                const Value& value) {
   
   

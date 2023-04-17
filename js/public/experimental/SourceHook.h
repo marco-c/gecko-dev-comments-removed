@@ -87,11 +87,11 @@ class SourceHook {
 
 
 
-extern JS_FRIEND_API void SetSourceHook(JSContext* cx,
+extern JS_PUBLIC_API void SetSourceHook(JSContext* cx,
                                         mozilla::UniquePtr<SourceHook> hook);
 
 
-extern JS_FRIEND_API mozilla::UniquePtr<SourceHook> ForgetSourceHook(
+extern JS_PUBLIC_API mozilla::UniquePtr<SourceHook> ForgetSourceHook(
     JSContext* cx);
 
 }  

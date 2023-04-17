@@ -47,22 +47,22 @@ namespace js {
 
 
 
-extern JS_FRIEND_API void SetWindowProxyClass(JSContext* cx,
+extern JS_PUBLIC_API void SetWindowProxyClass(JSContext* cx,
                                               const JSClass* clasp);
 
 
 
 
 
-extern JS_FRIEND_API void SetWindowProxy(JSContext* cx,
+extern JS_PUBLIC_API void SetWindowProxy(JSContext* cx,
                                          JS::Handle<JSObject*> global,
                                          JS::Handle<JSObject*> windowProxy);
 
 namespace detail {
 
-extern JS_FRIEND_API bool IsWindowSlow(JSObject* obj);
+extern JS_PUBLIC_API bool IsWindowSlow(JSObject* obj);
 
-extern JS_FRIEND_API JSObject* ToWindowProxyIfWindowSlow(JSObject* obj);
+extern JS_PUBLIC_API JSObject* ToWindowProxyIfWindowSlow(JSObject* obj);
 
 }  
 
@@ -80,7 +80,7 @@ inline bool IsWindow(JSObject* obj) {
 
 
 
-extern JS_FRIEND_API bool IsWindowProxy(JSObject* obj);
+extern JS_PUBLIC_API bool IsWindowProxy(JSObject* obj);
 
 
 
@@ -99,7 +99,7 @@ MOZ_ALWAYS_INLINE JSObject* ToWindowProxyIfWindow(JSObject* obj) {
 
 
 
-extern JS_FRIEND_API JSObject* ToWindowIfWindowProxy(JSObject* obj);
+extern JS_PUBLIC_API JSObject* ToWindowIfWindowProxy(JSObject* obj);
 
 }  
 

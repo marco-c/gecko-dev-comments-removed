@@ -58,7 +58,7 @@ typedef void (*RecordAllocationsCallback)(RecordAllocationInfo&& info);
 
 
 
-JS_FRIEND_API void EnableRecordingAllocations(
+JS_PUBLIC_API void EnableRecordingAllocations(
     JSContext* cx, RecordAllocationsCallback callback, double probability);
 
 
@@ -66,7 +66,7 @@ JS_FRIEND_API void EnableRecordingAllocations(
 
 
 
-JS_FRIEND_API void DisableRecordingAllocations(JSContext* cx);
+JS_PUBLIC_API void DisableRecordingAllocations(JSContext* cx);
 
 }  
 

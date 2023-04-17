@@ -21,10 +21,10 @@ template <typename T>
 class TenuredHeap;
 
 
-JS_FRIEND_API const char* GCTraceKindToAscii(JS::TraceKind kind);
+JS_PUBLIC_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 
 
-JS_FRIEND_API size_t GCTraceKindSize(JS::TraceKind kind);
+JS_PUBLIC_API size_t GCTraceKindSize(JS::TraceKind kind);
 
 
 enum class TracerKind {
@@ -527,7 +527,7 @@ bool IsAboutToBeFinalizedUnbarriered(T* thingp);
 
 
 
-extern JS_FRIEND_API bool RuntimeIsBeingDestroyed();
+extern JS_PUBLIC_API bool RuntimeIsBeingDestroyed();
 #endif
 
 }  

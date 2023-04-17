@@ -81,23 +81,23 @@ namespace js {
 
 class InterpreterFrame;
 
-extern JS_FRIEND_API void DumpString(JSString* str, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpString(JSString* str, GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpAtom(JSAtom* atom, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpAtom(JSAtom* atom, GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpObject(JSObject* obj, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpObject(JSObject* obj, GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpChars(const char16_t* s, size_t n,
+extern JS_PUBLIC_API void DumpChars(const char16_t* s, size_t n,
                                     GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpValue(const JS::Value& val, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpValue(const JS::Value& val, GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpId(PropertyKey id, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpId(PropertyKey id, GenericPrinter& out);
 
-extern JS_FRIEND_API void DumpInterpreterFrame(
+extern JS_PUBLIC_API void DumpInterpreterFrame(
     JSContext* cx, GenericPrinter& out, InterpreterFrame* start = nullptr);
 
-extern JS_FRIEND_API void DumpBigInt(JS::BigInt* bi, GenericPrinter& out);
+extern JS_PUBLIC_API void DumpBigInt(JS::BigInt* bi, GenericPrinter& out);
 
 }  
 
