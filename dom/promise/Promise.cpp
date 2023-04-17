@@ -806,6 +806,8 @@ void PromiseWorkerProxy::CleanUp() {
     
     
     
+    mWorkerRef = nullptr;
+
     CleanProperties();
   }
   Release();
