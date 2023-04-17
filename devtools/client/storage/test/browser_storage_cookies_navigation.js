@@ -7,10 +7,6 @@
 
 
 add_task(async function() {
-  
-  
-  
-  await pushPref("fission.bfcacheInParent", false);
   await testNavigation();
 });
 

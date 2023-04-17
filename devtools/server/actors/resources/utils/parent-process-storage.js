@@ -54,7 +54,8 @@ class ParentProcessStorage {
     
     this._offPageShow = watcherActor.on(
       "bf-cache-navigation-pageshow",
-      ({ windowGlobal }) => this._onNewWindowGlobal(windowGlobal)
+      ({ windowGlobal, isNewTargetCreated }) =>
+        this._onNewWindowGlobal(windowGlobal, isNewTargetCreated)
     );
 
     const {
@@ -170,7 +171,15 @@ class ParentProcessStorage {
     }
   }
 
-  async _onNewWindowGlobal(windowGlobal) {
+  
+
+
+
+
+
+
+
+  async _onNewWindowGlobal(windowGlobal, isBfCacheNavigationCreatingNewTarget) {
     
     
     if (
@@ -191,12 +200,15 @@ class ParentProcessStorage {
       return;
     }
 
-    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
-      "devtools.target-switching.server.enabled",
-      false
-    );
+    
+    
+    
+    
+    
+    const isNewTargetBeingCreated =
+      isTargetSwitchingEnabled() || isBfCacheNavigationCreatingNewTarget;
 
-    if (!isTargetSwitchingEnabled) {
+    if (!isNewTargetBeingCreated) {
       return;
     }
 
@@ -252,14 +264,16 @@ class StorageActorMock extends EventEmitter {
     
     
     
-    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
-      "devtools.target-switching.server.enabled",
-      false
-    );
-    if (!isTargetSwitchingEnabled) {
+    if (!isTargetSwitchingEnabled()) {
       this._offPageShow = watcherActor.on(
         "bf-cache-navigation-pageshow",
-        ({ windowGlobal }) => {
+        ({ windowGlobal, isNewTargetCreated }) => {
+          
+          
+          
+          if (isNewTargetCreated) {
+            return;
+          }
           const windowMock = { location: windowGlobal.documentURI };
           this.emit("window-ready", windowMock);
         }
@@ -523,4 +537,11 @@ class StorageActorMock extends EventEmitter {
     }
     return null;
   }
+}
+
+function isTargetSwitchingEnabled() {
+  return Services.prefs.getBoolPref(
+    "devtools.target-switching.server.enabled",
+    false
+  );
 }
