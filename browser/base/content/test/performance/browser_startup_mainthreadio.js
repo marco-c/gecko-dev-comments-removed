@@ -373,7 +373,7 @@ const startupPhases = {
       path: "ProfD:cert9.db",
       condition: WIN,
       read: 5,
-      stat: 2,
+      stat: 4,
     },
     {
       
@@ -381,7 +381,7 @@ const startupPhases = {
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
-      stat: 2,
+      stat: 4,
     },
     {
       
@@ -408,7 +408,7 @@ const startupPhases = {
       path: "ProfD:key4.db",
       condition: WIN,
       read: 8,
-      stat: 2,
+      stat: 4,
     },
     {
       
@@ -416,7 +416,7 @@ const startupPhases = {
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
-      stat: 2,
+      stat: 4,
     },
     {
       
