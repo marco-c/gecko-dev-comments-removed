@@ -638,6 +638,14 @@ struct CompilationInput {
     enclosingScope = lazy_.enclosingScope();
   }
 
+  void initFromStencil(CompilationStencil& context, ScriptIndex scriptIndex,
+                       ScriptSource* ss) {
+    target = CompilationTarget::Delazification;
+    lazy_ = InputScript(context, scriptIndex);
+    source = ss;
+    enclosingScope = lazy_.enclosingScope();
+  }
+
   
   
   bool hasNonDefaultEnclosingScope() const {
