@@ -12,6 +12,7 @@
 #define nsXULPopupManager_h__
 
 #include "mozilla/Logging.h"
+#include "nsHashtablesFwd.h"
 #include "nsIContent.h"
 #include "nsIRollupListener.h"
 #include "nsIDOMEventListener.h"
@@ -362,9 +363,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   void OnNativeMenuOpened() override;
   void OnNativeMenuClosed() override;
-  void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override {}
-  void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override {}
-  void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override {}
+  void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
+  void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
+  void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override;
 
   static nsXULPopupManager* sInstance;
 
@@ -884,6 +885,15 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   RefPtr<mozilla::widget::NativeMenu> mNativeMenu;
+
+  
+  
+  
+  
+  
+  
+  nsTHashMap<RefPtr<mozilla::dom::Element>, nsPopupState>
+      mNativeMenuSubmenuStates;
 };
 
 #endif

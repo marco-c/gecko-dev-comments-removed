@@ -864,11 +864,27 @@ void nsXULPopupManager::OnNativeMenuClosed() {
   }
   mNativeMenu->RemoveObserver(this);
   mNativeMenu = nullptr;
+  mNativeMenuSubmenuStates.Clear();
 
   
   
   popup->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden,
                                 true);
+}
+
+void nsXULPopupManager::OnNativeSubMenuWillOpen(
+    mozilla::dom::Element* aPopupElement) {
+  mNativeMenuSubmenuStates.InsertOrUpdate(aPopupElement, ePopupShowing);
+}
+
+void nsXULPopupManager::OnNativeSubMenuDidOpen(
+    mozilla::dom::Element* aPopupElement) {
+  mNativeMenuSubmenuStates.InsertOrUpdate(aPopupElement, ePopupShown);
+}
+
+void nsXULPopupManager::OnNativeSubMenuClosed(
+    mozilla::dom::Element* aPopupElement) {
+  mNativeMenuSubmenuStates.Remove(aPopupElement);
 }
 
 void nsXULPopupManager::ShowPopupAtScreenRect(
@@ -2670,6 +2686,15 @@ nsresult nsXULPopupManager::UpdateIgnoreKeys(bool aIgnoreKeys) {
 
 nsPopupState nsXULPopupManager::GetPopupState(
     mozilla::dom::Element* aPopupElement) {
+  if (mNativeMenu && mNativeMenu->Element()->Contains(aPopupElement)) {
+    if (aPopupElement != mNativeMenu->Element()) {
+      
+      return mNativeMenuSubmenuStates.MaybeGet(aPopupElement)
+          .valueOr(ePopupClosed);
+    }
+    
+  }
+
   nsMenuPopupFrame* menuPopupFrame =
       do_QueryFrame(aPopupElement->GetPrimaryFrame());
   if (menuPopupFrame) {
