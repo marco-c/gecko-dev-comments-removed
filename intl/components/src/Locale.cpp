@@ -835,15 +835,12 @@ static bool CreateLocaleForLikelySubtags(const Locale& tag, LocaleId& locale) {
 
 
 static bool AssignFromLocaleId(LocaleId& localeId, Locale& tag) {
-  MOZ_ASSERT(localeId.back() == '\0',
-             "Locale ID should be zero-terminated for ICU");
-
   
   std::replace(localeId.begin(), localeId.end(), '_', '-');
 
   
   
-  if (localeId[0] == '\0' || localeId[0] == '-') {
+  if (localeId.empty() || localeId[0] == '-') {
     static constexpr char und[] = "und";
     constexpr size_t length = std::char_traits<char>::length(und);
 
@@ -855,11 +852,9 @@ static bool AssignFromLocaleId(LocaleId& localeId, Locale& tag) {
     memmove(localeId.begin(), und, length);
   }
 
-  Span<const char> localeSpan(localeId.begin(), localeId.length() - 1);
-
   
   Locale localeTag;
-  if (LocaleParser::tryParseBaseName(localeSpan, localeTag).isErr()) {
+  if (LocaleParser::tryParseBaseName(localeId, localeTag).isErr()) {
     return false;
   }
 
@@ -886,8 +881,7 @@ static bool CallLikelySubtags(const LocaleId& localeId, LocaleId& result) {
     return false;
   }
 
-  
-  return result.append('\0');
+  return true;
 }
 
 
