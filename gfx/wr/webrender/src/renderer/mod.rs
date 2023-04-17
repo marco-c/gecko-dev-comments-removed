@@ -2433,9 +2433,7 @@ impl Renderer {
     }
 
     fn check_gl_errors(&mut self) {
-        
-        
-        for _ in 0..50 {
+        loop {
             let err = self.device.gl().get_error();
             if err == gl::NO_ERROR {
                 break;
