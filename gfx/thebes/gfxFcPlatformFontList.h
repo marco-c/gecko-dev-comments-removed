@@ -28,6 +28,8 @@
 namespace mozilla {
 namespace dom {
 class SystemFontListEntry;
+class SystemFontList;
+class SystemFontOptions;
 };
 
 template <>
@@ -247,7 +249,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   void GetFontList(nsAtom* aLangGroup, const nsACString& aGenericFamily,
                    nsTArray<nsString>& aListOfFonts) override;
 
-  void ReadSystemFontList(nsTArray<FontPatternListEntry>* retValue);
+  void ReadSystemFontList(mozilla::dom::SystemFontList*);
 
   gfxFontEntry* CreateFontEntry(
       mozilla::fontlist::Face* aFace,
@@ -369,6 +371,30 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
   RefPtr<FcConfig> mLastConfig;
+
+  
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  cairo_font_options_t* mSystemFontOptions = nullptr;
+  int32_t mFreetypeLcdSetting = -1;  
+
+  void ClearSystemFontOptions();
+
+  
+  
+  
+  
+  bool UpdateSystemFontOptions();
+
+  void UpdateSystemFontOptionsFromIpc(const mozilla::dom::SystemFontOptions&);
+  void SystemFontOptionsToIpc(mozilla::dom::SystemFontOptions&);
+
+ public:
+  void SubstituteSystemFontOptions(FcPattern*);
+
+ private:
+#endif
 
   
   

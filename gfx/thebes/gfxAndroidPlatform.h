@@ -11,13 +11,6 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
-class FontListEntry;
-};
-};  
-using mozilla::dom::FontListEntry;
-
 class gfxAndroidPlatform final : public gfxPlatform {
  public:
   gfxAndroidPlatform();
@@ -35,8 +28,7 @@ class gfxAndroidPlatform final : public gfxPlatform {
   
   gfxPlatformFontList* CreatePlatformFontList() override;
 
-  void ReadSystemFontList(
-      nsTArray<mozilla::dom::SystemFontListEntry>* aFontList) override;
+  void ReadSystemFontList(mozilla::dom::SystemFontList*) override;
 
   void GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
                               eFontPresentation aPresentation,

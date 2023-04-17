@@ -898,16 +898,16 @@ void gfxMacPlatformFontList::AddFamily(CFStringRef aFamily) {
   AddFamily(nameUtf8, GetVisibilityForFamily(nameUtf8));
 }
 
-void gfxMacPlatformFontList::ReadSystemFontList(nsTArray<FontFamilyListEntry>* aList) {
+void gfxMacPlatformFontList::ReadSystemFontList(dom::SystemFontList* aList) {
   
   
   
   
-  aList->AppendElement(FontFamilyListEntry(mSystemTextFontFamilyName, FontVisibility::Unknown,
-                                           kTextSizeSystemFontFamily));
+  aList->entries().AppendElement(FontFamilyListEntry(
+      mSystemTextFontFamilyName, FontVisibility::Unknown, kTextSizeSystemFontFamily));
   if (mUseSizeSensitiveSystemFont) {
-    aList->AppendElement(FontFamilyListEntry(mSystemDisplayFontFamilyName, FontVisibility::Unknown,
-                                             kDisplaySizeSystemFontFamily));
+    aList->entries().AppendElement(FontFamilyListEntry(
+        mSystemDisplayFontFamilyName, FontVisibility::Unknown, kDisplaySizeSystemFontFamily));
   }
   
   for (auto f = mFontFamilies.Iter(); !f.Done(); f.Next()) {
@@ -915,7 +915,7 @@ void gfxMacPlatformFontList::ReadSystemFontList(nsTArray<FontFamilyListEntry>* a
     if (macFamily->IsSingleFaceFamily()) {
       continue;  
     }
-    aList->AppendElement(
+    aList->entries().AppendElement(
         FontFamilyListEntry(macFamily->Name(), macFamily->Visibility(), kStandardFontFamily));
   }
 }
@@ -932,7 +932,7 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
     
     
     auto& fontList = dom::ContentChild::GetSingleton()->SystemFontList();
-    for (FontFamilyListEntry& ffe : fontList) {
+    for (FontFamilyListEntry& ffe : fontList.entries()) {
       switch (ffe.entryType()) {
         case kStandardFontFamily:
           
@@ -953,7 +953,7 @@ nsresult gfxMacPlatformFontList::InitFontListForPlatform() {
           break;
       }
     }
-    fontList.Clear();
+    fontList.entries().Clear();
   } else {
     
     

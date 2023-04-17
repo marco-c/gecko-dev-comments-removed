@@ -64,6 +64,7 @@ inline uint32_t BackendTypeBit(BackendType b) { return 1 << uint8_t(b); }
 }  
 namespace dom {
 class SystemFontListEntry;
+class SystemFontList;
 }
 }  
 
@@ -362,8 +363,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  virtual void ReadSystemFontList(
-      nsTArray<mozilla::dom::SystemFontListEntry>* aFontList) {}
+  virtual void ReadSystemFontList(mozilla::dom::SystemFontList*){};
 
   
 
