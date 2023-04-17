@@ -25,7 +25,6 @@ static already_AddRefed<imgFrame> CreateEmptyFrame(
                             Some(animParams), aCanRecycle);
   EXPECT_TRUE(NS_SUCCEEDED(rv));
   RawAccessFrameRef frameRef = frame->RawAccessRef();
-  frame->SetRawAccessOnly();
   
   
   frame->SetDirtyRect(aFrameRect);
