@@ -1510,7 +1510,7 @@ nsresult EditorBase::ComputeValueInternal(const nsAString& aFormatType,
       !(aDocumentEncoderFlags & (nsIDocumentEncoder::OutputSelectionOnly |
                                  nsIDocumentEncoder::OutputWrap))) {
     
-    if (mPaddingBRElementForEmptyEditor) {
+    if (IsEmpty()) {
       aOutputString.Truncate();
       return NS_OK;
     }
