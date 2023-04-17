@@ -162,6 +162,11 @@ class _Interactions {
   
 
 
+  #initialized = false;
+
+  
+
+
   init() {
     if (
       !Services.prefs.getBoolPref("browser.places.interactions.enabled", false)
@@ -192,13 +197,16 @@ class _Interactions {
     }
     Services.obs.addObserver(this, DOMWINDOW_OPENED_TOPIC, true);
     idleService.addIdleObserver(this, pageViewIdleTime);
+    this.#initialized = true;
   }
 
   
 
 
   uninit() {
-    idleService.removeIdleObserver(this, pageViewIdleTime);
+    if (this.#initialized) {
+      idleService.removeIdleObserver(this, pageViewIdleTime);
+    }
   }
 
   
