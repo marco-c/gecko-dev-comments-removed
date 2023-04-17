@@ -52,24 +52,24 @@ pub const ARCH: &str = "x86_64";
     target_arch = "x86_64"
 )))]
 
-pub const ARCH: &str = "unknown";
+pub const ARCH: &str = "Unknown";
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 
 pub fn get_os_version() -> String {
-    whatsys::kernel_version().unwrap_or_else(|| "unknown".to_owned())
+    whatsys::kernel_version().unwrap_or_else(|| "Unknown".to_owned())
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 
 pub fn get_os_version() -> String {
-    "unknown".to_owned()
+    "Unknown".to_owned()
 }
 
 #[cfg(target_os = "linux")]
 
 pub fn get_os_version() -> String {
-    parse_linux_os_string(whatsys::kernel_version().unwrap_or_else(|| "unknown".to_owned()))
+    parse_linux_os_string(whatsys::kernel_version().unwrap_or_else(|| "Unknown".to_owned()))
 }
 
 #[cfg(target_os = "linux")]
