@@ -45,7 +45,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   void ReceivedRTCPPacket(const uint8_t* data, int len) override;
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
-  DOMHighResTimeStamp GetNow() const override { return mCall->GetNow(); }
+  DOMHighResTimeStamp GetNow() const override;
 
   MediaConduitErrorCode StopTransmitting() override;
   MediaConduitErrorCode StartTransmitting() override;
@@ -143,24 +143,8 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   void DeleteStreams() override;
 
-  WebrtcAudioConduit(RefPtr<WebRtcCallWrapper> aCall,
-                     nsCOMPtr<nsISerialEventTarget> aStsThread)
-      : mTransportMonitor("WebrtcAudioConduit"),
-        mTransmitterTransport(nullptr),
-        mReceiverTransport(nullptr),
-        mCall(aCall),
-        mRecvStreamConfig(),
-        mRecvStream(nullptr),
-        mSendStreamConfig(
-            this)  
-        ,
-        mSendStream(nullptr),
-        mRecvSSRC(0),
-        mSendStreamRunning(false),
-        mRecvStreamRunning(false),
-        mDtmfEnabled(false),
-        mMutex("WebrtcAudioConduit::mMutex"),
-        mStsThread(aStsThread) {}
+  WebrtcAudioConduit(RefPtr<WebrtcCallWrapper> aCall,
+                     nsCOMPtr<nsISerialEventTarget> aStsThread);
 
   virtual ~WebrtcAudioConduit();
 
@@ -224,7 +208,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   
-  const RefPtr<WebRtcCallWrapper> mCall;
+  const RefPtr<WebrtcCallWrapper> mCall;
 
   
   webrtc::AudioReceiveStream::Config mRecvStreamConfig;

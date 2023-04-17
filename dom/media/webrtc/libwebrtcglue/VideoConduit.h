@@ -98,7 +98,7 @@ class WebrtcVideoConduit
 
   void ReceivedRTCPPacket(const uint8_t* data, int len) override;
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
-  DOMHighResTimeStamp GetNow() const override { return mCall->GetNow(); }
+  DOMHighResTimeStamp GetNow() const override;
 
   MediaConduitErrorCode StopTransmitting() override;
   MediaConduitErrorCode StartTransmitting() override;
@@ -220,7 +220,7 @@ class WebrtcVideoConduit
     return mCodecMode;
   }
 
-  WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall,
+  WebrtcVideoConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread,
                      std::string aPCHandle);
   virtual ~WebrtcVideoConduit();
@@ -418,7 +418,7 @@ class WebrtcVideoConduit
   
   
   
-  const RefPtr<WebRtcCallWrapper> mCall;
+  const RefPtr<WebrtcCallWrapper> mCall;
 
   
   webrtc::VideoSendStream::Config mSendStreamConfig;
