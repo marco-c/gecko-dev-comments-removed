@@ -11,6 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetters(this, {
@@ -57,6 +60,14 @@ var _TaskSchedulerWinImpl = {
     WinTaskSvc.deleteTask(this._taskFolderName(), this._formatTaskName(id));
   },
 
+  
+
+
+
+
+
+
+
   deleteAllTasks() {
     const taskFolderName = this._taskFolderName();
 
@@ -73,11 +84,36 @@ var _TaskSchedulerWinImpl = {
 
     const tasksToDelete = allTasks.filter(name => this._matchAppTaskName(name));
 
+    let numberDeleted = 0;
+    let lastFailedTaskName;
+    
+    const defaultBrowserAgentTaskName =
+      AppConstants.MOZ_APP_DISPLAYNAME_DO_NOT_USE +
+      " Default Browser Agent " +
+      XreDirProvider.getInstallHash();
     for (const taskName of tasksToDelete) {
-      WinTaskSvc.deleteTask(taskFolderName, taskName);
+      if (taskName == defaultBrowserAgentTaskName) {
+        
+        continue;
+      }
+
+      try {
+        WinTaskSvc.deleteTask(taskFolderName, taskName);
+        numberDeleted += 1;
+      } catch (e) {
+        lastFailedTaskName = taskName;
+      }
     }
 
-    if (allTasks.length == tasksToDelete.length) {
+    if (lastFailedTaskName) {
+      
+      
+      
+      
+      WinTaskSvc.deleteTask(taskFolderName, lastFailedTaskName);
+    }
+
+    if (allTasks.length == numberDeleted) {
       
       this._deleteFolderIfEmpty();
     }
