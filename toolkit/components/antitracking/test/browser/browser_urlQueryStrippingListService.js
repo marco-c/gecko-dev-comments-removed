@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyServiceGetter(
 const COLLECTION_NAME = "query-stripping";
 
 const TEST_URI = TEST_DOMAIN + TEST_PATH + "empty.html";
+const TEST_THIRD_PARTY_URI = TEST_DOMAIN_2 + TEST_PATH + "empty.html";
 
 
 
@@ -43,7 +44,41 @@ async function check(query, expected) {
   
   let testURI = TEST_URI + "?" + query;
 
+  
   await BrowserTestUtils.withNewTab(testURI, async browser => {
+    
+    await verifyQueryString(browser, expected);
+  });
+
+  testURI = TEST_URI + "?" + query;
+  let expectedURI;
+  if (expected != "") {
+    expectedURI = TEST_URI + "?" + expected;
+  } else {
+    expectedURI = TEST_URI;
+  }
+
+  
+  
+  
+  await BrowserTestUtils.withNewTab(TEST_THIRD_PARTY_URI, async browser => {
+    
+    let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      expectedURI
+    );
+
+    
+    await SpecialPowers.spawn(browser, [testURI], async uri => {
+      let link = content.document.createElement("a");
+      link.setAttribute("href", uri);
+      link.textContent = "Link";
+      content.document.body.appendChild(link);
+      link.click();
+    });
+
+    await locationChangePromise;
+
     
     await verifyQueryString(browser, expected);
   });
