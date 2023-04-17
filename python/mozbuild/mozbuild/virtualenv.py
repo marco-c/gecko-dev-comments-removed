@@ -33,13 +33,6 @@ another Python version. Ensure a modern Python can be found in the paths
 defined by the $PATH environment variable and try again.
 """.lstrip()
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-
-
-
-
-
 
 class VirtualenvHelper(object):
     """Contains basic logic for getting information about virtualenvs."""
