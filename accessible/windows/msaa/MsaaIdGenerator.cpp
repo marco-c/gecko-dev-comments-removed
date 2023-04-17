@@ -7,6 +7,7 @@
 #include "MsaaIdGenerator.h"
 
 #include "mozilla/a11y/AccessibleWrap.h"
+#include "mozilla/a11y/MsaaAccessible.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
@@ -81,7 +82,7 @@ uint32_t MsaaIdGenerator::GetID() {
 }
 
 bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
-  MOZ_ASSERT(aID != AccessibleWrap::kNoID);
+  MOZ_ASSERT(aID != MsaaAccessible::kNoID);
   detail::MsaaIDCracker cracked(aID);
   if (cracked.GetContentProcessId() != ResolveContentProcessID()) {
     return false;
@@ -90,14 +91,12 @@ bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
   return true;
 }
 
-void MsaaIdGenerator::ReleaseID(NotNull<AccessibleWrap*> aAccWrap) {
-  if (!ReleaseID(aAccWrap->GetExistingID())) {
-    
-    
-    
-    
-    MOZ_ASSERT(aAccWrap->IsProxy());
-  }
+void MsaaIdGenerator::ReleaseID(NotNull<MsaaAccessible*> aMsaaAcc) {
+  
+  
+  
+  
+  ReleaseID(aMsaaAcc->GetExistingID());
 }
 
 void MsaaIdGenerator::ReleaseID(NotNull<sdnAccessible*> aSdnAcc) {

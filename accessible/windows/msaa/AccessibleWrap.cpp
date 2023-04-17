@@ -64,7 +64,6 @@ const uint32_t USE_ROLE_STRING = 0;
 static gAccessibles = 0;
 #endif
 
-MsaaIdGenerator AccessibleWrap::sIDGen;
 StaticAutoPtr<nsTArray<AccessibleWrap::HandlerControllerData>>
     AccessibleWrap::sHandlerControllers;
 
@@ -76,13 +75,7 @@ static const int32_t kIEnumVariantDisconnected = -1;
 
 
 AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
-    : LocalAccessible(aContent, aDoc), mID(kNoID) {}
-
-AccessibleWrap::~AccessibleWrap() {
-  if (mID != kNoID) {
-    sIDGen.ReleaseID(WrapNotNull(this));
-  }
-}
+    : LocalAccessible(aContent, aDoc) {}
 
 ITypeInfo* AccessibleWrap::gTypeInfo = nullptr;
 
@@ -1077,11 +1070,6 @@ void AccessibleWrap::GetNativeInterface(void** aOutAccessible) {
   NS_ADDREF_THIS();
 }
 
-void AccessibleWrap::SetID(uint32_t aID) {
-  MOZ_ASSERT(XRE_IsParentProcess() && IsProxy());
-  mID = aID;
-}
-
 static bool IsHandlerInvalidationNeeded(uint32_t aEvent) {
   
   
@@ -1123,7 +1111,7 @@ void AccessibleWrap::FireWinEvent(LocalAccessible* aTarget,
   uint32_t winEvent = gWinEventMap[aEventType];
   if (!winEvent) return;
 
-  int32_t childID = GetChildIDFor(aTarget);
+  int32_t childID = MsaaAccessible::GetChildIDFor(aTarget);
   if (!childID) return;  
 
   HWND hwnd = GetHWNDFor(aTarget);
@@ -1186,37 +1174,6 @@ DocRemoteAccessibleWrap* AccessibleWrap::DocProxyWrapper() const {
 
 
 
-
-int32_t AccessibleWrap::GetChildIDFor(LocalAccessible* aAccessible) {
-  
-  
-  
-
-  if (!aAccessible) {
-    return 0;
-  }
-
-  
-  if (aAccessible->IsProxy()) {
-    const uint32_t id = static_cast<AccessibleWrap*>(aAccessible)->mID;
-    MOZ_ASSERT(id != kNoID);
-    return id;
-  }
-
-  if (!aAccessible->Document()) return 0;
-
-  uint32_t* id = &static_cast<AccessibleWrap*>(aAccessible)->mID;
-  if (*id != kNoID) return *id;
-
-  *id = sIDGen.GetID();
-
-  MOZ_ASSERT(!aAccessible->IsProxy());
-  DocAccessibleWrap* doc =
-      static_cast<DocAccessibleWrap*>(aAccessible->Document());
-  doc->AddID(*id, static_cast<AccessibleWrap*>(aAccessible));
-
-  return *id;
-}
 
 HWND AccessibleWrap::GetHWNDFor(LocalAccessible* aAccessible) {
   if (!aAccessible) {
@@ -1311,7 +1268,7 @@ static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
     const DocAccessibleParent* aDoc, const VARIANT& aVarChild) {
   auto wrapper = static_cast<DocRemoteAccessibleWrap*>(WrapperFor(aDoc));
   RefPtr<IAccessible> comProxy;
-  int32_t docWrapperChildId = AccessibleWrap::GetChildIDFor(wrapper);
+  int32_t docWrapperChildId = MsaaAccessible::GetChildIDFor(wrapper);
   
   
   if (aDoc->IsTopLevelInContentProcess()) {
@@ -1649,18 +1606,6 @@ ITypeInfo* AccessibleWrap::GetTI(LCID lcid) {
 }
 
 
-uint32_t AccessibleWrap::GetContentProcessIdFor(
-    dom::ContentParentId aIPCContentId) {
-  return sIDGen.GetContentProcessIDFor(aIPCContentId);
-}
-
-
-void AccessibleWrap::ReleaseContentProcessIdFor(
-    dom::ContentParentId aIPCContentId) {
-  sIDGen.ReleaseContentProcessIDFor(aIPCContentId);
-}
-
-
 void AccessibleWrap::SetHandlerControl(DWORD aPid,
                                        RefPtr<IHandlerControl> aCtrl) {
   MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
@@ -1726,7 +1671,7 @@ bool AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
     return false;
   }
 
-  long msaaId = GetChildIDFor(this);
+  long msaaId = MsaaAccessible::GetChildIDFor(this);
 
   DWORD ourPid = ::GetCurrentProcessId();
 
@@ -1762,14 +1707,4 @@ bool AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
   ::SysFreeString(textSegment.text);
 
   return SUCCEEDED(hr);
-}
-
-
-void AccessibleWrap::AssignChildIDTo(NotNull<sdnAccessible*> aSdnAcc) {
-  aSdnAcc->SetUniqueID(sIDGen.GetID());
-}
-
-
-void AccessibleWrap::ReleaseChildID(NotNull<sdnAccessible*> aSdnAcc) {
-  sIDGen.ReleaseID(aSdnAcc);
 }
