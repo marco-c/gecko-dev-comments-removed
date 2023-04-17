@@ -5,13 +5,20 @@
 
 
 UNIFIED_SOURCES += [
+    "AudioDecoderInputTrack.cpp",
     "AudioSink.cpp",
     "AudioSinkWrapper.cpp",
     "DecodedStream.cpp",
     "VideoSink.cpp",
 ]
 
-EXPORTS += ["MediaSink.h"]
+EXPORTS += [
+    "MediaSink.h",
+]
+
+LOCAL_INCLUDES += [
+    "/dom/media",
+]
 
 DEFINES["TRACING"] = True
 
