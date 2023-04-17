@@ -214,11 +214,13 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   webrtc::AudioReceiveStream::Config mRecvStreamConfig;
 
   
+  
   webrtc::AudioReceiveStream* mRecvStream;
 
   
   webrtc::AudioSendStream::Config mSendStreamConfig;
 
+  
   
   webrtc::AudioSendStream* mSendStream;
 
@@ -230,7 +232,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   
+  
   bool mSendStreamRunning;
+  
   
   
   bool mRecvStreamRunning;
@@ -241,6 +245,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   int mDtmfPayloadFrequency = -1;
 
   Mutex mMutex;
+
+  
+  const RefPtr<AbstractThread> mCallThread;
 
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
