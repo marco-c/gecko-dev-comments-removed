@@ -247,10 +247,6 @@ def bootstrap(topsrcdir):
         
         pass
 
-    from mozbuild.util import patch_main
-
-    patch_main()
-
     def resolve_repository():
         import mozversioncontrol
 
