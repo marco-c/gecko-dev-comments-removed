@@ -47,6 +47,7 @@ void BM_DecExternalImage_ConvertImageRGBA(benchmark::State& state) {
           false, num_channels, JXL_NATIVE_ENDIAN,
            bytes_per_row,
           nullptr, interleaved.data(), interleaved.size(),
+          nullptr, nullptr,
           jxl::Orientation::kIdentity));
     }
   }

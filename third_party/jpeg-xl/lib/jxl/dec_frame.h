@@ -133,6 +133,7 @@ class FrameDecoder {
   
   
   
+  
   void MaybeSetRGB8OutputBuffer(uint8_t* rgb_output, size_t stride,
                                 bool is_rgba) const {
     if (decoded_->metadata()->GetOrientation() != Orientation::kIdentity) {
@@ -148,6 +149,7 @@ class FrameDecoder {
     dec_state_->rgb_output = rgb_output;
     dec_state_->rgb_output_is_rgba = is_rgba;
     dec_state_->rgb_stride = stride;
+    JXL_ASSERT(dec_state_->pixel_callback == nullptr);
 #if !JXL_HIGH_PRECISION
     if (!is_rgba && decoded_->metadata()->xyb_encoded &&
         dec_state_->output_encoding_info.color_encoding.IsSRGB() &&
@@ -160,7 +162,32 @@ class FrameDecoder {
 
   
   
-  bool HasRGBBuffer() const { return dec_state_->rgb_output != nullptr; }
+  void MaybeSetFloatCallback(
+      const std::function<void(const float* pixels, size_t x, size_t y,
+                               size_t num_pixels)>& cb,
+      bool is_rgba) const {
+    if (decoded_->metadata()->GetOrientation() != Orientation::kIdentity) {
+      return;
+    }
+    if (frame_header_.blending_info.mode != BlendMode::kReplace ||
+        frame_header_.custom_size_or_origin) {
+      return;
+    }
+    if (frame_header_.CanBeReferenced()) {
+      return;
+    }
+    dec_state_->pixel_callback = cb;
+    dec_state_->rgb_output_is_rgba = is_rgba;
+    JXL_ASSERT(dec_state_->rgb_output == nullptr);
+  }
+
+  
+  
+  
+  bool HasRGBBuffer() const {
+    return dec_state_->rgb_output != nullptr ||
+           dec_state_->pixel_callback != nullptr;
+  }
 
  private:
   Status ProcessDCGlobal(BitReader* br);

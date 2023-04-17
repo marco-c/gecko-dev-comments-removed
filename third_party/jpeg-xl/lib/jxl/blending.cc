@@ -302,7 +302,8 @@ Status ImageBlender::RectBlender::DoBlending(size_t y) const {
     }
   }
 
-  if (info_.mode == BlendMode::kAdd) {
+  if (info_.mode == BlendMode::kAdd ||
+      (info_.mode == BlendMode::kAlphaWeightedAdd && !foreground_.HasAlpha())) {
     for (int p = 0; p < 3; p++) {
       AddTo(overlap_row, foreground_.color().Plane(p), cropbox_row,
             &dest_->color()->Plane(p));
@@ -347,21 +348,20 @@ Status ImageBlender::RectBlender::DoBlending(size_t y) const {
     PerformAlphaWeightedAdd({r, g, b, a}, {r1, g1, b1, a1},
                             {r, g, b, a}, cropbox_row.xsize());
   } else if (info_.mode == BlendMode::kMul) {
-    
-    const float* JXL_RESTRICT a1 = overlap_row.ConstRow(foreground_.alpha(), 0);
-    const float* JXL_RESTRICT r1 =
-        overlap_row.ConstRow(foreground_.color().Plane(0), 0);
-    const float* JXL_RESTRICT g1 =
-        overlap_row.ConstRow(foreground_.color().Plane(1), 0);
-    const float* JXL_RESTRICT b1 =
-        overlap_row.ConstRow(foreground_.color().Plane(2), 0);
-    
-    float* JXL_RESTRICT a = cropbox_row.Row(dest_->alpha(), 0);
-    float* JXL_RESTRICT r = cropbox_row.Row(&dest_->color()->Plane(0), 0);
-    float* JXL_RESTRICT g = cropbox_row.Row(&dest_->color()->Plane(1), 0);
-    float* JXL_RESTRICT b = cropbox_row.Row(&dest_->color()->Plane(2), 0);
-    PerformMulBlending({r, g, b, a}, {r1, g1, b1, a1},
-                       {r, g, b, a}, cropbox_row.xsize());
+    for (int p = 0; p < 3; p++) {
+      
+      const float* JXL_RESTRICT c1 =
+          overlap_row.ConstRow(foreground_.color().Plane(p), 0);
+      
+      float* JXL_RESTRICT c = cropbox_row.Row(&dest_->color()->Plane(p), 0);
+      PerformMulBlending(c, c1, c, cropbox_row.xsize());
+    }
+    if (foreground_.HasAlpha()) {
+      const float* JXL_RESTRICT a1 =
+          overlap_row.ConstRow(foreground_.alpha(), 0);
+      float* JXL_RESTRICT a = cropbox_row.Row(dest_->alpha(), 0);
+      PerformMulBlending(a, a1, a, cropbox_row.xsize());
+    }
   } else {  
     CopyImageTo(overlap_row, foreground_.color(), cropbox_row, dest_->color());
     if (foreground_.HasAlpha()) {

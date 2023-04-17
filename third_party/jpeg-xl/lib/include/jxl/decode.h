@@ -736,7 +736,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetImageOutBuffer(
 
 
 typedef void (*JxlImageOutCallback)(void* opaque, size_t x, size_t y,
-                                    size_t xsize, const void* pixels);
+                                    size_t num_pixels, const void* pixels);
 
 
 

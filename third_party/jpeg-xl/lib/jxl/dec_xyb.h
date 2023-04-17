@@ -39,6 +39,7 @@ struct OpsinParams {
 
 struct OutputEncodingInfo {
   ColorEncoding color_encoding;
+  
   float inverse_gamma;
   
   

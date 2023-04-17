@@ -293,11 +293,12 @@ Status EncodeImagePGX(const CodecInOut* io, const ColorEncoding& c_desired,
   PaddedBytes pixels(ib.xsize() * ib.ysize() *
                      (bits_per_sample / kBitsPerByte));
   size_t stride = ib.xsize() * (bits_per_sample / kBitsPerByte);
-  JXL_RETURN_IF_ERROR(ConvertToExternal(
-      *transformed, bits_per_sample,
-      false,
-      1, JXL_BIG_ENDIAN, stride, pool, pixels.data(),
-      pixels.size(), metadata.GetOrientation()));
+  JXL_RETURN_IF_ERROR(
+      ConvertToExternal(*transformed, bits_per_sample,
+                        false,
+                        1, JXL_BIG_ENDIAN, stride, pool,
+                        pixels.data(), pixels.size(), nullptr,
+                        nullptr, metadata.GetOrientation()));
 
   char header[kMaxHeaderSize];
   int header_size = 0;

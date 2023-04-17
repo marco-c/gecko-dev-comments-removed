@@ -87,7 +87,15 @@ struct PassesDecoderState {
   bool fast_xyb_srgb8_conversion;
 
   
+  
   bool rgb_output_is_rgba;
+
+  
+  std::function<void(const float*, size_t, size_t, size_t)> pixel_callback;
+  
+  std::vector<float> opaque_alpha;
+  
+  std::vector<std::vector<float>> pixel_callback_rows;
 
   
   size_t noise_seed = 0;
@@ -180,13 +188,23 @@ struct PassesDecoderState {
       ZeroFillImage(&group_data.back());
 #endif
     }
-    if (rgb_output) {
+    if (rgb_output || pixel_callback) {
       size_t log2_upsampling = CeilLog2Nonzero(shared->frame_header.upsampling);
       for (size_t _ = output_pixel_data_storage[log2_upsampling].size();
            _ < num_threads; _++) {
         output_pixel_data_storage[log2_upsampling].emplace_back(
             kApplyImageFeaturesTileDim << log2_upsampling,
             kApplyImageFeaturesTileDim << log2_upsampling);
+      }
+      opaque_alpha.resize(
+          kApplyImageFeaturesTileDim * shared->frame_header.upsampling, 1.0f);
+      if (pixel_callback) {
+        pixel_callback_rows.resize(num_threads);
+        for (size_t i = 0; i < pixel_callback_rows.size(); ++i) {
+          pixel_callback_rows[i].resize(kApplyImageFeaturesTileDim *
+                                        shared->frame_header.upsampling *
+                                        (rgb_output_is_rgba ? 4 : 3));
+        }
       }
     }
   }
@@ -202,6 +220,7 @@ struct PassesDecoderState {
         std::pow(1 / (1.25f), shared->frame_header.b_qm_scale - 2.0f);
 
     rgb_output = nullptr;
+    pixel_callback = nullptr;
     rgb_output_is_rgba = false;
     fast_xyb_srgb8_conversion = false;
     used_acs = 0;
