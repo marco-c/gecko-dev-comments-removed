@@ -479,7 +479,9 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_RANGE(0x06c0, INT32_MAX);
       break;
     case DeviceFamily::IntelRolloutWebRender:
-#ifdef EARLY_BETA_OR_EARLIER
+      
+      
+#if 0
       
       APPEND_DEVICE(0x2e22);
 
