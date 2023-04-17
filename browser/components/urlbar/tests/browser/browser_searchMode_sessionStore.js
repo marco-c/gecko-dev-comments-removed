@@ -220,6 +220,11 @@ async function doTest({
 
 
 add_task(async function duplicateTabs() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "http://example.net/"
+  );
+  gBrowser.selectedTab = tab;
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -262,6 +267,7 @@ add_task(async function duplicateTabs() {
     "Search string should be duplicated/restored"
   );
 
+  BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(newTab);
   gURLBar.handleRevert();
 });
