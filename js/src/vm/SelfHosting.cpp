@@ -3025,14 +3025,13 @@ static JSObject* CloneObject(JSContext* cx,
   if (selfHostedObject->is<JSFunction>()) {
     RootedFunction selfHostedFunction(cx, &selfHostedObject->as<JSFunction>());
     if (selfHostedFunction->isInterpreted()) {
-      bool hasName = selfHostedFunction->explicitName() != nullptr;
-
       
       
       
       MOZ_ASSERT(selfHostedFunction->kind() == FunctionFlags::NormalFunction);
-      js::gc::AllocKind kind = hasName ? gc::AllocKind::FUNCTION_EXTENDED
-                                       : selfHostedFunction->getAllocKind();
+      js::gc::AllocKind kind = selfHostedFunction->isLambda()
+                                   ? selfHostedFunction->getAllocKind()
+                                   : gc::AllocKind::FUNCTION_EXTENDED;
 
       Handle<GlobalObject*> global = cx->global();
       Rooted<GlobalLexicalEnvironmentObject*> globalLexical(
