@@ -23,12 +23,12 @@
 #include "mozilla/layers/CompositorTypes.h"   
 #include "mozilla/layers/DisplayItemCache.h"  
 #include "mozilla/layers/FocusTarget.h"       
-#include "mozilla/layers/LayerManager.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/RenderRootStateManager.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/WebRenderCommandBuilder.h"  
 #include "mozilla/layers/WebRenderScrollData.h"      
+#include "WindowRenderer.h"
 #include "nsHashKeys.h"                              
 #include "nsRegion.h"                                
 #include "nsStringFwd.h"                             
@@ -52,6 +52,12 @@ class Layer;
 class PCompositorBridgeChild;
 class WebRenderBridgeChild;
 class WebRenderParentCommand;
+class TransactionIdAllocator;
+class LayerUserData;
+class DidCompositeObserver {
+ public:
+  virtual void DidComposite() = 0;
+};
 
 class WebRenderLayerManager final : public WindowRenderer {
   typedef nsTArray<RefPtr<Layer>> LayerRefArray;

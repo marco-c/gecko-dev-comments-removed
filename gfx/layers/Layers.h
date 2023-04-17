@@ -32,7 +32,6 @@
 #include "mozilla/gfx/UserData.h"  
 #include "mozilla/layers/AnimationInfo.h"  
 #include "mozilla/layers/LayerAttributes.h"  
-#include "mozilla/layers/LayerManager.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/BSPTree.h"
 #include "nsISupports.h"    
@@ -124,8 +123,6 @@ void SetAntialiasingFlags(Layer* aLayer, gfx::DrawTarget* aTarget);
 
 #ifdef MOZ_DUMP_PAINTING
 void WriteSnapshotToDumpFile(Layer* aLayer, gfx::DataSourceSurface* aSurf);
-void WriteSnapshotToDumpFile(LayerManager* aManager,
-                             gfx::DataSourceSurface* aSurf);
 void WriteSnapshotToDumpFile(Compositor* aCompositor, gfx::DrawTarget* aTarget);
 #endif
 

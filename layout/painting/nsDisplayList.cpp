@@ -2235,7 +2235,7 @@ void nsDisplayList::PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
   bool temp = aBuilder->SetIsCompositingCheap(renderer->IsCompositingCheap());
   fallback->EndTransactionWithList(aBuilder, this,
                                    presContext->AppUnitsPerDevPixel(),
-                                   LayerManager::END_DEFAULT);
+                                   WindowRenderer::END_DEFAULT);
 
   if (widgetTransaction ||
       
