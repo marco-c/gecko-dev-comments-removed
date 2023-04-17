@@ -335,7 +335,7 @@ void NrSocketBase::fire_callback(int how) {
 }
 
 
-NS_IMPL_ISUPPORTS0(NrSocket)
+NS_IMPL_QUERY_INTERFACE0(NrSocket)
 
 
 void NrSocket::OnSocketReady(PRFileDesc* fd, int16_t outflags) {
@@ -1087,16 +1087,15 @@ NrUdpSocketIpc::NrUdpSocketIpc()
       err_(false),
       state_(NR_INIT) {}
 
-NrUdpSocketIpc::~NrUdpSocketIpc() {
+NrUdpSocketIpc::~NrUdpSocketIpc() = default;
+
+void NrUdpSocketIpc::Destroy() {
 #if defined(MOZILLA_INTERNAL_API)
   
   
   
-  RUN_ON_THREAD(
-      io_thread_,
-      mozilla::WrapRunnableNM(&NrUdpSocketIpc::destroy_i,
-                              socket_child_.forget().take(), sts_thread_),
-      NS_DISPATCH_NORMAL);
+  io_thread_->Dispatch(
+      NewNonOwningRunnableMethod(__func__, this, &NrUdpSocketIpc::destroy_i));
 #endif
 }
 
@@ -1560,17 +1559,10 @@ void NrUdpSocketIpc::close_i() {
 
 static void ReleaseIOThread_s() { sThread->ReleaseUse(); }
 
+void NrUdpSocketIpc::destroy_i() {
+  close_i();
 
-
-void NrUdpSocketIpc::destroy_i(dom::UDPSocketChild* aChild,
-                               const nsCOMPtr<nsIEventTarget>& aStsThread) {
-  RefPtr<dom::UDPSocketChild> socket_child_ref =
-      already_AddRefed<dom::UDPSocketChild>(aChild);
-  if (socket_child_ref) {
-    socket_child_ref->Close();
-  }
-
-  RUN_ON_THREAD(aStsThread, WrapRunnableNM(&ReleaseIOThread_s),
+  RUN_ON_THREAD(sts_thread_, WrapRunnableNM(&ReleaseIOThread_s),
                 NS_DISPATCH_NORMAL);
 }
 #endif
