@@ -39,9 +39,10 @@ struct RTCRtpSourceEntry;
 
 enum class MediaSessionConduitLocalDirection : int { kSend, kRecv };
 
+class VideoConduitControlInterface;
+class AudioConduitControlInterface;
 class VideoSessionConduit;
 class AudioSessionConduit;
-class RtpRtcpConfig;
 class WebrtcCallWrapper;
 
 using RtpExtList = std::vector<webrtc::RtpExtension>;
@@ -166,11 +167,6 @@ class MediaSessionConduit {
   virtual Maybe<DOMHighResTimeStamp> LastRtcpReceived() const = 0;
   virtual DOMHighResTimeStamp GetNow() const = 0;
 
-  virtual MediaConduitErrorCode StopTransmitting() = 0;
-  virtual MediaConduitErrorCode StartTransmitting() = 0;
-  virtual MediaConduitErrorCode StopReceiving() = 0;
-  virtual MediaConduitErrorCode StartReceiving() = 0;
-
   
 
 
@@ -196,35 +192,10 @@ class MediaSessionConduit {
   virtual MediaConduitErrorCode SetReceiverTransport(
       RefPtr<TransportInterface> aTransport) = 0;
 
-  
-
-
-
-  virtual bool SetLocalSSRCs(const Ssrcs& aSSRCs, const Ssrcs& aRtxSSRCs) = 0;
   virtual Ssrcs GetLocalSSRCs() const = 0;
 
-  
-
-
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode SetLocalRTPExtensions(
-      MediaSessionConduitLocalDirection aDirection,
-      const RtpExtList& aExtensions) = 0;
-
   virtual bool GetRemoteSSRC(Ssrc* ssrc) const = 0;
-  virtual bool SetRemoteSSRC(Ssrc ssrc, Ssrc rtxSsrc) = 0;
-  virtual bool UnsetRemoteSSRC(Ssrc ssrc) = 0;
-  virtual bool SetLocalCNAME(const char* cname) = 0;
-
-  virtual bool SetLocalMID(const std::string& mid) = 0;
-
-  virtual void SetSyncGroup(const std::string& group) = 0;
+  virtual void UnsetRemoteSSRC(Ssrc ssrc) = 0;
 
   virtual bool HasCodecPluginID(uint64_t aPluginID) const = 0;
 
@@ -374,6 +345,12 @@ class VideoSessionConduit : public MediaSessionConduit {
 
 
 
+  virtual void InitControl(VideoConduitControlInterface* aControl) = 0;
+
+  
+
+
+
 
 
   virtual MediaConduitErrorCode AttachRenderer(
@@ -382,8 +359,7 @@ class VideoSessionConduit : public MediaSessionConduit {
 
   virtual void DisableSsrcChanges() = 0;
 
-  bool SetRemoteSSRC(Ssrc ssrc, Ssrc rtxSsrc) override = 0;
-  bool UnsetRemoteSSRC(Ssrc ssrc) override = 0;
+  void UnsetRemoteSSRC(Ssrc ssrc) override = 0;
 
   
 
@@ -395,33 +371,6 @@ class VideoSessionConduit : public MediaSessionConduit {
 
   virtual MediaConduitErrorCode SendVideoFrame(
       const webrtc::VideoFrame& frame) = 0;
-
-  virtual MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode ConfigureSendMediaCodec(
-      const VideoCodecConfig& sendSessionConfig,
-      const RtpRtcpConfig& aRtpRtcpConfig) = 0;
-
-  
-
-
-
-
-
-
-  virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<VideoCodecConfig>& recvCodecConfigList,
-      const RtpRtcpConfig& aRtpRtcpConfig) = 0;
 
   
 
@@ -487,6 +436,12 @@ class AudioSessionConduit : public MediaSessionConduit {
 
 
 
+  virtual void InitControl(AudioConduitControlInterface* aControl) = 0;
+
+  
+
+
+
 
 
 
@@ -518,25 +473,6 @@ class AudioSessionConduit : public MediaSessionConduit {
 
 
   virtual bool IsSamplingFreqSupported(int freq) const = 0;
-
-  
-
-
-
-
-  virtual MediaConduitErrorCode ConfigureSendMediaCodec(
-      const AudioCodecConfig& sendCodecConfig) = 0;
-
-  
-
-
-
-
-  virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<AudioCodecConfig>& recvCodecConfigList) = 0;
-
-  virtual bool InsertDTMFTone(unsigned char payloadType, int payloadFrequency,
-                              int eventCode, int lengthMs) = 0;
 
   virtual Maybe<webrtc::AudioReceiveStream::Stats> GetReceiverStats() const = 0;
   virtual Maybe<webrtc::AudioSendStream::Stats> GetSenderStats() const = 0;

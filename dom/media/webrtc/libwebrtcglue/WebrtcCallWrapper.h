@@ -9,6 +9,8 @@
 
 #include <set>
 
+#include "domstubs.h"
+#include "jsapi/RTCStatsReport.h"
 #include "nsISupportsImpl.h"
 
 
@@ -16,8 +18,13 @@
 #include "call/call.h"
 
 namespace mozilla {
+class AbstractThread;
 class MediaSessionConduit;
 class SharedWebrtcState;
+
+namespace media {
+class ShutdownBlockingTicket;
+}
 
 
 class WebrtcCallWrapper {
@@ -39,7 +46,7 @@ class WebrtcCallWrapper {
 
   webrtc::Call* Call() const;
 
-  bool UnsetRemoteSSRC(uint32_t ssrc);
+  void UnsetRemoteSSRC(uint32_t aSsrc);
 
   
   void RegisterConduit(MediaSessionConduit* conduit);

@@ -7,6 +7,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/StateMirroring.h"
 #include "mozilla/TimeStamp.h"
 
 #include "MediaConduitInterface.h"
@@ -18,6 +19,8 @@
 
 
 namespace mozilla {
+
+struct DtmfEvent;
 
 
 
@@ -47,43 +50,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
   DOMHighResTimeStamp GetNow() const override;
 
-  MediaConduitErrorCode StopTransmitting() override;
-  MediaConduitErrorCode StartTransmitting() override;
-  MediaConduitErrorCode StopReceiving() override;
-  MediaConduitErrorCode StartReceiving() override;
-
   MediaConduitErrorCode StopTransmittingLocked();
   MediaConduitErrorCode StartTransmittingLocked();
   MediaConduitErrorCode StopReceivingLocked();
   MediaConduitErrorCode StartReceivingLocked();
-
-  
-
-
-
-
-
-
-
-
-  MediaConduitErrorCode ConfigureSendMediaCodec(
-      const AudioCodecConfig& codecConfig) override;
-  
-
-
-
-
-
-
-
-
-
-  MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<AudioCodecConfig>& codecConfigList) override;
-
-  MediaConduitErrorCode SetLocalRTPExtensions(
-      MediaSessionConduitLocalDirection aDirection,
-      const RtpExtList& extensions) override;
 
   
 
@@ -149,27 +119,34 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   virtual ~WebrtcAudioConduit();
 
   
+  void InitControl(AudioConduitControlInterface* aControl) override;
 
+  
+  void OnDtmfEvent(const DtmfEvent& aEvent);
 
+  
+  void OnControlConfigChange();
 
-
-  bool SetLocalSSRCs(const std::vector<uint32_t>& aSSRCs,
-                     const std::vector<uint32_t>& aRtxSSRCs) override;
   std::vector<uint32_t> GetLocalSSRCs() const override;
-  bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) override;
-  bool UnsetRemoteSSRC(uint32_t ssrc) override { return true; }
-  bool GetRemoteSSRC(uint32_t* ssrc) const override;
-  bool SetLocalCNAME(const char* cname) override;
-  bool SetLocalMID(const std::string& mid) override;
 
-  void SetSyncGroup(const std::string& group) override;
+ private:
+  
+
+
+
+
+
+
+
+  bool OverrideRemoteSSRC(uint32_t ssrc);
+
+ public:
+  void UnsetRemoteSSRC(uint32_t ssrc) override {}
+  bool GetRemoteSSRC(uint32_t* ssrc) const override;
 
   Maybe<webrtc::AudioReceiveStream::Stats> GetReceiverStats() const override;
   Maybe<webrtc::AudioSendStream::Stats> GetSenderStats() const override;
   webrtc::Call::Stats GetCallStats() const override;
-
-  bool InsertDTMFTone(unsigned char payloadType, int payloadFrequency,
-                      int eventCode, int lengthMs) override;
 
   bool IsSamplingFreqSupported(int freq) const override;
 
@@ -185,16 +162,21 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   unsigned int GetNum10msSamplesForFrequency(int samplingFreqHz) const;
 
   
-  MediaConduitErrorCode ValidateCodecConfig(const AudioCodecConfig& codecInfo,
-                                            bool send);
+  static MediaConduitErrorCode ValidateCodecConfig(
+      const AudioCodecConfig& codecInfo, bool send);
+  
+
+
+  static RtpExtList FilterExtensions(
+      MediaSessionConduitLocalDirection aDirection,
+      const RtpExtList& aExtensions);
+  static webrtc::SdpAudioFormat CodecConfigToLibwebrtcFormat(
+      const AudioCodecConfig& aConfig);
 
   MediaConduitErrorCode CreateSendStream();
   void DeleteSendStream();
   MediaConduitErrorCode CreateRecvStream();
   void DeleteRecvStream();
-
-  bool RecreateSendStreamIfExists();
-  bool RecreateRecvStreamIfExists();
 
   mozilla::ReentrantMonitor mTransportMonitor;
 
@@ -247,6 +229,38 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
+
+  struct Control {
+    
+    
+    Mirror<bool> mReceiving;
+    Mirror<bool> mTransmitting;
+    Mirror<Ssrcs> mLocalSsrcs;
+    Mirror<std::string> mLocalCname;
+    Mirror<std::string> mLocalMid;
+    Mirror<Ssrc> mRemoteSsrc;
+    Mirror<std::string> mSyncGroup;
+    Mirror<RtpExtList> mLocalRecvRtpExtensions;
+    Mirror<RtpExtList> mLocalSendRtpExtensions;
+    Mirror<Maybe<AudioCodecConfig>> mSendCodec;
+    Mirror<std::vector<AudioCodecConfig>> mRecvCodecs;
+    MediaEventListener mOnDtmfEventListener;
+
+    
+    
+    Ssrc mConfiguredRemoteSsrc = 0;
+    
+    Maybe<AudioCodecConfig> mConfiguredSendCodec;
+    
+    std::vector<AudioCodecConfig> mConfiguredRecvCodecs;
+
+    Control() = delete;
+    explicit Control(const RefPtr<AbstractThread>& aCallThread);
+  } mControl;
+
+  
+  
+  WatchManager<WebrtcAudioConduit> mWatchManager;
 
   
   Maybe<DOMHighResTimeStamp> mRttSec;

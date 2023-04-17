@@ -9,11 +9,13 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/SharedThreadPool.h"
+#include "mozilla/StateMirroring.h"
 #include "mozilla/UniquePtr.h"
 #include "nsITimer.h"
 
 #include "MediaConduitInterface.h"
 #include "common/MediaEngineWrapper.h"
+#include "RtpRtcpConfig.h"
 #include "RunningStat.h"
 #include "RtpPacketQueue.h"
 #include "transport/runnable_utils.h"
@@ -71,10 +73,6 @@ class WebrtcVideoConduit
   
   static bool HasH264Hardware();
 
-  MediaConduitErrorCode SetLocalRTPExtensions(
-      MediaSessionConduitLocalDirection aDirection,
-      const RtpExtList& aExtensions) override;
-
   
 
 
@@ -100,49 +98,12 @@ class WebrtcVideoConduit
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
   DOMHighResTimeStamp GetNow() const override;
 
-  MediaConduitErrorCode StopTransmitting() override;
-  MediaConduitErrorCode StartTransmitting() override;
-  MediaConduitErrorCode StopReceiving() override;
-  MediaConduitErrorCode StartReceiving() override;
-
   void OnFrameDelivered() override;
 
   MediaConduitErrorCode StopTransmittingLocked();
   MediaConduitErrorCode StartTransmittingLocked();
   MediaConduitErrorCode StopReceivingLocked();
   MediaConduitErrorCode StartReceivingLocked();
-
-  
-
-
-  MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) override;
-
-  
-
-
-
-
-
-
-
-
-  MediaConduitErrorCode ConfigureSendMediaCodec(
-      const VideoCodecConfig& codecInfo,
-      const RtpRtcpConfig& aRtpRtcpConfig) override;
-
-  
-
-
-
-
-
-
-
-
-
-  MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<VideoCodecConfig>& codecConfigList,
-      const RtpRtcpConfig& aRtpRtcpConfig) override;
 
   
 
@@ -223,6 +184,12 @@ class WebrtcVideoConduit
   virtual ~WebrtcVideoConduit();
 
   
+  void InitControl(VideoConduitControlInterface* aControl) override;
+
+  
+  void OnControlConfigChange();
+
+  
   MediaConduitErrorCode Init();
   
   void InitCall();
@@ -232,15 +199,15 @@ class WebrtcVideoConduit
   
   bool GetRemoteSSRC(uint32_t* ssrc) const override;
 
-  
-  bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
-                     const std::vector<uint32_t>& rtxSsrcs) override;
-  bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) override;
-  bool UnsetRemoteSSRC(uint32_t ssrc) override;
-  bool SetLocalCNAME(const char* cname) override;
-  bool SetLocalMID(const std::string& mid) override;
-  void SetSyncGroup(const std::string& group) override;
+  void UnsetRemoteSSRC(uint32_t ssrc) override;
   bool SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc);
+
+  
+  
+  void EnsureLocalSSRC();
+  
+  
+  void EnsureRemoteSSRC();
 
   Maybe<webrtc::VideoReceiveStream::Stats> GetReceiverStats() const override;
   Maybe<webrtc::VideoSendStream::Stats> GetSenderStats() const override;
@@ -308,6 +275,45 @@ class WebrtcVideoConduit
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
 
+  struct Control {
+    
+    
+    Mirror<bool> mReceiving;
+    Mirror<bool> mTransmitting;
+    Mirror<Ssrcs> mLocalSsrcs;
+    Mirror<Ssrcs> mLocalRtxSsrcs;
+    Mirror<std::string> mLocalCname;
+    Mirror<std::string> mLocalMid;
+    Mirror<Ssrc> mRemoteSsrc;
+    Mirror<Ssrc> mRemoteRtxSsrc;
+    Mirror<std::string> mSyncGroup;
+    Mirror<RtpExtList> mLocalRecvRtpExtensions;
+    Mirror<RtpExtList> mLocalSendRtpExtensions;
+    Mirror<Maybe<VideoCodecConfig>> mSendCodec;
+    Mirror<Maybe<RtpRtcpConfig>> mSendRtpRtcpConfig;
+    Mirror<std::vector<VideoCodecConfig>> mRecvCodecs;
+    Mirror<Maybe<RtpRtcpConfig>> mRecvRtpRtcpConfig;
+    Mirror<webrtc::VideoCodecMode> mCodecMode;
+
+    
+    
+    Ssrc mConfiguredRemoteSsrc = 0;
+    Ssrc mConfiguredRemoteRtxSsrc = 0;
+    
+    Maybe<VideoCodecConfig> mConfiguredSendCodec;
+    Maybe<RtpRtcpConfig> mConfiguredSendRtpRtcpConfig;
+    
+    std::vector<VideoCodecConfig> mConfiguredRecvCodecs;
+    Maybe<RtpRtcpConfig> mConfiguredRecvRtpRtcpConfig;
+
+    Control() = delete;
+    explicit Control(const RefPtr<AbstractThread>& aCallThread);
+  } mControl;
+
+  
+  
+  WatchManager<WebrtcVideoConduit> mWatchManager;
+
   mutable Mutex mMutex;
 
   
@@ -347,9 +353,6 @@ class WebrtcVideoConduit
       mEngineTransmitting;  
   mozilla::Atomic<bool>
       mEngineReceiving;  
-
-  
-  std::vector<VideoCodecConfig> mRecvCodecList;
 
   
   
@@ -410,10 +413,6 @@ class WebrtcVideoConduit
   static const unsigned int sRoundingPadding = 1024;
 
   
-  webrtc::VideoCodecMode mActiveCodecMode;
-  webrtc::VideoCodecMode mCodecMode;
-
-  
   
   
   const RefPtr<WebrtcCallWrapper> mCall;
@@ -438,7 +437,7 @@ class WebrtcVideoConduit
   bool mAllowSsrcChange = true;
 
   
-  bool mWaitingForInitialSsrc = true;
+  bool mWaitingForSignaledSsrc = true;
 
   
   

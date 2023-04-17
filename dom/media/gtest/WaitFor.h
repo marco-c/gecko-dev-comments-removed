@@ -81,6 +81,23 @@ void WaitUntil(MediaEventSource<T>& aEvent, const CallbackFunction& aF) {
   listener.Disconnect();
 }
 
+
+
+
+
+
+inline void WaitForMirrors(const RefPtr<nsISerialEventTarget>& aTarget) {
+  Unused << WaitFor(InvokeAsync(aTarget, __func__, [] {
+    return GenericPromise::CreateAndResolve(true, "WaitForMirrors resolver");
+  }));
+}
+
+
+
+
+
+inline void WaitForMirrors() { WaitForMirrors(GetCurrentSerialEventTarget()); }
+
 }  
 
 #endif  

@@ -188,7 +188,6 @@ class TransceiverImpl : public nsISupports,
   RefPtr<WebrtcCallWrapper> mCallWrapper;
   RefPtr<MediaSessionConduit> mConduit;
   
-  RefPtr<MediaConduitController> mConduitController;
   RefPtr<MediaPipelineTransmit> mTransmitPipeline;
   
   
