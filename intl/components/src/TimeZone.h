@@ -89,6 +89,13 @@ class TimeZone final {
         });
   }
 
+  
+
+
+
+  static Result<SpanEnumeration<char>, ICUError> GetAvailableTimeZones(
+      const char* aRegion);
+
  private:
   UCalendar* mCalendar = nullptr;
 };

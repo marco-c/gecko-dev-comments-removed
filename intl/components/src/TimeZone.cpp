@@ -4,6 +4,8 @@
 
 #include "mozilla/intl/TimeZone.h"
 
+#include "unicode/uenum.h"
+
 namespace mozilla::intl {
 
 
@@ -40,6 +42,22 @@ Result<int32_t, ICUError> TimeZone::GetRawOffsetMs() {
   }
 
   return offset;
+}
+
+Result<SpanEnumeration<char>, ICUError> TimeZone::GetAvailableTimeZones(
+    const char* aRegion) {
+  
+  
+  
+  
+  UErrorCode status = U_ZERO_ERROR;
+  UEnumeration* enumeration = ucal_openTimeZoneIDEnumeration(
+      UCAL_ZONE_TYPE_ANY, aRegion, nullptr, &status);
+  if (U_FAILURE(status)) {
+    return Err(ToICUError(status));
+  }
+
+  return SpanEnumeration<char>(enumeration);
 }
 
 TimeZone::~TimeZone() {
