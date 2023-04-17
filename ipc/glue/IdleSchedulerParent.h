@@ -39,6 +39,8 @@ class IdleSchedulerParent final
   IPCResult RecvSchedule();
   IPCResult RecvRunningPrioritizedOperation();
   IPCResult RecvPrioritizedOperationDone();
+  IPCResult RecvRequestGC(RequestGCResolver&& aResolve);
+  IPCResult RecvDoneGC();
 
  private:
   friend class BackgroundParentImpl;
@@ -48,8 +50,10 @@ class IdleSchedulerParent final
   static int32_t ActiveCount();
   static void Schedule(IdleSchedulerParent* aRequester);
   static bool HasSpareCycles(int32_t aActiveCount);
+  static bool HasSpareGCCycles();
   using PIdleSchedulerParent::SendIdleTime;
   void SendIdleTime();
+  void SendMayGC();
 
   static void EnsureStarvationTimer();
   static void StarvationCallback(nsITimer* aTimer, void* aData);
@@ -62,17 +66,17 @@ class IdleSchedulerParent final
   
   uint32_t mRunningPrioritizedOperation = 0;
 
+  
+  
+  Maybe<RequestGCResolver> mRequestingGC;
+  bool mDoingGC = false;
+
   uint32_t mChildId = 0;
 
   
-  bool IsWaitingForIdle() const {
-    MOZ_ASSERT_IF(isInList(), mRequestedIdleBudget);
-    return isInList();
-  }
+  bool IsWaitingForIdle() const { return isInList() && mRequestedIdleBudget; }
   bool IsDoingIdleTask() const { return !isInList() && mRequestedIdleBudget; }
-  bool IsNotDoingIdleTask() const {
-    return !isInList() && !mRequestedIdleBudget;
-  }
+  bool IsNotDoingIdleTask() const { return !mRequestedIdleBudget; }
 
   
   
@@ -94,9 +98,15 @@ class IdleSchedulerParent final
   
   
   
-  static LinkedList<IdleSchedulerParent> sWaitingForIdle;
+  
+  
+  
+  
+  static LinkedList<IdleSchedulerParent> sIdleAndGCRequests;
 
   static Atomic<int32_t> sMaxConcurrentIdleTasksInChildProcesses;
+  static uint32_t sMaxConcurrentGCs;
+  static uint32_t sActiveGCs;
 
   
   

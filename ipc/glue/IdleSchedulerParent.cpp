@@ -18,9 +18,11 @@ namespace ipc {
 base::SharedMemory* IdleSchedulerParent::sActiveChildCounter = nullptr;
 std::bitset<NS_IDLE_SCHEDULER_COUNTER_ARRAY_LENGHT>
     IdleSchedulerParent::sInUseChildCounters;
-LinkedList<IdleSchedulerParent> IdleSchedulerParent::sWaitingForIdle;
+LinkedList<IdleSchedulerParent> IdleSchedulerParent::sIdleAndGCRequests;
 Atomic<int32_t> IdleSchedulerParent::sMaxConcurrentIdleTasksInChildProcesses(
     -1);
+uint32_t IdleSchedulerParent::sMaxConcurrentGCs = 1;
+uint32_t IdleSchedulerParent::sActiveGCs = 0;
 uint32_t IdleSchedulerParent::sChildProcessesRunningPrioritizedOperation = 0;
 uint32_t IdleSchedulerParent::sChildProcessesAlive = 0;
 nsITimer* IdleSchedulerParent::sStarvationPreventer = nullptr;
@@ -46,6 +48,7 @@ IdleSchedulerParent::IdleSchedulerParent() {
             
             sMaxConcurrentIdleTasksInChildProcesses =
                 std::max(processInfo.cpuCount - 1, 1);
+            sMaxConcurrentGCs = std::max(processInfo.cpuCount / 4, 1);
             
             nsCOMPtr<nsIRunnable> runnable =
                 NS_NewRunnableFunction("IdleSchedulerParent::Schedule", []() {
@@ -84,6 +87,17 @@ IdleSchedulerParent::~IdleSchedulerParent() {
     --sChildProcessesRunningPrioritizedOperation;
   }
 
+  if (mDoingGC) {
+    
+    sActiveGCs--;
+  }
+
+  if (mRequestingGC) {
+    mRequestingGC.value()(false);
+    mRequestingGC = Nothing();
+  }
+
+  
   if (isInList()) {
     remove();
   }
@@ -91,7 +105,7 @@ IdleSchedulerParent::~IdleSchedulerParent() {
   MOZ_ASSERT(sChildProcessesAlive > 0);
   sChildProcessesAlive--;
   if (sChildProcessesAlive == 0) {
-    MOZ_ASSERT(sWaitingForIdle.isEmpty());
+    MOZ_ASSERT(sIdleAndGCRequests.isEmpty());
     delete sActiveChildCounter;
     sActiveChildCounter = nullptr;
 
@@ -164,7 +178,9 @@ IPCResult IdleSchedulerParent::RecvRequestIdleTime(uint64_t aId,
   mCurrentRequestId = aId;
   mRequestedIdleBudget = aBudget;
 
-  sWaitingForIdle.insertBack(this);
+  if (!isInList()) {
+    sIdleAndGCRequests.insertBack(this);
+  }
 
   Schedule(this);
   return IPC_OK();
@@ -181,7 +197,7 @@ IPCResult IdleSchedulerParent::RecvIdleTimeUsed(uint64_t aId) {
   
   MOZ_ASSERT(mCurrentRequestId == aId);
 
-  if (IsWaitingForIdle()) {
+  if (IsWaitingForIdle() && !mRequestingGC) {
     remove();
   }
   mRequestedIdleBudget = TimeDuration();
@@ -213,6 +229,40 @@ IPCResult IdleSchedulerParent::RecvPrioritizedOperationDone() {
   return IPC_OK();
 }
 
+IPCResult IdleSchedulerParent::RecvRequestGC(RequestGCResolver&& aResolver) {
+  MOZ_ASSERT(!mDoingGC);
+  MOZ_ASSERT(!mRequestingGC);
+
+  mRequestingGC = Some(aResolver);
+  if (!isInList()) {
+    sIdleAndGCRequests.insertBack(this);
+  }
+
+  Schedule(nullptr);
+  return IPC_OK();
+}
+
+IPCResult IdleSchedulerParent::RecvDoneGC() {
+  MOZ_ASSERT(mDoingGC || mRequestingGC);
+  MOZ_ASSERT(mDoingGC != !!mRequestingGC);
+
+  if (mRequestingGC && !IsWaitingForIdle()) {
+    remove();
+  }
+
+  if (mRequestingGC) {
+    mRequestingGC.value()(false);
+    mRequestingGC = Nothing();
+  } else {
+    
+    sActiveGCs--;
+    mDoingGC = false;
+  }
+
+  Schedule(nullptr);
+  return IPC_OK();
+}
+
 int32_t IdleSchedulerParent::ActiveCount() {
   if (sActiveChildCounter) {
     return (static_cast<Atomic<int32_t>*>(
@@ -235,11 +285,24 @@ bool IdleSchedulerParent::HasSpareCycles(int32_t aActiveCount) {
              : sMaxConcurrentIdleTasksInChildProcesses > aActiveCount;
 }
 
+bool IdleSchedulerParent::HasSpareGCCycles() {
+  return sMaxConcurrentGCs > sActiveGCs;
+}
+
 void IdleSchedulerParent::SendIdleTime() {
   
   
-  MOZ_ASSERT(IsDoingIdleTask());
+  
+  MOZ_ASSERT(mRequestedIdleBudget);
   Unused << SendIdleTime(mCurrentRequestId, mRequestedIdleBudget);
+}
+
+void IdleSchedulerParent::SendMayGC() {
+  MOZ_ASSERT(mRequestingGC);
+  mRequestingGC.value()(true);
+  mRequestingGC = Nothing();
+  mDoingGC = true;
+  sActiveGCs++;
 }
 
 void IdleSchedulerParent::Schedule(IdleSchedulerParent* aRequester) {
@@ -251,21 +314,49 @@ void IdleSchedulerParent::Schedule(IdleSchedulerParent* aRequester) {
 
   if (aRequester && aRequester->mRunningPrioritizedOperation) {
     
-    if (aRequester->isInList()) {
+    
+    MOZ_ASSERT(aRequester->IsWaitingForIdle());
+
+    
+    if (aRequester->isInList() && !aRequester->mRequestingGC) {
       aRequester->remove();
     }
     aRequester->SendIdleTime();
     activeCount++;
   }
 
-  while (!sWaitingForIdle.isEmpty() && HasSpareCycles(activeCount)) {
+  RefPtr<IdleSchedulerParent> idleRequester = sIdleAndGCRequests.getFirst();
+
+  bool has_spare_cycles = HasSpareCycles(activeCount);
+  bool has_spare_gc_cycles = HasSpareGCCycles();
+
+  while (idleRequester && (has_spare_cycles || has_spare_gc_cycles)) {
     
-    RefPtr<IdleSchedulerParent> idleRequester = sWaitingForIdle.popFirst();
-    idleRequester->SendIdleTime();
-    activeCount++;
+    
+    RefPtr<IdleSchedulerParent> next = idleRequester->getNext();
+
+    if (has_spare_cycles && idleRequester->IsWaitingForIdle()) {
+      
+      activeCount++;
+      if (!idleRequester->mRequestingGC) {
+        idleRequester->remove();
+      }
+      idleRequester->SendIdleTime();
+      has_spare_cycles = HasSpareCycles(activeCount);
+    }
+
+    if (has_spare_gc_cycles && idleRequester->mRequestingGC) {
+      if (!idleRequester->IsWaitingForIdle()) {
+        idleRequester->remove();
+      }
+      idleRequester->SendMayGC();
+      has_spare_gc_cycles = HasSpareGCCycles();
+    }
+
+    idleRequester = next;
   }
 
-  if (!sWaitingForIdle.isEmpty()) {
+  if (!sIdleAndGCRequests.isEmpty() && HasSpareCycles(activeCount)) {
     EnsureStarvationTimer();
   }
 }
@@ -285,15 +376,20 @@ void IdleSchedulerParent::EnsureStarvationTimer() {
 }
 
 void IdleSchedulerParent::StarvationCallback(nsITimer* aTimer, void* aData) {
-  if (!sWaitingForIdle.isEmpty()) {
-    RefPtr<IdleSchedulerParent> first = sWaitingForIdle.getFirst();
-    
-    
-    ++first->mRunningPrioritizedOperation;
-    ++sChildProcessesRunningPrioritizedOperation;
-    Schedule(first);
-    --first->mRunningPrioritizedOperation;
-    --sChildProcessesRunningPrioritizedOperation;
+  RefPtr<IdleSchedulerParent> idleRequester = sIdleAndGCRequests.getFirst();
+  while (idleRequester) {
+    if (idleRequester->IsWaitingForIdle()) {
+      
+      
+      ++idleRequester->mRunningPrioritizedOperation;
+      ++sChildProcessesRunningPrioritizedOperation;
+      Schedule(idleRequester);
+      --idleRequester->mRunningPrioritizedOperation;
+      --sChildProcessesRunningPrioritizedOperation;
+      break;
+    }
+
+    idleRequester = idleRequester->getNext();
   }
   NS_RELEASE(sStarvationPreventer);
 }

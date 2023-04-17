@@ -37,6 +37,14 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
   
   bool SetPaused();
 
+  typedef MozPromise<bool , ResponseRejectReason, true>
+      MayGCPromise;
+
+  
+  RefPtr<MayGCPromise> MayGCNow();
+
+  void DoneGC();
+
   static IdleSchedulerChild* GetMainThreadIdleScheduler();
 
  private:
@@ -50,6 +58,12 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
   IdlePeriodState* mIdlePeriodState = nullptr;
 
   uint32_t mChildId = 0;
+
+  
+  
+  
+  bool mIsRequestingGC = false;
+  bool mIsDoingGC = false;
 };
 
 }  
