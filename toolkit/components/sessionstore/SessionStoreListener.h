@@ -33,19 +33,16 @@ class ContentSessionStore {
 
   void SetSHistoryChanged();
   
-  void SetSHistoryFromParentChanged();
   bool GetAndClearSHistoryChanged() {
     bool ret = mSHistoryChanged;
     mSHistoryChanged = false;
-    mSHistoryChangedFromParent = false;
     return ret;
   }
 
   void OnDocumentStart();
   void OnDocumentEnd();
   bool UpdateNeeded() {
-    return mPrivateChanged || mDocCapChanged || mSHistoryChanged ||
-           mSHistoryChangedFromParent;
+    return mPrivateChanged || mDocCapChanged || mSHistoryChanged;
   }
 
  private:
@@ -63,9 +60,6 @@ class ContentSessionStore {
   
   
   bool mSHistoryChanged;
-  
-  
-  bool mSHistoryChangedFromParent;
 };
 
 class TabListener : public nsIDOMEventListener,
