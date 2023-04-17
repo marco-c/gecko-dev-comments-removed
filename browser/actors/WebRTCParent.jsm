@@ -412,7 +412,14 @@ class WebRTCParent extends JSWindowActorParent {
       aRequest.secondOrigin;
 
     let set = webrtcUI.activePerms.get(this.manager.outerWindowId);
-    let { callID, windowID } = aRequest;
+    let {
+      callID,
+      windowID,
+      audioInputDevices,
+      videoInputDevices,
+      hasInherentAudioConstraints,
+      hasInherentVideoConstraints,
+    } = aRequest;
 
     
     
@@ -427,18 +434,46 @@ class WebRTCParent extends JSWindowActorParent {
             this.getBrowser()
           ).state == SitePermissions.ALLOW));
 
-    let {
-      audioInputDevices: [microphone],
-      videoInputDevices: [camera],
-    } = aRequest;
-
-    if (microphone && !isAllowed(microphone, "microphone")) {
-      return false;
+    let microphone;
+    if (audioInputDevices.length) {
+      for (let device of audioInputDevices) {
+        if (isAllowed(device, "microphone")) {
+          microphone = device;
+          break;
+        }
+        if (hasInherentAudioConstraints) {
+          
+          break;
+        }
+        
+        
+        
+        
+      }
+      if (!microphone) {
+        return false;
+      }
     }
-    if (camera && !isAllowed(camera, "camera")) {
-      return false;
+    let camera;
+    if (videoInputDevices.length) {
+      for (let device of videoInputDevices) {
+        if (isAllowed(device, "camera")) {
+          camera = device;
+          break;
+        }
+        if (hasInherentVideoConstraints) {
+          
+          break;
+        }
+        
+        
+        
+        
+      }
+      if (!camera) {
+        return false;
+      }
     }
-
     let devices = [];
     if (camera) {
       perms.addFromPrincipal(
