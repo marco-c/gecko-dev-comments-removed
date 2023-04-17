@@ -156,7 +156,8 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
     if (contentBoxBSize == NS_UNCONSTRAINEDSIZE) {
       
       
-      contentBoxBSize = childMarginBoxBSize;
+      contentBoxBSize =
+          std::max(aReflowInput.GetLineHeight(), childMarginBoxBSize);
 
       
       
