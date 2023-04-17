@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 async function setupForms(numUsernameOnly, numBasic, numOther) {
@@ -69,6 +71,9 @@ async function checkChildHistogram(id, index, expected) {
 }
 
 add_task(async function setup() {
+  
+  
+  await new Promise(res => setTimeout(res, 1000));
   Services.telemetry.getSnapshotForHistograms("main", true );
 });
 
