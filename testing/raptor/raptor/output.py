@@ -196,11 +196,17 @@ class PerftestOutput(object):
             )
         else:
             for suite in self.summarized_results["suites"]:
-                tname = suite["name"]
+                gecko_profiling_enabled = "gecko-profile" in suite.get(
+                    "extraOptions", []
+                )
+                if gecko_profiling_enabled:
+                    LOG.info("gecko profiling enabled")
+                    suite["shouldAlert"] = False
 
                 
                 
                 
+                tname = suite["name"]
                 parts = tname.split(".")
                 try:
                     tname = ".".join(parts[:-1])
@@ -234,15 +240,9 @@ class PerftestOutput(object):
         if self.summarized_results == {}:
             return success, 0
 
-        
-        extra_opts = self.summarized_results["suites"][0].get("extraOptions", [])
         test_type = self.summarized_results["suites"][0].get("type", "")
-
         output_perf_data = True
         not_posting = "- not posting regular test results for perfherder"
-        if "gecko-profile" in extra_opts:
-            LOG.info("gecko profiling enabled %s" % not_posting)
-            output_perf_data = False
         if test_type == "scenario":
             
             
