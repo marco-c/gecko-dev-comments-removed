@@ -6,17 +6,14 @@
 #define mozilla_intl_LineBreaker_h__
 
 #include "nscore.h"
-#include "nsISupports.h"
 
 #define NS_LINEBREAKER_NEED_MORE_TEXT -1
 
 namespace mozilla {
 namespace intl {
 
-class LineBreaker {
+class LineBreaker final {
  public:
-  NS_INLINE_DECL_REFCOUNTING(LineBreaker)
-
   enum class WordBreak : uint8_t {
     Normal = 0,    
     BreakAll = 1,  
@@ -31,7 +28,10 @@ class LineBreaker {
     Anywhere = 4
   };
 
-  static already_AddRefed<LineBreaker> Create();
+  
+  
+  LineBreaker() = delete;
+  ~LineBreaker() = delete;
 
   
   
@@ -54,9 +54,6 @@ class LineBreaker {
                                     WordBreak aWordBreak, Strictness aLevel,
                                     bool aIsChineseOrJapanese,
                                     uint8_t* aBreakBefore);
-
- private:
-  ~LineBreaker() = default;
 };
 
 static inline bool NS_IsSpace(char16_t u) {
@@ -75,8 +72,8 @@ static inline bool NS_IsSpace(char16_t u) {
 
 static inline bool NS_NeedsPlatformNativeHandling(char16_t aChar) {
   return
-#if ANDROID || XP_WIN 
-                      
+#if ANDROID || XP_WIN  
+                       
       (0x0e01 <= aChar && aChar <= 0x0eff) ||  
 #else
       (0x0e01 <= aChar && aChar <= 0x0fff) ||  

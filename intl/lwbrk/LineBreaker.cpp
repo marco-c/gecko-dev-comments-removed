@@ -15,11 +15,6 @@ using namespace mozilla::unicode;
 using namespace mozilla::intl;
 
 
-already_AddRefed<LineBreaker> LineBreaker::Create() {
-  return RefPtr<LineBreaker>(new LineBreaker()).forget();
-}
-
-
 
 
 
