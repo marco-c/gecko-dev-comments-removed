@@ -239,7 +239,7 @@ function createViewControllers(state, elements) {
 
 
 
-function initializePopup(state, elements, view) {
+function initializeView(state, elements, view) {
   view.createPresetsList();
 
   state.cleanup.push(() => {
@@ -376,12 +376,21 @@ function addPopupEventHandlers(state, elements, view) {
 }
 
 
+
+
+
+
+function initializePopup(panelState, panelview) {
+  const panelElements = selectElementsInPanelview(panelview);
+  const panelviewControllers = createViewControllers(panelState, panelElements);
+  addPopupEventHandlers(panelState, panelElements, panelviewControllers);
+  initializeView(panelState, panelElements, panelviewControllers);
+}
+
+
  (this).module = {};
 
 module.exports = {
-  selectElementsInPanelview,
-  createViewControllers,
-  addPopupEventHandlers,
   initializePopup,
 };
 

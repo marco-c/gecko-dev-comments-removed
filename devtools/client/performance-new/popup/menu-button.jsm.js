@@ -170,17 +170,9 @@ function initialize(toggleProfilerKeyShortcuts) {
           
           
           
-          const {
-            selectElementsInPanelview,
-            createViewControllers,
-            addPopupEventHandlers,
-            initializePopup,
-          } = lazy.PopupPanel();
+          const { initializePopup } = lazy.PopupPanel();
 
-          const panelElements = selectElementsInPanelview(event.target);
-          const panelView = createViewControllers(panelState, panelElements);
-          addPopupEventHandlers(panelState, panelElements, panelView);
-          initializePopup(panelState, panelElements, panelView);
+          initializePopup(panelState, event.target);
         } catch (error) {
           
           console.error(error);
