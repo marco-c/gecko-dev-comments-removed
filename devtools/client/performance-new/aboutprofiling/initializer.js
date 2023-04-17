@@ -128,14 +128,25 @@ async function gInit(
   );
 }
 
+async function gDestroy() {
+  
+  ReactDOM.unmountComponentAtNode(document.querySelector("#root"));
+}
+
 
 
 if (window.location.hash !== "#remote") {
-  document.addEventListener("DOMContentLoaded", () => {
-    const isSupportedPlatform = "nsIProfiler" in Ci;
-    const supportedFeatures = isSupportedPlatform
-      ? Services.profiler.GetFeatures()
-      : [];
-    gInit("aboutprofiling", isSupportedPlatform, supportedFeatures);
-  });
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      const isSupportedPlatform = "nsIProfiler" in Ci;
+      const supportedFeatures = isSupportedPlatform
+        ? Services.profiler.GetFeatures()
+        : [];
+      gInit("aboutprofiling", isSupportedPlatform, supportedFeatures);
+    },
+    { once: true }
+  );
+
+  window.addEventListener("unload", () => gDestroy(), { once: true });
 }

@@ -205,6 +205,49 @@ const DEFAULT_RECORDING_SETTINGS = {
 
 
 
+
+
+
+function areSettingsEquals(a, b) {
+  if (a === b) {
+    return true;
+  }
+
+  
+  
+
+  
+  const simpleProperties = ["presetName", "interval", "entries", "duration"];
+
+  
+  
+  const arrayProperties = ["features", "threads", "objdirs"];
+
+  for (const property of simpleProperties) {
+    if (a[property] !== b[property]) {
+      return false;
+    }
+  }
+
+  for (const property of arrayProperties) {
+    if (a[property].length !== b[property].length) {
+      return false;
+    }
+
+    const arrayA = a[property].slice().sort();
+    const arrayB = b[property].slice().sort();
+    if (arrayA.some((valueA, i) => valueA !== arrayB[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
 function recordingSettings(state = DEFAULT_RECORDING_SETTINGS, action) {
   
 
@@ -253,6 +296,9 @@ function recordingSettings(state = DEFAULT_RECORDING_SETTINGS, action) {
             presetName: action.presetName, 
           };
     case "UPDATE_SETTINGS_FROM_PREFERENCES":
+      if (areSettingsEquals(state, action.recordingSettingsFromPreferences)) {
+        return state;
+      }
       return { ...action.recordingSettingsFromPreferences };
     default:
       return state;

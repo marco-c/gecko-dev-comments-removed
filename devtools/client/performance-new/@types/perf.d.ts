@@ -396,6 +396,26 @@ export interface PerformancePref {
 
 
 
+
+
+
+export type PrefObserverFunction = (
+  aSubject: nsIPrefBranch,
+  aTopic: "nsPref:changed",
+  aData: string
+) => unknown;
+
+
+
+
+
+export type PrefObserver =
+  | PrefObserverFunction
+  | { observe: PrefObserverFunction };
+
+
+
+
 export type NumberScaler = (value: number) => number;
 
 

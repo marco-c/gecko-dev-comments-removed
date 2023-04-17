@@ -37,6 +37,7 @@ const AppConstants = ChromeUtils.import(
 
 
 
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -52,6 +53,8 @@ const DURATION_PREF = "devtools.performance.recording.duration";
 const PRESET_PREF = "devtools.performance.recording.preset";
 
 const POPUP_FEATURE_FLAG_PREF = "devtools.performance.popup.feature-flag";
+
+const PREF_PREFIX = "devtools.performance.recording.";
 
 
 ChromeUtils.defineModuleGetter(
@@ -541,6 +544,24 @@ function changePreset(pageContext, presetName, supportedFeatures) {
 
 
 
+function addPrefObserver(observer) {
+  Services.prefs.addObserver(PREF_PREFIX, observer);
+}
+
+
+
+
+
+
+function removePrefObserver(observer) {
+  Services.prefs.removeObserver(PREF_PREFIX, observer);
+}
+
+
+
+
+
+
 
 
 
@@ -626,6 +647,8 @@ module.exports = {
   revertRecordingSettings,
   changePreset,
   handleWebChannelMessage,
+  addPrefObserver,
+  removePrefObserver,
 };
 
 
