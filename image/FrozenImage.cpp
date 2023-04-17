@@ -80,6 +80,26 @@ FrozenImage::GetImageContainerAtSize(WindowRenderer* aRenderer,
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
+FrozenImage::GetImageProvider(WindowRenderer* aRenderer,
+                              const gfx::IntSize& aSize,
+                              const Maybe<SVGImageContext>& aSVGContext,
+                              const Maybe<ImageIntRegion>& aRegion,
+                              uint32_t aFlags,
+                              WebRenderImageProvider** aProvider) {
+  if (IsNonAnimated()) {
+    return InnerImage()->GetImageProvider(aRenderer, aSize, aSVGContext,
+                                          aRegion, aFlags, aProvider);
+  }
+
+  
+  
+  
+  
+  
+  return ImgDrawResult::NOT_SUPPORTED;
+}
+
+NS_IMETHODIMP_(ImgDrawResult)
 FrozenImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
                   const ImageRegion& aRegion,
                   uint32_t ,
