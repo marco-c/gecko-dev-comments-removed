@@ -1940,8 +1940,10 @@ class nsTArray_Impl
   
   
   
+  
+  
   template <typename Predicate>
-  void RemoveElementsBy(Predicate aPredicate);
+  size_type RemoveElementsBy(Predicate aPredicate);
 
   
   
@@ -2517,9 +2519,10 @@ void nsTArray_Impl<E, Alloc>::UnorderedRemoveElementsAt(index_type aStart,
 
 template <typename E, class Alloc>
 template <typename Predicate>
-void nsTArray_Impl<E, Alloc>::RemoveElementsBy(Predicate aPredicate) {
+auto nsTArray_Impl<E, Alloc>::RemoveElementsBy(Predicate aPredicate)
+    -> size_type {
   if (this->HasEmptyHeader()) {
-    return;
+    return 0;
   }
 
   index_type j = 0;
@@ -2544,6 +2547,7 @@ void nsTArray_Impl<E, Alloc>::RemoveElementsBy(Predicate aPredicate) {
   }
 
   base_type::mHdr->mLength = j;
+  return len - j;
 }
 
 template <typename E, class Alloc>
