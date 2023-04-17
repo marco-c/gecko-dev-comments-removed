@@ -34,6 +34,9 @@ class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
  private:
   ~nsAvailableMemoryWatcher(){};
 
+  void OnMemoryPressureChangedInternal(MacMemoryPressureLevel aNewLevel,
+                                       bool aIsInitialLevel);
+
   void InitParentAnnotations();
   void UpdateParentAnnotations();
 
@@ -60,6 +63,9 @@ class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
   
   
   uint32_t mLevelSysctl;
+  static const int kSysctlLevelNormal = 0x1;
+  static const int kSysctlLevelWarning = 0x2;
+  static const int kSysctlLevelCritical = 0x4;
 
   
   
@@ -119,6 +125,23 @@ nsresult nsAvailableMemoryWatcher::Init() {
       CrashReporter::Annotation::MacMemoryPressureSysctl, mLevelSysctl);
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::MacAvailableMemorySysctl, mAvailMemSysctl);
+
+  
+  MacMemoryPressureLevel initialLevel;
+  switch (mLevelSysctl) {
+    case kSysctlLevelNormal:
+      initialLevel = MacMemoryPressureLevel::Value::eNormal;
+      break;
+    case kSysctlLevelWarning:
+      initialLevel = MacMemoryPressureLevel::Value::eWarning;
+      break;
+    case kSysctlLevelCritical:
+      initialLevel = MacMemoryPressureLevel::Value::eCritical;
+      break;
+    default:
+      initialLevel = MacMemoryPressureLevel::Value::eUnexpected;
+  }
+  OnMemoryPressureChangedInternal(initialLevel,  true);
 
   mInitialized = true;
   return NS_OK;
@@ -208,12 +231,45 @@ void nsAvailableMemoryWatcher::ReadSysctls() {
 
 
 void nsAvailableMemoryWatcher::OnMemoryPressureChanged(
-    MacMemoryPressureLevel aLevel) {
+    MacMemoryPressureLevel aNewLevel) {
   MOZ_ASSERT(mInitialized);
-  mLevel = aLevel;
-  ReadSysctls();
+  OnMemoryPressureChangedInternal(aNewLevel,  false);
+}
+
+void nsAvailableMemoryWatcher::OnMemoryPressureChangedInternal(
+    MacMemoryPressureLevel aNewLevel, bool aIsInitialLevel) {
+  MOZ_ASSERT(mInitialized || aIsInitialLevel);
+
+  
+  
+  
+  MOZ_ASSERT(aNewLevel.IsNormal() || aNewLevel.IsWarningOrAbove());
+
+  if (mLevel == aNewLevel) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (mLevel.IsUnsetOrNormal() && aNewLevel.IsWarningOrAbove()) {
+    UpdateLowMemoryTimeStamp();
+  }
+
+  
+  if (mLevel.IsWarningOrAbove() && aNewLevel.IsNormal()) {
+    RecordTelemetryEventOnHighMemory();
+  }
+
+  mLevel = aNewLevel;
+
+  if (!aIsInitialLevel) {
+    
+    ReadSysctls();
+  }
   MP_LOG("level: %s, level sysctl: %d, available memory: %d percent",
-         aLevel.ToString(), mLevelSysctl, mAvailMemSysctl);
+         mLevel.ToString(), mLevelSysctl, mAvailMemSysctl);
   UpdateParentAnnotations();
 }
 
