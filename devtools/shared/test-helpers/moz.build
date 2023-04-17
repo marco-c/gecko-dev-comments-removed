@@ -1,0 +1,12 @@
+
+
+
+
+
+
+DevToolsModules(
+    "tracked-objects.jsm",
+)
+
+with Files("**"):
+    BUG_COMPONENT = ("DevTools", "General")
