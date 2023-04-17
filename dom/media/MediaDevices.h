@@ -85,6 +85,7 @@ class MediaDevices final : public DOMEventTargetHelper {
   
   MediaEventListener mDeviceChangeListener;
   bool mIsDeviceChangeListenerSetUp = false;
+  bool mCanExposeMicrophoneInfo = false;
 
   void RecordAccessTelemetry(const UseCounter counter) const;
 };
