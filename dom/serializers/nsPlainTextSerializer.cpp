@@ -151,22 +151,24 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
 
   
   
-  if (aWrapColumn < prefixwidth) {
-    goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
-  } else {
+  if (aWrapColumn >= prefixwidth) {
+    
     goodSpace = static_cast<int32_t>(
         std::min(aWrapColumn - prefixwidth, mContent.Length() - 1));
-    while (goodSpace >= 0 && !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
+    while (goodSpace >= 0) {
+      if (nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
+        return goodSpace;
+      }
       goodSpace--;
     }
   }
-  if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
-    goodSpace = (prefixwidth > aWrapColumn) ? 1 : aWrapColumn - prefixwidth;
-    const int32_t contentLength = mContent.Length();
-    while (goodSpace < contentLength &&
-           !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
-      goodSpace++;
-    }
+
+  
+  goodSpace = (prefixwidth > aWrapColumn) ? 1 : aWrapColumn - prefixwidth;
+  const int32_t contentLength = mContent.Length();
+  while (goodSpace < contentLength &&
+         !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
+    goodSpace++;
   }
 
   return goodSpace;
