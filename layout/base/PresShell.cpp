@@ -10780,6 +10780,13 @@ void PresShell::ActivenessMaybeChanged() {
 }
 
 bool PresShell::ShouldBeActive() const {
+  MOZ_LOG(gLog, LogLevel::Debug,
+          ("PresShell::ShouldBeActive(%s, %d)\n",
+           mDocument->GetDocumentURI()
+               ? mDocument->GetDocumentURI()->GetSpecOrDefault().get()
+               : nullptr,
+           mIsActive));
+
   Document* doc = mDocument;
   if (Document* displayDoc = doc->GetDisplayDocument()) {
     
@@ -10807,6 +10814,8 @@ bool PresShell::ShouldBeActive() const {
     
     
     if (!browserChild->IsVisible()) {
+      MOZ_LOG(gLog, LogLevel::Debug,
+              (" > BrowserChild %p is not visible", browserChild));
       return false;
     }
 
@@ -10814,11 +10823,19 @@ bool PresShell::ShouldBeActive() const {
     
     
     if (!browserChild->IsPreservingLayers()) {
+      MOZ_LOG(gLog, LogLevel::Debug,
+              (" > BrowserChild %p is visible and not preserving layers",
+               browserChild));
       return true;
     }
+    MOZ_LOG(
+        gLog, LogLevel::Debug,
+        (" > BrowserChild %p is visible and preserving layers", browserChild));
   }
 
   BrowsingContext* bc = doc->GetBrowsingContext();
+  MOZ_LOG(gLog, LogLevel::Debug,
+          (" > BrowsingContext %p  active: %d", bc, bc && bc->IsActive()));
   return bc && bc->IsActive();
 }
 
