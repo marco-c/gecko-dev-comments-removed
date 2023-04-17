@@ -30,36 +30,7 @@ struct ParamTraits;
 namespace mozilla {
 
 #ifndef XP_WIN
-struct TimeStamp63Bit {
-  uint64_t mUsedCanonicalNow : 1;
-  uint64_t mTimeStamp : 63;
-
-  constexpr TimeStamp63Bit() : mUsedCanonicalNow(0), mTimeStamp(0) {}
-
-  MOZ_IMPLICIT constexpr TimeStamp63Bit(const uint64_t aValue)
-      : mUsedCanonicalNow(0), mTimeStamp(aValue) {}
-
-  constexpr TimeStamp63Bit(const bool aUsedCanonicalNow,
-                           const int64_t aTimeStamp)
-      : mUsedCanonicalNow(aUsedCanonicalNow ? 1 : 0), mTimeStamp(aTimeStamp) {}
-
-  bool operator==(const TimeStamp63Bit aOther) const {
-    uint64_t here, there;
-    memcpy(&here, this, sizeof(TimeStamp63Bit));
-    memcpy(&there, &aOther, sizeof(TimeStamp63Bit));
-    return here == there;
-  }
-
-  operator uint64_t() const { return mTimeStamp; }
-
-  bool IsNull() const { return mTimeStamp == 0; }
-
-  bool UsedCanonicalNow() const { return mUsedCanonicalNow; }
-
-  void SetCanonicalNow() { mUsedCanonicalNow = 1; }
-};
-
-typedef TimeStamp63Bit TimeStampValue;
+typedef uint64_t TimeStampValue;
 #endif
 
 class TimeStamp;
@@ -397,7 +368,7 @@ class TimeStamp {
   
 
 
-  constexpr TimeStamp() : mValue() {}
+  constexpr TimeStamp() : mValue(0) {}
   
 
   
@@ -417,24 +388,20 @@ class TimeStamp {
   static TimeStamp FromSystemTime(int64_t aSystemTime) {
     static_assert(sizeof(aSystemTime) == sizeof(TimeStampValue),
                   "System timestamp should be same units as TimeStampValue");
-    return TimeStamp(TimeStampValue(false, aSystemTime));
+    return TimeStamp(aSystemTime);
   }
 #endif
 
   
 
 
-  bool IsNull() const { return mValue.IsNull(); }
+  bool IsNull() const { return mValue == 0; }
 
   
 
 
 
-  explicit operator bool() const { return !IsNull(); }
-
-  bool UsedCanonicalNow() const { return mValue.UsedCanonicalNow(); }
-  static MFBT_API bool GetFuzzyfoxEnabled();
-  static MFBT_API void SetFuzzyfoxEnabled(bool aValue);
+  explicit operator bool() const { return mValue != 0; }
 
   
 
@@ -451,9 +418,7 @@ class TimeStamp {
 
   static TimeStamp Now() { return Now(true); }
   static TimeStamp NowLoRes() { return Now(false); }
-  static TimeStamp NowUnfuzzed() { return NowUnfuzzed(true); }
 
-  static MFBT_API int64_t NowFuzzyTime();
   
 
 
@@ -513,10 +478,7 @@ class TimeStamp {
     
     
     if (aOther.mValue < 0 && value > mValue) {
-      value = TimeStampValue();
-    }
-    if (mValue.UsedCanonicalNow()) {
-      value.SetCanonicalNow();
+      value = 0;
     }
     mValue = value;
     return *this;
@@ -528,10 +490,7 @@ class TimeStamp {
     
     
     if (aOther.mValue > 0 && value > mValue) {
-      value = TimeStampValue();
-    }
-    if (mValue.UsedCanonicalNow()) {
-      value.SetCanonicalNow();
+      value = 0;
     }
     mValue = value;
     return *this;
@@ -576,11 +535,6 @@ class TimeStamp {
   MOZ_IMPLICIT TimeStamp(TimeStampValue aValue) : mValue(aValue) {}
 
   static MFBT_API TimeStamp Now(bool aHighResolution);
-  static MFBT_API TimeStamp NowUnfuzzed(bool aHighResolution);
-  static MFBT_API TimeStamp NowFuzzy(TimeStampValue aValue);
-
-  static MFBT_API void UpdateFuzzyTime(int64_t aValue);
-  static MFBT_API void UpdateFuzzyTimeStamp(TimeStamp aValue);
 
   
 
@@ -606,8 +560,6 @@ class TimeStamp {
 
 
   TimeStampValue mValue;
-
-  friend class Fuzzyfox;
 };
 
 }  
