@@ -504,17 +504,6 @@
 
 
 
-#define NS_FTPPROTOCOLHANDLER_CID                   \
-  { /* 25029490-F132-11d2-9588-00805F369F95 */      \
-    0x25029490, 0xf132, 0x11d2, {                   \
-      0x95, 0x88, 0x0, 0x80, 0x5f, 0x36, 0x9f, 0x95 \
-    }                                               \
-  }
-
-
-
-
-
 #define NS_RESPROTOCOLHANDLER_CID                    \
   { /* e64f152a-9f07-11d3-8cda-0060b0fc14a3 */       \
     0xe64f152a, 0x9f07, 0x11d3, {                    \

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include "nsIChannel.h"
 #include "mozilla/Unused.h"
+#include "nsIURIMutator.h"
 
 using mozilla::intl::LocaleService;
 
@@ -169,29 +170,7 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   
   
 
-  if (uri->SchemeIs("ftp")) {
-    
-    
-    
-
-    nsAutoCString pw;
-    rv = titleURL->GetPassword(pw);
-    if (NS_FAILED(rv)) return rv;
-    if (!pw.IsEmpty()) {
-      nsCOMPtr<nsIURI> newUri;
-      rv = NS_MutateURI(titleURL).SetPassword(""_ns).Finalize(titleURL);
-      if (NS_FAILED(rv)) return rv;
-    }
-
-    nsAutoCString path;
-    rv = uri->GetPathQueryRef(path);
-    if (NS_FAILED(rv)) return rv;
-
-    if (!path.EqualsLiteral("//") && !path.LowerCaseEqualsLiteral("/%2f")) {
-      rv = uri->Resolve(".."_ns, parentStr);
-      if (NS_FAILED(rv)) return rv;
-    }
-  } else if (uri->SchemeIs("file")) {
+  if (uri->SchemeIs("file")) {
     nsCOMPtr<nsIFileURL> fileUrl = do_QueryInterface(uri);
     nsCOMPtr<nsIFile> file;
     rv = fileUrl->GetFile(getter_AddRefs(file));
