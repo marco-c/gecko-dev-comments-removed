@@ -33,9 +33,6 @@ const known_scripts = {
     "resource://gre/modules/Log.jsm",
 
     
-    "resource:///modules/sessionstore/ContentSessionStore.jsm",
-
-    
     "resource:///actors/AboutReaderChild.jsm",
     "resource:///actors/BrowserTabChild.jsm",
     "resource:///actors/LinkHandlerChild.jsm",
@@ -64,6 +61,12 @@ const known_scripts = {
     "resource://gre/modules/extensionProcessScriptLoader.js",
   ]),
 };
+
+if (!gFissionBrowser) {
+  known_scripts.modules.add(
+    "resource:///modules/sessionstore/ContentSessionStore.jsm"
+  );
+}
 
 
 
