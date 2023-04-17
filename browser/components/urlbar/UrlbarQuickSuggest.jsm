@@ -35,8 +35,6 @@ const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
 
 const MR1_VERSION = 89;
 
-const ONBOARDING_RESTARTS_NEEDED = 2;
-
 const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
 const VERSION_PREF = "browser.startup.upgradeDialog.version";
 const RESTARTS_PREF = "quicksuggest.seenRestarts";
@@ -62,7 +60,7 @@ class Suggestions {
       return this._initPromise;
     }
     this._initPromise = Promise.resolve();
-    if (NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
+    if (UrlbarPrefs.get("quickSuggestEnabled")) {
       this._initPromise = new Promise(resolve => (this._initResolve = resolve));
       Services.tm.idleDispatchToMainThread(this.onEnabledUpdate.bind(this));
     } else {
@@ -185,10 +183,16 @@ class Suggestions {
 
 
 
+
+
+
+
+
   onEnabledUpdate() {
     if (
-      NimbusFeatures.urlbar.getValue().quickSuggestEnabled &&
-      UrlbarPrefs.get(SEEN_DIALOG_PREF)
+      UrlbarPrefs.get("quickSuggestEnabled") &&
+      (UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
+        !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog"))
     ) {
       this._setupRemoteSettings();
     }
@@ -201,13 +205,20 @@ class Suggestions {
 
 
 
+
+
+
+
+
   async maybeShowOnboardingDialog() {
     
     
     
     
+    
     if (
-      !NimbusFeatures.urlbar.getValue().quickSuggestEnabled ||
+      !UrlbarPrefs.get("quickSuggestEnabled") ||
+      !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
       UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
       Services.prefs.getIntPref(VERSION_PREF, 0) < MR1_VERSION
     ) {
@@ -217,7 +228,10 @@ class Suggestions {
     
     
     let restartsSeen = UrlbarPrefs.get(RESTARTS_PREF);
-    if (restartsSeen < ONBOARDING_RESTARTS_NEEDED) {
+    if (
+      restartsSeen <
+      UrlbarPrefs.get("quickSuggestShowOnboardingDialogAfterNRestarts")
+    ) {
       UrlbarPrefs.set(RESTARTS_PREF, restartsSeen + 1);
       return;
     }

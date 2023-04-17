@@ -361,6 +361,12 @@ pref("browser.urlbar.suggest.calculator",           false);
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
+pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true);
+
+
+pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 2);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else
