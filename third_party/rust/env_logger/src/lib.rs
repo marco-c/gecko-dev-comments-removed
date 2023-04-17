@@ -229,17 +229,54 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-    html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico",
-    html_root_url = "https://docs.rs/env_logger/0.8.2"
+    html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico"
 )]
-#![cfg_attr(test, deny(warnings))]
 
 
 #![cfg_attr(rustbuild, feature(staged_api, rustc_private))]
 #![cfg_attr(rustbuild, unstable(feature = "rustc_private", issue = "27812"))]
-#![deny(missing_debug_implementations, missing_docs, warnings)]
+#![deny(missing_debug_implementations, missing_docs)]
 
 use std::{borrow::Cow, cell::RefCell, env, io};
 
@@ -595,6 +632,12 @@ impl Builder {
     }
 
     
+    pub fn format_suffix(&mut self, suffix: &'static str) -> &mut Self {
+        self.format.format_suffix = suffix;
+        self
+    }
+
+    
     
     
     
@@ -663,6 +706,9 @@ impl Builder {
         self
     }
 
+    
+    
+    
     
     
     
@@ -1233,5 +1279,21 @@ mod tests {
         );
 
         assert_eq!(Some("from default".to_owned()), env.get_write_style());
+    }
+
+    #[test]
+    fn builder_parse_env_overrides_existing_filters() {
+        env::set_var(
+            "builder_parse_default_env_overrides_existing_filters",
+            "debug",
+        );
+        let env = Env::new().filter("builder_parse_default_env_overrides_existing_filters");
+
+        let mut builder = Builder::new();
+        builder.filter_level(LevelFilter::Trace);
+        
+        builder.parse_env(env);
+
+        assert_eq!(builder.filter.build().filter(), LevelFilter::Debug);
     }
 }

@@ -1,11 +1,11 @@
-use std::io;
+use std::{io, sync::Mutex};
 
-use crate::fmt::{Target, WriteStyle};
+use crate::fmt::{WritableTarget, WriteStyle};
 
 pub(in crate::fmt::writer) mod glob {}
 
 pub(in crate::fmt::writer) struct BufferWriter {
-    target: Target,
+    target: WritableTarget,
 }
 
 pub(in crate::fmt) struct Buffer(Vec<u8>);
@@ -13,13 +13,23 @@ pub(in crate::fmt) struct Buffer(Vec<u8>);
 impl BufferWriter {
     pub(in crate::fmt::writer) fn stderr(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: Target::Stderr,
+            target: WritableTarget::Stderr,
         }
     }
 
     pub(in crate::fmt::writer) fn stdout(_is_test: bool, _write_style: WriteStyle) -> Self {
         BufferWriter {
-            target: Target::Stdout,
+            target: WritableTarget::Stdout,
+        }
+    }
+
+    pub(in crate::fmt::writer) fn pipe(
+        _is_test: bool,
+        _write_style: WriteStyle,
+        pipe: Box<Mutex<dyn io::Write + Send + 'static>>,
+    ) -> Self {
+        BufferWriter {
+            target: WritableTarget::Pipe(pipe),
         }
     }
 
@@ -31,11 +41,11 @@ impl BufferWriter {
         
         
         
-        let log = String::from_utf8_lossy(&buf.0);
-
-        match self.target {
-            Target::Stderr => eprint!("{}", log),
-            Target::Stdout => print!("{}", log),
+        match &self.target {
+            
+            WritableTarget::Pipe(pipe) => pipe.lock().unwrap().write_all(&buf.0)?,
+            WritableTarget::Stdout => print!("{}", String::from_utf8_lossy(&buf.0)),
+            WritableTarget::Stderr => eprint!("{}", String::from_utf8_lossy(&buf.0)),
         }
 
         Ok(())
