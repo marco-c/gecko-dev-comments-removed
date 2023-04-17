@@ -55,7 +55,9 @@ def _run_worker(config, paths, **lintargs):
 
     
     
-    if os.environ.get("CODE_REVIEW") == "1" and config.get("code_review_warnings", True):
+    if os.environ.get("CODE_REVIEW") == "1" and config.get(
+        "code_review_warnings", True
+    ):
         lintargs["show_warnings"] = True
 
     func = supported_types[config["type"]]
