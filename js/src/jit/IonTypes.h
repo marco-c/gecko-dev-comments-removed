@@ -476,7 +476,6 @@ enum class MIRType : uint8_t {
   Simd128,
   
   Object,
-  MagicOptimizedArguments,    
   MagicOptimizedOut,          
   MagicHole,                  
   MagicIsConstructing,        
@@ -541,7 +540,6 @@ static inline JSValueType ValueTypeFromMIRType(MIRType type) {
       return JSVAL_TYPE_SYMBOL;
     case MIRType::BigInt:
       return JSVAL_TYPE_BIGINT;
-    case MIRType::MagicOptimizedArguments:
     case MIRType::MagicOptimizedOut:
     case MIRType::MagicHole:
     case MIRType::MagicIsConstructing:
@@ -603,8 +601,6 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "BigInt";
     case MIRType::Object:
       return "Object";
-    case MIRType::MagicOptimizedArguments:
-      return "MagicOptimizedArguments";
     case MIRType::MagicOptimizedOut:
       return "MagicOptimizedOut";
     case MIRType::MagicHole:
@@ -668,7 +664,6 @@ static inline bool IsNullOrUndefined(MIRType type) {
 static inline bool IsMagicType(MIRType type) {
   return type == MIRType::MagicHole || type == MIRType::MagicOptimizedOut ||
          type == MIRType::MagicIsConstructing ||
-         type == MIRType::MagicOptimizedArguments ||
          type == MIRType::MagicUninitializedLexical;
 }
 
