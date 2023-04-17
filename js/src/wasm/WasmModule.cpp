@@ -23,6 +23,7 @@
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
+#include "js/Printf.h"                  
 #include "js/PropertyAndElement.h"  
 #include "js/StreamConsumer.h"
 #include "threading/LockGuard.h"
@@ -43,6 +44,40 @@
 using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
+
+static UniqueChars Tier2ResultsContext(const ScriptedCaller& scriptedCaller) {
+  return scriptedCaller.filename
+             ? JS_smprintf("%s:%d", scriptedCaller.filename.get(),
+                           scriptedCaller.line)
+             : UniqueChars();
+}
+
+static void ReportTier2ResultsOffThread(bool success,
+                                        const ScriptedCaller& scriptedCaller,
+                                        const UniqueChars& error,
+                                        const UniqueCharsVector& warnings) {
+  
+  UniqueChars context = Tier2ResultsContext(scriptedCaller);
+  const char* contextString = context ? context.get() : "unknown";
+
+  
+  if (!success) {
+    const char* errorString = error ? error.get() : "out of memory";
+    LogOffThread("'%s': wasm tier-2 failed with '%s'.\n", contextString,
+                 errorString);
+  }
+
+  
+  size_t numWarnings = std::min<size_t>(warnings.length(), 3);
+
+  for (size_t i = 0; i < numWarnings; i++) {
+    LogOffThread("'%s': wasm tier-2 warning: '%s'.\n'.", contextString,
+                 warnings[i].get());
+  }
+  if (warnings.length() > numWarnings) {
+    LogOffThread("'%s': other warnings suppressed.\n", contextString);
+  }
+}
 
 class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask {
   SharedCompileArgs compileArgs_;
@@ -68,7 +103,23 @@ class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask {
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override {
     {
       AutoUnlockHelperThreadState unlock(locked);
-      CompileTier2(*compileArgs_, bytecode_->bytes, *module_, &cancelled_);
+
+      
+      
+      
+      
+      
+      UniqueChars error;
+      UniqueCharsVector warnings;
+      bool success = CompileTier2(*compileArgs_, bytecode_->bytes, *module_,
+                                  &error, &warnings, &cancelled_);
+      if (!cancelled_) {
+        
+        
+        
+        ReportTier2ResultsOffThread(success, compileArgs_->scriptedCaller,
+                                    error, warnings);
+      }
     }
 
     

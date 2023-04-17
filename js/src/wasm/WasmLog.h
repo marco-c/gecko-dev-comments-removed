@@ -27,6 +27,7 @@ namespace wasm {
 
 
 extern void Log(JSContext* cx, const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+extern void LogOffThread(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2);
 
 
 

@@ -53,8 +53,9 @@ SharedModule CompileBuffer(const CompileArgs& args,
 
 
 
-void CompileTier2(const CompileArgs& args, const Bytes& bytecode,
-                  const Module& module, Atomic<bool>* cancelled);
+bool CompileTier2(const CompileArgs& args, const Bytes& bytecode,
+                  const Module& module, UniqueChars* error,
+                  UniqueCharsVector* warnings, Atomic<bool>* cancelled);
 
 
 
