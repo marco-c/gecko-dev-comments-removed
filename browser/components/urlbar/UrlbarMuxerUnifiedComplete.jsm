@@ -65,6 +65,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       usedResultSpan: 0,
       strippedUrlToTopPrefixAndTitle: new Map(),
+      urlToTabResultType: new Map(),
+      addedRemoteTabUrls: new Set(),
       canShowPrivateSearch: context.results.length > 1,
       canShowTailSuggestions: true,
       
@@ -151,6 +153,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       strippedUrlToTopPrefixAndTitle: new Map(
         state.strippedUrlToTopPrefixAndTitle
       ),
+      urlToTabResultType: new Map(state.urlToTabResultType),
+      addedRemoteTabUrls: new Set(state.addedRemoteTabUrls),
       suggestions: new Set(state.suggestions),
     });
     for (let [group, results] of state.resultsByGroup) {
@@ -542,6 +546,28 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
+    if (result.type == UrlbarUtils.RESULT_TYPE.REMOTE_TAB) {
+      if (state.addedRemoteTabUrls.has(result.payload.url)) {
+        return false;
+      }
+      let maybeDupeType = state.urlToTabResultType.get(result.payload.url);
+      if (maybeDupeType == UrlbarUtils.RESULT_TYPE.TAB_SWITCH) {
+        return false;
+      }
+    }
+
+    
+    if (
+      !result.heuristic &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL &&
+      result.payload.url &&
+      state.urlToTabResultType.has(result.payload.url)
+    ) {
+      return false;
+    }
+
+    
+    
     if (
       result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
       result.type == UrlbarUtils.RESULT_TYPE.URL
@@ -650,6 +676,17 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    if (
+      result.payload.url &&
+      (result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH ||
+        (result.type == UrlbarUtils.RESULT_TYPE.REMOTE_TAB &&
+          !state.urlToTabResultType.has(result.payload.url)))
+    ) {
+      
+      state.urlToTabResultType.set(result.payload.url, result.type);
+    }
+
+    
     
     
     if (
@@ -729,6 +766,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           result.payload.engine
         );
       }
+    }
+
+    
+    
+    
+    if (result.type == UrlbarUtils.RESULT_TYPE.REMOTE_TAB) {
+      state.addedRemoteTabUrls.add(result.payload.url);
     }
   }
 
