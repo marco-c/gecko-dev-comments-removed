@@ -223,8 +223,7 @@ function createLibraryMap(sharedLibraries) {
 
 
 
-function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
-  const sharedLibraries = sharedLibrariesFromProfile(profile);
+function createMultiModalGetSymbolTableFn(sharedLibraries, objdirs, perfFront) {
   const libraryGetter = createLibraryMap(sharedLibraries);
 
   return async function getSymbolTable(debugName, breakpadId) {
@@ -294,6 +293,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
 
 module.exports = {
   openProfilerAndDisplayProfile,
+  sharedLibrariesFromProfile,
   createMultiModalGetSymbolTableFn,
   restartBrowserWithEnvironmentVariable,
   getEnvironmentVariable,
