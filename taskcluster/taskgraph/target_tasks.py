@@ -792,7 +792,7 @@ def target_tasks_live_site_perf_testing(full_task_graph, parameters, graph_confi
                 return False
 
         
-        if "windows7" in platform:
+        if "windows7" in platform or "windows10-32" in platform:
             return False
 
         for test in LIVE_SITES:
@@ -834,7 +834,7 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             return False
 
         
-        if "windows7" in platform:
+        if "windows7" in platform or "windows10-32":
             return False
 
         
