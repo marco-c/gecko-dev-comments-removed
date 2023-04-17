@@ -8,6 +8,14 @@ requestLongerTimeout(4);
 
 loadTestSubscript("head_devtools.js");
 
+
+
+
+
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to/
+);
+
 const TEST_ORIGIN = "http://mochi.test:8888";
 const TEST_BASE = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
