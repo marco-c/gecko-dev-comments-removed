@@ -105,19 +105,15 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         CACHE_TRY(ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                               true,
                                               false))
-#ifdef WIN32
                       .orElse([](const nsresult rv) -> Result<Ok, nsresult> {
                         
                         
-                        if (NS_ERROR_GET_MODULE(rv) == NS_ERROR_MODULE_WIN32 &&
-                            NS_ERROR_GET_CODE(rv) == ERROR_FILE_CORRUPT) {
+                        if (rv == NS_ERROR_FILE_FS_CORRUPTED) {
                           return Ok{};
                         }
 
                         return Err(rv);
-                      })
-#endif
-        );
+                      }));
         return usageInfo;
       }));
 }
