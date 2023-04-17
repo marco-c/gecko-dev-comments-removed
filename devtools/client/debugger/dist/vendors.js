@@ -4,14 +4,14 @@
  
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-dom"));
+		module.exports = factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-dom"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react-dom-factories", "devtools/client/shared/vendor/react", "devtools/client/shared/vendor/react-dom"], factory);
+		define(["devtools/client/shared/vendor/react-prop-types", "devtools/client/shared/vendor/react", "devtools/client/shared/vendor/react-dom"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react-dom-factories"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-dom")) : factory(root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react-dom-factories"], root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/react-dom"]);
+		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react-prop-types"), require("devtools/client/shared/vendor/react"), require("devtools/client/shared/vendor/react-dom")) : factory(root["devtools/client/shared/vendor/react-prop-types"], root["devtools/client/shared/vendor/react"], root["devtools/client/shared/vendor/react-dom"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_112__) {
+})(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_112__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -83,13 +83,6 @@ return  (function(modules) {
  (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
-
- }),
-
- 1:
- (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
  }),
 
@@ -1294,8 +1287,6 @@ var reactAriaComponentsTabs = _interopRequireWildcard(__webpack_require__(937));
 
 var _classnames = _interopRequireDefault(__webpack_require__(943));
 
-var _devtoolsSplitter = _interopRequireDefault(__webpack_require__(944));
-
 var _lodashMove = _interopRequireDefault(__webpack_require__(948));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -1326,7 +1317,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 const vendored = {
   classnames: _classnames.default,
-  "devtools-splitter": _devtoolsSplitter.default,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,
   "lodash-move": _lodashMove.default,
@@ -2780,391 +2770,6 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- 944:
- (function(module, exports, __webpack_require__) {
-
-
-
-
-const SplitBox = __webpack_require__(945);
-
-module.exports = SplitBox;
-
- }),
-
- 945:
- (function(module, exports, __webpack_require__) {
-
-
-
-
-const React = __webpack_require__(6);
-
-const ReactDOM = __webpack_require__(112);
-
-const Draggable = React.createFactory(__webpack_require__(946));
-const {
-  Component
-} = React;
-
-const PropTypes = __webpack_require__(0);
-
-const dom = __webpack_require__(1);
-
-__webpack_require__(959);
-
-
-
-
-
-
-class SplitBox extends Component {
-  static get propTypes() {
-    return {
-      
-      className: PropTypes.string,
-      
-      initialSize: PropTypes.any,
-      
-      initialWidth: PropTypes.number,
-      
-      initialHeight: PropTypes.number,
-      
-      startPanel: PropTypes.any,
-      
-      startPanelCollapsed: PropTypes.bool,
-      
-      minSize: PropTypes.any,
-      
-      maxSize: PropTypes.any,
-      
-      endPanel: PropTypes.any,
-      
-      endPanelCollapsed: PropTypes.bool,
-      
-      endPanelControl: PropTypes.bool,
-      
-      splitterSize: PropTypes.number,
-      
-      vert: PropTypes.bool,
-      
-      style: PropTypes.object,
-      
-      onResizeEnd: PropTypes.func
-    };
-  }
-
-  static get defaultProps() {
-    return {
-      splitterSize: 5,
-      vert: true,
-      endPanelControl: false,
-      endPanelCollapsed: false,
-      startPanelCollapsed: false
-    };
-  }
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      vert: props.vert,
-      
-      width: parseInt(props.initialWidth || props.initialSize, 10),
-      height: parseInt(props.initialHeight || props.initialSize, 10)
-    };
-    this.onStartMove = this.onStartMove.bind(this);
-    this.onStopMove = this.onStopMove.bind(this);
-    this.onMove = this.onMove.bind(this);
-    this.preparePanelStyles = this.preparePanelStyles.bind(this);
-  }
-
-  componentWillReceiveProps(nextProps) {
-    if (this.props.vert !== nextProps.vert) {
-      this.setState({
-        vert: nextProps.vert
-      });
-    }
-
-    if (this.props.initialSize !== nextProps.initialSize || this.props.initialWidth !== nextProps.initialWidth || this.props.initialHeight !== nextProps.initialHeight) {
-      this.setState({
-        width: parseInt(nextProps.initialWidth || nextProps.initialSize, 10),
-        height: parseInt(nextProps.initialHeight || nextProps.initialSize, 10)
-      });
-    }
-  } 
-
-  
-
-
-
-
-
-
-  onStartMove() {
-    const splitBox = ReactDOM.findDOMNode(this);
-    const doc = splitBox.ownerDocument;
-    const defaultCursor = doc.documentElement.style.cursor;
-    doc.documentElement.style.cursor = this.state.vert ? "ew-resize" : "ns-resize";
-    splitBox.classList.add("dragging");
-    document.dispatchEvent(new CustomEvent("drag:start"));
-    this.setState({
-      defaultCursor: defaultCursor
-    });
-  }
-
-  onStopMove() {
-    const splitBox = ReactDOM.findDOMNode(this);
-    const doc = splitBox.ownerDocument;
-    doc.documentElement.style.cursor = this.state.defaultCursor;
-    splitBox.classList.remove("dragging");
-    document.dispatchEvent(new CustomEvent("drag:end"));
-
-    if (this.props.onResizeEnd) {
-      this.props.onResizeEnd(this.state.vert ? this.state.width : this.state.height);
-    }
-  }
-  
-
-
-
-
-
-
-  onMove({
-    clientX,
-    movementY
-  }) {
-    const node = ReactDOM.findDOMNode(this);
-    const doc = node.ownerDocument;
-    let targetWidth;
-
-    if (this.props.endPanelControl) {
-      
-      
-      targetWidth = node.clientWidth - clientX;
-      movementY = -movementY;
-    } else {
-      targetWidth = this.calcStartPanelWidth({
-        node,
-        clientX,
-        doc
-      });
-    }
-
-    if (this.state.vert) {
-      const isRtl = doc.dir === "rtl";
-
-      if (isRtl && this.props.endPanelControl) {
-        
-        
-        const fullWidth = node.clientWidth + node.offsetLeft;
-        targetWidth = fullWidth - targetWidth;
-      }
-
-      this.setState((state, props) => ({
-        width: targetWidth
-      }));
-    } else {
-      this.setState((state, props) => ({
-        height: state.height + movementY
-      }));
-    }
-  }
-
-  calcStartPanelWidth(options) {
-    const {
-      node,
-      clientX,
-      doc
-    } = options;
-    const availableWidth = node.clientWidth;
-    const maxSize = parseInt(this.props.maxSize, 10) / 100;
-    const maxPossibleWidth = Math.ceil(availableWidth * maxSize);
-
-    if (doc.dir === "rtl") {
-      const fullWidth = node.clientWidth + node.offsetLeft;
-      const targetWidth = fullWidth - clientX;
-      return targetWidth > maxPossibleWidth ? maxPossibleWidth : targetWidth;
-    }
-
-    return clientX > maxPossibleWidth ? maxPossibleWidth : clientX;
-  } 
-
-
-  preparePanelStyles() {
-    const vert = this.state.vert;
-    const {
-      minSize,
-      maxSize,
-      startPanelCollapsed,
-      endPanelControl,
-      endPanelCollapsed
-    } = this.props;
-    let leftPanelStyle, rightPanelStyle; 
-
-    if (vert) {
-      const startWidth = endPanelControl ? null : this.state.width,
-            endWidth = endPanelControl ? this.state.width : null;
-      leftPanelStyle = {
-        maxWidth: endPanelControl ? null : maxSize,
-        minWidth: endPanelControl ? null : minSize,
-        width: startPanelCollapsed ? 0 : startWidth
-      };
-      rightPanelStyle = {
-        maxWidth: endPanelControl ? maxSize : null,
-        minWidth: endPanelControl ? minSize : null,
-        width: endPanelCollapsed ? 0 : endWidth
-      };
-    } else {
-      const startHeight = endPanelControl ? null : this.state.height,
-            endHeight = endPanelControl ? this.state.height : null;
-      leftPanelStyle = {
-        maxHeight: endPanelControl ? null : maxSize,
-        minHeight: endPanelControl ? null : minSize,
-        height: endPanelCollapsed ? maxSize : startHeight
-      };
-      rightPanelStyle = {
-        maxHeight: endPanelControl ? maxSize : null,
-        minHeight: endPanelControl ? minSize : null,
-        height: startPanelCollapsed ? maxSize : endHeight
-      };
-    }
-
-    return {
-      leftPanelStyle,
-      rightPanelStyle
-    };
-  }
-
-  render() {
-    const vert = this.state.vert;
-    const {
-      startPanelCollapsed,
-      startPanel,
-      endPanel,
-      endPanelControl,
-      splitterSize,
-      endPanelCollapsed
-    } = this.props;
-    const style = Object.assign({}, this.props.style); 
-
-    let classNames = ["split-box"];
-    classNames.push(vert ? "vert" : "horz");
-
-    if (this.props.className) {
-      classNames = classNames.concat(this.props.className.split(" "));
-    }
-
-    const {
-      leftPanelStyle,
-      rightPanelStyle
-    } = this.preparePanelStyles(); 
-
-    const splitterStyle = {
-      flex: `0 0 ${splitterSize}px`
-    };
-    return dom.div({
-      className: classNames.join(" "),
-      style: style
-    }, !startPanelCollapsed ? dom.div({
-      className: endPanelControl ? "uncontrolled" : "controlled",
-      style: leftPanelStyle
-    }, startPanel) : null, Draggable({
-      className: "splitter",
-      style: splitterStyle,
-      onStart: this.onStartMove,
-      onStop: this.onStopMove,
-      onMove: this.onMove
-    }), !endPanelCollapsed ? dom.div({
-      className: endPanelControl ? "controlled" : "uncontrolled",
-      style: rightPanelStyle
-    }, endPanel) : null);
-  }
-
-}
-
-module.exports = SplitBox;
-
- }),
-
- 946:
- (function(module, exports, __webpack_require__) {
-
-
-
-
-const React = __webpack_require__(6);
-
-const ReactDOM = __webpack_require__(112);
-
-const {
-  Component
-} = React;
-
-const PropTypes = __webpack_require__(0);
-
-const dom = __webpack_require__(1);
-
-class Draggable extends Component {
-  static get propTypes() {
-    return {
-      onMove: PropTypes.func.isRequired,
-      onStart: PropTypes.func,
-      onStop: PropTypes.func,
-      style: PropTypes.object,
-      className: PropTypes.string
-    };
-  }
-
-  constructor(props) {
-    super(props);
-    this.startDragging = this.startDragging.bind(this);
-    this.onMove = this.onMove.bind(this);
-    this.onUp = this.onUp.bind(this);
-  }
-
-  startDragging(ev) {
-    ev.preventDefault();
-    const doc = ReactDOM.findDOMNode(this).ownerDocument;
-    doc.addEventListener("mousemove", this.onMove);
-    doc.addEventListener("mouseup", this.onUp);
-    this.props.onStart && this.props.onStart();
-  }
-
-  onMove(ev) {
-    ev.preventDefault(); 
-
-    if (!ev.target.tagName) {
-      return;
-    } 
-    
-
-
-    this.props.onMove(ev);
-  }
-
-  onUp(ev) {
-    ev.preventDefault();
-    const doc = ReactDOM.findDOMNode(this).ownerDocument;
-    doc.removeEventListener("mousemove", this.onMove);
-    doc.removeEventListener("mouseup", this.onUp);
-    this.props.onStop && this.props.onStop();
-  }
-
-  render() {
-    return dom.div({
-      style: this.props.style,
-      className: this.props.className,
-      onMouseDown: this.startDragging
-    });
-  }
-
-}
-
-module.exports = Draggable;
-
- }),
-
  948:
  (function(module, exports, __webpack_require__) {
 
@@ -3211,13 +2816,6 @@ function move(array, moveIndex, toIndex) {
  }),
 
  958:
- (function(module, exports) {
-
-
-
- }),
-
- 959:
  (function(module, exports) {
 
 
