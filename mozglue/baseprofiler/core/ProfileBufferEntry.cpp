@@ -624,7 +624,7 @@ int ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
           
           
           unsigned long long pcULL = (unsigned long long)(uintptr_t)pc;
-          SprintfLiteral(buf, "%#llx", pcULL);
+          SprintfLiteral(buf, "0x%llx", pcULL);
 
           
           
