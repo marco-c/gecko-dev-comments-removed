@@ -34,6 +34,7 @@
 #include "js/AllocationLogging.h"  
 #include "js/Date.h"
 #include "js/friend/ErrorMessages.h"  
+#include "js/Interrupt.h"
 #include "js/MemoryMetrics.h"
 #include "js/SliceBudget.h"
 #include "js/Wrapper.h"

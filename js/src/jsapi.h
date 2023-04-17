@@ -40,6 +40,7 @@
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/Id.h"
+#include "js/Interrupt.h"
 #include "js/MapAndSet.h"
 #include "js/MemoryCallbacks.h"
 #include "js/MemoryFunctions.h"
@@ -97,12 +98,6 @@ using ScriptVector = JS::GCVector<JSScript*>;
 using StringVector = JS::GCVector<JSString*>;
 
 } 
-
-
-
-
-
-using JSInterruptCallback = bool (*)(JSContext*);
 
 
 
@@ -744,32 +739,6 @@ extern JS_PUBLIC_API JSString* JS_DecompileScript(JSContext* cx,
 
 extern JS_PUBLIC_API JSString* JS_DecompileFunction(
     JSContext* cx, JS::Handle<JSFunction*> fun);
-
-extern JS_PUBLIC_API bool JS_CheckForInterrupt(JSContext* cx);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool JS_AddInterruptCallback(JSContext* cx,
-                                                  JSInterruptCallback callback);
-
-extern JS_PUBLIC_API bool JS_DisableInterruptCallback(JSContext* cx);
-
-extern JS_PUBLIC_API void JS_ResetInterruptCallback(JSContext* cx, bool enable);
-
-extern JS_PUBLIC_API void JS_RequestInterruptCallback(JSContext* cx);
-
-extern JS_PUBLIC_API void JS_RequestInterruptCallbackCanWait(JSContext* cx);
 
 namespace JS {
 

@@ -76,6 +76,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/WindowProxy.h"    
 #include "js/HashTable.h"
+#include "js/Interrupt.h"
 #include "js/LocaleSensitive.h"
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/Printf.h"

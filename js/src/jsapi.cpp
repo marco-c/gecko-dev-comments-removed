@@ -49,6 +49,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Initialization.h"
+#include "js/Interrupt.h"
 #include "js/JSON.h"
 #include "js/LocaleSensitive.h"
 #include "js/MemoryCallbacks.h"
