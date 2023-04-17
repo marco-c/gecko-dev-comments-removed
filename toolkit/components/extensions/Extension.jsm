@@ -1076,9 +1076,9 @@ class ExtensionData {
         }
 
         
-        
-        
-        permissions.add(perm);
+        if (!type.origin || perm === "<all_urls>") {
+          permissions.add(perm);
+        }
       }
 
       if (this.id) {
