@@ -45,7 +45,7 @@ function test() {
           "The closed window was added to Recently Closed Windows"
         );
 
-        let data = SessionStore.getClosedWindowData(false);
+        let data = SessionStore.getClosedWindowData();
 
         
         is(

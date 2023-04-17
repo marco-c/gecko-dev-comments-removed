@@ -199,7 +199,7 @@ add_task(async function() {
   await ForgetAboutSite.removeDataFromDomain("mozilla.org");
   await clearHistoryPromise;
 
-  let closedWindowData = JSON.parse(ss.getClosedWindowData());
+  let closedWindowData = ss.getClosedWindowData();
 
   
   let win = closedWindowData[0];

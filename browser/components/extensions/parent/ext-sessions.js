@@ -27,7 +27,7 @@ const getRecentlyClosed = (maxResults, extension) => {
   
   
   
-  let closedWindowData = SessionStore.getClosedWindowData(false);
+  let closedWindowData = SessionStore.getClosedWindowData();
   for (let window of closedWindowData) {
     recentlyClosed.push({
       lastModified: window.closedAt,
@@ -142,7 +142,7 @@ this.sessions = class extends ExtensionAPI {
 
         async forgetClosedWindow(sessionId) {
           await SessionStore.promiseInitialized;
-          let closedWindowData = SessionStore.getClosedWindowData(false);
+          let closedWindowData = SessionStore.getClosedWindowData();
 
           let closedWindowIndex = closedWindowData.findIndex(closedWindow => {
             return closedWindow.closedId === parseInt(sessionId, 10);
