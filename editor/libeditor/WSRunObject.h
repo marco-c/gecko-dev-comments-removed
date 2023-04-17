@@ -430,7 +430,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
   template <typename EditorDOMPointType>
   MOZ_NEVER_INLINE_DEBUG static dom::HTMLBRElement*
   GetPrecedingBRElementUnlessVisibleContentFound(
-      const HTMLEditor& aHTMLEditor, const EditorDOMPointType& aPoint) {
+      dom::Element* aEditingHost, const EditorDOMPointType& aPoint) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     
     
@@ -444,8 +444,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
     }
     
     
-    TextFragmentData textFragmentData(aPoint,
-                                      aHTMLEditor.GetActiveEditingHost());
+    TextFragmentData textFragmentData(aPoint, aEditingHost);
     return textFragmentData.StartsFromBRElement()
                ? textFragmentData.StartReasonBRElementPtr()
                : nullptr;

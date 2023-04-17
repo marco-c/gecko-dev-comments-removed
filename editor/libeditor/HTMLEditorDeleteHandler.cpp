@@ -4291,7 +4291,8 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
       mRightBlockElement) {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor, EditorDOMPoint::AtEndOf(mLeftBlockElement));
+            aHTMLEditor.GetActiveEditingHost(),
+            EditorDOMPoint::AtEndOf(mLeftBlockElement));
     
     
     
@@ -4318,7 +4319,8 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
              mLeftBlockElement) {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor, mPointContainingTheOtherBlockElement);
+            aHTMLEditor.GetActiveEditingHost(),
+            mPointContainingTheOtherBlockElement);
     
     
     
@@ -4352,7 +4354,8 @@ Result<bool, nsresult> HTMLEditor::AutoDeleteRangesHandler::
   } else {
     mPrecedingInvisibleBRElement =
         WSRunScanner::GetPrecedingBRElementUnlessVisibleContentFound(
-            aHTMLEditor, EditorDOMPoint::AtEndOf(mLeftBlockElement));
+            aHTMLEditor.GetActiveEditingHost(),
+            EditorDOMPoint::AtEndOf(mLeftBlockElement));
     
     
     
