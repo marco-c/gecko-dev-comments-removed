@@ -188,7 +188,7 @@ parent:
   
   
   
-  async UpdateBFCacheStatus(uint16_t aOnFlags, uint16_t aOffFlags);
+  async UpdateBFCacheStatus(uint32_t aOnFlags, uint32_t aOffFlags);
 
   
 
