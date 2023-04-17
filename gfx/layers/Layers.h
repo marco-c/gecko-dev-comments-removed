@@ -154,12 +154,6 @@ class Layer {
 
 
     CONTENT_EXTEND_3D_CONTEXT = 0x08,
-    
-
-
-
-
-    CONTENT_MAY_CHANGE_TRANSFORM = 0x10,
 
     
 
@@ -1020,17 +1014,6 @@ class Layer {
   void MutatedSimple() { mManager->MutatedSimple(this); }
 
   virtual int32_t GetMaxLayerSize() { return Manager()->GetMaxTextureSize(); }
-
-  
-
-
-
-
-
-
-
-
-  bool MayResample();
 
   RenderTargetRect TransformRectToRenderTarget(const LayerIntRect& aRect);
 
