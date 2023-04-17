@@ -13,7 +13,7 @@ use std::u32;
 use time::precise_time_ns;
 
 use crate::api::channel::{Sender, single_msg_channel, unbounded_channel};
-use crate::api::{ColorF, BuiltDisplayList, IdNamespace, ExternalScrollId};
+use crate::api::{ColorF, BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, BoolParameter};
 use crate::api::{SharedFontInstanceMap, FontKey, FontInstanceKey, NativeFontHandle};
 use crate::api::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey, Epoch, QualitySettings};
 use crate::api::{BlobImageParams, BlobImageRequest, BlobImageResult, AsyncBlobImageRasterizer, BlobImageHandler};
@@ -905,8 +905,6 @@ pub enum DebugCommand {
     
     EnableNativeCompositor(bool),
     
-    EnableMultithreading(bool),
-    
     SetBatchingLookback(u32),
     
     InvalidateGpuCache,
@@ -1357,13 +1355,20 @@ impl RenderApi {
     }
 
     
-    pub fn send_debug_cmd(&mut self, cmd: DebugCommand) {
-        if let DebugCommand::EnableMultithreading(enable) = cmd {
-            
-            self.resources.enable_multithreading(enable);
-        }
+    pub fn send_debug_cmd(&self, cmd: DebugCommand) {
         let msg = ApiMsg::DebugCommand(cmd);
         self.send_message(msg);
+    }
+
+    
+    pub fn set_parameter(&mut self, parameter: Parameter) {
+        if let Parameter::Bool(BoolParameter::Multithreading, enabled) = parameter {
+            self.resources.enable_multithreading(enabled);
+        }
+
+        let _ = self.low_priority_scene_sender.send(
+            SceneBuilderRequest::SetParameter(parameter)
+        );
     }
 }
 

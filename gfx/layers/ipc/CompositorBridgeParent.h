@@ -616,12 +616,12 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-  static void UpdateWebRenderMultithreading();
+  static void UpdateWebRenderParameters();
 
   
 
 
-  static void UpdateWebRenderParameters();
+  static void UpdateWebRenderBoolParameters();
 
   
 

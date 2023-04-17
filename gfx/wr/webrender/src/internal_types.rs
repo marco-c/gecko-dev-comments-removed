@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags};
+use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags, Parameter};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOp, ImageBufferKind};
 use api::units::*;
 use api;
@@ -548,6 +548,7 @@ pub enum ResultMsg {
         ResourceUpdateList,
     ),
     AppendNotificationRequests(Vec<NotificationRequest>),
+    SetParameter(Parameter),
     ForceRedraw,
 }
 
