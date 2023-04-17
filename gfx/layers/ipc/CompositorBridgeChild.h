@@ -200,14 +200,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   wr::PipelineId GetNextPipelineId();
 
-  
-  
-  
-  
-  
-  
-  bool NotifyBeginAsyncEndLayerTransaction(SyncObjectClient* aSyncObject);
-
  private:
   
   virtual ~CompositorBridgeChild();
@@ -285,15 +277,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   size_t mTotalAsyncPaints;
   TimeStamp mAsyncTransactionBegin;
-
-  
-  
-  
-  size_t mOutstandingAsyncPaints;
-
-  
-  bool mOutstandingAsyncEndTransaction;
-  RefPtr<SyncObjectClient> mOutstandingAsyncSyncObject;
 
   
   
