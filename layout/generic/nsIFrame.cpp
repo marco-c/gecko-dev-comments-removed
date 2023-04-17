@@ -6307,7 +6307,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     
-    MOZ_ASSERT(!IsFrameOfType(eReplaced),
+    MOZ_ASSERT(!IsFrameOfType(eReplacedSizing),
                "aspect-ratio minimums should not apply to replaced elements");
     
     

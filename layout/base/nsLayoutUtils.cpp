@@ -5065,6 +5065,9 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
         }
 
         if (MOZ_UNLIKELY(aFlags & nsLayoutUtils::MIN_INTRINSIC_ISIZE) &&
+            
+            
+            
             aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
           
           
