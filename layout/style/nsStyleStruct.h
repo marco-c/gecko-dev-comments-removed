@@ -908,7 +908,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleRubyPosition mRubyPosition;
   mozilla::StyleTextSizeAdjust mTextSizeAdjust;
   uint8_t mTextCombineUpright;  
-  mozilla::StyleControlCharacterVisibility mControlCharacterVisibility;
+  mozilla::StyleMozControlCharacterVisibility mMozControlCharacterVisibility;
   uint8_t mTextEmphasisPosition;  
   mozilla::StyleTextRendering mTextRendering;
   mozilla::StyleColor mTextEmphasisColor;

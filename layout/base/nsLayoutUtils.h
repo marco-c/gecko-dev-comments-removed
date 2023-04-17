@@ -2885,11 +2885,6 @@ class nsLayoutUtils {
 
   
   
-  static mozilla::StyleControlCharacterVisibility
-  ControlCharVisibilityDefault();
-
-  
-  
   static already_AddRefed<nsFontMetrics> GetMetricsFor(
       nsPresContext* aPresContext, bool aIsVertical,
       const nsStyleFont* aStyleFont, mozilla::Length aFontSize,
