@@ -80,16 +80,21 @@
 
 
 
+
+
+
+
+
+
+
+
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/ryu/1.0.2")]
+#![doc(html_root_url = "https://docs.rs/ryu/1.0.5")]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(cast_lossless, many_single_char_names, unreadable_literal,)
 )]
-
-#[cfg(feature = "no-panic")]
-extern crate no_panic;
 
 mod buffer;
 mod common;
@@ -101,11 +106,12 @@ mod d2s_intrinsics;
 mod d2s_small_table;
 mod digit_table;
 mod f2s;
+mod f2s_intrinsics;
 mod pretty;
 
-pub use buffer::{Buffer, Float};
+pub use crate::buffer::{Buffer, Float};
 
 
 pub mod raw {
-    pub use pretty::{format32, format64};
+    pub use crate::pretty::{format32, format64};
 }
