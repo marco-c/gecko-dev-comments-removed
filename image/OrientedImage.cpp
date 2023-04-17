@@ -185,7 +185,8 @@ OrientedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
 NS_IMETHODIMP_(ImgDrawResult)
 OrientedImage::GetImageContainerAtSize(
     layers::LayerManager* aManager, const gfx::IntSize& aSize,
-    const Maybe<SVGImageContext>& aSVGContext, uint32_t aFlags,
+    const Maybe<SVGImageContext>& aSVGContext,
+    const Maybe<ImageIntRegion>& aRegion, uint32_t aFlags,
     layers::ImageContainer** aOutContainer) {
   
   
@@ -194,8 +195,8 @@ OrientedImage::GetImageContainerAtSize(
   
 
   if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aSVGContext,
-                                                 aFlags, aOutContainer);
+    return InnerImage()->GetImageContainerAtSize(
+        aManager, aSize, aSVGContext, aRegion, aFlags, aOutContainer);
   }
 
   return ImgDrawResult::NOT_SUPPORTED;
