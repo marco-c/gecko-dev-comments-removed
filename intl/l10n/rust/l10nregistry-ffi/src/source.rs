@@ -156,7 +156,13 @@ pub extern "C" fn l10nfilesource_new_mock(
         .map(|mock| (mock.path.to_string(), mock.source.to_string()))
         .collect();
     let fetcher = MockFileFetcher::new(fs);
-    let mut source = FileSource::new(name.to_string(), locales, pre_path.to_string(), Default::default(), fetcher);
+    let mut source = FileSource::new(
+        name.to_string(),
+        locales,
+        pre_path.to_string(),
+        Default::default(),
+        fetcher,
+    );
     source.set_reporter(GeckoEnvironment);
 
     *status = L10nFileSourceStatus::None;
@@ -263,10 +269,7 @@ pub extern "C" fn l10nfilesource_fetch_file_sync(
     };
 
     *status = L10nFileSourceStatus::None;
-    
-    
-    
-    if let Some(res) = source.fetch_file_sync(&locale, &path.to_utf8(),  true) {
+    if let Some(res) = source.fetch_file_sync(&locale, &path.to_utf8(), false) {
         Rc::into_raw(res)
     } else {
         std::ptr::null()
