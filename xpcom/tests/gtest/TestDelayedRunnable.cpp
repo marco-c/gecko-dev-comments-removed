@@ -7,6 +7,7 @@
 #include "mozilla/DelayedRunnable.h"
 
 #include "gtest/gtest.h"
+#include "MediaTimer.h"
 #include "mozilla/media/MediaUtils.h"
 #include "VideoUtils.h"
 
@@ -101,4 +102,39 @@ TEST(DelayedRunnable, nsThreadShutdownTask)
   
   nsIThread* t = thread.forget().take();
   Unused << t;
+}
+
+TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
+{
+  RefPtr<SharedThreadPool> pool = SharedThreadPool::Get("Test Pool"_ns);
+  auto tailTaskQueue1 = MakeRefPtr<TaskQueue>(
+      do_AddRef(pool),  true);
+  auto tailTaskQueue2 = MakeRefPtr<TaskQueue>(
+      do_AddRef(pool),  true);
+  auto noTailTaskQueue = MakeRefPtr<TaskQueue>(
+      do_AddRef(pool),  false);
+  Monitor monitor(__func__);
+  MonitorAutoLock lock(monitor);
+  MOZ_ALWAYS_SUCCEEDS(
+      tailTaskQueue1->Dispatch(NS_NewRunnableFunction(__func__, [&] {
+        
+        
+        
+        EXPECT_TRUE(tailTaskQueue1->RequiresTailDispatch(tailTaskQueue2));
+        tailTaskQueue2->DelayedDispatch(
+            NS_NewRunnableFunction(__func__, [&] {}), 1);
+        MonitorAutoLock lock(monitor);
+        auto timer = MakeRefPtr<MediaTimer>();
+        timer->WaitFor(TimeDuration::FromMilliseconds(1), __func__)
+            ->Then(noTailTaskQueue, __func__, [&] {
+              MonitorAutoLock lock(monitor);
+              monitor.NotifyAll();
+            });
+        
+        
+        
+        monitor.Wait();
+      })));
+  
+  monitor.Wait();
 }
