@@ -52,12 +52,10 @@ class ReverbAccumulationBuffer {
   
   
   
-  
-  int accumulate(const float* source, size_t numberOfFrames, int* readIndex,
-                 size_t delayFrames);
+  void accumulate(const float* source, size_t numberOfFrames, size_t* readIndex,
+                  size_t delayFrames);
 
   size_t readIndex() const { return m_readIndex; }
-  void updateReadIndex(int* readIndex, size_t numberOfFrames) const;
 
   size_t readTimeFrame() const { return m_readTimeFrame; }
 
