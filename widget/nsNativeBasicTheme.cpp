@@ -160,6 +160,40 @@ ColorPalette::ColorPalette(nscolor aAccent, nscolor aForeground) {
   mAccentDarker = sRGBColor::FromABGR(GetDarker(aAccent));
 }
 
+static nscolor ComputeCustomAccentForeground(nscolor aColor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const float luminance = RelativeLuminanceUtils::Compute(aColor);
+
+  
+  
+  const float ratioWithWhite = 1.05f / (luminance + 0.05f);
+  const bool canBeWhite =
+      ratioWithWhite >=
+      StaticPrefs::layout_css_accent_color_min_contrast_ratio();
+  if (canBeWhite) {
+    return NS_RGB(0xff, 0xff, 0xff);
+  }
+  const float targetRatio =
+      StaticPrefs::layout_css_accent_color_darkening_target_contrast_ratio();
+  const float targetLuminance = (luminance + 0.05f) / targetRatio - 0.05f;
+  return RelativeLuminanceUtils::Adjust(aColor, targetLuminance);
+}
+
 }  
 
 class nsNativeBasicTheme::AccentColor {
@@ -189,12 +223,7 @@ class nsNativeBasicTheme::AccentColor {
     if (!mAccentColor) {
       return sDefaultPalette.mForeground;
     }
-    
-    
-    
-    
-    return nsNativeTheme::IsDarkColor(*mAccentColor) ? sColorWhite
-                                                     : sColorBlack;
+    return sRGBColor::FromABGR(ComputeCustomAccentForeground(*mAccentColor));
   }
 
   sRGBColor GetLight() const {
