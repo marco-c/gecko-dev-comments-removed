@@ -316,6 +316,11 @@ Download.prototype = {
   
 
 
+  _launchedFromPanel: false,
+
+  
+
+
 
 
 
@@ -771,6 +776,10 @@ Download.prototype = {
       return Promise.reject(
         new Error("launch can only be called if the download succeeded")
       );
+    }
+
+    if (this._launchedFromPanel) {
+      Services.telemetry.scalarAdd("downloads.file_opened", 1);
     }
 
     return DownloadIntegration.launchDownload(this, options);

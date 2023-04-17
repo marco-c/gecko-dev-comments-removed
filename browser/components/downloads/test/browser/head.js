@@ -102,11 +102,21 @@ function continueResponses() {
 
 
 function promiseInterruptibleDownload() {
-  let interruptibleFile = FileUtils.getFile("TmpD", ["interruptible.file"]);
+  let interruptibleFile = FileUtils.getFile("TmpD", ["interruptible.txt"]);
   interruptibleFile.createUnique(
     Ci.nsIFile.NORMAL_FILE_TYPE,
     FileUtils.PERMS_FILE
   );
+
+  registerCleanupFunction(async () => {
+    if (IOUtils.exists(interruptibleFile.path)) {
+      if (Services.appinfo.OS === "WINNT") {
+        
+        await IOUtils.setPermissions(interruptibleFile.path, 0o600);
+      }
+      await IOUtils.remove(interruptibleFile.path);
+    }
+  });
 
   return Downloads.createDownload({
     source: httpUrl("interruptible.txt"),
