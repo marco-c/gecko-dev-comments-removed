@@ -1471,34 +1471,31 @@ impl ShorthandId {
     
     
     
-    pub fn longhands_to_css<W>(
+    pub fn longhands_to_css(
         &self,
         declarations: &[&PropertyDeclaration],
-        dest: &mut CssWriter<W>,
-    ) -> fmt::Result
-    where
-        W: Write,
-    {
-        
-        
-        let declarations = declarations.iter().cloned();
-        match *self {
-            ShorthandId::All => {
-                
-                
-                
-                
-                Ok(())
-            }
-            % for property in data.shorthands_except_all():
-                ShorthandId::${property.camel_case} => {
-                    match shorthands::${property.ident}::LonghandsToSerialize::from_iter(declarations) {
-                        Ok(longhands) => longhands.to_css(dest),
-                        Err(_) => Ok(())
-                    }
-                },
-            % endfor
+        dest: &mut CssStringWriter,
+    ) -> fmt::Result {
+        type LonghandsToCssFn = for<'a, 'b> fn(&'a [&'b PropertyDeclaration], &mut CssStringWriter) -> fmt::Result;
+        fn all_to_css(_: &[&PropertyDeclaration], _: &mut CssStringWriter) -> fmt::Result {
+            
+            
+            
+            
+            Ok(())
         }
+
+        static LONGHANDS_TO_CSS: [LonghandsToCssFn; ${len(data.shorthands)}] = [
+            % for shorthand in data.shorthands:
+            % if shorthand.ident == "all":
+                all_to_css,
+            % else:
+                shorthands::${shorthand.ident}::to_css,
+            % endif
+            % endfor
+        ];
+
+        LONGHANDS_TO_CSS[*self as usize](declarations, dest)
     }
 
     
@@ -1591,23 +1588,20 @@ impl ShorthandId {
             input: &mut Parser<'i, 't>,
         ) -> Result<(), ParseError<'i>>;
 
-        fn unreachable<'i, 't>(
+        fn parse_all<'i, 't>(
             _: &mut SourcePropertyDeclaration,
             _: &ParserContext,
-            _: &mut Parser<'i, 't>
+            input: &mut Parser<'i, 't>
         ) -> Result<(), ParseError<'i>> {
-            unreachable!()
+            
+            Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
         }
 
-        
-        if *self == ShorthandId::All {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
 
         static PARSE_INTO: [ParseIntoFn; ${len(data.shorthands)}] = [
             % for shorthand in data.shorthands:
             % if shorthand.ident == "all":
-            unreachable,
+            parse_all,
             % else:
             shorthands::${shorthand.ident}::parse_into,
             % endif
