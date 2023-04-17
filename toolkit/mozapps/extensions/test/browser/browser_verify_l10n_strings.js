@@ -2,6 +2,12 @@
 
 
 
+
+
+const updatedAddonFluentIds = new Map([
+  ["extension-default-theme-name", "extension-default-theme-name-auto"],
+]);
+
 add_task(async function test_ensure_bundled_addons_are_localized() {
   let l10nReg = L10nRegistry.getInstance();
   let bundles = l10nReg.generateBundlesSync(
@@ -22,13 +28,14 @@ add_task(async function test_ensure_bundled_addons_are_localized() {
 
   for (let themeAddon of themeAddons) {
     let l10nId = themeAddon.id.replace("@mozilla.org", "");
-    ok(
-      bundle.hasMessage(`extension-${l10nId}-name`),
-      `l10n id for ${themeAddon.id} \"name\" attribute should exist`
-    );
-    ok(
-      bundle.hasMessage(`extension-${l10nId}-description`),
-      `l10n id for ${themeAddon.id} \"description\" attribute should exist`
-    );
+    for (let prop of ["name", "description"]) {
+      let defaultFluentId = `extension-${l10nId}-${prop}`;
+      let fluentId =
+        updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
+      ok(
+        bundle.hasMessage(fluentId),
+        `l10n id for ${themeAddon.id} \"${prop}\" attribute should exist`
+      );
+    }
   }
 });
