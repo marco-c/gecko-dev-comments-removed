@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include <string.h>
+#include <string_view>
 #include "mozilla/intl/Collator.h"
 #include "mozilla/Span.h"
 #include "TestBuffer.h"
@@ -291,6 +292,32 @@ TEST(IntlCollator, GetBcp47KeywordValues)
   ASSERT_TRUE(hasPhonebk);
 
   ASSERT_FALSE(hasPhonebook);  
+}
+
+TEST(IntlCollator, GetAvailableLocales)
+{
+  using namespace std::literals;
+
+  int32_t english = 0;
+  int32_t german = 0;
+  int32_t chinese = 0;
+
+  
+  
+  for (const char* locale : Collator::GetAvailableLocales()) {
+    if (locale == "en"sv) {
+      english++;
+    } else if (locale == "de"sv) {
+      german++;
+    } else if (locale == "zh"sv) {
+      chinese++;
+    }
+  }
+
+  
+  ASSERT_EQ(english, 1);
+  ASSERT_EQ(german, 1);
+  ASSERT_EQ(chinese, 1);
 }
 
 }  

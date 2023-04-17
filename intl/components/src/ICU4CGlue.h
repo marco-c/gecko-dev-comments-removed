@@ -14,6 +14,10 @@
 #include "mozilla/Vector.h"
 #include "mozilla/intl/ICUError.h"
 
+#include <iterator>
+#include <stddef.h>
+#include <stdint.h>
+
 namespace mozilla::intl {
 
 static inline const char* IcuLocale(const char* aLocale) {
@@ -371,6 +375,66 @@ using SpanResult = Result<Span<const CharType>, InternalError>;
 
 template <typename CharType>
 using SpanEnumeration = Enumeration<CharType, SpanResult<CharType>, SpanMapper>;
+
+
+
+
+template <int32_t(CountAvailable)(), const char*(GetAvailable)(int32_t)>
+class AvailableLocalesEnumeration final {
+  
+  int32_t mLocalesCount = 0;
+
+ public:
+  AvailableLocalesEnumeration() { mLocalesCount = CountAvailable(); }
+
+  class Iterator {
+   public:
+    
+    using iterator_category = std::input_iterator_tag;
+    using value_type = const char*;
+    using difference_type = ptrdiff_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
+   private:
+    
+    int32_t mLocalesPos = 0;
+
+   public:
+    explicit Iterator(int32_t aLocalesPos) : mLocalesPos(aLocalesPos) {}
+
+    Iterator& operator++() {
+      mLocalesPos++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator result = *this;
+      ++(*this);
+      return result;
+    }
+
+    bool operator==(const Iterator& aOther) const {
+      return mLocalesPos == aOther.mLocalesPos;
+    }
+
+    bool operator!=(const Iterator& aOther) const { return !(*this == aOther); }
+
+    value_type operator*() const { return GetAvailable(mLocalesPos); }
+  };
+
+  
+
+  
+
+
+  Iterator begin() const { return Iterator(0); }
+
+  
+
+
+  Iterator end() const { return Iterator(mLocalesCount); }
+};
 
 }  
 

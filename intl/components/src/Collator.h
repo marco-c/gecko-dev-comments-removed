@@ -180,6 +180,19 @@ class Collator final {
 
   static Result<Bcp47ExtEnumeration, ICUError> GetBcp47KeywordValues();
 
+  
+
+
+
+
+
+
+
+  static auto GetAvailableLocales() {
+    return AvailableLocalesEnumeration<ucol_countAvailable,
+                                       ucol_getAvailable>();
+  }
+
  private:
   
 
