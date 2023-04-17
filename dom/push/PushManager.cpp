@@ -337,7 +337,10 @@ class PermissionStateRunnable final : public Runnable {
 
     RefPtr<PermissionResultRunnable> r =
         new PermissionResultRunnable(mProxy, rv, state);
-    MOZ_ALWAYS_TRUE(r->Dispatch());
+
+    
+    
+    Unused << NS_WARN_IF(!r->Dispatch());
 
     return NS_OK;
   }
