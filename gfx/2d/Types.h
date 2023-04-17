@@ -42,6 +42,7 @@ enum class SurfaceType : int8_t {
   DATA_RECYCLING_SHARED,  
   OFFSET,                 
   DATA_ALIGNED,           
+  DATA_SHARED_WRAPPER,    
 };
 
 enum class SurfaceFormat : int8_t {
