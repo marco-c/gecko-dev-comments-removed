@@ -85,7 +85,6 @@ class NumberFormatObject : public NativeObject {
 
 
 
-
 [[nodiscard]] extern bool intl_FormatNumber(JSContext* cx, unsigned argc,
                                             Value* vp);
 
