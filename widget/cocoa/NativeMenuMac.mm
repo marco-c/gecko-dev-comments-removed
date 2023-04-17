@@ -4,15 +4,14 @@
 
 
 #import <Cocoa/Cocoa.h>
+#include "mozilla/BasicEvents.h"
+#include "nsThreadUtils.h"
+#include "mozilla/dom/Document.h"
 
 #include "NativeMenuMac.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/BasicEvents.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-
-#include "MOZMenuOpeningCoordinator.h"
 #include "nsISupports.h"
 #include "nsGkAtoms.h"
 #include "nsGkAtoms.h"
@@ -20,11 +19,26 @@
 #include "nsMenuItemX.h"
 #include "nsMenuUtilsX.h"
 #include "nsObjCExceptions.h"
-#include "nsThreadUtils.h"
+#include "mozilla/dom/Document.h"
 #include "PresShell.h"
 #include "nsCocoaUtils.h"
 #include "nsIFrame.h"
 #include "nsCocoaFeatures.h"
+
+#if !defined(MAC_OS_X_VERSION_10_14) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
+@interface NSApplication (NSApplicationAppearance)
+@property(readonly, strong) NSAppearance* effectiveAppearance NS_AVAILABLE_MAC(10_14);
+@end
+#endif
+
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+@interface NSMenu (NSMenuAppearance)
+
+
+
+- (void)setAppearance:(NSAppearance*)appearance;
+@end
+#endif
 
 namespace mozilla {
 
@@ -229,21 +243,85 @@ static NSView* NativeViewForContent(nsIContent* aContent) {
 void NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
   mMenu->PopupShowingEventWasSentAndApprovedExternally();
 
-  NSMenu* menu = mMenu->NativeNSMenu();
-  NSView* view = NativeViewForContent(mMenu->Content());
-  NSPoint locationOnScreen = nsCocoaUtils::GeckoPointToCocoaPoint(aPosition);
+  
+  
+  mozilla::DesktopPoint position = aPosition;
+  RefPtr<NativeMenuMac> self = this;
+  mOpenRunnable = NS_NewCancelableRunnableFunction("NativeMenuMac::ShowAsContextMenu",
+                                                   [=]() { self->OpenMenu(position); });
+  NS_DispatchToCurrentThread(mOpenRunnable);
+}
+
+void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {
+  mOpenRunnable = nullptr;
 
   
   
-  mOpeningHandle = [MOZMenuOpeningCoordinator.sharedInstance asynchronouslyOpenMenu:menu
-                                                                   atScreenPosition:locationOnScreen
-                                                                            forView:view];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  NSView* view = NativeViewForContent(mMenu->Content());
+  NSMenu* nativeMenu = mMenu->NativeNSMenu();
+
+  if (@available(macOS 10.14, *)) {
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+    if (@available(macOS 11.0, *)) {
+#endif
+
+      [nativeMenu setAppearance:NSApp.effectiveAppearance];
+    }
+  }
+
+  NSPoint locationOnScreen = nsCocoaUtils::GeckoPointToCocoaPoint(aPosition);
+  if (view) {
+    
+    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(view.window, locationOnScreen);
+    NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
+                                        location:locationInWindow
+                                   modifierFlags:0
+                                       timestamp:[[NSProcessInfo processInfo] systemUptime]
+                                    windowNumber:view.window.windowNumber
+                                         context:nil
+                                     eventNumber:0
+                                      clickCount:1
+                                        pressure:0.0f];
+    [NSMenu popUpContextMenu:nativeMenu withEvent:event forView:view];
+  } else {
+    
+    
+    
+    
+    [nativeMenu popUpMenuPositioningItem:nil atLocation:locationOnScreen inView:nil];
+  }
 }
 
 bool NativeMenuMac::Close() {
-  if (mOpeningHandle) {
+  if (mOpenRunnable) {
     
-    [MOZMenuOpeningCoordinator.sharedInstance cancelAsynchronousOpening:mOpeningHandle];
+    mOpenRunnable->Cancel();
+    mOpenRunnable = nullptr;
   }
   return mMenu->Close();
 }
