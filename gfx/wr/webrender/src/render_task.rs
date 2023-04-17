@@ -5,7 +5,7 @@
 use api::{CompositeOperator, FilterPrimitive, FilterPrimitiveInput, FilterPrimitiveKind};
 use api::{LineStyle, LineOrientation, ClipMode, MixBlendMode, ColorF, ColorSpace};
 use api::units::*;
-use crate::clip::{ClipDataStore, ClipItemKind, ClipStore, ClipNodeRange, ClipNodeFlags};
+use crate::clip::{ClipDataStore, ClipItemKind, ClipStore, ClipNodeRange};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::FrameBuilderConfig;
@@ -568,24 +568,7 @@ impl RenderTaskKind {
                         }
                     ));
                 }
-                ClipItemKind::Rectangle { mode: ClipMode::Clip, .. } => {
-                    if !clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
-                        
-                        
-                        
-                        
-                        let clip_task = rg_builder.get_task_mut(clip_task_id);
-                        match clip_task.kind {
-                            RenderTaskKind::CacheMask(ref mut task) => {
-                                task.clear_to_one = true;
-                            }
-                            _ => {
-                                unreachable!();
-                            }
-                        }
-                    }
-                }
-                ClipItemKind::Rectangle { mode: ClipMode::ClipOut, .. } |
+                ClipItemKind::Rectangle { .. } |
                 ClipItemKind::RoundedRectangle { .. } |
                 ClipItemKind::Image { .. } => {}
             }
