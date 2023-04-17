@@ -234,7 +234,6 @@ class IOUtils final {
 
 
 
-
   static Result<Ok, IOError> MoveSync(nsIFile* aSourceFile, nsIFile* aDestFile,
                                       bool aNoOverwrite);
 
@@ -504,8 +503,8 @@ struct IOUtils::InternalFileInfo {
 struct IOUtils::InternalWriteOpts {
   RefPtr<nsIFile> mBackupFile;
   RefPtr<nsIFile> mTmpFile;
+  WriteMode mMode;
   bool mFlush = false;
-  bool mNoOverwrite = false;
   bool mCompress = false;
 
   static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
