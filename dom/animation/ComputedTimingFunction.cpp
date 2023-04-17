@@ -55,43 +55,58 @@ static inline double StepTiming(
   
 
   
-  int32_t currentStep = floor(aPortion * aStepFunc.mSteps);
+  const int32_t currentStep = static_cast<int32_t>(
+      clamped(floor(aPortion * aStepFunc.mSteps),
+              (double)std::numeric_limits<int32_t>::min(),
+              (double)std::numeric_limits<int32_t>::max()));
+  CheckedInt32 checkedCurrentStep = currentStep;
 
   
   if (aStepFunc.mPos == StyleStepPosition::Start ||
       aStepFunc.mPos == StyleStepPosition::JumpStart ||
       aStepFunc.mPos == StyleStepPosition::JumpBoth) {
-    ++currentStep;
+    ++checkedCurrentStep;
   }
 
   
   
   if (aBeforeFlag == ComputedTimingFunction::BeforeFlag::Set &&
       fmod(aPortion * aStepFunc.mSteps, 1) == 0) {
-    --currentStep;
+    --checkedCurrentStep;
+  }
+
+  if (!checkedCurrentStep.isValid()) {
+    
+    checkedCurrentStep = currentStep;
   }
 
   
   
   
-  if (aPortion >= 0.0 && currentStep < 0) {
-    currentStep = 0;
+  if (aPortion >= 0.0 && checkedCurrentStep.value() < 0) {
+    checkedCurrentStep = 0;
   }
 
-  int32_t jumps = aStepFunc.mSteps;
+  
+  CheckedInt32 jumps = aStepFunc.mSteps;
   if (aStepFunc.mPos == StyleStepPosition::JumpBoth) {
     ++jumps;
   } else if (aStepFunc.mPos == StyleStepPosition::JumpNone) {
     --jumps;
   }
 
-  if (aPortion <= 1.0 && currentStep > jumps) {
-    currentStep = jumps;
+  if (!jumps.isValid()) {
+    
+    jumps = aStepFunc.mSteps;
+  }
+
+  if (aPortion <= 1.0 && checkedCurrentStep.value() > jumps.value()) {
+    checkedCurrentStep = jumps;
   }
 
   
-  MOZ_ASSERT(jumps > 0, "`jumps` should be a positive integer");
-  return double(currentStep) / double(jumps);
+  MOZ_ASSERT(jumps.value() > 0, "`jumps` should be a positive integer");
+  return double(checkedCurrentStep.value()) / double(jumps.value());
 }
 
 double ComputedTimingFunction::GetValue(
