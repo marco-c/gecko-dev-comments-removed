@@ -1313,10 +1313,14 @@ class GetUserMediaTask {
   }
 
  private:
+  
   const ipc::PrincipalInfo mPrincipalInfo;
 
  protected:
+  
+  
   const uint64_t mWindowID;
+  
   const bool mIsChrome;
 
  public:
@@ -1480,15 +1484,21 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
  private:
   void PrepareDOMStream();
 
+  
+  
   const MediaStreamConstraints mConstraints;
 
   MozPromiseHolder<MediaManager::StreamPromise> mHolder;
+  
   const RefPtr<GetUserMediaWindowListener> mWindowListener;
   const RefPtr<DeviceListener> mAudioDeviceListener;
   const RefPtr<DeviceListener> mVideoDeviceListener;
+  
   RefPtr<MediaDevice> mAudioDevice;
   RefPtr<MediaDevice> mVideoDevice;
+  
   const MediaEnginePrefs mPrefs;
+  
   const bool mShouldFocusSource;
   
   
