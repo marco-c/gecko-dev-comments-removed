@@ -212,10 +212,14 @@ class GeckoViewStartup {
           "GeckoView:SetLocale",
         ]);
 
+        Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
+
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
         break;
       }
       case "browser-idle-startup-tasks-finished": {
+        
+        
         
         Services.obs.removeObserver(this, aTopic);
         
