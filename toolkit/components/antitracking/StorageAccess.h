@@ -63,7 +63,8 @@ StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
 
 
 
-StorageAccess StorageAllowedForDocument(const dom::Document* aDoc);
+StorageAccess StorageAllowedForDocument(const dom::Document* aDoc,
+                                        uint32_t* aRejectedReason = nullptr);
 
 
 
