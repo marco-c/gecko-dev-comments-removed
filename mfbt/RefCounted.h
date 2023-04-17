@@ -9,7 +9,6 @@
 #ifndef mozilla_RefCounted_h
 #define mozilla_RefCounted_h
 
-#include <atomic>
 #include <utility>
 
 #include "mozilla/AlreadyAddRefed.h"
@@ -17,6 +16,12 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefCountType.h"
+
+#ifdef __wasi__
+#  include "mozilla/WasiAtomic.h"
+#else
+#  include <atomic>
+#endif  
 
 #if defined(MOZILLA_INTERNAL_API)
 #  include "nsXPCOM.h"
@@ -165,7 +170,7 @@ class RC<T, AtomicRefCount> {
       
       
       
-#ifdef MOZ_TSAN
+#if defined(MOZ_TSAN) || defined(__wasi__)
       
       
       

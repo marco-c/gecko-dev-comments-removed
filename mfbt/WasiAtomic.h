@@ -7,6 +7,8 @@
 #ifndef mozilla_WasiAtomic_h
 #define mozilla_WasiAtomic_h
 
+#include <cstdint>
+
 
 
 
@@ -40,7 +42,9 @@ struct atomic {
   atomic& operator=(const atomic&) volatile = delete;
   ~atomic() noexcept = default;
 
-  T load(memory_order) const volatile noexcept { return value_; }
+  T load(memory_order m = memory_order_seq_cst) const volatile noexcept {
+    return value_;
+  }
 
   void store(T desired,
              memory_order m = memory_order_seq_cst) volatile noexcept {
@@ -177,6 +181,12 @@ struct atomic<T*> {
     return previous;
   }
 };
+
+using atomic_uint8_t = atomic<uint8_t>;
+using atomic_uint16_t = atomic<uint16_t>;
+using atomic_uint32_t = atomic<uint32_t>;
+using atomic_uint64_t = atomic<uint64_t>;
+
 }  
 
 #endif  

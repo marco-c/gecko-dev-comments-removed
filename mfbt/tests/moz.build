@@ -59,10 +59,8 @@ CppUnitTests(
         "TestSHA1",
         "TestSmallPointerArray",
         "TestSplayTree",
-        "TestSPSCQueue",
         "TestTemplateLib",
         "TestTextUtils",
-        "TestThreadSafeWeakPtr",
         "TestTuple",
         "TestTypedEnum",
         "TestTypeTraits",
@@ -76,6 +74,15 @@ CppUnitTests(
 )
 
 
+if CONFIG["OS_ARCH"] != "WASI":
+    CppUnitTests(
+        [
+            "TestSPSCQueue",
+            "TestThreadSafeWeakPtr",
+        ]
+    )
+
+
 
 
 CppUnitTests(
@@ -84,7 +91,8 @@ CppUnitTests(
     ]
 )
 
-if not CONFIG["MOZ_ASAN"]:
+
+if not CONFIG["MOZ_ASAN"] and CONFIG["OS_ARCH"] != "WASI":
     CppUnitTests(
         [
             "TestPoisonArea",
