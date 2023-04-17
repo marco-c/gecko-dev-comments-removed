@@ -91,6 +91,13 @@ class Virtualenv(object):
         return self._working_set
 
     def activate(self):
+        if sys.platform == 'darwin':
+            
+            
+            
+            
+            
+            os.environ.pop('__PYVENV_LAUNCHER__', None)
         path = os.path.join(self.bin_path, "activate_this.py")
         with open(path) as f:
             exec(f.read(), {"__file__": path})
