@@ -627,14 +627,12 @@ pref("gfx.font_rendering.graphite.enabled", true);
   
   
   pref("gfx.canvas.azure.backends", "direct2d1.1,skia");
-  pref("gfx.content.azure.backends", "direct2d1.1,skia");
 #elif defined(XP_MACOSX)
-  pref("gfx.content.azure.backends", "skia");
   pref("gfx.canvas.azure.backends", "skia");
 #else
   pref("gfx.canvas.azure.backends", "skia");
-  pref("gfx.content.azure.backends", "skia");
 #endif
+pref("gfx.content.azure.backends", "skia");
 
 #ifdef XP_WIN
   pref("gfx.webrender.flip-sequential", false);
