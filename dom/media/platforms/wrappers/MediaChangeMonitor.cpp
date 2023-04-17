@@ -263,29 +263,36 @@ RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
                            CreateDecoderParams::Option::FullH264Parsing));
   }
 
+  
+  
+  
+  
+  const CreateDecoderParams updatedParams{changeMonitor->Config(), aParams};
+
   if (!changeMonitor->CanBeInstantiated()) {
     
     return PlatformDecoderModule::CreateDecoderPromise::CreateAndResolve(
         new MediaChangeMonitor(aPDM, std::move(changeMonitor), nullptr,
-                               aParams),
+                               updatedParams),
         __func__);
   }
 
   RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
-      aPDM->AsyncCreateDecoder(aParams)->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [params = CreateDecoderParamsForAsync(aParams), pdm = RefPtr{aPDM},
-           changeMonitor = std::move(changeMonitor)](
-              RefPtr<MediaDataDecoder>&& aDecoder) mutable {
-            RefPtr<MediaDataDecoder> decoder = new MediaChangeMonitor(
-                pdm, std::move(changeMonitor), aDecoder, params);
-            return PlatformDecoderModule::CreateDecoderPromise::
-                CreateAndResolve(decoder, __func__);
-          },
-          [](MediaResult aError) {
-            return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-                aError, __func__);
-          });
+      aPDM->AsyncCreateDecoder(updatedParams)
+          ->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [params = CreateDecoderParamsForAsync(updatedParams),
+               pdm = RefPtr{aPDM}, changeMonitor = std::move(changeMonitor)](
+                  RefPtr<MediaDataDecoder>&& aDecoder) mutable {
+                RefPtr<MediaDataDecoder> decoder = new MediaChangeMonitor(
+                    pdm, std::move(changeMonitor), aDecoder, params);
+                return PlatformDecoderModule::CreateDecoderPromise::
+                    CreateAndResolve(decoder, __func__);
+              },
+              [](MediaResult aError) {
+                return PlatformDecoderModule::CreateDecoderPromise::
+                    CreateAndReject(aError, __func__);
+              });
   return p;
 }
 
