@@ -521,13 +521,6 @@ nsresult nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest) {
     
     return NS_OK;
   }
-  if (loadInfo->GetBypassCORSChecks()) {
-    
-    
-    
-    
-    return NS_OK;
-  }
 
   
   RefPtr<CheckOriginHeader> visitor = new CheckOriginHeader();

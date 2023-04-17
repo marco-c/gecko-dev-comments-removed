@@ -718,11 +718,6 @@ interface nsILoadInfo : nsISupports
 
   [infallible] attribute boolean allowInsecureRedirectToDataURI;
 
-   
-
-
-  [infallible] attribute boolean bypassCORSChecks;
-
   
 
 
