@@ -196,8 +196,12 @@ extern JS_PUBLIC_API bool JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
-JS_PUBLIC_API void SetHelperThreadTaskCallback(
-    bool (*callback)(js::UniquePtr<js::RunnableTask>));
+JS_PUBLIC_API void SetHelperThreadTaskCallback(void (*callback)());
+
+namespace JS {
+
+extern JS_PUBLIC_API void RunHelperThreadTask();
+}  
 
 extern JS_PUBLIC_API const char* JS_GetImplementationVersion(void);
 
