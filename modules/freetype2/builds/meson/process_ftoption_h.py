@@ -1,4 +1,14 @@
 
+
+
+
+
+
+
+
+
+
+
 """Toggle settings in `ftoption.h` file based on command-line arguments.
 
 This script takes an `ftoption.h` file as input and rewrites
@@ -82,7 +92,7 @@ def main():
             line = "#define " + option_name
         new_lines.append(line)
 
-    result = "\n".join(new_lines)
+    result = "\n".join(new_lines) + "\n"
 
     
     cmdline_options = set(args.enable) | set(args.disable)

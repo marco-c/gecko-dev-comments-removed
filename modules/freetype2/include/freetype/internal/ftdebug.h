@@ -31,9 +31,23 @@
 
 #include "compiler-macros.h"
 
+#ifdef FT_DEBUG_LOGGING
+#include <dlg/output.h>
+#include <dlg/dlg.h>
+
+#include <freetype/ftlogging.h>
+#endif 
+
 
 FT_BEGIN_HEADER
 
+  
+  
+  
+#ifdef FT_DEBUG_LOGGING
+#undef  FT_DEBUG_LEVEL_TRACE
+#define FT_DEBUG_LEVEL_TRACE
+#endif
 
   
   
@@ -84,18 +98,64 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+  
+
+
+
+
+
+#ifdef FT_DEBUG_LOGGING
+
+  
+#define FT_LOGGING_TAG( x )   FT_LOGGING_TAG_( x )
+#define FT_LOGGING_TAG_( x )  #x
+
+  
+  
+#define FT_LOGGING_TAGX( x, y )   FT_LOGGING_TAGX_( x, y )
+#define FT_LOGGING_TAGX_( x, y )  #x ":" #y
+
+
+#define FT_LOG( level, varformat )                                         \
+          do                                                               \
+          {                                                                \
+            const char*  dlg_tag = FT_LOGGING_TAGX( FT_COMPONENT, level ); \
+                                                                           \
+                                                                           \
+            ft_add_tag( dlg_tag );                                         \
+            if ( ft_trace_levels[FT_TRACE_COMP( FT_COMPONENT )] >= level ) \
+            {                                                              \
+              if ( custom_output_handler != NULL )                         \
+                FT_Logging_Callback varformat;                             \
+              else                                                         \
+                dlg_trace varformat;                                       \
+            }                                                              \
+            ft_remove_tag( dlg_tag );                                      \
+          } while( 0 )
+
+#else 
+
+#define FT_LOG( level, varformat )                                         \
+          do                                                               \
+          {                                                                \
+            if ( ft_trace_levels[FT_TRACE_COMP( FT_COMPONENT )] >= level ) \
+              FT_Message varformat;                                        \
+          } while ( 0 )
+
+#endif 
+
+
 #ifdef FT_DEBUG_LEVEL_TRACE
 
   
 #define FT_TRACE_COMP( x )   FT_TRACE_COMP_( x )
 #define FT_TRACE_COMP_( x )  trace_ ## x
 
-#define FT_TRACE( level, varformat )                                       \
-          do                                                               \
-          {                                                                \
-            if ( ft_trace_levels[FT_TRACE_COMP( FT_COMPONENT )] >= level ) \
-              FT_Message varformat;                                        \
-          } while ( 0 )
+#define FT_TRACE( level, varformat )  FT_LOG( level, varformat )
 
 #else 
 
@@ -204,7 +264,32 @@ FT_BEGIN_HEADER
 
 #ifdef FT_DEBUG_LEVEL_ERROR
 
-#define FT_ERROR( varformat )  FT_Message  varformat
+  
+
+
+
+
+
+
+#ifdef FT_DEBUG_LOGGING
+
+#define FT_ERROR( varformat )                                      \
+          do                                                       \
+          {                                                        \
+            const char*  dlg_tag = FT_LOGGING_TAG( FT_COMPONENT ); \
+                                                                   \
+                                                                   \
+            ft_add_tag( dlg_tag );                                 \
+            dlg_trace varformat;                                   \
+            ft_remove_tag( dlg_tag );                              \
+          } while ( 0 )
+
+#else 
+
+#define FT_ERROR( varformat )  FT_Message varformat
+
+#endif 
+
 
 #else  
 
@@ -276,6 +361,77 @@ FT_BEGIN_HEADER
 
   FT_BASE( void )
   ft_debug_init( void );
+
+
+#ifdef FT_DEBUG_LOGGING
+
+  
+
+
+
+
+
+  FT_BASE( void )
+  ft_log_handler( const struct dlg_origin*  origin,
+                  const char*               string,
+                  void*                     data );
+
+
+  
+
+
+
+
+
+
+
+
+
+  extern dlg_handler            ft_default_log_handler;
+  extern FT_Custom_Log_Handler  custom_output_handler;
+
+
+  
+
+
+
+
+
+
+  FT_BASE( void )
+  ft_logging_init( void );
+
+  FT_BASE( void )
+  ft_logging_deinit( void );
+
+
+  
+
+
+
+
+
+
+  FT_BASE( void )
+  ft_add_tag( const char*  tag );
+
+  FT_BASE( void )
+  ft_remove_tag( const char*  tag );
+
+
+  
+
+
+
+
+
+
+  FT_BASE( void )
+  FT_Logging_Callback( const char*  fmt,
+                       ... );
+
+#endif 
+
 
 FT_END_HEADER
 

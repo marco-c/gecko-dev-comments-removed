@@ -1,4 +1,14 @@
 
+
+
+
+
+
+
+
+
+
+
 """Extract the FreeType version numbers from `<freetype/freetype.h>`.
 
 This script parses the header to extract the version number defined there.

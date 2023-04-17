@@ -1,4 +1,14 @@
 
+
+
+
+
+
+
+
+
+
+
 """Parse modules.cfg and dump its output either as ftmodule.h or a list of
 base extensions.
 """

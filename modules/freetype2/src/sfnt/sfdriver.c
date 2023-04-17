@@ -501,7 +501,7 @@
     FT_UNUSED( error );
 
 
-    if ( FT_ALLOC( result, entry->stringLength / 2 + 1 ) )
+    if ( FT_QALLOC( result, entry->stringLength / 2 + 1 ) )
       return NULL;
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
@@ -560,7 +560,7 @@
     FT_UNUSED( error );
 
 
-    if ( FT_ALLOC( result, entry->stringLength + 1 ) )
+    if ( FT_QALLOC( result, entry->stringLength + 1 ) )
       return NULL;
 
     if ( FT_STREAM_SEEK( entry->stringOffset ) ||
@@ -868,8 +868,8 @@
         result[len] = '\0';
 
         FT_TRACE0(( "sfnt_get_var_ps_name:"
-                    " Shortening variation PS name prefix\n"
-                    "                     "
+                    " Shortening variation PS name prefix\n" ));
+        FT_TRACE0(( "                     "
                     " to %d characters\n", len ));
       }
 
@@ -920,16 +920,16 @@
         if ( !subfamily_name )
         {
           FT_TRACE1(( "sfnt_get_var_ps_name:"
-                      " can't construct named instance PS name;\n"
-                      "                     "
+                      " can't construct named instance PS name;\n" ));
+          FT_TRACE1(( "                     "
                       " trying to construct normal instance PS name\n" ));
           goto construct_instance_name;
         }
 
         
         
-        if ( FT_ALLOC( result, face->var_postscript_prefix_len +
-                               1 + ft_strlen( subfamily_name ) + 1 ) )
+        if ( FT_QALLOC( result, face->var_postscript_prefix_len +
+                                1 + ft_strlen( subfamily_name ) + 1 ) )
           return NULL;
 
         ft_strcpy( result, face->var_postscript_prefix );
@@ -957,9 +957,9 @@
     construct_instance_name:
       axis = mm_var->axis;
 
-      if ( FT_ALLOC( result,
-                     face->var_postscript_prefix_len +
-                       num_coords * MAX_VALUE_DESCRIPTOR_LEN + 1 ) )
+      if ( FT_QALLOC( result,
+                      face->var_postscript_prefix_len +
+                        num_coords * MAX_VALUE_DESCRIPTOR_LEN + 1 ) )
         return NULL;
 
       p = result;
@@ -993,6 +993,7 @@
         if ( t != ' ' && ft_isalnum( t ) )
           *p++ = t;
       }
+      *p++ = '\0';
     }
 
   check_length:
@@ -1213,6 +1214,8 @@
 #define PUT_COLOR_LAYERS( a )  NULL
 #endif
 
+#define PUT_COLOR_LAYERS_V1( a )  PUT_COLOR_LAYERS( a )
+
 #ifdef TT_CONFIG_OPTION_POSTSCRIPT_NAMES
 #define PUT_PS_NAMES( a )  a
 #else
@@ -1271,9 +1274,9 @@
                             
 
     PUT_EMBEDDED_BITMAPS( tt_face_set_sbit_strike     ),
-                   
+                  
     PUT_EMBEDDED_BITMAPS( tt_face_load_strike_metrics ),
-                   
+                  
 
     PUT_COLOR_LAYERS( tt_face_load_cpal ),
                             
@@ -1287,6 +1290,16 @@
                             
     PUT_COLOR_LAYERS( tt_face_get_colr_layer ),
                             
+
+    PUT_COLOR_LAYERS_V1( tt_face_get_colr_glyph_paint ),
+                 
+    PUT_COLOR_LAYERS_V1( tt_face_get_paint_layers ),
+                 
+    PUT_COLOR_LAYERS_V1( tt_face_get_colorline_stops ),
+                 
+    PUT_COLOR_LAYERS_V1( tt_face_get_paint ),
+                 
+
     PUT_COLOR_LAYERS( tt_face_colr_blend_layer ),
                             
 

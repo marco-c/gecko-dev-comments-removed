@@ -506,7 +506,8 @@
             
             dsNew = FT_MIN(
                       cf2_fixedRound( bottomHintEdge->dsCoord ),
-                      blues->zone[i].dsFlatEdge - cf2_intToFixed( 1 ) );
+                      SUB_INT32( blues->zone[i].dsFlatEdge,
+                                 cf2_intToFixed( 1 ) ) );
           }
 
           else

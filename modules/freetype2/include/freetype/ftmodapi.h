@@ -105,6 +105,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   
 #define FT_MODULE_FONT_DRIVER         1  /* this module is a font driver  */
 #define FT_MODULE_RENDERER            2  /* this module is a renderer     */
@@ -344,6 +347,26 @@ FT_BEGIN_HEADER
 
 
 
+#define FT_FACE_DRIVER_NAME( face ) \
+          ( ( *(FT_Module_Class**)( ( face )->driver ) )->module_name )
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -456,7 +479,6 @@ FT_BEGIN_HEADER
 
 
   
-
 
 
 

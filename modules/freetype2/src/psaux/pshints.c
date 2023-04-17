@@ -412,6 +412,12 @@
     {
       FT_Bool  isPair = cf2_hint_isPair( &hintmap->edge[i] );
 
+      
+      CF2_Fixed  move = 0;
+
+      CF2_Fixed  dsCoord_i;
+      CF2_Fixed  dsCoord_j;
+
 
       
       j = isPair ? i + 1 : i;
@@ -422,11 +428,14 @@
       FT_ASSERT( cf2_hint_isLocked( &hintmap->edge[i] ) ==
                    cf2_hint_isLocked( &hintmap->edge[j] ) );
 
+      dsCoord_i = hintmap->edge[i].dsCoord;
+      dsCoord_j = hintmap->edge[j].dsCoord;
+
       if ( !cf2_hint_isLocked( &hintmap->edge[i] ) )
       {
         
-        CF2_Fixed  fracDown = cf2_fixedFraction( hintmap->edge[i].dsCoord );
-        CF2_Fixed  fracUp   = cf2_fixedFraction( hintmap->edge[j].dsCoord );
+        CF2_Fixed  fracDown = cf2_fixedFraction( dsCoord_i );
+        CF2_Fixed  fracUp   = cf2_fixedFraction( dsCoord_j );
 
         
         CF2_Fixed  downMoveDown = 0 - fracDown;
@@ -442,9 +451,6 @@
         CF2_Fixed  moveUp   = FT_MIN( downMoveUp, upMoveUp );
         
         CF2_Fixed  moveDown = FT_MAX( downMoveDown, upMoveDown );
-
-        
-        CF2_Fixed  move;
 
         CF2_Fixed  downMinCounter = CF2_MIN_COUNTER;
         CF2_Fixed  upMinCounter   = CF2_MIN_COUNTER;
@@ -467,16 +473,14 @@
         
         
         
-        if ( j >= hintmap->count - 1                ||
+        if ( j >= hintmap->count - 1                         ||
              hintmap->edge[j + 1].dsCoord >=
-               ADD_INT32( hintmap->edge[j].dsCoord,
-                          moveUp + upMinCounter )   )
+               ADD_INT32( dsCoord_j, moveUp + upMinCounter ) )
         {
           
-          if ( i == 0                                   ||
+          if ( i == 0                                              ||
                hintmap->edge[i - 1].dsCoord <=
-                 ADD_INT32( hintmap->edge[i].dsCoord,
-                            moveDown - downMinCounter ) )
+                 ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
           {
             
             move = ( -moveDown < moveUp ) ? moveDown : moveUp;  
@@ -487,10 +491,9 @@
         else
         {
           
-          if ( i == 0                                   ||
+          if ( i == 0                                              ||
                hintmap->edge[i - 1].dsCoord <=
-                 ADD_INT32( hintmap->edge[i].dsCoord,
-                            moveDown - downMinCounter ) )
+                 ADD_INT32( dsCoord_i, moveDown - downMinCounter ) )
           {
             move     = moveDown;
             
@@ -524,17 +527,21 @@
         }
 
         
-        hintmap->edge[i].dsCoord = ADD_INT32( hintmap->edge[i].dsCoord,
-                                              move );
+        hintmap->edge[i].dsCoord = ADD_INT32( dsCoord_i, move );
         if ( isPair )
-          hintmap->edge[j].dsCoord = ADD_INT32( hintmap->edge[j].dsCoord,
-                                                move );
+          hintmap->edge[j].dsCoord = ADD_INT32( dsCoord_j, move );
       }
 
       
+      
+      
       FT_ASSERT( i == 0                                                   ||
+                 ( ( dsCoord_i ^ move ) >= 0                    &&
+                   ( dsCoord_i ^ hintmap->edge[i].dsCoord ) < 0 )         ||
                  hintmap->edge[i - 1].dsCoord <= hintmap->edge[i].dsCoord );
       FT_ASSERT( i < j                                                ||
+                 ( ( dsCoord_j ^ move ) >= 0                    &&
+                   ( dsCoord_j ^ hintmap->edge[j].dsCoord ) < 0 )     ||
                  hintmap->edge[i].dsCoord <= hintmap->edge[j].dsCoord );
 
       
@@ -1022,10 +1029,17 @@
       }
     }
 
-    FT_TRACE6(( "%s\n", initialMap ? "flags: [p]air [g]host [t]op"
-                                     " [b]ottom [L]ocked [S]ynthetic\n"
-                                     "Initial hintmap"
-                                   : "Hints:" ));
+#ifdef FT_DEBUG_LEVEL_TRACE
+    if ( initialMap )
+    {
+      FT_TRACE6(( "flags: [p]air [g]host [t]op"
+                  " [b]ottom [L]ocked [S]ynthetic\n" ));
+      FT_TRACE6(( "Initial hintmap" ));
+    }
+    else
+      FT_TRACE6(( "Hints:" ));
+#endif
+
     cf2_hintmap_dump( hintmap );
 
     

@@ -202,6 +202,10 @@
     FT_Memory  memory;
 
 
+#ifdef FT_DEBUG_LOGGING
+    ft_logging_init();
+#endif
+
     
 
     
@@ -247,6 +251,10 @@
 
     
     FT_Done_Memory( memory );
+
+#ifdef FT_DEBUG_LOGGING
+    ft_logging_deinit();
+#endif
 
     return FT_Err_Ok;
   }

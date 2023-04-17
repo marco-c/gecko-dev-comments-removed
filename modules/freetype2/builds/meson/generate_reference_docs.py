@@ -1,4 +1,14 @@
 
+
+
+
+
+
+
+
+
+
+
 """Generate FreeType reference documentation."""
 
 from __future__ import print_function

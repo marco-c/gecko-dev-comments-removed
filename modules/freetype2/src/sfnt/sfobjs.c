@@ -65,7 +65,7 @@
 
     len = (FT_UInt)entry->stringLength / 2;
 
-    if ( FT_NEW_ARRAY( string, len + 1 ) )
+    if ( FT_QNEW_ARRAY( string, len + 1 ) )
       return NULL;
 
     for ( n = 0; n < len; n++ )
@@ -100,7 +100,7 @@
 
     len = (FT_UInt)entry->stringLength;
 
-    if ( FT_NEW_ARRAY( string, len + 1 ) )
+    if ( FT_QNEW_ARRAY( string, len + 1 ) )
       return NULL;
 
     for ( n = 0; n < len; n++ )
@@ -446,7 +446,7 @@
         return FT_THROW( Array_Too_Large );
 
       
-      if ( FT_NEW_ARRAY( face->ttc_header.offsets, face->ttc_header.count ) )
+      if ( FT_QNEW_ARRAY( face->ttc_header.offsets, face->ttc_header.count ) )
         return error;
 
       if ( FT_FRAME_ENTER( face->ttc_header.count * 4L ) )
@@ -464,7 +464,7 @@
       face->ttc_header.version = 1 << 16;
       face->ttc_header.count   = 1;
 
-      if ( FT_NEW( face->ttc_header.offsets ) )
+      if ( FT_QNEW( face->ttc_header.offsets ) )
         return error;
 
       face->ttc_header.offsets[0] = offset;
@@ -643,8 +643,8 @@
 
 
       if ( ( face->variation_support & TT_FACE_FLAG_VAR_FVAR ) &&
-           !( FT_ALLOC( default_values, num_axes * 4 )  ||
-              FT_ALLOC( instance_values, num_axes * 4 ) )      )
+           !( FT_QALLOC(  default_values, num_axes * 4 ) ||
+              FT_QALLOC( instance_values, num_axes * 4 ) )     )
       {
         
         FT_ULong  array_start = FT_STREAM_POS() - 16 + offset;
@@ -820,7 +820,8 @@
     
     
 
-    FT_TRACE2(( "sfnt_load_face: %p\n\n", (void *)face ));
+    FT_TRACE2(( "sfnt_load_face: %p\n", (void *)face ));
+    FT_TRACE2(( "\n" ));
 
     
 #ifdef FT_CONFIG_OPTION_INCREMENTAL
@@ -1149,9 +1150,10 @@
         }
 
         
-        if ( !has_unicode )
+        if ( !has_unicode                                &&
+             root->face_flags & FT_FACE_FLAG_GLYPH_NAMES )
         {
-          FT_CharMapRec cmaprec;
+          FT_CharMapRec  cmaprec;
 
 
           cmaprec.face        = root;
@@ -1236,7 +1238,7 @@
           }
 
           
-          (void)FT_RENEW_ARRAY( sbit_strike_map, count, bsize_idx );
+          (void)FT_QRENEW_ARRAY( sbit_strike_map, count, bsize_idx );
 
           
           

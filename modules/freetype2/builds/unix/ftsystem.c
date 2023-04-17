@@ -71,28 +71,39 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
+
+
+
+
+
+
+
+
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void* )
   ft_alloc( FT_Memory  memory,
             long       size )
@@ -104,25 +115,29 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void* )
   ft_realloc( FT_Memory  memory,
               long       cur_size,
@@ -137,18 +152,20 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void )
   ft_free( FT_Memory  memory,
            void*      block )
@@ -160,18 +177,18 @@
 
 
   
-  
-  
-  
-  
+
+
+
+
 
 
   
-  
-  
-  
-  
-  
+
+
+
+
+
 #undef  FT_COMPONENT
 #define FT_COMPONENT  io
 
@@ -181,16 +198,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void )
   ft_close_stream_by_munmap( FT_Stream  stream )
   {
@@ -203,16 +220,16 @@
 
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
   FT_CALLBACK_DEF( void )
   ft_close_stream_by_free( FT_Stream  stream )
   {

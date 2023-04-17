@@ -71,12 +71,18 @@ FT_BEGIN_HEADER
 
 #define FT_DUMMY_STMNT  FT_BEGIN_STMNT FT_END_STMNT
 
-#ifdef _WIN64
+#ifdef __UINTPTR_TYPE__
+  
+
+
+
+#  define FT_UINT_TO_POINTER( x )  (void *)(__UINTPTR_TYPE__)(x)
+#elif defined( _WIN64 )
   
   
-#define FT_UINT_TO_POINTER( x )  (void *)(unsigned __int64)(x)
+#  define FT_UINT_TO_POINTER( x )  (void *)(unsigned __int64)(x)
 #else
-#define FT_UINT_TO_POINTER( x )  (void *)(unsigned long)(x)
+#  define FT_UINT_TO_POINTER( x )  (void *)(unsigned long)(x)
 #endif
 
   
@@ -217,76 +223,88 @@ FT_BEGIN_HEADER
 #endif
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 #define FT_EXPORT_DEF( x )  FT_FUNCTION_DEFINITION( x )
 
   
-  
-  
+
+
+
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 #define FT_CALLBACK_DEF( x )  extern "C"  x
 #else
 #define FT_CALLBACK_DEF( x )  static  x
+#endif
+
+#if defined( __i386__ )
+#define FT_COMPARE_DEF( x )  FT_CALLBACK_DEF( x ) __attribute__(( cdecl ))
+#elif defined( _M_IX86 )
+#define FT_COMPARE_DEF( x )  FT_CALLBACK_DEF( x ) __cdecl
+#else
+#define FT_COMPARE_DEF( x )  FT_CALLBACK_DEF( x )
 #endif
 
 #define FT_BASE_CALLBACK( x )      FT_FUNCTION_DECLARATION( x )

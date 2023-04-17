@@ -416,9 +416,9 @@
          FT_FRAME_ENTER( sfnt.num_tables * 16L ) )
       goto Exit;
 
-    FT_TRACE2(( "\n"
-                "  tag    offset    length   checksum\n"
-                "  ----------------------------------\n" ));
+    FT_TRACE2(( "\n" ));
+    FT_TRACE2(( "  tag    offset    length   checksum\n" ));
+    FT_TRACE2(( "  ----------------------------------\n" ));
 
     valid_entries = 0;
     for ( nn = 0; nn < sfnt.num_tables; nn++ )
@@ -505,7 +505,8 @@
 
     FT_FRAME_EXIT();
 
-    FT_TRACE2(( "table directory loaded\n\n" ));
+    FT_TRACE2(( "table directory loaded\n" ));
+    FT_TRACE2(( "\n" ));
 
   Exit:
     return error;
@@ -794,8 +795,8 @@
       if ( maxProfile->maxTwilightPoints > ( 0xFFFFU - 4 ) )
       {
         FT_TRACE0(( "tt_face_load_maxp:"
-                    " too much twilight points in `maxp' table;\n"
-                    "                  "
+                    " too much twilight points in `maxp' table;\n" ));
+        FT_TRACE0(( "                  "
                     " some glyphs might be rendered incorrectly\n" ));
 
         maxProfile->maxTwilightPoints = 0xFFFFU - 4;
@@ -916,8 +917,8 @@
       storage_start += 2 + 4 * table->numLangTagRecords;
 
       
-      if ( FT_NEW_ARRAY( table->langTags, table->numLangTagRecords ) ||
-           FT_FRAME_ENTER( table->numLangTagRecords * 4 )            )
+      if ( FT_QNEW_ARRAY( table->langTags, table->numLangTagRecords ) ||
+           FT_FRAME_ENTER( table->numLangTagRecords * 4 )             )
         goto Exit;
 
       
@@ -947,8 +948,8 @@
     }
 
     
-    if ( FT_NEW_ARRAY( table->names, table->numNameRecords ) ||
-         FT_FRAME_ENTER( table->numNameRecords * 12 )        )
+    if ( FT_QNEW_ARRAY( table->names, table->numNameRecords ) ||
+         FT_FRAME_ENTER( table->numNameRecords * 12 )         )
       goto Exit;
 
     
@@ -992,9 +993,9 @@
 
       
       count = (FT_UInt)( entry - table->names );
-      (void)FT_RENEW_ARRAY( table->names,
-                            table->numNameRecords,
-                            count );
+      (void)FT_QRENEW_ARRAY( table->names,
+                             table->numNameRecords,
+                             count );
       table->numNameRecords = count;
     }
 
@@ -1310,6 +1311,12 @@
 
     if ( FT_STREAM_READ_FIELDS( post_fields, post ) )
       return error;
+
+    if ( post->FormatType != 0x00030000L &&
+         post->FormatType != 0x00025000L &&
+         post->FormatType != 0x00020000L &&
+         post->FormatType != 0x00010000L )
+      return FT_THROW( Invalid_Post_Table_Format );
 
     
     

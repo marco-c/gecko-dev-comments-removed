@@ -19,6 +19,11 @@
   
 
   
+  
+  
+#define FT_MAX_TRACE_LEVEL_LENGTH  (9 + 1 + 1)
+
+  
 FT_TRACE_DEF( any )
 
   
@@ -38,9 +43,11 @@ FT_TRACE_DEF( checksum )
 FT_TRACE_DEF( mm )        
 FT_TRACE_DEF( psprops )   
 FT_TRACE_DEF( raccess )   
+FT_TRACE_DEF( synth )     
+
+  
 FT_TRACE_DEF( raster )    
 FT_TRACE_DEF( smooth )    
-FT_TRACE_DEF( synth )     
 
   
 FT_TRACE_DEF( cache )     
@@ -77,6 +84,7 @@ FT_TRACE_DEF( t1objs )
 FT_TRACE_DEF( t1parse )
 
   
+FT_TRACE_DEF( afmparse )
 FT_TRACE_DEF( cffdecode )
 FT_TRACE_DEF( psconv )
 FT_TRACE_DEF( psobjs )
@@ -151,8 +159,10 @@ FT_TRACE_DEF( afglobal )
 FT_TRACE_DEF( afhints )
 FT_TRACE_DEF( afmodule )
 FT_TRACE_DEF( aflatin )
-FT_TRACE_DEF( aflatin2 )
 FT_TRACE_DEF( afshaper )
-FT_TRACE_DEF( afwarp )
+
+  
+FT_TRACE_DEF( sdf )       
+FT_TRACE_DEF( bsdf )      
 
 

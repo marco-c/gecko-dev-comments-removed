@@ -201,6 +201,11 @@ FT_BEGIN_HEADER
 #define ft_pixel_mode_pal2   FT_PIXEL_MODE_GRAY2
 #define ft_pixel_mode_pal4   FT_PIXEL_MODE_GRAY4
 
+  
+
+  
+  
+
 
   
 
@@ -772,17 +777,6 @@ FT_BEGIN_HEADER
   
 
 
-  
-
-
-
-
-
-
-
-
-
-
 
   
 
@@ -816,7 +810,6 @@ FT_BEGIN_HEADER
 
 
 
-  
 
 
 
@@ -825,7 +818,15 @@ FT_BEGIN_HEADER
 
 
 
-  typedef struct FT_RasterRec_*  FT_Raster;
+
+
+
+
+
+
+
+
+
 
 
   
@@ -865,6 +866,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -963,10 +965,16 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
 #define FT_RASTER_FLAG_DEFAULT  0x0
 #define FT_RASTER_FLAG_AA       0x1
 #define FT_RASTER_FLAG_DIRECT   0x2
 #define FT_RASTER_FLAG_CLIP     0x4
+#define FT_RASTER_FLAG_SDF      0x8
 
   
   
@@ -1045,6 +1053,23 @@ FT_BEGIN_HEADER
     FT_BBox                 clip_box;
 
   } FT_Raster_Params;
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  typedef struct FT_RasterRec_*  FT_Raster;
 
 
   

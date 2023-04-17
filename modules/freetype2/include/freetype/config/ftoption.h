@@ -109,7 +109,6 @@ FT_BEGIN_HEADER
 
 
 
-
 #define FT_CONFIG_OPTION_ENVIRONMENT_PROPERTIES
 
 
@@ -415,6 +414,23 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
 
 
@@ -907,24 +923,6 @@ FT_BEGIN_HEADER
 
 
 
-#define AF_CONFIG_OPTION_USE_WARPER
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -958,6 +956,21 @@ FT_BEGIN_HEADER
 #define  TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
 #endif
 #endif
+#endif
+
+
+  
+
+
+
+
+
+
+
+
+
+#ifdef TT_CONFIG_OPTION_COLOR_LAYERS
+#define  TT_SUPPORT_COLRV1
 #endif
 
 

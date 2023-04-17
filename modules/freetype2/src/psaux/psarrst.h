@@ -55,7 +55,6 @@ FT_BEGIN_HEADER
 
     size_t  sizeItem;       
     size_t  allocated;      
-    size_t  chunk;          
     size_t  count;          
     size_t  totalSize;      
 

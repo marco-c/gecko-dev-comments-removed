@@ -1,4 +1,14 @@
 
+
+
+
+
+
+
+
+
+
+
 """Extract the libtool version from `configure.raw`.
 
 This script parses the `configure.raw` file to extract the libtool version

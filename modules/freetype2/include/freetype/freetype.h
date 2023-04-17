@@ -54,6 +54,34 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
@@ -85,6 +113,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -2108,6 +2137,8 @@ FT_BEGIN_HEADER
 
 
 
+
+
   typedef struct  FT_Open_Args_
   {
     FT_UInt         flags;
@@ -2338,6 +2369,10 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
   FT_EXPORT( FT_Error )
   FT_Open_Face( FT_Library           library,
                 const FT_Open_Args*  args,
@@ -2406,6 +2441,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -3189,6 +3225,7 @@ FT_BEGIN_HEADER
 
 
 
+
   FT_EXPORT( void )
   FT_Set_Transform( FT_Face     face,
                     FT_Matrix*  matrix,
@@ -3196,6 +3233,81 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  FT_EXPORT( void )
+  FT_Get_Transform( FT_Face     face,
+                    FT_Matrix*  matrix,
+                    FT_Vector*  delta );
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3251,6 +3363,7 @@ FT_BEGIN_HEADER
     FT_RENDER_MODE_MONO,
     FT_RENDER_MODE_LCD,
     FT_RENDER_MODE_LCD_V,
+    FT_RENDER_MODE_SDF,
 
     FT_RENDER_MODE_MAX
 
@@ -3264,6 +3377,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -4022,168 +4136,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  typedef struct  FT_LayerIterator_
-  {
-    FT_UInt   num_layers;
-    FT_UInt   layer;
-    FT_Byte*  p;
-
-  } FT_LayerIterator;
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  FT_EXPORT( FT_Bool )
-  FT_Get_Color_Glyph_Layer( FT_Face            face,
-                            FT_UInt            base_glyph,
-                            FT_UInt           *aglyph_index,
-                            FT_UInt           *acolor_index,
-                            FT_LayerIterator*  iterator );
-
-
-  
-
-
-
-
-
-
   
 
 
@@ -4246,6 +4198,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -4361,6 +4314,7 @@ FT_BEGIN_HEADER
 
 
 
+
   FT_EXPORT( FT_UInt )
   FT_Face_GetCharVariantIndex( FT_Face   face,
                                FT_ULong  charcode,
@@ -4368,6 +4322,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -4428,11 +4383,13 @@ FT_BEGIN_HEADER
 
 
 
+
   FT_EXPORT( FT_UInt32* )
   FT_Face_GetVariantSelectors( FT_Face  face );
 
 
   
+
 
 
 
@@ -4467,6 +4424,7 @@ FT_BEGIN_HEADER
 
 
   
+
 
 
 
@@ -4766,8 +4724,8 @@ FT_BEGIN_HEADER
 
 
 #define FREETYPE_MAJOR  2
-#define FREETYPE_MINOR  10
-#define FREETYPE_PATCH  4
+#define FREETYPE_MINOR  11
+#define FREETYPE_PATCH  0
 
 
   
@@ -4830,11 +4788,13 @@ FT_BEGIN_HEADER
 
 
 
+
   FT_EXPORT( FT_Bool )
   FT_Face_CheckTrueTypePatents( FT_Face  face );
 
 
   
+
 
 
 

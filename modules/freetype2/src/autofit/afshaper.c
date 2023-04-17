@@ -132,11 +132,22 @@
     
     
     
-    hb_ot_tags_from_script( script,
-                            &script_tags[0],
-                            &script_tags[1] );
+    {
+      unsigned int  tags_count = 3;
+      hb_tag_t      tags[3];
 
-    
+
+      hb_ot_tags_from_script_and_language( script,
+                                           HB_LANGUAGE_INVALID,
+                                           &tags_count,
+                                           tags,
+                                           NULL,
+                                           NULL );
+      script_tags[0] = tags_count > 0 ? tags[0] : HB_TAG_NONE;
+      script_tags[1] = tags_count > 1 ? tags[1] : HB_TAG_NONE;
+      script_tags[2] = tags_count > 2 ? tags[2] : HB_TAG_NONE;
+    }
+
     
     
     if ( default_script )
@@ -157,9 +168,6 @@
       
       if ( script_tags[0] == HB_OT_TAG_DEFAULT_SCRIPT )
         goto Exit;
-
-      if ( script_tags[1] == HB_OT_TAG_DEFAULT_SCRIPT )
-        script_tags[1] = HB_TAG_NONE;
     }
 
     gsub_lookups = hb_set_create();
@@ -173,9 +181,9 @@
     if ( hb_set_is_empty( gsub_lookups ) )
       goto Exit; 
 
-    FT_TRACE4(( "GSUB lookups (style `%s'):\n"
-                " ",
+    FT_TRACE4(( "GSUB lookups (style `%s'):\n",
                 af_style_names[style_class->style] ));
+    FT_TRACE4(( " " ));
 
 #ifdef FT_DEBUG_LEVEL_TRACE
     count = 0;
@@ -202,12 +210,13 @@
 #ifdef FT_DEBUG_LEVEL_TRACE
     if ( !count )
       FT_TRACE4(( " (none)" ));
-    FT_TRACE4(( "\n\n" ));
+    FT_TRACE4(( "\n" ));
+    FT_TRACE4(( "\n" ));
 #endif
 
-    FT_TRACE4(( "GPOS lookups (style `%s'):\n"
-                " ",
+    FT_TRACE4(( "GPOS lookups (style `%s'):\n",
                 af_style_names[style_class->style] ));
+    FT_TRACE4(( " " ));
 
     gpos_lookups = hb_set_create();
     hb_ot_layout_collect_lookups( face,
@@ -242,7 +251,8 @@
 #ifdef FT_DEBUG_LEVEL_TRACE
     if ( !count )
       FT_TRACE4(( " (none)" ));
-    FT_TRACE4(( "\n\n" ));
+    FT_TRACE4(( "\n" ));
+    FT_TRACE4(( "\n" ));
 #endif
 
     
@@ -353,8 +363,10 @@
     {
 #ifdef FT_DEBUG_LEVEL_TRACE
       if ( !( count % 10 ) )
-        FT_TRACE4(( "\n"
-                    "   " ));
+      {
+        FT_TRACE4(( "\n" ));
+        FT_TRACE4(( "   " ));
+      }
 
       FT_TRACE4(( " %d", idx ));
       count++;
@@ -376,9 +388,12 @@
 
 #ifdef FT_DEBUG_LEVEL_TRACE
     if ( !count )
-      FT_TRACE4(( "\n"
-                  "    (none)" ));
-    FT_TRACE4(( "\n\n" ));
+    {
+      FT_TRACE4(( "\n" ));
+      FT_TRACE4(( "    (none)" ));
+    }
+    FT_TRACE4(( "\n" ));
+    FT_TRACE4(( "\n" ));
 #endif
 
   Exit:

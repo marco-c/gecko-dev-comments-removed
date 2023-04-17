@@ -59,15 +59,14 @@
     CF2_Stack  stack = NULL;
 
 
-    if ( FT_NEW( stack ) )
+    if ( FT_QNEW( stack ) )
       return NULL;
 
-    
     stack->memory = memory;
     stack->error  = e;
 
     
-    if ( FT_NEW_ARRAY( stack->buffer, stackSize ) )
+    if ( FT_QNEW_ARRAY( stack->buffer, stackSize ) )
     {
       FT_FREE( stack );
       return NULL;

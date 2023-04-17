@@ -175,6 +175,7 @@ FT_BEGIN_HEADER
 
     TT_GraphicsState   GS;         
 
+    FT_Int             iniRange;  
     FT_Int             curRange;  
     FT_Byte*           code;      
     FT_Long            IP;        
@@ -187,6 +188,9 @@ FT_BEGIN_HEADER
                                   
     FT_ULong           cvtSize;
     FT_Long*           cvt;
+    FT_ULong           glyfCvtSize;
+    FT_Long*           glyfCvt;   
+    FT_Long*           origCvt;
 
     FT_UInt            glyphSize; 
     FT_Byte*           glyphIns;  
@@ -213,8 +217,11 @@ FT_BEGIN_HEADER
     TT_CodeRangeTable  codeRangeTable;  
                                         
 
-    FT_UShort          storeSize;  
-    FT_Long*           storage;    
+    FT_UShort          storeSize;    
+    FT_Long*           storage;      
+    FT_UShort          glyfStoreSize;
+    FT_Long*           glyfStorage;  
+    FT_Long*           origStorage;
 
     FT_F26Dot6         period;     
     FT_F26Dot6         phase;      
@@ -464,7 +471,6 @@ FT_BEGIN_HEADER
 
 
   
-
 
 
 

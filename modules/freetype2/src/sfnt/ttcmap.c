@@ -916,6 +916,16 @@
       length = (FT_UInt)( valid->limit - table );
     }
 
+    
+    
+    if ( length < (FT_UInt)( valid->limit - table ) )
+    {
+      if ( valid->level >= FT_VALIDATE_PARANOID )
+        FT_INVALID_DATA;
+
+      length = (FT_UInt)( valid->limit - table );
+    }
+
     if ( length < 16 )
       FT_INVALID_TOO_SHORT;
 

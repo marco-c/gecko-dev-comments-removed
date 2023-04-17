@@ -276,7 +276,7 @@
       char*  s;
 
 
-      if ( FT_ALLOC( face->style_name, len ) )
+      if ( FT_QALLOC( face->style_name, len ) )
         return error;
 
       s = face->style_name;
@@ -442,7 +442,7 @@
       bdfface->num_glyphs = (FT_Long)( font->glyphs_size + 1 );
 
       bdfface->num_fixed_sizes = 1;
-      if ( FT_NEW_ARRAY( bdfface->available_sizes, 1 ) )
+      if ( FT_NEW( bdfface->available_sizes ) )
         goto Exit;
 
       {
@@ -450,8 +450,6 @@
         FT_Short         resolution_x = 0, resolution_y = 0;
         long             value;
 
-
-        FT_ZERO( bsize );
 
         
         if ( font->font_ascent > 0x7FFF || font->font_ascent < -0x7FFF )

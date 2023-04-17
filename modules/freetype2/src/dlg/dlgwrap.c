@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+#define _XOPEN_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include <freetype/freetype.h>
+
+
+#ifdef FT_DEBUG_LOGGING
+#include "dlg.c"
+#else
+  
+  typedef int  _dlg_dummy;
+#endif
+
+
+

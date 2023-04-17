@@ -238,6 +238,11 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
   typedef FT_Error
   (*FT_Incremental_GetGlyphMetricsFunc)
                       ( FT_Incremental              incremental,

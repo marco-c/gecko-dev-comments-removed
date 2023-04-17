@@ -155,31 +155,30 @@
     
     
     {
-      const char*  p   = glyph_name;
-      const char*  dot = NULL;
+      FT_UInt32    value = 0;
+      const char*  p     = glyph_name;
 
 
-      for ( ; *p; p++ )
-      {
-        if ( *p == '.' && p > glyph_name )
-        {
-          dot = p;
-          break;
-        }
-      }
+      for ( ; *p && *p != '.'; p++ )
+        ;
 
       
-      if ( !dot )
-        return (FT_UInt32)ft_get_adobe_glyph_index( glyph_name, p );
-      else
-        return (FT_UInt32)( ft_get_adobe_glyph_index( glyph_name, dot ) |
-                            VARIANT_BIT );
+      
+      if ( p > glyph_name )
+      {
+        value = (FT_UInt32)ft_get_adobe_glyph_index( glyph_name, p );
+
+        if ( *p == '.' )
+          value |= (FT_UInt32)VARIANT_BIT;
+      }
+
+      return value;
     }
   }
 
 
   
-  FT_CALLBACK_DEF( int )
+  FT_COMPARE_DEF( int )
   compare_uni_maps( const void*  a,
                     const void*  b )
   {
@@ -328,7 +327,7 @@
     table->num_maps = 0;
     table->maps     = NULL;
 
-    if ( !FT_NEW_ARRAY( table->maps, num_glyphs + EXTRA_GLYPH_LIST_SIZE ) )
+    if ( !FT_QNEW_ARRAY( table->maps, num_glyphs + EXTRA_GLYPH_LIST_SIZE ) )
     {
       FT_UInt     n;
       FT_UInt     count;
@@ -343,7 +342,7 @@
         const char*  gname = get_glyph_name( glyph_data, n );
 
 
-        if ( gname )
+        if ( gname && *gname )
         {
           ps_check_extra_glyph_name( gname, n,
                                      extra_glyphs, extra_glyph_list_states );
@@ -391,9 +390,9 @@
         
         if ( count < num_glyphs / 2 )
         {
-          (void)FT_RENEW_ARRAY( table->maps,
-                                num_glyphs + EXTRA_GLYPH_LIST_SIZE,
-                                count );
+          (void)FT_QRENEW_ARRAY( table->maps,
+                                 num_glyphs + EXTRA_GLYPH_LIST_SIZE,
+                                 count );
           error = FT_Err_Ok;
         }
 
