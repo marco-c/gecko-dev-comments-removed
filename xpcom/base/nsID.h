@@ -18,22 +18,19 @@
 
 
 struct nsID {
-  
-
-
-
-  
   uint32_t m0;
   uint16_t m1;
   uint16_t m2;
   uint8_t m3[8];
-  
 
   
 
 
 
-  
+
+  [[nodiscard]] static nsresult GenerateUUIDInPlace(nsID& aId);
+  static nsID GenerateUUID();
+
   
 
 
@@ -89,8 +86,6 @@ struct nsID {
 
   
   nsID* Clone() const;
-
-  
 };
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
