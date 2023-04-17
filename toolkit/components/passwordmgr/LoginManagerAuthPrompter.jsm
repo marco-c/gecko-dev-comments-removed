@@ -132,7 +132,16 @@ LoginManagerAuthPromptFactory.prototype = {
   },
 
   getPendingPrompt(browser, hashKey) {
-    return this._pendingPrompts.get(browser || this._noBrowser)?.get(hashKey);
+    
+    
+    
+    let pendingNoBrowserPrompt = this._pendingPrompts
+      .get(this._noBrowser)
+      ?.get(hashKey);
+    if (pendingNoBrowserPrompt) {
+      return pendingNoBrowserPrompt;
+    }
+    return this._pendingPrompts.get(browser)?.get(hashKey);
   },
 
   _setPendingPrompt(prompt, hashKey) {

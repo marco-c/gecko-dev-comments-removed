@@ -1071,6 +1071,7 @@ class ModalPrompter {
   async openPrompt(args) {
     if (!this.browsingContext) {
       
+      args.modalType = MODAL_TYPE_WINDOW;
       this.openWindowPrompt(null, args);
       return args;
     }
