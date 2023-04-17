@@ -209,10 +209,5 @@ interface nsIBaseWindow : nsISupports
 	
 
 
-	void setFocus();
-
-	
-
-
 	attribute AString title;
 };
