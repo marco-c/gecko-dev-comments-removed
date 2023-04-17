@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/jpeg/dec_jpeg_data.h"
 
 #include <brotli/decode.h>

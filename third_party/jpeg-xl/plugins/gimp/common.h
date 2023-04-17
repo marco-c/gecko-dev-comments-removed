@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef PLUGINS_GIMP_COMMON_H_
 #define PLUGINS_GIMP_COMMON_H_
 

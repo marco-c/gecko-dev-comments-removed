@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/optimize.h"
 
 #include <stdio.h>

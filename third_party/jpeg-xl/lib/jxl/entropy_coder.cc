@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/entropy_coder.h"
 
 #include <stddef.h>

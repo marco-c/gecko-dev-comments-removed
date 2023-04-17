@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_patch_dictionary.h"
 
 #include <stdint.h>

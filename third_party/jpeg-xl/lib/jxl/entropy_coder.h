@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENTROPY_CODER_H_
 #define LIB_JXL_ENTROPY_CODER_H_
 

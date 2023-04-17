@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/convolve.h"
 
 #include <time.h>

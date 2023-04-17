@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/data_parallel.h"
 
 #include "gtest/gtest.h"

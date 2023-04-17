@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_JPEG_ENC_JPEG_HUFFMAN_DECODE_H_
 #define LIB_JXL_JPEG_ENC_JPEG_HUFFMAN_DECODE_H_
 

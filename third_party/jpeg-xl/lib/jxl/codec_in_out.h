@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_CODEC_IN_OUT_H_
 #define LIB_JXL_CODEC_IN_OUT_H_
 

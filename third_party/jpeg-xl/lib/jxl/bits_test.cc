@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/bits.h"
 
 #include "gtest/gtest.h"

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/blending.h"
 
 #include "lib/jxl/alpha.h"

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/modular/encoding/encoding.h"
 
 #include <stdint.h>

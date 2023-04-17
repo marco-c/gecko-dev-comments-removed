@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "benchmark/benchmark.h"
 #include "lib/jxl/splines.h"
 

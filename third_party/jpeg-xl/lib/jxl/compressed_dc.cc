@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/compressed_dc.h"
 
 #include <stdint.h>

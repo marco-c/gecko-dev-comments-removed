@@ -10,15 +10,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_CODESTREAM_HEADER_H_
 #define JXL_CODESTREAM_HEADER_H_
 

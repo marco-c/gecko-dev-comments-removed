@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/blending.h"
 
 #include "gmock/gmock.h"

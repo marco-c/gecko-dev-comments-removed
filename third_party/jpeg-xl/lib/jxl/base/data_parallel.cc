@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/data_parallel.h"
 
 #define DATA_PARALLEL_TRACE 0

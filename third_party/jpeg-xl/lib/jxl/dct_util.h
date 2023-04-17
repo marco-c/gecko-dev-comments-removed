@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DCT_UTIL_H_
 #define LIB_JXL_DCT_UTIL_H_
 

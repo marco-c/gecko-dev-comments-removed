@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/codec_gif.h"
 
 #include <gif_lib.h>

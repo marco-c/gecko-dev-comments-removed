@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/alpha.h"
 
 #include "gmock/gmock.h"

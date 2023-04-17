@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_frame.h"
 
 #include <stddef.h>
@@ -375,12 +366,12 @@ Status MakeFrameHeader(const CompressParams& cparams,
     }
     frame_header->blending_info.alpha_channel = index;
     frame_header->blending_info.mode =
-        ib.blend ? BlendMode::kBlend : BlendMode::kReplace;
+        ib.blend ? ib.blendmode : BlendMode::kReplace;
     
     frame_header->blending_info.source = 1;
     for (size_t i = 0; i < extra_channels.size(); i++) {
       frame_header->extra_channel_blending_info[i].alpha_channel = index;
-      BlendMode default_blend = BlendMode::kBlend;
+      BlendMode default_blend = ib.blendmode;
       if (extra_channels[i].type != ExtraChannel::kBlack && i != index) {
         
         default_blend = BlendMode::kAdd;
@@ -1017,6 +1008,8 @@ Status EncodeFrame(const CompressParams& cparams_orig,
                    const ImageBundle& ib, PassesEncoderState* passes_enc_state,
                    ThreadPool* pool, BitWriter* writer, AuxOut* aux_out) {
   ib.VerifyMetadata();
+
+  passes_enc_state->special_frames.clear();
 
   CompressParams cparams = cparams_orig;
   if (cparams.progressive_dc < 0) {

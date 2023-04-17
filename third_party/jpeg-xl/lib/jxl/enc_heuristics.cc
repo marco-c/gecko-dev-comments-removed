@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_heuristics.h"
 
 #include <stddef.h>

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/dec_transforms_testonly.h"
 
 #undef HWY_TARGET_INCLUDE

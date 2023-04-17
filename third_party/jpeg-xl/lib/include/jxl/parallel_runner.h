@@ -31,15 +31,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_PARALLEL_RUNNER_H_
 #define JXL_PARALLEL_RUNNER_H_
 

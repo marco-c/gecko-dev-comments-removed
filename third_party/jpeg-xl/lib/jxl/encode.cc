@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "jxl/encode.h"
 
 #include <algorithm>

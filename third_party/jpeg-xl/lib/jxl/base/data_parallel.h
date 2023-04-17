@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_DATA_PARALLEL_H_
 #define LIB_JXL_BASE_DATA_PARALLEL_H_
 

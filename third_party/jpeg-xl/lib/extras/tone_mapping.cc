@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/tone_mapping.h"
 
 #undef HWY_TARGET_INCLUDE

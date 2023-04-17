@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_comparator.h"
 
 #include <stddef.h>

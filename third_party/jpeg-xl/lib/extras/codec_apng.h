@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_EXTRAS_CODEC_APNG_H_
 #define LIB_EXTRAS_CODEC_APNG_H_
 

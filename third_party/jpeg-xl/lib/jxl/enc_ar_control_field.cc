@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_ar_control_field.h"
 
 #include <stdint.h>

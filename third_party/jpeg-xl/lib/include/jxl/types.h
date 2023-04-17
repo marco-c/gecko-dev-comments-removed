@@ -8,15 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_TYPES_H_
 #define JXL_TYPES_H_
 

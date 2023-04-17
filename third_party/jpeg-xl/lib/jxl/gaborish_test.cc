@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/gaborish.h"
 
 #include <hwy/base.h>

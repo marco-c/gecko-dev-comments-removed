@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_GROUP_H_
 #define LIB_JXL_ENC_GROUP_H_
 

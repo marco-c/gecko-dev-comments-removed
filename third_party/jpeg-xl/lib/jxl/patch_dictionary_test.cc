@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "gtest/gtest.h"
 #include "lib/extras/codec.h"
 #include "lib/jxl/dec_params.h"

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/luminance.h"
 
 #include "lib/jxl/codec_in_out.h"

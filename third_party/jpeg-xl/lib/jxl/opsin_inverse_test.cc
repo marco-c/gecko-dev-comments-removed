@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "gtest/gtest.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/codec_in_out.h"

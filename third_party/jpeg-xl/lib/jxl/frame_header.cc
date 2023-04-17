@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/frame_header.h"
 
 #include "lib/jxl/aux_out.h"

@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_OPTIMIZE_H_
 #define LIB_JXL_OPTIMIZE_H_
 

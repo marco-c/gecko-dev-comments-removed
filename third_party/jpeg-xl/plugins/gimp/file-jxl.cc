@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include <glib/gi18n.h>
 #include <libgimp/gimp.h>
 #include <libgimp/gimpui.h>

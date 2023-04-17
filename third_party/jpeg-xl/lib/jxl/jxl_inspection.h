@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_JXL_INSPECTION_H_
 #define LIB_JXL_JXL_INSPECTION_H_
 

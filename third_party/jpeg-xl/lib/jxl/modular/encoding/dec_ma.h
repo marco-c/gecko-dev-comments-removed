@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_MODULAR_ENCODING_DEC_MA_H_
 #define LIB_JXL_MODULAR_ENCODING_DEC_MA_H_
 

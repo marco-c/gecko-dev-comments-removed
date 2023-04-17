@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/modular/modular_image.h"
 
 #include "lib/jxl/base/status.h"

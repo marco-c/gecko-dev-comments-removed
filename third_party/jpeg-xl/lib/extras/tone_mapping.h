@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_EXTRAS_TONE_MAPPING_H_
 #define LIB_EXTRAS_TONE_MAPPING_H_
 

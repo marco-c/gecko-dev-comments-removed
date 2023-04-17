@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_STATUS_H_
 #define LIB_JXL_BASE_STATUS_H_
 

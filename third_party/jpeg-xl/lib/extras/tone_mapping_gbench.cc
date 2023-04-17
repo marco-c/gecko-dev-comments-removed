@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "benchmark/benchmark.h"
 #include "lib/extras/codec.h"
 #include "lib/extras/tone_mapping.h"

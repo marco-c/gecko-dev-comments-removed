@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/icc_codec_common.h"
 
 #include <stdint.h>

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/modular/encoding/enc_ma.h"
 
 #include <algorithm>
@@ -542,13 +533,13 @@ constexpr int TreeSamples::kPropertyRange;
 constexpr uint32_t TreeSamples::kDedupEntryUnused;
 
 Status TreeSamples::SetPredictor(Predictor predictor,
-                                 ModularOptions::WPTreeMode wp_tree_mode) {
-  if (wp_tree_mode == ModularOptions::WPTreeMode::kWPOnly) {
+                                 ModularOptions::TreeMode wp_tree_mode) {
+  if (wp_tree_mode == ModularOptions::TreeMode::kWPOnly) {
     predictors = {Predictor::Weighted};
     residuals.resize(1);
     return true;
   }
-  if (wp_tree_mode == ModularOptions::WPTreeMode::kNoWP &&
+  if (wp_tree_mode == ModularOptions::TreeMode::kNoWP &&
       predictor == Predictor::Weighted) {
     return JXL_FAILURE("Invalid predictor settings");
   }
@@ -563,7 +554,7 @@ Status TreeSamples::SetPredictor(Predictor predictor,
   } else {
     predictors = {predictor};
   }
-  if (wp_tree_mode == ModularOptions::WPTreeMode::kNoWP) {
+  if (wp_tree_mode == ModularOptions::TreeMode::kNoWP) {
     auto wp_it =
         std::find(predictors.begin(), predictors.end(), Predictor::Weighted);
     if (wp_it != predictors.end()) {
@@ -575,12 +566,15 @@ Status TreeSamples::SetPredictor(Predictor predictor,
 }
 
 Status TreeSamples::SetProperties(const std::vector<uint32_t> &properties,
-                                  ModularOptions::WPTreeMode wp_tree_mode) {
+                                  ModularOptions::TreeMode wp_tree_mode) {
   props_to_use = properties;
-  if (wp_tree_mode == ModularOptions::WPTreeMode::kWPOnly) {
+  if (wp_tree_mode == ModularOptions::TreeMode::kWPOnly) {
     props_to_use = {kWPProp};
   }
-  if (wp_tree_mode == ModularOptions::WPTreeMode::kNoWP) {
+  if (wp_tree_mode == ModularOptions::TreeMode::kGradientOnly) {
+    props_to_use = {kGradientProp};
+  }
+  if (wp_tree_mode == ModularOptions::TreeMode::kNoWP) {
     auto it = std::find(props_to_use.begin(), props_to_use.end(), kWPProp);
     if (it != props_to_use.end()) {
       props_to_use.erase(it);

@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #if defined(LIB_JXL_DCT_INL_H_) == defined(HWY_TARGET_TOGGLE)
 #ifdef LIB_JXL_DCT_INL_H_
 #undef LIB_JXL_DCT_INL_H_

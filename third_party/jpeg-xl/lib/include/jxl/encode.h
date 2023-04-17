@@ -8,15 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_ENCODE_H_
 #define JXL_ENCODE_H_
 

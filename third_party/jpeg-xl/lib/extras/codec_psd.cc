@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/codec_psd.h"
 
 #include <stdio.h>

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/modular/transform/transform.h"
 
 #include "lib/jxl/fields.h"

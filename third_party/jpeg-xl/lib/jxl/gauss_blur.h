@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_GAUSS_BLUR_H_
 #define LIB_JXL_GAUSS_BLUR_H_
 

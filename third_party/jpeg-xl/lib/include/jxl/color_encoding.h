@@ -9,15 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_COLOR_ENCODING_H_
 #define JXL_COLOR_ENCODING_H_
 

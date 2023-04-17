@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/descriptive_statistics.h"
 
 #include <stdio.h>

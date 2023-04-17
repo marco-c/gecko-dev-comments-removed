@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include <stdlib.h>
 
 #include <algorithm>

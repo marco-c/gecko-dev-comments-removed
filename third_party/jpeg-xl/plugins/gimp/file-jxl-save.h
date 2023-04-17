@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef PLUGINS_GIMP_FILE_JXL_SAVE_H_
 #define PLUGINS_GIMP_FILE_JXL_SAVE_H_
 

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_LINALG_H_
 #define LIB_JXL_LINALG_H_
 

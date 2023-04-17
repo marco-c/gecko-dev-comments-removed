@@ -4,15 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENCODE_INTERNAL_H_
 #define LIB_JXL_ENCODE_INTERNAL_H_
 

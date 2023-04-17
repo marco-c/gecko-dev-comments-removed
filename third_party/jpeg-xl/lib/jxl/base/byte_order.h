@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_BYTE_ORDER_H_
 #define LIB_JXL_BASE_BYTE_ORDER_H_
 

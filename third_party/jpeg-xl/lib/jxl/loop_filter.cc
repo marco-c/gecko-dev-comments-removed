@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/loop_filter.h"
 
 #include "lib/jxl/aux_out.h"

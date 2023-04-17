@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/chroma_from_luma.h"
 
 namespace jxl {

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/jpeg/enc_jpeg_data_reader.h"
 
 #include <inttypes.h>

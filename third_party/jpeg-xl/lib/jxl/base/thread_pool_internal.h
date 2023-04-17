@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_THREAD_POOL_INTERNAL_H_
 #define LIB_JXL_BASE_THREAD_POOL_INTERNAL_H_
 

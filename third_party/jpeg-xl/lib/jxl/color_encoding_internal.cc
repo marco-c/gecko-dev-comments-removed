@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/color_encoding_internal.h"
 
 #include <errno.h>

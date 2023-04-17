@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #define GDK_PIXBUF_ENABLE_BACKEND
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #undef GDK_PIXBUF_ENABLE_BACKEND

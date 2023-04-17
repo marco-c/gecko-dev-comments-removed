@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_IACA_H_
 #define LIB_JXL_BASE_IACA_H_
 

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/passes_state.h"
 
 #include "lib/jxl/chroma_from_luma.h"

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BLENDING_H_
 #define LIB_JXL_BLENDING_H_
 #include "lib/jxl/dec_cache.h"

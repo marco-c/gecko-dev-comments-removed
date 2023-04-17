@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DEC_GROUP_BORDER_H_
 #define LIB_JXL_DEC_GROUP_BORDER_H_
 

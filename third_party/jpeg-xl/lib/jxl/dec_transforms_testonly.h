@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DEC_TRANSFORMS_TESTONLY_H_
 #define LIB_JXL_DEC_TRANSFORMS_TESTONLY_H_
 

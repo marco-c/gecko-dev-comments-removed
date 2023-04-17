@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_AUX_OUT_H_
 #define LIB_JXL_AUX_OUT_H_
 

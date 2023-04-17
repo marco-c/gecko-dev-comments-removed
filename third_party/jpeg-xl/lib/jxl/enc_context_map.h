@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_CONTEXT_MAP_H_
 #define LIB_JXL_ENC_CONTEXT_MAP_H_
 

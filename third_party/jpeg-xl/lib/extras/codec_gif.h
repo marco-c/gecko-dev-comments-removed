@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_EXTRAS_CODEC_GIF_H_
 #define LIB_EXTRAS_CODEC_GIF_H_
 

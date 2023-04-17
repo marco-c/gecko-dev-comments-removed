@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_LOOP_FILTER_H_
 #define LIB_JXL_LOOP_FILTER_H_
 

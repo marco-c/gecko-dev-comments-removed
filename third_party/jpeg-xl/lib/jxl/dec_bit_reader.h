@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DEC_BIT_READER_H_
 #define LIB_JXL_DEC_BIT_READER_H_
 

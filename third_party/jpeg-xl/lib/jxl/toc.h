@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_TOC_H_
 #define LIB_JXL_TOC_H_
 

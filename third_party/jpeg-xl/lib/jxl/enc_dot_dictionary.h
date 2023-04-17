@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_DOT_DICTIONARY_H_
 #define LIB_JXL_ENC_DOT_DICTIONARY_H_
 

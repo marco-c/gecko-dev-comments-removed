@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ICC_CODEC_COMMON_H_
 #define LIB_JXL_ICC_CODEC_COMMON_H_
 

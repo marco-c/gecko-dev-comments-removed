@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DEC_PATCH_DICTIONARY_H_
 #define LIB_JXL_DEC_PATCH_DICTIONARY_H_
 
@@ -168,6 +159,11 @@ class PatchDictionary {
 
   Status Decode(BitReader* br, size_t xsize, size_t ysize,
                 bool* uses_extra_channels);
+
+  void Clear() {
+    positions_.clear();
+    ComputePatchCache();
+  }
 
   
   

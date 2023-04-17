@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BUTTERAUGLI_BUTTERAUGLI_H_
 #define LIB_JXL_BUTTERAUGLI_BUTTERAUGLI_H_
 

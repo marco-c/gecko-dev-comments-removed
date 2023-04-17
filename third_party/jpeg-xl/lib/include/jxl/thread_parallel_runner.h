@@ -25,15 +25,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_THREAD_PARALLEL_RUNNER_H_
 #define JXL_THREAD_PARALLEL_RUNNER_H_
 

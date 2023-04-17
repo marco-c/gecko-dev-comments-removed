@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_dot_dictionary.h"
 
 #include <stddef.h>

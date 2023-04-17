@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_transforms.h"
 
 #undef HWY_TARGET_INCLUDE

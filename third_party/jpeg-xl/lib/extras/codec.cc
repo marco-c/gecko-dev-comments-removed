@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/codec.h"
 
 #include "lib/jxl/base/file_io.h"

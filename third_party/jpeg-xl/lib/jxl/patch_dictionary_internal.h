@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_PATCH_DICTIONARY_INTERNAL_H_
 #define LIB_JXL_PATCH_DICTIONARY_INTERNAL_H_
 

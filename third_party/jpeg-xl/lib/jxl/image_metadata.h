@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_IMAGE_METADATA_H_
 #define LIB_JXL_IMAGE_METADATA_H_
 

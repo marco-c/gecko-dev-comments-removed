@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_FILE_IO_H_
 #define LIB_JXL_BASE_FILE_IO_H_
 

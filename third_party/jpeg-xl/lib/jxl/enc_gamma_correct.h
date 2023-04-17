@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_GAMMA_CORRECT_H_
 #define LIB_JXL_ENC_GAMMA_CORRECT_H_
 

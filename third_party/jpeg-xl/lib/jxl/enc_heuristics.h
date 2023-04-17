@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_HEURISTICS_H_
 #define LIB_JXL_ENC_HEURISTICS_H_
 

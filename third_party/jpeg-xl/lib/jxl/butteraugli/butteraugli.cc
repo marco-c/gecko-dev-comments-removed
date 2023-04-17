@@ -20,15 +20,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/butteraugli/butteraugli.h"
 
 #include <stdint.h>

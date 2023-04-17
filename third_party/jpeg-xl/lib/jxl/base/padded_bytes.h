@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_PADDED_BYTES_H_
 #define LIB_JXL_BASE_PADDED_BYTES_H_
 

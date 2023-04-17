@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_MODULAR_MODULAR_IMAGE_H_
 #define LIB_JXL_MODULAR_MODULAR_IMAGE_H_
 

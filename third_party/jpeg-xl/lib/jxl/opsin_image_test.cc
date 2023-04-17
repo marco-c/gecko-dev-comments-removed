@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include <stdio.h>
 
 #include <hwy/tests/test_util-inl.h>

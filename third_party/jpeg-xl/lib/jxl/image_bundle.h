@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_IMAGE_BUNDLE_H_
 #define LIB_JXL_IMAGE_BUNDLE_H_
 
@@ -224,6 +215,7 @@ class ImageBundle {
   uint32_t duration = 0;
   bool use_for_next_frame = false;
   bool blend = false;
+  BlendMode blendmode = BlendMode::kBlend;
   std::string name;
 
  private:

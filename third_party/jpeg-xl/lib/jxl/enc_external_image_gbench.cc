@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "benchmark/benchmark.h"
 #include "lib/jxl/enc_external_image.h"
 #include "lib/jxl/image_ops.h"

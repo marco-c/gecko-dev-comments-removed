@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DEC_HUFFMAN_H_
 #define LIB_JXL_DEC_HUFFMAN_H_
 

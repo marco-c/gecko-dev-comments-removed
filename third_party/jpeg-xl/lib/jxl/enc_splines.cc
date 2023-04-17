@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include <algorithm>
 
 #include "lib/jxl/ans_params.h"

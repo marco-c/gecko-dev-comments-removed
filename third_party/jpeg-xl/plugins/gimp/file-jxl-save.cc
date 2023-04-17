@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "plugins/gimp/file-jxl-save.h"
 
 

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/filters_internal.h"
 
 #include "gtest/gtest.h"

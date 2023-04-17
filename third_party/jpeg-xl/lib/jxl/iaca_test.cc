@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/iaca.h"
 
 #include "gtest/gtest.h"

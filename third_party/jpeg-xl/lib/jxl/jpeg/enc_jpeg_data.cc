@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/jpeg/enc_jpeg_data.h"
 
 #include <brotli/encode.h>

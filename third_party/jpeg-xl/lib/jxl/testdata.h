@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_TESTDATA_H_
 #define LIB_JXL_TESTDATA_H_
 

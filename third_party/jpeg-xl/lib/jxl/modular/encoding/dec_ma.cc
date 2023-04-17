@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/modular/encoding/dec_ma.h"
 
 #include "lib/jxl/dec_ans.h"

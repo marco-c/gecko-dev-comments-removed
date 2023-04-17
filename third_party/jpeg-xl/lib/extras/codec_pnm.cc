@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/codec_pnm.h"
 
 #include <stdio.h>

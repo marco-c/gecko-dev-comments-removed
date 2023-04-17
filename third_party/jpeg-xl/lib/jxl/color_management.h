@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_COLOR_MANAGEMENT_H_
 #define LIB_JXL_COLOR_MANAGEMENT_H_
 

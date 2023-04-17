@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_JPEG_DEC_JPEG_DATA_WRITER_H_
 #define LIB_JXL_JPEG_DEC_JPEG_DATA_WRITER_H_
 

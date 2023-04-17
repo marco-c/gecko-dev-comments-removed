@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/splines.h"
 
 #include "gmock/gmock.h"

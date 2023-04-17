@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/epf.h"
 
 #include <math.h>

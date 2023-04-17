@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_EXTRAS_CODEC_EXR_H_
 #define LIB_EXTRAS_CODEC_EXR_H_
 

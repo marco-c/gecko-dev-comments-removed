@@ -4,15 +4,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_DETECT_DOTS_H_
 #define LIB_JXL_ENC_DETECT_DOTS_H_
 

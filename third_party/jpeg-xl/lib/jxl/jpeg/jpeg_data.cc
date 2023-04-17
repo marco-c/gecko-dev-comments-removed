@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/jpeg/jpeg_data.h"
 
 #include "lib/jxl/base/status.h"

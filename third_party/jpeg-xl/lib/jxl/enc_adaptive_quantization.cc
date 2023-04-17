@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_adaptive_quantization.h"
 
 #include <stddef.h>

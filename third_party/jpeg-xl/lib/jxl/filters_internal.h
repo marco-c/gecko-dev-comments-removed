@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_FILTERS_INTERNAL_H_
 #define LIB_JXL_FILTERS_INTERNAL_H_
 

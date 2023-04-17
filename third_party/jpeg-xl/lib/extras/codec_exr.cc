@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/extras/codec_exr.h"
 
 #include <ImfChromaticitiesAttribute.h>

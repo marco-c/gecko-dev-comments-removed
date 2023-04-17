@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_MODULAR_TRANSFORM_SQUEEZE_H_
 #define LIB_JXL_MODULAR_TRANSFORM_SQUEEZE_H_
 

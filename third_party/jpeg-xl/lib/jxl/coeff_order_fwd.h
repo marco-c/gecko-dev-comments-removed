@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_COEFF_ORDER_FWD_H_
 #define LIB_JXL_COEFF_ORDER_FWD_H_
 

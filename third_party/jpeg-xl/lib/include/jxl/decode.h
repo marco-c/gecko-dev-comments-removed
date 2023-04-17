@@ -8,15 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_DECODE_H_
 #define JXL_DECODE_H_
 
@@ -196,8 +187,6 @@ typedef enum {
   JXL_DEC_COLOR_ENCODING = 0x100,
 
   
-
-
 
 
 

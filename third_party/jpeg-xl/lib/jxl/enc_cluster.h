@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_CLUSTER_H_
 #define LIB_JXL_ENC_CLUSTER_H_
 

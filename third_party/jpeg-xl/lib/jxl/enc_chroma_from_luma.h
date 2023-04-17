@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ENC_CHROMA_FROM_LUMA_H_
 #define LIB_JXL_ENC_CHROMA_FROM_LUMA_H_
 

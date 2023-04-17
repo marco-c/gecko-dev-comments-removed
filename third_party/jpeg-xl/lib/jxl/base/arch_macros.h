@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_ARCH_MACROS_H_
 #define LIB_JXL_BASE_ARCH_MACROS_H_
 

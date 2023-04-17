@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_DCT_SCALES_H_
 #define LIB_JXL_DCT_SCALES_H_
 

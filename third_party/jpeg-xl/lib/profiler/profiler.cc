@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/profiler.h"
 
 #if PROFILER_ENABLED

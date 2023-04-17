@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_AC_CONTEXT_H_
 #define LIB_JXL_AC_CONTEXT_H_
 

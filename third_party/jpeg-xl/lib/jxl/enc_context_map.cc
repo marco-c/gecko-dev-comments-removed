@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_context_map.h"
 
 #include <stdint.h>

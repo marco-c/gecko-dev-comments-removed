@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/memory_manager_internal.h"
 
 #include <stdlib.h>

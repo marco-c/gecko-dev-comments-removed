@@ -2,15 +2,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/quant_weights.h"
 
 #include <stdio.h>

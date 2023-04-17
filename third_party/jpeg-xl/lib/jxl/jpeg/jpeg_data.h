@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_JPEG_JPEG_DATA_H_
 #define LIB_JXL_JPEG_JPEG_DATA_H_
 

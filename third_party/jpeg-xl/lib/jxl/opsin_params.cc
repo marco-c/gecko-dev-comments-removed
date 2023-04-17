@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/opsin_params.h"
 
 #include <stdlib.h>

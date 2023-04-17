@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_FIELD_ENCODINGS_H_
 #define LIB_JXL_FIELD_ENCODINGS_H_
 

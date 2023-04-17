@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_ALPHA_H_
 #define LIB_JXL_ALPHA_H_
 

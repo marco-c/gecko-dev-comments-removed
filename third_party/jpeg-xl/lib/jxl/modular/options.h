@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_MODULAR_OPTIONS_H_
 #define LIB_JXL_MODULAR_OPTIONS_H_
 
@@ -150,8 +141,8 @@ struct ModularOptions {
 
   
   
-  enum class WPTreeMode { kWPOnly, kNoWP, kDefault };
-  WPTreeMode wp_tree_mode = WPTreeMode::kDefault;
+  enum class TreeMode { kGradientOnly, kWPOnly, kNoWP, kDefault };
+  TreeMode wp_tree_mode = TreeMode::kDefault;
 
   
   bool skip_encoder_fast_path = false;

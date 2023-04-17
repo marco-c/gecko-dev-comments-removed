@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "gtest/gtest.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/thread_pool_internal.h"

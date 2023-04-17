@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_EXTRAS_CODEC_JPG_H_
 #define LIB_EXTRAS_CODEC_JPG_H_
 

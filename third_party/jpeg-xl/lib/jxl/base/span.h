@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_SPAN_H_
 #define LIB_JXL_BASE_SPAN_H_
 

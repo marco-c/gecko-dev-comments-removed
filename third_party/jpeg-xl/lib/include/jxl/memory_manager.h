@@ -8,15 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_MEMORY_MANAGER_H_
 #define JXL_MEMORY_MANAGER_H_
 

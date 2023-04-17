@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/base/byte_order.h"
 
 #include "gtest/gtest.h"

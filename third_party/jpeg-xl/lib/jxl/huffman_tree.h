@@ -5,15 +5,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_HUFFMAN_TREE_H_
 #define LIB_JXL_HUFFMAN_TREE_H_
 

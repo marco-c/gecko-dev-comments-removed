@@ -8,15 +8,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_BUTTERAUGLI_H_
 #define JXL_BUTTERAUGLI_H_
 

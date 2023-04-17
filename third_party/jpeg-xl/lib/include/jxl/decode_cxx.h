@@ -9,15 +9,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef JXL_DECODE_CXX_H_
 #define JXL_DECODE_CXX_H_
 

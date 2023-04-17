@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_BASE_COMPILER_SPECIFIC_H_
 #define LIB_JXL_BASE_COMPILER_SPECIFIC_H_
 

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_PASSES_STATE_H_
 #define LIB_JXL_PASSES_STATE_H_
 

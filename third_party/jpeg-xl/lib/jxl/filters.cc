@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/filters.h"
 
 #include "lib/jxl/base/profiler.h"

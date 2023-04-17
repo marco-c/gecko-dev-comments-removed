@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #if defined(LIB_JXL_DEC_TRANSFORMS_INL_H_) == defined(HWY_TARGET_TOGGLE)
 #ifdef LIB_JXL_DEC_TRANSFORMS_INL_H_
 #undef LIB_JXL_DEC_TRANSFORMS_INL_H_

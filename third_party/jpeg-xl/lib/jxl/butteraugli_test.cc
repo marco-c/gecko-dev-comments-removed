@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "jxl/butteraugli.h"
 
 #include "gtest/gtest.h"

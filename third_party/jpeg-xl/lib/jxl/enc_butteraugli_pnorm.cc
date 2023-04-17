@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/enc_butteraugli_pnorm.h"
 
 #include <math.h>

@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "jxl/decode.h"
 
 #include <stdint.h>

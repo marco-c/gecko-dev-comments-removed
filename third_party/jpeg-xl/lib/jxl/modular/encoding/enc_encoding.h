@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_MODULAR_ENCODING_ENC_ENCODING_H_
 #define LIB_JXL_MODULAR_ENCODING_ENC_ENCODING_H_
 

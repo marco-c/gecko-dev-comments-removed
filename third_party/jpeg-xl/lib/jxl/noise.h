@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_NOISE_H_
 #define LIB_JXL_NOISE_H_
 

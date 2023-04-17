@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include "lib/jxl/lehmer_code.h"
 
 #include <stdint.h>

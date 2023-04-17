@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_PROGRESSIVE_SPLIT_H_
 #define LIB_JXL_PROGRESSIVE_SPLIT_H_
 

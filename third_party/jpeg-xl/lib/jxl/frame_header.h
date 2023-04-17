@@ -3,15 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #ifndef LIB_JXL_FRAME_HEADER_H_
 #define LIB_JXL_FRAME_HEADER_H_
 
