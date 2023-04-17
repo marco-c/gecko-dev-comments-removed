@@ -742,8 +742,9 @@ Context::ThreadsafeHandle::~ThreadsafeHandle() {
 
   
   
-  NS_ProxyRelease("Context::ThreadsafeHandle::mStrongRef", mOwningEventTarget,
-                  mStrongRef.forget());
+  
+  MOZ_ALWAYS_SUCCEEDS(NS_ProxyRelease("Context::ThreadsafeHandle::mStrongRef",
+                                      mOwningEventTarget, mStrongRef.forget()));
 }
 
 void Context::ThreadsafeHandle::AllowToCloseOnOwningThread() {
