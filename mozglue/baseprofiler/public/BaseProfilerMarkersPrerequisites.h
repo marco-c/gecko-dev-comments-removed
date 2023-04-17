@@ -740,7 +740,7 @@ class MarkerSchema {
     Decimal
   };
 
-  enum class Searchable { notSearchable, searchable };
+  enum class Searchable { NotSearchable, Searchable };
 
   
   
