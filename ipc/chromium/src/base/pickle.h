@@ -156,6 +156,10 @@ class Pickle {
 
   
   
+  void Truncate(PickleIterator* iter);
+
+  
+  
   
   
   bool WriteBool(bool value);
