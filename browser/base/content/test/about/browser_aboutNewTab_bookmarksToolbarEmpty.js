@@ -56,121 +56,100 @@ add_task(async function setup() {
 });
 
 add_task(async function bookmarks_toolbar_not_shown_when_empty() {
-  for (let featureEnabled of [true, false]) {
-    info(
-      "Testing with the feature " + (featureEnabled ? "enabled" : "disabled")
-    );
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.toolbars.bookmarks.2h2020", featureEnabled]],
-    });
-    let bookmarks = await PlacesUtils.bookmarks.insertTree({
-      guid: PlacesUtils.bookmarks.toolbarGuid,
-      children: bookmarksInfo,
-    });
-    let example = await BrowserTestUtils.openNewForegroundTab({
-      gBrowser,
-      opening: "https://example.com",
-    });
-    let newtab = await BrowserTestUtils.openNewForegroundTab({
-      gBrowser,
-      opening: "about:newtab",
-    });
-    let emptyMessage = document.getElementById("personal-toolbar-empty");
+  let bookmarks = await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.toolbarGuid,
+    children: bookmarksInfo,
+  });
+  let example = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://example.com",
+  });
+  let newtab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:newtab",
+  });
+  let emptyMessage = document.getElementById("personal-toolbar-empty");
 
-    
-    if (featureEnabled) {
-      await waitForBookmarksToolbarVisibility({
-        visible: true,
-        message: "Toolbar should be visible on newtab if enabled",
-      });
-      ok(emptyMessage.hidden, "Empty message is hidden with toolbar populated");
-    }
+  
+  await waitForBookmarksToolbarVisibility({
+    visible: true,
+    message: "Toolbar should be visible on newtab",
+  });
+  ok(emptyMessage.hidden, "Empty message is hidden with toolbar populated");
 
-    
-    await BrowserTestUtils.switchTab(gBrowser, example);
-    await waitForBookmarksToolbarVisibility({
-      visible: false,
-      message: "Toolbar should be hidden on example.com",
-    });
+  
+  await BrowserTestUtils.switchTab(gBrowser, example);
+  await waitForBookmarksToolbarVisibility({
+    visible: false,
+    message: "Toolbar should be hidden on example.com",
+  });
 
-    
-    
-    CustomizableUI.addWidgetToArea(
-      "personal-bookmarks",
-      CustomizableUI.AREA_TABSTRIP
-    );
-    CustomizableUI.removeWidgetFromArea("import-button");
-    await BrowserTestUtils.switchTab(gBrowser, newtab);
-    if (featureEnabled) {
-      await waitForBookmarksToolbarVisibility({
-        visible: true,
-        message:
-          "Toolbar is visible when there are no items in the toolbar area",
-      });
-      ok(!emptyMessage.hidden, "Empty message is shown with toolbar empty");
-      
-      let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-      EventUtils.synthesizeMouseAtCenter(
-        emptyMessage.querySelector(".text-link"),
-        {}
-      );
-      let libraryWin = await winPromise;
-      is(
-        libraryWin.document.location.href,
-        "chrome://browser/content/places/places.xhtml",
-        "Should have opened library."
-      );
-      await BrowserTestUtils.closeWindow(libraryWin);
-    }
+  
+  
+  CustomizableUI.addWidgetToArea(
+    "personal-bookmarks",
+    CustomizableUI.AREA_TABSTRIP
+  );
+  CustomizableUI.removeWidgetFromArea("import-button");
+  await BrowserTestUtils.switchTab(gBrowser, newtab);
+  await waitForBookmarksToolbarVisibility({
+    visible: true,
+    message: "Toolbar is visible when there are no items in the toolbar area",
+  });
+  ok(!emptyMessage.hidden, "Empty message is shown with toolbar empty");
+  
+  let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
+  EventUtils.synthesizeMouseAtCenter(
+    emptyMessage.querySelector(".text-link"),
+    {}
+  );
+  let libraryWin = await winPromise;
+  is(
+    libraryWin.document.location.href,
+    "chrome://browser/content/places/places.xhtml",
+    "Should have opened library."
+  );
+  await BrowserTestUtils.closeWindow(libraryWin);
 
-    
-    CustomizableUI.addWidgetToArea(
-      "personal-bookmarks",
-      CustomizableUI.AREA_BOOKMARKS
-    );
-    await BrowserTestUtils.switchTab(gBrowser, example);
-    await BrowserTestUtils.switchTab(gBrowser, newtab);
-    if (featureEnabled) {
-      await waitForBookmarksToolbarVisibility({
-        visible: true,
-        message:
-          "Toolbar should be visible with Bookmarks Toolbar Items restored",
-      });
-      ok(emptyMessage.hidden, "Empty message is hidden with toolbar populated");
-    }
+  
+  CustomizableUI.addWidgetToArea(
+    "personal-bookmarks",
+    CustomizableUI.AREA_BOOKMARKS
+  );
+  await BrowserTestUtils.switchTab(gBrowser, example);
+  await BrowserTestUtils.switchTab(gBrowser, newtab);
+  await waitForBookmarksToolbarVisibility({
+    visible: true,
+    message: "Toolbar should be visible with Bookmarks Toolbar Items restored",
+  });
+  ok(emptyMessage.hidden, "Empty message is hidden with toolbar populated");
 
-    
-    
-    await PlacesUtils.bookmarks.remove(bookmarks);
-    await BrowserTestUtils.switchTab(gBrowser, example);
-    await BrowserTestUtils.switchTab(gBrowser, newtab);
-    if (featureEnabled) {
-      await waitForBookmarksToolbarVisibility({
-        visible: true,
-        message:
-          "Toolbar is visible when there are no items or nested bookmarks in the toolbar area",
-      });
-      ok(!emptyMessage.hidden, "Empty message is shown with toolbar empty");
-    }
+  
+  
+  await PlacesUtils.bookmarks.remove(bookmarks);
+  await BrowserTestUtils.switchTab(gBrowser, example);
+  await BrowserTestUtils.switchTab(gBrowser, newtab);
+  await waitForBookmarksToolbarVisibility({
+    visible: true,
+    message:
+      "Toolbar is visible when there are no items or nested bookmarks in the toolbar area",
+  });
+  ok(!emptyMessage.hidden, "Empty message is shown with toolbar empty");
 
-    
-    CustomizableUI.addWidgetToArea(
-      "characterencoding-button",
-      CustomizableUI.AREA_BOOKMARKS
-    );
-    await BrowserTestUtils.switchTab(gBrowser, example);
-    await BrowserTestUtils.switchTab(gBrowser, newtab);
-    if (featureEnabled) {
-      await waitForBookmarksToolbarVisibility({
-        visible: true,
-        message:
-          "Toolbar is visible when there is a visible button in the toolbar",
-      });
-      ok(emptyMessage.hidden, "Empty message is hidden with button in toolbar");
-    }
+  
+  CustomizableUI.addWidgetToArea(
+    "characterencoding-button",
+    CustomizableUI.AREA_BOOKMARKS
+  );
+  await BrowserTestUtils.switchTab(gBrowser, example);
+  await BrowserTestUtils.switchTab(gBrowser, newtab);
+  await waitForBookmarksToolbarVisibility({
+    visible: true,
+    message: "Toolbar is visible when there is a visible button in the toolbar",
+  });
+  ok(emptyMessage.hidden, "Empty message is hidden with button in toolbar");
 
-    await BrowserTestUtils.removeTab(newtab);
-    await BrowserTestUtils.removeTab(example);
-    CustomizableUI.reset();
-  }
+  await BrowserTestUtils.removeTab(newtab);
+  await BrowserTestUtils.removeTab(example);
+  CustomizableUI.reset();
 });

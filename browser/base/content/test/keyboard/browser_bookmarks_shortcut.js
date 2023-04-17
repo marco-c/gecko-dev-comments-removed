@@ -9,10 +9,6 @@
 
 
 add_task(async function testBookmarksToolbarShortcut() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.toolbars.bookmarks.2h2020", true]],
-  });
-
   let blankTab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: "example.com",

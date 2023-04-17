@@ -363,7 +363,7 @@ var StarUI = {
     }
 
     
-    if (didChangeFolder && gBookmarksToolbar2h2020) {
+    if (didChangeFolder) {
       Services.prefs.setCharPref(
         "browser.bookmarks.defaultLocation",
         selectedFolderGuid
@@ -1666,10 +1666,6 @@ var BookmarkingUI = {
 
       this.updateEmptyToolbarMessage();
 
-      if (!gBookmarksToolbar2h2020) {
-        return;
-      }
-
       let isVisible =
         Services.prefs.getCharPref(
           "browser.toolbars.bookmarks.visibility",
@@ -2237,8 +2233,7 @@ var BookmarkingUI = {
     
     let toolbar = document.getElementById("PlacesToolbar");
 
-    
-    if (!gBookmarksToolbar2h2020 || !toolbar?._placesView) {
+    if (!toolbar?._placesView) {
       return;
     }
 
@@ -2270,7 +2265,7 @@ var BookmarkingUI = {
     let unfiledGuid = PlacesUtils.bookmarks.unfiledGuid;
     let numberOfBookmarks = PlacesUtils.getChildCountForFolder(unfiledGuid);
 
-    if (!gBookmarksToolbar2h2020 || numberOfBookmarks < 1) {
+    if (numberOfBookmarks < 1) {
       return null;
     }
 

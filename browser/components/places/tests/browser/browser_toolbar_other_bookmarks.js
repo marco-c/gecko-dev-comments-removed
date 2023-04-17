@@ -5,7 +5,6 @@
 
 "use strict";
 
-const BOOKMARKS_H2_2020_PREF = "browser.toolbars.bookmarks.2h2020";
 const bookmarksInfo = [
   {
     title: "firefox",
@@ -45,10 +44,6 @@ add_task(async function setup() {
 
 
 add_task(async function testShowingOtherBookmarksInToolbar() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
-
   info("Check the initial state of the Other Bookmarks folder.");
   let win = await BrowserTestUtils.openNewBrowserWindow();
   await setupBookmarksToolbar(win);
@@ -76,10 +71,6 @@ add_task(async function testShowingOtherBookmarksInToolbar() {
 
 
 add_task(async function testOtherBookmarksVisibilityWhenMovingBookmarks() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
-
   info("Add bookmarks to Bookmarks Toolbar.");
   let bookmarks = await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.toolbarGuid,
@@ -106,10 +97,6 @@ add_task(async function testOtherBookmarksVisibilityWhenMovingBookmarks() {
 
 
 add_task(async function testOtherBookmarksMenuPopup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
-
   info("Add bookmarks to Other Bookmarks folder.");
   let bookmarks = await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
@@ -133,10 +120,6 @@ add_task(async function testOtherBookmarksMenuPopup() {
 
 
 add_task(async function testFolderPopup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
-
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
     children: [
@@ -167,10 +150,6 @@ add_task(async function testFolderPopup() {
 add_task(async function testOnlyShowOtherFolderInBookmarksToolbar() {
   await setupBookmarksToolbar();
 
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
-
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
     children: bookmarksInfo,
@@ -192,10 +171,6 @@ add_task(async function testOnlyShowOtherFolderInBookmarksToolbar() {
 
 add_task(async function testDeletingMenuItems() {
   await setupBookmarksToolbar();
-
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
 
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.unfiledGuid,
@@ -259,10 +234,6 @@ add_task(async function no_errors_when_bookmarks_placed_in_palette() {
 
 add_task(async function testShowingOtherBookmarksContextMenuItem() {
   await setupBookmarksToolbar();
-
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
 
   info("Add bookmark to Other Bookmarks.");
   let bookmark = await PlacesUtils.bookmarks.insertTree({
@@ -330,9 +301,6 @@ add_task(async function testShowingOtherBookmarksContextMenuItem() {
 
 add_task(async function showOtherBookmarksMenuItemPrefDisabled() {
   await setupBookmarksToolbar();
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, false]],
-  });
   await testIsOtherBookmarksMenuItemShown(false);
 });
 
@@ -340,9 +308,6 @@ add_task(async function showOtherBookmarksMenuItemPrefDisabled() {
 
 add_task(async function testOtherBookmarksToolbarOverFlow() {
   await setupBookmarksToolbar();
-  await SpecialPowers.pushPrefEnv({
-    set: [[BOOKMARKS_H2_2020_PREF, true]],
-  });
 
   info(
     "Ensure that visible nodes when showing/hiding Other Bookmarks is consistent across separate windows."

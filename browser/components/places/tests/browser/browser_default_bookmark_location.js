@@ -61,9 +61,7 @@ async function checkSelection() {
   
   let menuList = win.document.getElementById("editBMPanel_folderMenuList");
 
-  let expectedFolder = win.gBookmarksToolbar2h2020
-    ? "BookmarksToolbarFolderTitle"
-    : "OtherBookmarksFolderTitle";
+  let expectedFolder = "BookmarksToolbarFolderTitle";
   Assert.equal(
     menuList.label,
     PlacesUtils.getString(expectedFolder),
@@ -127,9 +125,7 @@ add_task(async function test_context_menu_link() {
       );
     },
     async function test(dialogWin) {
-      let expectedFolder = win.gBookmarksToolbar2h2020
-        ? "BookmarksToolbarFolderTitle"
-        : "OtherBookmarksFolderTitle";
+      let expectedFolder = "BookmarksToolbarFolderTitle";
       let expectedFolderName = PlacesUtils.getString(expectedFolder);
 
       let folderPicker = dialogWin.document.getElementById(
@@ -155,9 +151,7 @@ add_task(async function test_change_location_panel() {
 
   let { toolbarGuid, menuGuid, unfiledGuid } = PlacesUtils.bookmarks;
 
-  let expectedFolderGuid = win.gBookmarksToolbar2h2020
-    ? toolbarGuid
-    : unfiledGuid;
+  let expectedFolderGuid = toolbarGuid;
 
   info("Pref value: " + Services.prefs.getCharPref(LOCATION_PREF, ""));
   await TestUtils.waitForCondition(
@@ -186,10 +180,7 @@ add_task(async function test_change_location_panel() {
   );
 
   
-  let prefChangedPromise;
-  if (gBookmarksToolbar2h2020) {
-    prefChangedPromise = TestUtils.waitForPrefChange(LOCATION_PREF);
-  }
+  let prefChangedPromise = TestUtils.waitForPrefChange(LOCATION_PREF);
 
   
   EventUtils.synthesizeMouseAtCenter(
@@ -221,12 +212,9 @@ add_task(async function test_change_location_panel() {
   }
 
   
-  
   await clickBookmarkStar(win);
 
-  let expectedFolder = gBookmarksToolbar2h2020
-    ? "BookmarksMenuFolderTitle"
-    : "OtherBookmarksFolderTitle";
+  let expectedFolder = "BookmarksMenuFolderTitle";
   Assert.equal(
     menuList.label,
     PlacesUtils.getString(expectedFolder),
@@ -234,7 +222,7 @@ add_task(async function test_change_location_panel() {
   );
   Assert.equal(
     menuList.getAttribute("selectedGuid"),
-    gBookmarksToolbar2h2020 ? menuGuid : unfiledGuid,
+    menuGuid,
     "Should have the correct default guid selected"
   );
 
@@ -262,7 +250,7 @@ add_task(async function test_change_location_panel() {
 
   is(
     await PlacesUIUtils.defaultParentGuid,
-    gBookmarksToolbar2h2020 ? menuGuid : unfiledGuid,
+    menuGuid,
     "Default folder should not change if we cancel the panel."
   );
 
@@ -282,7 +270,7 @@ add_task(async function test_change_location_panel() {
   await hideBookmarksPanel(win);
   is(
     await PlacesUIUtils.defaultParentGuid,
-    gBookmarksToolbar2h2020 ? menuGuid : unfiledGuid,
+    menuGuid,
     "Default folder should not change if we accept the panel, but didn't change folders."
   );
 
