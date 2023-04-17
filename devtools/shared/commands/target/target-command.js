@@ -642,9 +642,12 @@ class TargetCommand extends EventEmitter {
 
 
 
-  async getAllFronts(targetType, frontType) {
+  async getAllFronts(targetTypes, frontType) {
+    if (!Array.isArray(targetTypes) || !targetTypes?.length) {
+      throw new Error("getAllFronts expects a non-empty array of target types");
+    }
     const fronts = [];
-    const targets = this.getAllTargets([targetType]);
+    const targets = this.getAllTargets(targetTypes);
     for (const target of targets) {
       const front = await target.getFront(frontType);
       fronts.push(front);
