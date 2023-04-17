@@ -82,7 +82,7 @@ class txStripSpaceItem : public txToplevelItem {
 
   TX_DECL_TOPLEVELITEM
 
-  nsresult addStripSpaceTest(txStripSpaceTest* aStripSpaceTest);
+  void addStripSpaceTest(txStripSpaceTest* aStripSpaceTest);
 
   nsTArray<txStripSpaceTest*> mStripSpaceTests;
 };
@@ -115,4 +115,4 @@ class txVariableItem : public txInstructionContainer {
   bool mIsParam;
 };
 
-#endif  
+#endif

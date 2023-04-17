@@ -18,11 +18,11 @@ class txPatternOptimizer {
 
 
 
-  nsresult optimize(txPattern* aInPattern, txPattern** aOutPattern);
+  void optimize(txPattern* aInPattern, txPattern** aOutPattern);
 
  private:
   
-  nsresult optimizeStep(txPattern* aInPattern, txPattern** aOutPattern);
+  void optimizeStep(txPattern* aInPattern, txPattern** aOutPattern);
 
   txXPathOptimizer mXPathOptimizer;
 };
