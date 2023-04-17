@@ -4,7 +4,7 @@
 
 
 
-TEST_DIRS += ["example", "moz-http2"]
+TEST_DIRS += ["example"]
 
 TESTING_JS_MODULES += [
     "dbg-actors.js",
