@@ -1807,17 +1807,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   
 
   bool alwaysAsk = true;
-
-  
-  bool skipShowingDialog =
-      StaticPrefs::browser_download_improvements_to_download_panel();
-
-  if (skipShowingDialog) {
-    alwaysAsk = false;
-  } else {
-    mMimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
-  }
-
+  mMimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
   if (alwaysAsk) {
     
     
@@ -1867,7 +1857,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   bool forcePrompt =
       mReason == nsIHelperAppLauncherDialog::REASON_TYPESNIFFED ||
       (mReason == nsIHelperAppLauncherDialog::REASON_SERVERREQUEST &&
-       !skipShowingDialog);
+       !StaticPrefs::browser_download_improvements_to_download_panel());
 
   
   if (!alwaysAsk && forcePrompt) {
