@@ -168,10 +168,7 @@ const invariants = {
   }
 };
 
-
-
-
-const attribute_test = (loader, path, validate, test_label) => {
+const attribute_test_internal = (loader, path, validator, run_test, test_label) => {
   promise_test(
     async () => {
       let loaded_entry = new Promise((resolve, reject) => {
@@ -190,8 +187,21 @@ const attribute_test = (loader, path, validate, test_label) => {
         }).observe({"type": "resource"});
       });
 
-      await loader(path);
+      await loader(path, validator);
       const entry = await(loaded_entry);
-      validate(entry);
+      run_test(entry);
   }, test_label);
-}
+};
+
+
+
+
+const attribute_test = (loader, path, run_test, test_label) => {
+  attribute_test_internal(loader, path, () => {}, run_test, test_label);
+};
+
+
+
+const attribute_test_with_validator = (loader, path, validator, run_test, test_label) => {
+  attribute_test_internal(loader, path, validator, run_test, test_label);
+};
