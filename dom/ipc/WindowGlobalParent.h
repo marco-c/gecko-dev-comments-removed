@@ -110,6 +110,8 @@ class WindowGlobalParent final : public WindowContext,
   
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 
+  nsIPrincipal* DocumentStoragePrincipal() { return mDocumentStoragePrincipal; }
+
   
   
   
@@ -232,7 +234,8 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvInternalLoad(nsDocShellLoadState* aLoadState);
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI);
   mozilla::ipc::IPCResult RecvUpdateDocumentPrincipal(
-      nsIPrincipal* aNewDocumentPrincipal);
+      nsIPrincipal* aNewDocumentPrincipal,
+      nsIPrincipal* aNewDocumentStoragePrincipal);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasLoaded(bool aDocumentHasLoaded);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasUserInteracted(
       bool aDocumentHasUserInteracted);
@@ -307,9 +310,18 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
+  nsresult SetDocumentStoragePrincipal(
+      nsIPrincipal* aNewDocumentStoragePrincipal);
+
+  
+  
+  
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
+  nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
+
   
   nsCOMPtr<nsIPrincipal> mDocContentBlockingAllowListPrincipal;
+
   nsCOMPtr<nsIURI> mDocumentURI;
   Maybe<nsString> mDocumentTitle;
 
