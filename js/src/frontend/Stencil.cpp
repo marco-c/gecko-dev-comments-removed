@@ -1102,13 +1102,6 @@ static bool InstantiateModuleObject(JSContext* cx,
   return stencil.moduleMetadata->initModule(cx, atomCache, module);
 }
 
-static Shape* GetFunctionShape(JSContext* cx, const JSClass* clasp,
-                               HandleObject proto, gc::AllocKind kind) {
-  size_t nfixed = GetGCKindSlots(kind);
-  return SharedShape::getInitialShape(
-      cx, clasp, cx->realm(), TaggedProto(proto), nfixed, ObjectFlags());
-}
-
 
 static bool InstantiateFunctions(JSContext* cx, CompilationAtomCache& atomCache,
                                  const CompilationStencil& stencil,
@@ -1123,21 +1116,14 @@ static bool InstantiateFunctions(JSContext* cx, CompilationAtomCache& atomCache,
   
   
   
-  RootedObject proto(cx,
-                     GlobalObject::getOrCreatePrototype(cx, JSProto_Function));
-  if (!proto) {
-    return false;
-  }
-
-  RootedShape functionShape(
-      cx, GetFunctionShape(cx, &FunctionClass, proto, gc::AllocKind::FUNCTION));
+  RootedShape functionShape(cx, GlobalObject::getFunctionShapeWithDefaultProto(
+                                    cx,  false));
   if (!functionShape) {
     return false;
   }
 
-  RootedShape extendedShape(cx,
-                            GetFunctionShape(cx, &ExtendedFunctionClass, proto,
-                                             gc::AllocKind::FUNCTION_EXTENDED));
+  RootedShape extendedShape(cx, GlobalObject::getFunctionShapeWithDefaultProto(
+                                    cx,  true));
   if (!extendedShape) {
     return false;
   }

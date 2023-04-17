@@ -193,6 +193,11 @@ class GlobalObjectData {
   PlainObjectShapeArray plainObjectShapesWithDefaultProto;
 
   
+  
+  HeapPtr<Shape*> functionShapeWithDefaultProto;
+  HeapPtr<Shape*> extendedFunctionShapeWithDefaultProto;
+
+  
   UniquePtr<RegExpStatics> regExpStatics;
 
   
@@ -1037,6 +1042,18 @@ class GlobalObject : public NativeObject {
   }
   static Shape* createPlainObjectShapeWithDefaultProto(JSContext* cx,
                                                        gc::AllocKind kind);
+
+  static Shape* getFunctionShapeWithDefaultProto(JSContext* cx, bool extended) {
+    GlobalObjectData& data = cx->global()->data();
+    Shape* shape = extended ? data.extendedFunctionShapeWithDefaultProto
+                            : data.functionShapeWithDefaultProto;
+    if (MOZ_LIKELY(shape)) {
+      return shape;
+    }
+    return createFunctionShapeWithDefaultProto(cx, extended);
+  }
+  static Shape* createFunctionShapeWithDefaultProto(JSContext* cx,
+                                                    bool extended);
 
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
