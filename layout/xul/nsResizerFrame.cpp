@@ -33,6 +33,13 @@
 
 using namespace mozilla;
 
+#ifdef MOZ_WAYLAND
+#  include "mozilla/WidgetUtilsGtk.h"
+#  define IS_WAYLAND_DISPLAY() mozilla::widget::GdkIsWaylandDisplay()
+#else
+#  define IS_WAYLAND_DISPLAY() false
+#endif
+
 
 
 
@@ -191,7 +198,9 @@ nsresult nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
 
         
         
-        if (window) {
+        
+        
+        if (window && !IS_WAYLAND_DISPLAY()) {
           nsCOMPtr<nsIScreen> screen;
           nsCOMPtr<nsIScreenManager> sm(
               do_GetService("@mozilla.org/gfx/screenmanager;1"));
@@ -210,7 +219,7 @@ nsresult nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
               rect.IntersectRect(rect, screenRect);
             }
           }
-        } else if (menuPopupFrame) {
+        } else if (menuPopupFrame && !IS_WAYLAND_DISPLAY()) {
           nsRect frameRect = menuPopupFrame->GetScreenRectInAppUnits();
           nsIFrame* rootFrame = aPresContext->PresShell()->GetRootFrame();
           nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
