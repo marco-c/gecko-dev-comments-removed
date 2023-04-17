@@ -5566,7 +5566,8 @@ public class GeckoSession {
                 }
             }
 
-            private static String convertType(final int type, final boolean privateMode) {
+            
+             static String convertType(final int type, final boolean privateMode) {
                 switch (type) {
                     case PERMISSION_GEOLOCATION:
                         return "geolocation";
