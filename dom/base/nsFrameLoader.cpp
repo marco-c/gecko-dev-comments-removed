@@ -3400,7 +3400,7 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
     return promise.forget();
   }
 
-  nsIDocShell* docShellToCloneInto = nullptr;
+  nsCOMPtr<nsIDocShell> docShellToCloneInto = nullptr;
   if (aSourceBrowsingContext) {
     
     
@@ -3410,6 +3410,27 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
     docShellToCloneInto = GetExistingDocShell();
     if (NS_WARN_IF(!docShellToCloneInto)) {
       promise->MaybeRejectWithNotSupportedError("No print preview docShell");
+      return promise.forget();
+    }
+
+    
+    RefPtr<BrowsingContext> bc = docShellToCloneInto->GetBrowsingContext();
+    if (NS_WARN_IF(!bc)) {
+      promise->MaybeRejectWithNotSupportedError(
+          "No print preview browsing context");
+      return promise.forget();
+    }
+
+    RefPtr<Element> embedder = bc->GetEmbedderElement();
+    if (NS_WARN_IF(!embedder)) {
+      promise->MaybeRejectWithNotSupportedError(
+          "Trying to clone into a frameloader with no element?");
+      return promise.forget();
+    }
+
+    nsIFrame* frame = embedder->GetPrimaryFrame(FlushType::Frames);
+    if (NS_WARN_IF(!frame)) {
+      promise->MaybeRejectWithNotSupportedError("Frame is not being displayed");
       return promise.forget();
     }
   }
