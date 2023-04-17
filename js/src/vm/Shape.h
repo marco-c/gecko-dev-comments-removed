@@ -534,8 +534,6 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 
-class Shape;
-
 
 
 
@@ -578,9 +576,6 @@ using ObjectFlags = EnumFlags<ObjectFlag>;
 
 class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
-  friend class Shape;
-  friend struct StackShape;
-
   
   const JSClass* clasp() const { return headerPtr(); }
 
