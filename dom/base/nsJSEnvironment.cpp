@@ -1798,34 +1798,21 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
     return;
   }
 
-  RefPtr<IdleTaskRunner> runnable;
-  if (sGCRunner) {
-    
-    
-    
-    
-    
-    if (!sScheduler.InIncrementalGC() &&
-        sScheduler.mMajorGCReason != JS::GCReason::INTER_SLICE_GC) {
-      sScheduler.SetWantMajorGC(aReason);
-    }
-    sGCRunner->SetIdleDeadline(aDeadline);
-    runnable = sGCRunner;
-  } else {
-    
-    
-    MOZ_ASSERT(
-        !sScheduler.InIncrementalGC(),
-        "Don't check the CC timers if the CC is locked out during an iGC.");
+  
+  
+  MOZ_ASSERT_IF(sScheduler.InIncrementalGC(), sGCRunner);
 
-    if (sCCRunner) {
-      sCCRunner->SetIdleDeadline(aDeadline);
-      runnable = sCCRunner;
-    }
+  RefPtr<IdleTaskRunner> runner;
+  if (sGCRunner) {
+    sScheduler.SetWantMajorGC(aReason);
+    runner = sGCRunner;
+  } else if (sCCRunner) {
+    runner = sCCRunner;
   }
 
-  if (runnable) {
-    runnable->Run();
+  if (runner) {
+    runner->SetIdleDeadline(aDeadline);
+    runner->Run();
   }
 }
 

@@ -200,20 +200,12 @@ class CCGCScheduler {
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
-
-      
-      
-      
       mReadyForMajorGC = true;
     }
+
+    
+    
+    mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
   }
 
   
@@ -393,9 +385,9 @@ class CCGCScheduler {
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
- public:
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
+ public:
   uint32_t mCCollectedWaitingForGC = 0;
   uint32_t mCCollectedZonesWaitingForGC = 0;
   uint32_t mLikelyShortLivingObjectsNeedingGC = 0;
