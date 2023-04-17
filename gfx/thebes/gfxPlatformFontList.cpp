@@ -505,6 +505,11 @@ bool gfxPlatformFontList::InitFontList() {
     ClearLangGroupPrefFonts();
     CancelLoader();
 
+    
+    for (auto& f : mReplacementCharFallbackFamily) {
+      f = FontFamily();
+    }
+
     gfxFontUtils::GetPrefsFontList(kFontSystemWhitelistPref, mEnabledFontsList);
   }
 
