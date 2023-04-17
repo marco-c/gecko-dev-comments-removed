@@ -880,7 +880,9 @@ void DocAccessible::ContentStateChanged(dom::Document* aDocument,
     FireDelayedEvent(event);
   }
 
-  if (aStateMask.HasState(NS_EVENT_STATE_DEFAULT)) {
+  
+  
+  if (aStateMask.HasState(NS_EVENT_STATE_DEFAULT) && accessible->IsButton()) {
     RefPtr<AccEvent> event =
         new AccStateChangeEvent(accessible, states::DEFAULT);
     FireDelayedEvent(event);
