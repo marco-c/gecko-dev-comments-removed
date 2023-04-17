@@ -58,10 +58,6 @@ extern "C" {
 
 
 
-static __inline int Abs(int v) {
-  return v >= 0 ? v : -v;
-}
-
 typedef mozilla::gfx::YUVColorSpace YUVColorSpace;
 
 struct YUVBuferIter {

@@ -805,24 +805,6 @@ void gfxSingleFaceMacFontFamily::ReadOtherFamilyNames(gfxPlatformFontList* aPlat
 
 #pragma mark -
 
-
-
-
-
-
-
-
-
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED < 101500
-static const nsLiteralCString kLangFontsDirs[] = {
-    "/Library/Application Support/Apple/Fonts/Language Support"_ns};
-#else
-static const nsLiteralCString kLangFontsDirs[] = {
-    "/Library/Application Support/Apple/Fonts/Language Support"_ns,
-    "/System/Library/Fonts/Supplemental"_ns};
-#endif
-
 gfxMacPlatformFontList::gfxMacPlatformFontList()
     : gfxPlatformFontList(false), mDefaultFont(nullptr), mUseSizeSensitiveSystemFont(false) {
   CheckFamilyList(kBaseFonts);

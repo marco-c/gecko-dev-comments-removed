@@ -999,38 +999,6 @@ static hb_unicode_combining_class_t HBGetCombiningClass(
   return hb_unicode_combining_class_t(GetCombiningClass(aCh));
 }
 
-
-
-static const char16_t sDageshForms[0x05EA - 0x05D0 + 1] = {
-    0xFB30,  
-    0xFB31,  
-    0xFB32,  
-    0xFB33,  
-    0xFB34,  
-    0xFB35,  
-    0xFB36,  
-    0,       
-    0xFB38,  
-    0xFB39,  
-    0xFB3A,  
-    0xFB3B,  
-    0xFB3C,  
-    0,       
-    0xFB3E,  
-    0,       
-    0xFB40,  
-    0xFB41,  
-    0,       
-    0xFB43,  
-    0xFB44,  
-    0,       
-    0xFB46,  
-    0xFB47,  
-    0xFB48,  
-    0xFB49,  
-    0xFB4A   
-};
-
 static hb_bool_t HBUnicodeCompose(hb_unicode_funcs_t* ufuncs, hb_codepoint_t a,
                                   hb_codepoint_t b, hb_codepoint_t* ab,
                                   void* user_data) {
