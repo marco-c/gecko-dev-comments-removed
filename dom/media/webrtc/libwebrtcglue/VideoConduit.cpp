@@ -287,8 +287,8 @@ bool operator!=(const rtc::VideoSinkWants& aThis,
 
 
 RefPtr<VideoSessionConduit> VideoSessionConduit::Create(
-    RefPtr<WebRtcCallWrapper> aCall,
-    nsCOMPtr<nsISerialEventTarget> aStsThread) {
+    RefPtr<WebRtcCallWrapper> aCall, nsCOMPtr<nsISerialEventTarget> aStsThread,
+    std::string aPCHandle) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCall, "missing required parameter: aCall");
   CSFLogVerbose(LOGTAG, "%s", __FUNCTION__);
@@ -297,7 +297,8 @@ RefPtr<VideoSessionConduit> VideoSessionConduit::Create(
     return nullptr;
   }
 
-  auto obj = MakeRefPtr<WebrtcVideoConduit>(aCall, aStsThread);
+  auto obj =
+      MakeRefPtr<WebrtcVideoConduit>(aCall, aStsThread, std::move(aPCHandle));
   if (obj->Init() != kMediaConduitNoError) {
     CSFLogError(LOGTAG, "%s VideoConduit Init Failed ", __FUNCTION__);
     return nullptr;
@@ -307,12 +308,14 @@ RefPtr<VideoSessionConduit> VideoSessionConduit::Create(
 }
 
 WebrtcVideoConduit::WebrtcVideoConduit(
-    RefPtr<WebRtcCallWrapper> aCall, nsCOMPtr<nsISerialEventTarget> aStsThread)
+    RefPtr<WebRtcCallWrapper> aCall, nsCOMPtr<nsISerialEventTarget> aStsThread,
+    std::string aPCHandle)
     : mTransportMonitor("WebrtcVideoConduit"),
       mStsThread(aStsThread),
       mMutex("WebrtcVideoConduit::mMutex"),
-      mDecoderFactory(MakeUnique<WebrtcVideoDecoderFactory>()),
-      mEncoderFactory(MakeUnique<WebrtcVideoEncoderFactory>()),
+      mDecoderFactory(MakeUnique<WebrtcVideoDecoderFactory>(aPCHandle)),
+      mEncoderFactory(
+          MakeUnique<WebrtcVideoEncoderFactory>(std::move(aPCHandle))),
       mVideoAdapter(MakeUnique<cricket::VideoAdapter>()),
       mBufferPool(false, SCALER_BUFFER_POOL_SIZE),
       mEngineTransmitting(false),
@@ -1449,15 +1452,9 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(
 
       
       NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "WebrtcVideoConduit::WebrtcGmpPCHandleSetter",
+          "WebrtcVideoConduit::SetRemoteSSRC",
           [this, self = RefPtr<WebrtcVideoConduit>(this),
            ssrc = header.ssrc]() mutable {
-            
-            
-            
-            
-            
-            WebrtcGmpPCHandleSetter setter(mPCHandle);
             
             
             

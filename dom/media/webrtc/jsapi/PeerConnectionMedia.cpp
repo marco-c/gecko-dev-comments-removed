@@ -299,12 +299,6 @@ void PeerConnectionMedia::UpdateTransport(const JsepTransceiver& aTransceiver,
 }
 
 nsresult PeerConnectionMedia::UpdateMediaPipelines() {
-  
-  
-  
-  
-  WebrtcGmpPCHandleSetter setter(mParentHandle);
-
   for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
     transceiver->ResetSync();
   }

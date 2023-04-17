@@ -22,7 +22,7 @@ WebrtcVideoDecoderFactory::CreateVideoDecoder(
   switch (type) {
     case webrtc::VideoCodecType::kVideoCodecH264: {
       
-      auto gmpDecoder = WrapUnique(GmpVideoCodec::CreateDecoder());
+      auto gmpDecoder = WrapUnique(GmpVideoCodec::CreateDecoder(mPCHandle));
       
       decoder.reset(gmpDecoder.release());
       break;
@@ -115,7 +115,7 @@ WebrtcVideoEncoderFactory::InternalFactory::CreateVideoEncoder(
   switch (type) {
     case webrtc::VideoCodecType::kVideoCodecH264: {
       
-      auto gmpEncoder = WrapUnique(GmpVideoCodec::CreateEncoder());
+      auto gmpEncoder = WrapUnique(GmpVideoCodec::CreateEncoder(mPCHandle));
       
       encoder.reset(gmpEncoder.release());
       break;
