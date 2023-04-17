@@ -26,7 +26,7 @@ test(t => {
     numberOfFrames: defaultInit.frames,
     numberOfChannels: defaultInit.channels,
     sampleRate: defaultInit.sampleRate,
-    format: 'FLTP',
+    format: 'f32-planar',
   }
 
   let data = new AudioData(audio_data_init);
@@ -38,7 +38,7 @@ test(t => {
   assert_equals(
       data.duration, defaultInit.frames / defaultInit.sampleRate * 1_000_000,
       'duration');
-  assert_equals(data.format, 'FLTP', 'format');
+  assert_equals(data.format, 'f32-planar', 'format');
 
   
   let small_data = new Int16Array(defaultInit.channels * defaultInit.frames);

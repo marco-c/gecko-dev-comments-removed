@@ -14,9 +14,9 @@ function join_audio_data(audio_data_array) {
     total_frames += data.numberOfFrames;
   }
 
-  assert_true(base_buffer.format == 'FLT' || base_buffer.format == 'FLTP');
+  assert_true(base_buffer.format == 'f32' || base_buffer.format == 'f32-planar');
 
-  if (base_buffer.format == 'FLT')
+  if (base_buffer.format == 'f32')
     return join_interleaved_data(audio_data_array, total_frames);
 
   
@@ -302,8 +302,8 @@ promise_test(async t => {
 
   
   
-  assert_equals(base_input.format, "FLTP");
-  assert_equals(base_output.format, "FLT");
+  assert_equals(base_input.format, "f32-planar");
+  assert_equals(base_output.format, "f32");
 
   assert_equals(base_output.numberOfChannels, config.numberOfChannels);
   assert_equals(base_output.sampleRate, sample_rate);
