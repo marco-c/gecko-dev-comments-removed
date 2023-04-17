@@ -830,7 +830,11 @@ void nsCocoaWindow::Show(bool bState) {
       bool parentIsSheet = false;
       if (NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) && parentIsSheet) {
         piParentWidget->GetSheetWindowParent(&topNonSheetWindow);
+#ifdef MOZ_THUNDERBIRD
+        [NSApp endSheet:nativeParentWindow];
+#else
         [nativeParentWindow.sheetParent endSheet:nativeParentWindow];
+#endif
       }
 
       nsCOMPtr<nsIWidget> sheetShown;
@@ -838,10 +842,24 @@ void nsCocoaWindow::Show(bool bState) {
           (!sheetShown || sheetShown == this)) {
         
         
+#ifdef MOZ_THUNDERBIRD
         
+#else
+        
+#endif
         if (![mWindow isVisible]) {
           mSheetNeedsShow = false;
           mSheetWindowParent = topNonSheetWindow;
+#ifdef MOZ_THUNDERBIRD
+          
+          NSWindow* contextInfo = parentIsSheet ? nil : mSheetWindowParent;
+          [TopLevelWindowData deactivateInWindow:mSheetWindowParent];
+          [NSApp beginSheet:mWindow
+              modalForWindow:mSheetWindowParent
+               modalDelegate:mDelegate
+              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
+                 contextInfo:contextInfo];
+#else
           NSWindow* sheet = mWindow;
           NSWindow* nonSheetParent = parentIsSheet ? nil : mSheetWindowParent;
           [TopLevelWindowData deactivateInWindow:mSheetWindowParent];
@@ -859,6 +877,7 @@ void nsCocoaWindow::Show(bool bState) {
                            [TopLevelWindowData activateInWindow:nonSheetParent];
                          }
                        }];
+#endif
           [TopLevelWindowData activateInWindow:mWindow];
           SendSetZLevelEvent();
         }
@@ -945,8 +964,11 @@ void nsCocoaWindow::Show(bool bState) {
         NSWindow* sheetParent = mSheetWindowParent;
 
         
+#ifdef MOZ_THUNDERBIRD
+        [NSApp endSheet:mWindow];
+#else
         [mSheetWindowParent endSheet:mWindow];
-
+#endif
         [TopLevelWindowData deactivateInWindow:mWindow];
 
         nsCOMPtr<nsIWidget> siblingSheetToShow;
@@ -960,9 +982,15 @@ void nsCocoaWindow::Show(bool bState) {
           siblingSheetToShow->Show(true);
         } else if (nativeParentWindow && piParentWidget &&
                    NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) && parentIsSheet) {
+#ifdef MOZ_THUNDERBIRD
+          
+          
+          NSWindow* contextInfo = sheetParent;
+#else
           
           
           NSWindow* nonSheetGrandparent = sheetParent;
+#endif
           nsIWidget* grandparentWidget = nil;
           if (NS_SUCCEEDED(piParentWidget->GetRealParent(&grandparentWidget)) &&
               grandparentWidget) {
@@ -971,12 +999,23 @@ void nsCocoaWindow::Show(bool bState) {
             if (piGrandparentWidget &&
                 NS_SUCCEEDED(piGrandparentWidget->GetIsSheet(&grandparentIsSheet)) &&
                 grandparentIsSheet) {
+#ifdef MOZ_THUNDERBIRD
+              contextInfo = nil;
+#else
               nonSheetGrandparent = nil;
+#endif
             }
           }
           
           
           
+#ifdef MOZ_THUNDERBIRD
+          [NSApp beginSheet:nativeParentWindow
+              modalForWindow:sheetParent
+               modalDelegate:[nativeParentWindow delegate]
+              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
+                 contextInfo:contextInfo];
+#else
           [nativeParentWindow beginSheet:sheetParent
                        completionHandler:^(NSModalResponse returnCode) {
                          
@@ -991,6 +1030,7 @@ void nsCocoaWindow::Show(bool bState) {
                            [TopLevelWindowData activateInWindow:nonSheetGrandparent];
                          }
                        }];
+#endif
         } else {
           
           
@@ -2915,6 +2955,25 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   }
   return rect;
 }
+
+#ifdef MOZ_THUNDERBIRD
+- (void)didEndSheet:(NSWindow*)sheet returnCode:(int)returnCode contextInfo:(void*)contextInfo {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  
+  
+  
+  
+  
+  
+  
+  [TopLevelWindowData deactivateInWindow:sheet];
+  [sheet orderOut:self];
+  if (contextInfo) [TopLevelWindowData activateInWindow:(NSWindow*)contextInfo];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+#endif
 
 - (void)windowDidChangeBackingProperties:(NSNotification*)aNotification {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
