@@ -19,9 +19,42 @@ impl std::fmt::Display for EntryKind {
     }
 }
 
+
+
+
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum FluentError {
-    Overriding { kind: EntryKind, id: String },
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Overriding {
+        kind: EntryKind,
+        id: String,
+    },
     ParserError(ParserError),
     ResolverError(ResolverError),
 }

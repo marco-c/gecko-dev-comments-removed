@@ -2,6 +2,7 @@ use inflector::Inflector;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use proc_macro2::{Group, Span, TokenTree};
+use proc_macro_error::proc_macro_error;
 use quote::{format_ident, quote, ToTokens};
 use syn::{
     Attribute, Error, Fields, GenericParam, Generics, Ident, ItemStruct, PathArguments, Type,
@@ -41,7 +42,8 @@ struct StructFieldInfo {
     self_referencing: bool,
     
     
-    uses_this_in_template: bool,
+    
+    covariant: Option<bool>,
 }
 
 impl StructFieldInfo {
@@ -87,6 +89,21 @@ impl StructFieldInfo {
                 )
             };
         }
+    }
+
+    
+    
+    fn covariance_error(&self) {
+        let error = concat!(
+            "Ouroboros cannot automatically determine if this type is covariant.\n\n",
+            "If it is covariant, it should be legal to convert any instance of that type to an ",
+            "instance of that type where all usages of 'this are replaced with a smaller ",
+            "lifetime. For example, Box<&'this i32> is covariant because it is legal to use it as ",
+            "a Box<&'a i32> where 'this: 'a. In contrast, Fn(&'this i32) cannot be used as ",
+            "Fn(&'a i32).\n\n",
+            "To resolve this error, add #[covariant] or #[not_covariant] to the field.\n",
+        );
+        proc_macro_error::emit_error!(self.typ, error);
     }
 }
 
@@ -330,34 +347,40 @@ fn handle_borrows_attr(
 }
 
 
-
-
-fn type_uses_this_in_template(ty: &syn::Type) -> bool {
+fn type_is_covariant(ty: &syn::Type, in_template: bool) -> bool {
     use syn::Type::*;
     match ty {
-        Array(arr) => type_uses_this_in_template(&*arr.elem),
+        Array(arr) => type_is_covariant(&*arr.elem, in_template),
         BareFn(f) => {
             for arg in f.inputs.iter() {
-                if type_uses_this_in_template(&arg.ty) {
-                    return true;
+                if !type_is_covariant(&arg.ty, true) {
+                    return false;
                 }
             }
             if let syn::ReturnType::Type(_, ty) = &f.output {
-                type_uses_this_in_template(ty)
+                type_is_covariant(ty, true)
             } else {
-                false
+                true
             }
         }
-        Group(ty) => type_uses_this_in_template(&ty.elem),
+        Group(ty) => type_is_covariant(&ty.elem, in_template),
         ImplTrait(..) => false, 
         Infer(..) => false,     
-        Macro(..) => true,      
+        Macro(..) => false,     
         Never(..) => false,
-        Paren(ty) => type_uses_this_in_template(&ty.elem),
+        Paren(ty) => type_is_covariant(&ty.elem, in_template),
         Path(path) => {
             if let Some(qself) = &path.qself {
-                if type_uses_this_in_template(&qself.ty) {
-                    return true;
+                if !type_is_covariant(&qself.ty, in_template) {
+                    return false;
+                }
+            }
+            let mut is_covariant = false;
+            
+            let last = path.path.segments.last();
+            if let Some(segment) = last {
+                if segment.ident == "Box" || segment.ident == "Arc" || segment.ident == "Rc" {
+                    is_covariant = true;
                 }
             }
             for segment in path.path.segments.iter() {
@@ -365,40 +388,40 @@ fn type_uses_this_in_template(ty: &syn::Type) -> bool {
                 if let syn::PathArguments::AngleBracketed(args) = &args {
                     for arg in args.args.iter() {
                         if let syn::GenericArgument::Type(ty) = arg {
-                            if type_uses_this_in_template(ty) {
-                                return true;
+                            if !type_is_covariant(ty, !is_covariant) {
+                                return false;
                             }
                         } else if let syn::GenericArgument::Lifetime(lt) = arg {
-                            if lt.ident.to_string() == "this" {
-                                return true;
+                            if lt.ident.to_string() == "this" && !is_covariant {
+                                return false;
                             }
                         }
                     }
                 } else if let syn::PathArguments::Parenthesized(args) = &args {
                     for arg in args.inputs.iter() {
-                        if type_uses_this_in_template(arg) {
-                            return true;
+                        if !type_is_covariant(arg, true) {
+                            return false;
                         }
                     }
                     if let syn::ReturnType::Type(_, ty) = &args.output {
-                        if type_uses_this_in_template(ty) {
-                            return true;
+                        if !type_is_covariant(ty, true) {
+                            return false;
                         }
                     }
                 }
             }
-            false
+            true
         }
-        Ptr(ptr) => type_uses_this_in_template(&ptr.elem),
+        Ptr(ptr) => type_is_covariant(&ptr.elem, in_template),
         
-        Reference(rf) => type_uses_this_in_template(&rf.elem),
-        Slice(sl) => type_uses_this_in_template(&sl.elem),
+        Reference(rf) => !in_template && type_is_covariant(&rf.elem, in_template),
+        Slice(sl) => type_is_covariant(&sl.elem, in_template),
         
         TraitObject(..) => unimplemented!(),
         Tuple(tup) => {
             for ty in tup.elems.iter() {
-                if type_uses_this_in_template(ty) {
-                    return true;
+                if !type_is_covariant(ty, in_template) {
+                    return false;
                 }
             }
             false
@@ -424,6 +447,9 @@ fn create_actual_struct(
             for field in &mut fields.named {
                 let mut borrows = Vec::new();
                 let mut self_referencing = false;
+                let covariant = type_is_covariant(&field.ty, false);
+                let mut covariant = if covariant { Some(true) } else { None };
+                let mut remove_attrs = Vec::new();
                 for (index, attr) in field.attrs.iter().enumerate() {
                     let path = &attr.path;
                     if path.leading_colon.is_some() {
@@ -433,11 +459,24 @@ fn create_actual_struct(
                         continue;
                     }
                     if path.segments.first().unwrap().ident == "borrows" {
+                        if self_referencing {
+                            panic!("TODO: Nice error, used #[borrows()] twice.");
+                        }
                         self_referencing = true;
                         handle_borrows_attr(&mut field_info[..], attr, &mut borrows)?;
-                        field.attrs.remove(index);
-                        break;
+                        remove_attrs.push(index);
                     }
+                    if path.segments.first().unwrap().ident == "covariant" {
+                        covariant = Some(true);
+                        remove_attrs.push(index);
+                    }
+                    if path.segments.first().unwrap().ident == "not_covariant" {
+                        covariant = Some(false);
+                        remove_attrs.push(index);
+                    }
+                }
+                for index in remove_attrs.into_iter().rev() {
+                    field.attrs.remove(index);
                 }
                 field.attrs.push(syn::parse_quote! { #[doc(hidden)] });
                 
@@ -451,7 +490,7 @@ fn create_actual_struct(
                     vis: with_vis,
                     borrows,
                     self_referencing,
-                    uses_this_in_template: type_uses_this_in_template(&field.ty),
+                    covariant,
                 });
             }
         }
@@ -948,6 +987,19 @@ fn make_with_functions(
                     user(&self. #field_name)
                 }
             });
+            if field.covariant == Some(true) {
+                let borrower_name = format_ident!("borrow_{}", &field.name);
+                users.push(quote! {
+                    #documentation
+                    #visibility fn #borrower_name<'this>(
+                        &'this self,
+                    ) -> &'this #field_type {
+                        &self.#field_name
+                    }
+                });
+            } else if field.covariant.is_none() {
+                field.covariance_error();
+            }
             
             let user_name = format_ident!("with_{}_mut", &field.name);
             let documentation = format!(
@@ -975,19 +1027,6 @@ fn make_with_functions(
                     user(&mut self. #field_name)
                 }
             });
-            if field.uses_this_in_template {
-                
-                continue;
-            }
-            let borrower_name = format_ident!("borrow_{}", &field.name);
-            users.push(quote! {
-                #documentation
-                #visibility fn #borrower_name<'this>(
-                    &'this self,
-                ) -> &'this #field_type {
-                    &self.#field_name
-                }
-            });
         } else if field.field_type == FieldType::Borrowed {
             let user_name = format_ident!("with_{}", &field.name);
             let documentation = format!(
@@ -1013,9 +1052,13 @@ fn make_with_functions(
                     user(&self.#field_name)
                 }
             });
-            if field.uses_this_in_template {
-                
-                continue;
+            if field.self_referencing {
+                if field.covariant == Some(false) {
+                    
+                    continue;
+                } else if field.covariant.is_none() {
+                    field.covariance_error();
+                }
             }
             let borrower_name = format_ident!("borrow_{}", &field.name);
             users.push(quote! {
@@ -1063,11 +1106,14 @@ fn make_with_all_function(
             mut_field_assignments.push(quote! { #field_name: &mut self.#field_name });
         } else if field.field_type == FieldType::Borrowed {
             let ass = quote! { #field_name: unsafe {
-                &self.#field_name
+                ::ouroboros::macro_help::stable_deref_and_strip_lifetime(
+                    &self.#field_name
+                )
             } };
-            fields.push(quote! { #visibility #field_name: &'outer_borrow #field_type });
+            let deref_type = quote! { <#field_type as ::std::ops::Deref>::Target };
+            fields.push(quote! { #visibility #field_name: &'this #deref_type });
             field_assignments.push(ass.clone());
-            mut_fields.push(quote! { #visibility #field_name: &'outer_borrow #field_type});
+            mut_fields.push(quote! { #visibility #field_name: &'this #deref_type });
             mut_field_assignments.push(ass);
         } else if field.field_type == FieldType::BorrowedMut {
             
@@ -1372,6 +1418,7 @@ fn self_referencing_impl(
     }))
 }
 
+#[proc_macro_error]
 #[proc_macro_attribute]
 pub fn self_referencing(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut do_chain_hack = false;
