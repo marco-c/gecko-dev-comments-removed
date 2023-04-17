@@ -397,8 +397,13 @@ class Browsertime(Perftest):
 
         
         
+        MULTI_OPTS = [
+            "--firefox.android.intentArgument",
+        ]
         for index, argument in list(enumerate(priority1_options)):
-            if argument.startswith("--"):
+            if argument in MULTI_OPTS:
+                browsertime_options.extend([argument, priority1_options[index + 1]])
+            elif argument.startswith("--"):
                 if index == len(priority1_options) - 1:
                     if argument not in browsertime_options:
                         browsertime_options.append(argument)
