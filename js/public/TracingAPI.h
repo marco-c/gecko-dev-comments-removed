@@ -510,7 +510,7 @@ namespace gc {
 
 
 template <typename T>
-extern JS_PUBLIC_API bool EdgeNeedsSweep(JS::Heap<T>* edgep);
+extern JS_PUBLIC_API bool TraceWeakEdge(JSTracer* trc, JS::Heap<T>* thingp);
 
 }  
 
