@@ -44,6 +44,10 @@ add_task(async function test() {
   
   updateTabContextMenu(pinned);
   ok(
+    !document.getElementById("context_closeTabOptions").disabled,
+    "Close Multiple Tabs is enabled on pinned tab"
+  );
+  ok(
     !document.getElementById("context_closeOtherTabs").disabled,
     "Close Other Tabs is enabled on pinned tab"
   );
@@ -58,6 +62,10 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
+  ok(
+    document.getElementById("context_closeTabOptions").disabled,
+    "Close Multiple Tabs is disabled on single unpinned tab"
+  );
   ok(
     document.getElementById("context_closeOtherTabs").disabled,
     "Close Other Tabs is disabled on single unpinned tab"
@@ -77,6 +85,10 @@ add_task(async function test() {
 
   
   updateTabContextMenu(testTab);
+  ok(
+    !document.getElementById("context_closeTabOptions").disabled,
+    "Close Multiple Tabs is enabled on unpinned tab when there's another unpinned tab"
+  );
   ok(
     !document.getElementById("context_closeOtherTabs").disabled,
     "Close Other Tabs is enabled on unpinned tab when there's another unpinned tab"
