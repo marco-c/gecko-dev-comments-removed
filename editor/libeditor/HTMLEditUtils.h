@@ -1099,6 +1099,47 @@ class HTMLEditUtils final {
 
 
 
+  static nsIContent* GetMostDistantAncestorInlineElement(
+      const nsIContent& aContent, const Element* aEditingHost = nullptr) {
+    if (HTMLEditUtils::IsBlockElement(aContent)) {
+      return nullptr;
+    }
+
+    
+    
+    if (&aContent == aEditingHost) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    if (aEditingHost && !aContent.IsInclusiveDescendantOf(aEditingHost)) {
+      return nullptr;
+    }
+
+    if (!aContent.GetParent()) {
+      return const_cast<nsIContent*>(&aContent);
+    }
+
+    
+    nsIContent* topMostInlineContent = const_cast<nsIContent*>(&aContent);
+    for (nsIContent* content : aContent.AncestorsOfType<nsIContent>()) {
+      if (content == aEditingHost ||
+          !HTMLEditUtils::IsInlineElement(*content)) {
+        break;
+      }
+      topMostInlineContent = content;
+    }
+    return topMostInlineContent;
+  }
+
+  
+
+
+
+
   static Element* GetMostDistantAnscestorEditableEmptyInlineElement(
       const nsIContent& aEmptyContent, const Element* aEditingHost = nullptr) {
     nsIContent* lastEmptyContent = const_cast<nsIContent*>(&aEmptyContent);

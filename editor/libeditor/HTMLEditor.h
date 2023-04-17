@@ -1101,13 +1101,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsIContent* GetMostAncestorInlineElement(nsINode& aNode) const;
-
-  
-
-
-
-
 
 
 
