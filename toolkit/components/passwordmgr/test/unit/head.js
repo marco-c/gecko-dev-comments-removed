@@ -53,6 +53,7 @@ const newPropertyBag = LoginHelper.newPropertyBag;
 const NEW_PASSWORD_HEURISTIC_ENABLED_PREF =
   "signon.generation.confidenceThreshold";
 const RELATED_REALMS_ENABLED_PREF = "signon.relatedRealms.enabled";
+const IMPROVED_PASSWORD_RULES_PREF = "signon.improvedPasswordRules.enabled";
 
 
 
