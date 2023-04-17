@@ -20,6 +20,7 @@
 #    include <sys/utsname.h>
 #    include <sched.h>
 #    include <sys/syscall.h>
+#    include <sys/un.h>
 #  endif  
 #  include <sys/socket.h>
 #  include <sys/stat.h>
@@ -46,7 +47,6 @@ void RunTestsContent(SandboxTestingChild* child) {
 #  ifdef XP_LINUX
   child->ErrnoTest("fstatat_as_fstat"_ns, true,
                    [&] { return fstatat(0, "", &st, AT_EMPTY_PATH); });
-#  endif  
 
   const struct timespec usec = {0, 1000};
   child->ErrnoTest("nanosleep"_ns, true,
@@ -55,6 +55,59 @@ void RunTestsContent(SandboxTestingChild* child) {
   struct timespec res = {0, 0};
   child->ErrnoTest("clock_getres"_ns, true,
                    [&] { return clock_getres(CLOCK_REALTIME, &res); });
+
+  
+  
+  
+  
+  child->ErrnoValueTest("connect_abstract_blocked"_ns, false, ENETUNREACH, [&] {
+    int sockfd;
+    struct sockaddr_un addr;
+    char str[] = "\0xyz";  
+    size_t str_size = 4;
+
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    memcpy(&addr.sun_path, str, str_size);
+
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+      return -1;
+    }
+
+    int con_st = connect(sockfd, (struct sockaddr*)&addr,
+                         sizeof(sa_family_t) + str_size);
+    return con_st;
+  });
+
+  
+  
+  
+  child->ErrnoValueTest("connect_abstract_permit"_ns, false, ECONNREFUSED, [&] {
+    int sockfd;
+    struct sockaddr_un addr;
+    
+    
+    
+
+    
+    char str[] = "\0/tmp/.X11-unix/X";
+    size_t str_size = 17;
+
+    memset(&addr, 0, sizeof(struct sockaddr_un));
+    addr.sun_family = AF_UNIX;
+    memcpy(&addr.sun_path, str, str_size);
+
+    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+      return -1;
+    }
+
+    int con_st = connect(sockfd, (struct sockaddr*)&addr,
+                         sizeof(sa_family_t) + str_size);
+    return con_st;
+  });
+#  endif  
 
 #else   
   child->ReportNoTests();
