@@ -7279,23 +7279,13 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
 
   
   nsCOMPtr<nsIPrincipal> principal = aElement->GetCurrentVideoPrincipal();
-  if (!principal) return result;
+  if (!principal) {
+    return result;
+  }
 
   result.mLayersImage = aElement->GetCurrentImage();
-  if (!result.mLayersImage) return result;
-
-  if (aTarget) {
-    
-    
-    
-    result.mSourceSurface = result.mLayersImage->GetAsSourceSurface();
-    if (!result.mSourceSurface) return result;
-
-    RefPtr<SourceSurface> opt =
-        aTarget->OptimizeSourceSurface(result.mSourceSurface);
-    if (opt) {
-      result.mSourceSurface = opt;
-    }
+  if (!result.mLayersImage) {
+    return result;
   }
 
   result.mCORSUsed = aElement->GetCORSMode() != CORS_NONE;
@@ -7307,6 +7297,19 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
   result.mHadCrossOriginRedirects = aElement->HadCrossOriginRedirects();
   result.mIsWriteOnly = CanvasUtils::CheckWriteOnlySecurity(
       result.mCORSUsed, result.mPrincipal, result.mHadCrossOriginRedirects);
+
+  if (aTarget) {
+    
+    
+    
+    if ((result.mSourceSurface = result.mLayersImage->GetAsSourceSurface())) {
+      RefPtr<SourceSurface> opt =
+          aTarget->OptimizeSourceSurface(result.mSourceSurface);
+      if (opt) {
+        result.mSourceSurface = opt;
+      }
+    }
+  }
 
   return result;
 }
