@@ -108,12 +108,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(AbortSignalMainThread)
 
 class AbortSignalProxy;
 
-
-
-
-
-
 class WorkerSignalFollower final : public AbortFollower {
+ public:
   
   
   class AbortSignalProxyRunnable final : public Runnable {
@@ -131,26 +127,10 @@ class WorkerSignalFollower final : public AbortFollower {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(WorkerSignalFollower)
 
-  WorkerSignalFollower(AbortSignalProxy* aProxy, AbortSignalImpl* aSignalImpl)
-      : AbortFollower(), mProxy(aProxy) {
-    MOZ_ASSERT(!NS_IsMainThread());
-
-    
-    Follow(aSignalImpl);
-  }
-
-  void RunAbortAlgorithm() override;
-
-  void Shutdown() {
-    MOZ_ASSERT(!NS_IsMainThread());
-    Unfollow();
-    mProxy = nullptr;
-  }
+  void RunAbortAlgorithm() override {}
 
  private:
   ~WorkerSignalFollower() = default;
-
-  RefPtr<AbortSignalProxy> mProxy;
 };
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(WorkerSignalFollower)
@@ -160,7 +140,6 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(WorkerSignalFollower)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WorkerSignalFollower)
   AbortFollower::Unlink(static_cast<AbortFollower*>(tmp));
-  tmp->mProxy = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WorkerSignalFollower)
@@ -173,18 +152,7 @@ NS_INTERFACE_MAP_END
 
 
 
-class AbortSignalProxy final {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<WorkerSignalFollower> mWorkerSignalFollower;
-
+class AbortSignalProxy final : public AbortFollower {
   
   RefPtr<AbortSignalImpl> mSignalImplMainThread;
 
@@ -198,7 +166,7 @@ class AbortSignalProxy final {
   const bool mAborted;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AbortSignalProxy)
+  NS_DECL_THREADSAFE_ISUPPORTS
 
   AbortSignalProxy(AbortSignalImpl* aSignalImpl,
                    nsIEventTarget* aMainThreadEventTarget)
@@ -206,9 +174,11 @@ class AbortSignalProxy final {
         mAborted(aSignalImpl->Aborted()) {
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(mMainThreadEventTarget);
-
-    mWorkerSignalFollower = new WorkerSignalFollower(this, aSignalImpl);
+    Follow(aSignalImpl);
   }
+
+  
+  void RunAbortAlgorithm() override;
 
   AbortSignalImpl* GetOrCreateSignalImplForMainThread() {
     MOZ_ASSERT(NS_IsMainThread());
@@ -220,26 +190,24 @@ class AbortSignalProxy final {
 
   AbortSignalImpl* GetSignalImplForTargetThread() {
     MOZ_ASSERT(!NS_IsMainThread());
-    return mWorkerSignalFollower->Signal();
+    return Signal();
   }
 
   nsIEventTarget* MainThreadEventTarget() { return mMainThreadEventTarget; }
 
   void Shutdown() {
     MOZ_ASSERT(!NS_IsMainThread());
-    mWorkerSignalFollower->Shutdown();
-    mWorkerSignalFollower = nullptr;
+    Unfollow();
   }
 
  private:
   ~AbortSignalProxy() {
-    MOZ_ASSERT(mWorkerSignalFollower == nullptr,
-               "Shutdown() should have been called, on the worker thread, to "
-               "release/free the worker thread's AbortSignal follower by now");
     NS_ProxyRelease("AbortSignalProxy::mSignalImplMainThread",
                     mMainThreadEventTarget, mSignalImplMainThread.forget());
   }
 };
+
+NS_IMPL_ISUPPORTS0(AbortSignalProxy)
 
 NS_IMETHODIMP WorkerSignalFollower::AbortSignalProxyRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -248,12 +216,13 @@ NS_IMETHODIMP WorkerSignalFollower::AbortSignalProxyRunnable::Run() {
   return NS_OK;
 }
 
-void WorkerSignalFollower::RunAbortAlgorithm() {
+void AbortSignalProxy::RunAbortAlgorithm() {
   MOZ_ASSERT(!NS_IsMainThread());
+  using AbortSignalProxyRunnable =
+      WorkerSignalFollower::AbortSignalProxyRunnable;
   RefPtr<AbortSignalProxyRunnable> runnable =
-      new AbortSignalProxyRunnable(mProxy);
-  mProxy->MainThreadEventTarget()->Dispatch(runnable.forget(),
-                                            NS_DISPATCH_NORMAL);
+      new AbortSignalProxyRunnable(this);
+  MainThreadEventTarget()->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
 }
 
 class WorkerFetchResolver final : public FetchDriverObserver {
@@ -361,7 +330,6 @@ class WorkerFetchResolver final : public FetchDriverObserver {
 
     if (mSignalProxy) {
       mSignalProxy->Shutdown();
-      mSignalProxy = nullptr;
     }
 
     mWorkerRef = nullptr;
