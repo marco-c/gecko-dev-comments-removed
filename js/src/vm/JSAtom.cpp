@@ -445,23 +445,23 @@ static void TracePermanentAtoms(JSTracer* trc, AtomSet::Range atoms) {
   }
 }
 
-void JSRuntime::tracePermanentThingsDuringInit(JSTracer* trc) {
+void JSRuntime::tracePermanentAtomsDuringInit(JSTracer* trc) {
   
-  if (!permanentAtomsDuringInit_) {
+  if (parentRuntime) {
     return;
   }
 
-  
-  
-  MOZ_ASSERT(!parentRuntime);
-
-  TracePermanentAtoms(trc, permanentAtomsDuringInit_->all());
-  TraceWellKnownSymbols(trc);
+  if (permanentAtomsDuringInit_) {
+    TracePermanentAtoms(trc, permanentAtomsDuringInit_->all());
+  }
 }
 
 void js::TraceWellKnownSymbols(JSTracer* trc) {
   JSRuntime* rt = trc->runtime();
-  MOZ_ASSERT(!rt->parentRuntime);
+
+  if (rt->parentRuntime) {
+    return;
+  }
 
   if (WellKnownSymbols* wks = rt->wellKnownSymbols) {
     for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
@@ -626,7 +626,7 @@ bool JSRuntime::initMainAtomsTables(JSContext* cx) {
   MOZ_ASSERT(!parentRuntime);
   MOZ_ASSERT(!permanentAtomsPopulated());
 
-  gc.freezePermanentSharedThings();
+  gc.freezePermanentAtoms();
 
   
   permanentAtoms_ =

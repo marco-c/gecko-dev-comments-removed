@@ -10,7 +10,6 @@
 #define js_shadow_Zone_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Atomics.h"
 
 #include <stdint.h>  
 
@@ -36,19 +35,15 @@ struct Zone {
 
   enum Kind : uint8_t { NormalZone, AtomsZone, SystemZone };
 
-  using BarrierState = mozilla::Atomic<uint32_t, mozilla::Relaxed>;
-
  protected:
   JSRuntime* const runtime_;
   JSTracer* const barrierTracer_;  
-  BarrierState needsIncrementalBarrier_;
+  uint32_t needsIncrementalBarrier_ = 0;
   GCState gcState_ = NoGC;
   const Kind kind_;
 
   Zone(JSRuntime* runtime, JSTracer* barrierTracerArg, Kind kind)
-      : runtime_(runtime), barrierTracer_(barrierTracerArg), kind_(kind) {
-    MOZ_ASSERT(!needsIncrementalBarrier());
-  }
+      : runtime_(runtime), barrierTracer_(barrierTracerArg), kind_(kind) {}
 
  public:
   bool needsIncrementalBarrier() const { return needsIncrementalBarrier_; }

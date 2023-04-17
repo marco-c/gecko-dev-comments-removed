@@ -289,11 +289,10 @@ class GCRuntime {
   void finishRoots();
   void finish();
 
-  void freezePermanentSharedThings();
-  template <typename T>
-  void freezeAtomsZoneArenas(AllocKind kind, ArenaList& arenaList);
-  void restorePermanentSharedThings();
-  void restoreAtomsZoneArenas(AllocKind kind, ArenaList& arenaList);
+  void freezePermanentAtoms();
+  void freezePermanentAtomsOfKind(AllocKind kind, ArenaList& arenaList);
+  void restorePermanentAtoms();
+  void restorePermanentAtomsOfKind(AllocKind kind, ArenaList& arenaList);
 
   JS::HeapState heapState() const { return heapState_; }
 
@@ -944,10 +943,8 @@ class GCRuntime {
 
  private:
   
-  
   MainThreadData<ArenaList> permanentAtoms;
   MainThreadData<ArenaList> permanentFatInlineAtoms;
-  MainThreadData<ArenaList> permanentWellKnownSymbols;
 
   
   
