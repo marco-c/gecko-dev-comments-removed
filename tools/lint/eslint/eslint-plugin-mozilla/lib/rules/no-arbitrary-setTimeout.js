@@ -29,16 +29,16 @@ module.exports = {
   
 
   create(context) {
+    
+    
+    
+    
+    if (!testTypes.has(helpers.getTestType(context))) {
+      return {};
+    }
+
     return {
       CallExpression(node) {
-        
-        
-        
-        
-        if (!testTypes.has(helpers.getTestType(context))) {
-          return;
-        }
-
         let callee = node.callee;
         if (callee.type === "MemberExpression") {
           if (
