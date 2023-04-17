@@ -8,6 +8,8 @@
 
 
 
+
+
 let dbg = new Debugger();
 let debuggeeCompartment = newGlobal({newCompartment: true});
 
@@ -328,3 +330,8 @@ testSourceExtent(` class C { static get #prop() { } }`,
 testSourceExtent(` class C { static set #prop(v) { } }`,
                  `                           ^------^ `,
                  ` ^----------------------------------`);
+
+
+testSourceExtent(` class C { static { 10; } }`,
+                 `           ^-------------^ `,
+                 ` ^-------------------------`);

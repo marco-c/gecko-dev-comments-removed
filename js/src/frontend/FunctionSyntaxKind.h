@@ -25,6 +25,10 @@ enum class FunctionSyntaxKind : uint8_t {
   Method,
   FieldInitializer,
 
+  
+  
+  StaticClassBlock,
+
   ClassConstructor,
   DerivedClassConstructor,
   Getter,

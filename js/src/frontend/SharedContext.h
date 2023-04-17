@@ -401,6 +401,9 @@ class FunctionBox : public SuspendableContext {
   bool hasExprBody_ : 1;
 
   
+  bool allowReturn_ : 1;
+
+  
   
   
   bool isFunctionFieldCopiedToStencil : 1;
@@ -534,6 +537,8 @@ class FunctionBox : public SuspendableContext {
     MOZ_ASSERT(isArrow());
     hasExprBody_ = true;
   }
+
+  bool allowReturn() const { return allowReturn_; }
 
   bool isNamedLambda() const { return flags_.isNamedLambda(!!explicitName()); }
   bool isGetter() const { return flags_.isGetter(); }

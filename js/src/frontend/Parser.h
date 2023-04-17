@@ -1223,6 +1223,8 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   
   
+  
+  
   enum FunctionBodyType { StatementListBody, ExpressionBody };
   LexicalScopeNodeType functionBody(InHandling inHandling,
                                     YieldHandling yieldHandling,
@@ -1266,6 +1268,9 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     size_t staticFields = 0;
 
     
+    size_t staticBlocks = 0;
+
+    
     size_t staticFieldKeys = 0;
 
     
@@ -1298,6 +1303,10 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
       TokenPos propNamePos, Node name, TaggedParserAtomIndex atom,
       ClassInitializedMembers& classInitializedMembers, bool isStatic,
       HasHeritage hasHeritage);
+
+  FunctionNodeType staticClassBlock(
+      ClassInitializedMembers& classInitializedMembers);
+
   FunctionNodeType synthesizeConstructor(TaggedParserAtomIndex className,
                                          TokenPos synthesizedBodyPos,
                                          HasHeritage hasHeritage);
