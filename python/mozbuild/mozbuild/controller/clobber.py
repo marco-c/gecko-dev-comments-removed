@@ -65,15 +65,20 @@ class Clobberer(object):
 
         
         if not os.path.isfile(self.src_clobber):
-            self.src_clobber = os.path.join(topsrcdir, "mozilla", "CLOBBER")
-
-        assert os.path.isfile(self.src_clobber)
+            comm_clobber = os.path.join(topsrcdir, "mozilla", "CLOBBER")
+            if os.path.isfile(comm_clobber):
+                self.src_clobber = comm_clobber
 
     def clobber_needed(self):
         """Returns a bool indicating whether a tree clobber is required."""
 
         
         if not os.path.exists(self.obj_clobber):
+            return False
+
+        
+        
+        if not os.path.exists(self.src_clobber):
             return False
 
         
