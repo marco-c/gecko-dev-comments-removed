@@ -129,77 +129,6 @@ function getCandidatePaths(objdirs, lib) {
 
 
 
-async function getSymbolTableMultiModal(lib, objdirs, perfFront = undefined) {
-  const { debugName, breakpadId } = lib;
-
-  
-  
-  const candidatePaths = getCandidatePaths(objdirs, lib);
-
-  
-  const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
-  for (const { path, debugPath } of candidatePaths) {
-    if (await doesFileExistAtPath(path)) {
-      try {
-        return await ProfilerGetSymbols.getSymbolTable(
-          path,
-          debugPath,
-          breakpadId
-        );
-      } catch (e) {
-        
-        
-        
-        
-      }
-    }
-  }
-
-  
-  
-  if (!perfFront) {
-    throw new Error(
-      `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
-        `because there was no matching file at any of the candidate paths: ${JSON.stringify(
-          candidatePaths
-        )}`
-    );
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return getSymbolTableFromDebuggee(perfFront, lib.path, breakpadId);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -222,6 +151,18 @@ function createLibraryMap(sharedLibraries) {
     return map.get(key);
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 class LocalSymbolicationService {
   
@@ -249,10 +190,54 @@ class LocalSymbolicationService {
         `Could not find the library for "${debugName}", "${breakpadId}".`
       );
     }
-    return getSymbolTableMultiModal(lib, this._objdirs, this._perfFront);
+
+    
+    
+    const candidatePaths = getCandidatePaths(this._objdirs, lib);
+
+    
+    const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
+    for (const { path, debugPath } of candidatePaths) {
+      if (await doesFileExistAtPath(path)) {
+        try {
+          return await ProfilerGetSymbols.getSymbolTable(
+            path,
+            debugPath,
+            breakpadId
+          );
+        } catch (e) {
+          
+          
+          
+          
+        }
+      }
+    }
+
+    
+    
+    if (!this._perfFront) {
+      throw new Error(
+        `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
+          `because there was no matching file at any of the candidate paths: ${JSON.stringify(
+            candidatePaths
+          )}`
+      );
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return getSymbolTableFromDebuggee(this._perfFront, lib.path, breakpadId);
   }
 }
-
 
 
 
