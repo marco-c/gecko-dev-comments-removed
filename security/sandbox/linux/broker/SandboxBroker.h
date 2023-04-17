@@ -53,6 +53,10 @@ class SandboxBroker final : private SandboxBrokerCommon,
     RECURSIVE = 1 << 5,
     
     MAY_CONNECT = 1 << 6,
+    
+    
+    
+    FORCE_DENY = 1 << 7,
   };
   
   
@@ -90,6 +94,9 @@ class SandboxBroker final : private SandboxBrokerCommon,
     
     void AddDir(int aPerms, const char* aPath);
     
+    
+    void AddFutureDir(int aPerms, const char* aPath);
+    
     void AddFilePrefix(int aPerms, const char* aDir, const char* aPrefix);
     
     
@@ -121,6 +128,7 @@ class SandboxBroker final : private SandboxBrokerCommon,
     
     bool ValidatePath(const char* path) const;
     void AddPrefixInternal(int aPerms, const nsACString& aPath);
+    void AddDirInternal(int aPerms, const char* aPath);
   };
 
   
