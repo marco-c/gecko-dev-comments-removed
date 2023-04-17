@@ -1,10 +1,11 @@
-#![doc(html_root_url = "https://docs.rs/tower-service/0.3.0")]
+#![doc(html_root_url = "https://docs.rs/tower-service/0.3.1")]
 #![warn(
     missing_debug_implementations,
     missing_docs,
     rust_2018_idioms,
     unreachable_pub
 )]
+#![deny(broken_intra_doc_links)]
 
 
 
@@ -14,6 +15,40 @@
 
 use std::future::Future;
 use std::task::{Context, Poll};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
