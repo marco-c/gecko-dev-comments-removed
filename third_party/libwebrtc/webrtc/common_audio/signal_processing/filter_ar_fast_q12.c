@@ -8,6 +8,8 @@
 
 
 
+#include <stddef.h>
+
 #include "rtc_base/checks.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 

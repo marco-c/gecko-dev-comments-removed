@@ -3,11 +3,14 @@
 
 
 #include "modules/desktop_capture/desktop_device_info.h"
+#include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 
 #include <cstddef>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 
 namespace webrtc {
 
@@ -310,4 +313,3 @@ void DesktopDeviceInfoImpl::RefreshScreenList() {
   InitializeScreenList();
 }
 }
-
