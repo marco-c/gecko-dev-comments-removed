@@ -27,16 +27,13 @@
 
 const { Cu } = require("chrome");
 
+loader.lazyRequireGetter(this, "Services", "Services");
+loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
+
 loader.lazyRequireGetter(
   this,
   "gDevToolsBrowser",
   "devtools/client/framework/devtools-browser",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "TabDescriptorFactory",
-  "devtools/client/framework/tab-descriptor-factory",
   true
 );
 loader.lazyRequireGetter(
@@ -48,6 +45,12 @@ loader.lazyRequireGetter(
   this,
   "openDocLink",
   "devtools/client/shared/link",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "CommandsFactory",
+  "devtools/shared/commands/commands-factory",
   true
 );
 
@@ -130,11 +133,15 @@ exports.menuitems = [
     async oncommand(event) {
       const window = event.target.ownerDocument.defaultView;
 
-      const descriptor = await TabDescriptorFactory.createDescriptorForTab(
+      
+      
+      
+      const commands = await CommandsFactory.forTab(
         window.gBrowser.selectedTab
       );
-      const target = await descriptor.getTarget();
-      await target.attach();
+      await commands.targetCommand.startListening();
+
+      const target = commands.targetCommand.targetFront;
       const inspectorFront = await target.getFront("inspector");
 
       
@@ -161,7 +168,20 @@ exports.menuitems = [
         });
       }
 
+      
+      
+      inspectorFront.once("color-picked", () => commands.destroy());
+      inspectorFront.once("color-pick-canceled", () => commands.destroy());
+
       inspectorFront.pickColorFromPage({ copyOnSelect: true, fromMenu: true });
+
+      if (flags.testing) {
+        
+        Services.obs.notifyObservers(
+          { wrappedJSObject: target },
+          "color-picker-command-handled"
+        );
+      }
     },
     checkbox: true,
   },
