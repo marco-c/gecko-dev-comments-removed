@@ -1062,53 +1062,52 @@ add_old_configure_assignment("FT2_CFLAGS", ft2_info.cflags)
 
 
 
-@depends(build_project)
-def remote_default(build_project):
-    
-    return build_project in ("browser", "comm/mail", "mobile/android")
 
 
-option("--enable-cdp", default=remote_default, help="{Enable|Disable} remote agent")
 
 
-@depends("--enable-cdp")
-def remote(value):
-    if value:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+option(
+    "--disable-webdriver",
+    help="Disable support for WebDriver remote protocols",
+)
+
+
+@depends("--disable-webdriver")
+def webdriver(enabled):
+    if enabled:
         return True
 
 
-set_config("ENABLE_REMOTE_AGENT", remote)
-set_define("ENABLE_REMOTE_AGENT", remote)
+set_config("ENABLE_WEBDRIVER", webdriver)
+set_define("ENABLE_WEBDRIVER", webdriver)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-option("--disable-marionette", help="Disable Marionette remote protocol")
-
-
-@depends("--disable-marionette")
-def marionette(value):
-    if value:
-        return True
-
-
-set_config("ENABLE_MARIONETTE", marionette)
-set_define("ENABLE_MARIONETTE", marionette)
 
 
 

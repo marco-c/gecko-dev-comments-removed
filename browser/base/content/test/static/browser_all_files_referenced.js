@@ -318,7 +318,7 @@ if (!isDevtools) {
   }
   
   
-  if (!AppConstants.ENABLE_REMOTE_AGENT) {
+  if (!AppConstants.ENABLE_WEBDRIVER) {
     whitelist.add("resource://gre/modules/jsdebugger.jsm");
   }
 }

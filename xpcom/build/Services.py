@@ -95,7 +95,7 @@ service(
 
 service("XULRuntime", "nsIXULRuntime", "@mozilla.org/xre/app-info;1")
 
-if buildconfig.substs.get("ENABLE_REMOTE_AGENT"):
+if buildconfig.substs.get("ENABLE_WEBDRIVER"):
     service("RemoteAgent", "nsIRemoteAgent", "@mozilla.org/remote/agent;1")
 
 
@@ -133,7 +133,7 @@ CPP_INCLUDES = """
 #include "nsIXULRuntime.h"
 """
 
-if buildconfig.substs.get("ENABLE_REMOTE_AGENT"):
+if buildconfig.substs.get("ENABLE_WEBDRIVER"):
     CPP_INCLUDES += '#include "nsIRemoteAgent.h"'
 
 

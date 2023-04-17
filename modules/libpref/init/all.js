@@ -4445,46 +4445,51 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("services.sync.extension-storage.skipPercentageChance", 50);
 #endif // MOZ_SERVICES_SYNC
 
+#if defined(ENABLE_WEBDRIVER)
+  
+  
+  
+  
+  
+  
+  
 
+  
+  
+  pref("marionette.debugging.clicktostart", false);
 
+  
+  
+  
+  
+  
+  pref("marionette.log.level", "Info");
 
+  
+  
+  pref("marionette.log.truncate", true);
 
+  
+  pref("marionette.port", 2828);
 
-pref("marionette.debugging.clicktostart", false);
+  
+  pref("marionette.prefs.recommended", true);
 
-
-
-
-
-
-pref("marionette.log.level", "Info");
-
-
-
-pref("marionette.log.truncate", true);
-
-
-pref("marionette.port", 2828);
-
-
-pref("marionette.prefs.recommended", true);
-
-#if defined(ENABLE_REMOTE_AGENT)
   
   
   pref("remote.force-local", true);
+
+  
+  
+  
+  
+  
+  pref("remote.log.level", "Info");
+
+  
+  
+  pref("remote.log.truncate", true);
 #endif
-
-
-
-
-
-
-pref("remote.log.level", "Info");
-
-
-
-pref("remote.log.truncate", true);
 
 
 pref("devtools.jsonview.enabled", true);

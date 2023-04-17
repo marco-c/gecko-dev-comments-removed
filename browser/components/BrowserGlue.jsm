@@ -2403,15 +2403,6 @@ BrowserGlue.prototype = {
       },
 
       
-      
-      {
-        condition: AppConstants.ENABLE_REMOTE_AGENT,
-        task: () => {
-          Services.obs.notifyObservers(null, "remote-startup-requested");
-        },
-      },
-
-      
       {
         task: () => {
           let enabledPref = "doh-rollout.trrRace.enabled";
@@ -2511,7 +2502,9 @@ BrowserGlue.prototype = {
       },
 
       
+      
       {
+        condition: AppConstants.ENABLE_WEBDRIVER,
         task: () => {
           
           
@@ -2520,6 +2513,10 @@ BrowserGlue.prototype = {
               null,
               "browser-startup-idle-tasks-finished"
             );
+
+            
+            
+            Services.obs.notifyObservers(null, "remote-startup-requested");
             Services.obs.notifyObservers(null, "marionette-startup-requested");
           });
         },
