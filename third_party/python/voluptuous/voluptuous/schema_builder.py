@@ -22,6 +22,11 @@ else:
     def iteritems(d):
         return d.iteritems()
 
+if sys.version_info >= (3, 3):
+    _Mapping = collections.abc.Mapping
+else:
+    _Mapping = collections.Mapping
+
 """Schema validation for Python data structures.
 
 Given eg. a nested data structure like this:
@@ -280,7 +285,7 @@ class Schema(object):
             return schema.__voluptuous_compile__(self)
         if isinstance(schema, Object):
             return self._compile_object(schema)
-        if isinstance(schema, collections.Mapping):
+        if isinstance(schema, _Mapping):
             return self._compile_dict(schema)
         elif isinstance(schema, list):
             return self._compile_list(schema)
@@ -614,7 +619,7 @@ class Schema(object):
             if not schema:
                 if data:
                     raise er.MultipleInvalid([
-                        er.ValueInvalid('not a valid value', [value]) for value in data
+                        er.ValueInvalid('not a valid value', path if path else data)
                     ])
                 return data
 
@@ -771,9 +776,10 @@ class Schema(object):
                 result[key] = value
 
         
+        result_cls = type(self)
         result_required = (required if required is not None else self.required)
         result_extra = (extra if extra is not None else self.extra)
-        return Schema(result, required=result_required, extra=result_extra)
+        return result_cls(result, required=result_required, extra=result_extra)
 
 
 def _compile_scalar(schema):
@@ -809,7 +815,7 @@ def _compile_scalar(schema):
         def validate_callable(path, data):
             try:
                 return schema(data)
-            except ValueError as e:
+            except ValueError:
                 raise er.ValueInvalid('not a valid value', path)
             except er.Invalid as e:
                 e.prepend(path)
@@ -1121,8 +1127,11 @@ class Inclusive(Optional):
     True
     """
 
-    def __init__(self, schema, group_of_inclusion, msg=None):
-        super(Inclusive, self).__init__(schema, msg=msg)
+    def __init__(self, schema, group_of_inclusion,
+                 msg=None, description=None, default=UNDEFINED):
+        super(Inclusive, self).__init__(schema, msg=msg,
+                                        default=default,
+                                        description=description)
         self.group_of_inclusion = group_of_inclusion
 
 
