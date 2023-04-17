@@ -384,12 +384,12 @@ class NumberFormat final {
   template <typename C, typename B>
   Result<Ok, NumberFormat::FormatError> formatResult(B& buffer) const {
     
-    static_assert(std::is_same<C, uint8_t>::value ||
+    static_assert(std::is_same<C, char>::value ||
                   std::is_same<C, char16_t>::value);
 
     return formatResult().andThen([&buffer](std::u16string_view result)
                                       -> Result<Ok, NumberFormat::FormatError> {
-      if constexpr (std::is_same<C, uint8_t>::value) {
+      if constexpr (std::is_same<C, char>::value) {
         if (!FillUTF8Buffer(Span(result.data(), result.size()), buffer)) {
           return Err(FormatError::OutOfMemory);
         }
