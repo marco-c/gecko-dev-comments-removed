@@ -25,7 +25,6 @@
 #include "hb.hh"
 
 #ifndef HB_NO_STYLE
-#ifdef HB_EXPERIMENTAL_API
 
 #include "hb-ot-var-avar-table.hh"
 #include "hb-ot-var-fvar-table.hh"
@@ -44,30 +43,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef enum {
-  HB_STYLE_TAG_ITALIC		= HB_TAG ('i','t','a','l'),
-  HB_STYLE_TAG_OPTICAL_SIZE	= HB_TAG ('o','p','s','z'),
-  HB_STYLE_TAG_SLANT		= HB_TAG ('s','l','n','t'),
-  HB_STYLE_TAG_WIDTH		= HB_TAG ('w','d','t','h'),
-  HB_STYLE_TAG_WEIGHT		= HB_TAG ('w','g','h','t'),
-
-  
-  _HB_STYLE_TAG_MAX_VALUE	= HB_TAG_MAX_SIGNED 
-} hb_style_tag_t;
+static inline float
+_hb_angle_to_ratio (float a)
+{
+  return tanf (a * float (M_PI / 180.));
+}
+#if 0
+static inline float
+_hb_ratio_to_angle (float r)
+{
+  return atanf (r) * float (180. / M_PI);
+}
+#endif
 
 
 
@@ -83,9 +70,11 @@ typedef enum {
 
 
 float
-hb_style_get_value (hb_font_t *font, hb_tag_t tag)
+hb_style_get_value (hb_font_t *font, hb_style_tag_t style_tag)
 {
-  hb_style_tag_t style_tag = (hb_style_tag_t) tag;
+  if (unlikely (style_tag == HB_STYLE_TAG_SLANT_RATIO))
+    return _hb_angle_to_ratio (hb_style_get_value (font, HB_STYLE_TAG_SLANT_ANGLE));
+
   hb_face_t *face = font->face;
 
 #ifndef HB_NO_VAR
@@ -112,12 +101,14 @@ hb_style_get_value (hb_font_t *font, hb_tag_t tag)
     return face->table.OS2->is_italic () || face->table.head->is_italic () ? 1 : 0;
   case HB_STYLE_TAG_OPTICAL_SIZE:
   {
-    unsigned int lower, upper;
+    unsigned int lower, design, upper;
     return face->table.OS2->v5 ().get_optical_size (&lower, &upper)
 	   ? (float) (lower + upper) / 2.f
+	   : hb_ot_layout_get_size_params (face, &design, nullptr, nullptr, nullptr, nullptr)
+	   ? design / 10.f
 	   : 12.f;
   }
-  case HB_STYLE_TAG_SLANT:
+  case HB_STYLE_TAG_SLANT_ANGLE:
     return face->table.post->table->italicAngle.to_float ();
   case HB_STYLE_TAG_WIDTH:
     return face->table.OS2->has_data ()
@@ -132,5 +123,4 @@ hb_style_get_value (hb_font_t *font, hb_tag_t tag)
   }
 }
 
-#endif
 #endif

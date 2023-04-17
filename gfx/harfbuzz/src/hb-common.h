@@ -486,6 +486,11 @@ hb_language_get_default (void);
 
 
 
+
+
+
+
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -682,6 +687,15 @@ typedef enum
   HB_SCRIPT_DIVES_AKURU			= HB_TAG ('D','i','a','k'), 
   HB_SCRIPT_KHITAN_SMALL_SCRIPT		= HB_TAG ('K','i','t','s'), 
   HB_SCRIPT_YEZIDI			= HB_TAG ('Y','e','z','i'), 
+
+  
+
+
+  HB_SCRIPT_CYPRO_MINOAN		= HB_TAG ('C','p','m','n'), 
+  HB_SCRIPT_OLD_UYGHUR			= HB_TAG ('O','u','g','r'), 
+  HB_SCRIPT_TANGSA			= HB_TAG ('T','n','s','a'), 
+  HB_SCRIPT_TOTO			= HB_TAG ('T','o','t','o'), 
+  HB_SCRIPT_VITHKUQI			= HB_TAG ('V','i','t','h'), 
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,

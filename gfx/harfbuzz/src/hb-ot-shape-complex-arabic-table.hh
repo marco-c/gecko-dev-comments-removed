@@ -75,13 +75,17 @@ static const uint8_t joining_table[] =
 
   
 
-   D,U,D,D,D,D,U,R,D,R,R,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
-   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   D,U,D,D,D,D,U,R,D,R,R,X,X,X,X,X,
 
   
 
-   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,D,D,
-   D,D,D,D,D,D,D,D,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+                                   R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,
+   R,R,R,C,C,C,D,U,U,D,D,D,D,D,R,X,U,U,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+
+  
+
+   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,D,D,D,D,R,D,D,D,D,D,D,
+   D,D,D,D,D,D,D,D,D,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
    X,X,U,
 
 #define joining_offset_0x1806u 739
@@ -137,23 +141,28 @@ static const uint8_t joining_table[] =
   
 
                                    D,D,D,R,D,D,D,D,D,D,D,D,D,D,D,D,
-   D,D,D,D,D,U,X,X,X,X,X,X,X,X,X,X,X,D,D,D,R,
+   D,D,D,D,D,U,X,X,X,X,X,X,X,X,X,X,X,D,D,D,R,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
 
-#define joining_offset_0x10fb0u 1219
+  
+
+                                   D,D,D,D,R,R,D,D,D,D,D,D,D,D,D,D,
+   D,D,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
 
   
 
                                    D,U,D,D,R,R,R,U,D,R,R,D,D,R,D,D,
    U,D,R,R,D,U,U,U,U,R,D,L,
 
-#define joining_offset_0x110bdu 1247
+#define joining_offset_0x110bdu 1338
 
   
 
                                                              U,X,X,
    X,X,X,X,X,X,X,X,X,X,X,X,X,U,
 
-#define joining_offset_0x1e900u 1264
+#define joining_offset_0x1e900u 1355
 
   
 
@@ -189,8 +198,7 @@ joining_type (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x10AC0u, 0x10AEFu)) return joining_table[u - 0x10AC0u + joining_offset_0x10ac0u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10B80u, 0x10BAFu)) return joining_table[u - 0x10B80u + joining_offset_0x10b80u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10D00u, 0x10D23u)) return joining_table[u - 0x10D00u + joining_offset_0x10d00u];
-      if (hb_in_range<hb_codepoint_t> (u, 0x10F30u, 0x10F54u)) return joining_table[u - 0x10F30u + joining_offset_0x10f30u];
-      if (hb_in_range<hb_codepoint_t> (u, 0x10FB0u, 0x10FCBu)) return joining_table[u - 0x10FB0u + joining_offset_0x10fb0u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x10F30u, 0x10FCBu)) return joining_table[u - 0x10F30u + joining_offset_0x10f30u];
       break;
 
     case 0x11u:

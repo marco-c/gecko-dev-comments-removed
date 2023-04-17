@@ -29,6 +29,7 @@ has_arabic_joining (hb_script_t script)
     case HB_SCRIPT_MANICHAEAN:
     case HB_SCRIPT_MONGOLIAN:
     case HB_SCRIPT_NKO:
+    case HB_SCRIPT_OLD_UYGHUR:
     case HB_SCRIPT_PHAGS_PA:
     case HB_SCRIPT_PSALTER_PAHLAVI:
     case HB_SCRIPT_SOGDIAN:
