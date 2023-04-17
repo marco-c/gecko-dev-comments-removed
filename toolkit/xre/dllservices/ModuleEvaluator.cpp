@@ -22,6 +22,8 @@
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
 
+namespace mozilla {
+
 
 
 
@@ -60,8 +62,6 @@ static Vector<nsString> GetKeyboardLayoutDlls() {
 
   return result;
 }
-
-namespace mozilla {
 
 
 bool ModuleEvaluator::ResolveKnownFolder(REFKNOWNFOLDERID aFolderId,
