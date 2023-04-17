@@ -1460,6 +1460,7 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
 
   MIRType type = MIRType::None;
   bool convertibleToFloat32 = false;
+  bool hasOSRValueInput = false;
   DebugOnly<bool> hasSpecializableInput = false;
   for (size_t i = 0, e = phi->numOperands(); i < e; i++) {
     MDefinition* in = phi->getOperand(i);
@@ -1479,15 +1480,8 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
     
     
     if (shouldSpecializeOsrPhis() && in->isOsrValue()) {
+      hasOSRValueInput = true;
       hasSpecializableInput = true;
-
-      
-      
-      
-      convertibleToFloat32 = false;
-      if (type == MIRType::Float32) {
-        type = MIRType::Double;
-      }
       continue;
     }
 
@@ -1516,6 +1510,13 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
         return MIRType::Value;
       }
     }
+  }
+
+  if (hasOSRValueInput && type == MIRType::Float32) {
+    
+    
+    
+    type = MIRType::Double;
   }
 
   MOZ_ASSERT_IF(type == MIRType::None, hasSpecializableInput);
