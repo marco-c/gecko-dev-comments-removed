@@ -615,6 +615,10 @@ function isFissionEnabled() {
   return SpecialPowers.useRemoteSubframes;
 }
 
+function isServerTargetSwitchingEnabled() {
+  return Services.prefs.getBoolPref("devtools.target-switching.server.enabled");
+}
+
 
 
 

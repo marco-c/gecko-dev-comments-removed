@@ -25,40 +25,23 @@ const browsingContextAttachedObserverByWatcher = new Map();
 
 
 
+function isServerTargetSwitchingEnabled() {
+  return Services.prefs.getBoolPref(
+    "devtools.target-switching.server.enabled",
+    false
+  );
+}
+
+
+
+
+
+
+
 async function createTargets(watcher) {
   
   
   
-  const browsingContexts = getFilteredRemoteBrowsingContext(
-    watcher.browserElement
-  );
-  const promises = [];
-  for (const browsingContext of browsingContexts) {
-    logWindowGlobal(
-      browsingContext.currentWindowGlobal,
-      "Existing WindowGlobal"
-    );
-
-    
-    
-    
-    
-    if (!browsingContext.parent) {
-      browsingContext.watchedByDevTools = true;
-    }
-
-    
-    
-    const promise = browsingContext.currentWindowGlobal
-      .getActor("DevToolsFrame")
-      .instantiateTarget({
-        watcherActorID: watcher.actorID,
-        connectionPrefix: watcher.conn.prefix,
-        browserId: watcher.browserId,
-        watchedData: watcher.watchedData,
-      });
-    promises.push(promise);
-  }
 
   
   
@@ -100,7 +83,57 @@ async function createTargets(watcher) {
     );
   }
 
-  return Promise.all(promises);
+  if (isServerTargetSwitchingEnabled() && watcher.browserElement) {
+    
+    
+    
+    await createTargetForBrowsingContext(
+      watcher,
+      watcher.browserElement.browsingContext
+    );
+  }
+
+  const browsingContexts = getFilteredRemoteBrowsingContext(
+    watcher.browserElement
+  );
+  
+  
+  
+  
+  await Promise.all(
+    browsingContexts.map(browsingContext =>
+      createTargetForBrowsingContext(watcher, browsingContext)
+    )
+  );
+}
+
+
+
+
+
+
+
+
+
+async function createTargetForBrowsingContext(watcher, browsingContext) {
+  logWindowGlobal(browsingContext.currentWindowGlobal, "Existing WindowGlobal");
+
+  
+  
+  
+  
+  if (!browsingContext.parent) {
+    browsingContext.watchedByDevTools = true;
+  }
+
+  return browsingContext.currentWindowGlobal
+    .getActor("DevToolsFrame")
+    .instantiateTarget({
+      watcherActorID: watcher.actorID,
+      connectionPrefix: watcher.conn.prefix,
+      browserId: watcher.browserId,
+      watchedData: watcher.watchedData,
+    });
 }
 
 
@@ -114,6 +147,12 @@ function destroyTargets(watcher) {
   const browsingContexts = getFilteredRemoteBrowsingContext(
     watcher.browserElement
   );
+  if (isServerTargetSwitchingEnabled() && watcher.browserElement) {
+    
+    
+    browsingContexts.push(watcher.browserElement.browsingContext);
+  }
+
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
       browsingContext.currentWindowGlobal,
