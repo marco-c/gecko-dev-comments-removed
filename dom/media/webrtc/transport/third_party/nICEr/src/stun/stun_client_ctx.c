@@ -475,27 +475,38 @@ int nr_stun_client_process_response(nr_stun_client_ctx *ctx, UCHAR *msg, int len
     
     switch (ctx->mode) {
     case NR_STUN_CLIENT_MODE_BINDING_REQUEST_LONG_TERM_AUTH:
+      
+
+      fail_on_error = 1;
       compute_lt_key = 1;
       
     case NR_STUN_CLIENT_MODE_BINDING_REQUEST_SHORT_TERM_AUTH:
-        password = ctx->params.stun_binding_request.password;
-        break;
+      password = ctx->params.stun_binding_request.password;
+      break;
 
     case NR_STUN_CLIENT_MODE_BINDING_REQUEST_NO_AUTH:
-        
-        break;
+      
+
+      fail_on_error = 1;
+      break;
 
     case NR_STUN_CLIENT_MODE_BINDING_REQUEST_STUND_0_96:
-        
-        break;
+      
+
+      fail_on_error = 1;
+      break;
 
 #ifdef USE_ICE
     case NR_ICE_CLIENT_MODE_BINDING_REQUEST:
-        password = &ctx->params.ice_binding_request.password;
-        break;
+      
+
+      password = &ctx->params.ice_binding_request.password;
+      break;
     case NR_ICE_CLIENT_MODE_USE_CANDIDATE:
-        password = &ctx->params.ice_binding_request.password;
-        break;
+      
+
+      password = &ctx->params.ice_binding_request.password;
+      break;
 #endif 
 
 #ifdef USE_TURN
@@ -511,26 +522,26 @@ int nr_stun_client_process_response(nr_stun_client_ctx *ctx, UCHAR *msg, int len
     case NR_TURN_CLIENT_MODE_REFRESH_REQUEST:
       fail_on_error = 1;
       compute_lt_key = 1;
-        username = ctx->auth_params.username;
-        password = &ctx->auth_params.password;
-        
-        break;
+      username = ctx->auth_params.username;
+      password = &ctx->auth_params.password;
+      
+      break;
     case NR_TURN_CLIENT_MODE_PERMISSION_REQUEST:
       fail_on_error = 1;
       compute_lt_key = 1;
-        username = ctx->auth_params.username;
-        password = &ctx->auth_params.password;
-        
-        break;
+      username = ctx->auth_params.username;
+      password = &ctx->auth_params.password;
+      
+      break;
     case NR_TURN_CLIENT_MODE_SEND_INDICATION:
-        
-        break;
+      
+      break;
 #endif 
 
     default:
-        assert(0);
-        ABORT(R_FAILED);
-        break;
+      assert(0);
+      ABORT(R_FAILED);
+      break;
     }
 
     if (compute_lt_key) {
