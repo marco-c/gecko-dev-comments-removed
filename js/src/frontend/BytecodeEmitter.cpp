@@ -9313,17 +9313,15 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       continue;
     }
 
+    MOZ_ASSERT(kind == PropertyEmitter::Kind::Static);
+
     
 
-    if (!pe.prepareForComputedPropKey(Some(propdef->pn_pos.begin), kind)) {
+    if (!pe.prepareForPrivateStaticMethod(Some(propdef->pn_pos.begin))) {
       
       return false;
     }
     if (!emitGetPrivateName(privateName)) {
-      
-      return false;
-    }
-    if (!pe.prepareForComputedPropValue()) {
       
       return false;
     }
@@ -9332,7 +9330,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       return false;
     }
 
-    if (!pe.emitInitIndexOrComputed(accessorType)) {
+    if (!pe.emitPrivateStaticMethod(accessorType)) {
+      
       return false;
     }
 
