@@ -5,10 +5,6 @@
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-const { FileUtils } = ChromeUtils.import(
-  "resource://gre/modules/FileUtils.jsm"
-);
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -25,29 +21,6 @@ var EXPORTED_SYMBOLS = ["Corroborate"];
 
 this.Corroborate = {
   async init() {
-    const appOmniJar = FileUtils.getFile("XCurProcD", [
-      AppConstants.OMNIJAR_NAME,
-    ]);
-    const greOmniJar = FileUtils.getFile("GreD", [AppConstants.OMNIJAR_NAME]);
-
-    let corruptOmnijar = true;
-    
-    
-    
-    if (
-      (await OS.File.exists(appOmniJar.path)) &&
-      (await OS.File.exists(greOmniJar.path))
-    ) {
-      corruptOmnijar = !(
-        (await this.verifyJar(appOmniJar)) && (await this.verifyJar(greOmniJar))
-      );
-    }
-
-    Services.telemetry.scalarSet(
-      "corroborate.omnijar_corrupted",
-      corruptOmnijar
-    );
-
     
     
     
