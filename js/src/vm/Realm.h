@@ -320,7 +320,7 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   using VarNamesSet =
-      GCHashSet<js::HeapPtr<JSAtom*>, js::DefaultHasher<JSAtom*>,
+      GCHashSet<js::WeakHeapPtr<JSAtom*>, js::DefaultHasher<JSAtom*>,
                 js::ZoneAllocPolicy>;
   VarNamesSet varNames_;
 
@@ -893,4 +893,4 @@ class ErrorCopier {
 
 } 
 
-#endif
+#endif 
