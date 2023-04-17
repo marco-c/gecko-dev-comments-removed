@@ -112,43 +112,52 @@ var PKT_PANEL_OVERLAY = function(options) {
     }
 
     
-    let variants = {
-      control: "signup_shell",
-      variant_a: "variant_a",
-      variant_b: "variant_b",
-      variant_c: "variant_c",
-      button_variant: "signup_shell",
-      button_control: "signup_shell",
-    };
+    if (this.variant == "overflow") {
+      elBody.append(
+        parser.parseFromString(
+          Handlebars.templates.signup_shell(this.dictJSON),
+          `text/html`
+        ).documentElement
+      );
+    } else {
+      
+      let variants = {
+        control: "signupstoryboard_shell",
+        variant_a: "variant_a",
+        variant_b: "variant_b",
+        variant_c: "variant_c",
+        button_variant: "signupstoryboard_shell",
+        button_control: "signupstoryboard_shell",
+      };
 
-    let loggedOutVariantTemplate = variants[this.loggedOutVariant];
-    if (
-      this.loggedOutVariant === "button_variant" ||
-      this.loggedOutVariant === "button_control"
-    ) {
-      this.dictJSON.buttonVariant = true;
-      this.dictJSON.utmCampaign = "logged_out_button_test";
-      this.dictJSON.utmSource = "button_control";
-      if (this.loggedOutVariant === "button_variant") {
-        this.dictJSON.oneButton = true;
-        this.dictJSON.utmSource = "button_variant";
+      let loggedOutVariantTemplate = variants[this.loggedOutVariant];
+      if (
+        this.loggedOutVariant === "button_variant" ||
+        this.loggedOutVariant === "button_control"
+      ) {
+        this.dictJSON.buttonVariant = true;
+        this.dictJSON.utmCampaign = "logged_out_button_test";
+        this.dictJSON.utmSource = "button_control";
+        if (this.loggedOutVariant === "button_variant") {
+          this.dictJSON.oneButton = true;
+          this.dictJSON.utmSource = "button_variant";
+        }
       }
-    }
 
-    if (loggedOutVariantTemplate !== `signup_shell`) {
-      elBody.classList.add(`los_variant`);
-      elBody.classList.add(`los_${loggedOutVariantTemplate}`);
-    }
+      if (loggedOutVariantTemplate !== `signupstoryboard_shell`) {
+        elBody.classList.add(`los_variant`);
+        elBody.classList.add(`los_${loggedOutVariantTemplate}`);
+      }
 
-    
-    elBody.append(
-      parser.parseFromString(
-        Handlebars.templates[loggedOutVariantTemplate || variants.control](
-          this.dictJSON
-        ),
-        `text/html`
-      ).documentElement
-    );
+      elBody.append(
+        parser.parseFromString(
+          Handlebars.templates[loggedOutVariantTemplate || variants.control](
+            this.dictJSON
+          ),
+          `text/html`
+        ).documentElement
+      );
+    }
 
     
     this.initCloseTabEvents();
