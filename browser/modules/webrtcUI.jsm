@@ -600,22 +600,18 @@ var webrtcUI = {
     
     let perms = SitePermissions.getAllForBrowser(browser);
 
-    let sharingCameraAndMic =
-      sharingState?.camera &&
-      sharingState?.microphone &&
+    
+    let sharingCameraOrMic =
+      (sharingState?.camera || sharingState?.microphone) &&
       (types.includes("camera") || types.includes("microphone"));
+
     perms
       .filter(perm => {
-        let [permId] = perm.id.split(SitePermissions.PERM_KEY_DELIMITER);
-        
-        
-        if (
-          sharingCameraAndMic &&
-          (permId == "camera" || permId == "microphone")
-        ) {
+        let [id] = perm.id.split(SitePermissions.PERM_KEY_DELIMITER);
+        if (sharingCameraOrMic && (id == "camera" || id == "microphone")) {
           return true;
         }
-        return types.includes(permId);
+        return types.includes(id);
       })
       .forEach(perm => {
         SitePermissions.removeFromPrincipal(
@@ -637,10 +633,7 @@ var webrtcUI = {
     if (types.includes("screen") && sharingState.screen) {
       windowIds.push(`screen:${windowId}`);
     }
-    if (
-      (types.includes("camera") && sharingState.camera) ||
-      (types.includes("microphone") && sharingState.microphone)
-    ) {
+    if (sharingCameraOrMic) {
       windowIds.push(windowId);
     }
 
