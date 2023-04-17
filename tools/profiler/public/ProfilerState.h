@@ -244,6 +244,8 @@ class RacyFeatures {
 
   
   
+  
+  
   [[nodiscard]] static bool IsActiveAndUnpaused() {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && !(af & Paused);

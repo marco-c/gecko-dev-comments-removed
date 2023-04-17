@@ -18,6 +18,53 @@
 #[inline]
 pub fn is_active() -> bool {
     use crate::gecko_bindings::structs::mozilla::profiler::detail;
+
+    let active_and_features = get_active_and_features();
+    (active_and_features & detail::RacyFeatures_Active) != 0
+}
+
+
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn is_active() -> bool {
+    false
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+pub fn can_accept_markers() -> bool {
+    use crate::gecko_bindings::structs::mozilla::profiler::detail;
+
+    let active_and_features = get_active_and_features();
+    (active_and_features & detail::RacyFeatures_Active) != 0
+        && (active_and_features & detail::RacyFeatures_Paused) == 0
+}
+
+
+#[cfg(not(feature = "enabled"))]
+#[inline]
+pub fn can_accept_markers() -> bool {
+    false
+}
+
+
+#[cfg(feature = "enabled")]
+#[inline]
+fn get_active_and_features() -> u32 {
+    use crate::gecko_bindings::structs::mozilla::profiler::detail;
     use std::mem;
     use std::sync::atomic::{AtomicU32, Ordering};
 
@@ -26,14 +73,6 @@ pub fn is_active() -> bool {
     
     
     
-    let active_and_features: &AtomicU32 =
-        unsafe { mem::transmute(&detail::RacyFeatures_sActiveAndFeatures) };
-    (active_and_features.load(Ordering::Relaxed) & detail::RacyFeatures_Active) != 0
-}
-
-
-#[cfg(not(feature = "enabled"))]
-#[inline]
-pub fn is_active() -> bool {
-    false
+    unsafe { mem::transmute::<_, &AtomicU32>(&detail::RacyFeatures_sActiveAndFeatures) }
+        .load(Ordering::Relaxed)
 }
