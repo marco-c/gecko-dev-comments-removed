@@ -1212,57 +1212,7 @@ void ScriptLoader::FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
   AutoJSAPI jsapi;
   MOZ_ASSERT(NS_FAILED(aResult));
   MOZ_ALWAYS_TRUE(jsapi.Init(aRequest->mDynamicPromise));
-  if (!JS::ContextOptionsRef(jsapi.cx()).topLevelAwait()) {
-    
-    
-    FinishDynamicImport_NoTLA(jsapi.cx(), aRequest, aResult);
-  } else {
-    
-    FinishDynamicImport(jsapi.cx(), aRequest, aResult, nullptr);
-  }
-}
-
-
-
-void ScriptLoader::FinishDynamicImport_NoTLA(JSContext* aCx,
-                                             ModuleLoadRequest* aRequest,
-                                             nsresult aResult) {
-  LOG(("ScriptLoadRequest (%p): Finish dynamic import %x %d", aRequest,
-       unsigned(aResult), JS_IsExceptionPending(aCx)));
-
-  
-  
-
-  JS::DynamicImportStatus status =
-      (NS_FAILED(aResult) || JS_IsExceptionPending(aCx))
-          ? JS::DynamicImportStatus::Failed
-          : JS::DynamicImportStatus::Ok;
-
-  if (NS_FAILED(aResult) &&
-      aResult != NS_SUCCESS_DOM_SCRIPT_EVALUATION_THREW_UNCATCHABLE) {
-    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-    JS_ReportErrorNumberUC(aCx, js::GetErrorMessage, nullptr,
-                           JSMSG_DYNAMIC_IMPORT_FAILED);
-  }
-
-  JS::Rooted<JS::Value> referencingScript(aCx,
-                                          aRequest->mDynamicReferencingPrivate);
-  JS::Rooted<JSString*> specifier(aCx, aRequest->mDynamicSpecifier);
-  JS::Rooted<JSObject*> promise(aCx, aRequest->mDynamicPromise);
-
-  JS::Rooted<JSObject*> moduleRequest(aCx,
-                                      JS::CreateModuleRequest(aCx, specifier));
-  if (!moduleRequest) {
-    JS_ReportOutOfMemory(aCx);
-  }
-
-  JS::FinishDynamicModuleImport_NoTLA(aCx, status, referencingScript,
-                                      moduleRequest, promise);
-
-  
-  MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-
-  aRequest->ClearDynamicImport();
+  FinishDynamicImport(jsapi.cx(), aRequest, aResult, nullptr);
 }
 
 void ScriptLoader::FinishDynamicImport(
@@ -3204,14 +3154,8 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
         JS_SetPendingException(cx, error);
         
         
-        if (!JS::ContextOptionsRef(cx).topLevelAwait()) {
-          if (request->IsDynamicImport()) {
-            FinishDynamicImport_NoTLA(cx, request, NS_OK);
-          }
-        } else {
-          if (request->IsDynamicImport()) {
-            FinishDynamicImport(cx, request, NS_OK, nullptr);
-          }
+        if (request->IsDynamicImport()) {
+          FinishDynamicImport(cx, request, NS_OK, nullptr);
         }
         return NS_OK;
       }
@@ -3243,32 +3187,25 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
         rv = NS_OK;
       }
 
-      if (!JS::ContextOptionsRef(cx).topLevelAwait()) {
-        if (request->IsDynamicImport()) {
-          FinishDynamicImport_NoTLA(cx, request, rv);
-        }
+      JS::Rooted<JSObject*> aEvaluationPromise(cx);
+      if (rval.isObject()) {
+        
+        
+        
+        
+        aEvaluationPromise.set(&rval.toObject());
+      }
+      if (request->IsDynamicImport()) {
+        FinishDynamicImport(cx, request, rv, aEvaluationPromise);
       } else {
         
-        JS::Rooted<JSObject*> aEvaluationPromise(cx);
-        if (rval.isObject()) {
+        
+        if (!JS::ThrowOnModuleEvaluationFailure(cx, aEvaluationPromise)) {
+          LOG(("ScriptLoadRequest (%p):   evaluation failed on throw",
+               aRequest));
           
           
-          
-          
-          aEvaluationPromise.set(&rval.toObject());
-        }
-        if (request->IsDynamicImport()) {
-          FinishDynamicImport(cx, request, rv, aEvaluationPromise);
-        } else {
-          
-          
-          if (!JS::ThrowOnModuleEvaluationFailure(cx, aEvaluationPromise)) {
-            LOG(("ScriptLoadRequest (%p):   evaluation failed on throw",
-                 aRequest));
-            
-            
-            rv = NS_OK;
-          }
+          rv = NS_OK;
         }
       }
 

@@ -1,5 +1,6 @@
 
 
+
 load(libdir + "asserts.js");
 
 function testGetter(obj, name) {
@@ -64,7 +65,7 @@ f();
 `));
 d.declarationInstantiation();
 try {
-  d.evaluation();
+  await d.evaluation();
 } catch (e) {
 }
 assertEq(d.evaluationError instanceof ReferenceError, true);

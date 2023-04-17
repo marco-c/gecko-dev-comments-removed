@@ -441,23 +441,6 @@ class ScriptLoader final : public nsISupports {
 
 
 
-  void FinishDynamicImport_NoTLA(JSContext* aCx, ModuleLoadRequest* aRequest,
-                                 nsresult aResult);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

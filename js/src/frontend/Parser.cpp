@@ -2525,10 +2525,6 @@ bool GeneralParser<ParseHandler, Unit>::matchOrInsertSemicolon(
 
 
     if (!pc_->isAsync() && anyChars.currentToken().type == TokenKind::Await) {
-      if (!options().topLevelAwait) {
-        error(JSMSG_AWAIT_OUTSIDE_ASYNC);
-        return false;
-      }
       error(JSMSG_AWAIT_OUTSIDE_ASYNC_OR_MODULE);
       return false;
     }
@@ -6618,8 +6614,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::forStatement(
   IteratorKind iterKind = IteratorKind::Sync;
   unsigned iflags = 0;
 
-  if (pc_->isAsync() ||
-      (options().topLevelAwait && pc_->sc()->isModuleContext())) {
+  if (pc_->isAsync() || pc_->sc()->isModuleContext()) {
     bool matched;
     if (!tokenStream.matchToken(&matched, TokenKind::Await)) {
       return null();
@@ -8818,10 +8813,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::statement(
       
       if (tt == TokenKind::Await && !pc_->isAsync()) {
         if (pc_->atModuleTopLevel()) {
-          if (!options().topLevelAwait) {
-            error(JSMSG_TOP_LEVEL_AWAIT_NOT_SUPPORTED);
-            return null();
-          }
           pc_->sc()->asModuleContext()->setIsAsync();
           MOZ_ASSERT(pc_->isAsync());
         }
@@ -9077,10 +9068,6 @@ GeneralParser<ParseHandler, Unit>::statementListItem(
       
       if (tt == TokenKind::Await && !pc_->isAsync()) {
         if (pc_->atModuleTopLevel()) {
-          if (!options().topLevelAwait) {
-            error(JSMSG_TOP_LEVEL_AWAIT_NOT_SUPPORTED);
-            return null();
-          }
           pc_->sc()->asModuleContext()->setIsAsync();
           MOZ_ASSERT(pc_->isAsync());
         }
@@ -10165,10 +10152,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
     case TokenKind::Await: {
       
       if (!pc_->isAsync() && pc_->sc()->isModule()) {
-        if (!options().topLevelAwait) {
-          error(JSMSG_TOP_LEVEL_AWAIT_NOT_SUPPORTED);
-          return null();
-        }
         pc_->sc()->asModuleContext()->setIsAsync();
         MOZ_ASSERT(pc_->isAsync());
       }
