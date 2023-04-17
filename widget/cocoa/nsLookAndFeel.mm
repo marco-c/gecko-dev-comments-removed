@@ -25,11 +25,6 @@
 
 #include "nsObjCExceptions.h"
 
-
-@interface NSWorkspace (AvailableSinceSierra)
-@property(readonly) BOOL accessibilityDisplayShouldReduceMotion;
-@end
-
 nsLookAndFeel::nsLookAndFeel()
     : nsXPLookAndFeel(),
       mUseOverlayScrollbars(-1),
@@ -567,10 +562,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       
       
       if (!mPrefersReducedMotionCached) {
-        mPrefersReducedMotion =
-            [[NSWorkspace sharedWorkspace]
-                respondsToSelector:@selector(accessibilityDisplayShouldReduceMotion)] &&
-            [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldReduceMotion];
+        mPrefersReducedMotion = NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
         mPrefersReducedMotionCached = true;
       }
       aResult = mPrefersReducedMotion;
@@ -583,9 +575,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       
       if (!mUseAccessibilityThemeCached) {
         mUseAccessibilityTheme =
-            [[NSWorkspace sharedWorkspace]
-                respondsToSelector:@selector(accessibilityDisplayShouldIncreaseContrast)] &&
-            [[NSWorkspace sharedWorkspace] accessibilityDisplayShouldIncreaseContrast];
+            NSWorkspace.sharedWorkspace.accessibilityDisplayShouldIncreaseContrast;
         mUseAccessibilityThemeCached = true;
       }
       aResult = mUseAccessibilityTheme;
