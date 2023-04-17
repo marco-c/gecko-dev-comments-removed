@@ -17,6 +17,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "useRecommendedPrefs",
+  "remote.prefs.recommended",
+  false
+);
+
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
@@ -264,6 +271,12 @@ const RecommendedPreferences = {
 
 
   applyPreferences(preferences) {
+    if (!useRecommendedPrefs) {
+      
+      
+      return;
+    }
+
     for (const [k, v] of preferences) {
       if (!Preferences.isSet(k)) {
         logger.debug(`Setting recommended pref ${k} to ${v}`);

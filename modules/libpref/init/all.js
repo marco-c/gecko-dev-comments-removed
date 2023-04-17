@@ -4438,9 +4438,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("marionette.port", 2828);
 
   
-  pref("marionette.prefs.recommended", true);
-
-  
   
   
   
@@ -4464,6 +4461,10 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   
   
   pref("remote.log.truncate", true);
+
+  
+  
+  pref("remote.prefs.recommended", true);
 #endif
 
 

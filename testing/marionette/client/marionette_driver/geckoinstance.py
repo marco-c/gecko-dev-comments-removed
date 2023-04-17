@@ -85,8 +85,6 @@ class GeckoInstance(object):
         
         "idle.lastDailyNotification": -1,
         
-        "marionette.prefs.recommended": False,
-        
         "media.gmp-manager.updateEnabled": False,
         
         "media.sanity-test.disabled": True,
@@ -99,6 +97,8 @@ class GeckoInstance(object):
         "network.sntp.pools": "%(server)s",
         
         "privacy.trackingprotection.enabled": False,
+        
+        "remote.prefs.recommended": False,
         
         "security.certerrors.mitm.priming.enabled": False,
         

@@ -57,10 +57,6 @@ user_pref("layout.interruptible-reflow.enabled", false);
 
 
 user_pref("layout.testing.overlay-scrollbars.always-visible", true);
-
-
-
-user_pref("marionette.prefs.recommended", false);
 user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");
 user_pref("media.openUnsupportedTypeWithExternalApp", false);
 
@@ -70,6 +66,10 @@ user_pref("places.history.enabled", false);
 user_pref("privacy.trackingprotection.annotate_channels", false);
 user_pref("privacy.trackingprotection.enabled", false);
 user_pref("privacy.trackingprotection.pbmode.enabled", false);
+
+
+
+user_pref("remote.prefs.recommended", false);
 
 
 

@@ -149,10 +149,6 @@ user_pref("idle.lastDailyNotification", -1);
 user_pref("layout.css.report_errors", true);
 
 user_pref("layout.spammy_warnings.enabled", false);
-
-
-
-user_pref("marionette.prefs.recommended", false);
 user_pref("media.cache_size", 1000);
 user_pref("media.dormant-on-pause-timeout-ms", 0); 
 
@@ -192,6 +188,10 @@ user_pref("network.sntp.pools", "{server}");
 
 user_pref("places.database.lastMaintenance", 2147483647);
 user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
+
+
+
+user_pref("remote.prefs.recommended", false);
 user_pref("security.default_personal_cert", "Select Automatically"); 
 
 user_pref("security.notification_enable_delay", 0);
