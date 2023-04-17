@@ -505,6 +505,21 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   
+  if (StaticPrefs::browser_tabs_remote_systemTriggeredAboutBlankAnywhere() &&
+      NS_IsAboutBlank(aChannelCreationURI)) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+        resultOrPrecursor->GetIsNullPrincipal()) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+              ("Forcing system-principal triggered about:blank load to "
+               "complete in the current process"));
+      behavior = IsolationBehavior::Anywhere;
+    }
+  }
+
+  
+  
+  
   if (auto* addonPolicy =
           BasePrincipal::Cast(resultOrPrecursor)->AddonPolicy()) {
     if (aParentWindow) {
