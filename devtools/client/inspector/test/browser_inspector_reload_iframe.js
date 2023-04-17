@@ -6,9 +6,16 @@
 
 
 
+
+
+
+const IMG_URL = URL_ROOT_COM_SSL + "sjs_slow-loading-image.sjs";
 const FRAME_URI =
   "data:text/html;charset=utf-8," +
-  encodeURI(`<div id="in-frame">div in the iframe</div>`);
+  encodeURI(`
+    <div id="in-frame">div in the iframe</div>
+    <img src="${IMG_URL}"></img>
+  `);
 const HTML = `
   <iframe src="${FRAME_URI}"></iframe>
 `;
