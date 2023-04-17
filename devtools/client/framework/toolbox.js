@@ -3014,7 +3014,8 @@ Toolbox.prototype = {
     if (
       toolId != "inspector" &&
       toolId != "webconsole" &&
-      toolId != "netmonitor"
+      toolId != "netmonitor" &&
+      toolId != "accessibility"
     ) {
       return;
     }

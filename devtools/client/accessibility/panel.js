@@ -173,9 +173,15 @@ AccessibilityPanel.prototype = {
 
 
 
-  onTabNavigated() {
+  async onTabNavigated() {
     this.shouldRefresh = true;
-    this._opening.then(() => this.refresh());
+    await this._opening;
+
+    const onUpdated = this.panelWin.once(EVENTS.INITIALIZED);
+    this.refresh();
+    await onUpdated;
+
+    this.emit("reloaded");
   },
 
   onTargetUpdated({ isTargetSwitching }) {
