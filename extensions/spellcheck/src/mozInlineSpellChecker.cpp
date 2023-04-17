@@ -1316,7 +1316,7 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
 
     
     
-    nsINode* rootNode = aWordUtil.GetRootNode();
+    const nsINode* rootNode = aWordUtil.GetRootNode();
     if (!beginNode->IsInComposedDoc() || !endNode->IsInComposedDoc() ||
         !beginNode->IsShadowIncludingInclusiveDescendantOf(rootNode) ||
         !endNode->IsShadowIncludingInclusiveDescendantOf(rootNode)) {
