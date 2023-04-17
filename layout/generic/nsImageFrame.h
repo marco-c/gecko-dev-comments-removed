@@ -445,13 +445,13 @@ namespace mozilla {
 
 
 
-class nsDisplayImage final : public nsDisplayImageContainer {
+class nsDisplayImage final : public nsPaintedDisplayItem {
  public:
   typedef mozilla::layers::LayerManager LayerManager;
 
   nsDisplayImage(nsDisplayListBuilder* aBuilder, nsImageFrame* aFrame,
                  imgIContainer* aImage, imgIContainer* aPrevImage)
-      : nsDisplayImageContainer(aBuilder, aFrame),
+      : nsPaintedDisplayItem(aBuilder, aFrame),
         mImage(aImage),
         mPrevImage(aPrevImage) {
     MOZ_COUNT_CTOR(nsDisplayImage);
@@ -464,17 +464,12 @@ class nsDisplayImage final : public nsDisplayImageContainer {
                                  nsRegion* aInvalidRegion) const final;
   void Paint(nsDisplayListBuilder*, gfxContext* aCtx) final;
 
-  already_AddRefed<imgIContainer> GetImage() final;
-
   
 
 
 
-  nsRect GetDestRect() const final;
+  nsRect GetDestRect() const;
 
-  void UpdateDrawResult(mozilla::image::ImgDrawResult aResult) final {
-    nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, aResult);
-  }
   nsRect GetBounds(bool* aSnap) const {
     *aSnap = true;
 

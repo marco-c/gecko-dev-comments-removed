@@ -3791,18 +3791,6 @@ class nsDisplayContainer final : public nsDisplayItem {
   nsRect mBounds;
 };
 
-class nsDisplayImageContainer : public nsPaintedDisplayItem {
- public:
-  nsDisplayImageContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
-      : nsPaintedDisplayItem(aBuilder, aFrame) {}
-
-  virtual void UpdateDrawResult(image::ImgDrawResult aResult) = 0;
-  virtual already_AddRefed<imgIContainer> GetImage() = 0;
-  virtual nsRect GetDestRect() const = 0;
-
-  bool SupportsOptimizingToImage() const override { return true; }
-};
-
 
 
 
@@ -4230,7 +4218,7 @@ enum class AppendedBackgroundType : uint8_t {
 
 
 
-class nsDisplayBackgroundImage : public nsDisplayImageContainer {
+class nsDisplayBackgroundImage : public nsPaintedDisplayItem {
  public:
   struct InitData {
     nsDisplayListBuilder* builder;
@@ -4261,7 +4249,7 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
   ~nsDisplayBackgroundImage() override;
 
   bool RestoreState() override {
-    bool superChanged = nsDisplayImageContainer::RestoreState();
+    bool superChanged = nsPaintedDisplayItem::RestoreState();
     bool opacityChanged = (mOpacity != 1.0f);
     mOpacity = 1.0f;
     return (superChanged || opacityChanged);
@@ -4335,16 +4323,11 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
   void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayItemGeometry* aGeometry,
                                  nsRegion* aInvalidRegion) const override;
-  already_AddRefed<imgIContainer> GetImage() override;
-  nsRect GetDestRect() const override;
-
-  void UpdateDrawResult(image::ImgDrawResult aResult) override {
-    nsDisplayBackgroundGeometry::UpdateDrawResult(this, aResult);
-  }
-
   bool ShouldFixToViewport(nsDisplayListBuilder* aBuilder) const override {
     return mShouldFixToViewport;
   }
+
+  nsRect GetDestRect() const { return mDestRect; }
 
   nsIFrame* GetDependentFrame() override { return mDependentFrame; }
 
@@ -4362,7 +4345,7 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
     if (aFrame == mDependentFrame) {
       mDependentFrame = nullptr;
     }
-    nsDisplayImageContainer::RemoveFrame(aFrame);
+    nsPaintedDisplayItem::RemoveFrame(aFrame);
   }
 
   
