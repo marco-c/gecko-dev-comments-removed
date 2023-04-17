@@ -178,6 +178,13 @@ function prepareForVisibilityEvents(browser, expectedOrder) {
 
 add_task(async function test_swap_frameloader_pagevisibility_events() {
   
+  if (navigator.platform.indexOf("Win") == 0) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["widget.windows.window_occlusion_tracking.enabled", false]],
+    });
+  }
+
+  
   let tab = BrowserTestUtils.addTab(gBrowser, PAGE);
   gBrowser.selectedTab = tab;
   let firstBrowser = tab.linkedBrowser;
