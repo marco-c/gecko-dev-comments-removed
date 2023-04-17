@@ -48,6 +48,24 @@ dictionary L10nMessage {
 
 
 
+callback GenerateBundles = Promise<any> (sequence<DOMString> aResourceIds);
+callback GenerateBundlesSync = any (sequence<DOMString> aResourceIds);
+
+
+
+
+
+
+dictionary BundleGenerator {
+  GenerateBundles generateBundles;
+  GenerateBundlesSync generateBundlesSync;
+};
+
+
+
+
+
+
 
 
 
@@ -72,23 +90,25 @@ interface Localization {
 
 
 
+
   [Throws]
-  constructor(sequence<UTF8String> aResourceIds,
+  constructor(sequence<DOMString> aResourceIds,
               optional boolean aSync = false,
-              optional L10nRegistry aRegistry,
-              optional sequence<UTF8String> aLocales);
-
-  
-
-
-  void addResourceIds(sequence<UTF8String> aResourceIds);
+              optional BundleGenerator aBundleGenerator = {});
 
   
 
 
 
 
-  unsigned long removeResourceIds(sequence<UTF8String> aResourceIds);
+  unsigned long addResourceIds(sequence<DOMString> aResourceIds);
+
+  
+
+
+
+
+  unsigned long removeResourceIds(sequence<DOMString> aResourceIds);
 
   
 
@@ -139,7 +159,7 @@ interface Localization {
 
   [NewObject] Promise<sequence<L10nMessage?>> formatMessages(sequence<L10nKey> aKeys);
 
-  void setAsync();
+  void setIsSync(boolean aIsSync);
 
   [NewObject, Throws]
   UTF8String? formatValueSync(UTF8String aId, optional L10nArgs aArgs);

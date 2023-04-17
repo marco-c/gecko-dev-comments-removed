@@ -67,11 +67,7 @@ where
             
             
             
-            
-            
-            
-            self.state.start_poll();
-
+            assert!(self.state.is(POLL));
             loop {
                 
                 
@@ -132,6 +128,10 @@ impl Default for TaskState {
 }
 
 impl TaskState {
+    fn is(&self, state: usize) -> bool {
+        self.state.load(SeqCst) == state
+    }
+
     
     
     
@@ -198,14 +198,6 @@ impl TaskState {
     unsafe fn complete(&self) {
         debug_assert!(matches!(self.state.load(SeqCst), POLL | REPOLL));
         self.state.store(COMPLETE, SeqCst);
-    }
-
-    
-    
-    
-    fn start_poll(&self) {
-        assert!(matches!(self.state.load(SeqCst), POLL | REPOLL));
-        self.state.store(POLL, SeqCst);
     }
 }
 
