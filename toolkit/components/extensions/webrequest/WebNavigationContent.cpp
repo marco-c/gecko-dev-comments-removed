@@ -7,6 +7,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/Document.h"
@@ -269,11 +270,19 @@ WebNavigationContent::OnLocationChange(nsIWebProgress* aWebProgress,
           isHistoryStateUpdated, isReferenceFragmentUpdated);
     }
   } else if (bc->IsTop()) {
-    
-    
-    
-    ExtensionsChild::Get().SendDocumentChange(
-        bc, GetFrameTransitionData(aWebProgress, aRequest), aLocation);
+    MOZ_ASSERT(bc->IsInProcess());
+    if (RefPtr browserChild = dom::BrowserChild::GetFrom(bc->GetDocShell())) {
+      
+      
+      
+      if (browserChild->ShouldSendWebProgressEventsToParent()) {
+        
+        
+        
+        ExtensionsChild::Get().SendDocumentChange(
+            bc, GetFrameTransitionData(aWebProgress, aRequest), aLocation);
+      }
+    }
   }
 
   return NS_OK;
