@@ -9,9 +9,9 @@ const {
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-processes-watcher");
 
 class LegacyWorkersWatcher {
-  constructor(targetList, onTargetAvailable, onTargetDestroyed) {
-    this.targetList = targetList;
-    this.rootFront = targetList.rootFront;
+  constructor(targetCommand, onTargetAvailable, onTargetDestroyed) {
+    this.targetCommand = targetCommand;
+    this.rootFront = targetCommand.rootFront;
 
     this.onTargetAvailable = onTargetAvailable;
     this.onTargetDestroyed = onTargetDestroyed;
@@ -74,7 +74,7 @@ class LegacyWorkersWatcher {
     
     
     const front = targetFront.isParentProcess ? this.rootFront : targetFront;
-    if (!front || front.isDestroyed() || this.targetList.isDestroyed()) {
+    if (!front || front.isDestroyed() || this.targetCommand.isDestroyed()) {
       return;
     }
 
@@ -124,7 +124,7 @@ class LegacyWorkersWatcher {
     if (
       !this._recordWorkerTarget(workerTarget) ||
       existingTargets.has(workerTarget) ||
-      this.targetList.isDestroyed()
+      this.targetCommand.isDestroyed()
     ) {
       return;
     }
@@ -139,11 +139,11 @@ class LegacyWorkersWatcher {
 
   async listen() {
     
-    this.target = this.targetList.targetFront;
+    this.target = this.targetCommand.targetFront;
 
     if (this.target.isParentProcess) {
-      await this.targetList.watchTargets(
-        [this.targetList.TYPES.PROCESS],
+      await this.targetCommand.watchTargets(
+        [this.targetCommand.TYPES.PROCESS],
         this._onProcessAvailable,
         this._onProcessDestroyed
       );
@@ -162,7 +162,7 @@ class LegacyWorkersWatcher {
 
     if (this._isServiceWorkerWatcher) {
       this._legacyProcessesWatcher = new LegacyProcessesWatcher(
-        this.targetList,
+        this.targetCommand,
         async targetFront => {
           
           if (!targetFront.isParentProcess) {
@@ -190,14 +190,14 @@ class LegacyWorkersWatcher {
   }
 
   _getProcessTargets() {
-    return this.targetList.getAllTargets([this.targetList.TYPES.PROCESS]);
+    return this.targetCommand.getAllTargets([this.targetCommand.TYPES.PROCESS]);
   }
 
   unlisten() {
     
     if (this.target.isParentProcess) {
-      this.targetList.unwatchTargets(
-        [this.targetList.TYPES.PROCESS],
+      this.targetCommand.unwatchTargets(
+        [this.targetCommand.TYPES.PROCESS],
         this._onProcessAvailable,
         this._onProcessDestroyed
       );

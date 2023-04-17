@@ -12,8 +12,8 @@ const {
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
-  constructor(targetList, onTargetAvailable, onTargetDestroyed) {
-    super(targetList, onTargetAvailable, onTargetDestroyed);
+  constructor(targetCommand, onTargetAvailable, onTargetDestroyed) {
+    super(targetCommand, onTargetAvailable, onTargetDestroyed);
     this._registrations = [];
     this._processTargets = new Set();
 
@@ -73,7 +73,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   
   async listen() {
     
-    this.target = this.targetList.targetFront;
+    this.target = this.targetCommand.targetFront;
 
     this._workersListener.addListener(this._onRegistrationListChanged);
 
@@ -82,7 +82,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     await this._onRegistrationListChanged();
 
-    if (this.targetList.descriptorFront.isLocalTab) {
+    if (this.targetCommand.descriptorFront.isLocalTab) {
       
       
       
@@ -96,7 +96,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   unlisten() {
     this._workersListener.removeListener(this._onRegistrationListChanged);
 
-    if (this.targetList.descriptorFront.isLocalTab) {
+    if (this.targetCommand.descriptorFront.isLocalTab) {
       this.target.off("navigate", this._onNavigate);
     }
 
@@ -105,7 +105,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
   
   async _onProcessAvailable({ targetFront }) {
-    if (this.targetList.descriptorFront.isLocalTab) {
+    if (this.targetCommand.descriptorFront.isLocalTab) {
       
       
       
@@ -132,7 +132,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   _shouldDestroyTargetsOnNavigation() {
-    return !!this.targetList.destroyServiceWorkersOnNavigation;
+    return !!this.targetCommand.destroyServiceWorkersOnNavigation;
   }
 
   _onProcessDestroyed({ targetFront }) {
@@ -145,7 +145,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
 
     for (const target of allServiceWorkerTargets) {
-      const isRegisteredBefore = this.targetList.isTargetRegistered(target);
+      const isRegisteredBefore = this.targetCommand.isTargetRegistered(target);
       if (shouldDestroy && isRegisteredBefore) {
         
         
@@ -155,7 +155,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
       
       
-      const isRegisteredAfter = this.targetList.isTargetRegistered(target);
+      const isRegisteredAfter = this.targetCommand.isTargetRegistered(target);
       const isValidTarget = this._supportWorkerTarget(target);
       if (isValidTarget && !isRegisteredAfter) {
         
@@ -166,7 +166,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   async _onRegistrationListChanged() {
-    if (this.targetList.isDestroyed()) {
+    if (this.targetCommand.isDestroyed()) {
       return;
     }
 
@@ -182,7 +182,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
         
         
         
-        if (this.targetList.isTargetRegistered(target)) {
+        if (this.targetCommand.isTargetRegistered(target)) {
           
           
           this.onTargetDestroyed(target);
@@ -250,7 +250,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       return true;
     }
 
-    if (!this.targetList.descriptorFront.isLocalTab) {
+    if (!this.targetCommand.descriptorFront.isLocalTab) {
       
       
       return false;
