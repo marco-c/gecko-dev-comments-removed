@@ -159,6 +159,8 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(HTMLFormElement,
 void HTMLFormElement::AsyncEventRunning(AsyncEventDispatcher* aEvent) {
   if (mFormPasswordEventDispatcher == aEvent) {
     mFormPasswordEventDispatcher = nullptr;
+  } else if (mFormPossibleUsernameEventDispatcher == aEvent) {
+    mFormPossibleUsernameEventDispatcher = nullptr;
   }
 }
 
@@ -1182,6 +1184,18 @@ void HTMLFormElement::PostPasswordEvent() {
   mFormPasswordEventDispatcher->PostDOMEvent();
 }
 
+void HTMLFormElement::PostPossibleUsernameEvent() {
+  
+  if (mFormPossibleUsernameEventDispatcher) {
+    return;
+  }
+
+  mFormPossibleUsernameEventDispatcher =
+      new AsyncEventDispatcher(this, u"DOMFormHasPossibleUsername"_ns,
+                               CanBubble::eYes, ChromeOnlyDispatch::eYes);
+  mFormPossibleUsernameEventDispatcher->PostDOMEvent();
+}
+
 namespace {
 
 struct FormComparator {
@@ -1259,6 +1273,11 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   
   if (type == FormControlType::InputPassword) {
     PostPasswordEvent();
+    
+    
+  } else if (type == FormControlType::InputEmail ||
+             type == FormControlType::InputText) {
+    PostPossibleUsernameEvent();
   }
 
   
