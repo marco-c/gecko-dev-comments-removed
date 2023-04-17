@@ -34,8 +34,8 @@ SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checkSig,
 
 
 SECStatus AuthCertificateHookWithInfo(
-    TransportSecurityInfo* infoObject, const void* aPtrForLogging,
-    nsTArray<nsTArray<uint8_t>>&& peerCertChain,
+    TransportSecurityInfo* infoObject, const nsACString& aHostName,
+    const void* aPtrForLogging, nsTArray<nsTArray<uint8_t>>&& peerCertChain,
     Maybe<nsTArray<nsTArray<uint8_t>>>& stapledOCSPResponses,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension, uint32_t providerFlags);
 
