@@ -528,6 +528,12 @@ function _execute_test() {
       );
       geckoViewStartup.observe(null, "profile-after-change", null);
       geckoViewStartup.observe(null, "app-startup", null);
+
+      
+      
+      
+      const FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
+      FOG.initializeFOG();
     } catch (ex) {
       do_throw(`Failed to initialize GeckoView: ${ex}`, ex.stack);
     }

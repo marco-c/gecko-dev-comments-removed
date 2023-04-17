@@ -20,15 +20,25 @@ pub(crate) struct InitUploadPrefObserver {}
 
 #[allow(non_snake_case)]
 impl UploadPrefObserver {
-    pub(crate) unsafe fn begin_observing() -> Result<(), nsresult> {
-        let pref_obs = Self::allocate(InitUploadPrefObserver {});
-        let pref_service = xpcom::services::get_PrefService().ok_or(NS_ERROR_FAILURE)?;
-        let pref_branch: RefPtr<nsIPrefBranch> =
-            (*pref_service).query_interface().ok_or(NS_ERROR_FAILURE)?;
-        let pref_nscstr = &nsCStr::from("datareporting.healthreport.uploadEnabled") as &nsACString;
-        (*pref_branch)
-            .AddObserverImpl(pref_nscstr, pref_obs.coerce(), false)
-            .to_result()?;
+    pub(crate) fn begin_observing() -> Result<(), nsresult> {
+        
+        
+        
+        
+        
+        
+        unsafe {
+            let pref_obs = Self::allocate(InitUploadPrefObserver {});
+            let pref_service = xpcom::services::get_PrefService().ok_or(NS_ERROR_FAILURE)?;
+            let pref_branch: RefPtr<nsIPrefBranch> =
+                (*pref_service).query_interface().ok_or(NS_ERROR_FAILURE)?;
+            let pref_nscstr =
+                &nsCStr::from("datareporting.healthreport.uploadEnabled") as &nsACString;
+            (*pref_branch)
+                .AddObserverImpl(pref_nscstr, pref_obs.coerce(), false)
+                .to_result()?;
+        }
+
         Ok(())
     }
 

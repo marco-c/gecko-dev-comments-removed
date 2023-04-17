@@ -1,12 +1,6 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
 Cu.importGlobalProperties(["Glean", "GleanPings"]);
@@ -17,23 +11,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-
-
-
 add_task(function test_fog_counter_works() {
   Glean.testOnly.badCode.add(31);
-  Assert.equal(undefined, Glean.testOnly.badCode.testGetValue("test-ping"));
+  Assert.equal(31, Glean.testOnly.badCode.testGetValue("test-ping"));
 });
 
 add_task(async function test_fog_string_works() {
   const value = "a cheesy string!";
   Glean.testOnly.cheesyString.set(value);
 
-  Assert.equal(
-    undefined,
-    Glean.testOnly.cheesyString.testGetValue("test-ping")
-  );
+  Assert.equal(value, Glean.testOnly.cheesyString.testGetValue("test-ping"));
 });
 
 add_task(async function test_fog_string_list_works() {
@@ -84,9 +71,9 @@ add_task({ skip_if: () => true }, function test_fog_datetime_works() {
 
 add_task(function test_fog_boolean_works() {
   Glean.testOnly.canWeFlagIt.set(false);
-  Assert.equal(undefined, Glean.testOnly.canWeFlagIt.testGetValue("test-ping"));
+  Assert.equal(false, Glean.testOnly.canWeFlagIt.testGetValue("test-ping"));
   
-  Assert.equal(undefined, Glean.testOnly.canWeFlagIt.testGetValue());
+  Assert.equal(false, Glean.testOnly.canWeFlagIt.testGetValue());
 });
 
 add_task(async function test_fog_event_works() {
@@ -141,11 +128,11 @@ add_task(async function test_fog_labeled_boolean_works() {
   Glean.testOnly.mabelsLikeBalloons.at_parties.set(true);
   Glean.testOnly.mabelsLikeBalloons.at_funerals.set(false);
   Assert.equal(
-    undefined,
+    true,
     Glean.testOnly.mabelsLikeBalloons.at_parties.testGetValue()
   );
   Assert.equal(
-    undefined,
+    false,
     Glean.testOnly.mabelsLikeBalloons.at_funerals.testGetValue()
   );
   Assert.equal(
@@ -153,8 +140,9 @@ add_task(async function test_fog_labeled_boolean_works() {
     Glean.testOnly.mabelsLikeBalloons.__other__.testGetValue()
   );
   Glean.testOnly.mabelsLikeBalloons.InvalidLabel.set(true);
+  
   Assert.equal(
-    undefined,
+    true,
     Glean.testOnly.mabelsLikeBalloons.__other__.testGetValue()
   );
   
@@ -169,11 +157,11 @@ add_task(async function test_fog_labeled_counter_works() {
   Glean.testOnly.mabelsKitchenCounters.near_the_sink.add(1);
   Glean.testOnly.mabelsKitchenCounters.with_junk_on_them.add(2);
   Assert.equal(
-    undefined,
+    1,
     Glean.testOnly.mabelsKitchenCounters.near_the_sink.testGetValue()
   );
   Assert.equal(
-    undefined,
+    2,
     Glean.testOnly.mabelsKitchenCounters.with_junk_on_them.testGetValue()
   );
   
@@ -182,11 +170,11 @@ add_task(async function test_fog_labeled_counter_works() {
     Glean.testOnly.mabelsKitchenCounters.__other__.testGetValue()
   );
   Glean.testOnly.mabelsKitchenCounters.InvalidLabel.add(1);
-  Assert.equal(
-    undefined,
-    Glean.testOnly.mabelsKitchenCounters.__other__.testGetValue()
+  Assert.throws(
+    () => Glean.testOnly.mabelsKitchenCounters.__other__.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+    "Should throw because of a recording error."
   );
-  
 });
 
 add_task(async function test_fog_labeled_string_works() {
@@ -197,11 +185,11 @@ add_task(async function test_fog_labeled_string_works() {
   Glean.testOnly.mabelsBalloonStrings.colour_of_99.set("crimson");
   Glean.testOnly.mabelsBalloonStrings.string_lengths.set("various");
   Assert.equal(
-    undefined,
+    "crimson",
     Glean.testOnly.mabelsBalloonStrings.colour_of_99.testGetValue()
   );
   Assert.equal(
-    undefined,
+    "various",
     Glean.testOnly.mabelsBalloonStrings.string_lengths.testGetValue()
   );
   
@@ -210,9 +198,9 @@ add_task(async function test_fog_labeled_string_works() {
     Glean.testOnly.mabelsBalloonStrings.__other__.testGetValue()
   );
   Glean.testOnly.mabelsBalloonStrings.InvalidLabel.set("valid");
-  Assert.equal(
-    undefined,
-    Glean.testOnly.mabelsBalloonStrings.__other__.testGetValue()
+  Assert.throws(
+    () => Glean.testOnly.mabelsBalloonStrings.__other__.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+    "Should throw because of a recording error."
   );
-  
 });
