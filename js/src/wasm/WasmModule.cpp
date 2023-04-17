@@ -840,8 +840,7 @@ bool Module::instantiateLocalTag(JSContext* cx, const TagDesc& ed,
     
     
     RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmTag));
-    RootedWasmTagObject tagObj(cx,
-                               WasmTagObject::create(cx, ed.argTypes, proto));
+    RootedWasmTagObject tagObj(cx, WasmTagObject::create(cx, ed.type, proto));
     if (!tagObj) {
       return false;
     }
