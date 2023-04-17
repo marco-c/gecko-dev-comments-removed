@@ -781,6 +781,12 @@ exports.createNetworkEvent = function(
     }
   }
 
+  
+  
+  
+  event.isNavigationRequest =
+    channel.isMainDocumentChannel && channel.loadInfo.isTopLevelLoad;
+
   return event;
 };
 
