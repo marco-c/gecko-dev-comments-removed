@@ -214,10 +214,10 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   if (mSessionHistory) {
     mSessionHistory->SetBrowsingContext(aNewContext);
-    if (mozilla::BFCacheInParent()) {
-      
-      mSessionHistory->SetEpoch(0, Nothing());
-    }
+    
+    
+    
+    mSessionHistory->SetEpoch(0, Nothing());
     mSessionHistory.swap(aNewContext->mSessionHistory);
     RefPtr<ChildSHistory> childSHistory = ForgetChildSHistory();
     aNewContext->SetChildSHistory(childSHistory);
