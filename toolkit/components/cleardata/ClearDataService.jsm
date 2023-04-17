@@ -1039,9 +1039,36 @@ const SecuritySettingsCleaner = {
     return this.deleteByHost(aPrincipal.host, aPrincipal.originAttributes);
   },
 
-  deleteByBaseDomain(aBaseDomain) {
+  async deleteByBaseDomain(aDomain) {
+    let sss = Cc["@mozilla.org/ssservice;1"].getService(
+      Ci.nsISiteSecurityService
+    );
+
     
-    return this.deleteByHost(aBaseDomain, {});
+    
+    Array.from(sss.enumerate(Ci.nsISiteSecurityService.HEADER_HSTS))
+      .filter(({ hostname, originAttributes }) =>
+        hasBaseDomain({ host: hostname, originAttributes }, aDomain)
+      )
+      .forEach(({ hostname, originAttributes }) => {
+        
+        let uri = Services.io.newURI("https://" + hostname);
+        sss.resetState(
+          Ci.nsISiteSecurityService.HEADER_HSTS,
+          uri,
+          0,
+          originAttributes
+        );
+      });
+
+    let cars = Cc[
+      "@mozilla.org/security/clientAuthRememberService;1"
+    ].getService(Ci.nsIClientAuthRememberService);
+
+    cars
+      .getDecisions()
+      .filter(({ asciiHost }) => hasBaseDomain({ host: asciiHost }, aDomain))
+      .forEach(({ entryKey }) => cars.forgetRememberedDecision(entryKey));
   },
 
   async deleteAll() {
