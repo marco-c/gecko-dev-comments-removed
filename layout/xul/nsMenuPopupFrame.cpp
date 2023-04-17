@@ -74,6 +74,14 @@ int8_t nsMenuPopupFrame::sDefaultLevelIsTop = -1;
 
 DOMTimeStamp nsMenuPopupFrame::sLastKeyTime = 0;
 
+static bool IsWaylandDisplay() {
+#ifdef MOZ_WAYLAND
+  return mozilla::widget::GdkIsWaylandDisplay();
+#else
+  return false;
+#endif
+}
+
 
 
 
@@ -550,12 +558,7 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   }
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
 
-#ifdef MOZ_WAYLAND
-  static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
-#else
-  static bool inWayland = false;
-#endif
-  if (inWayland) {
+  if (IsWaylandDisplay()) {
     
     
     
@@ -905,7 +908,8 @@ void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mPopupAlignment = POPUPALIGNMENT_NONE;
   mPosition = POPUPPOSITION_UNKNOWN;
   mIsContextMenu = aIsContextMenu;
-  mAdjustOffsetForContextMenu = aIsContextMenu;
+  
+  mAdjustOffsetForContextMenu = IsWaylandDisplay() ? false : aIsContextMenu;
   mIsNativeMenu = false;
   mAnchorType = MenuPopupAnchorType_Point;
   mPositionedOffset = 0;
@@ -924,7 +928,8 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mPopupAlignment = POPUPALIGNMENT_NONE;
   mPosition = POPUPPOSITION_UNKNOWN;
   mIsContextMenu = true;
-  mAdjustOffsetForContextMenu = true;
+  
+  mAdjustOffsetForContextMenu = !IsWaylandDisplay();
   mIsNativeMenu = true;
   mAnchorType = MenuPopupAnchorType_Point;
   mPositionedOffset = 0;
@@ -1497,7 +1502,7 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
       
 
 #ifdef MOZ_WAYLAND
-      if (mozilla::widget::GdkIsWaylandDisplay()) {
+      if (IsWaylandDisplay()) {
         screenPoint = nsPoint(anchorRect.x, anchorRect.y);
         mAnchorRect = anchorRect;
       }
@@ -1629,16 +1634,11 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     if (mRect.width > screenRect.width) mRect.width = screenRect.width;
     if (mRect.height > screenRect.height) mRect.height = screenRect.height;
 
-      
-      
-      
-      
-#ifdef MOZ_WAYLAND
-    static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
-#else
-    static bool inWayland = false;
-#endif
-    if (!inWayland) {
+    
+    
+    
+    
+    if (!IsWaylandDisplay()) {
       
       
       
@@ -1781,12 +1781,7 @@ LayoutDeviceIntRect nsMenuPopupFrame::GetConstraintRect(
   nsCOMPtr<nsIScreen> screen;
   nsCOMPtr<nsIScreenManager> sm(
       do_GetService("@mozilla.org/gfx/screenmanager;1"));
-#ifdef MOZ_WAYLAND
-  static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
-#else
-  static bool inWayland = false;
-#endif
-  if (sm && !inWayland) {
+  if (sm && !IsWaylandDisplay()) {
     
     
     
