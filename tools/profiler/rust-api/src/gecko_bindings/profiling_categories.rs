@@ -12,3 +12,22 @@ include!(concat!(
     env!("MOZ_TOPOBJDIR"),
     "/tools/profiler/rust-api/src/gecko_bindings/profiling_categories.rs"
 ));
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! gecko_profiler_category {
+    ($category:ident) => {
+        $crate::ProfilingCategoryPair::$category(None)
+    };
+    ($category:ident, $subcategory:ident) => {
+        $crate::ProfilingCategoryPair::$category(Some($crate::$category::$subcategory))
+    };
+}
