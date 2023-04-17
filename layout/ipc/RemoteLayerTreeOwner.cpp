@@ -126,9 +126,9 @@ void RemoteLayerTreeOwner::GetTextureFactoryIdentifier(
   RefPtr<WindowRenderer> renderer =
       mBrowserParent ? GetWindowRenderer(mBrowserParent) : nullptr;
   
-  if (renderer && renderer->AsLayerManager()) {
+  if (renderer && renderer->AsWebRender()) {
     *aTextureFactoryIdentifier =
-        renderer->AsLayerManager()->GetTextureFactoryIdentifier();
+        renderer->AsWebRender()->GetTextureFactoryIdentifier();
   } else {
     *aTextureFactoryIdentifier = TextureFactoryIdentifier();
   }
