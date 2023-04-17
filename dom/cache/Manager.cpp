@@ -386,17 +386,6 @@ class Manager::Factory {
       
       
       
-      {
-        StaticMutexAutoLock lock(sMutex);
-
-        if (sFactoryShutdown) {
-          return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-        }
-      }
-
-      
-      
-      
       
       sFactory = new Factory();
     }
@@ -479,13 +468,6 @@ class Manager::Factory {
   static StaticAutoPtr<Factory> sFactory;
 
   
-  static StaticMutex sMutex;
-
-  
-  
-  static bool sFactoryShutdown;
-
-  
   
   
   nsTObserverArray<NotNull<Manager*>> mManagerList;
@@ -498,12 +480,6 @@ class Manager::Factory {
 
 
 StaticAutoPtr<Manager::Factory> Manager::Factory::sFactory;
-
-
-StaticMutex Manager::Factory::sMutex;
-
-
-bool Manager::Factory::sFactoryShutdown = false;
 
 
 
