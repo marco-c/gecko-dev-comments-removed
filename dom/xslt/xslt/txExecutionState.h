@@ -81,7 +81,7 @@ class txExecutionState : public txIMatchContext {
   };
 
   
-  nsresult pushEvalContext(txIEvalContext* aContext);
+  void pushEvalContext(txIEvalContext* aContext);
   txIEvalContext* popEvalContext();
 
   
