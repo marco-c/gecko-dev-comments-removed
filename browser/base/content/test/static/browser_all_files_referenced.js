@@ -270,6 +270,18 @@ var whitelist = [
 
   
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
+
+  
+  
+  { file: "resource://usercontext-content/builtin-themes/light/preview.svg" },
+  { file: "resource://usercontext-content/builtin-themes/dark/preview.svg" },
+  {
+    file: "resource://usercontext-content/builtin-themes/alpenglow/preview.svg",
+  },
+  {
+    file:
+      "resource://usercontext-content/builtin-themes/monochromatic/lush/bold/preview.svg",
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
