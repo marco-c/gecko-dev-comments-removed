@@ -132,7 +132,9 @@ impl GradientBuilder {
         let first = *stops.first().unwrap();
         let last = *stops.last().unwrap();
 
-        assert!(first.offset <= last.offset);
+        
+        
+        assert!(!(first.offset > last.offset));
 
         let stops_delta = last.offset - first.offset;
 
