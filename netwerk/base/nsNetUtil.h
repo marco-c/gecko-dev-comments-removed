@@ -110,6 +110,21 @@ nsresult NS_NewFileURI(
 
 
 
+nsresult NS_GetSpecWithNSURLEncoding(nsACString& aResult,
+                                     const nsACString& aSpec);
+
+
+
+
+nsresult NS_NewURIWithNSURLEncoding(nsIURI** aResult, const nsACString& aSpec);
+
+
+
+
+
+
+
+
 nsresult NS_GetURIWithNewRef(nsIURI* aInput, const nsACString& aRef,
                              nsIURI** aOutput);
 nsresult NS_GetURIWithoutRef(nsIURI* aInput, nsIURI** aOutput);

@@ -27,7 +27,9 @@ typedef enum {
   url_XPAlphas =
       1u
       << 1,  
-  url_Path = 1u << 2  
+  url_Path = 1u << 2,       
+  url_AppleExtra = 1u << 3  
+                            
 } nsEscapeMask;
 
 #ifdef __cplusplus
