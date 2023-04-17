@@ -8,9 +8,8 @@
 #define mozilla_mscom_ProcessRuntime_h
 
 #include "mozilla/Attributes.h"
-#if defined(ACCESSIBILITY)
+#if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
 #  include "mozilla/mscom/ActivationContext.h"
-#  include "mozilla/Maybe.h"
 #endif  
 #include "mozilla/mscom/ApartmentRegion.h"
 #include "nsWindowsHelpers.h"
@@ -77,11 +76,9 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
  private:
   HRESULT mInitResult;
   const ProcessCategory mProcessCategory;
-#if defined(ACCESSIBILITY) && \
-    (defined(MOZILLA_INTERNAL_API) || defined(MOZ_HAS_MOZGLUE))
-  Maybe<ActivationContextRegion> mActCtxRgn;
+#if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
+  ActivationContextRegion mActCtxRgn;
 #endif  
-        
   ApartmentRegion mAptRegion;
 
  private:

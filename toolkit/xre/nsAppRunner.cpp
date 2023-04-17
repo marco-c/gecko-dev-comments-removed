@@ -5405,6 +5405,19 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
+  
+  
+  
+  
+  
+  if (!mozilla::IsEafPlusEnabled()) {
+    mozilla::ipc::GeckoChildProcessHost::CacheNtDllThunk();
+  }
+
+  
+  
+  
+  
   mozilla::mscom::ProcessRuntime msCOMRuntime;
 #endif
 

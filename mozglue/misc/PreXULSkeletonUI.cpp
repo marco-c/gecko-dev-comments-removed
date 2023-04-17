@@ -17,15 +17,12 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/BaseProfilerMarkers.h"
-#include "mozilla/CacheNtDllThunk.h"
-#include "mozilla/FStream.h"
-#include "mozilla/GetKnownFolderPath.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/BaseProfilerMarkers.h"
+#include "mozilla/FStream.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/mscom/ProcessRuntime.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
@@ -33,7 +30,6 @@
 #include "mozilla/Unused.h"
 #include "mozilla/WindowsDpiAwareness.h"
 #include "mozilla/WindowsVersion.h"
-#include "mozilla/WindowsProcessMitigations.h"
 
 namespace mozilla {
 
@@ -108,7 +104,6 @@ static LPWSTR const gIDCWait = MAKEINTRESOURCEW(32514);
 static HANDLE sPreXULSKeletonUIAnimationThread;
 static HANDLE sPreXULSKeletonUILockFile = INVALID_HANDLE_VALUE;
 
-static mozilla::mscom::ProcessRuntime* sProcessRuntime;
 static uint32_t* sPixelBuffer = nullptr;
 static Vector<ColorRect>* sAnimatedRects = nullptr;
 static int sTotalChromeHeight = 0;
@@ -194,6 +189,29 @@ static const wchar_t* sThemeRegSuffix = L"|Theme";
 static const wchar_t* sFlagsRegSuffix = L"|Flags";
 static const wchar_t* sProgressSuffix = L"|Progress";
 
+struct LoadedCoTaskMemFreeDeleter {
+  void operator()(void* ptr) {
+    static decltype(CoTaskMemFree)* coTaskMemFree = nullptr;
+    if (!coTaskMemFree) {
+      
+      
+      HMODULE ole32Dll = ::LoadLibraryW(L"ole32");
+      if (!ole32Dll) {
+        printf_stderr(
+            "Could not load ole32 - will not free with CoTaskMemFree");
+        return;
+      }
+      coTaskMemFree = reinterpret_cast<decltype(coTaskMemFree)>(
+          ::GetProcAddress(ole32Dll, "CoTaskMemFree"));
+      if (!coTaskMemFree) {
+        printf_stderr("Could not find CoTaskMemFree");
+        return;
+      }
+    }
+    coTaskMemFree(ptr);
+  }
+};
+
 std::wstring GetRegValueName(const wchar_t* prefix, const wchar_t* suffix) {
   std::wstring result(prefix);
   result.append(suffix);
@@ -235,6 +253,30 @@ static bool PreXULSkeletonUIDisallowed() {
   return sErrorReason.isSome() &&
          (*sErrorReason == PreXULSkeletonUIError::Cmdline ||
           *sErrorReason == PreXULSkeletonUIError::EnvVars);
+}
+
+static UniquePtr<wchar_t, LoadedCoTaskMemFreeDeleter> GetKnownFolderPath(
+    REFKNOWNFOLDERID folderId) {
+  static decltype(SHGetKnownFolderPath)* shGetKnownFolderPath = nullptr;
+  if (!shGetKnownFolderPath) {
+    
+    
+    
+    
+    
+    HMODULE shell32Dll = ::LoadLibraryW(L"shell32");
+    if (!shell32Dll) {
+      return nullptr;
+    }
+    shGetKnownFolderPath = reinterpret_cast<decltype(shGetKnownFolderPath)>(
+        ::GetProcAddress(shell32Dll, "SHGetKnownFolderPath"));
+    if (!shGetKnownFolderPath) {
+      return nullptr;
+    }
+  }
+  PWSTR path = nullptr;
+  shGetKnownFolderPath(folderId, 0, nullptr, &path);
+  return UniquePtr<wchar_t, LoadedCoTaskMemFreeDeleter>(path);
 }
 
 
@@ -1267,12 +1309,6 @@ LRESULT WINAPI PreXULSkeletonUIProc(HWND hWnd, UINT msg, WPARAM wParam,
                                     LPARAM lParam) {
   
   
-  if (msg == WM_GETOBJECT && sPreXULSkeletonUIWindow) {
-    return E_FAIL;
-  }
-
-  
-  
   if (msg == WM_NCCREATE && sEnableNonClientDpiScaling) {
     sEnableNonClientDpiScaling(hWnd);
   }
@@ -1805,31 +1841,6 @@ static Result<Ok, PreXULSkeletonUIError> WriteRegBool(
 
 static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
     HINSTANCE hInstance, int argc, char** argv) {
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mozilla::IsEafPlusEnabled()) {
-    CacheNtDllThunk();
-  }
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  sProcessRuntime = new mscom::ProcessRuntime(
-      mscom::ProcessRuntime::ProcessCategory::GeckoBrowserParent);
-
   const TimeStamp skeletonStart = TimeStamp::NowUnfuzzed();
 
   if (!IsWin10OrLater()) {
@@ -2039,11 +2050,6 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
   if (result.isErr()) {
     sErrorReason.emplace(result.unwrapErr());
   }
-}
-
-void CleanupProcessRuntime() {
-  delete sProcessRuntime;
-  sProcessRuntime = nullptr;
 }
 
 bool WasPreXULSkeletonUIMaximized() { return sMaximized; }

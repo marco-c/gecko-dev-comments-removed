@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include "mozilla/Maybe.h"
+#include "nsString.h"
 #include <stdint.h>
 
 namespace mozilla {
@@ -46,6 +47,12 @@ class Compatibility {
 
 
   static bool IsVisperoShared() { return !!(sConsumers & VISPEROSHARED); }
+
+  
+
+
+
+  static uint16_t GetActCtxResourceId();
 
   
 
