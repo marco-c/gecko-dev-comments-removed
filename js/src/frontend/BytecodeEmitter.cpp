@@ -2834,128 +2834,126 @@ bool BytecodeEmitter::emitSetOrInitializeDestructuring(
   } else if (target->isKind(ParseNodeKind::AssignExpr)) {
     target = target->as<AssignmentNode>().left();
   }
-  if (target->isKind(ParseNodeKind::ArrayExpr) ||
-      target->isKind(ParseNodeKind::ObjectExpr)) {
-    if (!emitDestructuringOps(&target->as<ListNode>(), flav)) {
-      return false;
-    }
-    
-    
-    if (!emit1(JSOp::Pop)) {
-      return false;
-    }
-  } else {
-    switch (target->getKind()) {
-      case ParseNodeKind::Name: {
-        auto name = target->as<NameNode>().name();
-        NameLocation loc = lookupName(name);
-        NameOpEmitter::Kind kind;
-        switch (flav) {
-          case DestructuringFlavor::Declaration:
-            kind = NameOpEmitter::Kind::Initialize;
-            break;
 
-          case DestructuringFlavor::Assignment:
-            kind = NameOpEmitter::Kind::SimpleAssignment;
-            break;
-        }
-
-        NameOpEmitter noe(this, name, loc, kind);
-        if (!noe.prepareForRhs()) {
-          
-          return false;
-        }
-        if (noe.emittedBindOp()) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          if (!emit1(JSOp::Swap)) {
-            
-            return false;
-          }
-        } else {
-          
-          
-        }
-        if (!noe.emitAssignment()) {
-          
-          return false;
-        }
-
-        break;
+  switch (target->getKind()) {
+    case ParseNodeKind::ArrayExpr:
+    case ParseNodeKind::ObjectExpr:
+      if (!emitDestructuringOps(&target->as<ListNode>(), flav)) {
+        return false;
       }
-
-      case ParseNodeKind::DotExpr: {
-        
-        
-        
-        
-        
-        PropertyAccess* prop = &target->as<PropertyAccess>();
-        bool isSuper = prop->isSuper();
-        PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
-                          isSuper ? PropOpEmitter::ObjKind::Super
-                                  : PropOpEmitter::ObjKind::Other);
-        if (!poe.skipObjAndRhs()) {
-          return false;
-        }
-        
-        if (!poe.emitAssignment(prop->key().atom())) {
-          return false;
-        }
-        break;
-      }
-
-      case ParseNodeKind::ElemExpr: {
-        
-        
-        
-        
-        
-        PropertyByValue* elem = &target->as<PropertyByValue>();
-        bool isSuper = elem->isSuper();
-        bool isPrivate = elem->key().isKind(ParseNodeKind::PrivateName);
-        ElemOpEmitter eoe(
-            this, ElemOpEmitter::Kind::SimpleAssignment,
-            isSuper ? ElemOpEmitter::ObjKind::Super
-                    : ElemOpEmitter::ObjKind::Other,
-            isPrivate ? NameVisibility::Private : NameVisibility::Public);
-        if (!eoe.skipObjAndKeyAndRhs()) {
-          return false;
-        }
-        if (!eoe.emitAssignment()) {
-          
-          return false;
-        }
-        break;
-      }
-
-      case ParseNodeKind::CallExpr:
-        MOZ_ASSERT_UNREACHABLE(
-            "Parser::reportIfNotValidSimpleAssignmentTarget "
-            "rejects function calls as assignment "
-            "targets in destructuring assignments");
-        break;
-
-      default:
-        MOZ_CRASH("emitSetOrInitializeDestructuring: bad lhs kind");
-    }
-
-    
-    if (!emit1(JSOp::Pop)) {
       
-      return false;
+      
+      break;
+
+    case ParseNodeKind::Name: {
+      auto name = target->as<NameNode>().name();
+      NameLocation loc = lookupName(name);
+      NameOpEmitter::Kind kind;
+      switch (flav) {
+        case DestructuringFlavor::Declaration:
+          kind = NameOpEmitter::Kind::Initialize;
+          break;
+
+        case DestructuringFlavor::Assignment:
+          kind = NameOpEmitter::Kind::SimpleAssignment;
+          break;
+      }
+
+      NameOpEmitter noe(this, name, loc, kind);
+      if (!noe.prepareForRhs()) {
+        
+        return false;
+      }
+      if (noe.emittedBindOp()) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!emit1(JSOp::Swap)) {
+          
+          return false;
+        }
+      } else {
+        
+        
+      }
+      if (!noe.emitAssignment()) {
+        
+        return false;
+      }
+
+      break;
     }
+
+    case ParseNodeKind::DotExpr: {
+      
+      
+      
+      
+      
+      PropertyAccess* prop = &target->as<PropertyAccess>();
+      bool isSuper = prop->isSuper();
+      PropOpEmitter poe(this, PropOpEmitter::Kind::SimpleAssignment,
+                        isSuper ? PropOpEmitter::ObjKind::Super
+                                : PropOpEmitter::ObjKind::Other);
+      if (!poe.skipObjAndRhs()) {
+        return false;
+      }
+      
+      if (!poe.emitAssignment(prop->key().atom())) {
+        return false;
+      }
+      break;
+    }
+
+    case ParseNodeKind::ElemExpr: {
+      
+      
+      
+      
+      
+      PropertyByValue* elem = &target->as<PropertyByValue>();
+      bool isSuper = elem->isSuper();
+      bool isPrivate = elem->key().isKind(ParseNodeKind::PrivateName);
+      ElemOpEmitter eoe(
+          this, ElemOpEmitter::Kind::SimpleAssignment,
+          isSuper ? ElemOpEmitter::ObjKind::Super
+                  : ElemOpEmitter::ObjKind::Other,
+          isPrivate ? NameVisibility::Private : NameVisibility::Public);
+      if (!eoe.skipObjAndKeyAndRhs()) {
+        return false;
+      }
+      if (!eoe.emitAssignment()) {
+        
+        return false;
+      }
+      break;
+    }
+
+    case ParseNodeKind::CallExpr:
+      MOZ_ASSERT_UNREACHABLE(
+          "Parser::reportIfNotValidSimpleAssignmentTarget "
+          "rejects function calls as assignment "
+          "targets in destructuring assignments");
+      break;
+
+    default:
+      MOZ_CRASH("emitSetOrInitializeDestructuring: bad lhs kind");
+  }
+
+  
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
   }
 
   return true;
