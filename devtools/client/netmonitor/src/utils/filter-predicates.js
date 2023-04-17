@@ -53,8 +53,14 @@ function isFont({ url, mimeType }) {
   );
 }
 
-function isImage({ mimeType }) {
-  return mimeType && mimeType.includes("image/");
+function isImage({ mimeType, cause }) {
+  
+  
+  return (
+    mimeType?.includes("image/") ||
+    cause?.type.includes("img") ||
+    cause?.type.includes("image")
+  );
 }
 
 function isMedia({ mimeType }) {
