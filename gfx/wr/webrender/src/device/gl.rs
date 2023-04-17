@@ -1472,10 +1472,6 @@ impl Device {
 
         
         
-        let supports_gles_bgra = supports_extension(&extensions, "GL_EXT_texture_format_BGRA8888");
-
-        
-        
         let is_emulator = renderer_name.starts_with("Android Emulator");
         let avoid_tex_image = is_emulator;
         let mut gl_version = [0; 2];
@@ -1491,6 +1487,20 @@ impl Device {
                 gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
                 gl::GlType::Gles => true,
             };
+
+        
+        
+        
+        
+        
+        
+        
+        let is_intel_baytrail = renderer_name.starts_with("Intel(R) HD Graphics for BayTrail");
+        let supports_gles_bgra = supports_extension(&extensions, "GL_EXT_texture_format_BGRA8888");
+        let supports_texture_storage_with_gles_bgra = supports_gles_bgra
+            && supports_extension(&extensions, "GL_EXT_texture_storage")
+            && !is_intel_baytrail;
+
         let supports_texture_swizzle = allow_texture_swizzling &&
             match gl.get_type() {
                 
@@ -1519,9 +1529,7 @@ impl Device {
             
             
             
-            gl::GlType::Gles if supports_gles_bgra
-                && supports_extension(&extensions, "GL_EXT_texture_storage") =>
-            (
+            gl::GlType::Gles if supports_texture_storage_with_gles_bgra => (
                 TextureFormatPair::from(ImageFormat::BGRA8),
                 TextureFormatPair { internal: gl::BGRA8_EXT, external: gl::BGRA_EXT },
                 gl::UNSIGNED_BYTE,
