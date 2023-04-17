@@ -28,6 +28,10 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
       const LayoutDeviceIntSize& aClientSize) = 0;
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
+  virtual void DisableRendering() = 0;
+  virtual void EnableRendering(const uintptr_t aXWindow,
+                               const bool aShaped) = 0;
+
   
 
   PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() override {
@@ -68,6 +72,13 @@ class GtkCompositorWidget : public CompositorWidget,
 
   LayoutDeviceIntRegion GetTransparentRegion() override;
 
+  
+  
+  void DisableRendering() override;
+
+  
+  void EnableRendering(const uintptr_t aXWindow, const bool aShaped) override;
+
 #if defined(MOZ_X11)
   Window XWindow() const { return mXWindow; }
 #endif
@@ -76,10 +87,23 @@ class GtkCompositorWidget : public CompositorWidget,
   RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
 #endif
 
+  bool PreRender(WidgetRenderingContext* aContext) override {
+    return !mIsRenderingSuspended;
+  }
+  bool IsHidden() const override { return mIsRenderingSuspended; }
+
   
 
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
   GtkCompositorWidget* AsGtkCompositorWidget() override { return this; }
+
+ private:
+#if defined(MOZ_WAYLAND)
+  void ConfigureWaylandBackend(RefPtr<nsWindow> aWindow);
+#endif
+#if defined(MOZ_X11)
+  void ConfigureX11Backend(Window aXWindow, bool aShaped);
+#endif
 
  protected:
   RefPtr<nsWindow> mWidget;
@@ -101,6 +125,7 @@ class GtkCompositorWidget : public CompositorWidget,
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::layers::NativeLayerRootWayland> mNativeLayerRoot;
 #endif
+  bool mIsRenderingSuspended;
 };
 
 }  
