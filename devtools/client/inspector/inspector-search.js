@@ -513,33 +513,10 @@ SelectorAutocompleter.prototype = {
       query += "*";
     }
 
-    this._lastQuery = this.inspector
-      
-      .getAllInspectorFronts()
-      .then(inspectors => {
-        
-        return Promise.all(
-          inspectors.map(async ({ walker }) => {
-            return walker.getSuggestionsForQuery(query, firstPart, state);
-          })
-        );
-      })
+    this._lastQuery = this.inspector.commands.inspectorCommand
+      .getSuggestionsForQuery(query, firstPart, state)
       .then(suggestions => {
-        
-        const result = { query: "", suggestions: [] };
-        for (const r of suggestions) {
-          result.query = r.query;
-          result.suggestions = result.suggestions.concat(r.suggestions);
-        }
-        return result;
-      })
-      .then(result => {
         this.emit("processing-done");
-        if (result.query !== query) {
-          
-          
-          return promise.resolve(null);
-        }
 
         if (state === this.States.CLASS) {
           firstPart = "." + firstPart;
@@ -549,16 +526,13 @@ SelectorAutocompleter.prototype = {
 
         
         
-        if (
-          result.suggestions.length === 1 &&
-          result.suggestions[0][0] === firstPart
-        ) {
-          result.suggestions = [];
+        if (suggestions.length === 1 && suggestions[0][0] === firstPart) {
+          suggestions = [];
         }
 
         
         
-        return this._showPopup(result.suggestions, state);
+        return this._showPopup(suggestions, state);
       });
   },
 };
