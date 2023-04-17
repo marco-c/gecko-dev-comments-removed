@@ -38,38 +38,39 @@ class WindowSurfaceWaylandMB : public WindowSurface {
   
   
   already_AddRefed<DrawTarget> Lock(
-      const LayoutDeviceIntRegion& aRegion) override;
+      const LayoutDeviceIntRegion& aInvalidRegion) override;
   void Commit(const LayoutDeviceIntRegion& aInvalidRegion) final;
-  RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
-
-  static void BufferReleaseCallbackHandler(void* aData, wl_buffer* aBuffer);
 
  private:
-  RefPtr<WaylandShmBuffer> GetWaylandBuffer();
+  void Commit(const MutexAutoLock& aProofOfLock,
+              const LayoutDeviceIntRegion& aInvalidRegion);
   RefPtr<WaylandShmBuffer> ObtainBufferFromPool(
-      const LayoutDeviceIntSize& aSize);
-  void ReturnBufferToPool(const RefPtr<WaylandShmBuffer>& aBuffer);
+      const MutexAutoLock& aProofOfLock, const LayoutDeviceIntSize& aSize);
+  void ReturnBufferToPool(const MutexAutoLock& aProofOfLock,
+                          const RefPtr<WaylandShmBuffer>& aBuffer);
   void EnforcePoolSizeLimit(const MutexAutoLock& aProofOfLock);
-  void PrepareBufferForFrame(const MutexAutoLock& aProofOfLock);
+  void CollectPendingSurfaces(const MutexAutoLock& aProofOfLock);
   void HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
                            const LayoutDeviceIntRegion& aInvalidRegion);
-  void IncrementBufferAge();
-  void BufferReleaseCallbackHandler(wl_buffer* aBuffer);
+  void IncrementBufferAge(const MutexAutoLock& aProofOfLock);
 
   mozilla::Mutex mSurfaceLock;
 
   nsWindow* mWindow;
-  RefPtr<nsWaylandDisplay> mWaylandDisplay;
-  RefPtr<WaylandShmBuffer> mWaylandBuffer;
   LayoutDeviceIntSize mMozContainerSize;
 
-  
-  RefPtr<WaylandShmBuffer> mPreviousWaylandBuffer;
-  LayoutDeviceIntRegion mPreviousInvalidRegion;
+  RefPtr<WaylandShmBuffer> mInProgressBuffer;
+  RefPtr<WaylandShmBuffer> mFrontBuffer;
+  LayoutDeviceIntRegion mFrontBufferInvalidRegion;
 
   
   nsTArray<RefPtr<WaylandShmBuffer>> mInUseBuffers;
+  nsTArray<RefPtr<WaylandShmBuffer>> mPendingBuffers;
   nsTArray<RefPtr<WaylandShmBuffer>> mAvailableBuffers;
+
+  
+  bool mFrameInProcess;
+  bool mCallbackRequested;
 };
 
 }  
