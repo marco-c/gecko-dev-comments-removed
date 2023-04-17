@@ -361,7 +361,7 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
   
   
   
-  {
+  if (!is_memfd) {
     int rv;
     
     
