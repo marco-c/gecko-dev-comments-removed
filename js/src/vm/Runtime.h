@@ -1181,6 +1181,11 @@ extern mozilla::Atomic<JS::BuildIdOp> GetBuildId;
 
 extern JS::FilenameValidationCallback gFilenameValidationCallback;
 
+
+
+
+extern bool (*HelperThreadTaskCallback)(js::UniquePtr<js::RunnableTask>);
+
 } 
 
 #endif 
