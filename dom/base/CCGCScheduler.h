@@ -119,6 +119,8 @@ class CCGCScheduler {
   
   static uint32_t SuspectedCCObjects();
 
+  static bool CCRunnerFired(TimeStamp aDeadline);
+
   
 
   void SetActiveIntersliceGCBudget(TimeDuration aDuration) {
@@ -149,6 +151,9 @@ class CCGCScheduler {
   void KillShrinkingGCTimer();
   void KillFullGCTimer();
   void KillGCRunner();
+  void KillCCRunner();
+
+  void EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget);
 
   
 
@@ -340,6 +345,10 @@ class CCGCScheduler {
   };
 
   void InitCCRunnerStateMachine(CCRunnerState initialState) {
+    if (mCCRunner) {
+      return;
+    }
+
     
     
     MOZ_ASSERT(mCCRunnerState == CCRunnerState::Inactive,
@@ -410,6 +419,7 @@ class CCGCScheduler {
 
  public:  
   RefPtr<IdleTaskRunner> mGCRunner;
+  RefPtr<IdleTaskRunner> mCCRunner;
 
  private:
   nsITimer* mShrinkingGCTimer = nullptr;
