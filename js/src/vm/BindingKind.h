@@ -25,7 +25,12 @@ enum class BindingKind : uint8_t {
 
   
   
-  NamedLambdaCallee
+  NamedLambdaCallee,
+
+  
+  
+  
+  Synthetic
 };
 
 static inline bool BindingKindIsLexical(BindingKind kind) {

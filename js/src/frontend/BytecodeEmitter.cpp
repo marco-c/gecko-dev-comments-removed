@@ -10308,7 +10308,8 @@ bool BytecodeEmitter::emitLexicalInitialization(TaggedParserAtomIndex name) {
 
   
   
-  MOZ_ASSERT(noe.loc().isLexical());
+  
+  MOZ_ASSERT(noe.loc().isLexical() || noe.loc().isSynthetic());
   MOZ_ASSERT(!noe.emittedBindOp());
 
   if (!noe.emitAssignment()) {

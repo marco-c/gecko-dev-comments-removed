@@ -445,15 +445,6 @@ bool EmitterScope::enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
     return false;
   }
 
-  
-  
-  
-  
-  
-  if (!deadZoneFrameSlotRange(bce, firstFrameSlot, frameSlotEnd())) {
-    return false;
-  }
-
   return checkEnvironmentChainLength(bce);
 }
 

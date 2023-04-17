@@ -49,6 +49,8 @@ const char* js::BindingKindString(BindingKind kind) {
       return "const";
     case BindingKind::NamedLambdaCallee:
       return "named lambda callee";
+    case BindingKind::Synthetic:
+      return "synthetic";
   }
   MOZ_CRASH("Bad BindingKind");
 }
@@ -1797,6 +1799,7 @@ void BaseAbstractBindingIter<NameT>::init(
           0,
           0,
           0,
+          data.length,
           CanHaveEnvironmentSlots | flags,
           firstFrameSlot,
          
@@ -1809,11 +1812,13 @@ void BaseAbstractBindingIter<NameT>::init(
     
     
     
+    
     init( 0,
           0,
           0,
           0,
           slotInfo.constStart,
+          data.length,
           CanHaveFrameSlots | CanHaveEnvironmentSlots | flags,
           firstFrameSlot,
          
@@ -1839,10 +1844,18 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  init(0, 0, 0, 0, slotInfo.constStart,
-       CanHaveFrameSlots | CanHaveEnvironmentSlots, firstFrameSlot,
+  
+  init( 0,
+        0,
+        0,
+        0,
+        slotInfo.constStart,
+        data.length,
+        CanHaveFrameSlots | CanHaveEnvironmentSlots,
+        firstFrameSlot,
+       
        JSSLOT_FREE(&LexicalEnvironmentObject::class_),
-       GetScopeDataTrailingNames(&data));
+        GetScopeDataTrailingNames(&data));
 }
 
 template void BaseAbstractBindingIter<JSAtom>::init(
@@ -1867,9 +1880,11 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init( 0,
         slotInfo.nonPositionalFormalStart,
         slotInfo.varStart,
+        length,
         length,
         length,
         flags,
@@ -1893,9 +1908,11 @@ void BaseAbstractBindingIter<NameT>::init(VarScope::AbstractData<NameT>& data,
   
   
   
+  
   init( 0,
         0,
         0,
+        length,
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -1919,11 +1936,13 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init( 0,
         0,
         0,
         slotInfo.letStart,
         slotInfo.constStart,
+        data.length,
         CannotHaveSlots,
         UINT32_MAX,
         UINT32_MAX,
@@ -1958,9 +1977,11 @@ void BaseAbstractBindingIter<NameT>::init(EvalScope::AbstractData<NameT>& data,
   
   
   
+  
   init( 0,
         0,
         0,
+        length,
         length,
         length,
         flags,
@@ -1984,12 +2005,14 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init(
        slotInfo.varStart,
        slotInfo.varStart,
        slotInfo.varStart,
        slotInfo.letStart,
        slotInfo.constStart,
+       data.length,
        CanHaveFrameSlots | CanHaveEnvironmentSlots,
        0,
        JSSLOT_FREE(&ModuleEnvironmentObject::class_),
@@ -2011,9 +2034,11 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init( 0,
         0,
         0,
+        length,
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
@@ -2037,9 +2062,11 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init( 0,
         0,
         0,
+        length,
         length,
         length,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,

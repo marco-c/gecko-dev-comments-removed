@@ -250,7 +250,8 @@ class ParseContext : public Nestable<ParseContext> {
         
         
         while (!declaredRange_.empty()) {
-          if (BindingKindIsLexical(kind())) {
+          if (BindingKindIsLexical(kind()) ||
+              kind() == BindingKind::Synthetic) {
             break;
           }
           declaredRange_.popFront();
