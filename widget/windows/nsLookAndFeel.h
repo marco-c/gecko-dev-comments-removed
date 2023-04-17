@@ -60,12 +60,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   char16_t GetPasswordCharacterImpl() override;
 
  private:
-  enum CachedValueKind {
-    PrimaryPointerCapabilitiesKind,
-    AllPointerCapabilitiesKind,
-    CachedValueKindMax = AllPointerCapabilitiesKind,
-  };
-
   
 
 
@@ -89,25 +83,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   LookAndFeelFont GetLookAndFeelFont(LookAndFeel::FontID anID);
 
-  bool GetSysFont(LookAndFeel::FontID anID, nsString& aFontName,
-                  gfxFontStyle& aFontStyle);
-
-  
-  
-  int32_t mUseAccessibilityTheme;
-  int32_t mUseDefaultTheme;  
-  int32_t mNativeThemeId;    
-
-  
-  
-  
-  
-  
-  int32_t mPrimaryPointerCapabilities;
-  int32_t mAllPointerCapabilities;
-
-  int32_t mCaretBlinkTime;
-
   
   nscolor mColorMenuHoverText;
   bool mHasColorMenuHoverText;
@@ -126,28 +101,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   void EnsureInit();
 
-  struct CachedSystemFont {
-    CachedSystemFont() : mCacheValid(false) {}
-
-    bool mCacheValid;
-    bool mHaveFont;
-    nsString mFontName;
-    gfxFontStyle mFontStyle;
-  };
-
-  mozilla::EnumeratedArray<FontID, FontID::End, CachedSystemFont>
-      mSystemFontCache;
-
-  using FontCache =
-      mozilla::EnumeratedArray<FontID, FontID::End, LookAndFeelFont>;
-  FontCache mFontCache;
-
   nsCOMPtr<nsIWindowsRegKey> mDwmKey;
-
-  
-  
-  
-  std::bitset<CachedValueKindMax + 1> mCacheValidBits;
 };
 
 #endif
