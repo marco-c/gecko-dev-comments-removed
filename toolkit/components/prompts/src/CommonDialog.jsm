@@ -86,6 +86,8 @@ CommonDialog.prototype = {
         this.initTextbox("login", this.args.value);
         
         this.ui.loginLabel.setAttribute("value", "");
+        
+        this.ui.loginTextbox.setAttribute("aria-labelledby", "infoBody");
         break;
       case "promptUserAndPass":
         this.numButtons = 2;
