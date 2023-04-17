@@ -1352,9 +1352,18 @@ bool nsDisplayRemote::CreateWebRenderCommands(
 
     
     gfx::Size scale = aSc.GetInheritedScale();
+
+    ParentLayerToScreenScale2D transformToAncestorScale =
+        ParentLayerToParentLayerScale(
+            pc->GetPresShell() ? pc->GetPresShell()->GetCumulativeResolution()
+                               : 1.f) *
+        nsLayoutUtils::GetTransformToAncestorScaleCrossProcessForFrameMetrics(
+            mFrame);
+
     aDisplayListBuilder->AddEffectUpdate(
         remoteBrowser,
-        EffectsInfo::VisibleWithinRect(visibleRect, scale.width, scale.height));
+        EffectsInfo::VisibleWithinRect(visibleRect, scale.width, scale.height,
+                                       transformToAncestorScale));
 
     
     

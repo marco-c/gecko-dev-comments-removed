@@ -643,6 +643,13 @@ struct FrameMetrics {
   CSSRect mLayoutViewport;
 
   
+  
+  
+  
+  
+  
+  
+  
   ParentLayerToScreenScale2D mTransformToAncestorScale;
 
   

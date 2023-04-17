@@ -21,15 +21,20 @@ class EffectsInfo {
  public:
   EffectsInfo() { *this = EffectsInfo::FullyHidden(); }
 
-  static EffectsInfo VisibleWithinRect(const nsRect& aVisibleRect,
-                                       float aScaleX, float aScaleY) {
-    return EffectsInfo{aVisibleRect, aScaleX, aScaleY};
+  static EffectsInfo VisibleWithinRect(
+      const nsRect& aVisibleRect, float aScaleX, float aScaleY,
+      const ParentLayerToScreenScale2D& aTransformToAncestorScale) {
+    return EffectsInfo{aVisibleRect, aScaleX, aScaleY,
+                       aTransformToAncestorScale};
   }
-  static EffectsInfo FullyHidden() { return EffectsInfo{nsRect(), 1.0f, 1.0f}; }
+  static EffectsInfo FullyHidden() {
+    return EffectsInfo{nsRect(), 1.0f, 1.0f, ParentLayerToScreenScale2D()};
+  }
 
   bool operator==(const EffectsInfo& aOther) {
     return mVisibleRect == aOther.mVisibleRect && mScaleX == aOther.mScaleX &&
-           mScaleY == aOther.mScaleY;
+           mScaleY == aOther.mScaleY &&
+           mTransformToAncestorScale == aOther.mTransformToAncestorScale;
   }
   bool operator!=(const EffectsInfo& aOther) { return !(*this == aOther); }
 
@@ -40,13 +45,29 @@ class EffectsInfo {
   nsRect mVisibleRect;
   
   
+  
   float mScaleX;
   float mScaleY;
   
+  
+  ParentLayerToScreenScale2D mTransformToAncestorScale;
+  
+  
+  
+  
+  
+  
+
+  
+  
 
  private:
-  EffectsInfo(const nsRect& aVisibleRect, float aScaleX, float aScaleY)
-      : mVisibleRect(aVisibleRect), mScaleX(aScaleX), mScaleY(aScaleY) {}
+  EffectsInfo(const nsRect& aVisibleRect, float aScaleX, float aScaleY,
+              const ParentLayerToScreenScale2D& aTransformToAncestorScale)
+      : mVisibleRect(aVisibleRect),
+        mScaleX(aScaleX),
+        mScaleY(aScaleY),
+        mTransformToAncestorScale(aTransformToAncestorScale) {}
 };
 
 }  

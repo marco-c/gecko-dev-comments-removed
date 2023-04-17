@@ -948,6 +948,19 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+  static mozilla::ParentLayerToScreenScale2D
+  GetTransformToAncestorScaleCrossProcessForFrameMetrics(
+      const nsIFrame* aFrame);
+
+  
+
+
+
   static const nsIFrame* FindNearestCommonAncestorFrame(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2);
 
