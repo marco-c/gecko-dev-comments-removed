@@ -16,6 +16,10 @@
 using namespace mozilla;
 using namespace mozilla::dom::indexedDB;
 
+class TestFileManager;
+
+using SimpleFileInfo = FileInfoT<TestFileManager>;
+
 struct TestFileManagerStats final {
   
 
@@ -60,8 +64,9 @@ class TestFileManager final : public FileManagerBase<TestFileManager>,
       
 
       mFileInfos.InsertOrUpdate(
-          id, MakeNotNull<FileInfo*>(FileManagerGuard{}, SafeRefPtrFromThis(),
-                                     id, static_cast<nsrefcnt>(1)));
+          id,
+          MakeNotNull<SimpleFileInfo*>(FileManagerGuard{}, SafeRefPtrFromThis(),
+                                       id, static_cast<nsrefcnt>(1)));
 
       mLastFileId = std::max(id, mLastFileId);
     }
@@ -77,8 +82,6 @@ class TestFileManager final : public FileManagerBase<TestFileManager>,
 
   TestFileManagerStats* const mStats;
 };
-
-using TestFileInfo = FileInfoT<TestFileManager>;
 
 
 
@@ -96,7 +99,8 @@ TEST(DOM_IndexedDB_TestFileManager, Invalidate)
 
 
 
-TEST(DOM_IndexedDB_FileInfo, Create)
+
+TEST(DOM_IndexedDB_SimpleFileInfo, Create)
 {
   auto stats = TestFileManagerStats{};
 
@@ -117,7 +121,7 @@ TEST(DOM_IndexedDB_FileInfo, Create)
   ASSERT_EQ(1u, stats.mAsyncDeleteFileCalls);
 }
 
-TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt)
+TEST(DOM_IndexedDB_SimpleFileInfo, CreateWithInitialDBRefCnt)
 {
   auto stats = TestFileManagerStats{};
 
@@ -144,7 +148,7 @@ TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt)
   ASSERT_EQ(0u, stats.mAsyncDeleteFileCalls);
 }
 
-TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt_Invalidate)
+TEST(DOM_IndexedDB_SimpleFileInfo, CreateWithInitialDBRefCnt_Invalidate)
 {
   auto stats = TestFileManagerStats{};
 
@@ -172,7 +176,7 @@ TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt_Invalidate)
   ASSERT_EQ(0u, stats.mAsyncDeleteFileCalls);
 }
 
-TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt_UpdateDBRefsToZero)
+TEST(DOM_IndexedDB_SimpleFileInfo, CreateWithInitialDBRefCnt_UpdateDBRefsToZero)
 {
   auto stats = TestFileManagerStats{};
 
@@ -195,7 +199,7 @@ TEST(DOM_IndexedDB_FileInfo, CreateWithInitialDBRefCnt_UpdateDBRefsToZero)
   ASSERT_EQ(1u, stats.mAsyncDeleteFileCalls);
 }
 
-TEST(DOM_IndexedDB_FileInfo, ReleaseWithFileManagerCleanup)
+TEST(DOM_IndexedDB_SimpleFileInfo, ReleaseWithFileManagerCleanup)
 {
   auto stats = TestFileManagerStats{};
   {
@@ -215,7 +219,7 @@ TEST(DOM_IndexedDB_FileInfo, ReleaseWithFileManagerCleanup)
 #ifndef DEBUG
 
 
-TEST(DOM_IndexedDB_FileInfo, Invalidate_CreateFileInfo)
+TEST(DOM_IndexedDB_SimpleFileInfo, Invalidate_CreateFileInfo)
 {
   auto stats = TestFileManagerStats{};
   {
@@ -234,7 +238,7 @@ TEST(DOM_IndexedDB_FileInfo, Invalidate_CreateFileInfo)
 }
 #endif
 
-TEST(DOM_IndexedDB_FileInfo, Invalidate_Release)
+TEST(DOM_IndexedDB_SimpleFileInfo, Invalidate_Release)
 {
   auto stats = TestFileManagerStats{};
   {
@@ -252,7 +256,7 @@ TEST(DOM_IndexedDB_FileInfo, Invalidate_Release)
   ASSERT_EQ(0u, stats.mAsyncDeleteFileCalls);
 }
 
-TEST(DOM_IndexedDB_FileInfo, Invalidate_ReleaseWithFileManagerCleanup)
+TEST(DOM_IndexedDB_SimpleFileInfo, Invalidate_ReleaseWithFileManagerCleanup)
 {
   auto stats = TestFileManagerStats{};
   {

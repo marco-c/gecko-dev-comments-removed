@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef DOM_INDEXEDDB_DATABASEFILEINFOFWD_H_
+#define DOM_INDEXEDDB_DATABASEFILEINFOFWD_H_
+
+namespace mozilla::dom::indexedDB {
+
+class FileManager;
+
+template <typename FileManager>
+class FileInfoT;
+
+using DatabaseFileInfo = FileInfoT<indexedDB::FileManager>;
+
+}  
+
+#endif  

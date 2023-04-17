@@ -7,7 +7,7 @@
 #include "ActorsParentCommon.h"
 
 
-#include "FileInfoFwd.h"  
+#include "DatabaseFileInfoFwd.h"  
 #include "FileManager.h"
 #include "IndexedDatabase.h"  
 #include "IndexedDatabaseManager.h"
@@ -105,7 +105,7 @@ Result<StructuredCloneFileParent, nsresult> DeserializeStructuredCloneFile(
                          ? aText
                          : static_cast<const nsAString&>(Substring(aText, 1))));
 
-  SafeRefPtr<FileInfo> fileInfo = aFileManager.GetFileInfo(id);
+  SafeRefPtr<DatabaseFileInfo> fileInfo = aFileManager.GetFileInfo(id);
   MOZ_ASSERT(fileInfo);
   
   
