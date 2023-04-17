@@ -1,0 +1,9 @@
+
+const kPorts = {
+  httpLocal:    {{ports[http][0]}},
+  httpPrivate:  {{ports[http-private][0]}},
+  httpPublic:   {{ports[http-public][0]}},
+  httpsLocal:   {{ports[https][0]}},
+  httpsPrivate: {{ports[https-private][0]}},
+  httpsPublic:  {{ports[https-public][0]}},
+};

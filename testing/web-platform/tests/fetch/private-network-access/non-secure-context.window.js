@@ -5,27 +5,82 @@
 
 
 
+
+
 setup(() => {
   
   assert_false(window.isSecureContext);
 });
 
 promise_test(async t => {
-  return fetch("/common/blank.html")
-      .catch(reason => {unreached_func(reason)});
-}, "Local non secure page fetches local page.");
+  const response = await fetch("/common/blank-with-cors.html");
+  assert_true(response.ok);
+}, "Local non secure context fetches local subresource.");
+
+
+
+
 
 
 
 promise_test(async t => {
-  let iframe = await appendIframe(t, document,
-      "resources/treat-as-public-address.html");
-  let reply = futureMessage();
-  iframe.contentWindow.postMessage("/common/blank.html", "*");
-  assert_equals(await reply, "failure");
-}, "Public non secure page fetches local page.");
+  const url = "resources/fetcher.html" +
+      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
+  const iframe = await appendIframe(t, document, url);
 
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage("/common/blank-with-cors.html", "*");
+  assert_equals(await reply, "TypeError: Failed to fetch");
+}, "Treat-as-public non secure context fails to fetch local subresource.");
 
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "http:",
+    port: kPorts.httpPrivate,
+  });
+  const iframe = await appendIframe(t, document, url);
 
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, "TypeError: Failed to fetch");
+}, "Private non secure context fails to fetch local subresource.");
 
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "http:",
+    port: kPorts.httpPublic,
+  });
+  const iframe = await appendIframe(t, document, url);
 
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, "TypeError: Failed to fetch");
+}, "Public non secure context fails to fetch local subresource.");
+
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "https:",
+    port: kPorts.httpsPrivate,
+  });
+  const iframe = await appendIframe(t, document, url);
+
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, "TypeError: Failed to fetch");
+}, "Private HTTPS yet non-secure context fails to fetch local subresource.");
+
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "https:",
+    port: kPorts.httpsPublic,
+  });
+  const iframe = await appendIframe(t, document, url);
+
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, "TypeError: Failed to fetch");
+}, "Public HTTPS yet non-secure context fails to fetch local subresource.");

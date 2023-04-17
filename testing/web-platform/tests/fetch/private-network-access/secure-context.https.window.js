@@ -5,27 +5,52 @@
 
 
 
+
+
 setup(() => {
   
   assert_true(window.isSecureContext);
 });
 
 promise_test(async t => {
-  return fetch("/common/blank.html")
-      .catch(reason => {unreached_func(reason)});
-}, "Local secure page fetches local page.");
+  const response = await fetch("/common/blank.html")
+  assert_true(response.ok);
+}, "Local secure context fetches local subresource.");
 
 
 
 promise_test(async t => {
-  let iframe = await appendIframe(t, document,
-      "resources/treat-as-public-address.https.html");
-  let reply = futureMessage();
-  iframe.contentWindow.postMessage("/common/blank.html", "*");
-  assert_equals(await reply, "success");
-}, "Public secure page fetches local page.");
+  const url = "resources/fetcher.html" +
+      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
+  const iframe = await appendIframe(t, document, url);
 
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage("/common/blank-with-cors.html", "*");
+  assert_equals(await reply, true);
+}, "Treat-as-public secure context fetches local subresource.");
 
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "https:",
+    port: kPorts.httpsPrivate,
+  });
+  const iframe = await appendIframe(t, document, url);
 
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, true);
+}, "Private secure context can fetch local subresource.");
 
+promise_test(async t => {
+  const url = resolveUrl("resources/fetcher.html", {
+    protocol: "https:",
+    port: kPorts.httpsPublic,
+  });
+  const iframe = await appendIframe(t, document, url);
 
+  const targetUrl = resolveUrl("/common/blank-with-cors.html");
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, true);
+}, "Public secure context can fetch local subresource.");
