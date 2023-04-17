@@ -342,7 +342,7 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     clipState.Clear();
-    clipState.ClipContainingBlockDescendants(clipRect);
+    clipState.ClipContentDescendants(clipRect);
 
     if (StaticPrefs::layout_display_list_improve_fragmentation() &&
         pageNum <= 255) {
