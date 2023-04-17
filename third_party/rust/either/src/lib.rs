@@ -6,20 +6,37 @@
 
 
 
+
+
+
+
+
+
 #![doc(html_root_url = "https://docs.rs/either/1/")]
 #![cfg_attr(all(not(test), not(feature = "use_std")), no_std)]
 #[cfg(all(not(test), not(feature = "use_std")))]
 extern crate core as std;
 
-use std::convert::{AsRef, AsMut};
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde;
+
+#[cfg(feature = "serde")]
+pub mod serde_untagged;
+
+#[cfg(feature = "serde")]
+pub mod serde_untagged_optional;
+
+use std::convert::{AsMut, AsRef};
 use std::fmt;
 use std::iter;
 use std::ops::Deref;
 use std::ops::DerefMut;
-#[cfg(any(test, feature = "use_std"))]
-use std::io::{self, Write, Read, BufRead};
+
 #[cfg(any(test, feature = "use_std"))]
 use std::error::Error;
+#[cfg(any(test, feature = "use_std"))]
+use std::io::{self, BufRead, Read, Write};
 
 pub use Either::{Left, Right};
 
@@ -28,6 +45,8 @@ pub use Either::{Left, Right};
 
 
 
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum Either<L, R> {
     
@@ -37,12 +56,12 @@ pub enum Either<L, R> {
 }
 
 macro_rules! either {
-    ($value:expr, $pattern:pat => $result:expr) => (
+    ($value:expr, $pattern:pat => $result:expr) => {
         match $value {
             Either::Left($pattern) => $result,
             Either::Right($pattern) => $result,
         }
-    )
+    };
 }
 
 
@@ -70,23 +89,23 @@ macro_rules! either {
 
 #[macro_export]
 macro_rules! try_left {
-    ($expr:expr) => (
+    ($expr:expr) => {
         match $expr {
             $crate::Left(val) => val,
-            $crate::Right(err) => return $crate::Right(::std::convert::From::from(err))
+            $crate::Right(err) => return $crate::Right(::std::convert::From::from(err)),
         }
-    )
+    };
 }
 
 
 #[macro_export]
 macro_rules! try_right {
-    ($expr:expr) => (
+    ($expr:expr) => {
         match $expr {
             $crate::Left(err) => return $crate::Left(::std::convert::From::from(err)),
-            $crate::Right(val) => val
+            $crate::Right(val) => val,
         }
-    )
+    };
 }
 
 impl<L, R> Either<L, R> {
@@ -229,7 +248,8 @@ impl<L, R> Either<L, R> {
     
     
     pub fn map_left<F, M>(self, f: F) -> Either<M, R>
-        where F: FnOnce(L) -> M
+    where
+        F: FnOnce(L) -> M,
     {
         match self {
             Left(l) => Left(f(l)),
@@ -250,7 +270,8 @@ impl<L, R> Either<L, R> {
     
     
     pub fn map_right<F, S>(self, f: F) -> Either<L, S>
-        where F: FnOnce(R) -> S
+    where
+        F: FnOnce(R) -> S,
     {
         match self {
             Left(l) => Left(l),
@@ -275,8 +296,9 @@ impl<L, R> Either<L, R> {
     
     
     pub fn either<F, G, T>(self, f: F, g: G) -> T
-      where F: FnOnce(L) -> T,
-            G: FnOnce(R) -> T
+    where
+        F: FnOnce(L) -> T,
+        G: FnOnce(R) -> T,
     {
         match self {
             Left(l) => f(l),
@@ -295,8 +317,39 @@ impl<L, R> Either<L, R> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn either_with<Ctx, F, G, T>(self, ctx: Ctx, f: F, g: G) -> T
+    where
+        F: FnOnce(Ctx, L) -> T,
+        G: FnOnce(Ctx, R) -> T,
+    {
+        match self {
+            Left(l) => f(ctx, l),
+            Right(r) => g(ctx, r),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn left_and_then<F, S>(self, f: F) -> Either<S, R>
-        where F: FnOnce(L) -> Either<S, R>
+    where
+        F: FnOnce(L) -> Either<S, R>,
     {
         match self {
             Left(l) => f(l),
@@ -316,11 +369,369 @@ impl<L, R> Either<L, R> {
     
     
     pub fn right_and_then<F, S>(self, f: F) -> Either<L, S>
-        where F: FnOnce(R) -> Either<L, S>
+    where
+        F: FnOnce(R) -> Either<L, S>,
     {
         match self {
             Left(l) => Left(l),
             Right(r) => f(r),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_iter(self) -> Either<L::IntoIter, R::IntoIter>
+    where
+        L: IntoIterator,
+        R: IntoIterator<Item = L::Item>,
+    {
+        match self {
+            Left(l) => Left(l.into_iter()),
+            Right(r) => Right(r.into_iter()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn left_or(self, other: L) -> L {
+        match self {
+            Either::Left(l) => l,
+            Either::Right(_) => other,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn left_or_default(self) -> L
+    where
+        L: Default,
+    {
+        match self {
+            Either::Left(l) => l,
+            Either::Right(_) => L::default(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn left_or_else<F>(self, f: F) -> L
+    where
+        F: FnOnce(R) -> L,
+    {
+        match self {
+            Either::Left(l) => l,
+            Either::Right(r) => f(r),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn right_or(self, other: R) -> R {
+        match self {
+            Either::Left(_) => other,
+            Either::Right(r) => r,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn right_or_default(self) -> R
+    where
+        R: Default,
+    {
+        match self {
+            Either::Left(_) => R::default(),
+            Either::Right(r) => r,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn right_or_else<F>(self, f: F) -> R
+    where
+        F: FnOnce(L) -> R,
+    {
+        match self {
+            Either::Left(l) => f(l),
+            Either::Right(r) => r,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unwrap_left(self) -> L
+    where
+        R: std::fmt::Debug,
+    {
+        match self {
+            Either::Left(l) => l,
+            Either::Right(r) => {
+                panic!("called `Either::unwrap_left()` on a `Right` value: {:?}", r)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn unwrap_right(self) -> R
+    where
+        L: std::fmt::Debug,
+    {
+        match self {
+            Either::Right(r) => r,
+            Either::Left(l) => panic!("called `Either::unwrap_right()` on a `Left` value: {:?}", l),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn expect_left(self, msg: &str) -> L
+    where
+        R: std::fmt::Debug,
+    {
+        match self {
+            Either::Left(l) => l,
+            Either::Right(r) => panic!("{}: {:?}", msg, r),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn expect_right(self, msg: &str) -> R
+    where
+        L: std::fmt::Debug,
+    {
+        match self {
+            Either::Right(r) => r,
+            Either::Left(l) => panic!("{}: {:?}", msg, l),
+        }
+    }
+}
+
+impl<T, L, R> Either<(T, L), (T, R)> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn factor_first(self) -> (T, Either<L, R>) {
+        match self {
+            Left((t, l)) => (t, Left(l)),
+            Right((t, r)) => (t, Right(r)),
+        }
+    }
+}
+
+impl<T, L, R> Either<(L, T), (R, T)> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn factor_second(self) -> (Either<L, R>, T) {
+        match self {
+            Left((l, t)) => (Left(l), t),
+            Right((r, t)) => (Right(r), t),
+        }
+    }
+}
+
+impl<T> Either<T, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_inner(self) -> T {
+        either!(self, inner => inner)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn map<F, M>(self, f: F) -> Either<M, M>
+    where
+        F: FnOnce(T) -> M,
+    {
+        match self {
+            Left(l) => Left(f(l)),
+            Right(r) => Right(f(r)),
         }
     }
 }
@@ -346,10 +757,13 @@ impl<L, R> Into<Result<R, L>> for Either<L, R> {
 }
 
 impl<L, R, A> Extend<A> for Either<L, R>
-    where L: Extend<A>, R: Extend<A>
+where
+    L: Extend<A>,
+    R: Extend<A>,
 {
     fn extend<T>(&mut self, iter: T)
-        where T: IntoIterator<Item=A>
+    where
+        T: IntoIterator<Item = A>,
     {
         either!(*self, ref mut inner => inner.extend(iter))
     }
@@ -357,7 +771,9 @@ impl<L, R, A> Extend<A> for Either<L, R>
 
 
 impl<L, R> Iterator for Either<L, R>
-    where L: Iterator, R: Iterator<Item=L::Item>
+where
+    L: Iterator,
+    R: Iterator<Item = L::Item>,
 {
     type Item = L::Item;
 
@@ -370,7 +786,8 @@ impl<L, R> Iterator for Either<L, R>
     }
 
     fn fold<Acc, G>(self, init: Acc, f: G) -> Acc
-        where G: FnMut(Acc, Self::Item) -> Acc,
+    where
+        G: FnMut(Acc, Self::Item) -> Acc,
     {
         either!(self, inner => inner.fold(init, f))
     }
@@ -388,20 +805,24 @@ impl<L, R> Iterator for Either<L, R>
     }
 
     fn collect<B>(self) -> B
-        where B: iter::FromIterator<Self::Item>
+    where
+        B: iter::FromIterator<Self::Item>,
     {
         either!(self, inner => inner.collect())
     }
 
     fn all<F>(&mut self, f: F) -> bool
-        where F: FnMut(Self::Item) -> bool
+    where
+        F: FnMut(Self::Item) -> bool,
     {
         either!(*self, ref mut inner => inner.all(f))
     }
 }
 
 impl<L, R> DoubleEndedIterator for Either<L, R>
-    where L: DoubleEndedIterator, R: DoubleEndedIterator<Item=L::Item>
+where
+    L: DoubleEndedIterator,
+    R: DoubleEndedIterator<Item = L::Item>,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
         either!(*self, ref mut inner => inner.next_back())
@@ -409,7 +830,9 @@ impl<L, R> DoubleEndedIterator for Either<L, R>
 }
 
 impl<L, R> ExactSizeIterator for Either<L, R>
-    where L: ExactSizeIterator, R: ExactSizeIterator<Item=L::Item>
+where
+    L: ExactSizeIterator,
+    R: ExactSizeIterator<Item = L::Item>,
 {
 }
 
@@ -418,7 +841,9 @@ impl<L, R> ExactSizeIterator for Either<L, R>
 
 
 impl<L, R> Read for Either<L, R>
-    where L: Read, R: Read
+where
+    L: Read,
+    R: Read,
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         either!(*self, ref mut inner => inner.read(buf))
@@ -432,7 +857,9 @@ impl<L, R> Read for Either<L, R>
 #[cfg(any(test, feature = "use_std"))]
 
 impl<L, R> BufRead for Either<L, R>
-    where L: BufRead, R: BufRead
+where
+    L: BufRead,
+    R: BufRead,
 {
     fn fill_buf(&mut self) -> io::Result<&[u8]> {
         either!(*self, ref mut inner => inner.fill_buf())
@@ -448,7 +875,9 @@ impl<L, R> BufRead for Either<L, R>
 
 
 impl<L, R> Write for Either<L, R>
-    where L: Write, R: Write
+where
+    L: Write,
+    R: Write,
 {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         either!(*self, ref mut inner => inner.write(buf))
@@ -460,23 +889,88 @@ impl<L, R> Write for Either<L, R>
 }
 
 impl<L, R, Target> AsRef<Target> for Either<L, R>
-    where L: AsRef<Target>, R: AsRef<Target>
+where
+    L: AsRef<Target>,
+    R: AsRef<Target>,
 {
     fn as_ref(&self) -> &Target {
         either!(*self, ref inner => inner.as_ref())
     }
 }
 
+macro_rules! impl_specific_ref_and_mut {
+    ($t:ty, $($attr:meta),* ) => {
+        $(#[$attr])*
+        impl<L, R> AsRef<$t> for Either<L, R>
+            where L: AsRef<$t>, R: AsRef<$t>
+        {
+            fn as_ref(&self) -> &$t {
+                either!(*self, ref inner => inner.as_ref())
+            }
+        }
+
+        $(#[$attr])*
+        impl<L, R> AsMut<$t> for Either<L, R>
+            where L: AsMut<$t>, R: AsMut<$t>
+        {
+            fn as_mut(&mut self) -> &mut $t {
+                either!(*self, ref mut inner => inner.as_mut())
+            }
+        }
+    };
+}
+
+impl_specific_ref_and_mut!(str,);
+impl_specific_ref_and_mut!(
+    ::std::path::Path,
+    cfg(feature = "use_std"),
+    doc = "Requires crate feature `use_std`."
+);
+impl_specific_ref_and_mut!(
+    ::std::ffi::OsStr,
+    cfg(feature = "use_std"),
+    doc = "Requires crate feature `use_std`."
+);
+impl_specific_ref_and_mut!(
+    ::std::ffi::CStr,
+    cfg(feature = "use_std"),
+    doc = "Requires crate feature `use_std`."
+);
+
+impl<L, R, Target> AsRef<[Target]> for Either<L, R>
+where
+    L: AsRef<[Target]>,
+    R: AsRef<[Target]>,
+{
+    fn as_ref(&self) -> &[Target] {
+        either!(*self, ref inner => inner.as_ref())
+    }
+}
+
 impl<L, R, Target> AsMut<Target> for Either<L, R>
-    where L: AsMut<Target>, R: AsMut<Target>
+where
+    L: AsMut<Target>,
+    R: AsMut<Target>,
 {
     fn as_mut(&mut self) -> &mut Target {
         either!(*self, ref mut inner => inner.as_mut())
     }
 }
 
+impl<L, R, Target> AsMut<[Target]> for Either<L, R>
+where
+    L: AsMut<[Target]>,
+    R: AsMut<[Target]>,
+{
+    fn as_mut(&mut self) -> &mut [Target] {
+        either!(*self, ref mut inner => inner.as_mut())
+    }
+}
+
 impl<L, R> Deref for Either<L, R>
-    where L: Deref, R: Deref<Target=L::Target>
+where
+    L: Deref,
+    R: Deref<Target = L::Target>,
 {
     type Target = L::Target;
 
@@ -486,7 +980,9 @@ impl<L, R> Deref for Either<L, R>
 }
 
 impl<L, R> DerefMut for Either<L, R>
-    where L: DerefMut, R: DerefMut<Target=L::Target>
+where
+    L: DerefMut,
+    R: DerefMut<Target = L::Target>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         either!(*self, ref mut inner => &mut *inner)
@@ -496,19 +992,26 @@ impl<L, R> DerefMut for Either<L, R>
 #[cfg(any(test, feature = "use_std"))]
 
 impl<L, R> Error for Either<L, R>
-    where L: Error, R: Error
+where
+    L: Error,
+    R: Error,
 {
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         either!(*self, ref inner => inner.description())
     }
 
+    #[allow(deprecated)]
+    #[allow(unknown_lints, bare_trait_objects)]
     fn cause(&self) -> Option<&Error> {
         either!(*self, ref inner => inner.cause())
     }
 }
 
 impl<L, R> fmt::Display for Either<L, R>
-    where L: fmt::Display, R: fmt::Display
+where
+    L: fmt::Display,
+    R: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         either!(*self, ref inner => inner.fmt(f))
@@ -553,7 +1056,7 @@ fn deref() {
 fn iter() {
     let x = 3;
     let mut iter = match x {
-        1...3 => Left(0..10),
+        3 => Left(0..10),
         _ => Right(17..),
     };
 
@@ -590,13 +1093,54 @@ fn read_write() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn error() {
     let invalid_utf8 = b"\xff";
-    let res = || -> Result<_, Either<_, _>> {
-        try!(::std::str::from_utf8(invalid_utf8).map_err(Left));
-        try!("x".parse::<i32>().map_err(Right));
+    let res = if let Err(error) = ::std::str::from_utf8(invalid_utf8) {
+        Err(Left(error))
+    } else if let Err(error) = "x".parse::<i32>() {
+        Err(Right(error))
+    } else {
         Ok(())
-    }();
+    };
     assert!(res.is_err());
     res.unwrap_err().description(); 
+}
+
+
+macro_rules! check_t {
+    ($t:ty) => {{
+        fn check_ref<T: AsRef<$t>>() {}
+        fn propagate_ref<T1: AsRef<$t>, T2: AsRef<$t>>() {
+            check_ref::<Either<T1, T2>>()
+        }
+        fn check_mut<T: AsMut<$t>>() {}
+        fn propagate_mut<T1: AsMut<$t>, T2: AsMut<$t>>() {
+            check_mut::<Either<T1, T2>>()
+        }
+    }};
+}
+
+
+fn _unsized_ref_propagation() {
+    check_t!(str);
+
+    fn check_array_ref<T: AsRef<[Item]>, Item>() {}
+    fn check_array_mut<T: AsMut<[Item]>, Item>() {}
+
+    fn propagate_array_ref<T1: AsRef<[Item]>, T2: AsRef<[Item]>, Item>() {
+        check_array_ref::<Either<T1, T2>, _>()
+    }
+
+    fn propagate_array_mut<T1: AsMut<[Item]>, T2: AsMut<[Item]>, Item>() {
+        check_array_mut::<Either<T1, T2>, _>()
+    }
+}
+
+
+#[cfg(feature = "use_std")]
+fn _unsized_std_propagation() {
+    check_t!(::std::path::Path);
+    check_t!(::std::ffi::OsStr);
+    check_t!(::std::ffi::CStr);
 }
