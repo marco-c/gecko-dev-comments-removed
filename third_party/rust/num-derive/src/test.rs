@@ -1,0 +1,31 @@
+
+
+
+
+#[cfg(not(feature = "full-syntax"))]
+
+
+
+
+
+
+
+
+
+
+
+mod issue16 {}
+
+#[cfg(feature = "full-syntax")]
+
+
+
+
+
+
+
+
+
+
+
+mod issue16 {}
