@@ -29,7 +29,7 @@
 
 #if defined(XP_WIN)
 #  include <winternl.h>  
-#  include "util/Windows.h"
+#  include "util/WindowsWrapper.h"
 #elif defined(XP_DARWIN)
 #  include <mach/exc.h>
 #  include <mach/mach.h>

@@ -9,7 +9,7 @@
 #include "mozilla/Assertions.h"  
 
 #ifdef XP_WIN
-#  include "util/Windows.h"
+#  include "util/WindowsWrapper.h"
 #elif defined(__wasi__)
 
 #elif defined(XP_DARWIN) || defined(DARWIN) || defined(XP_UNIX)

@@ -9,7 +9,7 @@
 
 
 #ifdef WIN32
-#  include "util/Windows.h"
+#  include "util/WindowsWrapper.h"
 #else
 #  define __cdecl
 #  include <stdarg.h>

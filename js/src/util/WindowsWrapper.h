@@ -4,8 +4,8 @@
 
 
 
-#ifndef util_Windows_h
-#define util_Windows_h
+#ifndef util_WindowsWrapper_h
+#define util_WindowsWrapper_h
 
 
 
