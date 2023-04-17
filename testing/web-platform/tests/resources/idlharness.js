@@ -181,23 +181,8 @@ self.IdlArray = function()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     this.partials = [];
-    this["includes"] = {};
-    this["inheritance"] = {};
+    this.includes = [];
 
     
 
@@ -249,11 +234,15 @@ IdlArray.prototype.internal_add_dependency_idls = function(parsed_idls, options)
     const new_options = { only: [] }
 
     const all_deps = new Set();
-    Object.values(this.inheritance).forEach(v => all_deps.add(v));
+    Object.values(this.members).forEach(v => {
+        if (v.base) {
+            all_deps.add(v.base);
+        }
+    });
     
-    Object.keys(this.includes).forEach(k => {
-        all_deps.add(k);
-        this.includes[k].forEach(v => all_deps.add(v));
+    this.includes.forEach(i => {
+        all_deps.add(i.target);
+        all_deps.add(i.includes);
     });
     this.partials.forEach(p => all_deps.add(p.name));
     
@@ -434,11 +423,7 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
             {
                 return;
             }
-            if (!(parsed_idl.target in this["includes"]))
-            {
-                this["includes"][parsed_idl.target] = [];
-            }
-            this["includes"][parsed_idl.target].push(parsed_idl["includes"]);
+            this.includes.push(parsed_idl);
             return;
         }
 
@@ -450,16 +435,6 @@ IdlArray.prototype.internal_add_idls = function(parsed_idls, options)
         if (parsed_idl.name in this.members)
         {
             throw new IdlHarnessError("Duplicate identifier " + parsed_idl.name);
-        }
-
-        if (parsed_idl["inheritance"]) {
-            
-            if (parsed_idl.name in this["inheritance"]
-                && parsed_idl["inheritance"] != this["inheritance"][parsed_idl.name]) {
-                throw new IdlHarnessError(
-                    `Inheritance for ${parsed_idl.name} was already defined`);
-            }
-            this["inheritance"][parsed_idl.name] = parsed_idl["inheritance"];
         }
 
         switch(parsed_idl.type)
@@ -527,34 +502,6 @@ IdlArray.prototype.prevent_multiple_testing = function(name)
 {
     
     this.members[name].prevent_multiple_testing = true;
-};
-
-IdlArray.prototype.recursively_get_includes = function(interface_name)
-{
-    
-
-
-
-
-
-
-
-
-
-    var ret = this["includes"][interface_name];
-    if (ret === undefined)
-    {
-        return [];
-    }
-    for (var i = 0; i < this["includes"][interface_name].length; i++)
-    {
-        ret = ret.concat(this.recursively_get_includes(ret[i]));
-        if (ret.indexOf(ret[i]) != ret.lastIndexOf(ret[i]))
-        {
-            throw new IdlHarnessError("Circular includes statements involving " + ret[i]);
-        }
-    }
-    return ret;
 };
 
 IdlArray.prototype.is_json_type = function(type)
@@ -753,37 +700,8 @@ IdlArray.prototype.test = function()
     
 
     
-    this.collapse_partials();
-
-    for (var lhs in this["includes"])
-    {
-        this.recursively_get_includes(lhs).forEach(function(rhs)
-        {
-            var errStr = lhs + " includes " + rhs + ", but ";
-            if (!(lhs in this.members)) throw errStr + lhs + " is undefined.";
-            if (!(this.members[lhs] instanceof IdlInterface)) throw errStr + lhs + " is not an interface.";
-            if (!(rhs in this.members)) throw errStr + rhs + " is undefined.";
-            if (!(this.members[rhs] instanceof IdlInterface)) throw errStr + rhs + " is not an interface.";
-
-            if (this.members[rhs].members.length) {
-                test(function () {
-                    var clash = this.members[rhs].members.find(function(member) {
-                        return this.members[lhs].members.find(function(m) {
-                            return this.are_duplicate_members(m, member);
-                        }.bind(this));
-                    }.bind(this));
-                    this.members[rhs].members.forEach(function(member) {
-                        assert_true(
-                            this.members[lhs].members.every(m => !this.are_duplicate_members(m, member)),
-                            "member " + member.name + " is unique");
-                        this.members[lhs].members.push(new IdlInterfaceMember(member));
-                    }.bind(this));
-                    assert_true(!clash, "member " + (clash && clash.name) + " is unique");
-                }.bind(this), lhs + " includes " + rhs + ": member names are unique");
-            }
-        }.bind(this));
-    }
-    this["includes"] = {};
+    this.merge_partials();
+    this.merge_mixins();
 
     
     for (const member of Object.values(this.members).filter(m => m.base)) {
@@ -832,7 +750,7 @@ IdlArray.prototype.test = function()
     }
 };
 
-IdlArray.prototype.collapse_partials = function()
+IdlArray.prototype.merge_partials = function()
 {
     const testedPartials = new Map();
     this.partials.forEach(function(parsed_idl)
@@ -924,6 +842,39 @@ IdlArray.prototype.collapse_partials = function()
         }
     }.bind(this));
     this.partials = [];
+}
+
+IdlArray.prototype.merge_mixins = function()
+{
+    for (const parsed_idl of this.includes)
+    {
+        const lhs = parsed_idl.target;
+        const rhs = parsed_idl.includes;
+
+        var errStr = lhs + " includes " + rhs + ", but ";
+        if (!(lhs in this.members)) throw errStr + lhs + " is undefined.";
+        if (!(this.members[lhs] instanceof IdlInterface)) throw errStr + lhs + " is not an interface.";
+        if (!(rhs in this.members)) throw errStr + rhs + " is undefined.";
+        if (!(this.members[rhs] instanceof IdlInterface)) throw errStr + rhs + " is not an interface.";
+
+        if (this.members[rhs].members.length) {
+            test(function () {
+                var clash = this.members[rhs].members.find(function(member) {
+                    return this.members[lhs].members.find(function(m) {
+                        return this.are_duplicate_members(m, member);
+                    }.bind(this));
+                }.bind(this));
+                this.members[rhs].members.forEach(function(member) {
+                    assert_true(
+                        this.members[lhs].members.every(m => !this.are_duplicate_members(m, member)),
+                        "member " + member.name + " is unique");
+                    this.members[lhs].members.push(new IdlInterfaceMember(member));
+                }.bind(this));
+                assert_true(!clash, "member " + (clash && clash.name) + " is unique");
+            }.bind(this), lhs + " includes " + rhs + ": member names are unique");
+        }
+    }
+    this.includes = [];
 }
 
 IdlArray.prototype.are_duplicate_members = function(m1, m2) {
@@ -1414,9 +1365,9 @@ IdlInterface.prototype.get_inheritance_stack = function() {
 
 
 
-IdlInterface.prototype.default_to_json_operation = function(callback) {
+IdlInterface.prototype.default_to_json_operation = function() {
     var map = new Map(), isDefault = false;
-    this.traverse_inherited_and_consequential_interfaces(function(I) {
+    this.get_inheritance_stack().reverse().forEach(function(I) {
         if (I.has_default_to_json_regular_operation()) {
             isDefault = true;
             I.members.forEach(function(m) {
@@ -1430,56 +1381,6 @@ IdlInterface.prototype.default_to_json_operation = function(callback) {
     });
     return isDefault ? map : null;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-IdlInterface.prototype.traverse_inherited_and_consequential_interfaces = function(callback) {
-    if (typeof callback != "function") {
-        throw new TypeError();
-    }
-    var stack = this.get_inheritance_stack();
-    _traverse_inherited_and_consequential_interfaces(stack, callback);
-};
-
-function _traverse_inherited_and_consequential_interfaces(stack, callback) {
-    var I = stack.pop();
-    callback(I);
-    var mixins = I.array["includes"][I.name];
-    if (mixins) {
-        mixins.forEach(function(id) {
-            var mixin = I.array.members[id];
-            if (!mixin) {
-                throw new Error("Interface mixin " + id + " not found (included by " + I.name + ")");
-            }
-            var interfaces = mixin.get_inheritance_stack();
-            _traverse_inherited_and_consequential_interfaces(interfaces, callback);
-        });
-    }
-    if (stack.length > 0) {
-        _traverse_inherited_and_consequential_interfaces(stack, callback);
-    }
-}
 
 IdlInterface.prototype.test = function()
 {
@@ -2990,11 +2891,6 @@ IdlInterface.prototype.do_interface_attribute_asserts = function(obj, member, a_
     
 
     var pendingPromises = [];
-
-    
-    
-    
-    
 
     
     assert_own_property(obj, member.name);
