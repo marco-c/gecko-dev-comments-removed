@@ -7520,9 +7520,7 @@ void nsLayoutUtils::AssertTreeOnlyEmptyNextInFlows(nsIFrame* aSubtreeRoot) {
                "frame tree not empty, but caller reported complete status");
 
   
-  int32_t start, end;
-  nsresult rv = aSubtreeRoot->GetOffsets(start, end);
-  NS_ASSERTION(NS_SUCCEEDED(rv), "GetOffsets failed");
+  auto [start, end] = aSubtreeRoot->GetOffsets();
   
   
   

@@ -486,11 +486,11 @@ nsIFrame* nsCaret::GetPaintGeometry(nsRect* aRect) {
   }
 
   
-  int32_t startOffset, endOffset;
-  if (frame->IsTextFrame() &&
-      (NS_FAILED(frame->GetOffsets(startOffset, endOffset)) ||
-       startOffset > frameOffset || endOffset < frameOffset)) {
-    return nullptr;
+  if (frame->IsTextFrame()) {
+    auto [startOffset, endOffset] = frame->GetOffsets();
+    if (startOffset > frameOffset || endOffset < frameOffset) {
+      return nullptr;
+    }
   }
 
   nsRect caretRect;
@@ -659,14 +659,12 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
       aBidiLevel = theFrame->GetEmbeddingLevel();
     }
 
-    int32_t start;
-    int32_t end;
     nsIFrame* frameBefore;
     nsIFrame* frameAfter;
     nsBidiLevel levelBefore;  
     nsBidiLevel levelAfter;   
 
-    theFrame->GetOffsets(start, end);
+    auto [start, end] = theFrame->GetOffsets();
     if (start == 0 || end == 0 || start == theFrameOffset ||
         end == theFrameOffset) {
       nsPrevNextBidiLevels levels =
@@ -694,7 +692,7 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
             if (theFrame != frameBefore) {
               if (frameBefore) {  
                 theFrame = frameBefore;
-                theFrame->GetOffsets(start, end);
+                std::tie(start, end) = theFrame->GetOffsets();
                 theFrameOffset = end;
               } else {
                 
@@ -724,7 +722,7 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
               if (frameAfter) {
                 
                 theFrame = frameAfter;
-                theFrame->GetOffsets(start, end);
+                std::tie(start, end) = theFrame->GetOffsets();
                 theFrameOffset = start;
               } else {
                 
@@ -753,7 +751,7 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
                      !IS_SAME_DIRECTION(aBidiLevel, levelAfter)) {
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(
                     frameAfter, eDirNext, aBidiLevel, &theFrame))) {
-              theFrame->GetOffsets(start, end);
+              std::tie(start, end) = theFrame->GetOffsets();
               levelAfter = theFrame->GetEmbeddingLevel();
               if (IS_LEVEL_RTL(aBidiLevel))  
                                              
@@ -769,7 +767,7 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
                      !IS_SAME_DIRECTION(aBidiLevel, levelAfter)) {
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(
                     frameBefore, eDirPrevious, aBidiLevel, &theFrame))) {
-              theFrame->GetOffsets(start, end);
+              std::tie(start, end) = theFrame->GetOffsets();
               levelBefore = theFrame->GetEmbeddingLevel();
               if (IS_LEVEL_RTL(aBidiLevel))  
                                              
