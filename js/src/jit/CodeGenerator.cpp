@@ -12697,7 +12697,8 @@ void CodeGenerator::visitLoadDataViewElement(LLoadDataViewElement* lir) {
 
   
   
-  if (noSwap && MacroAssembler::SupportsFastUnalignedAccesses()) {
+  if (noSwap && (!Scalar::isFloatingType(storageType) ||
+                 MacroAssembler::SupportsFastUnalignedFPAccesses())) {
     if (!Scalar::isBigIntType(storageType)) {
       Label fail;
       masm.loadFromTypedArray(storageType, source, out, temp, &fail);
@@ -13078,7 +13079,9 @@ void CodeGenerator::visitStoreDataViewElement(LStoreDataViewElement* lir) {
 
   
   
-  if (noSwap && MacroAssembler::SupportsFastUnalignedAccesses()) {
+  
+  if (noSwap && (!Scalar::isFloatingType(writeType) ||
+                 MacroAssembler::SupportsFastUnalignedFPAccesses())) {
     if (!Scalar::isBigIntType(writeType)) {
       StoreToTypedArray(masm, writeType, value, dest);
     } else {
