@@ -1255,7 +1255,7 @@ nsresult DecodeRFC2047Str(const char* aHeader,
       
       
       int32_t n = r - (q + 2);
-      R -= (n % 4 == 1 && !PL_strncmp(r - 3, "===", 3)) ? 1 : 0;
+      R -= (n % 4 == 1 && !strncmp(r - 3, "===", 3)) ? 1 : 0;
     }
     
     if (R[-1] != '=' &&
