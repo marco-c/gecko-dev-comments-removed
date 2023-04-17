@@ -43,7 +43,7 @@ class DisplayNamesObject : public NativeObject {
                 "object slot");
 
   
-  static constexpr size_t EstimatedMemoryUse = 1256;
+  static constexpr size_t EstimatedMemoryUse = 1238;
 
   ULocaleDisplayNames* getLocaleDisplayNames() const {
     const auto& slot = getFixedSlot(ULOCALE_DISPLAY_NAMES_SLOT);
