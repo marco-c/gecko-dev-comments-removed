@@ -951,7 +951,10 @@ var AddonTestUtils = {
     );
   },
 
-  async promiseShutdownManager(clearOverrides = true) {
+  async promiseShutdownManager({
+    clearOverrides = true,
+    clearL10nRegistry = true,
+  } = {}) {
     if (!this.addonIntegrationService) {
       return false;
     }
@@ -995,7 +998,9 @@ var AddonTestUtils = {
     }
 
     
-    L10nRegistry.clearSources();
+    if (clearL10nRegistry) {
+      L10nRegistry.clearSources();
+    }
 
     
     this.appInfo.annotations = {};
@@ -1040,7 +1045,7 @@ var AddonTestUtils = {
 
 
   async promiseRestartManager(newVersion) {
-    await this.promiseShutdownManager(false);
+    await this.promiseShutdownManager({ clearOverrides: false });
     await this.promiseStartupManager(newVersion);
   },
 

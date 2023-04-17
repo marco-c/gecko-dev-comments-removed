@@ -119,22 +119,19 @@ async function handleInitialHomepagePopup(extensionId, homepageUrl) {
 
 
 async function handleHomepageUrl(extension, homepageUrl) {
-  let inControl;
-  if (
-    extension.startupReason == "ADDON_INSTALL" ||
-    extension.startupReason == "ADDON_ENABLE"
-  ) {
-    inControl = await ExtensionPreferencesManager.setSetting(
-      extension.id,
-      "homepage_override",
-      homepageUrl
-    );
-  } else {
-    let item = await ExtensionPreferencesManager.getSetting(
-      "homepage_override"
-    );
-    inControl = item && item.id && item.id == extension.id;
-  }
+  
+  
+  
+  
+  
+
+  
+  
+  let inControl = await ExtensionPreferencesManager.setSetting(
+    extension.id,
+    "homepage_override",
+    homepageUrl
+  );
 
   if (inControl) {
     Services.prefs.setBoolPref(
@@ -261,6 +258,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
 
   static async onUpdate(id, manifest) {
     if (!manifest?.chrome_settings_overrides?.homepage) {
+      
       ExtensionPreferencesManager.removeSetting(id, "homepage_override");
     }
 
