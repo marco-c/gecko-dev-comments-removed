@@ -50,6 +50,18 @@ add_task(async function() {
         ["second", "b"],
       ],
     },
+    {
+      line: 51,
+      column: 26,
+      expression: "this",
+      fields: [
+        ["x", "1"],
+        
+        
+        
+      ],
+    },
+    { line: 51, column: 39, expression: "this.#privateVar", result: 2 },
   ]);
 });
 
