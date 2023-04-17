@@ -1178,13 +1178,6 @@ class HelperThreadTaskHandler : public Task {
     
   }
 
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("HelperThreadTask");
-    return true;
-  }
-#endif
-
  private:
   ~HelperThreadTaskHandler() = default;
 };

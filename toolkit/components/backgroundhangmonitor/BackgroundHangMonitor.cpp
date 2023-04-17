@@ -68,7 +68,7 @@ class BackgroundHangManager : public nsIObserver {
  private:
   
   static void MonitorThread(void* aData) {
-    AUTO_PROFILER_REGISTER_THREAD("BHMgr Monitor");
+    AUTO_PROFILER_REGISTER_THREAD("BgHangMonitor");
     NS_SetCurrentThreadName("BHMgr Monitor");
 
     
@@ -103,8 +103,6 @@ class BackgroundHangManager : public nsIObserver {
 
   
   nsCOMPtr<nsIThread> mHangProcessingThread;
-
-  ProfilerThreadId mHangMonitorProfilerThreadId;
 
   
   
@@ -252,17 +250,11 @@ class BackgroundHangThread : public LinkedListElement<BackgroundHangThread> {
   
   void NotifyActivity() {
     MonitorAutoLock autoLock(mManager->mLock);
-    PROFILER_MARKER_UNTYPED(
-        "NotifyActivity", OTHER,
-        MarkerThreadId(mManager->mHangMonitorProfilerThreadId));
     Update();
   }
   
   void NotifyWait() {
     MonitorAutoLock autoLock(mManager->mLock);
-    PROFILER_MARKER_UNTYPED(
-        "NotifyWait", OTHER,
-        MarkerThreadId(mManager->mHangMonitorProfilerThreadId));
 
     if (mWaiting) {
       return;
@@ -331,8 +323,6 @@ void BackgroundHangManager::RunMonitorThread() {
   
   MonitorAutoLock autoLock(mLock);
 
-  mHangMonitorProfilerThreadId = profiler_current_thread_id();
-
   
 
 
@@ -350,7 +340,6 @@ void BackgroundHangManager::RunMonitorThread() {
   while (!mShutdown) {
     autoLock.Wait(waitTime);
 
-    PROFILER_MARKER_UNTYPED("Wakeup", OTHER);
     TimeStamp newTime = TimeStamp::Now();
     TimeDuration systemInterval = newTime - systemTime;
     systemTime = newTime;
