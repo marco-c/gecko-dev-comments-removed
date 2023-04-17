@@ -2994,6 +2994,15 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return false;
   }();
 
+  
+  
+  
+  
+  presShell->ScrollContentIntoView(
+      element, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+      ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+      ScrollFlags::ScrollOverflowHidden);
+
   if (shouldSkip) {
     return NS_OK;
   }
@@ -3018,15 +3027,6 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   } else {
     flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
   }
-
-  
-  
-  
-  
-  presShell->ScrollContentIntoView(
-      element, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-      ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-      ScrollFlags::ScrollOverflowHidden);
 
   nsIScrollableFrame* rootScrollFrame =
       presShell->GetRootScrollFrameAsScrollable();
