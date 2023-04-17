@@ -526,10 +526,11 @@ class MachCommands(MachCommandBase):
 
     def show_taskgraph(self, graph_attr, options):
         self.setup_logging(quiet=options["quiet"], verbose=options["verbose"])
-
+        vcs = None
         base_out = ""
         base_ref = None
         cur_ref = None
+
         if options["diff"]:
             from mozversioncontrol import get_repository_object
 
@@ -544,6 +545,18 @@ class MachCommands(MachCommandBase):
                 
                 
                 cur_ref = vcs.branch or vcs.head_ref[:12]
+            logger.info("Generating {} @ {}".format(graph_attr, cur_ref))
+
+        out = self.format_taskgraph(graph_attr, options)
+
+        if options["diff"]:
+            with vcs:
+                
+                
+                
+                for mod in sys.modules.copy():
+                    if mod.startswith("taskgraph"):
+                        del sys.modules[mod]
 
                 if options["diff"] == "default":
                     base_ref = vcs.base_ref
@@ -557,18 +570,7 @@ class MachCommands(MachCommandBase):
                     base_out = self.format_taskgraph(graph_attr, options)
                 finally:
                     vcs.update(cur_ref)
-                    logger.info("Generating {} @ {}".format(graph_attr, cur_ref))
 
-            
-            
-            
-            for mod in sys.modules.copy():
-                if mod.startswith("taskgraph"):
-                    del sys.modules[mod]
-
-        out = self.format_taskgraph(graph_attr, options)
-
-        if options["diff"]:
             diffcmd = self._mach_context.settings["taskgraph"]["diffcmd"]
             diffcmd = diffcmd.format(attr=graph_attr, base=base_ref, cur=cur_ref)
 
