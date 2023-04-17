@@ -82,12 +82,30 @@ public class WebNotification {
 
     public final @Nullable String source;
 
+    
+
+
+
+    public final boolean silent;
+
+    
+
+
+
+
+
+
+
+
+    public final @NonNull int[] vibrate;
+
     @WrapForJNI
      WebNotification(@Nullable final String title, @NonNull final String tag,
                         @Nullable final String cookie, @Nullable final String text,
                         @Nullable final String imageUrl, @Nullable final String textDirection,
                         @Nullable final String lang, @NonNull final boolean requireInteraction,
-                        @NonNull final String source) {
+                        @NonNull final String source, final boolean silent,
+                        @NonNull final int[] vibrate) {
         this.tag = tag;
         this.mCookie = cookie;
         this.title = title;
@@ -97,6 +115,8 @@ public class WebNotification {
         this.lang = lang;
         this.requireInteraction = requireInteraction;
         this.source = "".equals(source) ? null : source;
+        this.silent = silent;
+        this.vibrate = vibrate;
     }
 
     
