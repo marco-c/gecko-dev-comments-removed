@@ -5315,10 +5315,13 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
   }
 
   
-  Element* commonAncestorBlock =
-      HTMLEditUtils::GetInclusiveAncestorBlockElement(
-          *aRange.GetClosestCommonInclusiveAncestor()->AsContent());
-  if (NS_WARN_IF(!commonAncestorBlock)) {
+  
+  
+  const Element* const maybeNonEditableBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorElement(
+          *aRange.GetClosestCommonInclusiveAncestor()->AsContent(),
+          HTMLEditUtils::ClosestBlockElement);
+  if (NS_WARN_IF(!maybeNonEditableBlockElement)) {
     return false;
   }
 
@@ -5329,7 +5332,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
   }
 
   
-  if (atStart.GetContainer() != commonAncestorBlock &&
+  if (atStart.GetContainer() != maybeNonEditableBlockElement &&
       atStart.GetContainer() != editingHost) {
     for (;;) {
       WSScanResult backwardScanFromStartResult =
@@ -5344,7 +5347,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
       
       if (HTMLEditUtils::IsAnyTableElement(
               backwardScanFromStartResult.GetContent()) ||
-          backwardScanFromStartResult.GetContent() == commonAncestorBlock ||
+          backwardScanFromStartResult.GetContent() ==
+              maybeNonEditableBlockElement ||
           backwardScanFromStartResult.GetContent() == editingHost) {
         break;
       }
@@ -5362,7 +5366,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
   
 
   
-  if (atEnd.GetContainer() != commonAncestorBlock &&
+  if (atEnd.GetContainer() != maybeNonEditableBlockElement &&
       atEnd.GetContainer() != editingHost) {
     EditorDOMPoint atFirstInvisibleBRElement;
     for (;;) {
@@ -5396,7 +5400,8 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
         
         if (HTMLEditUtils::IsAnyTableElement(
                 forwardScanFromEndResult.GetContent()) ||
-            forwardScanFromEndResult.GetContent() == commonAncestorBlock ||
+            forwardScanFromEndResult.GetContent() ==
+                maybeNonEditableBlockElement ||
             forwardScanFromEndResult.GetContent() == editingHost) {
           break;
         }
@@ -5415,11 +5420,13 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
 
     if (atFirstInvisibleBRElement.IsInContentNode()) {
       
-      if (RefPtr<Element> brElementParent =
-              HTMLEditUtils::GetInclusiveAncestorBlockElement(
-                  *atFirstInvisibleBRElement.ContainerAsContent())) {
+      if (const RefPtr<const Element> editableBlockContainingBRElement =
+              HTMLEditUtils::GetInclusiveAncestorElement(
+                  *atFirstInvisibleBRElement.ContainerAsContent(),
+                  HTMLEditUtils::ClosestEditableBlockElement)) {
         EditorRawDOMRange range(atStart, atEnd);
-        if (range.Contains(EditorRawDOMPoint(brElementParent))) {
+        if (range.Contains(
+                EditorRawDOMPoint(editableBlockContainingBRElement))) {
           nsresult rv = aRange.SetStartAndEnd(atStart.ToRawRangeBoundary(),
                                               atEnd.ToRawRangeBoundary());
           if (NS_FAILED(rv)) {
