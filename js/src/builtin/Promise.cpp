@@ -2927,10 +2927,16 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
 
 
 
+
+
+
+
+
 [[nodiscard]] static bool CommonPromiseCombinator(JSContext* cx, CallArgs& args,
                                                   CombinatorKind kind) {
   HandleValue iterable = args.get(0);
 
+  
   
   HandleValue CVal = args.thisv();
   if (!CVal.isObject()) {
@@ -2974,9 +2980,11 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
     PromiseLookup& promiseLookup = cx->realm()->promiseLookup;
     if (C != promiseCtor || !promiseLookup.isDefaultPromiseState(cx)) {
       
+
       
       
       if (!GetProperty(cx, C, C, cx->names().resolve, &promiseResolve)) {
+        
         return AbruptRejectPromise(cx, args, promiseCapability);
       }
 
@@ -2985,6 +2993,8 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
       
       if (!IsCallable(promiseResolve)) {
         ReportIsNotFunction(cx, promiseResolve);
+
+        
         return AbruptRejectPromise(cx, args, promiseCapability);
       }
     }
@@ -2993,10 +3003,12 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
   
   PromiseForOfIterator iter(cx);
   if (!iter.init(iterable, JS::ForOfIterator::AllowNonIterable)) {
+    
     return AbruptRejectPromise(cx, args, promiseCapability);
   }
 
   if (!iter.valueIsIterable()) {
+    
     const char* message;
     switch (kind) {
       case CombinatorKind::All:
@@ -3017,22 +3029,37 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
     return AbruptRejectPromise(cx, args, promiseCapability);
   }
 
-  
   bool done, result;
   switch (kind) {
     case CombinatorKind::All:
+      
+      
+      
+      
       result = PerformPromiseAll(cx, iter, C, promiseCapability, promiseResolve,
                                  &done);
       break;
     case CombinatorKind::AllSettled:
+      
+      
+      
+      
       result = PerformPromiseAllSettled(cx, iter, C, promiseCapability,
                                         promiseResolve, &done);
       break;
     case CombinatorKind::Any:
+      
+      
+      
+      
       result = PerformPromiseAny(cx, iter, C, promiseCapability, promiseResolve,
                                  &done);
       break;
     case CombinatorKind::Race:
+      
+      
+      
+      
       result = PerformPromiseRace(cx, iter, C, promiseCapability,
                                   promiseResolve, &done);
       break;
@@ -3040,6 +3067,7 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
 
   
   if (!result) {
+    
     
     if (!done) {
       iter.closeThrow();
@@ -3053,6 +3081,10 @@ enum class CombinatorKind { All, AllSettled, Any, Race };
   args.rval().setObject(*promiseCapability.promise());
   return true;
 }
+
+
+
+
 
 
 
@@ -3078,6 +3110,16 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
 
 
+
+
+
+
+
+
+
+
+
+
 [[nodiscard]] JSObject* js::GetWaitForAllPromise(
     JSContext* cx, JS::HandleObjectVector promises) {
 #ifdef DEBUG
@@ -3096,15 +3138,16 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   }
 
   
-
-  
   Rooted<PromiseCapability> resultCapability(cx);
   if (!NewPromiseCapability(cx, C, &resultCapability, false)) {
     return nullptr;
   }
 
   
+  
 
+  
+  
   
   
   
@@ -3129,6 +3172,7 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
     
     
     
+    
     Rooted<PromiseCombinatorDataHolder*> dataHolder(cx);
     dataHolder = PromiseCombinatorDataHolder::New(
         cx, resultCapability.promise(), values, resultCapability.resolve());
@@ -3141,16 +3185,21 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
     resultCapabilityWithoutResolving.promise().set(resultCapability.promise());
 
     
-
+    
     
     for (uint32_t index = 0; index < promiseCount; index++) {
       
+      
+
+      
+
       
       
 
       
       values.unwrappedArray()->setDenseElement(index, UndefinedHandleValue);
 
+      
       
       RootedObject nextPromiseObj(cx, promises[index]);
 
@@ -3162,8 +3211,11 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
       }
 
       
+      
       dataHolder->increaseRemainingCount();
 
+      
+      
       
       RootedValue resolveFunVal(cx, ObjectValue(*resolveFunc));
       RootedValue rejectFunVal(cx, ObjectValue(*resultCapability.reject()));
@@ -3181,9 +3233,10 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                               resultCapabilityWithoutResolving)) {
         return nullptr;
       }
-
-      
     }
+
+    
+    
 
     
     
@@ -3191,14 +3244,18 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
 
     
     if (remainingCount == 0) {
+      
+      
+
+      
+      
+      
       if (!ResolvePromiseInternal(cx, resultCapability.promise(),
                                   values.value())) {
         return nullptr;
       }
     }
   }
-
-  
 
   
   return resultCapability.promise();
@@ -3242,15 +3299,12 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
 
   
   
-  
-  
   if (!promiseObj) {
     
     
     return true;
   }
 
-  
   
   
   
@@ -3333,6 +3387,19 @@ static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
 [[nodiscard]] static bool CommonPerformPromiseCombinator(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
@@ -3370,14 +3437,22 @@ template <typename T>
   RootedObject thenSpeciesOrBlockedPromise(cx);
   Rooted<PromiseCapability> thenCapability(cx);
 
+  
+  
+  
+  
   while (true) {
+    
+    
+    
+    
+    
+    
+    
     
     RootedValue& nextValue = nextValueOrNextPromise;
     if (!iterator.next(&nextValue, done)) {
-      
       *done = true;
-
-      
       return false;
     }
 
@@ -3458,6 +3533,13 @@ template <typename T>
 
     
     
+    
+    
+    
+    
+    
+    
+    
     if (!getResolveAndReject(&resolveFunVal, &rejectFunVal)) {
       return false;
     }
@@ -3471,6 +3553,20 @@ template <typename T>
     
     
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     nextPromiseObj = ToObject(cx, nextPromise);
@@ -3505,6 +3601,7 @@ template <typename T>
       MOZ_ASSERT(&nextPromise.toObject() == nextPromiseObj);
 
       
+      
       RootedObject& thenSpecies = thenSpeciesOrBlockedPromise;
       if (getThen) {
         thenSpecies = SpeciesConstructor(cx, nextPromiseObj, JSProto_Promise,
@@ -3538,11 +3635,15 @@ template <typename T>
         addToDependent = false;
       } else {
         
+        
         if (!NewPromiseCapability(cx, thenSpecies, &thenCapability, true)) {
           return false;
         }
       }
 
+      
+      
+      
       
       Handle<PromiseObject*> promise = nextPromiseObj.as<PromiseObject>();
       if (!PerformPromiseThen(cx, promise, resolveFunVal, rejectFunVal,
@@ -3714,6 +3815,22 @@ static JSFunction* NewPromiseCombinatorElementFunction(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static bool PromiseCombinatorElementFunctionAlreadyCalled(
     const CallArgs& args, MutableHandle<PromiseCombinatorDataHolder*> data,
     uint32_t* index) {
@@ -3721,13 +3838,16 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   JSFunction* fn = &args.callee().as<JSFunction>();
 
   
+  
+  
+  
+  
+  
+  
+  
+  
   const Value& dataVal =
       fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
-
-  
-  
-  
-  
   if (dataVal.isUndefined()) {
     return true;
   }
@@ -3735,9 +3855,15 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   data.set(&dataVal.toObject().as<PromiseCombinatorDataHolder>());
 
   
+  
+  
+  
   fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
                       UndefinedValue());
 
+  
+  
+  
   
   int32_t idx =
       fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_ElementIndex)
@@ -3750,16 +3876,18 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
 
 
 
+
+
+
+
+
 [[nodiscard]] static bool PerformPromiseAll(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
     bool* done) {
   *done = false;
 
-  
   MOZ_ASSERT(C->isConstructor());
-
-  
 
   
   Rooted<PromiseCombinatorElements> values(cx);
@@ -3767,6 +3895,7 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     return false;
   }
 
+  
   
   
   
@@ -3798,6 +3927,7 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     }
 
     
+    
     dataHolder->increaseRemainingCount();
 
     
@@ -3817,16 +3947,28 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   }
 
   
+  
   int32_t remainingCount = dataHolder->decreaseRemainingCount();
 
   
   if (remainingCount == 0) {
+    
+    
+
+    
+    
+    
     return RunFulfillFunction(cx, resultCapability.resolve(), values.value(),
                               resultCapability.promise());
   }
 
+  
   return true;
 }
+
+
+
+
 
 
 
@@ -3850,13 +3992,14 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   }
 
   
-  
-
-  
   if (!values.setElement(cx, index, xVal)) {
     return false;
   }
 
+  
+  
+  
+  
   
   uint32_t remainingCount = data->decreaseRemainingCount();
 
@@ -3865,6 +4008,11 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
     
     
 
+    
+    
+    
+    
+    
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
@@ -3880,10 +4028,19 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
 
 
 
+
+
+
+
 static bool Promise_static_race(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CommonPromiseCombinator(cx, args, CombinatorKind::Race);
 }
+
+
+
+
+
 
 
 
@@ -3893,10 +4050,7 @@ static bool Promise_static_race(JSContext* cx, unsigned argc, Value* vp) {
     bool* done) {
   *done = false;
 
-  
   MOZ_ASSERT(C->isConstructor());
-
-  
 
   
   
@@ -3920,14 +4074,11 @@ static bool Promise_static_race(JSContext* cx, unsigned argc, Value* vp) {
 
 enum class PromiseAllSettledElementFunctionKind { Resolve, Reject };
 
-
-
-
-
-
 template <PromiseAllSettledElementFunctionKind Kind>
 static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
+
+
 
 
 
@@ -3942,16 +4093,16 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
 [[nodiscard]] static bool PerformPromiseAllSettled(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, HandleValue promiseResolve,
     bool* done) {
   *done = false;
 
-  
   MOZ_ASSERT(C->isConstructor());
-
-  
 
   
   Rooted<PromiseCombinatorElements> values(cx);
@@ -3959,6 +4110,7 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  
   
   
   
@@ -4006,6 +4158,7 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
     rejectFunVal.setObject(*rejectFunc);
 
     
+    
     dataHolder->increaseRemainingCount();
 
     
@@ -4023,16 +4176,30 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
   int32_t remainingCount = dataHolder->decreaseRemainingCount();
 
   
   if (remainingCount == 0) {
+    
+    
+
+    
+    
+    
     return RunFulfillFunction(cx, resultCapability.resolve(), values.value(),
                               resultCapability.promise());
   }
 
   return true;
 }
+
+
+
+
+
+
+
 
 
 
@@ -4063,12 +4230,12 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   
   
   
+  
+  
   if (!values.unwrappedArray()->getDenseElement(index).isUndefined()) {
     args.rval().setUndefined();
     return true;
   }
-
-  
 
   
   RootedPlainObject obj(cx, NewPlainObject(cx));
@@ -4076,6 +4243,9 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
+  
+  
   
   RootedId id(cx, NameToId(cx->names().status));
   RootedValue statusValue(cx);
@@ -4088,6 +4258,9 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
+  
+  
   
   if (Kind == PromiseAllSettledElementFunctionKind::Resolve) {
     id = NameToId(cx->names().value);
@@ -4105,6 +4278,10 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   }
 
   
+  
+  
+  
+  
   uint32_t remainingCount = data->decreaseRemainingCount();
 
   
@@ -4112,6 +4289,11 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     
     
 
+    
+    
+    
+    
+    
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
@@ -4129,25 +4311,24 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
 
 
 
+
+
 static bool Promise_static_any(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CommonPromiseCombinator(cx, args, CombinatorKind::Any);
 }
 
-
-
-
-
 static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
                                             Value* vp);
-
-
-
-
 
 static void ThrowAggregateError(JSContext* cx,
                                 Handle<PromiseCombinatorElements> errors,
                                 HandleObject promise);
+
+
+
+
+
 
 
 
@@ -4162,6 +4343,7 @@ static void ThrowAggregateError(JSContext* cx,
   
   MOZ_ASSERT(C->isConstructor());
 
+  
   
 
   
@@ -4183,6 +4365,7 @@ static void ThrowAggregateError(JSContext* cx,
   }
 
   
+  
   uint32_t index = 0;
 
   auto getResolveAndReject = [cx, &resultCapability, &errors, &dataHolder,
@@ -4200,6 +4383,7 @@ static void ThrowAggregateError(JSContext* cx,
       return false;
     }
 
+    
     
     dataHolder->increaseRemainingCount();
 
@@ -4226,6 +4410,7 @@ static void ThrowAggregateError(JSContext* cx,
   }
 
   
+  
   int32_t remainingCount = dataHolder->decreaseRemainingCount();
 
   
@@ -4237,6 +4422,8 @@ static void ThrowAggregateError(JSContext* cx,
   
   return true;
 }
+
+
 
 
 
@@ -4298,6 +4485,11 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
 
 
 
+
+
+
+
+
 static void ThrowAggregateError(JSContext* cx,
                                 Handle<PromiseCombinatorElements> errors,
                                 HandleObject promise) {
@@ -4326,11 +4518,19 @@ static void ThrowAggregateError(JSContext* cx,
 
   
   
+  
+  
   RootedValue error(cx);
   if (!GetAggregateError(cx, JSMSG_PROMISE_ANY_REJECTION, &error)) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
   
   
   RootedSavedFrame stack(cx);
@@ -4350,8 +4550,17 @@ static void ThrowAggregateError(JSContext* cx,
     }
   }
 
+  
   cx->setPendingException(error, stack);
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -4365,6 +4574,13 @@ static void ThrowAggregateError(JSContext* cx,
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if (!thisVal.isObject()) {
     const char* msg = mode == ResolveMode ? "Receiver of Promise.resolve call"
                                           : "Receiver of Promise.reject call";
@@ -4374,6 +4590,9 @@ static void ThrowAggregateError(JSContext* cx,
   }
   RootedObject C(cx, &thisVal.toObject());
 
+  
+  
+  
   
   
   
