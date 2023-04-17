@@ -427,18 +427,18 @@ NON_IDL_EVENT(SVGScroll, eSVGScroll, EventNameType_None, eBasicEventClass)
 
 
 #ifndef MESSAGE_TO_EVENT
-NON_IDL_EVENT(begin, eSMILBeginEvent, EventNameType_SMIL, eBasicEventClass)
+EVENT(begin, eSMILBeginEvent, EventNameType_SMIL, eBasicEventClass)
 #endif
 NON_IDL_EVENT(beginEvent, eSMILBeginEvent, EventNameType_None,
               eSMILTimeEventClass)
 
 #ifndef MESSAGE_TO_EVENT
-NON_IDL_EVENT(end, eSMILEndEvent, EventNameType_SMIL, eBasicEventClass)
+EVENT(end, eSMILEndEvent, EventNameType_SMIL, eBasicEventClass)
 #endif
 NON_IDL_EVENT(endEvent, eSMILEndEvent, EventNameType_None, eSMILTimeEventClass)
 
 #ifndef MESSAGE_TO_EVENT
-NON_IDL_EVENT(repeat, eSMILRepeatEvent, EventNameType_SMIL, eBasicEventClass)
+EVENT(repeat, eSMILRepeatEvent, EventNameType_SMIL, eBasicEventClass)
 #endif
 NON_IDL_EVENT(repeatEvent, eSMILRepeatEvent, EventNameType_None,
               eSMILTimeEventClass)
