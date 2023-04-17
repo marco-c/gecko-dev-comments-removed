@@ -1536,20 +1536,34 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
         int32_t wrapPosition = 0;
 
         if (mAllowLineBreaking) {
+          MOZ_ASSERT(aPos < aEnd,
+                     "We shouldn't be here if aPos reaches the end of text!");
           mozilla::intl::LineBreaker* lineBreaker =
               nsContentUtils::LineBreaker();
 
-          wrapPosition =
-              lineBreaker->Prev(aSequenceStart, (aEnd - aSequenceStart),
-                                (aPos - aSequenceStart) + 1);
-          if (wrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT) {
+          
+          
+          int32_t nextWrapPosition = 0;
+          while (true) {
+            nextWrapPosition = lineBreaker->Next(
+                aSequenceStart, aEnd - aSequenceStart, wrapPosition);
+            MOZ_ASSERT(nextWrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT,
+                       "We should've exited the loop when reaching the end of "
+                       "text in the previous iteration!");
+            if (aSequenceStart + nextWrapPosition > aPos) {
+              break;
+            }
+            wrapPosition = nextWrapPosition;
+          }
+
+          if (wrapPosition != 0) {
             foundWrapPosition = true;
           } else {
-            wrapPosition =
-                lineBreaker->Next(aSequenceStart, (aEnd - aSequenceStart),
-                                  (aPos - aSequenceStart));
-            MOZ_ASSERT(wrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT,
-                       "Next() always treats end-of-text as a break");
+            
+            
+            
+            wrapPosition = nextWrapPosition;
+
             
             
             
