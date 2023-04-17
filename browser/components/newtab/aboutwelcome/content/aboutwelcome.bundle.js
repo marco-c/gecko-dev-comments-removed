@@ -130,6 +130,13 @@ class AboutWelcome extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
   componentDidMount() {
     this.fetchFxAFlowUri(); 
 
+    if (this.props.design === "proton") {
+      const sheet = document.head.appendChild(document.createElement("link"));
+      sheet.rel = "stylesheet";
+      sheet.href = "chrome://global/skin/in-content/common.css";
+    } 
+
+
     const recordImpression = domState => {
       const {
         domComplete,
@@ -404,7 +411,7 @@ const SecondaryCTA = props => {
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", null)), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
     text: props.content[targetElement].label
   }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    className: "secondary",
+    className: "secondary text-link",
     value: targetElement,
     onClick: props.handleAction
   })));
