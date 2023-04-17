@@ -236,6 +236,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<unsigned> gcSweepGroupIndex;
 #endif
 
+  js::gc::PretenuringZone pretenuring;
+
  private:
   
   js::ZoneOrGCTaskData<js::gc::UniqueIdMap> uniqueIds_;
@@ -641,6 +643,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   void clearKeptObjects();
+
+  js::gc::AllocSite* unknownAllocSite() {
+    return &pretenuring.unknownAllocSite;
+  }
+  js::gc::AllocSite* optimizedAllocSite() {
+    return &pretenuring.optimizedAllocSite;
+  }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkAllCrossCompartmentWrappersAfterMovingGC();

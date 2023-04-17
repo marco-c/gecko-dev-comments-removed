@@ -16,18 +16,11 @@ class JSFatInlineString;
 
 namespace js {
 
-enum AllowGC { NoGC = 0, CanGC = 1 };
-
 namespace gc {
-
-
-
-
-
-
-enum InitialHeap : uint8_t { DefaultHeap, TenuredHeap };
-
+class AllocSite;
 }  
+
+enum AllowGC { NoGC = 0, CanGC = 1 };
 
 
 
@@ -46,7 +39,7 @@ T* Allocate(JSContext* cx);
 template <AllowGC allowGC = CanGC>
 JSObject* AllocateObject(JSContext* cx, gc::AllocKind kind,
                          size_t nDynamicSlots, gc::InitialHeap heap,
-                         const JSClass* clasp);
+                         const JSClass* clasp, gc::AllocSite* site = nullptr);
 
 
 template <typename StringAllocT, AllowGC allowGC = CanGC>

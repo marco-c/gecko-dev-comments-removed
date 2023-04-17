@@ -116,6 +116,13 @@ static_assert(int(AllocKind::OBJECT_FIRST) == 0,
 
 constexpr size_t AllocKindCount = size_t(AllocKind::LIMIT);
 
+
+
+
+
+
+enum InitialHeap : uint8_t { DefaultHeap, TenuredHeap };
+
 inline bool IsAllocKind(AllocKind kind) {
   return kind >= AllocKind::FIRST && kind <= AllocKind::LIMIT;
 }
