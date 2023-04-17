@@ -4,7 +4,7 @@
 
 add_task(async function setup() {
   let { formAutofillStorage } = ChromeUtils.import(
-    "resource://formautofill/FormAutofillStorage.jsm"
+    "resource://autofill/FormAutofillStorage.jsm"
   );
   await formAutofillStorage.initialize();
 });
@@ -348,7 +348,7 @@ add_task(async function test_editInvalidCreditCardNumber() {
   
   
   let { formAutofillStorage } = ChromeUtils.import(
-    "resource://formautofill/FormAutofillStorage.jsm"
+    "resource://autofill/FormAutofillStorage.jsm"
   );
   await formAutofillStorage.initialize();
   
