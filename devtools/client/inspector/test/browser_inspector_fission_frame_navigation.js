@@ -109,8 +109,9 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
 async function navigateIframeTo(inspector, url) {
   info("Navigate the test iframe to " + url);
 
-  const { resourceWatcher, targetList } = inspector.toolbox;
-  const onTargetProcessed = waitForTargetProcessed(targetList, url);
+  const { commands } = inspector;
+  const { resourceWatcher } = inspector.toolbox;
+  const onTargetProcessed = waitForTargetProcessed(commands, url);
 
   const onNewRoot = waitForNextResource(
     resourceWatcher,
@@ -146,15 +147,18 @@ async function navigateIframeTo(inspector, url) {
 
 
 
-function waitForTargetProcessed(targetList, url) {
+function waitForTargetProcessed(commands, url) {
   return new Promise(resolve => {
     const onTargetProcessed = targetFront => {
       if (targetFront.url !== encodeURI(url)) {
         return;
       }
-      targetList.off("processed-available-target", onTargetProcessed);
+      commands.targetCommand.off(
+        "processed-available-target",
+        onTargetProcessed
+      );
       resolve();
     };
-    targetList.on("processed-available-target", onTargetProcessed);
+    commands.targetCommand.on("processed-available-target", onTargetProcessed);
   });
 }
