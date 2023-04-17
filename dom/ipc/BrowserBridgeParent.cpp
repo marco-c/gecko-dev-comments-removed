@@ -45,6 +45,10 @@ nsresult BrowserBridgeParent::InitWithProcess(
       !browsingContext->GetBrowserParent(),
       "BrowsingContext must have had previous BrowserParent cleared");
 
+  MOZ_DIAGNOSTIC_ASSERT(
+      aParentBrowser->Manager() != aContentParent,
+      "Cannot create OOP iframe in the same process as its parent document");
+
   
   
   
@@ -95,6 +99,9 @@ nsresult BrowserBridgeParent::InitWithProcess(
     MOZ_ASSERT(false, "WindowGlobal Open Endpoint Failed");
     return NS_ERROR_FAILURE;
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(!browsingContext->IsDiscarded(),
+                        "bc cannot have become discarded");
 
   
   bool ok = aContentParent->SendConstructBrowser(
