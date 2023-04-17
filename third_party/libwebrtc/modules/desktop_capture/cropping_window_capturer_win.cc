@@ -155,12 +155,29 @@ void CroppingWindowCapturerWin::CaptureFrame() {
   DesktopCapturer* win_capturer = window_capturer();
   if (win_capturer) {
     
-    
     if (full_screen_window_detector_) {
       full_screen_window_detector_->UpdateWindowListIfNeeded(
-          selected_window(),
-          [win_capturer](DesktopCapturer::SourceList* sources) {
-            return win_capturer->GetSourceList(sources);
+          selected_window(), [this](DesktopCapturer::SourceList* sources) {
+            
+            
+            
+            
+            
+            SourceList result;
+            if (!webrtc::GetWindowList(GetWindowListFlags::kNone, &result))
+              return false;
+
+            
+            auto it = std::remove_if(
+                result.begin(), result.end(), [this](const auto& source) {
+                  HWND hwnd = reinterpret_cast<HWND>(source.id);
+                  return !window_capture_helper_
+                              .IsWindowVisibleOnCurrentDesktop(hwnd);
+                });
+            result.erase(it, result.end());
+
+            sources->swap(result);
+            return true;
           });
     }
     win_capturer->SelectSource(GetWindowToCapture());

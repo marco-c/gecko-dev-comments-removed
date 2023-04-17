@@ -24,6 +24,93 @@
 
 namespace webrtc {
 
+namespace {
+
+struct GetWindowListParams {
+  GetWindowListParams(int flags, DesktopCapturer::SourceList* result)
+      : ignoreUntitled(flags & GetWindowListFlags::kIgnoreUntitled),
+        ignoreUnresponsive(flags & GetWindowListFlags::kIgnoreUnresponsive),
+        result(result) {}
+  const bool ignoreUntitled;
+  const bool ignoreUnresponsive;
+  DesktopCapturer::SourceList* const result;
+};
+
+BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
+  GetWindowListParams* params = reinterpret_cast<GetWindowListParams*>(param);
+  DesktopCapturer::SourceList* list = params->result;
+
+  
+  if (params->ignoreUntitled && GetWindowTextLength(hwnd) == 0) {
+    return TRUE;
+  }
+
+  
+  if (!IsWindowVisible(hwnd) || IsIconic(hwnd)) {
+    return TRUE;
+  }
+
+  
+  
+  HWND owner = GetWindow(hwnd, GW_OWNER);
+  LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+  if (owner && !(exstyle & WS_EX_APPWINDOW)) {
+    return TRUE;
+  }
+
+  
+  
+  
+  const UINT uTimeout = 50;  
+  if (params->ignoreUnresponsive &&
+      !SendMessageTimeout(hwnd, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, uTimeout,
+                          nullptr)) {
+    return TRUE;
+  }
+
+  
+  
+  
+  
+  
+  
+  const size_t kMaxClassNameLength = 256;
+  WCHAR class_name[kMaxClassNameLength] = L"";
+  const int class_name_length =
+      GetClassNameW(hwnd, class_name, kMaxClassNameLength);
+  if (class_name_length < 1)
+    return TRUE;
+
+  
+  if (wcscmp(class_name, L"Progman") == 0)
+    return TRUE;
+
+  
+  
+  
+  if (wcscmp(class_name, L"Button") == 0)
+    return TRUE;
+
+  DesktopCapturer::Source window;
+  window.id = reinterpret_cast<WindowId>(hwnd);
+
+  const size_t kTitleLength = 500;
+  WCHAR window_title[kTitleLength] = L"";
+  if (GetWindowTextW(hwnd, window_title, kTitleLength) > 0) {
+    window.title = rtc::ToUtf8(window_title);
+  }
+
+  
+  if (params->ignoreUntitled && window.title.empty())
+    return TRUE;
+
+  list->push_back(window);
+
+  return TRUE;
+}
+
+}  
+
 
 const wchar_t kChromeWindowClassPrefix[] = L"Chrome_WidgetWin_";
 
@@ -165,57 +252,10 @@ bool IsWindowValidAndVisible(HWND window) {
   return IsWindow(window) && IsWindowVisible(window) && !IsIconic(window);
 }
 
-BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param) {
-  DesktopCapturer::SourceList* list =
-      reinterpret_cast<DesktopCapturer::SourceList*>(param);
-
-  
-  
-  int len = GetWindowTextLength(hwnd);
-  HWND owner = GetWindow(hwnd, GW_OWNER);
-  LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-  if (len == 0 || !IsWindowValidAndVisible(hwnd) ||
-      (owner && !(exstyle & WS_EX_APPWINDOW))) {
-    return TRUE;
-  }
-
-  
-  
-  
-  const UINT timeout = 50;  
-  if (!SendMessageTimeout(hwnd, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, timeout,
-                          nullptr)) {
-    return TRUE;
-  }
-
-  
-  WCHAR class_name[256];
-  const int class_name_length =
-      GetClassNameW(hwnd, class_name, arraysize(class_name));
-  if (class_name_length < 1)
-    return TRUE;
-
-  
-  
-  
-  if (wcscmp(class_name, L"Progman") == 0 || wcscmp(class_name, L"Button") == 0)
-    return TRUE;
-
-  DesktopCapturer::Source window;
-  window.id = reinterpret_cast<WindowId>(hwnd);
-
-  
-  WCHAR window_title[500];
-  GetWindowTextW(hwnd, window_title, arraysize(window_title));
-  window.title = rtc::ToUtf8(window_title);
-
-  
-  if (window.title.empty())
-    return TRUE;
-
-  list->push_back(window);
-
-  return TRUE;
+bool GetWindowList(int flags, DesktopCapturer::SourceList* windows) {
+  GetWindowListParams params(flags, windows);
+  return ::EnumWindows(&GetWindowListHandler,
+                       reinterpret_cast<LPARAM>(&params)) != 0;
 }
 
 
@@ -374,9 +414,11 @@ bool WindowCaptureHelperWin::IsWindowCloaked(HWND hwnd) {
 
 bool WindowCaptureHelperWin::EnumerateCapturableWindows(
     DesktopCapturer::SourceList* results) {
-  LPARAM param = reinterpret_cast<LPARAM>(results);
-  if (!EnumWindows(&FilterUncapturableWindows, param))
+  if (!webrtc::GetWindowList((GetWindowListFlags::kIgnoreUntitled |
+                              GetWindowListFlags::kIgnoreUnresponsive),
+                             results)) {
     return false;
+  }
 
   for (auto it = results->begin(); it != results->end();) {
     if (!IsWindowVisibleOnCurrentDesktop(reinterpret_cast<HWND>(it->id))) {

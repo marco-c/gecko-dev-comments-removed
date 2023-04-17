@@ -71,10 +71,20 @@ bool IsWindowMaximized(HWND window, bool* result);
 
 bool IsWindowValidAndVisible(HWND window);
 
+enum GetWindowListFlags {
+  kNone = 0x00,
+  kIgnoreUntitled = 1 << 0,
+  kIgnoreUnresponsive = 1 << 1,
+};
 
 
 
-BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param);
+
+
+
+
+
+bool GetWindowList(int flags, DesktopCapturer::SourceList* windows);
 
 typedef HRESULT(WINAPI* DwmIsCompositionEnabledFunc)(BOOL* enabled);
 typedef HRESULT(WINAPI* DwmGetWindowAttributeFunc)(HWND hwnd,
