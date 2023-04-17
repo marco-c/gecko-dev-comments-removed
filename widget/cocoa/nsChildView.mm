@@ -2590,6 +2590,16 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
   NS_ENSURE_TRUE(rollupListener, false);
+
+  if (rollupListener->RollupNativeMenu()) {
+    
+    
+    
+    
+    
+    return NO;
+  }
+
   nsCOMPtr<nsIWidget> rollupWidget = rollupListener->GetRollupWidget();
   if (rollupWidget) {
     NSWindow* currentPopup = static_cast<NSWindow*>(rollupWidget->GetNativeData(NS_NATIVE_WINDOW));

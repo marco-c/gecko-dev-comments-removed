@@ -67,6 +67,12 @@ class nsIRollupListener {
   virtual void NotifyGeometryChange() = 0;
 
   virtual nsIWidget* GetRollupWidget() = 0;
+
+  
+
+
+
+  virtual bool RollupNativeMenu() { return false; }
 };
 
 #endif 
