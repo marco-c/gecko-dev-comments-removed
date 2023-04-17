@@ -58,7 +58,7 @@ void Compartment::checkObjectWrappersAfterMovingGC() {
     
     
     auto key = e.front().key();
-    CheckGCThingAfterMovingGC(key);
+    CheckGCThingAfterMovingGC(key.get());
 
     auto ptr = crossCompartmentObjectWrappers.lookup(key);
     MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &e.front());

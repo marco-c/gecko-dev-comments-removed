@@ -380,7 +380,7 @@ void Zone::checkStringWrappersAfterMovingGC() {
     
     
     auto key = e.front().key();
-    CheckGCThingAfterMovingGC(key);
+    CheckGCThingAfterMovingGC(key.get());
 
     auto ptr = crossZoneStringWrappers().lookup(key);
     MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &e.front());
