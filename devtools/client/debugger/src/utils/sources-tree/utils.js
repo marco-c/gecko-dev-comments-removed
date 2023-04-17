@@ -176,14 +176,29 @@ export function createParentMap(tree) {
   return map;
 }
 
+
+
+
+
+
+
+
 export function getRelativePath(url) {
   const { pathname } = parse(url);
   if (!pathname) {
     return url;
   }
   const index = pathname.indexOf("/");
-
-  return index !== -1 ? pathname.slice(index + 1) : "";
+  if (index !== -1) {
+    const path = pathname.slice(index + 1);
+    
+    
+    if (path == "") {
+      return "(index)";
+    }
+    return path;
+  }
+  return "";
 }
 
 export function getPathWithoutThread(path) {

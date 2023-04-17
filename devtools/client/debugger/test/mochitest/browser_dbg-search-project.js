@@ -27,6 +27,7 @@ add_task(async function() {
   await waitForLoadedSource(dbg, "switching-01");
 });
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-react.html", "App.js");
   await openProjectSearch(dbg);
@@ -64,7 +65,7 @@ async function selectResult(dbg) {
 }
 
 function getExpandedResultsCount(dbg) {
-  return findAllElements(dbg, "projectSerchExpandedResults").length;
+  return findAllElements(dbg, "projectSearchExpandedResults").length;
 }
 
 function getResultsFiles(dbg) {
