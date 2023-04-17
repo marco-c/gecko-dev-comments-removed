@@ -172,8 +172,8 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
       MOZ_ASSERT(effectiveScaleDownBy >= 1.0);
       mSimulcastAdapter->OnScaleResolutionBy(
           effectiveScaleDownBy > 1.0
-              ? rtc::Optional<float>(effectiveScaleDownBy)
-              : rtc::Optional<float>());
+              ? absl::optional<float>(effectiveScaleDownBy)
+              : absl::optional<float>());
       bool rv = mSimulcastAdapter->AdaptFrameResolution(
           width, height,
           0,  
@@ -219,26 +219,12 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
                    mNegotiatedMaxBitrate, video_stream);
 
     video_stream.max_qp = kQpMax;
-    video_stream.SetRid(encoding.rid);
 
-    
-    video_stream.temporal_layer_thresholds_bps.clear();
     if (streamCount > 1) {
-      
-      
-      
-
-      
-      
-      
-      
-      
-      
       if (mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
-        video_stream.temporal_layer_thresholds_bps.push_back(
-            video_stream.target_bitrate_bps);
+        video_stream.num_temporal_layers = 1;
       } else {
-        video_stream.temporal_layer_thresholds_bps.resize(2);
+        video_stream.num_temporal_layers = 2;
       }
       
       
