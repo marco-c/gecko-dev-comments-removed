@@ -115,9 +115,11 @@ const Curl = {
       addPostData(text);
       ignoredHeaders.add("content-length");
     } else if (
-      utils.isUrlEncodedRequest(data) ||
-      ["PUT", "POST", "PATCH"].includes(data.method)
+      data.postDataText &&
+      (utils.isUrlEncodedRequest(data) ||
+        ["PUT", "POST", "PATCH"].includes(data.method))
     ) {
+      
       postDataText = data.postDataText;
       addPostData("--data-raw");
       addPostData(utils.writePostDataTextParams(postDataText));
@@ -129,9 +131,9 @@ const Curl = {
     
     
     
-    if (data.method == "HEAD") {
+    if (data.method === "HEAD") {
       addParam("-I");
-    } else if (!(data.method == "GET" || data.method == "POST")) {
+    } else if (data.method !== "GET") {
       
       
       
