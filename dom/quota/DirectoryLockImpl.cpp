@@ -45,17 +45,25 @@ DirectoryLockImpl::DirectoryLockImpl(
 DirectoryLockImpl::~DirectoryLockImpl() {
   AssertIsOnOwningThread();
 
-  for (NotNull<RefPtr<DirectoryLockImpl>> blockingLock : mBlocking) {
-    blockingLock->MaybeUnblock(*this);
-  }
-
-  mBlocking.Clear();
-
+  
+  
+  
+  
+  
+  
+  
+  
   if (mRegistered) {
     mQuotaManager->UnregisterDirectoryLock(*this);
   }
 
   MOZ_ASSERT(!mRegistered);
+
+  for (NotNull<RefPtr<DirectoryLockImpl>> blockingLock : mBlocking) {
+    blockingLock->MaybeUnblock(*this);
+  }
+
+  mBlocking.Clear();
 }
 
 #ifdef DEBUG
