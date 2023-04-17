@@ -504,7 +504,14 @@ static bool IsSpecialColor(LookAndFeel::ColorID aID, nscolor aColor) {
   return false;
 }
 
-nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID) {
+nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
+                                                  ColorScheme aScheme) {
+  if (aScheme == ColorScheme::Dark) {
+    if (auto color = GenericDarkColor(aID)) {
+      return *color;
+    }
+  }
+
   
   
 
@@ -591,6 +598,54 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID) {
       break;
   }
   return NS_RGB(0xFF, 0xFF, 0xFF);
+}
+
+#undef COLOR
+
+
+Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
+  nscolor color = NS_RGB(0, 0, 0);
+  switch (aID) {
+    case ColorID::Window:  
+    case ColorID::WindowBackground:
+    case ColorID::Background:
+    case ColorID::TextBackground:
+      color = NS_RGB(28, 27, 34);
+      break;
+    case ColorID::MozDialog:  
+      color = NS_RGB(35, 34, 43);
+      break;
+    case ColorID::Windowtext:  
+    case ColorID::WindowForeground:
+    case ColorID::MozDialogtext:
+    case ColorID::TextForeground:
+    case ColorID::Fieldtext:
+    case ColorID::Buttontext:  
+                               
+      color = NS_RGB(251, 251, 254);
+      break;
+    case ColorID::Graytext:  
+      color = NS_RGB(191, 191, 201);
+      break;
+    case ColorID::Selecteditem:  
+                                 
+    case ColorID::Highlight:
+      
+      
+      color = NS_RGB(0, 221, 255);
+      break;
+    case ColorID::Field:
+    case ColorID::Buttonface:        
+    case ColorID::Selecteditemtext:  
+                                     
+    case ColorID::Highlighttext:
+      color = NS_RGB(43, 42, 51);
+      break;
+
+    default:
+      return Nothing();
+  }
+  return Some(color);
 }
 
 
@@ -705,7 +760,7 @@ nsresult nsXPLookAndFeel::GetColorValue(ColorID aID, ColorScheme aScheme,
 #endif
 
   if (aUseStandins == UseStandins::Yes) {
-    aResult = GetStandinForNativeColor(aID);
+    aResult = GetStandinForNativeColor(aID, aScheme);
     return NS_OK;
   }
 

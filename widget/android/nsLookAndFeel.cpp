@@ -96,6 +96,34 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
 
   
   
+  switch (aID) {
+    case ColorID::Highlight: {
+      
+      
+      nscolor accent =
+          Color(ColorID::MozAccentColor, aColorScheme, UseStandins::No);
+      aColor =
+          NS_RGBA(NS_GET_R(accent), NS_GET_G(accent), NS_GET_B(accent), 153);
+      return NS_OK;
+    }
+    case ColorID::Highlighttext:
+      
+      
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      return NS_OK;
+    default:
+      break;
+  }
+
+  if (aColorScheme == ColorScheme::Dark) {
+    if (auto darkColor = GenericDarkColor(aID)) {
+      aColor = *darkColor;
+      return NS_OK;
+    }
+  }
+
+  
+  
   auto UseNativeAccent = [this] {
     return mSystemColors.colorAccent &&
            StaticPrefs::widget_non_native_theme_use_theme_accent();
@@ -129,20 +157,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       aColor = NS_RGBA(119, 119, 119, 102);
       break;
 
-    case ColorID::Highlight: {
-      
-      
-      nscolor accent =
-          Color(ColorID::MozAccentColor, aColorScheme, UseStandins::No);
-      aColor =
-          NS_RGBA(NS_GET_R(accent), NS_GET_G(accent), NS_GET_B(accent), 153);
-      break;
-    }
-    case ColorID::Highlighttext:
-      
-      
-      aColor = NS_SAME_AS_FOREGROUND_COLOR;
-      break;
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
     case ColorID::WidgetSelectBackground:

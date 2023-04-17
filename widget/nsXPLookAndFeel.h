@@ -6,6 +6,7 @@
 #ifndef __nsXPLookAndFeel
 #define __nsXPLookAndFeel
 
+#include "mozilla/Maybe.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/widget/LookAndFeelTypes.h"
 #include "nsTArray.h"
@@ -70,7 +71,15 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
  protected:
   nsXPLookAndFeel() = default;
 
-  static nscolor GetStandinForNativeColor(ColorID);
+  static nscolor GetStandinForNativeColor(ColorID, ColorScheme);
+
+  
+  
+  
+  
+  
+  static mozilla::Maybe<nscolor> GenericDarkColor(ColorID);
+
   void RecordTelemetry();
   virtual void RecordLookAndFeelSpecificTelemetry() {}
 
