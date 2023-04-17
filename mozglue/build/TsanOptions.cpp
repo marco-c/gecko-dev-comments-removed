@@ -232,10 +232,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:ipv6_is_present\n"
 
          
-         "race:nsSocketTransport::Close\n"
-         "race:nsSocketTransport::OnSocketDetached\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
