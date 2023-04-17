@@ -526,9 +526,6 @@ function Search(
     
     
     
-    
-    
-    
     let firstToken = !!this._searchTokens.length && this._searchTokens[0].value;
     this._heuristicToken =
       firstToken && this._trimmedOriginalSearchString.startsWith(firstToken)
@@ -718,10 +715,6 @@ Search.prototype = {
     
     
     
-    
-    
-    
-    
 
     
     await this._checkPreloadedSitesExpiry();
@@ -897,12 +890,25 @@ Search.prototype = {
       return false;
     }
 
-    
     let aliasEngine = await UrlbarSearchUtils.engineForAlias(
       this._heuristicToken,
       this._originalSearchString
     );
-    return !!aliasEngine;
+
+    if (aliasEngine) {
+      return true;
+    }
+
+    let { entry } = await KeywordUtils.getBindableKeyword(
+      this._heuristicToken,
+      this._originalSearchString
+    );
+    if (entry) {
+      this._filterOnHost = entry.url.host;
+      return true;
+    }
+
+    return false;
   },
 
   async _matchFirstHeuristicResult(conn) {
@@ -913,16 +919,8 @@ Search.prototype = {
 
     
     
-    if (this.pending && this._heuristicToken) {
-      
-      let matched = await this._matchPlacesKeyword(this._heuristicToken);
-      if (matched) {
-        return true;
-      }
-    }
 
     let shouldAutofill = this._shouldAutofill;
-
     if (this.pending && shouldAutofill) {
       let matched = this._matchPreloadedSiteForAutofill();
       if (matched) {
@@ -932,61 +930,6 @@ Search.prototype = {
 
     
     return false;
-  },
-
-  async _matchPlacesKeyword(keyword) {
-    let entry = await PlacesUtils.keywords.fetch(keyword);
-    if (!entry) {
-      return false;
-    }
-
-    let searchString = UrlbarUtils.substringAfter(
-      this._originalSearchString,
-      keyword
-    ).trim();
-
-    let url = null;
-    let postData = null;
-    try {
-      [url, postData] = await KeywordUtils.parseUrlAndPostData(
-        entry.url.href,
-        entry.postData,
-        searchString
-      );
-    } catch (ex) {
-      
-      return false;
-    }
-
-    let style = "keyword";
-    let value = url;
-    if (this._enableActions) {
-      style = "action " + style;
-      value = makeActionUrl("keyword", {
-        url,
-        keyword,
-        input: this._originalSearchString,
-        postData,
-      });
-    }
-
-    let match = {
-      value,
-      
-      
-      icon: iconHelper(entry.url),
-      style,
-      frecency: Infinity,
-    };
-    
-    if (this._searchTokens.length > 1) {
-      match.comment = entry.url.host;
-    }
-
-    this._firstTokenIsKeyword = true;
-    this._filterOnHost = entry.url.host;
-    this._addMatch(match);
-    return true;
   },
 
   
