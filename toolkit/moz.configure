@@ -1595,6 +1595,14 @@ set_define(
 
 
 
+option("--enable-tasktracer", help="Enable TaskTracer")
+
+set_define("MOZ_TASK_TRACER", depends_if("--enable-tasktracer")(lambda _: True))
+set_config("MOZ_TASK_TRACER", depends_if("--enable-tasktracer")(lambda _: True))
+
+
+
+
 
 @depends(moz_debug)
 def reflow_perf(debug):
