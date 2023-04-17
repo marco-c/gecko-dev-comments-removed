@@ -6,9 +6,7 @@
 #define PublicKeyPinningService_h
 
 #include "CertVerifier.h"
-#include "ScopedNSSTypes.h"
-#include "cert.h"
-#include "nsNSSCertificate.h"
+#include "nsIPublicKeyPinningService.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "mozilla/Span.h"
@@ -17,8 +15,13 @@
 namespace mozilla {
 namespace psm {
 
-class PublicKeyPinningService {
+class PublicKeyPinningService final : public nsIPublicKeyPinningService {
  public:
+  PublicKeyPinningService() = default;
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIPUBLICKEYPINNINGSERVICE
+
   
 
 
@@ -39,15 +42,10 @@ class PublicKeyPinningService {
 
 
 
-  static nsresult HostHasPins(const char* hostname, mozilla::pkix::Time time,
-                               bool& hostHasPins);
-
-  
-
-
-
-
   static nsAutoCString CanonicalizeHostname(const char* hostname);
+
+ private:
+  ~PublicKeyPinningService() = default;
 };
 
 }  

@@ -1055,17 +1055,12 @@ const SecuritySettingsCleaner = {
     );
     
     
-    for (let entry of sss.enumerate(Ci.nsISiteSecurityService.HEADER_HSTS)) {
+    for (let entry of sss.enumerate()) {
       let hostname = entry.hostname;
       if (Services.eTLD.hasRootDomain(hostname, aHost)) {
         
         let uri = Services.io.newURI("https://" + hostname);
-        sss.resetState(
-          Ci.nsISiteSecurityService.HEADER_HSTS,
-          uri,
-          0,
-          entry.originAttributes
-        );
+        sss.resetState(uri, 0, entry.originAttributes);
       }
     }
     let cars = Cc[
@@ -1086,19 +1081,14 @@ const SecuritySettingsCleaner = {
 
     
     
-    Array.from(sss.enumerate(Ci.nsISiteSecurityService.HEADER_HSTS))
+    Array.from(sss.enumerate())
       .filter(({ hostname, originAttributes }) =>
         hasBaseDomain({ host: hostname, originAttributes }, aDomain)
       )
       .forEach(({ hostname, originAttributes }) => {
         
         let uri = Services.io.newURI("https://" + hostname);
-        sss.resetState(
-          Ci.nsISiteSecurityService.HEADER_HSTS,
-          uri,
-          0,
-          originAttributes
-        );
+        sss.resetState(uri, 0, originAttributes);
       });
 
     let cars = Cc[

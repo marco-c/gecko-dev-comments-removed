@@ -23,6 +23,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/ssservice;1",
   "nsISiteSecurityService"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "pkps",
+  "@mozilla.org/security/publickeypinningservice;1",
+  "nsIPublicKeyPinningService"
+);
 
 
 
@@ -193,8 +199,8 @@ const SecurityInfo = {
         flags = Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
       }
 
-      info.hsts = sss.isSecureURI(sss.HEADER_HSTS, uri, flags);
-      info.hpkp = sss.isSecureURI(sss.STATIC_PINNING, uri, flags);
+      info.hsts = sss.isSecureURI(uri, flags);
+      info.hpkp = pkps.hostHasPins(uri);
     } else {
       info.hsts = false;
       info.hpkp = false;
