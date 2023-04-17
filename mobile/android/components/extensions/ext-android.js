@@ -600,31 +600,6 @@ extensions.on("startup", (type, extension) => {
 });
 
 
-
-const getSender = (extension, target, sender) => {
-  let tabId = -1;
-  if ("tabId" in sender) {
-    
-    
-    
-    tabId = sender.tabId;
-    delete sender.tabId;
-  } else if (ChromeUtils.getClassName(target) == "XULFrameElement") {
-    tabId = tabTracker.getBrowserData(target).tabId;
-  }
-
-  if (tabId != null && tabId >= 0) {
-    const tab = extension.tabManager.get(tabId, null);
-    if (tab) {
-      sender.tab = tab.convert();
-    }
-  }
-};
-
-
-global.tabGetSender = getSender;
-
-
 extensions.on("page-shutdown", (type, context) => {
   if (context.viewType == "tab") {
     const window = context.xulBrowser.ownerGlobal;

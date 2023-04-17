@@ -28,6 +28,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "AppConstants",
+  "resource://gre/modules/AppConstants.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "Extension",
   "resource://gre/modules/Extension.jsm"
 );
@@ -445,6 +450,12 @@ ExtensionTestCommon = class ExtensionTestCommon {
 
 
   static generate(data) {
+    
+    if (data.androidBrowserTest && AppConstants.platform === "android") {
+      data.useAddonManager ??= "permanent";
+      this.setExtensionID(data);
+    }
+
     let file = this.generateXPI(data);
 
     flushJarCache(file.path);

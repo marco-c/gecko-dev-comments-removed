@@ -56,6 +56,10 @@ const { BaseConduit } = ChromeUtils.import(
   "resource://gre/modules/ConduitsChild.jsm"
 );
 
+const { WebNavigationFrames } = ChromeUtils.import(
+  "resource://gre/modules/WebNavigationFrames.jsm"
+);
+
 const BATCH_TIMEOUT_MS = 250;
 const ADDON_ENV = new Set(["addon_child", "devtools_child"]);
 
@@ -139,9 +143,19 @@ const Hub = {
 
 
 
-  recvConduitOpened(address, actor) {
+  fillInAddress(address, actor) {
     address.actor = actor;
     address.verified = this.verifyEnv(address);
+    address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
+  },
+
+  
+
+
+
+
+  recvConduitOpened(address, actor) {
+    this.fillInAddress(address, actor);
     this.remotes.set(address.id, address);
     this.byActor.get(actor).add(address);
   },
