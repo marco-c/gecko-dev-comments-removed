@@ -51,13 +51,14 @@ async function testSearchBarChangeEngine(win, testPrivate, isPrivateWindow) {
     TEST_ENGINE_NAME
   );
 
+  const contextMenu = searchOneOff.contextMenuPopup;
   const setDefaultEngineMenuItem = searchOneOff.querySelector(
     ".search-one-offs-context-set-default" + (testPrivate ? "-private" : "")
   );
 
   
   let promise = promiseDefaultEngineChanged(testPrivate);
-  EventUtils.synthesizeMouseAtCenter(setDefaultEngineMenuItem, {}, win);
+  contextMenu.activateItem(setDefaultEngineMenuItem);
 
   
   await promise;
