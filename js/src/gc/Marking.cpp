@@ -1627,7 +1627,7 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
   
   
   while (queuePos < markQueue.length()) {
-    Value val = markQueue[queuePos++].get().unbarrieredGet();
+    Value val = markQueue[queuePos++].get();
     if (val.isObject()) {
       JSObject* obj = &val.toObject();
       JS::Zone* zone = obj->zone();

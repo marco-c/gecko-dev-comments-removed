@@ -573,7 +573,7 @@ class GCMarker final : public JSTracer {
 
 
 
-  JS::WeakCache<GCVector<JS::Heap<JS::Value>, 0, SystemAllocPolicy>> markQueue;
+  JS::WeakCache<GCVector<HeapPtrValue, 0, SystemAllocPolicy>> markQueue;
 
   
   size_t queuePos;
