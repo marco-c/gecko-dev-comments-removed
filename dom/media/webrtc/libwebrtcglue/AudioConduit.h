@@ -25,6 +25,7 @@ namespace mozilla {
 
 
 class WebrtcAudioConduit : public AudioSessionConduit,
+                           public webrtc::RtcpEventObserver,
                            public webrtc::Transport {
  public:
   
@@ -33,6 +34,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   void ReceivedRTPPacket(const uint8_t* data, int len,
                          webrtc::RTPHeader& header) override;
+
+  void OnRtcpBye() override;
+  void OnRtcpTimeout() override;
+
+  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
   
 
@@ -270,6 +276,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
+
+  
+  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
 };
 
 }  

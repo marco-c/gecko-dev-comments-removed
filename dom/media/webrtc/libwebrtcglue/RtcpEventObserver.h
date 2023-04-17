@@ -1,0 +1,20 @@
+
+
+
+
+#ifndef RTCP_EVENT_OBSERVER_
+#define RTCP_EVENT_OBSERVER_
+
+namespace mozilla {
+
+
+
+
+class RtcpEventObserver {
+ public:
+  virtual void OnRtcpBye() = 0;
+  virtual void OnRtcpTimeout() = 0;
+};
+
+}  
+#endif

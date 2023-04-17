@@ -70,6 +70,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     RtcpBandwidthObserver* bandwidth_callback = nullptr;
 
+    
+    RtcpEventObserver* rtcp_event_observer = nullptr;
+
     NetworkStateEstimateObserver* network_state_estimate_observer = nullptr;
     TransportFeedbackObserver* transport_feedback_callback = nullptr;
     VideoBitrateAllocationObserver* bitrate_allocation_observer = nullptr;

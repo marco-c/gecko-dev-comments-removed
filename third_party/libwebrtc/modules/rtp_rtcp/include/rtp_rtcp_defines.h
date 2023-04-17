@@ -216,6 +216,14 @@ class RtcpBandwidthObserver {
   virtual ~RtcpBandwidthObserver() {}
 };
 
+class RtcpEventObserver {
+ public:
+  virtual void OnRtcpBye() = 0;
+  virtual void OnRtcpTimeout() = 0;
+
+  virtual ~RtcpEventObserver() {}
+};
+
 
 static constexpr size_t kNumMediaTypes = 5;
 enum class RtpPacketMediaType : size_t {
