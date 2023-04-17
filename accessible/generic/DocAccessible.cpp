@@ -1377,20 +1377,10 @@ LocalAccessible* DocAccessible::GetAccessibleOrDescendant(
     return const_cast<DocAccessible*>(this);
   }
 
-  acc = GetContainerAccessible(aNode);
-  if (acc) {
-    
-    
-    
-    uint32_t childCnt = acc->mChildren.Length();
-    for (uint32_t idx = 0; idx < childCnt; idx++) {
-      LocalAccessible* child = acc->mChildren.ElementAt(idx);
-      for (nsIContent* elm = child->GetContent();
-           elm && elm != acc->GetContent();
-           elm = elm->GetFlattenedTreeParent()) {
-        if (elm == aNode) return child;
-      }
-    }
+  if (acc = GetContainerAccessible(aNode)) {
+    TreeWalker walker(acc, aNode->AsContent(),
+                      TreeWalker::eWalkCache | TreeWalker::eScoped);
+    return walker.Next();
   }
 
   return nullptr;

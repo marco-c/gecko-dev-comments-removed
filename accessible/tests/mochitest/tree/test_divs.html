@@ -16,6 +16,10 @@
         src="../attributes.js"></script>
 
 <script type="application/javascript">
+function getAccessibleDescendantFor(selector) {
+  return gAccService.getAccessibleDescendantFor(document.querySelector(selector));
+}
+
 function doTest() {
   // All below test cases are wrapped in a div which always gets rendered.
   // c1 through c10 are the containers, the actual test cases are inside.
@@ -270,6 +274,16 @@ function doTest() {
     };
   testAccessibleTree("c15", tree);
 
+  // Test getting descendants of unrendered nodes.
+  ok(!getAccessibleDescendantFor("#c16 > span"),
+     "Span has no accessible children");
+
+  ok(!getAccessibleDescendantFor("#c17 > span"),
+     "Span with relocated child should return null");
+
+  is(getAccessibleDescendantFor("#c12 > div").role, ROLE_PARAGRAPH,
+     "Descendant has correct role")
+
   SimpleTest.finish();
 }
 
@@ -283,51 +297,55 @@ addA11yLoadEvent(doTest);
   <pre id="test">
   </pre>
 
-  
+  <!-- Expose the div if it has plain text contents -->
   <div id="c1"><div>foo</div></div>
 
-  
+  <!-- Expose the outer and inner div, skip the middle one. -->
   <div id="c2"><div><div>foo</div></div></div>
 
-  
+  <!-- Expose the outer and inner divs due to the ID, but skip the middle one. -->
   <div id="c3"><div><div id="b">foo</div></div></div>
 
-  
+  <!-- Expose all three divs and their IDs. -->
   <div id="c4"><div id="a"><div id="b">foo</div></div></div>
 
-  
+  <!-- Expose outer and inner divs, due to text content, not class. -->
   <div id="c5"><div class="a"><div class="b">foo</div></div></div>
 
-  
+  <!-- Expose the outer and two inner divs, skip the single middle one. -->
   <div id="c6"><div><div>foo</div><div>bar</div></div></div>
 
-  
+  <!-- Expose all divs due to the middle one being block breaking. -->
   <div id="c7"><div>foo<div>bar</div>baz</div></div>
 
-  
+  <!-- Expose all divs due to them all being text block breakers. -->
   <div id="c8"><div>foo<div><div>bar</div>baz</div></div></div>
   <div id="c9"><div><div><div>a</div>b</div>c</div></div>
 
-  
+  <!-- Both inner divs need to be rendered so there is a break after b. -->
   <div id="c10"><div><b>a</b>b</div><div><b>c</b><b>d</b></div></div>
 
-  
+  <!-- Div must be rendered if it contains a br -->
   <div id="c11"><div>first line.</div><div><br /></div><div>third line</div></div>
 
-  
-
-
+  <!-- Inner div shouldn't be rendered because although its first and last
+    children are text nodes, they are invisible.
+    -->
   <div id="c12"><div> <p>Test</p> </div></div>
 
-  
-
-
+  <!-- Inner div should be rendered because despite the first/last invisible
+    text nodes, there is also an inline frame.
+    -->
   <div id="c13">l1<div> <span>l2 </span> </div></div>
 
-  
+  <!-- Inner div should be rendered because it contains an inline-block. -->
   <div id="c14">l1<div><button>l2</button></div></div>
 
-  
+  <!-- Inner div should be rendered because previous sibling is text. -->
   <div id="c15">l1<div></div>l2</div>
+
+  <div id="c16">hello <span></span> world</div>
+
+  <div id="c17"><div aria-owns="c"></div>hello <span><button id="c">b</button></span> world</div>
 </body>
 </html>
