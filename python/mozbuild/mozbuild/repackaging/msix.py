@@ -353,8 +353,15 @@ def repackage_msix(
         dict(section="App", value="CodeName", fallback="Name"),
         dict(section="App", value="Vendor"),
     )
+
     first = next(values)
-    displayname = displayname or "Mozilla {}".format(first)
+    if not displayname:
+        displayname = "Mozilla {}".format(first)
+
+        if channel == "beta":
+            
+            displayname += " Beta"
+
     second = next(values)
     vendor = vendor or second
 
@@ -393,6 +400,10 @@ def repackage_msix(
     _, _, brandFullName = brandFullName.partition("=")
     brandFullName = brandFullName.strip()
 
+    if channel == "beta":
+        
+        brandFullName += " Beta"
+
     
     
     
@@ -414,11 +425,6 @@ def repackage_msix(
             get_state_dir(), "cache", "mach-msix", "msix-temp-{}".format(channel)
         )
     )
-
-    if channel == "beta":
-        
-        displayname += " Beta"
-        brandFullName += " Beta"
 
     
     
