@@ -359,9 +359,6 @@ class PluginParent extends JSWindowActorParent {
           case "openHelpPage":
             this[msg.data.name](win);
             break;
-          case "openPluginUpdatePage":
-            this.openPluginUpdatePage(win, msg.data.pluginId);
-            break;
         }
         break;
       case "PluginContent:GetCrashData":
@@ -385,20 +382,6 @@ class PluginParent extends JSWindowActorParent {
   
   managePlugins(window) {
     window.BrowserOpenAddonsMgr("addons://list/plugin");
-  }
-
-  
-  
-  async openPluginUpdatePage(window, pluginId) {
-    let pluginTag = PluginManager.getPluginTagById(pluginId);
-    if (!pluginTag) {
-      return;
-    }
-    let { Blocklist } = ChromeUtils.import(
-      "resource://gre/modules/Blocklist.jsm"
-    );
-    let url = await Blocklist.getPluginBlockURL(pluginTag);
-    window.openTrustedLinkIn(url, "tab");
   }
 
   submitReport(runID, keyVals, submitURLOptIn) {
@@ -469,19 +452,7 @@ class PluginParent extends JSWindowActorParent {
       case "block":
         permission = Ci.nsIPermissionManager.PROMPT_ACTION;
         histogram.add(2);
-        let pluginTag = PluginManager.getPluginTagById(aActivationInfo.id);
-        switch (pluginTag.blocklistState) {
-          case Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE:
-            aActivationInfo.fallbackType = PLUGIN_VULNERABLE_UPDATABLE;
-            break;
-          case Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE:
-            aActivationInfo.fallbackType = PLUGIN_VULNERABLE_NO_UPDATE;
-            break;
-          default:
-            
-            
-            aActivationInfo.fallbackType = PLUGIN_CLICK_TO_PLAY_QUIET;
-        }
+        aActivationInfo.fallbackType = PLUGIN_CLICK_TO_PLAY_QUIET;
         notification.options.extraAttr = "inactive";
         break;
 
