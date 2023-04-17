@@ -8,6 +8,8 @@
 
 #include "builtin/streams/ReadableStream.h"
 
+#include "mozilla/Maybe.h"  
+
 #include "jsapi.h"    
 #include "jspubtd.h"  
 
@@ -38,6 +40,9 @@
 #include "vm/Compartment-inl.h"   
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
+
+using mozilla::Maybe;
+using mozilla::Some;
 
 using js::CanGC;
 using js::ClassSpec;
@@ -271,26 +276,16 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, JS::Value* vp) {
 
 
 
+enum class ReadableStreamReaderMode { Byob };
+
+
+
 
 
 
 [[nodiscard]] static bool ReadableStream_getReader(JSContext* cx, unsigned argc,
                                                    JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  Rooted<Value> optionsVal(cx, args.get(0));
-  if (optionsVal.isUndefined()) {
-    JSObject* emptyObj = NewBuiltinClassInstance<PlainObject>(cx);
-    if (!emptyObj) {
-      return false;
-    }
-    optionsVal.setObject(*emptyObj);
-  }
-  Rooted<Value> modeVal(cx);
-  if (!GetProperty(cx, optionsVal, cx->names().mode, &modeVal)) {
-    return false;
-  }
 
   
   Rooted<ReadableStream*> unwrappedStream(
@@ -301,38 +296,75 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, JS::Value* vp) {
 
   
   
+  
+
+  Rooted<Value> optionsVal(cx, args.get(0));
+  
+  if (!optionsVal.isNullOrUndefined() && !optionsVal.isObject()) {
+    ReportValueError(cx, JSMSG_CANT_CONVERT_TO, JSDVG_IGNORE_STACK, optionsVal,
+                     nullptr, "dictionary");
+    return false;
+  }
+
+  Maybe<ReadableStreamReaderMode> mode;
+  
+  
+  
+  
+  if (optionsVal.isObject()) {
+    Rooted<Value> modeVal(cx);
+    if (!GetProperty(cx, optionsVal, cx->names().mode, &modeVal)) {
+      return false;
+    }
+
+    
+    if (!modeVal.isUndefined()) {
+      
+      
+
+      
+      Rooted<JSString*> modeStr(cx, ToString<CanGC>(cx, modeVal));
+      if (!modeStr) {
+        return false;
+      }
+
+      
+      
+      
+      
+      bool equal;
+      if (!EqualStrings(cx, modeStr, cx->names().byob, &equal)) {
+        return false;
+      }
+      if (!equal) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_READABLESTREAM_INVALID_READER_MODE);
+        return false;
+      }
+
+      mode = Some(ReadableStreamReaderMode::Byob);
+    }
+  }
+
+  
+  
   Rooted<JSObject*> reader(cx);
-  if (modeVal.isUndefined()) {
+  if (mode.isNothing()) {
     reader = CreateReadableStreamDefaultReader(cx, unwrappedStream,
                                                ForAuthorCodeBool::Yes);
   } else {
     
-    Rooted<JSString*> mode(cx, ToString<CanGC>(cx, modeVal));
-    if (!mode) {
-      return false;
-    }
+    MOZ_ASSERT(mode.value() == ReadableStreamReaderMode::Byob);
 
-    
-    bool equal;
-    if (!EqualStrings(cx, mode, cx->names().byob, &equal)) {
-      return false;
-    }
-    if (!equal) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_READABLESTREAM_INVALID_READER_MODE);
-      return false;
-    }
-
-    
     
     reader = CreateReadableStreamBYOBReader(cx, unwrappedStream,
                                             ForAuthorCodeBool::Yes);
   }
 
-  
   if (!reader) {
     return false;
   }
+
   args.rval().setObject(*reader);
   return true;
 }
