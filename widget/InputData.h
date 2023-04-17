@@ -231,7 +231,7 @@ class MultiTouchInput : public InputData {
 
   void Translate(const ScreenPoint& aTranslation);
 
-  WidgetTouchEvent ToWidgetTouchEvent(nsIWidget* aWidget) const;
+  WidgetTouchEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   
   
