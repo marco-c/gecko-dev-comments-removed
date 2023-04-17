@@ -980,10 +980,6 @@ nscoord nsBulletFrame::GetListStyleAscent() const {
   if (list->mCounterStyle.IsAnonymous()) {
     return fm->MaxAscent();
   }
-  
-  
-  
-  
   nsAtom* style = list->mCounterStyle.AsAtom();
   if (style == nsGkAtoms::disc || style == nsGkAtoms::circle ||
       style == nsGkAtoms::square) {
