@@ -788,7 +788,8 @@ static bool CheckOverRecursedImpl(JSContext* cx, size_t extra) {
     return false;
   }
 #else
-  if (!CheckRecursionLimitWithExtra(cx, extra)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkWithExtra(cx, extra)) {
     return false;
   }
 #endif
