@@ -310,7 +310,10 @@ CommonDialog.prototype = {
 
     if (!this.hasInputField) {
       let isOSX = "nsILocalFileMac" in Ci;
-      if (isOSX) {
+      
+      
+      
+      if (isOSX && !(this.ui.infoRow && this.ui.infoRow.hidden)) {
         this.ui.infoBody.focus();
       } else {
         button.focus({ preventFocusRing: true });

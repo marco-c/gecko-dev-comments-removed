@@ -1,24 +1,20 @@
 const URL =
   "https://example.com/browser/dom/tests/browser/prevent_return_key.html";
 
+const { PromptTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromptTestUtils.jsm"
+);
 
-function awaitAndCloseAlertDialog() {
-  return new Promise(resolve => {
-    function onDialogShown(node) {
-      Services.obs.removeObserver(onDialogShown, "tabmodal-dialog-loaded");
-      let button = node.querySelector(".tabmodalprompt-button0");
-      button.click();
-      resolve();
-    }
-    Services.obs.addObserver(onDialogShown, "tabmodal-dialog-loaded");
-  });
+
+function awaitAndCloseAlertDialog(browser) {
+  return PromptTestUtils.handleNextPrompt(
+    browser,
+    { modalType: Services.prompt.MODAL_TYPE_CONTENT, promptType: "alert" },
+    { buttonNumClick: 0 }
+  );
 }
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["prompts.contentPromptSubDialog", false]],
-  });
-
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
 
@@ -30,7 +26,7 @@ add_task(async function() {
   });
 
   
-  let dialogShown = awaitAndCloseAlertDialog();
+  let dialogShown = awaitAndCloseAlertDialog(browser);
   EventUtils.synthesizeKey("KEY_Enter");
   await dialogShown;
 
