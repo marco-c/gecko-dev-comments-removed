@@ -188,6 +188,15 @@ class DevToolsFrameChild extends JSWindowActorChild {
           return;
         }
 
+        
+        
+        
+        
+        
+        if (existingTarget) {
+          existingTarget.destroy();
+        }
+
         this._createTargetActor({
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
