@@ -943,8 +943,8 @@ int32_t mozInlineSpellWordUtil::MapDOMPositionToSoftTextOffset(
     return -1;
   }
 
-  for (int32_t i = 0; i < int32_t(mSoftText.mDOMMapping.Length()); ++i) {
-    const DOMTextMapping& map = mSoftText.mDOMMapping[i];
+  for (int32_t i = 0; i < int32_t(mSoftText.GetDOMMapping().Length()); ++i) {
+    const DOMTextMapping& map = mSoftText.GetDOMMapping()[i];
     if (map.mNodeOffset.mNode == aNodeOffset.mNode) {
       
       
@@ -1005,8 +1005,8 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
 
   
   size_t index;
-  bool found =
-      FindLastNongreaterOffset(mSoftText.mDOMMapping, aSoftTextOffset, &index);
+  bool found = FindLastNongreaterOffset(mSoftText.GetDOMMapping(),
+                                        aSoftTextOffset, &index);
   if (!found) {
     return NodeOffset(nullptr, -1);
   }
@@ -1016,7 +1016,7 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
   
   
   if (aHint == HINT_END && index > 0) {
-    const DOMTextMapping& map = mSoftText.mDOMMapping[index - 1];
+    const DOMTextMapping& map = mSoftText.GetDOMMapping()[index - 1];
     if (map.mSoftTextOffset + map.mLength == aSoftTextOffset)
       return NodeOffset(map.mNodeOffset.mNode,
                         map.mNodeOffset.mOffset + map.mLength);
@@ -1025,7 +1025,7 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
   
   
   
-  const DOMTextMapping& map = mSoftText.mDOMMapping[index];
+  const DOMTextMapping& map = mSoftText.GetDOMMapping()[index];
   int32_t offset = aSoftTextOffset - map.mSoftTextOffset;
   if (offset >= 0 && offset <= map.mLength)
     return NodeOffset(map.mNodeOffset.mNode, map.mNodeOffset.mOffset + offset);
