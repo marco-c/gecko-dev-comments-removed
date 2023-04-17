@@ -978,6 +978,9 @@ pub struct Capabilities {
     
     pub requires_alpha_target_full_clear: bool,
     
+    
+    pub supports_render_target_invalidate: bool,
+    
     pub supports_r8_texture_upload: bool,
     
     
@@ -1718,6 +1721,12 @@ impl Device {
         
         
         
+        let is_powervr_rogue = renderer_name.starts_with("PowerVR Rogue");
+        let supports_render_target_invalidate = !is_powervr_rogue;
+
+        
+        
+        
         let supports_r8_texture_upload = if cfg!(target_os = "linux")
             && renderer_name.starts_with("AMD Radeon RX")
         {
@@ -1759,6 +1768,7 @@ impl Device {
                 requires_batched_texture_uploads,
                 supports_alpha_target_clears,
                 requires_alpha_target_full_clear,
+                supports_render_target_invalidate,
                 supports_r8_texture_upload,
                 uses_native_clip_mask,
                 uses_native_antialiasing,
@@ -2595,21 +2605,23 @@ impl Device {
     
     
     pub fn invalidate_render_target(&mut self, texture: &Texture) {
-        let (fbo, attachments) = if texture.supports_depth() {
-            (&texture.fbo_with_depth,
-             &[gl::COLOR_ATTACHMENT0, gl::DEPTH_ATTACHMENT] as &[gl::GLenum])
-        } else {
-            (&texture.fbo, &[gl::COLOR_ATTACHMENT0] as &[gl::GLenum])
-        };
+        if self.capabilities.supports_render_target_invalidate {
+            let (fbo, attachments) = if texture.supports_depth() {
+                (&texture.fbo_with_depth,
+                 &[gl::COLOR_ATTACHMENT0, gl::DEPTH_ATTACHMENT] as &[gl::GLenum])
+            } else {
+                (&texture.fbo, &[gl::COLOR_ATTACHMENT0] as &[gl::GLenum])
+            };
 
-        if let Some(fbo_id) = fbo {
-            let original_bound_fbo = self.bound_draw_fbo;
-            
-            
-            
-            self.bind_external_draw_target(*fbo_id);
-            self.gl.invalidate_framebuffer(gl::FRAMEBUFFER, attachments);
-            self.bind_external_draw_target(original_bound_fbo);
+            if let Some(fbo_id) = fbo {
+                let original_bound_fbo = self.bound_draw_fbo;
+                
+                
+                
+                self.bind_external_draw_target(*fbo_id);
+                self.gl.invalidate_framebuffer(gl::FRAMEBUFFER, attachments);
+                self.bind_external_draw_target(original_bound_fbo);
+            }
         }
     }
 
