@@ -288,6 +288,23 @@ class StoragePrincipalHelper final {
   static bool GetOriginAttributes(
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
       OriginAttributes& aAttributes);
+
+  
+
+
+
+  static bool GetBaseDomainFromPartitionKey(const nsAString& aPartitionKey,
+                                            nsAString& aBaseDomain);
+
+  
+
+
+
+
+  static bool HasMatchingBaseDomain(nsIURI* aURI,
+                                    const nsAString& aPartitionKey);
+  static bool HasMatchingBaseDomain(const nsAString& aOrigin,
+                                    const nsAString& aPartitionKey);
 };
 
 }  
