@@ -976,8 +976,9 @@ Shape* NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj,
 
   
   
-  if (shape->matchesParamsAfterId(obj->lastProperty()->base(), objectFlags,
-                                  slot, attrs, nullptr, nullptr)) {
+  
+  if (shape->matchesPropertyParamsAfterId(slot, attrs, nullptr, nullptr) &&
+      obj->lastProperty()->objectFlags() == objectFlags) {
     return shape;
   }
 
@@ -1085,8 +1086,9 @@ Shape* NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj,
 
   
   
-  if (shape->matchesParamsAfterId(obj->lastProperty()->base(), objectFlags,
-                                  SHAPE_INVALID_SLOT, attrs, getter, setter)) {
+  if (shape->matchesPropertyParamsAfterId(SHAPE_INVALID_SLOT, attrs, getter,
+                                          setter) &&
+      obj->lastProperty()->objectFlags() == objectFlags) {
     return shape;
   }
 
