@@ -439,9 +439,16 @@ bool wasm::StreamingCompilationAvailable(JSContext* cx) {
 bool wasm::CodeCachingAvailable(JSContext* cx) {
   
   
+#ifdef FUZZING_JS_FUZZILLI
+  return false;
+#else
+
+  
+  
   
   
   return StreamingCompilationAvailable(cx) && IonAvailable(cx);
+#endif
 }
 
 
