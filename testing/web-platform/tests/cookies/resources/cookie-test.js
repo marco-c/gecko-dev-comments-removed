@@ -130,18 +130,10 @@ function domCookieTest(cookie, expectedValue, name) {
 
 
 
-
-
 function getCtlCharacters() {
-  const termCtlCodes = [0x00 , 0x0A , 0x0D ];
   const ctlCodes = [...Array(0x20).keys()]
-                       .filter(i => termCtlCodes.indexOf(i) === -1)
                        .concat([0x7F]);
-  return {
-    TERMINATING_CTLS:
-        termCtlCodes.map(i => ({code: i, chr: String.fromCharCode(i)})),
-    CTLS: ctlCodes.map(i => ({code: i, chr: String.fromCharCode(i)}))
-  };
+  return ctlCodes.map(i => ({ code: i, chr: String.fromCharCode(i) }))
 }
 
 
