@@ -18,6 +18,7 @@ use neqo_common::{hex_with_len, qdebug, qtrace, Datagram, Encoder};
 use neqo_crypto::AuthenticationStatus;
 use neqo_transport::{server::ValidateAddress, ConnectionError, Error, State, StreamType};
 use std::convert::TryFrom;
+use std::mem;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
 use test_fixture::{self, addr, assertions, default_client, now, split_datagram};
@@ -39,7 +40,7 @@ fn retry_basic() {
     assert!(dgram.is_some());
     let dgram = server.process(dgram, now()).dgram(); 
     assert!(dgram.is_some());
-    let _ = client.process(dgram, now()).dgram(); 
+    mem::drop(client.process(dgram, now()).dgram()); 
     client.authenticated(AuthenticationStatus::Ok, now());
     let dgram = client.process(None, now()).dgram(); 
     assert!(dgram.is_some());

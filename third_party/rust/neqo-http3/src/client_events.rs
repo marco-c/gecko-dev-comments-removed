@@ -65,6 +65,10 @@ pub enum Http3ClientEvent {
     
     AuthenticationNeeded,
     
+    
+    
+    EchFallbackAuthenticationNeeded { public_name: String },
+    
     ResumptionToken(ResumptionToken),
     
     ZeroRttRejected,
@@ -163,6 +167,11 @@ impl Http3ClientEvents {
     
     pub(crate) fn authentication_needed(&self) {
         self.insert(Http3ClientEvent::AuthenticationNeeded);
+    }
+
+    
+    pub(crate) fn ech_fallback_authentication_needed(&self, public_name: String) {
+        self.insert(Http3ClientEvent::EchFallbackAuthenticationNeeded { public_name });
     }
 
     

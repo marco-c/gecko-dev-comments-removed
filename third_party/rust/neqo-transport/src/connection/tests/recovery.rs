@@ -20,6 +20,7 @@ use crate::StreamType;
 
 use neqo_common::qdebug;
 use neqo_crypto::AuthenticationStatus;
+use std::mem;
 use std::time::{Duration, Instant};
 use test_fixture::{self, now, split_datagram};
 
@@ -333,7 +334,7 @@ fn pto_handshake_frames() {
     let pkt = client.process(pkt.dgram(), now);
 
     now += Duration::from_millis(10);
-    let _ = server.process(pkt.dgram(), now);
+    mem::drop(server.process(pkt.dgram(), now));
 
     now += Duration::from_millis(10);
     client.authenticated(AuthenticationStatus::Ok, now);
@@ -429,7 +430,7 @@ fn loss_recovery_crash() {
     let now = now();
 
     
-    let _ = send_something(&mut server, now);
+    mem::drop(send_something(&mut server, now));
 
     
     let ack = send_and_receive(&mut server, &mut client, now);
@@ -445,7 +446,7 @@ fn loss_recovery_crash() {
     assert!(dgram.is_some());
 
     
-    let _ = send_something(&mut server, now + AT_LEAST_PTO);
+    mem::drop(send_something(&mut server, now + AT_LEAST_PTO));
 }
 
 
@@ -460,7 +461,7 @@ fn ack_after_pto() {
     let mut now = now();
 
     
-    let _ = send_something(&mut client, now);
+    mem::drop(send_something(&mut client, now));
 
     
     now += AT_LEAST_PTO;
@@ -475,7 +476,7 @@ fn ack_after_pto() {
     
     
     
-    let _ = send_something(&mut server, now);
+    mem::drop(send_something(&mut server, now));
     let dgram = send_something(&mut server, now);
 
     

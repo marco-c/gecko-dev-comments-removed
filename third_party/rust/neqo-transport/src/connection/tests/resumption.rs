@@ -11,6 +11,7 @@ use super::{
 use crate::addr_valid::{AddressValidation, ValidateAddress};
 
 use std::cell::RefCell;
+use std::mem;
 use std::rc::Rc;
 use std::time::Duration;
 use test_fixture::{self, assertions, now};
@@ -127,19 +128,19 @@ fn two_tickets_on_timer() {
     
     
     let mut now = now() + 3 * client.pto();
-    let _ = client.process(None, now);
+    mem::drop(client.process(None, now));
     let mut recv_tokens = get_tokens(&mut client);
     assert_eq!(recv_tokens.len(), 1);
     let token1 = recv_tokens.pop().unwrap();
     
     now += 3 * client.pto();
-    let _ = client.process(None, now);
+    mem::drop(client.process(None, now));
     let mut recv_tokens = get_tokens(&mut client);
     assert_eq!(recv_tokens.len(), 1);
     let token2 = recv_tokens.pop().unwrap();
     
     now += 3 * client.pto();
-    let _ = client.process(None, now);
+    mem::drop(client.process(None, now));
     assert_eq!(get_tokens(&mut client).len(), 0);
     assert_ne!(token1.as_ref(), token2.as_ref());
 

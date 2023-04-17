@@ -34,18 +34,10 @@ pub fn connection_tparams_set(qlog: &mut NeqoQlog, tph: &TransportParametersHand
             None,
             None,
             None,
-            if let Some(ocid) = remote.get_bytes(tparams::ORIGINAL_DESTINATION_CONNECTION_ID) {
-                
-                
-                Some(hex(ocid))
-            } else {
-                None
-            },
-            if let Some(srt) = remote.get_bytes(tparams::STATELESS_RESET_TOKEN) {
-                Some(hex(srt))
-            } else {
-                None
-            },
+            remote
+                .get_bytes(tparams::ORIGINAL_DESTINATION_CONNECTION_ID)
+                .map(hex),
+            remote.get_bytes(tparams::STATELESS_RESET_TOKEN).map(hex),
             if remote.get_empty(tparams::DISABLE_MIGRATION) {
                 Some(true)
             } else {

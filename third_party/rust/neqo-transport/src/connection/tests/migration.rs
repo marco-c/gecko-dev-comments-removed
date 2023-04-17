@@ -7,13 +7,19 @@
 use super::super::{Connection, Output, State, StreamType};
 use super::{
     connect_fail, connect_force_idle, connect_rtt_idle, default_client, default_server,
-    maybe_authenticate, new_client, new_server, send_something,
+    maybe_authenticate, new_client, new_server, send_something, CountingConnectionIdGenerator,
 };
+use crate::cid::LOCAL_ACTIVE_CID_LIMIT;
+use crate::frame::FRAME_TYPE_NEW_CONNECTION_ID;
+use crate::packet::PacketBuilder;
 use crate::path::{PATH_MTU_V4, PATH_MTU_V6};
 use crate::tparams::{self, PreferredAddress, TransportParameter};
-use crate::{ConnectionError, ConnectionParameters, EmptyConnectionIdGenerator, Error};
+use crate::{
+    ConnectionError, ConnectionId, ConnectionIdDecoder, ConnectionIdGenerator, ConnectionIdRef,
+    ConnectionParameters, EmptyConnectionIdGenerator, Error,
+};
 
-use neqo_common::Datagram;
+use neqo_common::{Datagram, Decoder};
 use std::cell::RefCell;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 use std::rc::Rc;
@@ -344,6 +350,14 @@ fn migrate_same_fail() {
     ));
 }
 
+
+
+fn get_cid(d: &Datagram) -> ConnectionIdRef {
+    let gen = CountingConnectionIdGenerator::default();
+    assert_eq!(d[0] & 0x80, 0); 
+    gen.decode_cid(&mut Decoder::from(&d[1..])).unwrap()
+}
+
 fn migration(mut client: Connection) {
     let mut server = default_server();
     connect_force_idle(&mut client, &mut server);
@@ -356,6 +370,7 @@ fn migration(mut client: Connection) {
     let probe = client.process_output(now).dgram().unwrap();
     assert_v4_path(&probe, true); 
     assert_eq!(client.stats().frame_tx.path_challenge, 1);
+    let probe_cid = ConnectionId::from(&get_cid(&probe));
 
     let resp = server.process(Some(probe), now).dgram().unwrap();
     assert_v4_path(&resp, true);
@@ -364,6 +379,7 @@ fn migration(mut client: Connection) {
 
     
     let client_data = send_something(&mut client, now);
+    assert_ne!(get_cid(&client_data), probe_cid);
     assert_v6_path(&client_data, false);
     server.process_input(client_data, now);
     let server_data = send_something(&mut server, now);
@@ -754,4 +770,172 @@ fn migration_invalid_address() {
             .unwrap_err(),
         Error::InvalidMigration
     );
+}
+
+
+
+struct RetireAll {
+    cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>>,
+}
+
+impl crate::connection::test_internal::FrameWriter for RetireAll {
+    fn write_frames(&mut self, builder: &mut PacketBuilder) {
+        
+        
+        
+        
+        const SEQNO: u64 = 100;
+        let cid = self.cid_gen.borrow_mut().generate_cid().unwrap();
+        builder
+            .encode_varint(FRAME_TYPE_NEW_CONNECTION_ID)
+            .encode_varint(SEQNO)
+            .encode_varint(SEQNO) 
+            .encode_vec(1, &cid)
+            .encode(&[0x7f; 16]);
+    }
+}
+
+
+
+#[test]
+fn retire_all() {
+    let mut client = default_client();
+    let cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>> =
+        Rc::new(RefCell::new(CountingConnectionIdGenerator::default()));
+    let mut server = Connection::new_server(
+        test_fixture::DEFAULT_KEYS,
+        test_fixture::DEFAULT_ALPN,
+        Rc::clone(&cid_gen),
+        ConnectionParameters::default(),
+    )
+    .unwrap();
+    connect_force_idle(&mut client, &mut server);
+
+    let original_cid = ConnectionId::from(&get_cid(&send_something(&mut client, now())));
+
+    server.test_frame_writer = Some(Box::new(RetireAll { cid_gen }));
+    let ncid = send_something(&mut server, now());
+    server.test_frame_writer = None;
+
+    let new_cid_before = client.stats().frame_rx.new_connection_id;
+    let retire_cid_before = client.stats().frame_tx.retire_connection_id;
+    client.process_input(ncid, now());
+    let retire = send_something(&mut client, now());
+    assert_eq!(
+        client.stats().frame_rx.new_connection_id,
+        new_cid_before + 1
+    );
+    assert_eq!(
+        client.stats().frame_tx.retire_connection_id,
+        retire_cid_before + LOCAL_ACTIVE_CID_LIMIT
+    );
+
+    assert_ne!(get_cid(&retire), original_cid);
+}
+
+
+
+#[test]
+fn retire_prior_to_migration_failure() {
+    let mut client = default_client();
+    let cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>> =
+        Rc::new(RefCell::new(CountingConnectionIdGenerator::default()));
+    let mut server = Connection::new_server(
+        test_fixture::DEFAULT_KEYS,
+        test_fixture::DEFAULT_ALPN,
+        Rc::clone(&cid_gen),
+        ConnectionParameters::default(),
+    )
+    .unwrap();
+    connect_force_idle(&mut client, &mut server);
+
+    let original_cid = ConnectionId::from(&get_cid(&send_something(&mut client, now())));
+
+    client
+        .migrate(Some(addr_v4()), Some(addr_v4()), false, now())
+        .unwrap();
+
+    
+    let probe = client.process_output(now()).dgram().unwrap();
+    assert_v4_path(&probe, true);
+    assert_eq!(client.stats().frame_tx.path_challenge, 1);
+    let probe_cid = ConnectionId::from(&get_cid(&probe));
+    assert_ne!(original_cid, probe_cid);
+
+    
+    
+    server.test_frame_writer = Some(Box::new(RetireAll { cid_gen }));
+    let retire_all = send_something(&mut server, now());
+    server.test_frame_writer = None;
+
+    let resp = server.process(Some(probe), now()).dgram().unwrap();
+    assert_v4_path(&resp, true);
+    assert_eq!(server.stats().frame_tx.path_response, 1);
+    assert_eq!(server.stats().frame_tx.path_challenge, 1);
+
+    
+    client.process_input(retire_all, now());
+    
+    
+    
+    client.process_input(resp, now());
+    assert!(matches!(
+        client.state(),
+        State::Closing {
+            error: ConnectionError::Transport(Error::InvalidMigration),
+            ..
+        }
+    ));
+}
+
+
+
+#[test]
+fn retire_prior_to_migration_success() {
+    let mut client = default_client();
+    let cid_gen: Rc<RefCell<dyn ConnectionIdGenerator>> =
+        Rc::new(RefCell::new(CountingConnectionIdGenerator::default()));
+    let mut server = Connection::new_server(
+        test_fixture::DEFAULT_KEYS,
+        test_fixture::DEFAULT_ALPN,
+        Rc::clone(&cid_gen),
+        ConnectionParameters::default(),
+    )
+    .unwrap();
+    connect_force_idle(&mut client, &mut server);
+
+    let original_cid = ConnectionId::from(&get_cid(&send_something(&mut client, now())));
+
+    client
+        .migrate(Some(addr_v4()), Some(addr_v4()), false, now())
+        .unwrap();
+
+    
+    let probe = client.process_output(now()).dgram().unwrap();
+    assert_v4_path(&probe, true);
+    assert_eq!(client.stats().frame_tx.path_challenge, 1);
+    let probe_cid = ConnectionId::from(&get_cid(&probe));
+    assert_ne!(original_cid, probe_cid);
+
+    
+    
+    server.test_frame_writer = Some(Box::new(RetireAll { cid_gen }));
+    let retire_all = send_something(&mut server, now());
+    server.test_frame_writer = None;
+
+    let resp = server.process(Some(probe), now()).dgram().unwrap();
+    assert_v4_path(&resp, true);
+    assert_eq!(server.stats().frame_tx.path_response, 1);
+    assert_eq!(server.stats().frame_tx.path_challenge, 1);
+
+    
+    
+    client.process_input(resp, now());
+    client.process_input(retire_all, now());
+
+    
+    let dgram = send_something(&mut client, now());
+    assert_v4_path(&dgram, false);
+    assert_ne!(get_cid(&dgram), original_cid);
+    assert_ne!(get_cid(&dgram), probe_cid);
 }

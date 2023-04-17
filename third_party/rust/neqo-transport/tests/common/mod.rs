@@ -22,6 +22,7 @@ use test_fixture::{self, default_client, now, CountingConnectionIdGenerator};
 
 use std::cell::RefCell;
 use std::convert::TryFrom;
+use std::mem;
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -207,7 +208,7 @@ pub fn get_ticket(server: &mut Server) -> ResumptionToken {
     
     client.close(now(), 0, "got a ticket");
     let dgram = client.process_output(now()).dgram();
-    let _ = server.process(dgram, now());
+    mem::drop(server.process(dgram, now()));
     
     assert_eq!(server.active_connections().len(), 1);
     ticket

@@ -13,12 +13,19 @@ use crate::err::{secstatus_to_res, Error, Res};
 
 use neqo_common::hex_with_len;
 
-use std::convert::TryInto;
+use std::convert::TryFrom;
 use std::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
+use std::os::raw::{c_int, c_uint};
+use std::ptr::null_mut;
 
-#[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
-#[allow(clippy::unreadable_literal, clippy::upper_case_acronyms)]
+#[allow(
+    unknown_lints,
+    renamed_and_removed_lints,
+    clippy::unknown_clippy_lints,
+    clippy::upper_case_acronyms
+)] 
+#[allow(unknown_lints, deref_nullptr)] 
+#[allow(clippy::unreadable_literal)]
 mod nss_p11 {
     include!(concat!(env!("OUT_DIR"), "/nss_p11.rs"));
 }
@@ -32,9 +39,16 @@ macro_rules! scoped_ptr {
         }
 
         impl $scoped {
-            #[must_use]
-            pub fn new(ptr: NonNull<$target>) -> Self {
-                Self { ptr: ptr.as_ptr() }
+            /// Create a new instance of `$scoped` from a pointer.
+            ///
+            /// # Errors
+            /// When passed a null pointer generates an error.
+            pub fn from_ptr(ptr: *mut $target) -> Result<Self, crate::err::Error> {
+                if ptr.is_null() {
+                    Err(crate::err::Error::last_nss_error())
+                } else {
+                    Ok(Self { ptr })
+                }
             }
         }
 
@@ -53,8 +67,9 @@ macro_rules! scoped_ptr {
         }
 
         impl Drop for $scoped {
+            #[allow(unused_must_use)]
             fn drop(&mut self) {
-                let _ = unsafe { $dtor(self.ptr) };
+                unsafe { $dtor(self.ptr) };
             }
         }
     };
@@ -62,9 +77,112 @@ macro_rules! scoped_ptr {
 
 scoped_ptr!(Certificate, CERTCertificate, CERT_DestroyCertificate);
 scoped_ptr!(CertList, CERTCertList, CERT_DestroyCertList);
+scoped_ptr!(PublicKey, SECKEYPublicKey, SECKEY_DestroyPublicKey);
+
+impl PublicKey {
+    
+    
+    
+    
+    
+    
+    pub fn key_data(&self) -> Res<Vec<u8>> {
+        let mut buf = vec![0; 100];
+        let mut len: c_uint = 0;
+        secstatus_to_res(unsafe {
+            PK11_HPKE_Serialize(
+                **self,
+                buf.as_mut_ptr(),
+                &mut len,
+                c_uint::try_from(buf.len()).unwrap(),
+            )
+        })?;
+        buf.truncate(usize::try_from(len).unwrap());
+        Ok(buf)
+    }
+}
+
+impl Clone for PublicKey {
+    #[must_use]
+    fn clone(&self) -> Self {
+        let ptr = unsafe { SECKEY_CopyPublicKey(self.ptr) };
+        assert!(!ptr.is_null());
+        Self { ptr }
+    }
+}
+
+impl std::fmt::Debug for PublicKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if let Ok(b) = self.key_data() {
+            write!(f, "PublicKey {}", hex_with_len(b))
+        } else {
+            write!(f, "Opaque PublicKey")
+        }
+    }
+}
+
 scoped_ptr!(PrivateKey, SECKEYPrivateKey, SECKEY_DestroyPrivateKey);
-scoped_ptr!(SymKey, PK11SymKey, PK11_FreeSymKey);
+
+impl PrivateKey {
+    
+    
+    
+    
+    
+    
+    
+    pub fn key_data(&self) -> Res<Vec<u8>> {
+        let mut key_item = Item::make_empty();
+        secstatus_to_res(unsafe {
+            PK11_ReadRawAttribute(
+                PK11ObjectType::PK11_TypePrivKey,
+                (**self).cast(),
+                CK_ATTRIBUTE_TYPE::from(CKA_VALUE),
+                &mut key_item,
+            )
+        })?;
+        let slc = unsafe {
+            std::slice::from_raw_parts(key_item.data, usize::try_from(key_item.len).unwrap())
+        };
+        let key = Vec::from(slc);
+        
+        
+        
+        unsafe { SECITEM_FreeItem(&mut key_item, PRBool::from(false)) };
+        Ok(key)
+    }
+}
+unsafe impl Send for PrivateKey {}
+
+impl Clone for PrivateKey {
+    #[must_use]
+    fn clone(&self) -> Self {
+        let ptr = unsafe { SECKEY_CopyPrivateKey(self.ptr) };
+        assert!(!ptr.is_null());
+        Self { ptr }
+    }
+}
+
+impl std::fmt::Debug for PrivateKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if let Ok(b) = self.key_data() {
+            write!(f, "PrivateKey {}", hex_with_len(b))
+        } else {
+            write!(f, "Opaque PrivateKey")
+        }
+    }
+}
+
 scoped_ptr!(Slot, PK11SlotInfo, PK11_FreeSlot);
+
+impl Slot {
+    pub fn internal() -> Res<Self> {
+        let p = unsafe { PK11_GetInternalSlot() };
+        Slot::from_ptr(p)
+    }
+}
+
+scoped_ptr!(SymKey, PK11SymKey, PK11_FreeSymKey);
 
 impl SymKey {
     
@@ -102,6 +220,46 @@ impl std::fmt::Debug for SymKey {
     }
 }
 
+unsafe fn destroy_secitem(item: *mut SECItem) {
+    SECITEM_FreeItem(item, PRBool::from(true));
+}
+scoped_ptr!(Item, SECItem, destroy_secitem);
+
+impl Item {
+    
+    
+    
+    pub fn wrap(buf: &[u8]) -> SECItem {
+        SECItem {
+            type_: SECItemType::siBuffer,
+            data: buf.as_ptr() as *mut u8,
+            len: c_uint::try_from(buf.len()).unwrap(),
+        }
+    }
+
+    
+    pub fn make_empty() -> SECItem {
+        SECItem {
+            type_: SECItemType::siBuffer,
+            data: null_mut(),
+            len: 0,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn into_vec(self) -> Vec<u8> {
+        let b = self.ptr.as_ref().unwrap();
+        
+        assert_eq!(b.type_, SECItemType::siBuffer);
+        let slc = std::slice::from_raw_parts(b.data, usize::try_from(b.len).unwrap());
+        Vec::from(slc)
+    }
+}
+
 
 
 
@@ -109,7 +267,7 @@ impl std::fmt::Debug for SymKey {
 pub fn random(size: usize) -> Vec<u8> {
     let mut buf = vec![0; size];
     secstatus_to_res(unsafe {
-        PK11_GenerateRandom(buf.as_mut_ptr(), buf.len().try_into().unwrap())
+        PK11_GenerateRandom(buf.as_mut_ptr(), c_int::try_from(buf.len()).unwrap())
     })
     .unwrap();
     buf

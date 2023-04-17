@@ -4,19 +4,24 @@
 
 
 
-use crate::err::{Error, Res};
+use crate::err::Res;
 use crate::ssl::PRFileDesc;
 use crate::time::{Interval, PRTime, Time};
 
 use std::convert::{TryFrom, TryInto};
 use std::ops::{Deref, DerefMut};
 use std::os::raw::c_uint;
-use std::ptr::{null_mut, NonNull};
+use std::ptr::null_mut;
 use std::time::{Duration, Instant};
 
 
-#[allow(clippy::empty_enum, clippy::upper_case_acronyms)]
-#[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
+#[allow(
+    unknown_lints,
+    renamed_and_removed_lints,
+    clippy::unknown_clippy_lints,
+    clippy::upper_case_acronyms
+)] 
+#[allow(clippy::empty_enum)]
 pub enum SSLAntiReplayContext {}
 
 experimental_api!(SSL_CreateAntiReplayContext(
@@ -66,12 +71,9 @@ impl AntiReplay {
             )
         }?;
 
-        match NonNull::new(ctx) {
-            Some(ctx_nn) => Ok(Self {
-                ctx: AntiReplayContext::new(ctx_nn),
-            }),
-            None => Err(Error::InternalError),
-        }
+        Ok(Self {
+            ctx: AntiReplayContext::from_ptr(ctx)?,
+        })
     }
 
     

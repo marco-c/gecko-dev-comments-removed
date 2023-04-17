@@ -384,7 +384,7 @@ fn low() {
     
     let stats_before = server.stats().frame_tx;
     server.send_ticket(now, &[0; 2048]).unwrap();
-    let _ = server.process_output(now);
+    mem::drop(server.process_output(now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto + 1);
     assert_eq!(stats_after.stream, stats_before.stream);
@@ -393,7 +393,7 @@ fn low() {
     
     
     let stats_before = server.stats().frame_tx;
-    let _ = server.process_output(now);
+    mem::drop(server.process_output(now));
     let stats_after = server.stats().frame_tx;
     assert_eq!(stats_after.crypto, stats_before.crypto + 1);
     assert_eq!(stats_after.new_token, 1);

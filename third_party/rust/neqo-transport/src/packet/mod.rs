@@ -373,6 +373,24 @@ impl PacketBuilder {
     }
 
     
+    
+    
+    pub fn write_varint_frame(&mut self, values: &[u64]) -> bool {
+        let write = self.remaining()
+            >= values
+                .iter()
+                .map(|&v| Encoder::varint_len(v))
+                .sum::<usize>();
+        if write {
+            for v in values {
+                self.encode_varint(*v);
+            }
+            debug_assert!(self.len() <= self.limit());
+        };
+        write
+    }
+
+    
     pub fn build(mut self, crypto: &mut CryptoDxState) -> Res<Encoder> {
         if self.len() > self.limit {
             qwarn!("Packet contents are more than the limit");

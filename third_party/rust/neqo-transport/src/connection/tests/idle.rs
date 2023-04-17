@@ -16,6 +16,7 @@ use crate::tracking::PacketNumberSpace;
 use crate::StreamType;
 
 use neqo_common::Encoder;
+use std::mem;
 use std::time::Duration;
 use test_fixture::{self, now, split_datagram};
 
@@ -31,10 +32,10 @@ fn idle_timeout() {
     assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
 
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT - Duration::from_secs(1));
+    mem::drop(client.process(None, now + LOCAL_IDLE_TIMEOUT - Duration::from_secs(1)));
     assert!(matches!(client.state(), State::Confirmed));
 
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT);
+    mem::drop(client.process(None, now + LOCAL_IDLE_TIMEOUT));
 
     
     assert!(matches!(client.state(), State::Closed(_)));
@@ -172,10 +173,10 @@ fn idle_send_packet2() {
 
     
     now += GAP;
-    let _ = send_something(&mut client, now);
+    mem::drop(send_something(&mut client, now));
 
     
-    let _ = send_something(&mut client, now + GAP);
+    mem::drop(send_something(&mut client, now + GAP));
     assert!((GAP * 2 + DELTA) < LOCAL_IDLE_TIMEOUT);
 
     
@@ -213,16 +214,16 @@ fn idle_recv_packet() {
     let out = server.process_output(now + Duration::from_secs(10));
     assert_ne!(out.as_dgram_ref(), None);
 
-    let _ = client.process(out.dgram(), now + Duration::from_secs(20));
+    mem::drop(client.process(out.dgram(), now + Duration::from_secs(20)));
     assert!(matches!(client.state(), State::Confirmed));
 
     
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(19));
+    mem::drop(client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(19)));
     assert!(matches!(client.state(), State::Confirmed));
 
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(20));
+    mem::drop(client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(20)));
 
     assert!(matches!(client.state(), State::Closed(_)));
 }
@@ -247,11 +248,11 @@ fn idle_caching() {
     
     
     let middle = start + AT_LEAST_PTO;
-    let _ = client.process_output(middle);
+    mem::drop(client.process_output(middle));
     let dgram = client.process_output(middle).dgram();
 
     
-    let _ = server.process_output(middle).dgram();
+    mem::drop(server.process_output(middle).dgram());
     
     
     let ping_before_s = server.stats().frame_rx.ping;
@@ -297,7 +298,7 @@ fn idle_caching() {
     let dgram = server.process_output(end).dgram();
     let (initial, _) = split_datagram(&dgram.unwrap());
     neqo_common::qwarn!("client ingests initial, finally");
-    let _ = client.process(Some(initial), end);
+    mem::drop(client.process(Some(initial), end));
     maybe_authenticate(&mut client);
     let dgram = client.process_output(end).dgram();
     let dgram = server.process(dgram, end).dgram();

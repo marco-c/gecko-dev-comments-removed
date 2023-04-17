@@ -21,6 +21,11 @@ pub enum ConnectionEvent {
     
     AuthenticationNeeded,
     
+    
+    EchFallbackAuthenticationNeeded {
+        public_name: String,
+    },
+    
     NewStream {
         stream_id: StreamId,
     },
@@ -68,6 +73,10 @@ pub struct ConnectionEvents {
 impl ConnectionEvents {
     pub fn authentication_needed(&self) {
         self.insert(ConnectionEvent::AuthenticationNeeded);
+    }
+
+    pub fn ech_fallback_authentication_needed(&self, public_name: String) {
+        self.insert(ConnectionEvent::EchFallbackAuthenticationNeeded { public_name });
     }
 
     pub fn new_stream(&self, stream_id: StreamId) {
