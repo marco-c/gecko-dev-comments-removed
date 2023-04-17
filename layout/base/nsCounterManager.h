@@ -63,6 +63,7 @@ struct nsCounterNode : public nsGenConNode {
   
   
   
+  
   nsCounterNode(int32_t aContentIndex, Type aType)
       : nsGenConNode(aContentIndex), mType(aType) {}
 
@@ -83,10 +84,10 @@ struct nsCounterUseNode : public nsCounterNode {
   bool mForLegacyBullet = false;
 
   enum ForLegacyBullet { ForLegacyBullet };
-  explicit nsCounterUseNode(enum ForLegacyBullet)
-      : nsCounterNode(0, USE), mForLegacyBullet(true) {
-    mCounterStyle = nsGkAtoms::list_item;
-  }
+  nsCounterUseNode(enum ForLegacyBullet, mozilla::CounterStylePtr aCounterStyle)
+      : nsCounterNode(0, USE),
+        mCounterStyle(std::move(aCounterStyle)),
+        mForLegacyBullet(true) {}
 
   
   nsCounterUseNode(mozilla::CounterStylePtr aCounterStyle, nsString aSeparator,
@@ -98,10 +99,8 @@ struct nsCounterUseNode : public nsCounterNode {
     NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
   }
 
-  virtual bool InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
-                             nsIFrame* aTextFrame) override;
-
-  bool InitBullet(nsGenConList* aList, nsIFrame* aBulletFrame);
+  bool InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
+                     nsIFrame* aTextFrame) override;
 
   
   
@@ -110,6 +109,8 @@ struct nsCounterUseNode : public nsCounterNode {
 
   
   void GetText(nsString& aResult);
+  void GetText(mozilla::WritingMode aWM, mozilla::CounterStyle* aStyle,
+               nsString& aResult);
 };
 
 struct nsCounterChangeNode : public nsCounterNode {
@@ -170,6 +171,11 @@ inline bool nsCounterNode::IsContentBasedReset() {
 class nsCounterList : public nsGenConList {
  public:
   nsCounterList() : nsGenConList(), mDirty(false) {}
+
+  
+  nsCounterNode* GetFirstNodeFor(nsIFrame* aFrame) const {
+    return static_cast<nsCounterNode*>(nsGenConList::GetFirstNodeFor(aFrame));
+  }
 
   void Insert(nsCounterNode* aNode) {
     nsGenConList::Insert(aNode);
@@ -234,6 +240,11 @@ class nsCounterManager {
 
   
   void Clear() { mNames.Clear(); }
+
+#ifdef ACCESSIBILITY
+  
+  void GetSpokenCounterText(nsIFrame* aFrame, nsAString& aText) const;
+#endif
 
 #ifdef DEBUG
   void Dump();

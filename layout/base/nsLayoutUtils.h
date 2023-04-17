@@ -273,6 +273,14 @@ class nsLayoutUtils {
 
   static nsIFrame* GetMarkerFrame(const nsIContent* aContent);
 
+#ifdef ACCESSIBILITY
+  
+
+
+
+  static void GetMarkerSpokenText(const nsIContent* aContent, nsAString& aText);
+#endif
+
   
 
 

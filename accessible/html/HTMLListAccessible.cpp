@@ -10,11 +10,10 @@
 #include "DocAccessible.h"
 #include "EventTree.h"
 #include "nsAccUtils.h"
-#include "nsTextEquivUtils.h"
+#include "nsPersistentProperties.h"
 #include "Role.h"
 #include "States.h"
 
-#include "nsBulletFrame.h"
 #include "nsLayoutUtils.h"
 
 using namespace mozilla;
@@ -90,24 +89,7 @@ HTMLListBulletAccessible::HTMLListBulletAccessible(nsIContent* aContent,
 
 
 ENameValueFlag HTMLListBulletAccessible::Name(nsString& aName) const {
-  aName.Truncate();
-
-  
-  if (nsBulletFrame* frame = do_QueryFrame(GetFrame())) {
-    if (!frame->StyleList()->mListStyleImage.IsNone()) {
-      
-      const char16_t kDiscCharacter = 0x2022;
-      aName.Assign(kDiscCharacter);
-      aName.Append(' ');
-      return eNameOK;
-    }
-    frame->GetSpokenText(aName);
-  } else {
-    
-    nsTextEquivUtils::AppendFromDOMChildren(mContent, &aName);
-    aName.CompressWhitespace();
-  }
-
+  nsLayoutUtils::GetMarkerSpokenText(mContent, aName);
   return eNameOK;
 }
 

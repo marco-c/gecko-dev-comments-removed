@@ -14,6 +14,7 @@
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RestyleManager.h"
@@ -333,8 +334,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
+#ifdef ACCESSIBILITY
   
-  nsCounterManager* CounterManager() { return &mCounterManager; }
+  const nsCounterManager* CounterManager() const { return &mCounterManager; }
+#endif
 
  private:
   struct FrameConstructionItem;
@@ -459,6 +462,19 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   already_AddRefed<nsIContent> CreateGeneratedContent(
       nsFrameConstructorState& aState, const Element& aOriginatingElement,
       ComputedStyle& aComputedStyle, uint32_t aContentIndex);
+
+  
+
+
+  void CreateGeneratedContentFromListStyle(
+      nsFrameConstructorState& aState, const ComputedStyle& aPseudoStyle,
+      const mozilla::FunctionRef<void(nsIContent*)> aAddChild);
+  
+
+
+  void CreateGeneratedContentFromListStyleType(
+      nsFrameConstructorState& aState, const ComputedStyle& aPseudoStyle,
+      const mozilla::FunctionRef<void(nsIContent*)> aAddChild);
 
   
   void CreateGeneratedContentItem(nsFrameConstructorState& aState,
