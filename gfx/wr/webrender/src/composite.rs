@@ -494,8 +494,6 @@ pub struct CompositeState {
     
     pub compositor_kind: CompositorKind,
     
-    global_device_pixel_scale: DevicePixelScale,
-    
     pub occluders: Occluders,
     
     pub descriptor: CompositeDescriptor,
@@ -508,7 +506,6 @@ impl CompositeState {
     
     pub fn new(
         compositor_kind: CompositorKind,
-        global_device_pixel_scale: DevicePixelScale,
         max_depth_ids: i32,
         dirty_rects_are_valid: bool,
     ) -> Self {
@@ -517,7 +514,6 @@ impl CompositeState {
             z_generator: ZBufferIdGenerator::new(max_depth_ids),
             dirty_rects_are_valid,
             compositor_kind,
-            global_device_pixel_scale,
             occluders: Occluders::new(),
             descriptor: CompositeDescriptor::empty(),
             external_surfaces: Vec::new(),
@@ -532,9 +528,9 @@ impl CompositeState {
         z_id: ZBufferId,
         rect: WorldRect,
     ) {
-        let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
+        let world_rect = rect.round().to_i32();
 
-        self.occluders.push(device_rect, z_id);
+        self.occluders.push(world_rect, z_id);
     }
 
     
@@ -1160,7 +1156,7 @@ pub trait PartialPresentCompositor {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Occluder {
     z_id: ZBufferId,
-    device_rect: DeviceIntRect,
+    world_rect: WorldIntRect,
 }
 
 
@@ -1217,8 +1213,8 @@ impl Occluders {
         }
     }
 
-    fn push(&mut self, device_rect: DeviceIntRect, z_id: ZBufferId) {
-        self.occluders.push(Occluder { device_rect, z_id });
+    fn push(&mut self, world_rect: WorldIntRect, z_id: ZBufferId) {
+        self.occluders.push(Occluder { world_rect, z_id });
     }
 
     
@@ -1226,7 +1222,7 @@ impl Occluders {
     pub fn is_tile_occluded(
         &mut self,
         z_id: ZBufferId,
-        device_rect: DeviceRect,
+        world_rect: WorldRect,
     ) -> bool {
         
         
@@ -1241,11 +1237,11 @@ impl Occluders {
         
 
         
-        let device_rect = device_rect.round().to_i32();
-        let ref_area = device_rect.size.width * device_rect.size.height;
+        let world_rect = world_rect.round().to_i32();
+        let ref_area = world_rect.size.width * world_rect.size.height;
 
         
-        let cover_area = self.area(z_id, &device_rect);
+        let cover_area = self.area(z_id, &world_rect);
         debug_assert!(cover_area <= ref_area);
 
         
@@ -1257,7 +1253,7 @@ impl Occluders {
     fn area(
         &mut self,
         z_id: ZBufferId,
-        clip_rect: &DeviceIntRect,
+        clip_rect: &WorldIntRect,
     ) -> i32 {
         
         
@@ -1274,7 +1270,7 @@ impl Occluders {
             if occluder.z_id.0 < z_id.0 {
                 
                 
-                if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
+                if let Some(rect) = occluder.world_rect.intersection(clip_rect) {
                     let x0 = rect.origin.x;
                     let x1 = x0 + rect.size.width;
                     self.events.push(OcclusionEvent::new(rect.origin.y, OcclusionEventKind::Begin, x0, x1));
