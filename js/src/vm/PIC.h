@@ -203,8 +203,7 @@ struct ForOfPIC {
 
     
     inline bool isArrayNextStillSane() {
-      return (arrayIteratorProto_->lastProperty() ==
-              arrayIteratorProtoShape_) &&
+      return (arrayIteratorProto_->shape() == arrayIteratorProtoShape_) &&
              (arrayIteratorProto_->getSlot(arrayIteratorProtoNextSlot_) ==
               canonicalNextFunc_);
     }

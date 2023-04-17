@@ -612,7 +612,7 @@ static void GuardReceiverProto(CacheIRWriter& writer, NativeObject* obj,
 
 static void TestMatchingNativeReceiver(CacheIRWriter& writer, NativeObject* obj,
                                        ObjOperandId objId) {
-  writer.guardShapeForOwnProperties(objId, obj->lastProperty());
+  writer.guardShapeForOwnProperties(objId, obj->shape());
 }
 
 
@@ -734,7 +734,8 @@ static void GeneratePrototypeHoleGuards(CacheIRWriter& writer,
     
     
     
-    writer.guardShape(protoId, pobj->as<NativeObject>().lastProperty());
+    MOZ_ASSERT(pobj->is<NativeObject>());
+    writer.guardShape(protoId, pobj->shape());
 
     
     writer.guardNoDenseElements(protoId);
@@ -751,7 +752,7 @@ static void TestMatchingHolder(CacheIRWriter& writer, NativeObject* obj,
   
   
   
-  writer.guardShapeForOwnProperties(objId, obj->lastProperty());
+  writer.guardShapeForOwnProperties(objId, obj->shape());
 }
 
 
@@ -1586,8 +1587,7 @@ static void CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer,
     
     NativeObject& expandoObj = expandoVal.toObject().as<NativeObject>();
     MOZ_ASSERT(!expandoObj.containsPure(id));
-    writer.guardDOMExpandoMissingOrGuardShape(expandoId,
-                                              expandoObj.lastProperty());
+    writer.guardDOMExpandoMissingOrGuardShape(expandoId, expandoObj.shape());
   } else {
     MOZ_CRASH("Invalid expando value");
   }
@@ -2758,17 +2758,17 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
     }
 
     
-    writer.guardShape(objId, globalLexical->lastProperty());
+    writer.guardShape(objId, globalLexical->shape());
 
     
     ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
-    writer.guardShape(globalId, globalLexical->global().lastProperty());
+    writer.guardShape(globalId, globalLexical->global().shape());
 
     ObjOperandId holderId = globalId;
     if (holder != &globalLexical->global()) {
       
       holderId = writer.loadObject(holder);
-      writer.guardShape(holderId, holder->lastProperty());
+      writer.guardShape(holderId, holder->shape());
     }
 
     EmitLoadSlotResult(writer, holderId, holder, *prop);
@@ -2807,16 +2807,16 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   }
 
   
-  writer.guardShape(objId, globalLexical->lastProperty());
+  writer.guardShape(objId, globalLexical->shape());
 
   
   ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
-  writer.guardShape(globalId, global->lastProperty());
+  writer.guardShape(globalId, global->shape());
 
   if (holder != global) {
     
     ObjOperandId holderId = writer.loadObject(holder);
-    writer.guardShape(holderId, holder->lastProperty());
+    writer.guardShape(holderId, holder->shape());
     EmitGuardGetterSetterSlot(writer, holder, *prop, holderId,
                                true);
   } else {
@@ -2994,7 +2994,7 @@ AttachDecision BindNameIRGenerator::tryAttachGlobalName(ObjOperandId objId,
     
     Maybe<PropertyInfo> prop = result->as<GlobalObject>().lookup(cx_, id);
     if (prop.isNothing() || prop->configurable()) {
-      writer.guardShape(objId, globalLexical->lastProperty());
+      writer.guardShape(objId, globalLexical->shape());
     }
     ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
     writer.loadObjectResult(globalId);
@@ -4417,7 +4417,7 @@ AttachDecision SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
 
   ObjOperandId windowObjId =
       GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
-  writer.guardShape(windowObjId, windowObj->lastProperty());
+  writer.guardShape(windowObjId, windowObj->shape());
 
   EmitStoreSlotAndReturn(writer, windowObjId, windowObj, *prop, rhsId);
 
@@ -4547,7 +4547,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   NativeObject* holder = nobj;
 
   
-  Shape* newShape = holder->lastProperty();
+  Shape* newShape = holder->shape();
   MOZ_RELEASE_ASSERT(newShape->lastProperty() == propInfo);
 
 #ifdef DEBUG
@@ -4681,7 +4681,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   ValOperandId rhs(writer.setInputOperandId(1));
 
   ObjOperandId rhsId = writer.guardToObject(rhs);
-  writer.guardShape(rhsId, fun->lastProperty());
+  writer.guardShape(rhsId, fun->shape());
 
   
   
@@ -4961,19 +4961,20 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   ObjOperandId objId = writer.guardToObject(valId);
 
   
-  writer.guardShape(objId, obj->as<ArrayObject>().lastProperty());
+  MOZ_ASSERT(obj->is<ArrayObject>());
+  writer.guardShape(objId, obj->shape());
   writer.guardArrayIsPacked(objId);
 
   
   ObjOperandId arrProtoId = writer.loadObject(arrProto);
   ObjOperandId iterId = writer.loadObject(iterFun);
-  writer.guardShape(arrProtoId, arrProto->lastProperty());
+  writer.guardShape(arrProtoId, arrProto->shape());
   writer.guardDynamicSlotIsSpecificObject(arrProtoId, iterId, arrProtoIterSlot);
 
   
   ObjOperandId iterProtoId = writer.loadObject(arrayIteratorProto);
   ObjOperandId nextId = writer.loadObject(nextFun);
-  writer.guardShape(iterProtoId, arrayIteratorProto->lastProperty());
+  writer.guardShape(iterProtoId, arrayIteratorProto->shape());
   writer.guardDynamicSlotIsSpecificObject(iterProtoId, nextId, iterNextSlot);
 
   writer.loadBooleanResult(true);
@@ -8197,7 +8198,7 @@ AttachDecision CallIRGenerator::tryAttachArrayIteratorPrototypeOptimizable(
   ObjOperandId protoId = writer.loadObject(arrayIteratorProto);
   ObjOperandId nextId = writer.loadObject(nextFun);
 
-  writer.guardShape(protoId, arrayIteratorProto->lastProperty());
+  writer.guardShape(protoId, arrayIteratorProto->shape());
 
   
   writer.guardDynamicSlotIsSpecificObject(protoId, nextId, slot);
@@ -9175,7 +9176,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
       ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
           ArgumentKind::NewTarget, argcId, flags);
       ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
-      writer.guardShape(newTargetObjId, newTarget->lastProperty());
+      writer.guardShape(newTargetObjId, newTarget->shape());
       ObjOperandId protoId = writer.loadObject(prototypeObject);
       writer.guardDynamicSlotIsSpecificObject(newTargetObjId, protoId, slot);
 
@@ -9422,8 +9423,8 @@ JSObject* jit::NewWrapperWithObjectShape(JSContext* cx,
     if (!wrapper) {
       return nullptr;
     }
-    wrapper->as<NativeObject>().setSlot(
-        SHAPE_CONTAINER_SLOT, PrivateGCThingValue(obj->lastProperty()));
+    wrapper->as<NativeObject>().setSlot(SHAPE_CONTAINER_SLOT,
+                                        PrivateGCThingValue(obj->shape()));
   }
   if (!JS_WrapObject(cx, &wrapper)) {
     return nullptr;
@@ -11073,7 +11074,7 @@ AttachDecision NewArrayIRGenerator::tryAttachArrayObject() {
     return AttachDecision::NoAction;
   }
 
-  Shape* shape = arrayObj->lastProperty();
+  Shape* shape = arrayObj->shape();
   uint32_t length = arrayObj->length();
 
   writer.newArrayObjectResult(length, shape, site);
@@ -11143,7 +11144,7 @@ AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
   uint32_t numFixedSlots = nativeObj->numUsedFixedSlots();
   uint32_t numDynamicSlots = nativeObj->numDynamicSlots();
   gc::AllocKind allocKind = nativeObj->allocKindForTenure();
-  Shape* shape = nativeObj->lastProperty();
+  Shape* shape = nativeObj->shape();
 
   writer.guardNoAllocationMetadataBuilder(
       cx_->realm()->addressOfMetadataBuilder());
