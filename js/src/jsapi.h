@@ -96,11 +96,6 @@ using StringVector = JS::GCVector<JSString*>;
 
 
 
-
-
-
-using JSSourceElementCallback = JSObject* (*)(JSContext*, JS::HandleValue);
-
 using JSInterruptCallback = bool (*)(JSContext*);
 
 

@@ -11,7 +11,6 @@
 #include <stddef.h>  
 #include <stdio.h>   
 
-#include "jsapi.h"    
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
@@ -90,6 +89,11 @@ extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
 extern JS_PUBLIC_API bool JS_ExecuteScript(JSContext* cx,
                                            JS::HandleObjectVector envChain,
                                            JS::Handle<JSScript*> script);
+
+
+
+
+using JSSourceElementCallback = JSObject* (*)(JSContext*, JS::HandleValue);
 
 namespace JS {
 
