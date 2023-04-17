@@ -103,6 +103,10 @@ AccessibilityPanel.prototype = {
       EVENTS.ACCESSIBILITY_INSPECTOR_UPDATED,
       this.onAccessibilityInspectorUpdated
     );
+    
+    this._accessibilityViewInitialized = this.panelWin.once(EVENTS.INITIALIZED);
+
+    this.shouldRefresh = true;
 
     this.accessibilityProxy = new AccessibilityProxy(this._commands);
     this.accessibilityProxy.startListeningForTargetUpdated(
@@ -126,12 +130,6 @@ AccessibilityPanel.prototype = {
       init: this.onLifecycleEvent,
       shutdown: this.onLifecycleEvent,
     });
-
-    
-    const onInitialized = this.panelWin.once(EVENTS.INITIALIZED);
-    this.shouldRefresh = true;
-    this.refresh();
-    await onInitialized;
 
     resolver(this);
     return this._opening;
