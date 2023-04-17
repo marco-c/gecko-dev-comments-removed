@@ -401,6 +401,8 @@ class GCRuntime {
 
  public:
   
+  ZoneVector& zones() { return zones_.ref(); }
+  gcstats::Statistics& stats() { return stats_.ref(); }
   State state() const { return incrementalState; }
   bool isHeapCompacting() const { return state() == State::Compact; }
   bool isForegroundSweeping() const { return state() == State::Sweep; }
@@ -412,7 +414,6 @@ class GCRuntime {
   void waitForBackgroundTasks();
 
   void lockGC() { lock.lock(); }
-
   void unlockGC() { lock.unlock(); }
 
 #ifdef DEBUG
@@ -744,6 +745,27 @@ class GCRuntime {
   void maybeDoCycleCollection();
   void findDeadCompartments();
 
+  
+  
+  
+  
+  
+  
+  enum class GrayBufferState { Unused, Okay, Failed };
+
+  bool hasValidGrayRootsBuffer() const {
+    return grayBufferState == GrayBufferState::Okay;
+  }
+
+  
+  void resetBufferedGrayRoots();
+
+  
+  void clearBufferedGrayRoots() {
+    grayBufferState = GrayBufferState::Unused;
+    resetBufferedGrayRoots();
+  }
+
   friend class BackgroundMarkTask;
   IncrementalProgress markUntilBudgetExhausted(
       SliceBudget& sliceBudget,
@@ -872,19 +894,15 @@ class GCRuntime {
   JSRuntime* const rt;
 
   
-  UnprotectedData<JS::Zone*> systemZone;
-
-  
- private:
-  MainThreadOrGCTaskData<ZoneVector> zones_;
-
- public:
-  ZoneVector& zones() { return zones_.ref(); }
-
-  
   WriteOnceData<Zone*> atomsZone;
 
+  
+  MainThreadData<JS::Zone*> systemZone;
+
  private:
+  
+  MainThreadOrGCTaskData<ZoneVector> zones_;
+
   
   mozilla::Atomic<JS::HeapState, mozilla::SequentiallyConsistent> heapState_;
   friend class AutoHeapSession;
@@ -893,8 +911,6 @@ class GCRuntime {
   UnprotectedData<gcstats::Statistics> stats_;
 
  public:
-  gcstats::Statistics& stats() { return stats_.ref(); }
-
   js::StringStats stringStats;
 
   GCMarker marker;
@@ -960,26 +976,7 @@ class GCRuntime {
   
   MainThreadData<bool> cleanUpEverything;
 
-  
-  
-  
-  
-  
-  
-  enum class GrayBufferState { Unused, Okay, Failed };
   MainThreadOrGCTaskData<GrayBufferState> grayBufferState;
-  bool hasValidGrayRootsBuffer() const {
-    return grayBufferState == GrayBufferState::Okay;
-  }
-
-  
-  void resetBufferedGrayRoots();
-
-  
-  void clearBufferedGrayRoots() {
-    grayBufferState = GrayBufferState::Unused;
-    resetBufferedGrayRoots();
-  }
 
   
 
