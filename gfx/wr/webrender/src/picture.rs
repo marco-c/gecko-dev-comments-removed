@@ -4813,7 +4813,7 @@ impl PicturePrimitive {
                         
                         if let Some(TileSurface::Texture { descriptor, .. }) = tile.surface.as_ref() {
                             if let SurfaceTextureDescriptor::TextureCache { ref handle, .. } = descriptor {
-                                frame_state.resource_cache.texture_cache.request(
+                                frame_state.resource_cache.texture_cache.request_picture_tile(
                                     handle,
                                     frame_state.gpu_cache,
                                 );
@@ -4876,7 +4876,7 @@ impl PicturePrimitive {
                                         
                                         
                                         
-                                        frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
+                                        frame_state.resource_cache.texture_cache.request_picture_tile(handle, frame_state.gpu_cache);
                                     } else {
                                         
                                         
