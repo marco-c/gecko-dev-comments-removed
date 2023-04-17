@@ -640,9 +640,6 @@ bool ArgumentsObject::reifyIterator(JSContext* cx,
 static bool ResolveArgumentsProperty(JSContext* cx,
                                      Handle<ArgumentsObject*> obj, HandleId id,
                                      PropertyFlags flags, bool* resolvedp) {
-  
-  
-
   MOZ_ASSERT(id.isInt() || id.isAtom(cx->names().length) ||
              id.isAtom(cx->names().callee));
   MOZ_ASSERT(flags.isCustomDataProperty());

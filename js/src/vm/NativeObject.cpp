@@ -1083,49 +1083,6 @@ static bool WouldDefinePastNonwritableLength(ArrayObject* arr, uint32_t index) {
   return !arr->lengthIsWritable() && index >= arr->length();
 }
 
-static bool ReshapeForShadowedPropSlow(JSContext* cx, HandleNativeObject obj,
-                                       HandleId id) {
-  MOZ_ASSERT(obj->isUsedAsPrototype());
-
-  
-  if (JSID_IS_INT(id)) {
-    return true;
-  }
-
-  RootedObject proto(cx, obj->staticPrototype());
-  while (proto) {
-    
-    if (!proto->is<NativeObject>()) {
-      break;
-    }
-
-    if (proto->as<NativeObject>().contains(cx, id)) {
-      return JSObject::setInvalidatedTeleporting(cx, proto);
-    }
-
-    proto = proto->staticPrototype();
-  }
-
-  return true;
-}
-
-static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
-                                                     HandleObject obj,
-                                                     HandleId id) {
-  
-  
-  
-  
-  
-
-  
-  if (!obj->isUsedAsPrototype() || !obj->is<NativeObject>()) {
-    return true;
-  }
-
-  return ReshapeForShadowedPropSlow(cx, obj.as<NativeObject>(), id);
-}
-
 static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                            HandleObject getter, HandleObject setter,
                            PropertyFlags flags, PropertyResult* existing) {
@@ -1204,10 +1161,6 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
     MOZ_ASSERT(existing->isNativeProperty() || existing->isDenseElement());
   }
 #endif
-
-  if (!ReshapeForShadowedProp(cx, obj, id)) {
-    return false;
-  }
 
   
   
@@ -1305,10 +1258,6 @@ static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
                                               HandleNativeObject obj,
                                               HandleId id, HandleValue v) {
   MOZ_ASSERT(!JSID_IS_INT(id));
-
-  if (!ReshapeForShadowedProp(cx, obj, id)) {
-    return false;
-  }
 
   uint32_t slot;
   if (!NativeObject::addProperty(cx, obj, id,
@@ -2357,12 +2306,6 @@ bool js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
   }
 
   
-  
-  if (!ReshapeForShadowedProp(cx, receiver, id)) {
-    return false;
-  }
-
-  
   Rooted<PropertyDescriptor> desc(cx);
   if (existing) {
     desc = PropertyDescriptor::Empty();
@@ -2427,12 +2370,6 @@ static bool SetNonexistentProperty(JSContext* cx, HandleNativeObject obj,
 
     
     if (DefinePropertyOp op = obj->getOpsDefineProperty()) {
-      
-      
-      if (!ReshapeForShadowedProp(cx, obj, id)) {
-        return false;
-      }
-
       MOZ_ASSERT(!cx->isHelperThreadContext());
 
       Rooted<PropertyDescriptor> desc(
