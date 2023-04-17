@@ -1,7 +1,6 @@
 
 
 
-const { Promise } = ChromeUtils.import("resource://gre/modules/Promise.jsm");
 const { PermissionTestUtils } = ChromeUtils.import(
   "resource://testing-common/PermissionTestUtils.jsm"
 );
@@ -93,54 +92,6 @@ function promiseLoadSubDialog(aURL) {
       }
     );
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForEvent(aSubject, aEventName, aTimeoutMs, aTarget) {
-  let eventDeferred = Promise.defer();
-  let timeoutMs = aTimeoutMs || kDefaultWait;
-  let stack = new Error().stack;
-  let timerID = setTimeout(function wfe_canceller() {
-    aSubject.removeEventListener(aEventName, listener);
-    eventDeferred.reject(new Error(aEventName + " event timeout at " + stack));
-  }, timeoutMs);
-
-  var listener = function(aEvent) {
-    if (aTarget && aTarget !== aEvent.target) {
-      return;
-    }
-
-    
-    clearTimeout(timerID);
-    eventDeferred.resolve(aEvent);
-  };
-
-  function cleanup(aEventOrError) {
-    
-    aSubject.removeEventListener(aEventName, listener);
-    return aEventOrError;
-  }
-  aSubject.addEventListener(aEventName, listener);
-  return eventDeferred.promise.then(cleanup, cleanup);
 }
 
 async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
