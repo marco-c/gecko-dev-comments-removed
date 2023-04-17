@@ -24,7 +24,7 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/net/DNS.h"
+#include "prnetdb.h"
 
 namespace etld_dafsa {
 
@@ -314,7 +314,9 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(
   }
 
   
-  if (mozilla::net::HostIsIPLiteral(aHostname)) {
+  PRNetAddr addr;
+  PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
+  if (result == PR_SUCCESS) {
     
     if (entry) {
       entry->Set(TLDCacheEntry{aHostname, ""_ns, NS_ERROR_HOST_IS_IP_ADDRESS});

@@ -13,6 +13,7 @@
 #include "prnetdb.h"
 #include "plstr.h"
 #include "nsISupportsImpl.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsTArray.h"
 
@@ -138,12 +139,6 @@ union NetAddr {
 
   NetAddr() { memset(this, 0, sizeof(NetAddr)); }
   explicit NetAddr(const PRNetAddr* prAddr);
-
-  
-  
-  
-  
-  nsresult InitFromString(const nsACString& aString, uint16_t aPort = 0);
 
   bool IsIPAddrAny() const;
   bool IsLoopbackAddr() const;
@@ -286,8 +281,6 @@ void PRNetAddrToNetAddr(const PRNetAddr* prAddr, NetAddr* addr);
 void NetAddrToPRNetAddr(const NetAddr* addr, PRNetAddr* prAddr);
 
 bool IsLoopbackHostname(const nsACString& aAsciiHost);
-
-bool HostIsIPLiteral(const nsACString& aAsciiHost);
 
 }  
 }  

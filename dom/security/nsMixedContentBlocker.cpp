@@ -233,11 +233,16 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
     return true;
   }
 
-  using namespace mozilla::net;
-  NetAddr addr;
-  if (NS_FAILED(addr.InitFromString(aAsciiHost))) {
+  PRNetAddr tempAddr;
+  memset(&tempAddr, 0, sizeof(PRNetAddr));
+
+  if (PR_StringToNetAddr(PromiseFlatCString(aAsciiHost).get(), &tempAddr) !=
+      PR_SUCCESS) {
     return false;
   }
+
+  using namespace mozilla::net;
+  NetAddr addr(&tempAddr);
 
   
   

@@ -743,10 +743,16 @@ nsresult nsIOService::RecheckCaptivePortalIfLocalRedirect(nsIChannel* newChan) {
     return rv;
   }
 
-  NetAddr addr;
-  
-  
-  if (NS_SUCCEEDED(addr.InitFromString(host)) && addr.IsIPAddrLocal()) {
+  PRNetAddr prAddr;
+  if (PR_StringToNetAddr(host.BeginReading(), &prAddr) != PR_SUCCESS) {
+    
+    
+    return NS_OK;
+  }
+
+  NetAddr netAddr(&prAddr);
+  if (netAddr.IsIPAddrLocal()) {
+    
     RecheckCaptivePortal();
   }
 
@@ -941,9 +947,13 @@ nsIOService::HostnameIsLocalIPAddress(nsIURI* aURI, bool* aResult) {
 
   *aResult = false;
 
-  NetAddr addr;
-  if (NS_SUCCEEDED(addr.InitFromString(host)) && addr.IsIPAddrLocal()) {
-    *aResult = true;
+  PRNetAddr addr;
+  PRStatus result = PR_StringToNetAddr(host.get(), &addr);
+  if (result == PR_SUCCESS) {
+    NetAddr netAddr(&addr);
+    if (netAddr.IsIPAddrLocal()) {
+      *aResult = true;
+    }
   }
 
   return NS_OK;
@@ -964,9 +974,13 @@ nsIOService::HostnameIsSharedIPAddress(nsIURI* aURI, bool* aResult) {
 
   *aResult = false;
 
-  NetAddr addr;
-  if (NS_SUCCEEDED(addr.InitFromString(host)) && addr.IsIPAddrShared()) {
-    *aResult = true;
+  PRNetAddr addr;
+  PRStatus result = PR_StringToNetAddr(host.get(), &addr);
+  if (result == PR_SUCCESS) {
+    NetAddr netAddr(&addr);
+    if (netAddr.IsIPAddrShared()) {
+      *aResult = true;
+    }
   }
 
   return NS_OK;

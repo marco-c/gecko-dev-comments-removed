@@ -900,12 +900,13 @@ bool nsDNSService::DNSForbiddenByActiveProxy(const nsACString& aHostname,
   }
 
   
-  NetAddr tempAddr;
+  PRNetAddr tempAddr;
   if (StaticPrefs::network_proxy_type() ==
           nsIProtocolProxyService::PROXYCONFIG_MANUAL &&
       mHasSocksProxy && StaticPrefs::network_proxy_socks_remote_dns()) {
     
-    if (!HostIsIPLiteral(aHostname)) {
+    if (PR_StringToNetAddr(nsCString(aHostname).get(), &tempAddr) !=
+        PR_SUCCESS) {
       return true;
     }
   }

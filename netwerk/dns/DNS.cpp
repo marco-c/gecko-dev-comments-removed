@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=4 sw=2 sts=2 et cin: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/net/DNS.h"
 
@@ -51,8 +51,8 @@ const char* inet_ntop_internal(int af, const void* src, char* dst,
 #endif
 }
 
-// Copies the contents of a PRNetAddr to a NetAddr.
-// Does not do a ptr safety check!
+
+
 void PRNetAddrToNetAddr(const PRNetAddr* prAddr, NetAddr* addr) {
   if (prAddr->raw.family == PR_AF_INET) {
     addr->inet.family = AF_INET;
@@ -73,8 +73,8 @@ void PRNetAddrToNetAddr(const PRNetAddr* prAddr, NetAddr* addr) {
 #endif
 }
 
-// Copies the contents of a NetAddr to a PRNetAddr.
-// Does not do a ptr safety check!
+
+
 void NetAddrToPRNetAddr(const NetAddr* addr, PRNetAddr* prAddr) {
   if (addr->raw.family == AF_INET) {
     prAddr->inet.family = PR_AF_INET;
@@ -121,19 +121,19 @@ bool NetAddr::ToStringBuffer(char* buf, uint32_t bufSize) const {
 #if defined(XP_UNIX)
   if (addr->raw.family == AF_LOCAL) {
     if (bufSize < sizeof(addr->local.path)) {
-      // Many callers don't bother checking our return value, so
-      // null-terminate just in case.
+      
+      
       if (bufSize > 0) {
         buf[0] = '\0';
       }
       return false;
     }
 
-    // Usually, the size passed to memcpy should be the size of the
-    // destination. Here, we know that the source is no larger than the
-    // destination, so using the source's size is always safe, whereas
-    // using the destination's size may cause us to read off the end of the
-    // source.
+    
+    
+    
+    
+    
     memcpy(buf, addr->local.path, sizeof(addr->local.path));
     return true;
   }
@@ -157,7 +157,7 @@ bool NetAddr::IsLoopbackAddr() const {
 bool NetAddr::IsLoopBackAddressWithoutIPv6Mapping() const {
   const NetAddr* addr = this;
   if (addr->raw.family == AF_INET) {
-    // Consider 127.0.0.1/8 as loopback
+    
     uint32_t ipv4Addr = ntohl(addr->inet.ip);
     return (ipv4Addr >> 24) == 127;
   }
@@ -166,8 +166,8 @@ bool NetAddr::IsLoopBackAddressWithoutIPv6Mapping() const {
 }
 
 bool IsLoopbackHostname(const nsACString& aAsciiHost) {
-  // If the user has configured to proxy localhost addresses don't consider them
-  // to be secure
+  
+  
   if (StaticPrefs::network_proxy_allow_hijacking_localhost()) {
     return false;
   }
@@ -177,11 +177,6 @@ bool IsLoopbackHostname(const nsACString& aAsciiHost) {
 
   return host.EqualsLiteral("localhost") ||
          StringEndsWith(host, ".localhost"_ns);
-}
-
-bool HostIsIPLiteral(const nsACString& aAsciiHost) {
-  NetAddr addr;
-  return NS_SUCCEEDED(addr.InitFromString(aAsciiHost));
 }
 
 bool NetAddr::IsIPAddrAny() const {
@@ -203,25 +198,6 @@ bool NetAddr::IsIPAddrAny() const {
 
 NetAddr::NetAddr(const PRNetAddr* prAddr) { PRNetAddrToNetAddr(prAddr, this); }
 
-nsresult NetAddr::InitFromString(const nsACString& aString, uint16_t aPort) {
-  const nsPromiseFlatCString& flat = PromiseFlatCString(aString);
-  PRNetAddr prAddr{};
-  if (PR_StringToNetAddr(flat.get(), &prAddr) != PR_SUCCESS) {
-    return NS_ERROR_FAILURE;
-  }
-
-  PRNetAddrToNetAddr(&prAddr, this);
-
-  if (aPort) {
-    if (this->raw.family == PR_AF_INET) {
-      this->inet.port = PR_htons(aPort);
-    } else if (this->raw.family == PR_AF_INET6) {
-      this->inet6.port = PR_htons(aPort);
-    }
-  }
-  return NS_OK;
-}
-
 bool NetAddr::IsIPAddrV4() const { return this->raw.family == AF_INET; }
 
 bool NetAddr::IsIPAddrV4Mapped() const {
@@ -233,25 +209,25 @@ bool NetAddr::IsIPAddrV4Mapped() const {
 
 static bool isLocalIPv4(uint32_t networkEndianIP) {
   uint32_t addr32 = ntohl(networkEndianIP);
-  return addr32 >> 24 == 0x0A ||    // 10/8 prefix (RFC 1918).
-         addr32 >> 20 == 0xAC1 ||   // 172.16/12 prefix (RFC 1918).
-         addr32 >> 16 == 0xC0A8 ||  // 192.168/16 prefix (RFC 1918).
-         addr32 >> 16 == 0xA9FE;    // 169.254/16 prefix (Link Local).
+  return addr32 >> 24 == 0x0A ||    
+         addr32 >> 20 == 0xAC1 ||   
+         addr32 >> 16 == 0xC0A8 ||  
+         addr32 >> 16 == 0xA9FE;    
 }
 
 bool NetAddr::IsIPAddrLocal() const {
   const NetAddr* addr = this;
 
-  // IPv4 RFC1918 and Link Local Addresses.
+  
   if (addr->raw.family == AF_INET) {
     return isLocalIPv4(addr->inet.ip);
   }
-  // IPv6 Unique and Link Local Addresses.
-  // or mapped IPv4 addresses
+  
+  
   if (addr->raw.family == AF_INET6) {
     uint16_t addr16 = ntohs(addr->inet6.ip.u16[0]);
-    if (addr16 >> 9 == 0xfc >> 1 ||    // fc00::/7 Unique Local Address.
-        addr16 >> 6 == 0xfe80 >> 6) {  // fe80::/10 Link Local Address.
+    if (addr16 >> 9 == 0xfc >> 1 ||    
+        addr16 >> 6 == 0xfe80 >> 6) {  
       return true;
     }
     if (IPv6ADDR_IS_V4MAPPED(&addr->inet6.ip)) {
@@ -259,22 +235,22 @@ bool NetAddr::IsIPAddrLocal() const {
     }
   }
 
-  // Not an IPv4/6 local address.
+  
   return false;
 }
 
 bool NetAddr::IsIPAddrShared() const {
   const NetAddr* addr = this;
 
-  // IPv4 RFC6598.
+  
   if (addr->raw.family == AF_INET) {
     uint32_t addr32 = ntohl(addr->inet.ip);
-    if (addr32 >> 22 == 0x644 >> 2) {  // 100.64/10 prefix (RFC 6598).
+    if (addr32 >> 22 == 0x644 >> 2) {  
       return true;
     }
   }
 
-  // Not an IPv4 shared address.
+  
   return false;
 }
 
@@ -346,7 +322,7 @@ AddrInfo::AddrInfo(const nsACString& host, const PRAddrInfo* prAddrInfo,
     : mHostName(host), mCanonicalName(cname) {
   MOZ_ASSERT(prAddrInfo,
              "Cannot construct AddrInfo with a null prAddrInfo pointer!");
-  const uint32_t nameCollisionAddr = htonl(0x7f003535);  // 127.0.53.53
+  const uint32_t nameCollisionAddr = htonl(0x7f003535);  
 
   PRNetAddr tmpAddr;
   void* iter = nullptr;
@@ -381,7 +357,7 @@ AddrInfo::AddrInfo(const nsACString& host, DNSResolverType aResolverType,
       mTRRType(aTRRType),
       mAddresses(std::move(addresses)) {}
 
-// deep copy constructor
+
 AddrInfo::AddrInfo(const AddrInfo* src) {
   mHostName = src->mHostName;
   mCanonicalName = src->mCanonicalName;
@@ -404,5 +380,5 @@ size_t AddrInfo::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
   return n;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
