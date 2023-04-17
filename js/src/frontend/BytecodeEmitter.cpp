@@ -9981,6 +9981,15 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
       
       return false;
     }
+    if (!emitCheckPrivateField(ThrowCondition::ThrowHas,
+                               ThrowMsgKind::PrivateBrandDoubleInit)) {
+      
+      return false;
+    }
+    if (!emit1(JSOp::Pop)) {
+      
+      return false;
+    }
     if (!emitBuiltinObject(BuiltinObjectKind::FunctionPrototype)) {
       
       return false;
