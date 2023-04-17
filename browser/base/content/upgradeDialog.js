@@ -191,6 +191,14 @@ function onLoad(ready) {
         }
 
         
+        [...themes.children].forEach(input => {
+          new Image().src = getComputedStyle(
+            input,
+            "::before"
+          ).backgroundImage.match(/resource:[^"]+/)?.[0];
+        });
+
+        
         subtitle.remove();
         items.remove();
         themes.classList.remove("hidden");
