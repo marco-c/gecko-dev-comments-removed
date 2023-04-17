@@ -11034,7 +11034,6 @@ AttachDecision NewArrayIRGenerator::tryAttachArrayObject() {
 
   MOZ_ASSERT(arrayObj->numUsedFixedSlots() == 0);
   MOZ_ASSERT(arrayObj->numDynamicSlots() == 0);
-  MOZ_ASSERT(!arrayObj->hasPrivate());
   MOZ_ASSERT(!arrayObj->isSharedMemory());
 
   
@@ -11113,7 +11112,6 @@ AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
     return AttachDecision::NoAction;
   }
 
-  MOZ_ASSERT(!nativeObj->hasPrivate());
   MOZ_ASSERT(!nativeObj->hasDynamicElements());
   MOZ_ASSERT(!nativeObj->isSharedMemory());
 

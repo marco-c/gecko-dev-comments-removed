@@ -491,7 +491,6 @@ static constexpr const js::ObjectOps* JS_NULL_OBJECT_OPS = nullptr;
 
 
 
-static const uint32_t JSCLASS_HAS_PRIVATE = 1 << 0;
 
 
 static const uint32_t JSCLASS_DELAY_METADATA_BUILDER = 1 << 1;
@@ -684,8 +683,6 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   
   bool isNativeObject() const { return !(flags & NON_NATIVE); }
   bool isProxyObject() const { return flags & JSCLASS_IS_PROXY; }
-
-  bool hasPrivate() const { return !!(flags & JSCLASS_HAS_PRIVATE); }
 
   bool emulatesUndefined() const { return flags & JSCLASS_EMULATES_UNDEFINED; }
 

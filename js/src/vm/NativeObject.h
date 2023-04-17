@@ -960,8 +960,7 @@ class NativeObject : public JSObject {
   [[nodiscard]] static bool fillInAfterSwap(JSContext* cx,
                                             HandleNativeObject obj,
                                             NativeObject* old,
-                                            HandleValueVector values,
-                                            void* priv);
+                                            HandleValueVector values);
 
  public:
   
@@ -1469,61 +1468,6 @@ class NativeObject : public JSObject {
   inline void privatePreWriteBarrier(HeapSlot* pprivate);
 
   
-
- private:
-  HeapSlot& privateRef(uint32_t nfixed) const {
-    
-
-
-
-
-    MOZ_ASSERT(isNumFixedSlots(nfixed));
-    MOZ_ASSERT(hasPrivate());
-    return fixedSlots()[nfixed];
-  }
-
- public:
-  bool hasPrivate() const { return getClass()->hasPrivate(); }
-
-  void* getPrivate() const { return getPrivate(numFixedSlots()); }
-  void* getPrivate(uint32_t nfixed) const {
-    return privateRef(nfixed).toPrivate();
-  }
-
-  void initPrivate(void* data) {
-    uint32_t nfixed = numFixedSlots();
-    privateRef(nfixed).unbarrieredSet(PrivateValue(data));
-  }
-
-  void setPrivate(void* data) { setPrivate(numFixedSlots(), data); }
-  void setPrivate(uint32_t nfixed, void* data) {
-    HeapSlot* pprivate = &privateRef(nfixed);
-    privatePreWriteBarrier(pprivate);
-    setPrivateUnbarriered(nfixed, data);
-  }
-
-  void setPrivateGCThing(gc::Cell* cell) {
-#ifdef DEBUG
-    if (IsMarkedBlack(this)) {
-      JS::AssertCellIsNotGray(cell);
-    }
-#endif
-    uint32_t nfixed = numFixedSlots();
-    HeapSlot* pprivate = &privateRef(nfixed);
-    Cell* prev = static_cast<gc::Cell*>(pprivate->toPrivate());
-    privatePreWriteBarrier(pprivate);
-    setPrivateUnbarriered(nfixed, cell);
-    gc::PostWriteBarrierCell(this, prev, cell);
-  }
-
-  void setPrivateUnbarriered(void* data) {
-    setPrivateUnbarriered(numFixedSlots(), data);
-  }
-  void setPrivateUnbarriered(uint32_t nfixed, void* data) {
-    privateRef(nfixed).unbarrieredSet(PrivateValue(data));
-  }
-
-  
   
   
   
@@ -1745,22 +1689,6 @@ template <typename T>
 inline void InitReservedSlot(NativeObject* obj, uint32_t slot, T* ptr,
                              MemoryUse use) {
   InitReservedSlot(obj, slot, ptr, sizeof(T), use);
-}
-
-
-
-
-
-
-
-inline void InitObjectPrivate(NativeObject* obj, void* ptr, size_t nbytes,
-                              MemoryUse use) {
-  AddCellMemory(obj, nbytes, use);
-  obj->initPrivate(ptr);
-}
-template <typename T>
-inline void InitObjectPrivate(NativeObject* obj, T* ptr, MemoryUse use) {
-  InitObjectPrivate(obj, ptr, sizeof(T), use);
 }
 
 }  

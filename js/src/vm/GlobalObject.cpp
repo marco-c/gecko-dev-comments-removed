@@ -639,12 +639,6 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
   Rooted<GlobalObject*> global(cx, &obj->as<GlobalObject>());
   MOZ_ASSERT(global->isUnqualifiedVarObj());
 
-  
-  
-  if (clasp->flags & JSCLASS_HAS_PRIVATE) {
-    global->setPrivate(nullptr);
-  }
-
   Rooted<GlobalLexicalEnvironmentObject*> lexical(
       cx, GlobalLexicalEnvironmentObject::create(cx, global));
   if (!lexical) {

@@ -16,7 +16,7 @@
 
 #include "jstypes.h"  
 
-#include "js/Class.h"  
+#include "js/Class.h"       
 #include "js/Realm.h"       
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
@@ -57,17 +57,6 @@ inline const JSClass* GetClass(const JSObject* obj) {
 static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
   Realm* realm = reinterpret_cast<shadow::Object*>(obj)->shape->base->realm;
   return GetCompartmentForRealm(realm);
-}
-
-
-
-
-
-
-inline void* GetPrivate(JSObject* obj) {
-  MOZ_ASSERT(GetClass(obj)->flags & JSCLASS_HAS_PRIVATE);
-  const auto* nobj = reinterpret_cast<const shadow::Object*>(obj);
-  return nobj->fixedSlots()[nobj->numFixedSlots()].toPrivate();
 }
 
 
