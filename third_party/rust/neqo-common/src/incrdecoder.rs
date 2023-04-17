@@ -21,6 +21,9 @@ impl IncrementalDecoderUint {
         self.remaining.unwrap_or(1)
     }
 
+    
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn consume(&mut self, dv: &mut Decoder) -> Option<u64> {
         if let Some(r) = &mut self.remaining {
             let amount = min(*r, dv.remaining());
@@ -84,6 +87,9 @@ impl IncrementalDecoderBuffer {
         self.remaining
     }
 
+    
+    
+    
     pub fn consume(&mut self, dv: &mut Decoder) -> Option<Vec<u8>> {
         let amount = min(self.remaining, dv.remaining());
         let b = dv.decode(amount).unwrap();

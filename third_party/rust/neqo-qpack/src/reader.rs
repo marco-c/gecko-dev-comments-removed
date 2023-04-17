@@ -158,6 +158,8 @@ pub struct IntReader {
 impl IntReader {
     
     
+    
+    
     #[must_use]
     pub fn new(first_byte: u8, prefix_len: u8) -> Self {
         debug_assert!(prefix_len < 8, "prefix cannot larger than 7.");
@@ -175,6 +177,8 @@ impl IntReader {
         }
     }
 
+    
+    
     #[must_use]
     pub fn make(first_byte: u8, prefixes: &[Prefix]) -> Self {
         for prefix in prefixes {
@@ -245,6 +249,8 @@ impl LiteralReader {
     
     
     
+    
+    
     #[must_use]
     pub fn new_with_first_byte(first_byte: u8, prefix_len: u8) -> Self {
         assert!(prefix_len < 8);
@@ -257,6 +263,8 @@ impl LiteralReader {
         }
     }
 
+    
+    
     
     
     

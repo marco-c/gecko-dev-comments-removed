@@ -8,7 +8,7 @@ use crate::decoder_instructions::{DecoderInstruction, DecoderInstructionReader};
 use crate::encoder_instructions::EncoderInstruction;
 use crate::header_block::HeaderEncoder;
 use crate::qlog;
-use crate::qpack_send_buf::QPData;
+use crate::qpack_send_buf::QpackData;
 use crate::reader::ReceiverConnWrapper;
 use crate::stats::Stats;
 use crate::table::{HeaderTable, LookupResult, ADDITIONAL_TABLE_ENTRY_SIZE};
@@ -155,7 +155,12 @@ impl QPackEncoder {
         }
     }
 
-    #[allow(clippy::map_err_ignore, clippy::unknown_clippy_lints)]
+    #[allow(
+        clippy::map_err_ignore,
+        unknown_lints,
+        renamed_and_removed_lints,
+        clippy::unknown_clippy_lints
+    )]
     fn insert_count_instruction(&mut self, increment: u64) -> Res<()> {
         self.table
             .increment_acked(increment)
@@ -241,6 +246,8 @@ impl QPackEncoder {
     
     
     
+    
+    
     pub fn send_and_insert(
         &mut self,
         conn: &mut Connection,
@@ -255,7 +262,7 @@ impl QPackEncoder {
             return Err(Error::DynamicTableFull);
         }
 
-        let mut buf = QPData::default();
+        let mut buf = QpackData::default();
         EncoderInstruction::InsertWithNameLiteral {
             name: &name,
             value: &value,
@@ -297,7 +304,7 @@ impl QPackEncoder {
             if cap < self.table.capacity() && !self.table.can_evict_to(cap) {
                 return Err(Error::DynamicTableFull);
             }
-            let mut buf = QPData::default();
+            let mut buf = QpackData::default();
             EncoderInstruction::Capacity { value: cap }.marshal(&mut buf, self.use_huffman);
             if !conn.stream_send_atomic(stream_id.as_u64(), &buf)? {
                 return Err(Error::EncoderStreamBlocked);
@@ -325,7 +332,7 @@ impl QPackEncoder {
                 Ok(())
             }
             LocalStreamState::Uninitialized(stream_id) => {
-                let mut buf = QPData::default();
+                let mut buf = QpackData::default();
                 buf.encode_varint(QPACK_UNI_STREAM_TYPE_ENCODER);
                 if !conn.stream_send_atomic(stream_id.as_u64(), &buf[..])? {
                     return Err(Error::EncoderStreamBlocked);
@@ -351,6 +358,8 @@ impl QPackEncoder {
         }
     }
 
+    
+    
     
     
     
@@ -459,6 +468,8 @@ impl QPackEncoder {
         Ok(encoded_h)
     }
 
+    
+    
     
     pub fn add_send_stream(&mut self, stream_id: u64) {
         if self.local_stream == LocalStreamState::NoStream {

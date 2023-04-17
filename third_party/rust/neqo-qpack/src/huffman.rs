@@ -67,6 +67,8 @@ impl<'a> BitReader<'a> {
 
 
 
+
+
 pub fn decode_huffman(input: &[u8]) -> Res<Vec<u8>> {
     let mut reader = BitReader::new(input);
     let mut output = Vec::new();
@@ -105,6 +107,8 @@ fn decode_character(reader: &mut BitReader) -> Res<Option<u16>> {
     debug_assert!(node.value.is_some());
     Ok(node.value)
 }
+
+
 
 #[must_use]
 pub fn encode_huffman(input: &[u8]) -> Vec<u8> {

@@ -66,13 +66,13 @@ impl PacketType {
     }
 }
 
-impl Into<CryptoSpace> for PacketType {
-    fn into(self) -> CryptoSpace {
-        match self {
-            Self::Initial => CryptoSpace::Initial,
-            Self::ZeroRtt => CryptoSpace::ZeroRtt,
-            Self::Handshake => CryptoSpace::Handshake,
-            Self::Short => CryptoSpace::ApplicationData,
+impl From<PacketType> for CryptoSpace {
+    fn from(v: PacketType) -> Self {
+        match v {
+            PacketType::Initial => Self::Initial,
+            PacketType::ZeroRtt => Self::ZeroRtt,
+            PacketType::Handshake => Self::Handshake,
+            PacketType::Short => Self::ApplicationData,
             _ => panic!("shouldn't be here"),
         }
     }
@@ -183,7 +183,7 @@ impl PacketBuilder {
     
     
     
-    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
     #[allow(clippy::reversed_empty_ranges)]
     pub fn short(mut encoder: Encoder, key_phase: bool, dcid: impl AsRef<[u8]>) -> Self {
         let mut limit = Self::infer_limit(&encoder);
@@ -216,7 +216,8 @@ impl PacketBuilder {
     
     
     
-    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)]
+    
     #[allow(clippy::reversed_empty_ranges)] 
     pub fn long(
         mut encoder: Encoder,
@@ -492,9 +493,9 @@ impl DerefMut for PacketBuilder {
     }
 }
 
-impl Into<Encoder> for PacketBuilder {
-    fn into(self) -> Encoder {
-        self.encoder
+impl From<PacketBuilder> for Encoder {
+    fn from(v: PacketBuilder) -> Self {
+        v.encoder
     }
 }
 
@@ -863,7 +864,7 @@ impl Deref for DecryptedPacket {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(feature = "fuzzing")))]
 mod tests {
     use super::*;
     use crate::crypto::{CryptoDxState, CryptoStates};

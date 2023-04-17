@@ -17,7 +17,8 @@ use std::convert::TryInto;
 use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 
-#[allow(clippy::unreadable_literal)]
+#[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
+#[allow(clippy::unreadable_literal, clippy::upper_case_acronyms)]
 mod nss_p11 {
     include!(concat!(env!("OUT_DIR"), "/nss_p11.rs"));
 }
@@ -100,6 +101,8 @@ impl std::fmt::Debug for SymKey {
         }
     }
 }
+
+
 
 
 #[must_use]

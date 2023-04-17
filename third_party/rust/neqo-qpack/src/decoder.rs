@@ -7,14 +7,14 @@
 use crate::decoder_instructions::DecoderInstruction;
 use crate::encoder_instructions::{DecodedEncoderInstruction, EncoderInstructionReader};
 use crate::header_block::{HeaderDecoder, HeaderDecoderResult};
-use crate::qpack_send_buf::QPData;
+use crate::qpack_send_buf::QpackData;
 use crate::reader::ReceiverConnWrapper;
 use crate::stats::Stats;
 use crate::table::HeaderTable;
 use crate::{Error, Header, QpackSettings, Res};
 use neqo_common::qdebug;
 use neqo_transport::Connection;
-use std::convert::TryInto;
+use std::convert::TryFrom;
 
 pub const QPACK_UNI_STREAM_TYPE_DECODER: u64 = 0x3;
 
@@ -24,7 +24,7 @@ pub struct QPackDecoder {
     table: HeaderTable,
     acked_inserts: u64,
     max_entries: u64,
-    send_buf: QPData,
+    send_buf: QpackData,
     local_stream_id: Option<u64>,
     remote_stream_id: Option<u64>,
     max_table_size: u64,
@@ -34,10 +34,12 @@ pub struct QPackDecoder {
 }
 
 impl QPackDecoder {
+    
+    
     #[must_use]
     pub fn new(qpack_settings: QpackSettings) -> Self {
         qdebug!("Decoder: creating a new qpack decoder.");
-        let mut send_buf = QPData::default();
+        let mut send_buf = QpackData::default();
         send_buf.encode_varint(QPACK_UNI_STREAM_TYPE_DECODER);
         Self {
             instruction_reader: EncoderInstructionReader::new(),
@@ -48,7 +50,7 @@ impl QPackDecoder {
             local_stream_id: None,
             remote_stream_id: None,
             max_table_size: qpack_settings.max_table_size_decoder,
-            max_blocked_streams: qpack_settings.max_blocked_streams.try_into().unwrap(),
+            max_blocked_streams: usize::try_from(qpack_settings.max_blocked_streams).unwrap(),
             blocked_streams: Vec::new(),
             stats: Stats::default(),
         }
@@ -64,9 +66,11 @@ impl QPackDecoder {
         self.max_table_size
     }
 
+    
+    
     #[must_use]
     pub fn get_blocked_streams(&self) -> u16 {
-        self.max_blocked_streams.try_into().unwrap()
+        u16::try_from(self.max_blocked_streams).unwrap()
     }
 
     
@@ -161,7 +165,14 @@ impl QPackDecoder {
 
     
     
-    #[allow(clippy::map_err_ignore, clippy::unknown_clippy_lints)]
+    
+    
+    #[allow(
+        clippy::map_err_ignore,
+        unknown_lints,
+        renamed_and_removed_lints,
+        clippy::unknown_clippy_lints
+    )]
     pub fn send(&mut self, conn: &mut Connection) -> Res<()> {
         
         let increment = self.table.base() - self.acked_inserts;
@@ -185,6 +196,8 @@ impl QPackDecoder {
         HeaderDecoder::new(buf).refers_dynamic_table(self.max_entries, self.table.base())
     }
 
+    
+    
     
     
     
@@ -231,6 +244,8 @@ impl QPackDecoder {
         }
     }
 
+    
+    
     pub fn add_send_stream(&mut self, stream_id: u64) {
         if self.local_stream_id.is_some() {
             panic!("Adding multiple local streams");

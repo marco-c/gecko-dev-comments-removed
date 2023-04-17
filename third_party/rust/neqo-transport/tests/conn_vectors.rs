@@ -6,6 +6,7 @@
 
 
 #![deny(clippy::pedantic)]
+#![cfg(not(feature = "fuzzing"))]
 
 use neqo_common::Datagram;
 use neqo_transport::{

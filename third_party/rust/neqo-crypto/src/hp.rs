@@ -45,6 +45,8 @@ impl HpKey {
     
     
     
+    
+    
     pub fn extract(version: Version, cipher: Cipher, prk: &SymKey, label: &str) -> Res<Self> {
         let l = label.as_bytes();
         let mut secret: *mut PK11SymKey = null_mut();
@@ -65,7 +67,7 @@ impl HpKey {
                 **prk,
                 null(),
                 0,
-                l.as_ptr() as *const c_char,
+                l.as_ptr().cast(),
                 c_uint::try_from(l.len())?,
                 mech,
                 key_size,
@@ -88,6 +90,8 @@ impl HpKey {
         (unsafe { PK11_GetBlockSize(mech, null_mut()) }) as usize
     }
 
+    
+    
     
     
     
@@ -123,7 +127,7 @@ impl HpKey {
                 output_slice.as_mut_ptr(),
                 &mut output_len,
                 c_uint::try_from(output.len())?,
-                inbuf.as_ptr() as *const u8,
+                inbuf.as_ptr().cast(),
                 c_uint::try_from(inbuf.len())?,
             )
         })?;

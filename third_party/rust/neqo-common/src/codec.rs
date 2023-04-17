@@ -36,6 +36,8 @@ impl<'a> Decoder<'a> {
     }
 
     
+    
+    
     pub fn skip(&mut self, n: usize) {
         assert!(self.remaining() >= n);
         self.offset += n;
@@ -90,6 +92,8 @@ impl<'a> Decoder<'a> {
     }
 
     
+    
+    
     pub fn decode_uint(&mut self, n: usize) -> Option<u64> {
         assert!(n > 0 && n <= 8);
         if self.remaining() < n {
@@ -105,6 +109,8 @@ impl<'a> Decoder<'a> {
     }
 
     
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
+    #[allow(clippy::missing_panics_doc)] 
     pub fn decode_varint(&mut self) -> Option<u64> {
         let b1 = match self.decode_byte() {
             Some(b) => b,
@@ -201,6 +207,8 @@ pub struct Encoder {
 
 impl Encoder {
     
+    
+    
     #[must_use]
     pub fn varint_len(v: u64) -> usize {
         match () {
@@ -212,6 +220,8 @@ impl Encoder {
         }
     }
 
+    
+    
     
     #[must_use]
     pub fn vvec_len(len: usize) -> usize {
@@ -247,6 +257,8 @@ impl Encoder {
     }
 
     
+    
+    
     #[must_use]
     pub fn from_hex(s: impl AsRef<str>) -> Self {
         let s = s.as_ref();
@@ -277,6 +289,8 @@ impl Encoder {
     }
 
     
+    
+    
     #[allow(clippy::cast_possible_truncation)]
     pub fn encode_uint<T: Into<u64>>(&mut self, n: usize, v: T) -> &mut Self {
         let v = v.into();
@@ -287,6 +301,8 @@ impl Encoder {
         self
     }
 
+    
+    
     
     pub fn encode_varint<T: Into<u64>>(&mut self, v: T) -> &mut Self {
         let v = v.into();
@@ -301,11 +317,15 @@ impl Encoder {
     }
 
     
+    
+    
     pub fn encode_vec(&mut self, n: usize, v: &[u8]) -> &mut Self {
         self.encode_uint(n, u64::try_from(v.len()).unwrap())
             .encode(v)
     }
 
+    
+    
     
     #[allow(clippy::cast_possible_truncation)]
     pub fn encode_vec_with<F: FnOnce(&mut Self)>(&mut self, n: usize, f: F) -> &mut Self {
@@ -321,11 +341,15 @@ impl Encoder {
     }
 
     
+    
+    
     pub fn encode_vvec(&mut self, v: &[u8]) -> &mut Self {
         self.encode_varint(u64::try_from(v.len()).unwrap())
             .encode(v)
     }
 
+    
+    
     
     #[allow(clippy::cast_possible_truncation)]
     pub fn encode_vvec_with<F: FnOnce(&mut Self)>(&mut self, f: F) -> &mut Self {
@@ -406,10 +430,10 @@ impl From<&[u8]> for Encoder {
     }
 }
 
-impl Into<Vec<u8>> for Encoder {
+impl From<Encoder> for Vec<u8> {
     #[must_use]
-    fn into(self) -> Vec<u8> {
-        self.buf
+    fn from(buf: Encoder) -> Self {
+        buf.buf
     }
 }
 

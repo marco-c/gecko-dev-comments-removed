@@ -40,6 +40,7 @@ pub use hframe::HFrameReader;
 pub use neqo_qpack::Header;
 pub use server::Http3Server;
 pub use server_events::{ClientRequestStream, Http3ServerEvent};
+pub use settings::HttpZeroRttChecker;
 
 type Res<T> = Result<T, Error>;
 
@@ -139,6 +140,8 @@ impl Error {
         matches!(self, Self::HttpGeneralProtocolStream | Self::InvalidHeader)
     }
 
+    
+    
     #[must_use]
     pub fn map_stream_send_errors(err: &TransportError) -> Self {
         match err {
@@ -153,6 +156,8 @@ impl Error {
         }
     }
 
+    
+    
     #[must_use]
     pub fn map_stream_create_errors(err: &TransportError) -> Self {
         match err {
@@ -165,6 +170,8 @@ impl Error {
         }
     }
 
+    
+    
     #[must_use]
     pub fn map_stream_recv_errors(err: &TransportError) -> Self {
         match err {
@@ -192,12 +199,14 @@ impl Error {
 
     
     
+    
+    
     fn map_error<R>(r: Result<R, impl Into<Self>>, err: Self) -> Result<R, Self> {
-        Ok(r.map_err(|e| {
+        r.map_err(|e| {
             debug_assert!(!matches!(e.into(), Self::HttpInternal(..)));
             debug_assert!(!matches!(err, Self::HttpInternal(..)));
             err
-        })?)
+        })
     }
 }
 

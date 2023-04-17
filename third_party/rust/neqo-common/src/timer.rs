@@ -34,6 +34,8 @@ pub struct Timer<T> {
 
 impl<T> Timer<T> {
     
+    
+    
     pub fn new(now: Instant, granularity: Duration, capacity: usize) -> Self {
         assert!(u32::try_from(capacity).is_ok());
         assert!(granularity.as_nanos() > 0);
@@ -89,7 +91,7 @@ impl<T> Timer<T> {
     }
 
     
-    #[allow(clippy::unknown_clippy_lints)] 
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
     #[allow(clippy::cast_possible_truncation, clippy::reversed_empty_ranges)]
     
     
@@ -108,6 +110,8 @@ impl<T> Timer<T> {
     }
 
     
+    
+    
     pub fn add(&mut self, time: Instant, item: T) {
         assert!(time >= self.now);
         
@@ -115,7 +119,7 @@ impl<T> Timer<T> {
         if time >= (self.now + self.span() + short_span) {
             
             for i in &self.items {
-                assert!(i.is_empty());
+                debug_assert!(i.is_empty());
             }
             self.now = time - short_span;
             self.cursor = 0;
