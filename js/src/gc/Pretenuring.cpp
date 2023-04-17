@@ -22,6 +22,12 @@ using namespace js::gc;
 
 
 
+
+static constexpr size_t AllocSiteAttentionThreshold = 500;
+
+
+
+
 static constexpr size_t MaxAllocSitesPerMinorGC = 500;
 
 
@@ -111,7 +117,7 @@ size_t PretenuringNursery::doPretenuring(GCRuntime* gc, bool validPromotionRate,
     if (site->hasScript()) {
       sitesActive++;
 
-      if (site->nurseryAllocCount > 100) {
+      if (site->nurseryAllocCount > AllocSiteAttentionThreshold) {
         promotionRate =
             double(site->nurseryTenuredCount) / double(site->nurseryAllocCount);
         hasPromotionRate = true;
