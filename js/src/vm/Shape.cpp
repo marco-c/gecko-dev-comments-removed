@@ -1080,38 +1080,41 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
 
 bool NativeObject::densifySparseElements(JSContext* cx,
                                          HandleNativeObject obj) {
+  MOZ_ASSERT(obj->inDictionaryMode());
+
   RootedValue value(cx);
 
   RootedShape shape(cx, obj->shape());
   while (!shape->isEmptyShape()) {
     jsid id = shape->propid();
     uint32_t index;
-    if (IdIsIndex(id, &index)) {
-      value = obj->getSlot(shape->slot());
-
-      
-
-
-
-
-
-
-      if (shape != obj->lastProperty()) {
-        shape = shape->previous();
-        if (!NativeObject::removeProperty(cx, obj, id)) {
-          return false;
-        }
-      } else {
-        if (!NativeObject::removeProperty(cx, obj, id)) {
-          return false;
-        }
-        shape = obj->lastProperty();
-      }
-
-      obj->setDenseElement(index, value);
-    } else {
+    if (!IdIsIndex(id, &index)) {
       shape = shape->previous();
+      continue;
     }
+
+    value = obj->getSlot(shape->slot());
+
+    
+
+
+
+
+
+
+    if (shape != obj->lastProperty()) {
+      shape = shape->previous();
+      if (!NativeObject::removeProperty(cx, obj, id)) {
+        return false;
+      }
+    } else {
+      if (!NativeObject::removeProperty(cx, obj, id)) {
+        return false;
+      }
+      shape = obj->lastProperty();
+    }
+
+    obj->setDenseElement(index, value);
   }
 
   return true;
