@@ -832,7 +832,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
   
   
   mSoftText.mValue.Truncate();
-  mSoftTextDOMMapping.Clear();
+  mSoftText.mDOMMapping.Clear();
   bool seenSoftEnd = false;
   
   
@@ -865,7 +865,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
 
       if (firstOffsetInNode < lastOffsetInNode) {
         int32_t len = lastOffsetInNode - firstOffsetInNode;
-        mSoftTextDOMMapping.AppendElement(
+        mSoftText.mDOMMapping.AppendElement(
             DOMTextMapping(NodeOffset(node, firstOffsetInNode),
                            mSoftText.mValue.Length(), len));
 
@@ -873,7 +873,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
                                          len, mozilla::fallible);
         if (!ok) {
           
-          mSoftTextDOMMapping.RemoveLastElement();
+          mSoftText.mDOMMapping.RemoveLastElement();
           exit = true;
         }
       }
@@ -942,8 +942,8 @@ int32_t mozInlineSpellWordUtil::MapDOMPositionToSoftTextOffset(
     return -1;
   }
 
-  for (int32_t i = 0; i < int32_t(mSoftTextDOMMapping.Length()); ++i) {
-    const DOMTextMapping& map = mSoftTextDOMMapping[i];
+  for (int32_t i = 0; i < int32_t(mSoftText.mDOMMapping.Length()); ++i) {
+    const DOMTextMapping& map = mSoftText.mDOMMapping[i];
     if (map.mNodeOffset.mNode == aNodeOffset.mNode) {
       
       
@@ -1005,7 +1005,7 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
   
   size_t index;
   bool found =
-      FindLastNongreaterOffset(mSoftTextDOMMapping, aSoftTextOffset, &index);
+      FindLastNongreaterOffset(mSoftText.mDOMMapping, aSoftTextOffset, &index);
   if (!found) {
     return NodeOffset(nullptr, -1);
   }
@@ -1015,7 +1015,7 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
   
   
   if (aHint == HINT_END && index > 0) {
-    const DOMTextMapping& map = mSoftTextDOMMapping[index - 1];
+    const DOMTextMapping& map = mSoftText.mDOMMapping[index - 1];
     if (map.mSoftTextOffset + map.mLength == aSoftTextOffset)
       return NodeOffset(map.mNodeOffset.mNode,
                         map.mNodeOffset.mOffset + map.mLength);
@@ -1024,7 +1024,7 @@ NodeOffset mozInlineSpellWordUtil::MapSoftTextOffsetToDOMPosition(
   
   
   
-  const DOMTextMapping& map = mSoftTextDOMMapping[index];
+  const DOMTextMapping& map = mSoftText.mDOMMapping[index];
   int32_t offset = aSoftTextOffset - map.mSoftTextOffset;
   if (offset >= 0 && offset <= map.mLength)
     return NodeOffset(map.mNodeOffset.mNode, map.mNodeOffset.mOffset + offset);

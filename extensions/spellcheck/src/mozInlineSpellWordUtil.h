@@ -120,6 +120,20 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   const nsINode* GetRootNode() const { return mRootNode; }
 
  private:
+  
+  
+  struct DOMTextMapping {
+    NodeOffset mNodeOffset;
+    int32_t mSoftTextOffset;
+    int32_t mLength;
+
+    DOMTextMapping(NodeOffset aNodeOffset, int32_t aSoftTextOffset,
+                   int32_t aLength)
+        : mNodeOffset(aNodeOffset),
+          mSoftTextOffset(aSoftTextOffset),
+          mLength(aLength) {}
+  };
+
   struct SoftText {
     
     nsString mValue;
@@ -128,6 +142,8 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
     NodeOffset mEnd = NodeOffset(nullptr, 0);
 
     bool mIsValid = false;
+
+    nsTArray<DOMTextMapping> mDOMMapping;
   };
 
   SoftText mSoftText;
@@ -147,21 +163,6 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   
   const nsINode* mRootNode;
-
-  
-  
-  struct DOMTextMapping {
-    NodeOffset mNodeOffset;
-    int32_t mSoftTextOffset;
-    int32_t mLength;
-
-    DOMTextMapping(NodeOffset aNodeOffset, int32_t aSoftTextOffset,
-                   int32_t aLength)
-        : mNodeOffset(aNodeOffset),
-          mSoftTextOffset(aSoftTextOffset),
-          mLength(aLength) {}
-  };
-  nsTArray<DOMTextMapping> mSoftTextDOMMapping;
 
   
   struct RealWord {
@@ -211,6 +212,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   int32_t FindRealWordContaining(int32_t aSoftTextOffset, DOMMapHint aHint,
                                  bool aSearchForward) const;
 
+  
   
   void AdjustSoftBeginAndBuildSoftText();
 
