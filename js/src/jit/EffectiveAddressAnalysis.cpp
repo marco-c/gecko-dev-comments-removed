@@ -201,6 +201,7 @@ void EffectiveAddressAnalysis::analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins) {
   if (base->isConstant()) {
     
     
+    
     int32_t imm = base->toConstant()->toInt32();
     if (imm >= 0) {
       int32_t end = (uint32_t)imm + ins->byteSize();
