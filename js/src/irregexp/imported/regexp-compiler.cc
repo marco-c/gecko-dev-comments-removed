@@ -1432,7 +1432,9 @@ EatsAtLeastInfo LoopChoiceNode::EatsAtLeastFromLoopEntry() {
   if (read_backward()) {
     
     
-    return *eats_at_least_info();
+    DCHECK_EQ(eats_at_least_info()->eats_at_least_from_possibly_start, 0);
+    DCHECK_EQ(eats_at_least_info()->eats_at_least_from_not_start, 0);
+    return {};
   }
 
   
@@ -3531,9 +3533,18 @@ class EatsAtLeastPropagator : public AllStatic {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     switch (that->action_type()) {
+      case ActionNode::BEGIN_SUBMATCH:
       case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
-        break;  
+        DCHECK(that->eats_at_least_info()->IsZero());
+        break;
       case ActionNode::SET_REGISTER_FOR_LOOP:
         that->set_eats_at_least_info(
             that->on_success()->EatsAtLeastFromLoopEntry());
@@ -3555,7 +3566,10 @@ class EatsAtLeastPropagator : public AllStatic {
   }
 
   static void VisitLoopChoiceContinueNode(LoopChoiceNode* that) {
-    that->set_eats_at_least_info(*that->continue_node()->eats_at_least_info());
+    if (!that->read_backward()) {
+      that->set_eats_at_least_info(
+          *that->continue_node()->eats_at_least_info());
+    }
   }
 
   static void VisitLoopChoiceLoopNode(LoopChoiceNode* that) {}
