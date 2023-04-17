@@ -3597,6 +3597,7 @@ public class GeckoSession {
 
 
 
+
         @UiThread
         default @Nullable GeckoResult<String> onLoadError(@NonNull final GeckoSession session,
                                                           @Nullable final String uri,
