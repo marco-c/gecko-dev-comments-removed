@@ -2040,18 +2040,6 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
     return ok;
   }
 
-  if (aAppearance == StyleAppearance::NumberInput ||
-      aAppearance == StyleAppearance::Textfield ||
-      aAppearance == StyleAppearance::Textarea ||
-      aAppearance == StyleAppearance::MenulistButton ||
-      aAppearance == StyleAppearance::Menulist) {
-    
-    
-    if (aFrame->PresContext()->HasAuthorSpecifiedRules(
-            aFrame, NS_AUTHOR_SPECIFIED_PADDING))
-      return false;
-  }
-
   
 
 
