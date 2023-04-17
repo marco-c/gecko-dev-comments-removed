@@ -189,10 +189,6 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AddCanvasBackgroundColorFlags)
 enum class PaintFlags {
   None = 0,
   
-
-
-  PaintLayers = 1 << 0,
-  
   PaintComposite = 1 << 1,
   
   PaintSyncDecodeImages = 1 << 2,
