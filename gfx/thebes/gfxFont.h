@@ -94,15 +94,16 @@ typedef struct _cairo_scaled_font cairo_scaled_font_t;
 #endif
 
 struct gfxFontStyle {
-  typedef mozilla::FontStretch FontStretch;
-  typedef mozilla::FontSlantStyle FontSlantStyle;
-  typedef mozilla::FontWeight FontWeight;
+  using FontStretch = mozilla::FontStretch;
+  using FontSlantStyle = mozilla::FontSlantStyle;
+  using FontWeight = mozilla::FontWeight;
+  using FontSizeAdjust = mozilla::StyleFontSizeAdjust;
 
   gfxFontStyle();
   gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
-               gfxFloat aSize, float aSizeAdjust, bool aSystemFont,
-               bool aPrinterFont, bool aWeightSynthesis, bool aStyleSynthesis,
-               uint32_t aLanguageOverride);
+               gfxFloat aSize, const FontSizeAdjust& aSizeAdjust,
+               bool aSystemFont, bool aPrinterFont, bool aWeightSynthesis,
+               bool aStyleSynthesis, uint32_t aLanguageOverride);
   
   
   
@@ -175,10 +176,13 @@ struct gfxFontStyle {
   
 
   
-  uint8_t variantCaps : 4;  
+  uint8_t variantCaps : 3;  
 
   
-  uint8_t variantSubSuper : 4;  
+  uint8_t variantSubSuper : 2;  
+
+  
+  uint8_t sizeAdjustBasis : 3;  
 
   
   
@@ -202,11 +206,20 @@ struct gfxFontStyle {
   
   
   gfxFloat GetAdjustedSize(gfxFloat aspect) const {
-    NS_ASSERTION(sizeAdjust >= 0.0,
-                 "Not meant to be called when sizeAdjust = -1.0");
+    MOZ_ASSERT(
+        FontSizeAdjust::Tag(sizeAdjustBasis) != FontSizeAdjust::Tag::None,
+        "Not meant to be called when sizeAdjustBasis is none");
     gfxFloat adjustedSize =
         std::max(NS_round(size * (sizeAdjust / aspect)), 1.0);
     return std::min(adjustedSize, FONT_MAX_SIZE);
+  }
+
+  
+  
+  bool AdjustedSizeMustBeZero() const {
+    return size == 0.0 ||
+           (FontSizeAdjust::Tag(sizeAdjustBasis) != FontSizeAdjust::Tag::None &&
+            sizeAdjust == 0.0);
   }
 
   PLDHashNumber Hash() const;
@@ -233,6 +246,7 @@ struct gfxFontStyle {
            (useGrayscaleAntialiasing == other.useGrayscaleAntialiasing) &&
            (baselineOffset == other.baselineOffset) &&
            mozilla::NumbersAreBitwiseIdentical(sizeAdjust, other.sizeAdjust) &&
+           (sizeAdjustBasis == other.sizeAdjustBasis) &&
            (featureSettings == other.featureSettings) &&
            (variantAlternates == other.variantAlternates) &&
            (featureValueLookup == other.featureValueLookup) &&
@@ -1392,14 +1406,15 @@ class gfxFont {
   friend class gfxGraphiteShaper;
 
  protected:
-  typedef mozilla::gfx::DrawTarget DrawTarget;
-  typedef mozilla::unicode::Script Script;
-  typedef mozilla::SVGContextPaint SVGContextPaint;
+  using DrawTarget = mozilla::gfx::DrawTarget;
+  using Script = mozilla::unicode::Script;
+  using SVGContextPaint = mozilla::SVGContextPaint;
 
-  typedef gfxFontShaper::RoundingFlags RoundingFlags;
+  using RoundingFlags = gfxFontShaper::RoundingFlags;
 
  public:
-  typedef mozilla::FontSlantStyle FontSlantStyle;
+  using FontSlantStyle = mozilla::FontSlantStyle;
+  using FontSizeAdjust = mozilla::StyleFontSizeAdjust;
 
   nsrefcnt AddRef(void) {
     MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
@@ -1497,7 +1512,7 @@ class gfxFont {
     
     
     if (mAdjustedSize < 0.0) {
-      mAdjustedSize = mStyle.sizeAdjust == 0.0
+      mAdjustedSize = mStyle.AdjustedSizeMustBeZero()
                           ? 0.0
                           : mStyle.size * mFontEntry->mSizeAdjust;
     }
@@ -1558,8 +1573,13 @@ class gfxFont {
   virtual uint32_t GetGlyph(uint32_t unicode, uint32_t variation_selector) {
     return 0;
   }
+
   
-  gfxFloat GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID);
+  gfxFloat GetGlyphHAdvance(uint16_t aGID);
+
+  
+  
+  gfxFloat GetCharAdvance(uint32_t aUnicode);
 
   gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
 
