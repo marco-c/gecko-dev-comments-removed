@@ -1138,7 +1138,8 @@ class EditorUtils final {
 
   static bool IsEditableContent(const nsIContent& aContent,
                                 EditorType aEditorType) {
-    if (aEditorType == EditorType::HTML && !aContent.IsEditable()) {
+    if (aEditorType == EditorType::HTML &&
+        (!aContent.IsEditable() || !aContent.IsInComposedDoc())) {
       
       
       
