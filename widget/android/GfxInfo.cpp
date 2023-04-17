@@ -600,8 +600,12 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       NS_LossyConvertUTF16toASCII model(mModel);
 
       
-      isUnblocked |= gpu.Find("Adreno (TM) 3",  true) >= 0 ||
-                     gpu.Find("Adreno (TM) 4",  true) >= 0 ||
+      
+      isUnblocked |= gpu.Find("Adreno (TM) 3",  true) >= 0 &&
+                     mSDKVersion < 28;
+
+      
+      isUnblocked |= gpu.Find("Adreno (TM) 4",  true) >= 0 ||
                      gpu.Find("Adreno (TM) 6",  true) >= 0;
 
       
