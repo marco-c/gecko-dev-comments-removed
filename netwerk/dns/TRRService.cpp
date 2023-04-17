@@ -25,6 +25,8 @@
 #include "mozilla/Tokenizer.h"
 #include "mozilla/net/rust_helper.h"
 
+#include "DNSLogging.h"
+
 #if defined(XP_WIN) && !defined(__MINGW32__)
 #  include <shlobj_core.h>  
 #endif                      
@@ -39,10 +41,6 @@ static const char kDisableIpv6Pref[] = "network.dns.disableIPv6";
 
 namespace mozilla {
 namespace net {
-
-#undef LOG
-extern mozilla::LazyLogModule gHostResolverLog;
-#define LOG(args) MOZ_LOG(gHostResolverLog, mozilla::LogLevel::Debug, args)
 
 TRRService* gTRRService = nullptr;
 StaticRefPtr<nsIThread> sTRRBackgroundThread;
@@ -1301,8 +1299,6 @@ AHostResolver::LookupStatus TRRService::CompleteLookupByType(
     uint32_t aTtl, bool aPb) {
   return LOOKUP_OK;
 }
-
-#undef LOG
 
 }  
 }  

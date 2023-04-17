@@ -19,6 +19,8 @@
 #include "TRRService.h"
 #include "nsURLHelper.h"
 
+#include "DNSLogging.h"
+
 static const char kODoHProxyURIPref[] = "network.trr.odoh.proxy_uri";
 static const char kODoHTargetHostPref[] = "network.trr.odoh.target_host";
 static const char kODoHTargetPathPref[] = "network.trr.odoh.target_path";
@@ -28,9 +30,6 @@ namespace mozilla {
 namespace net {
 
 ODoHService* gODoHService = nullptr;
-
-extern mozilla::LazyLogModule gHostResolverLog;
-#define LOG(args) MOZ_LOG(gHostResolverLog, mozilla::LogLevel::Debug, args)
 
 NS_IMPL_ISUPPORTS(ODoHService, nsIDNSListener, nsIObserver,
                   nsISupportsWeakReference, nsITimerCallback,

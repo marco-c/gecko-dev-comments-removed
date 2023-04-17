@@ -54,7 +54,6 @@ EXPORTS.mozilla.net += [
 SOURCES += [
     "GetAddrInfo.cpp",  
     "nsEffectiveTLDService.cpp",  
-    "nsHostResolver.cpp",  
 ]
 
 UNIFIED_SOURCES += [
@@ -71,6 +70,8 @@ UNIFIED_SOURCES += [
     "NativeDNSResolverOverrideChild.cpp",
     "NativeDNSResolverOverrideParent.cpp",
     "nsDNSService2.cpp",
+    "nsHostRecord.cpp",
+    "nsHostResolver.cpp",
     "nsIDNService.cpp",
     "ODoH.cpp",
     "ODoHService.cpp",

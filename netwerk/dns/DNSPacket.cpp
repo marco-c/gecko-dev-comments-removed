@@ -9,15 +9,10 @@
 #include "mozilla/ScopeExit.h"
 #include "ODoHService.h"
 
+#include "DNSLogging.h"
+
 namespace mozilla {
 namespace net {
-
-extern mozilla::LazyLogModule gHostResolverLog;
-#undef LOG
-#undef LOG_ENABLED
-#define LOG(args) MOZ_LOG(gHostResolverLog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() \
-  MOZ_LOG_TEST(mozilla::net::gHostResolverLog, mozilla::LogLevel::Debug)
 
 static uint16_t get16bit(const unsigned char* aData, unsigned int index) {
   return ((aData[index] << 8) | aData[index + 1]);

@@ -38,15 +38,10 @@
 #include "mozilla/Tokenizer.h"
 #include "mozilla/UniquePtr.h"
 
+#include "DNSLogging.h"
+
 namespace mozilla {
 namespace net {
-
-#undef LOG
-#undef LOG_ENABLED
-extern mozilla::LazyLogModule gHostResolverLog;
-#define LOG(args) MOZ_LOG(gHostResolverLog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() \
-  MOZ_LOG_TEST(mozilla::net::gHostResolverLog, mozilla::LogLevel::Debug)
 
 NS_IMPL_ISUPPORTS(TRR, nsIHttpPushListener, nsIInterfaceRequestor,
                   nsIStreamListener, nsIRunnable, nsITimerCallback)
@@ -1025,9 +1020,6 @@ void TRR::Cancel(nsresult aStatus) {
 }
 
 bool TRR::UseDefaultServer() { return !mRec || mRec->mTrrServer.IsEmpty(); }
-
-#undef LOG
-
 
 }  
 }  
