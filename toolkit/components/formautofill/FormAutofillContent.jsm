@@ -18,6 +18,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -696,9 +699,11 @@ var FormAutofillContent = {
         "updateActiveElement: checking if empty field is cc-*: ",
         this.activeFieldDetail?.fieldName
       );
-      
-      
-      if (this.activeFieldDetail?.fieldName?.startsWith("cc-")) {
+
+      if (
+        this.activeFieldDetail?.fieldName?.startsWith("cc-") ||
+        AppConstants.platform === "android"
+      ) {
         if (Services.cpmm.sharedData.get("FormAutofill:enabled")) {
           this.debug("updateActiveElement: opening pop up");
           formFillController.showPopup();
