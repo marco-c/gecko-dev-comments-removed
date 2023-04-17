@@ -22,24 +22,26 @@ const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
 
 add_task(async function accept() {
-  await doDialogTest(true, async () => {
-    let tabCount = gBrowser.tabs.length;
-    let dialogPromise = openDialog("accept");
+  await doDialogTest({
+    expectOptIn: true,
+    callback: async () => {
+      let tabCount = gBrowser.tabs.length;
+      let dialogPromise = openDialog("accept");
 
-    info("Calling maybeShowOnboardingDialog");
-    await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling maybeShowOnboardingDialog");
+      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
 
-    info("Waiting for dialog");
-    await dialogPromise;
+      info("Waiting for dialog");
+      await dialogPromise;
 
-    Assert.equal(
-      gBrowser.currentURI.spec,
-      "about:blank",
-      "Nothing loaded in the current tab"
-    );
-    Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
-
-    TelemetryTestUtils.assertEvents([
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:blank",
+        "Nothing loaded in the current tab"
+      );
+      Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+    },
+    telemetryEvents: [
       {
         category: TELEMETRY_EVENT_CATEGORY,
         method: "enable_toggled",
@@ -55,117 +57,315 @@ add_task(async function accept() {
         method: "opt_in_dialog",
         object: "accept",
       },
-    ]);
+    ],
   });
 });
 
 
 add_task(async function notNow() {
-  await doDialogTest(false, async () => {
-    let tabCount = gBrowser.tabs.length;
-    let dialogPromise = openDialog("onboardingNotNow");
+  await doDialogTest({
+    expectOptIn: false,
+    callback: async () => {
+      let tabCount = gBrowser.tabs.length;
+      let dialogPromise = openDialog("onboardingNotNow");
 
-    info("Calling maybeShowOnboardingDialog");
-    await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling maybeShowOnboardingDialog");
+      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
 
-    info("Waiting for dialog");
-    await dialogPromise;
+      info("Waiting for dialog");
+      await dialogPromise;
 
-    Assert.equal(
-      gBrowser.currentURI.spec,
-      "about:blank",
-      "Nothing loaded in the current tab"
-    );
-    Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
-
-    TelemetryTestUtils.assertEvents([
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:blank",
+        "Nothing loaded in the current tab"
+      );
+      Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+    },
+    telemetryEvents: [
       {
         category: TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
         object: "not_now",
       },
-    ]);
+    ],
   });
 });
 
 
 
-add_task(async function customize() {
-  await doDialogTest(false, async () => {
-    let dialogPromise = openDialog("extra1");
+add_task(async function settings() {
+  await doDialogTest({
+    expectOptIn: false,
+    callback: async () => {
+      let dialogPromise = openDialog("extra1");
 
-    
-    
-    let loadPromise = BrowserTestUtils.browserLoaded(
-      gBrowser.selectedBrowser
-    ).then(() => info("Saw load"));
+      
+      
+      let loadPromise = BrowserTestUtils.browserLoaded(
+        gBrowser.selectedBrowser
+      ).then(() => info("Saw load"));
 
-    info("Calling maybeShowOnboardingDialog");
-    await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling maybeShowOnboardingDialog");
+      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
 
-    info("Waiting for dialog");
-    await dialogPromise;
+      info("Waiting for dialog");
+      await dialogPromise;
 
-    info("Waiting for load");
-    await loadPromise;
+      info("Waiting for load");
+      await loadPromise;
 
-    Assert.equal(
-      gBrowser.currentURI.spec,
-      "about:preferences#privacy",
-      "Current tab is about:preferences#privacy"
-    );
-
-    TelemetryTestUtils.assertEvents([
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:preferences#privacy",
+        "Current tab is about:preferences#privacy"
+      );
+    },
+    telemetryEvents: [
       {
         category: TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
         object: "settings",
       },
-    ]);
+    ],
   });
 });
 
 
 
 add_task(async function learnMore() {
-  await doDialogTest(false, async () => {
-    let dialogPromise = openDialog("onboardingLearnMore");
-    let loadPromise = BrowserTestUtils.waitForNewTab(
-      gBrowser,
-      LEARN_MORE_URL
-    ).then(tab => {
-      info("Saw new tab");
-      return tab;
-    });
+  await doDialogTest({
+    expectOptIn: false,
+    callback: async () => {
+      let dialogPromise = openDialog("onboardingLearnMore");
+      let loadPromise = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        LEARN_MORE_URL
+      ).then(tab => {
+        info("Saw new tab");
+        return tab;
+      });
 
-    info("Calling maybeShowOnboardingDialog");
-    await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+      info("Calling maybeShowOnboardingDialog");
+      await UrlbarQuickSuggest.maybeShowOnboardingDialog();
 
-    info("Waiting for dialog");
-    await dialogPromise;
+      info("Waiting for dialog");
+      await dialogPromise;
 
-    info("Waiting for new tab");
-    let tab = await loadPromise;
+      info("Waiting for new tab");
+      let tab = await loadPromise;
 
-    Assert.equal(gBrowser.selectedTab, tab, "Current tab is the new tab");
-    Assert.equal(
-      gBrowser.currentURI.spec,
-      LEARN_MORE_URL,
-      "Current tab is the support page"
-    );
-    BrowserTestUtils.removeTab(tab);
-
-    TelemetryTestUtils.assertEvents([
+      Assert.equal(gBrowser.selectedTab, tab, "Current tab is the new tab");
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        LEARN_MORE_URL,
+        "Current tab is the support page"
+      );
+      BrowserTestUtils.removeTab(tab);
+    },
+    telemetryEvents: [
       {
         category: TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
         object: "learn_more",
       },
-    ]);
+    ],
   });
 });
 
-async function doDialogTest(expectOptIn, callback) {
+
+
+add_task(async function escKey() {
+  await doFocusTest({
+    tabKeyRepeat: 0,
+    expectedFocusID: "onboardingAcceptButton",
+    expectOptIn: false,
+    callback: async () => {
+      let tabCount = gBrowser.tabs.length;
+      EventUtils.synthesizeKey("KEY_Escape");
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:blank",
+        "Nothing loaded in the current tab"
+      );
+      Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "not_now",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_accept() {
+  await doFocusTest({
+    tabKeyRepeat: 0,
+    expectedFocusID: "onboardingAcceptButton",
+    expectOptIn: true,
+    callback: async () => {
+      EventUtils.synthesizeKey("KEY_Enter");
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "enable_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "sponsored_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "accept",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_settings() {
+  await doFocusTest({
+    tabKeyRepeat: 1,
+    expectedFocusID: "onboardingSettingsButton",
+    expectOptIn: false,
+    callback: async () => {
+      
+      let loadPromise = BrowserTestUtils.browserLoaded(
+        gBrowser.selectedBrowser
+      ).then(() => info("Saw load"));
+
+      EventUtils.synthesizeKey("KEY_Enter");
+
+      info("Waiting for load");
+      await loadPromise;
+
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:preferences#privacy",
+        "Current tab is about:preferences#privacy"
+      );
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "settings",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_learnMore() {
+  await doFocusTest({
+    tabKeyRepeat: 2,
+    expectedFocusID: "onboardingLearnMore",
+    expectOptIn: false,
+    callback: async () => {
+      let loadPromise = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        LEARN_MORE_URL
+      ).then(tab => {
+        info("Saw new tab");
+        return tab;
+      });
+
+      EventUtils.synthesizeKey("KEY_Enter");
+
+      info("Waiting for new tab");
+      let tab = await loadPromise;
+
+      Assert.equal(gBrowser.selectedTab, tab, "Current tab is the new tab");
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        LEARN_MORE_URL,
+        "Current tab is the support page"
+      );
+      BrowserTestUtils.removeTab(tab);
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "learn_more",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_notNow() {
+  await doFocusTest({
+    tabKeyRepeat: 3,
+    expectedFocusID: "onboardingNotNow",
+    expectOptIn: false,
+    callback: async () => {
+      let tabCount = gBrowser.tabs.length;
+      EventUtils.synthesizeKey("KEY_Enter");
+      Assert.equal(
+        gBrowser.currentURI.spec,
+        "about:blank",
+        "Nothing loaded in the current tab"
+      );
+      Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "not_now",
+      },
+    ],
+  });
+});
+
+
+
+
+add_task(async function focus_accept_wraparound() {
+  await doFocusTest({
+    tabKeyRepeat: 4,
+    expectedFocusID: "onboardingAcceptButton",
+    expectOptIn: true,
+    callback: async () => {
+      EventUtils.synthesizeKey("KEY_Enter");
+    },
+    telemetryEvents: [
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "enable_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "sponsored_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "accept",
+      },
+    ],
+  });
+});
+
+async function doDialogTest({ expectOptIn, telemetryEvents, callback }) {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     
     await SpecialPowers.pushPrefEnv({
@@ -196,13 +396,129 @@ async function doDialogTest(expectOptIn, callback) {
       "Sponsored pref enabled status"
     );
 
+    if (telemetryEvents) {
+      TelemetryTestUtils.assertEvents(telemetryEvents);
+    }
+
     await SpecialPowers.popPrefEnv();
   });
 }
 
-async function openDialog(button) {
+
+
+let gCanTabMoveFocus;
+
+async function doFocusTest({
+  tabKeyRepeat,
+  expectedFocusID,
+  expectOptIn,
+  telemetryEvents,
+  callback,
+}) {
+  if (AppConstants.platform == "macosx") {
+    if (gCanTabMoveFocus === undefined) {
+      gCanTabMoveFocus = await canTabMoveFocus();
+    }
+    if (!gCanTabMoveFocus) {
+      Assert.ok(true, "Skipping focus/tabbing test on Mac");
+      return;
+    }
+  }
+
+  await doDialogTest({
+    expectOptIn,
+    telemetryEvents,
+    callback: async () => {
+      let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+        null,
+        DIALOG_URI,
+        { isSubDialog: true }
+      );
+
+      let maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
+
+      let win = await dialogPromise;
+      if (win.document.readyState != "complete") {
+        await BrowserTestUtils.waitForEvent(win, "load");
+      }
+
+      let doc = win.document;
+
+      Assert.equal(
+        doc.activeElement.id,
+        "onboardingAcceptButton",
+        "Accept button is focused initially"
+      );
+
+      if (tabKeyRepeat) {
+        EventUtils.synthesizeKey("KEY_Tab", { repeat: tabKeyRepeat });
+      }
+      Assert.equal(
+        doc.activeElement.id,
+        expectedFocusID,
+        "Expected element is focused: " + expectedFocusID
+      );
+
+      await callback();
+      await maybeShowPromise;
+    },
+  });
+}
+
+async function openDialog(button = undefined) {
   await BrowserTestUtils.promiseAlertDialog(button, DIALOG_URI, {
     isSubDialog: true,
   });
   info("Saw dialog");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function canTabMoveFocus() {
+  let canMove = false;
+  await doDialogTest({
+    expectOptIn: false,
+    callback: async () => {
+      let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
+        null,
+        DIALOG_URI,
+        { isSubDialog: true }
+      );
+
+      let maybeShowPromise = UrlbarQuickSuggest.maybeShowOnboardingDialog();
+
+      let win = await dialogPromise;
+      if (win.document.readyState != "complete") {
+        await BrowserTestUtils.waitForEvent(win, "load");
+      }
+
+      let doc = win.document;
+      let { activeElement } = doc;
+      EventUtils.synthesizeKey("KEY_Tab");
+
+      canMove = activeElement != doc.activeElement;
+
+      EventUtils.synthesizeKey("KEY_Escape");
+      await maybeShowPromise;
+    },
+  });
+  return canMove;
 }
