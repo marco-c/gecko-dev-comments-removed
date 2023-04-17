@@ -1372,9 +1372,19 @@ void nsDisplayRemote::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
   int32_t appUnitsPerDevPixel = pc->AppUnitsPerDevPixel();
+  gfxFloat scale = gfxFloat(AppUnitsPerCSSPixel()) / appUnitsPerDevPixel;
+  gfxContextMatrixAutoSaveRestore saveMatrix(aCtx);
+  aCtx->Multiply(gfxMatrix::Scaling(scale, scale));
+
   Rect destRect =
-      NSRectToSnappedRect(GetContentRect(), appUnitsPerDevPixel, *target);
+      NSRectToSnappedRect(GetContentRect(), AppUnitsPerCSSPixel(), *target);
   target->DrawDependentSurface(mPaintData.mTabId, destRect);
 }
 
