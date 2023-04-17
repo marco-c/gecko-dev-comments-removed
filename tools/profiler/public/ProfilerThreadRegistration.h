@@ -237,6 +237,9 @@ class ThreadRegistration {
         : mThreadRegistration(&aThreadRegistration) {}
 
     
+    friend class ThreadRegistry;
+
+    
     ThreadRegistration* mThreadRegistration;
   };
 
