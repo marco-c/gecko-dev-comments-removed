@@ -637,14 +637,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  OnInputText(const nsAString& aStringToInsert);
-
-  
-
-
-
-
 
 
 

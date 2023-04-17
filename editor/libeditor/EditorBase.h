@@ -1529,6 +1529,14 @@ class EditorBase : public nsIEditor,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  OnInputText(const nsAString& aStringToInsert);
+
+  
+
+
+
+
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertTextAsSubAction(const nsAString& aStringToInsert);
