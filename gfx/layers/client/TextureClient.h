@@ -487,8 +487,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface();
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
-
   
 
 
