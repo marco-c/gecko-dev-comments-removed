@@ -308,8 +308,7 @@ class _ExperimentFeature {
         `No manifest entry for ${featureId}. Please add one to toolkit/components/nimbus/FeatureManifest.js`
       );
     }
-    
-    this._sendExposureEventOnce = true;
+    this._didSendExposureEvent = false;
     this._onRemoteReady = null;
     this._waitForRemote = new Promise(
       resolve => (this._onRemoteReady = resolve)
@@ -514,20 +513,23 @@ class _ExperimentFeature {
     return remoteConfig;
   }
 
-  recordExposureEvent() {
-    if (this._sendExposureEventOnce) {
-      let experimentData = ExperimentAPI.getExperiment({
+  recordExposureEvent({ once = false } = {}) {
+    if (once && this._didSendExposureEvent) {
+      return;
+    }
+
+    let experimentData = ExperimentAPI.getExperiment({
+      featureId: this.featureId,
+    });
+
+    
+    if (experimentData) {
+      ExperimentAPI.recordExposureEvent({
         featureId: this.featureId,
+        experimentSlug: experimentData.slug,
+        branchSlug: experimentData.branch?.slug,
       });
-      
-      if (experimentData) {
-        ExperimentAPI.recordExposureEvent({
-          featureId: this.featureId,
-          experimentSlug: experimentData.slug,
-          branchSlug: experimentData.branch?.slug,
-        });
-        this._sendExposureEventOnce = false;
-      }
+      this._didSendExposureEvent = true;
     }
   }
 

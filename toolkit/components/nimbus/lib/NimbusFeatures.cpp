@@ -123,12 +123,10 @@ nsresult NimbusFeatures::GetExperimentSlug(const nsACString& aFeatureId,
 
 
 
-
-
 nsresult NimbusFeatures::RecordExposureEvent(const nsACString& aFeatureId,
-                                             const bool aForce) {
+                                             const bool aOnce) {
   nsAutoCString featureName(aFeatureId);
-  if (!sExposureFeatureSet.EnsureInserted(featureName) && !aForce) {
+  if (!sExposureFeatureSet.EnsureInserted(featureName) && aOnce) {
     
     return NS_ERROR_ABORT;
   }
