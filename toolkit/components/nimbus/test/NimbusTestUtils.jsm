@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.jsm",
   Ajv: "resource://testing-common/ajv-4.1.1.js",
   sinon: "resource://testing-common/Sinon.jsm",
+  FeatureManifest: "resource://nimbus/FeatureManifest.js",
 });
 
 const { SYNC_DATA_PREF_BRANCH, SYNC_DEFAULTS_PREF_BRANCH } = ExperimentStore;
@@ -51,6 +52,31 @@ const ExperimentTestUtils = {
     return value;
   },
 
+  _validateFeatureValueEnum({ branch }) {
+    let { feature } = branch;
+    
+    if (!FeatureManifest[feature.featureId]) {
+      return true;
+    }
+    let { variables } = FeatureManifest[feature.featureId];
+    for (let varName of Object.keys(variables)) {
+      let varValue = feature.value[varName];
+      if (
+        varValue &&
+        variables[varName].enum &&
+        !variables[varName].enum.includes(varValue)
+      ) {
+        throw new Error(
+          `${varName} should have one of the following values: ${JSON.stringify(
+            variables[varName].enum
+          )} but has value '${varValue}'`
+        );
+      }
+    }
+
+    return true;
+  },
+
   
 
 
@@ -74,10 +100,13 @@ const ExperimentTestUtils = {
       )
     ).NimbusExperiment;
 
-    return this._validator(
-      schema,
-      enrollment,
-      `Enrollment ${enrollment.slug} is not valid`
+    return (
+      this._validateFeatureValueEnum(enrollment) &&
+      this._validator(
+        schema,
+        enrollment,
+        `Enrollment ${enrollment.slug} is not valid`
+      )
     );
   },
   async validateRollouts(rollout) {
