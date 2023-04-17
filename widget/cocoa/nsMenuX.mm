@@ -128,6 +128,9 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
 nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+  
+  FlushMenuOpenedRunnable();
+
   if (mIsOpen) {
     [mNativeMenu cancelTracking];
   }
@@ -332,6 +335,10 @@ void nsMenuX::MenuOpened() {
     return;
   }
 
+  
+  FlushMenuOpenedRunnable();
+  FlushMenuClosedRunnable();
+
   if (!mDidFirePopupshowingAndIsApprovedToOpen) {
     
     bool approvedToOpen = OnOpen();
@@ -347,7 +354,55 @@ void nsMenuX::MenuOpened() {
   mIsOpen = true;
 
   
-  FlushMenuClosedRunnable();
+  mDidFirePopupshowingAndIsApprovedToOpen = false;
+
+  if (mNeedsRebuild) {
+    OnHighlightedItemChanged(Nothing());
+    RemoveAll();
+    RebuildMenu();
+  }
+
+  
+  
+  
+  
+  
+  class MenuOpenedAsyncRunnable final : public mozilla::CancelableRunnable {
+   public:
+    explicit MenuOpenedAsyncRunnable(nsMenuX* aMenu)
+        : CancelableRunnable("MenuOpenedAsyncRunnable"), mMenu(aMenu) {}
+
+    nsresult Run() override {
+      if (mMenu) {
+        RefPtr<nsMenuX> menu = mMenu;
+        menu->MenuOpenedAsync();
+        mMenu = nullptr;
+      }
+      return NS_OK;
+    }
+    nsresult Cancel() override {
+      mMenu = nullptr;
+      return NS_OK;
+    }
+
+   private:
+    nsMenuX* mMenu;  
+  };
+  mPendingAsyncMenuOpenRunnable = new MenuOpenedAsyncRunnable(this);
+  NS_DispatchToCurrentThread(mPendingAsyncMenuOpenRunnable);
+}
+
+void nsMenuX::FlushMenuOpenedRunnable() {
+  if (mPendingAsyncMenuOpenRunnable) {
+    MenuOpenedAsync();
+  }
+}
+
+void nsMenuX::MenuOpenedAsync() {
+  if (mPendingAsyncMenuOpenRunnable) {
+    mPendingAsyncMenuOpenRunnable->Cancel();
+    mPendingAsyncMenuOpenRunnable = nullptr;
+  }
 
   mIsOpenForGecko = true;
 
@@ -356,25 +411,16 @@ void nsMenuX::MenuOpened() {
     mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
   }
 
+  
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupShown, nullptr, WidgetMouseEvent::eReal);
-
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   nsIContent* dispatchTo = popupContent ? popupContent : mContent;
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 
   
-  mDidFirePopupshowingAndIsApprovedToOpen = false;
-
-  
   if (mObserver) {
     mObserver->OnMenuOpened();
-  }
-
-  if (mNeedsRebuild) {
-    OnHighlightedItemChanged(Nothing());
-    RemoveAll();
-    RebuildMenu();
   }
 }
 
@@ -382,6 +428,9 @@ void nsMenuX::MenuClosed() {
   if (!mIsOpen) {
     return;
   }
+
+  
+  FlushMenuOpenedRunnable();
 
   
   for (auto& child : mMenuChildren) {
@@ -517,6 +566,8 @@ void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierF
 
 bool nsMenuX::Close() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  FlushMenuOpenedRunnable();
 
   bool wasOpen = mIsOpenForGecko;
 

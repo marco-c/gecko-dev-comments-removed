@@ -91,7 +91,6 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  
   void MenuOpened();
 
   
@@ -172,11 +171,18 @@ class nsMenuX final : public nsMenuParentX,
   NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
 
   
+  void MenuOpenedAsync();
+
+  
   
   
   
   
   void MenuClosedAsync();
+
+  
+  
+  void FlushMenuOpenedRunnable();
 
   
   
@@ -195,6 +201,9 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
 
   Observer* mObserver = nullptr;  
+
+  
+  RefPtr<mozilla::CancelableRunnable> mPendingAsyncMenuOpenRunnable;
 
   
   
