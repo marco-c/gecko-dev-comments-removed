@@ -30,6 +30,8 @@ const INSECURE_PASSWORDS_URI =
   DOCS_GA_PARAMS;
 
 add_task(async function() {
+  
+  await pushPref("dom.security.https_first", false);
   await testUriWarningMessage(INSECURE_IFRAME_URI, INSECURE_IFRAME_MSG);
   await testUriWarningMessage(INSECURE_PASSWORD_URI, INSECURE_PASSWORD_MSG);
   await testUriWarningMessage(
