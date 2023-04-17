@@ -518,6 +518,10 @@ struct FrameMetrics {
   
   
   
+  
+  
+  
+  
   ParentLayerRect mCompositionBounds;
 
   
