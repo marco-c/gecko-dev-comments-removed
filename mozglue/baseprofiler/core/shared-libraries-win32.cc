@@ -12,6 +12,7 @@
 
 #include "mozilla/glue/WindowsUnicode.h"
 #include "mozilla/Unused.h"
+#include "mozilla/WindowsEnumProcessModules.h"
 #include "mozilla/WindowsVersion.h"
 
 #include <cctype>
@@ -114,7 +115,7 @@ static bool GetPdbInfo(uintptr_t aStart, std::string& aSignature,
   return true;
 }
 
-static std::string GetVersion(wchar_t* dllPath) {
+static std::string GetVersion(const wchar_t* dllPath) {
   DWORD infoSize = GetFileVersionInfoSizeW(dllPath, nullptr);
   if (infoSize == 0) {
     return {};
@@ -144,42 +145,19 @@ static std::string GetVersion(wchar_t* dllPath) {
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo sharedLibraryInfo;
 
-  HANDLE hProcess = GetCurrentProcess();
-  mozilla::UniquePtr<HMODULE[]> hMods;
-  size_t modulesNum = 0;
-  if (hProcess != NULL) {
-    DWORD modulesSize;
-    if (!EnumProcessModules(hProcess, nullptr, 0, &modulesSize)) {
-      return sharedLibraryInfo;
-    }
-    modulesNum = modulesSize / sizeof(HMODULE);
-    hMods = mozilla::MakeUnique<HMODULE[]>(modulesNum);
-    if (!EnumProcessModules(hProcess, hMods.get(), modulesNum * sizeof(HMODULE),
-                            &modulesSize)) {
-      return sharedLibraryInfo;
-    }
-    
-    if (modulesSize / sizeof(HMODULE) < modulesNum) {
-      modulesNum = modulesSize / sizeof(HMODULE);
-    }
-  }
-
-  for (unsigned int i = 0; i < modulesNum; i++) {
-    wchar_t modulePath[MAX_PATH + 1];
-    if (!GetModuleFileNameExW(hProcess, hMods[i], modulePath,
-                              std::size(modulePath))) {
-      continue;
-    }
+  auto addSharedLibraryFromModuleInfo = [&sharedLibraryInfo](
+                                            const wchar_t* aModulePath,
+                                            HMODULE aModule) {
     mozilla::UniquePtr<char[]> utf8ModulePath(
-        mozilla::glue::WideToUTF8(modulePath));
+        mozilla::glue::WideToUTF8(aModulePath));
     if (!utf8ModulePath) {
-      continue;
+      return;
     }
 
     MODULEINFO module = {0};
-    if (!GetModuleInformation(hProcess, hMods[i], &module,
+    if (!GetModuleInformation(mozilla::nt::kCurrentProcess, aModule, &module,
                               sizeof(MODULEINFO))) {
-      continue;
+      return;
     }
 
     std::string modulePathStr(utf8ModulePath.get());
@@ -220,7 +198,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                           "000000000000000000000000000000000", moduleNameStr,
                           modulePathStr, pdbNameStr, pdbNameStr, "", "");
       sharedLibraryInfo.AddSharedLibrary(shlib);
-      continue;
+      return;
     }
 #endif  
 
@@ -238,7 +216,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     
     
     HMODULE handleLock =
-        LoadLibraryExW(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
+        LoadLibraryExW(aModulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
     MEMORY_BASIC_INFORMATION vmemInfo = {0};
     std::string pdbSig;
     uint32_t pdbAge;
@@ -264,12 +242,13 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                         (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
                         0,  
                         breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
-                        pdbPathStr, GetVersion(modulePath), "");
+                        pdbPathStr, GetVersion(aModulePath), "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
 
     FreeLibrary(handleLock);  
-  }
+  };
 
+  mozilla::EnumerateProcessModules(addSharedLibraryFromModuleInfo);
   return sharedLibraryInfo;
 }
 
