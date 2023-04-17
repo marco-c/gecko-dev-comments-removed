@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+document.addEventListener("dialogextra1", () => {
+  window.arguments[0].learnMore = true;
+  window.close();
+});
