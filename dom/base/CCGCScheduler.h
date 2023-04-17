@@ -105,6 +105,9 @@ struct CCRunnerStep {
   
   
   CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+
+  
+  CCReason mCCReason;
 };
 
 class CCGCScheduler {
@@ -200,14 +203,18 @@ class CCGCScheduler {
     return true;
   }
 
+  
   void NoteGCBegin();
+
+  
   void NoteGCEnd();
+
   
   void NoteWontGC();
 
   
   
-  void NoteCCBegin(TimeStamp aWhen);
+  void NoteCCBegin(CCReason aReason, TimeStamp aWhen);
 
   
   
@@ -355,10 +362,13 @@ class CCGCScheduler {
     NumStates
   };
 
-  void InitCCRunnerStateMachine(CCRunnerState initialState) {
+  void InitCCRunnerStateMachine(CCRunnerState initialState, CCReason aReason) {
     if (mCCRunner) {
       return;
     }
+
+    MOZ_ASSERT(mCCReason == CCReason::NO_REASON);
+    mCCReason = aReason;
 
     
     
@@ -378,7 +388,10 @@ class CCGCScheduler {
     }
   }
 
-  void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
+  void DeactivateCCRunner() {
+    mCCRunnerState = CCRunnerState::Inactive;
+    mCCReason = CCReason::NO_REASON;
+  }
 
   GCRunnerStep GetNextGCRunnerAction() const;
 
@@ -438,6 +451,7 @@ class CCGCScheduler {
   nsITimer* mShrinkingGCTimer = nullptr;
   nsITimer* mFullGCTimer = nullptr;
 
+  mozilla::CCReason mCCReason = mozilla::CCReason::NO_REASON;
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
   bool mIsCompactingOnUserInactive = false;
