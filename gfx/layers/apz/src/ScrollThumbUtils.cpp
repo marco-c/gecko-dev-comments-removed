@@ -21,7 +21,6 @@ struct AsyncScrollThumbTransformer {
   const FrameMetrics& mMetrics;
   const ScrollbarData& mScrollbarData;
   bool mScrollbarIsDescendant;
-  AsyncTransformComponentMatrix* mOutClipTransform;
 
   
   AsyncTransformComponentMatrix mAsyncTransform;
@@ -195,12 +194,6 @@ LayerToParentLayerMatrix4x4 AsyncScrollThumbTransformer::ComputeTransform() {
 
     compensation *= ViewAs<AsyncTransformComponentMatrix>(
         contentTransform * asyncUntransform * contentUntransform);
-
-    
-    
-    if (mOutClipTransform) {
-      *mOutClipTransform = compensation;
-    }
   }
   transform = transform * compensation;
 
@@ -211,15 +204,10 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     const LayerToParentLayerMatrix4x4& aCurrentTransform,
     const gfx::Matrix4x4& aScrollableContentTransform,
     AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
-    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
-    AsyncTransformComponentMatrix* aOutClipTransform) {
-  return AsyncScrollThumbTransformer{aCurrentTransform,
-                                     aScrollableContentTransform,
-                                     aApzc,
-                                     aMetrics,
-                                     aScrollbarData,
-                                     aScrollbarIsDescendant,
-                                     aOutClipTransform}
+    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant) {
+  return AsyncScrollThumbTransformer{
+      aCurrentTransform, aScrollableContentTransform, aApzc, aMetrics,
+      aScrollbarData,    aScrollbarIsDescendant}
       .ComputeTransform();
 }
 

@@ -38,16 +38,11 @@ namespace apz {
 
 
 
-
-
-
-
 LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     const LayerToParentLayerMatrix4x4& aCurrentTransform,
     const gfx::Matrix4x4& aScrollableContentTransform,
     AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
-    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
-    AsyncTransformComponentMatrix* aOutClipTransform);
+    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant);
 
 }  
 }  
