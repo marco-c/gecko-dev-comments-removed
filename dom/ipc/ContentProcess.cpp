@@ -15,6 +15,10 @@
 #  include "mozilla/Sandbox.h"
 #endif
 
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+#  include "mozilla/WindowsProcessMitigations.h"
+#endif
+
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  include "nsAppDirectoryServiceDefs.h"
@@ -54,7 +58,8 @@ static void SetUpSandboxEnvironment() {
 
   
   
-  if (!IsContentSandboxEnabled()) {
+  
+  if (!IsContentSandboxEnabled() || IsWin32kLockedDown()) {
     return;
   }
 
