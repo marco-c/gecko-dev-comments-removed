@@ -153,6 +153,7 @@ export class Coverage {
 
 
 
+
   async startCSSCoverage(options: CSSCoverageOptions = {}): Promise<void> {
     return await this._cssCoverage.start(options);
   }
@@ -192,10 +193,8 @@ export class JSCoverage {
     } = {}
   ): Promise<void> {
     assert(!this._enabled, 'JSCoverage is already enabled');
-    const {
-      resetOnNavigation = true,
-      reportAnonymousScripts = false,
-    } = options;
+    const { resetOnNavigation = true, reportAnonymousScripts = false } =
+      options;
     this._resetOnNavigation = resetOnNavigation;
     this._reportAnonymousScripts = reportAnonymousScripts;
     this._enabled = true;

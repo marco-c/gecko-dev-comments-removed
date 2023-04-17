@@ -14,5 +14,12 @@ async function run() {
 
   const div = await page.$('div');
   console.log('got a div!', div);
+  const contentsOfDiv = await div.evaluate(
+    
+
+
+
+    (divElem) => divElem.innerText
+  );
 }
 run();

@@ -419,6 +419,7 @@ export class Browser extends EventEmitter {
   
 
 
+
   async newPage(): Promise<Page> {
     return this._defaultContext.newPage();
   }
@@ -722,9 +723,8 @@ export class BrowserContext extends EventEmitter {
     permissions: Permission[]
   ): Promise<void> {
     const protocolPermissions = permissions.map((permission) => {
-      const protocolPermission = WEB_PERMISSION_TO_PROTOCOL_PERMISSION.get(
-        permission
-      );
+      const protocolPermission =
+        WEB_PERMISSION_TO_PROTOCOL_PERMISSION.get(permission);
       if (!protocolPermission)
         throw new Error('Unknown permission: ' + permission);
       return protocolPermission;

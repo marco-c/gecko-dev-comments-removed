@@ -32,6 +32,8 @@ const EXCLUDE_PROPERTIES = new Set([
 
 
   'ElementHandle.ElementType',
+  'ElementHandle.HandleObjectType',
+  'JSHandle.HandleObjectType',
 ]);
 
 
@@ -685,7 +687,8 @@ function compareDocumentations(actual, expected) {
         'Method Page.emulateVisionDeficiency() type',
         {
           actualName: 'string',
-          expectedName: 'Object',
+          expectedName:
+            '"none"|"achromatopsia"|"blurredVision"|"deuteranopia"|"protanopia"|"tritanopia"',
         },
       ],
       [
@@ -850,14 +853,6 @@ function compareDocumentations(actual, expected) {
         },
       ],
       [
-        'Method Page.emulateVisionDeficiency() type',
-        {
-          actualName: 'string',
-          expectedName:
-            '"none"|"achromatopsia"|"blurredVision"|"deuteranopia"|"protanopia"|"tritanopia"',
-        },
-      ],
-      [
         'Method BrowserContext.overridePermissions() permissions',
         {
           actualName: 'Array<string>',
@@ -883,6 +878,27 @@ function compareDocumentations(actual, expected) {
         {
           actualName: 'number',
           expectedName: 'Object',
+        },
+      ],
+      [
+        'Method EventEmitter.emit() eventData',
+        {
+          actualName: 'Object',
+          expectedName: 'unknown',
+        },
+      ],
+      [
+        'Method Page.queryObjects() prototypeHandle',
+        {
+          actualName: 'JSHandle',
+          expectedName: 'JSHandle<unknown>',
+        },
+      ],
+      [
+        'Method ExecutionContext.queryObjects() prototypeHandle',
+        {
+          actualName: 'JSHandle',
+          expectedName: 'JSHandle<unknown>',
         },
       ],
     ]);

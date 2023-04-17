@@ -110,6 +110,12 @@ export interface LaunchOptions {
 
 
   extraPrefsFirefox?: Record<string, unknown>;
+  
+
+
+
+
+  waitForInitialPage?: boolean;
 }
 
 

@@ -488,7 +488,15 @@ export class Page extends EventEmitter {
     this._viewport = null;
 
     client.on('Target.attachedToTarget', (event) => {
-      if (event.targetInfo.type !== 'worker') {
+      if (
+        event.targetInfo.type !== 'worker' &&
+        event.targetInfo.type !== 'iframe'
+      ) {
+        
+        
+        
+        
+        
         
         client
           .send('Target.detachFromTarget', {
@@ -787,15 +795,8 @@ export class Page extends EventEmitter {
 
 
 
-
-
-  async setRequestInterception(
-    value: boolean,
-    cacheSafe = false
-  ): Promise<void> {
-    return this._frameManager
-      .networkManager()
-      .setRequestInterception(value, cacheSafe);
+  async setRequestInterception(value: boolean): Promise<void> {
+    return this._frameManager.networkManager().setRequestInterception(value);
   }
 
   
@@ -1819,11 +1820,15 @@ export class Page extends EventEmitter {
       clip = { x: 0, y: 0, width, height, scale: 1 };
 
       if (!captureBeyondViewport) {
-        const { isMobile = false, deviceScaleFactor = 1, isLandscape = false } =
-          this._viewport || {};
-        const screenOrientation: Protocol.Emulation.ScreenOrientation = isLandscape
-          ? { angle: 90, type: 'landscapePrimary' }
-          : { angle: 0, type: 'portraitPrimary' };
+        const {
+          isMobile = false,
+          deviceScaleFactor = 1,
+          isLandscape = false,
+        } = this._viewport || {};
+        const screenOrientation: Protocol.Emulation.ScreenOrientation =
+          isLandscape
+            ? { angle: 90, type: 'landscapePrimary' }
+            : { angle: 0, type: 'portraitPrimary' };
         await this._client.send('Emulation.setDeviceMetricsOverride', {
           mobile: isMobile,
           width,

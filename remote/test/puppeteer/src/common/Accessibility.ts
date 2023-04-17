@@ -440,7 +440,8 @@ class AXNode {
       
       
       
-      if (booleanProperty === 'focused' && this._role === 'WebArea') continue;
+      if (booleanProperty === 'focused' && this._role === 'RootWebArea')
+        continue;
       const value = getBooleanPropertyValue(booleanProperty);
       if (!value) continue;
       node[booleanProperty] = getBooleanPropertyValue(booleanProperty);

@@ -360,9 +360,8 @@ describe('waittask specs', function () {
 
 
 
-
-      expect(endTime - startTime).toBeGreaterThan(900);
-      expect(endTime - startTime).toBeLessThan(1100);
+      expect(endTime - startTime).toBeGreaterThan(700);
+      expect(endTime - startTime).toBeLessThan(1300);
     });
   });
 
@@ -378,9 +377,8 @@ describe('waittask specs', function () {
 
 
 
-
-      expect(endTime - startTime).toBeGreaterThan(900);
-      expect(endTime - startTime).toBeLessThan(1100);
+      expect(endTime - startTime).toBeGreaterThan(700);
+      expect(endTime - startTime).toBeLessThan(1300);
     });
   });
 

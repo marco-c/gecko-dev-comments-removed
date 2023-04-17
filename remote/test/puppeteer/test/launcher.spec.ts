@@ -21,6 +21,7 @@ import { promisify } from 'util';
 import Protocol from 'devtools-protocol';
 import {
   getTestState,
+  itChromeOnly,
   itFailsFirefox,
   itOnlyRegularInstall,
 } from './mocha-utils'; 
@@ -430,6 +431,24 @@ describe('Launcher specs', function () {
         expect(screenshot).toBeInstanceOf(Buffer);
         await browser.close();
       });
+      itChromeOnly(
+        'should launch Chrome properly with --no-startup-window and waitForInitialPage=false',
+        async () => {
+          const { defaultBrowserOptions, puppeteer } = getTestState();
+          const options = {
+            args: ['--no-startup-window'],
+            waitForInitialPage: false,
+            
+            
+            ignoreDefaultArgs: true,
+            ...defaultBrowserOptions,
+          };
+          const browser = await puppeteer.launch(options);
+          const pages = await browser.pages();
+          expect(pages.length).toBe(0);
+          await browser.close();
+        }
+      );
     });
 
     describe('Puppeteer.launch', function () {
@@ -512,11 +531,8 @@ describe('Launcher specs', function () {
         ]);
       });
       it('should support ignoreHTTPSErrors option', async () => {
-        const {
-          httpsServer,
-          puppeteer,
-          defaultBrowserOptions,
-        } = getTestState();
+        const { httpsServer, puppeteer, defaultBrowserOptions } =
+          getTestState();
 
         const originalBrowser = await puppeteer.launch(defaultBrowserOptions);
         const browserWSEndpoint = originalBrowser.wsEndpoint();

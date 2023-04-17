@@ -166,6 +166,8 @@ module.exports = {
             default: 'array-simple',
           },
         ],
+        
+        '@typescript-eslint/explicit-module-boundary-types': 2,
       },
     },
     {

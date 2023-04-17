@@ -10,9 +10,21 @@ async function run() {
   const browser2 = await puppeteer.launch();
   
   const page = await browser2.newPage('foo');
-  const div = (await page.$('div')) as puppeteer.ElementHandle<
-    HTMLAnchorElement
-  >;
+  const div = (await page.$(
+    'div'
+  )) as puppeteer.ElementHandle<HTMLAnchorElement>;
   console.log('got a div!', div);
+  const contentsOfDiv = await div.evaluate(
+    
+    
+    (divElem: number) => divElem.innerText
+  );
+  
+  
+  const contentsOfDiv2 = await div.evaluate<(x: number) => string>(
+    
+    
+    (divElem: number) => divElem.innerText
+  );
 }
 run();

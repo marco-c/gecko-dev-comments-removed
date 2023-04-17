@@ -76,7 +76,7 @@ export class FileChooser {
   
 
 
-  cancel() {
+  cancel(): void {
     assert(
       !this._handled,
       'Cannot cancel FileChooser which is already handled!'

@@ -18,8 +18,8 @@
 const assert = require('assert');
 const https = require('https');
 
-const BrowserFetcher = require('../lib/cjs/puppeteer/node/BrowserFetcher.js')
-  .BrowserFetcher;
+const BrowserFetcher =
+  require('../lib/cjs/puppeteer/node/BrowserFetcher.js').BrowserFetcher;
 
 const SUPPORTER_PLATFORMS = ['linux', 'mac', 'win32', 'win64'];
 const fetchers = SUPPORTER_PLATFORMS.map(

@@ -193,11 +193,13 @@ export class HTTPRequest {
   
 
 
+
   response(): HTTPResponse | null {
     return this._response;
   }
 
   
+
 
 
   frame(): Frame | null {
@@ -212,6 +214,7 @@ export class HTTPRequest {
   }
 
   
+
 
 
 
