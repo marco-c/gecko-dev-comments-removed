@@ -1803,25 +1803,6 @@
       return origins;
     }
 
-    get processSwitchBehavior() {
-      
-      
-      
-      if (this.hasAttribute("maychangeremoteness")) {
-        return Ci.nsIBrowser.PROCESS_BEHAVIOR_STANDARD;
-      }
-
-      
-      
-      
-      
-      if (this.isRemoteBrowser) {
-        return Ci.nsIBrowser.PROCESS_BEHAVIOR_SUBFRAME_ONLY;
-      }
-      
-      return Ci.nsIBrowser.PROCESS_BEHAVIOR_DISABLED;
-    }
-
     
     
     
