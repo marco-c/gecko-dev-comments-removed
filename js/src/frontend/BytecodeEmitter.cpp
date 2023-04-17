@@ -10229,7 +10229,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
   
   
   
-  
 
   bool useObjLiteral = false;
   bool useObjLiteralValues = false;
