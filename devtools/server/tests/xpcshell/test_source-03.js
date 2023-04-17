@@ -42,7 +42,10 @@ add_task(
       });
 
       const { sources } = await getSources(threadFront);
-      Assert.equal(sources.length, 1);
+
+      
+      
+      Assert.equal(sources.length, 2);
 
       
       

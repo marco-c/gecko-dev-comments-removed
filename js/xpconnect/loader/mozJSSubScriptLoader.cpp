@@ -5,6 +5,7 @@
 
 
 #include "mozJSSubScriptLoader.h"
+#include "js/experimental/JSStencil.h"
 #include "mozJSComponentLoader.h"
 #include "mozJSLoaderUtils.h"
 
@@ -122,22 +123,19 @@ static void ReportError(JSContext* cx, const char* origMsg, nsIURI* uri) {
   ReportError(cx, msg);
 }
 
-static JSScript* PrepareScript(nsIURI* uri, JSContext* cx,
-                               const JS::ReadOnlyCompileOptions& options,
-                               const char* buf, int64_t len) {
-  JS::SourceText<Utf8Unit> srcBuf;
-  if (!srcBuf.init(cx, buf, len, JS::SourceOwnership::Borrowed)) {
-    return nullptr;
-  }
-
-  return JS::Compile(cx, options, srcBuf);
-}
-
-static bool EvalScript(JSContext* cx, HandleObject targetObj,
-                       HandleObject loadScope, MutableHandleValue retval,
-                       nsIURI* uri, bool storeIntoStartupCache,
-                       bool storeIntoPreloadCache, MutableHandleScript script) {
+static bool EvalStencil(JSContext* cx, HandleObject targetObj,
+                        HandleObject loadScope, MutableHandleValue retval,
+                        nsIURI* uri, bool storeIntoStartupCache,
+                        bool storeIntoPreloadCache,
+                        const ReadOnlyCompileOptions& options,
+                        JS::Stencil* stencil) {
   MOZ_ASSERT(!js::IsWrapper(targetObj));
+
+  JS::RootedScript script(cx,
+                          JS::InstantiateGlobalStencil(cx, options, stencil));
+  if (!script) {
+    return false;
+  }
 
   if (JS_IsGlobalObject(targetObj)) {
     if (!JS::CloneAndExecuteScript(cx, script, retval)) {
@@ -221,18 +219,18 @@ static bool EvalScript(JSContext* cx, HandleObject targetObj,
 
     if (storeIntoStartupCache) {
       JSAutoRealm ar(cx, script);
-      WriteCachedScript(StartupCache::GetSingleton(), cachePath, cx, script);
+      WriteCachedStencil(StartupCache::GetSingleton(), cachePath, cx, options,
+                         stencil);
     }
   }
 
   return true;
 }
 
-bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
-                                      nsIURI* uri, JSContext* cx,
-                                      const JS::ReadOnlyCompileOptions& options,
-                                      nsIIOService* serv,
-                                      bool useCompilationScope) {
+bool mozJSSubScriptLoader::ReadStencil(
+    JS::Stencil** stencilOut, nsIURI* uri, JSContext* cx,
+    const JS::ReadOnlyCompileOptions& options, nsIIOService* serv,
+    bool useCompilationScope) {
   
   
   nsCOMPtr<nsIChannel> chan;
@@ -304,13 +302,15 @@ bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
     ar.emplace(cx, xpc::CompilationScope());
   }
 
-  JSScript* ret = PrepareScript(uri, cx, options, buf.get(), len);
-  if (!ret) {
+  JS::SourceText<Utf8Unit> srcBuf;
+  if (!srcBuf.init(cx, buf.get(), len, JS::SourceOwnership::Borrowed)) {
     return false;
   }
 
-  script.set(ret);
-  return true;
+  RefPtr<JS::Stencil> stencil =
+      JS::CompileGlobalScriptToStencil(cx, options, srcBuf);
+  stencil.forget(stencilOut);
+  return *stencilOut;
 }
 
 NS_IMETHODIMP
@@ -463,28 +463,33 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
     compileOptions.setNoScriptRval(false);
   }
 
-  RootedScript script(cx);
+  RefPtr<JS::Stencil> stencil;
   if (!options.ignoreCache) {
-    if (!options.wantReturnValue) {
-      
-      script = ScriptPreloader::GetSingleton().GetCachedScript(
-          cx, compileOptions, cachePath);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (cache) {
+      rv = ReadCachedStencil(cache, cachePath, cx, compileOptions,
+                             getter_AddRefs(stencil));
     }
-    if (!script && cache) {
-      rv = ReadCachedScript(cache, cachePath, cx, compileOptions, &script);
-    }
-    if (NS_FAILED(rv) || !script) {
+    if (NS_FAILED(rv) || !stencil) {
       
       JS_ClearPendingException(cx);
     }
   }
 
   bool storeIntoStartupCache = false;
-  if (!script) {
+  if (!stencil) {
     
     storeIntoStartupCache = cache;
-    if (!ReadScript(&script, uri, cx, compileOptions, serv,
-                    useCompilationScope)) {
+    if (!ReadStencil(getter_AddRefs(stencil), uri, cx, compileOptions, serv,
+                     useCompilationScope)) {
       return NS_OK;
     }
   }
@@ -493,7 +498,8 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   
   bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
 
-  Unused << EvalScript(cx, targetObj, loadScope, retval, uri,
-                       storeIntoStartupCache, storeIntoPreloadCache, &script);
+  Unused << EvalStencil(cx, targetObj, loadScope, retval, uri,
+                        storeIntoStartupCache, storeIntoPreloadCache,
+                        compileOptions, stencil);
   return NS_OK;
 }

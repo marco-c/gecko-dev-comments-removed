@@ -21,7 +21,8 @@
 #include "js/Array.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
-#include "js/CompileOptions.h"         
+#include "js/CompileOptions.h"  
+#include "js/experimental/JSStencil.h"
 #include "js/friend/JSMEnvironment.h"  
 #include "js/Object.h"                 
 #include "js/Printf.h"
@@ -732,8 +733,6 @@ nsresult mozJSComponentLoader::ObjectForLocation(
 
   JSAutoRealm ar(cx, obj);
 
-  RootedScript script(cx);
-
   nsAutoCString nativePath;
   rv = aInfo.URI()->GetSpec(nativePath);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -758,18 +757,20 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   options.setForceStrictMode();
   options.setNonSyntacticScope(true);
 
-  script =
-      ScriptPreloader::GetSingleton().GetCachedScript(cx, options, cachePath);
+  RootedScript script(cx, ScriptPreloader::GetSingleton().GetCachedScript(
+                              cx, options, cachePath));
+
+  RefPtr<JS::Stencil> stencil;
   if (!script && cache) {
-    ReadCachedScript(cache, cachePath, cx, options, &script);
-    if (!script) {
+    ReadCachedStencil(cache, cachePath, cx, options, getter_AddRefs(stencil));
+    if (!stencil) {
       JS_ClearPendingException(cx);
 
       storeIntoStartupCache = true;
     }
   }
 
-  if (script) {
+  if (script || stencil) {
     LOG(("Successfully loaded %s from cache\n", nativePath.get()));
   } else {
     
@@ -794,9 +795,9 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       JS::SourceText<mozilla::Utf8Unit> srcBuf;
       if (srcBuf.init(cx, buf.get(), map.size(),
                       JS::SourceOwnership::Borrowed)) {
-        script = Compile(cx, options, srcBuf);
+        stencil = CompileGlobalScriptToStencil(cx, options, srcBuf);
       } else {
-        MOZ_ASSERT(!script);
+        MOZ_ASSERT(!stencil);
       }
     } else {
       nsCString str;
@@ -805,12 +806,26 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       JS::SourceText<mozilla::Utf8Unit> srcBuf;
       if (srcBuf.init(cx, str.get(), str.Length(),
                       JS::SourceOwnership::Borrowed)) {
-        script = Compile(cx, options, srcBuf);
+        stencil = CompileGlobalScriptToStencil(cx, options, srcBuf);
       } else {
-        MOZ_ASSERT(!script);
+        MOZ_ASSERT(!stencil);
       }
     }
 
+    if (!stencil) {
+      
+      
+      if (aPropagateExceptions && jsapi.HasException()) {
+        if (!jsapi.StealException(aException)) {
+          return NS_ERROR_OUT_OF_MEMORY;
+        }
+      }
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  if (!script) {
+    script = JS::InstantiateGlobalStencil(cx, options, stencil);
     if (!script) {
       
       
@@ -832,9 +847,10 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   
   if (storeIntoStartupCache) {
     MOZ_ASSERT(options.sourceIsLazy);
+    MOZ_ASSERT(stencil);
 
     
-    rv = WriteCachedScript(cache, cachePath, cx, script);
+    rv = WriteCachedStencil(cache, cachePath, cx, options, stencil);
 
     
     
