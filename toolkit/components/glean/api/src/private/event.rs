@@ -51,14 +51,32 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
         }
     }
 
+    
+    
+    
+    #[cfg(not(feature = "cargo-clippy"))]
+    pub(crate) fn record_raw(&self, extra: HashMap<i32, String>) {
+        let now = glean::get_timestamp_ms();
+        self.record_with_time(now, extra)
+    }
+
+    
+    
+    
     pub(crate) fn record_with_time(&self, timestamp: u64, extra: HashMap<i32, String>) {
         match self {
             EventMetric::Parent { inner, .. } => {
                 inner.record_with_time(timestamp, extra);
             }
-            EventMetric::Child(_) => {
-                
-                log::error!("Can't record an event with a timestamp from a child metric");
+            EventMetric::Child(c) => {
+                with_ipc_payload(move |payload| {
+                    if let Some(v) = payload.events.get_mut(&c.0) {
+                        v.push((timestamp, extra));
+                    } else {
+                        let v = vec![(timestamp, extra)];
+                        payload.events.insert(c.0, v);
+                    }
+                });
             }
         }
     }
@@ -68,28 +86,16 @@ impl<K: 'static + ExtraKeys + Send + Sync> EventMetric<K> {
 impl<K: 'static + ExtraKeys + Send + Sync> Event for EventMetric<K> {
     type Extra = K;
 
-    fn record<M: Into<Option<HashMap<K, String>>>>(&self, extra: M) {
+    fn record<M: Into<Option<K>>>(&self, extra: M) {
         match self {
             EventMetric::Parent { inner, .. } => {
                 inner.record(extra);
             }
-            EventMetric::Child(c) => {
+            EventMetric::Child(_) => {
                 let now = glean::get_timestamp_ms();
-                let extra = extra.into().map(|hash_map| {
-                    hash_map
-                        .iter()
-                        .map(|(k, v)| (k.index(), v.clone()))
-                        .collect()
-                });
+                let extra = extra.into().map(|extra| extra.into_ffi_extra());
                 let extra = extra.unwrap_or_else(HashMap::new);
-                with_ipc_payload(move |payload| {
-                    if let Some(v) = payload.events.get_mut(&c.0) {
-                        v.push((now, extra));
-                    } else {
-                        let v = vec![(now, extra)];
-                        payload.events.insert(c.0, v);
-                    }
-                });
+                self.record_with_time(now, extra);
             }
         }
     }
@@ -129,7 +135,6 @@ mod test {
     use crate::{common_test::*, ipc, metrics};
 
     #[test]
-    #[ignore] 
     fn smoke_test_event() {
         let _lock = lock_test();
 
@@ -153,57 +158,8 @@ mod test {
     }
 
     #[test]
-    #[ignore] 
-    fn smoke_test_event_with_extra() {
-        let _lock = lock_test();
-
-        #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-        enum TestKeys {
-            Extra1,
-        }
-
-        impl ExtraKeys for TestKeys {
-            const ALLOWED_KEYS: &'static [&'static str] = &["extra1"];
-
-            fn index(self) -> i32 {
-                self as i32
-            }
-        }
-
-        let metric = EventMetric::<TestKeys>::new(
-            0.into(),
-            CommonMetricData {
-                name: "event_metric_with_extra".into(),
-                category: "telemetry".into(),
-                send_in_pings: vec!["store1".into()],
-                disabled: false,
-                ..Default::default()
-            },
-        );
-
-        
-        metric.record(None);
-
-        
-        let mut map = HashMap::new();
-        map.insert(TestKeys::Extra1, "a-valid-value".into());
-        metric.record(map);
-
-        let recorded = metric.test_get_value("store1").unwrap();
-
-        let events: Vec<&RecordedEvent> = recorded
-            .iter()
-            .filter(|&e| e.category == "telemetry" && e.name == "event_metric_with_extra")
-            .collect();
-        assert_eq!(events.len(), 2);
-        assert_eq!(events[0].extra, None);
-        assert!(events[1].extra.as_ref().unwrap().get("extra1").unwrap() == "a-valid-value");
-    }
-
-    #[test]
-    #[ignore] 
     fn event_ipc() {
-        use metrics::test_only_ipc::AnEventKeys;
+        use metrics::test_only_ipc::AnEventExtra;
 
         let _lock = lock_test();
 
@@ -220,30 +176,59 @@ mod test {
 
             child_metric.record(None);
 
-            let mut map = HashMap::new();
-            map.insert(AnEventKeys::Extra1, "a-child-value".into());
-            child_metric.record(map);
+            let extra = AnEventExtra {
+                extra1: Some("a-child-value".into()),
+                ..Default::default()
+            };
+            child_metric.record(extra);
         }
 
         
-        let mut map = HashMap::new();
-        map.insert(AnEventKeys::Extra1, "a-valid-value".into());
-        parent_metric.record(map);
+        let extra = AnEventExtra {
+            extra1: Some("a-valid-value".into()),
+            ..Default::default()
+        };
+        parent_metric.record(extra);
 
-        let recorded = parent_metric.test_get_value("store1").unwrap();
-
-        let events: Vec<&RecordedEvent> = recorded
-            .iter()
-            .filter(|&e| e.category == "test_only.ipc" && e.name == "an_event")
-            .collect();
-        assert_eq!(events.len(), 2);
-        assert_eq!(events[0].extra, None);
-
-        assert!(events[1].extra.as_ref().unwrap().get("extra1").unwrap() == "a-valid-value");
-        
-        
-        let buf = ipc::take_buf().unwrap();
-        assert!(buf.len() > 0);
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
+
+        let events = parent_metric.test_get_value("store1").unwrap();
+        assert_eq!(events.len(), 4);
+
+        
+        assert_eq!(events[0].extra, None);
+        assert!(events[1].extra.as_ref().unwrap().get("extra1").unwrap() == "a-valid-value");
+        assert_eq!(events[2].extra, None);
+        assert!(events[3].extra.as_ref().unwrap().get("extra1").unwrap() == "a-child-value");
+    }
+
+    #[test]
+    fn events_with_typed_extras() {
+        use metrics::test_only_ipc::EventWithExtraExtra;
+        let _lock = lock_test();
+
+        let event = &metrics::test_only_ipc::event_with_extra;
+        
+        let extra = EventWithExtraExtra {
+            extra1: Some("a-valid-value".into()),
+            extra2: Some(37),
+            extra3_longer_name: Some(false),
+        };
+        event.record(extra);
+
+        let recorded = event.test_get_value("store1").unwrap();
+
+        assert_eq!(recorded.len(), 1);
+        assert!(recorded[0].extra.as_ref().unwrap().get("extra1").unwrap() == "a-valid-value");
+        assert!(recorded[0].extra.as_ref().unwrap().get("extra2").unwrap() == "37");
+        assert!(
+            recorded[0]
+                .extra
+                .as_ref()
+                .unwrap()
+                .get("extra3_longer_name")
+                .unwrap()
+                == "false"
+        );
     }
 }
