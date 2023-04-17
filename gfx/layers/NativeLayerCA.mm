@@ -340,6 +340,7 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
     
     
     
+    
     if (aWindowIsFullscreen && aRepresentation == WhichRepresentation::ONSCREEN &&
         StaticPrefs::gfx_core_animation_specialize_video()) {
       CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers);
@@ -1299,13 +1300,14 @@ void NativeLayerCA::Representation::ApplyChanges(
 
   if (mMutatedFrontSurface) {
     bool isEnqueued = false;
-    if (aSpecializeVideo) {
+    IOSurfaceRef surface = aFrontSurface.get();
+    if (aSpecializeVideo && CanSpecializeSurface(surface)) {
       
-      isEnqueued = EnqueueSurface(aFrontSurface.get());
+      isEnqueued = EnqueueSurface(surface);
     }
 
     if (!isEnqueued) {
-      mContentCALayer.contents = (id)aFrontSurface.get();
+      mContentCALayer.contents = (id)surface;
     }
   }
 
@@ -1339,6 +1341,15 @@ bool NativeLayerCA::Representation::HasUpdate() {
   return mMutatedPosition || mMutatedTransform || mMutatedDisplayRect || mMutatedClipRect ||
          mMutatedBackingScale || mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedFrontSurface ||
          mMutatedSamplingFilter || mMutatedSpecializeVideo;
+}
+
+bool NativeLayerCA::Representation::CanSpecializeSurface(IOSurfaceRef surface) {
+  
+  
+  
+  OSType pixelFormat = IOSurfaceGetPixelFormat(surface);
+  return (pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
+          pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange);
 }
 
 

@@ -327,6 +327,8 @@ class NativeLayerCA : public NativeLayer {
     
     bool HasUpdate();
 
+    bool CanSpecializeSurface(IOSurfaceRef surface);
+
     
     
     
