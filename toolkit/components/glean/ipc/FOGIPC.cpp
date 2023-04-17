@@ -10,6 +10,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/ProcInfo.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
@@ -20,6 +21,26 @@ using FlushFOGDataPromise = mozilla::dom::ContentParent::FlushFOGDataPromise;
 namespace mozilla {
 namespace glean {
 
+static void RecordCpuTime() {
+  static uint64_t previousCpuTime = 0;
+
+  uint64_t cpuTime;
+  if (NS_FAILED(GetCpuTimeSinceProcessStartInMs(&cpuTime))) {
+    return;
+  }
+
+  uint64_t newCpuTime = cpuTime - previousCpuTime;
+  previousCpuTime += newCpuTime;
+
+  if (newCpuTime) {
+    
+    
+    
+    power::total_cpu_time_ms.Add(int32_t(newCpuTime));
+  }
+}
+
+
 
 
 
@@ -27,6 +48,9 @@ namespace glean {
 
 
 void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver) {
+  
+  RecordCpuTime();
+
   ByteBuf buf;
   uint32_t ipcBufferSize = impl::fog_serialize_ipc_buf();
   bool ok = buf.Allocate(ipcBufferSize);
@@ -106,6 +130,9 @@ void SendFOGData(ipc::ByteBuf&& buf) {
 
 
 RefPtr<GenericPromise> FlushAndUseFOGData() {
+  
+  RecordCpuTime();
+
   RefPtr<GenericPromise::Private> ret = new GenericPromise::Private(__func__);
   std::function<void(nsTArray<ByteBuf> &&)> resolver =
       [ret](nsTArray<ByteBuf>&& bufs) {

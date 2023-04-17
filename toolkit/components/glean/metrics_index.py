@@ -12,6 +12,7 @@ metrics_yamls = [
     "toolkit/mozapps/update/metrics.yaml",
     "browser/base/content/metrics.yaml",
     "gfx/metrics.yaml",
+    "toolkit/components/processtools/metrics.yaml",
 ]
 
 

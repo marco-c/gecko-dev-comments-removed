@@ -741,6 +741,9 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
 
   
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/stat", aPid).get());
+
+  
   AddMemoryReporting(policy.get(), aPid);
 
   
