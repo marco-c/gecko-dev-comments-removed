@@ -364,6 +364,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   static void ConsumeInteractionData(
       dom::Record<nsString, dom::InteractionData>& aInteractions);
 
+  
+  
+  
+  void StopTrackingDragGesture(bool aClearInChildProcesses);
+
  protected:
   
 
@@ -980,11 +985,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   friend class mozilla::dom::BrowserParent;
   void BeginTrackingRemoteDragGesture(nsIContent* aContent,
                                       dom::RemoteDragStartData* aDragStartData);
-
-  
-  
-  
-  void StopTrackingDragGesture(bool aClearInChildProcesses);
 
   MOZ_CAN_RUN_SCRIPT
   void GenerateDragGesture(nsPresContext* aPresContext,
