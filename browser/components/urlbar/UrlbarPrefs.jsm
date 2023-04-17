@@ -171,25 +171,28 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.bookmark", true],
 
   
+  ["suggest.calculator", false],
+
+  
+  ["suggest.engines", true],
+
+  
   ["suggest.history", true],
 
   
   ["suggest.openpage", true],
 
   
+  ["suggest.quicksuggest", false],
+
+  
+  ["suggest.quicksuggest.sponsored", false],
+
+  
   ["suggest.searches", false],
 
   
-  ["suggest.engines", true],
-
-  
   ["suggest.topsites", true],
-
-  
-  ["suggest.calculator", false],
-
-  
-  ["suggest.quicksuggest", false],
 
   
   

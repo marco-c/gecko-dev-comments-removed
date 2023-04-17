@@ -34,7 +34,6 @@ const RS_COLLECTION = "quicksuggest";
 const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
 
 const FEATURE_AVAILABLE = "quickSuggestEnabled";
-const OPTED_IN = "suggest.quicksuggest";
 const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
 const RESTARTS_PREF = "quicksuggest.seenRestarts";
 
@@ -172,7 +171,10 @@ class Suggestions {
 
   onPrefChanged(pref) {
     switch (pref) {
-      case OPTED_IN:
+      
+      
+      
+      case "suggest.quicksuggest":
         this.onEnabledUpdate();
         break;
     }
@@ -190,8 +192,20 @@ class Suggestions {
 
 
 
+
+
+
+
+
+
+
+
+
   onEnabledUpdate() {
-    if (UrlbarPrefs.get(FEATURE_AVAILABLE) && UrlbarPrefs.get(OPTED_IN)) {
+    if (
+      UrlbarPrefs.get(FEATURE_AVAILABLE) &&
+      UrlbarPrefs.get("suggest.quicksuggest")
+    ) {
       this._setupRemoteSettings();
     }
   }
@@ -215,7 +229,8 @@ class Suggestions {
       !UrlbarPrefs.get(FEATURE_AVAILABLE) ||
       !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
       UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
-      UrlbarPrefs.get(OPTED_IN)
+      UrlbarPrefs.get("suggest.quicksuggest") ||
+      UrlbarPrefs.get("suggest.quicksuggest.sponsored")
     ) {
       return;
     }
@@ -241,7 +256,9 @@ class Suggestions {
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
 
     if (params.accept) {
-      UrlbarPrefs.set(OPTED_IN, true);
+      
+      UrlbarPrefs.set("suggest.quicksuggest", true);
+      UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
     } else if (params.openSettings) {
       win.openPreferences("search-quickSuggest");
     } else if (params.learnMore) {

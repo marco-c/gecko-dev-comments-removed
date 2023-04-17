@@ -97,9 +97,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       !queryContext.searchMode &&
       !queryContext.isPrivate &&
       UrlbarPrefs.get("quickSuggestEnabled") &&
-      UrlbarPrefs.get("suggest.quicksuggest") &&
-      UrlbarPrefs.get("suggest.searches") &&
-      UrlbarPrefs.get("browser.search.suggest.enabled")
+      UrlbarPrefs.get("suggest.quicksuggest")
     );
   }
 
@@ -134,9 +132,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
     }
 
     
+    
+    
+    
     let suggestion = allSuggestions
       .flat()
-      .filter(s => s)
+      .filter(
+        s =>
+          s &&
+          (!s.is_sponsored || UrlbarPrefs.get("suggest.quicksuggest.sponsored"))
+      )
       .sort((a, b) => b.score - a.score)[0];
     if (!suggestion) {
       return;
@@ -307,7 +312,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
         Services.telemetry.recordEvent(
           TELEMETRY_EVENT_CATEGORY,
           "enable_toggled",
-          UrlbarPrefs.get("suggest.quicksuggest") ? "enabled" : "disabled"
+          UrlbarPrefs.get(pref) ? "enabled" : "disabled"
+        );
+        break;
+      case "suggest.quicksuggest.sponsored":
+        Services.telemetry.recordEvent(
+          TELEMETRY_EVENT_CATEGORY,
+          "sponsored_toggled",
+          UrlbarPrefs.get(pref) ? "enabled" : "disabled"
         );
         break;
     }
