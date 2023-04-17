@@ -3907,12 +3907,6 @@ class nsIFrame : public nsQueryFrame {
                                                int32_t aLine,
                                                nsDirection aDirection);
 
-  
-  
-  
-  Result<int32_t, nsresult> GetLineNumber(
-      bool aLockScroll, nsIFrame** aContainingBlock = nullptr);
-
  public:
   
 
