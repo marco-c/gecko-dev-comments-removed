@@ -64,11 +64,35 @@ function getBaseDomainFromPartitionKey(partitionKey) {
 
 
 
-function hasBaseDomain({ host, originAttributes = null }, aBaseDomain) {
-  if (Services.eTLD.hasRootDomain(host, aBaseDomain)) {
+
+
+function hasBaseDomain(
+  { host = null, originAttributes = null, principal = null },
+  aBaseDomain
+) {
+  if (!aBaseDomain) {
+    throw new Error("Missing baseDomain.");
+  }
+  if (!host && !originAttributes && !principal) {
+    throw new Error(
+      "Missing host, originAttributes or principal to match with baseDomain."
+    );
+  }
+  if (principal && (host || originAttributes)) {
+    throw new Error(
+      "Can only pass either principal or host and originAttributes."
+    );
+  }
+
+  if (host && Services.eTLD.hasRootDomain(host, aBaseDomain)) {
     return true;
   }
 
+  if (principal?.baseDomain == aBaseDomain) {
+    return true;
+  }
+
+  originAttributes = originAttributes || principal?.originAttributes;
   if (!originAttributes) {
     return false;
   }
@@ -462,6 +486,59 @@ const MediaDevicesCleaner = {
 };
 
 const QuotaCleaner = {
+  
+
+
+
+
+
+
+  async _qmsClearStoragesForPrincipalsMatching(filterFn) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let origins = await new Promise((resolve, reject) => {
+      Services.qms.listOrigins().callback = request => {
+        if (request.resultCode != Cr.NS_OK) {
+          reject({ message: "Deleting quota storages failed" });
+          return;
+        }
+        resolve(request.result);
+      };
+    });
+
+    let clearPromises = origins
+      
+      .map(Services.scriptSecurityManager.createContentPrincipalFromOrigin)
+      
+      .filter(filterFn)
+      
+      .map(
+        principal =>
+          new Promise((resolve, reject) => {
+            let clearRequest = Services.qms.clearStoragesForPrincipal(
+              principal
+            );
+            clearRequest.callback = () => {
+              if (clearRequest.resultCode != Cr.NS_OK) {
+                reject({ message: "Deleting quota storages failed" });
+                return;
+              }
+              resolve();
+            };
+          })
+      );
+    return Promise.all(clearPromises);
+  },
+
   deleteByPrincipal(aPrincipal) {
     
     
@@ -501,12 +578,46 @@ const QuotaCleaner = {
       });
   },
 
-  deleteByBaseDomain(aBaseDomain) {
+  async deleteByBaseDomain(aBaseDomain) {
     
-    return this.deleteByHost(aBaseDomain, {});
+    
+    
+    
+    
+    Services.obs.notifyObservers(
+      null,
+      "extension:purge-localStorage",
+      aBaseDomain
+    );
+
+    
+    Services.obs.notifyObservers(
+      null,
+      "browser:purge-sessionStorage",
+      aBaseDomain
+    );
+
+    
+    
+    
+    let swCleanupError;
+    try {
+      await ServiceWorkerCleanUp.removeFromBaseDomain(aBaseDomain);
+    } catch (error) {
+      swCleanupError = error;
+    }
+
+    await this._qmsClearStoragesForPrincipalsMatching(principal =>
+      hasBaseDomain({ principal }, aBaseDomain)
+    );
+
+    
+    if (swCleanupError) {
+      throw swCleanupError;
+    }
   },
 
-  deleteByHost(aHost, aOriginAttributes) {
+  async deleteByHost(aHost, aOriginAttributes) {
     
     
 
@@ -519,58 +630,29 @@ const QuotaCleaner = {
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage", aHost);
 
     
-    return ServiceWorkerCleanUp.removeFromHost(aHost)
-      .then(
-        _ =>  false,
-        _ =>  true
-      )
-      .then(exceptionThrown => {
-        
-        
+    
+    let swCleanupError;
+    try {
+      await ServiceWorkerCleanUp.removeFromHost(aHost);
+    } catch (error) {
+      swCleanupError = error;
+    }
 
+    await this._qmsClearStoragesForPrincipalsMatching(principal => {
+      try {
         
         
-        return new Promise((aResolve, aReject) => {
-          Services.qms.listOrigins().callback = aRequest => {
-            if (aRequest.resultCode != Cr.NS_OK) {
-              aReject({ message: "Delete by host failed" });
-              return;
-            }
+        return Services.eTLD.hasRootDomain(principal.host, aHost);
+      } catch (e) {
+        
+        return false;
+      }
+    });
 
-            let promises = [];
-            for (const origin of aRequest.result) {
-              let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                origin
-              );
-              let host;
-              try {
-                host = principal.host;
-              } catch (e) {
-                
-                continue;
-              }
-
-              if (Services.eTLD.hasRootDomain(host, aHost)) {
-                promises.push(
-                  new Promise((aResolve, aReject) => {
-                    let clearRequest = Services.qms.clearStoragesForPrincipal(
-                      principal
-                    );
-                    clearRequest.callback = () => {
-                      if (clearRequest.resultCode == Cr.NS_OK) {
-                        aResolve();
-                      } else {
-                        aReject({ message: "Delete by host failed" });
-                      }
-                    };
-                  })
-                );
-              }
-            }
-            Promise.all(promises).then(exceptionThrown ? aReject : aResolve);
-          };
-        });
-      });
+    
+    if (swCleanupError) {
+      throw swCleanupError;
+    }
   },
 
   deleteByRange(aFrom, aTo) {
@@ -626,7 +708,7 @@ const QuotaCleaner = {
       });
   },
 
-  deleteAll() {
+  async deleteAll() {
     
     Services.obs.notifyObservers(null, "extension:purge-localStorage");
 
@@ -634,50 +716,25 @@ const QuotaCleaner = {
     Services.obs.notifyObservers(null, "browser:purge-sessionStorage");
 
     
-    return ServiceWorkerCleanUp.removeAll()
-      .then(
-        _ =>  false,
-        _ =>  true
-      )
-      .then(exceptionThrown => {
-        
-        
-        return new Promise((aResolve, aReject) => {
-          Services.qms.getUsage(aRequest => {
-            if (aRequest.resultCode != Cr.NS_OK) {
-              aReject({ message: "Delete all failed" });
-              return;
-            }
+    
+    let swCleanupError;
+    try {
+      await ServiceWorkerCleanUp.removeAll();
+    } catch (error) {
+      swCleanupError = error;
+    }
 
-            let promises = [];
-            for (let item of aRequest.result) {
-              let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                item.origin
-              );
-              if (
-                principal.schemeIs("http") ||
-                principal.schemeIs("https") ||
-                principal.schemeIs("file")
-              ) {
-                promises.push(
-                  new Promise((aResolve, aReject) => {
-                    let req = Services.qms.clearStoragesForPrincipal(principal);
-                    req.callback = () => {
-                      if (req.resultCode == Cr.NS_OK) {
-                        aResolve();
-                      } else {
-                        aReject({ message: "Delete all failed" });
-                      }
-                    };
-                  })
-                );
-              }
-            }
+    await this._qmsClearStoragesForPrincipalsMatching(
+      principal =>
+        principal.schemeIs("http") ||
+        principal.schemeIs("https") ||
+        principal.schemeIs("file")
+    );
 
-            Promise.all(promises).then(exceptionThrown ? aReject : aResolve);
-          });
-        });
-      });
+    
+    if (swCleanupError) {
+      throw swCleanupError;
+    }
   },
 };
 
