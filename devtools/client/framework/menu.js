@@ -82,6 +82,22 @@ Menu.prototype.popupAtTarget = function(target, doc) {
 
 
 
+Menu.prototype.hide = function(doc) {
+  const win = doc.defaultView;
+  doc = DevToolsUtils.getTopWindow(win).document;
+  const popup = doc.querySelector('popupset menupopup[menu-api="true"]');
+  if (!popup) {
+    return;
+  }
+  popup.hidePopup();
+};
+
+
+
+
+
+
+
 
 
 
@@ -92,24 +108,22 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
   
   
   
+  
+  this.hide(doc);
+
+  
+  
+  
   const win = doc.defaultView;
-  doc = DevToolsUtils.getTopWindow(doc.defaultView).document;
+  doc = DevToolsUtils.getTopWindow(win).document;
 
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
     popupset = doc.createXULElement("popupset");
     doc.documentElement.appendChild(popupset);
   }
-  
-  
-  
-  
-  let popup = popupset.querySelector('menupopup[menu-api="true"]');
-  if (popup) {
-    popup.hidePopup();
-  }
 
-  popup = doc.createXULElement("menupopup");
+  const popup = doc.createXULElement("menupopup");
   popup.setAttribute("menu-api", "true");
   popup.setAttribute("consumeoutsideclicks", "false");
   popup.setAttribute("incontentshell", "false");
