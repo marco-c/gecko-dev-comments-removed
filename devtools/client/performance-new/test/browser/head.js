@@ -107,9 +107,10 @@ async function waitUntil(condition, message) {
 
 
 
-function getElementByLabel(document, label) {
+
+function getElementByLabel(container, label) {
   return waitUntil(
-    () => document.querySelector(`[label="${label}"]`),
+    () => container.querySelector(`[label="${label}"]`),
     `Trying to find the button with the label "${label}".`
   );
 }
@@ -448,7 +449,7 @@ function withAboutProfiling(callback) {
     "about:profiling",
     async contentBrowser => {
       info("about:profiling is now open in a tab.");
-      await BrowserTestUtils.waitForCondition(
+      await TestUtils.waitForCondition(
         () =>
           contentBrowser.contentDocument.getElementById("root")
             .firstElementChild,
@@ -467,15 +468,23 @@ function withAboutProfiling(callback) {
 
 
 
-async function withDevToolsPanel(callback) {
+
+
+
+async function withDevToolsPanel(url, callback) {
+  if (typeof url !== "string" && !callback) {
+    callback = url;
+    url = "about:blank";
+  }
+
   SpecialPowers.pushPrefEnv({
     set: [["devtools.performance.new-panel-enabled", "true"]],
   });
 
   const { gDevTools } = require("devtools/client/framework/devtools");
 
-  info("Create a new about:blank tab.");
-  const tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  info(`Create a new tab with url "${url}".`);
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   info("Begin to open the DevTools and the performance-new panel.");
   const toolbox = await gDevTools.showToolboxForTab(tab, {
@@ -485,7 +494,7 @@ async function withDevToolsPanel(callback) {
   const { document } = toolbox.getCurrentPanel().panelWin;
 
   info("The performance-new panel is now open and ready to use.");
-  await callback(document);
+  await callback(document, tab.linkedBrowser.contentDocument);
 
   info("About to remove the about:blank tab");
   await toolbox.destroy();
@@ -582,6 +591,18 @@ async function devToolsActiveConfigurationHasFeature(document, feature) {
   await getActiveButtonFromText(document, "Start recording");
 
   return activeConfiguration.features.includes(feature);
+}
+
+
+
+
+
+
+
+function checkDevtoolsCustomPresetContent(devtoolsDocument, fixture) {
+  
+  fixture = fixture.replace(/^\s+/gm, "").trim();
+  is(devtoolsDocument.querySelector(".perf-presets-custom").innerText, fixture);
 }
 
 
