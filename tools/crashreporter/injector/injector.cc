@@ -8,7 +8,9 @@ using google_breakpad::ExceptionHandler;
 
 static ExceptionHandler* gExceptionHandler = nullptr;
 
-bool gBreakpadInjectorEnabled = true;
+
+
+bool __attribute__((visibility("default"))) gBreakpadInjectorEnabled = true;
 
 bool TestEnabled(void* ) { return gBreakpadInjectorEnabled; }
 
