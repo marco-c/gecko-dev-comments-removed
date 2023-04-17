@@ -789,56 +789,55 @@ bool ConvertHTMLtoUCS2(const char* data, int32_t dataLength, nsCString& charset,
            outUnicodeLen * sizeof(char16_t));
     (*unicodeData)[outUnicodeLen] = '\0';
     return true;
-  } else if (charset.EqualsLiteral("UNKNOWN")) {
+  }
+  if (charset.EqualsLiteral("UNKNOWN")) {
     outUnicodeLen = 0;
     return false;
-  } else {
-    
-    
-    auto encoding = Encoding::ForLabelNoReplacement(charset);
-    if (!encoding) {
-      LOGCLIP(("ConvertHTMLtoUCS2: get unicode decoder error\n"));
-      outUnicodeLen = 0;
-      return false;
-    }
-
-    auto dataSpan = Span(data, dataLength);
-    
-    
-    const size_t prefixLen = ArrayLength(kHTMLMarkupPrefix) - 1;
-    if (dataSpan.Length() >= prefixLen &&
-        Substring(data, prefixLen).EqualsLiteral(kHTMLMarkupPrefix)) {
-      dataSpan = dataSpan.From(prefixLen);
-    }
-
-    auto decoder = encoding->NewDecoder();
-    CheckedInt<size_t> needed =
-        decoder->MaxUTF16BufferLength(dataSpan.Length());
-    if (!needed.isValid() || needed.value() > INT32_MAX) {
-      outUnicodeLen = 0;
-      return false;
-    }
-
-    outUnicodeLen = 0;
-    if (needed.value()) {
-      *unicodeData = reinterpret_cast<char16_t*>(
-          moz_xmalloc((needed.value() + 1) * sizeof(char16_t)));
-      uint32_t result;
-      size_t read;
-      size_t written;
-      bool hadErrors;
-      Tie(result, read, written, hadErrors) = decoder->DecodeToUTF16(
-          AsBytes(dataSpan), Span(*unicodeData, needed.value()), true);
-      MOZ_ASSERT(result == kInputEmpty);
-      MOZ_ASSERT(read == size_t(dataSpan.Length()));
-      MOZ_ASSERT(written <= needed.value());
-      Unused << hadErrors;
-      outUnicodeLen = written;
-      
-      (*unicodeData)[outUnicodeLen] = '\0';
-      return true;
-    }  
   }
+  
+  
+  auto encoding = Encoding::ForLabelNoReplacement(charset);
+  if (!encoding) {
+    LOGCLIP(("ConvertHTMLtoUCS2: get unicode decoder error\n"));
+    outUnicodeLen = 0;
+    return false;
+  }
+
+  auto dataSpan = Span(data, dataLength);
+  
+  
+  const size_t prefixLen = ArrayLength(kHTMLMarkupPrefix) - 1;
+  if (dataSpan.Length() >= prefixLen &&
+      Substring(data, prefixLen).EqualsLiteral(kHTMLMarkupPrefix)) {
+    dataSpan = dataSpan.From(prefixLen);
+  }
+
+  auto decoder = encoding->NewDecoder();
+  CheckedInt<size_t> needed = decoder->MaxUTF16BufferLength(dataSpan.Length());
+  if (!needed.isValid() || needed.value() > INT32_MAX) {
+    outUnicodeLen = 0;
+    return false;
+  }
+
+  outUnicodeLen = 0;
+  if (needed.value()) {
+    *unicodeData = reinterpret_cast<char16_t*>(
+        moz_xmalloc((needed.value() + 1) * sizeof(char16_t)));
+    uint32_t result;
+    size_t read;
+    size_t written;
+    bool hadErrors;
+    Tie(result, read, written, hadErrors) = decoder->DecodeToUTF16(
+        AsBytes(dataSpan), Span(*unicodeData, needed.value()), true);
+    MOZ_ASSERT(result == kInputEmpty);
+    MOZ_ASSERT(read == size_t(dataSpan.Length()));
+    MOZ_ASSERT(written <= needed.value());
+    Unused << hadErrors;
+    outUnicodeLen = written;
+    
+    (*unicodeData)[outUnicodeLen] = '\0';
+    return true;
+  }  
   return false;
 }
 
