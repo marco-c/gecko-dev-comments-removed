@@ -15,6 +15,13 @@ function webtransport_url(handler) {
 
 
 
+function webtransport_code_to_http_code(n) {
+  const first = 0x52e4a40fa8db;
+  return first + n + Math.floor(n / 0x1e);
+}
+
+
+
 async function read_stream_as_string(readable_stream) {
   const decoder = new TextDecoderStream();
   const decode_stream = readable_stream.pipeThrough(decoder);
