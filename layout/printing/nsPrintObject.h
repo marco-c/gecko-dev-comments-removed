@@ -73,7 +73,6 @@ class nsPrintObject {
   nsPrintObject* mParent;  
   bool mHasBeenPrinted;
   bool mInvisible;  
-  bool mDidCreateDocShell;
   float mShrinkRatio;
   float mZoomRatio;
 
