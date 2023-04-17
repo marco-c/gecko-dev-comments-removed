@@ -11,7 +11,6 @@
 #include "ImageBridgeParent.h"  
 #include "ImageContainer.h"     
 #include "Layers.h"             
-#include "ShadowLayers.h"       
 #include "SynchronousTask.h"
 #include "mozilla/Assertions.h"        
 #include "mozilla/Monitor.h"           
@@ -401,10 +400,6 @@ void ImageBridgeChild::EndTransaction() {
   cset.SetCapacity(mTxn->mOperations.size());
   if (!mTxn->mOperations.empty()) {
     cset.AppendElements(&mTxn->mOperations.front(), mTxn->mOperations.size());
-  }
-
-  if (!IsSameProcess()) {
-    ShadowLayerForwarder::PlatformSyncBeforeUpdate();
   }
 
   if (!SendUpdate(cset, mTxn->mDestroyedActors, GetFwdTransactionId())) {
