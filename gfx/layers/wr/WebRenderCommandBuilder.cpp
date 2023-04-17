@@ -1750,8 +1750,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       
       
       
-      if (!forceNewLayerData &&
-          item->GetType() == DisplayItemType::TYPE_TRANSFORM &&
+      if (!forceNewLayerData && item->CreatesStackingContextHelper() &&
           aSc.GetDeferredTransformItem() &&
           (*aSc.GetDeferredTransformItem())->GetActiveScrolledRoot() != asr) {
         forceNewLayerData = true;
