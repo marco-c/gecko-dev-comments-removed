@@ -2698,28 +2698,6 @@ nsEventStatus AsyncPanZoomController::OnPan(
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (logicalPanDisplacement.x != 0) {
-    mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
-                                    aEvent.mTimeStamp);
-  }
-  if (logicalPanDisplacement.y != 0) {
-    mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
-                                    aEvent.mTimeStamp);
-  }
-
   HandlePanningUpdate(physicalPanDisplacement);
 
   MOZ_ASSERT(GetCurrentPanGestureBlock());
@@ -2746,6 +2724,35 @@ nsEventStatus AsyncPanZoomController::OnPan(
 
   const ParentLayerPoint velocity = GetVelocityVector();
   bool consumed = CallDispatchScroll(startPoint, endPoint, handoffState);
+
+  const ParentLayerPoint visualDisplacement = ToParentLayerCoordinates(
+      handoffState.mTotalMovement, aEvent.mPanStartPoint);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (visualDisplacement.x != 0) {
+    mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - visualDisplacement.x,
+                                    aEvent.mTimeStamp);
+  }
+  if (visualDisplacement.y != 0) {
+    mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - visualDisplacement.y,
+                                    aEvent.mTimeStamp);
+  }
 
   if (aFingersOnTouchpad == FingersOnTouchpad::No) {
     if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
@@ -3393,6 +3400,7 @@ bool AsyncPanZoomController::AttemptScroll(
         !block->GetScrolledApzc() || block->IsDownchainOfScrolledApzc(this);
   }
 
+  ParentLayerPoint adjustedDisplacement;
   if (scrollThisApzc) {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     bool forcesVerticalOverscroll =
@@ -3404,7 +3412,6 @@ bool AsyncPanZoomController::AttemptScroll(
         mScrollMetadata.GetDisregardedDirection() ==
             Some(ScrollDirection::eHorizontal);
 
-    ParentLayerPoint adjustedDisplacement;
     bool yChanged =
         mY.AdjustDisplacement(displacement.y, adjustedDisplacement.y,
                               overscroll.y, forcesVerticalOverscroll);
@@ -3453,6 +3460,14 @@ bool AsyncPanZoomController::AttemptScroll(
   }
 
   
+  
+  
+  if (!IsZero(adjustedDisplacement)) {
+    aOverscrollHandoffState.mTotalMovement +=
+        ToScreenCoordinates(adjustedDisplacement, aEndPoint);
+  }
+
+  
   if (IsZero(overscroll)) {
     return true;
   }
@@ -3478,7 +3493,23 @@ bool AsyncPanZoomController::AttemptScroll(
   
   
   APZC_LOG("%p taking overscroll during panning\n", this);
+
+  ParentLayerPoint prevVisualOverscroll = GetOverscrollAmount();
+
   OverscrollForPanning(overscroll, aOverscrollHandoffState.mPanDistance);
+
+  
+  
+  
+  
+  
+  ParentLayerPoint visualOverscrollChange =
+      GetOverscrollAmount() - prevVisualOverscroll;
+  if (!IsZero(visualOverscrollChange)) {
+    aOverscrollHandoffState.mTotalMovement +=
+        ToScreenCoordinates(visualOverscrollChange, aEndPoint);
+  }
+
   aStartPoint = aEndPoint + overscroll;
 
   return IsZero(overscroll);

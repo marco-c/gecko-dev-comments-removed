@@ -147,6 +147,11 @@ struct OverscrollHandoffState {
   const ScreenPoint mPanDistance;
 
   ScrollSource mScrollSource;
+
+  
+  
+  
+  ScreenPoint mTotalMovement;
 };
 
 
