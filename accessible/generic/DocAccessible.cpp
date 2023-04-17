@@ -90,7 +90,7 @@ DocAccessible::DocAccessible(dom::Document* aDocument,
       mLoadState(eTreeConstructionPending),
       mDocFlags(0),
       mLoadEventType(0),
-      mARIAAttrOldValue{nullptr},
+      mPrevStateBits(0),
       mVirtualCursor(nullptr),
       mPresShell(aPresShell),
       mIPCDoc(nullptr) {
@@ -691,21 +691,6 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
 
   
   
-  
-  
-
-  
-  
-  
-  
-  if (aAttribute == nsGkAtoms::aria_checked ||
-      aAttribute == nsGkAtoms::aria_pressed) {
-    mARIAAttrOldValue = (aModType != dom::MutationEvent_Binding::ADDITION)
-                            ? nsAccUtils::GetARIAToken(aElement, aAttribute)
-                            : nullptr;
-    return;
-  }
-
   if (aAttribute == nsGkAtoms::aria_disabled || aAttribute == nsGkAtoms::href ||
       aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::tabindex ||
       aAttribute == nsGkAtoms::contenteditable) {
@@ -767,7 +752,8 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
   
   
-  AttributeChangedImpl(accessible, aNameSpaceID, aAttribute, aModType);
+  AttributeChangedImpl(accessible, aNameSpaceID, aAttribute, aModType,
+                       aOldValue);
 
   
   
@@ -783,7 +769,8 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
 void DocAccessible::AttributeChangedImpl(LocalAccessible* aAccessible,
                                          int32_t aNameSpaceID,
-                                         nsAtom* aAttribute, int32_t aModType) {
+                                         nsAtom* aAttribute, int32_t aModType,
+                                         const nsAttrValue* aOldValue) {
   
   
   
@@ -859,7 +846,7 @@ void DocAccessible::AttributeChangedImpl(LocalAccessible* aAccessible,
   if (aNameSpaceID == kNameSpaceID_None) {
     
     if (StringBeginsWith(nsDependentAtomString(aAttribute), u"aria-"_ns)) {
-      ARIAAttributeChanged(aAccessible, aAttribute);
+      ARIAAttributeChanged(aAccessible, aAttribute, aOldValue);
     }
   }
 
@@ -1035,7 +1022,8 @@ void DocAccessible::AttributeChangedImpl(LocalAccessible* aAccessible,
 
 
 void DocAccessible::ARIAAttributeChanged(LocalAccessible* aAccessible,
-                                         nsAtom* aAttribute) {
+                                         nsAtom* aAttribute,
+                                         const nsAttrValue* aOldValue) {
   
   
 
@@ -1094,7 +1082,7 @@ void DocAccessible::ARIAAttributeChanged(LocalAccessible* aAccessible,
     RefPtr<AccEvent> event = new AccStateChangeEvent(aAccessible, kState);
     FireDelayedEvent(event);
 
-    bool wasMixed = (mARIAAttrOldValue == nsGkAtoms::mixed);
+    bool wasMixed = aOldValue->GetAtomValue() == nsGkAtoms::mixed;
     bool isMixed = elm->AttrValueIs(kNameSpaceID_None, aAttribute,
                                     nsGkAtoms::mixed, eCaseMatters);
     if (isMixed != wasMixed) {
