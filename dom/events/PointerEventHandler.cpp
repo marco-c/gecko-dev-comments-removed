@@ -5,6 +5,7 @@
 
 
 #include "PointerEventHandler.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "PointerEvent.h"
 #include "PointerLockManager.h"

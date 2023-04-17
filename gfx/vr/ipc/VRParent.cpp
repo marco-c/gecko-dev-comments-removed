@@ -116,7 +116,7 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
 #ifndef NS_FREE_PERMANENT_DATA
   
   
-  ProcessChild::QuickExit();
+  ipc::ProcessChild::QuickExit();
 #endif
 
 #if defined(XP_WIN)

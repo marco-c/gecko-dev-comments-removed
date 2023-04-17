@@ -5,6 +5,7 @@
 
 
 #include "nsAttrValueOrString.h"
+#include "nsAttrValueInlines.h"
 
 const nsAString& nsAttrValueOrString::String() const {
   if (mStringPtr) {
