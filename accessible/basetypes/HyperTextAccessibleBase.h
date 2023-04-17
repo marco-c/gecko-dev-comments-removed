@@ -72,7 +72,7 @@ class HyperTextAccessibleBase {
   
 
 
-  uint32_t CharacterCount() const;
+  virtual uint32_t CharacterCount() const;
 
   
 
