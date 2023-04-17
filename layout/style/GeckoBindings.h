@@ -35,12 +35,10 @@ class ComputedStyle;
 class SeenPtrs;
 class ServoElementSnapshot;
 class ServoElementSnapshotTable;
-class SharedFontList;
 class StyleSheet;
 enum class PseudoStyleType : uint8_t;
 enum class PointerCapabilities : uint8_t;
 enum class UpdateAnimationsTasks : uint8_t;
-struct FontFamilyName;
 struct Keyframe;
 
 namespace css {
@@ -274,27 +272,6 @@ void Gecko_AddRefAtom(nsAtom* aAtom);
 void Gecko_ReleaseAtom(nsAtom* aAtom);
 
 
-void Gecko_CopyFontFamilyFrom(nsFont* dst, const nsFont* src);
-
-void Gecko_nsTArray_FontFamilyName_AppendNamed(
-    nsTArray<mozilla::FontFamilyName>* aNames, nsAtom* aName,
-    mozilla::StyleFontFamilyNameSyntax);
-
-void Gecko_nsTArray_FontFamilyName_AppendGeneric(
-    nsTArray<mozilla::FontFamilyName>* aNames, mozilla::StyleGenericFontFamily);
-
-
-mozilla::SharedFontList* Gecko_SharedFontList_Create();
-
-size_t Gecko_SharedFontList_SizeOfIncludingThis(
-    mozilla::SharedFontList* fontlist);
-
-size_t Gecko_SharedFontList_SizeOfIncludingThisIfUnshared(
-    mozilla::SharedFontList* fontlist);
-
-NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::SharedFontList, SharedFontList);
-
-
 
 void Gecko_nsFont_InitSystem(nsFont* dst, mozilla::StyleSystemFont font_id,
                              const nsStyleFont* font,
@@ -501,14 +478,6 @@ void Gecko_nsStyleFont_SetLang(nsStyleFont* font, nsAtom* atom);
 
 void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
                                     const nsStyleFont* aSource);
-
-
-
-
-
-
-void Gecko_nsStyleFont_PrioritizeUserFonts(
-    nsStyleFont* font, mozilla::StyleGenericFontFamily aDefaultGeneric);
 
 mozilla::Length Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont*,
                                                  const mozilla::dom::Document*);

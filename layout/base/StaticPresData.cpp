@@ -138,32 +138,19 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
 
       nsAutoCString value;
       Preferences::GetCString(pref.get(), value);
+      if (value.IsEmpty()) {
+        MAKE_FONT_PREF_KEY(pref, "font.default.", langGroup);
+        Preferences::GetCString(pref.get(), value);
+      }
       if (!value.IsEmpty()) {
-        FontFamilyName defaultVariableName = FontFamilyName::Convert(value);
-        StyleGenericFontFamily defaultType = defaultVariableName.mGeneric;
+        auto defaultVariableName = StyleSingleFontFamily::Parse(value);
+        auto defaultType = defaultVariableName.IsGeneric()
+                               ? defaultVariableName.AsGeneric()
+                               : StyleGenericFontFamily::None;
         NS_ASSERTION(defaultType == StyleGenericFontFamily::Serif ||
                          defaultType == StyleGenericFontFamily::SansSerif,
                      "default type must be serif or sans-serif");
-        mDefaultVariableFont.fontlist = FontFamilyList();
-        mDefaultVariableFont.fontlist.SetDefaultFontType(defaultType);
-        
-        
-        
-      } else {
-        MAKE_FONT_PREF_KEY(pref, "font.default.", langGroup);
-        Preferences::GetCString(pref.get(), value);
-        if (!value.IsEmpty()) {
-          FontFamilyName defaultVariableName = FontFamilyName::Convert(value);
-          StyleGenericFontFamily defaultType = defaultVariableName.mGeneric;
-          NS_ASSERTION(defaultType == StyleGenericFontFamily::Serif ||
-                           defaultType == StyleGenericFontFamily::SansSerif,
-                       "default type must be serif or sans-serif");
-          mDefaultVariableFont.fontlist = FontFamilyList();
-          mDefaultVariableFont.fontlist.SetDefaultFontType(defaultType);
-          
-          
-          
-        }
+        mDefaultVariableFont.family.families.fallback = defaultType;
       }
     } else {
       if (eType != eDefaultFont_Monospace) {

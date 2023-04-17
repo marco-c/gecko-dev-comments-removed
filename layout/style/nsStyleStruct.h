@@ -100,8 +100,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   mozilla::Length mFontSizeOffset;
   mozilla::StyleFontSizeKeyword mFontSizeKeyword;
 
-  mozilla::StyleGenericFontFamily mGenericID;
-
   
   int8_t mMathDepth;
   

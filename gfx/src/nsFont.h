@@ -8,7 +8,6 @@
 #define nsFont_h___
 
 #include <cstdint>
-#include "gfxFontFamilyList.h"
 #include "gfxFontConstants.h"  
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
@@ -26,8 +25,7 @@ struct nsFont final {
   typedef mozilla::FontWeight FontWeight;
 
   
-  
-  mozilla::FontFamilyList fontlist;
+  mozilla::StyleFontFamily family;
 
   
   CopyableTArray<gfxFontFeature> fontFeatureSettings;
@@ -88,11 +86,7 @@ struct nsFont final {
   uint8_t synthesis = NS_FONT_SYNTHESIS_WEIGHT | NS_FONT_SYNTHESIS_STYLE;
 
   
-  
-  bool systemFont = false;
-
-  
-  nsFont(const mozilla::FontFamilyList& aFontlist, mozilla::Length aSize);
+  nsFont(const mozilla::StyleFontFamily&, mozilla::Length aSize);
 
   
   nsFont(mozilla::StyleGenericFontFamily, mozilla::Length aSize);

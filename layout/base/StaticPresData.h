@@ -27,8 +27,8 @@ struct LangGroupFontPrefs {
         mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, {0}),
         mDefaultCursiveFont(StyleGenericFontFamily::Cursive, {0}),
         mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, {0}) {
-    mDefaultVariableFont.fontlist.SetDefaultFontType(
-        StyleGenericFontFamily::Serif);
+    mDefaultVariableFont.family.families.fallback =
+        StyleGenericFontFamily::Serif;
     
     
     

@@ -932,7 +932,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
   static void
   Shutdown();  
 
-  gfxFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+  gfxFontGroup(const mozilla::StyleFontFamilyList& aFontFamilyList,
                const gfxFontStyle* aStyle, nsAtom* aLanguage,
                bool aExplicitLanguage, gfxTextPerfMetrics* aTextPerf,
                FontMatchingStats* aFontMatchingStats,
@@ -1373,7 +1373,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   
   
-  mozilla::FontFamilyList mFamilyList;
+  mozilla::StyleFontFamilyList mFamilyList;
 
   
   
