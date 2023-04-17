@@ -103,7 +103,8 @@ struct gfxFontStyle {
   gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
                gfxFloat aSize, const FontSizeAdjust& aSizeAdjust,
                bool aSystemFont, bool aPrinterFont, bool aWeightSynthesis,
-               bool aStyleSynthesis, uint32_t aLanguageOverride);
+               bool aStyleSynthesis, bool aSmallCapsSynthesis,
+               uint32_t aLanguageOverride);
   
   
   
@@ -198,6 +199,7 @@ struct gfxFontStyle {
   
   bool allowSyntheticWeight : 1;
   bool allowSyntheticStyle : 1;
+  bool allowSyntheticSmallCaps : 1;
 
   
   
