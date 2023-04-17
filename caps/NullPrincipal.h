@@ -66,7 +66,10 @@ class NullPrincipal final : public BasePrincipal {
 
   static already_AddRefed<NullPrincipal> CreateWithoutOriginAttributes();
 
-  static already_AddRefed<nsIURI> CreateURI();
+  
+  
+  
+  static already_AddRefed<nsIURI> CreateURI(nsIPrincipal* aPrecursor = nullptr);
 
   virtual nsresult GetScriptLocation(nsACString& aStr) override;
 
@@ -115,7 +118,7 @@ class NullPrincipal final : public BasePrincipal {
   
   static already_AddRefed<NullPrincipal> CreateInternal(
       const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
-      nsIURI* aURI = nullptr);
+      nsIURI* aURI = nullptr, nsIPrincipal* aPrecursor = nullptr);
 };
 
 }  

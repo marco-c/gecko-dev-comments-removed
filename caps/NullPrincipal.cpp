@@ -76,30 +76,58 @@ already_AddRefed<NullPrincipal> NullPrincipal::CreateWithoutOriginAttributes() {
   return NullPrincipal::Create(OriginAttributes(), nullptr);
 }
 
-already_AddRefed<nsIURI> NullPrincipal::CreateURI() {
-  nsCOMPtr<nsIURIMutator> mutator;
+already_AddRefed<nsIURI> NullPrincipal::CreateURI(nsIPrincipal* aPrecursor) {
+  nsCOMPtr<nsIURIMutator> iMutator;
   if (StaticPrefs::network_url_useDefaultURI()) {
-    mutator = new mozilla::net::DefaultURI::Mutator();
+    iMutator = new mozilla::net::DefaultURI::Mutator();
   } else {
-    mutator = new mozilla::net::nsSimpleURI::Mutator();
+    iMutator = new mozilla::net::nsSimpleURI::Mutator();
   }
 
   nsAutoCStringN<NSID_LENGTH> uuid;
   GkRustUtils::GenerateUUID(uuid);
 
+  NS_MutateURI mutator(iMutator);
+  mutator.SetSpec(NS_NULLPRINCIPAL_SCHEME ":"_ns + uuid);
+
+  
+  if (aPrecursor) {
+    nsAutoCString precursorOrigin;
+    switch (BasePrincipal::Cast(aPrecursor)->Kind()) {
+      case eNullPrincipal:
+        
+        if (nsCOMPtr<nsIURI> nullPrecursorURI = aPrecursor->GetURI()) {
+          MOZ_ALWAYS_SUCCEEDS(nullPrecursorURI->GetQuery(precursorOrigin));
+        }
+        break;
+      case eContentPrincipal:
+        MOZ_ALWAYS_SUCCEEDS(aPrecursor->GetOriginNoSuffix(precursorOrigin));
+        break;
+
+      
+      
+      
+      case eExpandedPrincipal:
+      case eSystemPrincipal:
+        break;
+    }
+    if (!precursorOrigin.IsEmpty()) {
+      mutator.SetQuery(precursorOrigin);
+    }
+  }
+
   nsCOMPtr<nsIURI> uri;
-  MOZ_ALWAYS_SUCCEEDS(NS_MutateURI(mutator)
-                          .SetSpec(NS_NULLPRINCIPAL_SCHEME ":"_ns + uuid)
-                          .Finalize(uri));
+  MOZ_ALWAYS_SUCCEEDS(mutator.Finalize(getter_AddRefs(uri)));
   return uri.forget();
 }
 
 already_AddRefed<NullPrincipal> NullPrincipal::CreateInternal(
-    const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
-    nsIURI* aURI) {
+    const OriginAttributes& aOriginAttributes, bool aIsFirstParty, nsIURI* aURI,
+    nsIPrincipal* aPrecursor) {
+  MOZ_ASSERT_IF(aPrecursor, !aURI);
   nsCOMPtr<nsIURI> uri = aURI;
   if (!uri) {
-    uri = NullPrincipal::CreateURI();
+    uri = NullPrincipal::CreateURI(aPrecursor);
   }
 
   MOZ_RELEASE_ASSERT(uri->SchemeIs(NS_NULLPRINCIPAL_SCHEME));
@@ -110,8 +138,10 @@ already_AddRefed<NullPrincipal> NullPrincipal::CreateInternal(
 
   OriginAttributes attrs(aOriginAttributes);
   if (aIsFirstParty) {
+    
+    
     nsAutoCString path;
-    rv = uri->GetPathQueryRef(path);
+    rv = uri->GetFilePath(path);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
@@ -217,10 +247,6 @@ nsresult NullPrincipal::PopulateJSONObject(Json::Value& aObject) {
   nsAutoCString principalURI;
   nsresult rv = mURI->GetSpec(principalURI);
   NS_ENSURE_SUCCESS(rv, rv);
-  MOZ_ASSERT(principalURI.Length() ==
-                 nsLiteralCString(NS_NULLPRINCIPAL_SCHEME ":").Length() +
-                     NSID_LENGTH - 1,
-             "Length of the URI should be: (scheme, uuid, - nullptr)");
   aObject[std::to_string(eSpec)] = principalURI.get();
 
   nsAutoCString suffix;
