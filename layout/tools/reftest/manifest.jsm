@@ -582,8 +582,6 @@ function BuildConditionSandbox(aURL) {
 
     
     sandbox.appleSilicon = prefs.getBoolPref("sandbox.apple_silicon", false);
-    
-    sandbox.haveTestPlugin = false;
 
     
     sandbox.windowsDefaultTheme = g.containingWindow.matchMedia("(-moz-windows-default-theme)").matches;

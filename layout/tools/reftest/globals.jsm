@@ -143,8 +143,6 @@ for (let [key, val] of Object.entries({
     suiteStarted: false,
     manageSuite: false,
 
-    
-    testPluginEnabledStates: null,
     prefsToRestore: [],
     httpServerPort: -1,
 

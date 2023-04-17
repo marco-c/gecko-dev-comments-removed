@@ -67,12 +67,6 @@ user_pref("media.openUnsupportedTypeWithExternalApp", false);
 
 
 user_pref("places.history.enabled", false);
-
-
-user_pref("plugin.load_flash_only", false);
-
-user_pref("plugins.flashBlock.enabled", false);
-user_pref("plugins.show_infobar", false);
 user_pref("privacy.trackingprotection.annotate_channels", false);
 user_pref("privacy.trackingprotection.enabled", false);
 user_pref("privacy.trackingprotection.pbmode.enabled", false);

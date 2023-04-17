@@ -26,15 +26,6 @@ ChromeUtils.import("resource://gre/modules/CustomElementsListener.jsm", null);
 var gBrowserIsRemote;
 var gIsWebRenderEnabled;
 var gHaveCanvasSnapshot = false;
-
-
-
-
-
-
-
-var gExplicitPendingPaintCount = 0;
-var gExplicitPendingPaintsCompleteHook;
 var gCurrentURL;
 var gCurrentURLRecordResults;
 var gCurrentURLTargetType;
@@ -85,26 +76,6 @@ function IDForEventTarget(event)
     }
 }
 
-function PaintWaitListener(event)
-{
-    LogInfo("MozPaintWait received for ID " + IDForEventTarget(event));
-    gExplicitPendingPaintCount++;
-}
-
-function PaintWaitFinishedListener(event)
-{
-    LogInfo("MozPaintWaitFinished received for ID " + IDForEventTarget(event));
-    gExplicitPendingPaintCount--;
-    if (gExplicitPendingPaintCount < 0) {
-        LogWarning("Underrun in gExplicitPendingPaintCount\n");
-        gExplicitPendingPaintCount = 0;
-    }
-    if (gExplicitPendingPaintCount == 0 &&
-        gExplicitPendingPaintsCompleteHook) {
-        gExplicitPendingPaintsCompleteHook();
-    }
-}
-
 var progressListener = {
   onStateChange(webprogress, request, flags, status) {
     let uri;
@@ -144,9 +115,6 @@ function OnInitialLoad()
 
     webProgress().addProgressListener(progressListener, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
 
-    addEventListener("MozPaintWait", PaintWaitListener, true);
-    addEventListener("MozPaintWaitFinished", PaintWaitFinishedListener, true);
-
     LogInfo("Using browser remote="+ gBrowserIsRemote +"\n");
 }
 
@@ -179,14 +147,6 @@ function StartTestURI(type, uri, uriTargetType, timeout)
     
     
     windowUtils().runNextCollectorTimer();
-
-    
-    
-    if (gExplicitPendingPaintCount != 0) {
-        LogWarning("Resetting gExplicitPendingPaintCount to zero (currently " +
-                   gExplicitPendingPaintCount + "\n");
-        gExplicitPendingPaintCount = 0;
-    }
 
     gCurrentTestType = type;
     gCurrentURL = uri;
@@ -375,10 +335,6 @@ function setupAsyncZoom(options) {
 function resetDisplayportAndViewport() {
     
     
-}
-
-function shouldWaitForExplicitPaintWaiters() {
-    return gExplicitPendingPaintCount > 0;
 }
 
 function shouldWaitForPendingPaints() {
@@ -682,13 +638,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         CallSetTimeoutMakeProgress();
     }
 
-    function ExplicitPaintsCompleteListener() {
-        LogInfo("ExplicitPaintsCompleteListener fired");
-        
-        
-        CallSetTimeoutMakeProgress();
-    }
-
     function RemoveListeners() {
         
         removeEventListener("MozAfterPaint", AfterPaintListener, false);
@@ -697,7 +646,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         if (contentRootElement) {
             contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener);
         }
-        gExplicitPendingPaintsCompleteHook = null;
         gTimeoutHook = null;
         
         
@@ -747,13 +695,8 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
         switch (state) {
         case STATE_WAITING_TO_FIRE_INVALIDATE_EVENT: {
             LogInfo("MakeProgress: STATE_WAITING_TO_FIRE_INVALIDATE_EVENT");
-            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints() ||
-                updateCanvasPending) {
+            if (shouldWaitForPendingPaints() || updateCanvasPending) {
                 gFailureReason = "timed out waiting for pending paint count to reach zero";
-                if (shouldWaitForExplicitPaintWaiters()) {
-                    gFailureReason += " (waiting for MozPaintWaitFinished)";
-                    LogInfo("MakeProgress: waiting for MozPaintWaitFinished");
-                }
                 if (shouldWaitForPendingPaints()) {
                     gFailureReason += " (waiting for MozAfterPaint)";
                     LogInfo("MakeProgress: waiting for MozAfterPaint");
@@ -800,8 +743,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
                 let promise = FlushRendering(FlushMode.ALL);
                 promise.then(function () {
                     OperationCompleted();
-                    if (!updateCanvasPending && !shouldWaitForPendingPaints() &&
-                        !shouldWaitForExplicitPaintWaiters()) {
+                    if (!updateCanvasPending && !shouldWaitForPendingPaints()) {
                         LogWarning("MozInvalidateEvent didn't invalidate");
                     }
                     MakeProgress();
@@ -881,14 +823,9 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
 
         case STATE_WAITING_TO_FINISH:
             LogInfo("MakeProgress: STATE_WAITING_TO_FINISH");
-            if (shouldWaitForExplicitPaintWaiters() || shouldWaitForPendingPaints() ||
-                updateCanvasPending) {
+            if (shouldWaitForPendingPaints() || updateCanvasPending) {
                 gFailureReason = "timed out waiting for pending paint count to " +
                     "reach zero (after reftest-wait removed and switch to print mode)";
-                if (shouldWaitForExplicitPaintWaiters()) {
-                    gFailureReason += " (waiting for MozPaintWaitFinished)";
-                    LogInfo("MakeProgress: waiting for MozPaintWaitFinished");
-                }
                 if (shouldWaitForPendingPaints()) {
                     gFailureReason += " (waiting for MozAfterPaint)";
                     LogInfo("MakeProgress: waiting for MozAfterPaint");
@@ -958,7 +895,6 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements, f
     if (contentRootElement) {
       contentRootElement.addEventListener("DOMAttrModified", AttrModifiedListener);
     }
-    gExplicitPendingPaintsCompleteHook = ExplicitPaintsCompleteListener;
     gTimeoutHook = RemoveListeners;
 
     
@@ -1042,40 +978,16 @@ async function OnDocumentLoad(uri)
           content.document ? content.document.documentElement : null;
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        var paintWaiterFinished = false;
-
-        gExplicitPendingPaintsCompleteHook = function () {
-            LogInfo("PaintWaiters finished while we were sending initial snapshop in AfterOnLoadScripts");
-            paintWaiterFinished = true;
-        }
-
-        
         await FlushRendering(FlushMode.ALL);
 
         
-        
-        
-        
         let painted = await SendInitCanvasWithSnapshot(uri);
-
-        gExplicitPendingPaintsCompleteHook = null;
 
         if (contentRootElement && Cu.isDeadWrapper(contentRootElement)) {
             contentRootElement = null;
         }
 
-        if (paintWaiterFinished || shouldWaitForExplicitPaintWaiters() ||
-            (!inPrintMode && doPrintMode(contentRootElement)) ||
+        if (!inPrintMode && doPrintMode(contentRootElement) ||
             
             
             
@@ -1091,7 +1003,6 @@ async function OnDocumentLoad(uri)
     }
 
     if (shouldWaitForReftestWaitRemoval(contentRootElement) ||
-        shouldWaitForExplicitPaintWaiters() ||
         spellCheckedElements.length) {
         
         
