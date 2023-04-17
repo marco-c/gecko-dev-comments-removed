@@ -6,6 +6,7 @@
 #define intl_components_PluralRules_h_
 
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/intl/NumberFormat.h"
@@ -145,6 +146,9 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
       options.mSignificantDigits.emplace(mSignificantDigits.ref());
     }
 
+    options.mRoundingPriority =
+        NumberFormatOptions::RoundingPriority(mRoundingPriority);
+
     return options;
   }
 
@@ -178,6 +182,29 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
 
 
   Maybe<std::pair<uint32_t, uint32_t>> mSignificantDigits;
+
+  
+
+
+
+  enum class RoundingPriority {
+    Auto,
+    MorePrecision,
+    LessPrecision,
+  } mRoundingPriority = RoundingPriority::Auto;
+
+  
+  static_assert(std::is_same_v<
+                std::underlying_type_t<RoundingPriority>,
+                std::underlying_type_t<NumberFormatOptions::RoundingPriority>>);
+  static_assert(RoundingPriority::Auto ==
+                RoundingPriority(NumberFormatOptions::RoundingPriority::Auto));
+  static_assert(
+      RoundingPriority::LessPrecision ==
+      RoundingPriority(NumberFormatOptions::RoundingPriority::LessPrecision));
+  static_assert(
+      RoundingPriority::MorePrecision ==
+      RoundingPriority(NumberFormatOptions::RoundingPriority::MorePrecision));
 };
 
 }  

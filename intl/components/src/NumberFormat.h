@@ -171,6 +171,18 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
     HalfEven,
     HalfOdd,
   } mRoundingMode = RoundingMode::HalfExpand;
+
+  
+
+
+
+
+
+  enum class RoundingPriority {
+    Auto,
+    MorePrecision,
+    LessPrecision,
+  } mRoundingPriority = RoundingPriority::Auto;
 };
 
 enum class NumberPartType {
