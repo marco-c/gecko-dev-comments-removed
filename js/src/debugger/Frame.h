@@ -13,8 +13,6 @@
 
 #include <stddef.h>  
 
-#include "jsapi.h"  
-
 #include "NamespaceImports.h"   
 #include "debugger/DebugAPI.h"  
 #include "debugger/Debugger.h"  
@@ -24,6 +22,8 @@
 #include "vm/JSObject.h"        
 #include "vm/NativeObject.h"    
 #include "vm/Stack.h"           
+
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 

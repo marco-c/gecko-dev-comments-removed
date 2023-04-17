@@ -11,7 +11,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jsapi.h"        
 #include "jsfriendapi.h"  
 #include "jstypes.h"      
 

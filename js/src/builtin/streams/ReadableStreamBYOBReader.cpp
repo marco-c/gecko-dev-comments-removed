@@ -12,8 +12,6 @@
 
 
 
-#include "jsapi.h"  
-
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "js/friend/ErrorMessages.h"  

@@ -11,11 +11,10 @@
 #include "mozilla/Assertions.h"     
 #include "mozilla/FloatingPoint.h"  
 
-#include "jsapi.h"  
-
 #include "builtin/streams/StreamController.h"  
 #include "js/Class.h"                 
 #include "js/Conversions.h"           
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"            
 #include "js/Value.h"                 

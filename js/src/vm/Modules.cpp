@@ -13,11 +13,11 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"    
 #include "jstypes.h"  
 
 #include "builtin/ModuleObject.h"  
 #include "frontend/BytecodeCompiler.h"  
+#include "js/Context.h"                 
 #include "js/RootingAPI.h"              
 #include "js/Value.h"                   
 #include "vm/JSContext.h"               

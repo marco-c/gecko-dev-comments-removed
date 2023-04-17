@@ -21,7 +21,6 @@
 #include <string.h>  
 #include <utility>   
 
-#include "jsapi.h"  
 #include "jsnum.h"  
 
 #include "builtin/Array.h"      
@@ -42,9 +41,11 @@
 #include "gc/ZoneAllocator.h"              
 #include "jit/JSJitFrameIter.h"            
 #include "jit/RematerializedFrame.h"       
+#include "js/CallArgs.h"                   
 #include "js/friend/ErrorMessages.h"       
 #include "js/Object.h"                     
 #include "js/Proxy.h"                      
+#include "js/RootingAPI.h"                 
 #include "js/SourceText.h"                 
 #include "js/StableStringChars.h"          
 #include "vm/ArgumentsObject.h"            

@@ -4,6 +4,8 @@
 
 
 
+#include "vm/Runtime.h"
+
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MemoryReporting.h"

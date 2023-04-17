@@ -95,7 +95,6 @@
 #include <memory>
 #include <type_traits>  
 
-#include "jsapi.h"
 #include "jsnum.h"
 
 #include "builtin/BigInt.h"

@@ -13,7 +13,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jsapi.h"             
 #include "jsnum.h"             
 #include "NamespaceImports.h"  
 
@@ -27,8 +26,10 @@
 #include "gc/Tracer.h"         
 #include "gc/Zone.h"           
 #include "gc/ZoneAllocator.h"  
+#include "js/CallArgs.h"       
 #include "js/friend/ErrorMessages.h"  
 #include "js/HeapAPI.h"               
+#include "js/RootingAPI.h"            
 #include "js/Wrapper.h"               
 #include "vm/ArrayObject.h"           
 #include "vm/BytecodeUtil.h"          

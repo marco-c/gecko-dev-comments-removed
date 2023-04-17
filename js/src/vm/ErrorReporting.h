@@ -10,7 +10,6 @@
 #include <stdarg.h>
 #include <utility>
 
-#include "jsapi.h"        
 #include "jsfriendapi.h"  
 
 #include "js/UniquePtr.h"  

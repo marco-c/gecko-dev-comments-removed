@@ -10,7 +10,6 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsapi.h"    
 #include "jspubtd.h"  
 
 #include "builtin/streams/ClassSpecMacro.h"           
@@ -20,6 +19,7 @@
 #include "builtin/streams/WritableStreamOperations.h"  
 #include "js/CallArgs.h"                               
 #include "js/Class.h"  
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/RealmOptions.h"          
 #include "js/RootingAPI.h"            

@@ -12,8 +12,6 @@
 #include <iterator>  
 #include <stdint.h>  
 
-#include "jsfriendapi.h"  
-
 #include "builtin/Array.h"          
 #include "builtin/Boolean.h"        
 #include "builtin/Object.h"         

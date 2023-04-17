@@ -11,8 +11,6 @@
 
 #include <string.h>
 
-#include "jsapi.h"
-
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  

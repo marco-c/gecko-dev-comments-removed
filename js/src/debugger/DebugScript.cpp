@@ -12,8 +12,6 @@
 
 #include <utility>  
 
-#include "jsapi.h"
-
 #include "debugger/DebugAPI.h"    
 #include "debugger/Debugger.h"    
 #include "gc/Cell.h"              

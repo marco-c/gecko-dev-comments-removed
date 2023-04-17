@@ -10,8 +10,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "jsapi.h"
-
 #include "NamespaceImports.h"  
 #include "js/Promise.h"        
 

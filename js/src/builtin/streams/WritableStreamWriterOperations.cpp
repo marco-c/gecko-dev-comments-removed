@@ -10,14 +10,13 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsapi.h"  
-
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamDefaultControllerOperations.h"  
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/Promise.h"               
 #include "js/Value.h"                 

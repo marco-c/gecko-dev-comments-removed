@@ -15,8 +15,6 @@
 #include <type_traits>  
 #include <utility>      
 
-#include "jsapi.h"
-
 #include "builtin/ModuleObject.h"
 #include "debugger/DebugAPI.h"
 #include "frontend/CompilationStencil.h"  

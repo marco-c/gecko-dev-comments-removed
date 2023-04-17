@@ -12,7 +12,6 @@
 #include "mozilla/Range.h"       
 #include "mozilla/Result.h"      
 
-#include "jsapi.h"             
 #include "jstypes.h"           
 #include "NamespaceImports.h"  
 
@@ -23,6 +22,7 @@
 #include "vm/NativeObject.h"  
 
 class JS_PUBLIC_API JSAtom;
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
 

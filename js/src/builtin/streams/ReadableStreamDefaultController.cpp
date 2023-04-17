@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsapi.h"        
 #include "jsfriendapi.h"  
 
 #include "builtin/streams/ClassSpecMacro.h"           
@@ -25,6 +24,7 @@
 #include "builtin/streams/TeeState.h"          
 #include "js/ArrayBuffer.h"                    
 #include "js/Class.h"                          
+#include "js/ErrorReport.h"                    
 #include "js/friend/ErrorMessages.h"           
 #include "js/PropertySpec.h"
 #include "vm/Interpreter.h"

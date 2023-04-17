@@ -10,8 +10,6 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsapi.h"  
-
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/QueueWithSizes.h"  
 #include "builtin/streams/WritableStream.h"  

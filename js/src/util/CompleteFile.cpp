@@ -14,8 +14,7 @@
 #  include "js/Vector.h"
 #endif  
 
-#include "jsapi.h"  
-
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 
 bool js::ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer) {

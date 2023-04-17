@@ -10,8 +10,7 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "jsapi.h"  
-
+#include "js/Context.h"       
 #include "vm/GlobalObject.h"  
 #include "vm/JSContext.h"     
 #include "vm/JSObject.h"      

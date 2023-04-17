@@ -7,15 +7,16 @@
 #ifndef debugger_Script_h
 #define debugger_Script_h
 
-#include "jsapi.h"  
-
 #include "jstypes.h"            
 #include "NamespaceImports.h"   
 #include "debugger/Debugger.h"  
 #include "gc/Rooting.h"         
+#include "js/TypeDecls.h"       
 #include "vm/NativeObject.h"    
 
 class JS_PUBLIC_API JSObject;
+struct JSFunctionSpec;
+struct JSPropertySpec;
 
 namespace js {
 

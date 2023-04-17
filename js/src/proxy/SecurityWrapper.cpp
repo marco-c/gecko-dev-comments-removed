@@ -4,8 +4,6 @@
 
 
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "NamespaceImports.h"
 
 #include "js/friend/ErrorMessages.h"  

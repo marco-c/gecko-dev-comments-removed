@@ -14,19 +14,19 @@
 #include <string.h>  
 #include <utility>   
 
-#include "jsapi.h"  
-
 #include "debugger/Debugger.h"  
 #include "debugger/Script.h"    
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
-#include "js/experimental/TypedData.h"    
-#include "js/friend/ErrorMessages.h"      
-#include "js/SourceText.h"                
-#include "vm/BytecodeUtil.h"              
-#include "vm/JSContext.h"                 
-#include "vm/JSObject.h"                  
-#include "vm/JSScript.h"          
+#include "js/ErrorReport.h"  
+#include "js/experimental/TypedData.h"  
+#include "js/friend/ErrorMessages.h"    
+#include "js/SourceText.h"              
+#include "js/String.h"                  
+#include "vm/BytecodeUtil.h"            
+#include "vm/JSContext.h"               
+#include "vm/JSObject.h"                
+#include "vm/JSScript.h"                
 #include "vm/StringType.h"        
 #include "vm/TypedArrayObject.h"  
 #include "wasm/WasmCode.h"        

@@ -6,7 +6,7 @@
 
 #include "js/Exception.h"
 
-#include "jsapi.h"  
+#include "js/Context.h"  
 #include "vm/JSContext.h"
 #include "vm/SavedFrame.h"
 

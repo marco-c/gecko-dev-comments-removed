@@ -11,7 +11,6 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jsapi.h"
 #include "jstypes.h"
 
 #include "gc/WeakMap.h"

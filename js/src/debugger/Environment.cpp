@@ -13,16 +13,16 @@
 #include <string.h>  
 #include <utility>   
 
-#include "jsapi.h"  
-
 #include "debugger/Debugger.h"          
 #include "debugger/Object.h"            
 #include "debugger/Script.h"            
 #include "frontend/BytecodeCompiler.h"  
 #include "gc/Rooting.h"                 
-#include "gc/Tracer.h"  
+#include "gc/Tracer.h"    
+#include "js/CallArgs.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/HeapAPI.h"               
+#include "js/RootingAPI.h"            
 #include "vm/Compartment.h"           
 #include "vm/JSAtom.h"                
 #include "vm/JSContext.h"             

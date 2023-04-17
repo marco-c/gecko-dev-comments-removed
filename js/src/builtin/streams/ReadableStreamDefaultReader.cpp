@@ -6,14 +6,13 @@
 
 
 
-#include "jsapi.h"  
-
 #include "builtin/streams/ClassSpecMacro.h"  
 #include "builtin/streams/MiscellaneousOperations.h"  
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "js/CallArgs.h"              
 #include "js/Class.h"                 
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"            
 #include "vm/PromiseObject.h"         

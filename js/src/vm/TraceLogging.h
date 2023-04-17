@@ -14,10 +14,8 @@
 
 #include <utility>
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
-
 #include "js/AllocPolicy.h"
+#include "js/ErrorReport.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
 #include "js/TraceLoggerAPI.h"

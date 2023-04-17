@@ -9,9 +9,9 @@
 
 #include <stdarg.h>  
 
-#include "jsapi.h"    
 #include "jstypes.h"  
 
+#include "js/Context.h"               
 #include "js/friend/ErrorMessages.h"  
 #include "vm/ErrorReporting.h"        
 #include "vm/JSContext.h"  

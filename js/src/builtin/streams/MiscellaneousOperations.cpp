@@ -11,10 +11,9 @@
 #include "mozilla/Assertions.h"     
 #include "mozilla/FloatingPoint.h"  
 
-#include "jsapi.h"  
-
 #include "js/CallAndConstruct.h"      
 #include "js/Conversions.h"           
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"            
 #include "vm/Interpreter.h"           

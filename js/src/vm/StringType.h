@@ -14,7 +14,6 @@
 
 #include <type_traits>  
 
-#include "jsapi.h"
 #include "jstypes.h"  
 
 #include "gc/Allocator.h"
