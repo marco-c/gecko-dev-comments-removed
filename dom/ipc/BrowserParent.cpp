@@ -1187,12 +1187,22 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     
     
     
+    
     MOZ_ASSERT(aParentID);
     if (!aParentID) {
       return IPC_FAIL_NO_REASON(this);
     }
 
     auto parentDoc = static_cast<a11y::DocAccessibleParent*>(aParentDoc);
+    if (parentDoc->IsShutdown()) {
+      
+      
+      
+      
+      doc->MarkAsShutdown();
+      return IPC_OK();
+    }
+
     mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
     if (!added) {
 #  ifdef DEBUG
