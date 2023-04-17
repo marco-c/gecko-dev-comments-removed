@@ -61,8 +61,13 @@ extern ArrayObject* NewDenseFullyAllocatedArray(
 
 
 extern ArrayObject* NewDensePartlyAllocatedArray(
-    JSContext* cx, uint32_t length, HandleObject proto = nullptr,
-    NewObjectKind newKind = GenericObject);
+    JSContext* cx, uint32_t length, NewObjectKind newKind = GenericObject);
+
+
+
+extern ArrayObject* NewDensePartlyAllocatedArrayWithProto(JSContext* cx,
+                                                          uint32_t length,
+                                                          HandleObject proto);
 
 
 extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
