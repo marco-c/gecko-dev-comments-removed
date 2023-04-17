@@ -107,6 +107,23 @@ class WidgetShutdownObserver final : public nsIObserver {
 };
 
 
+class LocalesChangedObserver final : public nsIObserver {
+  ~LocalesChangedObserver();
+
+ public:
+  explicit LocalesChangedObserver(nsBaseWidget* aWidget);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  void Register();
+  void Unregister();
+
+  nsBaseWidget* mWidget;
+  bool mRegistered;
+};
+
+
 
 
 
@@ -419,6 +436,8 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
                         bool aNeedsYFlip) override{};
 #endif
 
+  virtual void LocalesChanged() {}
+
  protected:
   
   
@@ -679,6 +698,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void RevokeTransactionIdAllocator();
 
   void FreeShutdownObserver();
+  void FreeLocalesChangedObserver();
 
   nsIWidgetListener* mWidgetListener;
   nsIWidgetListener* mAttachedWidgetListener;
@@ -695,6 +715,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   RefPtr<APZEventState> mAPZEventState;
   SetAllowedTouchBehaviorCallback mSetAllowedTouchBehaviorCallback;
   RefPtr<WidgetShutdownObserver> mShutdownObserver;
+  RefPtr<LocalesChangedObserver> mLocalesChangedObserver;
   RefPtr<TextEventDispatcher> mTextEventDispatcher;
   Cursor mCursor;
   nsBorderStyle mBorderStyle;
