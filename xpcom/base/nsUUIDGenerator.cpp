@@ -5,8 +5,7 @@
 
 
 #if defined(XP_WIN)
-#  include <windows.h>
-#  include <objbase.h>
+#  include "mozilla/mscom/COMWrappers.h"
 #elif defined(XP_MACOSX)
 #  include <CoreFoundation/CoreFoundation.h>
 #else
@@ -26,7 +25,7 @@ NS_IMPL_ISUPPORTS(nsUUIDGenerator, nsIUUIDGenerator)
 
 nsUUIDGenerator::nsUUIDGenerator() : mLock("nsUUIDGenerator.mLock") {}
 
-nsUUIDGenerator::~nsUUIDGenerator() {}
+nsUUIDGenerator::~nsUUIDGenerator() = default;
 
 nsresult nsUUIDGenerator::Init() {
   
@@ -95,7 +94,7 @@ nsUUIDGenerator::GenerateUUIDInPlace(nsID* aId) {
   MutexAutoLock lock(mLock);
 
 #if defined(XP_WIN)
-  HRESULT hr = CoCreateGuid((GUID*)aId);
+  HRESULT hr = mozilla::mscom::wrapped::CoCreateGuid((GUID*)aId);
   if (FAILED(hr)) {
     return NS_ERROR_FAILURE;
   }
