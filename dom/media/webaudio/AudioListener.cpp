@@ -4,10 +4,11 @@
 
 
 
-#include "AudioListener.h"
 #include "AudioContext.h"
-#include "mozilla/dom/AudioListenerBinding.h"
+#include "AudioListener.h"
 #include "MediaTrackGraphImpl.h"
+#include "Tracing.h"
+#include "mozilla/dom/AudioListenerBinding.h"
 
 namespace mozilla::dom {
 
@@ -119,6 +120,7 @@ void AudioListener::SendListenerEngineEvent(
           mParameter(aParameter),
           mValue(aValue) {}
     void Run() override {
+      TRACE("AudioListener::RecvListenerEngineEvent");
       mEngine->RecvListenerEngineEvent(mParameter, mValue);
     }
     RefPtr<AudioListenerEngine> mEngine;

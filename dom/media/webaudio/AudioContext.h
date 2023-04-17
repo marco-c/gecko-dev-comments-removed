@@ -118,7 +118,9 @@ class StateChangeTask final : public Runnable {
   AudioContextState mNewState;
 };
 
-enum class AudioContextOperation { Suspend, Resume, Close };
+enum class AudioContextOperation : uint8_t { Suspend, Resume, Close };
+static const char* const kAudioContextOptionsStrings[] = {"Suspend", "Resume",
+                                                          "Close"};
 
 
 
