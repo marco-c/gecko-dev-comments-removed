@@ -384,7 +384,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static void addSizeOfExcludingThis(JSObject* obj,
                                      mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::ClassInfo* info);
+                                     JS::ClassInfo* info,
+                                     JS::RuntimeSizes* runtimeSizes);
 
   
   

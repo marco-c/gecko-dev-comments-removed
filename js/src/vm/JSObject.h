@@ -299,7 +299,8 @@ class JSObject
   }
 
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                              JS::ClassInfo* info);
+                              JS::ClassInfo* info,
+                              JS::RuntimeSizes* runtimeSizes);
 
   
   
