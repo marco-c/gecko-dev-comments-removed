@@ -8,6 +8,10 @@
 const { PromptTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromptTestUtils.jsm"
 );
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+const { ForgetAboutSite } = ChromeUtils.import(
+  "resource://gre/modules/ForgetAboutSite.jsm"
+);
 
 const TEST_URIs = [
   { title: "0", uri: "http://example.com" },
@@ -17,6 +21,11 @@ const TEST_URIs = [
 ];
 
 async function setup() {
+  registerCleanupFunction(async function() {
+    
+    sinon.restore();
+  });
+
   let places = [];
   let transition = PlacesUtils.history.TRANSITION_TYPED;
   TEST_URIs.forEach(({ title, uri }) =>
@@ -38,8 +47,16 @@ async function teardown(organizer) {
 async function testForgetAboutThisSite(
   sitesToSelect,
   shouldForget,
-  removedEntries
+  removedEntries,
+  cancelConfirmWithEsc = false
 ) {
+  if (cancelConfirmWithEsc) {
+    ok(
+      !shouldForget,
+      "If cancelConfirmWithEsc is set we don't expect to clear entries."
+    );
+  }
+
   ok(PlacesUtils, "checking PlacesUtils, running in chrome context?");
   await setup();
   let organizer = await promiseHistoryView();
@@ -95,25 +112,72 @@ async function testForgetAboutThisSite(
     await teardown(organizer);
     return;
   }
-  let promptPromise = PromptTestUtils.handleNextPrompt(
-    organizer,
-    { modalType: Services.prompt.MODAL_TYPE_WINDOW, promptType: "confirmEx" },
-    { buttonNumClick: shouldForget ? 1 : 0 }
-  );
-  let deletedPromise;
+
+  
+  let promptPromise;
+
+  
+  
+  if (cancelConfirmWithEsc) {
+    promptPromise = PromptTestUtils.waitForPrompt(organizer, {
+      modalType: Services.prompt.MODAL_TYPE_WINDOW,
+      promptType: "confirmEx",
+    }).then(dialog => {
+      let dialogWindow = dialog.ui.prompt;
+      let dialogClosedPromise = BrowserTestUtils.waitForEvent(
+        dialogWindow.opener,
+        "DOMModalDialogClosed"
+      );
+      EventUtils.synthesizeKey("KEY_Escape", undefined, dialogWindow);
+
+      return dialogClosedPromise;
+    });
+  } else {
+    
+    promptPromise = PromptTestUtils.handleNextPrompt(
+      organizer,
+      { modalType: Services.prompt.MODAL_TYPE_WINDOW, promptType: "confirmEx" },
+      { buttonNumClick: shouldForget ? 0 : 1 }
+    );
+  }
+
+  
+  
+  if (!shouldForget) {
+    sinon.stub(ForgetAboutSite, "removeDataFromBaseDomain").resolves();
+    sinon.stub(ForgetAboutSite, "removeDataFromDomain").resolves();
+  }
+
+  let pageRemovedEventPromise;
   if (shouldForget) {
-    deletedPromise = PlacesTestUtils.waitForNotification(
+    pageRemovedEventPromise = PlacesTestUtils.waitForNotification(
       "page-removed",
       null,
       "places"
     );
   }
+
   
   contextmenu.activateItem(forgetThisSite);
+
+  
   await promptPromise;
-  if (shouldForget) {
-    await deletedPromise;
+
+  
+  
+  await pageRemovedEventPromise;
+
+  if (!shouldForget) {
+    ok(
+      ForgetAboutSite.removeDataFromBaseDomain.notCalled &&
+        ForgetAboutSite.removeDataFromDomain.notCalled,
+      "Should not call ForgetAboutSite when the confirmation prompt is cancelled."
+    );
+    
+    sinon.restore();
   }
+
+  
   await Promise.all(
     removedEntries.map(async ({ uri }) => {
       Assert.ok(
@@ -190,4 +254,10 @@ add_task(async function forgettingIPAddress() {
 
 add_task(async function dontAlwaysForget() {
   await testForgetAboutThisSite([0], false, []);
+});
+
+
+
+add_task(async function cancelConfirmWithEsc() {
+  await testForgetAboutThisSite([0], false, [], true);
 });
