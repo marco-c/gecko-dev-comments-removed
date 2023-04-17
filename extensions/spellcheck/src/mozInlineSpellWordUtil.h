@@ -206,7 +206,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   nsresult EnsureWords(NodeOffset aSoftBegin, NodeOffset aSoftEnd);
 
-  int32_t MapDOMPositionToSoftTextOffset(NodeOffset aNodeOffset) const;
+  int32_t MapDOMPositionToSoftTextOffset(const NodeOffset& aNodeOffset) const;
   
   
   
