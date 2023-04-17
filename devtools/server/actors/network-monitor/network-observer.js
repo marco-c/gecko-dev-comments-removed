@@ -123,7 +123,9 @@ function matchRequest(channel, filters) {
   if (filters.browserId) {
     const topFrame = NetworkHelper.getTopFrameForRequest(channel);
     
-    if (topFrame && topFrame.browsingContext.browserId == filters.browserId) {
+    
+    
+    if (topFrame?.browsingContext?.browserId == filters.browserId) {
       return true;
     }
 
