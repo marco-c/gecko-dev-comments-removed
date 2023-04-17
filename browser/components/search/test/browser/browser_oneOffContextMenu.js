@@ -3,16 +3,6 @@
 const TEST_ENGINE_NAME = "Foo";
 const TEST_ENGINE_BASENAME = "testEngine.xml";
 
-const searchPopup = document.getElementById("PopupSearchAutoComplete");
-const oneOffInstance = searchPopup.oneOffButtons;
-const contextMenu = oneOffInstance.querySelector(
-  ".search-one-offs-context-menu"
-);
-const oneOffButtons = oneOffInstance.buttons;
-const searchInNewTabMenuItem = oneOffInstance.querySelector(
-  ".search-one-offs-context-open-in-new-tab"
-);
-
 let searchbar;
 let searchIcon;
 
@@ -29,6 +19,11 @@ add_task(async function init() {
 });
 
 add_task(async function telemetry() {
+  let searchPopup = document.getElementById("PopupSearchAutoComplete");
+  let oneOffInstance = searchPopup.oneOffButtons;
+
+  let oneOffButtons = oneOffInstance.buttons;
+
   
   let shownPromise = promiseEvent(searchPopup, "popupshown");
   let builtPromise = promiseEvent(oneOffInstance, "rebuild");
@@ -51,6 +46,9 @@ add_task(async function telemetry() {
   );
 
   
+  let contextMenu = oneOffInstance.querySelector(
+    ".search-one-offs-context-menu"
+  );
   let promise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   EventUtils.synthesizeMouseAtCenter(oneOffButton, {
     type: "contextmenu",
@@ -59,8 +57,11 @@ add_task(async function telemetry() {
   await promise;
 
   
+  let searchInNewTabMenuItem = contextMenu.querySelector(
+    ".search-one-offs-context-open-in-new-tab"
+  );
   promise = BrowserTestUtils.waitForNewTab(gBrowser);
-  EventUtils.synthesizeMouseAtCenter(searchInNewTabMenuItem, {});
+  contextMenu.activateItem(searchInNewTabMenuItem);
   let tab = await promise;
 
   
