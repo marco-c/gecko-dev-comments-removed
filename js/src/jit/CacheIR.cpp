@@ -4647,7 +4647,8 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   }
 
   uint32_t slot = prop->slot();
-  MOZ_ASSERT(slot >= fun->numFixedSlots(), "Stub code relies on this");
+
+  MOZ_ASSERT(fun->numFixedSlots() == 0, "Stub code relies on this");
   if (!fun->getSlot(slot).isObject()) {
     trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
@@ -4674,8 +4675,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   
   ObjOperandId protoId = writer.loadObject(prototypeObject);
   
-  writer.guardDynamicSlotIsSpecificObject(rhsId, protoId,
-                                          slot - fun->numFixedSlots());
+  writer.guardDynamicSlotIsSpecificObject(rhsId, protoId, slot);
 
   
   
@@ -9408,9 +9408,8 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
       JSFunction* newTarget = &newTarget_.toObject().as<JSFunction>();
       Maybe<PropertyInfo> prop = newTarget->lookupPure(cx_->names().prototype);
       MOZ_ASSERT(prop.isSome());
+      MOZ_ASSERT(newTarget->numFixedSlots() == 0, "Stub code relies on this");
       uint32_t slot = prop->slot();
-      MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
-                 "Stub code relies on this");
       JSObject* prototypeObject = &newTarget->getSlot(slot).toObject();
 
       ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
@@ -9418,8 +9417,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
       ObjOperandId newTargetObjId = writer.guardToObject(newTargetValId);
       writer.guardShape(newTargetObjId, newTarget->shape());
       ObjOperandId protoId = writer.loadObject(prototypeObject);
-      writer.guardDynamicSlotIsSpecificObject(
-          newTargetObjId, protoId, slot - newTarget->numFixedSlots());
+      writer.guardDynamicSlotIsSpecificObject(newTargetObjId, protoId, slot);
 
       
       

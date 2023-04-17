@@ -15,7 +15,6 @@
 
 #include "js/CallArgs.h"       
 #include "js/shadow/Object.h"  
-#include "js/Value.h"          
 
 class JS_PUBLIC_API JSFunction;
 class JSJitInfo;
@@ -24,25 +23,23 @@ namespace JS {
 
 namespace shadow {
 
-struct Function : shadow::Object {
-  enum {
-    FlagsAndArgCountSlot,
-    NativeFuncOrInterpretedEnvSlot,
-    NativeJitInfoOrInterpretedScriptSlot,
-    AtomSlot
-  };
-  uint32_t flagsAndArgCount() const {
-    return fixedSlots()[FlagsAndArgCountSlot].toPrivateUint32();
-  }
-
-  void* jitInfoOrScript() const {
-    return fixedSlots()[NativeJitInfoOrInterpretedScriptSlot].toPrivate();
-  }
-
-  void setJitInfoOrScript(void* ptr) {
-    fixedSlots()[NativeJitInfoOrInterpretedScriptSlot] = JS::PrivateValue(ptr);
-  }
+struct Function {
+  shadow::Object base;
+  uint16_t nargs;
+  uint16_t flags;
+  
+  JSNative native;
+  const JSJitInfo* jitinfo;
+  void* _1;
 };
+
+inline Function* AsShadowFunction(JSFunction* fun) {
+  return reinterpret_cast<Function*>(fun);
+}
+
+inline const Function* AsShadowFunction(const JSFunction* fun) {
+  return reinterpret_cast<const Function*>(fun);
+}
 
 }  
 
