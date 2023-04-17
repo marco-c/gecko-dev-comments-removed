@@ -206,6 +206,11 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
   virtual void MaybeRenewHostRecord(nsHostRecord* aRec) override;
 
+  
+  
+  
+  bool TRRServiceEnabledForRecord(nsHostRecord* aRec);
+
  private:
   explicit nsHostResolver(uint32_t maxCacheEntries,
                           uint32_t defaultCacheEntryLifetime,
