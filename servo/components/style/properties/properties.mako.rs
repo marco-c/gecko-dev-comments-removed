@@ -3084,7 +3084,10 @@ impl ComputedValues {
     
     
     
-    pub fn get_longhand_property_value<W>(
+    
+    
+    
+    pub fn get_resolved_value<W>(
         &self,
         property_id: LonghandId,
         dest: &mut CssWriter<W>
@@ -3105,6 +3108,31 @@ impl ComputedValues {
             LonghandId::${prop.camel_case} => {
                 let value = self.clone_${prop.ident}();
                 value.to_resolved_value(&context).to_css(dest)
+            }
+            % endfor
+        }
+    }
+
+    
+    pub fn resolved_declaration(&self, property_id: LonghandId) -> PropertyDeclaration {
+        use crate::values::resolved::ToResolvedValue;
+        use crate::values::computed::ToComputedValue;
+
+        let context = resolved::Context {
+            style: self,
+        };
+
+        match property_id {
+            % for prop in data.longhands:
+            LonghandId::${prop.camel_case} => {
+                let value = self.clone_${prop.ident}();
+                let resolved = value.to_resolved_value(&context);
+                %if prop.boxed:
+                let resolved = Box::new(resolved);
+                %endif
+                let computed = ToResolvedValue::from_resolved_value(resolved);
+                let specified = ToComputedValue::from_computed_value(&computed);
+                PropertyDeclaration::${prop.camel_case}(specified)
             }
             % endfor
         }
