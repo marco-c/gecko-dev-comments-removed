@@ -87,7 +87,7 @@ struct TlsData {
   
   Atomic<uint32_t, mozilla::Relaxed> interrupt;
 
-  const uint32_t* addressOfNeedsIncrementalBarrier;
+  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier;
 
   
   
