@@ -45,6 +45,9 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 
                 
                 "app.normandy.enabled": False,
+                
+                
+                "app.shield.optoutstudies.enabled": False,
             }
         )
 
