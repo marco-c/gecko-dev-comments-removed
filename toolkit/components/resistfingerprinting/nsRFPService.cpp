@@ -28,11 +28,9 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
@@ -104,7 +102,6 @@ static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
 nsTHashMap<KeyboardHashKey, const SpoofingKeyboardCode*>*
     nsRFPService::sSpoofingKeyboardCodes = nullptr;
-static mozilla::StaticMutex sLock;
 
 KeyboardHashKey::KeyboardHashKey(const KeyboardLangs aLang,
                                  const KeyboardRegions aRegion,
@@ -244,7 +241,7 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
                                       uint8_t* aSecretSeed ) {
   nsresult rv;
   const int kSeedSize = 16;
-  static uint8_t* sSecretMidpointSeed = nullptr;
+  static Atomic<uint8_t*> sSecretMidpointSeed;
 
   if (MOZ_UNLIKELY(!aMidpointOut)) {
     return NS_ERROR_INVALID_ARG;
@@ -260,17 +257,6 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
   
-  
-  if (aSecretSeed != nullptr) {
-    StaticMutexAutoLock lock(sLock);
-
-    delete[] sSecretMidpointSeed;
-
-    sSecretMidpointSeed = new uint8_t[kSeedSize];
-    memcpy(sSecretMidpointSeed, aSecretSeed, kSeedSize);
-  }
-
-  
   if (MOZ_UNLIKELY(!sSecretMidpointSeed)) {
     nsCOMPtr<nsIRandomGenerator> randomGenerator =
         do_GetService("@mozilla.org/security/random-generator;1", &rv);
@@ -278,19 +264,36 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
       return rv;
     }
 
-    if (MOZ_LIKELY(!sSecretMidpointSeed)) {
-      rv =
-          randomGenerator->GenerateRandomBytes(kSeedSize, &sSecretMidpointSeed);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+    uint8_t* temp = nullptr;
+    rv = randomGenerator->GenerateRandomBytes(kSeedSize, &temp);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (MOZ_UNLIKELY(!sSecretMidpointSeed.compareExchange(nullptr, temp))) {
+      
+      delete[] temp;
     }
   }
 
   
-  non_crypto::XorShift128PlusRNG rng(
-      aContextMixin ^ *(uint64_t*)(sSecretMidpointSeed),
-      aClampedTimeUSec ^ *(uint64_t*)(sSecretMidpointSeed + 8));
+  
+  
+  uint8_t* seed = sSecretMidpointSeed;
+  MOZ_RELEASE_ASSERT(seed);
+
+  
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(aSecretSeed != nullptr)) {
+    memcpy(seed, aSecretSeed, kSeedSize);
+  }
+
+  
+  non_crypto::XorShift128PlusRNG rng(aContextMixin ^ *(uint64_t*)(seed),
+                                     aClampedTimeUSec ^ *(uint64_t*)(seed + 8));
 
   
   if (MOZ_UNLIKELY(aResolutionUSec <= 0)) {  
