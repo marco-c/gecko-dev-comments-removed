@@ -77,28 +77,6 @@ function monotonicNow() {
 
 
 
-class TypingInteraction {
-  
-
-
-
-
-  getTypingInteraction() {
-    let typingInteraction = { typingTime: 0, keypresses: 0 };
-    const interactionData = ChromeUtils.consumeInteractionData();
-    const typing = interactionData.Typing;
-    if (typing) {
-      typingInteraction.typingTime += typing.interactionTimeInMilliseconds;
-      typingInteraction.keypresses += typing.interactionCount;
-    }
-    return typingInteraction;
-  }
-}
-
-
-
-
-
 
 
 
@@ -150,13 +128,6 @@ class _Interactions {
 
 
   #interactions = new WeakMap();
-
-  
-
-
-
-
-  #typingInteraction = new TypingInteraction();
 
   
 
@@ -240,6 +211,7 @@ class _Interactions {
     this.#userIsIdle = false;
     this._pageViewStartTime = Cu.now();
     ChromeUtils.consumeInteractionData();
+    await _Interactions.interactionUpdatePromise;
     await this.store.reset();
   }
 
@@ -328,10 +300,48 @@ class _Interactions {
 
 
   #updateInteraction(browser = undefined) {
-    if (
-      !this.#activeWindow ||
-      (browser && browser.ownerGlobal != this.#activeWindow)
-    ) {
+    _Interactions.#updateInteraction_async(
+      browser,
+      this.#activeWindow,
+      this.#userIsIdle,
+      this.#interactions,
+      this._pageViewStartTime,
+      this.store
+    );
+  }
+
+  
+
+
+
+  static interactionUpdatePromise = Promise.resolve();
+
+  
+
+
+  get interactionUpdatePromise() {
+    return _Interactions.interactionUpdatePromise;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static async #updateInteraction_async(
+    browser,
+    activeWindow,
+    userIsIdle,
+    interactions,
+    pageViewStartTime,
+    store
+  ) {
+    if (!activeWindow || (browser && browser.ownerGlobal != activeWindow)) {
       logConsole.debug("Not updating interaction as there is no active window");
       return;
     }
@@ -340,30 +350,48 @@ class _Interactions {
     
     
     
-    if (this.#userIsIdle) {
+    if (userIsIdle) {
       logConsole.debug("Not updating interaction as the user is idle");
       return;
     }
 
     if (!browser) {
-      browser = this.#activeWindow.gBrowser.selectedTab.linkedBrowser;
+      browser = activeWindow.gBrowser.selectedTab.linkedBrowser;
     }
 
-    let interaction = this.#interactions.get(browser);
+    let interaction = interactions.get(browser);
     if (!interaction) {
       logConsole.debug("No interaction to update");
       return;
     }
 
-    interaction.totalViewTime += Cu.now() - this._pageViewStartTime;
-    this._pageViewStartTime = Cu.now();
+    interaction.totalViewTime += Cu.now() - pageViewStartTime;
+    Interactions._pageViewStartTime = Cu.now();
 
-    const typingInteraction = this.#typingInteraction.getTypingInteraction();
-    interaction.typingTime += typingInteraction.typingTime;
-    interaction.keypresses += typingInteraction.keypresses;
-    interaction.updated_at = monotonicNow();
+    const interactionData = ChromeUtils.consumeInteractionData();
+    const typing = interactionData.Typing;
+    if (typing) {
+      interaction.typingTime += typing.interactionTimeInMilliseconds;
+      interaction.keypresses += typing.interactionCount;
+    }
 
-    this.store.add(interaction);
+    
+    _Interactions.interactionUpdatePromise = _Interactions.interactionUpdatePromise
+      .then(async () => ChromeUtils.collectScrollingData())
+      .then(
+        result => {
+          interaction.scrollingTime += result.interactionTimeInMilliseconds;
+          interaction.scrollingDistance += result.scrollingDistanceInPixels;
+
+          interaction.updated_at = monotonicNow();
+
+          logConsole.debug("Add to store: ", interaction);
+          store.add(interaction);
+        },
+        reason => {
+          Cu.reportError(reason);
+        }
+      );
   }
 
   

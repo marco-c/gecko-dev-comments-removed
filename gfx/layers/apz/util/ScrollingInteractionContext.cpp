@@ -1,0 +1,29 @@
+
+
+
+
+
+
+#include "ScrollingInteractionContext.h"
+
+namespace mozilla::layers {
+
+
+bool ScrollingInteractionContext::sScrollingToAnchor = false;
+
+
+bool ScrollingInteractionContext::IsScrollingToAnchor() {
+  return sScrollingToAnchor;
+}
+
+ScrollingInteractionContext::ScrollingInteractionContext(
+    bool aScrollingToAnchor)
+    : mOldScrollingToAnchor(sScrollingToAnchor) {
+  sScrollingToAnchor = aScrollingToAnchor;
+}
+
+ScrollingInteractionContext::~ScrollingInteractionContext() {
+  sScrollingToAnchor = mOldScrollingToAnchor;
+}
+
+}  
