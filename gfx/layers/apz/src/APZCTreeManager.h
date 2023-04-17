@@ -997,7 +997,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   std::unordered_map<ScrollableLayerGuid, ZoomConstraints,
-                     ScrollableLayerGuid::HashFn>
+                     ScrollableLayerGuid::HashIgnoringPresShellFn,
+                     ScrollableLayerGuid::EqualIgnoringPresShellFn>
       mZoomConstraints;
   
 
