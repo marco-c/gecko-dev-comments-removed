@@ -864,8 +864,16 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         
         
         
-        let reset_props_bits = ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND;
-        builder.add_flags(cached_style.flags & reset_props_bits);
+        
+        
+        
+        
+        
+        let bits_to_copy = ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND |
+            ComputedValueFlags::DEPENDS_ON_SELF_FONT_METRICS |
+            ComputedValueFlags::DEPENDS_ON_INHERITED_FONT_METRICS |
+            ComputedValueFlags::USES_VIEWPORT_UNITS;
+        builder.add_flags(cached_style.flags & bits_to_copy);
 
         true
     }
