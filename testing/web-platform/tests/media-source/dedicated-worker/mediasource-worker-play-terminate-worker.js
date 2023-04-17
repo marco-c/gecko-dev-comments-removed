@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+try {
+  importScripts("mediasource-worker-play.js");
+} catch(e) {
+  if (e.name != "NetworkError")
+    throw e;
+}
