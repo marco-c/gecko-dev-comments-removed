@@ -91,27 +91,22 @@ class CacheQuotaClient final : public quota::Client {
     
     QM_TRY(aCommitHook());
 
-    
-    QM_TRY(QM_OR_ELSE_WARN(
-        ToResult(DirectoryPaddingFinalizeWrite(aBaseDir)),
-        ([&aBaseDir](const nsresult) -> Result<Ok, nsresult> {
-          
-          
-          
-          
-          Unused << DirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::FILE);
+    QM_WARNONLY_TRY(ToResult(DirectoryPaddingFinalizeWrite(aBaseDir)),
+                    ([&aBaseDir](const nsresult) {
+                      
+                      QM_WARNONLY_TRY(DirectoryPaddingDeleteFile(
+                          aBaseDir, DirPaddingFile::FILE));
 
-          
-          
-          MOZ_ASSERT(
-              DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE));
+                      
+                      
+                      MOZ_ASSERT(DirectoryPaddingFileExists(
+                          aBaseDir, DirPaddingFile::TMP_FILE));
 
-          
-          
-          
-          
-          return Ok{};
-        })));
+                      
+                      
+                      
+                      
+                    }));
 
     return NS_OK;
   }
