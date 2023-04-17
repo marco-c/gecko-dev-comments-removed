@@ -1813,7 +1813,19 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   
 
   bool alwaysAsk = true;
-  mMimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
+
+  
+  
+  bool skipShowingDialog =
+      Preferences::GetBool("browser.download.useDownloadDir") &&
+      StaticPrefs::browser_download_improvements_to_download_panel();
+
+  if (skipShowingDialog) {
+    alwaysAsk = false;
+  } else {
+    mMimeInfo->GetAlwaysAskBeforeHandling(&alwaysAsk);
+  }
+
   if (alwaysAsk) {
     
     
@@ -1860,18 +1872,28 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   int32_t action = nsIMIMEInfo::saveToDisk;
   mMimeInfo->GetPreferredAction(&action);
 
+  bool forcePrompt =
+      mReason == nsIHelperAppLauncherDialog::REASON_TYPESNIFFED ||
+      (mReason == nsIHelperAppLauncherDialog::REASON_SERVERREQUEST &&
+       !skipShowingDialog);
+
   
-  if (!alwaysAsk && mReason != nsIHelperAppLauncherDialog::REASON_CANTHANDLE) {
+  if (!alwaysAsk && forcePrompt) {
     
     
     alwaysAsk = (action != nsIMIMEInfo::saveToDisk);
   }
 
+  bool shouldAutomaticallyHandleInternally =
+      action == nsIMIMEInfo::handleInternally &&
+      StaticPrefs::browser_download_improvements_to_download_panel();
+
   
   if (!alwaysAsk) {
     alwaysAsk = action != nsIMIMEInfo::saveToDisk &&
                 action != nsIMIMEInfo::useHelperApp &&
-                action != nsIMIMEInfo::useSystemDefault;
+                action != nsIMIMEInfo::useSystemDefault &&
+                !shouldAutomaticallyHandleInternally;
   }
 
   
@@ -1934,8 +1956,9 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 
 #endif
     if (action == nsIMIMEInfo::useHelperApp ||
-        action == nsIMIMEInfo::useSystemDefault) {
-      rv = LaunchWithApplication(mHandleInternally);
+        action == nsIMIMEInfo::useSystemDefault ||
+        shouldAutomaticallyHandleInternally) {
+      rv = LaunchWithApplication(shouldAutomaticallyHandleInternally);
     } else {
       rv = PromptForSaveDestination();
     }
