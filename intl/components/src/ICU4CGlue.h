@@ -58,11 +58,6 @@ using ICUResult = Result<Ok, ICUError>;
 
 
 
-ICUError ToICUError(UErrorCode status);
-
-
-
-
 
 ICUError ToICUError(UErrorCode status);
 
