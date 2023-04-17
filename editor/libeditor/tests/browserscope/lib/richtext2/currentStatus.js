@@ -1,8 +1,8 @@
-
-
-
-
-
+/**
+ * The current status of the test suite.
+ *
+ * See README.Mozilla for details on how to generate this.
+ */
 const knownFailures = {
   value: {
     "A-Proposed-FS:18px_TEXT-1_SI-dM": true,
@@ -219,6 +219,8 @@ const knownFailures = {
     "D-Proposed-TR3rs:3-1_SO3-body": true,
     "D-Proposed-TR3rs:3-1_SO3-div": true,
     "D-Proposed-DIV:ce:false-1_SB-dM": true,
+    "D-Proposed-DIV:ce:false-1_SB-body": true,
+    "D-Proposed-DIV:ce:false-1_SB-div": true,
     "D-Proposed-DIV:ce:false-1_SL-dM": true,
     "D-Proposed-DIV:ce:false-1_SL-body": true,
     "D-Proposed-DIV:ce:false-1_SL-div": true,
@@ -859,6 +861,8 @@ const knownFailures = {
     "D-Proposed-TR3rs:3-1_SO3-body": true,
     "D-Proposed-TR3rs:3-1_SO3-div": true,
     "D-Proposed-DIV:ce:false-1_SB-dM": true,
+    "D-Proposed-DIV:ce:false-1_SB-body": true,
+    "D-Proposed-DIV:ce:false-1_SB-div": true,
     "D-Proposed-DIV:ce:false-1_SL-dM": true,
     "D-Proposed-DIV:ce:false-1_SL-body": true,
     "D-Proposed-DIV:ce:false-1_SL-div": true,

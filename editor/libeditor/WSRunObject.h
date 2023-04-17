@@ -268,13 +268,6 @@ class MOZ_STACK_CLASS WSScanResult final {
   
 
 
-  bool ReachedNonEditableOtherBlockElement() const {
-    return ReachedOtherBlockElement() && !GetContent()->IsEditable();
-  }
-
-  
-
-
   bool ReachedSomething() const { return !InNormalWhiteSpacesOrText(); }
 
  private:
