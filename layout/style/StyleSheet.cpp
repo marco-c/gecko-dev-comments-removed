@@ -1385,6 +1385,10 @@ already_AddRefed<StyleSheet> StyleSheet::CloneAdoptedSheet(
 
 ServoCSSRuleList* StyleSheet::GetCssRulesInternal() {
   if (!mRuleList) {
+    
+    
+    EnsureUniqueInner();
+
     RefPtr<ServoCssRules> rawRules =
         Servo_StyleSheet_GetRules(Inner().mContents).Consume();
     MOZ_ASSERT(rawRules);
