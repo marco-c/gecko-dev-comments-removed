@@ -253,6 +253,25 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 
 @implementation MOZSearchFieldCell
 
+- (instancetype)init {
+  
+  
+  
+  
+  
+  self = [super initTextCell:@" "];
+
+  
+  
+  NSButtonCell* invisibleCell = [[NSButtonCell alloc] initImageCell:nil];
+  invisibleCell.bezeled = NO;
+  invisibleCell.bordered = NO;
+  self.cancelButtonCell = invisibleCell;
+  [invisibleCell release];
+
+  return self;
+}
+
 - (BOOL)_isToolbarMode {
   return self.shouldUseToolbarStyle;
 }
@@ -414,7 +433,7 @@ nsNativeThemeCocoa::nsNativeThemeCocoa() {
   [mTextFieldCell setEditable:YES];
   [mTextFieldCell setFocusRingType:NSFocusRingTypeExterior];
 
-  mSearchFieldCell = [[MOZSearchFieldCell alloc] initTextCell:@""];
+  mSearchFieldCell = [[MOZSearchFieldCell alloc] init];
   [mSearchFieldCell setBezelStyle:NSTextFieldRoundedBezel];
   [mSearchFieldCell setBezeled:YES];
   [mSearchFieldCell setEditable:YES];
