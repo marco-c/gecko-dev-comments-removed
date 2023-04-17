@@ -7442,8 +7442,9 @@ bool nsTextFrame::IsFrameSelected() const {
     
     const bool isReallySelected =
         GetContent()->IsSelected(GetContentOffset(), GetContentEnd());
-    MOZ_ASSERT((mIsSelected == nsTextFrame::SelectionState::Selected) ==
-               isReallySelected);
+    NS_ASSERTION((mIsSelected == nsTextFrame::SelectionState::Selected) ==
+                     isReallySelected,
+                 "Should have called InvalidateSelectionState()");
 #endif
   }
 
