@@ -144,12 +144,6 @@ class RenderThread final {
   static void ShutDown();
 
   
-  
-  
-  
-  static MessageLoop* Loop();
-
-  
   static bool IsInRenderThread();
 
   
@@ -308,6 +302,7 @@ class RenderThread final {
   void DeferredRenderTextureHostDestroy();
   void ShutDownTask(layers::SynchronousTask* aTask);
   void InitDeviceTask();
+  void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
   void DoAccumulateMemoryReport(MemoryReport,
                                 const RefPtr<MemoryReportPromise::Private>&);
