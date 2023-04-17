@@ -673,20 +673,6 @@ class JSFunction : public js::NativeObject {
   inline const js::Value& getExtendedSlot(size_t which) const;
 
   
-
-
-
-
-
-
-
-
-
-  inline js::FunctionExtended* toExtendedOffMainThread();
-  inline const js::FunctionExtended* toExtendedOffMainThread() const;
-  inline const js::Value& getExtendedSlotOffMainThread(size_t which) const;
-
-  
   js::gc::AllocKind getAllocKind() const {
     static_assert(
         js::gc::AllocKind::FUNCTION != js::gc::AllocKind::FUNCTION_EXTENDED,
@@ -858,14 +844,6 @@ inline const js::FunctionExtended* JSFunction::toExtended() const {
   return static_cast<const js::FunctionExtended*>(this);
 }
 
-inline js::FunctionExtended* JSFunction::toExtendedOffMainThread() {
-  return static_cast<js::FunctionExtended*>(this);
-}
-
-inline const js::FunctionExtended* JSFunction::toExtendedOffMainThread() const {
-  return static_cast<const js::FunctionExtended*>(this);
-}
-
 inline void JSFunction::initializeExtended() {
   MOZ_ASSERT(isExtended());
 
@@ -889,12 +867,6 @@ inline void JSFunction::setExtendedSlot(size_t which, const js::Value& val) {
 inline const js::Value& JSFunction::getExtendedSlot(size_t which) const {
   MOZ_ASSERT(which < std::size(toExtended()->extendedSlots));
   return toExtended()->extendedSlots[which];
-}
-
-inline const js::Value& JSFunction::getExtendedSlotOffMainThread(
-    size_t which) const {
-  MOZ_ASSERT(which < std::size(toExtendedOffMainThread()->extendedSlots));
-  return toExtendedOffMainThread()->extendedSlots[which];
 }
 
 namespace js {
