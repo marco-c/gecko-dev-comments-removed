@@ -108,7 +108,7 @@ var SessionWorkerCacheInternal = {
       
       
       
-      SessionStore.promiseAllWindowsRestored.then(() => {
+      SessionStore.promiseAllWindowsRestored().then(() => {
         for (let [id] of objs) {
           this._releaseById(id);
         }
