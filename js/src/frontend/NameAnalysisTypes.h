@@ -274,7 +274,7 @@ class NameLocation {
                 "Frame and environment slots must be same sized.");
 
   NameLocation(Kind kind, BindingKind bindingKind, uint8_t hops = UINT8_MAX,
-               uint32_t slot = ENVCOORD_SLOT_LIMIT)
+               uint32_t slot = 0)
       : kind_(kind), bindingKind_(bindingKind), hops_(hops), slot_(slot) {}
 
  public:
