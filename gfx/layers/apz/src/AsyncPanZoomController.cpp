@@ -5480,6 +5480,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
     ParentLayerRect compositionBounds = Metrics().GetCompositionBounds();
     CSSRect cssPageRect = Metrics().GetScrollableRect();
+    CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
     CSSPoint scrollOffset = Metrics().GetVisualScrollOffset();
     
     CSSToParentLayerScale currentZoom = Metrics().GetZoom().ToScaleFactor();
@@ -5523,24 +5524,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
                 (currentZoom == localMinZoom && targetZoom <= localMinZoom);
     }
 
-    FrameMetrics endZoomToMetrics = Metrics();
-    CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
     if (zoomOut) {
-      
-      
-      
       targetZoom = localMinZoom;
-      endZoomToMetrics.SetZoom(CSSToParentLayerScale2D(targetZoom));
-
-      CSSSize sizeAfterZoom =
-          endZoomToMetrics.CalculateCompositedSizeInCssPixels();
-
-      rect = CSSRect(
-          scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2,
-          scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2,
-          sizeAfterZoom.Width(), sizeAfterZoom.Height());
-
-      rect = rect.Intersect(cssPageRect);
     }
 
     targetZoom.scale =
@@ -5560,12 +5545,25 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
         }
       }
     }
-    endZoomToMetrics.SetZoom(CSSToParentLayerScale2D(targetZoom));
 
-    
+    FrameMetrics endZoomToMetrics = Metrics();
+    endZoomToMetrics.SetZoom(CSSToParentLayerScale2D(targetZoom));
     CSSSize sizeAfterZoom =
         endZoomToMetrics.CalculateCompositedSizeInCssPixels();
 
+    if (zoomOut) {
+      
+      
+      
+      rect = CSSRect(
+          scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2,
+          scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2,
+          sizeAfterZoom.Width(), sizeAfterZoom.Height());
+
+      rect = rect.Intersect(cssPageRect);
+    }
+
+    
     if (!zoomOut && aZoomTarget.elementBoundingRect.isSome()) {
       MOZ_ASSERT(aZoomTarget.elementBoundingRect->Contains(rect));
       CSSRect elementBoundingRect =
