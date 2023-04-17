@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let count = 0;
+
+class Class {
+  #method() {
+    count += 1;
+  }
+
+  static isNameIn(value) {
+    return #method in value;
+  }
+}
+
+assert.sameValue(Class.isNameIn({}), false);
+assert.sameValue(Class.isNameIn(new Class()), true);
+assert.sameValue(count, 0);
+
+reportCompare(0, 0);

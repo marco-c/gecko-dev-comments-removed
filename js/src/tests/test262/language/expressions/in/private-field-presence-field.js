@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Class {
+  #field;
+
+  static isNameIn(value) {
+    return #field in value;
+  }
+}
+
+assert.sameValue(Class.isNameIn({}), false);
+assert.sameValue(Class.isNameIn(new Class()), true);
+
+reportCompare(0, 0);

@@ -8,6 +8,14 @@
 
 
 
+
 var implements = 1;
+var impl\u0065ments = 2;
+
+{ let implements = 3; }
+{ let impl\u0065ments = 4; }
+
+{ const implements = 5; }
+{ const impl\u0065ments = 6; }
 
 reportCompare(0, 0);

@@ -14,7 +14,7 @@
 $DONOTEVALUATE();
 
 class C {
-  static get #f();
+  static get #f() {}
   set #f(v) {}
 }
 
