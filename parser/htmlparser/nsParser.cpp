@@ -1215,9 +1215,7 @@ static nsresult ParserWriteFunc(nsIInputStream* in, void* closure,
     
     
     const Encoding* encoding;
-    size_t bomLength;
-    Tie(encoding, bomLength) = Encoding::ForBOM(Span(buf, count));
-    Unused << bomLength;
+    Tie(encoding, Ignore) = Encoding::ForBOM(Span(buf, count));
     if (encoding) {
       
       

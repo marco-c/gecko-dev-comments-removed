@@ -44,13 +44,11 @@ struct ScriptDecoding<char16_t> {
     uint32_t result;
     size_t read;
     size_t written;
-    bool hadErrors;
-    Tie(result, read, written, hadErrors) =
+    Tie(result, read, written, Ignore) =
         aDecoder->DecodeToUTF16(aSrc, aDest, aEndOfSource);
     MOZ_ASSERT(result == kInputEmpty);
     MOZ_ASSERT(read == aSrc.Length());
     MOZ_ASSERT(written <= aDest.Length());
-    Unused << hadErrors;
 
     return written;
   }
@@ -69,7 +67,6 @@ struct ScriptDecoding<Utf8Unit> {
     uint32_t result;
     size_t read;
     size_t written;
-    bool hadErrors;
     
     
     
@@ -79,12 +76,11 @@ struct ScriptDecoding<Utf8Unit> {
     
     
     
-    Tie(result, read, written, hadErrors) =
+    Tie(result, read, written, Ignore) =
         aDecoder->DecodeToUTF8(aSrc, AsWritableBytes(aDest), aEndOfSource);
     MOZ_ASSERT(result == kInputEmpty);
     MOZ_ASSERT(read == aSrc.Length());
     MOZ_ASSERT(written <= aDest.Length());
-    Unused << hadErrors;
 
     return written;
   }
