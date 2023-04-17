@@ -5,6 +5,7 @@
 
 #include "nsNativeThemeCocoa.h"
 
+#include "AppearanceOverride.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
 #include "mozilla/gfx/PathHelpers.h"
@@ -73,12 +74,6 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
   return [self controlTint];
 }
 @end
-
-#if !defined(MAC_OS_X_VERSION_10_14) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
-@interface NSApplication (NSApplicationAppearance)
-@property(readonly, strong) NSAppearance* effectiveAppearance NS_AVAILABLE_MAC(10_14);
-@end
-#endif
 
 
 
@@ -779,10 +774,11 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
 @end
 
 static id GetAppAppearance() {
-  if (@available(macOS 10.14, *)) {
-    return NSApp.effectiveAppearance;
-  }
-  return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+  
+  
+  
+  
+  return MOZGlobalAppearance.sharedInstance.effectiveAppearance;
 }
 
 @interface NSObject (NSAppearanceCoreUIRendering)
@@ -2677,10 +2673,7 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
     
     
     
-    
-    
-    
-    NSAppearance.currentAppearance = NSApp.effectiveAppearance;
+    NSAppearance.currentAppearance = GetAppAppearance();
   }
 
   const Widget widget = aWidgetInfo.Widget();

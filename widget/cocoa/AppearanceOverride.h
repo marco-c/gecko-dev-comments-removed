@@ -1,0 +1,22 @@
+
+
+
+
+
+#ifndef AppearanceOverride_h
+#define AppearanceOverride_h
+
+#import <Cocoa/Cocoa.h>
+
+
+
+
+
+
+
+
+@interface MOZGlobalAppearance : NSObject <NSAppearanceCustomization>
+@property(class, readonly) MOZGlobalAppearance* sharedInstance;
+@end
+
+#endif
