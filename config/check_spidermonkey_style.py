@@ -273,7 +273,12 @@ def check_style(enable_fixup):
     
     
 
-    non_js_dirnames = ("mfbt/", "memory/mozalloc/", "mozglue/")  
+    non_js_dirnames = (
+        "mfbt/",
+        "memory/mozalloc/",
+        "mozglue/",
+        "intl/components/",
+    )  
     non_js_inclnames = set()  
     js_names = dict()  
 
@@ -304,6 +309,8 @@ def check_style(enable_fixup):
             for filename in filenames:
                 if filename.endswith(".h"):
                     inclname = "mozilla/" + filename
+                    if non_js_dir == "intl/components/":
+                        inclname = "mozilla/intl/" + filename
                     non_js_inclnames.add(inclname)
 
     
