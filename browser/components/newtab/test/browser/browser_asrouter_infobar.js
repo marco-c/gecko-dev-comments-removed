@@ -1,3 +1,8 @@
+
+
+
+"use strict";
+
 const { InfoBar } = ChromeUtils.import(
   "resource://activity-stream/lib/InfoBar.jsm"
 );
