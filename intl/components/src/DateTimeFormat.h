@@ -327,7 +327,7 @@ class DateTimeFormat final {
       
       PatternVector u16Vec;
 
-      auto result = FillBufferWithICUCall(
+      auto result = FillVectorWithICUCall(
           u16Vec, [this, &aUnixEpoch](UChar* target, int32_t length,
                                       UErrorCode* status) {
             return udat_format(mDateFormat, aUnixEpoch, target, length,
