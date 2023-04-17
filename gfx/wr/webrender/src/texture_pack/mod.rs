@@ -72,6 +72,10 @@ struct TextureUnit<Allocator> {
     allocator: Allocator,
     handles: FastHashMap<AllocId, TextureCacheHandle>,
     texture_id: CacheTextureId,
+    
+    
+    
+    delay_deallocation: bool,
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -117,6 +121,7 @@ impl<Allocator: AtlasAllocator, TextureParameters> AllocatorList<Allocator, Text
             allocator: Allocator::new(self.size, &self.atlas_parameters),
             handles: FastHashMap::default(),
             texture_id,
+            delay_deallocation: false,
         });
 
         let (alloc_id, rect) = self.units[unit_index]
@@ -139,11 +144,12 @@ impl<Allocator: AtlasAllocator, TextureParameters> AllocatorList<Allocator, Text
 
     pub fn release_empty_textures<'l>(&mut self, texture_dealloc_cb: &'l mut dyn FnMut(CacheTextureId)) {
         self.units.retain(|unit| {
-            if unit.allocator.is_empty() {
+            if unit.allocator.is_empty() && !unit.delay_deallocation {
                 texture_dealloc_cb(unit.texture_id);
 
                 false
             } else{
+                unit.delay_deallocation = false;
                 true
             }
         });
@@ -304,6 +310,87 @@ impl AtlasAllocator for ShelfAllocator {
     fn dump_into_svg(&self, rect: &Box2D<f32>, output: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.dump_into_svg(Some(&rect.to_i32().cast_unit()), output)
     }
+}
+
+pub struct CompactionChange {
+    pub handle: TextureCacheHandle,
+    pub old_id: AllocId,
+    pub old_tex: CacheTextureId,
+    pub old_rect: DeviceIntRect,
+    pub new_id: AllocId,
+    pub new_tex: CacheTextureId,
+    pub new_rect: DeviceIntRect,
+}
+
+impl<P> AllocatorList<ShelfAllocator, P> {
+    
+    pub fn try_compaction(
+        &mut self,
+        max_pixels: i32,
+        changes: &mut Vec<CompactionChange>,
+    ) {
+        
+
+        if self.units.len() < 2 {
+            
+            return;
+        }
+
+        let last_unit = self.units.len() - 1;
+        let mut pixels = 0;
+        while let Some(alloc) = self.units[last_unit].allocator.iter().next() {
+            
+            let new_alloc = match self.units[0].allocator.allocate(alloc.rectangle.size()) {
+                Some(new_alloc) => new_alloc,
+                None => {
+                    
+                    
+                    
+                    
+                    
+                    break;
+                }
+            };
+
+            
+            
+
+            
+            
+            let alloc_id = AllocId(alloc.id.serialize());
+            let new_alloc_id = AllocId(new_alloc.id.serialize());
+            let handle = self.units[last_unit].handles.get(&alloc_id).unwrap().clone();
+            self.units[0].handles.insert(new_alloc_id, handle.clone());
+
+            
+            self.units[last_unit].handles.remove(&alloc_id);
+            self.units[last_unit].allocator.deallocate(alloc.id);
+
+            
+            self.units[last_unit].delay_deallocation = true;
+
+            
+            changes.push(CompactionChange {
+                handle,
+                old_id: AllocId(alloc.id.serialize()),
+                old_tex: self.units[last_unit].texture_id,
+                old_rect: alloc.rectangle.cast_unit(),
+                new_id: AllocId(new_alloc.id.serialize()),
+                new_tex: self.units[0].texture_id,
+                new_rect: new_alloc.rectangle.cast_unit(),
+            });
+
+            
+            
+            
+            
+            pixels += alloc.rectangle.area();
+            if pixels > max_pixels {
+                break;
+            }
+        }
+    }
+
 }
 
 #[test]
