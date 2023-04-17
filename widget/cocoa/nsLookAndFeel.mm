@@ -639,10 +639,12 @@ bool nsLookAndFeel::AllowOverlayScrollbarsOverlap() { return (UseOverlayScrollba
 bool nsLookAndFeel::SystemWantsDarkTheme() {
   
   
-  if (!nsCocoaFeatures::OnMojaveOrLater()) {
-    return false;
+  if (@available(macOS 10.14, *)) {
+    NSAppearanceName aquaOrDarkAqua = [NSApp.effectiveAppearance
+        bestMatchFromAppearancesWithNames:@[ NSAppearanceNameAqua, @"NSAppearanceNameDarkAqua" ]];
+    return [aquaOrDarkAqua isEqualToString:@"NSAppearanceNameDarkAqua"];
   }
-  return !![[NSUserDefaults standardUserDefaults] stringForKey:@"AppleInterfaceStyle"];
+  return false;
 }
 
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle& aFontStyle) {
