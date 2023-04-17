@@ -291,7 +291,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     
     
     if test.get("run-as-administrator", False):
-        if job["worker-type"].startswith("t-win10-64"):
+        if job["worker-type"].startswith("win10-64"):
             worker["run-as-administrator"] = True
         else:
             raise Exception(
