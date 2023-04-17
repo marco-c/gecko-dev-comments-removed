@@ -59,8 +59,6 @@ function TargetMixin(parentClass) {
       
       
       super.on("resource-available-form", this._onResourceAvailable);
-
-      this._addListeners();
     }
 
     on(eventName, listener) {
@@ -569,29 +567,6 @@ function TargetMixin(parentClass) {
       return this.threadFront;
     }
 
-    
-
-
-    _addListeners() {
-      this.client.on("closed", this.destroy);
-    }
-
-    
-
-
-    _removeListeners() {
-      
-      if (this.client) {
-        this.client.off("closed", this.destroy);
-      }
-
-      
-      if (this.removeOnInspectObjectListener) {
-        this.removeOnInspectObjectListener();
-        this.removeOnInspectObjectListener = null;
-      }
-    }
-
     isDestroyedOrBeingDestroyed() {
       return this.isDestroyed() || this._destroyer;
     }
@@ -641,7 +616,11 @@ function TargetMixin(parentClass) {
         }
       }
 
-      this._removeListeners();
+      
+      if (this.removeOnInspectObjectListener) {
+        this.removeOnInspectObjectListener();
+        this.removeOnInspectObjectListener = null;
+      }
 
       this.threadFront = null;
 
