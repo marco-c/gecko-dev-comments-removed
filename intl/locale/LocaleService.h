@@ -11,7 +11,7 @@
 #include "nsTArray.h"
 #include "nsWeakReference.h"
 #include "MozLocaleBindings.h"
-
+#include "mozilla/intl/ICU4CGlue.h"
 #include "mozILocaleService.h"
 
 namespace mozilla {
@@ -172,6 +172,26 @@ class LocaleService final : public mozILocaleService,
                              const nsACString& aAvailable);
 
   bool IsServer();
+
+  
+
+
+
+
+  template <typename T, typename... Args>
+  static Result<UniquePtr<T>, ICUError> TryCreateComponent(Args... args) {
+    
+    
+    
+    
+    
+    
+    
+    nsAutoCStringN<32> appLocale;
+    mozilla::intl::LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocale);
+
+    return T::TryCreate(appLocale.get(), args...);
+  }
 
  private:
   void NegotiateAppLocales(nsTArray<nsCString>& aRetVal);
