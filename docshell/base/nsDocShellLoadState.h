@@ -247,6 +247,8 @@ class nsDocShellLoadState final {
 
   void SetFileName(const nsAString& aFileName);
 
+  nsIURI* GetUnstrippedURI() const;
+
   
   
   
@@ -517,6 +519,10 @@ class nsDocShellLoadState final {
 
   
   bool mIsMetaRefresh;
+
+  
+  
+  nsCOMPtr<nsIURI> mUnstrippedURI;
 };
 
 #endif 
