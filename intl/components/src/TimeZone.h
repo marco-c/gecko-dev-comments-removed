@@ -146,6 +146,17 @@ class TimeZone final {
   
 
 
+
+
+
+  template <typename B>
+  static ICUResult GetHostTimeZone(B& aBuffer) {
+    return FillBufferWithICUCall(aBuffer, ucal_getHostTimeZone);
+  }
+
+  
+
+
   static Result<bool, ICUError> SetDefaultTimeZone(Span<const char> aTimeZone);
 
   
