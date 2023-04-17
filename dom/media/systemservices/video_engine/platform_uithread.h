@@ -31,11 +31,6 @@ class PlatformUIThread : public PlatformThread {
   
 
 
-  void RequestCallback();
-
-  
-
-
   bool RequestCallbackTimer(unsigned int milliseconds);
 
  protected:
