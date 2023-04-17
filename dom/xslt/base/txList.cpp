@@ -25,7 +25,7 @@ txList::txList() {
 
 txList::~txList() { clear(); }  
 
-void txList::add(void* objPtr) { insertBefore(objPtr, 0); }  
+void txList::add(void* objPtr) { insertBefore(objPtr, nullptr); }  
 
 
 
@@ -40,12 +40,7 @@ int32_t List::getLength() { return itemCount; }
 
 
 void txList::insertAfter(void* objPtr, ListItem* refItem) {
-  
-  if (!refItem) {
-    insertBefore(objPtr, firstItem);
-  } else {
-    insertBefore(objPtr, refItem->nextItem);
-  }
+  insertBefore(objPtr, refItem ? refItem->nextItem : firstItem);
 }  
 
 
@@ -143,7 +138,7 @@ void txListIterator::addAfter(void* objPtr) {
   if (currentItem || !atEndOfList) {
     list->insertAfter(objPtr, currentItem);
   } else {
-    list->insertBefore(objPtr, 0);
+    list->insertBefore(objPtr, nullptr);
   }
 }  
 
@@ -157,7 +152,7 @@ void txListIterator::addBefore(void* objPtr) {
   if (currentItem || atEndOfList) {
     list->insertBefore(objPtr, currentItem);
   } else {
-    list->insertAfter(objPtr, 0);
+    list->insertAfter(objPtr, nullptr);
   }
 }  
 
