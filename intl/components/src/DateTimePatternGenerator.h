@@ -97,6 +97,28 @@ class DateTimePatternGenerator final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+  Span<const char16_t> GetPlaceholderPattern() const {
+    int32_t length;
+    const char16_t* combined =
+        udatpg_getDateTimeFormat(mGenerator.GetConst(), &length);
+    return Span{combined, static_cast<size_t>(length)};
+  }
+
+  
+
+
+
+
   UDateTimePatternGenerator* UnsafeGetUDateTimePatternGenerator() {
     return mGenerator.GetMut();
   }

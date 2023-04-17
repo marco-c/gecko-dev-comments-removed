@@ -179,6 +179,14 @@ TEST(IntlDateTimePatternGenerator, GetSkeleton)
   ASSERT_TRUE(buffer.verboseMatches(u"yMd"));
 }
 
+TEST(IntlDateTimePatternGenerator, GetPlaceholderPattern)
+{
+  auto gen = DateTimePatternGenerator::TryCreate("en").unwrap();
+  auto span = gen->GetPlaceholderPattern();
+  
+  ASSERT_EQ(span, MakeStringSpan(u"{1}, {0}"));
+}
+
 
 [[nodiscard]] bool FormatComponents(
     TestBuffer<char16_t>& aBuffer, DateTimeFormat::ComponentsBag& aComponents,
