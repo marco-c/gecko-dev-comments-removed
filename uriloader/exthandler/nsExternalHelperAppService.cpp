@@ -2388,6 +2388,10 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
   
   
   if (mTempFile) {
+    if (mSaver) {
+      mSaver->Finish(NS_BINDING_ABORTED);
+      mSaver = nullptr;
+    }
     mTempFile->Remove(false);
   }
 

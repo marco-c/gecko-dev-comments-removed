@@ -28,6 +28,10 @@
 
 "use strict";
 
+
+
+const MAX_INSECURE_DOWNLOAD_AGE_MS = 5 * 60 * 1000;
+
 var EXPORTED_SYMBOLS = ["DownloadStore"];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -99,12 +103,30 @@ DownloadStore.prototype = {
         return;
       }
 
+      
+      
+      let storeChanges = false;
+      let removePromises = [];
       let storeData = JSON.parse(gTextDecoder.decode(bytes));
 
       
       for (let downloadData of storeData.list) {
         try {
           let download = await Downloads.createDownload(downloadData);
+
+          
+          
+          
+          if (
+            download.error?.becauseBlockedByReputationCheck &&
+            download.error.reputationCheckVerdict == "Insecure" &&
+            Date.now() - download.startTime > MAX_INSECURE_DOWNLOAD_AGE_MS
+          ) {
+            removePromises.push(download.removePartialData());
+            storeChanges = true;
+            continue;
+          }
+
           try {
             if (!download.succeeded && !download.canceled && !download.error) {
               
@@ -123,6 +145,15 @@ DownloadStore.prototype = {
           }
         } catch (ex) {
           
+          Cu.reportError(ex);
+        }
+      }
+
+      if (storeChanges) {
+        try {
+          await Promise.all(removePromises);
+          await this.save();
+        } catch (ex) {
           Cu.reportError(ex);
         }
       }
