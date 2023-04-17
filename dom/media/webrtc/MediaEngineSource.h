@@ -234,6 +234,12 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   static bool IsVideo(dom::MediaSourceEnum aSource);
 
+  
+
+
+
+  static bool IsAudio(dom::MediaSourceEnum aSource);
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEngineSource)
   NS_DECL_OWNINGEVENTTARGET
 
