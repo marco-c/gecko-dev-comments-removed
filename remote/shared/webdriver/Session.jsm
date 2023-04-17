@@ -224,8 +224,6 @@ class WebDriverSession {
     return this.messageHandler.handleCommand({
       moduleName: module,
       commandName: command,
-      params,
-
       
       
       
@@ -236,6 +234,7 @@ class WebDriverSession {
       destination: {
         type: RootMessageHandler.type,
       },
+      params,
     });
   }
 

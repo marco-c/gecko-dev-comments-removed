@@ -117,12 +117,7 @@ class MessageHandler extends EventEmitter {
 
 
 
-
-
   
-
-
-
 
 
 
@@ -142,14 +137,14 @@ class MessageHandler extends EventEmitter {
 
 
   handleCommand(command) {
-    const { moduleName, commandName, params, destination } = command;
+    const { moduleName, commandName, destination, params } = command;
     logger.trace(
-      `Received command ${moduleName}.${commandName} for destination ${destination.type}`
+      `Received command ${moduleName}:${commandName} for destination ${destination.type}`
     );
 
-    const module = this._moduleCache.getModuleInstance(moduleName, destination);
-    if (this._isCommandSupportedByModule(commandName, module)) {
-      return module[commandName](params, destination);
+    const mod = this._moduleCache.getModuleInstance(moduleName, destination);
+    if (this._isCommandSupportedByModule(commandName, mod)) {
+      return mod[commandName](params, destination);
     }
 
     return this.forwardCommand(command);
@@ -159,12 +154,12 @@ class MessageHandler extends EventEmitter {
     return `[object ${this.constructor.name} ${this.key}]`;
   }
 
-  _isCommandSupportedByModule(commandName, module) {
+  _isCommandSupportedByModule(commandName, mod) {
     
     
     
     
-    return module && typeof module[commandName] === "function";
+    return mod && typeof mod[commandName] === "function";
   }
 
   
