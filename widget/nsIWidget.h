@@ -1451,11 +1451,20 @@ class nsIWidget : public nsISupports {
   virtual void DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) = 0;
 
   
+  
+  struct ContentAndAPZEventStatus {
+    
+    
+    nsEventStatus mApzStatus = nsEventStatus_eIgnore;
+    nsEventStatus mContentStatus = nsEventStatus_eIgnore;
+  };
+
+  
 
 
 
 
-  virtual nsEventStatus DispatchInputEvent(
+  virtual ContentAndAPZEventStatus DispatchInputEvent(
       mozilla::WidgetInputEvent* aEvent) = 0;
 
   

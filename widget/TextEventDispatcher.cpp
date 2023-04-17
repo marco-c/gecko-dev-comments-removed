@@ -280,7 +280,7 @@ nsresult TextEventDispatcher::DispatchInputEvent(nsIWidget* aWidget,
   
   nsresult rv = NS_OK;
   if (ShouldSendInputEventToAPZ()) {
-    aStatus = widget->DispatchInputEvent(&aEvent);
+    aStatus = widget->DispatchInputEvent(&aEvent).mContentStatus;
   } else {
     rv = widget->DispatchEvent(&aEvent, aStatus);
   }

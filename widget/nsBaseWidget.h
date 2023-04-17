@@ -314,8 +314,10 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
                           const ScrollableLayerGuid::ViewID& aViewId,
                           const CSSRect& aRect,
                           const uint32_t& aFlags) override;
+
   
-  nsEventStatus DispatchInputEvent(mozilla::WidgetInputEvent* aEvent) override;
+  ContentAndAPZEventStatus DispatchInputEvent(
+      mozilla::WidgetInputEvent* aEvent) override;
   void DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) override;
 
   void SetConfirmedTargetAPZC(

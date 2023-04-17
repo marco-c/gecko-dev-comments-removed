@@ -3695,13 +3695,13 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   InitButtonEvent(event, aEvent);
   event.mPressure = mLastMotionPressure;
 
-  nsEventStatus eventStatus = DispatchInputEvent(&event);
+  nsIWidget::ContentAndAPZEventStatus eventStatus = DispatchInputEvent(&event);
 
   LayoutDeviceIntPoint refPoint =
       GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
   if (mDraggableRegion.Contains(refPoint.x, refPoint.y) &&
       domButton == MouseButton::ePrimary &&
-      eventStatus != nsEventStatus_eConsumeNoDefault) {
+      eventStatus.mContentStatus != nsEventStatus_eConsumeNoDefault) {
     mWindowShouldStartDragging = true;
   }
 
@@ -3746,9 +3746,10 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   
   LayoutDeviceIntPoint pos = event.mRefPoint;
 
-  nsEventStatus eventStatus = DispatchInputEvent(&event);
+  nsIWidget::ContentAndAPZEventStatus eventStatus = DispatchInputEvent(&event);
 
-  bool defaultPrevented = (eventStatus == nsEventStatus_eConsumeNoDefault);
+  bool defaultPrevented =
+      (eventStatus.mContentStatus == nsEventStatus_eConsumeNoDefault);
   
   
   if (!defaultPrevented && mDrawInTitlebar &&
