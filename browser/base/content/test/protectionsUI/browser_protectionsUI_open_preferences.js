@@ -67,7 +67,7 @@ add_task(async function testOpenPreferencesFromTrackersSubview() {
   await openProtectionsPanel();
 
   let categoryItem = document.getElementById(
-    "protections-popup-category-tracking-protection"
+    "protections-popup-category-trackers"
   );
 
   
