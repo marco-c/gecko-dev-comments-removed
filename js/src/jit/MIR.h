@@ -373,10 +373,13 @@ class AliasSet {
     
     DOMProxyExpando = 1 << 14,
 
-    Last = DOMProxyExpando,
+    
+    MapOrSetHashTable = 1 << 15,
+
+    Last = MapOrSetHashTable,
     Any = Last | (Last - 1),
 
-    NumCategories = 15,
+    NumCategories = 16,
 
     
     Store_ = 1 << 31
