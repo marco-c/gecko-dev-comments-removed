@@ -1,10 +1,10 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
-
+/* Ctrl-Tab */
 
 #ctrlTab-panel {
   appearance: none;
@@ -23,9 +23,8 @@
 .ctrlTab-preview,
 #ctrlTab-showAll {
   appearance: none;
-  
-  color: inherit !important;
-  
+  color: inherit;
+  /* remove the :-moz-focusring outline from button.css on Windows */
   outline: none !important;
   margin: 0;
   text-shadow: 0 0 1px hsl(0,0%,12%), 0 0 2px hsl(0,0%,12%);
