@@ -5438,7 +5438,7 @@ void nsGlobalWindowOuter::MoveToOuter(int32_t aXPos, int32_t aYPos,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -5495,7 +5495,7 @@ void nsGlobalWindowOuter::MoveByOuter(int32_t aXDif, int32_t aYDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -5546,7 +5546,7 @@ void nsGlobalWindowOuter::ResizeToOuter(int32_t aWidth, int32_t aHeight,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -5574,7 +5574,7 @@ void nsGlobalWindowOuter::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -5620,7 +5620,7 @@ void nsGlobalWindowOuter::SizeToContentOuter(CallerType aCallerType,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsSubframe()) {
     return;
   }
 
@@ -6175,7 +6175,7 @@ bool nsGlobalWindowOuter::CanClose() {
 }
 
 void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
-  if (!mDocShell || IsInModalState() || mBrowsingContext->IsFrame()) {
+  if (!mDocShell || IsInModalState() || mBrowsingContext->IsSubframe()) {
     
     
     
@@ -6271,7 +6271,7 @@ nsresult nsGlobalWindowOuter::Close() {
 void nsGlobalWindowOuter::ForceClose() {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
-  if (mBrowsingContext->IsFrame() || !mDocShell) {
+  if (mBrowsingContext->IsSubframe() || !mDocShell) {
     
     
     return;

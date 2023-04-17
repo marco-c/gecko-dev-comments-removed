@@ -2492,13 +2492,13 @@ Maybe<ClientInfo> nsDocShell::GetInitialClientInfo() const {
 }
 
 nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
-  bool wasFrame = IsFrame();
+  bool wasFrame = IsSubframe();
 
   nsresult rv = nsDocLoader::SetDocLoaderParent(aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsISupportsPriority> priorityGroup = do_QueryInterface(mLoadGroup);
-  if (wasFrame != IsFrame() && priorityGroup) {
+  if (wasFrame != IsSubframe() && priorityGroup) {
     priorityGroup->AdjustPriority(wasFrame ? -1 : 1);
   }
 
@@ -2716,7 +2716,7 @@ nsDocShell::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
   }
 
   
-  if (!IsFrame()) {
+  if (!IsSubframe()) {
     nsCOMPtr<nsIWebProgress> webProgress =
         do_QueryInterface(GetAsSupports(this));
 
@@ -3708,7 +3708,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   }
 
   Telemetry::AccumulateCategoricalKeyed(
-      IsFrame() ? "frame"_ns : "top"_ns,
+      IsSubframe() ? "frame"_ns : "top"_ns,
       mozilla::dom::LoadErrorToTelemetryLabel(aError));
 
   
@@ -7821,7 +7821,8 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
   }
 
   if (DocGroup::TryToLoadIframesInBackground()) {
-    if ((!mContentViewer || GetDocument()->IsInitialDocument()) && IsFrame()) {
+    if ((!mContentViewer || GetDocument()->IsInitialDocument()) &&
+        IsSubframe()) {
       
       
       
@@ -8115,7 +8116,7 @@ nsresult nsDocShell::CheckLoadingPermissions() {
   
   nsresult rv = NS_OK;
 
-  if (!IsFrame()) {
+  if (!IsSubframe()) {
     
     return rv;
   }
@@ -8232,7 +8233,7 @@ bool nsDocShell::JustStartedNetworkLoad() {
 
 
 nsContentPolicyType nsDocShell::DetermineContentType() {
-  if (!IsFrame()) {
+  if (!IsSubframe()) {
     return nsIContentPolicy::TYPE_DOCUMENT;
   }
 
@@ -9953,7 +9954,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   nsresult rv;
   nsContentPolicyType contentPolicyType = DetermineContentType();
 
-  if (IsFrame()) {
+  if (IsSubframe()) {
     MOZ_ASSERT(contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
                    contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME,
                "DoURILoad thinks this is a frame and InternalLoad does not");
@@ -10802,7 +10803,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
 
   if (aChannel && IsForceReloadType(mLoadType)) {
-    MOZ_ASSERT(!updateSHistory || IsFrame(),
+    MOZ_ASSERT(!updateSHistory || IsSubframe(),
                "We shouldn't be updating session history for forced"
                " reloads unless we're in a newly created iframe!");
 
@@ -13084,7 +13085,7 @@ void nsDocShell::UpdateGlobalHistoryTitle(nsIURI* aURI) {
   
   
   
-  if (IsFrame()) {
+  if (IsSubframe()) {
     return;
   }
 
