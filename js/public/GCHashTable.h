@@ -22,10 +22,6 @@ namespace JS {
 
 template <typename Key, typename Value>
 struct DefaultMapSweepPolicy {
-  static bool needsSweep(Key* key, Value* value) {
-    return GCPolicy<Key>::needsSweep(key) || GCPolicy<Value>::needsSweep(value);
-  }
-
   static bool traceWeak(JSTracer* trc, Key* key, Value* value) {
     return GCPolicy<Key>::traceWeak(trc, key) &&
            GCPolicy<Value>::traceWeak(trc, value);
@@ -75,15 +71,6 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy> {
     for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
       GCPolicy<Value>::trace(trc, &e.front().value(), "hashmap value");
       GCPolicy<Key>::trace(trc, &e.front().mutableKey(), "hashmap key");
-    }
-  }
-
-  void sweep() {
-    for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
-      if (MapSweepPolicy::needsSweep(&e.front().mutableKey(),
-                                     &e.front().value())) {
-        e.removeFront();
-      }
     }
   }
 
@@ -138,17 +125,6 @@ class GCRekeyableHashMap : public JS::GCHashMap<Key, Value, HashPolicy,
   explicit GCRekeyableHashMap(size_t length) : Base(length) {}
   GCRekeyableHashMap(AllocPolicy a, size_t length)
       : Base(std::move(a), length) {}
-
-  void sweep() {
-    for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
-      Key key(e.front().key());
-      if (MapSweepPolicy::needsSweep(&key, &e.front().value())) {
-        e.removeFront();
-      } else if (!HashPolicy::match(key, e.front().key())) {
-        e.rekeyFront(key);
-      }
-    }
-  }
 
   bool traceWeak(JSTracer* trc) {
     for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
