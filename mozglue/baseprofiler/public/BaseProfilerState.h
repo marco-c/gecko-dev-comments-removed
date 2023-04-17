@@ -42,11 +42,15 @@ namespace mozilla::baseprofiler {
 #  include <stdint.h>
 #  include <string>
 
+
+
+
+
+#  ifdef PROFILER_RUNTIME_STATS
+#    include "mozilla/TimeStamp.h"
+#  endif
+
 namespace mozilla::baseprofiler {
-
-
-
-
 
 #  ifdef PROFILER_RUNTIME_STATS
 
@@ -64,11 +68,11 @@ class StaticBaseProfilerStats {
       ULL sumNs = static_cast<ULL>(mSumDurationsNs);
       printf(
           "[%d] Profiler stats `%s`: %llu ns / %llu = %llu ns, max %llu ns\n",
-          profiler_current_process_id(), mName, sumNs, n, sumNs / n,
-          static_cast<ULL>(mLongestDurationNs));
+          int(profiler_current_process_id().ToNumber()), mName, sumNs, n,
+          sumNs / n, static_cast<ULL>(mLongestDurationNs));
     } else {
       printf("[%d] Profiler stats `%s`: (nothing)\n",
-             profiler_current_process_id(), mName);
+             int(profiler_current_process_id().ToNumber()), mName);
     }
   }
 
