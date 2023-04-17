@@ -91,38 +91,6 @@ class TabBase {
 
 
 
-  sendMessage(context, messageName, data = {}, options = null) {
-    let { browser, innerWindowID } = this;
-
-    options = Object.assign({}, options);
-    options.recipient = Object.assign({ innerWindowID }, options.recipient);
-
-    return context.sendMessage(
-      browser.messageManager,
-      messageName,
-      data,
-      options
-    );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
