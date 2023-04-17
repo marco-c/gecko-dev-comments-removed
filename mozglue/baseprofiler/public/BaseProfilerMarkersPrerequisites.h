@@ -508,6 +508,11 @@ class MarkerStack {
     return MarkerStack(std::move(aExternalChunkedBuffer));
   }
 
+  
+  static MarkerStack WithCaptureOptions(StackCaptureOptions aCaptureOptions) {
+    return MarkerStack(aCaptureOptions);
+  }
+
   [[nodiscard]] StackCaptureOptions CaptureOptions() const {
     return mCaptureOptions;
   }
