@@ -28,7 +28,11 @@ registerCleanupFunction(async () => {
       }
 
       if (win.clear) {
-        await win.clear();
+        
+        await Promise.race([
+          new Promise(r => win.setTimeout(r, 10000)),
+          win.clear(),
+        ]);
       }
     });
   }
