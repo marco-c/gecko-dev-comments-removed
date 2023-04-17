@@ -251,6 +251,23 @@ function getLastContentDisplayportFor(elementId, expectPainted = true) {
 }
 
 
+
+function getLastApzcTree() {
+  let data = SpecialPowers.getDOMWindowUtils(window).getCompositorAPZTestData();
+  if (data == undefined) {
+    ok(false, "expected to have compositor apz test data");
+    return null;
+  }
+  if (data.paints.length == 0) {
+    ok(false, "expected to have at least one compositor paint bucket");
+    return null;
+  }
+  var seqno = data.paints[data.paints.length - 1].sequenceNumber;
+  data = convertTestData(data);
+  return buildApzcTree(data.paints[seqno]);
+}
+
+
 function promiseFrame(aWindow = window) {
   return new Promise(resolve => {
     aWindow.requestAnimationFrame(resolve);
