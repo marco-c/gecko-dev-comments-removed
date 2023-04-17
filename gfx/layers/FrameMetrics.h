@@ -820,6 +820,7 @@ struct ScrollMetadata {
         mResolutionUpdated(false),
         mIsRDMTouchSimulationActive(false),
         mDidContentGetPainted(true),
+        mPrefersReducedMotion(false),
         mOverscrollBehavior() {}
 
   bool operator==(const ScrollMetadata& aOther) const {
@@ -837,6 +838,7 @@ struct ScrollMetadata {
            mResolutionUpdated == aOther.mResolutionUpdated &&
            mIsRDMTouchSimulationActive == aOther.mIsRDMTouchSimulationActive &&
            mDidContentGetPainted == aOther.mDidContentGetPainted &&
+           mPrefersReducedMotion == aOther.mPrefersReducedMotion &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior &&
            mScrollUpdates == aOther.mScrollUpdates;
@@ -923,6 +925,9 @@ struct ScrollMetadata {
   bool GetIsRDMTouchSimulationActive() const {
     return mIsRDMTouchSimulationActive;
   }
+
+  void SetPrefersReducedMotion(bool aValue) { mPrefersReducedMotion = aValue; }
+  bool PrefersReducedMotion() const { return mPrefersReducedMotion; }
 
   bool DidContentGetPainted() const { return mDidContentGetPainted; }
 
@@ -1036,6 +1041,11 @@ struct ScrollMetadata {
   
   
   bool mDidContentGetPainted : 1;
+
+  
+  
+  
+  bool mPrefersReducedMotion : 1;
 
   
   
