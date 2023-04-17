@@ -4,5 +4,14 @@
 
 "use strict";
 
+class ScreenshotsUI extends MozXULElement {
+  constructor() {
+    super();
+  }
+  get markup() {
+    return `
+    `;
+  }
+}
 
-
+customElements.define("screenshots-div", ScreenshotsUI);
