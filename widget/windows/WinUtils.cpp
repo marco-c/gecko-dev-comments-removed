@@ -432,10 +432,7 @@ GetSystemMetricsForDpiProc WinUtils::sGetSystemMetricsForDpi = NULL;
 
 
 void WinUtils::Initialize() {
-  
-  
-  
-  if (IsWin10OrLater() && !IsWin32kLockedDown()) {
+  if (IsWin10OrLater()) {
     HMODULE user32Dll = ::GetModuleHandleW(L"user32");
     if (user32Dll) {
       auto getThreadDpiAwarenessContext =
@@ -467,8 +464,6 @@ void WinUtils::Initialize() {
 LRESULT WINAPI WinUtils::NonClientDpiScalingDefWindowProcW(HWND hWnd, UINT msg,
                                                            WPARAM wParam,
                                                            LPARAM lParam) {
-  MOZ_DIAGNOSTIC_ASSERT(!IsWin32kLockedDown());
-
   
   
   
@@ -667,13 +662,11 @@ WinUtils::MonitorFromRect(const gfx::Rect& rect) {
 
 
 bool WinUtils::HasSystemMetricsForDpi() {
-  MOZ_DIAGNOSTIC_ASSERT(!IsWin32kLockedDown());
   return (sGetSystemMetricsForDpi != NULL);
 }
 
 
 int WinUtils::GetSystemMetricsForDpi(int nIndex, UINT dpi) {
-  MOZ_DIAGNOSTIC_ASSERT(!IsWin32kLockedDown());
   if (HasSystemMetricsForDpi()) {
     return sGetSystemMetricsForDpi(nIndex, dpi);
   } else {

@@ -28,7 +28,6 @@
 #  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
 #  include "mozilla/WindowsDllBlocklist.h"
-#  include "mozilla/WindowsDpiInitialization.h"
 
 #  define XRE_WANT_ENVIRON
 #  define strcasecmp _stricmp
@@ -288,23 +287,6 @@ int main(int argc, char* argv[], char* envp[]) {
 
   AUTO_BASE_PROFILER_INIT;
   AUTO_BASE_PROFILER_LABEL("nsBrowserApp main", OTHER);
-
-#if defined(XP_WIN)
-  
-  
-  
-  
-  
-  
-  
-  {
-    auto result = mozilla::WindowsDpiInitialization();
-    if (result != WindowsDpiInitializationResult::Success) {
-      Output(WindowsDpiInitializationResultString(result));
-      return 255;
-    }
-  }
-#endif
 
 #ifdef MOZ_BROWSER_CAN_BE_CONTENTPROC
   
