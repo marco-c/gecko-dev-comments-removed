@@ -25,6 +25,8 @@ define(function(require, exports, module) {
 
   PropRep.propTypes = {
     
+    keyClassName: PropTypes.string,
+    
     name: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
     
     equal: PropTypes.string,
@@ -51,9 +53,17 @@ define(function(require, exports, module) {
   function PropRep(props) {
     const Grip = require("devtools/client/shared/components/reps/reps/grip");
     const { Rep } = require("devtools/client/shared/components/reps/reps/rep");
-    const shouldRenderTooltip = props.shouldRenderTooltip;
 
-    let { name, mode, equal, suppressQuotes } = props;
+    let {
+      equal,
+      keyClassName,
+      mode,
+      name,
+      shouldRenderTooltip,
+      suppressQuotes,
+    } = props;
+
+    const className = `nodeName${keyClassName ? " " + keyClassName : ""}`;
 
     let key;
     
@@ -64,7 +74,7 @@ define(function(require, exports, module) {
       }
       key = span(
         {
-          className: "nodeName",
+          className,
           title: shouldRenderTooltip ? name : null,
         },
         name
@@ -72,7 +82,7 @@ define(function(require, exports, module) {
     } else {
       key = Rep({
         ...props,
-        className: "nodeName",
+        className,
         object: name,
         mode: mode || MODE.TINY,
         defaultRep: Grip,

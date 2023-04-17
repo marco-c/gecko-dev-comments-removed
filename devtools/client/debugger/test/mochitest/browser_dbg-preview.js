@@ -56,9 +56,7 @@ add_task(async function() {
       expression: "this",
       fields: [
         ["x", "1"],
-        
-        
-        
+        ["#privateVar", "2"],
       ],
     },
     { line: 51, column: 39, expression: "this.#privateVar", result: 2 },
