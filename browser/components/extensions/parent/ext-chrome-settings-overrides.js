@@ -433,8 +433,11 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
 
     let engineName = searchProvider.name.trim();
     let result = await Services.search.maybeSetAndOverrideDefault(extension);
+    
+    
+    
     if (result.canChangeToAppProvided) {
-      await this.setDefault(engineName);
+      await this.setDefault(engineName, true);
     }
     if (!result.canInstallEngine) {
       
@@ -450,7 +453,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
     }
   }
 
-  async setDefault(engineName) {
+  async setDefault(engineName, skipEnablePrompt = false) {
     let { extension } = this;
 
     if (extension.startupReason === "ADDON_INSTALL") {
@@ -478,8 +481,20 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
           Services.search.getEngineByName(engineName)
         );
       } else if (control === "controllable_by_this_extension") {
-        
-        await this.promptDefaultSearch(engineName);
+        if (skipEnablePrompt) {
+          
+          
+          await chrome_settings_overrides.processDefaultSearchSetting(
+            "enable",
+            extension.id
+          );
+          Services.search.defaultEngine = Services.search.getEngineByName(
+            engineName
+          );
+        } else {
+          
+          await this.promptDefaultSearch(engineName);
+        }
       }
     }
   }
