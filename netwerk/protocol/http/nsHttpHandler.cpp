@@ -98,7 +98,7 @@
 #  include "nsCocoaFeatures.h"
 #endif
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
 #  include "mozilla/browser/NimbusFeatures.h"
 #endif  
 
@@ -128,7 +128,7 @@
 #define NS_HTTP_PROTOCOL_FLAGS \
   (URI_STD | ALLOWS_PROXY | ALLOWS_PROXY_HTTP | URI_LOADABLE_BY_ANYONE)
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
 #  define UA_EXPERIMENT_NAME "firefox100"_ns
 #  define UA_EXPERIMENT_VAR "firefoxVersion"_ns
 #endif  
@@ -141,7 +141,7 @@ namespace mozilla::net {
 
 LazyLogModule gHttpLog("nsHttp");
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
 static void ExperimentUserAgentUpdated(const char* ,
                                        void* aUserData) {
   MOZ_ASSERT(aUserData != nullptr);
@@ -278,7 +278,7 @@ nsHttpHandler::nsHttpHandler()
 
   mUserAgentOverride.SetIsVoid(true);
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
   mExperimentUserAgent.SetIsVoid(true);
 #endif  
 
@@ -388,7 +388,7 @@ nsresult nsHttpHandler::Init() {
                                        gCallbackPrefs, this);
   PrefsChanged(nullptr);
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
   
   NimbusFeatures::OnUpdate(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR,
                            ExperimentUserAgentUpdated, &mExperimentUserAgent);
@@ -755,7 +755,7 @@ const nsCString& nsHttpHandler::UserAgent() {
     return mUserAgentOverride;
   }
 
-#ifndef ANDROID
+#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
   if (!mExperimentUserAgent.IsVoid()) {
     LOG(("using Firefox 100 Experiment User-Agent : %s\n",
          mExperimentUserAgent.get()));
