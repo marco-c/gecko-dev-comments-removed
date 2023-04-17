@@ -70,12 +70,12 @@ async function testNetmonitor(toolbox) {
 
   store.dispatch(Actions.batchEnable(false));
 
-  await waitUntil(() => store.getState().requests.requests.length > 0);
   
   
-  await waitForDOM(
-    document,
-    ".request-list-item:first-child .requests-list-timings-total"
+  await waitFor(() =>
+    document.querySelector(
+      ".request-list-item:first-child .requests-list-timings-total"
+    )
   );
 
   is(
