@@ -269,31 +269,35 @@ int wmain(int argc, wchar_t** argv) {
   
   
   
-  if (!wcscmp(argv[1], L"uninstall") || !wcscmp(argv[1], L"unregister-task")) {
+  if (!wcscmp(argv[1], L"uninstall")) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
 
-    if (!wcscmp(argv[1], L"uninstall")) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      regMutex.Acquire();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    regMutex.Acquire();
 
-      RemoveAllRegistryEntries();
+    RemoveAllRegistryEntries();
+    return RemoveTasks(argv[2], WhichTasks::AllTasksForInstallation);
+  } else if (!wcscmp(argv[1], L"unregister-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
     }
-    return RemoveTask(argv[2]);
+
+    return RemoveTasks(argv[2], WhichTasks::WdbaTaskOnly);
   } else if (!wcscmp(argv[1], L"debug-remote-disabled")) {
     int disabled = IsAgentRemoteDisabled();
     std::cerr << "default-browser-agent: IsAgentRemoteDisabled: " << disabled
