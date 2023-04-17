@@ -46,14 +46,14 @@ const GeckoViewPushController = {
 
         const [url, principal] = createScopeAndPrincipal(scope);
 
-        if (
-          Services.perms.testPermissionFromPrincipal(
-            principal,
-            "desktop-notification"
-          ) != Services.perms.ALLOW_ACTION
-        ) {
-          return;
-        }
+        
+        
+        Services.perms.addFromPrincipal(
+          principal,
+          "desktop-notification",
+          Services.perms.ALLOW_ACTION,
+          Services.perms.EXPIRE_SESSION
+        );
 
         if (!data) {
           PushNotifier.notifyPush(url, principal, "");
