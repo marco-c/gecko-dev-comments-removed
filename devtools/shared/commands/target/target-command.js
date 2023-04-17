@@ -276,7 +276,23 @@ class TargetCommand extends EventEmitter {
     return this._listenersStarted.has(type);
   }
 
-  hasTargetWatcherSupport(type) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  hasTargetWatcherSupport(targetTypeOrTrait) {
     
     
     
@@ -287,7 +303,14 @@ class TargetCommand extends EventEmitter {
       return false;
     }
 
-    return !!this.watcherFront?.traits[type];
+    if (targetTypeOrTrait) {
+      
+      
+      
+      return !!this.watcherFront?.traits[targetTypeOrTrait];
+    }
+
+    return !!this.watcherFront;
   }
 
   isServerTargetSwitchingEnabled() {
