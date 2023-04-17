@@ -189,15 +189,16 @@ class ContentBlockingLog final {
   }
 
   void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const {
-    aSizes.mDOMOtherSize +=
+    aSizes.mDOMSizes.mDOMOtherSize +=
         mLog.ShallowSizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
 
     
     for (const OriginEntry& entry : mLog) {
       if (entry.mData) {
-        aSizes.mDOMOtherSize += aSizes.mState.mMallocSizeOf(entry.mData.get()) +
-                                entry.mData->mLogs.ShallowSizeOfExcludingThis(
-                                    aSizes.mState.mMallocSizeOf);
+        aSizes.mDOMSizes.mDOMOtherSize +=
+            aSizes.mState.mMallocSizeOf(entry.mData.get()) +
+            entry.mData->mLogs.ShallowSizeOfExcludingThis(
+                aSizes.mState.mMallocSizeOf);
       }
     }
   }

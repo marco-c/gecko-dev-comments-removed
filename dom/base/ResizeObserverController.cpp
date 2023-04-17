@@ -220,7 +220,7 @@ void ResizeObserverController::AddSizeOfIncludingThis(
   size += mResizeObservers.ShallowSizeOfExcludingThis(mallocSizeOf);
   
   
-  aSizes.mDOMResizeObserverControllerSize += size;
+  aSizes.mDOMSizes.mDOMResizeObserverControllerSize += size;
 }
 
 }  
