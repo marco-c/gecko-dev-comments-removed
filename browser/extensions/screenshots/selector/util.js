@@ -4,7 +4,8 @@
 
 "use strict";
 
-this.util = (function() { 
+this.util = (function() {
+  
   const exports = {};
 
   
@@ -16,7 +17,12 @@ this.util = (function() {
 
   
   exports.truncateX = function(x) {
-    const max = Math.max(document.documentElement.clientWidth, document.body.clientWidth, document.documentElement.scrollWidth, document.body.scrollWidth);
+    const max = Math.max(
+      document.documentElement.clientWidth,
+      document.body.clientWidth,
+      document.documentElement.scrollWidth,
+      document.body.scrollWidth
+    );
     if (x < 0) {
       return 0;
     } else if (x > max) {
@@ -27,7 +33,12 @@ this.util = (function() {
 
   
   exports.truncateY = function(y) {
-    const max = Math.max(document.documentElement.clientHeight, document.body.clientHeight, document.documentElement.scrollHeight, document.body.scrollHeight);
+    const max = Math.max(
+      document.documentElement.clientHeight,
+      document.body.clientHeight,
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight
+    );
     if (y < 0) {
       return 0;
     } else if (y > max) {
@@ -52,17 +63,21 @@ this.util = (function() {
         left: elBox.left + scrollX,
         right: elBox.right + scrollX,
       };
-      if (elBox.bottom < box.top ||
-          elBox.top > box.bottom ||
-          elBox.right < box.left ||
-          elBox.left > box.right) {
+      if (
+        elBox.bottom < box.top ||
+        elBox.top > box.bottom ||
+        elBox.right < box.left ||
+        elBox.left > box.right
+      ) {
         
         return;
       }
-      if (elBox.bottom > box.bottom + CAPTURE_WIGGLE ||
-          elBox.top < box.top - CAPTURE_WIGGLE ||
-          elBox.right > box.right + CAPTURE_WIGGLE ||
-          elBox.left < box.left - CAPTURE_WIGGLE) {
+      if (
+        elBox.bottom > box.bottom + CAPTURE_WIGGLE ||
+        elBox.top < box.top - CAPTURE_WIGGLE ||
+        elBox.right > box.right + CAPTURE_WIGGLE ||
+        elBox.left < box.left - CAPTURE_WIGGLE
+      ) {
         
         for (let i = 0; i < el.childNodes.length; i++) {
           const child = el.childNodes[i];
@@ -80,7 +95,10 @@ this.util = (function() {
         t = el.getAttribute("alt") || el.getAttribute("title");
       } else if (el.tagName === "A") {
         t = el.innerText;
-        if (el.getAttribute("href") && !el.getAttribute("href").startsWith("#")) {
+        if (
+          el.getAttribute("href") &&
+          !el.getAttribute("href").startsWith("#")
+        ) {
           t += " (" + el.href + ")";
         }
       } else {
@@ -100,7 +118,6 @@ this.util = (function() {
     }
     return null;
   };
-
 
   return exports;
 })();
