@@ -8,7 +8,6 @@
 #include "gfxPlatform.h"
 #include "gtest/gtest.h"
 #include "MockWidget.h"
-#include "mozilla/layers/BasicCompositor.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureClient.h"
@@ -19,7 +18,6 @@
 
 using mozilla::gfx::Feature;
 using mozilla::gfx::gfxConfig;
-using mozilla::layers::BasicCompositor;
 using mozilla::layers::Compositor;
 using mozilla::layers::CompositorOptions;
 using mozilla::layers::ISurfaceAllocator;
@@ -59,55 +57,7 @@ static void GetPlatformBackends(nsTArray<LayersBackend>& aBackends) {
 
   platform->GetCompositorBackends(gfxConfig::IsEnabled(Feature::HW_COMPOSITING),
                                   aBackends);
-
-  if (aBackends.IsEmpty()) {
-    aBackends.AppendElement(LayersBackend::LAYERS_BASIC);
-  }
 }
-
-
-
-
-static already_AddRefed<Compositor> CreateBasicCompositor() {
-  RefPtr<Compositor> compositor;
-  
-  if (gfxPlatform::GetPlatform()) {
-    RefPtr<MockWidget> widget = new MockWidget(256, 256);
-    CompositorOptions options;
-    RefPtr<CompositorWidget> proxy =
-        new InProcessCompositorWidget(options, widget);
-    compositor = new BasicCompositor(nullptr, proxy);
-  }
-  return compositor.forget();
-}
-
-
-
-
-
-static void CheckCompatibilityWithBasicCompositor(
-    LayersBackend aBackends, nsTArray<RefPtr<TextureHost>>& aTextures) {
-  RefPtr<Compositor> compositor = CreateBasicCompositor();
-  for (uint32_t i = 0; i < aTextures.Length(); i++) {
-    if (!aTextures[i]) {
-      continue;
-    }
-    aTextures[i]->SetTextureSourceProvider(compositor);
-
-    
-    
-    bool lockResult = aTextures[i]->Lock();
-    if (aBackends != LayersBackend::LAYERS_BASIC) {
-      EXPECT_FALSE(lockResult);
-    } else {
-      EXPECT_TRUE(lockResult);
-    }
-    if (lockResult) {
-      aTextures[i]->Unlock();
-    }
-  }
-}
-
 TEST(Gfx, TestTextureCompatibility)
 {
   nsTArray<LayersBackend> backendHints;
@@ -120,6 +70,5 @@ TEST(Gfx, TestTextureCompatibility)
 
     CreateTextureWithBackend(backendHints[i], deallocator, textureClients,
                              textureHosts);
-    CheckCompatibilityWithBasicCompositor(backendHints[i], textureHosts);
   }
 }

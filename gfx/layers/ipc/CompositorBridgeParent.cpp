@@ -37,7 +37,6 @@
 #include "mozilla/layers/APZSampler.h"             
 #include "mozilla/layers/APZThreadUtils.h"         
 #include "mozilla/layers/APZUpdater.h"             
-#include "mozilla/layers/BasicCompositor.h"        
 #include "mozilla/layers/CompositionRecorder.h"    
 #include "mozilla/layers/Compositor.h"             
 #include "mozilla/layers/CompositorAnimationStorage.h"  
@@ -1020,78 +1019,6 @@ void CompositorBridgeParent::SetFixedLayerMargins(ScreenIntCoord aTop,
 
   Invalidate();
   ScheduleComposition();
-}
-
-RefPtr<Compositor> CompositorBridgeParent::NewCompositor(
-    const nsTArray<LayersBackend>& aBackendHints) {
-  for (size_t i = 0; i < aBackendHints.Length(); ++i) {
-    RefPtr<Compositor> compositor;
-    if (aBackendHints[i] == LayersBackend::LAYERS_OPENGL) {
-      compositor =
-          new CompositorOGL(this, mWidget, mEGLSurfaceSize.width,
-                            mEGLSurfaceSize.height, mUseExternalSurfaceSize);
-    } else if (aBackendHints[i] == LayersBackend::LAYERS_BASIC) {
-      compositor = new BasicCompositor(this, mWidget);
-#ifdef XP_WIN
-    } else if (aBackendHints[i] == LayersBackend::LAYERS_D3D11) {
-      compositor = new CompositorD3D11(this, mWidget);
-#endif
-    }
-    nsCString failureReason;
-
-    
-    
-    
-    
-    
-    
-    const int max_fb_size = 32767;
-    const LayoutDeviceIntSize size = mWidget->GetClientSize();
-    if (size.width > max_fb_size || size.height > max_fb_size) {
-      failureReason = "FEATURE_FAILURE_MAX_FRAMEBUFFER_SIZE";
-      return nullptr;
-    }
-
-    MOZ_ASSERT(!gfxVars::UseWebRender() ||
-               aBackendHints[i] == LayersBackend::LAYERS_BASIC);
-    if (compositor && compositor->Initialize(&failureReason)) {
-      if (failureReason.IsEmpty()) {
-        failureReason = "SUCCESS";
-      }
-
-      
-      if (aBackendHints[i] == LayersBackend::LAYERS_OPENGL) {
-        Telemetry::Accumulate(Telemetry::OPENGL_COMPOSITING_FAILURE_ID,
-                              failureReason);
-      }
-#ifdef XP_WIN
-      else if (aBackendHints[i] == LayersBackend::LAYERS_D3D11) {
-        Telemetry::Accumulate(Telemetry::D3D11_COMPOSITING_FAILURE_ID,
-                              failureReason);
-      }
-#endif
-
-      return compositor;
-    }
-
-    
-    if (aBackendHints[i] == LayersBackend::LAYERS_OPENGL) {
-      gfxCriticalNote << "[OPENGL] Failed to init compositor with reason: "
-                      << failureReason.get();
-      Telemetry::Accumulate(Telemetry::OPENGL_COMPOSITING_FAILURE_ID,
-                            failureReason);
-    }
-#ifdef XP_WIN
-    else if (aBackendHints[i] == LayersBackend::LAYERS_D3D11) {
-      gfxCriticalNote << "[D3D11] Failed to init compositor with reason: "
-                      << failureReason.get();
-      Telemetry::Accumulate(Telemetry::D3D11_COMPOSITING_FAILURE_ID,
-                            failureReason);
-    }
-#endif
-  }
-
-  return nullptr;
 }
 
 CompositorBridgeParent* CompositorBridgeParent::GetCompositorBridgeParent(
