@@ -2320,6 +2320,11 @@ class nsContentUtils {
   
 
 
+  static nsPresContext* FindPresContextForDocument(const Document* aDocument);
+
+  
+
+
 
 
 
