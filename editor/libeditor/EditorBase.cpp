@@ -2799,7 +2799,7 @@ nsresult EditorBase::DeleteTextWithTransaction(Text& aTextNode,
   return rv;
 }
 
-nsIContent* EditorBase::GetPreviousNodeInternal(
+nsIContent* EditorBase::GetPreviousContent(
     const nsINode& aNode, const WalkTreeOptions& aOptions) const {
   if (!IsDescendantOfEditorRoot(&aNode)) {
     return nullptr;
@@ -2807,12 +2807,12 @@ nsIContent* EditorBase::GetPreviousNodeInternal(
   return FindNode(&aNode, false, aOptions);
 }
 
-nsIContent* EditorBase::GetPreviousNodeInternal(
+nsIContent* EditorBase::GetPreviousContent(
     const EditorRawDOMPoint& aPoint, const WalkTreeOptions& aOptions) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   NS_WARNING_ASSERTION(
       !aPoint.IsInDataNode() || aPoint.IsInTextNode(),
-      "GetPreviousNodeInternal() doesn't assume that the start point is a "
+      "GetPreviousContent() doesn't assume that the start point is a "
       "data node except text node");
 
   
@@ -2824,12 +2824,12 @@ nsIContent* EditorBase::GetPreviousNodeInternal(
       
       return nullptr;
     }
-    return GetPreviousNodeInternal(*aPoint.GetContainer(), aOptions);
+    return GetPreviousContent(*aPoint.GetContainer(), aOptions);
   }
 
   
   if (aPoint.GetChild()) {
-    return GetPreviousNodeInternal(*aPoint.GetChild(), aOptions);
+    return GetPreviousContent(*aPoint.GetChild(), aOptions);
   }
 
   
@@ -2851,23 +2851,23 @@ nsIContent* EditorBase::GetPreviousNodeInternal(
   }
 
   
-  return GetPreviousNodeInternal(*lastLeafContent, aOptions);
+  return GetPreviousContent(*lastLeafContent, aOptions);
 }
 
-nsIContent* EditorBase::GetNextNodeInternal(
-    const nsINode& aNode, const WalkTreeOptions& aOptions) const {
+nsIContent* EditorBase::GetNextContent(const nsINode& aNode,
+                                       const WalkTreeOptions& aOptions) const {
   if (!IsDescendantOfEditorRoot(&aNode)) {
     return nullptr;
   }
   return FindNode(&aNode, true, aOptions);
 }
 
-nsIContent* EditorBase::GetNextNodeInternal(
-    const EditorRawDOMPoint& aPoint, const WalkTreeOptions& aOptions) const {
+nsIContent* EditorBase::GetNextContent(const EditorRawDOMPoint& aPoint,
+                                       const WalkTreeOptions& aOptions) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   NS_WARNING_ASSERTION(
       !aPoint.IsInDataNode() || aPoint.IsInTextNode(),
-      "GetNextNodeInternal() doesn't assume that the start point is a "
+      "GetNextContent() doesn't assume that the start point is a "
       "data node except text node");
 
   EditorRawDOMPoint point(aPoint);
@@ -2907,7 +2907,7 @@ nsIContent* EditorBase::GetNextNodeInternal(
     }
 
     
-    return GetNextNodeInternal(*firstLeafContent, aOptions);
+    return GetNextContent(*firstLeafContent, aOptions);
   }
 
   
@@ -2919,7 +2919,7 @@ nsIContent* EditorBase::GetNextNodeInternal(
     return nullptr;
   }
 
-  return GetNextNodeInternal(*point.GetContainer(), aOptions);
+  return GetNextContent(*point.GetContainer(), aOptions);
 }
 
 nsIContent* EditorBase::FindNextLeafNode(
