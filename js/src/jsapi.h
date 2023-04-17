@@ -31,6 +31,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
 #include "js/CompileOptions.h"
+#include "js/Context.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
 #include "js/GCVector.h"
@@ -56,6 +57,7 @@
 #include "js/ValueArray.h"
 #include "js/Vector.h"
 #include "js/WeakMap.h"
+#include "js/Zone.h"
 
 
 
@@ -135,13 +137,6 @@ struct JSWrapObjectCallbacks {
   JSPreWrapCallback preWrap;
 };
 
-using JSDestroyZoneCallback = void (*)(JSFreeOp*, JS::Zone*);
-
-using JSDestroyCompartmentCallback = void (*)(JSFreeOp*, JS::Compartment*);
-
-using JSSizeOfIncludingThisCompartmentCallback =
-    size_t (*)(mozilla::MallocSizeOf, JS::Compartment*);
-
 
 
 
@@ -217,129 +212,10 @@ extern JS_PUBLIC_API bool JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSContext* JS_NewContext(
-    uint32_t maxbytes, JSRuntime* parentRuntime = nullptr);
-
-
-
-extern JS_PUBLIC_API void JS_DestroyContext(JSContext* cx);
-
-JS_PUBLIC_API void* JS_GetContextPrivate(JSContext* cx);
-
-JS_PUBLIC_API void JS_SetContextPrivate(JSContext* cx, void* data);
-
-extern JS_PUBLIC_API JSRuntime* JS_GetParentRuntime(JSContext* cx);
-
-extern JS_PUBLIC_API JSRuntime* JS_GetRuntime(JSContext* cx);
-
-extern JS_PUBLIC_API void JS_SetFutexCanWait(JSContext* cx);
-
-namespace js {
-
-void AssertHeapIsIdle();
-
-} 
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx);
-
-
-
-
-
-JS_PUBLIC_API void AssertObjectBelongsToCurrentThread(JSObject* obj);
-
-
-
-
-
-
-
-
-
-
-
-using FilenameValidationCallback = bool (*)(const char* filename,
-                                            bool isSystemRealm);
-JS_PUBLIC_API void SetFilenameValidationCallback(FilenameValidationCallback cb);
-
-} 
-
-
-
-
 JS_PUBLIC_API void SetHelperThreadTaskCallback(
     bool (*callback)(js::UniquePtr<js::RunnableTask>));
 
 extern JS_PUBLIC_API const char* JS_GetImplementationVersion(void);
-
-extern JS_PUBLIC_API void JS_SetDestroyZoneCallback(
-    JSContext* cx, JSDestroyZoneCallback callback);
-
-extern JS_PUBLIC_API void JS_SetDestroyCompartmentCallback(
-    JSContext* cx, JSDestroyCompartmentCallback callback);
-
-extern JS_PUBLIC_API void JS_SetSizeOfIncludingThisCompartmentCallback(
-    JSContext* cx, JSSizeOfIncludingThisCompartmentCallback callback);
 
 extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
     JSContext* cx, const JSWrapObjectCallbacks* callbacks);
@@ -369,16 +245,6 @@ extern JS_PUBLIC_API JSErrorInterceptor* JS_GetErrorInterceptorCallback(
 extern JS_PUBLIC_API mozilla::Maybe<JSExnType> JS_GetErrorType(
     const JS::Value& val);
 
-extern JS_PUBLIC_API void JS_SetCompartmentPrivate(JS::Compartment* compartment,
-                                                   void* data);
-
-extern JS_PUBLIC_API void* JS_GetCompartmentPrivate(
-    JS::Compartment* compartment);
-
-extern JS_PUBLIC_API void JS_SetZoneUserData(JS::Zone* zone, void* data);
-
-extern JS_PUBLIC_API void* JS_GetZoneUserData(JS::Zone* zone);
-
 extern JS_PUBLIC_API bool JS_WrapObject(JSContext* cx,
                                         JS::MutableHandleObject objp);
 
@@ -388,100 +254,6 @@ extern JS_PUBLIC_API bool JS_WrapValue(JSContext* cx,
 extern JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx,
                                                    JS::HandleObject origobj,
                                                    JS::HandleObject target);
-
-extern JS_PUBLIC_API bool JS_RefreshCrossCompartmentWrappers(
-    JSContext* cx, JS::Handle<JSObject*> obj);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII JS_PUBLIC_API JSAutoRealm {
-  JSContext* cx_;
-  JS::Realm* oldRealm_;
-
- public:
-  JSAutoRealm(JSContext* cx, JSObject* target);
-  JSAutoRealm(JSContext* cx, JSScript* target);
-  ~JSAutoRealm();
-};
-
-class MOZ_RAII JS_PUBLIC_API JSAutoNullableRealm {
-  JSContext* cx_;
-  JS::Realm* oldRealm_;
-
- public:
-  explicit JSAutoNullableRealm(JSContext* cx, JSObject* targetOrNull);
-  ~JSAutoNullableRealm();
-};
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JS::Realm* EnterRealm(JSContext* cx, JSObject* target);
-
-extern JS_PUBLIC_API void LeaveRealm(JSContext* cx, JS::Realm* oldRealm);
-
-}  
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
-
-
-
-
-
-extern JS_PUBLIC_API void JS_MarkCrossZoneIdValue(JSContext* cx,
-                                                  const JS::Value& value);
 
 
 

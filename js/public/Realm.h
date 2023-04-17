@@ -12,6 +12,13 @@
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"  
 
+
+
+
+
+
+
+
 namespace js {
 namespace gc {
 JS_PUBLIC_API void TraceRealm(JSTracer* trc, JS::Realm* realm,
@@ -116,6 +123,78 @@ extern JS_PUBLIC_API JSObject* GetRealmWeakMapKey(JSContext* cx);
 extern JS_PUBLIC_API Realm* GetFunctionRealm(JSContext* cx,
                                              HandleObject objArg);
 
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JS::Realm* EnterRealm(JSContext* cx, JSObject* target);
+
+extern JS_PUBLIC_API void LeaveRealm(JSContext* cx, JS::Realm* oldRealm);
+
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII JS_PUBLIC_API JSAutoRealm {
+  JSContext* cx_;
+  JS::Realm* oldRealm_;
+
+ public:
+  JSAutoRealm(JSContext* cx, JSObject* target);
+  JSAutoRealm(JSContext* cx, JSScript* target);
+  ~JSAutoRealm();
+};
+
+class MOZ_RAII JS_PUBLIC_API JSAutoNullableRealm {
+  JSContext* cx_;
+  JS::Realm* oldRealm_;
+
+ public:
+  explicit JSAutoNullableRealm(JSContext* cx, JSObject* targetOrNull);
+  ~JSAutoNullableRealm();
+};
 
 #endif  
