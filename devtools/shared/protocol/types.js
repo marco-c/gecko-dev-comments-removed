@@ -349,6 +349,11 @@ types.addActorType = function(name) {
       
       
       if (v instanceof Actor) {
+        if (v.isDestroyed()) {
+          throw new Error(
+            `Attempted to write a response containing a destroyed actor`
+          );
+        }
         if (!v.actorID) {
           ctx.marshallPool().manage(v);
         }
