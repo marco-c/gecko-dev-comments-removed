@@ -184,17 +184,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
         mRecvSSRC(0),
         mEngineTransmitting(false),
         mEngineReceiving(false),
-        mRecvChannel(-1),
-        mSendChannel(-1),
         mDtmfEnabled(false),
         mMutex("WebrtcAudioConduit::mMutex"),
         mStsThread(aStsThread) {}
 
   virtual ~WebrtcAudioConduit();
-
-  virtual MediaConduitErrorCode Init();
-
-  int GetRecvChannel() { return mRecvChannel; }
 
   
 
@@ -244,20 +238,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   bool IsSamplingFreqSupported(int freq) const override;
 
- protected:
-  
-
-
-
-
-
-
-
-
-
-
-
-
  private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
   void operator=(const WebrtcAudioConduit& other) = delete;
@@ -281,9 +261,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   bool RecreateSendStreamIfExists();
   bool RecreateRecvStreamIfExists();
 
-  MediaConduitErrorCode CreateChannels();
-  virtual void DeleteChannels();
-
   mozilla::ReentrantMonitor mTransportMonitor;
 
   
@@ -291,11 +268,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   RefPtr<TransportInterface> mReceiverTransport;
-  
-
-
-
-
 
   
   
@@ -327,13 +299,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                          
 
   
-  int mRecvChannel;
-
-  
-  int mSendChannel;
-
-  
   bool mDtmfEnabled;
+  int mDtmfPayloadType = -1;
+  int mDtmfPayloadFrequency = -1;
 
   Mutex mMutex;
 

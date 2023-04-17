@@ -38,6 +38,10 @@ namespace dom {
 struct RTCRtpSourceEntry;
 }
 
+namespace dom {
+struct RTCRtpSourceEntry;
+}
+
 enum class MediaSessionConduitLocalDirection : int { kSend, kRecv };
 
 class VideoSessionConduit;
@@ -286,20 +290,7 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
 
   webrtc::Call* Call() const { return mCall.get(); }
 
-  virtual ~WebRtcCallWrapper() {
-    
-
-
-
-
-
-
-
-
-
-
-
-  }
+  virtual ~WebRtcCallWrapper() = default;
 
   bool UnsetRemoteSSRC(uint32_t ssrc) {
     for (auto conduit : mConduits) {
@@ -331,25 +322,7 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
 
  private:
   explicit WebRtcCallWrapper(const dom::RTCStatsTimestampMaker& aTimestampMaker)
-      : mTimestampMaker(aTimestampMaker) {
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  }
+      : mTimestampMaker(aTimestampMaker) {}
 
   explicit WebRtcCallWrapper(UniquePtr<webrtc::Call>&& aCall) {
     MOZ_ASSERT(aCall);
