@@ -88,6 +88,9 @@ static char const* cubeb_mock_get_backend_id(cubeb* context);
 
 static int cubeb_mock_stream_set_volume(cubeb_stream* stream, float volume);
 
+static int cubeb_mock_stream_set_name(cubeb_stream* stream,
+                                      char const* stream_name);
+
 static int cubeb_mock_get_min_latency(cubeb* context,
                                       cubeb_stream_params params,
                                       uint32_t* latency_ms);
@@ -113,7 +116,7 @@ cubeb_ops const mock_ops = {
     NULL,
     NULL,
     cubeb_mock_stream_set_volume,
-    NULL,
+    cubeb_mock_stream_set_name,
     NULL,
     NULL,
     NULL,
@@ -440,6 +443,11 @@ static char const* cubeb_mock_get_backend_id(cubeb* context) {
 }
 
 static int cubeb_mock_stream_set_volume(cubeb_stream* stream, float volume) {
+  return CUBEB_OK;
+}
+
+static int cubeb_mock_stream_set_name(cubeb_stream* stream,
+                                      char const* stream_name) {
   return CUBEB_OK;
 }
 
