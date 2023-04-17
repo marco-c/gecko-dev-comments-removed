@@ -468,7 +468,9 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   
   
   
-  const onTargetSwitched = toolbox.targetList.once("switched-target");
+  const onTargetSwitched = toolbox.commands.targetCommand.once(
+    "switched-target"
+  );
   
   const onNavigate = target.once("navigate");
 
