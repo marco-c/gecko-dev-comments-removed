@@ -3429,6 +3429,8 @@ nsresult PermissionManager::ImportLatestDefaults() {
       attrs.mPrivateBrowsingId = 1;
       nsCOMPtr<nsIPrincipal> pbPrincipal =
           BasePrincipal::Cast(principal)->CloneForcingOriginAttributes(attrs);
+      
+      NS_ENSURE_TRUE(pbPrincipal, NS_ERROR_FAILURE);
 
       rv = AddInternal(pbPrincipal, entry.mType, entry.mPermission,
                        cIDPermissionIsDefault,

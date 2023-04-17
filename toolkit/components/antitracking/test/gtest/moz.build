@@ -5,6 +5,7 @@
 
 
 UNIFIED_SOURCES += [
+    "TestStoragePrincipalHelper.cpp",
     "TestURLQueryStringStripper.cpp",
 ]
 

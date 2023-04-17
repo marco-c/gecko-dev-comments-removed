@@ -250,8 +250,16 @@ nsScriptSecurityManager::GetChannelResultStoragePrincipal(
   nsCOMPtr<nsIPrincipal> principal;
   nsresult rv = GetChannelResultPrincipal(aChannel, getter_AddRefs(principal),
                                            false);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_WARN_IF(NS_FAILED(rv) || !principal)) {
     return rv;
+  }
+
+  if (!(principal->GetIsContentPrincipal())) {
+    
+    
+    
+    principal.forget(aPrincipal);
+    return NS_OK;
   }
 
   return StoragePrincipalHelper::Create(
