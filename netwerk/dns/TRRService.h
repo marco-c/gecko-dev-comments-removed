@@ -62,7 +62,7 @@ class TRRService : public TRRServiceBase,
   bool IsExcludedFromTRR(const nsACString& aHost);
 
   bool MaybeBootstrap(const nsACString& possible, nsACString& result);
-  void TRRIsOkay(nsresult aChannelStatus);
+  void RecordTRRStatus(nsresult aChannelStatus);
   bool ParentalControlEnabled() const { return mParentalControlEnabled; }
 
   nsresult DispatchTRRRequest(TRR* aTrrRequest);
@@ -243,6 +243,8 @@ class TRRService : public TRRServiceBase,
     enum ConfirmationState State() { return mState; }
 
     void CompleteConfirmation(nsresult aStatus, TRR* aTrrRequest);
+
+    void RecordTRRStatus(nsresult aChannelStatus);
 
    private:
     

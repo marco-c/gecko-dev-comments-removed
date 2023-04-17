@@ -883,7 +883,7 @@ void TRR::ReportStatus(nsresult aStatusCode) {
   
   if (UseDefaultServer() && aStatusCode != NS_ERROR_ABORT) {
     
-    gTRRService->TRRIsOkay(aStatusCode);
+    gTRRService->RecordTRRStatus(aStatusCode);
   }
 }
 

@@ -1084,7 +1084,7 @@ static char StatusToChar(nsresult aLookupStatus, nsresult aChannelStatus) {
   return '?';
 }
 
-void TRRService::TRRIsOkay(nsresult aChannelStatus) {
+void TRRService::RecordTRRStatus(nsresult aChannelStatus) {
   MOZ_ASSERT_IF(XRE_IsParentProcess(), NS_IsMainThread() || IsOnTRRThread());
   MOZ_ASSERT_IF(XRE_IsSocketProcess(), NS_IsMainThread());
 
@@ -1094,34 +1094,45 @@ void TRRService::TRRIsOkay(nsresult aChannelStatus) {
                          : (aChannelStatus == NS_ERROR_NET_TIMEOUT_EXTERNAL
                                 ? Telemetry::LABELS_DNS_TRR_SUCCESS3::Timeout
                                 : Telemetry::LABELS_DNS_TRR_SUCCESS3::Bad));
+
+  mConfirmation.RecordTRRStatus(aChannelStatus);
+}
+
+void TRRService::ConfirmationContext::RecordTRRStatus(nsresult aChannelStatus) {
   if (NS_SUCCEEDED(aChannelStatus)) {
-    LOG(("TRRService::TRRIsOkay channel success"));
-    mConfirmation.mTRRFailures = 0;
-  } else if ((mMode == nsIDNSService::MODE_TRRFIRST) &&
-             (mConfirmation.State() == CONFIRM_OK)) {
+    LOG(("TRRService::RecordTRRStatus channel success"));
+    mTRRFailures = 0;
+    return;
+  }
+
+  if (OwningObject()->Mode() != nsIDNSService::MODE_TRRFIRST) {
+    return;
+  }
+
+  
+  if (State() != CONFIRM_OK) {
+    return;
+  }
+
+  mFailureReasons[mTRRFailures % ConfirmationContext::RESULTS_SIZE] =
+      StatusToChar(NS_OK, aChannelStatus);
+  uint32_t fails = ++mTRRFailures;
+  LOG(("TRRService::RecordTRRStatus fails=%u", fails));
+
+  if (fails >= StaticPrefs::network_trr_max_fails()) {
+    LOG(("TRRService had %u failures in a row\n", fails));
     
-    mConfirmation.mFailureReasons[mConfirmation.mTRRFailures %
-                                  ConfirmationContext::RESULTS_SIZE] =
-        StatusToChar(NS_OK, aChannelStatus);
-    uint32_t fails = ++mConfirmation.mTRRFailures;
-    LOG(("TRRService::TRRIsOkay fails=%u", fails));
+    
+    
+    
 
-    if (fails >= StaticPrefs::network_trr_max_fails()) {
-      LOG(("TRRService had %u failures in a row\n", fails));
-      
-      
-      
-      
+    mTrigger.Assign("failed-lookups");
+    mFailedLookups = nsDependentCSubstring(
+        mFailureReasons, fails % ConfirmationContext::RESULTS_SIZE);
 
-      mConfirmation.mTrigger.Assign("failed-lookups");
-      mConfirmation.mFailedLookups =
-          nsDependentCSubstring(mConfirmation.mFailureReasons,
-                                fails % ConfirmationContext::RESULTS_SIZE);
-
-      
-      
-      HandleConfirmationEvent(ConfirmationEvent::FailedLookups);
-    }
+    
+    
+    OwningObject()->HandleConfirmationEvent(ConfirmationEvent::FailedLookups);
   }
 }
 
