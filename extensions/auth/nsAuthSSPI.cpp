@@ -90,7 +90,7 @@ static nsresult InitSSPI() {
 
 
 
-nsresult nsAuthSSPI::MakeSN(const char* principal, nsCString& result) {
+nsresult nsAuthSSPI::MakeSN(const nsACString& principal, nsCString& result) {
   nsresult rv;
 
   nsAutoCString buf(principal);
@@ -174,9 +174,9 @@ void nsAuthSSPI::Reset() {
 NS_IMPL_ISUPPORTS(nsAuthSSPI, nsIAuthModule)
 
 NS_IMETHODIMP
-nsAuthSSPI::Init(const char* serviceName, uint32_t serviceFlags,
-                 const char16_t* domain, const char16_t* username,
-                 const char16_t* password) {
+nsAuthSSPI::Init(const nsACString& aServiceName, uint32_t aServiceFlags,
+                 const nsAString& aDomain, const nsAString& aUsername,
+                 const nsAString& aPassword) {
   LOG(("  nsAuthSSPI::Init\n"));
 
   mIsFirst = true;
@@ -185,7 +185,7 @@ nsAuthSSPI::Init(const char* serviceName, uint32_t serviceFlags,
 
   
   
-  NS_ENSURE_TRUE(serviceName && *serviceName, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(!aServiceName.IsEmpty(), NS_ERROR_INVALID_ARG);
 
   nsresult rv;
 
@@ -203,18 +203,18 @@ nsAuthSSPI::Init(const char* serviceName, uint32_t serviceFlags,
     
     
     
-    mServiceName.Assign(serviceName);
+    mServiceName = aServiceName;
     int32_t index = mServiceName.FindChar('@');
     if (index == kNotFound) return NS_ERROR_UNEXPECTED;
     mServiceName.Replace(index, 1, '/');
   } else {
     
     
-    rv = MakeSN(serviceName, mServiceName);
+    rv = MakeSN(aServiceName, mServiceName);
     if (NS_FAILED(rv)) return rv;
   }
 
-  mServiceFlags = serviceFlags;
+  mServiceFlags = aServiceFlags;
 
   SECURITY_STATUS rc;
 
@@ -235,11 +235,11 @@ nsAuthSSPI::Init(const char* serviceName, uint32_t serviceFlags,
   
   
   
-  if (username && password) {
+  if (!aUsername.IsEmpty() && !aPassword.IsEmpty()) {
     
-    mUsername.Assign(username);
-    mPassword.Assign(password);
-    mDomain.Assign(domain);
+    mUsername = aUsername;
+    mPassword = aPassword;
+    mDomain = aDomain;
     ai.Domain = reinterpret_cast<unsigned short*>(mDomain.BeginWriting());
     ai.DomainLength = mDomain.Length();
     ai.User = reinterpret_cast<unsigned short*>(mUsername.BeginWriting());
@@ -258,7 +258,7 @@ nsAuthSSPI::Init(const char* serviceName, uint32_t serviceFlags,
   static bool sTelemetrySent = false;
   if (!sTelemetrySent) {
     mozilla::Telemetry::Accumulate(mozilla::Telemetry::NTLM_MODULE_USED_2,
-                                   serviceFlags & nsIAuthModule::REQ_PROXY_AUTH
+                                   aServiceFlags & nsIAuthModule::REQ_PROXY_AUTH
                                        ? NTLM_MODULE_WIN_API_PROXY
                                        : NTLM_MODULE_WIN_API_DIRECT);
     sTelemetrySent = true;
