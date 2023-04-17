@@ -508,6 +508,15 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
   Assert.ok(doc);
   Assert.ok(tbody);
 
+  if (isFission) {
+    
+    
+    
+    await SpecialPowers.spawn(tabCloseProcess1.linkedBrowser, [], () => {
+      ChromeUtils.privateNoteIntentionalCrash();
+    });
+  }
+
   info("Setting up fake process hang detector");
   let hungChildID = tabHung.linkedBrowser.frameLoader.childID;
 
