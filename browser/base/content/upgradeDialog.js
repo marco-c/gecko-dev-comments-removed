@@ -20,21 +20,39 @@ const IS_DEFAULT = SHELL.isDefaultBrowser();
 const NEED_PIN = SHELL.doesAppNeedPin();
 
 
-const PIN_OR_THEME_STRING = NEED_PIN.then(pin =>
-  pin
-    ? "upgrade-dialog-new-primary-pin-button"
-    : "upgrade-dialog-new-primary-theme-button"
-);
-const PRIMARY_OR_DEFAULT_STRING = NEED_PIN.then(pin =>
-  pin
-    ? "upgrade-dialog-new-primary-primary-button"
-    : "upgrade-dialog-new-primary-default-button"
-);
+const PIN_OR_ALT_STRING = document.l10n.ready.then(async () => {
+  const ids = [
+    "upgrade-dialog-new-primary-pin-alt-button",
+    "upgrade-dialog-new-primary-pin-button",
+  ];
+  const [preferred, fallback] = await document.l10n.formatValues(ids);
+  
+  
+  
+  return preferred !== "Pin to taskbar" ||
+    fallback.match(/^Pin .+ to my taskbar$/)
+    ? ids[0]
+    : ids[1];
+});
+const THEME_OR_DEFAULT_STRING = IS_DEFAULT
+  ? "upgrade-dialog-new-primary-theme-button"
+  : "upgrade-dialog-new-primary-default-button";
 const SCREEN_STRINGS = [
   {
     title: "upgrade-dialog-new-title",
-    primary: IS_DEFAULT ? PIN_OR_THEME_STRING : PRIMARY_OR_DEFAULT_STRING,
+    subtitle: NEED_PIN.then(pin =>
+      pin ? "upgrade-dialog-new-alt-subtitle" : "upgrade-dialog-new-subtitle"
+    ),
+    primary: NEED_PIN.then(pin =>
+      pin ? PIN_OR_ALT_STRING : THEME_OR_DEFAULT_STRING
+    ),
     secondary: "upgrade-dialog-new-secondary-button",
+  },
+  {
+    title: "upgrade-dialog-default-title",
+    subtitle: "upgrade-dialog-default-subtitle",
+    primary: "upgrade-dialog-default-primary-button",
+    secondary: "upgrade-dialog-default-secondary-button",
   },
   {
     title: "upgrade-dialog-theme-title",
@@ -117,6 +135,7 @@ function onLoad(ready) {
   const { body } = document;
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
+  const image = document.querySelector(".image");
   const items = document.querySelector(".items");
   const themes = document.querySelector(".themes");
   const primary = document.getElementById("primary");
@@ -133,6 +152,7 @@ function onLoad(ready) {
 
     
     switch (++current) {
+      
       case 0:
         
         primary.addEventListener("click", advance);
@@ -154,16 +174,50 @@ function onLoad(ready) {
             secondary.style.display = "none";
           }
         }
+
+        
+        let removeDefaultScreen = true;
+        if (await NEED_PIN) {
+          items.remove();
+          removeDefaultScreen = IS_DEFAULT;
+        } else {
+          image.remove();
+        }
+
+        
+        if (removeDefaultScreen) {
+          SCREEN_STRINGS.splice(1, 1);
+        }
+
+        
+        
+        recordEvent("show", `${SCREEN_STRINGS.length}-screens`);
+
+        
+        for (let i = SCREEN_STRINGS.length; i > 1; i--) {
+          steps.append(steps.lastChild.cloneNode(true));
+        }
+        steps.lastChild.classList.add("current");
         break;
 
-      case 1:
-        
+      
+      default:
+        const { l10nId } = primary.dataset;
         if (target === primary) {
-          if (!IS_DEFAULT) {
-            SHELL.setAsDefault();
+          switch (l10nId) {
+            case "upgrade-dialog-new-primary-default-button":
+            case "upgrade-dialog-default-primary-button":
+              SHELL.setAsDefault();
+              break;
+            case "upgrade-dialog-new-primary-pin-button":
+            case "upgrade-dialog-new-primary-pin-alt-button":
+              SHELL.pinToTaskbar();
+              break;
           }
-          SHELL.pinToTaskbar();
-        } else if (target === secondary && IS_DEFAULT && !(await NEED_PIN)) {
+        } else if (
+          target === secondary &&
+          l10nId === "upgrade-dialog-new-primary-theme-button"
+        ) {
           closeDialog("early");
           return;
         }
@@ -172,6 +226,11 @@ function onLoad(ready) {
         if (win7Content) {
           closeDialog("win7");
           return;
+        }
+
+        
+        if (current !== SCREEN_STRINGS.length - 1) {
+          break;
         }
 
         
@@ -207,13 +266,14 @@ function onLoad(ready) {
 
         
         subtitle.remove();
+        image.remove();
         items.remove();
         themes.classList.remove("hidden");
-        steps.appendChild(steps.firstChild);
         adjustModalBackdrop();
         break;
 
-      case 2:
+      
+      case SCREEN_STRINGS.length:
         
         if (target === primary) {
           gPrevTheme = null;
@@ -224,13 +284,23 @@ function onLoad(ready) {
     }
 
     
-    const strings = SCREEN_STRINGS[current];
-    document.l10n.setAttributes(title, strings.title);
-    document.l10n.setAttributes(primary, await strings.primary);
-    document.l10n.setAttributes(secondary, strings.secondary);
+    image.setAttribute("screen", current);
+    steps.prepend(steps.lastChild);
 
     
     await document.l10n.ready;
+    const translatedElements = [];
+    const strings = SCREEN_STRINGS[current];
+    for (let el of [title, subtitle, primary, secondary]) {
+      const stringId = await strings[el.id];
+      if (stringId) {
+        document.l10n.setAttributes(el, stringId);
+        translatedElements.push(el);
+      }
+    }
+
+    
+    await document.l10n.translateElements(translatedElements);
     requestAnimationFrame(() => {
       
       primary.focus();
@@ -238,9 +308,6 @@ function onLoad(ready) {
       
       if (current === 0) {
         body.style.minHeight = getComputedStyle(body).height;
-
-        
-        recordEvent("show", primary.dataset.l10nId);
 
         
         ready();
@@ -251,7 +318,7 @@ function onLoad(ready) {
     });
 
     
-    recordEvent("show", current);
+    recordEvent("show", primary.dataset.l10nId);
   })();
 }
 document.mozSubdialogReady = new Promise(resolve =>
