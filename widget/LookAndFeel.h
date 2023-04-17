@@ -562,12 +562,6 @@ class LookAndFeel {
 
 
 
-#define NS_DONT_CHANGE_COLOR NS_RGB(0x01, 0x01, 0x01)
-
-
-
-
-
 
 #define NS_TRANSPARENT NS_RGBA(0x01, 0x00, 0x00, 0x00)
 
