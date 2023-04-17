@@ -1188,12 +1188,22 @@ class WebIDLChildAPIManager extends ChildAPIManager {
 
 
   handleForProxyAPIImplementation(request, impl) {
-    
-    const { apiNamespace, apiName } = request;
-    throw new Error(
-      `"${apiNamespace}.${apiName}" does not provide a local implementation.` +
-        `Not Implemented.`
-    );
+    const { requestType } = request;
+    switch (requestType) {
+      case "callAsyncFunction":
+      case "callFunctionNoReturn":
+      case "addListener":
+      case "removeListener":
+        return this.callAPIImplementation(request, impl);
+      default:
+        
+        
+        
+        
+        throw new Error(
+          `Unexpected requestType ${requestType} while handling "${request}"`
+        );
+    }
   }
 
   getAPIPathForWebIDLRequest(request) {
