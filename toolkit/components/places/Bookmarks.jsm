@@ -962,18 +962,6 @@ var Bookmarks = Object.freeze({
             item.parentGuid != updatedItem.parentGuid ||
             item.index != updatedItem.index
           ) {
-            notify(observers, "onItemMoved", [
-              updatedItem._id,
-              item.index,
-              updatedItem.index,
-              updatedItem.type,
-              updatedItem.guid,
-              item.parentGuid,
-              updatedItem.parentGuid,
-              updatedItem.source,
-              updatedItem.url && updatedItem.url.href,
-            ]);
-
             notifications.push(
               new PlacesBookmarkMoved({
                 id: updatedItem._id,
@@ -1204,8 +1192,6 @@ var Bookmarks = Object.freeze({
       
       for (let { updatedItem, existingItem, newParent } of updateInfos) {
         
-        let observers = PlacesUtils.bookmarks.getObservers();
-        
         
         
         
@@ -1213,18 +1199,6 @@ var Bookmarks = Object.freeze({
           existingItem.parentGuid != updatedItem.parentGuid ||
           existingItem.index != updatedItem.index
         ) {
-          notify(observers, "onItemMoved", [
-            updatedItem._id,
-            existingItem.index,
-            updatedItem.index,
-            updatedItem.type,
-            updatedItem.guid,
-            existingItem.parentGuid,
-            updatedItem.parentGuid,
-            source,
-            existingItem.url,
-          ]);
-
           notifications.push(
             new PlacesBookmarkMoved({
               id: updatedItem._id,
@@ -1791,22 +1765,9 @@ var Bookmarks = Object.freeze({
 
       const notifications = [];
 
-      let observers = PlacesUtils.bookmarks.getObservers();
       
       for (let i = 0; i < sortedChildren.length; ++i) {
         let child = sortedChildren[i];
-        notify(observers, "onItemMoved", [
-          child._id,
-          child.index,
-          i,
-          child.type,
-          child.guid,
-          child.parentGuid,
-          child.parentGuid,
-          options.source,
-          child.url && child.url.href,
-        ]);
-
         notifications.push(
           new PlacesBookmarkMoved({
             id: child._id,
