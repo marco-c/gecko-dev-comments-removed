@@ -4,9 +4,10 @@
 
 
 
+#include "mozilla/dom/QMResult.h"
+
 #include "gtest/gtest.h"
 
-#include "mozilla/dom/QMResult.h"
 #include "mozilla/dom/QMResultInlines.h"
 
 using namespace mozilla;

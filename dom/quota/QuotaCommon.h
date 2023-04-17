@@ -9,11 +9,6 @@
 
 #include "mozilla/dom/quota/Config.h"
 
-
-
-
-#include "mozilla/dom/QMResult.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -33,6 +28,7 @@
 #if defined(QM_LOG_ERROR_ENABLED) && defined(QM_ERROR_STACKS_ENABLED)
 #  include "mozilla/Variant.h"
 #endif
+#include "mozilla/dom/QMResult.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
