@@ -12,6 +12,9 @@ add_task(async function() {
   await selectNode("body", inspector);
 
   
+  const onInspectorReloaded = inspector.once("reloaded");
+
+  
   
   
   
@@ -56,6 +59,9 @@ add_task(async function() {
     return content.document.querySelector("#yay").textContent;
   });
   is(expectedText, "load", "Load event fired.");
+
+  info("Wait for the inspector to be properly reloaded");
+  await onInspectorReloaded;
 
   
   
