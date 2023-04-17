@@ -61,50 +61,89 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 const RemoteDefaultsLoader = {
-  async syncRemoteDefaults() {
+  async syncRemoteDefaults(reason) {
     log.debug("Fetching remote defaults for NimbusFeatures.");
     try {
-      await this._onUpdatesReady(await this._remoteSettingsClient.get());
-      ExperimentManager.store.finalizeRemoteConfigs();
+      await this._onUpdatesReady(
+        await this._remoteSettingsClient.get(),
+        reason
+      );
     } catch (e) {
       Cu.reportError(e);
     }
     log.debug("Finished fetching remote defaults.");
   },
 
-  async _onUpdatesReady(remoteDefaults = []) {
-    if (!remoteDefaults.length) {
-      return;
-    }
-    await ExperimentManager.store.ready();
-    const targetingContext = new TargetingContext();
-    
-    for (let remoteDefault of remoteDefaults) {
-      if (!remoteDefault.configurations) {
-        continue;
-      }
+  async _onUpdatesReady(remoteDefaults = [], reason = "unknown") {
+    const matches = [];
+    const existingConfigIds = ExperimentManager.store.getAllExistingRemoteConfigIds();
+
+    if (remoteDefaults.length) {
+      await ExperimentManager.store.ready();
+      const targetingContext = new TargetingContext();
+
       
-      for (let configuration of remoteDefault.configurations) {
-        let result;
-        try {
-          result = await targetingContext.eval(configuration.targeting);
-        } catch (e) {
-          Cu.reportError(e);
+      for (let remoteDefault of remoteDefaults) {
+        if (!remoteDefault.configurations) {
+          continue;
         }
-        if (result) {
-          log.debug(
-            `Setting remote defaults for feature: ${
+        
+        for (let configuration of remoteDefault.configurations) {
+          let result;
+          try {
+            result = await targetingContext.eval(configuration.targeting);
+          } catch (e) {
+            Cu.reportError(e);
+          }
+          if (result) {
+            log.debug(
+              `Setting remote defaults for feature: ${
+                remoteDefault.id
+              }: ${JSON.stringify(configuration)}`
+            );
+
+            matches.push(remoteDefault.id);
+
+            const existing = ExperimentManager.store.getRemoteConfig(
               remoteDefault.id
-            }: ${JSON.stringify(configuration)}`
-          );
-          ExperimentManager.store.updateRemoteConfigs(
-            remoteDefault.id,
-            configuration
-          );
-          break;
+            );
+
+            ExperimentManager.store.updateRemoteConfigs(
+              remoteDefault.id,
+              configuration
+            );
+
+            
+            
+            if (
+              reason === "init" ||
+              !existing ||
+              existing.slug !== configuration.slug
+            ) {
+              ExperimentManager.setRemoteDefaultActive(
+                remoteDefault.id,
+                configuration.slug
+              );
+            }
+            break;
+          } else {
+            log.debug(
+              `Remote default config ${configuration.slug} for ${remoteDefault.id} did not match due to targeting`
+            );
+          }
         }
       }
     }
+
+    
+    for (const id of existingConfigIds) {
+      if (!matches.includes(id)) {
+        ExperimentManager.setRemoteDefaultInactive(id);
+      }
+    }
+
+    
+    ExperimentManager.store.finalizeRemoteConfigs(matches);
   },
 };
 
@@ -162,7 +201,7 @@ class _RemoteSettingsExperimentLoader {
 
     await Promise.all([
       this.updateRecipes(),
-      RemoteDefaultsLoader.syncRemoteDefaults(),
+      RemoteDefaultsLoader.syncRemoteDefaults("init"),
     ]);
   }
 
@@ -293,7 +332,7 @@ class _RemoteSettingsExperimentLoader {
       TIMER_NAME,
       () => {
         this.updateRecipes("timer");
-        RemoteDefaultsLoader.syncRemoteDefaults();
+        RemoteDefaultsLoader.syncRemoteDefaults("timer");
       },
       this.intervalInSeconds
     );

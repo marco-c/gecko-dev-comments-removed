@@ -93,11 +93,6 @@ const SYNC_ACCESS_FEATURES = ["newtab", "aboutwelcome"];
 class ExperimentStore extends SharedDataMap {
   constructor(sharedDataKey, options = { isParent: IS_MAIN_PROCESS }) {
     super(sharedDataKey || DEFAULT_STORE_ID, options);
-
-    
-    
-    
-    this.remoteDefaultsSession = new Set();
   }
 
   
@@ -228,25 +223,24 @@ class ExperimentStore extends SharedDataMap {
     this._emitExperimentUpdates(updatedExperiment);
   }
 
-  finalizeRemoteConfigs() {
-    for (let featureId of syncDataStore.getAllDefaultBranches()) {
-      if (
-        !this.remoteDefaultsSession.has(featureId) &&
-        this.getRemoteConfig(featureId)
-      ) {
-        
-        
-        
-        const remoteConfigState = this.get(REMOTE_DEFAULTS_KEY);
-        delete remoteConfigState?.[featureId];
-        this.setNonPersistent(REMOTE_DEFAULTS_KEY, { ...remoteConfigState });
-        syncDataStore.deleteDefault(featureId);
-        this._emitFeatureUpdate(featureId, "remote-defaults-update");
+  
+
+
+
+
+
+  finalizeRemoteConfigs(activeFeatureConfigIds) {
+    if (!activeFeatureConfigIds) {
+      throw new Error("You must pass in an array of active feature ids.");
+    }
+    
+    
+    for (let featureId of this.getAllExistingRemoteConfigIds()) {
+      if (!activeFeatureConfigIds.includes(featureId)) {
+        this.deleteRemoteConfig(featureId);
       }
     }
 
-    
-    this.remoteDefaultsSession = new Set();
     
     
     
@@ -267,7 +261,14 @@ class ExperimentStore extends SharedDataMap {
     if (SYNC_ACCESS_FEATURES.includes(featureId)) {
       syncDataStore.setDefault(featureId, configuration);
     }
-    this.remoteDefaultsSession.add(featureId);
+    this._emitFeatureUpdate(featureId, "remote-defaults-update");
+  }
+
+  deleteRemoteConfig(featureId) {
+    const remoteConfigState = this.get(REMOTE_DEFAULTS_KEY);
+    delete remoteConfigState?.[featureId];
+    this.setNonPersistent(REMOTE_DEFAULTS_KEY, { ...remoteConfigState });
+    syncDataStore.deleteDefault(featureId);
     this._emitFeatureUpdate(featureId, "remote-defaults-update");
   }
 
@@ -281,6 +282,19 @@ class ExperimentStore extends SharedDataMap {
       this.get(REMOTE_DEFAULTS_KEY)?.[featureId] ||
       syncDataStore.getDefault(featureId)
     );
+  }
+
+  
+
+
+
+  getAllExistingRemoteConfigIds() {
+    return [
+      ...new Set([
+        ...syncDataStore.getAllDefaultBranches(),
+        ...Object.keys(this.get(REMOTE_DEFAULTS_KEY) || {}),
+      ]),
+    ];
   }
 
   _deleteForTests(featureId) {

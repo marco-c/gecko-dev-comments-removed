@@ -331,7 +331,6 @@ class _ExperimentManager {
 
 
 
-
   setExperimentActive(experiment) {
     TelemetryEnvironment.setExperimentActive(
       experiment.slug,
@@ -341,6 +340,39 @@ class _ExperimentManager {
         enrollmentId:
           experiment.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
       }
+    );
+  }
+
+  
+
+
+
+
+
+  getRemoteDefaultTelemetryIdentifierForFeature(featureId) {
+    return `default-${featureId}`;
+  }
+
+  
+
+
+
+
+
+  setRemoteDefaultActive(featureId, configId) {
+    TelemetryEnvironment.setExperimentActive(
+      this.getRemoteDefaultTelemetryIdentifierForFeature(featureId),
+      configId,
+      {
+        type: `${TELEMETRY_EXPERIMENT_ACTIVE_PREFIX}default`,
+        enrollmentId: TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
+      }
+    );
+  }
+
+  setRemoteDefaultInactive(featureId) {
+    TelemetryEnvironment.setExperimentInactive(
+      this.getRemoteDefaultTelemetryIdentifierForFeature(featureId)
     );
   }
 
