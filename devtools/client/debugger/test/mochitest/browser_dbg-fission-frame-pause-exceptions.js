@@ -4,7 +4,7 @@
 
 "use strict";
 
-const TEST_COM_URI = URL_ROOT_COM_SSL + "examples/doc_dbg-fission-pause-exceptions.html";
+const TEST_COM_URI = URL_ROOT_COM + "examples/doc_dbg-fission-pause-exceptions.html";
 
 
 add_task(async function() {
