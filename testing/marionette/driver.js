@@ -2226,11 +2226,6 @@ GeckoDriver.prototype.deleteSession = function() {
     return;
   }
 
-  clearElementIdCache();
-
-  unregisterCommandsActor();
-  unregisterEventsActor();
-
   for (let win of windowManager.windows) {
     this.unregisterListenersForWindow(win);
   }
@@ -2244,6 +2239,13 @@ GeckoDriver.prototype.deleteSession = function() {
   }
 
   Services.obs.removeObserver(this, "browser-delayed-startup-finished");
+
+  clearElementIdCache();
+
+  
+  
+  unregisterCommandsActor();
+  unregisterEventsActor();
 
   this.currentSession.destroy();
   this.currentSession = null;
