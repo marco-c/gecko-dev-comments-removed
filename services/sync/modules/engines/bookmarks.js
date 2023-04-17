@@ -425,12 +425,15 @@ BookmarksEngine.prototype = {
       if (
         Async.isShutdownException(ex) ||
         ex.status > 0 ||
-        ex.name == "MergeConflictError" ||
         ex.name == "InterruptedError"
       ) {
         
         
         throw ex;
+      }
+      if (ex.name == "MergeConflictError") {
+        this._log.warn("Bookmark syncing ran into a merge conflict error...will retry later");
+        return;
       }
       
       
