@@ -69,7 +69,7 @@ add_task(async function() {
   
   
   
-  openPreferences("privacy-reports");
+  await openPreferences("privacy-reports");
   let selectedPane = gBrowser.contentWindow.history.state;
   is(selectedPane, "panePrivacy", "Privacy pane should be selected");
   is(
