@@ -72,6 +72,7 @@
 #include "builtin/ModuleObject.h"
 #include "builtin/RegExp.h"
 #include "builtin/TestingFunctions.h"
+#include "builtin/TestingUtility.h"  
 #include "debugger/DebugAPI.h"
 #include "frontend/BytecodeCompilation.h"
 #include "frontend/BytecodeCompiler.h"
@@ -2022,99 +2023,6 @@ static bool ParseDebugMetadata(JSContext* cx, HandleObject opts,
   return true;
 }
 
-
-
-
-static bool ParseCompileOptions(JSContext* cx, CompileOptions& options,
-                                HandleObject opts, UniqueChars* fileNameBytes,
-                                MutableHandleValue privateValue,
-                                MutableHandleString elementAttributeName) {
-  RootedValue v(cx);
-  RootedString s(cx);
-
-  if (!ParseDebugMetadata(cx, opts, privateValue, elementAttributeName)) {
-    return false;
-  }
-
-  if (!JS_GetProperty(cx, opts, "isRunOnce", &v)) {
-    return false;
-  }
-  if (!v.isUndefined()) {
-    options.setIsRunOnce(ToBoolean(v));
-  }
-
-  if (!JS_GetProperty(cx, opts, "noScriptRval", &v)) {
-    return false;
-  }
-  if (!v.isUndefined()) {
-    options.setNoScriptRval(ToBoolean(v));
-  }
-
-  if (!JS_GetProperty(cx, opts, "fileName", &v)) {
-    return false;
-  }
-  if (v.isNull()) {
-    options.setFile(nullptr);
-  } else if (!v.isUndefined()) {
-    s = ToString(cx, v);
-    if (!s) {
-      return false;
-    }
-    if (fileNameBytes) {
-      *fileNameBytes = JS_EncodeStringToLatin1(cx, s);
-      if (!*fileNameBytes) {
-        return false;
-      }
-      options.setFile(fileNameBytes->get());
-    }
-  }
-
-  if (!JS_GetProperty(cx, opts, "skipFileNameValidation", &v)) {
-    return false;
-  }
-  if (!v.isUndefined()) {
-    options.setSkipFilenameValidation(ToBoolean(v));
-  }
-
-  if (!JS_GetProperty(cx, opts, "lineNumber", &v)) {
-    return false;
-  }
-  if (!v.isUndefined()) {
-    uint32_t u;
-    if (!ToUint32(cx, v, &u)) {
-      return false;
-    }
-    options.setLine(u);
-  }
-
-  if (!JS_GetProperty(cx, opts, "columnNumber", &v)) {
-    return false;
-  }
-  if (!v.isUndefined()) {
-    int32_t c;
-    if (!ToInt32(cx, v, &c)) {
-      return false;
-    }
-    options.setColumn(c);
-  }
-
-  if (!JS_GetProperty(cx, opts, "sourceIsLazy", &v)) {
-    return false;
-  }
-  if (v.isBoolean()) {
-    options.setSourceIsLazy(v.toBoolean());
-  }
-
-  if (!JS_GetProperty(cx, opts, "forceFullParse", &v)) {
-    return false;
-  }
-  if (v.isBoolean() && v.toBoolean()) {
-    options.setForceFullParse();
-  }
-
-  return true;
-}
-
 static void my_LargeAllocFailCallback() {
   JSContext* cx = TlsContext.get();
   if (!cx || cx->isHelperThreadContext()) {
@@ -2396,13 +2304,14 @@ static bool Evaluate(JSContext* cx, unsigned argc, Value* vp) {
 
   if (args.length() == 2) {
     RootedObject opts(cx, &args[1].toObject());
-    RootedValue v(cx);
-
-    if (!ParseCompileOptions(cx, options, opts, &fileNameBytes, &privateValue,
-                             &elementAttributeName)) {
+    if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
+      return false;
+    }
+    if (!ParseDebugMetadata(cx, opts, &privateValue, &elementAttributeName)) {
       return false;
     }
 
+    RootedValue v(cx);
     if (!JS_GetProperty(cx, opts, "displayURL", &v)) {
       return false;
     }
@@ -5517,8 +5426,10 @@ static bool Compile(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     RootedObject opts(cx, &args[1].toObject());
-    if (!ParseCompileOptions(cx, options, opts, nullptr, &privateValue,
-                             &elementAttributeName)) {
+    if (!js::ParseCompileOptions(cx, options, opts, nullptr)) {
+      return false;
+    }
+    if (!ParseDebugMetadata(cx, opts, &privateValue, &elementAttributeName)) {
       return false;
     }
   }
@@ -5928,10 +5839,7 @@ static bool FrontendTest(JSContext* cx, unsigned argc, Value* vp,
                           typeName);
       return false;
     }
-    RootedValue dummyValue(cx);
-    RootedString dummyAttributeName(cx);
-    if (!ParseCompileOptions(cx, options, objOptions, nullptr, &dummyValue,
-                             &dummyAttributeName)) {
+    if (!js::ParseCompileOptions(cx, options, objOptions, nullptr)) {
       return false;
     }
 
@@ -6237,11 +6145,8 @@ static bool OffThreadCompileScript(JSContext* cx, unsigned argc, Value* vp) {
 
     
     
-    RootedValue dummyPrivateValue(cx);
-    RootedString dummyElementAttributeName(cx);
     RootedObject opts(cx, &args[1].toObject());
-    if (!ParseCompileOptions(cx, options, opts, &fileNameBytes,
-                             &dummyPrivateValue, &dummyElementAttributeName)) {
+    if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
       return false;
     }
   }
@@ -6488,10 +6393,7 @@ static bool OffThreadDecodeScript(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     RootedObject opts(cx, &args[1].toObject());
-    RootedValue dummyValue(cx);
-    RootedString dummyAttributeName(cx);
-    if (!ParseCompileOptions(cx, options, opts, &fileNameBytes, &dummyValue,
-                             &dummyAttributeName)) {
+    if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
       return false;
     }
   }
