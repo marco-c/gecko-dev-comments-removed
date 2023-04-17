@@ -20,25 +20,21 @@ async function waitForSocketScalars() {
   await ContentTaskUtils.waitForCondition(() => {
     const scalars = Telemetry.getSnapshotForScalars("main", false);
     return Object.keys(scalars).includes("socket");
-  });
+  }, "Waiting for socket scalars to have been set");
 }
 
-add_task(async function() {
-  if (!Services.prefs.getBoolPref("network.process.enabled")) {
-    Assert.ok(
-      true,
-      "Test finished: no point to test telemetry from socket process with lanuching the process"
-    );
-    return;
-  }
-
-  do_test_pending();
+add_task(async function test_scalars_in_socket_process() {
+  Assert.ok(
+    Services.prefs.getBoolPref("network.process.enabled"),
+    "Socket process should be enabled"
+  );
 
   do_get_profile(true);
   await TelemetryController.testSetup();
 
   Services.io.socketProcessTelemetryPing();
 
+  
   
   
   
@@ -51,5 +47,4 @@ add_task(async function() {
     42,
     `${SOCKET_ONLY_UINT_SCALAR} must have the correct value (socket process).`
   );
-  do_test_finished();
 });
