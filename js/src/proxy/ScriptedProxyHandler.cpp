@@ -504,6 +504,7 @@ bool ScriptedProxyHandler::isExtensible(JSContext* cx, HandleObject proxy,
 }
 
 
+
 bool ScriptedProxyHandler::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject proxy, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
