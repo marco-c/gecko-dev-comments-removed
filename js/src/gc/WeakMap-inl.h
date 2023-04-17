@@ -158,14 +158,14 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value) {
     CellColor delegateColor = gc::detail::GetEffectiveColor(rt, delegate);
     MOZ_ASSERT(mapColor);
     
-    
-    if (keyColor < delegateColor) {
-      gc::AutoSetMarkColor autoColor(*marker, delegateColor);
+    CellColor proxyPreserveColor = std::min(delegateColor, mapColor);
+    if (keyColor < proxyPreserveColor) {
+      gc::AutoSetMarkColor autoColor(*marker, proxyPreserveColor);
       TraceWeakMapKeyEdge(marker, zone(), &key,
                           "proxy-preserved WeakMap entry key");
-      MOZ_ASSERT(key->color() >= delegateColor);
+      MOZ_ASSERT(key->color() >= proxyPreserveColor);
       marked = true;
-      keyColor = delegateColor;
+      keyColor = proxyPreserveColor;
     }
   }
 
@@ -234,11 +234,7 @@ bool WeakMapBase::addImplicitEdges(gc::Cell* key, gc::Cell* delegate,
 
     
     
-    
-    
-    
-    
-    gc::EphemeronEdge keyEdge{CellColor::Black, key};
+    gc::EphemeronEdge keyEdge{mapColor, key};
     if (!edges.append(keyEdge)) {
       return false;
     }
@@ -277,6 +273,10 @@ bool WeakMapBase::addImplicitEdges(gc::Cell* key, gc::Cell* delegate,
 
 template <class K, class V>
 bool WeakMap<K, V>::markEntries(GCMarker* marker) {
+  
+  
+  
+
   MOZ_ASSERT(mapColor);
   bool markedAny = false;
 
@@ -289,14 +289,18 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
       continue;
     }
 
+    
+    
+    
+    
+    
+    
+    
+
     JSRuntime* rt = zone()->runtimeFromAnyThread();
     CellColor keyColor =
         gc::detail::GetEffectiveColor(rt, e.front().key().get());
 
-    
-    
-    
-    
     if (keyColor < mapColor) {
       MOZ_ASSERT(marker->weakMapAction() == JS::WeakMapTraceAction::Expand);
       
