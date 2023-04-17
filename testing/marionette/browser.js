@@ -179,7 +179,6 @@ browser.Context = class {
 
     this.frameRegsPending = 0;
 
-    this.getIdForBrowser = driver.getIdForBrowser.bind(driver);
     this.updateIdForBrowser = driver.updateIdForBrowser.bind(driver);
   }
 
@@ -220,19 +219,6 @@ browser.Context = class {
 
   get closed() {
     return this.contentBrowser === null;
-  }
-
-  
-
-
-
-
-  get curFrameId() {
-    let rv = null;
-    if (this.tab || this.driver.isReftestBrowser(this.contentBrowser)) {
-      rv = this.getIdForBrowser(this.contentBrowser);
-    }
-    return rv;
   }
 
   
