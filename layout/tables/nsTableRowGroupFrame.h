@@ -243,14 +243,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
                             nsIFrame** aLastVisual) override;
 
   
-
-
-
-
-  NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame,
-                                  int32_t aLineNumber) const override;
-
-  
   
   
   
