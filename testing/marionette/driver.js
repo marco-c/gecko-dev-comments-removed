@@ -226,12 +226,7 @@ GeckoDriver.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 
-GeckoDriver.prototype.handleModalDialog = function(action, dialog, win) {
-  
-  if (win !== this.curBrowser.window) {
-    return;
-  }
-
+GeckoDriver.prototype.handleModalDialog = function(action, dialog) {
   if (action === modal.ACTION_OPENED) {
     this.dialog = new modal.Dialog(() => this.curBrowser, dialog);
     this.getActor().notifyDialogOpened();
@@ -620,7 +615,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   }
 
   
-  this.dialogObserver = new modal.DialogObserver(this);
+  this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
   this.dialogObserver.add(this.handleModalDialog.bind(this));
 
   Services.obs.addObserver(this, "browsing-context-attached");
@@ -1449,7 +1444,9 @@ GeckoDriver.prototype.setWindowHandle = async function(
   
   this.dialog = modal.findModalDialogs(this.curBrowser);
 
-  if (focus) {
+  
+  
+  if (focus && !this.dialog?.isWindowModal) {
     await this.curBrowser.focusWindow();
   }
 };
@@ -2627,13 +2624,14 @@ GeckoDriver.prototype.dismissDialog = async function() {
   assert.open(this.getBrowsingContext({ top: true }));
   this._checkIfAlertIsPresent();
 
-  const win = this.getCurrentWindow();
-  const dialogClosed = this.dialogObserver.dialogClosed(win);
+  const dialogClosed = this.dialogObserver.dialogClosed();
 
   const { button0, button1 } = this.dialog.ui;
   (button1 ? button1 : button0).click();
 
   await dialogClosed;
+
+  const win = this.getCurrentWindow();
   await new IdlePromise(win);
 };
 
@@ -2648,13 +2646,14 @@ GeckoDriver.prototype.acceptDialog = async function() {
   assert.open(this.getBrowsingContext({ top: true }));
   this._checkIfAlertIsPresent();
 
-  const win = this.getCurrentWindow();
-  const dialogClosed = this.dialogObserver.dialogClosed(win);
+  const dialogClosed = this.dialogObserver.dialogClosed();
 
   const { button0 } = this.dialog.ui;
   button0.click();
 
   await dialogClosed;
+
+  const win = this.getCurrentWindow();
   await new IdlePromise(win);
 };
 
