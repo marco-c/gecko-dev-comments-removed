@@ -52,13 +52,27 @@ class TextServicesDocument final : public nsIEditActionListener {
     eNext,
   };
 
+  class OffsetEntryArray final : public nsTArray<UniquePtr<OffsetEntry>> {
+   public:
+    
+
+
+
+
+
+
+    Result<IteratorStatus, nsresult> Init(
+        FilteredContentIterator& aFilteredIter, IteratorStatus aIteratorStatus,
+        nsRange* aIterRange, nsAString* aAllTextInBlock = nullptr);
+  };
+
   RefPtr<dom::Document> mDocument;
   nsCOMPtr<nsISelectionController> mSelCon;
   RefPtr<EditorBase> mEditorBase;
   RefPtr<FilteredContentIterator> mFilteredIter;
   nsCOMPtr<nsIContent> mPrevTextBlock;
   nsCOMPtr<nsIContent> mNextTextBlock;
-  nsTArray<UniquePtr<OffsetEntry>> mOffsetTable;
+  OffsetEntryArray mOffsetTable;
   RefPtr<nsRange> mExtent;
 
   
@@ -294,11 +308,6 @@ class TextServicesDocument final : public nsIEditActionListener {
 
   bool SelectionIsCollapsed() const;
   bool SelectionIsValid() const;
-
-  static nsresult CreateOffsetTable(
-      nsTArray<UniquePtr<OffsetEntry>>* aOffsetTable,
-      FilteredContentIterator* aFilteredIter, IteratorStatus* aIteratorStatus,
-      nsRange* aIterRange, nsAString* aStr);
 
   static nsresult NodeHasOffsetEntry(
       nsTArray<UniquePtr<OffsetEntry>>* aOffsetTable, nsINode* aNode,
