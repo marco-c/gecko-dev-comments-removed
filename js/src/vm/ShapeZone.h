@@ -18,37 +18,6 @@
 
 namespace js {
 
-class PropertyTree {
-  friend class ::JSFunction;
-
-#ifdef DEBUG
-  JS::Zone* zone_;
-#endif
-
-  bool insertChild(JSContext* cx, Shape* parent, Shape* child);
-
-  PropertyTree();
-
- public:
-  
-
-
-
-
-  enum { MAX_HEIGHT = 512, MAX_HEIGHT_WITH_ELEMENTS_ACCESS = 128 };
-
-  explicit PropertyTree(JS::Zone* zone)
-#ifdef DEBUG
-      : zone_(zone)
-#endif
-  {
-  }
-
-  MOZ_ALWAYS_INLINE Shape* inlinedGetChild(JSContext* cx, Shape* parent,
-                                           JS::Handle<StackShape> childSpec);
-  Shape* getChild(JSContext* cx, Shape* parent, JS::Handle<StackShape> child);
-};
-
 
 struct BaseShapeHasher {
   struct Lookup {
@@ -135,10 +104,44 @@ using InitialShapeSet = JS::WeakCache<
     JS::GCHashSet<WeakHeapPtr<Shape*>, InitialShapeHasher, SystemAllocPolicy>>;
 
 
-struct ShapeZone {
-  
-  PropertyTree propertyTree;
 
+struct PropMapShapeHasher {
+  struct Lookup {
+    BaseShape* base;
+    SharedPropMap* map;
+    uint32_t mapLength;
+    uint32_t nfixed;
+    ObjectFlags objectFlags;
+
+    Lookup(BaseShape* base, uint32_t nfixed, SharedPropMap* map,
+           uint32_t mapLength, ObjectFlags objectFlags)
+        : base(base),
+          map(map),
+          mapLength(mapLength),
+          nfixed(nfixed),
+          objectFlags(objectFlags) {}
+  };
+
+  static HashNumber hash(const Lookup& lookup) {
+    return mozilla::HashGeneric(lookup.base, lookup.map, lookup.mapLength,
+                                lookup.nfixed, lookup.objectFlags.toRaw());
+  }
+  static bool match(const WeakHeapPtr<Shape*>& key, const Lookup& lookup) {
+    const Shape* shape = key.unbarrieredGet();
+    return lookup.base == shape->base() &&
+           lookup.nfixed == shape->numFixedSlots() &&
+           lookup.map == shape->propMap() &&
+           lookup.mapLength == shape->propMapLength() &&
+           lookup.objectFlags == shape->objectFlags();
+  }
+  static void rekey(WeakHeapPtr<Shape*>& k, const WeakHeapPtr<Shape*>& newKey) {
+    k = newKey;
+  }
+};
+using PropMapShapeSet = JS::WeakCache<
+    JS::GCHashSet<WeakHeapPtr<Shape*>, PropMapShapeHasher, SystemAllocPolicy>>;
+
+struct ShapeZone {
   
   BaseShapeSet baseShapes;
 
@@ -149,11 +152,21 @@ struct ShapeZone {
   
   InitialShapeSet initialShapes;
 
+  
+  PropMapShapeSet propMapShapes;
+
+  using ShapeWithCacheVector = js::Vector<js::Shape*, 0, js::SystemAllocPolicy>;
+  ShapeWithCacheVector shapesWithCache;
+
   explicit ShapeZone(Zone* zone);
 
-  void clearTables();
+  void clearTables(JSFreeOp* fop);
+  void purgeShapeCaches(JSFreeOp* fop);
+
   void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               size_t* initialPropMapTable, size_t* shapeTables);
+
+  void fixupPropMapShapeTableAfterMovingGC();
 
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkTablesAfterMovingGC();

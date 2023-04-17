@@ -257,7 +257,7 @@ bool js::PromiseLookup::hasDefaultProtoAndNoShadowedProperties(
   
   
   
-  return promise->lastProperty()->isEmptyShape();
+  return promise->empty();
 }
 
 bool js::PromiseLookup::isDefaultInstance(JSContext* cx, PromiseObject* promise,

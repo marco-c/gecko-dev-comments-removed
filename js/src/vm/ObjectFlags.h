@@ -22,7 +22,7 @@ enum class ObjectFlag : uint16_t {
   NotExtensible = 1 << 1,
   Indexed = 1 << 2,
   HasInterestingSymbol = 1 << 3,
-  HadElementsAccess = 1 << 4,
+  
   FrozenElements = 1 << 5,  
   UncacheableProto = 1 << 6,
   ImmutablePrototype = 1 << 7,

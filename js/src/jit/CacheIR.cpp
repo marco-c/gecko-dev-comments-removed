@@ -4549,14 +4549,17 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
 
   
   Shape* newShape = holder->lastProperty();
-  MOZ_RELEASE_ASSERT(newShape->propertyInfo() == propInfo);
+  MOZ_RELEASE_ASSERT(newShape->lastProperty() == propInfo);
 
+#ifdef DEBUG
   
   
-  
-  if (newShape->previous() != oldShape) {
-    return AttachDecision::NoAction;
+  if (oldShape->propMapLength() == PropMap::Capacity) {
+    MOZ_ASSERT(newShape->propMapLength() == 1);
+  } else {
+    MOZ_ASSERT(newShape->propMapLength() == oldShape->propMapLength() + 1);
   }
+#endif
 
   
   if (newShape->inDictionary() || !propInfo.isDataProperty() ||

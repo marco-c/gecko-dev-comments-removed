@@ -88,26 +88,9 @@ void js::gc::TraceIncomingCCWs(JSTracer* trc,
 
 
 
-
-
-
-
-
-
-
-
 void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape) {
-  BaseShape* lastBaseShape = nullptr;
-  do {
-    if (shape->base() != lastBaseShape) {
-      shape->base()->traceChildren(trc);
-      lastBaseShape = shape->base();
-    }
-
-    
-
-    shape = shape->previous();
-  } while (shape);
+  shape->base()->traceChildren(trc);
+  
 }
 
 

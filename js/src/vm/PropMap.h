@@ -213,8 +213,6 @@ class LinkedPropMap;
 class CompactPropMap;
 class NormalPropMap;
 
-class AutoKeepShapeCaches;
-
 
 template <typename T>
 class MapAndIndex {
@@ -292,6 +290,19 @@ class SharedChildrenPtr {
     return reinterpret_cast<SharedChildrenSet*>(data_);
   }
 } JS_HAZ_GC_POINTER;
+
+
+
+class MOZ_RAII AutoKeepShapeCaches {
+  JSContext* cx_;
+  bool prev_;
+
+ public:
+  void operator=(const AutoKeepShapeCaches&) = delete;
+  AutoKeepShapeCaches(const AutoKeepShapeCaches&) = delete;
+  explicit inline AutoKeepShapeCaches(JSContext* cx);
+  inline ~AutoKeepShapeCaches();
+};
 
 
 

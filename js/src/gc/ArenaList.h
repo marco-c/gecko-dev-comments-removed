@@ -287,7 +287,6 @@ class ArenaLists {
 
   
   
-  ZoneData<Arena*> gcShapeArenasToUpdate;
   ZoneData<Arena*> gcCompactPropMapArenasToUpdate;
   ZoneData<Arena*> gcNormalPropMapArenasToUpdate;
 
