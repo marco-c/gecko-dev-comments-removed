@@ -2177,10 +2177,10 @@ class Repackage(MachCommandBase):
         type=str,
         
         
-        default="Mozilla Corporation",
+        default="CN=Mozilla Corporation",
         required=False,
         help="The Publisher string to use in the App Manifest."
-        + " It must match the CN on the certificate used for signing",
+        + " It must match the subject on the certificate used for signing",
     )
     @CommandArgument(
         "--makeappx",
