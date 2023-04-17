@@ -2856,16 +2856,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   
 
 
-
-
-
-
-  bool RecomputeVisibility(nsDisplayListBuilder* aBuilder,
-                           nsRegion* aVisibleRegion);
-
-  
-
-
   const nsPoint& ToReferenceFrame() const {
     NS_ASSERTION(mFrame, "No frame?");
     return mToReferenceFrame;

@@ -2975,34 +2975,6 @@ bool nsDisplayItem::ComputeVisibility(nsDisplayListBuilder* aBuilder,
          !IsInvisibleInRect(aVisibleRegion->GetBounds());
 }
 
-bool nsDisplayItem::RecomputeVisibility(nsDisplayListBuilder* aBuilder,
-                                        nsRegion* aVisibleRegion) {
-  if (ForceNotVisible() && !GetSameCoordinateSystemChildren()) {
-    
-    
-    
-    NS_ASSERTION(GetBuildingRect().IsEmpty(),
-                 "invisible items without children should have empty vis rect");
-    SetPaintRect(nsRect());
-  } else {
-    bool snap;
-    nsRect bounds = GetBounds(aBuilder, &snap);
-
-    nsRegion itemVisible;
-    itemVisible.And(*aVisibleRegion, bounds);
-    SetPaintRect(itemVisible.GetBounds());
-  }
-
-  if (!ComputeVisibility(aBuilder, aVisibleRegion)) {
-    SetPaintRect(nsRect());
-    return false;
-  }
-
-  nsRegion opaque = TreatAsOpaque(this, aBuilder);
-  aBuilder->SubtractFromVisibleRegion(aVisibleRegion, opaque);
-  return true;
-}
-
 void nsDisplayItem::SetClipChain(const DisplayItemClipChain* aClipChain,
                                  bool aStore) {
   mClipChain = aClipChain;
