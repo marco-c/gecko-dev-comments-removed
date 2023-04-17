@@ -780,7 +780,6 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
       if (node == mSoftBegin.mNode) {
         
         
-        int32_t newOffset = 0;
         if (firstOffsetInNode > 0) {
           
           
@@ -791,6 +790,7 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
           
           
           
+          int32_t newOffset = 0;
           if (!ContainsDOMWordSeparator(node, firstOffsetInNode - 1,
                                         &newOffset)) {
             nsIContent* prevNode = node->GetPreviousSibling();
@@ -805,9 +805,12 @@ void mozInlineSpellWordUtil::AdjustSoftBeginAndBuildSoftText() {
               prevNode = prevNode->GetPreviousSibling();
             }
           }
+          firstOffsetInNode = newOffset;
+        } else {
+          firstOffsetInNode = 0;
         }
-        firstOffsetInNode = newOffset;
-        mSoftBegin.mOffset = newOffset;
+
+        mSoftBegin.mOffset = firstOffsetInNode;
       }
       break;
     }
