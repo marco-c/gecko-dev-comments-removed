@@ -1713,7 +1713,7 @@ goog.scope(function() {
 
 
 
-    es3fMultisampleTests.run = function(context, range) {
+     es3fMultisampleTests.run = function(context) {
         gl = context;
         
         var testName = 'multisample';
@@ -1730,8 +1730,6 @@ goog.scope(function() {
         try {
             
             es3fMultisampleTests.init();
-            if (range)
-                state.setRange(range);
             
             tcuTestCase.runTestCases();
         }
