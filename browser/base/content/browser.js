@@ -4803,6 +4803,46 @@ function updateEditUIVisibility() {
   }
 }
 
+let gFileMenu = {
+  
+
+
+
+  updateUserContextUIVisibility() {
+    let menu = document.getElementById("menu_newUserContext");
+    menu.hidden = !Services.prefs.getBoolPref(
+      "privacy.userContext.enabled",
+      false
+    );
+    
+    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+      menu.setAttribute("disabled", "true");
+    }
+  },
+
+  
+
+
+
+  updateImportCommandEnabledState() {
+    if (!Services.policies.isAllowed("profileImport")) {
+      document
+        .getElementById("cmd_file_importFromAnotherBrowser")
+        .setAttribute("disabled", "true");
+    }
+  },
+
+  onPopupShowing(event) {
+    
+    if (event.target.id != "menu_FilePopup") {
+      return;
+    }
+    this.updateUserContextUIVisibility();
+    this.updateImportCommandEnabledState();
+    PrintUtils.updatePrintPreviewMenuHiddenState();
+  },
+};
+
 
 
 
@@ -4815,22 +4855,6 @@ function openNewUserContextTab(event) {
   openTrustedLinkIn(BROWSER_NEW_TAB_URL, "tab", {
     userContextId: parseInt(event.target.getAttribute("data-usercontextid")),
   });
-}
-
-
-
-
-
-function updateFileMenuUserContextUIVisibility(id) {
-  let menu = document.getElementById(id);
-  menu.hidden = !Services.prefs.getBoolPref(
-    "privacy.userContext.enabled",
-    false
-  );
-  
-  if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-    menu.setAttribute("disabled", "true");
-  }
 }
 
 

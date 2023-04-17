@@ -1167,15 +1167,3 @@ function openPrefsHelp(aEvent) {
   let helpTopic = aEvent.target.getAttribute("helpTopic");
   openHelpLink(helpTopic);
 }
-
-
-
-
-
-function updateImportCommandEnabledState() {
-  if (!Services.policies.isAllowed("profileImport")) {
-    document
-      .getElementById("cmd_file_importFromAnotherBrowser")
-      .setAttribute("disabled", "true");
-  }
-}
