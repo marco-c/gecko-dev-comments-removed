@@ -3,6 +3,9 @@
 
 "use strict";
 
+const { CryptoUtils } = ChromeUtils.import(
+  "resource://services-crypto/utils.js"
+);
 const { FxAccounts } = ChromeUtils.import(
   "resource://gre/modules/FxAccounts.jsm"
 );
@@ -18,6 +21,7 @@ const {
   ONLOGOUT_NOTIFICATION,
   ONVERIFIED_NOTIFICATION,
   DEPRECATED_SCOPE_ECOSYSTEM_TELEMETRY,
+  PREF_LAST_FXA_USER,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
@@ -402,13 +406,19 @@ add_test(function test_verification_poll() {
   makeObserver(ONVERIFIED_NOTIFICATION, function() {
     log.debug("test_verification_poll observed onverified");
     
-    fxa._internal.getUserAccountData().then(user => {
-      
-      Assert.equal(user.verified, true);
-      Assert.equal(user.email, test_user.email);
-      Assert.ok(login_notification_received);
-      run_next_test();
-    });
+    fxa._internal
+      .getUserAccountData()
+      .then(user => {
+        
+        Assert.equal(user.verified, true);
+        Assert.equal(user.email, test_user.email);
+        Assert.equal(
+          Services.prefs.getStringPref(PREF_LAST_FXA_USER),
+          CryptoUtils.sha256Base64(test_user.email)
+        );
+        Assert.ok(login_notification_received);
+      })
+      .finally(run_next_test);
   });
 
   makeObserver(ONLOGIN_NOTIFICATION, function() {
