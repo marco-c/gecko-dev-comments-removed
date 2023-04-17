@@ -28,5 +28,29 @@
   assertThrowsInstanceOf(() => { class a extends (a ??= 0) {} }, ReferenceError);
 }
 
+
+{
+  assertThrowsInstanceOf(() => {
+    const False = false;
+    False &&= b;
+    b = 2;
+    let b;
+  }, ReferenceError);
+
+  assertThrowsInstanceOf(() => {
+    const True = true;
+    True ||= b;
+    b = 2;
+    let b;
+  }, ReferenceError);
+
+  assertThrowsInstanceOf(() => {
+    const NonNull = {};
+    NonNull ??= b;
+    b = 2;
+    let b;
+  }, ReferenceError);
+}
+
 if (typeof reportCompare === "function")
   reportCompare(0, 0);
