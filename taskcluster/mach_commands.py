@@ -539,7 +539,12 @@ class MachCommands(MachCommandBase):
                     print("abort: can't diff taskgraph with dirty working directory")
                     return 1
 
-                cur_ref = vcs.head_ref[:12]
+                
+                
+                
+                
+                cur_ref = vcs.branch or vcs.head_ref[:12]
+
                 if options["diff"] == "default":
                     base_ref = vcs.base_ref
                 else:
