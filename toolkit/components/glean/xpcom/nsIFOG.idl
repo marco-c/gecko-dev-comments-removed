@@ -87,6 +87,21 @@ interface nsIFOG : nsISupports
 
 
 
+
+
+
+
+
+  [implicit_jscontext]
+  jsval testGetExperimentData(in ACString aExperimentId);
+
+  
+
+
+
+
+
+
   [implicit_jscontext]
   Promise testFlushAllChildren();
 };
