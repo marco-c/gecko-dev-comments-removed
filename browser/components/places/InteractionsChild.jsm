@@ -34,6 +34,10 @@ class InteractionsChild extends JSWindowActorChild {
           !this.docShell.currentDocumentChannel ||
           !(this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel)
         ) {
+          
+          
+          
+          this.sendAsyncMessage("Interactions:PageHide");
           return;
         }
 
