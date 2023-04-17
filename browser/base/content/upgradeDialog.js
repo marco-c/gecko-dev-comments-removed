@@ -181,6 +181,20 @@ function onLoad(ready) {
   }
 
   
+  
+  
+  
+  
+  
+  new MutationObserver(list =>
+    list.forEach(({ target }) => {
+      if (target.type === "radio" && !target.hasAttribute("aria-label")) {
+        target.setAttribute("aria-label", target.textContent);
+      }
+    })
+  ).observe(variations, { attributes: true, subtree: true });
+
+  
   function showColorways() {
     
     const random = Math.floor(Math.random() * (THEME_IDS.length - 1)) + 1;
