@@ -764,21 +764,9 @@ bool GlobalObject::initStandardClasses(JSContext* cx,
 }
 
 
-
-
-
-
-
 bool GlobalObject::initSelfHostingBuiltins(JSContext* cx,
                                            Handle<GlobalObject*> global,
                                            const JSFunctionSpec* builtins) {
-  
-  if (!DefineDataProperty(cx, global, cx->names().undefined,
-                          UndefinedHandleValue,
-                          JSPROP_PERMANENT | JSPROP_READONLY)) {
-    return false;
-  }
-
   return DefineFunctions(cx, global, builtins, AsIntrinsic);
 }
 
@@ -964,8 +952,8 @@ NativeObject* GlobalObject::getIntrinsicsHolder(JSContext* cx,
   }
 
   
-  RootedValue globalValue(cx, ObjectValue(*global));
-  if (!DefineDataProperty(cx, intrinsicsHolder, cx->names().global, globalValue,
+  if (!DefineDataProperty(cx, intrinsicsHolder, cx->names().undefined,
+                          UndefinedHandleValue,
                           JSPROP_PERMANENT | JSPROP_READONLY)) {
     return nullptr;
   }
