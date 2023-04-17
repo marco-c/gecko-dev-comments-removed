@@ -23,6 +23,14 @@
 
 namespace mozilla::widget {
 
+
+
+
+
+
+
+static StaticAutoPtr<FullLookAndFeel> sCachedLookAndFeelData;
+
 RemoteLookAndFeel::RemoteLookAndFeel(FullLookAndFeel&& aData)
     : mTables(std::move(aData.tables())) {
   MOZ_ASSERT(XRE_IsContentProcess(),
@@ -241,7 +249,5 @@ void RemoteLookAndFeel::ClearCachedData() {
   MOZ_ASSERT(XRE_IsParentProcess());
   sCachedLookAndFeelData = nullptr;
 }
-
-StaticAutoPtr<FullLookAndFeel> RemoteLookAndFeel::sCachedLookAndFeelData;
 
 }  

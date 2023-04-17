@@ -56,14 +56,6 @@ class RemoteLookAndFeel final : public nsXPLookAndFeel {
 
  private:
   LookAndFeelTables mTables;
-
-  
-  
-  
-  
-  
-  
-  static StaticAutoPtr<FullLookAndFeel> sCachedLookAndFeelData;
 };
 
 }  
