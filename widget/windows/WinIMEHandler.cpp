@@ -730,7 +730,7 @@ bool IMEHandler::IsOnScreenKeyboardSupported() {
   
   
   
-  if (IsWin10OrLater()) {
+  if (IsWin10OrLater() && !IsWin11OrLater()) {
     if (!IsInTabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
       return false;
     }
