@@ -780,14 +780,14 @@ class PanelList extends HTMLElement {
     let align;
     let leftOffset;
     let leftAlignX = anchorLeft;
-    let rightAlignX = anchorLeft - panelWidth;
+    let rightAlignX = anchorLeft + anchorWidth - panelWidth;
     if (!Services.prefs.getBoolPref("browser.proton.enabled")) {
       
       
       
       let arrowOffset = 26;
       leftAlignX += anchorWidth / 2 - arrowOffset;
-      rightAlignX += anchorWidth / 2 + arrowOffset;
+      rightAlignX += -anchorWidth / 2 + arrowOffset;
     }
 
     if (Services.locale.isAppLocaleRTL) {
