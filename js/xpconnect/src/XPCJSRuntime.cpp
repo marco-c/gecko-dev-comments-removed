@@ -258,8 +258,9 @@ static bool TryParseLocationURICandidate(
   if (aLocationHint == RealmPrivate::LocationHintAddon) {
     
     if (StringBeginsWith(uristr, kGRE) || StringBeginsWith(uristr, kToolkit) ||
-        StringBeginsWith(uristr, kBrowser))
+        StringBeginsWith(uristr, kBrowser)) {
       return false;
+    }
 
     
     
@@ -338,8 +339,9 @@ bool RealmPrivate::TryParseLocationURI(RealmPrivate::LocationHint aLocationHint,
   
   
   if (TryParseLocationURICandidate(Substring(location, 0, idx), aLocationHint,
-                                   aURI))
+                                   aURI)) {
     return true;
+  }
 
   
   
@@ -361,8 +363,9 @@ bool RealmPrivate::TryParseLocationURI(RealmPrivate::LocationHint aLocationHint,
 
     
     if (TryParseLocationURICandidate(Substring(chain, idx + arrowLength),
-                                     aLocationHint, aURI))
+                                     aLocationHint, aURI)) {
       return true;
+    }
 
     
     
@@ -378,7 +381,7 @@ static bool PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal) {
     return true;
   }
 
-  auto principal = BasePrincipal::Cast(aPrincipal);
+  auto* principal = BasePrincipal::Cast(aPrincipal);
 
   
   if (principal->Is<ExpandedPrincipal>()) {
@@ -686,7 +689,7 @@ bool XPCJSRuntime::UsefulToMergeZones() const {
 
 void XPCJSRuntime::TraceNativeBlackRoots(JSTracer* trc) {
   if (CycleCollectedJSContext* ccx = GetContext()) {
-    auto* cx = static_cast<const XPCJSContext*>(ccx);
+    const auto* cx = static_cast<const XPCJSContext*>(ccx);
     if (AutoMarkingPtr* roots = cx->mAutoRoots) {
       roots->TraceJSAll(trc);
     }
@@ -856,7 +859,7 @@ void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
       self->mGCIsRunning = true;
 
       if (CycleCollectedJSContext* ccx = self->GetContext()) {
-        auto* cx = static_cast<const XPCJSContext*>(ccx);
+        const auto* cx = static_cast<const XPCJSContext*>(ccx);
         if (AutoMarkingPtr* roots = cx->mAutoRoots) {
           roots->MarkAfterJSFinalizeAll();
         }
@@ -907,7 +910,7 @@ void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
 
       for (auto i = self->mDyingWrappedNativeProtoMap->Iter(); !i.Done();
            i.Next()) {
-        auto entry = static_cast<XPCWrappedNativeProtoMap::Entry*>(i.Get());
+        auto* entry = static_cast<XPCWrappedNativeProtoMap::Entry*>(i.Get());
         delete static_cast<const XPCWrappedNativeProto*>(entry->key);
         i.Remove();
       }
@@ -1852,15 +1855,13 @@ void ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats& rtStats,
                                       size_t* rtTotalOut) {
   size_t gcTotal = 0;
 
-  for (size_t i = 0; i < rtStats.zoneStatsVector.length(); i++) {
-    const JS::ZoneStats& zStats = rtStats.zoneStatsVector[i];
+  for (const auto& zStats : rtStats.zoneStatsVector) {
     const xpc::ZoneStatsExtras* extras =
         static_cast<const xpc::ZoneStatsExtras*>(zStats.extra);
     ReportZoneStats(zStats, *extras, handleReport, data, anonymize, &gcTotal);
   }
 
-  for (size_t i = 0; i < rtStats.realmStatsVector.length(); i++) {
-    const JS::RealmStats& realmStats = rtStats.realmStatsVector[i];
+  for (const auto& realmStats : rtStats.realmStatsVector) {
     const xpc::RealmStatsExtras* extras =
         static_cast<const xpc::RealmStatsExtras*>(realmStats.extra);
 
@@ -2057,8 +2058,8 @@ class JSMainRuntimeRealmsReporter final : public nsIMemoryReporter {
     d.anonymizeID = anonymize ? 1 : 0;
     JS::IterateRealms(XPCJSContext::Get()->Context(), &d, RealmCallback);
 
-    for (size_t i = 0; i < d.paths.length(); i++) {
-      REPORT(nsCString(d.paths[i]), KIND_OTHER, UNITS_COUNT, 1,
+    for (auto& path : d.paths) {
+      REPORT(nsCString(path), KIND_OTHER, UNITS_COUNT, 1,
              "A live realm in the main JSRuntime.");
     }
 
@@ -2152,8 +2153,9 @@ class XPCJSRuntimeStats : public JS::RuntimeStats {
         if (NS_SUCCEEDED(UNWRAP_NON_WRAPPER_OBJECT(Window, global, window))) {
           
           
-          if (mTopWindowPaths->Get(window->WindowID(), &extras->pathPrefix))
+          if (mTopWindowPaths->Get(window->WindowID(), &extras->pathPrefix)) {
             extras->pathPrefix.AppendLiteral("/js-");
+          }
         }
       }
     }
@@ -3097,7 +3099,7 @@ void XPCJSRuntime::DebugDump(int16_t depth) {
   if (depth && mNativeSetMap->Count()) {
     XPC_LOG_INDENT();
     for (auto i = mNativeSetMap->Iter(); !i.Done(); i.Next()) {
-      auto entry = static_cast<NativeSetMap::Entry*>(i.Get());
+      auto* entry = static_cast<NativeSetMap::Entry*>(i.Get());
       entry->key_value->DebugDump(depth);
     }
     XPC_LOG_OUTDENT();
