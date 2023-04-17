@@ -9,18 +9,19 @@
 #define _ACCESSIBLE_TABLECELL_H
 
 #include "AccessibleTableCell.h"
-#include "MsaaAccessible.h"
+#include "ia2AccessibleHypertext.h"
+#include "IUnknownImpl.h"
 
 namespace mozilla {
 namespace a11y {
 class TableCellAccessible;
 
 class ia2AccessibleTableCell : public IAccessibleTableCell,
-                               public MsaaAccessible {
+                               public ia2AccessibleHypertext {
  public:
   
   DECL_IUNKNOWN_INHERITED
-  IMPL_IUNKNOWN_REFCOUNTING_INHERITED(MsaaAccessible)
+  IMPL_IUNKNOWN_REFCOUNTING_INHERITED(ia2AccessibleHypertext)
 
   
 
@@ -58,7 +59,7 @@ class ia2AccessibleTableCell : public IAccessibleTableCell,
        boolean* isSelected);
 
  protected:
-  using MsaaAccessible::MsaaAccessible;
+  using ia2AccessibleHypertext::ia2AccessibleHypertext;
 
  private:
   TableCellAccessible* CellAcc();
