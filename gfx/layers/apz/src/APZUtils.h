@@ -49,7 +49,10 @@ enum class ScrollSource {
   DOM,
 
   
-  Touch,
+  Touchscreen,
+
+  
+  Touchpad,
 
   
   Wheel,
@@ -60,7 +63,7 @@ enum class ScrollSource {
 
 
 inline bool ScrollSourceRespectsDisregardedDirections(ScrollSource aSource) {
-  return aSource == ScrollSource::Wheel;
+  return aSource == ScrollSource::Wheel || aSource == ScrollSource::Touchpad;
 }
 
 
