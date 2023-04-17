@@ -1025,9 +1025,13 @@ static VectorType<uint16_t, 4 * sizeof(P)> gaussianBlurHorizontal(
   
   
   int offset = 1;
+  
+  
   int leftBound = i.x - max(minX, 0);
-  int rightBound = min(maxX, sampler->width) - (i.x + 4);
-  int validRadius = min(radius, min(leftBound, rightBound));
+  
+  
+  int rightBound = min(maxX, sampler->width - 1) - i.x;
+  int validRadius = min(radius, min(leftBound, rightBound - (4 - 1)));
   for (; offset <= validRadius; offset++) {
     
     
@@ -1096,7 +1100,7 @@ static VectorType<uint16_t, 4 * sizeof(P)> gaussianBlurVertical(
   
   int offset = 1;
   int belowBound = i.y - max(minY, 0);
-  int aboveBound = min(maxY, sampler->height) - (i.y + 1);
+  int aboveBound = min(maxY, sampler->height - 1) - i.y;
   int validRadius = min(radius, min(belowBound, aboveBound));
   for (; offset <= validRadius; offset++) {
     rowAbove += sampler->stride;
