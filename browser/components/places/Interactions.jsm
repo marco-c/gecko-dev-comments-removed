@@ -17,7 +17,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  Snapshots: "resource:///modules/Snapshots.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
@@ -42,13 +41,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "pageViewIdleTime",
   "browser.places.interactions.pageViewIdleTime",
   60
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "snapshotIdleTime",
-  "browser.places.interactions.snapshotIdleTime",
-  2
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -542,17 +534,6 @@ class InteractionsStore {
 
 
   #timerResolve = undefined;
-  
-
-
-
-
-  #potentialSnapshots = new Set();
-  
-
-
-
-  #userIsIdle = false;
 
   constructor() {
     
@@ -565,19 +546,6 @@ class InteractionsStore {
 
     
     this.pendingPromise = Promise.resolve();
-
-    idleService.addIdleObserver(this, snapshotIdleTime);
-  }
-
-  
-
-
-
-
-  updateSnapshots() {
-    let urls = [...this.#potentialSnapshots];
-    this.#potentialSnapshots.clear();
-    return Snapshots.updateSnapshots(urls);
   }
 
   
@@ -589,7 +557,6 @@ class InteractionsStore {
       clearTimeout(this.#timer);
       this.#timerResolve();
       await this.#updateDatabase();
-      await this.updateSnapshots();
     }
   }
 
@@ -641,24 +608,6 @@ class InteractionsStore {
     }
   }
 
-  
-
-
-
-
-
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "idle":
-        this.#userIsIdle = true;
-        this.updateSnapshots();
-        break;
-      case "active":
-        this.#userIsIdle = false;
-    }
-  }
-
   async #updateDatabase() {
     this.#timer = undefined;
 
@@ -670,9 +619,7 @@ class InteractionsStore {
     let params = {};
     let SQLInsertFragments = [];
     let i = 0;
-    for (let [url, interactionsForUrl] of interactions) {
-      this.#potentialSnapshots.add(url);
-
+    for (let interactionsForUrl of interactions.values()) {
       for (let interaction of interactionsForUrl.values()) {
         params[`url${i}`] = interaction.url;
         params[`created_at${i}`] = interaction.created_at;
@@ -723,9 +670,5 @@ class InteractionsStore {
       }
     );
     this.progress.pendingUpdates = 0;
-
-    if (this.#userIsIdle) {
-      this.updateSnapshots();
-    }
   }
 }

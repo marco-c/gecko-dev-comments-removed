@@ -30,64 +30,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
-  return console.createInstance({
-    prefix: "SnapshotsManager",
-    maxLogLevel: Services.prefs.getBoolPref(
-      "browser.places.interactions.log",
-      false
-    )
-      ? "Debug"
-      : "Warn",
-  });
-});
-
-const DEFAULT_CRITERIA = [
-  {
-    property: "total_view_time",
-    aggregator: "max",
-    cutoff: 30000,
-  },
-  {
-    property: "total_view_time",
-    aggregator: "sum",
-    cutoff: 120000,
-    interactionCount: 5,
-  },
-  {
-    property: "key_presses",
-    aggregator: "sum",
-    cutoff: 250,
-    interactionCount: 10,
-  },
-];
-
-
-
-
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "snapshotCriteria",
-  "browser.places.interactions.snapshotCriteria",
-  JSON.stringify(DEFAULT_CRITERIA)
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -102,9 +44,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 const Snapshots = new (class Snapshots {
-  #notify(topic, urls) {
-    Services.obs.notifyObservers(null, topic, JSON.stringify(urls));
-  }
+  #snapshots = new Map();
 
   
 
@@ -124,14 +64,9 @@ const Snapshots = new (class Snapshots {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
     }
-
-    let added = await PlacesUtils.withConnectionWrapper(
-      "Snapshots: add",
-      async db => {
-        let now = Date.now();
-
-        let rows = await db.executeCached(
-          `
+    await PlacesUtils.withConnectionWrapper("Snapshots: add", async db => {
+      await db.executeCached(
+        `
         INSERT INTO moz_places_metadata_snapshots
           (place_id, first_interaction_at, last_interaction_at, document_type, created_at, user_persisted)
         SELECT place_id, min(created_at), max(created_at),
@@ -140,19 +75,12 @@ const Snapshots = new (class Snapshots {
         FROM moz_places_metadata
         WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)
         ON CONFLICT DO UPDATE SET user_persisted = :userPersisted, removed_at = NULL WHERE :userPersisted = 1
-        RETURNING created_at
       `,
-          { createdAt: now, url, userPersisted }
-        );
+        { createdAt: Date.now(), url, userPersisted }
+      );
+    });
 
-        
-        return !!rows.length;
-      }
-    );
-
-    if (added) {
-      this.#notify("places-snapshots-added", [url]);
-    }
+    Services.obs.notifyObservers(null, "places-snapshot-added", url);
   }
 
   
@@ -174,7 +102,7 @@ const Snapshots = new (class Snapshots {
       );
     });
 
-    this.#notify("places-snapshots-deleted", [url]);
+    Services.obs.notifyObservers(null, "places-snapshot-deleted", url);
   }
 
   
@@ -284,141 +212,5 @@ const Snapshots = new (class Snapshots {
       return new Date(value);
     }
     return null;
-  }
-
-  
-
-
-
-
-
-
-  async updateSnapshots(urls = undefined) {
-    if (urls !== undefined && !urls.length) {
-      return;
-    }
-
-    logConsole.debug(
-      `Updating ${urls ? urls.length : "all"} potential snapshots`
-    );
-
-    let model;
-    try {
-      model = JSON.parse(snapshotCriteria);
-
-      if (!model.length) {
-        logConsole.debug(`No model provided, falling back to default`);
-        model = DEFAULT_CRITERIA;
-      }
-    } catch (e) {
-      logConsole.error(
-        "Invalid snapshot criteria, falling back to default.",
-        e
-      );
-      model = DEFAULT_CRITERIA;
-    }
-
-    let insertedUrls = await PlacesUtils.withConnectionWrapper(
-      "Snapshots.jsm::updateSnapshots",
-      async db => {
-        let bindings = {};
-
-        let urlFilter = "";
-        if (urls !== undefined) {
-          let urlMatches = [];
-
-          urls.forEach((url, idx) => {
-            bindings[`url${idx}`] = url;
-            urlMatches.push(
-              `(url_hash = hash(:url${idx}) AND url = :url${idx})`
-            );
-          });
-
-          urlFilter = `WHERE ${urlMatches.join(" OR ")}`;
-        }
-
-        let modelQueries = [];
-        model.forEach((criteria, idx) => {
-          let wheres = [];
-
-          if (criteria.interactionCount) {
-            wheres.push(`row <= :count${idx}`);
-            bindings[`count${idx}`] = criteria.interactionCount;
-          }
-
-          if (criteria.interactionRecency) {
-            wheres.push(`created_at >= :recency${idx}`);
-            bindings[`recency${idx}`] = Date.now() - criteria.interactionCount;
-          }
-
-          let where = wheres.length ? `WHERE ${wheres.join(" AND ")}` : "";
-
-          modelQueries.push(
-            `
-            SELECT
-                place_id,
-                min(created_at) AS first_interaction_at,
-                max(created_at) AS last_interaction_at,
-                doc_type,
-                :createdAt
-              FROM metadata
-              ${where}
-              GROUP BY place_id
-              HAVING ${criteria.aggregator}(${criteria.property}) >= :cutoff${idx}
-            `
-          );
-          bindings[`cutoff${idx}`] = criteria.cutoff;
-        });
-
-        let query = `
-          WITH metadata AS (
-            SELECT
-                moz_places_metadata.*,
-                row_number() OVER (PARTITION BY place_id ORDER BY created_at DESC) AS row,
-                first_value(document_type) OVER (PARTITION BY place_id ORDER BY created_at DESC) AS doc_type
-              FROM moz_places_metadata JOIN moz_places ON moz_places_metadata.place_id = moz_places.id
-              ${urlFilter}
-          )
-          INSERT OR IGNORE INTO moz_places_metadata_snapshots
-            (place_id, first_interaction_at, last_interaction_at, document_type, created_at)
-          ${modelQueries.join(" UNION ")}
-          RETURNING (SELECT url FROM moz_places WHERE id=place_id) AS url, created_at
-          `;
-
-        let now = Date.now();
-
-        let results = await db.execute(query, {
-          ...bindings,
-          createdAt: now,
-        });
-
-        let newUrls = [];
-        for (let row of results) {
-          
-          if (row.getResultByName("created_at") == now) {
-            newUrls.push(row.getResultByName("url"));
-          }
-        }
-
-        return newUrls;
-      }
-    );
-
-    if (insertedUrls.length) {
-      logConsole.debug(`Inserted ${insertedUrls.length} snapshots.`);
-      this.#notify("places-snapshots-added", insertedUrls);
-    }
-  }
-
-  
-
-
-  async reset() {
-    await PlacesUtils.withConnectionWrapper(
-      "Snapshots.jsm::reset",
-      async db => {
-        await db.executeCached(`DELETE FROM moz_places_metadata_snapshots`);
-      }
-    );
   }
 })();
