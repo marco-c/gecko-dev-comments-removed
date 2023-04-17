@@ -40,9 +40,11 @@ class HTMLButtonElement final : public nsGenericHTMLFormElementWithState,
   virtual bool IsInteractiveHTMLContent() const override { return true; }
 
   
+  void SaveState() override;
+
+  
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
-  NS_IMETHOD SaveState() override;
   bool RestoreState(PresState* aState) override;
   virtual bool IsDisabledForEvents(WidgetEvent* aEvent) override;
 

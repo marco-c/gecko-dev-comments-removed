@@ -151,13 +151,6 @@ class nsIFormControl : public nsISupports {
 
 
 
-  NS_IMETHOD SaveState() = 0;
-
-  
-
-
-
-
 
 
 

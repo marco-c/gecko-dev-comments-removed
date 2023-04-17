@@ -147,13 +147,15 @@ class HTMLInputElement final : public TextControlElement,
   virtual bool IsInteractiveHTMLContent() const override;
 
   
+  void SaveState() override;
+
+  
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
-  NS_IMETHOD SaveState() override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual bool RestoreState(PresState* aState) override;
   virtual bool AllowDrop() override;

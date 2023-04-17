@@ -975,8 +975,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
   virtual void SetForm(mozilla::dom::HTMLFormElement* aForm) override;
   virtual void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) override;
 
-  NS_IMETHOD SaveState() override { return NS_OK; }
-
   virtual bool RestoreState(mozilla::PresState* aState) override {
     return false;
   }
@@ -991,6 +989,13 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   virtual nsresult PreHandleEvent(
       mozilla::EventChainVisitor& aVisitor) override;
+
+  
+
+
+
+
+  virtual void SaveState() {}
 
   
 

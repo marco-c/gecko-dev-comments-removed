@@ -57,10 +57,12 @@ class HTMLTextAreaElement final : public TextControlElement,
   virtual bool IsInteractiveHTMLContent() const override { return true; }
 
   
+  void SaveState() override;
+
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
-  NS_IMETHOD SaveState() override;
   virtual bool RestoreState(PresState* aState) override;
   virtual bool IsDisabledForEvents(WidgetEvent* aEvent) override;
 
