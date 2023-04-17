@@ -183,12 +183,15 @@ static_assert(ArrayLength(sIntPrefs) == size_t(LookAndFeel::IntID::End),
 
 
 
+
 static const char sFloatPrefs[][37] = {
     "ui.IMEUnderlineRelativeSize",
     "ui.SpellCheckerUnderlineRelativeSize",
     "ui.caretAspectRatio",
     "ui.textScaleFactor",
+    "ui.titlebarRadius",
 };
+
 
 static_assert(ArrayLength(sFloatPrefs) == size_t(LookAndFeel::FloatID::End),
               "Should have a pref for each float value");

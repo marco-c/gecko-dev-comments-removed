@@ -404,6 +404,9 @@ class LookAndFeel {
     TextScaleFactor,
 
     
+    TitlebarRadius,
+
+    
     End,
   };
 

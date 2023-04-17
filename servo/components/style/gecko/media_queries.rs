@@ -369,6 +369,13 @@ impl Device {
     }
 
     
+    pub fn titlebar_radius(&self) -> f32 {
+        unsafe {
+            bindings::Gecko_GetLookAndFeelFloat(bindings::LookAndFeel_FloatID::TitlebarRadius as i32)
+        }
+    }
+
+    
     #[inline]
     pub fn is_chrome_document(&self) -> bool {
         self.pref_sheet_prefs().mIsChrome

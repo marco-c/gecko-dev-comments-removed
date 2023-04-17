@@ -386,8 +386,8 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::WindowBackground:
     case ColorID::WidgetBackground:
     case ColorID::TextBackground:
-    case ColorID::Appworkspace:   
-    case ColorID::Background:     
+    case ColorID::Appworkspace:  
+    case ColorID::Background:    
     case ColorID::Window:
     case ColorID::Windowframe:
     case ColorID::MozDialog:
@@ -486,7 +486,7 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       
       aColor = mMozWindowInactiveBorder;
       break;
-    case ColorID::Graytext:             
+    case ColorID::Graytext:  
       aColor = mMenuTextInactive;
       break;
     case ColorID::Activecaption:
@@ -880,6 +880,10 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
     case FloatID::CaretAspectRatio:
       EnsureInit();
       aResult = mSystemTheme.mCaretRatio;
+      break;
+    case FloatID::TitlebarRadius:
+      EnsureInit();
+      aResult = EffectiveTheme().mTitlebarRadius;
       break;
     case FloatID::TextScaleFactor:
       aResult = gfxPlatformGtk::GetFontScaleFactor();
@@ -1529,6 +1533,36 @@ void nsLookAndFeel::PerThemeData::Init() {
     mTitlebarInactiveText = GDK_RGBA_TO_NS_RGBA(color);
     mTitlebarInactiveBackground =
         GetBackgroundColor(style, mTitlebarText, GTK_STATE_FLAG_BACKDROP);
+
+    GValue value = G_VALUE_INIT;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    gtk_style_context_get_property(style, "border-radius",
+                                   GTK_STATE_FLAG_NORMAL, &value);
+
+    mTitlebarRadius = [&]() -> float {
+      auto type = G_VALUE_TYPE(&value);
+      if (type == G_TYPE_INT) {
+        return float(g_value_get_int(&value));
+      }
+      NS_WARNING(
+          nsPrintfCString("Unknown value type %lu for titlebar radius", type)
+              .get());
+      return 0.0f;
+    }();
+    g_value_unset(&value);
   }
 
   style = GetStyleContext(MOZ_GTK_MENUPOPUP);
@@ -1790,6 +1824,7 @@ void nsLookAndFeel::PerThemeData::Init() {
              GetColorPrefName(id), NS_SUCCEEDED(rv),
              NS_SUCCEEDED(rv) ? color : 0);
     }
+    LOGLNF(" * titlebar-radius: %f\n", mTitlebarRadius);
   }
 }
 
