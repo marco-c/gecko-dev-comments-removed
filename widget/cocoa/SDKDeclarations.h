@@ -76,6 +76,13 @@ typedef NS_ENUM(NSInteger, NSTitlebarSeparatorStyle) {
 @property NSTitlebarSeparatorStyle titlebarSeparatorStyle;
 @end
 
+@interface NSMenu (NSMenu11_0)
+
+
+
+- (void)setAppearance:(NSAppearance*)appearance;
+@end
+
 #endif
 
 #endif  

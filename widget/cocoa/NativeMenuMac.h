@@ -31,8 +31,8 @@ class NativeMenuMac : public NativeMenu,
   
   void ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) override;
   bool Close() override;
-  void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers,
-                    int16_t aButton, ErrorResult& aRv) override;
+  void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers, int16_t aButton,
+                    ErrorResult& aRv) override;
   void OpenSubmenu(dom::Element* aMenuElement) override;
   void CloseSubmenu(dom::Element* aMenuElement) override;
   RefPtr<dom::Element> Element() override;
@@ -71,20 +71,18 @@ class NativeMenuMac : public NativeMenu,
   
   
   
-  void OpenMenu(const mozilla::DesktopPoint& aPosition);
-
-  
-  
-  
   
   RefPtr<nsMenuX> GetOpenMenuContainingElement(dom::Element* aElement);
 
   RefPtr<dom::Element> mElement;
-  RefPtr<CancelableRunnable> mOpenRunnable;
   RefPtr<nsMenuGroupOwnerX> mMenuGroupOwner;
   RefPtr<nsMenuX> mMenu;
   nsTArray<NativeMenu::Observer*> mObservers;
   NSStatusItem* mContainerStatusBarItem;
+
+  
+  
+  NSInteger mOpeningHandle = 0;
 };
 
 }  
