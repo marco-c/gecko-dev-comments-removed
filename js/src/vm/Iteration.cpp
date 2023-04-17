@@ -1046,8 +1046,8 @@ PlainObject* Realm::createIterResultTemplateObject(
   
   Rooted<PlainObject*> templateObject(
       cx, withProto == WithObjectPrototype::Yes
-              ? NewTenuredBuiltinClassInstance<PlainObject>(cx)
-              : NewObjectWithGivenProto<PlainObject>(cx, nullptr));
+              ? NewPlainObject(cx, TenuredObject)
+              : NewPlainObjectWithProto(cx, nullptr));
   if (!templateObject) {
     return nullptr;
   }

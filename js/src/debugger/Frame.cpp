@@ -1045,8 +1045,7 @@ Result<Completion> js::DebuggerGenericEval(
 
   
   if (bindings) {
-    RootedPlainObject nenv(cx,
-                           NewObjectWithGivenProto<PlainObject>(cx, nullptr));
+    RootedPlainObject nenv(cx, NewPlainObjectWithProto(cx, nullptr));
     if (!nenv) {
       return cx->alreadyReportedError();
     }

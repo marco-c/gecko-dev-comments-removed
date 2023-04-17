@@ -3864,8 +3864,8 @@ static JSObject* CreateArrayPrototype(JSContext* cx, JSProtoKey key) {
 static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
                                JS::HandleObject proto) {
   
-  RootedObject unscopables(
-      cx, NewTenuredObjectWithGivenProto<PlainObject>(cx, nullptr));
+  RootedObject unscopables(cx,
+                           NewPlainObjectWithProto(cx, nullptr, TenuredObject));
   if (!unscopables) {
     return false;
   }

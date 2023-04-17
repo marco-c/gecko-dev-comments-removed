@@ -2141,7 +2141,7 @@ static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
 
 
   RootedPlainObject objectProto(
-      cx, NewTenuredObjectWithGivenProto<PlainObject>(cx, nullptr));
+      cx, NewPlainObjectWithProto(cx, nullptr, TenuredObject));
   if (!objectProto) {
     return nullptr;
   }

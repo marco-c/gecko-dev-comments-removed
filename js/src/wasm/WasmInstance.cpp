@@ -2014,7 +2014,7 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args,
     
     
     
-    PlainObject* obj = NewBuiltinClassInstance<PlainObject>(cx);
+    PlainObject* obj = NewPlainObject(cx);
     if (!obj) {
       return false;
     }
