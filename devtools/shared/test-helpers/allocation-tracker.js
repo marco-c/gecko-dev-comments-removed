@@ -35,8 +35,12 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
+const { Cu, Cc, Ci } = require("chrome");
 const ChromeUtils = require("ChromeUtils");
+
+const MemoryReporter = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
+  Ci.nsIMemoryReporterManager
+);
 
 const global = Cu.getGlobalForObject(this);
 const { addDebuggerToGlobal } = ChromeUtils.import(
@@ -234,9 +238,49 @@ exports.allocationTracker = function({
       dbg.memory.drainAllocationsLog();
     },
 
+    
+
+
+
+
+
     stillAllocatedObjects() {
-      const sensus = dbg.memory.takeCensus({ breakdown: { by: "count" } });
-      return sensus.count;
+      const sensus = dbg.memory.takeCensus({
+        breakdown: { by: "allocationStack" },
+      });
+      let objectsWithStack = 0;
+      let objectsWithoutStack = 0;
+      for (const [k, v] of sensus.entries()) {
+        
+        
+        if (k === "noStack") {
+          objectsWithoutStack += v.count;
+        } else {
+          objectsWithStack += v.count;
+        }
+      }
+      return { objectsWithStack, objectsWithoutStack };
+    },
+
+    
+
+
+    getAllocatedMemory() {
+      return MemoryReporter.residentUnique;
+    },
+
+    async doGC() {
+      
+      
+      const numCycles = 3;
+      for (let i = 0; i < numCycles; i++) {
+        Cu.forceGC();
+        Cu.forceCC();
+        await new Promise(resolve => Cu.schedulePreciseShrinkingGC(resolve));
+
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     },
 
     stop() {
