@@ -180,12 +180,6 @@ class MediaEngineSourceInterface {
 
 
 
-  virtual void Shutdown() = 0;
-
-  
-
-
-
 
   virtual nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) = 0;
 
@@ -255,9 +249,6 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   
   nsresult FocusOnSelectedSource() override;
-
-  
-  void Shutdown() override;
 
   
   
