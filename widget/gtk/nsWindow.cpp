@@ -1341,8 +1341,21 @@ void nsWindow::HideWaylandPopupWindow(bool aTemporaryHide,
   if (aRemoveFromPopupList) {
     RemovePopupFromHierarchyList();
   }
-  mPopupTemporaryHidden = aTemporaryHide;
-  HideWaylandWindow();
+
+  if (!mPopupClosed) {
+    mPopupClosed = !aTemporaryHide;
+  }
+
+  bool visible = gtk_widget_is_visible(mShell);
+  LOG_POPUP(("  gtk_widget_is_visible() = %d\n", visible));
+
+  
+  mPopupTemporaryHidden = aTemporaryHide && visible;
+
+  
+  if (visible) {
+    HideWaylandWindow();
+  }
 }
 
 void nsWindow::HideWaylandToplevelWindow() {
@@ -1528,9 +1541,9 @@ void nsWindow::WaylandPopupHierarchyShowTemporaryHidden() {
   LOG_POPUP(("nsWindow::WaylandPopupHierarchyShowTemporaryHidden()"));
   nsWindow* popup = this;
   while (popup) {
-    LOG_POPUP(("  showing temporary hidden popup [%p]", popup));
     if (popup->mPopupTemporaryHidden) {
       popup->mPopupTemporaryHidden = false;
+      LOG_POPUP(("  showing temporary hidden popup [%p]", popup));
       gtk_widget_show(popup->mShell);
     }
     popup = popup->mWaylandPopupNext;
@@ -1607,6 +1620,39 @@ void nsWindow::WaylandPopupHierarchyCalculatePositions() {
          popup->mRelativePopupPosition.x, popup->mRelativePopupPosition.y));
     popup = popup->mWaylandPopupNext;
   }
+}
+
+
+
+
+
+
+
+
+
+
+bool nsWindow::IsTooltipWithNegativeRelativePositionRemoved() {
+  LOG_POPUP(("nsWindow::IsTooltipWithNegativeRelativePositionRemoved()"));
+
+  nsWindow* firstChangedPopup = this;
+  nsWindow* popup = this;
+
+  while (popup) {
+    if (popup->mPopupType == ePopupTypeTooltip) {
+      if (popup->mRelativePopupPosition.x < 0 &&
+          popup->mRelativePopupPosition.y < 0) {
+        LOG_POPUP(
+            ("  removing tooltip with both negative coordinates [%p]", popup));
+        popup->HideWaylandPopupWindow( false,
+                                       true);
+        return firstChangedPopup == popup;
+      }
+      break;
+    }
+    popup = popup->mWaylandPopupNext;
+  }
+
+  return false;
 }
 
 
@@ -1889,6 +1935,9 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       &layoutPopupWidgetChain);
 
   changedPopup->WaylandPopupHierarchyCalculatePositions();
+  if (changedPopup->IsTooltipWithNegativeRelativePositionRemoved()) {
+    return;
+  }
 
   nsWindow* popup = changedPopup;
   while (popup) {
@@ -2274,25 +2323,14 @@ void nsWindow::WaylandPopupMove(bool aUseMoveToRect) {
 
   mWaitingForMoveToRectCallback = true;
 
-  
-  
-  
-  
-  bool applyGtkWorkaround = !mWaylandPopupNext && gtk_widget_is_visible(mShell);
-  if (applyGtkWorkaround) {
-    PauseCompositor();
-    gtk_widget_hide(mShell);
+  if (gtk_widget_is_visible(mShell)) {
+    NS_WARNING(
+        "Positioning visible popup under Wayland, position may be wrong!");
   }
 
   mPopupLastAnchor = anchorRect;
   sGdkWindowMoveToRect(gdkWindow, &rect, rectAnchor, menuAnchor, hints,
                        cursorOffset.x / p2a, cursorOffset.y / p2a);
-
-  
-  
-  if (applyGtkWorkaround) {
-    gtk_widget_show(mShell);
-  }
 }
 
 void nsWindow::NativeMove() {
@@ -5925,17 +5963,20 @@ void nsWindow::NativeShow(bool aAction) {
     LOG(("nsWindow::NativeShow show [%p]\n", this));
 
     if (mIsTopLevel) {
-      
-      if (mWindowType != eWindowType_invisible) {
-        SetUserTimeAndStartupIDForActivatedWindow(mShell);
-      }
       if (IsWaylandPopup()) {
         if (WaylandPopupNeedsTrackInHierarchy()) {
           AddWindowToPopupHierarchy();
           UpdateWaylandPopupHierarchy();
         }
+        if (mPopupClosed) {
+          return;
+        }
       }
-      LOG(("  calling gtk_widget_show(mShell)\n"));
+      
+      if (mWindowType != eWindowType_invisible) {
+        SetUserTimeAndStartupIDForActivatedWindow(mShell);
+      }
+      LOG(("  calling gtk_widget_show(mShell) [%p]\n", this));
       gtk_widget_show(mShell);
       if (GdkIsWaylandDisplay()) {
         WaylandStartVsync();
