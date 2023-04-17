@@ -1163,6 +1163,14 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   aDocument->ForgetImagePreload(aNewURI);
 
   if (NS_SUCCEEDED(rv)) {
+    
+    
+    if (Document* doc = element->GetComposedDoc()) {
+      if (PresShell* shell = doc->GetPresShell()) {
+        shell->TryUnsuppressPaintingSoon();
+      }
+    }
+
     CloneScriptedRequests(req);
     TrackImage(req);
     ResetAnimationIfNeeded();

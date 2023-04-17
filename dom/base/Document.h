@@ -4047,6 +4047,10 @@ class Document : public nsINode,
 
   bool HasOOPChildrenLoading() { return !mOOPChildrenLoading.IsEmpty(); }
 
+  void SetDidHitCompleteSheetCache() { mDidHitCompleteSheetCache = true; }
+
+  bool DidHitCompleteSheetCache() const { return mDidHitCompleteSheetCache; }
+
  protected:
   
   
@@ -4784,6 +4788,9 @@ class Document : public nsINode,
   
   
   bool mSetCompleteAfterDOMContentLoaded : 1;
+
+  
+  bool mDidHitCompleteSheetCache : 1;
 
   uint8_t mPendingFullscreenRequests;
 

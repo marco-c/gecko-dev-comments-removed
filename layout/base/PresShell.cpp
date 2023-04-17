@@ -845,7 +845,8 @@ PresShell::PresShell(Document* aDocument)
       mInitializedWithKeyPressEventDispatchingBlacklist(false),
       mForceUseLegacyNonPrimaryDispatch(false),
       mInitializedWithClickEventDispatchingBlacklist(false),
-      mMouseLocationWasSetBySynthesizedMouseEventForTests(false) {
+      mMouseLocationWasSetBySynthesizedMouseEventForTests(false),
+      mHasTriedFastUnsuppress(false) {
   MOZ_LOG(gLog, LogLevel::Debug, ("PresShell::PresShell this=%p", this));
   MOZ_ASSERT(aDocument);
 
@@ -1909,6 +1910,13 @@ nsresult PresShell::Initialize() {
       mPaintSuppressionTimer->SetTarget(
           mDocument->EventTargetFor(TaskCategory::Other));
       InitPaintSuppressionTimer();
+      if (mHasTriedFastUnsuppress) {
+        
+        
+        mHasTriedFastUnsuppress = false;
+        TryUnsuppressPaintingSoon();
+        MOZ_ASSERT(mHasTriedFastUnsuppress);
+      }
     }
   }
 
@@ -1919,6 +1927,35 @@ nsresult PresShell::Initialize() {
   }
 
   return NS_OK;  
+}
+
+void PresShell::TryUnsuppressPaintingSoon() {
+  if (mHasTriedFastUnsuppress) {
+    return;
+  }
+  mHasTriedFastUnsuppress = true;
+
+  if (!mDidInitialize || !IsPaintingSuppressed() || !XRE_IsContentProcess()) {
+    return;
+  }
+
+  if (!mDocument->IsInitialDocument() &&
+      mDocument->DidHitCompleteSheetCache() &&
+      mPresContext->IsRootContentDocumentCrossProcess()) {
+    
+    
+    
+    NS_DispatchToCurrentThreadQueue(
+        NS_NewRunnableFunction("PresShell::TryUnsuppressPaintingSoon",
+                               [self = RefPtr{this}]() -> void {
+                                 if (self->IsPaintingSuppressed()) {
+                                   PROFILER_MARKER_UNTYPED(
+                                       "Fast paint unsuppression", GRAPHICS);
+                                   self->UnsuppressPainting();
+                                 }
+                               }),
+        EventQueuePriority::Control);
+  }
 }
 
 nsresult PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
@@ -3839,6 +3876,8 @@ void PresShell::UnsuppressAndInvalidate() {
 
   ScheduleBeforeFirstPaint();
 
+  PROFILER_MARKER_UNTYPED("UnsuppressAndInvalidate", GRAPHICS);
+
   mPaintingSuppressed = false;
   if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
     
@@ -3847,7 +3886,11 @@ void PresShell::UnsuppressAndInvalidate() {
 
   if (mPresContext->IsRootContentDocumentCrossProcess()) {
     if (auto* bc = BrowserChild::GetFrom(mDocument->GetDocShell())) {
-      bc->SendDidUnsuppressPainting();
+      if (mDocument->IsInitialDocument()) {
+        bc->SendDidUnsuppressPaintingNormalPriority();
+      } else {
+        bc->SendDidUnsuppressPainting();
+      }
     }
   }
 

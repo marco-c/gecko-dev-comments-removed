@@ -232,7 +232,9 @@ parent:
 
 
 
-    [Priority=mediumhigh] async DidUnsuppressPainting();
+    [Priority=control] async DidUnsuppressPainting();
+
+    async DidUnsuppressPaintingNormalPriority();
 
     
 
