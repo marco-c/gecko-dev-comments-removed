@@ -124,6 +124,7 @@ class TRR : public Runnable,
   nsresult mChannelStatus = NS_OK;
 
   RequestPurpose mPurpose = Resolve;
+  Atomic<bool, Relaxed> mCancelled{false};
 
   
   
