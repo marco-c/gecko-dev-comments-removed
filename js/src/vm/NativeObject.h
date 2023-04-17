@@ -1090,6 +1090,21 @@ class NativeObject : public JSObject {
 
   
   
+  JSObject* getGetter(Shape* shape) const { return shape->getterObject(); }
+  JSObject* getSetter(Shape* shape) const { return shape->setterObject(); }
+
+  
+  
+  bool hasGetter(Shape* shape) const { return shape->hasGetterObject(); }
+  bool hasSetter(Shape* shape) const { return shape->hasSetterObject(); }
+
+  
+  
+  Value getGetterValue(Shape* shape) const { return shape->getterValue(); }
+  Value getSetterValue(Shape* shape) const { return shape->setterValue(); }
+
+  
+  
   static constexpr uint32_t MAX_FIXED_SLOTS =
       JS::shadow::Object::MAX_FIXED_SLOTS;
 

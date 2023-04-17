@@ -4119,16 +4119,17 @@ void js::ArraySpeciesLookup::initialize(JSContext* cx) {
   
   Shape* speciesShape =
       arrayCtor->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().species));
-  if (!speciesShape || !speciesShape->hasGetterValue()) {
+  if (!speciesShape || !arrayCtor->hasGetter(speciesShape)) {
     return;
   }
 
   
   
-  JSFunction* speciesFun;
-  if (!IsFunctionObject(speciesShape->getterValue(), &speciesFun)) {
+  JSObject* speciesGetter = arrayCtor->getGetter(speciesShape);
+  if (!speciesGetter->is<JSFunction>()) {
     return;
   }
+  JSFunction* speciesFun = &speciesGetter->as<JSFunction>();
   if (!IsSelfHostedFunctionWithName(speciesFun, cx->names().ArraySpecies)) {
     return;
   }
@@ -4184,7 +4185,8 @@ bool js::ArraySpeciesLookup::isArrayStateStillSane() {
   
   
   
-  MOZ_ASSERT(arraySpeciesShape_->getterObject() == canonicalSpeciesFunc_);
+  MOZ_ASSERT(arrayConstructor_->getGetter(arraySpeciesShape_) ==
+             canonicalSpeciesFunc_);
 
   return true;
 }
