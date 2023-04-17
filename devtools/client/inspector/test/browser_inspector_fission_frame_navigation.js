@@ -3,19 +3,15 @@
 "use strict";
 
 const EXAMPLE_COM_URI =
-  "http://example.com/document-builder.sjs?html=<div id=com>com";
+  "https://example.com/document-builder.sjs?html=<div id=com>com";
 const EXAMPLE_NET_URI =
-  "http://example.net/document-builder.sjs?html=<div id=net>net";
+  "https://example.net/document-builder.sjs?html=<div id=net>net";
 
 const ORG_URL_ROOT = URL_ROOT.replace("example.com", "example.org");
 const TEST_ORG_URI =
   ORG_URL_ROOT + "doc_inspector_fission_frame_navigation.html";
 
 add_task(async function() {
-  
-  
-  await pushPref("dom.security.https_first", false);
-
   const { inspector } = await openInspectorForURL(TEST_ORG_URI);
   const tree = `
     id="root"

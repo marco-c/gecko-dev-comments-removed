@@ -94,6 +94,10 @@ const URL_ROOT_NET = CHROME_URL_ROOT.replace(
   "chrome://mochitests/content/",
   "http://example.net/"
 );
+const URL_ROOT_NET_SSL = CHROME_URL_ROOT.replace(
+  "chrome://mochitests/content/",
+  "https://example.net/"
+);
 
 const URL_ROOT_MOCHI_8888 = CHROME_URL_ROOT.replace(
   "chrome://mochitests/content/",
