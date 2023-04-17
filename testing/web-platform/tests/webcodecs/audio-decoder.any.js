@@ -263,9 +263,10 @@ promise_test(async t => {
   decoder.decode(new EncodedAudioChunk(
       {type: 'key', timestamp: 0, data: view(buffer, opus.frames[0])}));
 
+  
+  await t.step_wait(() => numOutputs > 0, 'Decoded first frame', 10000, 1);
+
   let p = decoder.flush();
   decoder.reset();
-
-  
-  await p.catch(e => t.step_func());
+  return p;
 }, 'Test reset during flush.');
