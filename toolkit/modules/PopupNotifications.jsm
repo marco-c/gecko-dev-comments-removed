@@ -650,6 +650,17 @@ PopupNotifications.prototype = {
 
 
 
+  suppressWhileOpen(panel) {
+    this._hidePanel().catch(Cu.reportError);
+    panel.addEventListener("popuphidden", aEvent => {
+      this._update();
+    });
+  },
+
+  
+
+
+
   locationChange: function PopupNotifications_locationChange(aBrowser) {
     if (!aBrowser) {
       throw new Error("PopupNotifications_locationChange: invalid browser");
