@@ -1,3 +1,4 @@
+from .base import NullBrowser   
 from .base import require_arg
 from .base import get_timeout_multiplier   
 from .chrome import executor_kwargs as chrome_executor_kwargs
@@ -9,7 +10,8 @@ from ..executors.executorchrome import ChromeDriverWdspecExecutor
 
 __wptrunner__ = {"product": "android_webview",
                  "check_args": "check_args",
-                 "browser": "SystemWebViewShell",
+                 "browser": {None: "SystemWebViewShell",
+                             "wdspec": "NullBrowser"},
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
                               "wdspec": "ChromeDriverWdspecExecutor"},
