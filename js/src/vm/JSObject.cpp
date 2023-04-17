@@ -26,6 +26,7 @@
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
 #include "builtin/Eval.h"
+#include "builtin/MapObject.h"
 #include "builtin/Object.h"
 #include "builtin/String.h"
 #include "builtin/Symbol.h"
@@ -3601,6 +3602,10 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
   } else if (is<ArgumentsObject>()) {
     info->objectsMallocHeapMisc +=
         as<ArgumentsObject>().sizeOfMisc(mallocSizeOf);
+  } else if (is<MapObject>()) {
+    info->objectsMallocHeapMisc += as<MapObject>().sizeOfData(mallocSizeOf);
+  } else if (is<SetObject>()) {
+    info->objectsMallocHeapMisc += as<SetObject>().sizeOfData(mallocSizeOf);
   } else if (is<RegExpStaticsObject>()) {
     info->objectsMallocHeapMisc +=
         as<RegExpStaticsObject>().sizeOfData(mallocSizeOf);
