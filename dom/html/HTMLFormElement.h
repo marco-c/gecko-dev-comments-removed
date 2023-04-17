@@ -213,7 +213,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  bool IsDefaultSubmitElement(const nsIFormControl* aControl) const;
+  bool IsDefaultSubmitElement(const nsGenericHTMLFormElement* aElement) const;
 
   
 

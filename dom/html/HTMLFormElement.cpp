@@ -1756,16 +1756,16 @@ nsGenericHTMLFormElement* HTMLFormElement::GetDefaultSubmitElement() const {
 }
 
 bool HTMLFormElement::IsDefaultSubmitElement(
-    const nsIFormControl* aControl) const {
-  MOZ_ASSERT(aControl, "Unexpected call");
+    const nsGenericHTMLFormElement* aElement) const {
+  MOZ_ASSERT(aElement, "Unexpected call");
 
-  if (aControl == mDefaultSubmitElement) {
+  if (aElement == mDefaultSubmitElement) {
     
     return true;
   }
 
-  if (mDefaultSubmitElement || (aControl != mFirstSubmitInElements &&
-                                aControl != mFirstSubmitNotInElements)) {
+  if (mDefaultSubmitElement || (aElement != mFirstSubmitInElements &&
+                                aElement != mFirstSubmitNotInElements)) {
     
     return false;
   }
@@ -1781,12 +1781,12 @@ bool HTMLFormElement::IsDefaultSubmitElement(
   }
 
   
-  nsIFormControl* defaultSubmit =
+  nsGenericHTMLFormElement* defaultSubmit =
       CompareFormControlPosition(mFirstSubmitInElements,
                                  mFirstSubmitNotInElements, this) < 0
           ? mFirstSubmitInElements
           : mFirstSubmitNotInElements;
-  return aControl == defaultSubmit;
+  return aElement == defaultSubmit;
 }
 
 bool HTMLFormElement::ImplicitSubmissionIsDisabled() const {
