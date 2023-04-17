@@ -498,34 +498,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  
-  
-  
-  
-  
-  if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
-    
-    
-    
-    
-    nsAutoString jsConfigPref;
-    Preferences::GetString("general.config.filename", jsConfigPref);
-    if (!jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
-    }
-
-    
-    
-    
-    bool xpinstallSignatures;
-    Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (!xpinstallSignatures) {
-      sJSHacksPresent = true;
-    }
-
-    sJSHacksChecked = true;
-  }
-
+  DetectJsHacks();
   if (MOZ_UNLIKELY(sJSHacksPresent)) {
     MOZ_LOG(
         sCSMLog, LogLevel::Debug,
@@ -684,6 +657,37 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
     return;
   }
   console->LogMessage(error);
+}
+
+
+void nsContentSecurityUtils::DetectJsHacks() {
+  
+  
+  
+  
+  
+  if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
+    
+    
+    
+    
+    nsAutoString jsConfigPref;
+    Preferences::GetString("general.config.filename", jsConfigPref);
+    if (!jsConfigPref.IsEmpty()) {
+      sJSHacksPresent = true;
+    }
+
+    
+    
+    
+    bool xpinstallSignatures;
+    Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
+    if (!xpinstallSignatures) {
+      sJSHacksPresent = true;
+    }
+
+    sJSHacksChecked = true;
+  }
 }
 
 
@@ -1022,33 +1026,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
-  
-  
-  
-  
-  
-  if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
-    
-    
-    
-    
-    nsAutoString jsConfigPref;
-    Preferences::GetString("general.config.filename", jsConfigPref);
-    if (!jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
-    }
-
-    
-    
-    
-    bool xpinstallSignatures;
-    Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (!xpinstallSignatures) {
-      sJSHacksPresent = true;
-    }
-
-    sJSHacksChecked = true;
-  }
+  DetectJsHacks();
 
   if (MOZ_UNLIKELY(sJSHacksPresent)) {
     MOZ_LOG(sCSMLog, LogLevel::Debug,
