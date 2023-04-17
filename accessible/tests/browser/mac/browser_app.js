@@ -125,7 +125,7 @@ add_task(async () => {
       
       
       let baseRootChildCount = Services.prefs.getBoolPref(
-        "browser.proton.enabled",
+        "browser.proton.infobars.enabled",
         false
       )
         ? 6

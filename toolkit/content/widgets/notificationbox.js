@@ -7,9 +7,6 @@
 
 
 {
-  const { XPCOMUtils } = ChromeUtils.import(
-    "resource://gre/modules/XPCOMUtils.jsm"
-  );
   const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
   );
@@ -27,24 +24,17 @@
       this._insertElementFn = insertElementFn;
       this._animating = false;
       this.currentNotification = null;
-
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "gProton",
-        "browser.proton.enabled",
-        false
-      );
     }
 
     get stack() {
       if (!this._stack) {
         let stack;
         stack = document.createXULElement(
-          this.gProton ? "vbox" : "legacy-stack"
+          this.protonInfobarsEnabled ? "vbox" : "legacy-stack"
         );
         stack._notificationBox = this;
         stack.className = "notificationbox-stack";
-        if (!this.gProton) {
+        if (!this.protonInfobarsEnabled) {
           stack.appendChild(document.createXULElement("spacer"));
         }
         stack.addEventListener("transitionend", event => {
@@ -180,7 +170,7 @@
 
       
       var newitem;
-      if (this.gProton && !aNotificationIs) {
+      if (this.protonInfobarsEnabled && !aNotificationIs) {
         if (!customElements.get("notification-message")) {
           
           
@@ -212,7 +202,7 @@
       }
       newitem.setAttribute("value", aValue);
 
-      if (aImage && !this.gProton) {
+      if (aImage && !this.protonInfobarsEnabled) {
         newitem.messageImage.setAttribute("src", aImage);
       }
       newitem.eventCallback = aEventCallback;
@@ -253,7 +243,7 @@
       if (!aItem.parentNode) {
         return;
       }
-      if (this.gProton) {
+      if (this.protonInfobarsEnabled) {
         this.currentNotification = aItem;
         this.removeCurrentNotification(aSkipAnimation);
       } else if (aItem == this.currentNotification) {
@@ -367,6 +357,13 @@
           delete this._closedNotification;
         }
       }
+    }
+
+    get protonInfobarsEnabled() {
+      return Services.prefs.getBoolPref(
+        "browser.proton.infobars.enabled",
+        false
+      );
     }
   };
 
@@ -544,6 +541,13 @@
           event.stopPropagation();
         }
       }
+    }
+
+    get protonInfobarsEnabled() {
+      return Services.prefs.getBoolPref(
+        "browser.proton.infobars.enabled",
+        false
+      );
     }
   };
 
