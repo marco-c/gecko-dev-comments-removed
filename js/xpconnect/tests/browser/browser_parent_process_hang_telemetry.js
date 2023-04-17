@@ -14,7 +14,6 @@ add_task(async function test_browser_hang() {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.max_chrome_script_run_time", 2]]
   });
-  await SpecialPowers.promiseTimeout(0);
 
   
   let now = Date.now();
