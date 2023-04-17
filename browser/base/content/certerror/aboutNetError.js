@@ -226,6 +226,23 @@ function setErrorPageStrings(err) {
 }
 
 function initPage() {
+  
+  
+  
+  
+  
+  
+  
+  
+  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
+  let location = document.location.href;
+  if (location.startsWith(baseURL)) {
+    let supportPageSlug = document.location.pathname.split("/").pop();
+    RPMSendAsyncMessage("DisplayOfflineSupportPage", {
+      supportPageSlug,
+    });
+  }
+
   var err = getErrorCode();
   
   let illustratedErrors = [
@@ -327,7 +344,6 @@ function initPage() {
   }
 
   let learnMoreLink = document.getElementById("learnMoreLink");
-  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
   learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
 
   if (err == "cspBlocked" || err == "xfoBlocked") {

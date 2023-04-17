@@ -46,6 +46,10 @@ var gExceptionPaths = [
   
   "resource://gre/modules/services-automation/",
   "resource://services-automation/ServicesAutomation.jsm",
+
+  
+  
+  "chrome://browser/content/certerror/supportpages/",
 ];
 
 
