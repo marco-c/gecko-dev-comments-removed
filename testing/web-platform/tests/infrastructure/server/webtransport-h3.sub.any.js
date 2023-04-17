@@ -2,9 +2,7 @@
 
 
 const HOST = get_host_info().ORIGINAL_HOST;
-
-
-const PORT = '11000';
+const PORT = '{{ports[webtransport-h3][0]}}';
 const BASE = `https://${HOST}:${PORT}`;
 
 promise_test(async t => {
