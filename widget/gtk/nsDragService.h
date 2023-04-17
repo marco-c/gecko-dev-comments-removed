@@ -105,7 +105,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   void SetDragIcon(GdkDragContext* aContext);
-  gboolean IsDragActive() { return mScheduledTask != eDragTaskNone; }
 
   
   

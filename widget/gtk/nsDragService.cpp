@@ -1986,6 +1986,7 @@ gboolean nsDragService::RunScheduledTask() {
   
   
   if (mScheduledTaskIsRunning) {
+    LOGDRAGSERVICE(("  sheduled task is already running, quit."));
     return FALSE;
   }
   AutoRestore<bool> guard(mScheduledTaskIsRunning);
@@ -2018,7 +2019,8 @@ gboolean nsDragService::RunScheduledTask() {
   mTargetWindowPoint = mPendingWindowPoint;
 
   if (task == eDragTaskLeave || task == eDragTaskSourceEnd) {
-    LOGDRAGSERVICE(("  quit, task %s\n", GetDragServiceTaskName(task)));
+    LOGDRAGSERVICE(
+        ("  quit, selected task %s\n", GetDragServiceTaskName(task)));
     if (task == eDragTaskSourceEnd) {
       
       EndDragSession(true, GetCurrentModifiers());
