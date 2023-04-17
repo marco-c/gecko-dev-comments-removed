@@ -152,10 +152,6 @@ SetIsInlinableLargeFunction(ArraySome);
 
 
 function ArraySort(comparefn) {
-    return SortArray(this, comparefn);
-}
-
-function SortArray(obj, comparefn) {
     
     if (comparefn !== undefined) {
         if (!IsCallable(comparefn))
@@ -163,7 +159,7 @@ function SortArray(obj, comparefn) {
     }
 
     
-    var O = ToObject(obj);
+    var O = ToObject(this);
 
     
     
@@ -1186,67 +1182,3 @@ function ArrayAt(index) {
 }
 
 SetIsInlinableLargeFunction(ArrayAt);
-
-#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
-
-
-
-function ArrayWithReversed() {
-
-    
-    var O = ToObject(this);
-
-    
-    var len = ToLength(O.length);
-
-    
-    var A = std_Array(len);
-
-    
-    for (var k = 0; k < len; k++) {
-        
-        var from = len - k - 1;
-        
-        
-        var fromValue = O[from];
-        
-        DefineDataProperty(A, k, fromValue);
-    }
-
-    
-    return A;
-}
-
-
-
-function ArrayWithSorted(comparefn) {
-
-    
-
-    if (comparefn !== undefined && !IsCallable(comparefn)) {
-        ThrowTypeError(JSMSG_BAD_WITHSORTED_ARG);
-    }
-
-    
-    var O = ToObject(this);
-
-    
-    var len = ToLength(O.length);
-
-    
-    var items = std_Array(len);
-
-    
-    for(var k = 0; k < len; k++) {
-        DefineDataProperty(items, k, O[k]);
-    }
-
-    
-    SortArray(items, comparefn);
-
-    
-    
-    return items;
-}
-
-#endif
