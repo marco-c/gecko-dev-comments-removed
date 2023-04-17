@@ -936,6 +936,13 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
+  bool AttributeChangesState(nsAtom* aAttribute);
+
+  
+
+
+
+
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    int32_t aModType,
                                    const nsAttrValue* aOldValue,
