@@ -1160,8 +1160,10 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       abortSweepAfterCurrentGroup(false),
       sweepMarkResult(IncrementalProgress::NotFinished),
       startedCompacting(false),
-      relocatedArenasToRelease(nullptr),
       zonesCompacted(0),
+#ifdef DEBUG
+      relocatedArenasToRelease(nullptr),
+#endif
 #ifdef JS_GC_ZEAL
       markingValidator(nullptr),
 #endif
@@ -2287,25 +2289,6 @@ static void RelocateArena(Arena* arena, SliceBudget& sliceBudget) {
 #endif
 }
 
-#ifdef DEBUG
-static inline bool CanProtectArenas() {
-  
-  
-  return SystemPageSize() <= ArenaSize;
-}
-#endif
-
-static inline bool ShouldProtectRelocatedArenas(JS::GCReason reason) {
-  
-  
-  
-#ifdef DEBUG
-  return reason == JS::GCReason::DEBUG_GC && CanProtectArenas();
-#else
-  return false;
-#endif
-}
-
 
 
 
@@ -2922,6 +2905,35 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
   }
 }
 
+#ifdef DEBUG
+
+
+
+
+
+static inline bool CanProtectArenas() {
+  
+  
+  return SystemPageSize() <= ArenaSize;
+}
+
+static inline bool ShouldProtectRelocatedArenas(JS::GCReason reason) {
+  
+  
+  
+  return reason == JS::GCReason::DEBUG_GC && CanProtectArenas();
+}
+
+void GCRuntime::protectOrReleaseRelocatedArenas(Arena* arenaList,
+                                                JS::GCReason reason) {
+  if (ShouldProtectRelocatedArenas(reason)) {
+    protectAndHoldArenas(arenaList);
+    return;
+  }
+
+  releaseRelocatedArenas(arenaList);
+}
+
 void GCRuntime::protectAndHoldArenas(Arena* arenaList) {
   for (Arena* arena = arenaList; arena;) {
     MOZ_ASSERT(!arena->allocated());
@@ -2944,6 +2956,23 @@ void GCRuntime::unprotectHeldRelocatedArenas(const AutoLockGC& lock) {
   }
 }
 
+void GCRuntime::releaseHeldRelocatedArenas() {
+  AutoLockGC lock(this);
+  unprotectHeldRelocatedArenas(lock);
+  Arena* arenas = relocatedArenasToRelease;
+  relocatedArenasToRelease = nullptr;
+  releaseRelocatedArenasWithoutUnlocking(arenas, lock);
+}
+
+void GCRuntime::releaseHeldRelocatedArenasWithoutUnlocking(
+    const AutoLockGC& lock) {
+  unprotectHeldRelocatedArenas(lock);
+  releaseRelocatedArenasWithoutUnlocking(relocatedArenasToRelease, lock);
+  relocatedArenasToRelease = nullptr;
+}
+
+#endif
+
 void GCRuntime::releaseRelocatedArenas(Arena* arenaList) {
   AutoLockGC lock(this);
   releaseRelocatedArenasWithoutUnlocking(arenaList, lock);
@@ -2960,29 +2989,6 @@ void GCRuntime::releaseRelocatedArenasWithoutUnlocking(Arena* arenaList,
     
     arena->chunk()->releaseArena(this, arena, lock);
   }
-}
-
-
-
-
-
-void GCRuntime::releaseHeldRelocatedArenas() {
-#ifdef DEBUG
-  AutoLockGC lock(this);
-  unprotectHeldRelocatedArenas(lock);
-  Arena* arenas = relocatedArenasToRelease;
-  relocatedArenasToRelease = nullptr;
-  releaseRelocatedArenasWithoutUnlocking(arenas, lock);
-#endif
-}
-
-void GCRuntime::releaseHeldRelocatedArenasWithoutUnlocking(
-    const AutoLockGC& lock) {
-#ifdef DEBUG
-  unprotectHeldRelocatedArenas(lock);
-  releaseRelocatedArenasWithoutUnlocking(relocatedArenasToRelease, lock);
-  relocatedArenasToRelease = nullptr;
-#endif
 }
 
 FreeLists::FreeLists() {
@@ -5795,9 +5801,8 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
   MOZ_ASSERT(!abortSweepAfterCurrentGroup);
   MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
 
-  releaseHeldRelocatedArenas();
-
 #ifdef DEBUG
+  releaseHeldRelocatedArenas();
   verifyAllChunks();
 #endif
 
@@ -6569,11 +6574,11 @@ IncrementalProgress GCRuntime::compactPhase(JS::GCReason reason,
 
   clearRelocatedArenas(relocatedArenas, reason);
 
-  if (ShouldProtectRelocatedArenas(reason)) {
-    protectAndHoldArenas(relocatedArenas);
-  } else {
-    releaseRelocatedArenas(relocatedArenas);
-  }
+#ifdef DEBUG
+  protectOrReleaseRelocatedArenas(relocatedArenas, reason);
+#else
+  releaseRelocatedArenas(relocatedArenas);
+#endif
 
   
   rt->caches().purgeForCompaction();
@@ -7869,9 +7874,11 @@ void GCRuntime::onOutOfMallocMemory() {
 }
 
 void GCRuntime::onOutOfMallocMemory(const AutoLockGC& lock) {
+#ifdef DEBUG
   
   
   releaseHeldRelocatedArenasWithoutUnlocking(lock);
+#endif
 
   
   freeEmptyChunks(lock);
@@ -8168,9 +8175,11 @@ void GCRuntime::mergeRealms(Realm* source, Realm* target) {
   source->zone()->clearTables();
   source->unsetIsDebuggee();
 
+#ifdef DEBUG
   
   
   releaseHeldRelocatedArenas();
+#endif
 
   
   
