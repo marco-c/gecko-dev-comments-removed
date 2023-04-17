@@ -1,6 +1,6 @@
 
 
-from mod_pywebsocket import msgutil, util
+from mod_pywebsocket import msgutil
 
 def web_socket_do_extra_handshake(request):
     pass
