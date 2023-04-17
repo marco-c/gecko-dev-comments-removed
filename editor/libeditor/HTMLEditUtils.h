@@ -401,6 +401,7 @@ class HTMLEditUtils final {
   enum class WalkTreeOption {
     IgnoreNonEditableNode,     
     IgnoreDataNodeExceptText,  
+    IgnoreWhiteSpaceOnlyText,  
     StopAtBlockBoundary,       
   };
   using WalkTreeOptions = EnumSet<WalkTreeOption>;
@@ -462,6 +463,26 @@ class HTMLEditUtils final {
   static nsIContent* GetNextContent(const EditorDOMPointBase<PT, CT>& aPoint,
                                     const WalkTreeOptions& aOptions,
                                     const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+  static nsIContent* GetPreviousSibling(const nsIContent& aContent,
+                                        const WalkTreeOptions& aOptions) {
+    for (nsIContent* sibling = aContent.GetPreviousSibling(); sibling;
+         sibling = sibling->GetPreviousSibling()) {
+      if (HTMLEditUtils::IsContentIgnored(*sibling, aOptions)) {
+        continue;
+      }
+      if (aOptions.contains(WalkTreeOption::StopAtBlockBoundary) &&
+          HTMLEditUtils::IsBlockElement(*sibling)) {
+        return nullptr;
+      }
+      return sibling;
+    }
+    return nullptr;
+  }
 
   
 
@@ -1159,6 +1180,25 @@ class HTMLEditUtils final {
         (aHowToTreatTableBoundary == TableBoundary::NoCrossTableElement &&
          aContent.IsHTMLElement(nsGkAtoms::table));
     return !cannotCrossBoundary;
+  }
+
+  static bool IsContentIgnored(const nsIContent& aContent,
+                               const WalkTreeOptions& aOptions) {
+    if (aOptions.contains(WalkTreeOption::IgnoreNonEditableNode) &&
+        !EditorUtils::IsEditableContent(aContent,
+                                        EditorUtils::EditorType::HTML)) {
+      return true;
+    }
+    if (aOptions.contains(WalkTreeOption::IgnoreDataNodeExceptText) &&
+        !EditorUtils::IsElementOrText(aContent)) {
+      return true;
+    }
+    if (aOptions.contains(WalkTreeOption::IgnoreWhiteSpaceOnlyText) &&
+        aContent.IsText() &&
+        const_cast<dom::Text*>(aContent.AsText())->TextIsOnlyWhitespace()) {
+      return true;
+    }
+    return false;
   }
 
   
