@@ -22,6 +22,7 @@
 #ifndef wasm_wasm_baseline_frame_h
 #define wasm_wasm_baseline_frame_h
 
+#include "wasm/WasmConstants.h"        
 #include "wasm/WasmBaselineCompile.h"  
 #include "wasm/WasmBCDefs.h"
 #include "wasm/WasmBCRegDefs.h"
@@ -554,17 +555,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
   
 
-  bool checkStackHeight() {
-    
-    
-    
-    
-    
-    
-    
-    
-    return maxFramePushed_ <= 512 * 1024;
-  }
+  bool checkStackHeight() { return maxFramePushed_ <= MaxFrameSize; }
 
   
   
@@ -1266,7 +1257,7 @@ struct StackMapGenerator {
   
   
   [[nodiscard]] bool generateStackmapEntriesForTrapExit(
-    const ArgTypeVector& args, ExitStubMapVector* extras);
+      const ArgTypeVector& args, ExitStubMapVector* extras);
 
   
   
