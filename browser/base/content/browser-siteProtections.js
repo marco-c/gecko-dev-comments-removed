@@ -1640,6 +1640,10 @@ var gProtectionsHandler = {
 
       
       
+      this._trackingProtectionIconContainer.setAttribute("open", "true");
+
+      
+      
       ToolbarPanelHub.insertProtectionPanelMessage(event);
 
       if (!event.target.hasAttribute("toast")) {
@@ -1655,6 +1659,7 @@ var gProtectionsHandler = {
   onPopupHidden(event) {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
+      this._trackingProtectionIconContainer.removeAttribute("open");
     }
   },
 
