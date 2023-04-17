@@ -7,7 +7,8 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/adler/0.2.3")]
+
+#![doc(html_root_url = "https://docs.rs/adler/1.0.2")]
 
 #![doc(test(attr(deny(unused_imports, unused_must_use))))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -24,6 +25,49 @@ use std::hash::Hasher;
 
 #[cfg(feature = "std")]
 use std::io::{self, BufRead};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -119,6 +163,10 @@ impl Hasher for Adler32 {
 }
 
 
+
+
+
+
 pub fn adler32_slice(data: &[u8]) -> u32 {
     let mut h = Adler32::new();
     h.write_slice(data);
@@ -130,9 +178,32 @@ pub fn adler32_slice(data: &[u8]) -> u32 {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(feature = "std")]
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
+pub fn adler32<R: BufRead>(mut reader: R) -> io::Result<u32> {
     let mut h = Adler32::new();
     loop {
         let len = {
@@ -151,7 +222,6 @@ pub fn adler32_reader<R: BufRead>(reader: &mut R) -> io::Result<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::BufReader;
 
     #[test]
     fn zeroes() {
@@ -198,12 +268,14 @@ mod tests {
         assert_eq!(adler.checksum(), 0x8e88ef11); 
     }
 
+    #[cfg(feature = "std")]
     #[test]
     fn bufread() {
+        use std::io::BufReader;
         fn test(data: &[u8], checksum: u32) {
             
             let mut buf = BufReader::new(data);
-            let real_sum = adler32_reader(&mut buf).unwrap();
+            let real_sum = adler32(&mut buf).unwrap();
             assert_eq!(checksum, real_sum);
         }
 

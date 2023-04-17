@@ -126,7 +126,7 @@ impl InflateState {
     }
 
     
-    pub fn last_status(&self) -> TINFLStatus {
+    pub const fn last_status(&self) -> TINFLStatus {
         self.last_status
     }
 
