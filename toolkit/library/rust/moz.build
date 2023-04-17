@@ -8,6 +8,13 @@ include("gkrust-features.mozbuild")
 
 RustLibrary("gkrust", gkrust_features, is_gkrust=True)
 
+for feature in gkrust_features:
+    
+    
+    
+    if feature not in ("gecko_refcount_logging", "glean_with_gecko"):
+        RUST_TEST_FEATURES.append(feature)
+
 
 
 RUST_TESTS = [
@@ -15,19 +22,15 @@ RUST_TESTS = [
     "servo_arc",
     "stylo_tests",
     "qcms",
+    
+    
+    "gkrust",
 ]
 
 if not CONFIG["MOZ_CODE_COVERAGE"]:
     
     
     RUST_TESTS += ["fog"]
-
-for feature in gkrust_features:
-    
-    
-    
-    if feature not in ("gecko_refcount_logging", "glean_with_gecko"):
-        RUST_TEST_FEATURES.append(feature)
 
 if CONFIG["CPU_ARCH"] != "x86":
     
