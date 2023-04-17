@@ -22,7 +22,6 @@
 #include "nsIFile.h"
 #include "nsIURI.h"
 #include "nsIMemoryReporter.h"
-#include "nsIObserver.h"
 #include "nsIResProtocolHandler.h"
 #include "nsIThread.h"
 #include "nsReadableUtils.h"
@@ -45,14 +44,13 @@ class ScriptPreloader;
 
 
 
-class URLPreloader final : public nsIObserver, public nsIMemoryReporter {
+class URLPreloader final : public nsIMemoryReporter {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   URLPreloader() = default;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
   NS_DECL_NSIMEMORYREPORTER
 
   static URLPreloader& GetSingleton();
@@ -81,6 +79,8 @@ class URLPreloader final : public nsIObserver, public nsIMemoryReporter {
   static Result<nsCString, nsresult> ReadZip(nsZipArchive* archive,
                                              const nsACString& path,
                                              ReadType readType = Forget);
+
+  void SetStartupFinished() { mStartupFinished = true; }
 
  private:
   struct CacheKey;
