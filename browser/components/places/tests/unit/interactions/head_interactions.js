@@ -214,18 +214,30 @@ function assertSnapshot(actual, expected) {
 
 
 
-async function assertSnapshots(expected, options) {
-  let snapshots = await Snapshots.query(options);
-
-  info(`Found ${snapshots.length} snapshots:\n ${JSON.stringify(snapshots)}`);
+async function assertSnapshotList(received, expected) {
+  info(`Found ${received.length} snapshots:\n ${JSON.stringify(received)}`);
   Assert.equal(
-    snapshots.length,
+    received.length,
     expected.length,
     "Should have the expected number of snapshots"
   );
   for (let i = 0; i < expected.length; i++) {
-    assertSnapshot(snapshots[i], expected[i]);
+    assertSnapshot(received[i], expected[i]);
   }
+}
+
+
+
+
+
+
+
+
+
+async function assertSnapshots(expected, options) {
+  let snapshots = await Snapshots.query(options);
+
+  await assertSnapshotList(snapshots, expected);
 }
 
 
