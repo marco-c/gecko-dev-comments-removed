@@ -20,9 +20,9 @@ class CacheIndexIterator;
 
 struct CacheFileContextEvictorEntry {
   nsCOMPtr<nsILoadContextInfo> mInfo;
-  bool mPinned;
-  nsString mOrigin;   
-  PRTime mTimeStamp;  
+  bool mPinned = false;
+  nsString mOrigin;       
+  PRTime mTimeStamp = 0;  
   RefPtr<CacheIndexIterator> mIterator;
 };
 

@@ -14,9 +14,7 @@
 #include <algorithm>
 #include "mozilla/Unused.h"
 
-namespace mozilla {
-namespace net {
-namespace CacheFileUtils {
+namespace mozilla::net::CacheFileUtils {
 
 
 
@@ -665,6 +663,4 @@ void BuildAlternativeDataInfo(const char* aInfo, int64_t aOffset,
   _retval.Append(aInfo);
 }
 
-}  
-}  
 }  

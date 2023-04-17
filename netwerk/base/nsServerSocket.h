@@ -52,7 +52,7 @@ class nsServerSocket : public nsASocketHandler, public nsIServerSocket {
 
   
   mozilla::Mutex mLock;
-  PRNetAddr mAddr;
+  PRNetAddr mAddr = {.raw = {0, {0}}};
   nsCOMPtr<nsIEventTarget> mListenerTarget;
   bool mAttached;
   bool mKeepWhenOffline;

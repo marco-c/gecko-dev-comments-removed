@@ -374,7 +374,7 @@ void FeatureData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
        "%d [this=%p]",
        isBlocklisted, this));
 
-  if (isBlocklisted == false) {
+  if (!isBlocklisted) {
     
     
     

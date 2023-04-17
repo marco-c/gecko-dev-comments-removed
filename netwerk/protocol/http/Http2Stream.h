@@ -172,7 +172,7 @@ class Http2Stream : public nsAHttpSegmentReader,
 
   
   bool Do0RTT();
-  nsresult Finish0RTT(bool aRestart, bool aAlpnIgnored);
+  nsresult Finish0RTT(bool aRestart, bool aAlpnChanged);
 
   nsresult GetOriginAttributes(mozilla::OriginAttributes* oa);
 
@@ -242,8 +242,8 @@ class Http2Stream : public nsAHttpSegmentReader,
   
   nsISocketTransport* mSocketTransport;
 
-  uint8_t mPriorityWeight;       
-  uint32_t mPriorityDependency;  
+  uint8_t mPriorityWeight = 0;       
+  uint32_t mPriorityDependency = 0;  
   uint64_t mCurrentTopBrowsingContextId;
   uint64_t mTransactionTabId;
 
@@ -325,7 +325,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   
   int64_t mRequestBodyLenRemaining;
 
-  uint32_t mPriority;  
+  uint32_t mPriority = 0;  
 
   
   

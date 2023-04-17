@@ -16,7 +16,7 @@ class PickleIterator;
 
 
 
-typedef double DOMHighResTimeStamp;
+using DOMHighResTimeStamp = double;
 
 namespace IPC {
 class Message;
@@ -83,7 +83,7 @@ class WebSocketFrame final : public nsIWebSocketFrame {
 namespace IPC {
 template <>
 struct ParamTraits<mozilla::net::WebSocketFrameData> {
-  typedef mozilla::net::WebSocketFrameData paramType;
+  using paramType = mozilla::net::WebSocketFrameData;
 
   static void Write(Message* aMsg, const paramType& aParam) {
     aParam.WriteIPCParams(aMsg);

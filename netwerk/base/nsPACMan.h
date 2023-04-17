@@ -119,7 +119,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
   nsresult AsyncGetProxyForURI(nsIURI* uri, nsPACManCallback* callback,
-                               uint32_t flags, bool mustCallbackOnMainThread);
+                               uint32_t flags, bool mainThreadResponse);
 
   
 

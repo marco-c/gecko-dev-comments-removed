@@ -139,7 +139,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   ODASource mFirstODASource;
 
   
-  bool mOnStopRequestCalled;
+  bool mOnStopRequestCalled = false;
 
   
   

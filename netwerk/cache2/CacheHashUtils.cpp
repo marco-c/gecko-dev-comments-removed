@@ -9,8 +9,7 @@
 #include "mozilla/SHA1.h"
 #include "plstr.h"
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 
 
@@ -233,5 +232,4 @@ OriginAttrsHash GetOriginAttrsHash(const mozilla::OriginAttributes& aOA) {
   return BigEndian::readUint64(&hash);
 }
 
-}  
 }  

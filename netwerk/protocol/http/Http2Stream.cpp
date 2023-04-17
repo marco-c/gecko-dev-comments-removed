@@ -170,8 +170,9 @@ nsresult Http2Stream::ReadSegments(nsAHttpSegmentReader* reader, uint32_t count,
       
       
       if (NS_SUCCEEDED(rv) && mUpstreamState == GENERATING_HEADERS &&
-          !mRequestHeadersDone)
+          !mRequestHeadersDone) {
         mSession->TransactionHasDataToWrite(this);
+      }
 
       
       
@@ -843,9 +844,10 @@ void Http2Stream::UpdateTransportSendEvents(uint32_t count) {
     mSocketTransport->SetSendBufferSize(bufferSize);
   }
 
-  if (mUpstreamState != SENDING_FIN_STREAM)
+  if (mUpstreamState != SENDING_FIN_STREAM) {
     mTransaction->OnTransportStatus(mSocketTransport, NS_NET_STATUS_SENDING_TO,
                                     mTotalSent);
+  }
 
   if (!mSentWaitingFor && !mRequestBodyLenRemaining) {
     mSentWaitingFor = 1;
@@ -902,8 +904,9 @@ nsresult Http2Stream::TransmitFrame(const char* buf, uint32_t* countUsed,
     MOZ_ASSERT(!forceCommitment, "forceCommitment with WOULD_BLOCK");
     mSession->TransactionHasDataToWrite(this);
   }
-  if (NS_FAILED(rv))  
+  if (NS_FAILED(rv)) {  
     return rv;
+  }
 
   
   
@@ -1475,14 +1478,17 @@ nsresult Http2Stream::OnReadSegment(const char* buf, uint32_t count,
       
       dataLength = std::min(count, mChunkSize);
 
-      if (dataLength > Http2Session::kMaxFrameData)
+      if (dataLength > Http2Session::kMaxFrameData) {
         dataLength = Http2Session::kMaxFrameData;
+      }
 
-      if (dataLength > mSession->ServerSessionWindow())
+      if (dataLength > mSession->ServerSessionWindow()) {
         dataLength = static_cast<uint32_t>(mSession->ServerSessionWindow());
+      }
 
-      if (dataLength > mServerReceiveWindow)
+      if (dataLength > mServerReceiveWindow) {
         dataLength = static_cast<uint32_t>(mServerReceiveWindow);
+      }
 
       LOG3(
           ("Http2Stream this=%p id 0x%X send calculation "

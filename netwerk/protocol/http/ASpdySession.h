@@ -91,7 +91,7 @@ class ASpdySession : public nsAHttpTransaction {
   virtual bool CanAcceptWebsocket() = 0;
 };
 
-typedef bool (*ALPNCallback)(nsISupports*);  
+using ALPNCallback = bool (*)(nsISupports*);  
 
 
 

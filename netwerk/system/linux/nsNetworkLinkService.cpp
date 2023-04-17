@@ -134,8 +134,9 @@ nsresult nsNetworkLinkService::Shutdown() {
   
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
-  if (observerService)
+  if (observerService) {
     observerService->RemoveObserver(this, "xpcom-shutdown-threads");
+  }
 
   if (mNetlinkSvc) {
     mNetlinkSvc->Shutdown();
