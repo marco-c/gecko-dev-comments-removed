@@ -546,6 +546,33 @@ function promiseDownloadStarted(aDownload) {
 
 
 
+function promiseDownloadFinished(aDownload) {
+  return new Promise(resolve => {
+    
+    let onchange = function() {
+      if (aDownload.succeeded || aDownload.error) {
+        aDownload.onchange = null;
+        resolve();
+      }
+    };
+
+    
+    
+    aDownload.onchange = onchange;
+    onchange();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
 function promiseDownloadStopped(aDownload) {
   if (!aDownload.stopped) {
     

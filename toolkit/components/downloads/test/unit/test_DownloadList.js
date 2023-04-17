@@ -11,6 +11,10 @@
 
 
 
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
 
 
 
@@ -636,4 +640,33 @@ add_task(async function test_DownloadSummary_notifications() {
   });
   await download.start();
   Assert.ok(receivedOnSummaryChanged);
+});
+
+
+
+
+add_task(async function test_downloadAddedTelemetry() {
+  Services.telemetry.clearEvents();
+  Services.telemetry.setEventRecordingEnabled("downloads", true);
+
+  let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
+
+  let download = await Downloads.createDownload({
+    source: httpUrl("empty.txt"),
+    target: targetFile.path,
+  });
+
+  let list = await Downloads.getList(Downloads.ALL);
+  await list.add(download);
+  download.start();
+  await promiseDownloadFinished(download);
+
+  TelemetryTestUtils.assertEvents([
+    {
+      category: "downloads",
+      method: "added",
+      object: "fileExtension",
+      value: "txt",
+    },
+  ]);
 });
