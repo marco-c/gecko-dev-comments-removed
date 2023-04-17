@@ -15,6 +15,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
+  WebDriverNewSessionHandler:
+    "chrome://remote/content/webdriver-bidi/NewSessionHandler.jsm",
   WebDriverSession: "chrome://remote/content/shared/webdriver/Session.jsm",
 });
 
@@ -39,6 +41,7 @@ class WebDriverBiDi {
     this._running = false;
 
     this._session = null;
+    this._sessionlessConnections = new Set();
   }
 
   get address() {
@@ -55,6 +58,11 @@ class WebDriverBiDi {
 
 
 
+  addSessionlessConnection(connection) {
+    this._sessionlessConnections.add(connection);
+  }
+
+  
 
 
 
@@ -62,23 +70,40 @@ class WebDriverBiDi {
 
 
 
-  createSession(capabilities) {
+
+
+
+
+
+
+
+
+
+  createSession(capabilities, sessionlessConnection) {
     if (this.session) {
       throw new error.SessionNotCreatedError(
         "Maximum number of active sessions"
       );
     }
 
-    this._session = new WebDriverSession(capabilities);
+    this._session = new WebDriverSession(capabilities, sessionlessConnection);
 
     
     
     let webSocketUrl = null;
-    if (this.agent.listening && this.session.capabilities.get("webSocketUrl")) {
+    if (
+      this.agent.listening &&
+      (this.session.capabilities.get("webSocketUrl") || sessionlessConnection)
+    ) {
       this.agent.server.registerPathHandler(this.session.path, this.session);
       webSocketUrl = `${this.address}${this.session.path}`;
 
       logger.debug(`Registered session handler: ${this.session.path}`);
+
+      if (sessionlessConnection) {
+        
+        this._sessionlessConnections.delete(sessionlessConnection);
+      }
     }
 
     
@@ -120,6 +145,12 @@ class WebDriverBiDi {
 
     this._running = true;
 
+    
+    this.agent.server.registerPathHandler(
+      "/session",
+      new WebDriverNewSessionHandler(this)
+    );
+
     Services.obs.notifyObservers(
       null,
       "remote-listening",
@@ -137,6 +168,12 @@ class WebDriverBiDi {
 
     try {
       this.deleteSession();
+
+      this.agent.server.registerPathHandler("/session", null);
+
+      
+      this._sessionlessConnections.forEach(connection => connection.close());
+      this._sessionlessConnections.clear();
     } finally {
       this._running = false;
     }

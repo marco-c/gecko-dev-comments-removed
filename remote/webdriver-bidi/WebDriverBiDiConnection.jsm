@@ -4,15 +4,17 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["WebDriverBiDiConnection"];
+var EXPORTED_SYMBOLS = ["splitMethod", "WebDriverBiDiConnection"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
   truncate: "chrome://remote/content/shared/Format.jsm",
   WebSocketConnection: "chrome://remote/content/shared/WebSocketConnection.jsm",
 });
@@ -47,6 +49,7 @@ class WebDriverBiDiConnection extends WebSocketConnection {
     }
 
     this.session = session;
+    logger.debug(`Connection ${this.id} attached to session ${session.id}`);
   }
 
   
@@ -127,7 +130,7 @@ class WebDriverBiDiConnection extends WebSocketConnection {
     const payload = JSON.stringify(packet, null, Log.verbose ? "\t" : null);
     logger.trace(truncate`${this.constructor.name} ${this.id} -> ${payload}`);
 
-    const { id, method  } = packet;
+    const { id, method, params } = packet;
 
     try {
       
@@ -138,11 +141,47 @@ class WebDriverBiDiConnection extends WebSocketConnection {
         throw new TypeError("Message missing 'method' field");
       }
 
+      
+      const { module, command } = splitMethod(method);
       let result;
+
+      
+      if (module === "session" && command === "new") {
+        
+        result = RemoteAgent.webDriverBiDi.createSession(params, this);
+      } else {
+        assert.session(this.session);
+
+        
+        
+      }
 
       this.sendResult(id, result);
     } catch (e) {
       this.sendError(packet.id, e);
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+function splitMethod(method) {
+  const parts = method.split(".");
+
+  if (parts.length != 2 || parts[0].length == 0 || parts[1].length == 0) {
+    throw new TypeError(`Invalid method format: '${method}'`);
+  }
+
+  return {
+    module: parts[0],
+    command: parts[1],
+  };
 }

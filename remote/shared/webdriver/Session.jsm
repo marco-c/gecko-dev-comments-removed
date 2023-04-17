@@ -151,7 +151,11 @@ class WebDriverSession {
 
 
 
-  constructor(capabilities) {
+
+
+
+
+  constructor(capabilities, connection) {
     
     
     
@@ -185,6 +189,13 @@ class WebDriverSession {
     
     if (this.a11yChecks && accessibility.service) {
       logger.info("Preemptively starting accessibility service in Chrome");
+    }
+
+    
+    
+    if (connection) {
+      connection.registerSession(this);
+      this._connections.add(connection);
     }
   }
 
@@ -222,6 +233,10 @@ class WebDriverSession {
 
   get unhandledPromptBehavior() {
     return this.capabilities.get("unhandledPromptBehavior");
+  }
+
+  toString() {
+    return `[object ${this.constructor.name} ${this.id}]`;
   }
 
   
