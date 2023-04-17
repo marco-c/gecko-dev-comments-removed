@@ -335,6 +335,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void ClearPermanentKey() { mPermanentKey.setNull(); }
   void MaybeSetPermanentKey(Element* aEmbedder);
 
+  
+  
+  
+  
+  
+  void AddPageAwakeRequest();
+  void RemovePageAwakeRequest();
+
   void CloneDocumentTreeInto(CanonicalBrowsingContext* aSource,
                              const nsACString& aRemoteType,
                              embedding::PrintData&& aPrintData);
