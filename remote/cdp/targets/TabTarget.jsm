@@ -32,8 +32,8 @@ class TabTarget extends Target {
 
 
 
-  constructor(targets, browser) {
-    super(targets, TabSession);
+  constructor(targetList, browser) {
+    super(targetList, TabSession);
 
     this.browser = browser;
 

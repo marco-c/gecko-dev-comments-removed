@@ -31,10 +31,10 @@ class Target {
 
 
 
-  constructor(targets, sessionClass) {
+  constructor(targetList, sessionClass) {
     
     
-    this.targets = targets;
+    this.targetList = targetList;
 
     
     

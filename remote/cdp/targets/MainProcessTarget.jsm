@@ -27,8 +27,8 @@ class MainProcessTarget extends Target {
   
 
 
-  constructor(targets) {
-    super(targets, MainProcessSession);
+  constructor(targetList) {
+    super(targetList, MainProcessSession);
 
     this.type = "browser";
 

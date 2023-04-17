@@ -91,11 +91,11 @@ class RemoteAgentClass {
     this.server = new HttpServer();
     this.server.registerPrefixHandler("/json/", new JSONHandler(this));
 
-    this.targets = new TargetList();
-    this.targets.on("target-created", (eventName, target) => {
+    this.targetList = new TargetList();
+    this.targetList.on("target-created", (eventName, target) => {
       this.server.registerPathHandler(target.path, target);
     });
-    this.targets.on("target-destroyed", (eventName, target) => {
+    this.targetList.on("target-destroyed", (eventName, target) => {
       this.server.registerPathHandler(target.path, null);
     });
 
@@ -104,11 +104,11 @@ class RemoteAgentClass {
 
   async asyncListen(host, port) {
     try {
-      await this.targets.watchForTargets();
+      await this.targetList.watchForTargets();
 
       
       
-      const mainTarget = this.targets.getMainProcessTarget();
+      const mainTarget = this.targetList.getMainProcessTarget();
 
       this.server._start(port, host);
       Services.obs.notifyObservers(
@@ -132,8 +132,8 @@ class RemoteAgentClass {
 
       
       
-      if (this.targets) {
-        this.targets.destructor();
+      if (this.targetList) {
+        this.targetList.destructor();
       }
 
       if (this.listening) {
@@ -144,7 +144,7 @@ class RemoteAgentClass {
       log.error("unable to stop listener", e);
     } finally {
       this.server = null;
-      this.targets = null;
+      this.targetList = null;
     }
 
     return Promise.resolve();
