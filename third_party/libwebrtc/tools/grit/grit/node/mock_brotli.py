@@ -1,0 +1,10 @@
+
+
+
+
+
+"""Mock Brotli Executable for testing purposes."""
+
+import sys
+
+sys.stdout.write('This has been mock compressed!')
