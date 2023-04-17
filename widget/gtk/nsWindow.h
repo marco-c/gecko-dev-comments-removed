@@ -359,7 +359,6 @@ class nsWindow final : public nsBaseWidget {
     GTK_DECORATION_SYSTEM,  
     GTK_DECORATION_CLIENT,  
     GTK_DECORATION_NONE,    
-    GTK_DECORATION_UNKNOWN
   } GtkWindowDecoration;
   
 

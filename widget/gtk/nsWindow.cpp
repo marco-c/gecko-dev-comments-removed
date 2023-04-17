@@ -271,8 +271,6 @@ static SystemTimeConverter<guint32>& TimeConverter() {
   return sTimeConverterSingleton;
 }
 
-nsWindow::GtkWindowDecoration nsWindow::sGtkWindowDecoration =
-    GTK_DECORATION_UNKNOWN;
 bool nsWindow::sTransparentMainWindow = false;
 
 namespace mozilla {
@@ -8616,83 +8614,63 @@ nsresult nsWindow::SynthesizeNativeTouchPadPinch(
 }
 
 nsWindow::GtkWindowDecoration nsWindow::GetSystemGtkWindowDecoration() {
-  if (sGtkWindowDecoration != GTK_DECORATION_UNKNOWN) {
-    return sGtkWindowDecoration;
-  }
-
-  
-  const char* decorationOverride = getenv("MOZ_GTK_TITLEBAR_DECORATION");
-  if (decorationOverride) {
-    if (strcmp(decorationOverride, "none") == 0) {
-      sGtkWindowDecoration = GTK_DECORATION_NONE;
-    } else if (strcmp(decorationOverride, "client") == 0) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strcmp(decorationOverride, "system") == 0) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-    }
-    return sGtkWindowDecoration;
-  }
-
-  
-  
-  if (GdkIsWaylandDisplay()) {
-    sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    return sGtkWindowDecoration;
-  }
-
-  
-  
-  
-  const char* csdOverride = getenv("GTK_CSD");
-  if (csdOverride && *csdOverride == '1') {
-    sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    return sGtkWindowDecoration;
-  }
-
-  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  if (currentDesktop) {
+  static GtkWindowDecoration sGtkWindowDecoration = [] {
     
-    if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-      
-    } else if (strstr(currentDesktop, "pop:GNOME") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-      
-    } else if (strstr(currentDesktop, "GNOME") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-    } else if (strstr(currentDesktop, "XFCE") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "X-Cinnamon") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-      
-    } else if (strstr(currentDesktop, "KDE") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "Enlightenment") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "LXDE") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "openbox") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "i3") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_NONE;
-    } else if (strstr(currentDesktop, "MATE") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-      
-    } else if (strstr(currentDesktop, "Unity") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-      
-    } else if (strstr(currentDesktop, "Pantheon") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else if (strstr(currentDesktop, "LXQt") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
-    } else if (strstr(currentDesktop, "Deepin") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-    } else {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
+    if (const char* decorationOverride =
+            getenv("MOZ_GTK_TITLEBAR_DECORATION")) {
+      if (strcmp(decorationOverride, "none") == 0) {
+        return GTK_DECORATION_NONE;
+      }
+      if (strcmp(decorationOverride, "client") == 0) {
+        return GTK_DECORATION_CLIENT;
+      }
+      if (strcmp(decorationOverride, "system") == 0) {
+        return GTK_DECORATION_SYSTEM;
+      }
     }
-  } else {
-    sGtkWindowDecoration = GTK_DECORATION_NONE;
-  }
+
+    
+    
+    if (GdkIsWaylandDisplay()) {
+      return GTK_DECORATION_CLIENT;
+    }
+
+    
+    
+    
+    const char* csdOverride = getenv("GTK_CSD");
+    if (csdOverride && *csdOverride == '1') {
+      return GTK_DECORATION_CLIENT;
+    }
+
+    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+    if (!currentDesktop) {
+      return GTK_DECORATION_NONE;
+    }
+    
+    if (strstr(currentDesktop, "pop:GNOME") || 
+        strstr(currentDesktop, "KDE") ||
+        strstr(currentDesktop, "Enlightenment") ||
+        strstr(currentDesktop, "LXDE") ||
+        strstr(currentDesktop, "openbox") ||
+        strstr(currentDesktop, "MATE") ||
+        strstr(currentDesktop, "Pantheon") ||
+        strstr(currentDesktop, "Deepin")) {
+      return GTK_DECORATION_CLIENT;
+    }
+    if (strstr(currentDesktop, "GNOME") ||
+        strstr(currentDesktop, "X-Cinnamon") ||
+        strstr(currentDesktop, "LXQt") ||
+        strstr(currentDesktop, "Unity")) {
+      return GTK_DECORATION_SYSTEM;
+    }
+    if (strstr(currentDesktop, "i3")) {
+      return GTK_DECORATION_NONE;
+    }
+    
+
+    return GTK_DECORATION_CLIENT;
+  }();
   return sGtkWindowDecoration;
 }
 
