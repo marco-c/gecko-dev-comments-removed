@@ -821,6 +821,7 @@ void nsThread::WaitForAllAsynchronousShutdowns() {
   
   
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
+      "nsThread::WaitForAllAsynchronousShutdowns"_ns,
       [&]() { return mRequestedShutdownContexts.IsEmpty(); }, this);
 }
 
@@ -837,8 +838,10 @@ nsThread::Shutdown() {
 
   
   
-  SpinEventLoopUntil([&, context]() { return !context->mAwaitingShutdownAck; },
-                     context->mJoiningThread);
+  SpinEventLoopUntil(
+      "nsThread::Shutdown"_ns,
+      [&, context]() { return !context->mAwaitingShutdownAck; },
+      context->mJoiningThread);
 
   ShutdownComplete(context);
 

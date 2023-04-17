@@ -9,6 +9,7 @@
 #include "nsThreadPool.h"
 #include "nsThreadUtils.h"
 #include "nsIClassInfoImpl.h"
+#include "nsExceptionHandler.h"
 #include "nsTArray.h"
 #include "nsXULAppAPI.h"
 #include "nsExceptionHandler.h"
@@ -388,7 +389,9 @@ void nsThreadManager::Shutdown() {
   
   
   
-  ::SpinEventLoopUntil([&]() { return taskQueuesShutdown; }, mMainThread);
+  mozilla::SpinEventLoopUntil(
+      "nsThreadManager::Shutdown"_ns, [&]() { return taskQueuesShutdown; },
+      mMainThread);
 
   {
     
@@ -519,7 +522,9 @@ void nsThreadManager::CancelBackgroundDelayedRunnables() {
   bool canceled = false;
   mBackgroundEventTarget->CancelBackgroundDelayedRunnables()->Then(
       GetMainThreadSerialEventTarget(), __func__, [&] { canceled = true; });
-  ::SpinEventLoopUntil([&]() { return canceled; });
+  mozilla::SpinEventLoopUntil(
+      "nsThreadManager::CancelBackgroundDelayedRunnables"_ns,
+      [&]() { return canceled; });
 }
 
 nsThread* nsThreadManager::GetCurrentThread() {
@@ -651,73 +656,29 @@ nsThreadManager::SpinEventLoopUntilOrQuit(
                                     ShutdownPhase::AppShutdownConfirmed);
 }
 
-struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
-  explicit AutoNestedEventLoopAnnotation(const nsACString& aEntry)
-      : mPrev(sCurrent) {
-    sCurrent = this;
-    if (mPrev) {
-      mStack = mPrev->mStack + "|"_ns + aEntry;
-    } else {
-      mStack = aEntry;
-    }
-    CrashReporter::AnnotateCrashReport(
-        CrashReporter::Annotation::XPCOMSpinEventLoopStack, mStack);
-  }
-
-  ~AutoNestedEventLoopAnnotation() {
-    MOZ_ASSERT(sCurrent == this);
-    sCurrent = mPrev;
-    if (mPrev) {
-      CrashReporter::AnnotateCrashReport(
-          CrashReporter::Annotation::XPCOMSpinEventLoopStack, mPrev->mStack);
-    } else {
-      CrashReporter::RemoveCrashReportAnnotation(
-          CrashReporter::Annotation::XPCOMSpinEventLoopStack);
-    }
-  }
-
- private:
-  AutoNestedEventLoopAnnotation(const AutoNestedEventLoopAnnotation&) = delete;
-  AutoNestedEventLoopAnnotation& operator=(
-      const AutoNestedEventLoopAnnotation&) = delete;
-
-  static AutoNestedEventLoopAnnotation* sCurrent;
-
-  AutoNestedEventLoopAnnotation* mPrev;
-  nsCString mStack;
-};
 
 AutoNestedEventLoopAnnotation* AutoNestedEventLoopAnnotation::sCurrent =
     nullptr;
 
+
+void AutoNestedEventLoopAnnotation::AnnotateXPCOMSpinEventLoopStack(
+    const nsACString& aStack) {
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::XPCOMSpinEventLoopStack, aStack);
+}
+
 nsresult nsThreadManager::SpinEventLoopUntilInternal(
     const nsACString& aVeryGoodReasonToDoThis,
     nsINestedEventLoopCondition* aCondition,
-    ShutdownPhase aCheckingShutdownPhase) {
-  AutoNestedEventLoopAnnotation annotation(aVeryGoodReasonToDoThis);
-  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_NONSENSITIVE(
-      "nsThreadManager::SpinEventLoop", OTHER, aVeryGoodReasonToDoThis);
-  AUTO_PROFILER_MARKER_TEXT("SpinEventLoop", OTHER, MarkerStack::Capture(),
-                            aVeryGoodReasonToDoThis);
-
+    ShutdownPhase aShutdownPhaseToCheck) {
   
   nsCOMPtr<nsINestedEventLoopCondition> condition(aCondition);
   nsresult rv = NS_OK;
 
-  bool checkingShutdown =
-      (aCheckingShutdownPhase > ShutdownPhase::NotInShutdown);
-
-  
-  if (checkingShutdown &&
-      AppShutdown::GetCurrentShutdownPhase() >= aCheckingShutdownPhase) {
-    return NS_OK;
-  }
-
-  if (!mozilla::SpinEventLoopUntil([&]() -> bool {
+  if (!mozilla::SpinEventLoopUntil(aVeryGoodReasonToDoThis, [&]() -> bool {
         
-        if (checkingShutdown &&
-            AppShutdown::GetCurrentShutdownPhase() >= aCheckingShutdownPhase) {
-          
+        if (aShutdownPhaseToCheck > ShutdownPhase::NotInShutdown &&
+            AppShutdown::GetCurrentShutdownPhase() >= aShutdownPhaseToCheck) {
           return true;
         }
 
