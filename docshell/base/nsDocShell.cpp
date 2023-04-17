@@ -2445,14 +2445,8 @@ void nsDocShell::MaybeCreateInitialClientSource(nsIPrincipal* aPrincipal) {
     return;
   }
 
-  
-  
   nsIPrincipal* principal =
-      aPrincipal
-          ? aPrincipal
-          : GetInheritedPrincipal(
-                false, StoragePrincipalHelper::
-                           ShouldUsePartitionPrincipalForServiceWorker(this));
+      aPrincipal ? aPrincipal : GetInheritedPrincipal(false);
 
   
   
@@ -6624,14 +6618,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
       partitionedPrincipal = aPartitionedPrincipal;
     }
 
-    
-    
-    
-    MaybeCreateInitialClientSource(
-        StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
-            this)
-            ? partitionedPrincipal
-            : principal);
+    MaybeCreateInitialClientSource(principal);
 
     
     blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal,
