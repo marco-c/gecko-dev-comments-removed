@@ -17,6 +17,11 @@ bool IsOpaqueBlockListedMIMEType(const nsACString& aContentType);
 
 bool IsOpaqueBlockListedNeverSniffedMIMEType(const nsACString& aContentType);
 
+
+
+Result<std::tuple<int64_t, int64_t, int64_t>, nsresult>
+ParseContentRangeHeaderString(const nsAutoCString& aRangeStr);
+
 }  
 }  
 
