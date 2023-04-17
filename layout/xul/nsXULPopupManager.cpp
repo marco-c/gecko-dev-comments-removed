@@ -795,6 +795,11 @@ bool nsXULPopupManager::ShowPopupAsNativeMenu(nsIContent* aPopup, int32_t aXPos,
     return true;
   }
 
+  
+  
+  aPopup->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden,
+                               u"true"_ns, true);
+
   nsCOMPtr<nsIContent> triggerContent;
   InitTriggerEvent(aTriggerEvent, aPopup, getter_AddRefs(triggerContent));
 
@@ -859,6 +864,11 @@ void nsXULPopupManager::OnNativeMenuClosed() {
   }
   mNativeMenu->RemoveObserver(this);
   mNativeMenu = nullptr;
+
+  
+  
+  popup->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden,
+                                true);
 }
 
 void nsXULPopupManager::ShowPopupAtScreenRect(
