@@ -79,6 +79,19 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   
   
+  
+  struct KeepAliveDeleter {
+    void operator()(BrowsingContextGroup* aPtr) {
+      if (RefPtr<BrowsingContextGroup> ptr = already_AddRefed(aPtr)) {
+        ptr->RemoveKeepAlive();
+      }
+    }
+  };
+  using KeepAlivePtr = UniquePtr<BrowsingContextGroup, KeepAliveDeleter>;
+  KeepAlivePtr MakeKeepAlivePtr();
+
+  
+  
   void UpdateToplevelsSuspendedIfNeeded();
 
   
@@ -231,5 +244,17 @@ class BrowsingContextGroup final : public nsWrapperCache {
 };
 }  
 }  
+
+inline void ImplCycleCollectionUnlink(
+    mozilla::dom::BrowsingContextGroup::KeepAlivePtr& aField) {
+  aField = nullptr;
+}
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    mozilla::dom::BrowsingContextGroup::KeepAlivePtr& aField, const char* aName,
+    uint32_t aFlags = 0) {
+  CycleCollectionNoteChild(aCallback, aField.get(), aName, aFlags);
+}
 
 #endif  
