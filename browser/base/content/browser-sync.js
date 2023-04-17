@@ -498,6 +498,10 @@ var gSync = {
         document,
         "appMenu-header-description"
       );
+      const appMenuHeaderText = PanelMultiView.getViewNode(
+        document,
+        "appMenu-fxa-text"
+      );
       appMenuHeaderTitle.hidden = true;
       
       
@@ -505,6 +509,9 @@ var gSync = {
       
       appMenuHeaderDescription.value = this.fluentStrings.formatValueSync(
         "appmenu-fxa-signed-in-label"
+      );
+      appMenuHeaderText.textContent = this.fluentStrings.formatValueSync(
+        "appmenu-fxa-sync-and-save-data2"
       );
     }
 
