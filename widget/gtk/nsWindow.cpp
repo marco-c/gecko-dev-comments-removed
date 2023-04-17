@@ -1472,7 +1472,7 @@ bool nsWindow::IsPopupInLayoutPopupChain(
 
 void nsWindow::WaylandPopupHierarchyHideByLayout(
     nsTArray<nsIWidget*>* aLayoutWidgetHierarchy) {
-  LOG_POPUP(("nsWindow::WaylandPopupHierarchyMarkByLayout"));
+  LOG_POPUP(("nsWindow::WaylandPopupHierarchyHideByLayout"));
   MOZ_ASSERT(mWaylandToplevel == nullptr, "Should be called on toplevel only!");
 
   
@@ -1491,8 +1491,9 @@ void nsWindow::WaylandPopupHierarchyHideByLayout(
 }
 
 
-void nsWindow::WaylandPopupHierarchyMarkByLayout(
+void nsWindow::WaylandPopupHierarchyValidateByLayout(
     nsTArray<nsIWidget*>* aLayoutWidgetHierarchy) {
+  LOG_POPUP(("nsWindow::WaylandPopupHierarchyValidateByLayout"));
   nsWindow* popup = mWaylandPopupNext;
   while (popup) {
     if (popup->mPopupType == ePopupTypeTooltip) {
@@ -1835,7 +1836,8 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
   GetLayoutPopupWidgetChain(&layoutPopupWidgetChain);
 
   mWaylandToplevel->WaylandPopupHierarchyHideByLayout(&layoutPopupWidgetChain);
-  mWaylandToplevel->WaylandPopupHierarchyMarkByLayout(&layoutPopupWidgetChain);
+  mWaylandToplevel->WaylandPopupHierarchyValidateByLayout(
+      &layoutPopupWidgetChain);
 
   
   
@@ -1883,7 +1885,8 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
   }
 
   GetLayoutPopupWidgetChain(&layoutPopupWidgetChain);
-  mWaylandToplevel->WaylandPopupHierarchyMarkByLayout(&layoutPopupWidgetChain);
+  mWaylandToplevel->WaylandPopupHierarchyValidateByLayout(
+      &layoutPopupWidgetChain);
 
   changedPopup->WaylandPopupHierarchyCalculatePositions();
 
