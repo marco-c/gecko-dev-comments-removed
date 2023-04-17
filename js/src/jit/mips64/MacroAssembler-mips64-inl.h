@@ -1,22 +1,22 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef jit_mips64_MacroAssembler_mips64_inl_h
 #define jit_mips64_MacroAssembler_mips64_inl_h
 
 #include "jit/mips64/MacroAssembler-mips64.h"
 
-#include "vm/BigIntType.h"  
+#include "vm/BigIntType.h"  // JS::BigInt
 
 #include "jit/mips-shared/MacroAssembler-mips-shared-inl.h"
 
 namespace js {
 namespace jit {
 
-
+//{{{ check_macroassembler_style
 
 void MacroAssembler::move64(Register64 src, Register64 dest) {
   movePtr(src.reg, dest.reg);
@@ -64,15 +64,15 @@ void MacroAssembler::move32ZeroExtendToPtr(Register src, Register dest) {
   ma_dext(dest, src, Imm32(0), Imm32(32));
 }
 
-
-
+// ===============================================================
+// Load instructions
 
 void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
   load32(src, dest);
 }
 
-
-
+// ===============================================================
+// Logical instructions
 
 void MacroAssembler::notPtr(Register reg) { ma_not(reg, reg); }
 
@@ -148,8 +148,8 @@ void MacroAssembler::xorPtr(Register src, Register dest) { ma_xor(dest, src); }
 
 void MacroAssembler::xorPtr(Imm32 imm, Register dest) { ma_xor(dest, imm); }
 
-
-
+// ===============================================================
+// Swap instructions
 
 void MacroAssembler::byteSwap64(Register64 reg64) {
   Register reg = reg64.reg;
@@ -157,8 +157,8 @@ void MacroAssembler::byteSwap64(Register64 reg64) {
   ma_dshd(reg, reg);
 }
 
-
-
+// ===============================================================
+// Arithmetic functions
 
 void MacroAssembler::addPtr(Register src, Register dest) {
   ma_daddu(dest, src);
@@ -307,8 +307,8 @@ void MacroAssembler::neg64(Register64 reg) { as_dsubu(reg.reg, zero, reg.reg); }
 
 void MacroAssembler::negPtr(Register reg) { as_dsubu(reg, zero, reg); }
 
-
-
+// ===============================================================
+// Shift functions
 
 void MacroAssembler::lshiftPtr(Imm32 imm, Register dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
@@ -360,8 +360,8 @@ void MacroAssembler::rshift64Arithmetic(Register shift, Register64 dest) {
   ma_dsra(dest.reg, dest.reg, shift);
 }
 
-
-
+// ===============================================================
+// Rotation functions
 
 void MacroAssembler::rotateLeft64(Imm32 count, Register64 src, Register64 dest,
                                   Register temp) {
@@ -397,23 +397,23 @@ void MacroAssembler::rotateRight64(Register count, Register64 src,
   ma_dror(dest.reg, src.reg, count);
 }
 
-
-
+// ===============================================================
+// Condition functions
 
 template <typename T1, typename T2>
 void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
   ma_cmp_set(dest, lhs, rhs, cond);
 }
 
-
+// Also see below for specializations of cmpPtrSet.
 
 template <typename T1, typename T2>
 void MacroAssembler::cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest) {
   ma_cmp_set(dest, lhs, rhs, cond);
 }
 
-
-
+// ===============================================================
+// Bit counting functions
 
 void MacroAssembler::clz64(Register64 src, Register dest) {
   as_dclz(dest, src.reg);
@@ -448,8 +448,8 @@ void MacroAssembler::popcnt64(Register64 input, Register64 output,
   ma_dsra(output.reg, output.reg, Imm32(56));
 }
 
-
-
+// ===============================================================
+// Branch functions
 
 void MacroAssembler::branch64(Condition cond, Register64 lhs, Imm64 val,
                               Label* success, Label* fail) {
@@ -491,6 +491,14 @@ void MacroAssembler::branch64(Condition cond, const Address& lhs, Imm64 val,
              "other condition codes not supported");
 
   branchPtr(cond, lhs, ImmWord(val.value), label);
+}
+
+void MacroAssembler::branch64(Condition cond, const Address& lhs,
+                              Register64 rhs, Label* label) {
+  MOZ_ASSERT(cond == Assembler::NotEqual || cond == Assembler::Equal,
+             "other condition codes not supported");
+
+  branchPtr(cond, lhs, rhs.reg, label);
 }
 
 void MacroAssembler::branch64(Condition cond, const Address& lhs,
@@ -691,11 +699,11 @@ void MacroAssembler::fallibleUnboxPtr(const ValueOperand& src, Register dest,
                                       JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
              type == JSVAL_TYPE_SYMBOL || type == JSVAL_TYPE_BIGINT);
-  
-  
-  
-  
-  
+  // dest := src XOR mask
+  // scratch := dest >> JSVAL_TAG_SHIFT
+  // fail if scratch != 0
+  //
+  // Note: src and dest can be the same register
   ScratchRegisterScope scratch(asMasm());
   mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
   ma_xor(scratch, src.valueReg());
@@ -716,11 +724,11 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
   fallibleUnboxPtr(ValueOperand(dest), dest, type, fail);
 }
 
+//}}} check_macroassembler_style
+// ===============================================================
 
-
-
-
-
+// The specializations for cmpPtrSet are outside the braces because
+// check_macroassembler_style can't yet deal with specializations.
 
 template <>
 inline void MacroAssembler::cmpPtrSet(Assembler::Condition cond, Address lhs,
@@ -786,14 +794,14 @@ void MacroAssemblerMIPS64Compat::incrementInt32Value(const Address& addr) {
 }
 
 void MacroAssemblerMIPS64Compat::retn(Imm32 n) {
-  
+  // pc <- [sp]; sp += n
   loadPtr(Address(StackPointer, 0), ra);
   asMasm().addPtr(n, StackPointer);
   as_jr(ra);
   as_nop();
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
-#endif 
+#endif /* jit_mips64_MacroAssembler_mips64_inl_h */
