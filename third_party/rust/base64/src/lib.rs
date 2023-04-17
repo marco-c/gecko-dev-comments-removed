@@ -161,7 +161,7 @@ pub struct Config {
 
 impl Config {
     
-    pub fn new(char_set: CharacterSet, pad: bool) -> Config {
+    pub const fn new(char_set: CharacterSet, pad: bool) -> Config {
         Config {
             char_set,
             pad,
@@ -170,7 +170,7 @@ impl Config {
     }
 
     
-    pub fn pad(self, pad: bool) -> Config {
+    pub const fn pad(self, pad: bool) -> Config {
         Config { pad, ..self }
     }
 
@@ -178,7 +178,7 @@ impl Config {
     
     
     
-    pub fn decode_allow_trailing_bits(self, allow: bool) -> Config {
+    pub const fn decode_allow_trailing_bits(self, allow: bool) -> Config {
         Config {
             decode_allow_trailing_bits: allow,
             ..self
@@ -236,8 +236,10 @@ pub const IMAP_MUTF7: Config = Config {
 };
 
 
-pub const BINHEX : Config = Config {
+pub const BINHEX: Config = Config {
     char_set: CharacterSet::BinHex,
     pad: false,
     decode_allow_trailing_bits: false,
 };
+
+const PAD_BYTE: u8 = b'=';

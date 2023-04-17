@@ -131,6 +131,45 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(
     renamed_and_removed_lints,
     unknown_lints, 
@@ -750,6 +789,7 @@ pub enum BinaryOperator {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum AtomicFunction {
     Add,
+    Subtract,
     And,
     ExclusiveOr,
     InclusiveOr,

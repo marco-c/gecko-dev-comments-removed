@@ -14,6 +14,25 @@ use crate::{
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn all_simple_paths<TargetColl, G>(
     graph: G,
     from: G::NodeId,

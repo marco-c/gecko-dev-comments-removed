@@ -3,9 +3,9 @@ use std::collections::{BinaryHeap, HashMap};
 
 use std::hash::Hash;
 
-use super::visit::{EdgeRef, IntoEdges, VisitMap, Visitable};
 use crate::algo::Measure;
 use crate::scored::MinScored;
+use crate::visit::{EdgeRef, IntoEdges, VisitMap, Visitable};
 
 
 

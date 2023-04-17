@@ -127,3 +127,20 @@ impl ops::Index<Handle<crate::Expression>> for Typifier {
         &self.resolutions[handle.index()]
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn align_up(value: u32, align: u32) -> u32 {
+    ((value.wrapping_sub(1)) & !(align - 1)).wrapping_add(align)
+}

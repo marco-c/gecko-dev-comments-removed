@@ -1,4 +1,4 @@
-use super::{conv, Error, ExpectedToken, Span, Token, TokenSpan};
+use super::{conv, Error, ExpectedToken, NumberType, Span, Token, TokenSpan};
 
 fn _consume_str<'a>(input: &'a str, what: &str) -> Option<&'a str> {
     if input.starts_with(what) {
@@ -13,48 +13,283 @@ fn consume_any(input: &str, what: impl Fn(char) -> bool) -> (&str, &str) {
     input.split_at(pos)
 }
 
-fn consume_number(input: &str) -> (Token, &str) {
+
+
+
+pub fn try_skip_prefix<'a, 'b>(input: &'a str, prefix: &'b str) -> (bool, &'a str, usize) {
+    if input.starts_with(prefix) {
+        (true, &input[prefix.len()..], prefix.len())
+    } else {
+        (false, input, 0)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum NLDigitState {
+    Nothing,
+    LeadingZero,
+    DigitBeforeDot,
+    OnlyDot,
+    DigitsThenDot,
+    DigitAfterDot,
+    Exponent,
+    SignAfterExponent,
+    DigitAfterExponent,
+}
+
+struct NumberLexerState {
+    _minus: bool,
+    hex: bool,
+    leading_zeros: usize,
+    digit_state: NLDigitState,
+    uint_suffix: bool,
+}
+
+impl NumberLexerState {
     
-    let mut is_first_char = true;
-    let mut right_after_exponent = false;
+
+    pub fn _is_valid_number(&self) -> bool {
+        match *self {
+            Self {
+                _minus: false, 
+                hex,
+                leading_zeros,
+                digit_state: NLDigitState::LeadingZero,
+                ..
+            } => hex || leading_zeros == 1, 
+            Self {
+                _minus: minus,
+                hex,
+                leading_zeros,
+                digit_state: NLDigitState::DigitBeforeDot,
+                uint_suffix,
+            } => {
+                (hex || leading_zeros == 0) 
+                                              
+                                              
+                    && (minus ^ uint_suffix) 
+            }
+            _ => self.is_float(),
+        }
+    }
+
+    pub fn is_float(&self) -> bool {
+        !self.uint_suffix
+            && (self.digit_state == NLDigitState::DigitsThenDot
+                || self.digit_state == NLDigitState::DigitAfterDot
+                || self.digit_state == NLDigitState::DigitAfterExponent)
+    }
+}
+
+fn consume_number(input: &str) -> (Token, &str) {
+    let (minus, working_substr, minus_offset) = try_skip_prefix(input, "-");
+
+    let (hex, working_substr, hex_offset) = try_skip_prefix(working_substr, "0x");
+
+    let mut state = NumberLexerState {
+        _minus: minus,
+        hex,
+        leading_zeros: 0,
+        digit_state: NLDigitState::Nothing,
+        uint_suffix: false,
+    };
 
     let mut what = |c| {
-        if is_first_char {
-            is_first_char = false;
-            c == '-' || ('0'..='9').contains(&c) || c == '.'
-        } else if c == 'e' || c == 'E' {
-            right_after_exponent = true;
-            true
-        } else if right_after_exponent {
-            right_after_exponent = false;
-            ('0'..='9').contains(&c) || c == '-'
-        } else {
-            ('0'..='9').contains(&c) || c == '.'
-        }
-    };
-    let pos = input.find(|c| !what(c)).unwrap_or_else(|| input.len());
-    let (value, rest) = input.split_at(pos);
-
-    let mut rest_iter = rest.chars();
-    let ty = rest_iter.next().unwrap_or(' ');
-    match ty {
-        'u' | 'i' | 'f' => {
-            let width_end = rest_iter
-                .position(|c| !('0'..='9').contains(&c))
-                .unwrap_or_else(|| rest.len() - 1);
-            let (width, rest) = rest[1..].split_at(width_end);
-            (Token::Number { value, ty, width }, rest)
-        }
-        
-        _ => (
-            Token::Number {
-                value,
-                ty: if value.contains('.') { 'f' } else { 'i' },
-                width: "",
+        match state {
+            NumberLexerState {
+                hex,
+                digit_state: NLDigitState::Nothing,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0' => {
+                    state.digit_state = NLDigitState::LeadingZero;
+                    state.leading_zeros += 1;
+                }
+                '1'..='9' => {
+                    state.digit_state = NLDigitState::DigitBeforeDot;
+                }
+                'a'..='f' | 'A'..='F' if hex => {
+                    state.digit_state = NLDigitState::DigitBeforeDot;
+                }
+                '.' => {
+                    state.digit_state = NLDigitState::OnlyDot;
+                }
+                _ => return false,
             },
-            rest,
-        ),
-    }
+
+            NumberLexerState {
+                hex,
+                digit_state: NLDigitState::LeadingZero,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0' => {
+                    
+                    state.leading_zeros += 1;
+                }
+                '1'..='9' => {
+                    state.digit_state = NLDigitState::DigitBeforeDot;
+                }
+                'a'..='f' | 'A'..='F' if hex => {
+                    state.digit_state = NLDigitState::DigitBeforeDot;
+                }
+                '.' => {
+                    state.digit_state = NLDigitState::DigitsThenDot;
+                }
+                'e' | 'E' if !hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                'p' | 'P' if hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                'u' => {
+                    
+                    state.uint_suffix = true;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                hex,
+                digit_state: NLDigitState::DigitBeforeDot,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0'..='9' => {
+                    
+                }
+                'a'..='f' | 'A'..='F' if hex => {
+                    
+                }
+                '.' => {
+                    state.digit_state = NLDigitState::DigitsThenDot;
+                }
+                'e' | 'E' if !hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                'p' | 'P' if hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                'u' => {
+                    
+                    state.uint_suffix = true;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                hex,
+                digit_state: NLDigitState::OnlyDot,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0'..='9' => {
+                    state.digit_state = NLDigitState::DigitAfterDot;
+                }
+                'a'..='f' | 'A'..='F' if hex => {
+                    state.digit_state = NLDigitState::DigitAfterDot;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                hex,
+                digit_state: NLDigitState::DigitsThenDot,
+                uint_suffix: false,
+                ..
+            }
+            | NumberLexerState {
+                hex,
+                digit_state: NLDigitState::DigitAfterDot,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0'..='9' => {
+                    state.digit_state = NLDigitState::DigitAfterDot;
+                }
+                'a'..='f' | 'A'..='F' if hex => {
+                    state.digit_state = NLDigitState::DigitAfterDot;
+                }
+                'e' | 'E' if !hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                'p' | 'P' if hex => {
+                    state.digit_state = NLDigitState::Exponent;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                digit_state: NLDigitState::Exponent,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0'..='9' => {
+                    state.digit_state = NLDigitState::DigitAfterExponent;
+                }
+                '-' | '+' => {
+                    state.digit_state = NLDigitState::SignAfterExponent;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                digit_state: NLDigitState::SignAfterExponent,
+                uint_suffix: false,
+                ..
+            }
+            | NumberLexerState {
+                digit_state: NLDigitState::DigitAfterExponent,
+                uint_suffix: false,
+                ..
+            } => match c {
+                '0'..='9' => {
+                    state.digit_state = NLDigitState::DigitAfterExponent;
+                }
+                _ => return false,
+            },
+
+            NumberLexerState {
+                uint_suffix: true, ..
+            } => return false, 
+        }
+
+        
+        true
+    };
+
+    let pos = working_substr
+        .find(|c| !what(c))
+        .unwrap_or_else(|| working_substr.len());
+    let (value, rest) = input.split_at(pos + minus_offset + hex_offset);
+
+    
+    
+    
+    
+
+    
+
+    
+    (
+        Token::Number {
+            value: if state.uint_suffix {
+                &value[..value.len() - 1]
+            } else {
+                value
+            },
+            ty: if state.uint_suffix {
+                NumberType::Uint
+            } else if state.is_float() {
+                NumberType::Float
+            } else {
+                NumberType::Sint
+            },
+            width: None,
+        },
+        rest,
+    )
 }
 
 fn consume_token(mut input: &str, generic: bool) -> (Token<'_>, &str) {
@@ -291,34 +526,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn _next_float_literal(&mut self) -> Result<f32, Error<'a>> {
-        match self.next() {
-            (Token::Number { value, .. }, span) => {
-                value.parse().map_err(|e| Error::BadFloat(span, e))
-            }
-            other => Err(Error::Unexpected(other, ExpectedToken::Float)),
-        }
-    }
-
-    pub(super) fn next_uint_literal(&mut self) -> Result<u32, Error<'a>> {
-        match self.next() {
-            (Token::Number { value, .. }, span) => {
-                let v = value.parse();
-                v.map_err(|e| Error::BadU32(span, e))
-            }
-            other => Err(Error::Unexpected(other, ExpectedToken::Uint)),
-        }
-    }
-
-    pub(super) fn next_sint_literal(&mut self) -> Result<i32, Error<'a>> {
-        match self.next() {
-            (Token::Number { value, .. }, span) => {
-                value.parse().map_err(|e| Error::BadI32(span, e))
-            }
-            other => Err(Error::Unexpected(other, ExpectedToken::Sint)),
-        }
-    }
-
     
     pub(super) fn next_scalar_generic(
         &mut self,
@@ -409,8 +616,8 @@ fn test_tokens() {
         &[
             Token::Number {
                 value: "92",
-                ty: 'i',
-                width: "",
+                ty: NumberType::Sint,
+                width: None,
             },
             Token::Word("No"),
         ],
@@ -420,8 +627,13 @@ fn test_tokens() {
         &[
             Token::Number {
                 value: "2",
-                ty: 'u',
-                width: "3",
+                ty: NumberType::Uint,
+                width: None,
+            },
+            Token::Number {
+                value: "3",
+                ty: NumberType::Sint,
+                width: None,
             },
             Token::Word("o"),
         ],
@@ -431,10 +643,10 @@ fn test_tokens() {
         &[
             Token::Number {
                 value: "2.4",
-                ty: 'f',
-                width: "44",
+                ty: NumberType::Float,
+                width: None,
             },
-            Token::Word("po"),
+            Token::Word("f44po"),
         ],
     );
     sub_test(
@@ -456,8 +668,8 @@ fn test_variable_decl() {
             Token::Paren('('),
             Token::Number {
                 value: "0",
-                ty: 'i',
-                width: "",
+                ty: NumberType::Sint,
+                width: None,
             },
             Token::Paren(')'),
             Token::DoubleParen(']'),

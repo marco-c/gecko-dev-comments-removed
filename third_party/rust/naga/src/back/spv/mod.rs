@@ -13,7 +13,7 @@ mod writer;
 
 pub use spirv::Capability;
 
-use crate::{arena::Handle, back::BoundsCheckPolicy, proc::TypeResolution};
+use crate::{arena::Handle, back::BoundsCheckPolicies, proc::TypeResolution};
 
 use spirv::Word;
 use std::ops;
@@ -55,6 +55,8 @@ const BITS_PER_BYTE: crate::Bytes = 8;
 
 #[derive(Clone, Debug, Error)]
 pub enum Error {
+    #[error("The requested entry point couldn't be found")]
+    EntryPointNotFound,
     #[error("target SPIRV-{0}.{1} is not supported")]
     UnsupportedVersion(u8, u8),
     #[error("using {0} requires at least one of the capabilities {1:?}, but none are available")]
@@ -162,6 +164,74 @@ impl Function {
 
 
 #[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
+struct LocalImageType {
+    sampled_type: crate::ScalarKind,
+    dim: spirv::Dim,
+    flags: ImageTypeFlags,
+    image_format: spirv::ImageFormat,
+}
+
+bitflags::bitflags! {
+    /// Flags corresponding to the boolean(-ish) parameters to OpTypeImage.
+    pub struct ImageTypeFlags: u8 {
+        const DEPTH = 0x1;
+        const ARRAYED = 0x2;
+        const MULTISAMPLED = 0x4;
+        const SAMPLED = 0x8;
+    }
+}
+
+impl LocalImageType {
+    
+    fn from_inner(dim: crate::ImageDimension, arrayed: bool, class: crate::ImageClass) -> Self {
+        let make_flags = |multi: bool, other: ImageTypeFlags| -> ImageTypeFlags {
+            let mut flags = other;
+            flags.set(ImageTypeFlags::ARRAYED, arrayed);
+            flags.set(ImageTypeFlags::MULTISAMPLED, multi);
+            flags
+        };
+
+        let dim = spirv::Dim::from(dim);
+
+        match class {
+            crate::ImageClass::Sampled { kind, multi } => LocalImageType {
+                sampled_type: kind,
+                dim,
+                flags: make_flags(multi, ImageTypeFlags::SAMPLED),
+                image_format: spirv::ImageFormat::Unknown,
+            },
+            crate::ImageClass::Depth { multi } => LocalImageType {
+                sampled_type: crate::ScalarKind::Float,
+                dim,
+                flags: make_flags(multi, ImageTypeFlags::DEPTH | ImageTypeFlags::SAMPLED),
+                image_format: spirv::ImageFormat::Unknown,
+            },
+            crate::ImageClass::Storage { format, access: _ } => LocalImageType {
+                sampled_type: crate::ScalarKind::from(format),
+                dim,
+                flags: make_flags(false, ImageTypeFlags::empty()),
+                image_format: format.into(),
+            },
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
 enum LocalType {
     
     Value {
@@ -182,11 +252,7 @@ enum LocalType {
         base: Handle<crate::Type>,
         class: spirv::StorageClass,
     },
-    Image {
-        dim: crate::ImageDimension,
-        arrayed: bool,
-        class: crate::ImageClass,
-    },
+    Image(LocalImageType),
     SampledImage {
         image_type_id: Word,
     },
@@ -255,11 +321,7 @@ fn make_local(inner: &crate::TypeInner) -> Option<LocalType> {
             dim,
             arrayed,
             class,
-        } => LocalType::Image {
-            dim,
-            arrayed,
-            class,
-        },
+        } => LocalType::Image(LocalImageType::from_inner(dim, arrayed, class)),
         crate::TypeInner::Sampler { comparison: _ } => LocalType::Sampler,
         _ => return None,
     })
@@ -327,8 +389,15 @@ struct GlobalVariable {
 }
 
 impl GlobalVariable {
-    fn new(id: Word) -> GlobalVariable {
-        GlobalVariable { id, handle_id: 0 }
+    fn dummy() -> Self {
+        Self {
+            id: 0,
+            handle_id: 0,
+        }
+    }
+
+    fn new(id: Word) -> Self {
+        Self { id, handle_id: 0 }
     }
 
     
@@ -417,8 +486,7 @@ pub struct Writer {
     debugs: Vec<Instruction>,
     annotations: Vec<Instruction>,
     flags: WriterFlags,
-    index_bounds_check_policy: BoundsCheckPolicy,
-    image_bounds_check_policy: BoundsCheckPolicy,
+    bounds_check_policies: BoundsCheckPolicies,
     void_type: Word,
     
     lookup_type: crate::FastHashMap<LookupType, Word>,
@@ -443,6 +511,9 @@ bitflags::bitflags! {
         const DEBUG = 0x1;
         /// Flip Y coordinate of `BuiltIn::Position` output.
         const ADJUST_COORDINATE_SPACE = 0x2;
+        /// Emit `OpLabel` for input/output locations.
+        /// Some drivers treat it as semantic, not allowing any conflicts.
+        const LABEL_VARYINGS = 0x4;
     }
 }
 
@@ -462,15 +533,12 @@ pub struct Options {
 
     
     
-    pub index_bounds_check_policy: BoundsCheckPolicy,
-    
-    
-    pub image_bounds_check_policy: BoundsCheckPolicy,
+    pub bounds_check_policies: BoundsCheckPolicies,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        let mut flags = WriterFlags::ADJUST_COORDINATE_SPACE;
+        let mut flags = WriterFlags::ADJUST_COORDINATE_SPACE | WriterFlags::LABEL_VARYINGS;
         if cfg!(debug_assertions) {
             flags |= WriterFlags::DEBUG;
         }
@@ -478,19 +546,33 @@ impl Default for Options {
             lang_version: (1, 0),
             flags,
             capabilities: None,
-            index_bounds_check_policy: super::BoundsCheckPolicy::default(),
-            image_bounds_check_policy: super::BoundsCheckPolicy::default(),
+            bounds_check_policies: super::BoundsCheckPolicies::default(),
         }
     }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct PipelineOptions {
+    
+    pub shader_stage: crate::ShaderStage,
+    
+    
+    
+    
+    pub entry_point: String,
 }
 
 pub fn write_vec(
     module: &crate::Module,
     info: &crate::valid::ModuleInfo,
     options: &Options,
+    pipeline_options: Option<&PipelineOptions>,
 ) -> Result<Vec<u32>, Error> {
     let mut words = Vec::new();
     let mut w = Writer::new(options)?;
-    w.write(module, info, &mut words)?;
+    w.write(module, info, pipeline_options, &mut words)?;
     Ok(words)
 }

@@ -190,13 +190,11 @@ impl super::Queue {
                 gl.bind_buffer(glow::DRAW_INDIRECT_BUFFER, Some(indirect_buf));
                 gl.dispatch_compute_indirect(indirect_offset as i32);
             }
-            C::FillBuffer {
+            C::ClearBuffer {
                 dst,
                 dst_target,
                 ref range,
-                value,
             } => {
-                assert_eq!(value, 0); 
                 gl.bind_buffer(glow::COPY_READ_BUFFER, Some(self.zero_buffer));
                 gl.bind_buffer(dst_target, Some(dst));
                 let mut dst_offset = range.start;
@@ -211,6 +209,20 @@ impl super::Queue {
                     );
                     dst_offset += size;
                 }
+            }
+            C::ClearTexture {
+                dst: _,
+                dst_target: _,
+                subresource_range: _,
+            } => {
+                
+                
+                
+
+                
+                
+                
+                
             }
             C::CopyBufferToBuffer {
                 src,
@@ -971,5 +983,9 @@ impl crate::Queue<super::Api> for super::Queue {
     ) -> Result<(), crate::SurfaceError> {
         let gl = &self.shared.context.get_without_egl_lock();
         surface.present(texture, gl)
+    }
+
+    unsafe fn get_timestamp_period(&self) -> f32 {
+        1.0
     }
 }

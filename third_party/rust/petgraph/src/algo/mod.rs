@@ -4,19 +4,28 @@
 
 
 
+pub mod astar;
+pub mod bellman_ford;
+pub mod dijkstra;
 pub mod dominators;
+pub mod feedback_arc_set;
+pub mod floyd_warshall;
+pub mod isomorphism;
+pub mod k_shortest_path;
+pub mod matching;
+pub mod simple_paths;
+pub mod tred;
 
-use std::cmp::min;
 use std::collections::{BinaryHeap, HashMap};
+use std::num::NonZeroUsize;
 
 use crate::prelude::*;
 
 use super::graph::IndexType;
 use super::unionfind::UnionFind;
 use super::visit::{
-    GraphBase, GraphRef, IntoEdgeReferences, IntoEdges, IntoNeighbors, IntoNeighborsDirected,
-    IntoNodeIdentifiers, NodeCompactIndexable, NodeCount, NodeIndexable, Reversed, VisitMap,
-    Visitable,
+    GraphBase, GraphRef, IntoEdgeReferences, IntoNeighbors, IntoNeighborsDirected,
+    IntoNodeIdentifiers, NodeCompactIndexable, NodeIndexable, Reversed, VisitMap, Visitable,
 };
 use super::EdgeType;
 use crate::data::Element;
@@ -24,10 +33,17 @@ use crate::scored::MinScored;
 use crate::visit::Walker;
 use crate::visit::{Data, IntoNodeReferences, NodeRef};
 
-pub use super::astar::astar;
-pub use super::dijkstra::dijkstra;
-pub use super::isomorphism::{is_isomorphic, is_isomorphic_matching};
-pub use super::simple_paths::all_simple_paths;
+pub use astar::astar;
+pub use bellman_ford::{bellman_ford, find_negative_cycle};
+pub use dijkstra::dijkstra;
+pub use feedback_arc_set::greedy_feedback_arc_set;
+pub use floyd_warshall::floyd_warshall;
+pub use isomorphism::{
+    is_isomorphic, is_isomorphic_matching, is_isomorphic_subgraph, is_isomorphic_subgraph_matching,
+};
+pub use k_shortest_path::k_shortest_path;
+pub use matching::{greedy_matching, maximum_matching, Matching};
+pub use simple_paths::all_simple_paths;
 
 
 
@@ -79,7 +95,7 @@ where
         vertex_sets.union(g.to_index(a), g.to_index(b));
     }
     let mut labels = vertex_sets.into_labeling();
-    labels.sort();
+    labels.sort_unstable();
     labels.dedup();
     labels.len()
 }
@@ -323,6 +339,159 @@ where
     sccs
 }
 
+#[derive(Copy, Clone, Debug)]
+struct NodeData {
+    rootindex: Option<NonZeroUsize>,
+}
+
+
+
+
+#[derive(Debug)]
+pub struct TarjanScc<N> {
+    index: usize,
+    componentcount: usize,
+    nodes: Vec<NodeData>,
+    stack: Vec<N>,
+}
+
+impl<N> Default for TarjanScc<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<N> TarjanScc<N> {
+    
+    pub fn new() -> Self {
+        TarjanScc {
+            index: 1,                        
+            componentcount: std::usize::MAX, 
+            nodes: Vec::new(),
+            stack: Vec::new(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn run<G, F>(&mut self, g: G, mut f: F)
+    where
+        G: IntoNodeIdentifiers<NodeId = N> + IntoNeighbors<NodeId = N> + NodeIndexable<NodeId = N>,
+        F: FnMut(&[N]),
+        N: Copy + PartialEq,
+    {
+        self.nodes.clear();
+        self.nodes
+            .resize(g.node_bound(), NodeData { rootindex: None });
+
+        for n in g.node_identifiers() {
+            let visited = self.nodes[g.to_index(n)].rootindex.is_some();
+            if !visited {
+                self.visit(n, g, &mut f);
+            }
+        }
+
+        debug_assert!(self.stack.is_empty());
+    }
+
+    fn visit<G, F>(&mut self, v: G::NodeId, g: G, f: &mut F)
+    where
+        G: IntoNeighbors<NodeId = N> + NodeIndexable<NodeId = N>,
+        F: FnMut(&[N]),
+        N: Copy + PartialEq,
+    {
+        macro_rules! node {
+            ($node:expr) => {
+                self.nodes[g.to_index($node)]
+            };
+        }
+
+        let node_v = &mut node![v];
+        debug_assert!(node_v.rootindex.is_none());
+
+        let mut v_is_local_root = true;
+        let v_index = self.index;
+        node_v.rootindex = NonZeroUsize::new(v_index);
+        self.index += 1;
+
+        for w in g.neighbors(v) {
+            if node![w].rootindex.is_none() {
+                self.visit(w, g, f);
+            }
+            if node![w].rootindex < node![v].rootindex {
+                node![v].rootindex = node![w].rootindex;
+                v_is_local_root = false
+            }
+        }
+
+        if v_is_local_root {
+            
+            let mut indexadjustment = 1;
+            let c = NonZeroUsize::new(self.componentcount);
+            let nodes = &mut self.nodes;
+            let start = self
+                .stack
+                .iter()
+                .rposition(|&w| {
+                    if nodes[g.to_index(v)].rootindex > nodes[g.to_index(w)].rootindex {
+                        true
+                    } else {
+                        nodes[g.to_index(w)].rootindex = c;
+                        indexadjustment += 1;
+                        false
+                    }
+                })
+                .map(|x| x + 1)
+                .unwrap_or_default();
+            nodes[g.to_index(v)].rootindex = c;
+            self.stack.push(v); 
+            f(&self.stack[start..]);
+            self.stack.truncate(start);
+            self.index -= indexadjustment; 
+            self.componentcount -= 1;
+        } else {
+            self.stack.push(v); 
+        }
+    }
+
+    
+    pub fn node_component_index<G>(&self, g: G, v: N) -> usize
+    where
+        G: IntoNeighbors<NodeId = N> + NodeIndexable<NodeId = N>,
+        N: Copy + PartialEq,
+    {
+        let rindex: usize = self.nodes[g.to_index(v)]
+            .rootindex
+            .map(NonZeroUsize::get)
+            .unwrap_or(0); 
+        debug_assert!(
+            rindex != 0,
+            "Tried to get the component index of an unvisited node."
+        );
+        debug_assert!(
+            rindex > self.componentcount,
+            "Given node has been visited but not yet assigned to a component."
+        );
+        std::usize::MAX - rindex
+    }
+}
+
+
+
+
 
 
 
@@ -338,101 +507,10 @@ pub fn tarjan_scc<G>(g: G) -> Vec<Vec<G::NodeId>>
 where
     G: IntoNodeIdentifiers + IntoNeighbors + NodeIndexable,
 {
-    #[derive(Copy, Clone, Debug)]
-    struct NodeData {
-        index: Option<usize>,
-        lowlink: usize,
-        on_stack: bool,
-    }
-
-    #[derive(Debug)]
-    struct Data<'a, G>
-    where
-        G: NodeIndexable,
-        G::NodeId: 'a,
-    {
-        index: usize,
-        nodes: Vec<NodeData>,
-        stack: Vec<G::NodeId>,
-        sccs: &'a mut Vec<Vec<G::NodeId>>,
-    }
-
-    fn scc_visit<G>(v: G::NodeId, g: G, data: &mut Data<G>)
-    where
-        G: IntoNeighbors + NodeIndexable,
-    {
-        macro_rules! node {
-            ($node:expr) => {
-                data.nodes[g.to_index($node)]
-            };
-        }
-
-        if node![v].index.is_some() {
-            
-            return;
-        }
-
-        let v_index = data.index;
-        node![v].index = Some(v_index);
-        node![v].lowlink = v_index;
-        node![v].on_stack = true;
-        data.stack.push(v);
-        data.index += 1;
-
-        for w in g.neighbors(v) {
-            match node![w].index {
-                None => {
-                    scc_visit(w, g, data);
-                    node![v].lowlink = min(node![v].lowlink, node![w].lowlink);
-                }
-                Some(w_index) => {
-                    if node![w].on_stack {
-                        
-                        let v_lowlink = &mut node![v].lowlink;
-                        *v_lowlink = min(*v_lowlink, w_index);
-                    }
-                }
-            }
-        }
-
-        
-        if let Some(v_index) = node![v].index {
-            if node![v].lowlink == v_index {
-                let mut cur_scc = Vec::new();
-                loop {
-                    let w = data.stack.pop().unwrap();
-                    node![w].on_stack = false;
-                    cur_scc.push(w);
-                    if g.to_index(w) == g.to_index(v) {
-                        break;
-                    }
-                }
-                data.sccs.push(cur_scc);
-            }
-        }
-    }
-
     let mut sccs = Vec::new();
     {
-        let map = vec![
-            NodeData {
-                index: None,
-                lowlink: !0,
-                on_stack: false
-            };
-            g.node_bound()
-        ];
-
-        let mut data = Data {
-            index: 0,
-            nodes: map,
-            stack: Vec::new(),
-            sccs: &mut sccs,
-        };
-
-        for n in g.node_identifiers() {
-            scc_visit(n, g, &mut data);
-        }
+        let mut tarjan_scc = TarjanScc::new();
+        tarjan_scc.run(g, |scc| sccs.push(scc.to_vec()));
     }
     sccs
 }
@@ -598,6 +676,7 @@ where
 }
 
 
+#[derive(Debug, Clone)]
 pub struct MinSpanningTree<G>
 where
     G: Data + IntoNodeReferences,
@@ -605,6 +684,7 @@ where
     graph: G,
     node_ids: Option<G::NodeReferences>,
     subgraphs: UnionFind<usize>,
+    #[allow(clippy::type_complexity)]
     sort_edges: BinaryHeap<MinScored<G::EdgeWeight, (G::NodeId, G::NodeId)>>,
     node_map: HashMap<usize, usize>,
     node_count: usize,
@@ -674,122 +754,9 @@ impl<N> Cycle<N> {
     }
 }
 
+
 #[derive(Clone, Debug, PartialEq)]
-pub struct NegativeCycle(());
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn bellman_ford<G>(
-    g: G,
-    source: G::NodeId,
-) -> Result<(Vec<G::EdgeWeight>, Vec<Option<G::NodeId>>), NegativeCycle>
-where
-    G: NodeCount + IntoNodeIdentifiers + IntoEdges + NodeIndexable,
-    G::EdgeWeight: FloatMeasure,
-{
-    let mut predecessor = vec![None; g.node_bound()];
-    let mut distance = vec![<_>::infinite(); g.node_bound()];
-
-    let ix = |i| g.to_index(i);
-
-    distance[ix(source)] = <_>::zero();
-    
-    for _ in 1..g.node_count() {
-        let mut did_update = false;
-        for i in g.node_identifiers() {
-            for edge in g.edges(i) {
-                let i = edge.source();
-                let j = edge.target();
-                let w = *edge.weight();
-                if distance[ix(i)] + w < distance[ix(j)] {
-                    distance[ix(j)] = distance[ix(i)] + w;
-                    predecessor[ix(j)] = Some(i);
-                    did_update = true;
-                }
-            }
-        }
-        if !did_update {
-            break;
-        }
-    }
-
-    
-    for i in g.node_identifiers() {
-        for edge in g.edges(i) {
-            let j = edge.target();
-            let w = *edge.weight();
-            if distance[ix(i)] + w < distance[ix(j)] {
-                
-                return Err(NegativeCycle(()));
-            }
-        }
-    }
-
-    Ok((distance, predecessor))
-}
+pub struct NegativeCycle(pub ());
 
 
 
@@ -877,3 +844,59 @@ impl FloatMeasure for f64 {
         1. / 0.
     }
 }
+
+pub trait BoundedMeasure: Measure + std::ops::Sub<Self, Output = Self> {
+    fn min() -> Self;
+    fn max() -> Self;
+    fn overflowing_add(self, rhs: Self) -> (Self, bool);
+}
+
+macro_rules! impl_bounded_measure_integer(
+    ( $( $t:ident ),* ) => {
+        $(
+            impl BoundedMeasure for $t {
+                fn min() -> Self {
+                    std::$t::MIN
+                }
+
+                fn max() -> Self {
+                    std::$t::MAX
+                }
+
+                fn overflowing_add(self, rhs: Self) -> (Self, bool) {
+                    self.overflowing_add(rhs)
+                }
+            }
+        )*
+    };
+);
+
+impl_bounded_measure_integer!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
+
+macro_rules! impl_bounded_measure_float(
+    ( $( $t:ident ),* ) => {
+        $(
+            impl BoundedMeasure for $t {
+                fn min() -> Self {
+                    std::$t::MIN
+                }
+
+                fn max() -> Self {
+                    std::$t::MAX
+                }
+
+                fn overflowing_add(self, rhs: Self) -> (Self, bool) {
+                    // for an overflow: a + b > max: both values need to be positive and a > max - b must be satisfied
+                    let overflow = self > Self::default() && rhs > Self::default() && self > std::$t::MAX - rhs;
+
+                    // for an underflow: a + b < min: overflow can not happen and both values must be negative and a < min - b must be satisfied
+                    let underflow = !overflow && self < Self::default() && rhs < Self::default() && self < std::$t::MIN - rhs;
+
+                    (self + rhs, overflow || underflow)
+                }
+            }
+        )*
+    };
+);
+
+impl_bounded_measure_float!(f32, f64);

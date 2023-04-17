@@ -13,7 +13,7 @@ use super::{
     error::{Error, ErrorKind},
     SourceMetadata,
 };
-use crate::{Arena, Constant, Handle, Type, TypeInner};
+use crate::{front::align_up, Arena, Constant, Handle, Type, TypeInner};
 
 
 
@@ -169,21 +169,4 @@ pub fn calculate_offset(
     };
 
     TypeAlignSpan { ty, align, span }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn align_up(value: u32, align: u32) -> u32 {
-    ((value.wrapping_sub(1)) & !(align - 1)).wrapping_add(align)
 }

@@ -314,6 +314,7 @@ pub trait Queue<A: Api>: Send + Sync {
         surface: &mut A::Surface,
         texture: A::SurfaceTexture,
     ) -> Result<(), SurfaceError>;
+    unsafe fn get_timestamp_period(&self) -> f32;
 }
 
 
@@ -343,14 +344,20 @@ pub trait CommandEncoder<A: Api>: Send + Sync {
 
     
 
+    unsafe fn clear_buffer(&mut self, buffer: &A::Buffer, range: MemoryRange);
+
     
-    
-    unsafe fn fill_buffer(&mut self, buffer: &A::Buffer, range: MemoryRange, value: u8);
+    unsafe fn clear_texture(
+        &mut self,
+        texture: &A::Texture,
+        subresource_range: &wgt::ImageSubresourceRange,
+    );
 
     unsafe fn copy_buffer_to_buffer<T>(&mut self, src: &A::Buffer, dst: &A::Buffer, regions: T)
     where
         T: Iterator<Item = BufferCopy>;
 
+    
     
     
     
@@ -366,10 +373,12 @@ pub trait CommandEncoder<A: Api>: Send + Sync {
     
     
     
+    
     unsafe fn copy_buffer_to_texture<T>(&mut self, src: &A::Buffer, dst: &A::Texture, regions: T)
     where
         T: Iterator<Item = BufferTextureCopy>;
 
+    
     
     
     unsafe fn copy_texture_to_buffer<T>(
@@ -609,6 +618,7 @@ bitflags::bitflags! {
             Self::INDEX.bits | Self::VERTEX.bits | Self::UNIFORM.bits |
             Self::STORAGE_READ.bits | Self::INDIRECT.bits;
         /// The combination of exclusive usages (write-only and read-write).
+        /// These usages may still show up with others, but can't automatically be combined.
         const EXCLUSIVE = Self::MAP_WRITE.bits | Self::COPY_DST.bits | Self::STORAGE_WRITE.bits;
         /// The combination of all usages that the are guaranteed to be be ordered by the hardware.
         /// If a usage is not ordered, then even if it doesn't change between draw calls, there
@@ -631,6 +641,7 @@ bitflags::bitflags! {
         /// The combination of usages that can be used together (read-only).
         const INCLUSIVE = Self::COPY_SRC.bits | Self::RESOURCE.bits | Self::DEPTH_STENCIL_READ.bits;
         /// The combination of exclusive usages (write-only and read-write).
+        /// These usages may still show up with others, but can't automatically be combined.
         const EXCLUSIVE = Self::COPY_DST.bits | Self::COLOR_TARGET.bits | Self::DEPTH_STENCIL_WRITE.bits | Self::STORAGE_READ.bits | Self::STORAGE_WRITE.bits;
         /// The combination of all usages that the are guaranteed to be be ordered by the hardware.
         /// If a usage is not ordered, then even if it doesn't change between draw calls, there
@@ -654,8 +665,6 @@ pub struct Alignments {
     
     
     pub buffer_copy_pitch: wgt::BufferSize,
-    pub uniform_buffer_offset: wgt::BufferSize,
-    pub storage_buffer_offset: wgt::BufferSize,
 }
 
 #[derive(Clone, Debug)]

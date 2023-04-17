@@ -222,6 +222,7 @@ struct PrivateCapabilities {
     supports_arrays_of_textures: bool,
     supports_arrays_of_textures_write: bool,
     supports_mutability: bool,
+    supports_depth_clamping: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -237,11 +238,17 @@ struct Settings {
     retain_command_buffer_references: bool,
 }
 
+
+
+
+const ZERO_BUFFER_SIZE: wgt::BufferAddress = 32767 * 16; 
+
 struct AdapterShared {
     device: Mutex<mtl::Device>,
     disabilities: PrivateDisabilities,
     private_caps: PrivateCapabilities,
     settings: Settings,
+    zero_buffer: mtl::Buffer,
 }
 
 unsafe impl Send for AdapterShared {}
@@ -252,11 +259,20 @@ impl AdapterShared {
         let private_caps = PrivateCapabilities::new(&device);
         log::debug!("{:#?}", private_caps);
 
+        
+        
+        let zero_buffer = device.new_buffer(
+            ZERO_BUFFER_SIZE,
+            mtl::MTLResourceOptions::CPUCacheModeWriteCombined
+                | mtl::MTLResourceOptions::StorageModePrivate,
+        );
+
         Self {
             disabilities: PrivateDisabilities::new(&device),
             private_caps: PrivateCapabilities::new(&device),
             device: Mutex::new(device),
             settings: Settings::default(),
+            zero_buffer,
         }
     }
 }
@@ -280,7 +296,9 @@ pub struct Device {
 pub struct Surface {
     view: Option<NonNull<objc::runtime::Object>>,
     render_layer: Mutex<mtl::MetalLayer>,
+    swapchain_format: wgt::TextureFormat,
     raw_swapchain_format: mtl::MTLPixelFormat,
+    extent: wgt::Extent3d,
     main_thread_id: thread::ThreadId,
     
     
@@ -378,6 +396,11 @@ impl crate::Queue<Api> for Queue {
         });
         Ok(())
     }
+
+    unsafe fn get_timestamp_period(&self) -> f32 {
+        
+        1.0
+    }
 }
 
 #[derive(Debug)]
@@ -399,10 +422,12 @@ impl Buffer {
 #[derive(Debug)]
 pub struct Texture {
     raw: mtl::Texture,
+    format: wgt::TextureFormat,
     raw_format: mtl::MTLPixelFormat,
     raw_type: mtl::MTLTextureType,
     array_layers: u32,
     mip_levels: u32,
+    copy_size: crate::CopyExtent,
 }
 
 unsafe impl Send for Texture {}

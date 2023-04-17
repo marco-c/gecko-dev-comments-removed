@@ -230,6 +230,7 @@ pub struct Texture {
     array_layer_count: u32,
     format: wgt::TextureFormat,
     format_desc: TextureFormatDesc,
+    copy_size: crate::CopyExtent,
 }
 
 #[derive(Clone, Debug)]
@@ -527,11 +528,15 @@ enum Command {
         indirect_buf: glow::Buffer,
         indirect_offset: wgt::BufferAddress,
     },
-    FillBuffer {
+    ClearBuffer {
         dst: glow::Buffer,
         dst_target: BindTarget,
         range: crate::MemoryRange,
-        value: u8,
+    },
+    ClearTexture {
+        dst: glow::Texture,
+        dst_target: BindTarget,
+        subresource_range: wgt::ImageSubresourceRange,
     },
     CopyBufferToBuffer {
         src: glow::Buffer,

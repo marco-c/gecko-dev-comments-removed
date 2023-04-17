@@ -3,8 +3,8 @@ use std::collections::{BinaryHeap, HashMap};
 
 use std::hash::Hash;
 
-use super::visit::{EdgeRef, GraphBase, IntoEdges, VisitMap, Visitable};
 use crate::scored::MinScored;
+use crate::visit::{EdgeRef, GraphBase, IntoEdges, Visitable};
 
 use crate::algo::Measure;
 
@@ -78,16 +78,16 @@ where
     H: FnMut(G::NodeId) -> K,
     K: Measure + Copy,
 {
-    let mut visited = graph.visit_map();
     let mut visit_next = BinaryHeap::new();
-    let mut scores = HashMap::new();
+    let mut scores = HashMap::new(); 
+    let mut estimate_scores = HashMap::new(); 
     let mut path_tracker = PathTracker::<G>::new();
 
     let zero_score = K::default();
     scores.insert(start, zero_score);
     visit_next.push(MinScored(estimate_cost(start), start));
 
-    while let Some(MinScored(_, node)) = visit_next.pop() {
+    while let Some(MinScored(estimate_score, node)) = visit_next.pop() {
         if is_goal(node) {
             let path = path_tracker.reconstruct_path_to(node);
             let cost = scores[&node];
@@ -96,38 +96,41 @@ where
 
         
         
-        if !visited.visit(node) {
-            continue;
-        }
-
-        
-        
         let node_score = scores[&node];
+
+        match estimate_scores.entry(node) {
+            Occupied(mut entry) => {
+                
+                
+                if *entry.get() <= estimate_score {
+                    continue;
+                }
+                entry.insert(estimate_score);
+            }
+            Vacant(entry) => {
+                entry.insert(estimate_score);
+            }
+        }
 
         for edge in graph.edges(node) {
             let next = edge.target();
-            if visited.is_visited(&next) {
-                continue;
-            }
-
-            let mut next_score = node_score + edge_cost(edge);
+            let next_score = node_score + edge_cost(edge);
 
             match scores.entry(next) {
-                Occupied(ent) => {
-                    let old_score = *ent.get();
-                    if next_score < old_score {
-                        *ent.into_mut() = next_score;
-                        path_tracker.set_predecessor(next, node);
-                    } else {
-                        next_score = old_score;
+                Occupied(mut entry) => {
+                    
+                    
+                    if *entry.get() <= next_score {
+                        continue;
                     }
+                    entry.insert(next_score);
                 }
-                Vacant(ent) => {
-                    ent.insert(next_score);
-                    path_tracker.set_predecessor(next, node);
+                Vacant(entry) => {
+                    entry.insert(next_score);
                 }
             }
 
+            path_tracker.set_predecessor(next, node);
             let next_estimate_score = next_score + estimate_cost(next);
             visit_next.push(MinScored(next_estimate_score, next));
         }

@@ -20,6 +20,24 @@ const INDENT: &str = "    ";
 #[allow(dead_code)]
 const BAKE_PREFIX: &str = "_e";
 
+#[derive(Clone, Copy)]
+#[allow(dead_code)]
+struct Level(usize);
+
+#[allow(dead_code)]
+impl Level {
+    fn next(&self) -> Self {
+        Level(self.0 + 1)
+    }
+}
+
+#[allow(dead_code)]
+impl std::fmt::Display for Level {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        (0..self.0).try_for_each(|_| formatter.write_str(INDENT))
+    }
+}
+
 
 
 
@@ -122,6 +140,18 @@ impl<'a> FunctionCtx<'_> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Debug)]
 pub enum BoundsCheckPolicy {
     
@@ -138,17 +168,76 @@ pub enum BoundsCheckPolicy {
     
     
     
-    UndefinedBehavior,
+    Unchecked,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+
+
+
+pub struct BoundsCheckPolicies {
+    
+    
+    pub index: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub buffer: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub image: BoundsCheckPolicy,
 }
 
 
 impl Default for BoundsCheckPolicy {
     fn default() -> Self {
-        BoundsCheckPolicy::UndefinedBehavior
+        BoundsCheckPolicy::Unchecked
     }
 }
 
 impl crate::Expression {
+    
+    
+    
     
     
     

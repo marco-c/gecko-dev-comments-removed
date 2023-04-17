@@ -1,4 +1,4 @@
-use crate::{tables, Config};
+use crate::{tables, Config, PAD_BYTE};
 
 #[cfg(any(feature = "alloc", feature = "std", test))]
 use crate::STANDARD;
@@ -28,6 +28,10 @@ const DECODED_BLOCK_LEN: usize =
 pub enum DecodeError {
     
     InvalidByte(usize, u8),
+    
+    
+    
+    
     
     InvalidLength,
     
@@ -211,7 +215,17 @@ fn decode_helper(
         
         0 => INPUT_CHUNK_LEN,
         
-        1 | 5 => return Err(DecodeError::InvalidLength),
+        1 | 5 => {
+            
+            
+            if let Some(b) = input.last() {
+                if *b != PAD_BYTE && decode_table[*b as usize] == tables::INVALID_VALUE {
+                    return Err(DecodeError::InvalidByte(input.len() - 1, *b));
+                }
+            }
+
+            return Err(DecodeError::InvalidLength);
+        }
         
         
         
@@ -329,7 +343,7 @@ fn decode_helper(
     let start_of_leftovers = input_index;
     for (i, b) in input[start_of_leftovers..].iter().enumerate() {
         
-        if *b == 0x3D {
+        if *b == PAD_BYTE {
             
             
             
@@ -370,7 +384,7 @@ fn decode_helper(
         if padding_bytes > 0 {
             return Err(DecodeError::InvalidByte(
                 start_of_leftovers + first_padding_index,
-                0x3D,
+                PAD_BYTE,
             ));
         }
         last_symbol = *b;
@@ -805,7 +819,7 @@ mod tests {
                 symbols[1] = s2;
                 for &s3 in STANDARD.char_set.encode_table().iter() {
                     symbols[2] = s3;
-                    symbols[3] = b'=';
+                    symbols[3] = PAD_BYTE;
 
                     match base64_to_bytes.get(&symbols[..]) {
                         Some(bytes) => {
@@ -841,8 +855,8 @@ mod tests {
             symbols[0] = s1;
             for &s2 in STANDARD.char_set.encode_table().iter() {
                 symbols[1] = s2;
-                symbols[2] = b'=';
-                symbols[3] = b'=';
+                symbols[2] = PAD_BYTE;
+                symbols[3] = PAD_BYTE;
 
                 match base64_to_bytes.get(&symbols[..]) {
                     Some(bytes) => {
@@ -855,13 +869,5 @@ mod tests {
                 }
             }
         }
-    }
-
-    #[test]
-    fn decode_imap() {
-        assert_eq!(
-            decode_config(b"+,,+", crate::IMAP_MUTF7),
-            decode_config(b"+//+", crate::STANDARD_NO_PAD)
-        );
     }
 }

@@ -53,13 +53,12 @@ const MIN_ENCODE_CHUNK_SIZE: usize = 3;
 
 
 
-
-
-
-pub struct EncoderWriter<'a, W: 'a + Write> {
+pub struct EncoderWriter<W: Write> {
     config: Config,
     
-    w: &'a mut W,
+    
+    
+    delegate: Option<W>,
     
     
     extra_input: [u8; MIN_ENCODE_CHUNK_SIZE],
@@ -71,12 +70,10 @@ pub struct EncoderWriter<'a, W: 'a + Write> {
     
     output_occupied_len: usize,
     
-    finished: bool,
-    
     panicked: bool,
 }
 
-impl<'a, W: Write> fmt::Debug for EncoderWriter<'a, W> {
+impl<W: Write> fmt::Debug for EncoderWriter<W> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -89,17 +86,16 @@ impl<'a, W: Write> fmt::Debug for EncoderWriter<'a, W> {
     }
 }
 
-impl<'a, W: Write> EncoderWriter<'a, W> {
+impl<W: Write> EncoderWriter<W> {
     
-    pub fn new(w: &'a mut W, config: Config) -> EncoderWriter<'a, W> {
+    pub fn new(w: W, config: Config) -> EncoderWriter<W> {
         EncoderWriter {
             config,
-            w,
+            delegate: Some(w),
             extra_input: [0u8; MIN_ENCODE_CHUNK_SIZE],
             extra_input_occupied_len: 0,
             output: [0u8; BUF_SIZE],
             output_occupied_len: 0,
-            finished: false,
             panicked: false,
         }
     }
@@ -116,10 +112,31 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
     
     
     
-    pub fn finish(&mut self) -> Result<()> {
-        if self.finished {
-            return Ok(());
+    
+    
+    
+    
+    pub fn finish(&mut self) -> Result<W> {
+        
+        
+        if self.delegate.is_none() {
+            panic!("Encoder has already had finish() called")
         };
+
+        self.write_final_leftovers()?;
+
+        let writer = self.delegate.take().expect("Writer must be present");
+
+        Ok(writer)
+    }
+
+    
+    fn write_final_leftovers(&mut self) -> Result<()> {
+        if self.delegate.is_none() {
+            
+            
+            return Ok(());
+        }
 
         self.write_all_encoded_output()?;
 
@@ -138,7 +155,6 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
             self.extra_input_occupied_len = 0;
         }
 
-        self.finished = true;
         Ok(())
     }
 
@@ -152,7 +168,11 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
     
     fn write_to_delegate(&mut self, current_output_len: usize) -> Result<()> {
         self.panicked = true;
-        let res = self.w.write(&self.output[..current_output_len]);
+        let res = self
+            .delegate
+            .as_mut()
+            .expect("Writer must be present")
+            .write(&self.output[..current_output_len]);
         self.panicked = false;
 
         res.map(|consumed| {
@@ -197,7 +217,7 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
     }
 }
 
-impl<'a, W: Write> Write for EncoderWriter<'a, W> {
+impl<W: Write> Write for EncoderWriter<W> {
     
     
     
@@ -215,7 +235,7 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
     
     
     fn write(&mut self, input: &[u8]) -> Result<usize> {
-        if self.finished {
+        if self.delegate.is_none() {
             panic!("Cannot write more after calling finish()");
         }
 
@@ -339,17 +359,23 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
 
     
     
+    
+    
+    
     fn flush(&mut self) -> Result<()> {
         self.write_all_encoded_output()?;
-        self.w.flush()
+        self.delegate
+            .as_mut()
+            .expect("Writer must be present")
+            .flush()
     }
 }
 
-impl<'a, W: Write> Drop for EncoderWriter<'a, W> {
+impl<W: Write> Drop for EncoderWriter<W> {
     fn drop(&mut self) {
         if !self.panicked {
             
-            let _ = self.finish();
+            let _ = self.write_final_leftovers();
         }
     }
 }

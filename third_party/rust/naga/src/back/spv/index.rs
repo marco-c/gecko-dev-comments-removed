@@ -336,18 +336,39 @@ impl<'w> BlockContext<'w> {
     
     
     
+    
+    
+    
+    
     pub(super) fn write_bounds_check(
         &mut self,
         base: Handle<crate::Expression>,
         index: Handle<crate::Expression>,
         block: &mut Block,
     ) -> Result<BoundsCheckResult, Error> {
-        Ok(match self.writer.index_bounds_check_policy {
+        
+        
+        let is_buffer = match *self.fun_info[base].ty.inner_with(&self.ir_module.types) {
+            crate::TypeInner::Pointer { class, .. }
+            | crate::TypeInner::ValuePointer { class, .. } => match class {
+                crate::StorageClass::Storage { access: _ } | crate::StorageClass::Uniform => true,
+                _ => false,
+            },
+            _ => false,
+        };
+
+        let policy = if is_buffer {
+            self.writer.bounds_check_policies.buffer
+        } else {
+            self.writer.bounds_check_policies.index
+        };
+
+        Ok(match policy {
             BoundsCheckPolicy::Restrict => self.write_restricted_index(base, index, block)?,
             BoundsCheckPolicy::ReadZeroSkipWrite => {
                 self.write_index_comparison(base, index, block)?
             }
-            BoundsCheckPolicy::UndefinedBehavior => BoundsCheckResult::Computed(self.cached[index]),
+            BoundsCheckPolicy::Unchecked => BoundsCheckResult::Computed(self.cached[index]),
         })
     }
 

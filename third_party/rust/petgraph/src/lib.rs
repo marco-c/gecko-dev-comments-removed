@@ -133,17 +133,15 @@ pub mod visit;
 #[macro_use]
 pub mod data;
 
+pub mod adj;
 pub mod algo;
-mod astar;
 pub mod csr;
-mod dijkstra;
 pub mod dot;
 #[cfg(feature = "generate")]
 pub mod generate;
 mod graph_impl;
 #[cfg(feature = "graphmap")]
 pub mod graphmap;
-mod isomorphism;
 mod iter_format;
 mod iter_utils;
 #[cfg(feature = "matrix_graph")]
@@ -152,11 +150,11 @@ pub mod matrix_graph;
 mod quickcheck;
 #[cfg(feature = "serde-1")]
 mod serde_utils;
-mod simple_paths;
 mod traits_graph;
 pub mod unionfind;
 mod util;
 
+pub mod operator;
 pub mod prelude;
 
 
