@@ -302,6 +302,9 @@ pref("browser.startup.preXulSkeletonUI", false);
 #endif
 
 
+pref("browser.startup.upgradeDialog.enabled", true);
+
+
 
 pref("toolkit.lazyHiddenWindow", true);
 

@@ -92,7 +92,7 @@ function resolveURIInternal(aCmdLine, aArgument) {
 }
 
 let gKiosk = false;
-
+let gMajorUpgrade = false;
 var gFirstWindow = false;
 
 const OVERRIDE_NONE = 0;
@@ -142,6 +142,9 @@ function needHomepageOverride(prefb) {
     
     if (savedmstone) {
       prefb.setBoolPref("browser.rights.3.shown", true);
+
+      
+      gMajorUpgrade = true;
     }
 
     prefb.setCharPref("browser.startup.homepage_override.mstone", mstone);
@@ -835,6 +838,14 @@ nsBrowserContentHandler.prototype = {
 
   get kiosk() {
     return gKiosk;
+  },
+
+  get majorUpgrade() {
+    return gMajorUpgrade;
+  },
+
+  set majorUpgrade(val) {
+    gMajorUpgrade = val;
   },
 
   
