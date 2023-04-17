@@ -292,7 +292,11 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               if (audioStats->last_sender_report_timestamp_ms) {
                 RTCRemoteOutboundRtpStreamStats remote;
                 constructCommonRemoteOutboundRtpStats(
-                    remote, *audioStats->last_sender_report_timestamp_ms);
+                    remote,
+                    aConduit->GetTimestampMaker().ConvertNtpToDomTime(
+                        webrtc::Timestamp::Millis(
+                            *audioStats->last_sender_report_timestamp_ms) +
+                        webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970)));
                 remote.mPacketsSent.Construct(
                     audioStats->sender_reports_packets_sent);
                 remote.mBytesSent.Construct(
@@ -356,6 +360,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
 
 
 
+
+
               if (!report->mInboundRtpStreamStats.AppendElement(
                       std::move(local), fallible)) {
                 mozalloc_handle_oom(0);
@@ -373,10 +379,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               if (videoStats->rtcp_sender_ntp_timestamp_ms) {
                 RTCRemoteOutboundRtpStreamStats remote;
                 constructCommonRemoteOutboundRtpStats(
-                    remote, (webrtc::Timestamp::Millis(
-                                 videoStats->rtcp_sender_ntp_timestamp_ms) -
-                             webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970))
-                                .ms());
+                    remote, aConduit->GetTimestampMaker().ConvertNtpToDomTime(
+                                webrtc::Timestamp::Millis(
+                                    videoStats->rtcp_sender_ntp_timestamp_ms)));
                 remote.mPacketsSent.Construct(
                     videoStats->rtcp_sender_packets_sent);
                 remote.mBytesSent.Construct(
@@ -417,6 +422,9 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               local.mFramesDecoded.Construct(videoStats->frames_decoded);
 
               
+
+
+
 
 
 
