@@ -584,8 +584,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
                     match result {
                         Ok(new_value) => new_value,
                         Err(..) => {
-                            
-                            
+                            map.remove(name);
                             return;
                         },
                     }
@@ -659,8 +658,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
             None => return self.inherited.cloned(),
         };
         if self.may_have_cycles {
-            let inherited = self.inherited.as_ref().map(|m| &***m);
-            substitute_all(&mut map, inherited, self.device);
+            substitute_all(&mut map, self.device);
         }
         map.shrink_to_fit();
         Some(Arc::new(map))
@@ -673,7 +671,6 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
 fn substitute_all(
     custom_properties_map: &mut CustomPropertiesMap,
-    inherited: Option<&CustomPropertiesMap>,
     device: &Device,
 ) {
     
@@ -711,9 +708,6 @@ fn substitute_all(
         
         stack: SmallVec<[usize; 5]>,
         map: &'a mut CustomPropertiesMap,
-        
-        
-        inherited: Option<&'a CustomPropertiesMap>,
         
         device: &'a Device,
     }
@@ -857,15 +851,7 @@ fn substitute_all(
             },
             Err(..) => {
                 
-                let inherited = context.inherited.and_then(|m| m.get(&name)).cloned();
-                match inherited {
-                    Some(computed_value) => {
-                        context.map.insert(name, computed_value);
-                    },
-                    None => {
-                        context.map.remove(&name);
-                    },
-                };
+                context.map.remove(&name);
             },
         }
 
@@ -883,7 +869,6 @@ fn substitute_all(
             stack: SmallVec::new(),
             var_info: SmallVec::new(),
             map: custom_properties_map,
-            inherited,
             device,
         };
         traverse(name, &mut context);
