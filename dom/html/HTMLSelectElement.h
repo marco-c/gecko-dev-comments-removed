@@ -65,7 +65,7 @@ class MOZ_STACK_CLASS SafeOptionListMutation {
 
   const bool mNotify;
   
-  int32_t mInitialSelectedIndex;
+  RefPtr<HTMLOptionElement> mInitialSelectedOption;
   
   nsMutationGuard mGuard;
 };
