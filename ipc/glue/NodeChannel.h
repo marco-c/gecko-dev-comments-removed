@@ -138,7 +138,7 @@ class NodeChannel final : public IPC::Channel::Listener {
   bool mClosed = false;
 
   
-  IPC::Channel::Listener* mExistingListener = nullptr;
+  WeakPtr<IPC::Channel::Listener> mExistingListener;
 };
 
 }  

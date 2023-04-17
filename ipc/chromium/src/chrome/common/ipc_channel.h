@@ -12,6 +12,7 @@
 #include "base/basictypes.h"
 #include "build/build_config.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/WeakPtr.h"
 #include "chrome/common/ipc_message.h"
 
 #ifdef OS_WIN
@@ -40,9 +41,12 @@ class Channel {
 #endif
 
   
-  class Listener {
+  
+  
+  
+  class Listener : public mozilla::SupportsWeakPtr {
    public:
-    virtual ~Listener() {}
+    virtual ~Listener() = default;
 
     
     virtual void OnMessageReceived(Message&& message) = 0;
