@@ -9,6 +9,7 @@
 #define js_PropertyDescriptor_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/EnumSet.h"     
 #include "mozilla/Maybe.h"       
 
 #include <stdint.h>  
@@ -116,6 +117,20 @@ static constexpr unsigned JSPROP_FLAGS_MASK =
 namespace JS {
 
 
+enum class PropertyAttribute : uint8_t {
+  
+  Configurable,
+
+  
+  Enumerable,
+
+  
+  Writable
+};
+
+using PropertyAttributes = mozilla::EnumSet<PropertyAttribute>;
+
+
 
 
 
@@ -134,6 +149,43 @@ struct JS_PUBLIC_API PropertyDescriptor {
   PropertyDescriptor() = default;
 
   void trace(JSTracer* trc);
+
+  static PropertyDescriptor Data(const Value& value,
+                                 PropertyAttributes attributes = {}) {
+    PropertyDescriptor desc;
+    desc.setConfigurable(attributes.contains(PropertyAttribute::Configurable));
+    desc.setEnumerable(attributes.contains(PropertyAttribute::Enumerable));
+    desc.setWritable(attributes.contains(PropertyAttribute::Writable));
+    desc.value_ = value;
+    return desc;
+  }
+
+  
+  static PropertyDescriptor Data(const Value& value, unsigned attrs) {
+    MOZ_ASSERT((attrs &
+                ~(JSPROP_PERMANENT | JSPROP_ENUMERATE | JSPROP_READONLY)) == 0);
+    PropertyDescriptor desc;
+    desc.attrs = attrs;
+    desc.value_ = value;
+    return desc;
+  }
+
+  static PropertyDescriptor Accessor(JSObject* getter, JSObject* setter,
+                                     unsigned attrs) {
+    MOZ_ASSERT((attrs & ~(JSPROP_PERMANENT | JSPROP_ENUMERATE)) == 0);
+    MOZ_ASSERT(getter || setter);
+    PropertyDescriptor desc;
+    desc.attrs = attrs;
+    if (getter) {
+      desc.getter = getter;
+      desc.attrs |= JSPROP_GETTER;
+    }
+    if (setter) {
+      desc.setter = setter;
+      desc.attrs |= JSPROP_SETTER;
+    }
+    return desc;
+  }
 
  private:
   bool has(unsigned bit) const {
