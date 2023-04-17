@@ -15,6 +15,10 @@ function test() {
     Services.prefs.setIntPref("network.proxy.type", oldNetworkProxyType);
     Services.prefs.clearUserPref("network.proxy.no_proxies_on");
     Services.prefs.clearUserPref("browser.preferences.instantApply");
+    
+    
+    Services.prefs.clearUserPref("network.trr.mode");
+    Services.prefs.clearUserPref("network.trr.uri");
   });
 
   let connectionURL =

@@ -28,6 +28,10 @@ function test() {
         "network.proxy.backup." + proxyType + "_port"
       );
     }
+    
+    
+    Services.prefs.clearUserPref("network.trr.mode");
+    Services.prefs.clearUserPref("network.trr.uri");
   });
 
   
