@@ -1,12 +1,9 @@
-use error::Error;
+use crate::Error;
 use serde::de::{Unexpected, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{forward_to_deserialize_any, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Debug, Display};
 use std::hash::{Hash, Hasher};
 use std::i64;
-use std::mem;
-
-use private;
 
 
 #[derive(Clone, PartialEq, PartialOrd)]
@@ -16,7 +13,7 @@ pub struct Number {
 
 
 
-#[cfg_attr(feature = "cargo-clippy", allow(enum_variant_names))]
+#[allow(clippy::enum_variant_names)]
 #[derive(Copy, Clone, Debug, PartialOrd)]
 enum N {
     PosInt(u64),
@@ -54,7 +51,7 @@ impl Number {
     
     
     #[inline]
-    #[cfg_attr(feature = "cargo-clippy", allow(cast_sign_loss))]
+    #[allow(clippy::cast_sign_loss)]
     pub fn is_i64(&self) -> bool {
         match self.n {
             N::PosInt(v) => v <= i64::max_value() as u64,
@@ -328,10 +325,7 @@ impl PartialEq for N {
                 if a.is_nan() && b.is_nan() {
                     
                     
-                    
-                    let a = unsafe { mem::transmute::<f64, u64>(a) };
-                    let b = unsafe { mem::transmute::<f64, u64>(b) };
-                    a == b
+                    true
                 } else {
                     a == b
                 }
@@ -439,7 +433,7 @@ macro_rules! from_signed {
         $(
             impl From<$signed_ty> for Number {
                 #[inline]
-                #[cfg_attr(feature = "cargo-clippy", allow(cast_sign_loss))]
+                #[allow(clippy::cast_sign_loss)]
                 fn from(i: $signed_ty) -> Self {
                     if i < 0 {
                         Number { n: N::NegInt(i as i64) }
@@ -484,7 +478,7 @@ from_float!(f32 f64);
 
 
 
-#[cfg_attr(feature = "cargo-clippy", allow(derive_hash_xor_eq))]
+#[allow(clippy::derive_hash_xor_eq)]
 impl Hash for Number {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self.n {
@@ -498,12 +492,10 @@ impl Hash for Number {
     }
 }
 
-impl private {
-    pub fn number_unexpected(number: &Number) -> Unexpected {
-        match number.n {
-            N::PosInt(u) => Unexpected::Unsigned(u),
-            N::NegInt(i) => Unexpected::Signed(i),
-            N::Float(f) => Unexpected::Float(f),
-        }
+pub(crate) fn unexpected(number: &Number) -> Unexpected {
+    match number.n {
+        N::PosInt(u) => Unexpected::Unsigned(u),
+        N::NegInt(i) => Unexpected::Signed(i),
+        N::Float(f) => Unexpected::Float(f),
     }
 }

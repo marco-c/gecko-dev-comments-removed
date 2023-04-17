@@ -1,5 +1,4 @@
-use super::Value;
-use mapping::Mapping;
+use crate::{Mapping, Value};
 
 
 

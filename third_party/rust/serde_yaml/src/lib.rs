@@ -57,53 +57,55 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.9")]
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde_yaml/0.8.17")]
 #![deny(missing_docs)]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
-#![cfg_attr(feature = "cargo-clippy", allow(redundant_field_names))]
+#![allow(
+    
+    clippy::should_implement_trait,
+    
+    clippy::cast_lossless,
+    clippy::module_name_repetitions,
+    clippy::needless_pass_by_value,
+    clippy::option_if_let_else,
+    clippy::single_match_else,
+    
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate,
+)]
 
-#![cfg_attr(feature = "cargo-clippy", allow(
-    
-    should_implement_trait,
-    
-    cast_lossless,
-    module_name_repetitions,
-    single_match_else,
-    use_self,
-    
-    cast_possible_wrap,
-    cast_precision_loss,
-    cast_sign_loss,
-    
-    indexing_slicing,
-    missing_docs_in_private_items,
-    
-    empty_enum,
-    
-    result_unwrap_used,
-))]
+pub use crate::de::{from_reader, from_slice, from_str, Deserializer};
+pub use crate::error::{Error, Location, Result};
+pub use crate::ser::{to_string, to_vec, to_writer, Serializer};
+pub use crate::value::{from_value, to_value, Index, Number, Sequence, Value};
 
-extern crate dtoa;
-extern crate linked_hash_map;
-#[macro_use]
-extern crate serde;
-extern crate yaml_rust;
+#[doc(inline)]
+pub use crate::mapping::Mapping;
 
-pub use self::de::{from_reader, from_slice, from_str};
-pub use self::error::{Error, Location, Result};
-pub use self::mapping::Mapping;
-pub use self::ser::{to_string, to_vec, to_writer};
-pub use self::value::{from_value, to_value, Index, Number, Sequence, Value};
+
+
+
+
+
+pub mod seed {
+    pub use super::de::{from_reader_seed, from_slice_seed, from_str_seed};
+}
 
 mod de;
 mod error;
-mod mapping;
+pub mod mapping;
 mod number;
 mod path;
 mod ser;
 mod value;
-
-#[allow(non_camel_case_types)]
-enum private {}

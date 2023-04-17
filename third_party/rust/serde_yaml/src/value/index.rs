@@ -1,8 +1,6 @@
+use crate::{Mapping, Value};
 use std::fmt;
 use std::ops;
-
-use super::Value;
-use mapping::Mapping;
 
 
 
@@ -28,22 +26,22 @@ pub trait Index: private::Sealed {
 
 impl Index for usize {
     fn index_into<'v>(&self, v: &'v Value) -> Option<&'v Value> {
-        match *v {
-            Value::Sequence(ref vec) => vec.get(*self),
-            Value::Mapping(ref vec) => vec.get(&Value::Number((*self).into())),
+        match v {
+            Value::Sequence(vec) => vec.get(*self),
+            Value::Mapping(vec) => vec.get(&Value::Number((*self).into())),
             _ => None,
         }
     }
     fn index_into_mut<'v>(&self, v: &'v mut Value) -> Option<&'v mut Value> {
-        match *v {
-            Value::Sequence(ref mut vec) => vec.get_mut(*self),
-            Value::Mapping(ref mut vec) => vec.get_mut(&Value::Number((*self).into())),
+        match v {
+            Value::Sequence(vec) => vec.get_mut(*self),
+            Value::Mapping(vec) => vec.get_mut(&Value::Number((*self).into())),
             _ => None,
         }
     }
     fn index_or_insert<'v>(&self, v: &'v mut Value) -> &'v mut Value {
-        match *v {
-            Value::Sequence(ref mut vec) => {
+        match v {
+            Value::Sequence(vec) => {
                 let len = vec.len();
                 vec.get_mut(*self).unwrap_or_else(|| {
                     panic!(
@@ -52,7 +50,7 @@ impl Index for usize {
                     )
                 })
             }
-            Value::Mapping(ref mut map) => {
+            Value::Mapping(map) => {
                 let n = Value::Number((*self).into());
                 
                 
@@ -68,14 +66,14 @@ impl Index for usize {
 
 impl Index for Value {
     fn index_into<'v>(&self, v: &'v Value) -> Option<&'v Value> {
-        match *v {
-            Value::Mapping(ref map) => map.get(self),
+        match v {
+            Value::Mapping(map) => map.get(self),
             _ => None,
         }
     }
     fn index_into_mut<'v>(&self, v: &'v mut Value) -> Option<&'v mut Value> {
-        match *v {
-            Value::Mapping(ref mut map) => map.get_mut(self),
+        match v {
+            Value::Mapping(map) => map.get_mut(self),
             _ => None,
         }
     }
@@ -85,8 +83,8 @@ impl Index for Value {
             map.insert(self.clone(), Value::Null);
             *v = Value::Mapping(map);
         }
-        match *v {
-            Value::Mapping(ref mut map) => {
+        match v {
+            Value::Mapping(map) => {
                 
                 
                 if !map.contains_key(self) {
@@ -153,7 +151,7 @@ struct Type<'a>(&'a Value);
 
 impl<'a> fmt::Display for Type<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        match *self.0 {
+        match self.0 {
             Value::Null => formatter.write_str("null"),
             Value::Bool(_) => formatter.write_str("boolean"),
             Value::Number(_) => formatter.write_str("number"),

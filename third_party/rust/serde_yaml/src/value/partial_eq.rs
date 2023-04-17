@@ -1,14 +1,14 @@
-use super::Value;
+use crate::Value;
 
 impl PartialEq for Value {
     fn eq(&self, other: &Value) -> bool {
         match (self, other) {
-            (&Value::Null, &Value::Null) => true,
-            (&Value::Bool(a), &Value::Bool(b)) => a == b,
-            (&Value::Number(ref a), &Value::Number(ref b)) => a == b,
-            (&Value::String(ref a), &Value::String(ref b)) => a == b,
-            (&Value::Sequence(ref a), &Value::Sequence(ref b)) => a == b,
-            (&Value::Mapping(ref a), &Value::Mapping(ref b)) => a == b,
+            (Value::Null, Value::Null) => true,
+            (Value::Bool(a), Value::Bool(b)) => a == b,
+            (Value::Number(a), Value::Number(b)) => a == b,
+            (Value::String(a), Value::String(b)) => a == b,
+            (Value::Sequence(a), Value::Sequence(b)) => a == b,
+            (Value::Mapping(a), Value::Mapping(b)) => a == b,
             _ => false,
         }
     }
@@ -98,6 +98,20 @@ impl PartialEq<Value> for String {
     }
 }
 
+impl PartialEq<bool> for Value {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn eq(&self, other: &bool) -> bool {
+        self.as_bool().map_or(false, |b| b == *other)
+    }
+}
+
 macro_rules! partialeq_numeric {
     ($([$($ty:ty)*], $conversion:ident, $base:ty)*) => {
         $($(
@@ -130,6 +144,6 @@ macro_rules! partialeq_numeric {
 
 partialeq_numeric! {
     [i8 i16 i32 i64 isize], as_i64, i64
-    [u8 u16 u32 usize], as_i64, i64
+    [u8 u16 u32 u64 usize], as_u64, u64
     [f32 f64], as_f64, f64
 }
