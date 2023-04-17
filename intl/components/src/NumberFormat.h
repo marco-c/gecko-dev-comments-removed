@@ -42,13 +42,13 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
 
 
-  enum class CurrencyDisplayStyle {
+  enum class CurrencyDisplay {
     Symbol,
     Code,
     Name,
     NarrowSymbol,
   };
-  Maybe<std::pair<std::string_view, CurrencyDisplayStyle>> mCurrency;
+  Maybe<std::pair<std::string_view, CurrencyDisplay>> mCurrency;
 
   
 
