@@ -1102,6 +1102,7 @@ impl MarionetteConnection {
                 }
                 Err(e) => {
                     if now.elapsed() < timeout {
+                        trace!("{}. Retrying in {:?}", e.to_string(), poll_interval);
                         thread::sleep(poll_interval);
                     } else {
                         return Err(WebDriverError::new(ErrorStatus::Timeout, e.to_string()));
@@ -1122,8 +1123,9 @@ impl MarionetteConnection {
             Ok(timeout) => {
                 
                 
+                
                 stream
-                    .set_read_timeout(Some(time::Duration::from_millis(100)))
+                    .set_read_timeout(Some(time::Duration::from_millis(1000)))
                     .ok();
                 let data = MarionetteConnection::read_resp(stream);
                 stream.set_read_timeout(timeout).ok();
