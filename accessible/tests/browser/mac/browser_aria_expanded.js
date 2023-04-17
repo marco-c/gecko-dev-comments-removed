@@ -20,7 +20,6 @@ function waitForStateChange(id, state, isEnabled) {
 }
 
 
-
 addAccessibleTask(
   `hello world<br>
   <button aria-expanded="false" id="b">I am a button</button><br>
