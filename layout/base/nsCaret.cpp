@@ -81,9 +81,37 @@ static nsLineBox* FindContainingLine(nsIFrame* aFrame) {
   return nullptr;
 }
 
+static bool AdjustCaretFrameForLineStart(nsIFrame*& aFrame,
+                                         int32_t& aFrameOffset,
+                                         nsFrameSelection& aFrameSelection) {
+  if (!aFrame->HasSignificantTerminalNewline()) {
+    return false;
+  }
+
+  int32_t start;
+  int32_t end;
+  aFrame->GetOffsets(start, end);
+  if (aFrameOffset != end) {
+    return false;
+  }
+
+  nsIFrame* nextSibling = aFrame->GetNextSibling();
+  if (!nextSibling) {
+    return false;
+  }
+
+  aFrame = nextSibling;
+  aFrame->GetOffsets(start, end);
+  aFrameOffset = start;
+  aFrameSelection.SetHint(CARET_ASSOCIATE_AFTER);
+  return true;
+}
+
 static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset) {
   nsLineBox* line = FindContainingLine(*aFrame);
-  if (!line) return;
+  if (!line) {
+    return;
+  }
   int32_t count = line->GetChildCount();
   for (nsIFrame* f = line->mFirstChild; count > 0;
        --count, f = f->GetNextSibling()) {
@@ -638,9 +666,14 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
 
   
   
-  
-  
-  AdjustCaretFrameForLineEnd(&theFrame, &theFrameOffset);
+  if (!AdjustCaretFrameForLineStart(theFrame, theFrameOffset,
+                                    *aFrameSelection)) {
+    
+    
+    
+    
+    AdjustCaretFrameForLineEnd(&theFrame, &theFrameOffset);
+  };
 
   
   
