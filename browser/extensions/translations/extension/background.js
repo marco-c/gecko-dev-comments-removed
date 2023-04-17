@@ -1,7 +1,7 @@
  (() => { 
  	var __webpack_modules__ = ({
 
- 6789:
+ 7882:
 
 
 
@@ -19,7 +19,7 @@
    "og": () => ( GLEAN_MAX_SOURCE_TAGS)
  });
 const GLEAN_SCHEMA_VERSION = 1;
-const GLEAN_VERSION = "0.14.1";
+const GLEAN_VERSION = "0.15.0";
 const PING_INFO_STORAGE = "glean_ping_info";
 const CLIENT_INFO_STORAGE = "glean_client_info";
 const KNOWN_CLIENT_ID = "c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0";
@@ -30,7 +30,7 @@ const GLEAN_MAX_SOURCE_TAGS = 5;
 
  }),
 
- 4658:
+ 5639:
 
 
 
@@ -275,7 +275,7 @@ class Context {
 
  }),
 
- 7864:
+ 4511:
 
 
 
@@ -296,7 +296,7 @@ var ErrorType;
 
  }),
 
- 4815:
+ 5318:
 
 
 
@@ -339,7 +339,7 @@ const CoreEvents = {
 
  }),
 
- 9150:
+ 245:
 
 
 
@@ -350,7 +350,7 @@ const CoreEvents = {
    "K": () => ( RecordedEvent),
    "Z": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 6222);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 6379);
 
 class RecordedEvent {
     constructor(category, name, timestamp, extra) {
@@ -438,7 +438,7 @@ class EventsDatabase {
 
  }),
 
- 8284:
+ 1486:
 
 
 
@@ -448,9 +448,9 @@ class EventsDatabase {
  __webpack_require__.d(__webpack_exports__, {
    "t": () => ( MetricType)
  });
- var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 6222);
- var _types_labeled_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 3119);
- var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 4658);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 6379);
+ var _types_labeled_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 1209);
+ var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 5639);
 
 
 
@@ -492,7 +492,7 @@ class MetricType {
 
  }),
 
- 519:
+ 1977:
 
 
 
@@ -524,7 +524,7 @@ class Metric {
 
  }),
 
- 9696:
+ 8899:
 
 
 
@@ -549,7 +549,7 @@ var TimeUnit;
 
  }),
 
- 4429:
+ 499:
 
 
 
@@ -561,11 +561,11 @@ __webpack_require__.r(__webpack_exports__);
    "CounterMetric": () => ( CounterMetric),
    "default": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8284);
- var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 6222);
- var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 4658);
- var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 519);
- var _error_error_type_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 7864);
+ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 1486);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 6379);
+ var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 5639);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 1977);
+ var _error_error_type_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 4511);
 
 
 
@@ -640,7 +640,7 @@ class CounterMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
 
  }),
 
- 9303:
+ 7626:
 
 
 
@@ -652,11 +652,11 @@ class CounterMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
    "ZP": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
 
- var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8284);
- var _metrics_time_unit_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 9696);
- var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 4658);
- var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 519);
- var _utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 6222);
+ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 1486);
+ var _metrics_time_unit_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 8899);
+ var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 5639);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 1977);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 6379);
 
 
 
@@ -798,7 +798,7 @@ class DatetimeMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
 
  }),
 
- 4986:
+ 2178:
 
 
 
@@ -809,11 +809,11 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
    "default": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8284);
- var _events_database_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 9150);
- var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6222);
- var _context_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 4658);
- var _error_error_type_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 7864);
+ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 1486);
+ var _events_database_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 245);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6379);
+ var _context_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 5639);
+ var _error_error_type_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 4511);
 
 
 
@@ -861,7 +861,7 @@ class EventMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
 
  }),
 
- 3119:
+ 1209:
 
 
 
@@ -875,9 +875,9 @@ class EventMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
    "qd": () => ( getValidDynamicLabel)
  });
 
- var _metric_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 519);
- var _context_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 4658);
- var _error_error_type_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 7864);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 1977);
+ var _context_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 5639);
+ var _error_error_type_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 4511);
 
 
 
@@ -964,7 +964,7 @@ class LabeledMetricType {
 
  }),
 
- 6120:
+ 4717:
 
 
 
@@ -976,11 +976,11 @@ __webpack_require__.r(__webpack_exports__);
    "QuantityMetric": () => ( QuantityMetric),
    "default": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8284);
- var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 6222);
- var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 4658);
- var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 519);
- var _error_error_type_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 7864);
+ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 1486);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 6379);
+ var _context_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 5639);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 1977);
+ var _error_error_type_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 4511);
 
 
 
@@ -1037,7 +1037,7 @@ class QuantityMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
 
  }),
 
- 5799:
+ 4245:
 
 
 
@@ -1050,10 +1050,10 @@ __webpack_require__.r(__webpack_exports__);
    "StringMetric": () => ( StringMetric),
    "default": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8284);
- var _context_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 4658);
- var _metric_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 519);
- var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6222);
+ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 1486);
+ var _context_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 5639);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 1977);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6379);
 
 
 
@@ -1104,7 +1104,7 @@ class StringMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_0__ .t {
 
  }),
 
- 4498:
+ 2939:
 
 
 
@@ -1116,12 +1116,12 @@ __webpack_require__.r(__webpack_exports__);
    "TimespanMetric": () => ( TimespanMetric),
    "default": () => (__WEBPACK_DEFAULT_EXPORT__)
  });
- var _time_unit_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 9696);
- var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 8284);
- var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6222);
- var _metric_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( 519);
- var _context_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 4658);
- var _error_error_type_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 7864);
+ var _time_unit_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8899);
+ var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 1486);
+ var _utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__( 6379);
+ var _metric_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__( 1977);
+ var _context_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__( 5639);
+ var _error_error_type_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__( 4511);
 
 
 
@@ -1264,7 +1264,7 @@ class TimespanMetricType extends _index_js__WEBPACK_IMPORTED_MODULE_1__ .t {
 
  }),
 
- 2455:
+ 8410:
 
 
 
@@ -1280,19 +1280,19 @@ __webpack_require__.d(__webpack_exports__, {
 });
 
 
-var constants = __webpack_require__(6789);
+var constants = __webpack_require__(7882);
 
-var utils = __webpack_require__(6222);
+var utils = __webpack_require__(6379);
 
-var counter = __webpack_require__(4429);
+var counter = __webpack_require__(499);
 
-var datetime = __webpack_require__(9303);
+var datetime = __webpack_require__(7626);
 
-var time_unit = __webpack_require__(9696);
+var time_unit = __webpack_require__(8899);
 
-var events = __webpack_require__(4815);
+var events = __webpack_require__(5318);
 
-var context = __webpack_require__(4658);
+var context = __webpack_require__(5639);
 ;
 
 
@@ -1465,29 +1465,32 @@ class PingType {
             PingType._private_internalSubmit(this, reason);
         }
     }
+    static async _private_submitUndispatched(instance, reason, testResolver) {
+        if (!context._.initialized) {
+            console.info("Glean must be initialized before submitting pings.");
+            return;
+        }
+        if (!context._.uploadEnabled && !instance.isDeletionRequest()) {
+            console.info("Glean disabled: not submitting pings. Glean may still submit the deletion-request ping.");
+            return;
+        }
+        let correctedReason = reason;
+        if (reason && !instance.reasonCodes.includes(reason)) {
+            console.error(`Invalid reason code ${reason} from ${this.name}. Ignoring.`);
+            correctedReason = undefined;
+        }
+        const identifier = (0,utils.Ln)();
+        await maker(identifier, instance, correctedReason);
+        if (testResolver) {
+            testResolver();
+            instance.resolveTestPromiseFunction = undefined;
+            instance.rejectTestPromiseFunction = undefined;
+            instance.testCallback = undefined;
+        }
+    }
     static _private_internalSubmit(instance, reason, testResolver) {
         context._.dispatcher.launch(async () => {
-            if (!context._.initialized) {
-                console.info("Glean must be initialized before submitting pings.");
-                return;
-            }
-            if (!context._.uploadEnabled && !instance.isDeletionRequest()) {
-                console.info("Glean disabled: not submitting pings. Glean may still submit the deletion-request ping.");
-                return;
-            }
-            let correctedReason = reason;
-            if (reason && !instance.reasonCodes.includes(reason)) {
-                console.error(`Invalid reason code ${reason} from ${this.name}. Ignoring.`);
-                correctedReason = undefined;
-            }
-            const identifier = (0,utils.Ln)();
-            await maker(identifier, instance, correctedReason);
-            if (testResolver) {
-                testResolver();
-                instance.resolveTestPromiseFunction = undefined;
-                instance.rejectTestPromiseFunction = undefined;
-                instance.testCallback = undefined;
-            }
+            await PingType._private_submitUndispatched(instance, reason, testResolver);
         });
     }
     async testBeforeNextSubmit(callbackFn) {
@@ -1507,7 +1510,7 @@ class PingType {
 
  }),
 
- 6222:
+ 6379:
 
 
 
@@ -1619,9 +1622,9 @@ function v4(options, buf, offset) {
 
  const esm_browser_v4 = (v4);
 
-var context = __webpack_require__(4658);
+var context = __webpack_require__(5639);
 
-var error_type = __webpack_require__(7864);
+var error_type = __webpack_require__(4511);
 ;
 
 
@@ -1696,7 +1699,7 @@ async function truncateStringAtBoundaryWithError(metric, value, length) {
 
  }),
 
- 6902:
+ 5122:
 
 
 
@@ -1712,9 +1715,9 @@ __webpack_require__.d(__webpack_exports__, {
 });
 
 
-var constants = __webpack_require__(6789);
+var constants = __webpack_require__(7882);
 
-var utils = __webpack_require__(6222);
+var utils = __webpack_require__(6379);
 ;
 
 
@@ -1766,13 +1769,13 @@ class Configuration {
 }
 
 
-var labeled = __webpack_require__(3119);
+var labeled = __webpack_require__(1209);
 
-var metrics = __webpack_require__(8284);
+var metrics = __webpack_require__(1486);
 
-var context = __webpack_require__(4658);
+var context = __webpack_require__(5639);
 
-var metric = __webpack_require__(519);
+var metric = __webpack_require__(1977);
 ;
 
 
@@ -1813,17 +1816,17 @@ class BooleanMetricType extends ( null && (MetricType)) {
  const types_boolean = (( null && (BooleanMetricType)));
 
 
-var counter = __webpack_require__(4429);
+var counter = __webpack_require__(499);
 
-var datetime = __webpack_require__(9303);
+var datetime = __webpack_require__(7626);
 
-var quantity = __webpack_require__(6120);
+var quantity = __webpack_require__(4717);
 
-var string = __webpack_require__(5799);
+var string = __webpack_require__(4245);
 
-var timespan = __webpack_require__(4498);
+var timespan = __webpack_require__(2939);
 
-var error_type = __webpack_require__(7864);
+var error_type = __webpack_require__(4511);
 ;
 
 
@@ -2281,7 +2284,7 @@ class PingUploader {
  const upload = (PingUploader);
 
 
-var time_unit = __webpack_require__(9696);
+var time_unit = __webpack_require__(8899);
 ;
 
 
@@ -2390,9 +2393,9 @@ class CoreMetrics {
 }
 
 
-var events_database = __webpack_require__(9150);
+var events_database = __webpack_require__(245);
 
-var ping_type = __webpack_require__(2455);
+var ping_type = __webpack_require__(8410);
 ;
 
 
@@ -2408,7 +2411,7 @@ class CorePings {
  const internal_pings = (CorePings);
 
 
-var events = __webpack_require__(4815);
+var events = __webpack_require__(5318);
 ;
 
 function registerPluginToEvent(plugin) {
@@ -2612,6 +2615,7 @@ const TestPlatform = {
 
 
 
+
 class Glean {
     constructor() {
         if (!(0,utils.o8)(Glean._instance)) {
@@ -2641,9 +2645,9 @@ class Glean {
         await Glean.coreMetrics.initialize(Glean.instance._config, Glean.platform, context._.metricsDatabase);
     }
     static async onUploadDisabled() {
+        await ping_type.default._private_submitUndispatched(Glean.corePings.deletionRequest);
         context._.uploadEnabled = false;
         await Glean.clearMetrics();
-        Glean.corePings.deletionRequest.submit();
     }
     static async clearMetrics() {
         await Glean.pingUploader.clearPendingPingsQueue();
@@ -2936,7 +2940,7 @@ class BrowserUploader {
                 console.error("Timeout while attempting to upload ping.", e);
             }
             else if (e instanceof TypeError) {
-                console.error("Network while attempting to upload ping.", e);
+                console.error("Network error while attempting to upload ping.", e);
             }
             else {
                 console.error("Unknown error while attempting to upload ping.", e);
@@ -3033,7 +3037,7 @@ const WebExtPlatform = {
 
  }),
 
- 8313:
+ 2971:
 
 
 
@@ -3198,7 +3202,7 @@ var __WEBPACK_AMD_DEFINE_RESULT__;
 
  }),
 
- 3305:
+ 6903:
 
 
 
@@ -3459,198 +3463,25 @@ if ( true && module.exports) {
 
  }),
 
- 2150:
-
-
-
- ((module) => {
-
-
-
-
-
-
-if (true) {
-  module.exports = Emitter;
-}
-
-
-
-
-
-
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-
-
-
-
-
-
-
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-
-
-
-
-
-
-
-
-
-Emitter.prototype.on =
-Emitter.prototype.addEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
-    .push(fn);
-  return this;
-};
-
-
-
-
-
-
-
-
-
-
-
-Emitter.prototype.once = function(event, fn){
-  function on() {
-    this.off(event, on);
-    fn.apply(this, arguments);
-  }
-
-  on.fn = fn;
-  this.on(event, on);
-  return this;
-};
-
-
-
-
-
-
-
-
-
-
-
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners =
-Emitter.prototype.removeEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-
-  
-  if (0 == arguments.length) {
-    this._callbacks = {};
-    return this;
-  }
-
-  
-  var callbacks = this._callbacks['$' + event];
-  if (!callbacks) return this;
-
-  
-  if (1 == arguments.length) {
-    delete this._callbacks['$' + event];
-    return this;
-  }
-
-  
-  var cb;
-  for (var i = 0; i < callbacks.length; i++) {
-    cb = callbacks[i];
-    if (cb === fn || cb.fn === fn) {
-      callbacks.splice(i, 1);
-      break;
-    }
-  }
-  return this;
-};
-
-
-
-
-
-
-
-
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks['$' + event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-
-
-
-
-
-
-
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks['$' + event] || [];
-};
-
-
-
-
-
-
-
-
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
-};
-
-
- }),
-
- 3527:
+ 341:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-module.exports = __webpack_require__( 5661);
+module.exports = __webpack_require__( 813);
 
 
  }),
 
- 1480:
+ 6077:
 
 
 
  ((__unused_webpack_module, exports, __webpack_require__) => {
 
-var pathGetter = __webpack_require__( 6445);
-var utils = __webpack_require__( 4326);
+var pathGetter = __webpack_require__( 3284);
+var utils = __webpack_require__( 1062);
 
 var WMap = typeof WeakMap !== 'undefined'?
   WeakMap:
@@ -3861,13 +3692,13 @@ exports.retrocycle = function retrocycle($) {
 
  }),
 
- 5661:
+ 813:
 
 
 
  ((__unused_webpack_module, exports, __webpack_require__) => {
 
-var cycle = __webpack_require__( 1480);
+var cycle = __webpack_require__( 6077);
 
 exports.stringify = function stringify(value, replacer, space, _options) {
 
@@ -3923,7 +3754,7 @@ exports.parse = function parse(text, reviver) {
 
  }),
 
- 6445:
+ 3284:
 
 
 
@@ -3956,14 +3787,14 @@ function getPaths(pathString) {
 
  }),
 
- 4326:
+ 1062:
 
 
 
  ((__unused_webpack_module, exports, __webpack_require__) => {
 
-var pathGetter = __webpack_require__( 6445);
-var jsan = __webpack_require__( 5661);
+var pathGetter = __webpack_require__( 3284);
+var jsan = __webpack_require__( 813);
 
 exports.getRegexFlags = function getRegexFlags(regex) {
   var flags = '';
@@ -4030,7 +3861,7 @@ exports.restore = function restore(obj, root) {
 
  }),
 
- 8758:
+ 1299:
 
 
 
@@ -4427,7 +4258,7 @@ module.exports = List;
 
  }),
 
- 1441:
+ 9426:
 
 
 
@@ -4436,12 +4267,12 @@ module.exports = List;
 "use strict";
 
 
-module.exports = __webpack_require__( 8758);
+module.exports = __webpack_require__( 1299);
 
 
  }),
 
- 4:
+ 8391:
 
 
 
@@ -4532,7 +4363,7 @@ module.exports = function(qs, sep, eq, options) {
 
  }),
 
- 3132:
+ 4221:
 
 
 
@@ -4607,7 +4438,7 @@ module.exports = function(obj, sep, eq, name) {
 
  }),
 
- 6774:
+ 3329:
 
 
 
@@ -4616,13 +4447,13 @@ module.exports = function(obj, sep, eq, name) {
 "use strict";
 
 
-exports.decode = exports.parse = __webpack_require__( 4);
-exports.encode = exports.stringify = __webpack_require__( 3132);
+exports.decode = exports.parse = __webpack_require__( 8391);
+exports.encode = exports.stringify = __webpack_require__( 4221);
 
 
  }),
 
- 3288:
+ 4544:
 
 
 
@@ -4644,7 +4475,7 @@ var defaultSocketOptions = exports.defaultSocketOptions = {
 
  }),
 
- 4952:
+ 1538:
 
 
 
@@ -4661,17 +4492,17 @@ exports.start = start;
 exports.connect = connect;
 exports.connectViaExtension = connectViaExtension;
 
-var _jsan = __webpack_require__( 3527);
+var _jsan = __webpack_require__( 341);
 
-var _socketclusterClient = __webpack_require__( 8401);
+var _socketclusterClient = __webpack_require__( 3030);
 
 var _socketclusterClient2 = _interopRequireDefault(_socketclusterClient);
 
-var _rnHostDetect = __webpack_require__( 5826);
+var _rnHostDetect = __webpack_require__( 3084);
 
 var _rnHostDetect2 = _interopRequireDefault(_rnHostDetect);
 
-var _constants = __webpack_require__( 3288);
+var _constants = __webpack_require__( 4544);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -4809,7 +4640,7 @@ exports.default = { connect: connect, connectViaExtension: connectViaExtension, 
 
  }),
 
- 9607:
+ 8690:
 
 
 
@@ -4818,11 +4649,11 @@ exports.default = { connect: connect, connectViaExtension: connectViaExtension, 
 "use strict";
 
 
-module.exports = __webpack_require__( 4952);
+module.exports = __webpack_require__( 1538);
 
  }),
 
- 5826:
+ 3084:
 
 
 
@@ -4944,13 +4775,13 @@ module.exports = function (hostname) {
 
  }),
 
- 6125:
+ 5717:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var Emitter = __webpack_require__( 2150);
+var Emitter = __webpack_require__( 1113);
 
 var SCChannel = function (name, client, options) {
   var self = this;
@@ -5024,7 +4855,180 @@ module.exports.X = SCChannel;
 
  }),
 
- 5932:
+ 1113:
+
+
+
+ ((module) => {
+
+
+
+
+
+
+if (true) {
+  module.exports = Emitter;
+}
+
+
+
+
+
+
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+
+
+
+
+
+
+
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
+    .push(fn);
+  return this;
+};
+
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.once = function(event, fn){
+  function on() {
+    this.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  
+  var callbacks = this._callbacks['$' + event];
+  if (!callbacks) return this;
+
+  
+  if (1 == arguments.length) {
+    delete this._callbacks['$' + event];
+    return this;
+  }
+
+  
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks['$' + event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks['$' + event] || [];
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+
+ }),
+
+ 739:
 
 
 
@@ -5113,13 +5117,13 @@ module.exports = function decycle(object) {
 
  }),
 
- 5588:
+ 6299:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var decycle = __webpack_require__( 5932);
+var decycle = __webpack_require__( 739);
 
 var isStrict = (function () { return !this; })();
 
@@ -5449,7 +5453,7 @@ module.exports.decycle = decycle;
 
  }),
 
- 2973:
+ 571:
 
 
 
@@ -5553,19 +5557,19 @@ module.exports.encode = function (object) {
 
  }),
 
- 8401:
+ 3030:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var SCClientSocket = __webpack_require__( 4363);
-var factory = __webpack_require__( 9620);
+var SCClientSocket = __webpack_require__( 7244);
+var factory = __webpack_require__( 9330);
 
 module.exports.factory = factory;
 module.exports.SCClientSocket = SCClientSocket;
 
-module.exports.Emitter = __webpack_require__( 2150);
+module.exports.Emitter = __webpack_require__( 317);
 
 module.exports.create = function (options) {
   return factory.create(options);
@@ -5584,7 +5588,7 @@ module.exports.version = '13.0.1';
 
  }),
 
- 4539:
+ 512:
 
 
 
@@ -5652,15 +5656,15 @@ module.exports.K = AuthEngine;
 
  }),
 
- 9620:
+ 9330:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var SCClientSocket = __webpack_require__( 4363);
-var scErrors = __webpack_require__( 5588);
-var uuid = __webpack_require__( 6205);
+var SCClientSocket = __webpack_require__( 7244);
+var scErrors = __webpack_require__( 6299);
+var uuid = __webpack_require__( 6434);
 var InvalidArgumentsError = scErrors.InvalidArgumentsError;
 
 var _clients = {};
@@ -5783,13 +5787,13 @@ module.exports = {
 
  }),
 
- 9165:
+ 907:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var scErrors = __webpack_require__( 5588);
+var scErrors = __webpack_require__( 6299);
 var InvalidActionError = scErrors.InvalidActionError;
 
 var Response = function (socket, id) {
@@ -5848,24 +5852,24 @@ module.exports.H = Response;
 
  }),
 
- 4363:
+ 7244:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var Emitter = __webpack_require__( 2150);
-var SCChannel = __webpack_require__( 6125) .X;
-var Response = __webpack_require__( 9165) .H;
-var AuthEngine = __webpack_require__( 4539) .K;
-var formatter = __webpack_require__( 2973);
-var SCTransport = __webpack_require__( 4868) .U;
-var querystring = __webpack_require__( 6774);
-var LinkedList = __webpack_require__( 1441);
-var base64 = __webpack_require__( 8313);
-var clone = __webpack_require__( 3305);
+var Emitter = __webpack_require__( 317);
+var SCChannel = __webpack_require__( 5717) .X;
+var Response = __webpack_require__( 907) .H;
+var AuthEngine = __webpack_require__( 512) .K;
+var formatter = __webpack_require__( 571);
+var SCTransport = __webpack_require__( 9781) .U;
+var querystring = __webpack_require__( 3329);
+var LinkedList = __webpack_require__( 9426);
+var base64 = __webpack_require__( 2971);
+var clone = __webpack_require__( 6903);
 
-var scErrors = __webpack_require__( 5588);
+var scErrors = __webpack_require__( 6299);
 var InvalidArgumentsError = scErrors.InvalidArgumentsError;
 var InvalidMessageError = scErrors.InvalidMessageError;
 var InvalidActionError = scErrors.InvalidActionError;
@@ -6889,15 +6893,15 @@ module.exports = SCClientSocket;
 
  }),
 
- 4868:
+ 9781:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var Emitter = __webpack_require__( 2150);
-var Response = __webpack_require__( 9165) .H;
-var querystring = __webpack_require__( 6774);
+var Emitter = __webpack_require__( 317);
+var Response = __webpack_require__( 907) .H;
+var querystring = __webpack_require__( 3329);
 var WebSocket;
 var createWebSocket;
 
@@ -6907,13 +6911,13 @@ if (__webpack_require__.g.WebSocket) {
     return new WebSocket(uri);
   };
 } else {
-  WebSocket = __webpack_require__( 5381);
+  WebSocket = __webpack_require__( 4500);
   createWebSocket = function (uri, options) {
     return new WebSocket(uri, null, options);
   };
 }
 
-var scErrors = __webpack_require__( 5588);
+var scErrors = __webpack_require__( 6299);
 var TimeoutError = scErrors.TimeoutError;
 var BadConnectionError = scErrors.BadConnectionError;
 
@@ -7343,7 +7347,7 @@ module.exports.U = SCTransport;
 
  }),
 
- 5381:
+ 4500:
 
 
 
@@ -7388,14 +7392,187 @@ module.exports = WebSocket ? ws : null;
 
  }),
 
- 6205:
+ 317:
+
+
+
+ ((module) => {
+
+
+
+
+
+
+if (true) {
+  module.exports = Emitter;
+}
+
+
+
+
+
+
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+
+
+
+
+
+
+
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
+    .push(fn);
+  return this;
+};
+
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.once = function(event, fn){
+  function on() {
+    this.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+
+
+
+
+
+
+
+
+
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  
+  var callbacks = this._callbacks['$' + event];
+  if (!callbacks) return this;
+
+  
+  if (1 == arguments.length) {
+    delete this._callbacks['$' + event];
+    return this;
+  }
+
+  
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks['$' + event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks['$' + event] || [];
+};
+
+
+
+
+
+
+
+
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+
+ }),
+
+ 6434:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var v1 = __webpack_require__( 9390);
-var v4 = __webpack_require__( 7547);
+var v1 = __webpack_require__( 711);
+var v4 = __webpack_require__( 4754);
 
 var uuid = v4;
 uuid.v1 = v1;
@@ -7406,7 +7583,7 @@ module.exports = uuid;
 
  }),
 
- 4599:
+ 399:
 
 
 
@@ -7439,7 +7616,7 @@ module.exports = bytesToUuid;
 
  }),
 
- 9341:
+ 6641:
 
 
 
@@ -7481,14 +7658,14 @@ if (getRandomValues) {
 
  }),
 
- 9390:
+ 711:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var rng = __webpack_require__( 9341);
-var bytesToUuid = __webpack_require__( 4599);
+var rng = __webpack_require__( 6641);
+var bytesToUuid = __webpack_require__( 399);
 
 
 
@@ -7600,14 +7777,14 @@ module.exports = v1;
 
  }),
 
- 7547:
+ 4754:
 
 
 
  ((module, __unused_webpack_exports, __webpack_require__) => {
 
-var rng = __webpack_require__( 9341);
-var bytesToUuid = __webpack_require__( 4599);
+var rng = __webpack_require__( 6641);
+var bytesToUuid = __webpack_require__( 399);
 
 function v4(options, buf, offset) {
   var i = buf && offset || 0;
@@ -7639,7 +7816,7 @@ module.exports = v4;
 
  }),
 
- 410:
+ 933:
 
 
 
@@ -7661,9 +7838,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.contentScriptBergamotApiClientPortListener = void 0;
-const BergamotWasmApiClient_1 = __webpack_require__( 4222);
-const BergamotRestApiClient_1 = __webpack_require__( 484);
-const config_1 = __webpack_require__( 964);
+const BergamotWasmApiClient_1 = __webpack_require__( 7423);
+const BergamotRestApiClient_1 = __webpack_require__( 8240);
+const config_1 = __webpack_require__( 7843);
 
 const bergamotApiClient = config_1.config.useBergamotRestApi
     ? new BergamotRestApiClient_1.BergamotRestApiClient()
@@ -7727,7 +7904,7 @@ exports.contentScriptBergamotApiClientPortListener = contentScriptBergamotApiCli
 
  }),
 
- 220:
+ 800:
 
 
 
@@ -7785,7 +7962,7 @@ exports.contentScriptFrameInfoPortListener = contentScriptFrameInfoPortListener;
 
  }),
 
- 6047:
+ 4958:
 
 
 
@@ -7807,7 +7984,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.contentScriptLanguageDetectorProxyPortListener = void 0;
-const LanguageDetector_1 = __webpack_require__( 7991);
+const LanguageDetector_1 = __webpack_require__( 6621);
 const contentScriptLanguageDetectorProxyPortListener = (port) => {
     if (port.name !== "port-from-content-script-language-detector-proxy") {
         return;
@@ -7842,7 +8019,7 @@ exports.contentScriptLanguageDetectorProxyPortListener = contentScriptLanguageDe
 
  }),
 
- 7333:
+ 3797:
 
 
 
@@ -7864,9 +8041,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BergamotTranslatorAPI = exports.BergamotTranslatorAPIModelDownloadError = exports.BergamotTranslatorAPIModelLoadError = exports.BergamotTranslatorAPITranslationError = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
-const nanoid_1 = __webpack_require__( 350);
-const config_1 = __webpack_require__( 964);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const nanoid_1 = __webpack_require__( 3608);
+const config_1 = __webpack_require__( 7843);
 
 
 
@@ -8295,7 +8472,7 @@ exports.BergamotTranslatorAPI = {
 
  }),
 
- 7991:
+ 6621:
 
 
 
@@ -8317,7 +8494,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LanguageDetector = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const browserWithExperimentAPIs_1 = __webpack_require__( 2975);
 
 
 
@@ -8446,6 +8624,10 @@ exports.LanguageDetector = {
             if (typeof params === "string") {
                 params = { text: params };
             }
+            
+            if (true) {
+                return browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.languageDetector.detectLanguage(params);
+            }
             return workerManager.detectLanguage(params);
         });
     },
@@ -8454,7 +8636,7 @@ exports.LanguageDetector = {
 
  }),
 
- 5692:
+ 5733:
 
 
 
@@ -8473,10 +8655,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.translateAllFramesInTab = void 0;
-const mobx_1 = __webpack_require__( 9637);
-const BaseTranslationState_1 = __webpack_require__( 4779);
-const mobx_keystone_1 = __webpack_require__( 7680);
-const Telemetry_1 = __webpack_require__( 647);
+const mobx_1 = __webpack_require__( 5412);
+const BaseTranslationState_1 = __webpack_require__( 9359);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const Telemetry_1 = __webpack_require__( 1114);
 const translateAllFramesInTab = (tabId, from, to, extensionState) => __awaiter(void 0, void 0, void 0, function* () {
     
     const start = performance.now();
@@ -8494,7 +8676,7 @@ const translateAllFramesInTab = (tabId, from, to, extensionState) => __awaiter(v
     const timeToFullPageTranslatedMs = end - start;
     const { tabTranslationStates } = extensionState;
     const currentTabTranslationState = mobx_keystone_1.getSnapshot(tabTranslationStates.get(tabId));
-    const { totalModelLoadWallTimeMs, totalTranslationEngineRequestCount, totalTranslationWallTimeMs, wordCount, translationStatus, modelDownloadProgress, } = currentTabTranslationState;
+    const { totalModelLoadWallTimeMs, totalTranslationEngineRequestCount, totalTranslationWallTimeMs, wordCount, wordCountVisibleInViewport, translationStatus, modelDownloadProgress, } = currentTabTranslationState;
     if (translationStatus === BaseTranslationState_1.TranslationStatus.TRANSLATED) {
         
         const timeToFullPageTranslatedSeconds = timeToFullPageTranslatedMs / 1000;
@@ -8513,7 +8695,7 @@ const translateAllFramesInTab = (tabId, from, to, extensionState) => __awaiter(v
             ? "hydrating"
             : "downloading and persisting"} model files. The remaining ${unaccountedTranslationTimeMs /
             1000} seconds where spent elsewhere.`);
-        Telemetry_1.telemetry.onTranslationFinished(tabId, from, to, timeToFullPageTranslatedMs, timeToFullPageTranslatedWordsPerSecond, modelDownloadTimeMs, modelLoadTimeMs, translationEngineTimeMs, translationEngineWordsPerSecond);
+        Telemetry_1.telemetry.onTranslationFinished(tabId, from, to, timeToFullPageTranslatedMs, timeToFullPageTranslatedWordsPerSecond, modelDownloadTimeMs, modelLoadTimeMs, translationEngineTimeMs, translationEngineWordsPerSecond, wordCount, wordCountVisibleInViewport);
     }
     else {
         
@@ -8524,7 +8706,7 @@ exports.translateAllFramesInTab = translateAllFramesInTab;
 
  }),
 
- 805:
+ 1119:
 
 
 
@@ -8546,11 +8728,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MobxKeystoneBackgroundContextHost = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
-const mobx_keystone_1 = __webpack_require__( 7680);
-const ErrorReporting_1 = __webpack_require__( 3345);
-const DocumentTranslationState_1 = __webpack_require__( 5482);
-const TranslateOwnTextTranslationState_1 = __webpack_require__( 8238);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const ErrorReporting_1 = __webpack_require__( 9009);
+const DocumentTranslationState_1 = __webpack_require__( 1120);
+const TranslateOwnTextTranslationState_1 = __webpack_require__( 6745);
 
 
 DocumentTranslationState_1.DocumentTranslationState;
@@ -8667,7 +8849,7 @@ exports.MobxKeystoneBackgroundContextHost = MobxKeystoneBackgroundContextHost;
 
  }),
 
- 4517:
+ 823:
 
 
 
@@ -8689,8 +8871,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Store = void 0;
-const nanoid_1 = __webpack_require__( 350);
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
+const nanoid_1 = __webpack_require__( 3608);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
 class Store {
     constructor(localStorageWrapper) {
         this.get = (_keys) => __awaiter(this, void 0, void 0, function* () { return ({}); });
@@ -8754,7 +8936,7 @@ exports.Store = Store;
 
  }),
 
- 6432:
+ 7225:
 
 
 
@@ -8795,12 +8977,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.connectRootStoreToDevTools = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
+const mobx_keystone_1 = __webpack_require__( 4380);
 function connectRootStoreToDevTools(rootStore) {
     return __awaiter(this, void 0, void 0, function* () {
         
         
-        const { default: remotedev } = yield Promise.resolve().then(() => __importStar(__webpack_require__( 9607)));
+        const { default: remotedev } = yield Promise.resolve().then(() => __importStar(__webpack_require__( 8690)));
         const port = process.env.REMOTE_DEV_SERVER_PORT;
         console.info(`Connecting the background store to the Redux dev tools on port ${port}`);
         const connection = remotedev.connectViaExtension({
@@ -8816,7 +8998,7 @@ exports.connectRootStoreToDevTools = connectRootStoreToDevTools;
 
  }),
 
- 8911:
+ 5660:
 
 
 
@@ -8829,8 +9011,8 @@ exports.connectRootStoreToDevTools = connectRootStoreToDevTools;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createBackgroundContextRootStore = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const ExtensionState_1 = __webpack_require__( 65);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const ExtensionState_1 = __webpack_require__( 7516);
 
 mobx_keystone_1.setGlobalConfig({
     modelAutoTypeChecking: mobx_keystone_1.ModelAutoTypeCheckingMode.AlwaysOn,
@@ -8847,7 +9029,7 @@ exports.createBackgroundContextRootStore = createBackgroundContextRootStore;
 
  }),
 
- 5813:
+ 7404:
 
 
 
@@ -8860,7 +9042,7 @@ exports.createBackgroundContextRootStore = createBackgroundContextRootStore;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.localStorageWrapper = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
 exports.localStorageWrapper = {
     get: webextension_polyfill_ts_1.browser.storage.local.get,
     set: webextension_polyfill_ts_1.browser.storage.local.set,
@@ -8869,7 +9051,7 @@ exports.localStorageWrapper = {
 
  }),
 
- 647:
+ 1114:
 
 
 
@@ -8894,16 +9076,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.telemetry = exports.Telemetry = void 0;
-const webext_1 = __importDefault(__webpack_require__( 6902));
-const pings_1 = __webpack_require__( 3177);
-const config_1 = __webpack_require__( 964);
-const performance_1 = __webpack_require__( 1714);
-const metadata_1 = __webpack_require__( 9085);
-const infobar_1 = __webpack_require__( 2457);
-const service_1 = __webpack_require__( 7659);
-const errors_1 = __webpack_require__( 5352);
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
-const bergamot_translator_version_1 = __webpack_require__( 8471);
+const webext_1 = __importDefault(__webpack_require__( 5122));
+const pings_1 = __webpack_require__( 2609);
+const config_1 = __webpack_require__( 7843);
+const performance_1 = __webpack_require__( 7171);
+const metadata_1 = __webpack_require__( 6667);
+const infobar_1 = __webpack_require__( 2943);
+const service_1 = __webpack_require__( 2324);
+const errors_1 = __webpack_require__( 1418);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const bergamot_translator_version_1 = __webpack_require__( 7531);
 
 
 
@@ -9087,7 +9269,7 @@ class Telemetry {
 
 
 
-    onTranslationFinished(tabId, from, to, timeToFullPageTranslatedMs, timeToFullPageTranslatedWordsPerSecond, modelDownloadTimeMs, modelLoadTimeMs, translationEngineTimeMs, translationEngineWordsPerSecond) {
+    onTranslationFinished(tabId, from, to, timeToFullPageTranslatedMs, timeToFullPageTranslatedWordsPerSecond, modelDownloadTimeMs, modelLoadTimeMs, translationEngineTimeMs, translationEngineWordsPerSecond, $wordCount, $wordCountVisibleInViewport) {
         this.queueRecording(() => {
             performance_1.fullPageTranslatedTime.setRawNanos(timeToFullPageTranslatedMs * 1000000);
             performance_1.fullPageTranslatedWps.set(timeToFullPageTranslatedWordsPerSecond);
@@ -9095,6 +9277,8 @@ class Telemetry {
             performance_1.modelLoadTimeNum.setRawNanos(modelLoadTimeMs * 1000000);
             performance_1.translationEngineTime.setRawNanos(translationEngineTimeMs * 1000000);
             performance_1.translationEngineWps.set(translationEngineWordsPerSecond);
+            performance_1.wordCount.set($wordCount);
+            performance_1.wordCountVisibleInViewport.set($wordCountVisibleInViewport);
             this.recordCommonMetadata(from, to);
         }, tabId);
         this.submitQueuedRecordings(tabId);
@@ -9111,7 +9295,7 @@ class Telemetry {
             service_1.notSupported.add(1);
             this.recordCommonMetadata(from, to);
         }, tabId);
-        this.updateInactivityTimerForAllTabs();
+        this.submitQueuedRecordings(tabId);
     }
     onModelLoadErrorOccurred(tabId, from, to) {
         this.submitQueuedRecordings(tabId);
@@ -9177,7 +9361,7 @@ exports.telemetry = new Telemetry();
 
  }),
 
- 5352:
+ 1418:
 
 
 
@@ -9186,16 +9370,15 @@ exports.telemetry = new Telemetry();
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.modelDownload = exports.memory = exports.marian = exports.translation = void 0;
 
-
-
-
-const counter_1 = __importDefault(__webpack_require__( 4429));
+const counter_1 = __importDefault(__webpack_require__( 499));
 
 
 
@@ -9248,7 +9431,7 @@ exports.modelDownload = new counter_1.default({
 
  }),
 
- 2457:
+ 2943:
 
 
 
@@ -9257,16 +9440,15 @@ exports.modelDownload = new counter_1.default({
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.changeLang = exports.notNow = exports.neverTranslateSite = exports.neverTranslateLang = exports.translate = exports.closed = exports.displayed = void 0;
 
-
-
-
-const event_1 = __importDefault(__webpack_require__( 4986));
+const event_1 = __importDefault(__webpack_require__( 2178));
 
 
 
@@ -9355,7 +9537,7 @@ exports.changeLang = new event_1.default({
 
  }),
 
- 9085:
+ 6667:
 
 
 
@@ -9364,17 +9546,16 @@ exports.changeLang = new event_1.default({
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.cpuExtensions = exports.cpuSpeed = exports.cpuL3Cache = exports.cpuL2Cache = exports.cpuStepping = exports.cpuModel = exports.cpuFamily = exports.cpuVendor = exports.cpuCoresCount = exports.cpuCount = exports.systemMemory = exports.bergamotTranslatorVersion = exports.extensionBuildId = exports.extensionVersion = exports.firefoxClientId = exports.toLang = exports.fromLang = void 0;
 
-
-
-
-const quantity_1 = __importDefault(__webpack_require__( 6120));
-const string_1 = __importDefault(__webpack_require__( 5799));
+const string_1 = __importDefault(__webpack_require__( 4245));
+const quantity_1 = __importDefault(__webpack_require__( 4717));
 
 
 
@@ -9501,7 +9682,7 @@ exports.cpuVendor = new string_1.default({
 
 
 
-exports.cpuFamily = new string_1.default({
+exports.cpuFamily = new quantity_1.default({
     category: "metadata",
     name: "cpu_family",
     sendInPings: ["custom"],
@@ -9513,7 +9694,7 @@ exports.cpuFamily = new string_1.default({
 
 
 
-exports.cpuModel = new string_1.default({
+exports.cpuModel = new quantity_1.default({
     category: "metadata",
     name: "cpu_model",
     sendInPings: ["custom"],
@@ -9525,7 +9706,7 @@ exports.cpuModel = new string_1.default({
 
 
 
-exports.cpuStepping = new string_1.default({
+exports.cpuStepping = new quantity_1.default({
     category: "metadata",
     name: "cpu_stepping",
     sendInPings: ["custom"],
@@ -9584,7 +9765,7 @@ exports.cpuExtensions = new string_1.default({
 
  }),
 
- 1714:
+ 7171:
 
 
 
@@ -9593,18 +9774,17 @@ exports.cpuExtensions = new string_1.default({
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.translationQuality = exports.translationEngineWps = exports.translationEngineTime = exports.modelLoadTimeNum = exports.modelDownloadTimeNum = exports.fullPageTranslatedWps = exports.fullPageTranslatedTime = void 0;
+exports.translationQuality = exports.wordCountVisibleInViewport = exports.wordCount = exports.translationEngineWps = exports.translationEngineTime = exports.modelLoadTimeNum = exports.modelDownloadTimeNum = exports.fullPageTranslatedWps = exports.fullPageTranslatedTime = void 0;
 
-
-
-
-const timespan_1 = __importDefault(__webpack_require__( 4498));
-const quantity_1 = __importDefault(__webpack_require__( 6120));
-const string_1 = __importDefault(__webpack_require__( 5799));
+const string_1 = __importDefault(__webpack_require__( 4245));
+const timespan_1 = __importDefault(__webpack_require__( 2939));
+const quantity_1 = __importDefault(__webpack_require__( 4717));
 
 
 
@@ -9688,6 +9868,31 @@ exports.translationEngineWps = new quantity_1.default({
 
 
 
+exports.wordCount = new quantity_1.default({
+    category: "performance",
+    name: "word_count",
+    sendInPings: ["custom"],
+    lifetime: "ping",
+    disabled: false,
+});
+
+
+
+
+
+
+exports.wordCountVisibleInViewport = new quantity_1.default({
+    category: "performance",
+    name: "word_count_visible_in_viewport",
+    sendInPings: ["custom"],
+    lifetime: "ping",
+    disabled: false,
+});
+
+
+
+
+
 exports.translationQuality = new string_1.default({
     category: "performance",
     name: "translation_quality",
@@ -9699,7 +9904,7 @@ exports.translationQuality = new string_1.default({
 
  }),
 
- 3177:
+ 2609:
 
 
 
@@ -9708,16 +9913,15 @@ exports.translationQuality = new string_1.default({
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.custom = void 0;
 
-
-
-
-const ping_1 = __importDefault(__webpack_require__( 2455));
+const ping_1 = __importDefault(__webpack_require__( 8410));
 
 
 
@@ -9733,7 +9937,7 @@ exports.custom = new ping_1.default({
 
  }),
 
- 7659:
+ 2324:
 
 
 
@@ -9742,16 +9946,15 @@ exports.custom = new ping_1.default({
 "use strict";
 
 
+
+
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.langMismatch = exports.notSupported = void 0;
 
-
-
-
-const counter_1 = __importDefault(__webpack_require__( 4429));
+const counter_1 = __importDefault(__webpack_require__( 499));
 
 
 
@@ -9780,7 +9983,7 @@ exports.langMismatch = new counter_1.default({
 
  }),
 
- 484:
+ 8240:
 
 
 
@@ -9802,7 +10005,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BergamotRestApiClient = void 0;
-const config_1 = __webpack_require__( 964);
+const config_1 = __webpack_require__( 7843);
 const MS_IN_A_MINUTE = 60 * 1000;
 
 const fetchWithTimeout = (url, ms, options = {}) => {
@@ -9931,7 +10134,7 @@ function generateQEAnnotatedHTML(translation, score) {
 
  }),
 
- 4222:
+ 7423:
 
 
 
@@ -9953,7 +10156,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BergamotWasmApiClient = void 0;
-const BergamotTranslatorAPI_1 = __webpack_require__( 7333);
+const BergamotTranslatorAPI_1 = __webpack_require__( 3797);
 class BergamotWasmApiClient {
     constructor() {
         this.sendTranslationRequest = (texts, from, to, translationRequestProgressCallback) => __awaiter(this, void 0, void 0, function* () {
@@ -10027,7 +10230,7 @@ exports.BergamotWasmApiClient = BergamotWasmApiClient;
 
  }),
 
- 8471:
+ 7531:
 
 
 
@@ -10042,7 +10245,7 @@ exports.BERGAMOT_VERSION_FULL = "v0.3.1+d264450";
 
  }),
 
- 7983:
+ 4120:
 
 
 
@@ -10063,13 +10266,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NativeTranslateUiBroker = void 0;
-const LanguageSupport_1 = __webpack_require__( 5602);
-const BaseTranslationState_1 = __webpack_require__( 4779);
-const Telemetry_1 = __webpack_require__( 647);
-const mobx_keystone_1 = __webpack_require__( 7680);
-const mobx_1 = __webpack_require__( 9637);
-const translateAllFramesInTab_1 = __webpack_require__( 5692);
+exports.NativeTranslateUiBroker = exports.NativeTranslateUiStateInfobarState = void 0;
+const LanguageSupport_1 = __webpack_require__( 3872);
+const BaseTranslationState_1 = __webpack_require__( 9359);
+const Telemetry_1 = __webpack_require__( 1114);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const mobx_1 = __webpack_require__( 5412);
+const translateAllFramesInTab_1 = __webpack_require__( 5733);
+const browserWithExperimentAPIs_1 = __webpack_require__( 2975);
 
 
 var NativeTranslateUiStateInfobarState;
@@ -10079,8 +10283,7 @@ var NativeTranslateUiStateInfobarState;
     NativeTranslateUiStateInfobarState[NativeTranslateUiStateInfobarState["STATE_TRANSLATED"] = 2] = "STATE_TRANSLATED";
     NativeTranslateUiStateInfobarState[NativeTranslateUiStateInfobarState["STATE_ERROR"] = 3] = "STATE_ERROR";
     NativeTranslateUiStateInfobarState[NativeTranslateUiStateInfobarState["STATE_UNAVAILABLE"] = 4] = "STATE_UNAVAILABLE";
-})(NativeTranslateUiStateInfobarState || (NativeTranslateUiStateInfobarState = {}));
-const browserWithExperimentAPIs = browser;
+})(NativeTranslateUiStateInfobarState = exports.NativeTranslateUiStateInfobarState || (exports.NativeTranslateUiStateInfobarState = {}));
 class NativeTranslateUiBroker {
     constructor(extensionState) {
         this.extensionState = extensionState;
@@ -10104,25 +10307,25 @@ class NativeTranslateUiBroker {
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             
-            const uploadEnabled = yield browserWithExperimentAPIs.experiments.telemetryPreferences.getUploadEnabledPref();
-            const cachedClientID = yield browserWithExperimentAPIs.experiments.telemetryPreferences.getCachedClientIDPref();
+            const uploadEnabled = yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences.getUploadEnabledPref();
+            const cachedClientID = yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences.getCachedClientIDPref();
             
-            const telemetryInactivityThresholdInSecondsOverride = yield browserWithExperimentAPIs.experiments.extensionPreferences.getTelemetryInactivityThresholdInSecondsOverridePref();
+            const telemetryInactivityThresholdInSecondsOverride = yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.extensionPreferences.getTelemetryInactivityThresholdInSecondsOverridePref();
             Telemetry_1.telemetry.initialize(uploadEnabled, cachedClientID, telemetryInactivityThresholdInSecondsOverride);
             
-            browserWithExperimentAPIs.experiments.telemetryEnvironment
+            browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryEnvironment
                 .getTranslationRelevantFxTelemetryMetrics()
                 .then((translationRelevantFxTelemetryMetrics) => {
                 Telemetry_1.telemetry.setTranslationRelevantFxTelemetryMetrics(translationRelevantFxTelemetryMetrics);
             });
             
             this.telemetryPreferencesEventsToObserve.map((eventRef) => {
-                browserWithExperimentAPIs.experiments.telemetryPreferences[eventRef].addListener(this[eventRef].bind(this));
+                browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences[eventRef].addListener(this[eventRef].bind(this));
             });
             this.translateUiEventsToObserve.map((eventRef) => {
-                browserWithExperimentAPIs.experiments.translateUi[eventRef].addListener(this[eventRef].bind(this));
+                browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.translateUi[eventRef].addListener(this[eventRef].bind(this));
             });
-            yield browserWithExperimentAPIs.experiments.translateUi.start();
+            yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.translateUi.start();
             const { summarizeLanguageSupport } = new LanguageSupport_1.LanguageSupport();
             
             const nativeTranslateUiStateFromTabTranslationState = (tts) => __awaiter(this, void 0, void 0, function* () {
@@ -10192,7 +10395,6 @@ class NativeTranslateUiBroker {
                         return NativeTranslateUiStateInfobarState.STATE_UNAVAILABLE;
                     case BaseTranslationState_1.TranslationStatus.OFFER:
                         return NativeTranslateUiStateInfobarState.STATE_OFFER;
-                    case BaseTranslationState_1.TranslationStatus.DOWNLOADING_TRANSLATION_MODEL:
                     case BaseTranslationState_1.TranslationStatus.TRANSLATING:
                         return NativeTranslateUiStateInfobarState.STATE_TRANSLATING;
                     case BaseTranslationState_1.TranslationStatus.TRANSLATED:
@@ -10206,7 +10408,7 @@ class NativeTranslateUiBroker {
             mobx_1.reaction(() => this.extensionState.tabTranslationStates, (tabTranslationStates, _previousTabTranslationStates) => __awaiter(this, void 0, void 0, function* () {
                 tabTranslationStates.forEach((tts, tabId) => __awaiter(this, void 0, void 0, function* () {
                     const uiState = yield nativeTranslateUiStateFromTabTranslationState(mobx_keystone_1.getSnapshot(tts));
-                    browserWithExperimentAPIs.experiments.translateUi.setUiState(tabId, uiState);
+                    browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.translateUi.setUiState(tabId, uiState);
                     
                     const hasChanged = property => {
                         const previousTabTranslationState = _previousTabTranslationStates.get(tabId);
@@ -10254,14 +10456,14 @@ class NativeTranslateUiBroker {
     }
     onUploadEnabledPrefChange() {
         return __awaiter(this, void 0, void 0, function* () {
-            const uploadEnabled = yield browserWithExperimentAPIs.experiments.telemetryPreferences.getUploadEnabledPref();
+            const uploadEnabled = yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences.getUploadEnabledPref();
             
             Telemetry_1.telemetry.uploadEnabledPreferenceUpdated(uploadEnabled);
         });
     }
     onCachedClientIDPrefChange() {
         return __awaiter(this, void 0, void 0, function* () {
-            const cachedClientID = yield browserWithExperimentAPIs.experiments.telemetryPreferences.getCachedClientIDPref();
+            const cachedClientID = yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences.getCachedClientIDPref();
             
             Telemetry_1.telemetry.setFirefoxClientId(cachedClientID);
         });
@@ -10311,12 +10513,12 @@ class NativeTranslateUiBroker {
     }
     stop() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield browserWithExperimentAPIs.experiments.translateUi.stop();
+            yield browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.translateUi.stop();
             this.telemetryPreferencesEventsToObserve.map(eventRef => {
-                browserWithExperimentAPIs.experiments.telemetryPreferences[eventRef].removeListener(this[eventRef]);
+                browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.telemetryPreferences[eventRef].removeListener(this[eventRef]);
             });
             this.translateUiEventsToObserve.map(eventRef => {
-                browserWithExperimentAPIs.experiments.translateUi[eventRef].removeListener(this[eventRef]);
+                browserWithExperimentAPIs_1.browserWithExperimentAPIs.experiments.translateUi[eventRef].removeListener(this[eventRef]);
             });
             yield Telemetry_1.telemetry.cleanup();
         });
@@ -10327,7 +10529,22 @@ exports.NativeTranslateUiBroker = NativeTranslateUiBroker;
 
  }),
 
- 9755:
+ 2975:
+
+
+
+ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.browserWithExperimentAPIs = void 0;
+exports.browserWithExperimentAPIs = browser;
+
+
+ }),
+
+ 7227:
 
 
 
@@ -10349,19 +10566,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const ErrorReporting_1 = __webpack_require__( 3345);
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
-const localStorageWrapper_1 = __webpack_require__( 5813);
-const contentScriptFrameInfoPortListener_1 = __webpack_require__( 220);
-const createBackgroundContextRootStore_1 = __webpack_require__( 8911);
-const contentScriptLanguageDetectorProxyPortListener_1 = __webpack_require__( 6047);
-const Store_1 = __webpack_require__( 4517);
-const connectRootStoreToDevTools_1 = __webpack_require__( 6432);
-const MobxKeystoneBackgroundContextHost_1 = __webpack_require__( 805);
-const NativeTranslateUiBroker_1 = __webpack_require__( 7983);
-const contentScriptBergamotApiClientPortListener_1 = __webpack_require__( 410);
-const bergamot_translator_version_1 = __webpack_require__( 8471);
-const config_1 = __webpack_require__( 964);
+const ErrorReporting_1 = __webpack_require__( 9009);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const localStorageWrapper_1 = __webpack_require__( 7404);
+const contentScriptFrameInfoPortListener_1 = __webpack_require__( 800);
+const createBackgroundContextRootStore_1 = __webpack_require__( 5660);
+const contentScriptLanguageDetectorProxyPortListener_1 = __webpack_require__( 4958);
+const Store_1 = __webpack_require__( 823);
+const connectRootStoreToDevTools_1 = __webpack_require__( 7225);
+const MobxKeystoneBackgroundContextHost_1 = __webpack_require__( 1119);
+const NativeTranslateUiBroker_1 = __webpack_require__( 4120);
+const contentScriptBergamotApiClientPortListener_1 = __webpack_require__( 933);
+const bergamot_translator_version_1 = __webpack_require__( 7531);
+const config_1 = __webpack_require__( 7843);
 const store = new Store_1.Store(localStorageWrapper_1.localStorageWrapper);
 
 
@@ -10578,7 +10795,7 @@ if (false) {}
  		};
  		
  		var deferredModules = [
- 			[9755,351]
+ 			[7227,351]
  		];
  		
  		
@@ -10623,7 +10840,7 @@ if (false) {}
  			return checkDeferredModules();
  		}
  		
- 		var chunkLoadingGlobal = self["webpackChunkbergamot_browser_extension"] = self["webpackChunkbergamot_browser_extension"] || [];
+ 		var chunkLoadingGlobal = self["webpackChunkfirefox_infobar_ui"] = self["webpackChunkfirefox_infobar_ui"] || [];
  		chunkLoadingGlobal.forEach(webpackJsonpCallback.bind(null, 0));
  		chunkLoadingGlobal.push = webpackJsonpCallback.bind(null, chunkLoadingGlobal.push.bind(chunkLoadingGlobal));
  		

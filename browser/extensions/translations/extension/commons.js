@@ -1,6 +1,6 @@
-(self["webpackChunkbergamot_browser_extension"] = self["webpackChunkbergamot_browser_extension"] || []).push([[351],{
+(self["webpackChunkfirefox_infobar_ui"] = self["webpackChunkfirefox_infobar_ui"] || []).push([[351],{
 
- 6614:
+ 1346:
 
 
 
@@ -543,7 +543,7 @@ function isInstanceOf(wat, base) {
 }
 
 
-var time = __webpack_require__(7685);
+var time = __webpack_require__(5870);
 ;
 
 
@@ -746,7 +746,7 @@ var SyncPromise =  (function () {
 
 
 
-var misc = __webpack_require__(2681);
+var misc = __webpack_require__(637);
 ;
 
 
@@ -1223,7 +1223,7 @@ var logger = global.__SENTRY__.logger || (global.__SENTRY__.logger = new Logger(
 
 
 
-var node = __webpack_require__(8612);
+var node = __webpack_require__(4833);
 ;
 
 
@@ -5583,7 +5583,7 @@ var InboundFilters =  (function () {
         return {
             allowUrls: tslib_es6_spread(([]), (this._options.allowUrls || []), ([]), (clientOptions.allowUrls || [])),
             denyUrls: tslib_es6_spread(([]), (this._options.denyUrls || []), ([]), (clientOptions.denyUrls || [])),
-            ignoreErrors: tslib_es6_spread(([]), (clientOptions.ignoreErrors || []), DEFAULT_IGNORE_ERRORS),
+            ignoreErrors: tslib_es6_spread((this._options.ignoreErrors || []), (clientOptions.ignoreErrors || []), DEFAULT_IGNORE_ERRORS),
             ignoreInternal: typeof this._options.ignoreInternal !== 'undefined' ? this._options.ignoreInternal : true,
         };
     };
@@ -6464,7 +6464,7 @@ var INTEGRATIONS = __assign(__assign(__assign({}, windowIntegrations), integrati
 
  }),
 
- 2681:
+ 637:
 
 
 
@@ -6483,7 +6483,7 @@ var INTEGRATIONS = __assign(__assign(__assign({}, windowIntegrations), integrati
    "JY": () => ( parseRetryAfterHeader)
  });
 
- var _node__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 8612);
+ var _node__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 4833);
 
 
 var fallbackGlobalObject = {};
@@ -6726,7 +6726,7 @@ function stripUrlQueryAndFragment(urlPath) {
 
  }),
 
- 8612:
+ 4833:
 
 
 
@@ -6847,7 +6847,7 @@ function extractNodeRequestData(req, keys) {
 
  }),
 
- 7685:
+ 5870:
 
 
 
@@ -6858,8 +6858,8 @@ function extractNodeRequestData(req, keys) {
    "yW": () => ( dateTimestampInSeconds)
  });
 
- var _misc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 2681);
- var _node__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 8612);
+ var _misc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__( 637);
+ var _node__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__( 4833);
  module = __webpack_require__.hmd(module);
 
 
@@ -6979,7 +6979,7 @@ var browserPerformanceTimeOrigin = (function () {
 
  }),
 
- 4050:
+ 8122:
 
 
 
@@ -7062,7 +7062,7 @@ module.exports = function equal(a, b) {
 
  }),
 
- 9602:
+ 3229:
 
 
 
@@ -7230,7 +7230,7 @@ function unflatten (target, opts) {
 
  }),
 
- 7680:
+ 4380:
 
 
 
@@ -7488,7 +7488,7 @@ __webpack_require__.d(__webpack_exports__, {
 });
 
 
-var mobx_esm = __webpack_require__(9637);
+var mobx_esm = __webpack_require__(5412);
 ;
 
 
@@ -7800,7 +7800,7 @@ function __classPrivateFieldSet(receiver, privateMap, value) {
 }
 
 
-var es6 = __webpack_require__(4050);
+var es6 = __webpack_require__(8122);
 var es6_default = __webpack_require__.n(es6);
 ;
 
@@ -19087,7 +19087,7 @@ var types = {
 
  }),
 
- 9637:
+ 5412:
 
 
 
@@ -24168,7 +24168,7 @@ if (typeof __MOBX_DEVTOOLS_GLOBAL_HOOK__ === "object") {
 
  }),
 
- 350:
+ 3608:
 
 
 
@@ -24279,7 +24279,7 @@ let nanoid = (size = 21) => {
 
  }),
 
- 3624:
+ 5006:
 
 
 
@@ -24291,12 +24291,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 if (typeof window === "undefined") exports.browser = {};
-else exports.browser = __webpack_require__( 4390);
+else exports.browser = __webpack_require__( 1105);
 
 
  }),
 
- 4390:
+ 1105:
 
 
 
@@ -25524,7 +25524,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 
  }),
 
- 964:
+ 7843:
 
 
 
@@ -25533,7 +25533,7 @@ var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.modelRegistry = exports.config = void 0;
+exports.config = void 0;
 const developmentBuild = "production" !== "production";
 exports.config = {
     bergamotRestApiUrl: "http://127.0.0.1:8787",
@@ -25541,10 +25541,13 @@ exports.config = {
     sentryDsn: "https://<key>@<organization>.ingest.sentry.io/<project>",
     bergamotModelsBaseUrl: developmentBuild
         ? "http://0.0.0.0:4000/models"
-        : "https://storage.googleapis.com/bergamot-models-sandbox/0.2.0",
+        : "https://storage.googleapis.com/bergamot-models-sandbox/0.2.2",
+    wasmBinariesBaseUrl: developmentBuild
+        ? "http://0.0.0.0:4000/wasm"
+        : "https://storage.googleapis.com/bergamot-models-sandbox/wasm/1",
     telemetryAppId: "org-mozilla-bergamot",
     telemetryDebugMode: developmentBuild,
-    extensionBuildId: `${"v0.4.0"}-${"local"}#${"HEAD"}`,
+    extensionBuildId: `${"v0.4.3"}-${"local"}#${"HEAD"}`,
     supportedLanguagePairs: [
         
         
@@ -25553,125 +25556,24 @@ exports.config = {
         
         ["es", "en"],
         
-        
+        ["cs", "en"],
         ["et", "en"],
         ["en", "de"],
         
         ["en", "es"],
         
-        
+        ["en", "cs"],
         ["en", "et"],
+        ["ru", "en"],
     ],
     privacyNoticeUrl: "https://example.com/privacy-notice",
     feedbackSurveyUrl: "https://qsurvey.mozilla.com/s3/bergamot-translate-product-feedback",
-};
-exports.modelRegistry = {
-    esen: {
-        lex: {
-            name: "lex.50.50.esen.s2t.bin",
-            size: 3860888,
-            estimatedCompressedSize: 1978538,
-            expectedSha256Hash: "f11a2c23ef85ab1fee1c412b908d69bc20d66fd59faa8f7da5a5f0347eddf969",
-        },
-        model: {
-            name: "model.esen.intgemm.alphas.bin",
-            size: 17140755,
-            estimatedCompressedSize: 13215960,
-            expectedSha256Hash: "4b6b7f451094aaa447d012658af158ffc708fc8842dde2f871a58404f5457fe0",
-        },
-        vocab: {
-            name: "vocab.esen.spm",
-            size: 825463,
-            estimatedCompressedSize: 414566,
-            expectedSha256Hash: "909b1eea1face0d7f90a474fe29a8c0fef8d104b6e41e65616f864c964ba8845",
-        },
-    },
-    eten: {
-        lex: {
-            name: "lex.50.50.eten.s2t.bin",
-            size: 3974944,
-            estimatedCompressedSize: 1920655,
-            expectedSha256Hash: "6992bedc590e60e610a28129c80746fe5f33144a4520e2c5508d87db14ca54f8",
-        },
-        model: {
-            name: "model.eten.intgemm.alphas.bin",
-            size: 17140754,
-            estimatedCompressedSize: 12222624,
-            expectedSha256Hash: "aac98a2371e216ee2d4843cbe896c617f6687501e17225ac83482eba52fd0028",
-        },
-        vocab: {
-            name: "vocab.eten.spm",
-            size: 828426,
-            estimatedCompressedSize: 416995,
-            expectedSha256Hash: "e3b66bc141f6123cd40746e2fb9b8ee4f89cbf324ab27d6bbf3782e52f15fa2d",
-        },
-    },
-    ende: {
-        lex: {
-            name: "lex.50.50.ende.s2t.bin",
-            size: 3062492,
-            estimatedCompressedSize: 1575385,
-            expectedSha256Hash: "764797d075f0642c0b079cce6547348d65fe4e92ac69fa6a8605cd8b53dacb3f",
-        },
-        model: {
-            name: "model.ende.intgemm.alphas.bin",
-            size: 17140498,
-            estimatedCompressedSize: 13207068,
-            expectedSha256Hash: "f0946515c6645304f0706fa66a051c3b7b7c507f12d0c850f276c18165a10c14",
-        },
-        vocab: {
-            name: "vocab.deen.spm",
-            size: 797501,
-            estimatedCompressedSize: 412505,
-            expectedSha256Hash: "bc8f8229933d8294c727f3eab12f6f064e7082b929f2d29494c8a1e619ba174c",
-        },
-    },
-    enes: {
-        lex: {
-            name: "lex.50.50.enes.s2t.bin",
-            size: 3347104,
-            estimatedCompressedSize: 1720700,
-            expectedSha256Hash: "3a113d713dec3cf1d12bba5b138ae616e28bba4bbc7fe7fd39ba145e26b86d7f",
-        },
-        model: {
-            name: "model.enes.intgemm.alphas.bin",
-            size: 17140755,
-            estimatedCompressedSize: 12602853,
-            expectedSha256Hash: "fa7460037a3163e03fe1d23602f964bff2331da6ee813637e092ddf37156ef53",
-        },
-        vocab: {
-            name: "vocab.esen.spm",
-            size: 825463,
-            estimatedCompressedSize: 414566,
-            expectedSha256Hash: "909b1eea1face0d7f90a474fe29a8c0fef8d104b6e41e65616f864c964ba8845",
-        },
-    },
-    enet: {
-        lex: {
-            name: "lex.50.50.enet.s2t.bin",
-            size: 2700780,
-            estimatedCompressedSize: 1336443,
-            expectedSha256Hash: "3d1b40ff43ebef82cf98d416a88a1ea19eb325a85785eef102f59878a63a829d",
-        },
-        model: {
-            name: "model.enet.intgemm.alphas.bin",
-            size: 17140754,
-            estimatedCompressedSize: 12543318,
-            expectedSha256Hash: "a28874a8b702a519a14dc71bcee726a5cb4b539eeaada2d06492f751469a1fd6",
-        },
-        vocab: {
-            name: "vocab.eten.spm",
-            size: 828426,
-            estimatedCompressedSize: 416995,
-            expectedSha256Hash: "e3b66bc141f6123cd40746e2fb9b8ee4f89cbf324ab27d6bbf3782e52f15fa2d",
-        },
-    },
 };
 
 
  }),
 
- 3345:
+ 9009:
 
 
 
@@ -25712,11 +25614,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Sentry = exports.captureExceptionWithExtras = exports.initErrorReportingInContentScript = exports.initErrorReportingInBackgroundScript = exports.toggleErrorReportingBasedAsPerExtensionPreferences = void 0;
-const Sentry = __importStar(__webpack_require__( 6614));
+const Sentry = __importStar(__webpack_require__( 1346));
 exports.Sentry = Sentry;
-const config_1 = __webpack_require__( 964);
-const subscribeToExtensionPreferenceChanges_1 = __webpack_require__( 4971);
-const flat_1 = __webpack_require__( 9602);
+const config_1 = __webpack_require__( 7843);
+const subscribeToExtensionPreferenceChanges_1 = __webpack_require__( 14);
+const flat_1 = __webpack_require__( 3229);
 
 let sentryIntialized = false;
 if (!config_1.config.sentryDsn.includes("<project>")) {
@@ -25805,7 +25707,7 @@ Sentry.configureScope(scope => {
 
  }),
 
- 5602:
+ 3872:
 
 
 
@@ -25827,8 +25729,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LanguageSupport = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
-const config_1 = __webpack_require__( 964);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
+const config_1 = __webpack_require__( 7843);
 class LanguageSupport {
     constructor() {
         this.getAcceptedTargetLanguages = () => __awaiter(this, void 0, void 0, function* () {
@@ -25888,7 +25790,7 @@ exports.LanguageSupport = LanguageSupport;
 
  }),
 
- 4779:
+ 9359:
 
 
 
@@ -25907,9 +25809,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BaseTranslationState = exports.TranslationStatus = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const mobx_1 = __webpack_require__( 9637);
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const mobx_1 = __webpack_require__( 5412);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
 
 
 var TranslationStatus;
@@ -25921,7 +25823,6 @@ var TranslationStatus;
     TranslationStatus["SOURCE_LANGUAGE_UNDERSTOOD"] = "SOURCE_LANGUAGE_UNDERSTOOD";
     TranslationStatus["TRANSLATION_UNSUPPORTED"] = "TRANSLATION_UNSUPPORTED";
     TranslationStatus["OFFER"] = "OFFER";
-    TranslationStatus["DOWNLOADING_TRANSLATION_MODEL"] = "DOWNLOADING_TRANSLATION_MODEL";
     TranslationStatus["TRANSLATING"] = "TRANSLATING";
     TranslationStatus["TRANSLATED"] = "TRANSLATED";
     TranslationStatus["ERROR"] = "ERROR";
@@ -25984,7 +25885,7 @@ exports.BaseTranslationState = BaseTranslationState;
 
  }),
 
- 5482:
+ 1120:
 
 
 
@@ -26003,8 +25904,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DocumentTranslationState = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const TabTranslationState_1 = __webpack_require__( 6556);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const TabTranslationState_1 = __webpack_require__( 6777);
 let DocumentTranslationState = class DocumentTranslationState extends mobx_keystone_1.ExtendedModel(TabTranslationState_1.TabTranslationState, {
     frameId: mobx_keystone_1.prop(),
 }) {
@@ -26017,7 +25918,7 @@ exports.DocumentTranslationState = DocumentTranslationState;
 
  }),
 
- 65:
+ 7516:
 
 
 
@@ -26036,10 +25937,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ExtensionState = exports.translateOwnTextTranslationStateMapKey = exports.documentTranslationStateMapKey = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const mobx_1 = __webpack_require__( 9637);
-const TabTranslationState_1 = __webpack_require__( 6556);
-const BaseTranslationState_1 = __webpack_require__( 4779);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const mobx_1 = __webpack_require__( 5412);
+const TabTranslationState_1 = __webpack_require__( 6777);
+const BaseTranslationState_1 = __webpack_require__( 9359);
 const documentTranslationStateMapKey = (frameInfo) => `${frameInfo.tabId}-${frameInfo.frameId}`;
 exports.documentTranslationStateMapKey = documentTranslationStateMapKey;
 const translateOwnTextTranslationStateMapKey = (totts) => `${totts.tabId}`;
@@ -26096,40 +25997,56 @@ let ExtensionState = class ExtensionState extends mobx_keystone_1.Model({
             
             const { isVisible, displayQualityEstimation, translationRequested, cancellationRequested, detectedLanguageResults, translateFrom, translateTo, windowId, showOriginal, url, } = mobx_keystone_1.getSnapshot(tabTopFrameState);
             
-            const wordCount = documentTranslationStates
+            
+            
+            const translationRelevantDocumentTranslationStates = documentTranslationStates.filter(dts => dts.translationRequested ||
+                dts.translationStatus === BaseTranslationState_1.TranslationStatus.TRANSLATING ||
+                dts.translationFinished);
+            const isNotUndefined = val => val !== undefined;
+            
+            const wordCount = translationRelevantDocumentTranslationStates
                 .map(dts => dts.wordCount)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const wordCountVisible = documentTranslationStates
+            const wordCountVisible = translationRelevantDocumentTranslationStates
                 .map(dts => dts.wordCountVisible)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const wordCountVisibleInViewport = documentTranslationStates
+            const wordCountVisibleInViewport = translationRelevantDocumentTranslationStates
                 .map(dts => dts.wordCountVisibleInViewport)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const totalModelLoadWallTimeMs = documentTranslationStates
+            const totalModelLoadWallTimeMs = translationRelevantDocumentTranslationStates
                 .map(dts => dts.totalModelLoadWallTimeMs)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const totalTranslationWallTimeMs = documentTranslationStates
+            const totalTranslationWallTimeMs = translationRelevantDocumentTranslationStates
                 .map(dts => dts.totalTranslationWallTimeMs)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const totalTranslationEngineRequestCount = documentTranslationStates
+            const totalTranslationEngineRequestCount = translationRelevantDocumentTranslationStates
                 .map(dts => dts.totalTranslationEngineRequestCount)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
-            const queuedTranslationEngineRequestCount = documentTranslationStates
+            const queuedTranslationEngineRequestCount = translationRelevantDocumentTranslationStates
                 .map(dts => dts.queuedTranslationEngineRequestCount)
+                .filter(isNotUndefined)
                 .reduce((a, b) => a + b, 0);
             
-            const translationInitiationTimestamps = documentTranslationStates.map((dts) => dts.translationInitiationTimestamp);
+            const translationInitiationTimestamps = translationRelevantDocumentTranslationStates
+                .map((dts) => dts.translationInitiationTimestamp)
+                .filter(isNotUndefined);
             const translationInitiationTimestamp = Math.min(...translationInitiationTimestamps);
-            const modelLoadNecessary = !!documentTranslationStates.filter((dts) => dts.modelLoadNecessary).length;
-            const modelDownloadNecessary = !!documentTranslationStates.filter((dts) => dts.modelDownloadNecessary).length;
-            const modelDownloading = !!documentTranslationStates.filter((dts) => dts.modelDownloading).length;
+            const modelLoadNecessary = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.modelLoadNecessary).length;
+            const modelDownloadNecessary = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.modelDownloadNecessary).length;
+            const modelDownloading = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.modelDownloading).length;
             const modelLoading = modelLoadNecessary
-                ? !!documentTranslationStates.find((dts) => dts.modelLoading)
+                ? !!translationRelevantDocumentTranslationStates.find((dts) => dts.modelLoading)
                 : undefined;
             const modelLoaded = modelLoadNecessary
-                ? !!documentTranslationStates.find((dts) => !dts.modelLoaded)
+                ? !!translationRelevantDocumentTranslationStates.find((dts) => !dts.modelLoaded)
                 : undefined;
-            const translationFinished = documentTranslationStates.filter((dts) => !dts.translationFinished).length === 0;
+            const translationFinished = translationRelevantDocumentTranslationStates.filter((dts) => !dts.translationFinished).length === 0;
             
             const emptyDownloadProgress = {
                 bytesDownloaded: 0,
@@ -26138,7 +26055,7 @@ let ExtensionState = class ExtensionState extends mobx_keystone_1.Model({
                 durationMs: 0,
                 endTs: undefined,
             };
-            const modelDownloadProgress = documentTranslationStates
+            const modelDownloadProgress = translationRelevantDocumentTranslationStates
                 .map((dts) => mobx_keystone_1.getSnapshot(dts.modelDownloadProgress))
                 .filter((mdp) => mdp)
                 .reduce((a, b) => {
@@ -26153,25 +26070,33 @@ let ExtensionState = class ExtensionState extends mobx_keystone_1.Model({
                 };
             }, emptyDownloadProgress);
             
-            const modelLoadErrorOccurred = !!documentTranslationStates.filter((dts) => dts.modelLoadErrorOccurred).length;
-            const modelDownloadErrorOccurred = !!documentTranslationStates.filter((dts) => dts.modelDownloadErrorOccurred).length;
-            const translationErrorOccurred = !!documentTranslationStates.filter((dts) => dts.translationErrorOccurred).length;
-            const otherErrorOccurred = !!documentTranslationStates.filter((dts) => dts.otherErrorOccurred).length;
+            const modelLoadErrorOccurred = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.modelLoadErrorOccurred).length;
+            const modelDownloadErrorOccurred = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.modelDownloadErrorOccurred).length;
+            const translationErrorOccurred = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.translationErrorOccurred).length;
+            const otherErrorOccurred = !!translationRelevantDocumentTranslationStates.filter((dts) => dts.otherErrorOccurred).length;
             
-            const anyTabHasTranslationStatus = (translationStatus) => documentTranslationStates.find(dts => dts.translationStatus === translationStatus);
+            const anyFrameHasTranslationStatus = (translationStatus) => documentTranslationStates.find(dts => dts.translationStatus === translationStatus);
+            const anyFrameThatExistedWhenTranslationWasRequestedHasTranslationStatus = (translationStatus) => translationRelevantDocumentTranslationStates.find(dts => dts.translationStatus === translationStatus);
             const tabTranslationStatus = () => {
-                if (anyTabHasTranslationStatus(BaseTranslationState_1.TranslationStatus.DETECTING_LANGUAGE)) {
-                    return BaseTranslationState_1.TranslationStatus.DETECTING_LANGUAGE;
+                
+                
+                if ([
+                    BaseTranslationState_1.TranslationStatus.DETECTING_LANGUAGE,
+                    BaseTranslationState_1.TranslationStatus.OFFER,
+                ].includes(tabTopFrameState.translationStatus)) {
+                    return tabTopFrameState.translationStatus;
                 }
-                if (anyTabHasTranslationStatus(BaseTranslationState_1.TranslationStatus.DOWNLOADING_TRANSLATION_MODEL)) {
-                    return BaseTranslationState_1.TranslationStatus.DOWNLOADING_TRANSLATION_MODEL;
-                }
-                if (anyTabHasTranslationStatus(BaseTranslationState_1.TranslationStatus.TRANSLATING)) {
+                
+                
+                
+                if (anyFrameThatExistedWhenTranslationWasRequestedHasTranslationStatus(BaseTranslationState_1.TranslationStatus.TRANSLATING)) {
                     return BaseTranslationState_1.TranslationStatus.TRANSLATING;
                 }
-                if (anyTabHasTranslationStatus(BaseTranslationState_1.TranslationStatus.ERROR)) {
+                
+                if (anyFrameHasTranslationStatus(BaseTranslationState_1.TranslationStatus.ERROR)) {
                     return BaseTranslationState_1.TranslationStatus.ERROR;
                 }
+                
                 return tabTopFrameState.translationStatus;
             };
             const translationStatus = tabTranslationStatus();
@@ -26241,6 +26166,11 @@ let ExtensionState = class ExtensionState extends mobx_keystone_1.Model({
                     path: ["translationRequested"],
                     value: true,
                 },
+                {
+                    op: "replace",
+                    path: ["translationStatus"],
+                    value: BaseTranslationState_1.TranslationStatus.TRANSLATING,
+                },
             ]);
         });
     }
@@ -26296,7 +26226,7 @@ exports.ExtensionState = ExtensionState;
 
  }),
 
- 6556:
+ 6777:
 
 
 
@@ -26315,8 +26245,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TabTranslationState = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const BaseTranslationState_1 = __webpack_require__( 4779);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const BaseTranslationState_1 = __webpack_require__( 9359);
 let TabTranslationState = class TabTranslationState extends mobx_keystone_1.ExtendedModel(BaseTranslationState_1.BaseTranslationState, {
     windowId: mobx_keystone_1.prop(),
     showOriginal: mobx_keystone_1.prop({ setterAction: true }),
@@ -26331,7 +26261,7 @@ exports.TabTranslationState = TabTranslationState;
 
  }),
 
- 8238:
+ 6745:
 
 
 
@@ -26350,8 +26280,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TranslateOwnTextTranslationState = void 0;
-const mobx_keystone_1 = __webpack_require__( 7680);
-const BaseTranslationState_1 = __webpack_require__( 4779);
+const mobx_keystone_1 = __webpack_require__( 4380);
+const BaseTranslationState_1 = __webpack_require__( 9359);
 let TranslateOwnTextTranslationState = class TranslateOwnTextTranslationState extends mobx_keystone_1.ExtendedModel(BaseTranslationState_1.BaseTranslationState, {
     translateAutomatically: mobx_keystone_1.prop(true),
 }) {
@@ -26364,7 +26294,7 @@ exports.TranslateOwnTextTranslationState = TranslateOwnTextTranslationState;
 
  }),
 
- 4971:
+ 14:
 
 
 
@@ -26386,7 +26316,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.communicateExtensionPreferenceChangesToContentScripts = exports.subscribeToExtensionPreferenceChangesInContentScript = exports.subscribeToExtensionPreferenceChangesInBackgroundScript = void 0;
-const webextension_polyfill_ts_1 = __webpack_require__( 3624);
+const webextension_polyfill_ts_1 = __webpack_require__( 5006);
 const subscribeToExtensionPreferenceChangesInBackgroundScript = (store, callback) => __awaiter(void 0, void 0, void 0, function* () {
     const extensionPreferences = yield store.getExtensionPreferences();
     callback(extensionPreferences);

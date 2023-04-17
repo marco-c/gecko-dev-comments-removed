@@ -4,10 +4,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 this.translateUi = class extends ExtensionAPI {
