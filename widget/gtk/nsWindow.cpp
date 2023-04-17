@@ -5164,23 +5164,18 @@ static GdkWindow* CreateGdkWindow(GdkWindow* parent, GtkWidget* widget) {
 bool nsWindow::ConfigureX11GLVisual() {
   auto* screen = gtk_widget_get_screen(mShell);
   int visualId = 0;
-  bool haveVisual;
+  bool haveVisual = false;
 
-  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-  nsString adapterDriverVendor;
-  gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
-  bool isMesa = adapterDriverVendor.Find("mesa") != -1;
+  if (gfxVars::UseEGL()) {
+    haveVisual = GLContextEGL::FindVisual(&visualId);
+  }
 
   
   
-  
-  
-  if (!gfxVars::UseEGL() || isMesa) {
+  if (!haveVisual) {
     auto* display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
     int screenNumber = GDK_SCREEN_XNUMBER(screen);
     haveVisual = GLContextGLX::FindVisual(display, screenNumber, &visualId);
-  } else {
-    haveVisual = GLContextEGL::FindVisual(&visualId);
   }
 
   GdkVisual* gdkVisual = nullptr;
