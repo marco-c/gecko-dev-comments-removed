@@ -7487,7 +7487,8 @@ void nsLayoutUtils::AssertTreeOnlyEmptyNextInFlows(nsIFrame* aSubtreeRoot) {
 
   
   int32_t start, end;
-  aSubtreeRoot->GetOffsets(start, end);
+  nsresult rv = aSubtreeRoot->GetOffsets(start, end);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "GetOffsets failed");
   
   
   
