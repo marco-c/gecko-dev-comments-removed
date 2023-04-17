@@ -924,7 +924,12 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return splitNodeResult;
     }
-    MOZ_ASSERT(splitNodeResult.Handled());
+    
+    
+    
+    if (!splitNodeResult.Handled()) {
+      continue;
+    }
     
     result = SplitNodeResult(splitNodeResult.GetPreviousNode(),
                              splitNodeResult.GetNextNode());
