@@ -50,16 +50,17 @@ class MOZ_NON_TEMPORARY_CLASS PromiseLookup final {
 
 
 
+
   
 
   
   MOZ_INIT_OUTSIDE_CTOR Shape* promiseConstructorShape_;
 
   
-  MOZ_INIT_OUTSIDE_CTOR Shape* promiseSpeciesShape_;
+  MOZ_INIT_OUTSIDE_CTOR Shape* promiseProtoShape_;
 
   
-  MOZ_INIT_OUTSIDE_CTOR Shape* promiseProtoShape_;
+  MOZ_INIT_OUTSIDE_CTOR uint32_t promiseSpeciesGetterSlot_;
 
   
   
@@ -126,7 +127,7 @@ class MOZ_NON_TEMPORARY_CLASS PromiseLookup final {
 
   
   static bool isAccessorPropertyNative(JSContext* cx, NativeObject* holder,
-                                       Shape* shape, JSNative native);
+                                       uint32_t getterSlot, JSNative native);
 
  public:
   

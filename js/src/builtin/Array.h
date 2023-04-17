@@ -190,7 +190,7 @@ class MOZ_NON_TEMPORARY_CLASS ArraySpeciesLookup final {
   
   
   MOZ_INIT_OUTSIDE_CTOR Shape* arrayConstructorShape_;
-  MOZ_INIT_OUTSIDE_CTOR Shape* arraySpeciesShape_;
+  MOZ_INIT_OUTSIDE_CTOR uint32_t arraySpeciesGetterSlot_;
   MOZ_INIT_OUTSIDE_CTOR JSFunction* canonicalSpeciesFunc_;
 
   

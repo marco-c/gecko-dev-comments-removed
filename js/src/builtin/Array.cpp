@@ -4123,8 +4123,9 @@ void js::ArraySpeciesLookup::initialize(JSContext* cx) {
 
   
   
-  JSObject* speciesGetter = arrayCtor->getGetter(speciesShape);
-  if (!speciesGetter->is<JSFunction>()) {
+  uint32_t speciesGetterSlot = speciesShape->slot();
+  JSObject* speciesGetter = arrayCtor->getGetter(speciesGetterSlot);
+  if (!speciesGetter || !speciesGetter->is<JSFunction>()) {
     return;
   }
   JSFunction* speciesFun = &speciesGetter->as<JSFunction>();
@@ -4145,7 +4146,7 @@ void js::ArraySpeciesLookup::initialize(JSContext* cx) {
   arrayProto_ = arrayProto;
   arrayConstructor_ = arrayCtor;
   arrayConstructorShape_ = arrayCtor->lastProperty();
-  arraySpeciesShape_ = speciesShape;
+  arraySpeciesGetterSlot_ = speciesGetterSlot;
   canonicalSpeciesFunc_ = speciesFun;
   arrayProtoShape_ = arrayProto->lastProperty();
   arrayProtoConstructorSlot_ = ctorShape->slot();
@@ -4178,7 +4179,7 @@ bool js::ArraySpeciesLookup::isArrayStateStillSane() {
   }
 
   
-  JSObject* getter = arrayConstructor_->getGetter(arraySpeciesShape_);
+  JSObject* getter = arrayConstructor_->getGetter(arraySpeciesGetterSlot_);
   return getter == canonicalSpeciesFunc_;
 }
 
