@@ -47,9 +47,66 @@ pub fn get_iso_time_string(datetime: DateTime<FixedOffset>, truncate_to: TimeUni
 
 
 
-pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
+
+
+pub(crate) fn local_now_with_offset() -> (DateTime<FixedOffset>, bool) {
+    #[cfg(target_os = "windows")]
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        use chrono::Utc;
+
+        
+        let tm = time::now();
+        
+        
+        let offset = tm.tm_utcoff;
+        if let None = FixedOffset::east_opt(offset) {
+            log::warn!(
+                "Detected invalid timezone offset: {}. Using UTC fallback.",
+                offset
+            );
+            let now: DateTime<Utc> = Utc::now();
+            let utc_offset = FixedOffset::east(0);
+            return (now.with_timezone(&utc_offset), true);
+        }
+    }
+
     let now: DateTime<Local> = Local::now();
-    now.with_timezone(now.offset())
+    (now.with_timezone(now.offset()), false)
+}
+
+
+
+
+
+
+pub(crate) fn local_now_with_offset_and_record(glean: &Glean) -> DateTime<FixedOffset> {
+    let (now, is_corrected) = local_now_with_offset();
+    if is_corrected {
+        glean
+            .additional_metrics
+            .invalid_timezone_offset
+            .add(&glean, 1);
+    }
+
+    now
 }
 
 
@@ -240,7 +297,11 @@ mod test {
     #[test]
     fn local_now_gets_the_time() {
         let now = Local::now();
-        let fixed_now = local_now_with_offset();
+        let (fixed_now, is_corrected) = local_now_with_offset();
+
+        
+        
+        assert!(!is_corrected, "Timezone offset should be valid.");
 
         
         

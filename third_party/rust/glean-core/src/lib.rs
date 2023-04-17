@@ -51,7 +51,7 @@ pub use crate::error::{Error, ErrorKind, Result};
 pub use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::event_database::EventDatabase;
 pub use crate::histogram::HistogramType;
-use crate::internal_metrics::{CoreMetrics, DatabaseMetrics};
+use crate::internal_metrics::{AdditionalMetrics, CoreMetrics, DatabaseMetrics};
 use crate::internal_pings::InternalPings;
 use crate::metrics::{Metric, MetricType, PingType};
 use crate::ping::PingMaker;
@@ -120,7 +120,7 @@ pub struct Configuration {
     
     pub upload_enabled: bool,
     
-    pub data_path: String,
+    pub data_path: PathBuf,
     
     pub application_id: String,
     
@@ -174,6 +174,7 @@ pub struct Glean {
     data_store: Option<Database>,
     event_data_store: EventDatabase,
     core_metrics: CoreMetrics,
+    additional_metrics: AdditionalMetrics,
     database_metrics: DatabaseMetrics,
     internal_pings: InternalPings,
     data_path: PathBuf,
@@ -213,24 +214,35 @@ impl Glean {
             let _scanning_thread = upload_manager.scan_pending_pings_directories();
         }
 
-        Ok(Self {
+        let (start_time, start_time_is_corrected) = local_now_with_offset();
+        let this = Self {
             upload_enabled: cfg.upload_enabled,
             
             
             data_store: None,
             event_data_store,
             core_metrics: CoreMetrics::new(),
+            additional_metrics: AdditionalMetrics::new(),
             database_metrics: DatabaseMetrics::new(),
             internal_pings: InternalPings::new(),
             upload_manager,
             data_path: PathBuf::from(&cfg.data_path),
             application_id,
             ping_registry: HashMap::new(),
-            start_time: local_now_with_offset(),
+            start_time,
             max_events: cfg.max_events.unwrap_or(DEFAULT_MAX_EVENTS),
             is_first_run: false,
             debug: DebugOptions::new(),
-        })
+        };
+
+        
+        if start_time_is_corrected {
+            this.additional_metrics
+                .invalid_timezone_offset
+                .add(&this, 1);
+        }
+
+        Ok(this)
     }
 
     
@@ -270,7 +282,7 @@ impl Glean {
                         
                         
                         glean.upload_enabled = true;
-                        glean.on_upload_disabled();
+                        glean.on_upload_disabled(true);
                     }
                 }
             }
@@ -400,7 +412,7 @@ impl Glean {
             if flag {
                 self.on_upload_enabled();
             } else {
-                self.on_upload_disabled();
+                self.on_upload_disabled(false);
             }
             true
         } else {
@@ -434,10 +446,15 @@ impl Glean {
     
     
     
-    fn on_upload_disabled(&mut self) {
+    fn on_upload_disabled(&mut self, during_init: bool) {
         
         
-        if let Err(err) = self.internal_pings.deletion_request.submit(self, None) {
+        let reason = if during_init {
+            Some("at_init")
+        } else {
+            Some("set_upload_enabled")
+        };
+        if let Err(err) = self.internal_pings.deletion_request.submit(self, reason) {
             log::error!("Failed to submit deletion-request ping on optout: {}", err);
         }
         self.clear_metrics();
@@ -609,10 +626,6 @@ impl Glean {
     
     
     
-    
-    
-    
-    
     pub fn submit_ping(&self, ping: &PingType, reason: Option<&str>) -> Result<bool> {
         if !self.is_upload_enabled() {
             log::info!("Glean disabled: not submitting any pings.");
@@ -622,7 +635,7 @@ impl Glean {
         let ping_maker = PingMaker::new();
         let doc_id = Uuid::new_v4().to_string();
         let url_path = self.make_path(&ping.name, &doc_id);
-        match ping_maker.collect(self, &ping, reason) {
+        match ping_maker.collect(self, &ping, reason, &doc_id, &url_path) {
             None => {
                 log::info!(
                     "No content for ping '{}', therefore no ping queued.",
@@ -630,27 +643,29 @@ impl Glean {
                 );
                 Ok(false)
             }
-            Some(content) => {
+            Some(ping) => {
                 
                 
                 
                 
-                self.core_metrics
+                self.additional_metrics
                     .pings_submitted
                     .get(&ping.name)
                     .add(&self, 1);
 
-                if let Err(e) = ping_maker.store_ping(
-                    self,
-                    &doc_id,
-                    &ping.name,
-                    &self.get_data_path(),
-                    &url_path,
-                    &content,
-                ) {
-                    log::warn!("IO error while writing ping to file: {}", e);
-                    self.core_metrics.io_errors.add(self, 1);
-                    return Err(e.into());
+                if let Err(e) = ping_maker.store_ping(&self.get_data_path(), &ping) {
+                    log::warn!("IO error while writing ping to file: {}. Enqueuing upload of what we have in memory.", e);
+                    self.additional_metrics.io_errors.add(self, 1);
+                    let content = ::serde_json::to_string(&ping.content)?;
+                    self.upload_manager.enqueue_ping(
+                        self,
+                        ping.doc_id,
+                        ping.url_path,
+                        &content,
+                        Some(ping.headers),
+                    );
+                    
+                    return Ok(true);
                 }
 
                 self.upload_manager.enqueue_ping_from_file(self, &doc_id);

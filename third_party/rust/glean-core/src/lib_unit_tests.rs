@@ -401,7 +401,7 @@ fn correct_order() {
         Counter(0),
         CustomDistributionExponential(Histogram::exponential(1, 500, 10)),
         CustomDistributionLinear(Histogram::linear(1, 500, 10)),
-        Datetime(local_now_with_offset(), TimeUnit::Second),
+        Datetime(local_now_with_offset().0, TimeUnit::Second),
         Experiment(RecordedExperimentData { branch: "branch".into(), extra: None, }),
         Quantity(0),
         String("glean".into()),
@@ -893,9 +893,11 @@ fn records_io_errors() {
 
     
     let submitted = glean.internal_pings.metrics.submit(&glean, None);
-    assert!(submitted.is_err());
+    
+    assert!(submitted.is_ok());
+    assert!(submitted.unwrap());
 
-    let metric = &glean.core_metrics.io_errors;
+    let metric = &glean.additional_metrics.io_errors;
     assert_eq!(
         1,
         metric.test_get_value(&glean, "metrics").unwrap(),
@@ -928,4 +930,21 @@ fn test_activity_api() {
 
     
     assert!(!glean.is_dirty_flag_set());
+}
+
+
+
+#[test]
+fn handles_local_now_gracefully() {
+    let _ = env_logger::builder().is_test(true).try_init();
+
+    let dir = tempfile::tempdir().unwrap();
+    let (glean, _) = new_glean(Some(dir));
+
+    let metric = &glean.additional_metrics.invalid_timezone_offset;
+    assert_eq!(
+        None,
+        metric.test_get_value(&glean, "metrics"),
+        "Timezones should be valid"
+    );
 }

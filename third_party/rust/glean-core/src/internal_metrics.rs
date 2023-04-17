@@ -10,14 +10,24 @@ pub struct CoreMetrics {
     pub first_run_date: DatetimeMetric,
     pub first_run_hour: DatetimeMetric,
     pub os: StringMetric,
+}
+
+#[derive(Debug)]
+pub struct AdditionalMetrics {
+    
+    
+    pub io_errors: CounterMetric,
+
+    
+    pub pings_submitted: LabeledMetric<CounterMetric>,
 
     
     
     
     
     
-    pub io_errors: CounterMetric,
-    pub pings_submitted: LabeledMetric<CounterMetric>,
+    
+    pub invalid_timezone_offset: CounterMetric,
 }
 
 impl CoreMetrics {
@@ -64,7 +74,13 @@ impl CoreMetrics {
                 disabled: false,
                 dynamic_label: None,
             }),
+        }
+    }
+}
 
+impl AdditionalMetrics {
+    pub fn new() -> AdditionalMetrics {
+        AdditionalMetrics {
             io_errors: CounterMetric::new(CommonMetricData {
                 name: "io".into(),
                 category: "glean.error".into(),
@@ -85,6 +101,15 @@ impl CoreMetrics {
                 }),
                 None,
             ),
+
+            invalid_timezone_offset: CounterMetric::new(CommonMetricData {
+                name: "invalid_timezone_offset".into(),
+                category: "glean.time".into(),
+                send_in_pings: vec!["metrics".into()],
+                lifetime: Lifetime::Ping,
+                disabled: false,
+                dynamic_label: None,
+            }),
         }
     }
 }

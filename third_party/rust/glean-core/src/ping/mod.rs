@@ -14,10 +14,25 @@ use serde_json::{json, Value as JsonValue};
 use crate::common_metric_data::{CommonMetricData, Lifetime};
 use crate::metrics::{CounterMetric, DatetimeMetric, Metric, MetricType, PingType, TimeUnit};
 use crate::storage::StorageManager;
-use crate::util::{get_iso_time_string, local_now_with_offset};
+use crate::upload::HeaderMap;
+use crate::util::{get_iso_time_string, local_now_with_offset_and_record};
 use crate::{
     Glean, Result, DELETION_REQUEST_PINGS_DIRECTORY, INTERNAL_STORAGE, PENDING_PINGS_DIRECTORY,
 };
+
+
+pub struct Ping<'a> {
+    
+    pub doc_id: &'a str,
+    
+    pub name: &'a str,
+    
+    pub url_path: &'a str,
+    
+    pub content: JsonValue,
+    
+    pub headers: HeaderMap,
+}
 
 
 pub struct PingMaker;
@@ -97,7 +112,7 @@ impl PingMaker {
         let start_time_data = start_time
             .get_value(glean, INTERNAL_STORAGE)
             .unwrap_or_else(|| glean.start_time());
-        let end_time_data = local_now_with_offset();
+        let end_time_data = local_now_with_offset_and_record(&glean);
 
         
         start_time.set(glean, Some(end_time_data));
@@ -173,45 +188,18 @@ impl PingMaker {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    fn get_metadata(&self, glean: &Glean) -> Option<JsonValue> {
-        let mut headers_map = json!({});
+    fn get_headers(&self, glean: &Glean) -> HeaderMap {
+        let mut headers_map = HeaderMap::new();
 
         if let Some(debug_view_tag) = glean.debug_view_tag() {
-            headers_map
-                .as_object_mut()
-                .unwrap() 
-                .insert(
-                    "X-Debug-ID".to_string(),
-                    JsonValue::String(debug_view_tag.to_string()),
-                );
+            headers_map.insert("X-Debug-ID".to_string(), debug_view_tag.to_string());
         }
 
         if let Some(source_tags) = glean.source_tags() {
-            headers_map
-                .as_object_mut()
-                .unwrap() 
-                .insert(
-                    "X-Source-Tags".to_string(),
-                    JsonValue::String(source_tags.join(",")),
-                );
+            headers_map.insert("X-Source-Tags".to_string(), source_tags.join(","));
         }
 
-        
-        if !headers_map.as_object().unwrap().is_empty() {
-            Some(json!({
-                "headers": headers_map,
-            }))
-        } else {
-            None
-        }
+        headers_map
     }
 
     
@@ -226,12 +214,16 @@ impl PingMaker {
     
     
     
-    pub fn collect(
+    
+    
+    pub fn collect<'a>(
         &self,
         glean: &Glean,
-        ping: &PingType,
+        ping: &'a PingType,
         reason: Option<&str>,
-    ) -> Option<JsonValue> {
+        doc_id: &'a str,
+        url_path: &'a str,
+    ) -> Option<Ping<'a>> {
         info!("Collecting {}", ping.name);
 
         let metrics_data = StorageManager.snapshot_as_json(glean.storage(), &ping.name, true);
@@ -260,7 +252,13 @@ impl PingMaker {
             json_obj.insert("events".to_string(), events_data);
         }
 
-        Some(json)
+        Some(Ping {
+            content: json,
+            name: &ping.name,
+            doc_id,
+            url_path,
+            headers: self.get_headers(glean),
+        })
     }
 
     
@@ -281,8 +279,8 @@ impl PingMaker {
         ping: &PingType,
         reason: Option<&str>,
     ) -> Option<String> {
-        self.collect(glean, ping, reason)
-            .map(|ping| ::serde_json::to_string_pretty(&ping).unwrap())
+        self.collect(glean, ping, reason, "", "")
+            .map(|ping| ::serde_json::to_string_pretty(&ping.content).unwrap())
     }
 
     
@@ -313,33 +311,30 @@ impl PingMaker {
     }
 
     
-    pub fn store_ping(
-        &self,
-        glean: &Glean,
-        doc_id: &str,
-        ping_name: &str,
-        data_path: &Path,
-        url_path: &str,
-        ping_content: &JsonValue,
-    ) -> std::io::Result<()> {
-        let pings_dir = self.get_pings_dir(data_path, Some(ping_name))?;
+    pub fn store_ping(&self, data_path: &Path, ping: &Ping) -> std::io::Result<()> {
+        let pings_dir = self.get_pings_dir(data_path, Some(ping.name))?;
         let temp_dir = self.get_tmp_dir(data_path)?;
 
         
         
-        let temp_ping_path = temp_dir.join(doc_id);
-        let ping_path = pings_dir.join(doc_id);
+        let temp_ping_path = temp_dir.join(ping.doc_id);
+        let ping_path = pings_dir.join(ping.doc_id);
 
-        log::debug!("Storing ping '{}' at '{}'", doc_id, ping_path.display());
+        log::debug!(
+            "Storing ping '{}' at '{}'",
+            ping.doc_id,
+            ping_path.display()
+        );
 
         {
             let mut file = File::create(&temp_ping_path)?;
-            file.write_all(url_path.as_bytes())?;
+            file.write_all(ping.url_path.as_bytes())?;
             file.write_all(b"\n")?;
-            file.write_all(::serde_json::to_string(ping_content)?.as_bytes())?;
-            if let Some(metadata) = self.get_metadata(glean) {
-                file.write_all(b"\n")?;
-                file.write_all(::serde_json::to_string(&metadata)?.as_bytes())?;
+            file.write_all(::serde_json::to_string(&ping.content)?.as_bytes())?;
+            if !ping.headers.is_empty() {
+                file.write_all(b"\n{\"headers\":")?;
+                file.write_all(::serde_json::to_string(&ping.headers)?.as_bytes())?;
+                file.write_all(b"}")?;
             }
         }
 
