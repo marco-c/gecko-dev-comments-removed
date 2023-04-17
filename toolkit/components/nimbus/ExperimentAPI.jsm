@@ -84,6 +84,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentStore: "resource://nimbus/lib/ExperimentStore.jsm",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
+  setTimeout: "resource://gre/modules/Timer.jsm",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 const IS_MAIN_PROCESS =
@@ -452,8 +454,22 @@ class ExperimentFeature {
     return userPrefs;
   }
 
-  async ready() {
-    return Promise.all([ExperimentAPI.ready(), this._waitForRemote]);
+  
+
+
+
+
+
+
+  async ready(timeout) {
+    const REMOTE_DEFAULTS_TIMEOUT_MS = 15 * 1000; 
+    await ExperimentAPI.ready();
+    let remoteTimeoutId = setTimeout(
+      this._onRemoteReady,
+      timeout || REMOTE_DEFAULTS_TIMEOUT_MS
+    );
+    await this._waitForRemote;
+    clearTimeout(remoteTimeoutId);
   }
 
   
