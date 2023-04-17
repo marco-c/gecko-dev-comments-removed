@@ -47,7 +47,6 @@
 
 
 
-
 class C {
   static #field = (a, b) => undefined;
   static field = function() {};

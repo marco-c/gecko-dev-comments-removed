@@ -1,5 +1,3 @@
-
-
 class B {
   constructor(obj) { return obj; }
 }

@@ -38,7 +38,6 @@
 
 
 
-
 class A {
   constructor(arg) {
     return arg;

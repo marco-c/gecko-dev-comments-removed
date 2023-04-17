@@ -24,7 +24,6 @@
 
 
 
-
 var C = class {
   static *m() { return 42; } #x; #y;
   x() {

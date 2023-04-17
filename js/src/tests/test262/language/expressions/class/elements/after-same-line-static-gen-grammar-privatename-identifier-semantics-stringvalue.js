@@ -63,7 +63,6 @@
 
 
 
-
 var C = class {
   static *m() { return 42; } #\u{6F};
   #\u2118;

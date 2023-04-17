@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   #x; #y;
   *m() { return 42; }

@@ -14,7 +14,6 @@
 
 
 
-
 var C = class {
   #x = 1;
   x() {

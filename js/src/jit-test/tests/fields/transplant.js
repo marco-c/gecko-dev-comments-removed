@@ -1,6 +1,3 @@
-
-
-
 class Base {
   constructor(o) {
     return o;

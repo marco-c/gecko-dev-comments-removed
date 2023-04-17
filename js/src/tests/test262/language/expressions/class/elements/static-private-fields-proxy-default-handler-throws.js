@@ -13,7 +13,6 @@
 
 
 
-
 var C = class {
   static #x = 1;
   static x() {
