@@ -44,13 +44,7 @@ class Alias(object):
 def is_internal(prop):
     
     
-    if not prop.gecko_pref and not prop.enabled_in_content():
-        return True
-    
-    OTHER_INTERNALS = [
-        "-moz-context-properties",
-    ]
-    return prop.name in OTHER_INTERNALS
+    return not prop.gecko_pref and not prop.enabled_in_content()
 
 def method(prop):
     if prop.name == "float":
