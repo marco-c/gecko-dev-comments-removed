@@ -1231,6 +1231,73 @@ var SessionStoreInternal = {
     this._browserProgressListenerForRestore.set(browser.permanentKey, listener);
   },
 
+  handleTabStateUpdate(browser, data) {
+    let permanentKey = browser.permanentKey;
+
+    
+    
+    if (!this._crashedBrowsers.has(permanentKey)) {
+      
+      
+      TabState.update(browser, data);
+      this.saveStateDelayed(browser.ownerGlobal);
+
+      
+      
+      
+      if (this._closedTabs.has(permanentKey)) {
+        let { closedTabs, tabData } = this._closedTabs.get(
+          browser.permanentKey
+        );
+
+        
+        
+        TabState.copyFromCache(browser, tabData.state);
+
+        
+        if (data.isFinal) {
+          
+          this._closedTabs.delete(permanentKey);
+          
+          delete tabData.permanentKey;
+
+          
+          let shouldSave = this._shouldSaveTabState(tabData.state);
+          let index = closedTabs.indexOf(tabData);
+
+          if (shouldSave && index == -1) {
+            
+            
+            
+            
+            this.saveClosedTabData(closedTabs, tabData);
+          } else if (!shouldSave && index > -1) {
+            
+            
+            
+            this.removeClosedTabData(closedTabs, index);
+          }
+        }
+      }
+    }
+
+    if (data.isFinal) {
+      
+      
+      
+      
+      TabStateFlusher.resolveAll(browser);
+
+      this._browserSHistoryListener.get(permanentKey)?.uninstall();
+      this._browserSHistoryListenerForRestore.get(permanentKey)?.uninstall();
+    } else if (data.flushID) {
+      
+      
+      
+      TabStateFlusher.resolve(browser, data.flushID);
+    }
+  },
+
   updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
     if (aBrowser.permanentKey == undefined) {
       return;
@@ -1277,10 +1344,7 @@ var SessionStoreInternal = {
       }
     }
 
-    delete aData.sHistoryNeeded; 
-    TabState.update(aBrowser, aData);
-    let win = aBrowser.ownerGlobal;
-    this.saveStateDelayed(win);
+    this.handleTabStateUpdate(aBrowser, aData);
   },
 
   
@@ -1332,75 +1396,7 @@ var SessionStoreInternal = {
           return;
         }
 
-        
-        
-        if (!this._crashedBrowsers.has(browser.permanentKey)) {
-          
-          
-          TabState.update(browser, aMessage.data);
-          this.saveStateDelayed(win);
-
-          
-          
-          
-          if (this._closedTabs.has(browser.permanentKey)) {
-            let { closedTabs, tabData } = this._closedTabs.get(
-              browser.permanentKey
-            );
-
-            
-            
-            TabState.copyFromCache(browser, tabData.state);
-
-            
-            if (aMessage.data.isFinal) {
-              
-              this._closedTabs.delete(browser.permanentKey);
-              
-              delete tabData.permanentKey;
-
-              
-              let shouldSave = this._shouldSaveTabState(tabData.state);
-              let index = closedTabs.indexOf(tabData);
-
-              if (shouldSave && index == -1) {
-                
-                
-                
-                
-                this.saveClosedTabData(closedTabs, tabData);
-              } else if (!shouldSave && index > -1) {
-                
-                
-                
-                this.removeClosedTabData(closedTabs, index);
-              }
-            }
-          }
-        }
-
-        if (aMessage.data.isFinal) {
-          
-          
-          
-          
-          TabStateFlusher.resolveAll(browser);
-
-          for (let wm of [
-            this._browserSHistoryListener,
-            this._browserSHistoryListenerForRestore,
-          ]) {
-            let listener = wm.get(browser.permanentKey);
-            if (listener) {
-              listener.uninstall();
-            }
-          }
-        } else if (aMessage.data.flushID) {
-          
-          
-          
-          TabStateFlusher.resolve(browser, aMessage.data.flushID);
-        }
+        this.handleTabStateUpdate(browser, data);
         break;
       case "SessionStore:restoreHistoryComplete":
         this._restoreHistoryComplete(browser, data);
