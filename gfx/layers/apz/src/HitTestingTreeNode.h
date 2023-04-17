@@ -101,13 +101,13 @@ class HitTestingTreeNode {
 
   
 
-  void SetHitTestData(const EventRegions& aRegions,
-                      const LayerIntRegion& aVisibleRegion,
-                      const LayerIntSize& aRemoteDocumentSize,
-                      const CSSTransformMatrix& aTransform,
-                      const Maybe<ParentLayerIntRegion>& aClipRegion,
-                      const EventRegionsOverride& aOverride,
-                      bool aIsBackfaceHidden, bool aIsAsyncZoomContainer);
+  void SetHitTestData(
+      const EventRegions& aRegions, const LayerIntRegion& aVisibleRegion,
+      const LayerIntSize& aRemoteDocumentSize,
+      const CSSTransformMatrix& aTransform,
+      const Maybe<ParentLayerIntRegion>& aClipRegion,
+      const EventRegionsOverride& aOverride, bool aIsBackfaceHidden,
+      const Maybe<ScrollableLayerGuid::ViewID>& aAsyncZoomContainerId);
   bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
 
   
@@ -167,7 +167,7 @@ class HitTestingTreeNode {
 
   ScreenRect GetRemoteDocumentScreenRect() const;
 
-  bool IsAsyncZoomContainer() const;
+  Maybe<ScrollableLayerGuid::ViewID> GetAsyncZoomContainerId() const;
 
   
   void Dump(const char* aPrefix = "") const;
@@ -240,7 +240,8 @@ class HitTestingTreeNode {
   bool mIsBackfaceHidden;
 
   
-  bool mIsAsyncZoomContainer;
+
+  Maybe<ScrollableLayerGuid::ViewID> mAsyncZoomContainerId;
 
   
 

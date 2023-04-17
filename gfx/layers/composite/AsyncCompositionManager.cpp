@@ -694,7 +694,7 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
         
         
         if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
-                layer->IsAsyncZoomContainer()) {
+                layer->GetAsyncZoomContainerId()) {
           zoomContainer = layer;
           ForEachNode<ForwardIterator>(
               LayerMetricsWrapper(layer),
@@ -960,7 +960,7 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
           }
 
           if (Maybe<ScrollableLayerGuid::ViewID> zoomedScrollId =
-                  layer->IsAsyncZoomContainer()) {
+                  layer->GetAsyncZoomContainerId()) {
             if (zoomedMetrics) {
               AsyncTransformComponentMatrix zoomTransform =
                   sampler->GetCurrentAsyncTransformWithOverscroll(
