@@ -211,8 +211,23 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
     mDocument->EndLoad();
 
     
+    
+    bool topLevel = false;
+    if (BrowsingContext* bc = mDocument->GetBrowsingContext()) {
+      topLevel = bc->IsTopContent();
+    }
+
+    
+    
+    nsAutoString contentType;
+    mDocument->GetContentType(contentType);
+    bool htmlOrPlain = contentType.EqualsLiteral(u"text/html") ||
+                       contentType.EqualsLiteral(u"text/plain");
+
+    
     MOZ_ASSERT(mDocument->IsHTMLDocument());
-    if (!aTerminated && !mDocument->AsHTMLDocument()->IsViewSource()) {
+    if (htmlOrPlain && topLevel && !aTerminated &&
+        !mDocument->AsHTMLDocument()->IsViewSource()) {
       
       
       
