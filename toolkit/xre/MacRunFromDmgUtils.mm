@@ -93,7 +93,32 @@ static bool AskUserIfWeShouldInstall() {
   
   [dontInstallButton setKeyEquivalent:@"\e"];
 
-  NSInteger result = [alert runModal];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  __block NSInteger result = -1;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    result = [alert runModal];
+    [NSApp stop:nil];
+  });
+
+  [NSApp run];
+  MOZ_ASSERT(result != -1);
 
   return result == NSAlertFirstButtonReturn;
 
