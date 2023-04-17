@@ -1052,8 +1052,6 @@ with modules["IPC"]:
 with modules["SVG"]:
     
     errors["NS_ERROR_DOM_SVG_WRONG_TYPE_ERR"] = FAILURE(0)
-    
-    errors["NS_ERROR_DOM_SVG_MATRIX_NOT_INVERTABLE"] = FAILURE(2)
 
 
 
