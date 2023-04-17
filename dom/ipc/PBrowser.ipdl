@@ -872,12 +872,6 @@ child:
     
 
 
-    [Priority=input] async InsertText(nsString aStringToInsert);
-    async NormalPriorityInsertText(nsString aStringToInsert);
-
-    
-
-
 
     async PasteTransferable(IPCDataTransfer aDataTransfer,
                             bool aIsPrivateData,

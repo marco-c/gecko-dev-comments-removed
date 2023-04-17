@@ -875,9 +875,6 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     case eContentCommandLookUpDictionary:
       DoContentCommandEvent(aEvent->AsContentCommandEvent());
       break;
-    case eContentCommandInsertText:
-      DoContentCommandInsertTextEvent(aEvent->AsContentCommandEvent());
-      break;
     case eContentCommandScroll:
       DoContentCommandScrollEvent(aEvent->AsContentCommandEvent());
       break;
@@ -5923,43 +5920,6 @@ nsresult EventStateManager::DoContentCommandEvent(
     }
   }
   aEvent->mSucceeded = true;
-  return NS_OK;
-}
-
-nsresult EventStateManager::DoContentCommandInsertTextEvent(
-    WidgetContentCommandEvent* aEvent) {
-  MOZ_ASSERT(aEvent);
-  MOZ_ASSERT(aEvent->mMessage == eContentCommandInsertText);
-  MOZ_DIAGNOSTIC_ASSERT(aEvent->mString.isSome());
-  MOZ_DIAGNOSTIC_ASSERT(!aEvent->mString.ref().IsEmpty());
-
-  aEvent->mIsEnabled = false;
-  aEvent->mSucceeded = false;
-
-  NS_ENSURE_TRUE(mPresContext, NS_ERROR_NOT_AVAILABLE);
-
-  if (XRE_IsParentProcess()) {
-    
-    if (BrowserParent* remote = BrowserParent::GetFocused()) {
-      remote->SendInsertText(aEvent->mString.ref());
-      aEvent->mIsEnabled = true;  
-      aEvent->mSucceeded = true;
-      return NS_OK;
-    }
-  }
-
-  
-  
-  RefPtr<TextEditor> activeEditor =
-      nsContentUtils::GetActiveEditor(mPresContext);
-  if (!activeEditor) {
-    aEvent->mSucceeded = true;
-    return NS_OK;
-  }
-
-  nsresult rv = activeEditor->InsertTextAsAction(aEvent->mString.ref());
-  aEvent->mIsEnabled = rv != NS_SUCCESS_DOM_NO_OPERATION;
-  aEvent->mSucceeded = NS_SUCCEEDED(rv);
   return NS_OK;
 }
 
