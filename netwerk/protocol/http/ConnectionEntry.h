@@ -84,8 +84,8 @@ class ConnectionEntry {
   }
 
   void InsertIntoDnsAndConnectSockets(DnsAndConnectSocket* sock);
+  void RemoveDnsAndConnectSocket(DnsAndConnectSocket* dnsAndSock, bool abandon);
   void CloseAllDnsAndConnectSockets();
-  bool IsInDnsAndConnectSockets(DnsAndConnectSocket* sock);
 
   HttpRetParams GetConnectionData();
   void LogConnections();
@@ -103,6 +103,11 @@ class ConnectionEntry {
 
   bool MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
                                   bool aIsHttp3 = false);
+
+  nsresult CreateDnsAndConnectSocket(nsAHttpTransaction* trans, uint32_t caps,
+                                     bool speculative, bool isFromPredictor,
+                                     bool urgentStart, bool allow1918,
+                                     PendingTransactionInfo* pendingTransInfo);
 
   
   
@@ -193,7 +198,7 @@ class ConnectionEntry {
   nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
   nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
 
-  nsTArray<DnsAndConnectSocket*>
+  nsTArray<RefPtr<DnsAndConnectSocket>>
       mDnsAndConnectSockets;  
 
   PendingTransactionQueue mPendingQ;
