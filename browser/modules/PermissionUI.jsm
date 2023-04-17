@@ -415,7 +415,10 @@ var PermissionPromptPrototype = {
       }
     }
 
-    if (this.requiresUserInput && !this.request.isHandlingUserInput) {
+    if (
+      this.requiresUserInput &&
+      !this.request.hasValidTransientUserGestureActivation
+    ) {
       if (this.postPromptEnabled) {
         this.postPrompt();
       }

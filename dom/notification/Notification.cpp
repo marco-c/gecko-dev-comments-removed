@@ -510,7 +510,7 @@ NotificationPermissionRequest::Run() {
       break;
   }
 
-  if (!mIsHandlingUserInput &&
+  if (!mHasValidTransientUserGestureActivation &&
       !StaticPrefs::dom_webnotifications_requireuserinteraction()) {
     nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
     if (doc) {
@@ -578,7 +578,7 @@ nsresult NotificationPermissionRequest::ResolvePromise() {
     
     
     
-    if (!mIsHandlingUserInput &&
+    if (!mHasValidTransientUserGestureActivation &&
         StaticPrefs::dom_webnotifications_requireuserinteraction()) {
       nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
       if (doc) {
