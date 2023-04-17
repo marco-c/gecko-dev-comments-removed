@@ -42,7 +42,7 @@ class UnpackFinder(BaseFinder):
     or with files from a FileFinder using the given path as its root.
     """
 
-    def __init__(self, source, omnijar_name=None):
+    def __init__(self, source, omnijar_name=None, unpack_xpi=True):
         if isinstance(source, BaseFinder):
             self._finder = source
         else:
@@ -59,6 +59,7 @@ class UnpackFinder(BaseFinder):
             self.omnijar = substs.get("OMNIJAR_NAME", "omni.ja")
         self.jarlogs = {}
         self.compressed = False
+        self._unpack_xpi = unpack_xpi
 
         jars = set()
 
@@ -91,7 +92,7 @@ class UnpackFinder(BaseFinder):
                 f = m
             
             
-            if p.endswith(".xpi") and self._maybe_zip(f):
+            if self._unpack_xpi and p.endswith(".xpi") and self._maybe_zip(f):
                 self._fill_with_jar(p[:-4], self._open_jar(p, f))
                 continue
             if p not in jars:
