@@ -3892,7 +3892,7 @@ void SamplerThread::Run() {
 
                     TimeDuration currentEventDelay;
                     TimeDuration currentEventRunning;
-                    registeredThread->GetRunningEventDelay(
+                    lockedThreadData->GetRunningEventDelay(
                         aNow, currentEventDelay, currentEventRunning);
 
                     

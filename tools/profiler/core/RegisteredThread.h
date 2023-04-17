@@ -68,17 +68,6 @@ class RegisteredThread final {
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
 
-  
-  
-  
-  
-  
-  
-  
-  void GetRunningEventDelay(const mozilla::TimeStamp& aNow,
-                            mozilla::TimeDuration& aDelay,
-                            mozilla::TimeDuration& aRunning);
-
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
