@@ -338,24 +338,9 @@ var Bookmarks = Object.freeze({
 
       
       if (isTagging) {
-        let observers = PlacesUtils.bookmarks.getObservers();
         for (let entry of await fetchBookmarksByURL(item, {
           concurrent: true,
         })) {
-          notify(observers, "onItemChanged", [
-            entry._id,
-            "tags",
-            false,
-            "",
-            PlacesUtils.toPRTime(entry.lastModified),
-            entry.type,
-            entry._parentId,
-            entry.guid,
-            entry.parentGuid,
-            "",
-            item.source,
-          ]);
-
           notifications.push(
             new PlacesBookmarkTags({
               id: entry._id,
@@ -869,9 +854,6 @@ var Bookmarks = Object.freeze({
           const notifications = [];
 
           
-          let observers = PlacesUtils.bookmarks.getObservers();
-
-          
           
           if (
             (info.hasOwnProperty("lastModified") &&
@@ -934,20 +916,6 @@ var Bookmarks = Object.freeze({
                 { tags: [updatedItem.title] },
                 { concurrent: true }
               )) {
-                notify(observers, "onItemChanged", [
-                  entry._id,
-                  "tags",
-                  false,
-                  "",
-                  PlacesUtils.toPRTime(entry.lastModified),
-                  entry.type,
-                  entry._parentId,
-                  entry.guid,
-                  entry.parentGuid,
-                  "",
-                  updatedItem.source,
-                ]);
-
                 notifications.push(
                   new PlacesBookmarkTags({
                     id: entry._id,
@@ -1342,7 +1310,6 @@ var Bookmarks = Object.freeze({
       let notifications = [];
 
       for (let item of removeItems) {
-        let observers = PlacesUtils.bookmarks.getObservers();
         let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
         let url = "";
         if (item.type == Bookmarks.TYPE_BOOKMARK) {
@@ -1368,20 +1335,6 @@ var Bookmarks = Object.freeze({
           for (let entry of await fetchBookmarksByURL(item, {
             concurrent: true,
           })) {
-            notify(observers, "onItemChanged", [
-              entry._id,
-              "tags",
-              false,
-              "",
-              PlacesUtils.toPRTime(entry.lastModified),
-              entry.type,
-              entry._parentId,
-              entry.guid,
-              entry.parentGuid,
-              "",
-              options.source,
-            ]);
-
             notifications.push(
               new PlacesBookmarkTags({
                 id: entry._id,
@@ -1896,38 +1849,6 @@ var Bookmarks = Object.freeze({
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function notify(observers, notification, args = [], information = {}) {
-  for (let observer of observers) {
-    if (information.isTagging && observer.skipTags) {
-      continue;
-    }
-
-    if (
-      information.isDescendantRemoval &&
-      !PlacesUtils.bookmarks.userContentRoots.includes(information.parentGuid)
-    ) {
-      continue;
-    }
-
-    try {
-      observer[notification](...args);
-    } catch (ex) {}
-  }
-}
 
 
 
@@ -3330,7 +3251,6 @@ var removeFoldersContents = async function(db, folderGuids, options) {
 
   
   let { source = Bookmarks.SOURCES.DEFAULT } = options;
-  let observers = PlacesUtils.bookmarks.getObservers();
   let notifications = [];
   for (let item of itemsRemoved.reverse()) {
     let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
@@ -3357,20 +3277,6 @@ var removeFoldersContents = async function(db, folderGuids, options) {
 
     if (isUntagging) {
       for (let entry of await fetchBookmarksByURL(item, true)) {
-        notify(observers, "onItemChanged", [
-          entry._id,
-          "tags",
-          false,
-          "",
-          PlacesUtils.toPRTime(entry.lastModified),
-          entry.type,
-          entry._parentId,
-          entry.guid,
-          entry.parentGuid,
-          "",
-          source,
-        ]);
-
         notifications.push(
           new PlacesBookmarkTags({
             id: entry._id,
