@@ -341,6 +341,27 @@ bool HTMLEditUtils::SupportsAlignAttr(nsINode& aNode) {
       nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6);
 }
 
+bool HTMLEditUtils::IsVisibleTextNode(Text& aText,
+                                      Element* aEditingHost ) {
+  if (!aText.TextDataLength()) {
+    return false;
+  }
+
+  if (!aText.TextIsOnlyWhitespace()) {
+    return true;
+  }
+
+  if (!aEditingHost) {
+    aEditingHost = HTMLEditUtils::
+        GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(aText);
+  }
+  WSScanResult nextWSScanResult =
+      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+          aEditingHost, EditorRawDOMPoint(&aText, 0));
+  return nextWSScanResult.InNormalWhiteSpacesOrText() &&
+         nextWSScanResult.TextPtr() == &aText;
+}
+
 
 
 

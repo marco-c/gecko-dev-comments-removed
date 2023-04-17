@@ -6028,7 +6028,8 @@ nsresult HTMLEditor::CollectEditTargetNodes(
       for (int32_t i = aOutArrayOfContents.Length() - 1; i >= 0; i--) {
         if (Text* text = aOutArrayOfContents[i]->GetAsText()) {
           
-          if (!IsVisibleTextNode(*text)) {
+          if (!HTMLEditUtils::IsVisibleTextNode(*text,
+                                                GetActiveEditingHost())) {
             aOutArrayOfContents.RemoveElementAt(i);
           }
         }

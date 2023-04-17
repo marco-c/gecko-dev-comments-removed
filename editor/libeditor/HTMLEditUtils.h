@@ -231,6 +231,17 @@ class HTMLEditUtils final {
 
 
 
+
+
+
+
+  static bool IsVisibleTextNode(dom::Text& aText,
+                                Element* aEditingHost = nullptr);
+
+  
+
+
+
   template <typename PT, typename CT>
   static bool IsPointAtEdgeOfLink(const EditorDOMPointBase<PT, CT>& aPoint,
                                   Element** aFoundLinkElement = nullptr) {

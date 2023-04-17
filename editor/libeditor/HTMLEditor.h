@@ -842,12 +842,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsVisibleTextNode(Text& aText) const;
-
-  
-
-
-
 
   bool IsEmptyNode(nsINode& aNode, bool aSingleBRDoesntCount = false,
                    bool aListOrCellNotEmpty = false,
