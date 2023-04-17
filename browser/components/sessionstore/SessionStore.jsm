@@ -545,14 +545,10 @@ var SessionStoreInternal = {
   _browserSHistoryListener: new WeakMap(),
 
   
-  _browserSHistoryListenerForRestore: new WeakMap(),
+  _restoreListeners: new WeakMap(),
 
   
-  
-  _browserProgressListenerForRestore: new WeakMap(),
-
-  
-  _shistoryToRestore: new WeakMap(),
+  _tabStateToRestore: new WeakMap(),
 
   
   _browserEpochs: new WeakMap(),
@@ -1138,130 +1134,6 @@ var SessionStoreInternal = {
     return listener;
   },
 
-  
-
-
-
-
-  addSHistoryListenerForRestore(aBrowser, aCallbacks) {
-    if (!Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should only be used with SHIP");
-    }
-    function SHistoryListener(browser, callbacks) {
-      browser.browsingContext.sessionHistory.addSHistoryListener(this);
-      this.browser = browser;
-      this.callbacks = callbacks;
-    }
-    SHistoryListener.prototype = {
-      QueryInterface: ChromeUtils.generateQI([
-        "nsISHistoryListener",
-        "nsISupportsWeakReference",
-      ]),
-
-      uninstall() {
-        let shistory = this.browser.browsingContext?.sessionHistory;
-        if (shistory) {
-          shistory.removeSHistoryListener(this);
-        }
-        SessionStoreInternal._browserSHistoryListenerForRestore.delete(
-          this.browser.permanentKey
-        );
-      },
-
-      OnHistoryGotoIndex() {},
-      OnHistoryPurge() {},
-      OnHistoryReplaceEntry() {},
-
-      
-      
-      OnHistoryNewEntry(newURI) {
-        let currentURI = this.browser.currentURI;
-
-        
-        
-        
-        if (currentURI && currentURI.displaySpec == newURI.spec) {
-          return;
-        }
-
-        if (this.callbacks.onHistoryNewEntry) {
-          this.callbacks.onHistoryNewEntry(newURI);
-        }
-      },
-
-      OnHistoryReload() {
-        if (this.callbacks.onHistoryReload) {
-          return this.callbacks.onHistoryReload();
-        }
-        return false;
-      },
-    };
-
-    
-    if (!aBrowser.browsingContext?.sessionHistory) {
-      throw new Error("no SessionHistory object");
-    }
-
-    
-    if (this._browserSHistoryListenerForRestore.has(aBrowser.permanentKey)) {
-      this._browserSHistoryListenerForRestore
-        .get(aBrowser.permanentKey)
-        .uninstall();
-    }
-
-    let listener = new SHistoryListener(aBrowser, aCallbacks);
-    this._browserSHistoryListenerForRestore.set(
-      aBrowser.permanentKey,
-      listener
-    );
-  },
-
-  addProgressListenerForRestore(browser, callbacks) {
-    if (!Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should only be used with SHIP");
-    }
-
-    class ProgressListener {
-      constructor() {
-        browser.addProgressListener(
-          this,
-          Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
-        );
-      }
-      uninstall() {
-        browser.removeProgressListener(this);
-        SessionStoreInternal._browserProgressListenerForRestore.delete(
-          browser.permanentKey
-        );
-      }
-      onStateChange(webProgress, request, stateFlags, status) {
-        if (
-          webProgress.isTopLevel &&
-          stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
-          stateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-          callbacks.onStopRequest
-        ) {
-          callbacks.onStopRequest(request, this);
-        }
-      }
-    }
-
-    ProgressListener.prototype.QueryInterface = ChromeUtils.generateQI([
-      "nsIWebProgressListener",
-      "nsISupportsWeakReference",
-    ]);
-
-    
-    if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
-      this._browserProgressListenerForRestore
-        .get(browser.permanentKey)
-        .uninstall();
-    }
-
-    let listener = new ProgressListener();
-    this._browserProgressListenerForRestore.set(browser.permanentKey, listener);
-  },
-
   onTabStateUpdate(browser, data) {
     
     
@@ -1321,7 +1193,7 @@ var SessionStoreInternal = {
     TabStateFlusher.resolveAll(browser);
 
     this._browserSHistoryListener.get(permanentKey)?.uninstall();
-    this._browserSHistoryListenerForRestore.get(permanentKey)?.uninstall();
+    this._restoreListeners.get(permanentKey)?.unregister();
 
     Services.obs.notifyObservers(browser, NOTIFY_BROWSER_SHUTDOWN_FLUSH);
   },
@@ -5673,11 +5545,7 @@ var SessionStoreInternal = {
     TAB_STATE_FOR_BROWSER.delete(browser);
 
     if (Services.appinfo.sessionHistoryInParent) {
-      if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
-        this._browserProgressListenerForRestore
-          .get(browser.permanentKey)
-          .uninstall();
-      }
+      this._restoreListeners.get(browser.permanentKey)?.unregister();
       browser.browsingContext.clearRestoreState();
     }
 
@@ -5878,6 +5746,115 @@ var SessionStoreInternal = {
     return root;
   },
 
+  _waitForStateStop(browser, expectedURL = null) {
+    const deferred = PromiseUtils.defer();
+
+    const listener = {
+      unregister(reject = true) {
+        if (reject) {
+          deferred.reject();
+        }
+
+        SessionStoreInternal._restoreListeners.delete(browser.permanentKey);
+
+        try {
+          browser.removeProgressListener(
+            this,
+            Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
+          );
+        } catch {} 
+      },
+
+      onStateChange(webProgress, request, stateFlags, status) {
+        if (
+          webProgress.isTopLevel &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_STOP
+        ) {
+          
+          
+          let aboutBlankOK = !expectedURL || expectedURL === "about:blank";
+          let url = request.QueryInterface(Ci.nsIChannel).originalURI.spec;
+          if (url !== "about:blank" || aboutBlankOK) {
+            this.unregister(false);
+            deferred.resolve();
+          }
+        }
+      },
+
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+      ]),
+    };
+
+    this._restoreListeners.get(browser.permanentKey)?.unregister();
+    this._restoreListeners.set(browser.permanentKey, listener);
+
+    browser.addProgressListener(
+      listener,
+      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
+    );
+
+    return deferred.promise;
+  },
+
+  _listenForNavigations(browser, callbacks) {
+    const listener = {
+      unregister() {
+        browser.browsingContext?.sessionHistory?.removeSHistoryListener(this);
+
+        try {
+          browser.removeProgressListener(
+            this,
+            Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
+          );
+        } catch {} 
+
+        SessionStoreInternal._restoreListeners.delete(browser.permanentKey);
+      },
+
+      OnHistoryReload() {
+        this.unregister();
+        return callbacks.onHistoryReload();
+      },
+
+      
+      
+      OnHistoryNewEntry() {},
+      OnHistoryGotoIndex() {},
+      OnHistoryPurge() {},
+      OnHistoryReplaceEntry() {},
+
+      onStateChange(webProgress, request, stateFlags, status) {
+        if (
+          webProgress.isTopLevel &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_START
+        ) {
+          this.unregister();
+          callbacks.onStartRequest();
+        }
+      },
+
+      QueryInterface: ChromeUtils.generateQI([
+        "nsISHistoryListener",
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+      ]),
+    };
+
+    this._restoreListeners.get(browser.permanentKey)?.unregister();
+    this._restoreListeners.set(browser.permanentKey, listener);
+
+    browser.browsingContext?.sessionHistory?.addSHistoryListener(listener);
+
+    browser.addProgressListener(
+      listener,
+      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW
+    );
+  },
+
   
 
 
@@ -5887,37 +5864,77 @@ var SessionStoreInternal = {
       throw new Error("This function should only be used with SHIP");
     }
 
+    this._tabStateToRestore.set(browser.permanentKey, data);
+
+    
     
     browser.stop();
-
-    let uri = data.tabData?.entries[data.tabData.index - 1]?.url;
-    let disallow = data.tabData?.disallow;
-
-    let promise = SessionStoreUtils.restoreDocShellState(
-      browser.browsingContext,
-      uri,
-      disallow
-    );
-
-    promise
-      .then(() => {
-        this._restoreHistoryComplete(browser, data);
-      })
-      .catch(() => {});
-
-    this._shistoryToRestore.set(browser.permanentKey, data);
 
     SessionHistory.restoreFromParent(
       browser.browsingContext.sessionHistory,
       data.tabData
     );
 
-    this.addSHistoryListenerForRestore(browser, {
-      onHistoryReload: () => {
-        this._restoreTabContent(browser);
-        return false;
-      },
+    let url = data.tabData?.entries[data.tabData.index - 1]?.url;
+    let disallow = data.tabData?.disallow;
+    let restorePromise = SessionStoreUtils.restoreDocShellState(
+      browser.browsingContext,
+      url,
+      disallow
+    );
+
+    const onResolve = () => {
+      if (TAB_STATE_FOR_BROWSER.get(browser) !== TAB_STATE_RESTORING) {
+        this._listenForNavigations(browser, {
+          
+          
+          onHistoryReload: () => {
+            this._restoreTabContent(browser);
+            return false;
+          },
+
+          
+          
+          
+          onStartRequest: () => {
+            this._tabStateToRestore.delete(browser.permanentKey);
+            this._restoreTabContent(browser);
+          },
+        });
+      }
+
+      this._restoreHistoryComplete(browser, data);
+    };
+
+    restorePromise.then(onResolve).catch(() => {});
+  },
+
+  
+
+
+
+  _restoreTabEntry(browser, tabData) {
+    let url = "about:blank";
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
+
+    if (tabData.userTypedValue && tabData.userTypedClear) {
+      url = tabData.userTypedValue;
+      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+    } else if (tabData.entries.length) {
+      return SessionStoreUtils.initializeRestore(
+        browser.browsingContext,
+        this.buildRestoreData(tabData.formdata, tabData.scroll)
+      );
+    }
+
+    let loadPromise = this._waitForStateStop(browser, url);
+
+    browser.browsingContext.loadURI(url, {
+      loadFlags,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
+
+    return loadPromise;
   },
 
   
@@ -5929,75 +5946,28 @@ var SessionStoreInternal = {
       throw new Error("This function should only be used with SHIP");
     }
 
-    for (let map of [
-      this._browserProgressListenerForRestore,
-      this._browserSHistoryListenerForRestore,
-    ]) {
-      let listener = map.get(browser.permanentKey);
-      if (listener) {
-        listener.uninstall();
-      }
-    }
+    let state = this._tabStateToRestore.get(browser.permanentKey);
+    this._tabStateToRestore.delete(browser.permanentKey);
 
-    let data = {
-      ...options,
-      ...this._shistoryToRestore.get(browser.permanentKey),
+    this._restoreListeners.get(browser.permanentKey)?.unregister();
+
+    this._restoreTabContentStarted(browser, options);
+    const onResolve = () => {
+      this._restoreTabContentComplete(browser, options);
     };
-    this._shistoryToRestore.delete(browser.permanentKey);
 
-    this._restoreTabContentStarted(browser, data);
+    let promise;
 
-    let tabData = data.tabData || {};
-    let uri = null;
-    let loadFlags = null;
-    let promises = [];
-
-    if (tabData.userTypedValue && tabData.userTypedClear) {
-      uri = tabData.userTypedValue;
-      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-    } else if (tabData.entries.length) {
-      promises.push(
-        SessionStoreUtils.initializeRestore(
-          browser.browsingContext,
-          this.buildRestoreData(tabData.formdata, tabData.scroll)
-        )
-      );
+    if (state) {
+      promise = this._restoreTabEntry(browser, state.tabData);
     } else {
-      uri = "about:blank";
-      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
+      
+      
+      
+      promise = this._waitForStateStop(browser);
     }
 
-    if (uri && loadFlags) {
-      let deferred = PromiseUtils.defer();
-      promises.push(deferred.promise);
-
-      this.addProgressListenerForRestore(browser, {
-        onStopRequest: (request, listener) => {
-          let requestURI = request.QueryInterface(Ci.nsIChannel)?.originalURI;
-          
-          
-          
-          if (requestURI?.spec !== "about:blank" || uri === "about:blank") {
-            listener.uninstall();
-            deferred.resolve();
-          }
-        },
-      });
-
-      browser.browsingContext.loadURI(uri, {
-        loadFlags,
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-    }
-
-    Promise.allSettled(promises).then(() => {
-      
-      
-      
-      if (TAB_STATE_FOR_BROWSER.get(browser) === TAB_STATE_RESTORING) {
-        this._restoreTabContentComplete(browser, data);
-      }
-    });
+    promise.then(onResolve).catch(() => {});
   },
 
   _sendRestoreTabContent(browser, options) {
