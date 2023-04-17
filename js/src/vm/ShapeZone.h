@@ -12,6 +12,7 @@
 #include "gc/Barrier.h"
 #include "js/GCHashTable.h"
 #include "vm/PropertyKey.h"
+#include "vm/PropMap.h"
 #include "vm/Shape.h"
 #include "vm/TaggedProto.h"
 
@@ -74,6 +75,29 @@ using BaseShapeSet = JS::WeakCache<
 
 
 
+struct InitialPropMapHasher {
+  struct Lookup {
+    PropertyKey key;
+    PropertyInfo prop;
+
+    Lookup(PropertyKey key, PropertyInfo prop) : key(key), prop(prop) {}
+  };
+  static HashNumber hash(const Lookup& lookup) {
+    HashNumber hash = HashPropertyKey(lookup.key);
+    return mozilla::AddToHash(hash, lookup.prop.toRaw());
+  }
+  static bool match(const WeakHeapPtr<SharedPropMap*>& key,
+                    const Lookup& lookup) {
+    const SharedPropMap* map = key.unbarrieredGet();
+    return map->matchProperty(0, lookup.key, lookup.prop);
+  }
+};
+using InitialPropMapSet =
+    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<SharedPropMap*>,
+                                InitialPropMapHasher, SystemAllocPolicy>>;
+
+
+
 
 
 
@@ -117,6 +141,10 @@ struct ShapeZone {
 
   
   BaseShapeSet baseShapes;
+
+  
+  
+  InitialPropMapSet initialPropMaps;
 
   
   InitialShapeSet initialShapes;
