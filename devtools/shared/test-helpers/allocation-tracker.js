@@ -438,11 +438,33 @@ exports.allocationTracker = function({
       }
     },
 
-    traceObjects(objects) {
+    
+
+
+
+    getSnapshotFile() {
+      return ChromeUtils.saveHeapSnapshot({ debugger: dbg });
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    traceObjects(objects, snapshotFile) {
       
       
-      const filePath = ChromeUtils.saveHeapSnapshot({ debugger: dbg });
-      const snapshot = ChromeUtils.readHeapSnapshot(filePath);
+      if (!snapshotFile) {
+        snapshotFile = this.getSnapshotFile();
+      }
+      const snapshot = ChromeUtils.readHeapSnapshot(snapshotFile);
 
       function getObjectClass(id) {
         if (!id) {
@@ -479,6 +501,9 @@ exports.allocationTracker = function({
             )[0][0] + (stack ? "@" + stack + ":" + line : "")
           );
         } catch (e) {
+          if (e.name == "NS_ERROR_ILLEGAL_VALUE") {
+            return "<not-in-memory-snapshot:is-from-untracked-global?>";
+          }
           return "<invalid:" + id + ":" + e + ">";
         }
       }

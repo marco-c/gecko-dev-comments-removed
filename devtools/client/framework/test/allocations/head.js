@@ -111,9 +111,6 @@ async function stopRecordingAllocations(
     DEBUG_ALLOCATIONS
   );
 
-  
-  
-  
   const objectNodeIds = TrackedObjects.getAllNodeIds();
   if (objectNodeIds.length > 0) {
     tracker.traceObjects(objectNodeIds);
@@ -135,6 +132,36 @@ async function stopRecordingAllocations(
         );
         return tracker.stopRecordingAllocations(debug_allocations);
       }
+    );
+  }
+
+  const trackedObjectsInContent = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => {
+      const TrackedObjects = ChromeUtils.import(
+        "resource://devtools/shared/test-helpers/tracked-objects.jsm"
+      );
+      const objectNodeIds = TrackedObjects.getAllNodeIds();
+      if (objectNodeIds.length > 0) {
+        const { DevToolsLoader } = ChromeUtils.import(
+          "resource://devtools/shared/Loader.jsm"
+        );
+        const { tracker } = DevToolsLoader;
+        
+        
+        
+        
+        const snapshotFile = tracker.getSnapshotFile();
+        return { snapshotFile, objectNodeIds };
+      }
+      return null;
+    }
+  );
+  if (trackedObjectsInContent) {
+    tracker.traceObjects(
+      trackedObjectsInContent.objectNodeIds,
+      trackedObjectsInContent.snapshotFile
     );
   }
 

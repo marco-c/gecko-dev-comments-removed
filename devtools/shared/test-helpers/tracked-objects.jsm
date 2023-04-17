@@ -14,8 +14,6 @@
 
 var EXPORTED_SYMBOLS = ["track", "getAllNodeIds", "clear"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const objects = [];
 
 
@@ -23,9 +21,6 @@ const objects = [];
 
 
 function track(obj) {
-  if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-    throw new Error("For now, this API only works from the parent process");
-  }
   
   objects.push(Cu.getWeakReference(obj));
 }
