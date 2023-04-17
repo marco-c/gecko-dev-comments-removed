@@ -195,9 +195,16 @@ class RemoteAccessibleBase : public Accessible {
   DocAccessibleParent* AsDoc() const { return IsDoc() ? mDoc : nullptr; }
 
   void ApplyCache(CacheUpdateType aUpdateType, AccAttributes* aFields) {
-    if (aUpdateType == CacheUpdateType::Initial || !mCachedFields) {
+    if (aUpdateType == CacheUpdateType::Initial) {
       mCachedFields = aFields;
     } else {
+      if (!mCachedFields) {
+        
+        
+        
+        
+        mCachedFields = new AccAttributes();
+      }
       mCachedFields->Update(aFields);
     }
   }
