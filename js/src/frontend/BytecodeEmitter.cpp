@@ -9336,6 +9336,10 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     }
 
     if (privateName->privateNameKind() == PrivateNameKind::Setter) {
+      if (!emitDupAt(1)) {
+        
+        return false;
+      }
       if (!emitGetPrivateName(privateName)) {
         
         return false;
@@ -9346,6 +9350,10 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         return false;
       }
       if (!emit1(JSOp::InitHiddenElemGetter)) {
+        
+        return false;
+      }
+      if (!emit1(JSOp::Pop)) {
         
         return false;
       }
