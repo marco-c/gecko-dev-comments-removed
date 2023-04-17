@@ -1501,7 +1501,7 @@ class nsDisplayListBuilder {
                                       OutOfFlowDisplayData)
 
   struct DisplayListBuildingData {
-    RefPtr<AnimatedGeometryRoot> mModifiedAGR = nullptr;
+    nsIFrame* mModifiedAGR = nullptr;
     nsRect mDirtyRect;
   };
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(DisplayListBuildingRect,
@@ -2363,6 +2363,12 @@ class nsDisplayItem : public nsDisplayItemLink {
   }
 
   virtual bool CreatesStackingContextHelper() { return false; }
+
+  
+
+
+
+  virtual bool CanMoveAsync() { return false; }
 
  protected:
   
@@ -5615,6 +5621,8 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
 
   bool CreatesStackingContextHelper() override { return true; }
 
+  bool CanMoveAsync() override { return true; }
+
  private:
   NS_DISPLAY_ALLOW_CLONING()
 
@@ -6442,6 +6450,11 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
                      bool aEnforceMinimumSize = true) const;
 
   void WriteDebugInfo(std::stringstream& aStream) override;
+
+  bool CanMoveAsync() override {
+    return EffectCompositor::HasAnimationsForCompositor(
+        mFrame, DisplayItemType::TYPE_TRANSFORM);
+  }
 
   
 
