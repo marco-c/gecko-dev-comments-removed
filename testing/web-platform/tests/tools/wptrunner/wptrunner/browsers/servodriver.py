@@ -11,7 +11,6 @@ from .base import get_timeout_multiplier
 from ..executors import executor_kwargs as base_executor_kwargs
 from ..executors.executorservodriver import (ServoWebDriverTestharnessExecutor,  
                                              ServoWebDriverRefTestExecutor)  
-from ..process import cast_env
 
 here = os.path.dirname(__file__)
 
@@ -132,11 +131,11 @@ class ServoWebDriverBrowser(Browser):
         if not self.debug_info or not self.debug_info.interactive:
             self.proc = ProcessHandler(self.command,
                                        processOutputLine=[self.on_output],
-                                       env=cast_env(env),
+                                       env=env,
                                        storeOutput=False)
             self.proc.run()
         else:
-            self.proc = subprocess.Popen(self.command, env=cast_env(env))
+            self.proc = subprocess.Popen(self.command, env=env)
 
         self.logger.debug("Servo Started")
 

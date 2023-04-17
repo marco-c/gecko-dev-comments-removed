@@ -12,13 +12,6 @@ from datetime import datetime, timedelta
 CERT_EXPIRY_BUFFER = dict(hours=6)
 
 
-def _ensure_str(s, encoding):
-    """makes sure s is an instance of str, converting with encoding if needed"""
-    if isinstance(s, str):
-        return s
-    return s.decode(encoding)
-
-
 class OpenSSL(object):
     def __init__(self, logger, binary, base_path, conf_path, hosts, duration,
                  base_conf_path=None):
@@ -71,13 +64,9 @@ class OpenSSL(object):
         self.cmd += list(args)
 
         
-        
-        env = {}
-        for k, v in os.environ.items():
-            env[_ensure_str(k, "utf8")] = _ensure_str(v, "utf8")
-
+        env = os.environ.copy()
         if self.base_conf_path is not None:
-            env["OPENSSL_CONF"] = _ensure_str(self.base_conf_path, "utf-8")
+            env["OPENSSL_CONF"] = self.base_conf_path
 
         self.proc = subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                      env=env)
