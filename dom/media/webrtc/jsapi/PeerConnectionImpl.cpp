@@ -2140,9 +2140,8 @@ void PeerConnectionImpl::ShutdownMedia() {
     }
   }
 
-  
-  
-  mMedia.forget().take()->SelfDestruct();
+  mMedia->Shutdown();
+  mMedia = nullptr;
 }
 
 DOMMediaStream* PeerConnectionImpl::GetReceiveStream(

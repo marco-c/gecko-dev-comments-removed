@@ -582,7 +582,7 @@ void PeerConnectionMedia::EnsureIceGathering(bool aDefaultRouteOnly,
                                        aObfuscateHostAddresses, mStunAddrs);
 }
 
-void PeerConnectionMedia::SelfDestruct() {
+void PeerConnectionMedia::Shutdown() {
   ASSERT_ON_THREAD(mMainThread);
 
   CSFLogDebug(LOGTAG, "%s: ", __FUNCTION__);
@@ -609,48 +609,42 @@ void PeerConnectionMedia::SelfDestruct() {
 
   mQueuedIceCtxOperations.clear();
 
-  if (mCall) {
-    
-    mCall->mCallThread->Dispatch(NS_NewRunnableFunction(
-        "PeerConnectionMedia::SelfDestruct(mCall)",
-        [call = std::move(mCall)]() { call->Destroy(); }));
-  }
+  
+  auto promise =
+      mCall ? InvokeAsync(mCall->mCallThread, __func__,
+                          [call = mCall] {
+                            call->Destroy();
+                            return GenericPromise::CreateAndResolve(
+                                true, "PCMedia->WebRtcCallWrapper::Destroy");
+                          })
+            : GenericPromise::CreateAndResolve(true, __func__);
 
   
-  RUN_ON_THREAD(
-      mSTSThread,
-      WrapRunnable(this, &PeerConnectionMedia::ShutdownMediaTransport_s),
-      NS_DISPATCH_NORMAL);
+  auto self = nsMainThreadPtrHandle<PeerConnectionMedia>(
+      new nsMainThreadPtrHolder<PeerConnectionMedia>(
+          "PeerConnectionMedia::Shutdown::self", this, false));
+  promise
+      ->Then(mSTSThread, __func__,
+             [self] {
+               CSFLogDebug(LOGTAG, "PeerConnectionMedia::disconnect_all");
+               self->disconnect_all();
+               return GenericPromise::CreateAndResolve(
+                   true, "PeerConnectionMedia::disconnect_all");
+             })
+      ->Then(
+          mMainThread, __func__,
+          [this, self = RefPtr<PeerConnectionMedia>(this)] {
+            CSFLogDebug(LOGTAG, "PCMedia->mTransportHandler::RemoveTransports");
+            mTransportHandler->RemoveTransportsExcept(std::set<std::string>());
+            mTransportHandler = nullptr;
+
+            mMainThread = nullptr;
+          });
+
   mParent = nullptr;
+  mCall = nullptr;
 
   CSFLogDebug(LOGTAG, "%s: Media shut down", __FUNCTION__);
-}
-
-void PeerConnectionMedia::SelfDestruct_m() {
-  CSFLogDebug(LOGTAG, "%s: ", __FUNCTION__);
-
-  ASSERT_ON_THREAD(mMainThread);
-
-  mTransportHandler->RemoveTransportsExcept(std::set<std::string>());
-  mTransportHandler = nullptr;
-
-  mMainThread = nullptr;
-
-  
-  this->Release();
-}
-
-void PeerConnectionMedia::ShutdownMediaTransport_s() {
-  ASSERT_ON_THREAD(mSTSThread);
-
-  CSFLogDebug(LOGTAG, "%s: ", __FUNCTION__);
-
-  disconnect_all();
-
-  
-  mMainThread->Dispatch(
-      WrapRunnable(this, &PeerConnectionMedia::SelfDestruct_m),
-      NS_DISPATCH_NORMAL);
 }
 
 nsresult PeerConnectionMedia::AddTransceiver(

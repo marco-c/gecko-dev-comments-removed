@@ -52,8 +52,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   explicit PeerConnectionMedia(PeerConnectionImpl* parent);
 
   nsresult Init();
-  
-  void SelfDestruct();
+  void Shutdown();
 
   
   void EnsureTransports(const JsepSession& aSession);
@@ -156,13 +155,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
     RefPtr<PeerConnectionMedia> pcm_;
     virtual ~StunAddrsHandler() {}
   };
-
-  
-  void ShutdownMediaTransport_s();
-
-  
-  
-  void SelfDestruct_m();
 
   
   void UpdateTransport(const JsepTransceiver& aTransceiver, bool aForceIceTcp);
