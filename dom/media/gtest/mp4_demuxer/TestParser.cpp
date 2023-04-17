@@ -247,6 +247,12 @@ static const TestFileData testFiles[] = {
      300, 1, 10032000, false, 0, true, true, 2},
     {"test_case_1519617-video-has-track_id-0.mp4", true, 1, true, 10032000, 400,
      300, 1, 10032000, false, 0, true, true, 2},  
+    
+    
+    
+    
+    {"test_case_1714125-2-sample-description-entires-with-identical-crypto.mp4",
+     true, 1, true, 0, 1920, 1080, 0, 0, true, 0, false, true, 0},
 };
 
 TEST(MP4Metadata, test_case_mp4)
@@ -988,4 +994,18 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
       MakeTuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>(
           0, 4, 1, 0, 0, 0),
       "test_case_1513651-2-sample-description-entries.mp4");
+
+  
+  
+  UpdateMetadataAndHistograms(
+      "test_case_1714125-2-sample-description-entires-with-identical-crypto."
+      "mp4");
+
+  
+  CheckHistograms(
+      MakeTuple<uint32_t, uint32_t>(6, 0), MakeTuple<uint32_t, uint32_t>(5, 1),
+      MakeTuple<uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t>(
+          0, 4, 2, 0, 0, 0),
+      "test_case_1714125-2-sample-description-entires-with-identical-crypto."
+      "mp4");
 }
