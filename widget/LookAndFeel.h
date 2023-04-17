@@ -398,6 +398,9 @@ class LookAndFeel {
     TextScaleFactor,
 
     
+    CursorScale,
+
+    
     End,
   };
 

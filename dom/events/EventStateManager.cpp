@@ -4027,6 +4027,10 @@ static bool ShouldBlockCustomCursor(nsPresContext* aPresContext,
   
   
   float zoom = topLevel->GetFullZoom();
+
+  
+  zoom /= LookAndFeel::GetFloat(LookAndFeel::FloatID::CursorScale, 1.0f);
+
   nsSize size(CSSPixel::ToAppUnits(width / zoom),
               CSSPixel::ToAppUnits(height / zoom));
   nsPoint hotspot(CSSPixel::ToAppUnits(aCursor.mHotspot.x / zoom),
