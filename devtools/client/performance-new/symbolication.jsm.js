@@ -14,6 +14,7 @@ const { createLazyLoaders } = ChromeUtils.import(
 
 
 
+
 const lazy = createLazyLoaders({
   OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
   ProfilerGetSymbols: () =>
@@ -171,9 +172,81 @@ async function getSymbolTableMultiModal(lib, objdirs, perfFront = undefined) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createLibraryMap(sharedLibraries) {
+  const map = new Map(
+    sharedLibraries.map(lib => {
+      const { debugName, breakpadId } = lib;
+      const key = [debugName, breakpadId].join(":");
+      return [key, lib];
+    })
+  );
+
+  return function getLibraryFor(debugName, breakpadId) {
+    const key = [debugName, breakpadId].join(":");
+    return map.get(key);
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function createLocalSymbolicationService(sharedLibraries, objdirs, perfFront) {
+  const libraryGetter = createLibraryMap(sharedLibraries);
+
+  return {
+    async getSymbolTable(debugName, breakpadId) {
+      const lib = libraryGetter(debugName, breakpadId);
+      if (!lib) {
+        throw new Error(
+          `Could not find the library for "${debugName}", "${breakpadId}".`
+        );
+      }
+      return getSymbolTableMultiModal(lib, objdirs, perfFront);
+    },
+  };
+}
+
+
  (this).module = {};
 
 module.exports = {
+  createLocalSymbolicationService,
   getSymbolTableFromDebuggee,
   getSymbolTableFromLocalBinary,
   getSymbolTableMultiModal,
