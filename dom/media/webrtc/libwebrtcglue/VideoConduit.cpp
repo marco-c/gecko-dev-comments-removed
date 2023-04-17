@@ -54,7 +54,9 @@
 
 namespace mozilla {
 
-static const char* vcLogTag = "WebrtcVideoSessionConduit";
+namespace {
+
+const char* vcLogTag = "WebrtcVideoSessionConduit";
 #ifdef LOGTAG
 #  undef LOGTAG
 #endif
@@ -62,9 +64,9 @@ static const char* vcLogTag = "WebrtcVideoSessionConduit";
 
 using LocalDirection = MediaSessionConduitLocalDirection;
 
-static const int kNullPayloadType = -1;
-static const char* kUlpFecPayloadName = "ulpfec";
-static const char* kRedPayloadName = "red";
+const int kNullPayloadType = -1;
+const char* kUlpFecPayloadName = "ulpfec";
+const char* kRedPayloadName = "red";
 
 
 
@@ -80,8 +82,7 @@ static const char* kRedPayloadName = "red";
 
 
 template <class t>
-static void ConstrainPreservingAspectRatioExact(uint32_t max_fs, t* width,
-                                                t* height) {
+void ConstrainPreservingAspectRatioExact(uint32_t max_fs, t* width, t* height) {
   
   
   for (size_t d = 1; d < std::min(*width, *height); ++d) {
@@ -101,9 +102,8 @@ static void ConstrainPreservingAspectRatioExact(uint32_t max_fs, t* width,
 }
 
 template <class t>
-static void ConstrainPreservingAspectRatio(uint16_t max_width,
-                                           uint16_t max_height, t* width,
-                                           t* height) {
+void ConstrainPreservingAspectRatio(uint16_t max_width, uint16_t max_height,
+                                    t* width, t* height) {
   if (((*width) <= max_width) && ((*height) <= max_height)) {
     return;
   }
@@ -123,10 +123,10 @@ static void ConstrainPreservingAspectRatio(uint16_t max_width,
 
 
 
-static unsigned int SelectSendFrameRate(const VideoCodecConfig* codecConfig,
-                                        unsigned int old_framerate,
-                                        unsigned short sending_width,
-                                        unsigned short sending_height) {
+unsigned int SelectSendFrameRate(const VideoCodecConfig* codecConfig,
+                                 unsigned int old_framerate,
+                                 unsigned short sending_width,
+                                 unsigned short sending_height) {
   unsigned int new_framerate = old_framerate;
 
   
@@ -150,8 +150,7 @@ static unsigned int SelectSendFrameRate(const VideoCodecConfig* codecConfig,
 
 
 
-static MediaConduitErrorCode ValidateCodecConfig(
-    const VideoCodecConfig* codecInfo) {
+MediaConduitErrorCode ValidateCodecConfig(const VideoCodecConfig* codecInfo) {
   if (!codecInfo) {
     CSFLogError(LOGTAG, "%s Null CodecConfig ", __FUNCTION__);
     return kMediaConduitMalformedArgument;
@@ -164,6 +163,113 @@ static MediaConduitErrorCode ValidateCodecConfig(
 
   return kMediaConduitNoError;
 }
+
+webrtc::VideoCodecType SupportedCodecType(webrtc::VideoCodecType aType) {
+  switch (aType) {
+    case webrtc::VideoCodecType::kVideoCodecVP8:
+    case webrtc::VideoCodecType::kVideoCodecVP9:
+    case webrtc::VideoCodecType::kVideoCodecH264:
+      return aType;
+    default:
+      return webrtc::VideoCodecType::kVideoCodecGeneric;
+  }
+  
+}
+
+rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
+ConfigureVideoEncoderSettings(const VideoCodecConfig* aConfig,
+                              const WebrtcVideoConduit* aConduit) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  bool is_screencast =
+      aConduit->CodecMode() == webrtc::VideoCodecMode::kScreensharing;
+  
+  bool automatic_resize = !is_screencast && aConfig->mEncodings.size() <= 1;
+  bool frame_dropping = !is_screencast;
+  bool denoising;
+  bool codec_default_denoising = false;
+  if (is_screencast) {
+    denoising = false;
+  } else {
+    
+    denoising = aConduit->Denoising();
+    codec_default_denoising = !denoising;
+  }
+
+  if (aConfig->mName == "H264") {
+    webrtc::VideoCodecH264 h264_settings =
+        webrtc::VideoEncoder::GetDefaultH264Settings();
+    h264_settings.frameDroppingOn = frame_dropping;
+    h264_settings.packetizationMode = aConfig->mPacketizationMode;
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::H264EncoderSpecificSettings>(h264_settings);
+  }
+  if (aConfig->mName == "VP8") {
+    webrtc::VideoCodecVP8 vp8_settings =
+        webrtc::VideoEncoder::GetDefaultVp8Settings();
+    vp8_settings.automaticResizeOn = automatic_resize;
+    
+    vp8_settings.denoisingOn = codec_default_denoising ? true : denoising;
+    vp8_settings.frameDroppingOn = frame_dropping;
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
+  }
+  if (aConfig->mName == "VP9") {
+    webrtc::VideoCodecVP9 vp9_settings =
+        webrtc::VideoEncoder::GetDefaultVp9Settings();
+    if (is_screencast) {
+      
+      
+      vp9_settings.numberOfSpatialLayers = 2;
+    } else {
+      vp9_settings.numberOfSpatialLayers = aConduit->SpatialLayers();
+    }
+    
+    vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
+    vp9_settings.frameDroppingOn = true;  
+    return new rtc::RefCountedObject<
+        webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+  }
+  return nullptr;
+}
+
+
+bool CodecsDifferent(const nsTArray<UniquePtr<VideoCodecConfig>>& a,
+                     const nsTArray<UniquePtr<VideoCodecConfig>>& b) {
+  
+  
+  auto len = a.Length();
+  if (len != b.Length()) {
+    return true;
+  }
+
+  
+  
+  for (uint32_t i = 0; i < len; ++i) {
+    if (!(*a[i] == *b[i])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+uint32_t GenerateRandomSSRC() {
+  uint32_t ssrc;
+  do {
+    SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc),
+                                       sizeof(ssrc));
+    if (rv != SECSuccess) {
+      CSFLogError(LOGTAG, "%s: PK11_GenerateRandom failed with error %d",
+                  __FUNCTION__, rv);
+      return 0;
+    }
+  } while (ssrc == 0);  
+
+  return ssrc;
+}
+
+}  
 
 
 
@@ -320,18 +426,6 @@ void WebrtcVideoConduit::DeleteSendStream() {
   }
 }
 
-webrtc::VideoCodecType SupportedCodecType(webrtc::VideoCodecType aType) {
-  switch (aType) {
-    case webrtc::VideoCodecType::kVideoCodecVP8:
-    case webrtc::VideoCodecType::kVideoCodecVP9:
-    case webrtc::VideoCodecType::kVideoCodecH264:
-      return aType;
-    default:
-      return webrtc::VideoCodecType::kVideoCodecGeneric;
-  }
-  
-}
-
 MediaConduitErrorCode WebrtcVideoConduit::CreateSendStream() {
   MOZ_ASSERT(NS_IsMainThread());
   mMutex.AssertCurrentThreadOwns();
@@ -441,84 +535,6 @@ MediaConduitErrorCode WebrtcVideoConduit::CreateRecvStream() {
               mRecvStream, mRecvStreamConfig.rtp.remote_ssrc,
               mRecvStreamConfig.rtp.remote_ssrc);
   return kMediaConduitNoError;
-}
-
-static rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
-ConfigureVideoEncoderSettings(const VideoCodecConfig* aConfig,
-                              const WebrtcVideoConduit* aConduit) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  bool is_screencast =
-      aConduit->CodecMode() == webrtc::VideoCodecMode::kScreensharing;
-  
-  bool automatic_resize = !is_screencast && aConfig->mEncodings.size() <= 1;
-  bool frame_dropping = !is_screencast;
-  bool denoising;
-  bool codec_default_denoising = false;
-  if (is_screencast) {
-    denoising = false;
-  } else {
-    
-    denoising = aConduit->Denoising();
-    codec_default_denoising = !denoising;
-  }
-
-  if (aConfig->mName == "H264") {
-    webrtc::VideoCodecH264 h264_settings =
-        webrtc::VideoEncoder::GetDefaultH264Settings();
-    h264_settings.frameDroppingOn = frame_dropping;
-    h264_settings.packetizationMode = aConfig->mPacketizationMode;
-    return new rtc::RefCountedObject<
-        webrtc::VideoEncoderConfig::H264EncoderSpecificSettings>(h264_settings);
-  }
-  if (aConfig->mName == "VP8") {
-    webrtc::VideoCodecVP8 vp8_settings =
-        webrtc::VideoEncoder::GetDefaultVp8Settings();
-    vp8_settings.automaticResizeOn = automatic_resize;
-    
-    vp8_settings.denoisingOn = codec_default_denoising ? true : denoising;
-    vp8_settings.frameDroppingOn = frame_dropping;
-    return new rtc::RefCountedObject<
-        webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
-  }
-  if (aConfig->mName == "VP9") {
-    webrtc::VideoCodecVP9 vp9_settings =
-        webrtc::VideoEncoder::GetDefaultVp9Settings();
-    if (is_screencast) {
-      
-      
-      vp9_settings.numberOfSpatialLayers = 2;
-    } else {
-      vp9_settings.numberOfSpatialLayers = aConduit->SpatialLayers();
-    }
-    
-    vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
-    vp9_settings.frameDroppingOn = true;  
-    return new rtc::RefCountedObject<
-        webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
-  }
-  return nullptr;
-}
-
-
-static bool CodecsDifferent(const nsTArray<UniquePtr<VideoCodecConfig>>& a,
-                            const nsTArray<UniquePtr<VideoCodecConfig>>& b) {
-  
-  
-  auto len = a.Length();
-  if (len != b.Length()) {
-    return true;
-  }
-
-  
-  
-  for (uint32_t i = 0; i < len; ++i) {
-    if (!(*a[i] == *b[i])) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 
@@ -691,21 +707,6 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureSendMediaCodec(
   }
 
   return condError;
-}
-
-static uint32_t GenerateRandomSSRC() {
-  uint32_t ssrc;
-  do {
-    SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc),
-                                       sizeof(ssrc));
-    if (rv != SECSuccess) {
-      CSFLogError(LOGTAG, "%s: PK11_GenerateRandom failed with error %d",
-                  __FUNCTION__, rv);
-      return 0;
-    }
-  } while (ssrc == 0);  
-
-  return ssrc;
 }
 
 bool WebrtcVideoConduit::SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) {
