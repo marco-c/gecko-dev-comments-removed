@@ -82,6 +82,7 @@ class nsProxyInfo final : public nsIProxyInfo {
   nsCString mPassword;
   nsCString mProxyAuthorizationHeader;
   nsCString mConnectionIsolationKey;
+  nsCString mSourceId;
   int32_t mPort{-1};
   uint32_t mFlags{0};
   

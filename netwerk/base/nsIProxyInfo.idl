@@ -77,6 +77,12 @@ interface nsIProxyInfo : nsISupports
 
 
 
+  attribute ACString sourceId;
+
+  
+
+
+
 
   readonly attribute ACString proxyAuthorizationHeader;
 
