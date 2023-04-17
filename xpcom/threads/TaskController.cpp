@@ -147,7 +147,27 @@ bool TaskController::InitializeInternal() {
 }
 
 
-const PRUint32 sStackSize = 512u * 1024u;
+
+
+
+
+
+constexpr PRUint32 sBaseStackSize = 2048 * 1024 - 2 * 4096;
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_TSAN)
+constexpr PRUint32 sStackSize = 2 * sBaseStackSize;
+#else
+constexpr PRUint32 sStackSize = sBaseStackSize;
+#endif
 
 void TaskController::InitializeThreadPool() {
   mPoolInitializationMutex.AssertCurrentThreadOwns();
