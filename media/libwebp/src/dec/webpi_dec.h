@@ -78,6 +78,10 @@ VP8StatusCode WebPParseHeaders(WebPHeaderStructure* const headers);
 
 
 
+int WebPCheckCropDimensions(int image_width, int image_height,
+                            int x, int y, int w, int h);
+
+
 
 void WebPInitCustomIo(WebPDecParams* const params, VP8Io* const io);
 

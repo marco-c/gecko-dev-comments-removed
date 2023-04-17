@@ -12,66 +12,74 @@
 
 
 #include <assert.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include "src/dsp/dsp.h"
 #include "src/utils/rescaler_utils.h"
+#include "src/utils/utils.h"
 
 
 
-void WebPRescalerInit(WebPRescaler* const wrk, int src_width, int src_height,
-                      uint8_t* const dst,
-                      int dst_width, int dst_height, int dst_stride,
-                      int num_channels, rescaler_t* const work) {
+int WebPRescalerInit(WebPRescaler* const rescaler,
+                     int src_width, int src_height,
+                     uint8_t* const dst,
+                     int dst_width, int dst_height, int dst_stride,
+                     int num_channels, rescaler_t* const work) {
   const int x_add = src_width, x_sub = dst_width;
   const int y_add = src_height, y_sub = dst_height;
-  wrk->x_expand = (src_width < dst_width);
-  wrk->y_expand = (src_height < dst_height);
-  wrk->src_width = src_width;
-  wrk->src_height = src_height;
-  wrk->dst_width = dst_width;
-  wrk->dst_height = dst_height;
-  wrk->src_y = 0;
-  wrk->dst_y = 0;
-  wrk->dst = dst;
-  wrk->dst_stride = dst_stride;
-  wrk->num_channels = num_channels;
+  const uint64_t total_size = 2ull * dst_width * num_channels * sizeof(*work);
+  if (!CheckSizeOverflow(total_size)) return 0;
+
+  rescaler->x_expand = (src_width < dst_width);
+  rescaler->y_expand = (src_height < dst_height);
+  rescaler->src_width = src_width;
+  rescaler->src_height = src_height;
+  rescaler->dst_width = dst_width;
+  rescaler->dst_height = dst_height;
+  rescaler->src_y = 0;
+  rescaler->dst_y = 0;
+  rescaler->dst = dst;
+  rescaler->dst_stride = dst_stride;
+  rescaler->num_channels = num_channels;
 
   
-  wrk->x_add = wrk->x_expand ? (x_sub - 1) : x_add;
-  wrk->x_sub = wrk->x_expand ? (x_add - 1) : x_sub;
-  if (!wrk->x_expand) {  
-    wrk->fx_scale = WEBP_RESCALER_FRAC(1, wrk->x_sub);
+  rescaler->x_add = rescaler->x_expand ? (x_sub - 1) : x_add;
+  rescaler->x_sub = rescaler->x_expand ? (x_add - 1) : x_sub;
+  if (!rescaler->x_expand) {  
+    rescaler->fx_scale = WEBP_RESCALER_FRAC(1, rescaler->x_sub);
   }
   
-  wrk->y_add = wrk->y_expand ? y_add - 1 : y_add;
-  wrk->y_sub = wrk->y_expand ? y_sub - 1 : y_sub;
-  wrk->y_accum = wrk->y_expand ? wrk->y_sub : wrk->y_add;
-  if (!wrk->y_expand) {
+  rescaler->y_add = rescaler->y_expand ? y_add - 1 : y_add;
+  rescaler->y_sub = rescaler->y_expand ? y_sub - 1 : y_sub;
+  rescaler->y_accum = rescaler->y_expand ? rescaler->y_sub : rescaler->y_add;
+  if (!rescaler->y_expand) {
     
     
     
-    const uint64_t ratio =
-        (uint64_t)dst_height * WEBP_RESCALER_ONE / (wrk->x_add * wrk->y_add);
+    const uint64_t num = (uint64_t)dst_height * WEBP_RESCALER_ONE;
+    const uint64_t den = (uint64_t)rescaler->x_add * rescaler->y_add;
+    const uint64_t ratio = num / den;
     if (ratio != (uint32_t)ratio) {
       
       
       
       
-      wrk->fxy_scale = 0;
+      rescaler->fxy_scale = 0;
     } else {
-      wrk->fxy_scale = (uint32_t)ratio;
+      rescaler->fxy_scale = (uint32_t)ratio;
     }
-    wrk->fy_scale = WEBP_RESCALER_FRAC(1, wrk->y_sub);
+    rescaler->fy_scale = WEBP_RESCALER_FRAC(1, rescaler->y_sub);
   } else {
-    wrk->fy_scale = WEBP_RESCALER_FRAC(1, wrk->x_add);
+    rescaler->fy_scale = WEBP_RESCALER_FRAC(1, rescaler->x_add);
     
   }
-  wrk->irow = work;
-  wrk->frow = work + num_channels * dst_width;
-  memset(work, 0, 2 * dst_width * num_channels * sizeof(*work));
+  rescaler->irow = work;
+  rescaler->frow = work + num_channels * dst_width;
+  memset(work, 0, (size_t)total_size);
 
   WebPRescalerDspInit();
+  return 1;
 }
 
 int WebPRescalerGetScaledDimensions(int src_width, int src_height,
@@ -82,6 +90,7 @@ int WebPRescalerGetScaledDimensions(int src_width, int src_height,
   {
     int width = *scaled_width;
     int height = *scaled_height;
+    const int max_size = INT_MAX / 2;
 
     
     if (width == 0 && src_height > 0) {
@@ -94,7 +103,7 @@ int WebPRescalerGetScaledDimensions(int src_width, int src_height,
           (int)(((uint64_t)src_height * width + src_width - 1) / src_width);
     }
     
-    if (width <= 0 || height <= 0) {
+    if (width <= 0 || height <= 0 || width > max_size || height > max_size) {
       return 0;
     }
 
@@ -107,31 +116,34 @@ int WebPRescalerGetScaledDimensions(int src_width, int src_height,
 
 
 
-int WebPRescaleNeededLines(const WebPRescaler* const wrk, int max_num_lines) {
-  const int num_lines = (wrk->y_accum + wrk->y_sub - 1) / wrk->y_sub;
+int WebPRescaleNeededLines(const WebPRescaler* const rescaler,
+                           int max_num_lines) {
+  const int num_lines =
+      (rescaler->y_accum + rescaler->y_sub - 1) / rescaler->y_sub;
   return (num_lines > max_num_lines) ? max_num_lines : num_lines;
 }
 
-int WebPRescalerImport(WebPRescaler* const wrk, int num_lines,
+int WebPRescalerImport(WebPRescaler* const rescaler, int num_lines,
                        const uint8_t* src, int src_stride) {
   int total_imported = 0;
-  while (total_imported < num_lines && !WebPRescalerHasPendingOutput(wrk)) {
-    if (wrk->y_expand) {
-      rescaler_t* const tmp = wrk->irow;
-      wrk->irow = wrk->frow;
-      wrk->frow = tmp;
+  while (total_imported < num_lines &&
+         !WebPRescalerHasPendingOutput(rescaler)) {
+    if (rescaler->y_expand) {
+      rescaler_t* const tmp = rescaler->irow;
+      rescaler->irow = rescaler->frow;
+      rescaler->frow = tmp;
     }
-    WebPRescalerImportRow(wrk, src);
-    if (!wrk->y_expand) {     
+    WebPRescalerImportRow(rescaler, src);
+    if (!rescaler->y_expand) {    
       int x;
-      for (x = 0; x < wrk->num_channels * wrk->dst_width; ++x) {
-        wrk->irow[x] += wrk->frow[x];
+      for (x = 0; x < rescaler->num_channels * rescaler->dst_width; ++x) {
+        rescaler->irow[x] += rescaler->frow[x];
       }
     }
-    ++wrk->src_y;
+    ++rescaler->src_y;
     src += src_stride;
     ++total_imported;
-    wrk->y_accum -= wrk->y_sub;
+    rescaler->y_accum -= rescaler->y_sub;
   }
   return total_imported;
 }

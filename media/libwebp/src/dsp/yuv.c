@@ -90,12 +90,12 @@ WEBP_DSP_INIT_FUNC(WebPInitSamplers) {
 
   
   if (VP8GetCPUInfo != NULL) {
-#if defined(WEBP_USE_SSE2)
+#if defined(WEBP_HAVE_SSE2)
     if (VP8GetCPUInfo(kSSE2)) {
       WebPInitSamplersSSE2();
     }
 #endif  
-#if defined(WEBP_USE_SSE41)
+#if defined(WEBP_HAVE_SSE41)
     if (VP8GetCPUInfo(kSSE4_1)) {
       WebPInitSamplersSSE41();
     }
@@ -276,20 +276,20 @@ WEBP_DSP_INIT_FUNC(WebPInitConvertARGBToYUV) {
 #endif
 
   if (VP8GetCPUInfo != NULL) {
-#if defined(WEBP_USE_SSE2)
+#if defined(WEBP_HAVE_SSE2)
     if (VP8GetCPUInfo(kSSE2)) {
       WebPInitConvertARGBToYUVSSE2();
       WebPInitSharpYUVSSE2();
     }
 #endif  
-#if defined(WEBP_USE_SSE41)
+#if defined(WEBP_HAVE_SSE41)
     if (VP8GetCPUInfo(kSSE4_1)) {
       WebPInitConvertARGBToYUVSSE41();
     }
 #endif  
   }
 
-#if defined(WEBP_USE_NEON)
+#if defined(WEBP_HAVE_NEON)
   if (WEBP_NEON_OMIT_C_CODE ||
       (VP8GetCPUInfo != NULL && VP8GetCPUInfo(kNEON))) {
     WebPInitConvertARGBToYUVNEON();

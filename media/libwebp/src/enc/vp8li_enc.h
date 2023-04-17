@@ -69,6 +69,8 @@ typedef struct {
   int use_palette_;
   int palette_size_;
   uint32_t palette_[MAX_PALETTE_SIZE];
+  
+  uint32_t palette_sorted_[MAX_PALETTE_SIZE];
 
   
   struct VP8LBackwardRefs refs_[4];  

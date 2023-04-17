@@ -42,6 +42,10 @@ extern "C" {
 #endif
 #endif  
 
+static WEBP_INLINE int CheckSizeOverflow(uint64_t size) {
+  return size == (size_t)size;
+}
+
 
 
 
@@ -108,23 +112,32 @@ static WEBP_INLINE void PutLE32(uint8_t* const data, uint32_t val) {
 }
 
 
-
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
+
 static WEBP_INLINE int BitsLog2Floor(uint32_t n) {
   return 31 ^ __builtin_clz(n);
 }
+
+static WEBP_INLINE int BitsCtz(uint32_t n) { return __builtin_ctz(n); }
 #elif defined(_MSC_VER) && _MSC_VER > 1310 && \
       (defined(_M_X64) || defined(_M_IX86))
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
+#pragma intrinsic(_BitScanForward)
 
 static WEBP_INLINE int BitsLog2Floor(uint32_t n) {
-  unsigned long first_set_bit;
+  unsigned long first_set_bit;  
   _BitScanReverse(&first_set_bit, n);
   return first_set_bit;
 }
+static WEBP_INLINE int BitsCtz(uint32_t n) {
+  unsigned long first_set_bit;  
+  _BitScanForward(&first_set_bit, n);
+  return first_set_bit;
+}
 #else   
+#define WEBP_HAVE_SLOW_CLZ_CTZ
 
 
 #define WEBP_NEED_LOG_TABLE_8BIT
@@ -139,6 +152,15 @@ static WEBP_INLINE int WebPLog2FloorC(uint32_t n) {
 }
 
 static WEBP_INLINE int BitsLog2Floor(uint32_t n) { return WebPLog2FloorC(n); }
+
+static WEBP_INLINE int BitsCtz(uint32_t n) {
+  int i;
+  for (i = 0; i < 32; ++i, n >>= 1) {
+    if (n & 1) return i;
+  }
+  return 32;
+}
+
 #endif
 
 

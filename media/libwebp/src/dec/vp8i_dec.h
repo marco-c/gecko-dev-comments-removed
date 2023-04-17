@@ -32,7 +32,7 @@ extern "C" {
 
 #define DEC_MAJ_VERSION 1
 #define DEC_MIN_VERSION 2
-#define DEC_REV_VERSION 0
+#define DEC_REV_VERSION 1
 
 
 

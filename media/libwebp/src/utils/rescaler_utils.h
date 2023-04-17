@@ -47,12 +47,13 @@ struct WebPRescaler {
 };
 
 
-void WebPRescalerInit(WebPRescaler* const rescaler,
-                      int src_width, int src_height,
-                      uint8_t* const dst,
-                      int dst_width, int dst_height, int dst_stride,
-                      int num_channels,
-                      rescaler_t* const work);
+
+int WebPRescalerInit(WebPRescaler* const rescaler,
+                     int src_width, int src_height,
+                     uint8_t* const dst,
+                     int dst_width, int dst_height, int dst_stride,
+                     int num_channels,
+                     rescaler_t* const work);
 
 
 

@@ -55,7 +55,7 @@ void VP8LoadFinalBytes(VP8BitReader* const br);
 
 
 static WEBP_UBSAN_IGNORE_UNDEF WEBP_INLINE
-void VP8LoadNewBytes(VP8BitReader* const br) {
+void VP8LoadNewBytes(VP8BitReader* WEBP_RESTRICT const br) {
   assert(br != NULL && br->buf_ != NULL);
   
   if (br->buf_ < br->buf_max_) {
@@ -104,7 +104,7 @@ void VP8LoadNewBytes(VP8BitReader* const br) {
 }
 
 
-static WEBP_INLINE int VP8GetBit(VP8BitReader* const br,
+static WEBP_INLINE int VP8GetBit(VP8BitReader* WEBP_RESTRICT const br,
                                  int prob, const char label[]) {
   
   
@@ -137,7 +137,8 @@ static WEBP_INLINE int VP8GetBit(VP8BitReader* const br,
 
 
 static WEBP_UBSAN_IGNORE_UNSIGNED_OVERFLOW WEBP_INLINE
-int VP8GetSigned(VP8BitReader* const br, int v, const char label[]) {
+int VP8GetSigned(VP8BitReader* WEBP_RESTRICT const br, int v,
+                 const char label[]) {
   if (br->bits_ < 0) {
     VP8LoadNewBytes(br);
   }
@@ -155,7 +156,7 @@ int VP8GetSigned(VP8BitReader* const br, int v, const char label[]) {
   }
 }
 
-static WEBP_INLINE int VP8GetBitAlt(VP8BitReader* const br,
+static WEBP_INLINE int VP8GetBitAlt(VP8BitReader* WEBP_RESTRICT const br,
                                     int prob, const char label[]) {
   
   

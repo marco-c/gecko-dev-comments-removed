@@ -29,6 +29,23 @@ extern "C" {
 
 
 
+
+
+
+
+
+
+#if defined(__GNUC__)
+#define WEBP_RESTRICT __restrict__
+#elif defined(_MSC_VER)
+#define WEBP_RESTRICT __restrict
+#else
+#define WEBP_RESTRICT
+#endif
+
+
+
+
 #if defined(__GNUC__)
 # define LOCAL_GCC_VERSION ((__GNUC__ << 8) | __GNUC_MINOR__)
 # define LOCAL_GCC_PREREQ(maj, min) \
@@ -67,12 +84,22 @@ extern "C" {
 
 
 
-#if defined(__SSE2__) || defined(WEBP_MSC_SSE2) || defined(WEBP_HAVE_SSE2)
+#if (defined(__SSE2__) || defined(WEBP_MSC_SSE2)) && \
+    (!defined(HAVE_CONFIG_H) || defined(WEBP_HAVE_SSE2))
 #define WEBP_USE_SSE2
 #endif
 
-#if defined(__SSE4_1__) || defined(WEBP_MSC_SSE41) || defined(WEBP_HAVE_SSE41)
+#if defined(WEBP_USE_SSE2) && !defined(WEBP_HAVE_SSE2)
+#define WEBP_HAVE_SSE2
+#endif
+
+#if (defined(__SSE4_1__) || defined(WEBP_MSC_SSE41)) && \
+    (!defined(HAVE_CONFIG_H) || defined(WEBP_HAVE_SSE41))
 #define WEBP_USE_SSE41
+#endif
+
+#if defined(WEBP_USE_SSE41) && !defined(WEBP_HAVE_SSE41)
+#define WEBP_HAVE_SSE41
 #endif
 
 #undef WEBP_MSC_SSE41
@@ -80,8 +107,8 @@ extern "C" {
 
 
 
-#if (defined(__ARM_NEON__) || \
-     defined(__aarch64__) || defined(WEBP_HAVE_NEON)) && \
+#if ((defined(__ARM_NEON__) || defined(__aarch64__)) && \
+     (!defined(HAVE_CONFIG_H) || defined(WEBP_HAVE_NEON))) && \
     !defined(__native_client__)
 #define WEBP_USE_NEON
 #endif
@@ -95,6 +122,10 @@ extern "C" {
 #if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_M_ARM)
 #define WEBP_USE_NEON
 #define WEBP_USE_INTRINSICS
+#endif
+
+#if defined(WEBP_USE_NEON) && !defined(WEBP_HAVE_NEON)
+#define WEBP_HAVE_NEON
 #endif
 
 #if defined(__mips__) && !defined(__mips64) && \
@@ -116,7 +147,7 @@ extern "C" {
 #define WEBP_DSP_OMIT_C_CODE 1
 #endif
 
-#if (defined(__aarch64__) || defined(__ARM_NEON__)) && WEBP_DSP_OMIT_C_CODE
+#if defined(WEBP_USE_NEON) && WEBP_DSP_OMIT_C_CODE
 #define WEBP_NEON_OMIT_C_CODE 1
 #else
 #define WEBP_NEON_OMIT_C_CODE 0
@@ -578,26 +609,29 @@ extern void (*WebPApplyAlphaMultiply4444)(
 
 
 
-extern int (*WebPDispatchAlpha)(const uint8_t* alpha, int alpha_stride,
-                                int width, int height,
-                                uint8_t* dst, int dst_stride);
+extern int (*WebPDispatchAlpha)(const uint8_t* WEBP_RESTRICT alpha,
+                                int alpha_stride, int width, int height,
+                                uint8_t* WEBP_RESTRICT dst, int dst_stride);
 
 
 
-extern void (*WebPDispatchAlphaToGreen)(const uint8_t* alpha, int alpha_stride,
-                                        int width, int height,
-                                        uint32_t* dst, int dst_stride);
+extern void (*WebPDispatchAlphaToGreen)(const uint8_t* WEBP_RESTRICT alpha,
+                                        int alpha_stride, int width, int height,
+                                        uint32_t* WEBP_RESTRICT dst,
+                                        int dst_stride);
 
 
 
 
-extern int (*WebPExtractAlpha)(const uint8_t* argb, int argb_stride,
-                               int width, int height,
-                               uint8_t* alpha, int alpha_stride);
+extern int (*WebPExtractAlpha)(const uint8_t* WEBP_RESTRICT argb,
+                               int argb_stride, int width, int height,
+                               uint8_t* WEBP_RESTRICT alpha,
+                               int alpha_stride);
 
 
 
-extern void (*WebPExtractGreen)(const uint32_t* argb, uint8_t* alpha, int size);
+extern void (*WebPExtractGreen)(const uint32_t* WEBP_RESTRICT argb,
+                                uint8_t* WEBP_RESTRICT alpha, int size);
 
 
 
@@ -610,29 +644,35 @@ void WebPMultARGBRows(uint8_t* ptr, int stride, int width, int num_rows,
                       int inverse);
 
 
-extern void (*WebPMultRow)(uint8_t* const ptr, const uint8_t* const alpha,
+extern void (*WebPMultRow)(uint8_t* WEBP_RESTRICT const ptr,
+                           const uint8_t* WEBP_RESTRICT const alpha,
                            int width, int inverse);
 
 
-void WebPMultRows(uint8_t* ptr, int stride,
-                  const uint8_t* alpha, int alpha_stride,
+void WebPMultRows(uint8_t* WEBP_RESTRICT ptr, int stride,
+                  const uint8_t* WEBP_RESTRICT alpha, int alpha_stride,
                   int width, int num_rows, int inverse);
 
 
-void WebPMultRow_C(uint8_t* const ptr, const uint8_t* const alpha,
+void WebPMultRow_C(uint8_t* WEBP_RESTRICT const ptr,
+                   const uint8_t* WEBP_RESTRICT const alpha,
                    int width, int inverse);
 void WebPMultARGBRow_C(uint32_t* const ptr, int width, int inverse);
 
 #ifdef WORDS_BIGENDIAN
 
-extern void (*WebPPackARGB)(const uint8_t* a, const uint8_t* r,
-                            const uint8_t* g, const uint8_t* b, int len,
-                            uint32_t* out);
+extern void (*WebPPackARGB)(const uint8_t* WEBP_RESTRICT a,
+                            const uint8_t* WEBP_RESTRICT r,
+                            const uint8_t* WEBP_RESTRICT g,
+                            const uint8_t* WEBP_RESTRICT b,
+                            int len, uint32_t* WEBP_RESTRICT out);
 #endif
 
 
-extern void (*WebPPackRGB)(const uint8_t* r, const uint8_t* g, const uint8_t* b,
-                           int len, int step, uint32_t* out);
+extern void (*WebPPackRGB)(const uint8_t* WEBP_RESTRICT r,
+                           const uint8_t* WEBP_RESTRICT g,
+                           const uint8_t* WEBP_RESTRICT b,
+                           int len, int step, uint32_t* WEBP_RESTRICT out);
 
 
 extern int (*WebPHasAlpha8b)(const uint8_t* src, int length);
