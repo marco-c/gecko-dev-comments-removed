@@ -6043,8 +6043,14 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
 
   
   
+  
+  
+  
+  
   if (emitterMode == EmitterMode::SelfHosting) {
-    if (sc->isTopLevelContext() && funbox->explicitName()) {
+    if (sc->isTopLevelContext()) {
+      MOZ_ASSERT(!funbox->isLambda());
+      MOZ_ASSERT(funbox->explicitName());
       prevSelfHostedTopLevelFunction = funbox;
     }
   }

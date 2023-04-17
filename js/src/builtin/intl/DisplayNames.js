@@ -5,25 +5,25 @@
 
 
 
+function displayNamesInternalProperties_localeFn() {
+    
+    return {};
+}
 var displayNamesInternalProperties = {
-    localeData: function() 
-    {
-        
-        return {};
-    },
+    localeData: displayNamesInternalProperties_localeFn,
     relevantExtensionKeys: []
 };
 
+function mozDisplayNamesInternalProperties_localeFn() {
+    return {
+        ca: intl_availableCalendars,
+        default: {
+            ca: intl_defaultCalendar,
+        },
+    };
+}
 var mozDisplayNamesInternalProperties = {
-    localeData: function() 
-    {
-        return {
-            ca: intl_availableCalendars,
-            default: {
-                ca: intl_defaultCalendar,
-            },
-        };
-    },
+    localeData: mozDisplayNamesInternalProperties_localeFn,
     relevantExtensionKeys: ["ca"]
 };
 

@@ -3029,9 +3029,7 @@ static JSObject* CloneObject(JSContext* cx,
       
       
       MOZ_ASSERT(selfHostedFunction->kind() == FunctionFlags::NormalFunction);
-      js::gc::AllocKind kind = selfHostedFunction->isLambda()
-                                   ? selfHostedFunction->getAllocKind()
-                                   : gc::AllocKind::FUNCTION_EXTENDED;
+      MOZ_ASSERT(selfHostedFunction->isLambda() == false);
 
       Handle<GlobalObject*> global = cx->global();
       Rooted<GlobalLexicalEnvironmentObject*> globalLexical(
@@ -3045,19 +3043,22 @@ static JSObject* CloneObject(JSContext* cx,
       MOZ_ASSERT(
           !CanReuseScriptForClone(cx->realm(), selfHostedFunction, global));
       clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
-                                     emptyGlobalScope, sourceObject, kind);
+                                     emptyGlobalScope, sourceObject,
+                                     gc::AllocKind::FUNCTION_EXTENDED);
+      if (!clone) {
+        return nullptr;
+      }
+
       
       
+      SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(),
+                                      selfHostedFunction->explicitName());
+
       
-      if (clone && !selfHostedFunction->isLambda()) {
-        
-        
-        if (JSAtom* name =
-                GetUnclonedSelfHostedCanonicalName(selfHostedFunction)) {
-          clone->as<JSFunction>().setAtom(name);
-        }
-        SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(),
-                                        selfHostedFunction->explicitName());
+      
+      if (JSAtom* name =
+              GetUnclonedSelfHostedCanonicalName(selfHostedFunction)) {
+        clone->as<JSFunction>().setAtom(name);
       }
     } else {
       clone = CloneSelfHostingIntrinsic(cx, selfHostedFunction);
