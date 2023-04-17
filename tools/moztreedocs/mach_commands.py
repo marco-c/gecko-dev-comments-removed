@@ -14,6 +14,7 @@ import time
 import yaml
 import uuid
 import mozpack.path as mozpath
+import sentry_sdk
 
 from functools import partial
 from pprint import pprint
@@ -250,6 +251,10 @@ class Documentation(MachCommandBase):
         import sphinx.cmd.build
 
         config = config or self.manager().conf_py_path
+        
+        
+        
+        sentry_sdk.init(None)
         args = [
             "-T",
             "-b",
