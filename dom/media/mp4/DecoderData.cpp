@@ -81,6 +81,7 @@ static MediaResult UpdateTrackProtectedInfo(mozilla::TrackInfo& aConfig,
 
 
 
+
 template <typename Mp4ParseTrackAudioOrVideoInfo>
 static MediaResult VerifyAudioOrVideoInfoAndRecordTelemetry(
     Mp4ParseTrackAudioOrVideoInfo* audioOrVideoInfo) {
@@ -129,13 +130,6 @@ static MediaResult VerifyAudioOrVideoInfoAndRecordTelemetry(
         RESULT_DETAIL("Multiple codecs encountered while verifying track."));
   }
 
-  if (hasMultipleCrypto) {
-    
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_METADATA_ERR,
-        RESULT_DETAIL(
-            "Multiple crypto info encountered while verifying track."));
-  }
   return NS_OK;
 }
 
