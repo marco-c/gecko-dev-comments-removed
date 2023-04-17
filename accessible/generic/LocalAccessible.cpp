@@ -646,12 +646,40 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       }
     }
 
-    if (mParent) {
-      boundingFrame = mParent->GetFrame();
+    
+    
+    
+    
+    
+    if (IsDoc() &&
+        nsCoreUtils::IsTopLevelContentDocInProcess(AsDoc()->DocumentNode())) {
+      
+      
+      
+      
+      boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+    }
+
+    
+    LocalAccessible* parent = mParent;
+    while (parent && !boundingFrame) {
+      if (parent->IsDoc()) {
+        
+        
+        boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
+        break;
+      }
+
+      if ((boundingFrame = parent->GetFrame())) {
+        
+        break;
+      }
+
+      parent = parent->LocalParent();
     }
 
     if (!boundingFrame) {
-      
+      MOZ_ASSERT_UNREACHABLE("No ancestor with frame?");
       boundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
     }
 
