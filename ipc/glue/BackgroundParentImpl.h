@@ -11,8 +11,7 @@
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/PBackgroundParent.h"
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 
 
@@ -420,9 +419,11 @@ class BackgroundParentImpl : public PBackgroundParent,
   AllocPWebSocketConnectionParent(const uint32_t& aListenerId) override;
   mozilla::ipc::IPCResult RecvPWebSocketConnectionConstructor(
       PWebSocketConnectionParent* actor, const uint32_t& aListenerId) override;
+
+  already_AddRefed<PLockManagerParent> AllocPLockManagerParent(
+      const ContentPrincipalInfo& aPrincipalInfo, const nsID& aClientId) final;
 };
 
-}  
 }  
 
 #endif  
