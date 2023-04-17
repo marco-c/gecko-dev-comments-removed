@@ -92,7 +92,7 @@ function TypedArraySpeciesConstructor(obj) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
 
     
-    var s = ctor[std_species];
+    var s = ctor[GetBuiltinSymbol("species")];
 
     
     if (s === undefined || s === null)
@@ -1432,7 +1432,7 @@ function TypedArrayStaticFrom(source, mapfn = undefined, thisArg = undefined) {
 
     
     
-    var usingIterator = source[std_iterator];
+    var usingIterator = source[GetBuiltinSymbol("iterator")];
 
     
     

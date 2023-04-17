@@ -738,7 +738,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
 
     
     
-    var usingIterator = items[std_iterator];
+    var usingIterator = items[GetBuiltinSymbol("iterator")];
 
     
     
@@ -820,7 +820,7 @@ function MakeIteratorWrapper(items, method) {
     return {
         
         
-        [std_iterator]: function IteratorMethod() {
+        [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
             return callContentFunction(method, items);
         },
     };
@@ -927,7 +927,7 @@ function ArraySpeciesCreate(originalArray, length) {
     
     if (IsObject(C)) {
         
-        C = C[std_species];
+        C = C[GetBuiltinSymbol("species")];
 
         
         if (C === GetBuiltinConstructor("Array"))
@@ -957,7 +957,7 @@ function IsConcatSpreadable(O) {
         return false;
 
     
-    var spreadable = O[std_isConcatSpreadable];
+    var spreadable = O[GetBuiltinSymbol("isConcatSpreadable")];
 
     
     if (spreadable !== undefined)

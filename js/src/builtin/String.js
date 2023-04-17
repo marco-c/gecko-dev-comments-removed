@@ -7,7 +7,7 @@ function StringProtoHasNoMatch() {
     var StringProto = GetBuiltinPrototype("String");
     if (!ObjectHasPrototype(StringProto, ObjectProto))
         return false;
-    return !(std_match in StringProto);
+    return !(GetBuiltinSymbol("match") in StringProto);
 }
 
 function IsStringMatchOptimizable() {
@@ -16,7 +16,7 @@ function IsStringMatchOptimizable() {
     
     return RegExpPrototypeOptimizable(RegExpProto) &&
            RegExpProto.exec === RegExp_prototype_Exec &&
-           RegExpProto[std_match] === RegExpMatch;
+           RegExpProto[GetBuiltinSymbol("match")] === RegExpMatch;
 }
 
 function ThrowIncompatibleMethod(name, thisv) {
@@ -33,7 +33,7 @@ function String_match(regexp) {
     var isPatternString = (typeof regexp === "string");
     if (!(isPatternString && StringProtoHasNoMatch()) && regexp !== undefined && regexp !== null) {
         
-        var matcher = GetMethod(regexp, std_match);
+        var matcher = GetMethod(regexp, GetBuiltinSymbol("match"));
 
         
         if (matcher !== undefined)
@@ -57,7 +57,7 @@ function String_match(regexp) {
         return RegExpMatcher(rx, S, 0);
 
     
-    return callContentFunction(GetMethod(rx, std_match), rx, S);
+    return callContentFunction(GetMethod(rx, GetBuiltinSymbol("match")), rx, S);
 }
 
 
@@ -88,7 +88,7 @@ function String_matchAll(regexp) {
         }
 
         
-        var matcher = GetMethod(regexp, std_matchAll);
+        var matcher = GetMethod(regexp, GetBuiltinSymbol("matchAll"));
 
         
         if (matcher !== undefined)
@@ -102,7 +102,7 @@ function String_matchAll(regexp) {
     var rx = RegExpCreate(regexp, "g");
 
     
-    return callContentFunction(GetMethod(rx, std_matchAll), rx, string);
+    return callContentFunction(GetMethod(rx, GetBuiltinSymbol("matchAll")), rx, string);
 }
 
 
@@ -168,7 +168,7 @@ function StringProtoHasNoReplace() {
     var StringProto = GetBuiltinPrototype("String");
     if (!ObjectHasPrototype(StringProto, ObjectProto))
         return false;
-    return !(std_replace in StringProto);
+    return !(GetBuiltinSymbol("replace") in StringProto);
 }
 
 
@@ -192,7 +192,7 @@ function String_replace(searchValue, replaceValue) {
         searchValue !== undefined && searchValue !== null)
     {
         
-        var replacer = GetMethod(searchValue, std_replace);
+        var replacer = GetMethod(searchValue, GetBuiltinSymbol("replace"));
 
         
         if (replacer !== undefined)
@@ -271,7 +271,7 @@ function String_replaceAll(searchValue, replaceValue) {
         }
 
         
-        var replacer = GetMethod(searchValue, std_replace);
+        var replacer = GetMethod(searchValue, GetBuiltinSymbol("replace"));
 
         
         if (replacer !== undefined) {
@@ -355,7 +355,7 @@ function StringProtoHasNoSearch() {
     var StringProto = GetBuiltinPrototype("String");
     if (!ObjectHasPrototype(StringProto, ObjectProto))
         return false;
-    return !(std_search in StringProto);
+    return !(GetBuiltinSymbol("search") in StringProto);
 }
 
 function IsStringSearchOptimizable() {
@@ -364,7 +364,7 @@ function IsStringSearchOptimizable() {
     
     return RegExpPrototypeOptimizable(RegExpProto) &&
            RegExpProto.exec === RegExp_prototype_Exec &&
-           RegExpProto[std_search] === RegExpSearch;
+           RegExpProto[GetBuiltinSymbol("search")] === RegExpSearch;
 }
 
 
@@ -377,7 +377,7 @@ function String_search(regexp) {
     var isPatternString = (typeof regexp === "string");
     if (!(isPatternString && StringProtoHasNoSearch()) && regexp !== undefined && regexp !== null) {
         
-        var searcher = GetMethod(regexp, std_search);
+        var searcher = GetMethod(regexp, GetBuiltinSymbol("search"));
 
         
         if (searcher !== undefined)
@@ -397,7 +397,7 @@ function String_search(regexp) {
     var rx = RegExpCreate(regexp);
 
     
-    return callContentFunction(GetMethod(rx, std_search), rx, string);
+    return callContentFunction(GetMethod(rx, GetBuiltinSymbol("search")), rx, string);
 }
 
 function StringProtoHasNoSplit() {
@@ -405,7 +405,7 @@ function StringProtoHasNoSplit() {
     var StringProto = GetBuiltinPrototype("String");
     if (!ObjectHasPrototype(StringProto, ObjectProto))
         return false;
-    return !(std_split in StringProto);
+    return !(GetBuiltinSymbol("split") in StringProto);
 }
 
 
@@ -434,7 +434,7 @@ function String_split(separator, limit) {
         separator !== undefined && separator !== null)
     {
         
-        var splitter = GetMethod(separator, std_split);
+        var splitter = GetMethod(separator, GetBuiltinSymbol("split"));
 
         
         if (splitter !== undefined)

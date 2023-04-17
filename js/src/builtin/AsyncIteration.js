@@ -60,7 +60,7 @@ function GetAsyncIteratorDirectWrapper(obj) {
   return {
     
     
-    [std_asyncIterator]: function AsyncIteratorMethod() {
+    [GetBuiltinSymbol("asyncIterator")]: function AsyncIteratorMethod() {
       return this;
     },
     next(value) {
@@ -436,7 +436,7 @@ async function AsyncIteratorReduce(reducer) {
 
 async function AsyncIteratorToArray() {
   
-  const iterated = {[std_asyncIterator]: () => this};
+  const iterated = {[GetBuiltinSymbol("asyncIterator")]: () => this};
   
   const items = [];
   let index = 0;

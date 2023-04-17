@@ -77,7 +77,7 @@ function GetIteratorDirectWrapper(obj) {
   return {
     
     
-    [std_iterator]: function IteratorMethod() {
+    [GetBuiltinSymbol("iterator")]: function IteratorMethod() {
       return this;
     },
     next(value) {
@@ -122,7 +122,7 @@ function IteratorStep(iteratorRecord, value) {
 
 function IteratorFrom(O) {
   
-  const usingIterator = O[std_iterator];
+  const usingIterator = O[GetBuiltinSymbol("iterator")];
 
   let iteratorRecord;
   
@@ -598,7 +598,7 @@ function IteratorReduce(reducer) {
 
 function IteratorToArray() {
   
-  const iterated = {[std_iterator]: () => this};
+  const iterated = {[GetBuiltinSymbol("iterator")]: () => this};
   
   return [...allowContentIter(iterated)];
 }

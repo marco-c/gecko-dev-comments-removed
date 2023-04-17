@@ -113,7 +113,7 @@ function SpeciesConstructor(obj, defaultConstructor) {
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, "object's 'constructor' property");
 
     
-    var s = ctor[std_species];
+    var s = ctor[GetBuiltinSymbol("species")];
 
     
     if (s === undefined || s === null)
