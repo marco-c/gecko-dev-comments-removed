@@ -189,12 +189,6 @@ using mozilla::profiler::detail::RacyFeatures;
 
 LazyLogModule gProfilerLog("prof");
 
-namespace mozilla::profiler::detail {
-
-
-ProfilerThreadId scProfilerMainThreadId;
-}  
-
 #if defined(GP_OS_android)
 class GeckoJavaSampler
     : public java::GeckoJavaSampler::Natives<GeckoJavaSampler> {

@@ -36,21 +36,6 @@
 namespace mozilla {
 namespace baseprofiler {
 
-BaseProfilerProcessId profiler_current_process_id() {
-  return BaseProfilerProcessId::FromNumber(getpid());
-}
-
-BaseProfilerThreadId profiler_current_thread_id() {
-  uint64_t tid;
-  pthread_threadid_np(nullptr, &tid);
-  
-  
-  
-  
-  return BaseProfilerThreadId::FromNumber(
-      static_cast<BaseProfilerThreadId::NumberType>(tid));
-}
-
 static int64_t MicrosecondsSince1970() {
   struct timeval tv;
   gettimeofday(&tv, NULL);

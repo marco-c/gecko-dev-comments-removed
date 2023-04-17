@@ -181,12 +181,6 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
-namespace detail {
-
-
-BaseProfilerThreadId scProfilerMainThreadId;
-}  
-
 constexpr static bool ValidateFeatures() {
   int expectedFeatureNumber = 0;
 

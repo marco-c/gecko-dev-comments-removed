@@ -34,21 +34,6 @@
 
 
 
-ProfilerProcessId profiler_current_process_id() {
-  return ProfilerProcessId::FromNumber(getpid());
-}
-
-ProfilerThreadId profiler_current_thread_id() {
-  uint64_t tid;
-  pthread_threadid_np(nullptr, &tid);
-  
-  
-  
-  
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(tid));
-}
-
 void* GetStackTop(void* aGuess) {
   pthread_t thread = pthread_self();
   return pthread_get_stackaddr_np(thread);

@@ -10,8 +10,6 @@
 
 
 
-#include "mozilla/Assertions.h"
-
 #include <type_traits>
 
 namespace mozilla::baseprofiler {
@@ -110,26 +108,7 @@ static_assert(std::is_move_assignable_v<BaseProfilerThreadId>);
 
 }  
 
-#ifndef MOZ_GECKO_PROFILER
-
-namespace mozilla::baseprofiler {
-
-[[nodiscard]] inline BaseProfilerProcessId profiler_current_process_id() {
-  return BaseProfilerProcessId{};
-}
-[[nodiscard]] inline BaseProfilerThreadId profiler_current_thread_id() {
-  return BaseProfilerThreadId{};
-}
-[[nodiscard]] inline BaseProfilerThreadId profiler_main_thread_id() {
-  return BaseProfilerThreadId{};
-}
-[[nodiscard]] inline bool profiler_is_main_thread() { return false; }
-
-}  
-
-#else  
-
-#  include "mozilla/Types.h"
+#include "mozilla/Types.h"
 
 namespace mozilla::baseprofiler {
 
@@ -154,7 +133,5 @@ extern MFBT_DATA BaseProfilerThreadId scProfilerMainThreadId;
 }
 
 }  
-
-#endif  
 
 #endif  
