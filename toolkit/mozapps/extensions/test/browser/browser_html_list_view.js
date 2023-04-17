@@ -988,3 +988,29 @@ add_task(async function testDisabledDimming() {
   await closeView(win);
   await extension.unload();
 });
+
+add_task(async function testEmptyMessage() {
+  let win = await loadInitialView("extension");
+  let doc = win.document;
+  let enabledSection = getSection(doc, "enabled");
+  let disabledSection = getSection(doc, "disabled");
+  const message = doc.querySelector("#empty-addons-message");
+
+  
+  is_element_hidden(message, "Empty addons message hidden");
+
+  
+  
+  while (enabledSection.firstChild) {
+    enabledSection.firstChild.remove();
+  }
+
+  while (disabledSection.firstChild) {
+    disabledSection.firstChild.remove();
+  }
+
+  
+  is_element_visible(message, "Empty addons message visible");
+
+  await closeView(win);
+});

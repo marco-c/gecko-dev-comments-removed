@@ -3958,6 +3958,24 @@ class AddonList extends HTMLElement {
     return heading;
   }
 
+  createEmptyListMessage() {
+    let messageContainer = document.createElement("p");
+    messageContainer.id = "empty-addons-message";
+    let a = document.createElement("a");
+    a.href = Services.urlFormatter.formatURLPref(
+      "extensions.getAddons.link.url"
+    );
+    a.setAttribute("target", "_blank");
+    a.setAttribute("data-l10n-name", "get-extensions");
+    document.l10n.setAttributes(
+      messageContainer,
+      "list-empty-get-extensions-message",
+      { domain: a.hostname }
+    );
+    messageContainer.appendChild(a);
+    return messageContainer;
+  }
+
   updateSectionIfEmpty(section) {
     
     
@@ -4198,6 +4216,13 @@ class AddonList extends HTMLElement {
       this.sections[i].node = this.renderSection(sectionedAddons[i], i);
       frag.appendChild(this.sections[i].node);
     }
+
+    
+    
+    
+    
+    let message = this.createEmptyListMessage();
+    frag.appendChild(message);
 
     
     
