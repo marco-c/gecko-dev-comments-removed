@@ -3007,6 +3007,9 @@ function _computeSrcElementFromSrcSelection(aSrcSelection) {
 
 
 
+
+
+
 async function synthesizePlainDragAndDrop(aParams) {
   let {
     dragEvent = {},
@@ -3023,6 +3026,7 @@ async function synthesizePlainDragAndDrop(aParams) {
     srcWindow = window,
     destWindow = window,
     expectCancelDragStart = false,
+    expectSrcElementDisconnected = false,
     logFunc,
   } = aParams;
   
@@ -3341,6 +3345,7 @@ async function synthesizePlainDragAndDrop(aParams) {
     await new Promise(r => setTimeout(r, 0));
 
     if (ds.getCurrentSession()) {
+      const sourceNode = ds.sourceNode;
       let dragEndEvent;
       function onDragEnd(aEvent) {
         dragEndEvent = aEvent;
@@ -3356,14 +3361,25 @@ async function synthesizePlainDragAndDrop(aParams) {
             'event target of "dragend" is not srcElement nor its descendant'
           );
         }
+        if (expectSrcElementDisconnected) {
+          throw new Error(
+            `"dragend" event shouldn't be fired when the source node is disconnected (the source node is ${
+              sourceNode?.isConnected ? "connected" : "null or disconnected"
+            })`
+          );
+        }
       }
       srcWindow.addEventListener("dragend", onDragEnd, { capture: true });
       try {
         ds.endDragSession(true, _parseModifiers(dragEvent));
-        if (!dragEndEvent) {
+        if (!expectSrcElementDisconnected && !dragEndEvent) {
           
           throw new Error(
-            '"dragend" event is not fired by nsIDragService.endDragSession()'
+            `"dragend" event is not fired by nsIDragService.endDragSession()${
+              ds.sourceNode && !ds.sourceNode.isConnected
+                ? "(sourceNode was disconnected)"
+                : ""
+            }`
           );
         }
       } finally {

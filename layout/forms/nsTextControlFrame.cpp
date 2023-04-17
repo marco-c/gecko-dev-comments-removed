@@ -34,6 +34,7 @@
 #include "nsFocusManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
+#include "mozilla/TextEditor.h"
 #include "nsAttrValueInlines.h"
 #include "mozilla/dom/Selection.h"
 #include "nsContentUtils.h"
@@ -147,6 +148,23 @@ void nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   if (mMutationObserver) {
     mRootNode->RemoveMutationObserver(mMutationObserver);
     mMutationObserver = nullptr;
+  }
+
+  
+  
+  
+  
+  if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
+    if (dragSession->IsDraggingTextInTextControl() && mRootNode &&
+        mRootNode->GetFirstChild()) {
+      nsCOMPtr<nsINode> sourceNode;
+      if (NS_SUCCEEDED(
+              dragSession->GetSourceNode(getter_AddRefs(sourceNode))) &&
+          mRootNode->Contains(sourceNode)) {
+        MOZ_ASSERT(sourceNode->IsText());
+        dragSession->UpdateSource(textControlElement, nullptr);
+      }
+    }
   }
 
   
@@ -444,6 +462,20 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
   if (auto* htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
     if (htmlElement->Spellcheck()) {
       return true;
+    }
+  }
+
+  
+  
+  
+  if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
+    if (dragSession->IsDraggingTextInTextControl()) {
+      nsCOMPtr<nsINode> sourceNode;
+      if (NS_SUCCEEDED(
+              dragSession->GetSourceNode(getter_AddRefs(sourceNode))) &&
+          sourceNode == textControlElement) {
+        return true;
+      }
     }
   }
 
@@ -1290,6 +1322,33 @@ nsTextControlFrame::EditorInitializer::Run() {
   
   if (!mFrame) {
     return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  
+  if (nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession()) {
+    if (dragSession->IsDraggingTextInTextControl()) {
+      nsCOMPtr<nsINode> sourceNode;
+      if (NS_SUCCEEDED(
+              dragSession->GetSourceNode(getter_AddRefs(sourceNode))) &&
+          mFrame->GetContent() == sourceNode) {
+        if (TextControlElement* textControlElement =
+                TextControlElement::FromNode(mFrame->GetContent())) {
+          if (TextEditor* textEditor =
+                  textControlElement->GetTextEditorWithoutCreation()) {
+            if (Element* anonymousDivElement = textEditor->GetRoot()) {
+              if (anonymousDivElement && anonymousDivElement->GetFirstChild()) {
+                MOZ_ASSERT(anonymousDivElement->GetFirstChild()->IsText());
+                dragSession->UpdateSource(anonymousDivElement->GetFirstChild(),
+                                          textEditor->GetSelection());
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   mFrame->FinishedInitializer();
