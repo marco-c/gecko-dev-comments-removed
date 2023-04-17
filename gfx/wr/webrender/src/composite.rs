@@ -65,6 +65,7 @@ pub struct NativeSurfaceOperation {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone)]
 pub enum CompositeTileSurface {
     Texture {
         surface: ResolvedSurfaceTexture,
@@ -109,6 +110,7 @@ pub enum TileKind {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone)]
 pub struct CompositeTile {
     pub surface: CompositeTileSurface,
     pub rect: DeviceRect,
@@ -120,7 +122,7 @@ pub struct CompositeTile {
     pub kind: TileKind,
 }
 
-fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
+pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
     match surface {
         
         
@@ -538,16 +540,11 @@ impl CompositeState {
         &mut self,
         tile_cache: &TileCacheInstance,
         device_clip_rect: DeviceRect,
-        global_device_pixel_scale: DevicePixelScale,
         resource_cache: &ResourceCache,
         gpu_cache: &mut GpuCache,
         deferred_resolves: &mut Vec<DeferredResolve>,
     ) {
         for sub_slice in &tile_cache.sub_slices {
-            let mut visible_opaque_tile_count = 0;
-            let mut visible_alpha_tile_count = 0;
-            let mut opaque_tile_descriptors = Vec::new();
-            let mut alpha_tile_descriptors = Vec::new();
             let mut surface_device_rect = DeviceRect::zero();
 
             for tile in sub_slice.tiles.values() {
@@ -555,9 +552,6 @@ impl CompositeState {
                     
                     continue;
                 }
-
-                let device_rect = (tile.world_tile_rect * global_device_pixel_scale).round();
-                let surface = tile.surface.as_ref().expect("no tile surface set!");
 
                 
                 
@@ -569,57 +563,10 @@ impl CompositeState {
                 
                 
                 surface_device_rect = surface_device_rect.union(&tile.device_valid_rect);
-
-                let descriptor = CompositeTileDescriptor {
-                    surface_kind: surface.into(),
-                    tile_id: tile.id,
-                };
-
-                let (surface, is_opaque) = match surface {
-                    TileSurface::Color { color } => {
-                        (CompositeTileSurface::Color { color: *color }, true)
-                    }
-                    TileSurface::Clear => {
-                        
-                        (CompositeTileSurface::Clear, false)
-                    }
-                    TileSurface::Texture { descriptor, .. } => {
-                        let surface = descriptor.resolve(resource_cache, tile_cache.current_tile_size);
-                        (
-                            CompositeTileSurface::Texture { surface },
-                            tile.is_opaque 
-                        )
-                    }
-                };
-
-                if is_opaque {
-                    opaque_tile_descriptors.push(descriptor);
-                    visible_opaque_tile_count += 1;
-                } else {
-                    alpha_tile_descriptors.push(descriptor);
-                    visible_alpha_tile_count += 1;
-                }
-
-                let tile = CompositeTile {
-                    kind: tile_kind(&surface, is_opaque),
-                    surface,
-                    rect: device_rect,
-                    valid_rect: tile.device_valid_rect.translate(-device_rect.origin.to_vector()),
-                    dirty_rect: tile.device_dirty_rect.translate(-device_rect.origin.to_vector()),
-                    clip_rect: device_clip_rect,
-                    transform: None,
-                    z_id: tile.z_id,
-                };
-
-                self.tiles.push(tile);
             }
 
             
-            
-            
-            
-            opaque_tile_descriptors.sort_by_key(|desc| desc.tile_id);
-            alpha_tile_descriptors.sort_by_key(|desc| desc.tile_id);
+            self.tiles.extend_from_slice(&sub_slice.composite_tiles);
 
             
             
@@ -630,7 +577,7 @@ impl CompositeState {
                 .unwrap_or(DeviceRect::zero());
 
             
-            if visible_opaque_tile_count > 0 {
+            if !sub_slice.opaque_tile_descriptors.is_empty() {
                 self.descriptor.surfaces.push(
                     CompositeSurfaceDescriptor {
                         surface_id: sub_slice.native_surface.as_ref().map(|s| s.opaque),
@@ -642,13 +589,13 @@ impl CompositeState {
                         ),
                         image_dependencies: [ImageDependency::INVALID; 3],
                         image_rendering: ImageRendering::CrispEdges,
-                        tile_descriptors: opaque_tile_descriptors,
+                        tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
                     }
                 );
             }
 
             
-            if visible_alpha_tile_count > 0 {
+            if !sub_slice.alpha_tile_descriptors.is_empty() {
                 self.descriptor.surfaces.push(
                     CompositeSurfaceDescriptor {
                         surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
@@ -660,7 +607,7 @@ impl CompositeState {
                         ),
                         image_dependencies: [ImageDependency::INVALID; 3],
                         image_rendering: ImageRendering::CrispEdges,
-                        tile_descriptors: alpha_tile_descriptors,
+                        tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
                     }
                 );
             }
