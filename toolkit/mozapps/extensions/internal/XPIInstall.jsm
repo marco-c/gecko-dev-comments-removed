@@ -3562,7 +3562,15 @@ class SystemAddonInstaller extends DirectoryInstaller {
     for (let addon of aAddons) {
       let install = await createLocalInstall(
         addon._sourceBundle,
-        this.location
+        this.location,
+        
+        
+        
+        
+        {
+          source: "system-addon",
+          method: "product-updates",
+        }
       );
       installs.push(install);
     }
