@@ -408,7 +408,7 @@ class ScriptLoader final : public nsISupports {
 
   static void ResolveImportedModule(JSContext* aCx,
                                     JS::Handle<JS::Value> aReferencingPrivate,
-                                    JS::Handle<JSObject*> aModuleRequest,
+                                    JS::Handle<JSString*> aSpecifier,
                                     JS::MutableHandle<JSObject*> aModuleOut);
 
   void StartDynamicImport(ModuleLoadRequest* aRequest);

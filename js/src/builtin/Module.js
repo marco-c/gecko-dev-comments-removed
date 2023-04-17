@@ -3,9 +3,9 @@
 
 
 
-function CallModuleResolveHook(module, moduleRequest, expectedMinimumStatus)
+function CallModuleResolveHook(module, specifier, expectedMinimumStatus)
 {
-    let requestedModule = HostResolveImportedModule(module, moduleRequest);
+    let requestedModule = HostResolveImportedModule(module, specifier);
     if (requestedModule.status < expectedMinimumStatus)
         ThrowInternalError(JSMSG_BAD_MODULE_STATUS);
 
@@ -390,7 +390,7 @@ function InnerModuleLinking(module, stack, index)
     let requestedModules = module.requestedModules;
     for (let i = 0; i < requestedModules.length; i++) {
         
-        let required = requestedModules[i].moduleRequest;
+        let required = requestedModules[i].moduleSpecifier;
         let requiredModule = CallModuleResolveHook(module, required, MODULE_STATUS_UNLINKED);
 
         
@@ -690,7 +690,7 @@ function InnerModuleEvaluation(module, stack, index)
     
     let requestedModules = module.requestedModules;
     for (let i = 0; i < requestedModules.length; i++) {
-        let required = requestedModules[i].moduleRequest;
+        let required = requestedModules[i].moduleSpecifier;
         let requiredModule =
             CallModuleResolveHook(module, required, MODULE_STATUS_LINKED);
 

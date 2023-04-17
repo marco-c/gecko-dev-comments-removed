@@ -1019,9 +1019,9 @@ static LoadedScript* GetLoadedScriptOrNull(
 
 JSObject* HostResolveImportedModule(JSContext* aCx,
                                     JS::Handle<JS::Value> aReferencingPrivate,
-                                    JS::Handle<JSObject*> aModuleRequest) {
+                                    JS::Handle<JSString*> aSpecifier) {
   JS::Rooted<JSObject*> module(aCx);
-  ScriptLoader::ResolveImportedModule(aCx, aReferencingPrivate, aModuleRequest,
+  ScriptLoader::ResolveImportedModule(aCx, aReferencingPrivate, aSpecifier,
                                       &module);
   return module;
 }
@@ -1029,22 +1029,15 @@ JSObject* HostResolveImportedModule(JSContext* aCx,
 
 void ScriptLoader::ResolveImportedModule(
     JSContext* aCx, JS::Handle<JS::Value> aReferencingPrivate,
-    JS::Handle<JSObject*> aModuleRequest,
-    JS::MutableHandle<JSObject*> aModuleOut) {
+    JS::Handle<JSString*> aSpecifier, JS::MutableHandle<JSObject*> aModuleOut) {
   MOZ_ASSERT(!aModuleOut);
 
   RefPtr<LoadedScript> script(GetLoadedScriptOrNull(aCx, aReferencingPrivate));
 
-  JS::Rooted<JSString*> specifierString(
-      aCx, JS::GetModuleRequestSpecifier(aCx, aModuleRequest));
-  if (!specifierString) {
-    return;
-  }
-
   
   
   nsAutoJSString string;
-  if (!string.init(aCx, specifierString)) {
+  if (!string.init(aCx, aSpecifier)) {
     return;
   }
 
@@ -1104,19 +1097,13 @@ bool HostPopulateImportMeta(JSContext* aCx,
 
 bool HostImportModuleDynamically(JSContext* aCx,
                                  JS::Handle<JS::Value> aReferencingPrivate,
-                                 JS::Handle<JSObject*> aModuleRequest,
+                                 JS::Handle<JSString*> aSpecifier,
                                  JS::Handle<JSObject*> aPromise) {
   RefPtr<LoadedScript> script(GetLoadedScriptOrNull(aCx, aReferencingPrivate));
 
-  JS::Rooted<JSString*> specifierString(
-      aCx, JS::GetModuleRequestSpecifier(aCx, aModuleRequest));
-  if (!specifierString) {
-    return false;
-  }
-
   
   nsAutoJSString specifier;
-  if (!specifier.init(aCx, specifierString)) {
+  if (!specifier.init(aCx, aSpecifier)) {
     return false;
   }
 
@@ -1172,8 +1159,7 @@ bool HostImportModuleDynamically(JSContext* aCx,
   }
 
   RefPtr<ModuleLoadRequest> request = ModuleLoadRequest::CreateDynamicImport(
-      uri, options, baseURL, loader, aReferencingPrivate, specifierString,
-      aPromise);
+      uri, options, baseURL, loader, aReferencingPrivate, aSpecifier, aPromise);
 
   loader->StartDynamicImport(request);
   return true;
@@ -1234,14 +1220,8 @@ void ScriptLoader::FinishDynamicImport_NoTLA(JSContext* aCx,
   JS::Rooted<JSString*> specifier(aCx, aRequest->mDynamicSpecifier);
   JS::Rooted<JSObject*> promise(aCx, aRequest->mDynamicPromise);
 
-  JS::Rooted<JSObject*> moduleRequest(aCx,
-                                      JS::CreateModuleRequest(aCx, specifier));
-  if (!moduleRequest) {
-    JS_ReportOutOfMemory(aCx);
-  }
-
-  JS::FinishDynamicModuleImport_NoTLA(aCx, status, referencingScript,
-                                      moduleRequest, promise);
+  JS::FinishDynamicModuleImport_NoTLA(aCx, status, referencingScript, specifier,
+                                      promise);
 
   
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
@@ -1274,14 +1254,8 @@ void ScriptLoader::FinishDynamicImport(
   JS::Rooted<JSString*> specifier(aCx, aRequest->mDynamicSpecifier);
   JS::Rooted<JSObject*> promise(aCx, aRequest->mDynamicPromise);
 
-  JS::Rooted<JSObject*> moduleRequest(aCx,
-                                      JS::CreateModuleRequest(aCx, specifier));
-  if (!moduleRequest) {
-    JS_ReportOutOfMemory(aCx);
-  }
-
   JS::FinishDynamicModuleImport(aCx, aEvaluationPromise, referencingScript,
-                                moduleRequest, promise);
+                                specifier, promise);
 
   
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
