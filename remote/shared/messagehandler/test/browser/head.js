@@ -16,3 +16,33 @@ function createRootMessageHandler(sessionId) {
     RootMessageHandler.type
   );
 }
+
+
+
+
+
+
+
+
+
+
+async function loadURL(browser, url) {
+  const loaded = BrowserTestUtils.browserLoaded(browser);
+  BrowserTestUtils.loadURI(browser, url);
+  return loaded;
+}
+
+
+
+
+
+
+
+
+async function addTab(url) {
+  const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  registerCleanupFunction(() => {
+    gBrowser.removeTab(tab);
+  });
+  return tab;
+}

@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   MessageHandlerFrameActor:
     "chrome://remote/content/shared/messagehandler/transports/js-window-actors/MessageHandlerFrameActor.jsm",
 });
@@ -44,13 +46,55 @@ class FrameTransport {
 
 
   forwardCommand(command) {
-    const browsingContext = BrowsingContext.get(command.destination.id);
-    if (!browsingContext) {
+    if (command.destination.id && command.destination.broadcast) {
       throw new Error(
-        "Unable to find a BrowsingContext for id " + command.destination.id
+        "Invalid command destination with both 'id' and 'broadcast' properties"
       );
     }
 
+    
+    if (command.destination.id) {
+      const browsingContext = BrowsingContext.get(command.destination.id);
+      if (!browsingContext) {
+        throw new Error(
+          "Unable to find a BrowsingContext for id " + command.destination.id
+        );
+      }
+      return this._sendCommandToBrowsingContext(command, browsingContext);
+    }
+
+    
+    if (command.destination.broadcast) {
+      return this._broadcastCommand(command);
+    }
+
+    throw new Error(
+      "Unrecognized command destination, missing 'id' or 'broadcast' properties"
+    );
+  }
+
+  _broadcastCommand(command) {
+    const browsingContexts = this._getAllBrowsingContexts();
+
+    return Promise.all(
+      browsingContexts.map(async browsingContext => {
+        try {
+          return await this._sendCommandToBrowsingContext(
+            command,
+            browsingContext
+          );
+        } catch (e) {
+          console.error(
+            `Failed to broadcast a command to browsingContext ${browsingContext.id}`,
+            e
+          );
+          return null;
+        }
+      })
+    );
+  }
+
+  _sendCommandToBrowsingContext(command, browsingContext) {
     return browsingContext.currentWindowGlobal
       .getActor("MessageHandlerFrame")
       .sendCommand(command, this._messageHandler.sessionId);
@@ -58,5 +102,43 @@ class FrameTransport {
 
   toString() {
     return `[object ${this.constructor.name} ${this._messageHandler.key}]`;
+  }
+
+  _getAllBrowsingContexts() {
+    let browsingContexts = [];
+    
+    
+    
+    for (const win of Services.ww.getWindowEnumerator("navigator:browser")) {
+      if (!win.gBrowser) {
+        continue;
+      }
+
+      for (const { browsingContext } of win.gBrowser.browsers) {
+        
+        
+        const isChrome = browsingContext.currentWindowGlobal.osPid === -1;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        const isInitialDocument =
+          browsingContext.currentWindowGlobal.isInitialDocument;
+        if (isChrome || isInitialDocument) {
+          continue;
+        }
+
+        browsingContexts = browsingContexts.concat(
+          browsingContext.getAllBrowsingContextsInSubtree()
+        );
+      }
+    }
+
+    return browsingContexts;
   }
 }
