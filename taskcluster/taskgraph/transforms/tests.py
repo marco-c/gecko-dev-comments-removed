@@ -1744,11 +1744,34 @@ def set_retry_exit_status(config, tasks):
 @transforms.add
 def set_profile(config, tasks):
     """Set profiling mode for tests."""
-    profile = config.params["try_task_config"].get("gecko-profile", False)
+    ttconfig = config.params["try_task_config"]
+    profile = ttconfig.get("gecko-profile", False)
+    settings = (
+        "gecko-profile-interval",
+        "gecko-profile-entries",
+        "gecko-profile-threads",
+        "gecko-profile-features",
+    )
 
     for task in tasks:
         if profile and task["suite"] in ["talos", "raptor"]:
-            task["mozharness"]["extra-options"].append("--gecko-profile")
+            extras = task["mozharness"]["extra-options"]
+            extras.append("--gecko-profile")
+            for setting in settings:
+                value = ttconfig.get(setting)
+                if value is not None:
+                    
+                    
+                    
+
+                    if task["test-platform"].startswith("win"):
+                        
+                        extras.append("--" + setting + '="' + str(value) + '"')
+                    else:
+                        
+                        
+                        extras.append("--" + setting + "=" + str(value))
+
         yield task
 
 
