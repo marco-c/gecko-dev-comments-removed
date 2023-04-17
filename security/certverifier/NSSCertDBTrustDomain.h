@@ -76,11 +76,6 @@ bool LoadOSClientCertsModule(const nsCString& dir);
 
 extern const char* kOSClientCertsModuleName;
 
-
-
-
-void UnloadUserModules();
-
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                        nsCString& nickname);
 
