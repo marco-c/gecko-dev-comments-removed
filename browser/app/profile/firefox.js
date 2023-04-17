@@ -245,6 +245,8 @@ pref("browser.uidensity", 0);
 
 pref("browser.touchmode.auto", true);
 
+pref("browser.compactmode.show", false);
+
 
 pref("browser.shell.checkDefaultBrowser", true);
 pref("browser.shell.shortcutFavicons",true);
