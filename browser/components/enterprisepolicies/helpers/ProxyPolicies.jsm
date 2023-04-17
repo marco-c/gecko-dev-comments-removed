@@ -72,10 +72,6 @@ var ProxyPolicies = {
       );
     }
 
-    if (param.FTPProxy) {
-      log.warn("FTPProxy support was removed in bug 1574475");
-    }
-
     function setProxyHostAndPort(type, address) {
       let url;
       try {
@@ -100,8 +96,12 @@ var ProxyPolicies = {
       
       
       if (param.UseHTTPProxyForAllProtocols) {
-        param.SSLProxy = param.SOCKSProxy = param.HTTPProxy;
+        param.FTPProxy = param.SSLProxy = param.SOCKSProxy = param.HTTPProxy;
       }
+    }
+
+    if (param.FTPProxy) {
+      setProxyHostAndPort("ftp", param.FTPProxy);
     }
 
     if (param.SSLProxy) {
