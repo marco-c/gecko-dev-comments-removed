@@ -347,6 +347,11 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   if (port != defaultPortforScheme && port != -1) {
     return false;
   }
+  
+  
+  if (aLoadInfo->GetIsFormSubmission()) {
+    return false;
+  }
 
   
   
