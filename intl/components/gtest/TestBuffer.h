@@ -5,38 +5,68 @@
 #define intl_components_gtest_TestBuffer_h_
 
 #include <string_view>
+#include "mozilla/DebugOnly.h"
+#include "mozilla/Vector.h"
 
 namespace mozilla::intl {
 
 
 
 
-template <typename C>
+
+
+template <typename C, size_t inlineCapacity = 0>
 class TestBuffer {
  public:
   using CharType = C;
 
-  bool allocate(size_t aSize) {
-    mBuffer.resize(aSize);
-    return true;
-  }
+  
+  TestBuffer(TestBuffer&& other) noexcept = default;
+  TestBuffer& operator=(TestBuffer&& other) noexcept = default;
 
-  CharType* data() { return mBuffer.data(); }
+  explicit TestBuffer(const size_t aSize = 0) { reserve(aSize); }
 
-  size_t size() const { return mBuffer.size(); }
+  
+
+
+  bool reserve(const size_t aSize) { return mBuffer.reserve(aSize); }
+
+  
+
+
+  CharType* data() { return mBuffer.begin(); }
+
+  
+
+
+  size_t length() const { return mBuffer.length(); }
+
+  
+
 
   size_t capacity() const { return mBuffer.capacity(); }
 
-  void written(size_t aAmount) { mWritten = aAmount; }
+  
+
+
+
+
+  void written(size_t aAmount) {
+    MOZ_ASSERT(aAmount <= mBuffer.capacity());
+    mozilla::DebugOnly<bool> result = mBuffer.resizeUninitialized(aAmount);
+    MOZ_ASSERT(result);
+  }
+
+  
+
 
   template <typename C2>
   std::basic_string_view<const C2> get_string_view() {
-    return std::basic_string_view<const C2>(
-        reinterpret_cast<const C2*>(mBuffer.data()), mWritten);
+    return std::basic_string_view<const C2>(reinterpret_cast<const C2*>(data()),
+                                            length());
   }
 
-  std::vector<C> mBuffer;
-  size_t mWritten = 0;
+  Vector<C, inlineCapacity> mBuffer{};
 };
 
 }  
