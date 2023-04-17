@@ -203,18 +203,12 @@ async function getTestActor(toolbox) {
 
 
 async function getTestActorWithoutToolbox(tab) {
-  const { DevToolsServer } = require("devtools/server/devtools-server");
-  const { DevToolsClient } = require("devtools/client/devtools-client");
-
+  const commands = await CommandsFactory.forTab(tab);
   
   
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-  await client.connect();
+  await commands.targetCommand.startListening();
 
-  const descriptor = await client.mainRoot.getTab({ tab });
-  const targetFront = await descriptor.getTarget();
+  const targetFront = commands.targetCommand.targetFront;
   return targetFront.getFront("test");
 }
 
