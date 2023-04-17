@@ -8781,6 +8781,23 @@
   mirror: always
 
 #ifdef MOZ_WEBRTC
+  #ifdef ANDROID
+-     name: media.navigator.hardware.vp8_encode.acceleration_remote_enabled
+      type: bool
+      value: true
+      mirror: always
+
+-     name: media.navigator.hardware.vp8_encode.acceleration_enabled
+      type: bool
+      value: true
+      mirror: never
+
+-     name: media.navigator.hardware.vp8_decode.acceleration_enabled
+      type: bool
+      value: false
+      mirror: never
+  #endif  # ANDROID
+
   # Use MediaDataDecoder API for VP8/VP9 in WebRTC. This includes hardware
   # acceleration for decoding.
 -   name: media.navigator.mediadatadecoder_vpx_enabled
@@ -8888,7 +8905,7 @@
   mirror: always
 
 - name: media.webrtc.platformencoder
-  type: RelaxedAtomicBool
+  type: bool
 #if defined(MOZ_WIDGET_ANDROID)
   value: true
 #elif defined(NIGHTLY_BUILD) && !defined(MOZ_WIDGET_GTK)
@@ -12066,7 +12083,7 @@
 
 - name: widget.windows.window_occlusion_tracking.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 - name: widget.windows.window_occlusion_tracking_display_state.enabled
