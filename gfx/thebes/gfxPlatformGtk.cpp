@@ -27,6 +27,7 @@
 #include "GLContextProvider.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Components.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
@@ -493,6 +494,26 @@ nsTArray<uint8_t> gfxPlatformGtk::GetPlatformCMSOutputProfileData() {
     return prefProfileData;
   }
 
+  if (XRE_IsContentProcess()) {
+    MOZ_ASSERT(NS_IsMainThread());
+    
+    
+    const mozilla::gfx::ContentDeviceData* contentDeviceData =
+        GetInitContentDeviceData();
+    if (contentDeviceData) {
+      
+      
+      
+      return contentDeviceData->cmsOutputProfileData().Clone();
+    }
+
+    
+    mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
+    nsTArray<uint8_t> result;
+    Unused << cc->SendGetOutputColorProfileData(&result);
+    return result;
+  }
+
   if (!mIsX11Display) {
     return nsTArray<uint8_t>();
   }
@@ -849,3 +870,9 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
 }
 
 #endif
+
+void gfxPlatformGtk::BuildContentDeviceData(ContentDeviceData* aOut) {
+  gfxPlatform::BuildContentDeviceData(aOut);
+
+  aOut->cmsOutputProfileData() = GetPlatformCMSOutputProfileData();
+}

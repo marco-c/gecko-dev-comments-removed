@@ -240,6 +240,15 @@ add_task(async function navigate_around() {
         min: 49,
         max: 55,
       };
+      
+      
+      
+      
+      
+      knownProblematicPrefs["gfx.color_management.display_profile"] = {
+        min: 49,
+        max: 50,
+      };
     } else if (AppConstants.platform == "win") {
       
       
