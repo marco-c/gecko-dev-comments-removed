@@ -40,6 +40,7 @@ this.takeshot = (function() {
         height: pos.height,
       };
       options.rect = rectangle;
+      options.resetScrollPosition = true;
 
       
       
