@@ -2,6 +2,7 @@
 
 
 #include "mozilla/intl/RelativeTimeFormat.h"
+#include "mozilla/FloatingPoint.h"
 
 #include "ICU4CGlue.h"
 #include "ScopedICUObject.h"
