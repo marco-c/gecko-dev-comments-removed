@@ -137,7 +137,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   bool IsDroppedDown() { return mDroppedDown; }
   MOZ_CAN_RUN_SCRIPT void ShowDropDown(bool aDoDropDown);
   nsIFrame* GetDropDown();
-  void SetDropDown(nsIFrame* aDropDownFrame);
+  void SetDropDown(nsListControlFrame* aDropDownFrame);
   MOZ_CAN_RUN_SCRIPT void RollupFromList();
 
   
@@ -284,7 +284,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   RefPtr<Element> mButtonContent;      
   nsContainerFrame* mDisplayFrame;     
   nsIFrame* mButtonFrame;              
-  nsIFrame* mDropdownFrame;            
+  nsListControlFrame* mDropdownFrame;  
   nsListControlFrame* mListControlFrame;  
 
   
