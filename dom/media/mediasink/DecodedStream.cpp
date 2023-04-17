@@ -730,9 +730,9 @@ void DecodedStream::SendAudio(const PrincipalHandle& aPrincipalHandle) {
   mAudioQueue.GetElementsAfter(mData->mNextAudioTime, &audio);
 
   
+  mData->mAudioTrack->AppendData(audio, aPrincipalHandle);
   for (uint32_t i = 0; i < audio.Length(); ++i) {
     CheckIsDataAudible(audio[i]);
-    mData->mAudioTrack->AppendData(audio[i], aPrincipalHandle);
     mData->mNextAudioTime = audio[i]->GetEndTime();
     mData->mAudioFramesWritten += audio[i]->Frames();
   }

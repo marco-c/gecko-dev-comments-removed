@@ -85,30 +85,29 @@ void AudioDecoderInputTrack::AppendData(
     AudioData* aAudio, const PrincipalHandle& aPrincipalHandle) {
   AssertOnDecoderThread();
   MOZ_ASSERT(aAudio);
+  nsTArray<RefPtr<AudioData>> audio;
+  audio.AppendElement(aAudio);
+  AppendData(audio, aPrincipalHandle);
+}
+
+void AudioDecoderInputTrack::AppendData(
+    nsTArray<RefPtr<AudioData>>& aAudioArray,
+    const PrincipalHandle& aPrincipalHandle) {
+  AssertOnDecoderThread();
   MOZ_ASSERT(!mShutdownSPSCQueue);
 
   
   
-  if (ShouldBatchData()) {
-    BatchData(aAudio, aPrincipalHandle);
-    return;
+  for (const auto& audio : aAudioArray) {
+    BatchData(audio, aPrincipalHandle);
   }
 
   
-  if (HasBatchedData()) {
-    BatchData(aAudio, aPrincipalHandle);
-    PushBatchedDataIfNeeded();
+  
+  if (ShouldBatchData()) {
     return;
   }
-
-  SPSCData data({SPSCData::DecodedData(aAudio->mTime, aAudio->GetEndTime())});
-  if (ConvertAudioDataToSegment(aAudio, data.AsDecodedData()->mSegment,
-                                aPrincipalHandle)) {
-    LOG("Append data [%" PRId64 ":%" PRId64 "], available SPSC sz=%u",
-        aAudio->mTime.ToMicroseconds(), aAudio->GetEndTime().ToMicroseconds(),
-        mSPSCQueue.AvailableWrite());
-    PushDataToSPSCQueue(data);
-  }
+  PushBatchedDataIfNeeded();
 }
 
 bool AudioDecoderInputTrack::ShouldBatchData() const {
