@@ -66,20 +66,6 @@ class AccAttributes {
     }
   }
 
-  
-  
-  template <typename T>
-  void SetAttribute(const nsAString& aAttrName, const T& aAttrValue) {
-    RefPtr<nsAtom> attrAtom = NS_Atomize(aAttrName);
-    if constexpr (std::is_base_of_v<nsAtom, std::remove_pointer_t<T>>) {
-      mData.InsertOrUpdate(attrAtom, AsVariant(RefPtr<nsAtom>(aAttrValue)));
-    } else if constexpr (std::is_base_of_v<detail::nsStringRepr, T>) {
-      mData.InsertOrUpdate(attrAtom, AsVariant(nsString(aAttrValue)));
-    } else {
-      mData.InsertOrUpdate(attrAtom, AsVariant(aAttrValue));
-    }
-  }
-
   template <typename T>
   Maybe<T> GetAttribute(nsAtom* aAttrName) {
     if (auto value = mData.Lookup(aAttrName)) {

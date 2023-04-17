@@ -212,8 +212,8 @@
       testGroupAttrs("h5", 0, 0, 5);
       testGroupAttrs("h6", 0, 0, 6);
       testGroupAttrs("ariaHeadingNoLevel", 0, 0, 2);
-      // No child item counts or "hierarchical" flag for parent of headings
-      testAbsentAttrs("headings", {"child-item-count": "", "hierarchical": ""});
+      // No child item counts or "tree" flag for parent of headings
+      testAbsentAttrs("headings", {"child-item-count": "", "tree": ""});
 
       // ////////////////////////////////////////////////////////////////////////
       // ARIA combobox
@@ -465,7 +465,7 @@
     </div>
   </div>
 
-  
+  <!-- IMPORTANT: Need to have no whitespace between elements in this tree. -->
   <div role="tree" id="tree4"><div role="treeitem"
     id="tree4_ti1">Item 1</div><div role="treeitem"
     id="tree4_ti2">Item 2</div></div>
@@ -543,13 +543,13 @@
   </div>
   <div role="listitem" id="t1_li3">Bananas</div>
 
-  
+  <!-- ARIA comments, 1 level, group pos and size calculation -->
   <article>
     <p id="comm_single_1" role="comment">Comment 1</p>
     <p id="comm_single_2" role="comment">Comment 2</p>
   </article>
 
-  
+  <!-- Nested comments -->
   <article>
     <div id="comm_nested_1" role="comment"><p>Comment 1 level 1</p>
       <div id="comm_nested_1_1" role="comment"><p>Comment 1 level 2</p></div>
