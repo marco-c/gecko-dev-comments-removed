@@ -407,6 +407,25 @@ class nsWindow final : public nsBaseWidget {
   };
 #endif
 
+  typedef enum {
+    
+    COMPOSITOR_ENABLED,
+    
+    COMPOSITOR_PAUSED_INITIALLY,
+    
+    
+    COMPOSITOR_PAUSED_MISSING_EGL_WINDOW,
+    
+    
+    COMPOSITOR_PAUSED_FLICKERING
+  } WindowCompositorState;
+
+  
+  void ResumeCompositor();
+  void ResumeCompositorFromCompositorThread();
+  void PauseCompositor();
+  bool IsWaitingForCompositorResume();
+
  protected:
   virtual ~nsWindow();
 
@@ -418,7 +437,7 @@ class nsWindow final : public nsBaseWidget {
   virtual void RegisterTouchWindow() override;
   virtual bool CompositorInitiallyPaused() override {
 #ifdef MOZ_WAYLAND
-    return mCompositorInitiallyPaused;
+    return mCompositorState == COMPOSITOR_PAUSED_INITIALLY;
 #else
     return false;
 #endif
@@ -471,9 +490,8 @@ class nsWindow final : public nsBaseWidget {
 
   void DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
                                               GdkEventButton* aEvent);
-
-  void MaybeResumeCompositor();
-  void PauseCompositor();
+  void ResumeCompositorHiddenWindow();
+  void PauseCompositorHiddenWindow();
 
   void WaylandStartVsync();
   void WaylandStopVsync();
@@ -518,9 +536,10 @@ class nsWindow final : public nsBaseWidget {
   GdkWindow* mGdkWindow;
   bool mWindowShouldStartDragging;
   PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
-
-  bool mNeedsCompositorResume;
-  bool mCompositorInitiallyPaused;
+  WindowCompositorState mCompositorState;
+  
+  
+  int mCompositorPauseTimeoutID;
 
   uint32_t mHasMappedToplevel : 1, mRetryPointerGrab : 1;
   nsSizeMode mSizeState;
