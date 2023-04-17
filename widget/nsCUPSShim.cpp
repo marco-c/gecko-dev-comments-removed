@@ -8,9 +8,15 @@
 #include "nsString.h"
 #include "nsCUPSShim.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Logging.h"
 #include "prlink.h"
 
 #ifdef CUPS_SHIM_RUNTIME_LINK
+
+mozilla::LazyLogModule gCupsLinkLog("CupsLink");
+
+#  define DEBUG_LOG(...) \
+    MOZ_LOG(gCupsLinkLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
 
 
@@ -22,24 +28,12 @@ static const char gCUPSLibraryName[] = "libcups.2.dylib";
 static const char gCUPSLibraryName[] = "libcups.so.2";
 #  endif
 
-template <typename FuncT>
-static bool LoadCupsFunc(PRLibrary*& lib, FuncT*& dest,
-                         const char* const name) {
-  dest = (FuncT*)PR_FindSymbol(lib, name);
-  if (MOZ_UNLIKELY(!dest)) {
-#  ifdef DEBUG
-    nsAutoCString msg(name);
-    msg.AppendLiteral(" not found in CUPS library");
-    NS_WARNING(msg.get());
-#  endif
-#  ifndef MOZ_TSAN
-    
-    
-    
-    PR_UnloadLibrary(lib);
-#  endif
-    lib = nullptr;
-    return false;
+static bool LoadCupsFunc(PRLibrary* aLib, void** aDest, const char* const aName,
+                         nsCUPSShim::Optional aOptional) {
+  *aDest = PR_FindSymbol(aLib, aName);
+  if (!*aDest) {
+    DEBUG_LOG("%s not found in CUPS library", aName);
+    return bool(aOptional);
   }
   return true;
 }
@@ -47,15 +41,33 @@ static bool LoadCupsFunc(PRLibrary*& lib, FuncT*& dest,
 nsCUPSShim::nsCUPSShim() {
   mCupsLib = PR_LoadLibrary(gCUPSLibraryName);
   if (!mCupsLib) {
+    DEBUG_LOG("CUPS library not found");
     return;
   }
 
+  bool success = true;
+
   
   
-#  define CUPS_SHIM_LOAD(NAME) \
-    if (!LoadCupsFunc(mCupsLib, NAME, #NAME)) return;
+  
+  
+  
+#  define CUPS_SHIM_LOAD(opt_, fn_) \
+    success |=                      \
+        LoadCupsFunc(mCupsLib, reinterpret_cast<void**>(&fn_), #fn_, opt_);
   CUPS_SHIM_ALL_FUNCS(CUPS_SHIM_LOAD)
 #  undef CUPS_SHIM_LOAD
+
+  if (!success) {
+#  ifndef MOZ_TSAN
+    
+    
+    
+    PR_UnloadLibrary(mCupsLib);
+#  endif
+    mCupsLib = nullptr;
+    return;
+  }
 
   
   mInitOkay = true;
