@@ -69,12 +69,12 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
-#include "mozilla/mozalloc.h"                         
-#include "mozilla/Unused.h"                           
-#include "mozilla/FloatingPoint.h"                    
-#include "nsAlgorithm.h"                              
-#include "nsCOMPtr.h"                                 
-#include "nsDebug.h"                                  
+#include "mozilla/mozalloc.h"               
+#include "mozilla/Unused.h"                 
+#include "mozilla/FloatingPoint.h"          
+#include "nsAlgorithm.h"                    
+#include "nsCOMPtr.h"                       
+#include "nsDebug.h"                        
 #include "nsLayoutUtils.h"
 #include "nsMathUtils.h"  
 #include "nsPoint.h"      
@@ -4478,15 +4478,6 @@ bool AsyncPanZoomController::AdvanceAnimations(const SampleTime& aSampleTime) {
   
   
   return requestAnimationFrame;
-}
-
-CSSRect AsyncPanZoomController::GetCurrentAsyncLayoutViewport(
-    AsyncTransformConsumer aMode) const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
-  AutoApplyAsyncTestAttributes testAttributeApplier(this, lock);
-  MOZ_ASSERT(Metrics().IsRootContent(),
-             "Only the root content APZC has a layout viewport");
-  return GetEffectiveLayoutViewport(aMode, lock);
 }
 
 ParentLayerPoint AsyncPanZoomController::GetCurrentAsyncScrollOffset(

@@ -1140,12 +1140,6 @@ class AsyncPanZoomController {
 
 
 
-  CSSRect GetCurrentAsyncLayoutViewport(AsyncTransformConsumer aMode) const;
-
-  
-
-
-
 
   ParentLayerPoint GetCurrentAsyncScrollOffset(
       AsyncTransformConsumer aMode) const;
