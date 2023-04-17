@@ -240,6 +240,11 @@ var whitelist = [
     file:
       "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
   },
+  
+  {
+    file: "resource://gre/localization/en-US/toolkit/about/aboutThirdParty.ftl",
+    platforms: ["linux", "macosx"],
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
