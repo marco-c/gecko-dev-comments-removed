@@ -14,6 +14,10 @@ add_task(async function() {
 
   await addTab(TEST_URI);
   let hud = await BrowserConsoleManager.toggleBrowserConsole();
+  
+  
+  await setFilterState(hud, { text: "-builtin-modules.js" });
+
   const CACHED_MESSAGE = "CACHED_MESSAGE";
   await logTextInContentAndWaitForMessage(hud, CACHED_MESSAGE);
 
