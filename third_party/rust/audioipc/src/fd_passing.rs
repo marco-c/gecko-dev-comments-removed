@@ -4,64 +4,55 @@
 
 
 use crate::async_msg::{AsyncRecvMsg, AsyncSendMsg};
-#[cfg(unix)]
 use crate::cmsg;
 use crate::codec::Codec;
-#[cfg(windows)]
-use crate::duplicate_platform_handle;
 use crate::messages::AssocRawPlatformHandle;
 use bytes::{Bytes, BytesMut, IntoBuf};
 use futures::{task, AsyncSink, Poll, Sink, StartSend, Stream};
 use std::collections::VecDeque;
-#[cfg(unix)]
-use std::mem;
-#[cfg(unix)]
 use std::os::unix::io::RawFd;
-use std::{fmt, io};
+use std::{fmt, io, mem};
 
 const INITIAL_CAPACITY: usize = 1024;
 const BACKPRESSURE_THRESHOLD: usize = 4 * INITIAL_CAPACITY;
+const FDS_CAPACITY: usize = 16;
 
-#[cfg(unix)]
-struct IncomingFd {
+struct IncomingFds {
     cmsg: BytesMut,
-    recv_fd: Option<cmsg::ControlMsgIter>,
+    recv_fds: Option<cmsg::ControlMsgIter>,
 }
 
-#[cfg(unix)]
-impl IncomingFd {
-    pub fn new() -> Self {
-        IncomingFd {
-            cmsg: BytesMut::with_capacity(cmsg::space(mem::size_of::<RawFd>())),
-            recv_fd: None,
+impl IncomingFds {
+    pub fn new(c: usize) -> Self {
+        let capacity = c * cmsg::space(mem::size_of::<[RawFd; 3]>());
+        IncomingFds {
+            cmsg: BytesMut::with_capacity(capacity),
+            recv_fds: None,
         }
     }
 
-    pub fn take_fd(&mut self) -> Option<RawFd> {
+    pub fn take_fds(&mut self) -> Option<[RawFd; 3]> {
         loop {
-            let fd = self
-                .recv_fd
+            let fds = self
+                .recv_fds
                 .as_mut()
-                .and_then(|recv_fd| recv_fd.next())
-                .map(|fd| {
-                    assert_eq!(fd.len(), 1);
-                    fd[0]
-                });
+                .and_then(|recv_fds| recv_fds.next())
+                .map(|fds| clone_into_array(&fds));
 
-            if fd.is_some() {
-                return fd;
+            if fds.is_some() {
+                return fds;
             }
 
             if self.cmsg.is_empty() {
                 return None;
             }
 
-            self.recv_fd = Some(cmsg::iterator(self.cmsg.take().freeze()));
+            self.recv_fds = Some(cmsg::iterator(self.cmsg.take().freeze()));
         }
     }
 
     pub fn cmsg(&mut self) -> &mut BytesMut {
-        self.cmsg.reserve(cmsg::space(mem::size_of::<RawFd>()));
+        self.cmsg.reserve(cmsg::space(mem::size_of::<[RawFd; 3]>()));
         &mut self.cmsg
     }
 }
@@ -69,28 +60,26 @@ impl IncomingFd {
 #[derive(Debug)]
 struct Frame {
     msgs: Bytes,
-    handle: Option<Bytes>,
+    fds: Option<Bytes>,
 }
 
 
 
-pub struct Framed<A, C> {
+pub struct FramedWithPlatformHandles<A, C> {
     io: A,
     codec: C,
     
     read_buf: BytesMut,
-    #[cfg(unix)]
-    incoming_fd: IncomingFd,
+    incoming_fds: IncomingFds,
     is_readable: bool,
     eof: bool,
     
     frames: VecDeque<Frame>,
     write_buf: BytesMut,
-    #[cfg(unix)]
-    outgoing_fd: BytesMut,
+    outgoing_fds: BytesMut,
 }
 
-impl<A, C> Framed<A, C>
+impl<A, C> FramedWithPlatformHandles<A, C>
 where
     A: AsyncSendMsg,
 {
@@ -109,14 +98,14 @@ where
         loop {
             let n = match self.frames.front() {
                 Some(frame) => {
-                    trace!("sending msg {:?}, handle {:?}", frame.msgs, frame.handle);
+                    trace!("sending msg {:?}, fds {:?}", frame.msgs, frame.fds);
                     let mut msgs = frame.msgs.clone().into_buf();
-                    let handle = match frame.handle {
-                        Some(ref handle) => handle.clone(),
+                    let fds = match frame.fds {
+                        Some(ref fds) => fds.clone(),
                         None => Bytes::new(),
                     }
                     .into_buf();
-                    try_ready!(self.io.send_msg_buf(&mut msgs, &handle))
+                    try_ready!(self.io.send_msg_buf(&mut msgs, &fds))
                 }
                 _ => {
                     
@@ -132,13 +121,9 @@ where
                     
                     
                     
-                    #[cfg(unix)]
-                    if let Some(cmsg) = frame.handle.take() {
-                        for handle in cmsg::iterator(cmsg) {
-                            assert_eq!(handle.len(), 1);
-                            unsafe {
-                                super::close_platform_handle(handle[0]);
-                            }
+                    if let Some(cmsg) = frame.fds.take() {
+                        for fds in cmsg::iterator(cmsg) {
+                            close_fds(&*fds)
                         }
                     }
 
@@ -162,21 +147,21 @@ where
         Ok(().into())
     }
 
-    fn set_frame(&mut self, handle: Option<Bytes>) {
+    fn set_frame(&mut self, fds: Option<Bytes>) {
         if self.write_buf.is_empty() {
-            assert!(handle.is_none());
+            assert!(fds.is_none());
             trace!("set_frame: No pending messages...");
             return;
         }
 
         let msgs = self.write_buf.take().freeze();
-        trace!("set_frame: msgs={:?} handle={:?}", msgs, handle);
+        trace!("set_frame: msgs={:?} fds={:?}", msgs, fds);
 
-        self.frames.push_back(Frame { msgs, handle });
+        self.frames.push_back(Frame { msgs, fds });
     }
 }
 
-impl<A, C> Stream for Framed<A, C>
+impl<A, C> Stream for FramedWithPlatformHandles<A, C>
 where
     A: AsyncRecvMsg,
     C: Codec,
@@ -194,20 +179,16 @@ where
             
             if self.is_readable {
                 if self.eof {
-                    #[allow(unused_mut)]
                     let mut item = self.codec.decode_eof(&mut self.read_buf)?;
-                    #[cfg(unix)]
-                    item.set_owned_handle(|| self.incoming_fd.take_fd());
+                    item.take_platform_handles(|| self.incoming_fds.take_fds());
                     return Ok(Some(item).into());
                 }
 
                 trace!("attempting to decode a frame");
 
-                #[allow(unused_mut)]
                 if let Some(mut item) = self.codec.decode(&mut self.read_buf)? {
                     trace!("frame decoded from buffer");
-                    #[cfg(unix)]
-                    item.set_owned_handle(|| self.incoming_fd.take_fd());
+                    item.take_platform_handles(|| self.incoming_fds.take_fds());
                     return Ok(Some(item).into());
                 }
 
@@ -217,17 +198,11 @@ where
             assert!(!self.eof);
 
             
-            #[cfg(windows)]
-            self.read_buf.reserve(INITIAL_CAPACITY);
-
             
             
-            
-            #[cfg(unix)]
-            let incoming_handle = self.incoming_fd.cmsg();
-            #[cfg(windows)]
-            let incoming_handle = &mut BytesMut::new();
-            let (n, _) = try_ready!(self.io.recv_msg_buf(&mut self.read_buf, incoming_handle));
+            let (n, _) = try_ready!(self
+                .io
+                .recv_msg_buf(&mut self.read_buf, self.incoming_fds.cmsg()));
 
             if n == 0 {
                 self.eof = true;
@@ -238,7 +213,7 @@ where
     }
 }
 
-impl<A, C> Sink for Framed<A, C>
+impl<A, C> Sink for FramedWithPlatformHandles<A, C>
 where
     A: AsyncSendMsg,
     C: Codec,
@@ -247,10 +222,7 @@ where
     type SinkItem = C::In;
     type SinkError = io::Error;
 
-    fn start_send(
-        &mut self,
-        mut item: Self::SinkItem,
-    ) -> StartSend<Self::SinkItem, Self::SinkError> {
+    fn start_send(&mut self, item: Self::SinkItem) -> StartSend<Self::SinkItem, Self::SinkError> {
         trace!("start_send: item={:?}", item);
 
         
@@ -265,46 +237,22 @@ where
 
         
         
-        let handle = item.take_handle_for_send();
-
-        
-        #[cfg(windows)]
-        if let Some((handle, target_pid)) = handle {
-            let remote_handle = unsafe { duplicate_platform_handle(handle, Some(target_pid))? };
-            trace!(
-                "item handle: {:?} remote_handle: {:?}",
-                handle,
-                remote_handle
-            );
-            
-            
-            item.set_remote_handle_value(|| Some(remote_handle));
-        }
-        
-        #[cfg(unix)]
-        if let Some((handle, _)) = handle {
-            item.set_remote_handle_value(|| Some(handle));
-        }
-
+        let fds = item.platform_handles();
         self.codec.encode(item, &mut self.write_buf)?;
 
-        if handle.is_some() {
-            
-            
-            #[cfg(unix)]
-            let handle = handle.and_then(|handle| {
-                cmsg::builder(&mut self.outgoing_fd)
-                    .rights(&[handle.0])
-                    .finish()
-                    .ok()
-            });
+        let fds = fds.and_then(|fds| {
+            cmsg::builder(&mut self.outgoing_fds)
+                .rights(&fds.0[..])
+                .finish()
+                .ok()
+        });
 
-            
-            #[cfg(windows)]
-            let handle = None;
+        trace!("item fds: {:?}", fds);
 
+        if fds.is_some() {
             
-            self.set_frame(handle);
+            
+            self.set_frame(fds);
         }
 
         Ok(AsyncSink::Ready)
@@ -329,23 +277,41 @@ where
     }
 }
 
-pub fn framed<A, C>(io: A, codec: C) -> Framed<A, C> {
-    Framed {
+pub fn framed_with_platformhandles<A, C>(io: A, codec: C) -> FramedWithPlatformHandles<A, C> {
+    FramedWithPlatformHandles {
         io,
         codec,
         read_buf: BytesMut::with_capacity(INITIAL_CAPACITY),
-        #[cfg(unix)]
-        incoming_fd: IncomingFd::new(),
+        incoming_fds: IncomingFds::new(FDS_CAPACITY),
         is_readable: false,
         eof: false,
         frames: VecDeque::new(),
         write_buf: BytesMut::with_capacity(INITIAL_CAPACITY),
-        #[cfg(unix)]
-        outgoing_fd: BytesMut::with_capacity(cmsg::space(mem::size_of::<RawFd>())),
+        outgoing_fds: BytesMut::with_capacity(
+            FDS_CAPACITY * cmsg::space(mem::size_of::<[RawFd; 3]>()),
+        ),
     }
 }
 
-#[cfg(all(test, unix))]
+fn clone_into_array<A, T>(slice: &[T]) -> A
+where
+    A: Sized + Default + AsMut<[T]>,
+    T: Clone,
+{
+    let mut a = Default::default();
+    <A as AsMut<[T]>>::as_mut(&mut a).clone_from_slice(slice);
+    a
+}
+
+fn close_fds(fds: &[RawFd]) {
+    for fd in fds {
+        unsafe {
+            super::close_platformhandle(*fd);
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use bytes::BufMut;
 
@@ -363,34 +329,35 @@ mod tests {
 
     #[test]
     fn single_cmsg() {
-        let mut incoming = super::IncomingFd::new();
+        let mut incoming = super::IncomingFds::new(16);
 
         incoming.cmsg().put_slice(cmsg_bytes());
-        assert!(incoming.take_fd().is_some());
-        assert!(incoming.take_fd().is_none());
+        assert!(incoming.take_fds().is_some());
+        assert!(incoming.take_fds().is_none());
     }
 
     #[test]
     fn multiple_cmsg_1() {
-        let mut incoming = super::IncomingFd::new();
+        let mut incoming = super::IncomingFds::new(16);
 
         incoming.cmsg().put_slice(cmsg_bytes());
-        assert!(incoming.take_fd().is_some());
+        assert!(incoming.take_fds().is_some());
         incoming.cmsg().put_slice(cmsg_bytes());
-        assert!(incoming.take_fd().is_some());
-        assert!(incoming.take_fd().is_none());
+        assert!(incoming.take_fds().is_some());
+        assert!(incoming.take_fds().is_none());
     }
 
     #[test]
     fn multiple_cmsg_2() {
-        let mut incoming = super::IncomingFd::new();
+        let mut incoming = super::IncomingFds::new(16);
+        println!("cmsg_bytes() {}", cmsg_bytes().len());
 
         incoming.cmsg().put_slice(cmsg_bytes());
         incoming.cmsg().put_slice(cmsg_bytes());
-        assert!(incoming.take_fd().is_some());
+        assert!(incoming.take_fds().is_some());
         incoming.cmsg().put_slice(cmsg_bytes());
-        assert!(incoming.take_fd().is_some());
-        assert!(incoming.take_fd().is_some());
-        assert!(incoming.take_fd().is_none());
+        assert!(incoming.take_fds().is_some());
+        assert!(incoming.take_fds().is_some());
+        assert!(incoming.take_fds().is_none());
     }
 }
