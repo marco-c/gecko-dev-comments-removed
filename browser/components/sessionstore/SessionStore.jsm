@@ -2516,10 +2516,20 @@ var SessionStoreInternal = {
     this._crashedBrowsers.delete(browser.permanentKey);
     aTab.removeAttribute("crashed");
 
-    let { userTypedValue = "", userTypedClear = 0 } = browser;
+    let { userTypedValue = null, userTypedClear = 0 } = browser;
 
     let cacheState = TabStateCache.get(browser.permanentKey);
-    if (cacheState === undefined && userTypedValue) {
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (userTypedValue && !cacheState?.userTypedValue) {
       
       
       
