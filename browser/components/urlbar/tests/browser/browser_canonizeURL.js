@@ -40,12 +40,6 @@ add_task(async function checkCtrlWorks() {
     ],
   ];
 
-  if (Services.prefs.getBoolPref("network.ftp.enabled")) {
-    
-    
-    testcases.push(["ftp://example", "ftp://example/", { ctrlKey: true }]);
-  }
-
   
   await SpecialPowers.pushPrefEnv({
     set: [
