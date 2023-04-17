@@ -3,13 +3,12 @@
   <title>Test for IME state controling</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
-  <script type="text/javascript" src="utils.js"></script>
   <link rel="stylesheet" type="text/css"
           href="chrome://mochikit/content/tests/SimpleTest/test.css" />
 </head>
 <body onload="setTimeout(runTests, 0);" style="ime-mode: disabled;">
 <div id="display" style="ime-mode: disabled;">
-  
+  <!-- input elements -->
   <input type="text"     id="text"/><br/>
   <input type="text"     id="text_readonly" readonly="readonly"/><br/>
   <input type="password" id="password"/><br/>
@@ -22,14 +21,14 @@
   <input type="button"   id="ibutton"/><br/>
   <input type="image"    id="image" alt="image"/><br/>
 
-  
+  <!-- html5 input elements -->
   <input type="url"      id="url"/><br/>
   <input type="email"    id="email"/><br/>
   <input type="search"   id="search"/><br/>
   <input type="tel"      id="tel"/><br/>
   <input type="number"   id="number"/><br/>
 
-  
+  <!-- form controls -->
   <button id="button">button</button><br/>
   <textarea id="textarea">textarea</textarea><br/>
   <textarea id="textarea_readonly" readonly="readonly">textarea[readonly]</textarea><br/>
@@ -41,10 +40,10 @@
   </select><br/>
   <isindex id="isindex" prompt="isindex"/><br/>
 
-  
+  <!-- a element -->
   <a id="a_href" href="about:blank">a[href]</a><br/>
 
-  
+  <!-- ime-mode test -->
   <input type="text" id="ime_mode_auto"     style="ime-mode: auto;"/><br/>
   <input type="text" id="ime_mode_normal"   style="ime-mode: normal;"/><br/>
   <input type="text" id="ime_mode_active"   style="ime-mode: active;"/><br/>
@@ -92,13 +91,13 @@
   <textarea id="ime_mode_inactive_t" style="ime-mode: inactive;">textarea</textarea><br/>
   <textarea id="ime_mode_disabled_t" style="ime-mode: disabled;">textarea</textarea><br/>
 
-  
+  <!-- plugin -->
   <object type="application/x-test" id="plugin"></object><br/>
 
-  
+  <!-- contenteditable editor -->
   <div id="contenteditableEditor" contenteditable="true"></div>
 
-  
+  <!-- designMode editor -->
   <iframe id="designModeEditor"
    onload="document.getElementById('designModeEditor').contentDocument.designMode = 'on';"
    src="data:text/html,<html><body></body></html>"></iframe><br/>
