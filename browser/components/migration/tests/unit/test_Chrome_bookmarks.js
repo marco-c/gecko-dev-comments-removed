@@ -57,14 +57,18 @@ async function testBookmarks(migratorKey, subDirs) {
   while (subDirs.length) {
     target.append(subDirs.shift());
   }
-
-  await IOUtils.makeDirectory(target.path, {
-    createAncestor: true,
+  
+  
+  
+  
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  await OS.File.makeDir(target.path, {
+    from: rootDir.parent.path,
     ignoreExisting: true,
   });
 
   target.append("Bookmarks");
-  await IOUtils.remove(target.path, { ignoreAbsent: true });
+  await OS.File.remove(target.path, { ignoreAbsent: true });
 
   let bookmarksData = {
     roots: { bookmark_bar: { children: [] }, other: { children: [] } },
@@ -104,7 +108,9 @@ async function testBookmarks(migratorKey, subDirs) {
     }
   }
 
-  await IOUtils.writeJSON(target.path, bookmarksData);
+  await OS.File.writeAtomic(target.path, JSON.stringify(bookmarksData), {
+    encoding: "utf-8",
+  });
 
   let migrator = await MigrationUtils.getMigrator(migratorKey);
   
