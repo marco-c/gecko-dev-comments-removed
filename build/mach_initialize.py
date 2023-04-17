@@ -170,7 +170,15 @@ install a recent enough Python 3.
 def _activate_python_environment(topsrcdir):
     
     
-    sys.path.insert(0, os.path.join(topsrcdir, "python", "mach"))
+    
+    sys.path[0:0] = [
+        os.path.join(topsrcdir, module)
+        for module in (
+            os.path.join("python", "mach"),
+            os.path.join("third_party", "python", "packaging"),
+            os.path.join("third_party", "python", "pyparsing"),
+        )
+    ]
 
     from mach.requirements import MachEnvRequirements
 
@@ -182,6 +190,7 @@ def _activate_python_environment(topsrcdir):
     requirements = MachEnvRequirements.from_requirements_definition(
         topsrcdir,
         is_thunderbird,
+        True,
         os.path.join(topsrcdir, "build", "mach_virtualenv_packages.txt"),
     )
     sys.path[0:0] = [
