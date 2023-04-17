@@ -3896,8 +3896,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  nsIFrame* GetContainingBlockForLine(bool aLockScroll,
-                                      nsIFrame*& aLineFrame) const;
+
+  std::pair<nsIFrame*, nsIFrame*> GetContainingBlockForLine(
+      bool aLockScroll) const;
 
  private:
   Result<bool, nsresult> IsVisuallyAtLineEdge(nsILineIterator* aLineIterator,

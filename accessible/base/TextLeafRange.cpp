@@ -141,17 +141,15 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
     return false;
   }
   nsIFrame::GetLastLeaf(&prevFrame);
-  nsIFrame* thisLineFrame = nullptr;
-  nsIFrame* thisBlock = thisFrame->GetContainingBlockForLine(
-       false, thisLineFrame);
+  auto [thisBlock, thisLineFrame] = thisFrame->GetContainingBlockForLine(
+       false);
   if (!thisBlock) {
     
     
     return true;
   }
-  nsIFrame* prevLineFrame = nullptr;
-  nsIFrame* prevBlock = prevFrame->GetContainingBlockForLine(
-       false, prevLineFrame);
+  auto [prevBlock, prevLineFrame] = prevFrame->GetContainingBlockForLine(
+       false);
   if (thisBlock != prevBlock) {
     
     
