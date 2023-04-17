@@ -259,6 +259,14 @@ class ExperimentStore extends SharedDataMap {
 
     
     
+    if (!activeFeatureConfigIds.length) {
+      
+      
+      this.ready().then(() => this.setNonPersistent(REMOTE_DEFAULTS_KEY, {}));
+    }
+
+    
+    
     
     this.emit("remote-defaults-finalized");
   }
