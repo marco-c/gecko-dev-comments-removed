@@ -203,12 +203,9 @@ pub enum LayerRuleKind {
     
     Block {
         
-        name: LayerName,
+        name: Option<LayerName>,
         
         rules: Arc<Locked<CssRules>>,
-        
-        
-        is_anonymous: bool,
     },
     
     Statement {
@@ -239,9 +236,8 @@ impl ToCssWithGuard for LayerRule {
             LayerRuleKind::Block {
                 ref name,
                 ref rules,
-                ref is_anonymous,
             } => {
-                if !*is_anonymous {
+                if let Some(ref name) = *name {
                     dest.write_char(' ')?;
                     name.to_css(&mut CssWriter::new(dest))?;
                 }
@@ -277,13 +273,8 @@ impl DeepCloneWithLock for LayerRule {
                 LayerRuleKind::Block {
                     ref name,
                     ref rules,
-                    ref is_anonymous,
                 } => LayerRuleKind::Block {
-                    name: if *is_anonymous {
-                        LayerName::new_anonymous()
-                    } else {
-                        name.clone()
-                    },
+                    name: name.clone(),
                     rules: Arc::new(
                         lock.wrap(
                             rules
@@ -291,7 +282,6 @@ impl DeepCloneWithLock for LayerRule {
                                 .deep_clone_with_lock(lock, guard, params),
                         ),
                     ),
-                    is_anonymous: *is_anonymous,
                 },
                 LayerRuleKind::Statement { ref names } => LayerRuleKind::Statement {
                     names: names.clone(),
