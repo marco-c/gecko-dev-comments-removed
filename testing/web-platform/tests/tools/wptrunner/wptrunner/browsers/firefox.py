@@ -180,22 +180,21 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
                                   kwargs["enable_webrender"],
                                   kwargs["chaos_mode_flags"])
             leak_report_file = setup_leak_report(kwargs["leak_check"], profile, environ)
+
+            
+            
+            
+            
+            del environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"]
+            executor_kwargs["environ"] = environ
         else:
             if kwargs["headless"] and "--headless" not in options["args"]:
                 options["args"].append("--headless")
             leak_report_file = None
 
-        
-        
-        
-        
-        del environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"]
-
         executor_kwargs["stackfix_dir"] = kwargs["stackfix_dir"],
         executor_kwargs["leak_report_file"] = leak_report_file
         executor_kwargs["asan"] = run_info_data.get("asan")
-
-        executor_kwargs["environ"] = environ
 
     if kwargs["certutil_binary"] is None:
         capabilities["acceptInsecureCerts"] = True
