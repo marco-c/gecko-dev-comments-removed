@@ -73,13 +73,6 @@ loader.lazyRequireGetter(
   true
 );
 
-loader.lazyRequireGetter(
-  this,
-  "TouchSimulator",
-  "devtools/server/actors/emulation/touch-simulator",
-  true
-);
-
 function getWindowID(window) {
   return window.windowGlobalChild.innerWindowId;
 }
@@ -605,11 +598,6 @@ const browsingContextTargetPrototype = {
     if (this._attached) {
       
       this.threadActor._parentClosed = true;
-    }
-
-    if (this._touchSimulator) {
-      this._touchSimulator.stop();
-      this._touchSimulator = null;
     }
 
     this._detach();
@@ -1248,33 +1236,15 @@ const browsingContextTargetPrototype = {
       return;
     }
 
-    let reload = false;
-    if (typeof options.touchEventsOverride !== "undefined") {
-      const enableTouchSimulator = options.touchEventsOverride === "enabled";
-
-      
-      
-      
-      if (
-        enableTouchSimulator !== this.touchSimulator.enabled &&
-        options.reloadOnTouchSimulationToggle === true &&
-        this.isTopLevelTarget
-      ) {
-        reload = true;
-      }
-
-      if (enableTouchSimulator) {
-        this.touchSimulator.start();
-      } else {
-        this.touchSimulator.stop();
-      }
-    }
-
     if (!this.isTopLevelTarget) {
       
       
       return;
     }
+
+    
+    
+    let reload = false;
 
     if (
       typeof options.javascriptEnabled !== "undefined" &&
@@ -1302,14 +1272,6 @@ const browsingContextTargetPrototype = {
     if (reload) {
       this.reload();
     }
-  },
-
-  get touchSimulator() {
-    if (!this._touchSimulator) {
-      this._touchSimulator = new TouchSimulator(this.chromeEventHandler);
-    }
-
-    return this._touchSimulator;
   },
 
   

@@ -307,11 +307,9 @@ class ResponsiveUI {
       await this.updateDPPX(null);
       reloadNeeded |=
         (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
-
-      
-      const reloadOnTouchSimulationChange =
-        this.reloadOnChange("touchSimulation") && !reloadNeeded;
-      await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
+      reloadNeeded |=
+        (await this.updateTouchSimulation()) &&
+        this.reloadOnChange("touchSimulation");
       if (reloadNeeded) {
         await this.reloadBrowser();
       }
@@ -491,12 +489,9 @@ class ResponsiveUI {
     reloadNeeded |=
       (await this.updateUserAgent(userAgent)) &&
       this.reloadOnChange("userAgent");
-
-    
-    const reloadOnTouchSimulationChange =
-      this.reloadOnChange("touchSimulation") && !reloadNeeded;
-    await this.updateTouchSimulation(touch, reloadOnTouchSimulationChange);
-
+    reloadNeeded |=
+      (await this.updateTouchSimulation(touch)) &&
+      this.reloadOnChange("touchSimulation");
     if (reloadNeeded) {
       this.reloadBrowser();
     }
@@ -521,11 +516,12 @@ class ResponsiveUI {
 
     await this.updateMaxTouchPointsEnabled(enabled);
 
-    await this.updateTouchSimulation(
-      enabled,
-      this.reloadOnChange("touchSimulation")
-    );
-
+    const reloadNeeded =
+      (await this.updateTouchSimulation(enabled)) &&
+      this.reloadOnChange("touchSimulation");
+    if (reloadNeeded) {
+      this.reloadBrowser();
+    }
     
     this.emit("touch-simulation-changed");
   }
@@ -551,11 +547,9 @@ class ResponsiveUI {
     await this.updateDPPX(null);
     reloadNeeded |=
       (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
-
-    
-    const reloadOnTouchSimulationChange =
-      this.reloadOnChange("touchSimulation") && !reloadNeeded;
-    await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
+    reloadNeeded |=
+      (await this.updateTouchSimulation()) &&
+      this.reloadOnChange("touchSimulation");
     if (reloadNeeded) {
       this.reloadBrowser();
     }
@@ -796,11 +790,12 @@ class ResponsiveUI {
     await this.updateScreenOrientation(type, angle);
     await this.updateMaxTouchPointsEnabled(touchSimulationEnabled);
 
-    if (touchSimulationEnabled) {
-      await this.updateTouchSimulation(touchSimulationEnabled);
-    }
-
     let reloadNeeded = false;
+    if (touchSimulationEnabled) {
+      reloadNeeded |=
+        (await this.updateTouchSimulation(touchSimulationEnabled)) &&
+        this.reloadOnChange("touchSimulation");
+    }
     if (userAgent) {
       reloadNeeded |=
         (await this.updateUserAgent(userAgent)) &&
@@ -875,28 +870,29 @@ class ResponsiveUI {
 
 
 
-
-  async updateTouchSimulation(enabled, reloadOnTouchSimulationToggle) {
-    
-    
+  async updateTouchSimulation(enabled) {
+    let reloadNeeded;
     if (enabled) {
+      reloadNeeded = await this.commands.targetConfigurationCommand.setTouchEventsOverride(
+        "enabled"
+      );
+
       const metaViewportEnabled = Services.prefs.getBoolPref(
         "devtools.responsive.metaViewport.enabled",
         false
       );
       if (metaViewportEnabled) {
-        await this.responsiveFront.setMetaViewportOverride(
+        reloadNeeded |= await this.responsiveFront.setMetaViewportOverride(
           Ci.nsIDocShell.META_VIEWPORT_OVERRIDE_ENABLED
         );
       }
     } else {
-      await this.responsiveFront.clearMetaViewportOverride();
+      reloadNeeded = await this.commands.targetConfigurationCommand.setTouchEventsOverride(
+        null
+      );
+      reloadNeeded |= await this.responsiveFront.clearMetaViewportOverride();
     }
-
-    await this.commands.targetConfigurationCommand.updateConfiguration({
-      touchEventsOverride: enabled ? "enabled" : null,
-      reloadOnTouchSimulationToggle,
-    });
+    return reloadNeeded;
   }
 
   

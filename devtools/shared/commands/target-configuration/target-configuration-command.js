@@ -85,6 +85,35 @@ class TargetConfigurationCommand {
 
 
 
+  async setTouchEventsOverride(flag) {
+    
+    await this.updateConfiguration({
+      touchEventsOverride: flag,
+    });
+
+    
+    
+    
+    
+    
+    const responsiveFront = await this._commands.targetCommand.targetFront.getFront(
+      "responsive"
+    );
+    const reloadNeeded = await responsiveFront.toggleTouchSimulator({
+      enable: flag === "enabled",
+    });
+
+    return reloadNeeded;
+  }
+
+  
+
+
+
+
+
+
+
 
 
 
