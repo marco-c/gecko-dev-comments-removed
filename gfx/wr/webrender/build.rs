@@ -15,6 +15,12 @@ use webrender_build::shader::*;
 use webrender_build::shader_features::{ShaderFeatureFlags, get_shader_features};
 
 
+#[no_mangle]
+pub extern "C" fn __lsan_default_options() -> *const u8 {
+    b"detect_leaks=0\0".as_ptr()
+}
+
+
 
 
 
