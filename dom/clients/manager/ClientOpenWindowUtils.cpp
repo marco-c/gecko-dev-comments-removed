@@ -406,38 +406,38 @@ RefPtr<ClientOpPromise> ClientOpenWindow(const ClientOpenWindowArgs& aArgs) {
   return promise.forget();
 #endif  
 
-  RefPtr<BrowsingContextCallbackReceivedPromise::Private>
-      browsingContextReadyPromise =
-          new BrowsingContextCallbackReceivedPromise::Private(__func__);
-  RefPtr<nsIBrowsingContextReadyCallback> callback =
-      new nsBrowsingContextReadyCallback(browsingContextReadyPromise);
-
   RefPtr<nsOpenWindowInfo> openInfo = new nsOpenWindowInfo();
-  openInfo->mBrowsingContextReadyCallback = callback;
   openInfo->mOriginAttributes = principal->OriginAttributesRef();
   openInfo->mIsRemote = true;
+
+  openInfo->OnBrowsingContextReady(
+      [argsValidated, promise](BrowsingContext* aBC) {
+        if (aBC) {
+          WaitForLoad(argsValidated, aBC, promise);
+        } else {
+          
+          CopyableErrorResult result;
+          result.ThrowTypeError("Unable to open window");
+          promise->Reject(result, __func__);
+        }
+      });
 
   RefPtr<BrowsingContext> bc;
   ErrorResult errResult;
   OpenWindow(argsValidated, openInfo, getter_AddRefs(bc), errResult);
   if (NS_WARN_IF(errResult.Failed())) {
+    
+    openInfo->mBrowsingContextReadyCallback = nullptr;
     promise->Reject(errResult, __func__);
     return promise;
   }
 
-  browsingContextReadyPromise->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [argsValidated, promise](const RefPtr<BrowsingContext>& aBC) {
-        WaitForLoad(argsValidated, aBC, promise);
-      },
-      [promise]() {
-        
-        CopyableErrorResult result;
-        result.ThrowTypeError("Unable to open window");
-        promise->Reject(result, __func__);
-      });
+  
+  
   if (bc) {
-    browsingContextReadyPromise->Resolve(bc, __func__);
+    if (nsCOMPtr cb = openInfo->mBrowsingContextReadyCallback.forget()) {
+      cb->BrowsingContextReady(bc);
+    }
   }
   return promise;
 }
