@@ -1157,7 +1157,10 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
-  virtual void DrawDependentSurface(uint64_t aId, const Rect& aDest) {
+  virtual void DrawDependentSurface(
+      uint64_t aId, const Rect& aDest,
+      const DrawSurfaceOptions& aSurfOptions = DrawSurfaceOptions(),
+      const DrawOptions& aOptions = DrawOptions()) {
     MOZ_CRASH("GFX: DrawDependentSurface");
   }
 
