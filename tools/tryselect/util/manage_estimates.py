@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function
 
 import os
 import requests
@@ -32,7 +31,7 @@ def check_downloaded_history(tag_file, duration_cache, quantile_cache):
         )
         if download_date < datetime.now() - timedelta(days=7):
             return False
-    except (IOError, ValueError):
+    except (OSError, ValueError):
         return False
 
     if not os.path.isfile(duration_cache):

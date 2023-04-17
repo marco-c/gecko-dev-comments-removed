@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import platform
@@ -11,7 +10,6 @@ import six
 import sys
 from distutils.spawn import find_executable
 from distutils.version import StrictVersion
-from six.moves import input
 
 from mozbuild.base import MozbuildObject
 from mozbuild.util import ensure_subprocess_env
@@ -375,7 +373,7 @@ def run(
         if not all_tasks:
             return 1
 
-    key_shortcuts = [k + ":" + v for k, v in six.iteritems(fzf_shortcuts)]
+    key_shortcuts = [k + ":" + v for k, v in fzf_shortcuts.items()]
     base_cmd = [
         fzf,
         "-m",

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import os
@@ -77,7 +76,7 @@ def run(
         print("error: history file not found: {}".format(history_path))
         return 1
 
-    with open(history_path, "r") as fh:
+    with open(history_path) as fh:
         history = fh.readlines()
 
     if list_configs or list_tasks > 0:

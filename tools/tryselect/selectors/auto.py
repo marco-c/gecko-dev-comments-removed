@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.util.python_path import find_object
 
@@ -61,7 +60,7 @@ class AutoParser(BaseTryParser):
     ]
 
     def validate(self, args):
-        super(AutoParser, self).validate(args)
+        super().validate(args)
 
         if args.strategy:
             if ":" not in args.strategy:
