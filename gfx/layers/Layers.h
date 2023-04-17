@@ -1041,25 +1041,6 @@ class Layer {
 
 
 
-  void Dump(std::stringstream& aStream, const char* aPrefix = "",
-            bool aDumpHtml = false, bool aSorted = false,
-            const Maybe<gfx::Polygon>& aGeometry = Nothing());
-  
-
-
-  void DumpSelf(std::stringstream& aStream, const char* aPrefix = "",
-                const Maybe<gfx::Polygon>& aGeometry = Nothing());
-
-  
-
-
-
-  void Dump(layerscope::LayersPacket* aPacket, const void* aParent);
-
-  
-
-
-
   void Log(const char* aPrefix = "");
   
 
@@ -1073,12 +1054,6 @@ class Layer {
   
   
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
-
-  
-  
-  
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket,
-                          const void* aParent);
 
   
 
@@ -1433,9 +1408,6 @@ class PaintedLayer : public Layer {
 
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
 
-  void DumpPacket(layerscope::LayersPacket* aPacket,
-                  const void* aParent) override;
-
   
 
 
@@ -1692,9 +1664,6 @@ class ContainerLayer : public Layer {
   virtual void PrintInfo(std::stringstream& aStream,
                          const char* aPrefix) override;
 
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket,
-                          const void* aParent) override;
-
   
 
 
@@ -1767,9 +1736,6 @@ class ColorLayer : public Layer {
       : Layer(aManager, aImplData), mColor() {}
 
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  void DumpPacket(layerscope::LayersPacket* aPacket,
-                  const void* aParent) override;
 
   gfx::IntRect mBounds;
   gfx::DeviceColor mColor;
@@ -1858,9 +1824,6 @@ class CanvasLayer : public Layer {
   virtual ~CanvasLayer();
 
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  void DumpPacket(layerscope::LayersPacket* aPacket,
-                  const void* aParent) override;
 
   virtual RefPtr<CanvasRenderer> CreateCanvasRendererInternal() = 0;
 
@@ -2009,9 +1972,6 @@ class RefLayer : public ContainerLayer {
         mEventRegionsOverride(EventRegionsOverride::NoOverride) {}
 
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  void DumpPacket(layerscope::LayersPacket* aPacket,
-                  const void* aParent) override;
 
   
   LayersId mId;

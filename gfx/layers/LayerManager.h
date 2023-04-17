@@ -562,10 +562,6 @@ class LayerManager : public WindowRenderer {
   
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix);
 
-  
-  
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket);
-
   uint64_t mId;
   bool mInTransaction;
 
