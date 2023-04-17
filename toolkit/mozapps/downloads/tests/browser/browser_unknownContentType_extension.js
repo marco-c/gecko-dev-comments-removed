@@ -63,11 +63,20 @@ add_task(async function test_download_filename_extension() {
   dialog.getButton("accept").removeAttribute("disabled");
   dialog.acceptDialog();
   let download = await downloadFinishedPromise;
-  let f = new FileUtils.File(download.target.path);
   
-  let extensions = f.leafName.substring(f.leafName.indexOf("."));
-  is(extensions, ".EXE", "Should not duplicate extension");
+  let filename = PathUtils.filename(download.target.path);
+  Assert.ok(
+    filename.indexOf(".") == filename.lastIndexOf("."),
+    "Should not duplicate extension"
+  );
+  Assert.ok(filename.endsWith(".EXE"), "Should not change extension");
   await list.remove(download);
-  f.remove(true);
   BrowserTestUtils.removeTab(tab);
+  try {
+    await IOUtils.remove(download.target.path);
+  } catch (ex) {
+    
+    
+    info("Failed to remove the file " + ex);
+  }
 });
