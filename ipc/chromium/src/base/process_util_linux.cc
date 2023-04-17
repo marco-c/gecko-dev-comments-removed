@@ -172,14 +172,7 @@ void AppProcessBuilder::InitAppProcess(int* argcp, char*** argvp) {
   ReplaceArguments(argcp, argvp);
 }
 
-static void handle_sigchld(int s) {
-  while (true) {
-    if (waitpid(-1, nullptr, WNOHANG) <= 0) {
-      
-      break;
-    }
-  }
-}
+static void handle_sigchld(int s) { waitpid(-1, nullptr, WNOHANG); }
 
 static void InstallChildSignalHandler() {
   
