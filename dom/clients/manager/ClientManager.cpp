@@ -14,6 +14,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ClearOnShutdown.h"  
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "prthread.h"
 
@@ -218,12 +219,15 @@ already_AddRefed<ClientManager> ClientManager::GetOrCreateForCurrentThread() {
   }
 
   MOZ_DIAGNOSTIC_ASSERT(cm);
-  
-  
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!cm->IsShutdown());
+
+  if (StaticPrefs::dom_workers_testing_enabled()) {
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!cm->IsShutdown());
+  }
   return cm.forget();
 }
 
