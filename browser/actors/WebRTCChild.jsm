@@ -271,6 +271,7 @@ function handleGUMRequest(aSubject, aTopic, aData) {
   let contentWindow = Services.wm.getOuterWindowWithId(aSubject.windowID);
 
   contentWindow.navigator.mozGetUserMediaDevices(
+    constraints,
     function(devices) {
       
       

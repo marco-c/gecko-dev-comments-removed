@@ -3211,7 +3211,7 @@ RefPtr<SinkInfoPromise> MediaManager::GetSinkDevice(nsPIDOMWindowInner* aWindow,
 
 
 nsresult MediaManager::GetUserMediaDevices(
-    nsPIDOMWindowInner* aWindow,
+    nsPIDOMWindowInner* aWindow, const MediaStreamConstraints& aConstraints,
     MozGetUserMediaDevicesSuccessCallback& aOnSuccess, uint64_t aWindowId,
     const nsAString& aCallID) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -3219,6 +3219,7 @@ nsresult MediaManager::GetUserMediaDevices(
     aWindowId = aWindow->WindowID();
   }
 
+  
   
 
   nsTArray<nsString>* callIDs;

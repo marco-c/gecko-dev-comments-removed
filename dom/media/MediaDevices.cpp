@@ -287,23 +287,6 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
 already_AddRefed<Promise> MediaDevices::SelectAudioOutput(
     const AudioOutputOptions& aOptions, CallerType aCallerType,
     ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = xpc::NativeGlobal(GetWrapper());
-  RefPtr<Promise> p = Promise::Create(global, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-  
-
-
-
-
-  nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global);
-  WindowContext* wc = owner->GetWindowContext();
-  if (!wc || !wc->HasValidTransientUserGestureActivation()) {
-    p->MaybeRejectWithInvalidStateError(
-        "selectAudioOutput requires transient user activation.");
-    return p.forget();
-  }
   aRv.ThrowNotSupportedError("Under implementation");
   return nullptr;
 }
