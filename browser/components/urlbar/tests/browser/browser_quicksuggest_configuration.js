@@ -52,7 +52,7 @@ add_task(async function test_override_wait_after_n_restarts() {
   let doExperimentCleanup = await UrlbarTestUtils.enrollExperiment({
     valueOverrides: {
       quickSuggestEnabled: true,
-      quickSuggestShuoldShowOnboardingDialog: true,
+      quickSuggestShouldShowOnboardingDialog: true,
       
       quickSuggestShowOnboardingDialogAfterNRestarts: 1,
     },

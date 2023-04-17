@@ -835,45 +835,16 @@ var UrlbarTestUtils = {
 
 
 
-  async enrollExperiment({
-    valueOverrides = {},
-    recipe = null,
-    name = "UrlbarTestUtils-experiment",
-  }) {
+  async enrollExperiment({ valueOverrides = {} }) {
     await ExperimentAPI.ready();
-    let {
-      enrollmentPromise,
-      doExperimentCleanup,
-    } = ExperimentFakes.enrollmentHelper(
-      ExperimentFakes.recipe(
-        name,
-        recipe || {
-          branches: [
-            {
-              slug: "treatment-branch",
-              ratio: 1,
-              feature: {
-                enabled: true,
-                featureId: "urlbar",
-                value: Object.assign(
-                  DEFAULT_EXPERIMENT_FEATURE_VARIABLES,
-                  valueOverrides
-                ),
-              },
-            },
-          ],
-          bucketConfig: {
-            start: 0,
-            
-            count: 10000,
-            total: 10000,
-            namespace: "UrlbarTestUtils",
-            randomizationUnit: "normandy_id",
-          },
-        }
-      )
-    );
-    await enrollmentPromise;
+    let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+      enabled: true,
+      featureId: "urlbar",
+      value: Object.assign(
+        DEFAULT_EXPERIMENT_FEATURE_VARIABLES,
+        valueOverrides
+      ),
+    });
     return doExperimentCleanup;
   },
 };
