@@ -75,13 +75,6 @@ inline void* GetPrivate(JSObject* obj) {
 
 
 
-extern JS_PUBLIC_API void SetPrivate(JSObject* obj, void* data);
-
-
-
-
-
-
 
 inline const Value& GetReservedSlot(JSObject* obj, size_t slot) {
   MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
