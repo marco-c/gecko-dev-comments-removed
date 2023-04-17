@@ -442,11 +442,9 @@ class PredicateList {
 
 
 
-
-  nsresult add(Expr* aExpr) {
+  void add(Expr* aExpr) {
     NS_ASSERTION(aExpr, "missing expression");
     mPredicates.AppendElement(aExpr);
-    return NS_OK;
   }
 
   nsresult evaluatePredicates(txNodeSet* aNodes, txIMatchContext* aContext);
