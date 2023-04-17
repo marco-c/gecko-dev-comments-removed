@@ -155,9 +155,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           
-          
-          
-          
           [Resources.TYPES.CONSOLE_MESSAGE]: true,
           [Resources.TYPES.CSS_CHANGE]: hasBrowserElement,
           [Resources.TYPES.CSS_MESSAGE]: true,
