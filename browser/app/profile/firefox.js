@@ -355,6 +355,13 @@ pref("browser.urlbar.suggest.calculator",           false);
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.unitConversion.enabled", true);
+#else
+pref("browser.urlbar.unitConversion.enabled", false);
+#endif
+
+
 
 pref("browser.urlbar.showSearchSuggestionsFirst", true);
 
