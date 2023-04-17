@@ -213,10 +213,8 @@ class TargetCommand extends EventEmitter {
 
     
     this.emitForTests("processed-available-target", targetFront);
-
-    
     if (isTargetSwitching) {
-      this.emit("switched-target", targetFront);
+      this.emitForTests("switched-target", targetFront);
     }
   }
 

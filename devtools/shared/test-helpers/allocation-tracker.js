@@ -35,12 +35,8 @@
 
 "use strict";
 
-const { Cu, Cc, Ci } = require("chrome");
+const { Cu } = require("chrome");
 const ChromeUtils = require("ChromeUtils");
-
-const MemoryReporter = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
-  Ci.nsIMemoryReporterManager
-);
 
 const global = Cu.getGlobalForObject(this);
 const { addDebuggerToGlobal } = ChromeUtils.import(
@@ -82,28 +78,14 @@ exports.allocationTracker = function({
     acceptGlobal = () => true;
   } else if (watchDevToolsGlobals) {
     
-    const builtinGlobal = require("devtools/shared/builtin-modules");
     acceptGlobal = g => {
       
       if (g.class == "self-hosting-global") {
-        dump("TRACKER NEW GLOBAL: - : " + g.class + "\n");
         return false;
       }
       const ref = g.unsafeDereference();
       const location = Cu.getRealmLocation(ref);
-      let accept = !!location.match(/devtools/i);
-
-      
-      
-      
-      
-      if (
-        ref == Cu.getGlobalForObject(builtinGlobal) ||
-        ref == builtinGlobal.internalSandbox
-      ) {
-        accept = false;
-      }
-
+      const accept = !!location.match(/devtools/i);
       dump(
         "TRACKER NEW GLOBAL: " + (accept ? "+" : "-") + " : " + location + "\n"
       );
@@ -252,49 +234,9 @@ exports.allocationTracker = function({
       dbg.memory.drainAllocationsLog();
     },
 
-    
-
-
-
-
-
     stillAllocatedObjects() {
-      const sensus = dbg.memory.takeCensus({
-        breakdown: { by: "allocationStack" },
-      });
-      let objectsWithStack = 0;
-      let objectsWithoutStack = 0;
-      for (const [k, v] of sensus.entries()) {
-        
-        
-        if (k === "noStack") {
-          objectsWithoutStack += v.count;
-        } else {
-          objectsWithStack += v.count;
-        }
-      }
-      return { objectsWithStack, objectsWithoutStack };
-    },
-
-    
-
-
-    getAllocatedMemory() {
-      return MemoryReporter.residentUnique;
-    },
-
-    async doGC() {
-      
-      
-      const numCycles = 3;
-      for (let i = 0; i < numCycles; i++) {
-        Cu.forceGC();
-        Cu.forceCC();
-        await new Promise(resolve => Cu.schedulePreciseShrinkingGC(resolve));
-
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      const sensus = dbg.memory.takeCensus({ breakdown: { by: "count" } });
+      return sensus.count;
     },
 
     stop() {

@@ -1,17 +1,51 @@
-
-
-
-"use strict";
-
-
-
 const TEST_URL =
   "data:text/html;charset=UTF-8,<div>Target allocations test</div>";
 
+
+
+let tracker;
+{
+  const { DevToolsLoader } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
+  const loader = new DevToolsLoader({
+    invisibleToDebugger: true,
+  });
+  const { allocationTracker } = loader.require(
+    "chrome://mochitests/content/browser/devtools/shared/test-helpers/allocation-tracker"
+  );
+  tracker = allocationTracker({ watchDevToolsGlobals: true });
+}
+
+
+SimpleTest.requestCompleteLog();
+
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+
 const {
   CommandsFactory,
 } = require("devtools/shared/commands/commands-factory");
+
+async function doGC() {
+  
+  
+  const numCycles = 3;
+  for (let i = 0; i < numCycles; i++) {
+    Cu.forceGC();
+    Cu.forceCC();
+    await new Promise(resolve => Cu.schedulePreciseShrinkingGC(resolve));
+
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+
+async function addTab(url) {
+  const tab = BrowserTestUtils.addTab(gBrowser, url);
+  gBrowser.selectedTab = tab;
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  return tab;
+}
 
 async function testScript(tab) {
   const commands = await CommandsFactory.forTab(tab);
@@ -34,12 +68,50 @@ add_task(async function() {
   
   await testScript(tab);
 
-  const recordData = await startRecordingAllocations();
+  
+  
+  await doGC();
+
+  
+  
+  
+  const totalBefore = tracker.stillAllocatedObjects();
 
   
   await testScript(tab);
 
-  await stopRecordingAllocations(recordData, "target");
+  
+  await doGC();
+
+  
+  ok(!tracker.overflowed, "Allocation were all recorded");
+
+  
+  const totalAfter = tracker.stillAllocatedObjects();
 
   gBrowser.removeTab(tab);
+
+  const PERFHERDER_DATA = {
+    framework: {
+      name: "devtools",
+    },
+    suites: [
+      {
+        name: "total-after-gc",
+        value: totalAfter - totalBefore,
+        subtests: [
+          {
+            name: "before",
+            value: totalBefore,
+          },
+          {
+            name: "after",
+            value: totalAfter - totalBefore,
+          },
+        ],
+      },
+    ],
+  };
+  info("PERFHERDER_DATA: " + JSON.stringify(PERFHERDER_DATA));
+  ok(true, "Test succeeded");
 });
