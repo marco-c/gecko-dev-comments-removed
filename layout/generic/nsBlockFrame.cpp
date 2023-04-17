@@ -235,13 +235,15 @@ static Maybe<nscolor> GetBackplateColor(nsIFrame* aFrame) {
     if (!drawColor && !drawImage) {
       continue;
     }
-    if (NS_GET_A(backgroundColor) != 0) {
+    if (NS_GET_A(backgroundColor) == 0) {
       
       
-      return Some(NS_RGB(NS_GET_R(backgroundColor), NS_GET_G(backgroundColor),
-                         NS_GET_B(backgroundColor)));
+      continue;
     }
-    break;
+    
+    
+    return Some(NS_RGB(NS_GET_R(backgroundColor), NS_GET_G(backgroundColor),
+                       NS_GET_B(backgroundColor)));
   }
   return Some(aFrame->PresContext()->DefaultBackgroundColor());
 }
