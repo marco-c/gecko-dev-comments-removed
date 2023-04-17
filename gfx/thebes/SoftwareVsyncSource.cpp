@@ -17,8 +17,19 @@ SoftwareVsyncSource::SoftwareVsyncSource() {
 }
 
 SoftwareVsyncSource::~SoftwareVsyncSource() {
-  MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  auto strongRef = mGlobalDisplay;
   mGlobalDisplay = nullptr;
+
+  if (!NS_IsMainThread()) {
+    const auto fnRun = [strongRef]() {};  
+    strongRef = nullptr;
+
+    already_AddRefed<mozilla::Runnable> runnable =
+        NS_NewRunnableFunction("enqueue ~SoftwareDisplay", fnRun);
+    NS_DispatchToMainThread(std::move(runnable), 0);
+  }
 }
 
 SoftwareDisplay::SoftwareDisplay() : mVsyncEnabled(false) {

@@ -159,12 +159,26 @@ nsRFPService* nsRFPService::GetOrCreate() {
   return sRFPService;
 }
 
+constexpr double RFP_TIME_ATOM_MS = 16.667;  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 double nsRFPService::TimerResolution() {
   double prefValue = StaticPrefs::
       privacy_resistFingerprinting_reduceTimerPrecision_microseconds();
   if (StaticPrefs::privacy_resistFingerprinting()) {
-    return std::max(100000.0, prefValue);
+    return std::max(RFP_TIME_ATOM_MS * 1000.0, prefValue);
   }
   return prefValue;
 }
