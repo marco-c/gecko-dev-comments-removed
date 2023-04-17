@@ -273,7 +273,7 @@ static sk_sp<SkImage> GetSkImageForSurface(SourceSurface* aSurface,
     releaseProc = ReleaseTemporarySurface;
   }
 
-  DataSourceSurface* surf = aSurface->GetDataSurface().take();
+  DataSourceSurface* surf = dataSurface.take();
 
   
   
