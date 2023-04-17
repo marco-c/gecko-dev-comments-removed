@@ -292,7 +292,7 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   
   
   if (cx->realm()->isSelfHostingRealm()) {
-    JS::PrintError(cx, stderr, reportp, true);
+    JS::PrintError(stderr, reportp, true);
     return;
   }
 
