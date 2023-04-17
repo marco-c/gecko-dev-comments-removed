@@ -4269,7 +4269,7 @@ class DebugFrame {
   
  protected:
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM) || \
-    defined(JS_CODEGEN_X86)
+    defined(JS_CODEGEN_X86) || defined(__wasi__)
   
   
   

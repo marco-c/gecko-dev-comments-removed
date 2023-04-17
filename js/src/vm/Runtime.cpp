@@ -173,8 +173,10 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
   JS_COUNT_CTOR(JSRuntime);
   liveRuntimesCount++;
 
+#ifndef __wasi__
   
   wasm::EnsureEagerProcessSignalHandlers();
+#endif  
 }
 
 JSRuntime::~JSRuntime() {

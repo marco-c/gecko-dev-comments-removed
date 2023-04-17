@@ -36,12 +36,15 @@ UNIFIED_SOURCES += [
     "WasmOpIter.cpp",
     "WasmProcess.cpp",
     "WasmRealm.cpp",
-    "WasmSignalHandlers.cpp",
     "WasmStubs.cpp",
     "WasmTable.cpp",
     "WasmTypes.cpp",
     "WasmValidate.cpp",
 ]
+
+
+if CONFIG["OS_ARCH"] != "WASI":
+    UNIFIED_SOURCES += ["WasmSignalHandlers.cpp"]
 
 
 
