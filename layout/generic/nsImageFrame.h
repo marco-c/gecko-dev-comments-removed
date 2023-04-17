@@ -187,6 +187,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
     
     
     ContentPropertyAtIndex,
+    
+    ListStyleImage,
   };
 
   
@@ -199,6 +201,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
                                                       ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForGeneratedContentIndex(mozilla::PresShell*,
                                                             ComputedStyle*);
+  friend nsIFrame* NS_NewImageFrameForListStyleImage(mozilla::PresShell*,
+                                                     ComputedStyle*);
 
   nsImageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, Kind aKind)
       : nsImageFrame(aStyle, aPresContext, kClassID, aKind) {}
@@ -259,6 +263,11 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
   void MaybeDecodeForPredictedSize();
+
+  
+
+
+  bool IsForMarkerPseudo() const;
 
  protected:
   friend class nsImageListener;
@@ -426,6 +435,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   static mozilla::StaticRefPtr<IconLoad> gIconLoad;
 
   friend class nsDisplayImage;
+  friend class nsDisplayGradient;
 };
 
 

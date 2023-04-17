@@ -37,7 +37,6 @@
 #include "Layers.h"
 #include "nsAnimationManager.h"
 #include "nsBlockFrame.h"
-#include "nsBulletFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
@@ -465,6 +464,10 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
                                       const nsIFrame& aFrame,
                                       EventStates aStates) {
   if (aFrame.IsGeneratedContentFrame()) {
+    if (aElement.IsHTMLElement(nsGkAtoms::mozgeneratedcontentimage)) {
+      return aStates.HasState(NS_EVENT_STATE_BROKEN);
+    }
+
     
     return false;
   }
