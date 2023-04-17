@@ -604,16 +604,6 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
 #undef COLOR
 
 
-
-
-
-
-
-
-
-
-
-
 Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
   nscolor color = NS_RGB(0, 0, 0);
   switch (aID) {
@@ -623,28 +613,23 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::TextBackground:
       color = NS_RGB(28, 27, 34);
       break;
-#ifndef XP_WIN
     case ColorID::MozDialog:  
       color = NS_RGB(35, 34, 43);
       break;
-#endif
     case ColorID::Windowtext:  
     case ColorID::WindowForeground:
     case ColorID::TextForeground:
-#ifndef XP_WIN
     case ColorID::MozDialogtext:
     case ColorID::Fieldtext:
     case ColorID::Buttontext:  
                                
     case ColorID::MozButtonhovertext:
     case ColorID::MozButtonactivetext:
-#endif
       color = NS_RGB(251, 251, 254);
       break;
     case ColorID::Graytext:  
       color = NS_RGB(191, 191, 201);
       break;
-#ifndef XP_WIN
     case ColorID::Selecteditem:  
                                  
       color = NS_RGB(0, 221, 255);
@@ -661,7 +646,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::MozButtonactiveface:  
       color = NS_RGB(91, 91, 102);
       break;
-#endif
     case ColorID::Highlight:
       color = NS_RGBA(0, 221, 255, 153);
       break;
