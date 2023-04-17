@@ -615,7 +615,8 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       
       
       if (rootFrame == targetFrame ||
-          !nsLayoutUtils::IsAncestorFrameCrossDoc(rootFrame, targetFrame)) {
+          !nsLayoutUtils::IsAncestorFrameCrossDocInProcess(rootFrame,
+                                                           targetFrame)) {
         return false;
       }
 
