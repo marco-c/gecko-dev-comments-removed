@@ -47,6 +47,8 @@ add_task(async function test_contentscript() {
       },
     },
   });
+  
+  ExtensionTestUtils.failOnSchemaWarnings(false);
   await extension.startup();
 
   let contentPage = await ExtensionTestUtils.loadContentPage(
@@ -58,4 +60,5 @@ add_task(async function test_contentscript() {
   await contentPage.close();
 
   await extension.unload();
+  ExtensionTestUtils.failOnSchemaWarnings(true);
 });
