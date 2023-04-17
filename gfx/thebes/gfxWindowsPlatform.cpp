@@ -308,9 +308,12 @@ gfxWindowsPlatform::~gfxWindowsPlatform() {
   DeviceManagerDx::Shutdown();
 
   
+  if (!IsWin32kLockedDown()) {
+    
 
 
-  CoUninitialize();
+    CoUninitialize();
+  }
 }
 
 
