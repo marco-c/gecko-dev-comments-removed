@@ -2535,7 +2535,11 @@ NSEvent* gLastDragMouseDownEvent = nil;
   nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
   NS_ENSURE_TRUE(rollupListener, false);
 
-  if (rollupListener->RollupNativeMenu()) {
+  BOOL isWheelTypeEvent = [theEvent type] == NSEventTypeScrollWheel ||
+                          [theEvent type] == NSEventTypeMagnify ||
+                          [theEvent type] == NSEventTypeSmartMagnify;
+
+  if (!isWheelTypeEvent && rollupListener->RollupNativeMenu()) {
     
     
     
@@ -2552,8 +2556,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
       bool shouldRollup = true;
 
       
-      if ([theEvent type] == NSEventTypeScrollWheel || [theEvent type] == NSEventTypeMagnify ||
-          [theEvent type] == NSEventTypeSmartMagnify) {
+      if (isWheelTypeEvent) {
         shouldRollup = rollupListener->ShouldRollupOnMouseWheelEvent();
         
         
