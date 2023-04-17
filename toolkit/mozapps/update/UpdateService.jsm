@@ -723,6 +723,15 @@ function getCanApplyUpdates() {
       
       let userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper)
         .userCanElevate;
+      const bts =
+        "@mozilla.org/backgroundtasks;1" in Cc &&
+        Cc["@mozilla.org/backgroundtasks;1"].getService(Ci.nsIBackgroundTasks);
+      if (bts && bts.isBackgroundTaskMode) {
+        LOG(
+          "getCanApplyUpdates - in background task mode, assuming user can't elevate"
+        );
+        userCanElevate = false;
+      }
       if (!userCanElevate) {
         
         let appDirTestFile = getAppBaseDir();
