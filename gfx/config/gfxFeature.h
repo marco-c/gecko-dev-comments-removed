@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef mozilla_gfx_config_gfxFeature_h
 #define mozilla_gfx_config_gfxFeature_h
 
@@ -16,8 +16,8 @@
 namespace mozilla {
 namespace gfx {
 
-#define GFX_FEATURE_MAP(_)
-           \
+#define GFX_FEATURE_MAP(_)                                               \
+  /* Name,                        Type,         Description */           \
   _(HW_COMPOSITING, Feature, "Compositing")                              \
   _(D3D11_COMPOSITING, Feature, "Direct3D11 Compositing")                \
   _(OPENGL_COMPOSITING, Feature, "OpenGL Compositing")                   \
@@ -29,6 +29,7 @@ namespace gfx {
   _(WEBRENDER_QUALIFIED, Feature, "WebRender qualified")                 \
   _(WEBRENDER_COMPOSITOR, Feature, "WebRender native compositor")        \
   _(WEBRENDER_PARTIAL, Feature, "WebRender partial present")             \
+  _(WEBRENDER_SHADER_CACHE, Feature, "WebRender shader disk cache")      \
   _(WEBRENDER_OPTIMIZED_SHADERS, Feature, "WebRender optimized shaders") \
   _(WEBRENDER_ANGLE, Feature, "WebRender ANGLE")                         \
   _(WEBRENDER_DCOMP_PRESENT, Feature, "WebRender DirectComposition")     \
@@ -48,7 +49,7 @@ enum class Feature : uint32_t {
 
 class FeatureState {
   friend class gfxConfig;
-  friend class GfxConfigManager;  
+  friend class GfxConfigManager;  // for testing
 
  public:
   FeatureState() { Reset(); }
@@ -83,8 +84,8 @@ class FeatureState {
   bool MaybeSetFailed(FeatureStatus aStatus, const char* aMessage,
                       const nsACString& aFailureId);
 
-  
-  
+  // aType is "base", "user", "env", or "runtime".
+  // aMessage may be null.
   typedef std::function<void(const char* aType, FeatureStatus aStatus,
                              const char* aMessage, const nsCString& aFailureId)>
       StatusIterCallback;
@@ -109,7 +110,7 @@ class FeatureState {
 
   void AssertInitialized() const { MOZ_ASSERT(IsInitialized()); }
 
-  
+  // Clear all state.
   void Reset();
 
  private:
@@ -132,22 +133,22 @@ class FeatureState {
     const nsCString& FailureId() const { return mFailureId; }
   };
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The default state is the state we decide on startup, based on the operating
+  // system or a base preference.
+  //
+  // The user state factors in any changes to preferences that the user made.
+  //
+  // The environment state factors in any additional decisions made, such as
+  // availability or blocklisting.
+  //
+  // The runtime state factors in any problems discovered at runtime.
   Instance mDefault;
   Instance mUser;
   Instance mEnvironment;
   Instance mRuntime;
 };
 
-}  
-}  
+}  // namespace gfx
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_gfx_config_gfxFeature_h
