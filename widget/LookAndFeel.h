@@ -256,12 +256,6 @@ class LookAndFeel {
 
 
 
-    GTKCSDTransparentBackground,
-
-    
-
-
-
     GTKCSDMinimizeButton,
 
     
