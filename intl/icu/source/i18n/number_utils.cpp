@@ -180,12 +180,6 @@ void DecNum::_setTo(const char* str, int32_t maxDigits, UErrorCode& status) {
         status = U_UNSUPPORTED_ERROR;
         return;
     }
-
-    
-    if (decNumberIsSpecial(fData.getAlias())) {
-        status = U_UNSUPPORTED_ERROR;
-        return;
-    }
 }
 
 void
