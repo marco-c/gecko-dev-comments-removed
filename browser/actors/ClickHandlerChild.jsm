@@ -23,12 +23,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/E10SUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm"
-);
-
 class ClickHandlerChild extends JSWindowActorChild {
   handleEvent(event) {
     if (
@@ -65,9 +59,7 @@ class ClickHandlerChild extends JSWindowActorChild {
       }
     }
 
-    let [href, node, principal] = BrowserUtils.hrefAndLinkNodeForClickEvent(
-      event
-    );
+    let [href, node, principal] = this._hrefAndLinkNodeForClickEvent(event);
 
     let csp = ownerDoc.csp;
     if (csp) {
@@ -140,5 +132,66 @@ class ClickHandlerChild extends JSWindowActorChild {
     if (event.button == 1) {
       this.sendAsyncMessage("Content:Click", json);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _hrefAndLinkNodeForClickEvent(event) {
+    let content = this.contentWindow;
+    function isHTMLLink(aNode) {
+      
+      return (
+        (aNode instanceof content.HTMLAnchorElement && aNode.href) ||
+        (aNode instanceof content.HTMLAreaElement && aNode.href) ||
+        aNode instanceof content.HTMLLinkElement
+      );
+    }
+
+    let node = event.composedTarget;
+    while (node && !isHTMLLink(node)) {
+      node = node.flattenedTreeParentNode;
+    }
+
+    if (node) {
+      return [node.href, node, node.ownerDocument.nodePrincipal];
+    }
+
+    
+    let href, baseURI;
+    node = event.composedTarget;
+    while (node && !href) {
+      if (
+        node.nodeType == content.Node.ELEMENT_NODE &&
+        (node.localName == "a" ||
+          node.namespaceURI == "http://www.w3.org/1998/Math/MathML")
+      ) {
+        href =
+          node.getAttribute("href") ||
+          node.getAttributeNS("http://www.w3.org/1999/xlink", "href");
+        if (href) {
+          baseURI = node.ownerDocument.baseURIObject;
+          break;
+        }
+      }
+      node = node.flattenedTreeParentNode;
+    }
+
+    
+    
+    
+    return [
+      href ? Services.io.newURI(href, null, baseURI).spec : null,
+      null,
+      node && node.ownerDocument.nodePrincipal,
+    ];
   }
 }

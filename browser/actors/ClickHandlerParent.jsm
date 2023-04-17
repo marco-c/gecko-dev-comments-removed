@@ -55,11 +55,6 @@ class ClickHandlerParent extends JSWindowActorParent {
     
     
     let browser = this.manager.browsingContext.top.embedderElement;
-    if (!browser) {
-      
-      
-      return;
-    }
     let window = browser.ownerGlobal;
 
     if (!data.href) {

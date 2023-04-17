@@ -3,15 +3,9 @@
 
 
 
-var EXPORTED_SYMBOLS = ["AutoScrollChild"];
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm"
-);
+var EXPORTED_SYMBOLS = ["AutoScrollChild"];
 
 class AutoScrollChild extends JSWindowActorChild {
   constructor() {
@@ -31,12 +25,11 @@ class AutoScrollChild extends JSWindowActorChild {
     this.autoscrollLoop = this.autoscrollLoop.bind(this);
   }
 
-  isAutoscrollBlocker(event) {
+  isAutoscrollBlocker(node) {
     let mmPaste = Services.prefs.getBoolPref("middlemouse.paste");
     let mmScrollbarPosition = Services.prefs.getBoolPref(
       "middlemouse.scrollbarPosition"
     );
-    let node = event.originalTarget;
     let content = node.ownerGlobal;
 
     
@@ -52,26 +45,34 @@ class AutoScrollChild extends JSWindowActorChild {
       }
     }
 
-    
-    if (BrowserUtils.hrefAndLinkNodeForClickEvent(event)) {
-      return true;
-    }
+    while (node) {
+      if (
+        (node instanceof content.HTMLAnchorElement ||
+          node instanceof content.HTMLAreaElement) &&
+        node.hasAttribute("href")
+      ) {
+        return true;
+      }
 
-    
-    if (
-      mmPaste &&
-      node.closest("input,textarea")?.constructor.name.startsWith("HTML")
-    ) {
-      return true;
-    }
+      if (
+        mmPaste &&
+        (node instanceof content.HTMLInputElement ||
+          node instanceof content.HTMLTextAreaElement)
+      ) {
+        return true;
+      }
 
-    
-    if (
-      (mmScrollbarPosition &&
-        node.closest("scrollbar,scrollcorner") instanceof content.XULElement) ||
-      node.closest("treechildren") instanceof content.XULElement
-    ) {
-      return true;
+      if (
+        node instanceof content.XULElement &&
+        ((mmScrollbarPosition &&
+          (node.localName == "scrollbar" ||
+            node.localName == "scrollcorner")) ||
+          node.localName == "treechildren")
+      ) {
+        return true;
+      }
+
+      node = node.parentNode;
     }
     return false;
   }
@@ -376,7 +377,7 @@ class AutoScrollChild extends JSWindowActorChild {
         if (
           this.canStartAutoScrollWith(event) &&
           !this._scrollable &&
-          !this.isAutoscrollBlocker(event)
+          !this.isAutoscrollBlocker(event.originalTarget)
         ) {
           this.startScroll(event);
         }
