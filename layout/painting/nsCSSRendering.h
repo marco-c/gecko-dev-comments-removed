@@ -336,13 +336,11 @@ struct nsCSSRendering {
 
 
 
-  struct NonTransparentBackgroundFrame {
-    nsIFrame* mFrame = nullptr;
-    bool mIsThemed = false;
-    bool mIsForCanvas = false;
-  };
-  static NonTransparentBackgroundFrame FindNonTransparentBackgroundFrame(
-      nsIFrame* aFrame, bool aStopAtThemed = true);
+
+
+
+  static nsIFrame* FindNonTransparentBackgroundFrame(
+      nsIFrame* aFrame, bool aStartAtParent = false);
 
   
 
