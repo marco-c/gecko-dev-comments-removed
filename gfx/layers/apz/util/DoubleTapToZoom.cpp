@@ -84,6 +84,12 @@ static dom::Element* GetNearbyTableCell(
     if (tableCell) {
       return parent;
     }
+    if (dom::Element* grandParent = parent->GetFlattenedTreeParentElement()) {
+      tableCell = do_QueryFrame(grandParent->GetPrimaryFrame());
+      if (tableCell) {
+        return grandParent;
+      }
+    }
   }
   return nullptr;
 }
