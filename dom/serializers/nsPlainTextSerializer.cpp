@@ -118,6 +118,7 @@ void nsPlainTextSerializer::CurrentLine::ResetContentAndIndentationHeader() {
 int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
     const uint32_t aWrapColumn, const uint32_t aContentWidth,
     mozilla::intl::LineBreaker* aLineBreaker) const {
+  MOZ_ASSERT(!mContent.IsEmpty());
   MOZ_ASSERT(aContentWidth < std::numeric_limits<int32_t>::max());
   MOZ_ASSERT(static_cast<int32_t>(aContentWidth) ==
              GetUnicharStringWidth(mContent));
@@ -149,7 +150,7 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
     
     
 
-    if (mContent.IsEmpty() || aWrapColumn < prefixwidth) {
+    if (aWrapColumn < prefixwidth) {
       goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
     } else {
       goodSpace = std::min(aWrapColumn - prefixwidth, mContent.Length() - 1);
@@ -1237,17 +1238,20 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
 
   
-  uint32_t currentLineContentWidth =
-      GetUnicharStringWidth(mCurrentLine.mContent);
-
-  
   
   
   
   const uint32_t wrapColumn = mSettings.GetWrapColumn();
   uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
 
-  while (currentLineContentWidth + prefixwidth > wrapColumn + bonuswidth) {
+  while (!mCurrentLine.mContent.IsEmpty()) {
+    
+    const uint32_t currentLineContentWidth =
+        GetUnicharStringWidth(mCurrentLine.mContent);
+    if (currentLineContentWidth + prefixwidth <= wrapColumn + bonuswidth) {
+      break;
+    }
+
     const int32_t goodSpace = mCurrentLine.FindWrapIndexForContent(
         wrapColumn, currentLineContentWidth, mLineBreaker);
 
@@ -1281,7 +1285,6 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
         }
       }
       mCurrentLine.mContent.Append(restOfContent);
-      currentLineContentWidth = GetUnicharStringWidth(mCurrentLine.mContent);
       mEmptyLines = -1;
     } else {
       
