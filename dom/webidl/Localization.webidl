@@ -90,11 +90,11 @@ interface Localization {
 
 
 
-
   [Throws]
   constructor(sequence<UTF8String> aResourceIds,
               optional boolean aSync = false,
-	      optional L10nRegistry aRegistry);
+              optional L10nRegistry aRegistry,
+              optional sequence<UTF8String> aLocales);
 
   
 
