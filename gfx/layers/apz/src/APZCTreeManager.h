@@ -765,8 +765,15 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   void NotifyAutoscrollRejected(const ScrollableLayerGuid& aGuid) const;
 
   
+  
+  
+  
+  
+  
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(
-      const HitTestingTreeNode* aNode) const;
+      const HitTestingTreeNode* aNode,
+      const AsyncPanZoomController** aOutSourceOfOverscrollTransform =
+          nullptr) const;
 
   
   static already_AddRefed<GeckoContentController> GetContentController(
