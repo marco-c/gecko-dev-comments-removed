@@ -18,7 +18,7 @@ namespace utils {
 
 
 NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<LocalAccessible*>& aArray) {
-  NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
+  NSMutableArray* nativeArray = [[[NSMutableArray alloc] init] autorelease];
 
   
   size_t totalCount = aArray.Length();
@@ -35,7 +35,7 @@ NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<LocalAccessible*>& aArray) {
 
 
 NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<RemoteAccessible*>& aArray) {
-  NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
+  NSMutableArray* nativeArray = [[[NSMutableArray alloc] init] autorelease];
 
   
   size_t totalCount = aArray.Length();

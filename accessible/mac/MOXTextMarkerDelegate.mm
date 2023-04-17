@@ -90,11 +90,11 @@ static nsTHashMap<nsUint64HashKey, MOXTextMarkerDelegate*> sDelegates;
 
   
   
-  NSMutableDictionary* info = [@{
+  NSMutableDictionary* info = [[@{
     @"AXSelectedTextMarkerRange" : selectedGeckoRange.IsValid() ? mSelection
                                                                 : [NSNull null],
     @"AXTextStateChangeType" : @(stateChangeType),
-  } mutableCopy];
+  } mutableCopy] autorelease];
 
   GeckoTextMarker caretMarker(mGeckoDocAccessible, mCaret);
   GeckoTextMarker prevCaretMarker(mGeckoDocAccessible, mPrevCaret);
