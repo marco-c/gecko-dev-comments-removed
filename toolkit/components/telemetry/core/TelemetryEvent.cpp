@@ -123,6 +123,9 @@ const uint32_t kEventPingLimit = 1000;
 struct EventKey {
   uint32_t id;
   bool dynamic;
+
+  EventKey() : id(kExpiredEventId), dynamic(false) {}
+  EventKey(uint32_t id_, bool dynamic_) : id(id_), dynamic(dynamic_) {}
 };
 
 struct DynamicEventInfo {
@@ -286,7 +289,7 @@ bool gCanRecordBase;
 bool gCanRecordExtended;
 
 
-nsClassHashtable<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
+nsTHashMap<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 
 
 nsTHashSet<nsCString> gCategoryNames;
@@ -378,11 +381,11 @@ EventRecordArray* GetEventRecordsForProcess(const StaticMutexAutoLock& lock,
   return gEventRecords.GetOrInsertNew(uint32_t(processType));
 }
 
-EventKey* GetEventKey(const StaticMutexAutoLock& lock,
-                      const nsACString& category, const nsACString& method,
-                      const nsACString& object) {
+bool GetEventKey(const StaticMutexAutoLock& lock, const nsACString& category,
+                 const nsACString& method, const nsACString& object,
+                 EventKey* aEventKey) {
   const nsCString& name = UniqueEventName(category, method, object);
-  return gEventNameIDMap.Get(name);
+  return gEventNameIDMap.Get(name, aEventKey);
 }
 
 static bool CheckExtraKeysValid(const EventKey& eventKey,
@@ -417,8 +420,8 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
                               const Maybe<nsCString>& value,
                               const ExtraArray& extra) {
   
-  EventKey* eventKey = GetEventKey(lock, category, method, object);
-  if (!eventKey) {
+  EventKey eventKey;
+  if (!GetEventKey(lock, category, method, object, &eventKey)) {
     mozilla::Telemetry::AccumulateCategorical(
         LABELS_TELEMETRY_EVENT_RECORDING_ERROR::UnknownEvent);
     return RecordEventResult::UnknownEvent;
@@ -428,7 +431,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   
   
   
-  if (IsExpired(*eventKey)) {
+  if (IsExpired(eventKey)) {
     mozilla::Telemetry::AccumulateCategorical(
         LABELS_TELEMETRY_EVENT_RECORDING_ERROR::Expired);
     return RecordEventResult::ExpiredEvent;
@@ -437,20 +440,20 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   
   
   auto dynamicNonBuiltin =
-      eventKey->dynamic && !(*gDynamicEventInfo)[eventKey->id].builtin;
+      eventKey.dynamic && !(*gDynamicEventInfo)[eventKey.id].builtin;
   if (dynamicNonBuiltin) {
     processType = ProcessID::Dynamic;
   }
 
   
-  if (!CheckExtraKeysValid(*eventKey, extra)) {
+  if (!CheckExtraKeysValid(eventKey, extra)) {
     mozilla::Telemetry::AccumulateCategorical(
         LABELS_TELEMETRY_EVENT_RECORDING_ERROR::ExtraKey);
     return RecordEventResult::InvalidExtraKey;
   }
 
   
-  if (!CanRecordEvent(lock, *eventKey, processType)) {
+  if (!CanRecordEvent(lock, eventKey, processType)) {
     return RecordEventResult::CannotRecord;
   }
 
@@ -460,12 +463,12 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
                                   processType, dynamicNonBuiltin);
 
   
-  if (!gEnabledCategories.Contains(GetCategory(lock, *eventKey))) {
+  if (!gEnabledCategories.Contains(GetCategory(lock, eventKey))) {
     return RecordEventResult::Ok;
   }
 
   EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType);
-  eventRecords->AppendElement(EventRecord(timestamp, *eventKey, value, extra));
+  eventRecords->AppendElement(EventRecord(timestamp, eventKey, value, extra));
 
   
   if (eventRecords->Length() == kEventPingLimit) {
@@ -479,19 +482,19 @@ RecordEventResult ShouldRecordChildEvent(const StaticMutexAutoLock& lock,
                                          const nsACString& category,
                                          const nsACString& method,
                                          const nsACString& object) {
-  EventKey* eventKey = GetEventKey(lock, category, method, object);
-  if (!eventKey) {
+  EventKey eventKey;
+  if (!GetEventKey(lock, category, method, object, &eventKey)) {
     
     
     return RecordEventResult::Ok;
   }
 
-  if (IsExpired(*eventKey)) {
+  if (IsExpired(eventKey)) {
     return RecordEventResult::ExpiredEvent;
   }
 
   const auto processes =
-      gEventInfo[eventKey->id].common_info.record_in_processes;
+      gEventInfo[eventKey.id].common_info.record_in_processes;
   if (!CanRecordInProcess(processes, XRE_GetProcessType())) {
     return RecordEventResult::WrongProcess;
   }
@@ -521,10 +524,10 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
     
     
     
-    EventKey* existing = nullptr;
+    EventKey existing;
     if (!aBuiltin && gEventNameIDMap.Get(eventName, &existing)) {
       if (eventExpired[i]) {
-        existing->id = kExpiredEventId;
+        existing.id = kExpiredEventId;
       }
       continue;
     }
@@ -532,8 +535,7 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
     gDynamicEventInfo->AppendElement(eventInfos[i]);
     uint32_t eventId =
         eventExpired[i] ? kExpiredEventId : gDynamicEventInfo->Length() - 1;
-    gEventNameIDMap.InsertOrUpdate(
-        eventName, UniquePtr<EventKey>{new EventKey{eventId, true}});
+    gEventNameIDMap.InsertOrUpdate(eventName, EventKey{eventId, true});
   }
 
   
@@ -702,9 +704,8 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
       eventId = kExpiredEventId;
     }
 
-    gEventNameIDMap.InsertOrUpdate(
-        UniqueEventName(info),
-        UniquePtr<EventKey>{new EventKey{eventId, false}});
+    gEventNameIDMap.InsertOrUpdate(UniqueEventName(info),
+                                   EventKey{eventId, false});
     gCategoryNames.Insert(info.common_info.category());
   }
 
