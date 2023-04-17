@@ -1768,7 +1768,8 @@ static bool ShouldHaveRoundedMenuDropShadow(nsWindow* aWindow) {
 
 
 void nsWindow::ClearThemeRegion() {
-  if (mWindowType == eWindowType_popup && mPopupType == ePopupTypeMenu &&
+  if (mWindowType == eWindowType_popup &&
+      (mPopupType == ePopupTypeMenu || mPopupType == ePopupTypePanel) &&
       ShouldHaveRoundedMenuDropShadow(this)) {
     SetWindowRgn(mWnd, nullptr, false);
   } else if (!HasGlass() &&
@@ -1781,7 +1782,8 @@ void nsWindow::ClearThemeRegion() {
 
 void nsWindow::SetThemeRegion() {
   
-  if (mWindowType == eWindowType_popup && mPopupType == ePopupTypeMenu) {
+  if (mWindowType == eWindowType_popup &&
+      (mPopupType == ePopupTypeMenu || mPopupType == ePopupTypePanel)) {
     nsView* view = nsView::GetViewFor(this);
     if (view) {
       LayoutDeviceIntSize size =
