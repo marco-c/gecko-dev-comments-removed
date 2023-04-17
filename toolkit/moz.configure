@@ -1065,7 +1065,7 @@ add_old_configure_assignment("FT2_CFLAGS", ft2_info.cflags)
 @depends(build_project)
 def remote_default(build_project):
     
-    return build_project in ("browser", "mobile/android")
+    return build_project in ("browser", "comm/mail", "mobile/android")
 
 
 option("--enable-cdp", default=remote_default, help="{Enable|Disable} remote agent")
