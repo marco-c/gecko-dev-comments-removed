@@ -212,6 +212,7 @@
 
 class nsIChannel;
 class nsICookieJarSettings;
+class nsIDocShell;
 class nsILoadGroup;
 class nsIPrincipal;
 class nsIURI;
@@ -284,6 +285,12 @@ class StoragePrincipalHelper final {
   static nsresult GetPrincipal(nsPIDOMWindowInner* aWindow,
                                PrincipalType aPrincipalType,
                                nsIPrincipal** aPrincipal);
+
+  
+  
+  
+  static bool ShouldUsePartitionPrincipalForServiceWorker(
+      nsIDocShell* aDocShell);
 
   
 
