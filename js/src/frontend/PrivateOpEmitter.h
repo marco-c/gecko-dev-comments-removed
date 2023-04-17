@@ -106,9 +106,6 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
   TaggedParserAtomIndex name_;
 
   
-  GCThingIndex atomIndex_;
-
-  
   
   mozilla::Maybe<NameLocation> loc_;
 

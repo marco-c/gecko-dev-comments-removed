@@ -23,10 +23,6 @@ PrivateOpEmitter::PrivateOpEmitter(BytecodeEmitter* bce, Kind kind,
 }
 
 bool PrivateOpEmitter::init() {
-  if (!bce_->makeAtomIndex(name_, &atomIndex_)) {
-    return false;
-  }
-
   
   NameLocation loc = NameLocation::Dynamic();
   bce_->lookupPrivate(name_, loc, brandLoc_);
