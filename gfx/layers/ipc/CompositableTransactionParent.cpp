@@ -1,28 +1,29 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "CompositableTransactionParent.h"
-#include "CompositableHost.h"        // for CompositableParent, etc
-#include "CompositorBridgeParent.h"  // for CompositorBridgeParent
-#include "GLContext.h"               // for GLContext
-#include "Layers.h"                  // for Layer
-#include "mozilla/Assertions.h"      // for MOZ_ASSERT, etc
-#include "mozilla/RefPtr.h"          // for RefPtr
+#include "CompositableHost.h"        
+#include "CompositorBridgeParent.h"  
+#include "GLContext.h"               
+#include "Layers.h"                  
+#include "RenderTrace.h"             
+#include "mozilla/Assertions.h"      
+#include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/ContentHost.h"        // for ContentHostBase
-#include "mozilla/layers/ImageBridgeParent.h"  // for ImageBridgeParent
-#include "mozilla/layers/LayersSurfaces.h"     // for SurfaceDescriptor
-#include "mozilla/layers/LayersTypes.h"        // for MOZ_LAYERS_LOG
-#include "mozilla/layers/TextureHost.h"        // for TextureHost
-#include "mozilla/layers/TextureHostOGL.h"     // for TextureHostOGL
+#include "mozilla/layers/ContentHost.h"        
+#include "mozilla/layers/ImageBridgeParent.h"  
+#include "mozilla/layers/LayersSurfaces.h"     
+#include "mozilla/layers/LayersTypes.h"        
+#include "mozilla/layers/TextureHost.h"        
+#include "mozilla/layers/TextureHostOGL.h"     
 #include "mozilla/layers/TiledContentHost.h"
-#include "mozilla/mozalloc.h"  // for operator delete
+#include "mozilla/mozalloc.h"  
 #include "mozilla/Unused.h"
-#include "nsDebug.h"   // for NS_WARNING, NS_ASSERTION
-#include "nsRegion.h"  // for nsIntRegion
+#include "nsDebug.h"   
+#include "nsRegion.h"  
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/layers/AndroidHardwareBuffer.h"
@@ -34,17 +35,17 @@ namespace layers {
 class ClientTiledLayerBuffer;
 class Compositor;
 
-// This function can in some cases fail and return false without it being a bug.
-// This can theoretically happen if the ImageBridge sends frames before
-// we created the layer tree. Since we can't enforce that the layer
-// tree is already created before ImageBridge operates, there isn't much
-// we can do about it, but in practice it is very rare.
-// Typically when a tab with a video is dragged from a window to another,
-// there can be a short time when the video is still sending frames
-// asynchonously while the layer tree is not reconstructed. It's not a
-// big deal.
-// Note that Layers transactions do not need to call this because they always
-// schedule the composition, in LayerManagerComposite::EndTransaction.
+
+
+
+
+
+
+
+
+
+
+
 static bool ScheduleComposition(CompositableHost* aCompositable) {
   uint64_t id = aCompositable->GetCompositorBridgeID();
   if (!id) {
@@ -61,8 +62,8 @@ static bool ScheduleComposition(CompositableHost* aCompositable) {
 
 bool CompositableParentManager::ReceiveCompositableUpdate(
     const CompositableOperation& aEdit) {
-  // Ignore all operations on compositables created on stale compositors. We
-  // return true because the child is unable to handle errors.
+  
+  
   RefPtr<CompositableHost> compositable =
       FindCompositable(aEdit.compositable());
   if (!compositable) {
@@ -108,8 +109,8 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
             TextureHost::AsTextureHost(texturedDesc.textureParent());
         if (texture) {
           texture->SetLastFwdTransactionId(mFwdTransactionId);
-          // Make sure that each texture was handled by the compositable
-          // because the recycling logic depends on it.
+          
+          
           MOZ_ASSERT(texture->NumCompositableRefs() > 0);
         }
         if (texturedDesc.textureOnWhiteParent().isSome()) {
@@ -117,8 +118,8 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
               texturedDesc.textureOnWhiteParent().ref());
           if (texture) {
             texture->SetLastFwdTransactionId(mFwdTransactionId);
-            // Make sure that each texture was handled by the compositable
-            // because the recycling logic depends on it.
+            
+            
             MOZ_ASSERT(texture->NumCompositableRefs() > 0);
           }
         }
@@ -161,8 +162,8 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
               TextureHost::AsTextureHost(timedTexture.textureParent());
           if (texture) {
             texture->SetLastFwdTransactionId(mFwdTransactionId);
-            // Make sure that each texture was handled by the compositable
-            // because the recycling logic depends on it.
+            
+            
             MOZ_ASSERT(texture->NumCompositableRefs() > 0);
           }
         }
@@ -192,15 +193,15 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
 
       if (texOnBlack) {
         texOnBlack->SetLastFwdTransactionId(mFwdTransactionId);
-        // Make sure that each texture was handled by the compositable
-        // because the recycling logic depends on it.
+        
+        
         MOZ_ASSERT(texOnBlack->NumCompositableRefs() > 0);
       }
 
       if (texOnWhite) {
         texOnWhite->SetLastFwdTransactionId(mFwdTransactionId);
-        // Make sure that each texture was handled by the compositable
-        // because the recycling logic depends on it.
+        
+        
         MOZ_ASSERT(texOnWhite->NumCompositableRefs() > 0);
       }
 
@@ -282,9 +283,9 @@ RefPtr<CompositableHost> CompositableParentManager::FindCompositable(
     return host;
   }
 
-  // Try to replace WebRenderImageHost of ImageBridge to ImageHost.
+  
   RefPtr<CompositableHost> newHost = CompositableHost::Create(
-      host->GetTextureInfo(), /* aUseWebRender */ false);
+      host->GetTextureInfo(),  false);
   if (!newHost || !newHost->AsImageHost()) {
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return host;
@@ -309,5 +310,5 @@ void CompositableParentManager::ReleaseCompositable(
   host->Detach(nullptr, CompositableHost::FORCE_DETACH);
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  
