@@ -4137,11 +4137,11 @@ bool WasmFunctionType(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsWasmFunction, WasmFunctionTypeImpl>(cx, args);
 }
 
-JSFunction* WasmFunctionCreate(JSContext* cx, HandleFunction fun,
+JSFunction* WasmFunctionCreate(JSContext* cx, HandleFunction func,
                                wasm::ValTypeVector&& params,
                                wasm::ValTypeVector&& results,
                                HandleObject proto) {
-  MOZ_RELEASE_ASSERT(!IsWasmExportedFunction(fun));
+  MOZ_RELEASE_ASSERT(!IsWasmExportedFunction(func));
 
   
   
@@ -4189,25 +4189,36 @@ JSFunction* WasmFunctionCreate(JSContext* cx, HandleFunction fun,
   if (!mg.init(nullptr)) {
     return nullptr;
   }
-  ShareableBytes* sharableBytes = cx->new_<ShareableBytes>();
   
   if (!mg.finishFuncDefs()) {
     return nullptr;
   }
-  SharedModule wasmModule = mg.finishModule(*sharableBytes);
+  ShareableBytes* shareableBytes = cx->new_<ShareableBytes>();
+  if (!shareableBytes) {
+    return nullptr;
+  }
+  SharedModule module = mg.finishModule(*shareableBytes);
+  if (!module) {
+    return nullptr;
+  }
+
   
   Rooted<ImportValues> imports(cx);
-  imports.get().funcs.append(fun);
-  RootedWasmInstanceObject instanceObj(cx);
-  if (!wasmModule->instantiate(cx, imports.get(), nullptr, &instanceObj)) {
+  if (!imports.get().funcs.append(func)) {
+    return nullptr;
+  }
+  RootedWasmInstanceObject instance(cx);
+  if (!module->instantiate(cx, imports.get(), nullptr, &instance)) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
     return nullptr;
   }
 
   
-  RootedFunction exportedFun(cx);
-  instanceObj->getExportedFunction(cx, instanceObj, 0, &exportedFun);
-  return exportedFun;
+  RootedFunction wasmFunc(cx);
+  if (!instance->getExportedFunction(cx, instance, 0, &wasmFunc)) {
+    return nullptr;
+  }
+  return wasmFunc;
 }
 
 bool WasmFunctionConstruct(JSContext* cx, unsigned argc, Value* vp) {
@@ -4221,58 +4232,63 @@ bool WasmFunctionConstruct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  ValTypeVector params;
-  ValTypeVector results;
   if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_DESC_ARG, "function");
     return false;
   }
-  RootedObject obj(cx, &args[0].toObject());
+  RootedObject typeObj(cx, &args[0].toObject());
 
-  RootedId parametersId(cx, NameToId(cx->names().parameters));
+  
+
   RootedValue parametersVal(cx);
-  if (!GetProperty(cx, obj, obj, parametersId, &parametersVal)) {
+  if (!JS_GetProperty(cx, typeObj, "parameters", &parametersVal)) {
     return false;
   }
+
+  ValTypeVector params;
   if (!ParseValTypes(cx, parametersVal, params)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_ARG_TYPE);
     return false;
   }
 
-  RootedId resultsId(cx, NameToId(cx->names().results));
   RootedValue resultsVal(cx);
-  if (!GetProperty(cx, obj, obj, resultsId, &resultsVal)) {
+  if (!JS_GetProperty(cx, typeObj, "results", &resultsVal)) {
     return false;
   }
+
+  ValTypeVector results;
   if (!ParseValTypes(cx, resultsVal, results)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_ARG_TYPE);
     return false;
   }
 
-  if (!args[1].isObject() || !args[1].toObject().is<JSFunction>()) {
+  
+
+  if (!args[1].isObject() || !args[1].toObject().is<JSFunction>() ||
+      IsWasmFunction(args[1])) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_FUNCTION_VALUE);
     return false;
   }
+  RootedFunction func(cx, &args[1].toObject().as<JSFunction>());
 
-  RootedFunction funcObj(cx, &args[1].toObject().as<JSFunction>());
-
-  RootedObject proto(cx);
-  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_WasmFunction,
-                                          &proto)) {
-    return false;
-  }
+  RootedObject proto(
+      cx, GetWasmConstructorPrototype(cx, args, JSProto_WasmFunction));
   if (!proto) {
-    proto = GlobalObject::getOrCreatePrototype(cx, JSProto_WasmFunction);
-  }
-
-  RootedFunction function(cx, WasmFunctionCreate(cx, funcObj, std::move(params),
-                                                 std::move(results), proto));
-  if (!function) {
+    ReportOutOfMemory(cx);
     return false;
   }
-  args.rval().setObject(*function);
+
+  RootedFunction wasmFunc(cx, WasmFunctionCreate(cx, func, std::move(params),
+                                                 std::move(results), proto));
+  if (!wasmFunc) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  args.rval().setObject(*wasmFunc);
 
   return true;
 }
