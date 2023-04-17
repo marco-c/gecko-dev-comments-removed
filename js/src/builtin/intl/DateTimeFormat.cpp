@@ -9,6 +9,7 @@
 #include "builtin/intl/DateTimeFormat.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/intl/Calendar.h"
 #include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/DateTimePatternGenerator.h"
@@ -603,6 +604,22 @@ static mozilla::Maybe<HourCycle> HourCycleFromPattern(
   return mozilla::Nothing();
 }
 
+enum class PatternField { Hour, Minute, Second, Other };
+
+template <typename CharT>
+static PatternField ToPatternField(CharT ch) {
+  if (ch == 'K' || ch == 'h' || ch == 'H' || ch == 'k' || ch == 'j') {
+    return PatternField::Hour;
+  }
+  if (ch == 'm') {
+    return PatternField::Minute;
+  }
+  if (ch == 's') {
+    return PatternField::Second;
+  }
+  return PatternField::Other;
+}
+
 
 
 
@@ -612,11 +629,69 @@ static void ReplaceHourSymbol(mozilla::Span<char16_t> patternOrSkeleton,
   char16_t replacement = HourSymbol(hc);
   PatternIterator<char16_t> iter(patternOrSkeleton);
   while (auto* ptr = iter.next()) {
-    char16_t ch = *ptr;
-    if (ch == 'K' || ch == 'h' || ch == 'H' || ch == 'k' || ch == 'j') {
+    auto field = ToPatternField(*ptr);
+    if (field == PatternField::Hour) {
       *ptr = replacement;
     }
   }
+}
+
+static auto PatternMatchOptions(mozilla::Span<const char16_t> skeleton) {
+  
+  
+  
+  
+  int32_t hour = 0;
+  int32_t minute = 0;
+  int32_t second = 0;
+
+  PatternIterator<const char16_t> iter(skeleton);
+  while (const auto* ptr = iter.next()) {
+    switch (ToPatternField(*ptr)) {
+      case PatternField::Hour:
+        MOZ_ASSERT(hour < 2);
+        hour += 1;
+        break;
+      case PatternField::Minute:
+        MOZ_ASSERT(minute < 2);
+        minute += 1;
+        break;
+      case PatternField::Second:
+        MOZ_ASSERT(second < 2);
+        second += 1;
+        break;
+      case PatternField::Other:
+        break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  using PatternMatchOption =
+      mozilla::intl::DateTimePatternGenerator::PatternMatchOption;
+  mozilla::EnumSet<PatternMatchOption> options;
+  if (hour == 2) {
+    options += PatternMatchOption::HourField;
+  }
+  if (minute == 2) {
+    options += PatternMatchOption::MinuteField;
+  }
+  if (second == 2) {
+    options += PatternMatchOption::SecondField;
+  }
+  return options;
 }
 
 bool js::intl_patternForSkeleton(JSContext* cx, unsigned argc, Value* vp) {
@@ -656,7 +731,8 @@ bool js::intl_patternForSkeleton(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> pattern(cx);
-  auto result = gen->GetBestPattern(skelChars, pattern);
+  auto options = PatternMatchOptions(skelChars);
+  auto result = gen->GetBestPattern(skelChars, pattern, options);
   if (result.isErr()) {
     intl::ReportInternalError(cx, result.unwrapErr());
     return false;

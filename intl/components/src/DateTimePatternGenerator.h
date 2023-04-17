@@ -5,6 +5,7 @@
 #define intl_components_DateTimePatternGenerator_h_
 
 #include "unicode/udatpg.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/Span.h"
@@ -45,6 +46,26 @@ class DateTimePatternGenerator final {
   static Result<UniquePtr<DateTimePatternGenerator>, Error> TryCreate(
       const char* aLocale);
 
+  enum class PatternMatchOption {
+    
+
+
+
+    HourField,
+
+    
+
+
+
+    MinuteField,
+
+    
+
+
+
+    SecondField,
+  };
+
   
 
 
@@ -52,12 +73,14 @@ class DateTimePatternGenerator final {
 
 
   template <typename B>
-  ICUResult GetBestPattern(Span<const char16_t> aSkeleton, B& aBuffer) {
+  ICUResult GetBestPattern(Span<const char16_t> aSkeleton, B& aBuffer,
+                           EnumSet<PatternMatchOption> options = {}) {
     return FillBufferWithICUCall(
         aBuffer, [&](UChar* target, int32_t length, UErrorCode* status) {
-          return udatpg_getBestPattern(mGenerator, aSkeleton.data(),
-                                       static_cast<int32_t>(aSkeleton.Length()),
-                                       target, length, status);
+          return udatpg_getBestPatternWithOptions(
+              mGenerator, aSkeleton.data(),
+              static_cast<int32_t>(aSkeleton.Length()),
+              toUDateTimePatternMatchOptions(options), target, length, status);
         });
   }
 
@@ -88,6 +111,28 @@ class DateTimePatternGenerator final {
 
  private:
   UDateTimePatternGenerator* mGenerator = nullptr;
+
+  static UDateTimePatternMatchOptions toUDateTimePatternMatchOptions(
+      EnumSet<PatternMatchOption> options) {
+    struct OptionMap {
+      PatternMatchOption from;
+      UDateTimePatternMatchOptions to;
+    } static constexpr map[] = {
+        {PatternMatchOption::HourField, UDATPG_MATCH_HOUR_FIELD_LENGTH},
+#ifndef U_HIDE_INTERNAL_API
+        {PatternMatchOption::MinuteField, UDATPG_MATCH_MINUTE_FIELD_LENGTH},
+        {PatternMatchOption::SecondField, UDATPG_MATCH_SECOND_FIELD_LENGTH},
+#endif
+    };
+
+    UDateTimePatternMatchOptions result = UDATPG_MATCH_NO_OPTIONS;
+    for (const auto& entry : map) {
+      if (options.contains(entry.from)) {
+        result = UDateTimePatternMatchOptions(result | entry.to);
+      }
+    }
+    return result;
+  }
 };
 
 }  
