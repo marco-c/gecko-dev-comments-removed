@@ -18,7 +18,24 @@ add_task(async function run_test() {
   let promise = PromiseUtils.defer();
 
   let bookmarksObserver = {
+    QueryInterface: ChromeUtils.generateQI(["nsINavBookmarkObserver"]),
+
     _changedCount: 0,
+    onItemChanged(
+      aItemId,
+      aProperty,
+      aIsAnnotationProperty,
+      aValue,
+      aLastModified,
+      aItemType,
+      aParentId,
+      aGuid
+    ) {
+      if (aProperty == "tags") {
+        Assert.equal(aGuid, bookmark.guid);
+        this._changedCount++;
+      }
+    },
     handlePlacesEvents(events) {
       for (let event of events) {
         switch (event.type) {
@@ -31,20 +48,16 @@ add_task(async function run_test() {
               Assert.equal(this._changedCount, 2);
               promise.resolve();
             }
-            break;
-          case "bookmark-tags-changed":
-            Assert.equal(event.guid, bookmark.guid);
-            this._changedCount++;
-            break;
         }
       }
     },
   };
+  PlacesUtils.bookmarks.addObserver(bookmarksObserver);
   bookmarksObserver.handlePlacesEvents = bookmarksObserver.handlePlacesEvents.bind(
     bookmarksObserver
   );
   PlacesUtils.observers.addListener(
-    ["bookmark-removed", "bookmark-tags-changed"],
+    ["bookmark-removed"],
     bookmarksObserver.handlePlacesEvents
   );
 
