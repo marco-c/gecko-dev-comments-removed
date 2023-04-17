@@ -19,6 +19,7 @@
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/FileUtils.h"
 #include "mozilla/FileLocation.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 
 class nsZipFind;
@@ -218,6 +219,8 @@ class nsZipArchive final {
   
   
   bool mUseZipLog;
+
+  mozilla::Mutex mLock{"nsZipArchive"};
 
  private:
   
