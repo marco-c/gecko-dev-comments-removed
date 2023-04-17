@@ -279,6 +279,26 @@ nsISerialEventTarget* WorkerGlobalScopeBase::EventTargetFor(
   return mSerialEventTarget;
 }
 
+
+void WorkerGlobalScopeBase::ReportError(JSContext* aCx,
+                                        JS::Handle<JS::Value> aError,
+                                        CallerType, ErrorResult& aRv) {
+  JS::ErrorReportBuilder jsReport(aCx);
+  JS::ExceptionStack exnStack(aCx, aError, nullptr);
+  if (!jsReport.init(aCx, exnStack, JS::ErrorReportBuilder::WithSideEffects)) {
+    return aRv.NoteJSContextException(aCx);
+  }
+
+  
+  
+  
+  
+  JS::SetPendingExceptionStack(aCx, exnStack);
+  mWorkerPrivate->ReportError(aCx, jsReport.toStringResult(),
+                              jsReport.report());
+  JS_ClearPendingException(aCx);
+}
+
 void WorkerGlobalScopeBase::Atob(const nsAString& aAtob, nsAString& aOut,
                                  ErrorResult& aRv) const {
   mWorkerPrivate->AssertIsOnWorkerThread();

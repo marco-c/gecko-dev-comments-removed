@@ -121,6 +121,10 @@ class WorkerGlobalScopeBase : public DOMEventTargetHelper,
     MOZ_CRASH("AbstractMainThreadFor not supported for workers.");
   }
 
+  MOZ_CAN_RUN_SCRIPT
+  void ReportError(JSContext* aCx, JS::Handle<JS::Value> aError,
+                   CallerType aCallerType, ErrorResult& aRv);
+
   
   
   void Atob(const nsAString& aAtob, nsAString& aOut, ErrorResult& aRv) const;
