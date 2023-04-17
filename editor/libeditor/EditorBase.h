@@ -582,6 +582,13 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  virtual bool IsEmpty() const = 0;
+
+  
+
+
+
   void SuppressDispatchingInputEvent(bool aSuppress) {
     mDispatchInputEvent = !aSuppress;
   }

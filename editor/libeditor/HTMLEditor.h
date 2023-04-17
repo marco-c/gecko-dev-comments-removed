@@ -151,13 +151,7 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD BeginningOfDocument() override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD SetFlags(uint32_t aFlags) override;
 
-  
-
-
-
-
-
-  virtual bool IsEmpty() const override;
+  bool IsEmpty() const final;
 
   virtual bool CanPaste(int32_t aClipboardType) const override;
   using EditorBase::CanPaste;
