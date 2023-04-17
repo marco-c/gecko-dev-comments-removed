@@ -3676,6 +3676,15 @@ void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText) {
 void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
                                         ProfilerStackCollector& aCollector,
                                         bool aSampleNative ) {
+  const bool isSynchronous = [&aThreadId]() {
+    const int currentThreadId = profiler_current_thread_id();
+    if (aThreadId == 0) {
+      aThreadId = currentThreadId;
+      return true;
+    }
+    return aThreadId == currentThreadId;
+  }();
+
   
   PSAutoLock lock;
 
@@ -3693,47 +3702,56 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
       
       NativeStack nativeStack;
 
+      auto collectStack = [&](const Registers& aRegs, const TimeStamp& aNow) {
       
-      Sampler sampler(lock);
-      TimeStamp now = TimeStamp::NowUnfuzzed();
-      sampler.SuspendAndSampleAndResumeThread(
-          lock, registeredThread, now,
-          [&](const Registers& aRegs, const TimeStamp& aNow) {
-            
-            
-            bool isSynchronous = false;
+      
 #if defined(HAVE_FASTINIT_NATIVE_UNWIND)
-            if (aSampleNative) {
+        if (aSampleNative) {
           
           
           
 #  if defined(USE_FRAME_POINTER_STACK_WALK)
-              DoFramePointerBacktrace(lock, registeredThread, aRegs,
-                                      nativeStack);
+          DoFramePointerBacktrace(lock, registeredThread, aRegs, nativeStack);
 #  elif defined(USE_MOZ_STACK_WALK)
-              DoMozStackWalkBacktrace(lock, registeredThread, aRegs,
-                                      nativeStack);
+          DoMozStackWalkBacktrace(lock, registeredThread, aRegs, nativeStack);
 #  else
 #    error "Invalid configuration"
 #  endif
 
-              MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector);
-            } else
+          MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
+                      nativeStack, aCollector);
+        } else
 #endif
-            {
-              MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector);
+        {
+          MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
+                      nativeStack, aCollector);
 
-              if (ProfilerFeature::HasLeaf(aFeatures)) {
-                aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
-              }
-            }
-          });
+          if (ProfilerFeature::HasLeaf(aFeatures)) {
+            aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
+          }
+        }
+      };
 
-      
-      
-      sampler.Disable(lock);
+      if (isSynchronous) {
+        
+        Registers regs;
+#if defined(HAVE_NATIVE_UNWIND)
+        regs.SyncPopulate();
+#else
+        regs.Clear();
+#endif
+        collectStack(regs, TimeStamp::Now());
+      } else {
+        
+        Sampler sampler(lock);
+        TimeStamp now = TimeStamp::NowUnfuzzed();
+        sampler.SuspendAndSampleAndResumeThread(lock, registeredThread, now,
+                                                collectStack);
+
+        
+        
+        sampler.Disable(lock);
+      }
       break;
     }
   }

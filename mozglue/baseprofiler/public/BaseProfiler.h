@@ -304,6 +304,7 @@ class ProfilerStackCollector {
 
 
 
+
 MFBT_API void profiler_suspend_and_sample_thread(
     int aThreadId, uint32_t aFeatures, ProfilerStackCollector& aCollector,
     bool aSampleNative = true);
