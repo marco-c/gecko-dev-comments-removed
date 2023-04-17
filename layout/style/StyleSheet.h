@@ -501,7 +501,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  void FixUpAfterInnerClone();
+  void BuildChildListAfterInnerClone();
 
   void DropRuleList();
 

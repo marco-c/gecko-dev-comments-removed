@@ -45,12 +45,6 @@ void ServoStyleRuleMap::SheetAdded(StyleSheet& aStyleSheet) {
   }
 }
 
-void ServoStyleRuleMap::SheetCloned(StyleSheet& aStyleSheet) {
-  
-  
-  mTable.Clear();
-}
-
 void ServoStyleRuleMap::SheetRemoved(StyleSheet& aStyleSheet) {
   
   
