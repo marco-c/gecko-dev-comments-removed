@@ -959,7 +959,7 @@ void DoMarking(GCMarker* gcmarker, T* thing) {
   gcmarker->markAndTraverse(thing);
 
   
-  SetMaybeAliveFlag(thing);
+  SetCompartmentHasMarkedCells(thing);
 }
 
 template <typename T>

@@ -282,6 +282,7 @@ class JS::Compartment {
     
     
     bool scheduledForDestruction = false;
+    bool hasMarkedCells = false;
     bool maybeAlive = true;
 
     
@@ -439,16 +440,16 @@ namespace js {
 
 
 template <typename T>
-inline void SetMaybeAliveFlag(T* thing) {}
+inline void SetCompartmentHasMarkedCells(T* thing) {}
 
 template <>
-inline void SetMaybeAliveFlag(JSObject* thing) {
-  thing->compartment()->gcState.maybeAlive = true;
+inline void SetCompartmentHasMarkedCells(JSObject* thing) {
+  thing->compartment()->gcState.hasMarkedCells = true;
 }
 
 template <>
-inline void SetMaybeAliveFlag(JSScript* thing) {
-  thing->compartment()->gcState.maybeAlive = true;
+inline void SetCompartmentHasMarkedCells(JSScript* thing) {
+  thing->compartment()->gcState.hasMarkedCells = true;
 }
 
 
