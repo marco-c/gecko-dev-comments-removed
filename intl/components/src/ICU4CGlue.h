@@ -15,6 +15,14 @@
 #include "mozilla/Vector.h"
 #include "mozilla/intl/ICUError.h"
 
+
+
+
+
+#ifndef JS_STANDALONE
+#  include "nsTArray.h"
+#endif
+
 #include <cstring>
 #include <iterator>
 #include <stddef.h>
@@ -190,6 +198,86 @@ static ICUResult FillBufferWithICUCall(Vector<CharType, InlineSize>& vector,
   VectorToBufferAdaptor buffer(vector);
   return FillBufferWithICUCall(buffer, strFn);
 }
+
+#ifndef JS_STANDALONE
+
+
+
+
+template <typename T>
+class nsTArrayToBufferAdapter {
+ public:
+  using CharType = T;
+
+  
+  nsTArrayToBufferAdapter(const nsTArrayToBufferAdapter&) = delete;
+  nsTArrayToBufferAdapter& operator=(const nsTArrayToBufferAdapter&) = delete;
+
+  explicit nsTArrayToBufferAdapter(nsTArray<CharType>& aArray)
+      : mArray(aArray) {}
+
+  
+
+
+  [[nodiscard]] bool reserve(size_t size) {
+    mArray.SetCapacity(size);
+    
+    
+    return true;
+  }
+
+  
+
+
+  CharType* data() { return mArray.Elements(); }
+
+  
+
+
+  size_t length() const { return mArray.Length(); }
+
+  
+
+
+  size_t capacity() const { return mArray.Capacity(); }
+
+  
+
+
+  void written(size_t amount) {
+    MOZ_ASSERT(amount <= mArray.Capacity());
+    
+    
+    
+    mArray.SetLengthAndRetainStorage(amount);
+  }
+
+ private:
+  nsTArray<CharType>& mArray;
+};
+
+template <typename T, size_t N>
+class AutoTArrayToBufferAdapter : public nsTArrayToBufferAdapter<T> {
+  using nsTArrayToBufferAdapter<T>::nsTArrayToBufferAdapter;
+};
+
+
+
+
+template <typename ICUStringFunction, typename CharType>
+static ICUResult FillBufferWithICUCall(nsTArray<CharType>& array,
+                                       const ICUStringFunction& strFn) {
+  nsTArrayToBufferAdapter<CharType> buffer(array);
+  return FillBufferWithICUCall(buffer, strFn);
+}
+
+template <typename ICUStringFunction, typename CharType, size_t N>
+static ICUResult FillBufferWithICUCall(AutoTArray<CharType, N>& array,
+                                       const ICUStringFunction& strFn) {
+  AutoTArrayToBufferAdapter<CharType, N> buffer(array);
+  return FillBufferWithICUCall(buffer, strFn);
+}
+#endif
 
 
 
