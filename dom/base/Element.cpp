@@ -959,17 +959,14 @@ nsRect Element::GetClientAreaRect() {
   if (overlayScrollbars &&
       !doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
       doc->IsScrollingElement(this)) {
-    
-    
-    
-    PresShell* presShell = doc->GetPresShell();
-
-    
-    RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
-    if (viewManager) {
-      viewManager->FlushDelayedResize(false);
+    if (PresShell* presShell = doc->GetPresShell()) {
+      
+      RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
+      if (viewManager) {
+        viewManager->FlushDelayedResize(false);
+      }
+      return nsRect(nsPoint(), presContext->GetVisibleArea().Size());
     }
-    return nsRect(nsPoint(), presContext->GetVisibleArea().Size());
   }
 
   nsIFrame* frame;
