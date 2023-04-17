@@ -3177,6 +3177,8 @@ void Document::SetCompatibilityMode(nsCompatibility aMode) {
   }
   mCompatMode = aMode;
   CompatibilityModeChanged();
+  
+  mViewportType = Unknown;
 }
 
 static void WarnIfSandboxIneffective(nsIDocShell* aDocShell,
