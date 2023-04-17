@@ -4,6 +4,7 @@
 
 
 
+include IPCNavigationPreloadState;
 include PBackgroundSharedTypes;
 
 namespace mozilla {
@@ -24,6 +25,8 @@ struct ServiceWorkerRegistrationData
   int64_t currentWorkerInstalledTime;
   int64_t currentWorkerActivatedTime;
   int64_t lastUpdateTime;
+
+  IPCNavigationPreloadState navigationPreloadState;
 };
 
 } 
