@@ -296,7 +296,7 @@ var ignoreFunctions = {
     "void mozilla::dom::JSStreamConsumer::~JSStreamConsumer() [[base_dtor]]": true,
 };
 
-function extraGCFunctions() {
+function extraGCFunctions(readableNames) {
     return ["ffi_call"].filter(f => f in readableNames);
 }
 
@@ -323,7 +323,7 @@ function isICU(name)
            name.match(/u(prv_malloc|prv_realloc|prv_free|case_toFullLower)_\d+/)
 }
 
-function ignoreGCFunction(mangled)
+function ignoreGCFunction(mangled, readableNames)
 {
     
     if (!(mangled in readableNames))
