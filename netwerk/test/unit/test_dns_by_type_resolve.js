@@ -6,11 +6,19 @@
 
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
+let prefs;
 let h2Port;
+let listen;
 
 const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
   Ci.nsIDNSService
 );
+const threadManager = Cc["@mozilla.org/thread-manager;1"].getService(
+  Ci.nsIThreadManager
+);
+const mainThread = threadManager.currentThread;
+
+const defaultOriginAttributes = {};
 
 function setup() {
   let env = Cc["@mozilla.org/process/environment;1"].getService(
@@ -20,29 +28,98 @@ function setup() {
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
 
-  trr_test_setup();
-  Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRFIRST);
+  
+  do_get_profile();
+  prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
+
+  prefs.setBoolPref("network.http.spdy.enabled", true);
+  prefs.setBoolPref("network.http.spdy.enabled.http2", true);
+  
+  prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
+
+  
+  prefs.setBoolPref("network.dns.native-is-localhost", true);
+
+  
+  prefs.setIntPref("network.trr.mode", 2); 
+  prefs.setBoolPref("network.trr.wait-for-portal", false);
+  
+  prefs.setCharPref("network.trr.confirmationNS", "skip");
+
+  
+  
+  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
+
+  
+  
+  const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 }
 
 setup();
 registerCleanupFunction(() => {
-  trr_clear_prefs();
+  prefs.clearUserPref("network.http.spdy.enabled");
+  prefs.clearUserPref("network.http.spdy.enabled.http2");
+  prefs.clearUserPref("network.dns.localDomains");
+  prefs.clearUserPref("network.dns.native-is-localhost");
+  prefs.clearUserPref("network.trr.mode");
+  prefs.clearUserPref("network.trr.uri");
+  prefs.clearUserPref("network.trr.credentials");
+  prefs.clearUserPref("network.trr.wait-for-portal");
+  prefs.clearUserPref("network.trr.allow-rfc1918");
+  prefs.clearUserPref("network.trr.useGET");
+  prefs.clearUserPref("network.trr.confirmationNS");
+  prefs.clearUserPref("network.trr.bootstrapAddress");
+  prefs.clearUserPref("network.trr.blacklist-duration");
+  prefs.clearUserPref("network.trr.request-timeout");
+  prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
 });
 
 let test_answer = "bXkgdm9pY2UgaXMgbXkgcGFzc3dvcmQ=";
 let test_answer_addr = "127.0.0.1";
 
+class DNSListener {
+  constructor() {
+    this.promise = new Promise(resolve => {
+      this.resolve = resolve;
+    });
+  }
+  onLookupComplete(inRequest, inRecord, inStatus) {
+    this.resolve([inRequest, inRecord, inStatus]);
+  }
+  
+  then() {
+    return this.promise.then.apply(this.promise, arguments);
+  }
+}
+
+DNSListener.prototype.QueryInterface = ChromeUtils.generateQI([
+  "nsIDNSListener",
+]);
+
 add_task(async function testTXTResolve() {
   
-  Services.prefs.setCharPref(
+  prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/doh"
   );
 
-  let [, inRecord] = await new TRRDNSListener("_esni.example.com", {
-    type: dns.RESOLVE_TYPE_TXT,
-  });
+  let listenerEsni = new DNSListener();
+  let request = dns.asyncResolve(
+    "_esni.example.com",
+    dns.RESOLVE_TYPE_TXT,
+    0,
+    null, 
+    listenerEsni,
+    mainThread,
+    defaultOriginAttributes
+  );
 
+  let [inRequest, inRecord, inStatus] = await listenerEsni;
+  Assert.equal(inRequest, request, "correct request was used");
+  Assert.equal(inStatus, Cr.NS_OK, "status OK");
   let answer = inRecord
     .QueryInterface(Ci.nsIDNSTXTRecord)
     .getRecordsAsOneString();
@@ -51,15 +128,24 @@ add_task(async function testTXTResolve() {
 
 
 add_task(async function testTXTRecordPushPart1() {
-  Services.prefs.setCharPref(
+  prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/txt-dns-push"
   );
-  let [, inRecord] = await new TRRDNSListener("_esni_push.example.com", {
-    type: dns.RESOLVE_TYPE_DEFAULT,
-    expectedAnswer: "127.0.0.1",
-  });
+  let listenerAddr = new DNSListener();
+  let request = dns.asyncResolve(
+    "_esni_push.example.com",
+    dns.RESOLVE_TYPE_DEFAULT,
+    0,
+    null, 
+    listenerAddr,
+    mainThread,
+    defaultOriginAttributes
+  );
 
+  let [inRequest, inRecord, inStatus] = await listenerAddr;
+  Assert.equal(inRequest, request, "correct request was used");
+  Assert.equal(inStatus, Cr.NS_OK, "status OK");
   inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
   let answer = inRecord.getNextAddrAsString();
   Assert.equal(answer, test_answer_addr, "got correct answer");
@@ -69,14 +155,24 @@ add_task(async function testTXTRecordPushPart1() {
 add_task(async function testTXTRecordPushPart2() {
   
   
-  Services.prefs.setCharPref(
+  prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/404"
   );
-  let [, inRecord] = await new TRRDNSListener("_esni_push.example.com", {
-    type: dns.RESOLVE_TYPE_TXT,
-  });
+  let listenerEsni = new DNSListener();
+  let request = dns.asyncResolve(
+    "_esni_push.example.com",
+    dns.RESOLVE_TYPE_TXT,
+    0,
+    null, 
+    listenerEsni,
+    mainThread,
+    defaultOriginAttributes
+  );
 
+  let [inRequest, inRecord, inStatus] = await listenerEsni;
+  Assert.equal(inRequest, request, "correct request was used");
+  Assert.equal(inStatus, Cr.NS_OK, "status OK");
   let answer = inRecord
     .QueryInterface(Ci.nsIDNSTXTRecord)
     .getRecordsAsOneString();

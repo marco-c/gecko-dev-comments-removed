@@ -1,8 +1,7 @@
 "use strict";
 
 let h2Port;
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+let prefs;
 
 function setup() {
   let env = Cc["@mozilla.org/process/environment;1"].getService(
@@ -14,45 +13,57 @@ function setup() {
 
   
   do_get_profile();
+  prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
-  Services.prefs.setBoolPref("network.http.spdy.enabled", true);
-  Services.prefs.setBoolPref("network.http.spdy.enabled.http2", true);
+  prefs.setBoolPref("network.http.spdy.enabled", true);
+  prefs.setBoolPref("network.http.spdy.enabled.http2", true);
   
-  Services.prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
-
-  
-  Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
+  prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
 
   
-  Services.prefs.setBoolPref("network.trr.wait-for-portal", false);
+  prefs.setBoolPref("network.dns.native-is-localhost", true);
+
   
-  Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  prefs.setIntPref("network.trr.mode", 2); 
+  prefs.setBoolPref("network.trr.wait-for-portal", false);
+  
+  prefs.setCharPref("network.trr.confirmationNS", "skip");
 
   
   
-  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
+  prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
 
   
   
   const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
-
-  
-  
   addCertFromFile(certdb, "../unit/http2-ca.pem", "CTu,u,u");
 }
 
 setup();
 registerCleanupFunction(() => {
-  trr_clear_prefs();
+  prefs.clearUserPref("network.http.spdy.enabled");
+  prefs.clearUserPref("network.http.spdy.enabled.http2");
+  prefs.clearUserPref("network.dns.localDomains");
+  prefs.clearUserPref("network.dns.native-is-localhost");
+  prefs.clearUserPref("network.trr.mode");
+  prefs.clearUserPref("network.trr.uri");
+  prefs.clearUserPref("network.trr.credentials");
+  prefs.clearUserPref("network.trr.wait-for-portal");
+  prefs.clearUserPref("network.trr.allow-rfc1918");
+  prefs.clearUserPref("network.trr.useGET");
+  prefs.clearUserPref("network.trr.confirmationNS");
+  prefs.clearUserPref("network.trr.bootstrapAddress");
+  prefs.clearUserPref("network.trr.blacklist-duration");
+  prefs.clearUserPref("network.trr.request-timeout");
+  prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
 });
 
 function run_test() {
-  Services.prefs.setCharPref(
+  prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/doh"
   );
-  Services.prefs.setIntPref("network.trr.mode", 2); 
   run_test_in_child("child_dns_by_type_resolve.js");
 }

@@ -58,10 +58,10 @@ extern mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 struct nsHostKey {
   const nsCString host;
   const nsCString mTrrServer;
-  uint16_t type = 0;
-  uint16_t flags = 0;
-  uint16_t af = 0;
-  bool pb = false;
+  uint16_t type;
+  uint16_t flags;
+  uint16_t af;
+  bool pb;
   const nsCString originSuffix;
   explicit nsHostKey(const nsACString& host, const nsACString& aTrrServer,
                      uint16_t type, uint16_t flags, uint16_t af, bool pb,
@@ -159,7 +159,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   
   
-  nsIRequest::TRRMode mEffectiveTRRMode = nsIRequest::TRR_DEFAULT_MODE;
+  nsIRequest::TRRMode mEffectiveTRRMode;
 
   TRRSkippedReason mTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
   TRRSkippedReason mTRRAFailReason = TRRSkippedReason::TRR_UNSET;
@@ -167,16 +167,15 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   mozilla::DataMutex<RefPtr<mozilla::net::TRRQuery>> mTRRQuery;
 
-  
-  mozilla::Atomic<int32_t> mResolving{0};
+  mozilla::Atomic<int32_t>
+      mResolving;  
 
-  
-  
-  
-  bool negative = false;
+  uint8_t negative : 1; 
 
-  
-  bool mDoomed = false;
+
+
+
+  uint8_t mDoomed : 1;  
 };
 
 
@@ -189,7 +188,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
 class AddrHostRecord final : public nsHostRecord {
   using Mutex = mozilla::Mutex;
-  using DNSResolverType = mozilla::net::DNSResolverType;
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(ADDRHOSTRECORD_IID)
@@ -212,9 +210,8 @@ class AddrHostRecord final : public nsHostRecord {
 
 
 
-  Mutex addr_info_lock{"AddrHostRecord.addr_info_lock"};
-  
-  int addr_info_gencnt = 0;
+  Mutex addr_info_lock;
+  int addr_info_gencnt; 
   RefPtr<mozilla::net::AddrInfo> addr_info;
   mozilla::UniquePtr<mozilla::net::NetAddr> addr;
 
@@ -260,9 +257,9 @@ class AddrHostRecord final : public nsHostRecord {
   mozilla::TimeDuration mNativeDuration;
 
   
-  mozilla::Atomic<DNSResolverType> mResolverType{DNSResolverType::Native};
-  uint8_t mTRRSuccess = 0;     
-  uint8_t mNativeSuccess = 0;  
+  mozilla::Atomic<mozilla::net::DNSResolverType> mResolverType;
+  uint8_t mTRRSuccess;     
+  uint8_t mNativeSuccess;  
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (
@@ -324,7 +321,7 @@ class TypeHostRecord final : public nsHostRecord,
   bool HasUsableResult();
 
   mozilla::net::TypeRecordResultType mResults = AsVariant(mozilla::Nothing());
-  mozilla::Mutex mResultsLock{"TypeHostRecord.mResultsLock"};
+  mozilla::Mutex mResultsLock;
 
   
   mozilla::TimeStamp mStart;
@@ -587,18 +584,17 @@ class nsHostResolver : public nsISupports, public AHostResolver {
     METHOD_NETWORK_SHARED = 7
   };
 
-  uint32_t mMaxCacheEntries = 0;
-  uint32_t mDefaultCacheLifetime = 0;  
-  uint32_t mDefaultGracePeriod = 0;    
-  
-  mutable Mutex mLock{"nsHostResolver.mLock"};
+  uint32_t mMaxCacheEntries;
+  uint32_t mDefaultCacheLifetime;  
+  uint32_t mDefaultGracePeriod;    
+  mutable Mutex mLock;  
   CondVar mIdleTaskCV;
   nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord> mRecordDB;
   mozilla::LinkedList<RefPtr<nsHostRecord>> mHighQ;
   mozilla::LinkedList<RefPtr<nsHostRecord>> mMediumQ;
   mozilla::LinkedList<RefPtr<nsHostRecord>> mLowQ;
   mozilla::LinkedList<RefPtr<nsHostRecord>> mEvictionQ;
-  uint32_t mEvictionQSize = 0;
+  uint32_t mEvictionQSize;
   PRTime mCreationTime;
   mozilla::TimeDuration mLongIdleTimeout;
   mozilla::TimeDuration mShortIdleTimeout;
@@ -606,11 +602,11 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   RefPtr<nsIThreadPool> mResolverThreads;
   RefPtr<mozilla::net::NetworkConnectivityService> mNCS;
 
-  mozilla::Atomic<bool> mShutdown{true};
-  mozilla::Atomic<uint32_t> mNumIdleTasks{0};
-  mozilla::Atomic<uint32_t> mActiveTaskCount{0};
-  mozilla::Atomic<uint32_t> mActiveAnyThreadCount{0};
-  mozilla::Atomic<uint32_t> mPendingCount{0};
+  mozilla::Atomic<bool> mShutdown;
+  mozilla::Atomic<uint32_t> mNumIdleTasks;
+  mozilla::Atomic<uint32_t> mActiveTaskCount;
+  mozilla::Atomic<uint32_t> mActiveAnyThreadCount;
+  mozilla::Atomic<uint32_t> mPendingCount;
 
   
   void PrepareRecordExpirationAddrRecord(AddrHostRecord* rec) const;

@@ -38,24 +38,63 @@ function setup() {
   Assert.notEqual(h3Port, null);
   Assert.notEqual(h3Port, "");
 
-  trr_test_setup();
+  
+  do_get_profile();
+  prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
-  Services.prefs.setIntPref("network.trr.mode", 2); 
+  prefs.setBoolPref("network.security.esni.enabled", false);
+  prefs.setBoolPref("network.http.spdy.enabled", true);
+  prefs.setBoolPref("network.http.spdy.enabled.http2", true);
+  
+  prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
+
+  
+  prefs.setBoolPref("network.dns.native-is-localhost", true);
+
+  
+  prefs.setIntPref("network.trr.mode", 2); 
+  prefs.setBoolPref("network.trr.wait-for-portal", false);
+  
+  prefs.setCharPref("network.trr.confirmationNS", "skip");
+
+  
+  
+  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
+
   Services.prefs.setBoolPref("network.http.http3.enabled", true);
+
+  
+  
+  const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 }
 
 setup();
 registerCleanupFunction(async () => {
-  trr_clear_prefs();
-  Services.prefs.clearUserPref("network.dns.upgrade_with_https_rr");
-  Services.prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
-  Services.prefs.clearUserPref("network.dns.echconfig.enabled");
-  Services.prefs.clearUserPref("network.dns.echconfig.fallback_to_origin");
-  Services.prefs.clearUserPref("network.dns.httpssvc.reset_exclustion_list");
-  Services.prefs.clearUserPref("network.http.http3.enabled");
-  Services.prefs.clearUserPref(
-    "network.dns.httpssvc.http3_fast_fallback_timeout"
-  );
+  prefs.clearUserPref("network.security.esni.enabled");
+  prefs.clearUserPref("network.http.spdy.enabled");
+  prefs.clearUserPref("network.http.spdy.enabled.http2");
+  prefs.clearUserPref("network.dns.localDomains");
+  prefs.clearUserPref("network.dns.native-is-localhost");
+  prefs.clearUserPref("network.trr.mode");
+  prefs.clearUserPref("network.trr.uri");
+  prefs.clearUserPref("network.trr.credentials");
+  prefs.clearUserPref("network.trr.wait-for-portal");
+  prefs.clearUserPref("network.trr.allow-rfc1918");
+  prefs.clearUserPref("network.trr.useGET");
+  prefs.clearUserPref("network.trr.confirmationNS");
+  prefs.clearUserPref("network.trr.bootstrapAddress");
+  prefs.clearUserPref("network.trr.request-timeout");
+  prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
+  prefs.clearUserPref("network.dns.upgrade_with_https_rr");
+  prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
+  prefs.clearUserPref("network.dns.echconfig.enabled");
+  prefs.clearUserPref("network.dns.echconfig.fallback_to_origin");
+  prefs.clearUserPref("network.dns.httpssvc.reset_exclustion_list");
+  prefs.clearUserPref("network.http.http3.enabled");
+  prefs.clearUserPref("network.dns.httpssvc.http3_fast_fallback_timeout");
   Services.prefs.clearUserPref(
     "network.http.http3.alt-svc-mapping-for-testing"
   );
@@ -65,6 +104,25 @@ registerCleanupFunction(async () => {
     await trrServer.stop();
   }
 });
+
+class DNSListener {
+  constructor() {
+    this.promise = new Promise(resolve => {
+      this.resolve = resolve;
+    });
+  }
+  onLookupComplete(inRequest, inRecord, inStatus) {
+    this.resolve([inRequest, inRecord, inStatus]);
+  }
+  
+  then() {
+    return this.promise.then.apply(this.promise, arguments);
+  }
+}
+
+DNSListener.prototype.QueryInterface = ChromeUtils.generateQI([
+  "nsIDNSListener",
+]);
 
 function makeChan(url) {
   let chan = NetUtil.newChannel({
