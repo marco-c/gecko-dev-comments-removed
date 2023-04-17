@@ -77,7 +77,6 @@ for (let [key, val] of Object.entries({
     
     browserIsIframe: undefined,        
     browserMessageManager: undefined,  
-    useDrawSnapshot: undefined,        
     canvas1: undefined,
     canvas2: undefined,
     
