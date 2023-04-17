@@ -138,7 +138,8 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   
   
   
-  if (textControl && !StaticPrefs::dom_select_events_textcontrols_enabled()) {
+  if (textControl &&
+      !StaticPrefs::dom_select_events_textcontrols_selectionchange_enabled()) {
     return;
   }
 
