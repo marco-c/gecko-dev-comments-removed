@@ -13,17 +13,12 @@
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RandomNum.h"
 #include "nsFrameMessageManager.h"
 #include "prenv.h"
 
 namespace mozilla::dom {
 
 LazyLogModule MMPrinter::sMMLog("MessageManager");
-
-
-
-
 
 
 void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
@@ -46,11 +41,9 @@ void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
     return;
   }
 
-  uint64_t msg_id = RandomUint64OrDie();
-
   MOZ_LOG(MMPrinter::sMMLog, LogLevel::Debug,
-          ("%lu %s Message: %s in process type: %s", msg_id, aLocation,
-           charMsg.get(), XRE_GetProcessTypeString()));
+          ("%s Message: %s in process type: %s", aLocation, charMsg.get(),
+           XRE_GetProcessTypeString()));
 
   if (!MOZ_LOG_TEST(sMMLog, LogLevel::Verbose)) {
     return;
@@ -72,10 +65,7 @@ void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
   
   JS::RootedValue scdContent(cx);
   data.Read(cx, &scdContent, rv);
-  if (rv.Failed()) {
-    
-    
-    MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose, ("%lu (No Data)", msg_id));
+  if (NS_WARN_IF(rv.Failed())) {
     rv.SuppressException();
     return;
   }
@@ -85,7 +75,7 @@ void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
   if (!srcString.init(cx, unevalObj)) return;
 
   MOZ_LOG(MMPrinter::sMMLog, LogLevel::Verbose,
-          ("%lu %s", msg_id, NS_ConvertUTF16toUTF8(srcString).get()));
+          ("   %s", NS_ConvertUTF16toUTF8(srcString).get()));
 }
 
 }  
