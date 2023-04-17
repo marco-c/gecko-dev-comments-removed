@@ -201,14 +201,18 @@ add_task(async function testSendTabToDeviceButtonPress() {
 
 
 add_task(async function testReloadButtonPress() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
+  await BrowserTestUtils.withNewTab("https://example.com/1", async function(
     aBrowser
   ) {
     let button = document.getElementById("reload-button");
+    info("Waiting for button to be enabled.");
     await TestUtils.waitForCondition(() => !button.disabled);
-    forceFocus(button);
     let loaded = BrowserTestUtils.browserLoaded(aBrowser);
+    info("Focusing button");
+    forceFocus(button);
+    info("Pressing space on the button");
     EventUtils.synthesizeKey(" ");
+    info("Waiting for load.");
     await loaded;
     ok(true, "Page loaded after Reload button pressed");
   });
