@@ -400,7 +400,9 @@ var UrlbarUtils = {
       highlightType == this.HIGHLIGHT.SUGGESTED ? 1 : 0
     );
     let compareIgnoringDiacritics;
-    for (let { lowerCaseValue: needle } of tokens) {
+    for (let i = 0, totalTokensLength = 0; i < tokens.length; i++) {
+      const { lowerCaseValue: needle } = tokens[i];
+
       
       
       if (!needle) {
@@ -472,6 +474,12 @@ var UrlbarUtils = {
             index++;
           }
         }
+      }
+
+      totalTokensLength += needle.length;
+      if (totalTokensLength > UrlbarUtils.MAX_TEXT_LENGTH) {
+        
+        break;
       }
     }
     
