@@ -966,9 +966,14 @@ var gIdentityHandler = {
     
     
     this._clearSiteDataFooter.hidden = true;
+    let securityButton = document.getElementById(
+      "identity-popup-security-button"
+    );
+    securityButton.removeAttribute("footerHidden");
     if (this._uriHasHost && !this._pageExtensionPolicy) {
       SiteDataManager.hasSiteData(this._uri.asciiHost).then(hasData => {
         this._clearSiteDataFooter.hidden = !hasData;
+        securityButton.setAttribute("footerHidden", !hasData);
       });
     }
 
