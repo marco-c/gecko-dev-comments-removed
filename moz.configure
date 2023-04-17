@@ -898,6 +898,7 @@ def makensis_progs(target):
         "makensis-3.0b3",
         "makensis-3.0b1",
         "makensis",
+        "makensis.exe",
     ]
 
     
@@ -910,7 +911,7 @@ def makensis_progs(target):
     return tuple(candidates)
 
 
-nsis = check_prog("MAKENSISU", makensis_progs, allow_missing=True)
+nsis = check_prog("MAKENSISU", makensis_progs, bootstrap="nsis/bin", allow_missing=True)
 
 
 
