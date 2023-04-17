@@ -11,6 +11,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
+#include "mozilla/intl/Locale.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
@@ -23,7 +24,9 @@
 
 #include "builtin/Boolean.h"
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/LanguageTag.h"
+#include "builtin/intl/StringAsciiChars.h"
 #include "builtin/String.h"
 #include "gc/Rooting.h"
 #include "js/Conversions.h"
@@ -42,10 +45,7 @@
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
-using namespace js::intl::LanguageTagLimits;
-
-using intl::LanguageTag;
-using intl::LanguageTagParser;
+using namespace mozilla::intl::LanguageTagLimits;
 
 const JSClass LocaleObject::class_ = {
     "Intl.Locale",
@@ -60,7 +60,7 @@ static inline bool IsLocale(HandleValue v) {
 }
 
 
-static size_t BaseNameLength(const LanguageTag& tag) {
+static size_t BaseNameLength(const mozilla::intl::Locale& tag) {
   size_t baseNameLength = tag.language().length();
   if (tag.script().present()) {
     baseNameLength += 1 + tag.script().length();
@@ -88,7 +88,7 @@ struct IndexAndLength {
 
 
 static mozilla::Maybe<IndexAndLength> UnicodeExtensionPosition(
-    const LanguageTag& tag) {
+    const mozilla::intl::Locale& tag) {
   size_t index = 0;
   for (const auto& extension : tag.extensions()) {
     MOZ_ASSERT(!mozilla::IsAsciiUppercaseAlpha(extension[0]),
@@ -106,8 +106,14 @@ static mozilla::Maybe<IndexAndLength> UnicodeExtensionPosition(
 }
 
 static LocaleObject* CreateLocaleObject(JSContext* cx, HandleObject prototype,
-                                        const LanguageTag& tag) {
-  RootedString tagStr(cx, tag.toString(cx));
+                                        const mozilla::intl::Locale& tag) {
+  intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  if (auto result = tag.toString(buffer); result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+
+  RootedString tagStr(cx, buffer.toString(cx));
   if (!tagStr) {
     return nullptr;
   }
@@ -142,9 +148,27 @@ static LocaleObject* CreateLocaleObject(JSContext* cx, HandleObject prototype,
   return locale;
 }
 
-static inline bool IsValidUnicodeExtensionValue(JSLinearString* linear) {
-  return linear->length() > 0 &&
-         LanguageTagParser::canParseUnicodeExtensionType(linear);
+static inline bool IsValidUnicodeExtensionValue(JSContext* cx,
+                                                JSLinearString* linear,
+                                                bool* isValid) {
+  if (linear->length() == 0) {
+    *isValid = false;
+    return true;
+  }
+
+  if (!StringIsAscii(linear)) {
+    *isValid = false;
+    return true;
+  }
+
+  intl::StringAsciiChars chars(linear);
+  if (!chars.init(cx)) {
+    return false;
+  }
+
+  *isValid =
+      mozilla::intl::LocaleParser::canParseUnicodeExtensionType(chars).isOk();
+  return true;
 }
 
 
@@ -274,7 +298,7 @@ static bool GetBooleanOption(JSContext* cx, HandleObject options,
 
 
 
-static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
+static bool ApplyOptionsToTag(JSContext* cx, mozilla::intl::Locale& tag,
                               HandleObject options) {
   
 
@@ -286,7 +310,7 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
   }
 
   
-  intl::LanguageSubtag language;
+  mozilla::intl::LanguageSubtag language;
   if (option && !intl::ParseStandaloneLanguageTag(option, language)) {
     if (UniqueChars str = QuoteString(cx, option, '"')) {
       JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
@@ -302,7 +326,7 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
   }
 
   
-  intl::ScriptSubtag script;
+  mozilla::intl::ScriptSubtag script;
   if (option && !intl::ParseStandaloneScriptTag(option, script)) {
     if (UniqueChars str = QuoteString(cx, option, '"')) {
       JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
@@ -318,7 +342,7 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
   }
 
   
-  intl::RegionSubtag region;
+  mozilla::intl::RegionSubtag region;
   if (option && !intl::ParseStandaloneRegionTag(option, region)) {
     if (UniqueChars str = QuoteString(cx, option, '"')) {
       JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
@@ -350,8 +374,16 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
     
     
     
-    if (!tag.canonicalizeBaseName(cx)) {
-      return true;
+    auto result = tag.canonicalizeBaseName();
+    if (result.isErr()) {
+      if (result.unwrapErr() ==
+          mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_DUPLICATE_VARIANT_SUBTAG);
+      } else {
+        intl::ReportInternalError(cx);
+      }
+      return false;
     }
   }
 
@@ -362,7 +394,7 @@ static bool ApplyOptionsToTag(JSContext* cx, LanguageTag& tag,
 
 
 bool js::intl::ApplyUnicodeExtensionToTag(
-    JSContext* cx, LanguageTag& tag,
+    JSContext* cx, mozilla::intl::Locale& tag,
     JS::HandleVector<intl::UnicodeExtensionKeyword> keywords) {
   
   
@@ -437,12 +469,12 @@ bool js::intl::ApplyUnicodeExtensionToTag(
     return false;
   }
 
-  
-  UniqueChars newExtensionChars(newExtension.extractOrCopyRawBuffer());
-  if (!newExtensionChars) {
+  if (!tag.setUnicodeExtension(newExtension.begin())) {
+    intl::ReportInternalError(cx);
     return false;
   }
-  return tag.setUnicodeExtension(std::move(newExtensionChars));
+
+  return true;
 }
 
 static JS::Result<JSString*> LanguageTagFromMaybeWrappedLocale(JSContext* cx,
@@ -521,12 +553,19 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  LanguageTag tag(cx);
-  if (!LanguageTagParser::parse(cx, tagLinearStr, tag)) {
+  mozilla::intl::Locale tag;
+  if (!intl::ParseLocale(cx, tagLinearStr, tag)) {
     return false;
   }
 
-  if (!tag.canonicalizeBaseName(cx)) {
+  if (auto result = tag.canonicalizeBaseName(); result.isErr()) {
+    if (result.unwrapErr() ==
+        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
+    } else {
+      intl::ReportInternalError(cx);
+    }
     return false;
   }
 
@@ -547,7 +586,12 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
     
     if (calendar) {
-      if (!IsValidUnicodeExtensionValue(calendar)) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, calendar, &isValid)) {
+        return false;
+      }
+
+      if (!isValid) {
         if (UniqueChars str = QuoteString(cx, calendar, '"')) {
           JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                                     JSMSG_INVALID_OPTION_VALUE, "calendar",
@@ -569,7 +613,12 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
     
     if (collation) {
-      if (!IsValidUnicodeExtensionValue(collation)) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, collation, &isValid)) {
+        return false;
+      }
+
+      if (!isValid) {
         if (UniqueChars str = QuoteString(cx, collation, '"')) {
           JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                                     JSMSG_INVALID_OPTION_VALUE, "collation",
@@ -654,7 +703,11 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
     
     if (numberingSystem) {
-      if (!IsValidUnicodeExtensionValue(numberingSystem)) {
+      bool isValid;
+      if (!IsValidUnicodeExtensionValue(cx, numberingSystem, &isValid)) {
+        return false;
+      }
+      if (!isValid) {
         if (UniqueChars str = QuoteString(cx, numberingSystem, '"')) {
           JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
                                     JSMSG_INVALID_OPTION_VALUE,
@@ -676,7 +729,14 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  if (!tag.canonicalizeExtensions(cx)) {
+  if (auto result = tag.canonicalizeExtensions(); result.isErr()) {
+    if (result.unwrapErr() ==
+        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
+    } else {
+      intl::ReportInternalError(cx);
+    }
     return false;
   }
 
@@ -841,18 +901,21 @@ static BaseNamePartsResult BaseNameParts(const CharT* baseName, size_t length) {
   }
 
   IndexAndLength language{0, languageLength};
-  MOZ_ASSERT(intl::IsStructurallyValidLanguageTag(language.spanOf(baseName)));
+  MOZ_ASSERT(
+      mozilla::intl::IsStructurallyValidLanguageTag(language.spanOf(baseName)));
 
   mozilla::Maybe<IndexAndLength> script{};
   if (scriptIndex) {
     script.emplace(scriptIndex, ScriptLength);
-    MOZ_ASSERT(intl::IsStructurallyValidScriptTag(script->spanOf(baseName)));
+    MOZ_ASSERT(
+        mozilla::intl::IsStructurallyValidScriptTag(script->spanOf(baseName)));
   }
 
   mozilla::Maybe<IndexAndLength> region{};
   if (regionIndex) {
     region.emplace(regionIndex, regionLength);
-    MOZ_ASSERT(intl::IsStructurallyValidRegionTag(region->spanOf(baseName)));
+    MOZ_ASSERT(
+        mozilla::intl::IsStructurallyValidRegionTag(region->spanOf(baseName)));
   }
 
   return {language, script, region};
@@ -876,12 +939,13 @@ static bool Locale_maximize(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  LanguageTag tag(cx);
-  if (!LanguageTagParser::parse(cx, tagStr, tag)) {
+  mozilla::intl::Locale tag;
+  if (!intl::ParseLocale(cx, tagStr, tag)) {
     return false;
   }
 
-  if (!tag.addLikelySubtags(cx)) {
+  if (!tag.addLikelySubtags()) {
+    intl::ReportInternalError(cx);
     return false;
   }
 
@@ -912,12 +976,13 @@ static bool Locale_minimize(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  LanguageTag tag(cx);
-  if (!LanguageTagParser::parse(cx, tagStr, tag)) {
+  mozilla::intl::Locale tag;
+  if (!intl::ParseLocale(cx, tagStr, tag)) {
     return false;
   }
 
-  if (!tag.removeLikelySubtags(cx)) {
+  if (!tag.removeLikelySubtags()) {
+    intl::ReportInternalError(cx);
     return false;
   }
 
@@ -1280,19 +1345,34 @@ bool js::intl_ValidateAndCanonicalizeLanguageTag(JSContext* cx, unsigned argc,
     return true;
   }
 
-  LanguageTag tag(cx);
-  if (!LanguageTagParser::parse(cx, tagLinearStr, tag)) {
+  mozilla::intl::Locale tag;
+  if (!intl::ParseLocale(cx, tagLinearStr, tag)) {
     return false;
   }
 
-  if (!tag.canonicalize(cx)) {
+  auto result = tag.canonicalize();
+  if (result.isErr()) {
+    if (result.unwrapErr() ==
+        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
+    } else {
+      intl::ReportInternalError(cx);
+    }
     return false;
   }
 
-  JSString* resultStr = tag.toString(cx);
+  intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  if (auto result = tag.toString(buffer); result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return false;
+  }
+
+  JSString* resultStr = buffer.toString(cx);
   if (!resultStr) {
     return false;
   }
+
   args.rval().setString(resultStr);
   return true;
 }
@@ -1307,22 +1387,45 @@ bool js::intl_TryValidateAndCanonicalizeLanguageTag(JSContext* cx,
     return false;
   }
 
-  LanguageTag tag(cx);
-  bool ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(cx, ok,
-                             LanguageTagParser::tryParse(cx, linear, tag));
+  mozilla::intl::Locale tag;
+  {
+    if (!StringIsAscii(linear)) {
+      
+      args.rval().setNull();
+      return true;
+    }
 
-  
-  if (!ok) {
-    args.rval().setNull();
-    return true;
+    intl::StringAsciiChars chars(linear);
+    if (!chars.init(cx)) {
+      return false;
+    }
+
+    if (mozilla::intl::LocaleParser::tryParse(chars, tag).isErr()) {
+      
+      args.rval().setNull();
+      return true;
+    }
   }
 
-  if (!tag.canonicalize(cx)) {
+  auto result = tag.canonicalize();
+  if (result.isErr()) {
+    if (result.unwrapErr() ==
+        mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DUPLICATE_VARIANT_SUBTAG);
+    } else {
+      intl::ReportInternalError(cx);
+    }
     return false;
   }
 
-  JSString* resultStr = tag.toString(cx);
+  intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+  if (auto result = tag.toString(buffer); result.isErr()) {
+    intl::ReportInternalError(cx, result.unwrapErr());
+    return false;
+  }
+
+  JSString* resultStr = buffer.toString(cx);
   if (!resultStr) {
     return false;
   }
@@ -1350,7 +1453,11 @@ bool js::intl_ValidateAndCanonicalizeUnicodeExtensionType(JSContext* cx,
     return false;
   }
 
-  if (!IsValidUnicodeExtensionValue(unicodeType)) {
+  bool isValid;
+  if (!IsValidUnicodeExtensionValue(cx, unicodeType, &isValid)) {
+    return false;
+  }
+  if (!isValid) {
     UniqueChars optionChars = EncodeAscii(cx, optionArg.toString());
     if (!optionChars) {
       return false;
@@ -1391,8 +1498,8 @@ bool js::intl_ValidateAndCanonicalizeUnicodeExtensionType(JSContext* cx,
   MOZ_ASSERT(strlen(unicodeTypeChars.get()) == unicodeTypeLength);
 
   
-  intl::AsciiToLowerCase(unicodeTypeChars.get(), unicodeTypeLength,
-                         unicodeTypeChars.get());
+  mozilla::intl::AsciiToLowerCase(unicodeTypeChars.get(), unicodeTypeLength,
+                                  unicodeTypeChars.get());
 
   auto key = mozilla::Span(unicodeKey, UnicodeKeyLength);
   auto type = mozilla::Span(unicodeTypeChars.get(), unicodeTypeLength);
@@ -1400,7 +1507,7 @@ bool js::intl_ValidateAndCanonicalizeUnicodeExtensionType(JSContext* cx,
   
   JSString* result;
   if (const char* replacement =
-          LanguageTag::replaceUnicodeExtensionType(key, type)) {
+          mozilla::intl::Locale::replaceUnicodeExtensionType(key, type)) {
     result = NewStringCopyZ<CanGC>(cx, replacement);
   } else {
     result = StringToLowerCase(cx, unicodeType);

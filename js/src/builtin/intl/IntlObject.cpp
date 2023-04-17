@@ -32,6 +32,7 @@
 #include "builtin/intl/PluralRules.h"
 #include "builtin/intl/RelativeTimeFormat.h"
 #include "builtin/intl/SharedIntlData.h"
+#include "builtin/intl/StringAsciiChars.h"
 #include "ds/Sort.h"
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
@@ -260,29 +261,51 @@ bool js::intl_BestAvailableLocale(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef DEBUG
   {
-    intl::LanguageTag tag(cx);
-    bool ok;
-    JS_TRY_VAR_OR_RETURN_FALSE(
-        cx, ok, intl::LanguageTagParser::tryParse(cx, locale, tag));
-    MOZ_ASSERT(ok, "locale is a structurally valid language tag");
+    MOZ_ASSERT(StringIsAscii(locale), "language tags are ASCII-only");
+
+    
+    mozilla::intl::Locale tag;
+    {
+      intl::StringAsciiChars chars(locale);
+      if (!chars.init(cx)) {
+        return false;
+      }
+
+      if (auto result = mozilla::intl::LocaleParser::tryParse(chars, tag);
+          result.isErr()) {
+        using ParserError = mozilla::intl::LocaleParser::ParserError;
+        MOZ_ASSERT(result.unwrapErr() == ParserError::OutOfMemory,
+                   "locale is a structurally valid language tag");
+
+        intl::ReportInternalError(cx);
+        return false;
+      }
+    }
 
     MOZ_ASSERT(!tag.unicodeExtension(),
                "locale must contain no Unicode extensions");
 
-    if (!tag.canonicalize(cx)) {
+    if (auto result = tag.canonicalize(); result.isErr()) {
+      MOZ_ASSERT(
+          result.unwrapErr() !=
+          mozilla::intl::Locale::CanonicalizationError::DuplicateVariant);
+      intl::ReportInternalError(cx);
       return false;
     }
 
-    JSString* tagStr = tag.toString(cx);
+    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+    if (auto result = tag.toString(buffer); result.isErr()) {
+      intl::ReportInternalError(cx, result.unwrapErr());
+      return false;
+    }
+
+    JSLinearString* tagStr = buffer.toString(cx);
     if (!tagStr) {
       return false;
     }
 
-    bool canonical;
-    if (!EqualStrings(cx, locale, tagStr, &canonical)) {
-      return false;
-    }
-    MOZ_ASSERT(canonical, "locale is a canonicalized language tag");
+    MOZ_ASSERT(EqualStrings(locale, tagStr),
+               "locale is a canonicalized language tag");
   }
 #endif
 
@@ -318,37 +341,42 @@ bool js::intl_supportedLocaleOrFallback(JSContext* cx, unsigned argc,
     return false;
   }
 
-  intl::LanguageTag tag(cx);
-  bool ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, ok, intl::LanguageTagParser::tryParse(cx, locale, tag));
+  mozilla::intl::Locale tag;
+  bool canParseLocale = false;
+  if (StringIsAscii(locale)) {
+    intl::StringAsciiChars chars(locale);
+    if (!chars.init(cx)) {
+      return false;
+    }
+
+    canParseLocale = mozilla::intl::LocaleParser::tryParse(chars, tag).isOk() &&
+                     tag.canonicalize().isOk();
+  }
 
   RootedLinearString candidate(cx);
-  if (!ok) {
+  if (!canParseLocale) {
     candidate = NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
     if (!candidate) {
       return false;
     }
   } else {
-    if (!tag.canonicalize(cx)) {
-      return false;
-    }
-
     
     
     
     tag.clearUnicodeExtension();
 
-    JSString* canonical = tag.toString(cx);
-    if (!canonical) {
+    intl::FormatBuffer<char, intl::INITIAL_CHAR_BUFFER_SIZE> buffer(cx);
+    if (auto result = tag.toString(buffer); result.isErr()) {
+      intl::ReportInternalError(cx, result.unwrapErr());
       return false;
     }
 
-    candidate = canonical->ensureLinear(cx);
+    candidate = buffer.toString(cx);
     if (!candidate) {
       return false;
     }
 
+    
     
     
     for (const auto& mapping : js::intl::oldStyleLanguageTagMappings) {
@@ -561,6 +589,7 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
     
     
     
+    
     auto keywords = mozilla::intl::Calendar::GetBcp47KeywordValuesForLocale("");
     if (keywords.isErr()) {
       intl::ReportInternalError(cx, keywords.unwrapErr());
@@ -602,6 +631,7 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
     
     
     
+    
     auto keywords = mozilla::intl::Collator::GetBcp47KeywordValues();
     if (keywords.isErr()) {
       intl::ReportInternalError(cx, keywords.unwrapErr());
@@ -620,7 +650,9 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
   
   
   
+  
   {
+    
     
     
     
@@ -680,6 +712,7 @@ static ArrayObject* AvailableCurrencies(JSContext* cx) {
     
     
     
+    
     auto currencies = mozilla::intl::Currency::GetISOCurrencies();
     if (currencies.isErr()) {
       intl::ReportInternalError(cx, currencies.unwrapErr());
@@ -723,6 +756,7 @@ static ArrayObject* AvailableNumberingSystems(JSContext* cx) {
 
 
 static ArrayObject* AvailableTimeZones(JSContext* cx) {
+  
   
   Rooted<StringList> timeZones(cx, StringList(cx));
 
