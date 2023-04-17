@@ -726,11 +726,6 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
     
     
     if (mLoadFlags & LOAD_ONLY_FROM_CACHE) {
-      
-      
-      if (!LoadFallbackChannel() && !mFallbackKey.IsEmpty()) {
-        return AsyncCall(&nsHttpChannel::HandleAsyncFallback);
-      }
       return NS_ERROR_DOCUMENT_NOT_CACHED;
     }
     
@@ -801,11 +796,6 @@ nsresult nsHttpChannel::ContinueConnect() {
       return NS_ERROR_DOCUMENT_NOT_CACHED;
     }
   } else if (mLoadFlags & LOAD_ONLY_FROM_CACHE) {
-    
-    
-    if (!LoadFallbackChannel() && !mFallbackKey.IsEmpty()) {
-      return AsyncCall(&nsHttpChannel::HandleAsyncFallback);
-    }
     LOG(("  !mCacheEntry && mLoadFlags & LOAD_ONLY_FROM_CACHE"));
     return NS_ERROR_DOCUMENT_NOT_CACHED;
   }
@@ -3512,13 +3502,7 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(
   }
 
   nsCOMPtr<nsICacheStorage> cacheStorage;
-  if (!mFallbackKey.IsEmpty() && LoadFallbackChannel()) {
-    
-    rv = NS_NewURI(getter_AddRefs(mCacheEntryURI), mFallbackKey);
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    mCacheEntryURI = mURI;
-  }
+  mCacheEntryURI = mURI;
 
   RefPtr<LoadContextInfo> info = GetLoadContextInfo(this);
   if (!info) {
@@ -4100,12 +4084,6 @@ nsresult nsHttpChannel::OnCacheEntryAvailableInternal(
   rv = OnNormalCacheEntryAvailable(entry, aNew, status);
 
   if (NS_FAILED(rv) && (mLoadFlags & LOAD_ONLY_FROM_CACHE)) {
-    
-    
-    if (!LoadFallbackChannel() && !mFallbackKey.IsEmpty()) {
-      return AsyncCall(&nsHttpChannel::HandleAsyncFallback);
-    }
-
     return NS_ERROR_DOCUMENT_NOT_CACHED;
   }
 
@@ -4198,8 +4176,7 @@ nsresult nsHttpChannel::OnNormalCacheEntryAvailable(nsICacheEntry* aEntry,
 
 nsresult nsHttpChannel::GenerateCacheKey(uint32_t postID,
                                          nsACString& cacheKey) {
-  AssembleCacheKey(LoadFallbackChannel() ? mFallbackKey.get() : mSpec.get(),
-                   postID, cacheKey);
+  AssembleCacheKey(mSpec.get(), postID, cacheKey);
   return NS_OK;
 }
 

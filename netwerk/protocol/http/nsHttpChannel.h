@@ -600,11 +600,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   uint32_t mSuspendTotalTime;
 
-  
-  
-  
-  nsCString mFallbackKey;
-
   friend class AutoRedirectVetoNotifier;
   friend class HttpAsyncAborter<nsHttpChannel>;
 
