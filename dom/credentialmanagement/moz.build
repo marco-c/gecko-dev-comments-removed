@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
+    BUG_COMPONENT = ("Core", "DOM: Web Authentication")
 
 EXPORTS.mozilla.dom += [
     "Credential.h",
