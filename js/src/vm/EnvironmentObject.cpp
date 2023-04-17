@@ -3446,7 +3446,7 @@ bool js::CheckLexicalNameConflict(
   RootedId id(cx, NameToId(name));
   mozilla::Maybe<PropertyInfo> prop;
   if (varObj->is<GlobalObject>() &&
-      varObj->as<GlobalObject>().realm()->isInVarNames(name)) {
+      varObj->as<GlobalObject>().isInVarNames(name)) {
     
     redeclKind = "var";
   } else if ((prop = lexicalEnv->lookup(cx, name))) {
@@ -3579,7 +3579,7 @@ static bool InitGlobalOrEvalDeclarations(
         }
 
         if (varObj->is<GlobalObject>()) {
-          if (!varObj->as<GlobalObject>().realm()->addToVarNames(cx, name)) {
+          if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
             return false;
           }
         }
@@ -3657,7 +3657,7 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
       }
 
       if (varObj->is<GlobalObject>()) {
-        if (!varObj->as<GlobalObject>().realm()->addToVarNames(cx, name)) {
+        if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
           return false;
         }
       }
@@ -3689,7 +3689,7 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
 
       
       
-      if (!varObj->as<GlobalObject>().realm()->addToVarNames(cx, name)) {
+      if (!varObj->as<GlobalObject>().addToVarNames(cx, name)) {
         return false;
       }
     }

@@ -65,7 +65,16 @@ class GlobalObjectData {
   void operator=(const GlobalObjectData&) = delete;
 
  public:
-  GlobalObjectData() = default;
+  explicit GlobalObjectData(Zone* zone);
+
+  
+  
+  
+  
+  
+  using VarNamesSet =
+      GCHashSet<HeapPtr<JSAtom*>, DefaultHasher<JSAtom*>, ZoneAllocPolicy>;
+  VarNamesSet varNames;
 
   
   
@@ -146,7 +155,8 @@ class GlobalObjectData {
   bool globalThisResolved = false;
 
   void trace(JSTracer* trc);
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              JS::ClassInfo* info) const;
 
   static constexpr size_t offsetOfLexicalEnvironment() {
     static_assert(sizeof(lexicalEnvironment) == sizeof(uintptr_t),
@@ -212,8 +222,11 @@ class GlobalObject : public NativeObject {
   void traceData(JSTracer* trc) { data().trace(trc); }
   void releaseData(JSFreeOp* fop);
 
-  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const {
-    return maybeData() ? data().sizeOfIncludingThis(mallocSizeOf) : 0;
+  void addSizeOfData(mozilla::MallocSizeOf mallocSizeOf,
+                     JS::ClassInfo* info) const {
+    if (maybeData()) {
+      data().addSizeOfIncludingThis(mallocSizeOf, info);
+    }
   }
 
   void setOriginalEval(JSFunction* evalFun) {
@@ -886,6 +899,14 @@ class GlobalObject : public NativeObject {
   
   
   bool valueIsEval(const Value& val);
+
+  void removeFromVarNames(JSAtom* name) { data().varNames.remove(name); }
+
+  
+  bool isInVarNames(JSAtom* name) { return data().varNames.has(name); }
+
+  
+  [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
 
   
   static bool initIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
