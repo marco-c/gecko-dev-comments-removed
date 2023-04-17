@@ -728,25 +728,16 @@ static ALWAYS_INLINE auto perpDot(T a, T b) {
 
 
 
+
 template <typename T>
 static ALWAYS_INLINE bool checkIfEdgesFlipped(T l0, T l1, T r0, T r1) {
   
   
-  if (l0.x > r0.x) {
-    return true;
-  }
   
   
-  float side = perpDot(l1 - l0, r1 - r0);
-  if (side <= 0.0f) {
-    
-    
-    return false;
-  }
   
   
-  float t = perpDot(r0 - l0, r1 - r0);
-  return t >= 0.0f && t < side;
+  return l0.x > r0.x || (l0.x == r0.x && perpDot(l1 - l0, r1 - r0) > 0.0f);
 }
 
 
