@@ -78,12 +78,9 @@ child:
   async IntrinsicSizeOrRatioChanged(IntrinsicSize? aIntrinsicSize,
                                     AspectRatio? aIntrinsicRatio);
 
+parent:
   
   async __delete__();
-
-parent:
-
-  async BeginDestroy();
 
   
   async LoadURL(nsDocShellLoadState aLoadState);

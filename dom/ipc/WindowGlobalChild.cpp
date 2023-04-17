@@ -405,7 +405,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   }
 
   auto deleteBridge =
-      MakeScopeExit([&] { bridge->SendBeginDestroy(); });
+      MakeScopeExit([&] { BrowserBridgeChild::Send__delete__(bridge); });
 
   
   if (NS_WARN_IF(aFrameContext.IsNullOrDiscarded())) {
