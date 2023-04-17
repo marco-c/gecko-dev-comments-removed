@@ -61,6 +61,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "SaveToPocket",
+  "chrome://pocket/content/SaveToPocket.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "pktTelemetry",
   "chrome://pocket/content/pktTelemetry.jsm"
 );
@@ -245,6 +250,8 @@ var pktUI = (function() {
 
   function onShowSignup() {
     
+    SaveToPocket.itemDeleted();
+    
     pktTelemetry.sendStructuredIngestionEvent(
       pktTelemetry.createPingPayload({
         events: [
@@ -273,7 +280,6 @@ var pktUI = (function() {
 
   function onShowSaved() {
     var saveLinkMessageId = "PKT_saveLink";
-    getPanelFrame().setAttribute("itemAdded", "false");
 
     
     if (!isValidURL()) {
@@ -332,7 +338,7 @@ var pktUI = (function() {
           _panelId,
           successResponse
         );
-        getPanelFrame().setAttribute("itemAdded", "true");
+        SaveToPocket.itemSaved();
 
         getAndShowRecsForItem(item, {
           success(data) {
@@ -526,16 +532,11 @@ var pktUI = (function() {
   }
 
   function closePanel() {
-    getPanel().hidePopup();
-  }
-
-  function getPanel() {
-    var frame = getPanelFrame();
-    var panel = frame;
-    while (panel && panel.localName != "panel") {
-      panel = panel.parentNode;
-    }
-    return panel;
+    
+    
+    getPanelFrame()
+      ?.closest("panel")
+      ?.hidePopup();
   }
 
   var toolbarPanelFrame;
