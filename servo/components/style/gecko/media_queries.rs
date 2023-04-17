@@ -89,7 +89,9 @@ impl Device {
             document,
             default_values: ComputedValues::default_values(doc),
             root_font_size: AtomicU32::new(FONT_MEDIUM_PX.to_bits()),
-            body_text_color: AtomicUsize::new(prefs.mColors.mDefault as usize),
+            
+            
+            body_text_color: AtomicUsize::new(prefs.mLightColors.mDefault as usize),
             used_root_font_size: AtomicBool::new(false),
             used_viewport_size: AtomicBool::new(false),
             environment: CssEnvironment,
@@ -314,13 +316,18 @@ impl Device {
     }
 
     
-    pub fn default_background_color(&self) -> RGBA {
-        convert_nscolor_to_rgba(self.pref_sheet_prefs().mColors.mDefaultBackground)
+    
+    
+    
+    pub fn default_background_color_for_forced_colors(&self) -> RGBA {
+        convert_nscolor_to_rgba(self.pref_sheet_prefs().mLightColors.mDefaultBackground)
     }
 
     
-    pub fn default_color(&self) -> RGBA {
-        convert_nscolor_to_rgba(self.pref_sheet_prefs().mColors.mDefault)
+    
+    
+    pub fn default_color_for_forced_colors(&self) -> RGBA {
+        convert_nscolor_to_rgba(self.pref_sheet_prefs().mLightColors.mDefault)
     }
 
     

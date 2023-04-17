@@ -5293,29 +5293,29 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() {
     return NS_RGB(255, 255, 255);
   }
 
-  nscolor backgroundColor = mPresContext->DefaultBackgroundColor();
-  if (backgroundColor != NS_RGB(255, 255, 255)) {
-    
-    return backgroundColor;
-  }
-
-  
-  
-  
-  
-  
   Document* doc = GetDocument();
-  BrowsingContext* bc = doc->GetBrowsingContext();
-  if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
-      NS_IsAboutBlank(doc->GetDocumentURI()) &&
-      doc->PreferredColorScheme(Document::IgnoreRFP::Yes) ==
-          ColorScheme::Dark) {
-    auto color = LookAndFeel::ColorID::WindowBackground;
-    return LookAndFeel::Color(color, ColorScheme::Dark,
-                              LookAndFeel::ShouldUseStandins(*doc, color));
-  }
+  auto colorScheme = [&] {
+    
+    
+    {
+      BrowsingContext* bc = doc->GetBrowsingContext();
+      if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
+          NS_IsAboutBlank(doc->GetDocumentURI())) {
+        return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
+      }
+    }
+    
+    
+    
+    if (auto* frame = mFrameConstructor->GetRootElementStyleFrame()) {
+      return LookAndFeel::ColorSchemeForFrame(frame);
+    }
+    return doc->DefaultColorScheme();
+  }();
 
-  return backgroundColor;
+  return mPresContext->PrefSheetPrefs()
+      .ColorsFor(colorScheme)
+      .mDefaultBackground;
 }
 
 void PresShell::UpdateCanvasBackground() {

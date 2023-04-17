@@ -31,7 +31,15 @@ PreferenceSheet::Prefs PreferenceSheet::sContentPrefs;
 PreferenceSheet::Prefs PreferenceSheet::sChromePrefs;
 PreferenceSheet::Prefs PreferenceSheet::sPrintPrefs;
 
-static void GetColor(const char* aPrefName, nscolor& aColor) {
+static void GetColor(const char* aPrefName, ColorScheme aColorScheme,
+                     nscolor& aColor) {
+  nsAutoCString darkPrefName;
+  if (aColorScheme == ColorScheme::Dark) {
+    darkPrefName.Append(aPrefName);
+    darkPrefName.AppendLiteral(".dark");
+    aPrefName = darkPrefName.get();
+  }
+
   nsAutoCString value;
   Preferences::GetCString(aPrefName, value);
   if (value.IsEmpty() || Encoding::UTF8ValidUpTo(value) != value.Length()) {
@@ -84,6 +92,81 @@ static bool UseDocumentColors(bool aIsChrome, bool aUseAcccessibilityTheme) {
   }
 }
 
+void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
+  auto& colors = aIsLight ? mLightColors : mDarkColors;
+
+  if (!aIsLight) {
+    
+    
+    
+    std::swap(colors.mDefault, colors.mDefaultBackground);
+  }
+
+  const bool useStandins = nsContentUtils::UseStandinsForNativeColors();
+  
+  
+  
+  
+  const bool usePrefColors = !useStandins && !mIsChrome &&
+                             !StaticPrefs::browser_display_use_system_colors();
+  const auto scheme = aIsLight ? ColorScheme::Light : ColorScheme::Dark;
+  if (usePrefColors) {
+    GetColor("browser.display.background_color", scheme,
+             colors.mDefaultBackground);
+    GetColor("browser.display.foreground_color", scheme, colors.mDefault);
+    GetColor("browser.anchor_color", scheme, colors.mLink);
+    GetColor("browser.active_color", scheme, colors.mActiveLink);
+    GetColor("browser.visited_color", scheme, colors.mVisitedLink);
+  } else {
+    using ColorID = LookAndFeel::ColorID;
+    const auto standins = LookAndFeel::UseStandins(useStandins);
+    
+    
+    colors.mDefault = LookAndFeel::Color(
+        useStandins ? ColorID::Windowtext : ColorID::WindowForeground, scheme,
+        standins, colors.mDefault);
+    colors.mDefaultBackground = LookAndFeel::Color(
+        useStandins ? ColorID::Window : ColorID::WindowBackground, scheme,
+        standins, colors.mDefaultBackground);
+    colors.mLink = LookAndFeel::Color(ColorID::MozNativehyperlinktext, scheme,
+                                      standins, colors.mLink);
+
+    if (auto color = LookAndFeel::GetColor(
+            ColorID::MozNativevisitedhyperlinktext, scheme, standins)) {
+      
+      colors.mVisitedLink = *color;
+    } else if (mUseAccessibilityTheme) {
+      
+      
+      
+      
+      colors.mVisitedLink = NS_RGB(
+          AVG2(NS_GET_R(colors.mDefault), NS_GET_R(colors.mDefaultBackground)),
+          NS_GET_G(colors.mDefault),
+          AVG2(NS_GET_B(colors.mDefault), NS_GET_B(colors.mDefaultBackground)));
+    } else {
+      
+    }
+
+    if (mUseAccessibilityTheme) {
+      colors.mActiveLink = colors.mLink;
+    }
+  }
+
+  {
+    
+    
+    GetColor("browser.display.focus_text_color", ColorScheme::Light,
+             colors.mFocusText);
+    GetColor("browser.display.focus_background_color", ColorScheme::Light,
+             colors.mFocusBackground);
+  }
+
+  
+  colors.mDefaultBackground =
+      NS_ComposeColors(NS_RGB(0xFF, 0xFF, 0xFF), colors.mDefaultBackground);
+}
+
 bool PreferenceSheet::Prefs::NonNativeThemeShouldBeHighContrast() const {
   
   
@@ -98,68 +181,8 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   mIsChrome = aIsChrome;
   mUseAccessibilityTheme = UseAccessibilityTheme(aIsChrome);
 
-  const bool useStandins = nsContentUtils::UseStandinsForNativeColors();
-  
-  
-  
-  
-  const bool usePrefColors = !useStandins && !aIsChrome &&
-                             !StaticPrefs::browser_display_use_system_colors();
-  if (usePrefColors) {
-    GetColor("browser.display.background_color", mColors.mDefaultBackground);
-    GetColor("browser.display.foreground_color", mColors.mDefault);
-    GetColor("browser.anchor_color", mColors.mLink);
-    GetColor("browser.active_color", mColors.mActiveLink);
-    GetColor("browser.visited_color", mColors.mVisitedLink);
-  } else {
-    using ColorID = LookAndFeel::ColorID;
-    const auto standins = LookAndFeel::UseStandins(useStandins);
-    
-    
-    
-    
-    
-    const auto scheme = aIsChrome ? LookAndFeel::ColorSchemeForChrome()
-                                  : LookAndFeel::ColorScheme::Light;
-    mColors.mDefault = LookAndFeel::Color(
-        useStandins ? ColorID::Windowtext : ColorID::WindowForeground, scheme,
-        standins, mColors.mDefault);
-    mColors.mDefaultBackground = LookAndFeel::Color(
-        useStandins ? ColorID::Window : ColorID::WindowBackground, scheme,
-        standins, mColors.mDefaultBackground);
-    mColors.mLink = LookAndFeel::Color(ColorID::MozNativehyperlinktext, scheme,
-                                       standins, mColors.mLink);
-
-    if (auto color = LookAndFeel::GetColor(
-            ColorID::MozNativevisitedhyperlinktext, scheme, standins)) {
-      
-      mColors.mVisitedLink = *color;
-    } else if (mUseAccessibilityTheme) {
-      
-      
-      
-      
-      mColors.mVisitedLink = NS_RGB(AVG2(NS_GET_R(mColors.mDefault),
-                                         NS_GET_R(mColors.mDefaultBackground)),
-                                    NS_GET_G(mColors.mDefault),
-                                    AVG2(NS_GET_B(mColors.mDefault),
-                                         NS_GET_B(mColors.mDefaultBackground)));
-    } else {
-      
-    }
-
-    if (mUseAccessibilityTheme) {
-      mColors.mActiveLink = mColors.mLink;
-    }
-  }
-
-  GetColor("browser.display.focus_text_color", mColors.mFocusText);
-  GetColor("browser.display.focus_background_color", mColors.mFocusBackground);
-
-  
-  
-  mColors.mDefaultBackground =
-      NS_ComposeColors(NS_RGB(0xFF, 0xFF, 0xFF), mColors.mDefaultBackground);
+  LoadColors(true);
+  LoadColors(false);
   mUseDocumentColors = UseDocumentColors(aIsChrome, mUseAccessibilityTheme);
 }
 
@@ -173,7 +196,15 @@ void PreferenceSheet::Initialize() {
   sChromePrefs.Load(true);
   sPrintPrefs = sContentPrefs;
   if (!sPrintPrefs.mUseDocumentColors) {
-    sPrintPrefs.mColors = Prefs().mColors;
+    
+    
+    
+    
+    
+    
+    
+    
+    sPrintPrefs.mLightColors = Prefs().mLightColors;
   }
 
   nsAutoString useDocumentColorPref;
@@ -196,10 +227,19 @@ void PreferenceSheet::Initialize() {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_HCM_FOREGROUND,
-                         sContentPrefs.mColors.mDefault);
+                         sContentPrefs.mLightColors.mDefault);
     Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_HCM_BACKGROUND,
-                         sContentPrefs.mColors.mDefaultBackground);
+                         sContentPrefs.mLightColors.mDefaultBackground);
   }
 
   Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_BACKPLATE,
