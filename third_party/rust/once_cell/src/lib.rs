@@ -275,9 +275,55 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "unstable")]
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
@@ -291,10 +337,11 @@ mod imp;
 #[path = "imp_std.rs"]
 mod imp;
 
+
 pub mod unsync {
     use core::{
         cell::{Cell, UnsafeCell},
-        fmt, mem,
+        fmt, hint, mem,
         ops::{Deref, DerefMut},
     };
 
@@ -417,9 +464,29 @@ pub mod unsync {
         
         
         pub fn set(&self, value: T) -> Result<(), T> {
-            let slot = unsafe { &*self.inner.get() };
-            if slot.is_some() {
-                return Err(value);
+            match self.try_insert(value) {
+                Ok(_) => Ok(()),
+                Err((_, value)) => Err(value),
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn try_insert(&self, value: T) -> Result<&T, (&T, T)> {
+            if let Some(old) = self.get() {
+                return Err((old, value));
             }
             let slot = unsafe { &mut *self.inner.get() };
             
@@ -427,7 +494,10 @@ pub mod unsync {
             
             
             *slot = Some(value);
-            Ok(())
+            Ok(match &*slot {
+                Some(value) => value,
+                None => unsafe { hint::unreachable_unchecked() },
+            })
         }
 
         
@@ -599,6 +669,17 @@ pub mod unsync {
         pub const fn new(init: F) -> Lazy<T, F> {
             Lazy { cell: OnceCell::new(), init: Cell::new(Some(init)) }
         }
+
+        
+        
+        
+        pub fn into_value(this: Lazy<T, F>) -> Result<T, F> {
+            let cell = this.cell;
+            let init = this.init;
+            cell.into_inner().ok_or_else(|| {
+                init.take().unwrap_or_else(|| panic!("Lazy instance has previously been poisoned"))
+            })
+        }
     }
 
     impl<T, F: FnOnce() -> T> Lazy<T, F> {
@@ -645,6 +726,7 @@ pub mod unsync {
         }
     }
 }
+
 
 #[cfg(feature = "std")]
 pub mod sync {
@@ -792,11 +874,33 @@ pub mod sync {
         
         
         pub fn set(&self, value: T) -> Result<(), T> {
+            match self.try_insert(value) {
+                Ok(_) => Ok(()),
+                Err((_, value)) => Err(value),
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn try_insert(&self, value: T) -> Result<&T, (&T, T)> {
             let mut value = Some(value);
-            self.get_or_init(|| value.take().unwrap());
+            let res = self.get_or_init(|| value.take().unwrap());
             match value {
-                None => Ok(()),
-                Some(value) => Err(value),
+                None => Ok(res),
+                Some(value) => Err((res, value)),
             }
         }
 
@@ -967,7 +1071,6 @@ pub mod sync {
     
     
     
-    
     unsafe impl<T, F: Send> Sync for Lazy<T, F> where OnceCell<T>: Sync {}
     
 
@@ -979,6 +1082,17 @@ pub mod sync {
         
         pub const fn new(f: F) -> Lazy<T, F> {
             Lazy { cell: OnceCell::new(), init: Cell::new(Some(f)) }
+        }
+
+        
+        
+        
+        pub fn into_value(this: Lazy<T, F>) -> Result<T, F> {
+            let cell = this.cell;
+            let init = this.init;
+            cell.into_inner().ok_or_else(|| {
+                init.take().unwrap_or_else(|| panic!("Lazy instance has previously been poisoned"))
+            })
         }
     }
 
@@ -1043,5 +1157,16 @@ pub mod sync {
     fn _dummy() {}
 }
 
-#[cfg(feature = "unstable")]
+#[cfg(feature = "race")]
 pub mod race;
+
+#[cfg(feature = "std")]
+unsafe fn take_unchecked<T>(val: &mut Option<T>) -> T {
+    match val.take() {
+        Some(it) => it,
+        None => {
+            debug_assert!(false);
+            std::hint::unreachable_unchecked()
+        }
+    }
+}

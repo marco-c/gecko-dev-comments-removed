@@ -7,6 +7,8 @@ use std::{
 
 use parking_lot::Mutex;
 
+use crate::take_unchecked;
+
 pub(crate) struct OnceCell<T> {
     mutex: Mutex<()>,
     is_initialized: AtomicBool,
@@ -46,8 +48,10 @@ impl<T> OnceCell<T> {
     where
         F: FnOnce() -> Result<T, E>,
     {
-        let _guard = self.mutex.lock();
-        if !self.is_initialized() {
+        let mut f = Some(f);
+        let mut res: Result<(), E> = Ok(());
+        let slot: *mut Option<T> = self.value.get();
+        initialize_inner(&self.mutex, &self.is_initialized, &mut || {
             
             
             
@@ -56,15 +60,22 @@ impl<T> OnceCell<T> {
             
             
             
-            let value = f()?;
-            
-            
-            let slot: &mut Option<T> = unsafe { &mut *self.value.get() };
-            debug_assert!(slot.is_none());
-            *slot = Some(value);
-            self.is_initialized.store(true, Ordering::Release);
-        }
-        Ok(())
+            let f = unsafe { take_unchecked(&mut f) };
+            match f() {
+                Ok(value) => unsafe {
+                    
+                    
+                    debug_assert!((*slot).is_none());
+                    *slot = Some(value);
+                    true
+                },
+                Err(err) => {
+                    res = Err(err);
+                    false
+                }
+            }
+        });
+        res
     }
 
     
@@ -99,6 +110,18 @@ impl<T> OnceCell<T> {
     
     pub(crate) fn into_inner(self) -> Option<T> {
         self.value.into_inner()
+    }
+}
+
+
+#[inline(never)]
+fn initialize_inner(mutex: &Mutex<()>, is_initialized: &AtomicBool, init: &mut dyn FnMut() -> bool) {
+    let _guard = mutex.lock();
+
+    if !is_initialized.load(Ordering::Acquire) {
+        if init() {
+            is_initialized.store(true, Ordering::Release);
+        }
     }
 }
 
