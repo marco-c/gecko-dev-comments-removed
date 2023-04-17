@@ -47,6 +47,12 @@ class NativeMenu {
   virtual void OpenSubmenu(dom::Element* aMenuElement) = 0;
 
   
+  
+  
+  
+  virtual void CloseSubmenu(dom::Element* aMenuElement) = 0;
+
+  
   virtual RefPtr<dom::Element> Element() = 0;
 
   class Observer {
