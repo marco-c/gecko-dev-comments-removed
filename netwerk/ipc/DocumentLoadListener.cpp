@@ -539,6 +539,21 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     }
   }
 
+  if (aLoadState->GetRemoteTypeOverride()) {
+    if (!mIsDocumentLoad || !NS_IsAboutBlank(aLoadState->URI()) ||
+        !loadingContext->IsTopContent()) {
+      LOG(
+          ("DocumentLoadListener::Open with invalid remoteTypeOverride "
+           "[this=%p]",
+           this));
+      *aRv = NS_ERROR_DOM_SECURITY_ERR;
+      mParentChannelListener = nullptr;
+      return nullptr;
+    }
+
+    mRemoteTypeOverride = aLoadState->GetRemoteTypeOverride();
+  }
+
   if (!nsDocShell::CreateAndConfigureRealChannelForLoadState(
           loadingContext, aLoadState, aLoadInfo, mParentChannelListener,
           nullptr, attrs, aLoadFlags, aCacheKey, *aRv,
@@ -1575,6 +1590,11 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   RemotenessChangeOptions options;
 
   
+  if (mRemoteTypeOverride) {
+    preferredRemoteType = *mRemoteTypeOverride;
+  }
+
+  
   
   {
     bool isCOOPSwitch = HasCrossOriginOpenerPolicyMismatch();
@@ -2519,6 +2539,10 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   
   
   mIParentChannelFunctions.Clear();
+
+  
+  
+  mRemoteTypeOverride.reset();
 
 #ifdef ANDROID
   nsCOMPtr<nsIURI> uriBeingLoaded =
