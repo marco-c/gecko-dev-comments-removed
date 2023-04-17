@@ -758,11 +758,11 @@ async function openPasswordContextMenu(
 
   if (openFillMenu) {
     
-    let popupShownPromise = BrowserTestUtils.waitForCondition(
-      () => POPUP_HEADER.open && BrowserTestUtils.is_visible(LOGIN_POPUP),
-      "Waiting for header to be open and submenu to be visible"
+    let popupShownPromise = BrowserTestUtils.waitForEvent(
+      LOGIN_POPUP,
+      "popupshown"
     );
-    EventUtils.synthesizeMouseAtCenter(POPUP_HEADER, {}, browser.ownerGlobal);
+    POPUP_HEADER.openMenu(true);
     await popupShownPromise;
   }
 }
@@ -823,7 +823,8 @@ async function doFillGeneratedPasswordContextMenuItem(browser, passwordInput) {
     SimpleTest.executeSoon(resolve);
   });
 
-  EventUtils.synthesizeMouseAtCenter(generatedPasswordItem, {});
+  let contextMenu = document.getElementById("contentAreaContextMenu");
+  contextMenu.activateItem(generatedPasswordItem);
 
   await promiseShown;
   await fillGeneratedPasswordFromOpenACPopup(browser, passwordInput);
