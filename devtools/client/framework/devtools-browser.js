@@ -387,7 +387,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
         
         
         toolbox.target.on("target-destroyed", () => {
-          toolbox.target.client.close();
+          toolbox.commands.client.close();
         });
 
         return toolbox;

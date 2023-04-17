@@ -462,7 +462,7 @@ OptionsPanel.prototype = {
           
           
           
-          const { mainRoot } = this.target.client;
+          const { mainRoot } = this.commands.client;
           const preferenceFront = await mainRoot.getFront("preference");
           preferenceFront.setBoolPref(
             "devtools.browsertoolbox.fission",

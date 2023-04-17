@@ -17,6 +17,7 @@
 
 
 
+
 class PerformancePanel {
   
 
@@ -60,7 +61,7 @@ class PerformancePanel {
     this.panelWin.gToolbox = this.toolbox;
     this.panelWin.gIsPanelDestroyed = false;
 
-    const perfFront = await this.target.client.mainRoot.getFront("perf");
+    const perfFront = await this.commands.client.mainRoot.getFront("perf");
 
     this.panelWin.gInit(perfFront, "devtools");
     return this;

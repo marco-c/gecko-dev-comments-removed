@@ -38,6 +38,13 @@ export interface Toolbox {
 
 
 
+export interface Commands {
+  client: any;
+}
+
+
+
+
 
 type MaybePromise<T> = Promise<T> | T;
 

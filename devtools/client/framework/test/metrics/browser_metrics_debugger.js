@@ -58,5 +58,5 @@ add_task(async function() {
   
   
   info("Wait for all pending requests to settle on the DevToolsClient");
-  await toolbox.target.client.waitForRequestsToSettle();
+  await toolbox.commands.client.waitForRequestsToSettle();
 });

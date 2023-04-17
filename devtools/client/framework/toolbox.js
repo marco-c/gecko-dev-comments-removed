@@ -634,7 +634,7 @@ Toolbox.prototype = {
       return null;
     }
 
-    return this.target.client.getFrontByID(selectedTarget.actorID);
+    return this.commands.client.getFrontByID(selectedTarget.actorID);
   },
 
   _onToolboxStateChange(state, oldState) {
@@ -3066,7 +3066,7 @@ Toolbox.prototype = {
 
 
   get preferenceFront() {
-    const frontPromise = this.target.client.mainRoot.getFront("preference");
+    const frontPromise = this.commands.client.mainRoot.getFront("preference");
     frontPromise.then(front => {
       
       
@@ -3676,11 +3676,7 @@ Toolbox.prototype = {
 
     
     
-    if (this.target.client) {
-      
-      
-      this.target.client.isToolboxDestroy = true;
-    }
+    this.commands.client.isToolboxDestroy = true;
 
     this.off("select", this._onToolSelected);
     this.off("host-changed", this._refreshHostTitle);
