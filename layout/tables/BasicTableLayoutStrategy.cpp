@@ -151,6 +151,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
         break;
       case StyleSize::Tag::MozAvailable:
       case StyleSize::Tag::MozFitContent:
+      case StyleSize::Tag::FitContentFunction:
+        
       case StyleSize::Tag::Auto:
       case StyleSize::Tag::LengthPercentage:
         break;
@@ -161,7 +163,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (nsIFrame::ToExtremumLength(maxISize)) {
     if (!aIsCell || maxISize.IsMozAvailable()) {
       maxISize = StyleMaxSize::None();
-    } else if (maxISize.IsMozFitContent()) {
+    } else if (maxISize.IsMozFitContent() || maxISize.IsFitContentFunction()) {
+      
       
       maxISize = StyleMaxSize::MaxContent();
     }
@@ -187,7 +190,8 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   if (nsIFrame::ToExtremumLength(maxISize)) {
     if (!aIsCell || minISize.IsMozAvailable()) {
       minISize = StyleSize::LengthPercentage(LengthPercentage::Zero());
-    } else if (minISize.IsMozFitContent()) {
+    } else if (minISize.IsMozFitContent() || minISize.IsFitContentFunction()) {
+      
       
       minISize = StyleSize::MinContent();
     }
