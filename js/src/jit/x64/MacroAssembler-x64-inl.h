@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_x64_MacroAssembler_x64_inl_h
 #define jit_x64_MacroAssembler_x64_inl_h
@@ -14,11 +14,11 @@
 namespace js {
 namespace jit {
 
-//{{{ check_macroassembler_style
-// ===============================================================
+
+
 
 void MacroAssembler::move64(Imm64 imm, Register64 dest) {
-  // Use mov instead of movq because it has special optimizations for imm == 0.
+  
   mov(ImmWord(imm.value), dest.reg);
 }
 
@@ -62,15 +62,15 @@ void MacroAssembler::move32ZeroExtendToPtr(Register src, Register dest) {
   movl(src, dest);
 }
 
-// ===============================================================
-// Load instructions
+
+
 
 void MacroAssembler::load32SignExtendToPtr(const Address& src, Register dest) {
   movslq(Operand(src), dest);
 }
 
-// ===============================================================
-// Logical instructions
+
+
 
 void MacroAssembler::notPtr(Register reg) { notq(reg); }
 
@@ -140,13 +140,13 @@ void MacroAssembler::xor64(const Operand& src, Register64 dest) {
   xorq(src, dest.reg);
 }
 
-// ===============================================================
-// Swap instructions
+
+
 
 void MacroAssembler::byteSwap64(Register64 reg) { bswapq(reg.reg); }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void MacroAssembler::addPtr(Register src, Register dest) { addq(src, dest); }
 
@@ -245,8 +245,12 @@ void MacroAssembler::mul64(Imm64 imm, const Register64& dest,
 }
 
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
-  movq(ImmWord(uintptr_t(imm.value)), ScratchReg);
-  imulq(ScratchReg, dest.reg);
+  if (INT32_MIN <= int64_t(imm.value) && int64_t(imm.value) <= INT32_MAX) {
+    imulq(Imm32((int32_t)imm.value), dest.reg, dest.reg);
+  } else {
+    movq(ImmWord(uintptr_t(imm.value)), ScratchReg);
+    imulq(ScratchReg, dest.reg);
+  }
 }
 
 void MacroAssembler::mul64(const Register64& src, const Register64& dest,
@@ -289,8 +293,8 @@ void MacroAssembler::neg64(Register64 reg) { negq(reg.reg); }
 
 void MacroAssembler::negPtr(Register reg) { negq(reg); }
 
-// ===============================================================
-// Shift functions
+
+
 
 void MacroAssembler::lshiftPtr(Imm32 imm, Register dest) {
   MOZ_ASSERT(0 <= imm.value && imm.value < 64);
@@ -366,8 +370,8 @@ void MacroAssembler::rshift64Arithmetic(Register shift, Register64 srcDest) {
   sarq_cl(srcDest.reg);
 }
 
-// ===============================================================
-// Rotation functions
+
+
 
 void MacroAssembler::rotateLeft64(Register count, Register64 src,
                                   Register64 dest) {
@@ -421,8 +425,8 @@ void MacroAssembler::rotateRight64(Imm32 count, Register64 src, Register64 dest,
   rotateRight64(count, src, dest);
 }
 
-// ===============================================================
-// Condition functions
+
+
 
 template <typename T1, typename T2>
 void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
@@ -430,8 +434,8 @@ void MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) {
   emitSet(cond, dest);
 }
 
-// ===============================================================
-// Bit counting functions
+
+
 
 void MacroAssembler::clz64(Register64 src, Register dest) {
   if (AssemblerX86Shared::HasLZCNT()) {
@@ -479,15 +483,15 @@ void MacroAssembler::popcnt64(Register64 src64, Register64 dest64,
 
   ScratchRegisterScope scratch(*this);
 
-  // Equivalent to mozilla::CountPopulation32, adapted for 64 bits.
-  // x -= (x >> 1) & m1;
+  
+  
   movq(src, tmp);
   movq(ImmWord(0x5555555555555555), scratch);
   shrq(Imm32(1), tmp);
   andq(scratch, tmp);
   subq(tmp, dest);
 
-  // x = (x & m2) + ((x >> 2) & m2);
+  
   movq(dest, tmp);
   movq(ImmWord(0x3333333333333333), scratch);
   andq(scratch, dest);
@@ -495,21 +499,21 @@ void MacroAssembler::popcnt64(Register64 src64, Register64 dest64,
   andq(scratch, tmp);
   addq(tmp, dest);
 
-  // x = (x + (x >> 4)) & m4;
+  
   movq(dest, tmp);
   movq(ImmWord(0x0f0f0f0f0f0f0f0f), scratch);
   shrq(Imm32(4), tmp);
   addq(tmp, dest);
   andq(scratch, dest);
 
-  // (x * h01) >> 56
+  
   movq(ImmWord(0x0101010101010101), scratch);
   imulq(scratch, dest);
   shrq(Imm32(56), dest);
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 void MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs,
                               Register rhs, Label* label) {
@@ -633,7 +637,7 @@ void MacroAssembler::branchTruncateFloat32ToPtr(FloatRegister src,
                                                 Register dest, Label* fail) {
   vcvttss2sq(src, dest);
 
-  // Same trick as for Doubles
+  
   cmpPtr(dest, Imm32(1));
   j(Assembler::Overflow, fail);
 }
@@ -642,29 +646,29 @@ void MacroAssembler::branchTruncateFloat32MaybeModUint32(FloatRegister src,
                                                          Register dest,
                                                          Label* fail) {
   branchTruncateFloat32ToPtr(src, dest, fail);
-  movl(dest, dest);  // Zero upper 32-bits.
+  movl(dest, dest);  
 }
 
 void MacroAssembler::branchTruncateFloat32ToInt32(FloatRegister src,
                                                   Register dest, Label* fail) {
   branchTruncateFloat32ToPtr(src, dest, fail);
 
-  // Check that the result is in the int32_t range.
+  
   ScratchRegisterScope scratch(*this);
   move32To64SignExtend(dest, Register64(scratch));
   cmpPtr(dest, scratch);
   j(Assembler::NotEqual, fail);
 
-  movl(dest, dest);  // Zero upper 32-bits.
+  movl(dest, dest);  
 }
 
 void MacroAssembler::branchTruncateDoubleToPtr(FloatRegister src, Register dest,
                                                Label* fail) {
   vcvttsd2sq(src, dest);
 
-  // vcvttsd2sq returns 0x8000000000000000 on failure. Test for it by
-  // subtracting 1 and testing overflow (this avoids the need to
-  // materialize that value in a register).
+  
+  
+  
   cmpPtr(dest, Imm32(1));
   j(Assembler::Overflow, fail);
 }
@@ -673,20 +677,20 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
                                                         Register dest,
                                                         Label* fail) {
   branchTruncateDoubleToPtr(src, dest, fail);
-  movl(dest, dest);  // Zero upper 32-bits.
+  movl(dest, dest);  
 }
 
 void MacroAssembler::branchTruncateDoubleToInt32(FloatRegister src,
                                                  Register dest, Label* fail) {
   branchTruncateDoubleToPtr(src, dest, fail);
 
-  // Check that the result is in the int32_t range.
+  
   ScratchRegisterScope scratch(*this);
   move32To64SignExtend(dest, Register64(scratch));
   cmpPtr(dest, scratch);
   j(Assembler::NotEqual, fail);
 
-  movl(dest, dest);  // Zero upper 32-bits.
+  movl(dest, dest);  
 }
 
 void MacroAssembler::branchTest32(Condition cond, const AbsoluteAddress& lhs,
@@ -867,13 +871,13 @@ void MacroAssembler::spectreBoundsCheckPtr(Register index,
   }
 }
 
-// ========================================================================
-// SIMD.
-//
-// These are x64-only because they use ScratchRegister or they use a quadword
-// operation.  SSE4.1 or better is assumed.
 
-// Any lane true, ie any bit set
+
+
+
+
+
+
 
 void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
   ScratchRegisterScope one(*this);
@@ -883,29 +887,29 @@ void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
   cmovCCl(NonZero, one, dest);
 }
 
-// Extract lane as scalar
+
 
 void MacroAssembler::extractLaneInt64x2(uint32_t lane, FloatRegister src,
                                         Register64 dest) {
   vpextrq(lane, src, dest.reg);
 }
 
-// Replace lane value
+
 
 void MacroAssembler::replaceLaneInt64x2(unsigned lane, Register64 rhs,
                                         FloatRegister lhsDest) {
   vpinsrq(lane, rhs.reg, lhsDest, lhsDest);
 }
 
-// Splat
+
 
 void MacroAssembler::splatX2(Register64 src, FloatRegister dest) {
   vpinsrq(0, src.reg, dest, dest);
   vpinsrq(1, src.reg, dest, dest);
 }
 
-// ========================================================================
-// Truncate floating point.
+
+
 
 void MacroAssembler::truncateFloat32ToUInt64(Address src, Address dest,
                                              Register temp,
@@ -916,12 +920,12 @@ void MacroAssembler::truncateFloat32ToUInt64(Address src, Address dest,
 
   truncateFloat32ToInt64(src, dest, temp);
 
-  // For unsigned conversion the case of [INT64, UINT64] needs to get handled
-  // separately.
+  
+  
   loadPtr(dest, temp);
   branchPtr(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
 
-  // Move the value inside INT64 range.
+  
   storeFloat32(floatTemp, dest);
   loadConstantFloat32(double(int64_t(0x8000000000000000)), floatTemp);
   vaddss(Operand(dest), floatTemp, floatTemp);
@@ -944,12 +948,12 @@ void MacroAssembler::truncateDoubleToUInt64(Address src, Address dest,
 
   truncateDoubleToInt64(src, dest, temp);
 
-  // For unsigned conversion the case of [INT64, UINT64] needs to get handle
-  // seperately.
+  
+  
   loadPtr(dest, temp);
   branchPtr(Assembler::Condition::NotSigned, temp, Imm32(0), &done);
 
-  // Move the value inside INT64 range.
+  
   storeDouble(floatTemp, dest);
   loadConstantDouble(double(int64_t(0x8000000000000000)), floatTemp);
   vaddsd(Operand(dest), floatTemp, floatTemp);
@@ -967,11 +971,11 @@ void MacroAssemblerX64::fallibleUnboxPtrImpl(const Operand& src, Register dest,
                                              JSValueType type, Label* fail) {
   MOZ_ASSERT(type == JSVAL_TYPE_OBJECT || type == JSVAL_TYPE_STRING ||
              type == JSVAL_TYPE_SYMBOL || type == JSVAL_TYPE_BIGINT);
-  // dest := src XOR mask
-  // scratch := dest >> JSVAL_TAG_SHIFT
-  // fail if scratch != 0
-  //
-  // Note: src and dest can be the same register.
+  
+  
+  
+  
+  
   ScratchRegisterScope scratch(asMasm());
   mov(ImmWord(JSVAL_TYPE_TO_SHIFTED_TAG(type)), scratch);
   xorq(src, scratch);
@@ -995,8 +999,8 @@ void MacroAssembler::fallibleUnboxPtr(const BaseIndex& src, Register dest,
   fallibleUnboxPtrImpl(Operand(src), dest, type, fail);
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
+
+
 
 void MacroAssemblerX64::incrementInt32Value(const Address& addr) {
   asMasm().addPtr(Imm32(1), addr);
@@ -1028,8 +1032,8 @@ void MacroAssemblerX64::loadInt32OrDouble(const T& src, FloatRegister dest) {
   bind(&end);
 }
 
-// If source is a double, load it into dest. If source is int32,
-// convert it to double. Else, branch to failure.
+
+
 void MacroAssemblerX64::ensureDouble(const ValueOperand& source,
                                      FloatRegister dest, Label* failure) {
   Label isDouble, done;
@@ -1053,7 +1057,7 @@ void MacroAssemblerX64::ensureDouble(const ValueOperand& source,
   bind(&done);
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_x64_MacroAssembler_x64_inl_h */
+#endif 
