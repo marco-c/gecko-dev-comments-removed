@@ -1150,7 +1150,18 @@ MinidumpGenerator::WriteExceptionStream(MDRawDirectory *exception_stream) {
   
   
   exception_ptr->exception_record.exception_code = exception_type_;
-  exception_ptr->exception_record.exception_flags = exception_code_;
+
+  uint32_t exception_flags = 0;
+  if (exception_type_ == EXC_RESOURCE) {
+    
+    
+    uint64_t unsigned_exception_code = exception_code_;
+    exception_flags = unsigned_exception_code >> 32;
+  } else {
+    exception_flags = exception_code_;
+  }
+
+  exception_ptr->exception_record.exception_flags = exception_flags;
 
   breakpad_thread_state_data_t state;
   mach_msg_type_number_t state_count
@@ -1166,6 +1177,14 @@ MinidumpGenerator::WriteExceptionStream(MDRawDirectory *exception_stream) {
     exception_ptr->exception_record.exception_address = exception_subcode_;
   else
     exception_ptr->exception_record.exception_address = CurrentPCForStack(state);
+
+  
+  
+  exception_ptr->exception_record.number_parameters =
+    (exception_subcode_ != 0) ? 3 : 2;
+  exception_ptr->exception_record.exception_information[0] = exception_type_;
+  exception_ptr->exception_record.exception_information[1] = exception_code_;
+  exception_ptr->exception_record.exception_information[2] = exception_subcode_;
 
   return true;
 }
