@@ -9,8 +9,15 @@ fn main() {
 
 
 
+
+
+
+
+
 fn enable_simd_optimizations() {
-    if is_env_set("CARGO_CFG_MEMCHR_DISABLE_AUTO_SIMD") {
+    if is_env_set("CARGO_CFG_MEMCHR_DISABLE_AUTO_SIMD")
+        || !target_has_feature("sse2")
+    {
         return;
     }
     println!("cargo:rustc-cfg=memchr_runtime_simd");
@@ -58,4 +65,10 @@ fn is_feature_set(name: &str) -> bool {
 
 fn is_env_set(name: &str) -> bool {
     env::var_os(name).is_some()
+}
+
+fn target_has_feature(feature: &str) -> bool {
+    env::var("CARGO_CFG_TARGET_FEATURE")
+        .map(|features| features.contains(feature))
+        .unwrap_or(false)
 }

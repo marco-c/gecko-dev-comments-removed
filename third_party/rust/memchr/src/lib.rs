@@ -20,9 +20,144 @@
 
 
 
-#![cfg_attr(not(feature = "std"), no_std)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/memchr/2.0.0")]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+
+#![cfg_attr(miri, allow(dead_code, unused_macros))]
 
 
 
@@ -31,421 +166,16 @@
     target_pointer_width = "32",
     target_pointer_width = "64"
 )))]
-compile_error!("memchr currently not supported on non-32 or non-64 bit");
+compile_error!("memchr currently not supported on non-{16,32,64}");
 
-#[cfg(feature = "std")]
-extern crate core;
+pub use crate::memchr::{
+    memchr, memchr2, memchr2_iter, memchr3, memchr3_iter, memchr_iter,
+    memrchr, memrchr2, memrchr2_iter, memrchr3, memrchr3_iter, memrchr_iter,
+    Memchr, Memchr2, Memchr3,
+};
 
-#[cfg(all(test, all(not(miri), feature = "std")))]
-#[macro_use]
-extern crate quickcheck;
-
-use core::iter::Rev;
-
-pub use iter::{Memchr, Memchr2, Memchr3};
-
-
-#[cfg(memchr_libc)]
-mod c;
-#[allow(dead_code)]
-mod fallback;
-mod iter;
-mod naive;
-#[cfg(all(test, all(not(miri), feature = "std")))]
+mod cow;
+mod memchr;
+pub mod memmem;
+#[cfg(test)]
 mod tests;
-#[cfg(all(test, any(miri, not(feature = "std"))))]
-#[path = "tests/miri.rs"]
-mod tests;
-#[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
-mod x86;
-
-
-#[inline]
-pub fn memchr_iter(needle: u8, haystack: &[u8]) -> Memchr {
-    Memchr::new(needle, haystack)
-}
-
-
-#[inline]
-pub fn memchr2_iter(needle1: u8, needle2: u8, haystack: &[u8]) -> Memchr2 {
-    Memchr2::new(needle1, needle2, haystack)
-}
-
-
-#[inline]
-pub fn memchr3_iter(
-    needle1: u8,
-    needle2: u8,
-    needle3: u8,
-    haystack: &[u8],
-) -> Memchr3 {
-    Memchr3::new(needle1, needle2, needle3, haystack)
-}
-
-
-#[inline]
-pub fn memrchr_iter(needle: u8, haystack: &[u8]) -> Rev<Memchr> {
-    Memchr::new(needle, haystack).rev()
-}
-
-
-#[inline]
-pub fn memrchr2_iter(
-    needle1: u8,
-    needle2: u8,
-    haystack: &[u8],
-) -> Rev<Memchr2> {
-    Memchr2::new(needle1, needle2, haystack).rev()
-}
-
-
-#[inline]
-pub fn memrchr3_iter(
-    needle1: u8,
-    needle2: u8,
-    needle3: u8,
-    haystack: &[u8],
-) -> Rev<Memchr3> {
-    Memchr3::new(needle1, needle2, needle3, haystack).rev()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memchr(needle: u8, haystack: &[u8]) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memchr(n1, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memchr(n1, haystack)
-    }
-
-    #[cfg(all(
-        memchr_libc,
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        c::memchr(n1, haystack)
-    }
-
-    #[cfg(all(
-        not(memchr_libc),
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memchr(n1, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle, haystack)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memchr2(needle1: u8, needle2: u8, haystack: &[u8]) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memchr2(n1, n2, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memchr2(n1, n2, haystack)
-    }
-
-    #[cfg(all(
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memchr2(n1, n2, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle1, needle2, haystack)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memchr3(
-    needle1: u8,
-    needle2: u8,
-    needle3: u8,
-    haystack: &[u8],
-) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memchr3(n1, n2, n3, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memchr3(n1, n2, n3, haystack)
-    }
-
-    #[cfg(all(
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memchr3(n1, n2, n3, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle1, needle2, needle3, haystack)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memrchr(needle: u8, haystack: &[u8]) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memrchr(n1, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memrchr(n1, haystack)
-    }
-
-    #[cfg(all(
-        memchr_libc,
-        target_os = "linux",
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri)
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        c::memrchr(n1, haystack)
-    }
-
-    #[cfg(all(
-        not(all(memchr_libc, target_os = "linux")),
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memrchr(n1, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle, haystack)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memrchr2(needle1: u8, needle2: u8, haystack: &[u8]) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memrchr2(n1, n2, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memrchr2(n1, n2, haystack)
-    }
-
-    #[cfg(all(
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memrchr2(n1, n2, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle1, needle2, haystack)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn memrchr3(
-    needle1: u8,
-    needle2: u8,
-    needle3: u8,
-    haystack: &[u8],
-) -> Option<usize> {
-    #[cfg(miri)]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        naive::memrchr3(n1, n2, n3, haystack)
-    }
-
-    #[cfg(all(target_arch = "x86_64", memchr_runtime_simd, not(miri)))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        x86::memrchr3(n1, n2, n3, haystack)
-    }
-
-    #[cfg(all(
-        not(all(target_arch = "x86_64", memchr_runtime_simd)),
-        not(miri),
-    ))]
-    #[inline(always)]
-    fn imp(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-        fallback::memrchr3(n1, n2, n3, haystack)
-    }
-
-    if haystack.is_empty() {
-        None
-    } else {
-        imp(needle1, needle2, needle3, haystack)
-    }
-}

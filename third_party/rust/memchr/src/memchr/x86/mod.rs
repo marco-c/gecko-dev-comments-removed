@@ -1,4 +1,4 @@
-use fallback;
+use super::fallback;
 
 
 
@@ -27,11 +27,14 @@ mod sse2;
 
 
 
+
+
+
+
 #[cfg(feature = "std")]
-macro_rules! ifunc {
+macro_rules! unsafe_ifunc {
     ($fnty:ty, $name:ident, $haystack:ident, $($needle:ident),+) => {{
-        use std::mem;
-        use std::sync::atomic::{AtomicPtr, Ordering};
+        use std::{mem, sync::atomic::{AtomicPtr, Ordering}};
 
         type FnRaw = *mut ();
 
@@ -47,11 +50,19 @@ macro_rules! ifunc {
                     fallback::$name as FnRaw
                 };
             FN.store(fun as FnRaw, Ordering::Relaxed);
+            // SAFETY: By virtue of the caller contract, $fnty is a function
+            // pointer, which is always safe to transmute with a *mut ().
+            // Also, if 'fun is the AVX routine, then it is guaranteed to be
+            // supported since we checked the avx2 feature.
             unsafe {
                 mem::transmute::<FnRaw, $fnty>(fun)($($needle),+, haystack)
             }
         }
 
+        // SAFETY: By virtue of the caller contract, $fnty is a function
+        // pointer, which is always safe to transmute with a *mut (). Also, if
+        // 'fun is the AVX routine, then it is guaranteed to be supported since
+        // we checked the avx2 feature.
         unsafe {
             let fun = FN.load(Ordering::Relaxed);
             mem::transmute::<FnRaw, $fnty>(fun)($($needle),+, $haystack)
@@ -63,8 +74,14 @@ macro_rules! ifunc {
 
 
 
+
+
+
+
+
+
 #[cfg(not(feature = "std"))]
-macro_rules! ifunc {
+macro_rules! unsafe_ifunc {
     ($fnty:ty, $name:ident, $haystack:ident, $($needle:ident),+) => {{
         if cfg!(memchr_runtime_sse2) {
             unsafe { sse2::$name($($needle),+, $haystack) }
@@ -76,17 +93,23 @@ macro_rules! ifunc {
 
 #[inline(always)]
 pub fn memchr(n1: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(fn(u8, &[u8]) -> Option<usize>, memchr, haystack, n1)
+    unsafe_ifunc!(fn(u8, &[u8]) -> Option<usize>, memchr, haystack, n1)
 }
 
 #[inline(always)]
 pub fn memchr2(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(fn(u8, u8, &[u8]) -> Option<usize>, memchr2, haystack, n1, n2)
+    unsafe_ifunc!(
+        fn(u8, u8, &[u8]) -> Option<usize>,
+        memchr2,
+        haystack,
+        n1,
+        n2
+    )
 }
 
 #[inline(always)]
 pub fn memchr3(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(
+    unsafe_ifunc!(
         fn(u8, u8, u8, &[u8]) -> Option<usize>,
         memchr3,
         haystack,
@@ -98,17 +121,23 @@ pub fn memchr3(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
 
 #[inline(always)]
 pub fn memrchr(n1: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(fn(u8, &[u8]) -> Option<usize>, memrchr, haystack, n1)
+    unsafe_ifunc!(fn(u8, &[u8]) -> Option<usize>, memrchr, haystack, n1)
 }
 
 #[inline(always)]
 pub fn memrchr2(n1: u8, n2: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(fn(u8, u8, &[u8]) -> Option<usize>, memrchr2, haystack, n1, n2)
+    unsafe_ifunc!(
+        fn(u8, u8, &[u8]) -> Option<usize>,
+        memrchr2,
+        haystack,
+        n1,
+        n2
+    )
 }
 
 #[inline(always)]
 pub fn memrchr3(n1: u8, n2: u8, n3: u8, haystack: &[u8]) -> Option<usize> {
-    ifunc!(
+    unsafe_ifunc!(
         fn(u8, u8, u8, &[u8]) -> Option<usize>,
         memrchr3,
         haystack,

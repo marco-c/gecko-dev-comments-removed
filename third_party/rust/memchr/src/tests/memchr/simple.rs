@@ -1,9 +1,13 @@
 
 
+
+
+
+
 use crate::{memchr, memchr2, memchr3, memrchr, memrchr2, memrchr3};
 
 #[test]
-fn test_with_miri() {
+fn simple() {
     assert_eq!(memchr(b'a', b"abcda"), Some(0));
     assert_eq!(memchr(b'z', b"abcda"), None);
     assert_eq!(memchr2(b'a', b'z', b"abcda"), Some(0));

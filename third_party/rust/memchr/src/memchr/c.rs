@@ -3,11 +3,10 @@
 
 #![allow(dead_code)]
 
-extern crate libc;
-
-use self::libc::{c_int, c_void, size_t};
+use libc::{c_int, c_void, size_t};
 
 pub fn memchr(needle: u8, haystack: &[u8]) -> Option<usize> {
+    
     let p = unsafe {
         libc::memchr(
             haystack.as_ptr() as *const c_void,
@@ -29,6 +28,7 @@ pub fn memrchr(needle: u8, haystack: &[u8]) -> Option<usize> {
     if haystack.is_empty() {
         return None;
     }
+    
     let p = unsafe {
         libc::memrchr(
             haystack.as_ptr() as *const c_void,
