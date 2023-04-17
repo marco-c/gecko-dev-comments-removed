@@ -439,16 +439,6 @@ LoginManager.prototype = {
   
 
 
-  getAllLoginsWithCallbackAsync(aCallback) {
-    log.debug("Searching a list of all logins asynchronously");
-    this._storage.getAllLoginsAsync().then(logins => {
-      aCallback.onSearchComplete(logins);
-    });
-  },
-
-  
-
-
 
 
   removeAllUserFacingLogins() {

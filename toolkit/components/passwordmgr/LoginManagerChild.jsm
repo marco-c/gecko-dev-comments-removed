@@ -1928,7 +1928,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     this._maybeSendFormInteractionMessage(
       form,
-      "PasswordManager:ShowDoorhanger",
+      "PasswordManager:onFormSubmit",
       {
         targetField: null,
         isSubmission: true,
@@ -1952,17 +1952,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   _maybeSendFormInteractionMessage(
     form,
     messageName,
@@ -1970,90 +1959,12 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
   ) {
     let doc = form.ownerDocument;
     let win = doc.defaultView;
-    let logMessagePrefix = isSubmission ? "form submission" : "field edit";
     let passwordField = null;
     if (targetField && targetField.hasBeenTypePassword) {
       passwordField = targetField;
     }
-
-    let origin = LoginHelper.getLoginOrigin(doc.documentURI);
-    if (!origin) {
-      log(`(${logMessagePrefix} ignored -- invalid origin)`);
-      return;
-    }
-
-    
-    let recipes = LoginRecipesContent.getRecipes(this, origin, win);
-    let fields = {
-      targetField,
-      ...this._getFormFields(form, true, recipes, { ignoreConnect }),
-    };
-
-    
-    if (
-      passwordField &&
-      passwordField != fields.newPasswordField &&
-      passwordField != fields.oldPasswordField &&
-      passwordField != fields.confirmPasswordField
-    ) {
-      fields.newPasswordField = passwordField;
-    }
-
-    
-    if (fields.newPasswordField == null) {
-      if (isSubmission && fields.usernameField) {
-        log(
-          "_onFormSubmit: username-only form. Record the username field but not sending prompt"
-        );
-        this.stateForDocument(doc).mockUsernameOnlyField = {
-          name: fields.usernameField.name,
-          value: fields.usernameField.value,
-        };
-      }
-      return;
-    }
-
-    this._maybeSendFormInteractionMessageContinue(form, messageName, {
-      ...fields,
-      isSubmission,
-      triggeredByFillingGenerated,
-    });
-
-    if (isSubmission) {
-      
-      
-      this.sendAsyncMessage(
-        "PasswordManager:onFormSubmit",
-        {},
-        {
-          fields,
-          isSubmission,
-          triggeredByFillingGenerated,
-        }
-      );
-    }
-  }
-
-  
-
-
-
-  _maybeSendFormInteractionMessageContinue(
-    form,
-    messageName,
-    {
-      targetField,
-      usernameField,
-      newPasswordField,
-      oldPasswordField,
-      confirmPasswordField,
-      isSubmission,
-      triggeredByFillingGenerated,
-    }
-  ) {
     let logMessagePrefix = isSubmission ? "form submission" : "field edit";
-    let doc = form.ownerDocument;
-    let win = doc.defaultView;
+    let dismissedPrompt = !isSubmission;
 
     let detail = { messageSent: false };
     try {
@@ -2074,6 +1985,50 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         return;
       }
 
+      let origin = LoginHelper.getLoginOrigin(doc.documentURI);
+      if (!origin) {
+        log(`(${logMessagePrefix} ignored -- invalid origin)`);
+        return;
+      }
+
+      let formActionOrigin = LoginHelper.getFormActionOrigin(form);
+
+      let recipes = LoginRecipesContent.getRecipes(this, origin, win);
+
+      
+      let {
+        usernameField,
+        newPasswordField,
+        oldPasswordField,
+        confirmPasswordField,
+      } = this._getFormFields(form, true, recipes, { ignoreConnect });
+
+      
+      if (
+        passwordField &&
+        passwordField != newPasswordField &&
+        passwordField != oldPasswordField &&
+        passwordField != confirmPasswordField
+      ) {
+        newPasswordField = passwordField;
+      }
+
+      let docState = this.stateForDocument(doc);
+
+      
+      if (newPasswordField == null) {
+        if (isSubmission && usernameField) {
+          log(
+            "_onFormSubmit: username-only form. Record the username field but not sending prompt"
+          );
+          docState.mockUsernameOnlyField = {
+            name: usernameField.name,
+            value: usernameField.value,
+          };
+        }
+        return;
+      }
+
       let fullyMungedPattern = /^\*+$|^•+$|^\.+$/;
       
       
@@ -2088,7 +2043,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       
       
       
-      let docState = this.stateForDocument(doc);
       if (!usernameField) {
         if (docState.mockUsernameOnlyField) {
           usernameField = docState.mockUsernameOnlyField;
@@ -2133,7 +2087,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       
       
       
-      let dismissedPrompt = !isSubmission;
       let newPasswordFieldValue = newPasswordField.value;
       if (
         (!dismissedPrompt &&
@@ -2175,7 +2128,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       let { login: autoFilledLogin } =
         docState.fillsByRootElement.get(form.rootElement) || {};
       let browsingContextId = win.windowGlobalChild.browsingContext.id;
-      let formActionOrigin = LoginHelper.getFormActionOrigin(form);
 
       detail = {
         browsingContextId,

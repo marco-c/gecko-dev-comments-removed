@@ -36,7 +36,6 @@
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorage.h"
-#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/OpaqueResponseUtils.h"
 #include "mozilla/net/PartiallySeekableInputStream.h"
@@ -2314,6 +2313,55 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
 
 
 
+static void AddHighValueCOOPPermission(nsIPrincipal* aResultPrincipal) {
+  RefPtr<PermissionManager> perms = PermissionManager::GetInstance();
+  if (NS_WARN_IF(!perms)) {
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> resultOrPrecursor(aResultPrincipal);
+  if (!aResultPrincipal->GetIsContentPrincipal()) {
+    resultOrPrecursor = aResultPrincipal->GetPrecursorPrincipal();
+    if (!resultOrPrecursor) {
+      return;
+    }
+  }
+
+  
+  
+  
+  nsAutoCString siteOrigin;
+  if (NS_FAILED(resultOrPrecursor->GetSiteOrigin(siteOrigin))) {
+    return;
+  }
+
+  nsCOMPtr<nsIPrincipal> sitePrincipal =
+      BasePrincipal::CreateContentPrincipal(siteOrigin);
+  if (!sitePrincipal || !sitePrincipal->GetIsContentPrincipal()) {
+    return;
+  }
+
+  MOZ_LOG(dom::gProcessIsolationLog, LogLevel::Verbose,
+          ("Adding HighValue COOP Permission for site '%s'", siteOrigin.get()));
+
+  
+  
+  
+  int64_t expirationTime =
+      (PR_Now() / PR_USEC_PER_MSEC) +
+      (int64_t(StaticPrefs::fission_highValue_coop_expiration()) *
+       PR_MSEC_PER_SEC);
+  Unused << perms->AddFromPrincipal(
+      sitePrincipal, mozilla::dom::kHighValueCOOPPermission,
+      nsIPermissionManager::ALLOW_ACTION, nsIPermissionManager::EXPIRE_TIME,
+      expirationTime);
+}
+
+
+
 
 static bool CompareCrossOriginOpenerPolicies(
     nsILoadInfo::CrossOriginOpenerPolicy documentPolicy,
@@ -2381,8 +2429,7 @@ nsresult HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch() {
 
   
   if (resultPolicy != nsILoadInfo::OPENER_POLICY_UNSAFE_NONE) {
-    mozilla::dom::AddHighValuePermission(
-        resultOrigin, mozilla::dom::kHighValueCOOPPermission);
+    AddHighValueCOOPPermission(resultOrigin);
   }
 
   
