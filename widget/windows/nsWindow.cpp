@@ -4109,7 +4109,7 @@ WindowRenderer* nsWindow::GetWindowRenderer() {
         reinterpret_cast<uintptr_t>(static_cast<nsIWidget*>(this)),
         mTransparencyMode, mSizeMode);
     
-    CompositorOptions options(false, false, false);
+    CompositorOptions options(false, false);
     mBasicLayersSurface =
         new InProcessWinCompositorWidget(initData, options, this);
     mCompositorWidgetDelegate = mBasicLayersSurface;
