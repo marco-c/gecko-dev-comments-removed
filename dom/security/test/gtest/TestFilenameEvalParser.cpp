@@ -38,6 +38,11 @@ static constexpr auto kOther = "other"_ns;
   ASSERT_TRUE((condition));
 
 
+#define ASSERT_AND_PRINT_FIRST(first, condition) \
+  fprintf(stderr, "First: %s\n", (first).get()); \
+  ASSERT_TRUE((condition));
+
+
 TEST(FilenameEvalParser, ResourceChrome)
 {
   {

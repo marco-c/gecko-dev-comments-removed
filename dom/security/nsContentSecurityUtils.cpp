@@ -352,46 +352,44 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kDataUri, Nothing());
   }
 
-  if (!NS_IsMainThread()) {
+  
+  if (NS_IsMainThread()) {
     
-    return FilenameTypeAndDetails(kOtherWorker, Nothing());
-  }
+    bool regexMatch;
+    nsTArray<nsString> regexResults;
+    nsresult rv = RegexEval(kExtensionRegex, fileName,  false,
+                            regexMatch, &regexResults);
+    if (NS_FAILED(rv)) {
+      return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    }
+    if (regexMatch) {
+      nsCString type = StringEndsWith(regexResults[2], u"mozilla.org.xpi"_ns)
+                           ? kMozillaExtensionFile
+                           : kOtherExtensionFile;
+      const auto& extensionNameAndPath =
+          Substring(regexResults[0], ArrayLength("extensions/") - 1);
+      return FilenameTypeAndDetails(
+          type, Some(OptimizeFileName(extensionNameAndPath)));
+    }
 
-  
-  bool regexMatch;
-  nsTArray<nsString> regexResults;
-  nsresult rv = RegexEval(kExtensionRegex, fileName,  false,
-                          regexMatch, &regexResults);
-  if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
-  }
-  if (regexMatch) {
-    nsCString type = StringEndsWith(regexResults[2], u"mozilla.org.xpi"_ns)
-                         ? kMozillaExtensionFile
-                         : kOtherExtensionFile;
-    auto& extensionNameAndPath =
-        Substring(regexResults[0], ArrayLength("extensions/") - 1);
-    return FilenameTypeAndDetails(type,
-                                  Some(OptimizeFileName(extensionNameAndPath)));
-  }
+    
+    rv = RegexEval(kSingleFileRegex, fileName,  true,
+                   regexMatch);
+    if (NS_FAILED(rv)) {
+      return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    }
+    if (regexMatch) {
+      return FilenameTypeAndDetails(kSingleString, Some(fileName));
+    }
 
-  
-  rv = RegexEval(kSingleFileRegex, fileName,  true,
-                 regexMatch);
-  if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
-  }
-  if (regexMatch) {
-    return FilenameTypeAndDetails(kSingleString, Some(fileName));
-  }
-
-  
-  rv = RegexEval(kUCJSRegex, fileName,  true, regexMatch);
-  if (NS_FAILED(rv)) {
-    return FilenameTypeAndDetails(kRegexFailure, Nothing());
-  }
-  if (regexMatch) {
-    return FilenameTypeAndDetails(kSuspectedUserChromeJS, Nothing());
+    
+    rv = RegexEval(kUCJSRegex, fileName,  true, regexMatch);
+    if (NS_FAILED(rv)) {
+      return FilenameTypeAndDetails(kRegexFailure, Nothing());
+    }
+    if (regexMatch) {
+      return FilenameTypeAndDetails(kSuspectedUserChromeJS, Nothing());
+    }
   }
 
   
@@ -488,6 +486,9 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   }
 #endif
 
+  if (!NS_IsMainThread()) {
+    return FilenameTypeAndDetails(kOtherWorker, Nothing());
+  }
   return FilenameTypeAndDetails(kOther, Nothing());
 }
 
@@ -1296,16 +1297,26 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     }
   }
 
-  auto kAllowedFilenames = {
+  auto kAllowedFilenamesExact = {
       
       u"data:,new function() {\n  Components.utils.import(\"chrome://aboutsync/content/AboutSyncRedirector.js\");\n  AboutSyncRedirector.register();\n}"_ns,
+  };
+
+  for (auto allowedFilename : kAllowedFilenamesExact) {
+    if (filenameU == allowedFilename) {
+      return true;
+    }
+  }
+
+  auto kAllowedFilenamesPrefix = {
       
       
       u"about:downloads"_ns,
       
       u"about:preferences"_ns};
-  for (auto allowedFilename : kAllowedFilenames) {
-    if (filenameU == allowedFilename) {
+
+  for (auto allowedFilenamePrefix : kAllowedFilenamesPrefix) {
+    if (StringBeginsWith(filenameU, allowedFilenamePrefix)) {
       return true;
     }
   }
