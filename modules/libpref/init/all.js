@@ -298,8 +298,6 @@ pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
-pref("ui.android.mouse_as_touch", 1);
-
 pref("browser.display.force_inline_alttext", false); 
 
 

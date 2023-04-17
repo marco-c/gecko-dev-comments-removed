@@ -71,9 +71,6 @@ pref("browser.safebrowsing.features.cryptomining.update", true);
 pref("browser.safebrowsing.features.fingerprinting.update", true);
 
 
-pref("ui.android.mouse_as_touch", 2);
-
-
 pref("media.geckoview.autoplay.request", true);
 
 
