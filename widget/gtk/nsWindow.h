@@ -694,6 +694,12 @@ class nsWindow final : public nsBaseWidget {
   
 
 
+
+  bool mHiddenPopupPositioned;
+
+  
+
+
   GdkPoint mPopupPosition;
 
   
