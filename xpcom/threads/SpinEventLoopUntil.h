@@ -134,7 +134,6 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
 
 
 
-
 template <
     ProcessFailureBehavior Behavior = ProcessFailureBehavior::ReportToCaller,
     typename Pred>
@@ -169,13 +168,6 @@ bool SpinEventLoopUntil(const nsACString& aVeryGoodReasonToDoThis,
   }
 
   return true;
-}
-
-
-
-template <typename Pred>
-bool SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr) {
-  return SpinEventLoopUntil("Missing motivation."_ns, aPredicate, aThread);
 }
 
 }  
