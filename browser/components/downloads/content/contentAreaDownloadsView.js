@@ -15,7 +15,10 @@ var ContentAreaDownloadsView = {
       "InitialDownloadsLoaded",
       () => {
         
-        document.getElementById("downloadsRichListBox").focus();
+        
+        document
+          .getElementById("downloadsRichListBox")
+          .focus({ preventFocusRing: true });
       },
       { once: true }
     );
