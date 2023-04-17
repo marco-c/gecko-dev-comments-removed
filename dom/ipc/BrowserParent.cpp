@@ -3356,7 +3356,7 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
     mActiveInPriorityManager = aEnabled;
     
     
-    ProcessPriorityManager::TabActivityChanged(this, aEnabled);
+    ProcessPriorityManager::ActivityChanged(this, aEnabled);
   }
 
   if (aEnabled == mRenderLayers) {
@@ -3423,7 +3423,7 @@ void BrowserParent::NotifyResolutionChanged() {
 
 void BrowserParent::Deprioritize() {
   if (mActiveInPriorityManager) {
-    ProcessPriorityManager::TabActivityChanged(this, false);
+    ProcessPriorityManager::ActivityChanged(this, false);
     mActiveInPriorityManager = false;
   }
 }
