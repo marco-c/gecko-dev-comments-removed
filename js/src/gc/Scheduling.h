@@ -432,9 +432,6 @@ static const auto MinLastDitchGCPeriod = 60;
 static const size_t MallocThresholdBase = 38 * 1024 * 1024;
 
 
-static const double MallocGrowthFactor = 1.5;
-
-
 static const double HelperThreadRatio = 0.5;
 
 
@@ -605,13 +602,6 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<double> mallocGrowthFactor_;
-
-  
-
-
-
-
   MainThreadData<size_t> urgentThresholdBytes_;
 
  public:
@@ -667,7 +657,6 @@ class GCSchedulingTunables {
   }
 
   size_t mallocThresholdBase() const { return mallocThresholdBase_; }
-  double mallocGrowthFactor() const { return mallocGrowthFactor_; }
 
   size_t urgentThresholdBytes() const { return urgentThresholdBytes_; }
 

@@ -343,13 +343,6 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_MALLOC_GROWTH_FACTOR = 36,
-
-  
-
-
-
-
 
   JSGC_INCREMENTAL_WEAKMAP_ENABLED = 37,
 
