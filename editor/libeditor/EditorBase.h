@@ -44,6 +44,7 @@ class mozInlineSpellChecker;
 class nsAtom;
 class nsCaret;
 class nsIContent;
+class nsIDocumentEncoder;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
 class nsIEditorObserver;
@@ -2245,6 +2246,19 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+
+  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
+      const nsAString& aFormatType, uint32_t aDocumentEncoderFlags,
+      const nsACString& aCharset) const;
+
+  
+
+
+
+
   MOZ_CAN_RUN_SCRIPT virtual nsresult SelectAllInternal();
 
   nsresult DetermineCurrentDirection();
@@ -2725,6 +2739,12 @@ class EditorBase : public nsIEditor,
   RefPtr<TextInputListener> mTextInputListener;
 
   RefPtr<IMEContentObserver> mIMEContentObserver;
+
+  
+  
+  
+  mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
+  mutable nsString mCachedDocumentEncoderType;
 
   
   

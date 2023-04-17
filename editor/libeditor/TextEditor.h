@@ -530,19 +530,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
-      const nsAString& aFormatType, uint32_t aDocumentEncoderFlags,
-      const nsACString& aCharset) const;
-
-  
-
-
-
-
-
-
-
   nsresult ComputeValueInternal(const nsAString& aFormatType,
                                 uint32_t aDocumentEncoderFlags,
                                 nsAString& aOutputString) const;
@@ -573,13 +560,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
                                                      bool aForceStartMasking);
 
  protected:
-  mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
-
   
   
   nsCOMPtr<nsITimer> mMaskTimer;
-
-  mutable nsString mCachedDocumentEncoderType;
 
   int32_t mMaxTextLength;
 
