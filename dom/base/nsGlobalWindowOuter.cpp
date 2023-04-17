@@ -5303,6 +5303,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     MOZ_DIAGNOSTIC_ASSERT(cv);
   } else {
     if (aDocShellToCloneInto) {
+      
+      Unused << aDocShellToCloneInto->GetDocument();
       bc = aDocShellToCloneInto->GetBrowsingContext();
     } else {
       AutoNoJSAPI nojsapi;
