@@ -417,7 +417,8 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
           
           
           nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-      nsIContentPolicy::TYPE_OTHER, getter_AddRefs(localChannel));
+      nsIContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA,
+      getter_AddRefs(localChannel));
   if (NS_FAILED(rv)) {
     LOG(("WebrtcTCPSocket %p: bad open channel\n", this));
     return rv;

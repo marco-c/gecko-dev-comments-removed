@@ -503,6 +503,11 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
+  
+  
+  
+  
+  
 
   switch (contentType) {
     
@@ -528,6 +533,13 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       *aDecision = ACCEPT;
       return NS_OK;
       break;
+
+    
+    
+    
+    case ExtContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA:
+      *aDecision = ACCEPT;
+      return NS_OK;
 
     
     
@@ -563,7 +575,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     case ExtContentPolicy::TYPE_XSLT:
     case ExtContentPolicy::TYPE_OTHER:
     case ExtContentPolicy::TYPE_SPECULATIVE:
-    case ExtContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA:
       break;
 
     case ExtContentPolicy::TYPE_INVALID:
