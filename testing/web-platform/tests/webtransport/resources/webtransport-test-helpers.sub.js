@@ -11,9 +11,29 @@ function webtransport_url(handler) {
 }
 
 
-async function read_stream_as_json(stream) {
+
+async function read_stream_as_string(readable_stream) {
+  const decoder = new TextDecoderStream();
+  const decode_stream = readable_stream.pipeThrough(decoder);
+  const reader = decode_stream.getReader();
+
+  let chunks = '';
+  while (true) {
+    const {value: chunk, done} = await reader.read();
+    if (done) {
+      break;
+    }
+    chunks += chunk;
+  }
+  reader.releaseLock();
+
+  return chunks;
+}
+
+
+async function read_stream_as_json(readable_stream) {
   const decoder = new TextDecoderStream('utf-8');
-  const decode_stream = stream.readable.pipeThrough(decoder);
+  const decode_stream = readable_stream.pipeThrough(decoder);
   const reader = decode_stream.getReader();
 
   let chunks = '';
