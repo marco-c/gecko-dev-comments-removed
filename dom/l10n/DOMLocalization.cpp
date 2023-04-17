@@ -492,6 +492,13 @@ bool DOMLocalization::ApplyTranslations(
     if (aProto && !elem->IsInComposedDoc()) {
       continue;
     }
+
+    
+    
+    
+    if (!elem->HasAttr(kNameSpaceID_None, nsGkAtoms::datal10nid)) {
+      continue;
+    }
     L10nOverlays::TranslateElement(*elem, aTranslations[i].Value(), errors,
                                    aRv);
     if (NS_WARN_IF(aRv.Failed())) {
