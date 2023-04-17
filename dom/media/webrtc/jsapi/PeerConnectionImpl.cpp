@@ -1843,13 +1843,15 @@ PeerConnectionImpl::ReplaceTrackNoRenegotiation(TransceiverImpl& aTransceiver,
   if (aTransceiver.IsVideo()) {
     
     
-    MediaSourceEnum oldSource = oldSendTrack
-                                    ? oldSendTrack->GetSource().GetMediaSource()
-                                    : MediaSourceEnum::Camera;
-    MediaSourceEnum newSource = aWithTrack
-                                    ? aWithTrack->GetSource().GetMediaSource()
-                                    : MediaSourceEnum::Camera;
-    if (oldSource != newSource) {
+    Maybe<MediaSourceEnum> oldType;
+    Maybe<MediaSourceEnum> newType;
+    if (oldSendTrack) {
+      oldType = Some(oldSendTrack->GetSource().GetMediaSource());
+    }
+    if (aWithTrack) {
+      newType = Some(aWithTrack->GetSource().GetMediaSource());
+    }
+    if (oldType != newType) {
       if (NS_WARN_IF(NS_FAILED(rv = aTransceiver.UpdateConduit()))) {
         CSFLogError(LOGTAG, "Error Updating VideoConduit");
         return rv;

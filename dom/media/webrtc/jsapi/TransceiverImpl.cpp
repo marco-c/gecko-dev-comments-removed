@@ -784,7 +784,7 @@ nsresult TransceiverImpl::UpdateVideoConduit() {
   
   
   if (mJsepTransceiver->mSendTrack.GetNegotiatedDetails() &&
-      mJsepTransceiver->mSendTrack.GetActive() && mSendTrack) {
+      mJsepTransceiver->mSendTrack.GetActive()) {
     const auto& details(*mJsepTransceiver->mSendTrack.GetNegotiatedDetails());
 
     UpdateConduitRtpExtmap(*conduit, details, LocalDirection::kSend);
@@ -826,6 +826,11 @@ nsresult TransceiverImpl::UpdateVideoConduit() {
 
 nsresult TransceiverImpl::ConfigureVideoCodecMode(
     VideoSessionConduit& aConduit) {
+  if (!mSendTrack) {
+    
+    return NS_OK;
+  }
+
   RefPtr<mozilla::dom::VideoStreamTrack> videotrack =
       mSendTrack->AsVideoStreamTrack();
 
