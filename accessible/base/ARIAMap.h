@@ -271,7 +271,8 @@ uint64_t UniversalStatesFor(dom::Element* aElement);
 
 
 
-uint8_t AttrCharacteristicsFor(nsAtom* aAtom);
+
+int8_t AttrCharacteristicsFor(nsAtom* aAtom);
 
 
 

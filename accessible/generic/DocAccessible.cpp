@@ -690,9 +690,8 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
 
   
   
-  if (aAttribute == nsGkAtoms::aria_disabled || aAttribute == nsGkAtoms::href ||
-      aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::tabindex ||
-      aAttribute == nsGkAtoms::contenteditable) {
+  
+  if (accessible->AttributeChangesState(aAttribute)) {
     mPrevStateBits = accessible->State();
   } else {
     mPrevStateBits = 0;
