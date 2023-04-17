@@ -2665,12 +2665,6 @@ class nsLayoutUtils {
 
 
 
-  static float GetCurrentAPZResolutionScale(PresShell* aPresShell);
-
-  
-
-
-
   static bool AllowZoomingForDocument(const mozilla::dom::Document* aDocument);
 
   
