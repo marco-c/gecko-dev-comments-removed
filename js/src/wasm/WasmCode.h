@@ -741,8 +741,27 @@ using MutableCode = RefPtr<Code>;
 
 class Code : public ShareableBase<Code> {
   UniqueCodeTier tier1_;
-  mutable UniqueConstCodeTier tier2_;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable UniqueConstCodeTier tier2_;
   mutable Atomic<bool> hasTier2_;
+
   SharedMetadata metadata_;
   ExclusiveData<CacheableCharsVector> profilingLabels_;
   JumpTables jumpTables_;
@@ -770,7 +789,12 @@ class Code : public ShareableBase<Code> {
   }
   uint32_t getFuncIndex(JSFunction* fun) const;
 
-  bool setTier2(UniqueCodeTier tier2, const LinkData& linkData) const;
+  
+  
+  
+  
+  bool setAndBorrowTier2(UniqueCodeTier tier2, const LinkData& linkData,
+                         const CodeTier** borrowedTier) const;
   void commitTier2() const;
 
   bool hasTier2() const { return hasTier2_; }
