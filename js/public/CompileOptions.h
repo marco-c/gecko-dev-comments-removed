@@ -146,6 +146,8 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool privateClassMethods = false;
   bool topLevelAwait = true;
 
+  bool classStaticBlocks = false;
+
   
   bool useStencilXDR = false;
 
