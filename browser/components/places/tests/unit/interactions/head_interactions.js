@@ -52,6 +52,36 @@ async function addInteractions(interactions) {
 
 
 
+async function getInteractions() {
+  const columns = [
+    "id",
+    "place_id",
+    "url",
+    "updated_at",
+    "total_view_time",
+    "typing_time",
+    "key_presses",
+  ];
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.executeCached(
+    `SELECT m.id AS id, h.id AS place_id, h.url AS url, updated_at,
+            total_view_time, typing_time, key_presses
+     FROM moz_places_metadata m
+     JOIN moz_places h ON h.id = m.place_id
+     ORDER BY updated_at DESC`
+  );
+  return rows.map(r => {
+    let result = {};
+    for (let column of columns) {
+      result[column] = r.getResultByName(column);
+    }
+    return result;
+  });
+}
+
+
+
+
 
 
 
@@ -128,7 +158,12 @@ function assertRecentDate(date) {
 
 function assertSnapshot(actual, expected) {
   Assert.equal(actual.url, expected.url, "Should have the expected URL");
-  let expectedTitle = expected.title || `test visit for ${expected.url}`;
+  let expectedTitle = `test visit for ${expected.url}`;
+  if (expected.hasOwnProperty("title")) {
+    
+    
+    expectedTitle = expected.title;
+  }
   Assert.equal(actual.title, expectedTitle, "Should have the expected title");
   
   Assert.strictEqual(
@@ -142,8 +177,13 @@ function assertSnapshot(actual, expected) {
     "Should have the expected document type"
   );
   assertRecentDate(actual.createdAt);
-  assertRecentDate(actual.firstInteractionAt);
   assertRecentDate(actual.lastInteractionAt);
+  if (actual.firstInteractionAt || !actual.userPersisted) {
+    
+    
+    
+    assertRecentDate(actual.firstInteractionAt);
+  }
   if (expected.lastUpdated) {
     Assert.greaterOrEqual(
       actual.lastInteractionAt,

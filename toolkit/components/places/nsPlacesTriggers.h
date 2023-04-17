@@ -331,6 +331,8 @@
         "END")
 
 
+
+
 #  define CREATE_PLACES_METADATA_AFTERINSERT_TRIGGER                   \
     nsLiteralCString(                                                  \
         "CREATE TEMP TRIGGER moz_places_metadata_afterinsert_trigger " \
@@ -340,6 +342,11 @@
         "UPDATE moz_places_metadata_snapshots "                        \
         "SET last_interaction_at = NEW.created_at "                    \
         "WHERE place_id = NEW.place_id; "                              \
+        "UPDATE moz_places_metadata_snapshots "                        \
+        "SET first_interaction_at = NEW.created_at, document_type = "  \
+          "CASE WHEN NEW.document_type <> 0 "                          \
+          "THEN NEW.document_type ELSE document_type END "             \
+        "WHERE place_id = NEW.place_id AND first_interaction_at = 0;"  \
         "END")
 
 
