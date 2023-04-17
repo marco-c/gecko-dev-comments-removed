@@ -17,8 +17,6 @@
 
 
 
-#![feature(slice_strip)]
-
 extern crate encoding_rs;
 
 fn position(needle: u8, haystack: &[u8]) -> Option<usize> {
