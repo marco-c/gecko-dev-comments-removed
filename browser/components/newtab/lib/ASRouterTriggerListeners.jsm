@@ -468,10 +468,6 @@ this.ASRouterTriggerListeners = new Map([
     },
   ],
 
-  
-
-
-
   [
     "contentBlocking",
     {
