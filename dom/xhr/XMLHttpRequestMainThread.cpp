@@ -2239,17 +2239,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
 
     mErrorLoad = ErrorType::eUnreachable;
     mResponseXML = nullptr;
-
-    
-    if (NS_ERROR_GET_MODULE(status) == NS_ERROR_MODULE_NETWORK) {
-      IgnoredErrorResult rv;
-      RequestErrorSteps(ProgressEventType::error, NS_ERROR_DOM_NETWORK_ERR, rv);
-      
-      
-      
-      ChangeStateToDone(wasSync);
-      return NS_OK;
-    }
   }
 
   
