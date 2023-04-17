@@ -700,7 +700,6 @@ class FunctionCompiler {
   
   
   
-  
 
   
   MDefinition* binarySimd128(MDefinition* lhs, MDefinition* rhs,
@@ -5865,8 +5864,8 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
 
 bool js::wasm::IonPlatformSupport() {
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) ||    \
-    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS32) || \
-    defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_ARM64)
+    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_ARM64)
   return true;
 #else
   return false;
