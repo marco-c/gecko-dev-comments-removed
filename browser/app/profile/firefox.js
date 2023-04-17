@@ -1797,7 +1797,10 @@ pref("browser.contentblocking.state-partitioning.mvp.ui.enabled", true);
 
 
 
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp");
+
+
+
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp,ocsp");
 
 
 
