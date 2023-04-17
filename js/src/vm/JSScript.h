@@ -1536,8 +1536,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   
   JSFunction* function() const {
-    if (functionOrGlobal_->is<JSFunction>()) {
-      return &functionOrGlobal_->as<JSFunction>();
+    
+    
+    if (isFunction()) {
+      return reinterpret_cast<JSFunction*>(functionOrGlobal_.get());
     }
     return nullptr;
   }

@@ -16,7 +16,6 @@
 #include "jit/JitContext.h"
 #include "jit/TypeData.h"
 #include "vm/FunctionFlags.h"  
-#include "vm/Printer.h"
 
 namespace js {
 

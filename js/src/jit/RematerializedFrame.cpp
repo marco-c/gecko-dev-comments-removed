@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "debugger/DebugAPI.h"
 #include "jit/Bailouts.h"
 #include "js/friend/DumpFunctions.h"  
 #include "vm/ArgumentsObject.h"

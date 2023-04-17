@@ -11,10 +11,12 @@
 
 #include "jit/CacheIR.h"
 #include "jit/CacheIRCompiler.h"
-#include "jit/IonIC.h"
 
 namespace js {
 namespace jit {
+
+class IonIC;
+class IonICStub;
 
 
 class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
