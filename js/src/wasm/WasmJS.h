@@ -153,6 +153,9 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE)
 #undef WASM_FEATURE
 
 
+bool IsSimdPrivilegedContext(JSContext* cx);
+
+
 bool SimdWormholeAvailable(JSContext* cx);
 
 #if defined(ENABLE_WASM_SIMD) && defined(DEBUG)
