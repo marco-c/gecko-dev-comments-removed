@@ -4068,7 +4068,7 @@ HTMLMediaElement* HTMLMediaElement::LookupMediaElementURITable(nsIURI* aURI) {
         equal && elem->mCORSMode == mCORSMode) {
       
       
-      auto decoder = static_cast<ChannelMediaDecoder*>(elem->mDecoder.get());
+      auto* decoder = static_cast<ChannelMediaDecoder*>(elem->mDecoder.get());
       NS_ASSERTION(decoder, "Decoder gone");
       if (decoder->CanClone()) {
         return elem;
