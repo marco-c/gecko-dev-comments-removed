@@ -11,8 +11,7 @@
 #include "mozilla/dom/LSWriteOptimizerImpl.h"
 #include "nsTHashMap.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SSSetItemInfo;
 class SSWriteInfo;
@@ -95,7 +94,6 @@ class SessionStorageCache final {
   bool mLoadedOrCloned;
 };
 
-}  
 }  
 
 #endif  
