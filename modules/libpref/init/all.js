@@ -77,7 +77,11 @@ pref("security.enterprise_roots.enabled", false);
 
 
 
-pref("security.osclientcerts.autoload", true);
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("security.osclientcerts.autoload", true);
+#else
+  pref("security.osclientcerts.autoload", false);
+#endif
 
 
 
