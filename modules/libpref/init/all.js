@@ -2480,7 +2480,11 @@ pref("dom.ipc.processCount.privilegedabout", 1);
 pref("dom.ipc.processCount.privilegedmozilla", 1);
 
 
+#ifdef ANDROID
 pref("dom.ipc.processCount.webIsolated", 1);
+#else
+pref("dom.ipc.processCount.webIsolated", 4);
+#endif
 
 
 
