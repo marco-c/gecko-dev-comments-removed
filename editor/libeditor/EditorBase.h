@@ -1743,28 +1743,28 @@ class EditorBase : public nsIEditor,
     StopAtBlockBoundary,       
   };
   using WalkTreeOptions = EnumSet<WalkTreeOption>;
-  nsIContent* GetPreviousContent(const nsINode& aNode,
-                                 const WalkTreeOptions& aOptions) const;
+  static nsIContent* GetPreviousContent(
+      const nsINode& aNode, const WalkTreeOptions& aOptions,
+      EditorType aEditorType, const Element* aAncestorLimiter = nullptr);
 
   
 
 
-  nsIContent* GetPreviousContent(const EditorRawDOMPoint& aPoint,
-                                 const WalkTreeOptions& aOptions) const;
-
-  
-
-
-
-
-  nsIContent* GetNextContent(const nsINode& aNode,
-                             const WalkTreeOptions& aOptions) const;
+  static nsIContent* GetPreviousContent(
+      const EditorRawDOMPoint& aPoint, const WalkTreeOptions& aOptions,
+      EditorType aEditorType, const Element* aAncestorLimiter = nullptr);
 
   
 
 
 
 
+  static nsIContent* GetNextContent(const nsINode& aNode,
+                                    const WalkTreeOptions& aOptions,
+                                    EditorType aEditorType,
+                                    const Element* aAncestorLimiter = nullptr);
+
+  
 
 
 
@@ -1783,8 +1783,14 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsIContent* GetNextContent(const EditorRawDOMPoint& aPoint,
-                             const WalkTreeOptions& aOptions) const;
+
+
+
+
+  static nsIContent* GetNextContent(const EditorRawDOMPoint& aPoint,
+                                    const WalkTreeOptions& aOptions,
+                                    EditorType aEditorType,
+                                    const Element* aAncestorLimiter = nullptr);
 
   
 
