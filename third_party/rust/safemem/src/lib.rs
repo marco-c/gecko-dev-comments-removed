@@ -41,11 +41,15 @@ pub fn copy_over<T: Copy>(slice: &mut [T], src_idx: usize, dest_idx: usize, len:
     len_check!(slice, src_idx, len);
     len_check!(slice, dest_idx, len);
 
-    let src_ptr: *const T = &slice[src_idx];
-    let dest_ptr: *mut T = &mut slice[dest_idx];
+    
+    
+    #[cfg(miri)]
+    slice.iter().copied().for_each(drop);
+
+    let ptr = slice.as_mut_ptr();
 
     unsafe {
-        ptr::copy(src_ptr, dest_ptr, len);
+        ptr::copy(ptr.offset(src_idx as isize), ptr.offset(dest_idx as isize), len);
     }
 }
 
@@ -60,24 +64,37 @@ pub fn write_bytes(slice: &mut [u8], byte: u8) {
 
 
 
+
 #[cfg(feature = "std")]
 pub fn prepend<T: Copy>(elems: &[T], vec: &mut Vec<T>) {
-    
-    vec.reserve(elems.len());
+    let elems_len = elems.len(); 
+    if elems_len == 0 { return; }
 
-    let old_len = vec.len();
-    let new_len = old_len + elems.len();
-
-    unsafe {
-        vec.set_len(new_len);
+    let old_len = vec.len(); 
+    if old_len == 0 {
+        
+        vec.extend_from_slice(elems);
+    } else {
+        
+        vec.reserve(elems_len);
+        let ptr = vec.as_mut_ptr();
+        unsafe {
+            
+            ptr::copy(
+                ptr,
+                ptr.offset(elems_len as isize),
+                old_len,
+            );
+            
+            ptr::copy_nonoverlapping(
+                elems.as_ptr(),
+                ptr,
+                elems_len,
+            );
+            
+            vec.set_len(old_len + elems_len);
+        }
     }
-
-    
-    if old_len > 0 {
-        copy_over(vec, 0, elems.len(), old_len);
-    }
-
-    vec[..elems.len()].copy_from_slice(elems);
 }
 
 #[cfg(test)]
@@ -113,5 +130,14 @@ mod tests {
         prepend(&[1, 2], &mut vec);
         assert_eq!(vec, &[1, 2, 3, 4, 5]);
     }
-}
 
+    
+    #[test]
+    #[cfg(all(
+        feature = "std",
+        miri,
+    ))]
+    fn prepend_bool() {
+        prepend(&[true], &mut vec![false]);
+    }
+}
