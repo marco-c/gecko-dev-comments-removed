@@ -47,10 +47,13 @@ const global = this;
 
 
 
+
+
+
 const WASM_MODULE_URL =
-  "https://zealous-rosalind-a98ce8.netlify.com/wasm/8f7ca2f70e1cd21b5a2dbe96545672752887bfbd4e7b3b9437e9fc7c3da0a3bedae4584ff734f0c9f08c642e6b66ffab.wasm";
+  "https://storage.googleapis.com/firefox-profiler-get-symbols/c1dca28a2a506df40f0a6f32c12ba51ec54b02be.wasm";
 const WASM_MODULE_INTEGRITY =
-  "sha384-j3yi9w4c0htaLb6WVFZydSiHv71OezuUN+n8fD2go77a5FhP9zTwyfCMZC5rZv+r";
+  "sha384-ZWi2jwcKJr20rE2gmHjFQGHgsCF9CagkyPLsrIZfmf5QKD2oXgkLa8tMKHK6zPA1";
 
 const EXPIRY_TIME_IN_MS = 5 * 60 * 1000; 
 

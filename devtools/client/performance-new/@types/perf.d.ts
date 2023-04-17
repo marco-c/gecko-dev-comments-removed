@@ -544,3 +544,16 @@ export type SymbolicationWorkerReplyData<R> =
   | {
       error: SymbolicationWorkerError;
     };
+
+
+
+
+
+export interface FileHandle {
+  
+  getLength: () => number;
+  
+  readBytesInto: (dest: Uint8Array, offset: number) => void;
+  
+  drop: () => void;
+}

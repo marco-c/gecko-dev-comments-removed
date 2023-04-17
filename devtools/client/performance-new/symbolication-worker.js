@@ -29,60 +29,56 @@ importScripts(
 
 
 
-const { WasmMemBuffer, get_compact_symbol_table } = wasm_bindgen;
+
+const { getCompactSymbolTable } = wasm_bindgen;
 
 
-function readFileInto(file, dataBuf) {
+
+function readFileBytesInto(file, offset, destBuf) {
+  file.setPosition(offset);
   
   
-  
-  
-  
-  const dataBufLen = dataBuf.byteLength;
   const chunkSize = 4 * 1024 * 1024;
-  let pos = 0;
-  while (pos < dataBufLen) {
-    const chunkData = file.read({ bytes: chunkSize });
+  let posInDestBuf = 0;
+  let remainingBytes = destBuf.byteLength;
+  while (remainingBytes > 0) {
+    const bytes = remainingBytes > chunkSize ? chunkSize : remainingBytes;
+    const chunkData = file.read({ bytes });
     const chunkBytes = chunkData.byteLength;
     if (chunkBytes === 0) {
       break;
     }
 
-    dataBuf.set(chunkData, pos);
-    pos += chunkBytes;
+    destBuf.set(chunkData, posInDestBuf);
+    posInDestBuf += chunkBytes;
+    remainingBytes -= chunkBytes;
   }
 }
 
 
 
 function createPlainErrorObject(e) {
-  
-  
-  
-  if (!(e instanceof OS.File.Error)) {
+  if (e instanceof OS.File.Error) {
     
-    if (e instanceof Error) {
-      const { name, message, fileName, lineNumber } = e;
-      return { name, message, fileName, lineNumber };
-    }
     
-    if (e.error_type) {
-      return {
-        name: e.error_type,
-        message: e.error_msg,
-      };
-    }
+    
+    return {
+      name: "OSFileError",
+      message: e.toString(),
+      fileName: e.fileName,
+      lineNumber: e.lineNumber,
+    };
   }
-
-  return {
-    name: e instanceof OS.File.Error ? "OSFileError" : "Error",
-    message: e.toString(),
-    fileName: e.fileName,
-    lineNumber: e.lineNumber,
-  };
+  
+  const { name, message, fileName, lineNumber } = e;
+  return { name, message, fileName, lineNumber };
 }
 
-class PathHelper {
+
+
+
+
+class FileAndPathHelper {
   constructor(libInfoMap, objdirs) {
     this._libInfoMap = libInfoMap;
     this._objdirs = objdirs;
@@ -95,7 +91,8 @@ class PathHelper {
 
 
 
-  getCandidatePaths(debugName, breakpadId) {
+
+  getCandidatePathsForBinaryOrPdb(debugName, breakpadId) {
     const key = `${debugName}:${breakpadId}`;
     const lib = this._libInfoMap.get(key);
     if (!lib) {
@@ -121,89 +118,64 @@ class PathHelper {
     
     for (const objdirPath of this._objdirs) {
       
-      candidatePaths.push({
-        path: OS.Path.join(objdirPath, "dist", "bin", name),
-        debugPath: OS.Path.join(objdirPath, "dist", "bin", name),
-      });
+      candidatePaths.push(OS.Path.join(objdirPath, "dist", "bin", name));
       
       
       
       
-      candidatePaths.push({
-        path: OS.Path.join(objdirPath, name),
-        debugPath: OS.Path.join(objdirPath, name),
-      });
+      candidatePaths.push(OS.Path.join(objdirPath, name));
     }
 
     
     
     
     
-    candidatePaths.push({ path, debugPath });
+    if (debugPath !== path) {
+      
+      
+
+      
+      
+      
+      candidatePaths.push(debugPath);
+    }
+
+    
+    
+    
+    candidatePaths.push(path);
 
     return candidatePaths;
   }
-}
-
-function getCompactSymbolTableFromPath(binaryPath, debugPath, breakpadId) {
-  
-  const binaryFile = OS.File.open(binaryPath, { read: true });
-  const binaryData = new WasmMemBuffer(binaryFile.stat().size, array => {
-    readFileInto(binaryFile, array);
-  });
-  binaryFile.close();
 
   
-  
-  let debugData = binaryData;
-  if (debugPath && debugPath !== binaryPath) {
-    const debugFile = OS.File.open(debugPath, { read: true });
-    debugData = new WasmMemBuffer(debugFile.stat().size, array => {
-      readFileInto(debugFile, array);
-    });
-    debugFile.close();
-  }
 
-  try {
-    const output = get_compact_symbol_table(binaryData, debugData, breakpadId);
-    const result = [
-      output.take_addr(),
-      output.take_index(),
-      output.take_buffer(),
-    ];
-    output.free();
-    return result;
-  } finally {
-    binaryData.free();
-    if (debugData != binaryData) {
-      debugData.free();
+
+
+
+
+
+  async readFile(path) {
+    const file = OS.File.open(path, { read: true });
+    const info = file.stat();
+    if (info.isDir) {
+      throw new Error(`Path "${path}" is a directory.`);
     }
+
+    const fileSize = info.size;
+
+    
+    
+    return {
+      getLength: () => fileSize,
+      readBytesInto: (dest, offset) => {
+        readFileBytesInto(file, offset, dest);
+      },
+      drop: () => {
+        file.close();
+      },
+    };
   }
-}
-
-function getSymbolTableInWorker(debugName, breakpadId, libInfoMap, objdirs) {
-  const helper = new PathHelper(libInfoMap, objdirs);
-  const candidatePaths = helper.getCandidatePaths(debugName, breakpadId);
-
-  const errors = [];
-  for (const { path, debugPath } of candidatePaths) {
-    try {
-      return getCompactSymbolTableFromPath(path, debugPath, breakpadId);
-    } catch (e) {
-      
-      
-      
-      
-      errors.push(e);
-    }
-  }
-
-  throw new Error(
-    `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
-      `because there was no matching file at any of the candidate paths: ${JSON.stringify(
-        candidatePaths
-      )}. Errors: ${errors.map(e => e.message).join(", ")}`
-  );
 }
 
 
@@ -218,12 +190,8 @@ onmessage = async e => {
     
     await wasm_bindgen(module);
 
-    const result = getSymbolTableInWorker(
-      debugName,
-      breakpadId,
-      libInfoMap,
-      objdirs
-    );
+    const helper = new FileAndPathHelper(libInfoMap, objdirs);
+    const result = await getCompactSymbolTable(debugName, breakpadId, helper);
     postMessage(
       { result },
       result.map(r => r.buffer)
