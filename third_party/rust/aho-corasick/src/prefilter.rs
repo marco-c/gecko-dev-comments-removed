@@ -5,9 +5,9 @@ use std::u8;
 
 use memchr::{memchr, memchr2, memchr3};
 
-use ahocorasick::MatchKind;
-use packed;
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::packed;
+use crate::Match;
 
 
 
@@ -79,6 +79,17 @@ pub trait Prefilter:
     
     fn reports_false_positives(&self) -> bool {
         true
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn looks_for_non_start_of_match(&self) -> bool {
+        false
     }
 }
 
@@ -192,6 +203,17 @@ impl PrefilterState {
     }
 
     
+    pub fn disabled() -> PrefilterState {
+        PrefilterState {
+            skips: 0,
+            skipped: 0,
+            max_match_len: 0,
+            inert: true,
+            last_scan_at: 0,
+        }
+    }
+
+    
     
     #[inline]
     fn update_skipped_bytes(&mut self, skipped: usize) {
@@ -285,6 +307,7 @@ impl Builder {
     
     
     pub fn build(&self) -> Option<PrefilterObj> {
+        
         match (self.start_bytes.build(), self.rare_bytes.build()) {
             
             
@@ -372,6 +395,12 @@ struct RareBytesBuilder {
     
     ascii_case_insensitive: bool,
     
+    rare_set: ByteSet,
+    
+    
+    
+    
+    
     
     byte_offsets: RareByteOffsets,
     
@@ -383,6 +412,38 @@ struct RareBytesBuilder {
     
     
     rank_sum: u16,
+}
+
+
+#[derive(Clone, Copy)]
+struct ByteSet([bool; 256]);
+
+impl ByteSet {
+    fn empty() -> ByteSet {
+        ByteSet([false; 256])
+    }
+
+    fn insert(&mut self, b: u8) -> bool {
+        let new = !self.contains(b);
+        self.0[b as usize] = true;
+        new
+    }
+
+    fn contains(&self, b: u8) -> bool {
+        self.0[b as usize]
+    }
+}
+
+impl fmt::Debug for ByteSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut bytes = vec![];
+        for b in 0..=255 {
+            if self.contains(b) {
+                bytes.push(b);
+            }
+        }
+        f.debug_struct("ByteSet").field("set", &bytes).finish()
+    }
 }
 
 
@@ -403,29 +464,17 @@ impl RareByteOffsets {
     
     
     
-    
-    
-    pub fn apply(&mut self, byte: u8, off: RareByteOffset) -> bool {
-        assert!(off.is_active());
-
-        let existing = &mut self.set[byte as usize];
-        if !existing.is_active() {
-            *existing = off;
-            true
-        } else {
-            if existing.max < off.max {
-                *existing = off;
-            }
-            false
-        }
+    pub fn set(&mut self, byte: u8, off: RareByteOffset) {
+        self.set[byte as usize].max =
+            cmp::max(self.set[byte as usize].max, off.max);
     }
 }
 
 impl fmt::Debug for RareByteOffsets {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut offsets = vec![];
         for off in self.set.iter() {
-            if off.is_active() {
+            if off.max > 0 {
                 offsets.push(off);
             }
         }
@@ -450,31 +499,25 @@ struct RareByteOffset {
     
     
     
-    
     max: u8,
 }
 
 impl Default for RareByteOffset {
     fn default() -> RareByteOffset {
-        RareByteOffset { max: u8::MAX }
+        RareByteOffset { max: 0 }
     }
 }
 
 impl RareByteOffset {
     
     
-    fn new(max: usize) -> RareByteOffset {
-        if max > (u8::MAX - 1) as usize {
-            RareByteOffset::default()
+    
+    fn new(max: usize) -> Option<RareByteOffset> {
+        if max > u8::MAX as usize {
+            None
         } else {
-            RareByteOffset { max: max as u8 }
+            Some(RareByteOffset { max: max as u8 })
         }
-    }
-
-    
-    
-    fn is_active(&self) -> bool {
-        self.max < u8::MAX
     }
 }
 
@@ -483,6 +526,7 @@ impl RareBytesBuilder {
     fn new() -> RareBytesBuilder {
         RareBytesBuilder {
             ascii_case_insensitive: false,
+            rare_set: ByteSet::empty(),
             byte_offsets: RareByteOffsets::empty(),
             available: true,
             count: 0,
@@ -507,8 +551,8 @@ impl RareBytesBuilder {
             return None;
         }
         let (mut bytes, mut len) = ([0; 3], 0);
-        for b in 0..256 {
-            if self.byte_offsets.set[b].is_active() {
+        for b in 0..=255 {
+            if self.rare_set.contains(b) {
                 bytes[len] = b as u8;
                 len += 1;
             }
@@ -540,14 +584,24 @@ impl RareBytesBuilder {
     
     fn add(&mut self, bytes: &[u8]) {
         
+        if !self.available {
+            return;
+        }
+        
         
         if self.count > 3 {
             self.available = false;
             return;
         }
+        
+        
+        if bytes.len() >= 256 {
+            self.available = false;
+            return;
+        }
         let mut rarest = match bytes.get(0) {
             None => return,
-            Some(&b) => (b, 0, freq_rank(b)),
+            Some(&b) => (b, freq_rank(b)),
         };
         
         
@@ -558,33 +612,44 @@ impl RareBytesBuilder {
         
         
         
+        let mut found = false;
         for (pos, &b) in bytes.iter().enumerate() {
-            if self.byte_offsets.set[b as usize].is_active() {
-                self.add_rare_byte(b, pos);
-                return;
+            self.set_offset(pos, b);
+            if found {
+                continue;
+            }
+            if self.rare_set.contains(b) {
+                found = true;
+                continue;
             }
             let rank = freq_rank(b);
-            if rank < rarest.2 {
-                rarest = (b, pos, rank);
+            if rank < rarest.1 {
+                rarest = (b, rank);
             }
         }
-        self.add_rare_byte(rarest.0, rarest.1);
+        if !found {
+            self.add_rare_byte(rarest.0);
+        }
     }
 
-    fn add_rare_byte(&mut self, byte: u8, pos: usize) {
-        self.add_one_byte(byte, pos);
+    fn set_offset(&mut self, pos: usize, byte: u8) {
+        
+        let offset = RareByteOffset::new(pos).unwrap();
+        self.byte_offsets.set(byte, offset);
         if self.ascii_case_insensitive {
-            self.add_one_byte(opposite_ascii_case(byte), pos);
+            self.byte_offsets.set(opposite_ascii_case(byte), offset);
         }
     }
 
-    fn add_one_byte(&mut self, byte: u8, pos: usize) {
-        let off = RareByteOffset::new(pos);
-        if !off.is_active() {
-            self.available = false;
-            return;
+    fn add_rare_byte(&mut self, byte: u8) {
+        self.add_one_rare_byte(byte);
+        if self.ascii_case_insensitive {
+            self.add_one_rare_byte(opposite_ascii_case(byte));
         }
-        if self.byte_offsets.apply(byte, off) {
+    }
+
+    fn add_one_rare_byte(&mut self, byte: u8) {
+        if self.rare_set.insert(byte) {
             self.count += 1;
             self.rank_sum += freq_rank(byte) as u16;
         }
@@ -621,6 +686,33 @@ impl Prefilter for RareBytesOne {
     fn heap_bytes(&self) -> usize {
         0
     }
+
+    fn looks_for_non_start_of_match(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        true
+    }
 }
 
 
@@ -654,6 +746,11 @@ impl Prefilter for RareBytesTwo {
 
     fn heap_bytes(&self) -> usize {
         0
+    }
+
+    fn looks_for_non_start_of_match(&self) -> bool {
+        
+        true
     }
 }
 
@@ -689,6 +786,11 @@ impl Prefilter for RareBytesThree {
 
     fn heap_bytes(&self) -> usize {
         0
+    }
+
+    fn looks_for_non_start_of_match(&self) -> bool {
+        
+        true
     }
 }
 
@@ -930,7 +1032,7 @@ pub fn opposite_ascii_case(b: u8) -> u8 {
 
 
 fn freq_rank(b: u8) -> u8 {
-    use byte_frequencies::BYTE_FREQUENCIES;
+    use crate::byte_frequencies::BYTE_FREQUENCIES;
     BYTE_FREQUENCIES[b as usize]
 }
 

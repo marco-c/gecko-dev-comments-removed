@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use error::{Error, Result};
+use crate::error::{Error, Result};
 
 
 
@@ -69,18 +69,7 @@ mod private {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-pub unsafe trait StateID:
+pub trait StateID:
     private::Sealed
     + Clone
     + Copy
@@ -115,7 +104,7 @@ pub unsafe trait StateID:
     fn max_id() -> usize;
 }
 
-unsafe impl StateID for usize {
+impl StateID for usize {
     #[inline]
     fn from_usize(n: usize) -> usize {
         n
@@ -132,7 +121,7 @@ unsafe impl StateID for usize {
     }
 }
 
-unsafe impl StateID for u8 {
+impl StateID for u8 {
     #[inline]
     fn from_usize(n: usize) -> u8 {
         n as u8
@@ -149,7 +138,7 @@ unsafe impl StateID for u8 {
     }
 }
 
-unsafe impl StateID for u16 {
+impl StateID for u16 {
     #[inline]
     fn from_usize(n: usize) -> u16 {
         n as u16
@@ -167,7 +156,7 @@ unsafe impl StateID for u16 {
 }
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-unsafe impl StateID for u32 {
+impl StateID for u32 {
     #[inline]
     fn from_usize(n: usize) -> u32 {
         n as u32
@@ -185,7 +174,7 @@ unsafe impl StateID for u32 {
 }
 
 #[cfg(target_pointer_width = "64")]
-unsafe impl StateID for u64 {
+impl StateID for u64 {
     #[inline]
     fn from_usize(n: usize) -> u64 {
         n as u64

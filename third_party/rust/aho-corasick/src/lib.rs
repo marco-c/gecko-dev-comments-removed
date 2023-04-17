@@ -178,6 +178,7 @@
 
 
 
+
 #![deny(missing_docs)]
 
 
@@ -185,20 +186,19 @@
 #[cfg(not(feature = "std"))]
 compile_error!("`std` feature is currently required to build this crate");
 
-extern crate memchr;
-#[cfg(test)]
-#[macro_use]
-extern crate doc_comment;
 
-#[cfg(test)]
-doctest!("../README.md");
 
-pub use ahocorasick::{
+
+
+
+
+
+pub use crate::ahocorasick::{
     AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,
     StreamFindIter,
 };
-pub use error::{Error, ErrorKind};
-pub use state_id::StateID;
+pub use crate::error::{Error, ErrorKind};
+pub use crate::state_id::StateID;
 
 mod ahocorasick;
 mod automaton;
@@ -292,6 +292,6 @@ impl Match {
 
     #[inline]
     fn from_span(id: usize, start: usize, end: usize) -> Match {
-        Match { pattern: id, len: end - start, end: end }
+        Match { pattern: id, len: end - start, end }
     }
 }

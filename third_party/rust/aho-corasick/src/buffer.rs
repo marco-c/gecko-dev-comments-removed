@@ -51,6 +51,8 @@ impl Buffer {
         
         
         
+        
+        
         let capacity = cmp::max(min * 8, DEFAULT_BUFFER_CAPACITY);
         Buffer { buf: vec![0; capacity], min, end: 0 }
     }
@@ -114,6 +116,8 @@ impl Buffer {
 
         assert!(roll_start + roll_len <= self.end);
         unsafe {
+            
+            
             
             
             

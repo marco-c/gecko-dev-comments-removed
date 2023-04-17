@@ -1,14 +1,14 @@
 use std::io;
 
-use automaton::Automaton;
-use buffer::Buffer;
-use dfa::{self, DFA};
-use error::Result;
-use nfa::{self, NFA};
-use packed;
-use prefilter::PrefilterState;
-use state_id::StateID;
-use Match;
+use crate::automaton::Automaton;
+use crate::buffer::Buffer;
+use crate::dfa::{self, DFA};
+use crate::error::Result;
+use crate::nfa::{self, NFA};
+use crate::packed;
+use crate::prefilter::{Prefilter, PrefilterState};
+use crate::state_id::StateID;
+use crate::Match;
 
 
 
@@ -524,6 +524,24 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn replace_all_with<F>(
         &self,
         haystack: &str,
@@ -536,11 +554,31 @@ impl<S: StateID> AhoCorasick<S> {
         for mat in self.find_iter(haystack) {
             dst.push_str(&haystack[last_match..mat.start()]);
             last_match = mat.end();
-            replace_with(&mat, &haystack[mat.start()..mat.end()], dst);
+            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
+                break;
+            };
         }
         dst.push_str(&haystack[last_match..]);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -582,7 +620,9 @@ impl<S: StateID> AhoCorasick<S> {
         for mat in self.find_iter(haystack) {
             dst.extend(&haystack[last_match..mat.start()]);
             last_match = mat.end();
-            replace_with(&mat, &haystack[mat.start()..mat.end()], dst);
+            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
+                break;
+            };
         }
         dst.extend(&haystack[last_match..]);
     }
@@ -729,8 +769,6 @@ impl<S: StateID> AhoCorasick<S> {
         })
     }
 
-    
-    
     
     
     
@@ -971,18 +1009,6 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn heap_bytes(&self) -> usize {
         match self.imp {
             Imp::NFA(ref nfa) => nfa.heap_bytes(),
@@ -1035,6 +1061,24 @@ impl<S: StateID> Imp<S> {
             Imp::NFA(ref nfa) => nfa.pattern_count(),
             Imp::DFA(ref dfa) => dfa.pattern_count(),
         }
+    }
+
+    
+    
+    fn prefilter(&self) -> Option<&dyn Prefilter> {
+        match *self {
+            Imp::NFA(ref nfa) => nfa.prefilter(),
+            Imp::DFA(ref dfa) => dfa.prefilter(),
+        }
+    }
+
+    
+    fn use_prefilter(&self) -> bool {
+        let p = match self.prefilter() {
+            None => return false,
+            Some(p) => p,
+        };
+        !p.looks_for_non_start_of_match()
     }
 
     #[inline(always)]
@@ -1113,7 +1157,7 @@ impl<S: StateID> Imp<S> {
 
 
 #[derive(Debug)]
-pub struct FindIter<'a, 'b, S: 'a + StateID> {
+pub struct FindIter<'a, 'b, S: StateID> {
     fsm: &'a Imp<S>,
     prestate: PrefilterState,
     haystack: &'b [u8],
@@ -1170,7 +1214,7 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
 
 
 #[derive(Debug)]
-pub struct FindOverlappingIter<'a, 'b, S: 'a + StateID> {
+pub struct FindOverlappingIter<'a, 'b, S: StateID> {
     fsm: &'a Imp<S>,
     prestate: PrefilterState,
     haystack: &'b [u8],
@@ -1241,7 +1285,7 @@ impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
 
 
 #[derive(Debug)]
-pub struct StreamFindIter<'a, R, S: 'a + StateID> {
+pub struct StreamFindIter<'a, R, S: StateID> {
     it: StreamChunkIter<'a, R, S>,
 }
 
@@ -1276,7 +1320,7 @@ impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
 
 
 #[derive(Debug)]
-struct StreamChunkIter<'a, R, S: 'a + StateID> {
+struct StreamChunkIter<'a, R, S: StateID> {
     
     fsm: &'a Imp<S>,
     
@@ -1325,7 +1369,11 @@ impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
             "stream searching is only supported for Standard match semantics"
         );
 
-        let prestate = PrefilterState::new(ac.max_pattern_len());
+        let prestate = if ac.imp.use_prefilter() {
+            PrefilterState::new(ac.max_pattern_len())
+        } else {
+            PrefilterState::disabled()
+        };
         let buf = Buffer::new(ac.imp.max_pattern_len());
         let state_id = ac.imp.start_state();
         StreamChunkIter {
@@ -1621,7 +1669,7 @@ impl AhoCorasickBuilder {
             
             
             
-            self.dfa(true).byte_classes(false);
+            self.dfa(true);
         } else if patterns.len() <= 5000 {
             self.dfa(true);
         }
@@ -1868,6 +1916,10 @@ impl AhoCorasickBuilder {
     
     
     
+    #[deprecated(
+        since = "0.7.16",
+        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
+    )]
     pub fn byte_classes(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.dfa_builder.byte_classes(yes);
         self
@@ -1896,6 +1948,10 @@ impl AhoCorasickBuilder {
     
     
     
+    #[deprecated(
+        since = "0.7.16",
+        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
+    )]
     pub fn premultiply(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
         self.dfa_builder.premultiply(yes);
         self

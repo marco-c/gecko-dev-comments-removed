@@ -36,7 +36,7 @@ impl ByteClasses {
     pub fn get(&self, byte: u8) -> u8 {
         
         
-        unsafe { *self.0.get_unchecked(byte as usize) }
+        self.0[byte as usize]
     }
 
     
@@ -64,7 +64,7 @@ impl ByteClasses {
     
     
     
-    pub fn representatives(&self) -> ByteClassRepresentatives {
+    pub fn representatives(&self) -> ByteClassRepresentatives<'_> {
         ByteClassRepresentatives { classes: self, byte: 0, last_class: None }
     }
 
@@ -85,7 +85,7 @@ impl ByteClasses {
 }
 
 impl fmt::Debug for ByteClasses {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_singleton() {
             write!(f, "ByteClasses({{singletons}})")
         } else {

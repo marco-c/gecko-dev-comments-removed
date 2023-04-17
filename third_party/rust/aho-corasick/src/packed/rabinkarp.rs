@@ -1,7 +1,7 @@
 use std::mem;
 
-use packed::pattern::{PatternID, Patterns};
-use Match;
+use crate::packed::pattern::{PatternID, Patterns};
+use crate::Match;
 
 
 type Hash = usize;

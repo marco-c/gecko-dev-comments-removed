@@ -1,7 +1,43 @@
-use ahocorasick::MatchKind;
-use prefilter::{self, Candidate, Prefilter, PrefilterState};
-use state_id::{dead_id, fail_id, StateID};
-use Match;
+use crate::ahocorasick::MatchKind;
+use crate::prefilter::{self, Candidate, Prefilter, PrefilterState};
+use crate::state_id::{dead_id, fail_id, StateID};
+use crate::Match;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -123,20 +159,12 @@ pub trait Automaton {
     
     
     
-    unsafe fn next_state_unchecked(
-        &self,
-        current: Self::ID,
-        input: u8,
-    ) -> Self::ID;
+    fn next_state(&self, current: Self::ID, input: u8) -> Self::ID;
 
     
     
-    unsafe fn next_state_unchecked_no_fail(
-        &self,
-        current: Self::ID,
-        input: u8,
-    ) -> Self::ID {
-        let next = self.next_state_unchecked(current, input);
+    fn next_state_no_fail(&self, current: Self::ID, input: u8) -> Self::ID {
+        let next = self.next_state(current, input);
         
         debug_assert!(
             next != fail_id(),
@@ -183,66 +211,49 @@ pub trait Automaton {
         prestate: &mut PrefilterState,
         prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
-        at: usize,
+        mut at: usize,
         state_id: &mut Self::ID,
     ) -> Option<Match> {
-        
-        
-        
-        assert!(
-            self.is_valid(*state_id),
-            "{} is not a valid state ID",
-            state_id.to_usize()
-        );
-        unsafe {
-            let start = haystack.as_ptr();
-            let end = haystack[haystack.len()..].as_ptr();
-            let mut ptr = haystack[at..].as_ptr();
-            while ptr < end {
-                if let Some(pre) = prefilter {
-                    let at = ptr as usize - start as usize;
-                    if prestate.is_effective(at)
-                        && *state_id == self.start_state()
-                    {
-                        let c = prefilter::next(prestate, pre, haystack, at)
-                            .into_option();
-                        match c {
-                            None => return None,
-                            Some(i) => {
-                                ptr = start.offset(i as isize);
-                            }
+        while at < haystack.len() {
+            if let Some(pre) = prefilter {
+                if prestate.is_effective(at) && *state_id == self.start_state()
+                {
+                    let c = prefilter::next(prestate, pre, haystack, at)
+                        .into_option();
+                    match c {
+                        None => return None,
+                        Some(i) => {
+                            at = i;
                         }
                     }
                 }
-                
-                
-                
-                
-                
-                
-                *state_id = self.next_state_unchecked_no_fail(*state_id, *ptr);
-                ptr = ptr.offset(1);
-                
-                
-                
-                
-                
-                debug_assert!(
-                    *state_id != dead_id() || self.anchored(),
-                    "standard find should never see a dead state"
-                );
-
-                if self.is_match_or_dead_state(*state_id) {
-                    return if *state_id == dead_id() {
-                        None
-                    } else {
-                        let end = ptr as usize - start as usize;
-                        self.get_match(*state_id, 0, end)
-                    };
-                }
             }
-            None
+            
+            
+            
+            
+            
+            *state_id = self.next_state_no_fail(*state_id, haystack[at]);
+            at += 1;
+            
+            
+            
+            
+            
+            debug_assert!(
+                *state_id != dead_id() || self.anchored(),
+                "standard find should never see a dead state"
+            );
+
+            if self.is_match_or_dead_state(*state_id) {
+                return if *state_id == dead_id() {
+                    None
+                } else {
+                    self.get_match(*state_id, 0, at)
+                };
+            }
         }
+        None
     }
 
     
@@ -285,76 +296,58 @@ pub trait Automaton {
         prestate: &mut PrefilterState,
         prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
-        at: usize,
+        mut at: usize,
         state_id: &mut Self::ID,
     ) -> Option<Match> {
         debug_assert!(self.match_kind().is_leftmost());
-        
-        
-        
-        assert!(
-            self.is_valid(*state_id),
-            "{} is not a valid state ID",
-            state_id.to_usize()
-        );
         if self.anchored() && at > 0 && *state_id == self.start_state() {
             return None;
         }
-        unsafe {
-            let start = haystack.as_ptr();
-            let end = haystack[haystack.len()..].as_ptr();
-            let mut ptr = haystack[at..].as_ptr();
-
-            let mut last_match = self.get_match(*state_id, 0, at);
-            while ptr < end {
-                if let Some(pre) = prefilter {
-                    let at = ptr as usize - start as usize;
-                    if prestate.is_effective(at)
-                        && *state_id == self.start_state()
-                    {
-                        let c = prefilter::next(prestate, pre, haystack, at)
-                            .into_option();
-                        match c {
-                            None => return None,
-                            Some(i) => {
-                                ptr = start.offset(i as isize);
-                            }
+        let mut last_match = self.get_match(*state_id, 0, at);
+        while at < haystack.len() {
+            if let Some(pre) = prefilter {
+                if prestate.is_effective(at) && *state_id == self.start_state()
+                {
+                    let c = prefilter::next(prestate, pre, haystack, at)
+                        .into_option();
+                    match c {
+                        None => return None,
+                        Some(i) => {
+                            at = i;
                         }
                     }
                 }
-                
-                
-                
-                
-                
-                
-                *state_id = self.next_state_unchecked_no_fail(*state_id, *ptr);
-                ptr = ptr.offset(1);
-                if self.is_match_or_dead_state(*state_id) {
-                    if *state_id == dead_id() {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        debug_assert!(
-                            last_match.is_some() || self.anchored(),
-                            "failure state should only be seen after match"
-                        );
-                        return last_match;
-                    }
-                    let end = ptr as usize - start as usize;
-                    last_match = self.get_match(*state_id, 0, end);
-                }
             }
-            last_match
+            
+            
+            
+            
+            
+            *state_id = self.next_state_no_fail(*state_id, haystack[at]);
+            at += 1;
+            if self.is_match_or_dead_state(*state_id) {
+                if *state_id == dead_id() {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    debug_assert!(
+                        last_match.is_some() || self.anchored(),
+                        "failure state should only be seen after match"
+                    );
+                    return last_match;
+                }
+                last_match = self.get_match(*state_id, 0, at);
+            }
         }
+        last_match
     }
 
     
@@ -402,7 +395,7 @@ pub trait Automaton {
         prestate: &mut PrefilterState,
         prefilter: Option<&dyn Prefilter>,
         haystack: &[u8],
-        at: usize,
+        mut at: usize,
     ) -> Option<Match> {
         debug_assert!(self.match_kind().is_leftmost());
         if self.anchored() && at > 0 {
@@ -422,63 +415,54 @@ pub trait Automaton {
                 };
             }
         }
-        let mut state_id = self.start_state();
-        unsafe {
-            let start = haystack.as_ptr();
-            let end = haystack[haystack.len()..].as_ptr();
-            let mut ptr = haystack[at..].as_ptr();
 
-            let mut last_match = self.get_match(state_id, 0, at);
-            while ptr < end {
-                if let Some(pre) = prefilter {
-                    let at = ptr as usize - start as usize;
-                    if prestate.is_effective(at)
-                        && state_id == self.start_state()
-                    {
-                        match prefilter::next(prestate, pre, haystack, at) {
-                            Candidate::None => return None,
-                            
-                            
-                            Candidate::Match(m) => return Some(m),
-                            Candidate::PossibleStartOfMatch(i) => {
-                                ptr = start.offset(i as isize);
-                            }
+        let mut state_id = self.start_state();
+        let mut last_match = self.get_match(state_id, 0, at);
+        while at < haystack.len() {
+            if let Some(pre) = prefilter {
+                if prestate.is_effective(at) && state_id == self.start_state()
+                {
+                    match prefilter::next(prestate, pre, haystack, at) {
+                        Candidate::None => return None,
+                        
+                        
+                        Candidate::Match(m) => return Some(m),
+                        Candidate::PossibleStartOfMatch(i) => {
+                            at = i;
                         }
                     }
                 }
-                
-                
-                
-                
-                
-                
-                state_id = self.next_state_unchecked_no_fail(state_id, *ptr);
-                ptr = ptr.offset(1);
-                if self.is_match_or_dead_state(state_id) {
-                    if state_id == dead_id() {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        debug_assert!(
-                            last_match.is_some() || self.anchored(),
-                            "failure state should only be seen after match"
-                        );
-                        return last_match;
-                    }
-                    let end = ptr as usize - start as usize;
-                    last_match = self.get_match(state_id, 0, end);
-                }
             }
-            last_match
+            
+            
+            
+            
+            
+            state_id = self.next_state_no_fail(state_id, haystack[at]);
+            at += 1;
+            if self.is_match_or_dead_state(state_id) {
+                if state_id == dead_id() {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    debug_assert!(
+                        last_match.is_some() || self.anchored(),
+                        "failure state should only be seen after match"
+                    );
+                    return last_match;
+                }
+                last_match = self.get_match(state_id, 0, at);
+            }
         }
+        last_match
     }
 
     

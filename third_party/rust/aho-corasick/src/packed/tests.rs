@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::usize;
 
-use packed::{Config, MatchKind};
-use Match;
+use crate::packed::{Config, MatchKind};
+use crate::Match;
 
 
 
