@@ -66,7 +66,6 @@ function commonDialogOnLoad() {
   if (args.headerIconURL) {
     root.style.setProperty("--icon-url", `url('${args.headerIconURL}')`);
   }
-  dialog.setAttribute("buttonpack", "end");
   
   title.shouldUseMaskFade = title.raw && (args.authOrigin || promptPrincipal);
   root.setAttribute("headertitle", JSON.stringify(title));
