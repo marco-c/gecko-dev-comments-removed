@@ -3046,15 +3046,14 @@ RefPtr<MediaManager::MgrPromise> MediaManager::EnumerateDevicesImpl(
            aAudioInputEnumType, aOutDevices](bool) {
             
             MediaManager* mgr = MediaManager::GetIfExists();
-            if (!mgr || !mgr->IsWindowStillActive(windowId)) {
+            if (!mgr || placeholderListener->Stopped()) {
               
               
-              MOZ_ASSERT(placeholderListener->Stopped());
               return MgrPromise::CreateAndReject(
                   MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
                   __func__);
             }
-            MOZ_ASSERT(!placeholderListener->Stopped());
+            MOZ_ASSERT(mgr->IsWindowStillActive(windowId));
             placeholderListener->Stop();
 
             for (auto& device : *aOutDevices) {
