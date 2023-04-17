@@ -840,6 +840,10 @@ function handleRequest(req, res) {
       }
     }
 
+    if (u.query.noResponse) {
+      return;
+    }
+
     if (u.query.push) {
       
       let pcontent = dnsPacket.encode({
@@ -1246,9 +1250,6 @@ function handleRequest(req, res) {
     res.writeHead(200);
     res.write(rContent);
     res.end("");
-    return;
-  } else if (u.pathname === "/dns-750ms") {
-    
     return;
   }
   
