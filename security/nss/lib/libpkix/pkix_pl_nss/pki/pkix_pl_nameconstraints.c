@@ -829,10 +829,15 @@ pkix_pl_CertNameConstraints_Create(
 
         if (nssNameConstraints == NULL) {
                 *pNameConstraints = NULL;
+                 
+
+
+
                 if (arena){
                         PKIX_CERTNAMECONSTRAINTS_DEBUG
                                 ("\t\tCalling PORT_FreeArena).\n");
                         PORT_FreeArena(arena, PR_FALSE);
+                        arena = NULL;
                 }
                 goto cleanup;
         }

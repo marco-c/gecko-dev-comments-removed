@@ -711,7 +711,7 @@ cleanup:
     if (rv == SECFailure) {
         mp_zero(prime);
         if (prime_seed->data) {
-            SECITEM_FreeItem(prime_seed, PR_FALSE);
+            SECITEM_ZfreeItem(prime_seed, PR_FALSE);
         }
         *prime_gen_counter = 0;
     }
@@ -867,7 +867,7 @@ cleanup:
     if (rv == SECFailure) {
         mp_zero(prime);
         if (prime_seed->data) {
-            SECITEM_FreeItem(prime_seed, PR_FALSE);
+            SECITEM_ZfreeItem(prime_seed, PR_FALSE);
         }
         *prime_gen_counter = 0;
     }
@@ -905,6 +905,7 @@ findQfromSeed(
             *typePtr = FIPS186_1_TYPE;
             return SECSuccess;
         }
+        mp_zero(Q_);
         return SECFailure;
     }
     
@@ -957,18 +958,20 @@ findQfromSeed(
 
 
                 SECITEM_FreeItem(&qseed, PR_FALSE);
+                mp_zero(Q_);
                 return SECFailure;
             }
             *qseed_len = qseed.len;
             *hashtypePtr = hashtype;
             *typePtr = FIPS186_3_ST_TYPE;
             *qgen_counter = count;
-            SECITEM_FreeItem(&qseed, PR_FALSE);
+            SECITEM_ZfreeItem(&qseed, PR_FALSE);
             return SECSuccess;
         }
-        SECITEM_FreeItem(&qseed, PR_FALSE);
+        SECITEM_ZfreeItem(&qseed, PR_FALSE);
     }
     
+    mp_zero(Q_);
     return SECFailure;
 }
 
@@ -1069,6 +1072,7 @@ makePfromQandSeed(
     CHECK_MPI_OK(mp_sub_d(&c, 1, &c)); 
     CHECK_MPI_OK(mp_sub(&X, &c, P));   
 cleanup:
+    PORT_Memset(V_j, 0, sizeof V_j);
     mp_clear(&W);
     mp_clear(&X);
     mp_clear(&c);
@@ -1077,7 +1081,11 @@ cleanup:
     mp_clear(&tmp);
     if (err) {
         MP_TO_SEC_ERROR(err);
+        mp_zero(P);
         return SECFailure;
+    }
+    if (rv != SECSuccess) {
+        mp_zero(P);
     }
     return rv;
 }
@@ -1127,6 +1135,9 @@ cleanup:
     if (err) {
         MP_TO_SEC_ERROR(err);
         rv = SECFailure;
+    }
+    if (rv != SECSuccess) {
+        mp_zero(G);
     }
     return rv;
 }
@@ -1534,10 +1545,10 @@ generate_G:
     *pVfy = verify;
 cleanup:
     if (pseed.data) {
-        PORT_Free(pseed.data);
+        SECITEM_ZfreeItem(&pseed, PR_FALSE);
     }
     if (qseed.data) {
-        PORT_Free(qseed.data);
+        SECITEM_ZfreeItem(&qseed, PR_FALSE);
     }
     mp_clear(&P);
     mp_clear(&Q);
@@ -1558,7 +1569,7 @@ cleanup:
         }
     }
     if (hit.data) {
-        SECITEM_FreeItem(&hit, PR_FALSE);
+        SECITEM_ZfreeItem(&hit, PR_FALSE);
     }
     return rv;
 }
@@ -1869,7 +1880,7 @@ cleanup:
     mp_clear(&r);
     mp_clear(&h);
     if (pseed_.data) {
-        SECITEM_FreeItem(&pseed_, PR_FALSE);
+        SECITEM_ZfreeItem(&pseed_, PR_FALSE);
     }
     if (err) {
         MP_TO_SEC_ERROR(err);
@@ -1887,11 +1898,11 @@ PQG_DestroyParams(PQGParams *params)
     if (params == NULL)
         return;
     if (params->arena != NULL) {
-        PORT_FreeArena(params->arena, PR_FALSE); 
+        PORT_FreeArena(params->arena, PR_TRUE);
     } else {
-        SECITEM_FreeItem(&params->prime, PR_FALSE);    
-        SECITEM_FreeItem(&params->subPrime, PR_FALSE); 
-        SECITEM_FreeItem(&params->base, PR_FALSE);     
+        SECITEM_ZfreeItem(&params->prime, PR_FALSE);    
+        SECITEM_ZfreeItem(&params->subPrime, PR_FALSE); 
+        SECITEM_ZfreeItem(&params->base, PR_FALSE);     
         PORT_Free(params);
     }
 }
@@ -1906,10 +1917,10 @@ PQG_DestroyVerify(PQGVerify *vfy)
     if (vfy == NULL)
         return;
     if (vfy->arena != NULL) {
-        PORT_FreeArena(vfy->arena, PR_FALSE); 
+        PORT_FreeArena(vfy->arena, PR_TRUE);
     } else {
-        SECITEM_FreeItem(&vfy->seed, PR_FALSE); 
-        SECITEM_FreeItem(&vfy->h, PR_FALSE);    
+        SECITEM_ZfreeItem(&vfy->seed, PR_FALSE); 
+        SECITEM_ZfreeItem(&vfy->h, PR_FALSE);    
         PORT_Free(vfy);
     }
 }

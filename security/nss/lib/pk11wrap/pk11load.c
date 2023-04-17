@@ -528,7 +528,10 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
     }
 #endif
 
-    mod->isThreadSafe = PR_TRUE;
+    
+
+
+    mod->isThreadSafe = !PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
 
     
     rv = secmod_ModuleInit(mod, oldModule, &alreadyLoaded);

@@ -1038,8 +1038,8 @@ secmod_SetInternalKeySlotFlag(SECMODModule *mod, PRBool val)
 
 
 static char *
-secmod_doDescCopy(char *target, int *targetLen, const char *desc,
-                  int descLen, char *value)
+secmod_doDescCopy(char *target, char **base, int *baseLen,
+                  const char *desc, int descLen, char *value)
 {
     int diff, esc_len;
 
@@ -1048,12 +1048,14 @@ secmod_doDescCopy(char *target, int *targetLen, const char *desc,
     if (diff > 0) {
         
 
-        char *newPtr = PORT_Realloc(target, *targetLen * diff);
+        int offset = target - *base;
+        char *newPtr = PORT_Realloc(*base, *baseLen + diff);
         if (!newPtr) {
             return target; 
         }
-        *targetLen += diff;
-        target = newPtr;
+        *baseLen += diff;
+        target = newPtr + offset;
+        *base = newPtr;
         value = NSSUTIL_Escape(value, '\"');
         if (value == NULL) {
             return target; 
@@ -1158,7 +1160,7 @@ secmod_ParseModuleSpecForTokens(PRBool convert, PRBool isFIPS,
                                       modulePrev = moduleSpec;
                                       if (!isFIPS) {
                                           newSpecPtr = secmod_doDescCopy(newSpecPtr,
-                                                                         &newSpecLen,
+                                                                         &newSpec, &newSpecLen,
                                                                          SECMOD_TOKEN_DESCRIPTION,
                                                                          sizeof(SECMOD_TOKEN_DESCRIPTION) - 1,
                                                                          tmp);
@@ -1169,7 +1171,7 @@ secmod_ParseModuleSpecForTokens(PRBool convert, PRBool isFIPS,
                                       modulePrev = moduleSpec; 
                                       if (!isFIPS) {
                                           newSpecPtr = secmod_doDescCopy(newSpecPtr,
-                                                                         &newSpecLen,
+                                                                         &newSpec, &newSpecLen,
                                                                          SECMOD_SLOT_DESCRIPTION,
                                                                          sizeof(SECMOD_SLOT_DESCRIPTION) - 1,
                                                                          tmp);
@@ -1180,7 +1182,7 @@ secmod_ParseModuleSpecForTokens(PRBool convert, PRBool isFIPS,
                                       modulePrev = moduleSpec; 
                                       if (isFIPS) {
                                           newSpecPtr = secmod_doDescCopy(newSpecPtr,
-                                                                         &newSpecLen,
+                                                                         &newSpec, &newSpecLen,
                                                                          SECMOD_TOKEN_DESCRIPTION,
                                                                          sizeof(SECMOD_TOKEN_DESCRIPTION) - 1,
                                                                          tmp);
@@ -1191,7 +1193,7 @@ secmod_ParseModuleSpecForTokens(PRBool convert, PRBool isFIPS,
                                       modulePrev = moduleSpec; 
                                       if (isFIPS) {
                                           newSpecPtr = secmod_doDescCopy(newSpecPtr,
-                                                                         &newSpecLen,
+                                                                         &newSpec, &newSpecLen,
                                                                          SECMOD_SLOT_DESCRIPTION,
                                                                          sizeof(SECMOD_SLOT_DESCRIPTION) - 1,
                                                                          tmp);

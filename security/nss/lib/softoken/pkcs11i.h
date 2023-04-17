@@ -105,8 +105,9 @@ typedef struct SFTKSessionContextStr SFTKSessionContext;
 typedef struct SFTKSearchResultsStr SFTKSearchResults;
 typedef struct SFTKHashVerifyInfoStr SFTKHashVerifyInfo;
 typedef struct SFTKHashSignInfoStr SFTKHashSignInfo;
-typedef struct SFTKOAEPEncryptInfoStr SFTKOAEPEncryptInfo;
-typedef struct SFTKOAEPDecryptInfoStr SFTKOAEPDecryptInfo;
+typedef struct SFTKOAEPInfoStr SFTKOAEPInfo;
+typedef struct SFTKPSSSignInfoStr SFTKPSSSignInfo;
+typedef struct SFTKPSSVerifyInfoStr SFTKPSSVerifyInfo;
 typedef struct SFTKSSLMACInfoStr SFTKSSLMACInfo;
 typedef struct SFTKChaCha20Poly1305InfoStr SFTKChaCha20Poly1305Info;
 typedef struct SFTKChaCha20CtrInfoStr SFTKChaCha20CtrInfo;
@@ -388,21 +389,33 @@ struct SFTKHashSignInfoStr {
     NSSLOWKEYPrivateKey *key;
 };
 
-
-
-
-struct SFTKOAEPEncryptInfoStr {
-    CK_RSA_PKCS_OAEP_PARAMS *params;
+struct SFTKPSSVerifyInfoStr {
+    size_t size; 
+    CK_RSA_PKCS_PSS_PARAMS params;
     NSSLOWKEYPublicKey *key;
 };
 
-struct SFTKOAEPDecryptInfoStr {
-    CK_RSA_PKCS_OAEP_PARAMS *params;
+struct SFTKPSSSignInfoStr {
+    size_t size; 
+    CK_RSA_PKCS_PSS_PARAMS params;
     NSSLOWKEYPrivateKey *key;
 };
 
 
+
+
+struct SFTKOAEPInfoStr {
+    CK_RSA_PKCS_OAEP_PARAMS params;
+    PRBool isEncrypt;
+    union {
+        NSSLOWKEYPublicKey *pub;
+        NSSLOWKEYPrivateKey *priv;
+    } key;
+};
+
+
 struct SFTKSSLMACInfoStr {
+    size_t size; 
     void *hashContext;
     SFTKBegin begin;
     SFTKHash update;
@@ -481,6 +494,8 @@ struct SFTKItemTemplateStr {
 
 #define sftk_SlotFromSession(sp) ((sp)->slot)
 #define sftk_isToken(id) (((id)&SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
+#define sftk_isFIPS(id) \
+    (((id) == FIPS_SLOT_ID) || ((id) >= SFTK_MIN_FIPS_USER_SLOT_ID))
 
 
 #define SHMULTIPLIER 1791398085

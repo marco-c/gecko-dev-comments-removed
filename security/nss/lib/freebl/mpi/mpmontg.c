@@ -1007,6 +1007,10 @@ CLEANUP:
     mp_clear(&accum[3]);
     mp_clear(&tmp);
     
+
+    if (powers) {
+        PORT_Memset(powers, 0, num_powers * sizeof(mp_digit));
+    }
     free(powersArray);
     return res;
 }

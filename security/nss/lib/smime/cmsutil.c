@@ -306,6 +306,10 @@ NSS_CMSContent_GetContentInfo(void *msg, SECOidTag type)
                 cinfo = &(c.genericData->contentInfo);
             }
     }
+    
+
+
+    
     return cinfo;
 }
 

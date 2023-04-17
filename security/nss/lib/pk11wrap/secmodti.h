@@ -149,12 +149,13 @@ struct PK11ContextStr {
 
 
     PK11SymKey *key;                      
+    CK_OBJECT_HANDLE objectID;            
     PK11SlotInfo *slot;                   
     CK_SESSION_HANDLE session;            
     PZLock *sessionLock;                  
 
     PRBool ownSession;                    
-    void *cx;                             
+    void *pwArg;                          
     void *savedData;                      
 
     unsigned long savedLength;            
