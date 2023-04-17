@@ -12,8 +12,7 @@
 
 struct UNumberRangeFormatter;
 
-namespace mozilla {
-namespace intl {
+namespace mozilla::intl {
 
 
 
@@ -108,7 +107,6 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
   [[nodiscard]] bool roundingMode(NumberFormatOptions::RoundingMode rounding);
 };
 
-}  
 }  
 
 #endif

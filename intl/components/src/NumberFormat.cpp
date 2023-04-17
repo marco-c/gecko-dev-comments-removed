@@ -9,8 +9,7 @@
 #include "unicode/unumberformatter.h"
 #include "unicode/upluralrules.h"
 
-namespace mozilla {
-namespace intl {
+namespace mozilla::intl {
 
  Result<UniquePtr<NumberFormat>, ICUError> NumberFormat::TryCreate(
     std::string_view aLocale, const NumberFormatOptions& aOptions) {
@@ -112,5 +111,4 @@ Result<std::u16string_view, ICUError> NumberFormat::formatResult() const {
   return std::u16string_view(utf16Str, static_cast<size_t>(utf16Length));
 }
 
-}  
 }  

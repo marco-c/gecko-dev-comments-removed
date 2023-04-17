@@ -19,8 +19,7 @@
 
 #include "unicode/utypes.h"
 
-namespace mozilla {
-namespace intl {
+namespace mozilla::intl {
 
 #ifndef U_HIDE_DRAFT_API
 
@@ -226,7 +225,6 @@ struct MOZ_STACK_CLASS PluralRulesOptions {
       RoundingPriority(NumberFormatOptions::RoundingPriority::MorePrecision));
 };
 
-}  
 }  
 
 #endif
