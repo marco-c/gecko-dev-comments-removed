@@ -84,7 +84,7 @@ class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
 
 TEST_F(APZCTreeManagerGenericTester, ScrollablePaintedLayers) {
   CreateSimpleMultiLayerTree();
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
 
   
   SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
@@ -114,7 +114,7 @@ TEST_F(APZCTreeManagerGenericTester, ScrollablePaintedLayers) {
 
 TEST_F(APZCTreeManagerGenericTester, Bug1068268) {
   CreatePotentiallyLeakingTree();
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
 
   UpdateHitTestingTree();
   RefPtr<HitTestingTreeNode> root = manager->GetRootNode();
@@ -138,7 +138,7 @@ TEST_F(APZCTreeManagerGenericTester, Bug1194876) {
   
   
   CreateTwoLayerDTCTree(1);
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
   UpdateHitTestingTree();
 
   uint64_t blockId;
@@ -178,7 +178,7 @@ TEST_F(APZCTreeManagerGenericTester, TargetChangesMidGesture_Bug1570559) {
   
   
   CreateTwoLayerDTCTree(0);
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
   UpdateHitTestingTree();
 
   uint64_t blockId;
@@ -217,7 +217,7 @@ TEST_F(APZCTreeManagerGenericTester, Bug1198900) {
   
   
   CreateSimpleDTCScrollingLayer();
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
   UpdateHitTestingTree();
 
   ScreenPoint origin(100, 50);
@@ -238,7 +238,7 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   
   
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
   UpdateHitTestingTree();
 
   
@@ -273,7 +273,7 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   
   
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
   UpdateHitTestingTree();
 
   
