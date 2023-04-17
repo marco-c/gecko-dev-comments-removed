@@ -13,6 +13,7 @@
 #include <sys/param.h>
 
 #include "MacRunFromDmgUtils.h"
+#include "MacLaunchHelper.h"
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/intl/Localization.h"
@@ -25,18 +26,12 @@
 #include "nsIMacDockSupport.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
+#include "nsUpdateDriver.h"
+#include "SDKDeclarations.h"
 
 
 
 
-
-#if !defined(MAC_OS_X_VERSION_10_13) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_13
-@interface NSTask (NSTask10_13)
-@property(copy) NSURL* executableURL NS_AVAILABLE_MAC(10_13);
-@property(copy) NSArray<NSString*>* arguments;
-- (BOOL)launchAndReturnError:(NSError**)error NS_AVAILABLE_MAC(10_13);
-@end
-#endif
 
 namespace mozilla {
 namespace MacRunFromDmgUtils {
@@ -178,11 +173,41 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
+bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSArray* aArguments) {
+  NSTask* task;
+  if (@available(macOS 10.13, *)) {
+    task = [[NSTask alloc] init];
+    [task setExecutableURL:[NSURL fileURLWithPath:aBundlePath]];
+    if (aArguments) {
+      [task setArguments:aArguments];
+    }
+    [task launchAndReturnError:nil];
+  } else {
+    NSArray* arguments = aArguments;
+    if (!arguments) {
+      arguments = @[];
+    }
+    task = [NSTask launchedTaskWithLaunchPath:aBundlePath arguments:arguments];
+  }
+
+  bool didSucceed = InstallPrivilegedHelper();
+  [task waitUntilExit];
+  if (@available(macOS 10.13, *)) {
+    [task release];
+  }
+  if (!didSucceed) {
+    AbortElevatedUpdate();
+  }
+
+  return didSucceed;
+}
+
 
 
 static bool InstallFromDmg(NSString* aBundlePath, NSString* aDestPath) {
   bool installSuccessful = false;
-  if ([[NSFileManager defaultManager] copyItemAtPath:aBundlePath toPath:aDestPath error:nil]) {
+  NSFileManager* fileManager = [NSFileManager defaultManager];
+  if ([fileManager copyItemAtPath:aBundlePath toPath:aDestPath error:nil]) {
     RegisterAppWithLaunchServices(aDestPath);
     StripQuarantineBit(aDestPath);
     installSuccessful = true;
@@ -191,9 +216,21 @@ static bool InstallFromDmg(NSString* aBundlePath, NSString* aDestPath) {
   
   
   
+  
+  
+  
+  
+  
   NSString* destDir = [aDestPath stringByDeletingLastPathComponent];
-  if (!installSuccessful && ![[NSFileManager defaultManager] isWritableFileAtPath:destDir]) {
-    
+  if (!installSuccessful && ![fileManager isWritableFileAtPath:destDir]) {
+    NSString* updaterBinPath = [NSString pathWithComponents:@[
+      aBundlePath, @"Contents", @"MacOS", [NSString stringWithUTF8String:UPDATER_APP], @"Contents",
+      @"MacOS", [NSString stringWithUTF8String:UPDATER_BIN]
+    ]];
+
+    NSArray* arguments = @[ @"-dmgInstall", aBundlePath, aDestPath ];
+    LaunchElevatedDmgInstall(updaterBinPath, arguments);
+    installSuccessful = [fileManager fileExistsAtPath:aDestPath];
   }
 
   if (!installSuccessful) {
