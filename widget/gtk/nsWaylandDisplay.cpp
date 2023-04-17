@@ -7,6 +7,8 @@
 
 #include "nsWaylandDisplay.h"
 
+#include <dlfcn.h>
+
 #include "base/message_loop.h"  
 #include "base/task.h"          
 #include "mozilla/StaticMutex.h"
