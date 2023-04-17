@@ -1077,6 +1077,22 @@ bool MessageChannel::SendBuildIDsMatchMessage(const char* aParentBuildID) {
     ReportConnectionError("MessageChannel", msg.get());
     return false;
   }
+
+#if defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
+  
+  
+  
+  if (const char* dontSend = PR_GetEnv("MOZ_BUILDID_MATCH_DONTSEND")) {
+    if (dontSend[0] == '1') {
+      if (XRE_IsContentProcess()) {
+        
+        PR_Sleep(PR_MillisecondsToInterval(1000));
+        return false;
+      }
+    }
+  }
+#endif
+
   mLink->SendMessage(std::move(msg));
   return true;
 }
