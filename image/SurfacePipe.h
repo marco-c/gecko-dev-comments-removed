@@ -34,6 +34,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Swizzle.h"
 #include "nsDebug.h"
 #include "Orientation.h"
 
@@ -772,8 +773,6 @@ class AbstractSurfaceSink : public SurfaceFilter {
 
  protected:
   uint8_t* DoResetToFirstRow() final;
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) final;
-  uint8_t* DoAdvanceRow() final;
   virtual uint8_t* GetRowPointer() const = 0;
 
   OrientedIntRect
@@ -808,7 +807,41 @@ class SurfaceSink final : public AbstractSurfaceSink {
   nsresult Configure(const SurfaceConfig& aConfig);
 
  protected:
-  uint8_t* GetRowPointer() const override;
+  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) final;
+  uint8_t* DoAdvanceRow() final;
+  uint8_t* GetRowPointer() const final;
+};
+
+class ReorientSurfaceSink;
+
+
+struct ReorientSurfaceConfig {
+  using Filter = ReorientSurfaceSink;
+  Decoder* mDecoder;  
+  OrientedIntSize mOutputSize;  
+  gfx::SurfaceFormat mFormat;   
+  Orientation mOrientation;     
+};
+
+
+
+
+
+
+
+
+class ReorientSurfaceSink final : public AbstractSurfaceSink {
+ public:
+  nsresult Configure(const ReorientSurfaceConfig& aConfig);
+
+ protected:
+  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) final;
+  uint8_t* DoAdvanceRow() final;
+  uint8_t* GetRowPointer() const final;
+
+  UniquePtr<uint8_t[]> mBuffer;
+  gfx::ReorientRowFn mReorientFn;
+  gfx::IntSize mSurfaceSize;
 };
 
 }  

@@ -116,6 +116,8 @@ class SurfacePipeFactory {
     MOZ_ASSERT(aOutFormat == gfx::SurfaceFormat::OS_RGBA ||
                aOutFormat == gfx::SurfaceFormat::OS_RGBX);
 
+    MOZ_ASSERT(aDecoder->GetOrientation().IsIdentity());
+
     const bool inFormatRgb = aInFormat == gfx::SurfaceFormat::R8G8B8;
 
     const bool inFormatOpaque = aInFormat == gfx::SurfaceFormat::OS_RGBX ||
@@ -573,6 +575,82 @@ class SurfacePipeFactory {
               pipe = MakePipe(surfaceConfig);
             }
           }
+        }
+      }
+    }
+
+    return pipe;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static Maybe<SurfacePipe> CreateReorientSurfacePipe(
+      Decoder* aDecoder, const OrientedIntSize& aInputSize,
+      const OrientedIntSize& aOutputSize, gfx::SurfaceFormat aFormat,
+      qcms_transform* aTransform, const Orientation& aOrientation) {
+    const bool downscale = aInputSize != aOutputSize;
+    const bool colorManagement = aTransform != nullptr;
+
+    
+    
+    
+    
+    
+    
+    DownscalingConfig downscalingConfig{
+        aOrientation.ToUnoriented(aInputSize).ToUnknownSize(), aFormat};
+    ColorManagementConfig colorManagementConfig{aTransform};
+    SurfaceConfig surfaceConfig{aDecoder, aOutputSize.ToUnknownSize(), aFormat,
+                                 false,
+                                 Nothing()};
+    ReorientSurfaceConfig reorientSurfaceConfig{aDecoder, aOutputSize, aFormat,
+                                                aOrientation};
+
+    Maybe<SurfacePipe> pipe;
+
+    if (aOrientation.IsIdentity()) {
+      if (colorManagement) {
+        if (downscale) {
+          pipe =
+              MakePipe(downscalingConfig, colorManagementConfig, surfaceConfig);
+        } else {  
+          pipe = MakePipe(colorManagementConfig, surfaceConfig);
+        }
+      } else {  
+        if (downscale) {
+          pipe = MakePipe(downscalingConfig, surfaceConfig);
+        } else {  
+          pipe = MakePipe(surfaceConfig);
+        }
+      }
+    } else {  
+      if (colorManagement) {
+        if (downscale) {
+          pipe = MakePipe(downscalingConfig, colorManagementConfig,
+                          reorientSurfaceConfig);
+        } else {  
+          pipe = MakePipe(colorManagementConfig, reorientSurfaceConfig);
+        }
+      } else {  
+        if (downscale) {
+          pipe = MakePipe(downscalingConfig, reorientSurfaceConfig);
+        } else {  
+          pipe = MakePipe(reorientSurfaceConfig);
         }
       }
     }
