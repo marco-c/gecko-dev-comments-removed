@@ -632,19 +632,7 @@ struct gfxFontEntry::GrSandboxData {
 
   GrSandboxData() {
 #ifdef MOZ_WASM_SANDBOXING_GRAPHITE
-#  ifdef LUCETC_WASM_SANDBOXING
-    
-    
-    const bool external_loads_exist = true;
-    
-    
-    
-    const bool allow_stdio = false;
-    sandbox.create_sandbox(mozilla::ipc::GetSandboxedRLBoxPath().get(),
-                           external_loads_exist, allow_stdio);
-#  else
     sandbox.create_sandbox(mozilla::ipc::GetSandboxedRLBoxPath().get());
-#  endif
 #else
     sandbox.create_sandbox();
 #endif
