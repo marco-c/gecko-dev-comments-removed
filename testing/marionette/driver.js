@@ -560,8 +560,6 @@ GeckoDriver.prototype.newSession = async function(cmd) {
         this.registerBrowser(contentBrowser);
       }
     }
-
-    this.registerListenersForWindow(win);
   }
 
   if (this.mainFrame) {
@@ -578,10 +576,10 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
   this.dialogObserver.add(this.handleModalDialog.bind(this));
 
+  Services.obs.addObserver(this, "browsing-context-attached");
+
   
   this.dialog = modal.findModalDialogs(this.curBrowser);
-
-  Services.obs.addObserver(this, "browser-delayed-startup-finished");
 
   return {
     sessionId: this.currentSession.id,
@@ -589,58 +587,37 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   };
 };
 
-
-
-
-
-
-
-GeckoDriver.prototype.registerListenersForWindow = function(win) {
-  const tabBrowser = browser.getTabBrowser(win);
-
-  
-  tabBrowser?.addEventListener("XULFrameLoaderCreated", this);
-};
-
-
-
-
-
-
-
-GeckoDriver.prototype.unregisterListenersForWindow = function(win) {
-  const tabBrowser = browser.getTabBrowser(win);
-
-  tabBrowser?.removeEventListener("XULFrameLoaderCreated", this);
-};
-
-GeckoDriver.prototype.handleEvent = function({ target, type }) {
-  switch (type) {
-    case "XULFrameLoaderCreated":
-      if (target === this.curBrowser.contentBrowser) {
+GeckoDriver.prototype.observe = function(subject, topic, data) {
+  switch (topic) {
+    case "browsing-context-attached":
+      
+      
+      
+      
+      
+      
+      
+      
+      if (
+        subject.browserId ==
+          this.currentSession.contentBrowsingContext?.browserId &&
+        !subject.parent &&
+        !this.currentSession.contentBrowsingContext?.parent
+      ) {
         logger.trace(
           "Remoteness change detected. Set new top-level browsing context " +
-            `to ${target.browsingContext.id}`
+            `to ${subject.id}`
         );
-
-        this.currentSession.contentBrowsingContext = target.browsingContext;
+        this.currentSession.contentBrowsingContext = subject;
 
         
         
         
         windowManager.updateIdForBrowser(
           this.curBrowser.contentBrowser,
-          target.browsingContext.id
+          subject.id
         );
       }
-      break;
-  }
-};
-
-GeckoDriver.prototype.observe = function(subject, topic, data) {
-  switch (topic) {
-    case "browser-delayed-startup-finished":
-      this.registerListenersForWindow(subject);
       break;
   }
 };
@@ -2243,10 +2220,6 @@ GeckoDriver.prototype.deleteSession = function() {
   unregisterCommandsActor();
   unregisterEventsActor();
 
-  for (let win of windowManager.windows) {
-    this.unregisterListenersForWindow(win);
-  }
-
   
   this.mainFrame = null;
 
@@ -2255,7 +2228,7 @@ GeckoDriver.prototype.deleteSession = function() {
     this.dialogObserver = null;
   }
 
-  Services.obs.removeObserver(this, "browser-delayed-startup-finished");
+  Services.obs.removeObserver(this, "browsing-context-attached");
 
   this.currentSession.destroy();
   this.currentSession = null;
