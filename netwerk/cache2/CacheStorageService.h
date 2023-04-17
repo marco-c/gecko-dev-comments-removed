@@ -90,6 +90,10 @@ class CacheStorageService final : public nsICacheStorageService,
   void Shutdown();
   void DropPrivateBrowsingEntries();
 
+  
+  
+  static void CleaupCacheDirectories();
+
   static CacheStorageService* Self() { return sSelf; }
   static nsISupports* SelfISupports() {
     return static_cast<nsICacheStorageService*>(Self());
