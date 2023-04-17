@@ -6,25 +6,32 @@
 
 #include "vm/Xdr.h"
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/Utf8.h"
+#include "mozilla/ArrayUtils.h"   
+#include "mozilla/Assertions.h"   
+#include "mozilla/EndianUtils.h"  
+#include "mozilla/RefPtr.h"       
+#include "mozilla/Result.h"       
+#include "mozilla/ScopeExit.h"    
+#include "mozilla/Utf8.h"         
 
-#include <algorithm>  
-#include <string.h>
+#include <algorithm>    
+#include <stddef.h>     
+#include <stdint.h>     
+#include <string>       
 #include <type_traits>  
 #include <utility>      
 
-#include "builtin/ModuleObject.h"
-#include "debugger/DebugAPI.h"
 #include "frontend/CompilationStencil.h"  
 #include "frontend/StencilXdr.h"          
 #include "js/BuildId.h"                   
-#include "js/OffThreadScriptCompilation.h"
-#include "vm/JSContext.h"
-#include "vm/JSScript.h"
-#include "vm/SharedStencil.h"  
-#include "vm/TraceLogging.h"
+#include "js/CompileOptions.h"            
+#include "js/Transcoding.h"  
+#include "js/UniquePtr.h"   
+#include "js/Utility.h"     
+#include "vm/JSContext.h"   
+#include "vm/JSScript.h"    
+#include "vm/Runtime.h"     
+#include "vm/StringType.h"  
 
 using namespace js;
 
@@ -264,48 +271,6 @@ static XDRResult VersionCheck(XDRState<mode>* xdr, XDRFormatType formatType) {
     }
   }
 
-  return Ok();
-}
-
-template <XDRMode mode>
-XDRResult XDRState<mode>::codeModuleObject(MutableHandleModuleObject modp) {
-#ifdef DEBUG
-  auto sanityCheck = mozilla::MakeScopeExit(
-      [&] { MOZ_ASSERT(validateResultCode(cx(), resultCode())); });
-#endif
-  if (mode == XDR_DECODE) {
-    modp.set(nullptr);
-  } else {
-    MOZ_ASSERT(modp->status() < MODULE_STATUS_LINKING);
-  }
-
-  MOZ_TRY(XDRModuleObject(this, modp));
-  return Ok();
-}
-
-template <XDRMode mode>
-XDRResult XDRState<mode>::codeScript(MutableHandleScript scriptp) {
-  TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx());
-  TraceLoggerTextId event =
-      mode == XDR_DECODE ? TraceLogger_DecodeScript : TraceLogger_EncodeScript;
-  AutoTraceLog tl(logger, event);
-
-#ifdef DEBUG
-  auto sanityCheck = mozilla::MakeScopeExit(
-      [&] { MOZ_ASSERT(validateResultCode(cx(), resultCode())); });
-#endif
-  auto guard = mozilla::MakeScopeExit([&] { scriptp.set(nullptr); });
-
-  if (mode == XDR_DECODE) {
-    scriptp.set(nullptr);
-  } else {
-    MOZ_ASSERT(!scriptp->enclosingScope());
-  }
-
-  MOZ_TRY(VersionCheck(this, XDRFormatType::JSScript));
-  MOZ_TRY(XDRScript(this, nullptr, nullptr, nullptr, scriptp));
-
-  guard.release();
   return Ok();
 }
 

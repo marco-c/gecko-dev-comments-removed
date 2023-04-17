@@ -75,16 +75,6 @@ template <AllowGC allowGC>
 extern JSAtom* ToAtom(JSContext* cx,
                       typename MaybeRooted<JS::Value, allowGC>::HandleType v);
 
-
-
-
-
-
-
-
-
-
-
 extern JS::Handle<PropertyName*> ClassName(JSProtoKey key, JSContext* cx);
 
 #ifdef DEBUG

@@ -7,30 +7,35 @@
 #ifndef vm_Xdr_h
 #define vm_Xdr_h
 
-#include "mozilla/MaybeOneOf.h"
-#include "mozilla/Utf8.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/MaybeOneOf.h"  
+#include "mozilla/RefPtr.h"      
+#include "mozilla/Result.h"      
+#include "mozilla/Utf8.h"        
 
-#include <type_traits>
+#include <stddef.h>     
+#include <stdint.h>     
+#include <string.h>     
+#include <type_traits>  
 
-#include "NamespaceImports.h"
+#include "js/AllocPolicy.h"     
+#include "js/CompileOptions.h"  
+#include "js/Transcoding.h"  
+#include "js/TypeDecls.h"    
+#include "js/UniquePtr.h"    
+#include "js/Utility.h"      
 
-#include "js/CompileOptions.h"
-#include "js/Transcoding.h"
-#include "js/TypeDecls.h"
-#include "vm/JSAtom.h"
+struct JSContext;
 
 namespace js {
 
 class ScriptSource;
-struct SourceExtent;
 
 namespace frontend {
 struct CompilationStencil;
 struct ExtensibleCompilationStencil;
 struct CompilationStencilMerger;
 }  
-
-class LifoAlloc;
 
 enum XDRMode { XDR_ENCODE, XDR_DECODE };
 
@@ -221,15 +226,9 @@ class XDRState : public XDRCoderBase {
 
   JSContext* cx() const { return mainBuf.cx(); }
 
-  virtual bool isMultiDecode() const { return false; }
-
   virtual bool hasOptions() const { return false; }
   virtual const JS::ReadOnlyCompileOptions& options() {
     MOZ_CRASH("does not have options");
-  }
-  virtual bool hasScriptSourceObjectOut() const { return false; }
-  virtual ScriptSourceObject** scriptSourceObjectOut() {
-    MOZ_CRASH("does not have scriptSourceObjectOut.");
   }
 
   template <typename T = mozilla::Ok>
@@ -246,7 +245,7 @@ class XDRState : public XDRCoderBase {
     if (!buf->align32()) {
       return fail(JS::TranscodeResult::Throw);
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
 #ifdef DEBUG
@@ -259,7 +258,7 @@ class XDRState : public XDRCoderBase {
       return fail(JS::TranscodeResult::Failure_BadDecode);
     }
     *pptr = ptr;
-    return Ok();
+    return mozilla::Ok();
   }
 
   
@@ -273,7 +272,7 @@ class XDRState : public XDRCoderBase {
       return fail(JS::TranscodeResult::Failure_BadDecode);
     }
     *pptr = reinterpret_cast<const T*>(ptr);
-    return Ok();
+    return mozilla::Ok();
   }
 
   
@@ -284,7 +283,7 @@ class XDRState : public XDRCoderBase {
       return fail(JS::TranscodeResult::Failure_BadDecode);
     }
     *n = *reinterpret_cast<const uint32_t*>(ptr);
-    return Ok();
+    return mozilla::Ok();
   }
 
   XDRResult codeUint8(uint8_t* n) {
@@ -301,7 +300,7 @@ class XDRState : public XDRCoderBase {
       }
       *n = *ptr;
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
  private:
@@ -320,7 +319,7 @@ class XDRState : public XDRCoderBase {
       }
       memcpy(n, ptr, sizeof(T));
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
  public:
@@ -349,7 +348,7 @@ class XDRState : public XDRCoderBase {
     if (mode == XDR_DECODE) {
       *val = T(tmp ^ MAGIC);
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
   XDRResult codeDouble(double* dp) {
@@ -364,7 +363,7 @@ class XDRState : public XDRCoderBase {
     if (mode == XDR_DECODE) {
       *dp = pun.d;
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
   XDRResult codeMarker(uint32_t magic) {
@@ -375,12 +374,12 @@ class XDRState : public XDRCoderBase {
       MOZ_ASSERT(false, "Bad XDR marker");
       return fail(JS::TranscodeResult::Failure_BadDecode);
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
   XDRResult codeBytes(void* bytes, size_t len) {
     if (len == 0) {
-      return Ok();
+      return mozilla::Ok();
     }
     if (mode == XDR_ENCODE) {
       uint8_t* ptr = buf->write(len);
@@ -395,7 +394,7 @@ class XDRState : public XDRCoderBase {
       }
       memcpy(bytes, ptr, len);
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
   
@@ -417,7 +416,7 @@ class XDRState : public XDRCoderBase {
       MOZ_TRY(readData(&cursor, length));
       *data = reinterpret_cast<T*>(const_cast<uint8_t*>(cursor));
     }
-    return Ok();
+    return mozilla::Ok();
   }
 
   
@@ -433,9 +432,6 @@ class XDRState : public XDRCoderBase {
   
   XDRResult codeCharsZ(XDRTranscodeString<char>& buffer);
   XDRResult codeCharsZ(XDRTranscodeString<char16_t>& buffer);
-
-  XDRResult codeModuleObject(MutableHandleModuleObject modp);
-  XDRResult codeScript(MutableHandleScript scriptp);
 };
 
 using XDREncoder = XDRState<XDR_ENCODE>;
@@ -525,12 +521,6 @@ class XDRIncrementalStencilEncoder {
   XDRResult addDelazification(
       JSContext* cx, const frontend::CompilationStencil& delazification);
 };
-
-template <XDRMode mode>
-XDRResult XDRAtomOrNull(XDRState<mode>* xdr, js::MutableHandleAtom atomp);
-
-template <XDRMode mode>
-XDRResult XDRAtom(XDRState<mode>* xdr, js::MutableHandleAtom atomp);
 
 } 
 

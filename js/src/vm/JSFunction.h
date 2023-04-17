@@ -885,12 +885,6 @@ namespace js {
 
 JSString* FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource);
 
-template <XDRMode mode>
-XDRResult XDRInterpretedFunction(XDRState<mode>* xdr,
-                                 HandleScope enclosingScope,
-                                 HandleScriptSourceObject sourceObject,
-                                 MutableHandleFunction objp);
-
 
 
 
