@@ -55,7 +55,10 @@ interface nsIInterceptedChannel : nsISupports
 
 
 
-    void resetInterception();
+
+
+
+    void resetInterception(in boolean bypass);
 
     
 
