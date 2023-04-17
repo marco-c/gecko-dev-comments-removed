@@ -16,7 +16,7 @@ impl<T> Clone for MaybeUninit<T>
 
 impl<T> MaybeUninit<T> {
     
-    pub unsafe fn uninitialized() -> Self {
+    pub const unsafe fn uninitialized() -> Self {
         MaybeUninit { inner: StdMaybeUninit::uninit() }
     }
 

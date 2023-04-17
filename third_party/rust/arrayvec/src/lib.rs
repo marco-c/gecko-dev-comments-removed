@@ -18,8 +18,15 @@
 
 
 
+
+
+
+
+
+
 #![doc(html_root_url="https://docs.rs/arrayvec/0.4/")]
 #![cfg_attr(not(feature="std"), no_std)]
+#![cfg_attr(feature="unstable-const-fn", feature(const_fn))]
 
 #[cfg(feature="serde")]
 extern crate serde;
@@ -82,8 +89,6 @@ impl<A: Array> Drop for ArrayVec<A> {
         self.clear();
 
         
-        
-        
     }
 }
 
@@ -108,9 +113,17 @@ impl<A: Array> ArrayVec<A> {
     
     
     
+    #[cfg(not(feature="unstable-const-fn"))]
     pub fn new() -> ArrayVec<A> {
         unsafe {
-            ArrayVec { xs: MaybeUninit::uninitialized(), len: Index::from(0) }
+            ArrayVec { xs: MaybeUninit::uninitialized(), len: Index::ZERO }
+        }
+    }
+
+    #[cfg(feature="unstable-const-fn")]
+    pub const fn new() -> ArrayVec<A> {
+        unsafe {
+            ArrayVec { xs: MaybeUninit::uninitialized(), len: Index::ZERO }
         }
     }
 
@@ -125,6 +138,18 @@ impl<A: Array> ArrayVec<A> {
     
     #[inline]
     pub fn len(&self) -> usize { self.len.to_usize() }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool { self.len() == 0 }
 
     
     
@@ -545,7 +570,7 @@ impl<A: Array> ArrayVec<A> {
         let other_len = other.len();
 
         unsafe {
-            let dst = self.xs.ptr_mut().offset(self_len as isize);
+            let dst = self.xs.ptr_mut().add(self_len);
             ptr::copy_nonoverlapping(other.as_ptr(), dst, other_len);
             self.set_len(self_len + other_len);
         }
@@ -600,12 +625,15 @@ impl<A: Array> ArrayVec<A> {
     fn drain_range(&mut self, start: usize, end: usize) -> Drain<A>
     {
         let len = self.len();
+
         
         let range_slice: *const _ = &self[start..end];
 
+        
+        
+        self.len = Index::from(start);
+
         unsafe {
-            
-            self.set_len(start);
             Drain {
                 tail_start: end,
                 tail_len: len - end,
@@ -691,6 +719,35 @@ impl<A: Array> DerefMut for ArrayVec<A> {
 impl<A: Array> From<A> for ArrayVec<A> {
     fn from(array: A) -> Self {
         ArrayVec { xs: MaybeUninit::from(array), len: Index::from(A::CAPACITY) }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<A: Array> std::convert::TryFrom<&[A::Item]> for ArrayVec<A>
+    where
+        A::Item: Clone,
+{
+    type Error = CapacityError;
+
+    fn try_from(slice: &[A::Item]) -> Result<Self, Self::Error> {
+        if A::CAPACITY < slice.len() {
+            Err(CapacityError::new(()))
+        } else {
+            let mut array = Self::new();
+            array.extend(slice.iter().cloned());
+            Ok(array)
+        }
     }
 }
 
@@ -895,8 +952,8 @@ impl<'a, A: Array> Drop for Drain<'a, A>
                 
                 let start = source_vec.len();
                 let tail = self.tail_start;
-                let src = source_vec.as_ptr().offset(tail as isize);
-                let dst = source_vec.as_mut_ptr().offset(start as isize);
+                let src = source_vec.as_ptr().add(tail);
+                let dst = source_vec.as_mut_ptr().add(start);
                 ptr::copy(src, dst, self.tail_len);
                 source_vec.set_len(start + self.tail_len);
             }
@@ -965,7 +1022,7 @@ unsafe fn raw_ptr_add<T>(ptr: *mut T, offset: usize) -> *mut T {
         
         (ptr as usize).wrapping_add(offset) as _
     } else {
-        ptr.offset(offset as isize)
+        ptr.add(offset)
     }
 }
 
