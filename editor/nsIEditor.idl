@@ -14,7 +14,6 @@ interface nsIDocumentStateListener;
 interface nsIOutputStream;
 interface nsITransactionManager;
 interface nsITransaction;
-interface nsIEditorObserver;
 interface nsIEditActionListener;
 interface nsIInlineSpellChecker;
 interface nsITransferable;
@@ -469,9 +468,6 @@ interface nsIEditor  : nsISupports
 
 
 
-
-  
-  void addEditorObserver(in nsIEditorObserver observer);
 
   
   void addEditActionListener(in nsIEditActionListener listener);

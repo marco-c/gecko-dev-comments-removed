@@ -47,7 +47,6 @@ class nsIContent;
 class nsIDocumentEncoder;
 class nsIDocumentStateListener;
 class nsIEditActionListener;
-class nsIEditorObserver;
 class nsINode;
 class nsIPrincipal;
 class nsISupports;
@@ -2834,12 +2833,6 @@ class EditorBase : public nsIEditor,
   typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 2>
       AutoActionListenerArray;
   AutoActionListenerArray mActionListeners;
-  
-  
-  
-  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 0>
-      AutoEditorObserverArray;
-  AutoEditorObserverArray mEditorObservers;
   
   
   
