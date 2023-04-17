@@ -3503,13 +3503,12 @@ bool JS::OwningCompileOptions::copy(JSContext* cx,
 }
 
 JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
-  discardSource = cx->realm()->behaviors().discardSource();
   if (!js::IsAsmJSCompilationAvailable(cx)) {
     
     asmJSOption = !cx->options().asmJS()
                       ? AsmJSOption::DisabledByAsmJSPref
                       : AsmJSOption::DisabledByNoWasmCompiler;
-  } else if (cx->realm()->debuggerObservesAsmJS()) {
+  } else if (cx->realm() && cx->realm()->debuggerObservesAsmJS()) {
     asmJSOption = AsmJSOption::DisabledByDebugger;
   } else {
     asmJSOption = AsmJSOption::Enabled;
@@ -3533,8 +3532,14 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
 
   
   
-  instrumentationKinds =
-      RealmInstrumentation::getInstrumentationKinds(cx->global());
+  if (cx->realm()) {
+    discardSource = cx->realm()->behaviors().discardSource();
+
+    
+    
+    instrumentationKinds =
+        RealmInstrumentation::getInstrumentationKinds(cx->global());
+  }
 }
 
 CompileOptions& CompileOptions::setIntroductionInfoToCaller(
