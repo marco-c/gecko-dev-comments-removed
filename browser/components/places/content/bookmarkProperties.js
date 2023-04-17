@@ -112,10 +112,6 @@ var BookmarkPropertiesPanel = {
 
 
   _getAcceptLabel: function BPP__getAcceptLabel() {
-    if (Services.prefs.getBoolPref("browser.proton.modals.enabled", false)) {
-      return this._strings.getString("dialogAcceptLabelSaveItem");
-    }
-
     if (this._action == ACTION_ADD) {
       if (this._URIs.length) {
         return this._strings.getString("dialogAcceptLabelAddMulti");
