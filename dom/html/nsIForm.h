@@ -40,15 +40,6 @@ class nsIForm : public nsISupports {
 
 
 
-
-
-  NS_IMETHOD_(nsIFormControl*) GetElementAt(int32_t aIndex) const = 0;
-
-  
-
-
-
-
   NS_IMETHOD_(int32_t) IndexOfControl(nsIFormControl* aControl) = 0;
 
   
