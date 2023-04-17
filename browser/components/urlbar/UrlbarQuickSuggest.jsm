@@ -42,6 +42,12 @@ const RESTARTS_PREF = "quicksuggest.seenRestarts";
 
 
 
+const SUGGESTION_SCORE = 0.2;
+
+
+
+
+
 class Suggestions {
   
   _rs = null;
@@ -99,6 +105,7 @@ class Suggestions {
       block_id: result.id,
       advertiser: result.advertiser.toLocaleLowerCase(),
       is_sponsored: !NONSPONSORED_IAB_CATEGORIES.has(result.iab_category),
+      score: SUGGESTION_SCORE,
       icon,
     };
   }
@@ -366,6 +373,10 @@ const RESULT_KEY = "^";
 class KeywordTree {
   constructor() {
     this.tree = new Map();
+  }
+
+  static get SUGGESTION_SCORE() {
+    return SUGGESTION_SCORE;
   }
 
   

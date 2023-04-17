@@ -124,15 +124,19 @@ class ProviderQuickSuggest extends UrlbarProvider {
       promises.push(UrlbarQuickSuggest.query(searchString));
     }
     if (UrlbarPrefs.get("merinoEnabled") && queryContext.allowRemoteResults()) {
-      promises.push(this._fetchMerinoSuggestion(searchString));
+      promises.push(this._fetchMerinoSuggestions(searchString));
     }
-    let [rsSuggestion, merinoSuggestion] = await Promise.all(promises);
+
+    let allSuggestions = await Promise.all(promises);
     if (instance != this.queryInstance) {
       return;
     }
 
     
-    let suggestion = merinoSuggestion || rsSuggestion;
+    let suggestion = allSuggestions
+      .flat()
+      .filter(s => s)
+      .sort((a, b) => b.score - a.score)[0];
     if (!suggestion) {
       return;
     }
@@ -332,7 +336,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-  async _fetchMerinoSuggestion(searchString) {
+
+  async _fetchMerinoSuggestions(searchString) {
     let instance = this.queryInstance;
 
     
@@ -384,8 +389,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       return null;
     }
 
-    
-    return suggestions[0];
+    return suggestions;
   }
 
   
