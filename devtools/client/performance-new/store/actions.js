@@ -46,9 +46,11 @@ const changeRecordingState = (exports.changeRecordingState = (
 
 
 
-exports.reportProfilerReady = recordingState => ({
+
+exports.reportProfilerReady = (isActive, isLockedForPrivateBrowsing) => ({
   type: "REPORT_PROFILER_READY",
-  recordingState,
+  isActive,
+  isLockedForPrivateBrowsing,
 });
 
 

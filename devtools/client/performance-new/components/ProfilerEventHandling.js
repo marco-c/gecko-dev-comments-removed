@@ -51,26 +51,16 @@ class ProfilerEventHandling extends PureComponent {
   componentDidMount() {
     const { perfFront, isSupportedPlatform, reportProfilerReady } = this.props;
 
+    if (!isSupportedPlatform) {
+      return;
+    }
+
     
     Promise.all([
       perfFront.isActive(),
       perfFront.isLockedForPrivateBrowsing(),
-    ]).then(results => {
-      const [isActive, isLockedForPrivateBrowsing] = results;
-
-      let recordingState = this.props.recordingState;
-      
-      
-      if (recordingState === "not-yet-known" && isSupportedPlatform) {
-        if (isLockedForPrivateBrowsing) {
-          recordingState = "locked-by-private-browsing";
-        } else if (isActive) {
-          recordingState = "recording";
-        } else {
-          recordingState = "available-to-record";
-        }
-      }
-      reportProfilerReady(recordingState);
+    ]).then(([isActive, isLockedForPrivateBrowsing]) => {
+      reportProfilerReady(isActive, isLockedForPrivateBrowsing);
     });
 
     

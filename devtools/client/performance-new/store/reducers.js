@@ -24,8 +24,22 @@ function recordingState(state = "not-yet-known", action) {
   switch (action.type) {
     case "CHANGE_RECORDING_STATE":
       return action.state;
-    case "REPORT_PROFILER_READY":
-      return action.recordingState;
+    case "REPORT_PROFILER_READY": {
+      
+      
+      if (state !== "not-yet-known") {
+        return state;
+      }
+
+      const { isActive, isLockedForPrivateBrowsing } = action;
+      if (isLockedForPrivateBrowsing) {
+        return "locked-by-private-browsing";
+      }
+      if (isActive) {
+        return "recording";
+      }
+      return "available-to-record";
+    }
     default:
       return state;
   }
