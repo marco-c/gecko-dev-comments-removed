@@ -145,6 +145,9 @@ class WinUtils {
   static EnableNonClientDpiScalingProc sEnableNonClientDpiScaling;
   static GetSystemMetricsForDpiProc sGetSystemMetricsForDpi;
 
+  
+  static bool sHasPackageIdentity;
+
  public:
   class AutoSystemDpiAware {
    public:
@@ -217,6 +220,8 @@ class WinUtils {
 
 
   static gfx::MarginDouble GetUnwriteableMarginsForDeviceInInches(HDC aHdc);
+
+  static bool HasPackageIdentity() { return sHasPackageIdentity; }
 
   
 
