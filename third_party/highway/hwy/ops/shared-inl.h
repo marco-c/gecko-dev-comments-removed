@@ -108,7 +108,7 @@ HWY_INLINE HWY_MAYBE_UNUSED constexpr size_t MaxLanes(Simd<T, N>) {
 }
 
 
-#if HWY_TARGET != HWY_RVV
+#if HWY_TARGET != HWY_RVV && HWY_TARGET != HWY_SVE2 && HWY_TARGET != HWY_SVE
 
 
 

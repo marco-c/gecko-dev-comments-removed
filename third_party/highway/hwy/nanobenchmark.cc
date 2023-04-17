@@ -29,6 +29,22 @@
 #include <string>
 #include <vector>
 
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif  
+#include <windows.h>
+#endif
+
+#if defined(__MACH__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#endif
+
+#if defined(__HAIKU__)
+#include <OS.h>
+#endif
+
 #include "hwy/base.h"
 #if HWY_ARCH_PPC
 #include <sys/platform/ppc.h>  
@@ -43,116 +59,12 @@
 #endif  
 
 namespace hwy {
-namespace platform {
 namespace {
-
-#if HWY_ARCH_X86
-
-void Cpuid(const uint32_t level, const uint32_t count,
-           uint32_t* HWY_RESTRICT abcd) {
-#if HWY_COMPILER_MSVC
-  int regs[4];
-  __cpuidex(regs, level, count);
-  for (int i = 0; i < 4; ++i) {
-    abcd[i] = regs[i];
-  }
-#else
-  uint32_t a;
-  uint32_t b;
-  uint32_t c;
-  uint32_t d;
-  __cpuid_count(level, count, a, b, c, d);
-  abcd[0] = a;
-  abcd[1] = b;
-  abcd[2] = c;
-  abcd[3] = d;
-#endif
-}
-
-std::string BrandString() {
-  char brand_string[49];
-  std::array<uint32_t, 4> abcd;
-
-  
-  Cpuid(0x80000000U, 0, abcd.data());
-  if (abcd[0] < 0x80000004U) {
-    return std::string();
-  }
-
-  for (size_t i = 0; i < 3; ++i) {
-    Cpuid(static_cast<uint32_t>(0x80000002U + i), 0, abcd.data());
-    memcpy(brand_string + i * 16, abcd.data(), sizeof(abcd));
-  }
-  brand_string[48] = 0;
-  return brand_string;
-}
-
-
-
-double NominalClockRate() {
-  const std::string& brand_string = BrandString();
-  
-  
-  const char* prefixes[3] = {"MHz", "GHz", "THz"};
-  const double multipliers[3] = {1E6, 1E9, 1E12};
-  for (size_t i = 0; i < 3; ++i) {
-    const size_t pos_prefix = brand_string.find(prefixes[i]);
-    if (pos_prefix != std::string::npos) {
-      const size_t pos_space = brand_string.rfind(' ', pos_prefix - 1);
-      if (pos_space != std::string::npos) {
-        const std::string digits =
-            brand_string.substr(pos_space + 1, pos_prefix - pos_space - 1);
-        return std::stod(digits) * multipliers[i];
-      }
-    }
-  }
-
-  return 0.0;
-}
-
-#endif  
-
-}  
-
-
-
-double InvariantTicksPerSecond() {
-#if HWY_ARCH_PPC
-  return __ppc_get_timebase_freq();
-#elif HWY_ARCH_X86
-  
-  return NominalClockRate();
-#else
-  
-  return 1E9;
-#endif
-}
-
-}  
-namespace {
-
-
-template <class T>
-inline void PreventElision(T&& output) {
-#if HWY_COMPILER_MSVC == 0
-  
-  
-  
-  asm volatile("" : "+r"(output) : : "memory");
-#else
-  
-  
-  
-  
-  static std::atomic<T> dummy(T{});
-  dummy.store(output, std::memory_order_relaxed);
-#endif
-}
-
 namespace timer {
 
 
 
+using Ticks = uint64_t;
 
 
 
@@ -202,8 +114,11 @@ namespace timer {
 
 
 
-inline uint64_t Start64() {
-  uint64_t t;
+
+
+
+inline Ticks Start() {
+  Ticks t;
 #if HWY_ARCH_PPC
   asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
 #elif HWY_ARCH_X86 && HWY_COMPILER_MSVC
@@ -228,8 +143,15 @@ inline uint64_t Start64() {
       : "rdx", "memory", "cc");
 #elif HWY_ARCH_RVV
   asm volatile("rdcycle %0" : "=r"(t));
-#else
-  
+#elif defined(_WIN32) || defined(_WIN64)
+  LARGE_INTEGER counter;
+  (void)QueryPerformanceCounter(&counter);
+  t = counter.QuadPart;
+#elif defined(__MACH__)
+  t = mach_absolute_time();
+#elif defined(__HAIKU__)
+  t = system_time_nsecs();  
+#else  
   timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   t = ts.tv_sec * 1000000000LL + ts.tv_nsec;
@@ -237,7 +159,7 @@ inline uint64_t Start64() {
   return t;
 }
 
-inline uint64_t Stop64() {
+inline Ticks Stop() {
   uint64_t t;
 #if HWY_ARCH_PPC
   asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
@@ -261,61 +183,7 @@ inline uint64_t Stop64() {
       
       : "rcx", "rdx", "memory", "cc");
 #else
-  t = Start64();
-#endif
-  return t;
-}
-
-
-
-
-inline uint32_t Start32() {
-  uint32_t t;
-#if HWY_ARCH_X86 && HWY_COMPILER_MSVC
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-  t = static_cast<uint32_t>(__rdtsc());
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-#elif HWY_ARCH_X86_64
-  asm volatile(
-      "lfence\n\t"
-      "rdtsc\n\t"
-      "lfence"
-      : "=a"(t)
-      :
-      
-      : "rdx", "memory");
-#elif HWY_ARCH_RVV
-  asm volatile("rdcycle %0" : "=r"(t));
-#else
-  t = static_cast<uint32_t>(Start64());
-#endif
-  return t;
-}
-
-inline uint32_t Stop32() {
-  uint32_t t;
-#if HWY_ARCH_X86 && HWY_COMPILER_MSVC
-  _ReadWriteBarrier();
-  unsigned aux;
-  t = static_cast<uint32_t>(__rdtscp(&aux));
-  _ReadWriteBarrier();
-  _mm_lfence();
-  _ReadWriteBarrier();
-#elif HWY_ARCH_X86_64
-  
-  asm volatile(
-      "rdtscp\n\t"
-      "lfence"
-      : "=a"(t)
-      :
-      
-      : "rcx", "rdx", "memory");
-#else
-  t = static_cast<uint32_t>(Stop64());
+  t = Start();
 #endif
   return t;
 }
@@ -440,21 +308,130 @@ T MedianAbsoluteDeviation(const T* values, const size_t num_values,
 }
 
 }  
+}  
+namespace platform {
+namespace {
 
 
-
-
-using Ticks = uint32_t;
-
-
-Ticks TimerResolution() {
+template <class T>
+inline void PreventElision(T&& output) {
+#if HWY_COMPILER_MSVC == 0
   
-  Ticks repetitions[Params::kTimerSamples];
+  
+  
+  asm volatile("" : "+r"(output) : : "memory");
+#else
+  
+  
+  
+  
+  static std::atomic<T> dummy(T{});
+  dummy.store(output, std::memory_order_relaxed);
+#endif
+}
+
+#if HWY_ARCH_X86
+
+void Cpuid(const uint32_t level, const uint32_t count,
+           uint32_t* HWY_RESTRICT abcd) {
+#if HWY_COMPILER_MSVC
+  int regs[4];
+  __cpuidex(regs, level, count);
+  for (int i = 0; i < 4; ++i) {
+    abcd[i] = regs[i];
+  }
+#else
+  uint32_t a;
+  uint32_t b;
+  uint32_t c;
+  uint32_t d;
+  __cpuid_count(level, count, a, b, c, d);
+  abcd[0] = a;
+  abcd[1] = b;
+  abcd[2] = c;
+  abcd[3] = d;
+#endif
+}
+
+std::string BrandString() {
+  char brand_string[49];
+  std::array<uint32_t, 4> abcd;
+
+  
+  Cpuid(0x80000000U, 0, abcd.data());
+  if (abcd[0] < 0x80000004U) {
+    return std::string();
+  }
+
+  for (size_t i = 0; i < 3; ++i) {
+    Cpuid(static_cast<uint32_t>(0x80000002U + i), 0, abcd.data());
+    memcpy(brand_string + i * 16, abcd.data(), sizeof(abcd));
+  }
+  brand_string[48] = 0;
+  return brand_string;
+}
+
+
+
+double NominalClockRate() {
+  const std::string& brand_string = BrandString();
+  
+  
+  const char* prefixes[3] = {"MHz", "GHz", "THz"};
+  const double multipliers[3] = {1E6, 1E9, 1E12};
+  for (size_t i = 0; i < 3; ++i) {
+    const size_t pos_prefix = brand_string.find(prefixes[i]);
+    if (pos_prefix != std::string::npos) {
+      const size_t pos_space = brand_string.rfind(' ', pos_prefix - 1);
+      if (pos_space != std::string::npos) {
+        const std::string digits =
+            brand_string.substr(pos_space + 1, pos_prefix - pos_space - 1);
+        return std::stod(digits) * multipliers[i];
+      }
+    }
+  }
+
+  return 0.0;
+}
+
+#endif  
+
+}  
+
+double InvariantTicksPerSecond() {
+#if HWY_ARCH_PPC
+  return __ppc_get_timebase_freq();
+#elif HWY_ARCH_X86
+  
+  return NominalClockRate();
+#elif defined(_WIN32) || defined(_WIN64)
+  LARGE_INTEGER freq;
+  (void)QueryPerformanceFrequency(&freq);
+  return double(freq.QuadPart);
+#elif defined(__MACH__)
+  
+  mach_timebase_info_data_t timebase;
+  (void)mach_timebase_info(&timebase);
+  return double(timebase.denom) / timebase.numer * 1E9;
+#else
+  
+  return 1E9;  
+#endif
+}
+
+double Now() {
+  static const double mul = 1.0 / InvariantTicksPerSecond();
+  return static_cast<double>(timer::Start()) * mul;
+}
+
+uint64_t TimerResolution() {
+  
+  timer::Ticks repetitions[Params::kTimerSamples];
   for (size_t rep = 0; rep < Params::kTimerSamples; ++rep) {
-    Ticks samples[Params::kTimerSamples];
+    timer::Ticks samples[Params::kTimerSamples];
     for (size_t i = 0; i < Params::kTimerSamples; ++i) {
-      const Ticks t0 = timer::Start32();
-      const Ticks t1 = timer::Stop32();
+      const timer::Ticks t0 = timer::Start();
+      const timer::Ticks t1 = timer::Stop();
       samples[i] = t1 - t0;
     }
     repetitions[rep] = robust_statistics::Mode(samples);
@@ -462,18 +439,21 @@ Ticks TimerResolution() {
   return robust_statistics::Mode(repetitions);
 }
 
-static const Ticks timer_resolution = TimerResolution();
+}  
+namespace {
+
+static const timer::Ticks timer_resolution = platform::TimerResolution();
 
 
 
 template <class Lambda>
-Ticks SampleUntilStable(const double max_rel_mad, double* rel_mad,
-                        const Params& p, const Lambda& lambda) {
+timer::Ticks SampleUntilStable(const double max_rel_mad, double* rel_mad,
+                               const Params& p, const Lambda& lambda) {
   
-  Ticks t0 = timer::Start32();
+  timer::Ticks t0 = timer::Start();
   lambda();
-  Ticks t1 = timer::Stop32();
-  Ticks est = t1 - t0;
+  timer::Ticks t1 = timer::Stop();
+  timer::Ticks est = t1 - t0;
   static const double ticks_per_second = platform::InvariantTicksPerSecond();
   const size_t ticks_per_eval =
       static_cast<size_t>(ticks_per_second * p.seconds_per_eval);
@@ -481,21 +461,21 @@ Ticks SampleUntilStable(const double max_rel_mad, double* rel_mad,
       est == 0 ? p.min_samples_per_eval : ticks_per_eval / est;
   samples_per_eval = std::max(samples_per_eval, p.min_samples_per_eval);
 
-  std::vector<Ticks> samples;
+  std::vector<timer::Ticks> samples;
   samples.reserve(1 + samples_per_eval);
   samples.push_back(est);
 
   
   
-  const Ticks max_abs_mad = (timer_resolution + 99) / 100;
+  const timer::Ticks max_abs_mad = (timer_resolution + 99) / 100;
   *rel_mad = 0.0;  
 
   for (size_t eval = 0; eval < p.max_evals; ++eval, samples_per_eval *= 2) {
     samples.reserve(samples.size() + samples_per_eval);
     for (size_t i = 0; i < samples_per_eval; ++i) {
-      t0 = timer::Start32();
+      t0 = timer::Start();
       lambda();
-      t1 = timer::Stop32();
+      t1 = timer::Stop();
       samples.push_back(t1 - t0);
     }
 
@@ -508,14 +488,14 @@ Ticks SampleUntilStable(const double max_rel_mad, double* rel_mad,
     NANOBENCHMARK_CHECK(est != 0);
 
     
-    const Ticks abs_mad = robust_statistics::MedianAbsoluteDeviation(
+    const timer::Ticks abs_mad = robust_statistics::MedianAbsoluteDeviation(
         samples.data(), samples.size(), est);
-    *rel_mad = static_cast<double>(int(abs_mad)) / est;
+    *rel_mad = static_cast<double>(abs_mad) / static_cast<double>(est);
 
     if (*rel_mad <= max_rel_mad || abs_mad <= max_abs_mad) {
       if (p.verbose) {
-        printf("%6zu samples => %5u (abs_mad=%4u, rel_mad=%4.2f%%)\n",
-               samples.size(), est, abs_mad, *rel_mad * 100.0);
+        printf("%6zu samples => %5zu (abs_mad=%4zu, rel_mad=%4.2f%%)\n",
+               samples.size(), size_t(est), size_t(abs_mad), *rel_mad * 100.0);
       }
       return est;
     }
@@ -540,28 +520,16 @@ InputVec UniqueInputs(const FuncInput* inputs, const size_t num_inputs) {
 }
 
 
-
 size_t NumSkip(const Func func, const uint8_t* arg, const InputVec& unique,
                const Params& p) {
   
-  Ticks min_duration = ~0u;
+  timer::Ticks min_duration = ~timer::Ticks(0);
 
   for (const FuncInput input : unique) {
-    
-    const uint64_t t0 = timer::Start64();
-    PreventElision(func(arg, input));
-    const uint64_t t1 = timer::Stop64();
-    const uint64_t elapsed = t1 - t0;
-    if (elapsed >= (1ULL << 30)) {
-      fprintf(stderr, "Measurement failed: need 64-bit timer for input=%zu\n",
-              input);
-      return 0;
-    }
-
     double rel_mad;
-    const Ticks total = SampleUntilStable(
+    const timer::Ticks total = SampleUntilStable(
         p.target_rel_mad, &rel_mad, p,
-        [func, arg, input]() { PreventElision(func(arg, input)); });
+        [func, arg, input]() { platform::PreventElision(func(arg, input)); });
     min_duration = std::min(min_duration, total - timer_resolution);
   }
 
@@ -571,8 +539,8 @@ size_t NumSkip(const Func func, const uint8_t* arg, const InputVec& unique,
   const size_t num_skip =
       min_duration == 0 ? 0 : (max_skip + min_duration - 1) / min_duration;
   if (p.verbose) {
-    printf("res=%u max_skip=%zu min_dur=%u num_skip=%zu\n", timer_resolution,
-           max_skip, min_duration, num_skip);
+    printf("res=%zu max_skip=%zu min_dur=%zu num_skip=%zu\n",
+           size_t(timer_resolution), max_skip, size_t(min_duration), num_skip);
   }
   return num_skip;
 }
@@ -637,13 +605,14 @@ void FillSubset(const InputVec& full, const FuncInput input_to_skip,
 }
 
 
-Ticks TotalDuration(const Func func, const uint8_t* arg, const InputVec* inputs,
-                    const Params& p, double* max_rel_mad) {
+timer::Ticks TotalDuration(const Func func, const uint8_t* arg,
+                           const InputVec* inputs, const Params& p,
+                           double* max_rel_mad) {
   double rel_mad;
-  const Ticks duration =
+  const timer::Ticks duration =
       SampleUntilStable(p.target_rel_mad, &rel_mad, p, [func, arg, inputs]() {
         for (const FuncInput input : *inputs) {
-          PreventElision(func(arg, input));
+          platform::PreventElision(func(arg, input));
         }
       });
   *max_rel_mad = std::max(*max_rel_mad, rel_mad);
@@ -657,19 +626,20 @@ HWY_NOINLINE FuncOutput EmptyFunc(const void* , const FuncInput input) {
 
 
 
-Ticks Overhead(const uint8_t* arg, const InputVec* inputs, const Params& p) {
+timer::Ticks Overhead(const uint8_t* arg, const InputVec* inputs,
+                      const Params& p) {
   double rel_mad;
   
   return SampleUntilStable(0.0, &rel_mad, p, [arg, inputs]() {
     for (const FuncInput input : *inputs) {
-      PreventElision(EmptyFunc(arg, input));
+      platform::PreventElision(EmptyFunc(arg, input));
     }
   });
 }
 
 }  
 
-int Unpredictable1() { return timer::Start64() != ~0ULL; }
+int Unpredictable1() { return timer::Start() != ~0ULL; }
 
 size_t Measure(const Func func, const uint8_t* arg, const FuncInput* inputs,
                const size_t num_inputs, Result* results, const Params& p) {
@@ -685,32 +655,35 @@ size_t Measure(const Func func, const uint8_t* arg, const FuncInput* inputs,
       ReplicateInputs(inputs, num_inputs, unique.size(), num_skip, p);
   InputVec subset(full.size() - num_skip);
 
-  const Ticks overhead = Overhead(arg, &full, p);
-  const Ticks overhead_skip = Overhead(arg, &subset, p);
+  const timer::Ticks overhead = Overhead(arg, &full, p);
+  const timer::Ticks overhead_skip = Overhead(arg, &subset, p);
   if (overhead < overhead_skip) {
-    fprintf(stderr, "Measurement failed: overhead %u < %u\n", overhead,
-            overhead_skip);
+    fprintf(stderr, "Measurement failed: overhead %zu < %zu\n",
+            size_t(overhead), size_t(overhead_skip));
     return 0;
   }
 
   if (p.verbose) {
-    printf("#inputs=%5zu,%5zu overhead=%5u,%5u\n", full.size(), subset.size(),
-           overhead, overhead_skip);
+    printf("#inputs=%5zu,%5zu overhead=%5zu,%5zu\n", full.size(), subset.size(),
+           size_t(overhead), size_t(overhead_skip));
   }
 
   double max_rel_mad = 0.0;
-  const Ticks total = TotalDuration(func, arg, &full, p, &max_rel_mad);
+  const timer::Ticks total = TotalDuration(func, arg, &full, p, &max_rel_mad);
 
   for (size_t i = 0; i < unique.size(); ++i) {
     FillSubset(full, unique[i], num_skip, &subset);
-    const Ticks total_skip = TotalDuration(func, arg, &subset, p, &max_rel_mad);
+    const timer::Ticks total_skip =
+        TotalDuration(func, arg, &subset, p, &max_rel_mad);
 
     if (total < total_skip) {
-      fprintf(stderr, "Measurement failed: total %u < %u\n", total, total_skip);
+      fprintf(stderr, "Measurement failed: total %zu < %zu\n", size_t(total),
+              size_t(total_skip));
       return 0;
     }
 
-    const Ticks duration = (total - overhead) - (total_skip - overhead_skip);
+    const timer::Ticks duration =
+        (total - overhead) - (total_skip - overhead_skip);
     results[i].input = unique[i];
     results[i].ticks = static_cast<float>(duration) * mul;
     results[i].variability = static_cast<float>(max_rel_mad);

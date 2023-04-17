@@ -203,6 +203,10 @@
 #define HWY_ARCH_X86_64 0
 #endif
 
+#if HWY_ARCH_X86_32 && HWY_ARCH_X86_64
+#error "Cannot have both x86-32 and x86-64"
+#endif
+
 #if HWY_ARCH_X86_32 || HWY_ARCH_X86_64
 #define HWY_ARCH_X86 1
 #else
@@ -249,9 +253,11 @@
 #define HWY_ARCH_RVV 0
 #endif
 
+
+
 #if (HWY_ARCH_X86 + HWY_ARCH_PPC + HWY_ARCH_ARM + HWY_ARCH_WASM + \
-     HWY_ARCH_RVV) != 1
-#error "Must detect exactly one platform"
+     HWY_ARCH_RVV) > 1
+#error "Must not detect more than one architecture"
 #endif
 
 
@@ -328,6 +334,12 @@ static constexpr HWY_MAYBE_UNUSED size_t kMaxVectorSize = 16;
 
 
 #if HWY_ARCH_RVV && HWY_COMPILER_GCC
+#define HWY_NATIVE_FLOAT16 1
+#else
+#define HWY_NATIVE_FLOAT16 0
+#endif
+
+#if HWY_NATIVE_FLOAT16
 using float16_t = __fp16;
 
 
@@ -597,7 +609,7 @@ HWY_API size_t PopCount(uint64_t x) {
   return static_cast<size_t>(__builtin_popcountll(x));
 #elif HWY_COMPILER_MSVC && HWY_ARCH_X86_64
   return _mm_popcnt_u64(x);
-#elif HWY_COMPILER_MSVC
+#elif HWY_COMPILER_MSVC && HWY_ARCH_X86_32
   return _mm_popcnt_u32(uint32_t(x)) + _mm_popcnt_u32(uint32_t(x >> 32));
 #else
   x -= ((x >> 1) & 0x55555555U);

@@ -117,9 +117,8 @@ struct RawMask512<8> {
 
 template <typename T>
 class Mask512 {
-  using Raw = typename RawMask512<sizeof(T)>::type;
-
  public:
+  using Raw = typename RawMask512<sizeof(T)>::type;
   Raw raw;
 };
 
@@ -184,23 +183,24 @@ HWY_API Vec512<uint16_t> Set(Full512<uint16_t> , const uint16_t t) {
   return Vec512<uint16_t>{_mm512_set1_epi16(static_cast<short>(t))};  
 }
 HWY_API Vec512<uint32_t> Set(Full512<uint32_t> , const uint32_t t) {
-  return Vec512<uint32_t>{_mm512_set1_epi32(static_cast<int>(t))};  
+  return Vec512<uint32_t>{_mm512_set1_epi32(static_cast<int>(t))};
 }
 HWY_API Vec512<uint64_t> Set(Full512<uint64_t> , const uint64_t t) {
   return Vec512<uint64_t>{
       _mm512_set1_epi64(static_cast<long long>(t))};  
 }
 HWY_API Vec512<int8_t> Set(Full512<int8_t> , const int8_t t) {
-  return Vec512<int8_t>{_mm512_set1_epi8(t)};
+  return Vec512<int8_t>{_mm512_set1_epi8(static_cast<char>(t))};  
 }
 HWY_API Vec512<int16_t> Set(Full512<int16_t> , const int16_t t) {
-  return Vec512<int16_t>{_mm512_set1_epi16(t)};
+  return Vec512<int16_t>{_mm512_set1_epi16(static_cast<short>(t))};  
 }
 HWY_API Vec512<int32_t> Set(Full512<int32_t> , const int32_t t) {
   return Vec512<int32_t>{_mm512_set1_epi32(t)};
 }
 HWY_API Vec512<int64_t> Set(Full512<int64_t> , const int64_t t) {
-  return Vec512<int64_t>{_mm512_set1_epi64(t)};
+  return Vec512<int64_t>{
+      _mm512_set1_epi64(static_cast<long long>(t))};  
 }
 HWY_API Vec512<float> Set(Full512<float> , const float t) {
   return Vec512<float>{_mm512_set1_ps(t)};
@@ -344,6 +344,44 @@ template <typename T>
 HWY_API Vec512<T> CopySignToAbs(const Vec512<T> abs, const Vec512<T> sign) {
   
   return CopySign(abs, sign);
+}
+
+
+
+
+
+
+
+
+
+
+#if HWY_ARCH_X86_32
+namespace detail {
+
+
+template <typename T, HWY_IF_NOT_LANE_SIZE(T, 1)>
+HWY_API Mask512<T> FirstN(size_t n) {
+  using Bits = typename Mask512<T>::Raw;
+  return Mask512<T>{static_cast<Bits>(_bzhi_u32(~uint32_t(0), n))};
+}
+
+template <typename T, HWY_IF_LANE_SIZE(T, 1)>
+HWY_API Mask512<T> FirstN(size_t n) {
+  const uint64_t bits = n < 64 ? ((1ULL << n) - 1) : ~uint64_t(0);
+  return Mask512<T>{static_cast<__mmask64>(bits)};
+}
+
+}  
+#endif  
+
+template <typename T>
+HWY_API Mask512<T> FirstN(const Full512<T> , size_t n) {
+#if HWY_ARCH_X86_64
+  using Bits = typename Mask512<T>::Raw;
+  return Mask512<T>{static_cast<Bits>(_bzhi_u64(~uint64_t(0), n))};
+#else
+  return detail::FirstN<T>(n);
+#endif  
 }
 
 
@@ -643,13 +681,22 @@ HWY_API Vec512<uint16_t> AverageRound(const Vec512<uint16_t> a,
 
 
 HWY_API Vec512<int8_t> Abs(const Vec512<int8_t> v) {
+#if HWY_COMPILER_MSVC
+  
+  const auto zero = Zero(Full512<int8_t>());
+  return Vec512<int8_t>{_mm512_max_epi8(v.raw, (zero - v).raw)};
+#else
   return Vec512<int8_t>{_mm512_abs_epi8(v.raw)};
+#endif
 }
 HWY_API Vec512<int16_t> Abs(const Vec512<int16_t> v) {
   return Vec512<int16_t>{_mm512_abs_epi16(v.raw)};
 }
 HWY_API Vec512<int32_t> Abs(const Vec512<int32_t> v) {
   return Vec512<int32_t>{_mm512_abs_epi32(v.raw)};
+}
+HWY_API Vec512<int64_t> Abs(const Vec512<int64_t> v) {
+  return Vec512<int64_t>{_mm512_abs_epi64(v.raw)};
 }
 
 
@@ -1114,6 +1161,10 @@ HWY_API Vec512<float> ApproximateReciprocalSqrt(const Vec512<float> v) {
 
 
 
+HWY_DIAGNOSTICS(push)
+HWY_DIAGNOSTICS_OFF(disable : 4245 4365, ignored "-Wsign-conversion")
+
+
 HWY_API Vec512<float> Round(const Vec512<float> v) {
   return Vec512<float>{_mm512_roundscale_ps(
       v.raw, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC)};
@@ -1152,6 +1203,8 @@ HWY_API Vec512<double> Floor(const Vec512<double> v) {
   return Vec512<double>{
       _mm512_roundscale_pd(v.raw, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC)};
 }
+
+HWY_DIAGNOSTICS(pop)
 
 
 
@@ -1747,6 +1800,10 @@ HWY_API void Stream(const Vec512<double> v, Full512<double>,
 
 
 
+
+HWY_DIAGNOSTICS(push)
+HWY_DIAGNOSTICS_OFF(disable : 4245 4365, ignored "-Wsign-conversion")
+
 namespace detail {
 
 template <typename T>
@@ -1888,6 +1945,8 @@ HWY_INLINE Vec512<double> GatherIndex<double>(Full512<double> ,
                                               const Vec512<int64_t> index) {
   return Vec512<double>{_mm512_i64gather_pd(index.raw, base, 8)};
 }
+
+HWY_DIAGNOSTICS(pop)
 
 
 
@@ -2579,7 +2638,11 @@ HWY_API Vec256<int8_t> DemoteTo(Full256<int8_t> ,
 
 HWY_API Vec256<float16_t> DemoteTo(Full256<float16_t> ,
                                    const Vec512<float> v) {
+  
+  HWY_DIAGNOSTICS(push)
+  HWY_DIAGNOSTICS_OFF(disable : 4245 4365, ignored "-Wsign-conversion")
   return Vec256<float16_t>{_mm512_cvtps_ph(v.raw, _MM_FROUND_NO_EXC)};
+  HWY_DIAGNOSTICS(pop)
 }
 
 HWY_API Vec256<float> DemoteTo(Full256<float> ,

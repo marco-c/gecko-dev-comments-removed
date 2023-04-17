@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include <array>
 #include <new>
 #include <random>
 #include <vector>
@@ -85,6 +86,32 @@ TEST(AlignedAllocatorTest, FreeNullptr) {
   
   FreeAlignedBytes(nullptr, nullptr,
                    nullptr);
+}
+
+TEST(AlignedAllocatorTest, Log2) {
+  EXPECT_EQ(0u, detail::ShiftCount(1));
+  EXPECT_EQ(1u, detail::ShiftCount(2));
+  EXPECT_EQ(3u, detail::ShiftCount(8));
+}
+
+
+TEST(AlignedAllocatorTest, Overflow) {
+  constexpr size_t max = ~size_t(0);
+  constexpr size_t msb = (max >> 1) + 1;
+  using Size5 = std::array<uint8_t, 5>;
+  using Size10 = std::array<uint8_t, 10>;
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<uint32_t>(max / 2, nullptr, nullptr));
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<uint32_t>(max / 3, nullptr, nullptr));
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<Size5>(max / 4, nullptr, nullptr));
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<uint16_t>(msb, nullptr, nullptr));
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<double>(msb + 1, nullptr, nullptr));
+  EXPECT_EQ(nullptr,
+            detail::AllocateAlignedItems<Size10>(msb / 4, nullptr, nullptr));
 }
 
 TEST(AlignedAllocatorTest, AllocDefaultPointers) {
@@ -215,6 +242,7 @@ TEST(AlignedAllocatorTest, MakeUniqueAlignedArrayWithCustomAlloc) {
     auto arr = MakeUniqueAlignedArrayWithAlloc<SampleObject<24>>(
         7, FakeAllocator::StaticAlloc, FakeAllocator::StaticFree, &fake_alloc,
         &counter);
+    ASSERT_NE(nullptr, arr.get());
     
     EXPECT_EQ(1u, fake_alloc.PendingAllocs());
     EXPECT_EQ(7, counter);

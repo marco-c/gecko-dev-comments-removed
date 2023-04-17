@@ -44,11 +44,6 @@
 
 
 
-
-
-
-
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -78,6 +73,16 @@ namespace platform {
 
 
 double InvariantTicksPerSecond();
+
+
+
+
+double Now();
+
+
+
+
+uint64_t TimerResolution();
 
 }  
 

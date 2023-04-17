@@ -83,6 +83,13 @@ HWY_INLINE HWY_ATTR_CACHE void FlushCacheline(const void* p) {
 #endif
 }
 
+
+HWY_INLINE HWY_ATTR_CACHE void Pause() {
+#if HWY_ARCH_X86 && !defined(HWY_DISABLE_CACHE_CONTROL)
+  _mm_pause();
+#endif
+}
+
 }  
 
 #endif  

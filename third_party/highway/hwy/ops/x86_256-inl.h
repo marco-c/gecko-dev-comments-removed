@@ -20,15 +20,18 @@
 
 
 #include <immintrin.h>  
+
 #if defined(_MSC_VER) && defined(__clang__)
 
 
 
-#include <smmintrin.h>
 #include <avxintrin.h>
+
 #include <avx2intrin.h>
+#include <bmi2intrin.h>  
 #include <f16cintrin.h>
 #include <fmaintrin.h>
+#include <smmintrin.h>
 #endif
 
 #include <stddef.h>
@@ -159,23 +162,24 @@ HWY_API Vec256<uint16_t> Set(Full256<uint16_t> , const uint16_t t) {
   return Vec256<uint16_t>{_mm256_set1_epi16(static_cast<short>(t))};  
 }
 HWY_API Vec256<uint32_t> Set(Full256<uint32_t> , const uint32_t t) {
-  return Vec256<uint32_t>{_mm256_set1_epi32(static_cast<int>(t))};  
+  return Vec256<uint32_t>{_mm256_set1_epi32(static_cast<int>(t))};
 }
 HWY_API Vec256<uint64_t> Set(Full256<uint64_t> , const uint64_t t) {
   return Vec256<uint64_t>{
       _mm256_set1_epi64x(static_cast<long long>(t))};  
 }
 HWY_API Vec256<int8_t> Set(Full256<int8_t> , const int8_t t) {
-  return Vec256<int8_t>{_mm256_set1_epi8(t)};
+  return Vec256<int8_t>{_mm256_set1_epi8(static_cast<char>(t))};  
 }
 HWY_API Vec256<int16_t> Set(Full256<int16_t> , const int16_t t) {
-  return Vec256<int16_t>{_mm256_set1_epi16(t)};
+  return Vec256<int16_t>{_mm256_set1_epi16(static_cast<short>(t))};  
 }
 HWY_API Vec256<int32_t> Set(Full256<int32_t> , const int32_t t) {
   return Vec256<int32_t>{_mm256_set1_epi32(t)};
 }
 HWY_API Vec256<int64_t> Set(Full256<int64_t> , const int64_t t) {
-  return Vec256<int64_t>{_mm256_set1_epi64x(t)};
+  return Vec256<int64_t>{
+      _mm256_set1_epi64x(static_cast<long long>(t))};  
 }
 HWY_API Vec256<float> Set(Full256<float> , const float t) {
   return Vec256<float>{_mm256_set1_ps(t)};
@@ -350,6 +354,8 @@ template <typename T>
 HWY_API Vec256<T> VecFromMask(Full256<T> , const Mask256<T> v) {
   return Vec256<T>{v.raw};
 }
+
+
 
 
 template <typename T>
@@ -683,6 +689,14 @@ HWY_API Vec256<double> Max(const Vec256<double> a, const Vec256<double> b) {
 
 
 
+template <typename T>
+HWY_API Mask256<T> FirstN(const Full256<T> d, size_t n) {
+  const RebindToSigned<decltype(d)> di;  
+  return RebindMask(d, Iota(di, 0) < Set(di, static_cast<MakeSigned<T>>(n)));
+}
+
+
+
 
 
 
@@ -843,7 +857,13 @@ HWY_API Vec256<uint16_t> AverageRound(const Vec256<uint16_t> a,
 
 
 HWY_API Vec256<int8_t> Abs(const Vec256<int8_t> v) {
+#if HWY_COMPILER_MSVC
+  
+  const auto zero = Zero(Full256<int8_t>());
+  return Vec256<int8_t>{_mm256_max_epi8(v.raw, (zero - v).raw)};
+#else
   return Vec256<int8_t>{_mm256_abs_epi8(v.raw)};
+#endif
 }
 HWY_API Vec256<int16_t> Abs(const Vec256<int16_t> v) {
   return Vec256<int16_t>{_mm256_abs_epi16(v.raw)};
@@ -851,6 +871,7 @@ HWY_API Vec256<int16_t> Abs(const Vec256<int16_t> v) {
 HWY_API Vec256<int32_t> Abs(const Vec256<int32_t> v) {
   return Vec256<int32_t>{_mm256_abs_epi32(v.raw)};
 }
+
 
 HWY_API Vec256<float> Abs(const Vec256<float> v) {
   const Vec256<int32_t> mask{_mm256_set1_epi32(0x7FFFFFFF)};
@@ -1024,6 +1045,15 @@ HWY_API Vec256<int64_t> ShiftRight(const Vec256<int64_t> v) {
   const auto right = BitCast(di, ShiftRight<kBits>(BitCast(du, v)));
   const auto sign = ShiftLeft<64 - kBits>(BroadcastSignBit(v));
   return right | sign;
+#endif
+}
+
+HWY_API Vec256<int64_t> Abs(const Vec256<int64_t> v) {
+#if HWY_TARGET == HWY_AVX3
+  return Vec256<int64_t>{_mm256_abs_epi64(v.raw)};
+#else
+  const auto zero = Zero(Full256<int64_t>());
+  return IfThenElse(MaskFromVec(BroadcastSignBit(v)), zero - v, v);
 #endif
 }
 
@@ -1398,6 +1428,10 @@ HWY_API void Stream(const Vec256<double> v, Full256<double> ,
 
 
 
+
+HWY_DIAGNOSTICS(push)
+HWY_DIAGNOSTICS_OFF(disable : 4245 4365, ignored "-Wsign-conversion")
+
 #if HWY_TARGET == HWY_AVX3
 namespace detail {
 
@@ -1583,6 +1617,8 @@ HWY_INLINE Vec256<double> GatherIndex<double>(Full256<double> ,
                                               const Vec256<int64_t> index) {
   return Vec256<double>{_mm256_i64gather_pd(base, index.raw, 8)};
 }
+
+HWY_DIAGNOSTICS(pop)
 
 
 
@@ -2379,10 +2415,17 @@ HWY_API Vec128<int8_t> DemoteTo(Full128<int8_t> ,
       _mm256_castsi256_si128(_mm256_permute4x64_epi64(i8, 0x88))};
 }
 
+  
+  
+HWY_DIAGNOSTICS(push)
+HWY_DIAGNOSTICS_OFF(disable : 4556, ignored "-Wsign-conversion")
+
 HWY_API Vec128<float16_t> DemoteTo(Full128<float16_t> ,
                                    const Vec256<float> v) {
   return Vec128<float16_t>{_mm256_cvtps_ph(v.raw, _MM_FROUND_NO_EXC)};
 }
+
+HWY_DIAGNOSTICS(pop)
 
 HWY_API Vec128<float> DemoteTo(Full128<float> ,
                                const Vec256<double> v) {
@@ -2421,13 +2464,20 @@ HWY_API Vec256<double> ConvertTo(Full256<double> dd, const Vec256<int64_t> v) {
   (void)dd;
   return Vec256<double>{_mm256_cvtepi64_pd(v.raw)};
 #else
-  alignas(32) int64_t lanes_i[4];
-  Store(v, Full256<int64_t>(), lanes_i);
-  alignas(32) double lanes_d[4];
-  for (size_t i = 0; i < 4; ++i) {
-    lanes_d[i] = static_cast<double>(lanes_i[i]);
-  }
-  return Load(dd, lanes_d);
+  
+  const Repartition<uint32_t, decltype(dd)> d32;
+  const Repartition<uint64_t, decltype(dd)> d64;
+
+  
+  const auto k84_63 = Set(d64, 0x4530000080000000ULL);
+  const auto v_upper = BitCast(dd, ShiftRight<32>(BitCast(d64, v)) ^ k84_63);
+
+  
+  const auto k52 = Set(d32, 0x43300000);
+  const auto v_lower = BitCast(dd, OddEven(k52, BitCast(d32, v)));
+
+  const auto k84_63_52 = BitCast(dd, Set(d64, 0x4530000080100000ULL));
+  return (v_upper - k84_63_52) + v_lower;  
 #endif
 }
 
@@ -2502,8 +2552,7 @@ HWY_API uint64_t BitsFromMask(hwy::SizeTag<2> , const Mask256<T> mask) {
   const auto compressed =
       _mm256_permute4x64_epi64(sign_bits, _MM_SHUFFLE(3, 1, 2, 0));
   return static_cast<unsigned>(_mm256_movemask_epi8(compressed));
-
-#endif
+#endif  
 }
 
 template <typename T>

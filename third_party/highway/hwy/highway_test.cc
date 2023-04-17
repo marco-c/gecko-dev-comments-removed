@@ -192,29 +192,8 @@ struct TestNaN {
     HWY_ASSERT(AllFalse(Lt(nan, v1)));
     HWY_ASSERT(AllFalse(Ge(nan, v1)));
     HWY_ASSERT(AllFalse(Le(nan, v1)));
-  }
-};
 
-
-struct TestF32NaN {
-  template <class T, class D>
-  HWY_NOINLINE void operator()(T , D d) {
-    const auto v1 = Set(d, T(Unpredictable1()));
-    const auto nan = IfThenElse(Eq(v1, Set(d, T(1))), NaN(d), v1);
-    HWY_ASSERT_NAN(d, ApproximateReciprocal(nan));
-    HWY_ASSERT_NAN(d, ApproximateReciprocalSqrt(nan));
-    HWY_ASSERT_NAN(d, AbsDiff(nan, v1));
-    HWY_ASSERT_NAN(d, AbsDiff(v1, nan));
-  }
-};
-
-
-struct TestFullNaN {
-  template <class T, class D>
-  HWY_NOINLINE void operator()(T , D d) {
-    const auto v1 = Set(d, T(Unpredictable1()));
-    const auto nan = IfThenElse(Eq(v1, Set(d, T(1))), NaN(d), v1);
-
+    
     HWY_ASSERT_NAN(d, SumOfLanes(nan));
 
 #if HWY_TARGET != HWY_RVV
@@ -222,6 +201,7 @@ struct TestFullNaN {
     HWY_ASSERT_NAN(d, MaxOfLanes(nan));
 #endif
 
+    
 #if HWY_ARCH_X86 && HWY_TARGET != HWY_SCALAR
     
     HWY_ASSERT_VEC_EQ(d, v1, Min(nan, v1));
@@ -257,10 +237,22 @@ struct TestFullNaN {
   }
 };
 
+
+struct TestF32NaN {
+  template <class T, class D>
+  HWY_NOINLINE void operator()(T , D d) {
+    const auto v1 = Set(d, T(Unpredictable1()));
+    const auto nan = IfThenElse(Eq(v1, Set(d, T(1))), NaN(d), v1);
+    HWY_ASSERT_NAN(d, ApproximateReciprocal(nan));
+    HWY_ASSERT_NAN(d, ApproximateReciprocalSqrt(nan));
+    HWY_ASSERT_NAN(d, AbsDiff(nan, v1));
+    HWY_ASSERT_NAN(d, AbsDiff(v1, nan));
+  }
+};
+
 HWY_NOINLINE void TestAllNaN() {
   ForFloatTypes(ForPartialVectors<TestNaN>());
   ForPartialVectors<TestF32NaN>()(float());
-  ForFloatTypes(ForFullVectors<TestFullNaN>());
 }
 
 struct TestCopyAndAssign {
