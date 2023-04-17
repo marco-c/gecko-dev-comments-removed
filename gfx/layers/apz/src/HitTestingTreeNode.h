@@ -103,7 +103,7 @@ class HitTestingTreeNode {
   
 
   void SetHitTestData(
-      const EventRegions& aRegions, const LayerIntRegion& aVisibleRegion,
+      const LayerIntRegion& aVisibleRegion,
       const LayerIntSize& aRemoteDocumentSize,
       const CSSTransformMatrix& aTransform,
       const EventRegionsOverride& aOverride,
@@ -201,15 +201,6 @@ class HitTestingTreeNode {
   
   
   Maybe<uint64_t> mStickyPositionAnimationId;
-
-  
-
-
-
-
-
-
-  EventRegions mEventRegions;
 
   LayerIntRegion mVisibleRegion;
 
