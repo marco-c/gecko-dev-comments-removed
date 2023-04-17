@@ -270,11 +270,6 @@ CompositorBridgeChild* CompositorBridgeChild::Get() {
 }
 
 
-bool CompositorBridgeChild::ChildProcessHasCompositorBridge() {
-  return sCompositorBridge != nullptr;
-}
-
-
 bool CompositorBridgeChild::CompositorIsInGPUProcess() {
   MOZ_ASSERT(NS_IsMainThread());
 

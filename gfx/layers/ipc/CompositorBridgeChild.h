@@ -76,8 +76,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   static CompositorBridgeChild* Get();
 
-  static bool ChildProcessHasCompositorBridge();
-
   
   
   static bool CompositorIsInGPUProcess();
