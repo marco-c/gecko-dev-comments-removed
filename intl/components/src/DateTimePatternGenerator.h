@@ -19,7 +19,7 @@ class DateTimePatternGenerator final {
  public:
   explicit DateTimePatternGenerator(UDateTimePatternGenerator* aGenerator)
       : mGenerator(aGenerator) {
-    MOZ_ASSERT(mGenerator);
+    MOZ_ASSERT(aGenerator);
   };
 
   
@@ -71,7 +71,7 @@ class DateTimePatternGenerator final {
     return FillBufferWithICUCall(
         aBuffer, [&](UChar* target, int32_t length, UErrorCode* status) {
           return udatpg_getBestPatternWithOptions(
-              mGenerator, aSkeleton.data(),
+              mGenerator.GetMut(), aSkeleton.data(),
               static_cast<int32_t>(aSkeleton.Length()),
               toUDateTimePatternMatchOptions(options), target, length, status);
         });
@@ -90,7 +90,7 @@ class DateTimePatternGenerator final {
     return FillVectorWithICUCall(
         aVector, [&](UChar* target, int32_t length, UErrorCode* status) {
           return udatpg_getBestPatternWithOptions(
-              mGenerator, aSkeleton.data(),
+              mGenerator.GetMut(), aSkeleton.data(),
               static_cast<int32_t>(aSkeleton.Length()),
               toUDateTimePatternMatchOptions(options), target, length, status);
         });
@@ -134,12 +134,13 @@ class DateTimePatternGenerator final {
 
 
 
-  UDateTimePatternGenerator* UnsafeGetUDateTimePatternGenerator() const {
-    return mGenerator;
+  UDateTimePatternGenerator* UnsafeGetUDateTimePatternGenerator() {
+    return mGenerator.GetMut();
   }
 
  private:
-  UDateTimePatternGenerator* mGenerator = nullptr;
+  ICUPointer<UDateTimePatternGenerator> mGenerator =
+      ICUPointer<UDateTimePatternGenerator>(nullptr);
 
   static UDateTimePatternMatchOptions toUDateTimePatternMatchOptions(
       EnumSet<PatternMatchOption> options) {
