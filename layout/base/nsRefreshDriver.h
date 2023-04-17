@@ -149,6 +149,16 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
+
+  void EnterUserInputProcessing() { mUserInputProcessingCount++; }
+  void ExitUserInputProcessing() {
+    MOZ_ASSERT(mUserInputProcessingCount > 0);
+    mUserInputProcessingCount--;
+  }
+
+  
+
+
   void AddResizeEventFlushObserver(mozilla::PresShell* aPresShell,
                                    bool aDelayed = false) {
     MOZ_DIAGNOSTIC_ASSERT(
@@ -408,6 +418,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void AddForceNotifyContentfulPaintPresContext(nsPresContext* aPresContext);
   void FlushForceNotifyContentfulPaintPresContext();
 
+  
+  
+  void FinishedVsyncTick() { mAttemptedExtraTickSinceLastVsync = false; }
+
  private:
   typedef nsTArray<RefPtr<VVPResizeEvent>> VisualViewportResizeEventArray;
   typedef nsTArray<RefPtr<mozilla::Runnable>> ScrollEventArray;
@@ -443,7 +457,13 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
   void UpdateIntersectionObservations(mozilla::TimeStamp aNowTime);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void Tick(mozilla::VsyncId aId, mozilla::TimeStamp aNowTime);
+
+  enum class IsExtraTick {
+    No,
+    Yes,
+  };
+  void Tick(mozilla::VsyncId aId, mozilla::TimeStamp aNowTime,
+            IsExtraTick aIsExtraTick = IsExtraTick::No);
 
   enum EnsureTimerStartedFlags {
     eNone = 0,
@@ -478,7 +498,18 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   void FinishedWaitingForTransaction();
 
+  
+
+
+
   bool CanDoCatchUpTick();
+  
+
+
+
+
+
+  bool CanDoExtraTick();
 
   bool AtPendingTransactionLimit() {
     return mPendingTransactions.Length() == 2;
@@ -502,6 +533,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<TransactionId, 3> mPendingTransactions;
 
   uint32_t mFreezeCount;
+  uint32_t mUserInputProcessingCount = 0;
 
   
   
@@ -553,6 +585,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   bool mInNormalTick : 1;
+
+  
+  
+  bool mAttemptedExtraTickSinceLastVsync : 1;
 
   
   

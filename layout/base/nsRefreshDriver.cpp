@@ -771,6 +771,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   void RunRefreshDrivers(VsyncId aId, TimeStamp aTimeStamp) {
     Tick(aId, aTimeStamp);
+    for (auto& driver : mContentRefreshDrivers) {
+      driver->FinishedVsyncTick();
+    }
+    for (auto& driver : mRootRefreshDrivers) {
+      driver->FinishedVsyncTick();
+    }
   }
 
   
@@ -1124,6 +1130,7 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mNotifyDOMContentFlushed(false),
       mNeedToUpdateIntersectionObservations(false),
       mInNormalTick(false),
+      mAttemptedExtraTickSinceLastVsync(false),
       mWarningThreshold(REFRESH_WAIT_WARNING) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext,
@@ -1402,6 +1409,36 @@ bool nsRefreshDriver::CanDoCatchUpTick() {
   return true;
 }
 
+bool nsRefreshDriver::CanDoExtraTick() {
+  
+  if (mAttemptedExtraTickSinceLastVsync) {
+    return false;
+  }
+
+  
+  
+  
+  if (!mActiveTimer ||
+      mActiveTimer->MostRecentRefresh() != mMostRecentRefresh) {
+    return false;
+  }
+
+  
+  
+  
+  TimeStamp now = TimeStamp::Now();
+  Maybe<TimeStamp> nextTick = mActiveTimer->GetNextTickHint();
+  int32_t minimumRequiredTime = StaticPrefs::layout_extra_tick_minimum_ms();
+  
+  
+  if (minimumRequiredTime < 0 || !nextTick ||
+      (*nextTick - now) < TimeDuration::FromMilliseconds(minimumRequiredTime)) {
+    return false;
+  }
+
+  return true;
+}
+
 void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   
   
@@ -1416,7 +1453,31 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   }
 
   
-  if (mActiveTimer && !(aFlags & eForceAdjustTimer)) return;
+  if (mActiveTimer && !(aFlags & eForceAdjustTimer)) {
+    
+    
+    
+    if (mUserInputProcessingCount && CanDoExtraTick()) {
+      RefPtr<nsRefreshDriver> self = this;
+      NS_DispatchToCurrentThreadQueue(
+          NS_NewRunnableFunction(
+              "RefreshDriver::EnsureTimerStarted::extra",
+              [self]() -> void {
+                
+                
+                if (self->CanDoExtraTick()) {
+                  PROFILER_MARKER_UNTYPED("ExtraRefreshDriverTick", GRAPHICS);
+                  LOG("[%p] Doing extra tick for user input", self.get());
+                  self->mAttemptedExtraTickSinceLastVsync = true;
+                  self->Tick(self->mActiveTimer->MostRecentRefreshVsyncId(),
+                             self->mActiveTimer->MostRecentRefresh(),
+                             IsExtraTick::Yes);
+                }
+              }),
+          EventQueuePriority::Vsync);
+    }
+    return;
+  }
 
   if (IsFrozen() || !mPresContext) {
     
@@ -1456,6 +1517,7 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
                 
                 
                 if (self->CanDoCatchUpTick()) {
+                  LOG("[%p] Doing catch up tick", self.get());
                   self->Tick(self->mActiveTimer->MostRecentRefreshVsyncId(),
                              self->mActiveTimer->MostRecentRefresh());
                 }
@@ -1965,7 +2027,8 @@ static CallState ReduceAnimations(Document& aDocument) {
   return CallState::Continue;
 }
 
-void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
+void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
+                           IsExtraTick aIsExtraTick ) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
              "Shouldn't have a JSContext on the stack");
 
@@ -1982,11 +2045,14 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   
   
   
-  if ((aNowTime <= mMostRecentRefresh) && !mTestControllingRefreshes) {
+  
+  
+  if ((aNowTime <= mMostRecentRefresh) && !mTestControllingRefreshes &&
+      aIsExtraTick == IsExtraTick::No) {
     return;
   }
   auto cleanupInExtraTick = MakeScopeExit([&] { mInNormalTick = false; });
-  mInNormalTick = true;
+  mInNormalTick = aIsExtraTick != IsExtraTick::Yes;
 
   bool isPresentingInVR = false;
 #if defined(MOZ_WIDGET_ANDROID)
