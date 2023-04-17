@@ -55,6 +55,7 @@ class ArgumentsObject;
 class GlobalScope;
 class GlobalLexicalEnvironmentObject;
 class PlainObject;
+class PropertyIteratorObject;
 class RegExpStatics;
 
 
@@ -182,6 +183,9 @@ class GlobalObjectData {
 
   
   HeapPtr<JSFunction*> eval;
+
+  
+  HeapPtr<PropertyIteratorObject*> emptyIterator;
 
   
   HeapPtr<Shape*> arrayShapeWithDefaultProto;
@@ -1084,6 +1088,8 @@ class GlobalObject : public NativeObject {
   }
   static Shape* createFunctionShapeWithDefaultProto(JSContext* cx,
                                                     bool extended);
+
+  static PropertyIteratorObject* getOrCreateEmptyIterator(JSContext* cx);
 
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,

@@ -1267,6 +1267,21 @@ RegExpStringIteratorObject* js::NewRegExpStringIterator(JSContext* cx) {
   return NewObjectWithGivenProto<RegExpStringIteratorObject>(cx, proto);
 }
 
+
+PropertyIteratorObject* GlobalObject::getOrCreateEmptyIterator(JSContext* cx) {
+  if (!cx->global()->data().emptyIterator) {
+    RootedIdVector props(cx);  
+    PropertyIteratorObject* iter =
+        CreatePropertyIterator(cx, nullptr, props, 0, 0);
+    if (!iter) {
+      return nullptr;
+    }
+    MOZ_ASSERT(iter->getNativeIterator()->isEmptyIteratorSingleton());
+    cx->global()->data().emptyIterator.init(iter);
+  }
+  return cx->global()->data().emptyIterator;
+}
+
 JSObject* js::ValueToIterator(JSContext* cx, HandleValue vp) {
   RootedObject obj(cx);
   if (vp.isObject()) {
@@ -1278,8 +1293,7 @@ JSObject* js::ValueToIterator(JSContext* cx, HandleValue vp) {
 
 
 
-    RootedIdVector props(cx);  
-    return CreatePropertyIterator(cx, nullptr, props, 0, 0);
+    return GlobalObject::getOrCreateEmptyIterator(cx);
   } else {
     obj = ToObject(cx, vp);
     if (!obj) {
