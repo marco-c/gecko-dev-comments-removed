@@ -30,8 +30,12 @@ add_task(async function() {
   await waitUntil(() => findSourceNodeWithText(dbg, "simple1.js"));
 
   
-  if (isFissionEnabled()) {
-    is(rootNodes.length, 2, "Found 2 sourceview root nodes when fission is on");
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
+    is(
+      rootNodes.length,
+      2,
+      "Found 2 sourceview root nodes when iframe has dedicated target"
+    );
 
     info("Expands the remote frame root node");
     await expandAllSourceNodes(dbg, rootNodes[1]);

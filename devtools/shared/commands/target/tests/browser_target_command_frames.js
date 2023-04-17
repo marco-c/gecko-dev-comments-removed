@@ -368,11 +368,12 @@ async function testTabFrames(mainRoot) {
   
   const frames = await targetCommand.getAllTargets([TYPES.FRAME]);
   
-  const expectedFramesCount = isFissionEnabled() ? 2 : 1;
+  const expectedFramesCount =
+    isFissionEnabled() || isEveryFrameTargetEnabled() ? 2 : 1;
   is(
     frames.length,
     expectedFramesCount,
-    "retrieved only the top level document"
+    "retrieved the expected number of targets"
   );
 
   
@@ -430,7 +431,7 @@ async function testTabFrames(mainRoot) {
     true,
     "First target is not considered as a target switching"
   );
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
     is(
       targets[1].targetFront.url,
       IFRAME_URL,
@@ -469,7 +470,7 @@ async function testTabFrames(mainRoot) {
   await BrowserTestUtils.loadURI(browser, SECOND_PAGE_URL);
   await onLoaded;
 
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
     const afterNavigationFramesCount = 3;
     await waitFor(
       () => targets.length == afterNavigationFramesCount,

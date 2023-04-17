@@ -309,11 +309,11 @@ async function testIframeNavigations() {
 
   
   
-  if (!isFissionEnabled()) {
+  if (!isFissionEnabled() && !isEveryFrameTargetEnabled()) {
     is(
       targets.length,
       1,
-      "when fission is off, there is only the top level target"
+      "Without fission/EFT, there is only the top level target"
     );
     return;
   }

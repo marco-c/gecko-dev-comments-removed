@@ -36,7 +36,7 @@ add_task(async function() {
   ok(true, "debugger is paused");
 
   let highlighterTestFront;
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
     
     const iframeTarget = commands.targetCommand
       .getAllTargets([commands.targetCommand.TYPES.FRAME])
