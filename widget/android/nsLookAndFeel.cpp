@@ -121,14 +121,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       
       aColor = mSystemColors.textColorPrimary;
       break;
-
-    case ColorID::ThemedScrollbarThumbInactive:
-    case ColorID::ThemedScrollbarThumb:
-      
-      
-      aColor = NS_RGBA(119, 119, 119, 102);
-      break;
-
     case ColorID::Highlight: {
       
       
@@ -337,10 +329,6 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
 
     case IntID::ScrollSliderStyle:
       aResult = eScrollThumbStyle_Proportional;
-      break;
-
-    case IntID::UseOverlayScrollbars:
-      aResult = 1;
       break;
 
     case IntID::WindowsDefaultTheme:
