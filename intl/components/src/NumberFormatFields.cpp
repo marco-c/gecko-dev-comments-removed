@@ -1,6 +1,7 @@
 
 
 
+#include "ICU4CGlue.h"
 #include "NumberFormatFields.h"
 #include "NumberFormatFieldsUtil.h"
 #include "ScopedICUObject.h"
@@ -256,7 +257,7 @@ Result<std::u16string_view, ICUError> FormatResultToParts(
 
   const UFormattedValue* formattedValue = unumf_resultAsValue(value, &status);
   if (U_FAILURE(status)) {
-    return Err(ICUError::InternalError);
+    return Err(ToICUError(status));
   }
 
   return FormatResultToParts(formattedValue, number, isNegative, formatForUnit,
@@ -271,19 +272,19 @@ Result<std::u16string_view, ICUError> FormatResultToParts(
   int32_t utf16Length;
   const char16_t* utf16Str = ufmtval_getString(value, &utf16Length, &status);
   if (U_FAILURE(status)) {
-    return Err(ICUError::InternalError);
+    return Err(ToICUError(status));
   }
 
   UConstrainedFieldPosition* fpos = ucfpos_open(&status);
   if (U_FAILURE(status)) {
-    return Err(ICUError::InternalError);
+    return Err(ToICUError(status));
   }
   ScopedICUObject<UConstrainedFieldPosition, ucfpos_close> toCloseFpos(fpos);
 
   
   ucfpos_constrainCategory(fpos, UFIELD_CATEGORY_NUMBER, &status);
   if (U_FAILURE(status)) {
-    return Err(ICUError::InternalError);
+    return Err(ToICUError(status));
   }
 
   
@@ -292,7 +293,7 @@ Result<std::u16string_view, ICUError> FormatResultToParts(
   while (true) {
     bool hasMore = ufmtval_nextPosition(value, fpos, &status);
     if (U_FAILURE(status)) {
-      return Err(ICUError::InternalError);
+      return Err(ToICUError(status));
     }
     if (!hasMore) {
       break;
@@ -300,13 +301,13 @@ Result<std::u16string_view, ICUError> FormatResultToParts(
 
     int32_t fieldName = ucfpos_getField(fpos, &status);
     if (U_FAILURE(status)) {
-      return Err(ICUError::InternalError);
+      return Err(ToICUError(status));
     }
 
     int32_t beginIndex, endIndex;
     ucfpos_getIndexes(fpos, &beginIndex, &endIndex, &status);
     if (U_FAILURE(status)) {
-      return Err(ICUError::InternalError);
+      return Err(ToICUError(status));
     }
 
     Maybe<NumberPartType> partType = GetPartTypeForNumberField(
