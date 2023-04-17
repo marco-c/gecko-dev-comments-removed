@@ -1396,53 +1396,6 @@ bool gfxHarfBuzzShaper::ShapeText(DrawTarget* aDrawTarget,
 
   bool isRightToLeft = aShapedText->IsRightToLeft();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aScript == Script::ARABIC && !isRightToLeft) {
-    ClusterIterator iter(aText, aLength);
-    while (!iter.AtEnd()) {
-      uint32_t ch = *iter;
-      auto bidiCat = GetBidiCat(ch);
-      
-      
-      if (bidiCat == eCharType_RightToLeftArabic ||
-          bidiCat == eCharType_RightToLeft) {
-        isRightToLeft = false;
-        break;
-      }
-      
-      
-      if (GetMirroredChar(ch) != ch) {
-        isRightToLeft = false;
-        break;
-      }
-      
-      
-      if (bidiCat == eCharType_ArabicNumber) {
-        auto gc = GetGeneralCategory(ch);
-        if (gc == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER) {
-          isRightToLeft = true;
-          
-          
-        } else if (gc == HB_UNICODE_GENERAL_CATEGORY_FORMAT) {
-          
-          
-          isRightToLeft = false;
-          break;
-        }
-      }
-      iter.Next();
-    }
-  }
-
   hb_buffer_set_direction(
       mBuffer, aVertical
                    ? HB_DIRECTION_TTB
