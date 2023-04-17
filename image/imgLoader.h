@@ -329,7 +329,8 @@ class imgLoader final : public imgILoader,
 
   void VerifyCacheSizes();
 
-  nsresult RemoveEntriesFromPrincipal(nsIPrincipal* aPrincipal);
+  nsresult RemoveEntriesInternal(nsIPrincipal* aPrincipal,
+                                 const nsACString* aBaseDomain);
 
   
   

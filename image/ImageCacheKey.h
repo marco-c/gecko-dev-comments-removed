@@ -51,6 +51,8 @@ class ImageCacheKey final {
     return mOriginAttributes;
   }
 
+  const nsCString& IsolationKeyRef() const { return mIsolationKey; }
+
   
   bool IsChrome() const { return mIsChrome; }
 

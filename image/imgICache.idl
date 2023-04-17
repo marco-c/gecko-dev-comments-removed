@@ -69,6 +69,16 @@ interface imgICache : nsISupports
 
 
 
+  void removeEntriesFromBaseDomainInAllProcesses(in ACString aBaseDomain);
+
+  
+
+
+
+
+
+
+
 
 
 
