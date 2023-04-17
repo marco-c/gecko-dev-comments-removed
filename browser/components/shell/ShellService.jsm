@@ -208,10 +208,7 @@ let ShellServiceInternal = {
     
     if (
       AppConstants.isPlatformAndVersionAtLeast("win", "10") &&
-      Services.prefs.getBoolPref(
-        "browser.shell.setDefaultBrowserUserChoice",
-        true
-      )
+      NimbusFeatures.shellService.getVariable("setDefaultBrowserUserChoice")
     ) {
       
       
