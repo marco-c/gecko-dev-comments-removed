@@ -265,9 +265,15 @@ extern bool GetPrototypeIfOrdinary(JSContext* cx, JS::Handle<JSObject*> obj,
 extern bool SetImmutablePrototype(JSContext* cx, JS::Handle<JSObject*> obj,
                                   bool* succeeded);
 
-extern bool GetPropertyDescriptor(JSContext* cx, JS::Handle<JSObject*> obj,
-                                  JS::Handle<jsid> id,
-                                  MutableHandle<JS::PropertyDescriptor> desc);
+
+
+
+
+
+extern bool GetPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+    MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
+    JS::MutableHandle<JSObject*> holder);
 
 
 
