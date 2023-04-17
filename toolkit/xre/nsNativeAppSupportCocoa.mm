@@ -114,7 +114,7 @@ nsNativeAppSupportCocoa::ReOpen() {
 
       nsCOMPtr<nsIWidget> widget = nullptr;
       baseWindow->GetMainWidget(getter_AddRefs(widget));
-      if (!widget) {
+      if (!widget || !widget->IsVisible()) {
         windowList->HasMoreElements(&more);
         continue;
       }
@@ -129,7 +129,12 @@ nsNativeAppSupportCocoa::ReOpen() {
     if (!haveNonMiniaturized) {
       
       nsCOMPtr<mozIDOMWindowProxy> mru;
-      wm->GetMostRecentWindow(nullptr, getter_AddRefs(mru));
+      wm->GetMostRecentBrowserWindow(getter_AddRefs(mru));
+
+      
+      if (!mru) {
+        wm->GetMostRecentWindow(nullptr, getter_AddRefs(mru));
+      }
 
       if (mru) {
         NSWindow* cocoaMru = nil;
