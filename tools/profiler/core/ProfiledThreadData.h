@@ -7,6 +7,8 @@
 #ifndef ProfiledThreadData_h
 #define ProfiledThreadData_h
 
+#include "platform.h"
+
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerThreadRegistrationInfo.h"
 #include "mozilla/TimeStamp.h"
@@ -62,6 +64,7 @@ class ProfiledThreadData final {
                "unregistered");
     mUnregisterTime = mozilla::TimeStamp::Now();
     mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
+    mPreviousThreadRunningTimes.Clear();
   }
   mozilla::Maybe<uint64_t> BufferPositionWhenUnregistered() {
     return mBufferPositionWhenUnregistered;
@@ -95,6 +98,10 @@ class ProfiledThreadData final {
                                   const mozilla::TimeStamp& aProcessStartTime,
                                   ProfileBuffer& aBuffer);
 
+  RunningTimes& PreviousThreadRunningTimesRef() {
+    return mPreviousThreadRunningTimes;
+  }
+
  private:
   
   
@@ -121,6 +128,9 @@ class ProfiledThreadData final {
 
   
   mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
+
+  
+  RunningTimes mPreviousThreadRunningTimes;
 
   
   
