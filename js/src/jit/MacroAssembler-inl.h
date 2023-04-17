@@ -415,13 +415,28 @@ void MacroAssembler::branchIfBigIntIsNonZero(Register bigInt, Label* label) {
 
 void MacroAssembler::branchTestFunctionFlags(Register fun, uint32_t flags,
                                              Condition cond, Label* label) {
-  Address address(fun, JSFunction::offsetOfFlagsAndArgCount());
-  branchTest32(cond, address, Imm32(flags), label);
+  
+  
+
+  static_assert(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0,
+                "The code in this function and the ones below must change");
+  static_assert(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2,
+                "The code in this function and the ones below must change");
+
+  int32_t bit = Imm32_16Adj(flags);
+  Address address(fun, JSFunction::offsetOfNargs());
+  branchTest32(cond, address, Imm32(bit), label);
 }
 
 void MacroAssembler::branchIfNotFunctionIsNonBuiltinCtor(Register fun,
                                                          Register scratch,
                                                          Label* label) {
+  
+  
+
+  static_assert(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
+  static_assert(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
+
   
   
   
@@ -431,7 +446,7 @@ void MacroAssembler::branchIfNotFunctionIsNonBuiltinCtor(Register fun,
   constexpr int32_t expected =
       Imm32_16Adj(FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR);
 
-  load32(Address(fun, JSFunction::offsetOfFlagsAndArgCount()), scratch);
+  load32(Address(fun, JSFunction::offsetOfNargs()), scratch);
   and32(Imm32(mask), scratch);
   branch32(Assembler::NotEqual, scratch, Imm32(expected), label);
 }
@@ -503,10 +518,18 @@ void MacroAssembler::branchFunctionKind(Condition cond,
                                         FunctionFlags::FunctionKind kind,
                                         Register fun, Register scratch,
                                         Label* label) {
-  Address address(fun, JSFunction::offsetOfFlagsAndArgCount());
+  
+  
+
+  static_assert(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
+  static_assert(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
+
+  Address address(fun, JSFunction::offsetOfNargs());
+  int32_t mask = Imm32_16Adj(FunctionFlags::FUNCTION_KIND_MASK);
+  int32_t bit = Imm32_16Adj(kind << FunctionFlags::FUNCTION_KIND_SHIFT);
   load32(address, scratch);
-  and32(Imm32(FunctionFlags::FUNCTION_KIND_MASK), scratch);
-  branch32(cond, scratch, Imm32(kind), label);
+  and32(Imm32(mask), scratch);
+  branch32(cond, scratch, Imm32(bit), label);
 }
 
 void MacroAssembler::branchTestObjClass(Condition cond, Register obj,
@@ -577,46 +600,6 @@ void MacroAssembler::branchTestObjClass(Condition cond, Register obj,
   if (JitOptions.spectreObjectMitigations) {
     spectreZeroRegister(cond, scratch, spectreRegToZero);
   }
-}
-
-void MacroAssembler::branchTestClassIsFunction(Condition cond, Register clasp,
-                                               Label* label) {
-  MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
-
-  if (cond == Assembler::Equal) {
-    branchPtr(Assembler::Equal, clasp, ImmPtr(&FunctionClass), label);
-    branchPtr(Assembler::Equal, clasp, ImmPtr(&ExtendedFunctionClass), label);
-    return;
-  }
-
-  Label isFunction;
-  branchPtr(Assembler::Equal, clasp, ImmPtr(&FunctionClass), &isFunction);
-  branchPtr(Assembler::NotEqual, clasp, ImmPtr(&ExtendedFunctionClass), label);
-  bind(&isFunction);
-}
-
-void MacroAssembler::branchTestObjIsFunction(Condition cond, Register obj,
-                                             Register scratch,
-                                             Register spectreRegToZero,
-                                             Label* label) {
-  MOZ_ASSERT(scratch != spectreRegToZero);
-
-  branchTestObjIsFunctionNoSpectreMitigations(cond, obj, scratch, label);
-
-  if (JitOptions.spectreObjectMitigations) {
-    spectreZeroRegister(cond, scratch, spectreRegToZero);
-  }
-}
-
-void MacroAssembler::branchTestObjIsFunctionNoSpectreMitigations(
-    Condition cond, Register obj, Register scratch, Label* label) {
-  MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
-  MOZ_ASSERT(obj != scratch);
-
-  loadPtr(Address(obj, JSObject::offsetOfShape()), scratch);
-  loadPtr(Address(scratch, Shape::offsetOfBaseShape()), scratch);
-  loadPtr(Address(scratch, BaseShape::offsetOfClasp()), scratch);
-  branchTestClassIsFunction(cond, scratch, label);
 }
 
 void MacroAssembler::branchTestObjShape(Condition cond, Register obj,
