@@ -413,8 +413,8 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     
     
     MOZ_ASSERT(mAPIObjectType == APIObjectType::RUNTIME_PORT);
-    RefPtr<ExtensionPort> port = ExtensionPort::Create(global, extensionBrowser,
-                                                       apiObjectDescriptor, rv);
+    RefPtr<ExtensionPort> port =
+        extensionBrowser->GetPort(apiObjectDescriptor, rv);
     if (NS_WARN_IF(rv.Failed())) {
       retPromise->MaybeReject(rv.StealNSResult());
       return true;
