@@ -837,9 +837,12 @@ var gIdentityHandler = {
     } else if (this._isAboutHttpsOnlyErrorPage) {
       
       this._identityBox.className = "httpsOnlyErrorPage";
-    } else if (this._isAboutNetErrorPage || this._isAboutBlockedPage) {
+    } else if (this._isAboutBlockedPage) {
       
       this._identityBox.className = "unknownIdentity";
+    } else if (this._isAboutNetErrorPage) {
+      
+      this._identityBox.className = "netErrorPage";
     } else if (this._isPotentiallyTrustworthy) {
       
       this._identityBox.className = "localResource";
