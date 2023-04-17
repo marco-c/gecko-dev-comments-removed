@@ -196,12 +196,7 @@ nsXULPopupManager* nsXULPopupManager::GetInstance() {
 bool nsXULPopupManager::RollupNativeMenu() {
   if (mNativeMenu) {
     RefPtr<NativeMenu> menu = mNativeMenu;
-    if (menu->Close()) {
-      MOZ_RELEASE_ASSERT(!mNativeMenu,
-                         "OnNativeMenuClosed should have been called");
-      return true;
-    }
-    
+    return menu->Close();
   }
   return false;
 }
