@@ -760,17 +760,26 @@ StyleEditorUI.prototype = {
 
 
 
-  _selectEditor: function(editor, line, col) {
+  _selectEditor: function(editor, line = null, col = null) {
     
     if (!this.editors.includes(editor)) {
       return null;
     }
 
-    line = line || 0;
-    col = col || 0;
-
     const editorPromise = editor.getSourceEditor().then(() => {
-      editor.setCursor(line, col);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (line !== null || col !== null) {
+        editor.setCursor(line, col);
+      }
       this._styleSheetBoundToSelect = null;
     });
 
