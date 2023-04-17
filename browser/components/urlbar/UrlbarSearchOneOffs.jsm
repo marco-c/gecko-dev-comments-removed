@@ -33,6 +33,7 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     UrlbarPrefs.addObserver(this);
     
     this.disableOneOffsHorizontalKeyNavigation = true;
+    this._webEngines = [];
   }
 
   
