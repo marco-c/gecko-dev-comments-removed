@@ -16546,6 +16546,11 @@ already_AddRefed<mozilla::dom::Promise> Document::HasStorageAccess(
     return promise.forget();
   }
 
+  if (CookieJarSettings()->GetBlockingAllContexts()) {
+    promise->MaybeResolve(false);
+    return promise.forget();
+  }
+
   if (IsTopLevelContentDocument()) {
     promise->MaybeResolve(true);
     return promise.forget();
@@ -16637,6 +16642,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
   nsCOMPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
   if (!inner) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  if (CookieJarSettings()->GetBlockingAllContexts()) {
     this->ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithUndefined();
     return promise.forget();
@@ -16738,6 +16750,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   
+
+  if (CookieJarSettings()->GetBlockingAllThirdPartyContexts()) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
     uint32_t antiTrackingRejectedReason = 0;
@@ -16932,6 +16951,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   }
 
   
+  if (CookieJarSettings()->GetBlockingAllContexts()) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
   if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
     bool isSameOrigin = false;
@@ -16945,6 +16971,13 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   }
 
   
+
+  if (CookieJarSettings()->GetBlockingAllThirdPartyContexts()) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
     RefPtr<BrowsingContext> bc = GetBrowsingContext();
     if (!bc) {
