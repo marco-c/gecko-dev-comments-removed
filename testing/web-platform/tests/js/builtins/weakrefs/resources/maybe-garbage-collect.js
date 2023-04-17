@@ -21,12 +21,13 @@ async function maybeGarbageCollectAsync() {
   } else if (self.GCController) {
     
     await GCController.collect();
+  } else {
+    
+    console.warn('Tests are running without the ability to do manual ' +
+                 'garbage collection. They will still work, but ' +
+                 'coverage will be suboptimal.');
+    
   }
-  
-  console.warn('Tests are running without the ability to do manual ' +
-               'garbage collection. They will still work, but ' +
-               'coverage will be suboptimal.');
-  
 }
 
 
