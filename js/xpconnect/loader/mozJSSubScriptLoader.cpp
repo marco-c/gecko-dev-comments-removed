@@ -192,29 +192,7 @@ static bool EvalStencil(JSContext* cx, HandleObject targetObj,
 
     nsCString uriStr;
     if (storeIntoPreloadCache && NS_SUCCEEDED(uri->GetSpec(uriStr))) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      ScriptPreloader::GetSingleton().NoteScript(uriStr, cachePath, script);
+      ScriptPreloader::GetSingleton().NoteStencil(uriStr, cachePath, stencil);
     }
 
     if (storeIntoStartupCache) {
@@ -455,7 +433,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   SubscriptCachePath(cx, uri, targetObj, cachePath);
 
   JS::CompileOptions compileOptions(cx);
-  ScriptPreloader::FillCompileOptionsForCachedScript(compileOptions);
+  ScriptPreloader::FillCompileOptionsForCachedStencil(compileOptions);
   compileOptions.setFileAndLine(uriStr.get(), 1);
   compileOptions.setNonSyntacticScope(!JS_IsGlobalObject(targetObj));
 
@@ -465,22 +443,17 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
 
   RefPtr<JS::Stencil> stencil;
   if (!options.ignoreCache) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (cache) {
+    if (!options.wantReturnValue) {
+      
+      stencil = ScriptPreloader::GetSingleton().GetCachedStencil(
+          cx, compileOptions, cachePath);
+    }
+    if (!stencil && cache) {
       rv = ReadCachedStencil(cache, cachePath, cx, compileOptions,
                              getter_AddRefs(stencil));
-    }
-    if (NS_FAILED(rv) || !stencil) {
-      
-      JS_ClearPendingException(cx);
+      if (NS_FAILED(rv) || !stencil) {
+        JS_ClearPendingException(cx);
+      }
     }
   }
 

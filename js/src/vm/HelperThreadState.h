@@ -15,11 +15,14 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/RefPtr.h"  
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Vector.h"  
 
 #include "ds/Fifo.h"
 #include "frontend/CompilationStencil.h"  
 #include "js/CompileOptions.h"
+#include "js/experimental/JSStencil.h"
 #include "js/HelperThreadAPI.h"
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
@@ -61,7 +64,7 @@ enum class ParseTaskKind {
   ScriptDecode,
 
   
-  MultiScriptsDecode,
+  MultiStencilsDecode,
 };
 enum class StartEncoding { No, Yes };
 
@@ -391,7 +394,7 @@ class GlobalHelperThreadState {
   bool generateLCovSources(JSContext* cx, ParseTask* parseTask);
   bool finishMultiParseTask(JSContext* cx, ParseTaskKind kind,
                             JS::OffThreadToken* token,
-                            MutableHandle<ScriptVector> scripts);
+                            mozilla::Vector<RefPtr<JS::Stencil>>* stencils);
 
   void mergeParseTaskRealm(JSContext* cx, ParseTask* parseTask,
                            JS::Realm* dest);
@@ -409,8 +412,9 @@ class GlobalHelperThreadState {
   UniquePtr<frontend::CompilationStencil> finishCompileToStencilTask(
       JSContext* cx, JS::OffThreadToken* token);
   JSScript* finishScriptDecodeTask(JSContext* cx, JS::OffThreadToken* token);
-  bool finishMultiScriptsDecodeTask(JSContext* cx, JS::OffThreadToken* token,
-                                    MutableHandle<ScriptVector> scripts);
+  bool finishMultiStencilsDecodeTask(
+      JSContext* cx, JS::OffThreadToken* token,
+      mozilla::Vector<RefPtr<JS::Stencil>>* stencils);
   JSObject* finishModuleParseTask(JSContext* cx, JS::OffThreadToken* token);
 
   frontend::CompilationStencil* finishStencilParseTask(
@@ -512,6 +516,10 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   GCVector<JSScript*, 1, SystemAllocPolicy> scripts;
 
   
+  
+  mozilla::Vector<RefPtr<JS::Stencil>> stencils;
+
+  
   GCVector<ScriptSourceObject*, 1, SystemAllocPolicy> sourceObjects;
 
   
@@ -564,12 +572,12 @@ struct ScriptDecodeTask : public ParseTask {
   void parse(JSContext* cx) override;
 };
 
-struct MultiScriptsDecodeTask : public ParseTask {
+struct MultiStencilsDecodeTask : public ParseTask {
   JS::TranscodeSources* sources;
 
-  MultiScriptsDecodeTask(JSContext* cx, JS::TranscodeSources& sources,
-                         JS::OffThreadCompileCallback callback,
-                         void* callbackData);
+  MultiStencilsDecodeTask(JSContext* cx, JS::TranscodeSources& sources,
+                          JS::OffThreadCompileCallback callback,
+                          void* callbackData);
   void parse(JSContext* cx) override;
 };
 

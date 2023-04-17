@@ -14,8 +14,10 @@
 
 
 
-#include "mozilla/RefPtr.h"  
-#include "mozilla/Utf8.h"    
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/RefPtr.h"           
+#include "mozilla/Utf8.h"             
+#include "mozilla/Vector.h"           
 
 #include <stddef.h>  
 
@@ -24,7 +26,7 @@
 #include "js/CompileOptions.h"              
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"                  
-#include "js/Transcoding.h"
+#include "js/Transcoding.h"                 
 
 struct JS_PUBLIC_API JSContext;
 
@@ -83,6 +85,10 @@ extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
 
 
 
+extern JS_PUBLIC_API bool StencilIsBorrowed(Stencil* stencil);
+
+
+
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options, Stencil* stencil);
 
@@ -96,6 +102,9 @@ extern JS_PUBLIC_API TranscodeResult
 DecodeStencil(JSContext* cx, const ReadOnlyCompileOptions& options,
               const TranscodeRange& range, Stencil** stencilOut);
 
+extern JS_PUBLIC_API size_t SizeOfStencil(Stencil* stencil,
+                                          mozilla::MallocSizeOf mallocSizeOf);
+
 extern JS_PUBLIC_API OffThreadToken* CompileToStencilOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
@@ -108,6 +117,15 @@ extern JS_PUBLIC_API OffThreadToken* CompileToStencilOffThread(
 
 extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadCompileToStencil(
     JSContext* cx, OffThreadToken* token);
+
+extern JS_PUBLIC_API OffThreadToken* DecodeMultiOffThreadStencils(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    mozilla::Vector<TranscodeSource>& sources,
+    OffThreadCompileCallback callback, void* callbackData);
+
+extern JS_PUBLIC_API bool FinishMultiOffThreadStencilDecoder(
+    JSContext* cx, OffThreadToken* token,
+    mozilla::Vector<RefPtr<Stencil>>* stencils);
 
 }  
 

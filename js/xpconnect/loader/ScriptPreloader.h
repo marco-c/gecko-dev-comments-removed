@@ -26,6 +26,7 @@
 #include "nsIThread.h"
 #include "nsITimer.h"
 
+#include "js/experimental/JSStencil.h"
 #include "js/GCAnnotations.h"  
 #include "js/RootingAPI.h"     
 #include "js/Transcoding.h"  
@@ -89,13 +90,13 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  static void FillCompileOptionsForCachedScript(JS::CompileOptions& options);
+  static void FillCompileOptionsForCachedStencil(JS::CompileOptions& options);
 
   
   
-  JSScript* GetCachedScript(JSContext* cx,
-                            const JS::ReadOnlyCompileOptions& options,
-                            const nsCString& path);
+  already_AddRefed<JS::Stencil> GetCachedStencil(
+      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      const nsCString& path);
 
   
   
@@ -104,14 +105,14 @@ class ScriptPreloader : public nsIObserver,
   
   
   
-  void NoteScript(const nsCString& url, const nsCString& cachePath,
-                  JS::HandleScript script, bool isRunOnce = false);
+  void NoteStencil(const nsCString& url, const nsCString& cachePath,
+                   JS::Stencil* stencil, bool isRunOnce = false);
 
   
   
-  void NoteScript(const nsCString& url, const nsCString& cachePath,
-                  ProcessType processType, nsTArray<uint8_t>&& xdrData,
-                  TimeStamp loadTime);
+  void NoteStencil(const nsCString& url, const nsCString& cachePath,
+                   ProcessType processType, nsTArray<uint8_t>&& xdrData,
+                   TimeStamp loadTime);
 
   
   Result<Ok, nsresult> InitCache(const nsAString& = u"scriptCache"_ns);
@@ -123,13 +124,11 @@ class ScriptPreloader : public nsIObserver,
 
  private:
   Result<Ok, nsresult> InitCacheInternal(JS::HandleObject scope = nullptr);
-  JSScript* GetCachedScriptInternal(JSContext* cx,
-                                    const JS::ReadOnlyCompileOptions& options,
-                                    const nsCString& path);
+  already_AddRefed<JS::Stencil> GetCachedStencilInternal(
+      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      const nsCString& path);
 
  public:
-  void Trace(JSTracer* trc);
-
   static ProcessType CurrentProcessType() {
     MOZ_ASSERT(sProcessType != ProcessType::Uninitialized);
     return sProcessType;
@@ -167,25 +166,22 @@ class ScriptPreloader : public nsIObserver,
   
   
   
-  
-  
-  
-  class CachedScript : public LinkedListElement<CachedScript> {
+  class CachedStencil : public LinkedListElement<CachedStencil> {
    public:
-    CachedScript(CachedScript&&) = delete;
+    CachedStencil(CachedStencil&&) = delete;
 
-    CachedScript(ScriptPreloader& cache, const nsCString& url,
-                 const nsCString& cachePath, JSScript* script)
+    CachedStencil(ScriptPreloader& cache, const nsCString& url,
+                  const nsCString& cachePath, JS::Stencil* stencil)
         : mCache(cache),
           mURL(url),
           mCachePath(cachePath),
-          mScript(script),
+          mStencil(stencil),
           mReadyToExecute(true),
           mIsRunOnce(false) {}
 
-    inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
+    inline CachedStencil(ScriptPreloader& cache, InputBuffer& buf);
 
-    ~CachedScript() = default;
+    ~CachedStencil() = default;
 
     ScriptStatus Status() const {
       return mProcessTypes.isEmpty() ? ScriptStatus::Restored
@@ -198,67 +194,23 @@ class ScriptPreloader : public nsIObserver,
     
     
     struct Comparator {
-      bool Equals(const CachedScript* a, const CachedScript* b) const {
+      bool Equals(const CachedStencil* a, const CachedStencil* b) const {
         return a->mLoadTime == b->mLoadTime;
       }
 
-      bool LessThan(const CachedScript* a, const CachedScript* b) const {
+      bool LessThan(const CachedStencil* a, const CachedStencil* b) const {
         return a->mLoadTime < b->mLoadTime;
       }
     };
 
-    struct StatusMatcher final : public Matcher<CachedScript*> {
+    struct StatusMatcher final : public Matcher<CachedStencil*> {
       explicit StatusMatcher(ScriptStatus status) : mStatus(status) {}
 
-      virtual bool Matches(CachedScript* script) override {
+      virtual bool Matches(CachedStencil* script) override {
         return script->Status() == mStatus;
       }
 
       const ScriptStatus mStatus;
-    };
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    class MOZ_HEAP_CLASS ScriptHolder {
-     public:
-      explicit ScriptHolder(JSScript* script)
-          : mScript(script), mHasScript(script) {}
-      ScriptHolder() : mHasScript(false) {}
-
-      
-      
-      
-      explicit operator bool() const { return mHasScript; }
-
-      
-      JSScript* Get() const {
-        MOZ_ASSERT(NS_IsMainThread());
-        return mScript;
-      }
-
-      
-      
-      void Trace(JSTracer* trc);
-
-      
-      
-      void Set(JS::HandleScript jsscript);
-      void Clear();
-
-     private:
-      JS::Heap<JSScript*> mScript;
-      bool mHasScript;  
     };
 
     void FreeData() {
@@ -284,9 +236,9 @@ class ScriptPreloader : public nsIObserver,
     
     
     
-    bool MaybeDropScript() {
+    bool MaybeDropStencil() {
       if (mIsRunOnce && (HasRange() || !mCache.WillWriteScripts())) {
-        mScript.Clear();
+        mStencil = nullptr;
         return true;
       }
       return false;
@@ -331,8 +283,8 @@ class ScriptPreloader : public nsIObserver,
 
     bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
 
-    JSScript* GetJSScript(JSContext* cx,
-                          const JS::ReadOnlyCompileOptions& options);
+    already_AddRefed<JS::Stencil> GetStencil(
+        JSContext* cx, const JS::ReadOnlyCompileOptions& options);
 
     size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
       auto size = mallocSizeOf(this);
@@ -341,8 +293,10 @@ class ScriptPreloader : public nsIObserver,
         size += Array().ShallowSizeOfExcludingThis(mallocSizeOf);
       } else if (HasBuffer()) {
         size += Buffer().sizeOfExcludingThis(mallocSizeOf);
-      } else {
-        return size;
+      }
+
+      if (mStencil) {
+        size += JS::SizeOfStencil(mStencil, mallocSizeOf);
       }
 
       
@@ -370,7 +324,7 @@ class ScriptPreloader : public nsIObserver,
 
     TimeStamp mLoadTime{};
 
-    ScriptHolder mScript;
+    RefPtr<JS::Stencil> mStencil;
 
     
     
@@ -405,8 +359,8 @@ class ScriptPreloader : public nsIObserver,
   } JS_HAZ_NON_GC_POINTER;
 
   template <ScriptStatus status>
-  static Matcher<CachedScript*>* Match() {
-    static CachedScript::StatusMatcher matcher{status};
+  static Matcher<CachedStencil*>* Match() {
+    static CachedStencil::StatusMatcher matcher{status};
     return &matcher;
   }
 
@@ -480,9 +434,9 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  JSScript* WaitForCachedScript(JSContext* cx,
-                                const JS::ReadOnlyCompileOptions& options,
-                                CachedScript* script);
+  already_AddRefed<JS::Stencil> WaitForCachedStencil(
+      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      CachedStencil* script);
 
   void DecodeNextBatch(size_t chunkSize, JS::HandleObject scope = nullptr);
 
@@ -498,7 +452,7 @@ class ScriptPreloader : public nsIObserver,
             mallocSizeOf(mSaveThread.get()) + mallocSizeOf(mProfD.get()));
   }
 
-  using ScriptHash = nsClassHashtable<nsCStringHashKey, CachedScript>;
+  using ScriptHash = nsClassHashtable<nsCStringHashKey, CachedStencil>;
 
   template <ScriptStatus status>
   static size_t SizeOfHashEntries(ScriptHash& scripts,
@@ -524,12 +478,12 @@ class ScriptPreloader : public nsIObserver,
 
   
   
-  LinkedList<CachedScript> mPendingScripts;
+  LinkedList<CachedStencil> mPendingScripts;
 
   
   
   JS::TranscodeSources mParsingSources;
-  Vector<CachedScript*> mParsingScripts;
+  Vector<CachedStencil*> mParsingScripts;
 
   
   Atomic<JS::OffThreadToken*, ReleaseAcquire> mToken{nullptr};
