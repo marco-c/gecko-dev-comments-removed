@@ -674,6 +674,7 @@ class nsIFrame : public nsQueryFrame {
         mMayHaveOpacityAnimation(false),
         mAllDescendantsAreInvisible(false),
         mHasBSizeChange(false),
+        mHasPaddingChange(false),
         mInScrollAnchorChain(false),
         mHasColumnSpanSiblings(false),
         mDescendantMayDependOnItsStaticPosition(false),
@@ -4974,6 +4975,11 @@ class nsIFrame : public nsQueryFrame {
     mHasBSizeChange = aHasBSizeChange;
   }
 
+  bool HasPaddingChange() const { return mHasPaddingChange; }
+  void SetHasPaddingChange(const bool aHasPaddingChange) {
+    mHasPaddingChange = aHasPaddingChange;
+  }
+
   bool HasColumnSpanSiblings() const { return mHasColumnSpanSiblings; }
   void SetHasColumnSpanSiblings(bool aHasColumnSpanSiblings) {
     mHasColumnSpanSiblings = aHasColumnSpanSiblings;
@@ -5226,6 +5232,19 @@ class nsIFrame : public nsQueryFrame {
   bool mAllDescendantsAreInvisible : 1;
 
   bool mHasBSizeChange : 1;
+
+  
+
+
+
+
+
+
+
+
+
+
+  bool mHasPaddingChange : 1;
 
   
 

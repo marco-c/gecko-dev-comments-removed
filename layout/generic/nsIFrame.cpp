@@ -6675,6 +6675,7 @@ void nsIFrame::DidReflow(nsPresContext* aPresContext,
   
   
   SetHasBSizeChange(false);
+  SetHasPaddingChange(false);
 
   
   

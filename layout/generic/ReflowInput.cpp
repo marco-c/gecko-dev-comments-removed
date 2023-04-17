@@ -512,13 +512,15 @@ void ReflowInput::InitResizeFlags(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
   bool isIResize =
       
       mFrame->ISize(wm) !=
           ComputedISize() + ComputedLogicalBorderPadding(wm).IStartEnd(wm) ||
       
-      (mStylePosition->mBoxSizing != StyleBoxSizing::Content &&
-       mStylePadding->IsWidthDependent());
+      mFrame->HasPaddingChange();
 
   if (mFrame->HasAnyStateBits(NS_FRAME_FONT_INFLATION_FLOW_ROOT) &&
       nsLayoutUtils::FontSizeInflationEnabled(aPresContext)) {
@@ -2522,6 +2524,23 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
       SetComputedLogicalBorderPadding(wm, LogicalMargin(wm));
     }
   }
+
+  bool hasPaddingChange;
+  if (nsMargin* oldPadding =
+          mFrame->GetProperty(nsIFrame::UsedPaddingProperty())) {
+    
+    
+    
+    
+    hasPaddingChange = *oldPadding != ComputedPhysicalPadding();
+  } else {
+    
+    hasPaddingChange = needPaddingProp;
+  }
+  
+  
+  mFrame->SetHasPaddingChange(mFrame->HasPaddingChange() || hasPaddingChange);
+
   ::UpdateProp(mFrame, nsIFrame::UsedPaddingProperty(), needPaddingProp,
                ComputedPhysicalPadding());
 }
