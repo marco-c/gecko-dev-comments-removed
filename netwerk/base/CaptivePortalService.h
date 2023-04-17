@@ -42,6 +42,8 @@ class CaptivePortalService : public nsICaptivePortalService,
   void SetStateInChild(int32_t aState);
 
  private:
+  static const uint32_t kDefaultInterval = 60 * 1000;  
+
   CaptivePortalService();
   virtual ~CaptivePortalService();
   nsresult PerformCheck();
@@ -49,20 +51,22 @@ class CaptivePortalService : public nsICaptivePortalService,
   void NotifyConnectivityAvailable(bool aCaptive);
 
   nsCOMPtr<nsICaptivePortalDetector> mCaptivePortalDetector;
-  int32_t mState;
+  int32_t mState{UNKNOWN};
 
   nsCOMPtr<nsITimer> mTimer;
-  bool mStarted;
-  bool mInitialized;
-  bool mRequestInProgress;
-  bool mEverBeenCaptive;
+  bool mStarted{false};
+  bool mInitialized{false};
+  bool mRequestInProgress{false};
+  bool mEverBeenCaptive{false};
 
-  uint32_t mDelay;
-  int32_t mSlackCount;
+  uint32_t mDelay{kDefaultInterval};
+  int32_t mSlackCount{0};
 
-  uint32_t mMinInterval;
-  uint32_t mMaxInterval;
-  float mBackoffFactor;
+  uint32_t mMinInterval{kDefaultInterval};
+  uint32_t mMaxInterval{25 * kDefaultInterval};
+  float mBackoffFactor{5.0};
+
+  void StateTransition(int32_t aNewState);
 
   
   
