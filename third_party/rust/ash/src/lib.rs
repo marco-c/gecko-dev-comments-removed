@@ -1,4 +1,8 @@
-#![allow(clippy::too_many_arguments, clippy::missing_safety_doc)]
+#![allow(
+    clippy::too_many_arguments,
+    clippy::missing_safety_doc,
+    clippy::upper_case_acronyms
+)]
 
 
 

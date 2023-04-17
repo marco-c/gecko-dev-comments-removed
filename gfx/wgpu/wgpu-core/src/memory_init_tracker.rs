@@ -157,10 +157,10 @@ impl MemoryInitTracker {
 
     
     #[must_use]
-    pub(crate) fn drain<'a>(
-        &'a mut self,
+    pub(crate) fn drain(
+        &mut self,
         drain_range: Range<wgt::BufferAddress>,
-    ) -> MemoryInitTrackerDrain<'a> {
+    ) -> MemoryInitTrackerDrain {
         let index = self.lower_bound(drain_range.start);
         MemoryInitTrackerDrain {
             drain_range,

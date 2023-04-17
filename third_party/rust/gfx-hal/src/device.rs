@@ -12,7 +12,7 @@
 
 
 use crate::{
-    buffer, format, image,
+    buffer, format, image, memory,
     memory::{Requirements, Segment},
     pass,
     pool::CommandPoolCreateFlags,
@@ -164,7 +164,7 @@ pub struct NagaShader {
     
     pub module: naga::Module,
     
-    pub analysis: naga::proc::analyzer::Analysis,
+    pub info: naga::valid::ModuleInfo,
 }
 
 
@@ -376,6 +376,7 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
         &self,
         size: u64,
         usage: buffer::Usage,
+        sparse: memory::SparseFlags,
     ) -> Result<B::Buffer, buffer::CreationError>;
 
     
@@ -419,6 +420,7 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
         format: format::Format,
         tiling: image::Tiling,
         usage: image::Usage,
+        sparse: memory::SparseFlags,
         view_caps: image::ViewCapabilities,
     ) -> Result<B::Image, image::CreationError>;
 
@@ -710,4 +712,10 @@ pub trait Device<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     unsafe fn set_pipeline_layout_name(&self, pipeline_layout: &mut B::PipelineLayout, name: &str);
+
+    
+    fn start_capture(&self);
+
+    
+    fn stop_capture(&self);
 }

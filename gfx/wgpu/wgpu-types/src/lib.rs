@@ -6,11 +6,15 @@
 
 
 
-
-
-
-
-#![allow(broken_intra_doc_links)]
+#![allow(
+    
+    
+    
+    
+    broken_intra_doc_links,
+    
+    clippy::match_like_matches_macro,
+)]
 #![warn(missing_docs)]
 
 #[cfg(feature = "serde")]
@@ -403,7 +407,7 @@ bitflags::bitflags! {
         /// Enables 64-bit floating point types in SPIR-V shaders.
         ///
         /// Note: even when supported by GPU hardware, 64-bit floating point operations are
-        /// frequently between 16 and 64 _times_ slower than equivelent operations on 32-bit floats.
+        /// frequently between 16 and 64 _times_ slower than equivalent operations on 32-bit floats.
         ///
         /// Supported Platforms:
         /// - Vulkan
@@ -418,6 +422,17 @@ bitflags::bitflags! {
         ///
         /// This is a native-only feature.
         const VERTEX_ATTRIBUTE_64BIT = 0x0000_0000_4000_0000;
+        /// Allows the user to set a overestimation-conservative-rasterization in [`PrimitiveState::conservative`]
+        ///
+        /// Processing of degenerate triangles/lines is hardware specific.
+        /// Only triangles are supported.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan
+        ///
+        /// This is a native only feature.
+        const CONSERVATIVE_RASTERIZATION = 0x0000_0000_8000_0000;
         /// Features which are part of the upstream WebGPU standard.
         const ALL_WEBGPU = 0x0000_0000_0000_FFFF;
         /// Features that are only available when targeting native (not web).
@@ -521,6 +536,70 @@ impl Default for Limits {
             max_push_constant_size: 0,
         }
     }
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DownlevelProperties {
+    
+    pub flags: DownlevelFlags,
+    
+    pub shader_model: ShaderModel,
+}
+
+impl Default for DownlevelProperties {
+    
+    
+    fn default() -> Self {
+        Self {
+            flags: DownlevelFlags::COMPLIANT,
+            shader_model: ShaderModel::Sm5,
+        }
+    }
+}
+
+impl DownlevelProperties {
+    
+    
+    
+    
+    pub fn is_webgpu_compliant(self) -> bool {
+        self == Self::default()
+    }
+}
+
+bitflags::bitflags! {
+    /// Binary flags listing various ways the underlying platform does not conform to the WebGPU standard.
+    pub struct DownlevelFlags: u32 {
+        /// The device supports compiling and using compute shaders.
+        const COMPUTE_SHADERS = 0x0000_0001;
+        /// Supports creating storage images.
+        const STORAGE_IMAGES = 0x0000_0002;
+        /// Supports reading from a depth/stencil buffer while using as a read-only depth/stencil attachment.
+        const READ_ONLY_DEPTH_STENCIL = 0x0000_0004;
+        /// Supports:
+        /// - copy_image_to_image
+        /// - copy_buffer_to_image and copy_image_to_buffer with a buffer without a MAP_* usage
+        const DEVICE_LOCAL_IMAGE_COPIES = 0x0000_0008;
+        /// Supports textures with mipmaps which have a non power of two size.
+        const NON_POWER_OF_TWO_MIPMAPPED_TEXTURES = 0x0000_0010;
+        /// Supports samplers with anisotropic filtering
+        const ANISOTROPIC_FILTERING = 0x0000_0020;
+        /// All flags are in their compliant state.
+        const COMPLIANT = 0x0000_003F;
+    }
+}
+
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ShaderModel {
+    
+    Sm2,
+    
+    Sm4,
+    
+    Sm5,
 }
 
 
@@ -750,6 +829,13 @@ impl BlendComponent {
     };
 
     
+    pub const OVER: Self = BlendComponent {
+        src_factor: BlendFactor::One,
+        dst_factor: BlendFactor::OneMinusSrcAlpha,
+        operation: BlendOperation::Add,
+    };
+
+    
     
     pub fn uses_color(&self) -> bool {
         match (self.src_factor, self.dst_factor) {
@@ -780,6 +866,30 @@ pub struct BlendState {
     pub color: BlendComponent,
     
     pub alpha: BlendComponent,
+}
+
+impl BlendState {
+    
+    pub const REPLACE: Self = Self {
+        color: BlendComponent::REPLACE,
+        alpha: BlendComponent::REPLACE,
+    };
+
+    
+    pub const ALPHA_BLENDING: Self = Self {
+        color: BlendComponent {
+            src_factor: BlendFactor::SrcAlpha,
+            dst_factor: BlendFactor::OneMinusSrcAlpha,
+            operation: BlendOperation::Add,
+        },
+        alpha: BlendComponent::OVER,
+    };
+
+    
+    pub const PREMULTIPLIED_ALPHA_BLENDING: Self = Self {
+        color: BlendComponent::OVER,
+        alpha: BlendComponent::OVER,
+    };
 }
 
 
@@ -917,7 +1027,17 @@ pub struct PrimitiveState {
     
     
     #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub clamp_depth: bool,
+    
+    
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub polygon_mode: PolygonMode,
+    
+    
+    
+    
+    pub conservative: bool,
 }
 
 
@@ -1636,11 +1756,6 @@ pub struct DepthStencilState {
     
     #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub bias: DepthBiasState,
-    
-    
-    
-    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
-    pub clamp_depth: bool,
 }
 
 impl DepthStencilState {
@@ -2482,7 +2597,7 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-pub struct TextureDataLayout {
+pub struct ImageDataLayout {
     
     
     pub offset: BufferAddress,
@@ -2493,12 +2608,12 @@ pub struct TextureDataLayout {
     
     
     
-    pub bytes_per_row: u32,
+    
+    pub bytes_per_row: Option<NonZeroU32>,
     
     
     
-    
-    pub rows_per_image: u32,
+    pub rows_per_image: Option<NonZeroU32>,
 }
 
 
@@ -2745,11 +2860,11 @@ pub struct BindGroupLayoutEntry {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-pub struct BufferCopyView<B> {
+pub struct ImageCopyBuffer<B> {
     
     pub buffer: B,
     
-    pub layout: TextureDataLayout,
+    pub layout: ImageDataLayout,
 }
 
 
@@ -2757,7 +2872,7 @@ pub struct BufferCopyView<B> {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-pub struct TextureCopyView<T> {
+pub struct ImageCopyTexture<T> {
     
     pub texture: T,
     
@@ -2822,13 +2937,13 @@ bitflags::bitflags! {
     ///
     /// The amount of values written when resolved depends
     /// on the amount of flags. If 3 flags are enabled, 3
-    /// 64-bit values will be writen per-query.
+    /// 64-bit values will be written per-query.
     ///
     /// The order they are written is the order they are declared
     /// in this bitflags. If you enabled `CLIPPER_PRIMITIVES_OUT`
-    /// and `COMPUTE_SHADER_INVOCATIONS`, it would write 16 bytes,
-    /// the first 8 bytes being the primative out value, the last 8
-    /// bytes being the compute shader invocation count.
+    
+    
+    
     #[repr(transparent)]
     #[cfg_attr(feature = "trace", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -2848,7 +2963,7 @@ bitflags::bitflags! {
         /// derivatives.
         const FRAGMENT_SHADER_INVOCATIONS = 0x08;
         /// Amount of times a compute shader is invoked. This will
-        /// be equivilent to the dispatch count times the workgroup size.
+        /// be equivalent to the dispatch count times the workgroup size.
         const COMPUTE_SHADER_INVOCATIONS = 0x10;
     }
 }

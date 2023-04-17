@@ -14,15 +14,17 @@
 
 
 
-use crate::{
-    arena::Handle,
-    proc::{analyzer::Analysis, TypifyError},
-    FastHashMap,
-};
-use std::{
-    io::{Error as IoError, Write},
-    string::FromUtf8Error,
-};
+
+
+
+
+
+
+
+
+
+use crate::{arena::Handle, valid::ModuleInfo, FastHashMap};
+use std::fmt::{Error as FmtError, Write};
 
 mod keywords;
 mod writer;
@@ -59,13 +61,7 @@ enum ResolvedBinding {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    IO(#[from] IoError),
-    #[error(transparent)]
-    Utf8(#[from] FromUtf8Error),
-    #[error(transparent)]
-    Type(#[from] TypifyError),
-    #[error("bind source for {0:?} is missing from the map")]
-    MissingBindTarget(BindSource),
+    Format(#[from] FmtError),
     #[error("bind target {0:?} is empty")]
     UnimplementedBindTarget(BindTarget),
     #[error("composing of {0:?} is not implemented yet")]
@@ -78,6 +74,12 @@ pub enum Error {
     FeatureNotImplemented(String),
     #[error("module is not valid")]
     Validation,
+}
+
+#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+pub enum EntryPointError {
+    #[error("mapping of {0:?} is missing")]
+    MissingBinding(BindSource),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -98,6 +100,9 @@ pub struct Options {
     pub spirv_cross_compatibility: bool,
     
     pub fake_missing_bindings: bool,
+    
+    
+    pub allow_point_size: bool,
 }
 
 impl Default for Options {
@@ -106,21 +111,21 @@ impl Default for Options {
             lang_version: (1, 0),
             binding_map: BindingMap::default(),
             spirv_cross_compatibility: false,
-            fake_missing_bindings: false,
+            fake_missing_bindings: true,
+            allow_point_size: true,
         }
     }
 }
 
 impl Options {
-    fn resolve_binding(
+    fn resolve_local_binding(
         &self,
-        stage: crate::ShaderStage,
-        var: &crate::GlobalVariable,
+        binding: &crate::Binding,
         mode: LocationMode,
     ) -> Result<ResolvedBinding, Error> {
-        match var.binding {
-            Some(crate::Binding::BuiltIn(built_in)) => Ok(ResolvedBinding::BuiltIn(built_in)),
-            Some(crate::Binding::Location(index)) => match mode {
+        match *binding {
+            crate::Binding::BuiltIn(built_in) => Ok(ResolvedBinding::BuiltIn(built_in)),
+            crate::Binding::Location(index, _) => match mode {
                 LocationMode::VertexInput => Ok(ResolvedBinding::Attribute(index)),
                 LocationMode::FragmentOutput => Ok(ResolvedBinding::Color(index)),
                 LocationMode::Intermediate => Ok(ResolvedBinding::User {
@@ -139,25 +144,26 @@ impl Options {
                     Err(Error::Validation)
                 }
             },
-            Some(crate::Binding::Resource { group, binding }) => {
-                let source = BindSource {
-                    stage,
-                    group,
-                    binding,
-                };
-                match self.binding_map.get(&source) {
-                    Some(target) => Ok(ResolvedBinding::Resource(target.clone())),
-                    None if self.fake_missing_bindings => Ok(ResolvedBinding::User {
-                        prefix: "fake",
-                        index: 0,
-                    }),
-                    None => Err(Error::MissingBindTarget(source)),
-                }
-            }
-            None => {
-                log::error!("Missing binding for {:?}", var.name);
-                Err(Error::Validation)
-            }
+        }
+    }
+
+    fn resolve_global_binding(
+        &self,
+        stage: crate::ShaderStage,
+        res_binding: &crate::ResourceBinding,
+    ) -> Result<ResolvedBinding, EntryPointError> {
+        let source = BindSource {
+            stage,
+            group: res_binding.group,
+            binding: res_binding.binding,
+        };
+        match self.binding_map.get(&source) {
+            Some(target) => Ok(ResolvedBinding::Resource(target.clone())),
+            None if self.fake_missing_bindings => Ok(ResolvedBinding::User {
+                prefix: "fake",
+                index: 0,
+            }),
+            None => Err(EntryPointError::MissingBinding(source)),
         }
     }
 }
@@ -168,21 +174,19 @@ impl ResolvedBinding {
             ResolvedBinding::BuiltIn(built_in) => {
                 use crate::BuiltIn as Bi;
                 let name = match built_in {
+                    Bi::Position => "position",
                     
                     Bi::BaseInstance => "base_instance",
                     Bi::BaseVertex => "base_vertex",
                     Bi::ClipDistance => "clip_distance",
                     Bi::InstanceIndex => "instance_id",
                     Bi::PointSize => "point_size",
-                    Bi::Position => "position",
                     Bi::VertexIndex => "vertex_id",
                     
-                    Bi::FragCoord => "position",
                     Bi::FragDepth => "depth(any)",
                     Bi::FrontFacing => "front_facing",
                     Bi::SampleIndex => "sample_id",
-                    Bi::SampleMaskIn => "sample_mask",
-                    Bi::SampleMaskOut => "sample_mask",
+                    Bi::SampleMask => "sample_mask",
                     
                     Bi::GlobalInvocationId => "thread_position_in_grid",
                     Bi::LocalInvocationId => "thread_position_in_threadgroup",
@@ -225,16 +229,23 @@ impl ResolvedBinding {
 pub struct TranslationInfo {
     
     
-    pub entry_point_names: Vec<String>,
+    
+    
+    pub entry_point_names: Vec<Result<String, EntryPointError>>,
 }
 
 pub fn write_string(
     module: &crate::Module,
-    analysis: &Analysis,
+    info: &ModuleInfo,
     options: &Options,
 ) -> Result<(String, TranslationInfo), Error> {
-    let mut w = writer::Writer::new(Vec::new());
-    let info = w.write(module, analysis, options)?;
-    let string = String::from_utf8(w.finish())?;
-    Ok((string, info))
+    let mut w = writer::Writer::new(String::new());
+    let info = w.write(module, info, options)?;
+    Ok((w.finish(), info))
+}
+
+#[test]
+fn test_error_size() {
+    use std::mem::size_of;
+    assert_eq!(size_of::<Error>(), 32);
 }

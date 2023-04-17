@@ -1,7 +1,4 @@
-use crate::{
-    Binding, BuiltIn, Expression, GlobalVariable, Handle, ScalarKind, StorageAccess, StorageClass,
-    Type, TypeInner, VectorSize,
-};
+use crate::{Expression, Handle, Type, TypeInner, VectorSize};
 
 use super::ast::*;
 use super::error::ErrorKind;
@@ -20,57 +17,67 @@ impl Program<'_> {
         }
         match name {
             "gl_Position" => {
-                let h = self.module.global_variables.append(GlobalVariable {
-                    name: Some(name.into()),
-                    class: StorageClass::Output,
-                    binding: Some(Binding::BuiltIn(BuiltIn::Position)),
-                    ty: self.module.types.fetch_or_append(Type {
-                        name: None,
-                        inner: TypeInner::Vector {
-                            size: VectorSize::Quad,
-                            kind: ScalarKind::Float,
-                            width: 4,
-                        },
-                    }),
-                    init: None,
-                    interpolation: None,
-                    storage_access: StorageAccess::empty(),
-                });
-                self.lookup_global_variables.insert(name.into(), h);
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 let exp = self
                     .context
                     .expressions
-                    .append(Expression::GlobalVariable(h));
+                    .append(Expression::FunctionArgument(0)); 
                 self.context.lookup_global_var_exps.insert(name.into(), exp);
 
                 Ok(Some(exp))
             }
             "gl_VertexIndex" => {
-                let h = self.module.global_variables.append(GlobalVariable {
-                    name: Some(name.into()),
-                    class: StorageClass::Input,
-                    binding: Some(Binding::BuiltIn(BuiltIn::VertexIndex)),
-                    ty: self.module.types.fetch_or_append(Type {
-                        name: None,
-                        inner: TypeInner::Scalar {
-                            kind: ScalarKind::Uint,
-                            width: 4,
-                        },
-                    }),
-                    init: None,
-                    interpolation: None,
-                    storage_access: StorageAccess::empty(),
-                });
-                self.lookup_global_variables.insert(name.into(), h);
-                let mut expr = self
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                let expr = self
                     .context
                     .expressions
-                    .append(Expression::GlobalVariable(h));
-                expr = self.context.expressions.append(Expression::As {
-                    expr,
-                    kind: ScalarKind::Sint,
-                    convert: true,
-                });
+                    .append(Expression::FunctionArgument(0)); 
                 self.context
                     .lookup_global_var_exps
                     .insert(name.into(), expr);
@@ -78,31 +85,37 @@ impl Program<'_> {
                 Ok(Some(expr))
             }
             "gl_InstanceIndex" => {
-                let h = self.module.global_variables.append(GlobalVariable {
-                    name: Some(name.into()),
-                    class: StorageClass::Input,
-                    binding: Some(Binding::BuiltIn(BuiltIn::InstanceIndex)),
-                    ty: self.module.types.fetch_or_append(Type {
-                        name: None,
-                        inner: TypeInner::Scalar {
-                            kind: ScalarKind::Uint,
-                            width: 4,
-                        },
-                    }),
-                    init: None,
-                    interpolation: None,
-                    storage_access: StorageAccess::empty(),
-                });
-                self.lookup_global_variables.insert(name.into(), h);
-                let mut expr = self
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                let expr = self
                     .context
                     .expressions
-                    .append(Expression::GlobalVariable(h));
-                expr = self.context.expressions.append(Expression::As {
-                    expr,
-                    kind: ScalarKind::Sint,
-                    convert: true,
-                });
+                    .append(Expression::FunctionArgument(0)); 
                 self.context
                     .lookup_global_var_exps
                     .insert(name.into(), expr);
