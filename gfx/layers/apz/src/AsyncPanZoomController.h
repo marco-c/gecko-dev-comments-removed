@@ -812,6 +812,12 @@ class AsyncPanZoomController {
 
   ParentLayerPoint GetOverscrollAmount() const;
 
+ private:
+  
+  
+  ParentLayerPoint GetOverscrollAmountInternal() const;
+
+ protected:
   
 
 
