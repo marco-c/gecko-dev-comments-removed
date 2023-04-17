@@ -18,25 +18,24 @@ var virtualDefinitions = new Map();
 
 
 
+
+
+
+
+
+
+var virtualDeclarations = new Map();
+
 var virtualResolutionsSeen = new Set();
 
 
 function addToNamedSet(map, name, entry)
 {
     if (!map.has(name))
-        map.set(name, new Set());
-    map.get(name).add(entry);
-}
-
-function fieldKey(csuName, field)
-{
-    
-    
-    
-    var nargs = 0;
-    if (field.Type.Kind == "Function" && "TypeFunctionArguments" in field.Type)
-        nargs = field.Type.TypeFunctionArguments.Type.length;
-    return csuName + ":" + field.Name[0] + ":" + nargs;
+      map.set(name, new Set());
+    const s = map.get(name);
+    s.add(entry);
+    return s;
 }
 
 
@@ -44,13 +43,31 @@ function processCSU(csuName, csu)
 {
     if (!("FunctionField" in csu))
         return;
+
+    for (const {Base} of (csu.CSUBaseClass || [])) {
+        addToNamedSet(subclasses, Base, csuName);
+        addToNamedSet(superclasses, csuName, Base);
+    }
+
     for (const field of csu.FunctionField) {
-        if (1 in field.Field) {
-            const superclass = field.Field[1].Type.Name;
-            const subclass = field.Field[1].FieldCSU.Type.Name;
-            assert(subclass == csuName);
-            addToNamedSet(subclasses, superclass, subclass);
-            addToNamedSet(superclasses, subclass, superclass);
+        
+        const info = field.Field[0];
+        const name = info.Name[0];
+        const annotations = new Set();
+        const funcInfo = {
+            name,
+            typedfield: typedField(info),
+            field: info,
+            annotations,
+            inherited: (info.FieldCSU.Type.Name != csuName),
+            pureVirtual: "Variable" in field,
+            synthetic: false
+        };
+        addToNamedSet(virtualDeclarations, csuName, funcInfo);
+        if ('Annotation' in info) {
+            for (const {Name: [annType, annValue]} of info.Annotation) {
+                annotations.add([annType, annValue]);
+            }
         }
 
         if ("Variable" in field) {
@@ -59,84 +76,6 @@ function processCSU(csuName, csu)
             addToNamedSet(virtualDefinitions, fieldKey(csuName, field.Field[0]), name);
         }
     }
-}
-
-
-
-function nearestAncestorMethods(csu, field)
-{
-    const key = fieldKey(csu, field);
-
-    if (virtualDefinitions.has(key))
-        return new Set(virtualDefinitions.get(key));
-
-    const functions = new Set();
-    if (superclasses.has(csu)) {
-        for (const parent of superclasses.get(csu))
-            functions.update(nearestAncestorMethods(parent, field));
-    }
-
-    return functions;
-}
-
-
-
-
-
-
-function findVirtualFunctions(initialCSU, field)
-{
-    const fieldName = field.Name[0];
-    const worklist = [initialCSU];
-    const functions = new Set();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    while (worklist.length) {
-        const csu = worklist.pop();
-        if (isSuppressedVirtualMethod(csu, fieldName))
-            return [ new Set(), LIMIT_CANNOT_GC ];
-        if (isOverridableField(initialCSU, csu, fieldName)) {
-            
-            
-            
-            functions.add(null);
-        }
-
-        if (superclasses.has(csu))
-            worklist.push(...superclasses.get(csu));
-    }
-
-    
-    
-
-    
-    
-    functions.update(nearestAncestorMethods(initialCSU, field));
-
-    
-
-    worklist.push(initialCSU);
-    while (worklist.length) {
-        const csu = worklist.pop();
-        const key = fieldKey(csu, field);
-
-        if (virtualDefinitions.has(key))
-            functions.update(virtualDefinitions.get(key));
-
-        if (subclasses.has(csu))
-            worklist.push(...subclasses.get(csu));
-    }
-
-    return [ functions, LIMIT_NONE ];
 }
 
 
@@ -155,6 +94,9 @@ function getCallees(edge)
         return [{'kind': 'direct', 'name': callee.Variable.Name[0]}];
     }
 
+    
+    
+    
     if (callee.Kind == "Int")
         return []; 
 
@@ -170,43 +112,20 @@ function getCallees(edge)
         return [{'kind': "unknown"}];
     }
 
+    
+    
+    
+    
+    
+    
     const callees = [];
     const field = callee.Exp[0].Field;
-    const fieldName = field.Name[0];
-    const csuName = field.FieldCSU.Type.Name;
-    let functions;
-    let limits = LIMIT_NONE;
-    if ("FieldInstanceFunction" in field) {
-        [ functions, limits ] = findVirtualFunctions(csuName, field);
-        callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                      'limits': limits, 'isVirtual': true});
-    } else {
-        functions = new Set([null]); 
-    }
+    callees.push({'kind': "field", 'csu': field.FieldCSU.Type.Name,
+                  'field': field.Name[0],
+                  'isVirtual': ("FieldInstanceFunction" in field)});
 
-    
-    
-    
-    
-    
-    const targets = [];
-    let fullyResolved = true;
-    for (const name of functions) {
-        if (name === null) {
-            
-            
-            
-            
-            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                          'limits': limits,
-			  'isVirtual': "FieldInstanceFunction" in field});
-            fullyResolved = false;
-        } else {
-            targets.push({'kind': "direct", name, limits });
-        }
-    }
-    if (fullyResolved)
-        callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
+    const staticCSU = getFieldCallInstanceCSU(edge, field);
+    callees.push({'kind': "direct", 'name': fieldKey(staticCSU, field)});
 
     return callees;
 }

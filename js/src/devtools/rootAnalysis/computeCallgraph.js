@@ -20,12 +20,13 @@ var callgraphOut_filename = scriptArgs[1] || "callgraph.txt";
 var origOut = os.file.redirect(callgraphOut_filename);
 
 var memoized = new Map();
-var memoizedCount = 0;
 
 var JSNativeCaller = Object.create(null);
 var JSNatives = [];
 
 var unmangled2id = new Set();
+
+
 
 function getId(name)
 {
@@ -39,6 +40,8 @@ function getId(name)
 
     return id;
 }
+
+
 
 function functionId(name)
 {
@@ -184,6 +187,50 @@ function processBody(functionName, body)
 var typeInfo = loadTypeInfo(typeInfo_filename);
 
 loadTypes("src_comp.xdb");
+
+
+
+
+
+for (const [fieldkey, methods] of virtualDefinitions) {
+    const caller = getId(fieldkey);
+    for (const name of methods) {
+        const callee = functionId(name);
+        printOnce(`D ${caller} ${callee}`);
+    }
+}
+
+function ancestorClassesAndSelf(C) {
+    const ancestors = [C];
+    for (const base of (superclasses.get(C) || []))
+        ancestors.push(...ancestorClassesAndSelf(base));
+    return ancestors;
+}
+
+function isOverridable(C, field) {
+    for (const A of ancestorClassesAndSelf(C)) {
+        if (isOverridableField(C, A, field))
+            return true;
+    }
+    return false;
+}
+
+
+
+
+
+for (const [csu, methods] of virtualDeclarations) {
+    for (const {field} of methods) {
+        const caller = getId(fieldKey(csu, field));
+        if (isOverridable(csu, field.Name[0]))
+            printOnce(`D ${caller} ${functionId("(unknown-definition)")}`);
+        if (!subclasses.has(csu))
+            continue;
+        for (const sub of subclasses.get(csu)) {
+            printOnce(`D ${caller} ${getId(fieldKey(sub, field))}`);
+        }
+    }
+}
 
 var xdb = xdbLibrary();
 xdb.open("src_body.xdb");

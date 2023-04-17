@@ -4,6 +4,9 @@
 
 
 
+
+#include <exception>
+
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
 struct Cell {

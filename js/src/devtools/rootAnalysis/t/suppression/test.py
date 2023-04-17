@@ -3,7 +3,8 @@ test.compile("source.cpp")
 test.run_analysis_script("gcTypes", upto="gcFunctions")
 
 
-suppressed = test.load_suppressed_functions()
+info = test.load_funcInfo()
+suppressed = [f for f, v in info.items() if v.get("limits", 0) | 1]
 
 
 
