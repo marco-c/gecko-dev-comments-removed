@@ -16,7 +16,6 @@
 namespace js {
 
 class GlobalObject;
-class RegExpStaticsObject;
 
 class RegExpStatics {
   
@@ -43,7 +42,7 @@ class RegExpStatics {
 
  public:
   RegExpStatics() { clear(); }
-  static RegExpStaticsObject* create(JSContext* cx);
+  static UniquePtr<RegExpStatics> create(JSContext* cx);
 
  private:
   bool executeLazy(JSContext* cx);

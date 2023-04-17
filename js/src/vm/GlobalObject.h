@@ -54,7 +54,6 @@ class GlobalScope;
 class GlobalLexicalEnvironmentObject;
 class PlainObject;
 class RegExpStatics;
-class RegExpStaticsObject;
 
 
 
@@ -120,9 +119,6 @@ class GlobalObjectData {
   HeapPtr<JSObject*> windowProxy;
 
   
-  HeapPtr<RegExpStaticsObject*> regExpStatics;
-
-  
   HeapPtr<NativeObject*> intrinsicsHolder;
 
   
@@ -144,9 +140,13 @@ class GlobalObjectData {
   HeapPtr<Shape*> arrayShapeWithDefaultProto;
 
   
+  UniquePtr<RegExpStatics> regExpStatics;
+
+  
   bool globalThisResolved = false;
 
   void trace(JSTracer* trc);
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   static constexpr size_t offsetOfLexicalEnvironment() {
     static_assert(sizeof(lexicalEnvironment) == sizeof(uintptr_t),
@@ -213,7 +213,7 @@ class GlobalObject : public NativeObject {
   void releaseData(JSFreeOp* fop);
 
   size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mallocSizeOf(maybeData());
+    return maybeData() ? data().sizeOfIncludingThis(mallocSizeOf) : 0;
   }
 
   void setOriginalEval(JSFunction* evalFun) {
