@@ -12,8 +12,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
+  AppInfo: "chrome://marionette/content/appinfo.js",
   browser: "chrome://marionette/content/browser.js",
+  error: "chrome://marionette/content/error.js",
   Log: "chrome://marionette/content/log.js",
+  waitForEvent: "chrome://marionette/content/sync.js",
+  waitForObserverTopic: "chrome://marionette/content/sync.js",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
@@ -180,6 +184,90 @@ class WindowManager {
 
   getIdForWindow(win) {
     return win.browsingContext.id;
+  }
+
+  
+
+
+
+
+
+
+
+  async closeWindow(win) {
+    const destroyed = waitForObserverTopic("xul-window-destroyed", {
+      checkFn: () => win && win.closed,
+    });
+
+    win.close();
+
+    return destroyed;
+  }
+
+  
+
+
+
+
+
+
+
+  async focusWindow(win) {
+    if (Services.focus.activeWindow != win) {
+      let activated = waitForEvent(win, "activate");
+      let focused = waitForEvent(win, "focus", { capture: true });
+
+      win.focus();
+
+      await Promise.all([activated, focused]);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async openBrowserWindow(openerWindow, focus = false, isPrivate = false) {
+    switch (AppInfo.name) {
+      case "Firefox":
+        
+        
+        
+        const win = openerWindow.OpenBrowserWindow({ private: isPrivate });
+
+        const activated = waitForEvent(win, "activate");
+        const focused = waitForEvent(win, "focus", { capture: true });
+        const startup = waitForObserverTopic(
+          "browser-delayed-startup-finished",
+          {
+            checkFn: subject => subject == win,
+          }
+        );
+
+        win.focus();
+        await Promise.all([activated, focused, startup]);
+
+        
+        
+        if (!focus) {
+          await this.focusWindow(openerWindow);
+        }
+
+        return win;
+
+      default:
+        throw new error.UnsupportedOperationError(
+          `openWindow() not supported in ${AppInfo.name}`
+        );
+    }
   }
 }
 
