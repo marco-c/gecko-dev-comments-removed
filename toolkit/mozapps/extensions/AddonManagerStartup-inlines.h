@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "js/Array.h"  
+#include "js/Exception.h"
 #include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/Maybe.h"

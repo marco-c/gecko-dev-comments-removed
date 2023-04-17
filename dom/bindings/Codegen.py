@@ -18120,6 +18120,9 @@ class CGBindingRoot(CGThing):
         bindingDeclareHeaders["js/TypeDecls.h"] = not bindingDeclareHeaders["jsapi.h"]
         bindingDeclareHeaders["js/RootingAPI.h"] = not bindingDeclareHeaders["jsapi.h"]
 
+        
+        bindingDeclareHeaders["js/CallAndConstruct.h"] = True
+
         def descriptorHasIteratorAlias(desc):
             def hasIteratorAlias(m):
                 return m.isMethod() and "@@iterator" in m.aliases
@@ -18146,6 +18149,12 @@ class CGBindingRoot(CGThing):
 
         
         bindingHeaders["js/CallAndConstruct.h"] = True
+
+        
+        bindingHeaders["js/Exception.h"] = True
+
+        
+        bindingHeaders["js/MapAndSet.h"] = True
 
         
         

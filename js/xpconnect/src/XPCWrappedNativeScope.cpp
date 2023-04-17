@@ -19,6 +19,7 @@
 #include "mozJSComponentLoader.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
+#include "js/RealmIterators.h"
 
 #include "mozilla/dom/BindingUtils.h"
 

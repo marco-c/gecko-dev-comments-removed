@@ -9,6 +9,7 @@
 #include "jsapi.h"
 #include "js/Array.h"               
 #include "js/PropertyAndElement.h"  
+#include "js/String.h"
 #include "mozilla/HangAnnotations.h"
 
 namespace mozilla::Telemetry {

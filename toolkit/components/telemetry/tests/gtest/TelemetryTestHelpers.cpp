@@ -8,6 +8,7 @@
 #include "core/TelemetryOrigin.h"
 #include "gtest/gtest.h"
 #include "js/Array.h"               
+#include "js/CallAndConstruct.h"    
 #include "js/PropertyAndElement.h"  
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Unused.h"

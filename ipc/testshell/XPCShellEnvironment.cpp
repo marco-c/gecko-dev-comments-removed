@@ -20,6 +20,7 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
+#include "js/RealmOptions.h"
 #include "js/SourceText.h"  
 
 #include "xpcpublic.h"

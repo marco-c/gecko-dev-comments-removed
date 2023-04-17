@@ -15,6 +15,7 @@
 #include "mozilla/Maybe.h"
 
 #include "jsapi.h"
+#include "js/Exception.h"
 #include "js/Warnings.h"  
 
 class JSObject;

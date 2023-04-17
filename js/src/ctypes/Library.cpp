@@ -6,17 +6,20 @@
 
 #include "ctypes/Library.h"
 
+#include "jsapi.h"
 #include "prerror.h"
 #include "prlink.h"
 
 #include "ctypes/CTypes.h"
 #include "js/CharacterEncoding.h"
+#include "js/ErrorReport.h"
 #include "js/experimental/CTypes.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
+#include "js/ValueArray.h"
 #include "vm/JSObject.h"
 
 using JS::AutoStableStringChars;

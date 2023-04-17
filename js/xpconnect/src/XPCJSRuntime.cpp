@@ -51,6 +51,7 @@
 #include "js/MemoryFunctions.h"
 #include "js/MemoryMetrics.h"
 #include "js/Object.h"  
+#include "js/RealmIterators.h"
 #include "js/Stream.h"  
 #include "js/SliceBudget.h"
 #include "js/UbiNode.h"

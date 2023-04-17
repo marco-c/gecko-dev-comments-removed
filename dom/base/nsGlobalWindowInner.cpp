@@ -29,6 +29,7 @@
 #include "WindowNamedPropertiesHandler.h"
 #include "js/ComparisonOperators.h"
 #include "js/CompileOptions.h"
+#include "js/friend/PerformanceHint.h"
 #include "js/Id.h"
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"

@@ -17,7 +17,9 @@
 #include "mozilla/Assertions.h"
 
 #include "jsapi.h"
+#include "js/CompileOptions.h"
 #include "js/Conversions.h"
+#include "js/SourceText.h"
 #include "js/String.h"  
 #include "nsString.h"
 #include "xpcpublic.h"

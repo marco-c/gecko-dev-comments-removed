@@ -10,6 +10,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"
+#include "js/Exception.h"
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  
 #include "js/TracingAPI.h"

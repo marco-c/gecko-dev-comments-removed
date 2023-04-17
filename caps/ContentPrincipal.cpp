@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ContentPrincipal.h"
 
@@ -27,6 +27,7 @@
 #include "nsError.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsNetCID.h"
+#include "js/RealmIterators.h"
 #include "js/Wrapper.h"
 
 #include "mozilla/dom/BlobURLProtocolHandler.h"
@@ -56,11 +57,11 @@ ContentPrincipal::ContentPrincipal(nsIURI* aURI,
     : BasePrincipal(eContentPrincipal, aOriginNoSuffix, aOriginAttributes),
       mURI(aURI) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  // Assert that the URI we get here isn't any of the schemes that we know we
-  // should not get here.  These schemes always either inherit their principal
-  // or fall back to a null principal.  These are schemes which return
-  // URI_INHERITS_SECURITY_CONTEXT from their protocol handler's
-  // GetProtocolFlags function.
+  
+  
+  
+  
+  
   bool hasFlag = false;
   MOZ_DIAGNOSTIC_ASSERT(
       NS_SUCCEEDED(NS_URIChainHasFlags(
@@ -82,7 +83,7 @@ nsresult ContentPrincipal::GetScriptLocation(nsACString& aStr) {
   return mURI->GetSpec(aStr);
 }
 
-/* static */
+
 nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
     nsIURI* aURI, nsACString& aOriginNoSuffix) {
   if (!aURI) {
@@ -97,17 +98,17 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
   MOZ_ASSERT(!NS_IsAboutBlank(origin),
              "The inner URI for about:blank must be moz-safe-about:blank");
 
-  // Handle non-strict file:// uris.
+  
   if (!nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
       NS_URIIsLocalFile(origin)) {
-    // If strict file origin policy is not in effect, all local files are
-    // considered to be same-origin, so return a known dummy origin here.
+    
+    
     aOriginNoSuffix.AssignLiteral("file://UNIVERSAL_FILE_URI_ORIGIN");
     return NS_OK;
   }
 
   nsresult rv;
-// NB: This is only compiled for Thunderbird/Suite.
+
 #if IS_ORIGIN_IS_FULL_SPEC_DEFINED
   bool fullSpec = false;
   rv = NS_URIChainHasFlags(origin, nsIProtocolHandler::ORIGIN_IS_FULL_SPEC,
@@ -118,23 +119,23 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
   }
 #endif
 
-  // We want the invariant that prinA.origin == prinB.origin i.f.f.
-  // prinA.equals(prinB). However, this requires that we impose certain
-  // constraints on the behavior and origin semantics of principals, and in
-  // particular, forbid creating origin strings for principals whose equality
-  // constraints are not expressible as strings (i.e. object equality).
-  // Moreover, we want to forbid URIs containing the magic "^" we use as a
-  // separating character for origin attributes.
-  //
-  // These constraints can generally be achieved by restricting .origin to
-  // nsIStandardURL-based URIs, but there are a few other URI schemes that we
-  // need to handle.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (origin->SchemeIs("about") ||
       (origin->SchemeIs("moz-safe-about") &&
-       // We generally consider two about:foo origins to be same-origin, but
-       // about:blank is special since it can be generated from different
-       // sources. We check for moz-safe-about:blank since origin is an
-       // innermost URI.
+       
+       
+       
+       
        !StringBeginsWith(origin->GetSpecOrDefault(),
                          "moz-safe-about:blank"_ns))) {
     rv = origin->GetAsciiSpec(aOriginNoSuffix);
@@ -151,7 +152,7 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
       aOriginNoSuffix.Truncate(pos);
     }
 
-    // These URIs could technically contain a '^', but they never should.
+    
     if (NS_WARN_IF(aOriginNoSuffix.FindChar('^', 0) != -1)) {
       aOriginNoSuffix.Truncate();
       return NS_ERROR_FAILURE;
@@ -159,8 +160,8 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
     return NS_OK;
   }
 
-  // This URL can be a blobURL. In this case, we should use the 'parent'
-  // principal instead.
+  
+  
   nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
           origin, getter_AddRefs(blobPrincipal))) {
@@ -168,19 +169,19 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
     return blobPrincipal->GetOriginNoSuffix(aOriginNoSuffix);
   }
 
-  // If we reached this branch, we can only create an origin if we have a
-  // nsIStandardURL.  So, we query to a nsIStandardURL, and fail if we aren't
-  // an instance of an nsIStandardURL nsIStandardURLs have the good property
-  // of escaping the '^' character in their specs, which means that we can be
-  // sure that the caret character (which is reserved for delimiting the end
-  // of the spec, and the beginning of the origin attributes) is not present
-  // in the origin string
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<nsIStandardURL> standardURL = do_QueryInterface(origin);
   if (!standardURL) {
     return NS_ERROR_FAILURE;
   }
 
-  // See whether we have a useful hostPort. If we do, use that.
+  
   nsAutoCString hostPort;
   if (!origin->SchemeIs("chrome")) {
     rv = origin->GetAsciiHostPort(hostPort);
@@ -197,8 +198,8 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
   rv = aURI->GetAsciiSpec(aOriginNoSuffix);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // The origin, when taken from the spec, should not contain the ref part of
-  // the URL.
+  
+  
 
   int32_t pos = aOriginNoSuffix.FindChar('?');
   int32_t hashPos = aOriginNoSuffix.FindChar('#');
@@ -219,24 +220,24 @@ bool ContentPrincipal::SubsumesInternal(
     BasePrincipal::DocumentDomainConsideration aConsideration) {
   MOZ_ASSERT(aOther);
 
-  // For ContentPrincipal, Subsumes is equivalent to Equals.
+  
   if (aOther == this) {
     return true;
   }
 
-  // If either the subject or the object has changed its principal by
-  // explicitly setting document.domain then the other must also have
-  // done so in order to be considered the same origin. This prevents
-  // DNS spoofing based on document.domain (154930)
+  
+  
+  
+  
   nsresult rv;
   if (aConsideration == ConsiderDocumentDomain) {
-    // Get .domain on each principal.
+    
     nsCOMPtr<nsIURI> thisDomain, otherDomain;
     GetDomain(getter_AddRefs(thisDomain));
     aOther->GetDomain(getter_AddRefs(otherDomain));
 
-    // If either has .domain set, we have equality i.f.f. the domains match.
-    // Otherwise, we fall through to the non-document-domain-considering case.
+    
+    
     if (thisDomain || otherDomain) {
       bool isMatch =
           nsScriptSecurityManager::SecurityCompareURIs(thisDomain, otherDomain);
@@ -254,7 +255,7 @@ bool ContentPrincipal::SubsumesInternal(
     }
   }
 
-  // Compare uris.
+  
   bool isSameOrigin = false;
   rv = aOther->IsSameOrigin(mURI, false, &isSameOrigin);
   NS_ENSURE_SUCCESS(rv, false);
@@ -294,8 +295,8 @@ bool ContentPrincipal::MayLoadInternal(nsIURI* aURI) {
     return nsIPrincipal::Subsumes(blobPrincipal);
   }
 
-  // If this principal is associated with an addon, check whether that addon
-  // has been given permission to load from this domain.
+  
+  
   if (AddonAllowsLoad(aURI)) {
     return true;
   }
@@ -304,9 +305,9 @@ bool ContentPrincipal::MayLoadInternal(nsIURI* aURI) {
     return true;
   }
 
-  // If strict file origin policy is in effect, local files will always fail
-  // SecurityCompareURIs unless they are identical. Explicitly check file origin
-  // policy, in that case.
+  
+  
+  
   if (nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
       NS_URIIsLocalFile(aURI) && NS_RelaxStrictFileOriginPolicy(aURI, mURI)) {
     return true;
@@ -344,8 +345,8 @@ ContentPrincipal::SetDomain(nsIURI* aDomain) {
   mDomain = aDomain;
   SetHasExplicitDomain();
 
-  // Set the changed-document-domain flag on compartments containing realms
-  // using this principal.
+  
+  
   auto cb = [](JSContext*, void*, JS::Realm* aRealm,
                const JS::AutoRequireNoGC& nogc) {
     JS::Compartment* comp = JS::GetCompartmentForRealm(aRealm);
@@ -365,17 +366,17 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
                                      bool* aHandled, nsACString& aBaseDomain) {
   *aHandled = false;
 
-  // Special handling for a file URI.
+  
   if (NS_URIIsLocalFile(aURI)) {
-    // If strict file origin policy is not in effect, all local files are
-    // considered to be same-origin, so return a known dummy domain here.
+    
+    
     if (!nsScriptSecurityManager::GetStrictFileOriginPolicy()) {
       *aHandled = true;
       aBaseDomain.AssignLiteral("UNIVERSAL_FILE_URI_ORIGIN");
       return NS_OK;
     }
 
-    // Otherwise, we return the file path.
+    
     nsCOMPtr<nsIURL> url = do_QueryInterface(aURI);
 
     if (url) {
@@ -391,9 +392,9 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
     return rv;
   }
 
-  // In case of FTP we want to get base domain via TLD service even if FTP
-  // protocol handler is disabled and the scheme is handled by external protocol
-  // handler which returns URI_NORELATIVE flag.
+  
+  
+  
   if (hasNoRelativeFlag && !aURI->SchemeIs("ftp")) {
     *aHandled = true;
     return aURI->GetSpec(aBaseDomain);
@@ -409,7 +410,7 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
 
 NS_IMETHODIMP
 ContentPrincipal::GetBaseDomain(nsACString& aBaseDomain) {
-  // Handle some special URIs first.
+  
   bool handled;
   nsresult rv = GetSpecialBaseDomain(mURI, &handled, aBaseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -418,7 +419,7 @@ ContentPrincipal::GetBaseDomain(nsACString& aBaseDomain) {
     return NS_OK;
   }
 
-  // For everything else, we ask the TLD service via the ThirdPartyUtil.
+  
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
       do_GetService(THIRDPARTYUTIL_CONTRACTID);
   if (!thirdPartyUtil) {
@@ -433,35 +434,35 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   nsresult rv = GetOriginNoSuffix(aSiteOrigin);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // It is possible for two principals with the same origin to have different
-  // mURI values. In order to ensure that two principals with matching origins
-  // also have matching siteOrigins, we derive the siteOrigin entirely from the
-  // origin string and do not rely on mURI at all here.
+  
+  
+  
+  
   nsCOMPtr<nsIURI> origin;
   rv = NS_NewURI(getter_AddRefs(origin), aSiteOrigin);
   if (NS_FAILED(rv)) {
-    // We got an error parsing the origin as a URI? siteOrigin == origin
-    // aSiteOrigin was already filled with `OriginNoSuffix`
+    
+    
     return rv;
   }
 
-  // Handle some special URIs first.
+  
   nsAutoCString baseDomain;
   bool handled;
   rv = GetSpecialBaseDomain(origin, &handled, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (handled) {
-    // This is a special URI ("file:", "about:", "view-source:", etc). Just
-    // return the origin.
+    
+    
     return NS_OK;
   }
 
-  // For everything else, we ask the TLD service. Note that, unlike in
-  // GetBaseDomain, we don't use ThirdPartyUtil.getBaseDomain because if the
-  // host is an IP address that returns the raw address and we can't use it with
-  // SetHost below because SetHost expects '[' and ']' around IPv6 addresses.
-  // See bug 1491728.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIEffectiveTLDService> tldService =
       do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
   if (!tldService) {
@@ -473,16 +474,16 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   if (NS_SUCCEEDED(rv)) {
     gotBaseDomain = true;
   } else {
-    // If this is an IP address or something like "localhost", we just continue
-    // with gotBaseDomain = false.
+    
+    
     if (rv != NS_ERROR_HOST_IS_IP_ADDRESS &&
         rv != NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
       return rv;
     }
   }
 
-  // NOTE: Calling `SetHostPort` with a portless domain is insufficient to clear
-  // the port, so an extra `SetPort` call has to be made.
+  
+  
   nsCOMPtr<nsIURI> siteUri;
   NS_MutateURI mutator(origin);
   mutator.SetUserPass(""_ns).SetPort(-1);
@@ -551,8 +552,8 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   }
 
   principalURI = do_QueryInterface(supports);
-  // Enforce re-parsing about: URIs so that if they change, we continue to use
-  // their new principals correctly.
+  
+  
   if (principalURI->SchemeIs("about")) {
     nsAutoCString spec;
     principalURI->GetSpec(spec);
@@ -576,17 +577,17 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   bool ok = attrs.PopulateFromSuffix(suffix);
   NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
-  // Since Bug 965637 we do not serialize the CSP within the
-  // Principal anymore. Nevertheless there might still be
-  // serialized Principals that do have a serialized CSP.
-  // For now, we just read the CSP here but do not actually
-  // consume it. Please note that we deliberately ignore
-  // the return value to avoid CSP deserialization problems.
-  // After Bug 1508939 we will have a new serialization for
-  // Principals which allows us to update the code here.
-  // Additionally, the format for serialized CSPs changed
-  // within Bug 965637 which also can cause failures within
-  // the CSP deserialization code.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Unused << NS_ReadOptionalObject(aStream, true, getter_AddRefs(supports));
 
   nsAutoCString originNoSuffix;
@@ -596,8 +597,8 @@ ContentPrincipal::Deserializer::Read(nsIObjectInputStream* aStream) {
   RefPtr<ContentPrincipal> principal =
       new ContentPrincipal(principalURI, attrs, originNoSuffix);
 
-  // Note: we don't call SetDomain here because we don't need the wrapper
-  // recomputation code there (we just created this principal).
+  
+  
   if (domain) {
     principal->mDomain = domain;
     principal->SetHasExplicitDomain();
@@ -612,19 +613,19 @@ nsresult ContentPrincipal::PopulateJSONObject(Json::Value& aObject) {
   nsresult rv = mURI->GetSpec(principalURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // We turn each int enum field into a JSON string key of the object
-  // aObject is the inner JSON object that has stringified enum keys
-  // An example aObject might be:
-  //
-  // eURI                   eSuffix
-  //    |                           |
-  //  {"0": "https://mozilla.com", "2": "^privateBrowsingId=1"}
-  //    |                |          |         |
-  //    -----------------------------         |
-  //         |           |                    |
-  //        Key          ----------------------
-  //                                |
-  //                              Value
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   aObject[std::to_string(eURI)] = principalURI.get();
 
   if (mDomain) {
@@ -652,8 +653,8 @@ already_AddRefed<BasePrincipal> ContentPrincipal::FromProperties(
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   OriginAttributes attrs;
 
-  // The odd structure here is to make the code to not compile
-  // if all the switch enum cases haven't been codified
+  
+  
   for (const auto& field : aFields) {
     switch (field.key) {
       case ContentPrincipal::eURI:
@@ -667,8 +668,8 @@ already_AddRefed<BasePrincipal> ContentPrincipal::FromProperties(
         NS_ENSURE_SUCCESS(rv, nullptr);
 
         {
-          // Enforce re-parsing about: URIs so that if they change, we
-          // continue to use their new principals correctly.
+          
+          
           if (principalURI->SchemeIs("about")) {
             nsAutoCString spec;
             principalURI->GetSpec(spec);

@@ -35,6 +35,7 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/MapAndSet.h"
 #include "js/Object.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsCRTGlue.h"

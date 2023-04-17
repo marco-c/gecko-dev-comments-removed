@@ -26,6 +26,7 @@
 #include "js/friend/StackLimits.h"  
 #include "js/Id.h"
 #include "js/JSON.h"
+#include "js/MapAndSet.h"
 #include "js/Object.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/StableStringChars.h"
