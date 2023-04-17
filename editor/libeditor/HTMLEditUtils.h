@@ -242,11 +242,18 @@ class HTMLEditUtils final {
 
 
   static bool IsSplittableNode(const nsIContent& aContent) {
+    if (!EditorUtils::IsEditableContent(aContent,
+                                        EditorUtils::EditorType::HTML) ||
+        !HTMLEditUtils::IsRemovableFromParentNode(aContent)) {
+      return false;
+    }
     if (aContent.IsElement()) {
       
       
       
-      return HTMLEditUtils::IsContainerNode(aContent);
+      return HTMLEditUtils::IsContainerNode(aContent) &&
+             !aContent.IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::head,
+                                           nsGkAtoms::html);
     }
     return aContent.IsText() && aContent.Length() > 0;
   }
