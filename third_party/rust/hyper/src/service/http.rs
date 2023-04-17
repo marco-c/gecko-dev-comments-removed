@@ -1,13 +1,13 @@
 use std::error::Error as StdError;
 
-use crate::body::Payload;
+use crate::body::HttpBody;
 use crate::common::{task, Future, Poll};
 use crate::{Request, Response};
 
 
 pub trait HttpService<ReqBody>: sealed::Sealed<ReqBody> {
     
-    type ResBody: Payload;
+    type ResBody: HttpBody;
 
     
     
@@ -29,7 +29,7 @@ pub trait HttpService<ReqBody>: sealed::Sealed<ReqBody> {
 impl<T, B1, B2> HttpService<B1> for T
 where
     T: tower_service::Service<Request<B1>, Response = Response<B2>>,
-    B2: Payload,
+    B2: HttpBody,
     T::Error: Into<Box<dyn StdError + Send + Sync>>,
 {
     type ResBody = B2;
@@ -49,7 +49,7 @@ where
 impl<T, B1, B2> sealed::Sealed<B1> for T
 where
     T: tower_service::Service<Request<B1>, Response = Response<B2>>,
-    B2: Payload,
+    B2: HttpBody,
 {
 }
 
