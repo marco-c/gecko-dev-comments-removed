@@ -1157,18 +1157,19 @@ Shape* NativeObject::addProperty(JSContext* cx, HandleNativeObject obj,
 template <AllowGC allowGC>
 bool js::NativeLookupOwnProperty(
     JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-    typename MaybeRooted<jsid, allowGC>::HandleType id,
-    typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp) {
+    typename MaybeRooted<jsid, allowGC>::HandleType id, PropertyResult* propp) {
   return NativeLookupOwnPropertyInline<allowGC>(cx, obj, id, propp);
 }
 
-template bool js::NativeLookupOwnProperty<CanGC>(
-    JSContext* cx, HandleNativeObject obj, HandleId id,
-    MutableHandle<PropertyResult> propp);
+template bool js::NativeLookupOwnProperty<CanGC>(JSContext* cx,
+                                                 HandleNativeObject obj,
+                                                 HandleId id,
+                                                 PropertyResult* propp);
 
-template bool js::NativeLookupOwnProperty<NoGC>(
-    JSContext* cx, NativeObject* const& obj, const jsid& id,
-    FakeMutableHandle<PropertyResult> propp);
+template bool js::NativeLookupOwnProperty<NoGC>(JSContext* cx,
+                                                NativeObject* const& obj,
+                                                const jsid& id,
+                                                PropertyResult* propp);
 
 
 
@@ -1475,7 +1476,7 @@ static MOZ_ALWAYS_INLINE bool GetExistingProperty(
     typename MaybeRooted<Value, allowGC>::MutableHandleType vp);
 
 static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
-                                     HandleId id, Handle<PropertyResult> prop,
+                                     HandleId id, const PropertyResult& prop,
                                      MutableHandleValue vp) {
   if (prop.isDenseElement()) {
     vp.set(obj->getDenseElement(prop.denseElementIndex()));
@@ -1499,7 +1500,7 @@ static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
 
 
 static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
-                                      HandleId id, Handle<PropertyResult> prop,
+                                      HandleId id, const PropertyResult& prop,
                                       unsigned shapeAttrs,
                                       Handle<PropertyDescriptor> desc,
                                       bool* redundant) {
@@ -1639,12 +1640,12 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
   if (desc_.attributes() & JSPROP_RESOLVING) {
     
     
     
-    if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, prop.address())) {
+    if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
       return false;
     }
   } else {
@@ -1814,8 +1815,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
-  if (!AddOrChangeProperty<IsAddOrChange::Change>(cx, obj, id, desc,
-                                                  prop.address())) {
+  if (!AddOrChangeProperty<IsAddOrChange::Change>(cx, obj, id, desc, &prop)) {
     return false;
   }
 
@@ -2022,7 +2022,7 @@ bool js::AddOrUpdateSparseElementHelper(JSContext* cx, HandleArrayObject obj,
 bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
                            bool* foundp) {
   RootedNativeObject pobj(cx, obj);
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
 
   
   
@@ -2072,7 +2072,7 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 bool js::NativeGetOwnPropertyDescriptor(
     JSContext* cx, HandleNativeObject obj, HandleId id,
     MutableHandle<PropertyDescriptor> desc) {
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
     return false;
   }
@@ -2322,7 +2322,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     typename MaybeRooted<jsid, allowGC>::HandleType id, IsNameLookup nameLookup,
     typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
   typename MaybeRooted<NativeObject*, allowGC>::RootType pobj(cx, obj);
-  typename MaybeRooted<PropertyResult, allowGC>::RootType prop(cx);
+  PropertyResult prop;
 
   
   
@@ -2643,7 +2643,7 @@ static bool SetDenseElement(JSContext* cx, HandleNativeObject obj,
 
 static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
                                 HandleValue receiver, HandleNativeObject pobj,
-                                Handle<PropertyResult> prop,
+                                const PropertyResult& prop,
                                 ObjectOpResult& result) {
   
   if (prop.isDenseElement() || prop.isTypedArrayElement()) {
@@ -2713,7 +2713,7 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   
   
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
   RootedNativeObject pobj(cx, obj);
 
   
@@ -2820,7 +2820,7 @@ static bool CallJSDeletePropertyOp(JSContext* cx, JSDeletePropertyOp op,
 bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
                               HandleId id, ObjectOpResult& result) {
   
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
     return false;
   }
