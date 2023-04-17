@@ -2671,18 +2671,6 @@ void gfxPlatform::InitWebRenderConfig() {
 
   bool hasHardware = gfxConfig::IsEnabled(Feature::WEBRENDER);
   bool hasSoftware = gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE);
-
-#if defined(XP_WIN) && !defined(EARLY_BETA_OR_EARLIER)
-  
-  
-  
-  
-  if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING) &&
-      !gfxConfig::IsForcedOnByUser(Feature::WEBRENDER_SOFTWARE)) {
-    hasSoftware = false;
-  }
-#endif
-
   bool hasWebRender = hasHardware || hasSoftware;
 
 #ifdef XP_WIN
