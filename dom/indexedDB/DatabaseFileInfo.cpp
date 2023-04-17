@@ -4,11 +4,11 @@
 
 
 
+#include "DatabaseFileManager.h"
 #include "FileInfoTImpl.h"
-#include "FileManager.h"
 
 namespace mozilla::dom::indexedDB {
 
-template class FileInfoT<FileManager>;
+template class FileInfoT<DatabaseFileManager>;
 
 }  
