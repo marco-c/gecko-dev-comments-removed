@@ -1,5 +1,3 @@
-
-
 assertEq(typeof AggregateError, "function");
 assertEq(Object.getPrototypeOf(AggregateError), Error);
 assertEq(AggregateError.name, "AggregateError");

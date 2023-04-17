@@ -2,7 +2,6 @@
 
 
 
-
 var BUGNUMBER = 1416337;
 var summary =
   "Expression closure syntax is only permitted for functions that constitute " +
@@ -15,7 +14,6 @@ print(BUGNUMBER + ": " + summary);
 
 
 
-if (getBuildConfiguration().release_or_beta)
 {
   function assertThrowsSyntaxError(code)
   {
