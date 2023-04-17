@@ -4,6 +4,8 @@
 
 
 
+SPHINX_TREES["docs"] = "docs"
+
 XPIDL_MODULE = "update"
 
 DIRS += [
