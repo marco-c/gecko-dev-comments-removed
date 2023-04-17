@@ -8,12 +8,12 @@ use std::fmt;
 use std::result;
 use std::u8;
 
-use ast::Span;
-use hir::interval::{Interval, IntervalSet, IntervalSetIter};
-use unicode;
+use crate::ast::Span;
+use crate::hir::interval::{Interval, IntervalSet, IntervalSetIter};
+use crate::unicode;
 
-pub use hir::visitor::{visit, Visitor};
-pub use unicode::CaseFoldError;
+pub use crate::hir::visitor::{visit, Visitor};
+pub use crate::unicode::CaseFoldError;
 
 mod interval;
 pub mod literal;
@@ -91,6 +91,8 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         use self::ErrorKind::*;
         match *self {
@@ -113,19 +115,23 @@ impl ErrorKind {
 }
 
 impl error::Error for Error {
+    
+    #[allow(deprecated)]
     fn description(&self) -> &str {
         self.kind.description()
     }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        ::error::Formatter::from(self).fmt(f)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        crate::error::Formatter::from(self).fmt(f)
     }
 }
 
 impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        #[allow(deprecated)]
         f.write_str(self.description())
     }
 }
@@ -235,8 +241,8 @@ impl Hir {
         info.set_any_anchored_start(false);
         info.set_any_anchored_end(false);
         info.set_match_empty(true);
-        info.set_literal(true);
-        info.set_alternation_literal(true);
+        info.set_literal(false);
+        info.set_alternation_literal(false);
         Hir { kind: HirKind::Empty, info: info }
     }
 
@@ -721,8 +727,8 @@ impl HirKind {
 
 
 impl fmt::Display for Hir {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use hir::print::Printer;
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use crate::hir::print::Printer;
         Printer::new().print(self, f)
     }
 }
@@ -853,7 +859,7 @@ impl ClassUnicode {
     
     
     
-    pub fn iter(&self) -> ClassUnicodeIter {
+    pub fn iter(&self) -> ClassUnicodeIter<'_> {
         ClassUnicodeIter(self.set.iter())
     }
 
@@ -881,9 +887,6 @@ impl ClassUnicode {
             .expect("unicode-case feature must be enabled");
     }
 
-    
-    
-    
     
     
     
@@ -935,6 +938,13 @@ impl ClassUnicode {
     pub fn symmetric_difference(&mut self, other: &ClassUnicode) {
         self.set.symmetric_difference(&other.set);
     }
+
+    
+    
+    
+    pub fn is_all_ascii(&self) -> bool {
+        self.set.intervals().last().map_or(true, |r| r.end <= '\x7F')
+    }
 }
 
 
@@ -962,7 +972,7 @@ pub struct ClassUnicodeRange {
 }
 
 impl fmt::Debug for ClassUnicodeRange {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let start = if !self.start.is_whitespace() && !self.start.is_control()
         {
             self.start.to_string()
@@ -1092,7 +1102,7 @@ impl ClassBytes {
     
     
     
-    pub fn iter(&self) -> ClassBytesIter {
+    pub fn iter(&self) -> ClassBytesIter<'_> {
         ClassBytesIter(self.set.iter())
     }
 
@@ -1248,7 +1258,7 @@ impl ClassBytesRange {
 }
 
 impl fmt::Debug for ClassBytesRange {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut debug = f.debug_struct("ClassBytesRange");
         if self.start <= 0x7F {
             debug.field("start", &(self.start as char));
@@ -1486,7 +1496,7 @@ macro_rules! define_bool {
                 self.bools &= !(1 << $bit);
             }
         }
-    }
+    };
 }
 
 impl HirInfo {

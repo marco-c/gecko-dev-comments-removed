@@ -1,12 +1,12 @@
 use std::str;
 
-use find_byte::find_byte;
+use crate::find_byte::find_byte;
 
-use re_bytes;
-use re_unicode;
+use crate::re_bytes;
+use crate::re_unicode;
 
 pub fn expand_str(
-    caps: &re_unicode::Captures,
+    caps: &re_unicode::Captures<'_>,
     mut replacement: &str,
     dst: &mut String,
 ) {
@@ -24,7 +24,7 @@ pub fn expand_str(
             continue;
         }
         debug_assert!(!replacement.is_empty());
-        let cap_ref = match find_cap_ref(replacement) {
+        let cap_ref = match find_cap_ref(replacement.as_bytes()) {
             Some(cap_ref) => cap_ref,
             None => {
                 dst.push_str("$");
@@ -48,7 +48,7 @@ pub fn expand_str(
 }
 
 pub fn expand_bytes(
-    caps: &re_bytes::Captures,
+    caps: &re_bytes::Captures<'_>,
     mut replacement: &[u8],
     dst: &mut Vec<u8>,
 ) {
@@ -125,19 +125,15 @@ impl From<usize> for Ref<'static> {
 
 
 
-fn find_cap_ref<T: ?Sized + AsRef<[u8]>>(
-    replacement: &T,
-) -> Option<CaptureRef> {
+fn find_cap_ref(replacement: &[u8]) -> Option<CaptureRef<'_>> {
     let mut i = 0;
     let rep: &[u8] = replacement.as_ref();
     if rep.len() <= 1 || rep[0] != b'$' {
         return None;
     }
-    let mut brace = false;
     i += 1;
     if rep[i] == b'{' {
-        brace = true;
-        i += 1;
+        return find_cap_ref_braced(rep, i + 1);
     }
     let mut cap_end = i;
     while rep.get(cap_end).map_or(false, is_valid_cap_letter) {
@@ -149,20 +145,40 @@ fn find_cap_ref<T: ?Sized + AsRef<[u8]>>(
     
     
     
+    
     let cap =
         str::from_utf8(&rep[i..cap_end]).expect("valid UTF-8 capture name");
-    if brace {
-        if !rep.get(cap_end).map_or(false, |&b| b == b'}') {
-            return None;
-        }
-        cap_end += 1;
-    }
     Some(CaptureRef {
         cap: match cap.parse::<u32>() {
             Ok(i) => Ref::Number(i as usize),
             Err(_) => Ref::Named(cap),
         },
         end: cap_end,
+    })
+}
+
+fn find_cap_ref_braced(rep: &[u8], mut i: usize) -> Option<CaptureRef<'_>> {
+    let start = i;
+    while rep.get(i).map_or(false, |&b| b != b'}') {
+        i += 1;
+    }
+    if !rep.get(i).map_or(false, |&b| b == b'}') {
+        return None;
+    }
+    
+    
+    
+    
+    let cap = match str::from_utf8(&rep[start..i]) {
+        Err(_) => return None,
+        Ok(cap) => cap,
+    };
+    Some(CaptureRef {
+        cap: match cap.parse::<u32>() {
+            Ok(i) => Ref::Number(i as usize),
+            Err(_) => Ref::Named(cap),
+        },
+        end: i + 1,
     })
 }
 
@@ -182,13 +198,13 @@ mod tests {
         ($name:ident, $text:expr) => {
             #[test]
             fn $name() {
-                assert_eq!(None, find_cap_ref($text));
+                assert_eq!(None, find_cap_ref($text.as_bytes()));
             }
         };
         ($name:ident, $text:expr, $capref:expr) => {
             #[test]
             fn $name() {
-                assert_eq!(Some($capref), find_cap_ref($text));
+                assert_eq!(Some($capref), find_cap_ref($text.as_bytes()));
             }
         };
     }
@@ -205,6 +221,7 @@ mod tests {
     find!(find_cap_ref4, "$5", c!(5, 2));
     find!(find_cap_ref5, "$10", c!(10, 3));
     
+    
     find!(find_cap_ref6, "$42a", c!("42a", 4));
     find!(find_cap_ref7, "${42}a", c!(42, 5));
     find!(find_cap_ref8, "${42");
@@ -217,4 +234,6 @@ mod tests {
     find!(find_cap_ref15, "$1_$2", c!("1_", 3));
     find!(find_cap_ref16, "$x-$y", c!("x", 2));
     find!(find_cap_ref17, "$x_$y", c!("x_", 3));
+    find!(find_cap_ref18, "${#}", c!("#", 4));
+    find!(find_cap_ref19, "${Z[}", c!("Z[", 5));
 }
