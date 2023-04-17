@@ -166,3 +166,12 @@ function getCtlCharacters() {
     CTLS: ctlCodes.map(i => ({code: i, chr: String.fromCharCode(i)}))
   };
 }
+
+
+
+
+
+
+function cookieStringWithNameAndValueLengths(nameLength, valueLength) {
+  return `${"t".repeat(nameLength)}=${"1".repeat(valueLength)}`;
+}
