@@ -299,6 +299,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void UpdateSessionStoreSessionStorage(const std::function<void()>& aDone);
 
+  static void UpdateSessionStoreForStorage(uint64_t aBrowsingContextId);
+
   
   
   void BrowserParentDestroyed(BrowserParent* aBrowserParent,
