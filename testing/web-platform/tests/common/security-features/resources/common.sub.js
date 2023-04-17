@@ -636,6 +636,24 @@ function requestViaScript(url, additionalAttributes) {
 
 
 
+function requestViaDynamicImport(url, additionalAttributes) {
+  const scriptUrl = `data:text/javascript,import("${url}");`;
+  const script = createElement(
+      "script",
+      Object.assign({"src": scriptUrl}, additionalAttributes),
+      document.body,
+      false);
+
+  return bindEvents2(window, "message", script, "error", window, "error")
+    .then(event => wrapResult(event.data));
+}
+
+
+
+
+
+
+
 function requestViaForm(url, additionalAttributes) {
   return requestViaNavigable(
       "form",
@@ -865,6 +883,10 @@ const subresourceMap = {
   "script-tag": {
     path: "/common/security-features/subresource/script.py",
     invoker: requestViaScript,
+  },
+  "script-tag-dynamic-import": {
+    path: "/common/security-features/subresource/script.py",
+    invoker: requestViaDynamicImport,
   },
   "video-tag": {
     path: "/common/security-features/subresource/video.py",
