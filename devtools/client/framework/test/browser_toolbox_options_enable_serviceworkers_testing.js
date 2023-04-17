@@ -4,8 +4,12 @@
 
 
 
+
+
+
 const TEST_URI =
-  URL_ROOT + "browser_toolbox_options_enable_serviceworkers_testing.html";
+  URL_ROOT_MOCHI_8888 +
+  "browser_toolbox_options_enable_serviceworkers_testing.html";
 const ELEMENT_ID = "devtools-enable-serviceWorkersTesting";
 
 add_task(async function() {
