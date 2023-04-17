@@ -1233,6 +1233,11 @@ gfxFloat gfxTextRun::GetMinAdvanceWidth(Range aRange) {
   
   gfxFloat clusterAdvance = 0;
   for (uint32_t i = ligatureRange.start; i < ligatureRange.end; ++i) {
+    if (mCharacterGlyphs[i].CharIsSpace()) {
+      
+      
+      continue;
+    }
     clusterAdvance += GetAdvanceForGlyph(i);
     if (i + 1 == ligatureRange.end || IsClusterStart(i + 1)) {
       result = std::max(result, clusterAdvance);
