@@ -1473,11 +1473,12 @@ class UrlbarInput {
       ObjectUtils.deepEqual(currentSearchMode, searchMode);
 
     
+    let engine;
     if (searchMode?.engineName) {
       if (!Services.search.isInitialized) {
         await Services.search.init();
       }
-      let engine = Services.search.getEngineByName(searchMode.engineName);
+      engine = Services.search.getEngineByName(searchMode.engineName);
       if (!engine || engine.hidden) {
         searchMode = null;
       }
@@ -1488,10 +1489,13 @@ class UrlbarInput {
     searchMode = null;
 
     if (engineName) {
-      searchMode = { engineName };
+      searchMode = {
+        engineName,
+        isGeneralPurposeEngine: engine.isGeneralPurposeEngine,
+      };
       if (source) {
         searchMode.source = source;
-      } else if (UrlbarUtils.WEB_ENGINE_NAMES.has(engineName)) {
+      } else if (searchMode.isGeneralPurposeEngine) {
         
         
         
@@ -2621,7 +2625,7 @@ class UrlbarInput {
 
 
   _updateSearchModeUI(searchMode) {
-    let { engineName, source } = searchMode || {};
+    let { engineName, source, isGeneralPurposeEngine } = searchMode || {};
 
     
     
@@ -2655,7 +2659,7 @@ class UrlbarInput {
       this._searchModeLabel.textContent = engineName;
       this.document.l10n.setAttributes(
         this.inputField,
-        UrlbarUtils.WEB_ENGINE_NAMES.has(engineName)
+        isGeneralPurposeEngine
           ? "urlbar-placeholder-search-mode-web-2"
           : "urlbar-placeholder-search-mode-other-engine",
         { name: engineName }

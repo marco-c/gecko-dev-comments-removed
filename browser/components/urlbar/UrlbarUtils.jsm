@@ -191,22 +191,6 @@ var UrlbarUtils = {
 
   
   
-  
-  
-  WEB_ENGINE_NAMES: new Set([
-    "百度", 
-    "百度搜索", 
-    "Bing",
-    "DuckDuckGo",
-    "Ecosia",
-    "Google",
-    "Qwant",
-    "Yandex",
-    "Яндекс", 
-  ]),
-
-  
-  
   SEARCH_MODE_ENTRY: new Set([
     "bookmarkmenu",
     "keywordoffer",
@@ -1176,6 +1160,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "boolean",
       },
       isPrivateEngine: {
+        type: "boolean",
+      },
+      isGeneralPurposeEngine: {
         type: "boolean",
       },
       keyword: {
