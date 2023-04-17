@@ -427,6 +427,9 @@ class Selection final : public nsSupportsWeakReference,
   }
   SelectionType Type() const { return mSelectionType; }
 
+  
+
+
   void GetRangesForInterval(nsINode& aBeginNode, int32_t aBeginOffset,
                             nsINode& aEndNode, int32_t aEndOffset,
                             bool aAllowAdjacent,
