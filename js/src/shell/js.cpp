@@ -131,6 +131,7 @@
 #include "js/GCVector.h"
 #include "js/Initialization.h"
 #include "js/JSON.h"
+#include "js/MemoryCallbacks.h"
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
 #include "js/Object.h"  

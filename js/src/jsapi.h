@@ -41,6 +41,7 @@
 #include "js/HashTable.h"
 #include "js/Id.h"
 #include "js/MapAndSet.h"
+#include "js/MemoryCallbacks.h"
 #include "js/MemoryFunctions.h"
 #include "js/OffThreadScriptCompilation.h"
 #include "js/Principals.h"
@@ -1101,36 +1102,6 @@ class MOZ_RAII AutoHideScriptedCaller {
 
 
 [[nodiscard]] extern JS_PUBLIC_API bool DisableWasmHugeMemory();
-
-
-
-
-
-
-
-
-
-using LargeAllocationFailureCallback = void (*)();
-
-extern JS_PUBLIC_API void SetProcessLargeAllocationFailureCallback(
-    LargeAllocationFailureCallback afc);
-
-
-
-
-
-
-
-
-
-
-
-
-using OutOfMemoryCallback = void (*)(JSContext*, void*);
-
-extern JS_PUBLIC_API void SetOutOfMemoryCallback(JSContext* cx,
-                                                 OutOfMemoryCallback cb,
-                                                 void* data);
 
 
 

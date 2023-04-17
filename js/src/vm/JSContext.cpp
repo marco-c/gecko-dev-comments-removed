@@ -45,6 +45,7 @@
 #include "js/ErrorInterceptor.h"      
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
+#include "js/MemoryCallbacks.h"
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/Stack.h"
