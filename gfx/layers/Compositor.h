@@ -266,17 +266,6 @@ class Compositor : public TextureSourceProvider {
                         const gfx::Matrix4x4& aTransform,
                         const gfx::Rect& aVisibleRect) = 0;
 
-  
-
-
-
-
-  void DrawQuad(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
-                const EffectChain& aEffectChain, gfx::Float aOpacity,
-                const gfx::Matrix4x4& aTransform) {
-    DrawQuad(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect);
-  }
-
   void SetClearColor(const gfx::DeviceColor& aColor) { mClearColor = aColor; }
 
   
