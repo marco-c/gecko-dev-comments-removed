@@ -799,6 +799,14 @@ void nsCocoaWindow::Show(bool bState) {
 
   if (bState && !mBounds.IsEmpty()) {
     
+    
+    
+    if ([NSApp activationPolicy] != NSApplicationActivationPolicyRegular) {
+      [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+      PR_SetEnv("MOZ_APP_NO_DOCK=");
+    }
+
+    
     if (mWindowType == eWindowType_popup && nativeParentWindow) {
       if (![nativeParentWindow isVisible] || [nativeParentWindow isMiniaturized]) {
         return;

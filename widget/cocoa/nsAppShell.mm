@@ -335,6 +335,11 @@ nsresult nsAppShell::Init() {
   
   NSAutoreleasePool* localPool = [[NSAutoreleasePool alloc] init];
 
+  char* mozAppNoDock = PR_GetEnv("MOZ_APP_NO_DOCK");
+  if (mozAppNoDock && strcmp(mozAppNoDock, "") != 0) {
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+  }
+
   
   
   
