@@ -3725,10 +3725,12 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
   
   
   
-  if (HTMLEditUtils::GetInclusiveAncestorBlockElementExceptHRElement(
-          *aRange.GetStartContainer()->AsContent(), aEditingHost) !=
-      HTMLEditUtils::GetInclusiveAncestorBlockElementExceptHRElement(
-          *aRange.GetEndContainer()->AsContent(), aEditingHost)) {
+  if (HTMLEditUtils::GetInclusiveAncestorElement(
+          *aRange.GetStartContainer()->AsContent(),
+          HTMLEditUtils::ClosestEditableBlockElementExceptHRElement) !=
+      HTMLEditUtils::GetInclusiveAncestorElement(
+          *aRange.GetEndContainer()->AsContent(),
+          HTMLEditUtils::ClosestEditableBlockElementExceptHRElement)) {
     return false;
   }
 
