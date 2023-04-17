@@ -24,8 +24,6 @@
 #include "nsIInputStream.h"
 #include "nsIMultiPartChannel.h"
 #include "nsIHttpChannel.h"
-#include "nsIApplicationCache.h"
-#include "nsIApplicationCacheChannel.h"
 #include "nsMimeTypes.h"
 
 #include "nsIInterfaceRequestorUtils.h"
@@ -564,66 +562,6 @@ void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
   }
 }
 
-namespace {
-
-already_AddRefed<nsIApplicationCache> GetApplicationCache(
-    nsIRequest* aRequest) {
-  nsresult rv;
-
-  nsCOMPtr<nsIApplicationCacheChannel> appCacheChan =
-      do_QueryInterface(aRequest);
-  if (!appCacheChan) {
-    return nullptr;
-  }
-
-  bool fromAppCache;
-  rv = appCacheChan->GetLoadedFromApplicationCache(&fromAppCache);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  if (!fromAppCache) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIApplicationCache> appCache;
-  rv = appCacheChan->GetApplicationCache(getter_AddRefs(appCache));
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  return appCache.forget();
-}
-
-}  
-
-bool imgRequest::CacheChanged(nsIRequest* aNewRequest) {
-  nsCOMPtr<nsIApplicationCache> newAppCache = GetApplicationCache(aNewRequest);
-
-  
-  
-  if (newAppCache == mApplicationCache) {
-    return false;
-  }
-
-  
-  
-  if (newAppCache && mApplicationCache) {
-    nsresult rv;
-
-    nsAutoCString oldAppCacheClientId, newAppCacheClientId;
-    rv = mApplicationCache->GetClientID(oldAppCacheClientId);
-    NS_ENSURE_SUCCESS(rv, true);
-    rv = newAppCache->GetClientID(newAppCacheClientId);
-    NS_ENSURE_SUCCESS(rv, true);
-
-    if (oldAppCacheClientId == newAppCacheClientId) {
-      return false;
-    }
-  }
-
-  
-  
-  
-  return true;
-}
-
 bool imgRequest::GetMultipart() const {
   MutexAutoLock lock(mMutex);
   return mIsMultiPartChannel;
@@ -700,8 +638,6 @@ imgRequest::OnStartRequest(nsIRequest* aRequest) {
   }
 
   SetCacheValidation(mCacheEntry, aRequest);
-
-  mApplicationCache = GetApplicationCache(aRequest);
 
   
   

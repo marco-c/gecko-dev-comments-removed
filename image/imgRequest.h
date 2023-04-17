@@ -25,7 +25,6 @@ class imgCacheValidator;
 class imgLoader;
 class imgRequestProxy;
 class imgCacheEntry;
-class nsIApplicationCache;
 class nsIProperties;
 class nsIRequest;
 class nsITimedChannel;
@@ -105,12 +104,6 @@ class imgRequest final : public nsIStreamListener,
   
   
   static void SetCacheValidation(imgCacheEntry* aEntry, nsIRequest* aRequest);
-
-  
-  
-  
-  
-  bool CacheChanged(nsIRequest* aNewRequest);
 
   bool GetMultipart() const;
 
@@ -248,7 +241,6 @@ class imgRequest final : public nsIStreamListener,
   nsCOMPtr<nsIProperties> mProperties;
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIInterfaceRequestor> mPrevChannelSink;
-  nsCOMPtr<nsIApplicationCache> mApplicationCache;
 
   nsCOMPtr<nsITimedChannel> mTimedChannel;
 

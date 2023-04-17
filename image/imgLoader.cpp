@@ -38,8 +38,6 @@
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsHttpChannel.h"
-#include "nsIApplicationCache.h"
-#include "nsIApplicationCacheContainer.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIChannelEventSink.h"
@@ -1869,26 +1867,6 @@ bool imgLoader::ValidateEntry(
 
   
   
-  nsCOMPtr<nsIApplicationCacheContainer> appCacheContainer;
-  nsCOMPtr<nsIApplicationCache> requestAppCache;
-  nsCOMPtr<nsIApplicationCache> groupAppCache;
-  if ((appCacheContainer = do_GetInterface(request->GetRequest()))) {
-    appCacheContainer->GetApplicationCache(getter_AddRefs(requestAppCache));
-  }
-  if ((appCacheContainer = do_QueryInterface(aLoadGroup))) {
-    appCacheContainer->GetApplicationCache(getter_AddRefs(groupAppCache));
-  }
-
-  if (requestAppCache != groupAppCache) {
-    MOZ_LOG(gImgLog, LogLevel::Debug,
-            ("imgLoader::ValidateEntry - Unable to use cached imgRequest "
-             "[request=%p] because of mismatched application caches\n",
-             address_of(request)));
-    return false;
-  }
-
-  
-  
   
   
   
@@ -3021,7 +2999,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   
   nsCOMPtr<nsICacheInfoChannel> cacheChan(do_QueryInterface(aRequest));
   nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
-  if (cacheChan && channel && !mRequest->CacheChanged(aRequest)) {
+  if (cacheChan && channel) {
     bool isFromCache = false;
     cacheChan->IsFromCache(&isFromCache);
 
