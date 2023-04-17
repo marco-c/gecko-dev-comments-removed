@@ -5311,6 +5311,28 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (needToReclampScroll) {
+    if (mState == OVERSCROLL_ANIMATION) {
+      CancelAnimation();
+    } else if (IsOverscrolled()) {
+      ClearOverscroll();
+    }
+  }
+
   if (smoothScrollRequested && !scrollOffsetUpdated) {
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
     
