@@ -82,6 +82,24 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     chrome_options["args"].append("--host-resolver-rules=MAP nonexistent.*.test ~NOTFOUND, MAP *.test 127.0.0.1")
 
+    
+    
+    
+    address_space_overrides_ports = [
+        ("http-private", "private"),
+        ("http-public", "public"),
+        ("https-private", "private"),
+        ("https-public", "public"),
+    ]
+    address_space_overrides_arg = ",".join(
+        "127.0.0.1:{}={}".format(port_number, address_space)
+        for port_name, address_space in address_space_overrides_ports
+        for port_number in test_environment.config.ports.get(port_name, [])
+    )
+    if address_space_overrides_arg:
+        chrome_options["args"].append(
+            "--ip-address-space-overrides=" + address_space_overrides_arg)
+
     if kwargs["enable_mojojs"]:
         chrome_options["args"].append("--enable-blink-features=MojoJS,MojoJSTest")
 
