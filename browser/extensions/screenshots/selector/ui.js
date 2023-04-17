@@ -639,20 +639,6 @@ this.ui = (function() {
       } else {
         this.cancel.style.display = "none";
       }
-      if (callbacks !== undefined && callbacks.save && this.save) {
-        
-        
-        this.save.removeAttribute("disabled");
-        this.save.onclick = watchFunction(
-          assertIsTrusted(e => {
-            this.save.setAttribute("disabled", "true");
-            callbacks.save(e);
-          })
-        );
-        this.save.style.display = "";
-      } else if (this.save) {
-        this.save.style.display = "none";
-      }
       if (callbacks !== undefined && callbacks.download) {
         this.download.removeAttribute("disabled");
         this.download.onclick = watchFunction(
@@ -856,15 +842,6 @@ this.ui = (function() {
         target = target.parentNode;
       }
       return false;
-    },
-
-    clearSaveDisabled() {
-      if (!this.save) {
-        
-        
-        return;
-      }
-      this.save.removeAttribute("disabled");
     },
 
     el: null,
