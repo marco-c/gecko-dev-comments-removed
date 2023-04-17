@@ -115,10 +115,18 @@ var _attachConsole = async function(listeners, attachToTab, attachToWorker) {
   return null;
 };
 
-async function createCommandsForTab() {
+async function createResourceWatcherForTab() {
+  
+  const {
+    ResourceWatcher,
+  } = require("devtools/shared/resources/resource-watcher");
+
   const commands = await CommandsFactory.forMainProcess();
   await commands.targetCommand.startListening();
-  return commands;
+  const target = commands.targetCommand.targetFront;
+  const resourceWatcher = new ResourceWatcher(commands.targetCommand);
+
+  return { resourceWatcher, target };
 }
 
 function closeDebugger(state, callback) {

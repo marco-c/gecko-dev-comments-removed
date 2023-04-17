@@ -67,7 +67,7 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
   }
 
   const { inspector } = await openInspectorForURL(TEST_ORG_URI);
-  const resourceCommand = inspector.toolbox.resourceCommand;
+  const resourceWatcher = inspector.toolbox.resourceWatcher;
 
   
   
@@ -81,7 +81,7 @@ add_task(async function navigateFrameNotExpandedInMarkupView() {
 
   is(
     resource.resourceType,
-    resourceCommand.TYPES.ROOT_NODE,
+    resourceWatcher.TYPES.ROOT_NODE,
     "A resource with resourceType ROOT_NODE was received when navigating"
   );
 
@@ -110,12 +110,12 @@ async function navigateIframeTo(inspector, url) {
   info("Navigate the test iframe to " + url);
 
   const { commands } = inspector;
-  const { resourceCommand } = inspector.toolbox;
+  const { resourceWatcher } = inspector.toolbox;
   const onTargetProcessed = waitForTargetProcessed(commands, url);
 
   const onNewRoot = waitForNextResource(
-    resourceCommand,
-    resourceCommand.TYPES.ROOT_NODE,
+    resourceWatcher,
+    resourceWatcher.TYPES.ROOT_NODE,
     {
       ignoreExistingResources: true,
     }

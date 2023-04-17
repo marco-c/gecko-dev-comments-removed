@@ -12,7 +12,9 @@ const {
   EDITOR_PRETTY_PRINT,
 } = require("devtools/client/webconsole/constants");
 const { getAllPrefs } = require("devtools/client/webconsole/selectors/prefs");
-const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
+const {
+  ResourceWatcher,
+} = require("devtools/shared/resources/resource-watcher");
 const l10n = require("devtools/client/webconsole/utils/l10n");
 
 loader.lazyServiceGetter(
@@ -171,13 +173,13 @@ function handleHelperResult(response) {
   return async ({ dispatch, hud, toolbox, webConsoleUI }) => {
     const { result, helperResult } = response;
     const helperHasRawOutput = !!helperResult?.rawOutput;
-    const hasNetworkResourceCommandSupport = hud.resourceCommand.hasResourceCommandSupport(
-      hud.resourceCommand.TYPES.NETWORK_EVENT
+    const hasNetworkResourceWatcherSupport = hud.resourceWatcher.hasResourceWatcherSupport(
+      hud.resourceWatcher.TYPES.NETWORK_EVENT
     );
     let networkFront = null;
     
-    if (hasNetworkResourceCommandSupport) {
-      networkFront = await hud.resourceCommand.watcherFront.getNetworkParentActor();
+    if (hasNetworkResourceWatcherSupport) {
+      networkFront = await hud.resourceWatcher.watcherFront.getNetworkParentActor();
     }
 
     if (helperResult?.type) {
@@ -237,7 +239,7 @@ function handleHelperResult(response) {
                     level: message.level || "log",
                     arguments: [message.text],
                   },
-                  resourceType: ResourceCommand.TYPES.CONSOLE_MESSAGE,
+                  resourceType: ResourceWatcher.TYPES.CONSOLE_MESSAGE,
                 }))
               )
             );
@@ -250,7 +252,7 @@ function handleHelperResult(response) {
           
           
           
-          if (hasNetworkResourceCommandSupport && networkFront) {
+          if (hasNetworkResourceWatcherSupport && networkFront) {
             await networkFront.blockRequest({ url: blockURL });
           }
           toolbox
@@ -262,7 +264,7 @@ function handleHelperResult(response) {
           dispatch(
             messagesActions.messagesAdd([
               {
-                resourceType: ResourceCommand.TYPES.PLATFORM_MESSAGE,
+                resourceType: ResourceWatcher.TYPES.PLATFORM_MESSAGE,
                 message: l10n.getFormatStr(
                   "webconsole.message.commands.blockedURL",
                   [blockURL]
@@ -274,7 +276,7 @@ function handleHelperResult(response) {
         case "unblockURL":
           const unblockURL = helperResult.args.url;
           
-          if (hasNetworkResourceCommandSupport && networkFront) {
+          if (hasNetworkResourceWatcherSupport && networkFront) {
             await networkFront.unblockRequest({ url: unblockURL });
           }
           toolbox
@@ -286,7 +288,7 @@ function handleHelperResult(response) {
           dispatch(
             messagesActions.messagesAdd([
               {
-                resourceType: ResourceCommand.TYPES.PLATFORM_MESSAGE,
+                resourceType: ResourceWatcher.TYPES.PLATFORM_MESSAGE,
                 message: l10n.getFormatStr(
                   "webconsole.message.commands.unblockedURL",
                   [unblockURL]

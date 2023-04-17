@@ -213,9 +213,9 @@ class HighlightersOverlay {
     
     this.inspector.on("markupmutation", this.onMarkupMutation);
 
-    this.resourceCommand = this.inspector.toolbox.resourceCommand;
-    this.resourceCommand.watchResources(
-      [this.resourceCommand.TYPES.ROOT_NODE],
+    this.resourceWatcher = this.inspector.toolbox.resourceWatcher;
+    this.resourceWatcher.watchResources(
+      [this.resourceWatcher.TYPES.ROOT_NODE],
       { onAvailable: this._onResourceAvailable }
     );
 
@@ -1742,7 +1742,7 @@ class HighlightersOverlay {
   async _onResourceAvailable(resources) {
     for (const resource of resources) {
       if (
-        resource.resourceType !== this.resourceCommand.TYPES.ROOT_NODE ||
+        resource.resourceType !== this.resourceWatcher.TYPES.ROOT_NODE ||
         
         
         resource.isDestroyed()
@@ -1888,8 +1888,8 @@ class HighlightersOverlay {
 
   destroy() {
     this.inspector.off("markupmutation", this.onMarkupMutation);
-    this.resourceCommand.unwatchResources(
-      [this.resourceCommand.TYPES.ROOT_NODE],
+    this.resourceWatcher.unwatchResources(
+      [this.resourceWatcher.TYPES.ROOT_NODE],
       { onAvailable: this._onResourceAvailable }
     );
 

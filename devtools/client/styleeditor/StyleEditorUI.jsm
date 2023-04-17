@@ -145,14 +145,14 @@ StyleEditorUI.prototype = {
       this._onTargetAvailable
     );
 
-    await this._toolbox.resourceCommand.watchResources(
-      [this._toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
+    await this._toolbox.resourceWatcher.watchResources(
+      [this._toolbox.resourceWatcher.TYPES.DOCUMENT_EVENT],
       { onAvailable: this._onResourceAvailable }
     );
 
     this._startLoadingStyleSheets();
-    await this._toolbox.resourceCommand.watchResources(
-      [this._toolbox.resourceCommand.TYPES.STYLESHEET],
+    await this._toolbox.resourceWatcher.watchResources(
+      [this._toolbox.resourceWatcher.TYPES.STYLESHEET],
       {
         onAvailable: this._onResourceAvailable,
         onUpdated: this._onResourceUpdated,
@@ -259,8 +259,8 @@ StyleEditorUI.prototype = {
     
     
     this._root.classList.add("loading");
-    for (const resource of this._toolbox.resourceCommand.getAllResources(
-      this._toolbox.resourceCommand.TYPES.STYLESHEET
+    for (const resource of this._toolbox.resourceWatcher.getAllResources(
+      this._toolbox.resourceWatcher.TYPES.STYLESHEET
     )) {
       await this._handleStyleSheetResource(resource);
     }
@@ -1190,7 +1190,7 @@ StyleEditorUI.prototype = {
     const promises = [];
     for (const resource of resources) {
       if (
-        resource.resourceType === this._toolbox.resourceCommand.TYPES.STYLESHEET
+        resource.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
       ) {
         const onStyleSheetHandled = this._handleStyleSheetResource(resource);
 
@@ -1235,7 +1235,7 @@ StyleEditorUI.prototype = {
   async _onResourceUpdated(updates) {
     for (const { resource, update } of updates) {
       if (
-        update.resourceType === this._toolbox.resourceCommand.TYPES.STYLESHEET
+        update.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
       ) {
         const editor = this.editors.find(
           e => e.resourceId === update.resourceId
@@ -1279,10 +1279,10 @@ StyleEditorUI.prototype = {
       this._onTargetAvailable
     );
 
-    this._toolbox.resourceCommand.unwatchResources(
+    this._toolbox.resourceWatcher.unwatchResources(
       [
-        this._toolbox.resourceCommand.TYPES.DOCUMENT_EVENT,
-        this._toolbox.resourceCommand.TYPES.STYLESHEET,
+        this._toolbox.resourceWatcher.TYPES.DOCUMENT_EVENT,
+        this._toolbox.resourceWatcher.TYPES.STYLESHEET,
       ],
       {
         onAvailable: this._onResourceAvailable,

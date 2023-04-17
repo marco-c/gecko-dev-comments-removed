@@ -13,9 +13,15 @@ let ORIGINAL_LONG_STRING_LENGTH, ORIGINAL_LONG_STRING_INITIAL_LENGTH;
 add_task(async function() {
   const tab = await addTab(URL_ROOT + "network_requests_iframe.html");
 
+  
+  const {
+    ResourceWatcher,
+  } = require("devtools/shared/resources/resource-watcher");
+
   const commands = await CommandsFactory.forTab(tab);
   await commands.targetCommand.startListening();
   const target = commands.targetCommand.targetFront;
+  const resourceWatcher = new ResourceWatcher(commands.targetCommand);
 
   
   
@@ -30,8 +36,8 @@ add_task(async function() {
 
   info("test network POST request");
   const networkResource = await new Promise(resolve => {
-    commands.resourceCommand
-      .watchResources([commands.resourceCommand.TYPES.NETWORK_EVENT], {
+    resourceWatcher
+      .watchResources([resourceWatcher.TYPES.NETWORK_EVENT], {
         onAvailable: () => {},
         onUpdated: resourceUpdate => {
           resolve(resourceUpdate[0].resource);
