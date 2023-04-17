@@ -324,8 +324,8 @@ const PREF_TYPES = new Map([
 
 
 
-function makeResultBuckets({ showSearchSuggestionsFirst }) {
-  let rootBucket = {
+function makeResultGroups({ showSearchSuggestionsFirst }) {
+  let rootGroup = {
     children: [
       
       {
@@ -352,7 +352,7 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
   };
 
   
-  let mainBucket = {
+  let mainGroup = {
     flexChildren: true,
     children: [
       
@@ -417,13 +417,13 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
     ],
   };
   if (!showSearchSuggestionsFirst) {
-    mainBucket.children.reverse();
+    mainGroup.children.reverse();
   }
-  mainBucket.children[0].flex = 2;
-  mainBucket.children[1].flex = 1;
-  rootBucket.children.push(mainBucket);
+  mainGroup.children[0].flex = 2;
+  mainGroup.children[1].flex = 1;
+  rootGroup.children.push(mainGroup);
 
-  return rootBucket;
+  return rootGroup;
 }
 
 
@@ -512,8 +512,8 @@ class Preferences {
 
 
 
-  makeResultBuckets(options) {
-    return makeResultBuckets(options);
+  makeResultGroups(options) {
+    return makeResultGroups(options);
   }
 
   
@@ -521,11 +521,11 @@ class Preferences {
 
 
 
-  migrateResultBuckets() {
+  migrateResultGroups() {
     this.set(
       "resultGroups",
       JSON.stringify(
-        makeResultBuckets({
+        makeResultGroups({
           showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
         })
       )
@@ -725,7 +725,7 @@ class Preferences {
         this.set(
           "resultGroups",
           JSON.stringify(
-            makeResultBuckets({ showSearchSuggestionsFirst: this.get(pref) })
+            makeResultGroups({ showSearchSuggestionsFirst: this.get(pref) })
           )
         );
         return;
@@ -801,7 +801,7 @@ class Preferences {
         try {
           return JSON.parse(this._readPref(pref));
         } catch (ex) {}
-        return makeResultBuckets({
+        return makeResultGroups({
           showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
         });
       case "shouldHandOffToSearchMode":
@@ -889,17 +889,17 @@ class Preferences {
 
 
   initializeShowSearchSuggestionsFirstPref() {
-    let matchBuckets = [];
-    let pref = Services.prefs.getCharPref("browser.urlbar.matchBuckets", "");
+    let matchGroups = [];
+    let pref = Services.prefs.getCharPref("browser.urlbar.matchGroups", "");
     try {
-      matchBuckets = pref.split(",").map(v => {
-        let bucket = v.split(":");
-        return [bucket[0].trim().toLowerCase(), Number(bucket[1])];
+      matchGroups = pref.split(",").map(v => {
+        let group = v.split(":");
+        return [group[0].trim().toLowerCase(), Number(group[1])];
       });
     } catch (ex) {}
-    let bucketNames = matchBuckets.map(bucket => bucket[0]);
-    let suggestionIndex = bucketNames.indexOf("suggestion");
-    let generalIndex = bucketNames.indexOf("general");
+    let groupNames = matchGroups.map(group => group[0]);
+    let suggestionIndex = groupNames.indexOf("suggestion");
+    let generalIndex = groupNames.indexOf("general");
     let showSearchSuggestionsFirst =
       generalIndex < 0 ||
       (suggestionIndex >= 0 && suggestionIndex < generalIndex);

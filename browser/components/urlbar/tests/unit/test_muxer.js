@@ -329,8 +329,8 @@ const BAD_HEURISTIC_RESULTS_GENERAL = [
   BAD_HEURISTIC_RESULTS[3],
 ];
 
-add_task(async function test_badHeuristicBuckets_multiple_0() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_0() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -346,8 +346,8 @@ add_task(async function test_badHeuristicBuckets_multiple_0() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_1() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_1() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -362,8 +362,8 @@ add_task(async function test_badHeuristicBuckets_multiple_1() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_2() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_2() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -379,8 +379,8 @@ add_task(async function test_badHeuristicBuckets_multiple_2() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_3() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_3() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -395,8 +395,8 @@ add_task(async function test_badHeuristicBuckets_multiple_3() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_4() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_4() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -417,8 +417,8 @@ add_task(async function test_badHeuristicBuckets_multiple_4() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_5() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_5() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -437,8 +437,8 @@ add_task(async function test_badHeuristicBuckets_multiple_5() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_6() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_6() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -459,8 +459,8 @@ add_task(async function test_badHeuristicBuckets_multiple_6() {
   );
 });
 
-add_task(async function test_badHeuristicBuckets_multiple_7() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicGroups_multiple_7() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -479,8 +479,8 @@ add_task(async function test_badHeuristicBuckets_multiple_7() {
   );
 });
 
-add_task(async function test_badHeuristicsBuckets_notFirst_0() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicsGroups_notFirst_0() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -496,8 +496,8 @@ add_task(async function test_badHeuristicsBuckets_notFirst_0() {
   );
 });
 
-add_task(async function test_badHeuristicsBuckets_notFirst_1() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicsGroups_notFirst_1() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -512,8 +512,8 @@ add_task(async function test_badHeuristicsBuckets_notFirst_1() {
   );
 });
 
-add_task(async function test_badHeuristicsBuckets_notFirst_2() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicsGroups_notFirst_2() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -529,8 +529,8 @@ add_task(async function test_badHeuristicsBuckets_notFirst_2() {
   );
 });
 
-add_task(async function test_badHeuristicsBuckets_notFirst_3() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicsGroups_notFirst_3() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -545,8 +545,8 @@ add_task(async function test_badHeuristicsBuckets_notFirst_3() {
   );
 });
 
-add_task(async function test_badHeuristicsBuckets_notFirst_4() {
-  await doBadHeuristicBucketsTest(
+add_task(async function test_badHeuristicsGroups_notFirst_4() {
+  await doBadHeuristicGroupsTest(
     [
       
       {
@@ -576,10 +576,10 @@ add_task(async function test_badHeuristicsBuckets_notFirst_4() {
 
 
 
-async function doBadHeuristicBucketsTest(resultBuckets, expectedResults) {
+async function doBadHeuristicGroupsTest(resultGroups, expectedResults) {
   Services.prefs.setCharPref(
     "browser.urlbar.resultGroups",
-    JSON.stringify({ children: resultBuckets })
+    JSON.stringify({ children: resultGroups })
   );
 
   let provider = registerBasicTestProvider(BAD_HEURISTIC_RESULTS);

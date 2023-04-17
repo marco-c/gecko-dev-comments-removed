@@ -3892,7 +3892,7 @@ BrowserGlue.prototype = {
       
       
       
-      UrlbarPrefs.migrateResultBuckets();
+      UrlbarPrefs.migrateResultGroups();
     }
 
     if (currentUIVersion < 119 && AppConstants.NIGHTLY_BUILD) {
