@@ -32,6 +32,7 @@ class FullLookAndFeel;
 }  
 
 enum class StyleSystemColor : uint8_t;
+enum class StyleSystemColorScheme : uint8_t;
 enum class StyleSystemFont : uint8_t;
 
 class LookAndFeel {
@@ -435,6 +436,7 @@ class LookAndFeel {
   
   
   enum class UseStandins : bool { No, Yes };
+  static UseStandins ShouldUseStandins(const dom::Document&, ColorID);
 
   
   
