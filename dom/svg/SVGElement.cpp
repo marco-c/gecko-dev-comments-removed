@@ -1937,8 +1937,7 @@ void SVGElement::DidAnimateBoolean(uint8_t aAttrEnum) {
 
   if (frame) {
     BooleanAttributesInfo info = GetBooleanInfo();
-    frame->AttributeChanged(kNameSpaceID_None,
-                            info.mInfos[aAttrEnum].mName,
+    frame->AttributeChanged(kNameSpaceID_None, info.mInfos[aAttrEnum].mName,
                             MutationEvent_Binding::SMIL);
   }
 }
@@ -2120,8 +2119,8 @@ void SVGElement::GetStringBaseValue(uint8_t aAttrEnum,
 
   NS_ASSERTION(aAttrEnum < info.mCount, "aAttrEnum out of range");
 
-  GetAttr(info.mInfos[aAttrEnum].mNamespaceID,
-          info.mInfos[aAttrEnum].mName, aResult);
+  GetAttr(info.mInfos[aAttrEnum].mNamespaceID, info.mInfos[aAttrEnum].mName,
+          aResult);
 }
 
 void SVGElement::SetStringBaseValue(uint8_t aAttrEnum,
@@ -2133,8 +2132,8 @@ void SVGElement::SetStringBaseValue(uint8_t aAttrEnum,
 
   NS_ASSERTION(aAttrEnum < info.mCount, "aAttrEnum out of range");
 
-  SetAttr(info.mInfos[aAttrEnum].mNamespaceID,
-          info.mInfos[aAttrEnum].mName, aValue, true);
+  SetAttr(info.mInfos[aAttrEnum].mNamespaceID, info.mInfos[aAttrEnum].mName,
+          aValue, true);
 }
 
 void SVGElement::DidAnimateString(uint8_t aAttrEnum) {

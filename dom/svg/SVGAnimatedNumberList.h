@@ -43,7 +43,6 @@ class SVGAnimatedNumberList {
  public:
   SVGAnimatedNumberList() = default;
 
-
   SVGAnimatedNumberList& operator=(const SVGAnimatedNumberList& aOther) {
     mIsBaseSet = aOther.mIsBaseSet;
     mBaseVal = aOther.mBaseVal;

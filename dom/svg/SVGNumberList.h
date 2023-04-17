@@ -47,9 +47,7 @@ class SVGNumberList {
     return *this;
   }
 
-  SVGNumberList(const SVGNumberList& aOther) {
-    *this = aOther;
-  }
+  SVGNumberList(const SVGNumberList& aOther) { *this = aOther; }
 
   
   
