@@ -427,28 +427,7 @@ TimerThread::Run() {
           
           {
             LogTimerEvent::Run run(timerRef.get());
-            timerRef = PostTimerEvent(timerRef.forget());
-          }
-
-          if (timerRef) {
-            
-            
-            
-            nsrefcnt rc = timerRef.forget().take()->Release();
-            (void)rc;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            MOZ_ASSERT(rc != 0, "destroyed timer off its target thread!");
+            PostTimerEvent(timerRef.forget());
           }
 
           if (mShutdown) {
@@ -761,14 +740,13 @@ void TimerThread::RemoveFirstTimerInternal() {
   mTimers.RemoveLastElement();
 }
 
-already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
-    already_AddRefed<nsTimerImpl> aTimerRef) {
+void TimerThread::PostTimerEvent(already_AddRefed<nsTimerImpl> aTimerRef) {
   mMonitor.AssertCurrentThreadOwns();
 
   RefPtr<nsTimerImpl> timer(aTimerRef);
   if (!timer->mEventTarget) {
     NS_ERROR("Attempt to post timer event to NULL event target");
-    return timer.forget();
+    return;
   }
 
   
@@ -783,7 +761,7 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
 
   void* p = nsTimerEvent::operator new(sizeof(nsTimerEvent));
   if (!p) {
-    return timer.forget();
+    return;
   }
   RefPtr<nsTimerEvent> event =
       ::new (KnownNotNull, p) nsTimerEvent(timer.forget(), mProfilerThreadId);
@@ -799,10 +777,7 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
   if (NS_FAILED(rv)) {
     timer = event->ForgetTimer();
     RemoveTimerInternal(timer);
-    return timer.forget();
   }
-
-  return nullptr;
 }
 
 void TimerThread::DoBeforeSleep() {

@@ -39,7 +39,23 @@ class LogModule;
 
 
 class nsTimerImpl {
-  ~nsTimerImpl() { MOZ_ASSERT(!mHolder); }
+  ~nsTimerImpl() {
+    MOZ_ASSERT(!mHolder);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(
+        mCallback.is<UnknownCallback>() || mEventTarget->IsOnCurrentThread(),
+        "Must not release mCallback off-target without canceling");
+  }
 
  public:
   typedef mozilla::TimeStamp TimeStamp;
