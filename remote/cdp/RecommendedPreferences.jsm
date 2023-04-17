@@ -15,6 +15,9 @@ const RecommendedPreferences = new Map([
   ["app.update.disabledForTesting", true],
 
   
+  ["browser.warnOnQuit", false],
+
+  
   ["focusmanager.testmode", true],
 
   

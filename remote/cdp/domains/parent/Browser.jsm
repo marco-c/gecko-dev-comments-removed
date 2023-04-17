@@ -34,6 +34,17 @@ class Browser extends Domain {
   }
 
   close() {
-    Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit);
+    
+    const cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+      Ci.nsISupportsPRBool
+    );
+    Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+
+    
+    const mode = cancelQuit.data
+      ? Ci.nsIAppStartup.eForceQuit
+      : Ci.nsIAppStartup.eAttemptQuit;
+
+    Services.startup.quit(mode);
   }
 }
