@@ -242,6 +242,7 @@ function CaptivePortalDetector() {
   
   this._canonicalSiteURL = null;
   this._canonicalSiteExpectedContent = null;
+  this._telemetryService = Services.telemetry;
 
   try {
     this._canonicalSiteURL = Services.prefs.getCharPref(
@@ -281,7 +282,7 @@ function CaptivePortalDetector() {
   this._requestQueue = []; 
   this._interfaceNames = {}; 
 
-  Services.telemetry.setEventRecordingEnabled(
+  this._telemetryService.setEventRecordingEnabled(
     "networking.captive_portal",
     true
   );
@@ -442,6 +443,12 @@ CaptivePortalDetector.prototype = {
       
       
       if (this._runningRequest.hasOwnProperty("eventId") && success) {
+        this._telemetryService.recordEvent(
+          "networking.captive_portal",
+          "login_successful",
+          "detector"
+        );
+
         let details = {
           type: kCaptivePortalLoginSuccessEvent,
           id: this._runningRequest.eventId,
