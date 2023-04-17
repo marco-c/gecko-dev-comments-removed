@@ -649,6 +649,14 @@ enum class StyleDominantBaseline : uint8_t {
 };
 
 
+enum class StyleImageRendering : uint8_t {
+  Auto,
+  Optimizespeed,
+  Optimizequality,
+  CrispEdges,
+};
+
+
 enum class StyleMaskType : uint8_t {
   Luminance,
   Alpha,

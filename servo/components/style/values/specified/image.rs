@@ -1212,39 +1212,3 @@ impl MozImageRect {
         })
     }
 }
-
-
-#[allow(missing_docs)]
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    Hash,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToCss,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum ImageRendering {
-    Auto,
-    Smooth,
-    #[parse(aliases = "-moz-crisp-edges")]
-    CrispEdges,
-    Pixelated,
-    
-    
-    
-    
-    
-    
-    
-    
-    Optimizespeed,
-    Optimizequality,
-}
