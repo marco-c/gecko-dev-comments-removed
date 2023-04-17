@@ -30,6 +30,8 @@ const TEST_URI = `
   </div>
 `;
 
+ignoreGetGridsPromiseRejections();
+
 add_task(async function() {
   
   
@@ -42,9 +44,6 @@ add_task(async function() {
   const { gridInspector, inspector } = await openLayoutView();
   const { document: doc } = gridInspector;
   const { highlighters, store } = inspector;
-
-  
-  inspector.off("reflow-in-selected-target", gridInspector.onReflow);
 
   await selectNode("#grid1", inspector);
   const gridList = doc.getElementById("grid-list");

@@ -31,6 +31,8 @@ const OTHER_URI = `
   </div>
 `;
 
+ignoreGetGridsPromiseRejections();
+
 add_task(async function() {
   
   
@@ -47,9 +49,6 @@ add_task(async function() {
     waitForHighlighterTypeRestored,
     waitForHighlighterTypeDiscarded,
   } = getHighlighterTestHelpers(inspector);
-
-  
-  inspector.off("reflow-in-selected-target", gridInspector.onReflow);
 
   await selectNode("#grid", inspector);
   const gridList = doc.getElementById("grid-list");
