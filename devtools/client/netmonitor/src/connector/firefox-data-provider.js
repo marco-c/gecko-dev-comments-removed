@@ -38,6 +38,9 @@ class FirefoxDataProvider {
     this.owner = owner;
 
     
+    
+    
+    
     this.stackTraces = new Map();
     
     this.stackTraceRequestInfoByActorID = new Map();
@@ -319,8 +322,30 @@ class FirefoxDataProvider {
 
 
 
-  onStackTraceAvailable(resource) {
-    this.stackTraces.set(resource.resourceId, resource);
+  async onStackTraceAvailable(resource) {
+    if (!this.stackTraces.has(resource.resourceId)) {
+      
+      
+      
+      this.stackTraces.set(resource.resourceId, resource);
+    } else {
+      
+      
+      const request = this.stackTraces.get(resource.resourceId);
+      request.cause.stacktraceAvailable = resource.stacktraceAvailable;
+      request.cause.lastFrame = resource.lastFrame;
+
+      this.stackTraces.delete(resource.resourceId);
+
+      this.stackTraceRequestInfoByActorID.set(request.actor, {
+        targetFront: resource.targetFront,
+        stacktraceResourceId: resource.resourceId,
+      });
+
+      if (this.actionsEnabled && this.actions.updateRequest) {
+        await this.actions.updateRequest(request.actor, request, true);
+      }
+    }
   }
 
   
@@ -329,10 +354,8 @@ class FirefoxDataProvider {
 
 
   async onNetworkResourceAvailable(resource) {
-    const { actor, stacktraceResourceId } = resource;
+    const { actor, stacktraceResourceId, cause } = resource;
 
-    
-    
     
     if (this.stackTraces.has(stacktraceResourceId)) {
       const {
@@ -354,6 +377,12 @@ class FirefoxDataProvider {
         targetFront,
         stacktraceResourceId,
       });
+    } else if (cause) {
+      
+      
+      
+      
+      this.stackTraces.set(stacktraceResourceId, { actor, cause });
     }
     await this.addRequest(actor, resource);
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT, resource);
