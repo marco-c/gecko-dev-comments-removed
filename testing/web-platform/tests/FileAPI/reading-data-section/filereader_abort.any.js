@@ -1,17 +1,5 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>FileAPI Test: filereader_abort</title>
-    <link rel="author" title="Intel" href="http://www.intel.com">
-    <link rel="help" href="http://dev.w3.org/2006/webapi/FileAPI/#abort">
-    <script src="/resources/testharness.js"></script>
-    <script src="/resources/testharnessreport.js"></script>
-  </head>
-  <body>
-    <div id="log"></div>
 
-    <script>
+
     test(function() {
       var readerNoRead = new FileReader();
       readerNoRead.abort();
@@ -26,8 +14,8 @@
         var eventWatcher = new EventWatcher(t, readerAbort,
             ['abort', 'loadstart', 'loadend', 'error', 'load']);
 
-        // EventWatcher doesn't let us inspect the state after the abort event,
-        // so add an extra event handler for that.
+        
+        
         readerAbort.addEventListener('abort', t.step_func(e => {
               assert_equals(readerAbort.readyState, readerAbort.DONE);
           }));
@@ -36,18 +24,15 @@
         return eventWatcher.wait_for('loadstart')
           .then(() => {
               assert_equals(readerAbort.readyState, readerAbort.LOADING);
-              // 'abort' and 'loadend' events are dispatched synchronously, so
-              // call wait_for before calling abort.
+              
+              
               var nextEvent = eventWatcher.wait_for(['abort', 'loadend']);
               readerAbort.abort();
               return nextEvent;
             })
           .then(() => {
-              // https://www.w3.org/Bugs/Public/show_bug.cgi?id=24401
+              
               assert_equals(readerAbort.result, null);
               assert_equals(readerAbort.readyState, readerAbort.DONE);
             });
       }, "Aborting after read");
-    </script>
-  </body>
-</html>

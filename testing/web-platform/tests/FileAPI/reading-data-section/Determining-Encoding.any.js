@@ -1,16 +1,8 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>FileAPI Test: Blob Determining Encoding</title>
-<link ref="author" title="march1993" href="mailto:march511@gmail.com">
-<link rel=help href="http://dev.w3.org/2006/webapi/FileAPI/#enctype">
-<link rel=help href="http://encoding.spec.whatwg.org/#decode">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<div id="log"></div>
-<script>
+
+
 var t = async_test("Blob Determing Encoding with encoding argument");
 t.step(function() {
-    // string 'hello'
+    
     var data = [0xFE,0xFF,0x00,0x68,0x00,0x65,0x00,0x6C,0x00,0x6C,0x00,0x6F];
     var blob = new Blob([new Uint8Array(data)]);
     var reader = new FileReader();
@@ -87,5 +79,3 @@ t.step(function() {
 
     reader.readAsText(blob);
 });
-
-</script>
