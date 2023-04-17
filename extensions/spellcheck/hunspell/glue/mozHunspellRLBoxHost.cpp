@@ -146,12 +146,19 @@ tainted_hunspell<bool> mozHunspellCallbacks::GetLine(
       mozHunspellCallbacks::GetMozHunspellFileMgrHost(t_aFd);
   std::string line;
   bool ok = inst.GetLine(line);
+  
   if (ok) {
+    
     
     size_t size = line.size() + 1;
     tainted_hunspell<char*> t_line = aSandbox.malloc_in_sandbox<char>(size);
-    MOZ_RELEASE_ASSERT(t_line);
-    rlbox::memcpy(aSandbox, t_line, line.c_str(), size);
+
+    if (t_line == nullptr) {
+      
+      ok = false;
+    } else {
+      rlbox::memcpy(aSandbox, t_line, line.c_str(), size);
+    }
     *t_aLinePtr = t_line;
   } else {
     *t_aLinePtr = nullptr;
