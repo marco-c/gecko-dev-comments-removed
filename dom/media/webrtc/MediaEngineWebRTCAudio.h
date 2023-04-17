@@ -227,13 +227,11 @@ class AudioInputProcessing : public AudioDataListener {
   AudioSegment mSegment;
   
   
-  bool mLiveFramesAppended;
   
   
   
   
-  
-  TrackTime mLiveBufferingAppended;
+  Maybe<TrackTime> mLiveBufferingAppended;
   
   const PrincipalHandle mPrincipal;
   
