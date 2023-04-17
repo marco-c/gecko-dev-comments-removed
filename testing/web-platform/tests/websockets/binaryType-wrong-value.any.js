@@ -1,12 +1,9 @@
 
 
-
-
-
 var testOpen = async_test("Create WebSocket - set binaryType to something other than blob or arraybuffer - SYNTAX_ERR is returned - Connection should be opened");
 var testClose = async_test("Create WebSocket - set binaryType to something other than blob or arraybuffer - SYNTAX_ERR is returned - Connection should be closed");
 
-var wsocket = CreateWebSocket(false, false);
+var wsocket = CreateWebSocket(true, false, false);
 
 wsocket.addEventListener('open', testOpen.step_func(function(evt) {
   assert_equals(wsocket.binaryType, "blob");

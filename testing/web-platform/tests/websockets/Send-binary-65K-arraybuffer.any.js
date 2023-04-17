@@ -1,15 +1,12 @@
 
 
-
-
-
 var testOpen = async_test("Send 65K binary data on a WebSocket - ArrayBuffer - Connection should be opened");
 var testMessage = async_test("Send 65K binary data on a WebSocket - ArrayBuffer - Message should be received");
 var testClose = async_test("Send 65K binary data on a WebSocket - ArrayBuffer - Connection should be closed");
 
 var data = "";
 var datasize = 65000;
-var wsocket = CreateWebSocket(false, false);
+var wsocket = CreateWebSocket(false, false, false);
 var isOpenCalled = false;
 
 wsocket.addEventListener('open', testOpen.step_func(function(evt) {

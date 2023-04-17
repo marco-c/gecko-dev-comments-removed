@@ -1,12 +1,9 @@
 
 
-
-
-
 var testOpen = async_test("Create WebSocket - Close the Connection - Connection should be opened");
 var testClose = async_test("Create WebSocket - Close the Connection - close(1000, reason) - readyState should be in CLOSED state and wasClean is TRUE - Connection should be closed");
 
-var wsocket = CreateWebSocket(false, false);
+var wsocket = CreateWebSocket(false, false, false);
 var isOpenCalled = false;
 
 wsocket.addEventListener('open', testOpen.step_func(function(evt) {
