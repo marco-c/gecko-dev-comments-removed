@@ -210,21 +210,9 @@ class GlobalHelperThreadState {
   void assertIsLockedByCurrentThread() const;
 #endif
 
-  enum CondVar {
-    
-    
-    
-    CONSUMER,
-
-    
-    
-    
-    PRODUCER,
-  };
-
-  void wait(AutoLockHelperThreadState& locked, CondVar which,
+  void wait(AutoLockHelperThreadState& locked,
             mozilla::TimeDuration timeout = mozilla::TimeDuration::Forever());
-  void notifyAll(CondVar which, const AutoLockHelperThreadState&);
+  void notifyAll(const AutoLockHelperThreadState&);
 
   bool useInternalThreadPool(const AutoLockHelperThreadState& lock) const {
     return useInternalThreadPool_;
@@ -235,7 +223,7 @@ class GlobalHelperThreadState {
   }
 
  private:
-  void notifyOne(CondVar which, const AutoLockHelperThreadState&);
+  void notifyOne(const AutoLockHelperThreadState&);
 
  public:
   
@@ -425,19 +413,8 @@ class GlobalHelperThreadState {
 
  private:
   
+  
   js::ConditionVariable consumerWakeup;
-  js::ConditionVariable producerWakeup;
-
-  js::ConditionVariable& whichWakeup(CondVar which) {
-    switch (which) {
-      case CONSUMER:
-        return consumerWakeup;
-      case PRODUCER:
-        return producerWakeup;
-      default:
-        MOZ_CRASH("Invalid CondVar in |whichWakeup|");
-    }
-  }
 
   void dispatch(const AutoLockHelperThreadState& locked);
 
