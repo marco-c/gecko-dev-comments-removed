@@ -275,6 +275,24 @@ void MacroAssemblerX86Shared::compareInt8x16(FloatRegister lhs, Operand rhs,
       vpcmpgtb(rhs, lhs, output);
       asMasm().bitwiseXorSimd128(allOnes, output);
       break;
+    case Assembler::Above:
+      vpmaxub(rhs, lhs, output);
+      vpcmpeqb(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::BelowOrEqual:
+      vpmaxub(rhs, lhs, output);
+      vpcmpeqb(rhs, output, output);
+      break;
+    case Assembler::Below:
+      vpminub(rhs, lhs, output);
+      vpcmpeqb(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::AboveOrEqual:
+      vpminub(rhs, lhs, output);
+      vpcmpeqb(rhs, output, output);
+      break;
     default:
       MOZ_CRASH("unexpected condition op");
   }
@@ -304,85 +322,6 @@ void MacroAssemblerX86Shared::compareInt8x16(Assembler::Condition cond,
   }
   if (complement) {
     asMasm().bitwiseXorSimd128(SimdConstant::SplatX16(-1), lhsDest);
-  }
-}
-
-void MacroAssemblerX86Shared::unsignedCompareInt8x16(
-    FloatRegister lhs, Operand rhs, Assembler::Condition cond,
-    FloatRegister output, FloatRegister tmp1, FloatRegister tmp2) {
-  
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT(lhs == output);
-  MOZ_ASSERT(lhs != tmp1 && lhs != tmp2);
-  MOZ_ASSERT_IF(
-      rhs.kind() == Operand::FPREG,
-      ToSimdFloatRegister(rhs) != tmp1 && ToSimdFloatRegister(rhs) != tmp2);
-
-  bool complement = false;
-  switch (cond) {
-    case Assembler::Above:
-    case Assembler::BelowOrEqual:
-      complement = cond == Assembler::BelowOrEqual;
-
-      
-      vpmovzxbw(Operand(lhs), tmp1);
-      vpmovzxbw(rhs, tmp2);
-      
-      vpcmpgtw(Operand(tmp2), tmp1, tmp1);  
-
-      
-      vpalignr(rhs, tmp2, 8);
-      vpmovzxbw(Operand(tmp2), tmp2);
-      vpalignr(Operand(lhs), output, 8);
-      vpmovzxbw(Operand(output), output);
-      
-      vpcmpgtw(Operand(tmp2), output, output);  
-
-      break;
-    case Assembler::Below:
-    case Assembler::AboveOrEqual:
-      complement = cond == Assembler::AboveOrEqual;
-
-      
-
-      
-      vpmovzxbw(Operand(lhs), tmp2);
-      vpmovzxbw(rhs, tmp1);
-      
-      vpcmpgtw(Operand(tmp2), tmp1, tmp1);  
-
-      
-      vpalignr(Operand(lhs), tmp2, 8);
-      vpmovzxbw(Operand(tmp2), tmp2);
-      vpalignr(rhs, output, 8);
-      vpmovzxbw(Operand(output), output);
-      
-      vpcmpgtw(Operand(tmp2), output, output);  
-
-      break;
-    default:
-      MOZ_CRASH("Unsupported condition code");
-  }
-
-  
-  
-  
-  vpsrlw(Imm32(8), tmp1, tmp1);
-  vpackuswb(Operand(tmp1), tmp1, tmp1);
-  vpsrlw(Imm32(8), output, output);
-  vpackuswb(Operand(output), output, output);
-  vpalignr(Operand(tmp1), output, 8);
-
-  
-  if (complement) {
-    vpcmpeqd(Operand(tmp1), tmp1, tmp1);
-    vpxor(Operand(tmp1), output, output);
   }
 }
 
@@ -435,6 +374,24 @@ void MacroAssemblerX86Shared::compareInt16x8(FloatRegister lhs, Operand rhs,
       vpcmpgtw(rhs, lhs, output);
       asMasm().bitwiseXorSimd128(allOnes, output);
       break;
+    case Assembler::Above:
+      vpmaxuw(rhs, lhs, output);
+      vpcmpeqw(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::BelowOrEqual:
+      vpmaxuw(rhs, lhs, output);
+      vpcmpeqw(rhs, output, output);
+      break;
+    case Assembler::Below:
+      vpminuw(rhs, lhs, output);
+      vpcmpeqw(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::AboveOrEqual:
+      vpminuw(rhs, lhs, lhs);
+      vpcmpeqw(rhs, lhs, lhs);
+      break;
     default:
       MOZ_CRASH("unexpected condition op");
   }
@@ -464,65 +421,6 @@ void MacroAssemblerX86Shared::compareInt16x8(Assembler::Condition cond,
   }
   if (complement) {
     asMasm().bitwiseXorSimd128(SimdConstant::SplatX16(-1), lhsDest);
-  }
-}
-
-void MacroAssemblerX86Shared::unsignedCompareInt16x8(
-    FloatRegister lhs, Operand rhs, Assembler::Condition cond,
-    FloatRegister output, FloatRegister tmp1, FloatRegister tmp2) {
-  
-
-  MOZ_ASSERT(lhs == output);
-  MOZ_ASSERT(lhs != tmp1 && lhs != tmp2);
-  MOZ_ASSERT_IF(
-      rhs.kind() == Operand::FPREG,
-      ToSimdFloatRegister(rhs) != tmp1 && ToSimdFloatRegister(rhs) != tmp2);
-
-  bool complement = false;
-  switch (cond) {
-    case Assembler::Above:
-    case Assembler::BelowOrEqual:
-      complement = cond == Assembler::BelowOrEqual;
-
-      vpmovzxwd(Operand(lhs), tmp1);
-      vpmovzxwd(rhs, tmp2);
-      vpcmpgtd(Operand(tmp2), tmp1, tmp1);
-
-      vpalignr(rhs, tmp2, 8);
-      vpmovzxwd(Operand(tmp2), tmp2);
-      vpalignr(Operand(lhs), output, 8);
-      vpmovzxwd(Operand(output), output);
-      vpcmpgtd(Operand(tmp2), output, output);
-
-      break;
-    case Assembler::Below:
-    case Assembler::AboveOrEqual:
-      complement = cond == Assembler::AboveOrEqual;
-
-      vpmovzxwd(Operand(lhs), tmp2);
-      vpmovzxwd(rhs, tmp1);
-      vpcmpgtd(Operand(tmp2), tmp1, tmp1);
-
-      vpalignr(Operand(lhs), tmp2, 8);
-      vpmovzxwd(Operand(tmp2), tmp2);
-      vpalignr(rhs, output, 8);
-      vpmovzxwd(Operand(output), output);
-      vpcmpgtd(Operand(tmp2), output, output);
-
-      break;
-    default:
-      MOZ_CRASH();
-  }
-
-  vpsrld(Imm32(16), tmp1, tmp1);
-  vpackusdw(Operand(tmp1), tmp1, tmp1);
-  vpsrld(Imm32(16), output, output);
-  vpackusdw(Operand(output), output, output);
-  vpalignr(Operand(tmp1), output, 8);
-
-  if (complement) {
-    vpcmpeqd(Operand(tmp1), tmp1, tmp1);
-    vpxor(Operand(tmp1), output, output);
   }
 }
 
@@ -574,6 +472,24 @@ void MacroAssemblerX86Shared::compareInt32x4(FloatRegister lhs, Operand rhs,
       vpcmpgtd(rhs, lhs, lhs);
       asMasm().bitwiseXorSimd128(allOnes, lhs);
       break;
+    case Assembler::Above:
+      vpmaxud(rhs, lhs, output);
+      vpcmpeqd(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::BelowOrEqual:
+      vpmaxud(rhs, lhs, output);
+      vpcmpeqd(rhs, output, output);
+      break;
+    case Assembler::Below:
+      vpminud(rhs, lhs, output);
+      vpcmpeqd(rhs, output, output);
+      asMasm().bitwiseXorSimd128(allOnes, output);
+      break;
+    case Assembler::AboveOrEqual:
+      vpminud(rhs, lhs, output);
+      vpcmpeqd(rhs, output, output);
+      break;
     default:
       MOZ_CRASH("unexpected condition op");
   }
@@ -603,83 +519,6 @@ void MacroAssemblerX86Shared::compareInt32x4(Assembler::Condition cond,
   }
   if (complement) {
     asMasm().bitwiseXorSimd128(SimdConstant::SplatX16(-1), lhsDest);
-  }
-}
-
-void MacroAssemblerX86Shared::unsignedCompareInt32x4(
-    FloatRegister lhs, Operand rhs, Assembler::Condition cond,
-    FloatRegister output, FloatRegister tmp1, FloatRegister tmp2) {
-  
-  
-  
-
-  MOZ_ASSERT(lhs == output);
-  MOZ_ASSERT(lhs != tmp1 && lhs != tmp2);
-  MOZ_ASSERT_IF(
-      rhs.kind() == Operand::FPREG,
-      ToSimdFloatRegister(rhs) != tmp1 && ToSimdFloatRegister(rhs) != tmp2);
-
-  bool complement = false;
-  switch (cond) {
-    case Assembler::Below:
-    case Assembler::AboveOrEqual:
-      complement = cond == Assembler::AboveOrEqual;
-
-      
-      
-
-      vpmovzxdq(Operand(lhs), tmp1);
-      vpmovzxdq(rhs, tmp2);
-      vpsubq(Operand(tmp2), tmp1, tmp1);  
-      vpsrlq(Imm32(32), tmp1, tmp1);      
-      vpshufd(MacroAssembler::ComputeShuffleMask(0, 2, 3, 3), tmp1,
-              tmp1);  
-
-      vpalignr(rhs, tmp2, 8);
-      vpmovzxdq(Operand(tmp2), tmp2);
-      vpalignr(Operand(lhs), output, 8);
-      vpmovzxdq(Operand(output), output);
-      vpsubq(Operand(tmp2), output, output);  
-      vpsrlq(Imm32(32), output, output);      
-      vpshufd(MacroAssembler::ComputeShuffleMask(3, 3, 0, 2), output,
-              output);  
-
-      vpor(Operand(tmp1), output, output);
-      break;
-
-    case Assembler::Above:
-    case Assembler::BelowOrEqual:
-      complement = cond == Assembler::BelowOrEqual;
-
-      
-      
-
-      vpmovzxdq(Operand(lhs), tmp2);
-      vpmovzxdq(rhs, tmp1);
-      vpsubq(Operand(tmp2), tmp1, tmp1);  
-      vpsrlq(Imm32(32), tmp1, tmp1);      
-      vpshufd(MacroAssembler::ComputeShuffleMask(0, 2, 3, 3), tmp1,
-              tmp1);  
-
-      vpalignr(Operand(lhs), tmp2, 8);
-      vpmovzxdq(Operand(tmp2), tmp2);
-      vpalignr(rhs, output, 8);
-      vpmovzxdq(Operand(output), output);
-      vpsubq(Operand(tmp2), output, output);  
-      vpsrlq(Imm32(32), output, output);      
-      vpshufd(MacroAssembler::ComputeShuffleMask(3, 3, 0, 2), output,
-              output);  
-
-      vpor(Operand(tmp1), output, output);
-      break;
-
-    default:
-      MOZ_CRASH();
-  }
-
-  if (complement) {
-    vpcmpeqd(Operand(tmp1), tmp1, tmp1);
-    vpxor(Operand(tmp1), output, output);
   }
 }
 
