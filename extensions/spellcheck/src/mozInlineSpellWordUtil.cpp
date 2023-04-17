@@ -102,20 +102,22 @@ static bool IsDOMWordSeparator(char16_t ch) {
 
 Maybe<mozInlineSpellWordUtil> mozInlineSpellWordUtil::Create(
     const TextEditor& aTextEditor) {
-  mozInlineSpellWordUtil util;
-  util.mDocument = aTextEditor.GetDocument();
-  if (NS_WARN_IF(!util.mDocument)) {
+  dom::Document* document = aTextEditor.GetDocument();
+  if (NS_WARN_IF(!document)) {
     return Nothing();
   }
 
-  util.mIsContentEditableOrDesignMode = !!aTextEditor.AsHTMLEditor();
+  const bool isContentEditableOrDesignMode = !!aTextEditor.AsHTMLEditor();
 
   
   
-  util.mRootNode = aTextEditor.GetRoot();
-  if (NS_WARN_IF(!util.mRootNode)) {
+  nsINode* rootNode = aTextEditor.GetRoot();
+  if (NS_WARN_IF(!rootNode)) {
     return Nothing();
   }
+
+  mozInlineSpellWordUtil util{*document, isContentEditableOrDesignMode,
+                              *rootNode};
   return Some(std::move(util));
 }
 
