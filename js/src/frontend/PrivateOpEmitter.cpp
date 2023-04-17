@@ -27,7 +27,13 @@ bool PrivateOpEmitter::init() {
     return false;
   }
 
-  return bce_->lookupPrivate(name_, loc_, brandLoc_);
+  
+  NameLocation loc = NameLocation::Dynamic();
+  bool result = bce_->lookupPrivate(name_, loc, brandLoc_);
+  if (result) {
+    loc_ = mozilla::Some(loc);
+  }
+  return result;
 }
 
 bool PrivateOpEmitter::emitLoad(TaggedParserAtomIndex name,
@@ -38,7 +44,7 @@ bool PrivateOpEmitter::emitLoad(TaggedParserAtomIndex name,
 
 bool PrivateOpEmitter::emitLoadPrivateBrand() {
   
-  MOZ_ASSERT(loc_.bindingKind() == BindingKind::PrivateMethod);
+  MOZ_ASSERT(loc_->bindingKind() == BindingKind::PrivateMethod);
   return emitLoad(TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
                   *brandLoc_);
 }
@@ -75,13 +81,13 @@ bool PrivateOpEmitter::emitReference() {
     return false;
   }
 
-  if (loc_.bindingKind() == BindingKind::PrivateMethod) {
+  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
     if (!emitLoadPrivateBrand()) {
       
       return false;
     }
   } else {
-    if (!emitLoad(name_, loc_)) {
+    if (!emitLoad(name_, loc_.ref())) {
       
       return false;
     }
@@ -110,7 +116,7 @@ bool PrivateOpEmitter::emitGet() {
 
   
 
-  if (loc_.bindingKind() == BindingKind::PrivateMethod) {
+  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
     
     
     
@@ -140,7 +146,7 @@ bool PrivateOpEmitter::emitGet() {
       }
     }
 
-    if (!emitLoad(name_, loc_)) {
+    if (!emitLoad(name_, loc_.ref())) {
       
       
       
@@ -208,7 +214,7 @@ bool PrivateOpEmitter::emitAssignment() {
 
   
 
-  if (loc_.bindingKind() == BindingKind::PrivateMethod) {
+  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
     if (!bce_->emit2(JSOp::ThrowMsg,
                      uint8_t(ThrowMsgKind::AssignToPrivateMethod))) {
       return false;

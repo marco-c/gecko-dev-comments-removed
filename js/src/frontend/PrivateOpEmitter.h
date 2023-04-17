@@ -98,7 +98,7 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
 
   
   
-  NameLocation loc_;
+  mozilla::Maybe<NameLocation> loc_;
 
   
   
