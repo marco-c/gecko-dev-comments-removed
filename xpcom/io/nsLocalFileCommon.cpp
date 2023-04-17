@@ -53,6 +53,7 @@ const char* const sExecutableExts[] = {
   ".fxp",         
   ".hlp",
   ".hta",
+  ".inetloc",     
   ".inf",
   ".ins",
   ".isp",

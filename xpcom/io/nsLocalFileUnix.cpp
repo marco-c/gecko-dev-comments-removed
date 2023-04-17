@@ -1656,6 +1656,8 @@ nsLocalFile::IsExecutable(bool* aResult) {
 #ifdef MOZ_WIDGET_COCOA
         "fileloc",  
                     
+        "inetloc", 
+                    
 #endif
         "jar"  
     };
