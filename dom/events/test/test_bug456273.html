@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=456273
+-->
 <head>
   <title>Test for Bug 456273</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -23,9 +23,14 @@
 /** Test for Bug 456273 **/
 
 function doTest() {
-  var ev = document.createEvent('KeyboardEvent');
-  ev.initKeyEvent("keypress", true, true, null, true, false,
-                 false, false, 0, "z".charCodeAt(0));
+  var ev = new KeyboardEvent("keypress", {
+    bubbles: true,
+    cancelable: true,
+    view: null,
+    ctrlKey: true,
+    keyCode: 0,
+    charCode: "z".charCodeAt(0),
+  });
   SpecialPowers.dispatchEvent(window, document.getElementById('edit456273'), ev);
 
   ok(true, "PASS");

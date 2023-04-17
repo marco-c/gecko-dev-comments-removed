@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
-
-
-
+<!--
+Test that the inspector actor has the pickColorFromPage and cancelPickColorFromPage
+methods and that when a color is picked the color-picked event is emitted and that when
+the eyedropper is dimissed, the color-pick-canceled event is emitted.
+https://bugzilla.mozilla.org/show_bug.cgi?id=1262439
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1262439</title>
@@ -52,9 +52,12 @@ window.onload = function() {
     info("Use the escape key to dismiss the eyedropper");
     const onPickCanceled = waitForEvent("color-pick-canceled");
 
-    const keyboardEvent = win.document.createEvent("KeyboardEvent");
-    keyboardEvent.initKeyEvent("keydown", true, true, win, false, false,
-                               false, false, 27, 0);
+    const keyboardEvent = new win.KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      view: win,
+      keyCode: 27
+    });
     win.document.dispatchEvent(keyboardEvent);
 
     await onPickCanceled;
