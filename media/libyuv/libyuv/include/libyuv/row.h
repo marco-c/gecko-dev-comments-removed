@@ -558,13 +558,21 @@ struct YuvConstants {
 extern const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants);  
 extern const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants);  
 extern const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants);  
+
+extern const struct YuvConstants SIMD_ALIGNED(kYuvF709Constants);
 extern const struct YuvConstants SIMD_ALIGNED(kYuv2020Constants);  
+
+extern const struct YuvConstants SIMD_ALIGNED(kYuvV2020Constants);
 
 
 extern const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants);  
 extern const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants);  
 extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  
+
+extern const struct YuvConstants SIMD_ALIGNED(kYvuF709Constants);
 extern const struct YuvConstants SIMD_ALIGNED(kYvu2020Constants);  
+
+extern const struct YuvConstants SIMD_ALIGNED(kYvuV2020Constants);
 
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a)-1)))
 
