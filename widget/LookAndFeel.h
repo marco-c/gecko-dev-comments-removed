@@ -250,12 +250,6 @@ class LookAndFeel {
 
 
 
-    GTKCSDHideTitlebarByDefault,
-
-    
-
-
-
     GTKCSDMinimizeButton,
 
     
@@ -508,6 +502,11 @@ class LookAndFeel {
 
 
   static bool GetEchoPassword();
+
+  
+
+
+  static bool DrawInTitlebar();
 
   
 

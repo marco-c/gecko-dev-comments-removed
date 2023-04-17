@@ -789,10 +789,6 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       EnsureInit();
       aResult = mCSDAvailable;
       break;
-    case IntID::GTKCSDHideTitlebarByDefault:
-      EnsureInit();
-      aResult = mCSDHideTitlebarByDefault;
-      break;
     case IntID::GTKCSDMaximizeButton:
       EnsureInit();
       aResult = mCSDMaximizeButton;
@@ -1246,7 +1242,6 @@ void nsLookAndFeel::EnsureInit() {
 
   mCSDAvailable =
       nsWindow::GtkWindowDecoration() != nsWindow::GTK_DECORATION_NONE;
-  mCSDHideTitlebarByDefault = nsWindow::HideTitlebarByDefault();
 
   mSystemTheme.Init();
 
@@ -1839,6 +1834,29 @@ char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
 }
 
 bool nsLookAndFeel::GetEchoPasswordImpl() { return false; }
+
+bool nsLookAndFeel::GetDefaultDrawInTitlebar() {
+  static bool drawInTitlebar = []() {
+    
+    
+    if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
+      return Preferences::GetBool("widget.default-hidden-titlebar", false);
+    }
+
+    
+    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+    if (!currentDesktop || nsWindow::GetSystemGtkWindowDecoration() ==
+                               nsWindow::GTK_DECORATION_NONE) {
+      return false;
+    }
+
+    
+    return strstr(currentDesktop, "GNOME-Flashback:GNOME") ||
+           strstr(currentDesktop, "GNOME") ||
+           strstr(currentDesktop, "Pantheon");
+  }();
+  return drawInTitlebar;
+}
 
 void nsLookAndFeel::GetThemeInfo(nsACString& aInfo) {
   aInfo.Append(mSystemTheme.mName);

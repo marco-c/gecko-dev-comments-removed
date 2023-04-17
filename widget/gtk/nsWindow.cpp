@@ -8720,29 +8720,6 @@ bool nsWindow::TitlebarUseShapeMask() {
   return useShapeMask;
 }
 
-bool nsWindow::HideTitlebarByDefault() {
-  static int hideTitlebar = []() {
-    
-    
-    if (Preferences::HasUserValue("widget.default-hidden-titlebar")) {
-      return Preferences::GetBool("widget.default-hidden-titlebar", false);
-    }
-
-    
-    const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-    if (!currentDesktop ||
-        GetSystemGtkWindowDecoration() == GTK_DECORATION_NONE) {
-      return false;
-    }
-
-    
-    return ((strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-             strstr(currentDesktop, "GNOME") != nullptr ||
-             strstr(currentDesktop, "Pantheon") != nullptr));
-  }();
-  return hideTitlebar;
-}
-
 int32_t nsWindow::RoundsWidgetCoordinatesTo() { return GdkCeiledScaleFactor(); }
 
 void nsWindow::GetCompositorWidgetInitData(
