@@ -35,6 +35,8 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/tippytop/favicons/",
   
   "chrome://activity-stream/content/data/content/assets/remote/",
+  "chrome://browser/content/assets/moz-vpn.svg",
+  "chrome://browser/content/assets/vpn-logo.svg",
 
   
   "resource://pdf.js/web/images/",
