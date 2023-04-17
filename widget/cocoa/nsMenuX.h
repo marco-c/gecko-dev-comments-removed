@@ -56,7 +56,6 @@ class nsMenuX final : public nsMenuParentX,
                       public nsMenuItemIconX::Listener,
                       public nsMenuXObserver {
  public:
-  using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, RefPtr<nsMenuItemX>>;
   using Observer = nsMenuXObserver;
 
   
@@ -143,10 +142,10 @@ class nsMenuX final : public nsMenuParentX,
 
   
   
-  void InsertChildNativeMenuItem(nsMenuX* aChild) override;
+  void InsertChildNativeMenuItem(const MenuChild& aChild) override;
 
   
-  void RemoveChildNativeMenuItem(nsMenuX* aChild) override;
+  void RemoveChildNativeMenuItem(const MenuChild& aChild) override;
 
   void Dump(uint32_t aIndent) const;
 
@@ -180,7 +179,7 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+  NSInteger CalculateNativeInsertionPoint(const MenuChild& aChild);
 
   
   void MenuOpenedAsync();

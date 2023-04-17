@@ -6,21 +6,27 @@
 #ifndef nsMenuParentX_h_
 #define nsMenuParentX_h_
 
+#include "mozilla/RefPtr.h"
+#include "mozilla/Variant.h"
+
 class nsMenuX;
 class nsMenuBarX;
+class nsMenuItemX;
 
 
 class nsMenuParentX {
  public:
+  using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, RefPtr<nsMenuItemX>>;
+
   
   virtual nsMenuBarX* AsMenuBar() { return nullptr; }
 
   
   
-  virtual void InsertChildNativeMenuItem(nsMenuX* aChild) = 0;
+  virtual void InsertChildNativeMenuItem(const MenuChild& aChild) = 0;
 
   
-  virtual void RemoveChildNativeMenuItem(nsMenuX* aChild) = 0;
+  virtual void RemoveChildNativeMenuItem(const MenuChild& aChild) = 0;
 };
 
 #endif  
