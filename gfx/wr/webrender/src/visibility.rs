@@ -95,9 +95,16 @@ pub enum VisibilityState {
     Culled,
     
     
+    PassThrough,
+    
+    
     
     Coarse {
         rect_in_pic_space: PictureRect,
+
+        
+        
+        vis_flags: PrimitiveVisibilityFlags,
     },
     
     
@@ -105,6 +112,10 @@ pub enum VisibilityState {
         
         
         rect_in_pic_space: PictureRect,
+
+        
+        
+        vis_flags: PrimitiveVisibilityFlags,
     },
 }
 
@@ -130,10 +141,6 @@ pub struct PrimitiveVisibility {
 
     
     
-    pub flags: PrimitiveVisibilityFlags,
-
-    
-    
     pub combined_local_clip_rect: LayoutRect,
 }
 
@@ -143,7 +150,6 @@ impl PrimitiveVisibility {
             state: VisibilityState::Unset,
             clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
-            flags: PrimitiveVisibilityFlags::empty(),
             combined_local_clip_rect: LayoutRect::zero(),
         }
     }
@@ -151,7 +157,6 @@ impl PrimitiveVisibility {
     pub fn reset(&mut self) {
         self.state = VisibilityState::Culled;
         self.clip_task_index = ClipTaskIndex::INVALID;
-        self.flags = PrimitiveVisibilityFlags::empty();
     }
 }
 
@@ -338,9 +343,7 @@ pub fn update_primitive_visibility(
 
             if is_passthrough {
                 
-                prim_instance.vis.state = VisibilityState::Detailed {
-                    rect_in_pic_space: PictureRect::max_rect(),
-                };
+                prim_instance.vis.state = VisibilityState::PassThrough;
             } else {
                 if prim_local_rect.size.width <= 0.0 || prim_local_rect.size.height <= 0.0 {
                     if prim_instance.is_chased() {
@@ -474,7 +477,7 @@ pub fn update_primitive_visibility(
                 match prim_instance.vis.state {
                     VisibilityState::Unset => panic!("bug: invalid state"),
                     VisibilityState::Culled => continue,
-                    VisibilityState::Coarse { .. } | VisibilityState::Detailed { .. } => {}
+                    VisibilityState::Coarse { .. } | VisibilityState::Detailed { .. } | VisibilityState::PassThrough => {}
                 }
 
                 
