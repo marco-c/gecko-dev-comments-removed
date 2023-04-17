@@ -40,23 +40,16 @@ struct PreservedStreamDeleter;
 
 }  
 
+class ProcessRuntime;
+
 
 class MOZ_STACK_CLASS EnsureMTA final {
  public:
-  
-
-
-  EnsureMTA() {
-    nsCOMPtr<nsIThread> thread = GetMTAThread();
-    MOZ_ASSERT(thread);
-    Unused << thread;
-  }
-
   enum class Option {
     Default,
     
     
-    ForceDispatch,
+    ForceDispatchToPersistentThread,
   };
 
   
@@ -64,50 +57,20 @@ class MOZ_STACK_CLASS EnsureMTA final {
 
 
 
+
   template <typename FuncT>
   explicit EnsureMTA(FuncT&& aClosure, Option aOpt = Option::Default) {
-    if (aOpt != Option::ForceDispatch && IsCurrentThreadMTA()) {
+    if (aOpt != Option::ForceDispatchToPersistentThread &&
+        IsCurrentThreadMTA()) {
       
       aClosure();
       return;
     }
 
     
-    nsCOMPtr<nsIThread> thread = GetMTAThread();
-    MOZ_ASSERT(thread);
-    if (!thread) {
-      return;
-    }
-
-    
-    
-    
-    
-    nsAutoHandle event(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
-    if (!event) {
-      return;
-    }
-
-    HANDLE eventHandle = event.get();
-
-    auto eventSetter = [&aClosure, eventHandle]() -> void {
-      aClosure();
-      ::SetEvent(eventHandle);
-    };
-
-    nsresult rv = thread->Dispatch(
-        NS_NewRunnableFunction("EnsureMTA", std::move(eventSetter)),
-        NS_DISPATCH_NORMAL);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    if (NS_FAILED(rv)) {
-      return;
-    }
-
-    DWORD waitResult;
-    while ((waitResult = ::WaitForSingleObjectEx(event, INFINITE, TRUE)) ==
-           WAIT_IO_COMPLETION) {
-    }
-    MOZ_ASSERT(waitResult == WAIT_OBJECT_0);
+    nsCOMPtr<nsIRunnable> runnable(
+        NS_NewRunnableFunction("EnsureMTA::EnsureMTA", std::move(aClosure)));
+    SyncDispatch(std::move(runnable), aOpt);
   }
 
   using CreateInstanceAgileRefPromise =
@@ -173,7 +136,10 @@ class MOZ_STACK_CLASS EnsureMTA final {
   static RefPtr<CreateInstanceAgileRefPromise> CreateInstanceInternal(
       REFCLSID aClsid, REFIID aIid);
 
-  static nsCOMPtr<nsIThread> GetMTAThread();
+  static nsCOMPtr<nsIThread> GetPersistentMTAThread();
+
+  static void SyncDispatch(nsCOMPtr<nsIRunnable>&& aRunnable, Option aOpt);
+  static void SyncDispatchToPersistentThread(nsIRunnable* aRunnable);
 
   
   
@@ -186,7 +152,7 @@ class MOZ_STACK_CLASS EnsureMTA final {
       return;
     }
 
-    nsCOMPtr<nsIThread> thread(GetMTAThread());
+    nsCOMPtr<nsIThread> thread(GetPersistentMTAThread());
     MOZ_ASSERT(thread);
     if (!thread) {
       return;
@@ -198,6 +164,14 @@ class MOZ_STACK_CLASS EnsureMTA final {
         NS_DISPATCH_NORMAL);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
+
+  
+
+
+
+  EnsureMTA();
+
+  friend class mozilla::mscom::ProcessRuntime;
 
   template <typename T>
   friend struct mozilla::mscom::detail::MTADelete;
