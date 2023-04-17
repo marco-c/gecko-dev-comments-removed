@@ -33,11 +33,11 @@ const {
 
 const changeRecordingState = (exports.changeRecordingState = (
   state,
-  options = { didRecordingUnexpectedlyStopped: false }
+  options = { recordingUnexpectedlyStopped: false }
 ) => ({
   type: "CHANGE_RECORDING_STATE",
   state,
-  didRecordingUnexpectedlyStopped: options.didRecordingUnexpectedlyStopped,
+  recordingUnexpectedlyStopped: options.recordingUnexpectedlyStopped,
 }));
 
 
