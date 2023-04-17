@@ -47,7 +47,6 @@ using base::ProcessId from "base/process.h";
 using mozilla::wr::MaybeExternalImageId from "mozilla/webrender/WebRenderTypes.h";
 using mozilla::layers::LayersObserverEpoch from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::TransactionId from "mozilla/layers/LayersTypes.h";
-using struct DxgiAdapterDesc from "mozilla/D3DMessageUtils.h";
 
 namespace mozilla {
 namespace layers {
@@ -118,9 +117,10 @@ child:
   
   
   
-  prio(mediumhigh) async DidComposite(LayersId id, TransactionId transactionId,
-                                      TimeStamp compositeStart,
-                                      TimeStamp compositeEnd);
+  [Priority=mediumhigh] async DidComposite(LayersId id,
+                                           TransactionId transactionId,
+                                           TimeStamp compositeStart,
+                                           TimeStamp compositeEnd);
 
   async NotifyFrameStats(FrameStats[] aFrameStats);
 
@@ -132,28 +132,6 @@ child:
 
 
   async RemotePaintIsReady();
-
-  
-
-
-
-
-  async UpdatePluginConfigurations(LayoutDeviceIntPoint aContentOffset,
-                                   LayoutDeviceIntRegion aVisibleRegion,
-                                   PluginWindowData[] aPlugins);
-
-  
-
-
-
-
-  async CaptureAllPlugins(uintptr_t aParentWidget);
-
-  
-
-
-
-  async HideAllPlugins(uintptr_t aParentWidget);
 
   async ParentAsyncMessages(AsyncParentMessageData[] aMessages);
 
@@ -179,11 +157,6 @@ parent:
   
   
   async PWebGPU();
-
-  
-
-
-  async RemotePluginsReady();
 
   
   sync WillClose();
@@ -261,11 +234,6 @@ parent:
 
   async RequestNotifyAfterRemotePaint();
 
-  
-
-
-  async AllPluginsCaptured();
-
   async PTexture(SurfaceDescriptor aSharedData, ReadLockDescriptor aReadLock, LayersBackend aBackend, TextureFlags aTextureFlags, LayersId id, uint64_t aSerial, MaybeExternalImageId aExternalImageId);
 
   async InitPCanvasParent(Endpoint<PCanvasParent> aEndpoint);
@@ -287,11 +255,6 @@ parent:
 
   async EndRecordingToMemory()
     returns (CollectedFramesParams? frames);
-
-  sync SupportsAsyncDXGISurface()
-    returns (bool value);
-  sync PreferredDXGIAdapter()
-    returns (DxgiAdapterDesc desc);
 
   
   async RequestFxrOutput();
