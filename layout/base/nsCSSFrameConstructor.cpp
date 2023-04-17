@@ -4006,14 +4006,33 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
   
   
   
-  bool allowStyleCaching =
-      StaticPrefs::layout_css_cached_scrollbar_styles_enabled() &&
-      aParentFrame->StyleVisibility()->mVisible == StyleVisibility::Visible &&
-#ifndef ANDROID
-      aParentFrame->StyleUI()->ComputedPointerEvents() ==
-          StylePointerEvents::Auto &&
-#endif
-      mPresShell->GetPresContext()->Medium() == nsGkAtoms::screen;
+  
+  Maybe<bool> computedAllowStyleCaching;
+  auto ComputeAllowStyleCaching = [&] {
+    if (!StaticPrefs::layout_css_cached_scrollbar_styles_enabled()) {
+      return false;
+    }
+    if (aParentFrame->StyleVisibility()->mVisible != StyleVisibility::Visible) {
+      return false;
+    }
+    nsPresContext* pc = mPresShell->GetPresContext();
+    if (!pc->UseOverlayScrollbars() &&
+        aParentFrame->StyleUI()->ComputedPointerEvents() !=
+            StylePointerEvents::Auto) {
+      return false;
+    }
+    if (pc->Medium() != nsGkAtoms::screen) {
+      return false;
+    }
+    return true;
+  };
+
+  auto AllowStyleCaching = [&] {
+    if (computedAllowStyleCaching.isNothing()) {
+      computedAllowStyleCaching.emplace(ComputeAllowStyleCaching());
+    }
+    return computedAllowStyleCaching.value();
+  };
 
   
   ServoStyleSet* styleSet = mPresShell->StyleSet();
@@ -4023,7 +4042,7 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
       continue;
     }
 
-    if (info.mKey == AnonymousContentKey::None || !allowStyleCaching) {
+    if (info.mKey == AnonymousContentKey::None || !AllowStyleCaching()) {
       
       
       styleSet->StyleNewSubtree(e);
@@ -4066,10 +4085,11 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
             cachedStyles[i]->EqualForCachedAnonymousContentStyle(*cs),
             "cached anonymous content styles should be identical to those we "
             "would compute normally");
-#  ifdef ANDROID
-        MOZ_ASSERT(cs->StyleUI()->ComputedPointerEvents() ==
-                   StylePointerEvents::None);
-#  endif
+        
+        
+        MOZ_ASSERT(!mPresShell->GetPresContext()->UseOverlayScrollbars() ||
+                   cs->StyleUI()->ComputedPointerEvents() ==
+                       StylePointerEvents::None);
 #endif
         Servo_SetExplicitStyle(elements[i], cachedStyles[i]);
       }
