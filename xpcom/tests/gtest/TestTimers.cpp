@@ -9,17 +9,13 @@
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
-#include "nsIObserverService.h"
 #include "nsThreadUtils.h"
 #include "prinrval.h"
 #include "prmon.h"
 #include "prthread.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Services.h"
 
-#include "mozilla/Monitor.h"
 #include "mozilla/ReentrantMonitor.h"
-#include "mozilla/StaticPrefs_timer.h"
 
 #include <list>
 #include <vector>
@@ -98,171 +94,53 @@ class TimerCallback final : public nsITimerCallback {
 
 NS_IMPL_ISUPPORTS(TimerCallback, nsITimerCallback)
 
-class TimerHelper {
- public:
-  explicit TimerHelper(nsIEventTarget* aTarget)
-      : mStart(TimeStamp::Now()),
-        mTimer(NS_NewTimer(aTarget)),
-        mMonitor(__func__),
-        mTarget(aTarget) {}
+TEST(Timers, TargetedTimers)
+{
+  AutoCreateAndDestroyReentrantMonitor newMon;
+  ASSERT_TRUE(newMon);
 
-  ~TimerHelper() {
-    MonitorAutoLock lock(mMonitor);
-    mTimer->Cancel();
+  AutoTestThread testThread;
+  ASSERT_TRUE(testThread);
+
+  nsIThread* notifiedThread = nullptr;
+
+  nsCOMPtr<nsITimerCallback> callback =
+      new TimerCallback(&notifiedThread, newMon);
+  ASSERT_TRUE(callback);
+
+  nsIEventTarget* target = static_cast<nsIEventTarget*>(testThread);
+
+  nsCOMPtr<nsITimer> timer;
+  nsresult rv = NS_NewTimerWithCallback(getter_AddRefs(timer), callback, 2000,
+                                        nsITimer::TYPE_ONE_SHOT, target);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  ReentrantMonitorAutoEnter mon(*newMon);
+  while (!notifiedThread) {
+    mon.Wait();
   }
-
-  static void ClosureCallback(nsITimer*, void* aClosure) {
-    reinterpret_cast<TimerHelper*>(aClosure)->Notify();
-  }
-
-  
-  
-  
-  void Notify() {
-    MonitorAutoLock lock(mMonitor);
-    EXPECT_TRUE(mTarget->IsOnCurrentThread());
-    TimeDuration elapsed = TimeStamp::Now() - mStart;
-    mStart = TimeStamp::Now();
-    mLastDelay = Some(elapsed.ToMilliseconds());
-    if (mBlockTime) {
-      PR_Sleep(mBlockTime);
-    }
-    mMonitor.Notify();
-  }
-
-  nsresult SetTimer(uint32_t aDelay, uint8_t aType) {
-    MonitorAutoLock lock(mMonitor);
-    mTimer->Cancel();
-    mStart = TimeStamp::Now();
-    return mTimer->InitWithNamedFuncCallback(
-        ClosureCallback, this, aDelay, aType, "TimerHelper::ClosureCallback");
-  }
-
-  Maybe<uint32_t> Wait(uint32_t aLimitMs) {
-    return WaitAndBlockCallback(aLimitMs, 0);
-  }
-
-  
-  
-  
-  Maybe<uint32_t> WaitAndBlockCallback(uint32_t aLimitMs, uint32_t aBlockTime) {
-    MonitorAutoLock lock(mMonitor);
-    mBlockTime = aBlockTime;
-    TimeStamp start = TimeStamp::Now();
-    while (!mLastDelay.isSome()) {
-      mMonitor.Wait(TimeDuration::FromMilliseconds(aLimitMs));
-      TimeDuration elapsed = TimeStamp::Now() - start;
-      uint32_t elapsedMs = static_cast<uint32_t>(elapsed.ToMilliseconds());
-      if (elapsedMs >= aLimitMs) {
-        break;
-      }
-      aLimitMs -= elapsedMs;
-      start = TimeStamp::Now();
-    }
-    mBlockTime = 0;
-    return std::move(mLastDelay);
-  }
-
- private:
-  TimeStamp mStart;
-  RefPtr<nsITimer> mTimer;
-  mutable Monitor mMonitor;
-  uint32_t mBlockTime = 0;
-  Maybe<uint32_t> mLastDelay;
-  RefPtr<nsIEventTarget> mTarget;
-};
-
-class SimpleTimerTest : public ::testing::Test {
- public:
-  std::unique_ptr<TimerHelper> MakeTimer(uint32_t aDelay, uint8_t aType) {
-    std::unique_ptr<TimerHelper> timer(new TimerHelper(mThread));
-    timer->SetTimer(aDelay, aType);
-    return timer;
-  }
-
-  void PauseTimerThread() {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    observerService->NotifyObservers(nullptr, "sleep_notification", nullptr);
-  }
-
-  void ResumeTimerThread() {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    observerService->NotifyObservers(nullptr, "wake_notification", nullptr);
-  }
-
- protected:
-  AutoTestThread mThread;
-};
-
-#ifdef XP_MACOSX
-
-
-
-const unsigned kSlowdownFactor = 50;
-#else
-const unsigned kSlowdownFactor = 1;
-#endif
-
-TEST_F(SimpleTimerTest, OneShot) {
-  auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_ONE_SHOT);
-  auto res = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(res.isSome());
-  ASSERT_LT(*res, 110U * kSlowdownFactor);
-  ASSERT_GT(*res, 95U * kSlowdownFactor);
+  ASSERT_EQ(notifiedThread, testThread);
 }
 
-TEST_F(SimpleTimerTest, TimerWithStoppedTarget) {
-  mThread->Shutdown();
-  auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_ONE_SHOT);
-  auto res = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_FALSE(res.isSome());
-}
+TEST(Timers, TimerWithStoppedTarget)
+{
+  AutoTestThread testThread;
+  ASSERT_TRUE(testThread);
 
-TEST_F(SimpleTimerTest, SlackRepeating) {
-  auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_REPEATING_SLACK);
-  auto delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 50 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-  
-  
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 160U * kSlowdownFactor);
-  ASSERT_GT(*delay, 145U * kSlowdownFactor);
-}
-
-TEST_F(SimpleTimerTest, RepeatingPrecise) {
-  auto timer = MakeTimer(100 * kSlowdownFactor,
-                         nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
-  auto delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 50 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  nsIEventTarget* target = static_cast<nsIEventTarget*>(testThread);
 
   
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  nsCOMPtr<nsITimerCallback> callback = new TimerCallback(nullptr, nullptr);
+  ASSERT_TRUE(callback);
 
-  
-  
-  delay =
-      timer->WaitAndBlockCallback(110 * kSlowdownFactor, 150 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
+  nsCOMPtr<nsITimer> timer;
+  nsresult rv = NS_NewTimerWithCallback(getter_AddRefs(timer), callback, 100,
+                                        nsITimer::TYPE_ONE_SHOT, target);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
 
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 210U * kSlowdownFactor);
-  ASSERT_GT(*delay, 195U * kSlowdownFactor);
+  testThread->Shutdown();
+
+  PR_Sleep(400);
 }
 
 
@@ -356,7 +234,8 @@ class FindExpirationTimeState final {
   }
 };
 
-TEST_F(SimpleTimerTest, FindExpirationTime) {
+TEST(Timers, FindExpirationTime)
+{
   {
     FindExpirationTimeState state;
     
@@ -506,97 +385,6 @@ TEST_F(SimpleTimerTest, FindExpirationTime) {
 }
 
 #endif
-
-
-
-
-TEST_F(SimpleTimerTest, SleepWakeOneShot) {
-  if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
-    return;
-  }
-  auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_ONE_SHOT);
-  PauseTimerThread();
-  auto delay = timer->Wait(200 * kSlowdownFactor);
-  ResumeTimerThread();
-  ASSERT_FALSE(delay.isSome());
-}
-
-TEST_F(SimpleTimerTest, SleepWakeRepeatingSlack) {
-  if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
-    return;
-  }
-  auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_REPEATING_SLACK);
-  PauseTimerThread();
-  auto delay = timer->Wait(200 * kSlowdownFactor);
-  ResumeTimerThread();
-  ASSERT_FALSE(delay.isSome());
-
-  
-  
-  delay = timer->Wait(10 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 210 * kSlowdownFactor);
-  ASSERT_GT(*delay, 199 * kSlowdownFactor);
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-
-  PauseTimerThread();
-  delay = timer->Wait(50 * kSlowdownFactor);
-  ResumeTimerThread();
-  ASSERT_FALSE(delay.isSome());
-
-  
-  
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-}
-
-TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
-  if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
-    return;
-  }
-  auto timer = MakeTimer(100 * kSlowdownFactor,
-                         nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
-  PauseTimerThread();
-  auto delay = timer->Wait(350 * kSlowdownFactor);
-  ResumeTimerThread();
-  ASSERT_FALSE(delay.isSome());
-
-  
-  
-  delay = timer->Wait(10 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 360U * kSlowdownFactor);
-  ASSERT_GT(*delay, 349U * kSlowdownFactor);
-
-  
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 60U * kSlowdownFactor);
-  ASSERT_GT(*delay, 45U * kSlowdownFactor);
-
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-
-  PauseTimerThread();
-  delay = timer->Wait(50 * kSlowdownFactor);
-  ResumeTimerThread();
-  ASSERT_FALSE(delay.isSome());
-
-  
-  
-  delay = timer->Wait(110 * kSlowdownFactor);
-  ASSERT_TRUE(delay.isSome());
-  ASSERT_LT(*delay, 110U * kSlowdownFactor);
-  ASSERT_GT(*delay, 95U * kSlowdownFactor);
-}
 
 #define FUZZ_MAX_TIMEOUT 9
 class FuzzTestThreadState final : public nsITimerCallback {
