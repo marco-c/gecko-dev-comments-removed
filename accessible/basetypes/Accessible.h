@@ -112,6 +112,11 @@ class Accessible {
 
   
 
+
+  virtual Accessible* EmbeddedChildAt(uint32_t aIndex) = 0;
+
+  
+
   
 
 
