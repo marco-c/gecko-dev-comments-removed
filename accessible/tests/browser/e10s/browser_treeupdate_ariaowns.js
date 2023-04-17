@@ -292,3 +292,34 @@ addAccessibleTask(
   },
   { iframe: true, remoteIframe: true }
 );
+
+
+
+addAccessibleTask(
+  `
+  <span id="a">
+    <div id="b" aria-owns="c"></div>
+  </span>
+  <div id="c">
+    <iframe></iframe>
+  </div>
+  <script>
+    document.getElementById("c").setAttribute("aria-owns", "a");
+  </script>
+  `,
+  async function(browser, accDoc) {
+    testAccessibleTree(accDoc, {
+      DOCUMENT: [
+        {
+          
+          SECTION: [
+            {
+              
+              SECTION: [{ INTERNAL_FRAME: [{ DOCUMENT: [] }] }],
+            },
+          ],
+        },
+      ],
+    });
+  }
+);
