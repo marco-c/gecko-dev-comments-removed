@@ -54,11 +54,16 @@ void SampledAPZCState::UpdateZoomProperties(const FrameMetrics& aMetrics) {
 }
 
 void SampledAPZCState::ClampVisualScrollOffset(const FrameMetrics& aMetrics) {
-  mVisualScrollOffset =
-      aMetrics.CalculateScrollRange().ClampPoint(mVisualScrollOffset);
+  
+  
+  CSSRect scrollRange = FrameMetrics::CalculateScrollRange(
+      aMetrics.GetScrollableRect(), aMetrics.GetCompositionBounds(), mZoom);
+  mVisualScrollOffset = scrollRange.ClampPoint(mVisualScrollOffset);
+
   FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
       CSSRect(mVisualScrollOffset,
-              aMetrics.CalculateCompositedSizeInCssPixels()),
+              FrameMetrics::CalculateCompositedSizeInCssPixels(
+                  aMetrics.GetCompositionBounds(), mZoom)),
       aMetrics.GetScrollableRect(), mLayoutViewport);
 }
 
