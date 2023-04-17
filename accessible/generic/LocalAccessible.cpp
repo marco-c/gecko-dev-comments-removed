@@ -3165,26 +3165,36 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
-  
-  if ((aCacheDomain & CacheDomain::Text) && !HasChildren()) {
-    
-    if (IsText()) {
-      nsString text;
-      AppendTextTo(text);
-      fields->SetAttribute(nsGkAtoms::text, std::move(text));
+  if (aCacheDomain & CacheDomain::Text) {
+    if (!HasChildren()) {
+      
+      
+      if (IsText()) {
+        nsString text;
+        AppendTextTo(text);
+        fields->SetAttribute(nsGkAtoms::text, std::move(text));
+        TextLeafPoint point(this, 0);
+        RefPtr<AccAttributes> attrs = point.GetTextAttributesLocalAcc(
+             false);
+        fields->SetAttribute(nsGkAtoms::style, std::move(attrs));
+      }
+      
+      
+      nsTArray<int32_t> lineStarts;
+      for (TextLeafPoint lineStart =
+               TextLeafPoint(this, 0).FindNextLineStartSameLocalAcc(
+                    true);
+           lineStart;
+           lineStart = lineStart.FindNextLineStartSameLocalAcc(false)) {
+        lineStarts.AppendElement(lineStart.mOffset);
+      }
+      if (!lineStarts.IsEmpty()) {
+        fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
+      }
     }
-    
-    
-    nsTArray<int32_t> lineStarts;
-    for (TextLeafPoint lineStart =
-             TextLeafPoint(this, 0).FindNextLineStartSameLocalAcc(
-                  true);
-         lineStart;
-         lineStart = lineStart.FindNextLineStartSameLocalAcc(false)) {
-      lineStarts.AppendElement(lineStart.mOffset);
-    }
-    if (!lineStarts.IsEmpty()) {
-      fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
+    if (HyperTextAccessible* ht = AsHyperText()) {
+      RefPtr<AccAttributes> attrs = ht->DefaultTextAttributes();
+      fields->SetAttribute(nsGkAtoms::style, std::move(attrs));
     }
   }
 
