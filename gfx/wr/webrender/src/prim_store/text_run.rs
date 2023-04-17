@@ -425,7 +425,12 @@ impl TextRunPrimitive {
                 RasterSpace::Local(rounded_up / device_pixel_scale.0)
             }
         } else {
-            self.requested_raster_space
+            
+            
+            match self.requested_raster_space {
+                RasterSpace::Local(scale) => RasterSpace::Local(scale / device_pixel_scale.0),
+                RasterSpace::Screen => RasterSpace::Screen,
+            }
         }
     }
 
