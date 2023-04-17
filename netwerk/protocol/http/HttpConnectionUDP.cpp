@@ -110,6 +110,14 @@ nsresult HttpConnectionUDP::Init(nsHttpConnectionInfo* info,
     return rv;
   }
 
+  if (peerAddr.raw.family == AF_INET) {
+    rv = mSocket->SetDontFragment(true);
+    if (NS_FAILED(rv)) {
+      LOG(("HttpConnectionUDP::Init SetDontFragment failed %d [this=%p]",
+           static_cast<uint32_t>(rv), this));
+    }
+  }
+
   
   rv = mSocket->GetLocalAddr(getter_AddRefs(mSelfAddr));
   if (NS_FAILED(rv)) {
