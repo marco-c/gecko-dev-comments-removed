@@ -481,8 +481,9 @@ static int blendTextureNearestFast(S sampler, vec2 uv, int span,
   
   
   P* row =
-      &sampler->buf[clamp(clampCoord(i.y, sampler->height), minUV.y, maxUV.y) *
-                    sampler->stride];
+      &((P*)sampler
+            ->buf)[clamp(clampCoord(i.y, sampler->height), minUV.y, maxUV.y) *
+                   sampler->stride];
   
   int minX = clamp(minUV.x, 0, sampler->width - 1);
   int maxX = clamp(maxUV.x, minX, sampler->width - 1);
@@ -518,7 +519,8 @@ static int blendTextureNearestFast(S sampler, vec2 uv, int span,
   
   
   if (curX < endX) {
-    auto src = applyColor(unpack(bit_cast<packed_type>(U32(row[maxX]))), color);
+    auto src =
+        applyColor(unpack(bit_cast<packed_type>(V4<P>(row[maxX]))), color);
     commit_solid_span<BLEND>(buf, src, endX - curX);
   }
   return span;
