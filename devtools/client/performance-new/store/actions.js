@@ -204,12 +204,8 @@ exports.getProfileAndStopProfiler = () => {
     const perfFront = selectors.getPerfFront(getState());
     dispatch(changeRecordingState("request-to-get-profile-and-stop-profiler"));
     const profile = await perfFront.getProfileAndStopProfiler();
-
-    const getSymbolTable = selectors.getSymbolTableGetter(getState())(profile);
-    const receiveProfile = selectors.getReceiveProfileFn(getState());
-    const profilerViewMode = selectors.getProfilerViewMode(getState());
-    receiveProfile(profile, profilerViewMode, getSymbolTable);
     dispatch(changeRecordingState("available-to-record"));
+    return profile;
   };
 };
 

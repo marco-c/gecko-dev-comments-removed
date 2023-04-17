@@ -18,6 +18,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 const {
@@ -51,7 +56,7 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 class DevToolsPanel extends PureComponent {
   render() {
-    const { isSupportedPlatform } = this.props;
+    const { isSupportedPlatform, onProfileReceived } = this.props;
 
     if (isSupportedPlatform === null) {
       
@@ -61,7 +66,7 @@ class DevToolsPanel extends PureComponent {
     return div(
       { className: `perf perf-devtools` },
       OnboardingMessage(),
-      RecordingButton(),
+      RecordingButton({ onProfileReceived }),
       Description(),
       hr({ className: "perf-presets-hr" }),
       DevToolsPresetSelection()

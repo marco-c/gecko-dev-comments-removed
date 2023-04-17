@@ -23,7 +23,6 @@
 
 
 
-
 const getRecordingState = state => state.recordingState;
 
 
@@ -132,18 +131,11 @@ const getInitializedValues = state => {
 const getPerfFront = state => getInitializedValues(state).perfFront;
 
 
-const getReceiveProfileFn = state => getInitializedValues(state).receiveProfile;
-
-
 const getSetRecordingSettingsFn = state =>
   getInitializedValues(state).setRecordingSettings;
 
 
 const getPageContext = state => getInitializedValues(state).pageContext;
-
-
-const getSymbolTableGetter = state =>
-  getInitializedValues(state).getSymbolTableGetter;
 
 
 const getSupportedFeatures = state =>
@@ -170,10 +162,8 @@ module.exports = {
   getRecordingSettings,
   getInitializedValues,
   getPerfFront,
-  getReceiveProfileFn,
   getSetRecordingSettingsFn,
   getPageContext,
-  getSymbolTableGetter,
   getPromptEnvRestart,
   getSupportedFeatures,
 };

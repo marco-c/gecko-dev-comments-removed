@@ -198,6 +198,15 @@ export type RestartBrowserWithEnvironmentVariable = (
 
 
 
+export type OnProfileReceived = (
+  profile: MinimallyTypedGeckoProfile,
+  profilerViewMode: ProfilerViewMode | undefined
+) => void;
+
+
+
+
+
 export type GetEnvironmentVariable = (envName: string) => string;
 
 
@@ -234,17 +243,11 @@ export interface InitializedValues {
   
   perfFront: PerfFront;
   
-  receiveProfile: ReceiveProfile;
-  
   setRecordingSettings: SetRecordingSettings;
   
   presets: Presets;
   
   pageContext: PageContext;
-  
-  getSymbolTableGetter: (
-    profile: MinimallyTypedGeckoProfile
-  ) => GetSymbolTableCallback;
   
   supportedFeatures: string[];
   
@@ -295,16 +298,12 @@ export type Action =
   | {
       type: "INITIALIZE_STORE";
       perfFront: PerfFront;
-      receiveProfile: ReceiveProfile;
       setRecordingSettings: SetRecordingSettings;
       presets: Presets;
       pageContext: PageContext;
       openAboutProfiling?: () => void;
       openRemoteDevTools?: () => void;
       recordingSettingsFromPreferences: RecordingSettings;
-      getSymbolTableGetter: (
-        profile: MinimallyTypedGeckoProfile
-      ) => GetSymbolTableCallback;
       supportedFeatures: string[];
     }
   | {
@@ -315,15 +314,11 @@ export type Action =
 
 export interface InitializeStoreValues {
   perfFront: PerfFront;
-  receiveProfile: ReceiveProfile;
   setRecordingSettings: SetRecordingSettings;
   presets: Presets;
   pageContext: PageContext;
   recordingSettings: RecordingSettings;
   supportedFeatures: string[];
-  getSymbolTableGetter: (
-    profile: MinimallyTypedGeckoProfile
-  ) => GetSymbolTableCallback;
   openAboutProfiling?: () => void;
   openRemoteDevTools?: () => void;
 }

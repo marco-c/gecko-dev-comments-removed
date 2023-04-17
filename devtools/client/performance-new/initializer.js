@@ -13,6 +13,7 @@
 
 
 
+
 "use strict";
 
 {
@@ -119,7 +120,6 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
   store.dispatch(
     actions.initializeStore({
       perfFront,
-      receiveProfile,
       recordingSettings: getRecordingSettings(pageContext, supportedFeatures),
       presets,
       supportedFeatures,
@@ -133,19 +133,22 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
 
       setRecordingSettings: newRecordingSettings =>
         setRecordingSettings(pageContext, newRecordingSettings),
-
-      
-      
-      getSymbolTableGetter:
-        
-        profile =>
-          createMultiModalGetSymbolTableFn(
-            profile,
-            selectors.getObjdirs(store.getState()),
-            selectors.getPerfFront(store.getState())
-          ),
     })
   );
+
+  
+
+
+
+  const onProfileReceived = (profile, profilerViewMode) => {
+    const objdirs = selectors.getObjdirs(store.getState());
+    const getSymbolTableCallback = createMultiModalGetSymbolTableFn(
+      profile,
+      objdirs,
+      perfFront
+    );
+    receiveProfile(profile, profilerViewMode, getSymbolTableCallback);
+  };
 
   ReactDOM.render(
     Provider(
@@ -156,7 +159,7 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
           React.Fragment,
           null,
           ProfilerEventHandling(),
-          DevToolsPanel()
+          DevToolsPanel({ onProfileReceived })
         )
       )
     ),

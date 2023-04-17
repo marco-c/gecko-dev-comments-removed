@@ -32,6 +32,12 @@
 
 
 
+
+
+
+
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -57,6 +63,16 @@ const Localized = React.createFactory(
 
 
 class RecordingButton extends PureComponent {
+  _onStopButtonClick = async () => {
+    const {
+      getProfileAndStopProfiler,
+      profilerViewMode,
+      onProfileReceived,
+    } = this.props;
+    const profile = await getProfileAndStopProfiler();
+    onProfileReceived(profile, profilerViewMode);
+  };
+
   render() {
     const {
       startRecording,
@@ -64,7 +80,6 @@ class RecordingButton extends PureComponent {
       recordingState,
       isSupportedPlatform,
       recordingUnexpectedlyStopped,
-      getProfileAndStopProfiler,
     } = this.props;
 
     if (!isSupportedPlatform) {
@@ -131,7 +146,7 @@ class RecordingButton extends PureComponent {
             })
           ),
           isPrimary: true,
-          onClick: getProfileAndStopProfiler,
+          onClick: this._onStopButtonClick,
           disabled: recordingState === "request-to-start-recording",
           additionalButton: {
             label: Localized(
@@ -241,6 +256,7 @@ function mapStateToProps(state) {
       state
     ),
     pageContext: selectors.getPageContext(state),
+    profilerViewMode: selectors.getProfilerViewMode(state),
   };
 }
 
