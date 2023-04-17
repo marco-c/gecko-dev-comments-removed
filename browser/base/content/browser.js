@@ -389,7 +389,7 @@ XPCOMUtils.defineLazyGetter(this, "ReferrerInfo", () =>
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
+XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
   return new MozElements.NotificationBox(element => {
     element.classList.add("global-notificationbox");
     element.setAttribute("notificationside", "top");
@@ -404,11 +404,6 @@ XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
     let tabNotifications = document.getElementById("tab-notification-deck");
     gNavToolbox.insertBefore(outer, tabNotifications);
   });
-});
-
-
-XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
-  return gHighPriorityNotificationBox;
 });
 
 XPCOMUtils.defineLazyGetter(this, "InlineSpellCheckerUI", () => {
@@ -922,9 +917,7 @@ const gStoragePressureObserver = {
     }
 
     const NOTIFICATION_VALUE = "storage-pressure-notification";
-    if (
-      gHighPriorityNotificationBox.getNotificationWithValue(NOTIFICATION_VALUE)
-    ) {
+    if (gNotificationBox.getNotificationWithValue(NOTIFICATION_VALUE)) {
       
       return;
     }
@@ -978,19 +971,17 @@ const gStoragePressureObserver = {
     }
     messageFragment.appendChild(message);
 
-    gHighPriorityNotificationBox.appendNotification(
+    gNotificationBox.appendNotification(
       messageFragment,
       NOTIFICATION_VALUE,
       null,
-      gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH,
+      gNotificationBox.PRIORITY_WARNING_HIGH,
       buttons
     );
 
     
     
-    document.l10n.translateFragment(
-      gHighPriorityNotificationBox.currentNotification
-    );
+    document.l10n.translateFragment(gNotificationBox.currentNotification);
   },
 };
 

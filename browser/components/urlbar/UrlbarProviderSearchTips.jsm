@@ -407,7 +407,7 @@ async function isBrowserShowingNotification() {
   
   if (
     window.gURLBar.view.isOpen ||
-    window.gHighPriorityNotificationBox.currentNotification ||
+    window.gNotificationBox.currentNotification ||
     window.gBrowser.getNotificationBox().currentNotification
   ) {
     return true;

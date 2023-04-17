@@ -97,7 +97,7 @@ add_task(async function setup() {
 
 add_task(async function() {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
-  const notificationBox = targetWindow.gHighPriorityNotificationBox;
+  const notificationBox = targetWindow.gNotificationBox;
 
   const preCount = notificationBox.allNotifications.length;
   const hb = new Heartbeat(targetWindow, {
@@ -176,7 +176,7 @@ add_task(async function() {
 
 add_task(async function() {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
-  const notificationBox = targetWindow.gHighPriorityNotificationBox;
+  const notificationBox = targetWindow.gNotificationBox;
   const hb = new Heartbeat(targetWindow, {
     testing: true,
     flowId: "test",
