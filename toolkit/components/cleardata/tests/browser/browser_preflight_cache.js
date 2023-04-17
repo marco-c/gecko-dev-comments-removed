@@ -43,7 +43,10 @@ function testPreflightCached(browser, url, token, isCached) {
   );
 }
 
-async function testDeleteAll(clearDataFlag) {
+async function testDeleteAll(
+  clearDataFlag,
+  { deleteBy = "all", hasUserInput = false } = {}
+) {
   await BrowserTestUtils.withNewTab("http://example.com", async browser => {
     let token = uuidGenerator.generateUUID().toString();
 
@@ -54,17 +57,46 @@ async function testDeleteAll(clearDataFlag) {
     await testPreflightCached(browser, PREFLIGHT_URL_A, token, true);
     await testPreflightCached(browser, PREFLIGHT_URL_B, token, true);
 
-    
-    await new Promise(aResolve => {
-      Services.clearData.deleteData(clearDataFlag, value => {
-        Assert.equal(value, 0);
-        aResolve();
-      });
+    await new Promise(resolve => {
+      if (deleteBy == "principal") {
+        Services.clearData.deleteDataFromPrincipal(
+          browser.contentPrincipal,
+          hasUserInput,
+          clearDataFlag,
+          value => {
+            Assert.equal(value, 0);
+            resolve();
+          }
+        );
+      } else if (deleteBy == "baseDomain") {
+        Services.clearData.deleteDataFromBaseDomain(
+          browser.contentPrincipal.baseDomain,
+          hasUserInput,
+          clearDataFlag,
+          value => {
+            Assert.equal(value, 0);
+            resolve();
+          }
+        );
+      } else {
+        Services.clearData.deleteData(clearDataFlag, value => {
+          Assert.equal(value, 0);
+          resolve();
+        });
+      }
     });
 
     
-    await testPreflightCached(browser, PREFLIGHT_URL_A, token, false);
-    await testPreflightCached(browser, PREFLIGHT_URL_B, token, false);
+    
+    
+    
+    
+    
+    let clearedAll = deleteBy == "all" || hasUserInput;
+
+    
+    await testPreflightCached(browser, PREFLIGHT_URL_A, token, !clearedAll);
+    await testPreflightCached(browser, PREFLIGHT_URL_B, token, !clearedAll);
   });
 
   SiteDataTestUtils.clear();
@@ -81,5 +113,21 @@ add_task(async function test_deleteAll() {
 
   for (let flag of [CLEAR_ALL, CLEAR_ALL_CACHES, CLEAR_PREFLIGHT_CACHE]) {
     await testDeleteAll(flag);
+  }
+});
+
+add_task(async function test_deleteByPrincipal() {
+  
+  
+  let {
+    CLEAR_ALL,
+    CLEAR_ALL_CACHES,
+    CLEAR_PREFLIGHT_CACHE,
+  } = Ci.nsIClearDataService;
+
+  for (let flag of [CLEAR_ALL, CLEAR_ALL_CACHES, CLEAR_PREFLIGHT_CACHE]) {
+    for (let hasUserInput of [true, false]) {
+      await testDeleteAll(flag, { deleteBy: "principal", hasUserInput });
+    }
   }
 });

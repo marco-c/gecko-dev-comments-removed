@@ -1304,12 +1304,21 @@ const AboutHomeStartupCacheCleaner = {
 };
 
 const PreflightCacheCleaner = {
-  deleteByPrincipal(aPrincipal) {
-    return this.deleteAll();
+  
+  
+  async deleteByPrincipal(aPrincipal, aIsUserRequest) {
+    if (!aIsUserRequest) {
+      return;
+    }
+    await this.deleteAll();
   },
 
-  deleteByBaseDomain(aBaseDomain) {
-    return this.deleteAll();
+  
+  async deleteByBaseDomain(aBaseDomain, aIsUserRequest) {
+    if (!aIsUserRequest) {
+      return;
+    }
+    await this.deleteAll();
   },
 
   async deleteAll() {
