@@ -670,7 +670,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  private:
   
-  js::ContextData<bool> throwing; 
+  js::ContextData<JS::ExceptionStatus> status;
   js::ContextData<JS::PersistentRooted<JS::Value>>
       unwrappedException_; 
   js::ContextData<JS::PersistentRooted<js::SavedFrame*>>
@@ -690,10 +690,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return unwrappedExceptionStack_.ref().get();
   }
 
-  
-  
-  js::ContextData<bool> overRecursed_;
-
 #ifdef DEBUG
   
   js::ContextData<bool> hadOverRecursed_;
@@ -704,11 +700,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
            js::oom::simulator.isThreadSimulatingAny();
   }
 #endif
-
- private:
-  
-  
-  js::ContextData<bool> propagatingForcedReturn_;
 
  public:
   js::ContextData<int32_t> reportGranularity; 
@@ -803,7 +794,9 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   inline void minorGC(JS::GCReason reason);
 
  public:
-  bool isExceptionPending() const { return throwing; }
+  bool isExceptionPending() const {
+    return JS::IsCatchableExceptionStatus(status);
+  }
 
   [[nodiscard]] bool getPendingException(JS::MutableHandleValue rval);
 
@@ -817,16 +810,25 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void setPendingExceptionAndCaptureStack(JS::HandleValue v);
 
   void clearPendingException() {
-    throwing = false;
-    overRecursed_ = false;
+    status = JS::ExceptionStatus::None;
     unwrappedException().setUndefined();
     unwrappedExceptionStack() = nullptr;
   }
 
-  bool isThrowingOverRecursed() const { return throwing && overRecursed_; }
-  bool isPropagatingForcedReturn() const { return propagatingForcedReturn_; }
-  void setPropagatingForcedReturn() { propagatingForcedReturn_ = true; }
-  void clearPropagatingForcedReturn() { propagatingForcedReturn_ = false; }
+  bool isThrowingOverRecursed() const {
+    return status == JS::ExceptionStatus::OverRecursed;
+  }
+  bool isPropagatingForcedReturn() const {
+    return status == JS::ExceptionStatus::ForcedReturn;
+  }
+  void setPropagatingForcedReturn() {
+    MOZ_ASSERT(status == JS::ExceptionStatus::None);
+    status = JS::ExceptionStatus::ForcedReturn;
+  }
+  void clearPropagatingForcedReturn() {
+    MOZ_ASSERT(status == JS::ExceptionStatus::ForcedReturn);
+    status = JS::ExceptionStatus::None;
+  }
 
   
 

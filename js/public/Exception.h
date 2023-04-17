@@ -57,6 +57,32 @@ namespace JS {
 
 
 
+enum class ExceptionStatus {
+  
+  None,
+
+  
+  
+  
+  ForcedReturn,
+
+  
+  
+  Throwing,
+  OverRecursed,
+};
+
+
+
+static MOZ_ALWAYS_INLINE bool IsCatchableExceptionStatus(
+    ExceptionStatus status) {
+  return status >= ExceptionStatus::Throwing;
+}
+
+
+
+
+
 
 
 
@@ -100,9 +126,7 @@ class MOZ_STACK_CLASS ExceptionStack {
 class JS_PUBLIC_API AutoSaveExceptionState {
  private:
   JSContext* context;
-  bool wasPropagatingForcedReturn;
-  bool wasOverRecursed;
-  bool wasThrowing;
+  ExceptionStatus status;
   RootedValue exceptionValue;
   RootedObject exceptionStack;
 
