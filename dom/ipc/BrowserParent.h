@@ -973,6 +973,9 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mLockedNativePointer : 1;
+
+  
+  bool mShowingTooltip : 1;
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {
