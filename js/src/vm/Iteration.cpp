@@ -189,8 +189,21 @@ static bool EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj,
                                       unsigned flags,
                                       MutableHandle<PropertyKeySet> visited,
                                       MutableHandleIdVector props) {
+  
+  
+  
+  
+  
+  
+  const bool iterShapeProperties = CheckForDuplicates ||
+                                   (flags & JSITER_HIDDEN) ||
+                                   pobj->hasEnumerableProperty();
+
   bool enumerateSymbols;
   if (flags & JSITER_SYMBOLSONLY) {
+    if (!iterShapeProperties) {
+      return true;
+    }
     enumerateSymbols = true;
   } else {
     
@@ -233,6 +246,12 @@ static bool EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj,
           return false;
         }
       }
+    }
+
+    
+    
+    if (!iterShapeProperties) {
+      return true;
     }
 
     
@@ -299,6 +318,8 @@ static bool EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj,
   }
 
   if (enumerateSymbols) {
+    MOZ_ASSERT(iterShapeProperties);
+
     
     
     
