@@ -722,8 +722,6 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
     return;
   }
 
-  auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
-
   
   
   if (thing.mayBeOwnedByOtherRuntime()) {
@@ -732,6 +730,7 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
 
   
   
+  auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
   if (detail::TenuredCellIsMarkedBlack(cell)) {
     return;
   }
@@ -744,6 +743,22 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   }
 
   MOZ_ASSERT_IF(!zone->isGCPreparing(), !detail::TenuredCellIsMarkedGray(cell));
+}
+
+static MOZ_ALWAYS_INLINE void IncrementalReadBarrier(JS::GCCellPtr thing) {
+  
+  
+
+  if (IsInsideNursery(thing.asCell()) || thing.mayBeOwnedByOtherRuntime()) {
+    return;
+  }
+
+  auto* zone = JS::shadow::Zone::from(JS::GetTenuredGCThingZone(thing));
+  auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
+  if (zone->needsIncrementalBarrier() &&
+      !detail::TenuredCellIsMarkedBlack(cell)) {
+    PerformIncrementalReadBarrier(thing);
+  }
 }
 
 template <typename T>
