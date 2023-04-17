@@ -23,6 +23,19 @@ module.exports = {
         ],
       },
     },
+    {
+      
+      files: "test*.js",
+      rules: {
+        "no-unused-vars": [
+          "error",
+          {
+            args: "none",
+            vars: "all",
+          },
+        ],
+      },
+    },
   ],
 
   rules: {

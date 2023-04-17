@@ -1,14 +1,6 @@
 
 
 
-let unfiledFolderId;
-
-add_task(async function setup() {
-  unfiledFolderId = await PlacesUtils.promiseItemId(
-    PlacesUtils.bookmarks.unfiledGuid
-  );
-});
-
 add_task(async function test_value_combo() {
   let buf = await openMirror("value_combo");
   let now = Date.now();

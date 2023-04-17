@@ -23,9 +23,6 @@ const { BookmarkJSONUtils } = ChromeUtils.import(
   "resource://gre/modules/BookmarkJSONUtils.jsm"
 );
 
-
-var bookmarksExportedFile;
-
 add_task(async function test_import_bookmarks() {
   let bookmarksFile = OS.Path.join(do_get_cwd().path, "bookmarks_corrupt.json");
 

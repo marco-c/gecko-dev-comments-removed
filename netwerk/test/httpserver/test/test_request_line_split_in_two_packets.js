@@ -36,7 +36,6 @@ function veryLongRequestLine(request, response) {
   response.setStatusLine(request.httpVersion, 200, "TEST PASSED");
 }
 
-var path = "/very-long-request-line?";
 var reallyLong = "0123456789ABCDEF0123456789ABCDEF"; 
 reallyLong = reallyLong + reallyLong + reallyLong + reallyLong; 
 reallyLong = reallyLong + reallyLong + reallyLong + reallyLong; 
