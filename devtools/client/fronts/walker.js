@@ -433,6 +433,13 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
             nodeType === Node.DOCUMENT_NODE
           );
         });
+
+        
+        
+        
+        if (!nodeFront) {
+          return null;
+        }
       }
       return querySelectors(nodeFront) || nodeFront;
     };
