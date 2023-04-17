@@ -117,7 +117,7 @@ var UITour = {
         query: "#appMenu-fxa-label2",
         
         
-        widgetName: "appMenu-fxa-label",
+        widgetName: "appMenu-fxa-label2",
       },
     ],
     [
