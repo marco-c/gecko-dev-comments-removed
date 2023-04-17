@@ -107,6 +107,14 @@
   }
 
 
+#define NS_MACUSERACTIVITYUPDATER_CID                \
+  {                                                  \
+    0x29046c8f, 0xcba6, 0x4ffa, {                    \
+      0x91, 0x41, 0x16, 0x85, 0xe9, 0x6c, 0x4e, 0xa0 \
+    }                                                \
+  }
+
+
 #define NS_SYSTEMSTATUSBAR_CID                       \
   {                                                  \
     0xb6e1a890, 0xb2b8, 0x4883, {                    \

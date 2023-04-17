@@ -445,6 +445,16 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
   }
 });
 
+XPCOMUtils.defineLazyGetter(this, "MacUserActivityUpdater", () => {
+  if (AppConstants.platform != "macosx") {
+    return null;
+  }
+
+  return Cc["@mozilla.org/widget/macuseractivityupdater;1"].getService(
+    Ci.nsIMacUserActivityUpdater
+  );
+});
+
 XPCOMUtils.defineLazyGetter(this, "Win7Features", () => {
   if (AppConstants.platform != "win") {
     return null;
@@ -5468,6 +5478,8 @@ var XULBrowserWindow = {
 
     this._updateElementsForContentType();
 
+    this._updateMacUserActivity(window, aLocationURI, aWebProgress);
+
     
     
     
@@ -5559,6 +5571,30 @@ var XULBrowserWindow = {
         element.setAttribute("disabled", "true");
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _updateMacUserActivity(win, uri, webProgress) {
+    if (!webProgress.isTopLevel || AppConstants.platform != "macosx") {
+      return;
+    }
+
+    let baseWin = win.docShell.treeOwner.QueryInterface(Ci.nsIBaseWindow);
+    MacUserActivityUpdater.updateLocation(
+      uri.spec,
+      win.gBrowser.contentTitle,
+      baseWin
+    );
   },
 
   asyncUpdateUI() {
