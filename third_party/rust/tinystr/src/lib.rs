@@ -30,14 +30,68 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![no_std]
+
+#[cfg(any(feature = "std", test))]
+extern crate std;
+
+#[cfg(all(not(feature = "std"), not(test)))]
+extern crate core as std;
+
 mod helpers;
 mod tinystr16;
 mod tinystr4;
 mod tinystr8;
 
+#[cfg(any(feature = "std", feature = "alloc"))]
+mod tinystrauto;
+
 pub use tinystr16::TinyStr16;
 pub use tinystr4::TinyStr4;
 pub use tinystr8::TinyStr8;
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+pub use tinystrauto::TinyStrAuto;
+
+#[cfg(feature = "macros")]
+pub use tinystr_macros as macros;
 
 
 #[derive(PartialEq, Eq, Debug)]

@@ -79,6 +79,12 @@ impl TinyStr8 {
     
     
     
+    
+    
+    
+    
+    
+    
     #[inline(always)]
     pub const unsafe fn new_unchecked(text: u64) -> Self {
         Self(NonZeroU64::new_unchecked(u64::from_le(text)))

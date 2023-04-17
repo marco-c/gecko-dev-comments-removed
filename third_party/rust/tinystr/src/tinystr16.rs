@@ -79,6 +79,12 @@ impl TinyStr16 {
     
     
     
+    
+    
+    
+    
+    
+    
     #[inline(always)]
     pub const unsafe fn new_unchecked(text: u128) -> Self {
         Self(NonZeroU128::new_unchecked(u128::from_le(text)))
