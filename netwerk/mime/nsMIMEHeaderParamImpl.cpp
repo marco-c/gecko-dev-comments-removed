@@ -579,8 +579,8 @@ nsresult nsMIMEHeaderParamImpl::DoParameterInternal(
       
       if (caseB || (caseCStart && acceptContinuations)) {
         
-        const char* sQuote1 = PL_strchr(valueStart, 0x27);
-        const char* sQuote2 = sQuote1 ? PL_strchr(sQuote1 + 1, 0x27) : nullptr;
+        const char* sQuote1 = strchr(valueStart, 0x27);
+        const char* sQuote2 = sQuote1 ? strchr(sQuote1 + 1, 0x27) : nullptr;
 
         
         
@@ -760,7 +760,7 @@ nsresult internalDecodeRFC2047Header(const char* aHeaderVal,
         Is7bitNonAsciiString(aHeaderVal, strlen(aHeaderVal))))) {
     DecodeRFC2047Str(aHeaderVal, aDefaultCharset, aOverrideCharset, aResult);
   } else if (aEatContinuations &&
-             (PL_strchr(aHeaderVal, '\n') || PL_strchr(aHeaderVal, '\r'))) {
+             (strchr(aHeaderVal, '\n') || strchr(aHeaderVal, '\r'))) {
     aResult = aHeaderVal;
   } else {
     aEatContinuations = false;
@@ -1178,7 +1178,9 @@ nsresult DecodeRFC2047Str(const char* aHeader,
     if (isLastEncodedWord) {
       
       for (q = begin; q < p; ++q) {
-        if (!PL_strchr(" \t\r\n", *q)) break;
+        if (!strchr(" \t\r\n", *q)) {
+          break;
+        }
       }
     }
 
@@ -1204,7 +1206,7 @@ nsresult DecodeRFC2047Str(const char* aHeader,
     charsetStart = p;
     charsetEnd = nullptr;
     for (q = p; *q != '?'; q++) {
-      if (*q <= ' ' || PL_strchr(especials, *q)) {
+      if (*q <= ' ' || strchr(especials, *q)) {
         goto badsyntax;
       }
 
