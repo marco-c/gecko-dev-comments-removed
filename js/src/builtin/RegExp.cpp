@@ -51,17 +51,11 @@ static PlainObject* CreateGroupsObject(JSContext* cx,
   
   
   if (cx->realm() != groupsTemplate->realm()) {
-    PlainObject* result;
-    JS_TRY_VAR_OR_RETURN_NULL(
-        cx, result,
-        PlainObject::createWithTemplateFromDifferentRealm(cx, groupsTemplate));
-    return result;
+    return PlainObject::createWithTemplateFromDifferentRealm(cx,
+                                                             groupsTemplate);
   }
 
-  PlainObject* result;
-  JS_TRY_VAR_OR_RETURN_NULL(
-      cx, result, PlainObject::createWithTemplate(cx, groupsTemplate));
-  return result;
+  return PlainObject::createWithTemplate(cx, groupsTemplate);
 }
 
 

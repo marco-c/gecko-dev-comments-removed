@@ -267,9 +267,10 @@ static bool ReturnUndefined(JSContext* cx, unsigned argc, Value* vp) {
   
 
   
-  PlainObject* obj;
-  JS_TRY_VAR_OR_RETURN_NULL(
-      cx, obj, PlainObject::createWithTemplate(cx, templateObject));
+  PlainObject* obj = PlainObject::createWithTemplate(cx, templateObject);
+  if (!obj) {
+    return nullptr;
+  }
 
   
   obj->setSlot(Realm::IterResultObjectValueSlot, value);
