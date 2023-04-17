@@ -118,7 +118,7 @@ child:
   
   
   [Priority=mediumhigh] async DidComposite(LayersId id,
-                                           TransactionId transactionId,
+                                           TransactionId[] transactionId,
                                            TimeStamp compositeStart,
                                            TimeStamp compositeEnd);
 

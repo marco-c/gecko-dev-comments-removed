@@ -480,6 +480,13 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   bool CanDoCatchUpTick();
 
+  bool AtPendingTransactionLimit() {
+    return mPendingTransactions.Length() == 2;
+  }
+  bool TooManyPendingTransactions() {
+    return mPendingTransactions.Length() >= 2;
+  }
+
   mozilla::RefreshDriverTimer* ChooseTimer();
   mozilla::RefreshDriverTimer* mActiveTimer;
   RefPtr<mozilla::RefreshDriverTimer> mOwnTimer;
@@ -492,13 +499,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   
   TransactionId mNextTransactionId;
-  
-  
-  
-  
-  TransactionId mOutstandingTransactionId;
-  
-  TransactionId mCompletedTransaction;
+  AutoTArray<TransactionId, 3> mPendingTransactions;
 
   uint32_t mFreezeCount;
 
@@ -548,6 +549,10 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
   
   bool mNeedToUpdateIntersectionObservations : 1;
+
+  
+  
+  bool mInNormalTick : 1;
 
   
   

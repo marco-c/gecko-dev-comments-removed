@@ -772,8 +772,9 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void DidComposite(const VsyncId& aId, TimeStamp& aCompositeStart,
                     TimeStamp& aCompositeEnd);
 
-  void NotifyDidComposite(TransactionId aTransactionId, VsyncId aId,
-                          TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
+  void NotifyDidComposite(const nsTArray<TransactionId>& aTransactionIds,
+                          VsyncId aId, TimeStamp& aCompositeStart,
+                          TimeStamp& aCompositeEnd);
 
   
   
@@ -796,7 +797,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   CSSToLayoutDeviceScale mScale;
   TimeDuration mVsyncRate;
 
-  TransactionId mPendingTransaction;
+  AutoTArray<TransactionId, 2> mPendingTransactions;
   TimeStamp mRefreshStartTime;
   TimeStamp mTxnStartTime;
   TimeStamp mFwdTime;
