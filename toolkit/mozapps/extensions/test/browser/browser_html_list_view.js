@@ -1000,27 +1000,59 @@ add_task(async function testDisabledDimming() {
 });
 
 add_task(async function testEmptyMessage() {
-  let win = await loadInitialView("extension");
-  let doc = win.document;
-  let enabledSection = getSection(doc, "enabled");
-  let disabledSection = getSection(doc, "disabled");
-  const message = doc.querySelector("#empty-addons-message");
+  let tests = [
+    {
+      type: "extension",
+      message: "Get extensions and themes on ",
+    },
+    {
+      type: "theme",
+      message: "Get extensions and themes on ",
+    },
+    {
+      type: "plugin",
+      message: "Get extensions and themes on ",
+    },
+    {
+      type: "locale",
+      message: "Get language packs on ",
+    },
+    {
+      type: "dictionary",
+      message: "Get dictionaries on ",
+    },
+  ];
 
-  
-  is_element_hidden(message, "Empty addons message hidden");
+  for (let test of tests) {
+    let win = await loadInitialView(test.type);
+    let doc = win.document;
+    let enabledSection = getSection(doc, "enabled");
+    let disabledSection = getSection(doc, "disabled");
+    const message = doc.querySelector("#empty-addons-message");
 
-  
-  
-  while (enabledSection.firstChild) {
-    enabledSection.firstChild.remove();
+    
+    ok(
+      message.textContent.startsWith(test.message),
+      `View ${test.type} has correct empty list message`
+    );
+
+    
+    
+    is_element_hidden(message, "Empty addons message hidden");
+
+    
+    
+    while (enabledSection.firstChild) {
+      enabledSection.firstChild.remove();
+    }
+
+    while (disabledSection.firstChild) {
+      disabledSection.firstChild.remove();
+    }
+
+    
+    is_element_visible(message, "Empty addons message visible");
+
+    await closeView(win);
   }
-
-  while (disabledSection.firstChild) {
-    disabledSection.firstChild.remove();
-  }
-
-  
-  is_element_visible(message, "Empty addons message visible");
-
-  await closeView(win);
 });
