@@ -422,6 +422,7 @@ class GCMarker final : public JSTracer {
   void eagerlyMarkChildren(JSRope* rope);
   void eagerlyMarkChildren(JSString* str);
   void eagerlyMarkChildren(Shape* shape);
+  void eagerlyMarkChildren(PropMap* map);
   void eagerlyMarkChildren(Scope* scope);
 
   

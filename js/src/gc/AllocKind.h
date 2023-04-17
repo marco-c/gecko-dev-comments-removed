@@ -21,6 +21,11 @@
 #include "js/Utility.h"
 
 namespace js {
+
+class CompactPropMap;
+class NormalPropMap;
+class DictionaryPropMap;
+
 namespace gc {
 
 
@@ -60,17 +65,20 @@ namespace gc {
 
 #define FOR_EACH_NONOBJECT_NONNURSERY_ALLOCKIND(D)
  \
-    D(SCRIPT,              Script,       js::BaseScript,    js::BaseScript,    false,  false,  true) \
-    D(SHAPE,               Shape,        js::Shape,         js::Shape,         true,   false,  true) \
-    D(BASE_SHAPE,          BaseShape,    js::BaseShape,     js::BaseShape,     true,   false,  true) \
-    D(GETTER_SETTER,       GetterSetter, js::GetterSetter,  js::GetterSetter,  true,   false,  true) \
-    D(EXTERNAL_STRING,     String,       JSExternalString,  JSExternalString,  true,   false,  true) \
-    D(FAT_INLINE_ATOM,     String,       js::FatInlineAtom, js::FatInlineAtom, true,   false,  false) \
-    D(ATOM,                String,       js::NormalAtom,    js::NormalAtom,    true,   false,  false) \
-    D(SYMBOL,              Symbol,       JS::Symbol,        JS::Symbol,        true,   false,  false) \
-    D(JITCODE,             JitCode,      js::jit::JitCode,  js::jit::JitCode,  false,  false,  false) \
-    D(SCOPE,               Scope,        js::Scope,         js::Scope,         true,   false,  true) \
-    D(REGEXP_SHARED,       RegExpShared, js::RegExpShared,  js::RegExpShared,  true,   false,  true)
+    D(SCRIPT,              Script,       js::BaseScript,        js::BaseScript,        false,  false,  true) \
+    D(SHAPE,               Shape,        js::Shape,             js::Shape,             true,   false,  true) \
+    D(BASE_SHAPE,          BaseShape,    js::BaseShape,         js::BaseShape,         true,   false,  true) \
+    D(GETTER_SETTER,       GetterSetter, js::GetterSetter,      js::GetterSetter,      true,   false,  true) \
+    D(COMPACT_PROP_MAP,    PropMap,      js::CompactPropMap,    js::CompactPropMap,    true,   false,  true) \
+    D(NORMAL_PROP_MAP,     PropMap,      js::NormalPropMap,     js::NormalPropMap,     true,   false,  true) \
+    D(DICT_PROP_MAP,       PropMap,      js::DictionaryPropMap, js::DictionaryPropMap, true,   false,  true) \
+    D(EXTERNAL_STRING,     String,       JSExternalString,      JSExternalString,      true,   false,  true) \
+    D(FAT_INLINE_ATOM,     String,       js::FatInlineAtom,     js::FatInlineAtom,     true,   false,  false) \
+    D(ATOM,                String,       js::NormalAtom,        js::NormalAtom,        true,   false,  false) \
+    D(SYMBOL,              Symbol,       JS::Symbol,            JS::Symbol,            true,   false,  false) \
+    D(JITCODE,             JitCode,      js::jit::JitCode,      js::jit::JitCode,      false,  false,  false) \
+    D(SCOPE,               Scope,        js::Scope,             js::Scope,             true,   false,  true) \
+    D(REGEXP_SHARED,       RegExpShared, js::RegExpShared,      js::RegExpShared,      true,   false,  true)
 
 #define FOR_EACH_NONOBJECT_NURSERY_ALLOCKIND(D)
  \
