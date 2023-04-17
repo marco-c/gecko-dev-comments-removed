@@ -971,17 +971,17 @@ inTimeZone("Pacific/Kiritimati", () => {
 inTimeZone("Pacific/Niue", () => {
 {
   
-  let local = new DateTime.Local(1950, Month.January, 1, DayOfWeek.Sunday, 0, 0, 0);
-  let utc = new DateTime.UTC(1950, Month.January, 1, DayOfWeek.Sunday, 11, 20, 0);
+  let local = new DateTime.Local(1956, Month.January, 1, DayOfWeek.Sunday, 0, 0, 0);
+  let utc = new DateTime.UTC(1956, Month.January, 1, DayOfWeek.Sunday, 11, 20, 0);
 
   assertDate(local, utc, TimeZone(-11,20), {
-    String: "Sun Jan 01 1950 00:00:00 GMT-1120 (Niue Time)",
-    DateString: "Sun Jan 01 1950",
+    String: "Sun Jan 01 1956 00:00:00 GMT-1120 (Niue Time)",
+    DateString: "Sun Jan 01 1956",
     TimeString: "00:00:00 GMT-1120 (Niue Time)",
-    UTCString: "Sun, 01 Jan 1950 11:20:00 GMT",
-    ISOString: "1950-01-01T11:20:00.000Z",
-    LocaleString: "Sun, 01/01/1950, 12:00:00 AM GMT-11:20",
-    LocaleDateString: "Sun, 01/01/1950",
+    UTCString: "Sun, 01 Jan 1956 11:20:00 GMT",
+    ISOString: "1956-01-01T11:20:00.000Z",
+    LocaleString: "Sun, 01/01/1956, 12:00:00 AM GMT-11:20",
+    LocaleDateString: "Sun, 01/01/1956",
     LocaleTimeString: "12:00:00 AM GMT-11:20",
   });
 }
