@@ -131,7 +131,9 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
   
   
   
-  if (!mHasGuardedAgainstIncorrectFirstSample &&
+  
+  
+  if (IsWin10OrLater() && !mHasGuardedAgainstIncorrectFirstSample &&
       !mMFTManager->HasSeekThreshold()) {
     mHasGuardedAgainstIncorrectFirstSample = true;
     mMFTManager->SetSeekThreshold(aSample->mTime);
