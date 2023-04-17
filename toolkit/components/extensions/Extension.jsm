@@ -1621,10 +1621,20 @@ class ExtensionData {
 
 
 
+
+
+
+
+
+
+
   static formatPermissionStrings(
     info,
     bundle,
-    { collapseOrigins = false } = {}
+    {
+      collapseOrigins = false,
+      getKeyForPermission = perm => `webextPerms.description.${perm}`,
+    } = {}
   ) {
     let result = {
       msgs: [],
@@ -1687,13 +1697,11 @@ class ExtensionData {
       );
     }
 
-    let permissionKey = perm => `webextPerms.description.${perm}`;
-
     
     const NATIVE_MSG_PERM = "nativeMessaging";
     if (perms.permissions.includes(NATIVE_MSG_PERM)) {
       result.msgs.push(
-        bundle.formatStringFromName(permissionKey(NATIVE_MSG_PERM), [
+        bundle.formatStringFromName(getKeyForPermission(NATIVE_MSG_PERM), [
           info.appName,
         ])
       );
@@ -1709,7 +1717,9 @@ class ExtensionData {
         continue;
       }
       try {
-        result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
+        result.msgs.push(
+          bundle.GetStringFromName(getKeyForPermission(permission))
+        );
       } catch (err) {
         
         
@@ -1722,14 +1732,14 @@ class ExtensionData {
       if (permission == NATIVE_MSG_PERM) {
         result.optionalPermissions[
           permission
-        ] = bundle.formatStringFromName(permissionKey(permission), [
+        ] = bundle.formatStringFromName(getKeyForPermission(permission), [
           info.appName,
         ]);
         continue;
       }
       try {
         result.optionalPermissions[permission] = bundle.GetStringFromName(
-          permissionKey(permission)
+          getKeyForPermission(permission)
         );
       } catch (err) {
         

@@ -34,12 +34,20 @@ async function getManifestPermissions(extensionData) {
   return manifestPermissions;
 }
 
-function getPermissionWarnings(manifestPermissions, options) {
+function getPermissionWarnings(
+  manifestPermissions,
+  options,
+  stringBundle = bundle
+) {
   let info = {
     permissions: manifestPermissions,
     appName: DUMMY_APP_NAME,
   };
-  let { msgs } = ExtensionData.formatPermissionStrings(info, bundle, options);
+  let { msgs } = ExtensionData.formatPermissionStrings(
+    info,
+    stringBundle,
+    options
+  );
   return msgs;
 }
 
@@ -52,6 +60,40 @@ async function getPermissionWarningsForUpdate(
   let difference = Extension.comparePermissions(oldPerms, newPerms);
   return getPermissionWarnings(difference);
 }
+
+
+
+add_task(async function customized_permission_keys_mapping() {
+  const mockBundle = {
+    
+    GetStringFromName: key => `Fake localized ${key}`,
+    formatStringFromName: (name, params) => "Fake formatted string",
+  };
+
+  
+  const getKeyForPermission = perm => `customWebExtPerms.description.${perm}`;
+
+  const manifest = {
+    permissions: ["downloads", "proxy"],
+  };
+  const expectedWarnings = manifest.permissions.map(k =>
+    mockBundle.GetStringFromName(getKeyForPermission(k))
+  );
+  const manifestPermissions = await getManifestPermissions({ manifest });
+
+  
+  
+  const warnings = getPermissionWarnings(
+    manifestPermissions,
+    { getKeyForPermission },
+    mockBundle
+  );
+  deepEqual(
+    warnings,
+    expectedWarnings,
+    "Got the expected string from customized permission mapping"
+  );
+});
 
 
 
