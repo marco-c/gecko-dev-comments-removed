@@ -62,7 +62,6 @@ InlineSpellChecker.prototype = {
     this.mOverMisspelling = false;
     this.mMisspelling = "";
     this.mMenu = null;
-    this.mSpellSuggestions = [];
     this.mSuggestionItems = [];
     this.mDictionaryMenu = null;
     this.mDictionaryItems = [];
@@ -144,7 +143,40 @@ InlineSpellChecker.prototype = {
 
   
   
-  addSuggestionsToMenu(menu, insertBefore, maxNumber) {
+  addSuggestionsToMenuOnParent(menu, insertBefore, maxNumber) {
+    if (this.mRemote) {
+      
+      
+      
+      return 0;
+    }
+    if (!this.mInlineSpellChecker || !this.mOverMisspelling) {
+      return 0;
+    }
+
+    let spellchecker = this.mInlineSpellChecker.spellChecker;
+    let spellSuggestions = [];
+
+    try {
+      if (!spellchecker.CheckCurrentWord(this.mMisspelling)) {
+        return 0;
+      }
+
+      for (let i = 0; i < maxNumber; i++) {
+        let suggestion = spellchecker.GetSuggestedWord();
+        if (!suggestion.length) {
+          
+          break;
+        }
+        spellSuggestions.push(suggestion);
+      }
+    } catch (e) {
+      return 0;
+    }
+    return this._addSuggestionsToMenu(menu, insertBefore, spellSuggestions);
+  },
+
+  addSuggestionsToMenu(menu, insertBefore, spellSuggestions) {
     if (
       !this.mRemote &&
       (!this.mInlineSpellChecker || !this.mOverMisspelling)
@@ -152,41 +184,31 @@ InlineSpellChecker.prototype = {
       return 0;
     } 
 
-    var spellchecker = this.mRemote || this.mInlineSpellChecker.spellChecker;
-    try {
-      if (!this.mRemote && !spellchecker.CheckCurrentWord(this.mMisspelling)) {
-        return 0;
-      } 
-    } catch (e) {
+    if (!spellSuggestions?.length) {
       return 0;
     }
 
-    this.mMenu = menu;
-    this.mSpellSuggestions = [];
-    this.mSuggestionItems = [];
-    for (var i = 0; i < maxNumber; i++) {
-      var suggestion = spellchecker.GetSuggestedWord();
-      if (!suggestion.length) {
-        break;
-      }
-      this.mSpellSuggestions.push(suggestion);
+    return this._addSuggestionsToMenu(menu, insertBefore, spellSuggestions);
+  },
 
+  _addSuggestionsToMenu(menu, insertBefore, spellSuggestions) {
+    this.mMenu = menu;
+    this.mSuggestionItems = [];
+
+    for (let suggestion of spellSuggestions) {
       var item = menu.ownerDocument.createXULElement("menuitem");
       this.mSuggestionItems.push(item);
       item.setAttribute("label", suggestion);
       item.setAttribute("value", suggestion);
-      
-      
-      var callback = function(me, val) {
-        return function(evt) {
-          me.replaceMisspelling(val);
-        };
-      };
-      item.addEventListener("command", callback(this, i), true);
+      item.addEventListener(
+        "command",
+        this.replaceMisspelling.bind(this, suggestion),
+        true
+      );
       item.setAttribute("class", "spell-suggestion");
       menu.insertBefore(item, insertBefore);
     }
-    return this.mSpellSuggestions.length;
+    return spellSuggestions.length;
   },
 
   
@@ -301,21 +323,18 @@ InlineSpellChecker.prototype = {
   },
 
   
-  replaceMisspelling(index) {
+  replaceMisspelling(suggestion) {
     if (this.mRemote) {
-      this.mRemote.replaceMisspelling(index);
+      this.mRemote.replaceMisspelling(suggestion);
       return;
     }
     if (!this.mInlineSpellChecker || !this.mOverMisspelling) {
       return;
     }
-    if (index < 0 || index >= this.mSpellSuggestions.length) {
-      return;
-    }
     this.mInlineSpellChecker.replaceWord(
       this.mWordNode,
       this.mWordOffset,
-      this.mSpellSuggestions[index]
+      suggestion
     );
   },
 
@@ -514,22 +533,8 @@ RemoteSpellChecker.prototype = {
   get enableRealTimeSpell() {
     return this._spellInfo.enableRealTimeSpell;
   },
-
-  GetSuggestedWord() {
-    if (!this._suggestionGenerator) {
-      this._suggestionGenerator = (function*(spellInfo) {
-        for (let i of spellInfo.spellSuggestions) {
-          yield i;
-        }
-      })(this._spellInfo);
-    }
-
-    let next = this._suggestionGenerator.next();
-    if (next.done) {
-      this._suggestionGenerator = null;
-      return "";
-    }
-    return next.value;
+  get suggestions() {
+    return this._spellInfo.spellSuggestions;
   },
 
   get currentDictionary() {
@@ -543,8 +548,8 @@ RemoteSpellChecker.prototype = {
     this._actor.selectDictionary({ localeCode });
   },
 
-  replaceMisspelling(index) {
-    this._actor.replaceMisspelling({ index });
+  replaceMisspelling(suggestion) {
+    this._actor.replaceMisspelling({ suggestion });
   },
 
   toggleEnabled() {
