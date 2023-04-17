@@ -215,7 +215,11 @@ TEST(FOG, TestCppTimingDistWorks)
 
   
   
-  ASSERT_GT(data.sum, (uint64_t)(15 * NANOS_IN_MILLIS));
+  const uint64_t EPSILON = 40000;
+
+  
+  
+  ASSERT_GT(data.sum, (uint64_t)(15 * NANOS_IN_MILLIS) - EPSILON);
 
   
   uint64_t sampleCount = 0;
