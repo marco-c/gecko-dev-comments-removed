@@ -8230,7 +8230,8 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   
   
   
-  if (!nsContentUtils::IsAlphanumericOrSymbolAt(aFrag, aOffset + i)) {
+  uint32_t usv = aFrag->ScalarValueAt(aOffset + i);
+  if (!nsContentUtils::IsAlphanumericOrSymbol(usv)) {
     *aLength = 0;
     return true;
   }
@@ -8243,10 +8244,15 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   bool allowSplitLigature;
 
   typedef unicode::Script Script;
-  Script script = unicode::GetScriptCode(aFrag->CharAt(aOffset + i));
+  Script script = unicode::GetScriptCode(usv);
   switch (script) {
     default:
       allowSplitLigature = true;
+      break;
+
+    
+    case Script::COMMON:
+      allowSplitLigature = !gfxFontUtils::IsRegionalIndicator(usv);
       break;
 
     
