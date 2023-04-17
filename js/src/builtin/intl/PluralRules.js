@@ -61,6 +61,9 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
     }
 
     
+    internalProps.roundingPriority = lazyPluralRulesData.roundingPriority;
+
+    
     internalProps.pluralCategories = null;
 
     return internalProps;
@@ -102,6 +105,8 @@ function InitializePluralRules(pluralRules, locales, options) {
     assert(intl_GuardToPluralRules(pluralRules) !== null,
            "InitializePluralRules called with non-PluralRules");
 
+    
+    
     
     
     
@@ -292,6 +297,10 @@ function Intl_PluralRules_resolvedOptions() {
 
     
     DefineDataProperty(result, "pluralCategories", pluralCategories);
+
+#ifdef NIGHTLY_BUILD
+    DefineDataProperty(result, "roundingPriority", internals.roundingPriority);
+#endif
 
     
     return result;
