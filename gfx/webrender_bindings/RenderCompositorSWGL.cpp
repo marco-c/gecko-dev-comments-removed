@@ -222,6 +222,8 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     
     mDT->ReleaseBits(mMappedData);
   }
+  mDT->Flush();
+
   
   mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
   mDirtyRegion.SetEmpty();
