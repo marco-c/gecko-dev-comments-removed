@@ -990,6 +990,8 @@ impl<U> MaxRect for Box2D<f32, U> {
 
 
 #[derive(Debug, MallocSizeOf)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum FastTransform<Src, Dst> {
     
     Offset(Vector2D<f32, Src>),

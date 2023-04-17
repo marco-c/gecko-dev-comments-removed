@@ -18,6 +18,8 @@ use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRe
 
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum SpatialNodeUidKind {
     
     Root,
@@ -37,6 +39,8 @@ pub enum SpatialNodeUidKind {
 
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SpatialNodeUid {
     
     pub kind: SpatialNodeUidKind,
@@ -81,6 +85,8 @@ impl SpatialNodeUid {
 }
 
 #[derive(Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum SpatialNodeType {
     
     
@@ -116,6 +122,8 @@ pub struct SpatialNodeInfo<'a> {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SceneSpatialNode {
     
     children: Vec<SpatialNodeIndex>,
@@ -283,6 +291,8 @@ impl SceneSpatialNode {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SpatialNode {
     
     
@@ -882,6 +892,8 @@ impl SpatialNode {
 
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum ScrollFrameKind {
     PipelineRoot {
         is_root_pipeline: bool,
@@ -890,6 +902,8 @@ pub enum ScrollFrameKind {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ScrollFrameInfo {
     
     
@@ -975,6 +989,8 @@ impl ScrollFrameInfo {
 
 
 #[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ReferenceFrameInfo {
     
     
@@ -994,6 +1010,8 @@ pub struct ReferenceFrameInfo {
 }
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct StickyFrameInfo {
     pub frame_rect: LayoutRect,
     pub margins: SideOffsets2D<Option<f32>, LayoutPixel>,
@@ -1090,10 +1108,11 @@ fn test_cst_perspective_relative_scroll() {
         SpatialNodeUid::external(SpatialTreeItemKey::new(0, 4)),
     );
 
-    let mut cst = SpatialTree::new(&cst);
-    cst.update_tree(&SceneProperties::new());
+    let mut st = SpatialTree::new();
+    st.apply_updates(cst.end_frame_and_get_pending_updates());
+    st.update_tree(&SceneProperties::new());
 
-    let world_transform = cst.get_world_transform(ref_frame).into_transform().cast_unit();
+    let world_transform = st.get_world_transform(ref_frame).into_transform().cast_unit();
     let ref_transform = transform.then_translate(LayoutVector3D::new(0.0, -50.0, 0.0));
     assert!(world_transform.approx_eq(&ref_transform));
 }
