@@ -230,17 +230,8 @@ var whitelist = [
 
   
   {
-    file: "resource://gre/modules/TaskScheduler.jsm",
-    platforms: ["macosx", "win"],
-  },
-  {
-    file: "resource://gre/modules/TaskSchedulerWinImpl.jsm",
-    platforms: ["win"],
-  },
-  
-  {
-    file: "resource://gre/modules/TaskSchedulerMacOSImpl.jsm",
-    platforms: ["macosx"],
+    file:
+      "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
   },
 ];
 
@@ -260,7 +251,7 @@ if (AppConstants.platform == "android") {
   });
 }
 
-if (AppConstants.MOZ_BACKGROUNDTASKS) {
+if (AppConstants.MOZ_BACKGROUNDTASKS && !AppConstants.MOZ_UPDATE_AGENT) {
   
   whitelist.push({
     file: "resource://gre/modules/BackgroundTasksUtils.jsm",

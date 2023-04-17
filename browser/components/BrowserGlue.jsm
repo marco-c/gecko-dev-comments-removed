@@ -27,6 +27,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ASRouterNewTabHook: "resource://activity-stream/lib/ASRouterNewTabHook.jsm",
   ASRouter: "resource://activity-stream/lib/ASRouter.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.jsm",
   Blocklist: "resource://gre/modules/Blocklist.jsm",
   BookmarkHTMLUtils: "resource://gre/modules/BookmarkHTMLUtils.jsm",
   BookmarkJSONUtils: "resource://gre/modules/BookmarkJSONUtils.jsm",
@@ -2519,6 +2520,25 @@ BrowserGlue.prototype = {
       {
         task: () => {
           PlacesUIUtils.ensureBookmarkToolbarTelemetryListening();
+        },
+      },
+
+      {
+        condition:
+          AppConstants.MOZ_BACKGROUNDTASKS && AppConstants.MOZ_UPDATE_AGENT,
+        task: () => {
+          
+          
+          
+          
+          
+          
+          let disabledForTesting =
+            Cu.isInAutomation &&
+            Services.prefs.getBoolPref("app.update.disabledForTesting", false);
+          if (!disabledForTesting) {
+            BackgroundUpdate.maybeScheduleBackgroundUpdateTask();
+          }
         },
       },
 

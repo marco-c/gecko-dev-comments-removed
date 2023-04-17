@@ -169,6 +169,20 @@ pref("app.update.staging.enabled", true);
 
 pref("app.update.langpack.enabled", true);
 
+#if defined(MOZ_BACKGROUNDTASKS) && defined(MOZ_UPDATE_AGENT) && defined(NIGHTLY_BUILD)
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("app.update.background.scheduling.enabled", false);
+  
+  pref("app.update.background.interval", 25200);
+#endif
+
 
 
 
