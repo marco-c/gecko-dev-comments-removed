@@ -332,9 +332,6 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly, bool aInvalidateChangedSize) {
     return;
   }
 
-  
-  widget->ConstrainSize(&newBounds.width, &newBounds.height);
-
   bool changedPos = curBounds.TopLeft() != newBounds.TopLeft();
   bool changedSize = curBounds.Size() != newBounds.Size();
 
