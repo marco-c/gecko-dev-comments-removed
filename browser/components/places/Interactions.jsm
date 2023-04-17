@@ -75,187 +75,15 @@ class TypingInteraction {
 
 
 
-  #typingStartTime = null;
-  
-
-
-
-
-  #typingEndTime = null;
-  
-
-
-
-
-  #keypresses = 0;
-
-  
-
-
-
-
-  static _TYPING_TIMEOUT = 3000;
-
-  
-
-
-
-
-
-  #accumulatedKeypresses = 0;
-
-  
-
-
-
-
-
-  #accumulatedTypingTime = 0;
-
-  
-
-
-
-
-
-  registerWindow(win) {
-    Services.els.addSystemEventListener(
-      win.document,
-      "keyup",
-      this,
-       false
-    );
-  }
-
-  
-
-
-
-
-
-  unregisterWindow(win) {
-    Services.els.removeSystemEventListener(
-      win.document,
-      "keyup",
-      this,
-       false
-    );
-  }
-
-  
-
-
-
-
-
-
-  #isTypingKey(code) {
-    if (["Space", "Comma", "Period", "Quote"].includes(code)) {
-      return true;
-    }
-
-    return (
-      code.startsWith("Key") ||
-      code.startsWith("Digit") ||
-      code.startsWith("Numpad")
-    );
-  }
-
-  
-
-
-  #resetCurrentTypingMetrics() {
-    this.#keypresses = 0;
-    this.#typingStartTime = null;
-    this.#typingEndTime = null;
-  }
-
-  
-
-
-  resetTypingInteraction() {
-    this.#resetCurrentTypingMetrics();
-    this.#accumulatedKeypresses = 0;
-    this.#accumulatedTypingTime = 0;
-  }
-
-  
-
-
-
-
   getTypingInteraction() {
-    let typingInteraction = this.#getCurrentTypingMetrics();
-
-    typingInteraction.typingTime += this.#accumulatedTypingTime;
-    typingInteraction.keypresses += this.#accumulatedKeypresses;
-
-    return typingInteraction;
-  }
-
-  
-
-
-
-
-  #getCurrentTypingMetrics() {
     let typingInteraction = { typingTime: 0, keypresses: 0 };
-
-    
-    
-    if (this.#keypresses > 1) {
-      let typingTime = this.#typingEndTime - this.#typingStartTime;
-      typingInteraction.typingTime = typingTime;
-      typingInteraction.keypresses = this.#keypresses;
+    const interactionData = ChromeUtils.consumeInteractionData();
+    const typing = interactionData.Typing;
+    if (typing) {
+      typingInteraction.typingTime += typing.interactionTimeInMilliseconds;
+      typingInteraction.keypresses += typing.interactionCount;
     }
-
     return typingInteraction;
-  }
-
-  
-
-
-
-  #onTypingEnded() {
-    let typingInteraction = this.#getCurrentTypingMetrics();
-
-    this.#accumulatedTypingTime += typingInteraction.typingTime;
-    this.#accumulatedKeypresses += typingInteraction.keypresses;
-
-    this.#resetCurrentTypingMetrics();
-  }
-
-  
-
-
-
-
-  handleEvent(event) {
-    switch (event.type) {
-      case "keyup":
-        if (
-          event.target.ownerGlobal.gBrowser?.selectedBrowser == event.target &&
-          this.#isTypingKey(event.code)
-        ) {
-          const now = Cu.now();
-          
-          const lastKeyDelay = now - this.#typingEndTime;
-          if (
-            this.#keypresses > 0 &&
-            lastKeyDelay > TypingInteraction._TYPING_TIMEOUT
-          ) {
-            this.#onTypingEnded();
-          }
-
-          this.#keypresses++;
-          if (!this.#typingStartTime) {
-            this.#typingStartTime = now;
-          }
-
-          this.#typingEndTime = now;
-        }
-        break;
-    }
   }
 }
 
@@ -386,7 +214,7 @@ class _Interactions {
     this.#interactions = new WeakMap();
     this.#userIsIdle = false;
     this._pageViewStartTime = Cu.now();
-    this.#typingInteraction?.resetTypingInteraction();
+    ChromeUtils.consumeInteractionData();
     await this.store.reset();
   }
 
@@ -506,7 +334,6 @@ class _Interactions {
     interaction.typingTime += typingInteraction.typingTime;
     interaction.keypresses += typingInteraction.keypresses;
     interaction.updated_at = monotonicNow();
-    this.#typingInteraction.resetTypingInteraction();
 
     logConsole.debug("Add to store: ", interaction);
     this.store.add(interaction);
@@ -538,26 +365,6 @@ class _Interactions {
 
     this.#updateInteraction();
     this.#activeWindow = undefined;
-  }
-
-  
-
-
-
-
-  _getTypingTimeout() {
-    return TypingInteraction._TYPING_TIMEOUT;
-  }
-
-  
-
-
-
-
-
-
-  _setTypingTimeout(timeout) {
-    TypingInteraction._TYPING_TIMEOUT = timeout;
   }
 
   
@@ -638,7 +445,6 @@ class _Interactions {
     win.addEventListener("TabSelect", this, true);
     win.addEventListener("deactivate", this, true);
     win.addEventListener("activate", this, true);
-    this.#typingInteraction.registerWindow(win);
   }
 
   
@@ -651,7 +457,6 @@ class _Interactions {
     win.removeEventListener("TabSelect", this, true);
     win.removeEventListener("deactivate", this, true);
     win.removeEventListener("activate", this, true);
-    this.#typingInteraction.unregisterWindow(win);
   }
 
   
