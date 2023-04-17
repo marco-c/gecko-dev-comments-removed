@@ -20,7 +20,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EncodingDetector.h"
-#include "mozilla/JapaneseDetector.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SchedulerGroup.h"
@@ -307,9 +306,6 @@ int32_t nsHtml5StreamParser::MaybeRollBackSource(int32_t aSource) {
 }
 
 void nsHtml5StreamParser::GuessEncoding(bool aEof, bool aInitial) {
-  if (mJapaneseDetector) {
-    return;
-  }
   if (aInitial) {
     if (!mDetectorHasSeenNonAscii) {
       mDetectorHadOnlySeenAsciiWhenFirstGuessing = true;
@@ -320,7 +316,6 @@ void nsHtml5StreamParser::GuessEncoding(bool aEof, bool aInitial) {
   bool forced = (mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
                  mCharsetSource == kCharsetFromInitialUserForcedAutoDetection);
   MOZ_ASSERT(
-      mCharsetSource != kCharsetFromFinalJapaneseAutoDetection &&
       mCharsetSource != kCharsetFromFinalUserForcedAutoDetection &&
       mCharsetSource != kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8 &&
       mCharsetSource !=
@@ -385,8 +380,7 @@ void nsHtml5StreamParser::GuessEncoding(bool aEof, bool aInitial) {
       mCharsetSource = MaybeRollBackSource(source);
       mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
     } else {
-      MOZ_ASSERT(mCharsetSource < kCharsetFromFinalJapaneseAutoDetection ||
-                 forced);
+      MOZ_ASSERT(mCharsetSource < kCharsetFromXmlDeclarationUtf16 || forced);
       
       
       mTreeBuilder->NeedsCharsetSwitchTo(encoding, source, 0);
@@ -407,44 +401,9 @@ void nsHtml5StreamParser::GuessEncoding(bool aEof, bool aInitial) {
   }
 }
 
-void nsHtml5StreamParser::FeedJapaneseDetector(Span<const uint8_t> aBuffer,
-                                               bool aLast) {
-  MOZ_ASSERT(!mDecodingLocalFileWithoutTokenizing);
-  const Encoding* detected = mJapaneseDetector->Feed(aBuffer, aLast);
-  if (!detected) {
-    return;
-  }
-  DontGuessEncoding();
-  int32_t source = kCharsetFromFinalJapaneseAutoDetection;
-  if (mCharsetSource == kCharsetFromUserForced) {
-    source = kCharsetFromUserForcedJapaneseAutoDetection;
-  }
-  if (detected == mEncoding) {
-    MOZ_ASSERT(mCharsetSource < source, "Why are we running chardet at all?");
-    mCharsetSource = source;
-    mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-  } else if (HasDecoder()) {
-    
-    
-    mTreeBuilder->NeedsCharsetSwitchTo(WrapNotNull(detected), source, 0);
-    FlushTreeOpsAndDisarmTimer();
-    Interrupt();
-  } else {
-    
-    
-    mEncoding = WrapNotNull(detected);
-    mCharsetSource = source;
-    mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-  }
-}
-
 void nsHtml5StreamParser::FeedDetector(Span<const uint8_t> aBuffer,
                                        bool aLast) {
-  if (mJapaneseDetector) {
-    FeedJapaneseDetector(aBuffer, aLast);
-  } else {
-    mDetectorHasSeenNonAscii = mDetector->Feed(aBuffer, aLast);
-  }
+  mDetectorHasSeenNonAscii = mDetector->Feed(aBuffer, aLast);
 }
 
 void nsHtml5StreamParser::SetViewSourceTitle(nsIURI* aURL) {
@@ -491,13 +450,12 @@ nsHtml5StreamParser::SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
   NS_ASSERTION(IsParserThread(), "Wrong thread!");
   nsresult rv = NS_OK;
   if (mDecodingLocalFileWithoutTokenizing &&
-      mCharsetSource <= kCharsetFromTopLevelDomain) {
+      mCharsetSource <= kCharsetFromFallback) {
     MOZ_ASSERT(mEncoding != UTF_8_ENCODING);
     mUnicodeDecoder = UTF_8_ENCODING->NewDecoderWithBOMRemoval();
   } else {
-    if (mCharsetSource >= kCharsetFromFinalJapaneseAutoDetection) {
-      if (!(mCharsetSource == kCharsetFromUserForced ||
-            mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
+    if (mCharsetSource >= kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8) {
+      if (!(mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
             mCharsetSource == kCharsetFromInitialUserForcedAutoDetection)) {
         DontGuessEncoding();
       }
@@ -681,7 +639,7 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
                                                uint32_t aCountToSniffingLimit,
                                                bool aEof) {
   MOZ_ASSERT(IsParserThread(), "Wrong thread!");
-  MOZ_ASSERT(mCharsetSource < kCharsetFromUserForcedJapaneseAutoDetection,
+  MOZ_ASSERT(mCharsetSource < kCharsetFromXmlDeclarationUtf16,
              "Should not finalize sniffing with strong decision already made.");
   if (mMode == VIEW_SOURCE_XML) {
     static const XML_Memory_Handling_Suite memsuite = {
@@ -744,12 +702,9 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
 
     return SetupDecodingAndWriteSniffingBufferAndCurrentSegment(aFromSegment);
   }
-  bool forced =
-      (mCharsetSource == kCharsetFromUserForced ||
-       mCharsetSource == kCharsetFromUserForcedJapaneseAutoDetection ||
-       mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
-       mCharsetSource == kCharsetFromInitialUserForcedAutoDetection ||
-       mCharsetSource == kCharsetFromFinalUserForcedAutoDetection);
+  bool forced = (mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
+                 mCharsetSource == kCharsetFromInitialUserForcedAutoDetection ||
+                 mCharsetSource == kCharsetFromFinalUserForcedAutoDetection);
   if (!mChannelHadCharset &&
       (forced || mCharsetSource < kCharsetFromMetaPrescan) &&
       (mMode == NORMAL || mMode == VIEW_SOURCE_HTML || mMode == LOAD_AS_DATA)) {
@@ -776,17 +731,7 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
       if (forced &&
           (encoding->IsAsciiCompatible() || encoding == ISO_2022_JP_ENCODING)) {
         
-        if (mCharsetSource == kCharsetFromUserForced &&
-            mEncoding->IsJapaneseLegacy()) {
-          mFeedChardet = true;
-          if (!mJapaneseDetector) {
-            mJapaneseDetector = mozilla::JapaneseDetector::Create(true);
-          }
-          FinalizeSniffingWithDetector(aFromSegment, aCountToSniffingLimit,
-                                       false);
-        } else if (mCharsetSource ==
-                       kCharsetFromUserForcedJapaneseAutoDetection ||
-                   mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) {
+        if (mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) {
           DontGuessEncoding();
         } else {
           FinalizeSniffingWithDetector(aFromSegment, aCountToSniffingLimit,
@@ -808,15 +753,7 @@ nsresult nsHtml5StreamParser::FinalizeSniffing(Span<const uint8_t> aFromSegment,
   }
   if (forced && mCharsetSource != kCharsetFromIrreversibleAutoDetection) {
     
-    if (mCharsetSource == kCharsetFromUserForced &&
-        mEncoding->IsJapaneseLegacy()) {
-      mFeedChardet = true;
-      if (!mJapaneseDetector) {
-        mJapaneseDetector = mozilla::JapaneseDetector::Create(true);
-      }
-      FinalizeSniffingWithDetector(aFromSegment, aCountToSniffingLimit, false);
-    } else if (mCharsetSource == kCharsetFromUserForcedJapaneseAutoDetection ||
-               mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) {
+    if (mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) {
       DontGuessEncoding();
     } else {
       FinalizeSniffingWithDetector(aFromSegment, aCountToSniffingLimit, false);
@@ -1021,9 +958,7 @@ nsresult nsHtml5StreamParser::SniffStreamBytes(
     
     uint32_t countToSniffingLimit = SNIFFING_BUFFER_SIZE - mSniffingLength;
     bool forced =
-        (mCharsetSource == kCharsetFromUserForced ||
-         mCharsetSource == kCharsetFromUserForcedJapaneseAutoDetection ||
-         mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
+        (mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
          mCharsetSource == kCharsetFromInitialUserForcedAutoDetection ||
          mCharsetSource == kCharsetFromFinalUserForcedAutoDetection);
     if (!mChannelHadCharset && (mMode == NORMAL || mMode == VIEW_SOURCE_HTML ||
@@ -1045,18 +980,7 @@ nsresult nsHtml5StreamParser::SniffStreamBytes(
         if (forced && (encoding->IsAsciiCompatible() ||
                        encoding == ISO_2022_JP_ENCODING)) {
           
-          if (mCharsetSource == kCharsetFromUserForced &&
-              mEncoding->IsJapaneseLegacy()) {
-            mFeedChardet = true;
-            if (!mJapaneseDetector) {
-              mJapaneseDetector = mozilla::JapaneseDetector::Create(true);
-            }
-            FinalizeSniffingWithDetector(aFromSegment, countToSniffingLimit,
-                                         false);
-          } else if (mCharsetSource ==
-                         kCharsetFromUserForcedJapaneseAutoDetection ||
-                     mCharsetSource ==
-                         kCharsetFromFinalUserForcedAutoDetection) {
+          if (mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) {
             DontGuessEncoding();
           } else {
             FinalizeSniffingWithDetector(aFromSegment, countToSniffingLimit,
@@ -1091,9 +1015,7 @@ nsresult nsHtml5StreamParser::SniffStreamBytes(
     }
     if (encoding) {
       
-      if ((mCharsetSource == kCharsetFromUserForced ||
-           mCharsetSource == kCharsetFromUserForcedJapaneseAutoDetection ||
-           mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) &&
+      if ((mCharsetSource == kCharsetFromFinalUserForcedAutoDetection) &&
           (encoding->IsAsciiCompatible() || encoding == ISO_2022_JP_ENCODING)) {
         
         return SetupDecodingAndWriteSniffingBufferAndCurrentSegment(
@@ -1293,7 +1215,7 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
   
   
   auto detectorCreator = MakeScopeExit([&] {
-    if (mFeedChardet && !mJapaneseDetector) {
+    if (mFeedChardet) {
       mDetector = mozilla::EncodingDetector::Create();
     }
   });
@@ -1321,7 +1243,7 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
   nsresult rv = GetChannel(getter_AddRefs(channel));
   if (NS_SUCCEEDED(rv)) {
     isSrcdoc = NS_IsSrcdocChannel(channel);
-    if (!isSrcdoc && mCharsetSource <= kCharsetFromTopLevelDomain) {
+    if (!isSrcdoc && mCharsetSource <= kCharsetFromFallback) {
       nsCOMPtr<nsIURI> originalURI;
       rv = channel->GetOriginalURI(getter_AddRefs(originalURI));
       if (NS_SUCCEEDED(rv)) {
@@ -1457,44 +1379,8 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
   if (!(mCharsetSource == kCharsetFromPendingUserForcedAutoDetection ||
         mCharsetSource == kCharsetFromInitialUserForcedAutoDetection ||
         mCharsetSource == kCharsetFromFinalUserForcedAutoDetection)) {
-    if (mCharsetSource >= kCharsetFromFinalJapaneseAutoDetection) {
-      if ((mCharsetSource == kCharsetFromUserForced) &&
-          mEncoding->IsJapaneseLegacy()) {
-        
-        if (!mJapaneseDetector) {
-          mJapaneseDetector = mozilla::JapaneseDetector::Create(true);
-        }
-        mGuessEncoding = false;
-      } else {
-        DontGuessEncoding();
-      }
-    }
-
-    
-    if (!mDecodingLocalFileWithoutTokenizing && mFeedChardet) {
-      if (mTLD.EqualsLiteral("jp")) {
-        if (!mJapaneseDetector &&
-            !StaticPrefs::intl_charset_detector_ng_jp_enabled()) {
-          mJapaneseDetector = mozilla::JapaneseDetector::Create(true);
-        }
-        if (mJapaneseDetector && mEncoding == WINDOWS_1252_ENCODING &&
-            mCharsetSource <= kCharsetFromTopLevelDomain) {
-          mCharsetSource = kCharsetFromTopLevelDomain;
-          mEncoding = SHIFT_JIS_ENCODING;
-          mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-        }
-      } else if ((mTLD.EqualsLiteral("in") &&
-                  !StaticPrefs::intl_charset_detector_ng_in_enabled()) ||
-                 (mTLD.EqualsLiteral("lk") &&
-                  !StaticPrefs::intl_charset_detector_ng_lk_enabled())) {
-        if (mEncoding == WINDOWS_1252_ENCODING &&
-            mCharsetSource <= kCharsetFromTopLevelDomain) {
-          
-          mCharsetSource = kCharsetFromTopLevelDomain;
-          mTreeBuilder->SetDocumentCharset(mEncoding, mCharsetSource);
-        }
-        DontGuessEncoding();
-      }
+    if (mCharsetSource >= kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8) {
+      DontGuessEncoding();
     }
   }
 
