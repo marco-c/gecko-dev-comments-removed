@@ -613,12 +613,32 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
     
     return *this;
   }
+  if (aBoundaryType == nsIAccessibleText::BOUNDARY_CHAR && aIncludeOrigin) {
+    return *this;
+  }
   TextLeafPoint searchFrom = *this;
   bool includeOrigin = aIncludeOrigin;
   for (;;) {
     TextLeafPoint boundary;
     
     switch (aBoundaryType) {
+      case nsIAccessibleText::BOUNDARY_CHAR:
+        if (aDirection == eDirPrevious && searchFrom.mOffset > 0) {
+          boundary.mAcc = searchFrom.mAcc;
+          boundary.mOffset = searchFrom.mOffset - 1;
+        } else if (aDirection == eDirNext) {
+          if (includeOrigin) {
+            
+            
+            boundary = searchFrom;
+          } else if (searchFrom.mOffset <
+                     static_cast<int32_t>(
+                         nsAccUtils::TextLength(searchFrom.mAcc->AsLocal()))) {
+            boundary.mAcc = searchFrom.mAcc;
+            boundary.mOffset = searchFrom.mOffset + 1;
+          }
+        }
+        break;
       case nsIAccessibleText::BOUNDARY_WORD_START:
         if (aDirection == eDirPrevious) {
           boundary = searchFrom.FindPrevWordStartSameAcc(includeOrigin);
