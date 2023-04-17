@@ -1256,6 +1256,61 @@ static inline bool CanSkipOverflowUpdates(const nsIFrame* aFrame) {
                                  NS_FRAME_HAS_DIRTY_CHILDREN);
 }
 
+static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
+                                                nsPresContext* aPc) {
+  if (!(aData.mHint & nsChangeHint_ScrollbarChange)) {
+    return;
+  }
+  aData.mHint &= ~nsChangeHint_ScrollbarChange;
+  bool doReconstruct = true;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aData.mContent->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::html)) {
+    
+    
+    
+    
+    
+    
+    nsIContent* prevOverrideNode =
+        aPc->GetViewportScrollStylesOverrideElement();
+    nsIContent* newOverrideNode = aPc->UpdateViewportScrollStylesOverride();
+
+    if (aData.mContent == prevOverrideNode ||
+        aData.mContent == newOverrideNode) {
+      
+      
+      if (!prevOverrideNode || !newOverrideNode ||
+          prevOverrideNode == newOverrideNode) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
+        doReconstruct = false;
+      }
+    }
+  }
+
+  if (doReconstruct) {
+    aData.mHint |= nsChangeHint_ReconstructFrame;
+  }
+}
+
 void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
@@ -1307,59 +1362,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
   
   
-  
   for (nsStyleChangeData& data : aChangeList) {
-    if (data.mHint & nsChangeHint_ScrollbarChange) {
-      data.mHint &= ~nsChangeHint_ScrollbarChange;
-      bool doReconstruct = true;  
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (data.mContent->IsAnyOfHTMLElements(nsGkAtoms::body,
-                                             nsGkAtoms::html)) {
-        
-        
-        
-        
-        
-        
-        nsIContent* prevOverrideNode =
-            presContext->GetViewportScrollStylesOverrideElement();
-        nsIContent* newOverrideNode =
-            presContext->UpdateViewportScrollStylesOverride();
-
-        if (data.mContent == prevOverrideNode ||
-            data.mContent == newOverrideNode) {
-          
-          
-          if (!prevOverrideNode || !newOverrideNode ||
-              prevOverrideNode == newOverrideNode) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            data.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
-            doReconstruct = false;
-          }
-        }
-      }
-      if (doReconstruct) {
-        data.mHint |= nsChangeHint_ReconstructFrame;
-      }
-    }
+    MaybeDealWithScrollbarChange(data, presContext);
   }
 
   bool didUpdateCursor = false;
