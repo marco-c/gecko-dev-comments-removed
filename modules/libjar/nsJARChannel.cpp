@@ -852,6 +852,13 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   uint32_t from = findFilenameStart(aSpec);
   nsAutoCString fileName(Substring(aSpec, from));
 
+  
+  
+  
+  if (StringEndsWith(fileName, "aboutNetError.xhtml"_ns)) {
+    return;
+  }
+
   nsAutoCString errorCString;
   mozilla::GetErrorName(aStatus, errorCString);
 
@@ -899,6 +906,16 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
 
     eventType = Telemetry::EventID::Zero_byte_load_Load_Xhtml;
   } else if (StringEndsWith(fileName, ".css"_ns)) {
+    
+    if (aStatus == NS_BINDING_ABORTED) {
+      return;
+    }
+
+    
+    
+    if (!isOmniJa && aStatus == NS_ERROR_CORRUPTED_CONTENT) {
+      return;
+    }
     eventType = Telemetry::EventID::Zero_byte_load_Load_Css;
   } else if (StringEndsWith(fileName, ".json"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Json;
@@ -919,21 +936,25 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   } else if (StringEndsWith(fileName, ".png"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Png;
     
-    if (!isOmniJa) {
+    
+    if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
   } else if (StringEndsWith(fileName, ".svg"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Svg;
     
-    if (!isOmniJa) {
+    
+    if (!isOmniJa || aStatus == NS_BINDING_ABORTED) {
       return;
     }
   }
 
   
   
+  
   if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others &&
-      !isOmniJa) {
+      (!isOmniJa || (aStatus == NS_BINDING_ABORTED &&
+                     StringEndsWith(fileName, ".ico"_ns)))) {
     return;
   }
 
