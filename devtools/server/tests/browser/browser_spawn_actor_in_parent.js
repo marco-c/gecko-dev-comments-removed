@@ -13,6 +13,15 @@ const ACTOR_URL =
 const { InContentFront, InParentFront } = require(ACTOR_URL);
 
 add_task(async function() {
+  
+  
+  
+  
+  
+  
+  
+  await pushPref("devtools.target-switching.server.enabled", false);
+
   const browser = await addTab("data:text/html;charset=utf-8,foo");
 
   info("Register target-scoped actor in the content process");
