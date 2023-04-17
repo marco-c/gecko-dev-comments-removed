@@ -69,6 +69,9 @@ MALLOC_DECL(jemalloc_stats_internal, void, jemalloc_stats_t*,
             jemalloc_bin_stats_t*)
 
 
+MALLOC_DECL(jemalloc_stats_num_bins, size_t)
+
+
 
 
 

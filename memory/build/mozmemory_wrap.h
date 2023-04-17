@@ -86,6 +86,7 @@
 
 
 
+
 #if defined(MOZ_MEMORY_IMPL) && !defined(IMPL_MFBT)
 #  ifdef MFBT_API  
 #    error mozmemory_wrap.h has to be included before mozilla/Types.h when MOZ_MEMORY_IMPL is set and IMPL_MFBT is not.
