@@ -24,9 +24,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 
-#ifdef MOZ_ENABLE_SKIA
-#  include "mozilla/gfx/ConvolutionFilter.h"
-#endif
+#include "mozilla/gfx/ConvolutionFilter.h"
 
 #include "SurfacePipe.h"
 
@@ -52,43 +50,6 @@ struct DownscalingConfig {
   gfx::SurfaceFormat mFormat;  
                                
 };
-
-#ifndef MOZ_ENABLE_SKIA
-
-
-
-
-
-
-
-
-
-template <typename Next>
-class DownscalingFilter final : public SurfaceFilter {
- public:
-  Maybe<SurfaceInvalidRect> TakeInvalidRect() override { return Nothing(); }
-
-  template <typename... Rest>
-  nsresult Configure(const DownscalingConfig& aConfig, const Rest&... aRest) {
-    return NS_ERROR_FAILURE;
-  }
-
- protected:
-  uint8_t* DoResetToFirstRow() override {
-    MOZ_CRASH();
-    return nullptr;
-  }
-  uint8_t* DoAdvanceRowFromBuffer(const uint8_t* aInputRow) override {
-    MOZ_CRASH();
-    return nullptr;
-  }
-  uint8_t* DoAdvanceRow() override {
-    MOZ_CRASH();
-    return nullptr;
-  }
-};
-
-#else
 
 
 
@@ -343,8 +304,6 @@ class DownscalingFilter final : public SurfaceFilter {
 
   bool mHasAlpha;  
 };
-
-#endif
 
 }  
 }  

@@ -116,22 +116,19 @@
 #include "GLContextProvider.h"
 #include "mozilla/gfx/Logging.h"
 
-#ifdef USE_SKIA
-#  ifdef __GNUC__
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wshadow"
-#  endif
-#  include "skia/include/core/SkGraphics.h"
-#  ifdef MOZ_ENABLE_FREETYPE
-#    include "skia/include/ports/SkTypeface_cairo.h"
-#  endif
-#  include "mozilla/gfx/SkMemoryReporter.h"
-#  ifdef __GNUC__
-#    pragma GCC diagnostic pop  // -Wshadow
-#  endif
-static const uint32_t kDefaultGlyphCacheSize = -1;
-
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wshadow"
 #endif
+#include "skia/include/core/SkGraphics.h"
+#ifdef MOZ_ENABLE_FREETYPE
+#  include "skia/include/ports/SkTypeface_cairo.h"
+#endif
+#include "mozilla/gfx/SkMemoryReporter.h"
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop  // -Wshadow
+#endif
+static const uint32_t kDefaultGlyphCacheSize = -1;
 
 #include "mozilla/Preferences.h"
 #include "mozilla/Assertions.h"
@@ -617,10 +614,9 @@ static void WebRenderBatchingPrefChangeCallback(const char* aPrefName, void*) {
   gfx::gfxVars::SetWebRenderBatchingLookback(count);
 }
 
-#if defined(USE_SKIA)
 static uint32_t GetSkiaGlyphCacheSize() {
   
-#  if !defined(MOZ_WIDGET_ANDROID)
+#if !defined(MOZ_WIDGET_ANDROID)
   
   
   
@@ -633,11 +629,10 @@ static uint32_t GetSkiaGlyphCacheSize() {
   }
 
   return cacheSize;
-#  else
+#else
   return kDefaultGlyphCacheSize;
-#  endif  
+#endif  
 }
-#endif
 
 class WebRenderMemoryReporter final : public nsIMemoryReporter {
  public:
@@ -961,11 +956,9 @@ void gfxPlatform::Init() {
   
   InitializeCMS();
 
-#ifdef USE_SKIA
   SkGraphics::Init();
-#  ifdef MOZ_ENABLE_FREETYPE
+#ifdef MOZ_ENABLE_FREETYPE
   SkInitCairoFT(gPlatform->FontHintingEnabled());
-#  endif
 #endif
 
   InitLayersIPC();
@@ -1026,16 +1019,12 @@ void gfxPlatform::Init() {
     RegisterStrongAsyncMemoryReporter(new WebRenderMemoryReporter());
   }
 
-#ifdef USE_SKIA
   RegisterStrongMemoryReporter(new SkMemoryReporter());
-#endif
 
-#ifdef USE_SKIA
   uint32_t skiaCacheSize = GetSkiaGlyphCacheSize();
   if (skiaCacheSize != kDefaultGlyphCacheSize) {
     SkGraphics::SetFontCacheLimit(skiaCacheSize);
   }
-#endif
 
   InitNullMetadata();
   InitOpenGLConfig();
@@ -1385,12 +1374,10 @@ void gfxPlatform::WillShutdown() {
   mScreenReferenceSurface = nullptr;
   mScreenReferenceDrawTarget = nullptr;
 
-#ifdef USE_SKIA
   
   
   
   SkGraphics::PurgeFontCache();
-#endif
 
   
   
@@ -1660,12 +1647,10 @@ bool gfxPlatform::SupportsAzureContentForDrawTarget(DrawTarget* aTarget) {
 }
 
 void gfxPlatform::PurgeSkiaFontCache() {
-#ifdef USE_SKIA
   if (gfxPlatform::GetPlatform()->GetDefaultContentBackend() ==
       BackendType::SKIA) {
     SkGraphics::PurgeFontCache();
   }
-#endif
 }
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForBackend(
@@ -1740,11 +1725,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateSimilarSoftwareDrawTarget(
   if (Factory::DoesBackendSupportDataDrawtarget(aDT->GetBackendType())) {
     dt = aDT->CreateSimilarDrawTarget(aSize, aFormat);
   } else {
-#ifdef USE_SKIA
     BackendType backendType = BackendType::SKIA;
-#else
-    BackendType backendType = BackendType::CAIRO;
-#endif
     dt = Factory::CreateDrawTarget(backendType, aSize, aFormat);
   }
 
@@ -1759,11 +1740,7 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
   NS_ASSERTION(backendType != BackendType::NONE, "No backend.");
 
   if (!Factory::DoesBackendSupportDataDrawtarget(backendType)) {
-#ifdef USE_SKIA
     backendType = BackendType::SKIA;
-#else
-    backendType = BackendType::CAIRO;
-#endif
   }
 
   RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
