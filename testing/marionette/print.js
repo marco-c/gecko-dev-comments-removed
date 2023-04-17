@@ -98,7 +98,7 @@ function getPrintSettings(settings, filePath) {
   return printSettings;
 }
 
-print.printToFile = async function(browser, outerWindowID, settings) {
+print.printToFile = async function(browser, settings) {
   
   const basePath = OS.Path.join(OS.Constants.Path.tmpDir, "marionette.pdf");
   const { file, path: filePath } = await OS.File.openUnique(basePath);
@@ -106,7 +106,7 @@ print.printToFile = async function(browser, outerWindowID, settings) {
 
   let printSettings = getPrintSettings(settings, filePath);
 
-  await browser.print(outerWindowID, printSettings);
+  await browser.browsingContext.print(printSettings);
 
   
   

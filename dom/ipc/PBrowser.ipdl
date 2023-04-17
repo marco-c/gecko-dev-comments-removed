@@ -985,7 +985,7 @@ child:
 
 
 
-    async Print(uint64_t aOuterWindowID, PrintData aPrintData);
+    async Print(MaybeDiscardedBrowsingContext aBC, PrintData aPrintData);
 
     
 

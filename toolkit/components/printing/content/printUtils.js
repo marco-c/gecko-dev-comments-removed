@@ -370,8 +370,7 @@ var PrintUtils = {
 
 
   printWindow(aBrowsingContext, aPrintSettings) {
-    let windowID = aBrowsingContext.currentWindowGlobal.outerWindowId;
-    let topBrowser = aBrowsingContext.top.embedderElement;
+    let wg = aBrowsingContext.currentWindowGlobal;
 
     const printPreviewIsOpen = !!document.getElementById(
       "print-preview-toolbar"
@@ -388,18 +387,18 @@ var PrintUtils = {
 
     
     
-    printSettings.title = this._originalTitle || topBrowser.contentTitle;
+    printSettings.title = this._originalTitle || wg.documentTitle;
 
     if (this._shouldSimplify) {
       
       
       
-      printSettings.docURL = this._originalURL || topBrowser.currentURI.spec;
+      printSettings.docURL = this._originalURL || wg.documentURI;
     }
 
     
     
-    let promise = topBrowser.print(windowID, printSettings);
+    let promise = aBrowsingContext.print(printSettings);
 
     if (printPreviewIsOpen) {
       if (this._shouldSimplify) {

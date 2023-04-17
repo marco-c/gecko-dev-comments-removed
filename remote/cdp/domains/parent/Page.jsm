@@ -608,7 +608,7 @@ class Page extends Domain {
 
     const { linkedBrowser } = this.session.target.tab;
 
-    await linkedBrowser.print(linkedBrowser.outerWindowID, printSettings);
+    await linkedBrowser.browsingContext.print(printSettings);
 
     
     

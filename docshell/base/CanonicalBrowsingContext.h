@@ -24,6 +24,7 @@
 
 class nsISHistory;
 class nsIWidget;
+class nsIPrintSettings;
 class nsSHistory;
 class nsBrowserStatusFilter;
 class nsSecureBrowserUI;
@@ -126,6 +127,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   UniquePtr<LoadingSessionHistoryInfo> ReplaceLoadingSessionHistoryEntryForLoad(
       LoadingSessionHistoryInfo* aInfo, nsIChannel* aChannel);
+
+  already_AddRefed<Promise> Print(nsIPrintSettings* aPrintSettings,
+                                  ErrorResult& aRv);
 
   
   
