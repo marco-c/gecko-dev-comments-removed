@@ -161,9 +161,8 @@ pub fn create_sample_table(
     
     
     let total_sample_count = sample_to_chunk_iter(&stsc.samples, &stco.offsets)
-        .by_ref()
         .map(|(_, sample_counts)| sample_counts.to_usize())
-        .sum();
+        .try_fold(0usize, usize::checked_add)?;
     let mut sample_table = TryVec::with_capacity(total_sample_count).ok()?;
 
     for i in sample_to_chunk_iter(&stsc.samples, &stco.offsets) {
