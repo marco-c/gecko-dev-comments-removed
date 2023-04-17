@@ -44,7 +44,7 @@ class TelemetryProbesReporter final {
   void OnDecodeResumed();
   void OnShutdown();
 
-  double GetTotalPlayTimeInSeconds() const;
+  double GetTotalVideoPlayTimeInSeconds() const;
   double GetVisibleVideoPlayTimeInSeconds() const;
   double GetInvisibleVideoPlayTimeInSeconds() const;
   double GetVideoDecodeSuspendedTimeInSeconds() const;
@@ -104,7 +104,7 @@ class TelemetryProbesReporter final {
   TelemetryProbesReporterOwner* mOwner;
 
   
-  TimeDurationAccumulator mTotalPlayTime;
+  TimeDurationAccumulator mTotalVideoPlayTime;
 
   
   
