@@ -9,7 +9,6 @@ from __future__ import print_function
 
 from __future__ import absolute_import, print_function
 
-import copy
 import json
 import multiprocessing
 import os
@@ -599,47 +598,42 @@ class RefTest(object):
         self._populate_logger(options)
 
         
-        
-        
-        
-        if hasattr(options, "log"):
-            delattr(options, "log")
-
-        
         VERIFY_REPEAT = 10
         
         VERIFY_REPEAT_SINGLE_BROWSER = 5
 
         def step1():
-            stepOptions = copy.deepcopy(options)
-            stepOptions.repeat = VERIFY_REPEAT
-            stepOptions.runUntilFailure = True
-            result = self.runTests(tests, stepOptions)
+            options.repeat = VERIFY_REPEAT
+            options.runUntilFailure = True
+            result = self.runTests(tests, options)
             return result
 
         def step2():
-            stepOptions = copy.deepcopy(options)
+            options.repeat = 0
+            options.runUntilFailure = False
             for i in range(VERIFY_REPEAT_SINGLE_BROWSER):
-                result = self.runTests(tests, stepOptions)
+                result = self.runTests(tests, options)
                 if result != 0:
                     break
             return result
 
         def step3():
-            stepOptions = copy.deepcopy(options)
-            stepOptions.repeat = VERIFY_REPEAT
-            stepOptions.runUntilFailure = True
-            stepOptions.environment.append("MOZ_CHAOSMODE=0xfb")
-            result = self.runTests(tests, stepOptions)
+            options.repeat = VERIFY_REPEAT
+            options.runUntilFailure = True
+            options.environment.append("MOZ_CHAOSMODE=0xfb")
+            result = self.runTests(tests, options)
+            options.environment.remove("MOZ_CHAOSMODE=0xfb")
             return result
 
         def step4():
-            stepOptions = copy.deepcopy(options)
-            stepOptions.environment.append("MOZ_CHAOSMODE=0xfb")
+            options.repeat = 0
+            options.runUntilFailure = False
+            options.environment.append("MOZ_CHAOSMODE=0xfb")
             for i in range(VERIFY_REPEAT_SINGLE_BROWSER):
-                result = self.runTests(tests, stepOptions)
+                result = self.runTests(tests, options)
                 if result != 0:
                     break
+            options.environment.remove("MOZ_CHAOSMODE=0xfb")
             return result
 
         steps = [

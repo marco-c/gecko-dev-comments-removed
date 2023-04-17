@@ -1042,6 +1042,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             max_per_test_tests = 30
         executed_tests = 0
         executed_too_many_tests = False
+        xpcshell_selftests = 0
 
         if suites:
             self.info("#### Running %s suites" % suite_category)
@@ -1167,6 +1168,20 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
                     final_cmd = copy.copy(cmd)
                     final_cmd.extend(per_test_args)
+
+                    
+                    
+                    
+                    
+                    if (
+                        self.verify_enabled
+                        and sys.platform.startswith("win")
+                        and sys.version_info < (3, 7)
+                        and "--self-test" in final_cmd
+                    ):
+                        xpcshell_selftests += 1
+                        if xpcshell_selftests > 1:
+                            final_cmd.remove("--self-test")
 
                     final_env = copy.copy(env)
 
