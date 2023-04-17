@@ -722,36 +722,6 @@ var pktApi = (function() {
   
 
 
-  function getSignupPanelTabTestVariant() {
-    return getMultipleTestOption("panelSignUp", { control: 1, v1: 0, v2: 0 });
-  }
-
-  function getMultipleTestOption(testName, testOptions) {
-    
-    var settingName = "test." + testName;
-    var assignedValue = getSetting(settingName);
-    var valArray = [];
-
-    
-    if (!assignedValue) {
-      
-      Object.keys(testOptions).forEach(function(key) {
-        for (var i = 0; i < testOptions[key]; i++) {
-          valArray.push(key);
-        }
-      });
-
-      
-      assignedValue = valArray[Math.floor(Math.random() * valArray.length)];
-      setSetting(settingName, assignedValue);
-    }
-
-    return assignedValue;
-  }
-
-  
-
-
   return {
     isUserLoggedIn,
     clearUserData,
@@ -765,7 +735,6 @@ var pktApi = (function() {
     isPremiumUser,
     getSuggestedTagsForItem,
     getSuggestedTagsForURL,
-    getSignupPanelTabTestVariant,
     retrieve,
     getArticleInfo,
     getMobileDownload,
