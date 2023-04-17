@@ -2162,6 +2162,11 @@ static GdkGravity PopupGetHorizontallyFlippedAnchor(GdkGravity anchor) {
   return anchor;
 }
 
+bool nsWindow::IsPopupDirectionRTL() {
+  nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame());
+  return popupFrame && popupFrame->IsDirectionRTL();
+}
+
 
 
 
@@ -2190,8 +2195,7 @@ void nsWindow::WaylandPopupSetDirectPosition(GdkPoint* aPosition,
   if (popupWidth > parentWidth) {
     mPopupPosition.x = -(parentWidth - popupWidth) / 2 + x;
   } else {
-    nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame());
-    if (popupFrame->IsDirectionRTL()) {
+    if (IsPopupDirectionRTL()) {
       
       if (mPopupPosition.x < x) {
         mPopupPosition.x = x;
@@ -2399,7 +2403,7 @@ void nsWindow::WaylandPopupMove() {
     position = popupFrame->GetAlignmentPosition();
   }
 
-  if (popupFrame->IsDirectionRTL()) {
+  if (IsPopupDirectionRTL()) {
     rectAnchor = PopupGetHorizontallyFlippedAnchor(rectAnchor);
     menuAnchor = PopupGetHorizontallyFlippedAnchor(menuAnchor);
   }
