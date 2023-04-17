@@ -78,7 +78,11 @@ static inline mozilla::LauncherResult<bool> IsSameBinaryAsParentProcess(
                                            FALSE, parentPid.unwrap()));
   if (!parentProcess.get()) {
     DWORD err = ::GetLastError();
-    if (err == ERROR_INVALID_PARAMETER) {
+    if (err == ERROR_INVALID_PARAMETER || err == ERROR_ACCESS_DENIED) {
+      
+      
+      
+      
       
       
       
