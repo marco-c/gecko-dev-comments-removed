@@ -275,6 +275,10 @@ class Message : public Pickle {
   
   void AssertAsLargeAsHeader() const;
 
+  void WriteFooter(const void* data, uint32_t data_len);
+  [[nodiscard]] bool ReadFooter(void* buffer, uint32_t buffer_len);
+  uint32_t FooterSize() const;
+
   
   static void Log(const Message* msg, std::wstring* l) {}
 
@@ -338,6 +342,8 @@ class Message : public Pickle {
     uint32_t interrupt_local_stack_depth;
     
     int32_t seqno;
+    
+    int32_t footer_offset;
   };
 
   Header* header() { return headerT<Header>(); }
