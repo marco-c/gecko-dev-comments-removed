@@ -575,7 +575,7 @@ async function poll(check, desc, attempts = 10, timeBetweenAttempts = 200) {
 
 
 const getHighlighterHelperFor = type =>
-  async function({ inspector, testActor }) {
+  async function({ inspector, highlighterTestFront }) {
     const front = inspector.inspectorFront;
     const highlighter = await front.getHighlighterByType(type);
 
@@ -631,7 +631,7 @@ const getHighlighterHelperFor = type =>
 
       isElementHidden: async function(id) {
         return (
-          (await testActor.getHighlighterNodeAttribute(
+          (await highlighterTestFront.getHighlighterNodeAttribute(
             prefix + id,
             "hidden",
             highlighter
@@ -640,14 +640,14 @@ const getHighlighterHelperFor = type =>
       },
 
       getElementTextContent: async function(id) {
-        return testActor.getHighlighterNodeTextContent(
+        return highlighterTestFront.getHighlighterNodeTextContent(
           prefix + id,
           highlighter
         );
       },
 
       getElementAttribute: async function(id, name) {
-        return testActor.getHighlighterNodeAttribute(
+        return highlighterTestFront.getHighlighterNodeAttribute(
           prefix + id,
           name,
           highlighter
@@ -656,7 +656,7 @@ const getHighlighterHelperFor = type =>
 
       waitForElementAttributeSet: async function(id, name) {
         await poll(async function() {
-          const value = await testActor.getHighlighterNodeAttribute(
+          const value = await highlighterTestFront.getHighlighterNodeAttribute(
             prefix + id,
             name,
             highlighter
@@ -667,7 +667,7 @@ const getHighlighterHelperFor = type =>
 
       waitForElementAttributeRemoved: async function(id, name) {
         await poll(async function() {
-          const value = await testActor.getHighlighterNodeAttribute(
+          const value = await highlighterTestFront.getHighlighterNodeAttribute(
             prefix + id,
             name,
             highlighter
@@ -1342,7 +1342,7 @@ function waitForNMutations(inspector, type, count) {
 
 
 async function checkEyeDropperColorAt(
-  testActorFront,
+  highlighterTestFront,
   inspectorActorID,
   x,
   y,
@@ -1354,7 +1354,7 @@ async function checkEyeDropperColorAt(
     type: "mousemove",
   });
 
-  const colorValue = await testActorFront.getEyeDropperColorValue(
+  const colorValue = await highlighterTestFront.getEyeDropperColorValue(
     inspectorActorID
   );
   is(colorValue, expectedColor, assertionDescription);
@@ -1454,8 +1454,8 @@ async function getAllAdjustedQuadsForContentPageElement(selector) {
 
 
 
-async function isNodeCorrectlyHighlighted(testActor, selector) {
-  const boxModel = await testActor.getBoxModelStatus();
+async function isNodeCorrectlyHighlighted(highlighterTestFront, selector) {
+  const boxModel = await highlighterTestFront.getBoxModelStatus();
   const regions = await getAllAdjustedQuadsForContentPageElement(selector);
 
   for (const boxType of ["content", "padding", "border", "margin"]) {

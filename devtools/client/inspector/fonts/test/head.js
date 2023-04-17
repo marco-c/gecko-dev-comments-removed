@@ -40,7 +40,7 @@ selectNode = async function(node, inspector, reason) {
 
 var openFontInspectorForURL = async function(url) {
   const tab = await addTab(url);
-  const { toolbox, inspector, testActor } = await openInspector();
+  const { toolbox, inspector } = await openInspector();
 
   
   
@@ -49,7 +49,6 @@ var openFontInspectorForURL = async function(url) {
 
   return {
     tab,
-    testActor,
     toolbox,
     inspector,
     view: inspector.getPanel("fontinspector"),

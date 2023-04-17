@@ -1272,9 +1272,7 @@ async function waitForNoEagerEvaluationResult(hud) {
 
 
 
-
-
-async function selectNodeWithPicker(toolbox, testActor, selector) {
+async function selectNodeWithPicker(toolbox, selector) {
   const inspector = toolbox.getPanel("inspector");
 
   const onPickerStarted = toolbox.nodePicker.once("picker-started");

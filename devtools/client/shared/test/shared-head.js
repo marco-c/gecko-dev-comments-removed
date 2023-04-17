@@ -132,22 +132,22 @@ require("devtools/client/framework/devtools-browser");
 
 
 
-function testActorBootstrap() {
-  const TEST_ACTOR_URL =
-    "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor.js";
+function highlighterTestActorBootstrap() {
+  const HIGHLIGHTER_TEST_ACTOR_URL =
+    "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
 
   const { require: _require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  _require(TEST_ACTOR_URL);
+  _require(HIGHLIGHTER_TEST_ACTOR_URL);
 
   const Services = _require("Services");
 
   const actorRegistryObserver = subject => {
     const actorRegistry = subject.wrappedJSObject;
-    actorRegistry.registerModule(TEST_ACTOR_URL, {
-      prefix: "test",
-      constructor: "TestActor",
+    actorRegistry.registerModule(HIGHLIGHTER_TEST_ACTOR_URL, {
+      prefix: "highlighterTest",
+      constructor: "HighlighterTestActor",
       type: { target: true },
     });
   };
@@ -172,44 +172,55 @@ function testActorBootstrap() {
   );
 }
 
-const testActorBootstrapScript = "data:,(" + testActorBootstrap + ")()";
+const highlighterTestActorBootstrapScript =
+  "data:,(" + highlighterTestActorBootstrap + ")()";
 Services.ppmm.loadProcessScript(
-  testActorBootstrapScript,
+  highlighterTestActorBootstrapScript,
   
   true
 );
 
 registerCleanupFunction(() => {
   Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
-  Services.ppmm.removeDelayedProcessScript(testActorBootstrapScript);
+  Services.ppmm.removeDelayedProcessScript(highlighterTestActorBootstrapScript);
 });
 
 
-async function getTestActor(toolbox) {
+
+
+
+
+
+async function getHighlighterTestFront(toolbox) {
   
   
   
   const inspector = await toolbox.loadTool("inspector");
-  const testActor = await toolbox.target.getFront("test");
+  const highlighterTestFront = await toolbox.target.getFront("highlighterTest");
   
   
   
-  testActor.highlighter = () => {
+  highlighterTestFront.highlighter = () => {
     return inspector.highlighters.getActiveHighlighter("BoxModelHighlighter");
   };
-  return testActor;
+  return highlighterTestFront;
 }
 
 
 
-async function getTestActorWithoutToolbox(tab) {
+
+
+
+
+
+async function getHighlighterTestFrontWithoutToolbox(tab) {
   const commands = await CommandsFactory.forTab(tab);
   
   
   await commands.targetCommand.startListening();
 
   const targetFront = commands.targetCommand.targetFront;
-  return targetFront.getFront("test");
+  return targetFront.getFront("highlighterTest");
 }
 
 
@@ -628,8 +639,10 @@ function isServerTargetSwitchingEnabled() {
 
 var openInspectorForURL = async function(url, hostType) {
   const tab = await addTab(url);
-  const { inspector, toolbox, testActor } = await openInspector(hostType);
-  return { tab, inspector, toolbox, testActor };
+  const { inspector, toolbox, highlighterTestFront } = await openInspector(
+    hostType
+  );
+  return { tab, inspector, toolbox, highlighterTestFront };
 };
 
 async function getActiveInspector() {

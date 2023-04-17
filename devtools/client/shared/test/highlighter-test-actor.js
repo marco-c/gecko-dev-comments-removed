@@ -6,6 +6,8 @@
 "use strict";
 
 
+
+
 const { Ci, Cc } = require("chrome");
 const Services = require("Services");
 const { getRect, getAdjustedQuads } = require("devtools/shared/layout/utils");
@@ -53,8 +55,8 @@ function getHighlighterCanvasFrameHelper(conn, actorID) {
   return null;
 }
 
-var testSpec = protocol.generateActorSpec({
-  typeName: "test",
+var highlighterTestSpec = protocol.generateActorSpec({
+  typeName: "highlighterTest",
 
   events: {
     "highlighter-updated": {},
@@ -160,7 +162,7 @@ var testSpec = protocol.generateActorSpec({
   },
 });
 
-var TestActor = protocol.ActorClassWithSpec(testSpec, {
+var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
   initialize: function(conn, targetActor, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.conn = conn;
@@ -392,12 +394,14 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     return color;
   },
 });
-exports.TestActor = TestActor;
+exports.HighlighterTestActor = HighlighterTestActor;
 
-class TestFront extends protocol.FrontClassWithSpec(testSpec) {
+class HighlighterTestFront extends protocol.FrontClassWithSpec(
+  highlighterTestSpec
+) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
-    this.formAttributeName = "testActor";
+    this.formAttributeName = "highlighterTestActor";
     
     
     this._highlighter = null;
@@ -711,7 +715,7 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
     return { d, points };
   }
 }
-protocol.registerFront(TestFront);
+protocol.registerFront(HighlighterTestFront);
 
 
 

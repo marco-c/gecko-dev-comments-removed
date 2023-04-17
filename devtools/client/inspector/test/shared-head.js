@@ -20,6 +20,10 @@ var {
 
 
 
+
+
+
+
 var openInspector = async function(hostType) {
   info("Opening the inspector");
 
@@ -30,9 +34,9 @@ var openInspector = async function(hostType) {
   );
   const inspector = toolbox.getPanel("inspector");
 
-  const testActor = await getTestActor(toolbox);
+  const highlighterTestFront = await getHighlighterTestFront(toolbox);
 
-  return { toolbox, inspector, testActor };
+  return { toolbox, inspector, highlighterTestFront };
 };
 
 
@@ -44,8 +48,12 @@ var openInspector = async function(hostType) {
 
 
 
+
+
+
+
 var openInspectorSidebarTab = async function(id) {
-  const { toolbox, inspector, testActor } = await openInspector();
+  const { toolbox, inspector, highlighterTestFront } = await openInspector();
 
   info("Selecting the " + id + " sidebar");
 
@@ -65,7 +73,7 @@ var openInspectorSidebarTab = async function(id) {
   return {
     toolbox,
     inspector,
-    testActor,
+    highlighterTestFront,
   };
 };
 
@@ -87,7 +95,7 @@ function openRuleView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      testActor: data.testActor,
+      highlighterTestFront: data.highlighterTestFront,
       view,
     };
   });
@@ -107,7 +115,7 @@ function openComputedView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      testActor: data.testActor,
+      highlighterTestFront: data.highlighterTestFront,
       view,
     };
   });
@@ -125,7 +133,7 @@ function openChangesView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      testActor: data.testActor,
+      highlighterTestFront: data.highlighterTestFront,
       view: data.inspector.getPanel("changesview"),
     };
   });
@@ -147,7 +155,7 @@ function openLayoutView() {
       gridInspector: data.inspector.getPanel("layoutview").gridInspector,
       flexboxInspector: data.inspector.getPanel("layoutview").flexboxInspector,
       layoutView: data.inspector.getPanel("layoutview"),
-      testActor: data.testActor,
+      highlighterTestFront: data.highlighterTestFront,
     };
   });
 }

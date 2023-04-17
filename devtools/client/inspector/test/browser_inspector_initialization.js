@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -25,14 +24,12 @@ const TEST_URI = "data:text/html;charset=utf-8," + encodeURI(HTML);
 
 add_task(async function() {
   const tab = await addTab(TEST_URI);
-  const testActor = await getTestActorWithoutToolbox(tab);
-
-  await testToolboxInitialization(testActor, tab);
+  await testToolboxInitialization(tab);
   await testContextMenuInitialization();
   await testContextMenuInspectorAlreadyOpen();
 });
 
-async function testToolboxInitialization(testActor, tab) {
+async function testToolboxInitialization(tab) {
   info("Opening inspector with gDevTools.");
   const toolbox = await gDevTools.showToolboxForTab(tab, {
     toolId: "inspector",
