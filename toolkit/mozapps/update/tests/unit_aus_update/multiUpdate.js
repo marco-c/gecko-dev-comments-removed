@@ -49,8 +49,26 @@ const SECOND_UPDATE_VERSION = "999999.0";
 
 
 
-async function downloadUpdate(onDownloadStartCallback) {
+
+
+
+
+
+
+
+async function downloadUpdate(appUpdateAuto, onDownloadStartCallback) {
   let downloadFinishedPromise = waitForEvent("update-downloaded");
+  let updateAvailablePromise;
+  if (!appUpdateAuto) {
+    updateAvailablePromise = new Promise(resolve => {
+      let observer = (subject, topic, status) => {
+        Services.obs.removeObserver(observer, "update-available");
+        subject.QueryInterface(Ci.nsIUpdate);
+        resolve({ update: subject, status });
+      };
+      Services.obs.addObserver(observer, "update-available");
+    });
+  }
   let waitToStartPromise = new Promise(resolve => {
     let listener = {
       onStartRequest: aRequest => {
@@ -72,6 +90,17 @@ async function downloadUpdate(onDownloadStartCallback) {
   let updateCheckStarted = gAUS.checkForBackgroundUpdates();
   Assert.ok(updateCheckStarted, "Update check should have started");
 
+  if (!appUpdateAuto) {
+    let { update, status } = await updateAvailablePromise;
+    Assert.equal(
+      status,
+      "show-prompt",
+      "Should attempt to show the update-available prompt"
+    );
+    
+    gAUS.downloadUpdate(update, true);
+  }
+
   await continueFileHandler(CONTINUE_DOWNLOAD);
   await waitToStartPromise;
   await downloadFinishedPromise;
@@ -92,15 +121,22 @@ async function downloadUpdate(onDownloadStartCallback) {
 
 
 
+
+
+
+
+
 async function testUpdateDoesNotDownload() {
-  let updates = await new Promise(resolve => {
+  let { request, updates } = await new Promise((resolve, reject) => {
     let listener = {
-      onCheckComplete: async (request, results) => {
-        resolve(results);
+      
+      onCheckComplete: async (request, updates) => {
+        resolve({ request, updates });
       },
+      
       onError: async (request, update) => {
         Assert.ok(false, "Update check should have succeeded");
-        resolve([]);
+        reject();
       },
       QueryInterface: ChromeUtils.generateQI(["nsIUpdateCheckListener"]),
     };
@@ -119,6 +155,20 @@ async function testUpdateDoesNotDownload() {
     downloadStarted,
     false,
     "Expected that we would not start downloading an update"
+  );
+
+  let updateAvailableObserved = false;
+  let observer = (subject, topic, status) => {
+    updateAvailableObserved = true;
+  };
+  Services.obs.addObserver(observer, "update-available");
+  await gAUS.onCheckComplete(request, updates);
+  Services.obs.removeObserver(observer, "update-available");
+  Assert.equal(
+    updateAvailableObserved,
+    false,
+    "update-available notification should not fire if we aren't going to " +
+      "download the update."
   );
 }
 
@@ -151,16 +201,12 @@ function startUpdateServer() {
   });
 }
 
-add_task(async function multi_update_test() {
-  setupTestCommon(true);
-  startUpdateServer();
-
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
-  Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
+async function multi_update_test(appUpdateAuto) {
+  await UpdateUtils.setAppUpdateAutoEnabled(appUpdateAuto);
 
   prepareToDownloadVersion(FIRST_UPDATE_VERSION);
 
-  await downloadUpdate(() => {
+  await downloadUpdate(appUpdateAuto, () => {
     Assert.ok(
       !gUpdateManager.readyUpdate,
       "There should not be a ready update yet"
@@ -257,7 +303,7 @@ add_task(async function multi_update_test() {
 
   prepareToDownloadVersion(SECOND_UPDATE_VERSION);
 
-  await downloadUpdate(() => {
+  await downloadUpdate(appUpdateAuto, () => {
     Assert.ok(
       !!gUpdateManager.downloadingUpdate,
       "Second update download should be in downloadingUpdate"
@@ -319,7 +365,7 @@ add_task(async function multi_update_test() {
   
   prepareToDownloadVersion(FIRST_UPDATE_VERSION, true);
 
-  await downloadUpdate(() => {
+  await downloadUpdate(appUpdateAuto, () => {
     Assert.equal(
       gUpdateManager.downloadingUpdate.selectedPatch.type,
       "complete",
@@ -336,6 +382,26 @@ add_task(async function multi_update_test() {
   
   prepareToDownloadVersion(SECOND_UPDATE_VERSION);
   testUpdateCheckDoesNotStart();
+}
+
+add_task(async function all_multi_update_tests() {
+  setupTestCommon(true);
+  startUpdateServer();
+
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false);
+
+  let origAppUpdateAutoVal = await UpdateUtils.getAppUpdateAutoEnabled();
+  registerCleanupFunction(async () => {
+    await UpdateUtils.setAppUpdateAutoEnabled(origAppUpdateAutoVal);
+  });
+
+  await multi_update_test(true);
+
+  
+  reloadUpdateManagerData(true);
+
+  await multi_update_test(false);
 
   doTestFinish();
 });
