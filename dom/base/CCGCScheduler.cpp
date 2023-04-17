@@ -7,7 +7,6 @@
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsRefreshDriver.h"
 
 namespace mozilla {
 
@@ -116,20 +115,11 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
   
   nsJSContext::IsShrinking is_shrinking = nsJSContext::NonShrinkingGC;
   if (!InIncrementalGC() && aStep.mReason == JS::GCReason::USER_INACTIVE) {
-    bool do_gc = mWantAtLeastRegularGC;
-
     if (!mUserIsActive) {
-      if (!nsRefreshDriver::IsRegularRateTimerTicking()) {
-        mIsCompactingOnUserInactive = true;
-        is_shrinking = nsJSContext::ShrinkingGC;
-        do_gc = true;
-      } else {
-        
-        PokeShrinkingGC();
-      }
-    }
-
-    if (!do_gc) {
+      mIsCompactingOnUserInactive = true;
+      is_shrinking = nsJSContext::ShrinkingGC;
+    } else if (!mWantAtLeastRegularGC) {
+      
       using mozilla::ipc::IdleSchedulerChild;
       IdleSchedulerChild* child =
           IdleSchedulerChild::GetMainThreadIdleScheduler();
@@ -243,14 +233,8 @@ void CCGCScheduler::PokeShrinkingGC() {
       [](nsITimer* aTimer, void* aClosure) {
         CCGCScheduler* s = static_cast<CCGCScheduler*>(aClosure);
         s->KillShrinkingGCTimer();
-        if (!s->mUserIsActive) {
-          if (!nsRefreshDriver::IsRegularRateTimerTicking()) {
-            s->SetWantMajorGC(JS::GCReason::USER_INACTIVE);
-            s->EnsureGCRunner(0);
-          } else {
-            s->PokeShrinkingGC();
-          }
-        }
+        s->SetWantMajorGC(JS::GCReason::USER_INACTIVE);
+        s->EnsureGCRunner(0);
       },
       this, StaticPrefs::javascript_options_compact_on_user_inactive_delay(),
       nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "ShrinkingGCTimerFired");
