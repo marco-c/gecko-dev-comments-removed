@@ -561,6 +561,17 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
       policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
       if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
         policy->AddPath(rdonly, xauth);
+      } else if (auto* const home = PR_GetEnv("HOME")) {
+        
+        
+        
+        
+        nsAutoCString xauth(home);
+        if (xauth != "/"_ns) {
+          xauth.Append('/');
+        }
+        xauth.AppendLiteral(".Xauthority");
+        policy->AddPath(rdonly, xauth.get());
       }
     }
 #endif
