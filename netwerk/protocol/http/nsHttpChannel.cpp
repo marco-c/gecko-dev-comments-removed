@@ -1035,54 +1035,6 @@ void nsHttpChannel::HandleAsyncNotModified() {
   if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
 }
 
-void nsHttpChannel::HandleAsyncFallback() {
-  MOZ_ASSERT(!mCallOnResume, "How did that happen?");
-
-  if (mSuspendCount) {
-    LOG(("Waiting until resume to do async fallback [this=%p]\n", this));
-    mCallOnResume = [](nsHttpChannel* self) {
-      self->HandleAsyncFallback();
-      return NS_OK;
-    };
-    return;
-  }
-
-  nsresult rv = NS_OK;
-
-  LOG(("nsHttpChannel::HandleAsyncFallback [this=%p]\n", this));
-
-  
-  
-  
-  if (!mCanceled) {
-    PushRedirectAsyncFunc(&nsHttpChannel::ContinueHandleAsyncFallback);
-    bool waitingForRedirectCallback;
-    rv = ProcessFallback(&waitingForRedirectCallback);
-    if (waitingForRedirectCallback) return;
-    PopRedirectAsyncFunc(&nsHttpChannel::ContinueHandleAsyncFallback);
-  }
-
-  rv = ContinueHandleAsyncFallback(rv);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-}
-
-nsresult nsHttpChannel::ContinueHandleAsyncFallback(nsresult rv) {
-  if (!mCanceled && (NS_FAILED(rv) || !LoadFallingBack())) {
-    
-    
-    LOG(("ProcessFallback failed [rv=%" PRIx32 ", %d]\n",
-         static_cast<uint32_t>(rv), LoadFallingBack()));
-    mStatus = NS_FAILED(rv) ? rv : NS_ERROR_DOCUMENT_NOT_CACHED;
-    DoNotifyListener();
-  }
-
-  StoreIsPending(false);
-
-  if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
-
-  return rv;
-}
-
 nsresult nsHttpChannel::SetupTransaction() {
   LOG(("nsHttpChannel::SetupTransaction [this=%p, cos=%u, prio=%d]\n", this,
        mClassOfService, mPriority));
@@ -2594,22 +2546,7 @@ nsresult nsHttpChannel::ContinueProcessResponse4(nsresult rv) {
 }
 
 nsresult nsHttpChannel::ProcessNormal() {
-  nsresult rv;
-
   LOG(("nsHttpChannel::ProcessNormal [this=%p]\n", this));
-
-  bool succeeded;
-  rv = GetRequestSucceeded(&succeeded);
-  if (NS_SUCCEEDED(rv) && !succeeded) {
-    PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessNormal);
-    bool waitingForRedirectCallback;
-    Unused << ProcessFallback(&waitingForRedirectCallback);
-    if (waitingForRedirectCallback) {
-      
-      return NS_OK;
-    }
-    PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessNormal);
-  }
 
   return ContinueProcessNormal(NS_OK);
 }
@@ -2623,12 +2560,6 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
     mStatus = rv;
     DoNotifyListener();
     return rv;
-  }
-
-  if (LoadFallingBack()) {
-    
-    
-    return NS_OK;
   }
 
   
@@ -3400,45 +3331,6 @@ nsresult nsHttpChannel::ProcessNotModified(
   });
 }
 
-nsresult nsHttpChannel::ProcessFallback(bool* waitingForRedirectCallback) {
-  LOG(("nsHttpChannel::ProcessFallback [this=%p]\n", this));
-
-  *waitingForRedirectCallback = false;
-  StoreFallingBack(false);
-
-  return NS_OK;
-}
-
-nsresult nsHttpChannel::ContinueProcessFallback(nsresult rv) {
-  AutoRedirectVetoNotifier notifier(this);
-
-  if (NS_FAILED(rv)) return rv;
-
-  MOZ_ASSERT(mRedirectChannel, "No redirect channel?");
-
-  
-  
-  mRedirectChannel->SetOriginalURI(mOriginalURI);
-
-  rv = mRedirectChannel->AsyncOpen(mListener);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
-    MaybeWarnAboutAppCache();
-  }
-
-  
-  Cancel(NS_BINDING_REDIRECTED);
-
-  notifier.RedirectSucceeded();
-
-  ReleaseListeners();
-
-  StoreFallingBack(true);
-
-  return NS_OK;
-}
-
 
 
 static bool IsSubRangeRequest(nsHttpRequestHead& aRequestHead) {
@@ -3743,23 +3635,18 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry,
 
   
   
-  
-  
-  if (!mApplicationCacheForWrite &&
-      (appCache || (LoadCacheEntryIsReadOnly() &&
-                    !(mLoadFlags & nsIRequest::INHIBIT_CACHING)))) {
-    if (!appCache) {
-      int64_t size, contentLength;
-      rv = CheckPartial(entry, &size, &contentLength);
-      NS_ENSURE_SUCCESS(rv, rv);
+  if ((LoadCacheEntryIsReadOnly() &&
+       !(mLoadFlags & nsIRequest::INHIBIT_CACHING))) {
+    int64_t size, contentLength;
+    rv = CheckPartial(entry, &size, &contentLength);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-      if (contentLength != int64_t(-1) && contentLength != size) {
-        *aResult = ENTRY_NOT_WANTED;
-        return NS_OK;
-      }
+    if (contentLength != int64_t(-1) && contentLength != size) {
+      *aResult = ENTRY_NOT_WANTED;
+      return NS_OK;
     }
 
-    rv = OpenCacheInputStream(entry, true, !!appCache);
+    rv = OpenCacheInputStream(entry, true, false);
     if (NS_SUCCEEDED(rv)) {
       mCachedContentIsValid = true;
       entry->MaybeMarkValid();
@@ -5136,12 +5023,6 @@ nsresult nsHttpChannel::AsyncProcessRedirection(uint32_t redirectType) {
 }
 
 nsresult nsHttpChannel::ContinueProcessRedirectionAfterFallback(nsresult rv) {
-  if (NS_SUCCEEDED(rv) && LoadFallingBack()) {
-    
-    
-    return NS_OK;
-  }
-
   
   
   bool redirectingBackToSameURI = false;
@@ -6982,22 +6863,11 @@ nsresult nsHttpChannel::ContinueOnStartRequest3(nsresult result) {
     return NS_OK;
   }
 
-  
-  if (NS_FAILED(mStatus)) {
-    PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest4);
-    bool waitingForRedirectCallback;
-    Unused << ProcessFallback(&waitingForRedirectCallback);
-    if (waitingForRedirectCallback) return NS_OK;
-    PopRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest4);
-  }
-
   return ContinueOnStartRequest4(NS_OK);
 }
 
 nsresult nsHttpChannel::ContinueOnStartRequest4(nsresult result) {
   LOG(("nsHttpChannel::ContinueOnStartRequest4 [this=%p]", this));
-
-  if (LoadFallingBack()) return NS_OK;
 
   if (NS_SUCCEEDED(mStatus) && mResponseHead && mAuthProvider) {
     uint32_t httpStatus = mResponseHead->Status();
@@ -8654,19 +8524,6 @@ nsresult nsHttpChannel::CallOrWaitForResume(
   }
 
   return aFunc(this);
-}
-
-void nsHttpChannel::MaybeWarnAboutAppCache() {
-  
-  Telemetry::Accumulate(Telemetry::HTTP_OFFLINE_CACHE_DOCUMENT_LOAD, true);
-
-  
-  nsCOMPtr<nsIDeprecationWarner> warner;
-  GetCallback(warner);
-  if (warner) {
-    warner->IssueWarning(static_cast<uint32_t>(DeprecatedOperations::eAppCache),
-                         false);
-  }
 }
 
 

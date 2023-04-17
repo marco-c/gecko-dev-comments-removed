@@ -344,8 +344,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ContinueProcessRedirection(nsresult);
   [[nodiscard]] nsresult ContinueProcessRedirectionAfterFallback(nsresult);
   [[nodiscard]] nsresult ProcessFailedProxyConnect(uint32_t httpStatus);
-  [[nodiscard]] nsresult ProcessFallback(bool* waitingForRedirectCallback);
-  [[nodiscard]] nsresult ContinueProcessFallback(nsresult);
   void HandleAsyncAbort();
   [[nodiscard]] nsresult EnsureAssocReq();
   void ProcessSSLInformation();
@@ -629,12 +627,8 @@ class nsHttpChannel final : public HttpBaseChannel,
     (uint32_t, InitedCacheEntry, 1),
     
     
-    (uint32_t, FallbackChannel, 1),
-    
-    
     
     (uint32_t, CustomConditionalRequest, 1),
-    (uint32_t, FallingBack, 1),
     (uint32_t, WaitingForRedirectCallback, 1),
     
     
