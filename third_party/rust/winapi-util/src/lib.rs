@@ -20,9 +20,6 @@
 
 
 #[cfg(windows)]
-extern crate winapi;
-
-#[cfg(windows)]
 pub use win::*;
 
 

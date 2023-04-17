@@ -5,12 +5,11 @@ use winapi::shared::minwindef::FILETIME;
 use winapi::shared::winerror::NO_ERROR;
 use winapi::um::errhandlingapi::GetLastError;
 use winapi::um::fileapi::{
-    BY_HANDLE_FILE_INFORMATION,
-    GetFileInformationByHandle, GetFileType,
+    GetFileInformationByHandle, GetFileType, BY_HANDLE_FILE_INFORMATION,
 };
 use winapi::um::winnt;
 
-use AsHandleRef;
+use crate::AsHandleRef;
 
 
 
@@ -20,9 +19,7 @@ use AsHandleRef;
 
 
 
-pub fn information<H: AsHandleRef>(
-    h: H,
-) -> io::Result<Information> {
+pub fn information<H: AsHandleRef>(h: H) -> io::Result<Information> {
     unsafe {
         let mut info: BY_HANDLE_FILE_INFORMATION = mem::zeroed();
         let rc = GetFileInformationByHandle(h.as_raw(), &mut info);
