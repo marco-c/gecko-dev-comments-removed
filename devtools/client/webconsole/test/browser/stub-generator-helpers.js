@@ -258,7 +258,11 @@ function getCleanedPacket(key, packet) {
   if (Array.isArray(res.exceptionStack)) {
     res.exceptionStack = res.exceptionStack.map((frame, i) => {
       const existingFrame = existingPacket.exceptionStack[i];
-      if (frame && existingFrame && frame.sourceId) {
+      
+      
+      
+      
+      if (frame && existingFrame && "sourceId" in frame) {
         frame.sourceId = existingFrame.sourceId;
       }
       return frame;
