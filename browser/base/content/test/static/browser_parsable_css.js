@@ -118,6 +118,9 @@ let propNameWhitelist = [
 
   
   { propName: "--icon-url", isFromDevTools: false },
+
+  
+  { propName: "--zoom-factor", isFromDevTools: false },
 ];
 
 
