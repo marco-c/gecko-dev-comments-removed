@@ -124,6 +124,11 @@ class ChromeUtils {
            aA.mPrivateBrowsingId == aB.mPrivateBrowsingId;
   }
 
+  static void GetBaseDomainFromPartitionKey(dom::GlobalObject& aGlobal,
+                                            const nsAString& aPartitionKey,
+                                            nsAString& aBaseDomain,
+                                            ErrorResult& aRv);
+
   
   static already_AddRefed<Promise> CompileScript(
       GlobalObject& aGlobal, const nsAString& aUrl,
