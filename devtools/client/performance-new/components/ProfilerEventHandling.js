@@ -92,18 +92,6 @@ class ProfilerEventHandling extends PureComponent {
         }
       }
       reportProfilerReady(isSupportedPlatform, recordingState);
-
-      
-      
-      
-      
-      
-      const anyWindow = window;
-      
-      const { gReportReady } = anyWindow;
-      if (gReportReady) {
-        gReportReady();
-      }
     });
 
     
