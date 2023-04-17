@@ -13,10 +13,10 @@
 namespace mozilla {
 namespace intl {
 
-typedef struct {
+struct WordRange {
   uint32_t mBegin;
   uint32_t mEnd;
-} WordRange;
+};
 
 class WordBreaker {
  public:
@@ -26,8 +26,16 @@ class WordBreaker {
 
   bool BreakInBetween(const char16_t* aText1, uint32_t aTextLen1,
                       const char16_t* aText2, uint32_t aTextLen2);
-  WordRange FindWord(const char16_t* aText1, uint32_t aTextLen1,
-                     uint32_t aOffset);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  WordRange FindWord(const char16_t* aText, uint32_t aLen, uint32_t aPos);
 
   
   
