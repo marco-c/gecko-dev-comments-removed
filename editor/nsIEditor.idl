@@ -66,6 +66,7 @@ interface nsIEditor  : nsISupports
   const long eEditorReadonlyMask        = 0x0008;
   
   
+  
   const long eEditorMailMask            = 0x0020;
   
   const long eEditorEnableWrapHackMask  = 0x0040;

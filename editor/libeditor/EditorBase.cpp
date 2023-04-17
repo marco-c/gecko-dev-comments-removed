@@ -685,9 +685,6 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
   MOZ_ASSERT_IF(IsHTMLEditor(), !(aFlags & nsIEditor::eEditorPasswordMask));
   
   
-  MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorMailMask));
-  
-  
   MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorAllowInteraction));
 
   const bool isCalledByPostCreate = (mFlags == ~aFlags);
