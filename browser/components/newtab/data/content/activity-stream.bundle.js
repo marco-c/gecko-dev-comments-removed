@@ -7727,7 +7727,13 @@ class _Card extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureComponent {
       } 
 
 
-      await gImageLoading.get(imageUrl); 
+      try {
+        await gImageLoading.get(imageUrl);
+      } catch (ex) {
+        
+        return;
+      } 
+
 
       if (content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__["ScreenshotUtils"].isRemoteImageLocal(this.state.cardImage, this.props.link.image) && !this.state.imageLoaded) {
         this.setState({
