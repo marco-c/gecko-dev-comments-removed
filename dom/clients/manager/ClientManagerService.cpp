@@ -167,18 +167,6 @@ void ClientManagerService::Shutdown() {
        CopyableAutoTArray<ClientManagerParent*, 16>(mManagerList)) {
     Unused << PClientManagerParent::Send__delete__(actor);
   }
-
-  
-  
-  for (auto& entry : mSourceTable) {
-    MOZ_RELEASE_ASSERT(entry.GetData().is<FutureClientSourceParent>());
-    CopyableErrorResult rv;
-    rv.ThrowInvalidStateError("Client creation aborted.");
-    entry.GetModifiableData()
-        ->as<FutureClientSourceParent>()
-        .RejectPromiseIfExists(rv);
-  }
-  mSourceTable.Clear();
 }
 
 ClientSourceParent* ClientManagerService::MaybeUnwrapAsExistingSource(
