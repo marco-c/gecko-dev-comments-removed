@@ -1,22 +1,22 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-/* globals module, require */
 
-// This is a hack for the tests.
+
+
 if (typeof InterventionHelpers === "undefined") {
   var InterventionHelpers = require("../lib/intervention_helpers");
 }
 
-/**
- * For detailed information on our policies, and a documention on this format
- * and its possibilites, please check the Mozilla-Wiki at
- *
- * https://wiki.mozilla.org/Compatibility/Go_Faster_Addon/Override_Policies_and_Workflows#User_Agent_overrides
- */
+
+
+
+
+
+
 const AVAILABLE_INJECTIONS = [
   {
     id: "testbed-injection",
@@ -449,6 +449,35 @@ const AVAILABLE_INJECTIONS = [
         {
           file:
             "injections/css/bug1712843-snaptik.app-fix-text-input-alignment.css",
+        },
+      ],
+    },
+  },
+  {
+    id: "bug1714612",
+    platform: "all",
+    domain: "www.rfi.it",
+    bug: "1714612",
+    contentScripts: {
+      matches: ["*://www.rfi.it/*"],
+      js: [
+        {
+          file: "injections/js/bug1714612-www.rfi.it-outertext.js",
+        },
+      ],
+      allFrames: true,
+    },
+  },
+  {
+    id: "bug1719870",
+    platform: "desktop",
+    domain: "lcbo.com",
+    bug: "1719870",
+    contentScripts: {
+      matches: ["*://*.lcbo.com/*"],
+      css: [
+        {
+          file: "injections/css/bug1719870-lcbo.com-table-clearfix.css",
         },
       ],
     },
