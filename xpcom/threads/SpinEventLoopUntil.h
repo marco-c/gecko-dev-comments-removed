@@ -9,6 +9,9 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
 #include "xpcpublic.h"
 
@@ -75,10 +78,75 @@ enum class ProcessFailureBehavior {
   ReportToCaller,
 };
 
+
+
+
+
+struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
+  explicit AutoNestedEventLoopAnnotation(const nsACString& aEntry)
+      : mPrev(nullptr) {
+    if (NS_IsMainThread()) {
+      mPrev = sCurrent;
+      sCurrent = this;
+      if (mPrev) {
+        mStack = mPrev->mStack + "|"_ns + aEntry;
+      } else {
+        mStack = aEntry;
+      }
+      AnnotateXPCOMSpinEventLoopStack(mStack);
+    }
+  }
+
+  ~AutoNestedEventLoopAnnotation() {
+    if (NS_IsMainThread()) {
+      MOZ_ASSERT(sCurrent == this);
+      sCurrent = mPrev;
+      if (mPrev) {
+        AnnotateXPCOMSpinEventLoopStack(mPrev->mStack);
+      } else {
+        AnnotateXPCOMSpinEventLoopStack(""_ns);
+      }
+    }
+  }
+
+ private:
+  AutoNestedEventLoopAnnotation(const AutoNestedEventLoopAnnotation&) = delete;
+  AutoNestedEventLoopAnnotation& operator=(
+      const AutoNestedEventLoopAnnotation&) = delete;
+
+  
+  static AutoNestedEventLoopAnnotation* sCurrent;
+
+  
+  
+  
+  static void AnnotateXPCOMSpinEventLoopStack(const nsACString& aStack);
+
+  AutoNestedEventLoopAnnotation* mPrev;
+  nsCString mStack;
+};
+
+
+
+
+
+
+
+
+
+
 template <
     ProcessFailureBehavior Behavior = ProcessFailureBehavior::ReportToCaller,
     typename Pred>
-bool SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr) {
+bool SpinEventLoopUntil(const nsACString& aVeryGoodReasonToDoThis,
+                        Pred&& aPredicate, nsIThread* aThread = nullptr) {
+  
+  AutoNestedEventLoopAnnotation annotation(aVeryGoodReasonToDoThis);
+  AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_NONSENSITIVE(
+      "SpinEventLoopUntil", OTHER, aVeryGoodReasonToDoThis);
+  AUTO_PROFILER_MARKER_TEXT("SpinEventLoop", OTHER, MarkerStack::Capture(),
+                            aVeryGoodReasonToDoThis);
+
   nsIThread* thread = aThread ? aThread : NS_GetCurrentThread();
 
   
@@ -101,6 +169,13 @@ bool SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr) {
   }
 
   return true;
+}
+
+
+
+template <typename Pred>
+bool SpinEventLoopUntil(Pred&& aPredicate, nsIThread* aThread = nullptr) {
+  return SpinEventLoopUntil("Missing motivation."_ns, aPredicate, aThread);
 }
 
 }  
