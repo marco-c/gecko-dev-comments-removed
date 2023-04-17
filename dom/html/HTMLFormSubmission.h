@@ -23,6 +23,7 @@ namespace mozilla {
 namespace dom {
 
 class Blob;
+class DialogFormSubmission;
 class Directory;
 class Element;
 class HTMLFormElement;
@@ -93,8 +94,6 @@ class HTMLFormSubmission {
 
   void GetCharset(nsACString& aCharset) { mEncoding->Name(aCharset); }
 
-  Element* GetSubmitterElement() const { return mSubmitter.get(); }
-
   
 
 
@@ -118,10 +117,8 @@ class HTMLFormSubmission {
 
 
 
-
   HTMLFormSubmission(nsIURI* aActionURL, const nsAString& aTarget,
-                     mozilla::NotNull<const mozilla::Encoding*> aEncoding,
-                     Element* aSubmitter);
+                     mozilla::NotNull<const mozilla::Encoding*> aEncoding);
 
   
   nsCOMPtr<nsIURI> mActionURL;
@@ -131,9 +128,6 @@ class HTMLFormSubmission {
 
   
   mozilla::NotNull<const mozilla::Encoding*> mEncoding;
-
-  
-  RefPtr<Element> mSubmitter;
 
   
   bool mInitiatedFromUserInput;
@@ -177,9 +171,9 @@ class DialogFormSubmission final : public HTMLFormSubmission {
  public:
   DialogFormSubmission(nsAString& aResult, nsIURI* aActionURL,
                        const nsAString& aTarget,
-                       NotNull<const Encoding*> aEncoding, Element* aSubmitter,
+                       NotNull<const Encoding*> aEncoding,
                        HTMLDialogElement* aDialogElement)
-      : HTMLFormSubmission(aActionURL, aTarget, aEncoding, aSubmitter),
+      : HTMLFormSubmission(aActionURL, aTarget, aEncoding),
         mDialogElement(aDialogElement),
         mReturnValue(aResult) {}
   nsresult AddNameValuePair(const nsAString& aName,

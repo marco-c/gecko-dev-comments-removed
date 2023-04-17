@@ -14,9 +14,8 @@ namespace mozilla {
 class PresState;
 namespace dom {
 class Element;
+class FormData;
 class HTMLFieldSetElement;
-class HTMLFormSubmission;
-class DialogFormSubmission;
 class HTMLFormElement;
 }  
 }  
@@ -145,7 +144,7 @@ class nsIFormControl : public nsISupports {
 
 
   NS_IMETHOD
-  SubmitNamesValues(mozilla::dom::HTMLFormSubmission* aFormSubmission) = 0;
+  SubmitNamesValues(mozilla::dom::FormData* aFormData) = 0;
 
   
 
