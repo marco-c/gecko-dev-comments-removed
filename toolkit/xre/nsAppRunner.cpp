@@ -29,6 +29,7 @@
 #include "mozilla/Utf8.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/JSONWriter.h"
+#include "mozilla/glean/GleanMetrics.h"
 #include "BaseProfiler.h"
 
 #include "nsAppRunner.h"
@@ -5219,10 +5220,10 @@ nsresult XREMain::XRE_mainRun() {
 #endif 
 
     
-    Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_VERSION,
-                         NS_ConvertASCIItoUTF16(gAppData->version));
-    Telemetry::ScalarSet(Telemetry::ScalarID::GECKO_BUILD_ID,
-                         NS_ConvertASCIItoUTF16(gAppData->buildID));
+    nsAutoCString version(gAppData->version);
+    nsAutoCString buildID(gAppData->buildID);
+    mozilla::glean::geckoview_validation::version.Set(version);
+    mozilla::glean::geckoview_validation::build_id.Set(buildID);
 
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX)
     
