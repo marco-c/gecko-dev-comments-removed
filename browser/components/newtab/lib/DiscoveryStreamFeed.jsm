@@ -48,9 +48,8 @@ const STARTUP_CACHE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000;
 const COMPONENT_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const SPOCS_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const DEFAULT_RECS_EXPIRE_TIME = 60 * 60 * 1000; 
-const MIN_DOMAIN_AFFINITIES_UPDATE_TIME = 12 * 60 * 60 * 1000; 
+const MIN_PERSONALIZATION_UPDATE_TIME = 12 * 60 * 60 * 1000; 
 const MAX_LIFETIME_CAP = 500; 
-const DEFAULT_MAX_HISTORY_QUERY_RESULTS = 1000;
 const FETCH_TIMEOUT = 45 * 1000;
 const PREF_CONFIG = "discoverystream.config";
 const PREF_ENDPOINTS = "discoverystream.endpoints";
@@ -70,9 +69,9 @@ const PREF_REC_IMPRESSIONS = "discoverystream.rec.impressions";
 const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
 const PREF_RECS_PERSONALIZED = "discoverystream.recs.personalized";
 const PREF_SPOCS_PERSONALIZED = "discoverystream.spocs.personalized";
-const PREF_PERSONALIZATION_VERSION = "discoverystream.personalization.version";
-const PREF_PERSONALIZATION_OVERRIDE_VERSION =
-  "discoverystream.personalization.overrideVersion";
+const PREF_PERSONALIZATION = "discoverystream.personalization.enabled";
+const PREF_PERSONALIZATION_OVERRIDE =
+  "discoverystream.personalization.override";
 
 let getHardcodedLayout;
 
@@ -177,22 +176,33 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     const recsPersonalized = this.store.getState().Prefs.values[
       PREF_RECS_PERSONALIZED
     ];
+    const personalization = this.store.getState().Prefs.values[
+      PREF_PERSONALIZATION
+    ];
+
+    
+    
+    
+    const overrideState = this.store.getState().Prefs.values[
+      PREF_PERSONALIZATION_OVERRIDE
+    ];
 
     return (
-      this.config.personalized &&
-      !!this.providerSwitcher &&
+      personalization &&
+      !overrideState &&
+      !!this.recommendationProvider &&
       (spocsPersonalized || recsPersonalized)
     );
   }
 
-  get providerSwitcher() {
-    if (this._providerSwitcher) {
-      return this._providerSwitcher;
+  get recommendationProvider() {
+    if (this._recommendationProvider) {
+      return this._recommendationProvider;
     }
-    this._providerSwitcher = this.store.feeds.get(
-      "feeds.recommendationproviderswitcher"
+    this._recommendationProvider = this.store.feeds.get(
+      "feeds.recommendationprovider"
     );
-    return this._providerSwitcher;
+    return this._recommendationProvider;
   }
 
   setupPrefs(isStartup = false) {
@@ -536,21 +546,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
                 isStartup,
               },
             });
-
-            
-            
-            
-            if (!this.affinities) {
-              const { settings } = feed.data;
-              this.affinities = {
-                timeSegments: settings.timeSegments,
-                parameterSets: settings.domainAffinityParameterSets,
-                maxHistoryQueryResults:
-                  settings.maxHistoryQueryResults ||
-                  DEFAULT_MAX_HISTORY_QUERY_RESULTS,
-                version: settings.version,
-              };
-            }
           })
           .catch(
              error => {
@@ -694,26 +689,35 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
   }
 
   
-  personalizationVersionOverride(spoc_v2) {
-    const overrideVersion = this.store.getState().Prefs.values[
-      PREF_PERSONALIZATION_OVERRIDE_VERSION
+  
+  
+  
+  
+  personalizationOverride(overrideCommand) {
+    
+    
+    const overrideState = this.store.getState().Prefs.values[
+      PREF_PERSONALIZATION_OVERRIDE
     ];
 
-    const currentVersion = this.store.getState().Prefs.values[
-      PREF_PERSONALIZATION_VERSION
+    
+    const personalization = this.store.getState().Prefs.values[
+      PREF_PERSONALIZATION
     ];
 
     
     
-    if (spoc_v2 === false && currentVersion === 2 && overrideVersion !== 1) {
-      this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION_OVERRIDE_VERSION, 1));
+    if (overrideCommand && personalization && !overrideState) {
+      this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION_OVERRIDE, true));
     }
 
     
-    if (spoc_v2 && overrideVersion === 1) {
+    
+    
+    if (!overrideCommand && overrideState) {
       this.store.dispatch({
         type: at.CLEAR_PREF,
-        data: { name: PREF_PERSONALIZATION_OVERRIDE_VERSION },
+        data: { name: PREF_PERSONALIZATION_OVERRIDE },
       });
     }
   }
@@ -756,8 +760,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           };
 
           if (spocsResponse.settings && spocsResponse.settings.feature_flags) {
-            this.personalizationVersionOverride(
-              spocsResponse.settings.feature_flags.spoc_v2
+            this.personalizationOverride(
+              
+              
+              
+              !spocsResponse.settings.feature_flags.spoc_v2
             );
           }
 
@@ -883,25 +890,20 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
-  async loadAffinityScoresCache(isStartup = false) {
+  async loadPersonalizationScoresCache(isStartup = false) {
     const cachedData = (await this.cache.get()) || {};
-    const { affinities } = cachedData;
-    if (this.personalized && affinities && affinities.scores) {
-      this.providerSwitcher.setAffinityProvider(
-        affinities.timeSegments,
-        affinities.parameterSets,
-        affinities.maxHistoryQueryResults,
-        affinities.version,
-        affinities.scores
-      );
+    const { personalization } = cachedData;
 
-      this.domainAffinitiesLastUpdated = affinities._timestamp;
+    if (this.personalized && personalization && personalization.scores) {
+      this.recommendationProvider.setProvider(personalization.scores);
+
+      this.personalizationLastUpdated = personalization._timestamp;
 
       this.store.dispatch(
         ac.BroadcastToContent({
           type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
           data: {
-            lastUpdated: this.domainAffinitiesLastUpdated,
+            lastUpdated: this.personalizationLastUpdated,
           },
           meta: {
             isStartup,
@@ -920,46 +922,38 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
-  async updateDomainAffinityScores() {
+  async updatePersonalizationScores() {
     if (
       !this.personalized ||
-      !this.affinities ||
-      !this.affinities.parameterSets ||
-      Date.now() - this.domainAffinitiesLastUpdated <
-        MIN_DOMAIN_AFFINITIES_UPDATE_TIME
+      Date.now() - this.personalizationLastUpdated <
+        MIN_PERSONALIZATION_UPDATE_TIME
     ) {
       return;
     }
 
-    this.providerSwitcher.setAffinityProvider(
-      this.affinities.timeSegments,
-      this.affinities.parameterSets,
-      this.affinities.maxHistoryQueryResults,
-      this.affinities.version,
-      undefined
-    );
+    this.recommendationProvider.setProvider();
 
-    await this.providerSwitcher.init();
+    await this.recommendationProvider.init();
 
-    const affinities = this.providerSwitcher.getAffinities();
-    this.domainAffinitiesLastUpdated = Date.now();
+    const personalization = { scores: this.recommendationProvider.getScores() };
+    this.personalizationLastUpdated = Date.now();
 
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
         data: {
-          lastUpdated: this.domainAffinitiesLastUpdated,
+          lastUpdated: this.personalizationLastUpdated,
         },
       })
     );
-    affinities._timestamp = this.domainAffinitiesLastUpdated;
-    this.cache.set("affinities", affinities);
+    personalization._timestamp = this.personalizationLastUpdated;
+    this.cache.set("personalization", personalization);
   }
 
   observe(subject, topic, data) {
     switch (topic) {
       case "idle-daily":
-        this.updateDomainAffinityScores();
+        this.updatePersonalizationScores();
         break;
     }
   }
@@ -1021,7 +1015,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       item.score = 1;
     }
     if (this.personalized && personalizedByType) {
-      await this.providerSwitcher.calculateItemRelevanceScore(item);
+      await this.recommendationProvider.calculateItemRelevanceScore(item);
     }
     return item;
   }
@@ -1221,7 +1215,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
   async refreshAll(options = {}) {
-    const affinityCacheLoadPromise = this.loadAffinityScoresCache(
+    const personalizationCacheLoadPromise = this.loadPersonalizationScoresCache(
       options.isStartup
     );
 
@@ -1244,12 +1238,12 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     if (this.personalized) {
       
       
-      affinityCacheLoadPromise.then(() => {
+      personalizationCacheLoadPromise.then(() => {
         
         
         
         
-        const initPromise = this.providerSwitcher.init();
+        const initPromise = this.recommendationProvider.init();
         initPromise.then(() => {
           
           
@@ -1429,7 +1423,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
   async resetAllCache() {
     await this.resetContentCache();
-    await this.cache.set("affinities", {});
+    await this.cache.set("personalization", {});
   }
 
   resetDataPrefs() {
@@ -1453,7 +1447,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         },
       })
     );
-    this.domainAffinitiesLastUpdated = null;
+    this.personalizationLastUpdated = null;
     this.loaded = false;
   }
 
@@ -1581,6 +1575,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case PREF_HARDCODED_BASIC_LAYOUT:
       case PREF_SPOCS_ENDPOINT:
       case PREF_SPOCS_ENDPOINT_QUERY:
+      case PREF_PERSONALIZATION:
         
         this.configReset();
         break;
@@ -1793,7 +1788,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       case at.UNINIT:
         
         this.uninitPrefs();
-        this._providerSwitcher = null;
+        this._recommendationProvider = null;
         break;
       case at.BLOCK_URL: {
         

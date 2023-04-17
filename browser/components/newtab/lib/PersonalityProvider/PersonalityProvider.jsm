@@ -31,24 +31,13 @@ const RECIPE_NAME = "personality-provider-recipe";
 const MODELS_NAME = "personality-provider-models";
 
 this.PersonalityProvider = class PersonalityProvider {
-  constructor(v2Params) {
-    this.v2Params = v2Params || {};
-    this.modelKeys = this.v2Params.modelKeys;
+  constructor(modelKeys) {
+    this.modelKeys = modelKeys;
     this.onSync = this.onSync.bind(this);
     this.setup();
   }
 
-  setAffinities(
-    timeSegments,
-    parameterSets,
-    maxHistoryQueryResults,
-    version,
-    scores
-  ) {
-    this.timeSegments = timeSegments;
-    this.parameterSets = parameterSets;
-    this.maxHistoryQueryResults = maxHistoryQueryResults;
-    this.version = version;
+  setScores(scores) {
     this.scores = scores || {};
     this.interestConfig = this.scores.interestConfig;
     this.interestVector = this.scores.interestVector;
@@ -294,20 +283,14 @@ this.PersonalityProvider = class PersonalityProvider {
   
 
 
-  getAffinities() {
+  getScores() {
     return {
-      timeSegments: this.timeSegments,
-      parameterSets: this.parameterSets,
-      maxHistoryQueryResults: this.maxHistoryQueryResults,
-      version: this.version,
-      scores: {
-        
-        
-        
-        
-        interestConfig: this.interestConfig,
-        interestVector: this.interestVector,
-      },
+      
+      
+      
+      
+      interestConfig: this.interestConfig,
+      interestVector: this.interestVector,
     };
   }
 };
