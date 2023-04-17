@@ -1293,6 +1293,8 @@ class MOZ_STACK_CLASS mozInlineSpellChecker::SpellCheckerTimeSlice {
  private:
   
   
+  
+  
   void CheckWordsAndAddRangesForMisspellings(
       const nsTArray<nsString>& aWords, nsTArray<NodeOffsetRange>&& aRanges);
 
