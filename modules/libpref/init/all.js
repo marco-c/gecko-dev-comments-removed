@@ -1867,9 +1867,6 @@ pref("network.http.tailing.delay-max", 6000);
 
 pref("network.http.tailing.total-max", 45000);
 
-
-pref("network.http.spdy.bug1563538", true);
-
 pref("network.proxy.http",                  "");
 pref("network.proxy.http_port",             0);
 pref("network.proxy.ssl",                   "");
