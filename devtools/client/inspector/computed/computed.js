@@ -913,8 +913,16 @@ function PropertyInfo(tree, name) {
 }
 
 PropertyInfo.prototype = {
+  get isSupported() {
+    
+    
+    
+    
+    return this.tree._computed && this.name in this.tree._computed;
+  },
+
   get value() {
-    if (this.tree._computed) {
+    if (this.isSupported) {
       const value = this.tree._computed[this.name].value;
       return value;
     }
@@ -1014,7 +1022,7 @@ PropertyView.prototype = {
       return false;
     }
 
-    return true;
+    return this.propertyInfo.isSupported;
   },
 
   
