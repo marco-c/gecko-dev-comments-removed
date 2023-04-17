@@ -80,6 +80,7 @@ void LaunchMacPostProcess(const char* aAppBundle);
 bool ObtainUpdaterArguments(int* argc, char*** argv);
 bool ServeElevatedUpdate(int argc, const char** argv);
 void SetGroupOwnershipAndPermissions(const char* aAppBundle);
+bool PerformInstallationFromDMG(int argc, char** argv);
 struct UpdateServerThreadArgs {
   int argc;
   const NS_tchar** argv;
@@ -2727,6 +2728,10 @@ int NS_main(int argc, NS_tchar** argv) {
   
   const int callbackIndex = 6;
 
+  
+  
+  bool isDMGInstall = false;
+
 #ifdef XP_MACOSX
   
   
@@ -2744,84 +2749,82 @@ int NS_main(int argc, NS_tchar** argv) {
       return 1;
     }
   }
+
+  if (argc == 4 && (strstr(argv[1], "-dmgInstall") != 0)) {
+    isDMGInstall = true;
+    if (isElevated) {
+      PerformInstallationFromDMG(argc, argv);
+      freeArguments(argc, argv);
+      CleanupElevatedMacUpdate(true);
+      return 0;
+    }
+  }
 #endif
+
+  if (!isDMGInstall) {
+    
 
 #if defined(MOZ_VERIFY_MAR_SIGNATURE) && !defined(XP_WIN) && !defined(XP_MACOSX)
-  
-  
-  
-  
-  if (NSS_NoDB_Init(nullptr) != SECSuccess) {
-    PRErrorCode error = PR_GetError();
-    fprintf(stderr, "Could not initialize NSS: %s (%d)", PR_ErrorToName(error),
-            (int)error);
-    _exit(1);
-  }
-#endif
-
-#ifdef XP_MACOSX
-  if (!isElevated) {
-#endif
-    InitProgressUI(&argc, &argv);
-#ifdef XP_MACOSX
-  }
-#endif
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (argc < 4) {
-    fprintf(stderr,
-            "Usage: updater patch-dir install-dir apply-to-dir [wait-pid "
-            "[callback-working-dir callback-path args...]]\n");
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
+    
+    
+    
+    
+    if (NSS_NoDB_Init(nullptr) != SECSuccess) {
+      PRErrorCode error = PR_GetError();
+      fprintf(stderr, "Could not initialize NSS: %s (%d)",
+              PR_ErrorToName(error), (int)error);
+      _exit(1);
     }
 #endif
-    return 1;
-  }
+
+#ifdef XP_MACOSX
+    if (!isElevated) {
+#endif
+      InitProgressUI(&argc, &argv);
+#ifdef XP_MACOSX
+    }
+#endif
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (argc < 4) {
+      fprintf(stderr,
+              "Usage: updater patch-dir install-dir apply-to-dir [wait-pid "
+              "[callback-working-dir callback-path args...]]\n");
+#ifdef XP_MACOSX
+      if (isElevated) {
+        freeArguments(argc, argv);
+        CleanupElevatedMacUpdate(true);
+      }
+#endif
+      return 1;
+    }
 
 #if defined(TEST_UPDATER) && defined(XP_WIN)
-  
-  
-  
-  
-  if (EnvHasValue("CURWORKDIRPATH")) {
-    const WCHAR* val = _wgetenv(L"CURWORKDIRPATH");
-    NS_tchdir(val);
-  }
-#endif
-
-  
-  
-  if (!IsValidFullPath(argv[1])) {
     
     
-    fprintf(stderr,
-            "The patch directory path is not valid for this "
-            "application (" LOG_S ")\n",
-            argv[1]);
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
+    
+    
+    if (EnvHasValue("CURWORKDIRPATH")) {
+      const WCHAR* val = _wgetenv(L"CURWORKDIRPATH");
+      NS_tchdir(val);
     }
 #endif
-    return 1;
-  }
+
+  }  
+
   
   NS_tstrncpy(gPatchDirPath, argv[1], MAXPATHLEN);
   gPatchDirPath[MAXPATHLEN - 1] = NS_T('\0');
@@ -2835,22 +2838,44 @@ int NS_main(int argc, NS_tchar** argv) {
       sUsingService || (NS_tremove(elevatedLockFilePath) && errno != ENOENT);
 #endif
 
-  
-  
-  if (!IsValidFullPath(argv[2])) {
-    WriteStatusFile(INVALID_INSTALL_DIR_PATH_ERROR);
-    fprintf(stderr,
-            "The install directory path is not valid for this "
-            "application (" LOG_S ")\n",
-            argv[2]);
+  if (!isDMGInstall) {
+    
+    
+    if (!IsValidFullPath(argv[1])) {
+      
+      
+      fprintf(stderr,
+              "The patch directory path is not valid for this "
+              "application (" LOG_S ")\n",
+              argv[1]);
 #ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
+      if (isElevated) {
+        freeArguments(argc, argv);
+        CleanupElevatedMacUpdate(true);
+      }
 #endif
-    return 1;
-  }
+      return 1;
+    }
+
+    
+    
+    if (!IsValidFullPath(argv[2])) {
+      WriteStatusFile(INVALID_INSTALL_DIR_PATH_ERROR);
+      fprintf(stderr,
+              "The install directory path is not valid for this "
+              "application (" LOG_S ")\n",
+              argv[2]);
+#ifdef XP_MACOSX
+      if (isElevated) {
+        freeArguments(argc, argv);
+        CleanupElevatedMacUpdate(true);
+      }
+#endif
+      return 1;
+    }
+
+  }  
+
   
   
   
@@ -2866,39 +2891,44 @@ int NS_main(int argc, NS_tchar** argv) {
   bool useService = false;
   bool testOnlyFallbackKeyExists = false;
   bool noServiceFallback = false;
+#endif
 
-  
-  
+  if (!isDMGInstall) {
+#ifdef XP_WIN
+    
+    
 #  ifdef MOZ_MAINTENANCE_SERVICE
-  useService = IsUpdateStatusPendingService();
+    useService = IsUpdateStatusPendingService();
 #    ifdef TEST_UPDATER
-  noServiceFallback = EnvHasValue("MOZ_NO_SERVICE_FALLBACK");
-  putenv(const_cast<char*>("MOZ_NO_SERVICE_FALLBACK="));
-  
-  
-  
-  testOnlyFallbackKeyExists = DoesFallbackKeyExist();
+    noServiceFallback = EnvHasValue("MOZ_NO_SERVICE_FALLBACK");
+    putenv(const_cast<char*>("MOZ_NO_SERVICE_FALLBACK="));
+    
+    
+    
+    testOnlyFallbackKeyExists = DoesFallbackKeyExist();
 #    endif
 #  endif
 
-  
-  {
-    HKEY hkApp = nullptr;
-    RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\Applications", 0,
-                    nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr,
-                    &hkApp, nullptr);
-    RegCloseKey(hkApp);
-    if (RegCreateKeyExW(HKEY_CURRENT_USER,
-                        L"Software\\Classes\\Applications\\updater.exe", 0,
-                        nullptr, REG_OPTION_VOLATILE, KEY_SET_VALUE, nullptr,
-                        &hkApp, nullptr) == ERROR_SUCCESS) {
-      RegSetValueExW(hkApp, L"IsHostApp", 0, REG_NONE, 0, 0);
-      RegSetValueExW(hkApp, L"NoOpenWith", 0, REG_NONE, 0, 0);
-      RegSetValueExW(hkApp, L"NoStartPage", 0, REG_NONE, 0, 0);
+    
+    {
+      HKEY hkApp = nullptr;
+      RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\Classes\\Applications", 0,
+                      nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr,
+                      &hkApp, nullptr);
       RegCloseKey(hkApp);
+      if (RegCreateKeyExW(HKEY_CURRENT_USER,
+                          L"Software\\Classes\\Applications\\updater.exe", 0,
+                          nullptr, REG_OPTION_VOLATILE, KEY_SET_VALUE, nullptr,
+                          &hkApp, nullptr) == ERROR_SUCCESS) {
+        RegSetValueExW(hkApp, L"IsHostApp", 0, REG_NONE, 0, 0);
+        RegSetValueExW(hkApp, L"NoOpenWith", 0, REG_NONE, 0, 0);
+        RegSetValueExW(hkApp, L"NoStartPage", 0, REG_NONE, 0, 0);
+        RegCloseKey(hkApp);
+      }
     }
-  }
 #endif
+
+  }  
 
   
   
@@ -2916,40 +2946,15 @@ int NS_main(int argc, NS_tchar** argv) {
     }
   }
 
-  
-  
-  if (!IsValidFullPath(argv[3])) {
-    WriteStatusFile(INVALID_WORKING_DIR_PATH_ERROR);
-    fprintf(stderr,
-            "The working directory path is not valid for this "
-            "application (" LOG_S ")\n",
-            argv[3]);
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
-#endif
-    return 1;
-  }
-  
-  
-  
-  
-  NS_tstrncpy(gWorkingDirPath, argv[3], MAXPATHLEN);
-  gWorkingDirPath[MAXPATHLEN - 1] = NS_T('\0');
-  slash = NS_tstrrchr(gWorkingDirPath, NS_SLASH);
-  if (slash && !slash[1]) {
-    *slash = NS_T('\0');
-  }
-
-  if (argc > callbackIndex) {
-    if (!IsValidFullPath(argv[callbackIndex])) {
-      WriteStatusFile(INVALID_CALLBACK_PATH_ERROR);
+  if (!isDMGInstall) {
+    
+    
+    if (!IsValidFullPath(argv[3])) {
+      WriteStatusFile(INVALID_WORKING_DIR_PATH_ERROR);
       fprintf(stderr,
-              "The callback file path is not valid for this "
+              "The working directory path is not valid for this "
               "application (" LOG_S ")\n",
-              argv[callbackIndex]);
+              argv[3]);
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -2958,31 +2963,59 @@ int NS_main(int argc, NS_tchar** argv) {
 #endif
       return 1;
     }
-
-    size_t len = NS_tstrlen(gInstallDirPath);
-    NS_tchar callbackInstallDir[MAXPATHLEN] = {NS_T('\0')};
-    NS_tstrncpy(callbackInstallDir, argv[callbackIndex], len);
-    if (NS_tstrcmp(gInstallDirPath, callbackInstallDir) != 0) {
-      WriteStatusFile(INVALID_CALLBACK_DIR_ERROR);
-      fprintf(stderr,
-              "The callback file must be located in the "
-              "installation directory (" LOG_S ")\n",
-              argv[callbackIndex]);
-#ifdef XP_MACOSX
-      if (isElevated) {
-        freeArguments(argc, argv);
-        CleanupElevatedMacUpdate(true);
-      }
-#endif
-      return 1;
+    
+    
+    
+    
+    NS_tstrncpy(gWorkingDirPath, argv[3], MAXPATHLEN);
+    gWorkingDirPath[MAXPATHLEN - 1] = NS_T('\0');
+    slash = NS_tstrrchr(gWorkingDirPath, NS_SLASH);
+    if (slash && !slash[1]) {
+      *slash = NS_T('\0');
     }
 
-    sUpdateSilently =
-        ShouldRunSilently(argc - callbackIndex, argv + callbackIndex);
-  }
+    if (argc > callbackIndex) {
+      if (!IsValidFullPath(argv[callbackIndex])) {
+        WriteStatusFile(INVALID_CALLBACK_PATH_ERROR);
+        fprintf(stderr,
+                "The callback file path is not valid for this "
+                "application (" LOG_S ")\n",
+                argv[callbackIndex]);
+#ifdef XP_MACOSX
+        if (isElevated) {
+          freeArguments(argc, argv);
+          CleanupElevatedMacUpdate(true);
+        }
+#endif
+        return 1;
+      }
+
+      size_t len = NS_tstrlen(gInstallDirPath);
+      NS_tchar callbackInstallDir[MAXPATHLEN] = {NS_T('\0')};
+      NS_tstrncpy(callbackInstallDir, argv[callbackIndex], len);
+      if (NS_tstrcmp(gInstallDirPath, callbackInstallDir) != 0) {
+        WriteStatusFile(INVALID_CALLBACK_DIR_ERROR);
+        fprintf(stderr,
+                "The callback file must be located in the "
+                "installation directory (" LOG_S ")\n",
+                argv[callbackIndex]);
+#ifdef XP_MACOSX
+        if (isElevated) {
+          freeArguments(argc, argv);
+          CleanupElevatedMacUpdate(true);
+        }
+#endif
+        return 1;
+      }
+
+      sUpdateSilently =
+          ShouldRunSilently(argc - callbackIndex, argv + callbackIndex);
+    }
+
+  }  
 
 #ifdef XP_MACOSX
-  if (!isElevated && !IsRecursivelyWritable(argv[2])) {
+  if (!isElevated && (!IsRecursivelyWritable(argv[2]) || isDMGInstall)) {
     
     
     if (sUpdateSilently) {
@@ -3008,7 +3041,9 @@ int NS_main(int argc, NS_tchar** argv) {
       if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
         
         
-        ShowProgressUI(true);
+        if (!isDMGInstall) {
+          ShowProgressUI(true);
+        }
       }
       t1.Join();
     }
@@ -3018,521 +3053,31 @@ int NS_main(int argc, NS_tchar** argv) {
   }
 #endif
 
-  NS_tchar logFilePath[MAXPATHLEN + 1] = {L'\0'};
 #ifdef XP_WIN
-  if (gUseSecureOutputPath) {
-    
-    
-    RemoveSecureOutputFiles(gPatchDirPath);
-
-    (void)GetSecureOutputFilePath(gPatchDirPath, L".log", logFilePath);
-  } else {
-    NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
-                 NS_T("%s\\update.log"), gPatchDirPath);
-  }
-#else
-    NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
-                 NS_T("%s/update.log"), gPatchDirPath);
-#endif
-  LogInit(logFilePath);
-
-  if (!WriteStatusFile("applying")) {
-    LOG(("failed setting status to 'applying'"));
-#ifdef XP_MACOSX
-    if (isElevated) {
-      freeArguments(argc, argv);
-      CleanupElevatedMacUpdate(true);
-    }
-#endif
-    output_finish();
-    return 1;
-  }
-
-  if (sStagedUpdate) {
-    LOG(("Performing a staged update"));
-  } else if (sReplaceRequest) {
-    LOG(("Performing a replace request"));
-  }
-
-  LOG(("PATCH DIRECTORY " LOG_S, gPatchDirPath));
-  LOG(("INSTALLATION DIRECTORY " LOG_S, gInstallDirPath));
-  LOG(("WORKING DIRECTORY " LOG_S, gWorkingDirPath));
-
-#if defined(XP_WIN)
-  
-  
-  if (_wcsnicmp(gWorkingDirPath, gInstallDirPath, MAX_PATH) != 0) {
-    if (!sStagedUpdate && !sReplaceRequest) {
-      WriteStatusFile(INVALID_APPLYTO_DIR_ERROR);
-      LOG(
-          ("Installation directory and working directory must be the same "
-           "for non-staged updates. Exiting."));
-      output_finish();
-      return 1;
-    }
-
-    NS_tchar workingDirParent[MAX_PATH];
-    NS_tsnprintf(workingDirParent,
-                 sizeof(workingDirParent) / sizeof(workingDirParent[0]),
-                 NS_T("%s"), gWorkingDirPath);
-    if (!PathRemoveFileSpecW(workingDirParent)) {
-      WriteStatusFile(REMOVE_FILE_SPEC_ERROR);
-      LOG(("Error calling PathRemoveFileSpecW: %d", GetLastError()));
-      output_finish();
-      return 1;
-    }
-
-    if (_wcsnicmp(workingDirParent, gInstallDirPath, MAX_PATH) != 0) {
-      WriteStatusFile(INVALID_APPLYTO_DIR_STAGED_ERROR);
-      LOG(
-          ("The apply-to directory must be the same as or "
-           "a child of the installation directory! Exiting."));
-      output_finish();
-      return 1;
-    }
-  }
-#endif
-
-#ifdef XP_WIN
-  if (pid > 0) {
-    HANDLE parent = OpenProcess(SYNCHRONIZE, false, (DWORD)pid);
-    
-    
-    
-    if (parent) {
-      DWORD waitTime = PARENT_WAIT;
-#  ifdef TEST_UPDATER
-      if (EnvHasValue("MOZ_TEST_SHORTER_WAIT_PID")) {
-        
-        waitTime = 100;
-      }
-#  endif
-      DWORD result = WaitForSingleObject(parent, waitTime);
-      CloseHandle(parent);
-      if (result != WAIT_OBJECT_0) {
-        
-        
-        
-        LOG(("The parent process didn't exit! Continuing with update."));
-      }
-    }
-  }
-#endif
-
-#ifdef XP_WIN
-  if (sReplaceRequest || sStagedUpdate) {
-    
-    
-    NS_tchar sysDir[MAX_PATH + 1] = {L'\0'};
-    if (GetSystemDirectoryW(sysDir, MAX_PATH + 1)) {
-      NS_tchdir(sysDir);
-    }
-  }
-
-  
-  
-  
-  
-  
-  int lastFallbackError = FALLBACKKEY_UNKNOWN_ERROR;
-
-  
-  
-  
   HANDLE updateLockFileHandle = INVALID_HANDLE_VALUE;
-  if (!sUsingService &&
-      (argc > callbackIndex || sStagedUpdate || sReplaceRequest)) {
-    NS_tchar updateLockFilePath[MAXPATHLEN];
-    if (sStagedUpdate) {
+#endif
+
+  if (!isDMGInstall) {
+    NS_tchar logFilePath[MAXPATHLEN + 1] = {L'\0'};
+#ifdef XP_WIN
+    if (gUseSecureOutputPath) {
       
       
-      NS_tsnprintf(updateLockFilePath,
-                   sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
-                   NS_T("%s/updated.update_in_progress.lock"), gInstallDirPath);
-    } else if (sReplaceRequest) {
-      
-      
-      NS_tchar installDir[MAXPATHLEN];
-      NS_tstrcpy(installDir, gInstallDirPath);
-      NS_tchar* slash = (NS_tchar*)NS_tstrrchr(installDir, NS_SLASH);
-      *slash = NS_T('\0');
-      NS_tsnprintf(updateLockFilePath,
-                   sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
-                   NS_T("%s\\moz_update_in_progress.lock"), installDir);
+      RemoveSecureOutputFiles(gPatchDirPath);
+
+      (void)GetSecureOutputFilePath(gPatchDirPath, L".log", logFilePath);
     } else {
-      
-      
-      NS_tsnprintf(updateLockFilePath,
-                   sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
-                   NS_T("%s.update_in_progress.lock"), argv[callbackIndex]);
+      NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
+                   NS_T("%s\\update.log"), gPatchDirPath);
     }
-
-    
-    
-    
-    if (NS_tremove(updateLockFilePath) && errno != ENOENT) {
-      
-      
-      if (sReplaceRequest) {
-        
-        
-        WriteStatusFile("pending");
-      } else if (sStagedUpdate) {
-        WriteStatusFile(DELETE_ERROR_STAGING_LOCK_FILE);
-      }
-      LOG(("Update already in progress! Exiting"));
-      output_finish();
-      return 1;
-    }
-
-    updateLockFileHandle =
-        CreateFileW(updateLockFilePath, GENERIC_READ | GENERIC_WRITE, 0,
-                    nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-
-    
-    bool startedFromUnelevatedUpdater =
-        GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
-
-    
-    
-    
-    
-    
-    
-    if (startedFromUnelevatedUpdater) {
-      
-      
-      UACHelper::DisablePrivileges(nullptr);
-    }
-
-    if (updateLockFileHandle == INVALID_HANDLE_VALUE ||
-        (useService && testOnlyFallbackKeyExists && noServiceFallback)) {
-      HANDLE elevatedFileHandle;
-      if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
-        LOG(("Unable to create elevated lock file! Exiting"));
-        output_finish();
-        return 1;
-      }
-
-      elevatedFileHandle =
-          CreateFileW(elevatedLockFilePath, GENERIC_READ | GENERIC_WRITE, 0,
-                      nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-      if (elevatedFileHandle == INVALID_HANDLE_VALUE) {
-        LOG(("Unable to create elevated lock file! Exiting"));
-        output_finish();
-        return 1;
-      }
-
-      auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
-      if (!cmdLine) {
-        CloseHandle(elevatedFileHandle);
-        output_finish();
-        return 1;
-      }
-
-#  ifdef MOZ_MAINTENANCE_SERVICE
-
-
-
-#    ifndef TEST_UPDATER
-      if (useService) {
-        useService = IsProgramFilesPath(gInstallDirPath);
-      }
-#    endif
-
-      
-      
-      
-      if (useService) {
-        BOOL isLocal = FALSE;
-        useService = IsLocalFile(argv[0], isLocal) && isLocal;
-      }
-
-      
-      
-      
-      
-      
-      
-      if (useService) {
-        BOOL unpromptedElevation;
-        if (IsUnpromptedElevation(unpromptedElevation)) {
-          useService = !unpromptedElevation;
-        }
-      }
-
-      
-      
-      if (useService) {
-        WCHAR maintenanceServiceKey[MAX_PATH + 1];
-        if (CalculateRegistryPathFromFilePath(gInstallDirPath,
-                                              maintenanceServiceKey)) {
-          HKEY baseKey = nullptr;
-          if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, maintenanceServiceKey, 0,
-                            KEY_READ | KEY_WOW64_64KEY,
-                            &baseKey) == ERROR_SUCCESS) {
-            RegCloseKey(baseKey);
-          } else {
-#    ifdef TEST_UPDATER
-            useService = testOnlyFallbackKeyExists;
-#    endif
-            if (!useService) {
-              lastFallbackError = FALLBACKKEY_NOKEY_ERROR;
-            }
-          }
-        } else {
-          useService = false;
-          lastFallbackError = FALLBACKKEY_REGPATH_ERROR;
-        }
-      }
-
-      
-      
-      
-      
-      
-
-      
-      
-      if (useService) {
-        
-        
-        
-        char uuidStringBefore[UUID_LEN] = {'\0'};
-        bool checkID = GetSecureID(uuidStringBefore);
-        
-        
-        WriteStatusFile(SERVICE_UPDATE_STATUS_UNCHANGED);
-
-        
-        
-        DWORD ret = LaunchServiceSoftwareUpdateCommand(argc, (LPCWSTR*)argv);
-        useService = (ret == ERROR_SUCCESS);
-        
-        if (useService) {
-          bool showProgressUI = false;
-          
-          
-          if (!sStagedUpdate && !sUpdateSilently) {
-            
-            
-            
-            showProgressUI = !InitProgressUIStrings();
-          }
-
-          
-          
-          DWORD lastState = WaitForServiceStop(SVC_NAME, 5);
-          if (lastState != SERVICE_STOPPED) {
-            Thread t1;
-            if (t1.Run(WaitForServiceFinishThread, nullptr) == 0 &&
-                showProgressUI) {
-              ShowProgressUI(true, false);
-            }
-            t1.Join();
-          }
-
-          lastState = WaitForServiceStop(SVC_NAME, 1);
-          if (lastState != SERVICE_STOPPED) {
-            
-            
-            lastFallbackError = FALLBACKKEY_SERVICE_NO_STOP_ERROR;
-            useService = false;
-          } else {
-            
-            gCopyOutputFiles = true;
-            char uuidStringAfter[UUID_LEN] = {'\0'};
-            if (checkID && GetSecureID(uuidStringAfter) &&
-                strncmp(uuidStringBefore, uuidStringAfter,
-                        sizeof(uuidStringBefore)) == 0) {
-              LOG(
-                  ("The secure ID hasn't changed after launching the updater "
-                   "using the service"));
-              gCopyOutputFiles = false;
-            }
-          }
-        } else {
-          lastFallbackError = FALLBACKKEY_LAUNCH_ERROR;
-        }
-      }
-#  endif
-
-      
-      
-      if (!useService && sStagedUpdate) {
-        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
-          CloseHandle(updateLockFileHandle);
-        }
-        
-        
-        
-        WriteStatusFile(UNEXPECTED_STAGING_ERROR);
-        LOG(
-            ("Non-critical update staging error! Falling back to non-staged "
-             "updates and exiting"));
-        output_finish();
-        
-        return 0;
-      }
-
-      
-      
-      if (!useService && sUpdateSilently) {
-        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
-          CloseHandle(updateLockFileHandle);
-        }
-        
-        
-        
-        WriteStatusFile(SILENT_UPDATE_NEEDED_ELEVATION_ERROR);
-        LOG(("Skipping update to avoid UAC prompt from background task."));
-        output_finish();
-
-        LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                          sUsingService);
-        return 0;
-      }
-
-      
-      
-      
-      
-      
-      
-      if (!useService && !noServiceFallback &&
-          updateLockFileHandle == INVALID_HANDLE_VALUE) {
-        
-        
-        char uuidStringBefore[UUID_LEN] = {'\0'};
-        bool checkID = GetSecureID(uuidStringBefore);
-        
-        
-        WriteStatusFile(UPDATE_STATUS_UNCHANGED);
-
-        SHELLEXECUTEINFO sinfo;
-        memset(&sinfo, 0, sizeof(SHELLEXECUTEINFO));
-        sinfo.cbSize = sizeof(SHELLEXECUTEINFO);
-        sinfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_FLAG_DDEWAIT |
-                      SEE_MASK_NOCLOSEPROCESS;
-        sinfo.hwnd = nullptr;
-        sinfo.lpFile = argv[0];
-        sinfo.lpParameters = cmdLine.get();
-        sinfo.lpVerb = L"runas";
-        sinfo.nShow = SW_SHOWNORMAL;
-
-        bool result = ShellExecuteEx(&sinfo);
-
-        if (result) {
-          WaitForSingleObject(sinfo.hProcess, INFINITE);
-          CloseHandle(sinfo.hProcess);
-
-          
-          gCopyOutputFiles = true;
-          char uuidStringAfter[UUID_LEN] = {'\0'};
-          if (checkID && GetSecureID(uuidStringAfter) &&
-              strncmp(uuidStringBefore, uuidStringAfter,
-                      sizeof(uuidStringBefore)) == 0) {
-            LOG(
-                ("The secure ID hasn't changed after launching the updater "
-                 "using runas"));
-            gCopyOutputFiles = false;
-          }
-        } else {
-          
-          
-          
-          
-          
-          gCopyOutputFiles = false;
-          WriteStatusFile(ELEVATION_CANCELED);
-        }
-      }
-
-      
-      
-      
-      
-      
-      
-      if (!sStagedUpdate) {
-        bool updateStatusSucceeded = false;
-        if (IsSecureUpdateStatusSucceeded(updateStatusSucceeded) &&
-            updateStatusSucceeded) {
-          if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
-            fprintf(stderr,
-                    "The post update process which runs as the user"
-                    " for service update could not be launched.");
-          }
-        }
-      }
-
-      CloseHandle(elevatedFileHandle);
-
-      if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
-        CloseHandle(updateLockFileHandle);
-      }
-
-      if (!useService && noServiceFallback) {
-        
-        
-        
-        
-        
-        gCopyOutputFiles = false;
-        WriteStatusFile(lastFallbackError);
-      }
-
-      
-      
-      
-      
-      output_finish();
-      if (argc > callbackIndex) {
-        LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                          sUsingService);
-      }
-      return 0;
-
-      
-      
-      
-      
-    }
-    
-    
-    
-  }
-  
-  
+#else
+      NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
+                   NS_T("%s/update.log"), gPatchDirPath);
 #endif
+    LogInit(logFilePath);
 
-  if (sStagedUpdate) {
-#ifdef TEST_UPDATER
-    
-    
-    
-    
-    if (EnvHasValue("MOZ_TEST_STAGING_ERROR")) {
-#  ifdef XP_WIN
-      if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
-        CloseHandle(updateLockFileHandle);
-      }
-#  endif
-      
-      
-      WriteStatusFile(WRITE_ERROR);
-      output_finish();
-      return 0;
-    }
-#endif
-    
-    
-    ensure_remove_recursive(gWorkingDirPath);
-  }
-  if (!sReplaceRequest) {
-    
-    int rv = NS_tmkdir(gWorkingDirPath, 0755);
-    if (rv != OK && errno != EEXIST) {
+    if (!WriteStatusFile("applying")) {
+      LOG(("failed setting status to 'applying'"));
 #ifdef XP_MACOSX
       if (isElevated) {
         freeArguments(argc, argv);
@@ -3542,69 +3087,512 @@ int NS_main(int argc, NS_tchar** argv) {
       output_finish();
       return 1;
     }
-  }
+
+    if (sStagedUpdate) {
+      LOG(("Performing a staged update"));
+    } else if (sReplaceRequest) {
+      LOG(("Performing a replace request"));
+    }
+
+    LOG(("PATCH DIRECTORY " LOG_S, gPatchDirPath));
+    LOG(("INSTALLATION DIRECTORY " LOG_S, gInstallDirPath));
+    LOG(("WORKING DIRECTORY " LOG_S, gWorkingDirPath));
+
+#if defined(XP_WIN)
+    
+    
+    if (_wcsnicmp(gWorkingDirPath, gInstallDirPath, MAX_PATH) != 0) {
+      if (!sStagedUpdate && !sReplaceRequest) {
+        WriteStatusFile(INVALID_APPLYTO_DIR_ERROR);
+        LOG(
+            ("Installation directory and working directory must be the same "
+             "for non-staged updates. Exiting."));
+        output_finish();
+        return 1;
+      }
+
+      NS_tchar workingDirParent[MAX_PATH];
+      NS_tsnprintf(workingDirParent,
+                   sizeof(workingDirParent) / sizeof(workingDirParent[0]),
+                   NS_T("%s"), gWorkingDirPath);
+      if (!PathRemoveFileSpecW(workingDirParent)) {
+        WriteStatusFile(REMOVE_FILE_SPEC_ERROR);
+        LOG(("Error calling PathRemoveFileSpecW: %d", GetLastError()));
+        output_finish();
+        return 1;
+      }
+
+      if (_wcsnicmp(workingDirParent, gInstallDirPath, MAX_PATH) != 0) {
+        WriteStatusFile(INVALID_APPLYTO_DIR_STAGED_ERROR);
+        LOG(
+            ("The apply-to directory must be the same as or "
+             "a child of the installation directory! Exiting."));
+        output_finish();
+        return 1;
+      }
+    }
+#endif
 
 #ifdef XP_WIN
-  NS_tchar applyDirLongPath[MAXPATHLEN];
-  if (!GetLongPathNameW(
-          gWorkingDirPath, applyDirLongPath,
-          sizeof(applyDirLongPath) / sizeof(applyDirLongPath[0]))) {
-    WriteStatusFile(WRITE_ERROR_APPLY_DIR_PATH);
-    LOG(("NS_main: unable to find apply to dir: " LOG_S, gWorkingDirPath));
-    output_finish();
-    EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-    if (argc > callbackIndex) {
-      LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                        sUsingService);
-    }
-    return 1;
-  }
-
-  HANDLE callbackFile = INVALID_HANDLE_VALUE;
-  if (argc > callbackIndex) {
-    
-    
-    
-    
-    
-    NS_tchar callbackLongPath[MAXPATHLEN];
-    ZeroMemory(callbackLongPath, sizeof(callbackLongPath));
-    NS_tchar* targetPath = argv[callbackIndex];
-    NS_tchar buffer[MAXPATHLEN * 2] = {NS_T('\0')};
-    size_t bufferLeft = MAXPATHLEN * 2;
-    if (sReplaceRequest) {
+    if (pid > 0) {
+      HANDLE parent = OpenProcess(SYNCHRONIZE, false, (DWORD)pid);
       
       
-      size_t commonPrefixLength =
-          PathCommonPrefixW(argv[callbackIndex], gInstallDirPath, nullptr);
-      NS_tchar* p = buffer;
-      NS_tstrncpy(p, argv[callbackIndex], commonPrefixLength);
-      p += commonPrefixLength;
-      bufferLeft -= commonPrefixLength;
-      NS_tstrncpy(p, gInstallDirPath + commonPrefixLength, bufferLeft);
-
-      size_t len = NS_tstrlen(gInstallDirPath + commonPrefixLength);
-      p += len;
-      bufferLeft -= len;
-      *p = NS_T('\\');
-      ++p;
-      bufferLeft--;
-      *p = NS_T('\0');
-      NS_tchar installDir[MAXPATHLEN];
-      NS_tstrcpy(installDir, gInstallDirPath);
-      size_t callbackPrefixLength =
-          PathCommonPrefixW(argv[callbackIndex], installDir, nullptr);
-      NS_tstrncpy(p,
-                  argv[callbackIndex] +
-                      std::max(callbackPrefixLength, commonPrefixLength),
-                  bufferLeft);
-      targetPath = buffer;
+      
+      if (parent) {
+        DWORD waitTime = PARENT_WAIT;
+#  ifdef TEST_UPDATER
+        if (EnvHasValue("MOZ_TEST_SHORTER_WAIT_PID")) {
+          
+          waitTime = 100;
+        }
+#  endif
+        DWORD result = WaitForSingleObject(parent, waitTime);
+        CloseHandle(parent);
+        if (result != WAIT_OBJECT_0) {
+          
+          
+          
+          LOG(("The parent process didn't exit! Continuing with update."));
+        }
+      }
     }
+#endif
+
+#ifdef XP_WIN
+    if (sReplaceRequest || sStagedUpdate) {
+      
+      
+      NS_tchar sysDir[MAX_PATH + 1] = {L'\0'};
+      if (GetSystemDirectoryW(sysDir, MAX_PATH + 1)) {
+        NS_tchdir(sysDir);
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    int lastFallbackError = FALLBACKKEY_UNKNOWN_ERROR;
+
+    
+    
+    
+    if (!sUsingService &&
+        (argc > callbackIndex || sStagedUpdate || sReplaceRequest)) {
+      NS_tchar updateLockFilePath[MAXPATHLEN];
+      if (sStagedUpdate) {
+        
+        
+        NS_tsnprintf(updateLockFilePath,
+                     sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
+                     NS_T("%s/updated.update_in_progress.lock"),
+                     gInstallDirPath);
+      } else if (sReplaceRequest) {
+        
+        
+        NS_tchar installDir[MAXPATHLEN];
+        NS_tstrcpy(installDir, gInstallDirPath);
+        NS_tchar* slash = (NS_tchar*)NS_tstrrchr(installDir, NS_SLASH);
+        *slash = NS_T('\0');
+        NS_tsnprintf(updateLockFilePath,
+                     sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
+                     NS_T("%s\\moz_update_in_progress.lock"), installDir);
+      } else {
+        
+        
+        NS_tsnprintf(updateLockFilePath,
+                     sizeof(updateLockFilePath) / sizeof(updateLockFilePath[0]),
+                     NS_T("%s.update_in_progress.lock"), argv[callbackIndex]);
+      }
+
+      
+      
+      
+      if (NS_tremove(updateLockFilePath) && errno != ENOENT) {
+        
+        
+        if (sReplaceRequest) {
+          
+          
+          WriteStatusFile("pending");
+        } else if (sStagedUpdate) {
+          WriteStatusFile(DELETE_ERROR_STAGING_LOCK_FILE);
+        }
+        LOG(("Update already in progress! Exiting"));
+        output_finish();
+        return 1;
+      }
+
+      updateLockFileHandle =
+          CreateFileW(updateLockFilePath, GENERIC_READ | GENERIC_WRITE, 0,
+                      nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+
+      
+      bool startedFromUnelevatedUpdater =
+          GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
+
+      
+      
+      
+      
+      
+      
+      if (startedFromUnelevatedUpdater) {
+        
+        
+        UACHelper::DisablePrivileges(nullptr);
+      }
+
+      if (updateLockFileHandle == INVALID_HANDLE_VALUE ||
+          (useService && testOnlyFallbackKeyExists && noServiceFallback)) {
+        HANDLE elevatedFileHandle;
+        if (NS_tremove(elevatedLockFilePath) && errno != ENOENT) {
+          LOG(("Unable to create elevated lock file! Exiting"));
+          output_finish();
+          return 1;
+        }
+
+        elevatedFileHandle = CreateFileW(
+            elevatedLockFilePath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+            OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+        if (elevatedFileHandle == INVALID_HANDLE_VALUE) {
+          LOG(("Unable to create elevated lock file! Exiting"));
+          output_finish();
+          return 1;
+        }
+
+        auto cmdLine = mozilla::MakeCommandLine(argc - 1, argv + 1);
+        if (!cmdLine) {
+          CloseHandle(elevatedFileHandle);
+          output_finish();
+          return 1;
+        }
+
+#  ifdef MOZ_MAINTENANCE_SERVICE
+
+
+
+#    ifndef TEST_UPDATER
+        if (useService) {
+          useService = IsProgramFilesPath(gInstallDirPath);
+        }
+#    endif
+
+        
+        
+        
+        if (useService) {
+          BOOL isLocal = FALSE;
+          useService = IsLocalFile(argv[0], isLocal) && isLocal;
+        }
+
+        
+        
+        
+        
+        
+        
+        if (useService) {
+          BOOL unpromptedElevation;
+          if (IsUnpromptedElevation(unpromptedElevation)) {
+            useService = !unpromptedElevation;
+          }
+        }
+
+        
+        
+        if (useService) {
+          WCHAR maintenanceServiceKey[MAX_PATH + 1];
+          if (CalculateRegistryPathFromFilePath(gInstallDirPath,
+                                                maintenanceServiceKey)) {
+            HKEY baseKey = nullptr;
+            if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, maintenanceServiceKey, 0,
+                              KEY_READ | KEY_WOW64_64KEY,
+                              &baseKey) == ERROR_SUCCESS) {
+              RegCloseKey(baseKey);
+            } else {
+#    ifdef TEST_UPDATER
+              useService = testOnlyFallbackKeyExists;
+#    endif
+              if (!useService) {
+                lastFallbackError = FALLBACKKEY_NOKEY_ERROR;
+              }
+            }
+          } else {
+            useService = false;
+            lastFallbackError = FALLBACKKEY_REGPATH_ERROR;
+          }
+        }
+
+        
+        
+        
+        
+        
+
+        
+        
+        if (useService) {
+          
+          
+          
+          char uuidStringBefore[UUID_LEN] = {'\0'};
+          bool checkID = GetSecureID(uuidStringBefore);
+          
+          
+          WriteStatusFile(SERVICE_UPDATE_STATUS_UNCHANGED);
+
+          
+          
+          DWORD ret = LaunchServiceSoftwareUpdateCommand(argc, (LPCWSTR*)argv);
+          useService = (ret == ERROR_SUCCESS);
+          
+          if (useService) {
+            bool showProgressUI = false;
+            
+            
+            if (!sStagedUpdate && !sUpdateSilently) {
+              
+              
+              
+              showProgressUI = !InitProgressUIStrings();
+            }
+
+            
+            
+            DWORD lastState = WaitForServiceStop(SVC_NAME, 5);
+            if (lastState != SERVICE_STOPPED) {
+              Thread t1;
+              if (t1.Run(WaitForServiceFinishThread, nullptr) == 0 &&
+                  showProgressUI) {
+                ShowProgressUI(true, false);
+              }
+              t1.Join();
+            }
+
+            lastState = WaitForServiceStop(SVC_NAME, 1);
+            if (lastState != SERVICE_STOPPED) {
+              
+              
+              lastFallbackError = FALLBACKKEY_SERVICE_NO_STOP_ERROR;
+              useService = false;
+            } else {
+              
+              gCopyOutputFiles = true;
+              char uuidStringAfter[UUID_LEN] = {'\0'};
+              if (checkID && GetSecureID(uuidStringAfter) &&
+                  strncmp(uuidStringBefore, uuidStringAfter,
+                          sizeof(uuidStringBefore)) == 0) {
+                LOG(
+                    ("The secure ID hasn't changed after launching the updater "
+                     "using the service"));
+                gCopyOutputFiles = false;
+              }
+            }
+          } else {
+            lastFallbackError = FALLBACKKEY_LAUNCH_ERROR;
+          }
+        }
+#  endif
+
+        
+        
+        if (!useService && sStagedUpdate) {
+          if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+            CloseHandle(updateLockFileHandle);
+          }
+          
+          
+          
+          WriteStatusFile(UNEXPECTED_STAGING_ERROR);
+          LOG(
+              ("Non-critical update staging error! Falling back to non-staged "
+               "updates and exiting"));
+          output_finish();
+          
+          return 0;
+        }
+
+        
+        
+        if (!useService && sUpdateSilently) {
+          if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+            CloseHandle(updateLockFileHandle);
+          }
+          
+          
+          
+          WriteStatusFile(SILENT_UPDATE_NEEDED_ELEVATION_ERROR);
+          LOG(("Skipping update to avoid UAC prompt from background task."));
+          output_finish();
+
+          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+                            sUsingService);
+          return 0;
+        }
+
+        
+        
+        
+        
+        
+        
+        if (!useService && !noServiceFallback &&
+            updateLockFileHandle == INVALID_HANDLE_VALUE) {
+          
+          
+          char uuidStringBefore[UUID_LEN] = {'\0'};
+          bool checkID = GetSecureID(uuidStringBefore);
+          
+          
+          WriteStatusFile(UPDATE_STATUS_UNCHANGED);
+
+          SHELLEXECUTEINFO sinfo;
+          memset(&sinfo, 0, sizeof(SHELLEXECUTEINFO));
+          sinfo.cbSize = sizeof(SHELLEXECUTEINFO);
+          sinfo.fMask = SEE_MASK_FLAG_NO_UI | SEE_MASK_FLAG_DDEWAIT |
+                        SEE_MASK_NOCLOSEPROCESS;
+          sinfo.hwnd = nullptr;
+          sinfo.lpFile = argv[0];
+          sinfo.lpParameters = cmdLine.get();
+          sinfo.lpVerb = L"runas";
+          sinfo.nShow = SW_SHOWNORMAL;
+
+          bool result = ShellExecuteEx(&sinfo);
+
+          if (result) {
+            WaitForSingleObject(sinfo.hProcess, INFINITE);
+            CloseHandle(sinfo.hProcess);
+
+            
+            gCopyOutputFiles = true;
+            char uuidStringAfter[UUID_LEN] = {'\0'};
+            if (checkID && GetSecureID(uuidStringAfter) &&
+                strncmp(uuidStringBefore, uuidStringAfter,
+                        sizeof(uuidStringBefore)) == 0) {
+              LOG(
+                  ("The secure ID hasn't changed after launching the updater "
+                   "using runas"));
+              gCopyOutputFiles = false;
+            }
+          } else {
+            
+            
+            
+            
+            
+            gCopyOutputFiles = false;
+            WriteStatusFile(ELEVATION_CANCELED);
+          }
+        }
+
+        
+        
+        
+        
+        
+        
+        if (!sStagedUpdate) {
+          bool updateStatusSucceeded = false;
+          if (IsSecureUpdateStatusSucceeded(updateStatusSucceeded) &&
+              updateStatusSucceeded) {
+            if (!LaunchWinPostProcess(gInstallDirPath, gPatchDirPath)) {
+              fprintf(stderr,
+                      "The post update process which runs as the user"
+                      " for service update could not be launched.");
+            }
+          }
+        }
+
+        CloseHandle(elevatedFileHandle);
+
+        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+          CloseHandle(updateLockFileHandle);
+        }
+
+        if (!useService && noServiceFallback) {
+          
+          
+          
+          
+          
+          gCopyOutputFiles = false;
+          WriteStatusFile(lastFallbackError);
+        }
+
+        
+        
+        
+        
+        output_finish();
+        if (argc > callbackIndex) {
+          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+                            sUsingService);
+        }
+        return 0;
+
+        
+        
+        
+        
+      }
+      
+      
+      
+    }
+    
+    
+    
+#endif
+
+    if (sStagedUpdate) {
+#ifdef TEST_UPDATER
+      
+      
+      
+      
+      if (EnvHasValue("MOZ_TEST_STAGING_ERROR")) {
+#  ifdef XP_WIN
+        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+          CloseHandle(updateLockFileHandle);
+        }
+#  endif
+        
+        
+        WriteStatusFile(WRITE_ERROR);
+        output_finish();
+        return 0;
+      }
+#endif
+      
+      
+      ensure_remove_recursive(gWorkingDirPath);
+    }
+    if (!sReplaceRequest) {
+      
+      int rv = NS_tmkdir(gWorkingDirPath, 0755);
+      if (rv != OK && errno != EEXIST) {
+#ifdef XP_MACOSX
+        if (isElevated) {
+          freeArguments(argc, argv);
+          CleanupElevatedMacUpdate(true);
+        }
+#endif
+        output_finish();
+        return 1;
+      }
+    }
+
+#ifdef XP_WIN
+    NS_tchar applyDirLongPath[MAXPATHLEN];
     if (!GetLongPathNameW(
-            targetPath, callbackLongPath,
-            sizeof(callbackLongPath) / sizeof(callbackLongPath[0]))) {
-      WriteStatusFile(WRITE_ERROR_CALLBACK_PATH);
-      LOG(("NS_main: unable to find callback file: " LOG_S, targetPath));
+            gWorkingDirPath, applyDirLongPath,
+            sizeof(applyDirLongPath) / sizeof(applyDirLongPath[0]))) {
+      WriteStatusFile(WRITE_ERROR_APPLY_DIR_PATH);
+      LOG(("NS_main: unable to find apply to dir: " LOG_S, gWorkingDirPath));
       output_finish();
       EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
       if (argc > callbackIndex) {
@@ -3614,226 +3602,284 @@ int NS_main(int argc, NS_tchar** argv) {
       return 1;
     }
 
-    
-    if (!sReplaceRequest) {
-      int len = NS_tstrlen(applyDirLongPath);
-      NS_tchar* s = callbackLongPath;
-      NS_tchar* d = gCallbackRelPath;
+    HANDLE callbackFile = INVALID_HANDLE_VALUE;
+    if (argc > callbackIndex) {
       
       
-      s += len;
-      if (*s == NS_T('\\')) {
-        ++s;
+      
+      
+      
+      NS_tchar callbackLongPath[MAXPATHLEN];
+      ZeroMemory(callbackLongPath, sizeof(callbackLongPath));
+      NS_tchar* targetPath = argv[callbackIndex];
+      NS_tchar buffer[MAXPATHLEN * 2] = {NS_T('\0')};
+      size_t bufferLeft = MAXPATHLEN * 2;
+      if (sReplaceRequest) {
+        
+        
+        size_t commonPrefixLength =
+            PathCommonPrefixW(argv[callbackIndex], gInstallDirPath, nullptr);
+        NS_tchar* p = buffer;
+        NS_tstrncpy(p, argv[callbackIndex], commonPrefixLength);
+        p += commonPrefixLength;
+        bufferLeft -= commonPrefixLength;
+        NS_tstrncpy(p, gInstallDirPath + commonPrefixLength, bufferLeft);
+
+        size_t len = NS_tstrlen(gInstallDirPath + commonPrefixLength);
+        p += len;
+        bufferLeft -= len;
+        *p = NS_T('\\');
+        ++p;
+        bufferLeft--;
+        *p = NS_T('\0');
+        NS_tchar installDir[MAXPATHLEN];
+        NS_tstrcpy(installDir, gInstallDirPath);
+        size_t callbackPrefixLength =
+            PathCommonPrefixW(argv[callbackIndex], installDir, nullptr);
+        NS_tstrncpy(p,
+                    argv[callbackIndex] +
+                        std::max(callbackPrefixLength, commonPrefixLength),
+                    bufferLeft);
+        targetPath = buffer;
+      }
+      if (!GetLongPathNameW(
+              targetPath, callbackLongPath,
+              sizeof(callbackLongPath) / sizeof(callbackLongPath[0]))) {
+        WriteStatusFile(WRITE_ERROR_CALLBACK_PATH);
+        LOG(("NS_main: unable to find callback file: " LOG_S, targetPath));
+        output_finish();
+        EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+        if (argc > callbackIndex) {
+          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+                            sUsingService);
+        }
+        return 1;
       }
 
       
-      
-      do {
+      if (!sReplaceRequest) {
+        int len = NS_tstrlen(applyDirLongPath);
+        NS_tchar* s = callbackLongPath;
+        NS_tchar* d = gCallbackRelPath;
+        
+        
+        s += len;
         if (*s == NS_T('\\')) {
-          *d = NS_T('/');
-        } else {
-          *d = *s;
+          ++s;
         }
-        ++s;
+
+        
+        
+        do {
+          if (*s == NS_T('\\')) {
+            *d = NS_T('/');
+          } else {
+            *d = *s;
+          }
+          ++s;
+          ++d;
+        } while (*s);
+        *d = NS_T('\0');
         ++d;
-      } while (*s);
-      *d = NS_T('\0');
-      ++d;
 
-      const size_t callbackBackupPathBufSize =
-          sizeof(gCallbackBackupPath) / sizeof(gCallbackBackupPath[0]);
-      const int callbackBackupPathLen =
-          NS_tsnprintf(gCallbackBackupPath, callbackBackupPathBufSize,
-                       NS_T("%s" CALLBACK_BACKUP_EXT), argv[callbackIndex]);
+        const size_t callbackBackupPathBufSize =
+            sizeof(gCallbackBackupPath) / sizeof(gCallbackBackupPath[0]);
+        const int callbackBackupPathLen =
+            NS_tsnprintf(gCallbackBackupPath, callbackBackupPathBufSize,
+                         NS_T("%s" CALLBACK_BACKUP_EXT), argv[callbackIndex]);
 
-      if (callbackBackupPathLen < 0 ||
-          callbackBackupPathLen >=
-              static_cast<int>(callbackBackupPathBufSize)) {
-        WriteStatusFile(USAGE_ERROR);
-        LOG(("NS_main: callback backup path truncated"));
-        output_finish();
+        if (callbackBackupPathLen < 0 ||
+            callbackBackupPathLen >=
+                static_cast<int>(callbackBackupPathBufSize)) {
+          WriteStatusFile(USAGE_ERROR);
+          LOG(("NS_main: callback backup path truncated"));
+          output_finish();
 
-        
-        
-        EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-        return 1;
-      }
-
-      
-      if (!CopyFileW(argv[callbackIndex], gCallbackBackupPath, false)) {
-        DWORD copyFileError = GetLastError();
-        if (copyFileError == ERROR_ACCESS_DENIED) {
-          WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
-        } else {
-          WriteStatusFile(WRITE_ERROR_CALLBACK_APP);
-        }
-        LOG(("NS_main: failed to copy callback file " LOG_S
-             " into place at " LOG_S,
-             argv[callbackIndex], gCallbackBackupPath));
-        output_finish();
-        EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-        LaunchCallbackApp(argv[callbackIndex], argc - callbackIndex,
-                          argv + callbackIndex, sUsingService);
-        return 1;
-      }
-
-      
-      
-      
-      
-      const int max_retries = 10;
-      int retries = 1;
-      DWORD lastWriteError = 0;
-      do {
-        
-        
-        
-        callbackFile = CreateFileW(targetPath, DELETE | GENERIC_WRITE,
-                                   
-                                   FILE_SHARE_DELETE | FILE_SHARE_WRITE,
-                                   nullptr, OPEN_EXISTING, 0, nullptr);
-        if (callbackFile != INVALID_HANDLE_VALUE) {
-          break;
+          
+          
+          EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+          return 1;
         }
 
-        lastWriteError = GetLastError();
-        LOG(
-            ("NS_main: callback app file open attempt %d failed. "
-             "File: " LOG_S ". Last error: %d",
-             retries, targetPath, lastWriteError));
-
-        Sleep(100);
-      } while (++retries <= max_retries);
-
-      
-      if (callbackFile == INVALID_HANDLE_VALUE) {
-        bool proceedWithoutExclusive = true;
-
         
-        if (lastWriteError != ERROR_SHARING_VIOLATION) {
-          LOG(
-              ("NS_main: callback app file in use, failed to exclusively open "
-               "executable file: " LOG_S,
-               argv[callbackIndex]));
-          if (lastWriteError == ERROR_ACCESS_DENIED) {
+        
+        if (!CopyFileW(argv[callbackIndex], gCallbackBackupPath, false)) {
+          DWORD copyFileError = GetLastError();
+          if (copyFileError == ERROR_ACCESS_DENIED) {
             WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
           } else {
             WriteStatusFile(WRITE_ERROR_CALLBACK_APP);
           }
-
-          proceedWithoutExclusive = false;
-        }
-
-        
-        
-        
-        
-        if (lastWriteError == ERROR_SHARING_VIOLATION && sUpdateSilently) {
-          LOG(
-              ("NS_main: callback app file in use, failed to exclusively open "
-               "executable file from background task: " LOG_S,
-               argv[callbackIndex]));
-          WriteStatusFile(WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION);
-
-          proceedWithoutExclusive = false;
-        }
-
-        if (!proceedWithoutExclusive) {
-          if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
-            LOG(
-                ("NS_main: unable to remove backup of callback app file, "
-                 "path: " LOG_S,
-                 gCallbackBackupPath));
-          }
+          LOG(("NS_main: failed to copy callback file " LOG_S
+               " into place at " LOG_S,
+               argv[callbackIndex], gCallbackBackupPath));
           output_finish();
           EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-          LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
-                            sUsingService);
+          LaunchCallbackApp(argv[callbackIndex], argc - callbackIndex,
+                            argv + callbackIndex, sUsingService);
           return 1;
         }
 
-        LOG(
-            ("NS_main: callback app file in use, continuing without "
-             "exclusive access for executable file: " LOG_S,
-             argv[callbackIndex]));
+        
+        
+        
+        
+        const int max_retries = 10;
+        int retries = 1;
+        DWORD lastWriteError = 0;
+        do {
+          
+          
+          
+          callbackFile = CreateFileW(targetPath, DELETE | GENERIC_WRITE,
+                                     
+                                     FILE_SHARE_DELETE | FILE_SHARE_WRITE,
+                                     nullptr, OPEN_EXISTING, 0, nullptr);
+          if (callbackFile != INVALID_HANDLE_VALUE) {
+            break;
+          }
+
+          lastWriteError = GetLastError();
+          LOG(
+              ("NS_main: callback app file open attempt %d failed. "
+               "File: " LOG_S ". Last error: %d",
+               retries, targetPath, lastWriteError));
+
+          Sleep(100);
+        } while (++retries <= max_retries);
+
+        
+        if (callbackFile == INVALID_HANDLE_VALUE) {
+          bool proceedWithoutExclusive = true;
+
+          
+          if (lastWriteError != ERROR_SHARING_VIOLATION) {
+            LOG((
+                "NS_main: callback app file in use, failed to exclusively open "
+                "executable file: " LOG_S,
+                argv[callbackIndex]));
+            if (lastWriteError == ERROR_ACCESS_DENIED) {
+              WriteStatusFile(WRITE_ERROR_ACCESS_DENIED);
+            } else {
+              WriteStatusFile(WRITE_ERROR_CALLBACK_APP);
+            }
+
+            proceedWithoutExclusive = false;
+          }
+
+          
+          
+          
+          
+          if (lastWriteError == ERROR_SHARING_VIOLATION && sUpdateSilently) {
+            LOG((
+                "NS_main: callback app file in use, failed to exclusively open "
+                "executable file from background task: " LOG_S,
+                argv[callbackIndex]));
+            WriteStatusFile(WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION);
+
+            proceedWithoutExclusive = false;
+          }
+
+          if (!proceedWithoutExclusive) {
+            if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
+              LOG(
+                  ("NS_main: unable to remove backup of callback app file, "
+                   "path: " LOG_S,
+                   gCallbackBackupPath));
+            }
+            output_finish();
+            EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
+            LaunchCallbackApp(argv[5], argc - callbackIndex,
+                              argv + callbackIndex, sUsingService);
+            return 1;
+          }
+
+          LOG(
+              ("NS_main: callback app file in use, continuing without "
+               "exclusive access for executable file: " LOG_S,
+               argv[callbackIndex]));
+        }
       }
     }
-  }
 
-  
-  
-  
-  if (!sStagedUpdate && !sReplaceRequest) {
     
     
     
-    
-    
-    
-    
-    NS_tsnprintf(gDeleteDirPath,
-                 sizeof(gDeleteDirPath) / sizeof(gDeleteDirPath[0]),
-                 NS_T("%s/%s"), gWorkingDirPath, DELETE_DIR);
+    if (!sStagedUpdate && !sReplaceRequest) {
+      
+      
+      
+      
+      
+      
+      
+      NS_tsnprintf(gDeleteDirPath,
+                   sizeof(gDeleteDirPath) / sizeof(gDeleteDirPath[0]),
+                   NS_T("%s/%s"), gWorkingDirPath, DELETE_DIR);
 
-    if (NS_taccess(gDeleteDirPath, F_OK)) {
-      NS_tmkdir(gDeleteDirPath, 0755);
+      if (NS_taccess(gDeleteDirPath, F_OK)) {
+        NS_tmkdir(gDeleteDirPath, 0755);
+      }
     }
-  }
 #endif 
 
-  
-  
-  
-  
-  Thread t;
-  if (t.Run(UpdateThreadFunc, nullptr) == 0) {
-    if (!sStagedUpdate && !sReplaceRequest && !sUpdateSilently
+    
+    
+    
+    
+    Thread t;
+    if (t.Run(UpdateThreadFunc, nullptr) == 0) {
+      if (!sStagedUpdate && !sReplaceRequest && !sUpdateSilently
 #ifdef XP_MACOSX
-        && !isElevated
+          && !isElevated
 #endif
-    ) {
-      ShowProgressUI();
+      ) {
+        ShowProgressUI();
+      }
     }
-  }
-  t.Join();
+    t.Join();
 
 #ifdef XP_WIN
-  if (argc > callbackIndex && !sReplaceRequest) {
-    if (callbackFile != INVALID_HANDLE_VALUE) {
-      CloseHandle(callbackFile);
+    if (argc > callbackIndex && !sReplaceRequest) {
+      if (callbackFile != INVALID_HANDLE_VALUE) {
+        CloseHandle(callbackFile);
+      }
+      
+      if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
+        LOG(
+            ("NS_main: non-fatal error removing backup of callback app file, "
+             "path: " LOG_S,
+             gCallbackBackupPath));
+      }
     }
-    
-    if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
-      LOG(
-          ("NS_main: non-fatal error removing backup of callback app file, "
-           "path: " LOG_S,
-           gCallbackBackupPath));
-    }
-  }
 
-  if (!sStagedUpdate && !sReplaceRequest && _wrmdir(gDeleteDirPath)) {
-    LOG(("NS_main: unable to remove directory: " LOG_S ", err: %d", DELETE_DIR,
-         errno));
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (MoveFileEx(gDeleteDirPath, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT)) {
-      LOG(("NS_main: directory will be removed on OS reboot: " LOG_S,
-           DELETE_DIR));
-    } else {
-      LOG(
-          ("NS_main: failed to schedule OS reboot removal of "
-           "directory: " LOG_S,
-           DELETE_DIR));
+    if (!sStagedUpdate && !sReplaceRequest && _wrmdir(gDeleteDirPath)) {
+      LOG(("NS_main: unable to remove directory: " LOG_S ", err: %d",
+           DELETE_DIR, errno));
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (MoveFileEx(gDeleteDirPath, nullptr, MOVEFILE_DELAY_UNTIL_REBOOT)) {
+        LOG(("NS_main: directory will be removed on OS reboot: " LOG_S,
+             DELETE_DIR));
+      } else {
+        LOG(
+            ("NS_main: failed to schedule OS reboot removal of "
+             "directory: " LOG_S,
+             DELETE_DIR));
+      }
     }
-  }
 #endif 
+
+  }  
 
 #ifdef XP_MACOSX
   if (isElevated) {
