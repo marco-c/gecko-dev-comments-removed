@@ -4,6 +4,7 @@
 
 "use strict";
 
+const Services = require("Services");
 const {
   WatcherRegistry,
 } = require("devtools/server/actors/watcher/WatcherRegistry.jsm");
@@ -15,6 +16,8 @@ const {
   getAllRemoteBrowsingContexts,
   shouldNotifyWindowGlobal,
 } = require("devtools/server/actors/watcher/target-helpers/utils.js");
+
+const browsingContextAttachedObserverByWatcher = new Map();
 
 
 
@@ -38,6 +41,13 @@ async function createTargets(watcher) {
 
     
     
+    
+    if (browsingContext.top === browsingContext) {
+      browsingContext.watchedByDevTools = true;
+    }
+
+    
+    
     const promise = browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
       .instantiateTarget({
@@ -48,6 +58,46 @@ async function createTargets(watcher) {
       });
     promises.push(promise);
   }
+
+  
+  
+  
+  
+  if (watcher.browserElement) {
+    
+    
+    
+    watcher.browserElement.browsingContext.watchedByDevTools = true;
+  }
+
+  if (!browsingContextAttachedObserverByWatcher.has(watcher)) {
+    
+    
+    const browserId = watcher.browserElement?.browserId;
+    const onBrowsingContextAttached = browsingContext => {
+      
+      
+      
+      
+      
+      if (
+        browsingContext.top === browsingContext &&
+        (!watcher.browserElement || browserId === browsingContext.browserId)
+      ) {
+        browsingContext.watchedByDevTools = true;
+      }
+    };
+    Services.obs.addObserver(
+      onBrowsingContextAttached,
+      "browsing-context-attached"
+    );
+    
+    browsingContextAttachedObserverByWatcher.set(
+      watcher,
+      onBrowsingContextAttached
+    );
+  }
+
   return Promise.all(promises);
 }
 
@@ -68,12 +118,28 @@ function destroyTargets(watcher) {
       "Existing WindowGlobal"
     );
 
+    if (browsingContext.top === browsingContext) {
+      browsingContext.watchedByDevTools = false;
+    }
+
     browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
       .destroyTarget({
         watcherActorID: watcher.actorID,
         browserId: watcher.browserId,
       });
+  }
+
+  if (watcher.browserElement) {
+    watcher.browserElement.browsingContext.watchedByDevTools = false;
+  }
+
+  if (browsingContextAttachedObserverByWatcher.has(watcher)) {
+    Services.obs.removeObserver(
+      browsingContextAttachedObserverByWatcher.get(watcher),
+      "browsing-context-attached"
+    );
+    browsingContextAttachedObserverByWatcher.delete(watcher);
   }
 }
 
