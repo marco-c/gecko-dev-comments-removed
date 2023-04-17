@@ -11,6 +11,7 @@
 
   <meta content="" name="flags">
 
+  <link rel="stylesheet" href="support/highlights.css">
   <style>
   div
     {
@@ -25,16 +26,16 @@
     }
   </style>
 
-  
-
-
-
-
-
-
-
-
-
+  <!--
+  "
+  The element's own text decorations (both line decorations
+  and emphasis marks) are thus drawn in the pseudo-element's
+  own color when that is not currentColor, regardless of
+  their original color or fill specifications.
+  "
+  coming from
+  https://www.w3.org/TR/css-pseudo-4/#highlight-painting
+  -->
 
   <script>
   function startTest()
@@ -52,4 +53,4 @@
 
   <p>Test passes if each glyph of "Selected Text" is green and <strong>not red</strong> and if the underline, the overline and the line-through are also green and not red.
 
-  <div id="test">Selected Text</div>
+  <div id="test" class="highlight_reftest">Selected Text</div>

@@ -2,6 +2,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 function selectRangeWith(fun) {
     const selection = getSelection();
 
@@ -43,7 +52,10 @@ function selectNodeContents(node) {
 
 
 
+
 function trySpellcheck(...nodes) {
+    
+    
     
     
     
