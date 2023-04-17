@@ -2,13 +2,6 @@
 
 add_task(async function starButtonCtrlClick() {
   
-  
-  
-  if (AppConstants.platform == "macosx") {
-    return;
-  }
-
-  
   let url = "http://example.com/browser_page_action_star_button";
   await BrowserTestUtils.withNewTab(url, async () => {
     StarUI._createPanelIfNeeded();

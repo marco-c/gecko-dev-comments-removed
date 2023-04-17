@@ -735,14 +735,7 @@ var BrowserPageActions = {
   },
 
   doCommandForAction(action, event, buttonNode) {
-    
-    
-    if (
-      event &&
-      event.type == "click" &&
-      (event.button != 0 ||
-        (AppConstants.platform == "macosx" && event.ctrlKey))
-    ) {
+    if (event && event.type == "click" && event.button != 0) {
       return;
     }
     if (event && event.type == "keypress") {
