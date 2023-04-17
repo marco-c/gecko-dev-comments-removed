@@ -31,6 +31,9 @@ add_task(async () => {
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
 
+  
+  Services.prefs.setBoolPref("dom.security.https_first_pbm", false);
+
   CookieXPCShellUtils.createServer({ hosts: ["foo.com", "bar.com"] });
 
   
