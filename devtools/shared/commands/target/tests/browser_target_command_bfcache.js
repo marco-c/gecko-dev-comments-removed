@@ -16,10 +16,6 @@ add_task(async function() {
   
   await pushPref("dom.ipc.keepProcessesAlive.web", 1);
 
-  info("### Test with client side target switching");
-  await pushPref("devtools.target-switching.server.enabled", false);
-  await bfcacheTest();
-
   info("### Test with server side target switching");
   await pushPref("devtools.target-switching.server.enabled", true);
   await bfcacheTest();

@@ -66,6 +66,16 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._browser = options && options.browser;
     this._config = options ? options.config : {};
+    
+    
+    
+    this._earlyIframeTargets = {};
+    
+    
+    
+    
+    
+    this._currentTopLevelWindowGlobalTargets = new Set();
 
     this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
     this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
@@ -222,14 +232,59 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
 
 
+
+
+  _flushIframeTargets(topInnerWindowID) {
+    while (this._earlyIframeTargets[topInnerWindowID]?.length > 0) {
+      const actor = this._earlyIframeTargets[topInnerWindowID].shift();
+      this.emit("target-available-form", actor);
+    }
+  },
+
+  
+
+
   notifyTargetAvailable(actor) {
-    this.emit("target-available-form", actor);
+    
+    if (!this.browserId) {
+      this.emit("target-available-form", actor);
+      return;
+    }
+
+    
+    
+    if (!actor.traits?.isBrowsingContext) {
+      this.emit("target-available-form", actor);
+      return;
+    }
+
+    if (actor.isTopLevelTarget) {
+      this.emit("target-available-form", actor);
+      this._currentTopLevelWindowGlobalTargets.add(actor.innerWindowId);
+      
+      this._flushIframeTargets(actor.innerWindowId);
+    } else if (
+      this._currentTopLevelWindowGlobalTargets.has(actor.topInnerWindowId)
+    ) {
+      
+      this.emit("target-available-form", actor);
+    } else if (this._earlyIframeTargets[actor.topInnerWindowId]) {
+      
+      this._earlyIframeTargets[actor.topInnerWindowId].push(actor);
+    } else {
+      
+      this._earlyIframeTargets[actor.topInnerWindowId] = [actor];
+    }
   },
 
   
 
 
   notifyTargetDestroyed(actor) {
+    if (this._earlyIframeTargets[actor.innerWindowId]) {
+      delete this._earlyIframeTargets[actor.innerWindowId];
+    }
+    this._currentTopLevelWindowGlobalTargets.delete(actor.innerWindowId);
     this.emit("target-destroyed-form", actor);
   },
 
