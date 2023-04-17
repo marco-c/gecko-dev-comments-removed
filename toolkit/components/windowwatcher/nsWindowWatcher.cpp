@@ -29,7 +29,6 @@
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/Telemetry.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsIPrompt.h"
 #include "nsIScriptObjectPrincipal.h"
@@ -1774,73 +1773,40 @@ uint32_t nsWindowWatcher::EnsureFlagsSafeForContent(uint32_t aChromeFlags,
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
                                       const SizeSpec& aSizeSpec) {
   if (aFeatures.IsEmpty()) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::NoPopup_Empty);
     return false;
   }
 
   
   
-  if (aSizeSpec.WidthSpecified()) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Width);
-    return true;
-  }
-
-  
-  
-
-  
-  
   if (!aFeatures.GetBoolWithDefault("location", false) &&
       !aFeatures.GetBoolWithDefault("toolbar", false)) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Location);
     return true;
   }
 
   if (!aFeatures.GetBoolWithDefault("menubar", false)) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Menubar);
     return true;
   }
 
   if (!aFeatures.GetBoolWithDefault("resizable", true)) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Resizable);
     return true;
   }
 
   if (!aFeatures.GetBoolWithDefault("scrollbars", false)) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Scrollbars);
     return true;
   }
 
   if (!aFeatures.GetBoolWithDefault("status", false)) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::Popup_Status);
     return true;
   }
 
-  AccumulateCategorical(
-      mozilla::Telemetry::LABELS_WINDOW_OPEN_TYPE::NoPopup_Other);
+  
+  if (aSizeSpec.WidthSpecified()) {
+    return true;
+  }
+
   return false;
 }
 
