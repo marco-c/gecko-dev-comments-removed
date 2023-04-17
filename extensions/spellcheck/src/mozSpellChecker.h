@@ -22,6 +22,8 @@ namespace mozilla {
 class RemoteSpellcheckEngineChild;
 class TextServicesDocument;
 typedef MozPromise<CopyableTArray<bool>, nsresult, false> CheckWordPromise;
+typedef MozPromise<CopyableTArray<nsString>, nsresult, false>
+    SuggestionsPromise;
 }  
 
 class mozSpellChecker final {
@@ -73,6 +75,12 @@ class mozSpellChecker final {
 
   RefPtr<mozilla::CheckWordPromise> CheckWords(
       const nsTArray<nsString>& aWords);
+
+  
+
+
+  RefPtr<mozilla::SuggestionsPromise> Suggest(const nsAString& aWord,
+                                              uint32_t aMaxCount);
 
   
 
