@@ -311,12 +311,18 @@ class FirefoxDataProvider {
 
 
   async _getStackTraceFromWatcher(actor) {
-    const networkContentFront = await actor.targetFront.getFront(
-      "networkContent"
-    );
-    const stacktrace = await networkContentFront.getStackTrace(
-      actor.stacktraceResourceId
-    );
+    
+    
+    
+    let stacktrace = [];
+    if (!actor.targetFront.isDestroyed()) {
+      const networkContentFront = await actor.targetFront.getFront(
+        "networkContent"
+      );
+      stacktrace = await networkContentFront.getStackTrace(
+        actor.stacktraceResourceId
+      );
+    }
     return { stacktrace };
   }
 
@@ -567,6 +573,7 @@ class FirefoxDataProvider {
     ) {
       const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
       const { stacktrace } = await this._getStackTraceFromWatcher(requestInfo);
+      this.stackTraceRequestInfoByActorID.delete(actorID);
       response = { from: actor, stacktrace };
     } else {
       
