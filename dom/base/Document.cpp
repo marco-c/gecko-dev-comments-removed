@@ -5578,7 +5578,8 @@ void Document::QueryCommandValue(const nsAString& aHTMLCommandName,
 
   
   if (!IsHTMLOrXHTML()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_DOCUMENT_QUERY_COMMAND_VALUE);
+    aRv.ThrowInvalidStateError(
+        "queryCommandValue is only supported on HTML documents");
     return;
   }
   

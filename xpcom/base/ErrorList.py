@@ -756,9 +756,6 @@ with modules["DOM"]:
     errors["NS_ERROR_DOM_IMAGE_BROKEN"] = FAILURE(1029)
 
     
-    errors["NS_ERROR_DOM_INVALID_STATE_DOCUMENT_QUERY_COMMAND_VALUE"] = FAILURE(1035)
-
-    
     
     
     errors["NS_ERROR_DOM_CORP_FAILED"] = FAILURE(1036)
