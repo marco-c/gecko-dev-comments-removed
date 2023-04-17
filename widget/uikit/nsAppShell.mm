@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <UIKit/UIApplication.h>
 #import <UIKit/UIScreen.h>
@@ -26,7 +26,7 @@ NSMutableArray* nsAppShell::gTopLevelViews = [[NSMutableArray alloc] init];
   fprintf(stderr, args); \
   fprintf(stderr, "\n")
 
-// ViewController
+
 @interface ViewController : UIViewController
 @end
 
@@ -37,7 +37,7 @@ NSMutableArray* nsAppShell::gTopLevelViews = [[NSMutableArray alloc] init];
   CGRect r = {{0, 0}, {100, 100}};
   self.view = [[UIView alloc] initWithFrame:r];
   [self.view setBackgroundColor:[UIColor lightGrayColor]];
-  // add all of the top level views as children
+  
   for (UIView* v in nsAppShell::gTopLevelViews) {
     ALOG("[ViewController.view addSubView:%p]", v);
     [self.view addSubview:v];
@@ -47,9 +47,9 @@ NSMutableArray* nsAppShell::gTopLevelViews = [[NSMutableArray alloc] init];
 }
 @end
 
-// AppShellDelegate
-//
-// Acts as a delegate for the UIApplication
+
+
+
 
 @interface AppShellDelegate : NSObject <UIApplicationDelegate> {
 }
@@ -61,16 +61,16 @@ NSMutableArray* nsAppShell::gTopLevelViews = [[NSMutableArray alloc] init];
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   ALOG("[AppShellDelegate application:didFinishLaunchingWithOptions:]");
-  // We only create one window, since we can only display one window at
-  // a time anyway. Also, iOS 4 fails to display UIWindows if you
-  // create them before calling UIApplicationMain, so this makes more sense.
+  
+  
+  
   nsAppShell::gWindow =
       [[[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]] retain];
   self.window = nsAppShell::gWindow;
 
   self.window.rootViewController = [[ViewController alloc] init];
 
-  // just to make things more visible for now
+  
   nsAppShell::gWindow.backgroundColor = [UIColor blueColor];
   [nsAppShell::gWindow makeKeyAndVisible];
 
@@ -92,11 +92,11 @@ NSMutableArray* nsAppShell::gTopLevelViews = [[NSMutableArray alloc] init];
 
 - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
   ALOG("[AppShellDelegate applicationDidReceiveMemoryWarning:]");
-  NS_DispatchMemoryPressure(MemPressure_New);
+  NS_NotifyOfMemoryPressure(MemoryPressureState::LowMemory);
 }
 @end
 
-// nsAppShell implementation
+
 
 NS_IMETHODIMP
 nsAppShell::ResumeNative(void) { return nsBaseAppShell::ResumeNative(); }
@@ -128,14 +128,14 @@ nsAppShell::~nsAppShell() {
   gAppShell = NULL;
 }
 
-// Init
-//
-// public
+
+
+
 nsresult nsAppShell::Init() {
   mAutoreleasePool = [[NSAutoreleasePool alloc] init];
 
-  // Add a CFRunLoopSource to the main native run loop.  The source is
-  // responsible for interrupting the run loop when Gecko events are ready.
+  
+  
 
   mCFRunLoop = [[NSRunLoop currentRunLoop] getCFRunLoop];
   NS_ENSURE_STATE(mCFRunLoop);
@@ -143,7 +143,7 @@ nsresult nsAppShell::Init() {
 
   CFRunLoopSourceContext context;
   bzero(&context, sizeof(context));
-  // context.version = 0;
+  
   context.info = this;
   context.perform = ProcessGeckoEvents;
 
@@ -155,49 +155,49 @@ nsresult nsAppShell::Init() {
   return nsBaseAppShell::Init();
 }
 
-// ProcessGeckoEvents
-//
-// The "perform" target of mCFRunLoop, called when mCFRunLoopSource is
-// signalled from ScheduleNativeEventCallback.
-//
-// protected static
+
+
+
+
+
+
 void nsAppShell::ProcessGeckoEvents(void* aInfo) {
   nsAppShell* self = static_cast<nsAppShell*>(aInfo);
   self->NativeEventCallback();
   self->Release();
 }
 
-// WillTerminate
-//
-// public
+
+
+
 void nsAppShell::WillTerminate() {
   mNotifiedWillTerminate = true;
   if (mTerminated) return;
   mTerminated = true;
-  // We won't get another chance to process events
+  
   NS_ProcessPendingEvents(NS_GetCurrentThread());
 
-  // Unless we call nsBaseAppShell::Exit() here, it might not get called
-  // at all.
+  
+  
   nsBaseAppShell::Exit();
 }
 
-// ScheduleNativeEventCallback
-//
-// protected virtual
+
+
+
 void nsAppShell::ScheduleNativeEventCallback() {
   if (mTerminated) return;
 
   NS_ADDREF_THIS();
 
-  // This will invoke ProcessGeckoEvents on the main thread.
+  
   ::CFRunLoopSourceSignal(mCFRunLoopSource);
   ::CFRunLoopWakeUp(mCFRunLoop);
 }
 
-// ProcessNextNativeEvent
-//
-// protected virtual
+
+
+
 bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   if (mTerminated) return false;
 
@@ -220,15 +220,15 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   return false;
 }
 
-// Run
-//
-// public
+
+
+
 NS_IMETHODIMP
 nsAppShell::Run(void) {
   ALOG("nsAppShell::Run");
   char argv[1][4] = {"app"};
   UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
-  // UIApplicationMain doesn't exit. :-(
+  
   return NS_OK;
 }
 
