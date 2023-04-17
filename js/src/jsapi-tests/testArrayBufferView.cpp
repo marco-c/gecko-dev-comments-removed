@@ -2,8 +2,6 @@
 
 
 
-#include "jsfriendapi.h"
-
 #include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
 #include "js/PropertyAndElement.h"      

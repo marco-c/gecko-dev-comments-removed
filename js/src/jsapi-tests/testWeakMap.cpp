@@ -8,6 +8,7 @@
 #include "gc/Zone.h"
 #include "js/Array.h"               
 #include "js/PropertyAndElement.h"  
+#include "js/WeakMap.h"
 #include "jsapi-tests/tests.h"
 #include "vm/Realm.h"
 

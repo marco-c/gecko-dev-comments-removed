@@ -7,8 +7,6 @@
 
 #include <cstdio>  
 
-#include "jsapi.h"           
-#include "jsfriendapi.h"     
 #include "js/ErrorReport.h"  
 #include "js/Warnings.h"     
 

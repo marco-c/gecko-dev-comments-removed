@@ -5,7 +5,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "jsfriendapi.h"
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/StructuredClone.h"

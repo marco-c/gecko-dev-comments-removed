@@ -5,8 +5,6 @@
 
 
 
-#include "jsfriendapi.h"
-
 #include "js/ArrayBuffer.h"
 #include "js/ArrayBufferMaybeShared.h"
 #include "js/experimental/TypedData.h"

@@ -7,8 +7,6 @@
 
 #include <cstring>
 
-#include "jsfriendapi.h"
-
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Exception.h"

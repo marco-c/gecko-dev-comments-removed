@@ -8,6 +8,7 @@
 
 
 
+#include "js/CallAndConstruct.h"
 #include "js/Exception.h"
 #include "jsapi-tests/tests.h"
 

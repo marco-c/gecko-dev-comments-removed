@@ -5,7 +5,6 @@
 
 
 #include "gdb-tests.h"
-#include "jsapi.h"
 
 #include "vm/Stack.h"
 

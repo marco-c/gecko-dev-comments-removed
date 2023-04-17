@@ -8,9 +8,8 @@
 #include <inttypes.h>  
 #include <stdint.h>    
 
-#include "jsapi.h"  
-
-#include "js/RootingAPI.h"      
+#include "js/Exception.h"   
+#include "js/RootingAPI.h"  
 #include "jsapi-tests/tests.h"  
 #include "vm/JSAtom.h"          
 #include "vm/StringType.h"      

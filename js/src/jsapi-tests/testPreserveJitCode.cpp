@@ -5,6 +5,7 @@
 #include "mozilla/Utf8.h"  
 
 #include "jit/Ion.h"                      
+#include "js/CallAndConstruct.h"          
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"

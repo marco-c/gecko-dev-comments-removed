@@ -2,6 +2,7 @@
 
 
 
+#include "js/CallAndConstruct.h"
 #include "js/Object.h"  
 #include "jsapi-tests/tests.h"
 

@@ -6,8 +6,6 @@
 
 #include "mozilla/Utf8.h"  
 
-#include "jsfriendapi.h"
-
 #include "builtin/TestingFunctions.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Exception.h"
