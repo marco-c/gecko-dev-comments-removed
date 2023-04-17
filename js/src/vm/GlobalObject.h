@@ -88,6 +88,9 @@ class GlobalObjectData {
   HeapPtr<JSFunction*> throwTypeError;
 
   
+  HeapPtr<JSFunction*> eval;
+
+  
   HeapPtr<Shape*> arrayShape;
 
   
@@ -135,10 +138,7 @@ class GlobalObject : public NativeObject {
 
   enum : unsigned {
     
-    EVAL = APPLICATION_SLOTS + STANDARD_CLASS_SLOTS,
-
-    
-    GLOBAL_DATA_SLOT,
+    GLOBAL_DATA_SLOT = APPLICATION_SLOTS + STANDARD_CLASS_SLOTS,
     ITERATOR_PROTO,
     ARRAY_ITERATOR_PROTO,
     STRING_ITERATOR_PROTO,
@@ -204,9 +204,9 @@ class GlobalObject : public NativeObject {
     return mallocSizeOf(maybeData());
   }
 
-  void setOriginalEval(JSObject* evalobj) {
-    MOZ_ASSERT(getReservedSlot(EVAL).isUndefined());
-    setReservedSlot(EVAL, ObjectValue(*evalobj));
+  void setOriginalEval(JSFunction* evalFun) {
+    MOZ_ASSERT(!data().eval);
+    data().eval.init(evalFun);
   }
 
   Value getConstructor(JSProtoKey key) const {
