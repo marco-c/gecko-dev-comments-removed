@@ -32,6 +32,7 @@ struct ActiveScrolledRoot;
 
 namespace layers {
 
+class APZTestAccess;
 class Layer;
 class WebRenderLayerManager;
 class WebRenderScrollData;
@@ -173,10 +174,13 @@ class WebRenderLayerScrollData final {
 
  private:
   
+  friend class APZTestAccess;
+
   
-  friend class TestWRScrollData;
+  
   void InitializeForTest(int32_t aDescendantCount);
 
+ private:
   
   
   
