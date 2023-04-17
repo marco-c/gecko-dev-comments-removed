@@ -75,7 +75,7 @@ async function setAboutWelcomePref(value) {
 
 
 async function setProton(value = false) {
-  return pushPrefs(["browser.proton.enabled", value]);
+  return pushPrefs(["browser.aboutwelcome.protonDesign", value]);
 }
 
 
