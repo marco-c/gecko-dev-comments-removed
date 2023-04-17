@@ -178,19 +178,23 @@ async function testRestore() {
     let regular_browser = regular_tab.linkedBrowser;
 
     
-    let correctLocation = BrowserTestUtils.waitForCondition(() => {
-      return regular_browser.currentURI.spec == test_page_data.uri;
+    let ready = BrowserTestUtils.waitForCondition(async () => {
+      
+      
+      return SpecialPowers.spawn(regular_browser, [], () => {
+        return content.document.readyState == "complete";
+      }).catch(Cu.reportError);
     });
     newWin.gBrowser.selectedTab = regular_tab;
     await TabStateFlusher.flush(regular_browser);
-    await correctLocation;
+    await ready;
 
     currRemoteType = regular_browser.remoteType;
     expectedRemoteType = remoteTypes.shift();
     is(
       currRemoteType,
       expectedRemoteType,
-      "correct remote type for regular tab"
+      `correct remote type for regular tab with uri ${test_page_data.uri}`
     );
 
     let page_uri = regular_browser.currentURI.spec;
@@ -243,6 +247,9 @@ async function testRestore() {
       }
       
       
+      info(
+        `XULFrameLoaderCreated has been fired ${xulFrameLoaderCreatedCounter.numCalledSoFar} times, when restoring ${uri} in container ${userContextId}`
+      );
       ok(
         xulFrameLoaderCreatedCounter.numCalledSoFar <= 2,
         `XULFrameLoaderCreated was fired [1,2] times, when restoring ${uri} in container ${userContextId} `

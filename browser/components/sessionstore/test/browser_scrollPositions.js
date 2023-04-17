@@ -37,9 +37,11 @@ addNonCoopTask(
   HTTPROOT
 );
 
-
-
-
+addNonCoopTask(
+  "browser_scrollPositions_sample.html",
+  test_scroll_background_tabs,
+  HTTPSROOT
+);
 
 function getScrollPosition(bc) {
   return SpecialPowers.spawn(bc, [], () => {

@@ -1466,12 +1466,6 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
     DocShellRestoreState state = {uri, aDocShellCaps};
 
     
-    
-    
-    
-    
-    
-    
     wgp->SendRestoreDocShellState(state)->Then(
         GetMainThreadSerialEventTarget(), __func__,
         [promise](void) { promise->MaybeResolveWithUndefined(); },

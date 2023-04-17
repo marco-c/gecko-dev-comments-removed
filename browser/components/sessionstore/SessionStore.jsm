@@ -559,10 +559,6 @@ var SessionStoreInternal = {
 
   
   
-  _historyRestorePromises: new WeakMap(),
-
-  
-  
   
   _crashedBrowsers: new WeakSet(),
 
@@ -4678,10 +4674,11 @@ var SessionStoreInternal = {
 
     this.markTabAsRestoring(aTab);
 
-    
-    
     let isRemotenessUpdate = aOptions.isRemotenessUpdate;
-    if (!isRemotenessUpdate) {
+    let explicitlyUpdateRemoteness = !Services.appinfo.sessionHistoryInParent;
+    
+    
+    if (explicitlyUpdateRemoteness && !isRemotenessUpdate) {
       isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(
         browser,
         uri
@@ -5678,7 +5675,6 @@ var SessionStoreInternal = {
           .uninstall();
       }
       browser.browsingContext.clearRestoreState();
-      this._historyRestorePromises.delete(browser.permanentKey);
     }
 
     aTab.removeAttribute("pending");
@@ -5755,6 +5751,9 @@ var SessionStoreInternal = {
 
   resetEpoch(browser) {
     this._browserEpochs.delete(browser.permanentKey);
+    if (browser && browser.frameLoader) {
+      browser.frameLoader.requestEpochUpdate(0);
+    }
   },
 
   
@@ -5890,37 +5889,17 @@ var SessionStoreInternal = {
     let uri = data.tabData?.entries[data.tabData.index - 1]?.url;
     let disallow = data.tabData?.disallow;
 
-    
-    
-    
-    
     let promise = SessionStoreUtils.restoreDocShellState(
       browser.browsingContext,
       uri,
       disallow
     );
-    this._historyRestorePromises.set(browser.permanentKey, promise);
 
     promise
       .then(() => {
-        if (
-          this._historyRestorePromises.get(browser.permanentKey) === promise
-        ) {
-          this._historyRestorePromises.delete(browser.permanentKey);
-          this._restoreHistoryComplete(browser, data);
-        }
+        this._restoreHistoryComplete(browser, data);
       })
-      .catch(() => {
-        
-        
-        
-        
-        if (
-          this._historyRestorePromises.get(browser.permanentKey) === promise
-        ) {
-          console.error("Rejected active restore promise");
-        }
-      });
+      .catch(() => {});
 
     this._shistoryToRestore.set(browser.permanentKey, data);
 
@@ -5967,7 +5946,7 @@ var SessionStoreInternal = {
     let tabData = data.tabData || {};
     let uri = null;
     let loadFlags = null;
-    let promises = [this._historyRestorePromises.get(browser.permanentKey)];
+    let promises = [];
 
     if (tabData.userTypedValue && tabData.userTypedClear) {
       uri = tabData.userTypedValue;
