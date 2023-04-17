@@ -2586,18 +2586,6 @@ struct nsGridContainerFrame::Tracks {
     return mSizes[aLine].mPosition;
   }
 
-  nscoord SumOfGridTracksAndGaps() {
-    return SumOfGridTracks() + SumOfGridGaps();
-  }
-
-  nscoord SumOfGridTracks() const {
-    nscoord result = 0;
-    for (const TrackSize& size : mSizes) {
-      result += size.mBase;
-    }
-    return result;
-  }
-
   nscoord SumOfGridGaps() const {
     auto len = mSizes.Length();
     return MOZ_LIKELY(len > 1) ? (len - 1) * mGridGap : 0;
@@ -6489,8 +6477,12 @@ void nsGridContainerFrame::Tracks::StretchFlexibleTracks(
       
       
       
+      nscoord newSize = 0;
+      for (auto& sz : mSizes) {
+        newSize += sz.mBase;
+      }
       const auto sumOfGridGaps = SumOfGridGaps();
-      nscoord newSize = SumOfGridTracks() + sumOfGridGaps;
+      newSize += sumOfGridGaps;
       if (newSize > maxSize) {
         aAvailableSize = maxSize;
       } else if (newSize < minSize) {
@@ -8655,55 +8647,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    const auto numCols =
-        static_cast<int32_t>(gridReflowInput.mCols.mSizes.Length());
-    const auto numRows =
-        static_cast<int32_t>(gridReflowInput.mRows.mSizes.Length());
-    if (numCols > 0 && numRows > 0) {
-      const GridArea gridArea(LineRange(0, numCols), LineRange(0, numRows));
-      const LogicalRect gridAreaRect =
-          gridReflowInput.ContainingBlockFor(gridArea) +
-          LogicalPoint(wm, bp.IStart(wm), bp.BStart(wm));
-
-      MOZ_ASSERT(bp == aReflowInput.ComputedLogicalPadding(wm),
-                 "A scrolled inner frame shouldn't have any border!");
-      const LogicalMargin& padding = bp;
-      nsRect physicalGridAreaRectWithPadding =
-          gridAreaRect.GetPhysicalRect(wm, containerSize);
-      physicalGridAreaRectWithPadding.Inflate(padding.GetPhysicalMargin(wm));
-      aDesiredSize.mOverflowAreas.UnionAllWith(physicalGridAreaRectWithPadding);
-    }
-
-    nsRect gridItemMarginBoxBounds;
-    for (const auto& item : gridReflowInput.mGridItems) {
-      gridItemMarginBoxBounds =
-          gridItemMarginBoxBounds.Union(item.mFrame->GetMarginRect());
-    }
-    aDesiredSize.mOverflowAreas.UnionAllWith(gridItemMarginBoxBounds);
-  }
-
   
   if ((IsMasonry(eLogicalAxisBlock) && !prevInFlow) ||
       IsMasonry(eLogicalAxisInline)) {
@@ -9277,7 +9220,11 @@ nscoord nsGridContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
                                    NS_UNCONSTRAINEDSIZE, constraint);
 
   if (MOZ_LIKELY(!IsSubgrid())) {
-    return state.mCols.SumOfGridTracksAndGaps();
+    nscoord length = 0;
+    for (const TrackSize& sz : state.mCols.mSizes) {
+      length += sz.mBase;
+    }
+    return length + state.mCols.SumOfGridGaps();
   }
   const auto& last = state.mCols.mSizes.LastElement();
   return last.mPosition + last.mBase;
