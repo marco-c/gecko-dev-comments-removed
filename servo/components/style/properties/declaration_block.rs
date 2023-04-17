@@ -1320,8 +1320,7 @@ struct PropertyDeclarationParser<'a, 'b: 'a> {
 
 
 impl<'a, 'b, 'i> AtRuleParser<'i> for PropertyDeclarationParser<'a, 'b> {
-    type PreludeNoBlock = ();
-    type PreludeBlock = ();
+    type Prelude = ();
     type AtRule = Importance;
     type Error = StyleParseErrorKind<'i>;
 }

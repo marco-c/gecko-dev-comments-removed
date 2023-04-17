@@ -21,22 +21,6 @@ pub fn parse_important<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), BasicPa
 
 
 
-pub enum AtRuleType<P, PB> {
-    
-    
-    
-    
-    WithoutBlock(P),
-
-    
-    
-    
-    WithBlock(PB),
-}
-
-
-
-
 
 pub trait DeclarationParser<'i> {
     
@@ -80,10 +64,7 @@ pub trait DeclarationParser<'i> {
 
 pub trait AtRuleParser<'i> {
     
-    type PreludeNoBlock;
-
-    
-    type PreludeBlock;
+    type Prelude;
 
     
     type AtRule;
@@ -106,14 +87,11 @@ pub trait AtRuleParser<'i> {
     
     
     
-    
-    
     fn parse_prelude<'t>(
         &mut self,
         name: CowRcStr<'i>,
         input: &mut Parser<'i, 't>,
-    ) -> Result<AtRuleType<Self::PreludeNoBlock, Self::PreludeBlock>, ParseError<'i, Self::Error>>
-    {
+    ) -> Result<Self::Prelude, ParseError<'i, Self::Error>> {
         let _ = name;
         let _ = input;
         Err(input.new_error(BasicParseErrorKind::AtRuleInvalid(name)))
@@ -129,15 +107,12 @@ pub trait AtRuleParser<'i> {
     
     fn rule_without_block(
         &mut self,
-        prelude: Self::PreludeNoBlock,
+        prelude: Self::Prelude,
         start: &ParserState,
-    ) -> Self::AtRule {
+    ) -> Result<Self::AtRule, ()> {
         let _ = prelude;
         let _ = start;
-        panic!(
-            "The `AtRuleParser::rule_without_block` method must be overriden \
-             if `AtRuleParser::parse_prelude` ever returns `AtRuleType::WithoutBlock`."
-        )
+        Err(())
     }
 
     
@@ -152,7 +127,7 @@ pub trait AtRuleParser<'i> {
     
     fn parse_block<'t>(
         &mut self,
-        prelude: Self::PreludeBlock,
+        prelude: Self::Prelude,
         start: &ParserState,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self::AtRule, ParseError<'i, Self::Error>> {
@@ -468,31 +443,22 @@ where
     let callback = |input: &mut Parser<'i, '_>| parser.parse_prelude(name, input);
     let result = parse_until_before(input, delimiters, callback);
     match result {
-        Ok(AtRuleType::WithoutBlock(prelude)) => match input.next() {
-            Ok(&Token::Semicolon) | Err(_) => Ok(parser.rule_without_block(prelude, start)),
-            Ok(&Token::CurlyBracketBlock) => Err((
-                input.new_unexpected_token_error(Token::CurlyBracketBlock),
-                input.slice_from(start.position()),
-            )),
-            Ok(_) => unreachable!(),
-        },
-        Ok(AtRuleType::WithBlock(prelude)) => {
-            match input.next() {
+        Ok(prelude) => {
+            let result = match input.next() {
+                Ok(&Token::Semicolon) | Err(_) => {
+                    parser.rule_without_block(prelude, start)
+                        .map_err(|()| input.new_unexpected_token_error(Token::Semicolon))
+                },
                 Ok(&Token::CurlyBracketBlock) => {
                     
                     let callback =
                         |input: &mut Parser<'i, '_>| parser.parse_block(prelude, start, input);
                     parse_nested_block(input, callback)
-                        .map_err(|e| (e, input.slice_from(start.position())))
-                }
-                Ok(&Token::Semicolon) => Err((
-                    input.new_unexpected_token_error(Token::Semicolon),
-                    input.slice_from(start.position()),
-                )),
-                Err(e) => Err((e.into(), input.slice_from(start.position()))),
+                },
                 Ok(_) => unreachable!(),
-            }
-        }
+            };
+            result.map_err(|e| (e, input.slice_from(start.position())))
+        },
         Err(error) => {
             let end_position = input.position();
             match input.next() {
@@ -500,7 +466,7 @@ where
                 _ => unreachable!(),
             };
             Err((error, input.slice(start.position()..end_position)))
-        }
+        },
     }
 }
 

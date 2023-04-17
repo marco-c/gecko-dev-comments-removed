@@ -107,6 +107,8 @@ impl<'a> ToCss for Token<'a> {
                 write_numeric(value, int_value, has_sign, dest)?;
                 
                 let unit = &**unit;
+                
+                
                 if unit == "e" || unit == "E" || unit.starts_with("e-") || unit.starts_with("E-") {
                     dest.write_str("\\65 ")?;
                     serialize_name(&unit[1..], dest)?;
