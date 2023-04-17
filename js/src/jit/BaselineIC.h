@@ -25,6 +25,7 @@
 #include "jit/Registers.h"
 #include "jit/RegisterSets.h"
 #include "jit/shared/Assembler-shared.h"
+#include "jit/TypeData.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "vm/ArrayObject.h"
@@ -156,6 +157,11 @@ class ICStub {
   
   
   uint32_t enteredCount_ = 0;
+
+  
+  
+  
+  TypeData typeData_;
 
   
   bool isFallback_;
@@ -291,6 +297,9 @@ class ICCacheIRStub final : public ICStub {
   static constexpr size_t offsetOfNext() {
     return offsetof(ICCacheIRStub, next_);
   }
+
+  void setTypeData(TypeData data) { typeData_ = data; }
+  TypeData typeData() const { return typeData_; }
 };
 
 
