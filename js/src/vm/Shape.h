@@ -898,6 +898,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   friend struct StackShape;
   friend class JS::ubi::Concrete<Shape>;
   friend class js::gc::RelocationOverlay;
+  friend class js::ShapeTable;
 
  public:
   
@@ -1240,6 +1241,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     mutableFlags = (mutableFlags & ~LINEAR_SEARCHES_MASK) | (count + 1);
   }
 
+ private:
   const GCPtrId& propid() const {
     MOZ_ASSERT(!isEmptyShape());
     MOZ_ASSERT(!JSID_IS_VOID(propid_));
@@ -1254,6 +1256,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     return propid();
   }
 
+ public:
   ShapeProperty property() const {
     MOZ_ASSERT(!isEmptyShape());
     return ShapeProperty(attrs, maybeSlot());
@@ -1647,6 +1650,9 @@ MOZ_ALWAYS_INLINE bool ShapeIC::search(jsid id, Shape** foundShape) {
 }
 
 using ShapePropertyVector = GCVector<ShapePropertyWithKey, 8>;
+
+
+
 
 
 

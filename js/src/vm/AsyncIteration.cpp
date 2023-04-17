@@ -523,10 +523,8 @@ static bool AsyncGeneratorFunctionClassFinish(JSContext* cx,
   
   
   
-  MOZ_ASSERT(StringEqualsAscii(
-      JSID_TO_LINEAR_STRING(
-          asyncGenerator->as<NativeObject>().lastProperty()->propid()),
-      "constructor"));
+  MOZ_ASSERT(asyncGenerator->as<NativeObject>().getLastProperty().key() ==
+             NameToId(cx->names().constructor));
   MOZ_ASSERT(!asyncGenerator->as<NativeObject>().inDictionaryMode());
 
   RootedValue asyncGenFunctionVal(cx, ObjectValue(*asyncGenFunction));

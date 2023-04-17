@@ -47,10 +47,8 @@ static bool AsyncFunctionClassFinish(JSContext* cx, HandleObject asyncFunction,
   
   
   
-  MOZ_ASSERT(StringEqualsAscii(
-      JSID_TO_LINEAR_STRING(
-          asyncFunctionProto->as<NativeObject>().lastProperty()->propid()),
-      "constructor"));
+  MOZ_ASSERT(asyncFunctionProto->as<NativeObject>().getLastProperty().key() ==
+             NameToId(cx->names().constructor));
   MOZ_ASSERT(!asyncFunctionProto->as<NativeObject>().inDictionaryMode());
 
   RootedValue asyncFunctionVal(cx, ObjectValue(*asyncFunction));
