@@ -3184,6 +3184,7 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
           
           aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented = true;
           aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
+          aVisitor.mItemData = static_cast<Element*>(mForm);
           
           
           
@@ -3675,7 +3676,11 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     }
   }
 
-  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) && mForm) {
+  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK)) {
+    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
+    MOZ_ASSERT(form);
+
     switch (oldType) {
       case FormControlType::InputSubmit:
       case FormControlType::InputImage:
@@ -3683,7 +3688,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         
         
         
-        mForm->OnSubmitClickEnd();
+        form->OnSubmitClickEnd();
         break;
       default:
         break;
@@ -4037,15 +4042,19 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
 
       if (outerActivateEvent) {
-        if (mForm && (oldType == FormControlType::InputSubmit ||
-                      oldType == FormControlType::InputImage)) {
+        if ((oldType == FormControlType::InputSubmit ||
+             oldType == FormControlType::InputImage)) {
           if (mType != FormControlType::InputSubmit &&
               mType != FormControlType::InputImage &&
               aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) {
+            nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+            RefPtr<HTMLFormElement> form =
+                HTMLFormElement::FromNodeOrNull(content);
+            MOZ_ASSERT(form);
             
             
             
-            mForm->FlushPendingSubmission();
+            form->FlushPendingSubmission();
           }
         }
         switch (mType) {
@@ -4061,6 +4070,19 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                 form->MaybeSubmit(this);
               }
               aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+            } else if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
+                       (oldType == FormControlType::InputSubmit ||
+                        oldType == FormControlType::InputImage)) {
+              
+              
+              
+              
+              nsCOMPtr<nsIContent> content(
+                  do_QueryInterface(aVisitor.mItemData));
+              RefPtr<HTMLFormElement> form =
+                  HTMLFormElement::FromNodeOrNull(content);
+              MOZ_ASSERT(form);
+              form->FlushPendingSubmission();
             }
             break;
 
@@ -4070,13 +4092,15 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }    
     } else if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
                (oldType == FormControlType::InputSubmit ||
-                oldType == FormControlType::InputImage) &&
-               mForm) {
+                oldType == FormControlType::InputImage)) {
+      nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+      RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
+      MOZ_ASSERT(form);
       
       
       
       
-      mForm->FlushPendingSubmission();
+      form->FlushPendingSubmission();
     }
   }  
 

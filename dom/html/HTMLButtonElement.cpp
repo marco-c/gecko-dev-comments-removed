@@ -179,6 +179,7 @@ void HTMLButtonElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
         !aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented) {
       aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented = true;
       aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
+      aVisitor.mItemData = static_cast<Element*>(mForm);
       
       
       
@@ -218,14 +219,15 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     }
   }
 
-  
-  
-  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) && mForm) {
+  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK)) {
+    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
+    MOZ_ASSERT(form);
     
     
     
     
-    mForm->OnSubmitClickEnd();
+    form->OnSubmitClickEnd();
   }
 
   if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
@@ -243,16 +245,22 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         }
         
         
+        return rv;
       }
     }
-  } else if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) && mForm) {
+  }
+
+  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK)) {
+    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
+    MOZ_ASSERT(form);
     
     
     
     
     
-    mForm->FlushPendingSubmission();
-  }  
+    form->FlushPendingSubmission();
+  }
 
   return rv;
 }
