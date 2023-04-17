@@ -524,6 +524,7 @@ class nsFlexContainerFrame::FlexItem final {
   bool IsBlockAxisCrossAxis() const { return mIsInlineAxisMainAxis; }
 
   WritingMode GetWritingMode() const { return mWM; }
+  WritingMode ContainingBlockWM() const { return mCBWM; }
   StyleAlignSelf AlignSelf() const { return mAlignSelf; }
   StyleAlignFlags AlignSelfFlags() const { return mAlignSelfFlags; }
 
@@ -1850,18 +1851,26 @@ class CachedFinalReflowMetrics final {
                                  aReflowOutput) {}
 
   CachedFinalReflowMetrics(const FlexItem& aItem, const LogicalSize& aSize)
-      : mSize(aSize), mTreatBSizeAsIndefinite(aItem.TreatBSizeAsIndefinite()) {}
+      : mBorderPadding(aItem.BorderPadding().ConvertTo(
+            aItem.GetWritingMode(), aItem.ContainingBlockWM())),
+        mSize(aSize),
+        mTreatBSizeAsIndefinite(aItem.TreatBSizeAsIndefinite()) {}
 
   const LogicalSize& Size() const { return mSize; }
+  const LogicalMargin& BorderPadding() const { return mBorderPadding; }
   bool TreatBSizeAsIndefinite() const { return mTreatBSizeAsIndefinite; }
 
  private:
   
   CachedFinalReflowMetrics(WritingMode aWM, const ReflowInput& aReflowInput,
                            const ReflowOutput& aReflowOutput)
-      : mSize(aReflowOutput.Size(aWM) -
-              aReflowInput.ComputedLogicalBorderPadding(aWM).Size(aWM)),
+      : mBorderPadding(aReflowInput.ComputedLogicalBorderPadding(aWM)),
+        mSize(aReflowOutput.Size(aWM) - mBorderPadding.Size(aWM)),
         mTreatBSizeAsIndefinite(aReflowInput.mFlags.mTreatBSizeAsIndefinite) {}
+
+  
+  
+  LogicalMargin mBorderPadding;
 
   
   
@@ -2542,14 +2551,6 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   auto* cache = mFrame->GetProperty(CachedFlexItemData::Prop());
@@ -2566,6 +2567,22 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to having a "
         "different content box size vs. its most recent final reflow",
+        mFrame);
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (cache->mFinalReflowMetrics->BorderPadding() !=
+      BorderPadding().ConvertTo(mWM, mCBWM)) {
+    FLEX_LOG(
+        "[perf] Flex item %p needed a final reflow due to having a "
+        "different border and padding vs. its most recent final reflow",
         mFrame);
     return true;
   }
