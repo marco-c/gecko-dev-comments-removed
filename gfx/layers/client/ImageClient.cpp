@@ -8,6 +8,7 @@
 
 #include <stdint.h>  
 
+#include "ClientLayerManager.h"  
 #include "ImageContainer.h"      
 #include "ImageTypes.h"          
 #include "GLImages.h"            
