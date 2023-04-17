@@ -613,7 +613,10 @@ fn prepare_interned_prim_for_render(
                 prim_data.common.may_need_repetition = false;
             }
 
-            if prim_data.supports_caching {
+            
+            
+            
+            if prim_data.supports_caching && !frame_context.fb_config.is_software {
                 let gradient_size = (prim_data.end_point - prim_data.start_point).to_size();
 
                 
