@@ -257,6 +257,12 @@ void SVGRenderingObserver::AttributeChanged(dom::Element* aElement,
                                             nsAtom* aAttribute,
                                             int32_t aModType,
                                             const nsAttrValue* aOldValue) {
+  if (aElement->IsInNativeAnonymousSubtree()) {
+    
+    
+    return;
+  }
+
   
   
   
