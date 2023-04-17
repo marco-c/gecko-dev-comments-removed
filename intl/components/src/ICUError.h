@@ -1,0 +1,27 @@
+
+
+
+
+#ifndef intl_components_ICUError_h
+#define intl_components_ICUError_h
+
+#include <cstdint>
+
+namespace mozilla::intl {
+
+
+
+
+enum class ICUError : uint8_t {
+  OutOfMemory,
+  InternalError,
+};
+
+
+
+
+struct InternalError {};
+
+}  
+
+#endif

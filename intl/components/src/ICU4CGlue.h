@@ -12,18 +12,9 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/Vector.h"
+#include "mozilla/intl/ICUError.h"
 
 namespace mozilla::intl {
-
-enum class ICUError : uint8_t {
-  OutOfMemory,
-  InternalError,
-};
-
-
-
-
-struct InternalError {};
 
 using ICUResult = Result<Ok, ICUError>;
 
