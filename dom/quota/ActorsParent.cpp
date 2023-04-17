@@ -2718,7 +2718,7 @@ void InitializeQuotaManager() {
     QM_WARNONLY_TRY(OkIf(ss));
   }
 
-  QM_WARNONLY_TRY(QuotaManager::Initialize());
+  QM_WARNONLY_TRY(QM_TO_RESULT(QuotaManager::Initialize()));
 
 #ifdef DEBUG
   gQuotaManagerInitialized = true;
@@ -3889,7 +3889,7 @@ void QuotaManager::Shutdown() {
   }
 
   
-  QM_WARNONLY_TRY((*mShutdownTimer)->Cancel());
+  QM_WARNONLY_TRY(QM_TO_RESULT((*mShutdownTimer)->Cancel()));
 
   
   
@@ -3901,10 +3901,11 @@ void QuotaManager::Shutdown() {
   MOZ_ASSERT(runnable);
 
   
-  QM_WARNONLY_TRY((*mIOThread)->Dispatch(runnable, NS_DISPATCH_NORMAL));
+  QM_WARNONLY_TRY(
+      QM_TO_RESULT((*mIOThread)->Dispatch(runnable, NS_DISPATCH_NORMAL)));
 
   
-  QM_WARNONLY_TRY((*mIOThread)->Shutdown());
+  QM_WARNONLY_TRY(QM_TO_RESULT((*mIOThread)->Shutdown()));
 
   for (RefPtr<DirectoryLockImpl>& lock : mPendingDirectoryLocks) {
     lock->Invalidate();
@@ -9265,109 +9266,111 @@ void ClearRequestBase::DeleteFiles(QuotaManager& aQuotaManager,
   aQuotaManager.MaybeRecordQuotaManagerShutdownStep(
       "ClearRequestBase: Starting deleting files"_ns);
 
-  QM_TRY(CollectEachFile(
-             *directory,
-             [originScope =
-                  [this] {
-                    OriginScope originScope = mOriginScope.Clone();
-                    if (originScope.IsOrigin()) {
-                      originScope.SetOrigin(
-                          MakeSanitizedOriginCString(originScope.GetOrigin()));
-                    } else if (originScope.IsPrefix()) {
-                      originScope.SetOriginNoSuffix(MakeSanitizedOriginCString(
-                          originScope.GetOriginNoSuffix()));
-                    }
-                    return originScope;
-                  }(),
-              aPersistenceType, &aQuotaManager, &directoriesForRemovalRetry,
-              this](nsCOMPtr<nsIFile>&& file) -> mozilla::Result<Ok, nsresult> {
-               QM_TRY_INSPECT(
-                   const auto& leafName,
-                   MOZ_TO_RESULT_INVOKE_TYPED(nsAutoString, file, GetLeafName));
-
-               QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
-
-               switch (dirEntryKind) {
-                 case nsIFileKind::ExistsAsDirectory: {
-                   
-                   if (!originScope.Matches(OriginScope::FromOrigin(
-                           NS_ConvertUTF16toUTF8(leafName)))) {
-                     break;
-                   }
-
-                   QM_TRY_INSPECT(
-                       const auto& metadata,
-                       aQuotaManager.LoadFullOriginMetadataWithRestore(file));
-
-                   MOZ_ASSERT(metadata.mPersistenceType == aPersistenceType);
-
-                   if (!mClientType.IsNull()) {
-                     nsAutoString clientDirectoryName;
-                     QM_TRY(OkIf(Client::TypeToText(mClientType.Value(),
-                                                    clientDirectoryName,
-                                                    fallible)),
-                            Err(NS_ERROR_FAILURE));
-
-                     QM_TRY(file->Append(clientDirectoryName));
-
-                     QM_TRY_INSPECT(const bool& exists,
-                                    MOZ_TO_RESULT_INVOKE(file, Exists));
-
-                     if (!exists) {
-                       break;
-                     }
-                   }
-
-                   
-                   
-                   QM_WARNONLY_TRY(file->Remove(true), [&](const auto&) {
-                     directoriesForRemovalRetry.AppendElement(std::move(file));
-                   });
-
-                   const bool initialized =
-                       aPersistenceType == PERSISTENCE_TYPE_PERSISTENT
-                           ? aQuotaManager.IsOriginInitialized(metadata.mOrigin)
-                           : aQuotaManager.IsTemporaryStorageInitialized();
-
-                   
-                   
-                   if (!initialized) {
-                     break;
-                   }
-
-                   if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
-                     if (mClientType.IsNull()) {
-                       aQuotaManager.RemoveQuotaForOrigin(aPersistenceType,
-                                                          metadata);
-                     } else {
-                       aQuotaManager.ResetUsageForClient(
-                           ClientMetadata{metadata, mClientType.Value()});
-                     }
-                   }
-
-                   aQuotaManager.OriginClearCompleted(
-                       aPersistenceType, metadata.mOrigin, mClientType);
-
-                   break;
+  QM_TRY(
+      CollectEachFile(
+          *directory,
+          [originScope =
+               [this] {
+                 OriginScope originScope = mOriginScope.Clone();
+                 if (originScope.IsOrigin()) {
+                   originScope.SetOrigin(
+                       MakeSanitizedOriginCString(originScope.GetOrigin()));
+                 } else if (originScope.IsPrefix()) {
+                   originScope.SetOriginNoSuffix(MakeSanitizedOriginCString(
+                       originScope.GetOriginNoSuffix()));
                  }
+                 return originScope;
+               }(),
+           aPersistenceType, &aQuotaManager, &directoriesForRemovalRetry,
+           this](nsCOMPtr<nsIFile>&& file) -> mozilla::Result<Ok, nsresult> {
+            QM_TRY_INSPECT(
+                const auto& leafName,
+                MOZ_TO_RESULT_INVOKE_TYPED(nsAutoString, file, GetLeafName));
 
-                 case nsIFileKind::ExistsAsFile:
-                   
-                   
-                   if (!IsOSMetadata(leafName)) {
-                     UNKNOWN_FILE_WARNING(leafName);
-                   }
+            QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
 
-                   break;
+            switch (dirEntryKind) {
+              case nsIFileKind::ExistsAsDirectory: {
+                
+                if (!originScope.Matches(OriginScope::FromOrigin(
+                        NS_ConvertUTF16toUTF8(leafName)))) {
+                  break;
+                }
 
-                 case nsIFileKind::DoesNotExist:
-                   
-                   break;
-               }
+                QM_TRY_INSPECT(
+                    const auto& metadata,
+                    aQuotaManager.LoadFullOriginMetadataWithRestore(file));
 
-               return Ok{};
-             }),
-         QM_VOID);
+                MOZ_ASSERT(metadata.mPersistenceType == aPersistenceType);
+
+                if (!mClientType.IsNull()) {
+                  nsAutoString clientDirectoryName;
+                  QM_TRY(
+                      OkIf(Client::TypeToText(mClientType.Value(),
+                                              clientDirectoryName, fallible)),
+                      Err(NS_ERROR_FAILURE));
+
+                  QM_TRY(file->Append(clientDirectoryName));
+
+                  QM_TRY_INSPECT(const bool& exists,
+                                 MOZ_TO_RESULT_INVOKE(file, Exists));
+
+                  if (!exists) {
+                    break;
+                  }
+                }
+
+                
+                
+                QM_WARNONLY_TRY(
+                    QM_TO_RESULT(file->Remove(true)), [&](const auto&) {
+                      directoriesForRemovalRetry.AppendElement(std::move(file));
+                    });
+
+                const bool initialized =
+                    aPersistenceType == PERSISTENCE_TYPE_PERSISTENT
+                        ? aQuotaManager.IsOriginInitialized(metadata.mOrigin)
+                        : aQuotaManager.IsTemporaryStorageInitialized();
+
+                
+                
+                if (!initialized) {
+                  break;
+                }
+
+                if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
+                  if (mClientType.IsNull()) {
+                    aQuotaManager.RemoveQuotaForOrigin(aPersistenceType,
+                                                       metadata);
+                  } else {
+                    aQuotaManager.ResetUsageForClient(
+                        ClientMetadata{metadata, mClientType.Value()});
+                  }
+                }
+
+                aQuotaManager.OriginClearCompleted(
+                    aPersistenceType, metadata.mOrigin, mClientType);
+
+                break;
+              }
+
+              case nsIFileKind::ExistsAsFile:
+                
+                
+                if (!IsOSMetadata(leafName)) {
+                  UNKNOWN_FILE_WARNING(leafName);
+                }
+
+                break;
+
+              case nsIFileKind::DoesNotExist:
+                
+                break;
+            }
+
+            return Ok{};
+          }),
+      QM_VOID);
 
   
   

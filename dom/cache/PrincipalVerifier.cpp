@@ -8,6 +8,8 @@
 
 #include "ErrorList.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/QMResult.h"
+#include "mozilla/dom/QMResultInlines.h"
 #include "mozilla/dom/cache/ManagerId.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundParent.h"
@@ -177,8 +179,8 @@ void PrincipalVerifier::DispatchToInitiatingThread(nsresult aRv) {
   
   
   
-  QM_WARNONLY_TRY(
-      mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL));
+  QM_WARNONLY_TRY(QM_TO_RESULT(
+      mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL)));
 }
 
 }  
