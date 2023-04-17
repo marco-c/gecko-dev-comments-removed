@@ -56,9 +56,13 @@ void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis,
   
   
   
-  const CSSCoord thumbOrigin =
+  CSSCoord thumbOriginRelativeToCompBounds =
       (aAxis.GetPointOffset(mMetrics.GetVisualScrollOffset()) *
        mUnitlessThumbRatio);
+  CSSCoord compBoundsOrigin = aAxis.GetPointOffset(
+      mMetrics.CalculateCompositionBoundsInCssPixelsOfSurroundingContent()
+          .TopLeft());
+  CSSCoord thumbOrigin = compBoundsOrigin + thumbOriginRelativeToCompBounds;
   const CSSCoord thumbOriginScaled = thumbOrigin * aScale;
   const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
   const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * mEffectiveZoom;
