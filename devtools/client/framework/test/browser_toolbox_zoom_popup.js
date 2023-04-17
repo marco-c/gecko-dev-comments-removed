@@ -6,6 +6,7 @@
 
 
 const { Toolbox } = require("devtools/client/framework/toolbox");
+const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
 
 
@@ -110,6 +111,18 @@ add_task(async function() {
   gBrowser.removeCurrentTab();
 });
 
+function convertScreenToDoc(rect, doc) {
+  const zoom = getCurrentZoom(doc);
+  const screenX = doc.defaultView.mozInnerScreenX;
+  const screenY = doc.defaultView.mozInnerScreenY;
+  return new DOMRect(
+    rect.x / zoom - screenX,
+    rect.y / zoom - screenY,
+    rect.width / zoom,
+    rect.height / zoom
+  );
+}
+
 
 
 
@@ -147,11 +160,15 @@ async function getButtonAndMenuInfo(toolbox, menuButton) {
 
   let menuPopup;
   let menuType;
+  let menuBounds = null;
   let arrowBounds = null;
   if (menuButton.hasAttribute("aria-controls")) {
     menuType = "doorhanger";
     menuPopup = doc.getElementById(menuButton.getAttribute("aria-controls"));
     await waitUntil(() => menuPopup.classList.contains("tooltip-visible"));
+    
+    
+    menuBounds = menuPopup.getBoxQuads({ relativeTo: doc })[0].getBounds();
   } else {
     menuType = "native";
     await waitUntil(() => {
@@ -159,13 +176,15 @@ async function getButtonAndMenuInfo(toolbox, menuButton) {
       menuPopup = popupset?.querySelector('menupopup[menu-api="true"]');
       return menuPopup?.state === "open";
     });
+    
+    
+    menuBounds = convertScreenToDoc(menuPopup.getOuterScreenRect(), doc);
   }
   ok(menuPopup, "Menu popup is displayed.");
 
   const buttonBounds = menuButton
     .getBoxQuads({ relativeTo: doc })[0]
     .getBounds();
-  const menuBounds = menuPopup.getBoxQuads({ relativeTo: doc })[0].getBounds();
 
   if (menuType === "doorhanger") {
     const arrow = menuPopup.querySelector(".tooltip-arrow");
