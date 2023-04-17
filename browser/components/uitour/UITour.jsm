@@ -123,9 +123,12 @@ var UITour = {
           let id = UITour.protonEnabled
             ? "appMenu-fxa-label2"
             : "appMenu-fxa-label";
-          
-          let statusButton = aDocument.getElementById(id);
-          return statusButton.icon;
+          let statusButton = PanelMultiView.getViewNode(aDocument, id);
+          if (!UITour.protonEnabled) {
+            
+            return statusButton.querySelector(".toolbarbutton-icon");
+          }
+          return statusButton;
         },
         
         
