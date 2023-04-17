@@ -369,15 +369,10 @@ class NumberFormat final {
     return formatResult().andThen([&buffer](std::u16string_view result)
                                       -> Result<Ok, NumberFormat::FormatError> {
       if constexpr (std::is_same<C, uint8_t>::value) {
-        
-        
-        if (!buffer.allocate(3 * result.size())) {
+        if (!FillUTF8Buffer(Span(result.data(), result.size()), buffer)) {
           return Err(FormatError::OutOfMemory);
         }
-        size_t amount = ConvertUtf16toUtf8(
-            Span(result.data(), result.size()),
-            Span(static_cast<char*>(std::data(buffer)), std::size(buffer)));
-        buffer.written(amount);
+        return Ok();
       } else {
         
         
@@ -387,9 +382,9 @@ class NumberFormat final {
         PodCopy(static_cast<char16_t*>(buffer.data()), result.data(),
                 result.size());
         buffer.written(result.size());
-      }
 
-      return Ok();
+        return Ok();
+      }
     });
   }
 };
