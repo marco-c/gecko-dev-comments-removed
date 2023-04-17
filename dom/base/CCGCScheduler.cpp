@@ -164,7 +164,6 @@ RefPtr<CCGCScheduler::MayGCPromise> CCGCScheduler::MayGCNow(
         }
       }
       
-      
       break;
     }
     default:
