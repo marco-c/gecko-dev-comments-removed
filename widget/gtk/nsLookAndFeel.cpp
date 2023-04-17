@@ -359,7 +359,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
     case ColorID::MozDragtargetzone:
-    case ColorID::MozHtmlCellhighlight:
     case ColorID::Highlight:  
       aColor = mTextSelectedBackground;
       break;
@@ -373,12 +372,13 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::IMESelectedRawTextForeground:
     case ColorID::IMESelectedConvertedTextForeground:
     case ColorID::Highlighttext:
-    case ColorID::MozHtmlCellhighlighttext:
       aColor = mTextSelectedText;
       break;
+    case ColorID::MozHtmlCellhighlight:
     case ColorID::MozAccentColor:
       aColor = mAccentColor;
       break;
+    case ColorID::MozHtmlCellhighlighttext:
     case ColorID::MozAccentColorForeground:
       aColor = mAccentColorForeground;
       break;
@@ -1446,8 +1446,30 @@ void nsLookAndFeel::PerThemeData::Init() {
       GrabSelectionColors(style);
     }
 
+    
     mAccentColor = mTextSelectedBackground;
     mAccentColorForeground = mTextSelectedText;
+
+    
+    
+    
+    
+    
+    
+    {
+      GdkRGBA bg, fg;
+      const bool found =
+          (gtk_style_context_lookup_color(style, "selected_bg_color", &bg) &&
+           gtk_style_context_lookup_color(style, "selected_fg_color", &fg)) ||
+          (gtk_style_context_lookup_color(style, "theme_selected_bg_color",
+                                          &bg) &&
+           gtk_style_context_lookup_color(style, "theme_selected_fg_color",
+                                          &fg));
+      if (found) {
+        mAccentColor = GDK_RGBA_TO_NS_RGBA(bg);
+        mAccentColorForeground = GDK_RGBA_TO_NS_RGBA(fg);
+      }
+    }
 
     
     
