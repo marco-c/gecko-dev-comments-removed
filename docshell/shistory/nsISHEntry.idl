@@ -98,13 +98,6 @@ interface nsISHEntry : nsISupports
     [infallible] attribute boolean hasUserInteraction;
 
     
-
-
-
-
-    [infallible] attribute boolean hasUserActivation;
-
-    
     [infallible] attribute nsIReferrerInfo referrerInfo;
 
     
@@ -328,8 +321,7 @@ interface nsISHEntry : nsISupports
                            in bool srcdocEntry,
                            in nsIURI baseURI,
                            in bool saveLayoutState,
-                           in bool expired,
-                           in bool userActivation);
+                           in bool expired);
 
     nsISHEntry clone();
 
