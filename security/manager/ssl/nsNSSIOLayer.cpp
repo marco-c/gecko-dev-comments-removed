@@ -251,9 +251,17 @@ void nsNSSSocketInfo::SetHandshakeCompleted() {
 
   mIsFullHandshake = false;  
 
-  if (mTlsHandshakeCallback) {
-    Unused << mTlsHandshakeCallback->HandshakeDone();
-  }
+  
+  
+  RefPtr<nsNSSSocketInfo> self(this);
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "nsNSSSocketInfo::HandshakeDone",
+      [self{std::move(self)}]() {
+        if (self->mTlsHandshakeCallback) {
+          auto callback = std::move(self->mTlsHandshakeCallback);
+          Unused << callback->HandshakeDone();
+        }
+      }));
 }
 
 void nsNSSSocketInfo::SetNegotiatedNPN(const char* value, uint32_t length) {
