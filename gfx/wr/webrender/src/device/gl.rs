@@ -1667,12 +1667,12 @@ impl Device {
         
         let supports_nonzero_pbo_offsets = !is_macos;
 
-        let is_mali = renderer_name.starts_with("Mali");
-
         
         
         
-        let supports_render_target_partial_update = !is_mali;
+        let is_mali_g = renderer_name.starts_with("Mali-G");
+        let is_mali_t = renderer_name.starts_with("Mali-T");
+        let supports_render_target_partial_update = !is_mali_g && !is_mali_t;
 
         let supports_shader_storage_object = match gl.get_type() {
             
@@ -1692,8 +1692,6 @@ impl Device {
 
         let supports_image_external_essl3 = supports_extension(&extensions, "GL_OES_EGL_image_external_essl3");
 
-        let is_mali_g = renderer_name.starts_with("Mali-G");
-
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
             
@@ -1707,7 +1705,6 @@ impl Device {
         
         
         
-        let is_mali_t = renderer_name.starts_with("Mali-T");
         let supports_alpha_target_clears = !is_mali_t;
 
         
