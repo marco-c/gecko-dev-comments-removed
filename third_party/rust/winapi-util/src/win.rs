@@ -168,6 +168,16 @@ impl HandleRef {
             Some(File::from_raw_handle(handle))
         }))
     }
+
+    
+    pub fn as_file(&self) -> &File {
+        (self.0).0.as_ref().unwrap()
+    }
+
+    
+    pub fn as_file_mut(&mut self) -> &mut File {
+        (self.0).0.as_mut().unwrap()
+    }
 }
 
 
