@@ -1063,6 +1063,7 @@ WEBIDL_FILES += [
     
     "ExtensionMockAPI.webidl",
     "ExtensionPort.webidl",
+    "ExtensionTest.webidl",
 ]
 
 
