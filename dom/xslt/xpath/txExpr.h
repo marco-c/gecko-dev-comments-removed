@@ -701,8 +701,7 @@ class PathExpr : public Expr {
 
 
 
-
-  nsresult addExpr(Expr* aExpr, PathOperator pathOp);
+  void addExpr(Expr* aExpr, PathOperator pathOp);
 
   
 
