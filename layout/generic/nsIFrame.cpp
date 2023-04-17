@@ -3102,9 +3102,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
       this, nsCSSPropertyIDSet::OpacityProperties());
   
   
-  bool needHitTestInfo =
-      aBuilder->BuildCompositorHitTestInfo() &&
-      StyleUI()->GetEffectivePointerEvents(this) != StylePointerEvents::None;
+  bool needHitTestInfo = aBuilder->BuildCompositorHitTestInfo() &&
+                         Style()->PointerEvents() != StylePointerEvents::None;
   bool opacityItemForEventsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChange.bits & StyleWillChangeBits::OPACITY) &&
@@ -4526,8 +4525,14 @@ static bool IsEditingHost(const nsIFrame* aFrame) {
   return element && element->IsEditableRoot();
 }
 
+static bool IsTopmostModalDialog(const nsIFrame* aFrame) {
+  auto* element = Element::FromNodeOrNull(aFrame->GetContent());
+  return element &&
+         element->State().HasState(NS_EVENT_STATE_TOPMOST_MODAL_DIALOG);
+}
+
 static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
-  if (aFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT)) {
+  if (aFrame->IsGeneratedContentFrame()) {
     return StyleUserSelect::None;
   }
 
@@ -4545,12 +4550,16 @@ static StyleUserSelect UsedUserSelect(const nsIFrame* aFrame) {
   
   
   
-  auto style = aFrame->StyleUIReset()->mUserSelect;
+  auto style = aFrame->Style()->UserSelect();
   if (style != StyleUserSelect::Auto) {
     return style;
   }
 
-  if (aFrame->IsTextInputFrame() || IsEditingHost(aFrame)) {
+  if (aFrame->IsTextInputFrame() || IsEditingHost(aFrame) ||
+      IsTopmostModalDialog(aFrame)) {
+    
+    
+    
     
     
     
@@ -5300,7 +5309,7 @@ static bool SelfIsSelectable(nsIFrame* aFrame, uint32_t aFlags) {
     return false;
   }
   return !aFrame->IsGeneratedContentFrame() &&
-         aFrame->StyleUIReset()->mUserSelect != StyleUserSelect::None;
+         aFrame->Style()->UserSelect() != StyleUserSelect::None;
 }
 
 static bool SelectionDescendToKids(nsIFrame* aFrame) {
@@ -5328,7 +5337,7 @@ static bool SelectionDescendToKids(nsIFrame* aFrame) {
     return false;
   }
 
-  auto style = aFrame->StyleUIReset()->mUserSelect;
+  auto style = aFrame->Style()->UserSelect();
   return style != StyleUserSelect::All && style != StyleUserSelect::None;
 }
 
@@ -5592,7 +5601,7 @@ static nsIFrame* AdjustFrameForSelectionStyles(nsIFrame* aFrame) {
   for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
     
     
-    StyleUserSelect userSelect = frame->StyleUIReset()->mUserSelect;
+    auto userSelect = frame->Style()->UserSelect();
     if (userSelect != StyleUserSelect::Auto &&
         userSelect != StyleUserSelect::All) {
       break;
@@ -5621,7 +5630,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(
 
     
     
-    if (adjustedFrame->StyleUIReset()->mUserSelect == StyleUserSelect::All) {
+    if (adjustedFrame->Style()->UserSelect() == StyleUserSelect::All) {
       nsPoint adjustedPoint = aPoint + this->GetOffsetTo(adjustedFrame);
       return OffsetsForSingleFrame(adjustedFrame, adjustedPoint);
     }
@@ -5712,7 +5721,7 @@ StyleImageRendering nsIFrame::UsedImageRendering() const {
 }
 
 Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
-  StyleCursorKind kind = StyleUI()->mCursor.keyword;
+  StyleCursorKind kind = StyleUI()->Cursor().keyword;
   if (kind == StyleCursorKind::Auto) {
     
     kind = (mContent && mContent->IsEditable()) ? StyleCursorKind::Text
@@ -6767,7 +6776,7 @@ void nsIFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
 bool nsIFrame::IsContentDisabled() const {
   
   
-  if (StyleUI()->mUserInput == StyleUserInput::None) {
+  if (StyleUI()->UserInput() == StyleUserInput::None) {
     return true;
   }
 
@@ -10207,8 +10216,8 @@ nsIFrame::Focusable nsIFrame::IsFocusable(bool aWithMouse) {
     return {};
   }
 
-  const nsStyleUI* ui = StyleUI();
-  if (ui->mInert == StyleInert::Inert) {
+  const nsStyleUI& ui = *StyleUI();
+  if (ui.IsInert()) {
     return {};
   }
 
@@ -10219,8 +10228,8 @@ nsIFrame::Focusable nsIFrame::IsFocusable(bool aWithMouse) {
   }
 
   int32_t tabIndex = -1;
-  if (ui->mUserFocus != StyleUserFocus::Ignore &&
-      ui->mUserFocus != StyleUserFocus::None) {
+  if (ui.UserFocus() != StyleUserFocus::Ignore &&
+      ui.UserFocus() != StyleUserFocus::None) {
     
     tabIndex = 0;
   }
@@ -11283,9 +11292,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     
     return result;
   }
-  const StylePointerEvents pointerEvents =
-      StyleUI()->GetEffectivePointerEvents(this);
-  if (pointerEvents == StylePointerEvents::None) {
+  if (Style()->PointerEvents() == StylePointerEvents::None) {
     return result;
   }
   if (!StyleVisibility()->IsVisible()) {

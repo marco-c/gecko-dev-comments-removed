@@ -1716,7 +1716,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
 
   nsChangeHint CalcDifference(const nsStyleUIReset& aNewData) const;
 
+ private:
   mozilla::StyleUserSelect mUserSelect;  
+
+ public:
+  mozilla::StyleUserSelect ComputedUserSelect() const { return mUserSelect; }
+
   mozilla::StyleScrollbarWidth mScrollbarWidth;
   uint8_t mMozForceBrokenImageIcon;  
   mozilla::StyleImeMode mIMEMode;
@@ -1738,20 +1743,44 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   nsChangeHint CalcDifference(const nsStyleUI& aNewData) const;
 
   mozilla::StyleInert mInert;
-  mozilla::StyleUserInput mUserInput;
-  mozilla::StyleUserModify mUserModify;  
-  mozilla::StyleUserFocus mUserFocus;    
-  mozilla::StylePointerEvents mPointerEvents;
 
+ private:
+  mozilla::StyleUserInput mUserInput;
+  mozilla::StyleUserModify mUserModify;
+  mozilla::StyleUserFocus mUserFocus;
+  mozilla::StylePointerEvents mPointerEvents;
   mozilla::StyleCursor mCursor;
+
+ public:
+  bool IsInert() const { return mInert == mozilla::StyleInert::Inert; }
+
+  mozilla::StyleUserInput UserInput() const {
+    return IsInert() ? mozilla::StyleUserInput::None : mUserInput;
+  }
+
+  mozilla::StyleUserModify UserModify() const {
+    return IsInert() ? mozilla::StyleUserModify::ReadOnly : mUserModify;
+  }
+
+  mozilla::StyleUserFocus UserFocus() const {
+    return IsInert() ? mozilla::StyleUserFocus::None : mUserFocus;
+  }
+
+  
+  
+  mozilla::StylePointerEvents ComputedPointerEvents() const {
+    return mPointerEvents;
+  }
+
+  const mozilla::StyleCursor& Cursor() const {
+    static mozilla::StyleCursor sAuto{{}, mozilla::StyleCursorKind::Auto};
+    return IsInert() ? sAuto : mCursor;
+  }
 
   mozilla::StyleColorOrAuto mAccentColor;
   mozilla::StyleCaretColor mCaretColor;
   mozilla::StyleScrollbarColor mScrollbarColor;
   mozilla::StyleColorScheme mColorScheme;
-
-  inline mozilla::StylePointerEvents GetEffectivePointerEvents(
-      const nsIFrame*) const;
 
   bool HasCustomScrollbars() const { return !mScrollbarColor.IsAuto(); }
 };

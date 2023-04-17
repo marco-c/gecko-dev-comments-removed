@@ -200,8 +200,7 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 
 bool nsMenuPopupFrame::IsMouseTransparent(const ComputedStyle& aStyle) const {
-  return aStyle.StyleUI()->GetEffectivePointerEvents(this) ==
-         StylePointerEvents::None;
+  return aStyle.PointerEvents() == StylePointerEvents::None;
 }
 
 bool nsMenuPopupFrame::HasRemoteContent() const {
