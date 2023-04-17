@@ -36,9 +36,10 @@
 #include "js/TypeDecls.h"  
 #include "js/Vector.h"  
 #include "js/WasmFeatures.h"
-#include "vm/JSFunction.h"    
-#include "vm/NativeObject.h"  
-#include "wasm/WasmTypes.h"   
+#include "vm/JSFunction.h"     
+#include "vm/NativeObject.h"   
+#include "wasm/WasmTlsData.h"  
+#include "wasm/WasmTypes.h"    
 
 class JSFreeOp;
 class JSObject;

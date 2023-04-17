@@ -25,7 +25,7 @@
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
 #include "vm/SavedFrame.h"
-#include "wasm/WasmTypes.h"  
+#include "wasm/WasmFrame.h"  
 
 namespace js {
 
