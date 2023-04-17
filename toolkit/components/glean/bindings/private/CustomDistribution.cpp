@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/glean/bindings/MemoryDistribution.h"
+#include "mozilla/glean/bindings/CustomDistribution.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/glean/bindings/HistogramGIFFTMap.h"
@@ -18,29 +18,51 @@ namespace mozilla::glean {
 
 namespace impl {
 
-void MemoryDistributionMetric::Accumulate(uint64_t aSample) const {
+void CustomDistributionMetric::AccumulateSamples(
+    const nsTArray<uint64_t>& aSamples) const {
   auto hgramId = HistogramIdForMetric(mId);
   if (hgramId) {
-    Telemetry::Accumulate(hgramId.extract(), aSample);
+    auto id = hgramId.extract();
+    
+    
+    for (auto sample : aSamples) {
+      Telemetry::Accumulate(id, sample);
+    }
   }
 #ifndef MOZ_GLEAN_ANDROID
-  fog_memory_distribution_accumulate(mId, aSample);
+  fog_custom_distribution_accumulate_samples(mId, &aSamples);
 #endif
 }
 
-Maybe<DistributionData> MemoryDistributionMetric::TestGetValue(
+void CustomDistributionMetric::AccumulateSamplesSigned(
+    const nsTArray<int64_t>& aSamples) const {
+  auto hgramId = HistogramIdForMetric(mId);
+  if (hgramId) {
+    auto id = hgramId.extract();
+    
+    
+    for (auto sample : aSamples) {
+      Telemetry::Accumulate(id, sample);
+    }
+  }
+#ifndef MOZ_GLEAN_ANDROID
+  fog_custom_distribution_accumulate_samples_signed(mId, &aSamples);
+#endif
+}
+
+Maybe<DistributionData> CustomDistributionMetric::TestGetValue(
     const nsACString& aPingName) const {
 #ifdef MOZ_GLEAN_ANDROID
   Unused << mId;
   return Nothing();
 #else
-  if (!fog_memory_distribution_test_has_value(mId, &aPingName)) {
+  if (!fog_custom_distribution_test_has_value(mId, &aPingName)) {
     return Nothing();
   }
   nsTArray<uint64_t> buckets;
   nsTArray<uint64_t> counts;
   uint64_t sum;
-  fog_memory_distribution_test_get_value(mId, &aPingName, &sum, &buckets,
+  fog_custom_distribution_test_get_value(mId, &aPingName, &sum, &buckets,
                                          &counts);
   return Some(DistributionData(buckets, counts, sum));
 #endif
@@ -48,20 +70,20 @@ Maybe<DistributionData> MemoryDistributionMetric::TestGetValue(
 
 }  
 
-NS_IMPL_CLASSINFO(GleanMemoryDistribution, nullptr, 0, {0})
-NS_IMPL_ISUPPORTS_CI(GleanMemoryDistribution, nsIGleanMemoryDistribution)
+NS_IMPL_CLASSINFO(GleanCustomDistribution, nullptr, 0, {0})
+NS_IMPL_ISUPPORTS_CI(GleanCustomDistribution, nsIGleanCustomDistribution)
 
 NS_IMETHODIMP
-GleanMemoryDistribution::Accumulate(uint64_t aSample) {
-  mMemoryDist.Accumulate(aSample);
+GleanCustomDistribution::AccumulateSamples(const nsTArray<int64_t>& aSamples) {
+  mCustomDist.AccumulateSamplesSigned(aSamples);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-GleanMemoryDistribution::TestGetValue(const nsACString& aPingName,
+GleanCustomDistribution::TestGetValue(const nsACString& aPingName,
                                       JSContext* aCx,
                                       JS::MutableHandleValue aResult) {
-  auto result = mMemoryDist.TestGetValue(aPingName);
+  auto result = mCustomDist.TestGetValue(aPingName);
   if (result.isNothing()) {
     aResult.set(JS::UndefinedValue());
   } else {

@@ -99,13 +99,13 @@ static Maybe<ScalarID> ScalarIdForMetric(uint32_t aId) {
     case 11: { 
       return Some(ScalarID::SOME_OTHER_UINT_SCALAR);
     }
-    case 14: { 
+    case 15: { 
       return Some(ScalarID::SOME_OTHER_STRING_SCALAR);
     }
-    case 15: { 
+    case 16: { 
       return Some(ScalarID::SOME_STILL_OTHER_STRING_SCALAR);
     }
-    case 18: { 
+    case 19: { 
       return Some(ScalarID::TELEMETRY_TEST_MIRROR_FOR_QUANTITY);
     }
     default: {
