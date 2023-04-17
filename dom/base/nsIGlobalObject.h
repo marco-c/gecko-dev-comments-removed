@@ -33,6 +33,7 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 class DOMEventTargetHelper;
+enum class StorageAccess;
 namespace dom {
 class VoidFunction;
 class DebuggerNotificationManager;
@@ -182,6 +183,14 @@ class nsIGlobalObject : public nsISupports,
   virtual RefPtr<mozilla::dom::ServiceWorkerRegistration>
   GetOrCreateServiceWorkerRegistration(
       const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor);
+
+  
+
+
+
+
+
+  virtual mozilla::StorageAccess GetStorageAccess();
 
   
   
