@@ -12,7 +12,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGDocument.h"
-#include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
@@ -69,21 +68,11 @@ bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
   RefPtr<BasePrincipal> principal =
       BasePrincipal::CreateContentPrincipal(aURI, OriginAttributes());
 
-  RefPtr<extensions::WebExtensionPolicy> addonPolicy = principal->AddonPolicy();
-  if (addonPolicy) {
-    if (addonPolicy->IsPrivileged()) {
+  nsString addonId;
+  if (NS_SUCCEEDED(principal->GetAddonId(addonId))) {
+    if (StringEndsWith(addonId, u"@mozilla.org"_ns) ||
+        StringEndsWith(addonId, u"@mozilla.com"_ns)) {
       return true;
-    }
-
-    
-    
-    
-    nsString addonId;
-    if (NS_SUCCEEDED(principal->GetAddonId(addonId))) {
-      if (StringEndsWith(addonId, u"@mozilla.org"_ns) ||
-          StringEndsWith(addonId, u"@mozilla.com"_ns)) {
-        return true;
-      }
     }
   }
 
