@@ -447,27 +447,46 @@ Result<> js::CheckPropertyDescriptorAccessors(JSContext* cx,
   return Ok();
 }
 
+
 void js::CompletePropertyDescriptor(MutableHandle<PropertyDescriptor> desc) {
+  
   desc.assertValid();
 
+  
+  
+  
+  
+
+  
   if (desc.isGenericDescriptor() || desc.isDataDescriptor()) {
-    if (!desc.hasWritable()) {
-      desc.attributesRef() |= JSPROP_READONLY;
+    
+    if (!desc.hasValue()) {
+      desc.setValue(UndefinedHandleValue);
     }
-    desc.attributesRef() &= ~(JSPROP_IGNORE_READONLY | JSPROP_IGNORE_VALUE);
+    
+    if (!desc.hasWritable()) {
+      desc.setWritable(false);
+    }
   } else {
+    
     if (!desc.hasGetterObject()) {
       desc.setGetterObject(nullptr);
     }
+    
     if (!desc.hasSetterObject()) {
       desc.setSetterObject(nullptr);
     }
-    desc.attributesRef() |= JSPROP_GETTER | JSPROP_SETTER;
   }
+
+  
+  if (!desc.hasEnumerable()) {
+    desc.setEnumerable(false);
+  }
+
+  
   if (!desc.hasConfigurable()) {
-    desc.attributesRef() |= JSPROP_PERMANENT;
+    desc.setConfigurable(false);
   }
-  desc.attributesRef() &= ~(JSPROP_IGNORE_PERMANENT | JSPROP_IGNORE_ENUMERATE);
 
   desc.assertComplete();
 }

@@ -2056,13 +2056,11 @@ bool js::NativeGetOwnPropertyDescriptor(
       desc.setGetterObject(obj->getGetter(shapeProp));
     } else {
       desc.setGetterObject(nullptr);
-      desc.attributesRef() |= JSPROP_GETTER;
     }
     if (desc.hasSetterObject()) {
       desc.setSetterObject(obj->getSetter(shapeProp));
     } else {
       desc.setSetterObject(nullptr);
-      desc.attributesRef() |= JSPROP_SETTER;
     }
 
     desc.value().setUndefined();
@@ -2079,7 +2077,7 @@ bool js::NativeGetOwnPropertyDescriptor(
       
       
       
-      desc.attributesRef() &= ~JSPROP_CUSTOM_DATA_PROP;
+      desc.setAttributes(desc.attributes() & ~JSPROP_CUSTOM_DATA_PROP);
 
       if (!NativeGetExistingProperty(cx, obj, obj, id, prop.shapeProperty(),
                                      desc.value())) {
