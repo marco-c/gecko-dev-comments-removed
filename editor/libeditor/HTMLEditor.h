@@ -1595,14 +1595,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  enum class IgnoreSingleBR { Yes, No };
-  bool IsEmptyBlockElement(Element& aElement,
-                           IgnoreSingleBR aIgnoreSingleBR) const;
-
-  
-
-
-
 
 
 

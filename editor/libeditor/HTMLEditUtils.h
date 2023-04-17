@@ -323,6 +323,16 @@ class HTMLEditUtils final {
 
 
 
+  static bool IsEmptyBlockElement(const Element& aElement,
+                                  const EmptyCheckOptions& aOptions) {
+    return HTMLEditUtils::IsBlockElement(aElement) &&
+           HTMLEditUtils::IsEmptyNode(aElement, aOptions);
+  }
+
+  
+
+
+
   static bool IsEmptyOneHardLine(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents) {
     if (NS_WARN_IF(aArrayOfContents.IsEmpty())) {
