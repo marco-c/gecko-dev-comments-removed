@@ -53,25 +53,6 @@ class BrowsingContextTargetFront extends TargetMixin(
     this.emit("frame-update", packet);
   }
 
-  async reload({ options } = {}) {
-    try {
-      await super.reload({ options });
-    } catch (e) {
-      dump(" reload exception: " + e + " >>> " + e.message + " <<<\n");
-      
-      
-      
-      
-      const shouldSwallowReloadError =
-        this.getTrait("supportsFollowWindowGlobalLifeCycleFlag") &&
-        this.targetForm.followWindowGlobalLifeCycle;
-
-      if (!shouldSwallowReloadError) {
-        throw e;
-      }
-    }
-  }
-
   
 
 
