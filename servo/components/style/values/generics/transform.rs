@@ -687,7 +687,7 @@ pub trait IsParallelTo {
 
 impl<Number, Angle> ToCss for Rotate<Number, Angle>
 where
-    Number: Copy + ToCss,
+    Number: Copy + ToCss + Zero,
     Angle: ToCss,
     (Number, Number, Number): IsParallelTo,
 {
@@ -704,21 +704,37 @@ where
                 
                 
                 
+                
                 let v = (x, y, z);
-                if v.is_parallel_to(&DirectionVector::new(1., 0., 0.)) {
-                    dest.write_char('x')?;
+                let axis = if x.is_zero() && y.is_zero() && z.is_zero() {
+                    
+                    
+                    
+                    
+                    
+                    
+                    None
+                } else if v.is_parallel_to(&DirectionVector::new(1., 0., 0.)) {
+                    Some("x ")
                 } else if v.is_parallel_to(&DirectionVector::new(0., 1., 0.)) {
-                    dest.write_char('y')?;
+                    Some("y ")
                 } else if v.is_parallel_to(&DirectionVector::new(0., 0., 1.)) {
-                    dest.write_char('z')?;
+                    
+                    return angle.to_css(dest);
                 } else {
-                    x.to_css(dest)?;
-                    dest.write_char(' ')?;
-                    y.to_css(dest)?;
-                    dest.write_char(' ')?;
-                    z.to_css(dest)?;
+                    None
+                };
+                match axis {
+                    Some(a) => dest.write_str(a)?,
+                    None => {
+                        x.to_css(dest)?;
+                        dest.write_char(' ')?;
+                        y.to_css(dest)?;
+                        dest.write_char(' ')?;
+                        z.to_css(dest)?;
+                        dest.write_char(' ')?;
+                    }
                 }
-                dest.write_char(' ')?;
                 angle.to_css(dest)
             },
         }
