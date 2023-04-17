@@ -1,8 +1,9 @@
 def main(request, response):
-    response.headers.set(b"Access-Control-Allow-Origin", b"*");
-    response.headers.set(b"Access-Control-Max-Age", b"0");
-    response.headers.set(b"Timing-Allow-Origin", b"*");
-    
-    
-    if request.method == u'OPTIONS':
-        response.headers.set(b"Access-Control-Allow-Headers", b"X-Require-Preflight");
+  response.headers.set(b"Access-Control-Allow-Origin", b"*")
+  response.headers.set(b"Access-Control-Max-Age", b"0")
+  response.headers.set(b"Timing-Allow-Origin", b"*")
+  
+  
+  if request.method == u'OPTIONS':
+    response.headers.set(b"Access-Control-Allow-Headers",
+        b"X-Require-Preflight")

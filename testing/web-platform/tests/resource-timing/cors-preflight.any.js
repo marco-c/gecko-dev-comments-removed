@@ -5,29 +5,45 @@
 
 const fuzzFactor = 3;  
 
-const hostInfo = get_host_info();
-const url = new URL('/resource-timing/resources/preflight.py', hostInfo['HTTP_REMOTE_ORIGIN']).href;
+const {HTTP_REMOTE_ORIGIN} = get_host_info();
+const url = new URL('/resource-timing/resources/preflight.py',
+    HTTP_REMOTE_ORIGIN).href;
 
 
 
 const minHeaderSize = 100;
 const maxHeaderSize = 1024;
 
-function checkResourceSizes() {
-  const entries = performance.getEntriesByName(url);
-  assert_equals(entries.length, 2, 'Wrong number of entries');
+promise_test(async () => {
+  const checkCorsAllowed = response => response.arrayBuffer();
+  const requirePreflight = {headers: {'X-Require-Preflight' : '1'}};
+  const collectEntries = new Promise(resolve => {
+    let entriesSeen = [];
+    new PerformanceObserver(entryList => {
+      entriesSeen = entriesSeen.concat(entryList.getEntries());
+      if (entriesSeen.length > 2) {
+        throw new Error(`Saw too many PerformanceResourceTiming entries ` +
+            `(${entriesSeen.length})`);
+      }
+      if (entriesSeen.length == 2) {
+        resolve(entriesSeen);
+      }
+    }).observe({"type": "resource"});
+  });
+
+  
+  
+  
+  await fetch(url).then(checkCorsAllowed);
+
+  
+  
+  await fetch(url, requirePreflight).then(checkCorsAllowed);
+
+  const entries = await collectEntries;
   assert_greater_than(entries[0].transferSize, 0, 'No-preflight transferSize');
   const lowerBound = entries[0].transferSize - fuzzFactor;
   const upperBound = entries[0].transferSize + fuzzFactor;
-  assert_between_exclusive(entries[1].transferSize, lowerBound, upperBound, 'Preflighted transferSize');
-}
-
-promise_test(() => {
-  const eatBody = response => response.arrayBuffer();
-  const requirePreflight = {headers: {'X-Require-Preflight' : '1'}};
-  return fetch(url)
-      .then(eatBody)
-      .then(() => fetch(url, requirePreflight))
-      .then(eatBody)
-      .then(checkResourceSizes);
+  assert_between_exclusive(entries[1].transferSize, lowerBound, upperBound,
+      'Preflighted transferSize');
 }, 'PerformanceResourceTiming sizes fetch with preflight test');
