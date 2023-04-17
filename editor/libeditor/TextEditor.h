@@ -272,30 +272,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  nsresult OnCompositionStart(WidgetCompositionEvent& aCompositionStartEvent);
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult
-  OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void OnCompositionEnd(
-      WidgetCompositionEvent& aCompositionEndEvent);
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult OnDrop(dom::DragEvent* aDropEvent);
 
   
@@ -759,18 +735,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   MOZ_CAN_RUN_SCRIPT bool UpdateMetaCharset(Document& aDocument,
                                             const nsACString& aCharacterSet);
-
-  
-
-
-
-
-
-
-
-
-
-  bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
 
   virtual already_AddRefed<Element> GetInputEventTargetElement() const override;
 

@@ -451,6 +451,30 @@ class EditorBase : public nsIEditor,
 
 
 
+  nsresult OnCompositionStart(WidgetCompositionEvent& aCompositionStartEvent);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void OnCompositionEnd(
+      WidgetCompositionEvent& aCompositionEndEvent);
+
+  
+
+
+
 
 
   void SetWrapColumn(int32_t aWrapColumn) { mWrapColumn = aWrapColumn; }
@@ -2261,6 +2285,18 @@ class EditorBase : public nsIEditor,
   Tuple<EditorDOMPointInText, EditorDOMPointInText> ComputeInsertedRange(
       const EditorDOMPointInText& aInsertedPoint,
       const nsAString& aInsertedString) const;
+
+  
+
+
+
+
+
+
+
+
+
+  bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
