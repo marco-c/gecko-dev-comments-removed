@@ -526,10 +526,7 @@ var tests = [
 
 
 
-if (
-  Services.prefs.getBoolPref("browser.cache.offline.enable") &&
-  Services.prefs.getBoolPref("browser.cache.offline.storage.enable")
-) {
+if (Services.prefs.getBoolPref("browser.cache.offline.enable")) {
   tests.push(test_cache_cleared);
 }
 
