@@ -152,10 +152,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
   virtual void Shutdown() override;
 
   
-  static HWND GetHWNDFor(LocalAccessible* aAccessible);
-
-  static void FireWinEvent(LocalAccessible* aTarget, uint32_t aEventType);
-
   
 
 

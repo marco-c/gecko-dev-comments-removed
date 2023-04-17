@@ -39,7 +39,6 @@
 #include "nsTextFormatter.h"
 #include "nsView.h"
 #include "nsViewManager.h"
-#include "nsEventMap.h"
 #include "nsArrayUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ReverseIterator.h"
@@ -982,63 +981,6 @@ void AccessibleWrap::GetNativeInterface(void** aOutAccessible) {
   NS_ADDREF_THIS();
 }
 
-static bool IsHandlerInvalidationNeeded(uint32_t aEvent) {
-  
-  
-  switch (aEvent) {
-    case EVENT_OBJECT_STATECHANGE:
-    case EVENT_OBJECT_LOCATIONCHANGE:
-    case EVENT_OBJECT_NAMECHANGE:
-    case EVENT_OBJECT_DESCRIPTIONCHANGE:
-    case EVENT_OBJECT_VALUECHANGE:
-    case EVENT_OBJECT_FOCUS:
-    case IA2_EVENT_ACTION_CHANGED:
-    case IA2_EVENT_DOCUMENT_LOAD_COMPLETE:
-    case IA2_EVENT_DOCUMENT_LOAD_STOPPED:
-    case IA2_EVENT_DOCUMENT_ATTRIBUTE_CHANGED:
-    case IA2_EVENT_DOCUMENT_CONTENT_CHANGED:
-    case IA2_EVENT_PAGE_CHANGED:
-    case IA2_EVENT_TEXT_ATTRIBUTE_CHANGED:
-    case IA2_EVENT_TEXT_CHANGED:
-    case IA2_EVENT_TEXT_INSERTED:
-    case IA2_EVENT_TEXT_REMOVED:
-    case IA2_EVENT_TEXT_UPDATED:
-    case IA2_EVENT_OBJECT_ATTRIBUTE_CHANGED:
-      return true;
-    default:
-      return false;
-  }
-}
-
-void AccessibleWrap::FireWinEvent(LocalAccessible* aTarget,
-                                  uint32_t aEventType) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  static_assert(sizeof(gWinEventMap) / sizeof(gWinEventMap[0]) ==
-                    nsIAccessibleEvent::EVENT_LAST_ENTRY,
-                "MSAA event map skewed");
-
-  NS_ASSERTION(aEventType > 0 && aEventType < ArrayLength(gWinEventMap),
-               "invalid event type");
-
-  uint32_t winEvent = gWinEventMap[aEventType];
-  if (!winEvent) return;
-
-  int32_t childID = MsaaAccessible::GetChildIDFor(aTarget);
-  if (!childID) return;  
-
-  HWND hwnd = GetHWNDFor(aTarget);
-  if (!hwnd) {
-    return;
-  }
-
-  if (IsHandlerInvalidationNeeded(winEvent)) {
-    InvalidateHandlers();
-  }
-
-  
-  ::NotifyWinEvent(winEvent, hwnd, OBJID_CLIENT, childID);
-}
-
 
 
 
@@ -1063,7 +1005,7 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
     UpdateSystemCaretFor(accessible);
   }
 
-  FireWinEvent(accessible, eventType);
+  MsaaAccessible::FireWinEvent(accessible, eventType);
 
   return NS_OK;
 }
@@ -1087,69 +1029,6 @@ DocRemoteAccessibleWrap* AccessibleWrap::DocProxyWrapper() const {
 
 
 
-HWND AccessibleWrap::GetHWNDFor(LocalAccessible* aAccessible) {
-  if (!aAccessible) {
-    return nullptr;
-  }
-
-  if (aAccessible->IsProxy()) {
-    RemoteAccessible* proxy = aAccessible->Proxy();
-    if (!proxy) {
-      return nullptr;
-    }
-
-    
-    
-    if (nsWinUtils::IsWindowEmulationStarted()) {
-      DocAccessibleParent* doc = proxy->Document();
-      HWND hWnd = doc->GetEmulatedWindowHandle();
-      if (hWnd) {
-        return hWnd;
-      }
-    }
-
-    
-    
-    
-    LocalAccessible* outerDoc = proxy->OuterDocOfRemoteBrowser();
-    if (!outerDoc) {
-      
-      
-      
-      
-      
-      
-      return nullptr;
-    }
-
-    return GetHWNDFor(outerDoc);
-  }
-
-  DocAccessible* document = aAccessible->Document();
-  if (!document) return nullptr;
-
-  
-  
-  
-  nsIFrame* frame = aAccessible->GetFrame();
-  if (frame) {
-    nsIWidget* widget = frame->GetNearestWidget();
-    if (widget && widget->IsVisible()) {
-      if (nsViewManager* vm = document->PresShellPtr()->GetViewManager()) {
-        nsCOMPtr<nsIWidget> rootWidget;
-        vm->GetRootWidget(getter_AddRefs(rootWidget));
-        
-        
-        
-        if (rootWidget != widget)
-          return static_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-      }
-    }
-  }
-
-  return static_cast<HWND>(document->GetNativeWindow());
-}
-
 IDispatch* AccessibleWrap::NativeAccessible(LocalAccessible* aAccessible) {
   if (!aAccessible) {
     NS_WARNING("Not passing in an aAccessible");
@@ -1165,10 +1044,10 @@ bool AccessibleWrap::IsRootForHWND() {
   if (IsRoot()) {
     return true;
   }
-  HWND thisHwnd = GetHWNDFor(this);
+  HWND thisHwnd = MsaaAccessible::GetHWNDFor(this);
   AccessibleWrap* parent = static_cast<AccessibleWrap*>(LocalParent());
   MOZ_ASSERT(parent);
-  HWND parentHwnd = GetHWNDFor(parent);
+  HWND parentHwnd = MsaaAccessible::GetHWNDFor(parent);
   return thisHwnd != parentHwnd;
 }
 
@@ -1200,7 +1079,7 @@ void AccessibleWrap::UpdateSystemCaretFor(
   
   
   LocalAccessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-  UpdateSystemCaretFor(GetHWNDFor(outerDoc), aCaretRect);
+  UpdateSystemCaretFor(MsaaAccessible::GetHWNDFor(outerDoc), aCaretRect);
 }
 
 
@@ -1298,7 +1177,7 @@ bool AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
     return false;
   }
 
-  HWND hwnd = GetHWNDFor(this);
+  HWND hwnd = MsaaAccessible::GetHWNDFor(this);
   MOZ_ASSERT(hwnd);
   if (!hwnd) {
     return false;
