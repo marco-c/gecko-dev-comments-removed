@@ -3,13 +3,6 @@
 
 "use strict";
 
-const { ExperimentFakes } = ChromeUtils.import(
-  "resource://testing-common/NimbusTestUtils.jsm"
-);
-const { NimbusFeatures, ExperimentFeature } = ChromeUtils.import(
-  "resource://nimbus/ExperimentAPI.jsm"
-);
-
 const BROWSER_GLUE = Cc["@mozilla.org/browser/browserglue;1"].getService()
   .wrappedJSObject;
 
@@ -211,10 +204,9 @@ add_task(async function not_major_upgrade() {
 add_task(async function remote_disabled() {
   Services.telemetry.clearEvents();
 
-  await ExperimentFakes.remoteDefaultsHelper({
-    feature: NimbusFeatures.upgradeDialog,
-    configuration: { enabled: false, variables: {} },
-  });
+  
+  NimbusFeatures.upgradeDialog._onRemoteReady();
+  Services.prefs.setBoolPref("browser.startup.upgradeDialog.enabled", false);
 
   
   await SpecialPowers.pushPrefEnv({
@@ -228,11 +220,7 @@ add_task(async function remote_disabled() {
     ["upgrade_dialog", "trigger", "reason", "disabled"],
     "Feature disabled for upgrade dialog requirements"
   );
-  
-  await ExperimentFakes.remoteDefaultsHelper({
-    feature: NimbusFeatures.upgradeDialog,
-    configuration: { enabled: true, variables: {} },
-  });
+  Services.prefs.clearUserPref("browser.startup.upgradeDialog.enabled");
 });
 
 add_task(async function show_major_upgrade() {

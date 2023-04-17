@@ -367,7 +367,7 @@ class ExperimentFeature {
     this._waitForRemote = new Promise(
       resolve => (this._onRemoteReady = resolve)
     );
-    this._listenForRemoteDefaults = this._listenForRemoteDefaults.bind(this);
+    this._remoteReady = false;
     const variables = this.manifest?.variables || {};
 
     
@@ -404,36 +404,6 @@ class ExperimentFeature {
         );
       }
     });
-
-    
-
-
-
-
-
-
-    ExperimentAPI._store.on(
-      "remote-defaults-finalized",
-      this._listenForRemoteDefaults
-    );
-    this.onUpdate(this._listenForRemoteDefaults);
-  }
-
-  _listenForRemoteDefaults(eventName, reason) {
-    if (
-      
-      eventName === "remote-defaults-finalized" ||
-      
-      reason === "experiment-updated" ||
-      reason === "remote-defaults-update"
-    ) {
-      ExperimentAPI._store.off(
-        "remote-defaults-updated",
-        this._listenForRemoteDefaults
-      );
-      this.off(this._listenForRemoteDefaults);
-      this._onRemoteReady();
-    }
   }
 
   _getUserPrefsValues() {
@@ -453,7 +423,32 @@ class ExperimentFeature {
   }
 
   async ready() {
-    return Promise.all([ExperimentAPI.ready(), this._waitForRemote]);
+    await ExperimentAPI.ready();
+    
+    
+    if (
+      
+      
+      ExperimentAPI._store.getRemoteConfig(this.featureId) ||
+      ExperimentAPI.activateBranch({ featureId: this.featureId })
+    ) {
+      this._remoteReady = true;
+      this._onRemoteReady();
+    } else {
+      
+      let resolveEvent = (featureId, reason) => {
+        if (
+          reason === "remote-defaults-update" ||
+          reason === "experiment-updated"
+        ) {
+          this._remoteReady = true;
+          this._onRemoteReady();
+          this.off(resolveEvent);
+        }
+      };
+      this.onUpdate(resolveEvent);
+    }
+    return this._waitForRemote;
   }
 
   
@@ -522,14 +517,15 @@ class ExperimentFeature {
   }
 
   getRemoteConfig() {
-    let remoteConfig = ExperimentAPI._store.getRemoteConfig(this.featureId);
-    if (!remoteConfig) {
-      return null;
-    }
-    
-    delete remoteConfig.targeting;
+    if (this._remoteReady) {
+      let remoteConfig = ExperimentAPI._store.getRemoteConfig(this.featureId);
+      
+      delete remoteConfig.targeting;
 
-    return remoteConfig;
+      return remoteConfig;
+    }
+
+    return null;
   }
 
   recordExposureEvent() {
@@ -556,6 +552,7 @@ class ExperimentFeature {
 
   debug() {
     return {
+      _remoteReady: this._remoteReady,
       enabled: this.isEnabled(),
       value: this.getValue(),
       experiment: ExperimentAPI.getExperimentMetaData({

@@ -18,10 +18,7 @@ const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 const REMOTE_DEFAULTS_KEY = "__REMOTE_DEFAULTS";
 
-
 const SYNC_DATA_PREF_BRANCH = "nimbus.syncdatastore.";
-
-const SYNC_DEFAULTS_PREF_BRANCH = "nimbus.syncdefaultsstore.";
 let tryJSONParse = data => {
   try {
     return JSON.parse(data);
@@ -38,49 +35,26 @@ XPCOMUtils.defineLazyGetter(this, "syncDataStore", () => {
     }
   } catch (e) {}
 
-  let experimentsPrefBranch = Services.prefs.getBranch(SYNC_DATA_PREF_BRANCH);
-  let defaultsPrefBranch = Services.prefs.getBranch(SYNC_DEFAULTS_PREF_BRANCH);
+  let prefBranch = Services.prefs.getBranch(SYNC_DATA_PREF_BRANCH);
   return {
-    _tryParsePrefValue(branch, pref) {
+    get(featureId) {
       try {
-        return tryJSONParse(branch.getStringPref(pref, ""));
+        return tryJSONParse(prefBranch.getStringPref(featureId, ""));
       } catch (e) {
         
       }
 
       return null;
     },
-    _trySetPrefValue(branch, pref, value) {
+    set(featureId, value) {
       try {
-        branch.setStringPref(pref, JSON.stringify(value));
+        prefBranch.setStringPref(featureId, JSON.stringify(value));
       } catch (e) {
         Cu.reportError(e);
       }
     },
-    get(featureId) {
-      return this._tryParsePrefValue(experimentsPrefBranch, featureId);
-    },
-    getDefault(featureId) {
-      return this._tryParsePrefValue(defaultsPrefBranch, featureId);
-    },
-    set(featureId, value) {
-      this._trySetPrefValue(experimentsPrefBranch, featureId, value);
-    },
-    setDefault(featureId, value) {
-      this._trySetPrefValue(defaultsPrefBranch, featureId, value);
-    },
-    getAllDefaultBranches() {
-      return defaultsPrefBranch.getChildList("");
-    },
     delete(featureId) {
-      try {
-        experimentsPrefBranch.clearUserPref(featureId);
-      } catch (e) {}
-    },
-    deleteDefault(featureId) {
-      try {
-        defaultsPrefBranch.clearUserPref(featureId);
-      } catch (e) {}
+      prefBranch.clearUserPref(featureId);
     },
   };
 });
@@ -93,11 +67,6 @@ const SYNC_ACCESS_FEATURES = ["newtab", "aboutwelcome"];
 class ExperimentStore extends SharedDataMap {
   constructor(sharedDataKey, options = { isParent: IS_MAIN_PROCESS }) {
     super(sharedDataKey || DEFAULT_STORE_ID, options);
-
-    
-    
-    
-    this.remoteDefaultsSession = new Set();
   }
 
   
@@ -228,31 +197,6 @@ class ExperimentStore extends SharedDataMap {
     this._emitExperimentUpdates(updatedExperiment);
   }
 
-  finalizeRemoteConfigs() {
-    for (let featureId of syncDataStore.getAllDefaultBranches()) {
-      if (
-        !this.remoteDefaultsSession.has(featureId) &&
-        this.getRemoteConfig(featureId)
-      ) {
-        
-        
-        
-        const remoteConfigState = this.get(REMOTE_DEFAULTS_KEY);
-        delete remoteConfigState?.[featureId];
-        this.setNonPersistent(REMOTE_DEFAULTS_KEY, { ...remoteConfigState });
-        syncDataStore.deleteDefault(featureId);
-        this._emitFeatureUpdate(featureId, "remote-defaults-update");
-      }
-    }
-
-    
-    this.remoteDefaultsSession = new Set();
-    
-    
-    
-    this.emit("remote-defaults-finalized");
-  }
-
   
 
 
@@ -264,10 +208,6 @@ class ExperimentStore extends SharedDataMap {
       ...remoteConfigState,
       [featureId]: { ...configuration },
     });
-    if (SYNC_ACCESS_FEATURES.includes(featureId)) {
-      syncDataStore.setDefault(featureId, configuration);
-    }
-    this.remoteDefaultsSession.add(featureId);
     this._emitFeatureUpdate(featureId, "remote-defaults-update");
   }
 
@@ -277,15 +217,6 @@ class ExperimentStore extends SharedDataMap {
 
 
   getRemoteConfig(featureId) {
-    return (
-      this.get(REMOTE_DEFAULTS_KEY)?.[featureId] ||
-      syncDataStore.getDefault(featureId)
-    );
-  }
-
-  _deleteForTests(featureId) {
-    super._deleteForTests(featureId);
-    syncDataStore.deleteDefault(featureId);
-    syncDataStore.delete(featureId);
+    return this.get(REMOTE_DEFAULTS_KEY)?.[featureId];
   }
 }
