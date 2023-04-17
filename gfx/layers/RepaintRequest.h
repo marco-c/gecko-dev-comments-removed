@@ -118,19 +118,17 @@ struct RepaintRequest {
     return mZoom * mTransformToAncestorScale;
   }
 
-  CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
+  CSSToLayerScale LayersPixelsPerCSSPixel() const {
     return mDevPixelsPerCSSPixel * mCumulativeResolution;
   }
 
   
   LayerToParentLayerScale GetAsyncZoom() const {
-    
-    
-    return (mZoom / LayersPixelsPerCSSPixel()).ToScaleFactor();
+    return mZoom / LayersPixelsPerCSSPixel();
   }
 
   CSSSize CalculateCompositedSizeInCssPixels() const {
-    if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
+    if (GetZoom() == CSSToParentLayerScale(0)) {
       return CSSSize();  
     }
     return mCompositionBounds.Size() / GetZoom();
@@ -142,7 +140,7 @@ struct RepaintRequest {
     return mCompositionBounds;
   }
 
-  const LayoutDeviceToLayerScale2D& GetCumulativeResolution() const {
+  const LayoutDeviceToLayerScale& GetCumulativeResolution() const {
     return mCumulativeResolution;
   }
 
@@ -158,7 +156,7 @@ struct RepaintRequest {
 
   const CSSPoint& GetVisualScrollOffset() const { return mScrollOffset; }
 
-  const CSSToParentLayerScale2D& GetZoom() const { return mZoom; }
+  const CSSToParentLayerScale& GetZoom() const { return mZoom; }
 
   ScrollOffsetUpdateType GetScrollUpdateType() const {
     return mScrollUpdateType;
@@ -229,7 +227,7 @@ struct RepaintRequest {
   ParentLayerRect mCompositionBounds;
 
   
-  LayoutDeviceToLayerScale2D mCumulativeResolution;
+  LayoutDeviceToLayerScale mCumulativeResolution;
 
   
   
@@ -244,7 +242,7 @@ struct RepaintRequest {
   
   
   
-  CSSToParentLayerScale2D mZoom;
+  CSSToParentLayerScale mZoom;
 
   
   ScrollGeneration mScrollGeneration;

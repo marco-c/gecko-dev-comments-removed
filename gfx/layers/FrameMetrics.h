@@ -164,15 +164,13 @@ struct FrameMetrics {
     return mZoom * mTransformToAncestorScale;
   }
 
-  CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
+  CSSToLayerScale LayersPixelsPerCSSPixel() const {
     return mDevPixelsPerCSSPixel * mCumulativeResolution;
   }
 
   
   LayerToParentLayerScale GetAsyncZoom() const {
-    
-    
-    return (mZoom / LayersPixelsPerCSSPixel()).ToScaleFactor();
+    return mZoom / LayersPixelsPerCSSPixel();
   }
 
   
@@ -216,7 +214,7 @@ struct FrameMetrics {
 
 
   CSSRect CalculateCompositionBoundsInCssPixelsOfSurroundingContent() const {
-    if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
+    if (GetZoom() == CSSToParentLayerScale(0)) {
       return CSSRect();  
     }
     
@@ -240,12 +238,7 @@ struct FrameMetrics {
     SetVisualScrollOffset(GetVisualScrollOffset() + aPoint);
   }
 
-  void ZoomBy(float aScale) { ZoomBy(gfxSize(aScale, aScale)); }
-
-  void ZoomBy(const gfxSize& aScale) {
-    mZoom.xScale *= aScale.width;
-    mZoom.yScale *= aScale.height;
-  }
+  void ZoomBy(float aScale) { mZoom.scale *= aScale; }
 
   
 
@@ -314,11 +307,11 @@ struct FrameMetrics {
   const CSSRect& GetCriticalDisplayPort() const { return mCriticalDisplayPort; }
 
   void SetCumulativeResolution(
-      const LayoutDeviceToLayerScale2D& aCumulativeResolution) {
+      const LayoutDeviceToLayerScale& aCumulativeResolution) {
     mCumulativeResolution = aCumulativeResolution;
   }
 
-  const LayoutDeviceToLayerScale2D& GetCumulativeResolution() const {
+  const LayoutDeviceToLayerScale& GetCumulativeResolution() const {
     return mCumulativeResolution;
   }
 
@@ -358,9 +351,9 @@ struct FrameMetrics {
     mScrollOffset = aVisualScrollOffset;
   }
 
-  void SetZoom(const CSSToParentLayerScale2D& aZoom) { mZoom = aZoom; }
+  void SetZoom(const CSSToParentLayerScale& aZoom) { mZoom = aZoom; }
 
-  const CSSToParentLayerScale2D& GetZoom() const { return mZoom; }
+  const CSSToParentLayerScale& GetZoom() const { return mZoom; }
 
   void SetScrollGeneration(const ScrollGeneration& aScrollGeneration) {
     mScrollGeneration = aScrollGeneration;
@@ -493,10 +486,10 @@ struct FrameMetrics {
   
   static CSSRect CalculateScrollRange(const CSSRect& aScrollableRect,
                                       const ParentLayerRect& aCompositionBounds,
-                                      const CSSToParentLayerScale2D& aZoom);
+                                      const CSSToParentLayerScale& aZoom);
   static CSSSize CalculateCompositedSizeInCssPixels(
       const ParentLayerRect& aCompositionBounds,
-      const CSSToParentLayerScale2D& aZoom);
+      const CSSToParentLayerScale& aZoom);
 
  private:
   
@@ -589,7 +582,7 @@ struct FrameMetrics {
   
   
   
-  LayoutDeviceToLayerScale2D mCumulativeResolution;
+  LayoutDeviceToLayerScale mCumulativeResolution;
 
   
   
@@ -614,7 +607,7 @@ struct FrameMetrics {
   
   
   
-  CSSToParentLayerScale2D mZoom;
+  CSSToParentLayerScale mZoom;
 
   
   ScrollGeneration mScrollGeneration;

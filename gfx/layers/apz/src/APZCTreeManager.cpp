@@ -779,8 +779,7 @@ void APZCTreeManager::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
     
     
     LayoutDeviceToParentLayerScale resolution =
-        apzc->GetCumulativeResolution().ToScaleFactor() *
-        LayerToParentLayerScale(1.0f);
+        apzc->GetCumulativeResolution() * LayerToParentLayerScale(1.0f);
     
     
     

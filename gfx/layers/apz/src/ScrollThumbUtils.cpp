@@ -86,8 +86,7 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   const float scale = 1.f / asyncZoom;
 
   
-  mEffectiveZoom = CSSToParentLayerScale(
-      aAxis.GetAxisScale(mMetrics.GetZoom()).scale * asyncZoom);
+  mEffectiveZoom = CSSToParentLayerScale(mMetrics.GetZoom().scale * asyncZoom);
 
   if (gfxPlatform::UseDesktopZoomingScrollbars()) {
     

@@ -2817,7 +2817,7 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
     
     resolution = presShell->GetResolution();
   }
-  LayoutDeviceToLayerScale2D cumulativeResolution(
+  LayoutDeviceToLayerScale cumulativeResolution(
       LayoutDeviceToLayerScale(presShell->GetCumulativeResolution()));
 
   LayerToParentLayerScale layerToParentLayerScale(1.0f);
@@ -2833,15 +2833,14 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
   
   nsSize compositionSize =
       nsLayoutUtils::CalculateCompositionSizeForFrame(frame);
-  LayoutDeviceToParentLayerScale2D compBoundsScale;
+  LayoutDeviceToParentLayerScale compBoundsScale;
   if (frame == presShell->GetRootScrollFrame() &&
       presContext->IsRootContentDocumentCrossProcess()) {
     if (presContext->GetParentPresContext()) {
       float res = presContext->GetParentPresContext()
                       ->PresShell()
                       ->GetCumulativeResolution();
-      compBoundsScale =
-          LayoutDeviceToParentLayerScale2D(LayoutDeviceToParentLayerScale(res));
+      compBoundsScale = LayoutDeviceToParentLayerScale(res);
     }
   } else {
     compBoundsScale = cumulativeResolution * layerToParentLayerScale;
@@ -8784,8 +8783,8 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
   
   
   
-  metrics.SetCumulativeResolution(LayoutDeviceToLayerScale2D(
-      LayoutDeviceToLayerScale(presShell->GetCumulativeResolution())));
+  metrics.SetCumulativeResolution(
+      LayoutDeviceToLayerScale(presShell->GetCumulativeResolution()));
 
   metrics.SetTransformToAncestorScale(
       GetTransformToAncestorScaleCrossProcessForFrameMetrics(
