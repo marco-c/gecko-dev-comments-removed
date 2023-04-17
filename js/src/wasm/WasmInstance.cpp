@@ -1349,7 +1349,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
   
   if (!metadata().types.empty()) {
     
-    if (GcTypesAvailable(cx)) {
+    if (GcAvailable(cx)) {
       uint32_t baseIndex = 0;
       if (!cx->wasm().typeContext->transferTypes(metadata().types,
                                                  &baseIndex)) {

@@ -23,6 +23,8 @@
 
 #include "ds/Bitmap.h"
 
+#include "js/WasmFeatures.h"
+
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmTypes.h"
 
@@ -177,14 +179,15 @@ struct ModuleEnvironment {
   size_t numFuncDefs() const {
     return funcs.length() - funcImportGlobalDataOffsets.length();
   }
+
+#define WASM_FEATURE(NAME, SHORT_NAME, ...) \
+  bool SHORT_NAME##Enabled() const { return features.SHORT_NAME; }
+  JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE)
+#undef WASM_FEATURE
   Shareable sharedMemoryEnabled() const { return features.sharedMemory; }
-  bool refTypesEnabled() const { return features.refTypes; }
-  bool functionReferencesEnabled() const { return features.functionReferences; }
-  bool gcTypesEnabled() const { return features.gcTypes; }
-  bool v128Enabled() const { return features.v128; }
-  bool simdWormholeEnabled() const { return features.simdWormhole; }
   bool hugeMemoryEnabled() const { return !isAsmJS() && features.hugeMemory; }
-  bool exceptionsEnabled() const { return features.exceptions; }
+  bool simdWormholeEnabled() const { return features.simdWormhole; }
+
   bool usesMemory() const { return memoryUsage != MemoryUsage::None; }
   bool usesSharedMemory() const { return memoryUsage == MemoryUsage::Shared; }
   bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
@@ -684,7 +687,7 @@ class Decoder {
       }
       case uint8_t(TypeCode::Rtt): {
 #ifdef ENABLE_WASM_GC
-        if (!features.gcTypes) {
+        if (!features.gc) {
           return fail("gc types not enabled");
         }
 
@@ -710,7 +713,7 @@ class Decoder {
       }
       case uint8_t(TypeCode::EqRef): {
 #ifdef ENABLE_WASM_GC
-        if (!features.gcTypes) {
+        if (!features.gc) {
           return fail("gc types not enabled");
         }
         *type = RefType::fromTypeCode(TypeCode(code), true);
@@ -783,7 +786,7 @@ class Decoder {
           return true;
 #ifdef ENABLE_WASM_GC
         case uint8_t(TypeCode::EqRef):
-          if (!features.gcTypes) {
+          if (!features.gc) {
             return fail("gc types not enabled");
           }
           *type = RefType::fromTypeCode(TypeCode(code), nullable);
@@ -848,8 +851,8 @@ class Decoder {
                                        RefType type) {
     MOZ_ASSERT(type.isTypeIndex());
 
-    if (features.gcTypes && (types[type.typeIndex()].isStructType() ||
-                             types[type.typeIndex()].isArrayType())) {
+    if (features.gc && (types[type.typeIndex()].isStructType() ||
+                        types[type.typeIndex()].isArrayType())) {
       return true;
     }
     return fail("type index references an invalid type");

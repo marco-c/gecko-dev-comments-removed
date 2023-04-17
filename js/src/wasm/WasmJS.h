@@ -35,6 +35,7 @@
 #include "js/SweepingAPI.h"    
 #include "js/TypeDecls.h"  
 #include "js/Vector.h"  
+#include "js/WasmFeatures.h"
 #include "vm/BufferSize.h"
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  
@@ -132,19 +133,11 @@ bool StreamingCompilationAvailable(JSContext* cx);
 bool CodeCachingAvailable(JSContext* cx);
 
 
-bool ReftypesAvailable(JSContext* cx);
-
-
-bool FunctionReferencesAvailable(JSContext* cx);
-
-
-bool GcTypesAvailable(JSContext* cx);
-
-
 bool ThreadsAvailable(JSContext* cx);
 
-
-bool SimdAvailable(JSContext* cx);
+#define WASM_FEATURE(NAME, ...) bool NAME##Available(JSContext* cx);
+JS_FOR_WASM_FEATURES(WASM_FEATURE, WASM_FEATURE)
+#undef WASM_FEATURE
 
 
 bool SimdWormholeAvailable(JSContext* cx);
