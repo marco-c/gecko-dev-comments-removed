@@ -443,6 +443,7 @@ class LookAndFeel {
   
   enum class UseStandins : bool { No, Yes };
   static UseStandins ShouldUseStandins(const dom::Document&, ColorID);
+  static UseStandins ShouldAlwaysUseStandinsForColorInContent(ColorID);
 
   
   
