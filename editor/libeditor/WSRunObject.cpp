@@ -3222,14 +3222,13 @@ WSRunScanner::ComputeRangeInTextNodesContainingInvisibleWhiteSpaces(
 
 
 Result<EditorDOMRangeInTexts, nsresult>
-WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
+WSRunScanner::GetRangeInTextNodesToBackspaceFrom(Element* aEditingHost,
                                                  const EditorDOMPoint& aPoint) {
   
   
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  Element* editingHost = aHTMLEditor.GetActiveEditingHost();
-  TextFragmentData textFragmentDataAtCaret(aPoint, editingHost);
+  TextFragmentData textFragmentDataAtCaret(aPoint, aEditingHost);
   if (NS_WARN_IF(!textFragmentDataAtCaret.IsInitialized())) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -3299,11 +3298,11 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
   
   TextFragmentData textFragmentDataAtStart =
       rangeToDelete.StartRef() != aPoint
-          ? TextFragmentData(rangeToDelete.StartRef(), editingHost)
+          ? TextFragmentData(rangeToDelete.StartRef(), aEditingHost)
           : textFragmentDataAtCaret;
   TextFragmentData textFragmentDataAtEnd =
       rangeToDelete.EndRef() != aPoint
-          ? TextFragmentData(rangeToDelete.EndRef(), editingHost)
+          ? TextFragmentData(rangeToDelete.EndRef(), aEditingHost)
           : textFragmentDataAtCaret;
   if (NS_WARN_IF(!textFragmentDataAtStart.IsInitialized()) ||
       NS_WARN_IF(!textFragmentDataAtEnd.IsInitialized())) {
@@ -3320,13 +3319,12 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(const HTMLEditor& aHTMLEditor,
 
 Result<EditorDOMRangeInTexts, nsresult>
 WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
-    const HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint) {
+    Element* aEditingHost, const EditorDOMPoint& aPoint) {
   
   
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  Element* editingHost = aHTMLEditor.GetActiveEditingHost();
-  TextFragmentData textFragmentDataAtCaret(aPoint, editingHost);
+  TextFragmentData textFragmentDataAtCaret(aPoint, aEditingHost);
   if (NS_WARN_IF(!textFragmentDataAtCaret.IsInitialized())) {
     return Err(NS_ERROR_FAILURE);
   }
@@ -3394,11 +3392,11 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
   
   TextFragmentData textFragmentDataAtStart =
       rangeToDelete.StartRef() != aPoint
-          ? TextFragmentData(rangeToDelete.StartRef(), editingHost)
+          ? TextFragmentData(rangeToDelete.StartRef(), aEditingHost)
           : textFragmentDataAtCaret;
   TextFragmentData textFragmentDataAtEnd =
       rangeToDelete.EndRef() != aPoint
-          ? TextFragmentData(rangeToDelete.EndRef(), editingHost)
+          ? TextFragmentData(rangeToDelete.EndRef(), aEditingHost)
           : textFragmentDataAtCaret;
   if (NS_WARN_IF(!textFragmentDataAtStart.IsInitialized()) ||
       NS_WARN_IF(!textFragmentDataAtEnd.IsInitialized())) {
