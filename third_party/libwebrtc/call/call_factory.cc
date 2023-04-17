@@ -82,9 +82,13 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
       receive_degradation_config = ParseDegradationConfig(false);
 
   if (send_degradation_config || receive_degradation_config) {
-    return new DegradedCall(std::unique_ptr<Call>(Call::Create(config)),
-                            send_degradation_config, receive_degradation_config,
-                            config.task_queue_factory);
+    RTC_CHECK(false);
+    return nullptr;
+    
+
+
+
+
   }
 
   if (!module_thread_) {
@@ -95,7 +99,11 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
         });
   }
 
-  return Call::Create(config, module_thread_);
+  RTC_CHECK(false);
+  return nullptr;
+  
+
+
 }
 
 std::unique_ptr<CallFactoryInterface> CreateCallFactory() {

@@ -87,7 +87,7 @@ class VideoEngine {
   std::map<int32_t, CaptureEntry> mCaps;
   std::map<int32_t, int32_t> mIdMap;
   
-  int64_t mExpiryTimeInMs = 0;
+  webrtc::Timestamp mExpiryTime = webrtc::Timestamp::Micros(0);
   int32_t GenerateId();
 };
 }  

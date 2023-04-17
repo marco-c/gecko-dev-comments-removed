@@ -203,18 +203,18 @@ class MediaSessionConduit {
         : SourceKey(aSource.timestamp_ms(), aSource.source_id()) {}
 
     SourceKey(uint32_t aTimestamp, uint32_t aSrc)
-        : mLibwebrtcTimestamp(aTimestamp), mSrc(aSrc) {}
+        : mLibwebrtcTimestampMs(aTimestamp), mSrc(aSrc) {}
 
     
     auto operator>(const SourceKey& aRhs) const {
-      if (mLibwebrtcTimestamp == aRhs.mLibwebrtcTimestamp) {
+      if (mLibwebrtcTimestampMs == aRhs.mLibwebrtcTimestampMs) {
         return mSrc > aRhs.mSrc;
       }
-      return mLibwebrtcTimestamp > aRhs.mLibwebrtcTimestamp;
+      return mLibwebrtcTimestampMs > aRhs.mLibwebrtcTimestampMs;
     }
 
    private:
-    uint32_t mLibwebrtcTimestamp;
+    uint32_t mLibwebrtcTimestampMs;
     uint32_t mSrc;
   };
   mutable std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>
