@@ -1089,12 +1089,6 @@ using RootedPtrTraits =
                        js::RootedTraceableTraits<T>,
                        js::RootedGCThingTraits<T>>;
 
-
-
-struct FallbackOverload {};
-struct PreferredOverload : FallbackOverload {};
-using OverloadSelector = PreferredOverload;
-
 } 
 
 
@@ -1123,38 +1117,17 @@ class MOZ_RAII Rooted : public js::RootedBase<T, Rooted<T>> {
     return rootLists(RootingContext::get(cx));
   }
 
-  
-  
-  
-  
-
-  
-  struct CtorDispatcher {};
-
-  
-  
-  template <typename RootingContext>
-  Rooted(const RootingContext& cx, CtorDispatcher, detail::FallbackOverload)
-      : Rooted(cx, SafelyInitialized<T>()) {}
-
-  
-  
-  template <
-      typename RootingContext,
-      typename = std::enable_if_t<std::is_constructible_v<T, RootingContext>>>
-  Rooted(const RootingContext& cx, CtorDispatcher, detail::PreferredOverload)
-      : Rooted(cx, T(cx)) {}
-
  public:
   using ElementType = T;
 
   
-  
-  
   template <typename RootingContext>
   explicit Rooted(const RootingContext& cx)
-      : Rooted(cx, CtorDispatcher(), detail::OverloadSelector()) {}
+      : ptr(SafelyInitialized<T>()) {
+    registerWithRootLists(rootLists(cx));
+  }
 
+  
   template <typename RootingContext, typename S>
   Rooted(const RootingContext& cx, S&& initial)
       : ptr(std::forward<S>(initial)) {

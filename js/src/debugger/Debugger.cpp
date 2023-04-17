@@ -5235,7 +5235,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       using RealmToScriptMap =
           GCHashMap<Realm*, BaseScript*, DefaultHasher<Realm*>>;
 
-      Rooted<RealmToScriptMap> innermostForRealm(cx);
+      Rooted<RealmToScriptMap> innermostForRealm(cx, cx);
 
       
       for (BaseScript* script : scriptVector) {
