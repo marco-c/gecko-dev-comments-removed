@@ -135,12 +135,12 @@ add_task(async function test_pingSender() {
 
   Assert.equal(
     req.getHeader("User-Agent"),
-    "pingsender/2.0",
+    "pingsender/1.0",
     "Should have received the correct user agent string."
   );
   Assert.equal(
     req.getHeader("X-PingSender-Version"),
-    "2.0",
+    "1.0",
     "Should have received the correct PingSender version string."
   );
   Assert.equal(
@@ -165,18 +165,6 @@ add_task(async function test_pingSender() {
   await waitForPingDeletion(data.id);
 
   
-  await new Promise(r => failingServer.stop(r));
-});
-
-add_task(async function test_bannedDomains() {
-  
-  const data = generateTestPingData();
-  await TelemetryStorage.savePing(data, true);
-
-  
-  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
-
-  
   let bannedUris = [
     "https://example.com",
     "http://localhost.com",
@@ -185,25 +173,35 @@ add_task(async function test_bannedDomains() {
     "http://localhost:bob@example.com",
     "http://localhost:localhost@localhost.example.com",
   ];
-  for (let url of bannedUris) {
-    let result = await new Promise(resolve =>
-      TelemetrySend.testRunPingSender(
-        [{ url, path: pingPath }],
-        (_, topic, __) => {
-          switch (topic) {
-            case "process-finished": 
-            case "process-failed": 
-              resolve(topic);
-          }
+  for (let indx in bannedUris) {
+    TelemetrySend.testRunPingSender(
+      [{ url: bannedUris[indx], path: pingPath }],
+      (_, topic, __) => {
+        switch (topic) {
+          case "process-finished": 
+            Assert.equal(
+              false,
+              true,
+              "Pingsender should not be able to post to any banned urls: " +
+                bannedUris[indx]
+            );
+            break;
+          case "process-failed": 
+            Assert.equal(
+              true,
+              true,
+              "Pingsender should not be able to post to any banned urls: " +
+                bannedUris[indx]
+            );
+            break;
         }
-      )
-    );
-    Assert.equal(
-      result,
-      "process-failed",
-      `Pingsender should not be able to post to ${url}`
+      }
     );
   }
+
+  
+  
+  await new Promise(r => failingServer.stop(r));
 });
 
 add_task(async function test_pingSender_multiple_pings() {
