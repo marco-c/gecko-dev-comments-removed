@@ -34,6 +34,27 @@ fn get_hash<K, V>(entries: &[Bucket<K, V>]) -> impl Fn(&usize) -> u64 + '_ {
     move |&i| entries[i].hash.get()
 }
 
+#[inline]
+fn equivalent<'a, K, V, Q: ?Sized + Equivalent<K>>(
+    key: &'a Q,
+    entries: &'a [Bucket<K, V>],
+) -> impl Fn(&usize) -> bool + 'a {
+    move |&i| Q::equivalent(key, &entries[i].key)
+}
+
+#[inline]
+fn erase_index(table: &mut RawTable<usize>, hash: HashValue, index: usize) {
+    table.erase_entry(hash.get(), move |&i| i == index);
+}
+
+#[inline]
+fn update_index(table: &mut RawTable<usize>, hash: HashValue, old: usize, new: usize) {
+    let index = table
+        .get_mut(hash.get(), move |&i| i == old)
+        .expect("index not found");
+    *index = new;
+}
+
 impl<K, V> Clone for IndexMapCore<K, V>
 where
     K: Clone,
@@ -129,6 +150,13 @@ impl<K, V> IndexMapCore<K, V> {
         self.entries.clear();
     }
 
+    pub(crate) fn truncate(&mut self, len: usize) {
+        if len < self.len() {
+            self.erase_indices(len, self.entries.len());
+            self.entries.truncate(len);
+        }
+    }
+
     pub(crate) fn drain<R>(&mut self, range: R) -> Drain<'_, Bucket<K, V>>
     where
         R: RangeBounds<usize>,
@@ -136,6 +164,18 @@ impl<K, V> IndexMapCore<K, V> {
         let range = simplify_range(range, self.entries.len());
         self.erase_indices(range.start, range.end);
         self.entries.drain(range)
+    }
+
+    pub(crate) fn split_off(&mut self, at: usize) -> Self {
+        assert!(at <= self.entries.len());
+        self.erase_indices(at, self.entries.len());
+        let entries = self.entries.split_off(at);
+
+        let mut indices = RawTable::with_capacity(entries.len());
+        for (i, entry) in enumerate(&entries) {
+            indices.insert_no_grow(entry.hash.get(), i);
+        }
+        Self { indices, entries }
     }
 
     
@@ -160,7 +200,7 @@ impl<K, V> IndexMapCore<K, V> {
     pub(crate) fn pop(&mut self) -> Option<(K, V)> {
         if let Some(entry) = self.entries.pop() {
             let last = self.entries.len();
-            self.erase_index(entry.hash, last);
+            erase_index(&mut self.indices, entry.hash, last);
             Some((entry.key, entry.value))
         } else {
             None
@@ -181,6 +221,15 @@ impl<K, V> IndexMapCore<K, V> {
         i
     }
 
+    
+    pub(crate) fn get_index_of<Q>(&self, hash: HashValue, key: &Q) -> Option<usize>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        self.indices.get(hash.get(), eq).copied()
+    }
+
     pub(crate) fn insert_full(&mut self, hash: HashValue, key: K, value: V) -> (usize, Option<V>)
     where
         K: Eq,
@@ -189,6 +238,154 @@ impl<K, V> IndexMapCore<K, V> {
             Some(i) => (i, Some(replace(&mut self.entries[i].value, value))),
             None => (self.push(hash, key, value), None),
         }
+    }
+
+    
+    pub(crate) fn shift_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        match self.indices.remove_entry(hash.get(), eq) {
+            Some(index) => {
+                let (key, value) = self.shift_remove_finish(index);
+                Some((index, key, value))
+            }
+            None => None,
+        }
+    }
+
+    
+    pub(crate) fn shift_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        match self.entries.get(index) {
+            Some(entry) => {
+                erase_index(&mut self.indices, entry.hash, index);
+                Some(self.shift_remove_finish(index))
+            }
+            None => None,
+        }
+    }
+
+    
+    
+    
+    fn shift_remove_finish(&mut self, index: usize) -> (K, V) {
+        
+        
+        let entry = self.entries.remove(index);
+
+        
+        
+        let raw_capacity = self.indices.buckets();
+        let shifted_entries = &self.entries[index..];
+        if shifted_entries.len() > raw_capacity / 2 {
+            
+            for i in self.indices_mut() {
+                if *i > index {
+                    *i -= 1;
+                }
+            }
+        } else {
+            
+            for (i, entry) in (index + 1..).zip(shifted_entries) {
+                update_index(&mut self.indices, entry.hash, i, i - 1);
+            }
+        }
+
+        (entry.key, entry.value)
+    }
+
+    
+    pub(crate) fn swap_remove_full<Q>(&mut self, hash: HashValue, key: &Q) -> Option<(usize, K, V)>
+    where
+        Q: ?Sized + Equivalent<K>,
+    {
+        let eq = equivalent(key, &self.entries);
+        match self.indices.remove_entry(hash.get(), eq) {
+            Some(index) => {
+                let (key, value) = self.swap_remove_finish(index);
+                Some((index, key, value))
+            }
+            None => None,
+        }
+    }
+
+    
+    pub(crate) fn swap_remove_index(&mut self, index: usize) -> Option<(K, V)> {
+        match self.entries.get(index) {
+            Some(entry) => {
+                erase_index(&mut self.indices, entry.hash, index);
+                Some(self.swap_remove_finish(index))
+            }
+            None => None,
+        }
+    }
+
+    
+    
+    
+    fn swap_remove_finish(&mut self, index: usize) -> (K, V) {
+        
+        
+        let entry = self.entries.swap_remove(index);
+
+        
+        if let Some(entry) = self.entries.get(index) {
+            
+            
+            let last = self.entries.len();
+            update_index(&mut self.indices, entry.hash, last, index);
+        }
+
+        (entry.key, entry.value)
+    }
+
+    
+    
+    
+    
+    fn erase_indices(&mut self, start: usize, end: usize) {
+        let (init, shifted_entries) = self.entries.split_at(end);
+        let (start_entries, erased_entries) = init.split_at(start);
+
+        let erased = erased_entries.len();
+        let shifted = shifted_entries.len();
+        let half_capacity = self.indices.buckets() / 2;
+
+        
+        if erased == 0 {
+            
+        } else if start + shifted < half_capacity && start < erased {
+            
+            self.indices.clear();
+
+            
+            for (i, entry) in enumerate(start_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+
+            
+            for (i, entry) in (start..).zip(shifted_entries) {
+                self.indices.insert_no_grow(entry.hash.get(), i);
+            }
+        } else if erased + shifted < half_capacity {
+            
+
+            
+            for (i, entry) in (start..).zip(erased_entries) {
+                erase_index(&mut self.indices, entry.hash, i);
+            }
+
+            
+            for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {
+                update_index(&mut self.indices, entry.hash, old, new);
+            }
+        } else {
+            
+            self.erase_indices_sweep(start, end);
+        }
+
+        debug_assert_eq!(self.indices.len(), start + shifted);
     }
 
     pub(crate) fn retain_in_order<F>(&mut self, mut keep: F)
@@ -225,6 +422,17 @@ impl<K, V> IndexMapCore<K, V> {
             self.indices.insert_no_grow(entry.hash.get(), i);
         }
     }
+
+    pub(crate) fn reverse(&mut self) {
+        self.entries.reverse();
+
+        
+        
+        let len = self.entries.len();
+        for i in self.indices_mut() {
+            *i = len - *i - 1;
+        }
+    }
 }
 
 
@@ -238,6 +446,9 @@ pub enum Entry<'a, K, V> {
 
 impl<'a, K, V> Entry<'a, K, V> {
     
+    
+    
+    
     pub fn or_insert(self, default: V) -> &'a mut V {
         match self {
             Entry::Occupied(entry) => entry.into_mut(),
@@ -245,6 +456,9 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    
+    
+    
     
     pub fn or_insert_with<F>(self, call: F) -> &'a mut V
     where
@@ -256,6 +470,26 @@ impl<'a, K, V> Entry<'a, K, V> {
         }
     }
 
+    
+    
+    
+    
+    
+    pub fn or_insert_with_key<F>(self, call: F) -> &'a mut V
+    where
+        F: FnOnce(&K) -> V,
+    {
+        match self {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => {
+                let value = call(&entry.key);
+                entry.insert(value)
+            }
+        }
+    }
+
+    
+    
     pub fn key(&self) -> &K {
         match *self {
             Entry::Occupied(ref entry) => entry.key(),
@@ -375,10 +609,12 @@ pub struct VacantEntry<'a, K, V> {
 }
 
 impl<'a, K, V> VacantEntry<'a, K, V> {
+    
     pub fn key(&self) -> &K {
         &self.key
     }
 
+    
     pub fn into_key(self) -> K {
         self.key
     }
@@ -388,6 +624,8 @@ impl<'a, K, V> VacantEntry<'a, K, V> {
         self.map.len()
     }
 
+    
+    
     pub fn insert(self, value: V) -> &'a mut V {
         let i = self.map.push(self.hash, self.key, value);
         &mut self.map.entries[i].value

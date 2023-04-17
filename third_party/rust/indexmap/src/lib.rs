@@ -77,7 +77,6 @@
 
 
 
-
 #[cfg(not(has_std))]
 extern crate alloc;
 
@@ -95,8 +94,10 @@ use std::vec::{self, Vec};
 mod macros;
 mod equivalent;
 mod mutable_keys;
-#[cfg(feature = "serde-1")]
+#[cfg(feature = "serde")]
 mod serde;
+#[cfg(feature = "serde")]
+pub mod serde_seq;
 mod util;
 
 pub mod map;

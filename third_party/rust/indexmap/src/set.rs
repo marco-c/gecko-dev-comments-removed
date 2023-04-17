@@ -203,6 +203,13 @@ impl<T, S> IndexSet<T, S> {
     
     
     
+    pub fn truncate(&mut self, len: usize) {
+        self.map.truncate(len);
+    }
+
+    
+    
+    
     
     
     
@@ -219,6 +226,22 @@ impl<T, S> IndexSet<T, S> {
     {
         Drain {
             iter: self.map.drain(range).iter,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn split_off(&mut self, at: usize) -> Self
+    where
+        S: Clone,
+    {
+        Self {
+            map: self.map.split_off(at),
         }
     }
 }
@@ -576,7 +599,21 @@ impl<T, S> IndexSet<T, S> {
     
     
     pub fn get_index(&self, index: usize) -> Option<&T> {
-        self.map.get_index(index).map(|(x, &())| x)
+        self.as_entries().get(index).map(Bucket::key_ref)
+    }
+
+    
+    
+    
+    pub fn first(&self) -> Option<&T> {
+        self.as_entries().first().map(Bucket::key_ref)
+    }
+
+    
+    
+    
+    pub fn last(&self) -> Option<&T> {
+        self.as_entries().last().map(Bucket::key_ref)
     }
 
     
@@ -603,6 +640,13 @@ impl<T, S> IndexSet<T, S> {
     
     pub fn shift_remove_index(&mut self, index: usize) -> Option<T> {
         self.map.shift_remove_index(index).map(|(x, ())| x)
+    }
+
+    
+    
+    
+    pub fn swap_indices(&mut self, a: usize, b: usize) {
+        self.map.swap_indices(a, b)
     }
 }
 
