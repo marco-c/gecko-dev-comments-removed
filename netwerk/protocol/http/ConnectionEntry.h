@@ -101,6 +101,9 @@ class ConnectionEntry {
   
   bool RemoveDnsAndConnectSocket(DnsAndConnectSocket*);
 
+  bool MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
+                                  bool aIsHttp3 = false);
+
   
   
   
