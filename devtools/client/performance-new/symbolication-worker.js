@@ -10,8 +10,9 @@
 
 importScripts(
   "resource://gre/modules/osfile.jsm",
-  "resource://gre/modules/profiler_get_symbols.js"
+  "resource://devtools/client/performance-new/profiler_get_symbols.js"
 );
+
 
 
 
@@ -103,7 +104,11 @@ onmessage = async e => {
     }
 
     try {
-      let output = get_compact_symbol_table(binaryData, debugData, breakpadId);
+      const output = get_compact_symbol_table(
+        binaryData,
+        debugData,
+        breakpadId
+      );
       const result = [
         output.take_addr(),
         output.take_index(),

@@ -499,3 +499,18 @@ export interface FeatureDescription {
   
   disabledReason?: string;
 }
+
+export type SymbolicationWorkerError = {
+  name: string;
+  message: string;
+  fileName?: string;
+  lineNumber?: number;
+};
+
+export type SymbolicationWorkerReplyData =
+  | {
+      result: SymbolTableAsTuple;
+    }
+  | {
+      error: SymbolicationWorkerError;
+    };
