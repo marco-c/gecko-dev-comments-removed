@@ -87,6 +87,12 @@ class HyperTextAccessibleBase {
   virtual void TextSubstring(int32_t aStartOffset, int32_t aEndOffset,
                              nsAString& aText) const;
 
+  
+
+
+  bool CharAt(int32_t aOffset, nsAString& aChar,
+              int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr);
+
  protected:
   virtual const Accessible* Acc() const = 0;
   Accessible* Acc() {
