@@ -25,6 +25,25 @@ let tracker;
 }
 
 
+
+
+
+
+
+
+
+
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+XPCOMUtils.defineLazyGetter(this, "TrackedObjects", () => {
+  return ChromeUtils.import(
+    "resource://devtools/shared/test-helpers/tracked-objects.jsm"
+  );
+});
+
+
 SimpleTest.requestCompleteLog();
 
 
@@ -38,10 +57,6 @@ const env = Cc["@mozilla.org/process/environment;1"].getService(
   Ci.nsIEnvironment
 );
 const DEBUG_ALLOCATIONS = env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
-
-const TrackedObjects = ChromeUtils.import(
-  "resource://devtools/shared/test-helpers/tracked-objects.jsm"
-);
 
 async function addTab(url) {
   const tab = BrowserTestUtils.addTab(gBrowser, url);
