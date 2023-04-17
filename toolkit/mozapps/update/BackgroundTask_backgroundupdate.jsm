@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BackgroundTasksUtils: "resource://gre/modules/BackgroundTasksUtils.jsm",
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.jsm",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
 });
@@ -42,6 +43,8 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   };
   return new ConsoleAPI(consoleOptions);
 });
+
+Cu.importGlobalProperties(["Glean", "GleanPings"]);
 
 
 
@@ -93,6 +96,11 @@ async function _attemptBackgroundUpdate() {
     }
   }
 
+  reasons.sort();
+  for (let reason of reasons) {
+    Glean.backgroundUpdate.reasons.add(reason);
+  }
+
   let enabled = !reasons.length;
   if (!enabled) {
     log.info(
@@ -109,6 +117,9 @@ async function _attemptBackgroundUpdate() {
 
     let _appUpdaterListener = (status, progress, progressMax) => {
       let stringStatus = AppUpdater.STATUS.debugStringFor(status);
+      Glean.backgroundUpdate.states.add(stringStatus);
+      Glean.backgroundUpdate.finalState.set(stringStatus);
+
       if (AppUpdater.STATUS.isTerminalStatus(status)) {
         log.debug(
           `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
@@ -168,9 +179,28 @@ async function _attemptBackgroundUpdate() {
   return result;
 }
 
+
+
+
+
+
+
+
+
+async function maybeSubmitBackgroundUpdatePing() {
+  let SLUG = "maybeSubmitBackgroundUpdatePing";
+
+  
+  
+
+  GleanPings.backgroundUpdate.submit();
+
+  log.info(`${SLUG}: submitted "background-update" ping`);
+}
+
 async function runBackgroundTask() {
   let SLUG = "runBackgroundTask";
-  log.info(`${SLUG}: backgroundupdate`);
+  log.error(`${SLUG}: backgroundupdate`);
 
   
   
@@ -200,9 +230,28 @@ async function runBackgroundTask() {
   
   
   try {
-    let defaultProfilePrefs = await BackgroundTasksUtils.readPreferences(name =>
-      name.startsWith("app.update.")
-    );
+    let defaultProfilePrefs;
+    await BackgroundTasksUtils.withProfileLock(async lock => {
+      let predicate = name => {
+        return (
+          name.startsWith("app.update.") || 
+          name.startsWith("datareporting.") || 
+          name.startsWith("logging.") || 
+          name.startsWith("telemetry.fog.") || 
+          name.startsWith("app.partner.") 
+        );
+      };
+
+      defaultProfilePrefs = await BackgroundTasksUtils.readPreferences(
+        predicate,
+        lock
+      );
+      let telemetryClientID = await BackgroundTasksUtils.readTelemetryClientID(
+        lock
+      );
+      Glean.backgroundUpdate.clientId.set(telemetryClientID);
+    });
+
     for (let [name, value] of Object.entries(defaultProfilePrefs)) {
       switch (typeof value) {
         case "boolean":
@@ -242,6 +291,25 @@ async function runBackgroundTask() {
   
   
   
+  let gleanRoot = FileUtils.getFile("UpdRootD", [
+    "backgroundupdate",
+    "datareporting",
+    "glean",
+    "__dummy__",
+  ]).parent.path;
+  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
+  FOG.initializeFOG(gleanRoot);
+
+  
+  Services.prefs.setCharPref(
+    "toolkit.backgroundtasks.loglevel",
+    Services.prefs.getCharPref("app.update.background.loglevel", "error")
+  );
+
+  
+  
+  
+  
   
   
   
@@ -249,23 +317,34 @@ async function runBackgroundTask() {
   Services.prefs.setBoolPref("app.update.langpack.enabled", false);
 
   let result = EXIT_CODE.SUCCESS;
+
+  let stringStatus = AppUpdater.STATUS.debugStringFor(
+    AppUpdater.STATUS.NEVER_CHECKED
+  );
+  Glean.backgroundUpdate.states.add(stringStatus);
+  Glean.backgroundUpdate.finalState.set(stringStatus);
+
   try {
     await _attemptBackgroundUpdate();
 
     log.info(`${SLUG}: attempted background update`);
-
-    
-    await ExtensionUtils.promiseTimeout(500);
+    Glean.backgroundUpdate.exitCodeSuccess.set(true);
   } catch (e) {
     
     
     log.error(`${SLUG}: caught exception attempting background update`, e);
 
     result = EXIT_CODE.EXCEPTION;
+    Glean.backgroundUpdate.exitCodeException.set(true);
   } finally {
     
     
+    await maybeSubmitBackgroundUpdatePing();
   }
+
+  
+  
+  await ExtensionUtils.promiseTimeout(500);
 
   return result;
 }
