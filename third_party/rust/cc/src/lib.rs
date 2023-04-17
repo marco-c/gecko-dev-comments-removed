@@ -1638,6 +1638,11 @@ impl Build {
                     && (target.contains("-linux-") || target.contains("-kmc-solid_"))
                 {
                     cmd.args.push("-march=armv7-a".into());
+
+                    if target.ends_with("eabihf") {
+                        
+                        cmd.args.push("-mfpu=vfpv3-d16".into());
+                    }
                 }
 
                 
