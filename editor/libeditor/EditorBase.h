@@ -605,12 +605,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual nsIContent* GetFocusedContentForIME() const;
-
-  
-
-
-
 
 
   virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const;

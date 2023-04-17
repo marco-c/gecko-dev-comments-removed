@@ -87,7 +87,6 @@ class EditorEventListener : public nsIDOMEventListener {
   void CleanupDragDropCaret();
   PresShell* GetPresShell() const;
   nsPresContext* GetPresContext() const;
-  nsIContent* GetFocusedRootContent();
   
   MOZ_CAN_RUN_SCRIPT bool NotifyIMEOfMouseButtonEvent(
       WidgetMouseEvent* aMouseEvent);

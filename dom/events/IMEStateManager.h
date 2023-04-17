@@ -291,8 +291,8 @@ class IMEStateManager {
   static nsresult NotifyIME(IMEMessage aMessage, nsPresContext* aPresContext,
                             BrowserParent* aBrowserParent = nullptr);
 
-  static nsINode* GetRootEditableNode(nsPresContext* aPresContext,
-                                      nsIContent* aContent);
+  static nsINode* GetRootEditableNode(const nsPresContext* aPresContext,
+                                      const nsIContent* aContent);
 
   
 
@@ -320,7 +320,14 @@ class IMEStateManager {
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static void CreateIMEContentObserver(
-      EditorBase& aEditorBase);
+      EditorBase& aEditorBase, nsIContent* aFocusedContent);
+
+  
+
+
+
+  static bool IsFocusedContent(const nsPresContext* aPresContext,
+                               const nsIContent* aFocusedContent);
 
   static void DestroyIMEContentObserver();
 

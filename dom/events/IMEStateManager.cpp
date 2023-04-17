@@ -813,6 +813,43 @@ void IMEStateManager::OnClickInEditor(nsPresContext* aPresContext,
 }
 
 
+bool IMEStateManager::IsFocusedContent(const nsPresContext* aPresContext,
+                                       const nsIContent* aFocusedContent) {
+  if (!aPresContext || !sPresContext || aPresContext != sPresContext) {
+    return false;
+  }
+
+  if (sContent == aFocusedContent) {
+    return true;
+  }
+
+  
+  
+  if (sContent) {
+    return false;
+  }
+
+  
+  
+  if (!aFocusedContent) {
+    return false;
+  }
+
+  
+  if (aFocusedContent->IsInDesignMode()) {
+    MOZ_ASSERT(aPresContext == sPresContext && !sContent);
+    return true;
+  }
+
+  
+  
+  
+  
+  return aFocusedContent->IsEditable() &&
+         sPresContext->Document()->GetRootElement() == aFocusedContent;
+}
+
+
 void IMEStateManager::OnFocusInEditor(nsPresContext* aPresContext,
                                       nsIContent* aContent,
                                       EditorBase& aEditorBase) {
@@ -824,7 +861,7 @@ void IMEStateManager::OnFocusInEditor(nsPresContext* aPresContext,
            &aEditorBase, sPresContext.get(), sContent.get(),
            sActiveIMEContentObserver.get()));
 
-  if (sPresContext != aPresContext || sContent != aContent) {
+  if (!IsFocusedContent(aPresContext, aContent)) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusInEditor(), "
              "an editor not managed by ISM gets focus"));
@@ -851,7 +888,7 @@ void IMEStateManager::OnFocusInEditor(nsPresContext* aPresContext,
   }
 
   if (!sActiveIMEContentObserver) {
-    CreateIMEContentObserver(aEditorBase);
+    CreateIMEContentObserver(aEditorBase, aContent);
     if (sActiveIMEContentObserver) {
       MOZ_LOG(sISMLog, LogLevel::Debug,
               ("  OnFocusInEditor(), new IMEContentObserver is created (0x%p)",
@@ -1092,15 +1129,14 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
     }
   }
 
-  
-  NS_ASSERTION(sContent.get() == aContent,
-               "sContent and aContent are mismatched.");
+  NS_ASSERTION(IsFocusedContent(presContext, aContent),
+               "aContent does not match with sContent");
 
   if (createTextStateManager) {
     
     
     
-    CreateIMEContentObserver(aEditorBase);
+    CreateIMEContentObserver(aEditorBase, aContent);
   }
 }
 
@@ -1150,6 +1186,15 @@ IMEState IMEStateManager::GetNewIMEState(nsPresContext* aPresContext,
             ("  GetNewIMEState() returns IMEEnabled::Disabled because "
              "no content has focus"));
     return IMEState(IMEEnabled::Disabled);
+  }
+
+  
+  
+  if (aContent && aContent->IsInDesignMode()) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  GetNewIMEState() returns IMEEnabled::Enabled because "
+             "a content node in design mode editor has focus"));
+    return IMEState(IMEEnabled::Enabled);
   }
 
   
@@ -1928,12 +1973,20 @@ bool IMEStateManager::IsEditable(nsINode* node) {
 }
 
 
-nsINode* IMEStateManager::GetRootEditableNode(nsPresContext* aPresContext,
-                                              nsIContent* aContent) {
+nsINode* IMEStateManager::GetRootEditableNode(const nsPresContext* aPresContext,
+                                              const nsIContent* aContent) {
   if (aContent) {
+    
+    
+    if (aContent->IsInDesignMode()) {
+      return aContent->GetComposedDoc();
+    }
+
     nsINode* root = nullptr;
-    nsINode* node = aContent;
+    nsINode* node = const_cast<nsIContent*>(aContent);
     while (node && IsEditable(node)) {
+      
+      
       
       
       
@@ -1981,14 +2034,15 @@ void IMEStateManager::DestroyIMEContentObserver() {
 }
 
 
-void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase) {
+void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase,
+                                               nsIContent* aFocusedContent) {
   MOZ_LOG(sISMLog, LogLevel::Info,
-          ("CreateIMEContentObserver(aEditorBase=0x%p), "
+          ("CreateIMEContentObserver(aEditorBase=0x%p, aFocusedContent=0x%p), "
            "sPresContext=0x%p, sContent=0x%p, sWidget=0x%p (available: %s), "
            "sActiveIMEContentObserver=0x%p, "
            "sActiveIMEContentObserver->IsManaging(sPresContext, sContent)=%s",
-           &aEditorBase, sPresContext.get(), sContent.get(), sWidget,
-           GetBoolName(sWidget && !sWidget->Destroyed()),
+           &aEditorBase, aFocusedContent, sPresContext.get(), sContent.get(),
+           sWidget, GetBoolName(sWidget && !sWidget->Destroyed()),
            sActiveIMEContentObserver.get(),
            GetBoolName(sActiveIMEContentObserver
                            ? sActiveIMEContentObserver->IsManaging(sPresContext,
@@ -2052,7 +2106,7 @@ void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase) {
   RefPtr<IMEContentObserver> activeIMEContentObserver(
       sActiveIMEContentObserver);
   OwningNonNull<nsPresContext> presContext(*sPresContext);
-  RefPtr<nsIContent> content = sContent;
+  nsCOMPtr<nsIContent> content = aFocusedContent;
   activeIMEContentObserver->Init(widget, presContext, content, aEditorBase);
 }
 
