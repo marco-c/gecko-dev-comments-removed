@@ -58,10 +58,6 @@ pub enum EntryDetails {
         
         size_in_bytes: usize,
     },
-    Picture {
-        
-        size: DeviceIntSize,
-    },
     Cache {
         
         origin: DeviceIntPoint,
@@ -76,7 +72,6 @@ impl EntryDetails {
     fn describe(&self) -> DeviceIntPoint {
         match *self {
             EntryDetails::Standalone { .. }  => DeviceIntPoint::zero(),
-            EntryDetails::Picture { .. } => DeviceIntPoint::zero(),
             EntryDetails::Cache { origin, .. } => origin,
         }
     }
@@ -164,7 +159,7 @@ impl CacheEntry {
     
     
     
-    pub fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
+    fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
         if let Some(mut request) = gpu_cache.request(&mut self.uv_rect_handle) {
             let origin = self.details.describe();
             let image_source = ImageSource {
@@ -177,7 +172,7 @@ impl CacheEntry {
         }
     }
 
-    pub fn evict(&self) {
+    fn evict(&self) {
         if let Some(eviction_notice) = self.eviction_notice.as_ref() {
             eviction_notice.notify();
         }
@@ -1148,9 +1143,6 @@ impl TextureCache {
     
     fn free(&mut self, entry: &CacheEntry) {
         match entry.details {
-            EntryDetails::Picture { .. } => {
-                unreachable!();
-            }
             EntryDetails::Standalone { size_in_bytes, .. } => {
                 self.bytes_allocated[BudgetType::Standalone as usize] -= size_in_bytes;
 
