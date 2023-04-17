@@ -21,9 +21,11 @@
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/PermissionManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPtr.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsDocShell.h"
@@ -43,6 +45,27 @@ namespace mozilla::dom {
 mozilla::LazyLogModule gProcessIsolationLog{"ProcessIsolation"};
 
 namespace {
+
+
+
+
+
+enum class WebContentIsolationStrategy : uint32_t {
+  
+  
+  
+  
+  IsolateNothing = 0,
+  
+  
+  
+  IsolateEverything = 1,
+  
+  
+  
+  
+  IsolateHighValue = 2,
+};
 
 
 
@@ -400,17 +423,70 @@ static bool ShouldIsolateSite(nsIPrincipal* aPrincipal,
                               CanonicalBrowsingContext* aTopBC) {
   
   
-  if (!aPrincipal->GetIsContentPrincipal()) {
+  
+  if (aTopBC && !aTopBC->UseRemoteSubframes()) {
+    return false;
+  }
+  if (!aTopBC && !mozilla::FissionAutostart()) {
     return false;
   }
 
   
   
-  
-  if (aTopBC) {
-    return aTopBC->UseRemoteSubframes();
+  if (!aPrincipal->GetIsContentPrincipal()) {
+    return false;
   }
-  return mozilla::FissionAutostart();
+
+  switch (WebContentIsolationStrategy(
+      StaticPrefs::fission_webContentIsolationStrategy())) {
+    case WebContentIsolationStrategy::IsolateNothing:
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("Not isolating '%s' as isolation is disabled",
+               OriginString(aPrincipal).get()));
+      return false;
+    case WebContentIsolationStrategy::IsolateEverything:
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("Isolating '%s' as isolation is enabled for all sites",
+               OriginString(aPrincipal).get()));
+      return true;
+    case WebContentIsolationStrategy::IsolateHighValue: {
+      RefPtr<PermissionManager> perms = PermissionManager::GetInstance();
+      if (NS_WARN_IF(!perms)) {
+        
+        
+        MOZ_ASSERT_UNREACHABLE("Permission manager is missing");
+        return true;
+      }
+
+      static constexpr nsLiteralCString kHighValuePermissions[] = {
+          mozilla::dom::kHighValueCOOPPermission,
+      };
+
+      for (const auto& type : kHighValuePermissions) {
+        uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
+        if (NS_SUCCEEDED(perms->TestPermissionFromPrincipal(aPrincipal, type,
+                                                            &permission)) &&
+            permission == nsIPermissionManager::ALLOW_ACTION) {
+          MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                  ("Isolating '%s' due to high-value permission '%s'",
+                   OriginString(aPrincipal).get(), type.get()));
+          return true;
+        }
+      }
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("Not isolating '%s' as it is not high-value",
+               OriginString(aPrincipal).get()));
+      return false;
+    }
+    default:
+      
+      
+      NS_WARNING("Invalid pref value for fission.webContentIsolationStrategy");
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+              ("Isolating '%s' due to unknown strategy pref value",
+               OriginString(aPrincipal).get()));
+      return true;
+  }
 }
 
 enum class WebProcessType {

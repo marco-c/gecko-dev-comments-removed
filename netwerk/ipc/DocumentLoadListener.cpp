@@ -2022,6 +2022,14 @@ bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
       aStatus, mChannel, mLoadStateLoadType, loadingContext->IsTop(),
       loadingContext->GetUseErrorPages(), isInitialDocument, nullptr);
 
+  if (NS_SUCCEEDED(rv)) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+            ("Skipping process switch, as DocShell will not display content "
+             "(status: %s) %s",
+             GetStaticErrorName(aStatus),
+             mChannelCreationURI->GetSpecOrDefault().get()));
+  }
+
   
   
   return NS_FAILED(rv);
