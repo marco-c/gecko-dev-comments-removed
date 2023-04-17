@@ -914,13 +914,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual void SuppressEventHandling() = 0;
-  virtual void UnsuppressEventHandling() = 0;
-
-  
-
-
-
 
 
 
@@ -1130,8 +1123,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   uint32_t mModalStateDepth;
-
-  uint32_t mSuppressEventHandlingDepth;
 
   
   

@@ -20,45 +20,23 @@ namespace mozilla::dom {
 
 
 
-class MOZ_RAII AutoSuppressEventHandling
+
+
+
+class MOZ_RAII AutoSuppressEventHandlingAndSuspend
     : private AutoWalkBrowsingContextGroup {
  public:
-  explicit AutoSuppressEventHandling(BrowsingContext* aContext) {
-    if (aContext) {
-      SuppressBrowsingContext(aContext);
-    }
-  }
-
-  explicit AutoSuppressEventHandling(BrowsingContextGroup* aGroup) {
+  explicit AutoSuppressEventHandlingAndSuspend(BrowsingContextGroup* aGroup) {
     if (aGroup) {
       SuppressBrowsingContextGroup(aGroup);
     }
   }
 
-  ~AutoSuppressEventHandling();
-
- protected:
-  void SuppressDocument(Document* aDocument) override;
-  void UnsuppressDocument(Document* aDocument) override;
-};
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoSuppressEventHandlingAndSuspend
-    : private AutoSuppressEventHandling {
- public:
-  explicit AutoSuppressEventHandlingAndSuspend(BrowsingContextGroup* aGroup)
-      : AutoSuppressEventHandling(aGroup) {}
-
   ~AutoSuppressEventHandlingAndSuspend();
 
  protected:
   void SuppressDocument(Document* aDocument) override;
+  void UnsuppressDocument(Document* aDocument) override;
 
  private:
   AutoTArray<nsCOMPtr<nsPIDOMWindowInner>, 16> mWindows;
