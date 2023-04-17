@@ -6,6 +6,7 @@ const {
   AddonManager,
   document: gDoc,
   getShellService,
+  Services,
 } = window.docShell.chromeEventHandler.ownerGlobal;
 
 const SHELL = getShellService();
@@ -95,6 +96,19 @@ function adjustModalBackdrop() {
 }
 
 
+function recordEvent(obj, val) {
+  Services.telemetry.recordEvent("upgrade_dialog", "content", obj, `${val}`);
+}
+
+
+let gCloseReason = "external";
+CLEANUP.push(() => recordEvent("close", gCloseReason));
+function closeDialog(reason) {
+  gCloseReason = reason;
+  close();
+}
+
+
 function onLoad(ready) {
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
@@ -107,6 +121,11 @@ function onLoad(ready) {
   
   let current = -1;
   (async function advance({ target } = {}) {
+    
+    if (target) {
+      recordEvent("button", target.dataset.l10nId);
+    }
+
     
     switch (++current) {
       case 0:
@@ -127,7 +146,7 @@ function onLoad(ready) {
             } catch (ex) {}
           }
         } else if (target === secondary && IS_DEFAULT && !(await NEED_PIN)) {
-          window.close();
+          closeDialog("early");
           return;
         }
 
@@ -140,6 +159,7 @@ function onLoad(ready) {
             
             const index = [...themes.children].indexOf(button);
             enableTheme(THEME_IDS[index]);
+            recordEvent("theme", index);
           }
         });
 
@@ -167,7 +187,7 @@ function onLoad(ready) {
           gPrevTheme = null;
         }
 
-        window.close();
+        closeDialog("complete");
         return;
     }
 
@@ -192,6 +212,9 @@ function onLoad(ready) {
       
       dispatchEvent(new CustomEvent("ready"));
     });
+
+    
+    recordEvent("show", current);
   })();
 }
 document.mozSubdialogReady = new Promise(resolve =>

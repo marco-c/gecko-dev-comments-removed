@@ -3799,6 +3799,15 @@ BrowserGlue.prototype = {
     })();
 
     
+    Services.telemetry.setEventRecordingEnabled("upgrade_dialog", true);
+    Services.telemetry.recordEvent(
+      "upgrade_dialog",
+      "trigger",
+      "reason",
+      dialogReason || "satisfied"
+    );
+
+    
     if (!dialogReason) {
       Services.prefs.setIntPref(dialogVersionPref, dialogVersion);
       this._showUpgradeDialog();
