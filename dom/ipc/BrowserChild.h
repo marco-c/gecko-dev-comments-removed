@@ -843,6 +843,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   bool mDidLoadURLInit;
 
   bool mSkipKeyPress;
+  bool mDidSetEffectsInfo;
 
   
   
