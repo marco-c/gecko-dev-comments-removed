@@ -29,12 +29,10 @@
     get stack() {
       if (!this._stack) {
         let stack;
-        stack = document.createXULElement(
-          this.protonInfobarsEnabled ? "vbox" : "legacy-stack"
-        );
+        stack = document.createXULElement(gProton ? "vbox" : "legacy-stack");
         stack._notificationBox = this;
         stack.className = "notificationbox-stack";
-        if (!this.protonInfobarsEnabled) {
+        if (!gProton) {
           stack.appendChild(document.createXULElement("spacer"));
         }
         stack.addEventListener("transitionend", event => {
@@ -171,7 +169,7 @@
 
       
       var newitem;
-      if (this.protonInfobarsEnabled && !aNotificationIs) {
+      if (gProton && !aNotificationIs) {
         if (!customElements.get("notification-message")) {
           
           
@@ -206,7 +204,7 @@
       }
       newitem.setAttribute("value", aValue);
 
-      if (aImage && !this.protonInfobarsEnabled) {
+      if (aImage && !gProton) {
         newitem.messageImage.setAttribute("src", aImage);
       }
       newitem.eventCallback = aEventCallback;
@@ -247,7 +245,7 @@
       if (!aItem.parentNode) {
         return;
       }
-      if (this.protonInfobarsEnabled) {
+      if (gProton) {
         this.currentNotification = aItem;
         this.removeCurrentNotification(aSkipAnimation);
       } else if (aItem == this.currentNotification) {
@@ -361,13 +359,6 @@
           delete this._closedNotification;
         }
       }
-    }
-
-    get protonInfobarsEnabled() {
-      return Services.prefs.getBoolPref(
-        "browser.proton.infobars.enabled",
-        false
-      );
     }
   };
 
@@ -545,13 +536,6 @@
           event.stopPropagation();
         }
       }
-    }
-
-    get protonInfobarsEnabled() {
-      return Services.prefs.getBoolPref(
-        "browser.proton.infobars.enabled",
-        false
-      );
     }
   };
 
