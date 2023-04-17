@@ -2547,9 +2547,9 @@ UpdateService.prototype = {
   observe: async function AUS_observe(subject, topic, data) {
     
     
-    let bts = Cc["@mozilla.org/backgroundtasks;1"].getService(
-      Ci.nsIBackgroundTasks
-    );
+    const bts =
+      "@mozilla.org/backgroundtasks;1" in Cc &&
+      Cc["@mozilla.org/backgroundtasks;1"].getService(Ci.nsIBackgroundTasks);
     let isBackgroundTaskMode = bts && bts.isBackgroundTaskMode;
 
     switch (topic) {
