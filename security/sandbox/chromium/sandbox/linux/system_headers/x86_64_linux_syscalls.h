@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef SANDBOX_LINUX_SYSTEM_HEADERS_X86_64_LINUX_SYSCALLS_H_
 #define SANDBOX_LINUX_SYSTEM_HEADERS_X86_64_LINUX_SYSCALLS_H_
 
@@ -1400,6 +1401,18 @@
 
 #if !defined(__NR_clone3)
 #define __NR_clone3 435
+#endif
+
+#if !defined(__NR_openat2)
+#define __NR_openat2 437
+#endif
+
+#if !defined(__NR_pidfd_getfd)
+#define __NR_pidfd_getfd 438
+#endif
+
+#if !defined(__NR_faccessat2)
+#define __NR_faccessat2 439
 #endif
 
 #endif  

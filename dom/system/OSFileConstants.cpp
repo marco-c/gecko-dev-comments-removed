@@ -458,6 +458,7 @@ static const dom::ConstantSpec gLibcProperties[] = {
 #endif  
     INT_CONSTANT(EPERM),
     INT_CONSTANT(ERANGE),
+    INT_CONSTANT(ENOSYS),
 #if defined(ETIMEDOUT)  
     INT_CONSTANT(ETIMEDOUT),
 #endif                    
