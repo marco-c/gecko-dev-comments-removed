@@ -43,6 +43,8 @@ const tests = [
   { path: "data/bug1079747.mp4", expected: "application/octet-stream" },
   
   { path: "data/mp3-in-riff.wav", expected: "audio/mpeg" },
+  
+  { path: "data/bug1725190.cr3", expected: "application/octet-stream" },
 ];
 
 
