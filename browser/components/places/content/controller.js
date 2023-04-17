@@ -450,14 +450,14 @@ PlacesController.prototype = {
 
   _shouldShowMenuItem(aMenuItem, aMetaData) {
     if (
-      aMenuItem.hasAttribute("hideifprivatebrowsing") &&
+      aMenuItem.hasAttribute("hide-if-private-browsing") &&
       !PrivateBrowsingUtils.enabled
     ) {
       return false;
     }
 
     let selectiontype =
-      aMenuItem.getAttribute("selectiontype") || "single|multiple";
+      aMenuItem.getAttribute("selection-type") || "single|multiple";
 
     var selectionTypes = selectiontype.split("|");
     if (selectionTypes.includes("any")) {
@@ -480,7 +480,7 @@ PlacesController.prototype = {
       aMetaData = [this._selectionMetadataForNode(this._view.result.root)];
     }
 
-    let attr = aMenuItem.getAttribute("hideifnodetype");
+    let attr = aMenuItem.getAttribute("hide-if-node-type");
     if (attr) {
       let rules = attr.split("|");
       if (aMetaData.some(d => rules.some(r => r in d))) {
@@ -488,7 +488,7 @@ PlacesController.prototype = {
       }
     }
 
-    attr = aMenuItem.getAttribute("hideifnodetypeisonly");
+    attr = aMenuItem.getAttribute("hide-if-node-type-is-only");
     if (attr) {
       let rules = attr.split("|");
       if (rules.some(r => aMetaData.every(d => r in d))) {
@@ -496,7 +496,7 @@ PlacesController.prototype = {
       }
     }
 
-    attr = aMenuItem.getAttribute("nodetype");
+    attr = aMenuItem.getAttribute("node-type");
     if (!attr) {
       return true;
     }
@@ -561,21 +561,21 @@ PlacesController.prototype = {
     var usableItemCount = 0;
     for (var i = 0; i < aPopup.children.length; ++i) {
       var item = aPopup.children[i];
-      if (item.getAttribute("ignoreitem") == "true") {
+      if (item.getAttribute("ignore-item") == "true") {
         continue;
       }
       if (item.localName != "menuseparator") {
         
         let hideIfNoIP =
-          item.getAttribute("hideifnoinsertionpoint") == "true" &&
+          item.getAttribute("hide-if-no-insertion-point") == "true" &&
           noIp &&
           !(ip && ip.isTag && item.id == "placesContext_paste");
         let hideIfPrivate =
-          item.getAttribute("hideifprivatebrowsing") == "true" &&
+          item.getAttribute("hide-if-private-browsing") == "true" &&
           PrivateBrowsingUtils.isWindowPrivate(window);
         
         let hideIfSingleClickOpens =
-          item.getAttribute("hideifsingleclickopens") == "true" &&
+          item.getAttribute("hide-if-single-click-opens") == "true" &&
           !PlacesUIUtils.loadBookmarksInBackground &&
           !PlacesUIUtils.loadBookmarksInTabs &&
           this._view.singleClickOpens;
