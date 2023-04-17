@@ -979,8 +979,11 @@ static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
           }
         } else {
           
-          Rooted<PropertyDescriptor> desc(cx);
-          desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
+          Rooted<PropertyDescriptor> desc(
+              cx, PropertyDescriptor::Data(newElement,
+                                           {JS::PropertyAttribute::Configurable,
+                                            JS::PropertyAttribute::Enumerable,
+                                            JS::PropertyAttribute::Writable}));
           if (!DefineProperty(cx, obj, id, desc, ignored)) {
             return false;
           }
@@ -1015,8 +1018,11 @@ static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
           }
         } else {
           
-          Rooted<PropertyDescriptor> desc(cx);
-          desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
+          Rooted<PropertyDescriptor> desc(
+              cx, PropertyDescriptor::Data(newElement,
+                                           {JS::PropertyAttribute::Configurable,
+                                            JS::PropertyAttribute::Enumerable,
+                                            JS::PropertyAttribute::Writable}));
           if (!DefineProperty(cx, obj, id, desc, ignored)) {
             return false;
           }

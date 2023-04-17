@@ -174,7 +174,10 @@ bool js::SetPropertyIgnoringNamedGetter(
     }
 
     
-    ownDesc.setDataDescriptor(UndefinedHandleValue, JSPROP_ENUMERATE);
+    ownDesc.set(PropertyDescriptor::Data(
+        UndefinedValue(),
+        {JS::PropertyAttribute::Configurable, JS::PropertyAttribute::Enumerable,
+         JS::PropertyAttribute::Writable}));
   } else {
     ownDesc.set(*ownDesc_);
   }
