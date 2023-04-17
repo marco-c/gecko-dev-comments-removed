@@ -12,7 +12,6 @@
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
-#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 
@@ -105,9 +104,6 @@ struct CCRunnerStep {
   
   
   CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
-
-  
-  CCReason mCCReason;
 };
 
 class CCGCScheduler {
@@ -207,10 +203,9 @@ class CCGCScheduler {
 
   
   
-  void EnsureCCThenGC(CCReason aReason) {
+  void EnsureCCThenGC() {
     MOZ_ASSERT(mCCRunnerState != CCRunnerState::Inactive);
-    MOZ_ASSERT(aReason != CCReason::NO_REASON);
-    mNeedsFullCC = aReason;
+    mNeedsFullCC = true;
     mNeedsGCAfterCC = true;
   }
 
@@ -224,24 +219,10 @@ class CCGCScheduler {
     return true;
   }
 
-  
   void NoteGCBegin();
-
-  
   void NoteGCEnd();
-
   
   void NoteWontGC();
-
-  
-  
-  void NoteCCBegin(CCReason aReason, TimeStamp aWhen);
-
-  
-  
-  
-  
-  void NoteCCEnd(TimeStamp aWhen);
 
   void NoteGCSliceEnd(TimeDuration aSliceDuration) {
     if (mMajorGCReason == JS::GCReason::NO_REASON) {
@@ -302,7 +283,16 @@ class CCGCScheduler {
   }
 
   
-  bool IsCollectingCycles() const { return mIsCollectingCycles; }
+  
+  
+  
+  void NoteCCEnd(TimeStamp aWhen) {
+    mLastCCEndTime = aWhen;
+    mNeedsFullCC = false;
+
+    
+    mNeedsGCAfterCC = false;
+  }
 
   
   
@@ -340,22 +330,16 @@ class CCGCScheduler {
   
   
   
-  CCReason IsCCNeeded(TimeStamp aNow, uint32_t aSuspectedCCObjects) const {
-    if (mNeedsFullCC != CCReason::NO_REASON) {
-      return mNeedsFullCC;
+  bool IsCCNeeded(TimeStamp aNow, uint32_t aSuspectedCCObjects) const {
+    if (mNeedsFullCC) {
+      return true;
     }
-    if (aSuspectedCCObjects > kCCPurpleLimit) {
-      return CCReason::MANY_SUSPECTED;
-    }
-    if (aSuspectedCCObjects > kCCForcedPurpleLimit && mLastCCEndTime &&
-        aNow - mLastCCEndTime > kCCForced) {
-      return CCReason::TIMED;
-    }
-    return CCReason::NO_REASON;
+    return aSuspectedCCObjects > kCCPurpleLimit ||
+           (aSuspectedCCObjects > kCCForcedPurpleLimit && mLastCCEndTime &&
+            aNow - mLastCCEndTime > kCCForced);
   }
 
-  mozilla::CCReason ShouldScheduleCC(TimeStamp aNow,
-                                     uint32_t aSuspectedCCObjects) const;
+  bool ShouldScheduleCC(TimeStamp aNow, uint32_t aSuspectedCCObjects) const;
 
   
   
@@ -383,13 +367,10 @@ class CCGCScheduler {
     NumStates
   };
 
-  void InitCCRunnerStateMachine(CCRunnerState initialState, CCReason aReason) {
+  void InitCCRunnerStateMachine(CCRunnerState initialState) {
     if (mCCRunner) {
       return;
     }
-
-    MOZ_ASSERT(mCCReason == CCReason::NO_REASON);
-    mCCReason = aReason;
 
     
     
@@ -409,10 +390,7 @@ class CCGCScheduler {
     }
   }
 
-  void DeactivateCCRunner() {
-    mCCRunnerState = CCRunnerState::Inactive;
-    mCCReason = CCReason::NO_REASON;
-  }
+  void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
   GCRunnerStep GetNextGCRunnerAction() const;
 
@@ -462,7 +440,7 @@ class CCGCScheduler {
   
   bool mHasRunGC = false;
 
-  mozilla::CCReason mNeedsFullCC = CCReason::NO_REASON;
+  bool mNeedsFullCC = false;
   bool mNeedsFullGC = true;
   bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
@@ -476,11 +454,9 @@ class CCGCScheduler {
   nsITimer* mShrinkingGCTimer = nullptr;
   nsITimer* mFullGCTimer = nullptr;
 
-  mozilla::CCReason mCCReason = mozilla::CCReason::NO_REASON;
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
   bool mIsCompactingOnUserInactive = false;
-  bool mIsCollectingCycles = false;
   bool mUserIsActive = true;
 
  public:

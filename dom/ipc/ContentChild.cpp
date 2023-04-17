@@ -861,15 +861,15 @@ void ContentChild::SetProcessName(const nsACString& aName,
       MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
               ("private = %d, pref = %d",
                isolationPrincipal->OriginAttributesRef().mPrivateBrowsingId !=
-               nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID,
+                   nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID,
                StaticPrefs::fission_processPrivateWindowSiteNames()));
       if (isolationPrincipal->OriginAttributesRef().mPrivateBrowsingId ==
-          nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID
+              nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID
 #ifdef NIGHTLY_BUILD
           
           || StaticPrefs::fission_processPrivateWindowSiteNames()
 #endif
-          ) {
+      ) {
 #if !defined(XP_MACOSX)
         
         
@@ -2638,7 +2638,7 @@ mozilla::ipc::IPCResult ContentChild::RecvCycleCollect() {
   if (obs) {
     obs->NotifyObservers(nullptr, "child-cc-request", nullptr);
   }
-  nsJSContext::CycleCollectNow(CCReason::IPC_MESSAGE);
+  nsJSContext::CycleCollectNow();
   return IPC_OK();
 }
 
@@ -2712,11 +2712,12 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 #ifdef NIGHTLY_BUILD
     SetProcessName("WebCOOP+COEP Content"_ns);
 #else
-    SetProcessName("Isolated Web Content"_ns); 
+    SetProcessName("Isolated Web Content"_ns);  
 #endif
   } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
     
-    nsDependentCSubstring etld = Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1);
+    nsDependentCSubstring etld =
+        Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1);
     SetProcessName("Isolated Web Content"_ns, &etld);
   }
   

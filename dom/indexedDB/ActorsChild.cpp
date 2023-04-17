@@ -130,7 +130,7 @@ void MaybeCollectGarbageOnIPCMessage() {
   }
 
   nsJSContext::GarbageCollectNow(JS::GCReason::DOM_IPC);
-  nsJSContext::CycleCollectNow(CCReason::API);
+  nsJSContext::CycleCollectNow();
 #endif
 }
 
