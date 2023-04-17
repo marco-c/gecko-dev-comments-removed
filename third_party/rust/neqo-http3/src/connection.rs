@@ -224,6 +224,36 @@ impl Http3Connection {
         }
     }
 
+    fn handle_unblocked_streams(
+        &mut self,
+        unblocked_streams: Vec<u64>,
+        conn: &mut Connection,
+    ) -> Res<()> {
+        for stream_id in unblocked_streams {
+            qdebug!([self], "Stream {} is unblocked", stream_id);
+            if let Some(r) = self.recv_streams.get_mut(&stream_id) {
+                if let Err(e) = r
+                    .http_stream()
+                    .ok_or(Error::HttpInternal(10))?
+                    .header_unblocked(conn)
+                {
+                    if e.stream_reset_error() {
+                        
+                        
+                        mem::drop(conn.stream_stop_sending(stream_id, e.code()));
+                        r.stream_reset(e.code(), ResetType::Local).unwrap();
+                        let res = self.recv_streams.remove(&stream_id);
+                        
+                        debug_assert!(res.is_some());
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     
     
     
@@ -243,14 +273,7 @@ impl Http3Connection {
 
         match output {
             ReceiveOutput::UnblockedStreams(unblocked_streams) => {
-                for stream_id in unblocked_streams {
-                    qdebug!([self], "Stream {} is unblocked", stream_id);
-                    if let Some(r) = self.recv_streams.get_mut(&stream_id) {
-                        r.http_stream()
-                            .ok_or(Error::HttpInternal(10))?
-                            .header_unblocked(conn)?;
-                    }
-                }
+                self.handle_unblocked_streams(unblocked_streams, conn)?;
                 Ok(ReceiveOutput::NoOutput)
             }
             ReceiveOutput::ControlFrames(mut control_frames) => {
@@ -619,5 +642,16 @@ impl Http3Connection {
 
     pub fn queue_control_frame(&mut self, frame: &HFrame) {
         self.control_stream_local.queue_frame(frame);
+    }
+
+    pub fn stream_is_critical(&self, stream_id: u64) -> bool {
+        if let Some(r) = self.recv_streams.get(&stream_id) {
+            matches!(
+                r.stream_type(),
+                Http3StreamType::Control | Http3StreamType::Encoder | Http3StreamType::Decoder
+            )
+        } else {
+            false
+        }
     }
 }
