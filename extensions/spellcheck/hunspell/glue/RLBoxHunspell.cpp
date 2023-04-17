@@ -52,12 +52,8 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
 #endif
 
   
-  if (!affpath.IsEmpty()) {
-    mozHunspellCallbacks::AllowFile(affpath);
-  }
-  if (!dpath.IsEmpty()) {
-    mozHunspellCallbacks::AllowFile(dpath);
-  }
+  mozHunspellCallbacks::AllowFile(affpath);
+  mozHunspellCallbacks::AllowFile(dpath);
 
   
   mCreateFilemgr =
