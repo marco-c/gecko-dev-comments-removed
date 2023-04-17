@@ -126,12 +126,14 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
 nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  RemoveAll();
-
-  if (mPendingAsyncMenuCloseRunnable) {
-    mPendingAsyncMenuCloseRunnable->Cancel();
-    mPendingAsyncMenuCloseRunnable = nullptr;
+  if (mIsOpen) {
+    [mNativeMenu cancelTracking];
   }
+
+  
+  FlushMenuClosedRunnable();
+
+  RemoveAll();
 
   mNativeMenu.delegate = nil;
   [mNativeMenu release];
@@ -325,10 +327,8 @@ nsEventStatus nsMenuX::MenuOpened() {
 
   mIsOpen = true;
 
-  if (mPendingAsyncMenuCloseRunnable) {
-    
-    MenuClosedAsync();
-  }
+  
+  FlushMenuClosedRunnable();
 
   mIsOpenForGecko = true;
 
@@ -396,6 +396,12 @@ void nsMenuX::MenuClosed() {
   };
   mPendingAsyncMenuCloseRunnable = new MenuClosedAsyncRunnable(this);
   NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
+}
+
+void nsMenuX::FlushMenuClosedRunnable() {
+  if (mPendingAsyncMenuCloseRunnable) {
+    MenuClosedAsync();
+  }
 }
 
 void nsMenuX::MenuClosedAsync() {
