@@ -363,7 +363,6 @@ this.TopSitesFeed = class TopSitesFeed {
       
       
       if (
-        !contileEnabled &&
         siteData.sponsored_position &&
         sponsoredBlocklist.includes(hostname)
       ) {
