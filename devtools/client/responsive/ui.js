@@ -785,10 +785,15 @@ class ResponsiveUI {
       0
     );
 
-    const { type, angle } = this.getInitialViewportOrientation({
-      width,
-      height,
-    });
+    
+    
+    const { type, angle } =
+      this.commands.targetConfigurationCommand.configuration
+        .rdmPaneOrientation ||
+      this.getInitialViewportOrientation({
+        width,
+        height,
+      });
 
     await this.updateDPPX(pixelRatio);
     await this.updateScreenOrientation(type, angle);
@@ -907,16 +912,13 @@ class ResponsiveUI {
 
 
   async updateScreenOrientation(type, angle, isViewportRotated = false) {
-    await this.responsiveFront.simulateScreenOrientationChange(
-      type,
-      angle,
-      isViewportRotated
+    await this.commands.targetConfigurationCommand.simulateScreenOrientationChange(
+      {
+        type,
+        angle,
+        isViewportRotated,
+      }
     );
-
-    
-    if (!isViewportRotated) {
-      this.emit("only-viewport-orientation-changed");
-    }
   }
 
   

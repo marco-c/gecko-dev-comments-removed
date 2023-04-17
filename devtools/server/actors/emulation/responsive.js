@@ -282,42 +282,12 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
     return false;
   },
 
-  setScreenOrientation(type, angle) {
-    if (
-      this.win.screen.orientation.angle !== angle ||
-      this.win.screen.orientation.type !== type
-    ) {
-      this.docShell.browsingContext.setRDMPaneOrientation(type, angle);
-    }
-  },
-
   
 
 
-
-
-
-
-
-
-
-
-  async simulateScreenOrientationChange(
-    type,
-    angle,
-    isViewportRotated = false
-  ) {
-    
-    
-    if (!isViewportRotated) {
-      this.setScreenOrientation(type, angle);
-      return;
-    }
-
+  async dispatchOrientationChangeEvent() {
     const { CustomEvent } = this.win;
     const orientationChangeEvent = new CustomEvent("orientationchange");
-
-    this.setScreenOrientation(type, angle);
     this.win.dispatchEvent(orientationChangeEvent);
   },
 

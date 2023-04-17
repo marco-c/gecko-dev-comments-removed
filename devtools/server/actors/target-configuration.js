@@ -31,6 +31,8 @@ const SUPPORTED_OPTIONS = {
   
   printSimulationEnabled: true,
   
+  rdmPaneOrientation: true,
+  
   restoreFocus: true,
   
   serviceWorkersTestingEnabled: true,
@@ -102,9 +104,17 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
       return;
     }
 
+    const rdmEnabledInPreviousBrowsingContext = this._browsingContext.inRDMPane;
+
     
     
     this._browsingContext = browsingContext;
+
+    
+    
+    if (rdmEnabledInPreviousBrowsingContext) {
+      this._browsingContext.inRDMPane = true;
+    }
     this._updateParentProcessConfiguration(this._getConfiguration());
   },
 
@@ -155,17 +165,20 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
     for (const [key, value] of Object.entries(configuration)) {
       switch (key) {
-        case "printSimulationEnabled":
-          this._setPrintSimulationEnabled(value);
-          break;
         case "colorSchemeSimulation":
           this._setColorSchemeSimulation(value);
           break;
-        case "serviceWorkersTestingEnabled":
-          this._setServiceWorkersTestingEnabled(value);
-          break;
         case "overrideDPPX":
           this._setDPPXOverride(value);
+          break;
+        case "printSimulationEnabled":
+          this._setPrintSimulationEnabled(value);
+          break;
+        case "rdmPaneOrientation":
+          this._setRDMPaneOrientation(value);
+          break;
+        case "serviceWorkersTestingEnabled":
+          this._setServiceWorkersTestingEnabled(value);
           break;
         case "touchEventsOverride":
           this._setTouchEventsOverride(value);
@@ -271,6 +284,18 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     if (flag !== undefined) {
       this._browsingContext.touchEventsOverride = flag;
     }
+  },
+
+  
+
+
+
+
+
+
+
+  _setRDMPaneOrientation({ type, angle }) {
+    this._browsingContext.setRDMPaneOrientation(type, angle);
   },
 
   destroy() {

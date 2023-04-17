@@ -107,6 +107,37 @@ class TargetConfigurationCommand {
 
     return reloadNeeded;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async simulateScreenOrientationChange({ type, angle, isViewportRotated }) {
+    
+    await this.updateConfiguration({
+      rdmPaneOrientation: { type, angle },
+    });
+
+    
+    
+    if (!isViewportRotated) {
+      return;
+    }
+
+    const responsiveFront = await this._commands.targetCommand.targetFront.getFront(
+      "responsive"
+    );
+    await responsiveFront.dispatchOrientationChangeEvent();
+  }
 }
 
 module.exports = TargetConfigurationCommand;
