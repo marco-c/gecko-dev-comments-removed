@@ -797,6 +797,14 @@ Tester.prototype = {
         name
       );
       let time = Date.now() - this.lastStartTime;
+
+      
+      
+      
+      if (this.currentTest.https_first_disabled) {
+        window.SpecialPowers.popPrefEnv();
+      }
+
       this.structuredLogger.testEnd(
         this.currentTest.path,
         "OK",
@@ -954,6 +962,15 @@ Tester.prototype = {
       this.currentTest.expected
     ));
     let currentTest = this.currentTest;
+
+    
+    
+    
+    if (currentTest.https_first_disabled) {
+      window.SpecialPowers.pushPrefEnv({
+        set: [["dom.security.https_first", false]],
+      });
+    }
 
     
     let { scope } = this.currentTest;
