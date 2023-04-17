@@ -4,6 +4,8 @@
 
 
 #include "HostRecordQueue.h"
+#include "mozilla/Telemetry.h"
+#include "nsQueryObject.h"
 
 namespace mozilla {
 namespace net {
