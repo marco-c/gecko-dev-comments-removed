@@ -57,8 +57,7 @@ const Intrinsic& Intrinsic::getFromOp(IntrinsicOp op) {
   }
 }
 
-bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
-                         Bytes* body) {
+bool EncodeIntrinsicBody(const Intrinsic& intrinsic, Bytes* body) {
   Encoder encoder(*body);
   if (!EncodeLocalEntries(encoder, ValTypeVector())) {
     return false;
@@ -68,7 +67,7 @@ bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
       return false;
     }
   }
-  if (!encoder.writeOp(op)) {
+  if (!encoder.writeOp(IntrinsicOp::I8VecMul)) {
     return false;
   }
   if (!encoder.writeOp(Op::End)) {
@@ -77,10 +76,10 @@ bool EncodeIntrinsicBody(const Intrinsic& intrinsic, IntrinsicOp op,
   return true;
 }
 
-bool wasm::CompileIntrinsicModule(JSContext* cx,
-                                  const mozilla::Span<IntrinsicOp> ops,
-                                  Shareable sharedMemory,
+bool wasm::CompileIntrinsicModule(JSContext* cx, IntrinsicOp op,
                                   MutableHandleWasmModuleObject result) {
+  const Intrinsic& intrinsic = Intrinsic::getFromOp(op);
+
   
   FeatureOptions featureOptions;
   featureOptions.intrinsics = true;
@@ -105,79 +104,44 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
                                        DefinitionKind::Memory))) {
     return false;
   }
-  moduleEnv.memory = Some(MemoryDesc(Limits(0, Nothing(), sharedMemory)));
+  moduleEnv.memory = Some(MemoryDesc(Limits(0)));
 
   
-  
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(ops[funcIndex]);
-
-    FuncType type;
-    if (!intrinsic.funcType(&type) ||
-        !moduleEnv.types.append(TypeDef(std::move(type))) ||
-        !moduleEnv.typeIds.append(TypeIdDesc())) {
-      return false;
-    }
+  FuncType type;
+  if (!intrinsic.funcType(&type) ||
+      !moduleEnv.types.append(TypeDef(std::move(type))) ||
+      !moduleEnv.typeIds.append(TypeIdDesc())) {
+    return false;
   }
 
   
+  FuncDesc decl(&moduleEnv.types[0].funcType(), &moduleEnv.typeIds[0], 0);
+  if (!moduleEnv.funcs.append(decl)) {
+    return false;
+  }
+  moduleEnv.declareFuncExported(0, true, false);
+
   
-  
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    FuncDesc decl(&moduleEnv.types[funcIndex].funcType(),
-                  &moduleEnv.typeIds[funcIndex], funcIndex);
-    if (!moduleEnv.funcs.append(decl)) {
-      return false;
-    }
-    moduleEnv.declareFuncExported(funcIndex, true, false);
+  Bytes intrinsicBody;
+  if (!EncodeIntrinsicBody(intrinsic, &intrinsicBody)) {
+    return false;
   }
 
   
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(ops[funcIndex]);
-
-    UniqueChars exportString = DuplicateString(intrinsic.exportName);
-    if (!exportString ||
-        !moduleEnv.exports.append(Export(std::move(exportString), funcIndex,
-                                         DefinitionKind::Function))) {
-      return false;
-    }
+  UniqueChars exportString = DuplicateString(intrinsic.exportName);
+  if (!exportString ||
+      !moduleEnv.exports.append(
+          Export(std::move(exportString), 0, DefinitionKind::Function))) {
+    return false;
   }
 
   
   UniqueChars error;
   ModuleGenerator mg(*compileArgs, &moduleEnv, &compilerEnv, nullptr, &error);
-  if (!mg.init(nullptr)) {
-    return false;
-  }
-
-  
-  Vector<Bytes, 1, SystemAllocPolicy> bodies;
-  if (!bodies.reserve(ops.size())) {
-    return false;
-  }
-  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    IntrinsicOp op = ops[funcIndex];
-    const Intrinsic& intrinsic = Intrinsic::getFromOp(ops[funcIndex]);
-
-    
-    
-    bodies.infallibleAppend(Bytes());
-    Bytes& bytecode = bodies.back();
-
-    
-    
-    if (!EncodeIntrinsicBody(intrinsic, op, &bytecode) ||
-        !mg.compileFuncDef(funcIndex, 0, bytecode.begin(),
-                           bytecode.begin() + bytecode.length())) {
-      
-      MOZ_ASSERT(!error);
-      return false;
-    }
-  }
-
-  
-  if (!mg.finishFuncDefs()) {
+  if (!mg.init(nullptr) ||
+      !mg.compileFuncDef(0, 0, intrinsicBody.begin(),
+                         intrinsicBody.begin() + intrinsicBody.length()) ||
+      !mg.finishFuncDefs()) {
     
     MOZ_ASSERT(!error);
     return false;
