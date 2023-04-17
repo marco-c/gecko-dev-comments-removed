@@ -42,7 +42,7 @@ mod init;
 pub use init::fog_init;
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_shutdown() {
+pub extern "C" fn fog_shutdown() {
     glean::shutdown();
 }
 
@@ -94,7 +94,7 @@ pub unsafe extern "C" fn fog_use_ipc_buf(buf: *const u8, buf_len: usize) {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_set_debug_view_tag(value: &nsACString) -> nsresult {
+pub extern "C" fn fog_set_debug_view_tag(value: &nsACString) -> nsresult {
     let result = glean::set_debug_view_tag(&value.to_string());
     if result {
         return NS_OK;
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn fog_set_debug_view_tag(value: &nsACString) -> nsresult 
 
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_submit_ping(ping_name: &nsACString) -> nsresult {
+pub extern "C" fn fog_submit_ping(ping_name: &nsACString) -> nsresult {
     glean::submit_ping_by_name(&ping_name.to_string(), None);
     NS_OK
 }
@@ -113,14 +113,14 @@ pub unsafe extern "C" fn fog_submit_ping(ping_name: &nsACString) -> nsresult {
 
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_set_log_pings(value: bool) -> nsresult {
+pub extern "C" fn fog_set_log_pings(value: bool) -> nsresult {
     glean::set_log_pings(value);
     NS_OK
 }
 
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_persist_ping_lifetime_data() -> nsresult {
+pub extern "C" fn fog_persist_ping_lifetime_data() -> nsresult {
     glean::persist_ping_lifetime_data();
     NS_OK
 }
