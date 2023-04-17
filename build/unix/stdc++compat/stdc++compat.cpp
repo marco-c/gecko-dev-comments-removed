@@ -4,6 +4,7 @@
 
 #include <ostream>
 #include <istream>
+#include <memory>
 #include <string>
 #include <stdarg.h>
 #include <stdio.h>
@@ -48,12 +49,14 @@ void __attribute__((weak)) __throw_out_of_range_fmt(char const* fmt, ...) {
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 20)
+namespace __cxxabiv1 {
 
 
 
 extern "C" void __attribute__((weak)) __cxa_throw_bad_array_new_length() {
   MOZ_CRASH();
 }
+}  
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
