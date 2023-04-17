@@ -11,7 +11,9 @@
 #include <algorithm>  
 #include <utility>    
 
-#include "Layers.h"  
+#include "BasicImplData.h"    
+#include "BasicLayersImpl.h"  
+#include "Layers.h"           
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"         
 #include "gfxUtils.h"            
@@ -199,6 +201,36 @@ static bool IsClippingCheap(gfx::DrawTarget* aTarget,
   
   return !aTarget->GetTransform().HasNonIntegerTranslation() &&
          aRegion.GetNumRects() <= 1;
+}
+
+void RotatedBuffer::DrawTo(PaintedLayer* aLayer, DrawTarget* aTarget,
+                           float aOpacity, CompositionOp aOp,
+                           SourceSurface* aMask, const Matrix* aMaskTransform) {
+  bool clipped = false;
+
+  
+  
+  
+  
+  if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
+      (ToData(aLayer)->GetClipToVisibleRegion() &&
+       !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
+      IsClippingCheap(aTarget,
+                      aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
+    
+    
+    
+    
+    
+    gfxUtils::ClipToRegion(aTarget,
+                           aLayer->GetLocalVisibleRegion().ToUnknownRegion());
+    clipped = true;
+  }
+
+  DrawBufferWithRotation(aTarget, aOpacity, aOp, aMask, aMaskTransform);
+  if (clipped) {
+    aTarget->PopClip();
+  }
 }
 
 void RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,

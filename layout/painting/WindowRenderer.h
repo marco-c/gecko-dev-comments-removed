@@ -10,10 +10,9 @@
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/dom/Animation.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "mozilla/ScrollPositionUpdate.h"  
-#include "nsRefPtrHashtable.h"             
-#include "gfxContext.h"
+#include "nsRefPtrHashtable.h"  
 
+class gfxContext;
 namespace mozilla {
 namespace layers {
 class LayerManager;
@@ -174,12 +173,6 @@ class WindowRenderer : public FrameRecorder {
   virtual void WaitOnTransactionProcessed() {}
 
   virtual bool IsCompositingCheap() { return true; }
-
-  
-
-
-
-  virtual int32_t GetMaxTextureSize() const { return INT32_MAX; }
 
   
 

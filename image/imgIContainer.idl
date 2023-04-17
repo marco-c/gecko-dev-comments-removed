@@ -29,7 +29,6 @@ namespace gfx {
 class SourceSurface;
 }
 
-class WindowRenderer;
 namespace layers {
 class LayerManager;
 class ImageContainer;
@@ -73,7 +72,6 @@ native TempRefImageContainer(already_AddRefed<mozilla::layers::ImageContainer>);
 [ptr] native ImageContainer(mozilla::layers::ImageContainer);
 [ref] native ImageRegion(mozilla::image::ImageRegion);
 [ptr] native LayerManager(mozilla::layers::LayerManager);
-[ptr] native WindowRenderer(mozilla::WindowRenderer);
 native Orientation(mozilla::image::Orientation);
 native ImageResolution(mozilla::image::Resolution);
 [ref] native TimeStamp(mozilla::TimeStamp);
@@ -338,7 +336,7 @@ interface imgIContainer : nsISupports
 
 
 
-  [noscript, notxpcom] TempRefImageContainer getImageContainer(in WindowRenderer aRenderer,
+  [noscript, notxpcom] TempRefImageContainer getImageContainer(in LayerManager aManager,
                                                                in uint32_t aFlags);
 
   
@@ -363,7 +361,7 @@ interface imgIContainer : nsISupports
 
 
 
-  [noscript, notxpcom] ImgDrawResult getImageContainerAtSize(in WindowRenderer aRenderer,
+  [noscript, notxpcom] ImgDrawResult getImageContainerAtSize(in LayerManager aManager,
                                                              [const] in nsIntSize aSize,
                                                              [const] in MaybeSVGImageContext aSVGContext,
                                                              [const] in MaybeImageIntRegion aRegion,
