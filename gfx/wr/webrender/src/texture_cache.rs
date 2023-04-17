@@ -564,7 +564,7 @@ pub struct TextureCache {
     shared_textures: SharedTextures,
 
     
-    picture_textures: PictureTextures,
+    pub picture_textures: PictureTextures,
 
     
     max_texture_size: i32,
@@ -702,7 +702,7 @@ impl TextureCache {
         }
 
         
-        self.picture_textures.clear(self.now, &mut self.pending_updates);
+        self.picture_textures.clear(&mut self.pending_updates);
         self.shared_textures.clear(&mut self.pending_updates);
         self.pending_updates.note_clear();
     }
@@ -712,6 +712,8 @@ impl TextureCache {
         debug_assert!(!self.now.is_valid());
         profile_scope!("begin_frame");
         self.now = stamp;
+
+        self.picture_textures.begin_frame(stamp);
 
         
         
@@ -787,8 +789,8 @@ impl TextureCache {
         let now = self.now;
         let entry = match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(handle) => {
-                return self.picture_textures.request(handle, now, gpu_cache);
+            TextureCacheHandle::Picture(_) => {
+                unreachable!();
             },
             TextureCacheHandle::Auto(handle) => {
                 
@@ -806,6 +808,20 @@ impl TextureCache {
             entry.update_gpu_cache(gpu_cache);
             false
         })
+    }
+
+    pub fn request_picture_tile(&mut self, handle: &TextureCacheHandle, gpu_cache: &mut GpuCache) -> bool {
+        match handle {
+            TextureCacheHandle::Picture(handle) => {
+                self.picture_textures.request(handle, gpu_cache)
+            }
+            TextureCacheHandle::Empty => {
+                true
+            }
+            _ => {
+                unreachable!();
+            }
+        }
     }
 
     fn get_entry_opt(&self, handle: &TextureCacheHandle) -> Option<&CacheEntry> {
@@ -976,7 +992,7 @@ impl TextureCache {
     pub fn get_picture_texture(&self, handle: &TextureCacheHandle) -> TextureSource {
         match handle {
             TextureCacheHandle::Picture(handle) => {
-                self.picture_textures.get_texture_source(self.now, handle)
+                self.picture_textures.get_texture_source(handle)
             }
             _ => unreachable!(),
         }
@@ -1080,7 +1096,7 @@ impl TextureCache {
     
     
     fn expire_old_picture_cache_tiles(&mut self) {
-        self.picture_textures.expire_old_tiles(self.now, &mut self.pending_updates);
+        self.picture_textures.expire_old_tiles(&mut self.pending_updates);
     }
 
     
@@ -1507,7 +1523,6 @@ impl TextureCache {
         gpu_cache: &mut GpuCache,
     ) {
         self.picture_textures.update(
-            self.now,
             tile_size,
             handle,
             gpu_cache,
