@@ -40,11 +40,6 @@ class RacyRegisteredThread final {
   }
 
   
-  bool CanDuplicateLastSampleDueToSleep() {
-    return mThreadRegistration.mData.CanDuplicateLastSampleDueToSleep();
-  }
-
-  
   
   void SetSleeping() { mThreadRegistration.mData.SetSleeping(); }
 
@@ -82,9 +77,6 @@ class RegisteredThread final {
   }
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
-  const void* StackTop() const {
-    return mRacyRegisteredThread.mThreadRegistration.mData.mStackTop;
-  }
 
   
   
