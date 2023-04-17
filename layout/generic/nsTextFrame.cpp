@@ -977,7 +977,8 @@ class BuildTextRunsScanner {
  public:
   BuildTextRunsScanner(nsPresContext* aPresContext, DrawTarget* aDrawTarget,
                        nsIFrame* aLineContainer,
-                       nsTextFrame::TextRunType aWhichTextRun)
+                       nsTextFrame::TextRunType aWhichTextRun,
+                       bool aDoLineBreaking)
       : mDrawTarget(aDrawTarget),
         mLineContainer(aLineContainer),
         mCommonAncestorWithLastFrame(nullptr),
@@ -986,6 +987,7 @@ class BuildTextRunsScanner {
         mStartOfLine(true),
         mSkipIncompleteTextRuns(false),
         mCanStopOnThisLine(false),
+        mDoLineBreaking(aDoLineBreaking),
         mWhichTextRun(aWhichTextRun),
         mNextRunContextInfo(nsTextFrameUtils::INCOMING_NONE),
         mCurrentRunContextInfo(nsTextFrameUtils::INCOMING_NONE) {
@@ -1149,6 +1151,7 @@ class BuildTextRunsScanner {
   bool mStartOfLine;
   bool mSkipIncompleteTextRuns;
   bool mCanStopOnThisLine;
+  bool mDoLineBreaking;
   nsTextFrame::TextRunType mWhichTextRun;
   uint8_t mNextRunContextInfo;
   uint8_t mCurrentRunContextInfo;
@@ -1433,8 +1436,9 @@ static void BuildTextRuns(DrawTarget* aDrawTarget, nsTextFrame* aForFrame,
   }
 
   nsPresContext* presContext = aLineContainer->PresContext();
+  bool doLineBreaking = !SVGUtils::IsInSVGTextSubtree(aForFrame);
   BuildTextRunsScanner scanner(presContext, aDrawTarget, aLineContainer,
-                               aWhichTextRun);
+                               aWhichTextRun, doLineBreaking);
 
   nsBlockFrame* block = do_QueryFrame(aLineContainer);
 
@@ -1636,9 +1640,11 @@ void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
       
       textRun = mCurrentFramesAllSameTextRun;
 
-      
-      if (!SetupLineBreakerContext(textRun)) {
-        return;
+      if (mDoLineBreaking) {
+        
+        if (!SetupLineBreakerContext(textRun)) {
+          return;
+        }
       }
 
       
@@ -2566,7 +2572,9 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
   
   
   
-  SetupBreakSinksForTextRun(textRun.get(), textPtr);
+  if (mDoLineBreaking) {
+    SetupBreakSinksForTextRun(textRun.get(), textPtr);
+  }
 
   if (anyTextEmphasis) {
     SetupTextEmphasisForTextRun(textRun.get(), textPtr);
