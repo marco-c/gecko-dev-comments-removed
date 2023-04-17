@@ -45,6 +45,8 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
 
   void DoneGC();
 
+  
+  
   static IdleSchedulerChild* GetMainThreadIdleScheduler();
 
  private:
