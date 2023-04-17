@@ -8,6 +8,24 @@ const LoginAutoComplete = Cc[
   "@mozilla.org/login-manager/autocompletesearch;1"
 ].getService(Ci.nsILoginAutoCompleteSearch).wrappedJSObject;
 
+
+
+
+function makeDocumentVisibleToFathom(doc) {
+  let win = {
+    getComputedStyle() {
+      return {
+        overflow: "visible",
+        visibility: "visible",
+      };
+    },
+  };
+  Object.defineProperty(doc, "defaultView", {
+    value: win,
+  });
+  return doc;
+}
+
 function labelledByDocument() {
   let doc = MockDocument.createTestDocument(
     "http://localhost:8080/test/",
@@ -51,13 +69,17 @@ const TESTCASES = [
     expectedResult: [true],
   },
   {
+    
+    
+    
+    
     description: "Basic password change form",
     document: `
       <h1>Change password</h1>
       <form>
         <label>Current Password: <input type="password" name="current-password"></label>
         <label>New Password: <input type="password" name="new-password"></label>
-        <label>Confirm Password: <input type="password" name="confirm-password"></label>
+        <label>Confirm Password: <input type="password" name="confirm-password" placeholder="confirm"></label>
         <input type="submit" value="Save">
       </form>
     `,
@@ -149,6 +171,8 @@ for (let testcase of TESTCASES) {
               "http://localhost:8080/test/",
               testcase.document
             );
+
+      document = makeDocumentVisibleToFathom(document);
 
       const results = [];
       for (let input of testcase.inputs ||
