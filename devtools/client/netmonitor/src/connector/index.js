@@ -115,8 +115,6 @@ class Connector {
 
     this.removeListeners();
 
-    this.currentTarget.off("will-navigate", this.willNavigate);
-
     this.webConsoleFront = null;
     this.dataProvider = null;
   }
@@ -133,17 +131,6 @@ class Connector {
     if (!targetFront.isTopLevel) {
       return;
     }
-
-    if (isTargetSwitching) {
-      this.willNavigate();
-    }
-
-    
-    
-    
-    
-    
-    targetFront.on("will-navigate", this.willNavigate);
 
     this.webConsoleFront = await this.currentTarget.getFront("console");
 
@@ -369,7 +356,16 @@ class Connector {
     }
 
     
-    if (resource.name != "dom-interactive" && resource.name != "dom-complete") {
+    if (
+      resource.name != "dom-interactive" &&
+      resource.name != "dom-complete" &&
+      resource.name != "will-navigate"
+    ) {
+      return;
+    }
+
+    if (resource.name == "will-navigate") {
+      this.willNavigate();
       return;
     }
 
