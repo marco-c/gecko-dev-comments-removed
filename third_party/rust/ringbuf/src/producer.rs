@@ -1,9 +1,11 @@
-use std::{
-    io::{self, Read, Write},
+use alloc::sync::Arc;
+use core::{
     mem::{self, MaybeUninit},
     ptr::copy_nonoverlapping,
-    sync::{atomic::Ordering, Arc},
+    sync::atomic::Ordering,
 };
+#[cfg(feature = "std")]
+use std::io::{self, Read, Write};
 
 use crate::{consumer::Consumer, ring_buffer::*};
 
@@ -62,6 +64,11 @@ impl<T: Sized> Producer<T> {
     
     
     
+    
+    
+    
+    
+    
     pub unsafe fn push_access<F>(&mut self, f: F) -> usize
     where
         F: FnOnce(&mut [MaybeUninit<T>], &mut [MaybeUninit<T>]) -> usize,
@@ -98,6 +105,13 @@ impl<T: Sized> Producer<T> {
         n
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -204,6 +218,7 @@ impl<T: Sized + Copy> Producer<T> {
     }
 }
 
+#[cfg(feature = "std")]
 impl Producer<u8> {
     
     
@@ -236,7 +251,7 @@ impl Producer<u8> {
                         } else {
                             Err(io::Error::new(
                                 io::ErrorKind::InvalidInput,
-                                "Read operation returned invalid number",
+                                "Read operation returned an invalid number",
                             ))
                         }
                     }) {
@@ -255,14 +270,12 @@ impl Producer<u8> {
     }
 }
 
+#[cfg(feature = "std")]
 impl Write for Producer<u8> {
     fn write(&mut self, buffer: &[u8]) -> io::Result<usize> {
         let n = self.push_slice(buffer);
         if n == 0 && !buffer.is_empty() {
-            Err(io::Error::new(
-                io::ErrorKind::WouldBlock,
-                "Ring buffer is full",
-            ))
+            Err(io::ErrorKind::WouldBlock.into())
         } else {
             Ok(n)
         }
