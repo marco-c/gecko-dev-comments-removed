@@ -11131,17 +11131,19 @@ void NewObjectIRGenerator::trackAttached(const char* name) {
 }
 
 AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
+  
+  
+  static const uint32_t MaxDynamicSlotsToOptimize = 64;
+
   NativeObject* nativeObj = &templateObject_->as<NativeObject>();
   MOZ_ASSERT(nativeObj->is<PlainObject>());
 
   
-  
-  if (nativeObj->numDynamicSlots() > NativeObject::MAX_FIXED_SLOTS) {
+  if (cx_->realm()->hasAllocationMetadataBuilder()) {
     return AttachDecision::NoAction;
   }
 
-  
-  if (cx_->realm()->hasAllocationMetadataBuilder()) {
+  if (nativeObj->numDynamicSlots() > MaxDynamicSlotsToOptimize) {
     return AttachDecision::NoAction;
   }
 
