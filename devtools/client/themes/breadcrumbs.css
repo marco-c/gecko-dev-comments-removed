@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
  :root {
   --breadcrumb-id-class-color: #909090;
@@ -12,12 +12,12 @@
   --breadcrumb-pseudo-class-text-color: var(--yellow-50);
  }
 
-
+/* Inspector HTMLBreadcrumbs */
 
 .breadcrumbs-widget-container {
   margin-right: 3px;
-  max-height: 24px; 
-  height: 24px; 
+  max-height: 24px; /* Set max-height for proper sizing on linux */
+  height: 24px; /* Set height to prevent starting small waiting for content */
 }
 
 .breadcrumbs-widget-container:-moz-locale-dir(rtl) {
@@ -63,7 +63,7 @@
   opacity: 0.5;
 }
 
-
+/* Draw shadows to indicate there is more content 'behind' scrollbuttons. */
 .scrollbutton-up {
   border-right: solid 1px var(--theme-splitter-color);
   border-left: solid 1px transparent;
@@ -89,23 +89,12 @@
 .breadcrumbs-widget-item {
   background-color: transparent;
   border: none;
-  margin-inline-start: 10px;
-  margin-inline-end: 1px;
+  margin-inline: 10px 1px;
   padding: 0;
 }
 
-.breadcrumbs-widget-item > .button-box {
-  border: none;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-:root[platform="win"] .breadcrumbs-widget-item:-moz-focusring > .button-box {
-  border-width: 0;
-}
-
 .breadcrumbs-widget-item:first-child::before {
-  
+  /* The first crumb does not need any separator before itself */
   content: unset;
 }
 
