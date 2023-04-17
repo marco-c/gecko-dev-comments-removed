@@ -13,10 +13,6 @@ const {
   getAdjustedQuads,
   getWindowDimensions,
 } = require("devtools/shared/layout/utils");
-const {
-  isAgentStylesheet,
-  getCSSStyleRules,
-} = require("devtools/shared/inspector/css-logic");
 const InspectorUtils = require("InspectorUtils");
 
 
@@ -165,14 +161,6 @@ var testSpec = protocol.generateActorSpec({
       request: {
         parentSelector: Arg(0, "string"),
         childNodeIndex: Arg(1, "number"),
-      },
-      response: {
-        value: RetVal("json"),
-      },
-    },
-    getStyleSheetsInfoForNode: {
-      request: {
-        selector: Arg(0, "string"),
       },
       response: {
         value: RetVal("json"),
@@ -471,32 +459,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     const parentNode = this._querySelector(parentSelector);
     const node = parentNode.childNodes[childNodeIndex];
     return getAdjustedQuads(this.content, node)[0].bounds;
-  },
-
-  
-
-
-
-
-
-
-
-
-  getStyleSheetsInfoForNode: function(selector) {
-    const node = this._querySelector(selector);
-    const domRules = getCSSStyleRules(node);
-
-    const sheets = [];
-
-    for (let i = 0, n = domRules.length; i < n; i++) {
-      const sheet = domRules[i].parentStyleSheet;
-      sheets.push({
-        href: sheet.href,
-        isContentSheet: !isAgentStylesheet(sheet),
-      });
-    }
-
-    return sheets;
   },
 
   
