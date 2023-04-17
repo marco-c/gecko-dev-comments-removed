@@ -41,7 +41,7 @@ void Help(nsString& aHelp) const;
 
 
 
-void Description(nsString& aDesc) const;
+void Description(nsString& aDesc) const override;
 
 
 

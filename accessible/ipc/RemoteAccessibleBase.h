@@ -168,6 +168,7 @@ class RemoteAccessibleBase : public Accessible {
   
 
   virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual void Description(nsString& aDescription) const override;
 
   virtual double CurValue() const override;
   virtual double MinValue() const override;

@@ -161,7 +161,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual void Description(nsString& aDescription) const;
+  virtual void Description(nsString& aDescription) const override;
 
   
 
