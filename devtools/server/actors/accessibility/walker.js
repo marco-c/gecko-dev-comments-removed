@@ -32,7 +32,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(
   this,
-  ["getCurrentZoom", "isWindowIncluded", "isRemoteFrame"],
+  ["getCurrentZoom", "isWindowIncluded", "isFrameWithChildTarget"],
   "devtools/shared/layout/utils",
   true
 );
@@ -880,7 +880,10 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       
       
       
-      isRemoteFrame(event.originalTarget || event.target)
+      isFrameWithChildTarget(
+        this.targetActor,
+        event.originalTarget || event.target
+      )
     );
   },
 
