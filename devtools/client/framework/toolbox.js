@@ -3017,6 +3017,10 @@ Toolbox.prototype = {
     }
 
     await panel.once("reloaded");
+    
+    if (this.isDestroying()) {
+      return;
+    }
     const delay = this.win.performance.now() - start;
 
     const telemetryKey = "DEVTOOLS_TOOLBOX_PAGE_RELOAD_DELAY_MS";
