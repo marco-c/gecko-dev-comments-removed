@@ -11,15 +11,15 @@
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 
+#include "unicode/udateintervalformat.h"
 #include "unicode/utypes.h"
 
-struct UDateIntervalFormat;
-struct UFormattedDateInterval;
-struct UFormattedValue;
-
 namespace mozilla::intl {
-class AutoFormattedDateInterval;
 class Calendar;
+
+using AutoFormattedDateInterval =
+    AutoFormattedResult<UFormattedDateInterval, udtitvfmt_openResult,
+                        udtitvfmt_resultAsValue, udtitvfmt_closeResult>;
 
 
 
@@ -100,59 +100,6 @@ class DateIntervalFormat final {
 
   ICUPointer<UDateIntervalFormat> mDateIntervalFormat =
       ICUPointer<UDateIntervalFormat>(nullptr);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoFormattedDateInterval {
- public:
-  AutoFormattedDateInterval();
-  ~AutoFormattedDateInterval();
-
-  AutoFormattedDateInterval(const AutoFormattedDateInterval& other) = delete;
-  AutoFormattedDateInterval& operator=(const AutoFormattedDateInterval& other) =
-      delete;
-
-  AutoFormattedDateInterval(AutoFormattedDateInterval&& other) = delete;
-  AutoFormattedDateInterval& operator=(AutoFormattedDateInterval&& other) =
-      delete;
-
-  
-
-
-  bool IsValid() const { return !!mFormatted; }
-
-  
-
-
-  ICUError GetError() const { return ToICUError(mError); }
-
-  
-
-
-  Result<Span<const char16_t>, ICUError> ToSpan() const;
-
- private:
-  friend class DateIntervalFormat;
-  UFormattedDateInterval* GetUFormattedDateInterval() const {
-    return mFormatted;
-  }
-
-  const UFormattedValue* Value() const;
-
-  UFormattedDateInterval* mFormatted = nullptr;
-  UErrorCode mError = U_ZERO_ERROR;
 };
 }  
 
