@@ -60,6 +60,10 @@ const HALF_WIDTH_KATAKANA_PENALTY: i64 = -(CJK_BASE_SCORE * 3);
 
 const SHIFT_JIS_PUA_PENALTY: i64 = -(CJK_BASE_SCORE * 10); 
 
+const SHIFT_JIS_EXTENSION_PENALTY: i64 = SHIFT_JIS_PUA_PENALTY * 2;
+
+const SHIFT_JIS_SINGLE_BYTE_EXTENSION_PENALTY: i64 = SHIFT_JIS_EXTENSION_PENALTY;
+
 const EUC_JP_SCORE_PER_KANA: i64 = CJK_BASE_SCORE + (CJK_BASE_SCORE / 3); 
 
 const EUC_JP_SCORE_PER_NEAR_OBSOLETE_KANA: i64 = CJK_BASE_SCORE - 1;
@@ -72,9 +76,15 @@ const EUC_JP_SCORE_PER_OTHER_KANJI: i64 = CJK_SECONDARY_BASE_SCORE / 4;
 
 const EUC_JP_INITIAL_KANA_PENALTY: i64 = -((CJK_BASE_SCORE / 3) + 1);
 
+const EUC_JP_EXTENSION_PENALTY: i64 = -(CJK_BASE_SCORE * 50); 
+
 const BIG5_SCORE_PER_LEVEL_1_HANZI: i64 = CJK_BASE_SCORE;
 
 const BIG5_SCORE_PER_OTHER_HANZI: i64 = CJK_SECONDARY_BASE_SCORE;
+
+const BIG5_PUA_PENALTY: i64 = -(CJK_BASE_SCORE * 30); 
+
+const BIG5_SINGLE_BYTE_EXTENSION_PENALTY: i64 = -(CJK_BASE_SCORE * 40);
 
 const EUC_KR_SCORE_PER_EUC_HANGUL: i64 = CJK_BASE_SCORE + 1;
 
@@ -86,6 +96,12 @@ const EUC_KR_HANJA_AFTER_HANGUL_PENALTY: i64 = -(CJK_BASE_SCORE * 10);
 
 const EUC_KR_LONG_WORD_PENALTY: i64 = -6;
 
+const EUC_KR_PUA_PENALTY: i64 = GBK_PUA_PENALTY - 1; 
+
+const EUC_KR_MAC_KOREAN_PENALTY: i64 = EUC_KR_PUA_PENALTY * 2;
+
+const EUC_KR_SINGLE_BYTE_EXTENSION_PENALTY: i64 = EUC_KR_MAC_KOREAN_PENALTY;
+
 const GBK_SCORE_PER_LEVEL_1: i64 = CJK_BASE_SCORE;
 
 const GBK_SCORE_PER_LEVEL_2: i64 = CJK_SECONDARY_BASE_SCORE;
@@ -93,6 +109,8 @@ const GBK_SCORE_PER_LEVEL_2: i64 = CJK_SECONDARY_BASE_SCORE;
 const GBK_SCORE_PER_NON_EUC: i64 = CJK_SECONDARY_BASE_SCORE / 4;
 
 const GBK_PUA_PENALTY: i64 = -(CJK_BASE_SCORE * 10); 
+
+const GBK_SINGLE_BYTE_EXTENSION_PENALTY: i64 = GBK_PUA_PENALTY * 4;
 
 const CJK_LATIN_ADJACENCY_PENALTY: i64 = -CJK_BASE_SCORE; 
 
@@ -985,7 +1003,7 @@ impl GbkCandidate {
                 } else if u == 0x20AC {
                     
                     self.pending_score = None; 
-                    
+                                               
                     self.prev = LatinCj::Other;
                 } else if u >= 0x4E00 && u <= 0x9FA5 {
                     if let Some(pending) = self.pending_score {
@@ -1107,8 +1125,36 @@ impl GbkCandidate {
                 DecoderResult::InputEmpty => {
                     assert_eq!(read, 1);
                 }
-                DecoderResult::Malformed(_, _) => {
-                    return None;
+                DecoderResult::Malformed(malformed_len, _) => {
+                    if (self.prev_byte == 0xA0 || self.prev_byte == 0xFE || self.prev_byte == 0xFD)
+                        && (b < 0x80 || b == 0xFF)
+                    {
+                        
+                        
+                        self.pending_score = None; 
+                        score += GBK_SINGLE_BYTE_EXTENSION_PENALTY;
+                        if (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z') {
+                            self.prev = LatinCj::AsciiLetter;
+                        } else if b == 0xFF {
+                            score += GBK_SINGLE_BYTE_EXTENSION_PENALTY;
+                            self.prev = LatinCj::Other;
+                        } else {
+                            self.prev = LatinCj::Other;
+                        }
+                        
+                        
+                        self.decoder = GBK.new_decoder_without_bom_handling();
+                    } else if malformed_len == 1 && b == 0xFF {
+                        
+                        self.pending_score = None; 
+                        score += GBK_SINGLE_BYTE_EXTENSION_PENALTY;
+                        self.prev = LatinCj::Other;
+                        
+                        
+                        self.decoder = GBK.new_decoder_without_bom_handling();
+                    } else {
+                        return None;
+                    }
                 }
                 DecoderResult::OutputFull => {
                     unreachable!();
@@ -1271,8 +1317,38 @@ impl ShiftJisCandidate {
                 DecoderResult::InputEmpty => {
                     assert_eq!(read, 1);
                 }
-                DecoderResult::Malformed(_, _) => {
-                    return None;
+                DecoderResult::Malformed(malformed_len, _) => {
+                    if (((self.prev_byte >= 0x81 && self.prev_byte <= 0x9F)
+                        || (self.prev_byte >= 0xE0 && self.prev_byte <= 0xFC))
+                        && ((b >= 0x40 && b <= 0x7E) || (b >= 0x80 && b <= 0xFC)))
+                        && !((self.prev_byte == 0x82 && b >= 0xFA)
+                            || (self.prev_byte == 0x84 && ((b >= 0xDD && b <= 0xE4) || b >= 0xFB))
+                            || (self.prev_byte == 0x86 && b >= 0xF2 && b <= 0xFA)
+                            || (self.prev_byte == 0x87 && b >= 0x77 && b <= 0x7D)
+                            || (self.prev_byte == 0xFC && b >= 0xF5))
+                    {
+                        
+                        if let Some(pending) = self.pending_score {
+                            score += pending;
+                            self.pending_score = None;
+                        }
+                        score += SHIFT_JIS_EXTENSION_PENALTY;
+                        
+                        if self.prev_byte < 0x87 {
+                            self.prev = LatinCj::Other;
+                        } else {
+                            if self.prev == LatinCj::AsciiLetter {
+                                score += CJK_LATIN_ADJACENCY_PENALTY;
+                            }
+                            self.prev = LatinCj::Cj;
+                        }
+                    } else if malformed_len == 1 && (b == 0xA0 || b >= 0xFD) {
+                        self.pending_score = None; 
+                        score += SHIFT_JIS_SINGLE_BYTE_EXTENSION_PENALTY;
+                        self.prev = LatinCj::Other;
+                    } else {
+                        return None;
+                    }
                 }
                 DecoderResult::OutputFull => {
                     unreachable!();
@@ -1393,7 +1469,32 @@ impl EucJpCandidate {
                     assert_eq!(read, 1);
                 }
                 DecoderResult::Malformed(_, _) => {
-                    return None;
+                    if b >= 0xA1
+                        && b <= 0xFE
+                        && self.prev_byte >= 0xA1
+                        && self.prev_byte <= 0xFE
+                        && ((self.prev_prev_byte != 0x8F
+                            && !(self.prev_byte == 0xA8 && b >= 0xDF && b <= 0xE6)
+                            && !(self.prev_byte == 0xAC && b >= 0xF4 && b <= 0xFC)
+                            && !(self.prev_byte == 0xAD && b >= 0xD8 && b <= 0xDE))
+                            || (self.prev_prev_byte == 0x8F
+                                && self.prev_byte != 0xA2
+                                && self.prev_byte != 0xA6
+                                && self.prev_byte != 0xA7
+                                && self.prev_byte != 0xA9
+                                && self.prev_byte != 0xAA
+                                && self.prev_byte != 0xAB
+                                && self.prev_byte != 0xED
+                                && !(self.prev_byte == 0xFE && b >= 0xF7)))
+                    {
+                        score += EUC_JP_EXTENSION_PENALTY;
+                        if self.prev == LatinCj::AsciiLetter {
+                            score += CJK_LATIN_ADJACENCY_PENALTY;
+                        }
+                        self.prev = LatinCj::Cj;
+                    } else {
+                        return None;
+                    }
                 }
                 DecoderResult::OutputFull => {
                     unreachable!();
@@ -1530,8 +1631,50 @@ impl Big5Candidate {
                 DecoderResult::InputEmpty => {
                     assert_eq!(read, 1);
                 }
-                DecoderResult::Malformed(_, _) => {
-                    return None;
+                DecoderResult::Malformed(malformed_len, _) => {
+                    if self.prev_byte >= 0x81
+                        && self.prev_byte <= 0xFE
+                        && ((b >= 0x40 && b <= 0x7E) || (b >= 0xA1 && b <= 0xFE))
+                    {
+                        
+                        
+                        
+                        
+                        if let Some(pending) = self.pending_score {
+                            score += pending;
+                            self.pending_score = None;
+                        }
+                        score += BIG5_PUA_PENALTY;
+                        
+                        if self.prev == LatinCj::AsciiLetter {
+                            score += CJK_LATIN_ADJACENCY_PENALTY;
+                        }
+                        self.prev = LatinCj::Cj;
+                    } else if (self.prev_byte == 0xA0
+                        || self.prev_byte == 0xFD
+                        || self.prev_byte == 0xFE)
+                        && (b < 0x80 || b == 0xFF)
+                    {
+                        
+                        
+                        self.pending_score = None; 
+                        score += BIG5_SINGLE_BYTE_EXTENSION_PENALTY;
+                        if (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z') {
+                            self.prev = LatinCj::AsciiLetter;
+                        } else if b == 0xFF {
+                            score += BIG5_SINGLE_BYTE_EXTENSION_PENALTY;
+                            self.prev = LatinCj::Other;
+                        } else {
+                            self.prev = LatinCj::Other;
+                        }
+                    } else if malformed_len == 1 && b == 0xFF {
+                        
+                        self.pending_score = None; 
+                        score += BIG5_SINGLE_BYTE_EXTENSION_PENALTY;
+                        self.prev = LatinCj::Other;
+                    } else {
+                        return None;
+                    }
                 }
                 DecoderResult::OutputFull => {
                     unreachable!();
@@ -1658,8 +1801,68 @@ impl EucKrCandidate {
                 DecoderResult::InputEmpty => {
                     assert_eq!(read, 1);
                 }
-                DecoderResult::Malformed(_, _) => {
-                    return None;
+                DecoderResult::Malformed(malformed_len, _) => {
+                    if (self.prev_byte == 0xC9 || self.prev_byte == 0xFE) && b >= 0xA1 && b <= 0xFE
+                    {
+                        if let Some(pending) = self.pending_score {
+                            score += pending;
+                            self.pending_score = None;
+                        }
+                        
+                        score += EUC_KR_PUA_PENALTY;
+                        
+                        match self.prev {
+                            LatinKorean::AsciiLetter => {
+                                score += CJK_LATIN_ADJACENCY_PENALTY;
+                            }
+                            LatinKorean::Hangul => {
+                                score += EUC_KR_HANJA_AFTER_HANGUL_PENALTY;
+                            }
+                            _ => {}
+                        }
+                        self.prev = LatinKorean::Hanja;
+                        self.current_word_len += 1;
+                        if self.current_word_len > 5 {
+                            score += EUC_KR_LONG_WORD_PENALTY;
+                        }
+                    } else if (self.prev_byte == 0xA1
+                        || (self.prev_byte >= 0xA3 && self.prev_byte <= 0xA8)
+                        || (self.prev_byte >= 0xAA && self.prev_byte <= 0xAD))
+                        && (b >= 0x7B && b <= 0x7D)
+                    {
+                        if let Some(pending) = self.pending_score {
+                            score += pending;
+                            self.pending_score = None;
+                        }
+                        
+                        score += EUC_KR_MAC_KOREAN_PENALTY;
+                        self.prev = LatinKorean::Other;
+                        self.current_word_len = 0;
+                    } else if (self.prev_byte >= 0x81 && self.prev_byte <= 0x84)
+                        && (b <= 0x80 || b == 0xFF)
+                    {
+                        
+                        
+                        self.pending_score = None; 
+                        score += EUC_KR_SINGLE_BYTE_EXTENSION_PENALTY;
+                        if (b >= b'a' && b <= b'z') || (b >= b'A' && b <= b'Z') {
+                            self.prev = LatinKorean::AsciiLetter;
+                        } else if b == 0x80 || b == 0xFF {
+                            score += EUC_KR_SINGLE_BYTE_EXTENSION_PENALTY;
+                            self.prev = LatinKorean::Other;
+                        } else {
+                            self.prev = LatinKorean::Other;
+                        }
+                        self.current_word_len = 0;
+                    } else if malformed_len == 1 && (b == 0x80 || b == 0xFF) {
+                        
+                        self.pending_score = None; 
+                        score += EUC_KR_SINGLE_BYTE_EXTENSION_PENALTY;
+                        self.prev = LatinKorean::Other;
+                        self.current_word_len = 0;
+                    } else {
+                        return None;
+                    }
                 }
                 DecoderResult::OutputFull => {
                     unreachable!();
@@ -2858,6 +3061,15 @@ mod tests {
     use encoding_rs::WINDOWS_1258;
     use encoding_rs::WINDOWS_874;
 
+    fn check_bytes(bytes: &[u8], encoding: &'static Encoding) {
+        let mut det = EncodingDetector::new();
+        det.feed(bytes, true);
+        let enc = det.guess(None, false);
+        let (decoded, _) = enc.decode_without_bom_handling(bytes);
+        println!("{:?}", decoded);
+        assert_eq!(enc, encoding);
+    }
+
     fn check(input: &str, encoding: &'static Encoding) {
         let orthographic;
         let (bytes, _, _) = if encoding == WINDOWS_1258 {
@@ -2869,12 +3081,7 @@ mod tests {
         } else {
             encoding.encode(input)
         };
-        let mut det = EncodingDetector::new();
-        det.feed(&bytes, true);
-        let enc = det.guess(None, false);
-        let (decoded, _) = enc.decode_without_bom_handling(&bytes);
-        println!("{:?}", decoded);
-        assert_eq!(enc, encoding);
+        check_bytes(&bytes, encoding);
     }
 
     #[test]
@@ -3248,4 +3455,223 @@ mod tests {
         check(" €9", WINDOWS_1252);
     }
 
+    #[test]
+    fn test_big5_pua() {
+        let mut v = Vec::new();
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xA4\x40");
+        }
+        v.extend_from_slice(b"\x81\x40\xA4\x40");
+        check_bytes(&v, BIG5);
+    }
+
+    #[test]
+    fn test_big5_single_byte_a0() {
+        let mut v = Vec::new();
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\x40");
+        }
+        v.extend_from_slice(b"\x81\x40\xA0 ");
+        check_bytes(&v, BIG5);
+    }
+
+    #[test]
+    fn test_big5_single_byte_ff() {
+        let mut v = Vec::new();
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\x40");
+        }
+        v.extend_from_slice(b"\x81\x40\xFF ");
+        check_bytes(&v, BIG5);
+    }
+
+    #[test]
+    fn test_not_big5() {
+        let mut v = Vec::new();
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xA4\x40");
+        }
+        v.extend_from_slice(b"\x81\x40\xA0\xA0");
+        check_bytes(&v, IBM866);
+    }
+
+    #[test]
+    fn test_euc_kr_pua() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xC9\xA1\xB0\xA1 ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, EUC_KR);
+    }
+
+    #[test]
+    fn test_euc_kr_pua_bis() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFE\xA1\xB0\xA1 ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, EUC_KR);
+    }
+
+    #[test]
+    fn test_euc_kr_single_byte_ff() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFF ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, EUC_KR);
+    }
+
+    #[test]
+    fn test_euc_kr_single_byte_81() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x81 ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, EUC_KR);
+    }
+
+    #[test]
+    fn test_euc_kr_single_byte_84() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x84 ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, EUC_KR);
+    }
+
+    #[test]
+    fn test_not_euc_kr() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xC9\xA0\xB0\xA1 ");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\xC5\xD7\xBD\xBA\xC6\xAE. ");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_shift_jis_x0213() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x87\xE5");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\x82\xC9\x82\xD9\x82\xF1\x82\xB2");
+        }
+        check_bytes(&v, SHIFT_JIS);
+    }
+
+    #[test]
+    fn test_shift_jis_single_byte_fd() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFD");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\x82\xC9\x82\xD9\x82\xF1\x82\xB2");
+        }
+        check_bytes(&v, SHIFT_JIS);
+    }
+
+    #[test]
+    fn test_not_shift_jis() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x84\xE0");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\x82\xC9\x82\xD9\x82\xF1\x82\xB2");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_not_shift_jis_bis() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x87\x7D");
+        for _ in 0..40 {
+            v.extend_from_slice(b"\x82\xC9\x82\xD9\x82\xF1\x82\xB2");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_euc_jp_x0213() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xAD\xBF");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\xCB\xA4\xDB\xA4\xF3\xA4\xB4");
+        }
+        check_bytes(&v, EUC_JP);
+    }
+
+    #[test]
+    fn test_euc_jp_x0213_other_plane() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x8F\xFE\xF6");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\xCB\xA4\xDB\xA4\xF3\xA4\xB4");
+        }
+        check_bytes(&v, EUC_JP);
+    }
+
+    #[test]
+    fn test_not_euc_jp() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\x8F\xFE\xF7");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\xCB\xA4\xDB\xA4\xF3\xA4\xB4");
+        }
+        check_bytes(&v, WINDOWS_1252);
+    }
+
+    #[test]
+    fn test_not_euc_jp_bis() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xA8\xDF");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xA4\xCB\xA4\xDB\xA4\xF3\xA4\xB4");
+        }
+        check_bytes(&v, BIG5);
+    }
+
+    #[test]
+    fn test_gbk_single_byte_ff() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFF");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xB5\xC4");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_gbk_single_byte_a0() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xA0 ");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xB5\xC4");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_gbk_single_byte_fe() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFE ");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xB5\xC4");
+        }
+        check_bytes(&v, GBK);
+    }
+
+    #[test]
+    fn test_not_gbk_single_byte_fc() {
+        let mut v = Vec::new();
+        v.extend_from_slice(b"\xFC ");
+        for _ in 0..80 {
+            v.extend_from_slice(b"\xB5\xC4");
+        }
+        check_bytes(&v, ISO_8859_5);
+    }
 }
