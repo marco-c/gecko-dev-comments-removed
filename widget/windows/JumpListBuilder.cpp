@@ -98,7 +98,7 @@ JumpListBuilder::JumpListBuilder()
   
   
   
-  mscom::EnsureMTA([this]() {
+  mscom::EnsureMTA([&]() {
     RefPtr<ICustomDestinationList> jumpListMgr;
     HRESULT hr = ::CoCreateInstance(
         CLSID_DestinationList, nullptr, CLSCTX_INPROC_SERVER,

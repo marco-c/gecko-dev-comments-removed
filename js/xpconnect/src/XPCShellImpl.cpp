@@ -53,6 +53,7 @@
 #endif
 
 #ifdef XP_WIN
+#  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/widget/AudioSession.h"
 #  include "mozilla/WinDllServices.h"
@@ -1098,6 +1099,14 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     printf_stderr(
         "*** You are running in chaos test mode. See ChaosMode.h. ***\n");
   }
+
+#ifdef XP_WIN
+  
+  
+  
+  
+  mscom::ProcessRuntime mscom;
+#endif
 
   
   XPCShellDirProvider dirprovider;
