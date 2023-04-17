@@ -33,7 +33,7 @@ impl PartialEq for Handle {
     }
 }
 
-impl AsRawFd for ::Handle {
+impl AsRawFd for crate::Handle {
     fn as_raw_fd(&self) -> RawFd {
         
         
@@ -41,7 +41,7 @@ impl AsRawFd for ::Handle {
     }
 }
 
-impl IntoRawFd for ::Handle {
+impl IntoRawFd for crate::Handle {
     fn into_raw_fd(mut self) -> RawFd {
         
         

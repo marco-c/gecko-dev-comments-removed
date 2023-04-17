@@ -1,23 +1,10 @@
-use std::fs::{File, OpenOptions};
+use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io;
-use std::mem;
-use std::os::windows::fs::OpenOptionsExt;
-use std::os::windows::io::{
-    AsRawHandle, FromRawHandle, IntoRawHandle, RawHandle,
-};
+use std::os::windows::io::{AsRawHandle, IntoRawHandle, RawHandle};
 use std::path::Path;
 
-use winapi::shared::minwindef::DWORD;
-use winapi::um::fileapi::{
-    BY_HANDLE_FILE_INFORMATION,
-    GetFileInformationByHandle,
-};
-use winapi::um::processenv::GetStdHandle;
-use winapi::um::winbase::{
-    FILE_FLAG_BACKUP_SEMANTICS,
-    STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE,
-};
+use winapi_util as winutil;
 
 
 
@@ -62,28 +49,22 @@ use winapi::um::winbase::{
 
 #[derive(Debug)]
 pub struct Handle {
-    file: Option<File>,
-    
-    
-    is_std: bool,
+    kind: HandleKind,
     key: Option<Key>,
+}
+
+#[derive(Debug)]
+enum HandleKind {
+    
+    Owned(winutil::Handle),
+    
+    Borrowed(winutil::HandleRef),
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 struct Key {
-    volume: DWORD,
-    idx_high: DWORD,
-    idx_low: DWORD,
-}
-
-impl Drop for Handle {
-    fn drop(&mut self) {
-        if self.is_std {
-            
-            
-            self.file.take().unwrap().into_raw_handle();
-        }
-    }
+    volume: u64,
+    index: u64,
 }
 
 impl Eq for Handle {}
@@ -101,19 +82,21 @@ impl PartialEq for Handle {
     }
 }
 
-impl AsRawHandle for ::Handle {
+impl AsRawHandle for crate::Handle {
     fn as_raw_handle(&self) -> RawHandle {
-        
-        
-        self.0.file.as_ref().take().unwrap().as_raw_handle()
+        match self.0.kind {
+            HandleKind::Owned(ref h) => h.as_raw_handle(),
+            HandleKind::Borrowed(ref h) => h.as_raw_handle(),
+        }
     }
 }
 
-impl IntoRawHandle for ::Handle {
-    fn into_raw_handle(mut self) -> RawHandle {
-        
-        
-        self.0.file.take().unwrap().into_raw_handle()
+impl IntoRawHandle for crate::Handle {
+    fn into_raw_handle(self) -> RawHandle {
+        match self.0.kind {
+            HandleKind::Owned(h) => h.into_raw_handle(),
+            HandleKind::Borrowed(h) => h.as_raw_handle(),
+        }
     }
 }
 
@@ -125,85 +108,65 @@ impl Hash for Handle {
 
 impl Handle {
     pub fn from_path<P: AsRef<Path>>(p: P) -> io::Result<Handle> {
-        let file = OpenOptions::new()
-            .read(true)
-            
-            .custom_flags(FILE_FLAG_BACKUP_SEMANTICS)
-            .open(p)?;
-        Handle::from_file(file)
+        let h = winutil::Handle::from_path_any(p)?;
+        let info = winutil::file::information(&h)?;
+        Ok(Handle::from_info(HandleKind::Owned(h), info))
     }
 
     pub fn from_file(file: File) -> io::Result<Handle> {
-        file_info(&file).map(|info| Handle::from_file_info(file, false, info))
+        let h = winutil::Handle::from_file(file);
+        let info = winutil::file::information(&h)?;
+        Ok(Handle::from_info(HandleKind::Owned(h), info))
     }
 
-    fn from_std_handle(file: File) -> io::Result<Handle> {
-        match file_info(&file) {
-            Ok(info) => Ok(Handle::from_file_info(file, true, info)),
+    fn from_std_handle(h: winutil::HandleRef) -> io::Result<Handle> {
+        match winutil::file::information(&h) {
+            Ok(info) => Ok(Handle::from_info(HandleKind::Borrowed(h), info)),
             
             
             
             
             
-            Err(_) => Ok(Handle { file: Some(file), is_std: true, key: None }),
+            Err(_) => Ok(Handle { kind: HandleKind::Borrowed(h), key: None }),
         }
     }
 
-    fn from_file_info(
-        file: File,
-        is_std: bool,
-        info: BY_HANDLE_FILE_INFORMATION,
+    fn from_info(
+        kind: HandleKind,
+        info: winutil::file::Information,
     ) -> Handle {
         Handle {
-            file: Some(file),
-            is_std: is_std,
+            kind: kind,
             key: Some(Key {
-                volume: info.dwVolumeSerialNumber,
-                idx_high: info.nFileIndexHigh,
-                idx_low: info.nFileIndexLow,
+                volume: info.volume_serial_number(),
+                index: info.file_index(),
             }),
         }
     }
 
     pub fn stdin() -> io::Result<Handle> {
-        Handle::from_std_handle(unsafe {
-            File::from_raw_handle(GetStdHandle(STD_INPUT_HANDLE))
-        })
+        Handle::from_std_handle(winutil::HandleRef::stdin())
     }
 
     pub fn stdout() -> io::Result<Handle> {
-        Handle::from_std_handle(unsafe {
-            File::from_raw_handle(GetStdHandle(STD_OUTPUT_HANDLE))
-        })
+        Handle::from_std_handle(winutil::HandleRef::stdout())
     }
 
     pub fn stderr() -> io::Result<Handle> {
-        Handle::from_std_handle(unsafe {
-            File::from_raw_handle(GetStdHandle(STD_ERROR_HANDLE))
-        })
+        Handle::from_std_handle(winutil::HandleRef::stderr())
     }
 
     pub fn as_file(&self) -> &File {
-        
-        
-        self.file.as_ref().take().unwrap()
+        match self.kind {
+            HandleKind::Owned(ref h) => h.as_file(),
+            HandleKind::Borrowed(ref h) => h.as_file(),
+        }
     }
 
     pub fn as_file_mut(&mut self) -> &mut File {
-        
-        
-        self.file.as_mut().take().unwrap()
-    }
-}
-
-fn file_info(file: &File) -> io::Result<BY_HANDLE_FILE_INFORMATION> {
-    let (r, info) = unsafe {
-        let mut info: BY_HANDLE_FILE_INFORMATION = mem::zeroed();
-        (GetFileInformationByHandle(file.as_raw_handle(), &mut info), info)
-    };
-    if r == 0 {
-        Err(io::Error::last_os_error())
-    } else {
-        Ok(info)
+        match self.kind {
+            HandleKind::Owned(ref mut h) => h.as_file_mut(),
+            HandleKind::Borrowed(ref mut h) => h.as_file_mut(),
+        }
     }
 }
