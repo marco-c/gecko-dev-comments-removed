@@ -225,6 +225,28 @@ class ElemSegmentFlags {
 
 
 
+class NothingVector {
+  Nothing unused_;
+
+ public:
+  bool resize(size_t length) { return true; }
+  Nothing& operator[](size_t) { return unused_; }
+  Nothing& back() { return unused_; }
+};
+
+struct ValidatingPolicy {
+  using Value = Nothing;
+  using ValueVector = NothingVector;
+  using ControlItem = Nothing;
+};
+
+template <typename Policy>
+class OpIter;
+
+using ValidatingOpIter = OpIter<ValidatingPolicy>;
+
+
+
 [[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
                                     size_t opcodeOffset, ValType actual,
                                     ValType expected, TypeCache* cache);

@@ -3,13 +3,13 @@ const { Instance, Module, LinkError } = WebAssembly;
 
 assertErrorMessage(() => wasmEvalText(`(module (global))`), SyntaxError, /wasm text error/);
 
-assertErrorMessage(() => wasmEvalText(`(module (global i32))`), WebAssembly.CompileError, /unexpected initializer expression/);
-assertErrorMessage(() => wasmEvalText(`(module (global (mut i32)))`), WebAssembly.CompileError, /unexpected initializer expression/);
+assertErrorMessage(() => wasmEvalText(`(module (global i32))`), WebAssembly.CompileError, /popping value/);
+assertErrorMessage(() => wasmEvalText(`(module (global (mut i32)))`), WebAssembly.CompileError, /popping value/);
 
 
 wasmFailValidateText(`(module (global i32 (f32.const 13.37)))`, /type mismatch/);
 wasmFailValidateText(`(module (global f64 (f32.const 13.37)))`, /type mismatch/);
-wasmFailValidateText(`(module (global i32 (i32.add (i32.const 13) (i32.const 37))))`, /failed to read end/);
+wasmFailValidateText(`(module (global i32 (i32.add (i32.const 13) (i32.const 37))))`, /unexpected initializer opcode/);
 
 wasmFailValidateText(`(module (global i32 (global.get 0)))`, /out of range/);
 wasmFailValidateText(`(module (global i32 (global.get 1)) (global i32 (i32.const 1)))`, /out of range/);
