@@ -6,7 +6,6 @@
 const SSL3_PAGE = "https://ssl3.example.com/";
 const TLS10_PAGE = "https://tls1.example.com/";
 const TLS12_PAGE = "https://tls12.example.com/";
-const TRIPLEDES_PAGE = "https://3des.example.com/";
 
 
 const CIPHER_SUITE_PREFS = [
@@ -26,7 +25,7 @@ const CIPHER_SUITE_PREFS = [
   "security.ssl3.rsa_aes_256_sha",
   "security.ssl3.rsa_aes_128_gcm_sha256",
   "security.ssl3.rsa_aes_256_gcm_sha384",
-  "security.ssl3.deprecated.rsa_des_ede3_sha",
+  "security.ssl3.rsa_des_ede3_sha",
   "security.tls13.aes_128_gcm_sha256",
   "security.tls13.aes_256_gcm_sha384",
   "security.tls13.chacha20_poly1305_sha256",
@@ -37,9 +36,6 @@ function resetPrefs() {
   Services.prefs.clearUserPref("security.tls.version.max");
   Services.prefs.clearUserPref("security.tls.version.enable-deprecated");
   Services.prefs.clearUserPref("security.certerrors.tls.version.show-override");
-  CIPHER_SUITE_PREFS.forEach(suitePref => {
-    Services.prefs.clearUserPref(suitePref);
-  });
 }
 
 add_task(async function resetToDefaultConfig() {
@@ -320,42 +316,4 @@ add_task(async function overrideUIPref() {
 
   resetPrefs();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-add_task(async function onlyAllow3DESWithDeprecatedTLS() {
-  
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
-    async browser => {
-      BrowserTestUtils.loadURI(browser, TRIPLEDES_PAGE);
-      await BrowserTestUtils.waitForErrorPage(browser);
-    }
-  );
-
-  
-  Services.prefs.setBoolPref("security.tls.version.enable-deprecated", true);
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
-    async browser => {
-      BrowserTestUtils.loadURI(browser, TRIPLEDES_PAGE);
-      await BrowserTestUtils.browserLoaded(browser, false, TRIPLEDES_PAGE);
-    }
-  );
-
-  
-  Services.prefs.setBoolPref(
-    "security.ssl3.deprecated.rsa_des_ede3_sha",
-    false
-  );
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
-    async browser => {
-      BrowserTestUtils.loadURI(browser, TRIPLEDES_PAGE);
-      await BrowserTestUtils.waitForErrorPage(browser);
-    }
-  );
-
-  resetPrefs();
 });
