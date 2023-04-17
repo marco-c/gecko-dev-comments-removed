@@ -18,6 +18,7 @@
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeSection.h"      
 #include "frontend/CompilationStencil.h"  
+#include "frontend/NameAnalysisTypes.h"   
 #include "frontend/SharedContext.h"
 #include "gc/AllocKind.h"               
 #include "gc/Rooting.h"                 
@@ -362,24 +363,36 @@ bool ScopeContext::cachePrivateFieldsForEval(JSContext* cx,
 
   effectiveScopePrivateFieldCache_.emplace();
 
+  
+  
+  
+  uint32_t hops = 0;
   for (ScopeIter si(effectiveScope); si; si++) {
     if (si.scope()->kind() != ScopeKind::ClassBody) {
       continue;
     }
-
+    uint32_t slots = 0;
     for (js::BindingIter bi(si.scope()); bi; bi++) {
-      if (IsPrivateField(bi.name())) {
+      if (bi.kind() == BindingKind::PrivateMethod ||
+          (bi.kind() == BindingKind::Synthetic && IsPrivateField(bi.name()))) {
         auto parserName =
             parserAtoms.internJSAtom(cx, input.atomCache, bi.name());
         if (!parserName) {
           return false;
         }
 
-        if (!effectiveScopePrivateFieldCache_->put(parserName)) {
+        NameLocation loc =
+            NameLocation::EnvironmentCoordinate(bi.kind(), hops, slots);
+
+        if (!effectiveScopePrivateFieldCache_->put(parserName, loc)) {
           ReportOutOfMemory(cx);
           return false;
         }
       }
+      slots++;
+    }
+    if (si.scope()->hasEnvironment()) {
+      hops++;
     }
   }
 
@@ -577,6 +590,15 @@ ScopeContext::lookupLexicalBindingInEnclosingScope(TaggedParserAtomIndex name) {
 bool ScopeContext::effectiveScopePrivateFieldCacheHas(
     TaggedParserAtomIndex name) {
   return effectiveScopePrivateFieldCache_->has(name);
+}
+
+mozilla::Maybe<NameLocation> ScopeContext::getPrivateFieldLocation(
+    TaggedParserAtomIndex name) {
+  auto p = effectiveScopePrivateFieldCache_->lookup(name);
+  if (!p) {
+    return mozilla::Nothing();
+  }
+  return mozilla::Some(p->value());
 }
 
 bool CompilationInput::initScriptSource(JSContext* cx) {
