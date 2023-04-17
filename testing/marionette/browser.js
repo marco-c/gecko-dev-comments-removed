@@ -176,8 +176,6 @@ browser.Context = class {
     
     
     this.tab = null;
-
-    this.frameRegsPending = 0;
   }
 
   
