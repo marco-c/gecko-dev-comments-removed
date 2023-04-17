@@ -127,7 +127,8 @@ static nsresult ProfileResetCreateBackup(nsIToolkitProfile* aOldProfile) {
     
 
     
-    SpinEventLoopUntil([&]() { return gProfileResetCleanupCompleted; });
+    SpinEventLoopUntil("xre:ProfileResetCreateBackup"_ns,
+                       [&]() { return gProfileResetCleanupCompleted; });
   } else {
     gProfileResetCleanupCompleted = true;
     NS_WARNING("Cleanup thread creation failed");

@@ -77,7 +77,8 @@ nsresult SyncApplyUpdates(TableUpdateArray& aUpdates) {
   
   
   
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return done; }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil("url-classifier:SyncApplyUpdates"_ns,
+                                     [&]() { return done; }));
 
   return ret;
 }
