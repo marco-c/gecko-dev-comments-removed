@@ -267,6 +267,10 @@ static bool DetectContainerLayerPropertiesBoundsChange(
   return !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
 }
 
+
+
+
+
 struct DIGroup {
   
   
