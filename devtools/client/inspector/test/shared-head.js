@@ -276,26 +276,26 @@ async function getNodeFrontInFrames(selectors, inspector) {
     const url = walker.targetFront.url;
     info(`Find the frame element for selector ${frameSelector} in ${url}`);
 
-    const frameFront = await walker.querySelector(rootNode, frameSelector);
+    const frameNodeFront = await walker.querySelector(rootNode, frameSelector);
 
     
     
-    let frameTarget = frameFront.targetFront;
-    if (frameFront.remoteFrame) {
-      info("Connect to remote frame and retrieve the targetFront");
-      frameTarget = await frameFront.connectToRemoteFrame();
+    let frameTarget = frameNodeFront.targetFront;
+    if (frameNodeFront.useChildTargetToFetchChildren) {
+      info("Connect to frame and retrieve the targetFront");
+      frameTarget = await frameNodeFront.connectToFrame();
     }
 
     walker = (await frameTarget.getFront("inspector")).walker;
 
-    if (frameFront.remoteFrame) {
+    if (frameNodeFront.useChildTargetToFetchChildren) {
       
       rootNode = walker.rootNode;
     } else {
       
       
       info("Retrieve the children of the frame to find the document node");
-      const { nodes } = await walker.children(frameFront);
+      const { nodes } = await walker.children(frameNodeFront);
       rootNode = nodes.find(n => n.nodeType === Node.DOCUMENT_NODE);
     }
   }

@@ -334,11 +334,11 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   }
 
   async children(node, options) {
-    if (!node.remoteFrame) {
+    if (!node.useChildTargetToFetchChildren) {
       return super.children(node, options);
     }
-    const remoteTarget = await node.connectToRemoteFrame();
-    const walker = (await remoteTarget.getFront("inspector")).walker;
+    const target = await node.connectToFrame();
+    const walker = (await target.getFront("inspector")).walker;
 
     
     const documentNode = await walker.getRootNode();
