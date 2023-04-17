@@ -140,12 +140,20 @@ static already_AddRefed<Screen> MakeScreen(GdkScreen* aScreen,
   
   
   
-  LayoutDeviceIntRect rect(
-      monitor.x * gdkScaleFactor, monitor.y * gdkScaleFactor,
-      monitor.width * gdkScaleFactor, monitor.height * gdkScaleFactor);
-  LayoutDeviceIntRect availRect(
-      workarea.x * gdkScaleFactor, workarea.y * gdkScaleFactor,
-      workarea.width * gdkScaleFactor, workarea.height * gdkScaleFactor);
+  gint geometryScaleFactor = 1;
+  if (GdkIsX11Display()) {
+    geometryScaleFactor = gdkScaleFactor;
+  }
+
+  LayoutDeviceIntRect rect(monitor.x * geometryScaleFactor,
+                           monitor.y * geometryScaleFactor,
+                           monitor.width * geometryScaleFactor,
+                           monitor.height * geometryScaleFactor);
+  LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
+                                workarea.y * geometryScaleFactor,
+                                workarea.width * geometryScaleFactor,
+                                workarea.height * geometryScaleFactor);
+
   uint32_t pixelDepth = GetGTKPixelDepth();
 
   
