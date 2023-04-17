@@ -2867,6 +2867,9 @@ class UrlbarInput {
         this.focusedViaMousedown = !this.focused;
         this._preventClickSelectsAll = this.focused;
 
+        
+        
+        const hasFocus = this.hasAttribute("focused");
         if (event.target != this.inputField) {
           this.focus();
         }
@@ -2891,7 +2894,7 @@ class UrlbarInput {
           
           this.view.autoOpen({
             event,
-            suppressFocusBorder: !this.hasAttribute("focused"),
+            suppressFocusBorder: !hasFocus,
           });
         }
         break;
