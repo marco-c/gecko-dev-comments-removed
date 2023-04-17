@@ -285,7 +285,7 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   
   
   if (key == JSProto_GeneratorFunction &&
-      !global->getSlotRef(ITERATOR_PROTO).isObject()) {
+      !global->getReservedSlot(ITERATOR_PROTO).isObject()) {
     if (!getOrCreateIteratorPrototype(cx, global)) {
       return false;
     }
@@ -426,7 +426,7 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
 bool GlobalObject::maybeResolveGlobalThis(JSContext* cx,
                                           Handle<GlobalObject*> global,
                                           bool* resolved) {
-  if (global->getSlot(GLOBAL_THIS_RESOLVED).isUndefined()) {
+  if (global->getReservedSlot(GLOBAL_THIS_RESOLVED).isUndefined()) {
     RootedValue v(cx, ObjectValue(*ToWindowProxyIfWindow(global)));
     if (!DefineDataProperty(cx, global, cx->names().globalThis, v,
                             JSPROP_RESOLVING)) {
@@ -434,7 +434,7 @@ bool GlobalObject::maybeResolveGlobalThis(JSContext* cx,
     }
 
     *resolved = true;
-    global->setSlot(GLOBAL_THIS_RESOLVED, BooleanValue(true));
+    global->setReservedSlot(GLOBAL_THIS_RESOLVED, BooleanValue(true));
   }
 
   return true;
@@ -720,12 +720,12 @@ bool GlobalObject::getOrCreateEval(JSContext* cx, Handle<GlobalObject*> global,
   if (!getOrCreateObjectPrototype(cx, global)) {
     return false;
   }
-  eval.set(&global->getSlot(EVAL).toObject());
+  eval.set(&global->getReservedSlot(EVAL).toObject());
   return true;
 }
 
 bool GlobalObject::valueIsEval(const Value& val) {
-  Value eval = getSlot(EVAL);
+  Value eval = getReservedSlot(EVAL);
   return eval.isObject() && eval == val;
 }
 
@@ -760,7 +760,7 @@ bool GlobalObject::initStandardClasses(JSContext* cx,
 
 bool GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, HandleString code,
                                            Handle<GlobalObject*> global) {
-  HeapSlot& v = global->getSlotRef(RUNTIME_CODEGEN_ENABLED);
+  Value v = global->getReservedSlot(RUNTIME_CODEGEN_ENABLED);
   if (v.isUndefined()) {
     
 
@@ -775,7 +775,8 @@ bool GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, HandleString code,
     
     
     
-    v.set(global, HeapSlot::Slot, RUNTIME_CODEGEN_ENABLED, JS::TrueValue());
+    v = JS::TrueValue();
+    global->setReservedSlot(RUNTIME_CODEGEN_ENABLED, v);
   }
   return !v.isFalse();
 }
@@ -902,7 +903,7 @@ RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
                                               Handle<GlobalObject*> global) {
   MOZ_ASSERT(cx);
   RegExpStaticsObject* resObj = nullptr;
-  const Value& val = global->getSlot(REGEXP_STATICS);
+  const Value& val = global->getReservedSlot(REGEXP_STATICS);
   if (!val.isObject()) {
     MOZ_ASSERT(val.isUndefined());
     resObj = RegExpStatics::create(cx);
@@ -910,7 +911,7 @@ RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
       return nullptr;
     }
 
-    global->initSlot(REGEXP_STATICS, ObjectValue(*resObj));
+    global->initReservedSlot(REGEXP_STATICS, ObjectValue(*resObj));
   } else {
     resObj = &val.toObject().as<RegExpStaticsObject>();
   }
