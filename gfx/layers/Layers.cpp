@@ -16,7 +16,6 @@
 #include "CompositableHost.h"  
 #include "GeckoProfiler.h"  
 #include "LayerUserData.h"  
-#include "ReadbackLayer.h"  
 #include "TreeTraversal.h"  
 #include "UnitTransforms.h"  
 #include "apz/src/AsyncPanZoomController.h"  
