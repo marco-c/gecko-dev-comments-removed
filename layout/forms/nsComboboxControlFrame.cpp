@@ -843,33 +843,29 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   }
 
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord buttonISize = 0;
 
   
   
-  buttonISize += DropDownButtonISize();
+  const nscoord buttonISize = DropDownButtonISize();
+  const auto borderPadding = aReflowInput.ComputedLogicalBorderPadding(wm);
+  const auto padding = aReflowInput.ComputedLogicalPadding(wm);
+  const auto border = borderPadding - padding;
 
   mDisplayISize = aReflowInput.ComputedISize() - buttonISize;
-
-  mMaxDisplayISize =
-      mDisplayISize + aReflowInput.ComputedLogicalPadding(wm).IEnd(wm);
+  mMaxDisplayISize = mDisplayISize + padding.IEnd(wm);
 
   nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
   
-  nsSize containerSize = aDesiredSize.PhysicalSize();
-  LogicalRect buttonRect = mButtonFrame->GetLogicalRect(containerSize);
-  const auto borderPadding = aReflowInput.ComputedLogicalBorderPadding(wm);
+  
+  LogicalRect buttonRect(wm);
+  buttonRect.IStart(wm) = borderPadding.IStart(wm) + mMaxDisplayISize;
+  buttonRect.BStart(wm) = border.BStart(wm);
 
-  buttonRect.IStart(wm) = borderPadding.IStartEnd(wm) + mDisplayISize -
-                          (borderPadding.IEnd(wm) -
-                           aReflowInput.ComputedLogicalPadding(wm).IEnd(wm));
   buttonRect.ISize(wm) = buttonISize;
+  buttonRect.BSize(wm) = mDisplayFrame->BSize(wm) + padding.BStartEnd(wm);
 
-  buttonRect.BStart(wm) = this->GetLogicalUsedBorder(wm).BStart(wm);
-  buttonRect.BSize(wm) =
-      mDisplayFrame->BSize(wm) + this->GetLogicalUsedPadding(wm).BStartEnd(wm);
-
+  const nsSize containerSize = aDesiredSize.PhysicalSize();
   mButtonFrame->SetRect(buttonRect, containerSize);
 
   if (!aStatus.IsInlineBreakBefore() && !aStatus.IsFullyComplete()) {
