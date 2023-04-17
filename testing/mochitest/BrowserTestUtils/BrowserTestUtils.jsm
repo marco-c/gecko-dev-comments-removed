@@ -453,6 +453,21 @@ var BrowserTestUtils = {
       } else if (typeof wantLoad == "function") {
         return wantLoad(url);
       }
+
+      
+      
+      
+      
+      let httpsFirstEnabled = Services.prefs.getBoolPref(
+        "dom.security.https_first"
+      );
+      if (httpsFirstEnabled && wantLoad.startsWith("http://")) {
+        let wantLoadHttps = wantLoad.replace("http://", "https://");
+        if (wantLoadHttps == url) {
+          return true;
+        }
+      }
+
       
       return wantLoad == url;
     }
