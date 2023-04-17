@@ -190,6 +190,11 @@ class TestNat {
   
   uint32_t delay_stun_resp_ms_;
 
+  
+  
+  
+  std::map<nsCString, CopyableTArray<nsCString>> stun_redirect_map_;
+
   NatDelegate* nat_delegate_;
 
  private:
@@ -247,13 +252,12 @@ class TestNrSocket : public NrSocketBase {
                              const_cast<nr_transport_addr*>(&addr));
     }
 
+    UdpPacket(UdpPacket&& aOrig) = default;
+
+    ~UdpPacket() = default;
+
     nr_transport_addr remote_address_;
     UniquePtr<MediaPacket> buffer_;
-
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UdpPacket);
-
-   private:
-    ~UdpPacket() = default;
   };
 
   class PortMapping {
@@ -279,7 +283,7 @@ class TestNrSocket : public NrSocketBase {
     
     
     
-    std::list<RefPtr<UdpPacket>> send_queue_;
+    std::list<UdpPacket> send_queue_;
   };
 
   struct DeferredPacket {
@@ -330,6 +334,11 @@ class TestNrSocket : public NrSocketBase {
 
   static void process_delayed_cb(NR_SOCKET s, int how, void* cb_arg);
 
+  bool maybe_send_fake_response(const void* msg, size_t len,
+                                nr_transport_addr* to);
+  Maybe<nsTArray<nsCString>> maybe_get_redirect_targets(
+      nr_transport_addr* to) const;
+
   RefPtr<NrSocketBase> readable_socket_;
   
   
@@ -343,6 +352,11 @@ class TestNrSocket : public NrSocketBase {
   std::list<RefPtr<PortMapping>> port_mappings_;
 
   void* timer_handle_;
+
+  
+  
+  std::list<UdpPacket> read_buffer_;
+  std::unique_ptr<nr_transport_addr> connect_fake_stun_address_;
 };
 
 }  
