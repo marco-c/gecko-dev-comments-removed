@@ -135,7 +135,7 @@ const CustomizableWidgets = [
 
       PanelMultiView.getViewNode(
         document,
-        "appMenuRestoreSession"
+        "appMenu-restoreSession"
       ).hidden = !SessionStore.canRestoreLastSession;
 
       
