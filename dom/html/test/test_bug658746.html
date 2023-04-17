@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=658746
+-->
 <head>
   <title>Test for Bug 658746</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -68,8 +68,8 @@ SetGetDelete(0x3);
 SetGetDelete(0xa);
 
 // Octal numbers as properties.
-SetGetDelete(03);
-SetGetDelete(07);
+SetGetDelete(0o3);
+SetGetDelete(0o7);
 
 // String numbers as properties.
 SetGetDelete('0');
