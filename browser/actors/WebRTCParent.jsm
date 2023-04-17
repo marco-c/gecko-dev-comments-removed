@@ -870,6 +870,11 @@ function prompt(aActor, aBrowser, aRequest) {
               );
               item.deviceId = device.id;
               item.mediaSource = type;
+
+              
+              
+              menupopup.parentNode.selectedItem = item;
+              menupopup.parentNode.disabled = true;
               break;
             }
             if (type == "application") {
