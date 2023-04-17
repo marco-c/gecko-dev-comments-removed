@@ -453,6 +453,21 @@ var BrowserTestUtils = {
       } else if (typeof wantLoad == "function") {
         return wantLoad(url);
       }
+
+      
+      
+      
+      
+      if (
+        BrowserTestUtils._httpsFirstEnabled &&
+        wantLoad.startsWith("http://")
+      ) {
+        let wantLoadHttps = wantLoad.replace("http://", "https://");
+        if (wantLoadHttps == url) {
+          return true;
+        }
+      }
+
       
       return wantLoad == url;
     }
@@ -2564,5 +2579,12 @@ var BrowserTestUtils = {
     });
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  BrowserTestUtils,
+  "_httpsFirstEnabled",
+  "dom.security.https_first",
+  false
+);
 
 Services.obs.addObserver(BrowserTestUtils, "test-complete");
