@@ -225,14 +225,6 @@ def bootstrap(topsrcdir):
         site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
         sys.path = [path for path in sys.path if path not in site_paths]
 
-    
-    
-    
-    
-    
-    
-    
-    
     sys.path[0:0] = mach_sys_path(topsrcdir)
     import mach.base
     import mach.main
