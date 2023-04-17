@@ -359,7 +359,14 @@ class FormAutofillSection {
       }
 
       element.previewValue = "";
-      let value = profile[fieldDetail.fieldName];
+      
+      
+      
+      
+      
+      let value =
+        profile[`${fieldDetail.fieldName}-formatted`] ||
+        profile[fieldDetail.fieldName];
 
       if (ChromeUtils.getClassName(element) === "HTMLInputElement" && value) {
         
@@ -1055,6 +1062,34 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     }
   }
 
+  creditCardExpMonthTransformer(profile) {
+    if (!profile["cc-exp-month"]) {
+      return;
+    }
+
+    let detail = this.getFieldDetailByName("cc-exp-month");
+    if (!detail) {
+      return;
+    }
+
+    let element = detail.elementWeakRef.get();
+
+    
+    
+    
+    if (element.tagName === "INPUT") {
+      let placeholder = element.placeholder;
+
+      
+      let result = /(?<!.)mm(?!.)/i.test(placeholder);
+      if (result) {
+        profile["cc-exp-month-formatted"] = profile["cc-exp-month"]
+          .toString()
+          .padStart(2, "0");
+      }
+    }
+  }
+
   async _decrypt(cipherText, reauth) {
     
     let window;
@@ -1086,6 +1121,7 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
   applyTransformers(profile) {
     this.matchSelectOptions(profile);
     this.creditCardExpDateTransformer(profile);
+    this.creditCardExpMonthTransformer(profile);
     this.adaptFieldMaxLength(profile);
   }
 
