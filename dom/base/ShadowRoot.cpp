@@ -756,6 +756,8 @@ void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
 Element* ShadowRoot::GetFirstFocusable(bool aWithMouse) const {
   MOZ_ASSERT(DelegatesFocus(), "Why are we here?");
 
+  Element* potentialFocus = nullptr;
+
   for (nsINode* node = GetFirstChild(); node; node = node->GetNextNode(this)) {
     auto* el = Element::FromNode(*node);
     if (!el) {
@@ -763,20 +765,28 @@ Element* ShadowRoot::GetFirstFocusable(bool aWithMouse) const {
     }
     nsIFrame* frame = el->GetPrimaryFrame();
     if (frame && frame->IsFocusable(aWithMouse)) {
-      return el;
+      if (el->GetBoolAttr(nsGkAtoms::autofocus)) {
+        return el;
+      }
+      if (!potentialFocus) {
+        potentialFocus = el;
+      }
     }
-    ShadowRoot* shadow = el->GetShadowRoot();
-    if (shadow && shadow->DelegatesFocus()) {
-      if (Element* nested = shadow->GetFirstFocusable(aWithMouse)) {
-        return nested;
+    if (!potentialFocus) {
+      ShadowRoot* shadow = el->GetShadowRoot();
+      if (shadow && shadow->DelegatesFocus()) {
+        if (Element* nested = shadow->GetFirstFocusable(aWithMouse)) {
+          potentialFocus = nested;
+        }
       }
     }
   }
-  return nullptr;
+  return potentialFocus;
 }
 
 void ShadowRoot::MaybeSlotHostChild(nsIContent& aChild) {
   MOZ_ASSERT(aChild.GetParent() == GetHost());
+  
   
   
   if (aChild.IsRootOfNativeAnonymousSubtree()) {
