@@ -292,6 +292,7 @@ void DocumentL10n::InitialTranslationCompleted(bool aL10nCached) {
   
   if (mContentSink) {
     mContentSink->InitialTranslationCompleted();
+    mContentSink = nullptr;
   }
 
   
