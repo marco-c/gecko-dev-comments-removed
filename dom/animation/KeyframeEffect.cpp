@@ -32,7 +32,6 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"             
 #include "nsCSSPseudoElements.h"    
-#include "nsCSSRendering.h"         
 #include "nsDOMMutationObserver.h"  
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -2052,7 +2051,7 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     
     
     
-    if (nsCSSRendering::IsCanvasFrame(aFrame) ||
+    if (aFrame->IsCanvasFrame() ||
         (aFrame->GetContent() &&
          aFrame->GetContent()->IsHTMLElement(nsGkAtoms::body))) {
       return KeyframeEffect::MatchForCompositor::No;

@@ -4904,25 +4904,15 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-
   bool DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
-                                      const nsDisplayListSet& aLists,
-                                      bool aForceBackground);
+                                      const nsDisplayListSet& aLists);
   
 
 
 
 
-
-
-
-
   void DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
-                                      const nsDisplayListSet& aLists,
-                                      bool aForceBackground = false);
+                                      const nsDisplayListSet& aLists);
   
 
 
