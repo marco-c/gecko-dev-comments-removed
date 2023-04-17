@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { waitForTick } = require("devtools/shared/DevToolsUtils");

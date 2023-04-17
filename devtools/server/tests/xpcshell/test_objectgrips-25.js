@@ -3,7 +3,6 @@
 
 
 
-
 "use strict";
 
 Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);

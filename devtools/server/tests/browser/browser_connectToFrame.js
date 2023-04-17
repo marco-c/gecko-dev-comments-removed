@@ -25,7 +25,6 @@ add_task(async function() {
   
   
   await SpecialPowers.spawn(browser, [], () => {
-    
     const { require } = ChromeUtils.import(
       "resource://devtools/shared/Loader.jsm"
     );
@@ -33,7 +32,6 @@ add_task(async function() {
     const {
       ActorRegistry,
     } = require("devtools/server/actors/utils/actor-registry");
-    
 
     DevToolsServer.init();
 

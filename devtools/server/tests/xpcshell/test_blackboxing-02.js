@@ -9,8 +9,6 @@
 
 
 
-
-
 const BLACK_BOXED_URL = "http://example.com/blackboxme.js";
 const SOURCE_URL = "http://example.com/source.js";
 

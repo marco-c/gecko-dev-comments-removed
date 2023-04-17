@@ -8,7 +8,6 @@
 
 
 
-
 add_task(
   threadFrontTest(async ({ threadFront, debuggee }) => {
     const packet = await executeOnNextTickAndWaitForPause(

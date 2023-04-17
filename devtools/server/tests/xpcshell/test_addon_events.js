@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const { AddonManager } = require("resource://gre/modules/AddonManager.jsm");
