@@ -1259,7 +1259,8 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   
   nsAutoCString scheme;
   uri->GetScheme(scheme);
-  bool useScriptPreloader = !scheme.EqualsLiteral("data");
+  bool isCacheable = !scheme.EqualsLiteral("data");
+  bool useScriptPreloader = isCacheable;
 
   
   
@@ -1331,6 +1332,12 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
     if (!stencil) {
       return nullptr;
     }
+
+    if (isCacheable && !isRunOnce) {
+      
+      auto* holder = new nsMessageManagerScriptHolder(stencil);
+      sCachedScripts->InsertOrUpdate(aURL, holder);
+    }
   }
 
   MOZ_ASSERT(stencil);
@@ -1338,14 +1345,6 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   if (useScriptPreloader) {
     ScriptPreloader::GetChildSingleton().NoteStencil(url, url, stencil,
                                                      isRunOnce);
-
-    
-    
-    if (!isRunOnce) {
-      
-      auto* holder = new nsMessageManagerScriptHolder(stencil);
-      sCachedScripts->InsertOrUpdate(aURL, holder);
-    }
   }
 
   return stencil.forget();
