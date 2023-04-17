@@ -45,6 +45,8 @@ class SVGFEOffsetElement : public SVGFEOffsetElementBase {
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
+  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
+
   
   already_AddRefed<DOMSVGAnimatedString> In1();
   already_AddRefed<DOMSVGAnimatedNumber> Dx();
