@@ -586,6 +586,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   _canAddResult(result, state) {
     
     
+    if (result.providerName == "UrlbarProviderQuickSuggest") {
+      return true;
+    }
+
+    
+    
     
     
     
@@ -870,7 +876,16 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       let prefixRank = UrlbarUtils.getPrefixRank(prefix);
       let topPrefixData = state.strippedUrlToTopPrefixAndTitle.get(strippedUrl);
       let topPrefixRank = topPrefixData ? topPrefixData.rank : -1;
-      if (topPrefixRank < prefixRank) {
+      if (
+        topPrefixRank < prefixRank ||
+        
+        
+        
+        
+        
+        (topPrefixRank == prefixRank &&
+          result.providerName == "UrlbarProviderQuickSuggest")
+      ) {
         
         state.strippedUrlToTopPrefixAndTitle.set(strippedUrl, {
           prefix,
