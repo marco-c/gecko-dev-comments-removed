@@ -1172,6 +1172,8 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "brand-logo"
     }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "main-content-inner"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "welcome-text"
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
       text: content.title
@@ -1193,10 +1195,10 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
       className: "primary",
       value: "primary_button",
       onClick: this.props.handleAction
-    }))), content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__["SecondaryCTA"], {
+    })), content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__["SecondaryCTA"], {
       content: content,
       handleAction: this.props.handleAction
-    }) : null, !isWelcomeScreen ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("nav", {
+    }) : null)), !isWelcomeScreen ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("nav", {
       className: "steps",
       "data-l10n-id": "onboarding-welcome-steps-indicator",
       "data-l10n-args": JSON.stringify({
