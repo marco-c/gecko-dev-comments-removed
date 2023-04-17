@@ -6,6 +6,7 @@
 
 #include "mozilla/ProfilerThreadRegistration.h"
 
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerThreadRegistry.h"
 
 namespace mozilla::profiler {
@@ -31,6 +32,16 @@ ThreadRegistration::ThreadRegistration(const char* aName, const void* aStackTop)
       
       
       
+      MOZ_ASSERT(
+          mData.Info().ThreadId() == rootRegistration->mData.Info().ThreadId(),
+          "Thread being re-registered has changed its TID");
+      
+      
+      
+      PROFILER_MARKER_TEXT(
+          "Nested ThreadRegistration()", OTHER_Profiling,
+          MarkerThreadId::MainThread(),
+          ProfilerString8View::WrapNullTerminatedString(aName));
       return;
     }
 
@@ -53,8 +64,29 @@ ThreadRegistration::~ThreadRegistration() {
   mDataMutex.Unlock();
 #endif  
   if (auto* tls = GetTLS(); tls) {
-    if (tls->get() != this) {
+    ThreadRegistration* threadRegistrationInTLS = tls->get();
+    if (!threadRegistrationInTLS) {
       
+      
+      
+      
+      
+      
+      
+      if (!profiler_is_main_thread()) {
+        PROFILER_MARKER_TEXT(
+            "~ThreadRegistration() but TLS is empty", OTHER_Profiling,
+            MarkerThreadId::MainThread(),
+            ProfilerString8View::WrapNullTerminatedString(mData.Info().Name()));
+      }
+      return;
+    }
+    if (threadRegistrationInTLS != this) {
+      
+      PROFILER_MARKER_TEXT(
+          "Nested ~ThreadRegistration()", OTHER_Profiling,
+          MarkerThreadId::MainThread(),
+          ProfilerString8View::WrapNullTerminatedString(mData.Info().Name()));
       return;
     }
 
@@ -70,6 +102,9 @@ ProfilingStack& ThreadRegistration::RegisterThread(const char* aName,
     
     
     ++rootRegistration->mOtherRegistrations;
+    PROFILER_MARKER_TEXT("Nested ThreadRegistration::RegisterThread()",
+                         OTHER_Profiling, MarkerThreadId::MainThread(),
+                         ProfilerString8View::WrapNullTerminatedString(aName));
     return rootRegistration->mData.mProfilingStack;
   }
 
@@ -86,6 +121,9 @@ void ThreadRegistration::UnregisterThread() {
       
       
       --rootRegistration->mOtherRegistrations;
+      
+      PROFILER_MARKER_UNTYPED("Nested ThreadRegistration::UnregisterThread()",
+                              OTHER_Profiling, MarkerThreadId::MainThread());
       return;
     }
     
