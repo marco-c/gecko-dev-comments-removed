@@ -127,16 +127,14 @@ class AboutReaderChild extends JSWindowActorChild {
         this.sendAsyncMessage("Reader:UpdateReaderButton", {
           isArticle: this._isLeavingReaderableReaderMode,
         });
-        if (this._isLeavingReaderableReaderMode) {
-          this._isLeavingReaderableReaderMode = false;
-        }
+        this._isLeavingReaderableReaderMode = false;
         break;
 
       case "pageshow":
         
         
-        if (aEvent.persisted) {
-          this.updateReaderButton();
+        if (aEvent.persisted && this.canDoReadabilityCheck()) {
+          this.performReadabilityCheckNow();
         }
         break;
     }
@@ -149,18 +147,22 @@ class AboutReaderChild extends JSWindowActorChild {
 
 
   updateReaderButton(forceNonArticle) {
-    if (
-      !Readerable.isEnabledForParseOnLoad ||
-      this.isAboutReader ||
-      !this.contentWindow ||
-      !this.contentWindow.windowRoot ||
-      !(this.document instanceof this.contentWindow.HTMLDocument) ||
-      this.document.mozSyntheticDocument
-    ) {
+    if (!this.canDoReadabilityCheck()) {
       return;
     }
 
     this.scheduleReadabilityCheckPostPaint(forceNonArticle);
+  }
+
+  canDoReadabilityCheck() {
+    return (
+      Readerable.isEnabledForParseOnLoad &&
+      !this.isAboutReader &&
+      this.contentWindow &&
+      this.contentWindow.windowRoot &&
+      this.document instanceof this.contentWindow.HTMLDocument &&
+      !this.document.mozSyntheticDocument
+    );
   }
 
   cancelPotentialPendingReadabilityCheck() {
@@ -204,6 +206,10 @@ class AboutReaderChild extends JSWindowActorChild {
       return;
     }
 
+    this.performReadabilityCheckNow(forceNonArticle);
+  }
+
+  performReadabilityCheckNow(forceNonArticle) {
     this.cancelPotentialPendingReadabilityCheck();
 
     
