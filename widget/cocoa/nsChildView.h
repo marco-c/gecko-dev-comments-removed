@@ -513,6 +513,9 @@ class nsChildView final : public nsBaseWidget {
   
   void UpdateFullscreen(bool aFullscreen);
 
+  
+  void NoteMouseMoveAtTime(const mozilla::TimeStamp& aTime);
+
  protected:
   virtual ~nsChildView();
 
