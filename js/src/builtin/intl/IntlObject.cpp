@@ -10,6 +10,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/Calendar.h"
+#include "mozilla/intl/Collator.h"
 
 #include <algorithm>
 #include <array>
@@ -40,7 +41,6 @@
 #include "js/Result.h"
 #include "js/StableStringChars.h"
 #include "unicode/ucal.h"
-#include "unicode/ucol.h"
 #include "unicode/ucurr.h"
 #include "unicode/uenum.h"
 #include "unicode/uloc.h"
@@ -629,50 +629,6 @@ static bool EnumerationIntoList(JSContext* cx, UEnumeration* values,
   return true;
 }
 
-
-
-
-template <const auto& unsupported>
-static bool EnumerationIntoList(JSContext* cx, const char* type,
-                                UEnumeration* values,
-                                MutableHandle<StringList> list) {
-  while (true) {
-    UErrorCode status = U_ZERO_ERROR;
-    const char* value = uenum_next(values, nullptr, &status);
-    if (U_FAILURE(status)) {
-      intl::ReportInternalError(cx);
-      return false;
-    }
-    if (value == nullptr) {
-      break;
-    }
-
-    
-    value = uloc_toUnicodeLocaleType(type, value);
-    if (!value) {
-      intl::ReportInternalError(cx);
-      return false;
-    }
-
-    
-    if (std::any_of(
-            std::begin(unsupported), std::end(unsupported),
-            [value](const auto& e) { return std::strcmp(value, e) == 0; })) {
-      continue;
-    }
-
-    auto* string = NewStringCopyZ<CanGC>(cx, value);
-    if (!string) {
-      return false;
-    }
-    if (!list.append(string)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 static void CloseEnumeration(UEnumeration* ptr) {
   
   
@@ -741,19 +697,23 @@ static constexpr auto UnsupportedCollationsArray = UnsupportedCollations();
 
 
 static ArrayObject* AvailableCollations(JSContext* cx) {
-  UErrorCode status = U_ZERO_ERROR;
-  UEnumeration* values = ucol_getKeywordValues("collation", &status);
-  if (U_FAILURE(status)) {
-    intl::ReportInternalError(cx);
-    return nullptr;
-  }
-  ScopedICUObject<UEnumeration, CloseEnumeration> toClose(values);
-
-  static constexpr auto& unsupported = UnsupportedCollationsArray;
-
   Rooted<StringList> list(cx, StringList(cx));
-  if (!EnumerationIntoList<unsupported>(cx, "co", values, &list)) {
-    return nullptr;
+
+  {
+    
+    
+    
+    auto keywords = mozilla::intl::Collator::GetBcp47KeywordValues();
+    if (keywords.isErr()) {
+      intl::ReportInternalError(cx, keywords.unwrapErr());
+      return nullptr;
+    }
+
+    static constexpr auto& unsupported = UnsupportedCollationsArray;
+
+    if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
+      return nullptr;
+    }
   }
 
   
@@ -761,16 +721,21 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
   
   
   
-  UEnumeration* rootValues =
-      ucol_getKeywordValuesForLocale("collation", "", false, &status);
-  if (U_FAILURE(status)) {
-    intl::ReportInternalError(cx);
-    return nullptr;
-  }
-  ScopedICUObject<UEnumeration, CloseEnumeration> toCloseRoot(rootValues);
+  {
+    
+    
+    
+    auto keywords = mozilla::intl::Collator::GetBcp47KeywordValuesForLocale("");
+    if (keywords.isErr()) {
+      intl::ReportInternalError(cx, keywords.unwrapErr());
+      return nullptr;
+    }
 
-  if (!EnumerationIntoList<unsupported>(cx, "co", rootValues, &list)) {
-    return nullptr;
+    static constexpr auto& unsupported = UnsupportedCollationsArray;
+
+    if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
+      return nullptr;
+    }
   }
 
   return CreateArrayFromList(cx, &list);
