@@ -26,7 +26,6 @@ class gfxContext;
 class gfxTextPerfMetrics;
 class gfxUserFontSet;
 struct nsFont;
-class nsFontCache;
 class nsAtom;
 class nsIDeviceContextSpec;
 class nsIScreen;
@@ -48,14 +47,6 @@ class nsDeviceContext final {
 
 
   nsresult Init(nsIWidget* aWidget);
-
-  
-
-
-
-  void InitFontCache();
-
-  void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
 
   
 
@@ -115,27 +106,6 @@ class nsDeviceContext final {
   int32_t AppUnitsPerDevPixelAtUnitFullZoom() const {
     return mAppUnitsPerDevPixelAtUnitFullZoom;
   }
-
-  
-
-
-
-
-  already_AddRefed<nsFontMetrics> GetMetricsFor(
-      const nsFont& aFont, const nsFontMetrics::Params& aParams);
-
-  
-
-
-
-  nsresult FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
-
-  
-
-
-
-
-  nsresult FlushFontCache();
 
   
 
@@ -296,7 +266,6 @@ class nsDeviceContext final {
   float mPrintingScale;
   gfxPoint mPrintingTranslate;
 
-  RefPtr<nsFontCache> mFontCache;
   nsCOMPtr<nsIWidget> mWidget;
   nsCOMPtr<nsIScreenManager> mScreenManager;
   nsCOMPtr<nsIDeviceContextSpec> mDeviceContextSpec;

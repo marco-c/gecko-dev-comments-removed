@@ -26,6 +26,7 @@
 #include "nsCompatibility.h"
 #include "nsCoord.h"
 #include "nsCOMPtr.h"
+#include "nsFontMetrics.h"
 #include "nsHashKeys.h"
 #include "nsRect.h"
 #include "nsStringFwd.h"
@@ -58,6 +59,7 @@ class gfxUserFontSet;
 class gfxTextPerfMetrics;
 class nsCSSFontFeatureValuesRule;
 class nsCSSFrameConstructor;
+class nsFontCache;
 class nsTransitionManager;
 class nsAnimationManager;
 class nsRefreshDriver;
@@ -153,6 +155,35 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   nsresult Init(nsDeviceContext* aDeviceContext);
+
+  
+
+
+
+  void InitFontCache();
+
+  void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
+
+  
+
+
+
+
+  already_AddRefed<nsFontMetrics> GetMetricsFor(
+      const nsFont& aFont, const nsFontMetrics::Params& aParams);
+
+  
+
+
+
+  nsresult FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
+
+  
+
+
+
+
+  nsresult FlushFontCache();
 
   
 
@@ -1151,6 +1182,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
                                            
                                            
                                            
+  RefPtr<nsFontCache> mFontCache;
   RefPtr<mozilla::EventStateManager> mEventManager;
   RefPtr<nsRefreshDriver> mRefreshDriver;
   RefPtr<mozilla::AnimationEventDispatcher> mAnimationEventDispatcher;

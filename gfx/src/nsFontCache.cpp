@@ -16,7 +16,7 @@ NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
 
 
 
-void nsFontCache::Init(nsDeviceContext* aContext) {
+void nsFontCache::Init(nsPresContext* aContext) {
   mContext = aContext;
   
   

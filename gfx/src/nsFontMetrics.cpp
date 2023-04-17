@@ -13,11 +13,12 @@
 #include "gfxRect.h"             
 #include "gfxTextRun.h"          
 #include "gfxTypes.h"            
+#include "nsAtom.h"              
 #include "nsBoundingMetrics.h"   
 #include "nsDebug.h"             
 #include "nsDeviceContext.h"     
-#include "nsAtom.h"              
 #include "nsMathUtils.h"         
+#include "nsPresContext.h"       
 #include "nsString.h"            
 #include "nsStyleConsts.h"       
 #include "mozilla/Assertions.h"  
@@ -108,23 +109,24 @@ class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
 }  
 
 nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
-                             nsDeviceContext* aContext)
+                             nsPresContext* aContext)
     : mFont(aFont),
       mLanguage(aParams.language),
-      mDeviceContext(aContext),
-      mP2A(aContext->AppUnitsPerDevPixel()),
+      mPresContext(aContext),
+      mP2A(aContext->DeviceContext()->AppUnitsPerDevPixel()),
       mOrientation(aParams.orientation),
       mExplicitLanguage(aParams.explicitLanguage),
       mTextRunRTL(false),
       mVertical(false),
       mTextOrientation(mozilla::StyleTextOrientation::Mixed) {
-  gfxFontStyle style(
-      aFont.style, aFont.weight, aFont.stretch,
-      gfxFloat(aFont.size.ToAppUnits()) / mP2A, aFont.sizeAdjust,
-      aFont.family.is_system_font, mDeviceContext->IsPrinterContext(),
-      aFont.synthesis & NS_FONT_SYNTHESIS_WEIGHT,
-      aFont.synthesis & NS_FONT_SYNTHESIS_STYLE,
-      aFont.synthesis & NS_FONT_SYNTHESIS_SMALL_CAPS, aFont.languageOverride);
+  gfxFontStyle style(aFont.style, aFont.weight, aFont.stretch,
+                     gfxFloat(aFont.size.ToAppUnits()) / mP2A, aFont.sizeAdjust,
+                     aFont.family.is_system_font,
+                     aContext->DeviceContext()->IsPrinterContext(),
+                     aFont.synthesis & NS_FONT_SYNTHESIS_WEIGHT,
+                     aFont.synthesis & NS_FONT_SYNTHESIS_STYLE,
+                     aFont.synthesis & NS_FONT_SYNTHESIS_SMALL_CAPS,
+                     aFont.languageOverride);
 
   aFont.AddFontFeaturesToStyle(&style, mOrientation == eVertical);
   style.featureValueLookup = aParams.featureValueLookup;
@@ -140,12 +142,12 @@ nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
 nsFontMetrics::~nsFontMetrics() {
   
   MOZ_ASSERT(NS_IsMainThread());
-  if (mDeviceContext) {
-    mDeviceContext->FontMetricsDeleted(this);
+  if (mPresContext) {
+    mPresContext->FontMetricsDeleted(this);
   }
 }
 
-void nsFontMetrics::Destroy() { mDeviceContext = nullptr; }
+void nsFontMetrics::Destroy() { mPresContext = nullptr; }
 
 
 #define ROUND_TO_TWIPS(x) (nscoord) floor(((x)*mP2A) + 0.5)

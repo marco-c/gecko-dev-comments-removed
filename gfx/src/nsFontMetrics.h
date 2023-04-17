@@ -22,7 +22,7 @@ class gfxContext;
 class gfxFontGroup;
 class gfxUserFontSet;
 class gfxTextPerfMetrics;
-class nsDeviceContext;
+class nsPresContext;
 class nsAtom;
 struct nsBoundingMetrics;
 struct FontMatchingStats;
@@ -68,7 +68,7 @@ class nsFontMetrics final {
   };
 
   nsFontMetrics(const nsFont& aFont, const Params& aParams,
-                nsDeviceContext* aContext);
+                nsPresContext* aContext);
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsFontMetrics)
@@ -252,7 +252,7 @@ class nsFontMetrics final {
   RefPtr<nsAtom> mLanguage;
   
   
-  nsDeviceContext* MOZ_NON_OWNING_REF mDeviceContext;
+  nsPresContext* MOZ_NON_OWNING_REF mPresContext;
   int32_t mP2A;
 
   
