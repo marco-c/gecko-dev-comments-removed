@@ -383,6 +383,13 @@ void nsMenuX::MenuClosed() {
     return;
   }
 
+  
+  for (auto& child : mMenuChildren) {
+    if (child.is<RefPtr<nsMenuX>>()) {
+      child.as<RefPtr<nsMenuX>>()->MenuClosed();
+    }
+  }
+
   mIsOpen = false;
 
   
@@ -417,6 +424,13 @@ void nsMenuX::MenuClosed() {
 }
 
 void nsMenuX::FlushMenuClosedRunnable() {
+  
+  for (auto& child : mMenuChildren) {
+    if (child.is<RefPtr<nsMenuX>>()) {
+      child.as<RefPtr<nsMenuX>>()->FlushMenuClosedRunnable();
+    }
+  }
+
   if (mPendingAsyncMenuCloseRunnable) {
     MenuClosedAsync();
   }
