@@ -45,7 +45,8 @@ already_AddRefed<Sanitizer> Sanitizer::Constructor(
 
 
 already_AddRefed<DocumentFragment> Sanitizer::InputToNewFragment(
-    const mozilla::dom::DocumentFragmentOrDocument& aInput, ErrorResult& aRv) {
+    const mozilla::dom::StringOrDocumentFragmentOrDocument& aInput,
+    ErrorResult& aRv) {
   
   
 
@@ -62,6 +63,8 @@ already_AddRefed<DocumentFragment> Sanitizer::InputToNewFragment(
   if (aInput.IsDocumentFragment()) {
     RefPtr<DocumentFragment> inFragment = &aInput.GetAsDocumentFragment();
     inFragment->GetInnerHTML(innerHTML);
+  } else if (aInput.IsString()) {
+    innerHTML.Assign(aInput.GetAsString());
   } else if (aInput.IsDocument()) {
     RefPtr<Document> doc = &aInput.GetAsDocument();
     nsCOMPtr<Element> docElement = doc->GetDocumentElement();
@@ -103,7 +106,8 @@ already_AddRefed<DocumentFragment> Sanitizer::InputToNewFragment(
 }
 
 already_AddRefed<DocumentFragment> Sanitizer::Sanitize(
-    const mozilla::dom::DocumentFragmentOrDocument& aInput, ErrorResult& aRv) {
+    const mozilla::dom::StringOrDocumentFragmentOrDocument& aInput,
+    ErrorResult& aRv) {
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
   if (!window || !window->GetDoc()) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -139,21 +143,6 @@ already_AddRefed<Element> Sanitizer::SanitizeFor(const nsAString& aElement,
   if (aRv.Failed()) {
     return nullptr;
   }
-  RefPtr<nsAtom> elemName = NS_Atomize(aElement);
-  
-  
-  if (elemName == nsGkAtoms::script) {
-    
-    return nullptr;
-  }
-  if (elemName == nsGkAtoms::object) {
-    
-    return nullptr;
-  }
-  if (elemName == nsGkAtoms::iframe) {
-    
-    return nullptr;
-  }
   RefPtr<Document> inertDoc = nsContentUtils::CreateInertHTMLDocument(nullptr);
   if (!inertDoc) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -162,6 +151,7 @@ already_AddRefed<Element> Sanitizer::SanitizeFor(const nsAString& aElement,
   RefPtr<DocumentFragment> fragment = new (inertDoc->NodeInfoManager())
       DocumentFragment(inertDoc->NodeInfoManager());
 
+  RefPtr<nsAtom> elemName = NS_Atomize(aElement);
   aRv = nsContentUtils::ParseFragmentHTML(aInput, fragment, elemName,
                                           kNameSpaceID_XHTML, false, true);
 
