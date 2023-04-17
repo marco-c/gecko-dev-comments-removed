@@ -1949,17 +1949,6 @@ class EditorBase : public nsIEditor,
 
   bool ShouldHandleIMEComposition() const;
 
-  
-
-
-
-
-  static nsIContent* GetNodeAtRangeOffsetPoint(nsINode* aContainer,
-                                               int32_t aOffset) {
-    return GetNodeAtRangeOffsetPoint(RawRangeBoundary(aContainer, aOffset));
-  }
-  static nsIContent* GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint);
-
   static EditorRawDOMPoint GetStartPoint(const Selection& aSelection);
   static EditorRawDOMPoint GetEndPoint(const Selection& aSelection);
 

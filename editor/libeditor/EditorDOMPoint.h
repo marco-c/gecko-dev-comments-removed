@@ -286,6 +286,17 @@ class EditorDOMPointBase final {
 
 
 
+  nsIContent* GetChildOrContainerIfDataNode() const {
+    if (IsInDataNode()) {
+      return ContainerAsContent();
+    }
+    return GetChild();
+  }
+
+  
+
+
+
 
 
 
