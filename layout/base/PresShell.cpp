@@ -161,7 +161,6 @@
 #endif  
 
 #include "mozilla/layers/CompositorBridgeChild.h"
-#include "ClientLayerManager.h"
 #include "gfxPlatform.h"
 #include "Layers.h"
 #include "LayerTreeInvalidation.h"
