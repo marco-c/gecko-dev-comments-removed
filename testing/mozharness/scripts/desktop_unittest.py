@@ -19,7 +19,6 @@ import copy
 import shutil
 import glob
 import imp
-import platform
 
 from datetime import datetime, timedelta
 
@@ -1198,14 +1197,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     
 
                     success_codes = None
-                    if (
-                        suite_category == "reftest"
-                        and "32bit" in platform.architecture()
-                        and platform.system() == "Windows"
-                    ):
-                        
-                        success_codes = [1]
-
                     tbpl_status, log_level, summary = parser.evaluate_parser(
                         return_code, success_codes, summary
                     )
