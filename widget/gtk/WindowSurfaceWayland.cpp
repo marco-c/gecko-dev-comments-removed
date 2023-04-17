@@ -744,10 +744,6 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
 
   
   
-  mWaylandDisplay->WaitForSyncEnd();
-
-  
-  
   MutexAutoLock lock(mSurfaceLock);
 
   
