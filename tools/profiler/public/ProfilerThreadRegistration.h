@@ -323,11 +323,6 @@ class ThreadRegistration {
 
   
   
-  friend class ::RacyRegisteredThread;
-  friend class ::RegisteredThread;
-
-  
-  
   class EmbeddedData final : public LockedRWOnThread {
    private:
     

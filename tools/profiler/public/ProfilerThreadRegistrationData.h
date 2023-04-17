@@ -49,10 +49,6 @@ class ProfiledThreadData;
 class PSAutoLock;
 struct JSContext;
 
-
-class RacyRegisteredThread;
-class RegisteredThread;
-
 namespace mozilla::profiler {
 
 
@@ -86,11 +82,6 @@ class ThreadRegistrationData {
                "~ThreadRegistrationData");
   }
 #endif  
-
-  
-  
-  friend class ::RacyRegisteredThread;
-  friend class ::RegisteredThread;
 
   
   
@@ -231,9 +222,6 @@ class ThreadRegistrationData {
   
   
   ProfiledThreadData* mProfiledThreadData = nullptr;
-
-  
-  RegisteredThread* mRegisteredThread;
 };
 
 
@@ -246,9 +234,6 @@ class ThreadRegistrationUnlockedConstReader : public ThreadRegistrationData {
   }
 
   [[nodiscard]] const void* StackTop() const { return mStackTop; }
-
-  
-  [[nodiscard]] const RacyRegisteredThread& RacyRegisteredThreadCRef() const;
 
  protected:
   ThreadRegistrationUnlockedConstReader(const char* aName,
@@ -317,9 +302,6 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   }
 
   [[nodiscard]] bool IsSleeping() const { return mSleep != AWAKE; }
-
-  
-  [[nodiscard]] RacyRegisteredThread& RacyRegisteredThreadRef();
 
  protected:
   ThreadRegistrationUnlockedConstReaderAndAtomicRW(const char* aName,
@@ -440,9 +422,6 @@ class ThreadRegistrationLockedRWFromAnyThread
     mJSSampling = INACTIVE_REQUESTED;
   }
 
-  
-  [[nodiscard]] RegisteredThread& RegisteredThreadRef();
-
  protected:
   ThreadRegistrationLockedRWFromAnyThread(const char* aName,
                                           const void* aStackTop)
@@ -463,9 +442,6 @@ class ThreadRegistrationLockedRWOnThread
 
   
   void PollJSSampling();
-
-  
-  void SetRegisteredThread(RegisteredThread* aRegisteredThread);
 
  public:
   ThreadRegistrationLockedRWOnThread(const char* aName, const void* aStackTop)
