@@ -1404,33 +1404,40 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       usernameField,
       newPasswordField: passwordField,
     } = this._getFormFields(acForm, false, recipes);
-    if (usernameField == acInputField && passwordField) {
-      this._getLoginDataFromParent(acForm, {
-        guid: loginGUID,
-        showMasterPassword: false,
-      })
-        .then(({ form, loginsFound, recipes }) => {
-          if (!loginGUID) {
-            
-            loginsFound = this._filterForExactFormOriginLogins(
-              loginsFound,
-              acForm
-            );
-            
-            
-            let searchString = usernameField.value.toLowerCase();
-            loginsFound = loginsFound.filter(
-              l => l.username.toLowerCase() == searchString
-            );
-          }
-
-          this._fillForm(form, loginsFound, recipes, {
-            autofillForm: true,
-            clobberPassword: true,
-            userTriggered: true,
-          });
+    if (usernameField == acInputField) {
+      
+      if (passwordField) {
+        this._getLoginDataFromParent(acForm, {
+          guid: loginGUID,
+          showMasterPassword: false,
         })
-        .catch(Cu.reportError);
+          .then(({ form, loginsFound, recipes }) => {
+            if (!loginGUID) {
+              
+              loginsFound = this._filterForExactFormOriginLogins(
+                loginsFound,
+                acForm
+              );
+              
+              
+              let searchString = usernameField.value.toLowerCase();
+              loginsFound = loginsFound.filter(
+                l => l.username.toLowerCase() == searchString
+              );
+            }
+
+            this._fillForm(form, loginsFound, recipes, {
+              autofillForm: true,
+              clobberPassword: true,
+              userTriggered: true,
+            });
+          })
+          .catch(Cu.reportError);
+        
+        
+      } else if (loginGUID !== null) {
+        this._highlightFilledField(usernameField);
+      }
     } else {
       
     }
