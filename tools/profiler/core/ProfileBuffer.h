@@ -14,6 +14,7 @@
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileChunkedBuffer.h"
 
+class ProcessStreamingContext;
 class RunningTimes;
 
 
@@ -76,6 +77,12 @@ class ProfileBuffer final {
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
+
+  
+  
+  void StreamSamplesAndMarkersToJSON(
+      ProcessStreamingContext& aProcessStreamingContext) const;
+
   void StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
                                 double aSinceTime) const;
   void StreamProfilerOverheadToJSON(SpliceableJSONWriter& aWriter,
@@ -179,10 +186,11 @@ class ProfileBuffer final {
   
   
   template <typename GetStreamingParametersForThreadCallback>
-  ProfilerThreadId DoStreamSamplesToJSON(
+  ProfilerThreadId DoStreamSamplesAndMarkersToJSON(
       GetStreamingParametersForThreadCallback&&
           aGetStreamingParametersForThreadCallback,
-      double aSinceTime) const;
+      double aSinceTime,
+      ProcessStreamingContext* aStreamingContextForMarkers) const;
 
   double mFirstSamplingTimeUs = 0.0;
   double mLastSamplingTimeUs = 0.0;
