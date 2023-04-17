@@ -97,6 +97,13 @@ function closeDialog(reason) {
 }
 
 
+
+const QUIT_TOPIC = "quit-application-requested";
+const QUIT_OBSERVER = () => closeDialog(QUIT_TOPIC);
+Services.obs.addObserver(QUIT_OBSERVER, QUIT_TOPIC);
+CLEANUP.push(() => Services.obs.removeObserver(QUIT_OBSERVER, QUIT_TOPIC));
+
+
 function onLoad(ready) {
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
