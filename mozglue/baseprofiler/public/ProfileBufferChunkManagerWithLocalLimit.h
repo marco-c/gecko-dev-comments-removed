@@ -11,6 +11,7 @@
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/ProfileBufferChunkManager.h"
 #include "mozilla/ProfileBufferControlledChunkManager.h"
+#include "mozilla/mozalloc.h"
 
 #include <utility>
 
@@ -54,6 +55,8 @@ class ProfileBufferChunkManagerWithLocalLimit final
     
     return mMaxTotalBytes;
   }
+
+  [[nodiscard]] size_t TotalSize() const { return mTotalBytes; }
 
   [[nodiscard]] UniquePtr<ProfileBufferChunk> GetChunk() final {
     AUTO_PROFILER_STATS(Local_GetChunk);
@@ -282,7 +285,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
   void UnlockAfterPeekExtantReleasedChunks() final { mMutex.Unlock(); }
 
  private:
-  void MaybeRecycleChunk(
+  size_t MaybeRecycleChunkAndGetDeallocatedSize(
       UniquePtr<ProfileBufferChunk>&& chunk,
       const baseprofiler::detail::BaseProfilerAutoLock& aLock) {
     
@@ -292,10 +295,13 @@ class ProfileBufferChunkManagerWithLocalLimit final
       
       if (!mRecycledChunks) {
         mRecycledChunks = std::move(chunk);
+        return 0;
       } else if (!mRecycledChunks->GetNext()) {
         mRecycledChunks->InsertNext(std::move(chunk));
+        return 0;
       }
     }
+    return moz_malloc_usable_size(chunk.get());
   }
 
   UniquePtr<ProfileBufferChunk> TakeRecycledChunk(
@@ -318,7 +324,9 @@ class ProfileBufferChunkManagerWithLocalLimit final
       
       mChunkDestroyedCallback(*oldest);
     }
-    MaybeRecycleChunk(std::move(oldest), aLock);
+
+    mTotalBytes -=
+        MaybeRecycleChunkAndGetDeallocatedSize(std::move(oldest), aLock);
   }
 
   using ChunkAndUpdate = std::pair<UniquePtr<ProfileBufferChunk>, Update>;
@@ -350,6 +358,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
     if (!chunk) {
       
       chunk = ProfileBufferChunk::Create(mChunkMinBufferBytes);
+      mTotalBytes += moz_malloc_usable_size(chunk.get());
     }
 
     if (chunk) {
@@ -398,6 +407,9 @@ class ProfileBufferChunkManagerWithLocalLimit final
   
   
   size_t mReleasedBufferBytes = 0;
+
+  
+  size_t mTotalBytes = 0;
 
   
   
