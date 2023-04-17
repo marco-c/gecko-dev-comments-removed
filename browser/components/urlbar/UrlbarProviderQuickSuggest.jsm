@@ -191,11 +191,19 @@ class ProviderQuickSuggest extends UrlbarProvider {
     }
 
     
+    
+    
     let resultIndex = queryContext.results.length - 1;
-    let lastResult = queryContext.results[resultIndex];
-    if (!lastResult?.payload.isSponsored) {
-      Cu.reportError(`Last result is not a quick suggest`);
-      return;
+    let result = queryContext.results[resultIndex];
+    if (result.providerName != this.name) {
+      resultIndex = queryContext.results.findIndex(
+        r => r.providerName == this.name
+      );
+      if (resultIndex < 0) {
+        Cu.reportError(`Could not find quick suggest result`);
+        return;
+      }
+      result = queryContext.results[resultIndex];
     }
 
     
@@ -229,7 +237,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
         sponsoredImpressionUrl,
         sponsoredClickUrl,
         sponsoredBlockId,
-      } = lastResult.payload;
+      } = result.payload;
       
       PartnerLinkAttribution.sendContextualServicesPing(
         {
