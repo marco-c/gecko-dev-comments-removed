@@ -2354,8 +2354,7 @@ EditorDOMPoint HTMLEditor::GetGoodCaretPointFor(
   
   
   
-  if (!aContent.IsHTMLElement(nsGkAtoms::br) ||
-      HTMLEditUtils::IsVisibleBRElement(aContent)) {
+  if (!HTMLEditUtils::IsInvisibleBRElement(aContent)) {
     EditorDOMPoint ret(EditorDOMPoint::After(aContent));
     NS_WARNING_ASSERTION(ret.IsSet(), "Failed to set after aContent");
     return ret;
@@ -8203,8 +8202,8 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
           previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
         
         
-        if (!HTMLEditUtils::IsVisibleBRElement(*previousEditableContent,
-                                               editingHost)) {
+        if (HTMLEditUtils::IsInvisibleBRElement(*previousEditableContent,
+                                                editingHost)) {
           CreateElementResult createPaddingBRResult =
               InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
           if (createPaddingBRResult.Failed()) {
