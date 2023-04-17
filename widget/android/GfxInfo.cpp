@@ -606,10 +606,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
                      gpu.Find("Adreno (TM) 6",  true) >= 0;
 
       
-      isUnblocked |=
-          gpu.Find("Mali-T",  true) >= 0 &&
-          
-          mSDKVersion > 22;
+      isUnblocked |= gpu.Find("Mali-T",  true) >= 0;
 
       
       isUnblocked |= gpu.Find("Mali-G",  true) >= 0 &&
