@@ -174,8 +174,7 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
   
   
   if (!loc) {
-    MOZ_ASSERT(bce->compilationState.input.target ==
-                   CompilationInput::CompilationTarget::Delazification ||
+    MOZ_ASSERT(bce->compilationState.input.lazy ||
                bce->compilationState.input.target ==
                    CompilationInput::CompilationTarget::Eval);
     inCurrentScript = false;
