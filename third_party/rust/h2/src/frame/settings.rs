@@ -107,6 +107,16 @@ impl Settings {
         self.enable_push = Some(enable as u32);
     }
 
+    pub fn header_table_size(&self) -> Option<u32> {
+        self.header_table_size
+    }
+
+    
+
+
+
+
+
     pub fn load(head: Head, payload: &[u8]) -> Result<Settings, Error> {
         use self::Setting::*;
 

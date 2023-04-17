@@ -5,6 +5,42 @@ use bytes::{BufMut, Bytes, BytesMut};
 use std::io;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct BytesCodec(());
 
@@ -29,8 +65,7 @@ impl Decoder for BytesCodec {
     }
 }
 
-impl Encoder for BytesCodec {
-    type Item = Bytes;
+impl Encoder<Bytes> for BytesCodec {
     type Error = io::Error;
 
     fn encode(&mut self, data: Bytes, buf: &mut BytesMut) -> Result<(), io::Error> {

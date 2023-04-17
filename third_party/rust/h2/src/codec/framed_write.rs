@@ -272,6 +272,11 @@ impl<T, B> FramedWrite<T, B> {
     }
 
     
+    pub fn set_header_table_size(&mut self, val: usize) {
+        self.hpack.update_max_size(val);
+    }
+
+    
     pub fn take_last_data_frame(&mut self) -> Option<frame::Data<B>> {
         self.last_data_frame.take()
     }

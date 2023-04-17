@@ -3,10 +3,12 @@ use crate::codec::encoder::Encoder;
 use crate::codec::framed_read::{framed_read2, framed_read2_with_buffer, FramedRead2};
 use crate::codec::framed_write::{framed_write2, framed_write2_with_buffer, FramedWrite2};
 
-use tokio::io::{AsyncBufRead, AsyncRead, AsyncWrite};
+use tokio::{
+    io::{AsyncBufRead, AsyncRead, AsyncWrite},
+    stream::Stream,
+};
 
 use bytes::BytesMut;
-use futures_core::Stream;
 use futures_sink::Sink;
 use pin_project_lite::pin_project;
 use std::fmt;
@@ -16,10 +18,16 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 pin_project! {
-    /// A unified `Stream` and `Sink` interface to an underlying I/O object, using
+    /// A unified [`Stream`] and [`Sink`] interface to an underlying I/O object, using
     /// the `Encoder` and `Decoder` traits to encode and decode frames.
     ///
-    /// You can create a `Framed` instance by using the `AsyncRead::framed` adapter.
+    /// You can create a `Framed` instance by using the [`Decoder::framed`] adapter, or
+    /// by using the `new` function seen below.
+    ///
+    /// [`Stream`]: tokio::stream::Stream
+    /// [`Sink`]: futures_sink::Sink
+    /// [`AsyncRead`]: tokio::io::AsyncRead
+    /// [`Decoder::framed`]: crate::codec::Decoder::framed()
     pub struct Framed<T, U> {
         #[pin]
         inner: FramedRead2<FramedWrite2<Fuse<T, U>>>,
@@ -59,8 +67,13 @@ impl<T, U> ProjectFuse for Fuse<T, U> {
 impl<T, U> Framed<T, U>
 where
     T: AsyncRead + AsyncWrite,
-    U: Decoder + Encoder,
 {
+    
+    
+    
+    
+    
+    
     
     
     
@@ -83,9 +96,49 @@ where
             inner: framed_read2(framed_write2(Fuse { io: inner, codec })),
         }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_capacity(inner: T, codec: U, capacity: usize) -> Framed<T, U> {
+        Framed {
+            inner: framed_read2_with_buffer(
+                framed_write2(Fuse { io: inner, codec }),
+                BytesMut::with_capacity(capacity),
+            ),
+        }
+    }
 }
 
 impl<T, U> Framed<T, U> {
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -208,7 +261,7 @@ where
 impl<T, I, U> Sink<I> for Framed<T, U>
 where
     T: AsyncWrite,
-    U: Encoder<Item = I>,
+    U: Encoder<I>,
     U::Error: From<io::Error>,
 {
     type Error = U::Error;
@@ -326,14 +379,15 @@ impl<T, U: Decoder> Decoder for Fuse<T, U> {
     }
 }
 
-impl<T, U: Encoder> Encoder for Fuse<T, U> {
-    type Item = U::Item;
+impl<T, I, U: Encoder<I>> Encoder<I> for Fuse<T, U> {
     type Error = U::Error;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: I, dst: &mut BytesMut) -> Result<(), Self::Error> {
         self.codec.encode(item, dst)
     }
 }
+
+
 
 
 
@@ -359,7 +413,10 @@ pub struct FramedParts<T, U> {
 
 impl<T, U> FramedParts<T, U> {
     
-    pub fn new(io: T, codec: U) -> FramedParts<T, U> {
+    pub fn new<I>(io: T, codec: U) -> FramedParts<T, U>
+    where
+        U: Encoder<I>,
+    {
         FramedParts {
             io,
             codec,

@@ -90,6 +90,11 @@ impl<T, B> Codec<T, B> {
     }
 
     
+    pub fn set_send_header_table_size(&mut self, val: usize) {
+        self.framed_write().set_header_table_size(val)
+    }
+
+    
     pub fn set_max_recv_header_list_size(&mut self, val: usize) {
         self.inner.set_max_header_list_size(val);
     }

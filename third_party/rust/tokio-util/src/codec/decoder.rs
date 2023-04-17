@@ -1,10 +1,12 @@
-use crate::codec::encoder::Encoder;
 use crate::codec::Framed;
 
 use tokio::io::{AsyncRead, AsyncWrite};
 
 use bytes::BytesMut;
 use std::io;
+
+
+
 
 
 
@@ -33,8 +35,13 @@ pub trait Decoder {
     
     
     
+    
+    
     type Error: From<io::Error>;
 
+    
+    
+    
     
     
     
@@ -145,9 +152,13 @@ pub trait Decoder {
     
     
     
+    
+    
+    
+    
     fn framed<T: AsyncRead + AsyncWrite + Sized>(self, io: T) -> Framed<T, Self>
     where
-        Self: Encoder + Sized,
+        Self: Sized,
     {
         Framed::new(io, self)
     }

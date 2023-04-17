@@ -1,4 +1,5 @@
-#![doc(html_root_url = "https://docs.rs/tokio-util/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/tokio-util/0.3.1")]
+#![allow(clippy::needless_doctest_main)]
 #![warn(
     missing_debug_implementations,
     missing_docs,
@@ -14,6 +15,12 @@
 
 
 
+
+
+
+
+
+
 #[macro_use]
 mod cfg;
 
@@ -23,4 +30,8 @@ cfg_codec! {
 
 cfg_udp! {
     pub mod udp;
+}
+
+cfg_compat! {
+    pub mod compat;
 }

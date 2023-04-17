@@ -204,6 +204,12 @@ impl Store {
     }
 }
 
+
+
+
+
+
+#[cfg(feature = "unstable")]
 impl Drop for Store {
     fn drop(&mut self) {
         use std::thread;

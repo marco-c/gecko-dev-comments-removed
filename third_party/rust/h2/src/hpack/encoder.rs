@@ -46,7 +46,6 @@ impl Encoder {
     
     
     
-    #[allow(dead_code)]
     pub fn update_max_size(&mut self, val: usize) {
         match self.size_update {
             Some(SizeUpdate::One(old)) => {

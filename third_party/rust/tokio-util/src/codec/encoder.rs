@@ -3,10 +3,11 @@ use std::io;
 
 
 
-pub trait Encoder {
-    
-    type Item;
 
+
+pub trait Encoder<Item> {
+    
+    
     
     
     
@@ -18,5 +19,7 @@ pub trait Encoder {
     
     
     
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error>;
+    
+    
+    fn encode(&mut self, item: Item, dst: &mut BytesMut) -> Result<(), Self::Error>;
 }
