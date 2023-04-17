@@ -14,7 +14,7 @@ const { SiteDataTestUtils } = ChromeUtils.import(
 );
 
 
-const PREFIX = "http://sub1.test1.example";
+const PREFIX = "https://sub1.test1.example";
 const ORIGIN = `${PREFIX}.org`;
 const ORIGIN_THIRD_PARTY = `${PREFIX}.com`;
 const TEST_URL = `${ORIGIN}/${PATH}storage-dfpi.html`;

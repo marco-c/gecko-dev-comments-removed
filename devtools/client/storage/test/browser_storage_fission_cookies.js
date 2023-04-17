@@ -24,12 +24,12 @@ add_task(async function() {
   const doc = gPanelWindow.document;
 
   
-  checkTree(doc, ["cookies", "http://example.com"]);
-  checkTree(doc, ["cookies", "http://example.net"]);
+  checkTree(doc, ["cookies", "https://example.com"]);
+  checkTree(doc, ["cookies", "https://example.net"]);
   
-  await selectTreeItem(["cookies", "http://example.com"]);
+  await selectTreeItem(["cookies", "https://example.com"]);
   checkCookieData("foo", "bar");
-  await selectTreeItem(["cookies", "http://example.net"]);
+  await selectTreeItem(["cookies", "https://example.net"]);
   checkCookieData("lorem", "ipsum");
 
   info("Add more cookies");
@@ -48,6 +48,6 @@ add_task(async function() {
   checkCookieData("lorem2", "ipsum2");
 
   
-  await selectTreeItem(["cookies", "http://example.com"]);
+  await selectTreeItem(["cookies", "https://example.com"]);
   checkCookieData("foo2", "bar2");
 });

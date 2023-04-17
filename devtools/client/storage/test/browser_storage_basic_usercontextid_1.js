@@ -151,7 +151,10 @@ async function testTables(tests) {
 }
 
 add_task(async function() {
+  
+  
   await pushPref("dom.security.https_first", false);
+
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 
   testTree(testCases);

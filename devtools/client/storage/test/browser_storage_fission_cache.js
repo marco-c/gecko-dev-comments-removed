@@ -8,6 +8,10 @@
 
 add_task(async function() {
   
+  
+  await pushPref("dom.security.https_first", false);
+
+  
   const URL = URL_ROOT_COM + "storage-cache-basic.html";
   await openTabAndSetupStorage(URL);
   const doc = gPanelWindow.document;

@@ -53,6 +53,10 @@ async function performDelete(store, rowName, action) {
 }
 
 add_task(async function() {
+  
+  
+  await pushPref("dom.security.https_first", false);
+
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 
   info("test state before delete");

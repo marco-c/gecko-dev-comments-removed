@@ -10,7 +10,11 @@
 
 add_task(async function() {
   
-  Services.prefs.setBoolPref(DOM_CACHE, false);
+  await pushPref(DOM_CACHE, false);
+
+  
+  
+  await pushPref("dom.security.https_first", false);
 
   await openTabAndSetupStorage(MAIN_DOMAIN + "storage-listings.html");
 

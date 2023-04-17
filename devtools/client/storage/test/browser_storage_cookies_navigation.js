@@ -38,9 +38,9 @@ async function testNavigation() {
 
   
   
-  checkTree(doc, ["cookies", "http://example.com"]);
+  checkTree(doc, ["cookies", "https://example.com"]);
   
-  await selectTreeItem(["cookies", "http://example.com"]);
+  await selectTreeItem(["cookies", "https://example.com"]);
   checkCookieData("lorem", "ipsum");
 
   
@@ -52,12 +52,12 @@ async function testNavigation() {
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(
     () =>
-      isInTree(doc, ["cookies", "http://example.net"]) &&
-      !isInTree(doc, ["cookies", "http://example.com"])
+      isInTree(doc, ["cookies", "https://example.net"]) &&
+      !isInTree(doc, ["cookies", "https://example.com"])
   );
 
   ok(
-    !isInTree(doc, ["cookies", "http://example.com"]),
+    !isInTree(doc, ["cookies", "https://example.com"]),
     "example.com item is not in the tree anymore"
   );
 
@@ -66,7 +66,7 @@ async function testNavigation() {
   
   
   await selectTreeItem(["cookies"]);
-  await selectTreeItem(["cookies", "http://example.net"]);
+  await selectTreeItem(["cookies", "https://example.net"]);
   info("Waiting for table data to update and show correct values");
   await waitUntil(() => hasCookieData("foo", "bar"));
 
@@ -74,13 +74,13 @@ async function testNavigation() {
   await reloadBrowser();
   
   info("Waiting for storage tree to refresh and show correct host…");
-  await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
+  await waitUntil(() => isInTree(doc, ["cookies", "https://example.net"]));
   
   
   
   
   await selectTreeItem(["cookies"]);
-  await selectTreeItem(["cookies", "http://example.net"]);
+  await selectTreeItem(["cookies", "https://example.net"]);
   info("Waiting for table data to update and show correct values");
   await waitUntil(() => hasCookieData("foo", "bar"));
 
@@ -98,9 +98,9 @@ async function testNavigation() {
   await onStorageTreeUpdated;
 
   info("Waiting for storage tree to refresh and show correct host…");
-  await waitUntil(() => isInTree(doc, ["cookies", "http://example.org"]));
+  await waitUntil(() => isInTree(doc, ["cookies", "https://example.org"]));
   info("Checking cookie data");
-  await selectTreeItem(["cookies", "http://example.org"]);
+  await selectTreeItem(["cookies", "https://example.org"]);
   checkCookieData("hello", "world");
 
   info(
@@ -108,22 +108,22 @@ async function testNavigation() {
   );
   await navigateTo(URL1);
   ok(true, "navigated");
-  await waitUntil(() => isInTree(doc, ["cookies", "http://example.com"]));
+  await waitUntil(() => isInTree(doc, ["cookies", "https://example.com"]));
   ok(
-    !isInTree(doc, ["cookies", "http://example.net"]),
+    !isInTree(doc, ["cookies", "https://example.net"]),
     "host of previous document (example.net) is not in the tree anymore"
   );
   ok(
-    !isInTree(doc, ["cookies", "http://example.org"]),
+    !isInTree(doc, ["cookies", "https://example.org"]),
     "host of iframe in previous document (example.org) is not in the tree anymore"
   );
 
   info("Navigate backward to test bfcache navigation");
   gBrowser.goBack();
-  await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
+  await waitUntil(() => isInTree(doc, ["cookies", "https://example.net"]));
 
   ok(
-    !isInTree(doc, ["cookies", "http://example.com"]),
+    !isInTree(doc, ["cookies", "https://example.com"]),
     "host of previous document (example.com) is not in the tree anymore"
   );
 

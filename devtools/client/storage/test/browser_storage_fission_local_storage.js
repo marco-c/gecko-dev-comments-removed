@@ -22,11 +22,11 @@ add_task(async function() {
   const doc = gPanelWindow.document;
 
   
-  checkTree(doc, ["localStorage", "http://example.com"]);
+  checkTree(doc, ["localStorage", "https://example.com"]);
   
-  await selectTreeItem(["localStorage", "http://example.com"]);
+  await selectTreeItem(["localStorage", "https://example.com"]);
   await waitForStorageData("foo", "bar");
-  await selectTreeItem(["localStorage", "http://example.net"]);
+  await selectTreeItem(["localStorage", "https://example.net"]);
   await waitForStorageData("lorem", "ipsum");
 
   
@@ -38,8 +38,8 @@ add_task(async function() {
     });
   });
   
-  await selectTreeItem(["localStorage", "http://example.com"]);
+  await selectTreeItem(["localStorage", "https://example.com"]);
   await waitForStorageData("foo2", "bar2");
-  await selectTreeItem(["localStorage", "http://example.net"]);
+  await selectTreeItem(["localStorage", "https://example.net"]);
   await waitForStorageData("lorem2", "ipsum2");
 });
