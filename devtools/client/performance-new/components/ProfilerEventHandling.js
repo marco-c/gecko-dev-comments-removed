@@ -36,6 +36,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -118,7 +122,6 @@ class ProfilerEventHandling extends PureComponent {
 
 function mapStateToProps(state) {
   return {
-    perfFront: selectors.getPerfFront(state),
     recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
   };

@@ -24,6 +24,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -59,6 +60,7 @@ class DevToolsPanel extends PureComponent {
   render() {
     const {
       isSupportedPlatform,
+      perfFront,
       onProfileReceived,
       onEditSettingsLinkClicked,
     } = this.props;
@@ -71,7 +73,7 @@ class DevToolsPanel extends PureComponent {
     return div(
       { className: `perf perf-devtools` },
       OnboardingMessage(),
-      RecordingButton({ onProfileReceived }),
+      RecordingButton({ perfFront, onProfileReceived }),
       Description(),
       hr({ className: "perf-presets-hr" }),
       DevToolsPresetSelection({ onEditSettingsLinkClicked })

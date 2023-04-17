@@ -200,10 +200,10 @@ exports.initializeStore = values => {
 
 
 
-exports.startRecording = () => {
+
+exports.startRecording = perfFront => {
   return ({ dispatch, getState }) => {
     const recordingSettings = selectors.getRecordingSettings(getState());
-    const perfFront = selectors.getPerfFront(getState());
     
     
     
@@ -216,9 +216,9 @@ exports.startRecording = () => {
 
 
 
-exports.getProfileAndStopProfiler = () => {
+
+exports.getProfileAndStopProfiler = perfFront => {
   return async ({ dispatch, getState }) => {
-    const perfFront = selectors.getPerfFront(getState());
     dispatch({ type: "REQUESTING_PROFILE" });
     const profile = await perfFront.getProfileAndStopProfiler();
     dispatch({ type: "OBTAINED_PROFILE" });
@@ -230,9 +230,9 @@ exports.getProfileAndStopProfiler = () => {
 
 
 
-exports.stopProfilerAndDiscardProfile = () => {
+
+exports.stopProfilerAndDiscardProfile = perfFront => {
   return async ({ dispatch, getState }) => {
-    const perfFront = selectors.getPerfFront(getState());
     dispatch({ type: "REQUESTING_TO_STOP_RECORDING" });
 
     try {

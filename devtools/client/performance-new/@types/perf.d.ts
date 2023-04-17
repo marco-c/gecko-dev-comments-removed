@@ -240,8 +240,6 @@ export type Reducer<S> = (state: S | undefined, action: Action) => S;
 
 export interface InitializedValues {
   
-  perfFront: PerfFront;
-  
   setRecordingSettings: SetRecordingSettings;
   
   presets: Presets;
@@ -312,7 +310,6 @@ export type Action =
     }
   | {
       type: "INITIALIZE_STORE";
-      perfFront: PerfFront;
       isSupportedPlatform: boolean;
       setRecordingSettings: SetRecordingSettings;
       presets: Presets;
@@ -328,7 +325,6 @@ export type Action =
     };
 
 export interface InitializeStoreValues {
-  perfFront: PerfFront;
   isSupportedPlatform: boolean;
   setRecordingSettings: SetRecordingSettings;
   presets: Presets;
