@@ -2078,10 +2078,7 @@ class DelayedFireDOMPaintEvent : public Runnable {
         mPresContext(aPresContext),
         mTransactionId(aTransactionId),
         mTimeStamp(aTimeStamp),
-        mList(std::move(aList)) {
-    MOZ_ASSERT(mPresContext->GetContainerWeak(),
-               "DOMPaintEvent requested for a detached pres context");
-  }
+        mList(std::move(aList)) {}
   NS_IMETHOD Run() override {
     
     

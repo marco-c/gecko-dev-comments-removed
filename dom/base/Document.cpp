@@ -6933,8 +6933,11 @@ bool Document::RemoveFromBFCacheSync() {
   }
 
   if (mozilla::SessionHistoryInParent() && XRE_IsContentProcess()) {
-    if (BrowsingContext* bc = GetBrowsingContext()) {
-      if (bc->IsInBFCache()) {
+    
+    
+    if (nsPIDOMWindowInner* innerWindow = GetInnerWindow()) {
+      BrowsingContext* bc = innerWindow->GetBrowsingContext();
+      if (bc && bc->IsInBFCache()) {
         ContentChild* cc = ContentChild::GetSingleton();
         
         
