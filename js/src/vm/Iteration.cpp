@@ -993,7 +993,7 @@ PlainObject* js::CreateIterResultObject(JSContext* cx, HandleValue value,
 
   
   Rooted<PlainObject*> templateObject(
-      cx, GlobalObject::getOrCreateIterResultTemplateObject(cx, cx->global()));
+      cx, cx->realm()->getOrCreateIterResultTemplateObject(cx));
   if (!templateObject) {
     return nullptr;
   }
@@ -1004,50 +1004,44 @@ PlainObject* js::CreateIterResultObject(JSContext* cx, HandleValue value,
   }
 
   
-  resultObj->setSlot(GlobalObject::IterResultObjectValueSlot, value);
+  resultObj->setSlot(Realm::IterResultObjectValueSlot, value);
 
   
-  resultObj->setSlot(GlobalObject::IterResultObjectDoneSlot,
+  resultObj->setSlot(Realm::IterResultObjectDoneSlot,
                      done ? TrueHandleValue : FalseHandleValue);
 
   
   return resultObj;
 }
 
-PlainObject* GlobalObject::getOrCreateIterResultTemplateObject(
-    JSContext* cx, Handle<GlobalObject*> global) {
-  MOZ_ASSERT(cx->global() == global);
+PlainObject* Realm::getOrCreateIterResultTemplateObject(JSContext* cx) {
+  MOZ_ASSERT(cx->realm() == this);
 
-  HeapPtr<PlainObject*>& obj = global->data().iterResultTemplate;
-  if (obj) {
-    return obj;
+  if (iterResultTemplate_) {
+    return iterResultTemplate_;
   }
 
   PlainObject* templateObj =
       createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
-  obj.init(templateObj);
-  return obj;
+  iterResultTemplate_.set(templateObj);
+  return iterResultTemplate_;
 }
 
+PlainObject* Realm::getOrCreateIterResultWithoutPrototypeTemplateObject(
+    JSContext* cx) {
+  MOZ_ASSERT(cx->realm() == this);
 
-PlainObject* GlobalObject::getOrCreateIterResultWithoutPrototypeTemplateObject(
-    JSContext* cx, Handle<GlobalObject*> global) {
-  MOZ_ASSERT(cx->global() == global);
-
-  HeapPtr<PlainObject*>& obj =
-      global->data().iterResultWithoutPrototypeTemplate;
-  if (obj) {
-    return obj;
+  if (iterResultWithoutPrototypeTemplate_) {
+    return iterResultWithoutPrototypeTemplate_;
   }
 
   PlainObject* templateObj =
-      createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
-  obj.init(templateObj);
-  return obj;
+      createIterResultTemplateObject(cx, WithObjectPrototype::No);
+  iterResultWithoutPrototypeTemplate_.set(templateObj);
+  return iterResultWithoutPrototypeTemplate_;
 }
 
-
-PlainObject* GlobalObject::createIterResultTemplateObject(
+PlainObject* Realm::createIterResultTemplateObject(
     JSContext* cx, WithObjectPrototype withProto) {
   
   Rooted<PlainObject*> templateObject(
@@ -1073,10 +1067,10 @@ PlainObject* GlobalObject::createIterResultTemplateObject(
 #ifdef DEBUG
   
   ShapePropertyIter<NoGC> iter(templateObject->shape());
-  MOZ_ASSERT(iter->slot() == GlobalObject::IterResultObjectDoneSlot &&
+  MOZ_ASSERT(iter->slot() == Realm::IterResultObjectDoneSlot &&
              iter->key() == NameToId(cx->names().done));
   iter++;
-  MOZ_ASSERT(iter->slot() == GlobalObject::IterResultObjectValueSlot &&
+  MOZ_ASSERT(iter->slot() == Realm::IterResultObjectValueSlot &&
              iter->key() == NameToId(cx->names().value));
 #endif
 

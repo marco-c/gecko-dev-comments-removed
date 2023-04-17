@@ -51,7 +51,6 @@ class JS_PUBLIC_API RealmOptions;
 
 namespace js {
 
-class ArgumentsObject;
 class GlobalScope;
 class GlobalLexicalEnvironmentObject;
 class PlainObject;
@@ -200,16 +199,6 @@ class GlobalObjectData {
 
   
   UniquePtr<RegExpStatics> regExpStatics;
-
-  HeapPtr<ArgumentsObject*> mappedArgumentsTemplate;
-  HeapPtr<ArgumentsObject*> unmappedArgumentsTemplate;
-
-  HeapPtr<PlainObject*> iterResultTemplate;
-  HeapPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
-
-  
-  
-  HeapPtr<ScriptSourceObject*> selfHostingScriptSource;
 
   
   bool globalThisResolved = false;
@@ -974,26 +963,6 @@ class GlobalObject : public NativeObject {
 
   
   [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
-
-  static ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx,
-                                                             bool mapped);
-  ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
-
-  static const size_t IterResultObjectValueSlot = 0;
-  static const size_t IterResultObjectDoneSlot = 1;
-  static js::PlainObject* getOrCreateIterResultTemplateObject(
-      JSContext* cx, Handle<GlobalObject*> global);
-  static js::PlainObject* getOrCreateIterResultWithoutPrototypeTemplateObject(
-      JSContext* cx, Handle<GlobalObject*> global);
-
- private:
-  enum class WithObjectPrototype { No, Yes };
-  static js::PlainObject* createIterResultTemplateObject(
-      JSContext* cx, WithObjectPrototype withProto);
-
- public:
-  static ScriptSourceObject* getOrCreateSelfHostingScriptSourceObject(
-      JSContext* cx, Handle<GlobalObject*> global);
 
   
   static bool initIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
