@@ -135,11 +135,19 @@ fn derive_variant_fields_expr(
         Some(pair) => pair,
         None => return quote! { Ok(()) },
     };
+    if attrs.field_bound {
+        let ty = &first.ast().ty;
+        
+        
+        
+        let predicate = if attrs.iterable {
+            parse_quote!(<#ty as IntoIterator>::Item: style_traits::ToCss)
+        } else {
+            parse_quote!(#ty: style_traits::ToCss)
+        };
+        cg::add_predicate(where_clause, predicate);
+    }
     if !attrs.iterable && iter.peek().is_none() {
-        if attrs.field_bound {
-            let ty = &first.ast().ty;
-            cg::add_predicate(where_clause, parse_quote!(#ty: style_traits::ToCss));
-        }
         let mut expr = quote! { style_traits::ToCss::to_css(#first, dest) };
         if let Some(condition) = attrs.skip_if {
             expr = quote! {

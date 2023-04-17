@@ -95,17 +95,21 @@ impl<T: Sized> OwnedSlice<T> {
 
     
     #[inline]
-    pub fn into_iter(self) -> impl Iterator<Item = T> + ExactSizeIterator {
-        self.into_vec().into_iter()
-    }
-
-    
-    #[inline]
     pub fn from_slice(s: &[T]) -> Self
     where
         T: Clone,
     {
         Self::from(s.to_vec())
+    }
+}
+
+impl<T> IntoIterator for OwnedSlice<T> {
+    type Item = T;
+    type IntoIter = <Vec<T> as IntoIterator>::IntoIter;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_vec().into_iter()
     }
 }
 
