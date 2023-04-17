@@ -43,6 +43,12 @@ var gcFields = new Map;
 
 var rootedPointers = {};
 
+
+
+
+var pendingGCTypes = [];
+var pendingGCPointers = [];
+
 function processCSU(csu, body)
 {
     for (let { 'Name': [ annType, tag ] } of (body.Annotation || [])) {
@@ -182,11 +188,122 @@ for (const csu of typeInfo.GCPointers)
 for (const csu of typeInfo.GCInvalidated)
     addGCPointer(csu);
 
+function parseTemplateType(typeName, validate=false) {
+    
+    
+    
+    if (!typeName.endsWith(">")) {
+        return [typeName, undefined];
+    }
 
+    
+    
+    
+    const tokens = [];
+    const tokenizer = /[<>,]|[^<>,]+/g;
+    let match;
+    while ((match = tokenizer.exec(typeName)) !== null) {
+    	tokens.push(match);
+    }
 
+    
+    
+    const args = [];
+    let depth = 0;
+    let arg;
+    let first_result;
+    for (const match of tokens.reverse()) {
+        const token = match[0];
+        if (depth == 1 && (token == ',' || token == '<')) {
+            
+            
+            args.unshift(arg);
+            arg = '';
+        } else if (depth == 0 && token == '>') {
+            arg = ''; 
+        } else {
+            arg = token + arg;
+        }
 
+        
+        if (token == '<') {
+            
+            assert(depth > 0, `Invalid type: too many '<' signs in '${typeName}'`);
+            depth--;
+        } else if (token == '>') {
+            depth++;
+        }
 
+        if (depth == 0) {
+            
+            
+            assert(args.length > 0);
+            const templateName = typeName.substr(0, match.index);
+            const result = [templateName, args.map(arg => arg.trim())];
+            if (!validate) {
+                
+                
+                
+                return result;
+            } else if (!first_result) {
+                
+                
+                
+                first_result = result;
+            }
+        }
+    }
 
+    
+    assert(depth == 0, `Invalid type: too many '>' signs in '${typeName}'`);
+    return first_result;
+}
+
+if (os.getenv("HAZARD_RUN_INTERNAL_TESTS")) {
+    function check_parse(typeName, result) {
+        assertEq(JSON.stringify(parseTemplateType(typeName)), JSON.stringify(result));
+    }
+
+    check_parse("int", ["int", undefined]);
+    check_parse("Type<int>", ["Type", ["int"]]);
+    check_parse("Container<int, double>", ["Container", ["int", "double"]]);
+    check_parse("Container<Container<void, void>, double>", ["Container", ["Container<void, void>", "double"]]);
+    check_parse("Foo<Bar<a,b>,Bar<a,b>>::Container<Container<void, void>, double>", ["Foo<Bar<a,b>,Bar<a,b>>::Container", ["Container<void, void>", "double"]]);
+    check_parse("AlignedStorage2<TypedArray<foo>>", ["AlignedStorage2", ["TypedArray<foo>"]]);
+    check_parse("mozilla::AlignedStorage2<mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer> >",
+        [
+            "mozilla::AlignedStorage2",
+            [
+                "mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer>"
+            ]
+        ]
+    );
+    check_parse(
+        "mozilla::ArrayIterator<const mozilla::dom::binding_detail::RecordEntry<nsTString<char16_t>, mozilla::dom::Nullable<mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer> > >&, nsTArray_Impl<mozilla::dom::binding_detail::RecordEntry<nsTString<char16_t>, mozilla::dom::Nullable<mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer> > >, nsTArrayInfallibleAllocator> >",
+        [
+            "mozilla::ArrayIterator",
+            [
+                "const mozilla::dom::binding_detail::RecordEntry<nsTString<char16_t>, mozilla::dom::Nullable<mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer> > >&",
+                "nsTArray_Impl<mozilla::dom::binding_detail::RecordEntry<nsTString<char16_t>, mozilla::dom::Nullable<mozilla::dom::TypedArray<unsigned char, JS::UnwrapArrayBufferMaybeShared, JS::GetArrayBufferMaybeSharedData, JS::GetArrayBufferMaybeSharedLengthAndData, JS::NewArrayBuffer> > >, nsTArrayInfallibleAllocator>"
+            ]
+        ]
+    );
+
+    function check_throws(f, exc) {
+        try {
+            f();
+        } catch (e) {
+            assertEq(e.message.includes(exc), true, "incorrect exception: " + e.message);
+            return;
+        }
+        assertEq(undefined, exc);
+    }
+    
+    check_throws(() => parseTemplateType("foo>", true), "too many '>' signs");
+    check_throws(() => parseTemplateType("foo<<>", true), "too many '<' signs");
+    check_throws(() => parseTemplateType("foo<a::bar<a,b>", true), "too many '<' signs");
+    check_throws(() => parseTemplateType("foo<a>*>::bar<a,b>", true), "too many '>' signs");
+}
 
 
 
@@ -194,30 +311,16 @@ for (const csu of typeInfo.GCInvalidated)
 
 var inheritors = Object.keys(typeInfo.InheritFromTemplateArgs).sort((a, b) => a.length - b.length);
 for (const csu of inheritors) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const [_, params_str] = csu.match(/<(.*)>/);
-    for (let param of params_str.split(",")) {
-        param = param.replace(/^\s+/, '')
-        param = param.replace(/\s+$/, '')
-        const pieces = param.split("*");
-        const core_type = pieces[0];
-        const ptrdness = pieces.length - 1;
-        if (ptrdness > 1)
-            continue;
-        const paramDesc = 'template-param-' + param;
-        const why = '(inherited annotations from ' + param + ')';
-        if (core_type in gcTypes)
-            markGCType(csu, paramDesc, why, ptrdness, 0, "");
-        if (core_type in gcPointers)
-            markGCType(csu, paramDesc, why, ptrdness + 1, 0, "");
+    const [templateName, templateArgs] = parseTemplateType(csu);
+    for (const param of templateArgs) {
+        const pos = param.search(/\**$/);
+        const ptrdness = param.length - pos;
+        const core_type = param.substr(0, pos);
+        if (ptrdness == 0) {
+            addToKeyedList(structureParents, core_type, [csu, "template-param-" + param]);
+        } else if (ptrdness == 1) {
+            addToKeyedList(pointerParents, core_type, [csu, "template-param-" + param]);
+        }
     }
 }
 
@@ -301,12 +404,19 @@ function markGCType(typeName, child, why, typePtrLevel, fieldPtrLevel, indent)
 
 function addGCType(typeName, child, why, depth, fieldPtrLevel)
 {
-    markGCType(typeName, '<annotation>', '(annotation)', 0, 0, "");
+    pendingGCTypes.push([typeName, '<annotation>', '(annotation)', 0, 0]);
 }
 
 function addGCPointer(typeName)
 {
-    markGCType(typeName, '<pointer-annotation>', '(annotation)', 1, 0, "");
+    pendingGCPointers.push([typeName, '<pointer-annotation>', '(annotation)', 1, 0]);
+}
+
+for (const pending of pendingGCTypes) {
+    markGCType(...pending);
+}
+for (const pending of pendingGCPointers) {
+    markGCType(...pending);
 }
 
 
@@ -359,7 +469,11 @@ function explain(csu, indent, seen) {
         if (field[0] == '<')
             msg += "inherits from ";
         else {
-            msg += "contains field '" + field + "' ";
+            if (field.startsWith("template-param-")) {
+                msg += "inherits annotations from template parameter '" + field.substr(15) + "' ";
+            } else {
+                msg += "contains field '" + field + "' ";
+            }
             if (ptrdness == -1)
                 msg += "(with a pointer to unsafe storage) holding a ";
             else if (ptrdness == 0)
