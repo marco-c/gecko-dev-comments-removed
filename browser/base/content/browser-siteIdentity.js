@@ -966,14 +966,19 @@ var gIdentityHandler = {
     
     
     this._clearSiteDataFooter.hidden = true;
-    let securityButton = document.getElementById(
-      "identity-popup-security-button"
-    );
-    securityButton.removeAttribute("footerHidden");
+    let securityButton;
+    if (this._protonEnabled) {
+      securityButton = document.getElementById(
+        "identity-popup-security-button"
+      );
+      securityButton.removeAttribute("footerHidden");
+    }
     if (this._uriHasHost && !this._pageExtensionPolicy) {
       SiteDataManager.hasSiteData(this._uri.asciiHost).then(hasData => {
         this._clearSiteDataFooter.hidden = !hasData;
-        securityButton.setAttribute("footerHidden", !hasData);
+        if (securityButton) {
+          securityButton.setAttribute("footerHidden", !hasData);
+        }
       });
     }
 
@@ -1029,6 +1034,7 @@ var gIdentityHandler = {
         "secure-ev",
         "secure-cert-user-overridden",
         "cert-error-page",
+        "net-error-page",
         "https-only-error-page",
       ].includes(connection);
     }
