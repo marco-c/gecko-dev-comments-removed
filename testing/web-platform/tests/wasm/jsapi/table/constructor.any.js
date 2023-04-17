@@ -2,6 +2,7 @@
 
 
 
+
 test(() => {
   assert_function_name(WebAssembly.Table, "Table", "WebAssembly.Table");
 }, "name");
