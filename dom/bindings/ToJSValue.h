@@ -23,10 +23,9 @@
 #include "mozilla/Unused.h"            
 #include "mozilla/dom/BindingUtils.h"  
 #include "mozilla/dom/CallbackObject.h"  
-#include "mozilla/dom/Record.h"
-#include "nsID.h"         
-#include "nsISupports.h"  
-#include "nsStringFwd.h"  
+#include "nsID.h"                        
+#include "nsISupports.h"                 
+#include "nsStringFwd.h"                 
 #include "nsTArrayForwardDeclare.h"
 #include "xpcObjectHelper.h"  
 
@@ -397,40 +396,6 @@ template <typename T>
     return false;
   }
   aValue.setObject(*arrayObj);
-  return true;
-}
-
-
-
-template <typename K, typename V>
-[[nodiscard]] bool ToJSValue(JSContext* aCx, const Record<K, V>& aArgument,
-                             JS::MutableHandle<JS::Value> aValue) {
-  JS::RootedObject recordObj(aCx, JS_NewPlainObject(aCx));
-  if (!recordObj) {
-    return false;
-  }
-
-  for (auto& entry : aArgument.Entries()) {
-    JS::Rooted<JS::Value> value(aCx);
-    if (!ToJSValue(aCx, entry.mValue, &value)) {
-      return false;
-    }
-
-    if constexpr (std::is_same_v<nsCString, decltype(entry.mKey)>) {
-      NS_ConvertUTF8toUTF16 expandedKey(entry.mKey);
-      if (!JS_DefineUCProperty(aCx, recordObj, expandedKey.BeginReading(),
-                               expandedKey.Length(), value, JSPROP_ENUMERATE)) {
-        return false;
-      }
-    } else {
-      if (!JS_DefineUCProperty(aCx, recordObj, entry.mKey.BeginReading(),
-                               entry.mKey.Length(), value, JSPROP_ENUMERATE)) {
-        return false;
-      }
-    }
-  }
-
-  aValue.setObject(*recordObj);
   return true;
 }
 

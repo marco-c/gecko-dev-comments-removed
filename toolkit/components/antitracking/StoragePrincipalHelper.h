@@ -283,11 +283,6 @@ class StoragePrincipalHelper final {
   
   static bool GetOriginAttributesForHTTPSRR(nsIChannel* aChannel,
                                             OriginAttributes& aAttributes);
-
-  
-  static bool GetOriginAttributes(
-      const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
-      OriginAttributes& aAttributes);
 };
 
 }  

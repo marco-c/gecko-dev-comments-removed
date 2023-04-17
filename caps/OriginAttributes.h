@@ -80,12 +80,6 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
            mGeckoViewSessionContextId == aOther.mGeckoViewSessionContextId;
   }
 
-  [[nodiscard]] bool EqualsIgnoringPartitionKey(
-      const OriginAttributes& aOther) const {
-    return EqualsIgnoringFPD(aOther) &&
-           mFirstPartyDomain == aOther.mFirstPartyDomain;
-  }
-
   
   
   

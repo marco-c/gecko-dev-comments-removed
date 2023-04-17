@@ -68,8 +68,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   void SetDocumentURI(nsIURI* aDocumentURI);
   
   
-  void SetDocumentPrincipal(nsIPrincipal* aNewDocumentPrincipal,
-                            nsIPrincipal* aNewDocumentStoragePrincipal);
+  void SetDocumentPrincipal(nsIPrincipal* aNewDocumentPrincipal);
 
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 

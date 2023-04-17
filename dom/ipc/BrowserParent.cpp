@@ -2950,6 +2950,8 @@ bool BrowserParent::ReconstructWebProgressAndRequest(
 
 mozilla::ipc::IPCResult BrowserParent::RecvSessionStoreUpdate(
     const Maybe<nsCString>& aDocShellCaps, const Maybe<bool>& aPrivatedMode,
+    nsTArray<nsCString>&& aOrigins, nsTArray<nsString>&& aKeys,
+    nsTArray<nsString>&& aValues, const bool aIsFullStorage,
     const bool aNeedCollectSHistory, const bool& aIsFinal,
     const uint32_t& aEpoch) {
   UpdateSessionStoreData data;
@@ -2958,6 +2960,16 @@ mozilla::ipc::IPCResult BrowserParent::RecvSessionStoreUpdate(
   }
   if (aPrivatedMode.isSome()) {
     data.mIsPrivate.Construct() = aPrivatedMode.value();
+  }
+  
+  
+  
+  
+  if (aOrigins.Length() != 0 || aIsFullStorage) {
+    data.mStorageOrigins.Construct(std::move(aOrigins));
+    data.mStorageKeys.Construct(std::move(aKeys));
+    data.mStorageValues.Construct(std::move(aValues));
+    data.mIsFullStorage.Construct() = aIsFullStorage;
   }
 
   nsCOMPtr<nsISessionStoreFunctions> funcs =

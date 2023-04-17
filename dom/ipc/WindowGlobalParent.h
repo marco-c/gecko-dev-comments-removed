@@ -46,7 +46,6 @@ class JSActorMessageMeta;
 struct PageUseCounters;
 class WindowSessionStoreState;
 struct WindowSessionStoreUpdate;
-class SSCacheQueryResult;
 
 
 
@@ -110,8 +109,6 @@ class WindowGlobalParent final : public WindowContext,
   
   
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
-
-  nsIPrincipal* DocumentStoragePrincipal() { return mDocumentStoragePrincipal; }
 
   
   
@@ -214,9 +211,9 @@ class WindowGlobalParent final : public WindowContext,
 
   const nsACString& GetRemoteType() override;
 
-  nsresult WriteFormDataAndScrollToSessionStore(
-      const Maybe<FormData>& aFormData, const Maybe<nsPoint>& aScrollPosition,
-      uint32_t aEpoch);
+  nsresult UpdateSessionStore(const Maybe<FormData>& aFormData,
+                              const Maybe<nsPoint>& aScrollPosition,
+                              uint32_t aEpoch);
 
   Maybe<uint64_t> GetSingleChannelId() { return mSingleChannelId; }
 
@@ -235,8 +232,7 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvInternalLoad(nsDocShellLoadState* aLoadState);
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI);
   mozilla::ipc::IPCResult RecvUpdateDocumentPrincipal(
-      nsIPrincipal* aNewDocumentPrincipal,
-      nsIPrincipal* aNewDocumentStoragePrincipal);
+      nsIPrincipal* aNewDocumentPrincipal);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasLoaded(bool aDocumentHasLoaded);
   mozilla::ipc::IPCResult RecvUpdateDocumentHasUserInteracted(
       bool aDocumentHasUserInteracted);
@@ -311,18 +307,9 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  nsresult SetDocumentStoragePrincipal(
-      nsIPrincipal* aNewDocumentStoragePrincipal);
-
-  
-  
-  
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
-  nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
-
   
   nsCOMPtr<nsIPrincipal> mDocContentBlockingAllowListPrincipal;
-
   nsCOMPtr<nsIURI> mDocumentURI;
   Maybe<nsString> mDocumentTitle;
 

@@ -19,6 +19,8 @@ class nsITimer;
 namespace mozilla {
 namespace dom {
 
+class StorageEvent;
+
 class ContentSessionStore {
  public:
   explicit ContentSessionStore(nsIDocShell* aDocShell);
@@ -30,6 +32,31 @@ class ContentSessionStore {
   nsCString GetDocShellCaps();
   bool IsPrivateChanged() { return mPrivateChanged; }
   bool GetPrivateModeEnabled();
+
+  
+  bool IsStorageUpdated() { return mStorageStatus != NO_STORAGE; }
+  void ResetStorage() { mStorageStatus = RESET; }
+  
+
+
+
+
+
+
+
+  void SetFullStorageNeeded();
+  void ResetStorageChanges();
+  
+  
+  
+  
+  bool GetAndClearStorageChanges(nsTArray<nsCString>& aOrigins,
+                                 nsTArray<nsString>& aKeys,
+                                 nsTArray<nsString>& aValues);
+  
+  
+  
+  bool AppendSessionStorageChange(StorageEvent* aEvent);
 
   void SetSHistoryChanged();
   
@@ -44,8 +71,8 @@ class ContentSessionStore {
   void OnDocumentStart();
   void OnDocumentEnd();
   bool UpdateNeeded() {
-    return mPrivateChanged || mDocCapChanged || mSHistoryChanged ||
-           mSHistoryChangedFromParent;
+    return mPrivateChanged || mDocCapChanged || IsStorageUpdated() ||
+           mSHistoryChanged || mSHistoryChangedFromParent;
   }
 
  private:
@@ -55,8 +82,18 @@ class ContentSessionStore {
   nsCOMPtr<nsIDocShell> mDocShell;
   bool mPrivateChanged;
   bool mIsPrivate;
+  enum {
+    NO_STORAGE,
+    RESET,
+    FULLSTORAGE,
+    STORAGECHANGE,
+  } mStorageStatus;
   bool mDocCapChanged;
   nsCString mDocCaps;
+  
+  nsTArray<nsCString> mOrigins;
+  nsTArray<nsString> mKeys;
+  nsTArray<nsString> mValues;
   
   
   
@@ -101,6 +138,8 @@ class TabListener : public nsIDOMEventListener,
   void AddEventListeners();
   void RemoveEventListeners();
   bool UpdateSessionStore(bool aIsFlush = false, bool aIsFinal = false);
+  void ResetStorageChangeListener();
+  void RemoveStorageChangeListener();
   virtual ~TabListener();
 
   nsCOMPtr<nsIDocShell> mDocShell;
@@ -109,6 +148,8 @@ class TabListener : public nsIDOMEventListener,
   bool mProgressListenerRegistered;
   bool mEventListenerRegistered;
   bool mPrefObserverRegistered;
+  bool mStorageObserverRegistered;
+  bool mStorageChangeListenerRegistered;
   
   nsCOMPtr<nsITimer> mUpdatedTimer;
   bool mTimeoutDisabled;

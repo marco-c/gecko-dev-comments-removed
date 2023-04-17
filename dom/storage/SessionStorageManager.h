@@ -15,12 +15,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
 
-#include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/ipc/PBackgroundParent.h"
-
-class nsIPrincipal;
-class nsITimer;
-
 namespace mozilla {
 class OriginAttributesPattern;
 
@@ -30,11 +24,6 @@ bool RecvShutdownBackgroundSessionStorageManagers();
 void RecvPropagateBackgroundSessionStorageManager(uint64_t aCurrentTopContextId,
                                                   uint64_t aTargetTopContextId);
 bool RecvRemoveBackgroundSessionStorageManager(uint64_t aTopContextId);
-
-bool RecvGetSessionStorageData(
-    uint64_t aTopContextId, uint32_t aSizeLimit, bool aCancelSessionStoreTimer,
-    ::mozilla::ipc::PBackgroundParent::GetSessionStorageManagerDataResolver&&
-        aResolver);
 
 class BrowsingContext;
 class ContentParent;
@@ -180,14 +169,6 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
   
   static void RemoveManager(uint64_t aTopContextId);
 
-  using DataPromise =
-      ::mozilla::ipc::PBackgroundChild::GetSessionStorageManagerDataPromise;
-  static RefPtr<DataPromise> GetData(BrowsingContext* aContext,
-                                     uint32_t aSizeLimit,
-                                     bool aClearSessionStoreTimer = false);
-
-  void GetData(uint32_t aSizeLimit, nsTArray<SSCacheCopy>& aCacheCopyList);
-
   void CopyDataToContentProcess(const nsACString& aOriginAttrs,
                                 const nsACString& aOriginKey,
                                 nsTArray<SSSetItemInfo>& aDefaultData,
@@ -197,56 +178,11 @@ class BackgroundSessionStorageManager final : public SessionStorageManagerBase {
                   const nsTArray<SSWriteInfo>& aDefaultWriteInfos,
                   const nsTArray<SSWriteInfo>& aSessionWriteInfos);
 
-  void SetCurrentBrowsingContextId(uint64_t aBrowsingContextId);
-
-  void MaybeDispatchSessionStoreUpdate();
-
-  void CancelSessionStoreUpdate();
-
  private:
   
-  explicit BackgroundSessionStorageManager(uint64_t aBrowsingContextId);
+  explicit BackgroundSessionStorageManager();
 
   ~BackgroundSessionStorageManager();
-
-  
-  
-  void MaybeScheduleSessionStoreUpdate();
-
-  void DispatchSessionStoreUpdate();
-
-  
-  uint64_t mCurrentBrowsingContextId;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsITimer> mSessionStoreCallbackTimer;
 };
 
 }  

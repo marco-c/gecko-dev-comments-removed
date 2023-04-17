@@ -7570,14 +7570,6 @@ void nsGlobalWindowInner::StorageAccessPermissionGranted() {
   
   if (mDoc) {
     mDoc->ClearActiveStoragePrincipal();
-    if (mWindowGlobalChild) {
-      
-      
-      
-      
-      mWindowGlobalChild->SetDocumentPrincipal(
-          mDoc->NodePrincipal(), mDoc->EffectiveStoragePrincipal());
-    }
   }
 }
 
