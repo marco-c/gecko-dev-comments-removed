@@ -8,7 +8,10 @@
 
 
 #![cfg_attr(feature = "neon", feature(stdsimd))]
-#![cfg_attr(feature = "neon", feature(aarch64_target_feature, arm_target_feature, raw_ref_op))]
+#![cfg_attr(
+    feature = "neon",
+    feature(aarch64_target_feature, arm_target_feature, raw_ref_op)
+)]
 
 
 #[repr(u32)]
