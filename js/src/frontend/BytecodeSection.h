@@ -24,7 +24,7 @@
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        
-#include "frontend/ParserAtom.h"   
+#include "frontend/ParserAtom.h"  
 #include "frontend/SourceNotes.h"  
 #include "frontend/Stencil.h"      
 #include "gc/Rooting.h"            
@@ -59,9 +59,10 @@ struct MOZ_STACK_CLASS GCThingList {
   explicit GCThingList(JSContext* cx, CompilationState& compilationState)
       : compilationState(compilationState), vector(cx) {}
 
-  [[nodiscard]] bool append(TaggedParserAtomIndex atom, GCThingIndex* index) {
+  [[nodiscard]] bool append(TaggedParserAtomIndex atom,
+                            ParserAtom::Atomize atomize, GCThingIndex* index) {
     *index = GCThingIndex(vector.length());
-    compilationState.parserAtoms.markUsedByStencil(atom);
+    compilationState.parserAtoms.markUsedByStencil(atom, atomize);
     if (!vector.emplaceBack(atom)) {
       return false;
     }
@@ -121,6 +122,8 @@ struct MOZ_STACK_CLASS GCThingList {
   
   
   mozilla::Maybe<ScopeIndex> getScopeIndex(size_t index) const;
+
+  TaggedParserAtomIndex getAtom(size_t index) const;
 
   AbstractScopePtr firstScope() const {
     MOZ_ASSERT(firstScopeIndex.isSome());

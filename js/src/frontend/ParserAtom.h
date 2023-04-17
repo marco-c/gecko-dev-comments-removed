@@ -336,7 +336,21 @@ class alignas(alignof(uint32_t)) ParserAtom {
   
   static constexpr uint32_t HasTwoByteCharsFlag = 1 << 0;
   static constexpr uint32_t UsedByStencilFlag = 1 << 1;
+  static constexpr uint32_t AtomizeFlag = 1 << 2;
 
+ public:
+  
+  
+  
+  
+  
+  
+  enum class Atomize : uint32_t {
+    No = 0,
+    Yes = AtomizeFlag,
+  };
+
+ private:
   
   
   
@@ -411,6 +425,8 @@ class alignas(alignof(uint32_t)) ParserAtom {
 
   bool isUsedByStencil() const { return flags_ & UsedByStencilFlag; }
 
+  bool isMarkedAtomize() const { return flags_ & AtomizeFlag; }
+
   template <typename CharT>
   bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
 
@@ -419,7 +435,10 @@ class alignas(alignof(uint32_t)) ParserAtom {
                       CompilationAtomCache& atomCache) const;
 
  private:
-  void markUsedByStencil() { flags_ |= UsedByStencilFlag; }
+  void markUsedByStencil(Atomize atomize) {
+    flags_ |= UsedByStencilFlag | uint32_t(atomize);
+  }
+  void markAtomize(Atomize atomize) { flags_ |= uint32_t(atomize); }
 
   constexpr void setHashAndLength(HashNumber hash, uint32_t length) {
     hash_ = hash;
@@ -641,6 +660,8 @@ class ParserAtomsTable {
                                      CompilationAtomCache& atomCache,
                                      JSAtom* atom);
 
+  
+  
   TaggedParserAtomIndex internExternalParserAtom(JSContext* cx,
                                                  const ParserAtom* atom);
 
@@ -660,10 +681,14 @@ class ParserAtomsTable {
       TaggedParserAtomIndex index) const;
   bool isModuleExportName(TaggedParserAtomIndex index) const;
   bool isIndex(TaggedParserAtomIndex index, uint32_t* indexp) const;
+  bool isInstantiatedAsJSAtom(TaggedParserAtomIndex index) const;
   uint32_t length(TaggedParserAtomIndex index) const;
 
   
-  void markUsedByStencil(TaggedParserAtomIndex index) const;
+  void markUsedByStencil(TaggedParserAtomIndex index,
+                         ParserAtom::Atomize atomize) const;
+  void markAtomize(TaggedParserAtomIndex index,
+                   ParserAtom::Atomize atomize) const;
   bool toNumber(JSContext* cx, TaggedParserAtomIndex index,
                 double* result) const;
   UniqueChars toNewUTF8CharsZ(JSContext* cx, TaggedParserAtomIndex index) const;
@@ -779,4 +804,4 @@ JSAtom* GetWellKnownAtom(JSContext* cx, WellKnownAtomId atomId);
 } 
 } 
 
-#endif  
+#endif
