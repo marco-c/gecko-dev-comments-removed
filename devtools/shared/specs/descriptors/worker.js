@@ -28,17 +28,6 @@ const workerDescriptorSpec = generateActorSpec({
   },
 
   events: {
-    
-    
-    
-    
-    
-    
-    
-    "worker-close": {
-      type: "close",
-    },
-
     "descriptor-destroyed": {
       type: "descriptor-destroyed",
     },

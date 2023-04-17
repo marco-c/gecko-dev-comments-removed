@@ -23,11 +23,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
     super(client, targetFront, parentFront);
 
     this.traits = {};
-
-    
-    
-    
-    this.once("worker-close", this.destroy.bind(this));
   }
 
   form(json) {
