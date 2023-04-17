@@ -1834,7 +1834,7 @@ class nsContextMenu {
         referrerInfo,
         cookieJarSettings,
         this.frameOuterWindowID,
-        "",
+        this.mediaURL.startsWith("data") ? "index" : "", 
         isContentWindowPrivate
       );
     }
