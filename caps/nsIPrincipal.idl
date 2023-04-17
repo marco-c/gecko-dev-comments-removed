@@ -262,7 +262,7 @@ interface nsIPrincipal : nsISerializable
 
 
 
-    readonly attribute ACString prepath;
+    readonly attribute ACString prePath;
 
     
 

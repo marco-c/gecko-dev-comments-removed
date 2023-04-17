@@ -304,7 +304,7 @@ class BlobURLsReporter final : public nsIMemoryReporter {
 
     nsAutoCString origin;
 
-    aInfo->mPrincipal->GetPrepath(origin);
+    aInfo->mPrincipal->GetPrePath(origin);
 
     
     

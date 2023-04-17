@@ -309,7 +309,7 @@ let RemotePageAccessManager = {
       if (!aPrincipal.schemeIs("about")) {
         return null;
       }
-      spec = aPrincipal.prepath + aPrincipal.filePath;
+      spec = aPrincipal.prePath + aPrincipal.filePath;
     }
 
     

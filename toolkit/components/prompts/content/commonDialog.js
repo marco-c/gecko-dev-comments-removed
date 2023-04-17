@@ -56,7 +56,7 @@ function commonDialogOnLoad() {
         }
         
         if (!title.raw) {
-          title.raw = promptPrincipal.prepath;
+          title.raw = promptPrincipal.prePath;
         }
       } else {
         title = { l10nId: "common-dialog-title-unknown" };
