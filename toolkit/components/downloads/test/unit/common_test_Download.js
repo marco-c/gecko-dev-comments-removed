@@ -2681,7 +2681,15 @@ add_task(async function test_launchWhenSucceeded_deleteTempFileOnExit() {
     "@mozilla.org/uriloader/external-helper-app-service;1"
   ].getService(Ci.nsIObserver);
   expire.observe(null, "profile-before-change", null);
-  Assert.equal(false, await OS.File.exists(autoDeleteTargetPathTwo));
+  
+  
+  
+  Assert.equal(
+    Services.prefs.getBoolPref(
+      "browser.download.improvements_to_download_panel"
+    ),
+    await OS.File.exists(autoDeleteTargetPathTwo)
+  );
   Assert.ok(await OS.File.exists(noAutoDeleteTargetPath));
 });
 
