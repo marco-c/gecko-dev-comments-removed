@@ -183,7 +183,9 @@ class ShutdownBlocker : public nsIAsyncShutdownBlocker {
   const nsString mName;
 };
 
-namespace {
+
+
+namespace anon_media_utils {
 class RefCountedTicket;
 }
 
@@ -193,7 +195,7 @@ class RefCountedTicket;
 
 
 class ShutdownBlockingTicket final {
-  RefPtr<RefCountedTicket> mTicket;
+  RefPtr<anon_media_utils::RefCountedTicket> mTicket;
 
  public:
   
