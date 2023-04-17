@@ -2904,6 +2904,15 @@ bool MediaDecoderStateMachine::IsVideoDataEnoughComparedWithAudio() const {
   
   
   
+  
+  
+  if (mReader->VideoIsHardwareAccelerated()) {
+    return true;
+  }
+  
+  
+  
+  
   if (HasAudio() && Info().mVideo.mImage.width >= 3840 &&
       Info().mVideo.mImage.height >= 2160) {
     return VideoQueue().Duration() >= AudioQueue().Duration();
