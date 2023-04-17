@@ -9,7 +9,7 @@
 
 
 add_task(async function() {
-  const { tab, monitor } = await initNetMonitor(SINGLE_GET_URL, {
+  const { monitor } = await initNetMonitor(SINGLE_GET_URL, {
     requestCount: 1,
   });
   info("Starting test... ");
@@ -69,9 +69,9 @@ add_task(async function() {
   
 
 
-  function reloadAndWait() {
+  async function reloadAndWait() {
     const wait = waitForNetworkEvents(monitor, 2);
-    tab.linkedBrowser.reload();
+    await reloadBrowser();
     return wait;
   }
 });

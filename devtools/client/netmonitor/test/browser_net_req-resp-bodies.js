@@ -40,7 +40,7 @@ add_task(async function() {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  tab.linkedBrowser.reload();
+  await reloadBrowser();
   await wait;
 
   

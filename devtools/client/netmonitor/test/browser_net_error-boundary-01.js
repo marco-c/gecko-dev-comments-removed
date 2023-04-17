@@ -6,7 +6,7 @@
 
 
 add_task(async function() {
-  const { tab, monitor } = await initNetMonitor(SIMPLE_URL, {
+  const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
 
@@ -19,7 +19,7 @@ add_task(async function() {
   const state = store.getState();
   state.ui.columns = null;
 
-  tab.linkedBrowser.reload();
+  await reloadBrowser();
 
   
   const errorPanel = await waitUntil(() =>

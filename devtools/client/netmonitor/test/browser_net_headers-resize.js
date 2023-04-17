@@ -30,7 +30,7 @@ async function testForGivenDir(dir) {
   );
 
   
-  const { tab, monitor } = await initNetMonitor(SIMPLE_URL, {
+  const { monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });
   info("Starting test... ");
@@ -41,7 +41,7 @@ async function testForGivenDir(dir) {
 
   
   const wait = waitForNetworkEvents(monitor, 1);
-  tab.linkedBrowser.reload();
+  await reloadBrowser();
   await wait;
 
   const headers = document.querySelector(".requests-list-headers");
