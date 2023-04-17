@@ -18,6 +18,7 @@ const LEARN_MORE_URL =
   Services.urlFormatter.formatURLPref("app.support.baseURL") +
   "firefox-suggest";
 
+const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
 
 add_task(async function accept() {
@@ -37,9 +38,26 @@ add_task(async function accept() {
       "Nothing loaded in the current tab"
     );
     Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+
+    TelemetryTestUtils.assertEvents([
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "enable_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "sponsored_toggled",
+        object: "enabled",
+      },
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "accept",
+      },
+    ]);
   });
 });
-
 
 
 add_task(async function notNow() {
@@ -59,8 +77,17 @@ add_task(async function notNow() {
       "Nothing loaded in the current tab"
     );
     Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
+
+    TelemetryTestUtils.assertEvents([
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "not_now",
+      },
+    ]);
   });
 });
+
 
 
 add_task(async function customize() {
@@ -87,6 +114,14 @@ add_task(async function customize() {
       "about:preferences#search",
       "Current tab is about:preferences#search"
     );
+
+    TelemetryTestUtils.assertEvents([
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "settings",
+      },
+    ]);
   });
 });
 
@@ -119,6 +154,14 @@ add_task(async function learnMore() {
       "Current tab is the support page"
     );
     BrowserTestUtils.removeTab(tab);
+
+    TelemetryTestUtils.assertEvents([
+      {
+        category: TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "learn_more",
+      },
+    ]);
   });
 });
 
@@ -135,17 +178,22 @@ async function doDialogTest(expectOptIn, callback) {
         ["browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0],
       ],
     });
+
+    
+    
+    Services.telemetry.clearEvents();
+
     await callback();
 
     Assert.equal(
       UrlbarPrefs.get("suggest.quicksuggest"),
       expectOptIn,
-      "Main pref has been enabled"
+      "Main pref enabled status"
     );
     Assert.equal(
       UrlbarPrefs.get("suggest.quicksuggest.sponsored"),
       expectOptIn,
-      "Sponsored pref has been enabled"
+      "Sponsored pref enabled status"
     );
 
     await SpecialPowers.popPrefEnv();
