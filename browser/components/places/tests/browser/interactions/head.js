@@ -1,0 +1,9 @@
+
+
+
+
+const { Interactions } = ChromeUtils.import(
+  "resource:///modules/Interactions.jsm"
+);
+
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");

@@ -11,8 +11,23 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
+
+const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -34,7 +49,25 @@ class _Interactions {
 
 
 
+
   #interactions = new WeakMap();
+
+  
+
+
+
+
+
+
+  #currentInteraction = undefined;
+
+  
+
+
+
+
+
+  _lastUpdateTime = Cu.now();
 
   
 
@@ -55,7 +88,6 @@ class _Interactions {
         ? "Debug"
         : "Warn",
     });
-
     this.logConsole.debug("init");
 
     ChromeUtils.registerWindowActor("Interactions", {
@@ -67,9 +99,17 @@ class _Interactions {
         group: "browsers",
         events: {
           DOMContentLoaded: {},
+          pagehide: { mozSystemGroup: true },
         },
       },
     });
+
+    for (let win of BrowserWindowTracker.orderedWindows) {
+      if (!win.closed) {
+        this.#registerWindow(win);
+      }
+    }
+    Services.obs.addObserver(this, DOMWINDOW_OPENED_TOPIC, true);
   }
 
   
@@ -81,8 +121,57 @@ class _Interactions {
 
 
   registerNewInteraction(browser, docInfo) {
+    let interaction = this.#interactions.get(browser);
+    if (interaction && interaction.url != docInfo.url) {
+      this.registerEndOfInteraction(browser);
+    }
+
     this.logConsole.debug("New interaction", docInfo);
-    this.#interactions.set(browser, docInfo);
+    interaction = {
+      url: docInfo.url,
+      totalViewTime: 0,
+    };
+    this.#interactions.set(browser, interaction);
+
+    if (docInfo.isActive) {
+      this.#currentInteraction = interaction;
+      this._lastUpdateTime = Cu.now();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  registerEndOfInteraction(browser) {
+    let interaction = this.#interactions.get(browser);
+    if (!interaction) {
+      return;
+    }
+
+    this.#updateInteractionViewTime();
+    this.logConsole.debug("End of interaction for", interaction);
+
+    this._updateDatabase(interaction);
+
+    this.#interactions.delete(browser);
+    this.#currentInteraction = undefined;
+  }
+
+  
+
+
+  #updateInteractionViewTime() {
+    if (!this.#currentInteraction) {
+      return;
+    }
+    let now = Cu.now();
+    this.#currentInteraction.totalViewTime += now - this._lastUpdateTime;
+    this._lastUpdateTime = now;
   }
 
   
@@ -94,9 +183,115 @@ class _Interactions {
 
 
 
-  _getInteractionFor(browser) {
-    return this.#interactions.get(browser);
+
+  #onTabSelect(previousBrowser, browser) {
+    this.logConsole.debug("Tab switch notified");
+
+    let interaction = this.#interactions.get(previousBrowser);
+    if (interaction) {
+      this.#updateInteractionViewTime();
+      
+      
+      
+      this._updateDatabase(interaction);
+    }
+
+    
+    
+    this.#currentInteraction = this.#interactions.get(browser);
+    this._lastUpdateTime = Cu.now();
   }
+
+  
+
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "TabSelect":
+        this.#onTabSelect(
+          event.detail.previousTab.linkedBrowser,
+          event.target.linkedBrowser
+        );
+        break;
+      case "unload":
+        this.#unregisterWindow(event.target);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case DOMWINDOW_OPENED_TOPIC:
+        this.#onWindowOpen(subject);
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+  #registerWindow(win) {
+    win.addEventListener("TabSelect", this, true);
+  }
+
+  
+
+
+
+
+
+  #unregisterWindow(win) {
+    win.removeEventListener("TabSelect", this, true);
+  }
+
+  
+
+
+
+
+
+
+  #onWindowOpen(win) {
+    win.addEventListener(
+      "load",
+      () => {
+        if (
+          win.document.documentElement.getAttribute("windowtype") !=
+          "navigator:browser"
+        ) {
+          return;
+        }
+        this.#registerWindow(win);
+      },
+      { once: true }
+    );
+  }
+
+  QueryInterface = ChromeUtils.generateQI([
+    "nsIObserver",
+    "nsISupportsWeakReference",
+  ]);
+
+  
+
+
+
+
+
+
+  async _updateDatabase({ url, totalViewTime }) {}
 }
 
 const Interactions = new _Interactions();
