@@ -55,10 +55,10 @@ exports.DocumentEventsListener = DocumentEventsListener;
 DocumentEventsListener.prototype = {
   listen() {
     
-    EventEmitter.on(this.targetActor, "will-navigate", this.onWillNavigate);
+    this.targetActor.on("will-navigate", this.onWillNavigate);
 
     
-    EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
+    this.targetActor.on("window-ready", this.onWindowReady);
     
     
     if (
@@ -132,6 +132,9 @@ DocumentEventsListener.prototype = {
   },
 
   onContentLoaded(event, isFrameSwitching) {
+    if (this.destroyed) {
+      return;
+    }
     
     
     
@@ -141,6 +144,9 @@ DocumentEventsListener.prototype = {
   },
 
   onLoad(event, isFrameSwitching) {
+    if (this.destroyed) {
+      return;
+    }
     
     
     
@@ -180,6 +186,9 @@ DocumentEventsListener.prototype = {
   },
 
   destroy() {
-    this.listener = null;
+    
+    this.destroyed = true;
+    this.targetActor.off("will-navigate", this.onWillNavigate);
+    this.targetActor.off("window-ready", this.onWindowReady);
   },
 };
