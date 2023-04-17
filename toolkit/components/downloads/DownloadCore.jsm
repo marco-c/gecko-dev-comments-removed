@@ -651,6 +651,9 @@ Download.prototype = {
       this.error = null;
       this.succeeded = false;
       this.hasBlockedData = false;
+      
+      
+      delete this._unknownProperties?.errorObj;
       this.start().catch(e => {
         this.error = e;
         this._notifyChange();

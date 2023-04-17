@@ -514,6 +514,10 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       
       
       this.showButton("cancel");
+
+      
+      
+      this.element.removeAttribute("verdict");
     }
 
     
