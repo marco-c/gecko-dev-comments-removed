@@ -469,7 +469,6 @@ DevToolsStartup.prototype = {
 
   onWindowReady(window) {
     if (this.isDisabledByPolicy()) {
-      this.removeDevToolsMenus(window);
       return;
     }
 
@@ -483,16 +482,6 @@ DevToolsStartup.prototype = {
     }
 
     JsonView.initialize();
-  },
-
-  removeDevToolsMenus(window) {
-    
-    window.document.getElementById("webDeveloperMenu").hidden = true;
-    
-    PanelMultiView.getViewNode(
-      window.document,
-      "appMenu-developer-button"
-    ).hidden = true;
   },
 
   onFirstWindowReady(window) {
