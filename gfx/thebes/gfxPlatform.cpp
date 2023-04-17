@@ -2671,6 +2671,18 @@ void gfxPlatform::InitWebRenderConfig() {
 
   bool hasHardware = gfxConfig::IsEnabled(Feature::WEBRENDER);
   bool hasSoftware = gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE);
+
+#if defined(XP_WIN) && !defined(EARLY_BETA_OR_EARLIER)
+  
+  
+  
+  
+  if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING) &&
+      !gfxConfig::IsForcedOnByUser(Feature::WEBRENDER_SOFTWARE)) {
+    hasSoftware = false;
+  }
+#endif
+
   bool hasWebRender = hasHardware || hasSoftware;
 
 #ifdef XP_WIN
@@ -3366,11 +3378,19 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
         .ForceDisable(aStatus, aMessage, aFailureId);
   }
 
+  
+  
+  
+  bool swglFallbackAllowed =
+      !StaticPrefs::
+          gfx_webrender_fallback_software_requires_gpu_process_AtStartup() ||
+      gfxConfig::IsEnabled(Feature::GPU_PROCESS);
+
 #ifdef XP_WIN
   
   
   if (StaticPrefs::gfx_webrender_fallback_software_d3d11_AtStartup() &&
-      gfxVars::AllowSoftwareWebRenderD3D11() &&
+      swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
       gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE) &&
       gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING) &&
       gfxVars::UseWebRender() && !gfxVars::UseSoftwareWebRender()) {
@@ -3381,7 +3401,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
   }
 
   if (StaticPrefs::gfx_webrender_fallback_software_d3d11_AtStartup() &&
-      gfxVars::AllowSoftwareWebRenderD3D11() &&
+      swglFallbackAllowed && gfxVars::AllowSoftwareWebRenderD3D11() &&
       gfxVars::UseSoftwareWebRender()) {
     
     gfxCriticalNote << "Fallback SW-WR + D3D11 to SW-WR";
@@ -3391,13 +3411,24 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
 
   
   
-  if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    gfxConfig::GetFeature(Feature::D3D11_COMPOSITING)
-        .ForceDisable(aStatus, aMessage, aFailureId);
-  }
   if (gfxConfig::IsEnabled(Feature::DIRECT2D)) {
     gfxConfig::GetFeature(Feature::DIRECT2D)
         .ForceDisable(aStatus, aMessage, aFailureId);
+  }
+  if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
+    gfxConfig::GetFeature(Feature::D3D11_COMPOSITING)
+        .ForceDisable(aStatus, aMessage, aFailureId);
+
+    if (StaticPrefs::gfx_webrender_fallback_software_AtStartup() &&
+        swglFallbackAllowed &&
+        gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE) &&
+        !gfxVars::UseWebRender()) {
+      
+      gfxCriticalNote << "Fallback D3D11 to SW-WR";
+      gfxVars::SetUseWebRender(true);
+      gfxVars::SetUseSoftwareWebRender(true);
+      return true;
+    }
   }
 #endif
 
@@ -3417,6 +3448,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
   }
 
   if (StaticPrefs::gfx_webrender_fallback_software_AtStartup() &&
+      swglFallbackAllowed &&
       gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE) &&
       !gfxVars::UseSoftwareWebRender()) {
     
