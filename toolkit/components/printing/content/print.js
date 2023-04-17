@@ -3,7 +3,6 @@
 
 
 const {
-  gBrowser,
   PrintUtils,
   Services,
   AppConstants,
@@ -281,9 +280,9 @@ var PrintEventHandler = {
       
       
       let sourceBrowser = this.getSourceBrowsingContext().top.embedderElement;
-      let dialogBoxManager = gBrowser
-        .getTabDialogBox(sourceBrowser)
-        .getTabDialogManager();
+      let dialogBoxManager = PrintUtils.getTabDialogBox(
+        sourceBrowser
+      ).getTabDialogManager();
       dialogBoxManager.hideDialog(sourceBrowser);
 
       
