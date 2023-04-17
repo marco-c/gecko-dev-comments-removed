@@ -348,7 +348,11 @@ def repackage_msix(
                 
                 
                 dest = mozpath.normsep(
-                    mozpath.join(base, f"langpack-{locale}@firefox.mozilla.org.xpi")
+                    mozpath.join(
+                        base,
+                        f"locale-{locale}",
+                        f"langpack-{locale}@firefox.mozilla.org.xpi",
+                    )
                 )
 
                 log(
