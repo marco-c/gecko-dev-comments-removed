@@ -66,13 +66,6 @@ struct FeaturesVk : FeatureSetBase
 
     
     
-    Feature depthClamping = {
-        "depth_clamping", FeatureCategory::VulkanWorkarounds,
-        "The depth value is not clamped to [0,1] for floating point depth buffers.", &members,
-        "http://anglebug.com/3970"};
-
-    
-    
     
     Feature flushAfterVertexConversion = {
         "flushAfterVertexConversion", FeatureCategory::VulkanWorkarounds,
@@ -209,13 +202,6 @@ struct FeaturesVk : FeatureSetBase
                                            &members, "http://anglebug.com/4836"};
 
     
-    
-    Feature supportsMultisampledRenderToSingleSampled = {
-        "supportsMultisampledRenderToSingleSampled", FeatureCategory::VulkanFeatures,
-        "VkDevice supports the VK_EXT_multisampled_render_to_single_sampled extension", &members,
-        "http://anglebug.com/4836"};
-
-    
     Feature disableFifoPresentMode = {"disableFifoPresentMode", FeatureCategory::VulkanWorkarounds,
                                       "VK_PRESENT_MODE_FIFO_KHR causes random timeouts", &members,
                                       "http://anglebug.com/3153"};
@@ -264,6 +250,14 @@ struct FeaturesVk : FeatureSetBase
 
     
     
+    Feature forceOldRewriteStructSamplers = {
+        "forceOldRewriteStructSamplers", FeatureCategory::VulkanWorkarounds,
+        "Some shader compilers don't support sampler arrays as parameters, so revert to old "
+        "RewriteStructSamplers behavior, which produces fewer.",
+        &members, "http://anglebug.com/2703"};
+
+    
+    
     
     
     
@@ -301,17 +295,6 @@ struct FeaturesVk : FeatureSetBase
 
     
     
-    Feature logMemoryReportCallbacks = {"logMemoryReportCallbacks", FeatureCategory::VulkanFeatures,
-                                        "Log each callback from VK_EXT_device_memory_report",
-                                        &members};
-
-    
-    Feature logMemoryReportStats = {"logMemoryReportStats", FeatureCategory::VulkanFeatures,
-                                    "Log stats from VK_EXT_device_memory_report each swap",
-                                    &members};
-
-    
-    
     
     Feature shadowBuffers = {
         "shadowBuffers", FeatureCategory::VulkanFeatures,
@@ -333,6 +316,11 @@ struct FeaturesVk : FeatureSetBase
                                        &members, "http://anglebug.com/3502"};
 
     
+    Feature enableFramebufferVkCache = {"enableFramebufferVkCache", FeatureCategory::VulkanFeatures,
+                                        "Enable FramebufferVk objects to be cached", &members,
+                                        "http://anglebug.com/4442"};
+
+    
     Feature enablePrecisionQualifiers = {
         "enablePrecisionQualifiers", FeatureCategory::VulkanFeatures,
         "Enable precision qualifiers in shaders", &members, "http://anglebug.com/3078"};
@@ -348,9 +336,17 @@ struct FeaturesVk : FeatureSetBase
 
     
     
-    Feature asyncCommandQueue = {"asyncCommandQueue", FeatureCategory::VulkanFeatures,
-                                 "Use CommandQueue worker thread to dispatch work to GPU.",
-                                 &members, "http://anglebug.com/4324"};
+    
+    Feature commandProcessor = {"commandProcessor", FeatureCategory::VulkanFeatures,
+                                "Use CommandProcessor class to dispatch work to GPU.", &members,
+                                "http://anglebug.com/4324"};
+
+    
+    
+    Feature asynchronousCommandProcessing = {"asynchronousCommandProcessing",
+                                             FeatureCategory::VulkanFeatures,
+                                             "Enable/Disable parallel processing of worker thread",
+                                             &members, "http://anglebug.com/4324"};
 
     
     
@@ -358,6 +354,14 @@ struct FeaturesVk : FeatureSetBase
                                      "VkDevice supports the VK_KHR_shader_float16_int8 extension "
                                      "and has the shaderFloat16 feature",
                                      &members, "http://anglebug.com/4551"};
+
+    
+    
+    Feature supportsShaderImageFloat32Atomics = {
+        "supportsShaderImageFloat32Atomics", FeatureCategory::VulkanFeatures,
+        "VkDevice supports the VK_EXT_shader_atomic_float extension and has the "
+        "shaderImageFloat32Atomics feature.",
+        &members, "http://anglebug.com/3578"};
 
     
     
@@ -425,39 +429,9 @@ struct FeaturesVk : FeatureSetBase
 
     
     
-    std::array<angle::Feature, 4> forceTextureLODOffset = {
-        angle::Feature{"force_texture_lod_offset_1", angle::FeatureCategory::VulkanWorkarounds,
-                       "Increase the minimum texture level-of-detail by 1 when sampling.",
-                       &members},
-        angle::Feature{"force_texture_lod_offset_2", angle::FeatureCategory::VulkanWorkarounds,
-                       "Increase the minimum texture level-of-detail by 2 when sampling.",
-                       &members},
-        angle::Feature{"force_texture_lod_offset_3", angle::FeatureCategory::VulkanWorkarounds,
-                       "Increase the minimum texture level-of-detail by 3 when sampling.",
-                       &members},
-        angle::Feature{"force_texture_lod_offset_4", angle::FeatureCategory::VulkanWorkarounds,
-                       "Increase the minimum texture level-of-detail by 4 when sampling.",
-                       &members},
-    };
-
-    
-    
-    Feature forceNearestFiltering = {"force_nearest_filtering", FeatureCategory::VulkanWorkarounds,
-                                     "Force nearest filtering when sampling.", &members};
-
-    
-    
     Feature forceNearestMipFiltering = {"forceNearestMipFiltering",
                                         FeatureCategory::VulkanWorkarounds,
                                         "Force nearest mip filtering when sampling.", &members};
-
-    
-    
-    angle::Feature compressVertexData = {"compress_vertex_data",
-                                         angle::FeatureCategory::VulkanWorkarounds,
-                                         "Compress vertex data to smaller data types when "
-                                         "possible. Using this feature makes ANGLE non-conformant.",
-                                         &members};
 
     
     
@@ -481,46 +455,6 @@ struct FeaturesVk : FeatureSetBase
     Feature emulatedPrerotation270 = {"emulatedPrerotation270", FeatureCategory::VulkanFeatures,
                                       "Emulate 270-degree prerotation.", &members,
                                       "http://anglebug.com/4901"};
-
-    
-    
-    Feature forceDriverUniformOverSpecConst = {
-        "forceDriverUniformOverSpecConst", FeatureCategory::VulkanWorkarounds,
-        "Forces using driver uniforms instead of specialization constants.", &members,
-        "http://issuetracker.google.com/173636783"};
-
-    
-    
-    
-    Feature exposeNonConformantExtensionsAndVersions = {
-        "exposeNonConformantExtensionsAndVersions", FeatureCategory::VulkanWorkarounds,
-        "Expose GLES versions and extensions that are not conformant.", &members,
-        "http://anglebug.com/5375"};
-
-    
-    
-    
-    Feature emulateR32fImageAtomicExchange = {
-        "emulateR32fImageAtomicExchange", FeatureCategory::VulkanWorkarounds,
-        "Emulate r32f images with r32ui to support imageAtomicExchange.", &members,
-        "http://anglebug.com/5535"};
-
-    Feature supportsNegativeViewport = {
-        "supportsNegativeViewport", FeatureCategory::VulkanFeatures,
-        "The driver supports inverting the viewport with a negative height.", &members};
-
-    
-    
-    Feature forceFragmentShaderPrecisionHighpToMediump = {
-        "forceFragmentShaderPrecisionHighpToMediump", FeatureCategory::VulkanWorkarounds,
-        "Forces highp precision in fragment shader to mediump.", &members,
-        "https://issuetracker.google.com/184850002"};
-
-    
-    Feature preferSubmitAtFBOBoundary = {
-        "preferSubmitAtFBOBoundary", FeatureCategory::VulkanWorkarounds,
-        "Submit commands to driver at each FBO boundary for performance improvements.", &members,
-        "https://issuetracker.google.com/187425444"};
 };
 
 inline FeaturesVk::FeaturesVk()  = default;

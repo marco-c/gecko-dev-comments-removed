@@ -129,7 +129,7 @@ std::mutex &GetDebugMutex()
     return *g_debugMutex;
 }
 
-ScopedPerfEventHelper::ScopedPerfEventHelper(gl::Context *context, angle::EntryPoint entryPoint)
+ScopedPerfEventHelper::ScopedPerfEventHelper(gl::Context *context, gl::EntryPoint entryPoint)
     : mContext(context), mEntryPoint(entryPoint), mFunctionName(nullptr)
 {}
 
@@ -164,7 +164,7 @@ LogMessage::LogMessage(const char *file, const char *function, int line, LogSeve
     : mFile(file), mFunction(function), mLine(line), mSeverity(severity)
 {
     
-    if (mSeverity > LOG_INFO)
+    if (mSeverity != LOG_EVENT)
     {
         const char *slash = std::max(strrchr(mFile, '/'), strrchr(mFile, '\\'));
         mStream << (slash ? (slash + 1) : mFile) << ":" << mLine << " (" << mFunction << "): ";
@@ -179,7 +179,7 @@ LogMessage::~LogMessage()
         lock = std::unique_lock<std::mutex>(*g_debugMutex);
     }
 
-    if (DebugAnnotationsInitialized() && (mSeverity > LOG_INFO))
+    if (DebugAnnotationsInitialized() && (mSeverity >= LOG_INFO))
     {
         g_debugAnnotator->logMessage(*this);
     }
@@ -279,7 +279,7 @@ void Trace(LogSeverity severity, const char *message)
         }
 #else
         
-        fprintf((severity >= LOG_WARN) ? stderr : stdout, "%s: %s\n", LogSeverityName(severity),
+        fprintf((severity >= LOG_ERR) ? stderr : stdout, "%s: %s\n", LogSeverityName(severity),
                 str.c_str());
 #endif
     }

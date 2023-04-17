@@ -28,10 +28,6 @@ enum class WidgetId
     VulkanWriteDescriptorSetCount,
     
     VulkanDescriptorSetAllocations,
-    
-    VulkanShaderBufferDSHitRate,
-    
-    VulkanDynamicBufferAllocations,
 
     InvalidEnum,
     EnumCount = InvalidEnum,
@@ -46,8 +42,6 @@ enum class WidgetId
     PROC(VulkanRenderPassBufferCount)           \
     PROC(VulkanSecondaryCommandBufferPoolWaste) \
     PROC(VulkanWriteDescriptorSetCount)         \
-    PROC(VulkanDescriptorSetAllocations)        \
-    PROC(VulkanShaderBufferDSHitRate)           \
-    PROC(VulkanDynamicBufferAllocations)
+    PROC(VulkanDescriptorSetAllocations)
 
 }  

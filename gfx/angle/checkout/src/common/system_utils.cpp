@@ -10,10 +10,6 @@
 
 #include <stdlib.h>
 
-#if defined(ANGLE_PLATFORM_ANDROID)
-#    include <sys/system_properties.h>
-#endif
-
 namespace angle
 {
 std::string GetExecutableName()
@@ -52,24 +48,33 @@ std::string GetEnvironmentVarOrAndroidProperty(const char *variableName, const c
 std::string GetEnvironmentVarOrUnCachedAndroidProperty(const char *variableName,
                                                        const char *propertyName)
 {
-#if defined(ANGLE_PLATFORM_ANDROID) && __ANDROID_API__ >= 26
-    std::string propertyValue;
+#if defined(ANGLE_PLATFORM_ANDROID) && __ANDROID_API__ >= 21
+    std::string sanitizedPropertyName = propertyName;
+    sanitizedPropertyName.erase(
+        std::remove(sanitizedPropertyName.begin(), sanitizedPropertyName.end(), '\''),
+        sanitizedPropertyName.end());
 
-    const prop_info *propertyInfo = __system_property_find(propertyName);
-    if (propertyInfo != nullptr)
+    std::string command("getprop '");
+    command += sanitizedPropertyName;
+    command += "'";
+
+    
+    constexpr int kStreamSize = 64;
+    char stream[kStreamSize]  = {};
+    FILE *pipe                = popen(command.c_str(), "r");
+    if (pipe != nullptr)
     {
-        __system_property_read_callback(
-            propertyInfo,
-            [](void *cookie, const char *, const char *value, unsigned) {
-                auto propertyValue = reinterpret_cast<std::string *>(cookie);
-                *propertyValue     = value;
-            },
-            &propertyValue);
+        fgets(stream, kStreamSize, pipe);
+        pclose(pipe);
     }
 
     
-    SetEnvironmentVar(variableName, propertyValue.c_str());
-    return propertyValue;
+    std::string value(stream);
+    value.erase(value.find_last_not_of(" \n\r\t") + 1);
+
+    
+    SetEnvironmentVar(variableName, value.c_str());
+    return value;
 #endif  
     
     return GetEnvironmentVar(variableName);

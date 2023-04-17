@@ -24,8 +24,6 @@ struct ValidateASTOptions
     
     bool validateSingleParent = true;
     
-    bool validateVariableReferences = true;
-    
     
     
     bool validateFunctionCall = true;  
@@ -44,13 +42,11 @@ struct ValidateASTOptions
     bool validateUniqueFunctions = true;  
     
     
-    
-    
-    bool validateStructUsage = true;
+    bool validateStructUsage = true;  
     
     bool validateExpressionTypes = true;  
     
-    bool validateMultiDeclarations = false;
+    bool validateMultiDeclarations = false;  
 };
 
 

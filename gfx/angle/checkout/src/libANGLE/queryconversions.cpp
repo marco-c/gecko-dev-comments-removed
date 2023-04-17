@@ -220,9 +220,7 @@ void CastStateValues(const Context *context,
         }
     }
     else
-    {
-        WARN() << "Application querying parameter that does not exist.";
-    }
+        UNREACHABLE();
 }
 
 

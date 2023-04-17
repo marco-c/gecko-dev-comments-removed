@@ -389,8 +389,6 @@ bool ValidateES2CopyTexImageParameters(const Context *context,
         framebuffer->getReadColorAttachment()->getFormat().info->sizedInternalFormat;
     const auto &formatInfo = *textureFormat.info;
 
-    ASSERT(!formatInfo.compressed);
-
     
     if (isSubImage)
     {
@@ -469,6 +467,22 @@ bool ValidateES2CopyTexImageParameters(const Context *context,
                     return false;
                 }
                 break;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE:
+            case GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE:
+            case GL_ETC1_RGB8_OES:
+            case GL_ETC1_RGB8_LOSSY_DECODE_ANGLE:
+            case GL_COMPRESSED_RGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_RGBA_BPTC_UNORM_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT:
+            case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT_EXT:
+            case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT_EXT:
+                context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                return false;
             case GL_DEPTH_COMPONENT:
             case GL_DEPTH_STENCIL_OES:
                 context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
@@ -544,6 +558,73 @@ bool ValidateES2CopyTexImageParameters(const Context *context,
                     return false;
                 }
                 break;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+                if (context->getExtensions().textureCompressionDXT1)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE:
+                if (context->getExtensions().textureCompressionDXT3)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE:
+                if (context->getExtensions().textureCompressionDXT5)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_ETC1_RGB8_OES:
+                if (context->getExtensions().compressedETC1RGB8TextureOES)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_ETC1_RGB8_LOSSY_DECODE_ANGLE:
+            case GL_COMPRESSED_RGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+                if (context->getExtensions().lossyETCDecode)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG:
+            case GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG:
+            case GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG:
+            case GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG:
+                if (context->getExtensions().compressedTexturePVRTC)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT:
+                if (context->getExtensions().compressedTexturePVRTCsRGB)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
             case GL_DEPTH_COMPONENT:
             case GL_DEPTH_COMPONENT16:
             case GL_DEPTH_COMPONENT32_OES:
@@ -630,8 +711,8 @@ bool ValidCap(const Context *context, GLenum cap, bool queryOnly)
         case GL_CLIP_DISTANCE5_EXT:
         case GL_CLIP_DISTANCE6_EXT:
         case GL_CLIP_DISTANCE7_EXT:
-            if (context->getExtensions().clipDistanceAPPLE ||
-                context->getExtensions().clipCullDistanceEXT)
+            if (context->getClientVersion() >= Version(2, 0) &&
+                context->getExtensions().clipDistanceAPPLE)
             {
                 return true;
             }
@@ -718,6 +799,130 @@ bool IsValidESSLString(const char *str, size_t len)
         if (!IsValidESSLCharacter(str[i]))
         {
             return false;
+        }
+    }
+
+    return true;
+}
+
+bool IsValidESSLShaderSourceString(const char *str, size_t len, bool lineContinuationAllowed)
+{
+    enum class ParseState
+    {
+        
+        
+        
+        BEGINING_OF_LINE,
+
+        
+        
+        MIDDLE_OF_LINE,
+
+        
+        
+        
+        IN_PREPROCESSOR_DIRECTIVE,
+
+        
+        
+        IN_SINGLE_LINE_COMMENT,
+
+        
+        
+        IN_MULTI_LINE_COMMENT
+    };
+
+    ParseState state = ParseState::BEGINING_OF_LINE;
+    size_t pos       = 0;
+
+    while (pos < len)
+    {
+        char c    = str[pos];
+        char next = pos + 1 < len ? str[pos + 1] : 0;
+
+        
+        if (c == '\n' || c == '\r')
+        {
+            if (state != ParseState::IN_MULTI_LINE_COMMENT)
+            {
+                state = ParseState::BEGINING_OF_LINE;
+            }
+
+            pos++;
+            continue;
+        }
+
+        switch (state)
+        {
+            case ParseState::BEGINING_OF_LINE:
+                if (c == ' ')
+                {
+                    
+                    pos++;
+                }
+                else if (c == '#')
+                {
+                    state = ParseState::IN_PREPROCESSOR_DIRECTIVE;
+                    pos++;
+                }
+                else
+                {
+                    
+                    state = ParseState::MIDDLE_OF_LINE;
+                }
+                break;
+
+            case ParseState::MIDDLE_OF_LINE:
+                if (c == '/' && next == '/')
+                {
+                    state = ParseState::IN_SINGLE_LINE_COMMENT;
+                    pos++;
+                }
+                else if (c == '/' && next == '*')
+                {
+                    state = ParseState::IN_MULTI_LINE_COMMENT;
+                    pos++;
+                }
+                else if (lineContinuationAllowed && c == '\\' && (next == '\n' || next == '\r'))
+                {
+                    
+                }
+                else if (!IsValidESSLCharacter(c))
+                {
+                    return false;
+                }
+                pos++;
+                break;
+
+            case ParseState::IN_PREPROCESSOR_DIRECTIVE:
+                
+                
+                if (!lineContinuationAllowed && c == '\\')
+                {
+                    return false;
+                }
+                pos++;
+                break;
+
+            case ParseState::IN_SINGLE_LINE_COMMENT:
+                
+                
+                
+                if (c == '\\' && (next == '\n' || next == '\r'))
+                {
+                    pos++;
+                }
+                pos++;
+                break;
+
+            case ParseState::IN_MULTI_LINE_COMMENT:
+                if (c == '*' && next == '/')
+                {
+                    state = ParseState::MIDDLE_OF_LINE;
+                    pos++;
+                }
+                pos++;
+                break;
         }
     }
 
@@ -1231,6 +1436,77 @@ bool ValidateES2TexImageParametersBase(const Context *context,
 
         switch (format)
         {
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+                if (context->getExtensions().textureCompressionDXT1)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                else
+                {
+                    context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                    return false;
+                }
+                break;
+            case GL_COMPRESSED_RGBA_S3TC_DXT3_ANGLE:
+                if (context->getExtensions().textureCompressionDXT3)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_RGBA_S3TC_DXT5_ANGLE:
+                if (context->getExtensions().textureCompressionDXT5)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_ETC1_RGB8_OES:
+                if (context->getExtensions().compressedETC1RGB8TextureOES)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_ETC1_RGB8_LOSSY_DECODE_ANGLE:
+            case GL_COMPRESSED_RGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+            case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_LOSSY_DECODE_ETC2_ANGLE:
+                if (context->getExtensions().lossyETCDecode)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG:
+            case GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG:
+            case GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG:
+            case GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG:
+                if (context->getExtensions().compressedTexturePVRTC)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
+            case GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT:
+            case GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT:
+                if (context->getExtensions().compressedTexturePVRTCsRGB)
+                {
+                    context->validationError(GL_INVALID_OPERATION, kInvalidFormat);
+                    return false;
+                }
+                context->validationError(GL_INVALID_ENUM, kEnumNotSupported);
+                return false;
             case GL_DEPTH_COMPONENT:
             case GL_DEPTH_STENCIL_OES:
                 if (!context->getExtensions().depthTextureANGLE &&
@@ -2465,7 +2741,7 @@ bool ValidateBlitFramebufferANGLE(const Context *context,
                                   GLbitfield mask,
                                   GLenum filter)
 {
-    if (!context->getExtensions().framebufferBlitANGLE)
+    if (!context->getExtensions().framebufferBlit)
     {
         context->validationError(GL_INVALID_OPERATION, kBlitExtensionNotAvailable);
         return false;
@@ -2580,28 +2856,6 @@ bool ValidateBlitFramebufferANGLE(const Context *context,
                 }
             }
         }
-    }
-
-    return ValidateBlitFramebufferParameters(context, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0,
-                                             dstX1, dstY1, mask, filter);
-}
-
-bool ValidateBlitFramebufferNV(const Context *context,
-                               GLint srcX0,
-                               GLint srcY0,
-                               GLint srcX1,
-                               GLint srcY1,
-                               GLint dstX0,
-                               GLint dstY0,
-                               GLint dstX1,
-                               GLint dstY1,
-                               GLbitfield mask,
-                               GLenum filter)
-{
-    if (!context->getExtensions().framebufferBlitANGLE)
-    {
-        context->validationError(GL_INVALID_OPERATION, kBlitExtensionNotAvailable);
-        return false;
     }
 
     return ValidateBlitFramebufferParameters(context, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0,
@@ -3465,7 +3719,7 @@ bool ValidateCreateShader(const Context *context, ShaderType type)
             break;
 
         case ShaderType::Compute:
-            if (context->getClientVersion() < ES_3_1)
+            if (context->getClientVersion() < Version(3, 1))
             {
                 context->validationError(GL_INVALID_ENUM, kES31Required);
                 return false;
@@ -3473,31 +3727,12 @@ bool ValidateCreateShader(const Context *context, ShaderType type)
             break;
 
         case ShaderType::Geometry:
-            if (!context->getExtensions().geometryShader && context->getClientVersion() < ES_3_2)
+            if (!context->getExtensions().geometryShader)
             {
                 context->validationError(GL_INVALID_ENUM, kInvalidShaderType);
                 return false;
             }
             break;
-
-        case ShaderType::TessControl:
-            if (!context->getExtensions().tessellationShaderEXT &&
-                context->getClientVersion() < ES_3_2)
-            {
-                context->validationError(GL_INVALID_ENUM, kInvalidShaderType);
-                return false;
-            }
-            break;
-
-        case ShaderType::TessEvaluation:
-            if (!context->getExtensions().tessellationShaderEXT &&
-                context->getClientVersion() < ES_3_2)
-            {
-                context->validationError(GL_INVALID_ENUM, kInvalidShaderType);
-                return false;
-            }
-            break;
-
         default:
             context->validationError(GL_INVALID_ENUM, kInvalidShaderType);
             return false;
@@ -3709,7 +3944,8 @@ bool ValidateAttachShader(const Context *context, ShaderProgramID program, Shade
         return false;
     }
 
-    if (programObject->getAttachedShader(shaderObject->getType()))
+    if (programObject->getAttachedShader(shaderObject->getType()) &&
+        !programObject->getState().isShaderMarkedForDetach(shaderObject->getType()))
     {
         context->validationError(GL_INVALID_OPERATION, kShaderAttachmentHasShader);
         return false;
@@ -3758,12 +3994,38 @@ bool ValidateBindAttribLocation(const Context *context,
 
 bool ValidateBindFramebuffer(const Context *context, GLenum target, FramebufferID framebuffer)
 {
-    return ValidateBindFramebufferBase(context, target, framebuffer);
+    if (!ValidFramebufferTarget(context, target))
+    {
+        context->validationError(GL_INVALID_ENUM, kInvalidFramebufferTarget);
+        return false;
+    }
+
+    if (!context->getState().isBindGeneratesResourceEnabled() &&
+        !context->isFramebufferGenerated(framebuffer))
+    {
+        context->validationError(GL_INVALID_OPERATION, kObjectNotGenerated);
+        return false;
+    }
+
+    return true;
 }
 
 bool ValidateBindRenderbuffer(const Context *context, GLenum target, RenderbufferID renderbuffer)
 {
-    return ValidateBindRenderbufferBase(context, target, renderbuffer);
+    if (target != GL_RENDERBUFFER)
+    {
+        context->validationError(GL_INVALID_ENUM, kInvalidRenderbufferTarget);
+        return false;
+    }
+
+    if (!context->getState().isBindGeneratesResourceEnabled() &&
+        !context->isRenderbufferGenerated(renderbuffer))
+    {
+        context->validationError(GL_INVALID_OPERATION, kObjectNotGenerated);
+        return false;
+    }
+
+    return true;
 }
 
 static bool ValidBlendEquationMode(const Context *context, GLenum mode)
@@ -3897,14 +4159,6 @@ bool ValidateGetString(const Context *context, GLenum name)
 
         case GL_REQUESTABLE_EXTENSIONS_ANGLE:
             if (!context->getExtensions().requestExtension)
-            {
-                context->validationError(GL_INVALID_ENUM, kInvalidName);
-                return false;
-            }
-            break;
-
-        case GL_SERIALIZED_CONTEXT_STRING_ANGLE:
-            if (!context->getExtensions().getSerializedContextStringANGLE)
             {
                 context->validationError(GL_INVALID_ENUM, kInvalidName);
                 return false;
@@ -4694,6 +4948,25 @@ bool ValidateShaderSource(const Context *context,
         return false;
     }
 
+    
+    
+    if (context->getExtensions().webglCompatibility)
+    {
+        for (GLsizei i = 0; i < count; i++)
+        {
+            size_t len =
+                (length && length[i] >= 0) ? static_cast<size_t>(length[i]) : strlen(string[i]);
+
+            
+            if (!IsValidESSLShaderSourceString(string[i], len,
+                                               context->getClientVersion() >= ES_3_0))
+            {
+                context->validationError(GL_INVALID_VALUE, kShaderSourceInvalidCharacters);
+                return false;
+            }
+        }
+    }
+
     Shader *shaderObject = GetValidShader(context, shader);
     if (!shaderObject)
     {
@@ -5124,8 +5397,20 @@ bool ValidateFramebufferRenderbuffer(const Context *context,
                                      GLenum renderbuffertarget,
                                      RenderbufferID renderbuffer)
 {
-    return ValidateFramebufferRenderbufferBase(context, target, attachment, renderbuffertarget,
-                                               renderbuffer);
+    if (!ValidFramebufferTarget(context, target))
+    {
+        context->validationError(GL_INVALID_ENUM, kInvalidFramebufferTarget);
+        return false;
+    }
+
+    if (renderbuffertarget != GL_RENDERBUFFER && renderbuffer.value != 0)
+    {
+        context->validationError(GL_INVALID_ENUM, kInvalidRenderbufferTarget);
+        return false;
+    }
+
+    return ValidateFramebufferRenderbufferParameters(context, target, attachment,
+                                                     renderbuffertarget, renderbuffer);
 }
 
 bool ValidateFramebufferTexture2D(const Context *context,
@@ -5224,28 +5509,6 @@ bool ValidateFramebufferTexture2D(const Context *context,
                     return false;
                 }
                 if (tex->getType() != TextureType::_2DMultisample)
-                {
-                    context->validationError(GL_INVALID_OPERATION, kTextureTargetMismatch);
-                    return false;
-                }
-            }
-            break;
-
-            case TextureTarget::External:
-            {
-                if (!context->getExtensions().yuvTargetEXT)
-                {
-                    context->validationError(GL_INVALID_OPERATION, kYUVTargetExtensionRequired);
-                    return false;
-                }
-
-                if (attachment != GL_COLOR_ATTACHMENT0)
-                {
-                    context->validationError(GL_INVALID_OPERATION, kInvalidAttachment);
-                    return false;
-                }
-
-                if (tex->getType() != TextureType::External)
                 {
                     context->validationError(GL_INVALID_OPERATION, kTextureTargetMismatch);
                     return false;
@@ -5353,7 +5616,95 @@ bool ValidateGenTextures(const Context *context, GLint n, const TextureID *textu
 
 bool ValidateGenerateMipmap(const Context *context, TextureType target)
 {
-    return ValidateGenerateMipmapBase(context, target);
+    if (!ValidTextureTarget(context, target))
+    {
+        context->validationError(GL_INVALID_ENUM, kInvalidTextureTarget);
+        return false;
+    }
+
+    Texture *texture = context->getTextureByType(target);
+
+    if (texture == nullptr)
+    {
+        context->validationError(GL_INVALID_OPERATION, kTextureNotBound);
+        return false;
+    }
+
+    const GLuint effectiveBaseLevel = texture->getTextureState().getEffectiveBaseLevel();
+
+    
+    
+    if (effectiveBaseLevel >= IMPLEMENTATION_MAX_TEXTURE_LEVELS)
+    {
+        context->validationError(GL_INVALID_OPERATION, kBaseLevelOutOfRange);
+        return false;
+    }
+
+    TextureTarget baseTarget = (target == TextureType::CubeMap)
+                                   ? TextureTarget::CubeMapPositiveX
+                                   : NonCubeTextureTypeToTarget(target);
+    const auto &format = *(texture->getFormat(baseTarget, effectiveBaseLevel).info);
+    if (format.sizedInternalFormat == GL_NONE || format.compressed || format.depthBits > 0 ||
+        format.stencilBits > 0)
+    {
+        context->validationError(GL_INVALID_OPERATION, kGenerateMipmapNotAllowed);
+        return false;
+    }
+
+    
+    bool formatUnsized = !format.sized;
+    bool formatColorRenderableAndFilterable =
+        format.filterSupport(context->getClientVersion(), context->getExtensions()) &&
+        format.textureAttachmentSupport(context->getClientVersion(), context->getExtensions());
+    if (!formatUnsized && !formatColorRenderableAndFilterable)
+    {
+        context->validationError(GL_INVALID_OPERATION, kGenerateMipmapNotAllowed);
+        return false;
+    }
+
+    
+    
+    if (format.colorEncoding == GL_SRGB && format.format == GL_RGB)
+    {
+        context->validationError(GL_INVALID_OPERATION, kGenerateMipmapNotAllowed);
+        return false;
+    }
+
+    
+    
+    if (context->getClientVersion() < Version(3, 0) && format.colorEncoding == GL_SRGB)
+    {
+        context->validationError(GL_INVALID_OPERATION, kGenerateMipmapNotAllowed);
+        return false;
+    }
+
+    
+    if (context->getClientVersion() < Version(3, 0) && !context->getExtensions().textureNPOTOES &&
+        (!isPow2(static_cast<int>(texture->getWidth(baseTarget, 0))) ||
+         !isPow2(static_cast<int>(texture->getHeight(baseTarget, 0)))))
+    {
+        ASSERT(target == TextureType::_2D || target == TextureType::Rectangle ||
+               target == TextureType::CubeMap);
+        context->validationError(GL_INVALID_OPERATION, kTextureNotPow2);
+        return false;
+    }
+
+    
+    if (target == TextureType::CubeMap && !texture->getTextureState().isCubeComplete())
+    {
+        context->validationError(GL_INVALID_OPERATION, kCubemapIncomplete);
+        return false;
+    }
+
+    if (context->getExtensions().webglCompatibility &&
+        (texture->getWidth(baseTarget, effectiveBaseLevel) == 0 ||
+         texture->getHeight(baseTarget, effectiveBaseLevel) == 0))
+    {
+        context->validationError(GL_INVALID_OPERATION, kGenerateMipmapZeroSize);
+        return false;
+    }
+
+    return true;
 }
 
 bool ValidateGetBufferParameteriv(const Context *context,
@@ -6027,11 +6378,6 @@ bool ValidateFramebufferTexture2DMultisampleEXT(const Context *context,
         return false;
     }
 
-    if (!ValidateFramebufferTextureBase(context, target, attachment, texture, level))
-    {
-        return false;
-    }
-
     
     
     
@@ -6045,6 +6391,11 @@ bool ValidateFramebufferTexture2DMultisampleEXT(const Context *context,
             context->validationError(GL_INVALID_OPERATION, kSamplesOutOfRange);
             return false;
         }
+    }
+
+    if (!ValidateFramebufferTextureBase(context, target, attachment, texture, level))
+    {
+        return false;
     }
 
     
@@ -6144,12 +6495,6 @@ void RecordBindTextureTypeError(const Context *context, TextureType target)
 
         case TextureType::VideoImage:
             ASSERT(!context->getExtensions().webglVideoTexture);
-            context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
-            break;
-
-        case TextureType::Buffer:
-            ASSERT(!context->getExtensions().textureBufferOES &&
-                   !context->getExtensions().textureBufferEXT);
             context->validationError(GL_INVALID_ENUM, kExtensionNotEnabled);
             break;
 

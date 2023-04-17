@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef LIBANGLE_VALIDATION_GL12_AUTOGEN_H_
+#define LIBANGLE_VALIDATION_GL12_AUTOGEN_H_
+
+#include "common/PackedEnums.h"
+
+namespace gl
+{
+class Context;
+
+}  
+
+#endif  

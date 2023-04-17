@@ -258,7 +258,8 @@ void TOutputGLSLBase::writeLayoutQualifier(TIntermTyped *variable)
 
     if (type.getBasicType() == EbtInterfaceBlock)
     {
-        declareInterfaceBlockLayout(type);
+        const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
+        declareInterfaceBlockLayout(interfaceBlock);
         return;
     }
 
@@ -396,7 +397,7 @@ void TOutputGLSLBase::writeVariableType(const TType &type,
     }
 
     
-    if (type.isStructSpecifier())
+    if (type.getBasicType() == EbtStruct && !structDeclared(type.getStruct()))
     {
         const TStructure *structure = type.getStruct();
 
@@ -404,7 +405,8 @@ void TOutputGLSLBase::writeVariableType(const TType &type,
     }
     else if (type.getBasicType() == EbtInterfaceBlock)
     {
-        declareInterfaceBlock(type);
+        const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
+        declareInterfaceBlock(interfaceBlock);
     }
     else
     {
@@ -1089,8 +1091,7 @@ bool TOutputGLSLBase::visitDeclaration(Visit visit, TIntermDeclaration *node)
         const TIntermSequence &sequence = *(node->getSequence());
         TIntermTyped *variable          = sequence.front()->getAsTyped();
         TIntermSymbol *symbolNode       = variable->getAsSymbolNode();
-        if (!symbolNode || (symbolNode->getName() != "gl_ClipDistance" &&
-                            symbolNode->getName() != "gl_CullDistance"))
+        if (!symbolNode || symbolNode->getName() != "gl_ClipDistance")
         {
             
             writeLayoutQualifier(variable);
@@ -1279,6 +1280,17 @@ ImmutableString TOutputGLSLBase::hashFunctionNameIfNeeded(const TFunction *func)
     }
 }
 
+bool TOutputGLSLBase::structDeclared(const TStructure *structure) const
+{
+    ASSERT(structure);
+    if (structure->symbolType() == SymbolType::Empty)
+    {
+        return false;
+    }
+
+    return (mDeclaredStructs.count(structure->uniqueId().get()) > 0);
+}
+
 void TOutputGLSLBase::declareStruct(const TStructure *structure)
 {
     TInfoSinkBase &out = objSink();
@@ -1302,20 +1314,16 @@ void TOutputGLSLBase::declareStruct(const TStructure *structure)
         out << ";\n";
     }
     out << "}";
+
+    if (structure->symbolType() != SymbolType::Empty)
+    {
+        mDeclaredStructs.insert(structure->uniqueId().get());
+    }
 }
 
-void TOutputGLSLBase::declareInterfaceBlockLayout(const TType &type)
+void TOutputGLSLBase::declareInterfaceBlockLayout(const TInterfaceBlock *interfaceBlock)
 {
-    
-    
-    
-    if (IsShaderIoBlock(type.getQualifier()))
-    {
-        return;
-    }
-
-    const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
-    TInfoSinkBase &out                    = objSink();
+    TInfoSinkBase &out = objSink();
 
     out << "layout(";
 
@@ -1353,56 +1361,20 @@ void TOutputGLSLBase::declareInterfaceBlockLayout(const TType &type)
     out << ") ";
 }
 
-const char *getVariableInterpolation(TQualifier qualifier)
+void TOutputGLSLBase::declareInterfaceBlock(const TInterfaceBlock *interfaceBlock)
 {
-    switch (qualifier)
-    {
-        case EvqSmoothOut:
-            return "smooth out ";
-        case EvqFlatOut:
-            return "flat out ";
-        case EvqNoPerspectiveOut:
-            return "noperspective out ";
-        case EvqCentroidOut:
-            return "centroid out ";
-        case EvqSmoothIn:
-            return "smooth in ";
-        case EvqFlatIn:
-            return "flat in ";
-        case EvqNoPerspectiveIn:
-            return "noperspective in ";
-        case EvqCentroidIn:
-            return "centroid in ";
-        default:
-            break;
-    }
-    return nullptr;
-}
-
-void TOutputGLSLBase::declareInterfaceBlock(const TType &type)
-{
-    const TInterfaceBlock *interfaceBlock = type.getInterfaceBlock();
-    TInfoSinkBase &out                    = objSink();
+    TInfoSinkBase &out = objSink();
 
     out << hashName(interfaceBlock) << "{\n";
     const TFieldList &fields = interfaceBlock->fields();
     for (const TField *field : fields)
     {
-        if (!IsShaderIoBlock(type.getQualifier()) && type.getQualifier() != EvqPatchIn &&
-            type.getQualifier() != EvqPatchOut)
-        {
-            writeFieldLayoutQualifier(field);
-        }
+        writeFieldLayoutQualifier(field);
         out << getMemoryQualifiers(*field->type());
+
         if (writeVariablePrecision(field->type()->getPrecision()))
             out << " ";
-
-        const char *qualifier = getVariableInterpolation(field->type()->getQualifier());
-        if (qualifier != nullptr)
-            out << qualifier;
-
         out << getTypeName(*field->type()) << " " << hashFieldName(field);
-
         if (field->type()->isArray())
             out << ArrayString(*field->type());
         out << ";\n";
@@ -1455,40 +1427,6 @@ void WriteGeometryShaderLayoutQualifiers(TInfoSinkBase &out,
             out << "max_vertices = " << maxVertices;
         }
         out << ") out;\n";
-    }
-}
-
-void WriteTessControlShaderLayoutQualifiers(TInfoSinkBase &out, int inputVertices)
-{
-    if (inputVertices != 0)
-    {
-        out << "layout (vertices = " << inputVertices << ") out;\n";
-    }
-}
-
-void WriteTessEvaluationShaderLayoutQualifiers(TInfoSinkBase &out,
-                                               sh::TLayoutTessEvaluationType inputPrimitive,
-                                               sh::TLayoutTessEvaluationType inputVertexSpacing,
-                                               sh::TLayoutTessEvaluationType inputOrdering,
-                                               sh::TLayoutTessEvaluationType inputPoint)
-{
-    if (inputPrimitive != EtetUndefined)
-    {
-        out << "layout (";
-        out << getTessEvaluationShaderTypeString(inputPrimitive);
-        if (inputVertexSpacing != EtetUndefined)
-        {
-            out << ", " << getTessEvaluationShaderTypeString(inputVertexSpacing);
-        }
-        if (inputOrdering != EtetUndefined)
-        {
-            out << ", " << getTessEvaluationShaderTypeString(inputOrdering);
-        }
-        if (inputPoint != EtetUndefined)
-        {
-            out << ", " << getTessEvaluationShaderTypeString(inputPoint);
-        }
-        out << ") in;\n";
     }
 }
 

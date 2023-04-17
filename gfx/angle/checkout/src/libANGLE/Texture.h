@@ -122,8 +122,8 @@ class TextureState final : private angle::NonCopyable
 
     bool isCubeComplete() const;
 
-    ANGLE_INLINE bool compatibleWithSamplerFormatForWebGL(SamplerFormat format,
-                                                          const SamplerState &samplerState) const
+    ANGLE_INLINE bool compatibleWithSamplerFormat(SamplerFormat format,
+                                                  const SamplerState &samplerState) const
     {
         if (!mCachedSamplerFormatValid ||
             mCachedSamplerCompareMode != samplerState.getCompareMode())
@@ -152,7 +152,6 @@ class TextureState final : private angle::NonCopyable
 
     
     const ImageDesc &getBaseLevelDesc() const;
-    const ImageDesc &getLevelZeroDesc() const;
 
     
     void setCrop(const Rectangle &rect);
@@ -172,11 +171,11 @@ class TextureState final : private angle::NonCopyable
 
     InitState getInitState() const { return mInitState; }
 
-    const OffsetBindingPointer<Buffer> &getBuffer() const { return mBuffer; }
-
   private:
     
     friend class Texture;
+    
+    friend class rx::TextureGL;
     friend bool operator==(const TextureState &a, const TextureState &b);
 
     bool computeSamplerCompleteness(const SamplerState &samplerState, const State &state) const;
@@ -330,15 +329,12 @@ class Texture final : public RefCountObject<TextureID>,
     void setBorderColor(const Context *context, const ColorGeneric &color);
     const ColorGeneric &getBorderColor() const;
 
-    angle::Result setBuffer(const Context *context, gl::Buffer *buffer, GLenum internalFormat);
-    angle::Result setBufferRange(const Context *context,
-                                 gl::Buffer *buffer,
-                                 GLenum internalFormat,
-                                 GLintptr offset,
-                                 GLsizeiptr size);
+    angle::Result setBuffer(const Context *context,
+                            gl::Buffer *buffer,
+                            GLenum internalFormat,
+                            GLintptr offset,
+                            GLsizeiptr size);
     const OffsetBindingPointer<Buffer> &getBuffer() const;
-
-    GLint getRequiredTextureImageUnits(const Context *context) const;
 
     const TextureState &getTextureState() const;
 
@@ -641,8 +637,6 @@ class Texture final : public RefCountObject<TextureID>,
     DirtyBits mDirtyBits;
     rx::TextureImpl *mTexture;
     angle::ObserverBinding mImplObserver;
-    
-    angle::ObserverBinding mBufferObserver;
 
     std::string mLabel;
 

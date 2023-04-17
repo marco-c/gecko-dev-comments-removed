@@ -39,7 +39,16 @@ class QueryImpl : angle::NonCopyable
 
     gl::QueryType getType() const { return mType; }
 
-  protected:
+    
+    bool isOcclusionQuery() const { return isAnySamplesQuery() || isAnySamplesConservativeQuery(); }
+    bool isAnySamplesQuery() const { return getType() == gl::QueryType::AnySamples; }
+
+    bool isAnySamplesConservativeQuery() const
+    {
+        return getType() == gl::QueryType::AnySamplesConservative;
+    }
+
+  private:
     gl::QueryType mType;
 };
 }  

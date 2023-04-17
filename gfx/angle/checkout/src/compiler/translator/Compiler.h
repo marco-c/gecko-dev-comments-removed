@@ -16,7 +16,6 @@
 
 #include <GLSLANG/ShaderVars.h>
 
-#include "common/PackedEnums.h"
 #include "compiler/translator/BuiltInFunctionEmulator.h"
 #include "compiler/translator/CallDAG.h"
 #include "compiler/translator/Diagnostics.h"
@@ -36,8 +35,6 @@ class TParseContext;
 #ifdef ANGLE_ENABLE_HLSL
 class TranslatorHLSL;
 #endif  
-
-using SpecConstUsageBits = angle::PackedEnumBitSet<vk::SpecConstUsage, uint32_t>;
 
 
 
@@ -103,7 +100,6 @@ class TCompiler : public TShHandleBase
 
     bool isEarlyFragmentTestsSpecified() const { return mEarlyFragmentTestsSpecified; }
     bool isEarlyFragmentTestsOptimized() const { return mEarlyFragmentTestsOptimized; }
-    SpecConstUsageBits getSpecConstUsageBits() const { return mSpecConstUsageBits; }
 
     bool isComputeShaderLocalSizeDeclared() const { return mComputeShaderLocalSizeDeclared; }
     const sh::WorkGroupSize &getComputeShaderLocalSize() const { return mComputeShaderLocalSize; }
@@ -123,6 +119,7 @@ class TCompiler : public TShHandleBase
     {
         return mShaderStorageBlocks;
     }
+    const std::vector<sh::InterfaceBlock> &getInBlocks() const { return mInBlocks; }
 
     ShHashFunction64 getHashFunction() const { return mResources.HashFunction; }
     NameMap &getNameMap() { return mNameMap; }
@@ -148,25 +145,6 @@ class TCompiler : public TShHandleBase
     }
 
     unsigned int getStructSize(const ShaderVariable &var) const;
-
-    int getTessControlShaderOutputVertices() const { return mTessControlShaderOutputVertices; }
-    TLayoutTessEvaluationType getTessEvaluationShaderInputPrimitiveType() const
-    {
-        return mTessEvaluationShaderInputPrimitiveType;
-    }
-    TLayoutTessEvaluationType getTessEvaluationShaderInputVertexSpacingType() const
-    {
-        return mTessEvaluationShaderInputVertexSpacingType;
-    }
-    TLayoutTessEvaluationType getTessEvaluationShaderInputOrderingType() const
-    {
-        return mTessEvaluationShaderInputOrderingType;
-    }
-    TLayoutTessEvaluationType getTessEvaluationShaderInputPointType() const
-    {
-        return mTessEvaluationShaderInputPointType;
-    }
-
     unsigned int getSharedMemorySize() const;
 
     sh::GLenum getShaderType() const { return mShaderType; }
@@ -213,12 +191,7 @@ class TCompiler : public TShHandleBase
     std::vector<sh::InterfaceBlock> mInterfaceBlocks;
     std::vector<sh::InterfaceBlock> mUniformBlocks;
     std::vector<sh::InterfaceBlock> mShaderStorageBlocks;
-
-    
-    ValidateASTOptions mValidateASTOptions;
-
-    
-    SpecConstUsageBits mSpecConstUsageBits;
+    std::vector<sh::InterfaceBlock> mInBlocks;
 
   private:
     
@@ -322,16 +295,12 @@ class TCompiler : public TShHandleBase
     TLayoutPrimitiveType mGeometryShaderOutputPrimitiveType;
 
     
-    int mTessControlShaderOutputVertices;
-    TLayoutTessEvaluationType mTessEvaluationShaderInputPrimitiveType;
-    TLayoutTessEvaluationType mTessEvaluationShaderInputVertexSpacingType;
-    TLayoutTessEvaluationType mTessEvaluationShaderInputOrderingType;
-    TLayoutTessEvaluationType mTessEvaluationShaderInputPointType;
-
-    
     NameMap mNameMap;
 
     TPragma mPragma;
+
+    
+    ValidateASTOptions mValidateASTOptions;
 
     ShCompileOptions mCompileOptions;
 };

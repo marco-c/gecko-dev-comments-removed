@@ -51,6 +51,11 @@ enum class BlockType
 {
     BLOCK_UNIFORM,
     BLOCK_BUFFER,
+
+    
+    
+    
+    BLOCK_IN
 };
 
 
@@ -100,8 +105,6 @@ struct ShaderVariable
     unsigned int getExternalSize() const;
 
     bool isStruct() const { return !fields.empty(); }
-    const std::string &getStructName() const { return structOrBlockName; }
-    void setStructName(const std::string &newName) { structOrBlockName = newName; }
 
     
     
@@ -125,6 +128,14 @@ struct ShaderVariable
     bool isBuiltIn() const;
     bool isEmulatedBuiltIn() const;
 
+    GLenum type;
+    GLenum precision;
+    std::string name;
+    std::string mappedName;
+
+    
+    std::vector<unsigned int> arraySizes;
+
     
     
     
@@ -136,26 +147,51 @@ struct ShaderVariable
         return hasParentArrayIndex() ? flattenedOffsetInParentArrays : 0;
     }
 
-    int getFlattenedOffsetInParentArrays() const { return flattenedOffsetInParentArrays; }
     void setParentArrayIndex(int indexIn) { flattenedOffsetInParentArrays = indexIn; }
 
     bool hasParentArrayIndex() const { return flattenedOffsetInParentArrays != -1; }
 
-    void resetEffectiveLocation();
-    void updateEffectiveLocation(const sh::ShaderVariable &parent);
+    
+    bool staticUse;
+    
+    
+    
+    bool active;
+    std::vector<ShaderVariable> fields;
+    std::string structName;
 
+    
+    bool isRowMajorLayout;
+
+    
+    int location;
+
+    
+    int binding;
     
     
     
     
     bool isSameUniformAtLinkTime(const ShaderVariable &other) const;
+    GLenum imageUnitFormat;
+    int offset;
+    bool readonly;
+    bool writeonly;
 
+    
+    
+    int index;
+
+    
     
     
     
     
     bool isSameInterfaceBlockFieldAtLinkTime(const ShaderVariable &other) const;
 
+    
+    InterpolationType interpolation;
+    bool isInvariant;
     
     
     
@@ -166,80 +202,12 @@ struct ShaderVariable
     bool isSameVaryingAtLinkTime(const ShaderVariable &other) const;
 
     
-    
-    bool isSameNameAtLinkTime(const ShaderVariable &other) const;
-
-    
-    
-    
-
-    GLenum type;
-    GLenum precision;
-    std::string name;
-    std::string mappedName;
-
-    
-    std::vector<unsigned int> arraySizes;
-
-    
-    bool staticUse;
-    
-    
-    
-    bool active;
-    std::vector<ShaderVariable> fields;
-    
-    
-    
-    std::string structOrBlockName;
-    std::string mappedStructOrBlockName;
-
-    
-    bool isRowMajorLayout;
-
-    
-    int location;
-
-    
-    
-    
-    
-    bool hasImplicitLocation;
-
-    
-    int binding;
-    GLenum imageUnitFormat;
-    int offset;
-    bool readonly;
-    bool writeonly;
-
-    
-    bool isFragmentInOut;
-
-    
-    
-    int index;
-
-    
-    bool yuv;
-
-    
-    InterpolationType interpolation;
-    bool isInvariant;
-    bool isShaderIOBlock;
-    bool isPatch;
-
-    
     bool texelFetchStaticUse;
 
   protected:
     bool isSameVariableAtLinkTime(const ShaderVariable &other,
                                   bool matchPrecision,
                                   bool matchName) const;
-
-    
-    
-    
 
     int flattenedOffsetInParentArrays;
 };

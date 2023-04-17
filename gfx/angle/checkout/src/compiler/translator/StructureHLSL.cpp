@@ -62,7 +62,7 @@ TString Define(const TStructure &structure,
             if (padHelper)
             {
                 string += padHelper->postPaddingString(fieldType, useHLSLRowMajorPacking,
-                                                       memberSize == 0, forcePadding);
+                                                       memberSize == 0 && forcePadding);
             }
         }
     }
@@ -90,12 +90,6 @@ TString WriteParameterList(const std::vector<TType> &parameters)
         }
     }
     return parameterList;
-}
-
-int GetElementPadding(int elementIndex, int alignment)
-{
-    const int paddingOffset = elementIndex % alignment;
-    return paddingOffset != 0 ? (alignment - paddingOffset) : 0;
 }
 
 }  
@@ -129,19 +123,9 @@ int Std140PaddingHelper::prePadding(const TType &type, bool forcePadding)
 {
     if (type.getBasicType() == EbtStruct || type.isMatrix() || type.isArray())
     {
-        if (forcePadding)
-        {
-            
-            const int forcePaddingCount = GetElementPadding(mElementIndex, 4);
-            mElementIndex               = 0;
-            return forcePaddingCount;
-        }
-        else
-        {
-            
-            mElementIndex = 0;
-            return 0;
-        }
+        
+        mElementIndex = 0;
+        return 0;
     }
 
     const GLenum glType     = GLVariableType(type);
@@ -149,19 +133,9 @@ int Std140PaddingHelper::prePadding(const TType &type, bool forcePadding)
 
     if (numComponents >= 4)
     {
-        if (forcePadding)
-        {
-            
-            const int forcePaddingCount = GetElementPadding(mElementIndex, 4);
-            mElementIndex               = numComponents % 4;
-            return forcePaddingCount;
-        }
-        else
-        {
-            
-            mElementIndex = 0;
-            return 0;
-        }
+        
+        mElementIndex = 0;
+        return 0;
     }
 
     if (mElementIndex + numComponents > 4)
@@ -169,7 +143,8 @@ int Std140PaddingHelper::prePadding(const TType &type, bool forcePadding)
         if (forcePadding)
         {
             
-            const int forcePaddingCount = GetElementPadding(mElementIndex, 4);
+            
+            const int forcePaddingCount = 4 - mElementIndex;
             mElementIndex               = numComponents;
             return forcePaddingCount;
         }
@@ -181,8 +156,9 @@ int Std140PaddingHelper::prePadding(const TType &type, bool forcePadding)
         }
     }
 
-    const int alignment    = numComponents == 3 ? 4 : numComponents;
-    const int paddingCount = GetElementPadding(mElementIndex, alignment);
+    const int alignment     = numComponents == 3 ? 4 : numComponents;
+    const int paddingOffset = (mElementIndex % alignment);
+    const int paddingCount  = (paddingOffset != 0 ? (alignment - paddingOffset) : 0);
 
     mElementIndex += paddingCount;
     mElementIndex += numComponents;
@@ -207,33 +183,23 @@ TString Std140PaddingHelper::prePaddingString(const TType &type, bool forcePaddi
 
 TString Std140PaddingHelper::postPaddingString(const TType &type,
                                                bool useHLSLRowMajorPacking,
-                                               bool isLastElement,
                                                bool forcePadding)
 {
     if (!type.isMatrix() && !type.isArray() && type.getBasicType() != EbtStruct)
     {
         if (forcePadding)
         {
-            const GLenum glType     = GLVariableType(type);
-            const int numComponents = gl::VariableComponentCount(glType);
-            if (isLastElement || (numComponents >= 4))
+            
+            
+            TString forcePaddingStr;
+            const int paddingOffset = mElementIndex % 4;
+            const int paddingCount  = paddingOffset != 0 ? (4 - paddingOffset) : 0;
+            for (int paddingIndex = 0; paddingIndex < paddingCount; paddingIndex++)
             {
-                
-                
-                
-                
-                
-                TString forcePaddingStr;
-                const int paddingCount = GetElementPadding(mElementIndex, 4);
-                for (int paddingIndex = 0; paddingIndex < paddingCount; paddingIndex++)
-                {
-                    forcePaddingStr += "    float pad_" + next() + ";\n";
-                }
-                mElementIndex = 0;
-                return forcePaddingStr;
+                forcePaddingStr += "    float pad_" + next() + ";\n";
             }
+            return forcePaddingStr;
         }
-
         return "";
     }
 

@@ -1,9 +1,30 @@
-#ifndef __gles2_gl32_h_
-#define __gles2_gl32_h_ 1
+#ifndef __gl32_h_
+#define __gl32_h_ 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,8 +64,8 @@ extern "C" {
 typedef khronos_int8_t GLbyte;
 typedef khronos_float_t GLclampf;
 typedef khronos_int32_t GLfixed;
-typedef khronos_int16_t GLshort;
-typedef khronos_uint16_t GLushort;
+typedef short GLshort;
+typedef unsigned short GLushort;
 typedef void GLvoid;
 typedef struct __GLsync *GLsync;
 typedef khronos_int64_t GLint64;
@@ -651,7 +672,7 @@ GL_APICALL void GL_APIENTRY glViewport (GLint x, GLint y, GLsizei width, GLsizei
 
 #ifndef GL_ES_VERSION_3_0
 #define GL_ES_VERSION_3_0 1
-typedef khronos_uint16_t GLhalf;
+typedef unsigned short GLhalf;
 #define GL_READ_BUFFER                    0x0C02
 #define GL_UNPACK_ROW_LENGTH              0x0CF2
 #define GL_UNPACK_SKIP_ROWS               0x0CF3

@@ -100,10 +100,10 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     
     
 
-    TIntermSequence texelFetchArguments;
+    TIntermSequence *texelFetchArguments = new TIntermSequence();
 
     
-    texelFetchArguments.push_back(sequence->at(0));
+    texelFetchArguments->push_back(sequence->at(0));
 
     
     TIntermTyped *texCoordNode = sequence->at(1)->getAsTyped();
@@ -116,14 +116,14 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     {
         
         
-        TIntermSequence constructOffsetIvecArguments;
-        constructOffsetIvecArguments.push_back(sequence->at(3)->getAsTyped());
+        TIntermSequence *constructOffsetIvecArguments = new TIntermSequence();
+        constructOffsetIvecArguments->push_back(sequence->at(3)->getAsTyped());
 
         TIntermTyped *zeroNode = CreateZeroNode(TType(EbtInt));
-        constructOffsetIvecArguments.push_back(zeroNode);
+        constructOffsetIvecArguments->push_back(zeroNode);
 
         offsetNode = TIntermAggregate::CreateConstructor(texCoordNode->getType(),
-                                                         &constructOffsetIvecArguments);
+                                                         constructOffsetIvecArguments);
         offsetNode->setLine(texCoordNode->getLine());
     }
     else
@@ -134,14 +134,14 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     
     TIntermBinary *add = new TIntermBinary(EOpAdd, texCoordNode, offsetNode);
     add->setLine(texCoordNode->getLine());
-    texelFetchArguments.push_back(add);
+    texelFetchArguments->push_back(add);
 
     
-    texelFetchArguments.push_back(sequence->at(2));
+    texelFetchArguments->push_back(sequence->at(2));
 
-    ASSERT(texelFetchArguments.size() == 3u);
+    ASSERT(texelFetchArguments->size() == 3u);
 
-    TIntermTyped *texelFetchNode = CreateBuiltInFunctionCallNode("texelFetch", &texelFetchArguments,
+    TIntermTyped *texelFetchNode = CreateBuiltInFunctionCallNode("texelFetch", texelFetchArguments,
                                                                  *symbolTable, shaderVersion);
     texelFetchNode->setLine(node->getLine());
 

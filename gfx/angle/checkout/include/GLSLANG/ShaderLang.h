@@ -26,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 257
+#define ANGLE_SH_VERSION 239
 
 enum ShShaderSpec
 {
@@ -38,8 +38,6 @@ enum ShShaderSpec
 
     SH_GLES3_1_SPEC,
     SH_WEBGL3_SPEC,
-
-    SH_GLES3_2_SPEC,
 
     SH_GL_CORE_SPEC,
     SH_GL_COMPATIBILITY_SPEC,
@@ -70,10 +68,11 @@ enum ShShaderOutput
     SH_HLSL_4_0_FL9_3_OUTPUT = 0x8B4A,  
 
     
-    SH_SPIRV_VULKAN_OUTPUT = 0x8B4B,
+    SH_GLSL_VULKAN_OUTPUT = 0x8B4B,
 
     
-    SH_SPIRV_METAL_OUTPUT = 0x8B4C,
+    
+    SH_GLSL_METAL_OUTPUT = 0x8B4C,
 };
 
 
@@ -89,7 +88,13 @@ const ShCompileOptions SH_LINE_DIRECTIVES        = UINT64_C(1) << 4;
 const ShCompileOptions SH_SOURCE_PATH            = UINT64_C(1) << 5;
 
 
-const ShCompileOptions SH_VALIDATE_AST = UINT64_C(1) << 6;
+
+
+
+
+
+
+const ShCompileOptions SH_DONT_REMOVE_INVARIANT_FOR_FRAGMENT_INPUT = UINT64_C(1) << 6;
 
 
 
@@ -160,67 +165,68 @@ const ShCompileOptions SH_REGENERATE_STRUCT_NAMES = UINT64_C(1) << 17;
 
 
 
-const ShCompileOptions SH_REWRITE_DO_WHILE_LOOPS = UINT64_C(1) << 18;
 
+const ShCompileOptions SH_DONT_PRUNE_UNUSED_FUNCTIONS = UINT64_C(1) << 18;
 
 
 
-const ShCompileOptions SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS = UINT64_C(1) << 19;
+const ShCompileOptions SH_REMOVE_POW_WITH_CONSTANT_EXPONENT = UINT64_C(1) << 19;
 
 
 
+const ShCompileOptions SH_REWRITE_DO_WHILE_LOOPS = UINT64_C(1) << 20;
 
-const ShCompileOptions SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL = UINT64_C(1) << 20;
 
 
 
+const ShCompileOptions SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS = UINT64_C(1) << 21;
 
-const ShCompileOptions SH_HLSL_GET_DIMENSIONS_IGNORES_BASE_LEVEL = UINT64_C(1) << 21;
 
 
 
-const ShCompileOptions SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH = UINT64_C(1) << 22;
+const ShCompileOptions SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL = UINT64_C(1) << 22;
 
 
 
-const ShCompileOptions SH_ADD_AND_TRUE_TO_LOOP_CONDITION = UINT64_C(1) << 23;
 
+const ShCompileOptions SH_HLSL_GET_DIMENSIONS_IGNORES_BASE_LEVEL = UINT64_C(1) << 23;
 
 
-const ShCompileOptions SH_REWRITE_INTEGER_UNARY_MINUS_OPERATOR = UINT64_C(1) << 24;
 
+const ShCompileOptions SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH = UINT64_C(1) << 24;
 
 
-const ShCompileOptions SH_EMULATE_ISNAN_FLOAT_FUNCTION = UINT64_C(1) << 25;
 
+const ShCompileOptions SH_ADD_AND_TRUE_TO_LOOP_CONDITION = UINT64_C(1) << 25;
 
 
 
+const ShCompileOptions SH_REWRITE_INTEGER_UNARY_MINUS_OPERATOR = UINT64_C(1) << 26;
 
 
 
-const ShCompileOptions SH_USE_UNUSED_STANDARD_SHARED_BLOCKS = UINT64_C(1) << 26;
+const ShCompileOptions SH_EMULATE_ISNAN_FLOAT_FUNCTION = UINT64_C(1) << 27;
 
 
 
-const ShCompileOptions SH_REWRITE_FLOAT_UNARY_MINUS_OPERATOR = UINT64_C(1) << 27;
 
 
 
-const ShCompileOptions SH_EMULATE_ATAN2_FLOAT_FUNCTION = UINT64_C(1) << 28;
 
+const ShCompileOptions SH_USE_UNUSED_STANDARD_SHARED_BLOCKS = UINT64_C(1) << 28;
 
 
-const ShCompileOptions SH_INITIALIZE_UNINITIALIZED_LOCALS = UINT64_C(1) << 29;
 
+const ShCompileOptions SH_REWRITE_FLOAT_UNARY_MINUS_OPERATOR = UINT64_C(1) << 29;
 
 
 
+const ShCompileOptions SH_EMULATE_ATAN2_FLOAT_FUNCTION = UINT64_C(1) << 30;
 
 
 
+const ShCompileOptions SH_INITIALIZE_UNINITIALIZED_LOCALS = UINT64_C(1) << 31;
 
-const ShCompileOptions SH_INITIALIZE_BUILTINS_FOR_INSTANCED_MULTIVIEW = UINT64_C(1) << 30;
 
 
 
@@ -228,114 +234,112 @@ const ShCompileOptions SH_INITIALIZE_BUILTINS_FOR_INSTANCED_MULTIVIEW = UINT64_C
 
 
 
+const ShCompileOptions SH_INITIALIZE_BUILTINS_FOR_INSTANCED_MULTIVIEW = UINT64_C(1) << 32;
 
 
-const ShCompileOptions SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER = UINT64_C(1) << 31;
 
 
 
-const ShCompileOptions SH_CLAMP_POINT_SIZE = UINT64_C(1) << 32;
 
 
 
 
+const ShCompileOptions SH_SELECT_VIEW_IN_NV_GLSL_VERTEX_SHADER = UINT64_C(1) << 33;
 
 
 
-const ShCompileOptions SH_REWRITE_VECTOR_SCALAR_ARITHMETIC = UINT64_C(1) << 33;
+const ShCompileOptions SH_CLAMP_POINT_SIZE = UINT64_C(1) << 34;
 
 
 
-const ShCompileOptions SH_DONT_USE_LOOPS_TO_INITIALIZE_VARIABLES = UINT64_C(1) << 34;
 
 
 
 
-const ShCompileOptions SH_SKIP_D3D_CONSTANT_REGISTER_ZERO = UINT64_C(1) << 35;
+const ShCompileOptions SH_REWRITE_VECTOR_SCALAR_ARITHMETIC = UINT64_C(1) << 35;
 
 
-const ShCompileOptions SH_CLAMP_FRAG_DEPTH = UINT64_C(1) << 36;
 
+const ShCompileOptions SH_DONT_USE_LOOPS_TO_INITIALIZE_VARIABLES = UINT64_C(1) << 36;
 
 
-const ShCompileOptions SH_REWRITE_REPEATED_ASSIGN_TO_SWIZZLED = UINT64_C(1) << 37;
 
 
-const ShCompileOptions SH_EMULATE_GL_DRAW_ID = UINT64_C(1) << 38;
+const ShCompileOptions SH_SKIP_D3D_CONSTANT_REGISTER_ZERO = UINT64_C(1) << 37;
 
 
+const ShCompileOptions SH_CLAMP_FRAG_DEPTH = UINT64_C(1) << 38;
 
 
-const ShCompileOptions SH_INIT_SHARED_VARIABLES = UINT64_C(1) << 39;
 
+const ShCompileOptions SH_REWRITE_REPEATED_ASSIGN_TO_SWIZZLED = UINT64_C(1) << 39;
 
 
+const ShCompileOptions SH_EMULATE_GL_DRAW_ID = UINT64_C(1) << 40;
 
 
 
-const ShCompileOptions SH_FORCE_ATOMIC_VALUE_RESOLUTION = UINT64_C(1) << 40;
 
+const ShCompileOptions SH_INIT_SHARED_VARIABLES = UINT64_C(1) << 41;
 
-const ShCompileOptions SH_EMULATE_GL_BASE_VERTEX_BASE_INSTANCE = UINT64_C(1) << 41;
 
 
 
 
-const ShCompileOptions SH_EMULATE_SEAMFUL_CUBE_MAP_SAMPLING = UINT64_C(1) << 42;
 
+const ShCompileOptions SH_FORCE_ATOMIC_VALUE_RESOLUTION = UINT64_C(1) << 42;
 
-const ShCompileOptions SH_TAKE_VIDEO_TEXTURE_AS_EXTERNAL_OES = UINT64_C(1) << 43;
 
+const ShCompileOptions SH_EMULATE_GL_BASE_VERTEX_BASE_INSTANCE = UINT64_C(1) << 43;
 
 
 
-const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 44;
 
+const ShCompileOptions SH_EMULATE_SEAMFUL_CUBE_MAP_SAMPLING = UINT64_C(1) << 44;
 
-const ShCompileOptions SH_REMOVE_DYNAMIC_INDEXING_OF_SWIZZLED_VECTOR = UINT64_C(1) << 45;
 
+const ShCompileOptions SH_TAKE_VIDEO_TEXTURE_AS_EXTERNAL_OES = UINT64_C(1) << 45;
 
-const ShCompileOptions SH_ALLOW_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER = UINT64_C(1) << 46;
 
+const ShCompileOptions SH_VALIDATE_AST = UINT64_C(1) << 46;
 
 
 
-const ShCompileOptions SH_ADD_BRESENHAM_LINE_RASTER_EMULATION = UINT64_C(1) << 47;
+const ShCompileOptions SH_USE_OLD_REWRITE_STRUCT_SAMPLERS = UINT64_C(1) << 47;
 
 
 
 
-const ShCompileOptions SH_DISABLE_ARB_TEXTURE_RECTANGLE = UINT64_C(1) << 48;
+const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 48;
 
 
+const ShCompileOptions SH_REMOVE_DYNAMIC_INDEXING_OF_SWIZZLED_VECTOR = UINT64_C(1) << 49;
 
-const ShCompileOptions SH_REWRITE_ROW_MAJOR_MATRICES = UINT64_C(1) << 49;
 
+const ShCompileOptions SH_ALLOW_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER = UINT64_C(1) << 50;
 
-const ShCompileOptions SH_IGNORE_PRECISION_QUALIFIERS = UINT64_C(1) << 50;
 
 
-const ShCompileOptions SH_EARLY_FRAGMENT_TESTS_OPTIMIZATION = UINT64_C(1) << 51;
 
+const ShCompileOptions SH_ADD_BRESENHAM_LINE_RASTER_EMULATION = UINT64_C(1) << 51;
 
-const ShCompileOptions SH_ADD_PRE_ROTATION = UINT64_C(1) << 52;
 
-const ShCompileOptions SH_FORCE_SHADER_PRECISION_HIGHP_TO_MEDIUMP = UINT64_C(1) << 53;
 
 
-const ShCompileOptions SH_USE_SPECIALIZATION_CONSTANT = UINT64_C(1) << 54;
+const ShCompileOptions SH_DISABLE_ARB_TEXTURE_RECTANGLE = UINT64_C(1) << 52;
 
 
-const ShCompileOptions SH_ADD_VULKAN_XFB_EMULATION_SUPPORT_CODE = UINT64_C(1) << 55;
 
+const ShCompileOptions SH_REWRITE_ROW_MAJOR_MATRICES = UINT64_C(1) << 53;
 
 
-const ShCompileOptions SH_ADD_VULKAN_XFB_EXTENSION_SUPPORT_CODE = UINT64_C(1) << 56;
+const ShCompileOptions SH_IGNORE_PRECISION_QUALIFIERS = UINT64_C(1) << 54;
 
 
+const ShCompileOptions SH_EARLY_FRAGMENT_TESTS_OPTIMIZATION = UINT64_C(1) << 55;
 
 
-const ShCompileOptions SH_INIT_FRAGMENT_OUTPUT_VARIABLES = UINT64_C(1) << 57;
+const ShCompileOptions SH_ADD_PRE_ROTATION = UINT64_C(1) << 56;
 
 
 enum ShArrayIndexClampingStrategy
@@ -380,7 +384,6 @@ struct ShBuiltInResources
     int EXT_shader_texture_lod;
     int WEBGL_debug_shader_precision;
     int EXT_shader_framebuffer_fetch;
-    int EXT_shader_framebuffer_fetch_non_coherent;
     int NV_shader_framebuffer_fetch;
     int NV_shader_noperspective_interpolation;
     int ARM_shader_framebuffer_fetch;
@@ -390,8 +393,6 @@ struct ShBuiltInResources
     int EXT_multisampled_render_to_texture2;
     int EXT_YUV_target;
     int EXT_geometry_shader;
-    int OES_shader_io_blocks;
-    int EXT_shader_io_blocks;
     int EXT_gpu_shader5;
     int EXT_shader_non_constant_global_initializers;
     int OES_texture_storage_multisample_2d_array;
@@ -406,11 +407,8 @@ struct ShBuiltInResources
     int EXT_shadow_samplers;
     int OES_shader_multisample_interpolation;
     int OES_shader_image_atomic;
-    int EXT_tessellation_shader;
     int OES_texture_buffer;
     int EXT_texture_buffer;
-    int OES_sample_variables;
-    int EXT_clip_cull_distance;
 
     
     
@@ -467,10 +465,6 @@ struct ShBuiltInResources
 
     
     int MaxImageUnits;
-
-    
-    
-    int MaxSamples;
 
     
     int MaxVertexImageUniforms;
@@ -555,34 +549,10 @@ struct ShBuiltInResources
     int MaxGeometryImageUniforms;
 
     
-    int MaxTessControlInputComponents;
-    int MaxTessControlOutputComponents;
-    int MaxTessControlTextureImageUnits;
-    int MaxTessControlUniformComponents;
-    int MaxTessControlTotalOutputComponents;
-    int MaxTessControlImageUniforms;
-    int MaxTessControlAtomicCounters;
-    int MaxTessControlAtomicCounterBuffers;
-
-    int MaxTessPatchComponents;
-    int MaxPatchVertices;
-    int MaxTessGenLevel;
-
-    int MaxTessEvaluationInputComponents;
-    int MaxTessEvaluationOutputComponents;
-    int MaxTessEvaluationTextureImageUnits;
-    int MaxTessEvaluationUniformComponents;
-    int MaxTessEvaluationImageUniforms;
-    int MaxTessEvaluationAtomicCounters;
-    int MaxTessEvaluationAtomicCounterBuffers;
-
-    
     int SubPixelBits;
 
     
     int MaxClipDistances;
-    int MaxCullDistances;
-    int MaxCombinedClipAndCullDistances;
 };
 
 
@@ -596,7 +566,6 @@ using ShHandle = void *;
 
 namespace sh
 {
-using BinaryBlob = std::vector<uint32_t>;
 
 
 
@@ -686,14 +655,7 @@ const std::string &GetInfoLog(const ShHandle handle);
 
 
 
-
 const std::string &GetObjectCode(const ShHandle handle);
-
-
-
-
-
-const BinaryBlob &GetObjectBinaryBlob(const ShHandle handle);
 
 
 
@@ -722,9 +684,6 @@ sh::WorkGroupSize GetComputeShaderLocalGroupSize(const ShHandle handle);
 int GetVertexShaderNumViews(const ShHandle handle);
 
 bool HasEarlyFragmentTestsOptimization(const ShHandle handle);
-
-
-uint32_t GetShaderSpecConstUsageBits(const ShHandle handle);
 
 
 
@@ -760,7 +719,6 @@ bool GetUniformBlockRegister(const ShHandle handle,
 
 bool ShouldUniformBlockUseStructuredBuffer(const ShHandle handle,
                                            const std::string &uniformBlockName);
-const std::set<std::string> *GetSlowCompilingUniformBlockSet(const ShHandle handle);
 
 
 
@@ -782,20 +740,11 @@ const std::set<std::string> *GetUsedImage2DFunctionNames(const ShHandle handle);
 bool HasValidGeometryShaderInputPrimitiveType(const ShHandle handle);
 bool HasValidGeometryShaderOutputPrimitiveType(const ShHandle handle);
 bool HasValidGeometryShaderMaxVertices(const ShHandle handle);
-bool HasValidTessGenMode(const ShHandle handle);
-bool HasValidTessGenSpacing(const ShHandle handle);
-bool HasValidTessGenVertexOrder(const ShHandle handle);
-bool HasValidTessGenPointMode(const ShHandle handle);
 GLenum GetGeometryShaderInputPrimitiveType(const ShHandle handle);
 GLenum GetGeometryShaderOutputPrimitiveType(const ShHandle handle);
 int GetGeometryShaderInvocations(const ShHandle handle);
 int GetGeometryShaderMaxVertices(const ShHandle handle);
 unsigned int GetShaderSharedMemorySize(const ShHandle handle);
-int GetTessControlShaderVertices(const ShHandle handle);
-GLenum GetTessGenMode(const ShHandle handle);
-GLenum GetTessGenSpacing(const ShHandle handle);
-GLenum GetTessGenVertexOrder(const ShHandle handle);
-GLenum GetTessGenPointMode(const ShHandle handle);
 
 
 
@@ -826,36 +775,8 @@ enum class SpecializationConstantId : uint32_t
 {
     LineRasterEmulation = 0,
     SurfaceRotation     = 1,
-    DrawableWidth       = 2,
-    DrawableHeight      = 3,
 
-    InvalidEnum = 4,
-    EnumCount   = InvalidEnum,
-};
-
-enum class SurfaceRotation : uint32_t
-{
-    Identity,
-    Rotated90Degrees,
-    Rotated180Degrees,
-    Rotated270Degrees,
-    FlippedIdentity,
-    FlippedRotated90Degrees,
-    FlippedRotated180Degrees,
-    FlippedRotated270Degrees,
-
-    InvalidEnum,
-    EnumCount = InvalidEnum,
-};
-
-enum class SpecConstUsage : uint32_t
-{
-    LineRasterEmulation = 0,
-    YFlip               = 1,
-    Rotation            = 2,
-    DrawableSize        = 3,
-
-    InvalidEnum = 4,
+    InvalidEnum = 2,
     EnumCount   = InvalidEnum,
 };
 
@@ -877,19 +798,6 @@ extern const char kAtomicCountersBlockName[];
 
 extern const char kLineRasterEmulationPosition[];
 
-
-extern const char kXfbEmulationGetOffsetsFunctionName[];
-extern const char kXfbEmulationCaptureFunctionName[];
-extern const char kXfbEmulationBufferBlockName[];
-extern const char kXfbEmulationBufferName[];
-extern const char kXfbEmulationBufferFieldName[];
-
-
-extern const char kXfbExtensionPositionOutName[];
-
-
-extern const char kInputAttachmentName[];
-
 }  
 
 namespace mtl
@@ -900,13 +808,6 @@ extern const char kCoverageMaskEnabledConstName[];
 
 extern const char kRasterizerDiscardEnabledConstName[];
 }  
-
-
-
-
-void InitializeGlslang();
-void FinalizeGlslang();
-
 }  
 
 #endif  

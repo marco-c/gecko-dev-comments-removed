@@ -673,7 +673,7 @@ class TIntermAggregate : public TIntermOperator, public TIntermAggregateBase
 class TIntermBlock : public TIntermNode, public TIntermAggregateBase
 {
   public:
-    TIntermBlock() : TIntermNode(), mIsTreeRoot(false) {}
+    TIntermBlock() : TIntermNode() {}
     ~TIntermBlock() override {}
 
     TIntermBlock *getAsBlock() override { return this; }
@@ -683,7 +683,6 @@ class TIntermBlock : public TIntermNode, public TIntermAggregateBase
     size_t getChildCount() const final;
     TIntermNode *getChildNode(size_t index) const final;
     bool replaceChildNode(TIntermNode *original, TIntermNode *replacement) override;
-    void replaceAllChildren(const TIntermSequence &newStatements);
 
     
     void appendStatement(TIntermNode *statement);
@@ -694,15 +693,8 @@ class TIntermBlock : public TIntermNode, public TIntermAggregateBase
 
     TIntermBlock *deepCopy() const override { return new TIntermBlock(*this); }
 
-    void setIsTreeRoot() { mIsTreeRoot = true; }
-    bool isTreeRoot() const { return mIsTreeRoot; }
-
   protected:
     TIntermSequence mStatements;
-
-    
-    
-    bool mIsTreeRoot;
 
   private:
     TIntermBlock(const TIntermBlock &);
@@ -801,23 +793,13 @@ class TIntermDeclaration : public TIntermNode, public TIntermAggregateBase
     TIntermSequence *getSequence() override { return &mDeclarators; }
     const TIntermSequence *getSequence() const override { return &mDeclarators; }
 
-    TIntermDeclaration *deepCopy() const override
+    TIntermNode *deepCopy() const override
     {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return new TIntermDeclaration(*this);
+        UNREACHABLE();
+        return nullptr;
     }
 
   protected:
-    TIntermDeclaration(const TIntermDeclaration &node);
-
     TIntermSequence mDeclarators;
 };
 

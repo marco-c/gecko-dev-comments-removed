@@ -39,14 +39,10 @@ class Thread : public LabeledObject
     EGLLabelKHR getLabel() const override;
 
     void setSuccess();
-
-    void setError(EGLint error,
+    void setError(const Error &error,
+                  const Debug *debug,
                   const char *command,
-                  const LabeledObject *object,
-                  const char *message);
-
-    
-    void setError(const Error &error, const char *command, const LabeledObject *object);
+                  const LabeledObject *object);
     EGLint getError() const;
 
     void setAPI(EGLenum api);
@@ -64,10 +60,6 @@ class Thread : public LabeledObject
     EGLenum mAPI;
     gl::Context *mContext;
 };
-
-void EnsureDebugAllocated();
-void DeallocateDebug();
-Debug *GetDebug();
 
 }  
 

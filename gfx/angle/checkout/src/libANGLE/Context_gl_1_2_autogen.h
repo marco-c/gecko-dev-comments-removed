@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef ANGLE_CONTEXT_GL_1_2_AUTOGEN_H_
+#define ANGLE_CONTEXT_GL_1_2_AUTOGEN_H_
+
+#define ANGLE_GL_1_2_CONTEXT_API
+
+#endif  
