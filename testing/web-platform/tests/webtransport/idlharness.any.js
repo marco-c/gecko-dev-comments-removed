@@ -16,5 +16,9 @@ idl_test(
       
     });
     self.webTransport = new WebTransport("https://example.com/");
+    
+    
+    self.webTransport.ready.catch(() => {});
+    self.webTransport.closed.catch(() => {});
   }
 );
