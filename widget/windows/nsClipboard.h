@@ -65,6 +65,14 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   static UINT GetCustomClipboardFormat();
 
  protected:
+  
+  
+  static void LogOleSetClipboardResult(HRESULT aHres);
+
+  
+  
+  static void OleSetClipboardResultToString(HRESULT aHres, nsACString& aResult);
+
   NS_IMETHOD SetNativeClipboardData(int32_t aWhichClipboard) override;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
