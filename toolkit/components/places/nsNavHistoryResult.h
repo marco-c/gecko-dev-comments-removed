@@ -688,6 +688,11 @@ class nsNavHistoryQueryResultNode final
                          uint16_t aItemType, nsIURI* aURI,
                          const nsACString& aGUID, const nsACString& aParentGUID,
                          uint16_t aSource);
+  nsresult OnItemMoved(int64_t aFolder, int32_t aOldIndex, int32_t aNewIndex,
+                       uint16_t aItemType, const nsACString& aGUID,
+                       const nsACString& aOldParentGUID,
+                       const nsACString& aNewParentGUID, uint16_t aSource,
+                       const nsACString& aURI);
 
   
   
@@ -786,6 +791,11 @@ class nsNavHistoryFolderResultNode final
                          uint16_t aItemType, nsIURI* aURI,
                          const nsACString& aGUID, const nsACString& aParentGUID,
                          uint16_t aSource);
+  nsresult OnItemMoved(int64_t aFolder, int32_t aOldIndex, int32_t aNewIndex,
+                       uint16_t aItemType, const nsACString& aGUID,
+                       const nsACString& aOldParentGUID,
+                       const nsACString& aNewParentGUID, uint16_t aSource,
+                       const nsACString& aURI);
   nsresult OnItemVisited(nsIURI* aURI, int64_t aVisitId, PRTime aTime);
   virtual void OnRemoving() override;
 

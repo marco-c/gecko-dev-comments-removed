@@ -2503,14 +2503,11 @@ nsNavHistoryQueryResultNode::OnItemChanged(
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsNavHistoryQueryResultNode::OnItemMoved(int64_t aFolder, int32_t aOldIndex,
-                                         int32_t aNewIndex, uint16_t aItemType,
-                                         const nsACString& aGUID,
-                                         const nsACString& aOldParentGUID,
-                                         const nsACString& aNewParentGUID,
-                                         uint16_t aSource,
-                                         const nsACString& aURI) {
+nsresult nsNavHistoryQueryResultNode::OnItemMoved(
+    int64_t aFolder, int32_t aOldIndex, int32_t aNewIndex, uint16_t aItemType,
+    const nsACString& aGUID, const nsACString& aOldParentGUID,
+    const nsACString& aNewParentGUID, uint16_t aSource,
+    const nsACString& aURI) {
   
   
   
@@ -3322,14 +3319,11 @@ nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsNavHistoryFolderResultNode::OnItemMoved(int64_t aItemId, int32_t aOldIndex,
-                                          int32_t aNewIndex, uint16_t aItemType,
-                                          const nsACString& aGUID,
-                                          const nsACString& aOldParentGUID,
-                                          const nsACString& aNewParentGUID,
-                                          uint16_t aSource,
-                                          const nsACString& aURI) {
+nsresult nsNavHistoryFolderResultNode::OnItemMoved(
+    int64_t aItemId, int32_t aOldIndex, int32_t aNewIndex, uint16_t aItemType,
+    const nsACString& aGUID, const nsACString& aOldParentGUID,
+    const nsACString& aNewParentGUID, uint16_t aSource,
+    const nsACString& aURI) {
   MOZ_ASSERT(aOldParentGUID.Equals(mTargetFolderGuid) ||
                  aNewParentGUID.Equals(mTargetFolderGuid),
              "Got a bookmark message that doesn't belong to us");
@@ -3947,36 +3941,6 @@ nsNavHistoryResult::OnItemChanged(
   
   
   
-  return NS_OK;
-}
-
-
-
-
-
-NS_IMETHODIMP
-nsNavHistoryResult::OnItemMoved(int64_t aItemId, int32_t aOldIndex,
-                                int32_t aNewIndex, uint16_t aItemType,
-                                const nsACString& aGUID,
-                                const nsACString& aOldParentGUID,
-                                const nsACString& aNewParentGUID,
-                                uint16_t aSource, const nsACString& aURI) {
-  ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(
-      aOldParentGUID,
-      OnItemMoved(aItemId, aOldIndex, aNewIndex, aItemType, aGUID,
-                  aOldParentGUID, aNewParentGUID, aSource, aURI));
-  if (!aNewParentGUID.Equals(aOldParentGUID)) {
-    ENUMERATE_BOOKMARK_FOLDER_OBSERVERS(
-        aNewParentGUID,
-        OnItemMoved(aItemId, aOldIndex, aNewIndex, aItemType, aGUID,
-                    aOldParentGUID, aNewParentGUID, aSource, aURI));
-  }
-  ENUMERATE_ALL_BOOKMARKS_OBSERVERS(
-      OnItemMoved(aItemId, aOldIndex, aNewIndex, aItemType, aGUID,
-                  aOldParentGUID, aNewParentGUID, aSource, aURI));
-  ENUMERATE_HISTORY_OBSERVERS(OnItemMoved(aItemId, aOldIndex, aNewIndex,
-                                          aItemType, aGUID, aOldParentGUID,
-                                          aNewParentGUID, aSource, aURI));
   return NS_OK;
 }
 
