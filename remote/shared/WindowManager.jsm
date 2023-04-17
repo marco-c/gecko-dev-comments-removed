@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["WindowManager"];
+const EXPORTED_SYMBOLS = ["windowManager"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -12,21 +12,263 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
-
-  EventPromise: "chrome://remote/content/shared/Sync.jsm",
+  AppInfo: "chrome://remote/content/marionette/appinfo.js",
+  browser: "chrome://remote/content/marionette/browser.js",
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+  waitForEvent: "chrome://remote/content/marionette/sync.js",
+  waitForObserverTopic: "chrome://remote/content/marionette/sync.js",
 });
 
-var WindowManager = {
-  async focus(window) {
-    if (window != Services.focus.activeWindow) {
-      const promises = [
-        EventPromise(window, "activate"),
-        EventPromise(window, "focus", { capture: true }),
-      ];
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "uuidGen",
+  "@mozilla.org/uuid-generator;1",
+  "nsIUUIDGenerator"
+);
 
-      window.focus();
 
-      await Promise.all(promises);
+
+
+
+
+class WindowManager {
+  constructor() {
+    
+    this._windowHandles = new WeakMap();
+    
+    this._chromeWindowHandles = new WeakMap();
+  }
+
+  get windowHandles() {
+    const windowHandles = [];
+
+    for (const win of this.windows) {
+      const tabBrowser = browser.getTabBrowser(win);
+
+      
+      if (tabBrowser && tabBrowser.tabs) {
+        for (const tab of tabBrowser.tabs) {
+          const winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
+          if (winId !== null) {
+            windowHandles.push(winId);
+          }
+        }
+      }
     }
-  },
-};
+
+    return windowHandles;
+  }
+
+  get chromeWindowHandles() {
+    const chromeWindowHandles = [];
+
+    for (const win of this.windows) {
+      chromeWindowHandles.push(this.getIdForWindow(win));
+    }
+
+    return chromeWindowHandles;
+  }
+
+  get windows() {
+    return Services.wm.getEnumerator(null);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  findWindowByHandle(handle) {
+    for (const win of this.windows) {
+      
+      const chromeWindowId = this.getIdForWindow(win);
+      if (chromeWindowId == handle) {
+        return this.getWindowProperties(win);
+      }
+
+      
+      
+      const tabBrowser = browser.getTabBrowser(win);
+      if (tabBrowser && tabBrowser.tabs) {
+        for (let i = 0; i < tabBrowser.tabs.length; ++i) {
+          let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
+          let contentWindowId = this.getIdForBrowser(contentBrowser);
+
+          if (contentWindowId == handle) {
+            return this.getWindowProperties(win, { tabIndex: i });
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+  getWindowProperties(win, options = {}) {
+    if (!(win instanceof Window)) {
+      throw new TypeError("Invalid argument, expected a Window object");
+    }
+
+    return {
+      win,
+      id: this.getIdForWindow(win),
+      hasTabBrowser: !!browser.getTabBrowser(win),
+      tabIndex: options.tabIndex,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+  getIdForBrowser(browserElement) {
+    if (browserElement === null) {
+      return null;
+    }
+
+    const key = browserElement.permanentKey;
+    if (!this._windowHandles.has(key)) {
+      const uuid = uuidGen.generateUUID().toString();
+      this._windowHandles.set(key, uuid.substring(1, uuid.length - 1));
+    }
+    return this._windowHandles.get(key);
+  }
+
+  
+
+
+
+
+
+
+
+  getIdForWindow(win) {
+    if (!this._chromeWindowHandles.has(win)) {
+      const uuid = uuidGen.generateUUID().toString();
+      this._chromeWindowHandles.set(win, uuid.substring(1, uuid.length - 1));
+    }
+    return this._chromeWindowHandles.get(win);
+  }
+
+  
+
+
+
+
+
+
+
+  async closeWindow(win) {
+    const destroyed = waitForObserverTopic("xul-window-destroyed", {
+      checkFn: () => win && win.closed,
+    });
+
+    win.close();
+
+    return destroyed;
+  }
+
+  
+
+
+
+
+
+
+
+  async focusWindow(win) {
+    if (Services.focus.activeWindow != win) {
+      let activated = waitForEvent(win, "activate");
+      let focused = waitForEvent(win, "focus", { capture: true });
+
+      win.focus();
+
+      await Promise.all([activated, focused]);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async openBrowserWindow(openerWindow, focus = false, isPrivate = false) {
+    switch (AppInfo.name) {
+      case "Firefox":
+        
+        
+        
+        const win = openerWindow.OpenBrowserWindow({ private: isPrivate });
+
+        const activated = waitForEvent(win, "activate");
+        const focused = waitForEvent(win, "focus", { capture: true });
+        const startup = waitForObserverTopic(
+          "browser-delayed-startup-finished",
+          {
+            checkFn: subject => subject == win,
+          }
+        );
+
+        win.focus();
+        await Promise.all([activated, focused, startup]);
+
+        
+        
+        if (!focus) {
+          await this.focusWindow(openerWindow);
+        }
+
+        return win;
+
+      default:
+        throw new error.UnsupportedOperationError(
+          `openWindow() not supported in ${AppInfo.name}`
+        );
+    }
+  }
+}
+
+
+const windowManager = new WindowManager();
