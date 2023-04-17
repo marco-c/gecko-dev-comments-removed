@@ -1468,6 +1468,11 @@ def readUnicodeExtensions(core_file):
 
     
     
+    
+    alphaRegionRE = re.compile(r"^[A-Z]{2}$", re.IGNORECASE)
+
+    
+    
     mapping = {
         
         "u": {},
@@ -1595,13 +1600,13 @@ def readUnicodeExtensions(core_file):
             replacement = alias.get("replacement").split(" ")[0].lower()
 
             
+            if alphaRegionRE.match(replacement) is not None:
+                replacement += "zzzz"
+
             
-            
-            
-            
-            
-            if typeRE.match(replacement) is None:
-                continue
+            assert (
+                typeRE.match(replacement) is not None
+            ), "replacement {} matches the 'type' production".format(replacement)
 
             
             mapping["u"].setdefault("rg", {})[type] = replacement
@@ -3184,9 +3189,9 @@ static int32_t Compare{0}Type(const char* a, mozilla::Span<const char> b) {{
     }}
   }}
 
-  // Return zero if both strings are equal or a negative number if |b| is a
+  // Return zero if both strings are equal or a positive number if |b| is a
   // prefix of |a|.
-  return -int32_t(UnsignedChar(a[b.size()]));
+  return int32_t(UnsignedChar(a[b.size()]));
 }}
 
 template <size_t Length>
