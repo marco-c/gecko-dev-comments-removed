@@ -26,7 +26,6 @@
 #include "mozilla/dom/HTMLAreaElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/ResponsiveImageSelector.h"
-#include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/MouseEvents.h"
@@ -999,8 +998,9 @@ void nsImageFrame::InvalidateSelf(const nsIntRect* aLayerInvalidRect,
   
   
   const auto type = DisplayItemType::TYPE_IMAGE;
-  const auto providerId = mImage ? mImage->GetProviderId() : 0;
-  if (WebRenderUserData::ProcessInvalidateForImage(this, type, providerId)) {
+  const auto producerId =
+      mImage ? mImage->GetProducerId() : kContainerProducerID_Invalid;
+  if (WebRenderUserData::ProcessInvalidateForImage(this, type, producerId)) {
     return;
   }
 
@@ -1843,13 +1843,13 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
               imgCon, this, destRect, destRect, aSc, aFlags, svgContext,
               region);
-      RefPtr<image::WebRenderImageProvider> provider;
-      result = imgCon->GetImageProvider(aManager->LayerManager(), decodeSize,
-                                        svgContext, region, aFlags,
-                                        getter_AddRefs(provider));
-      if (provider) {
-        bool wrResult = aManager->CommandBuilder().PushImageProvider(
-            aItem, provider, aBuilder, aResources, destRect, bounds);
+      RefPtr<ImageContainer> container;
+      result = imgCon->GetImageContainerAtSize(
+          aManager->LayerManager(), decodeSize, svgContext, region, aFlags,
+          getter_AddRefs(container));
+      if (container) {
+        bool wrResult = aManager->CommandBuilder().PushImage(
+            aItem, container, aBuilder, aResources, aSc, destRect, bounds);
         result &= wrResult ? ImgDrawResult::SUCCESS : ImgDrawResult::NOT_READY;
       } else {
         
@@ -2098,10 +2098,10 @@ bool nsDisplayImage::CreateWebRenderCommands(
   IntSize decodeSize = nsLayoutUtils::ComputeImageContainerDrawingParameters(
       mImage, mFrame, destRect, destRect, aSc, flags, svgContext, region);
 
-  RefPtr<image::WebRenderImageProvider> provider;
-  ImgDrawResult drawResult =
-      mImage->GetImageProvider(aManager->LayerManager(), decodeSize, svgContext,
-                               region, flags, getter_AddRefs(provider));
+  RefPtr<layers::ImageContainer> container;
+  ImgDrawResult drawResult = mImage->GetImageContainerAtSize(
+      aManager->LayerManager(), decodeSize, svgContext, region, flags,
+      getter_AddRefs(container));
 
   
   
@@ -2123,13 +2123,13 @@ bool nsDisplayImage::CreateWebRenderCommands(
           prevFlags &= ~imgIContainer::FLAG_RECORD_BLOB;
         }
 
-        RefPtr<image::WebRenderImageProvider> prevProvider;
-        ImgDrawResult newDrawResult = mPrevImage->GetImageProvider(
+        RefPtr<ImageContainer> prevContainer;
+        ImgDrawResult newDrawResult = mPrevImage->GetImageContainerAtSize(
             aManager->LayerManager(), decodeSize, svgContext, region, prevFlags,
-            getter_AddRefs(prevProvider));
-        if (prevProvider && newDrawResult == ImgDrawResult::SUCCESS) {
+            getter_AddRefs(prevContainer));
+        if (prevContainer && newDrawResult == ImgDrawResult::SUCCESS) {
           drawResult = newDrawResult;
-          provider = std::move(prevProvider);
+          container = std::move(prevContainer);
           flags = prevFlags;
           break;
         }
@@ -2156,9 +2156,14 @@ bool nsDisplayImage::CreateWebRenderCommands(
   
   
   
-  if (provider) {
-    aManager->CommandBuilder().PushImageProvider(
-        this, provider, aBuilder, aResources, destRect, destRect);
+  if (container) {
+    if (flags & imgIContainer::FLAG_RECORD_BLOB) {
+      aManager->CommandBuilder().PushBlobImage(this, container, aBuilder,
+                                               aResources, destRect, destRect);
+    } else {
+      aManager->CommandBuilder().PushImage(this, container, aBuilder,
+                                           aResources, aSc, destRect, destRect);
+    }
   }
 
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, drawResult);
