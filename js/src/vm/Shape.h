@@ -36,6 +36,7 @@
 #include "vm/JSAtom.h"
 #include "vm/Printer.h"
 #include "vm/PropertyInfo.h"
+#include "vm/PropertyKey.h"
 #include "vm/StringType.h"
 #include "vm/SymbolType.h"
 
@@ -645,33 +646,6 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 #endif
   }
 };
-
-static MOZ_ALWAYS_INLINE js::HashNumber HashId(jsid id) {
-  
-  
-  if (MOZ_LIKELY(JSID_IS_ATOM(id))) {
-    return id.toAtom()->hash();
-  }
-  if (JSID_IS_SYMBOL(id)) {
-    return JSID_TO_SYMBOL(id)->hash();
-  }
-  return mozilla::HashGeneric(JSID_BITS(id));
-}
-
-}  
-
-namespace mozilla {
-
-template <>
-struct DefaultHasher<jsid> {
-  using Lookup = jsid;
-  static HashNumber hash(jsid id) { return js::HashId(id); }
-  static bool match(jsid id1, jsid id2) { return id1 == id2; }
-};
-
-}  
-
-namespace js {
 
 
 struct BaseShapeHasher {
