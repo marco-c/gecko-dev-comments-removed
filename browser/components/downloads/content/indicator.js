@@ -388,83 +388,37 @@ const DownloadsIndicatorView = {
 
 
   _showNotification(aType) {
-    
-    if (DownloadsPanel.isPanelShowing) {
-      return;
-    }
-
     let anchor = DownloadsButton._placeholder;
-    let widgetGroup = CustomizableUI.getWidget("downloads-button");
-    let widget = widgetGroup.forWindow(window);
-    if (widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL) {
-      if (anchor && this._isAncestorPanelOpen(anchor)) {
-        
-        
-        
-        return;
-      }
-
-      
-      anchor = widget.anchor;
-    }
     if (!anchor || !isElementVisible(anchor.parentNode)) {
       
       return;
     }
-
-    
-    
-    
-    
-    
-    
-    let notifier = this.notifier;
-
-    if (aType == "start") {
-      
-      
-      
-      notifier.removeAttribute("hidden");
-
-      
-      
-      let anchorRect = anchor.getBoundingClientRect();
-      let notifierRect = notifier.getBoundingClientRect();
-      let topDiff = anchorRect.top - notifierRect.top;
-      let leftDiff = anchorRect.left - notifierRect.left;
-      let heightDiff = anchorRect.height - notifierRect.height;
-      let widthDiff = anchorRect.width - notifierRect.width;
-      let translateX = leftDiff + 0.5 * widthDiff + "px";
-      let translateY = topDiff + 0.5 * heightDiff + "px";
-      notifier.style.transform =
-        "translate(" + translateX + ", " + translateY + ")";
-      notifier.setAttribute("notification", aType);
-    }
     anchor.setAttribute("notification", aType);
-
-    let animationDuration;
-    
-    animationDuration = aType == "start" ? 760 : 850;
+    anchor.setAttribute("animate", "");
 
     this._currentNotificationType = aType;
 
-    setTimeout(() => {
+    const onNotificationAnimEnd = event => {
+      if (event.animationName !== "downloadsButtonNotification") {
+        return;
+      }
+      anchor.removeEventListener("animationend", onNotificationAnimEnd);
+
       requestAnimationFrame(() => {
-        notifier.hidden = true;
-        notifier.removeAttribute("notification");
-        notifier.style.transform = "";
         anchor.removeAttribute("notification");
+        anchor.removeAttribute("animate");
 
         requestAnimationFrame(() => {
           let nextType = this._nextNotificationType;
           this._currentNotificationType = null;
           this._nextNotificationType = null;
-          if (nextType) {
+          if (nextType && isElementVisible(anchor.parentNode)) {
             this._showNotification(nextType);
           }
         });
       });
-    }, animationDuration);
+    };
+    anchor.addEventListener("animationend", onNotificationAnimEnd);
   },
 
   
@@ -500,24 +454,37 @@ const DownloadsIndicatorView = {
     if (!this._operational) {
       return;
     }
-
+    aValue = Math.min(100, aValue);
     if (this._percentComplete !== aValue) {
+      
+      
+      if (this._percentComplete < 0 && aValue >= 0) {
+        this.showEventNotification("start");
+      }
       this._percentComplete = aValue;
       this._refreshAttention();
-
-      if (this._percentComplete >= 0) {
-        this.indicator.setAttribute("progress", "true");
-        
-        
-        
-        this._progressIcon.style.animationDelay = -this._percentComplete + "s";
-      } else {
-        this.indicator.removeAttribute("progress");
-        this._progressIcon.style.animationDelay = "1s";
+      if (this._progressRaf) {
+        cancelAnimationFrame(this._progressRaf);
+        delete this._progressRaf;
       }
+      this._progressRaf = requestAnimationFrame(() => {
+        
+        if (this._percentComplete >= 0) {
+          this.indicator.setAttribute("progress", "true");
+          
+          
+          this.indicator.style.setProperty(
+            "--download-progress-pcent",
+            `${Math.max(5, this._percentComplete)}%`
+          );
+        } else {
+          this.indicator.removeAttribute("progress");
+          this.indicator.style.setProperty("--download-progress-pcent", "0%");
+        }
+      });
     }
   },
-  _percentComplete: null,
+  _percentComplete: -1,
 
   
 
@@ -646,15 +613,6 @@ const DownloadsIndicatorView = {
       this.__progressIcon ||
       (this.__progressIcon = document.getElementById(
         "downloads-indicator-progress-inner"
-      ))
-    );
-  },
-
-  get notifier() {
-    return (
-      this._notifier ||
-      (this._notifier = document.getElementById(
-        "downloads-notification-anchor"
       ))
     );
   },
