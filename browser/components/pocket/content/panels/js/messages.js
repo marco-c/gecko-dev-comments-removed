@@ -1,31 +1,15 @@
 
 
 var pktPanelMessaging = (function() {
-  function panelIdFromURL(url) {
-    var panelId = url.match(/panelId=([\w|\d|\.]*)&?/);
-    if (panelId && panelId.length > 1) {
-      return panelId[1];
-    }
-
-    return 0;
+  function removeMessageListener(messageId, callback) {
+    RPMRemoveMessageListener(messageId, callback);
   }
 
-  function removeMessageListener(messageId, panelId, callback) {
-    RPMRemoveMessageListener(`${messageId}_${panelId}`, callback);
+  function addMessageListener(messageId, callback = () => {}) {
+    RPMAddMessageListener(messageId, callback);
   }
 
-  function addMessageListener(messageId, panelId, callback = () => {}) {
-    RPMAddMessageListener(`${messageId}_${panelId}`, callback);
-  }
-
-  function sendMessage(messageId, panelId, payload = {}, callback) {
-    
-    
-    var messagePayload = {
-      panelId,
-      payload,
-    };
-
+  function sendMessage(messageId, payload = {}, callback) {
     if (callback) {
       
       
@@ -34,14 +18,14 @@ var pktPanelMessaging = (function() {
       const responseMessageId = `${messageId}_response`;
       var responseListener = function(responsePayload) {
         callback(responsePayload);
-        removeMessageListener(responseMessageId, panelId, responseListener);
+        removeMessageListener(responseMessageId, responseListener);
       };
 
-      addMessageListener(responseMessageId, panelId, responseListener);
+      addMessageListener(responseMessageId, responseListener);
     }
 
     
-    RPMSendAsyncMessage(messageId, messagePayload);
+    RPMSendAsyncMessage(messageId, payload);
   }
 
   function log() {
@@ -53,7 +37,6 @@ var pktPanelMessaging = (function() {
 
   return {
     log,
-    panelIdFromURL,
     addMessageListener,
     sendMessage,
   };

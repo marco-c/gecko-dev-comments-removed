@@ -75,13 +75,6 @@ const POCKET_ONSAVERECS_LOCLES_PREF = "extensions.pocket.onSaveRecs.locales";
 const POCKET_HOME_PREF = "extensions.pocket.showHome";
 
 var pktUI = (function() {
-  
-
-  
-  
-  
-  var _panelId = 0;
-
   let _titleToSave = "";
   let _urlToSave = "";
 
@@ -230,10 +223,6 @@ var pktUI = (function() {
 
 
   function showPanel(url, options) {
-    
-    _panelId += 1;
-    url += "&panelId=" + _panelId;
-
     resizePanel({
       width: options.width,
       height: options.height,
@@ -286,11 +275,7 @@ var pktUI = (function() {
       let errorData = {
         localizedKey: "pocket-panel-saved-error-only-links",
       };
-      pktUIMessaging.sendErrorMessageToPanel(
-        saveLinkMessageId,
-        _panelId,
-        errorData
-      );
+      pktUIMessaging.sendErrorMessageToPanel(saveLinkMessageId, errorData);
       return;
     }
 
@@ -299,11 +284,7 @@ var pktUI = (function() {
       let errorData = {
         localizedKey: "pocket-panel-saved-error-no-internet",
       };
-      pktUIMessaging.sendErrorMessageToPanel(
-        saveLinkMessageId,
-        _panelId,
-        errorData
-      );
+      pktUIMessaging.sendErrorMessageToPanel(saveLinkMessageId, errorData);
       return;
     }
 
@@ -333,20 +314,12 @@ var pktUI = (function() {
           item,
           ho2,
         };
-        pktUIMessaging.sendMessageToPanel(
-          saveLinkMessageId,
-          _panelId,
-          successResponse
-        );
+        pktUIMessaging.sendMessageToPanel(saveLinkMessageId, successResponse);
         SaveToPocket.itemSaved();
 
         getAndShowRecsForItem(item, {
           success(data) {
-            pktUIMessaging.sendMessageToPanel(
-              "PKT_renderItemRecs",
-              _panelId,
-              data
-            );
+            pktUIMessaging.sendMessageToPanel("PKT_renderItemRecs", data);
             if (data?.recommendations?.[0]?.experiment) {
               const payload = pktTelemetry.createPingPayload({
                 
@@ -379,11 +352,7 @@ var pktUI = (function() {
         };
 
         
-        pktUIMessaging.sendErrorMessageToPanel(
-          saveLinkMessageId,
-          _panelId,
-          errorData
-        );
+        pktUIMessaging.sendErrorMessageToPanel(saveLinkMessageId, errorData);
       },
     };
 
@@ -457,7 +426,7 @@ var pktUI = (function() {
   }
 
   
-  function onOpenTabWithUrl(panelId, data, contentPrincipal, csp) {
+  function onOpenTabWithUrl(data, contentPrincipal, csp) {
     try {
       urlSecurityCheck(
         data.url,
@@ -490,7 +459,7 @@ var pktUI = (function() {
   }
 
   
-  function onOpenTabWithPocketUrl(panelId, data, contentPrincipal, csp) {
+  function onOpenTabWithPocketUrl(data, contentPrincipal, csp) {
     try {
       urlSecurityCheck(
         data.url,
@@ -599,11 +568,7 @@ var pktUIMessaging = (function() {
   
 
 
-  function sendMessageToPanel(messageId, panelId, payload) {
-    if (!isPanelIdValid(panelId)) {
-      return;
-    }
-
+  function sendMessageToPanel(messageId, payload) {
     var panelFrame = pktUI.getPanelFrame();
     if (!isPocketPanelFrameValid(panelFrame)) {
       return;
@@ -614,36 +579,21 @@ var pktUIMessaging = (function() {
     );
 
     
-    aboutPocketActor?.sendAsyncMessage(`${messageId}_${panelId}`, payload);
+    aboutPocketActor?.sendAsyncMessage(messageId, payload);
   }
 
   
 
 
 
-  function sendErrorMessageToPanel(messageId, panelId, error) {
+  function sendErrorMessageToPanel(messageId, error) {
     var errorResponse = { status: "error", error };
-    sendMessageToPanel(messageId, panelId, errorResponse);
+    sendMessageToPanel(messageId, errorResponse);
   }
 
   
 
 
-
-  function isPanelIdValid(panelId) {
-    
-    
-    
-    
-    
-    
-    if (panelId === 0) {
-      console.warn("Tried to send message to panel with id 0.");
-      return false;
-    }
-
-    return true;
-  }
 
   function isPocketPanelFrameValid(panelFrame) {
     

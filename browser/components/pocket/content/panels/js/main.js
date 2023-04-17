@@ -8,7 +8,6 @@ PKT_PANEL.prototype = {
     if (this.inited) {
       return;
     }
-    this.panelId = pktPanelMessaging.panelIdFromURL(window.location.href);
     this.overlay = new PKT_PANEL_OVERLAY();
     this.setupMutationObserver();
     
@@ -22,14 +21,6 @@ PKT_PANEL.prototype = {
     this.inited = true;
   },
 
-  addMessageListener(messageId, callback) {
-    pktPanelMessaging.addMessageListener(messageId, this.panelId, callback);
-  },
-
-  sendMessage(messageId, payload, callback) {
-    pktPanelMessaging.sendMessage(messageId, this.panelId, payload, callback);
-  },
-
   resizeParent() {
     let clientHeight = document.body.clientHeight;
     if (this.overlay.tagsDropdownOpen) {
@@ -40,7 +31,7 @@ PKT_PANEL.prototype = {
     
     
     if (clientHeight) {
-      thePKT_PANEL.sendMessage("PKT_resizePanel", {
+      pktPanelMessaging.sendMessage("PKT_resizePanel", {
         width: document.body.clientWidth,
         height: clientHeight,
       });
