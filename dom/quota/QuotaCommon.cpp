@@ -537,21 +537,29 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
       nsPromiseFlatCString(sourceFileRelativePath).get(), aSourceFileLine);
 #  endif
 
-  nsCOMPtr<nsIConsoleService> console =
-      do_GetService(NS_CONSOLESERVICE_CONTRACTID);
-  if (console) {
-    NS_ConvertUTF8toUTF16 message("QM_TRY failure ("_ns + severityString +
-                                  ")"_ns + ": '"_ns + aExpr + extraInfosString +
-                                  "', file "_ns + sourceFileRelativePath +
-                                  ":"_ns + IntToCString(aSourceFileLine));
+  
+  
+  
+  
+  
+  
+  if (!context.IsEmpty()) {
+    nsCOMPtr<nsIConsoleService> console =
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+    if (console) {
+      NS_ConvertUTF8toUTF16 message(
+          "QM_TRY failure ("_ns + severityString + ")"_ns + ": '"_ns + aExpr +
+          extraInfosString + "', file "_ns + sourceFileRelativePath + ":"_ns +
+          IntToCString(aSourceFileLine));
 
-    
-    
-    
-    
-    
+      
+      
+      
+      
+      
 
-    console->LogStringMessage(message.get());
+      console->LogStringMessage(message.get());
+    }
   }
 
   if (!context.IsEmpty()) {
