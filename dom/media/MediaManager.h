@@ -339,6 +339,9 @@ class MediaManager final : public nsIMediaManagerService,
                             RefPtr<GetUserMediaTask> aTask);
   
   RefPtr<GetUserMediaTask> TakeGetUserMediaTask(const nsAString& aCallID);
+  
+  
+  void NotifyAllowed(const nsString& aCallID, const MediaDeviceSet& aDevices);
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf);
 
