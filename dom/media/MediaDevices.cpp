@@ -139,17 +139,39 @@ already_AddRefed<Promise> MediaDevices::EnumerateDevices(CallerType aCallerType,
                 aDevices->Length() == 0 ||
                 MediaManager::Get()->IsActivelyCapturingOrHasAPermission(
                     windowId);
+            nsTHashSet<nsString> exposedMicrophoneGroupIds;
             for (auto& device : *aDevices) {
-              MOZ_ASSERT(device->mKind == dom::MediaDeviceKind::Audioinput ||
-                         device->mKind == dom::MediaDeviceKind::Videoinput ||
-                         device->mKind == dom::MediaDeviceKind::Audiooutput);
-              
-              
               nsString label;
-              if (allowLabel ||
-                  Preferences::GetBool("media.navigator.permission.disabled",
-                                       false)) {
-                label = device->mName;
+              MOZ_ASSERT(device->mKind < MediaDeviceKind::EndGuard_);
+              switch (device->mKind) {
+                case MediaDeviceKind::Audioinput:
+                  if (mCanExposeMicrophoneInfo) {
+                    exposedMicrophoneGroupIds.Insert(device->mGroupID);
+                  }
+                  [[fallthrough]];
+                case MediaDeviceKind::Videoinput:
+                  
+                  
+                  
+                  
+                  if (allowLabel ||
+                      Preferences::GetBool(
+                          "media.navigator.permission.disabled", false)) {
+                    label = device->mName;
+                  }
+                  break;
+                case MediaDeviceKind::Audiooutput:
+                  if (!mExplicitlyGrantedAudioOutputIds.Contains(device->mID) &&
+                      
+                      !exposedMicrophoneGroupIds.Contains(device->mGroupID)) {
+                    continue;
+                  }
+                  label = device->mName;
+                  break;
+                case MediaDeviceKind::EndGuard_:
+                  break;
+                  
+                  
               }
               infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
                   device->mID, device->mKind, label, device->mGroupID));
