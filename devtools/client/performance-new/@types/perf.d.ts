@@ -179,7 +179,7 @@ export type ReceiveProfile = (
   getSymbolTableCallback: GetSymbolTableCallback
 ) => void;
 
-export type SetRecordingPreferences = (
+export type SetRecordingSettings = (
   settings: RecordingStateFromPreferences
 ) => void;
 
@@ -234,7 +234,7 @@ export interface InitializedValues {
   
   receiveProfile: ReceiveProfile;
   
-  setRecordingPreferences: SetRecordingPreferences;
+  setRecordingSettings: SetRecordingSettings;
   
   presets: Presets;
   
@@ -294,7 +294,7 @@ export type Action =
       type: "INITIALIZE_STORE";
       perfFront: PerfFront;
       receiveProfile: ReceiveProfile;
-      setRecordingPreferences: SetRecordingPreferences;
+      setRecordingSettings: SetRecordingSettings;
       presets: Presets;
       pageContext: PageContext;
       openAboutProfiling?: () => void;
@@ -314,10 +314,10 @@ export type Action =
 export interface InitializeStoreValues {
   perfFront: PerfFront;
   receiveProfile: ReceiveProfile;
-  setRecordingPreferences: SetRecordingPreferences;
+  setRecordingSettings: SetRecordingSettings;
   presets: Presets;
   pageContext: PageContext;
-  recordingPreferences: RecordingStateFromPreferences;
+  recordingSettings: RecordingStateFromPreferences;
   supportedFeatures: string[];
   getSymbolTableGetter: (
     profile: MinimallyTypedGeckoProfile

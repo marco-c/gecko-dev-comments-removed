@@ -43,8 +43,8 @@
 
 
 const {
-  getRecordingPreferences,
-  setRecordingPreferences,
+  getRecordingSettings,
+  setRecordingSettings,
   getSymbolsFromThisBrowser,
   presets,
 } = ChromeUtils.import(
@@ -111,15 +111,12 @@ async function gInit(perfFront, pageContext, openRemoteDevTools) {
       supportedFeatures,
       presets,
       
-      recordingPreferences: getRecordingPreferences(
-        pageContext,
-        supportedFeatures
-      ),
+      recordingSettings: getRecordingSettings(pageContext, supportedFeatures),
       
 
 
-      setRecordingPreferences: newRecordingPreferences =>
-        setRecordingPreferences(pageContext, newRecordingPreferences),
+      setRecordingSettings: newRecordingSettings =>
+        setRecordingSettings(pageContext, newRecordingSettings),
 
       
       

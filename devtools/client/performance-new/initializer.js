@@ -65,9 +65,9 @@ const {
 } = require("devtools/client/performance-new/browser");
 
 const {
-  setRecordingPreferences,
+  setRecordingSettings,
   presets,
-  getRecordingPreferences,
+  getRecordingSettings,
 } = ChromeUtils.import(
   "resource://devtools/client/performance-new/popup/background.jsm.js"
 );
@@ -120,10 +120,7 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
     actions.initializeStore({
       perfFront,
       receiveProfile,
-      recordingPreferences: getRecordingPreferences(
-        pageContext,
-        supportedFeatures
-      ),
+      recordingSettings: getRecordingSettings(pageContext, supportedFeatures),
       presets,
       supportedFeatures,
       openAboutProfiling,
@@ -134,8 +131,8 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
       
 
 
-      setRecordingPreferences: newRecordingPreferences =>
-        setRecordingPreferences(pageContext, newRecordingPreferences),
+      setRecordingSettings: newRecordingSettings =>
+        setRecordingSettings(pageContext, newRecordingSettings),
 
       
       

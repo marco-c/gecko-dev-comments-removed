@@ -281,7 +281,7 @@ function startProfiler(pageContext) {
     threads,
     duration,
   } = translatePreferencesToState(
-    getRecordingPreferences(pageContext, Services.profiler.GetFeatures())
+    getRecordingSettings(pageContext, Services.profiler.GetFeatures())
   );
 
   
@@ -391,7 +391,7 @@ function getObjdirPrefValue(pageContext) {
 
 
 
-function getRecordingPreferences(pageContext, supportedFeatures) {
+function getRecordingSettings(pageContext, supportedFeatures) {
   const postfix = getPrefPostfix(pageContext);
 
   
@@ -400,13 +400,13 @@ function getRecordingPreferences(pageContext, supportedFeatures) {
   const presetName = Services.prefs.getCharPref(PRESET_PREF + postfix);
 
   
-  const recordingPrefs = getRecordingPrefsFromPreset(
+  const recordingSettings = getRecordingSettingsFromPreset(
     presetName,
     supportedFeatures,
     objdirs
   );
-  if (recordingPrefs) {
-    return recordingPrefs;
+  if (recordingSettings) {
+    return recordingSettings;
   }
 
   
@@ -434,7 +434,11 @@ function getRecordingPreferences(pageContext, supportedFeatures) {
 
 
 
-function getRecordingPrefsFromPreset(presetName, supportedFeatures, objdirs) {
+function getRecordingSettingsFromPreset(
+  presetName,
+  supportedFeatures,
+  objdirs
+) {
   if (presetName === "custom") {
     return null;
   }
@@ -465,7 +469,7 @@ function getRecordingPrefsFromPreset(presetName, supportedFeatures, objdirs) {
 
 
 
-function setRecordingPreferences(pageContext, prefs) {
+function setRecordingSettings(pageContext, prefs) {
   const postfix = getPrefPostfix(pageContext);
   Services.prefs.setCharPref(PRESET_PREF + postfix, prefs.presetName);
   Services.prefs.setIntPref(ENTRIES_PREF + postfix, prefs.entries);
@@ -491,7 +495,7 @@ const platform = AppConstants.platform;
 
 
 
-function revertRecordingPreferences() {
+function revertRecordingSettings() {
   for (const postfix of ["", ".remote"]) {
     Services.prefs.clearUserPref(PRESET_PREF + postfix);
     Services.prefs.clearUserPref(ENTRIES_PREF + postfix);
@@ -515,21 +519,21 @@ function revertRecordingPreferences() {
 function changePreset(pageContext, presetName, supportedFeatures) {
   const postfix = getPrefPostfix(pageContext);
   const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
-  let recordingPrefs = getRecordingPrefsFromPreset(
+  let recordingSettings = getRecordingSettingsFromPreset(
     presetName,
     supportedFeatures,
     objdirs
   );
 
-  if (!recordingPrefs) {
+  if (!recordingSettings) {
     
     
     
     Services.prefs.setCharPref(PRESET_PREF + postfix, presetName);
-    recordingPrefs = getRecordingPreferences(pageContext, supportedFeatures);
+    recordingSettings = getRecordingSettings(pageContext, supportedFeatures);
   }
 
-  setRecordingPreferences(pageContext, recordingPrefs);
+  setRecordingSettings(pageContext, recordingSettings);
 }
 
 
@@ -618,9 +622,9 @@ module.exports = {
   toggleProfiler,
   platform,
   getSymbolsFromThisBrowser,
-  getRecordingPreferences,
-  setRecordingPreferences,
-  revertRecordingPreferences,
+  getRecordingSettings,
+  setRecordingSettings,
+  revertRecordingSettings,
   changePreset,
   handleWebChannelMessage,
 };
