@@ -269,8 +269,6 @@ class WebrtcVideoConduit
 
   void CollectTelemetryData() override;
 
-  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
-
  private:
   
   WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
@@ -476,9 +474,6 @@ class WebrtcVideoConduit
 
   
   Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
-
-  
-  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
 
   
   

@@ -185,7 +185,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                       int attenuationDb) override;
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
-  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
   
   void InsertAudioLevelForContributingSource(const uint32_t aCsrcSource,
@@ -271,9 +270,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
-
-  
-  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
 };
 
 }  
