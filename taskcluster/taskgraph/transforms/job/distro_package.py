@@ -62,10 +62,6 @@ debian_schema = common_schema.extend(
         Required("using"): "debian-package",
         
         Required("dist"): text_type,
-        
-        
-        
-        Required("snapshot"): text_type,
     }
 )
 
