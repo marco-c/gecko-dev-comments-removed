@@ -375,19 +375,19 @@ static void LogOleSetClipboardResult(const HRESULT aHres) {
   }
 }
 
-
-
-
-static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
+template <typename Function, typename LogFunction, typename Arg>
+static HRESULT RepeatedlyTry(Function aFunction, LogFunction aLogFunction,
+                             Arg&& aArg) {
   
   
   
   static constexpr int kNumberOfTries = 3;
   static constexpr int kDelayInMs = 3;
 
+  HRESULT hres;
   for (int i = 0; i < kNumberOfTries; ++i) {
-    const HRESULT hres = ::OleSetClipboard(aDataObj);
-    LogOleSetClipboardResult(hres);
+    hres = aFunction(aArg);
+    aLogFunction(hres);
 
     if (hres == S_OK) {
       break;
@@ -395,6 +395,15 @@ static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(kDelayInMs));
   }
+
+  return hres;
+}
+
+
+
+
+static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
+  RepeatedlyTry(::OleSetClipboard, LogOleSetClipboardResult, aDataObj);
 }
 
 
@@ -1124,6 +1133,13 @@ bool nsClipboard ::FindURLFromNativeURL(IDataObject* inDataObject, UINT inIndex,
 
 
 
+static HRESULT RepeatedlyTryOleGetClipboard(IDataObject** aDataObj) {
+  return RepeatedlyTry(::OleGetClipboard, LogOleGetClipboardResult, aDataObj);
+}
+
+
+
+
 void nsClipboard ::ResolveShortcut(nsIFile* aFile, nsACString& outURL) {
   nsCOMPtr<nsIFileProtocolHandler> fph;
   nsresult rv = NS_GetFileProtocolHandler(getter_AddRefs(fph));
@@ -1166,9 +1182,7 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
 
   
   IDataObject* dataObj;
-  const HRESULT hres = ::OleGetClipboard(&dataObj);
-  LogOleGetClipboardResult(hres);
-  if (S_OK == hres) {
+  if (S_OK == RepeatedlyTryOleGetClipboard(&dataObj)) {
     
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Verbose,
             ("%s: use OLE IDataObject.", __FUNCTION__));
