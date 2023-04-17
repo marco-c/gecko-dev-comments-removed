@@ -63,8 +63,34 @@ function promiseClickDownloadDialogButton(buttonAction) {
 
 async function performCanceledDownload(tab, path) {
   
-  info("watching for download popup");
-  const cancelDownload = promiseClickDownloadDialogButton("cancel");
+  
+  
+  
+  let cancelledDownload;
+
+  if (
+    Services.prefs.getBoolPref(
+      "browser.download.improvements_to_download_panel",
+      false
+    )
+  ) {
+    let downloadView;
+    cancelledDownload = new Promise(resolve => {
+      downloadView = {
+        onDownloadAdded(aDownload) {
+          aDownload.cancel();
+          resolve();
+        },
+      };
+    });
+    const downloadList = await Downloads.getList(Downloads.ALL);
+    await downloadList.addView(downloadView);
+  } else {
+    
+    cancelledDownload = promiseClickDownloadDialogButton("cancel");
+    
+    info("waiting for download popup");
+  }
 
   
   info(`triggering download of "${path}"`);
@@ -82,9 +108,8 @@ async function performCanceledDownload(tab, path) {
   
 
   
-  info("waiting for download popup");
-  await cancelDownload;
-  ok(true, "canceled download");
+  await cancelledDownload;
+  info("cancelled download");
 
   
   info(`wait for the ${path} stream to close.`);
