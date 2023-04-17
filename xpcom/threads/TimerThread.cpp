@@ -127,15 +127,18 @@ class nsTimerEvent final : public CancelableRunnable {
   NS_IMETHOD GetName(nsACString& aName) override;
 #endif
 
-  explicit nsTimerEvent(already_AddRefed<nsTimerImpl> aTimer)
+  explicit nsTimerEvent(already_AddRefed<nsTimerImpl> aTimer,
+                        ProfilerThreadId aTimerThreadId)
       : mozilla::CancelableRunnable("nsTimerEvent"),
         mTimer(aTimer),
-        mGeneration(mTimer->GetGeneration()) {
+        mGeneration(mTimer->GetGeneration()),
+        mTimerThreadId(aTimerThreadId) {
     
     
     sAllocatorUsers++;
 
-    if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
+    if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug) ||
+        profiler_can_accept_markers()) {
       mInitTime = TimeStamp::Now();
     }
   }
@@ -169,6 +172,7 @@ class nsTimerEvent final : public CancelableRunnable {
   TimeStamp mInitTime;
   RefPtr<nsTimerImpl> mTimer;
   const int32_t mGeneration;
+  ProfilerThreadId mTimerThreadId;
 
   static TimerEventAllocator* sAllocator;
 
@@ -245,6 +249,18 @@ nsTimerEvent::Run() {
              (now - mInitTime).ToMilliseconds()));
   }
 
+  if (profiler_can_accept_markers()) {
+    nsAutoCString name;
+    mTimer->GetName(name);
+    PROFILER_MARKER_TEXT(
+        "PostTimerEvent", OTHER,
+        MarkerOptions(MOZ_LIKELY(mInitTime)
+                          ? MarkerTiming::IntervalUntilNowFrom(mInitTime)
+                          : MarkerTiming::InstantNow(),
+                      MarkerThreadId(mTimerThreadId)),
+        name);
+  }
+
   mTimer->Fire(mGeneration);
 
   return NS_OK;
@@ -259,8 +275,7 @@ nsresult TimerThread::Init() {
     nsTimerEvent::Init();
 
     
-    nsresult rv =
-        NS_NewNamedThread("Timer Thread", getter_AddRefs(mThread), this);
+    nsresult rv = NS_NewNamedThread("Timer", getter_AddRefs(mThread), this);
     if (NS_FAILED(rv)) {
       mThread = nullptr;
     } else {
@@ -347,9 +362,9 @@ struct IntervalComparator {
 
 NS_IMETHODIMP
 TimerThread::Run() {
-  NS_SetCurrentThreadName("Timer");
-
   MonitorAutoLock lock(mMonitor);
+
+  mProfilerThreadId = profiler_current_thread_id();
 
   
   
@@ -492,7 +507,10 @@ TimerThread::Run() {
 
     mWaiting = true;
     mNotified = false;
-    mMonitor.Wait(waitFor);
+    {
+      AUTO_PROFILER_TRACING_MARKER("TimerThread", "Wait", OTHER);
+      mMonitor.Wait(waitFor);
+    }
     if (mNotified) {
       forceRunNextTimer = false;
     }
@@ -502,7 +520,8 @@ TimerThread::Run() {
   return NS_OK;
 }
 
-nsresult TimerThread::AddTimer(nsTimerImpl* aTimer) {
+nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
+                               const MutexAutoLock& aProofOfLock) {
   MonitorAutoLock lock(mMonitor);
 
   if (!aTimer->mEventTarget) {
@@ -525,10 +544,57 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer) {
     mMonitor.Notify();
   }
 
+  if (profiler_can_accept_markers()) {
+    struct TimerMarker {
+      static constexpr Span<const char> MarkerTypeName() {
+        return MakeStringSpan("Timer");
+      }
+      static void StreamJSONMarkerData(
+          baseprofiler::SpliceableJSONWriter& aWriter,
+          const ProfilerString8View& aTimerName, uint32_t aDelay,
+          MarkerThreadId aThreadId) {
+        aWriter.StringProperty("name", aTimerName);
+        aWriter.IntProperty("delay", aDelay);
+        if (!aThreadId.IsUnspecified()) {
+          
+          
+          
+          
+          
+          aWriter.IntProperty("threadId", static_cast<int64_t>(
+                                              aThreadId.ThreadId().ToNumber()));
+        }
+      }
+      static MarkerSchema MarkerTypeDisplay() {
+        using MS = MarkerSchema;
+        MS schema{MS::Location::markerChart, MS::Location::markerTable};
+        schema.AddKeyLabelFormatSearchable("name", "Name", MS::Format::string,
+                                           MS::Searchable::searchable);
+        schema.AddKeyLabelFormat("delay", "Delay", MS::Format::milliseconds);
+        schema.SetTableLabel(
+            "{marker.name} - {marker.data.name} - {marker.data.delay}");
+        return schema;
+      }
+    };
+
+    nsAutoCString name;
+    aTimer->GetName(name, aProofOfLock);
+
+    nsLiteralCString prefix("Anonymous_");
+    profiler_add_marker(
+        "AddTimer", geckoprofiler::category::OTHER,
+        MarkerOptions(MarkerThreadId(mProfilerThreadId),
+                      MarkerStack::MaybeCapture(
+                          StringHead(name, prefix.Length()) == prefix)),
+        TimerMarker{}, name, aTimer->mDelay.ToMilliseconds(),
+        MarkerThreadId::CurrentThread());
+  }
+
   return NS_OK;
 }
 
-nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer) {
+nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
+                                  const MutexAutoLock& aProofOfLock) {
   MonitorAutoLock lock(mMonitor);
 
   
@@ -542,6 +608,19 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer) {
   if (mWaiting) {
     mNotified = true;
     mMonitor.Notify();
+  }
+
+  if (profiler_can_accept_markers()) {
+    nsAutoCString name;
+    aTimer->GetName(name, aProofOfLock);
+
+    nsLiteralCString prefix("Anonymous_");
+    PROFILER_MARKER_TEXT(
+        "RemoveTimer", OTHER,
+        MarkerOptions(MarkerThreadId(mProfilerThreadId),
+                      MarkerStack::MaybeCapture(
+                          StringHead(name, prefix.Length()) == prefix)),
+        name);
   }
 
   return NS_OK;
@@ -706,7 +785,7 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
     return timer.forget();
   }
   RefPtr<nsTimerEvent> event =
-      ::new (KnownNotNull, p) nsTimerEvent(timer.forget());
+      ::new (KnownNotNull, p) nsTimerEvent(timer.forget(), mProfilerThreadId);
 
   nsresult rv;
   {
@@ -740,6 +819,8 @@ void TimerThread::DoAfterSleep() {
   
   
   mNotified = true;
+  PROFILER_MARKER_UNTYPED("AfterSleep", OTHER,
+                          MarkerThreadId(mProfilerThreadId));
   mMonitor.Notify();
 }
 
