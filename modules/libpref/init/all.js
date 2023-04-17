@@ -1899,7 +1899,7 @@ pref("network.online",                      true);
 
 
 
-pref("network.cookie.move.interval_sec",    10);
+pref("network.cookie.move.interval_sec",    0);
 
 
 
