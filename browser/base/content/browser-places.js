@@ -255,29 +255,13 @@ var StarUI = {
 
     let removeButton = this._element("editBookmarkPanelRemoveButton");
     if (this._isNewBookmark) {
-      removeButton.label = gNavigatorBundle.getString(
-        "editBookmarkPanel.cancel.label"
-      );
-      removeButton.setAttribute(
-        "accesskey",
-        gNavigatorBundle.getString("editBookmarkPanel.cancel.accesskey")
-      );
+      document.l10n.setAttributes(removeButton, "bookmark-panel-cancel");
     } else {
       
       
-      let bookmarksCount = this._itemGuids.length;
-      let forms = gNavigatorBundle.getString(
-        "editBookmark.removeBookmarks.label"
-      );
-      let label = PluralForm.get(bookmarksCount, forms).replace(
-        "#1",
-        bookmarksCount
-      );
-      removeButton.label = label;
-      removeButton.setAttribute(
-        "accesskey",
-        gNavigatorBundle.getString("editBookmark.removeBookmarks.accesskey")
-      );
+      document.l10n.setAttributes(removeButton, "bookmark-panel-remove", {
+        count: this._itemGuids.length,
+      });
     }
 
     this._setIconAndPreviewImage();
