@@ -12,6 +12,18 @@ function backgroundGetSelf() {
     extInfo => {
       let url = browser.runtime.getURL("*");
       extInfo.hostPermissions = extInfo.hostPermissions.filter(i => i != url);
+
+      
+      
+      
+      
+      
+      
+      
+      extInfo.permissions = extInfo.permissions.filter(
+        i => !i.startsWith("internal:")
+      );
+
       extInfo.url = browser.runtime.getURL("");
       browser.test.sendMessage("management-getSelf", extInfo);
     },

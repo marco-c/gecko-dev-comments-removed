@@ -60,6 +60,7 @@ bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
   
   
   
+  
   nsAutoCString scheme;
   if (NS_SUCCEEDED(aURI->GetScheme(scheme)) &&
       (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource") ||
@@ -71,23 +72,12 @@ bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
 
   RefPtr<extensions::WebExtensionPolicy> addonPolicy = principal->AddonPolicy();
   if (addonPolicy) {
-    if (addonPolicy->IsPrivileged()) {
-      return true;
-    }
-
     
     
     
     
-    
-    
-    nsString addonId;
-    if (NS_SUCCEEDED(principal->GetAddonId(addonId))) {
-      if (StringEndsWith(addonId, u"@mozilla.org"_ns) ||
-          StringEndsWith(addonId, u"@mozilla.com"_ns)) {
-        return true;
-      }
-    }
+    return addonPolicy->HasPermission(
+        nsGkAtoms::svgContextPropertiesAllowedPermission);
   }
 
   bool isInAllowList = false;

@@ -165,6 +165,8 @@ XPCOMUtils.defineLazyGetter(this, "LAZY_NO_PROMPT_PERMISSIONS", async () => {
 const { sharedData } = Services.ppmm;
 
 const PRIVATE_ALLOWED_PERMISSION = "internal:privateBrowsingAllowed";
+const SVG_CONTEXT_PROPERTIES_PERMISSION =
+  "internal:svgContextPropertiesAllowed";
 
 
 
@@ -185,6 +187,52 @@ const PRIVILEGED_PERMS = new Set([
   "normandyAddonStudy",
   "networkStatus",
 ]);
+
+const INSTALL_AND_UPDATE_STARTUP_REASONS = new Set([
+  "ADDON_INSTALL",
+  "ADDON_UPGRADE",
+  "ADDON_DOWNGRADE",
+]);
+
+
+
+
+
+
+
+
+
+
+
+
+function isMozillaExtension(extension) {
+  const { addonData, id, isPrivileged, startupReason } = extension;
+
+  if (!INSTALL_AND_UPDATE_STARTUP_REASONS.has(startupReason)) {
+    throw new Error(
+      `isMozillaExtension called with unexpected startupReason: ${startupReason}`
+    );
+  }
+
+  if (isPrivileged) {
+    return true;
+  }
+
+  if (id.endsWith("@mozilla.com") || id.endsWith("@mozilla.org")) {
+    return true;
+  }
+
+  
+  
+  
+  
+  const isMozillaLineExtension = addonData.recommendationState?.states?.includes(
+    "line"
+  );
+  const isSigned = addonData.signedState > AddonManager.SIGNEDSTATE_MISSING;
+
+  return isSigned && isMozillaLineExtension;
+}
 
 
 
@@ -2599,6 +2647,26 @@ class Extension extends ExtensionData {
             origins: [],
           });
           this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+        }
+      }
+
+      
+      
+      if (INSTALL_AND_UPDATE_STARTUP_REASONS.has(this.startupReason)) {
+        if (isMozillaExtension(this)) {
+          
+          
+          ExtensionPermissions.add(this.id, {
+            permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
+            origins: [],
+          });
+          this.permissions.add(SVG_CONTEXT_PROPERTIES_PERMISSION);
+        } else {
+          ExtensionPermissions.remove(this.id, {
+            permissions: [SVG_CONTEXT_PROPERTIES_PERMISSION],
+            origins: [],
+          });
+          this.permissions.delete(SVG_CONTEXT_PROPERTIES_PERMISSION);
         }
       }
 
