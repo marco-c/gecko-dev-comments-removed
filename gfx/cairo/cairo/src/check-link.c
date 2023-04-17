@@ -1,4 +1,11 @@
+#define CAIRO_VERSION_H 1
+
 #include <cairo.h>
+
+
+#undef CAIRO_VERSION_H
+#include "../cairo-version.h"
+
 #include <stdio.h>
 
 int

@@ -35,20 +35,95 @@
 
 #include "cairoint.h"
 
-#if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
-
 #include "cairo-xlib-private.h"
 #include "cairo-xlib-xrender-private.h"
 #include "cairo-freelist-private.h"
 #include "cairo-error-private.h"
-#include "cairo-list-inline.h"
 
 #include <X11/Xlibint.h>	
 
 typedef int (*cairo_xlib_error_func_t) (Display     *display,
 					XErrorEvent *event);
 
+struct _cairo_xlib_job {
+    cairo_xlib_job_t *next;
+    enum {
+	RESOURCE,
+	WORK
+    } type;
+    union {
+	struct {
+	    cairo_xlib_notify_resource_func notify;
+	    XID xid;
+	} resource;
+	struct {
+	    cairo_xlib_notify_func notify;
+	    void *data;
+	    void (*destroy) (void *);
+	} work;
+    } func;
+};
+
 static cairo_xlib_display_t *_cairo_xlib_display_list;
+
+static void
+_cairo_xlib_remove_close_display_hook_internal (cairo_xlib_display_t *display,
+						cairo_xlib_hook_t *hook);
+
+static void
+_cairo_xlib_call_close_display_hooks (cairo_xlib_display_t *display)
+{
+    cairo_xlib_screen_t *screen;
+    cairo_xlib_hook_t *hook;
+
+    cairo_list_foreach_entry (screen, cairo_xlib_screen_t, &display->screens, link)
+	_cairo_xlib_screen_close_display (display, screen);
+
+    while (TRUE) {
+	hook = display->close_display_hooks;
+	if (hook == NULL)
+	    break;
+
+	_cairo_xlib_remove_close_display_hook_internal (display, hook);
+
+	hook->func (display, hook);
+    }
+    display->closed = TRUE;
+}
+
+static void
+_cairo_xlib_display_finish (void *abstract_display)
+{
+    cairo_xlib_display_t *display = abstract_display;
+
+    display->display = NULL;
+}
+
+static void
+_cairo_xlib_display_destroy (void *abstract_display)
+{
+    cairo_xlib_display_t *display = abstract_display;
+
+    
+    while (display->workqueue != NULL) {
+	cairo_xlib_job_t *job = display->workqueue;
+	display->workqueue = job->next;
+
+	if (job->type == WORK && job->func.work.destroy != NULL)
+	    job->func.work.destroy (job->func.work.data);
+
+	_cairo_freelist_free (&display->wq_freelist, job);
+    }
+    _cairo_freelist_fini (&display->wq_freelist);
+
+    while (! cairo_list_is_empty (&display->screens)) {
+	_cairo_xlib_screen_destroy (cairo_list_first_entry (&display->screens,
+                                                            cairo_xlib_screen_t,
+                                                            link));
+    }
+
+    free (display);
+}
 
 static int
 _noop_error_handler (Display     *display,
@@ -58,52 +133,63 @@ _noop_error_handler (Display     *display,
 }
 
 static void
-_cairo_xlib_display_finish (void *abstract_display)
+_cairo_xlib_display_notify (cairo_xlib_display_t *display)
 {
-    cairo_xlib_display_t *display = abstract_display;
+    cairo_xlib_job_t *jobs, *job, *freelist;
     Display *dpy = display->display;
 
-    _cairo_xlib_display_fini_shm (display);
+    
 
-    if (! cairo_device_acquire (&display->base)) {
-	cairo_xlib_error_func_t old_handler;
+
+    if (display->workqueue == NULL)
+	return;
+
+    jobs = display->workqueue;
+    while (jobs != NULL) {
+	display->workqueue = NULL;
 
 	
-	XSync (dpy, False);
-	old_handler = XSetErrorHandler (_noop_error_handler);
+	job = NULL;
+	do {
+	    cairo_xlib_job_t *next = jobs->next;
+	    jobs->next = job;
+	    job = jobs;
+	    jobs = next;
+	} while (jobs != NULL);
+	freelist = jobs = job;
 
-	while (! cairo_list_is_empty (&display->fonts)) {
-	    _cairo_xlib_font_close (cairo_list_first_entry (&display->fonts,
-							    cairo_xlib_font_t,
-							    link));
-	}
+	do {
+	    job = jobs;
+	    jobs = job->next;
 
-	while (! cairo_list_is_empty (&display->screens)) {
-	    _cairo_xlib_screen_destroy (display,
-					cairo_list_first_entry (&display->screens,
-								cairo_xlib_screen_t,
-								link));
-	}
+	    switch (job->type){
+	    case WORK:
+		job->func.work.notify (dpy, job->func.work.data);
+		if (job->func.work.destroy != NULL)
+		    job->func.work.destroy (job->func.work.data);
+		break;
 
-	XSync (dpy, False);
-	XSetErrorHandler (old_handler);
+	    case RESOURCE:
+		job->func.resource.notify (dpy, job->func.resource.xid);
+		break;
+	    }
+	} while (jobs != NULL);
 
-	cairo_device_release (&display->base);
+	do {
+	    job = freelist;
+	    freelist = job->next;
+	    _cairo_freelist_free (&display->wq_freelist, job);
+	} while (freelist != NULL);
+
+	jobs = display->workqueue;
     }
-}
-
-static void
-_cairo_xlib_display_destroy (void *abstract_display)
-{
-    cairo_xlib_display_t *display = abstract_display;
-
-    free (display);
 }
 
 static int
 _cairo_xlib_close_display (Display *dpy, XExtCodes *codes)
 {
     cairo_xlib_display_t *display, **prev, *next;
+    cairo_xlib_error_func_t old_handler;
 
     CAIRO_MUTEX_LOCK (_cairo_xlib_display_mutex);
     for (display = _cairo_xlib_display_list; display; display = display->next)
@@ -113,7 +199,22 @@ _cairo_xlib_close_display (Display *dpy, XExtCodes *codes)
     if (display == NULL)
 	return 0;
 
-    cairo_device_finish (&display->base);
+    if (! cairo_device_acquire (&display->base)) {
+      
+      XSync (dpy, False);
+      old_handler = XSetErrorHandler (_noop_error_handler);
+
+      _cairo_xlib_display_notify (display);
+      _cairo_xlib_call_close_display_hooks (display);
+
+      
+      _cairo_xlib_display_notify (display);
+
+      XSync (dpy, False);
+      XSetErrorHandler (old_handler);
+
+      cairo_device_release (&display->base);
+    }
 
     
 
@@ -130,7 +231,9 @@ _cairo_xlib_close_display (Display *dpy, XExtCodes *codes)
     }
     CAIRO_MUTEX_UNLOCK (_cairo_xlib_display_mutex);
 
-    display->display = NULL; 
+    assert (display != NULL);
+
+    cairo_device_finish (&display->base);
     cairo_device_destroy (&display->base);
 
     
@@ -149,20 +252,6 @@ static const cairo_device_backend_t _cairo_xlib_device_backend = {
     _cairo_xlib_display_destroy,
 };
 
-static void _cairo_xlib_display_select_compositor (cairo_xlib_display_t *display)
-{
-#if 1
-    if (display->render_major > 0 || display->render_minor >= 4)
-	display->compositor = _cairo_xlib_traps_compositor_get ();
-    else if (display->render_major > 0 || display->render_minor >= 0)
-	display->compositor = _cairo_xlib_mask_compositor_get ();
-    else
-	display->compositor = _cairo_xlib_core_compositor_get ();
-#else
-    display->compositor = _cairo_xlib_fallback_compositor_get ();
-#endif
-}
-
 
 
 
@@ -179,6 +268,8 @@ _cairo_xlib_device_create (Display *dpy)
     cairo_device_t *device;
     XExtCodes *codes;
     const char *env;
+
+    static int buggy_repeat_force = -1;
 
     CAIRO_MUTEX_INITIALIZE ();
 
@@ -207,18 +298,11 @@ _cairo_xlib_device_create (Display *dpy)
 	}
     }
 
-    display = _cairo_malloc (sizeof (cairo_xlib_display_t));
+    display = malloc (sizeof (cairo_xlib_display_t));
     if (unlikely (display == NULL)) {
 	device = _cairo_device_create_in_error (CAIRO_STATUS_NO_MEMORY);
 	goto UNLOCK;
     }
-
-    _cairo_device_init (&display->base, &_cairo_xlib_device_backend);
-
-    display->display = dpy;
-    cairo_list_init (&display->screens);
-    cairo_list_init (&display->fonts);
-    display->closed = FALSE;
 
     
 
@@ -245,20 +329,28 @@ _cairo_xlib_device_create (Display *dpy)
 	}
     }
 
-    _cairo_xlib_display_select_compositor (display);
+    codes = XAddExtension (dpy);
+    if (unlikely (codes == NULL)) {
+	device = _cairo_device_create_in_error (CAIRO_STATUS_NO_MEMORY);
+	free (display);
+	goto UNLOCK;
+    }
 
-    display->white = NULL;
-    memset (display->alpha, 0, sizeof (display->alpha));
-    memset (display->solid, 0, sizeof (display->solid));
-    memset (display->solid_cache, 0, sizeof (display->solid_cache));
-    memset (display->last_solid_cache, 0, sizeof (display->last_solid_cache));
+    _cairo_device_init (&display->base, &_cairo_xlib_device_backend);
+
+    XESetCloseDisplay (dpy, codes->extension, _cairo_xlib_close_display);
+
+    _cairo_freelist_init (&display->wq_freelist, sizeof (cairo_xlib_job_t));
+
+    cairo_device_reference (&display->base); 
+    display->display = dpy;
+    cairo_list_init (&display->screens);
+    display->workqueue = NULL;
+    display->close_display_hooks = NULL;
+    display->closed = FALSE;
 
     memset (display->cached_xrender_formats, 0,
 	    sizeof (display->cached_xrender_formats));
-
-    display->force_precision = -1;
-
-    _cairo_xlib_display_init_shm (display);
 
     
 
@@ -315,7 +407,7 @@ _cairo_xlib_device_create (Display *dpy)
 
 
 
-    if (_cairo_xlib_vendor_is_xorg (dpy)) {
+    if (strstr (ServerVendor (dpy), "X.Org") != NULL) {
 	if (VendorRelease (dpy) >= 60700000) {
 	    if (VendorRelease (dpy) < 70000000)
 		display->buggy_repeat = TRUE;
@@ -342,15 +434,29 @@ _cairo_xlib_device_create (Display *dpy)
 	display->buggy_pad_reflect = TRUE;
     }
 
-    codes = XAddExtension (dpy);
-    if (unlikely (codes == NULL)) {
-	device = _cairo_device_create_in_error (CAIRO_STATUS_NO_MEMORY);
-	free (display);
-	goto UNLOCK;
+    
+    display->buggy_gradients = TRUE;
+
+
+    
+    
+
+
+
+
+    if (buggy_repeat_force == -1) {
+        const char *flag = getenv("MOZ_CAIRO_FORCE_BUGGY_REPEAT");
+
+        buggy_repeat_force = -2;
+
+        if (flag && flag[0] == '0')
+            buggy_repeat_force = 0;
+        else if (flag && flag[0] == '1')
+            buggy_repeat_force = 1;
     }
 
-    XESetCloseDisplay (dpy, codes->extension, _cairo_xlib_close_display);
-    cairo_device_reference (&display->base); 
+    if (buggy_repeat_force != -2)
+        display->buggy_repeat = (buggy_repeat_force == 1);
 
     display->next = _cairo_xlib_display_list;
     _cairo_xlib_display_list = display;
@@ -360,6 +466,92 @@ _cairo_xlib_device_create (Display *dpy)
 UNLOCK:
     CAIRO_MUTEX_UNLOCK (_cairo_xlib_display_mutex);
     return device;
+}
+
+void
+_cairo_xlib_add_close_display_hook (cairo_xlib_display_t	*display,
+				    cairo_xlib_hook_t		*hook)
+{
+    hook->prev = NULL;
+    hook->next = display->close_display_hooks;
+    if (hook->next != NULL)
+	hook->next->prev = hook;
+    display->close_display_hooks = hook;
+}
+
+static void
+_cairo_xlib_remove_close_display_hook_internal (cairo_xlib_display_t *display,
+						cairo_xlib_hook_t *hook)
+{
+    if (display->close_display_hooks == hook)
+	display->close_display_hooks = hook->next;
+    else if (hook->prev != NULL)
+	hook->prev->next = hook->next;
+
+    if (hook->next != NULL)
+	hook->next->prev = hook->prev;
+
+    hook->prev = NULL;
+    hook->next = NULL;
+}
+
+void
+_cairo_xlib_remove_close_display_hook (cairo_xlib_display_t	*display,
+				       cairo_xlib_hook_t	*hook)
+{
+    _cairo_xlib_remove_close_display_hook_internal (display, hook);
+}
+
+cairo_status_t
+_cairo_xlib_display_queue_resource (cairo_xlib_display_t *display,
+	                            cairo_xlib_notify_resource_func notify,
+				    XID xid)
+{
+    cairo_xlib_job_t *job;
+    cairo_status_t status = CAIRO_STATUS_NO_MEMORY;
+
+    if (display->closed == FALSE) {
+	job = _cairo_freelist_alloc (&display->wq_freelist);
+	if (job != NULL) {
+	    job->type = RESOURCE;
+	    job->func.resource.xid = xid;
+	    job->func.resource.notify = notify;
+
+	    job->next = display->workqueue;
+	    display->workqueue = job;
+
+	    status = CAIRO_STATUS_SUCCESS;
+	}
+    }
+
+    return status;
+}
+
+cairo_status_t
+_cairo_xlib_display_queue_work (cairo_xlib_display_t *display,
+	                        cairo_xlib_notify_func notify,
+				void *data,
+				void (*destroy) (void *))
+{
+    cairo_xlib_job_t *job;
+    cairo_status_t status = CAIRO_STATUS_NO_MEMORY;
+
+    if (display->closed == FALSE) {
+	job = _cairo_freelist_alloc (&display->wq_freelist);
+	if (job != NULL) {
+	    job->type = WORK;
+	    job->func.work.data    = data;
+	    job->func.work.notify  = notify;
+	    job->func.work.destroy = destroy;
+
+	    job->next = display->workqueue;
+	    display->workqueue = job;
+
+	    status = CAIRO_STATUS_SUCCESS;
+	}
+    }
+
+    return status;
 }
 
 cairo_status_t
@@ -372,121 +564,8 @@ _cairo_xlib_display_acquire (cairo_device_t *device, cairo_xlib_display_t **disp
         return status;
 
     *display = (cairo_xlib_display_t *) device;
-    return CAIRO_STATUS_SUCCESS;
-}
-
-XRenderPictFormat *
-_cairo_xlib_display_get_xrender_format_for_pixman(cairo_xlib_display_t *display,
-						  pixman_format_code_t format)
-{
-    Display *dpy = display->display;
-    XRenderPictFormat tmpl;
-    int mask;
-
-    
-    if (format == PIXMAN_rgba_float || format == PIXMAN_rgb_float)
-	return NULL;
-
-#define MASK(x) ((1<<(x))-1)
-
-    tmpl.depth = PIXMAN_FORMAT_DEPTH(format);
-    mask = PictFormatType | PictFormatDepth;
-
-    switch (PIXMAN_FORMAT_TYPE(format)) {
-    case PIXMAN_TYPE_ARGB:
-	tmpl.type = PictTypeDirect;
-
-	tmpl.direct.alphaMask = MASK(PIXMAN_FORMAT_A(format));
-	if (PIXMAN_FORMAT_A(format))
-	    tmpl.direct.alpha = (PIXMAN_FORMAT_R(format) +
-				 PIXMAN_FORMAT_G(format) +
-				 PIXMAN_FORMAT_B(format));
-
-	tmpl.direct.redMask = MASK(PIXMAN_FORMAT_R(format));
-	tmpl.direct.red = (PIXMAN_FORMAT_G(format) +
-			   PIXMAN_FORMAT_B(format));
-
-	tmpl.direct.greenMask = MASK(PIXMAN_FORMAT_G(format));
-	tmpl.direct.green = PIXMAN_FORMAT_B(format);
-
-	tmpl.direct.blueMask = MASK(PIXMAN_FORMAT_B(format));
-	tmpl.direct.blue = 0;
-
-	mask |= PictFormatRed | PictFormatRedMask;
-	mask |= PictFormatGreen | PictFormatGreenMask;
-	mask |= PictFormatBlue | PictFormatBlueMask;
-	mask |= PictFormatAlpha | PictFormatAlphaMask;
-	break;
-
-    case PIXMAN_TYPE_ABGR:
-	tmpl.type = PictTypeDirect;
-
-	tmpl.direct.alphaMask = MASK(PIXMAN_FORMAT_A(format));
-	if (tmpl.direct.alphaMask)
-	    tmpl.direct.alpha = (PIXMAN_FORMAT_B(format) +
-				 PIXMAN_FORMAT_G(format) +
-				 PIXMAN_FORMAT_R(format));
-
-	tmpl.direct.blueMask = MASK(PIXMAN_FORMAT_B(format));
-	tmpl.direct.blue = (PIXMAN_FORMAT_G(format) +
-			    PIXMAN_FORMAT_R(format));
-
-	tmpl.direct.greenMask = MASK(PIXMAN_FORMAT_G(format));
-	tmpl.direct.green = PIXMAN_FORMAT_R(format);
-
-	tmpl.direct.redMask = MASK(PIXMAN_FORMAT_R(format));
-	tmpl.direct.red = 0;
-
-	mask |= PictFormatRed | PictFormatRedMask;
-	mask |= PictFormatGreen | PictFormatGreenMask;
-	mask |= PictFormatBlue | PictFormatBlueMask;
-	mask |= PictFormatAlpha | PictFormatAlphaMask;
-	break;
-
-    case PIXMAN_TYPE_BGRA:
-	tmpl.type = PictTypeDirect;
-
-	tmpl.direct.blueMask = MASK(PIXMAN_FORMAT_B(format));
-	tmpl.direct.blue = (PIXMAN_FORMAT_BPP(format) - PIXMAN_FORMAT_B(format));
-
-	tmpl.direct.greenMask = MASK(PIXMAN_FORMAT_G(format));
-	tmpl.direct.green = (PIXMAN_FORMAT_BPP(format) - PIXMAN_FORMAT_B(format) -
-			     PIXMAN_FORMAT_G(format));
-
-	tmpl.direct.redMask = MASK(PIXMAN_FORMAT_R(format));
-	tmpl.direct.red = (PIXMAN_FORMAT_BPP(format) - PIXMAN_FORMAT_B(format) -
-			   PIXMAN_FORMAT_G(format) - PIXMAN_FORMAT_R(format));
-
-	tmpl.direct.alphaMask = MASK(PIXMAN_FORMAT_A(format));
-	tmpl.direct.alpha = 0;
-
-	mask |= PictFormatRed | PictFormatRedMask;
-	mask |= PictFormatGreen | PictFormatGreenMask;
-	mask |= PictFormatBlue | PictFormatBlueMask;
-	mask |= PictFormatAlpha | PictFormatAlphaMask;
-	break;
-
-    case PIXMAN_TYPE_A:
-	tmpl.type = PictTypeDirect;
-
-	tmpl.direct.alpha = 0;
-	tmpl.direct.alphaMask = MASK(PIXMAN_FORMAT_A(format));
-
-	mask |= PictFormatAlpha | PictFormatAlphaMask;
-	break;
-
-    case PIXMAN_TYPE_COLOR:
-    case PIXMAN_TYPE_GRAY:
-	
-	tmpl.type = PictTypeIndexed;
-	
-	
-	return NULL;
-    }
-#undef MASK
-
-    
-    return XRenderFindFormat(dpy, mask, &tmpl, 0);
+    _cairo_xlib_display_notify (*display);
+    return status;
 }
 
 XRenderPictFormat *
@@ -495,9 +574,15 @@ _cairo_xlib_display_get_xrender_format (cairo_xlib_display_t	*display,
 {
     XRenderPictFormat *xrender_format;
 
+#if ! ATOMIC_OP_NEEDS_MEMORY_BARRIER
+    xrender_format = display->cached_xrender_formats[format];
+    if (likely (xrender_format != NULL))
+	return xrender_format;
+#endif
+
     xrender_format = display->cached_xrender_formats[format];
     if (xrender_format == NULL) {
-	int pict_format = PictStandardNUM;
+	int pict_format;
 
 	switch (format) {
 	case CAIRO_FORMAT_A1:
@@ -506,31 +591,34 @@ _cairo_xlib_display_get_xrender_format (cairo_xlib_display_t	*display,
 	    pict_format = PictStandardA8; break;
 	case CAIRO_FORMAT_RGB24:
 	    pict_format = PictStandardRGB24; break;
-	case CAIRO_FORMAT_RGB16_565:
-	    xrender_format = _cairo_xlib_display_get_xrender_format_for_pixman(display,
-									       PIXMAN_r5g6b5);
+	case CAIRO_FORMAT_RGB16_565: {
+	    Visual *visual = NULL;
+	    Screen *screen = DefaultScreenOfDisplay(display->display);
+	    int j;
+	    for (j = 0; j < screen->ndepths; j++) {
+	        Depth *d = &screen->depths[j];
+	        if (d->depth == 16 && d->nvisuals && &d->visuals[0]) {
+	            if (d->visuals[0].red_mask   == 0xf800 &&
+	                d->visuals[0].green_mask == 0x7e0 &&
+	                d->visuals[0].blue_mask  == 0x1f)
+	                visual = &d->visuals[0];
+	            break;
+	        }
+	    }
+	    if (!visual)
+	        return NULL;
+	    xrender_format = XRenderFindVisualFormat(display->display, visual);
 	    break;
-	case CAIRO_FORMAT_RGB30:
-	    xrender_format = _cairo_xlib_display_get_xrender_format_for_pixman(display,
-									       PIXMAN_x2r10g10b10);
-	    break;
-	case CAIRO_FORMAT_RGBA128F:
-	    xrender_format = _cairo_xlib_display_get_xrender_format_for_pixman(display,
-									       PIXMAN_rgba_float);
-	    break;
-	case CAIRO_FORMAT_RGB96F:
-	    xrender_format = _cairo_xlib_display_get_xrender_format_for_pixman(display,
-									       PIXMAN_rgb_float);
-	    break;
+	}
 	case CAIRO_FORMAT_INVALID:
 	default:
 	    ASSERT_NOT_REACHED;
 	case CAIRO_FORMAT_ARGB32:
 	    pict_format = PictStandardARGB32; break;
 	}
-	if (pict_format != PictStandardNUM)
-	    xrender_format =
-		XRenderFindStandardFormat (display->display, pict_format);
+	if (!xrender_format)
+	    xrender_format = XRenderFindStandardFormat (display->display,
+		                                        pict_format);
 	display->cached_xrender_formats[format] = xrender_format;
     }
 
@@ -554,6 +642,14 @@ _cairo_xlib_display_get_screen (cairo_xlib_display_t *display,
     return NULL;
 }
 
+void
+_cairo_xlib_display_get_xrender_version (cairo_xlib_display_t *display,
+					 int *major, int *minor)
+{
+    *major = display->render_major;
+    *minor = display->render_minor;
+}
+
 cairo_bool_t
 _cairo_xlib_display_has_repeat (cairo_device_t *device)
 {
@@ -571,97 +667,3 @@ _cairo_xlib_display_has_gradients (cairo_device_t *device)
 {
     return ! ((cairo_xlib_display_t *) device)->buggy_gradients;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void
-cairo_xlib_device_debug_cap_xrender_version (cairo_device_t *device,
-					     int major_version,
-					     int minor_version)
-{
-    cairo_xlib_display_t *display = (cairo_xlib_display_t *) device;
-
-    if (device == NULL || device->status)
-	return;
-
-    if (device->backend->type != CAIRO_DEVICE_TYPE_XLIB)
-	return;
-
-    if (major_version < display->render_major ||
-	(major_version == display->render_major &&
-	 minor_version < display->render_minor))
-    {
-	display->render_major = major_version;
-	display->render_minor = minor_version;
-    }
-
-    _cairo_xlib_display_select_compositor (display);
-}
-
-
-
-
-
-
-
-
-
-
-
-void
-cairo_xlib_device_debug_set_precision (cairo_device_t *device,
-				       int precision)
-{
-    if (device == NULL || device->status)
-	return;
-    if (device->backend->type != CAIRO_DEVICE_TYPE_XLIB) {
-	cairo_status_t status;
-
-	status = _cairo_device_set_error (device, CAIRO_STATUS_DEVICE_TYPE_MISMATCH);
-	(void) status;
-	return;
-    }
-
-    ((cairo_xlib_display_t *) device)->force_precision = precision;
-}
-
-
-
-
-
-
-
-
-
-
-
-int
-cairo_xlib_device_debug_get_precision (cairo_device_t *device)
-{
-    if (device == NULL || device->status)
-	return -1;
-    if (device->backend->type != CAIRO_DEVICE_TYPE_XLIB) {
-	cairo_status_t status;
-
-	status = _cairo_device_set_error (device, CAIRO_STATUS_DEVICE_TYPE_MISMATCH);
-	(void) status;
-	return -1;
-    }
-
-    return ((cairo_xlib_display_t *) device)->force_precision;
-}
-
-#endif 

@@ -1,8 +1,16 @@
+
+
+
+
+
+
 #ifndef CAIRO_VERSION_H
 #define CAIRO_VERSION_H
 
-#define CAIRO_VERSION_MAJOR 1
-#define CAIRO_VERSION_MINOR 17
-#define CAIRO_VERSION_MICRO 4
+#if 0
+#define CAIRO_VERSION_MAJOR USE_cairo_version_OR_cairo_version_string_INSTEAD
+#define CAIRO_VERSION_MINOR USE_cairo_version_OR_cairo_version_string_INSTEAD
+#define CAIRO_VERSION_MICRO USE_cairo_version_OR_cairo_version_string_INSTEAD
+#endif
 
 #endif

@@ -49,10 +49,8 @@
 
 #include "test-paginated-surface.h"
 
-#include "cairo-default-context-private.h"
 #include "cairo-error-private.h"
 #include "cairo-paginated-private.h"
-#include "cairo-surface-backend-private.h"
 
 typedef struct _test_paginated_surface {
     cairo_surface_t base;
@@ -74,15 +72,14 @@ _cairo_test_paginated_surface_create (cairo_surface_t *target)
     if (unlikely (status))
 	return _cairo_surface_create_in_error (status);
 
-    surface = _cairo_malloc (sizeof (test_paginated_surface_t));
+    surface = malloc (sizeof (test_paginated_surface_t));
     if (unlikely (surface == NULL))
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
 
     _cairo_surface_init (&surface->base,
 			 &test_paginated_surface_backend,
 			 NULL, 
-			 target->content,
-			 TRUE); 
+			 target->content);
 
     surface->target = cairo_surface_reference (target);
 
@@ -124,7 +121,7 @@ static cairo_int_status_t
 _test_paginated_surface_paint (void		*abstract_surface,
 			       cairo_operator_t	 op,
 			       const cairo_pattern_t	*source,
-			       const cairo_clip_t	*clip)
+			       cairo_clip_t		*clip)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
@@ -139,7 +136,7 @@ _test_paginated_surface_mask (void		*abstract_surface,
 			      cairo_operator_t	 op,
 			      const cairo_pattern_t	*source,
 			      const cairo_pattern_t	*mask,
-			      const cairo_clip_t	*clip)
+			      cairo_clip_t		*clip)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
@@ -154,13 +151,13 @@ static cairo_int_status_t
 _test_paginated_surface_stroke (void				*abstract_surface,
 				cairo_operator_t		 op,
 				const cairo_pattern_t		*source,
-				const cairo_path_fixed_t		*path,
+				cairo_path_fixed_t		*path,
 				const cairo_stroke_style_t		*style,
 				const cairo_matrix_t			*ctm,
 				const cairo_matrix_t			*ctm_inverse,
 				double				 tolerance,
 				cairo_antialias_t		 antialias,
-				const cairo_clip_t		*clip)
+				cairo_clip_t			*clip)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
@@ -178,11 +175,11 @@ static cairo_int_status_t
 _test_paginated_surface_fill (void				*abstract_surface,
 			      cairo_operator_t			 op,
 			      const cairo_pattern_t		*source,
-			      const cairo_path_fixed_t		*path,
+			      cairo_path_fixed_t		*path,
 			      cairo_fill_rule_t			 fill_rule,
 			      double				 tolerance,
 			      cairo_antialias_t			 antialias,
-			      const cairo_clip_t		*clip)
+			      cairo_clip_t			*clip)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
@@ -215,7 +212,7 @@ _test_paginated_surface_show_text_glyphs (void			    *abstract_surface,
 					  int			     num_clusters,
 					  cairo_text_cluster_flags_t cluster_flags,
 					  cairo_scaled_font_t	    *scaled_font,
-					  const cairo_clip_t	    *clip)
+					  cairo_clip_t		    *clip)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
@@ -232,41 +229,40 @@ _test_paginated_surface_show_text_glyphs (void			    *abstract_surface,
 }
 
 
-static cairo_int_status_t
+static void
 _test_paginated_surface_set_paginated_mode (void			*abstract_surface,
 					    cairo_paginated_mode_t	 mode)
 {
     test_paginated_surface_t *surface = abstract_surface;
 
     surface->paginated_mode = mode;
-
-    return CAIRO_STATUS_SUCCESS;
 }
 
 static const cairo_surface_backend_t test_paginated_surface_backend = {
     CAIRO_INTERNAL_SURFACE_TYPE_TEST_PAGINATED,
-    _test_paginated_surface_finish,
-    _cairo_default_context_create,
 
     
 
 
     NULL, 
+    _test_paginated_surface_finish,
     NULL, 
     NULL, 
     NULL, 
-
-    _cairo_surface_default_source,
     NULL, 
     NULL, 
     NULL, 
-
     NULL, 
     NULL, 
-
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
     _test_paginated_surface_get_extents,
     NULL, 
-
+    NULL, 
+    NULL, 
+    NULL, 
     NULL, 
     NULL, 
 
@@ -278,7 +274,13 @@ static const cairo_surface_backend_t test_paginated_surface_backend = {
     _test_paginated_surface_stroke,
     _test_paginated_surface_fill,
     NULL, 
+
     NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+
     _test_paginated_surface_has_show_text_glyphs,
     _test_paginated_surface_show_text_glyphs
 };

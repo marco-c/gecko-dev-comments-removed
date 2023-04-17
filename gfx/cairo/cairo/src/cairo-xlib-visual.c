@@ -35,12 +35,9 @@
 
 #include "cairoint.h"
 
-#if !CAIRO_HAS_XLIB_XCB_FUNCTIONS
-
 #include "cairo-xlib-private.h"
 
 #include "cairo-error-private.h"
-#include "cairo-list-inline.h"
 
 
 
@@ -82,11 +79,10 @@ _cairo_xlib_visual_info_create (Display *dpy,
     for (i = 0; i < RAMP_SIZE; i++)
 	ramp_index_to_short[i] = (0xffff * i + ((RAMP_SIZE-1)>>1)) / (RAMP_SIZE-1);
 
-    info = _cairo_malloc (sizeof (cairo_xlib_visual_info_t));
+    info = malloc (sizeof (cairo_xlib_visual_info_t));
     if (unlikely (info == NULL))
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 
-    cairo_list_init (&info->link);
     info->visualid = visualid;
 
     
@@ -187,8 +183,5 @@ void
 _cairo_xlib_visual_info_destroy (cairo_xlib_visual_info_t *info)
 {
     
-    _cairo_list_del (&info->link);
     free (info);
 }
-
-#endif 

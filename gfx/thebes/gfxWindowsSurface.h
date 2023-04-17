@@ -26,6 +26,9 @@ class gfxWindowsSurface : public gfxASurface {
   explicit gfxWindowsSurface(HDC dc, uint32_t flags = 0);
 
   
+  explicit gfxWindowsSurface(IDirect3DSurface9* surface, uint32_t flags = 0);
+
+  
   explicit gfxWindowsSurface(const mozilla::gfx::IntSize& size,
                              gfxImageFormat imageFormat =
                                  mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32);
