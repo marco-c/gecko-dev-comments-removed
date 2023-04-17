@@ -167,12 +167,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         
-        "target-configuration": true,
-        
-        
-        
-        
-        
         "thread-configuration": true,
         
         
