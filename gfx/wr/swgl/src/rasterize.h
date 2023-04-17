@@ -1439,7 +1439,8 @@ static void draw_perspective(int nump, Interpolants interp_outs[4],
   vec3_scalar offset =
       make_vec3(make_vec2(ctx->viewport.origin() - colortex.offset), 0.0f) +
       scale;
-  if (test_none(pos.z <= -pos.w || pos.z >= pos.w)) {
+  
+  if (test_all(pos.z > -pos.w && pos.z < pos.w)) {
     
     
     
