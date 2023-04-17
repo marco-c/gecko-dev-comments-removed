@@ -136,6 +136,7 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   void RequestDelayedTask(nsIEventTarget* aTarget, DelayedTaskType aType);
 
  protected:
+  
   ContentPermissionRequestBase(nsIPrincipal* aPrincipal,
                                nsPIDOMWindowInner* aWindow,
                                const nsACString& aPrefName,
@@ -146,6 +147,13 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   RefPtr<PermissionDelegateHandler> mPermissionHandler;
+
+  
+  
+  
+  
+  
+  
   const nsCString mPrefName;
   const nsCString mType;
   bool mIsHandlingUserInput;
