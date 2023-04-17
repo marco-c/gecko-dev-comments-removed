@@ -160,6 +160,27 @@ class APZCTreeManagerTester : public APZCTesterBase {
     }
   }
 
+  void SetEventRegionsBasedOnBottommostMetrics(
+      WebRenderLayerScrollData* aLayer) {
+    const FrameMetrics& metrics =
+        aLayer->GetScrollMetadata(scrollData, 0).GetMetrics();
+    CSSRect scrollableRect = metrics.GetScrollableRect();
+    if (!scrollableRect.IsEqualEdges(CSSRect(-1, -1, -1, -1))) {
+      
+      
+      
+      EventRegions er = aLayer->GetEventRegions();
+      IntRect scrollRect =
+          RoundedToInt(scrollableRect * metrics.LayersPixelsPerCSSPixel())
+              .ToUnknownRect();
+      er.mHitRegion = nsIntRegion(IntRect(
+          RoundedToInt(
+              metrics.GetCompositionBounds().TopLeft().ToUnknownPoint()),
+          scrollRect.Size()));
+      APZTestAccess::SetEventRegions(*aLayer, er);
+    }
+  }
+
   static void SetScrollableFrameMetrics(
       Layer* aLayer, ScrollableLayerGuid::ViewID aScrollId,
       CSSRect aScrollableRect = CSSRect(-1, -1, -1, -1)) {
@@ -200,7 +221,7 @@ class APZCTreeManagerTester : public APZCTesterBase {
         aScrollId, aScrollableRect, ParentLayerRect(compositionBounds));
     SetScrollMetadata(aLayer, metadata);
     
-    
+    SetEventRegionsBasedOnBottommostMetrics(aLayer);
   }
 
   bool HasScrollableFrameMetrics(const WebRenderLayerScrollData* aLayer) const {
