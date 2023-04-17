@@ -22,6 +22,10 @@ async function testScript(tab) {
 
   
   await commands.destroy();
+
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 0));
 }
 
 add_task(async function() {

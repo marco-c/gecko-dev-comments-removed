@@ -33,6 +33,11 @@ async function testScript() {
 
   
   await BrowserConsoleManager.toggleBrowserConsole();
+
+  
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
 }
 
 add_task(async function() {

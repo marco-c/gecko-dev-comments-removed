@@ -187,7 +187,29 @@ exports.allocationTracker = function({
       }
 
       
+      
+      if (watchAllGlobals) {
+        dbg.memory.allocationSamplingProbability = 0.0;
+      }
+
+      
       await this.doGC();
+
+      
+      
+      
+      if (!watchAllGlobals) {
+        const allocations = dbg.memory.drainAllocationsLog();
+        if (allocations.length > 0) {
+          this.logAllocationLog(
+            allocations,
+            "Allocation that happened during the GC"
+          );
+          console.error(
+            "Allocation happened during the GC. Are you waiting correctly before calling stopRecordingAllocations?"
+          );
+        }
+      }
 
       const memory = this.getAllocatedMemory();
       const objects = this.stillAllocatedObjects();
@@ -379,11 +401,15 @@ exports.allocationTracker = function({
 
 
 
-    logAllocationLog() {
-      const allocations = dbg.memory.drainAllocationsLog();
+    logAllocationLog(allocations, msg = "") {
+      if (!allocations) {
+        allocations = dbg.memory.drainAllocationsLog();
+      }
       const sources = this.allocationsToSources(allocations);
       return this.logAllocationSites(
-        "all allocations (which may be freed or are still allocated)",
+        msg
+          ? msg
+          : "all allocations (which may be freed or are still allocated)",
         sources
       );
     },
