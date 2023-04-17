@@ -980,8 +980,7 @@ int ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
           }
         }
 
-        if (numFrames == 0) {
-          
+        if (numFrames == 0 && aRunningTimes.IsEmpty()) {
           
           
           
@@ -1054,11 +1053,9 @@ int ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
               MOZ_ASSERT(aReader,
                          "Local ProfileChunkedBuffer cannot be out-of-session");
               EntryGetter stackEntryGetter(*aReader);
-              if (stackEntryGetter.Has()) {
-                ReadStack(stackEntryGetter,
-                          it.CurrentBlockIndex().ConvertToProfileBufferIndex(),
-                          unresponsiveDuration, runningTimes);
-              }
+              ReadStack(stackEntryGetter,
+                        it.CurrentBlockIndex().ConvertToProfileBufferIndex(),
+                        unresponsiveDuration, runningTimes);
             });
             mWorkerChunkManager.Reset(tempBuffer.GetAllChunks());
             break;
