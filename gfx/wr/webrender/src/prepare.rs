@@ -6,12 +6,11 @@
 
 
 
-use std::{cmp, u32};
-use api::{PremultipliedColorF, PropertyBinding, GradientStop, ExtendMode};
-use api::{BoxShadowClipMode, LineOrientation, BorderStyle, ClipMode};
+use std::cmp;
+use api::{PremultipliedColorF, PropertyBinding};
+use api::{BoxShadowClipMode, BorderStyle, ClipMode};
 use api::units::*;
 use euclid::Scale;
-use euclid::approxeq::ApproxEq;
 use smallvec::SmallVec;
 use crate::image_tiling::{self, Repetition};
 use crate::border::{get_max_scale_for_border, build_border_instances};
@@ -24,8 +23,6 @@ use crate::gpu_types::{BrushFlags};
 use crate::internal_types::{FastHashMap, PlaneSplitAnchor};
 use crate::picture::{PicturePrimitive, SliceId, TileCacheLogger, ClusterFlags, SurfaceRenderTasks};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, TileCacheInstance, SubpixelMode};
-use crate::prim_store::gradient::{GRADIENT_FP_STOPS, FastLinearGradientCacheKey, GradientStopKey, CachedGradientSegment};
-use crate::prim_store::gradient::LinearGradientPrimitive;
 use crate::prim_store::line_dec::MAX_LINE_DECORATION_RESOLUTION;
 use crate::prim_store::*;
 use crate::render_backend::DataStores;
@@ -35,7 +32,6 @@ use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskPare
 use crate::render_task::{RenderTaskKind, RenderTask};
 use crate::segment::SegmentBuilder;
 use crate::space::SpaceMapper;
-use crate::texture_cache::TEXTURE_REGION_DIMENSIONS;
 use crate::util::{clamp_to_scale_factor, pack_as_float, raster_rect_to_device_pixels};
 use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
 
@@ -625,14 +621,13 @@ fn prepare_interned_prim_for_render(
                 },
             );
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, gradient_index, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
-            let gradient = &mut store.linear_gradients[*gradient_index];
 
             
             
-            prim_data.update(frame_state);
+            prim_data.update(frame_state, pic_context.surface_index);
 
             if prim_data.stretch_size.width >= prim_data.common.prim_rect.size.width &&
                 prim_data.stretch_size.height >= prim_data.common.prim_rect.size.height {
@@ -640,295 +635,12 @@ fn prepare_interned_prim_for_render(
                 prim_data.common.may_need_repetition = false;
             }
 
-            
-            
-            
-            if prim_data.supports_caching && !frame_context.fb_config.is_software {
-                let gradient_size = (prim_data.end_point - prim_data.start_point).to_size();
-
-                
-                
-                
-                
-                
-                let (size, orientation, prim_start_offset, prim_end_offset) =
-                    if prim_data.start_point.x.approx_eq(&prim_data.end_point.x) {
-                        let prim_start_offset = -prim_data.start_point.y / gradient_size.height;
-                        let prim_end_offset = (prim_data.common.prim_rect.size.height - prim_data.start_point.y)
-                                                / gradient_size.height;
-                        let size = DeviceIntSize::new(16, TEXTURE_REGION_DIMENSIONS);
-                        (size, LineOrientation::Vertical, prim_start_offset, prim_end_offset)
-                    } else {
-                        let prim_start_offset = -prim_data.start_point.x / gradient_size.width;
-                        let prim_end_offset = (prim_data.common.prim_rect.size.width - prim_data.start_point.x)
-                                                / gradient_size.width;
-                        let size = DeviceIntSize::new(TEXTURE_REGION_DIMENSIONS, 16);
-                        (size, LineOrientation::Horizontal, prim_start_offset, prim_end_offset)
-                    };
-
-                
-                let mut stops = vec![GradientStopKey::empty(); prim_data.stops.len()];
-
-                
-                
-                if prim_data.reverse_stops {
-                    for (src, dest) in prim_data.stops.iter().rev().zip(stops.iter_mut()) {
-                        let stop = GradientStop {
-                            offset: 1.0 - src.offset,
-                            color: src.color,
-                        };
-                        *dest = stop.into();
-                    }
-                } else {
-                    for (src, dest) in prim_data.stops.iter().zip(stops.iter_mut()) {
-                        *dest = (*src).into();
-                    }
-                }
-
-                gradient.cache_segments.clear();
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                fn emit_segments(start_offset: f32, 
-                                 end_offset: f32,   
-                                 gradient_offset_base: f32,
-                                 prim_start_offset: f32, 
-                                 prim_end_offset: f32,   
-                                 prim_origin_in: LayoutPoint,
-                                 prim_size_in: LayoutSize,
-                                 task_size: DeviceIntSize,
-                                 is_opaque: bool,
-                                 stops: &[GradientStopKey],
-                                 orientation: LineOrientation,
-                                 frame_state: &mut FrameBuildingState,
-                                 gradient: &mut LinearGradientPrimitive,
-                                 parent_surface_index: SurfaceIndex,
-                ) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    let mut first_stop = 0;
-                    
-                    
-                    while first_stop < stops.len()-1 {
-
-                        
-                        
-                        if stops[first_stop].offset > end_offset {
-                            return;
-                        }
-
-                        
-                        
-                        let mut last_stop = first_stop;
-                        let mut hard_stop = false;   
-                        while last_stop < stops.len()-1 &&
-                              last_stop - first_stop + 1 < GRADIENT_FP_STOPS
-                        {
-                            if stops[last_stop+1].offset == stops[last_stop].offset {
-                                hard_stop = true;
-                                break;
-                            }
-
-                            last_stop = last_stop + 1;
-                        }
-
-                        let num_stops = last_stop - first_stop + 1;
-
-                        
-                        if num_stops == 0 {
-                            first_stop = last_stop + 1;
-                            continue;
-                        }
-
-                        
-                        if stops[last_stop].offset < start_offset {
-                            first_stop = if hard_stop { last_stop+1 } else { last_stop };
-                            continue;
-                        }
-
-                        let segment_start_point = start_offset.max(stops[first_stop].offset);
-                        let segment_end_point   = end_offset  .min(stops[last_stop ].offset);
-
-                        let mut segment_stops = [GradientStopKey::empty(); GRADIENT_FP_STOPS];
-                        for i in 0..num_stops {
-                            segment_stops[i] = stops[first_stop + i];
-                        }
-
-                        let cache_key = FastLinearGradientCacheKey {
-                            orientation,
-                            start_stop_point: VectorKey {
-                                x: segment_start_point,
-                                y: segment_end_point,
-                            },
-                            stops: segment_stops,
-                        };
-
-                        let mut prim_origin = prim_origin_in;
-                        let mut prim_size   = prim_size_in;
-
-                        
-                        
-                        
-                        let inv_length = 1.0 / ( prim_end_offset - prim_start_offset );
-                        if orientation == LineOrientation::Horizontal {
-                            prim_origin.x    += ( segment_start_point + gradient_offset_base - prim_start_offset )
-                                                * inv_length * prim_size.width;
-                            prim_size.width  *= ( segment_end_point - segment_start_point )
-                                                * inv_length; 
-                        } else {
-                            prim_origin.y    += ( segment_start_point + gradient_offset_base - prim_start_offset )
-                                                * inv_length * prim_size.height;
-                            prim_size.height *= ( segment_end_point - segment_start_point )
-                                                * inv_length; 
-                        }
-
-                        
-                        if prim_size.area() > 0.0 {
-                            let local_rect = LayoutRect::new( prim_origin, prim_size );
-
-                            
-                            
-                            
-
-                            
-                            gradient.cache_segments.push(
-                                CachedGradientSegment {
-                                    render_task: frame_state.resource_cache.request_render_task(
-                                        RenderTaskCacheKey {
-                                            size: task_size,
-                                            kind: RenderTaskCacheKeyKind::FastLinearGradient(cache_key),
-                                        },
-                                        frame_state.gpu_cache,
-                                        frame_state.rg_builder,
-                                        None,
-                                        is_opaque,
-                                        RenderTaskParent::Surface(parent_surface_index),
-                                        frame_state.surfaces,
-                                        |rg_builder| {
-                                            rg_builder.add().init(RenderTask::new_dynamic(
-                                                task_size,
-                                                RenderTaskKind::new_gradient(
-                                                    segment_stops,
-                                                    orientation,
-                                                    segment_start_point,
-                                                    segment_end_point,
-                                                ),
-                                            ))
-                                        }),
-                                    local_rect: local_rect,
-                                }
-                            );
-                        }
-
-                        
-                        first_stop = if hard_stop { last_stop + 1 } else { last_stop };
-                    }
-                }
-
-                if prim_data.extend_mode == ExtendMode::Clamp ||
-                   ( prim_start_offset >= 0.0 && prim_end_offset <= 1.0 )  
-                {
-                    
-                    
-                    
-                    if prim_start_offset < 0.0 {
-                        stops.insert(0, GradientStopKey {
-                            offset: prim_start_offset,
-                            color : stops[0].color
-                        });
-                    }
-
-                    if prim_end_offset > 1.0 {
-                        stops.push( GradientStopKey {
-                            offset: prim_end_offset,
-                            color : stops[stops.len()-1].color
-                        });
-                    }
-
-                    emit_segments(prim_start_offset, prim_end_offset,
-                                  0.0,
-                                  prim_start_offset, prim_end_offset,
-                                  prim_data.common.prim_rect.origin,
-                                  prim_data.common.prim_rect.size,
-                                  size,
-                                  prim_data.stops_opacity.is_opaque,
-                                  &stops,
-                                  orientation,
-                                  frame_state,
-                                  gradient,
-                                  pic_context.surface_index,
-                    );
-                }
-                else
-                {
-                    let mut prev_segment_start_point = None;
-                    let mut segment_start_point = prim_start_offset;
-                    while segment_start_point < prim_end_offset {
-
-                        
-                        
-                        
-                        let gradient_offset_base = segment_start_point.floor();
-                        
-                        let repeat_start = segment_start_point - gradient_offset_base;
-                        
-                        
-                        let repeat_end = (gradient_offset_base + 1.0).min(prim_end_offset) - gradient_offset_base;
-
-                        emit_segments(repeat_start, repeat_end,
-                                      gradient_offset_base,
-                                      prim_start_offset, prim_end_offset,
-                                      prim_data.common.prim_rect.origin,
-                                      prim_data.common.prim_rect.size,
-                                      size,
-                                      prim_data.stops_opacity.is_opaque,
-                                      &stops,
-                                      orientation,
-                                      frame_state,
-                                      gradient,
-                                      pic_context.surface_index,
-                        );
-
-                        segment_start_point = repeat_end + gradient_offset_base;
-
-                        
-                        if prev_segment_start_point == Some(segment_start_point) {
-                            debug_assert!(segment_start_point.approx_eq(&prim_end_offset));
-                            break;
-                        }
-                        prev_segment_start_point = Some(segment_start_point)
-                    }
-                }
-            }
-
             if prim_data.tile_spacing != LayoutSize::zero() {
                 
                 
                 prim_data.common.may_need_repetition = false;
 
-                gradient.visible_tiles_range = decompose_repeated_gradient(
+                *visible_tiles_range = decompose_repeated_gradient(
                     &prim_instance.vis,
                     &prim_data.common.prim_rect,
                     prim_spatial_node_index,
@@ -950,16 +662,46 @@ fn prepare_interned_prim_for_render(
                             prim_data.stretch_size.height,
                             0.0,
                         ]);
-                    })
+                    }),
                 );
 
-                if gradient.visible_tiles_range.is_empty() {
+                if visible_tiles_range.is_empty() {
                     prim_instance.clear_visibility();
                 }
             }
 
             
             
+        }
+        PrimitiveInstanceKind::CachedLinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
+            profile_scope!("CachedLinearGradient");
+            let prim_data = &mut data_stores.linear_grad[*data_handle];
+            prim_data.common.may_need_repetition = prim_data.stretch_size.width < prim_data.common.prim_rect.size.width
+                || prim_data.stretch_size.height < prim_data.common.prim_rect.size.height;
+
+            
+            
+            prim_data.update(frame_state, pic_context.surface_index);
+
+            if prim_data.tile_spacing != LayoutSize::zero() {
+                prim_data.common.may_need_repetition = false;
+
+                *visible_tiles_range = decompose_repeated_gradient(
+                    &prim_instance.vis,
+                    &prim_data.common.prim_rect,
+                    prim_spatial_node_index,
+                    &prim_data.stretch_size,
+                    &prim_data.tile_spacing,
+                    frame_state,
+                    &mut scratch.gradient_tiles,
+                    &frame_context.spatial_tree,
+                    None,
+                );
+
+                if visible_tiles_range.is_empty() {
+                    prim_instance.clear_visibility();
+                }
+            }
         }
         PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, .. } => {
             profile_scope!("RadialGradient");
@@ -1289,7 +1031,8 @@ fn update_clip_task_for_brush(
             
             border_data.brush_segments.as_slice()
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, .. }
+        | PrimitiveInstanceKind::CachedLinearGradient { data_handle, .. } => {
             let prim_data = &data_stores.linear_grad[data_handle];
 
             
@@ -1735,6 +1478,7 @@ fn build_segments_if_needed(
         PrimitiveInstanceKind::ImageBorder { .. } |
         PrimitiveInstanceKind::Clear { .. } |
         PrimitiveInstanceKind::LinearGradient { .. } |
+        PrimitiveInstanceKind::CachedLinearGradient { .. } |
         PrimitiveInstanceKind::RadialGradient { .. } |
         PrimitiveInstanceKind::ConicGradient { .. } |
         PrimitiveInstanceKind::LineDecoration { .. } |

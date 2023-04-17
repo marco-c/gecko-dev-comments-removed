@@ -207,6 +207,10 @@ const GPU_TAG_CACHE_FAST_LINEAR_GRADIENT: GpuProfileTag = GpuProfileTag {
     label: "C_FastLinearGradient",
     color: debug_colors::BROWN,
 };
+const GPU_TAG_CACHE_LINEAR_GRADIENT: GpuProfileTag = GpuProfileTag {
+    label: "C_LinearGradient",
+    color: debug_colors::BROWN,
+};
 const GPU_TAG_CACHE_RADIAL_GRADIENT: GpuProfileTag = GpuProfileTag {
     label: "C_RadialGradient",
     color: debug_colors::BROWN,
@@ -4166,6 +4170,31 @@ impl Renderer {
             self.draw_instanced_batch(
                 &target.fast_linear_gradients,
                 VertexArrayKind::FastLinearGradient,
+                &BatchTextures::empty(),
+                stats,
+            );
+        }
+
+        
+        if !target.linear_gradients.is_empty() {
+            let _timer = self.gpu_profiler.start_timer(GPU_TAG_CACHE_LINEAR_GRADIENT);
+
+            self.set_blend(false, FramebufferKind::Other);
+
+            self.shaders.borrow_mut().cs_linear_gradient.bind(
+                &mut self.device,
+                &projection,
+                None,
+                &mut self.renderer_errors,
+            );
+
+            if let Some(ref texture) = self.dither_matrix_texture {
+                self.device.bind_texture(TextureSampler::Dither, texture, Swizzle::default());
+            }
+
+            self.draw_instanced_batch(
+                &target.linear_gradients,
+                VertexArrayKind::LinearGradient,
                 &BatchTextures::empty(),
                 stats,
             );
