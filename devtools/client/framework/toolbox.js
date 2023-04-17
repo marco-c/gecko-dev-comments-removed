@@ -1090,7 +1090,7 @@ Toolbox.prototype = {
     ].forEach(([id, force]) => {
       const key = L10N.getStr("toolbox." + id + ".key");
       this.shortcuts.on(key, event => {
-        this.reloadTarget(force);
+        this.commands.targetCommand.reloadTopLevelTarget(force);
 
         
         event.preventDefault();
@@ -2928,13 +2928,6 @@ Toolbox.prototype = {
     
     
     event.preventDefault();
-  },
-
-  
-
-
-  reloadTarget: function(force) {
-    this.target.reload({ options: { force } });
   },
 
   
