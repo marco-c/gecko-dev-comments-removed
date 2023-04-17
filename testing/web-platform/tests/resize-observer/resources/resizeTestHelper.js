@@ -41,6 +41,7 @@
 
 
 
+
 function ResizeTestHelper(name, steps)
 {
     this._name = name;
@@ -52,7 +53,17 @@ function ResizeTestHelper(name, steps)
     this._nextStepBind = this._nextStep.bind(this);
 }
 
-ResizeTestHelper.TIMEOUT = 100;
+
+
+
+
+ResizeTestHelper.TIMEOUT = 1000;
+
+
+
+
+
+ResizeTestHelper.SHORT_TIMEOUT = 100;
 
 ResizeTestHelper.prototype = {
   get _currentStep() {
@@ -62,8 +73,12 @@ ResizeTestHelper.prototype = {
   _nextStep: function() {
     if (++this._stepIdx == this._steps.length)
       return this._done();
+    
+    let timeoutValue = this._steps[this._stepIdx].timeout ?
+        ResizeTestHelper.SHORT_TIMEOUT :
+        ResizeTestHelper.TIMEOUT;
     this._timeoutId = this._harnessTest.step_timeout(
-      this._timeoutBind, ResizeTestHelper.TIMEOUT);
+      this._timeoutBind, timeoutValue);
     try {
       this._steps[this._stepIdx].setup(this._observer);
     }
