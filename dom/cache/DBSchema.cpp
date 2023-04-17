@@ -520,6 +520,9 @@ nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn) {
     
     
 
+    
+    
+    
     QM_TRY(
         QM_OR_ELSE_WARN(ToResult(aConn.ExecuteSimpleSQL("VACUUM"_ns)),
                         ([&aConn](const nsresult rv) -> Result<Ok, nsresult> {
@@ -554,8 +557,9 @@ nsresult InitializeConnection(mozIStorageConnection& aConn) {
       kPageSize)));
 
   
-  QM_TRY(QM_OR_ELSE_WARN(ToResult(aConn.SetGrowthIncrement(kGrowthSize, ""_ns)),
-                         ErrToDefaultOkOrErr<NS_ERROR_FILE_TOO_BIG>));
+  QM_TRY(QM_OR_ELSE_WARN_IF(
+      ToResult(aConn.SetGrowthIncrement(kGrowthSize, ""_ns)),
+      IsSpecificError<NS_ERROR_FILE_TOO_BIG>, ErrToDefaultOk<>));
 
   
   

@@ -64,18 +64,9 @@ nsresult DirectoryPaddingWrite(nsIFile& aBaseDir,
 
 const auto kMorgueDirectory = u"morgue"_ns;
 
-template <typename SuccessType = Ok>
-Result<SuccessType, nsresult> MapNotFoundToDefault(const nsresult aRv) {
-  return (aRv == NS_ERROR_FILE_NOT_FOUND ||
-          aRv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST)
-             ? Result<SuccessType, nsresult>{std::in_place}
-             : Err(aRv);
-}
-
-Result<Ok, nsresult> MapAlreadyExistsToDefault(const nsresult aRv) {
-  return (aRv == NS_ERROR_FILE_ALREADY_EXISTS)
-             ? Result<Ok, nsresult>{std::in_place}
-             : Err(aRv);
+bool IsFileNotFoundError(const nsresult aRv) {
+  return aRv == NS_ERROR_FILE_NOT_FOUND ||
+         aRv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
 }
 
 Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
@@ -91,9 +82,10 @@ Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
   
   
   
-  QM_TRY(
-      QM_OR_ELSE_LOG(ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-                     (ErrToDefaultOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS>)));
+  
+  QM_TRY(QM_OR_ELSE_LOG_IF(
+      ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
   return WrapNotNullUnchecked(std::move(cacheDir));
 }
@@ -107,9 +99,10 @@ nsresult BodyCreateDir(nsIFile& aBaseDir) {
   
   
   
-  QM_TRY(
-      QM_OR_ELSE_LOG(ToResult(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-                     (ErrToDefaultOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS>)));
+  
+  QM_TRY(QM_OR_ELSE_LOG_IF(
+      ToResult(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
   return NS_OK;
 }
@@ -385,20 +378,15 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
             
             
             
-            QM_TRY(QM_OR_ELSE_LOG(
+            QM_TRY(QM_OR_ELSE_LOG_IF(
                 ToResult(BodyTraverseFiles(aQuotaInfo, *subdir,
                                            removeOrphanedFiles,
                                             true,
                                             true)),
-                ([](const nsresult rv) -> Result<Ok, nsresult> {
-                  
-                  
-                  if (rv == NS_ERROR_FILE_FS_CORRUPTED) {
-                    return Ok{};
-                  }
-
-                  return Err(rv);
-                })));
+                IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
+                
+                
+                ErrToDefaultOk<>));
             break;
           }
 
@@ -451,9 +439,9 @@ nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo) {
   
   
   
-  QM_TRY(
-      QM_OR_ELSE_LOG(ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
-                     MapAlreadyExistsToDefault));
+  QM_TRY(QM_OR_ELSE_LOG_IF(
+      ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
   
   
@@ -525,9 +513,9 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
   if (aTrackQuota) {
     QM_TRY_INSPECT(
         const auto& maybeFileSize,
-        QM_OR_ELSE_WARN(
+        QM_OR_ELSE_WARN_IF(
             MOZ_TO_RESULT_INVOKE(aFile, GetFileSize).map(Some<int64_t>),
-            MapNotFoundToDefault<Maybe<int64_t>>));
+            IsFileNotFoundError, ErrToDefaultOk<Maybe<int64_t>>));
 
     if (!maybeFileSize) {
       return NS_OK;
@@ -536,8 +524,8 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
     fileSize = *maybeFileSize;
   }
 
-  QM_TRY(QM_OR_ELSE_WARN(ToResult(aFile.Remove( false)),
-                         MapNotFoundToDefault<>));
+  QM_TRY(QM_OR_ELSE_WARN_IF(ToResult(aFile.Remove( false)),
+                            IsFileNotFoundError, ErrToDefaultOk<>));
 
   if (fileSize > 0) {
     MOZ_ASSERT(aTrackQuota);
@@ -608,10 +596,10 @@ nsresult UpdateDirectoryPaddingFile(nsIFile& aBaseDir,
 
   const auto directoryPaddingGetResult =
       aTemporaryFileExist ? Maybe<int64_t>{} : [&aBaseDir] {
-        QM_TRY_RETURN(
-            QM_OR_ELSE_WARN(DirectoryPaddingGet(aBaseDir).map(Some<int64_t>),
-                            MapNotFoundToDefault<Maybe<int64_t>>),
-            Maybe<int64_t>{});
+        QM_TRY_RETURN(QM_OR_ELSE_WARN_IF(
+                          DirectoryPaddingGet(aBaseDir).map(Some<int64_t>),
+                          IsFileNotFoundError, ErrToDefaultOk<Maybe<int64_t>>),
+                      Maybe<int64_t>{});
       }();
 
   QM_TRY_INSPECT(
@@ -724,8 +712,8 @@ nsresult DirectoryPaddingDeleteFile(nsIFile& aBaseDir,
                                        ? nsLiteralString(PADDING_TMP_FILE_NAME)
                                        : nsLiteralString(PADDING_FILE_NAME)));
 
-  QM_TRY(QM_OR_ELSE_WARN(ToResult(file->Remove( false)),
-                         MapNotFoundToDefault<>));
+  QM_TRY(QM_OR_ELSE_WARN_IF(ToResult(file->Remove( false)),
+                            IsFileNotFoundError, ErrToDefaultOk<>));
 
   return NS_OK;
 }

@@ -106,19 +106,14 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         
         
         
-        QM_TRY(QM_OR_ELSE_LOG(
+        QM_TRY(QM_OR_ELSE_LOG_IF(
             ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                         true,
                                         false)),
-            ([](const nsresult rv) -> Result<Ok, nsresult> {
-              
-              
-              if (rv == NS_ERROR_FILE_FS_CORRUPTED) {
-                return Ok{};
-              }
-
-              return Err(rv);
-            })));
+            IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
+            
+            
+            ErrToDefaultOk<>));
         return usageInfo;
       }));
 }
