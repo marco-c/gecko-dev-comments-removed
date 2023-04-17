@@ -4,7 +4,7 @@
 
 
 
-#ifndef UNSAFE_FUZZER_MODE 
+#ifndef UNSAFE_FUZZER_MODE  
 
 #include <memory>
 #include "blapi.h"
