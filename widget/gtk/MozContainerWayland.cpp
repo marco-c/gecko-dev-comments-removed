@@ -116,6 +116,16 @@ static void moz_container_wayland_invalidate(MozContainer* container) {
   gdk_window_invalidate_rect(window, &rect, true);
 }
 
+
+
+static void moz_container_clear_input_region(MozContainer* container) {
+  struct wl_compositor* compositor = WaylandDisplayGet()->GetCompositor();
+  MozContainerWayland* wl_container = &container->wl_container;
+  wl_region* region = wl_compositor_create_region(compositor);
+  wl_surface_set_input_region(wl_container->surface, region);
+  wl_region_destroy(region);
+}
+
 static void moz_container_wayland_move_locked(MozContainer* container, int dx,
                                               int dy) {
   LOGWAYLAND(
@@ -310,6 +320,7 @@ static gboolean moz_container_wayland_map_event(GtkWidget* widget,
 
   moz_container_wayland_set_scale_factor_locked(MOZ_CONTAINER(widget));
   moz_container_wayland_set_opaque_region_locked(MOZ_CONTAINER(widget));
+  moz_container_clear_input_region(MOZ_CONTAINER(widget));
   moz_container_wayland_invalidate(MOZ_CONTAINER(widget));
   return FALSE;
 }
@@ -375,6 +386,7 @@ void moz_container_wayland_size_allocate(GtkWidget* widget,
     moz_container_wayland_set_scale_factor_locked(container);
     moz_container_wayland_set_opaque_region_locked(container);
     moz_container_wayland_move_locked(container, allocation->x, allocation->y);
+    moz_container_clear_input_region(container);
     moz_container_wayland_invalidate(MOZ_CONTAINER(widget));
     container->wl_container.before_first_size_alloc = false;
   }
@@ -505,12 +517,6 @@ static bool moz_container_wayland_surface_create_locked(
 
   
   
-  wl_region* region = wl_compositor_create_region(compositor);
-  wl_surface_set_input_region(wl_container->surface, region);
-  wl_region_destroy(region);
-
-  
-  
   if (wl_container->frame_callback_handler) {
     g_clear_pointer(&wl_container->frame_callback_handler, wl_callback_destroy);
   }
@@ -536,7 +542,6 @@ struct wl_surface* moz_container_wayland_surface_lock(MozContainer* container) {
   LOGWAYLAND(("%s [%p] surface %p ready_to_draw %d\n", __FUNCTION__,
               (void*)container, (void*)container->wl_container.surface,
               container->wl_container.ready_to_draw));
-
   if (!container->wl_container.surface ||
       !container->wl_container.ready_to_draw) {
     return nullptr;
