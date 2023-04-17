@@ -521,16 +521,35 @@ SearchSuggestionController.prototype = {
       return;
     }
 
-    if (
-      !Array.isArray(serverResults) ||
-      !serverResults[0] ||
-      this._searchString.localeCompare(serverResults[0], undefined, {
-        sensitivity: "base",
-      })
-    ) {
-      
+    try {
+      if (
+        !Array.isArray(serverResults) ||
+        !serverResults[0] ||
+        (this._searchString.localeCompare(serverResults[0], undefined, {
+          sensitivity: "base",
+        }) &&
+          
+          
+          
+          this._searchString.localeCompare(
+            decodeURIComponent(
+              JSON.parse('"' + serverResults[0].replace(/\"/g, '\\"') + '"')
+            ),
+            undefined,
+            {
+              sensitivity: "base",
+            }
+          ))
+      ) {
+        
+        deferredResponse.resolve(
+          "Unexpected response, this._searchString does not match remote response"
+        );
+        return;
+      }
+    } catch (ex) {
       deferredResponse.resolve(
-        "Unexpected response, this._searchString does not match remote response"
+        `Failed to parse the remote response string: ${ex}`
       );
       return;
     }
@@ -629,10 +648,11 @@ SearchSuggestionController.prototype = {
     }
 
     
-    results.remote = results.remote.slice(
-      0,
-      this.maxRemoteResults - results.local.length
-    );
+    let maxRemoteCount = this.maxRemoteResults;
+    if (dedupeRemoteAndLocal) {
+      maxRemoteCount -= results.local.length;
+    }
+    results.remote = results.remote.slice(0, maxRemoteCount);
 
     if (this._callback) {
       this._callback(results);
