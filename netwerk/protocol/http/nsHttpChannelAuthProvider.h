@@ -74,8 +74,8 @@ class nsHttpChannelAuthProvider final : public nsIHttpChannelAuthProvider,
 
 
 
-  [[nodiscard]] nsresult GetCredentials(const char* challenges, bool proxyAuth,
-                                        nsCString& creds);
+  [[nodiscard]] nsresult GetCredentials(const nsACString& challenges,
+                                        bool proxyAuth, nsCString& creds);
   [[nodiscard]] nsresult GetCredentialsForChallenge(
       const nsACString& aChallenge, const nsACString& aAuthType, bool proxyAuth,
       nsIHttpAuthenticator* auth, nsCString& creds);
