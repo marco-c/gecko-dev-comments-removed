@@ -146,12 +146,7 @@ class CCGCScheduler {
   void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
 
   void SetWantMajorGC(JS::GCReason aReason) {
-    if (aReason != JS::GCReason::DOM_WINDOW_UTILS ||
-        mMajorGCReason == JS::GCReason::NO_REASON) {
-      
-      
-      mMajorGCReason = aReason;
-    }
+    mMajorGCReason = aReason;
 
     
     
