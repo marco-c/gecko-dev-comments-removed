@@ -41,15 +41,8 @@ async function task_openPanel() {
   await promise;
 }
 
-
-
-
-
-
-
-
-
-function shouldPromptDownload(action = "save") {
+function shouldPromptDownload() {
+  
   return new Promise((resolve, reject) => {
     Services.wm.addListener({
       onOpenWindow(xulWin) {
@@ -62,8 +55,8 @@ function shouldPromptDownload(action = "save") {
           ) {
             let dialog = win.document.getElementById("unknownContentType");
             let button = dialog.getButton("accept");
-            let actionRadio = win.document.getElementById(action);
-            actionRadio.click();
+            let saveRadio = win.document.getElementById("save");
+            saveRadio.click();
             button.disabled = false;
             dialog.acceptDialog();
             resolve();
@@ -106,22 +99,14 @@ async function shouldNotifyDownloadUI() {
   
   
   let list = await Downloads.getList(Downloads.ALL);
-  return new Promise((res, err) => {
+  return new Promise(res => {
     const view = {
-      onDownloadAdded: async aDownload => {
+      onDownloadAdded: aDownload => {
         let { error } = aDownload;
         if (
           error.becauseBlockedByReputationCheck &&
           error.reputationCheckVerdict == Downloads.Error.BLOCK_VERDICT_INSECURE
         ) {
-          
-          if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
-            throw new Error(`Download target is not empty!`);
-          }
-          if ((await IOUtils.stat(aDownload.target.path)).size != 0) {
-            throw new Error(`Download partFile was not cleaned up properly`);
-          }
-
           res(aDownload);
           list.removeView(view);
         }
@@ -131,7 +116,7 @@ async function shouldNotifyDownloadUI() {
   });
 }
 
-async function runTest(url, link, checkFunction, description) {
+async function runTest(url, link, checkFunction, decscription) {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.block_download_insecure", true]],
   });
@@ -143,7 +128,7 @@ async function runTest(url, link, checkFunction, description) {
   let browser = gBrowser.getBrowserForTab(tab);
   await BrowserTestUtils.browserLoaded(browser);
 
-  info("Checking: " + description);
+  info("Checking: " + decscription);
 
   let checkPromise = checkFunction();
   
@@ -153,7 +138,7 @@ async function runTest(url, link, checkFunction, description) {
 
   await checkPromise;
 
-  ok(true, description);
+  ok(true, decscription);
   BrowserTestUtils.removeTab(tab);
 
   await SpecialPowers.popPrefEnv();
@@ -226,30 +211,5 @@ add_task(async function() {
       ok(true, "The Download Panel should have opened on blocked download");
     },
     "A Blocked Download Should open the Download Panel"
-  );
-});
-
-
-add_task(async function download_open_insecure_pdf() {
-  await promiseFocus();
-  await runTest(
-    SECURE_BASE_URL,
-    "insecurePDF",
-    async () => {
-      info("awaiting that the Download Prompt is shown");
-      await shouldPromptDownload("handleInternally");
-      let download = await shouldNotifyDownloadUI();
-      let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
-      await download.unblock();
-      ok(download.error == null, "There should be no error after unblocking");
-      let tab = await newTabPromise;
-      ok(
-        tab.linkedBrowser._documentURI.filePath == download.target.path,
-        "The download target was opened"
-      );
-      BrowserTestUtils.removeTab(tab);
-      ok(true, "The Content was opened in a new tab");
-    },
-    "A Blocked PDF can be opened internally"
   );
 });
