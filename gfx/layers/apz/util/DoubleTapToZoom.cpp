@@ -134,13 +134,24 @@ static bool ShouldZoomToElement(
   return true;
 }
 
-static bool IsRectZoomedIn(const CSSRect& aRect,
-                           const CSSRect& aCompositedArea) {
+
+
+static bool RectHasAlmostSameZoomLevel(const CSSRect& aRect,
+                                       const CSSRect& aCompositedArea) {
   
   
   
-  CSSRect overlap = aCompositedArea.Intersect(aRect);
-  float overlapArea = overlap.Width() * overlap.Height();
+
+  
+  
+  
+  
+  
+  
+  
+
+  float overlapArea = std::min(aRect.width, aCompositedArea.width) *
+                      std::min(aRect.height, aCompositedArea.height);
   float availHeight = std::min(
       aRect.Width() * aCompositedArea.Height() / aCompositedArea.Width(),
       aRect.Height());
@@ -274,7 +285,7 @@ ZoomTarget CalculateRectToZoomTo(
 
   
   
-  if (IsRectZoomedIn(rect, compositedArea)) {
+  if (RectHasAlmostSameZoomLevel(rect, compositedArea)) {
     return ZoomTarget{zoomOut, Nothing(), Some(documentRelativePoint)};
   }
 
