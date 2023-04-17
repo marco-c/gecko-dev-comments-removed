@@ -13,17 +13,9 @@ function evalWithCache(code, ctx) {
   if (!("global" in ctx))
       ctx.global = newGlobal({newCompartment: ctx.newCompartment});
 
-  
-  
-  
-  if (!("isRunOnce" in ctx))
-    ctx.isRunOnce = incremental;
-
-  var ctx_save;
-  if (incremental)
-    ctx_save = Object.create(ctx, {saveIncrementalBytecode: { value: true } });
-  else
-    ctx_save = Object.create(ctx, {saveBytecode: { value: true } });
+  var ctx_save = Object.create(ctx, {
+    saveIncrementalBytecode: { value: true }
+  });
 
   
   
