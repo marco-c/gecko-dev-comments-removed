@@ -21,6 +21,9 @@
 #  include <process.h>
 #  include <shobjidl.h>
 #  include "mozilla/ipc/WindowsMessageLoop.h"
+#  ifdef MOZ_ASAN
+#    include "mozilla/RandomNum.h"
+#  endif
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
 #endif
@@ -670,6 +673,16 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
           break;
 
         case GeckoProcessType_GMPlugin:
+#if defined(XP_WIN) && defined(MOZ_ASAN)
+          
+          
+          
+          
+          
+          
+          
+          RandomUint64OrDie();
+#endif
           process = MakeUnique<gmp::GMPProcessChild>(parentPID);
           break;
 
