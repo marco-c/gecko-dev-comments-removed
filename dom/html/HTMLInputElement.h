@@ -978,7 +978,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  nsresult VisitGroup(nsIRadioVisitor* aVisitor, bool aFlushContent);
+  nsresult VisitGroup(nsIRadioVisitor* aVisitor);
 
   
 
