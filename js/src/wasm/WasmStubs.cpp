@@ -2982,18 +2982,7 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
     return false;
   }
 
-  if (isAsmJS || fe.funcType().temporarilyUnsupportedReftypeForEntry()) {
-    return true;
-  }
-
-  
-  if (fe.funcType().hasUnexposableArgOrRet()) {
-    return true;
-  }
-
-  
-  
-  if (fe.funcType().temporarilyUnsupportedResultCountForJitEntry()) {
+  if (isAsmJS || !fe.canHaveJitEntry()) {
     return true;
   }
 
@@ -3076,17 +3065,7 @@ bool wasm::GenerateStubs(const ModuleEnvironment& env,
 
     
     
-    if (fi.funcType().hasUnexposableArgOrRet()) {
-      continue;
-    }
-
-    if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
-      continue;
-    }
-
-    
-    
-    if (fi.funcType().temporarilyUnsupportedResultCountForJitExit()) {
+    if (!fi.canHaveJitExit()) {
       continue;
     }
 

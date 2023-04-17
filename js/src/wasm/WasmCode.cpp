@@ -633,12 +633,7 @@ bool LazyStubSegment::addStubs(size_t codeLength,
     codeRanges_.back().offsetBy(offsetInSegment);
     i++;
 
-    if (funcExports[funcExportIndex].funcType().hasUnexposableArgOrRet()) {
-      continue;
-    }
-    if (funcExports[funcExportIndex]
-            .funcType()
-            .temporarilyUnsupportedReftypeForEntry()) {
+    if (!funcExports[funcExportIndex].canHaveJitEntry()) {
       continue;
     }
 
@@ -697,10 +692,7 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
   for (uint32_t funcExportIndex : funcExportIndices) {
     const FuncExport& fe = funcExports[funcExportIndex];
     
-    bool unsupportedType =
-        fe.funcType().hasUnexposableArgOrRet() ||
-        fe.funcType().temporarilyUnsupportedReftypeForEntry();
-    numExpectedRanges += (unsupportedType ? 1 : 2);
+    numExpectedRanges += (fe.canHaveJitEntry() ? 2 : 1);
     void* calleePtr =
         moduleSegmentBase + metadata.codeRange(fe).funcUncheckedCallEntry();
     Maybe<ImmPtr> callee;
@@ -793,11 +785,7 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
         exports_.insert(exports_.begin() + exportIndex, std::move(lazyExport)));
 
     
-    
-    bool unsupportedType =
-        fe.funcType().hasUnexposableArgOrRet() ||
-        fe.funcType().temporarilyUnsupportedReftypeForEntry();
-    interpRangeIndex += (unsupportedType ? 1 : 2);
+    interpRangeIndex += (fe.canHaveJitEntry() ? 2 : 1);
   }
 
   return true;
@@ -825,15 +813,7 @@ bool LazyStubTier::createOne(uint32_t funcExportIndex,
   const CodeRangeVector& codeRanges = segment->codeRanges();
 
   
-  
-  if (codeTier.metadata()
-          .funcExports[funcExportIndex]
-          .funcType()
-          .temporarilyUnsupportedReftypeForEntry() ||
-      codeTier.metadata()
-          .funcExports[funcExportIndex]
-          .funcType()
-          .hasUnexposableArgOrRet()) {
+  if (!codeTier.metadata().funcExports[funcExportIndex].canHaveJitEntry()) {
     MOZ_ASSERT(codeRanges.length() >= 1);
     MOZ_ASSERT(codeRanges.back().isInterpEntry());
     return true;

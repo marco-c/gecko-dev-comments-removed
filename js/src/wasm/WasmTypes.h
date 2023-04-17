@@ -1572,6 +1572,48 @@ class FuncType {
   ValTypeVector args_;
   ValTypeVector results_;
 
+  
+  
+  bool temporarilyUnsupportedResultCountForJitEntry() const {
+    return results().length() > MaxResultsForJitEntry;
+  }
+  
+  
+  bool temporarilyUnsupportedResultCountForJitExit() const {
+    return results().length() > MaxResultsForJitExit;
+  }
+  
+  
+  
+  
+  
+  bool temporarilyUnsupportedReftypeForEntry() const {
+    for (ValType arg : args()) {
+      if (arg.isReference() && (!arg.isExternRef() || !arg.isNullable())) {
+        return true;
+      }
+    }
+    for (ValType result : results()) {
+      if (result.isTypeIndex()) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  
+  
+  
+  bool temporarilyUnsupportedReftypeForExit() const {
+    for (ValType result : results()) {
+      if (result.isReference() &&
+          (!result.isExternRef() || !result.isNullable())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
  public:
   FuncType() : args_(), results_() {}
   FuncType(ValTypeVector&& args, ValTypeVector&& results)
@@ -1621,16 +1663,9 @@ class FuncType {
   }
   bool operator!=(const FuncType& rhs) const { return !(*this == rhs); }
 
-  
-  
-  bool temporarilyUnsupportedResultCountForJitEntry() const {
-    return results().length() > MaxResultsForJitEntry;
-  }
-  
-  
-  bool temporarilyUnsupportedResultCountForJitExit() const {
-    return results().length() > MaxResultsForJitExit;
-  }
+  bool canHaveJitEntry() const;
+  bool canHaveJitExit() const;
+
   bool hasUnexposableArgOrRet() const {
     for (ValType arg : args()) {
       if (!arg.isExposable()) {
@@ -1644,55 +1679,7 @@ class FuncType {
     }
     return false;
   }
-  
-  
-  
-  
-  
-  bool temporarilyUnsupportedReftypeForEntry() const {
-    for (ValType arg : args()) {
-      if (arg.isReference() && (!arg.isExternRef() || !arg.isNullable())) {
-        return true;
-      }
-    }
-    for (ValType result : results()) {
-      if (result.isTypeIndex()) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  
-  
-  
-  
-  bool temporarilyUnsupportedReftypeForInlineEntry() const {
-    for (ValType arg : args()) {
-      if (arg.isReference() && (!arg.isExternRef() || !arg.isNullable())) {
-        return true;
-      }
-    }
-    for (ValType result : results()) {
-      if (result.isTypeIndex()) {
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  
-  
-  
-  bool temporarilyUnsupportedReftypeForExit() const {
-    for (ValType result : results()) {
-      if (result.isReference() &&
-          (!result.isExternRef() || !result.isNullable())) {
-        return true;
-      }
-    }
-    return false;
-  }
+
 #ifdef WASM_PRIVATE_REFTYPES
   bool exposesTypeIndex() const {
     for (const ValType& arg : args()) {

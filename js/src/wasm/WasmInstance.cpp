@@ -300,16 +300,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   }
 
   
-  MOZ_ASSERT(!fi.funcType().hasUnexposableArgOrRet());
-
-  
-  
-  if (fi.funcType().temporarilyUnsupportedReftypeForExit()) {
-    return true;
-  }
-
-  
-  if (fi.funcType().temporarilyUnsupportedResultCountForJitExit()) {
+  if (!fi.canHaveJitExit()) {
     return true;
   }
 
