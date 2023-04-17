@@ -135,16 +135,9 @@ class LocalSymbolicationService {
 
 
   async getSymbolTable(debugName, breakpadId) {
-    const lib = this._libraryGetter(debugName, breakpadId);
-    if (!lib) {
-      throw new Error(
-        `Could not find the library for "${debugName}", "${breakpadId}".`
-      );
-    }
-
     
     
-    const candidatePaths = this._getCandidatePaths(lib);
+    const candidatePaths = this._getCandidatePaths(debugName, breakpadId);
 
     
     const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
@@ -179,7 +172,15 @@ class LocalSymbolicationService {
 
 
 
-  _getCandidatePaths(lib) {
+
+  _getCandidatePaths(debugName, breakpadId) {
+    const lib = this._libraryGetter(debugName, breakpadId);
+    if (!lib) {
+      throw new Error(
+        `Could not find the library for "${debugName}", "${breakpadId}".`
+      );
+    }
+
     const { name, path, debugPath } = lib;
     const { OS } = lazy.OS();
     const candidatePaths = [];
