@@ -462,29 +462,6 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-
-
-
-
-
-
-  void AttributeChangedImpl(LocalAccessible* aAccessible, int32_t aNameSpaceID,
-                            nsAtom* aAttribute, int32_t aModType,
-                            const nsAttrValue* aOldValue);
-
-  
-
-
-
-
-
-
-  void ARIAAttributeChanged(LocalAccessible* aAccessible, nsAtom* aAttribute,
-                            const nsAttrValue* aOldValue);
-
-  
-
-
   void ARIAActiveDescendantChanged(LocalAccessible* aAccessible);
 
   
