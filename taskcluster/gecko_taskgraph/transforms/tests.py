@@ -1338,6 +1338,11 @@ def split_variants(config, tasks):
 
         yield copy.deepcopy(task)
 
+        
+        
+        if task.get("app") not in (None, "firefox"):
+            continue
+
         for name in variants:
             variant = TEST_VARIANTS[name]
 
