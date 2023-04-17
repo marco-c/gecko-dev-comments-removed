@@ -44,7 +44,6 @@ enum class SectionId {
 #ifdef ENABLE_WASM_EXCEPTIONS
   Event = 13,
 #endif
-  GcFeatureOptIn = 42  
 };
 
 
