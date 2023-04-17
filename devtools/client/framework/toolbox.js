@@ -3852,6 +3852,8 @@ Toolbox.prototype = {
             this._win = null;
             this._toolPanels.clear();
             this.descriptorFront = null;
+            this.resourceCommand = null;
+            this.commands = null;
 
             
             
