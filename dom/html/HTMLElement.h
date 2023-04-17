@@ -26,6 +26,7 @@ class HTMLElement final : public nsGenericHTMLFormElement {
   
   void SetCustomElementDefinition(
       CustomElementDefinition* aDefinition) override;
+  bool IsLabelable() const override { return IsFormAssociatedElement(); }
 
   
   
