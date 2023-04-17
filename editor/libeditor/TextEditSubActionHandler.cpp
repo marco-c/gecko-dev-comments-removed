@@ -659,7 +659,6 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
     return EditActionHandled();
   }
 
-  
   RefPtr<Text> textNode = firstChild->GetAsText();
   if (MOZ_UNLIKELY(!textNode)) {
     NS_WARNING("The first child was not a text node");
@@ -669,25 +668,6 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::SetTextNodeWithoutTransaction() failed");
     return EditActionResult(rv);
-  }
-
-  
-  
-  if (sanitizedValue.IsEmpty() && !textNode->Length()) {
-    nsresult rv = DeleteNodeWithTransaction(*textNode);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "EditorBase::DeleteNodeWithTransaction() failed, but ignored");
-    
-    
-    
-    IgnoredErrorResult ignoredError;
-    SelectionRef().SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "Selection::SetInterlinePoisition(true) failed");
   }
 
   return EditActionHandled();
