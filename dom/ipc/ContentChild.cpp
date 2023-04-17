@@ -1285,6 +1285,10 @@ void ContentChild::InitSharedUASheets(const Maybe<SharedMemoryHandle>& aHandle,
 void ContentChild::InitXPCOM(
     XPCOMInitData&& aXPCOMInit,
     const mozilla::dom::ipc::StructuredCloneData& aInitialData) {
+  
+  
+  BackgroundChild::Startup();
+
 #ifdef MOZ_WIDGET_GTK
   
   
