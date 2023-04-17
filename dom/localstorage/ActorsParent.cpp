@@ -3056,16 +3056,31 @@ void ForceKillAllDatabases() {
 }
 
 bool VerifyPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
-                         const PrincipalInfo& aStoragePrincipalInfo) {
+                         const PrincipalInfo& aStoragePrincipalInfo,
+                         bool aCheckClientPrincipal) {
   AssertIsOnBackgroundThread();
 
   if (NS_WARN_IF(!QuotaManager::IsPrincipalInfoValid(aPrincipalInfo))) {
     return false;
   }
 
-  if (NS_WARN_IF(!StoragePrincipalHelper::
-                     VerifyValidStoragePrincipalInfoForPrincipalInfo(
-                         aStoragePrincipalInfo, aPrincipalInfo))) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool result = aCheckClientPrincipal
+                    ? StoragePrincipalHelper::
+                          VerifyValidClientPrincipalInfoForPrincipalInfo(
+                              aStoragePrincipalInfo, aPrincipalInfo)
+                    : StoragePrincipalHelper::
+                          VerifyValidStoragePrincipalInfoForPrincipalInfo(
+                              aStoragePrincipalInfo, aPrincipalInfo);
+  if (NS_WARN_IF(!result)) {
     return false;
   }
 
@@ -3073,7 +3088,7 @@ bool VerifyPrincipalInfo(const PrincipalInfo& aPrincipalInfo,
 }
 
 bool VerifyClientId(const Maybe<ContentParentId>& aContentParentId,
-                    const PrincipalInfo& aPrincipalInfo,
+                    const Maybe<PrincipalInfo>& aPrincipalInfo,
                     const Maybe<nsID>& aClientId) {
   AssertIsOnBackgroundThread();
 
@@ -3082,9 +3097,13 @@ bool VerifyClientId(const Maybe<ContentParentId>& aContentParentId,
       return false;
     }
 
+    if (NS_WARN_IF(aPrincipalInfo.isNothing())) {
+      return false;
+    }
+
     RefPtr<ClientManagerService> svc = ClientManagerService::GetInstance();
-    if (svc && NS_WARN_IF(!svc->HasWindow(aContentParentId, aPrincipalInfo,
-                                          aClientId.ref()))) {
+    if (svc && NS_WARN_IF(!svc->HasWindow(
+                   aContentParentId, aPrincipalInfo.ref(), aClientId.ref()))) {
       return false;
     }
   }
@@ -6114,8 +6133,8 @@ bool LSRequestBase::VerifyRequestParams() {
       const LSRequestCommonParams& params =
           mParams.get_LSRequestPreloadDatastoreParams().commonParams();
 
-      if (NS_WARN_IF(!VerifyPrincipalInfo(params.principalInfo(),
-                                          params.storagePrincipalInfo()))) {
+      if (NS_WARN_IF(!VerifyPrincipalInfo(
+              params.principalInfo(), params.storagePrincipalInfo(), false))) {
         return false;
       }
 
@@ -6133,14 +6152,21 @@ bool LSRequestBase::VerifyRequestParams() {
 
       const LSRequestCommonParams& commonParams = params.commonParams();
 
-      if (NS_WARN_IF(
-              !VerifyPrincipalInfo(commonParams.principalInfo(),
-                                   commonParams.storagePrincipalInfo()))) {
+      if (NS_WARN_IF(!VerifyPrincipalInfo(commonParams.principalInfo(),
+                                          commonParams.storagePrincipalInfo(),
+                                          false))) {
+        return false;
+      }
+
+      if (params.clientPrincipalInfo() &&
+          NS_WARN_IF(!VerifyPrincipalInfo(commonParams.principalInfo(),
+                                          params.clientPrincipalInfo().ref(),
+                                          true))) {
         return false;
       }
 
       if (NS_WARN_IF(!VerifyClientId(mContentParentId,
-                                     commonParams.principalInfo(),
+                                     params.clientPrincipalInfo(),
                                      params.clientId()))) {
         return false;
       }
@@ -6157,12 +6183,20 @@ bool LSRequestBase::VerifyRequestParams() {
       const LSRequestPrepareObserverParams& params =
           mParams.get_LSRequestPrepareObserverParams();
 
-      if (NS_WARN_IF(!VerifyPrincipalInfo(params.principalInfo(),
-                                          params.storagePrincipalInfo()))) {
+      if (NS_WARN_IF(!VerifyPrincipalInfo(
+              params.principalInfo(), params.storagePrincipalInfo(), false))) {
         return false;
       }
 
-      if (NS_WARN_IF(!VerifyClientId(mContentParentId, params.principalInfo(),
+      if (params.clientPrincipalInfo() &&
+          NS_WARN_IF(!VerifyPrincipalInfo(params.principalInfo(),
+                                          params.clientPrincipalInfo().ref(),
+                                          true))) {
+        return false;
+      }
+
+      if (NS_WARN_IF(!VerifyClientId(mContentParentId,
+                                     params.clientPrincipalInfo(),
                                      params.clientId()))) {
         return false;
       }
@@ -7782,8 +7816,8 @@ bool LSSimpleRequestBase::VerifyRequestParams() {
       const LSSimpleRequestPreloadedParams& params =
           mParams.get_LSSimpleRequestPreloadedParams();
 
-      if (NS_WARN_IF(!VerifyPrincipalInfo(params.principalInfo(),
-                                          params.storagePrincipalInfo()))) {
+      if (NS_WARN_IF(!VerifyPrincipalInfo(
+              params.principalInfo(), params.storagePrincipalInfo(), false))) {
         return false;
       }
 
