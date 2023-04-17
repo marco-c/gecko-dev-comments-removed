@@ -32,22 +32,24 @@ const double kMagicNtpFractionalUnit = 4.294967296E+9;
 class RTC_EXPORT Clock {
  public:
   virtual ~Clock() {}
+
   
-  virtual Timestamp CurrentTime() {
-    return Timestamp::Micros(TimeInMicroseconds());
+  virtual Timestamp CurrentTime() = 0;
+  int64_t TimeInMilliseconds() { return CurrentTime().ms(); }
+  int64_t TimeInMicroseconds() { return CurrentTime().us(); }
+
+  
+  
+  
+  virtual NtpTime CurrentNtpTime() {
+    return ConvertTimestampToNtpTime(CurrentTime());
   }
-  virtual int64_t TimeInMilliseconds() { return CurrentTime().ms(); }
-  virtual int64_t TimeInMicroseconds() { return CurrentTime().us(); }
+  int64_t CurrentNtpInMilliseconds() { return CurrentNtpTime().ToMs(); }
 
   
-  virtual NtpTime CurrentNtpTime() = 0;
-
-  
-  virtual int64_t CurrentNtpInMilliseconds() = 0;
-
-  
-  static int64_t NtpToMs(uint32_t seconds, uint32_t fractions) {
-    return NtpTime(seconds, fractions).ToMs();
+  virtual NtpTime ConvertTimestampToNtpTime(Timestamp timestamp) = 0;
+  int64_t ConvertTimestampToNtpTimeInMilliseconds(int64_t timestamp_ms) {
+    return ConvertTimestampToNtpTime(Timestamp::Millis(timestamp_ms)).ToMs();
   }
 
   
@@ -56,20 +58,15 @@ class RTC_EXPORT Clock {
 
 class SimulatedClock : public Clock {
  public:
+  
   explicit SimulatedClock(int64_t initial_time_us);
   explicit SimulatedClock(Timestamp initial_time);
-
   ~SimulatedClock() override;
 
   
-  
   Timestamp CurrentTime() override;
 
-  
-  NtpTime CurrentNtpTime() override;
-
-  
-  int64_t CurrentNtpInMilliseconds() override;
+  NtpTime ConvertTimestampToNtpTime(Timestamp timestamp) override;
 
   
   
