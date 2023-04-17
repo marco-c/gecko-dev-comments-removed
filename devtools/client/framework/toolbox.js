@@ -3014,6 +3014,18 @@ Toolbox.prototype = {
 
   async _onWillNavigate() {
     
+    
+    
+    
+    if (this._pausedTargets > 0) {
+      this.emit("toolbox-resumed");
+      this._pausedTargets = 0;
+      if (this.isHighlighted("jsdebugger")) {
+        this.unhighlightTool("jsdebugger");
+      }
+    }
+
+    
     this.setErrorCount(0);
     this.updateToolboxButtons();
     const toolId = this.currentToolId;

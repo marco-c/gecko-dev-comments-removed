@@ -1940,6 +1940,29 @@ async function assertNodeIsFocused(dbg, index) {
   ok(node.classList.contains("focused"), `node ${index} is focused`);
 }
 
+
+
+
+
+
+
+async function assertDebuggerIsHighlightedAndPaused(toolbox) {
+  info("Wait for the debugger to be automatically selected on pause");
+  await waitUntil(() => toolbox.currentToolId == "jsdebugger");
+  ok(true, "Debugger selected");
+
+  
+  await toolbox.getPanelWhenReady("jsdebugger");
+
+  
+  const dbg = createDebuggerContext(toolbox);
+  await waitForPaused(dbg);
+
+  ok(toolbox.isHighlighted("jsdebugger"), "Debugger is highlighted");
+
+  return dbg;
+}
+
 async function addExpression(dbg, input) {
   info("Adding an expression");
 
