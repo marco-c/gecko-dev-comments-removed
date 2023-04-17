@@ -6346,6 +6346,13 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
   }
 
   if (!renderer->BeginTransaction(url)) {
+    if (renderer->AsFallback() && !(aFlags & PaintFlags::PaintComposite)) {
+      
+      
+      
+      
+      aViewToPaint->GetViewManager()->InvalidateView(aViewToPaint);
+    }
     return;
   }
 

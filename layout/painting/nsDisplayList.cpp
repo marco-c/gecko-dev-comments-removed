@@ -2751,7 +2751,15 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(
                                         bounds);
       }
     } else if (shouldInvalidate) {
-      view->GetViewManager()->InvalidateView(view);
+      if (!renderer->AsFallback()) {
+        view->GetViewManager()->InvalidateView(view);
+      } else {
+        
+        
+        
+        NS_ASSERTION(!(aFlags & PAINT_NO_COMPOSITE),
+                     "Must be compositing during fallback");
+      }
     }
   }
 
