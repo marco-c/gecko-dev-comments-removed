@@ -1330,6 +1330,16 @@ nsDOMWindowUtils::RunNextCollectorTimer() {
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::PokeGC() {
+  
+  
+  
+  nsJSContext::PokeGC(JS::GCReason::PAGE_HIDE, nullptr);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::SendSimpleGestureEvent(const nsAString& aType, float aX,
                                          float aY, uint32_t aDirection,
                                          double aDelta, int32_t aModifiers,
