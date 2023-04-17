@@ -1819,7 +1819,7 @@ XDRResult XDRSourceExtent(XDRState<mode>* xdr, SourceExtent* extent);
 
 template <XDRMode mode>
 XDRResult XDRImmutableScriptData(XDRState<mode>* xdr,
-                                 UniquePtr<ImmutableScriptData>& isd);
+                                 SharedImmutableScriptData& sisd);
 
 
 
@@ -1901,7 +1901,7 @@ class JSScript : public js::BaseScript {
 
  public:
   js::ImmutableScriptData* immutableScriptData() const {
-    return sharedData_->isd_.get();
+    return sharedData_->get();
   }
 
   

@@ -2784,6 +2784,10 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
   bool decodeOk = false;
   Rooted<frontend::CompilationGCOutput> output(cx);
   if (xdrCache.Length() > 0) {
+    
+    
+    options.usePinnedBytecode = true;
+
     Rooted<frontend::CompilationInput> input(
         cx, frontend::CompilationInput(options));
     if (!input.get().initForSelfHostingGlobal(cx)) {

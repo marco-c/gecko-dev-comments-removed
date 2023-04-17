@@ -11856,6 +11856,12 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  
+  
+  
+  
+  Maybe<FileContents> selfHostedXDRBuffer;
+
   auto shutdownEngine = MakeScopeExit([] { JS_ShutDown(); });
 
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
@@ -12482,17 +12488,17 @@ int main(int argc, char** argv) {
 
   
   
-  Maybe<FileContents> buffer;
   JS::SelfHostedCache xdrSpan = nullptr;
   JS::SelfHostedWriter xdrWriter = nullptr;
   if (selfHostedXDRPath) {
     if (encodeSelfHostedCode) {
       xdrWriter = WriteSelfHostedXDRFile;
     } else {
-      buffer.emplace(cx);
-      if (ReadSelfHostedXDRFile(cx, *buffer)) {
-        MOZ_ASSERT(buffer->length() > 0);
-        JS::SelfHostedCache span(buffer->begin(), buffer->end());
+      selfHostedXDRBuffer.emplace(cx);
+      if (ReadSelfHostedXDRFile(cx, *selfHostedXDRBuffer)) {
+        MOZ_ASSERT(selfHostedXDRBuffer->length() > 0);
+        JS::SelfHostedCache span(selfHostedXDRBuffer->begin(),
+                                 selfHostedXDRBuffer->end());
         xdrSpan = span;
       } else {
         fprintf(stderr, "Falling back on parsing source.\n");
