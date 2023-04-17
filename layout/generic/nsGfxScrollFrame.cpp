@@ -4354,9 +4354,6 @@ nsRect ScrollFrameHelper::RestrictToRootDisplayPort(
 bool ScrollFrameHelper::DecideScrollableLayer(
     nsDisplayListBuilder* aBuilder, nsRect* aVisibleRect, nsRect* aDirtyRect,
     bool aSetBase, bool* aDirtyRectHasBeenOverriden) {
-  
-  bool oldWillBuildScrollableLayer = mWillBuildScrollableLayer;
-
   nsIContent* content = mOuter->GetContent();
   
   
@@ -4477,13 +4474,6 @@ bool ScrollFrameHelper::DecideScrollableLayer(
   mWillBuildScrollableLayer = usingDisplayPort ||
                               nsContentUtils::HasScrollgrab(content) ||
                               mZoomableByAPZ;
-
-  
-  
-  if (oldWillBuildScrollableLayer != mWillBuildScrollableLayer) {
-    aBuilder->RecomputeCurrentAnimatedGeometryRoot();
-  }
-
   return mWillBuildScrollableLayer;
 }
 
