@@ -403,11 +403,8 @@ function parseManifest(manifestUri) {
         
         
         
-        
         if (chromeUri === "chrome://report-site-issue/locale/") {
           gChromeMap.set("chrome://report-site-issue/locale/", true);
-        } else if (chromeUri === "chrome://fxmonitor/locale/") {
-          gChromeMap.set("chrome://fxmonitor/locale/", true);
         } else {
           trackChromeUri(chromeUri);
         }
