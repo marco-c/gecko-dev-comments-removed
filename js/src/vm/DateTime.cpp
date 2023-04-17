@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
+#include <string_view>
 #include <time.h>
 
 #if !defined(XP_WIN)
@@ -29,14 +30,8 @@
 #include "js/AllocPolicy.h"
 #include "js/Date.h"
 #include "js/GCAPI.h"
+#include "js/Vector.h"
 #include "threading/ExclusiveData.h"
-
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-#  include "unicode/basictz.h"
-#  include "unicode/locid.h"
-#  include "unicode/timezone.h"
-#  include "unicode/unistr.h"
-#endif 
 
 #include "util/Text.h"
 #include "vm/MutexIDs.h"
@@ -503,8 +498,9 @@ JS_PUBLIC_API void JS::ResetTimeZone() {
   js::ResetTimeZoneInternal(js::ResetTimeZoneMode::ResetEvenIfOffsetUnchanged);
 }
 
-#if defined(XP_WIN)
-static bool IsOlsonCompatibleWindowsTimeZoneId(const char* tz) {
+#if JS_HAS_INTL_API
+#  if defined(XP_WIN)
+static bool IsOlsonCompatibleWindowsTimeZoneId(std::string_view tz) {
   
   
   
@@ -546,23 +542,23 @@ static bool IsOlsonCompatibleWindowsTimeZoneId(const char* tz) {
       "GMT",
   };
   for (const auto& allowedId : allowedIds) {
-    if (std::strcmp(allowedId, tz) == 0) {
+    if (tz == allowedId) {
       return true;
     }
   }
   return false;
 }
-#elif JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-static inline const char* TZContainsAbsolutePath(const char* tzVar) {
+#  else
+static std::string_view TZContainsAbsolutePath(std::string_view tzVar) {
   
   
-  if (tzVar[0] == ':' && tzVar[1] == '/') {
-    return tzVar + 1;
+  if (tzVar.length() > 1 && tzVar[0] == ':' && tzVar[1] == '/') {
+    return tzVar.substr(1);
   }
-  if (tzVar[0] == '/') {
+  if (tzVar.length() > 0 && tzVar[0] == '/') {
     return tzVar;
   }
-  return nullptr;
+  return {};
 }
 
 
@@ -571,8 +567,12 @@ static inline const char* TZContainsAbsolutePath(const char* tzVar) {
 
 
 
-static icu::UnicodeString MaybeTimeZoneId(const char* timeZone) {
-  size_t timeZoneLen = std::strlen(timeZone);
+static bool IsTimeZoneId(std::string_view timeZone) {
+  size_t timeZoneLen = timeZone.length();
+
+  if (timeZoneLen == 0) {
+    return false;
+  }
 
   for (size_t i = 0; i < timeZoneLen; i++) {
     char c = timeZone[i];
@@ -589,12 +589,15 @@ static icu::UnicodeString MaybeTimeZoneId(const char* timeZone) {
       continue;
     }
 
-    return icu::UnicodeString();
+    return false;
   }
 
-  return icu::UnicodeString(timeZone, timeZoneLen, US_INV);
+  return true;
 }
 
+using TimeZoneIdentifierVector =
+    js::Vector<char, mozilla::intl::TimeZone::TimeZoneIdentifierLength,
+               js::SystemAllocPolicy>;
 
 
 
@@ -606,7 +609,15 @@ static icu::UnicodeString MaybeTimeZoneId(const char* timeZone) {
 
 
 
-static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
+
+
+
+
+static bool ReadTimeZoneLink(std::string_view tz,
+                             TimeZoneIdentifierVector& result) {
+  MOZ_ASSERT(!tz.empty());
+  MOZ_ASSERT(result.empty());
+
   
   
   static constexpr char ZoneInfoPath[] = "/zoneinfo/";
@@ -620,11 +631,11 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
   
   constexpr uint32_t FollowDepthLimit = 4;
 
-#  ifdef PATH_MAX
+#    ifdef PATH_MAX
   constexpr size_t PathMax = PATH_MAX;
-#  else
+#    else
   constexpr size_t PathMax = 4096;
-#  endif
+#    endif
   static_assert(PathMax > 0, "PathMax should be larger than zero");
 
   char linkName[PathMax];
@@ -632,11 +643,12 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
       std::size(linkName) - 1;  
 
   
-  if (std::strlen(tz) > linkNameLen) {
-    return icu::UnicodeString();
+  if (tz.length() > linkNameLen) {
+    return true;
   }
 
-  std::strcpy(linkName, tz);
+  tz.copy(linkName, tz.length());
+  linkName[tz.length()] = '\0';
 
   char linkTarget[PathMax];
   constexpr size_t linkTargetLen =
@@ -649,13 +661,13 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
   while (!(timeZoneWithZoneInfo = std::strstr(linkName, ZoneInfoPath))) {
     
     if (++depth > FollowDepthLimit) {
-      return icu::UnicodeString();
+      return true;
     }
 
     
     ssize_t slen = readlink(linkName, linkTarget, linkTargetLen);
     if (slen < 0 || size_t(slen) >= linkTargetLen) {
-      return icu::UnicodeString();
+      return true;
     }
 
     
@@ -685,32 +697,38 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
 
     
     if (std::strlen(linkName) + len > linkNameLen) {
-      return icu::UnicodeString();
+      return true;
     }
 
     
     std::strcat(linkName, linkTarget);
   }
 
-  const char* timeZone = timeZoneWithZoneInfo + ZoneInfoPathLength;
-  return MaybeTimeZoneId(timeZone);
+  std::string_view timeZone(timeZoneWithZoneInfo + ZoneInfoPathLength);
+  if (!IsTimeZoneId(timeZone)) {
+    return true;
+  }
+  return result.append(timeZone.data(), timeZone.length());
 }
-#endif 
+#  endif 
+#endif   
 
 void js::ResyncICUDefaultTimeZone() {
   js::DateTimeInfo::resyncICUDefaultTimeZone();
 }
 
 void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-  if (const char* tz = std::getenv("TZ")) {
-    icu::UnicodeString tzid;
+#if JS_HAS_INTL_API
+  if (const char* tzenv = std::getenv("TZ")) {
+    std::string_view tz(tzenv);
+
+    mozilla::Span<const char> tzid;
 
 #  if defined(XP_WIN)
     
     
     if (IsOlsonCompatibleWindowsTimeZoneId(tz)) {
-      tzid.setTo(icu::UnicodeString(tz, -1, US_INV));
+      tzid = mozilla::Span(tz.data(), tz.length());
     } else {
       
       
@@ -722,33 +740,45 @@ void js::DateTimeInfo::internalResyncICUDefaultTimeZone() {
     
     
     
-    if (const char* tzlink = TZContainsAbsolutePath(tz)) {
-      tzid.setTo(ReadTimeZoneLink(tzlink));
+    TimeZoneIdentifierVector tzidVector;
+    std::string_view tzlink = TZContainsAbsolutePath(tz);
+    if (!tzlink.empty()) {
+      if (!ReadTimeZoneLink(tzlink, tzidVector)) {
+        
+        return;
+      }
+      tzid = tzidVector;
     }
 
 #    ifdef ANDROID
     
     
-    else {
-      tzid.setTo(MaybeTimeZoneId(tz));
+    else if (IsTimeZoneId(tz)) {
+      tzid = mozilla::Span(tz.data(), tz.length());
     }
 #    endif
 #  endif 
 
-    if (!tzid.isEmpty()) {
-      mozilla::UniquePtr<icu::TimeZone> newTimeZone(
-          icu::TimeZone::createTimeZone(tzid));
-      MOZ_ASSERT(newTimeZone);
-      if (*newTimeZone != icu::TimeZone::getUnknown()) {
+    if (!tzid.empty()) {
+      auto result = mozilla::intl::TimeZone::SetDefaultTimeZone(tzid);
+      if (result.isErr()) {
         
-        icu::TimeZone::adoptDefault(newTimeZone.release());
+        
         return;
       }
+
+      
+      if (result.unwrap()) {
+        return;
+      }
+
+      
+      
     }
   }
 
-  if (icu::TimeZone* defaultZone = icu::TimeZone::detectHostTimeZone()) {
-    icu::TimeZone::adoptDefault(defaultZone);
-  }
+  
+  
+  (void)mozilla::intl::TimeZone::SetDefaultTimeZoneFromHostTimeZone();
 #endif
 }
