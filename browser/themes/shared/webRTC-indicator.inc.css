@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -31,7 +31,7 @@
   max-height: var(--indicator-height);
 }
 
-@media (prefers-color-scheme: dark) {
+@media (-moz-toolbar-prefers-color-scheme: dark) {
   :root {
     --indicator-background-color: hsl(240, 1%, 20%);
     --indicator-color: rgb(249, 249, 250);
@@ -56,17 +56,17 @@ body {
   margin: 0;
   user-select: none;
   -moz-window-dragging: drag;
-  
-
-
-
-
-
+  /**
+   * On macOS, for windows with small enough dimensions, we seem to get
+   * vertical scrollbars on the body, even when the contents initially
+   * fit the window. We sidestep this by making sure we never display
+   * scrollbars.
+   */
   overflow: hidden;
   cursor: move;
   border: 1px solid;
   border-color: var(--indicator-border-color);
-  
+  /* max-height = indicator height minus top and bottom border */
   max-height: calc(var(--indicator-height) - 2px);
 }
 
@@ -99,21 +99,21 @@ input[type="checkbox"] {
   padding: 0;
 }
 
-
-
-
-
-
+/**
+ * For display sharing, if we happen to be sharing both
+ * a window and a screen, we want to show the UI for sharing
+ * the screen, since that's the more privacy-sensitive one.
+ */
 :root[sharingwindow]:not([sharingscreen]) > body > #display-share > #screen-share-info,
 :root[sharingwindow]:not([sharingbrowserwindow]) > body > #display-share > #browser-window-share-info,
 :root[sharingwindow][sharingbrowserwindow] > body > #display-share > #window-share-info,
 :root[sharingscreen] > body > #display-share > #window-share-info,
 :root[sharingscreen] > body > #display-share > #browser-window-share-info,
 
-
-
-
-
+/**
+ * If we're not sharing either the screen or the window, we can
+ * hide the entire display sharing section.
+ */
 :root:not([sharingscreen],[sharingwindow]) > body > #display-share,
 :root:not([sharingscreen],[sharingwindow]) > body > #display-share + .separator,
 :root:not([sharingvideo]) > body > #device-share > #camera-mute-toggle,
@@ -258,5 +258,5 @@ xul|menu {
 #webRTC-sharingCamera-menu > menupopup,
 #webRTC-sharingMicrophone-menu > menupopup,
 #webRTC-sharingScreen-menu > menupopup {
-  list-style-image: none; 
+  list-style-image: none; /* don't inherit into menu items */
 }
