@@ -2800,7 +2800,7 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
     
     nsAutoCString desc(aFileExt);
     desc.AppendLiteral(" File");
-    (*_retval)->SetDescription(NS_ConvertUTF8toUTF16(desc));
+    (*_retval)->SetDescription(NS_ConvertASCIItoUTF16(desc));
     LOG(("Falling back to 'File' file description\n"));
   }
 
