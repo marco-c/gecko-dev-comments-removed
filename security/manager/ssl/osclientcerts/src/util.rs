@@ -19,13 +19,28 @@ macro_rules! unsafe_packed_field_access {
     }};
 }
 
+
+
+
 #[cfg(target_os = "macos")]
-pub const OID_BYTES_SECP256R1: &[u8] =
+pub const ENCODED_OID_BYTES_SECP256R1: &[u8] =
     &[0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07];
 #[cfg(target_os = "macos")]
-pub const OID_BYTES_SECP384R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22];
+pub const ENCODED_OID_BYTES_SECP384R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22];
 #[cfg(target_os = "macos")]
-pub const OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23];
+pub const ENCODED_OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23];
+
+
+
+
+#[cfg(target_os = "macos")]
+pub const OID_BYTES_SHA_256: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01];
+#[cfg(target_os = "macos")]
+pub const OID_BYTES_SHA_384: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x02];
+#[cfg(target_os = "macos")]
+pub const OID_BYTES_SHA_512: &[u8] = &[0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x03];
+#[cfg(target_os = "macos")]
+pub const OID_BYTES_SHA_1: &[u8] = &[0x2b, 0x0e, 0x03, 0x02, 0x1a];
 
 
 
@@ -70,16 +85,21 @@ pub fn read_rsa_modulus(public_key: &[u8]) -> Result<Vec<u8>, ()> {
 
 
 
-#[cfg(target_os = "windows")]
-pub fn read_digest<'a>(digest_info: &'a [u8]) -> Result<&'a [u8], ()> {
+pub fn read_digest_info<'a>(digest_info: &'a [u8]) -> Result<(&'a [u8], &'a [u8]), ()> {
     let mut sequence = Sequence::new(digest_info)?;
-    let _ = sequence.read_sequence()?;
+    let mut algorithm = sequence.read_sequence()?;
+    let oid = algorithm.read_oid()?;
+    algorithm.read_null()?;
+    if !algorithm.at_end() {
+        error!("read_digest: extra input");
+        return Err(());
+    }
     let digest = sequence.read_octet_string()?;
     if !sequence.at_end() {
         error!("read_digest: extra input");
         return Err(());
     }
-    Ok(digest)
+    Ok((oid, digest))
 }
 
 
@@ -134,8 +154,11 @@ macro_rules! try_read_bytes {
 
 const INTEGER: u8 = 0x02;
 
-#[cfg(target_os = "windows")]
 const OCTET_STRING: u8 = 0x04;
+
+const NULL: u8 = 0x05;
+
+const OBJECT_IDENTIFIER: u8 = 0x06;
 
 const SEQUENCE: u8 = 0x10;
 
@@ -179,10 +202,23 @@ impl<'a> Sequence<'a> {
         }
     }
 
-    #[cfg(target_os = "windows")]
     fn read_octet_string(&mut self) -> Result<&'a [u8], ()> {
         let (_, _, bytes) = self.contents.read_tlv(OCTET_STRING)?;
         Ok(bytes)
+    }
+
+    fn read_oid(&mut self) -> Result<&'a [u8], ()> {
+        let (_, _, bytes) = self.contents.read_tlv(OBJECT_IDENTIFIER)?;
+        Ok(bytes)
+    }
+
+    fn read_null(&mut self) -> Result<(), ()> {
+        let (_, _, bytes) = self.contents.read_tlv(NULL)?;
+        if bytes.len() == 0 {
+            Ok(())
+        } else {
+            Err(())
+        }
     }
 
     fn read_sequence(&mut self) -> Result<Sequence<'a>, ()> {

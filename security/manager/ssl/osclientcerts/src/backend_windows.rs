@@ -361,7 +361,7 @@ fn sign_cryptoapi(
     
     
     
-    let hash_bytes = read_digest(data)?;
+    let (_, hash_bytes) = read_digest_info(data)?;
     let hash = HCryptHash::new(hcryptprov, hash_bytes)?;
     let mut signature_len = 0;
     if unsafe {
