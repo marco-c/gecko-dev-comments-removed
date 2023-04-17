@@ -35,6 +35,14 @@ add_task(async function() {
     onAvailable: onAvailable1,
   });
 
+  info(
+    "Calling unwatchResources for an already unregistered callback should be a no-op"
+  );
+  
+  resourceCommand.unwatchResources([CONSOLE_MESSAGE], {
+    onAvailable: onAvailable1,
+  });
+
   
   
   

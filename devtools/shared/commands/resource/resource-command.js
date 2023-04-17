@@ -44,7 +44,7 @@ class ResourceCommand {
 
     
     this._cache = [];
-    this._listenerCount = new Map();
+    this._listenedResources = new Set();
 
     
     
@@ -154,11 +154,7 @@ class ResourceCommand {
 
     const promises = [];
     for (const resource of resources) {
-      
-      
-      if (!this._hasListenerForResource(resource)) {
-        promises.push(this._startListening(resource));
-      }
+      promises.push(this._startListening(resource));
     }
     await Promise.all(promises);
 
@@ -214,12 +210,6 @@ class ResourceCommand {
       );
     }
 
-    const watchedResources = [];
-    for (const resource of resources) {
-      if (this._hasListenerForResource(resource)) {
-        watchedResources.push(resource);
-      }
-    }
     
     
     
@@ -240,18 +230,20 @@ class ResourceCommand {
     });
 
     
-    for (const resource of watchedResources) {
-      if (!this._hasListenerForResource(resource)) {
+    for (const resource of resources) {
+      const isResourceWatched = allWatchers.some(watcherEntry =>
+        watcherEntry.resources.includes(resource)
+      );
+
+      
+      
+      if (!isResourceWatched && this._listenedResources.has(resource)) {
         this._stopListening(resource);
       }
     }
 
     
-    let listeners = 0;
-    for (const count of this._listenerCount.values()) {
-      listeners += count;
-    }
-    if (listeners <= 0) {
+    if (this._listenedResources.size == 0) {
       this._unwatchAllTargets();
     }
   }
@@ -312,7 +304,7 @@ class ResourceCommand {
       
       for (const resourceType of Object.values(ResourceCommand.TYPES)) {
         
-        if (!this._listenerCount.get(resourceType)) {
+        if (!this._listenedResources.has(resourceType)) {
           continue;
         }
 
@@ -337,7 +329,7 @@ class ResourceCommand {
       
       for (const resourceType of Object.values(ResourceCommand.TYPES)) {
         
-        if (!this._listenerCount.get(resourceType)) {
+        if (!this._listenedResources.has(resourceType)) {
           continue;
         }
         
@@ -567,18 +559,6 @@ class ResourceCommand {
     this._throttledNotifyWatchers();
   }
 
-  
-
-
-
-
-
-  _hasListenerForResource(resourceType) {
-    return this._watchers.some(({ resources }) => {
-      return resources.includes(resourceType);
-    });
-  }
-
   _queueResourceEvent(callbackType, resourceType, update) {
     for (const { resources, pendingEvents } of this._watchers) {
       
@@ -730,13 +710,10 @@ class ResourceCommand {
 
   async _startListening(resourceType, { bypassListenerCount = false } = {}) {
     if (!bypassListenerCount) {
-      let listeners = this._listenerCount.get(resourceType) || 0;
-      listeners++;
-      this._listenerCount.set(resourceType, listeners);
-
-      if (listeners > 1) {
+      if (this._listenedResources.has(resourceType)) {
         return;
       }
+      this._listenedResources.add(resourceType);
     }
 
     this._processingExistingResources.add(resourceType);
@@ -874,17 +851,12 @@ class ResourceCommand {
 
   _stopListening(resourceType, { bypassListenerCount = false } = {}) {
     if (!bypassListenerCount) {
-      let listeners = this._listenerCount.get(resourceType);
-      if (!listeners || listeners <= 0) {
+      if (!this._listenedResources.has(resourceType)) {
         throw new Error(
           `Stopped listening for resource '${resourceType}' that isn't being listened to`
         );
       }
-      listeners--;
-      this._listenerCount.set(resourceType, listeners);
-      if (listeners > 0) {
-        return;
-      }
+      this._listenedResources.delete(resourceType);
     }
 
     
