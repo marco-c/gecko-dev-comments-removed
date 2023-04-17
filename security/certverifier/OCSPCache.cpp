@@ -28,6 +28,7 @@
 
 #include "NSSCertDBTrustDomain.h"
 #include "pk11pub.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozpkix/pkixnss.h"
 #include "ScopedNSSTypes.h"
 #include "secerr.h"
@@ -54,6 +55,9 @@ static SECStatus DigestLength(UniquePK11Context& context, uint32_t length) {
 
   return PK11_DigestOp(context.get(), array, MOZ_ARRAY_LENGTH(array));
 }
+
+
+
 
 
 
@@ -108,17 +112,36 @@ static SECStatus CertIDHash(SHA384Buffer& buf, const CertID& certID,
     return rv;
   }
 
-  
-  NS_ConvertUTF16toUTF8 firstPartyDomain(originAttributes.mFirstPartyDomain);
-  if (!firstPartyDomain.IsEmpty()) {
-    rv = DigestLength(context, firstPartyDomain.Length());
+  auto populateOriginAttributesKey = [&context](const nsString& aKey) {
+    NS_ConvertUTF16toUTF8 key(aKey);
+
+    if (key.IsEmpty()) {
+      return SECSuccess;
+    }
+
+    SECStatus rv = DigestLength(context, key.Length());
     if (rv != SECSuccess) {
       return rv;
     }
-    rv =
-        PK11_DigestOp(context.get(),
-                      BitwiseCast<const unsigned char*>(firstPartyDomain.get()),
-                      firstPartyDomain.Length());
+
+    return PK11_DigestOp(context.get(),
+                         BitwiseCast<const unsigned char*>(key.get()),
+                         key.Length());
+  };
+
+  
+  
+  rv = populateOriginAttributesKey(originAttributes.mFirstPartyDomain);
+  if (rv != SECSuccess) {
+    return rv;
+  }
+
+  bool isolateByPartitionKey =
+      originAttributes.mPrivateBrowsingId > 0
+          ? StaticPrefs::privacy_partition_network_state_ocsp_cache_pbmode()
+          : StaticPrefs::privacy_partition_network_state_ocsp_cache();
+  if (isolateByPartitionKey) {
+    rv = populateOriginAttributesKey(originAttributes.mPartitionKey);
     if (rv != SECSuccess) {
       return rv;
     }
@@ -174,9 +197,11 @@ bool OCSPCache::FindInternal(const CertID& aCertID,
 
 static inline void LogWithCertID(const char* aMessage, const CertID& aCertID,
                                  const OriginAttributes& aOriginAttributes) {
-  NS_ConvertUTF16toUTF8 firstPartyDomain(aOriginAttributes.mFirstPartyDomain);
+  nsAutoString info = u"firstPartyDomain: "_ns +
+                      aOriginAttributes.mFirstPartyDomain +
+                      u", partitionKey: "_ns + aOriginAttributes.mPartitionKey;
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          (aMessage, &aCertID, firstPartyDomain.get()));
+          (aMessage, &aCertID, NS_ConvertUTF16toUTF8(info).get()));
 }
 
 void OCSPCache::MakeMostRecentlyUsed(size_t aIndex,
