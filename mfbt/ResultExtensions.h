@@ -16,6 +16,8 @@
 
 namespace mozilla {
 
+struct ErrorPropagationTag;
+
 
 
 template <>
@@ -29,6 +31,9 @@ class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult> {
   explicit GenericErrorResult(nsresult aErrorValue) : mErrorValue(aErrorValue) {
     MOZ_ASSERT(NS_FAILED(aErrorValue));
   }
+
+  GenericErrorResult(nsresult aErrorValue, const ErrorPropagationTag&)
+      : GenericErrorResult(aErrorValue) {}
 
   operator nsresult() const { return mErrorValue; }
 };

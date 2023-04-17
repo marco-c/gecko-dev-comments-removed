@@ -27,6 +27,15 @@ namespace mozilla {
 
 struct Ok {};
 
+
+
+
+
+
+
+
+struct ErrorPropagationTag {};
+
 template <typename E>
 class GenericErrorResult;
 template <typename V, typename E>
@@ -563,7 +572,7 @@ class MOZ_MUST_USE_TYPE Result final {
 
   constexpr GenericErrorResult<E> propagateErr() {
     MOZ_ASSERT(isErr());
-    return GenericErrorResult<E>{mImpl.unwrapErr()};
+    return GenericErrorResult<E>{mImpl.unwrapErr(), ErrorPropagationTag{}};
   }
 
   
@@ -748,6 +757,12 @@ class MOZ_MUST_USE_TYPE GenericErrorResult {
 
   explicit constexpr GenericErrorResult(E&& aErrorValue)
       : mErrorValue(std::move(aErrorValue)) {}
+
+  constexpr GenericErrorResult(const E& aErrorValue, const ErrorPropagationTag&)
+      : GenericErrorResult(aErrorValue) {}
+
+  constexpr GenericErrorResult(E&& aErrorValue, const ErrorPropagationTag&)
+      : GenericErrorResult(std::move(aErrorValue)) {}
 };
 
 template <typename E>
