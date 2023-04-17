@@ -208,6 +208,8 @@ impl Http3Connection {
             .insert(stream_id, Box::new(NewStreamTypeReader::new(stream_id)));
     }
 
+    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
+    #[allow(clippy::option_if_let_else)] 
     fn stream_receive(&mut self, conn: &mut Connection, stream_id: u64) -> Res<ReceiveOutput> {
         qtrace!([self], "Readable stream {}.", stream_id);
 

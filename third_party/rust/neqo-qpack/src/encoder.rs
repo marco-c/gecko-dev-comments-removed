@@ -415,7 +415,7 @@ impl QPackEncoder {
                 if !static_table && ref_entries.insert(index) {
                     self.table.add_ref(index);
                 }
-            } else if can_block & !encoder_blocked {
+            } else if can_block && !encoder_blocked {
                 
                 
                 match self.send_and_insert(conn, &name, &value) {

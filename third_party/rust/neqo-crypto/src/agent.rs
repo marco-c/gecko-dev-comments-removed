@@ -496,6 +496,8 @@ impl SecretAgent {
     
     
     
+    
+    
     pub fn set_alpn(&mut self, protocols: &[impl AsRef<str>]) -> Res<()> {
         
         let mut encoded_len = protocols.len();

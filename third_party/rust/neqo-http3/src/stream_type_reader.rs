@@ -1,8 +1,8 @@
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
+
+
+
+
+
 
 #![allow(clippy::module_name_repetitions)]
 
@@ -28,7 +28,7 @@ impl NewStreamTypeReader {
     }
 
     pub fn get_type(&mut self, conn: &mut Connection) -> Option<Http3StreamType> {
-        // On any error we will only close this stream!
+        
         loop {
             if let NewStreamTypeReader::Read {
                 ref mut reader,
@@ -109,7 +109,7 @@ mod tests {
     impl Test {
         fn new() -> Self {
             let (mut conn_c, mut conn_s) = connect();
-            // create a stream
+            
             let stream_id = conn_s.stream_create(StreamType::UniDi).unwrap();
             let out = conn_s.process(None, now());
             mem::drop(conn_c.process(out.dgram(), now()));
@@ -134,7 +134,7 @@ mod tests {
                     self.decoder.receive(&mut self.conn_c).unwrap(),
                     ReceiveOutput::NoOutput
                 );
-                assert_eq!(self.decoder.done(), false);
+                assert!(!self.decoder.done());
             }
             self.conn_s
                 .stream_send(self.stream_id, &enc[enc.len() - 1..])
