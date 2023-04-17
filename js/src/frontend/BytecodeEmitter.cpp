@@ -10249,53 +10249,78 @@ static MOZ_ALWAYS_INLINE ParseNode* FindConstructor(JSContext* cx,
   return nullptr;
 }
 
-template <class ClassMemberType>
-bool BytecodeEmitter::emitNewPrivateNames(ListNode* classMembers) {
+bool BytecodeEmitter::emitNewPrivateName(TaggedParserAtomIndex bindingName,
+                                         TaggedParserAtomIndex symbolName) {
+  
+  if (!emitAtomOp(JSOp::GetIntrinsic,
+                  TaggedParserAtomIndex::WellKnown::NewPrivateName())) {
+    
+    return false;
+  }
+
+  
+  if (!emit1(JSOp::Undefined)) {
+    
+    return false;
+  }
+
+  if (!emitAtomOp(JSOp::String, symbolName)) {
+    
+    return false;
+  }
+
+  int argc = 1;
+  if (!emitCall(JSOp::Call, argc)) {
+    
+    return false;
+  }
+
+  
+  if (!emitLexicalInitialization(bindingName)) {
+    
+    return false;
+  }
+
+  
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  return true;
+}
+
+bool BytecodeEmitter::emitNewPrivateNames(
+    TaggedParserAtomIndex privateBrandName, ListNode* classMembers) {
+  bool emittedPrivateBrand = false;
+
   for (ParseNode* classElement : classMembers->contents()) {
-    if (!classElement->is<ClassMemberType>()) {
+    ParseNode* elementName;
+    if (classElement->is<ClassMethod>()) {
+      elementName = &classElement->as<ClassMethod>().name();
+    } else if (classElement->is<ClassField>()) {
+      elementName = &classElement->as<ClassField>().name();
+    } else {
       continue;
     }
 
-    ParseNode* elementName = &classElement->as<ClassMemberType>().name();
     if (!elementName->isKind(ParseNodeKind::PrivateName)) {
       continue;
     }
 
+    if (!emittedPrivateBrand && classElement->is<ClassMethod>() &&
+        !classElement->as<ClassMethod>().isStatic()) {
+      
+      if (!emitNewPrivateName(
+              TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
+              privateBrandName)) {
+        return false;
+      }
+      emittedPrivateBrand = true;
+    }
+
     auto privateName = elementName->as<NameNode>().name();
-
-    
-    if (!emitAtomOp(JSOp::GetIntrinsic,
-                    TaggedParserAtomIndex::WellKnown::NewPrivateName())) {
-      
-      return false;
-    }
-
-    
-    if (!emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-
-    if (!emitAtomOp(JSOp::String, privateName)) {
-      
-      return false;
-    }
-
-    int argc = 1;
-    if (!emitCall(JSOp::Call, argc)) {
-      
-      return false;
-    }
-
-    
-    if (!emitLexicalInitialization(privateName)) {
-      
-      return false;
-    }
-
-    
-    if (!emit1(JSOp::Pop)) {
-      
+    if (!emitNewPrivateName(privateName, privateName)) {
       return false;
     }
   }
@@ -10366,10 +10391,17 @@ bool BytecodeEmitter::emitClass(
       return false;
     }
 
-    if (!emitNewPrivateNames<ClassField>(classMembers)) {
-      return false;
+    
+    
+    
+    
+    auto privateBrandName = innerName;
+    if (!innerName) {
+      privateBrandName = nameForAnonymousClass
+                             ? nameForAnonymousClass
+                             : TaggedParserAtomIndex::WellKnown::anonymous();
     }
-    if (!emitNewPrivateNames<ClassMethod>(classMembers)) {
+    if (!emitNewPrivateNames(privateBrandName, classMembers)) {
       return false;
     }
   }
