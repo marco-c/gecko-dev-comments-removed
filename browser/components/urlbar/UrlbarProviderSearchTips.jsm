@@ -362,25 +362,13 @@ class ProviderSearchTips extends UrlbarProvider {
     }
 
     
-    
-    if ((await isBrowserShowingNotification()) && !ignoreShowLimits) {
-      return;
-    }
-
-    
     let date = await lastBrowserUpdateDate();
     if (Date.now() - date <= LAST_UPDATE_THRESHOLD_MS && !ignoreShowLimits) {
       return;
     }
 
     
-    this.disableTipsForCurrentSession = true;
-
-    
-    UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
-
-    
-    setTimeout(() => {
+    setTimeout(async () => {
       if (this._maybeShowTipForUrlInstance != instance) {
         return;
       }
@@ -394,6 +382,21 @@ class ProviderSearchTips extends UrlbarProvider {
       ) {
         return;
       }
+
+      
+      
+      if (
+        (!ignoreShowLimits && (await isBrowserShowingNotification())) ||
+        this._maybeShowTipForUrlInstance != instance
+      ) {
+        return;
+      }
+
+      
+      this.disableTipsForCurrentSession = true;
+
+      
+      UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
 
       this.currentTip = tip;
       window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
@@ -451,6 +454,12 @@ async function isBrowserShowingNotification() {
     if (node.getAttribute("open") == "true") {
       return true;
     }
+  }
+
+  
+  
+  if (window.gDialogBox.isOpen) {
+    return true;
   }
 
   
