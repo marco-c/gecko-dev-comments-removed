@@ -1486,13 +1486,13 @@ impl ShorthandId {
                 
                 
                 
-                Err(fmt::Error)
+                Ok(())
             }
             % for property in data.shorthands_except_all():
                 ShorthandId::${property.camel_case} => {
                     match shorthands::${property.ident}::LonghandsToSerialize::from_iter(declarations) {
                         Ok(longhands) => longhands.to_css(dest),
-                        Err(_) => Err(fmt::Error)
+                        Err(_) => Ok(())
                     }
                 },
             % endfor
