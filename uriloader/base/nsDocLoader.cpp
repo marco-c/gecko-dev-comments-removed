@@ -418,13 +418,13 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
              count));
   }
 
-  bool bJustStartedLoading = false;
+  bool justStartedLoading = false;
 
   nsLoadFlags loadFlags = 0;
   request->GetLoadFlags(&loadFlags);
 
   if (!mIsLoadingDocument && (loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
-    bJustStartedLoading = true;
+    justStartedLoading = true;
     mIsLoadingDocument = true;
     mDocumentOpenedButNotLoaded = false;
     ClearInternalProgress();  
@@ -459,7 +459,7 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
       
       
       
-      if (bJustStartedLoading) {
+      if (justStartedLoading) {
         
         mProgressStateFlags = nsIWebProgressListener::STATE_START;
 
@@ -484,7 +484,7 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   
   
   int32_t extraFlags = 0;
-  if (mIsLoadingDocument && !bJustStartedLoading &&
+  if (mIsLoadingDocument && !justStartedLoading &&
       (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) &&
       (loadFlags & nsIChannel::LOAD_REPLACE)) {
     extraFlags = nsIWebProgressListener::STATE_IS_REDIRECTED_DOCUMENT;
@@ -514,7 +514,7 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
              (mDocumentOpenedButNotLoaded ? "true" : "false"), count));
   }
 
-  bool bFireTransferring = false;
+  bool fireTransferring = false;
 
   
   
@@ -563,7 +563,7 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       
       if (channel) {
         if (NS_SUCCEEDED(aStatus)) {
-          bFireTransferring = true;
+          fireTransferring = true;
         }
         
         
@@ -588,7 +588,7 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
                 
                 
                 
-                bFireTransferring = true;
+                fireTransferring = true;
               }
             }
           }
@@ -597,7 +597,7 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     }
   }
 
-  if (bFireTransferring) {
+  if (fireTransferring) {
     
     int32_t flags;
 
