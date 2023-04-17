@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonRollouts: "resource://normandy/lib/AddonRollouts.jsm",
@@ -48,9 +49,13 @@ var Normandy = {
   studyPrefsChanged: {},
   rolloutPrefsChanged: {},
   defaultPrefsHaveBeenApplied: PromiseUtils.defer(),
+  uiAvailableNotificationObserved: PromiseUtils.defer(),
 
+  
   async init({ runAsync = true } = {}) {
     
+    
+    Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
 
     
     Services.obs.addObserver(
@@ -70,22 +75,27 @@ var Normandy = {
 
     await NormandyMigrations.applyAll();
 
+    
     if (runAsync) {
-      Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
-    } else {
-      
-      try {
-        Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-      } catch (e) {}
-
-      await this.finishInit();
+      await Promise.race([
+        this.uiAvailableNotificationObserved,
+        new Promise(resolve => setTimeout(resolve, 5 * 60 * 1000)),
+      ]);
     }
+
+    
+    
+    try {
+      Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
+    } catch (e) {}
+
+    await this.finishInit();
   },
 
   async observe(subject, topic, data) {
     if (topic === UI_AVAILABLE_NOTIFICATION) {
       Services.obs.removeObserver(this, UI_AVAILABLE_NOTIFICATION);
-      this.finishInit();
+      this.uiAvailableNotificationObserved.resolve();
     } else if (topic === TelemetryUtils.TELEMETRY_UPLOAD_DISABLED_TOPIC) {
       await Promise.all(
         [
