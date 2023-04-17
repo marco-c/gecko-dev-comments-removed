@@ -1022,7 +1022,8 @@ void gfxFontconfigFontFamily::FindStyleVariations(FontInfoData* aFontInfoData) {
   CheckForSimpleFamily();
 }
 
-void gfxFontconfigFontFamily::AddFontPattern(FcPattern* aFontPattern, bool aSingleName) {
+void gfxFontconfigFontFamily::AddFontPattern(FcPattern* aFontPattern,
+                                             bool aSingleName) {
   NS_ASSERTION(
       !mHasStyles,
       "font patterns must not be added to already enumerated families");
@@ -1042,7 +1043,7 @@ void gfxFontconfigFontFamily::AddFontPattern(FcPattern* aFontPattern, bool aSing
   }
 
   if (aSingleName) {
-    mFontPatterns.InsertElementAt(0, aFontPattern);
+    mFontPatterns.InsertElementAt(mUniqueNameFaceCount++, aFontPattern);
   } else {
     mFontPatterns.AppendElement(aFontPattern);
   }
@@ -1368,8 +1369,7 @@ void gfxFcPlatformFontList::AddPatternToFontList(
   
   FcChar8* otherName;
   int n = (cIndex == 0 ? 1 : 0);
-  while (FcPatternGetString(aFont, FC_FAMILY, n, &otherName) ==
-         FcResultMatch) {
+  while (FcPatternGetString(aFont, FC_FAMILY, n, &otherName) == FcResultMatch) {
     nsAutoCString otherFamilyName(ToCharPtr(otherName));
     AddOtherFamilyName(aFontFamily, otherFamilyName);
     n++;
@@ -1536,6 +1536,28 @@ void gfxFcPlatformFontList::ReadSystemFontList(
   }
 }
 
+
+class FacesData {
+  using FaceInitArray = AutoTArray<fontlist::Face::InitData, 8>;
+
+  FaceInitArray mFaces;
+
+  
+  
+  uint32_t mUniqueNameFaceCount = 0;
+
+ public:
+  void Add(fontlist::Face::InitData&& aData, bool aSingleName) {
+    if (aSingleName) {
+      mFaces.InsertElementAt(mUniqueNameFaceCount++, std::move(aData));
+    } else {
+      mFaces.AppendElement(std::move(aData));
+    }
+  }
+
+  const FaceInitArray& Get() const { return mFaces; }
+};
+
 void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
   mLocalNames.Clear();
   mFcSubstituteCache.Clear();
@@ -1577,8 +1599,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
   nsTArray<fontlist::Family::InitData> families;
 
-  using FaceInitArray = nsTArray<fontlist::Face::InitData>;
-  nsClassHashtable<nsCStringHashKey, FaceInitArray> faces;
+  nsClassHashtable<nsCStringHashKey, FacesData> faces;
 
   
   
@@ -1600,35 +1621,27 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     nsAutoCString keyName;
     keyName = ToCharPtr(canonical);
     ToLowerCase(keyName);
-    FaceInitArray* faceListPtr = nullptr;
+
+    aLastFamilyName = canonical;
+    aFamilyName = ToCharPtr(canonical);
 
     
     
-    if (FcStrCmp(canonical, aLastFamilyName) == 0) {
-      faceListPtr = faces.Get(keyName);
-      MOZ_ASSERT(faceListPtr);
-    } else {
-      aLastFamilyName = canonical;
-      aFamilyName = ToCharPtr(canonical);
-
-      
-      faceListPtr =
-          faces
-              .LookupOrInsertWith(
-                  keyName,
-                  [&] {
-                    FontVisibility visibility =
-                        aAppFont ? FontVisibility::Base
-                                 : GetVisibilityForFamily(keyName);
-                    families.AppendElement(fontlist::Family::InitData(
-                        keyName, aFamilyName, fontlist::Family::kNoIndex,
-                        visibility,
-                         aAppFont,  false));
-
-                    return MakeUnique<FaceInitArray>();
-                  })
-              .get();
-    }
+    auto* faceList =
+        faces
+            .LookupOrInsertWith(
+                keyName,
+                [&] {
+                  FontVisibility visibility =
+                      aAppFont ? FontVisibility::Base
+                               : GetVisibilityForFamily(keyName);
+                  families.AppendElement(fontlist::Family::InitData(
+                      keyName, aFamilyName, fontlist::Family::kNoIndex,
+                      visibility,
+                       aAppFont,  false));
+                  return MakeUnique<FacesData>();
+                })
+            .get();
 
     char* s = (char*)FcNameUnparse(aPattern);
     nsAutoCString descriptor(s);
@@ -1673,9 +1686,10 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
                     visibility,
                      aAppFont,  false));
 
-                return MakeUnique<FaceInitArray>();
+                return MakeUnique<FacesData>();
               })
-          ->AppendElement(initData);
+          .get()
+          ->Add(fontlist::Face::InitData(initData),  false);
 
       n++;
       if (n == int(cIndex)) {
@@ -1684,12 +1698,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     }
 
     const bool singleName = n == 1;
-
-    if (singleName) {
-      faceListPtr->InsertElementAt(0, std::move(initData));
-    } else {
-      faceListPtr->AppendElement(std::move(initData));
-    }
+    faceList->Add(std::move(initData), singleName);
 
     
     nsAutoCString psname, fullname;
@@ -1709,7 +1718,8 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
             
             return;
           }
-          entry.InsertOrUpdate(fontlist::LocalFaceRec::InitData(keyName, descriptor));
+          entry.InsertOrUpdate(
+              fontlist::LocalFaceRec::InitData(keyName, descriptor));
         });
       }
     }
@@ -1762,7 +1772,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
   list->SetFamilyNames(families);
 
   for (uint32_t i = 0; i < families.Length(); i++) {
-    list->Families()[i].AddFaces(list, *faces.Get(families[i].mKey));
+    list->Families()[i].AddFaces(list, faces.Get(families[i].mKey)->Get());
   }
 }
 
