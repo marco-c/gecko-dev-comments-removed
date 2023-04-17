@@ -2758,6 +2758,10 @@ bool nsPIDOMWindowInner::HasOpenWebSockets() const {
 }
 
 bool nsPIDOMWindowInner::IsCurrentInnerWindow() const {
+  if (mBrowsingContext && mBrowsingContext->IsInBFCache()) {
+    return false;
+  }
+
   if (!mBrowsingContext || mBrowsingContext->IsDiscarded()) {
     
     

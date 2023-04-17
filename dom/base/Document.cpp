@@ -6824,15 +6824,14 @@ bool Document::RemoveFromBFCacheSync() {
 
   if (XRE_IsContentProcess()) {
     if (BrowsingContext* bc = GetBrowsingContext()) {
-      BrowsingContext* top = bc->Top();
-      if (top->GetIsInBFCache()) {
+      if (bc->IsInBFCache()) {
         ContentChild* cc = ContentChild::GetSingleton();
         
         
         
         
         
-        cc->SendRemoveFromBFCache(top);
+        cc->SendRemoveFromBFCache(bc->Top());
         removed = true;
       }
     }

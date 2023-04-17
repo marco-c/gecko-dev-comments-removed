@@ -197,6 +197,7 @@ enum class ExplicitActiveStatus : uint8_t {
   /* The number of entries added to the session history because of this       \
    * browsing context. */                                                     \
   FIELD(HistoryEntryCount, uint32_t)                                          \
+  /* Don't use the getter of the field, but IsInBFCache() method */           \
   FIELD(IsInBFCache, bool)                                                    \
   FIELD(HasRestoreData, bool)                                                 \
   FIELD(SessionStoreEpoch, uint32_t)
@@ -849,6 +850,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void FlushSessionStore();
 
+  bool IsInBFCache() const { return mIsInBFCache; }
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -1177,6 +1180,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   bool mCreatedDynamically : 1;
+
+  
+  
+  
+  bool mIsInBFCache : 1;
 
   
   
