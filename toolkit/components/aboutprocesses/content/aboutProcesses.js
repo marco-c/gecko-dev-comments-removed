@@ -308,18 +308,11 @@ var State = {
 
   _getProcessDelta(cur, prev) {
     let windows = this._getDOMWindows(cur);
-    
-    
-    
-    
-    
-    let totalRamSize =
-      cur.type == "browser" ? cur.residentSetSize : cur.residentUniqueSize;
     let result = {
       pid: cur.pid,
       childID: cur.childID,
       filename: cur.filename,
-      totalRamSize,
+      totalRamSize: cur.memory,
       deltaRamSize: null,
       totalCpuUser: cur.cpuUser,
       slopeCpuUser: null,
@@ -372,10 +365,7 @@ var State = {
         return this._getThreadDelta(curThread, prevThread, deltaT);
       });
     }
-    result.deltaRamSize =
-      cur.type == "browser"
-        ? cur.residentSetSize - prev.residentSetSize
-        : cur.residentUniqueSize - prev.residentUniqueSize;
+    result.deltaRamSize = cur.memory - prev.memory;
     result.slopeCpuUser = (cur.cpuUser - prev.cpuUser) / deltaT;
     result.slopeCpuKernel = (cur.cpuKernel - prev.cpuKernel) / deltaT;
     result.slopeCpu = result.slopeCpuUser + result.slopeCpuKernel;

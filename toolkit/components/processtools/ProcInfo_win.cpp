@@ -68,7 +68,7 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             
             continue;
           }
-          PROCESS_MEMORY_COUNTERS memoryCounters;
+          PROCESS_MEMORY_COUNTERS_EX memoryCounters;
           if (!GetProcessMemoryInfo(handle.get(),
                                     (PPROCESS_MEMORY_COUNTERS)&memoryCounters,
                                     sizeof(memoryCounters))) {
@@ -91,14 +91,7 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
           info.filename.Assign(filename);
           info.cpuKernel = ToNanoSeconds(kernelTime);
           info.cpuUser = ToNanoSeconds(userTime);
-          info.residentSetSize = memoryCounters.WorkingSetSize;
-
-          
-          
-          
-          
-          info.residentUniqueSize =
-              nsMemoryReporterManager::ResidentUnique(handle.get());
+          info.memory = memoryCounters.PrivateUsage;
 
           if (!gathered.put(request.pid, std::move(info))) {
             holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);

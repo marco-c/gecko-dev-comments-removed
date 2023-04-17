@@ -9,7 +9,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
-#include "nsLocalFile.h"
 #include "nsMemoryReporterManager.h"
 #include "nsNetCID.h"
 #include "nsWhitespaceTokenizer.h"
@@ -38,9 +37,7 @@ namespace mozilla {
 class StatReader {
  public:
   explicit StatReader(const base::ProcessId aPid)
-      : mPid(aPid), mMaxIndex(53), mTicksPerSec(sysconf(_SC_CLK_TCK)) {
-    mFilepath.AppendPrintf("/proc/%u/stat", mPid);
-  }
+      : mPid(aPid), mMaxIndex(15), mTicksPerSec(sysconf(_SC_CLK_TCK)) {}
 
   nsresult ParseProc(ProcInfo& aInfo) {
     nsAutoString fileContent;
@@ -89,14 +86,6 @@ class StatReader {
         aInfo.cpuKernel = GetCPUTime(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
         break;
-      case 23:
-        
-        
-        uint64_t pageCount = Get64Value(aToken, &rv);
-        NS_ENSURE_SUCCESS(rv, rv);
-        uint64_t pageSize = sysconf(_SC_PAGESIZE);
-        aInfo.residentSetSize = pageCount * pageSize;
-        break;
     }
     return rv;
   }
@@ -136,21 +125,17 @@ class StatReader {
  private:
   
   nsresult ReadFile(nsAutoString& aFileContent) {
-    RefPtr<nsLocalFile> file = new nsLocalFile(mFilepath);
-    bool exists;
-    nsresult rv = file->Exists(&exists);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!exists) {
+    if (mFilepath.IsEmpty()) {
+      mFilepath.AppendPrintf("/proc/%u/stat", mPid);
+    }
+    FILE* fstat = fopen(mFilepath.get(), "r");
+    if (!fstat) {
       return NS_ERROR_FAILURE;
     }
     
     
     
     
-    FILE* fstat;
-    if (NS_FAILED(file->OpenANSIFileDesc("r", &fstat)) || !fstat) {
-      return NS_ERROR_FAILURE;
-    }
     char buffer[2048];
     char* end;
     char* start = fgets(buffer, 2048, fstat);
@@ -176,10 +161,7 @@ class ThreadInfoReader final : public StatReader {
  public:
   ThreadInfoReader(const base::ProcessId aPid, const base::ProcessId aTid)
       : StatReader(aPid), mTid(aTid) {
-    
-    mFilepath.Truncate();
     mFilepath.AppendPrintf("/proc/%u/task/%u/stat", aPid, mTid);
-    mMaxIndex = 17;
   }
 
   nsresult ParseThread(ThreadInfo& aInfo) {
@@ -230,12 +212,22 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
             
             continue;
           }
+
           
           
           
-          
-          info.residentUniqueSize =
-              nsMemoryReporterManager::ResidentUnique(request.pid);
+          static const int MAX_FIELD = 3;
+          size_t VmSize, resident, shared;
+          info.memory = 0;
+          FILE* f =
+              fopen(nsPrintfCString("/proc/%u/statm", request.pid).get(), "r");
+          if (f) {
+            int nread = fscanf(f, "%zu %zu %zu", &VmSize, &resident, &shared);
+            fclose(f);
+            if (nread == MAX_FIELD) {
+              info.memory = (resident - shared) * getpagesize();
+            }
+          }
 
           
           info.pid = request.pid;
