@@ -529,6 +529,12 @@ static bool PushInnerFunctions(JSContext* cx, Debugger* dbg, HandleObject array,
     if (obj->is<JSFunction>()) {
       fun = &obj->as<JSFunction>();
 
+      
+      
+      if (fun->isGhost()) {
+        continue;
+      }
+
       if (!PushFunctionScript(cx, dbg, fun, array)) {
         return false;
       }

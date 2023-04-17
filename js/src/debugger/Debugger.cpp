@@ -5164,6 +5164,12 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       fun = script->function();
 
       
+      
+      if (fun->isGhost()) {
+        continue;
+      }
+
+      
       JSScript* compiledScript = GetOrCreateFunctionScript(cx, fun);
       if (!compiledScript) {
         return false;
