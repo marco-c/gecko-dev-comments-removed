@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use std::fmt;
 
 use super::lazy_buffer::LazyBuffer;
@@ -11,10 +12,7 @@ where
     I: Iterator,
     I::Item: Clone,
 {
-    k: usize,
     indices: Vec<usize>,
-    
-    max_index: usize,
     pool: LazyBuffer<I>,
     first: bool,
 }
@@ -24,7 +22,7 @@ where
     I: Iterator + fmt::Debug,
     I::Item: fmt::Debug + Clone,
 {
-    debug_fmt_fields!(Combinations, k, indices, max_index, pool, first);
+    debug_fmt_fields!(Combinations, indices, pool, first);
 }
 
 impl<I> CombinationsWithReplacement<I>
@@ -44,13 +42,11 @@ where
     I: Iterator,
     I::Item: Clone,
 {
-    let indices: Vec<usize> = vec![0; k];
+    let indices: Vec<usize> = alloc::vec![0; k];
     let pool: LazyBuffer<I> = LazyBuffer::new(iter);
 
     CombinationsWithReplacement {
-        k,
         indices,
-        max_index: 0,
         pool,
         first: true,
     }
@@ -66,7 +62,7 @@ where
         
         if self.first {
             
-            return if self.k != 0 && !self.pool.get_next() {
+            return if self.indices.len() != 0 && !self.pool.get_next() {
                 None
             
             } else {
@@ -77,14 +73,12 @@ where
 
         
         
-        if self.pool.get_next() {
-            self.max_index = self.pool.len() - 1;
-        }
+        self.pool.get_next();
 
         
         let mut increment: Option<(usize, usize)> = None;
         for (i, indices_int) in self.indices.iter().enumerate().rev() {
-            if indices_int < &self.max_index {
+            if *indices_int < self.pool.len()-1 {
                 increment = Some((i, indices_int + 1));
                 break;
             }

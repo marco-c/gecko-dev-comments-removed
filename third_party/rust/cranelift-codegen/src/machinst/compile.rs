@@ -5,7 +5,7 @@ use crate::machinst::*;
 use crate::settings;
 use crate::timing;
 
-use log::debug;
+use log::{debug, log_enabled, Level};
 use regalloc::{allocate_registers_with_opts, Algorithm, Options, PrettyPrint};
 
 
@@ -29,10 +29,15 @@ where
         lower.lower(b)?
     };
 
-    debug!(
-        "vcode from lowering: \n{}",
-        vcode.show_rru(Some(b.reg_universe()))
-    );
+    
+    
+    
+    if log_enabled!(Level::Debug) {
+        debug!(
+            "vcode from lowering: \n{}",
+            vcode.show_rru(Some(b.reg_universe()))
+        );
+    }
 
     
     let (run_checker, algorithm) = match vcode.flags().regalloc() {
@@ -101,10 +106,12 @@ where
         vcode.replace_insns_from_regalloc(result);
     }
 
-    debug!(
-        "vcode after regalloc: final version:\n{}",
-        vcode.show_rru(Some(b.reg_universe()))
-    );
+    if log_enabled!(Level::Debug) {
+        debug!(
+            "vcode after regalloc: final version:\n{}",
+            vcode.show_rru(Some(b.reg_universe()))
+        );
+    }
 
     Ok(vcode)
 }

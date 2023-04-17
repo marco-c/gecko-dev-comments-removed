@@ -48,6 +48,7 @@ impl IntoBytes for Vec<u8> {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Imm64(i64);
 
 impl Imm64 {
@@ -148,6 +149,7 @@ impl FromStr for Imm64 {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Uimm64(u64);
 
 impl Uimm64 {
@@ -279,6 +281,7 @@ pub type Uimm8 = u8;
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Uimm32(u32);
 
 impl Into<u32> for Uimm32 {
@@ -362,6 +365,7 @@ impl From<&[u8]> for V128Imm {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Offset32(i32);
 
 impl Offset32 {
@@ -451,6 +455,7 @@ impl FromStr for Offset32 {
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[repr(C)]
 pub struct Ieee32(u32);
 
@@ -459,6 +464,7 @@ pub struct Ieee32(u32);
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 #[repr(C)]
 pub struct Ieee64(u64);
 

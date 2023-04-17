@@ -1005,10 +1005,7 @@ fn get_range_frags_for_block<F: Function>(
                 None => panic!("get_range_frags_for_block: fail #2"),
                 Some(ref mut pf) => {
                     
-                    
-                    
-                    
-                    pf.num_mentions = plus1(plus1(pf.num_mentions));
+                    pf.num_mentions = plus1(pf.num_mentions);
                     let new_last = InstPoint::new_def(iix);
                     debug_assert!(pf.last <= new_last);
                     pf.last = new_last;

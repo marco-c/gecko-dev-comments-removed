@@ -60,60 +60,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use crate::binemit::{CodeInfo, CodeOffset, StackMap};
 use crate::ir::condcodes::IntCC;
-use crate::ir::{Function, SourceLoc, Type};
-use crate::isa::unwind::input as unwind_input;
+use crate::ir::{Function, SourceLoc, StackSlot, Type, ValueLabel};
 use crate::result::CodegenResult;
-use crate::settings::Flags;
-
+use crate::settings::{self, Flags};
+use crate::value_label::ValueLabelsRanges;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt::Debug;
-use core::ops::Range;
+use core::hash::Hasher;
+use cranelift_entity::PrimaryMap;
 use regalloc::RegUsageCollector;
 use regalloc::{
     RealReg, RealRegUniverse, Reg, RegClass, RegUsageMapper, SpillSlot, VirtualReg, Writable,
 };
-use smallvec::SmallVec;
+use smallvec::{smallvec, SmallVec};
 use std::string::String;
 use target_lexicon::Triple;
+
+#[cfg(feature = "unwind")]
+use crate::isa::unwind::systemv::RegisterMappingError;
 
 pub mod lower;
 pub use lower::*;
@@ -135,6 +102,9 @@ pub mod helpers;
 pub use helpers::*;
 pub mod inst_common;
 pub use inst_common::*;
+pub mod valueregs;
+pub use valueregs::*;
+pub mod debug;
 
 
 pub trait MachInst: Clone + Debug {
@@ -162,18 +132,20 @@ pub trait MachInst: Clone + Debug {
     }
 
     
+    fn stack_op_info(&self) -> Option<MachInstStackOpInfo> {
+        None
+    }
+
+    
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Self;
 
     
-    fn gen_constant<F: FnMut(RegClass, Type) -> Writable<Reg>>(
-        to_reg: Writable<Reg>,
-        value: u64,
+    fn gen_constant<F: FnMut(Type) -> Writable<Reg>>(
+        to_regs: ValueRegs<Writable<Reg>>,
+        value: u128,
         ty: Type,
         alloc_tmp: F,
     ) -> SmallVec<[Self; 4]>;
-
-    
-    fn gen_zero_len_nop() -> Self;
 
     
     
@@ -182,7 +154,17 @@ pub trait MachInst: Clone + Debug {
 
     
     
-    fn rc_for_type(ty: Type) -> CodegenResult<RegClass>;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn rc_for_type(ty: Type) -> CodegenResult<(&'static [RegClass], &'static [Type])>;
 
     
     
@@ -210,6 +192,17 @@ pub trait MachInst: Clone + Debug {
     
     
     fn ref_type_regclass(_flags: &Flags) -> RegClass;
+
+    
+    
+    fn defines_value_label(&self) -> Option<(ValueLabel, Reg)> {
+        None
+    }
+
+    
+    fn gen_value_label_marker(_label: ValueLabel, _reg: Reg) -> Self {
+        Self::gen_nop(0)
+    }
 
     
     
@@ -273,14 +266,41 @@ pub enum MachTerminator<'a> {
     Indirect(&'a [MachLabel]),
 }
 
+impl<'a> MachTerminator<'a> {
+    
+    pub fn get_succs(&self) -> SmallVec<[MachLabel; 2]> {
+        let mut ret = smallvec![];
+        match self {
+            &MachTerminator::Uncond(l) => {
+                ret.push(l);
+            }
+            &MachTerminator::Cond(l1, l2) => {
+                ret.push(l1);
+                ret.push(l2);
+            }
+            &MachTerminator::Indirect(ls) => {
+                ret.extend(ls.iter().cloned());
+            }
+            _ => {}
+        }
+        ret
+    }
+
+    
+    pub fn is_term(&self) -> bool {
+        match self {
+            MachTerminator::None => false,
+            _ => true,
+        }
+    }
+}
+
 
 pub trait MachInstEmit: MachInst {
     
     type State: MachInstEmitState<Self>;
     
     type Info: MachInstEmitInfo;
-    
-    type UnwindInfo: UnwindInfoGenerator<Self>;
     
     fn emit(&self, code: &mut MachBuffer<Self>, info: &Self::Info, state: &mut Self::State);
     
@@ -317,7 +337,9 @@ pub struct MachCompileResult {
     
     pub disasm: Option<String>,
     
-    pub unwind_info: Option<unwind_input::UnwindInfo<Reg>>,
+    pub value_labels_ranges: ValueLabelsRanges,
+    
+    pub stackslot_offsets: PrimaryMap<StackSlot, u32>,
 }
 
 impl MachCompileResult {
@@ -345,6 +367,12 @@ pub trait MachBackend {
 
     
     fn flags(&self) -> &Flags;
+
+    
+    fn isa_flags(&self) -> Vec<settings::Value>;
+
+    
+    fn hash_all_flags(&self, hasher: &mut dyn Hasher);
 
     
     fn triple(&self) -> Triple;
@@ -375,11 +403,15 @@ pub trait MachBackend {
     }
 
     
-    
     #[cfg(feature = "unwind")]
     fn create_systemv_cie(&self) -> Option<gimli::write::CommonInformationEntry> {
         
         None
+    }
+    
+    #[cfg(feature = "unwind")]
+    fn map_reg_to_dwarf(&self, _: Reg) -> Result<u16, RegisterMappingError> {
+        Err(RegisterMappingError::UnsupportedArchitecture)
     }
 }
 
@@ -398,24 +430,13 @@ pub enum UnwindInfoKind {
 }
 
 
-pub struct UnwindInfoContext<'a, Inst: MachInstEmit> {
+#[derive(Clone, Copy, Debug)]
+pub enum MachInstStackOpInfo {
     
-    pub insts: &'a [Inst],
+    LoadNomSPOff(Reg, i64),
     
-    pub insts_layout: &'a [CodeOffset],
-    
-    pub len: CodeOffset,
-    
-    pub prologue: Range<u32>,
-    
-    pub epilogues: &'a [Range<u32>],
-}
-
-
-pub trait UnwindInfoGenerator<I: MachInstEmit> {
+    StoreNomSPOff(Reg, i64),
     
     
-    fn create_unwind_info(
-        context: UnwindInfoContext<I>,
-    ) -> CodegenResult<Option<unwind_input::UnwindInfo<Reg>>>;
+    NomSPAdj(i64),
 }

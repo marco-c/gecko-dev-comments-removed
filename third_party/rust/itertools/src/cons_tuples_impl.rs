@@ -35,7 +35,7 @@ macro_rules! impl_cons_iter(
     );
 );
 
-impl_cons_iter!(A, B, C, D, E, F, G, H,);
+impl_cons_iter!(A, B, C, D, E, F, G, H, I, J, K, L,);
 
 
 
@@ -57,8 +57,8 @@ impl<I, J> Clone for ConsTuples<I, J>
 
 
 
-pub fn cons_tuples<I, J>(iterable: I) -> ConsTuples<I, J>
-    where I: Iterator<Item=J>
+pub fn cons_tuples<I, J>(iterable: I) -> ConsTuples<I::IntoIter, J>
+    where I: IntoIterator<Item=J>
 {
     ConsTuples { iter: iterable.into_iter() }
 }

@@ -21,6 +21,9 @@ use core::mem;
 use core::ops::{Index, IndexMut};
 use core::u16;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
@@ -29,6 +32,7 @@ use core::u16;
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct DataFlowGraph {
     
     
@@ -416,6 +420,7 @@ impl ValueDef {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 enum ValueData {
     
     Inst { ty: Type, num: u16, inst: Inst },
@@ -935,6 +940,7 @@ impl DataFlowGraph {
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 struct BlockData {
     
     params: ValueList,

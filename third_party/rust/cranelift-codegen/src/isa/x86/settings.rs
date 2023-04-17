@@ -1,6 +1,6 @@
 
 
-use crate::settings::{self, detail, Builder};
+use crate::settings::{self, detail, Builder, Value};
 use core::fmt;
 
 

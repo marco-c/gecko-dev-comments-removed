@@ -258,6 +258,17 @@ impl fmt::Display for AbiParam {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum ArgumentExtension {
@@ -398,6 +409,7 @@ impl FromStr for ArgumentPurpose {
 
 
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ExtFuncData {
     
     pub name: ExternalName,

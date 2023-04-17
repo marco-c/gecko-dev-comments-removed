@@ -45,10 +45,8 @@ impl PerCpuModeEncodings {
         if let Some(found_index) = self.recipes_by_name.get(&recipe.name) {
             assert!(
                 self.recipes[*found_index] == recipe,
-                format!(
-                    "trying to insert different recipes with a same name ({})",
-                    recipe.name
-                )
+                "trying to insert different recipes with a same name ({})",
+                recipe.name
             );
             *found_index
         } else {
@@ -549,10 +547,13 @@ fn define_moves(e: &mut PerCpuModeEncodings, shared_defs: &SharedDefinitions, r:
     }
     e.enc64(bconst.bind(B64), rec_pu_id_bool.opcodes(&MOV_IMM).rex());
 
+    
+    
+    
     let is_zero_int = InstructionPredicate::new_is_zero_int(&formats.unary_imm, "imm");
     e.enc_both_instp(
         iconst.bind(I8),
-        rec_u_id_z.opcodes(&XORB),
+        rec_u_id_z.opcodes(&XOR),
         is_zero_int.clone(),
     );
 
@@ -1688,6 +1689,7 @@ fn define_simd(
     let usub_sat = shared.by_name("usub_sat");
     let vconst = shared.by_name("vconst");
     let vselect = shared.by_name("vselect");
+    let widening_pairwise_dot_product_s = shared.by_name("widening_pairwise_dot_product_s");
     let x86_cvtt2si = x86.by_name("x86_cvtt2si");
     let x86_insertps = x86.by_name("x86_insertps");
     let x86_fmax = x86.by_name("x86_fmax");
@@ -2209,6 +2211,9 @@ fn define_simd(
 
     
     e.enc_both_inferred(x86_pmuludq, rec_fa.opcodes(&PMULUDQ));
+
+    
+    e.enc_both_inferred(widening_pairwise_dot_product_s, rec_fa.opcodes(&PMADDWD));
 
     
     {

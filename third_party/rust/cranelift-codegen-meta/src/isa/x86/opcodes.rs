@@ -509,6 +509,9 @@ pub static VPMULLQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
 pub static PMULUDQ: [u8; 3] = [0x66, 0x0f, 0xf4];
 
 
+pub static PMADDWD: [u8; 3] = [0x66, 0x0f, 0xf5];
+
+
 pub static POP_REG: [u8; 1] = [0x58];
 
 
@@ -710,9 +713,6 @@ pub static XOR_IMM8_SIGN_EXTEND: [u8; 1] = [0x83];
 
 
 pub static XOR: [u8; 1] = [0x31];
-
-
-pub static XORB: [u8; 1] = [0x30];
 
 
 pub static XORPD: [u8; 3] = [0x66, 0x0f, 0x57];

@@ -33,6 +33,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Block(u32);
 entity_impl!(Block, "block");
 
@@ -65,6 +66,7 @@ impl Block {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Value(u32);
 entity_impl!(Value, "v");
 
@@ -97,6 +99,7 @@ impl Value {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Inst(u32);
 entity_impl!(Inst, "inst");
 
@@ -152,6 +155,7 @@ impl StackSlot {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct GlobalValue(u32);
 entity_impl!(GlobalValue, "gv");
 
@@ -177,6 +181,7 @@ impl GlobalValue {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Constant(u32);
 entity_impl!(Constant, "const");
 
@@ -202,6 +207,7 @@ impl Constant {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Immediate(u32);
 entity_impl!(Immediate, "imm");
 
@@ -267,6 +273,7 @@ impl JumpTable {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct FuncRef(u32);
 entity_impl!(FuncRef, "fn");
 
@@ -298,6 +305,7 @@ impl FuncRef {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct SigRef(u32);
 entity_impl!(SigRef, "sig");
 
@@ -323,6 +331,7 @@ impl SigRef {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Heap(u32);
 entity_impl!(Heap, "heap");
 
@@ -349,6 +358,7 @@ impl Heap {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Table(u32);
 entity_impl!(Table, "table");
 
@@ -367,6 +377,7 @@ impl Table {
 
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum AnyEntity {
     
     Function,

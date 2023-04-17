@@ -45,6 +45,78 @@ pub trait Configurable {
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SettingKind {
+    
+    Enum,
+    
+    Num,
+    
+    Bool,
+    
+    Preset,
+}
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct Setting {
+    
+    pub name: &'static str,
+    
+    pub description: &'static str,
+    
+    pub kind: SettingKind,
+    
+    pub values: Option<&'static [&'static str]>,
+}
+
+
+
+
+pub struct Value {
+    
+    pub name: &'static str,
+    pub(crate) detail: detail::Detail,
+    pub(crate) values: Option<&'static [&'static str]>,
+    pub(crate) value: u8,
+}
+
+impl Value {
+    
+    pub fn kind(&self) -> SettingKind {
+        match &self.detail {
+            detail::Detail::Enum { .. } => SettingKind::Enum,
+            detail::Detail::Num => SettingKind::Num,
+            detail::Detail::Bool { .. } => SettingKind::Bool,
+            detail::Detail::Preset => unreachable!(),
+        }
+    }
+
+    
+    pub fn as_enum(&self) -> Option<&'static str> {
+        self.values.map(|v| v[self.value as usize])
+    }
+
+    
+    pub fn as_num(&self) -> Option<u8> {
+        match &self.detail {
+            detail::Detail::Num => Some(self.value),
+            _ => None,
+        }
+    }
+
+    
+    pub fn as_bool(&self) -> Option<bool> {
+        match &self.detail {
+            detail::Detail::Bool { bit } => Some(self.value & (1 << bit) != 0),
+            _ => None,
+        }
+    }
+}
+
+
 #[derive(Clone, Hash)]
 pub struct Builder {
     template: &'static detail::Template,
@@ -64,6 +136,30 @@ impl Builder {
     pub fn state_for(self, name: &str) -> Box<[u8]> {
         assert_eq!(name, self.template.name);
         self.bytes
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = Setting> {
+        let template = self.template;
+
+        template.descriptors.iter().map(move |d| {
+            let (kind, values) = match d.detail {
+                detail::Detail::Enum { last, enumerators } => {
+                    let values = template.enums(last, enumerators);
+                    (SettingKind::Enum, Some(values))
+                }
+                detail::Detail::Num => (SettingKind::Num, None),
+                detail::Detail::Bool { .. } => (SettingKind::Bool, None),
+                detail::Detail::Preset => (SettingKind::Preset, None),
+            };
+
+            Setting {
+                name: d.name,
+                description: d.description,
+                kind,
+                values,
+            }
+        })
     }
 
     
@@ -188,7 +284,7 @@ pub type SetResult<T> = Result<T, SetError>;
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 pub struct PredicateView<'a>(&'a [u8]);
 
 impl<'a> PredicateView<'a> {
@@ -287,6 +383,9 @@ pub mod detail {
     pub struct Descriptor {
         
         pub name: &'static str,
+
+        
+        pub description: &'static str,
 
         
         pub offset: u32,
@@ -398,6 +497,8 @@ use_pinned_reg_as_heap_base = false
 enable_simd = false
 enable_atomics = true
 enable_safepoints = false
+enable_llvm_abi_extensions = false
+unwind_info = true
 emit_all_ones_funcaddrs = false
 enable_probestack = true
 probestack_func_adjusts_sp = false

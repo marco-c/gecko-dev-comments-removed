@@ -1312,19 +1312,31 @@ unsafe impl<'a, 'b> InstructionSet<'b> for &'a dyn TargetIsa {
 }
 
 #[cfg(test)]
-#[cfg(feature = "x86")]
+#[cfg(any(feature = "x64", feature = "x86", feature = "arm64"))]
 mod tests {
     use super::*;
-    use crate::isa::lookup;
+    use crate::isa::{lookup, TargetIsa};
     use crate::settings::{builder, Flags};
     use std::str::FromStr;
     use target_lexicon::triple;
 
+    fn isa() -> Box<dyn TargetIsa> {
+        
+        
+        
+        let triple = if cfg!(any(feature = "x64", feature = "x86")) {
+            triple!("x86_64")
+        } else if cfg!(feature = "arm64") {
+            triple!("aarch64")
+        } else {
+            panic!("unknown arch")
+        };
+        lookup(triple).unwrap().finish(Flags::new(builder()))
+    }
+
     #[test]
     fn get_peepmatic_preopt() {
-        let isa = lookup(triple!("x86_64"))
-            .expect("expect x86 ISA")
-            .finish(Flags::new(builder()));
+        let isa = isa();
         let _ = preopt(&*isa);
     }
 }

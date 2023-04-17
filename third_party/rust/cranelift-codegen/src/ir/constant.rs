@@ -19,12 +19,16 @@ use core::slice::Iter;
 use core::str::{from_utf8, FromStr};
 use cranelift_entity::EntityRef;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
 
 
 #[derive(Clone, Hash, Eq, PartialEq, Debug, Default)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ConstantData(Vec<u8>);
 
 impl FromIterator<u8> for ConstantData {
@@ -173,6 +177,7 @@ pub type ConstantOffset = u32;
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ConstantPoolEntry {
     data: ConstantData,
     offset: Option<ConstantOffset>,
@@ -197,6 +202,7 @@ impl ConstantPoolEntry {
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ConstantPool {
     
     

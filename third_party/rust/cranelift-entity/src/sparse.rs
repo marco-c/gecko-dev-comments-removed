@@ -14,6 +14,9 @@ use core::mem;
 use core::slice;
 use core::u32;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
@@ -53,6 +56,7 @@ pub trait SparseMapValue<K> {
 
 
 
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct SparseMap<K, V>
 where
     K: EntityRef,

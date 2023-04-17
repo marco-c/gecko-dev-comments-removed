@@ -9,9 +9,13 @@ use crate::isa::Builder as IsaBuilder;
 use crate::machinst::{compile, MachBackend, MachCompileResult, TargetIsaAdapter, VCode};
 use crate::result::CodegenResult;
 use crate::settings::{self as shared_settings, Flags};
-use alloc::boxed::Box;
-use regalloc::{PrettyPrint, RealRegUniverse};
+use alloc::{boxed::Box, vec::Vec};
+use core::hash::{Hash, Hasher};
+use regalloc::{PrettyPrint, RealRegUniverse, Reg};
 use target_lexicon::Triple;
+
+#[cfg(feature = "unwind")]
+use crate::isa::unwind::systemv;
 
 mod abi;
 mod inst;
@@ -59,7 +63,8 @@ impl MachBackend for X64Backend {
         let buffer = vcode.emit();
         let buffer = buffer.finish();
         let frame_size = vcode.frame_size();
-        let unwind_info = vcode.unwind_info()?;
+        let value_labels_ranges = vcode.value_labels_ranges();
+        let stackslot_offsets = vcode.stackslot_offsets().clone();
 
         let disasm = if want_disasm {
             Some(vcode.show_rru(Some(&create_reg_universe_systemv(flags))))
@@ -71,12 +76,22 @@ impl MachBackend for X64Backend {
             buffer,
             frame_size,
             disasm,
-            unwind_info,
+            value_labels_ranges,
+            stackslot_offsets,
         })
     }
 
     fn flags(&self) -> &Flags {
         &self.flags
+    }
+
+    fn isa_flags(&self) -> Vec<shared_settings::Value> {
+        self.x64_flags.iter().collect()
+    }
+
+    fn hash_all_flags(&self, mut hasher: &mut dyn Hasher) {
+        self.flags.hash(&mut hasher);
+        self.x64_flags.hash(&mut hasher);
     }
 
     fn name(&self) -> &'static str {
@@ -94,13 +109,13 @@ impl MachBackend for X64Backend {
     fn unsigned_add_overflow_condition(&self) -> IntCC {
         
         
-        IntCC::UnsignedGreaterThanOrEqual
+        IntCC::UnsignedLessThan
     }
 
     fn unsigned_sub_overflow_condition(&self) -> IntCC {
         
         
-        IntCC::UnsignedGreaterThanOrEqual
+        IntCC::UnsignedLessThan
     }
 
     #[cfg(feature = "unwind")]
@@ -111,14 +126,22 @@ impl MachBackend for X64Backend {
     ) -> CodegenResult<Option<crate::isa::unwind::UnwindInfo>> {
         use crate::isa::unwind::UnwindInfo;
         use crate::machinst::UnwindInfoKind;
-        Ok(match (result.unwind_info.as_ref(), kind) {
-            (Some(info), UnwindInfoKind::SystemV) => {
-                inst::unwind::systemv::create_unwind_info(info.clone())?.map(UnwindInfo::SystemV)
+        Ok(match kind {
+            UnwindInfoKind::SystemV => {
+                let mapper = self::inst::unwind::systemv::RegisterMapper;
+                Some(UnwindInfo::SystemV(
+                    crate::isa::unwind::systemv::create_unwind_info_from_insts(
+                        &result.buffer.unwind_info[..],
+                        result.buffer.data.len(),
+                        &mapper,
+                    )?,
+                ))
             }
-            (Some(_info), UnwindInfoKind::Windows) => {
-                
-                None
-            }
+            UnwindInfoKind::Windows => Some(UnwindInfo::WindowsX64(
+                crate::isa::unwind::winx64::create_unwind_info_from_insts::<
+                    self::inst::unwind::winx64::RegisterMapper,
+                >(&result.buffer.unwind_info[..])?,
+            )),
             _ => None,
         })
     }
@@ -126,6 +149,11 @@ impl MachBackend for X64Backend {
     #[cfg(feature = "unwind")]
     fn create_systemv_cie(&self) -> Option<gimli::write::CommonInformationEntry> {
         Some(inst::unwind::systemv::create_cie())
+    }
+
+    #[cfg(feature = "unwind")]
+    fn map_reg_to_dwarf(&self, reg: Reg) -> Result<u16, systemv::RegisterMappingError> {
+        inst::unwind::systemv::map_reg(reg).map(|reg| reg.0)
     }
 }
 

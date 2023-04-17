@@ -7,6 +7,9 @@
 use core::fmt::{self, Display, Formatter};
 use core::str::FromStr;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 pub trait CondCode: Copy {
     
@@ -30,6 +33,7 @@ pub trait CondCode: Copy {
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum IntCC {
     
     Equal,
@@ -187,6 +191,7 @@ impl FromStr for IntCC {
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum FloatCC {
     
     Ordered,

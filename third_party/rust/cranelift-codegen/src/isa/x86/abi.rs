@@ -145,7 +145,12 @@ impl ArgAssigner for Args {
         }
 
         
-        if ty.is_int() && ty.bits() < u16::from(self.pointer_bits) {
+        
+        
+        if ty.is_int()
+            && ty.bits() < u16::from(self.pointer_bits)
+            && self.call_conv.extends_baldrdash()
+        {
             match arg.extension {
                 ArgumentExtension::None => {}
                 ArgumentExtension::Uext => return ValueConversion::Uext(self.pointer_type).into(),
@@ -507,6 +512,7 @@ pub fn prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> Codege
         }
         CallConv::Probestack => unimplemented!("probestack calling convention"),
         CallConv::Baldrdash2020 => unimplemented!("Baldrdash ABI 2020"),
+        CallConv::AppleAarch64 => unreachable!(),
     }
 }
 

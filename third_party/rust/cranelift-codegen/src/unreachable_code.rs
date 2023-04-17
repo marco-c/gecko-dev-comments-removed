@@ -43,4 +43,17 @@ pub fn eliminate_unreachable_code(
         
         pos.func.layout.remove_block(block);
     }
+
+    
+    
+    
+    
+    
+    
+    for jt_data in func.jump_tables.values_mut() {
+        let invalid_ref = jt_data.iter().any(|block| !domtree.is_reachable(*block));
+        if invalid_ref {
+            jt_data.clear();
+        }
+    }
 }

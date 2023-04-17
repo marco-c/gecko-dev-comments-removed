@@ -4,8 +4,12 @@ use crate::ir::immediates::Uimm64;
 use crate::ir::{GlobalValue, Type};
 use core::fmt;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct HeapData {
     
     pub base: GlobalValue,
@@ -26,6 +30,7 @@ pub struct HeapData {
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum HeapStyle {
     
     Dynamic {

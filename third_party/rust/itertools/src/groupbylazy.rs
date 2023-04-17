@@ -1,5 +1,5 @@
 use std::cell::{Cell, RefCell};
-use std::vec;
+use alloc::vec::{self, Vec};
 
 
 trait KeyFunction<A> {

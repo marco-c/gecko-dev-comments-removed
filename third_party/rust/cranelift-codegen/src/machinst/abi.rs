@@ -1,12 +1,16 @@
 
 
 use crate::binemit::StackMap;
-use crate::ir::StackSlot;
+use crate::ir::{Signature, StackSlot};
 use crate::isa::CallConv;
 use crate::machinst::*;
 use crate::settings;
-
 use regalloc::{Reg, Set, SpillSlot, Writable};
+use smallvec::SmallVec;
+
+
+
+pub type SmallInstVec<I> = SmallVec<[I; 4]>;
 
 
 
@@ -16,7 +20,7 @@ pub trait ABICallee {
 
     
     
-    fn temp_needed(&self) -> bool;
+    fn temp_needed(&self) -> Option<Type>;
 
     
     
@@ -24,10 +28,7 @@ pub trait ABICallee {
     fn init(&mut self, maybe_tmp: Option<Writable<Reg>>);
 
     
-    
-    
-    
-    fn accumulate_outgoing_args_size(&mut self, size: u32);
+    fn signature(&self) -> &Signature;
 
     
     fn flags(&self) -> &settings::Flags;
@@ -51,8 +52,15 @@ pub trait ABICallee {
     fn num_stackslots(&self) -> usize;
 
     
+    fn stackslot_offsets(&self) -> &PrimaryMap<StackSlot, u32>;
+
     
-    fn gen_copy_arg_to_reg(&self, idx: usize, into_reg: Writable<Reg>) -> Self::I;
+    
+    fn gen_copy_arg_to_regs(
+        &self,
+        idx: usize,
+        into_reg: ValueRegs<Writable<Reg>>,
+    ) -> SmallInstVec<Self::I>;
 
     
     
@@ -67,7 +75,11 @@ pub trait ABICallee {
     fn gen_retval_area_setup(&self) -> Option<Self::I>;
 
     
-    fn gen_copy_reg_to_retval(&self, idx: usize, from_reg: Writable<Reg>) -> Vec<Self::I>;
+    fn gen_copy_regs_to_retval(
+        &self,
+        idx: usize,
+        from_reg: ValueRegs<Writable<Reg>>,
+    ) -> SmallInstVec<Self::I>;
 
     
     fn gen_ret(&self) -> Self::I;
@@ -99,17 +111,33 @@ pub trait ABICallee {
         slot: StackSlot,
         offset: u32,
         ty: Type,
-        into_reg: Writable<Reg>,
-    ) -> Self::I;
+        into_reg: ValueRegs<Writable<Reg>>,
+    ) -> SmallInstVec<Self::I>;
 
     
-    fn store_stackslot(&self, slot: StackSlot, offset: u32, ty: Type, from_reg: Reg) -> Self::I;
+    fn store_stackslot(
+        &self,
+        slot: StackSlot,
+        offset: u32,
+        ty: Type,
+        from_reg: ValueRegs<Reg>,
+    ) -> SmallInstVec<Self::I>;
 
     
-    fn load_spillslot(&self, slot: SpillSlot, ty: Type, into_reg: Writable<Reg>) -> Self::I;
+    fn load_spillslot(
+        &self,
+        slot: SpillSlot,
+        ty: Type,
+        into_reg: ValueRegs<Writable<Reg>>,
+    ) -> SmallInstVec<Self::I>;
 
     
-    fn store_spillslot(&self, slot: SpillSlot, ty: Type, from_reg: Reg) -> Self::I;
+    fn store_spillslot(
+        &self,
+        slot: SpillSlot,
+        ty: Type,
+        from_reg: ValueRegs<Reg>,
+    ) -> SmallInstVec<Self::I>;
 
     
     
@@ -125,13 +153,13 @@ pub trait ABICallee {
     
     
     
-    fn gen_prologue(&mut self) -> Vec<Self::I>;
+    fn gen_prologue(&mut self) -> SmallInstVec<Self::I>;
 
     
     
     
     
-    fn gen_epilogue(&self) -> Vec<Self::I>;
+    fn gen_epilogue(&self) -> SmallInstVec<Self::I>;
 
     
     
@@ -188,19 +216,27 @@ pub trait ABICaller {
     fn num_args(&self) -> usize;
 
     
-    fn emit_copy_reg_to_arg<C: LowerCtx<I = Self::I>>(
+    fn signature(&self) -> &Signature;
+
+    
+    fn emit_copy_regs_to_arg<C: LowerCtx<I = Self::I>>(
         &self,
         ctx: &mut C,
         idx: usize,
-        from_reg: Reg,
+        from_reg: ValueRegs<Reg>,
     );
 
     
-    fn emit_copy_retval_to_reg<C: LowerCtx<I = Self::I>>(
+    
+    
+    fn get_copy_to_arg_order(&self) -> SmallVec<[usize; 8]>;
+
+    
+    fn emit_copy_retval_to_regs<C: LowerCtx<I = Self::I>>(
         &self,
         ctx: &mut C,
         idx: usize,
-        into_reg: Writable<Reg>,
+        into_reg: ValueRegs<Writable<Reg>>,
     );
 
     
@@ -208,13 +244,6 @@ pub trait ABICaller {
 
     
     fn emit_stack_post_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
-
-    
-    
-    
-    
-    
-    fn accumulate_outgoing_args_size<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
 
     
     

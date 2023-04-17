@@ -1,6 +1,7 @@
 use std::fmt;
 
 use super::lazy_buffer::LazyBuffer;
+use alloc::vec::Vec;
 
 
 
@@ -30,18 +31,52 @@ impl<I> fmt::Debug for Combinations<I>
 pub fn combinations<I>(iter: I, k: usize) -> Combinations<I>
     where I: Iterator
 {
-    let mut pool: LazyBuffer<I> = LazyBuffer::new(iter);
-
-    for _ in 0..k {
-        if !pool.get_next() {
-            break;
-        }
-    }
+    let mut pool = LazyBuffer::new(iter);
+    pool.prefill(k);
 
     Combinations {
         indices: (0..k).collect(),
         pool,
         first: true,
+    }
+}
+
+impl<I: Iterator> Combinations<I> {
+    
+    #[inline]
+    pub fn k(&self) -> usize { self.indices.len() }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn n(&self) -> usize { self.pool.len() }
+
+    
+    #[inline]
+    pub(crate) fn src(&self) -> &I { &self.pool.it }
+
+    
+    
+    
+    
+    pub(crate) fn reset(&mut self, k: usize) {
+        self.first = true;
+
+        if k < self.indices.len() {
+            self.indices.truncate(k);
+            for i in 0..k {
+                self.indices[i] = i;
+            }
+
+        } else {
+            for i in 0..self.indices.len() {
+                self.indices[i] = i;
+            }
+            self.indices.extend(self.indices.len()..k);
+            self.pool.prefill(k);
+        }
     }
 }
 
@@ -52,11 +87,11 @@ impl<I> Iterator for Combinations<I>
     type Item = Vec<I::Item>;
     fn next(&mut self) -> Option<Self::Item> {
         if self.first {
-            if self.pool.is_done() {
+            if self.k() > self.n() {
                 return None;
             }
             self.first = false;
-        } else if self.indices.len() == 0 {
+        } else if self.indices.is_empty() {
             return None;
         } else {
             

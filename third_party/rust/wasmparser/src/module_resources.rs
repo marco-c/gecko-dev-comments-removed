@@ -203,6 +203,8 @@ pub trait WasmModuleResources {
     
     fn memory_at(&self, at: u32) -> Option<MemoryType>;
     
+    fn event_at(&self, at: u32) -> Option<&Self::FuncType>;
+    
     fn global_at(&self, at: u32) -> Option<GlobalType>;
     
     fn func_type_at(&self, type_idx: u32) -> Option<&Self::FuncType>;
@@ -231,6 +233,9 @@ where
     }
     fn memory_at(&self, at: u32) -> Option<MemoryType> {
         T::memory_at(self, at)
+    }
+    fn event_at(&self, at: u32) -> Option<&Self::FuncType> {
+        T::event_at(self, at)
     }
     fn global_at(&self, at: u32) -> Option<GlobalType> {
         T::global_at(self, at)

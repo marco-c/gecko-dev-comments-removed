@@ -7,7 +7,7 @@ use std::mem;
 
 
 #[derive(Clone)]
-#[deprecated(note="Use std repeat_with() instead", since="0.8")]
+#[deprecated(note="Use std repeat_with() instead", since="0.8.0")]
 pub struct RepeatCall<F> {
     f: F,
 }
@@ -39,7 +39,7 @@ impl<F> fmt::Debug for RepeatCall<F>
 
 
 
-#[deprecated(note="Use std repeat_with() instead", since="0.8")]
+#[deprecated(note="Use std repeat_with() instead", since="0.8.0")]
 pub fn repeat_call<F, A>(function: F) -> RepeatCall<F>
     where F: FnMut() -> A
 {
@@ -52,7 +52,7 @@ impl<A, F> Iterator for RepeatCall<F>
     type Item = A;
 
     #[inline]
-    fn next(&mut self) -> Option<A> {
+    fn next(&mut self) -> Option<Self::Item> {
         Some((self.f)())
     }
 
@@ -60,7 +60,6 @@ impl<A, F> Iterator for RepeatCall<F>
         (usize::max_value(), None)
     }
 }
-
 
 
 
@@ -128,14 +127,8 @@ impl<A, St, F> Iterator for Unfold<St, F>
     type Item = A;
 
     #[inline]
-    fn next(&mut self) -> Option<A> {
+    fn next(&mut self) -> Option<Self::Item> {
         (self.f)(&mut self.state)
-    }
-
-    #[inline]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        
-        (0, None)
     }
 }
 

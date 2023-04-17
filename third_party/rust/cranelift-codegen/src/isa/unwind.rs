@@ -1,4 +1,7 @@
 
+
+use regalloc::RealReg;
+
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
 
@@ -66,6 +69,11 @@ pub mod input {
         RememberState,
         
         RestoreState,
+        
+        Aarch64SetPointerAuth {
+            
+            return_addresses: bool,
+        },
     }
 
     
@@ -85,4 +93,156 @@ pub mod input {
         
         pub initial_sp_offset: u8,
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub enum UnwindInst {
+    
+    
+    
+    
+    
+    
+    PushFrameRegs {
+        
+        
+        offset_upward_to_caller_sp: u32,
+    },
+    
+    
+    
+    
+    
+    DefineNewFrame {
+        
+        
+        offset_upward_to_caller_sp: u32,
+        
+        
+        offset_downward_to_clobbers: u32,
+    },
+    
+    
+    
+    
+    
+    
+    
+    SaveReg {
+        
+        
+        clobber_offset: u32,
+        
+        reg: RealReg,
+    },
+    
+    
+    Aarch64SetPointerAuth {
+        
+        return_addresses: bool,
+    },
 }

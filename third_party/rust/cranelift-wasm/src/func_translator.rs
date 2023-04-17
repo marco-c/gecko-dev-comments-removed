@@ -170,6 +170,8 @@ fn parse_local_decls<FE: FuncEnvironment + ?Sized>(
         declare_locals(builder, count, ty, &mut next_local, environ)?;
     }
 
+    environ.after_locals(next_local);
+
     Ok(())
 }
 
@@ -225,6 +227,7 @@ fn parse_function_body<FE: FuncEnvironment + ?Sized>(
     
     debug_assert_eq!(state.control_stack.len(), 1, "State not initialized");
 
+    environ.before_translate_function(builder, state)?;
     while !reader.eof() {
         let pos = reader.original_position();
         builder.set_srcloc(cur_srcloc(&reader));
@@ -234,6 +237,7 @@ fn parse_function_body<FE: FuncEnvironment + ?Sized>(
         translate_operator(validator, &op, builder, state, environ)?;
         environ.after_translate_operator(&op, builder, state)?;
     }
+    environ.after_translate_function(builder, state)?;
     let pos = reader.original_position();
     validator.finish(pos)?;
 
@@ -243,7 +247,6 @@ fn parse_function_body<FE: FuncEnvironment + ?Sized>(
     
     
     if state.reachable {
-        debug_assert!(builder.is_pristine());
         if !builder.is_unreachable() {
             match environ.return_mode() {
                 ReturnMode::NormalReturns => {

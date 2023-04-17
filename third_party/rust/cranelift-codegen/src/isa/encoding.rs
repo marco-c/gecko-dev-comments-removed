@@ -6,6 +6,9 @@ use crate::isa::constraints::{BranchRange, RecipeConstraints};
 use crate::regalloc::RegDiversions;
 use core::fmt;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
@@ -13,6 +16,7 @@ use core::fmt;
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Encoding {
     recipe: u16,
     bits: u16,

@@ -43,7 +43,6 @@
 
 
 
-
 pub use crate::isa::call_conv::CallConv;
 pub use crate::isa::constraints::{
     BranchRange, ConstraintKind, OperandConstraint, RecipeConstraints,
@@ -64,21 +63,26 @@ use crate::result::CodegenResult;
 use crate::settings;
 use crate::settings::SetResult;
 use crate::timing;
-use alloc::borrow::Cow;
-use alloc::boxed::Box;
+use alloc::{borrow::Cow, boxed::Box, vec::Vec};
 use core::any::Any;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
+use core::hash::Hasher;
 use target_lexicon::{triple, Architecture, PointerWidth, Triple};
 use thiserror::Error;
 
 #[cfg(feature = "riscv")]
 mod riscv;
 
+
+
+
+
+
 #[cfg(feature = "x86")]
 mod x86;
 
-#[cfg(feature = "x64")]
+#[cfg(feature = "x86")]
 mod x64;
 
 #[cfg(feature = "arm32")]
@@ -102,12 +106,12 @@ mod test_utils;
 
 
 macro_rules! isa_builder {
-    ($name: ident, $feature: tt, $triple: ident) => {{
-        #[cfg(feature = $feature)]
+    ($name: ident, $cfg_terms: tt, $triple: ident) => {{
+        #[cfg $cfg_terms]
         {
             Ok($name::isa_builder($triple))
         }
-        #[cfg(not(feature = $feature))]
+        #[cfg(not $cfg_terms)]
         {
             Err(LookupError::SupportDisabled)
         }
@@ -116,22 +120,54 @@ macro_rules! isa_builder {
 
 
 
-pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
-    match triple.architecture {
-        Architecture::Riscv32 { .. } | Architecture::Riscv64 { .. } => {
-            isa_builder!(riscv, "riscv", triple)
+
+#[derive(Clone, Copy, Debug)]
+pub enum BackendVariant {
+    
+    Any,
+    
+    Legacy,
+    
+    MachInst,
+}
+
+impl Default for BackendVariant {
+    fn default() -> Self {
+        BackendVariant::Any
+    }
+}
+
+
+
+pub fn lookup_variant(triple: Triple, variant: BackendVariant) -> Result<Builder, LookupError> {
+    match (triple.architecture, variant) {
+        (Architecture::Riscv32 { .. }, _) | (Architecture::Riscv64 { .. }, _) => {
+            isa_builder!(riscv, (feature = "riscv"), triple)
         }
-        Architecture::X86_32 { .. } | Architecture::X86_64 => {
-            if cfg!(feature = "x64") {
-                isa_builder!(x64, "x64", triple)
-            } else {
-                isa_builder!(x86, "x86", triple)
-            }
+        (Architecture::X86_64, BackendVariant::Legacy) => {
+            isa_builder!(x86, (feature = "x86"), triple)
         }
-        Architecture::Arm { .. } => isa_builder!(arm32, "arm32", triple),
-        Architecture::Aarch64 { .. } => isa_builder!(aarch64, "arm64", triple),
+        (Architecture::X86_64, BackendVariant::MachInst) => {
+            isa_builder!(x64, (feature = "x86"), triple)
+        }
+        #[cfg(not(feature = "old-x86-backend"))]
+        (Architecture::X86_64, BackendVariant::Any) => {
+            isa_builder!(x64, (feature = "x86"), triple)
+        }
+        #[cfg(feature = "old-x86-backend")]
+        (Architecture::X86_64, BackendVariant::Any) => {
+            isa_builder!(x86, (feature = "x86"), triple)
+        }
+        (Architecture::Arm { .. }, _) => isa_builder!(arm32, (feature = "arm32"), triple),
+        (Architecture::Aarch64 { .. }, _) => isa_builder!(aarch64, (feature = "arm64"), triple),
         _ => Err(LookupError::Unsupported),
     }
+}
+
+
+
+pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
+    lookup_variant(triple, BackendVariant::Any)
 }
 
 
@@ -163,6 +199,16 @@ pub struct Builder {
 }
 
 impl Builder {
+    
+    pub fn triple(&self) -> &Triple {
+        &self.triple
+    }
+
+    
+    pub fn iter(&self) -> impl Iterator<Item = settings::Setting> {
+        self.setup.iter()
+    }
+
     
     
     pub fn finish(self, shared_flags: settings::Flags) -> Box<dyn TargetIsa> {
@@ -228,8 +274,28 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
     fn flags(&self) -> &settings::Flags;
 
     
+    fn isa_flags(&self) -> Vec<settings::Value>;
+
+    
+    fn variant(&self) -> BackendVariant {
+        BackendVariant::Legacy
+    }
+
+    
+    
+    fn hash_all_flags(&self, hasher: &mut dyn Hasher);
+
+    
     fn default_call_conv(&self) -> CallConv {
         CallConv::triple_default(self.triple())
+    }
+
+    
+    fn endianness(&self) -> ir::Endianness {
+        match self.triple().endianness().unwrap() {
+            target_lexicon::Endianness::Little => ir::Endianness::Little,
+            target_lexicon::Endianness::Big => ir::Endianness::Big,
+        }
     }
 
     
@@ -276,6 +342,12 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
     #[cfg(feature = "unwind")]
     
     fn map_dwarf_register(&self, _: RegUnit) -> Result<u16, RegisterMappingError> {
+        Err(RegisterMappingError::UnsupportedArchitecture)
+    }
+
+    #[cfg(feature = "unwind")]
+    
+    fn map_regalloc_reg_to_dwarf(&self, _: ::regalloc::Reg) -> Result<u16, RegisterMappingError> {
         Err(RegisterMappingError::UnsupportedArchitecture)
     }
 

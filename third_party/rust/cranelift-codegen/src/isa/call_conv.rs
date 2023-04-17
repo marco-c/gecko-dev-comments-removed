@@ -19,6 +19,8 @@ pub enum CallConv {
     
     WindowsFastcall,
     
+    AppleAarch64,
+    
     BaldrdashSystemV,
     
     BaldrdashWindows,
@@ -36,6 +38,7 @@ impl CallConv {
             
             
             Ok(CallingConvention::SystemV) | Err(()) => Self::SystemV,
+            Ok(CallingConvention::AppleAarch64) => Self::AppleAarch64,
             Ok(CallingConvention::WindowsFastcall) => Self::WindowsFastcall,
             Ok(unimp) => unimplemented!("calling convention: {:?}", unimp),
         }
@@ -49,6 +52,7 @@ impl CallConv {
             LibcallCallConv::Cold => Self::Cold,
             LibcallCallConv::SystemV => Self::SystemV,
             LibcallCallConv::WindowsFastcall => Self::WindowsFastcall,
+            LibcallCallConv::AppleAarch64 => Self::AppleAarch64,
             LibcallCallConv::BaldrdashSystemV => Self::BaldrdashSystemV,
             LibcallCallConv::BaldrdashWindows => Self::BaldrdashWindows,
             LibcallCallConv::Baldrdash2020 => Self::Baldrdash2020,
@@ -80,6 +84,7 @@ impl fmt::Display for CallConv {
             Self::Cold => "cold",
             Self::SystemV => "system_v",
             Self::WindowsFastcall => "windows_fastcall",
+            Self::AppleAarch64 => "apple_aarch64",
             Self::BaldrdashSystemV => "baldrdash_system_v",
             Self::BaldrdashWindows => "baldrdash_windows",
             Self::Baldrdash2020 => "baldrdash_2020",
@@ -96,6 +101,7 @@ impl str::FromStr for CallConv {
             "cold" => Ok(Self::Cold),
             "system_v" => Ok(Self::SystemV),
             "windows_fastcall" => Ok(Self::WindowsFastcall),
+            "apple_aarch64" => Ok(Self::AppleAarch64),
             "baldrdash_system_v" => Ok(Self::BaldrdashSystemV),
             "baldrdash_windows" => Ok(Self::BaldrdashWindows),
             "baldrdash_2020" => Ok(Self::Baldrdash2020),

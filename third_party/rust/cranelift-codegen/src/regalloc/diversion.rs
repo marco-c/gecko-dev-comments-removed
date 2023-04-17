@@ -15,6 +15,9 @@ use crate::isa::{RegInfo, RegUnit};
 use core::fmt;
 use cranelift_entity::{SparseMap, SparseMapValue};
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
@@ -23,6 +26,7 @@ use cranelift_entity::{SparseMap, SparseMapValue};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Diversion {
     
     pub from: ValueLoc,
@@ -40,18 +44,21 @@ impl Diversion {
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct RegDiversions {
     current: FxHashMap<Value, Diversion>,
 }
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 struct EntryRegDiversionsValue {
     key: Block,
     divert: RegDiversions,
 }
 
 
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct EntryRegDiversions {
     map: SparseMap<Block, EntryRegDiversionsValue>,
 }

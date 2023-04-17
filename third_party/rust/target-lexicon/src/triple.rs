@@ -6,6 +6,7 @@ use crate::targets::{
     default_binary_format, Architecture, ArmArchitecture, BinaryFormat, Environment,
     OperatingSystem, Vendor,
 };
+#[cfg(not(feature = "std"))]
 use alloc::borrow::ToOwned;
 use core::fmt;
 use core::str::FromStr;
@@ -31,9 +32,9 @@ impl PointerWidth {
     
     pub fn bits(self) -> u8 {
         match self {
-            Self::U16 => 16,
-            Self::U32 => 32,
-            Self::U64 => 64,
+            PointerWidth::U16 => 16,
+            PointerWidth::U32 => 32,
+            PointerWidth::U64 => 64,
         }
     }
 
@@ -42,15 +43,16 @@ impl PointerWidth {
     
     pub fn bytes(self) -> u8 {
         match self {
-            Self::U16 => 2,
-            Self::U32 => 4,
-            Self::U64 => 8,
+            PointerWidth::U16 => 2,
+            PointerWidth::U32 => 4,
+            PointerWidth::U64 => 8,
         }
     }
 }
 
 
 
+#[cfg_attr(feature = "rust_1_40", non_exhaustive)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum CallingConvention {
     
@@ -68,6 +70,12 @@ pub enum CallingConvention {
     
     
     WindowsFastcall,
+
+    
+    
+    
+    
+    AppleAarch64,
 }
 
 
@@ -105,18 +113,22 @@ impl Triple {
     
     pub fn default_calling_convention(&self) -> Result<CallingConvention, ()> {
         Ok(match self.operating_system {
+            OperatingSystem::Darwin
+            | OperatingSystem::Ios
+            | OperatingSystem::Tvos
+            | OperatingSystem::MacOSX { .. } => match self.architecture {
+                Architecture::Aarch64(_) => CallingConvention::AppleAarch64,
+                _ => CallingConvention::SystemV,
+            },
             OperatingSystem::Bitrig
             | OperatingSystem::Cloudabi
-            | OperatingSystem::Darwin
             | OperatingSystem::Dragonfly
             | OperatingSystem::Freebsd
             | OperatingSystem::Fuchsia
             | OperatingSystem::Haiku
             | OperatingSystem::Hermit
-            | OperatingSystem::Ios
             | OperatingSystem::L4re
             | OperatingSystem::Linux
-            | OperatingSystem::MacOSX { .. }
             | OperatingSystem::Netbsd
             | OperatingSystem::Openbsd
             | OperatingSystem::Redox
@@ -193,6 +205,7 @@ impl fmt::Display for Triple {
                     && (self.architecture == Architecture::Arm(ArmArchitecture::Armebv7r)
                         || self.architecture == Architecture::Arm(ArmArchitecture::Armv7a)
                         || self.architecture == Architecture::Arm(ArmArchitecture::Armv7r)
+                        || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv4t)
                         || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv6m)
                         || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv7em)
                         || self.architecture == Architecture::Arm(ArmArchitecture::Thumbv7m)
@@ -368,5 +381,33 @@ mod tests {
         assert_eq!(Triple::unknown().endianness(), Err(()));
         assert_eq!(Triple::unknown().pointer_width(), Err(()));
         assert_eq!(Triple::unknown().default_calling_convention(), Err(()));
+    }
+
+    #[test]
+    fn apple_calling_convention() {
+        for triple in &[
+            "aarch64-apple-darwin",
+            "aarch64-apple-ios",
+            "aarch64-apple-ios-macabi",
+            "aarch64-apple-tvos",
+        ] {
+            assert_eq!(
+                Triple::from_str(triple)
+                    .unwrap()
+                    .default_calling_convention()
+                    .unwrap(),
+                CallingConvention::AppleAarch64
+            );
+        }
+
+        for triple in &["aarch64-linux-android", "x86_64-apple-ios"] {
+            assert_eq!(
+                Triple::from_str(triple)
+                    .unwrap()
+                    .default_calling_convention()
+                    .unwrap(),
+                CallingConvention::SystemV
+            );
+        }
     }
 }

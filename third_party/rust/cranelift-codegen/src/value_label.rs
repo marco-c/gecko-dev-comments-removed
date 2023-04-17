@@ -1,13 +1,16 @@
 use crate::ir::{Function, SourceLoc, Value, ValueLabel, ValueLabelAssignments, ValueLoc};
 use crate::isa::TargetIsa;
+use crate::machinst::MachCompileResult;
 use crate::regalloc::{Context, RegDiversions};
 use crate::HashMap;
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
+use core::convert::From;
 use core::iter::Iterator;
 use core::ops::Bound::*;
 use core::ops::Deref;
+use regalloc::Reg;
 
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
@@ -17,11 +20,29 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct ValueLocRange {
     
-    pub loc: ValueLoc,
+    pub loc: LabelValueLoc,
     
     pub start: u32,
     
     pub end: u32,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub enum LabelValueLoc {
+    
+    ValueLoc(ValueLoc),
+    
+    Reg(Reg),
+    
+    SPOffset(i64),
+}
+
+impl From<ValueLoc> for LabelValueLoc {
+    fn from(v: ValueLoc) -> Self {
+        LabelValueLoc::ValueLoc(v)
+    }
 }
 
 
@@ -86,14 +107,14 @@ where
 pub fn build_value_labels_ranges<T>(
     func: &Function,
     regalloc: &Context,
+    mach_compile_result: Option<&MachCompileResult>,
     isa: &dyn TargetIsa,
 ) -> ValueLabelsRanges
 where
     T: From<SourceLoc> + Deref<Target = SourceLoc> + Ord + Copy,
 {
-    
-    if isa.get_mach_backend().is_some() {
-        return HashMap::new();
+    if let Some(mach_compile_result) = mach_compile_result {
+        return mach_compile_result.value_labels_ranges.clone();
     }
 
     let values_labels = build_value_labels_index::<T>(func);
@@ -113,7 +134,7 @@ where
             .entry(label)
             .or_insert_with(Vec::new)
             .push(ValueLocRange {
-                loc,
+                loc: loc.into(),
                 start: range.0,
                 end: range.1,
             });

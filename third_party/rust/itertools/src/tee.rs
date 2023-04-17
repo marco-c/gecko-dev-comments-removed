@@ -1,8 +1,8 @@
 use super::size_hint;
 
 use std::cell::RefCell;
-use std::collections::VecDeque;
-use std::rc::Rc;
+use alloc::collections::VecDeque;
+use alloc::rc::Rc;
 
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ impl<I> Iterator for Tee<I>
           I::Item: Clone
 {
     type Item = I::Item;
-    fn next(&mut self) -> Option<I::Item> {
+    fn next(&mut self) -> Option<Self::Item> {
         
         
         let mut buffer = self.rcbuffer.borrow_mut();

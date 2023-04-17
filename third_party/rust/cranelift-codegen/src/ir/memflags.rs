@@ -2,13 +2,32 @@
 
 use core::fmt;
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 enum FlagBit {
     Notrap,
     Aligned,
     Readonly,
+    LittleEndian,
+    BigEndian,
 }
 
-const NAMES: [&str; 3] = ["notrap", "aligned", "readonly"];
+const NAMES: [&str; 5] = ["notrap", "aligned", "readonly", "little", "big"];
+
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+pub enum Endianness {
+    
+    Little,
+    
+    Big,
+}
+
+
+
+
+
 
 
 
@@ -16,6 +35,7 @@ const NAMES: [&str; 3] = ["notrap", "aligned", "readonly"];
 
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct MemFlags {
     bits: u8,
 }
@@ -48,14 +68,46 @@ impl MemFlags {
     
     
     
+    
     pub fn set_by_name(&mut self, name: &str) -> bool {
         match NAMES.iter().position(|&s| s == name) {
             Some(bit) => {
-                self.bits |= 1 << bit;
-                true
+                let bits = self.bits | 1 << bit;
+                if (bits & (1 << FlagBit::LittleEndian as usize)) != 0
+                    && (bits & (1 << FlagBit::BigEndian as usize)) != 0
+                {
+                    false
+                } else {
+                    self.bits = bits;
+                    true
+                }
             }
             None => false,
         }
+    }
+
+    
+    
+    
+    
+    
+    pub fn endianness(self, native_endianness: Endianness) -> Endianness {
+        if self.read(FlagBit::LittleEndian) {
+            Endianness::Little
+        } else if self.read(FlagBit::BigEndian) {
+            Endianness::Big
+        } else {
+            native_endianness
+        }
+    }
+
+    
+    pub fn set_endianness(&mut self, endianness: Endianness) {
+        match endianness {
+            Endianness::Little => self.set(FlagBit::LittleEndian),
+            Endianness::Big => self.set(FlagBit::BigEndian),
+        };
+        assert!(!(self.read(FlagBit::LittleEndian) && self.read(FlagBit::BigEndian)));
     }
 
     

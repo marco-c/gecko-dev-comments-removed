@@ -11,11 +11,13 @@ pub enum Size {
 impl Size {
     
     pub fn bits(self) -> u8 {
+        use Size::*;
+
         match self {
-            Self::U8 => 8,
-            Self::U16 => 16,
-            Self::U32 => 32,
-            Self::U64 => 64,
+            U8 => 8,
+            U16 => 16,
+            U32 => 32,
+            U64 => 64,
         }
     }
 
@@ -23,11 +25,13 @@ impl Size {
     
     
     pub fn bytes(self) -> u8 {
+        use Size::*;
+
         match self {
-            Self::U8 => 1,
-            Self::U16 => 2,
-            Self::U32 => 4,
-            Self::U64 => 8,
+            U8 => 1,
+            U16 => 2,
+            U32 => 4,
+            U64 => 8,
         }
     }
 }
@@ -36,7 +40,7 @@ impl Size {
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-#[non_exhaustive]
+#[cfg_attr(feature = "rust_1_40", non_exhaustive)]
 pub enum CDataModel {
     
     LP32,
@@ -61,35 +65,45 @@ pub enum CDataModel {
 impl CDataModel {
     
     pub fn pointer_width(self) -> Size {
+        use CDataModel::*;
+
         match self {
-            Self::LP32 | Self::ILP32 => Size::U32,
-            Self::LLP64 | Self::LP64 | Self::ILP64 => Size::U64,
+            LP32 | ILP32 => Size::U32,
+            LLP64 | LP64 | ILP64 => Size::U64,
         }
     }
     
     pub fn short_size(self) -> Size {
+        use CDataModel::*;
+
         match self {
-            Self::LP32 | Self::ILP32 | Self::LLP64 | Self::LP64 | Self::ILP64 => Size::U16,
+            LP32 | ILP32 | LLP64 | LP64 | ILP64 => Size::U16,
         }
     }
     
     pub fn int_size(self) -> Size {
+        use CDataModel::*;
+
         match self {
-            Self::LP32 => Size::U16,
-            Self::ILP32 | Self::LLP64 | Self::LP64 | Self::ILP64 => Size::U32,
+            LP32 => Size::U16,
+            ILP32 | LLP64 | LP64 | ILP64 => Size::U32,
         }
     }
     
     pub fn long_size(self) -> Size {
+        use CDataModel::*;
+
         match self {
-            Self::LP32 | Self::ILP32 | Self::LLP64 | Self::ILP64 => Size::U32,
-            Self::LP64 => Size::U64,
+            LP32 | ILP32 | LLP64 | ILP64 => Size::U32,
+            LP64 => Size::U64,
         }
     }
     
     pub fn long_long_size(self) -> Size {
+        use CDataModel::*;
+
         match self {
-            Self::LP32 | Self::ILP32 | Self::LLP64 | Self::ILP64 | Self::LP64 => Size::U64,
+            LP32 | ILP32 | LLP64 | ILP64 | LP64 => Size::U64,
         }
     }
     

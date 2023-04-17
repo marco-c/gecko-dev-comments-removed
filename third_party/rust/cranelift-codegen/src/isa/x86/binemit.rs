@@ -277,6 +277,7 @@ impl EvexContext {
 }
 
 
+#[allow(dead_code)]
 enum EvexVectorLength {
     V128,
     V256,
@@ -296,6 +297,7 @@ impl EvexVectorLength {
 }
 
 
+#[allow(dead_code)]
 enum EvexRoundingControl {
     RNE,
     RD,

@@ -8,8 +8,9 @@
 
 use crate::state::FuncTranslationState;
 use crate::translation_utils::{
-    DataIndex, ElemIndex, EntityType, FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, Table,
-    TableIndex, TypeIndex,
+    DataIndex, ElemIndex, EntityIndex, EntityType, Event, EventIndex, FuncIndex, Global,
+    GlobalIndex, InstanceIndex, InstanceTypeIndex, Memory, MemoryIndex, ModuleIndex,
+    ModuleTypeIndex, SignatureIndex, Table, TableIndex, TypeIndex,
 };
 use core::convert::From;
 use core::convert::TryFrom;
@@ -22,6 +23,7 @@ use cranelift_frontend::FunctionBuilder;
 use serde::{Deserialize, Serialize};
 use std::boxed::Box;
 use std::string::ToString;
+use std::vec::Vec;
 use thiserror::Error;
 use wasmparser::ValidatorResources;
 use wasmparser::{BinaryReaderError, FuncValidator, FunctionBody, Operator, WasmFeatures};
@@ -44,6 +46,8 @@ pub enum WasmType {
     FuncRef,
     
     ExternRef,
+    
+    ExnRef,
 }
 
 impl TryFrom<wasmparser::Type> for WasmType {
@@ -58,6 +62,7 @@ impl TryFrom<wasmparser::Type> for WasmType {
             V128 => Ok(WasmType::V128),
             FuncRef => Ok(WasmType::FuncRef),
             ExternRef => Ok(WasmType::ExternRef),
+            ExnRef => Ok(WasmType::ExnRef),
             EmptyBlockType | Func => Err(WasmError::InvalidWebAssembly {
                 message: "unexpected value type".to_string(),
                 offset: 0,
@@ -76,6 +81,7 @@ impl From<WasmType> for wasmparser::Type {
             WasmType::V128 => wasmparser::Type::V128,
             WasmType::FuncRef => wasmparser::Type::FuncRef,
             WasmType::ExternRef => wasmparser::Type::ExternRef,
+            WasmType::ExnRef => wasmparser::Type::ExnRef,
         }
     }
 }
@@ -198,6 +204,39 @@ pub enum ReturnMode {
 }
 
 
+
+pub enum Alias<'a> {
+    
+    OuterModule {
+        
+        relative_depth: u32,
+        
+        index: ModuleIndex,
+    },
+
+    
+    
+    
+    
+    OuterType {
+        
+        relative_depth: u32,
+        
+        index: TypeIndex,
+    },
+
+    
+    
+    InstanceExport {
+        
+        instance: InstanceIndex,
+        
+        
+        export: &'a str,
+    },
+}
+
+
 pub trait TargetEnvironment {
     
     fn target_config(&self) -> TargetFrontendConfig;
@@ -254,6 +293,12 @@ pub trait FuncEnvironment: TargetEnvironment {
     
     fn return_mode(&self) -> ReturnMode {
         ReturnMode::NormalReturns
+    }
+
+    
+    
+    fn after_locals(&mut self, num_locals_defined: usize) {
+        drop(num_locals_defined);
     }
 
     
@@ -598,7 +643,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     
     
     
-    fn translate_loop_header(&mut self, _pos: FuncCursor) -> WasmResult<()> {
+    fn translate_loop_header(&mut self, _builder: &mut FunctionBuilder) -> WasmResult<()> {
         
         Ok(())
     }
@@ -619,6 +664,26 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn after_translate_operator(
         &mut self,
         _op: &Operator,
+        _builder: &mut FunctionBuilder,
+        _state: &FuncTranslationState,
+    ) -> WasmResult<()> {
+        Ok(())
+    }
+
+    
+    
+    fn before_translate_function(
+        &mut self,
+        _builder: &mut FunctionBuilder,
+        _state: &FuncTranslationState,
+    ) -> WasmResult<()> {
+        Ok(())
+    }
+
+    
+    
+    fn after_translate_function(
+        &mut self,
         _builder: &mut FunctionBuilder,
         _state: &FuncTranslationState,
     ) -> WasmResult<()> {
@@ -661,6 +726,27 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
 
     
     
+    fn type_to_signature(&self, index: TypeIndex) -> WasmResult<SignatureIndex> {
+        drop(index);
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    
+    fn type_to_module_type(&self, index: TypeIndex) -> WasmResult<ModuleTypeIndex> {
+        drop(index);
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    
+    fn type_to_instance_type(&self, index: TypeIndex) -> WasmResult<InstanceTypeIndex> {
+        drop(index);
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    
     fn reserve_imports(&mut self, _num: u32) -> WasmResult<()> {
         Ok(())
     }
@@ -670,7 +756,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         &mut self,
         index: TypeIndex,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()>;
 
     
@@ -678,7 +764,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         &mut self,
         table: Table,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()>;
 
     
@@ -686,15 +772,26 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         &mut self,
         memory: Memory,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()>;
+
+    
+    fn declare_event_import(
+        &mut self,
+        event: Event,
+        module: &'data str,
+        field: Option<&'data str>,
+    ) -> WasmResult<()> {
+        drop((event, module, field));
+        Err(WasmError::Unsupported("wasm events".to_string()))
+    }
 
     
     fn declare_global_import(
         &mut self,
         global: Global,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()>;
 
     
@@ -702,7 +799,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         &mut self,
         ty_index: TypeIndex,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()> {
         drop((ty_index, module, field));
         Err(WasmError::Unsupported("module linking".to_string()))
@@ -713,7 +810,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         &mut self,
         ty_index: TypeIndex,
         module: &'data str,
-        field: &'data str,
+        field: Option<&'data str>,
     ) -> WasmResult<()> {
         drop((ty_index, module, field));
         Err(WasmError::Unsupported("module linking".to_string()))
@@ -753,6 +850,18 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
 
     
     
+    fn reserve_events(&mut self, _num: u32) -> WasmResult<()> {
+        Ok(())
+    }
+
+    
+    fn declare_event(&mut self, event: Event) -> WasmResult<()> {
+        drop(event);
+        Err(WasmError::Unsupported("wasm events".to_string()))
+    }
+
+    
+    
     fn reserve_globals(&mut self, _num: u32) -> WasmResult<()> {
         Ok(())
     }
@@ -781,11 +890,37 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     ) -> WasmResult<()>;
 
     
+    fn declare_event_export(
+        &mut self,
+        event_index: EventIndex,
+        name: &'data str,
+    ) -> WasmResult<()> {
+        drop((event_index, name));
+        Err(WasmError::Unsupported("wasm events".to_string()))
+    }
+
+    
     fn declare_global_export(
         &mut self,
         global_index: GlobalIndex,
         name: &'data str,
     ) -> WasmResult<()>;
+
+    
+    fn declare_instance_export(
+        &mut self,
+        index: InstanceIndex,
+        name: &'data str,
+    ) -> WasmResult<()> {
+        drop((index, name));
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
+
+    
+    fn declare_module_export(&mut self, index: ModuleIndex, name: &'data str) -> WasmResult<()> {
+        drop((index, name));
+        Err(WasmError::Unsupported("module linking".to_string()))
+    }
 
     
     fn finish_exports(&mut self) -> WasmResult<()> {
@@ -897,19 +1032,36 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     
     
     
+    fn module_start(&mut self) {}
+
     
     
     
+    fn module_end(&mut self) {}
+
+    
+    fn reserve_instances(&mut self, amount: u32) {
+        drop(amount);
+    }
+
     
     
-    fn module_start(&mut self, index: usize) {
-        drop(index);
+    fn declare_instance(
+        &mut self,
+        module: ModuleIndex,
+        args: Vec<(&'data str, EntityIndex)>,
+    ) -> WasmResult<()> {
+        drop((module, args));
+        Err(WasmError::Unsupported("wasm instance".to_string()))
     }
 
     
     
     
-    fn module_end(&mut self, index: usize) {
-        drop(index);
+    
+    
+    fn declare_alias(&mut self, alias: Alias<'data>) -> WasmResult<()> {
+        drop(alias);
+        Err(WasmError::Unsupported("wasm alias".to_string()))
     }
 }

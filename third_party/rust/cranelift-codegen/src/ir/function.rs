@@ -18,15 +18,63 @@ use crate::isa::{CallConv, EncInfo, Encoding, Legalize, TargetIsa};
 use crate::regalloc::{EntryRegDiversions, RegDiversions};
 use crate::value_label::ValueLabelsRanges;
 use crate::write::write_function;
+#[cfg(feature = "enable-serde")]
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(feature = "enable-serde")]
+use serde::de::{Deserializer, Error};
+#[cfg(feature = "enable-serde")]
+use serde::ser::Serializer;
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct VersionMarker;
+
+#[cfg(feature = "enable-serde")]
+impl Serialize for VersionMarker {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        crate::VERSION.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "enable-serde")]
+impl<'de> Deserialize<'de> for VersionMarker {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let version = String::deserialize(deserializer)?;
+        if version != crate::VERSION {
+            return Err(D::Error::custom(&format!(
+                "Expected a clif ir function for version {}, found one for version {}",
+                crate::VERSION,
+                version,
+            )));
+        }
+        Ok(VersionMarker)
+    }
+}
 
 
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct Function {
+    
+    
+    
+    
+    pub version_marker: VersionMarker,
+
     
     pub name: ExternalName,
 
@@ -109,6 +157,7 @@ impl Function {
     
     pub fn with_name_signature(name: ExternalName, sig: Signature) -> Self {
         Self {
+            version_marker: VersionMarker,
             name,
             signature: sig,
             old_signature: None,

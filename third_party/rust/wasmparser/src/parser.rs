@@ -1,4 +1,5 @@
-use crate::{AliasSectionReader, InstanceSectionReader, ModuleSectionReader};
+use crate::EventSectionReader;
+use crate::{AliasSectionReader, InstanceSectionReader};
 use crate::{BinaryReader, BinaryReaderError, FunctionBody, Range, Result};
 use crate::{DataSectionReader, ElementSectionReader, ExportSectionReader};
 use crate::{FunctionSectionReader, ImportSectionReader, TypeSectionReader};
@@ -28,7 +29,7 @@ enum State {
     ModuleHeader,
     SectionStart,
     FunctionBody { remaining: u32, len: u32 },
-    ModuleCode { remaining: u32, len: u32 },
+    Module { remaining: u32, len: u32 },
 }
 
 
@@ -101,9 +102,6 @@ pub enum Payload<'a> {
     InstanceSection(crate::InstanceSectionReader<'a>),
     
     
-    ModuleSection(crate::ModuleSectionReader<'a>),
-    
-    
     FunctionSection(crate::FunctionSectionReader<'a>),
     
     
@@ -111,6 +109,9 @@ pub enum Payload<'a> {
     
     
     MemorySection(crate::MemorySectionReader<'a>),
+    
+    
+    EventSection(crate::EventSectionReader<'a>),
     
     
     GlobalSection(crate::GlobalSectionReader<'a>),
@@ -150,6 +151,10 @@ pub enum Payload<'a> {
         data_offset: usize,
         
         data: &'a [u8],
+        
+        
+        
+        range: Range,
     },
 
     
@@ -191,7 +196,7 @@ pub enum Payload<'a> {
     
     
     
-    ModuleCodeSectionStart {
+    ModuleSectionStart {
         
         count: u32,
         
@@ -212,7 +217,7 @@ pub enum Payload<'a> {
     
     
     
-    ModuleCodeSectionEntry {
+    ModuleSectionEntry {
         
         
         parser: Parser,
@@ -481,6 +486,11 @@ impl Parser {
 
                 match id {
                     0 => {
+                        let start = reader.original_position();
+                        let range = Range {
+                            start,
+                            end: reader.original_position() + len as usize,
+                        };
                         let mut content = subreader(reader, len)?;
                         
                         
@@ -490,6 +500,7 @@ impl Parser {
                             name,
                             data_offset: content.original_position(),
                             data: content.remaining_buffer(),
+                            range,
                         })
                     }
                     1 => section(reader, len, TypeSectionReader::new, TypeSection),
@@ -526,26 +537,26 @@ impl Parser {
                         let (count, range) = single_u32(reader, len, "data count")?;
                         Ok(DataCountSection { count, range })
                     }
-                    100 => section(reader, len, ModuleSectionReader::new, ModuleSection),
-                    101 => section(reader, len, InstanceSectionReader::new, InstanceSection),
-                    102 => section(reader, len, AliasSectionReader::new, AliasSection),
-                    103 => {
+                    13 => section(reader, len, EventSectionReader::new, EventSection),
+                    14 => {
                         let start = reader.original_position();
                         let count = delimited(reader, &mut len, |r| r.read_var_u32())?;
                         let range = Range {
                             start,
                             end: reader.original_position() + len as usize,
                         };
-                        self.state = State::ModuleCode {
+                        self.state = State::Module {
                             remaining: count,
                             len,
                         };
-                        Ok(ModuleCodeSectionStart {
+                        Ok(ModuleSectionStart {
                             count,
                             range,
                             size: len,
                         })
                     }
+                    15 => section(reader, len, InstanceSectionReader::new, InstanceSection),
+                    16 => section(reader, len, AliasSectionReader::new, AliasSection),
                     id => {
                         let offset = reader.original_position();
                         let contents = reader.read_bytes(len as usize)?;
@@ -569,7 +580,7 @@ impl Parser {
                 remaining: 0,
                 len: 0,
             }
-            | State::ModuleCode {
+            | State::Module {
                 remaining: 0,
                 len: 0,
             } => {
@@ -579,7 +590,7 @@ impl Parser {
 
             
             
-            State::FunctionBody { remaining: 0, len } | State::ModuleCode { remaining: 0, len } => {
+            State::FunctionBody { remaining: 0, len } | State::Module { remaining: 0, len } => {
                 debug_assert!(len > 0);
                 let offset = reader.original_position();
                 Err(BinaryReaderError::new(
@@ -641,7 +652,7 @@ impl Parser {
             
             
             
-            State::ModuleCode { remaining, mut len } => {
+            State::Module { remaining, mut len } => {
                 let size = delimited(reader, &mut len, |r| r.read_var_u32())?;
                 match len.checked_sub(size) {
                     Some(i) => len = i,
@@ -652,7 +663,7 @@ impl Parser {
                         ));
                     }
                 }
-                self.state = State::ModuleCode {
+                self.state = State::Module {
                     remaining: remaining - 1,
                     len,
                 };
@@ -664,7 +675,7 @@ impl Parser {
                 self.offset += u64::from(size);
                 let mut parser = Parser::new(usize_to_u64(reader.original_position()));
                 parser.max_size = size.into();
-                Ok(ModuleCodeSectionEntry { parser, range })
+                Ok(ModuleSectionEntry { parser, range })
             }
         }
     }
@@ -717,7 +728,7 @@ impl Parser {
                 
                 
                 
-                Payload::ModuleCodeSectionEntry { parser, range: _ } => {
+                Payload::ModuleSectionEntry { parser, range: _ } => {
                     stack.push(cur.clone());
                     cur = parser.clone();
                 }
@@ -785,9 +796,7 @@ impl Parser {
     
     pub fn skip_section(&mut self) {
         let skip = match self.state {
-            State::FunctionBody { remaining: _, len } | State::ModuleCode { remaining: _, len } => {
-                len
-            }
+            State::FunctionBody { remaining: _, len } | State::Module { remaining: _, len } => len,
             _ => panic!("wrong state to call `skip_section`"),
         };
         self.offset += u64::from(skip);
@@ -887,10 +896,12 @@ impl fmt::Debug for Payload<'_> {
                 name,
                 data_offset,
                 data: _,
+                range,
             } => f
                 .debug_struct("CustomSection")
                 .field("name", name)
                 .field("data_offset", data_offset)
+                .field("range", range)
                 .field("data", &"...")
                 .finish(),
             Version { num, range } => f
@@ -902,10 +913,10 @@ impl fmt::Debug for Payload<'_> {
             ImportSection(_) => f.debug_tuple("ImportSection").field(&"...").finish(),
             AliasSection(_) => f.debug_tuple("AliasSection").field(&"...").finish(),
             InstanceSection(_) => f.debug_tuple("InstanceSection").field(&"...").finish(),
-            ModuleSection(_) => f.debug_tuple("ModuleSection").field(&"...").finish(),
             FunctionSection(_) => f.debug_tuple("FunctionSection").field(&"...").finish(),
             TableSection(_) => f.debug_tuple("TableSection").field(&"...").finish(),
             MemorySection(_) => f.debug_tuple("MemorySection").field(&"...").finish(),
+            EventSection(_) => f.debug_tuple("EventSection").field(&"...").finish(),
             GlobalSection(_) => f.debug_tuple("GlobalSection").field(&"...").finish(),
             ExportSection(_) => f.debug_tuple("ExportSection").field(&"...").finish(),
             ElementSection(_) => f.debug_tuple("ElementSection").field(&"...").finish(),
@@ -927,14 +938,14 @@ impl fmt::Debug for Payload<'_> {
                 .field("size", size)
                 .finish(),
             CodeSectionEntry(_) => f.debug_tuple("CodeSectionEntry").field(&"...").finish(),
-            ModuleCodeSectionStart { count, range, size } => f
-                .debug_struct("ModuleCodeSectionStart")
+            ModuleSectionStart { count, range, size } => f
+                .debug_struct("ModuleSectionStart")
                 .field("count", count)
                 .field("range", range)
                 .field("size", size)
                 .finish(),
-            ModuleCodeSectionEntry { parser: _, range } => f
-                .debug_struct("ModuleCodeSectionEntry")
+            ModuleSectionEntry { parser: _, range } => f
+                .debug_struct("ModuleSectionEntry")
                 .field("range", range)
                 .finish(),
             UnknownSection { id, range, .. } => f
@@ -1090,6 +1101,7 @@ mod tests {
                     name: "",
                     data_offset: 11,
                     data: b"",
+                    range: Range { start: 10, end: 11 },
                 },
             }),
         );
@@ -1101,6 +1113,7 @@ mod tests {
                     name: "a",
                     data_offset: 12,
                     data: b"",
+                    range: Range { start: 10, end: 12 },
                 },
             }),
         );
@@ -1112,6 +1125,7 @@ mod tests {
                     name: "",
                     data_offset: 11,
                     data: b"a",
+                    range: Range { start: 10, end: 12 },
                 },
             }),
         );
@@ -1230,24 +1244,24 @@ mod tests {
     #[test]
     fn module_code_errors() {
         
-        assert!(parser_after_header().parse(&[103], true).is_err());
+        assert!(parser_after_header().parse(&[14], true).is_err());
         
-        assert!(parser_after_header().parse(&[103, 0], true).is_err());
+        assert!(parser_after_header().parse(&[14, 0], true).is_err());
         
-        assert!(parser_after_header().parse(&[103, 1], true).is_err());
+        assert!(parser_after_header().parse(&[14, 1], true).is_err());
     }
 
     #[test]
     fn module_code_one() {
         let mut p = parser_after_header();
-        assert_matches!(p.parse(&[103], false), Ok(Chunk::NeedMoreData(1)));
-        assert_matches!(p.parse(&[103, 9], false), Ok(Chunk::NeedMoreData(1)));
+        assert_matches!(p.parse(&[14], false), Ok(Chunk::NeedMoreData(1)));
+        assert_matches!(p.parse(&[14, 9], false), Ok(Chunk::NeedMoreData(1)));
         
         assert_matches!(
-            p.parse(&[103, 10, 1], false),
+            p.parse(&[14, 10, 1], false),
             Ok(Chunk::Parsed {
                 consumed: 3,
-                payload: Payload::ModuleCodeSectionStart { count: 1, .. },
+                payload: Payload::ModuleSectionStart { count: 1, .. },
             })
         );
         
@@ -1255,7 +1269,7 @@ mod tests {
         let mut sub = match p.parse(&[8], false) {
             Ok(Chunk::Parsed {
                 consumed: 1,
-                payload: Payload::ModuleCodeSectionEntry { parser, .. },
+                payload: Payload::ModuleSectionEntry { parser, .. },
             }) => parser,
             other => panic!("bad parse {:?}", other),
         };
@@ -1300,10 +1314,10 @@ mod tests {
         
         
         assert_matches!(
-            p.parse(&[103, 12, 1], false),
+            p.parse(&[14, 12, 1], false),
             Ok(Chunk::Parsed {
                 consumed: 3,
-                payload: Payload::ModuleCodeSectionStart { count: 1, .. },
+                payload: Payload::ModuleSectionStart { count: 1, .. },
             })
         );
         
@@ -1311,7 +1325,7 @@ mod tests {
         let mut sub = match p.parse(&[10], false) {
             Ok(Chunk::Parsed {
                 consumed: 1,
-                payload: Payload::ModuleCodeSectionEntry { parser, .. },
+                payload: Payload::ModuleSectionEntry { parser, .. },
             }) => parser,
             other => panic!("bad parse {:?}", other),
         };

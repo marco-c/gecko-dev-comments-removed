@@ -8,10 +8,14 @@ use alloc::vec::Vec;
 use core::fmt::{self, Display, Formatter};
 use core::slice::{Iter, IterMut};
 
+#[cfg(feature = "enable-serde")]
+use serde::{Deserialize, Serialize};
+
 
 
 
 #[derive(Clone)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub struct JumpTableData {
     
     table: Vec<Block>,
@@ -63,6 +67,11 @@ impl JumpTableData {
     
     pub fn iter_mut(&mut self) -> IterMut<Block> {
         self.table.iter_mut()
+    }
+
+    
+    pub fn clear(&mut self) {
+        self.table.clear();
     }
 }
 

@@ -92,7 +92,25 @@ pub struct InstanceIndex(u32);
 entity_impl!(InstanceIndex);
 
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub struct EventIndex(u32);
+entity_impl!(EventIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub struct ModuleTypeIndex(u32);
+entity_impl!(ModuleTypeIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub struct InstanceTypeIndex(u32);
+entity_impl!(InstanceTypeIndex);
+
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
 pub enum EntityIndex {
     
@@ -120,16 +138,18 @@ pub enum EntityType {
     
     Memory(Memory),
     
+    Event(Event),
+    
     Table(Table),
     
     
-    Function(TypeIndex),
+    Function(SignatureIndex),
     
     
-    Instance(TypeIndex),
+    Instance(InstanceTypeIndex),
     
     
-    Module(TypeIndex),
+    Module(ModuleTypeIndex),
 }
 
 
@@ -210,6 +230,14 @@ pub struct Memory {
     pub maximum: Option<u32>,
     
     pub shared: bool,
+}
+
+
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+pub struct Event {
+    
+    pub ty: TypeIndex,
 }
 
 

@@ -142,7 +142,49 @@ fn harvest_candidate_lhs(
         let souper_assignment_rhs = match func.dfg.value_def(val) {
             ir::ValueDef::Result(inst, 0) => {
                 let args = func.dfg.inst_args(inst);
-                let arg = |allocs: &mut Allocs, n| allocs.ir_to_souper_val[&args[n]].into();
+
+                
+                let arg = |allocs: &mut Allocs, n| {
+                    let arg = args[n];
+                    if let Some(a) = allocs.ir_to_souper_val.get(&arg).copied() {
+                        a.into()
+                    } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        match func.dfg.value_def(arg) {
+                            ir::ValueDef::Result(inst, 0) => match func.dfg[inst] {
+                                ir::InstructionData::UnaryImm { opcode, imm } => {
+                                    debug_assert_eq!(opcode, ir::Opcode::Iconst);
+                                    let imm: i64 = imm.into();
+                                    ast::Operand::Constant(ast::Constant {
+                                        value: imm.into(),
+                                        r#type: souper_type_of(&func.dfg, arg),
+                                    })
+                                }
+                                ir::InstructionData::UnaryBool { opcode, imm } => {
+                                    debug_assert_eq!(opcode, ir::Opcode::Iconst);
+                                    ast::Operand::Constant(ast::Constant {
+                                        value: imm.into(),
+                                        r#type: souper_type_of(&func.dfg, arg),
+                                    })
+                                }
+                                _ => unreachable!(
+                                    "only iconst and bconst instructions \
+                                     aren't in `ir_to_souper_val`"
+                                ),
+                            },
+                            _ => unreachable!(
+                                "only iconst and bconst instructions \
+                                 aren't in `ir_to_souper_val`"
+                            ),
+                        }
+                    }
+                };
 
                 match (func.dfg[inst].opcode(), &func.dfg[inst]) {
                     (ir::Opcode::Iadd, _) => {
@@ -350,6 +392,28 @@ fn harvest_candidate_lhs(
                     }
                     (ir::Opcode::Select, _) => {
                         let a = arg(allocs, 0);
+
+                        
+                        
+                        let a = match a {
+                            ast::Operand::Value(id) => match lhs.get_value(id).r#type {
+                                Some(ast::Type { width: 1 }) => a,
+                                _ => lhs
+                                    .assignment(
+                                        None,
+                                        Some(ast::Type { width: 1 }),
+                                        ast::Instruction::Trunc { a },
+                                        vec![],
+                                    )
+                                    .into(),
+                            },
+                            ast::Operand::Constant(ast::Constant { value, .. }) => ast::Constant {
+                                value: (value != 0) as _,
+                                r#type: Some(ast::Type { width: 1 }),
+                            }
+                            .into(),
+                        };
+
                         let b = arg(allocs, 1);
                         let c = arg(allocs, 2);
                         ast::Instruction::Select { a, b, c }.into()
@@ -421,23 +485,13 @@ fn harvest_candidate_lhs(
                         let b = arg(allocs, 1);
                         ast::Instruction::UsubSat { a, b }.into()
                     }
-                    (ir::Opcode::Iconst, ir::InstructionData::UnaryImm { imm, .. }) => {
-                        let value: i64 = (*imm).into();
-                        let value: i128 = value.into();
-                        ast::Constant {
-                            value,
-                            r#type: souper_type_of(&func.dfg, val),
-                        }
-                        .into()
-                    }
-                    (ir::Opcode::Bconst, ir::InstructionData::UnaryBool { imm, .. }) => {
-                        let value = *imm as i128;
-                        ast::Constant {
-                            value,
-                            r#type: souper_type_of(&func.dfg, val),
-                        }
-                        .into()
-                    }
+                    
+                    
+                    
+                    
+                    
+                    
+                    (ir::Opcode::Iconst, _) | (ir::Opcode::Bconst, _) => return,
                     _ => ast::AssignmentRhs::Var,
                 }
             }

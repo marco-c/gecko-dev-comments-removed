@@ -1,6 +1,8 @@
 
 
+use super::{LowerCtx, VCodeInst};
 use crate::ir::{self, Inst as IRInst};
+use smallvec::SmallVec;
 
 
 
@@ -22,6 +24,24 @@ pub(crate) struct InsnOutput {
     pub(crate) output: usize,
 }
 
+pub(crate) fn insn_inputs<I: VCodeInst, C: LowerCtx<I = I>>(
+    ctx: &C,
+    insn: IRInst,
+) -> SmallVec<[InsnInput; 4]> {
+    (0..ctx.num_inputs(insn))
+        .map(|i| InsnInput { insn, input: i })
+        .collect()
+}
+
+pub(crate) fn insn_outputs<I: VCodeInst, C: LowerCtx<I = I>>(
+    ctx: &C,
+    insn: IRInst,
+) -> SmallVec<[InsnOutput; 4]> {
+    (0..ctx.num_outputs(insn))
+        .map(|i| InsnOutput { insn, output: i })
+        .collect()
+}
+
 
 
 
@@ -37,11 +57,21 @@ pub enum AtomicRmwOp {
     
     And,
     
+    Nand,
+    
     Or,
     
     Xor,
     
     Xchg,
+    
+    Umin,
+    
+    Umax,
+    
+    Smin,
+    
+    Smax,
 }
 
 impl AtomicRmwOp {
@@ -51,9 +81,14 @@ impl AtomicRmwOp {
             ir::AtomicRmwOp::Add => AtomicRmwOp::Add,
             ir::AtomicRmwOp::Sub => AtomicRmwOp::Sub,
             ir::AtomicRmwOp::And => AtomicRmwOp::And,
+            ir::AtomicRmwOp::Nand => AtomicRmwOp::Nand,
             ir::AtomicRmwOp::Or => AtomicRmwOp::Or,
             ir::AtomicRmwOp::Xor => AtomicRmwOp::Xor,
             ir::AtomicRmwOp::Xchg => AtomicRmwOp::Xchg,
+            ir::AtomicRmwOp::Umin => AtomicRmwOp::Umin,
+            ir::AtomicRmwOp::Umax => AtomicRmwOp::Umax,
+            ir::AtomicRmwOp::Smin => AtomicRmwOp::Smin,
+            ir::AtomicRmwOp::Smax => AtomicRmwOp::Smax,
         }
     }
 }
