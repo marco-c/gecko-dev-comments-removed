@@ -419,6 +419,14 @@ async function openContextMenuInSidebar(selector = "body") {
     contentAreaContextMenu,
     "popupshown"
   );
+
+  
+  
+  
+  
+  await SidebarUI.browser.contentWindow.promiseDocumentFlushed(() => {});
+
+  info("Opening context menu in sidebarAction panel");
   await BrowserTestUtils.synthesizeMouseAtCenter(
     selector,
     { type: "mousedown", button: 2 },
