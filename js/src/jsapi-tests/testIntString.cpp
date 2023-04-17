@@ -23,8 +23,15 @@ BEGIN_TEST(testIntString_bug515273) {
   
   EVAL("'111';", &v);
   str = v.toString();
-  CHECK(!JS_StringHasBeenPinned(cx, str));
+  CHECK(JS_StringHasBeenPinned(cx, str));
   CHECK(JS_LinearStringEqualsLiteral(JS_ASSERT_STRING_IS_LINEAR(str), "111"));
+
+  
+  EVAL("'111222333';", &v);
+  str = v.toString();
+  CHECK(!JS_StringHasBeenPinned(cx, str));
+  CHECK(JS_LinearStringEqualsLiteral(JS_ASSERT_STRING_IS_LINEAR(str),
+                                     "111222333"));
 
   
   EVAL("'a';", &v);
