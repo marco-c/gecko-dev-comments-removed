@@ -8,9 +8,9 @@
 #define MOZILLA_GFX_FONTVARIATION_H_
 
 #include <stdint.h>
+#include "mozilla/FloatingPoint.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
 
 struct FontVariation {
@@ -18,11 +18,11 @@ struct FontVariation {
   float mValue;
 
   bool operator==(const FontVariation& aOther) const {
-    return mTag == aOther.mTag && mValue == aOther.mValue;
+    return mTag == aOther.mTag &&
+           NumbersAreBitwiseIdentical(mValue, aOther.mValue);
   }
 };
 
-}  
 }  
 
 #endif 
