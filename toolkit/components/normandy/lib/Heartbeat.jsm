@@ -222,16 +222,8 @@ var Heartbeat = class {
         this.ratingContainer.appendChild(ratingElement);
       }
 
-      if (Services.prefs.getBoolPref("browser.proton.enabled")) {
-        
-        this.notice.buttonContainer.append(this.ratingContainer);
-      } else {
-        this.notice.messageText.flex = 0;
-        this.notice.messageDetails.insertBefore(
-          this.ratingContainer,
-          this.notice.spacer
-        );
-      }
+      
+      this.notice.buttonContainer.append(this.ratingContainer);
     }
 
     
