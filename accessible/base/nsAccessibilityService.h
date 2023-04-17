@@ -366,10 +366,20 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   using MarkupMap = nsTHashMap<nsPtrHashKey<const nsAtom>,
                                const mozilla::a11y::MarkupMapInfo*>;
   MarkupMap mHTMLMarkupMap;
+  MarkupMap mMathMLMarkupMap;
 
   const mozilla::a11y::MarkupMapInfo* GetMarkupMapInfoForNode(
       const nsIContent* aContent) const {
-    return mHTMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
+    if (aContent->IsHTMLElement()) {
+      return mHTMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
+    }
+    if (aContent->IsMathMLElement()) {
+      return mMathMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
+    }
+    
+    
+    
+    return nullptr;
   }
 
 #ifdef MOZ_XUL
