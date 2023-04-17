@@ -1508,61 +1508,6 @@ async function getBrowsingContextInFrames(browsingContext, selectors) {
 
 
 
-async function getAttributeInBrowser(browser, selector, attribute) {
-  return SpecialPowers.spawn(
-    browser,
-    [selector, attribute],
-    (_selector, _attribute) => {
-      return content.document.querySelector(_selector).getAttribute(_attribute);
-    }
-  );
-}
-
-
-
-
-
-
-
-
-
-async function setAttributeInBrowser(browser, selector, attribute, value) {
-  return SpecialPowers.spawn(
-    browser,
-    [selector, attribute, value],
-    (_selector, _attribute, _value) => {
-      content.document
-        .querySelector(_selector)
-        .setAttribute(_attribute, _value);
-    }
-  );
-}
-
-
-
-
-
-
-
-
-async function removeAttributeInBrowser(browser, selector, attribute) {
-  return SpecialPowers.spawn(
-    browser,
-    [selector, attribute],
-    (_selector, _attribute) => {
-      content.document.querySelector(_selector).removeAttribute(_attribute);
-    }
-  );
-}
-
-
-
-
-
-
-
-
-
 
 
 

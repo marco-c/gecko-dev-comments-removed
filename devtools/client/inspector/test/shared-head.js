@@ -835,3 +835,55 @@ function setContentPageElementProperty(selector, propertyName, propertyValue) {
     }
   );
 }
+
+
+
+
+
+
+
+
+async function getContentPageElementAttribute(selector, attribute) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, attribute],
+    (_selector, _attribute) => {
+      return content.document.querySelector(_selector).getAttribute(_attribute);
+    }
+  );
+}
+
+
+
+
+
+
+
+
+async function setContentPageElementAttribute(selector, attribute, value) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, attribute, value],
+    (_selector, _attribute, _value) => {
+      content.document
+        .querySelector(_selector)
+        .setAttribute(_attribute, _value);
+    }
+  );
+}
+
+
+
+
+
+
+
+async function removeContentPageElementAttribute(selector, attribute) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, attribute],
+    (_selector, _attribute) => {
+      content.document.querySelector(_selector).removeAttribute(_attribute);
+    }
+  );
+}
