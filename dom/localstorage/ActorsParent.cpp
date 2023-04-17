@@ -228,7 +228,12 @@ constexpr auto kDataFileName = u"data.sqlite"_ns;
 
 
 
+
+
+
+#ifdef DEBUG
 constexpr auto kJournalFileName = u"data.sqlite-journal"_ns;
+#endif
 
 
 
@@ -8152,6 +8157,9 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
         return UsageInfo{};
       }()));
 
+  
+  
+  
   
 
 #ifdef DEBUG
