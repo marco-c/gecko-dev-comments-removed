@@ -17,8 +17,8 @@
 #include "ProcessPriorityManager.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIXULRuntime.h"
-#include "nsTArray.h"
 #include "prsystem.h"
+#include <deque>
 
 using namespace mozilla::hal;
 using namespace mozilla::dom;
@@ -68,12 +68,15 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   void Disable();
   void CloseProcesses();
 
-  bool IsEmpty() const { return mPreallocatedProcesses.IsEmpty(); }
+  bool IsEmpty() const {
+    return mPreallocatedProcesses.empty() && !mLaunchInProgress;
+  }
 
   bool mEnabled;
   static bool sShutdown;
+  bool mLaunchInProgress;
   uint32_t mNumberPreallocs;
-  AutoTArray<RefPtr<ContentParent>, 3> mPreallocatedProcesses;
+  std::deque<RefPtr<ContentParent>> mPreallocatedProcesses;
   
   
   static uint32_t sNumBlockers;
@@ -109,10 +112,12 @@ PreallocatedProcessManagerImpl* PreallocatedProcessManagerImpl::Singleton() {
 NS_IMPL_ISUPPORTS(PreallocatedProcessManagerImpl, nsIObserver)
 
 PreallocatedProcessManagerImpl::PreallocatedProcessManagerImpl()
-    : mEnabled(false), mNumberPreallocs(1) {}
+    : mEnabled(false), mLaunchInProgress(false), mNumberPreallocs(1) {}
 
 PreallocatedProcessManagerImpl::~PreallocatedProcessManagerImpl() {
-  MOZ_RELEASE_ASSERT(mPreallocatedProcesses.IsEmpty());
+  
+  
+  MOZ_RELEASE_ASSERT(!mLaunchInProgress);
 }
 
 void PreallocatedProcessManagerImpl::Init() {
@@ -183,7 +188,7 @@ void PreallocatedProcessManagerImpl::RereadPrefs() {
     if (number >= 0) {
       Enable(number);
       
-      if (static_cast<uint64_t>(number) < mPreallocatedProcesses.Length()) {
+      if (static_cast<uint64_t>(number) < mPreallocatedProcesses.size()) {
         CloseProcesses();
       }
     }
@@ -198,36 +203,31 @@ already_AddRefed<ContentParent> PreallocatedProcessManagerImpl::Take(
     return nullptr;
   }
   RefPtr<ContentParent> process;
-  if (!IsEmpty()) {
-    process = mPreallocatedProcesses.ElementAt(0);
-    mPreallocatedProcesses.RemoveElementAt(0);
+  if (!mPreallocatedProcesses.empty()) {
+    process = mPreallocatedProcesses.front().forget();
+    mPreallocatedProcesses.pop_front();  
 
-    
-    
-
-    
-    
-    ContentParent* last = mPreallocatedProcesses.SafeLastElement(nullptr);
-    
-    
-    if (!last || !last->IsLaunching()) {
-      AllocateAfterDelay();
-    }
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Use prealloc process %p%s, %lu available", process.get(),
-             process->IsLaunching() ? " (still launching)" : "",
-             (unsigned long)mPreallocatedProcesses.Length()));
-  }
-  if (process && !process->IsLaunching()) {
     ProcessPriorityManager::SetProcessPriority(process,
                                                PROCESS_PRIORITY_FOREGROUND);
-  }  
 
+    
+    
+    AllocateAfterDelay();
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("Use prealloc process %p", process.get()));
+  }
   return process.forget();
 }
 
 void PreallocatedProcessManagerImpl::Erase(ContentParent* aParent) {
-  (void)mPreallocatedProcesses.RemoveElement(aParent);
+  
+  for (auto it = mPreallocatedProcesses.begin();
+       it != mPreallocatedProcesses.end(); it++) {
+    if (*it == aParent) {
+      mPreallocatedProcesses.erase(it);
+      break;
+    }
+  }
 }
 
 void PreallocatedProcessManagerImpl::Enable(uint32_t aProcesses) {
@@ -272,7 +272,7 @@ void PreallocatedProcessManagerImpl::RemoveBlocker(ContentParent* aParent) {
 
 bool PreallocatedProcessManagerImpl::CanAllocate() {
   return mEnabled && sNumBlockers == 0 &&
-         mPreallocatedProcesses.Length() < mNumberPreallocs && !sShutdown &&
+         mPreallocatedProcesses.size() < mNumberPreallocs && !sShutdown &&
          (FissionAutostart() ||
           !ContentParent::IsMaxProcessCountReached(DEFAULT_REMOTE_TYPE));
 }
@@ -315,46 +315,49 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
     return;
   }
 
-  RefPtr<ContentParent> process = ContentParent::MakePreallocProcess();
-  mPreallocatedProcesses.AppendElement(process);
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Preallocated = %lu of %d processes",
-           (unsigned long)mPreallocatedProcesses.Length(), mNumberPreallocs));
-
   RefPtr<PreallocatedProcessManagerImpl> self(this);
-  process->LaunchSubprocessAsync(PROCESS_PRIORITY_PREALLOC)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self, this, process](const RefPtr<ContentParent>&) {
-            if (process->IsDead()) {
-              Erase(process);
-              
-              
-              
-              
-              
-              
-              
-            } else {
-              
-              if (CanAllocate()) {
-                if (mPreallocatedProcesses.Length() < mNumberPreallocs) {
-                  AllocateOnIdle();
-                }
-              } else if (!mEnabled || sShutdown) {
-                
-                
-                if (process->mRemoteType == PREALLOC_REMOTE_TYPE) {
-                  
-                  process->ShutDownProcess(
-                      ContentParent::SEND_SHUTDOWN_MESSAGE);
-                }
-              }
+  mLaunchInProgress = true;
+
+  ContentParent::PreallocateProcess()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+
+      [self, this](const RefPtr<ContentParent>& process) {
+        mLaunchInProgress = false;
+        if (process->IsDead()) {
+          
+          
+          
+          
+          
+          
+          
+        } else {
+          if (CanAllocate()) {
+            
+            
+            
+            
+            
+            
+            mPreallocatedProcesses.push_back(process);
+            MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                    ("Preallocated = %lu of %d processes",
+                     (unsigned long)mPreallocatedProcesses.size(),
+                     mNumberPreallocs));
+
+            
+            if (mPreallocatedProcesses.size() < mNumberPreallocs) {
+              AllocateOnIdle();
             }
-          },
-          [self, this, process](ContentParent::LaunchError) {
-            Erase(process);
-          });
+          } else {
+            process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
+          }
+        }
+      },
+
+      [self, this](ContentParent::LaunchError err) {
+        mLaunchInProgress = false;
+      });
 }
 
 void PreallocatedProcessManagerImpl::Disable() {
@@ -367,9 +370,9 @@ void PreallocatedProcessManagerImpl::Disable() {
 }
 
 void PreallocatedProcessManagerImpl::CloseProcesses() {
-  while (!IsEmpty()) {
-    RefPtr<ContentParent> process(mPreallocatedProcesses.ElementAt(0));
-    mPreallocatedProcesses.RemoveElementAt(0);
+  while (!mPreallocatedProcesses.empty()) {
+    RefPtr<ContentParent> process(mPreallocatedProcesses.front().forget());
+    mPreallocatedProcesses.pop_front();
     process->ShutDownProcess(ContentParent::SEND_SHUTDOWN_MESSAGE);
     
   }
