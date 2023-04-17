@@ -5880,8 +5880,6 @@ var SessionStoreInternal = {
 
     let uri = data.tabData?.entries[data.tabData.index - 1]?.url;
     let disallow = data.tabData?.disallow;
-    let storage = data.tabData?.storage || {};
-    delete data.tabData?.storage;
 
     
     
@@ -5890,8 +5888,7 @@ var SessionStoreInternal = {
     let promise = SessionStoreUtils.restoreDocShellState(
       browser.browsingContext,
       uri,
-      disallow,
-      storage
+      disallow
     );
     this._historyRestorePromises.set(browser.permanentKey, promise);
 
@@ -6176,28 +6173,12 @@ var SessionStoreInternal = {
 
 
   _sendRestoreHistory(browser, options) {
-    
-    
-    
     if (options.tabData.storage) {
-      for (let origin of Object.getOwnPropertyNames(options.tabData.storage)) {
-        try {
-          let { frameLoader } = browser;
-          if (frameLoader.remoteTab) {
-            let attrs = browser.contentPrincipal.originAttributes;
-            let dataPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-              origin
-            );
-            let principal = Services.scriptSecurityManager.principalWithOA(
-              dataPrincipal,
-              attrs
-            );
-            frameLoader.remoteTab.transmitPermissionsForPrincipal(principal);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      SessionStoreUtils.restoreSessionStorageFromParent(
+        browser.browsingContext,
+        options.tabData.storage
+      );
+      delete options.tabData.storage;
     }
 
     if (Services.appinfo.sessionHistoryInParent) {

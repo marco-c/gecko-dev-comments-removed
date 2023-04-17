@@ -17,6 +17,7 @@
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SessionStorageManager.h"
+#include "mozilla/dom/PBackgroundSessionStorageCache.h"
 #include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/txIXPathContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -1264,135 +1265,6 @@ void SessionStoreUtils::RestoreFormData(
   }
 }
 
-
-void SessionStoreUtils::RestoreSessionStorage(
-    const GlobalObject& aGlobal, nsIDocShell* aDocShell,
-    const Record<nsString, Record<nsString, nsString>>& aData) {
-  BrowsingContext* const browsingContext =
-      nsDocShell::Cast(aDocShell)->GetBrowsingContext();
-  if (!browsingContext) {
-    return;
-  }
-
-  const RefPtr<SessionStorageManager> storageManager =
-      browsingContext->GetSessionStorageManager();
-  if (!storageManager) {
-    return;
-  }
-
-  for (auto& entry : aData.Entries()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    int32_t pos = entry.mKey.RFindChar('^');
-    nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
-        NS_ConvertUTF16toUTF8(Substring(entry.mKey, 0, pos)));
-
-    nsCOMPtr<nsIPrincipal> storagePrincipal =
-        BasePrincipal::CreateContentPrincipal(
-            NS_ConvertUTF16toUTF8(entry.mKey));
-
-    RefPtr<Storage> storage;
-    
-    
-    
-    
-    
-    
-    storageManager->CreateStorage(nullptr, principal, storagePrincipal, u""_ns,
-                                  false, getter_AddRefs(storage));
-    if (!storage) {
-      continue;
-    }
-    for (auto& InnerEntry : entry.mValue.Entries()) {
-      IgnoredErrorResult result;
-      storage->SetItem(InnerEntry.mKey, InnerEntry.mValue, *principal, result);
-      if (result.Failed()) {
-        NS_WARNING("storage set item failed!");
-      }
-    }
-  }
-}
-
-
-
-
-void RestoreSessionStorage(nsIDocShell* aDocShell,
-                           const nsTArray<StorageEntry>& aData) {
-  BrowsingContext* const browsingContext =
-      nsDocShell::Cast(aDocShell)->GetBrowsingContext();
-  if (!browsingContext) {
-    return;
-  }
-
-  const RefPtr<SessionStorageManager> storageManager =
-      browsingContext->GetSessionStorageManager();
-  if (!storageManager) {
-    return;
-  }
-
-  for (const auto& entry : aData) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    int32_t pos = entry.origin().RFindChar('^');
-    nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
-        Substring(entry.origin(), 0, pos));
-
-    nsCOMPtr<nsIPrincipal> storagePrincipal =
-        BasePrincipal::CreateContentPrincipal(entry.origin());
-
-    RefPtr<Storage> storage;
-    
-    
-    
-    
-    
-    
-    storageManager->CreateStorage(nullptr, principal, storagePrincipal, u""_ns,
-                                  false, getter_AddRefs(storage));
-    if (!storage) {
-      continue;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(entry.keys().Length() == entry.values().Length());
-    for (size_t i = 0; i < entry.keys().Length(); ++i) {
-      IgnoredErrorResult result;
-      storage->SetItem(entry.keys()[i], entry.values()[i], *principal, result);
-      if (result.Failed()) {
-        NS_WARNING("storage set item failed!");
-      }
-    }
-  }
-}
-
 typedef void (*CollectorFunc)(JSContext* aCx, Document& aDocument,
                               Nullable<CollectedData>& aRetVal);
 
@@ -1562,11 +1434,6 @@ void SessionStoreUtils::RestoreDocShellState(
       aDocShell->SetCurrentURI(aState.URI());
     }
     RestoreDocShellCapabilities(aDocShell, aState.docShellCaps());
-    
-    
-    if (!aState.sessionStorage().IsEmpty()) {
-      ::RestoreSessionStorage(aDocShell, aState.sessionStorage());
-    }
   }
 }
 
@@ -1574,7 +1441,6 @@ void SessionStoreUtils::RestoreDocShellState(
 already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
     const GlobalObject& aGlobal, CanonicalBrowsingContext& aContext,
     const nsACString& aURL, const nsCString& aDocShellCaps,
-    const Record<nsCString, Record<nsString, nsString>>& aSessionStorage,
     ErrorResult& aError) {
   MOZ_RELEASE_ASSERT(mozilla::SessionHistoryInParent());
   MOZ_RELEASE_ASSERT(aContext.IsTop());
@@ -1597,19 +1463,7 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
       }
     }
 
-    
-    
-    nsTArray<StorageEntry> storage;
-    for (const auto& originEntry : aSessionStorage.Entries()) {
-      StorageEntry* entry = storage.AppendElement();
-      entry->origin() = originEntry.mKey;
-      for (const auto& kvEntry : originEntry.mValue.Entries()) {
-        entry->keys().AppendElement(kvEntry.mKey);
-        entry->values().AppendElement(kvEntry.mValue);
-      }
-    }
-
-    DocShellRestoreState state = {uri, aDocShellCaps, storage};
+    DocShellRestoreState state = {uri, aDocShellCaps};
 
     
     
@@ -1627,6 +1481,37 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
   }
 
   return nullptr;
+}
+
+
+void SessionStoreUtils::RestoreSessionStorageFromParent(
+    const GlobalObject& aGlobal, const CanonicalBrowsingContext& aContext,
+    const Record<nsCString, Record<nsString, nsString>>& aSessionStorage) {
+  nsTArray<SSCacheCopy> cacheInitList;
+  for (const auto& originEntry : aSessionStorage.Entries()) {
+    nsCOMPtr<nsIPrincipal> storagePrincipal =
+        BasePrincipal::CreateContentPrincipal(originEntry.mKey);
+
+    nsCString originKey;
+    nsresult rv = storagePrincipal->GetStorageOriginKey(originKey);
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+
+    SSCacheCopy& cacheInit = *cacheInitList.AppendElement();
+
+    cacheInit.originKey() = originKey;
+    storagePrincipal->OriginAttributesRef().CreateSuffix(
+        cacheInit.originAttributes());
+
+    for (const auto& entry : originEntry.mValue.Entries()) {
+      SSSetItemInfo& setItemInfo = *cacheInit.data().AppendElement();
+      setItemInfo.key() = entry.mKey;
+      setItemInfo.value() = entry.mValue;
+    }
+  }
+
+  BackgroundSessionStorageManager::LoadData(aContext.Id(), cacheInitList);
 }
 
 
