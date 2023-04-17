@@ -171,8 +171,6 @@ class nsDMABufDevice {
   
   bool IsDMABufTexturesEnabled();
   
-  bool IsDMABufVideoEnabled();
-  
   bool IsDMABufVAAPIEnabled();
   
   bool IsDMABufWebGLEnabled();
