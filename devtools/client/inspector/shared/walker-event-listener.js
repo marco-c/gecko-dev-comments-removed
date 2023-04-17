@@ -61,6 +61,11 @@ class WalkerEventListener {
 
   async _onTargetAvailable({ targetFront }) {
     const inspectorFront = await targetFront.getFront("inspector");
+    
+    
+    if (inspectorFront.isDestroyed()) {
+      return;
+    }
     const { walker } = inspectorFront;
     for (const [name, listener] of Object.entries(this._listenerMap)) {
       walker.on(name, listener);

@@ -43,6 +43,8 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
 
     
     this._pendingGetHighlighterMap = new Map();
+
+    this.noopStylesheetListener = () => {};
   }
 
   
@@ -60,10 +62,17 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
         resourceCommand.TYPES.STYLESHEET
       )
     ) {
+      
+      
+      this.resourceCommand = resourceCommand;
       await resourceCommand.watchResources([resourceCommand.TYPES.STYLESHEET], {
         
-        onAvailable: () => {},
+        onAvailable: this.noopStylesheetListener,
       });
+      
+      if (this.isDestroyed()) {
+        return null;
+      }
     }
 
     this.initialized = await Promise.all([
@@ -105,7 +114,18 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   }
 
   destroy() {
+    if (this.isDestroyed()) {
+      return;
+    }
     this._compatibility = null;
+
+    const { resourceCommand } = this;
+    resourceCommand.unwatchResources([resourceCommand.TYPES.STYLESHEET], {
+      onAvailable: this.noopStylesheetListener,
+    });
+    this.resourceCommand = null;
+    this.walker = null;
+
     
     
     
