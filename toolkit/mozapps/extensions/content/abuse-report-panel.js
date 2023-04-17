@@ -717,46 +717,50 @@ class AbuseReport extends HTMLElement {
   }
 
   get addon() {
-    return this._report && this._report.addon;
+    return this._report?.addon;
   }
 
   get addonId() {
-    return this.addon && this.addon.id;
+    return this.addon?.id;
   }
 
   get addonName() {
-    return this.addon && this.addon.name;
+    return this.addon?.name;
   }
 
   get addonType() {
-    return this.addon && this.addon.type;
+    return this.addon?.type;
   }
 
   get addonCreator() {
-    return this.addon && this.addon.creator;
+    return this.addon?.creator;
   }
 
   get homepageURL() {
-    const { addon } = this;
-    return (addon && addon.homepageURL) || this.authorURL || "";
+    return this.addon?.homepageURL || this.authorURL || "";
   }
 
   get authorName() {
     
     
-    return (this.addonCreator && this.addonCreator.name) || "";
+    return this.addonCreator?.name || "";
   }
 
   get authorURL() {
-    return (this.addonCreator && this.addonCreator.url) || "";
+    return this.addonCreator?.url || "";
   }
 
   get iconURL() {
-    return this.addon && this.addon.iconURL;
+    return (
+      this.addon?.iconURL ||
+      
+      
+      "chrome://mozapps/skin/extensions/extensionGeneric.svg"
+    );
   }
 
   get supportURL() {
-    return (this.addon && this.addon.supportURL) || this.homepageURL || "";
+    return this.addon?.supportURL || this.homepageURL || "";
   }
 
   get message() {
