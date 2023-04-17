@@ -4301,8 +4301,6 @@ pref("toolkit.aboutProcesses.showThreads", false);
   pref("toolkit.crashreporter.include_context_heap", true);
 #endif
 
-pref("layers.omtp.enabled", false);
-
 
 
 
