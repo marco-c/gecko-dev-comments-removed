@@ -5433,6 +5433,12 @@ public class GeckoSession {
 
 
 
+        int PERMISSION_TRACKING = 7;
+
+        
+
+
+
 
         class ContentPermission {
             @Retention(RetentionPolicy.SOURCE)
@@ -5504,6 +5510,40 @@ public class GeckoSession {
                 this.contextId = StorageController.retrieveUnsafeSessionContextId(bundle.getString("contextId"));
             }
 
+            
+
+
+
+
+
+
+
+            @AnyThread
+            public static @Nullable ContentPermission fromJson(final @NonNull JSONObject perm) {
+                ContentPermission res = null;
+                try {
+                    res = new ContentPermission(GeckoBundle.fromJSONObject(perm));
+                } catch (final JSONException e) {
+                    Log.w(LOGTAG, "Failed to create ContentPermission; invalid JSONObject.", e);
+                }
+                return res;
+            }
+
+            
+
+
+
+
+
+
+
+
+
+            @AnyThread
+            public @NonNull JSONObject toJson() throws JSONException {
+                return toGeckoBundle().toJSONObject();
+            }
+
             private static int convertType(final @NonNull String type) {
                 if ("geolocation".equals(type)) {
                     return PERMISSION_GEOLOCATION;
@@ -5519,12 +5559,14 @@ public class GeckoSession {
                     return PERMISSION_AUTOPLAY_AUDIBLE;
                 } else if ("media-key-system-access".equals(type)) {
                     return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
+                } else if ("trackingprotection".equals(type) || "trackingprotection-pb".equals(type)) {
+                    return PERMISSION_TRACKING;
                 } else {
                     return -1;
                 }
             }
 
-            private static String convertType(final int type) {
+            private static String convertType(final int type, final boolean privateMode) {
                 switch (type) {
                     case PERMISSION_GEOLOCATION:
                         return "geolocation";
@@ -5540,6 +5582,8 @@ public class GeckoSession {
                         return "autoplay-media-audible";
                     case PERMISSION_MEDIA_KEY_SYSTEM_ACCESS:
                         return "media-key-system-access";
+                    case PERMISSION_TRACKING:
+                        return privateMode ? "trackingprotection-pb" : "trackingprotection";
                     default:
                         return "";
                 }
@@ -5566,7 +5610,7 @@ public class GeckoSession {
                 res.putString("uri", uri);
                 res.putString("principal", mPrincipal);
                 res.putBoolean("privateMode", privateMode);
-                res.putString("perm", convertType(permission));
+                res.putString("perm", convertType(permission, privateMode));
                 res.putInt("value", value);
                 res.putString("contextId", contextId);
                 return res;
