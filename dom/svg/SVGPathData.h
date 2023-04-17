@@ -123,6 +123,8 @@ class SVGPathData {
 
   uint32_t Length() const { return mData.Length(); }
 
+  const nsTArray<float>& RawData() const { return mData; }
+
   const float& operator[](uint32_t aIndex) const { return mData[aIndex]; }
 
   

@@ -1121,6 +1121,24 @@ bool SVGElement::UpdateDeclarationBlockFromLength(
 }
 
 
+bool SVGElement::UpdateDeclarationBlockFromPath(
+    DeclarationBlock& aBlock, const SVGAnimatedPathSegList& aPath,
+    ValToUse aValToUse) {
+  aBlock.AssertMutable();
+
+  const SVGPathData& pathData =
+      aValToUse == ValToUse::Anim ? aPath.GetAnimValue() : aPath.GetBaseValue();
+
+  
+  
+  
+  const nsTArray<float>& asInFallibleArray = pathData.RawData();
+  Servo_DeclarationBlock_SetPathValue(aBlock.Raw(), eCSSProperty_d,
+                                      &asInFallibleArray);
+  return true;
+}
+
+
 
 
 namespace {
@@ -1754,14 +1772,20 @@ void SVGElement::DidChangePathSegList(const nsAttrValue& aEmptyOrOldValue,
 }
 
 void SVGElement::DidAnimatePathSegList() {
-  MOZ_ASSERT(GetPathDataAttrName(), "Animating non-existent path data?");
+  nsStaticAtom* name = GetPathDataAttrName();
+  MOZ_ASSERT(name, "Animating non-existent path data?");
 
   ClearAnyCachedPath();
 
-  nsIFrame* frame = GetPrimaryFrame();
+  
+  if (StaticPrefs::layout_css_d_property_enabled() && name == nsGkAtoms::d) {
+    SMILOverrideStyle()->SetSMILValue(nsCSSPropertyID::eCSSProperty_d,
+                                      *GetAnimPathSegList());
+    return;
+  }
 
-  if (frame) {
-    frame->AttributeChanged(kNameSpaceID_None, GetPathDataAttrName(),
+  if (nsIFrame* frame = GetPrimaryFrame()) {
+    frame->AttributeChanged(kNameSpaceID_None, name,
                             MutationEvent_Binding::SMIL);
   }
 }
