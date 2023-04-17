@@ -2675,23 +2675,26 @@ nsEventStatus AsyncPanZoomController::OnPan(
   auto [logicalPanDisplacement, physicalPanDisplacement] =
       GetDisplacementsForPanGesture(aEvent);
 
-  if (mState == OVERSCROLL_ANIMATION &&
+  MOZ_ASSERT_IF(mState == OVERSCROLL_ANIMATION, mAnimation);
+  if (mState == OVERSCROLL_ANIMATION && mAnimation &&
       aFingersOnTouchpad == FingersOnTouchpad::No) {
     
     
-    OverscrollAnimation* overscrollAnimation =
-        mAnimation->AsOverscrollAnimation();
-    overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
-    
-    
-    
-    if (overscrollAnimation->IsManagingXAxis()) {
-      logicalPanDisplacement.x = 0;
-      physicalPanDisplacement.x = 0;
-    }
-    if (overscrollAnimation->IsManagingYAxis()) {
-      logicalPanDisplacement.y = 0;
-      physicalPanDisplacement.y = 0;
+    MOZ_ASSERT(mAnimation->AsOverscrollAnimation());
+    if (OverscrollAnimation* overscrollAnimation =
+            mAnimation->AsOverscrollAnimation()) {
+      overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
+      
+      
+      
+      if (overscrollAnimation->IsManagingXAxis()) {
+        logicalPanDisplacement.x = 0;
+        physicalPanDisplacement.x = 0;
+      }
+      if (overscrollAnimation->IsManagingYAxis()) {
+        logicalPanDisplacement.y = 0;
+        physicalPanDisplacement.y = 0;
+      }
     }
   }
 
