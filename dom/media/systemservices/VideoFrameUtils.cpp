@@ -5,7 +5,7 @@
 
 
 #include "VideoFrameUtils.h"
-#include "webrtc/api/video/video_frame.h"
+#include "api/video/video_frame.h"
 #include "mozilla/ShmemPool.h"
 
 namespace mozilla {
