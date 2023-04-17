@@ -122,6 +122,8 @@ LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/svg",
     
+    "/gfx/cairo/cairo/src",
+    
     "/image/decoders",
     
     "/netwerk/base",
@@ -130,9 +132,6 @@ LOCAL_INCLUDES += [
     
     "/xpcom/threads",
 ]
-
-
-CXXFLAGS += CONFIG["MOZ_CAIRO_CFLAGS"]
 
 LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
 

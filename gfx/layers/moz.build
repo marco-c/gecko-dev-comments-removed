@@ -596,6 +596,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
 LOCAL_INCLUDES += [
     "/docshell/base",  
     "/dom/canvas",  
+    "/gfx/cairo/cairo/src",
     "/layout/base",  
     "/layout/generic",  
     "/media/libyuv/libyuv/include",  
@@ -616,7 +617,6 @@ if CONFIG["ENABLE_TESTS"]:
 MOCHITEST_MANIFESTS += ["apz/test/mochitest/mochitest.ini"]
 BROWSER_CHROME_MANIFESTS += ["apz/test/mochitest/browser.ini"]
 
-CXXFLAGS += CONFIG["MOZ_CAIRO_CFLAGS"]
 CXXFLAGS += CONFIG["TK_CFLAGS"]
 CXXFLAGS += ["-Werror=switch"]
 
