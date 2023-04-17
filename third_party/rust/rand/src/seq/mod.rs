@@ -25,15 +25,16 @@
 
 
 
-#[cfg(feature="alloc")] pub mod index;
+#[cfg(feature = "alloc")] pub mod index;
 
-#[cfg(feature="alloc")] use core::ops::Index;
+#[cfg(feature = "alloc")] use core::ops::Index;
 
-#[cfg(all(feature="alloc", not(feature="std")))] use crate::alloc::vec::Vec;
+#[cfg(all(feature = "alloc", not(feature = "std")))] use crate::alloc::vec::Vec;
 
+#[cfg(feature = "alloc")]
+use crate::distributions::uniform::{SampleBorrow, SampleUniform};
+#[cfg(feature = "alloc")] use crate::distributions::WeightedError;
 use crate::Rng;
-#[cfg(feature="alloc")] use crate::distributions::WeightedError;
-#[cfg(feature="alloc")] use crate::distributions::uniform::{SampleUniform, SampleBorrow};
 
 
 
@@ -258,7 +259,11 @@ pub trait IteratorRandom: Iterator + Sized {
         let mut result = None;
 
         if upper == Some(lower) {
-            return if lower == 0 { None } else { self.nth(gen_index(rng, lower)) };
+            return if lower == 0 {
+                None
+            } else {
+                self.nth(gen_index(rng, lower))
+            };
         }
 
         
@@ -530,13 +535,14 @@ fn gen_index<R: Rng + ?Sized>(rng: &mut R, ubound: usize) -> usize {
 mod test {
     use super::*;
     #[cfg(feature = "alloc")] use crate::Rng;
-    #[cfg(all(feature="alloc", not(feature="std")))]
-    use alloc::vec::Vec;
+    #[cfg(all(feature = "alloc", not(feature = "std")))] use alloc::vec::Vec;
 
     #[test]
     fn test_slice_choose() {
         let mut r = crate::test::rng(107);
-        let chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'];
+        let chars = [
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        ];
         let mut chosen = [0i32; 14];
         
         
@@ -567,6 +573,7 @@ mod test {
     }
     impl<I: Iterator + Clone> Iterator for UnhintedIterator<I> {
         type Item = I::Item;
+
         fn next(&mut self) -> Option<Self::Item> {
             self.iter.next()
         }
@@ -581,18 +588,25 @@ mod test {
     }
     impl<I: ExactSizeIterator + Iterator + Clone> Iterator for ChunkHintedIterator<I> {
         type Item = I::Item;
+
         fn next(&mut self) -> Option<Self::Item> {
             if self.chunk_remaining == 0 {
-                self.chunk_remaining = ::core::cmp::min(self.chunk_size,
-                                                        self.iter.len());
+                self.chunk_remaining = ::core::cmp::min(self.chunk_size, self.iter.len());
             }
             self.chunk_remaining = self.chunk_remaining.saturating_sub(1);
 
             self.iter.next()
         }
+
         fn size_hint(&self) -> (usize, Option<usize>) {
-            (self.chunk_remaining,
-             if self.hint_total_size { Some(self.iter.len()) } else { None })
+            (
+                self.chunk_remaining,
+                if self.hint_total_size {
+                    Some(self.iter.len())
+                } else {
+                    None
+                },
+            )
         }
     }
 
@@ -604,20 +618,28 @@ mod test {
     }
     impl<I: ExactSizeIterator + Iterator + Clone> Iterator for WindowHintedIterator<I> {
         type Item = I::Item;
+
         fn next(&mut self) -> Option<Self::Item> {
             self.iter.next()
         }
+
         fn size_hint(&self) -> (usize, Option<usize>) {
-            (::core::cmp::min(self.iter.len(), self.window_size),
-             if self.hint_total_size { Some(self.iter.len()) } else { None })
+            (
+                ::core::cmp::min(self.iter.len(), self.window_size),
+                if self.hint_total_size {
+                    Some(self.iter.len())
+                } else {
+                    None
+                },
+            )
         }
     }
 
     #[test]
-    #[cfg(not(miri))] 
+    #[cfg_attr(miri, ignore)] 
     fn test_iterator_choose() {
         let r = &mut crate::test::rng(109);
-        fn test_iter<R: Rng + ?Sized, Iter: Iterator<Item=usize> + Clone>(r: &mut R, iter: Iter) {
+        fn test_iter<R: Rng + ?Sized, Iter: Iterator<Item = usize> + Clone>(r: &mut R, iter: Iter) {
             let mut chosen = [0i32; 9];
             for _ in 0..1000 {
                 let picked = iter.clone().choose(r).unwrap();
@@ -627,7 +649,11 @@ mod test {
                 
                 
                 
-                assert!(72 < *count && *count < 154, "count not close to 1000/9: {}", count);
+                assert!(
+                    72 < *count && *count < 154,
+                    "count not close to 1000/9: {}",
+                    count
+                );
             }
         }
 
@@ -636,17 +662,35 @@ mod test {
         #[cfg(feature = "alloc")]
         test_iter(r, (0..9).collect::<Vec<_>>().into_iter());
         test_iter(r, UnhintedIterator { iter: 0..9 });
-        test_iter(r, ChunkHintedIterator { iter: 0..9, chunk_size: 4, chunk_remaining: 4, hint_total_size: false });
-        test_iter(r, ChunkHintedIterator { iter: 0..9, chunk_size: 4, chunk_remaining: 4, hint_total_size: true });
-        test_iter(r, WindowHintedIterator { iter: 0..9, window_size: 2, hint_total_size: false });
-        test_iter(r, WindowHintedIterator { iter: 0..9, window_size: 2, hint_total_size: true });
+        test_iter(r, ChunkHintedIterator {
+            iter: 0..9,
+            chunk_size: 4,
+            chunk_remaining: 4,
+            hint_total_size: false,
+        });
+        test_iter(r, ChunkHintedIterator {
+            iter: 0..9,
+            chunk_size: 4,
+            chunk_remaining: 4,
+            hint_total_size: true,
+        });
+        test_iter(r, WindowHintedIterator {
+            iter: 0..9,
+            window_size: 2,
+            hint_total_size: false,
+        });
+        test_iter(r, WindowHintedIterator {
+            iter: 0..9,
+            window_size: 2,
+            hint_total_size: true,
+        });
 
         assert_eq!((0..0).choose(r), None);
-        assert_eq!(UnhintedIterator{ iter: 0..0 }.choose(r), None);
+        assert_eq!(UnhintedIterator { iter: 0..0 }.choose(r), None);
     }
 
     #[test]
-    #[cfg(not(miri))] 
+    #[cfg_attr(miri, ignore)] 
     fn test_shuffle() {
         let mut r = crate::test::rng(108);
         let empty: &mut [isize] = &mut [];
@@ -694,15 +738,15 @@ mod test {
             assert!(352 <= *count && *count <= 483, "count: {}", count);
         }
     }
-    
+
     #[test]
     fn test_partial_shuffle() {
         let mut r = crate::test::rng(118);
-        
+
         let mut empty: [u32; 0] = [];
         let res = empty.partial_shuffle(&mut r, 10);
         assert_eq!((res.0.len(), res.1.len()), (0, 0));
-        
+
         let mut v = [1, 2, 3, 4, 5];
         let res = v.partial_shuffle(&mut r, 2);
         assert_eq!((res.0.len(), res.1.len()), (2, 3));
@@ -727,14 +771,14 @@ mod test {
         
         assert_eq!(large_sample, vals.iter().collect::<Vec<_>>());
 
-        assert!(small_sample.iter().all(|e| {
-            **e >= min_val && **e <= max_val
-        }));
+        assert!(small_sample
+            .iter()
+            .all(|e| { **e >= min_val && **e <= max_val }));
     }
-    
+
     #[test]
     #[cfg(feature = "alloc")]
-    #[cfg(not(miri))] 
+    #[cfg_attr(miri, ignore)] 
     fn test_weighted() {
         let mut r = crate::test::rng(406);
         const N_REPS: u32 = 3000;
@@ -782,10 +826,25 @@ mod test {
 
         
         let empty_slice = &mut [10][0..0];
-        assert_eq!(empty_slice.choose_weighted(&mut r, |_| 1), Err(WeightedError::NoItem));
-        assert_eq!(empty_slice.choose_weighted_mut(&mut r, |_| 1), Err(WeightedError::NoItem));
-        assert_eq!(['x'].choose_weighted_mut(&mut r, |_| 0), Err(WeightedError::AllWeightsZero));
-        assert_eq!([0, -1].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::InvalidWeight));
-        assert_eq!([-1, 0].choose_weighted_mut(&mut r, |x| *x), Err(WeightedError::InvalidWeight));
+        assert_eq!(
+            empty_slice.choose_weighted(&mut r, |_| 1),
+            Err(WeightedError::NoItem)
+        );
+        assert_eq!(
+            empty_slice.choose_weighted_mut(&mut r, |_| 1),
+            Err(WeightedError::NoItem)
+        );
+        assert_eq!(
+            ['x'].choose_weighted_mut(&mut r, |_| 0),
+            Err(WeightedError::AllWeightsZero)
+        );
+        assert_eq!(
+            [0, -1].choose_weighted_mut(&mut r, |x| *x),
+            Err(WeightedError::InvalidWeight)
+        );
+        assert_eq!(
+            [-1, 0].choose_weighted_mut(&mut r, |x| *x),
+            Err(WeightedError::InvalidWeight)
+        );
     }
 }

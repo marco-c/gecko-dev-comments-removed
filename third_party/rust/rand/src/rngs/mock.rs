@@ -8,7 +8,7 @@
 
 
 
-use rand_core::{RngCore, Error, impls};
+use rand_core::{impls, Error, RngCore};
 
 
 
@@ -34,7 +34,10 @@ impl StepRng {
     
     
     pub fn new(initial: u64, increment: u64) -> Self {
-        StepRng { v: initial, a: increment }
+        StepRng {
+            v: initial,
+            a: increment,
+        }
     }
 }
 

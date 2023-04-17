@@ -40,22 +40,23 @@
 
 
 
-
-#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
-       html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://rust-random.github.io/rand/")]
-
+#![doc(
+    html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
+    html_favicon_url = "https://www.rust-lang.org/favicon.ico",
+    html_root_url = "https://rust-random.github.io/rand/"
+)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![doc(test(attr(allow(unused_variables), deny(warnings))))]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(feature = "simd_support", feature = "nightly"), feature(stdsimd))]
+#![allow(
+    clippy::excessive_precision,
+    clippy::unreadable_literal,
+    clippy::float_cmp
+)]
 
-#![cfg_attr(not(feature="std"), no_std)]
-#![cfg_attr(all(feature="simd_support", feature="nightly"), feature(stdsimd))]
-
-#![allow(clippy::excessive_precision, clippy::unreadable_literal, clippy::float_cmp)]
-
-#[cfg(all(feature="alloc", not(feature="std")))]
-extern crate alloc;
+#[cfg(all(feature = "alloc", not(feature = "std")))] extern crate alloc;
 
 #[allow(unused)]
 macro_rules! trace { ($($x:tt)*) => (
@@ -89,10 +90,10 @@ macro_rules! error { ($($x:tt)*) => (
 ) }
 
 
-pub use rand_core::{RngCore, CryptoRng, SeedableRng, Error};
+pub use rand_core::{CryptoRng, Error, RngCore, SeedableRng};
 
 
-#[cfg(feature="std")] pub use crate::rngs::thread::thread_rng;
+#[cfg(feature = "std")] pub use crate::rngs::thread::thread_rng;
 
 
 pub mod distributions;
@@ -101,10 +102,10 @@ pub mod rngs;
 pub mod seq;
 
 
-use core::{mem, slice};
-use core::num::Wrapping;
+use crate::distributions::uniform::{SampleBorrow, SampleUniform, UniformSampler};
 use crate::distributions::{Distribution, Standard};
-use crate::distributions::uniform::{SampleUniform, UniformSampler, SampleBorrow};
+use core::num::Wrapping;
+use core::{mem, slice};
 
 
 
@@ -268,7 +269,10 @@ pub trait Rng: RngCore {
     
     
     fn sample_iter<T, D>(self, distr: D) -> distributions::DistIter<D, Self, T>
-    where D: Distribution<T>, Self: Sized {
+    where
+        D: Distribution<T>,
+        Self: Sized,
+    {
         distr.sample_iter(self)
     }
 
@@ -468,9 +472,11 @@ macro_rules! impl_as_byte_slice {
 }
 
 impl_as_byte_slice!(u16, u32, u64, usize,);
-#[cfg(not(target_os = "emscripten"))] impl_as_byte_slice!(u128);
+#[cfg(not(target_os = "emscripten"))]
+impl_as_byte_slice!(u128);
 impl_as_byte_slice!(i8, i16, i32, i64, isize,);
-#[cfg(not(target_os = "emscripten"))] impl_as_byte_slice!(i128);
+#[cfg(not(target_os = "emscripten"))]
+impl_as_byte_slice!(i128);
 
 macro_rules! impl_as_byte_slice_arrays {
     ($n:expr,) => {};
@@ -495,6 +501,7 @@ macro_rules! impl_as_byte_slice_arrays {
         impl_as_byte_slice_arrays!(!div $n / 2, $($NN,)*);
     };
 }
+#[rustfmt::skip]
 impl_as_byte_slice_arrays!(32, N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,);
 impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
 
@@ -540,7 +547,7 @@ impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
 
 
 
-#[cfg(feature="std")]
+#[cfg(feature = "std")]
 #[inline]
 pub fn random<T>() -> T
 where Standard: Distribution<T> {
@@ -549,9 +556,9 @@ where Standard: Distribution<T> {
 
 #[cfg(test)]
 mod test {
-    use crate::rngs::mock::StepRng;
     use super::*;
-    #[cfg(all(not(feature="std"), feature="alloc"))] use alloc::boxed::Box;
+    use crate::rngs::mock::StepRng;
+    #[cfg(all(not(feature = "std"), feature = "alloc"))] use alloc::boxed::Box;
 
     
     pub fn rng(seed: u64) -> impl RngCore {
@@ -566,8 +573,7 @@ mod test {
         let mut r = StepRng::new(0x11_22_33_44_55_66_77_88, 0);
 
         
-        let lengths = [0, 1, 2, 3, 4, 5, 6, 7,
-                       80, 81, 82, 83, 84, 85, 86, 87];
+        let lengths = [0, 1, 2, 3, 4, 5, 6, 7, 80, 81, 82, 83, 84, 85, 86, 87];
         for &n in lengths.iter() {
             let mut buffer = [0u8; 87];
             let v = &mut buffer[0..n];
@@ -584,7 +590,7 @@ mod test {
 
     #[test]
     fn test_fill() {
-        let x = 9041086907909331047;    
+        let x = 9041086907909331047; 
         let mut rng = StepRng::new(x, 0);
 
         
@@ -670,7 +676,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="alloc")]
+    #[cfg(feature = "alloc")]
     fn test_rng_boxed_trait() {
         use crate::distributions::{Distribution, Standard};
         let rng = rng(110);
@@ -682,22 +688,22 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature="std")]
+    #[cfg(feature = "std")]
     fn test_random() {
         
-        let _n : usize = random();
-        let _f : f32 = random();
-        let _o : Option<Option<i8>> = random();
-        let _many : ((),
-                     (usize,
-                      isize,
-                      Option<(u32, (bool,))>),
-                     (u8, i8, u16, i16, u32, i32, u64, i64),
-                     (f32, (f64, (f64,)))) = random();
+        let _n: usize = random();
+        let _f: f32 = random();
+        let _o: Option<Option<i8>> = random();
+        let _many: (
+            (),
+            (usize, isize, Option<(u32, (bool,))>),
+            (u8, i8, u16, i16, u32, i32, u64, i64),
+            (f32, (f64, (f64,))),
+        ) = random();
     }
 
     #[test]
-    #[cfg(not(miri))] 
+    #[cfg_attr(miri, ignore)] 
     fn test_gen_ratio_average() {
         const NUM: u32 = 3;
         const DENOM: u32 = 10;
@@ -711,7 +717,7 @@ mod test {
             }
         }
         
-        let expected = (NUM * N) / DENOM;   
+        let expected = (NUM * N) / DENOM; 
         assert!(((sum - expected) as i32).abs() < 500);
     }
 }
