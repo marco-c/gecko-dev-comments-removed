@@ -1081,8 +1081,14 @@ nsIWidget* nsPresContext::GetRootWidget() const {
   if (!vm) {
     return nullptr;
   }
-  nsCOMPtr<nsIWidget> widget;
-  vm->GetRootWidget(getter_AddRefs(widget));
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWidget> widget = vm->GetRootWidget();
   return widget.get();
 }
 
