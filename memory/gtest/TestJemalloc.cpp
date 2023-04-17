@@ -138,8 +138,7 @@ TEST(Jemalloc, PtrInfo)
 
   
   
-  size_t small_max =
-      stats.subpage_max ? stats.subpage_max : stats.quantum_wide_max;
+  size_t small_max = stats.page_size / 2;
   for (size_t n = 0; n <= small_max; n += 8) {
     auto p = (char*)moz_arena_malloc(arenaId, n);
     size_t usable = moz_malloc_size_of(p);
@@ -200,7 +199,7 @@ TEST(Jemalloc, PtrInfo)
   
   ASSERT_TRUE(isFreedAlloc != 0);
   ASSERT_TRUE(isFreedPage != 0);
-  ASSERT_TRUE(isFreedAlloc / isFreedPage > 8);
+  ASSERT_TRUE(isFreedAlloc / isFreedPage > 10);
 
   
   len = large.length();
@@ -278,7 +277,7 @@ TEST(Jemalloc, PtrInfo)
   moz_dispose_arena(arenaId);
 }
 
-size_t sSizes[] = {1,      42,      79,      918,     1.4_KiB,
+size_t sSizes[] = {1,      42,      79,      918,     1.5_KiB,
                    73_KiB, 129_KiB, 1.1_MiB, 2.6_MiB, 5.1_MiB};
 
 TEST(Jemalloc, Arenas)
