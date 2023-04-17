@@ -34,18 +34,14 @@ pub trait Padding {
     
     
     
+    
     fn pad(buf: &mut [u8], pos: usize, block_size: usize)
         -> Result<&mut [u8], PadError>
     {
-        if buf.len() - pos < block_size { Err(PadError)? }
-        if pos % block_size == 0 {
-            Self::pad_block(&mut buf[pos..pos + block_size], 0)?;
-            Ok(&mut buf[..pos+block_size])
-        } else {
-            let bs = block_size * (pos / block_size);
-            Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
-            Ok(&mut buf[..bs+block_size])
-        }
+        let bs = block_size * (pos / block_size);
+        if buf.len() < bs || buf.len() - bs < block_size { Err(PadError)? }
+        Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
+        Ok(&mut buf[..bs+block_size])
     }
 
     
@@ -113,6 +109,11 @@ impl Padding for ZeroPadding {
         Ok(&data[..n+1])
     }
 }
+
+
+
+
+
 
 
 
@@ -272,5 +273,51 @@ impl Padding for Iso7816 {
         }
         if data[n] != 0x80 { Err(UnpadError)? }
         Ok(&data[..n])
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub enum NoPadding {}
+
+impl Padding for NoPadding {
+    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
+        if pos % block.len() != 0 {
+            Err(PadError)?
+        }
+        Ok(())
+    }
+
+    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
+        if pos % block_size != 0 {
+            Err(PadError)?
+        }
+        Ok(&mut buf[..pos])
+    }
+
+    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
+        Ok(data)
     }
 }
