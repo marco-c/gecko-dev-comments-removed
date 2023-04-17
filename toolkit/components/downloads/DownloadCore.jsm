@@ -1422,11 +1422,6 @@ DownloadSource.prototype = {
       return null;
     }
 
-    
-    if (!this.isPrivate && !this.referrerInfo && !this._unknownProperties) {
-      return this.url;
-    }
-
     let serializable = { url: this.url };
     if (this.isPrivate) {
       serializable.isPrivate = true;
@@ -1453,6 +1448,12 @@ DownloadSource.prototype = {
     }
 
     serializeUnknownProperties(this, serializable);
+
+    
+    if (Object.keys(serializable).length === 1) {
+      
+      return this.url;
+    }
     return serializable;
   },
 };
