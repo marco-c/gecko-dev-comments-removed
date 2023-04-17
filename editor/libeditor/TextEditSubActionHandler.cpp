@@ -600,36 +600,22 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
   }
 
   RefPtr<Element> anonymousDivElement = GetRoot();
-  nsIContent* firstChild = anonymousDivElement->GetFirstChild();
+  RefPtr<Text> textNode =
+      Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  MOZ_ASSERT(textNode);
 
   
   
   
   
   
-  if (IsSingleLineEditor()) {
+  if (!IsSingleLineEditor()) {
     
     
     
-    
-    
-    if (firstChild && (!firstChild->IsText() || firstChild->GetNextSibling())) {
-      return EditActionIgnored();
-    }
-  } else {
-    
-    
-    
-    if (!firstChild) {
-      return EditActionIgnored();
-    }
-    if (firstChild->IsText()) {
-      if (!firstChild->GetNextSibling() ||
-          !EditorUtils::IsPaddingBRElementForEmptyLastLine(
-              *firstChild->GetNextSibling())) {
-        return EditActionIgnored();
-      }
-    } else if (!EditorUtils::IsPaddingBRElementForEmptyLastLine(*firstChild)) {
+    if (!textNode->GetNextSibling() ||
+        !EditorUtils::IsPaddingBRElementForEmptyLastLine(
+            *textNode->GetNextSibling())) {
       return EditActionIgnored();
     }
   }
@@ -641,36 +627,6 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
     HandleNewLinesInStringForSingleLineEditor(sanitizedValue);
   }
 
-  if (!firstChild || !firstChild->IsText()) {
-    if (sanitizedValue.IsEmpty()) {
-      return EditActionHandled();
-    }
-    RefPtr<Document> document = GetDocument();
-    if (NS_WARN_IF(!document)) {
-      return EditActionIgnored();
-    }
-    RefPtr<nsTextNode> newTextNode = CreateTextNode(sanitizedValue);
-    if (!newTextNode) {
-      NS_WARNING("EditorBase::CreateTextNode() failed");
-      return EditActionIgnored();
-    }
-    nsresult rv = InsertNodeWithTransaction(
-        *newTextNode, EditorDOMPoint(anonymousDivElement, 0));
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return EditActionResult(rv);
-    }
-    return EditActionHandled();
-  }
-
-  RefPtr<Text> textNode = firstChild->GetAsText();
-  if (MOZ_UNLIKELY(!textNode)) {
-    NS_WARNING("The first child was not a text node");
-    return EditActionIgnored();
-  }
   rv = SetTextNodeWithoutTransaction(sanitizedValue, *textNode);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::SetTextNodeWithoutTransaction() failed");
@@ -785,37 +741,15 @@ EditActionResult TextEditor::ComputeValueFromTextNodeAndBRElement(
     return EditActionHandled();
   }
 
-  nsIContent* textNodeOrPaddingBRElement = anonymousDivElement->GetFirstChild();
-  if (!textNodeOrPaddingBRElement ||
-      textNodeOrPaddingBRElement == mPaddingBRElementForEmptyEditor) {
+  Text* textNode = Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  MOZ_ASSERT(textNode);
+
+  if (!textNode->Length()) {
     aValue.Truncate();
     return EditActionHandled();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  Text* textNode = textNodeOrPaddingBRElement->GetAsText();
-  if (!textNode) {
-    
-    
-    aValue.Truncate();
-    return EditActionHandled();
-  }
-
-  nsIContent* firstChildExceptText =
-      textNode ? textNodeOrPaddingBRElement->GetNextSibling()
-               : textNodeOrPaddingBRElement;
+  nsIContent* firstChildExceptText = textNode->GetNextSibling();
   
   bool isInput = IsSingleLineEditor();
   bool isTextarea = !isInput;
