@@ -68,3 +68,6 @@ user_pref("browser.cache.offline.enable", true);
 
 
 user_pref("network.cookie.cookieBehavior", 4);
+
+
+user_pref("prompts.contentPromptSubDialog", false);
