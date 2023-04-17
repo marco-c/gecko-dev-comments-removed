@@ -1160,11 +1160,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  nsIPrincipal* GetTopLevelStorageAreaPrincipal();
-
-  
-  
-  
   void StorageAccessPermissionGranted();
 
  protected:
