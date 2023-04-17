@@ -135,23 +135,16 @@ typedef struct CdfThreadContext {
         CdfContext *cdf; 
         unsigned qcat; 
     } data;
-    struct thread_data *t;
     atomic_uint *progress;
 } CdfThreadContext;
 
 void dav1d_cdf_thread_init_static(CdfThreadContext *cdf, int qidx);
 int dav1d_cdf_thread_alloc(Dav1dContext *c, CdfThreadContext *cdf,
-                           struct thread_data *t);
+                           const int have_frame_mt);
 void dav1d_cdf_thread_copy(CdfContext *dst, const CdfThreadContext *src);
 void dav1d_cdf_thread_ref(CdfThreadContext *dst, CdfThreadContext *src);
 void dav1d_cdf_thread_unref(CdfThreadContext *cdf);
 void dav1d_cdf_thread_update(const Dav1dFrameHeader *hdr, CdfContext *dst,
                              const CdfContext *src);
-
-
-
-
-void dav1d_cdf_thread_wait(CdfThreadContext *cdf);
-void dav1d_cdf_thread_signal(CdfThreadContext *cdf);
 
 #endif 

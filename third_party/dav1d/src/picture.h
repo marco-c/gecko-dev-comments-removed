@@ -52,7 +52,6 @@ typedef struct Dav1dThreadPicture {
     Dav1dPicture p;
     int visible;
     enum PictureFlags flags;
-    struct thread_data *t;
     
     
     atomic_uint *progress;
@@ -90,31 +89,6 @@ void dav1d_thread_picture_unref(Dav1dThreadPicture *p);
 
 
 void dav1d_picture_move_ref(Dav1dPicture *dst, Dav1dPicture *src);
-
-
-
-
-
-
-
-
-
-
-
-int dav1d_thread_picture_wait(const Dav1dThreadPicture *p, int y,
-                               enum PlaneType plane_type);
-
-
-
-
-
-
-
-
-
-
-void dav1d_thread_picture_signal(const Dav1dThreadPicture *p, int y,
-                                 enum PlaneType plane_type);
 
 int dav1d_default_picture_alloc(Dav1dPicture *p, void *cookie);
 void dav1d_default_picture_release(Dav1dPicture *p, void *cookie);

@@ -37,13 +37,8 @@ RefPtr<MediaDataDecoder::InitPromise> DAV1DDecoder::Init() {
   } else if (mInfo.mDisplay.width >= 1024) {
     decoder_threads = 4;
   }
-  settings.n_frame_threads =
+  settings.n_threads =
       static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
-  
-  
-  
-  
-  settings.n_tile_threads = 2;
 
   int res = dav1d_open(&mContext, &settings);
   if (res < 0) {

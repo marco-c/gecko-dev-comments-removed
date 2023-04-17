@@ -43,9 +43,8 @@ extern "C" {
 typedef struct Dav1dContext Dav1dContext;
 typedef struct Dav1dRef Dav1dRef;
 
-#define DAV1D_MAX_FRAME_THREADS 256
-#define DAV1D_MAX_TILE_THREADS 64
-#define DAV1D_MAX_POSTFILTER_THREADS 256
+#define DAV1D_MAX_THREADS 256
+#define DAV1D_MAX_FRAME_DELAY 256
 
 typedef struct Dav1dLogger {
     void *cookie; 
@@ -60,16 +59,15 @@ typedef struct Dav1dLogger {
 } Dav1dLogger;
 
 typedef struct Dav1dSettings {
-    int n_frame_threads;
-    int n_tile_threads;
+    int n_threads; 
+    int max_frame_delay; 
     int apply_grain;
     int operating_point; 
     int all_layers; 
     unsigned frame_size_limit; 
     Dav1dPicAllocator allocator; 
     Dav1dLogger logger; 
-    int n_postfilter_threads;
-    uint8_t reserved[28]; 
+    uint8_t reserved[32]; 
 } Dav1dSettings;
 
 
@@ -97,6 +95,11 @@ DAV1D_API void dav1d_default_settings(Dav1dSettings *s);
 
 
 DAV1D_API int dav1d_open(Dav1dContext **c_out, const Dav1dSettings *s);
+
+
+
+
+
 
 
 

@@ -581,6 +581,7 @@ class Dav1dDecoder final : AVIFDecoderInterface {
     Dav1dSettings settings;
     dav1d_default_settings(&settings);
     settings.all_layers = 0;
+    settings.max_frame_delay = 1;
     
 
     return dav1d_open(&mContext, &settings);
