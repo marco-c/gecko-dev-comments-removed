@@ -36,17 +36,14 @@ class ArrayBufferViewObject : public NativeObject {
   
   static constexpr size_t BYTEOFFSET_SLOT = 2;
 
-  static constexpr size_t RESERVED_SLOTS = 3;
+  
+  static constexpr size_t DATA_SLOT = 3;
+
+  static constexpr size_t RESERVED_SLOTS = 4;
 
 #ifdef DEBUG
   static const uint8_t ZeroLengthArrayData = 0x4A;
 #endif
-
-  
-  
-  
-  
-  static constexpr size_t DATA_SLOT = 3;
 
   static constexpr int bufferOffset() {
     return NativeObject::getFixedSlotOffset(BUFFER_SLOT);
@@ -58,14 +55,14 @@ class ArrayBufferViewObject : public NativeObject {
     return NativeObject::getFixedSlotOffset(BYTEOFFSET_SLOT);
   }
   static constexpr int dataOffset() {
-    return NativeObject::getPrivateDataOffset(DATA_SLOT);
+    return NativeObject::getFixedSlotOffset(DATA_SLOT);
   }
 
  private:
   void* dataPointerEither_() const {
     
     
-    return static_cast<void*>(getPrivate(DATA_SLOT));
+    return maybePtrFromReservedSlot<void>(DATA_SLOT);
   }
 
  public:
@@ -86,7 +83,8 @@ class ArrayBufferViewObject : public NativeObject {
     
     
     
-    initPrivate(viewData.unwrap());
+    void* data = viewData.unwrap();
+    initReservedSlot(DATA_SLOT, PrivateValue(data));
   }
 
   SharedMem<void*> dataPointerShared() const {
