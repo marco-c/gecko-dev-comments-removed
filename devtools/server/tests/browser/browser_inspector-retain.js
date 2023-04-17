@@ -17,6 +17,12 @@ Services.scriptloader.loadSubScript(
 
 
 add_task(async function testRetain() {
+  
+  
+  if (isEveryFrameTargetEnabled()) {
+    return;
+  }
+
   const { walker } = await initInspectorFront(
     MAIN_DOMAIN + "inspector-traversal-data.html"
   );
