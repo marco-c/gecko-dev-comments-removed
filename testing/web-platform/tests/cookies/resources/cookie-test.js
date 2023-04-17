@@ -68,59 +68,44 @@ async function getRedirectedCookies(location, cookie) {
 
 
 function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
-  let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
-  return promise_test(
-      async t => {
-          return fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`)
-              .then(async () => {
-                let cookies = document.cookie;
-                if (defaultPath) {
-                  
-                  
-                  
-                  cookies = await getDefaultPathCookies();
-                }
-                if (Boolean(expectedValue)) {
-                  assert_equals(
-                      cookies, expectedValue,
-                      'The cookie was set as expected.');
-                } else {
-                  assert_equals(
-                      cookies, expectedValue, 'The cookie was rejected.');
-                }
-              })
-              .then(() => {
-                return fetch(
-                    `/cookies/resources/cookie.py?drop=${encodedCookie}`);
-              })},
-      name);
+  return promise_test(async (t) => {
+    let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
+    await fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`);
+    let cookies = document.cookie;
+    if (defaultPath) {
+      
+      
+      
+      cookies = await getDefaultPathCookies();
+    }
+    if (Boolean(expectedValue)) {
+      assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
+    } else {
+      assert_equals(cookies, expectedValue, 'The cookie was rejected.');
+    }
+    await fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
+  }, name);
 }
 
 
 
 
 function httpRedirectCookieTest(cookie, expectedValue, name, location) {
-  const encodedCookie = encodeURIComponent(JSON.stringify(cookie));
-  const encodedLocation = encodeURIComponent(location);
-  const setParams = `?set=${encodedCookie}&location=${encodedLocation}`;
-  return promise_test(
-    async t => {
-      return fetch(`/cookies/resources/cookie.py${setParams}`)
-        .then(async () => {
-          
-          
-          const cookies = await getRedirectedCookies(location, cookie);
-          if (Boolean(expectedValue)) {
-            assert_equals(cookies, expectedValue,
-                          'The cookie was set as expected.');
-          } else {
-            assert_equals(cookies, expectedValue, 'The cookie was rejected.');
-          }
-        }).then(() => {
-          return fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
-        })
-    },
-    name);
+  return promise_test(async (t) => {
+    const encodedCookie = encodeURIComponent(JSON.stringify(cookie));
+    const encodedLocation = encodeURIComponent(location);
+    const setParams = `?set=${encodedCookie}&location=${encodedLocation}`;
+    await fetch(`/cookies/resources/cookie.py${setParams}`);
+    
+    
+    const cookies = await getRedirectedCookies(location, cookie);
+    if (Boolean(expectedValue)) {
+      assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
+    } else {
+      assert_equals(cookies, expectedValue, 'The cookie was rejected.');
+    }
+    await fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
+  }, name);
 }
 
 
@@ -140,14 +125,13 @@ function dropAllDomCookies() {
 
 
 function domCookieTest(cookie, expectedValue, name) {
-  return test(function() {
+  return promise_test(async (t) => {
     document.cookie = cookie;
     let cookies = document.cookie;
-    this.add_cleanup(dropAllDomCookies);
-    assert_equals(
-        cookies, expectedValue,
-        Boolean(expectedValue) ? 'The cookie was set as expected.' :
-                                 'The cookie was rejected.');
+    t.add_cleanup(dropAllDomCookies);
+    assert_equals(cookies, expectedValue, Boolean(expectedValue) ?
+                                          'The cookie was set as expected.' :
+                                          'The cookie was rejected.');
   }, name);
 }
 
