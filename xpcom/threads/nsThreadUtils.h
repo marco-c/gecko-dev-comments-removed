@@ -313,7 +313,6 @@ inline already_AddRefed<nsIThread> do_GetMainThread() {
 
 
 
-#ifdef MOZILLA_INTERNAL_API
 
 
 
@@ -336,7 +335,6 @@ extern nsIThread* NS_GetCurrentThreadNoCreate();
 
 
 extern void NS_SetCurrentThreadName(const char* aName);
-#endif
 
 
 
