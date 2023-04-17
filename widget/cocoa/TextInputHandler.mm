@@ -2922,7 +2922,7 @@ bool TextInputHandler::DoCommandBySelector(const char* aSelector) {
   
   
   
-  if (!strcmp(aSelector, "cancelOperatiorn:") && currentKeyEvent &&
+  if (!strcmp(aSelector, "cancelOperation:") && currentKeyEvent &&
       currentKeyEvent->IsProperKeyEvent(Command::CancelOperation)) {
     return HandleCommand(Command::CancelOperation);
   }
