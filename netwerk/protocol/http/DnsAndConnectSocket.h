@@ -79,6 +79,10 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
 
  private:
   
+  
+  void CheckIsDone();
+
+  
 
 
 
