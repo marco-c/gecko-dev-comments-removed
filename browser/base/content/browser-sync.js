@@ -1406,6 +1406,18 @@ var gSync = {
           this.sendTabToDevice(t.url, to, t.title)
         )
       ).then(results => {
+        
+        if (results.includes(true)) {
+          
+          
+          let fxastatus = document.documentElement.getAttribute("fxastatus");
+          let anchorNode =
+            (fxastatus &&
+              fxastatus != "not_configured" &&
+              document.getElementById("fxa-toolbar-menu-button")) ||
+            document.getElementById("PanelUI-menu-button");
+          ConfirmationHint.show(anchorNode, "sendToDevice");
+        }
         fxAccounts.flushLogFile();
       });
     };
