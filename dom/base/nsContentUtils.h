@@ -3112,12 +3112,8 @@ class nsContentUtils {
 
 
 
-
-
-
   static uint32_t HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
-                                                   bool aNoFakePlugin,
-                                                   nsIContent* aContent);
+                                                   bool aNoFakePlugin);
 
   static already_AddRefed<nsISerialEventTarget> GetEventTargetByLoadInfo(
       nsILoadInfo* aLoadInfo, mozilla::TaskCategory aCategory);

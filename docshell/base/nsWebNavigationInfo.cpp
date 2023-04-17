@@ -6,48 +6,28 @@
 
 #include "nsWebNavigationInfo.h"
 
-#include "mozilla/dom/BrowsingContext.h"
-#include "nsIWebNavigation.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIDocumentLoaderFactory.h"
-#include "nsIDocShell.h"
 #include "nsContentUtils.h"
 #include "imgLoader.h"
-#include "nsPluginHost.h"
 
 NS_IMPL_ISUPPORTS(nsWebNavigationInfo, nsIWebNavigationInfo)
 
 NS_IMETHODIMP
 nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
-                                     nsIWebNavigation* aWebNav,
                                      uint32_t* aIsTypeSupported) {
   MOZ_ASSERT(aIsTypeSupported, "null out param?");
 
-  *aIsTypeSupported = IsTypeSupported(aType, aWebNav);
+  *aIsTypeSupported = IsTypeSupported(aType);
   return NS_OK;
 }
 
-uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
-                                              nsIWebNavigation* aWebNav) {
-  
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aWebNav));
-  auto* browsingContext = docShell ? docShell->GetBrowsingContext() : nullptr;
-  bool pluginsAllowed =
-      browsingContext ? browsingContext->GetAllowPlugins() : true;
-
-  return IsTypeSupported(aType, pluginsAllowed);
-}
-
-uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
-                                              bool aPluginsAllowed) {
+uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType) {
   
   
   if (aType.LowerCaseEqualsLiteral("application/pdf") &&
       nsContentUtils::IsPDFJSEnabled()) {
     return nsIWebNavigationInfo::UNSUPPORTED;
-    ;
   }
 
   const nsCString& flatType = PromiseFlatCString(aType);
