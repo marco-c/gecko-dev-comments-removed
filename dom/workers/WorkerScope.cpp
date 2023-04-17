@@ -253,7 +253,7 @@ void WorkerGlobalScopeBase::Control(
     const ServiceWorkerDescriptor& aServiceWorker) {
   mWorkerPrivate->AssertIsOnWorkerThread();
   MOZ_DIAGNOSTIC_ASSERT(!mWorkerPrivate->IsChromeWorker());
-  MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate->Type() != WorkerTypeService);
+  MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate->Kind() != WorkerKindService);
 
   if (IsBlobURI(mWorkerPrivate->GetBaseURI())) {
     

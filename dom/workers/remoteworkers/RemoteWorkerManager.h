@@ -50,7 +50,7 @@ class RemoteWorkerManager final {
 
 
   static Result<nsCString, nsresult> GetRemoteType(
-      const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerType aWorkerType);
+      const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerKind aWorkerKind);
 
   
 

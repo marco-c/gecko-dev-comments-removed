@@ -42,7 +42,7 @@ already_AddRefed<Worker> Worker::Constructor(const GlobalObject& aGlobal,
   }
 
   RefPtr<WorkerPrivate> workerPrivate = WorkerPrivate::Constructor(
-      cx, aScriptURL, false , WorkerTypeDedicated,
+      cx, aScriptURL, false , WorkerKindDedicated,
       aOptions.mName, VoidCString(), nullptr , aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
