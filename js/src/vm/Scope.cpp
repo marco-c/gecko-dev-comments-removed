@@ -988,7 +988,6 @@ XDRResult ClassBodyScope::XDR(XDRState<mode>* xdr, ScopeKind kind,
       nextFrameSlot = data->slotInfo.nextFrameSlot;
     }
 
-    MOZ_TRY(xdr->codeUint32(&data->slotInfo.constStart));
     MOZ_TRY(xdr->codeUint32(&firstFrameSlot));
     MOZ_TRY(xdr->codeUint32(&nextFrameSlot));
 
@@ -1855,8 +1854,8 @@ void BaseAbstractBindingIter<NameT>::init(
         0,
         0,
         0,
-        slotInfo.constStart,
-        slotInfo.constStart,
+        0,
+        0,
         slotInfo.privateMethodStart,
         CanHaveFrameSlots | CanHaveEnvironmentSlots,
         firstFrameSlot,

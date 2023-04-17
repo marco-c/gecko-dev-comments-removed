@@ -1786,7 +1786,7 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
   
   
   MOZ_ASSERT(loc.hasKnownSlot());
-  MOZ_ASSERT(loc.isLexical());
+  MOZ_ASSERT(loc.isLexical() || loc.isPrivateMethod() || loc.isSynthetic());
 
   
   
