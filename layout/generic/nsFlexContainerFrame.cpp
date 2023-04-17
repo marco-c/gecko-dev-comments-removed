@@ -3034,8 +3034,9 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   
+  const AuCoord64 totalItemMBPAndGaps = mTotalItemMBP + SumOfGaps();
   const AuCoord64 spaceAvailableForFlexItemsContentBoxes =
-      flexContainerMainSize - AuCoord64(mTotalItemMBP + SumOfGaps());
+      flexContainerMainSize - totalItemMBPAndGaps;
 
   Maybe<AuCoord64> origAvailableFreeSpace;
 
@@ -3076,7 +3077,10 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
     
     
     
-    MOZ_ASSERT(!(mTotalOuterHypotheticalMainSize >= 0 && mTotalItemMBP >= 0) ||
+    
+    
+    MOZ_ASSERT(!(mTotalOuterHypotheticalMainSize >= 0 && mTotalItemMBP >= 0 &&
+                 totalItemMBPAndGaps >= 0) ||
                    (isUsingFlexGrow && availableFreeSpace >= 0) ||
                    (!isUsingFlexGrow && availableFreeSpace <= 0),
                "availableFreeSpace's sign should match isUsingFlexGrow");
