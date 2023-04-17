@@ -438,49 +438,62 @@ bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
   return NS_SUCCEEDED(rv) && isVisible;
 }
 
-bool HTMLEditUtils::IsVisibleBRElement(const nsIContent& aContent) {
-  if (!aContent.IsHTMLElement(nsGkAtoms::br)) {
-    return false;
-  }
+Element* HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
+    const nsIContent& aContent, const WalkTreeDirection aDirection) {
+  MOZ_ASSERT(aContent.IsHTMLElement(nsGkAtoms::br));
 
   
   
   Element* maybeNonEditableAncestorBlock = HTMLEditUtils::GetAncestorElement(
       aContent, HTMLEditUtils::ClosestBlockElement);
   if (NS_WARN_IF(!maybeNonEditableAncestorBlock)) {
-    return true;
+    return nullptr;
   }
 
+  auto getNextContent = [&aDirection, &maybeNonEditableAncestorBlock](
+                            const nsIContent& aContent) -> nsIContent* {
+    return aDirection == WalkTreeDirection::Forward
+               ? HTMLEditUtils::GetNextContent(
+                     aContent,
+                     {WalkTreeOption::IgnoreDataNodeExceptText,
+                      WalkTreeOption::StopAtBlockBoundary},
+                     maybeNonEditableAncestorBlock)
+               : HTMLEditUtils::GetPreviousContent(
+                     aContent,
+                     {WalkTreeOption::IgnoreDataNodeExceptText,
+                      WalkTreeOption::StopAtBlockBoundary},
+                     maybeNonEditableAncestorBlock);
+  };
+
   
-  for (nsIContent* nextContent = HTMLEditUtils::GetNextContent(
-           aContent,
-           {WalkTreeOption::IgnoreDataNodeExceptText,
-            WalkTreeOption::StopAtBlockBoundary},
-           maybeNonEditableAncestorBlock);
-       nextContent; nextContent = HTMLEditUtils::GetNextContent(
-                        *nextContent,
-                        {WalkTreeOption::IgnoreDataNodeExceptText,
-                         WalkTreeOption::StopAtBlockBoundary},
-                        maybeNonEditableAncestorBlock)) {
+  for (nsIContent* nextContent = getNextContent(aContent); nextContent;
+       nextContent = getNextContent(*nextContent)) {
     if (nextContent->IsElement()) {
       
       if (HTMLEditUtils::IsBlockElement(*nextContent)) {
-        return false;
+        return nextContent->AsElement();
       }
 
       
       
       if (!nextContent->IsHTMLElement()) {
-        return false;
+        return nextContent->AsElement();
       }
 
       
       
       if (nextContent->IsAnyOfHTMLElements(
-              nsGkAtoms::br, nsGkAtoms::applet, nsGkAtoms::iframe,
-              nsGkAtoms::img, nsGkAtoms::meter, nsGkAtoms::progress,
-              nsGkAtoms::select, nsGkAtoms::textarea)) {
-        return true;
+              nsGkAtoms::applet, nsGkAtoms::iframe, nsGkAtoms::img,
+              nsGkAtoms::meter, nsGkAtoms::progress, nsGkAtoms::select,
+              nsGkAtoms::textarea)) {
+        return nullptr;
+      }
+
+      
+      
+      if (aContent.IsHTMLElement(nsGkAtoms::br) &&
+          nextContent->IsHTMLElement(nsGkAtoms::br)) {
+        return nullptr;
       }
 
       if (HTMLInputElement* inputElement =
@@ -488,24 +501,22 @@ bool HTMLEditUtils::IsVisibleBRElement(const nsIContent& aContent) {
         if (inputElement->ControlType() == FormControlType::InputHidden) {
           continue;  
         }
-        return true;  
-                      
+        return nullptr;  
+                         
       }
 
       continue;
     }
 
-    
-    
     Text* textNode = Text::FromNode(nextContent);
-    if (!textNode) {
+    if (NS_WARN_IF(!textNode)) {
       continue;  
     }
     if (!textNode->TextLength()) {
       continue;  
     }
     if (!textNode->TextIsOnlyWhitespace()) {
-      return true;  
+      return nullptr;  
     }
     const nsTextFragment& textFragment = textNode->TextFragment();
     const bool isWhiteSpacePreformatted =
@@ -517,18 +528,15 @@ bool HTMLEditUtils::IsVisibleBRElement(const nsIContent& aContent) {
       continue;
     }
     for (uint32_t i = 0; i < textFragment.GetLength(); i++) {
-      
       if (textFragment.CharAt(AssertedCast<int32_t>(i)) ==
           HTMLEditUtils::kNewLine) {
         if (isNewLinePreformatted) {
-          return true;
+          return nullptr;  
         }
         continue;
       }
-      
-      
       if (isWhiteSpacePreformatted) {
-        return true;
+        return nullptr;  
       }
     }
     
@@ -537,7 +545,7 @@ bool HTMLEditUtils::IsVisibleBRElement(const nsIContent& aContent) {
   
   
   
-  return false;
+  return maybeNonEditableAncestorBlock;
 }
 
 bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,

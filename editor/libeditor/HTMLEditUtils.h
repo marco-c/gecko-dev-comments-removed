@@ -313,7 +313,15 @@ class HTMLEditUtils final {
 
 
 
-  static bool IsVisibleBRElement(const nsIContent& aContent);
+  static bool IsVisibleBRElement(const nsIContent& aContent) {
+    if (!aContent.IsHTMLElement(nsGkAtoms::br)) {
+      return false;
+    }
+    
+    
+    return !HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
+        aContent, WalkTreeDirection::Forward);
+  }
   static bool IsInvisibleBRElement(const nsIContent& aContent) {
     return aContent.IsHTMLElement(nsGkAtoms::br) &&
            !HTMLEditUtils::IsVisibleBRElement(aContent);
@@ -1699,6 +1707,14 @@ class HTMLEditUtils final {
       const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
       const WalkTreeOptions& aOptions,
       const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+  static Element* GetBlockElementOfImmediateBlockBoundary(
+      const nsIContent& aContent, const WalkTreeDirection aDirection);
 };
 
 
