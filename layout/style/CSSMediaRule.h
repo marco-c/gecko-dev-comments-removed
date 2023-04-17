@@ -31,7 +31,7 @@ class CSSMediaRule final : public css::ConditionRule {
   void SetRawAfterClone(RefPtr<RawServoMediaRule>);
 
   
-  uint16_t Type() const override { return CSSRule_Binding::MEDIA_RULE; }
+  StyleCssRuleType Type() const override;
   
   void GetCssText(nsACString& aCssText) const final;
   void GetConditionText(nsACString& aConditionText) final;

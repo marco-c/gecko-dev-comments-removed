@@ -310,10 +310,11 @@ impl CssRule {
 
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Eq, FromPrimitive, PartialEq)]
+#[repr(u8)]
 pub enum CssRuleType {
     
     Style = 1,
-    Charset = 2,
+    
     Import = 3,
     Media = 4,
     FontFace = 5,
@@ -322,7 +323,7 @@ pub enum CssRuleType {
     Keyframes = 7,
     Keyframe = 8,
     
-    Margin = 9,
+    
     Namespace = 10,
     
     CounterStyle = 11,

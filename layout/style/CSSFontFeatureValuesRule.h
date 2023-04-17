@@ -12,8 +12,7 @@
 
 #include "nsICSSDeclaration.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class CSSFontFeatureValuesRule final : public css::Rule {
  public:
@@ -29,9 +28,7 @@ class CSSFontFeatureValuesRule final : public css::Rule {
   void SetRawAfterClone(RefPtr<RawServoFontFeatureValuesRule> aRaw);
 
   
-  uint16_t Type() const final {
-    return CSSRule_Binding::FONT_FEATURE_VALUES_RULE;
-  }
+  StyleCssRuleType Type() const final;
 
   void GetCssText(nsACString& aCssText) const override;
   void GetFontFamily(nsACString& aFamily);
@@ -55,7 +52,6 @@ class CSSFontFeatureValuesRule final : public css::Rule {
   RefPtr<RawServoFontFeatureValuesRule> mRawRule;
 };
 
-}  
 }  
 
 #endif  

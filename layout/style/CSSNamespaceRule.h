@@ -36,8 +36,7 @@ class CSSNamespaceRule final : public css::Rule {
   
   void GetCssText(nsACString& aCssText) const final;
 
-  
-  uint16_t Type() const final { return CSSRule_Binding::NAMESPACE_RULE; }
+  StyleCssRuleType Type() const final;
 
   const RawServoNamespaceRule* Raw() const { return mRawRule.get(); }
   void SetRawAfterClone(RefPtr<RawServoNamespaceRule>);
