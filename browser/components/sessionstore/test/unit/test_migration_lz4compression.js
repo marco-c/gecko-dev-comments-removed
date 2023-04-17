@@ -51,10 +51,7 @@ function promise_check_contents(path, expect) {
 
 function generateFileContents(id) {
   let url = `http://example.com/test_backup_once#${id}_${Math.random()}`;
-  return {
-    windows: [{ tabs: [{ entries: [{ url }], index: 1 }] }],
-    _cachedObjs: [],
-  };
+  return { windows: [{ tabs: [{ entries: [{ url }], index: 1 }] }] };
 }
 
 
@@ -104,7 +101,7 @@ add_task(async function test_migration() {
 });
 
 add_task(async function test_startup_with_compressed_clean() {
-  let state = { windows: [], _cachedObjs: [] };
+  let state = { windows: [] };
   let stateString = JSON.stringify(state);
 
   
@@ -162,7 +159,7 @@ add_task(async function test_empty_profile_dir() {
   equal(result.noFilesFound, true);
 
   
-  let state = { windows: [], _cachedObjs: [] };
+  let state = { windows: [] };
   await SessionWorker.post("write", [state, { isFinalWrite: true }]);
 
   

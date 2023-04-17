@@ -133,7 +133,7 @@ var TabStateInternal = {
     
     if (!("image" in tabData)) {
       let tabbrowser = tab.ownerGlobal.gBrowser;
-      tabData.image = tabbrowser.getIconBlobKey(tab);
+      tabData.image = tabbrowser.getIcon(tab);
     }
 
     

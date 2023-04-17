@@ -45,7 +45,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   RunState: "resource:///modules/sessionstore/RunState.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   SessionWorker: "resource:///modules/sessionstore/SessionWorker.jsm",
-  SessionWorkerCache: "resource:///modules/sessionstore/SessionWorkerCache.jsm",
 });
 
 const PREF_UPGRADE_BACKUP = "browser.sessionstore.upgradeBackup.latestBuildID";
@@ -80,12 +79,6 @@ var SessionFile = {
 
   wipe() {
     return SessionFileInternal.wipe();
-  },
-  
-
-
-  resetWorker() {
-    return SessionFileInternal.resetWorker();
   },
 
   
@@ -221,10 +214,6 @@ var SessionFileInternal = {
 
   
   
-  _cachedObjsForInitialization: [],
-
-  
-  
   _readOrigin: null,
 
   
@@ -265,9 +254,6 @@ var SessionFileInternal = {
         }
         let source = await OS.File.read(path, options);
         let parsed = JSON.parse(source);
-        if (parsed._cachedObjs) {
-          SessionWorkerCache.import(parsed._cachedObjs);
-        }
 
         if (
           !SessionStore.isFormatVersionCompatible(
@@ -301,7 +287,6 @@ var SessionFileInternal = {
         );
         break;
       } catch (ex) {
-        SessionWorkerCache.clear();
         if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
           exists = false;
         } else if (ex instanceof OS.File.Error) {
@@ -397,7 +382,6 @@ var SessionFileInternal = {
         this._readOrigin,
         this._usingOldExtension,
         this.Paths,
-        this._cachedObjsForInitialization,
         {
           maxUpgradeBackups: Services.prefs.getIntPref(
             PREF_MAX_UPGRADE_BACKUPS,
@@ -418,7 +402,6 @@ var SessionFileInternal = {
           Promise.reject(err);
         })
         .then(resolve);
-      this._cachedObjsForInitialization = [];
     });
   },
 
@@ -436,22 +419,13 @@ var SessionFileInternal = {
 
   _checkWorkerHealth() {
     if (this._workerHealth.failures >= kMaxWriteFailures) {
-      this.resetWorker();
+      SessionWorker.terminate();
+      
+      
+      this._initializationStarted = false;
+      
+      this._workerHealth.failures = 0;
     }
-  },
-
-  resetWorker() {
-    SessionWorker.terminate();
-    
-    
-    this._initializationStarted = false;
-    
-    this._workerHealth.failures = 0;
-    
-    
-    
-    
-    this._cachedObjsForInitialization = SessionWorkerCache.getCacheObjects();
   },
 
   write(aData) {

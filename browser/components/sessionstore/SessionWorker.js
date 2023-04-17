@@ -92,8 +92,6 @@ var Agent = {
 
   maxUpgradeBackups: null,
 
-  _objIdsToObjs: new Map(),
-
   
 
 
@@ -103,8 +101,7 @@ var Agent = {
 
 
 
-
-  init(origin, useOldExtension, paths, cacheObjects, prefs = {}) {
+  init(origin, useOldExtension, paths, prefs = {}) {
     if (!(origin in paths || origin == STATE_EMPTY)) {
       throw new TypeError("Invalid origin: " + origin);
     }
@@ -127,10 +124,6 @@ var Agent = {
     this.maxSerializeBack = prefs.maxSerializeBack;
     this.maxSerializeForward = prefs.maxSerializeForward;
     this.upgradeBackupNeeded = paths.nextUpgradeBackup != paths.upgradeBackup;
-    for (let [id, value] of cacheObjects) {
-      this._objIdsToObjs.set(id, value);
-    }
-
     return { result: true };
   },
 
@@ -169,10 +162,6 @@ var Agent = {
           tab.index -= lower;
         }
       }
-    }
-
-    if (state) {
-      state._cachedObjs = [...this._objIdsToObjs.entries()];
     }
 
     let stateString = JSON.stringify(state);
@@ -370,37 +359,6 @@ var Agent = {
     }
 
     return { result: true };
-  },
-
-  
-
-
-
-
-
-
-
-  define(id, value) {
-    if (this._objIdsToObjs.has(id)) {
-      throw new Error("Cannot define a obj with occupied id " + id);
-    }
-    this._objIdsToObjs.set(id, value);
-  },
-
-  
-
-
-
-
-  delete(id) {
-    this._objIdsToObjs.delete(id);
-  },
-
-  
-
-
-  clearSessionWorkerCache() {
-    this._objIdsToObjs.clear();
   },
 
   
