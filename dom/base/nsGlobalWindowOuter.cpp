@@ -1890,14 +1890,7 @@ bool nsGlobalWindowOuter::ComputeIsSecureContext(Document* aDocument,
   }
 
   if (principal->GetIsNullPrincipal()) {
-    
-    
-    
-    nsCOMPtr<nsIPrincipal> precursorPrin = principal->GetPrecursorPrincipal();
-    nsCOMPtr<nsIURI> uri = precursorPrin ? precursorPrin->GetURI() : nullptr;
-    if (!uri) {
-      uri = aDocument->GetOriginalURI();
-    }
+    nsCOMPtr<nsIURI> uri = aDocument->GetOriginalURI();
     
     
     
