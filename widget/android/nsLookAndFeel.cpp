@@ -103,16 +103,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       break;
     case ColorID::TextSelectBackground:
       
-      
-      
-      
-      
       aColor = NS_RGBA(10, 132, 255, 153);
       break;
     case ColorID::TextSelectForeground:
-      
-      
-      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      aColor = NS_RGB(0, 0, 0);
       break;
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
@@ -161,16 +155,12 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::Highlight:
     case ColorID::MozAccentColor:
       
-      
-      
-      aColor = NS_RGB(0x06, 0x4e, 0x99);
+      aColor = NS_RGB(0xfa, 0xd1, 0x84);
       break;
     case ColorID::MozCellhighlighttext:
     case ColorID::MozHtmlCellhighlighttext:
     case ColorID::Highlighttext:
     case ColorID::MozAccentColorForeground:
-      aColor = NS_RGB(0xff, 0xff, 0xff);
-      break;
     case ColorID::Fieldtext:
       aColor = NS_RGB(0x1a, 0x1a, 0x1a);
       break;
