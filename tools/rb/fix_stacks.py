@@ -15,6 +15,8 @@ import platform
 import re
 import sys
 
+import six
+
 
 
 line_re = re.compile("#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
@@ -74,8 +76,9 @@ def fixSymbols(
     line, jsonMode=False, slowWarning=False, breakpadSymsDir=None, hide_errors=False
 ):
 
-    line_str = line.decode("utf-8") if isinstance(line, bytes) else line
-    if line_re.search(line_str) is None:
+    line = six.ensure_str(line)
+    result = line_re.search(line)
+    if result is None:
         return line
 
     if not fix_stacks:
@@ -85,17 +88,14 @@ def fixSymbols(
     
     
     
-    is_missing_newline = not line_str.endswith("\n")
+    is_missing_newline = not line.endswith("\n")
     if is_missing_newline:
-        line_str = line_str + "\n"
-    fix_stacks.stdin.write(line_str)
+        line = line + "\n"
+    fix_stacks.stdin.write(line)
     fix_stacks.stdin.flush()
     out = fix_stacks.stdout.readline()
     if is_missing_newline:
         out = out[:-1]
-
-    if not isinstance(out, bytes):
-        out = out.encode("utf-8")
     return out
 
 
