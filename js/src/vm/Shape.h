@@ -839,6 +839,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     
     
     
+    
     SLOT_MASK = BitMask(24),
 
     
@@ -924,10 +925,17 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   void handoffTableTo(Shape* newShape);
 
   void setParent(Shape* p) {
+    
+    
+    
+    
     MOZ_ASSERT_IF(p && !p->hasMissingSlot() && !inDictionary(),
                   p->maybeSlot() <= maybeSlot());
+    
+    
+    
     MOZ_ASSERT_IF(p && !inDictionary(),
-                  !isCustomDataProperty() == (p->maybeSlot() != maybeSlot()));
+                  hasSlot() == (p->maybeSlot() != maybeSlot()));
     parent = p;
   }
 
@@ -1076,12 +1084,9 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
                             uint32_t nfixed);
 
   
-
-
-
-
-
-
+  
+  
+  
   bool hasMissingSlot() const { return maybeSlot() == SHAPE_INVALID_SLOT; }
 
  public:
@@ -1115,11 +1120,16 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     return isDataProperty(attrs);
   }
   uint32_t slot() const {
-    MOZ_ASSERT(!isCustomDataProperty());
-    MOZ_ASSERT(!hasMissingSlot());
+    MOZ_ASSERT(hasSlot());
     return maybeSlot();
   }
   uint32_t maybeSlot() const { return immutableFlags & SLOT_MASK; }
+
+  bool hasSlot() const {
+    MOZ_ASSERT(!isEmptyShape());
+    MOZ_ASSERT_IF(!isCustomDataProperty(), !hasMissingSlot());
+    return !isCustomDataProperty();
+  }
 
   bool isCustomDataProperty() const { return attrs & JSPROP_CUSTOM_DATA_PROP; }
 
