@@ -1862,7 +1862,13 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     alwaysAsk = false;
     action = nsIMIMEInfo::saveToDisk;
   }
-
+  
+  
+  
+  if (mSourceUrl->SchemeIs("file") && !alwaysAsk &&
+      action == nsIMIMEInfo::saveToDisk) {
+    alwaysAsk = true;
+  }
   if (alwaysAsk) {
     
     mDialog = do_CreateInstance(NS_HELPERAPPLAUNCHERDLG_CONTRACTID, &rv);
