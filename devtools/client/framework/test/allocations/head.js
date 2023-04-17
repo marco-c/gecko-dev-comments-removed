@@ -27,6 +27,12 @@ let tracker;
 
 SimpleTest.requestCompleteLog();
 
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["devtools.testing", false]],
+});
+
 async function addTab(url) {
   const tab = BrowserTestUtils.addTab(gBrowser, url);
   gBrowser.selectedTab = tab;
