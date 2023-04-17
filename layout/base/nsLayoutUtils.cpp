@@ -9714,40 +9714,32 @@ ComputedStyle* nsLayoutUtils::StyleForScrollbar(nsIFrame* aScrollbarPart) {
   return style.get();
 }
 
-enum class FramePosition : uint8_t {
-  Unknown,
-  InView,
-  OutOfView,
-};
 
 
-
-
-static std::pair<Maybe<ScreenRect>, FramePosition> GetFrameVisibleRectOnScreen(
-    const nsIFrame* aFrame) {
+static Maybe<ScreenRect> GetFrameVisibleRectOnScreen(const nsIFrame* aFrame) {
   
   nsPresContext* topContextInProcess =
       aFrame->PresContext()->GetInProcessRootContentDocumentPresContext();
   if (!topContextInProcess) {
     
-    return std::make_pair(Nothing(), FramePosition::Unknown);
+    return Nothing();
   }
 
   if (topContextInProcess->Document()->IsTopLevelContentDocument()) {
     
-    return std::make_pair(Nothing(), FramePosition::Unknown);
+    return Nothing();
   }
 
   nsIDocShell* docShell = topContextInProcess->GetDocShell();
   BrowserChild* browserChild = BrowserChild::GetFrom(docShell);
   if (!browserChild) {
     
-    return std::make_pair(Nothing(), FramePosition::Unknown);
+    return Nothing();
   }
 
   if (!browserChild->GetEffectsInfo().IsVisible()) {
     
-    return std::make_pair(Some(ScreenRect()), FramePosition::Unknown);
+    return Some(ScreenRect());
   }
 
   Maybe<ScreenRect> visibleRect =
@@ -9755,7 +9747,7 @@ static std::pair<Maybe<ScreenRect>, FramePosition> GetFrameVisibleRectOnScreen(
   if (!visibleRect) {
     
     
-    return std::make_pair(Nothing(), FramePosition::Unknown);
+    return Nothing();
   }
 
   nsIFrame* rootFrame = topContextInProcess->PresShell()->GetRootFrame();
@@ -9770,41 +9762,24 @@ static std::pair<Maybe<ScreenRect>, FramePosition> GetFrameVisibleRectOnScreen(
           rectInLayoutDevicePixel),
       PixelCastJustification::ContentProcessIsLayerInUiProcess);
 
-  FramePosition position = FramePosition::Unknown;
-  
-  
-  
-  
-  
-  
-  if (transformedToRoot.x > visibleRect->XMost() ||
-      transformedToRoot.y > visibleRect->YMost() ||
-      visibleRect->x > transformedToRoot.XMost() ||
-      visibleRect->y > transformedToRoot.YMost()) {
-    position = FramePosition::OutOfView;
-  } else {
-    position = FramePosition::InView;
-  }
-
-  return std::make_pair(Some(visibleRect->Intersect(transformedToRoot)),
-                        position);
+  return Some(visibleRect->Intersect(transformedToRoot));
 }
 
 
 bool nsLayoutUtils::FrameIsScrolledOutOfViewInCrossProcess(
     const nsIFrame* aFrame) {
-  auto [visibleRect, framePosition] = GetFrameVisibleRectOnScreen(aFrame);
+  Maybe<ScreenRect> visibleRect = GetFrameVisibleRectOnScreen(aFrame);
   if (visibleRect.isNothing()) {
     return false;
   }
 
-  return visibleRect->IsEmpty() && framePosition != FramePosition::InView;
+  return visibleRect->IsEmpty();
 }
 
 
 bool nsLayoutUtils::FrameIsMostlyScrolledOutOfViewInCrossProcess(
     const nsIFrame* aFrame, nscoord aMargin) {
-  auto [visibleRect, framePosition] = GetFrameVisibleRectOnScreen(aFrame);
+  Maybe<ScreenRect> visibleRect = GetFrameVisibleRectOnScreen(aFrame);
   if (visibleRect.isNothing()) {
     return false;
   }
