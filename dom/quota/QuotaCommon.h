@@ -858,11 +858,11 @@ class NotNull;
 
 
 
-#define QM_OR_ELSE_REPORT(severity, expr, orElseFunc)              \
+#define QM_OR_ELSE_REPORT(severity, expr, fallback)                \
   (expr).orElse([&](const auto& firstRes) {                        \
     mozilla::dom::quota::QM_HANDLE_ERROR(                          \
         #expr, firstRes, mozilla::dom::quota::Severity::severity); \
-    return orElseFunc(firstRes);                                   \
+    return fallback(firstRes);                                     \
   })
 
 
