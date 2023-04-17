@@ -13,9 +13,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  UrlbarProviderQuickSuggest:
+    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
 });
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["TextDecoder"]);
@@ -29,6 +32,14 @@ const RS_COLLECTION = "quicksuggest";
 
 
 const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
+
+const MR1_VERSION = 89;
+
+const ONBOARDING_RESTARTS_NEEDED = 2;
+
+const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
+const VERSION_PREF = "browser.startup.upgradeDialog.version";
+const RESTARTS_PREF = "quicksuggest.seenRestarts";
 
 
 
@@ -52,15 +63,13 @@ class Suggestions {
     }
     this._initPromise = Promise.resolve();
     this._rs = RemoteSettings(RS_COLLECTION);
-    this.onFeatureUpdate = this.onFeatureUpdate.bind(this);
     if (NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
       this._initPromise = new Promise(resolve => (this._initResolve = resolve));
-      Services.tm.idleDispatchToMainThread(
-        this._setupRemoteSettings.bind(this)
-      );
+      Services.tm.idleDispatchToMainThread(this.onEnabledUpdate.bind(this));
     } else {
-      NimbusFeatures.urlbar.onUpdate(this.onFeatureUpdate);
+      NimbusFeatures.urlbar.onUpdate(this.onEnabledUpdate.bind(this));
     }
+    UrlbarPrefs.addObserver(this);
     return this._initPromise;
   }
 
@@ -153,9 +162,80 @@ class Suggestions {
   
 
 
-  onFeatureUpdate() {
-    if (NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
+
+
+
+
+
+  onPrefChanged(pref) {
+    switch (pref) {
+      case SEEN_DIALOG_PREF:
+        this.onEnabledUpdate();
+        break;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  onEnabledUpdate() {
+    if (
+      NimbusFeatures.urlbar.getValue().quickSuggestEnabled &&
+      UrlbarPrefs.get(SEEN_DIALOG_PREF)
+    ) {
       this._setupRemoteSettings();
+    }
+  }
+
+  
+
+
+
+
+
+
+  async maybeShowOnboardingDialog() {
+    
+    
+    
+    
+    if (
+      !NimbusFeatures.urlbar.getValue().quickSuggestEnabled ||
+      UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
+      Services.prefs.getIntPref(VERSION_PREF, 0) < MR1_VERSION
+    ) {
+      return;
+    }
+
+    
+    
+    let restartsSeen = UrlbarPrefs.get(RESTARTS_PREF);
+    if (restartsSeen < ONBOARDING_RESTARTS_NEEDED) {
+      UrlbarPrefs.set(RESTARTS_PREF, restartsSeen + 1);
+      return;
+    }
+
+    let params = { learnMore: false };
+    let win = BrowserWindowTracker.getTopWindow();
+    await win.gDialogBox.open(
+      "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml",
+      params
+    );
+
+    UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
+
+    if (params.learnMore) {
+      win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {
+        fromChrome: true,
+      });
     }
   }
 
