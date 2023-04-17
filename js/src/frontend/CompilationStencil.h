@@ -812,7 +812,12 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   ScopeContext scopeContext;
 
   UsedNameTracker usedNames;
-  LifoAllocScope& allocScope;
+
+  
+  
+  
+  
+  LifoAllocScope& parserAllocScope;
 
   CompilationInput& input;
 
@@ -825,7 +830,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   
 
-  CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
+  CompilationState(JSContext* cx, LifoAllocScope& parserAllocScope,
                    CompilationInput& input);
 
   bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
