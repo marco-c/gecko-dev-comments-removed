@@ -144,6 +144,10 @@ var Utils = {
       const { method = "GET", headers = {} } = init;
 
       request.open(method, input, true);
+      
+      
+      
+      request.responseType = "arraybuffer";
 
       for (const [name, value] of Object.entries(headers)) {
         request.setRequestHeader(name, value);
