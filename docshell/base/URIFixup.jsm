@@ -97,7 +97,7 @@ const COMMON_PROTOCOLS = ["http", "https", "ftp", "file"];
 XPCOMUtils.defineLazyGetter(
   this,
   "userPasswordRegex",
-  () => /^([a-z+.-]+:\/{0,3})*[^\/@]+@.+/i
+  () => /^([a-z+.-]+:\/{0,3})*([^\/@]+@).+/i
 );
 
 
@@ -883,6 +883,7 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   
   
   
+  
 
   
   
@@ -901,7 +902,11 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   }
 
   
-  if (IPv4LikeRegex.test(uriString) || IPv6LikeRegex.test(uriString)) {
+  const userPassword = userPasswordRegex.exec(uriString);
+  const ipString = userPassword
+    ? uriString.replace(userPassword[2], "")
+    : uriString;
+  if (IPv4LikeRegex.test(ipString) || IPv6LikeRegex.test(ipString)) {
     return false;
   }
 
@@ -920,15 +925,16 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   }
 
   
+  if (fixupInfo.fixedURI?.password) {
+    return false;
+  }
+
   
   
   
-  
-  
-  let userPass = fixupInfo.fixedURI?.userPass;
   if (
-    !uriLikeRegex.test(uriString) &&
-    !(userPass && /^[^\s@]+@/.test(uriString))
+    !uriLikeRegex.test(uriString) ||
+    (fixupInfo.fixedURI?.userPass && fixupInfo.fixedURI?.pathQueryRef === "/")
   ) {
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
