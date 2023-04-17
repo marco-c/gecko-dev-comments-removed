@@ -93,16 +93,6 @@ add_task(async function noAutofill() {
         heuristic: true,
         providerName: "HeuristicFallback",
       }),
-      makeSearchResult(context, {
-        engineName: testEngine.name,
-        engineIconUri: UrlbarUtils.ICON.SEARCH_GLASS,
-        uri: UrlbarUtils.stripPublicSuffixFromHost(
-          testEngine.getResultDomain()
-        ),
-        providesSearchMode: true,
-        query: "",
-        providerName: "TabToSearch",
-      }),
     ],
   });
 });

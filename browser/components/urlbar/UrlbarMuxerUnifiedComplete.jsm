@@ -659,16 +659,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         return false;
       }
 
-      
-      
-      
-      
-      if (state.context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.URL) {
-        
+      if (!result.payload.satisfiesAutofillThreshold) {
         
         if (
-          !state.context.heuristicResult.autofill &&
-          !result.payload.satisfiesAutofillThreshold
+          !state.context.heuristicResult ||
+          state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
+          !state.context.heuristicResult.autofill
         ) {
           return false;
         }
