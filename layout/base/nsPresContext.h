@@ -938,14 +938,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void FireDOMPaintEvent(nsTArray<nsRect>* aList, TransactionId aTransactionId,
                          mozilla::TimeStamp aTimeStamp = mozilla::TimeStamp());
 
-  
-  
-  static void NotifySubDocInvalidation(
-      mozilla::layers::ContainerLayer* aContainer, const nsIntRegion* aRegion);
-  void SetNotifySubDocInvalidationData(
-      mozilla::layers::ContainerLayer* aContainer);
-  static void ClearNotifySubDocInvalidationData(
-      mozilla::layers::ContainerLayer* aContainer);
   bool IsDOMPaintEventPending();
 
   
@@ -1120,13 +1112,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   bool MayHavePaintEventListener();
-
-  
-
-
-
-
-  bool MayHavePaintEventListenerInSubDocument();
 
   void InvalidatePaintedLayers();
 
