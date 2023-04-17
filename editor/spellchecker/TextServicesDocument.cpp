@@ -40,8 +40,26 @@ namespace mozilla {
 
 using namespace dom;
 
+
+
+
+
+
+
+
+
 class OffsetEntry final {
  public:
+  OffsetEntry() = delete;
+
+  
+
+
+
+
+
+
+
   OffsetEntry(Text& aTextNode, uint32_t aOffsetInTextInBlock, uint32_t aLength)
       : mTextNode(aTextNode),
         mOffsetInTextNode(0),
@@ -50,15 +68,34 @@ class OffsetEntry final {
         mIsInsertedText(false),
         mIsValid(true) {}
 
+  
+
+
+
   uint32_t EndOffsetInTextNode() const { return mOffsetInTextNode + mLength; }
+
+  
+
+
+
   bool OffsetInTextNodeIsInRangeOrEndOffset(uint32_t aOffsetInTextNode) const {
     return aOffsetInTextNode >= mOffsetInTextNode &&
            aOffsetInTextNode <= EndOffsetInTextNode();
   }
 
+  
+
+
+
   uint32_t EndOffsetInTextInBlock() const {
     return mOffsetInTextInBlock + mLength;
   }
+
+  
+
+
+
+
   bool OffsetInTextInBlockIsInRangeOrEndOffset(
       uint32_t aOffsetInTextInBlock) const {
     return aOffsetInTextInBlock >= mOffsetInTextInBlock &&
@@ -848,11 +885,12 @@ nsresult TextServicesDocument::DeleteSelection() {
         
         selLength = 0;
       } else {
-        selLength = entry->EndOffsetInTextInBlock() - *mSelStartOffset;
+        selLength = entry->EndOffsetInTextInBlock() -
+                    *mSelectionStartOffsetInTextInBlock;
       }
 
       if (selLength > 0) {
-        if (*mSelStartOffset > entry->mOffsetInTextInBlock) {
+        if (*mSelectionStartOffsetInTextInBlock > entry->mOffsetInTextInBlock) {
           
           
           
@@ -888,9 +926,11 @@ nsresult TextServicesDocument::DeleteSelection() {
         
         
 
-        uint32_t selLength = *mSelEndOffset - entry->mOffsetInTextInBlock;
+        uint32_t selLength =
+            *mSelectionEndOffsetInTextInBlock - entry->mOffsetInTextInBlock;
         if (selLength > 0) {
-          if (*mSelEndOffset < entry->EndOffsetInTextInBlock()) {
+          if (*mSelectionEndOffsetInTextInBlock <
+              entry->EndOffsetInTextInBlock()) {
             
             
             nsresult rv = SplitOffsetEntry(i, entry->mLength - selLength);
@@ -903,7 +943,8 @@ nsresult TextServicesDocument::DeleteSelection() {
             newEntry->mOffsetInTextNode = entry->mOffsetInTextNode;
           }
 
-          if (*mSelEndOffset == entry->EndOffsetInTextInBlock()) {
+          if (*mSelectionEndOffsetInTextInBlock ==
+              entry->EndOffsetInTextInBlock()) {
             
             
             entry->mIsValid = false;
@@ -989,7 +1030,8 @@ nsresult TextServicesDocument::DeleteSelection() {
       entry = nullptr;
     } else {
       mSelStartIndex = mSelEndIndex = Some(i - 1);
-      mSelStartOffset = mSelEndOffset = Some(entry->EndOffsetInTextInBlock());
+      mSelectionStartOffsetInTextInBlock = mSelectionEndOffsetInTextInBlock =
+          Some(entry->EndOffsetInTextInBlock());
     }
   }
 
@@ -1001,19 +1043,20 @@ nsresult TextServicesDocument::DeleteSelection() {
       entry = nullptr;
     } else {
       mSelStartIndex = mSelEndIndex = Some(i);
-      mSelStartOffset = mSelEndOffset = Some(entry->mOffsetInTextInBlock);
+      mSelectionStartOffsetInTextInBlock = mSelectionEndOffsetInTextInBlock =
+          Some(entry->mOffsetInTextInBlock);
     }
   }
 
   if (entry) {
-    SetSelection(*mSelStartOffset, 0);
+    SetSelection(*mSelectionStartOffsetInTextInBlock, 0);
   } else {
     
     
     mSelStartIndex.reset();
     mSelEndIndex.reset();
-    mSelStartOffset.reset();
-    mSelEndOffset.reset();
+    mSelectionStartOffsetInTextInBlock.reset();
+    mSelectionEndOffsetInTextInBlock.reset();
   }
 
   
@@ -1033,13 +1076,14 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
   
 
   bool collapsedSelection = SelectionIsCollapsed();
-  uint32_t savedSelOffset = *mSelStartOffset;
-  uint32_t savedSelLength = *mSelEndOffset - *mSelStartOffset;
+  uint32_t savedSelOffset = *mSelectionStartOffsetInTextInBlock;
+  uint32_t savedSelLength =
+      *mSelectionEndOffsetInTextInBlock - *mSelectionStartOffsetInTextInBlock;
 
   if (!collapsedSelection) {
     
     
-    nsresult rv = SetSelection(*mSelStartOffset, 0);
+    nsresult rv = SetSelection(*mSelectionStartOffsetInTextInBlock, 0);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1061,7 +1105,7 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
 
   NS_ASSERTION((entry->mIsValid), "Invalid insertion point!");
 
-  if (entry->mOffsetInTextInBlock == *mSelStartOffset) {
+  if (entry->mOffsetInTextInBlock == *mSelectionStartOffsetInTextInBlock) {
     if (entry->mIsInsertedText) {
       
       
@@ -1077,7 +1121,8 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
       
       mOffsetTable.InsertElementAt(*mSelStartIndex, itEntry);
     }
-  } else if (entry->EndOffsetInTextInBlock() == *mSelStartOffset) {
+  } else if (entry->EndOffsetInTextInBlock() ==
+             *mSelectionStartOffsetInTextInBlock) {
     
     
     
@@ -1093,7 +1138,8 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
       
       
       if (!itEntry->mIsInsertedText ||
-          itEntry->mOffsetInTextInBlock != *mSelStartOffset) {
+          itEntry->mOffsetInTextInBlock !=
+              *mSelectionStartOffsetInTextInBlock) {
         itEntry = 0;
       }
     }
@@ -1101,7 +1147,8 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
     if (!itEntry) {
       
       
-      itEntry = new OffsetEntry(entry->mTextNode, *mSelStartOffset, 0);
+      itEntry = new OffsetEntry(entry->mTextNode,
+                                *mSelectionStartOffsetInTextInBlock, 0);
       itEntry->mOffsetInTextNode = entry->EndOffsetInTextNode();
       itEntry->mIsInsertedText = true;
       
@@ -1128,18 +1175,20 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
     if (NS_FAILED(rv)) {
       return rv;
     }
-  } else if (entry->EndOffsetInTextInBlock() > *mSelStartOffset) {
+  } else if (entry->EndOffsetInTextInBlock() >
+             *mSelectionStartOffsetInTextInBlock) {
     
     
     
     nsresult rv = SplitOffsetEntry(
-        *mSelStartIndex, entry->EndOffsetInTextInBlock() - *mSelStartOffset);
+        *mSelStartIndex,
+        entry->EndOffsetInTextInBlock() - *mSelectionStartOffsetInTextInBlock);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    OffsetEntry* itEntry =
-        new OffsetEntry(entry->mTextNode, *mSelStartOffset, strLength);
+    OffsetEntry* itEntry = new OffsetEntry(
+        entry->mTextNode, *mSelectionStartOffsetInTextInBlock, strLength);
     itEntry->mIsInsertedText = true;
     itEntry->mOffsetInTextNode = entry->EndOffsetInTextNode();
     
@@ -1636,7 +1685,7 @@ nsresult TextServicesDocument::SetSelectionInternal(uint32_t aOffset,
 
       if (startTextNode) {
         mSelStartIndex = Some(i);
-        mSelStartOffset = Some(aOffset);
+        mSelectionStartOffsetInTextInBlock = Some(aOffset);
       }
     }
   }
@@ -1663,7 +1712,7 @@ nsresult TextServicesDocument::SetSelectionInternal(uint32_t aOffset,
       }
     }
     mSelEndIndex = mSelStartIndex;
-    mSelEndOffset = mSelStartOffset;
+    mSelectionEndOffsetInTextInBlock = mSelectionStartOffsetInTextInBlock;
     return NS_OK;
   }
 
@@ -1689,7 +1738,7 @@ nsresult TextServicesDocument::SetSelectionInternal(uint32_t aOffset,
 
       if (endTextNode) {
         mSelEndIndex = Some(i - 1);
-        mSelEndOffset = Some(endOffset);
+        mSelectionEndOffsetInTextInBlock = Some(endOffset);
       }
     }
   }
@@ -2158,12 +2207,14 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
 
 bool TextServicesDocument::SelectionIsCollapsed() const {
   return !SelectionIsValid() || (*mSelStartIndex == *mSelEndIndex &&
-                                 *mSelStartOffset == *mSelEndOffset);
+                                 *mSelectionStartOffsetInTextInBlock ==
+                                     *mSelectionEndOffsetInTextInBlock);
 }
 
 bool TextServicesDocument::SelectionIsValid() const {
   return mSelStartIndex.isSome() && mSelEndIndex.isSome() &&
-         mSelStartOffset.isSome() && mSelEndOffset.isSome();
+         mSelectionStartOffsetInTextInBlock.isSome() &&
+         mSelectionEndOffsetInTextInBlock.isSome();
 }
 
 

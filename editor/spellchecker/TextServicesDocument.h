@@ -64,8 +64,9 @@ class TextServicesDocument final : public nsIEditActionListener {
   
   Maybe<size_t> mSelStartIndex;
   Maybe<size_t> mSelEndIndex;
-  Maybe<uint32_t> mSelStartOffset;
-  Maybe<uint32_t> mSelEndOffset;
+  
+  Maybe<uint32_t> mSelectionStartOffsetInTextInBlock;
+  Maybe<uint32_t> mSelectionEndOffsetInTextInBlock;
 
   uint32_t mTxtSvcFilterType;
   IteratorStatus mIteratorStatus;
