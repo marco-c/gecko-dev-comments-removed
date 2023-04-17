@@ -261,6 +261,8 @@ class ServiceWorkerRegistrationInfo final
   
   
   void ForEachWorker(void (*aFunc)(RefPtr<ServiceWorkerInfo>&));
+
+  void CheckQuotaUsage();
 };
 
 }  
