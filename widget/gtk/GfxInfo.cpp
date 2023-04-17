@@ -637,6 +637,15 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
     
 
     
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        DesktopEnvironment::All, WindowProtocol::All,
+        DriverVendor::SoftwareMesaAll, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_FAILURE_SOFTWARE_GL",
+        "");
+
+    
     APPEND_TO_DRIVER_BLOCKLIST(
         OperatingSystem::Linux, DeviceFamily::IntelAll,
         nsIGfxInfo::FEATURE_WEBRENDER,
