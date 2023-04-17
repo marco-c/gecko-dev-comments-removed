@@ -9221,10 +9221,11 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         key->isKind(ParseNodeKind::StringExpr)) {
       
 
+      auto keyAtom = key->as<NameNode>().atom();
+
       
       if (type == ClassBody &&
-          key->as<NameNode>().atom() ==
-              TaggedParserAtomIndex::WellKnown::constructor() &&
+          keyAtom == TaggedParserAtomIndex::WellKnown::constructor() &&
           !propdef->as<ClassMethod>().isStatic()) {
         continue;
       }
@@ -9239,8 +9240,6 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         return false;
       }
 
-      auto keyAtom = key->as<NameNode>().atom();
-
       if (!pe.emitInit(accessorType, keyAtom)) {
         return false;
       }
@@ -9248,14 +9247,44 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       continue;
     }
 
-    if (key->isKind(ParseNodeKind::PrivateName) &&
-        !prop->as<ClassMethod>().isStatic()) {
+    if (key->isKind(ParseNodeKind::ComputedName)) {
+      
+
+      if (!pe.prepareForComputedPropKey(Some(propdef->pn_pos.begin), kind)) {
+        
+        return false;
+      }
+      if (!emitTree(key->as<UnaryNode>().kid())) {
+        
+        return false;
+      }
+      if (!pe.prepareForComputedPropValue()) {
+        
+        return false;
+      }
+      if (!emitValue()) {
+        
+        return false;
+      }
+
+      if (!pe.emitInitIndexOrComputed(accessorType)) {
+        return false;
+      }
+
+      continue;
+    }
+
+    MOZ_ASSERT(key->isKind(ParseNodeKind::PrivateName));
+
+    auto* privateName = &key->as<NameNode>();
+
+    if (!prop->as<ClassMethod>().isStatic()) {
       MOZ_ASSERT(accessorType == AccessorType::None);
       if (!pe.prepareForPrivateMethod()) {
         
         return false;
       }
-      NameOpEmitter noe(this, key->as<NameNode>().atom(),
+      NameOpEmitter noe(this, privateName->atom(),
                         NameOpEmitter::Kind::SimpleAssignment);
       if (!noe.prepareForRhs()) {
         
@@ -9280,25 +9309,15 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       continue;
     }
 
-    MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName) ||
-               key->isKind(ParseNodeKind::PrivateName));
-
     
 
     if (!pe.prepareForComputedPropKey(Some(propdef->pn_pos.begin), kind)) {
       
       return false;
     }
-    if (key->is<NameNode>()) {
-      if (!emitGetPrivateName(&key->as<NameNode>())) {
-        
-        return false;
-      }
-    } else {
-      if (!emitTree(key->as<UnaryNode>().kid())) {
-        
-        return false;
-      }
+    if (!emitGetPrivateName(privateName)) {
+      
+      return false;
     }
     if (!pe.prepareForComputedPropValue()) {
       
@@ -9313,9 +9332,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       return false;
     }
 
-    if (key->isKind(ParseNodeKind::PrivateName) &&
-        key->as<NameNode>().privateNameKind() == PrivateNameKind::Setter) {
-      if (!emitGetPrivateName(&key->as<NameNode>())) {
+    if (privateName->privateNameKind() == PrivateNameKind::Setter) {
+      if (!emitGetPrivateName(privateName)) {
         
         return false;
       }
