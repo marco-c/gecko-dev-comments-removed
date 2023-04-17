@@ -350,39 +350,19 @@ class MOZ_STATIC_CLASS OpToFallbackKindTable {
   }
 };
 
-
-
-class MOZ_RAII FallbackStubAllocator {
-  JSContext* cx_;
-  ICStubSpace& stubSpace_;
-  const BaselineICFallbackCode& code_;
-
- public:
-  FallbackStubAllocator(JSContext* cx, ICStubSpace& stubSpace)
-      : cx_(cx),
-        stubSpace_(stubSpace),
-        code_(cx->runtime()->jitRuntime()->baselineICFallbackCode()) {}
-
-  template <typename T, typename... Args>
-  T* newStub(BaselineICFallbackKind kind, Args&&... args) {
-    TrampolinePtr addr = code_.addr(kind);
-    return ICStub::NewFallback<T>(cx_, &stubSpace_, addr,
-                                  std::forward<Args>(args)...);
-  }
-};
-
-bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
+void ICScript::initICEntries(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(cx->realm()->jitRealm());
   MOZ_ASSERT(jit::IsBaselineInterpreterEnabled());
 
   MOZ_ASSERT(numICEntries() == script->numICEntries());
 
-  FallbackStubAllocator alloc(cx, *fallbackStubSpace());
-
   
   uint32_t icEntryIndex = 0;
 
   static constexpr OpToFallbackKindTable opTable;
+
+  const BaselineICFallbackCode& fallbackCode =
+      cx->runtime()->jitRuntime()->baselineICFallbackCode();
 
   
   for (BytecodeLocation loc : js::AllBytecodesIterable(script)) {
@@ -403,25 +383,19 @@ bool ICScript::initICEntries(JSContext* cx, JSScript* script) {
                "Unexpected fallback kind for non-JOF_IC op");
 
     BaselineICFallbackKind kind = BaselineICFallbackKind(tableValue);
-    ICFallbackStub* stub = alloc.newStub<ICFallbackStub>(kind);
-    if (MOZ_UNLIKELY(!stub)) {
-      MOZ_ASSERT(cx->isExceptionPending());
-      return false;
-    }
+    TrampolinePtr stubCode = fallbackCode.addr(kind);
 
     
     uint32_t offset = loc.bytecodeToOffset(script);
     ICEntry& entryRef = this->icEntry(icEntryIndex);
+    ICFallbackStub* stub = fallbackStub(icEntryIndex);
     icEntryIndex++;
     new (&entryRef) ICEntry(stub, offset);
-
-    
-    stub->fixupICEntry(&entryRef);
+    new (stub) ICFallbackStub(&entryRef, stubCode);
   }
 
   
   MOZ_ASSERT(icEntryIndex == numICEntries());
-  return true;
 }
 
 ICStubConstIterator& ICStubConstIterator::operator++() {

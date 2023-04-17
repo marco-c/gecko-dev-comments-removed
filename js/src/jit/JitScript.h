@@ -84,20 +84,26 @@ class InliningRoot;
 
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
-  ICScript(uint32_t warmUpCount, Offset endOffset, uint32_t depth,
-           InliningRoot* inliningRoot = nullptr)
+  ICScript(uint32_t warmUpCount, Offset fallbackStubsOffset, Offset endOffset,
+           uint32_t depth, InliningRoot* inliningRoot = nullptr)
       : inliningRoot_(inliningRoot),
         warmUpCount_(warmUpCount),
+        fallbackStubsOffset_(fallbackStubsOffset),
         endOffset_(endOffset),
         depth_(depth) {}
 
   bool isInlined() const { return depth_ > 0; }
 
-  [[nodiscard]] bool initICEntries(JSContext* cx, JSScript* script);
+  void initICEntries(JSContext* cx, JSScript* script);
 
   ICEntry& icEntry(size_t index) {
     MOZ_ASSERT(index < numICEntries());
     return icEntries()[index];
+  }
+
+  ICFallbackStub* fallbackStub(size_t index) {
+    MOZ_ASSERT(index < numICEntries());
+    return fallbackStubs() + index;
   }
 
   InliningRoot* inliningRoot() const { return inliningRoot_; }
@@ -117,7 +123,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   static constexpr Offset offsetOfICEntries() { return sizeof(ICScript); }
   uint32_t numICEntries() const {
-    return numElements<ICEntry>(icEntriesOffset(), endOffset());
+    return numElements<ICEntry>(icEntriesOffset(), fallbackStubsOffset());
   }
 
   ICEntry* interpreterICEntryFromPCOffset(uint32_t pcOffset);
@@ -167,20 +173,30 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
 
   
+  Offset fallbackStubsOffset_;
+
+  
   Offset endOffset_;
 
   
   uint32_t depth_;
 
   Offset icEntriesOffset() const { return offsetOfICEntries(); }
+  Offset fallbackStubsOffset() const { return fallbackStubsOffset_; }
   Offset endOffset() const { return endOffset_; }
 
   ICEntry* icEntries() { return offsetToPointer<ICEntry>(icEntriesOffset()); }
+
+  ICFallbackStub* fallbackStubs() {
+    return offsetToPointer<ICFallbackStub>(fallbackStubsOffset());
+  }
 
   JitScript* outerJitScript();
 
   friend class JitScript;
 };
+
+
 
 
 
@@ -312,7 +328,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
 
  public:
-  JitScript(JSScript* script, Offset endOffset, const char* profileString);
+  JitScript(JSScript* script, Offset fallbackStubsOffset, Offset endOffset,
+            const char* profileString);
 
 #ifdef DEBUG
   ~JitScript() {
