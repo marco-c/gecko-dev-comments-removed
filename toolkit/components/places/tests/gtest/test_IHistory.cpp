@@ -414,29 +414,6 @@ void test_new_visit_adds_place_guid() {
 
 
 
-void test_two_null_links_same_uri() {
-  
-  
-  
-  nsCOMPtr<nsIURI> testURI = new_test_uri();
-
-  nsCOMPtr<IHistory> history = do_get_IHistory();
-  history->RegisterVisitedCallback(testURI, nullptr);
-  history->RegisterVisitedCallback(testURI, nullptr);
-
-  nsresult rv = history->VisitURI(nullptr, testURI, nullptr,
-                                  mozilla::IHistory::TOP_LEVEL);
-  do_check_success(rv);
-
-  RefPtr<VisitURIObserver> finisher = new VisitURIObserver();
-  finisher->WaitForNotification();
-
-  run_next_test();
-}
-
-
-
-
 
 
 
@@ -457,9 +434,6 @@ Test gTests[] = {
     PTEST(test_visituri_transition_typed),
     PTEST(test_visituri_transition_embed),
     PTEST(test_new_visit_adds_place_guid),
-
-    
-    PTEST(test_two_null_links_same_uri),
 };
 
 #define TEST_NAME "IHistory"
