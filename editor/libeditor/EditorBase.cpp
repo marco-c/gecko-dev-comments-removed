@@ -1000,7 +1000,7 @@ void EditorBase::EndPlaceholderTransaction(
   MOZ_ASSERT(mPlaceholderBatch > 0,
              "zero or negative placeholder batch count when ending batch!");
 
-  if (mPlaceholderBatch == 1) {
+  if (!(--mPlaceholderBatch)) {
     
     
     
@@ -1038,8 +1038,13 @@ void EditorBase::EndPlaceholderTransaction(
     }
     
     if (mPlaceholderTransaction) {
+      
+      
+      
+      RefPtr<PlaceholderTransaction> placeholderTransaction =
+          std::move(mPlaceholderTransaction);
       DebugOnly<nsresult> rvIgnored =
-          mPlaceholderTransaction->EndPlaceHolderBatch();
+          placeholderTransaction->EndPlaceHolderBatch();
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "PlaceholderTransaction::EndPlaceHolderBatch() failed, but ignored");
@@ -1048,12 +1053,10 @@ void EditorBase::EndPlaceholderTransaction(
       if (!mComposition) {
         NotifyEditorObservers(eNotifyEditorObserversOfEnd);
       }
-      mPlaceholderTransaction = nullptr;
     } else {
       NotifyEditorObservers(eNotifyEditorObserversOfCancel);
     }
   }
-  mPlaceholderBatch--;
 }
 
 NS_IMETHODIMP EditorBase::SetShouldTxnSetSelection(bool aShould) {
