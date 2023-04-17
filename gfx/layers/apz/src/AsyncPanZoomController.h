@@ -515,6 +515,9 @@ class AsyncPanZoomController {
   ScrollDirections GetAllowedHandoffDirections() const;
 
   
+  ScrollDirections GetOverscrollableDirections() const;
+
+  
   
   bool CanScroll(const ParentLayerPoint& aDelta) const;
 
@@ -1470,9 +1473,6 @@ class AsyncPanZoomController {
   
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity,
                                 SideBits aOverscrollSideBits);
-
-  
-  ScrollDirections GetOverscrollableDirections() const;
 
   
   

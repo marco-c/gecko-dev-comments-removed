@@ -152,6 +152,20 @@ RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
       return mChain[i];
     }
 
+    
+    
+    
+    
+    
+    if (StaticPrefs::apz_overscroll_enabled() &&
+        
+        aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
+      *aOutAllowedScrollDirections &= mChain[i]->GetOverscrollableDirections();
+      if (!aOutAllowedScrollDirections->isEmpty()) {
+        return mChain[i];
+      }
+    }
+
     *aOutAllowedScrollDirections &= mChain[i]->GetAllowedHandoffDirections();
     if (aOutAllowedScrollDirections->isEmpty()) {
       return nullptr;
