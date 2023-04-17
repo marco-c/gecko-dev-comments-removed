@@ -498,6 +498,13 @@ pub struct TextureCacheUpdate {
 }
 
 
+#[derive(Debug)]
+pub struct TextureCacheCopy {
+    pub src_rect: DeviceIntRect,
+    pub dst_rect: DeviceIntRect,
+}
+
+
 
 
 
@@ -511,6 +518,9 @@ pub struct TextureUpdateList {
     pub allocations: Vec<TextureCacheAllocation>,
     
     pub updates: FastHashMap<CacheTextureId, Vec<TextureCacheUpdate>>,
+    
+    
+    pub copies: FastHashMap<(CacheTextureId, CacheTextureId), Vec<TextureCacheCopy>>,
 }
 
 impl TextureUpdateList {
@@ -520,6 +530,7 @@ impl TextureUpdateList {
             clears_shared_cache: false,
             allocations: Vec::new(),
             updates: FastHashMap::default(),
+            copies: FastHashMap::default(),
         }
     }
 
@@ -621,6 +632,25 @@ impl TextureUpdateList {
                 });
             }
         };
+    }
+
+    
+    
+    
+    
+    
+    pub fn push_copy(
+        &mut self,
+        src_id: CacheTextureId, src_rect: &DeviceIntRect,
+        dst_id: CacheTextureId, dst_rect: &DeviceIntRect,
+    ) {
+        debug_assert_eq!(src_rect.size(), dst_rect.size());
+        self.copies.entry((src_id, dst_id))
+            .or_insert_with(Vec::new)
+            .push(TextureCacheCopy {
+                src_rect: *src_rect,
+                dst_rect: *dst_rect,
+            });
     }
 
     fn debug_assert_coalesced(&self, id: CacheTextureId) {
