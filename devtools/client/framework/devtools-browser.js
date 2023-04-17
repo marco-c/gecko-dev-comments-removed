@@ -620,7 +620,9 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     const menu = win.document.getElementById("menu_devToolbox");
 
     
-    menu.hidden = gDevToolsBrowser._isAboutDevtoolsToolbox(win);
+    menu.hidden =
+      gDevToolsBrowser._isAboutDevtoolsToolbox(win) ||
+      Services.prefs.getBoolPref("devtools.policy.disabled", false);
 
     
     const hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
