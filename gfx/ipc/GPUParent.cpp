@@ -14,6 +14,7 @@
 #include "GPUProcessManager.h"
 #include "gfxGradientCache.h"
 #include "GfxInfoBase.h"
+#include "CanvasManagerParent.h"
 #include "VRGPUChild.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
@@ -629,6 +630,7 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         }
         RemoteDecoderManagerParent::ShutdownVideoBridge();
         CompositorThreadHolder::Shutdown();
+        CanvasManagerParent::Shutdown();
         
         
         

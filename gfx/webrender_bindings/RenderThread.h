@@ -147,6 +147,9 @@ class RenderThread final {
   static bool IsInRenderThread();
 
   
+  static already_AddRefed<nsIThread> GetRenderThread();
+
+  
   
   
   static RefPtr<MemoryReportPromise> AccumulateMemoryReport(

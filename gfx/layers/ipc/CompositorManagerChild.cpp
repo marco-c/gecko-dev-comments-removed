@@ -23,6 +23,7 @@ namespace layers {
 using gfx::GPUProcessManager;
 
 StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
+Atomic<base::ProcessId> CompositorManagerChild::sOtherPid(0);
 
 
 bool CompositorManagerChild::IsInitialized(uint64_t aProcessToken) {
@@ -51,6 +52,7 @@ void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
 
   parent->BindComplete( true);
   sInstance = std::move(child);
+  sOtherPid = sInstance->OtherPid();
 }
 
 
@@ -64,6 +66,7 @@ bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
 
   sInstance = new CompositorManagerChild(std::move(aEndpoint), aProcessToken,
                                          aNamespace);
+  sOtherPid = sInstance->OtherPid();
   return sInstance->CanSend();
 }
 
@@ -78,6 +81,7 @@ void CompositorManagerChild::Shutdown() {
 
   sInstance->Close();
   sInstance = nullptr;
+  sOtherPid = 0;
 }
 
 
@@ -89,6 +93,7 @@ void CompositorManagerChild::OnGPUProcessLost(uint64_t aProcessToken) {
   
   if (sInstance && sInstance->mProcessToken == aProcessToken) {
     sInstance->mCanSend = false;
+    sOtherPid = 0;
   }
 }
 

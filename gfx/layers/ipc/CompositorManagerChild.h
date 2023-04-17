@@ -7,8 +7,9 @@
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 #define MOZILLA_GFX_COMPOSITORMANAGERCHILD_H
 
-#include <stddef.h>              
-#include <stdint.h>              
+#include <stddef.h>  
+#include <stdint.h>  
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/RefPtr.h"      
 #include "mozilla/StaticPtr.h"   
@@ -49,6 +50,9 @@ class CompositorManagerChild : public PCompositorManagerChild {
     return sInstance;
   }
 
+  
+  static base::ProcessId GetOtherPid() { return sOtherPid; }
+
   bool CanSend() const {
     MOZ_ASSERT(NS_IsMainThread());
     return mCanSend;
@@ -85,6 +89,7 @@ class CompositorManagerChild : public PCompositorManagerChild {
 
  private:
   static StaticRefPtr<CompositorManagerChild> sInstance;
+  static Atomic<base::ProcessId> sOtherPid;
 
   CompositorManagerChild(CompositorManagerParent* aParent,
                          uint64_t aProcessToken, uint32_t aNamespace);

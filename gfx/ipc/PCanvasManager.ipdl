@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+include protocol PWebGL;
+
+namespace mozilla {
+namespace gfx {
+
+
+
+
+
+
+
+[RefCounted] sync protocol PCanvasManager
+{
+  manages PWebGL;
+
+parent:
+  
+  async PWebGL();
+};
+
+} 
+} 

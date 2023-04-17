@@ -5,6 +5,7 @@
 
 
 
+include protocol PCanvasManager;
 include protocol PCompositorBridge;
 include LayersSurfaces;
 include "mozilla/GfxMessageUtils.h";
@@ -83,6 +84,8 @@ parent:
   async NotifyMemoryPressure();
 
   async ReportMemory() returns (MemoryReport aReport);
+
+  async InitCanvasManager(Endpoint<PCanvasManagerParent> endpoint);
 
 child:
   async NotifyWebRenderError(WebRenderError error);
