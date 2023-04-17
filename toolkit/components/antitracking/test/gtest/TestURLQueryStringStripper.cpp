@@ -10,6 +10,7 @@
 #include "nsStringFwd.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/URLQueryStringStripper.h"
 
 using namespace mozilla;
@@ -38,8 +39,43 @@ void DoTest(const nsACString& aTestURL, const nsACString& aExpectedURL,
   }
 }
 
+class StripListObserver final : public nsIURLQueryStrippingListObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIURLQUERYSTRIPPINGLISTOBSERVER
+
+  bool IsStillWaiting() { return mWaitingObserver; }
+  void StartWaitingObserver() { mWaitingObserver = true; }
+
+  StripListObserver() : mWaitingObserver(false) {
+    mService = do_GetService("@mozilla.org/query-stripping-list-service;1");
+    mService->RegisterAndRunObserver(this);
+  }
+
+ private:
+  ~StripListObserver() {
+    mService->UnregisterObserver(this);
+    mService = nullptr;
+  }
+
+  bool mWaitingObserver;
+  nsCOMPtr<nsIURLQueryStrippingListService> mService;
+};
+
+NS_IMPL_ISUPPORTS(StripListObserver, nsIURLQueryStrippingListObserver)
+
+NS_IMETHODIMP
+StripListObserver::OnQueryStrippingListUpdate(const nsAString& aStripList,
+                                              const nsACString& aAllowList) {
+  mWaitingObserver = false;
+  return NS_OK;
+}
+
 TEST(TestURLQueryStringStripper, TestPrefDisabled)
 {
+  
+  
+  
   
   
   Preferences::SetCString(kPrefQueryStrippingList, "fooBar foobaz");
@@ -53,8 +89,20 @@ TEST(TestURLQueryStringStripper, TestPrefDisabled)
 TEST(TestURLQueryStringStripper, TestEmptyStripList)
 {
   
-  Preferences::SetCString(kPrefQueryStrippingList, "");
   Preferences::SetBool(kPrefQueryStrippingEnabled, true);
+
+  
+  
+  
+  DoTest("https://example.com/"_ns, ""_ns, false);
+
+  
+  
+  RefPtr<StripListObserver> observer = new StripListObserver();
+  observer->StartWaitingObserver();
+  Preferences::SetCString(kPrefQueryStrippingList, "");
+  MOZ_ALWAYS_TRUE(mozilla::SpinEventLoopUntil(
+      [&]() -> bool { return !observer->IsStillWaiting(); }));
 
   DoTest("https://example.com/"_ns, ""_ns, false);
   DoTest("https://example.com/?Barfoo=123"_ns, ""_ns, false);
@@ -63,8 +111,18 @@ TEST(TestURLQueryStringStripper, TestEmptyStripList)
 
 TEST(TestURLQueryStringStripper, TestStripping)
 {
-  Preferences::SetCString(kPrefQueryStrippingList, "fooBar foobaz");
   Preferences::SetBool(kPrefQueryStrippingEnabled, true);
+
+  
+  DoTest("https://example.com/"_ns, ""_ns, false);
+
+  
+  
+  RefPtr<StripListObserver> observer = new StripListObserver();
+  observer->StartWaitingObserver();
+  Preferences::SetCString(kPrefQueryStrippingList, "fooBar foobaz");
+  MOZ_ALWAYS_TRUE(mozilla::SpinEventLoopUntil(
+      [&]() -> bool { return !observer->IsStillWaiting(); }));
 
   
   DoTest("https://example.com/"_ns, ""_ns, false);
@@ -85,7 +143,10 @@ TEST(TestURLQueryStringStripper, TestStripping)
          "https://example.com/?AfoobazB=123"_ns, false);
 
   
+  observer->StartWaitingObserver();
   Preferences::SetCString(kPrefQueryStrippingList, "Barfoo bazfoo");
+  MOZ_ALWAYS_TRUE(mozilla::SpinEventLoopUntil(
+      [&]() -> bool { return !observer->IsStillWaiting(); }));
 
   DoTest("https://example.com/?fooBar=123"_ns, ""_ns, false);
   DoTest("https://example.com/?fooBar=123&foobaz"_ns, ""_ns, false);
