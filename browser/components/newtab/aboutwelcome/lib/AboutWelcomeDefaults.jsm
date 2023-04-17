@@ -214,6 +214,7 @@ const DEFAULT_PROTON_WELCOME_CONTENT = {
         
         help_text: {
           text: "Photograph by Sam Moqadam via Unsplash",
+          deleteIfNotEn: true,
         },
         primary_button: {
           label: {
@@ -430,24 +431,10 @@ async function getAttributionContent() {
 const RULES = [
   {
     description: "Proton Default AW content",
-    async getDefaults(featureConfig) {
+    getDefaults(featureConfig) {
       if (featureConfig?.isProton) {
-        let content = Cu.cloneInto(DEFAULT_PROTON_WELCOME_CONTENT, {});
-        
-        if (await ShellService.doesAppNeedPin()) {
-          content.screens[0].content.primary_button.label.string_id =
-            "mr1-onboarding-set-default-pin-primary-button-label";
-          content.screens[0].id = "AW_PIN_AND_DEFAULT";
-        }
-
-        
-        if (Services.locale.appLocaleAsBCP47.split("-")[0] !== "en") {
-          delete content.screens[0].content.help_text;
-        }
-
-        return content;
+        return Cu.cloneInto(DEFAULT_PROTON_WELCOME_CONTENT, {});
       }
-
       return null;
     },
   },
@@ -520,28 +507,39 @@ const RULES = [
   },
 ];
 
-function prepareContentForReact(content) {
-  if (content.isProton) {
-    content.design = "proton";
+async function getDefaults(featureConfig) {
+  for (const rule of RULES) {
+    const result = await rule.getDefaults(featureConfig);
+    if (result) {
+      return result;
+    }
   }
+  return null;
+}
 
-  if (content.template === "return_to_amo") {
+let gSourceL10n = null;
+
+
+
+
+const allowedUAs = ["chrome", "edge", "ie"];
+function getLocalizedUA(ua) {
+  if (!gSourceL10n) {
+    gSourceL10n = new Localization(["browser/migration.ftl"]);
+  }
+  if (allowedUAs.includes(ua)) {
+    return gSourceL10n.formatValue(`source-name-${ua.toLowerCase()}`);
+  }
+  return null;
+}
+
+async function prepareContentForReact(content) {
+  if (content?.template === "return_to_amo") {
     return content;
   }
 
-  
-  if (content.ua) {
-    
-    
-    const { action } =
-      content.screens?.find(
-        screen =>
-          screen?.content?.primary_button?.action?.type ===
-          "SHOW_MIGRATION_WIZARD"
-      )?.content.primary_button ?? {};
-    if (action) {
-      action.data = { ...action.data, source: content.ua };
-    }
+  if (content.isProton) {
+    content.design = "proton";
   }
 
   
@@ -558,17 +556,64 @@ function prepareContentForReact(content) {
     }
   }
 
-  return content;
-}
+  
+  if (content?.ua) {
+    
+    
+    const { label, action } =
+      content?.screens?.find(
+        screen =>
+          screen?.content?.primary_button?.action?.type ===
+          "SHOW_MIGRATION_WIZARD"
+      )?.content?.primary_button ?? {};
 
-async function getDefaults(featureConfig) {
-  for (const rule of RULES) {
-    const result = await rule.getDefaults(featureConfig);
-    if (result) {
-      return result;
+    if (action) {
+      action.data = { ...action.data, source: content.ua };
+    }
+
+    let browserStr = await getLocalizedUA(content.ua);
+
+    if (label?.string_id) {
+      label.string_id = browserStr
+        ? "mr1-onboarding-import-primary-button-label-attribution"
+        : "mr1-onboarding-import-primary-button-label-no-attribution";
+
+      label.args = browserStr ? { previous: browserStr } : {};
     }
   }
-  return null;
+
+  
+  if (await ShellService.doesAppNeedPin()) {
+    const defaultScreenIndex = content.screens?.findIndex(screen =>
+      screen.id.startsWith("AW_SET_DEFAULT")
+    );
+
+    
+    if (
+      content.screens[defaultScreenIndex]?.content?.primary_button?.label
+        ?.string_id
+    ) {
+      content.screens[defaultScreenIndex].id = "AW_PIN_AND_DEFAULT";
+
+      content.screens[
+        defaultScreenIndex
+      ].content.primary_button.label.string_id =
+        "mr1-onboarding-set-default-pin-primary-button-label";
+    }
+  }
+
+  
+  if (Services.locale.appLocaleAsBCP47.split("-")[0] !== "en") {
+    const { help_text } =
+      content.screens?.find(screen => screen.content?.help_text?.deleteIfNotEn)
+        ?.content ?? {};
+
+    if (help_text?.text) {
+      delete help_text.text;
+    }
+  }
+
+  return content;
 }
 
 const AboutWelcomeDefaults = {
