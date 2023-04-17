@@ -5487,10 +5487,12 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         
         gtk_widget_realize(mShell);
 
-        
-        
-        
-        NativeMoveResize( true,  false);
+        if (GdkIsX11Display()) {
+          
+          
+          
+          NativeMoveResize( true,  false);
+        }
       } else {  
         mGtkWindowRoleName = "Toplevel";
         SetDefaultIcon();
@@ -5923,6 +5925,7 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
       NativeShow(false);
     }
     if (aMoved) {
+      LOG(("  moving to %d x %d", topLeft.x, topLeft.y));
       gtk_window_move(GTK_WINDOW(mShell), topLeft.x, topLeft.y);
     }
     return;
