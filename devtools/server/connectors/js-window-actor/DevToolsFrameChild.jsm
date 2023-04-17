@@ -246,6 +246,17 @@ class DevToolsFrameChild extends JSWindowActorChild {
     });
 
     
+    for (const type in watchedData) {
+      
+      
+      const entries = watchedData[type];
+      if (!Array.isArray(entries) || entries.length == 0) {
+        continue;
+      }
+      targetActor.addWatcherDataEntry(type, entries);
+    }
+
+    
     
     
     
@@ -259,17 +270,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
       forwardingPrefix,
       actor: targetActor.form(),
     });
-
-    
-    for (const type in watchedData) {
-      
-      
-      const entries = watchedData[type];
-      if (!Array.isArray(entries) || entries.length == 0) {
-        continue;
-      }
-      targetActor.addWatcherDataEntry(type, entries);
-    }
   }
 
   _destroyTargetActor(watcherActorID) {

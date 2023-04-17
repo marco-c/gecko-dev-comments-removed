@@ -1462,16 +1462,9 @@ const browsingContextTargetPrototype = {
       this._updateChildDocShells();
     }
 
-    
-    
-    
-    if (this.followWindowGlobalLifeCycle && isTopLevel) {
-      return;
-    }
-
     this.emit("window-ready", {
-      window,
-      isTopLevel,
+      window: window,
+      isTopLevel: isTopLevel,
       isBFCache,
       id: getWindowID(window),
       isFrameSwitching,
@@ -1479,20 +1472,11 @@ const browsingContextTargetPrototype = {
   },
 
   _windowDestroyed(window, id = null, isFrozen = false) {
-    const isTopLevel = window == this.window;
-
-    
-    
-    
-    if (this.followWindowGlobalLifeCycle && isTopLevel) {
-      return;
-    }
-
     this.emit("window-destroyed", {
-      window,
-      isTopLevel,
+      window: window,
+      isTopLevel: window == this.window,
       id: id || getWindowID(window),
-      isFrozen,
+      isFrozen: isFrozen,
     });
   },
 

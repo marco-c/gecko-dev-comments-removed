@@ -60,11 +60,7 @@ DocumentEventsListener.prototype = {
     
     EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
     
-    
-    if (
-      !this.targetActor.attached &&
-      !this.targetActor.followWindowGlobalLifeCycle
-    ) {
+    if (!this.targetActor.attached) {
       
       
       this.targetActor.attach();
