@@ -658,15 +658,6 @@ pub enum FontFamily {
 
 impl FontFamily {
     system_font_methods!(FontFamily, font_family);
-
-    
-    pub fn parse_specified<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
-        let values = input.parse_comma_separated(SingleFontFamily::parse)?;
-        Ok(FontFamily::Values(FontFamilyList {
-            list: crate::ArcSlice::from_iter(values.into_iter()),
-            fallback: computed::GenericFontFamily::None,
-        }))
-    }
 }
 
 impl ToComputedValue for FontFamily {
@@ -706,10 +697,14 @@ impl Parse for FontFamily {
     
     
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<FontFamily, ParseError<'i>> {
-        FontFamily::parse_specified(input)
+        let values = input.parse_comma_separated(|input| SingleFontFamily::parse(context, input))?;
+        Ok(FontFamily::Values(FontFamilyList {
+            list: crate::ArcSlice::from_iter(values.into_iter()),
+            fallback: computed::GenericFontFamily::None,
+        }))
     }
 }
 
@@ -719,10 +714,10 @@ impl SpecifiedValueInfo for FontFamily {}
 
 impl Parse for FamilyName {
     fn parse<'i, 't>(
-        _: &ParserContext,
+        context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        match SingleFontFamily::parse(input) {
+        match SingleFontFamily::parse(context, input) {
             Ok(SingleFontFamily::FamilyName(name)) => Ok(name),
             Ok(SingleFontFamily::Generic(_)) => {
                 Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))

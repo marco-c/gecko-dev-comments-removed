@@ -46,19 +46,20 @@ static const char* const kGenericFont[] = {
   ".sans-serif.",
   ".monospace.",
   ".cursive.",
-  ".fantasy."
+  ".fantasy.",
+  ".system-ui.",
 };
 
 
-
-enum {
-  eDefaultFont_Variable,
-  eDefaultFont_Serif,
-  eDefaultFont_SansSerif,
-  eDefaultFont_Monospace,
-  eDefaultFont_Cursive,
-  eDefaultFont_Fantasy,
-  eDefaultFont_COUNT
+enum class DefaultFont {
+  Variable = 0,
+  Serif,
+  SansSerif,
+  Monospace,
+  Cursive,
+  Fantasy,
+  SystemUi,
+  COUNT
 };
 
 void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
@@ -111,10 +112,11 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
     &mDefaultSansSerifFont,
     &mDefaultMonospaceFont,
     &mDefaultCursiveFont,
-    &mDefaultFantasyFont
+    &mDefaultFantasyFont,
+    &mDefaultSystemUiFont,
   };
   
-  static_assert(MOZ_ARRAY_LENGTH(fontTypes) == eDefaultFont_COUNT,
+  static_assert(MOZ_ARRAY_LENGTH(fontTypes) == size_t(DefaultFont::COUNT),
                 "FontTypes array count is not correct");
 
   
@@ -123,16 +125,16 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
   
   
   nsAutoCString generic_dot_langGroup;
-  for (uint32_t eType = 0; eType < ArrayLength(fontTypes); ++eType) {
-    generic_dot_langGroup.Assign(kGenericFont[eType]);
+  for (auto type : MakeEnumeratedRange(DefaultFont::COUNT)) {
+    generic_dot_langGroup.Assign(kGenericFont[size_t(type)]);
     generic_dot_langGroup.Append(langGroup);
 
-    nsFont* font = fontTypes[eType];
+    nsFont* font = fontTypes[size_t(type)];
 
     
     
     
-    if (eType == eDefaultFont_Variable) {
+    if (type == DefaultFont::Variable) {
       
       MAKE_FONT_PREF_KEY(pref, "font.name.variable.", langGroup);
 
@@ -153,7 +155,7 @@ void LangGroupFontPrefs::Initialize(nsStaticAtom* aLangGroupAtom) {
         mDefaultVariableFont.family.families.fallback = defaultType;
       }
     } else {
-      if (eType != eDefaultFont_Monospace) {
+      if (type != DefaultFont::Monospace) {
         
         
         
