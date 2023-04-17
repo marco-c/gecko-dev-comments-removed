@@ -931,8 +931,9 @@ const VariationsCircle = props => {
 
 
 
+
 function computeColorWay(themeName, systemVariations) {
-  return !themeName || systemVariations.find(variation => themeName === variation.id) ? "default" : themeName.split("-")[0];
+  return !themeName || themeName === "alpenglow" || systemVariations.find(variation => themeName === variation.id) ? "default" : themeName.split("-")[0];
 }
 function Colorways(props) {
   var _colorways$find;
