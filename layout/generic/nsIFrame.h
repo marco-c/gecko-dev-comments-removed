@@ -4801,6 +4801,10 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
   struct ISizeComputationResult {
     nscoord mISize = 0;
     AspectRatioUsage mAspectRatioUsage = AspectRatioUsage::None;
@@ -4810,6 +4814,7 @@ class nsIFrame : public nsQueryFrame {
       const mozilla::LogicalSize& aContainingBlockSize,
       const mozilla::LogicalSize& aContentEdgeToBoxSizing,
       nscoord aBoxSizingToMarginEdge, ExtremumLength aSize,
+      Maybe<nscoord> aAvailableISizeOverride,
       const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags);
 
@@ -4837,10 +4842,15 @@ class nsIFrame : public nsQueryFrame {
     }
     auto length = ToExtremumLength(aSize);
     MOZ_ASSERT(length, "This doesn't handle none / auto");
+    Maybe<nscoord> availbleISizeOverride;
+    if (aSize.IsFitContentFunction()) {
+      availbleISizeOverride.emplace(aSize.AsFitContentFunction().Resolve(
+          aContainingBlockSize.ISize(aWM)));
+    }
     return ComputeISizeValue(aRenderingContext, aWM, aContainingBlockSize,
                              aContentEdgeToBoxSizing, aBoxSizingToMarginEdge,
                              length.valueOr(ExtremumLength::MinContent),
-                             aSizeOverrides, aFlags);
+                             availbleISizeOverride, aSizeOverrides, aFlags);
   }
 
   DisplayItemDataArray* DisplayItemData() const {
