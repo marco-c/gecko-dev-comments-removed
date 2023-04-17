@@ -128,7 +128,7 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     
     
     const topLevelTarget = await this.parentFront.getTarget();
-    if (topLevelTarget?.browsingContextID == id) {
+    if (topLevelTarget.browsingContextID == id) {
       return topLevelTarget;
     }
 
