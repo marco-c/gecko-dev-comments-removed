@@ -588,34 +588,9 @@ async function devToolsActiveConfigurationHasFeature(document, feature) {
 
 
 
-function _adaptCustomPresetExpectationToCustomBuild(fixture) {
-  const supportedFeatures = Services.profiler.GetFeatures();
-  info("Supported features are: " + supportedFeatures.join(", "));
-
-  
-  
-  
-  if (!supportedFeatures.includes("stackwalk")) {
-    info(
-      "Supported features do not include stackwalk, let's remove the Native Stacks from the expected output."
-    );
-    fixture = fixture.replace(/^.*Native Stacks.*\n/m, "");
-  }
-
-  return fixture;
-}
-
-
-
-
-
-
-
 function checkDevtoolsCustomPresetContent(devtoolsDocument, fixture) {
   
   fixture = fixture.replace(/^\s+/gm, "").trim();
-  
-  fixture = _adaptCustomPresetExpectationToCustomBuild(fixture);
   is(devtoolsDocument.querySelector(".perf-presets-custom").innerText, fixture);
 }
 
