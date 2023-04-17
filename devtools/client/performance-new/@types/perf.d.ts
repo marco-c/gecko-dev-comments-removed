@@ -107,7 +107,6 @@ export interface State {
   recordingUnexpectedlyStopped: boolean;
   isSupportedPlatform: boolean | null;
   recordingSettings: RecordingSettings;
-  profilerViewMode: ProfilerViewMode | undefined;
   initializedValues: InitializedValues | null;
   promptEnvRestart: null | string;
 }
@@ -184,10 +183,7 @@ export type RestartBrowserWithEnvironmentVariable = (
 
 
 
-export type OnProfileReceived = (
-  profile: MinimallyTypedGeckoProfile,
-  profilerViewMode: ProfilerViewMode | undefined
-) => void;
+export type OnProfileReceived = (profile: MinimallyTypedGeckoProfile) => void;
 
 
 

@@ -649,6 +649,7 @@ module.exports = {
   handleWebChannelMessage,
   addPrefObserver,
   removePrefObserver,
+  getProfilerViewModeForCurrentPreset,
 };
 
 
