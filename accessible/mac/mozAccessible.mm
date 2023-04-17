@@ -629,11 +629,7 @@ struct RoleDescrComparator {
   
   
   nsAutoString helpText;
-  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
-    acc->Description(helpText);
-  } else {
-    mGeckoAccessible->AsRemote()->Description(helpText);
-  }
+  mGeckoAccessible->Description(helpText);
 
   return nsCocoaUtils::ToNSString(helpText);
 
