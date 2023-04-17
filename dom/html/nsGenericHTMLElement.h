@@ -999,7 +999,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
   void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete);
 
  protected:
-  virtual ~nsGenericHTMLFormElement();
+  virtual ~nsGenericHTMLFormElement() = default;
 
   virtual nsresult BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                  const nsAttrValueOrString* aValue,
@@ -1017,6 +1017,17 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
   virtual void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                                bool aBindToTree) {}
+
+  virtual mozilla::dom::HTMLFormElement* GetFormInternal() const {
+    return nullptr;
+  }
+
+  virtual mozilla::dom::HTMLFieldSetElement* GetFieldSetInternal() const {
+    return nullptr;
+  }
+
+  virtual void SetFieldSetInternal(
+      mozilla::dom::HTMLFieldSetElement* aFieldset) {}
 
   
 
@@ -1070,12 +1081,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
 
   virtual bool DoesReadOnlyApply() const { return false; }
-
-  
-  mozilla::dom::HTMLFormElement* mForm;
-
-  
-  mozilla::dom::HTMLFieldSetElement* mFieldSet;
 };
 
 class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
@@ -1131,6 +1136,10 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   bool DoesReadOnlyApply() const override;
   void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                        bool aBindToTree) override;
+  mozilla::dom::HTMLFormElement* GetFormInternal() const override;
+  mozilla::dom::HTMLFieldSetElement* GetFieldSetInternal() const override;
+  void SetFieldSetInternal(
+      mozilla::dom::HTMLFieldSetElement* aFieldset) override;
 
   
 
@@ -1151,6 +1160,12 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
 
   virtual void SaveState() {}
+
+  
+  mozilla::dom::HTMLFormElement* mForm;
+
+  
+  mozilla::dom::HTMLFieldSetElement* mFieldSet;
 };
 
 class nsGenericHTMLFormControlElementWithState
