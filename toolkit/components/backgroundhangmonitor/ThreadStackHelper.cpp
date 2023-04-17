@@ -327,8 +327,19 @@ void ThreadStackHelper::CollectProfilingStackFrame(
   
   
   
-  
   const char* filename = JS_GetScriptFilename(aFrame.script());
+
+  nsAutoCString funcName;
+  JSFunction* func = aFrame.function();
+  if (func) {
+    JSString* str = JS_GetFunctionDisplayId(func);
+    if (str) {
+      JSLinearString* linear = JS_ASSERT_STRING_IS_LINEAR(str);
+      AssignJSLinearString(funcName, linear);
+      funcName.AppendLiteral(" ");
+    }
+  }
+
   unsigned lineno = JS_PCToLineNumber(aFrame.script(), aFrame.pc());
 
   
@@ -359,8 +370,9 @@ void ThreadStackHelper::CollectProfilingStackFrame(
     }
   }
 
-  char buffer[128];  
-  size_t len = SprintfLiteral(buffer, "%s:%u", basename, lineno);
+  char buffer[256];  
+  size_t len =
+      SprintfLiteral(buffer, "%s%s:%u", funcName.get(), basename, lineno);
   if (len > sizeof(buffer)) {
     buffer[sizeof(buffer) - 1] = kTruncationIndicator;
     len = sizeof(buffer);

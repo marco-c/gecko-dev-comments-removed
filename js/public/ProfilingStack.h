@@ -328,6 +328,8 @@ class ProfilingStackFrame {
 
   JS_PUBLIC_API JSScript* script() const;
 
+  JS_PUBLIC_API JSFunction* function() const;
+
   
   JSScript* rawScript() const {
     MOZ_ASSERT(isJsFrame());
