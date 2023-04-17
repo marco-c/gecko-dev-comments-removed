@@ -98,11 +98,7 @@ nsresult InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
 
   aOutString.Truncate();
 
-  nsresult rv;
-
-  RefPtr<mozilla::intl::LineBreaker> lineBreaker =
-      mozilla::intl::LineBreaker::Create();
-  MOZ_ASSERT(lineBreaker);
+  mozilla::intl::LineBreaker* lineBreaker = nsContentUtils::LineBreaker();
 
   
   uint32_t length;
@@ -232,37 +228,23 @@ nsresult InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
         continue;  
       }
 
-      int32_t breakPt = 0;
-      
-      rv = NS_ERROR_BASE;
-      if (lineBreaker) {
-        breakPt =
-            lineBreaker->Prev(tString.get() + posInString, length - posInString,
-                              eol + 1 - posInString);
-        if (breakPt == NS_LINEBREAKER_NEED_MORE_TEXT) {
-          
-          
-          
-          if (outStringCol > citeLevel + 1) {
-            BreakLine(aOutString, outStringCol, citeLevel);
-            continue;  
-          }
-
-          
-          breakPt = lineBreaker->DeprecatedNext(tString.get() + posInString,
-                                                length - posInString,
-                                                eol - posInString);
-
-          rv = breakPt == NS_LINEBREAKER_NEED_MORE_TEXT ? NS_ERROR_BASE : NS_OK;
-        } else {
-          rv = NS_OK;
+      int32_t breakPt =
+          lineBreaker->Prev(tString.get() + posInString, length - posInString,
+                            eol + 1 - posInString);
+      if (breakPt == NS_LINEBREAKER_NEED_MORE_TEXT) {
+        
+        
+        
+        if (outStringCol > citeLevel + 1) {
+          BreakLine(aOutString, outStringCol, citeLevel);
+          continue;  
         }
-      }
-      
-      
-      
-      if (NS_FAILED(rv)) {
-        breakPt = eol;
+
+        
+        breakPt = lineBreaker->Next(tString.get() + posInString,
+                                    length - posInString, eol - posInString);
+        MOZ_ASSERT(breakPt != NS_LINEBREAKER_NEED_MORE_TEXT,
+                   "Next() always treats end-of-text as a break");
       }
 
       
