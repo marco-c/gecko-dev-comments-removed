@@ -33,10 +33,16 @@ class _MachCommand(object):
         "order",
         
         
-        "func",
+        
+        
+        "cls",
         
         
         "metrics_path",
+        
+        
+        
+        "method",
         
         
         "subcommand_handlers",
@@ -73,8 +79,9 @@ class _MachCommand(object):
             )
         self.ok_if_tests_disabled = ok_if_tests_disabled
 
-        self.func = None
+        self.cls = None
         self.metrics_path = None
+        self.method = None
         self.subcommand_handlers = {}
         self.decl_order = None
 
@@ -82,11 +89,7 @@ class _MachCommand(object):
         metrics = None
         if self.metrics_path:
             metrics = context.telemetry.metrics(self.metrics_path)
-
-        
-        
-        subclass = type(self.name, (MachCommandBase,), {})
-        return subclass(context, virtualenv_name=virtualenv_name, metrics=metrics)
+        return self.cls(context, virtualenv_name=virtualenv_name, metrics=metrics)
 
     @property
     def parser(self):
@@ -99,7 +102,7 @@ class _MachCommand(object):
 
     @property
     def docstring(self):
-        return self.func.__doc__
+        return self.cls.__dict__[self.method].__doc__
 
     def __ior__(self, other):
         if not isinstance(other, _MachCommand):
@@ -111,44 +114,84 @@ class _MachCommand(object):
 
         return self
 
-    def register(self, func):
-        """Register the command in the Registrar with the function to be called on invocation."""
-        if not self.subcommand:
-            if not self.conditions and Registrar.require_conditions:
-                return
 
-            msg = (
-                "Mach command '%s' implemented incorrectly. "
-                + "Conditions argument must take a list "
-                + "of functions. Found %s instead."
-            )
+def CommandProvider(cls):
+    if not issubclass(cls, MachCommandBase):
+        raise MachError(
+            "Mach command provider class %s must be a subclass of "
+            "mozbuild.base.MachComandBase" % cls.__name__
+        )
 
-            if not isinstance(self.conditions, collections.abc.Iterable):
-                msg = msg % (self.name, type(self.conditions))
+    seen_commands = set()
+
+    
+    
+    
+    
+    command_methods = sorted(
+        [
+            (name, value._mach_command)
+            for name, value in cls.__dict__.items()
+            if hasattr(value, "_mach_command")
+        ]
+    )
+
+    for method, command in command_methods:
+        
+        if command.subcommand:
+            continue
+
+        seen_commands.add(command.name)
+
+        if not command.conditions and Registrar.require_conditions:
+            continue
+
+        msg = (
+            "Mach command '%s' implemented incorrectly. "
+            + "Conditions argument must take a list "
+            + "of functions. Found %s instead."
+        )
+
+        if not isinstance(command.conditions, collections.abc.Iterable):
+            msg = msg % (command.name, type(command.conditions))
+            raise MachError(msg)
+
+        for c in command.conditions:
+            if not hasattr(c, "__call__"):
+                msg = msg % (command.name, type(c))
                 raise MachError(msg)
 
-            for c in self.conditions:
-                if not hasattr(c, "__call__"):
-                    msg = msg % (self.name, type(c))
-                    raise MachError(msg)
+        command.cls = cls
+        command.method = method
 
-            self.func = func
+        Registrar.register_command_handler(command)
 
-            Registrar.register_command_handler(self)
+    
+    
+    
+    for method, command in command_methods:
+        
+        if not command.subcommand:
+            continue
 
-        else:
-            if self.name not in Registrar.command_handlers:
-                raise MachError(
-                    "Command referenced by sub-command does not exist: %s" % self.name
-                )
+        if command.name not in seen_commands:
+            raise MachError(
+                "Command referenced by sub-command does not exist: %s" % command.name
+            )
 
-            self.func = func
-            parent = Registrar.command_handlers[self.name]
+        if command.name not in Registrar.command_handlers:
+            continue
 
-            if self.subcommand in parent.subcommand_handlers:
-                raise MachError("sub-command already defined: %s" % self.subcommand)
+        command.cls = cls
+        command.method = method
+        parent = Registrar.command_handlers[command.name]
 
-            parent.subcommand_handlers[self.subcommand] = self
+        if command.subcommand in parent.subcommand_handlers:
+            raise MachError("sub-command already defined: %s" % command.subcommand)
+
+        parent.subcommand_handlers[command.subcommand] = command
+
+    return cls
 
 
 class Command(object):
@@ -182,7 +225,6 @@ class Command(object):
             func._mach_command = _MachCommand()
 
         func._mach_command |= self._mach_command
-        func._mach_command.register(func)
 
         return func
 
@@ -223,7 +265,6 @@ class SubCommand(object):
             func._mach_command = _MachCommand()
 
         func._mach_command |= self._mach_command
-        func._mach_command.register(func)
 
         return func
 
