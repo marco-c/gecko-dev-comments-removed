@@ -9014,6 +9014,7 @@ class MWasmHeapBase : public MUnaryInstruction, public NoTypePolicy::Data {
 
 
 
+
 class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
   wasm::BytecodeOffset bytecodeOffset_;
 
@@ -9021,6 +9022,8 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
                             wasm::BytecodeOffset bytecodeOffset)
       : MBinaryInstruction(classOpcode, index, boundsCheckLimit),
         bytecodeOffset_(bytecodeOffset) {
+    MOZ_ASSERT(index->type() == boundsCheckLimit->type());
+
     
     setGuard();
 
@@ -9053,7 +9056,9 @@ class MWasmAddOffset : public MUnaryInstruction, public NoTypePolicy::Data {
         offset_(offset),
         bytecodeOffset_(bytecodeOffset) {
     setGuard();
-    setResultType(MIRType::Int32);
+    MOZ_ASSERT(base->type() == MIRType::Int32 ||
+               base->type() == MIRType::Int64);
+    setResultType(base->type());
   }
 
  public:
