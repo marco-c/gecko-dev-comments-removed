@@ -295,6 +295,18 @@ async function addTestTailSuggestionsEngine(suggestionsFn = null) {
   return engine;
 }
 
+async function addOpenPages(uri, count = 1, userContextId = 0) {
+  for (let i = 0; i < count; i++) {
+    await UrlbarProviderOpenTabs.registerOpenTab(uri.spec, userContextId);
+  }
+}
+
+async function removeOpenPages(aUri, aCount = 1, aUserContextId = 0) {
+  for (let i = 0; i < aCount; i++) {
+    await UrlbarProviderOpenTabs.unregisterOpenTab(aUri.spec, aUserContextId);
+  }
+}
+
 
 
 
@@ -469,6 +481,31 @@ function makeOmniboxResult(
 
 
 
+function makeTabSwitchResult(queryContext, { uri, title, iconUri }) {
+  return new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    UrlbarUtils.RESULT_SOURCE.TABS,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+      title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
+      
+      icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
+    })
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -527,6 +564,54 @@ function makePrioritySearchResult(
   if (heuristic) {
     result.heuristic = heuristic;
   }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeRemoteTabResult(
+  queryContext,
+  { uri, device, title, iconUri, lastUsed = 0 }
+) {
+  let payload = {
+    url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+    device: [device, UrlbarUtils.HIGHLIGHT.TYPED],
+    
+    icon:
+      typeof iconUri != "undefined"
+        ? iconUri
+        : `moz-anno:favicon:page-icon:${uri}`,
+    lastUsed: lastUsed * 1000,
+  };
+
+  
+  if (typeof title != "undefined") {
+    payload.title = [title, UrlbarUtils.HIGHLIGHT.TYPED];
+  } else {
+    payload.title = [uri, UrlbarUtils.HIGHLIGHT.TYPED];
+  }
+
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.REMOTE_TAB,
+    UrlbarUtils.RESULT_SOURCE.TABS,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
+  );
+
   return result;
 }
 
