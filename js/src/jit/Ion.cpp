@@ -11,7 +11,6 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ThreadLocal.h"
-#include "mozilla/Unused.h"
 
 #include "gc/FreeOp.h"
 #include "gc/Marking.h"
@@ -1712,7 +1711,7 @@ static AbortReason IonCompile(JSContext* cx, HandleScript script,
 
     
     
-    mozilla::Unused << alloc.release();
+    (void)alloc.release();
 
     return AbortReason::NoAbort;
   }
