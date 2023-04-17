@@ -210,6 +210,17 @@ struct JS_PUBLIC_API PropertyDescriptor {
     return desc;
   }
 
+  
+  
+  
+  static PropertyDescriptor Empty() {
+    PropertyDescriptor desc;
+    desc.attrs_ = JSPROP_IGNORE_PERMANENT | JSPROP_IGNORE_ENUMERATE |
+                  JSPROP_IGNORE_READONLY | JSPROP_IGNORE_VALUE;
+    desc.assertValid();
+    return desc;
+  }
+
  private:
   bool has(unsigned bit) const {
     MOZ_ASSERT(bit != 0);
