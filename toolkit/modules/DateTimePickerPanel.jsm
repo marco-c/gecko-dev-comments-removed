@@ -29,9 +29,6 @@ var DateTimePickerPanel = class {
   }
 
   openPicker(type, rect, detail) {
-    if (type == "datetime-local") {
-      type = "date";
-    }
     this.type = type;
     this.pickerState = {};
     
