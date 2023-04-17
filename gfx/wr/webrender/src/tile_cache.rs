@@ -112,6 +112,7 @@ impl TileCacheBuilder {
     pub fn add_tile_cache(
         &mut self,
         prim_list: PrimitiveList,
+        clip_chain_id: ClipChainId,
         spatial_tree: &SpatialTree,
         clip_store: &ClipStore,
         interners: &Interners,
@@ -214,6 +215,22 @@ impl TileCacheBuilder {
                     }
                 }
             }
+        }
+
+        
+        
+        
+        let mut current_clip_chain_id = clip_chain_id;
+        while current_clip_chain_id != ClipChainId::NONE {
+            let clip_chain_node = &clip_store
+                .clip_chain_nodes[current_clip_chain_id.0 as usize];
+
+            let clip_node_data = &interners.clip[clip_chain_node.handle];
+            if let ClipNodeKind::Rectangle = clip_node_data.clip_node_kind {
+                shared_clips.push(ClipInstance::new(clip_chain_node.handle, clip_chain_node.spatial_node_index));
+            }
+
+            current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
         
