@@ -45,6 +45,34 @@ function isPrivateTab(nativeTab) {
 }
 
 
+
+const getSender = (extension, target, sender) => {
+  let tabId;
+  if ("tabId" in sender) {
+    
+    
+    
+    tabId = sender.tabId;
+    delete sender.tabId;
+  } else if (
+    ExtensionCommon.instanceOf(target, "XULFrameElement") ||
+    ExtensionCommon.instanceOf(target, "HTMLIFrameElement")
+  ) {
+    tabId = tabTracker.getBrowserData(target).tabId;
+  }
+
+  if (tabId) {
+    let tab = extension.tabManager.get(tabId, null);
+    if (tab) {
+      sender.tab = tab.convert();
+    }
+  }
+};
+
+
+global.tabGetSender = getSender;
+
+
 extensions.on("uninstalling", (msg, extension) => {
   if (extension.uninstallURL) {
     let browser = windowTracker.topWindow.gBrowser;
