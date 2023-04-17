@@ -21,6 +21,7 @@
 
 #include "nsIMemoryReporter.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
@@ -509,7 +510,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       mozilla::StyleGenericFontFamily aGenericType);
 
   bool SkipFontFallbackForChar(uint32_t aCh) const {
-    return mCodepointsWithNoFonts.test(aCh);
+    return mCodepointsWithNoFonts[mVisibilityLevel].test(aCh);
   }
 
   
@@ -871,11 +872,14 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
-  gfxSparseBitSet mCodepointsWithNoFonts;
+  mozilla::EnumeratedArray<FontVisibility, FontVisibility::Count,
+                           gfxSparseBitSet>
+      mCodepointsWithNoFonts;
 
   
   
-  FontFamily mReplacementCharFallbackFamily;
+  mozilla::EnumeratedArray<FontVisibility, FontVisibility::Count, FontFamily>
+      mReplacementCharFallbackFamily;
 
   
   nsTArray<nsCString> mBadUnderlineFamilyNames;
