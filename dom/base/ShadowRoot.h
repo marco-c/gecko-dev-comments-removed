@@ -208,6 +208,14 @@ class ShadowRoot final : public DocumentFragment,
     mIsUAWidget = true;
   }
 
+  bool IsAvailableToElementInternals() const {
+    return mIsAvailableToElementInternals;
+  }
+
+  void SetAvailableToElementInternals() {
+    mIsAvailableToElementInternals = true;
+  }
+
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
@@ -279,6 +287,9 @@ class ShadowRoot final : public DocumentFragment,
   nsTArray<const Element*> mParts;
 
   bool mIsUAWidget : 1;
+
+  
+  bool mIsAvailableToElementInternals : 1;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };

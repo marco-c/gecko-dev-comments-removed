@@ -1166,16 +1166,12 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
   
 
 
-
-
-
   if (!CanAttachShadowDOM()) {
     aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return nullptr;
   }
 
   
-
 
 
   if (GetShadowRoot()) {
@@ -1224,6 +1220,16 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
 
   if (NodeOrAncestorHasDirAuto()) {
     shadowRoot->SetAncestorHasDirAuto();
+  }
+
+  
+
+
+
+  CustomElementData* ceData = GetCustomElementData();
+  if (ceData && (ceData->mState == CustomElementData::State::ePrecustomized ||
+                 ceData->mState == CustomElementData::State::eCustom)) {
+    shadowRoot->SetAvailableToElementInternals();
   }
 
   
