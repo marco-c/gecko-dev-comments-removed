@@ -180,6 +180,12 @@ Maybe<uint16_t> DisplayItemCache::CanReuseItem(
     return Nothing();
   }
 
+  if (mSuppressed) {
+    slot.mOccupied = false;
+    slotIndex = Nothing();
+    return Nothing();
+  }
+
   if (!(aSpaceAndClip == slot.mSpaceAndClip)) {
     
     

@@ -101,7 +101,7 @@ class WebRenderCommandBuilder final {
       nsDisplayList* aDisplayList, nsDisplayItem* aWrappingItem,
       nsDisplayListBuilder* aDisplayListBuilder,
       const StackingContextHelper& aSc, wr::DisplayListBuilder& aBuilder,
-      wr::IpcResourceUpdateQueue& aResources);
+      wr::IpcResourceUpdateQueue& aResources, bool aNewClipList = true);
 
   
   void DoGroupingForDisplayList(nsDisplayList* aDisplayList,
