@@ -546,6 +546,9 @@ struct TilePostUpdateContext<'a> {
     
     
     invalidate_all: bool,
+
+    
+    transform_index: CompositorTransformIndex,
 }
 
 
@@ -1230,7 +1233,15 @@ impl Tile {
         self.update_content_validity(ctx, state, frame_context);
 
         
-        if self.current_descriptor.prims.is_empty() {
+        
+        let compositor_valid_rect = state.composite_state.get_surface_rect(
+            &self.current_descriptor.local_valid_rect,
+            &self.local_tile_rect,
+            ctx.transform_index,
+        ).to_i32();
+
+        
+        if self.current_descriptor.prims.is_empty() || compositor_valid_rect.is_empty() {
             
             
             
@@ -3919,6 +3930,7 @@ impl TileCacheInstance {
             local_rect: self.local_rect,
             z_id: ZBufferId::invalid(),
             invalidate_all: self.invalidate_all_tiles,
+            transform_index: self.transform_index,
         };
 
         let mut state = TilePostUpdateState {
