@@ -1964,6 +1964,17 @@ async function editExpression(dbg, input) {
   await evaluated;
 }
 
+
+
+
+
+
+
+
+function getWatchExpressionValue(dbg, index) {
+  return findElement(dbg, "expressionValue", index).innerText;
+}
+
 async function waitUntilPredicate(predicate) {
   let result;
   await waitUntil(() => {
