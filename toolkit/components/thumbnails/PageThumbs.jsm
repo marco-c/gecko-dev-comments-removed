@@ -28,7 +28,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { BasePromiseWorker } = ChromeUtils.import(
   "resource://gre/modules/PromiseWorker.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["FileReader"]);
 
@@ -619,9 +618,7 @@ var PageThumbsStorage = {
       aData,
       {
         tmpPath: path + ".tmp",
-        bytes: aData.byteLength,
-        noOverwrite: aNoOverwrite,
-        flush: false ,
+        mode: aNoOverwrite ? "create" : "overwrite",
       },
     ];
     return PageThumbsWorker.post(
@@ -746,8 +743,8 @@ var PageThumbsStorage = {
     return function onError(err) {
       if (
         !aNoOverwrite ||
-        !(err instanceof OS.File.Error) ||
-        !err.becauseExists
+        !(err instanceof DOMException) ||
+        err.name !== "TypeMismatchError"
       ) {
         throw err;
       }
@@ -803,12 +800,12 @@ var PageThumbsStorageMigrator = {
 
 
   migrateToVersion3: function Migrator_migrateToVersion3(
-    local = OS.Constants.Path.localProfileDir,
-    roaming = OS.Constants.Path.profileDir
+    local = Services.dirsvc.get("ProfLD", Ci.nsIFile).path,
+    roaming = Services.dirsvc.get("ProfD", Ci.nsIFile).path
   ) {
     PageThumbsWorker.post("moveOrDeleteAllThumbnails", [
-      OS.Path.join(roaming, THUMBNAIL_DIRECTORY),
-      OS.Path.join(local, THUMBNAIL_DIRECTORY),
+      PathUtils.join(roaming, THUMBNAIL_DIRECTORY),
+      PathUtils.join(local, THUMBNAIL_DIRECTORY),
     ]);
   },
 };
@@ -881,6 +878,3 @@ var PageThumbsExpiration = {
 var PageThumbsWorker = new BasePromiseWorker(
   "resource://gre/modules/PageThumbsWorker.js"
 );
-
-
-PageThumbsWorker.ExceptionHandlers["OS.File.Error"] = OS.File.Error.fromMsg;
