@@ -301,6 +301,9 @@ nsHttpNTLMAuth::GenerateCredentials(
     rv = module->Init(serviceName, reqFlags, domain, user, pass);
     if (NS_FAILED(rv)) return rv;
 
+    inBufLen = 0;
+    inBuf = nullptr;
+
 
 
 
@@ -330,22 +333,19 @@ nsHttpNTLMAuth::GenerateCredentials(
       rv = secInfo->GetServerCert(getter_AddRefs(cert));
       if (NS_FAILED(rv)) return rv;
 
-      certArray.emplace();
-      rv = cert->GetRawDER(*certArray);
-      if (NS_FAILED(rv)) return rv;
+      if (cert) {
+        certArray.emplace();
+        rv = cert->GetRawDER(*certArray);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
 
-      
-      
-      inBufLen = certArray->Length();
-      inBuf = certArray->Elements();
-    } else {
-      
-      inBufLen = 0;
-      inBuf = nullptr;
+        
+        
+        inBufLen = certArray->Length();
+        inBuf = certArray->Elements();
+      }
     }
-#else  
-    inBufLen = 0;
-    inBuf = nullptr;
 #endif
   } else {
     
