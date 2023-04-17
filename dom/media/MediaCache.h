@@ -526,8 +526,6 @@ class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
   
   ReadMode mCurrentMode = MODE_METADATA;
   
-  bool mMetadataInPartialBlockBuffer;
-  
   
   uint32_t mLoadID = 0;
   
