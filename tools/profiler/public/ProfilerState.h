@@ -231,6 +231,8 @@ class RacyFeatures {
     return Nothing();
   }
 
+  
+  
   [[nodiscard]] static bool IsActive() {
     return uint32_t(sActiveAndFeatures) & Active;
   }
