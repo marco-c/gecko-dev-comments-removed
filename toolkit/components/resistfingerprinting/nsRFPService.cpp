@@ -292,6 +292,9 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
       aClampedTimeUSec ^ *(uint64_t*)(sSecretMidpointSeed + 8));
 
   
+  if (MOZ_UNLIKELY(aResolutionUSec <= 0)) {  
+    return NS_ERROR_FAILURE;
+  }
   *aMidpointOut = rng.next() % aResolutionUSec;
 
   return NS_OK;
