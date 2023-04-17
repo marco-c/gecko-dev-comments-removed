@@ -169,6 +169,10 @@ class ModulesMap final
 
 class UntrustedModulesData final {
  public:
+  
+  
+  static constexpr size_t kMaxEvents = 50;
+
   UntrustedModulesData()
       : mProcessType(XRE_GetProcessType()),
         mPid(::GetCurrentProcessId()),
