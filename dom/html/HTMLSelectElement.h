@@ -201,13 +201,15 @@ class HTMLSelectElement final : public nsGenericHTMLFormElementWithState,
   virtual void RemoveChildNode(nsIContent* aKid, bool aNotify) override;
 
   
+  virtual bool IsDisabledForEvents(WidgetEvent* aEvent) override;
+
+  
   void SaveState() override;
   bool RestoreState(PresState* aState) override;
 
   
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
-  virtual bool IsDisabledForEvents(WidgetEvent* aEvent) override;
 
   virtual void FieldSetDisabledChanged(bool aNotify) override;
 

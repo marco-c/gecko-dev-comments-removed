@@ -181,10 +181,6 @@ class nsIFormControl : public nsISupports {
 
   inline bool AllowDraggableChildren() const;
 
-  virtual bool IsDisabledForEvents(mozilla::WidgetEvent* aEvent) {
-    return false;
-  }
-
   
   
   
