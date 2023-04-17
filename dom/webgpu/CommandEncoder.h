@@ -69,8 +69,7 @@ class CommandEncoder final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;
-  
-  WeakPtr<dom::HTMLCanvasElement> mTargetCanvasElement;
+  nsTArray<WeakPtr<dom::HTMLCanvasElement>> mTargetCanvases;
 
  public:
   void EndComputePass(ffi::WGPUComputePass& aPass, ErrorResult& aRv);
