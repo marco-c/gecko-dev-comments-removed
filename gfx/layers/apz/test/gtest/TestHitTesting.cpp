@@ -74,6 +74,12 @@ class APZHitTestingTester : public APZCTreeManagerTester {
     aLayer->SetScrollMetadata(m);
   }
 
+  void DisableApzOn(WebRenderLayerScrollData* aLayer) {
+    ModifyFrameMetrics(aLayer, [](ScrollMetadata& aSm, FrameMetrics&) {
+      aSm.SetForceDisableApz(true);
+    });
+  }
+
   void CreateComplexMultiLayerTree() {
     const char* layerTreeSyntax = "c(tc(t)tc(c(t)tt))";
     
@@ -459,8 +465,9 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
 
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();
+  WebRenderLayerScrollData* root = scrollData[0];
   RefPtr<TestAsyncPanZoomController> apzcroot = ApzcOf(root);
 
   
@@ -532,8 +539,9 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
   
 
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();
+  WebRenderLayerScrollData* root = scrollData[0];
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(AtLeast(3));
@@ -561,9 +569,10 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
 
 TEST_F(APZHitTestingTester, TestForceDisableApz) {
   CreateSimpleScrollingLayer();
-  DisableApzOn(root);
-  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();
+  WebRenderLayerScrollData* root = scrollData[0];
+  DisableApzOn(root);
   TestAsyncPanZoomController* apzcroot = ApzcOf(root);
 
   ScreenPoint origin(100, 50);

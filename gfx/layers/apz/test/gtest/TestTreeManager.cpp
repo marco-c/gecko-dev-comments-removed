@@ -238,8 +238,9 @@ TEST_F(APZCTreeManagerTester, Bug1551582) {
   
   
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();
+  WebRenderLayerScrollData* root = scrollData[0];
 
   
   ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
@@ -273,8 +274,9 @@ TEST_F(APZCTreeManagerTester, Bug1557424) {
   
   
   CreateSimpleScrollingLayer();
-  ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();
+  WebRenderLayerScrollData* root = scrollData[0];
 
   
   ModifyFrameMetrics(root, [](ScrollMetadata& aSm, FrameMetrics& aMetrics) {
