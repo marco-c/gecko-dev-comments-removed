@@ -11,42 +11,45 @@ let gHandlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
 
 
 function initTestHandlers() {
-  let handlerInfo = HandlerServiceTestUtils.getBlankHandlerInfo("yoink");
+  let handlerInfoThatAsks = HandlerServiceTestUtils.getBlankHandlerInfo(
+    "should-ask"
+  );
 
   let appHandler = Cc[
     "@mozilla.org/uriloader/local-handler-app;1"
   ].createInstance(Ci.nsILocalHandlerApp);
   
   appHandler.executable = Services.dirsvc.get("XCurProcD", Ci.nsIFile);
-  handlerInfo.possibleApplicationHandlers.appendElement(appHandler);
-  handlerInfo.preferredApplicationHandler = appHandler;
-  handlerInfo.preferredAction = handlerInfo.useHelperApp;
-  handlerInfo.alwaysAskBeforeHandling = false;
-  gHandlerService.store(handlerInfo);
+  handlerInfoThatAsks.possibleApplicationHandlers.appendElement(appHandler);
+  handlerInfoThatAsks.preferredApplicationHandler = appHandler;
+  handlerInfoThatAsks.preferredAction = handlerInfoThatAsks.useHelperApp;
+  handlerInfoThatAsks.alwaysAskBeforeHandling = false;
+  gHandlerService.store(handlerInfoThatAsks);
+
+  let webHandlerInfo = HandlerServiceTestUtils.getBlankHandlerInfo(
+    "web+somesite"
+  );
+  let webHandler = Cc[
+    "@mozilla.org/uriloader/web-handler-app;1"
+  ].createInstance(Ci.nsIWebHandlerApp);
+  webHandler.name = "Somesite";
+  webHandler.uriTemplate = "https://example.com/handle_url?u=%s";
+  webHandlerInfo.possibleApplicationHandlers.appendElement(webHandler);
+  webHandlerInfo.preferredApplicationHandler = webHandler;
+  webHandlerInfo.preferredAction = webHandlerInfo.useHelperApp;
+  webHandlerInfo.alwaysAskBeforeHandling = false;
+  gHandlerService.store(webHandlerInfo);
+
   registerCleanupFunction(() => {
-    gHandlerService.remove(handlerInfo);
+    gHandlerService.remove(webHandlerInfo);
+    gHandlerService.remove(handlerInfoThatAsks);
   });
 }
 
-
-
-
-
-
-
-
-add_task(async function test_external_asks_anyway() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["network.protocol-handler.prompt-from-external", true]],
-  });
-  initTestHandlers();
-
-  let cmdLineHandler = Cc["@mozilla.org/browser/final-clh;1"].getService(
-    Ci.nsICommandLineHandler
-  );
-  let fakeCmdLine = {
+function makeCmdLineHelper(url) {
+  return {
     length: 1,
-    _arg: "yoink:yoink",
+    _arg: url,
 
     getArgument(aIndex) {
       if (aIndex == 0) {
@@ -81,10 +84,31 @@ add_task(async function test_external_asks_anyway() {
     },
     QueryInterface: ChromeUtils.generateQI(["nsICommandLine"]),
   };
+}
+
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.protocol-handler.prompt-from-external", true]],
+  });
+  initTestHandlers();
+});
+
+
+
+
+
+
+
+
+add_task(async function test_external_asks_anyway() {
+  let cmdLineHandler = Cc["@mozilla.org/browser/final-clh;1"].getService(
+    Ci.nsICommandLineHandler
+  );
   let chooserDialogOpenPromise = waitForProtocolAppChooserDialog(
     gBrowser,
     true
   );
+  let fakeCmdLine = makeCmdLineHelper("should-ask:dummy");
   cmdLineHandler.handle(fakeCmdLine);
   let dialog = await chooserDialogOpenPromise;
   ok(dialog, "Should have prompted.");
@@ -98,4 +122,50 @@ add_task(async function test_external_asks_anyway() {
   await dialogClosedPromise;
   
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+
+add_task(async function test_web_app_doesnt_ask() {
+  
+  let dialogOpenListener = () => ok(false, "Shouldn't have opened a dialog!");
+  document.documentElement.addEventListener("dialogopen", dialogOpenListener);
+  registerCleanupFunction(() =>
+    document.documentElement.removeEventListener(
+      "dialogopen",
+      dialogOpenListener
+    )
+  );
+
+  
+  const kURL = "web+somesite:dummy";
+  const kLoadedURL =
+    "https://example.com/handle_url?u=" + encodeURIComponent(kURL);
+  let tabPromise = BrowserTestUtils.waitForNewTab(gBrowser, kLoadedURL);
+
+  
+  let cmdLineHandler = Cc["@mozilla.org/browser/final-clh;1"].getService(
+    Ci.nsICommandLineHandler
+  );
+  let fakeCmdLine = makeCmdLineHelper(kURL);
+  cmdLineHandler.handle(fakeCmdLine);
+
+  
+  
+  let tab = await tabPromise;
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    kLoadedURL,
+    "Should have opened the right URL."
+  );
+  BrowserTestUtils.removeTab(tab);
+
+  
+  
+  document.documentElement.removeEventListener(
+    "dialogopen",
+    dialogOpenListener
+  );
 });

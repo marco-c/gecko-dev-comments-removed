@@ -263,7 +263,15 @@ class nsContentDispatchChooser {
 
     
     
-    if (aTriggeredExternally && gPrefs.promptForExternal) {
+    if (
+      aTriggeredExternally &&
+      gPrefs.promptForExternal &&
+      
+      !(
+        aHandler.preferredAction == Ci.nsIHandlerInfo.useHelperApp &&
+        aHandler.preferredApplicationHandler instanceof Ci.nsIWebHandlerApp
+      )
+    ) {
       aHandler.alwaysAskBeforeHandling = true;
     }
 
