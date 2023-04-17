@@ -926,25 +926,21 @@ impl ProfilerHooks for GeckoProfilerHooks {
         gecko_profiler::unregister_thread();
     }
 
-    
-    fn begin_marker(&self, label: &CStr) {
-        gecko_profiler_start_marker(label.to_str().unwrap());
+    fn begin_marker(&self, label: &str) {
+        gecko_profiler_start_marker(label);
     }
 
-    
-    fn end_marker(&self, label: &CStr) {
-        gecko_profiler_end_marker(label.to_str().unwrap());
+    fn end_marker(&self, label: &str) {
+        gecko_profiler_end_marker(label);
     }
 
-    
-    fn event_marker(&self, label: &CStr) {
-        gecko_profiler_event_marker(label.to_str().unwrap());
+    fn event_marker(&self, label: &str) {
+        gecko_profiler_event_marker(label);
     }
 
-    
-    fn add_text_marker(&self, label: &CStr, text: &str, duration: Duration) {
+    fn add_text_marker(&self, label: &str, text: &str, duration: Duration) {
         let micros = duration.as_micros() as f64;
-        gecko_profiler_add_text_marker(label.to_str().unwrap(), text, micros);
+        gecko_profiler_add_text_marker(label, text, micros);
     }
 
     fn thread_is_being_profiled(&self) -> bool {
