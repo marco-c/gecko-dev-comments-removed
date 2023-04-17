@@ -4754,10 +4754,16 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   bool lastStartupWasCrash = CheckLastStartupWasCrash().unwrapOr(false);
 
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::LastStartupWasCrash, lastStartupWasCrash);
+
   if (CheckArg("purgecaches") || PR_GetEnv("MOZ_PURGE_CACHES") ||
       lastStartupWasCrash || gSafeMode) {
     cachesOK = false;
   }
+
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::StartupCacheValid, cachesOK && versionOK);
 
   
   
