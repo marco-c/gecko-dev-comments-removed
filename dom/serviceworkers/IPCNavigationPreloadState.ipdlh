@@ -1,0 +1,16 @@
+
+
+
+
+
+
+namespace mozilla {
+namespace dom {
+
+struct IPCNavigationPreloadState {
+  bool enabled;
+  nsCString headerValue;
+};
+
+} 
+} 
