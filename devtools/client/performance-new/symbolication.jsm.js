@@ -66,56 +66,6 @@ async function doesFileExistAtPath(path) {
 
 
 
-function getCandidatePaths(objdirs, lib) {
-  const { name, path, debugPath } = lib;
-  const { OS } = lazy.OS();
-  const candidatePaths = [];
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  for (const objdirPath of objdirs) {
-    
-    candidatePaths.push({
-      path: OS.Path.join(objdirPath, "dist", "bin", name),
-      debugPath: OS.Path.join(objdirPath, "dist", "bin", name),
-    });
-    
-    
-    
-    
-    candidatePaths.push({
-      path: OS.Path.join(objdirPath, name),
-      debugPath: OS.Path.join(objdirPath, name),
-    });
-  }
-
-  
-  
-  
-  
-  candidatePaths.push({ path, debugPath });
-
-  return candidatePaths;
-}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -193,7 +143,7 @@ class LocalSymbolicationService {
 
     
     
-    const candidatePaths = getCandidatePaths(this._objdirs, lib);
+    const candidatePaths = this._getCandidatePaths(lib);
 
     
     const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
@@ -236,6 +186,54 @@ class LocalSymbolicationService {
     
     
     return getSymbolTableFromDebuggee(this._perfFront, lib.path, breakpadId);
+  }
+
+  
+
+
+
+
+
+  _getCandidatePaths(lib) {
+    const { name, path, debugPath } = lib;
+    const { OS } = lazy.OS();
+    const candidatePaths = [];
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (const objdirPath of this._objdirs) {
+      
+      candidatePaths.push({
+        path: OS.Path.join(objdirPath, "dist", "bin", name),
+        debugPath: OS.Path.join(objdirPath, "dist", "bin", name),
+      });
+      
+      
+      
+      
+      candidatePaths.push({
+        path: OS.Path.join(objdirPath, name),
+        debugPath: OS.Path.join(objdirPath, name),
+      });
+    }
+
+    
+    
+    
+    
+    candidatePaths.push({ path, debugPath });
+
+    return candidatePaths;
   }
 }
 
