@@ -1390,8 +1390,7 @@ void ReflowInput::CalculateHypotheticalPosition(
   
   
   
-  LogicalMargin border = aCBReflowInput->ComputedLogicalBorderPadding(wm) -
-                         aCBReflowInput->ComputedLogicalPadding(wm);
+  const LogicalMargin border = aCBReflowInput->ComputedLogicalBorder(wm);
   aHypotheticalPos.mIStart -= border.IStart(wm);
   aHypotheticalPos.mBStart -= border.BStart(wm);
 
