@@ -193,6 +193,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["sponsoredTopSites", false],
 
   
+  ["unitConversion.enabled", false],
+
+  
+  ["unitConversion.suggestedIndex", 1],
+
+  
   ["usepreloadedtopurls.enabled", false],
 
   
