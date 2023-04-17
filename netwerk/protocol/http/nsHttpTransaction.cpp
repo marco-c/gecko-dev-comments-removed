@@ -2168,14 +2168,14 @@ nsresult nsHttpTransaction::HandleContentStart() {
         gHttpHandler->ClearHostMapping(mConnInfo);
 
         m421Received = true;
+        mCaps |= NS_HTTP_REFRESH_DNS;
 
         
         
-        mCaps |= (NS_HTTP_REFRESH_DNS | NS_HTTP_CONNECTION_RESTARTABLE);
-        mCaps &= ~NS_HTTP_STICKY_CONNECTION;
-
         
-        if (!mRestartCount) {
+        
+        
+        if (!mRestartCount && !(mCaps & NS_HTTP_STICKY_CONNECTION)) {
           mCaps &= ~NS_HTTP_ALLOW_KEEPALIVE;
           mForceRestart = true;  
           return NS_ERROR_NET_RESET;
