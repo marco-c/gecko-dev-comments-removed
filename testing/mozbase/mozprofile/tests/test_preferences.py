@@ -409,7 +409,7 @@ def test_read_prefs_ttw():
 
     try:
         
-        httpd.start(block=False)
+        httpd.start()
 
         
         read = prefs.read_prefs("http://%s:%d/prefs_with_comments.js" % (host, port))
