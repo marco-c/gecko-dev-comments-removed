@@ -83,10 +83,8 @@ class WebProgressListener final : public nsIWebProgressListener,
 
     
     
-    auto RemoveListener = [&] {
-      nsCOMPtr<nsIWebProgress> webProgress = browsingContext->GetWebProgress();
-      webProgress->RemoveProgressListener(this);
-    };
+    nsCOMPtr<nsIWebProgress> webProgress = browsingContext->GetWebProgress();
+    webProgress->RemoveProgressListener(this);
 
     RefPtr<dom::WindowGlobalParent> wgp =
         browsingContext->GetCurrentWindowGlobal();
@@ -95,17 +93,8 @@ class WebProgressListener final : public nsIWebProgressListener,
       rv.ThrowInvalidStateError("Unable to open window");
       mPromise->Reject(rv, __func__);
       mPromise = nullptr;
-      RemoveListener();
       return NS_OK;
     }
-
-    if (NS_WARN_IF(wgp->IsInitialDocument())) {
-      
-      
-      return NS_OK;
-    }
-
-    RemoveListener();
 
     
     
@@ -115,7 +104,7 @@ class WebProgressListener final : public nsIWebProgressListener,
         wgp->DocumentPrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
     nsresult rv = securityManager->CheckSameOriginURI(
         wgp->GetDocumentURI(), mBaseURI, false, isPrivateWin);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
       mPromise->Resolve(CopyableErrorResult(), __func__);
       mPromise = nullptr;
       return NS_OK;
