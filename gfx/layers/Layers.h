@@ -28,7 +28,6 @@
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/gfx/Polygon.h"      
 #include "mozilla/gfx/Rect.h"         
-#include "mozilla/gfx/TiledRegion.h"  
 #include "mozilla/gfx/Types.h"  
 #include "mozilla/gfx/UserData.h"  
 #include "mozilla/layers/AnimationInfo.h"  
