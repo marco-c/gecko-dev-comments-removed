@@ -229,7 +229,7 @@ EXPORTS.js += [
 
 
 EXPORTS.js += [
-    "../../mozglue/baseprofiler/public/ProfilingCategoryList.h",
+    "!/mozglue/baseprofiler/public/ProfilingCategoryList.h",
 ]
 
 
