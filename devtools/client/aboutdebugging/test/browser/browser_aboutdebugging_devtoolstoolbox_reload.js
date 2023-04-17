@@ -61,25 +61,12 @@ async function testReloadAboutDevToolsToolbox(toolId) {
   const toolbox = getToolbox(devtoolsWindow);
   await toolbox.selectTool(toolId);
 
-  
-  
-  
-  if (toolId === "accessibility") {
-    await waitForA11yPanel(toolbox);
-  }
-
   info("Wait for requests to settle before reloading");
   await toolbox.target.client.waitForRequestsToSettle();
 
   info("Reload about:devtools-toolbox page");
   devtoolsBrowser.reload();
-  const newToolbox = await gDevTools.once("toolbox-ready");
-
-  
-  if (toolId === "accessibility") {
-    await waitForA11yPanel(newToolbox);
-  }
-
+  await gDevTools.once("toolbox-ready");
   ok(true, "Toolbox is re-created again");
 
   
@@ -97,9 +84,4 @@ async function testReloadAboutDevToolsToolbox(toolId) {
 
   await closeAboutDevtoolsToolbox(document, devtoolsTab, window);
   await removeTab(tab);
-}
-
-async function waitForA11yPanel(toolbox) {
-  const panel = toolbox.getPanel("accessibility");
-  await panel._accessibilityViewInitialized;
 }

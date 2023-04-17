@@ -33,7 +33,16 @@ const tests = [
         keyboardShortcut: "",
         childCount: 0,
         indexInParent: 0,
-        states: ["readonly", "focusable", "opaque", "enabled", "sensitive"],
+        states: [
+          
+          
+          "focused",
+          "readonly",
+          "focusable",
+          "opaque",
+          "enabled",
+          "sensitive",
+        ],
       },
     },
   },
