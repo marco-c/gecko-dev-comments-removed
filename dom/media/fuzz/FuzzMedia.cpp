@@ -36,7 +36,7 @@ class FuzzRunner {
         [&](uint32_t aDecodeFps) { done = true; }, [&]() { done = true; });
 
     
-    SpinEventLoopUntil([&]() { return done; });
+    SpinEventLoopUntil("FuzzRunner::Run"_ns, [&]() { return done; });
     return;
   }
 

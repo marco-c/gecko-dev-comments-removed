@@ -277,7 +277,10 @@ GeckoMediaPluginServiceParent::Observe(nsISupports* aSubject,
           NS_DISPATCH_NORMAL);
 
       
-      SpinEventLoopUntil([&]() { return !mWaitingForPluginsSyncShutdown; });
+      SpinEventLoopUntil(
+          "GeckoMediaPluginServiceParent::Observe "
+          "WaitingForPluginsSyncShutdown"_ns,
+          [&]() { return !mWaitingForPluginsSyncShutdown; });
     } else {
       
       MOZ_ASSERT(mPlugins.IsEmpty());
