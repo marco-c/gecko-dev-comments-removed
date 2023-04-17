@@ -423,6 +423,16 @@ var PrintEventHandler = {
       Cu.reportError(e);
     }
 
+    if (settings.printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
+      
+      
+      let prefName =
+        "print.printer_" +
+        settings.printerName.replace(/ /g, "_") +
+        ".print_to_filename";
+      Services.prefs.clearUserPref(prefName);
+    }
+
     window.close();
     return true;
   },
