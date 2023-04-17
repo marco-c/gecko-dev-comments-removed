@@ -183,7 +183,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   void InvalidateWords() { mSoftTextValid = false; }
   nsresult EnsureWords();
 
-  int32_t MapDOMPositionToSoftTextOffset(NodeOffset aNodeOffset);
+  int32_t MapDOMPositionToSoftTextOffset(NodeOffset aNodeOffset) const;
   
   
   
@@ -192,7 +192,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   
   enum DOMMapHint { HINT_BEGIN, HINT_END };
   NodeOffset MapSoftTextOffsetToDOMPosition(int32_t aSoftTextOffset,
-                                            DOMMapHint aHint);
+                                            DOMMapHint aHint) const;
 
   static void ToString(DOMMapHint aHint, nsACString& aResult);
 
@@ -213,7 +213,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   nsresult SplitDOMWord(int32_t aStart, int32_t aEnd);
 
-  nsresult MakeRangeForWord(const RealWord& aWord, nsRange** aRange);
+  nsresult MakeRangeForWord(const RealWord& aWord, nsRange** aRange) const;
   void MakeNodeOffsetRangeForWord(const RealWord& aWord,
                                   NodeOffsetRange* aNodeOffsetRange);
 };
