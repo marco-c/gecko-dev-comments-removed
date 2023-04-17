@@ -1524,12 +1524,6 @@ extern JS_PUBLIC_API void NoteIntentionalCrash();
 
 } 
 
-namespace js {
-
-enum class CompletionKind { Normal, Return, Throw };
-
-} 
-
 #ifdef DEBUG
 namespace JS {
 

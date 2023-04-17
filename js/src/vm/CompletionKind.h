@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef vm_CompletionKind_h
+#define vm_CompletionKind_h
+
+namespace js {
+
+enum class CompletionKind { Normal, Return, Throw };
+
+}  
+
+#endif  

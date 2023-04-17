@@ -11,6 +11,7 @@
 #include "builtin/Promise.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
+#include "vm/CompletionKind.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"

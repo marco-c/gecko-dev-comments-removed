@@ -65,6 +65,7 @@
 #include "util/StringBuffer.h"            
 #include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/BytecodeUtil.h"  
+#include "vm/CompletionKind.h"      
 #include "vm/FunctionPrefixKind.h"  
 #include "vm/GeneratorObject.h"     
 #include "vm/JSAtom.h"              

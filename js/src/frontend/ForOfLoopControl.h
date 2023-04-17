@@ -11,12 +11,11 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"  
-
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/BytecodeOffset.h"             
 #include "frontend/IteratorKind.h"               
 #include "frontend/TryEmitter.h"                 
+#include "vm/CompletionKind.h"                   
 
 namespace js {
 namespace frontend {
