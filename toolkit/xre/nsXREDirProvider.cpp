@@ -1142,40 +1142,58 @@ static nsresult HashInstallPath(nsAString& aInstallPath, nsAString& aPathHash) {
 
 
 nsresult nsXREDirProvider::GetInstallHash(nsAString& aPathHash) {
-  nsCOMPtr<nsIFile> installDir;
-  nsCOMPtr<nsIFile> appFile;
-  bool per = false;
-  nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = appFile->GetParent(getter_AddRefs(installDir));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoString stringToHash;
 
-  
-  
-  
 #ifdef XP_WIN
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
-          installDir)) {
-    NS_WARNING("Failed to resolve install directory.");
-  }
-#elif defined(MOZ_WIDGET_COCOA)
-  
-  FSRef ref;
-  nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(installDir);
-  rv = macFile->GetFSRef(&ref);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = NS_NewLocalFileWithFSRef(&ref, true, getter_AddRefs(macFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-  installDir = static_cast<nsIFile*>(macFile);
+  if (mozilla::widget::WinUtils::HasPackageIdentity()) {
+    
+    
+    
+    stringToHash = mozilla::widget::WinUtils::GetPackageFamilyName();
+  } else
 #endif
+  {
+    nsCOMPtr<nsIFile> installDir;
+    nsCOMPtr<nsIFile> appFile;
+    bool per = false;
+    nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = appFile->GetParent(getter_AddRefs(installDir));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    
+    
+#ifdef XP_WIN
+    
+    if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
+            installDir)) {
+      NS_WARNING("Failed to resolve install directory.");
+    }
+#elif defined(MOZ_WIDGET_COCOA)
+    
+    FSRef ref;
+    nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(installDir);
+    rv = macFile->GetFSRef(&ref);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = NS_NewLocalFileWithFSRef(&ref, true, getter_AddRefs(macFile));
+    NS_ENSURE_SUCCESS(rv, rv);
+    installDir = static_cast<nsIFile*>(macFile);
+#endif
+    
+
+    rv = installDir->GetPath(stringToHash);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   
+  
+  
+  if (stringToHash.IsEmpty()) {
+    return NS_ERROR_FAILURE;
+  }
 
-  nsAutoString installPath;
-  rv = installDir->GetPath(installPath);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return HashInstallPath(installPath, aPathHash);
+  return HashInstallPath(stringToHash, aPathHash);
 }
 
 
