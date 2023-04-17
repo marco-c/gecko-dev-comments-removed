@@ -17,7 +17,7 @@ function test() {
   registerCleanupFunction(function() {
     Services.prefs.setIntPref("network.proxy.type", oldNetworkProxyType);
     Services.prefs.clearUserPref("network.proxy.share_proxy_settings");
-    for (let proxyType of ["http", "ssl", "ftp", "socks"]) {
+    for (let proxyType of ["http", "ssl", "socks"]) {
       Services.prefs.clearUserPref("network.proxy." + proxyType);
       Services.prefs.clearUserPref("network.proxy." + proxyType + "_port");
       if (proxyType == "http") {
@@ -37,7 +37,7 @@ function test() {
 
   open_preferences(async function tabOpened(aContentWindow) {
     let dialog, dialogClosingPromise, dialogElement;
-    let proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
+    let proxyTypePref, sharePref, httpPref, httpPortPref;
 
     
     async function setDoc() {
@@ -63,8 +63,6 @@ function test() {
       sharePref = dialog.Preferences.get("network.proxy.share_proxy_settings");
       httpPref = dialog.Preferences.get("network.proxy.http");
       httpPortPref = dialog.Preferences.get("network.proxy.http_port");
-      ftpPref = dialog.Preferences.get("network.proxy.ftp");
-      ftpPortPref = dialog.Preferences.get("network.proxy.ftp_port");
     }
 
     
@@ -79,13 +77,10 @@ function test() {
 
     
     sharePref.value = false;
-    ftpPref.value = "localhost";
-    ftpPortPref.value = 80;
     dialogElement.acceptDialog();
 
     
     httpPortPref.value = 80;
-    ftpPortPref.value = 0;
     dialogElement.acceptDialog();
 
     
@@ -94,17 +89,14 @@ function test() {
 
     
     httpPortPref.value = 80;
-    ftpPortPref.value = 80;
     dialogElement.acceptDialog();
 
     
     await setDoc();
     proxyTypePref.value = 1;
     sharePref.value = true;
-    ftpPref.value = "localhost";
     httpPref.value = "localhost";
     httpPortPref.value = 80;
-    ftpPortPref.value = 0;
     dialogElement.acceptDialog();
 
     
