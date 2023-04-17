@@ -2,7 +2,13 @@
 
 
 
-const { document: gDoc } = window.docShell.chromeEventHandler.ownerGlobal;
+const {
+  document: gDoc,
+  ChromeUtils,
+} = window.docShell.chromeEventHandler.ownerGlobal;
+const { RemoteL10n } = ChromeUtils.import(
+  "resource://activity-stream/lib/RemoteL10n.jsm"
+);
 
 function renderSpotlight() {
   const [content, params] = window.arguments[0];
@@ -20,11 +26,11 @@ function renderSpotlight() {
       el.remove();
       continue;
     }
-    if (content.body[textProp].label.string_id) {
-      document.l10n.setAttributes(el, content.body[textProp].label.string_id);
-    } else {
-      el.textContent = content.body[textProp].label;
-    }
+    el.appendChild(
+      RemoteL10n.createElement(this.window.document, "span", {
+        content: content.body[textProp].label,
+      })
+    );
   }
 
   document.body.appendChild(clone);
