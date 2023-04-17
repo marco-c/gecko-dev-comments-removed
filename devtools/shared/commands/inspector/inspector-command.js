@@ -163,7 +163,11 @@ class InspectorCommand {
 
 
 
-  async findNodeFrontFromSelectors(nodeSelectors) {
+
+
+
+
+  async findNodeFrontFromSelectors(nodeSelectors, timeoutInMs = 5000) {
     if (
       !nodeSelectors ||
       !Array.isArray(nodeSelectors) ||
@@ -268,7 +272,15 @@ class InspectorCommand {
       return childrenNodeFront || nodeFront;
     };
     const rootNodeFront = await walker.getRootNode();
-    return querySelectors(rootNodeFront);
+
+    
+    
+    
+    const onTimeout = new Promise(res => setTimeout(res, timeoutInMs)).then(
+      () => null
+    );
+    const onQuerySelectors = querySelectors(rootNodeFront);
+    return Promise.race([onTimeout, onQuerySelectors]);
   }
 }
 
