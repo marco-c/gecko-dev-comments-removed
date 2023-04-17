@@ -953,11 +953,11 @@ nsRect Element::GetClientAreaRect() {
   
   
   
+  
   bool overlayScrollbars =
       LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0;
-  bool rootContentDocument =
-      presContext && presContext->IsRootContentDocument();
-  if (overlayScrollbars && rootContentDocument &&
+  if (overlayScrollbars &&
+      !doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
       doc->IsScrollingElement(this)) {
     
     
@@ -1183,11 +1183,13 @@ already_AddRefed<ShadowRoot> Element::AttachShadow(const ShadowRootInit& aInit,
     OwnerDoc()->ReportShadowDOMUsage();
   }
 
-  return AttachShadowWithoutNameChecks(aInit.mMode, aInit.mSlotAssignment);
+  return AttachShadowWithoutNameChecks(aInit.mMode, aInit.mDelegatesFocus,
+                                       aInit.mSlotAssignment);
 }
 
 already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
-    ShadowRootMode aMode, SlotAssignmentMode aSlotAssignment) {
+    ShadowRootMode aMode, bool aDelegatesFocus,
+    SlotAssignmentMode aSlotAssignment) {
   nsAutoScriptBlocker scriptBlocker;
 
   RefPtr<mozilla::dom::NodeInfo> nodeInfo =
@@ -1215,8 +1217,8 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
 
 
   auto* nim = nodeInfo->NodeInfoManager();
-  RefPtr<ShadowRoot> shadowRoot =
-      new (nim) ShadowRoot(this, aMode, aSlotAssignment, nodeInfo.forget());
+  RefPtr<ShadowRoot> shadowRoot = new (nim) ShadowRoot(
+      this, aMode, aDelegatesFocus, aSlotAssignment, nodeInfo.forget());
 
   if (NodeOrAncestorHasDirAuto()) {
     shadowRoot->SetAncestorHasDirAuto();
