@@ -24,6 +24,7 @@
 
 #include "MessageLink.h"  
 #include "mozilla/ipc/Transport.h"
+#include "mozilla/ipc/ScopedPort.h"
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "mozilla/BaseProfilerMarkers.h"
@@ -104,6 +105,7 @@ class AutoEnterTransaction;
 class MessageChannel : HasResultCodes {
   friend class ProcessLink;
   friend class ThreadLink;
+  friend class PortLink;
 #ifdef FUZZING
   friend class ProtocolFuzzerHelper;
 #endif
@@ -153,11 +155,19 @@ class MessageChannel : HasResultCodes {
   typedef IPC::Message Message;
   typedef IPC::MessageInfo MessageInfo;
   typedef mozilla::ipc::Transport Transport;
+  using ScopedPort = mozilla::ipc::ScopedPort;
 
   explicit MessageChannel(const char* aName, IToplevelProtocol* aListener);
   ~MessageChannel();
 
   IToplevelProtocol* Listener() const { return mListener; }
+
+  
+  
+  
+  
+  bool Open(ScopedPort aPort, Side aSide,
+            nsISerialEventTarget* aEventTarget = nullptr);
 
   
   
@@ -331,7 +341,8 @@ class MessageChannel : HasResultCodes {
   
 
 
-  bool IsCrossProcess() const { return mIsCrossProcess; }
+  bool IsCrossProcess() const;
+  void SetIsCrossProcess(bool aIsCrossProcess);
 
 #ifdef OS_WIN
   struct MOZ_STACK_CLASS SyncStackFrame {
