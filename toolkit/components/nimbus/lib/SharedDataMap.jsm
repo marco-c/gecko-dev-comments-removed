@@ -148,6 +148,14 @@ class SharedDataMap extends EventEmitter {
     }
     if (this._nonPersistentStore) {
       delete this._nonPersistentStore.__REMOTE_DEFAULTS?.[key];
+      if (
+        !Object.keys(this._nonPersistentStore?.__REMOTE_DEFAULTS || {}).length
+      ) {
+        
+        
+        
+        this._nonPersistentStore = {};
+      }
     }
 
     this._store.saveSoon();
