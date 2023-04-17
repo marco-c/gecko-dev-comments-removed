@@ -86,6 +86,7 @@ function register_module(categoryName, categoryObject) {
   gCategoryInits.set(categoryName, {
     inited: false,
     async init() {
+      let startTime = performance.now();
       let template = document.getElementById("template-" + categoryName);
       if (template) {
         
@@ -99,11 +100,16 @@ function register_module(categoryName, categoryObject) {
 
         
         
-        
-        Preferences.updateAllElements();
+        Preferences.queueUpdateOfAllElements();
       }
+
       categoryObject.init();
       this.inited = true;
+      ChromeUtils.addProfilerMarker(
+        "Preferences",
+        { startTime },
+        categoryName + " init"
+      );
     },
   });
 }
@@ -112,6 +118,10 @@ document.addEventListener("DOMContentLoaded", init_all, { once: true });
 
 function init_all() {
   Preferences.forceEnableInstantApply();
+
+  
+  
+  Preferences.queueUpdateOfAllElements();
 
   register_module("paneGeneral", gMainPane);
   register_module("paneHome", gHomePane);

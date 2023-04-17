@@ -48,7 +48,9 @@ const Preferences = (window.Preferences = (function() {
       const pref = new Preference(prefInfo);
       this._all[pref.id] = pref;
       domContentLoadedPromise.then(() => {
-        pref.updateElements();
+        if (!this.updateQueued) {
+          pref.updateElements();
+        }
       });
       return pref;
     },
@@ -109,39 +111,36 @@ const Preferences = (window.Preferences = (function() {
       }
     },
 
-    onDOMContentLoaded() {
-      
-      
-      
-      
-      
-      
-      
-      
-      const elements = getElementsByAttribute("preference");
-      for (const element of elements) {
-        const id = element.getAttribute("preference");
-        const pref = this.get(id);
-        if (!pref) {
-          console.error(`Missing preference for ID ${id}`);
-        }
-      }
-    },
-
     updateQueued: false,
 
-    updateAllElements() {
+    queueUpdateOfAllElements() {
       if (this.updateQueued) {
         return;
       }
 
       this.updateQueued = true;
 
-      Promise.resolve().then(() => {
-        const preferences = Preferences.getAll();
-        for (const preference of preferences) {
-          preference.updateElements();
+      Services.tm.dispatchToMainThread(() => {
+        let startTime = performance.now();
+
+        const elements = getElementsByAttribute("preference");
+        for (const element of elements) {
+          const id = element.getAttribute("preference");
+          let preference = this.get(id);
+          if (!preference) {
+            console.error(`Missing preference for ID ${id}`);
+            continue;
+          }
+
+          preference.setElementValue(element);
         }
+
+        ChromeUtils.addProfilerMarker(
+          "Preferences",
+          { startTime },
+          `updateAllElements: ${elements.length} preferences updated`
+        );
+
         this.updateQueued = false;
       });
     },
@@ -299,6 +298,9 @@ const Preferences = (window.Preferences = (function() {
 
     addSyncFromPrefListener(aElement, callback) {
       this._syncFromPrefListeners.set(aElement, callback);
+      if (this.updateQueued) {
+        return;
+      }
       
       let elementPref = aElement.getAttribute("preference");
       if (elementPref) {
@@ -311,6 +313,9 @@ const Preferences = (window.Preferences = (function() {
 
     addSyncToPrefListener(aElement, callback) {
       this._syncToPrefListeners.set(aElement, callback);
+      if (this.updateQueued) {
+        return;
+      }
       
       let elementPref = aElement.getAttribute("preference");
       if (elementPref) {
@@ -331,9 +336,6 @@ const Preferences = (window.Preferences = (function() {
   };
 
   Services.prefs.addObserver("", Preferences);
-  domContentLoadedPromise.then(result =>
-    Preferences.onDOMContentLoaded(result)
-  );
   window.addEventListener("change", Preferences);
   window.addEventListener("command", Preferences);
   window.addEventListener("dialogaccept", Preferences);
@@ -500,16 +502,22 @@ const Preferences = (window.Preferences = (function() {
     }
 
     updateElements() {
+      let startTime = performance.now();
+
       if (!this.id) {
         return;
       }
 
-      
-      
       const elements = getElementsByAttribute("preference", this.id);
       for (const element of elements) {
         this.setElementValue(element);
       }
+
+      ChromeUtils.addProfilerMarker(
+        "Preferences",
+        { startTime, captureStack: true },
+        `updateElements for ${this.id}`
+      );
     }
 
     onChange() {
