@@ -538,6 +538,20 @@ interface nsIPrincipal : nsISupports
 
     [infallible] readonly attribute boolean isLocalIpAddress;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    [infallible] readonly attribute nsIPrincipal precursorPrincipal;
 };
 
 
