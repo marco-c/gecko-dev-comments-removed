@@ -5,7 +5,6 @@
 
 
 #include "ReadbackManagerD3D11.h"
-#include "ReadbackProcessor.h"
 #include "ReadbackLayer.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/gfx/2D.h"
