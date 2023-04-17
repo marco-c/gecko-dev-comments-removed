@@ -220,8 +220,7 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   
   
-  [[nodiscard]] bool EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
-                                       uint32_t& aOut0RTTBytesWritten);
+  [[nodiscard]] bool EnsureNPNComplete();
 
   void SetupSSL();
 
