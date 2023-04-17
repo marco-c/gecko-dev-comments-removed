@@ -1045,14 +1045,6 @@ class nsDisplayListBuilder {
   const DisplayItemClipChain* CopyWholeChain(
       const DisplayItemClipChain* aClipChain);
 
-  
-
-
-
-
-  const DisplayItemClipChain* FuseClipChainUpTo(
-      const DisplayItemClipChain* aClipChain, const ActiveScrolledRoot* aASR);
-
   const ActiveScrolledRoot* GetFilterASR() const { return mFilterASR; }
 
   
@@ -2866,13 +2858,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   virtual void SetClipChain(const DisplayItemClipChain* aClipChain,
                             bool aStore);
   const DisplayItemClipChain* GetClipChain() const { return mClipChain; }
-
-  
-
-
-
-  void FuseClipChainUpTo(nsDisplayListBuilder* aBuilder,
-                         const ActiveScrolledRoot* aASR);
 
   bool BackfaceIsHidden() const {
     return mItemFlags.contains(ItemFlag::BackfaceHidden);
