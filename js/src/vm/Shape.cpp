@@ -1739,6 +1739,12 @@ Shape* EmptyShape::getInitialShape(JSContext* cx, const JSClass* clasp,
     if (!JSObject::setIsUsedAsPrototype(cx, protoObj)) {
       return nullptr;
     }
+    
+    uint64_t unused;
+    if (!cx->zone()->getOrCreateUniqueId(protoObj, &unused)) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
     proto = TaggedProto(protoObj);
   }
 
