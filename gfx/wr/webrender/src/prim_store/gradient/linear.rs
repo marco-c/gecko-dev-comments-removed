@@ -124,11 +124,6 @@ pub fn optimize_linear_gradient(
     
     
 
-    
-    
-    tile_size.width = tile_size.width.min(prim_rect.width());
-    tile_size.height = tile_size.height.min(prim_rect.height());
-
     simplify_repeated_primitive(&tile_size, &mut tile_spacing, prim_rect);
 
     let vertical = start.x.approx_eq(&end.x);
@@ -155,6 +150,11 @@ pub fn optimize_linear_gradient(
         &tile_spacing,
         &clip_rect
     );
+
+    
+    
+    tile_size.width = tile_size.width.min(prim_rect.width());
+    tile_size.height = tile_size.height.min(prim_rect.height());
 
     *start += offset;
     *end += offset;
