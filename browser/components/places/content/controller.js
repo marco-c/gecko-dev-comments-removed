@@ -28,6 +28,7 @@
 
 
 
+
 function PlacesInsertionPoint({
   parentId,
   parentGuid,
@@ -162,6 +163,7 @@ PlacesController.prototype = {
         return this._hasRemovableSelection();
       case "cmd_copy":
       case "placesCmd_copy":
+      case "placesCmd_showInFolder":
         return this._view.hasSelection;
       case "cmd_paste":
       case "placesCmd_paste":
@@ -321,6 +323,30 @@ PlacesController.prototype = {
         );
         break;
       }
+      case "placesCmd_showInFolder":
+        
+        let currentNode = this._view.selectedNode;
+        if (this._view.parentElement.id.includes("Panel")) {
+          
+          let searchBox = document.getElementById("search-box");
+          searchBox.value = "";
+          searchBox.doCommand();
+          
+          this._view.selectItems([currentNode.bookmarkGuid], true);
+        } else {
+          PlacesUtils.bookmarks
+            .fetch(currentNode.bookmarkGuid, null, { includePath: true })
+            .then(b => {
+              let containers = b.path.map(obj => {
+                return obj.guid;
+              });
+              
+              containers.splice(0, 0, "AllBookmarks");
+              PlacesOrganizer.selectLeftPaneContainerByHierarchy(containers);
+              this._view.selectItems([currentNode.bookmarkGuid], false);
+            });
+        }
+        break;
     }
   },
 
@@ -565,11 +591,17 @@ PlacesController.prototype = {
           !PlacesUIUtils.loadBookmarksInBackground &&
           !PlacesUIUtils.loadBookmarksInTabs &&
           this._view.singleClickOpens;
+        let hideIfNotSearch =
+          item.getAttribute("hide-if-not-search") == "true" &&
+          (!this._view.selectedNode ||
+            !this._view.selectedNode.parent ||
+            !PlacesUtils.nodeIsQuery(this._view.selectedNode.parent));
 
         let shouldHideItem =
           hideIfNoIP ||
           hideIfPrivate ||
           hideIfSingleClickOpens ||
+          hideIfNotSearch ||
           !this._shouldShowMenuItem(item, metadata);
         item.hidden = item.disabled = shouldHideItem;
 
