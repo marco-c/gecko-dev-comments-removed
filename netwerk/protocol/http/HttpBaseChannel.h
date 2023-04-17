@@ -328,13 +328,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD HasCrossOriginOpenerPolicyMismatch(bool* aIsMismatch) override;
   NS_IMETHOD GetResponseEmbedderPolicy(
       nsILoadInfo::CrossOriginEmbedderPolicy* aOutPolicy) override;
-  virtual bool GetHasNonEmptySandboxingFlag() override {
-    return LoadHasNonEmptySandboxingFlag();
-  }
-  virtual void SetHasNonEmptySandboxingFlag(
-      bool aHasNonEmptySandboxingFlag) override {
-    StoreHasNonEmptySandboxingFlag(aHasNonEmptySandboxingFlag);
-  }
 
   inline void CleanRedirectCacheChainIfNecessary() {
     mRedirectedCachekeys = nullptr;
@@ -843,9 +836,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
     
     
     (uint32_t, UpgradableToSecure, 1),
-
-    
-    (uint32_t, HasNonEmptySandboxingFlag, 1),
 
     
     
