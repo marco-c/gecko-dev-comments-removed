@@ -83,7 +83,7 @@ class AboutNewTabChild extends JSWindowActorChild {
 
         
         
-        NimbusFeatures.newtab.recordExposureEvent({ once: true });
+        NimbusFeatures.newtab.recordExposureEvent();
       }
     }
   }
