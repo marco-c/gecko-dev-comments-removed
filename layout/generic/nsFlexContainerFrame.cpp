@@ -1863,17 +1863,23 @@ class nsFlexContainerFrame::CachedFlexItemData {
   CachedFlexItemData(const ReflowInput& aReflowInput,
                      const ReflowOutput& aReflowOutput,
                      FlexItemReflowType aType) {
-    if (aType == FlexItemReflowType::Measuring) {
-      mBAxisMeasurement.emplace(aReflowInput, aReflowOutput);
-    } else {
-      UpdateFinalReflowSize(aReflowInput, aReflowOutput);
-    }
+    Update(aReflowInput, aReflowOutput, aType);
   }
 
   
   
-  void UpdateFinalReflowSize(const ReflowInput& aReflowInput,
-                             const ReflowOutput& aReflowOutput) {
+  void Update(const ReflowInput& aReflowInput,
+              const ReflowOutput& aReflowOutput, FlexItemReflowType aType) {
+    if (aType == FlexItemReflowType::Measuring) {
+      mBAxisMeasurement.reset();
+      mBAxisMeasurement.emplace(aReflowInput, aReflowOutput);
+      
+      
+      mFinalReflowSize.reset();
+      return;
+    }
+
+    MOZ_ASSERT(aType == FlexItemReflowType::Final);
     auto wm = aReflowInput.GetWritingMode();
 
     
@@ -1899,7 +1905,7 @@ class nsFlexContainerFrame::CachedFlexItemData {
   
   
   
-  void UpdateFinalReflowSize(const FlexItem& aItem, const LogicalSize& aSize) {
+  void Update(const FlexItem& aItem, const LogicalSize& aSize) {
     MOZ_ASSERT(!mFinalReflowSize,
                "This version of the method is only intended to be called when "
                "the most recent reflow was a 'measuring reflow'; and that "
@@ -1951,6 +1957,7 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
   if (cachedData && cachedData->mBAxisMeasurement) {
     if (!aItem.Frame()->IsSubtreeDirty() &&
         cachedData->mBAxisMeasurement->IsValidFor(aChildReflowInput)) {
+      FLEX_LOG("[perf] MeasureBSizeForFlexItem accepted cached value");
       return *(cachedData->mBAxisMeasurement);
     }
     FLEX_LOG("[perf] MeasureBSizeForFlexItem rejected cached value");
@@ -1990,11 +1997,8 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
   
   
   if (cachedData) {
-    cachedData->mBAxisMeasurement.reset();
-    cachedData->mBAxisMeasurement.emplace(aChildReflowInput, childReflowOutput);
-    
-    
-    cachedData->mFinalReflowSize.reset();
+    cachedData->Update(aChildReflowInput, childReflowOutput,
+                       FlexItemReflowType::Measuring);
   } else {
     cachedData = new CachedFlexItemData(aChildReflowInput, childReflowOutput,
                                         FlexItemReflowType::Measuring);
@@ -2501,7 +2505,7 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
     
     
     if (auto* cache = mFrame->GetProperty(CachedFlexItemData::Prop())) {
-      cache->UpdateFinalReflowSize(*this, finalSize);
+      cache->Update(*this, finalSize);
     }
 
     return false;
@@ -5615,7 +5619,8 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
 
   
   if (auto* cached = aItem.Frame()->GetProperty(CachedFlexItemData::Prop())) {
-    cached->UpdateFinalReflowSize(childReflowInput, childReflowOutput);
+    cached->Update(childReflowInput, childReflowOutput,
+                   FlexItemReflowType::Final);
   } else {
     cached = new CachedFlexItemData(childReflowInput, childReflowOutput,
                                     FlexItemReflowType::Final);
