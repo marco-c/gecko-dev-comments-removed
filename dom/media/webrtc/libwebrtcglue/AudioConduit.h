@@ -86,10 +86,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
   DOMHighResTimeStamp GetNow() const override;
 
-  MediaConduitErrorCode StopTransmittingLocked();
-  MediaConduitErrorCode StartTransmittingLocked();
-  MediaConduitErrorCode StopReceivingLocked();
-  MediaConduitErrorCode StartReceivingLocked();
+  void StopTransmitting();
+  void StartTransmitting();
+  void StopReceiving();
+  void StartReceiving();
 
   
 
@@ -199,9 +199,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   static webrtc::SdpAudioFormat CodecConfigToLibwebrtcFormat(
       const AudioCodecConfig& aConfig);
 
-  MediaConduitErrorCode CreateSendStream();
+  void CreateSendStream();
   void DeleteSendStream();
-  MediaConduitErrorCode CreateRecvStream();
+  void CreateRecvStream();
   void DeleteRecvStream();
 
   
@@ -229,12 +229,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   
-  
-  bool mSendStreamRunning;
-  
+  Atomic<bool> mSendStreamRunning;
   
   
-  bool mRecvStreamRunning;
+  Atomic<bool> mRecvStreamRunning;
 
   
   bool mDtmfEnabled;
