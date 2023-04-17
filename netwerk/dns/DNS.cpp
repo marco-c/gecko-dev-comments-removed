@@ -209,13 +209,10 @@ bool NetAddr::IsIPAddrV4Mapped() const {
 
 static bool isLocalIPv4(uint32_t networkEndianIP) {
   uint32_t addr32 = ntohl(networkEndianIP);
-  if (addr32 >> 24 == 0x0A ||    
-      addr32 >> 20 == 0xAC1 ||   
-      addr32 >> 16 == 0xC0A8 ||  
-      addr32 >> 16 == 0xA9FE) {  
-    return true;
-  }
-  return false;
+  return addr32 >> 24 == 0x0A ||    
+         addr32 >> 20 == 0xAC1 ||   
+         addr32 >> 16 == 0xC0A8 ||  
+         addr32 >> 16 == 0xA9FE;    
 }
 
 bool NetAddr::IsIPAddrLocal() const {
