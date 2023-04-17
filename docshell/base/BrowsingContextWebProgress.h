@@ -40,6 +40,8 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
     unsigned long mNotifyMask;
   };
 
+  void ContextDiscarded();
+
  private:
   virtual ~BrowsingContextWebProgress() = default;
 
@@ -59,7 +61,7 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   
   
   
-  bool mSuspendOnStateStartChangeEvents = false;
+  bool mAwaitingStop = false;
 };
 
 }  

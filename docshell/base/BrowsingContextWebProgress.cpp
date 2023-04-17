@@ -96,6 +96,28 @@ void BrowsingContextWebProgress::UpdateAndNotifyListeners(
   mListenerInfoList.Compact();
 }
 
+void BrowsingContextWebProgress::ContextDiscarded() {
+  if (!mAwaitingStop) {
+    return;
+  }
+
+  
+  
+  
+  
+  const int32_t flags = STATE_STOP | STATE_IS_WINDOW | STATE_IS_NETWORK;
+  UpdateAndNotifyListeners(((flags >> 16) & nsIWebProgress::NOTIFY_STATE_ALL),
+                           [&](nsIWebProgressListener* listener) {
+                             
+                             
+                             
+                             
+                             listener->OnStateChange(this,
+                                                      nullptr,
+                                                     flags, NS_ERROR_ABORT);
+                           });
+}
+
 
 
 
@@ -118,9 +140,9 @@ BrowsingContextWebProgress::OnStateChange(nsIWebProgress* aWebProgress,
   
   
   
-  if (isTopLevelStartDocumentEvent && !mSuspendOnStateStartChangeEvents) {
-    mSuspendOnStateStartChangeEvents = true;
-  } else if (mSuspendOnStateStartChangeEvents) {
+  if (isTopLevelStartDocumentEvent && !mAwaitingStop) {
+    mAwaitingStop = true;
+  } else if (mAwaitingStop) {
     
     
     const uint32_t stopWindowFlags = nsIWebProgressListener::STATE_STOP |
@@ -130,7 +152,7 @@ BrowsingContextWebProgress::OnStateChange(nsIWebProgress* aWebProgress,
     if (isTopLevelStopWindowEvent) {
       
       
-      mSuspendOnStateStartChangeEvents = false;
+      mAwaitingStop = false;
     } else if (isTopLevelStartDocumentEvent) {
       
       
