@@ -5,6 +5,15 @@
 add_task(async function setup() {
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (gProton) {
     BrowserPageActions.mainButtonNode.style.visibility = "visible";
     registerCleanupFunction(() => {
@@ -159,6 +168,17 @@ add_task(async function test_clickData_reset() {
 });
 
 add_task(async function test_click_disabled() {
+  
+  
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.proton.enabled", false]],
+  });
+
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       page_action: {},
@@ -218,5 +238,7 @@ add_task(async function test_click_disabled() {
   await clickPageActionInPanel(extension, window, { button: 1 });
   await extension.awaitMessage("onClick");
 
+  
+  await SpecialPowers.popPrefEnv();
   await extension.unload();
 });

@@ -143,6 +143,18 @@ var BrowserPageActions = {
       this._placeActionInPanelNow(action);
     } else {
       
+      
+      
+      
+      
+      
+      
+      if (
+        this._actionsToLazilyPlaceInPanel.findIndex(a => a.id == action.id) >= 0
+      ) {
+        return;
+      }
+      
       this._actionsToLazilyPlaceInPanel.push(action);
     }
   },
@@ -616,7 +628,17 @@ var BrowserPageActions = {
     urlbarNode,
     disabled = action.getDisabled(window)
   ) {
-    if (action.__transient) {
+    
+    
+    
+    
+    
+    
+    
+    
+    const isProtonExtensionAction = action.extensionID && gProton;
+
+    if (action.__transient || isProtonExtensionAction) {
       this.placeActionInPanel(action);
     } else {
       this._updateActionDisabledInPanel(action, panelNode, disabled);

@@ -178,6 +178,8 @@ add_task(async function test_hiddenPageActionContextMenu() {
   
   
   
+  
+  
   await SpecialPowers.pushPrefEnv({
     set: [["browser.proton.enabled", false]],
   });

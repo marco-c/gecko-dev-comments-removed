@@ -1186,8 +1186,19 @@ Action.prototype = {
 
 
   shouldShowInPanel(browserWindow) {
+    
+    
+    
+    
+    
+    
+    
+    
+    const isProtonExtensionAction = this.extensionID && protonEnabled;
+
     return (
-      (!this.__transient || !this.getDisabled(browserWindow)) &&
+      (!(this.__transient || isProtonExtensionAction) ||
+        !this.getDisabled(browserWindow)) &&
       this.canShowInWindow(browserWindow)
     );
   },
