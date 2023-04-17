@@ -29,12 +29,6 @@ class RacyRegisteredThread final {
 
   MOZ_COUNTED_DTOR(RacyRegisteredThread)
 
-  
-  
-  void ReinitializeOnResume() {
-    mThreadRegistration.mData.ReinitializeOnResume();
-  }
-
   class ProfilingStack& ProfilingStack() {
     return mThreadRegistration.mData.ProfilingStackRef();
   }
@@ -77,22 +71,6 @@ class RegisteredThread final {
   void ResetMainThread(nsIThread* aThread) {
     mRacyRegisteredThread.mThreadRegistration.mData.mThread = aThread;
   }
-
-  
-  
-  
-  void StartJSSampling(uint32_t aJSFlags) {
-    mRacyRegisteredThread.mThreadRegistration.mData.StartJSSampling(aJSFlags);
-  }
-
-  
-  
-  void StopJSSampling() {
-    mRacyRegisteredThread.mThreadRegistration.mData.StopJSSampling();
-  }
-
-  
-  void PollJSSampling();
 
  private:
   class RacyRegisteredThread mRacyRegisteredThread;
