@@ -762,7 +762,19 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributes(
   if (mAcc->IsLocal()) {
     return GetTextAttributesLocalAcc(aIncludeDefaults);
   }
-  return nullptr;
+  RefPtr<AccAttributes> attrs = new AccAttributes();
+  if (aIncludeDefaults) {
+    Accessible* parent = mAcc->Parent();
+    if (parent && parent->IsRemote() && parent->IsHyperText()) {
+      if (auto defAttrs = parent->AsRemote()->GetCachedTextAttributes()) {
+        defAttrs->CopyTo(attrs);
+      }
+    }
+  }
+  if (auto thisAttrs = mAcc->AsRemote()->GetCachedTextAttributes()) {
+    thisAttrs->CopyTo(attrs);
+  }
+  return attrs.forget();
 }
 
 TextLeafPoint TextLeafPoint::FindTextAttrsStart(
@@ -770,10 +782,26 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
     const AccAttributes* aOriginAttrs, bool aIncludeDefaults) const {
   
   RefPtr<const AccAttributes> lastAttrs;
-  if (aOriginAttrs) {
-    lastAttrs = aOriginAttrs;
+  const bool isRemote = mAcc->IsRemote();
+  if (isRemote) {
+    
+    
+    
+    
+    
+    
+    lastAttrs = mAcc->AsRemote()->GetCachedTextAttributes();
   } else {
-    lastAttrs = GetTextAttributesLocalAcc(aIncludeDefaults);
+    
+    
+    if (aOriginAttrs) {
+      lastAttrs = aOriginAttrs;
+      
+      
+      
+    } else {
+      lastAttrs = GetTextAttributesLocalAcc(aIncludeDefaults);
+    }
   }
   if (aIncludeOrigin && aDirection == eDirNext && mOffset == 0) {
     
@@ -784,8 +812,11 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
     if (!point.mAcc || !point.mAcc->IsText()) {
       return *this;
     }
+    
+    
     RefPtr<const AccAttributes> attrs =
-        point.GetTextAttributesLocalAcc(aIncludeDefaults);
+        isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
+                 : point.GetTextAttributesLocalAcc(aIncludeDefaults);
     if (!attrs->Equal(lastAttrs)) {
       return *this;
     }
@@ -799,7 +830,8 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
       break;
     }
     RefPtr<const AccAttributes> attrs =
-        point.GetTextAttributesLocalAcc(aIncludeDefaults);
+        isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
+                 : point.GetTextAttributesLocalAcc(aIncludeDefaults);
     if (!attrs->Equal(lastAttrs)) {
       
       
