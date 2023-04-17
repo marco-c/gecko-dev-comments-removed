@@ -13,9 +13,8 @@ var { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppUiTestDelegate: "resource://testing-common/AppUiTestDelegate.jsm",
+  Services: "resource://gre/modules/Services.jsm",
 });
-
-const UUIDGen = Services.uuid;
 
 class AppTestDelegateParent extends JSWindowActorParent {
   constructor() {
@@ -62,7 +61,7 @@ class AppTestDelegateParent extends JSWindowActorParent {
       case "openNewForegroundTab": {
         
         
-        const uuid = UUIDGen.generateUUID().toString();
+        const uuid = Services.uuid.generateUUID().toString();
         const tab = await AppUiTestDelegate.openNewForegroundTab(
           this.window,
           url,
