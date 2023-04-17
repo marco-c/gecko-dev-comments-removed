@@ -1540,6 +1540,7 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+
   virtual RefPtr<DrawTarget> CreateClippedDrawTarget(const Rect& aBounds,
                                                      SurfaceFormat aFormat) = 0;
 
