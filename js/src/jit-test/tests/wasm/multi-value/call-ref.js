@@ -1,5 +1,3 @@
-
-
 let counter;
 function resetCounter() { counter = 0; }
 

@@ -1,7 +1,5 @@
 
 
-
-
 function Stuff(n) {
     this.n = n;
 }

@@ -4,8 +4,6 @@
 
 
 
-
-
 new WebAssembly.Module(wasmTextToBinary(
     `(module
        (table 10 externref))`));

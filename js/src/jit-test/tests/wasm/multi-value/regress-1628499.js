@@ -1,7 +1,3 @@
-
-
-
-
 let instance = wasmEvalText(`
   (func $twoRefs (result externref externref)
     (ref.null extern)

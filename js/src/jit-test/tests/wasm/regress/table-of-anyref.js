@@ -1,6 +1,4 @@
 
-
-
 gczeal(4, 8);
 let ins = wasmEvalText(
     `(module

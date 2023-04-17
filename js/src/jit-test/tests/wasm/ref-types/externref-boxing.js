@@ -22,8 +22,6 @@
 
 
 
-
-
 for (let v of WasmExternrefValues)
 {
     let g = new WebAssembly.Global({value: "externref"}, v);

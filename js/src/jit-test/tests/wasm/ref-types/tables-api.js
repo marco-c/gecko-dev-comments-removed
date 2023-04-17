@@ -1,7 +1,5 @@
 
 
-
-
 function assertTableFilled(table, length, element) {
   assertEq(table.length, length);
   for (let i = 0; i < length; i++) {

@@ -1,6 +1,4 @@
 
-
-
 wasmFullPass(`
 	(module
 		(func $f1)

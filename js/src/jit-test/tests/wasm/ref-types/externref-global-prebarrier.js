@@ -1,8 +1,6 @@
 
 
 
-
-
 opts = getJitCompilerOptions();
 if (opts['ion.enable'] || opts['baseline.enable'])
   quit();

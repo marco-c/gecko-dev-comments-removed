@@ -208,28 +208,26 @@ function testTableFailCreate(initial, maximum, pattern) {
 testTableFailCreate(TableMaxRuntime + 1, undefined, /too many table elements/);
 testTableFailCreate(TableMaxRuntime + 1, TableMaxValid, /too many table elements/);
 
-if (wasmReftypesEnabled()) {
-  
-  
-  function testTableFailGrow(initial, maximum, target) {
-    let {run} = wasmEvalText(`(module
-      (table ${initial} ${maximum || ''} externref)
-      (func (export "run") (result i32)
-        ref.null extern
-        i32.const ${target - initial}
-        table.grow
-      )
-    )`).exports;
-    assertEq(run(), -1, 'failed to grow');
 
-    let tab = new WebAssembly.Table({
-      initial,
-      maximum,
-      element: 'externref',
-    });
-    assertErrorMessage(() => tab.grow(target - initial), RangeError, /failed to grow table/);
-  }
 
-  testTableFailGrow(1, undefined, TableMaxRuntime + 1);
-  testTableFailGrow(1, TableMaxValid, TableMaxRuntime + 1);
+function testTableFailGrow(initial, maximum, target) {
+  let {run} = wasmEvalText(`(module
+    (table ${initial} ${maximum || ''} externref)
+    (func (export "run") (result i32)
+      ref.null extern
+      i32.const ${target - initial}
+      table.grow
+    )
+  )`).exports;
+  assertEq(run(), -1, 'failed to grow');
+
+  let tab = new WebAssembly.Table({
+    initial,
+    maximum,
+    element: 'externref',
+  });
+  assertErrorMessage(() => tab.grow(target - initial), RangeError, /failed to grow table/);
 }
+
+testTableFailGrow(1, undefined, TableMaxRuntime + 1);
+testTableFailGrow(1, TableMaxValid, TableMaxRuntime + 1);

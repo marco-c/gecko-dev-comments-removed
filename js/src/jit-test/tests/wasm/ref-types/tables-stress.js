@@ -1,5 +1,3 @@
-
-
 for ( let prefix of ['', '(table $prefix 0 32 funcref)']) {
     let mod = new WebAssembly.Module(wasmTextToBinary(
     `(module

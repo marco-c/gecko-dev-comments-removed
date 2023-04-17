@@ -1,6 +1,4 @@
 
-
-
 function Baguette(calories) {
     this.calories = calories;
 }

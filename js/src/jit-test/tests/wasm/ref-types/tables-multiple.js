@@ -9,8 +9,6 @@
 
 
 
-
-
 var ins = wasmEvalText(
     `(module
       (table $t1 2 funcref)
