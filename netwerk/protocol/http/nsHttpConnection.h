@@ -353,10 +353,19 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   bool m0RTTChecked{false};
   
-  
-  bool mWaitingFor0RTTResponse{false};
+  enum EarlyData {
+    NOT_AVAILABLE,
+    USED,
+    CANNOT_BE_USED,
+    DONE,
+  };
+  EarlyData mEarlyDataState{EarlyData::NOT_AVAILABLE};
+  bool EarlyDataAvailable() const {
+    return mEarlyDataState == EarlyData::USED ||
+           mEarlyDataState == EarlyData::CANNOT_BE_USED;
+  }
+  bool EarlyDataUsed() const { return mEarlyDataState == EarlyData::USED; }
   int64_t mContentBytesWritten0RTT{0};
-  bool mEarlyDataNegotiated{false};  
   nsCString mEarlyNegotiatedALPN;
   bool mDid0RTTSpdy{false};
   bool mTlsHandshakeComplitionPending{false};
