@@ -770,11 +770,7 @@ var Policies = {
         
         
         let visibilityPref = "browser.toolbars.bookmarks.visibility";
-        let bookmarksFeaturePref = "browser.toolbars.bookmarks.2h2020";
-        let visibility = param ? "always" : "never";
-        if (Services.prefs.getBoolPref(bookmarksFeaturePref, false)) {
-          visibility = param ? "always" : "newtab";
-        }
+        let visibility = param ? "always" : "newtab";
         Services.prefs.setCharPref(visibilityPref, visibility);
         gXulStore.setValue(
           BROWSER_DOCUMENT_URL,
