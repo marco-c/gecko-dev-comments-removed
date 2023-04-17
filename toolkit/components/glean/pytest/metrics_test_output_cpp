@@ -177,6 +177,15 @@ namespace test_nested {
 
     constexpr impl::EventMetric<EventMetricWithExtraKeys> event_metric_with_extra(17);
 
+    
+
+
+    
+
+
+
+    constexpr impl::QuantityMetric quantity_metric(18);
+
 }
 
 } 
