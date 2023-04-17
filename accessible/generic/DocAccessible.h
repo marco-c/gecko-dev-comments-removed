@@ -467,8 +467,10 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
+
   void AttributeChangedImpl(LocalAccessible* aAccessible, int32_t aNameSpaceID,
-                            nsAtom* aAttribute, int32_t aModType);
+                            nsAtom* aAttribute, int32_t aModType,
+                            const nsAttrValue* aOldValue);
 
   
 
@@ -476,7 +478,9 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void ARIAAttributeChanged(LocalAccessible* aAccessible, nsAtom* aAttribute);
+
+  void ARIAAttributeChanged(LocalAccessible* aAccessible, nsAtom* aAttribute,
+                            const nsAttrValue* aOldValue);
 
   
 
@@ -635,13 +639,9 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  union {
-    
-    const nsAtom* mARIAAttrOldValue;
 
-    
-    uint64_t mPrevStateBits;
-  };
+  
+  uint64_t mPrevStateBits;
 
   nsTArray<RefPtr<DocAccessible>> mChildDocuments;
 
