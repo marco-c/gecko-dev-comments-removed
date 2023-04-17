@@ -226,7 +226,24 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+        @Deprecated
+        @DeprecationSchedule(version = 98, id = "runtime-settings-typo")
         public @NonNull Builder enterpiseRootsEnabled(final boolean enabled) {
+            getSettings().setEnterpriseRootsEnabled(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
+        public @NonNull Builder enterpriseRootsEnabled(final boolean enabled) {
             getSettings().setEnterpriseRootsEnabled(enabled);
             return this;
         }
