@@ -273,7 +273,12 @@ interface nsIClearDataService : nsISupports
   
 
 
-  const uint32_t CLEAR_ALL = 0xFFFFFF;
+  const uint32_t CLEAR_PREFLIGHT_CACHE = 1 << 24;
+
+  
+
+
+  const uint32_t CLEAR_ALL = 0xFFFFFFFF;
 
   
 
@@ -283,7 +288,8 @@ interface nsIClearDataService : nsISupports
   
 
 
-  const uint32_t CLEAR_ALL_CACHES = CLEAR_NETWORK_CACHE | CLEAR_IMAGE_CACHE | CLEAR_CSS_CACHE;
+  const uint32_t CLEAR_ALL_CACHES = CLEAR_NETWORK_CACHE | CLEAR_IMAGE_CACHE |
+    CLEAR_CSS_CACHE | CLEAR_PREFLIGHT_CACHE;
 
   
 

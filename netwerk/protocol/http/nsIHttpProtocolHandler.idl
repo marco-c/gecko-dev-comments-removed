@@ -81,6 +81,11 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
 
     [noscript]
     void EnsureHSTSDataReadyNative(in HSTSDataCallbackWrapperAlreadyAddRefed aCallback);
+
+    
+
+
+    void clearCORSPreflightCache();
 };
 
 %{C++
