@@ -1,11 +1,6 @@
 
 function run_test() {
   
-  if (!AppConstants.MOZ_GECKO_PROFILER) {
-    return;
-  }
-
-  
   
   
   Assert.ok(!Services.profiler.IsActive());

@@ -19,9 +19,6 @@ add_task(async function test_network_markers_service_worker_setup() {
 add_task(async function test_network_markers_redirect_simple() {
   
   
-  if (!AppConstants.MOZ_GECKO_PROFILER) {
-    return;
-  }
   Assert.ok(
     !Services.profiler.IsActive(),
     "The profiler is not currently active"
@@ -145,9 +142,6 @@ add_task(async function test_network_markers_redirect_simple() {
 add_task(async function test_network_markers_redirect_resources() {
   
   
-  if (!AppConstants.MOZ_GECKO_PROFILER) {
-    return;
-  }
   Assert.ok(
     !Services.profiler.IsActive(),
     "The profiler is not currently active"
