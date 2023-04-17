@@ -758,8 +758,6 @@ class nsContentUtils {
   
   static bool InProlog(nsINode* aNode);
 
-  static nsNameSpaceManager* NameSpaceManager() { return sNameSpaceManager; }
-
   static nsIIOService* GetIOService() { return sIOService; }
 
   static nsIBidiKeyboard* GetBidiKeyboard();

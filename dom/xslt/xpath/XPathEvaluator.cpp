@@ -171,7 +171,7 @@ nsresult XPathEvaluatorParseContext::resolveNamespacePrefix(nsAtom* aPrefix,
   }
 
   
-  return nsContentUtils::NameSpaceManager()->RegisterNameSpace(ns, aID);
+  return nsNameSpaceManager::GetInstance()->RegisterNameSpace(ns, aID);
 }
 
 nsresult XPathEvaluatorParseContext::resolveFunctionCall(nsAtom* aName,
