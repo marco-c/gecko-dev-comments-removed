@@ -1,0 +1,18 @@
+
+
+
+
+
+#ifndef mozilla_ColorScheme_h
+#define mozilla_ColorScheme_h
+
+#include <cstdint>
+
+namespace mozilla {
+
+
+enum class ColorScheme : uint8_t { Light, Dark };
+
+}  
+
+#endif
