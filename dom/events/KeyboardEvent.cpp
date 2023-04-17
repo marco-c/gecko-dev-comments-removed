@@ -6,9 +6,11 @@
 
 #include "mozilla/dom/KeyboardEvent.h"
 
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsIPrincipal.h"
 #include "nsRFPService.h"
 #include "prtime.h"
 
@@ -247,9 +249,7 @@ uint32_t KeyboardEvent::Which(CallerType aCallerType) {
 
   switch (mEvent->mMessage) {
     case eKeyDown:
-    case eKeyDownOnPlugin:
     case eKeyUp:
-    case eKeyUpOnPlugin:
       return KeyCode(aCallerType);
     case eKeyPress:
       
@@ -310,6 +310,18 @@ void KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
   if (internalEvent->mCodeNameIndex == CODE_NAME_INDEX_USE_STRING) {
     internalEvent->mCodeValue = aParam.mCode;
   }
+}
+
+
+bool KeyboardEvent::IsInitKeyEventAvailable(JSContext* aCx, JSObject*) {
+  if (StaticPrefs::dom_keyboardevent_init_key_event_enabled()) {
+    return true;
+  }
+  if (!StaticPrefs::dom_keyboardevent_init_key_event_enabled_in_addons()) {
+    return false;
+  }
+  nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
+  return principal && principal->GetIsAddonOrExpandedAddonPrincipal();
 }
 
 void KeyboardEvent::InitKeyEventJS(const nsAString& aType, bool aCanBubble,
