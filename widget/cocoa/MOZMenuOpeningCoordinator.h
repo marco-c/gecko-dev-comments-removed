@@ -8,6 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/RefPtr.h"
+
+namespace mozilla {
+class Runnable;
+}
+
 
 
 
@@ -31,6 +37,10 @@
 
 
 - (void)cancelAsynchronousOpening:(NSInteger)aHandle;
+
+
+
+- (void)runAfterMenuClosed:(RefPtr<mozilla::Runnable>&&)aRunnable;
 
 @end
 

@@ -14,7 +14,9 @@
 
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
+#include "nsDeque.h"
 #include "nsObjCExceptions.h"
+#include "nsThreadUtils.h"
 #include "SDKDeclarations.h"
 
 @interface MOZMenuOpeningInfo : NSObject
@@ -31,6 +33,10 @@
   
   
   MOZMenuOpeningInfo* mPendingOpening;  
+
+  
+  
+  nsRefPtrDeque<mozilla::Runnable> mPendingAfterMenuCloseRunnables;
 
   
   NSInteger mLastHandle;
@@ -99,6 +105,12 @@
     }
 
     [info release];
+
+    
+    
+    while (mPendingAfterMenuCloseRunnables.GetSize() != 0) {
+      NS_DispatchToCurrentThread(mPendingAfterMenuCloseRunnables.PopFront());
+    }
   }
 
   mRunMenuIsOnTheStack = NO;
@@ -108,6 +120,16 @@
   if (mPendingOpening && mPendingOpening.handle == aHandle) {
     [mPendingOpening release];
     mPendingOpening = nil;
+  }
+}
+
+- (void)runAfterMenuClosed:(RefPtr<mozilla::Runnable>&&)aRunnable {
+  MOZ_RELEASE_ASSERT(aRunnable);
+
+  if (mRunMenuIsOnTheStack) {
+    mPendingAfterMenuCloseRunnables.Push(aRunnable.forget());
+  } else {
+    NS_DispatchToCurrentThread(aRunnable.forget());
   }
 }
 
