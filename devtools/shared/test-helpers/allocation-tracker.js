@@ -146,7 +146,15 @@ exports.allocationTracker = function({
     async startRecordingAllocations(debug_allocations) {
       
       
+      
+      
+      
+      dbg.memory.allocationSamplingProbability = 0.0;
+      
+      
+      this.flushAllocations();
       await this.doGC();
+      dbg.memory.allocationSamplingProbability = 1.0;
 
       
       const memory = this.getAllocatedMemory();
@@ -173,15 +181,22 @@ exports.allocationTracker = function({
 
     async stopRecordingAllocations(debug_allocations) {
       
+      
+      if (debug_allocations != "allocations") {
+        this.flushAllocations();
+      }
+
+      
       await this.doGC();
 
       const memory = this.getAllocatedMemory();
       const objects = this.stillAllocatedObjects();
 
+      let leaks;
       if (debug_allocations == "allocations") {
         this.logAllocationLog();
       } else if (debug_allocations == "leaks") {
-        this.logAllocationSitesDiff(this.data.allocations);
+        leaks = this.logAllocationSitesDiff(this.data.allocations);
       }
 
       return {
@@ -190,6 +205,7 @@ exports.allocationTracker = function({
         objectsWithStack:
           objects.objectsWithStack - this.data.objects.objectsWithStack,
         memory: memory - this.data.memory,
+        leaks,
       };
     },
 
@@ -307,6 +323,7 @@ exports.allocationTracker = function({
           JSON.stringify(allocationList, null, 2) +
           "\n"
       );
+      return allocationList;
     },
 
     
@@ -436,6 +453,15 @@ exports.allocationTracker = function({
         
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
+
+      
+      
+      
+      
+      
+      
+      
+      await new Promise(resolve => MemoryReporter.minimizeMemoryUsage(resolve));
     },
 
     

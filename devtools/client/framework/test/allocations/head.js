@@ -106,6 +106,9 @@ async function startRecordingAllocations({
         await tracker.startRecordingAllocations(debug_allocations);
       }
     );
+    
+    
+    await tracker.doGC();
   }
 
   await tracker.startRecordingAllocations(DEBUG_ALLOCATIONS);
