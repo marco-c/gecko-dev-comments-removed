@@ -1092,6 +1092,11 @@ bool nsLookAndFeel::ConfigureContentGtkTheme() {
   return changed;
 }
 
+static bool AnyColorChannelIsDifferent(nscolor aColor) {
+  return NS_GET_R(aColor) != NS_GET_G(aColor) ||
+         NS_GET_R(aColor) != NS_GET_B(aColor);
+}
+
 void nsLookAndFeel::EnsureInit() {
   if (mInitialized) {
     return;
@@ -1318,8 +1323,12 @@ void nsLookAndFeel::EnsureInit() {
     mAccentColorForeground = mTextSelectedText;
 
     
+    
+    
     if (RelativeLuminanceUtils::Compute(mAccentColor) >
-        RelativeLuminanceUtils::Compute(mAccentColorForeground)) {
+            RelativeLuminanceUtils::Compute(mAccentColorForeground) &&
+        (AnyColorChannelIsDifferent(mAccentColorForeground) ||
+         !AnyColorChannelIsDifferent(mAccentColor))) {
       std::swap(mAccentColor, mAccentColorForeground);
     }
   }
