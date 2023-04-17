@@ -22,7 +22,6 @@
 #include "nsHttpChannelAuthProvider.h"
 #include "nsHttpHandler.h"
 #include "nsString.h"
-#include "nsIApplicationCacheContainer.h"
 #include "nsICacheStorageService.h"
 #include "nsICacheStorage.h"
 #include "nsICacheEntry.h"
@@ -146,10 +145,10 @@ namespace {
 
 
 #define BYPASS_LOCAL_CACHE(loadFlags, isPreferCacheLoadOverBypass) \
-  (loadFlags & (nsIRequest::LOAD_BYPASS_CACHE |                    \
-                nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE) &&     \
-   !((loadFlags & nsIRequest::LOAD_FROM_CACHE) &&                  \
-     isPreferCacheLoadOverBypass))
+  ((loadFlags) & (nsIRequest::LOAD_BYPASS_CACHE |                  \
+                  nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE) &&   \
+   !(((loadFlags)&nsIRequest::LOAD_FROM_CACHE) &&                  \
+     (isPreferCacheLoadOverBypass)))
 
 #define RECOVER_FROM_CACHE_FILE_ERROR(result) \
   ((result) == NS_ERROR_FILE_NOT_FOUND ||     \
@@ -892,7 +891,6 @@ void nsHttpChannel::SpeculativeConnect() {
   
   
   
-  
   if (gIOService->IsOffline() || mUpgradeProtocolCallback ||
       !(mCaps & NS_HTTP_ALLOW_KEEPALIVE)) {
     return;
@@ -900,10 +898,10 @@ void nsHttpChannel::SpeculativeConnect() {
 
   
   
-  
-  if (mLoadFlags & (LOAD_ONLY_FROM_CACHE | LOAD_FROM_CACHE |
-                    LOAD_NO_NETWORK_IO | LOAD_CHECK_OFFLINE_CACHE))
+  if (mLoadFlags &
+      (LOAD_ONLY_FROM_CACHE | LOAD_FROM_CACHE | LOAD_NO_NETWORK_IO)) {
     return;
+  }
 
   if (LoadAllowStaleCacheContent()) {
     return;

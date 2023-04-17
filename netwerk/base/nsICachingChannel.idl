@@ -79,14 +79,6 @@ interface nsICachingChannel : nsICacheInfoChannel
 
 
 
-
-    const unsigned long LOAD_CHECK_OFFLINE_CACHE = 1 << 27;
-
-    
-
-
-
-
     const unsigned long LOAD_BYPASS_LOCAL_CACHE = 1 << 28;
 
     
