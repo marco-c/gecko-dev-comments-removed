@@ -111,6 +111,10 @@ var BookmarkPropertiesPanel = {
 
 
   _getAcceptLabel: function BPP__getAcceptLabel() {
+    if (Services.prefs.getBoolPref("browser.proton.modals.enabled", false)) {
+      return this._strings.getString("dialogAcceptLabelSaveItem");
+    }
+
     if (this._action == ACTION_ADD) {
       if (this._URIs.length) {
         return this._strings.getString("dialogAcceptLabelAddMulti");
@@ -253,8 +257,12 @@ var BookmarkPropertiesPanel = {
     document.title = this._getDialogTitle();
 
     
+    let title = { raw: document.title };
+    document.documentElement.setAttribute("headertitle", JSON.stringify(title));
+
     
-    this._initDialog().catch(ex => {
+    
+    document.mozSubdialogReady = this._initDialog().catch(ex => {
       Cu.reportError(`Failed to initialize dialog: ${ex}`);
     });
   },
@@ -283,6 +291,12 @@ var BookmarkPropertiesPanel = {
           continue;
         }
 
+        if (
+          Services.prefs.getBoolPref("browser.proton.modals.enabled", false)
+        ) {
+          this._height = window.innerHeight;
+        }
+
         let collapsed = target.getAttribute("collapsed") === "true";
         let wasCollapsed = mutation.oldValue === "true";
         if (collapsed == wasCollapsed) {
@@ -297,6 +311,13 @@ var BookmarkPropertiesPanel = {
           this._height += elementsHeight.get(id);
         }
         window.resizeTo(window.outerWidth, this._height);
+
+        if (
+          Services.prefs.getBoolPref("browser.proton.modals.enabled", false)
+        ) {
+          let frame = window.parent.document.querySelector(".dialogFrame");
+          frame.style.height = this._height + "px";
+        }
       }
     });
 
@@ -530,3 +551,7 @@ var BookmarkPropertiesPanel = {
     });
   },
 };
+
+document.addEventListener("DOMContentLoaded", function() {
+  BookmarkPropertiesPanel.onDialogLoad();
+});

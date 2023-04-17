@@ -281,7 +281,7 @@ var PlacesUIUtils = {
 
 
 
-  showBookmarkDialog(aInfo, aParentWindow = null) {
+  async showBookmarkDialog(aInfo, aParentWindow = null) {
     
     
     
@@ -308,7 +308,11 @@ var PlacesUIUtils = {
       aParentWindow = Services.wm.getMostRecentWindow(null);
     }
 
-    aParentWindow.openDialog(dialogURL, "", features, aInfo);
+    if (Services.prefs.getBoolPref("browser.proton.modals.enabled", false)) {
+      await aParentWindow.gDialogBox.open(dialogURL, aInfo);
+    } else {
+      aParentWindow.openDialog(dialogURL, "", features, aInfo);
+    }
 
     let bookmarkGuid =
       ("bookmarkGuid" in aInfo && aInfo.bookmarkGuid) || undefined;
@@ -333,7 +337,7 @@ var PlacesUIUtils = {
 
 
 
-  showBookmarkPagesDialog(URIList, hiddenRows = [], win = null) {
+  async showBookmarkPagesDialog(URIList, hiddenRows = [], win = null) {
     if (!URIList.length) {
       return;
     }
@@ -348,7 +352,7 @@ var PlacesUIUtils = {
       bookmarkDialogInfo.uri = URIList[0].uri;
     }
 
-    PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, win);
+    await PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, win);
   },
 
   
