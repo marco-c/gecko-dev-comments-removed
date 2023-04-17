@@ -1497,9 +1497,7 @@ impl Device {
         let supports_texture_storage = allow_texture_storage_support && !cfg!(target_os = "macos") &&
             match gl.get_type() {
                 gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
-                
-                
-                gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_texture_storage"),
+                gl::GlType::Gles => true,
             };
         let supports_texture_swizzle = allow_texture_swizzling &&
             match gl.get_type() {
@@ -1529,7 +1527,9 @@ impl Device {
             
             
             
-            gl::GlType::Gles if supports_gles_bgra && supports_texture_storage => (
+            gl::GlType::Gles if supports_gles_bgra
+                && supports_extension(&extensions, "GL_EXT_texture_storage") =>
+            (
                 TextureFormatPair::from(ImageFormat::BGRA8),
                 TextureFormatPair { internal: gl::BGRA8_EXT, external: gl::BGRA_EXT },
                 gl::UNSIGNED_BYTE,
