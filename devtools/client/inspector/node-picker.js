@@ -218,20 +218,6 @@ class NodePicker extends EventEmitter {
 
   _onHovered(data) {
     this.emit("picker-node-hovered", data.node);
-
-    
-    
-    if (!data.node.walkerFront.traits.clearPickerSupport) {
-      return;
-    }
-
-    
-    
-    for (const inspectorFront of this._currentInspectorFronts) {
-      if (inspectorFront.walker !== data.node.walkerFront) {
-        inspectorFront.walker.clearPicker();
-      }
-    }
   }
 
   

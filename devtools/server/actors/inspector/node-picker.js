@@ -3,10 +3,18 @@
 
 
 "use strict";
+const { Ci } = require("chrome");
 const Services = require("Services");
+
 loader.lazyRequireGetter(
   this,
-  "isRemoteBrowserElement",
+  "isWindowIncluded",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "isRemoteFrame",
   "devtools/shared/layout/utils",
   true
 );
@@ -14,8 +22,6 @@ loader.lazyRequireGetter(
 const IS_OSX = Services.appinfo.OS === "Darwin";
 
 class NodePicker {
-  #eventListenersAbortController;
-
   constructor(walker, targetActor) {
     this._walker = walker;
     this._targetActor = targetActor;
@@ -28,7 +34,6 @@ class NodePicker {
     this._onKey = this._onKey.bind(this);
     this._onPick = this._onPick.bind(this);
     this._onSuppressedEvent = this._onSuppressedEvent.bind(this);
-    this._preventContentEvent = this._preventContentEvent.bind(this);
   }
 
   _findAndAttachElement(event) {
@@ -47,25 +52,13 @@ class NodePicker {
 
 
 
-  _isEventAllowed({ target, view }) {
-    
-    
-    if (window instanceof Ci.nsIDOMChromeWindow) {
-      return true;
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    if (isRemoteBrowserElement(target)) {
-      return false;
-    }
+  _isEventAllowed({ view }) {
+    const { window } = this._targetActor;
 
-    return this._targetActor.windows.includes(view);
+    return (
+      window instanceof Ci.nsIDOMChromeWindow || isWindowIncluded(window, view)
+    );
   }
 
   
@@ -79,11 +72,16 @@ class NodePicker {
 
 
   _onPick(event) {
-    if (!this._isEventAllowed(event)) {
+    
+    
+    if (isRemoteFrame(event.target)) {
       return;
     }
 
     this._preventContentEvent(event);
+    if (!this._isEventAllowed(event)) {
+      return;
+    }
 
     
     
@@ -105,10 +103,16 @@ class NodePicker {
   }
 
   _onHovered(event) {
+    
+    
+    if (isRemoteFrame(event.target)) {
+      return;
+    }
+
+    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
-    this._preventContentEvent(event);
 
     this._currentNode = this._findAndAttachElement(event);
     if (this._hoveredNode !== this._currentNode.node) {
@@ -122,10 +126,10 @@ class NodePicker {
       return;
     }
 
+    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
-    this._preventContentEvent(event);
 
     let currentNode = this._currentNode.node.rawNode;
 
@@ -211,7 +215,7 @@ class NodePicker {
   
   
   _preventContentEvent(event) {
-    if (!this._isEventAllowed(event)) {
+    if (isRemoteFrame(event.target)) {
       return;
     }
     event.stopPropagation();
@@ -229,41 +233,42 @@ class NodePicker {
 
 
   _setSuppressedEventListener(callback) {
-    if (!this._targetActor?.window?.document) {
-      return;
-    }
+    const { document } = this._targetActor.window;
 
     
-    this._targetActor.window.document.setSuppressedEventListener(
+    document.setSuppressedEventListener(
       callback ? { handleEvent: callback } : null
     );
   }
 
   _startPickerListeners() {
     const target = this._targetActor.chromeEventHandler;
-    this.#eventListenersAbortController = new AbortController();
-    const config = {
-      capture: true,
-      signal: this.#eventListenersAbortController.signal,
-    };
-    target.addEventListener("mousemove", this._onHovered, config);
-    target.addEventListener("click", this._onPick, config);
-    target.addEventListener("mousedown", this._preventContentEvent, config);
-    target.addEventListener("mouseup", this._preventContentEvent, config);
-    target.addEventListener("dblclick", this._preventContentEvent, config);
-    target.addEventListener("keydown", this._onKey, config);
-    target.addEventListener("keyup", this._preventContentEvent, config);
+    target.addEventListener("mousemove", this._onHovered, true);
+    target.addEventListener("click", this._onPick, true);
+    target.addEventListener("mousedown", this._preventContentEvent, true);
+    target.addEventListener("mouseup", this._preventContentEvent, true);
+    target.addEventListener("dblclick", this._preventContentEvent, true);
+    target.addEventListener("keydown", this._onKey, true);
+    target.addEventListener("keyup", this._preventContentEvent, true);
 
     this._setSuppressedEventListener(this._onSuppressedEvent);
   }
 
   _stopPickerListeners() {
-    this._setSuppressedEventListener(null);
-
-    if (this.#eventListenersAbortController) {
-      this.#eventListenersAbortController.abort();
-      this.#eventListenersAbortController = null;
+    const target = this._targetActor.chromeEventHandler;
+    if (!target) {
+      return;
     }
+
+    target.removeEventListener("mousemove", this._onHovered, true);
+    target.removeEventListener("click", this._onPick, true);
+    target.removeEventListener("mousedown", this._preventContentEvent, true);
+    target.removeEventListener("mouseup", this._preventContentEvent, true);
+    target.removeEventListener("dblclick", this._preventContentEvent, true);
+    target.removeEventListener("keydown", this._onKey, true);
+    target.removeEventListener("keyup", this._preventContentEvent, true);
+
+    this._setSuppressedEventListener(null);
   }
 
   cancelPick() {
@@ -293,10 +298,6 @@ class NodePicker {
     if (doFocus) {
       this._targetActor.window.focus();
     }
-  }
-
-  resetHoveredNodeReference() {
-    this._hoveredNode = null;
   }
 
   destroy() {

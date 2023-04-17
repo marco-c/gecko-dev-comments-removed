@@ -198,29 +198,17 @@ registerCleanupFunction(() => {
 
 
 
-
-
-
-async function getHighlighterTestFront(toolbox, { findTarget } = {}) {
+async function getHighlighterTestFront(toolbox) {
   
   
   
   const inspector = await toolbox.loadTool("inspector");
-
-  const target = findTarget
-    ? toolbox.commands.targetCommand
-        .getAllTargets([toolbox.commands.targetCommand.TYPES.FRAME])
-        .find(t => findTarget(t))
-    : toolbox.target;
-
-  const highlighterTestFront = await target.getFront("highlighterTest");
+  const highlighterTestFront = await toolbox.target.getFront("highlighterTest");
   
   
   
   highlighterTestFront.highlighter = () => {
-    return inspector.highlighters.getActiveHighlighter(
-      inspector.highlighters.TYPES.BOXMODEL
-    );
+    return inspector.highlighters.getActiveHighlighter("BoxModelHighlighter");
   };
   return highlighterTestFront;
 }

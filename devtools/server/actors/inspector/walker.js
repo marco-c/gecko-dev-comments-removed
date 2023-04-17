@@ -321,10 +321,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {
-        
-        clearPickerSupport: true,
-      },
+      traits: {},
     };
   },
 
@@ -2794,10 +2791,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   cancelPick() {
     this.nodePicker.cancelPick();
-  },
-
-  clearPicker() {
-    this.nodePicker.resetHoveredNodeReference();
   },
 
   
