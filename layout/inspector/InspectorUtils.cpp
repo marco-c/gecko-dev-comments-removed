@@ -623,10 +623,14 @@ void InspectorUtils::GetCSSPseudoElementNames(GlobalObject& aGlobalObject,
       static_cast<size_t>(PseudoStyleType::CSSPseudoElementsEnd);
   for (size_t i = 0; i < kPseudoCount; ++i) {
     PseudoStyleType type = static_cast<PseudoStyleType>(i);
-    if (nsCSSPseudoElements::IsEnabled(type, CSSEnabledState::ForAllContent)) {
-      nsAtom* atom = nsCSSPseudoElements::GetPseudoAtom(type);
-      aResult.AppendElement(nsDependentAtomString(atom));
+    if (!nsCSSPseudoElements::IsEnabled(type, CSSEnabledState::ForAllContent)) {
+      continue;
     }
+    auto& string = *aResult.AppendElement();
+    
+    string.Append(u':');
+    nsAtom* atom = nsCSSPseudoElements::GetPseudoAtom(type);
+    string.Append(nsDependentAtomString(atom));
   }
 }
 
