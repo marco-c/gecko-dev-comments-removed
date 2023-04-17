@@ -217,8 +217,22 @@ already_AddRefed<FileList> DataTransferItemList::Files(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RefPtr<FileList> files;
-  if (aPrincipal->IsSystemPrincipal()) {
+  if (aPrincipal->IsSystemPrincipal() ||
+      
+      nsContentUtils::IsExpandedPrincipal(aPrincipal)) {
     files = new FileList(mDataTransfer);
     GenerateFiles(files, aPrincipal);
     return files.forget();
