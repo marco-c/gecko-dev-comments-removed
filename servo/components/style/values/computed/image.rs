@@ -74,9 +74,20 @@ impl ToComputedValue for specified::ImageSet {
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         let items = self.items.to_computed_value(context);
         let dpr = context.device().device_pixel_ratio().get();
+
+        
+        
+        let mut supported_image = false;
         let mut selected_index = 0;
         let mut selected_resolution = items[0].resolution.dppx();
-        for (i, item) in items.iter().enumerate().skip(1) {
+
+        for (i, item) in items.iter().enumerate() {
+
+            
+            if item.has_mime_type && !context.device().is_supported_mime_type(&item.mime_type) {
+                continue;
+            }
+
             let candidate_resolution = item.resolution.dppx();
 
             
@@ -97,7 +108,9 @@ impl ToComputedValue for specified::ImageSet {
                 false
             };
 
-            if better_candidate() {
+            
+            if !supported_image || better_candidate() {
+                supported_image = true;
                 selected_index = i;
                 selected_resolution = candidate_resolution;
             }

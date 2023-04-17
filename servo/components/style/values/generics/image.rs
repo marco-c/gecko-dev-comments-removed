@@ -132,7 +132,7 @@ pub struct GenericImageSet<Image, Resolution> {
 
 
 #[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem, ToCss,
+    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[repr(C)]
 pub struct GenericImageSetItem<Image, Resolution> {
@@ -142,7 +142,33 @@ pub struct GenericImageSetItem<Image, Resolution> {
     
     
     pub resolution: Resolution,
+
     
+    
+    pub mime_type: crate::OwnedStr,
+
+    
+    pub has_mime_type: bool,
+}
+
+impl<I: style_traits::ToCss, R: style_traits::ToCss> ToCss for GenericImageSetItem<I, R>
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        self.image.to_css(dest)?;
+        dest.write_str(" ")?;
+        self.resolution.to_css(dest)?;
+
+        if self.has_mime_type {
+            dest.write_str(" ")?;
+            dest.write_str("type(")?;
+            self.mime_type.to_css(dest)?;
+            dest.write_str(")")?;
+        }
+        Ok(())
+    }
 }
 
 pub use self::GenericImageSet as ImageSet;
