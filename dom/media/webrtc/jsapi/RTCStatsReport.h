@@ -8,23 +8,22 @@
 #define RTCStatsReport_h_
 
 #include "api/units/timestamp.h"  
-#include "nsWrapperCache.h"
-#include "nsCOMPtr.h"
-
-#include "nsPIDOMWindow.h"  
-#include "mozilla/dom/AutoEntryScript.h"
-#include "nsIGlobalObject.h"
-#include "js/RootingAPI.h"  
+#include "js/RootingAPI.h"        
 #include "js/Value.h"
-#include "libwebrtcglue/SystemTime.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/UniquePtr.h"
-#include "prtime.h"  
+#include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"  
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "nsIGlobalObject.h"
+#include "nsPIDOMWindow.h"  
+#include "nsWrapperCache.h"
+#include "prtime.h"  
 
 namespace mozilla {
 
