@@ -18,6 +18,18 @@ class CacheDomain {
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 
+enum class CacheUpdateType {
+  
+
+
+  Initial,
+
+  
+
+
+  Update,
+};
+
 }  
 }  
 
