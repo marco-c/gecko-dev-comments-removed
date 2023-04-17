@@ -73,6 +73,13 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
   nsresult GetVisibleItemCount(uint32_t& aCount);
 
+  mozilla::Maybe<MenuChild> GetItemForElement(mozilla::dom::Element* aMenuChildElement);
+
+  
+  void ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers);
+
+  bool IsOpenForGecko() const { return mIsOpenForGecko; }
+
   
   
   
@@ -192,6 +199,11 @@ class nsMenuX final : public nsMenuParentX,
   
   
   RefPtr<mozilla::CancelableRunnable> mPendingAsyncMenuCloseRunnable;
+
+  
+  
+  
+  nsTArray<RefPtr<mozilla::CancelableRunnable>> mPendingCommandRunnables;
 
   GeckoNSMenu* mNativeMenu = nil;     
   MenuDelegate* mMenuDelegate = nil;  

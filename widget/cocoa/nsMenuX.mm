@@ -289,6 +289,18 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   return {};
 }
 
+Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(Element* aMenuChildElement) {
+  for (auto& child : mMenuChildren) {
+    RefPtr<nsIContent> content =
+        child.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+                    [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+    if (content == aMenuChildElement) {
+      return Some(child);
+    }
+  }
+  return {};
+}
+
 nsresult nsMenuX::RemoveAll() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -415,6 +427,13 @@ void nsMenuX::MenuClosedAsync() {
   }
 
   
+  for (auto& runnable : mPendingCommandRunnables) {
+    runnable->Run();
+    runnable->Cancel();  
+  }
+  mPendingCommandRunnables.Clear();
+
+  
   OnHighlightedItemChanged(Nothing());
 
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
@@ -437,6 +456,47 @@ void nsMenuX::MenuClosedAsync() {
   if (mObserver) {
     mObserver->OnMenuClosed();
   }
+}
+
+void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  
+  class DoCommandRunnable final : public mozilla::CancelableRunnable {
+   public:
+    explicit DoCommandRunnable(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers)
+        : CancelableRunnable("DoCommandRunnable"), mMenuItem(aItem), mModifiers(aModifiers) {}
+
+    nsresult Run() override {
+      if (mMenuItem) {
+        RefPtr<nsMenuItemX> menuItem = std::move(mMenuItem);
+        menuItem->DoCommand(mModifiers);
+      }
+      return NS_OK;
+    }
+    nsresult Cancel() override {
+      mMenuItem = nullptr;
+      return NS_OK;
+    }
+
+   private:
+    RefPtr<nsMenuItemX> mMenuItem;  
+    NSEventModifierFlags mModifiers;
+  };
+  RefPtr<CancelableRunnable> doCommandAsync = new DoCommandRunnable(std::move(aItem), aModifiers);
+  mPendingCommandRunnables.AppendElement(doCommandAsync);
+  NS_DispatchToCurrentThread(doCommandAsync);
+
+  if (mIsOpen) {
+    
+    
+    [mNativeMenu cancelTrackingWithoutAnimation];
+  }
+
+  
+  
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 bool nsMenuX::Close() {

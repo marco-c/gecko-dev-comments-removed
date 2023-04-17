@@ -31,6 +31,8 @@ class NativeMenuMac : public NativeMenu,
   
   void ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) override;
   bool Close() override;
+  void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers,
+                    ErrorResult& aRv) override;
   RefPtr<dom::Element> Element() override;
   void AddObserver(NativeMenu::Observer* aObserver) override {
     mObservers.AppendElement(aObserver);
@@ -67,6 +69,12 @@ class NativeMenuMac : public NativeMenu,
   
   
   void OpenMenu(const mozilla::DesktopPoint& aPosition);
+
+  
+  
+  
+  
+  RefPtr<nsMenuX> GetOpenMenuContainingElement(dom::Element* aElement);
 
   RefPtr<dom::Element> mElement;
   RefPtr<nsMenuGroupOwnerX> mMenuGroupOwner;

@@ -9,6 +9,11 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+namespace mozilla {
+using Modifiers = uint16_t;
+class ErrorResult;
+}  
+
 namespace mozilla::dom {
 class Element;
 }
@@ -27,6 +32,13 @@ class NativeMenu {
   
   
   virtual bool Close() = 0;
+
+  
+  
+  
+  
+  virtual void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers,
+                            ErrorResult& aRv) = 0;
 
   
   virtual RefPtr<dom::Element> Element() = 0;
