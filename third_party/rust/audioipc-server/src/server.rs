@@ -759,13 +759,31 @@ impl CubebServer {
         let user_ptr = server_stream.cbs.as_ref() as *const ServerStreamCallbacks as *mut c_void;
 
         
-        if let Err(e) = server_stream.shm_setup.take().wait() {
-            
-            debug!(
-                "Shmem setup for stream {:?} failed (error {:?})",
-                stm_tok, e
-            );
-            return Err(e.into());
+        match server_stream.shm_setup.take().wait() {
+            Ok(Some(CallbackResp::SharedMem)) => {}
+            Ok(Some(CallbackResp::Error(e))) => {
+                
+                debug!(
+                    "Shmem setup for stream {:?} failed (raw error {:?})",
+                    stm_tok, e
+                );
+                return Ok(ClientMessage::Error(e));
+            }
+            Ok(r) => {
+                debug!(
+                    "Shmem setup for stream {:?} failed (unexpected response {:?})",
+                    stm_tok, r
+                );
+                return Ok(error(cubeb::Error::error()));
+            }
+            Err(e) => {
+                
+                debug!(
+                    "Shmem setup for stream {:?} failed (error {:?})",
+                    stm_tok, e
+                );
+                return Err(e.into());
+            }
         }
 
         let stream = unsafe {
