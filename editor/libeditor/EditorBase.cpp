@@ -83,6 +83,7 @@
 #include "nsCharTraits.h"              
 #include "nsComponentManagerUtils.h"   
 #include "nsContentUtils.h"            
+#include "nsCopySupport.h"             
 #include "nsDOMString.h"               
 #include "nsDebug.h"                   
 #include "nsError.h"                   
@@ -1467,6 +1468,37 @@ bool EditorBase::CheckForClipboardCommandListener(
   }
 
   return false;
+}
+
+bool EditorBase::FireClipboardEvent(EventMessage aEventMessage,
+                                    int32_t aClipboardType,
+                                    bool* aActionTaken) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (aEventMessage == ePaste) {
+    CommitComposition();
+  }
+
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
+    return false;
+  }
+
+  RefPtr<Selection> sel = &SelectionRef();
+  if (IsHTMLEditor() && aEventMessage == eCopy && sel->IsCollapsed()) {
+    
+    
+    
+    sel = nsCopySupport::GetSelectionForCopy(GetDocument());
+  }
+
+  const bool clipboardEventCanceled = !nsCopySupport::FireClipboardEvent(
+      aEventMessage, aClipboardType, presShell, sel, aActionTaken);
+  NotifyOfDispatchingClipboardEvent();
+
+  
+  
+  return !clipboardEventCanceled && !mDidPreDestroy;
 }
 
 NS_IMETHODIMP EditorBase::Cut() {

@@ -2410,6 +2410,20 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT bool CheckForClipboardCommandListener(
       nsAtom* aCommand, EventMessage aEventMessage) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+  bool FireClipboardEvent(EventMessage aEventMessage, int32_t aClipboardType,
+                          bool* aActionTaken = nullptr);
+
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
   RefPtr<Document> mDocument;
