@@ -49,7 +49,6 @@ gfxUserFontEntry::gfxUserFontEntry(
     : gfxFontEntry("userfont"_ns),
       mUserFontLoadState(STATUS_NOT_LOADED),
       mFontDataLoadingState(NOT_LOADING),
-      mSeenLocalSource(false),
       mUnsupportedFormat(false),
       mFontDisplay(aFontDisplay),
       mLoader(nullptr),
@@ -356,13 +355,6 @@ void CopyWOFFMetadata(const uint8_t* aFontData, uint32_t aLength,
 }
 
 void gfxUserFontEntry::LoadNextSrc() {
-  
-  
-  if (mFontDataLoadingState == NOT_LOADING) {
-    mSrcIndex = 0;
-    mSeenLocalSource = false;
-  }
-
   NS_ASSERTION(mSrcIndex < mSrcList.Length(),
                "already at the end of the src list for user font");
   NS_ASSERTION((mUserFontLoadState == STATUS_NOT_LOADED ||
@@ -427,20 +419,17 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
     if (currSrc.mSourceType == gfxFontFaceSrc::eSourceType_Local) {
       
       gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
-      gfxFontEntry* fe = nullptr;
-      if (!pfl->IsFontFamilyWhitelistActive()) {
-        fe = gfxPlatform::GetPlatform()->LookupLocalFont(
-            currSrc.mLocalName, Weight(), Stretch(), SlantStyle());
+      gfxFontEntry* fe =
+          pfl && pfl->IsFontFamilyWhitelistActive()
+              ? nullptr
+              : gfxPlatform::GetPlatform()->LookupLocalFont(
+                    currSrc.mLocalName, Weight(), Stretch(), SlantStyle());
+      nsTArray<gfxUserFontSet*> fontSets;
+      GetUserFontSets(fontSets);
+      for (gfxUserFontSet* fontSet : fontSets) {
         
         
-        mSeenLocalSource = true;
-        nsTArray<gfxUserFontSet*> fontSets;
-        GetUserFontSets(fontSets);
-        for (gfxUserFontSet* fontSet : fontSets) {
-          
-          
-          fontSet->SetLocalRulesUsed();
-        }
+        fontSet->SetLocalRulesUsed();
       }
       if (fe) {
         LOG(("userfonts (%p) [src %d] loaded local: (%s) for (%s) gen: %8.8x\n",
@@ -1071,14 +1060,10 @@ void gfxUserFontSet::ForgetLocalFaces() {
       auto ufe = static_cast<gfxUserFontEntry*>(f.get());
       
       
+      
       if (ufe->GetPlatformFontEntry() &&
           ufe->GetPlatformFontEntry()->IsLocalUserFont()) {
         ufe->mPlatformFontEntry = nullptr;
-      }
-      
-      
-      
-      if (ufe->mSeenLocalSource) {
         ufe->LoadCanceled();
       }
     }
