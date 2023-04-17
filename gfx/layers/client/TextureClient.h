@@ -661,6 +661,8 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
   bool TryReadLock();
   void ReadUnlock();
 
+  void SetUpdated() { mUpdated = true; }
+
   bool OnForwardedToHost();
 
   

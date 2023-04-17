@@ -436,7 +436,28 @@ TextureClient* PersistentBufferProviderShared::GetTextureClient() {
   if (!texture) {
     gfxCriticalNote
         << "PersistentBufferProviderShared: front buffer unavailable";
+    return nullptr;
   }
+
+  
+  
+  
+  if (texture->IsReadLocked()) {
+    RefPtr<DrawTarget> dt =
+        BorrowDrawTarget(IntRect(0, 0, mSize.width, mSize.height));
+    ReturnDrawTarget(dt.forget());
+    texture = GetTexture(mFront);
+    if (!texture) {
+      gfxCriticalNote
+          << "PersistentBufferProviderShared: front buffer unavailable";
+      return nullptr;
+    }
+  } else {
+    
+    
+    texture->SetUpdated();
+  }
+
   return texture;
 }
 
