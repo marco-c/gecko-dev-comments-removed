@@ -90,6 +90,9 @@ class ReferrerInfo : public nsIReferrerInfo {
       nsIURI* aOriginalReferrer) const;
 
   
+  void RecordTelemetry(nsIHttpChannel* aChannel);
+
+  
 
 
 
@@ -179,6 +182,11 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
   static bool IsCrossOriginRequest(nsIHttpChannel* aChannel);
+
+  
+
+
+  static bool IsCrossSiteRequest(nsIHttpChannel* aChannel);
 
   
 
@@ -449,6 +457,12 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   
   Maybe<nsCString> mComputedReferrer;
+
+#ifdef DEBUG
+  
+  
+  bool mTelemetryRecorded = false;
+#endif  
 };
 
 }  
