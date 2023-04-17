@@ -81,9 +81,6 @@ add_gcc_warning("-Wunreachable-code")
 check_and_add_gcc_warning("-Wunreachable-code-return")
 
 
-add_gcc_warning("-Wwrite-strings", cxx_compiler)
-
-
 add_gcc_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
