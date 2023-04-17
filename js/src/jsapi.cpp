@@ -3537,11 +3537,8 @@ bool JS::OwningCompileOptions::copy(JSContext* cx,
 
 JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
   discardSource = cx->realm()->behaviors().discardSource();
-  if (!js::IsAsmJSCompilationAvailable(cx)) {
-    
-    asmJSOption = !cx->options().asmJS()
-                      ? AsmJSOption::DisabledByAsmJSPref
-                      : AsmJSOption::DisabledByNoWasmCompiler;
+  if (!cx->options().asmJS()) {
+    asmJSOption = AsmJSOption::Disabled;
   } else if (cx->realm()->debuggerObservesAsmJS()) {
     asmJSOption = AsmJSOption::DisabledByDebugger;
   } else {

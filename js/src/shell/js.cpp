@@ -12496,16 +12496,6 @@ int main(int argc, char** argv) {
     cx->runtime()->setSelfHostedXDRWriterCallback(&WriteSelfHostedXDRFile);
   }
 
-#ifndef __wasi__
-  
-  
-  bool disabledHugeMemory = false;
-  if (op.getBoolOption("disable-wasm-huge-memory")) {
-    disabledHugeMemory = JS::DisableWasmHugeMemory();
-    MOZ_RELEASE_ASSERT(disabledHugeMemory);
-  }
-#endif
-
   if (!JS::InitSelfHostedCode(cx)) {
     return 1;
   }
@@ -12576,9 +12566,12 @@ int main(int argc, char** argv) {
 
 #ifndef __wasi__
   
-  if (disabledHugeMemory &&
-      !sCompilerProcessFlags.append("--disable-wasm-huge-memory")) {
-    return EXIT_FAILURE;
+  if (op.getBoolOption("disable-wasm-huge-memory")) {
+    if (!sCompilerProcessFlags.append("--disable-wasm-huge-memory")) {
+      return EXIT_FAILURE;
+    }
+    bool disabledHugeMemory = JS::DisableWasmHugeMemory();
+    MOZ_RELEASE_ASSERT(disabledHugeMemory);
   }
 
   
