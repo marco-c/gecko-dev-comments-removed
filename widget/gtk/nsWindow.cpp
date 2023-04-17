@@ -388,9 +388,9 @@ static void UpdateLastInputEventTime(void* aGdkEvent) {
 }
 
 void GetWindowOrigin(GdkWindow* aWindow, int* aX, int* aY) {
-  if (aWindow) {
-    gdk_window_get_origin(aWindow, aX, aY);
-  }
+  MOZ_RELEASE_ASSERT(aWindow);
+
+  gdk_window_get_origin(aWindow, aX, aY);
 
   
   
