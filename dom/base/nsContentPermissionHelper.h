@@ -126,7 +126,7 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   PromptResult CheckPromptPrefs() const;
 
   
-  bool CheckPermissionDelegate();
+  bool CheckPermissionDelegate() const;
 
   enum class DelayedTaskType {
     Allow,

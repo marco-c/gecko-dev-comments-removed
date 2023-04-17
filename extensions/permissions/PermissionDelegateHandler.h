@@ -67,7 +67,7 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
   
 
 
-  bool HasPermissionDelegated(const nsACString& aType);
+  bool HasPermissionDelegated(const nsACString& aType) const;
 
   
 

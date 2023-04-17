@@ -492,7 +492,7 @@ ContentPermissionRequestBase::CheckPromptPrefs() const {
   return PromptResult::Pending;
 }
 
-bool ContentPermissionRequestBase::CheckPermissionDelegate() {
+bool ContentPermissionRequestBase::CheckPermissionDelegate() const {
   
   
   
