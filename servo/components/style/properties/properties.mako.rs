@@ -1537,6 +1537,11 @@ impl ShorthandId {
             return None;
         }
 
+        if self == ShorthandId::All {
+            
+            return None;
+        }
+
         
         if declarations3.all(|d| d.may_serialize_as_part_of_shorthand()) {
             return Some(AppendableValue::DeclarationsForShorthand(self, declarations));
