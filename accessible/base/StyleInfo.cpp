@@ -72,7 +72,7 @@ void StyleInfo::Margin(Side aSide, nsAString& aValue) {
   aValue.AppendLiteral("px");
 }
 
-void StyleInfo::FormatColor(const nscolor& aValue, nsString& aFormattedValue) {
+void StyleInfo::FormatColor(const nscolor& aValue, nsAString& aFormattedValue) {
   
   aFormattedValue.AppendLiteral("rgb(");
   aFormattedValue.AppendInt(NS_GET_R(aValue));
