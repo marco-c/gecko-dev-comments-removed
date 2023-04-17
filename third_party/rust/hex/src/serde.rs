@@ -1,28 +1,40 @@
 
+#[cfg_attr(
+    all(feature = "alloc", feature = "serde"),
+    doc = r##"
+# Example
 
+```
+use serde::{Serialize, Deserialize};
 
-
-
-
-
-
-
-
-
-
-
-
+#[derive(Serialize, Deserialize)]
+struct Foo {
+    #[serde(with = "hex")]
+    bar: Vec<u8>,
+}
+```
+"##
+)]
 use serde::de::{Error, Visitor};
-use serde::{Deserializer, Serializer};
+use serde::Deserializer;
+#[cfg(feature = "alloc")]
+use serde::Serializer;
 
-use std::fmt;
-use std::marker::PhantomData;
+#[cfg(feature = "alloc")]
+use alloc::string::String;
 
-use crate::{FromHex, ToHex};
+use core::fmt;
+use core::marker::PhantomData;
+
+use crate::FromHex;
+
+#[cfg(feature = "alloc")]
+use crate::ToHex;
 
 
 
 
+#[cfg(feature = "alloc")]
 pub fn serialize_upper<S, T>(data: T, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -37,6 +49,8 @@ where
 
 
 
+
+#[cfg(feature = "alloc")]
 pub fn serialize<S, T>(data: T, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -73,14 +87,14 @@ where
         where
             E: Error,
         {
-            FromHex::from_hex(data).map_err(|e| Error::custom(e))
+            FromHex::from_hex(data).map_err(Error::custom)
         }
 
         fn visit_borrowed_str<E>(self, data: &'de str) -> Result<Self::Value, E>
         where
             E: Error,
         {
-            FromHex::from_hex(data).map_err(|e| Error::custom(e))
+            FromHex::from_hex(data).map_err(Error::custom)
         }
     }
 
