@@ -212,6 +212,9 @@ module.exports = {
     "no-lonely-if": "error",
 
     
+    "no-loss-of-precision": "error",
+
+    
     "no-nested-ternary": "error",
 
     
