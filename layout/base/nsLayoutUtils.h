@@ -2803,20 +2803,14 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
   static CSSRect GetBoundingContentRect(
-      const nsIContent* aContent, const nsIScrollableFrame* aRootScrollFrame,
-      mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
+      const nsIContent* aContent, const nsIScrollableFrame* aRootScrollFrame);
 
   
 
 
   static CSSRect GetBoundingFrameRect(
-      nsIFrame* aFrame, const nsIScrollableFrame* aRootScrollFrame,
-      mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr);
+      nsIFrame* aFrame, const nsIScrollableFrame* aRootScrollFrame);
 
   
 
