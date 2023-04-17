@@ -376,6 +376,9 @@ with Files("WindowOrWorkerGlobalScope.webidl"):
 with Files("Worker*"):
     BUG_COMPONENT = ("Core", "DOM: Workers")
 
+with Files("Extension*"):
+    BUG_COMPONENT = ("WebExtensions", "General")
+
 GENERATED_WEBIDL_FILES = [
     "CSS2Properties.webidl",
 ]
@@ -1042,6 +1045,14 @@ WEBIDL_FILES += [
     "PopupBlockedEvent.webidl",
     "ProgressEvent.webidl",
     "StyleSheetApplicableStateChangeEvent.webidl",
+]
+
+
+
+
+
+WEBIDL_FILES += [
+    "ExtensionBrowser.webidl",
 ]
 
 
