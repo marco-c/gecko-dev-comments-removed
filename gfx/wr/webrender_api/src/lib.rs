@@ -596,22 +596,6 @@ pub enum ScrollLocation {
 }
 
 
-#[derive(Clone, Copy, Debug)]
-pub struct ZoomFactor(f32);
-
-impl ZoomFactor {
-    
-    pub fn new(scale: f32) -> Self {
-        ZoomFactor(scale)
-    }
-
-    
-    pub fn get(self) -> f32 {
-        self.0
-    }
-}
-
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub enum CrashAnnotation {
