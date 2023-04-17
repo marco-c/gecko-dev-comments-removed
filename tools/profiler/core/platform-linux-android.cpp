@@ -569,14 +569,9 @@ static void PlatformInit(PSLockRef aLock) {}
 #endif
 
 #if defined(HAVE_NATIVE_UNWIND)
-
-
-
-ucontext_t sSyncUContext;
-
 void Registers::SyncPopulate() {
-  if (!getcontext(&sSyncUContext)) {
-    PopulateRegsFromContext(*this, &sSyncUContext);
+  if (!getcontext(&mContextSyncStorage)) {
+    PopulateRegsFromContext(*this, &mContextSyncStorage);
   }
 }
 #endif
