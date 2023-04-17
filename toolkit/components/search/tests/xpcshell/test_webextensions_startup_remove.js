@@ -51,7 +51,7 @@ add_task(async function test_removeAddonOnStartup() {
   
   
   
-  await OS.File.remove(
+  await IOUtils.remove(
     OS.Path.join(profile.path, "extensions", `${ENGINE_ID}.xpi`)
   );
 
