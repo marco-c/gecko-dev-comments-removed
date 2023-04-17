@@ -38,7 +38,7 @@ var gExceptionPaths = [
 
   
   
-  "resource://formautofill/addressmetadata/",
+  "resource://gre-resources/autofill/",
 
   
   "resource://search-extensions/",
@@ -372,7 +372,7 @@ function trackChromeUri(uri) {
 
 
 
-trackResourcePrefix("formautofill");
+trackResourcePrefix("autofill");
 trackChromeUri("chrome://formautofill/content/");
 
 function parseManifest(manifestUri) {
