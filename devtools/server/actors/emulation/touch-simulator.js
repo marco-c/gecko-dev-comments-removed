@@ -45,16 +45,20 @@ const TOUCH_STATES = {
 
 const kStateHover = 0x00000004; 
 
-function TouchSimulator(simulatorTarget) {
-  this.simulatorTarget = simulatorTarget;
-  this._currentPickerMap = new Map();
-}
 
 
 
+class TouchSimulator {
+  
 
-TouchSimulator.prototype = {
-  events: [
+
+
+  constructor(simulatorTarget) {
+    this.simulatorTarget = simulatorTarget;
+    this._currentPickerMap = new Map();
+  }
+
+  events = [
     "mousedown",
     "mousemove",
     "mouseup",
@@ -64,13 +68,9 @@ TouchSimulator.prototype = {
     "mouseover",
     "mouseout",
     "mouseleave",
-  ],
-
-  contextMenuTimeout: null,
-
-  simulatorTarget: null,
-
-  enabled: false,
+  ];
+  contextMenuTimeout = null;
+  enabled = false;
 
   start() {
     if (this.enabled) {
@@ -85,7 +85,7 @@ TouchSimulator.prototype = {
     });
 
     this.enabled = true;
-  },
+  }
 
   stop() {
     if (!this.enabled) {
@@ -96,12 +96,12 @@ TouchSimulator.prototype = {
       this.simulatorTarget.removeEventListener(evt, this, true);
     });
     this.enabled = false;
-  },
+  }
 
   _isPicking() {
     const types = Object.values(PICKER_TYPES);
     return types.some(type => this._currentPickerMap.get(type));
-  },
+  }
 
   
 
@@ -123,7 +123,7 @@ TouchSimulator.prototype = {
       );
     }
     this._currentPickerMap.set(pickerType, state);
-  },
+  }
 
   
   handleEvent(evt) {
@@ -286,7 +286,7 @@ TouchSimulator.prototype = {
       evt.preventDefault();
       evt.stopImmediatePropagation();
     }
-  },
+  }
 
   sendContextMenu({ target, clientX, clientY, screenX, screenY }) {
     const view = target.ownerGlobal;
@@ -306,7 +306,7 @@ TouchSimulator.prototype = {
     }, clickHoldDelay);
 
     return timeout;
-  },
+  }
 
   
 
@@ -335,7 +335,7 @@ TouchSimulator.prototype = {
 
     utils.sendNativeTouchPoint(0, TOUCH_STATES[type], pt.x, pt.y, 1, 90, null);
     return true;
-  },
+  }
 
   sendTouchEvent(evt, target, name) {
     const win = target.ownerGlobal;
@@ -359,12 +359,12 @@ TouchSimulator.prototype = {
       0,
       false
     );
-  },
+  }
 
   getContent(target) {
     const win = target?.ownerDocument ? target.ownerGlobal : null;
     return win;
-  },
+  }
 
   getDelayBeforeMouseEvent(evt) {
     
@@ -420,7 +420,7 @@ TouchSimulator.prototype = {
       return 0;
     }
     return 300;
-  },
-};
+  }
+}
 
 exports.TouchSimulator = TouchSimulator;
