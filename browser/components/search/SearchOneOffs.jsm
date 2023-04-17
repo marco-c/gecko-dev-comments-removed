@@ -148,6 +148,10 @@ class SearchOneOffs {
     return this.container.getAttribute(...args);
   }
 
+  hasAttribute(...args) {
+    return this.container.hasAttribute(...args);
+  }
+
   setAttribute(...args) {
     this.container.setAttribute(...args);
   }
@@ -195,15 +199,9 @@ class SearchOneOffs {
   
 
 
+
   get buttonWidth() {
     return 48;
-  }
-
-  
-
-
-  get buttonHeight() {
-    return 32;
   }
 
   
@@ -275,7 +273,13 @@ class SearchOneOffs {
     if (this.isViewOpen) {
       let isOneOffSelected =
         this.selectedButton &&
-        this.selectedButton.classList.contains("searchbar-engine-one-off-item");
+        this.selectedButton.classList.contains(
+          "searchbar-engine-one-off-item"
+        ) &&
+        !(
+          this.selectedButton == this.settingsButtonCompact &&
+          this.hasAttribute("is_searchbar")
+        );
       
       
       if (this.selectedButton && !isOneOffSelected) {
@@ -478,7 +482,10 @@ class SearchOneOffs {
       this.spacerCompact.setAttribute("flex", "1");
     }
 
-    let engines = (await this.getEngineInfo()).engines;
+    
+    let origin = this.telemetryOrigin;
+    this.settingsButton.id = origin + "-anon-search-settings";
+    this.settingsButtonCompact.id = origin + "-anon-search-settings-compact";
 
     if (this.popup) {
       let buttonsWidth = this.popup.clientWidth;
@@ -496,32 +503,16 @@ class SearchOneOffs {
       }
 
       
+      buttonsWidth -= this.settingsButtonCompact.clientWidth + 8;
+
+      
       
       this.buttons.style.setProperty("max-width", `${buttonsWidth}px`);
-
-      
-      
-      buttonsWidth = Math.max(buttonsWidth, this.buttonWidth);
-
-      let enginesPerRow = Math.floor(buttonsWidth / this.buttonWidth);
-      
-      
-      
-
-      
-      
-      
-      let engineCount = engines.length + addEngines.length;
-      let rowCount = Math.ceil(engineCount / enginesPerRow);
-      let height = rowCount * this.buttonHeight;
-      this.buttons.style.setProperty("height", `${height}px`);
     }
-    
-    let origin = this.telemetryOrigin;
-    this.settingsButton.id = origin + "-anon-search-settings";
-    this.settingsButtonCompact.id = origin + "-anon-search-settings-compact";
 
+    let engines = (await this.getEngineInfo()).engines;
     this._rebuildEngineList(engines, addEngines);
+
     this.dispatchEvent(new Event("rebuild"));
   }
 
