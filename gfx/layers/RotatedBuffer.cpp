@@ -14,7 +14,6 @@
 #include "BasicImplData.h"    
 #include "BasicLayersImpl.h"  
 #include "Layers.h"           
-#include "PaintThread.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"         
 #include "gfxUtils.h"            

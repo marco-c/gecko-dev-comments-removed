@@ -18,7 +18,6 @@
 #include "mozilla/layers/APZCTreeManagerChild.h"
 #include "mozilla/layers/CanvasChild.h"
 #include "mozilla/layers/LayerTransactionChild.h"
-#include "mozilla/layers/PaintThread.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/TextureClient.h"      
@@ -164,9 +163,6 @@ void CompositorBridgeChild::Destroy() {
     mLayerManager->Destroy();
     mLayerManager = nullptr;
   }
-
-  
-  FlushAsyncPaints();
 
   if (!mCanSend) {
     
@@ -918,83 +914,6 @@ wr::PipelineId CompositorBridgeChild::GetNextPipelineId() {
   return wr::AsPipelineId(GetNextResourceId());
 }
 
-void CompositorBridgeChild::FlushAsyncPaints() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  Maybe<TimeStamp> start;
-  if (XRE_IsContentProcess() && gfx::gfxVars::UseOMTP()) {
-    start = Some(TimeStamp::Now());
-  }
-
-  {
-    MonitorAutoLock lock(mPaintLock);
-    while (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
-      lock.Wait();
-    }
-
-    
-    mTextureClientsForAsyncPaint.Clear();
-  }
-
-  if (start) {
-    float ms = (TimeStamp::Now() - start.value()).ToMilliseconds();
-
-    
-    if (ms >= 0.2) {
-      mSlowFlushCount++;
-      Telemetry::Accumulate(Telemetry::GFX_OMTP_PAINT_WAIT_TIME, int32_t(ms));
-    }
-    mTotalFlushCount++;
-
-    double ratio = double(mSlowFlushCount) / double(mTotalFlushCount);
-    Telemetry::ScalarSet(Telemetry::ScalarID::GFX_OMTP_PAINT_WAIT_RATIO,
-                         uint32_t(ratio * 100 * 100));
-  }
-}
-
-void CompositorBridgeChild::NotifyBeginAsyncPaint(PaintTask* aTask) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MonitorAutoLock lock(mPaintLock);
-
-  if (mTotalAsyncPaints == 0) {
-    mAsyncTransactionBegin = TimeStamp::Now();
-  }
-  mTotalAsyncPaints += 1;
-
-  
-  
-  
-  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
-
-  mOutstandingAsyncPaints++;
-
-  
-  
-  for (auto& client : aTask->mClients) {
-    client->AddPaintThreadRef();
-    mTextureClientsForAsyncPaint.AppendElement(client);
-  };
-}
-
-
-
-bool CompositorBridgeChild::NotifyFinishedAsyncWorkerPaint(PaintTask* aTask) {
-  MOZ_ASSERT(PaintThread::Get()->IsOnPaintWorkerThread());
-
-  MonitorAutoLock lock(mPaintLock);
-  mOutstandingAsyncPaints--;
-
-  for (auto& client : aTask->mClients) {
-    client->DropPaintThreadRef();
-  };
-  aTask->DropTextureClients();
-
-  
-  
-  return mOutstandingAsyncEndTransaction && mOutstandingAsyncPaints == 0;
-}
-
 bool CompositorBridgeChild::NotifyBeginAsyncEndLayerTransaction(
     SyncObjectClient* aSyncObject) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1004,77 +923,6 @@ bool CompositorBridgeChild::NotifyBeginAsyncEndLayerTransaction(
   mOutstandingAsyncEndTransaction = true;
   mOutstandingAsyncSyncObject = aSyncObject;
   return mOutstandingAsyncPaints == 0;
-}
-
-void CompositorBridgeChild::NotifyFinishedAsyncEndLayerTransaction() {
-  MOZ_ASSERT(PaintThread::Get()->IsOnPaintWorkerThread());
-
-  if (mOutstandingAsyncSyncObject) {
-    mOutstandingAsyncSyncObject->Synchronize();
-    mOutstandingAsyncSyncObject = nullptr;
-  }
-
-  MonitorAutoLock lock(mPaintLock);
-
-  if (mTotalAsyncPaints > 0) {
-    float tenthMs =
-        (TimeStamp::Now() - mAsyncTransactionBegin).ToMilliseconds() * 10;
-    Telemetry::Accumulate(Telemetry::GFX_OMTP_PAINT_TASK_COUNT,
-                          int32_t(mTotalAsyncPaints));
-    Telemetry::Accumulate(Telemetry::GFX_OMTP_PAINT_TIME, int32_t(tenthMs));
-    mTotalAsyncPaints = 0;
-  }
-
-  
-  
-  MOZ_RELEASE_ASSERT(mOutstandingAsyncPaints == 0);
-  MOZ_ASSERT(mOutstandingAsyncEndTransaction);
-
-  mOutstandingAsyncEndTransaction = false;
-
-  
-  
-  
-  if (mIsDelayingForAsyncPaints) {
-    ResumeIPCAfterAsyncPaint();
-  }
-
-  
-  
-  lock.Notify();
-}
-
-void CompositorBridgeChild::ResumeIPCAfterAsyncPaint() {
-  
-  mPaintLock.AssertCurrentThreadOwns();
-  MOZ_ASSERT(PaintThread::Get()->IsOnPaintWorkerThread());
-  MOZ_ASSERT(mOutstandingAsyncPaints == 0);
-  MOZ_ASSERT(!mOutstandingAsyncEndTransaction);
-  MOZ_ASSERT(mIsDelayingForAsyncPaints);
-
-  mIsDelayingForAsyncPaints = false;
-
-  
-  if (!mCanSend || mActorDestroyed) {
-    return;
-  }
-
-  GetIPCChannel()->StopPostponingSends();
-}
-
-void CompositorBridgeChild::PostponeMessagesIfAsyncPainting() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MonitorAutoLock lock(mPaintLock);
-
-  MOZ_ASSERT(!mIsDelayingForAsyncPaints);
-
-  
-  
-  if (mOutstandingAsyncPaints > 0 || mOutstandingAsyncEndTransaction) {
-    mIsDelayingForAsyncPaints = true;
-    GetIPCChannel()->BeginPostponingSends();
-  }
 }
 
 }  

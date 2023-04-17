@@ -695,10 +695,6 @@ bool ShadowLayerForwarder::EndTransaction(
     startTime = Some(TimeStamp::Now());
   }
 
-  
-  
-  GetCompositorBridgeChild()->PostponeMessagesIfAsyncPainting();
-
   MOZ_LAYERS_LOG(("[LayersForwarder] sending transaction..."));
   RenderTraceScope rendertrace3("Forward Transaction", "000093");
   if (!mShadowManager->SendUpdate(info)) {

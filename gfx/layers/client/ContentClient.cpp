@@ -23,7 +23,6 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/PaintThread.h"
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
 #include "nsIWidget.h"        
@@ -118,7 +117,6 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
   BufferDecision dest = CalculateBufferForPaint(aLayer, aFlags);
 
   PaintState result;
-  result.mAsyncPaint = (aFlags & PAINT_ASYNC);
   result.mContentType = dest.mBufferContentType;
 
   if (!dest.mCanKeepBufferContents) {
@@ -160,16 +158,10 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
       !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
       !(aLayer->Manager()->AsWebRenderLayerManager());
   bool canDrawRotated = aFlags & PAINT_CAN_DRAW_ROTATED;
-  OpenMode readMode =
-      result.mAsyncPaint ? OpenMode::OPEN_READ_ASYNC : OpenMode::OPEN_READ;
-  OpenMode writeMode = result.mAsyncPaint ? OpenMode::OPEN_READ_WRITE_ASYNC
-                                          : OpenMode::OPEN_READ_WRITE;
+  OpenMode readMode = OpenMode::OPEN_READ;
+  OpenMode writeMode = OpenMode::OPEN_READ_WRITE;
 
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
-
-  if (result.mAsyncPaint) {
-    result.mAsyncTask.reset(new PaintTask());
-  }
 
   
   
@@ -180,17 +172,12 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
       bool needsUnrotate =
           (!canHaveRotation && newParameters.IsRotated()) ||
           (!canDrawRotated && newParameters.RectWrapsBuffer(drawBounds));
-      bool canUnrotate =
-          !result.mAsyncPaint || mBuffer->BufferRotation() == IntPoint(0, 0);
+      bool canUnrotate = true;
 
       
       
       
       if (!needsUnrotate || canUnrotate) {
-        
-        if (result.mAsyncPaint) {
-          mBuffer->BeginCapture();
-        }
 
         
         
@@ -244,20 +231,14 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
                         << dest.mBufferRect.Width() << ", "
                         << dest.mBufferRect.Height();
       }
-      result.mAsyncTask = nullptr;
       Clear();
       return result;
     }
 
     if (!newBuffer->Lock(writeMode)) {
       gfxCriticalNote << "Failed to lock new back buffer.";
-      result.mAsyncTask = nullptr;
       Clear();
       return result;
-    }
-
-    if (result.mAsyncPaint) {
-      newBuffer->BeginCapture();
     }
 
     
@@ -284,14 +265,6 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
   NS_ASSERTION(canHaveRotation || mBuffer->BufferRotation() == IntPoint(0, 0),
                "Rotation disabled, but we have nonzero rotation?");
 
-  if (result.mAsyncPaint) {
-    result.mAsyncTask->mTarget = mBuffer->GetBufferTarget();
-    result.mAsyncTask->mClients.AppendElement(mBuffer->GetClient());
-    if (mBuffer->GetClientOnWhite()) {
-      result.mAsyncTask->mClients.AppendElement(mBuffer->GetClientOnWhite());
-    }
-  }
-
   nsIntRegion invalidate;
   invalidate.Sub(aLayer->GetValidRegion(), dest.mBufferRect);
   result.mRegionToInvalidate.Or(result.mRegionToInvalidate, invalidate);
@@ -305,9 +278,6 @@ ContentClient::PaintState ContentClient::BeginPaint(PaintedLayer* aLayer,
 void ContentClient::EndPaint(
     PaintState& aPaintState,
     nsTArray<ReadbackProcessor::Update>* aReadbackUpdates) {
-  if (aPaintState.mAsyncTask) {
-    aPaintState.mAsyncTask->mCapture = mBuffer->EndCapture();
-  }
 }
 
 static nsIntRegion ExpandDrawRegion(ContentClient::PaintState& aPaintState,
@@ -851,19 +821,10 @@ void ContentClientDoubleBuffered::FinalizeFrame(PaintState& aPaintState) {
     return;
   }
 
-  OpenMode openMode = aPaintState.mAsyncPaint ? OpenMode::OPEN_READ_ASYNC
-                                              : OpenMode::OPEN_READ_ONLY;
+  OpenMode openMode = OpenMode::OPEN_READ_ONLY;
 
   if (mFrontBuffer->Lock(openMode)) {
     mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion.GetBounds());
-
-    if (aPaintState.mAsyncPaint) {
-      aPaintState.mAsyncTask->mClients.AppendElement(mFrontBuffer->GetClient());
-      if (mFrontBuffer->GetClientOnWhite()) {
-        aPaintState.mAsyncTask->mClients.AppendElement(
-            mFrontBuffer->GetClientOnWhite());
-      }
-    }
 
     mFrontBuffer->Unlock();
   }

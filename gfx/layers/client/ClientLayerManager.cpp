@@ -192,16 +192,6 @@ already_AddRefed<ReadbackLayer> ClientLayerManager::CreateReadbackLayer() {
 
 bool ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget,
                                                     const nsCString& aURL) {
-#ifdef MOZ_DUMP_PAINTING
-  
-  
-  
-  
-  if (gfxEnv::DumpPaint()) {
-    FlushAsyncPaints();
-  }
-#endif
-
   MOZ_ASSERT(mForwarder,
              "ClientLayerManager::BeginTransaction without forwarder");
   if (!mForwarder->IPCOpen()) {
@@ -293,11 +283,6 @@ bool ClientLayerManager::EndTransactionInternal(
   if (mForwarder) {
     mForwarder->UpdateTextureLocks();
   }
-
-  
-  
-  
-  FlushAsyncPaints();
 
   AUTO_PROFILER_TRACING_MARKER("Paint", "Rasterize", GRAPHICS);
   PerfStats::AutoMetricRecording<PerfStats::Metric::Rasterizing> autoRecording;
@@ -432,9 +417,6 @@ bool ClientLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
     
     
     
-    if (PaintThread::Get() && mQueuedAsyncPaints) {
-      PaintThread::Get()->QueueEndLayerTransaction(nullptr);
-    }
     return false;
   }
   if (mWidget) {
@@ -458,15 +440,6 @@ CompositorBridgeChild* ClientLayerManager::GetCompositorBridgeChild() {
     return CompositorBridgeChild::Get();
   }
   return GetRemoteRenderer();
-}
-
-void ClientLayerManager::FlushAsyncPaints() {
-  AUTO_PROFILER_LABEL_CATEGORY_PAIR(GRAPHICS_FlushingAsyncPaints);
-
-  CompositorBridgeChild* cbc = GetCompositorBridgeChild();
-  if (cbc) {
-    cbc->FlushAsyncPaints();
-  }
 }
 
 void ClientLayerManager::ScheduleComposite() {
@@ -687,14 +660,7 @@ void ClientLayerManager::ForwardTransaction(bool aScheduleComposite) {
     }
   }
 
-  
-  
-  
-  
-  if (mQueuedAsyncPaints) {
-    MOZ_ASSERT(PaintThread::Get());
-    PaintThread::Get()->QueueEndLayerTransaction(syncObject);
-  } else if (syncObject) {
+  if (syncObject) {
     syncObject->Synchronize();
   }
 

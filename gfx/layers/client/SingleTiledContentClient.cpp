@@ -223,31 +223,8 @@ void ClientSingleTiledLayerBuffer::PaintThebes(
               DrawRegionClip::DRAW, nsIntRegion(), aCallbackData);
   }
 
-  if (asyncPaint) {
-    if (!backBuffer->mCapture->IsEmpty()) {
-      UniquePtr<PaintTask> task(new PaintTask());
-      task->mCapture = backBuffer->mCapture;
-      task->mTarget = backBuffer->mBackBuffer;
-      task->mClients = std::move(backBuffer->mTextureClients);
-      if (discardedFrontBuffer) {
-        task->mClients.AppendElement(discardedFrontBuffer);
-      }
-      if (discardedFrontBufferOnWhite) {
-        task->mClients.AppendElement(discardedFrontBufferOnWhite);
-      }
-
-      
-      
-      backBuffer->mTarget = nullptr;
-      backBuffer->mCapture = nullptr;
-
-      PaintThread::Get()->QueuePaintTask(std::move(task));
-      mManager->SetQueuedAsyncPaints();
-    }
-  } else {
-    MOZ_ASSERT(backBuffer->mTarget == backBuffer->mBackBuffer);
-    MOZ_ASSERT(!backBuffer->mCapture);
-  }
+  MOZ_ASSERT(backBuffer->mTarget == backBuffer->mBackBuffer);
+  MOZ_ASSERT(!backBuffer->mCapture);
 
   
   mTile.mInvalidBack.SubOut(tileDirtyRegion);

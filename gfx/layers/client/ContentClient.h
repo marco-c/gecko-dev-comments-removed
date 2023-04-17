@@ -22,7 +22,6 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"     
 #include "mozilla/layers/TextureClient.h"   
-#include "mozilla/layers/PaintThread.h"     
 #include "mozilla/Maybe.h"                  
 #include "mozilla/mozalloc.h"               
 #include "mozilla/UniquePtr.h"              
@@ -100,17 +99,13 @@ class ContentClient : public CompositableClient {
           mRegionToInvalidate(),
           mMode(SurfaceMode::SURFACE_NONE),
           mClip(DrawRegionClip::NONE),
-          mContentType(gfxContentType::SENTINEL),
-          mAsyncPaint(false),
-          mAsyncTask(nullptr) {}
+          mContentType(gfxContentType::SENTINEL) {}
 
     nsIntRegion mRegionToDraw;
     nsIntRegion mRegionToInvalidate;
     SurfaceMode mMode;
     DrawRegionClip mClip;
     gfxContentType mContentType;
-    bool mAsyncPaint;
-    UniquePtr<PaintTask> mAsyncTask;
   };
 
   enum {

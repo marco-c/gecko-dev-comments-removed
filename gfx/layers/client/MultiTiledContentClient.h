@@ -117,7 +117,6 @@ class ClientMultiTiledLayerBuffer
   
   
   AutoTArray<gfx::Tile, 4> mPaintTiles;
-  AutoTArray<UniquePtr<PaintTask>, 4> mPaintTasks;
 
   
 

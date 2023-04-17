@@ -14,7 +14,6 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PCompositorBridgeChild.h"
 #include "mozilla/layers/TextureForwarder.h"  
-#include "mozilla/layers/PaintThread.h"       
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsClassHashtable.h"  
 #include "nsCOMPtr.h"          
@@ -220,19 +219,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   
   
-  void FlushAsyncPaints();
-
-  
-  
-  void NotifyBeginAsyncPaint(PaintTask* aTask);
-
-  
-  
-  bool NotifyFinishedAsyncWorkerPaint(PaintTask* aTask);
-
-  
-  
-  
   
   
   
@@ -242,11 +228,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   
   void NotifyFinishedAsyncEndLayerTransaction();
-
-  
-  
-  
-  void PostponeMessagesIfAsyncPainting();
 
  private:
   

@@ -22,7 +22,6 @@
 #include "mozilla/layers/CompositorBridgeChild.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/ShadowLayers.h"  
-#include "mozilla/layers/PaintThread.h"   
 #include "TextureClientPool.h"
 #include "nsISupportsImpl.h"      
 #include "nsExpirationTracker.h"  
