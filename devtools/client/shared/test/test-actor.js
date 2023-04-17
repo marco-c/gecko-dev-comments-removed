@@ -65,6 +65,10 @@ function getHighlighterCanvasFrameHelper(conn, actorID) {
 var testSpec = protocol.generateActorSpec({
   typeName: "test",
 
+  events: {
+    "highlighter-updated": {},
+  },
+
   methods: {
     getHighlighterAttribute: {
       request: {
@@ -101,17 +105,16 @@ var testSpec = protocol.generateActorSpec({
       },
       response: {},
     },
+    registerOneTimeHighlighterUpdate: {
+      request: {
+        actorID: Arg(0, "string"),
+      },
+      response: {},
+    },
     waitForEventOnNode: {
       request: {
         eventName: Arg(0, "string"),
         selector: Arg(1, "nullable:string"),
-      },
-      response: {},
-    },
-    changeZoomLevel: {
-      request: {
-        level: Arg(0, "string"),
-        actorID: Arg(1, "string"),
       },
       response: {},
     },
@@ -365,6 +368,21 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
+
+
+  registerOneTimeHighlighterUpdate(actorID) {
+    const { _highlighter } = this.conn.getActor(actorID);
+    _highlighter.once("updated").then(() => this.emit("highlighter-updated"));
+
+    
+  },
+
+  
+
+
+
+
+
   waitForEventOnNode: function(eventName, selector) {
     return new Promise(resolve => {
       const node = selector ? this._querySelector(selector) : this.content;
@@ -375,29 +393,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
         },
         { once: true }
       );
-    });
-  },
-
-  
-
-
-
-
-
-
-  changeZoomLevel: function(level, actorID) {
-    dumpn("Zooming page to " + level);
-    return new Promise(resolve => {
-      if (actorID) {
-        const actor = this.conn.getActor(actorID);
-        const { _highlighter: h } = actor;
-        h.once("updated", resolve);
-      } else {
-        resolve();
-      }
-
-      const bc = this.content.docShell.browsingContext;
-      bc.fullZoom = level;
     });
   },
 
@@ -665,17 +660,6 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
     return typeof this._highlighter === "function"
       ? this._highlighter()
       : this._highlighter;
-  }
-
-  
-
-
-
-
-
-
-  zoomPageTo(level, actorID = this.highlighter.actorID) {
-    return this.changeZoomLevel(level, actorID);
   }
 
   

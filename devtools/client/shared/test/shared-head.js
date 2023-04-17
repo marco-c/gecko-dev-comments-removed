@@ -1596,3 +1596,12 @@ function scrollContentPageNodeIntoView(browsingContext, selector) {
     node.scrollIntoView();
   });
 }
+
+
+
+
+
+
+function setContentPageZoomLevel(zoomLevel) {
+  gBrowser.selectedBrowser.fullZoom = zoomLevel;
+}
