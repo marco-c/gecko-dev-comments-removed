@@ -161,15 +161,19 @@ add_task(
     Assert.equal("an_event", events[0].name);
     Assert.deepEqual(EVENT_EXTRA, events[0].extra);
 
+    const NANOS_IN_MILLIS = 1e6;
+    const EPSILON = 40000; 
+    const times = Glean.testOnly.whatTimeIsIt.testGetValue();
+    Assert.greater(times.sum, 15 * NANOS_IN_MILLIS - EPSILON);
     
-
-
-
-
-
-
-
-
+    
+    Assert.equal(
+      2,
+      Object.entries(times.values).reduce(
+        (acc, [bucket, count]) => acc + count,
+        0
+      )
+    );
 
     const mabelsCounters = Glean.testOnly.mabelsKitchenCounters;
     Assert.equal(
