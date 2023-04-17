@@ -5483,6 +5483,14 @@ void AsyncPanZoomController::ZoomToRect(CSSRect aRect, const uint32_t aFlags) {
     }
 
     
+    if (!zoomOut && (sizeAfterZoom.width > aRect.Width())) {
+      aRect.MoveByX(-(sizeAfterZoom.width - aRect.Width()) * 0.5f);
+      if (aRect.X() < 0.0f) {
+        aRect.MoveToX(0.0f);
+      }
+    }
+
+    
     
     if (aRect.Y() + sizeAfterZoom.height > cssPageRect.Height()) {
       aRect.MoveToY(std::max(0.f, cssPageRect.Height() - sizeAfterZoom.height));
