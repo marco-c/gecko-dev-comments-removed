@@ -82,7 +82,7 @@ var {
 
 
 if (AppConstants.ASAN) {
-  SimpleTest.requestLongerTimeout(10);
+  requestLongerTimeout(5);
 }
 
 function loadTestSubscript(filePath) {
