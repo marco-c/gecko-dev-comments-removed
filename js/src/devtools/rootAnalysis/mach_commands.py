@@ -9,9 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import json
-import multiprocessing
 import os
-import psutil
 import textwrap
 
 from mach.base import FailedCommandError, MachError
@@ -242,24 +240,11 @@ no shell found in %s -- must build the JS shell with `mach hazards build-shell` 
             )
             fh.write(data)
 
-        jobs = kwargs.get("jobs")
-        if not jobs:
-            
-            
-            
-            
-            cores = multiprocessing.cpu_count()
-            available = psutil.virtual_memory().available
-            mem_allowed = 2.5 * 2**30  
-            jobs = min(cores, int(available / mem_allowed))
-            jobs = max(jobs, 2)
-
         buildscript = " ".join(
             [
                 self.topsrcdir + "/mach hazards compile",
                 "--application=" + application,
                 "--haz-objdir=" + objdir,
-                "--jobs=" + jobs,
             ]
         )
         args = [
