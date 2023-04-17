@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   Log: "chrome://remote/content/shared/Log.jsm",
   getMessageHandlerClass:
     "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
@@ -22,6 +24,9 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
 const MODULES_FOLDER = "chrome://remote/content/webdriver-bidi/modules";
+
+const TEST_MODULES_FOLDER =
+  "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules";
 
 
 
@@ -62,6 +67,19 @@ class ModuleCache {
   constructor(messageHandler) {
     this.messageHandler = messageHandler;
     this._messageHandlerPath = messageHandler.constructor.modulePath;
+
+    this._modulesRootFolder = MODULES_FOLDER;
+    
+    
+    
+    if (
+      Services.prefs.getBoolPref(
+        "remote.messagehandler.modulecache.useBrowserTestRoot",
+        false
+      )
+    ) {
+      this._modulesRootFolder = TEST_MODULES_FOLDER;
+    }
 
     
     this._modules = new Map();
@@ -127,6 +145,6 @@ class ModuleCache {
       moduleFolder = `${destinationPath}-in-${this._messageHandlerPath}`;
     }
 
-    return `${MODULES_FOLDER}/${moduleFolder}/${moduleName}.jsm`;
+    return `${this._modulesRootFolder}/${moduleFolder}/${moduleName}.jsm`;
   }
 }

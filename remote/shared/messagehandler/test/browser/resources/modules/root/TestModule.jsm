@@ -1,0 +1,23 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["TestModule"];
+
+class TestModule {
+  constructor(messageHandler) {
+    this.messageHandler = messageHandler;
+  }
+
+  destroy() {}
+
+  
+
+
+
+  testRootModule() {
+    return "root-value";
+  }
+}

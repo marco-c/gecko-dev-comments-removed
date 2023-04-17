@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+function createRootMessageHandler(sessionId) {
+  const { MessageHandlerRegistry } = ChromeUtils.import(
+    "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm"
+  );
+  const { RootMessageHandler } = ChromeUtils.import(
+    "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm"
+  );
+  return MessageHandlerRegistry.getOrCreateMessageHandler(
+    sessionId,
+    RootMessageHandler.type
+  );
+}

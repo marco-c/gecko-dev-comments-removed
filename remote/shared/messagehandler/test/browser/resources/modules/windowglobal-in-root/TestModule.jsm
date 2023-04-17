@@ -1,0 +1,32 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["TestModule"];
+
+class TestModule {
+  constructor(messageHandler) {
+    this.messageHandler = messageHandler;
+  }
+
+  destroy() {}
+
+  
+
+
+
+  testInterceptModule() {
+    return "intercepted-value";
+  }
+
+  async testInterceptAndForwardModule(destination) {
+    const windowGlobalValue = await this.messageHandler.handleCommand({
+      moduleName: "TestModule",
+      commandName: "testForwardToWindowGlobal",
+      destination,
+    });
+    return "intercepted-and-forward+" + windowGlobalValue;
+  }
+}
