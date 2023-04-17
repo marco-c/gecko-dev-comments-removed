@@ -16,6 +16,7 @@
 
 #include "mozilla/ErrorResult.h"
 #include "mozilla/intl/Localization.h"
+#include "mozilla/Telemetry.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsCommandLine.h"
@@ -286,6 +287,9 @@ bool MaybeInstallFromDmgAndRelaunch() {
     if (!IsAppRunningFromDmg()) {
       return false;
     }
+
+    Telemetry::ScalarSet(Telemetry::ScalarID::STARTUP_FIRST_RUN_IS_FROM_DMG,
+                         MacRunFromDmgUtils::IsAppRunningFromDmg());
 
     
     
