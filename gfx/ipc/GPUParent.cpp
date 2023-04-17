@@ -101,17 +101,17 @@ GPUParent* GPUParent::GetSingleton() {
   return sGPUParent;
 }
 
- void GPUParent::MaybeFlushMemory() {
+ bool GPUParent::MaybeFlushMemory() {
 #if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (!XRE_IsGPUProcess()) {
-    return;
+    return false;
   }
 
   MEMORYSTATUSEX stat;
   stat.dwLength = sizeof(stat);
   if (!GlobalMemoryStatusEx(&stat)) {
-    return;
+    return false;
   }
 
   
@@ -132,6 +132,9 @@ GPUParent* GPUParent::GetSingleton() {
         }));
   }
   sLowMemory = lowMemory;
+  return lowMemory;
+#else
+  return false;
 #endif
 }
 
