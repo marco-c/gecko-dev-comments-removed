@@ -1565,7 +1565,9 @@ nsresult PermissionManager::AddInternal(
   
   
   
-  if (aID != cIDPermissionIsDefault && aExpireType != EXPIRE_SESSION) {
+  
+  if (aID != cIDPermissionIsDefault && aPermission != UNKNOWN_ACTION &&
+      aExpireType != EXPIRE_SESSION) {
     uint32_t privateBrowsingId =
         nsScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
     nsresult rv = aPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
