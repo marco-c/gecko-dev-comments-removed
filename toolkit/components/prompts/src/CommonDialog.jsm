@@ -175,6 +175,11 @@ CommonDialog.prototype = {
     if (this.args.text) {
       
       croppedMessage = this.args.text.substr(0, 10000);
+      
+      
+      if (this.ui.infoRow) {
+        this.ui.infoRow.hidden = false;
+      }
     }
     let infoBody = this.ui.infoBody;
     infoBody.appendChild(infoBody.ownerDocument.createTextNode(croppedMessage));
