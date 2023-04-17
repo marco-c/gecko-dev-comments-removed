@@ -59,6 +59,9 @@ define(function(require, exports, module) {
 
     onTabChanged(index) {
       this.setState({ activeTab: index });
+
+      
+      window.dispatchEvent(new CustomEvent("TabChanged"));
     }
 
     render() {
