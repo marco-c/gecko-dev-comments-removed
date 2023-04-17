@@ -28,7 +28,78 @@ struct AsyncScrollThumbTransformer {
   AsyncTransformComponentMatrix mScrollbarTransform;
 
   LayerToParentLayerMatrix4x4 ComputeTransform();
+
+ private:
+  
+
+  
+  
+  void ApplyTransformForAxis(const Axis& aAxis);
 };
+
+void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
+  ParentLayerCoord asyncScroll = aAxis.GetTransformTranslation(mAsyncTransform);
+  const float asyncZoom = aAxis.GetTransformScale(mAsyncTransform);
+
+  
+  
+  
+  const float scale = 1.f / asyncZoom;
+
+  
+  const CSSToParentLayerScale effectiveZoom(
+      aAxis.GetAxisScale(mMetrics.GetZoom()).scale * asyncZoom);
+
+  if (gfxPlatform::UseDesktopZoomingScrollbars()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    asyncScroll -= aAxis.GetPointOffset(
+        (mMetrics.GetLayoutScrollOffset() - mMetrics.GetVisualScrollOffset()) *
+        effectiveZoom);
+  }
+
+  
+  
+  
+  const float ratio = mScrollbarData.mThumbRatio /
+                      (mMetrics.GetPresShellResolution() * asyncZoom);
+  
+  
+  
+  ParentLayerCoord translation = -asyncScroll * ratio;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const CSSCoord thumbOrigin =
+      (aAxis.GetPointOffset(mMetrics.GetVisualScrollOffset()) * ratio);
+  const CSSCoord thumbOriginScaled = thumbOrigin * scale;
+  const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
+  const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
+  translation -= thumbOriginDeltaPL;
+
+  aAxis.PostScale(mScrollbarTransform, scale);
+  aAxis.PostTranslate(mScrollbarTransform, translation);
+}
 
 LayerToParentLayerMatrix4x4 AsyncScrollThumbTransformer::ComputeTransform() {
   
@@ -50,100 +121,10 @@ LayerToParentLayerMatrix4x4 AsyncScrollThumbTransformer::ComputeTransform() {
   
   
   if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
-    ParentLayerCoord asyncScrollY = mAsyncTransform._42;
-    const float asyncZoomY = mAsyncTransform._22;
-
-    
-    
-    
-    const float yScale = 1.f / asyncZoomY;
-
-    
-    const CSSToParentLayerScale effectiveZoom(mMetrics.GetZoom().yScale *
-                                              asyncZoomY);
-
-    if (gfxPlatform::UseDesktopZoomingScrollbars()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      asyncScrollY -= ((mMetrics.GetLayoutScrollOffset() -
-                        mMetrics.GetVisualScrollOffset()) *
-                       effectiveZoom)
-                          .y;
-    }
-
-    
-    
-    
-    const float ratio = mScrollbarData.mThumbRatio /
-                        (mMetrics.GetPresShellResolution() * asyncZoomY);
-    
-    
-    
-    ParentLayerCoord yTranslation = -asyncScrollY * ratio;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const CSSCoord thumbOrigin = (mMetrics.GetVisualScrollOffset().y * ratio);
-    const CSSCoord thumbOriginScaled = thumbOrigin * yScale;
-    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-    const ParentLayerCoord thumbOriginDeltaPL =
-        thumbOriginDelta * effectiveZoom;
-    yTranslation -= thumbOriginDeltaPL;
-
-    mScrollbarTransform.PostScale(1.f, yScale, 1.f);
-    mScrollbarTransform.PostTranslate(0, yTranslation, 0);
+    ApplyTransformForAxis(mApzc->mY);
   }
   if (*mScrollbarData.mDirection == ScrollDirection::eHorizontal) {
-    
-
-    ParentLayerCoord asyncScrollX = mAsyncTransform._41;
-    const float asyncZoomX = mAsyncTransform._11;
-
-    const float xScale = 1.f / asyncZoomX;
-
-    const CSSToParentLayerScale effectiveZoom(mMetrics.GetZoom().xScale *
-                                              asyncZoomX);
-
-    if (gfxPlatform::UseDesktopZoomingScrollbars()) {
-      asyncScrollX -= ((mMetrics.GetLayoutScrollOffset() -
-                        mMetrics.GetVisualScrollOffset()) *
-                       effectiveZoom)
-                          .x;
-    }
-
-    const float ratio = mScrollbarData.mThumbRatio /
-                        (mMetrics.GetPresShellResolution() * asyncZoomX);
-    ParentLayerCoord xTranslation = -asyncScrollX * ratio;
-
-    const CSSCoord thumbOrigin = (mMetrics.GetVisualScrollOffset().x * ratio);
-    const CSSCoord thumbOriginScaled = thumbOrigin * xScale;
-    const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-    const ParentLayerCoord thumbOriginDeltaPL =
-        thumbOriginDelta * effectiveZoom;
-    xTranslation -= thumbOriginDeltaPL;
-
-    mScrollbarTransform.PostScale(xScale, 1.f, 1.f);
-    mScrollbarTransform.PostTranslate(xTranslation, 0, 0);
+    ApplyTransformForAxis(mApzc->mX);
   }
 
   LayerToParentLayerMatrix4x4 transform =

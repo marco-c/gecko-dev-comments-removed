@@ -74,6 +74,10 @@ class AndroidSpecificState;
 struct KeyboardScrollAction;
 struct ZoomTarget;
 
+namespace apz {
+struct AsyncScrollThumbTransformer;
+}
+
 
 class PlatformSpecificStateBase {
  public:
@@ -1456,6 +1460,7 @@ class AsyncPanZoomController {
 
   friend class GenericOverscrollEffect;
   friend class WidgetOverscrollEffect;
+  friend struct apz::AsyncScrollThumbTransformer;
 
   FlingAccelerator mFlingAccelerator;
 
