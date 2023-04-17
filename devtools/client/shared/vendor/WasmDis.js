@@ -650,13 +650,25 @@ var WasmDisassembler =  (function () {
             case 12 :
             case 13 :
             case 212 :
+            case 214 :
             case 64322 :
+            case 64323 :
             case 64352 :
+            case 64355 :
             case 64353 :
+            case 64356 :
             case 64354 :
+            case 64357 :
                 this.appendBuffer(" ");
                 this.appendBuffer(this.useLabel(operator.brDepth));
                 break;
+            case 64326 :
+            case 64327 : {
+                var label = this.useLabel(operator.brDepth);
+                var refType = this._nameResolver.getTypeName(operator.refType, true);
+                this.appendBuffer(" " + label + " " + refType);
+                break;
+            }
             case 14 :
                 for (var i = 0; i < operator.brTable.length; i++) {
                     this.appendBuffer(" ");
@@ -690,6 +702,11 @@ var WasmDisassembler =  (function () {
             case 19 :
                 this.printFuncType(operator.typeIndex);
                 break;
+            case 28 : {
+                var selectType = this.typeToString(operator.selectType);
+                this.appendBuffer(" " + selectType);
+                break;
+            }
             case 32 :
             case 33 :
             case 34 :
@@ -892,9 +909,16 @@ var WasmDisassembler =  (function () {
             }
             case 64304 :
             case 64305 :
+            case 64306 :
+            case 64324 :
+            case 64325 :
+            case 64264 :
             case 64258 :
+            case 64263 :
             case 64257 :
+            case 64284 :
             case 64274 :
+            case 64283 :
             case 64273 :
             case 64275 :
             case 64276 :
@@ -903,6 +927,19 @@ var WasmDisassembler =  (function () {
             case 64279 : {
                 var refType = this._nameResolver.getTypeName(operator.refType, true);
                 this.appendBuffer(" " + refType);
+                break;
+            }
+            case 64280 : {
+                var dstType = this._nameResolver.getTypeName(operator.refType, true);
+                var srcType = this._nameResolver.getTypeName(operator.srcType, true);
+                this.appendBuffer(" " + dstType + " " + srcType);
+                break;
+            }
+            case 64281 :
+            case 64282 : {
+                var refType = this._nameResolver.getTypeName(operator.refType, true);
+                var length_1 = operator.brDepth; 
+                this.appendBuffer(" " + refType + " " + length_1);
                 break;
             }
         }
@@ -1047,7 +1084,7 @@ var WasmDisassembler =  (function () {
                     if (this._exportMetadata !== null) {
                         for (var _i = 0, _a = this._exportMetadata.getMemoryExportNames(memoryIndex); _i < _a.length; _i++) {
                             var exportName = _a[_i];
-                            this.appendBuffer(" (export \"" + exportName + "\")");
+                            this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                         }
                     }
                     this.appendBuffer(" " + limitsToString(memoryInfo.limits));
@@ -1065,7 +1102,7 @@ var WasmDisassembler =  (function () {
                     if (this._exportMetadata !== null) {
                         for (var _b = 0, _c = this._exportMetadata.getEventExportNames(eventIndex); _b < _c.length; _b++) {
                             var exportName = _c[_b];
-                            this.appendBuffer(" (export \"" + exportName + "\")");
+                            this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                         }
                     }
                     this.printFuncType(eventInfo.typeIndex);
@@ -1080,7 +1117,7 @@ var WasmDisassembler =  (function () {
                     if (this._exportMetadata !== null) {
                         for (var _d = 0, _e = this._exportMetadata.getTableExportNames(tableIndex); _d < _e.length; _d++) {
                             var exportName = _e[_d];
-                            this.appendBuffer(" (export \"" + exportName + "\")");
+                            this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                         }
                     }
                     this.appendBuffer(" " + limitsToString(tableInfo.limits) + " " + this.typeToString(tableInfo.elementType) + ")");
@@ -1133,7 +1170,7 @@ var WasmDisassembler =  (function () {
                             if (this._exportMetadata !== null) {
                                 for (var _f = 0, _g = this._exportMetadata.getFunctionExportNames(funcIndex); _f < _g.length; _f++) {
                                     var exportName = _g[_f];
-                                    this.appendBuffer(" (export \"" + exportName + "\")");
+                                    this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                                 }
                             }
                             this.appendBuffer(" (import ");
@@ -1150,7 +1187,7 @@ var WasmDisassembler =  (function () {
                             if (this._exportMetadata !== null) {
                                 for (var _h = 0, _j = this._exportMetadata.getGlobalExportNames(globalIndex); _h < _j.length; _h++) {
                                     var exportName = _j[_h];
-                                    this.appendBuffer(" (export \"" + exportName + "\")");
+                                    this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                                 }
                             }
                             this.appendBuffer(" (import ");
@@ -1165,7 +1202,7 @@ var WasmDisassembler =  (function () {
                             if (this._exportMetadata !== null) {
                                 for (var _k = 0, _l = this._exportMetadata.getMemoryExportNames(memoryIndex); _k < _l.length; _k++) {
                                     var exportName = _l[_k];
-                                    this.appendBuffer(" (export \"" + exportName + "\")");
+                                    this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                                 }
                             }
                             this.appendBuffer(" (import ");
@@ -1184,7 +1221,7 @@ var WasmDisassembler =  (function () {
                             if (this._exportMetadata !== null) {
                                 for (var _m = 0, _o = this._exportMetadata.getTableExportNames(tableIndex); _m < _o.length; _m++) {
                                     var exportName = _o[_m];
-                                    this.appendBuffer(" (export \"" + exportName + "\")");
+                                    this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                                 }
                             }
                             this.appendBuffer(" (import ");
@@ -1199,7 +1236,7 @@ var WasmDisassembler =  (function () {
                             if (this._exportMetadata !== null) {
                                 for (var _p = 0, _q = this._exportMetadata.getEventExportNames(eventIndex); _p < _q.length; _p++) {
                                     var exportName = _q[_p];
-                                    this.appendBuffer(" (export \"" + exportName + "\")");
+                                    this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                                 }
                             }
                             this.appendBuffer(" (import ");
@@ -1248,7 +1285,7 @@ var WasmDisassembler =  (function () {
                     if (this._exportMetadata !== null) {
                         for (var _r = 0, _s = this._exportMetadata.getGlobalExportNames(globalIndex); _r < _s.length; _r++) {
                             var exportName = _s[_r];
-                            this.appendBuffer(" (export \"" + exportName + "\")");
+                            this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                         }
                     }
                     this.appendBuffer(" " + this.globalTypeToString(globalInfo.type));
@@ -1263,20 +1300,39 @@ var WasmDisassembler =  (function () {
                     this._types.push(typeEntry);
                     if (!this._skipTypes) {
                         var typeName = this._nameResolver.getTypeName(typeIndex, false);
+                        var superTypeName = undefined;
+                        if (typeEntry.supertype !== undefined) {
+                            superTypeName = this.typeIndexToString(typeEntry.supertype);
+                        }
                         if (typeEntry.form === -32 ) {
                             this.appendBuffer("  (type " + typeName + " (func");
                             this.printFuncType(typeIndex);
                             this.appendBuffer("))");
+                        }
+                        else if (typeEntry.form === -35 ) {
+                            this.appendBuffer("  (type " + typeName + " (func_subtype");
+                            this.printFuncType(typeIndex);
+                            this.appendBuffer(" (supertype " + superTypeName + ")))");
                         }
                         else if (typeEntry.form === -33 ) {
                             this.appendBuffer("  (type " + typeName + " (struct");
                             this.printStructType(typeIndex);
                             this.appendBuffer("))");
                         }
+                        else if (typeEntry.form === -36 ) {
+                            this.appendBuffer("  (type " + typeName + " (struct_subtype");
+                            this.printStructType(typeIndex);
+                            this.appendBuffer(" (supertype " + superTypeName + ")))");
+                        }
                         else if (typeEntry.form === -34 ) {
                             this.appendBuffer("  (type " + typeName + " (array");
                             this.printArrayType(typeIndex);
                             this.appendBuffer("))");
+                        }
+                        else if (typeEntry.form === -37 ) {
+                            this.appendBuffer("  (type " + typeName + " (array_subtype");
+                            this.printArrayType(typeIndex);
+                            this.appendBuffer(") (supertype " + superTypeName + ")))");
                         }
                         else {
                             throw new Error("Unknown type form: " + typeEntry.form);
@@ -1349,7 +1405,7 @@ var WasmDisassembler =  (function () {
                     if (this._exportMetadata !== null) {
                         for (var _t = 0, _u = this._exportMetadata.getFunctionExportNames(this._funcIndex); _t < _u.length; _t++) {
                             var exportName = _u[_t];
-                            this.appendBuffer(" (export \"" + exportName + "\")");
+                            this.appendBuffer(" (export " + JSON.stringify(exportName) + ")");
                         }
                     }
                     for (var i = 0; i < type.params.length; i++) {
