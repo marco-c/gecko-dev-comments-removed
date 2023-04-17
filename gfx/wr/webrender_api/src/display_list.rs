@@ -115,18 +115,6 @@ pub struct BuiltDisplayList {
     descriptor: BuiltDisplayListDescriptor,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone, Deserialize, Serialize)]
-pub enum GeckoDisplayListType {
-  None,
-  Partial(f64),
-  Full(f64),
-}
-
-impl Default for GeckoDisplayListType {
-  fn default() -> Self { GeckoDisplayListType::None }
-}
-
 
 
 
@@ -135,7 +123,7 @@ impl Default for GeckoDisplayListType {
 #[derive(Copy, Clone, Default, Deserialize, Serialize)]
 pub struct BuiltDisplayListDescriptor {
     
-    gecko_display_list_type: GeckoDisplayListType,
+    gecko_display_list_time: f64,
     
     builder_start_time: u64,
     
@@ -182,7 +170,7 @@ impl DisplayListWithCache {
         self.display_list.descriptor()
     }
 
-    pub fn times(&self) -> (u64, u64, u64) {
+    pub fn times(&self) -> (f64, u64, u64, u64) {
         self.display_list.times()
     }
 
@@ -406,20 +394,13 @@ impl BuiltDisplayList {
         self.descriptor.send_start_time = time;
     }
 
-    pub fn times(&self) -> (u64, u64, u64) {
+    pub fn times(&self) -> (f64, u64, u64, u64) {
         (
+            self.descriptor.gecko_display_list_time,
             self.descriptor.builder_start_time,
             self.descriptor.builder_finish_time,
             self.descriptor.send_start_time,
         )
-    }
-
-    pub fn gecko_display_list_stats(&self) -> (f64, bool) {
-      match self.descriptor.gecko_display_list_type {
-        GeckoDisplayListType::Full(duration) => (duration, true),
-        GeckoDisplayListType::Partial(duration) => (duration, false),
-        _ => (0.0, false)
-      }
     }
 
     pub fn total_clip_nodes(&self) -> usize {
@@ -976,7 +957,7 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
         Ok(BuiltDisplayList {
             data,
             descriptor: BuiltDisplayListDescriptor {
-                gecko_display_list_type: GeckoDisplayListType::Default(),
+                gecko_display_list_time: 0.0,
                 builder_start_time: 0,
                 builder_finish_time: 1,
                 send_start_time: 1,
@@ -2035,7 +2016,7 @@ impl DisplayListBuilder {
             self.pipeline_id,
             BuiltDisplayList {
                 descriptor: BuiltDisplayListDescriptor {
-                    gecko_display_list_type: GeckoDisplayListType::None,
+                    gecko_display_list_time: 0.0,
                     builder_start_time: self.builder_start_time,
                     builder_finish_time: end_time,
                     send_start_time: end_time,

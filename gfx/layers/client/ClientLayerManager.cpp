@@ -296,8 +296,13 @@ bool ClientLayerManager::EndTransactionInternal(
   
   
   
-  FlushAsyncPaints();
+  {
+    PaintTelemetry::AutoRecord record(
+        PaintTelemetry::Metric::FlushRasterization);
+    FlushAsyncPaints();
+  }
 
+  PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Rasterization);
   AUTO_PROFILER_TRACING_MARKER("Paint", "Rasterize", GRAPHICS);
   PerfStats::AutoMetricRecording<PerfStats::Metric::Rasterizing> autoRecording;
 
