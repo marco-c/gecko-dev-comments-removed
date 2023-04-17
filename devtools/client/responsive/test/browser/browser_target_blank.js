@@ -15,8 +15,8 @@ addRDMTask(TEST_URL, async function({ ui }) {
   
   await waitForFrameLoad(ui, TEST_URL);
   const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
-  spawnViewportTask(ui, {}, function() {
-  content.document.querySelector("a").click(); 
+  await spawnViewportTask(ui, {}, function() {
+    content.document.querySelector("a").click(); 
   });
   const newTab = await newTabPromise;
   ok(newTab, "New tab opened from link");
