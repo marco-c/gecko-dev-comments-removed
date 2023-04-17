@@ -4839,12 +4839,21 @@ let gFileMenu = {
     }
     this.updateUserContextUIVisibility();
     this.updateImportCommandEnabledState();
+    if (AppConstants.platform == "macosx") {
+      gShareUtils.updateShareURLMenuItem(
+        gBrowser.selectedBrowser,
+        document.getElementById("menu_savePage")
+      );
+    }
     PrintUtils.updatePrintPreviewMenuHiddenState();
   },
 };
 
 let gShareUtils = {
-  updateShareURLMenuItem(browser) {
+  
+
+
+  updateShareURLMenuItem(browser, insertAfterEl) {
     
     if (
       AppConstants.platform != "macosx" &&
@@ -4854,42 +4863,47 @@ let gShareUtils = {
       return;
     }
 
-    let shareURL = document.getElementById("context_shareTabURL");
-
-    if (!shareURL) {
-      shareURL = this.createShareURLMenuItem();
+    let shareURL = insertAfterEl.nextElementSibling;
+    if (!shareURL?.matches(".share-tab-url-item")) {
+      shareURL = this._createShareURLMenuItem(insertAfterEl);
     }
 
-    
-    shareURL.hidden = !BrowserUtils.isShareableURL(browser.currentURI);
+    shareURL.browserToShare = Cu.getWeakReference(browser);
+    if (AppConstants.platform == "win") {
+      
+      
+      shareURL.hidden = !BrowserUtils.isShareableURL(browser.currentURI);
+    }
   },
 
   
 
 
-  createShareURLMenuItem() {
-    let menu = document.getElementById("tabContextMenu");
+  _createShareURLMenuItem(insertAfterEl) {
+    let menu = insertAfterEl.parentNode;
     let shareURL = null;
-
     if (AppConstants.platform == "win") {
-      shareURL = this.buildShareURLItem();
+      shareURL = this._buildShareURLItem(menu.id);
     } else if (AppConstants.platform == "macosx") {
-      shareURL = this.buildShareURLMenu();
+      shareURL = this._buildShareURLMenu(menu.id);
     }
+    shareURL.className = "share-tab-url-item";
 
-    let sendTabContext = document.getElementById("context_sendTabToDevice");
-    menu.insertBefore(shareURL, sendTabContext.nextSibling);
+    let l10nID =
+      menu.id == "tabContextMenu"
+        ? "tab-context-share-url"
+        : "menu-file-share-url";
+    document.l10n.setAttributes(shareURL, l10nID);
+
+    menu.insertBefore(shareURL, insertAfterEl.nextSibling);
     return shareURL;
   },
 
   
 
 
-  buildShareURLItem() {
+  _buildShareURLItem() {
     let shareURLMenuItem = document.createXULElement("menuitem");
-    shareURLMenuItem.setAttribute("id", "context_shareTabURL");
-    document.l10n.setAttributes(shareURLMenuItem, "tab-context-share-url");
-
     shareURLMenuItem.addEventListener("command", this);
     return shareURLMenuItem;
   },
@@ -4897,39 +4911,55 @@ let gShareUtils = {
   
 
 
-  buildShareURLMenu() {
+  _buildShareURLMenu() {
     let menu = document.createXULElement("menu");
-    menu.id = "context_shareTabURL";
-    document.l10n.setAttributes(menu, "tab-context-share-url");
-
     let menuPopup = document.createXULElement("menupopup");
-    menuPopup.id = "context_shareTabURL_popup";
     menuPopup.addEventListener("popupshowing", this);
     menu.appendChild(menuPopup);
-
     return menu;
   },
 
   
 
 
-  initializeShareURLPopup() {
-    if (AppConstants.platform !== "macosx") {
+  getDataToShare(node) {
+    let browser = node.browserToShare?.get();
+    let urlToShare = null;
+    let titleToShare = null;
+
+    if (browser && BrowserUtils.isShareableURL(browser.currentURI)) {
+      urlToShare = browser.currentURI;
+      titleToShare = browser.contentTitle;
+    }
+    return { urlToShare, titleToShare };
+  },
+
+  
+
+
+  initializeShareURLPopup(menuPopup) {
+    if (AppConstants.platform != "macosx") {
       return;
     }
-
-    let menuPopup = document.getElementById("context_shareTabURL_popup");
 
     
     while (menuPopup.firstChild) {
       menuPopup.firstChild.remove();
     }
 
+    let { urlToShare } = this.getDataToShare(menuPopup.parentNode);
+
     
     
-    let url = gBrowser.selectedBrowser.currentURI;
+    
+    let shouldEnable = !!urlToShare;
+    if (!urlToShare) {
+      
+      urlToShare = makeURI("https://mozilla.org/");
+    }
+
     let sharingService = gBrowser.MacSharingService;
-    let currentURI = gURLBar.makeURIReadable(url).displaySpec;
+    let currentURI = gURLBar.makeURIReadable(urlToShare).displaySpec;
     let services = sharingService.getSharingProviders(currentURI);
 
     services.forEach(share => {
@@ -4938,10 +4968,14 @@ let gShareUtils = {
       item.setAttribute("label", share.menuItemTitle);
       item.setAttribute("share-name", share.name);
       item.setAttribute("image", share.image);
+      if (!shouldEnable) {
+        item.setAttribute("disabled", "true");
+      }
       menuPopup.appendChild(item);
     });
+    menuPopup.appendChild(document.createXULElement("menuseparator"));
     let moreItem = document.createXULElement("menuitem");
-    document.l10n.setAttributes(moreItem, "tab-context-share-more");
+    document.l10n.setAttributes(moreItem, "menu-share-more");
     moreItem.classList.add("menuitem-iconic", "share-more-button");
     menuPopup.appendChild(moreItem);
 
@@ -4956,31 +4990,32 @@ let gShareUtils = {
     
     
     
-    if (
-      event.target.parentNode.id !== "context_shareTabURL_popup" &&
-      event.target.id !== "context_shareTabURL"
-    ) {
+    
+    let target = event.target.closest(".share-tab-url-item");
+    if (!target) {
       return;
     }
 
     
     
-    let browser = gBrowser.selectedBrowser;
-    let currentURI = gURLBar.makeURIReadable(browser.currentURI).displaySpec;
+    if (event.target.classList.contains("share-more-button")) {
+      gBrowser.MacSharingService.openSharingPreferences();
+      return;
+    }
+
+    let { urlToShare, titleToShare } = this.getDataToShare(target);
+    let currentURI = gURLBar.makeURIReadable(urlToShare).displaySpec;
 
     if (AppConstants.platform == "win") {
-      WindowsUIUtils.shareUrl(currentURI, browser.contentTitle);
+      WindowsUIUtils.shareUrl(currentURI, titleToShare);
       return;
     }
 
     
-    let sharingService = gBrowser.MacSharingService;
     let shareName = event.target.getAttribute("share-name");
 
     if (shareName) {
-      sharingService.shareUrl(shareName, currentURI, browser.contentTitle);
-    } else if (event.target.classList.contains("share-more-button")) {
-      sharingService.openSharingPreferences();
+      gBrowser.MacSharingService.shareUrl(shareName, currentURI, titleToShare);
     }
   },
 
@@ -4991,8 +5026,9 @@ let gShareUtils = {
       return;
     }
     
-    let menupopup = document.getElementById("context_shareTabURL_popup");
-    menupopup.removeAttribute("data-initialized");
+    let menupopup = event.target.querySelector(".share-tab-url-item")
+      ?.menupopup;
+    menupopup?.removeAttribute("data-initialized");
 
     event.target.removeEventListener("popuphiding", this);
   },
