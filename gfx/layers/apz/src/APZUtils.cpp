@@ -84,9 +84,9 @@ bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
   CSSRect visible =
       CSSRect(aCompositorMetrics.GetVisualScrollOffset(),
               aCompositorMetrics.CalculateBoundedCompositedSizeInCssPixels());
-  visible.Inflate(LayerSize(StaticPrefs::apz_danger_zone_x(),
-                            StaticPrefs::apz_danger_zone_y()) /
-                  aCompositorMetrics.LayersPixelsPerCSSPixel());
+  visible.Inflate(ScreenSize(StaticPrefs::apz_danger_zone_x(),
+                             StaticPrefs::apz_danger_zone_y()) /
+                  aCompositorMetrics.DisplayportPixelsPerCSSPixel());
 
   
   
