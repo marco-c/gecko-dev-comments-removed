@@ -17,7 +17,7 @@ use crate::renderer::{MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::{ResourceCache};
 use crate::util::{MatrixHelpers};
 use crate::prim_store::{InternablePrimitive, PrimitiveInstanceKind};
-use crate::spatial_tree::{SpatialTree, SpatialNodeIndex, ROOT_SPATIAL_NODE_INDEX};
+use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::space::SpaceSnapper;
 use crate::util::PrimaryArc;
 
@@ -408,12 +408,14 @@ impl TextRunPrimitive {
                 
                 RasterSpace::Local(1.0)
             } else {
+                let root_spatial_node_index = spatial_tree.root_reference_frame_index();
+
                 
                 
                 
                 
                 let scale_factors = spatial_tree
-                    .get_relative_transform(prim_spatial_node_index, ROOT_SPATIAL_NODE_INDEX)
+                    .get_relative_transform(prim_spatial_node_index, root_spatial_node_index)
                     .scale_factors();
 
                 
