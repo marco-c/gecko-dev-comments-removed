@@ -30,10 +30,7 @@ impl<T: AsRef<[u8]>> Window<T> {
     
     
     pub fn new(t: T) -> Self {
-        Self {
-            range: 0..t.as_ref().len(),
-            inner: t,
-        }
+        Self { range: 0..t.as_ref().len(), inner: t }
     }
 
     

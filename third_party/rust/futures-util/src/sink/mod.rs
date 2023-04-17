@@ -6,7 +6,7 @@
 
 
 
-use crate::future::Either;
+use crate::future::{assert_future, Either};
 use core::pin::Pin;
 use futures_core::future::Future;
 use futures_core::stream::{Stream, TryStream};
@@ -81,7 +81,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         E: From<Self::Error>,
         Self: Sized,
     {
-        With::new(self, f)
+        assert_sink::<U, E, _>(With::new(self, f))
     }
 
     
@@ -122,7 +122,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         St: Stream<Item = Result<Item, Self::Error>>,
         Self: Sized,
     {
-        WithFlatMap::new(self, f)
+        assert_sink::<U, Self::Error, _>(WithFlatMap::new(self, f))
     }
 
     
@@ -145,7 +145,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         F: FnOnce(Self::Error) -> E,
         Self: Sized,
     {
-        SinkMapErr::new(self, f)
+        assert_sink::<Item, E, _>(SinkMapErr::new(self, f))
     }
 
     
@@ -156,7 +156,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         Self: Sized,
         Self::Error: Into<E>,
     {
-        SinkErrInto::new(self)
+        assert_sink::<Item, E, _>(SinkErrInto::new(self))
     }
 
     
@@ -176,7 +176,7 @@ pub trait SinkExt<Item>: Sink<Item> {
     where
         Self: Sized,
     {
-        Buffer::new(self, capacity)
+        assert_sink::<Item, Self::Error, _>(Buffer::new(self, capacity))
     }
 
     
@@ -184,7 +184,7 @@ pub trait SinkExt<Item>: Sink<Item> {
     where
         Self: Unpin,
     {
-        Close::new(self)
+        assert_future::<Result<(), Self::Error>, _>(Close::new(self))
     }
 
     
@@ -197,7 +197,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         Item: Clone,
         Si: Sink<Item, Error = Self::Error>,
     {
-        Fanout::new(self, other)
+        assert_sink::<Item, Self::Error, _>(Fanout::new(self, other))
     }
 
     
@@ -208,7 +208,7 @@ pub trait SinkExt<Item>: Sink<Item> {
     where
         Self: Unpin,
     {
-        Flush::new(self)
+        assert_future::<Result<(), Self::Error>, _>(Flush::new(self))
     }
 
     
@@ -221,7 +221,7 @@ pub trait SinkExt<Item>: Sink<Item> {
     where
         Self: Unpin,
     {
-        Send::new(self, item)
+        assert_future::<Result<(), Self::Error>, _>(Send::new(self, item))
     }
 
     
@@ -231,11 +231,13 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn feed(&mut self, item: Item) -> Feed<'_, Self, Item>
-        where Self: Unpin,
+    where
+        Self: Unpin,
     {
-        Feed::new(self, item)
+        assert_future::<Result<(), Self::Error>, _>(Feed::new(self, item))
     }
 
+    
     
     
     
@@ -250,8 +252,11 @@ pub trait SinkExt<Item>: Sink<Item> {
     fn send_all<'a, St>(&'a mut self, stream: &'a mut St) -> SendAll<'a, Self, St>
     where
         St: TryStream<Ok = Item, Error = Self::Error> + Stream + Unpin + ?Sized,
+        
         Self: Unpin,
     {
+        
+        
         SendAll::new(self, stream)
     }
 
@@ -265,7 +270,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         Si2: Sink<Item, Error = Self::Error>,
         Self: Sized,
     {
-        Either::Left(self)
+        assert_sink::<Item, Self::Error, _>(Either::Left(self))
     }
 
     
@@ -278,7 +283,7 @@ pub trait SinkExt<Item>: Sink<Item> {
         Si1: Sink<Item, Error = Self::Error>,
         Self: Sized,
     {
-        Either::Right(self)
+        assert_sink::<Item, Self::Error, _>(Either::Right(self))
     }
 
     
@@ -327,4 +332,13 @@ pub trait SinkExt<Item>: Sink<Item> {
     {
         Pin::new(self).poll_close(cx)
     }
+}
+
+
+
+pub(crate) fn assert_sink<T, E, S>(sink: S) -> S
+where
+    S: Sink<T, Error = E>,
+{
+    sink
 }

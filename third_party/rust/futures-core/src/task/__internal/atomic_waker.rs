@@ -1,7 +1,7 @@
 use core::cell::UnsafeCell;
 use core::fmt;
 use core::sync::atomic::AtomicUsize;
-use core::sync::atomic::Ordering::{Acquire, Release, AcqRel};
+use core::sync::atomic::Ordering::{AcqRel, Acquire, Release};
 use core::task::Waker;
 
 
@@ -202,10 +202,7 @@ impl AtomicWaker {
         trait AssertSync: Sync {}
         impl AssertSync for Waker {}
 
-        Self {
-            state: AtomicUsize::new(WAITING),
-            waker: UnsafeCell::new(None),
-        }
+        Self { state: AtomicUsize::new(WAITING), waker: UnsafeCell::new(None) }
     }
 
     
@@ -279,8 +276,7 @@ impl AtomicWaker {
                     
                     
                     
-                    let res = self.state.compare_exchange(
-                        REGISTERING, WAITING, AcqRel, Acquire);
+                    let res = self.state.compare_exchange(REGISTERING, WAITING, AcqRel, Acquire);
 
                     match res {
                         Ok(_) => {
@@ -344,9 +340,7 @@ impl AtomicWaker {
                 
                 
                 
-                debug_assert!(
-                    state == REGISTERING ||
-                    state == REGISTERING | WAKING);
+                debug_assert!(state == REGISTERING || state == REGISTERING | WAKING);
             }
         }
     }
@@ -391,9 +385,8 @@ impl AtomicWaker {
                 
                 
                 debug_assert!(
-                    state == REGISTERING ||
-                    state == REGISTERING | WAKING ||
-                    state == WAKING);
+                    state == REGISTERING || state == REGISTERING | WAKING || state == WAKING
+                );
                 None
             }
         }

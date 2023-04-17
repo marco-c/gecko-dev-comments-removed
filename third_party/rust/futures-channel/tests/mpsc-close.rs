@@ -1,17 +1,19 @@
 use futures::channel::mpsc;
 use futures::executor::block_on;
+use futures::future::Future;
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
-use std::sync::Arc;
+use futures::task::{Context, Poll};
+use std::pin::Pin;
+use std::sync::{Arc, Weak};
 use std::thread;
+use std::time::{Duration, Instant};
 
 #[test]
 fn smoke() {
     let (mut sender, receiver) = mpsc::channel(1);
 
-    let t = thread::spawn(move || {
-        while let Ok(()) = block_on(sender.send(42)) {}
-    });
+    let t = thread::spawn(move || while let Ok(()) = block_on(sender.send(42)) {});
 
     
     block_on(receiver.take(3).for_each(|_| futures::future::ready(())));
@@ -141,4 +143,156 @@ fn single_receiver_drop_closes_channel_and_drains() {
         assert!(weak_ref.upgrade().is_none());
         assert!(sender.is_closed());
     }
+}
+
+
+
+#[test]
+fn stress_try_send_as_receiver_closes() {
+    const AMT: usize = 10000;
+    
+    
+    
+    
+    
+    const MAX_COUNTDOWN: usize = 20;
+    
+    
+    
+    const SPIN_TIMEOUT_S: u64 = 10;
+    const SPIN_SLEEP_MS: u64 = 10;
+    struct TestRx {
+        rx: mpsc::Receiver<Arc<()>>,
+        
+        poll_count: usize,
+    }
+    struct TestTask {
+        command_rx: mpsc::Receiver<TestRx>,
+        test_rx: Option<mpsc::Receiver<Arc<()>>>,
+        countdown: usize,
+    }
+    impl TestTask {
+        
+        fn new() -> (TestTask, mpsc::Sender<TestRx>) {
+            let (command_tx, command_rx) = mpsc::channel::<TestRx>(0);
+            (
+                TestTask {
+                    command_rx,
+                    test_rx: None,
+                    countdown: 0, 
+                },
+                command_tx,
+            )
+        }
+    }
+    impl Future for TestTask {
+        type Output = ();
+
+        fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+            
+            if let Some(rx) = &mut self.test_rx {
+                if let Poll::Ready(v) = rx.poll_next_unpin(cx) {
+                    let _ = v.expect("test finished unexpectedly!");
+                }
+                self.countdown -= 1;
+                
+                cx.waker().wake_by_ref();
+            }
+            
+            match self.command_rx.poll_next_unpin(cx) {
+                Poll::Ready(Some(TestRx { rx, poll_count })) => {
+                    self.test_rx = Some(rx);
+                    self.countdown = poll_count;
+                    cx.waker().wake_by_ref();
+                }
+                Poll::Ready(None) => return Poll::Ready(()),
+                Poll::Pending => {}
+            }
+            if self.countdown == 0 {
+                
+                self.test_rx = None;
+            }
+            Poll::Pending
+        }
+    }
+    let (f, mut cmd_tx) = TestTask::new();
+    let bg = thread::spawn(move || block_on(f));
+    for i in 0..AMT {
+        let (mut test_tx, rx) = mpsc::channel(0);
+        let poll_count = i % MAX_COUNTDOWN;
+        cmd_tx.try_send(TestRx { rx, poll_count }).unwrap();
+        let mut prev_weak: Option<Weak<()>> = None;
+        let mut attempted_sends = 0;
+        let mut successful_sends = 0;
+        loop {
+            
+            let item = Arc::new(());
+            let weak = Arc::downgrade(&item);
+            match test_tx.try_send(item) {
+                Ok(_) => {
+                    prev_weak = Some(weak);
+                    successful_sends += 1;
+                }
+                Err(ref e) if e.is_full() => {}
+                Err(ref e) if e.is_disconnected() => {
+                    
+                    if let Some(prev_weak) = prev_weak {
+                        if prev_weak.upgrade().is_some() {
+                            
+                            
+                            
+                            
+                            
+                            
+                            let t0 = Instant::now();
+                            let mut spins = 0;
+                            loop {
+                                if prev_weak.upgrade().is_none() {
+                                    break;
+                                }
+                                assert!(
+                                    t0.elapsed() < Duration::from_secs(SPIN_TIMEOUT_S),
+                                    "item not dropped on iteration {} after \
+                                     {} sends ({} successful). spin=({})",
+                                    i,
+                                    attempted_sends,
+                                    successful_sends,
+                                    spins
+                                );
+                                spins += 1;
+                                thread::sleep(Duration::from_millis(SPIN_SLEEP_MS));
+                            }
+                        }
+                    }
+                    break;
+                }
+                Err(ref e) => panic!("unexpected error: {}", e),
+            }
+            attempted_sends += 1;
+        }
+    }
+    drop(cmd_tx);
+    bg.join().expect("background thread join");
+}
+
+#[test]
+fn unbounded_try_next_after_none() {
+    let (tx, mut rx) = mpsc::unbounded::<String>();
+    
+    drop(tx);
+    
+    assert_eq!(Ok(None), rx.try_next().map_err(|_| ()));
+    
+    assert_eq!(Ok(None), rx.try_next().map_err(|_| ()));
+}
+
+#[test]
+fn bounded_try_next_after_none() {
+    let (tx, mut rx) = mpsc::channel::<String>(17);
+    
+    drop(tx);
+    
+    assert_eq!(Ok(None), rx.try_next().map_err(|_| ()));
+    
+    assert_eq!(Ok(None), rx.try_next().map_err(|_| ()));
 }

@@ -1,7 +1,5 @@
 
 
-use proc_macro_hack::proc_macro_hack;
-
 macro_rules! document_select_macro {
     
     ($select:item) => {
@@ -309,12 +307,14 @@ macro_rules! document_select_macro {
 }
 
 #[cfg(feature = "std")]
+#[allow(unreachable_pub)]
 #[doc(hidden)]
-#[proc_macro_hack(support_nested, only_hack_old_rustc)]
+#[cfg_attr(not(fn_like_proc_macro), proc_macro_hack::proc_macro_hack(support_nested))]
 pub use futures_macro::select_internal;
 
+#[allow(unreachable_pub)]
 #[doc(hidden)]
-#[proc_macro_hack(support_nested, only_hack_old_rustc)]
+#[cfg_attr(not(fn_like_proc_macro), proc_macro_hack::proc_macro_hack(support_nested))]
 pub use futures_macro::select_biased_internal;
 
 document_select_macro! {

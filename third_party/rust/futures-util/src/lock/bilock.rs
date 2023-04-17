@@ -1,16 +1,16 @@
 
 
-#[cfg(feature = "bilock")]
-use futures_core::future::Future;
-use futures_core::task::{Context, Poll, Waker};
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 use core::cell::UnsafeCell;
 use core::fmt;
 use core::ops::{Deref, DerefMut};
 use core::pin::Pin;
 use core::sync::atomic::AtomicUsize;
 use core::sync::atomic::Ordering::SeqCst;
-use alloc::boxed::Box;
-use alloc::sync::Arc;
+#[cfg(feature = "bilock")]
+use futures_core::future::Future;
+use futures_core::task::{Context, Poll, Waker};
 
 
 
@@ -61,10 +61,7 @@ impl<T> BiLock<T> {
     
     
     pub fn new(t: T) -> (Self, Self) {
-        let arc = Arc::new(Inner {
-            state: AtomicUsize::new(0),
-            value: Some(UnsafeCell::new(t)),
-        });
+        let arc = Arc::new(Inner { state: AtomicUsize::new(0), value: Some(UnsafeCell::new(t)) });
 
         (Self { arc: arc.clone() }, Self { arc })
     }
@@ -103,11 +100,11 @@ impl<T> BiLock<T> {
                     let mut prev = Box::from_raw(n as *mut Waker);
                     *prev = cx.waker().clone();
                     waker = Some(prev);
-                }
+                },
             }
 
             
-            let me: Box<Waker> = waker.take().unwrap_or_else(||Box::new(cx.waker().clone()));
+            let me: Box<Waker> = waker.take().unwrap_or_else(|| Box::new(cx.waker().clone()));
             let me = Box::into_raw(me) as usize;
 
             match self.arc.state.compare_exchange(1, me, SeqCst, SeqCst) {
@@ -145,9 +142,7 @@ impl<T> BiLock<T> {
     #[cfg(feature = "bilock")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
     pub fn lock(&self) -> BiLockAcquire<'_, T> {
-        BiLockAcquire {
-            bilock: self,
-        }
+        BiLockAcquire { bilock: self }
     }
 
     
@@ -181,7 +176,7 @@ impl<T> BiLock<T> {
             
             n => unsafe {
                 Box::from_raw(n as *mut Waker).wake();
-            }
+            },
         }
     }
 }
@@ -205,9 +200,7 @@ pub struct ReuniteError<T>(pub BiLock<T>, pub BiLock<T>);
 
 impl<T> fmt::Debug for ReuniteError<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("ReuniteError")
-            .field(&"...")
-            .finish()
+        f.debug_tuple("ReuniteError").field(&"...").finish()
     }
 }
 

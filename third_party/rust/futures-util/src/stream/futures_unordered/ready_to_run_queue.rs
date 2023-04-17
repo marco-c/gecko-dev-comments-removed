@@ -1,9 +1,9 @@
 use crate::task::AtomicWaker;
+use alloc::sync::Arc;
 use core::cell::UnsafeCell;
 use core::ptr;
 use core::sync::atomic::AtomicPtr;
-use core::sync::atomic::Ordering::{Relaxed, Acquire, Release, AcqRel};
-use alloc::sync::Arc;
+use core::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
 
 use super::abort::abort;
 use super::task::Task;
@@ -85,25 +85,38 @@ impl<Fut> ReadyToRunQueue<Fut> {
     pub(super) fn stub(&self) -> *const Task<Fut> {
         &*self.stub
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn clear(&self) {
+        loop {
+            
+            match self.dequeue() {
+                Dequeue::Empty => break,
+                Dequeue::Inconsistent => abort("inconsistent in drop"),
+                Dequeue::Data(ptr) => drop(Arc::from_raw(ptr)),
+            }
+        }
+    }
 }
 
 impl<Fut> Drop for ReadyToRunQueue<Fut> {
     fn drop(&mut self) {
         
         
-        
-        
-        
+
         
         
         unsafe {
-            loop {
-                match self.dequeue() {
-                    Dequeue::Empty => break,
-                    Dequeue::Inconsistent => abort("inconsistent in drop"),
-                    Dequeue::Data(ptr) => drop(Arc::from_raw(ptr)),
-                }
-            }
+            self.clear();
         }
     }
 }

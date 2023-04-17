@@ -3,8 +3,8 @@
 
 
 
-use futures_core::future::{Future, FusedFuture};
-use futures_core::stream::{Stream, FusedStream};
+use futures_core::future::{FusedFuture, Future};
+use futures_core::stream::{FusedStream, Stream};
 
 #[macro_use]
 mod poll;

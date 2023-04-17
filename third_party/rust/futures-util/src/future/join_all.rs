@@ -1,24 +1,22 @@
 
 
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 use core::fmt;
 use core::future::Future;
 use core::iter::FromIterator;
 use core::mem;
 use core::pin::Pin;
 use core::task::{Context, Poll};
-use alloc::boxed::Box;
-use alloc::vec::Vec;
 
-use super::MaybeDone;
+use super::{assert_future, MaybeDone};
 
 fn iter_pin_mut<T>(slice: Pin<&mut [T]>) -> impl Iterator<Item = Pin<&mut T>> {
     
     
     
-    unsafe { slice.get_unchecked_mut() }
-        .iter_mut()
-        .map(|t| unsafe { Pin::new_unchecked(t) })
+    unsafe { slice.get_unchecked_mut() }.iter_mut().map(|t| unsafe { Pin::new_unchecked(t) })
 }
 
 
@@ -36,9 +34,7 @@ where
     F::Output: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("JoinAll")
-            .field("elems", &self.elems)
-            .finish()
+        f.debug_struct("JoinAll").field("elems", &self.elems).finish()
     }
 }
 
@@ -85,7 +81,7 @@ where
     I::Item: Future,
 {
     let elems: Box<[_]> = i.into_iter().map(MaybeDone::Future).collect();
-    JoinAll { elems: elems.into() }
+    assert_future::<Vec<<I::Item as Future>::Output>, _>(JoinAll { elems: elems.into() })
 }
 
 impl<F> Future for JoinAll<F>
@@ -105,9 +101,7 @@ where
 
         if all_done {
             let mut elems = mem::replace(&mut self.elems, Box::pin([]));
-            let result = iter_pin_mut(elems.as_mut())
-                .map(|e| e.take_output().unwrap())
-                .collect();
+            let result = iter_pin_mut(elems.as_mut()).map(|e| e.take_output().unwrap()).collect();
             Poll::Ready(result)
         } else {
             Poll::Pending

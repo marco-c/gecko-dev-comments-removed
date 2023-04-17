@@ -7,7 +7,7 @@ use core::fmt;
 use core::pin::Pin;
 use core::sync::atomic::AtomicBool;
 use core::sync::atomic::Ordering::SeqCst;
-use futures_core::future::{Future, FusedFuture};
+use futures_core::future::{FusedFuture, Future};
 use futures_core::task::{Context, Poll, Waker};
 
 use crate::lock::Lock;
@@ -16,7 +16,6 @@ use crate::lock::Lock;
 
 
 #[must_use = "futures do nothing unless you `.await` or poll them"]
-#[derive(Debug)]
 pub struct Receiver<T> {
     inner: Arc<Inner<T>>,
 }
@@ -24,7 +23,6 @@ pub struct Receiver<T> {
 
 
 
-#[derive(Debug)]
 pub struct Sender<T> {
     inner: Arc<Inner<T>>,
 }
@@ -35,7 +33,6 @@ impl<T> Unpin for Sender<T> {}
 
 
 
-#[derive(Debug)]
 struct Inner<T> {
     
     
@@ -106,12 +103,8 @@ struct Inner<T> {
 
 pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
     let inner = Arc::new(Inner::new());
-    let receiver = Receiver {
-        inner: inner.clone(),
-    };
-    let sender = Sender {
-        inner,
-    };
+    let receiver = Receiver { inner: inner.clone() };
+    let sender = Sender { inner };
     (sender, receiver)
 }
 
@@ -127,7 +120,7 @@ impl<T> Inner<T> {
 
     fn send(&self, t: T) -> Result<(), T> {
         if self.complete.load(SeqCst) {
-            return Err(t)
+            return Err(t);
         }
 
         
@@ -164,7 +157,7 @@ impl<T> Inner<T> {
         
         
         if self.complete.load(SeqCst) {
-            return Poll::Ready(())
+            return Poll::Ready(());
         }
 
         
@@ -273,7 +266,10 @@ impl<T> Inner<T> {
         } else {
             let task = cx.waker().clone();
             match self.rx_task.try_lock() {
-                Some(mut slot) => { *slot = Some(task); false },
+                Some(mut slot) => {
+                    *slot = Some(task);
+                    false
+                }
                 None => true,
             }
         };
@@ -394,6 +390,12 @@ impl<T> Drop for Sender<T> {
     }
 }
 
+impl<T: fmt::Debug> fmt::Debug for Sender<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Sender").field("complete", &self.inner.complete).finish()
+    }
+}
+
 
 
 
@@ -453,10 +455,7 @@ impl<T> Receiver<T> {
 impl<T> Future for Receiver<T> {
     type Output = Result<T, Canceled>;
 
-    fn poll(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<T, Canceled>> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<T, Canceled>> {
         self.inner.recv(cx)
     }
 }
@@ -479,5 +478,11 @@ impl<T> FusedFuture for Receiver<T> {
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         self.inner.drop_rx()
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for Receiver<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Receiver").field("complete", &self.inner.complete).finish()
     }
 }

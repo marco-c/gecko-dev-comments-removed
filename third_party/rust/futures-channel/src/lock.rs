@@ -6,8 +6,8 @@
 
 use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
-use core::sync::atomic::Ordering::SeqCst;
 use core::sync::atomic::AtomicBool;
+use core::sync::atomic::Ordering::SeqCst;
 
 
 
@@ -37,10 +37,7 @@ unsafe impl<T: Send> Sync for Lock<T> {}
 impl<T> Lock<T> {
     
     pub(crate) fn new(t: T) -> Self {
-        Self {
-            locked: AtomicBool::new(false),
-            data: UnsafeCell::new(t),
-        }
+        Self { locked: AtomicBool::new(false), data: UnsafeCell::new(t) }
     }
 
     

@@ -7,8 +7,8 @@ use {
     futures::{
         channel::mpsc::{self, Sender, UnboundedSender},
         ready,
-        stream::{Stream, StreamExt},
         sink::Sink,
+        stream::{Stream, StreamExt},
         task::{Context, Poll},
     },
     futures_test::task::noop_context,
@@ -25,7 +25,6 @@ fn unbounded_1_tx(b: &mut Bencher) {
         
         
         for i in 0..1000 {
-
             
             assert_eq!(Poll::Pending, rx.poll_next_unpin(&mut cx));
 
@@ -74,7 +73,6 @@ fn unbounded_uncontended(b: &mut Bencher) {
 }
 
 
-
 struct TestSender {
     tx: Sender<u32>,
     last: u32, 
@@ -84,9 +82,7 @@ struct TestSender {
 impl Stream for TestSender {
     type Item = u32;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>)
-        -> Poll<Option<Self::Item>>
-    {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
         let mut tx = Pin::new(&mut this.tx);
 
@@ -123,12 +119,7 @@ fn bounded_100_tx(b: &mut Bencher) {
         
         let (tx, mut rx) = mpsc::channel(0);
 
-        let mut tx: Vec<_> = (0..100).map(|_| {
-            TestSender {
-                tx: tx.clone(),
-                last: 0
-            }
-        }).collect();
+        let mut tx: Vec<_> = (0..100).map(|_| TestSender { tx: tx.clone(), last: 0 }).collect();
 
         for i in 0..10 {
             for x in &mut tx {

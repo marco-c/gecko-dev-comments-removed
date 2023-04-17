@@ -4,8 +4,11 @@
 
 
 use crate::future::{assert_future, Either};
+use crate::stream::assert_stream;
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 use core::pin::Pin;
 #[cfg(feature = "sink")]
 use futures_core::stream::TryStream;
@@ -19,7 +22,7 @@ use futures_core::{
 #[cfg(feature = "sink")]
 use futures_sink::Sink;
 
-use crate::fns::{InspectFn, inspect_fn};
+use crate::fns::{inspect_fn, InspectFn};
 
 mod chain;
 #[allow(unreachable_pub)] 
@@ -120,7 +123,7 @@ pub use self::select_next_some::SelectNextSome;
 
 mod peek;
 #[allow(unreachable_pub)] 
-pub use self::peek::{Peek, Peekable};
+pub use self::peek::{NextIf, NextIfEq, Peek, Peekable};
 
 mod skip;
 #[allow(unreachable_pub)] 
@@ -201,7 +204,6 @@ mod catch_unwind;
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
 pub use self::catch_unwind::CatchUnwind;
-use crate::stream::assert_stream;
 
 impl<T: ?Sized> StreamExt for T where T: Stream {}
 
@@ -689,7 +691,7 @@ pub trait StreamExt: Stream {
         U: Stream,
         Self: Sized,
     {
-        FlatMap::new(self, f)
+        assert_stream::<U::Item, _>(FlatMap::new(self, f))
     }
 
     
@@ -722,7 +724,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = Option<B>>,
         Self: Sized,
     {
-        Scan::new(self, initial_state, f)
+        assert_stream::<B, _>(Scan::new(self, initial_state, f))
     }
 
     
@@ -827,7 +829,7 @@ pub trait StreamExt: Stream {
         Fut: Future,
         Self: Sized,
     {
-        TakeUntil::new(self, fut)
+        assert_stream::<Self::Item, _>(TakeUntil::new(self, fut))
     }
 
     
@@ -917,7 +919,7 @@ pub trait StreamExt: Stream {
     
     
     
-    #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
+    #[cfg(not(futures_no_atomic_cas))]
     #[cfg(feature = "alloc")]
     fn for_each_concurrent<Fut, F>(
         self,
@@ -1140,7 +1142,7 @@ pub trait StreamExt: Stream {
     
     
     
-    #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
+    #[cfg(not(futures_no_atomic_cas))]
     #[cfg(feature = "alloc")]
     fn buffered(self, n: usize) -> Buffered<Self>
     where
@@ -1185,7 +1187,7 @@ pub trait StreamExt: Stream {
     
     
     
-    #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
+    #[cfg(not(futures_no_atomic_cas))]
     #[cfg(feature = "alloc")]
     fn buffer_unordered(self, n: usize) -> BufferUnordered<Self>
     where
@@ -1289,7 +1291,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        assert_stream::<alloc::vec::Vec<Self::Item>, _>(Chunks::new(self, capacity))
+        assert_stream::<Vec<Self::Item>, _>(Chunks::new(self, capacity))
     }
 
     
@@ -1312,12 +1314,13 @@ pub trait StreamExt: Stream {
     
     #[cfg(feature = "alloc")]
     fn ready_chunks(self, capacity: usize) -> ReadyChunks<Self>
-        where
-            Self: Sized,
+    where
+        Self: Sized,
     {
-        ReadyChunks::new(self, capacity)
+        assert_stream::<Vec<Self::Item>, _>(ReadyChunks::new(self, capacity))
     }
 
+    
     
     
     
@@ -1334,7 +1337,10 @@ pub trait StreamExt: Stream {
     where
         S: Sink<Self::Ok, Error = Self::Error>,
         Self: TryStream + Sized,
+        
     {
+        
+        
         Forward::new(self, sink)
     }
 
@@ -1349,14 +1355,17 @@ pub trait StreamExt: Stream {
     
     #[cfg(feature = "sink")]
     #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
-    #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
+    #[cfg(not(futures_no_atomic_cas))]
     #[cfg(feature = "alloc")]
     fn split<Item>(self) -> (SplitSink<Self, Item>, SplitStream<Self>)
     where
         Self: Sink<Item> + Sized,
     {
         let (sink, stream) = split::split(self);
-        (sink, assert_stream::<Self::Item, _>(stream))
+        (
+            crate::sink::assert_sink::<Item, Self::Error, _>(sink),
+            assert_stream::<Self::Item, _>(stream),
+        )
     }
 
     
@@ -1459,6 +1468,6 @@ pub trait StreamExt: Stream {
     where
         Self: Unpin + FusedStream,
     {
-        SelectNextSome::new(self)
+        assert_future::<Self::Item, _>(SelectNextSome::new(self))
     }
 }

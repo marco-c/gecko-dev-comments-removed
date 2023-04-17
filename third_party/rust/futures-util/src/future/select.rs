@@ -1,7 +1,8 @@
-use core::pin::Pin;
-use futures_core::future::{Future, FusedFuture};
-use futures_core::task::{Context, Poll};
+use super::assert_future;
 use crate::future::{Either, FutureExt};
+use core::pin::Pin;
+use futures_core::future::{FusedFuture, Future};
+use futures_core::task::{Context, Poll};
 
 
 #[must_use = "futures do nothing unless you `.await` or poll them"]
@@ -72,10 +73,22 @@ impl<A: Unpin, B: Unpin> Unpin for Select<A, B> {}
 
 
 
+
+
+
+
+
+
+
+
 pub fn select<A, B>(future1: A, future2: B) -> Select<A, B>
-    where A: Future + Unpin, B: Future + Unpin
+where
+    A: Future + Unpin,
+    B: Future + Unpin,
 {
-    Select { inner: Some((future1, future2)) }
+    assert_future::<Either<(A::Output, B), (B::Output, A)>, _>(Select {
+        inner: Some((future1, future2)),
+    })
 }
 
 impl<A, B> Future for Select<A, B>
@@ -95,7 +108,7 @@ where
                     self.inner = Some((a, b));
                     Poll::Pending
                 }
-            }
+            },
         }
     }
 }

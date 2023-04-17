@@ -3,9 +3,10 @@
 
 #[macro_export]
 macro_rules! ready {
-    ($e:expr $(,)?) => (match $e {
-        $crate::__private::Poll::Ready(t) => t,
-        $crate::__private::Poll::Pending =>
-            return $crate::__private::Poll::Pending,
-    })
+    ($e:expr $(,)?) => {
+        match $e {
+            $crate::__private::Poll::Ready(t) => t,
+            $crate::__private::Poll::Pending => return $crate::__private::Poll::Pending,
+        }
+    };
 }
