@@ -1,39 +1,39 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef builtin_ModuleObject_h
 #define builtin_ModuleObject_h
 
-#include "mozilla/HashTable.h"  // mozilla::{HashMap, DefaultHasher}
-#include "mozilla/Maybe.h"      // mozilla::Maybe
+#include "mozilla/HashTable.h"  
+#include "mozilla/Maybe.h"      
 
-#include <stddef.h>  // size_t
-#include <stdint.h>  // int32_t, uint32_t
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "builtin/SelfHostingDefines.h"  // MODULE_OBJECT_*
-#include "gc/Barrier.h"                  // HeapPtr, PreBarrieredId
-#include "gc/Rooting.h"                  // HandleAtom, HandleArrayObject
-#include "gc/ZoneAllocator.h"            // ZoneAllocPolicy
-#include "js/Class.h"                    // JSClass, ObjectOpResult
-#include "js/GCVector.h"                 // GCVector
-#include "js/Id.h"                       // jsid
-#include "js/Modules.h"                  // JS::DynamicImportStatus
-#include "js/PropertyDescriptor.h"       // PropertyDescriptor
-#include "js/Proxy.h"                    // BaseProxyHandler
-#include "js/RootingAPI.h"               // Rooted, Handle, MutableHandle
-#include "js/TypeDecls.h"  // HandleValue, HandleId, HandleObject, HandleScript, MutableHandleValue, MutableHandleIdVector, MutableHandleObject
-#include "js/UniquePtr.h"  // UniquePtr
-#include "js/Value.h"      // JS::Value
-#include "vm/JSAtom.h"     // JSAtom
-#include "vm/JSObject.h"   // JSObject
-#include "vm/List.h"       // ListObject
-#include "vm/NativeObject.h"   // NativeObject
-#include "vm/PromiseObject.h"  // js::PromiseObject
-#include "vm/ProxyObject.h"    // ProxyObject
-#include "vm/Xdr.h"            // XDRMode, XDRResult, XDRState
+#include "builtin/SelfHostingDefines.h"  
+#include "gc/Barrier.h"                  
+#include "gc/Rooting.h"                  
+#include "gc/ZoneAllocator.h"            
+#include "js/Class.h"                    
+#include "js/GCVector.h"                 
+#include "js/Id.h"                       
+#include "js/Modules.h"                  
+#include "js/PropertyDescriptor.h"       
+#include "js/Proxy.h"                    
+#include "js/RootingAPI.h"               
+#include "js/TypeDecls.h"  
+#include "js/UniquePtr.h"  
+#include "js/Value.h"      
+#include "vm/JSAtom.h"     
+#include "vm/JSObject.h"   
+#include "vm/List.h"       
+#include "vm/NativeObject.h"   
+#include "vm/PromiseObject.h"  
+#include "vm/ProxyObject.h"    
+#include "vm/Xdr.h"            
 
 class JSFreeOp;
 class JSScript;
@@ -54,6 +54,18 @@ using HandleModuleObject = Handle<ModuleObject*>;
 using RootedModuleEnvironmentObject = Rooted<ModuleEnvironmentObject*>;
 using HandleModuleEnvironmentObject = Handle<ModuleEnvironmentObject*>;
 
+class ModuleRequestObject : public NativeObject {
+ public:
+  enum { SpecifierSlot = 0, SlotCount };
+
+  static const JSClass class_;
+  static bool isInstance(HandleValue value);
+  [[nodiscard]] static ModuleRequestObject* create(JSContext* cx,
+                                                   HandleAtom specifier);
+
+  JSAtom* specifier() const;
+};
+
 class ImportEntryObject : public NativeObject {
  public:
   enum {
@@ -67,11 +79,11 @@ class ImportEntryObject : public NativeObject {
 
   static const JSClass class_;
   static bool isInstance(HandleValue value);
-  static ImportEntryObject* create(JSContext* cx, HandleAtom moduleRequest,
+  static ImportEntryObject* create(JSContext* cx, HandleObject moduleRequest,
                                    HandleAtom maybeImportName,
                                    HandleAtom localName, uint32_t lineNumber,
                                    uint32_t columnNumber);
-  JSAtom* moduleRequest() const;
+  ModuleRequestObject* moduleRequest() const;
   JSAtom* importName() const;
   JSAtom* localName() const;
   uint32_t lineNumber() const;
@@ -102,12 +114,12 @@ class ExportEntryObject : public NativeObject {
   static const JSClass class_;
   static bool isInstance(HandleValue value);
   static ExportEntryObject* create(JSContext* cx, HandleAtom maybeExportName,
-                                   HandleAtom maybeModuleRequest,
+                                   HandleObject maybeModuleRequest,
                                    HandleAtom maybeImportName,
                                    HandleAtom maybeLocalName,
                                    uint32_t lineNumber, uint32_t columnNumber);
   JSAtom* exportName() const;
-  JSAtom* moduleRequest() const;
+  ModuleRequestObject* moduleRequest() const;
   JSAtom* importName() const;
   JSAtom* localName() const;
   uint32_t lineNumber() const;
@@ -122,15 +134,15 @@ using HandleExportEntryObject = Handle<ExportEntryObject*>;
 
 class RequestedModuleObject : public NativeObject {
  public:
-  enum { ModuleSpecifierSlot = 0, LineNumberSlot, ColumnNumberSlot, SlotCount };
+  enum { ModuleRequestSlot = 0, LineNumberSlot, ColumnNumberSlot, SlotCount };
 
   static const JSClass class_;
   static bool isInstance(HandleValue value);
   static RequestedModuleObject* create(JSContext* cx,
-                                       HandleAtom moduleSpecifier,
+                                       HandleObject moduleRequest,
                                        uint32_t lineNumber,
                                        uint32_t columnNumber);
-  JSAtom* moduleSpecifier() const;
+  ModuleRequestObject* moduleRequest() const;
   uint32_t lineNumber() const;
   uint32_t columnNumber() const;
 };
@@ -141,9 +153,17 @@ using RootedRequestedModuleVector = Rooted<GCVector<RequestedModuleObject*> >;
 using MutableHandleRequestedModuleObject =
     MutableHandle<RequestedModuleObject*>;
 
+using RootedModuleRequestObject = Rooted<ModuleRequestObject*>;
+using MutableHandleModuleRequestObject = MutableHandle<ModuleRequestObject*>;
+
 template <XDRMode mode>
 XDRResult XDRRequestedModuleObject(XDRState<mode>* xdr,
                                    MutableHandleRequestedModuleObject reqObj);
+
+template <XDRMode mode>
+XDRResult XDRModuleRequestObject(
+    XDRState<mode>* xdr, MutableHandleModuleRequestObject moduleRequestObj,
+    bool allowNullSpecifier);
 
 class IndirectBindingMap {
  public:
@@ -250,7 +270,7 @@ class ModuleNamespaceObject : public ProxyObject {
 using RootedModuleNamespaceObject = Rooted<ModuleNamespaceObject*>;
 using HandleModuleNamespaceObject = Handle<ModuleNamespaceObject*>;
 
-// Possible values for ModuleStatus are defined in SelfHostingDefines.h.
+
 using ModuleStatus = int32_t;
 
 class ModuleObject : public NativeObject {
@@ -307,7 +327,7 @@ class ModuleObject : public NativeObject {
 
   static ModuleObject* create(JSContext* cx);
 
-  // Initialize the slots on this object that are dependent on the script.
+  
   void initScriptSlots(HandleScript script);
 
   void setInitialEnvironment(
@@ -372,7 +392,7 @@ class ModuleObject : public NativeObject {
 
   static bool Instantiate(JSContext* cx, HandleModuleObject self);
 
-  // Start evaluating the module. If TLA is enabled, rval will be a promise
+  
   static bool Evaluate(JSContext* cx, HandleModuleObject self,
                        MutableHandleValue rval);
 
@@ -381,15 +401,15 @@ class ModuleObject : public NativeObject {
 
   void setMetaObject(JSObject* obj);
 
-  // For intrinsic_InstantiateModuleFunctionDeclarations.
+  
   static bool instantiateFunctionDeclarations(JSContext* cx,
                                               HandleModuleObject self);
 
-  // For intrinsic_ExecuteModule.
+  
   static bool execute(JSContext* cx, HandleModuleObject self,
                       MutableHandleValue rval);
 
-  // For intrinsic_NewModuleNamespace.
+  
   static ModuleNamespaceObject* createNamespace(JSContext* cx,
                                                 HandleModuleObject self,
                                                 HandleObject exports);
@@ -404,8 +424,8 @@ class ModuleObject : public NativeObject {
   static bool GatherAsyncParentCompletions(JSContext* cx,
                                            HandleModuleObject module,
                                            MutableHandleArrayObject execList);
-  // NOTE: accessor for FunctionDeclarationsSlot is defined inside
-  // ModuleObject.cpp as static function.
+  
+  
 
  private:
   static const JSClassOps classOps_;
@@ -419,20 +439,20 @@ class ModuleObject : public NativeObject {
 JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 
 JSObject* CallModuleResolveHook(JSContext* cx, HandleValue referencingPrivate,
-                                HandleString specifier);
+                                HandleObject moduleRequest);
 
-// https://tc39.es/proposal-top-level-await/#sec-asyncmodulexecutionfulfilled
+
 void AsyncModuleExecutionFulfilled(JSContext* cx, HandleModuleObject module);
 
-// https://tc39.es/proposal-top-level-await/#sec-asyncmodulexecutionrejected
+
 void AsyncModuleExecutionRejected(JSContext* cx, HandleModuleObject module,
                                   HandleValue error);
 
-// https://tc39.es/proposal-top-level-await/#sec-asyncmodulexecutionfulfilled
+
 bool AsyncModuleExecutionFulfilledHandler(JSContext* cx, unsigned argc,
                                           Value* vp);
 
-// https://tc39.es/proposal-top-level-await/#sec-asyncmodulexecutionrejected
+
 bool AsyncModuleExecutionRejectedHandler(JSContext* cx, unsigned argc,
                                          Value* vp);
 
@@ -443,20 +463,21 @@ bool OnModuleEvaluationFailure(JSContext* cx, HandleObject evaluationPromise);
 
 bool FinishDynamicModuleImport(JSContext* cx, HandleObject evaluationPromise,
                                HandleValue referencingPrivate,
-                               HandleString specifier, HandleObject promise);
+                               HandleObject moduleRequest,
+                               HandleObject promise);
 
-// This is used so that Top Level Await functionality can be turned off
-// entirely. It will be removed in bug#1676612.
+
+
 bool FinishDynamicModuleImport_NoTLA(JSContext* cx,
                                      JS::DynamicImportStatus status,
                                      HandleValue referencingPrivate,
-                                     HandleString specifier,
+                                     HandleObject moduleRequest,
                                      HandleObject promise);
 
 template <XDRMode mode>
 XDRResult XDRModuleObject(XDRState<mode>* xdr, MutableHandleModuleObject modp);
 
-}  // namespace js
+}  
 
 template <>
 inline bool JSObject::is<js::ModuleNamespaceObject>() const {
@@ -464,4 +485,4 @@ inline bool JSObject::is<js::ModuleNamespaceObject>() const {
                                   &js::ModuleNamespaceObject::proxyHandler);
 }
 
-#endif /* builtin_ModuleObject_h */
+#endif 
