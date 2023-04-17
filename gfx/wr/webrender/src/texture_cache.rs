@@ -1530,13 +1530,17 @@ impl TextureCache {
     ) -> bool {
         let mut allowed_in_shared_cache = true;
 
-        
-        
-        
-        
-        if descriptor.size.width > TEXTURE_REGION_DIMENSIONS ||
-           descriptor.size.height > TEXTURE_REGION_DIMENSIONS
+        if matches!(descriptor.format, ImageFormat::RGBA8 | ImageFormat::BGRA8)
+            && filter == TextureFilter::Linear
         {
+            
+            let max = self.shared_textures.color8_linear.size() / 2;
+            allowed_in_shared_cache = descriptor.size.width.max(descriptor.size.height) <= max;
+        } else if descriptor.size.width > TEXTURE_REGION_DIMENSIONS {
+            allowed_in_shared_cache = false;
+        }
+
+        if descriptor.size.height > TEXTURE_REGION_DIMENSIONS {
             allowed_in_shared_cache = false;
         }
 
