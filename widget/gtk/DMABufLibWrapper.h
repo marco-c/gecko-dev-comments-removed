@@ -162,7 +162,6 @@ struct GbmFormat {
 class nsDMABufDevice {
  public:
   nsDMABufDevice();
-  ~nsDMABufDevice();
 
   gbm_device* GetGbmDevice();
   
@@ -186,8 +185,6 @@ class nsDMABufDevice {
 
  private:
   bool IsDMABufEnabled();
-
-  void* mRegistry;
 
   GbmFormat mXRGBFormat;
   GbmFormat mARGBFormat;
