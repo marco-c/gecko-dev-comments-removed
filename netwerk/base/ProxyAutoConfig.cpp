@@ -517,8 +517,17 @@ static bool PACDnsResolve(JSContext* cx, unsigned int argc, JS::Value* vp) {
 
   if (!args.requireAtLeast(cx, "dnsResolve", 1)) return false;
 
-  JS::Rooted<JSString*> arg1(cx, JS::ToString(cx, args[0]));
-  if (!arg1) return false;
+  
+  
+  
+  
+  if (!args[0].isString()) {
+    args.rval().setNull();
+    return true;
+  }
+
+  JS::RootedString arg1(cx);
+  arg1 = args[0].toString();
 
   nsAutoJSString hostName;
   nsAutoCString dottedDecimal;
