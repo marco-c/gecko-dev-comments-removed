@@ -102,14 +102,6 @@ var testSpec = protocol.generateActorSpec({
       },
       response: {},
     },
-    getAllAdjustedQuads: {
-      request: {
-        selector: Arg(0, "string"),
-      },
-      response: {
-        value: RetVal("json"),
-      },
-    },
     getNodeRect: {
       request: {
         selector: Arg(0, "string"),
@@ -308,22 +300,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     
   },
 
-  
-
-
-
-
-
-  getAllAdjustedQuads: function(selector) {
-    const regions = {};
-    const node = this._querySelector(selector);
-    for (const boxType of ["content", "padding", "border", "margin"]) {
-      regions[boxType] = getAdjustedQuads(this.content, node, boxType);
-    }
-
-    return regions;
-  },
-
   async getNodeRect(selector) {
     const node = this._querySelector(selector);
     return getRect(this.content, node, this.content);
@@ -500,39 +476,8 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
   
 
 
-
-
-
-
-
-  async isNodeCorrectlyHighlighted(selector, is, prefix = "") {
-    prefix += (prefix ? " " : "") + selector + " ";
-
-    const boxModel = await this._getBoxModelStatus();
-    const regions = await this.getAllAdjustedQuads(selector);
-
-    for (const boxType of ["content", "padding", "border", "margin"]) {
-      const [quad] = regions[boxType];
-      for (const point in boxModel[boxType].points) {
-        is(
-          boxModel[boxType].points[point].x,
-          quad[point].x,
-          prefix + boxType + " point " + point + " x coordinate is correct"
-        );
-        is(
-          boxModel[boxType].points[point].y,
-          quad[point].y,
-          prefix + boxType + " point " + point + " y coordinate is correct"
-        );
-      }
-    }
-  }
-
-  
-
-
   async getSimpleBorderRect() {
-    const { border } = await this._getBoxModelStatus();
+    const { border } = await this.getBoxModelStatus();
     const { p1, p2, p4 } = border.points;
 
     return {
@@ -547,7 +492,7 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
 
 
 
-  async _getBoxModelStatus() {
+  async getBoxModelStatus() {
     const isVisible = await this.isHighlighting();
 
     const ret = {
@@ -598,7 +543,7 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
 
 
   async isNodeRectHighlighted({ left, top, width, height }) {
-    const { visible, border } = await this._getBoxModelStatus();
+    const { visible, border } = await this.getBoxModelStatus();
     let points = border.points;
     if (!visible) {
       return false;
