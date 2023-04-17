@@ -123,6 +123,8 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   struct SoftText {
     
     nsString mValue;
+
+    NodeOffset mBegin = NodeOffset(nullptr, 0);
   };
 
   SoftText mSoftText;
@@ -134,7 +136,6 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
       : mDocument(&aDocument),
         mIsContentEditableOrDesignMode(aIsContentEditableOrDesignMode),
         mRootNode(&aRootNode),
-        mSoftBegin(nullptr, 0),
         mSoftEnd(nullptr, 0),
         mNextWordIndex(-1),
         mSoftTextValid(false) {}
@@ -145,7 +146,6 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
 
   
   const nsINode* mRootNode;
-  NodeOffset mSoftBegin;
   NodeOffset mSoftEnd;
 
   
