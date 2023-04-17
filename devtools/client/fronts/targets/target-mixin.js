@@ -643,7 +643,6 @@ function TargetMixin(parentClass) {
           console.warn("Error while destroying front:", name, e);
         }
       }
-      this.fronts.clear();
 
       
       if (this.removeOnInspectObjectListener) {

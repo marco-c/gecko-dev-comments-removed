@@ -98,10 +98,7 @@ class NodePicker extends EventEmitter {
 
 
 
-
-
-
-  async _onInspectorFrontDestroyed(inspectorFront, { isDestroyCodepath }) {
+  async _onInspectorFrontDestroyed(inspectorFront) {
     this._currentInspectorFronts.delete(inspectorFront);
 
     const { walker } = inspectorFront;
@@ -113,12 +110,7 @@ class NodePicker extends EventEmitter {
     walker.off("picker-node-picked", this._onPicked);
     walker.off("picker-node-previewed", this._onPreviewed);
     walker.off("picker-node-canceled", this._onCanceled);
-    
-    
-    
-    if (!isDestroyCodepath) {
-      await walker.cancelPick();
-    }
+    await walker.cancelPick();
   }
 
   
@@ -168,11 +160,7 @@ class NodePicker extends EventEmitter {
 
 
 
-
-
-
-
-  async stop({ isDestroyCodepath } = {}) {
+  async stop() {
     if (!this.isPicking) {
       return;
     }
@@ -185,21 +173,12 @@ class NodePicker extends EventEmitter {
     );
 
     for (const inspectorFront of this._currentInspectorFronts) {
-      await this._onInspectorFrontDestroyed(inspectorFront, {
-        isDestroyCodepath,
-      });
+      await this._onInspectorFrontDestroyed(inspectorFront);
     }
 
     this._currentInspectorFronts.clear();
 
     this.emit("picker-stopped");
-  }
-
-  destroy() {
-    
-    
-    this.stop({ isDestroyCodepath: true });
-    this.targetCommand = null;
   }
 
   
