@@ -98,8 +98,6 @@ class ProviderRemoteTabs extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return false;
-    
     return (
       syncUsernamePref &&
       showRemoteTabsPref &&

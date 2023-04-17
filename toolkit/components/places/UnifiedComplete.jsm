@@ -19,10 +19,6 @@ const QUERYTYPE_FILTERED = 0;
 const FRECENCY_DEFAULT = 1000;
 
 
-
-const RECENT_REMOTE_TAB_THRESHOLD_MS = 259200000; 
-
-
 const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 
 
@@ -121,8 +117,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.jsm",
   KeywordUtils: "resource://gre/modules/KeywordUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
-  PlacesRemoteTabsAutocompleteProvider:
-    "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
@@ -134,12 +128,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "syncUsernamePref",
-  "services.sync.username"
-);
 
 function setTimeout(callback, ms) {
   let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -570,9 +558,6 @@ function Search(
   this._result = result;
 
   
-  this._extraRemoteTabRows = [];
-
-  
   this._usedURLs = [];
   this._usedPlaceIds = new Set();
 
@@ -803,14 +788,6 @@ Search.prototype = {
     }
 
     
-    if (this._enableActions && this.hasBehavior("openpage")) {
-      await this._matchRemoteTabs();
-      if (!this.pending) {
-        return;
-      }
-    }
-
-    
     let queries = [];
     
     
@@ -823,14 +800,6 @@ Search.prototype = {
       if (!this.pending) {
         return;
       }
-    }
-
-    
-    while (
-      this._extraRemoteTabRows.length &&
-      this._result.matchCount < this._maxResults
-    ) {
-      this._addMatch(this._extraRemoteTabRows.shift());
     }
 
     this._matchAboutPages();
@@ -1114,56 +1083,6 @@ Search.prototype = {
 
     match.value = makeActionUrl("searchengine", actionURLParams);
     this._addMatch(match);
-  },
-
-  async _matchRemoteTabs() {
-    
-    if (!syncUsernamePref) {
-      return;
-    }
-
-    let searchString = this._searchTokens.map(t => t.value).join(" ");
-    let matches = await PlacesRemoteTabsAutocompleteProvider.getMatches(
-      searchString,
-      this._maxResults
-    );
-    let remoteTabsAdded = 0;
-    for (let { url, title, icon, deviceName, lastUsed } of matches) {
-      
-      
-      if (!icon) {
-        icon = iconHelper(url);
-      } else {
-        icon = PlacesUtils.favicons.getFaviconLinkForIcon(
-          Services.io.newURI(icon)
-        ).spec;
-      }
-
-      let match = {
-        
-        
-        value: makeActionUrl("remotetab", { url, deviceName }),
-        comment: title || url,
-        style: "action remotetab",
-        
-        
-        frecency: FRECENCY_DEFAULT + 1,
-        icon,
-      };
-      
-      
-      
-      
-      if (
-        remoteTabsAdded < this._maxResults / 2 &&
-        lastUsed > Date.now() - RECENT_REMOTE_TAB_THRESHOLD_MS
-      ) {
-        this._addMatch(match);
-        remoteTabsAdded++;
-      } else {
-        this._extraRemoteTabRows.push(match);
-      }
-    }
   },
 
   _onResultRow(row, cancel) {
