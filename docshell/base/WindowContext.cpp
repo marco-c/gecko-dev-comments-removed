@@ -262,6 +262,44 @@ bool WindowContext::CanSet(FieldIndex<IDX_HadLazyLoadImage>, const bool& aValue,
   return IsTop();
 }
 
+bool WindowContext::CanSet(FieldIndex<IDX_AllowJavascript>, bool aValue,
+                           ContentParent* aSource) {
+  return (XRE_IsParentProcess() && !aSource) || CheckOnlyOwningProcessCanSet(aSource);
+}
+
+void WindowContext::DidSet(FieldIndex<IDX_AllowJavascript>, bool aOldValue) {
+  RecomputeCanExecuteScripts();
+}
+
+void WindowContext::RecomputeCanExecuteScripts(bool aApplyChanges) {
+  const bool old = mCanExecuteScripts;
+  if (!AllowJavascript()) {
+    
+    mCanExecuteScripts = false;
+  } else {
+    
+    mCanExecuteScripts = mBrowsingContext->CanExecuteScripts();
+  }
+
+  if (aApplyChanges && old != mCanExecuteScripts) {
+    
+    if (nsGlobalWindowInner* window = GetInnerWindow()) {
+      
+      
+      
+      if (window->IsCurrentInnerWindow()) {
+        auto& scriptability = xpc::Scriptability::Get(
+            window->GetGlobalJSObject());
+        scriptability.SetWindowAllowsScript(mCanExecuteScripts);
+      }
+    }
+
+    for (const RefPtr<BrowsingContext>& child : Children()) {
+      child->RecomputeCanExecuteScripts();
+    }
+  }
+}
+
 void WindowContext::DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>,
                            bool aOldValue) {
   MOZ_ASSERT(
@@ -473,6 +511,7 @@ WindowContext::WindowContext(BrowsingContext* aBrowsingContext,
   MOZ_ASSERT(mBrowsingContext);
   MOZ_ASSERT(mInnerWindowId);
   MOZ_ASSERT(mOuterWindowId);
+  RecomputeCanExecuteScripts( false);
 }
 
 WindowContext::~WindowContext() {

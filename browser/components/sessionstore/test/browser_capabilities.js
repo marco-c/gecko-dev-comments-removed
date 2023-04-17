@@ -11,7 +11,7 @@
 add_task(async function docshell_capabilities() {
   let tab = await createTab();
   let browser = tab.linkedBrowser;
-  let docShell = browser.docShell;
+  let { browsingContext, docShell } = browser;
 
   
   let flags = Object.keys(docShell).filter(k => k.startsWith("allow"));
@@ -27,7 +27,7 @@ add_task(async function docshell_capabilities() {
   
   docShell.allowImages = false;
   docShell.allowMetaRedirects = false;
-  docShell.allowJavascript = false;
+  browsingContext.allowJavascript = false;
 
   
   
@@ -68,7 +68,7 @@ add_task(async function docshell_capabilities() {
   ok(!docShell.allowMetaRedirects, "meta redirects not allowed");
 
   
-  ok(docShell.allowJavascript, "Javascript still allowed");
+  ok(browsingContext.allowJavascript, "Javascript still allowed");
 
   
   state = JSON.parse(ss.getTabState(tab));

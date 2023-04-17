@@ -61,20 +61,23 @@ class TargetConfigurationCommand {
   }
 
   async isJavascriptEnabled() {
-    if (
-      this._hasTargetWatcherSupport() &&
-      
-      
-      
-      typeof this.configuration.javascriptEnabled !== "undefined"
-    ) {
-      return this.configuration.javascriptEnabled;
+    if (this._hasTargetWatcherSupport()) {
+      const front = await this.getFront();
+      return front.isJavascriptEnabled();
     }
 
     
     
     
-    return this._commands.targetCommand.targetFront._javascriptEnabled;
+    
+    const { targetFront } = this._commands.targetCommand;
+    if (targetFront.traits.javascriptEnabled) {
+      return targetFront._javascriptEnabled;
+    }
+
+    
+    
+    return true;
   }
 
   

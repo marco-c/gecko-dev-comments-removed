@@ -81,7 +81,7 @@ class Scriptability {
 
   void Block();
   void Unblock();
-  void SetDocShellAllowsScript(bool aAllowed);
+  void SetWindowAllowsScript(bool aAllowed);
 
   static Scriptability& Get(JSObject* aScope);
 
@@ -94,7 +94,7 @@ class Scriptability {
 
   
   
-  bool mDocShellAllowsScript;
+  bool mWindowAllowsScript;
 
   
   

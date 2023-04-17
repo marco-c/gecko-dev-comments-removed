@@ -393,7 +393,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
 #endif
       mInitialized(false),
       mAllowSubframes(true),
-      mAllowJavascript(true),
       mAllowMetaRedirects(true),
       mAllowImages(true),
       mAllowMedia(true),
@@ -407,7 +406,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mDeviceSizeIsPageSize(false),
       mWindowDraggingAllowed(false),
       mInFrameSwap(false),
-      mCanExecuteScripts(false),
       mFiredUnloadEvent(false),
       mEODForCurrentDocument(false),
       mURIResultedInDocument(false),
@@ -1750,14 +1748,6 @@ nsDocShell::SetAllowPlugins(bool aAllowPlugins) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GetAllowJavascript(bool* aAllowJavascript) {
-  NS_ENSURE_ARG_POINTER(aAllowJavascript);
-
-  *aAllowJavascript = mAllowJavascript;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocShell::GetCssErrorReportingEnabled(bool* aEnabled) {
   MOZ_ASSERT(aEnabled);
   *aEnabled = mCSSErrorReportingEnabled;
@@ -1767,13 +1757,6 @@ nsDocShell::GetCssErrorReportingEnabled(bool* aEnabled) {
 NS_IMETHODIMP
 nsDocShell::SetCssErrorReportingEnabled(bool aEnabled) {
   mCSSErrorReportingEnabled = aEnabled;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetAllowJavascript(bool aAllowJavascript) {
-  mAllowJavascript = aAllowJavascript;
-  RecomputeCanExecuteScripts();
   return NS_OK;
 }
 
@@ -2653,50 +2636,6 @@ Maybe<ClientInfo> nsDocShell::GetInitialClientInfo() const {
   return innerWindow->GetClientInfo();
 }
 
-void nsDocShell::RecomputeCanExecuteScripts() {
-  bool old = mCanExecuteScripts;
-  RefPtr<nsDocShell> parent = GetInProcessParentDocshell();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mTreeOwner) {
-    mCanExecuteScripts = mCanExecuteScripts && mAllowJavascript;
-    
-  } else if (!mAllowJavascript) {
-    mCanExecuteScripts = false;
-    
-  } else if (parent) {
-    mCanExecuteScripts = parent->mCanExecuteScripts;
-    
-    
-  } else {
-    mCanExecuteScripts = true;
-  }
-
-  
-  
-  
-  if (mScriptGlobal && mScriptGlobal->GetGlobalJSObject()) {
-    xpc::Scriptability& scriptability =
-        xpc::Scriptability::Get(mScriptGlobal->GetGlobalJSObject());
-    scriptability.SetDocShellAllowsScript(mCanExecuteScripts);
-  }
-
-  
-  
-  if (old != mCanExecuteScripts) {
-    for (auto* child : mChildList.ForwardRange()) {
-      static_cast<nsDocShell*>(child)->RecomputeCanExecuteScripts();
-    }
-  }
-}
-
 nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
   bool wasFrame = IsFrame();
 
@@ -2717,10 +2656,6 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
   nsCOMPtr<nsIDocShell> parentAsDocShell(do_QueryInterface(parent));
 
   if (parentAsDocShell) {
-    if (mAllowJavascript &&
-        NS_SUCCEEDED(parentAsDocShell->GetAllowJavascript(&value))) {
-      SetAllowJavascript(value);
-    }
     if (mAllowMetaRedirects &&
         NS_SUCCEEDED(parentAsDocShell->GetAllowMetaRedirects(&value))) {
       SetAllowMetaRedirects(value);
@@ -2754,9 +2689,6 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
   if (parentURIListener) {
     mContentListener->SetParentContentListener(parentURIListener);
   }
-
-  
-  RecomputeCanExecuteScripts();
 
   
   if (!aParent) {
@@ -2981,16 +2913,6 @@ nsDocShell::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
       mBrowserChild = do_GetWeakReference(newBrowserChild);
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  RecomputeCanExecuteScripts();
 
   return NS_OK;
 }
@@ -7658,9 +7580,6 @@ nsresult nsDocShell::RestoreFromHistory() {
 
     
     
-    bool allowJavascript;
-    childShell->GetAllowJavascript(&allowJavascript);
-
     bool allowRedirects;
     childShell->GetAllowMetaRedirects(&allowRedirects);
 
@@ -7684,7 +7603,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     AddChild(childItem);
 
-    childShell->SetAllowJavascript(allowJavascript);
     childShell->SetAllowMetaRedirects(allowRedirects);
     childShell->SetAllowSubframes(allowSubframes);
     childShell->SetAllowImages(allowImages);
@@ -13089,12 +13007,6 @@ NS_IMETHODIMP nsDocShell::ExitPrintPreview() {
 #else
   return NS_OK;
 #endif
-}
-
-NS_IMETHODIMP
-nsDocShell::GetCanExecuteScripts(bool* aResult) {
-  *aResult = mCanExecuteScripts;
-  return NS_OK;
 }
 
 

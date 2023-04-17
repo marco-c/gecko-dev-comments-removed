@@ -1847,7 +1847,7 @@ WindowStateHolder::WindowStateHolder(nsGlobalWindowInner* aWindow)
   aWindow->Suspend();
 
   
-  xpc::Scriptability::Get(mInnerWindowReflector).SetDocShellAllowsScript(false);
+  xpc::Scriptability::Get(mInnerWindowReflector).SetWindowAllowsScript(false);
 }
 
 WindowStateHolder::~WindowStateHolder() {
@@ -2332,9 +2332,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     }
 
     
-    bool allow = GetDocShell()->GetCanExecuteScripts();
+    WindowContext* wc = mInnerWindow->GetWindowContext();
+    bool allow = wc ? wc->CanExecuteScripts() : mBrowsingContext->CanExecuteScripts();
     xpc::Scriptability::Get(GetWrapperPreserveColor())
-        .SetDocShellAllowsScript(allow);
+        .SetWindowAllowsScript(allow);
 
     if (!aState) {
       

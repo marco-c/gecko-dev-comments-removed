@@ -406,6 +406,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
   fields.mTouchEventsOverrideInternal = TouchEventsOverride::None;
 
+  fields.mAllowJavascript = inherit ? inherit->GetAllowJavascript() : true;
+
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
     context = new CanonicalBrowsingContext(parentWC, group, id,
@@ -538,6 +540,7 @@ BrowsingContext::BrowsingContext(WindowContext* aParentWindow,
       mUseRemoteSubframes(false),
       mCreatedDynamically(false),
       mIsInBFCache(false),
+      mCanExecuteScripts(true),
       mChildOffset(0) {
   MOZ_RELEASE_ASSERT(!mParentWindow || mParentWindow->Group() == mGroup);
   MOZ_RELEASE_ASSERT(mBrowsingContextId != 0);
@@ -742,6 +745,7 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
     mChildOffset =
         mCreatedDynamically ? -1 : mParentWindow->Children().Length();
     mParentWindow->AppendChildBrowsingContext(this);
+    RecomputeCanExecuteScripts();
   } else {
     mGroup->Toplevels().AppendElement(this);
   }
@@ -2626,6 +2630,43 @@ void BrowsingContext::DidSet(FieldIndex<IDX_HasMainMediaController>,
     return;
   }
   Group()->UpdateToplevelsSuspendedIfNeeded();
+}
+
+auto BrowsingContext::CanSet(FieldIndex<IDX_AllowJavascript>, bool aValue,
+                             ContentParent* aSource) -> CanSetResult {
+  if (mozilla::SessionHistoryInParent()) {
+    return XRE_IsParentProcess() && !aSource ? CanSetResult::Allow : CanSetResult::Deny;
+  }
+
+  
+  
+  return LegacyRevertIfNotOwningOrParentProcess(aSource);
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_AllowJavascript>, bool aOldValue) {
+  RecomputeCanExecuteScripts();
+}
+
+
+void BrowsingContext::RecomputeCanExecuteScripts() {
+  const bool old = mCanExecuteScripts;
+  if (!AllowJavascript()) {
+    
+    mCanExecuteScripts = false;
+  } else if (GetParentWindowContext()) {
+    
+    mCanExecuteScripts = GetParentWindowContext()->CanExecuteScripts();
+  } else {
+    
+    
+    mCanExecuteScripts = true;
+  }
+
+  if (old != mCanExecuteScripts) {
+    for (WindowContext* wc : GetWindowContexts()) {
+      wc->RecomputeCanExecuteScripts();
+    }
+  }
 }
 
 bool BrowsingContext::InactiveForSuspend() const {

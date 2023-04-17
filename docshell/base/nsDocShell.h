@@ -952,7 +952,6 @@ class nsDocShell final : public nsDocLoader,
   void SetupReferrerInfoFromChannel(nsIChannel* aChannel);
   void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo);
   void ReattachEditorToWindow(nsISHEntry* aSHEntry);
-  void RecomputeCanExecuteScripts();
   void ClearFrameHistory(nsISHEntry* aEntry);
   
   static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
@@ -1245,7 +1244,6 @@ class nsDocShell final : public nsDocLoader,
 
   bool mInitialized : 1;
   bool mAllowSubframes : 1;
-  bool mAllowJavascript : 1;
   bool mAllowMetaRedirects : 1;
   bool mAllowImages : 1;
   bool mAllowMedia : 1;
@@ -1259,11 +1257,6 @@ class nsDocShell final : public nsDocLoader,
   bool mDeviceSizeIsPageSize : 1;
   bool mWindowDraggingAllowed : 1;
   bool mInFrameSwap : 1;
-
-  
-  
-  
-  bool mCanExecuteScripts : 1;
 
   
   

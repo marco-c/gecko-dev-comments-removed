@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=519928
+-->
 <head>
   <title>Test for Bug 519928</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,7 +22,7 @@ var iframe = document.getElementById("load-frame");
 function enableJS() { allowJS(true, iframe); }
 function disableJS() { allowJS(false, iframe); }
 function allowJS(allow, frame) {
-  SpecialPowers.wrap(frame.contentWindow).docShell.allowJavascript = allow;
+  SpecialPowers.wrap(frame.contentWindow).windowGlobalChild.windowContext.allowJavascript = allow;
 }
 
 function expectJSAllowed(allowed, testCondition, callback) {

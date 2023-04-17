@@ -25,7 +25,6 @@ class BrowsingContextTargetFront extends TargetMixin(
     
     
     
-    
     this._javascriptEnabled = null;
 
     this._onTabNavigated = this._onTabNavigated.bind(this);
@@ -121,8 +120,12 @@ class BrowsingContextTargetFront extends TargetMixin(
       const response = await super.attach();
 
       this.targetForm.threadActor = response.threadActor;
-      this._javascriptEnabled = response.javascriptEnabled;
       this.traits = response.traits || {};
+
+      if (response.javascriptEnabled != null) {
+        this.traits.javascriptEnabled = true;
+        this._javascriptEnabled = response.javascriptEnabled;
+      }
 
       
       
@@ -131,16 +134,6 @@ class BrowsingContextTargetFront extends TargetMixin(
       }
     })();
     return this._attach;
-  }
-
-  async reconfigure({ options }) {
-    const response = await super.reconfigure({ options });
-
-    if (typeof options.javascriptEnabled != "undefined") {
-      this._javascriptEnabled = options.javascriptEnabled;
-    }
-
-    return response;
   }
 
   async detach() {

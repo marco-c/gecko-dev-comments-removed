@@ -2118,11 +2118,15 @@ Toolbox.prototype = {
 
 
 
+
+
   _applyJavascriptEnabledSettings: function() {
-    const javascriptEnabled = this.target._javascriptEnabled;
-    this.commands.targetConfigurationCommand.updateConfiguration({
-      javascriptEnabled,
-    });
+    if (this.target.traits.javascriptEnabled) {
+      const javascriptEnabled = this.target._javascriptEnabled;
+      this.commands.targetConfigurationCommand.updateConfiguration({
+        javascriptEnabled,
+      });
+    }
   },
 
   
