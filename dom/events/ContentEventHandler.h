@@ -396,7 +396,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
-  FrameRelativeRect GuessLineBreakerRectAfter(nsIContent* aTextContent);
+  FrameRelativeRect GuessLineBreakerRectAfter(const dom::Text& aTextNode);
 
   
   
