@@ -48,12 +48,6 @@ typedef double f64;
 #ifdef _MSC_VER
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
-#else 
-#ifdef _WIN64
-typedef signed long long ssize_t;
-#else 
-typedef signed long ssize_t;
-#endif 
 #endif 
 #endif 
 
