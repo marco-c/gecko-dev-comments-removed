@@ -91,6 +91,7 @@ class nsTDependentSubstring : public nsTSubstring<T> {
 
   
   
+  nsTDependentSubstring(const nsTDependentSubstring&) = default;
 
  private:
   
