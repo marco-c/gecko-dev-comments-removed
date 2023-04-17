@@ -10,6 +10,7 @@
 #include "nsIWebNavigation.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIDocumentLoaderFactory.h"
+#include "nsIPluginHost.h"
 #include "nsIDocShell.h"
 #include "nsContentUtils.h"
 #include "imgLoader.h"
@@ -51,7 +52,40 @@ uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
   }
 
   const nsCString& flatType = PromiseFlatCString(aType);
-  return IsTypeSupportedInternal(flatType);
+  uint32_t result = IsTypeSupportedInternal(flatType);
+  if (result != nsIWebNavigationInfo::UNSUPPORTED) {
+    return result;
+  }
+
+  
+  
+  if (!nsPluginHost::CanUsePluginForMIMEType(aType)) {
+    return nsIWebNavigationInfo::UNSUPPORTED;
+  }
+
+  
+  
+  if (!aPluginsAllowed) {
+    return nsIWebNavigationInfo::UNSUPPORTED;
+  }
+
+  
+  nsCOMPtr<nsIPluginHost> pluginHost =
+      do_GetService(MOZ_PLUGIN_HOST_CONTRACTID);
+  if (pluginHost) {
+    
+    
+    nsresult rv = pluginHost->ReloadPlugins();
+    if (NS_SUCCEEDED(rv)) {
+      
+      
+      
+      
+      return IsTypeSupportedInternal(flatType);
+    }
+  }
+
+  return nsIWebNavigationInfo::UNSUPPORTED;
 }
 
 uint32_t nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType) {
@@ -64,8 +98,8 @@ uint32_t nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType) {
     case nsContentUtils::TYPE_UNSUPPORTED:
       return nsIWebNavigationInfo::UNSUPPORTED;
 
-    case nsContentUtils::TYPE_FALLBACK:
-      return nsIWebNavigationInfo::FALLBACK;
+    case nsContentUtils::TYPE_PLUGIN:
+      return nsIWebNavigationInfo::PLUGIN;
 
     case nsContentUtils::TYPE_UNKNOWN:
       return nsIWebNavigationInfo::OTHER;

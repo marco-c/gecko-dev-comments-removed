@@ -3098,6 +3098,24 @@ class Document : public nsINode,
 
   
   
+  void AddPlugin(nsIObjectLoadingContent* aPlugin) {
+    MOZ_ASSERT(aPlugin);
+    mPlugins.Insert(aPlugin);
+  }
+
+  
+  
+  void RemovePlugin(nsIObjectLoadingContent* aPlugin) {
+    MOZ_ASSERT(aPlugin);
+    mPlugins.Remove(aPlugin);
+  }
+
+  
+  
+  void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins);
+
+  
+  
   void AddResponsiveContent(HTMLImageElement* aContent) {
     MOZ_ASSERT(aContent);
     mResponsiveContent.Insert(aContent);
@@ -5096,6 +5114,9 @@ class Document : public nsINode,
 
   
   nsTHashSet<HTMLImageElement*> mResponsiveContent;
+
+  
+  nsTHashSet<nsIObjectLoadingContent*> mPlugins;
 
   RefPtr<DocumentTimeline> mDocumentTimeline;
   LinkedList<DocumentTimeline> mTimelines;

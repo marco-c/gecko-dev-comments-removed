@@ -1,0 +1,11 @@
+
+
+
+
+
+
+SharedLibrary("npsecondtest")
+
+relative_path = "secondplugin"
+cocoa_name = "SecondTest"
+include("../testplugin.mozbuild")

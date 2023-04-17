@@ -265,6 +265,14 @@ class ShadowLayerForwarder final : public LayersIPCActor,
 
   void SetShadowManager(PLayerTransactionChild* aShadowManager);
 
+  
+
+
+
+
+  void StorePluginWidgetConfigurations(
+      const nsTArray<nsIWidget::Configuration>& aConfigurations);
+
   void StopReceiveAsyncParentMessge();
 
   void ClearCachedResources();
@@ -413,6 +421,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
   DiagnosticTypes mDiagnosticTypes;
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
+  nsTArray<PluginWindowData> mPluginWindowData;
   UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
   uint64_t mNextLayerHandle;
   nsTHashMap<nsUint64HashKey, CompositableClient*> mCompositables;

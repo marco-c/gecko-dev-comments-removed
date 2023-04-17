@@ -5,24 +5,72 @@
 
 
 XPIDL_SOURCES += [
+    "nsIHTTPHeaderListener.idl",
+    "nsIPluginDocument.idl",
+    "nsIPluginHost.idl",
+    "nsIPluginInputStream.idl",
+    "nsIPluginInstanceOwner.idl",
     "nsIPluginTag.idl",
+    "nspluginroot.idl",
 ]
 
 XPIDL_MODULE = "plugin"
 
 EXPORTS += [
+    "npapi.h",
+    "npfunctions.h",
+    "npruntime.h",
+    "nptypes.h",
+    "nsJSNPRuntime.h",
+    "nsNPAPIPluginInstance.h",
     "nsPluginHost.h",
+    "nsPluginInstanceOwner.h",
     "nsPluginLogging.h",
+    "nsPluginNativeWindow.h",
+    "nsPluginsCID.h",
+    "nsPluginsDir.h",
     "nsPluginTags.h",
 ]
 
 UNIFIED_SOURCES += [
-    "nsPluginHost.cpp",
+    "nsJSNPRuntime.cpp",
+    "nsNPAPIPluginInstance.cpp",
+    "nsNPAPIPluginStreamListener.cpp",
+    "nsPluginInstanceOwner.cpp",
+    "nsPluginStreamListenerPeer.cpp",
     "nsPluginTags.cpp",
+]
+
+SOURCES += [
+    "nsNPAPIPlugin.cpp",  
+    "nsPluginHost.cpp",  
+]
+
+if CONFIG["OS_ARCH"] == "WINNT":
+    UNIFIED_SOURCES += [
+        "nsPluginNativeWindowWin.cpp",
+        "nsPluginsDirWin.cpp",
+    ]
+elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+    UNIFIED_SOURCES += [
+        "nsPluginNativeWindow.cpp",
+    ]
+    SOURCES += [
+        "nsPluginsDirDarwin.cpp",  
+    ]
+else:
+    UNIFIED_SOURCES += [
+        "nsPluginNativeWindow.cpp",
+        "nsPluginsDirUnix.cpp",
+    ]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
 
 LOCAL_INCLUDES += [
     "/dom/base",
+    "/dom/plugins/ipc",
     "/layout/generic",
     "/layout/xul",
     "/netwerk/base",

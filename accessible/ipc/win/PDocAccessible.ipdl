@@ -86,6 +86,9 @@ parent:
 
   async BindChildDoc(PDocAccessible aChildDoc, uint64_t aID);
 
+  sync GetWindowedPluginIAccessible(WindowsHandle aHwnd)
+    returns (IAccessibleHolder aPluginCOMProxy);
+
 child:
   
 

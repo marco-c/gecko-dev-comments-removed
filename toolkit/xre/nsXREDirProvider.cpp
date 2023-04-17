@@ -517,6 +517,14 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     rv = mContentTempDir->Clone(getter_AddRefs(file));
   }
 #endif  
+#if defined(MOZ_SANDBOX)
+  else if (0 == strcmp(aProperty, NS_APP_PLUGIN_PROCESS_TEMP_DIR)) {
+    if (!mPluginTempDir && NS_FAILED((rv = LoadPluginProcessTempDir()))) {
+      return rv;
+    }
+    rv = mPluginTempDir->Clone(getter_AddRefs(file));
+  }
+#endif  
   else if (NS_SUCCEEDED(GetProfileStartupDir(getter_AddRefs(file)))) {
     
     
@@ -669,6 +677,43 @@ nsresult nsXREDirProvider::LoadContentProcessTempDir() {
   return NS_OK;
 }
 
+
+
+
+
+
+nsresult nsXREDirProvider::LoadPluginProcessTempDir() {
+  
+  if (XRE_IsParentProcess()) {
+    mPluginProcessSandboxTempDir =
+        CreateProcessSandboxTempDir(GeckoProcessType_Plugin);
+    mPluginTempDir = mPluginProcessSandboxTempDir;
+  } else {
+    MOZ_ASSERT(XRE_IsPluginProcess());
+    mPluginTempDir = GetProcessSandboxTempDir(GeckoProcessType_Plugin);
+  }
+
+  if (!mPluginTempDir) {
+    nsresult rv =
+        NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mPluginTempDir));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+#  if defined(XP_WIN)
+  
+  
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
+          mPluginTempDir)) {
+    NS_WARNING("Failed to resolve plugin temp dir.");
+  }
+#  endif
+
+  return NS_OK;
+}
+
 static bool IsContentSandboxDisabled() {
   return !mozilla::BrowserTabsRemoteAutostart() ||
          (!mozilla::IsContentSandboxEnabled());
@@ -688,9 +733,13 @@ static already_AddRefed<nsIFile> GetProcessSandboxTempDir(
     return nullptr;
   }
 
-  MOZ_ASSERT(type == GeckoProcessType_Content);
+  MOZ_ASSERT((type == GeckoProcessType_Content) ||
+             (type == GeckoProcessType_Plugin));
 
-  const char* prefKey = "security.sandbox.content.tempDirSuffix";
+  const char* prefKey = (type == GeckoProcessType_Content)
+                            ? "security.sandbox.content.tempDirSuffix"
+                            : "security.sandbox.plugin.tempDirSuffix";
+
   nsAutoString tempDirSuffix;
   rv = mozilla::Preferences::GetString(prefKey, tempDirSuffix);
   if (NS_WARN_IF(NS_FAILED(rv)) || tempDirSuffix.IsEmpty()) {
@@ -717,10 +766,13 @@ static already_AddRefed<nsIFile> CreateProcessSandboxTempDir(
     return nullptr;
   }
 
-  MOZ_ASSERT(procType == GeckoProcessType_Content);
+  MOZ_ASSERT((procType == GeckoProcessType_Content) ||
+             (procType == GeckoProcessType_Plugin));
 
   
-  const char* pref = "security.sandbox.content.tempDirSuffix";
+  const char* pref = (procType == GeckoProcessType_Content)
+                         ? "security.sandbox.content.tempDirSuffix"
+                         : "security.sandbox.plugin.tempDirSuffix";
 
   nsresult rv;
   nsAutoString tempDirSuffix;
@@ -1017,6 +1069,11 @@ nsXREDirProvider::DoStartup() {
       mozilla::Unused << NS_WARN_IF(NS_FAILED(LoadContentProcessTempDir()));
     }
 #endif
+#if defined(MOZ_SANDBOX)
+    if (!mPluginTempDir) {
+      mozilla::Unused << NS_WARN_IF(NS_FAILED(LoadPluginProcessTempDir()));
+    }
+#endif
   }
   return NS_OK;
 }
@@ -1052,6 +1109,7 @@ void nsXREDirProvider::DoShutdown() {
   if (XRE_IsParentProcess()) {
 #if defined(MOZ_SANDBOX)
     mozilla::Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
+    mozilla::Unused << DeleteDirIfExists(mPluginProcessSandboxTempDir);
 #endif
   }
 }

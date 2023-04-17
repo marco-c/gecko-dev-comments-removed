@@ -2851,6 +2851,13 @@ nsExternalHelperAppService::GetTypeFromExtension(const nsACString& aFileExt,
   }
 
   
+  RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
+  if (pluginHost &&
+      pluginHost->HavePluginForExtension(aFileExt, aContentType)) {
+    return NS_OK;
+  }
+
+  
   nsCOMPtr<nsICategoryManager> catMan(
       do_GetService("@mozilla.org/categorymanager;1"));
   if (catMan) {

@@ -559,6 +559,16 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const uintptr_t& aNewHandle);
 
   mozilla::ipc::IPCResult RecvWillChangeProcess();
+  
+
+
+  PPluginWidgetChild* AllocPPluginWidgetChild();
+
+  bool DeallocPPluginWidgetChild(PPluginWidgetChild* aActor);
+
+#ifdef XP_WIN
+  nsresult CreatePluginWidget(nsIWidget* aParent, nsIWidget** aOut);
+#endif
 
   PPaymentRequestChild* AllocPPaymentRequestChild();
 

@@ -652,6 +652,13 @@ class BrowserParent final : public PBrowserParent,
 
   void StopIMEStateManagement();
 
+  
+
+
+  PPluginWidgetParent* AllocPPluginWidgetParent();
+
+  bool DeallocPPluginWidgetParent(PPluginWidgetParent* aActor);
+
   PPaymentRequestParent* AllocPPaymentRequestParent();
 
   bool DeallocPPaymentRequestParent(PPaymentRequestParent* aActor);

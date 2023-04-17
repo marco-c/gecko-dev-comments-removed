@@ -30,12 +30,17 @@ add_task(async function setup() {
 
   
   BlocklistGlobal.ExtensionBlocklistRS.ensureInitialized();
+  BlocklistGlobal.PluginBlocklistRS.ensureInitialized();
   BlocklistGlobal.GfxBlocklistRS._ensureInitialized();
 
   gBlocklistClients = [
     {
       client: BlocklistGlobal.ExtensionBlocklistRS._client,
       testData: ["i808", "i720", "i539"],
+    },
+    {
+      client: BlocklistGlobal.PluginBlocklistRS._client,
+      testData: ["p1044", "p32", "p28"],
     },
     {
       client: BlocklistGlobal.GfxBlocklistRS._client,

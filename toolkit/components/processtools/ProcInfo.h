@@ -35,6 +35,7 @@ enum class ProcType {
   WebCOOPCOEP,
   
   Browser,  
+  Plugin,
   IPDLUnitTest,
   GMPlugin,
   GPU,

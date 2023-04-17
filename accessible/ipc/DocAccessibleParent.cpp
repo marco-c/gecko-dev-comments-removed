@@ -909,6 +909,35 @@ void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {
   mEmulatedWindowHandle = aWindowHandle;
 }
 
+mozilla::ipc::IPCResult DocAccessibleParent::RecvGetWindowedPluginIAccessible(
+    const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) {
+#  if defined(MOZ_SANDBOX)
+  
+  
+  HWND childWnd = ::GetWindow(reinterpret_cast<HWND>(aHwnd), GW_CHILD);
+  if (!childWnd) {
+    
+    
+    return IPC_OK();
+  }
+
+  IAccessible* rawAccPlugin = nullptr;
+  HRESULT hr = ::AccessibleObjectFromWindow(
+      childWnd, OBJID_WINDOW, IID_IAccessible, (void**)&rawAccPlugin);
+  if (FAILED(hr)) {
+    
+    
+    return IPC_OK();
+  }
+
+  aPluginCOMProxy->Set(IAccessibleHolder::COMPtrType(rawAccPlugin));
+
+  return IPC_OK();
+#  else
+  return IPC_FAIL(this, "Message unsupported in this build configuration");
+#  endif
+}
+
 mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
     const uint64_t& aID, const LayoutDeviceIntRect& aCaretRect) {
   if (mShutdown) {

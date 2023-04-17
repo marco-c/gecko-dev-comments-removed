@@ -12,6 +12,16 @@ var gCount;
 async function run_test() {
   do_test_pending();
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
+  
+  
+  Services.prefs.setBoolPref("plugin.load_flash_only", false);
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+    true
+  );
 
   await promiseStartupManager();
   let list = await AddonManager.getAddonsByTypes(null);

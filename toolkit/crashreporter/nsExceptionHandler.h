@@ -175,6 +175,17 @@ void OOPInit();
 
 
 
+
+
+
+
+bool TakeMinidump(nsIFile** aResult, bool aMoveToPending = false);
+
+
+
+
+
+
 bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
                           AnnotationTable& aAnnotations,
                           uint32_t* aSequence = nullptr);

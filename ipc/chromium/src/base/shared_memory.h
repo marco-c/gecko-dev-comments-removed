@@ -108,6 +108,15 @@ class SharedMemory {
     return handle;
   }
 
+#ifdef OS_WIN
+  
+  
+  HANDLE GetHandle() {
+    freezeable_ = false;
+    return mapped_file_.get();
+  }
+#endif
+
   
   
   

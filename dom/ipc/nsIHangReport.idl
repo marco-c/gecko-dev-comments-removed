@@ -22,6 +22,7 @@ webidl Element;
 interface nsIHangReport : nsISupports
 {
   const unsigned long SLOW_SCRIPT = 1;
+  const unsigned long PLUGIN_HANG = 2;
 
   
   readonly attribute unsigned long hangType;
@@ -36,6 +37,10 @@ interface nsIHangReport : nsISupports
   readonly attribute AString addonId;
 
   
+  
+  readonly attribute ACString pluginName;
+
+  
   readonly attribute unsigned long long childID;
 
   
@@ -46,6 +51,9 @@ interface nsIHangReport : nsISupports
   
   void terminateScript();
 
+  
+  
+  void terminatePlugin();
 
   
   

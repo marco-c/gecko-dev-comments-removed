@@ -69,6 +69,9 @@ add_task(async function setup() {
   Services.prefs.clearUserPref("services.settings.default_bucket");
 
   
+  TelemetryEnvironmentTesting.registerFakePluginHost();
+
+  
   gHttpServer = new HttpServer();
   gHttpServer.start(-1);
   let port = gHttpServer.identity.primaryPort;

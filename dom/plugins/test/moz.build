@@ -4,6 +4,8 @@
 
 
 
+DIRS += ["testplugin"]
+
 if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("gtk", "cocoa", "windows"):
     MOCHITEST_MANIFESTS += ["mochitest/mochitest.ini"]
     BROWSER_CHROME_MANIFESTS += ["mochitest/browser.ini"]

@@ -222,6 +222,11 @@ UNIFIED_SOURCES += [
     "VideoDocument.cpp",
 ]
 
+SOURCES += [
+    
+    "PluginDocument.cpp",
+]
+
 EXTRA_JS_MODULES += [
     "HTMLMenuBuilder.jsm",
 ]

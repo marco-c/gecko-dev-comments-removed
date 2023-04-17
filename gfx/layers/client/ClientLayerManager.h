@@ -146,6 +146,15 @@ class ClientLayerManager final : public LayerManager,
   void SetFocusTarget(const FocusTarget& aFocusTarget) override;
 
   
+
+
+
+
+
+  void StorePluginWidgetConfigurations(
+      const nsTArray<nsIWidget::Configuration>& aConfigurations) override;
+
+  
   
   void ClearCachedResources(Layer* aSubtree = nullptr) override;
 

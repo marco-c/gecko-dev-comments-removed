@@ -588,6 +588,9 @@ void GeckoChildProcessHost::PrepareLaunch() {
 #endif
 
 #ifdef XP_WIN
+  if (mProcessType == GeckoProcessType_Plugin) {
+    InitWindowsGroupID();
+  }
 
 #  if defined(MOZ_SANDBOX)
   
@@ -1125,6 +1128,12 @@ bool PosixProcessLauncher::DoSetup() {
     const char* ld_library_path = PR_GetEnv("LD_LIBRARY_PATH");
     nsCString new_ld_lib_path(path.get());
 
+#    ifdef MOZ_WIDGET_GTK
+    if (mProcessType == GeckoProcessType_Plugin) {
+      new_ld_lib_path.AppendLiteral("/gtk2:");
+      new_ld_lib_path.Append(path.get());
+    }
+#    endif  
     if (ld_library_path && *ld_library_path) {
       new_ld_lib_path.Append(':');
       new_ld_lib_path.Append(ld_library_path);
@@ -1133,13 +1142,25 @@ bool PosixProcessLauncher::DoSetup() {
 
 #  elif OS_MACOSX  
     mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = path.get();
-
     
     
-    const char* interpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
-    if (interpose && strlen(interpose) > 0) {
-      mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose;
+    
+    
+    
+    
+    
+    
+    
+    
+    const char* prevInterpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
+    nsCString interpose;
+    if (prevInterpose && strlen(prevInterpose) > 0) {
+      interpose.Assign(prevInterpose);
+      interpose.Append(':');
     }
+    interpose.Append(path.get());
+    interpose.AppendLiteral("/libplugin_child_interpose.dylib");
+    mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose.get();
 
     
     
@@ -1413,6 +1434,15 @@ bool WindowsProcessLauncher::DoSetup() {
         mUseSandbox = true;
       }
       break;
+    case GeckoProcessType_Plugin:
+      if (mSandboxLevel > 0 && !PR_GetEnv("MOZ_DISABLE_NPAPI_SANDBOX")) {
+        if (!mResults.mSandboxBroker->SetSecurityLevelForPluginProcess(
+                mSandboxLevel)) {
+          return false;
+        }
+        mUseSandbox = true;
+      }
+      break;
     case GeckoProcessType_IPDLUnitTest:
       
       break;
@@ -1554,6 +1584,7 @@ bool WindowsProcessLauncher::DoFinishLaunch() {
     switch (mProcessType) {
       case GeckoProcessType_Default:
         MOZ_CRASH("shouldn't be launching a parent process");
+      case GeckoProcessType_Plugin:
       case GeckoProcessType_IPDLUnitTest:
         
         break;
