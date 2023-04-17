@@ -119,6 +119,20 @@ dictionary WindowActorSidedOptions {
   required ByteString moduleURI;
 };
 
+dictionary WindowActorEventListenerOptions : AddEventListenerOptions {
+  
+
+
+
+
+
+
+
+
+
+  boolean createActor = true;
+};
+
 dictionary WindowActorChildOptions : WindowActorSidedOptions {
   
 
@@ -129,7 +143,7 @@ dictionary WindowActorChildOptions : WindowActorSidedOptions {
 
 
 
-  record<DOMString, AddEventListenerOptions> events;
+  record<DOMString, WindowActorEventListenerOptions> events;
 
  
 
