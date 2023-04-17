@@ -217,15 +217,16 @@ void nsAvailableMemoryWatcher::Shutdown(const MutexAutoLock&) {
 
 bool nsAvailableMemoryWatcher::ListenForLowMemory() {
   if (mLowMemoryHandle && !mWaitHandle) {
+    
+    
+    
+    this->AddRef();
     bool res = ::RegisterWaitForSingleObject(
         &mWaitHandle, mLowMemoryHandle, LowMemoryCallback, this, INFINITE,
         WT_EXECUTEDEFAULT | WT_EXECUTEONLYONCE);
-    if (res) {
+    if (!res) {
       
-      
-      
-      
-      this->AddRef();
+      this->Release();
     }
     return res;
   }
