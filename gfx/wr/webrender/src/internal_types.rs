@@ -63,6 +63,11 @@ impl Default for PlaneSplitAnchor {
 pub type PlaneSplitter = BspSplitter<f64, WorldPixel, PlaneSplitAnchor>;
 
 
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct PlaneSplitterIndex(pub usize);
+
+
 const OPACITY_EPSILON: f32 = 0.001;
 
 
