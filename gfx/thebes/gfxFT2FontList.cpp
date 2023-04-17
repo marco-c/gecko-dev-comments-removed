@@ -174,27 +174,29 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
     return nullptr;
   }
 
-  
-  
-  
-  if ((!mVariationSettings.IsEmpty() ||
-       (aStyle && !aStyle->variationSettings.IsEmpty())) &&
-      (face->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
+  if (face->GetFace()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
+    
+    AutoTArray<gfxFontVariation, 8> settings;
+    GetVariationsForStyle(settings, aStyle ? *aStyle : gfxFontStyle());
+
     
     
-    RefPtr<SharedFTFace> varFace;
-    if (!mFilename.IsEmpty() && mFilename[0] == '/') {
-      varFace =
-          Factory::NewSharedFTFace(nullptr, mFilename.get(), mFTFontIndex);
-    } else {
-      varFace = face->GetData()->CloneFace(mFTFontIndex);
-    }
-    if (varFace) {
+    
+    if (!settings.IsEmpty()) {
       
-      AutoTArray<gfxFontVariation, 8> settings;
-      GetVariationsForStyle(settings, aStyle ? *aStyle : gfxFontStyle());
-      gfxFT2FontBase::SetupVarCoords(GetMMVar(), settings, varFace->GetFace());
-      face = std::move(varFace);
+      
+      RefPtr<SharedFTFace> varFace;
+      if (!mFilename.IsEmpty() && mFilename[0] == '/') {
+        varFace =
+            Factory::NewSharedFTFace(nullptr, mFilename.get(), mFTFontIndex);
+      } else {
+        varFace = face->GetData()->CloneFace(mFTFontIndex);
+      }
+      if (varFace) {
+        gfxFT2FontBase::SetupVarCoords(GetMMVar(), settings,
+                                       varFace->GetFace());
+        face = std::move(varFace);
+      }
     }
   }
 

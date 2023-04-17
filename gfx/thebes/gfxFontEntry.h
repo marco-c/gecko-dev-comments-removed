@@ -431,6 +431,8 @@ class gfxFontEntry {
 
   bool HasBoldVariableWeight();
   bool HasItalicVariation();
+  bool HasOpticalSize();
+
   void CheckForVariationAxes();
 
   
@@ -527,7 +529,10 @@ class gfxFontEntry {
     
     
     eNonCSSWeight = (1 << 5),
-    eNonCSSStretch = (1 << 6)
+    eNonCSSStretch = (1 << 6),
+
+    
+    eOpticalSize = (1 << 7)
   };
   RangeFlags mRangeFlags = RangeFlags::eNoFlags;
 

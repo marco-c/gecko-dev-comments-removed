@@ -105,8 +105,6 @@ class MacOSFontEntry final : public gfxFontEntry {
   
   
   
-  bool mCheckedForOpszAxis;
-  bool mHasOpszAxis;
   gfxFontVariationAxis mOpszAxis;
   float mAdjustedDefaultOpsz;
 

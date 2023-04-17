@@ -127,6 +127,9 @@ struct gfxFontStyle {
   gfxFloat size;
 
   
+  float autoOpticalSize = -1.0f;
+
+  
   
   
   
@@ -235,6 +238,8 @@ struct gfxFontStyle {
            (featureValueLookup == other.featureValueLookup) &&
            (variationSettings == other.variationSettings) &&
            (languageOverride == other.languageOverride) &&
+           mozilla::NumbersAreBitwiseIdentical(autoOpticalSize,
+                                               other.autoOpticalSize) &&
            (fontSmoothingBackgroundColor == other.fontSmoothingBackgroundColor);
   }
 };

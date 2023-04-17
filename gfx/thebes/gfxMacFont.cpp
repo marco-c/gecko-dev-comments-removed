@@ -53,44 +53,45 @@ gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
     AutoTArray<gfxFontVariation, 4> vars;
     aFontEntry->GetVariationsForStyle(vars, *aFontStyle);
 
-    
-    
-    
-    
-    
-    
-    const uint32_t kOpszTag = HB_TAG('o', 'p', 's', 'z');
-    const float kOpszFudgeAmount = 0.01f;
+    if (aFontEntry->HasOpticalSize()) {
+      
+      
+      
+      
+      
+      
+      const uint32_t kOpszTag = HB_TAG('o', 'p', 's', 'z');
+      const float kOpszFudgeAmount = 0.01f;
 
-    if (!aFontEntry->mCheckedForOpszAxis) {
-      aFontEntry->mCheckedForOpszAxis = true;
-      AutoTArray<gfxFontVariationAxis, 4> axes;
-      aFontEntry->GetVariationAxes(axes);
-      auto index = axes.IndexOf(kOpszTag, 0, TagEquals<gfxFontVariationAxis>());
-      if (index == axes.NoIndex) {
-        aFontEntry->mHasOpszAxis = false;
-      } else {
-        const auto& axis = axes[index];
-        aFontEntry->mHasOpszAxis = true;
-        aFontEntry->mOpszAxis = axis;
-        
-        
-        
-        aFontEntry->mAdjustedDefaultOpsz =
-            axis.mDefaultValue == axis.mMinValue
-                ? axis.mDefaultValue + kOpszFudgeAmount
-                : axis.mDefaultValue - kOpszFudgeAmount;
+      
+      if (!aFontEntry->mOpszAxis.mTag) {
+        AutoTArray<gfxFontVariationAxis, 4> axes;
+        aFontEntry->GetVariationAxes(axes);
+        auto index =
+            axes.IndexOf(kOpszTag, 0, TagEquals<gfxFontVariationAxis>());
+        MOZ_ASSERT(index != axes.NoIndex);
+        if (index != axes.NoIndex) {
+          const auto& axis = axes[index];
+          aFontEntry->mOpszAxis = axis;
+          
+          
+          
+          aFontEntry->mAdjustedDefaultOpsz =
+              axis.mDefaultValue == axis.mMinValue
+                  ? axis.mDefaultValue + kOpszFudgeAmount
+                  : axis.mDefaultValue - kOpszFudgeAmount;
+        }
       }
-    }
 
-    
-    
-    if (aFontEntry->mHasOpszAxis) {
+      
+      
       auto index = vars.IndexOf(kOpszTag, 0, TagEquals<gfxFontVariation>());
       if (index == vars.NoIndex) {
-        gfxFontVariation opsz{kOpszTag, aFontEntry->mAdjustedDefaultOpsz};
-        vars.AppendElement(opsz);
+        
+        vars.AppendElement(
+            gfxFontVariation{kOpszTag, aFontEntry->mAdjustedDefaultOpsz});
       } else {
+        
         
         auto& value = vars[index].mValue;
         auto& axis = aFontEntry->mOpszAxis;
