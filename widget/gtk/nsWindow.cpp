@@ -2388,18 +2388,11 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
   if (!aCursor.IsCustom()) {
     return nullptr;
   }
-  
-  
-  
   nsIntSize size = nsIWidget::CustomCursorSize(aCursor);
-  GdkPixbuf* pixbuf =
-      nsImageToPixbuf::ImageToPixbuf(aCursor.mContainer, Some(size));
-  if (!pixbuf) {
-    return nullptr;
-  }
 
-  auto CleanupPixBuf =
-      mozilla::MakeScopeExit([&]() { g_object_unref(pixbuf); });
+  
+  
+  int32_t gtkScale = std::ceil(aCursor.mResolution);
 
   
   
@@ -2409,6 +2402,13 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
   
   
   if (size.width > 128 || size.height > 128) {
+    return nullptr;
+  }
+
+  nsIntSize rasterSize = size * gtkScale;
+  GdkPixbuf* pixbuf =
+      nsImageToPixbuf::ImageToPixbuf(aCursor.mContainer, Some(rasterSize));
+  if (!pixbuf) {
     return nullptr;
   }
 
@@ -2424,8 +2424,20 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
     }
   }
 
-  return gdk_cursor_new_from_pixbuf(gdk_display_get_default(), pixbuf,
-                                    aCursor.mHotspotX, aCursor.mHotspotY);
+  auto CleanupPixBuf =
+      mozilla::MakeScopeExit([&]() { g_object_unref(pixbuf); });
+
+  cairo_surface_t* surface =
+      gdk_cairo_surface_create_from_pixbuf(pixbuf, gtkScale, nullptr);
+  if (!surface) {
+    return nullptr;
+  }
+
+  auto CleanupSurface =
+      mozilla::MakeScopeExit([&]() { cairo_surface_destroy(surface); });
+
+  return gdk_cursor_new_from_surface(gdk_display_get_default(), surface,
+                                     aCursor.mHotspotX, aCursor.mHotspotY);
 }
 
 void nsWindow::SetCursor(const Cursor& aCursor) {
