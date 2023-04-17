@@ -146,15 +146,6 @@ class LookAndFeel {
 
 
 
-    TouchEnabled,
-
-    
-
-
-
-
-
-
     MacGraphiteTheme,
 
     
@@ -288,6 +279,30 @@ class LookAndFeel {
 
 
 
+
+
+    GTKCSDMinimizeButtonPosition,
+
+    
+
+
+
+
+
+    GTKCSDMaximizeButtonPosition,
+
+    
+
+
+
+
+
+    GTKCSDCloseButtonPosition,
+
+    
+
+
+
     GTKCSDReversedPlacement,
 
     
@@ -318,30 +333,6 @@ class LookAndFeel {
 
 
     AllPointerCapabilities,
-    
-
-
-
-
-
-    GTKCSDCloseButtonPosition,
-
-    
-
-
-
-
-
-    GTKCSDMinimizeButtonPosition,
-
-    
-
-
-
-
-
-    GTKCSDMaximizeButtonPosition,
-
     
     SystemVerticalScrollbarWidth,
 
