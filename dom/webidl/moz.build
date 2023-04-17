@@ -1048,20 +1048,13 @@ WEBIDL_FILES += [
 ]
 
 
-
-
-
 WEBIDL_FILES += [
     "ExtensionBrowser.webidl",
     "ExtensionEventManager.webidl",
+    
+    "ExtensionMockAPI.webidl",
     "ExtensionPort.webidl",
 ]
-
-
-
-
-
-WEBIDL_FILES += ["ExtensionMockAPI.webidl"]
 
 
 

@@ -36,15 +36,8 @@ JSObject* ExtensionBrowser::WrapObject(JSContext* aCx,
 
 nsIGlobalObject* ExtensionBrowser::GetParentObject() const { return mGlobal; }
 
-ExtensionMockAPI* ExtensionBrowser::GetExtensionMockAPI() {
-  if (!mExtensionMockAPI) {
-    mExtensionMockAPI = new ExtensionMockAPI(mGlobal, this);
-  }
-
-  return mExtensionMockAPI;
-}
-
 bool ExtensionAPIAllowed(JSContext* aCx, JSObject* aGlobal) {
+#ifdef MOZ_WEBEXT_WEBIDL_ENABLED
   
   
   
@@ -69,6 +62,19 @@ bool ExtensionAPIAllowed(JSContext* aCx, JSObject* aGlobal) {
   MOZ_ASSERT(workerPrivate->IsServiceWorker());
 
   return workerPrivate->ExtensionAPIAllowed();
+#else
+  
+  
+  return false;
+#endif
+}
+
+ExtensionMockAPI* ExtensionBrowser::GetExtensionMockAPI() {
+  if (!mExtensionMockAPI) {
+    mExtensionMockAPI = new ExtensionMockAPI(mGlobal, this);
+  }
+
+  return mExtensionMockAPI;
 }
 
 }  
