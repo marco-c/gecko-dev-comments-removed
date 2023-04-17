@@ -156,7 +156,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   return SendAudio(frame_type, payload_type, rtp_timestamp, payload_data,
                    payload_size,
                    
-                   0);
+                   -1);
 }
 
 bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
@@ -276,22 +276,26 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   packet->SetExtension<AudioLevel>(
       frame_type == AudioFrameType::kAudioFrameSpeech, audio_level_dbov);
 
-  
-  
-  
-  auto absolute_capture_time = absolute_capture_time_sender_.OnSendPacket(
-      AbsoluteCaptureTimeSender::GetSource(packet->Ssrc(), packet->Csrcs()),
-      packet->Timestamp(),
-      
-      
-      encoder_rtp_timestamp_frequency.value_or(0),
-      Int64MsToUQ32x32(absolute_capture_timestamp_ms + NtpOffsetMs()),
-      
-      include_capture_clock_offset_ ? absl::make_optional(0) : absl::nullopt);
-  if (absolute_capture_time) {
+  if (absolute_capture_timestamp_ms > 0) {
     
     
-    packet->SetExtension<AbsoluteCaptureTimeExtension>(*absolute_capture_time);
+    
+    auto absolute_capture_time = absolute_capture_time_sender_.OnSendPacket(
+        AbsoluteCaptureTimeSender::GetSource(packet->Ssrc(), packet->Csrcs()),
+        packet->Timestamp(),
+        
+        
+        encoder_rtp_timestamp_frequency.value_or(0),
+        Int64MsToUQ32x32(clock_->ConvertTimestampToNtpTimeInMilliseconds(
+            absolute_capture_timestamp_ms)),
+        
+        include_capture_clock_offset_ ? absl::make_optional(0) : absl::nullopt);
+    if (absolute_capture_time) {
+      
+      
+      packet->SetExtension<AbsoluteCaptureTimeExtension>(
+          *absolute_capture_time);
+    }
   }
 
   uint8_t* payload = packet->AllocatePayload(payload_size);
