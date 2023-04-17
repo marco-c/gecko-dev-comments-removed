@@ -3209,7 +3209,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 113;
+    const UI_VERSION = 114;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3843,6 +3843,12 @@ BrowserGlue.prototype = {
     }
 
     if (currentUIVersion < 113) {
+      
+      
+      UrlbarPrefs.migrateResultBuckets();
+    }
+
+    if (currentUIVersion < 114) {
       
       
       UrlbarPrefs.migrateResultBuckets();

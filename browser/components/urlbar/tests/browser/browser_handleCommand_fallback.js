@@ -62,7 +62,7 @@ add_task(async function() {
   
   
   for (let value of TEST_STRINGS) {
-    info("Input the value normally and Enter.");
+    info(`Input the value normally and Enter. Value: ${value}`);
     let promise = promiseLoadURL();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
