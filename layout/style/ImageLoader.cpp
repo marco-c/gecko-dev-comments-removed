@@ -84,6 +84,10 @@ void ImageLoader::Init() {
 
 
 void ImageLoader::Shutdown() {
+  for (const auto& entry : *sImages) {
+    entry.GetKey()->CancelAndForgetObserver(NS_BINDING_ABORTED);
+  }
+
   delete sImages;
   sImages = nullptr;
   sImageObserver = nullptr;
@@ -448,6 +452,10 @@ already_AddRefed<imgRequestProxy> ImageLoader::LoadImage(
 void ImageLoader::UnloadImage(imgRequestProxy* aImage) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aImage);
+
+  if (MOZ_UNLIKELY(!sImages)) {
+    return;  
+  }
 
   auto lookup = sImages->Lookup(aImage);
   MOZ_DIAGNOSTIC_ASSERT(lookup, "Unregistered image?");
