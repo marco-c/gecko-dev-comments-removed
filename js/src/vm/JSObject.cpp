@@ -1739,8 +1739,8 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   RootedObject pobj(cx, obj);
 
   while (pobj && pobj->is<NativeObject>()) {
-    if (!pobj->hasUncacheableProto()) {
-      if (!JSObject::setUncacheableProto(cx, pobj)) {
+    if (!pobj->hasInvalidatedTeleporting()) {
+      if (!JSObject::setInvalidatedTeleporting(cx, pobj)) {
         return false;
       }
     }
@@ -3218,8 +3218,8 @@ void JSObject::dump(js::GenericPrinter& out) const {
   if (obj->isUnqualifiedVarObj()) {
     out.put(" unqualified_varobj");
   }
-  if (obj->hasUncacheableProto()) {
-    out.put(" has_uncacheable_proto");
+  if (obj->hasInvalidatedTeleporting()) {
+    out.put(" invalidated_teleporting");
   }
   if (obj->hasStaticPrototype() && obj->staticPrototypeIsImmutable()) {
     out.put(" immutable_prototype");

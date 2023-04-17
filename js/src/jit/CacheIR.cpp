@@ -678,7 +678,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   MOZ_ASSERT(pobj->isUsedAsPrototype());
 
   
-  if (!holder->hasUncacheableProto()) {
+  if (!holder->hasInvalidatedTeleporting()) {
     return;
   }
 
