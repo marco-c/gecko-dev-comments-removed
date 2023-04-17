@@ -401,37 +401,37 @@ static inline void FindInflectionPoints(
     *aT1 = -c / b;
     *aCount = 1;
     return;
+  }
+
+  double discriminant = b * b - 4 * a * c;
+
+  if (discriminant < 0) {
+    
+    *aCount = 0;
+  } else if (discriminant == 0) {
+    *aCount = 1;
+    *aT1 = -b / (2 * a);
   } else {
-    double discriminant = b * b - 4 * a * c;
+    
 
-    if (discriminant < 0) {
-      
-      *aCount = 0;
-    } else if (discriminant == 0) {
-      *aCount = 1;
-      *aT1 = -b / (2 * a);
+
+
+
+
+    double q = sqrt(discriminant);
+    if (b < 0) {
+      q = b - q;
     } else {
-      
-
-
-
-
-
-      double q = sqrt(discriminant);
-      if (b < 0) {
-        q = b - q;
-      } else {
-        q = b + q;
-      }
-      q *= -1. / 2;
-
-      *aT1 = q / a;
-      *aT2 = c / q;
-      if (*aT1 > *aT2) {
-        std::swap(*aT1, *aT2);
-      }
-      *aCount = 2;
+      q = b + q;
     }
+    q *= -1. / 2;
+
+    *aT1 = q / a;
+    *aT2 = c / q;
+    if (*aT1 > *aT2) {
+      std::swap(*aT1, *aT2);
+    }
+    *aCount = 2;
   }
 }
 
