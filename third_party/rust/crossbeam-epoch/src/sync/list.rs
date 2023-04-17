@@ -247,7 +247,8 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                 
                 debug_assert!(self.curr.tag() == 0);
 
-                match self
+                
+                let succ = match self
                     .pred
                     .compare_and_set(self.curr, succ, Acquire, self.guard)
                 {
@@ -260,18 +261,26 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                         }
 
                         
-                        self.curr = succ;
-                        continue;
+                        succ
                     }
-                    Err(_) => {
+                    Err(e) => {
                         
-                        
-                        self.pred = self.head;
-                        self.curr = self.head.load(Acquire, self.guard);
+                        e.current
+                    }
+                };
 
-                        return Some(Err(IterError::Stalled));
-                    }
+                
+                
+                if succ.tag() != 0 {
+                    self.pred = self.head;
+                    self.curr = self.head.load(Acquire, self.guard);
+
+                    return Some(Err(IterError::Stalled));
                 }
+
+                
+                self.curr = succ;
+                continue;
             }
 
             

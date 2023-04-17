@@ -92,18 +92,22 @@
 extern crate crossbeam_epoch as epoch;
 extern crate crossbeam_utils as utils;
 
+extern crate maybe_uninit;
+
 use std::cell::{Cell, UnsafeCell};
 use std::cmp;
 use std::fmt;
 use std::iter::FromIterator;
 use std::marker::PhantomData;
-use std::mem::{self, ManuallyDrop};
+use std::mem;
 use std::ptr;
 use std::sync::atomic::{self, AtomicIsize, AtomicPtr, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use epoch::{Atomic, Owned};
 use utils::{Backoff, CachePadded};
+
+use maybe_uninit::MaybeUninit;
 
 
 const MIN_CAP: usize = 64;
@@ -218,7 +222,7 @@ impl<T> Drop for Inner<T> {
             
             let mut i = f;
             while i != b {
-                ptr::drop_in_place(buffer.deref().at(i));
+                buffer.deref().at(i).drop_in_place();
                 i = i.wrapping_add(1);
             }
 
@@ -745,6 +749,14 @@ impl<T> Stealer<T> {
     
     
     pub fn steal_batch(&self, dest: &Worker<T>) -> Steal<()> {
+        if Arc::ptr_eq(&self.inner, &dest.inner) {
+            if dest.is_empty() {
+                return Steal::Empty;
+            } else {
+                return Steal::Success(());
+            }
+        }
+
         
         let mut f = self.inner.front.load(Ordering::Acquire);
 
@@ -922,6 +934,13 @@ impl<T> Stealer<T> {
     
     
     pub fn steal_batch_and_pop(&self, dest: &Worker<T>) -> Steal<T> {
+        if Arc::ptr_eq(&self.inner, &dest.inner) {
+            match dest.pop() {
+                None => return Steal::Empty,
+                Some(task) => return Steal::Success(task),
+            }
+        }
+
         
         let mut f = self.inner.front.load(Ordering::Acquire);
 
@@ -1125,7 +1144,7 @@ const HAS_NEXT: usize = 1;
 
 struct Slot<T> {
     
-    task: UnsafeCell<ManuallyDrop<T>>,
+    task: UnsafeCell<MaybeUninit<T>>,
 
     
     state: AtomicUsize,
@@ -1155,7 +1174,13 @@ struct Block<T> {
 impl<T> Block<T> {
     
     fn new() -> Block<T> {
-        unsafe { mem::zeroed() }
+        
+        
+        
+        
+        
+        
+        unsafe { MaybeUninit::zeroed().assume_init() }
     }
 
     
@@ -1314,7 +1339,7 @@ impl<T> Injector<T> {
 
                     
                     let slot = (*block).slots.get_unchecked(offset);
-                    slot.task.get().write(ManuallyDrop::new(task));
+                    slot.task.get().write(MaybeUninit::new(task));
                     slot.state.fetch_or(WRITE, Ordering::Release);
 
                     return;
@@ -1407,8 +1432,7 @@ impl<T> Injector<T> {
             
             let slot = (*block).slots.get_unchecked(offset);
             slot.wait_write();
-            let m = slot.task.get().read();
-            let task = ManuallyDrop::into_inner(m);
+            let task = slot.task.get().read().assume_init();
 
             
             
@@ -1533,8 +1557,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i);
                         slot.wait_write();
-                        let m = slot.task.get().read();
-                        let task = ManuallyDrop::into_inner(m);
+                        let task = slot.task.get().read().assume_init();
 
                         
                         dest_buffer.write(dest_b.wrapping_add(i as isize), task);
@@ -1546,8 +1569,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i);
                         slot.wait_write();
-                        let m = slot.task.get().read();
-                        let task = ManuallyDrop::into_inner(m);
+                        let task = slot.task.get().read().assume_init();
 
                         
                         dest_buffer.write(dest_b.wrapping_add((batch_size - 1 - i) as isize), task);
@@ -1689,8 +1711,7 @@ impl<T> Injector<T> {
             
             let slot = (*block).slots.get_unchecked(offset);
             slot.wait_write();
-            let m = slot.task.get().read();
-            let task = ManuallyDrop::into_inner(m);
+            let task = slot.task.get().read().assume_init();
 
             match dest.flavor {
                 Flavor::Fifo => {
@@ -1699,8 +1720,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i + 1);
                         slot.wait_write();
-                        let m = slot.task.get().read();
-                        let task = ManuallyDrop::into_inner(m);
+                        let task = slot.task.get().read().assume_init();
 
                         
                         dest_buffer.write(dest_b.wrapping_add(i as isize), task);
@@ -1713,8 +1733,7 @@ impl<T> Injector<T> {
                         
                         let slot = (*block).slots.get_unchecked(offset + i + 1);
                         slot.wait_write();
-                        let m = slot.task.get().read();
-                        let task = ManuallyDrop::into_inner(m);
+                        let task = slot.task.get().read().assume_init();
 
                         
                         dest_buffer.write(dest_b.wrapping_add((batch_size - 1 - i) as isize), task);
@@ -1789,7 +1808,8 @@ impl<T> Drop for Injector<T> {
                 if offset < BLOCK_CAP {
                     
                     let slot = (*block).slots.get_unchecked(offset);
-                    ManuallyDrop::drop(&mut *(*slot).task.get());
+                    let p = &mut *slot.task.get();
+                    p.as_mut_ptr().drop_in_place();
                 } else {
                     
                     let next = (*block).next.load(Ordering::Relaxed);

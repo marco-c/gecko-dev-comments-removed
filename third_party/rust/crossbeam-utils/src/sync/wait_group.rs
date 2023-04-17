@@ -1,8 +1,8 @@
 
 #![allow(clippy::mutex_atomic)]
 
+use crate::primitive::sync::{Arc, Condvar, Mutex};
 use std::fmt;
-use std::sync::{Arc, Condvar, Mutex};
 
 
 

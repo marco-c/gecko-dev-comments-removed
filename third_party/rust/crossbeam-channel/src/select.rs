@@ -486,7 +486,7 @@ pub fn select_timeout<'a>(
 
 
 #[inline]
-pub fn select_deadline<'a>(
+pub(crate) fn select_deadline<'a>(
     handles: &mut [(&'a dyn SelectHandle, usize, *const u8)],
     deadline: Instant,
 ) -> Result<SelectedOperation<'a>, SelectTimeoutError> {
@@ -852,9 +852,6 @@ impl<'a> Select<'a> {
         select_timeout(&mut self.handles, timeout)
     }
 
-    
-    
-    
     
     
     

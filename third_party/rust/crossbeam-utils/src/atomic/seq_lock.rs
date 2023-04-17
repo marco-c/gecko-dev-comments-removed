@@ -4,7 +4,7 @@ use core::sync::atomic::{self, AtomicUsize, Ordering};
 use crate::Backoff;
 
 
-pub struct SeqLock {
+pub(crate) struct SeqLock {
     
     
     
@@ -13,7 +13,7 @@ pub struct SeqLock {
 }
 
 impl SeqLock {
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             state: AtomicUsize::new(0),
         }
@@ -23,7 +23,7 @@ impl SeqLock {
     
     
     #[inline]
-    pub fn optimistic_read(&self) -> Option<usize> {
+    pub(crate) fn optimistic_read(&self) -> Option<usize> {
         let state = self.state.load(Ordering::Acquire);
         if state == 1 {
             None
@@ -37,14 +37,14 @@ impl SeqLock {
     
     
     #[inline]
-    pub fn validate_read(&self, stamp: usize) -> bool {
+    pub(crate) fn validate_read(&self, stamp: usize) -> bool {
         atomic::fence(Ordering::Acquire);
         self.state.load(Ordering::Relaxed) == stamp
     }
 
     
     #[inline]
-    pub fn write(&'static self) -> SeqLockWriteGuard {
+    pub(crate) fn write(&'static self) -> SeqLockWriteGuard {
         let backoff = Backoff::new();
         loop {
             let previous = self.state.swap(1, Ordering::Acquire);
@@ -64,7 +64,7 @@ impl SeqLock {
 }
 
 
-pub struct SeqLockWriteGuard {
+pub(crate) struct SeqLockWriteGuard {
     
     lock: &'static SeqLock,
 
@@ -75,7 +75,7 @@ pub struct SeqLockWriteGuard {
 impl SeqLockWriteGuard {
     
     #[inline]
-    pub fn abort(self) {
+    pub(crate) fn abort(self) {
         self.lock.state.store(self.state, Ordering::Release);
 
         

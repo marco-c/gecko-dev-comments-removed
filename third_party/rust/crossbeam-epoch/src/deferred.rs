@@ -4,6 +4,8 @@ use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
 
+use maybe_uninit::MaybeUninit;
+
 
 
 
@@ -36,11 +38,8 @@ impl Deferred {
 
         unsafe {
             if size <= mem::size_of::<Data>() && align <= mem::align_of::<Data>() {
-                
-                
-                #[allow(deprecated)]
-                let mut data: Data = mem::uninitialized();
-                ptr::write(&mut data as *mut Data as *mut F, f);
+                let mut data = MaybeUninit::<Data>::uninit();
+                ptr::write(data.as_mut_ptr() as *mut F, f);
 
                 unsafe fn call<F: FnOnce()>(raw: *mut u8) {
                     let f: F = ptr::read(raw as *mut F);
@@ -49,16 +48,13 @@ impl Deferred {
 
                 Deferred {
                     call: call::<F>,
-                    data,
+                    data: data.assume_init(),
                     _marker: PhantomData,
                 }
             } else {
                 let b: Box<F> = Box::new(f);
-                
-                
-                #[allow(deprecated)]
-                let mut data: Data = mem::uninitialized();
-                ptr::write(&mut data as *mut Data as *mut Box<F>, b);
+                let mut data = MaybeUninit::<Data>::uninit();
+                ptr::write(data.as_mut_ptr() as *mut Box<F>, b);
 
                 unsafe fn call<F: FnOnce()>(raw: *mut u8) {
                     let b: Box<F> = ptr::read(raw as *mut Box<F>);
@@ -67,7 +63,7 @@ impl Deferred {
 
                 Deferred {
                     call: call::<F>,
-                    data,
+                    data: data.assume_init(),
                     _marker: PhantomData,
                 }
             }

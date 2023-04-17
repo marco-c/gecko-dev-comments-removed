@@ -7,7 +7,7 @@ use crate::Backoff;
 
 
 
-pub struct SeqLock {
+pub(crate) struct SeqLock {
     
     state_hi: AtomicUsize,
 
@@ -19,7 +19,7 @@ pub struct SeqLock {
 }
 
 impl SeqLock {
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             state_hi: AtomicUsize::new(0),
             state_lo: AtomicUsize::new(0),
@@ -30,7 +30,7 @@ impl SeqLock {
     
     
     #[inline]
-    pub fn optimistic_read(&self) -> Option<(usize, usize)> {
+    pub(crate) fn optimistic_read(&self) -> Option<(usize, usize)> {
         
         
         
@@ -51,7 +51,7 @@ impl SeqLock {
     
     
     #[inline]
-    pub fn validate_read(&self, stamp: (usize, usize)) -> bool {
+    pub(crate) fn validate_read(&self, stamp: (usize, usize)) -> bool {
         
         
         
@@ -76,7 +76,7 @@ impl SeqLock {
 
     
     #[inline]
-    pub fn write(&'static self) -> SeqLockWriteGuard {
+    pub(crate) fn write(&'static self) -> SeqLockWriteGuard {
         let backoff = Backoff::new();
         loop {
             let previous = self.state_lo.swap(1, Ordering::Acquire);
@@ -98,7 +98,7 @@ impl SeqLock {
 }
 
 
-pub struct SeqLockWriteGuard {
+pub(crate) struct SeqLockWriteGuard {
     
     lock: &'static SeqLock,
 
@@ -109,7 +109,7 @@ pub struct SeqLockWriteGuard {
 impl SeqLockWriteGuard {
     
     #[inline]
-    pub fn abort(self) {
+    pub(crate) fn abort(self) {
         self.lock.state_lo.store(self.state_lo, Ordering::Release);
         mem::forget(self);
     }

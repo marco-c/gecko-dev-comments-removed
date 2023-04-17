@@ -8,22 +8,22 @@ use crate::select::{Operation, Selected};
 use crate::utils::Spinlock;
 
 
-pub struct Entry {
+pub(crate) struct Entry {
     
-    pub oper: Operation,
+    pub(crate) oper: Operation,
 
     
-    pub packet: usize,
+    pub(crate) packet: usize,
 
     
-    pub cx: Context,
+    pub(crate) cx: Context,
 }
 
 
 
 
 
-pub struct Waker {
+pub(crate) struct Waker {
     
     selectors: Vec<Entry>,
 
@@ -34,7 +34,7 @@ pub struct Waker {
 impl Waker {
     
     #[inline]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Waker {
             selectors: Vec::new(),
             observers: Vec::new(),
@@ -43,13 +43,13 @@ impl Waker {
 
     
     #[inline]
-    pub fn register(&mut self, oper: Operation, cx: &Context) {
+    pub(crate) fn register(&mut self, oper: Operation, cx: &Context) {
         self.register_with_packet(oper, 0, cx);
     }
 
     
     #[inline]
-    pub fn register_with_packet(&mut self, oper: Operation, packet: usize, cx: &Context) {
+    pub(crate) fn register_with_packet(&mut self, oper: Operation, packet: usize, cx: &Context) {
         self.selectors.push(Entry {
             oper,
             packet,
@@ -59,7 +59,7 @@ impl Waker {
 
     
     #[inline]
-    pub fn unregister(&mut self, oper: Operation) -> Option<Entry> {
+    pub(crate) fn unregister(&mut self, oper: Operation) -> Option<Entry> {
         if let Some((i, _)) = self
             .selectors
             .iter()
@@ -75,7 +75,7 @@ impl Waker {
 
     
     #[inline]
-    pub fn try_select(&mut self) -> Option<Entry> {
+    pub(crate) fn try_select(&mut self) -> Option<Entry> {
         let mut entry = None;
 
         if !self.selectors.is_empty() {
@@ -108,7 +108,7 @@ impl Waker {
 
     
     #[inline]
-    pub fn can_select(&self) -> bool {
+    pub(crate) fn can_select(&self) -> bool {
         if self.selectors.is_empty() {
             false
         } else {
@@ -122,7 +122,7 @@ impl Waker {
 
     
     #[inline]
-    pub fn watch(&mut self, oper: Operation, cx: &Context) {
+    pub(crate) fn watch(&mut self, oper: Operation, cx: &Context) {
         self.observers.push(Entry {
             oper,
             packet: 0,
@@ -132,13 +132,13 @@ impl Waker {
 
     
     #[inline]
-    pub fn unwatch(&mut self, oper: Operation) {
+    pub(crate) fn unwatch(&mut self, oper: Operation) {
         self.observers.retain(|e| e.oper != oper);
     }
 
     
     #[inline]
-    pub fn notify(&mut self) {
+    pub(crate) fn notify(&mut self) {
         for entry in self.observers.drain(..) {
             if entry.cx.try_select(Selected::Operation(entry.oper)).is_ok() {
                 entry.cx.unpark();
@@ -148,7 +148,7 @@ impl Waker {
 
     
     #[inline]
-    pub fn disconnect(&mut self) {
+    pub(crate) fn disconnect(&mut self) {
         for entry in self.selectors.iter() {
             if entry.cx.try_select(Selected::Disconnected).is_ok() {
                 
@@ -175,7 +175,7 @@ impl Drop for Waker {
 
 
 
-pub struct SyncWaker {
+pub(crate) struct SyncWaker {
     
     inner: Spinlock<Waker>,
 
@@ -186,7 +186,7 @@ pub struct SyncWaker {
 impl SyncWaker {
     
     #[inline]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         SyncWaker {
             inner: Spinlock::new(Waker::new()),
             is_empty: AtomicBool::new(true),
@@ -195,7 +195,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn register(&self, oper: Operation, cx: &Context) {
+    pub(crate) fn register(&self, oper: Operation, cx: &Context) {
         let mut inner = self.inner.lock();
         inner.register(oper, cx);
         self.is_empty.store(
@@ -206,7 +206,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn unregister(&self, oper: Operation) -> Option<Entry> {
+    pub(crate) fn unregister(&self, oper: Operation) -> Option<Entry> {
         let mut inner = self.inner.lock();
         let entry = inner.unregister(oper);
         self.is_empty.store(
@@ -218,7 +218,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn notify(&self) {
+    pub(crate) fn notify(&self) {
         if !self.is_empty.load(Ordering::SeqCst) {
             let mut inner = self.inner.lock();
             if !self.is_empty.load(Ordering::SeqCst) {
@@ -234,7 +234,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn watch(&self, oper: Operation, cx: &Context) {
+    pub(crate) fn watch(&self, oper: Operation, cx: &Context) {
         let mut inner = self.inner.lock();
         inner.watch(oper, cx);
         self.is_empty.store(
@@ -245,7 +245,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn unwatch(&self, oper: Operation) {
+    pub(crate) fn unwatch(&self, oper: Operation) {
         let mut inner = self.inner.lock();
         inner.unwatch(oper);
         self.is_empty.store(
@@ -256,7 +256,7 @@ impl SyncWaker {
 
     
     #[inline]
-    pub fn disconnect(&self) {
+    pub(crate) fn disconnect(&self) {
         let mut inner = self.inner.lock();
         inner.disconnect();
         self.is_empty.store(

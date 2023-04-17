@@ -11,17 +11,17 @@ use crate::select::{Operation, SelectHandle, Token};
 use crate::utils;
 
 
-pub type NeverToken = ();
+pub(crate) type NeverToken = ();
 
 
-pub struct Channel<T> {
+pub(crate) struct Channel<T> {
     _marker: PhantomData<T>,
 }
 
 impl<T> Channel<T> {
     
     #[inline]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Channel {
             _marker: PhantomData,
         }
@@ -29,44 +29,45 @@ impl<T> Channel<T> {
 
     
     #[inline]
-    pub fn try_recv(&self) -> Result<T, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<T, TryRecvError> {
         Err(TryRecvError::Empty)
     }
 
     
     #[inline]
-    pub fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
+    pub(crate) fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
         utils::sleep_until(deadline);
         Err(RecvTimeoutError::Timeout)
     }
 
     
     #[inline]
-    pub unsafe fn read(&self, _token: &mut Token) -> Result<T, ()> {
+    pub(crate) unsafe fn read(&self, _token: &mut Token) -> Result<T, ()> {
         Err(())
     }
 
     
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         true
     }
 
     
     #[inline]
-    pub fn is_full(&self) -> bool {
+    pub(crate) fn is_full(&self) -> bool {
         true
     }
 
     
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         0
     }
 
     
+    #[allow(clippy::unnecessary_wraps)] 
     #[inline]
-    pub fn capacity(&self) -> Option<usize> {
+    pub(crate) fn capacity(&self) -> Option<usize> {
         Some(0)
     }
 }

@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 use crossbeam_utils::Backoff;
 
 
-pub fn shuffle<T>(v: &mut [T]) {
+pub(crate) fn shuffle<T>(v: &mut [T]) {
     let len = v.len();
     if len <= 1 {
         return;
@@ -46,7 +46,7 @@ pub fn shuffle<T>(v: &mut [T]) {
 }
 
 
-pub fn sleep_until(deadline: Option<Instant>) {
+pub(crate) fn sleep_until(deadline: Option<Instant>) {
     loop {
         match deadline {
             None => thread::sleep(Duration::from_secs(1000)),
@@ -62,14 +62,14 @@ pub fn sleep_until(deadline: Option<Instant>) {
 }
 
 
-pub struct Spinlock<T> {
+pub(crate) struct Spinlock<T> {
     flag: AtomicBool,
     value: UnsafeCell<T>,
 }
 
 impl<T> Spinlock<T> {
     
-    pub fn new(value: T) -> Spinlock<T> {
+    pub(crate) fn new(value: T) -> Spinlock<T> {
         Spinlock {
             flag: AtomicBool::new(false),
             value: UnsafeCell::new(value),
@@ -77,7 +77,7 @@ impl<T> Spinlock<T> {
     }
 
     
-    pub fn lock(&self) -> SpinlockGuard<'_, T> {
+    pub(crate) fn lock(&self) -> SpinlockGuard<'_, T> {
         let backoff = Backoff::new();
         while self.flag.swap(true, Ordering::Acquire) {
             backoff.snooze();
@@ -87,7 +87,7 @@ impl<T> Spinlock<T> {
 }
 
 
-pub struct SpinlockGuard<'a, T> {
+pub(crate) struct SpinlockGuard<'a, T> {
     parent: &'a Spinlock<T>,
 }
 

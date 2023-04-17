@@ -5,11 +5,14 @@
 
 
 
-use core::mem::{self, ManuallyDrop};
-use core::ptr;
+
+
+
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
 use crossbeam_utils::CachePadded;
+
+use maybe_uninit::MaybeUninit;
 
 use {unprotected, Atomic, Guard, Owned, Shared};
 
@@ -22,7 +25,6 @@ pub struct Queue<T> {
     tail: CachePadded<Atomic<Node<T>>>,
 }
 
-#[derive(Debug)]
 struct Node<T> {
     
     
@@ -30,7 +32,7 @@ struct Node<T> {
     
     
     
-    data: ManuallyDrop<T>,
+    data: MaybeUninit<T>,
 
     next: Atomic<Node<T>>,
 }
@@ -46,11 +48,8 @@ impl<T> Queue<T> {
             head: CachePadded::new(Atomic::null()),
             tail: CachePadded::new(Atomic::null()),
         };
-        
-        
-        #[allow(deprecated)]
         let sentinel = Owned::new(Node {
-            data: unsafe { mem::uninitialized() },
+            data: MaybeUninit::uninit(),
             next: Atomic::null(),
         });
         unsafe {
@@ -90,7 +89,7 @@ impl<T> Queue<T> {
     
     pub fn push(&self, t: T, guard: &Guard) {
         let new = Owned::new(Node {
-            data: ManuallyDrop::new(t),
+            data: MaybeUninit::new(t),
             next: Atomic::null(),
         });
         let new = Owned::into_shared(new, guard);
@@ -117,8 +116,14 @@ impl<T> Queue<T> {
                 self.head
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
+                        let tail = self.tail.load(Relaxed, guard);
+                        
+                        if head == tail {
+                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
+                        }
                         guard.defer_destroy(head);
-                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
+                        
+                        Some(n.data.as_ptr().read())
                     })
                     .map_err(|_| ())
             },
@@ -138,12 +143,17 @@ impl<T> Queue<T> {
         let h = unsafe { head.deref() };
         let next = h.next.load(Acquire, guard);
         match unsafe { next.as_ref() } {
-            Some(n) if condition(&n.data) => unsafe {
+            Some(n) if condition(unsafe { &*n.data.as_ptr() }) => unsafe {
                 self.head
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
+                        let tail = self.tail.load(Relaxed, guard);
+                        
+                        if head == tail {
+                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
+                        }
                         guard.defer_destroy(head);
-                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
+                        Some(n.data.as_ptr().read())
                     })
                     .map_err(|_| ())
             },

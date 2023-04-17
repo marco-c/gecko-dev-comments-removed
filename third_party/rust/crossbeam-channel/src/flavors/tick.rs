@@ -12,10 +12,10 @@ use crate::err::{RecvTimeoutError, TryRecvError};
 use crate::select::{Operation, SelectHandle, Token};
 
 
-pub type TickToken = Option<Instant>;
+pub(crate) type TickToken = Option<Instant>;
 
 
-pub struct Channel {
+pub(crate) struct Channel {
     
     delivery_time: AtomicCell<Instant>,
 
@@ -26,7 +26,7 @@ pub struct Channel {
 impl Channel {
     
     #[inline]
-    pub fn new(dur: Duration) -> Self {
+    pub(crate) fn new(dur: Duration) -> Self {
         Channel {
             delivery_time: AtomicCell::new(Instant::now() + dur),
             duration: dur,
@@ -35,7 +35,7 @@ impl Channel {
 
     
     #[inline]
-    pub fn try_recv(&self) -> Result<Instant, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<Instant, TryRecvError> {
         loop {
             let now = Instant::now();
             let delivery_time = self.delivery_time.load();
@@ -56,7 +56,7 @@ impl Channel {
 
     
     #[inline]
-    pub fn recv(&self, deadline: Option<Instant>) -> Result<Instant, RecvTimeoutError> {
+    pub(crate) fn recv(&self, deadline: Option<Instant>) -> Result<Instant, RecvTimeoutError> {
         loop {
             let delivery_time = self.delivery_time.load();
             let now = Instant::now();
@@ -85,25 +85,25 @@ impl Channel {
 
     
     #[inline]
-    pub unsafe fn read(&self, token: &mut Token) -> Result<Instant, ()> {
+    pub(crate) unsafe fn read(&self, token: &mut Token) -> Result<Instant, ()> {
         token.tick.ok_or(())
     }
 
     
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         Instant::now() < self.delivery_time.load()
     }
 
     
     #[inline]
-    pub fn is_full(&self) -> bool {
+    pub(crate) fn is_full(&self) -> bool {
         !self.is_empty()
     }
 
     
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         if self.is_empty() {
             0
         } else {
@@ -112,8 +112,9 @@ impl Channel {
     }
 
     
+    #[allow(clippy::unnecessary_wraps)] 
     #[inline]
-    pub fn capacity(&self) -> Option<usize> {
+    pub(crate) fn capacity(&self) -> Option<usize> {
         Some(1)
     }
 }

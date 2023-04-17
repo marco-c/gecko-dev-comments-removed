@@ -70,6 +70,7 @@ mod tests {
                 super::pin();
                 
             });
-        }).unwrap();
+        })
+        .unwrap();
     }
 }

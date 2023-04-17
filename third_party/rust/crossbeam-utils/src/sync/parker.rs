@@ -1,10 +1,9 @@
+use crate::primitive::sync::atomic::AtomicUsize;
+use crate::primitive::sync::{Arc, Condvar, Mutex};
+use core::sync::atomic::Ordering::SeqCst;
 use std::fmt;
 use std::marker::PhantomData;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering::SeqCst;
-use std::sync::{Arc, Condvar, Mutex};
-use std::time::Duration;
-
+use std::time::{Duration, Instant};
 
 
 
@@ -104,9 +103,6 @@ impl Parker {
     
     
     
-    
-    
-    
     pub fn park(&self) {
         self.unparker.inner.park(None);
     }
@@ -124,11 +120,26 @@ impl Parker {
     
     
     
-    
-    
-    
     pub fn park_timeout(&self, timeout: Duration) {
-        self.unparker.inner.park(Some(timeout));
+        self.park_deadline(Instant::now() + timeout)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn park_deadline(&self, deadline: Instant) {
+        self.unparker.inner.park(Some(deadline))
     }
 
     
@@ -233,7 +244,6 @@ impl Unparker {
     
     
     
-    
     pub fn unpark(&self) {
         self.inner.unpark()
     }
@@ -302,7 +312,7 @@ struct Inner {
 }
 
 impl Inner {
-    fn park(&self, timeout: Option<Duration>) {
+    fn park(&self, deadline: Option<Instant>) {
         
         if self
             .state
@@ -313,8 +323,8 @@ impl Inner {
         }
 
         
-        if let Some(ref dur) = timeout {
-            if *dur == Duration::from_millis(0) {
+        if let Some(deadline) = deadline {
+            if deadline <= Instant::now() {
                 return;
             }
         }
@@ -338,40 +348,42 @@ impl Inner {
             Err(n) => panic!("inconsistent park_timeout state: {}", n),
         }
 
-        match timeout {
-            None => {
-                loop {
-                    
-                    m = self.cvar.wait(m).unwrap();
-
-                    if self
-                        .state
-                        .compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst)
-                        .is_ok()
-                    {
+        loop {
+            
+            m = match deadline {
+                None => self.cvar.wait(m).unwrap(),
+                Some(deadline) => {
+                    let now = Instant::now();
+                    if now < deadline {
                         
-                        return;
+                        
+                        
+                        self.cvar.wait_timeout(m, deadline - now).unwrap().0
+                    } else {
+                        
+                        match self.state.swap(EMPTY, SeqCst) {
+                            NOTIFIED | PARKED => return,
+                            n => panic!("inconsistent park_timeout state: {}", n),
+                        };
                     }
-
-                    
                 }
-            }
-            Some(timeout) => {
-                
-                
-                
-                let (_m, _result) = self.cvar.wait_timeout(m, timeout).unwrap();
+            };
 
-                match self.state.swap(EMPTY, SeqCst) {
-                    NOTIFIED => {} 
-                    PARKED => {}   
-                    n => panic!("inconsistent park_timeout state: {}", n),
-                }
+            if self
+                .state
+                .compare_exchange(NOTIFIED, EMPTY, SeqCst, SeqCst)
+                .is_ok()
+            {
+                
+                return;
             }
+
+            
+            
         }
     }
 
-    pub fn unpark(&self) {
+    pub(crate) fn unpark(&self) {
         
         
         

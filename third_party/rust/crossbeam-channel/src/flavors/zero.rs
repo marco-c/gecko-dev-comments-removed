@@ -16,7 +16,7 @@ use crate::utils::Spinlock;
 use crate::waker::Waker;
 
 
-pub type ZeroToken = usize;
+pub(crate) type ZeroToken = usize;
 
 
 struct Packet<T> {
@@ -80,7 +80,7 @@ struct Inner {
 }
 
 
-pub struct Channel<T> {
+pub(crate) struct Channel<T> {
     
     inner: Spinlock<Inner>,
 
@@ -90,7 +90,7 @@ pub struct Channel<T> {
 
 impl<T> Channel<T> {
     
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Channel {
             inner: Spinlock::new(Inner {
                 senders: Waker::new(),
@@ -102,12 +102,12 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn receiver(&self) -> Receiver<'_, T> {
+    pub(crate) fn receiver(&self) -> Receiver<'_, T> {
         Receiver(self)
     }
 
     
-    pub fn sender(&self) -> Sender<'_, T> {
+    pub(crate) fn sender(&self) -> Sender<'_, T> {
         Sender(self)
     }
 
@@ -128,7 +128,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub unsafe fn write(&self, token: &mut Token, msg: T) -> Result<(), T> {
+    pub(crate) unsafe fn write(&self, token: &mut Token, msg: T) -> Result<(), T> {
         
         if token.zero == 0 {
             return Err(msg);
@@ -157,7 +157,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub unsafe fn read(&self, token: &mut Token) -> Result<T, ()> {
+    pub(crate) unsafe fn read(&self, token: &mut Token) -> Result<T, ()> {
         
         if token.zero == 0 {
             return Err(());
@@ -183,7 +183,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
+    pub(crate) fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
         let token = &mut Token::default();
         let mut inner = self.inner.lock();
 
@@ -203,7 +203,11 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn send(&self, msg: T, deadline: Option<Instant>) -> Result<(), SendTimeoutError<T>> {
+    pub(crate) fn send(
+        &self,
+        msg: T,
+        deadline: Option<Instant>,
+    ) -> Result<(), SendTimeoutError<T>> {
         let token = &mut Token::default();
         let mut inner = self.inner.lock();
 
@@ -256,7 +260,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn try_recv(&self) -> Result<T, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<T, TryRecvError> {
         let token = &mut Token::default();
         let mut inner = self.inner.lock();
 
@@ -273,7 +277,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
+    pub(crate) fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
         let token = &mut Token::default();
         let mut inner = self.inner.lock();
 
@@ -325,7 +329,7 @@ impl<T> Channel<T> {
     
     
     
-    pub fn disconnect(&self) -> bool {
+    pub(crate) fn disconnect(&self) -> bool {
         let mut inner = self.inner.lock();
 
         if !inner.is_disconnected {
@@ -339,31 +343,32 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         0
     }
 
     
-    pub fn capacity(&self) -> Option<usize> {
+    #[allow(clippy::unnecessary_wraps)] 
+    pub(crate) fn capacity(&self) -> Option<usize> {
         Some(0)
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         true
     }
 
     
-    pub fn is_full(&self) -> bool {
+    pub(crate) fn is_full(&self) -> bool {
         true
     }
 }
 
 
-pub struct Receiver<'a, T>(&'a Channel<T>);
+pub(crate) struct Receiver<'a, T>(&'a Channel<T>);
 
 
-pub struct Sender<'a, T>(&'a Channel<T>);
+pub(crate) struct Sender<'a, T>(&'a Channel<T>);
 
 impl<T> SelectHandle for Receiver<'_, T> {
     fn try_select(&self, token: &mut Token) -> bool {

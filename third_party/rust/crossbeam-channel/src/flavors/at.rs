@@ -12,10 +12,10 @@ use crate::select::{Operation, SelectHandle, Token};
 use crate::utils;
 
 
-pub type AtToken = Option<Instant>;
+pub(crate) type AtToken = Option<Instant>;
 
 
-pub struct Channel {
+pub(crate) struct Channel {
     
     delivery_time: Instant,
 
@@ -26,7 +26,7 @@ pub struct Channel {
 impl Channel {
     
     #[inline]
-    pub fn new_deadline(when: Instant) -> Self {
+    pub(crate) fn new_deadline(when: Instant) -> Self {
         Channel {
             delivery_time: when,
             received: AtomicBool::new(false),
@@ -34,13 +34,13 @@ impl Channel {
     }
     
     #[inline]
-    pub fn new_timeout(dur: Duration) -> Self {
+    pub(crate) fn new_timeout(dur: Duration) -> Self {
         Self::new_deadline(Instant::now() + dur)
     }
 
     
     #[inline]
-    pub fn try_recv(&self) -> Result<Instant, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<Instant, TryRecvError> {
         
         if self.received.load(Ordering::Relaxed) {
             
@@ -64,7 +64,7 @@ impl Channel {
 
     
     #[inline]
-    pub fn recv(&self, deadline: Option<Instant>) -> Result<Instant, RecvTimeoutError> {
+    pub(crate) fn recv(&self, deadline: Option<Instant>) -> Result<Instant, RecvTimeoutError> {
         
         if self.received.load(Ordering::Relaxed) {
             
@@ -103,13 +103,13 @@ impl Channel {
 
     
     #[inline]
-    pub unsafe fn read(&self, token: &mut Token) -> Result<Instant, ()> {
+    pub(crate) unsafe fn read(&self, token: &mut Token) -> Result<Instant, ()> {
         token.at.ok_or(())
     }
 
     
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         
         if self.received.load(Ordering::Relaxed) {
             return true;
@@ -127,13 +127,13 @@ impl Channel {
 
     
     #[inline]
-    pub fn is_full(&self) -> bool {
+    pub(crate) fn is_full(&self) -> bool {
         !self.is_empty()
     }
 
     
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         if self.is_empty() {
             0
         } else {
@@ -142,8 +142,9 @@ impl Channel {
     }
 
     
+    #[allow(clippy::unnecessary_wraps)] 
     #[inline]
-    pub fn capacity(&self) -> Option<usize> {
+    pub(crate) fn capacity(&self) -> Option<usize> {
         Some(1)
     }
 }

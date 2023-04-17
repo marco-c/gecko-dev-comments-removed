@@ -8,11 +8,6 @@
 
 
 
-
-
-
-
-
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
 use std::mem::{self, MaybeUninit};
@@ -57,7 +52,7 @@ impl Default for ArrayToken {
 }
 
 
-pub struct Channel<T> {
+pub(crate) struct Channel<T> {
     
     
     
@@ -100,7 +95,7 @@ pub struct Channel<T> {
 
 impl<T> Channel<T> {
     
-    pub fn with_capacity(cap: usize) -> Self {
+    pub(crate) fn with_capacity(cap: usize) -> Self {
         assert!(cap > 0, "capacity must be positive");
 
         
@@ -143,12 +138,12 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn receiver(&self) -> Receiver<'_, T> {
+    pub(crate) fn receiver(&self) -> Receiver<'_, T> {
         Receiver(self)
     }
 
     
-    pub fn sender(&self) -> Sender<'_, T> {
+    pub(crate) fn sender(&self) -> Sender<'_, T> {
         Sender(self)
     }
 
@@ -224,7 +219,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub unsafe fn write(&self, token: &mut Token, msg: T) -> Result<(), T> {
+    pub(crate) unsafe fn write(&self, token: &mut Token, msg: T) -> Result<(), T> {
         
         if token.array.slot.is_null() {
             return Err(msg);
@@ -314,7 +309,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub unsafe fn read(&self, token: &mut Token) -> Result<T, ()> {
+    pub(crate) unsafe fn read(&self, token: &mut Token) -> Result<T, ()> {
         if token.array.slot.is_null() {
             
             return Err(());
@@ -332,7 +327,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
+    pub(crate) fn try_send(&self, msg: T) -> Result<(), TrySendError<T>> {
         let token = &mut Token::default();
         if self.start_send(token) {
             unsafe { self.write(token, msg).map_err(TrySendError::Disconnected) }
@@ -342,7 +337,11 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn send(&self, msg: T, deadline: Option<Instant>) -> Result<(), SendTimeoutError<T>> {
+    pub(crate) fn send(
+        &self,
+        msg: T,
+        deadline: Option<Instant>,
+    ) -> Result<(), SendTimeoutError<T>> {
         let token = &mut Token::default();
         loop {
             
@@ -391,7 +390,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn try_recv(&self) -> Result<T, TryRecvError> {
+    pub(crate) fn try_recv(&self) -> Result<T, TryRecvError> {
         let token = &mut Token::default();
 
         if self.start_recv(token) {
@@ -402,7 +401,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
+    pub(crate) fn recv(&self, deadline: Option<Instant>) -> Result<T, RecvTimeoutError> {
         let token = &mut Token::default();
         loop {
             
@@ -453,7 +452,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         loop {
             
             let tail = self.tail.load(Ordering::SeqCst);
@@ -478,14 +477,15 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn capacity(&self) -> Option<usize> {
+    #[allow(clippy::unnecessary_wraps)] 
+    pub(crate) fn capacity(&self) -> Option<usize> {
         Some(self.cap)
     }
 
     
     
     
-    pub fn disconnect(&self) -> bool {
+    pub(crate) fn disconnect(&self) -> bool {
         let tail = self.tail.fetch_or(self.mark_bit, Ordering::SeqCst);
 
         if tail & self.mark_bit == 0 {
@@ -498,12 +498,12 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn is_disconnected(&self) -> bool {
+    pub(crate) fn is_disconnected(&self) -> bool {
         self.tail.load(Ordering::SeqCst) & self.mark_bit != 0
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         let head = self.head.load(Ordering::SeqCst);
         let tail = self.tail.load(Ordering::SeqCst);
 
@@ -515,7 +515,7 @@ impl<T> Channel<T> {
     }
 
     
-    pub fn is_full(&self) -> bool {
+    pub(crate) fn is_full(&self) -> bool {
         let tail = self.tail.load(Ordering::SeqCst);
         let head = self.head.load(Ordering::SeqCst);
 
@@ -563,10 +563,10 @@ impl<T> Drop for Channel<T> {
 }
 
 
-pub struct Receiver<'a, T>(&'a Channel<T>);
+pub(crate) struct Receiver<'a, T>(&'a Channel<T>);
 
 
-pub struct Sender<'a, T>(&'a Channel<T>);
+pub(crate) struct Sender<'a, T>(&'a Channel<T>);
 
 impl<T> SelectHandle for Receiver<'_, T> {
     fn try_select(&self, token: &mut Token) -> bool {

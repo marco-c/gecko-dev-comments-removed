@@ -1,8 +1,11 @@
 
 
-use cfg_if::cfg_if;
 
-cfg_if! {
+
+
+#[cfg(not(crossbeam_no_atomic_cas))]
+#[cfg(not(crossbeam_loom))]
+cfg_if::cfg_if! {
     // Use "wide" sequence lock if the pointer width <= 32 for preventing its counter against wrap
     // around.
     //
@@ -20,8 +23,10 @@ cfg_if! {
     }
 }
 
+#[cfg(not(crossbeam_no_atomic_cas))]
 mod atomic_cell;
 mod consume;
 
+#[cfg(not(crossbeam_no_atomic_cas))]
 pub use self::atomic_cell::AtomicCell;
 pub use self::consume::AtomicConsume;
