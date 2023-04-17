@@ -2423,6 +2423,14 @@ function installAddonFromURL(url, extensionID, addon) {
         log.debug(`Installation succeeded - ${url}`);
       },
     };
+    
+    
+    if (url.startsWith("file:")) {
+      listener.onDownloadEnded(install);
+      if (install.state == AddonManager.STATE_CANCELLED) {
+        return;
+      }
+    }
     install.addListener(listener);
     install.install();
   });
