@@ -3452,16 +3452,14 @@ void AsyncPanZoomController::OverscrollBy(ParentLayerPoint& aOverscroll) {
   
   
   ScrollDirections overscrollableDirections = GetOverscrollableDirections();
-  bool xConsumed = FuzzyEqualsAdditive(aOverscroll.x, 0.0f, COORDINATE_EPSILON);
-  bool yConsumed = FuzzyEqualsAdditive(aOverscroll.y, 0.0f, COORDINATE_EPSILON);
+  if (FuzzyEqualsAdditive(aOverscroll.x, 0.0f, COORDINATE_EPSILON)) {
+    overscrollableDirections -= ScrollDirection::eHorizontal;
+  }
+  if (FuzzyEqualsAdditive(aOverscroll.y, 0.0f, COORDINATE_EPSILON)) {
+    overscrollableDirections -= ScrollDirection::eVertical;
+  }
 
-  bool shouldOverscrollX = !xConsumed && overscrollableDirections.contains(
-                                             ScrollDirection::eHorizontal);
-  bool shouldOverscrollY = !yConsumed && overscrollableDirections.contains(
-                                             ScrollDirection::eVertical);
-
-  mOverscrollEffect->ConsumeOverscroll(aOverscroll, shouldOverscrollX,
-                                       shouldOverscrollY);
+  mOverscrollEffect->ConsumeOverscroll(aOverscroll, overscrollableDirections);
 }
 
 RefPtr<const OverscrollHandoffChain>
