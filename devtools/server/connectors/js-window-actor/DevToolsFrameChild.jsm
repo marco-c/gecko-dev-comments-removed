@@ -322,11 +322,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     const targetActor = new FrameTargetActor(connection, {
       docShell: this.docShell,
+      
+      
+      
+      
+      
+      
       doNotFireFrameUpdates: true,
-      
-      
-      followWindowGlobalLifeCycle:
-        !isTopLevelTarget || this.isServerTargetSwitchingEnabled,
+      followWindowGlobalLifeCycle: true,
       isTopLevelTarget,
     });
     targetActor.manage(targetActor);
