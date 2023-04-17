@@ -2074,21 +2074,6 @@ WebRenderLayerManager* nsDisplayListBuilder::GetWidgetLayerManager(
   return nullptr;
 }
 
-
-
-
-Layer* GetLayerForRootMetadata(Layer* aRootLayer,
-                               ScrollableLayerGuid::ViewID aRootScrollId) {
-  Layer* asyncZoomContainer = DepthFirstSearch<ForwardIterator>(
-      aRootLayer, [aRootScrollId](Layer* aLayer) {
-        if (auto id = aLayer->GetAsyncZoomContainerId()) {
-          return *id == aRootScrollId;
-        }
-        return false;
-      });
-  return asyncZoomContainer ? asyncZoomContainer : aRootLayer;
-}
-
 void nsDisplayList::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
                           int32_t aAppUnitsPerDevPixel) {
   FlattenedDisplayListIterator iter(aBuilder, this);
