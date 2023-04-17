@@ -1811,6 +1811,16 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     return mWrBridge;
   }
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  if (!mPaused && mWidget->GetCompositorOptions().UseSoftwareWebRender() &&
+      mWidget->GetCompositorOptions().AllowSoftwareWebRenderOGL()) {
+    api->Resume();
+  }
+#endif
+
   wr::TransactionBuilder txn(api);
   txn.SetRootPipeline(aPipelineId);
   api->SendTransaction(txn);
