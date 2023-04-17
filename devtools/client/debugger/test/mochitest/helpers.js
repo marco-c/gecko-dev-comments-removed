@@ -1971,6 +1971,17 @@ async function editExpression(dbg, input) {
 
 
 
+function getWatchExpressionLabel(dbg, index) {
+  return findElement(dbg, "expressionNode", index).innerText;
+}
+
+
+
+
+
+
+
+
 function getWatchExpressionValue(dbg, index) {
   return findElement(dbg, "expressionValue", index).innerText;
 }
