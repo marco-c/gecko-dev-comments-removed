@@ -113,8 +113,8 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
       do_AddRef(pool),  true);
   auto noTailTaskQueue = MakeRefPtr<TaskQueue>(
       do_AddRef(pool),  false);
-  Monitor monitor(__func__);
-  MonitorAutoLock lock(monitor);
+  Monitor outerMonitor(__func__);
+  MonitorAutoLock lock(outerMonitor);
   MOZ_ALWAYS_SUCCEEDS(
       tailTaskQueue1->Dispatch(NS_NewRunnableFunction(__func__, [&] {
         
@@ -123,18 +123,21 @@ TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
         EXPECT_TRUE(tailTaskQueue1->RequiresTailDispatch(tailTaskQueue2));
         tailTaskQueue2->DelayedDispatch(
             NS_NewRunnableFunction(__func__, [&] {}), 1);
-        MonitorAutoLock lock(monitor);
+        Monitor innerMonitor(__func__);
+        MonitorAutoLock lock(innerMonitor);
         auto timer = MakeRefPtr<MediaTimer>();
         timer->WaitFor(TimeDuration::FromMilliseconds(1), __func__)
             ->Then(noTailTaskQueue, __func__, [&] {
-              MonitorAutoLock lock(monitor);
-              monitor.NotifyAll();
+              MonitorAutoLock lock(innerMonitor);
+              innerMonitor.NotifyAll();
             });
         
         
         
-        monitor.Wait();
+        innerMonitor.Wait();
+        
+        outerMonitor.NotifyAll();
       })));
   
-  monitor.Wait();
+  outerMonitor.Wait();
 }
