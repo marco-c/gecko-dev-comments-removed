@@ -34,8 +34,6 @@
 #ifdef MOZ_WIDGET_COCOA
 #  include "BorrowedContext.h"
 #  include <ApplicationServices/ApplicationServices.h>
-#  include "ScaledFontMac.h"
-#  include "CGTextDrawing.h"
 #endif
 
 #ifdef XP_WIN
@@ -1090,32 +1088,6 @@ static bool SetupCGContext(DrawTargetSkia* aDT, CGContextRef aCGContext,
   return true;
 }
 
-static bool SetupCGGlyphs(CGContextRef aCGContext, const GlyphBuffer& aBuffer,
-                          Vector<CGGlyph, 32>& aGlyphs,
-                          Vector<CGPoint, 32>& aPositions) {
-  
-  CGContextScaleCTM(aCGContext, 1, -1);
-
-  if (!aGlyphs.resizeUninitialized(aBuffer.mNumGlyphs) ||
-      !aPositions.resizeUninitialized(aBuffer.mNumGlyphs)) {
-    gfxDevCrash(LogReason::GlyphAllocFailedCG)
-        << "glyphs/positions allocation failed";
-    return false;
-  }
-
-  for (unsigned int i = 0; i < aBuffer.mNumGlyphs; i++) {
-    aGlyphs[i] = aBuffer.mGlyphs[i].mIndex;
-
-    
-    
-    aPositions[i] = CGPointMake(aBuffer.mGlyphs[i].mPosition.x,
-                                -aBuffer.mGlyphs[i].mPosition.y);
-  }
-
-  return true;
-}
-
-
 
 
 
@@ -1222,96 +1194,7 @@ void BorrowedCGContext::ReturnCGContextToDrawTarget(DrawTarget* aDT,
                                                     CGContextRef cg) {
   DrawTargetSkia* skiaDT = static_cast<DrawTargetSkia*>(aDT);
   skiaDT->ReturnCGContext(cg);
-  return;
 }
-
-static void SetFontColor(CGContextRef aCGContext, CGColorSpaceRef aColorSpace,
-                         const Pattern& aPattern) {
-  const DeviceColor& color = static_cast<const ColorPattern&>(aPattern).mColor;
-  CGColorRef textColor = ColorToCGColor(aColorSpace, color);
-  CGContextSetFillColorWithColor(aCGContext, textColor);
-  CGColorRelease(textColor);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool DrawTargetSkia::FillGlyphsWithCG(ScaledFont* aFont,
-                                      const GlyphBuffer& aBuffer,
-                                      const Pattern& aPattern,
-                                      const DrawOptions& aOptions) {
-  MOZ_ASSERT(aFont->GetType() == FontType::MAC);
-  MOZ_ASSERT(aPattern.GetType() == PatternType::COLOR);
-
-  CGContextRef cgContext = BorrowCGContext(aOptions);
-  if (!cgContext) {
-    return false;
-  }
-
-  Vector<CGGlyph, 32> glyphs;
-  Vector<CGPoint, 32> positions;
-  if (!SetupCGGlyphs(cgContext, aBuffer, glyphs, positions)) {
-    ReturnCGContext(cgContext);
-    return false;
-  }
-
-  ScaledFontMac* macFont = static_cast<ScaledFontMac*>(aFont);
-  SetFontSmoothingBackgroundColor(cgContext, mColorSpace,
-                                  macFont->FontSmoothingBackgroundColor());
-  SetFontColor(cgContext, mColorSpace, aPattern);
-
-  CTFontDrawGlyphs(macFont->mCTFont, glyphs.begin(), positions.begin(),
-                   aBuffer.mNumGlyphs, cgContext);
-
-  
-  auto* bboxes = new CGRect[aBuffer.mNumGlyphs];
-  CTFontGetBoundingRectsForGlyphs(macFont->mCTFont, kCTFontOrientationDefault,
-                                  glyphs.begin(), bboxes, aBuffer.mNumGlyphs);
-  CGRect extents =
-      ComputeGlyphsExtents(bboxes, positions.begin(), aBuffer.mNumGlyphs, 1.0f);
-  delete[] bboxes;
-
-  CGAffineTransform cgTransform = CGContextGetCTM(cgContext);
-  extents = CGRectApplyAffineTransform(extents, cgTransform);
-
-  
-  Rect rect(extents.origin.x, extents.origin.y, extents.size.width,
-            extents.size.height);
-  rect.RoundOut();
-  extents = CGRectMake(rect.x, rect.y, rect.width, rect.height);
-
-  EnsureValidPremultipliedData(cgContext, extents);
-
-  ReturnCGContext(cgContext);
-  return true;
-}
-
-static bool HasFontSmoothingBackgroundColor(ScaledFont* aFont) {
-  
-  if (aFont && aFont->GetType() == FontType::MAC) {
-    DeviceColor fontSmoothingBackgroundColor =
-        static_cast<ScaledFontMac*>(aFont)->FontSmoothingBackgroundColor();
-    return fontSmoothingBackgroundColor.a > 0;
-  }
-
-  return false;
-}
-
-static bool ShouldUseCGToFillGlyphs(ScaledFont* aFont,
-                                    const Pattern& aPattern) {
-  return HasFontSmoothingBackgroundColor(aFont) &&
-         aPattern.GetType() == PatternType::COLOR;
-}
-
 #endif
 
 static bool CanDrawFont(ScaledFont* aFont) {
@@ -1336,14 +1219,6 @@ void DrawTargetSkia::DrawGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   }
 
   MarkChanged();
-
-#ifdef MOZ_WIDGET_COCOA
-  if (!aStrokeOptions && ShouldUseCGToFillGlyphs(aFont, aPattern)) {
-    if (FillGlyphsWithCG(aFont, aBuffer, aPattern, aOptions)) {
-      return;
-    }
-  }
-#endif
 
   ScaledFontBase* skiaFont = static_cast<ScaledFontBase*>(aFont);
   SkTypeface* typeface = skiaFont->GetSkTypeface();
