@@ -975,6 +975,9 @@ pub struct Capabilities {
     
     pub requires_batched_texture_uploads: Option<bool>,
     
+    
+    pub supports_alpha_target_clears: bool,
+    
     pub supports_r8_texture_upload: bool,
     
     
@@ -1699,6 +1702,12 @@ impl Device {
         
         
         
+        let is_mali_t = renderer_name.starts_with("Mali-T");
+        let supports_alpha_target_clears = !is_mali_t;
+
+        
+        
+        
         let supports_r8_texture_upload = if cfg!(target_os = "linux")
             && renderer_name.starts_with("AMD Radeon RX")
         {
@@ -1733,6 +1742,7 @@ impl Device {
                 supports_render_target_partial_update,
                 supports_shader_storage_object,
                 requires_batched_texture_uploads,
+                supports_alpha_target_clears,
                 supports_r8_texture_upload,
                 uses_native_clip_mask,
                 uses_native_antialiasing,
