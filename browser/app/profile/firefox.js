@@ -1996,9 +1996,6 @@ pref("browser.suppress_first_window_animation", true);
 pref("extensions.screenshots.disabled", false);
 
 
-pref("extensions.screenshots.upload-disabled", false);
-
-
 
 pref("doh-rollout.trr-selection.enabled", false);
 
