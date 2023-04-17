@@ -180,6 +180,9 @@ class WebRenderLayerScrollData final {
   
   void InitializeForTest(int32_t aDescendantCount);
 
+  ScrollMetadata& GetScrollMetadataMut(WebRenderScrollData& aOwner,
+                                       size_t aIndex);
+
  private:
   
   
@@ -266,6 +269,11 @@ class WebRenderScrollData {
 
   friend std::ostream& operator<<(std::ostream& aOut,
                                   const WebRenderScrollData& aData);
+
+ private:
+  
+  friend class WebRenderLayerScrollData;
+  ScrollMetadata& GetScrollMetadataMut(size_t aIndex);
 
  private:
   
