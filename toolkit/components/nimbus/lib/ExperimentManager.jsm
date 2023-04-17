@@ -176,13 +176,22 @@ class _ExperimentManager {
 
 
 
-  async enroll(recipe, source) {
-    let { slug, branches } = recipe;
+  async enroll(
+    {
+      slug,
+      branches,
+      experimentType = TELEMETRY_DEFAULT_EXPERIMENT_TYPE,
+      userFacingName,
+      userFacingDescription,
+    },
+    source
+  ) {
     if (this.store.has(slug)) {
       this.sendFailureTelemetry("enrollFailed", slug, "name-conflict");
       throw new Error(`An experiment with the slug "${slug}" already exists.`);
     }
 
+    const enrollmentId = NormandyUtils.generateUuid();
     const branch = await this.chooseBranch(slug, branches);
 
     if (
@@ -199,38 +208,18 @@ class _ExperimentManager {
       return null;
     }
 
-    return this._enroll(recipe, branch, source);
-  }
-
-  _enroll(
-    {
-      slug,
-      experimentType = TELEMETRY_DEFAULT_EXPERIMENT_TYPE,
-      userFacingName,
-      userFacingDescription,
-    },
-    branch,
-    source,
-    options = {}
-  ) {
     
     const experiment = {
       slug,
       branch,
       active: true,
-      enrollmentId: NormandyUtils.generateUuid(),
+      enrollmentId,
       experimentType,
       source,
       userFacingName,
       userFacingDescription,
       lastSeen: new Date().toJSON(),
     };
-
-    
-    
-    if (options.force) {
-      experiment.force = true;
-    }
 
     this.store.addExperiment(experiment);
     this.setExperimentActive(experiment);
@@ -239,29 +228,6 @@ class _ExperimentManager {
     log.debug(`New experiment started: ${slug}, ${branch.slug}`);
 
     return experiment;
-  }
-
-  forceEnroll(recipe, branch, source = "force-enrollment") {
-    
-
-
-
-
-
-    let experiment = this.store.getExperimentForFeature(
-      branch.feature?.featureId
-    );
-    if (experiment) {
-      log.debug(
-        `Existing experiment found for the same feature ${branch?.feature.featureId}, unenrolling.`
-      );
-
-      this.unenroll(experiment.slug, source);
-    }
-
-    recipe.userFacingName = `${recipe.userFacingName} - Forced enrollment`;
-
-    return this._enroll(recipe, branch, source, { force: true });
   }
 
   
@@ -276,11 +242,6 @@ class _ExperimentManager {
     
     if (experiment.active === false) {
       log.debug(`Enrollment ${recipe.slug} has expired, aborting.`);
-      return;
-    }
-
-    
-    if (experiment.force) {
       return;
     }
 
