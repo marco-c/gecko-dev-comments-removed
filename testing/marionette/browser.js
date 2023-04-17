@@ -424,13 +424,6 @@ browser.Context = class {
     if (!this.tab) {
       this.switchToTab();
     }
-
-    if (target === this.contentBrowser) {
-      
-      
-      const uid = target.browsingContext.id;
-      windowManager.updateIdForBrowser(this.contentBrowser, uid);
-    }
   }
 };
 

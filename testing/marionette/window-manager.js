@@ -22,6 +22,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "uuidGen",
+  "@mozilla.org/uuid-generator;1",
+  "nsIUUIDGenerator"
+);
+
 
 
 
@@ -30,7 +37,9 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 class WindowManager {
   constructor() {
     
-    this._browserIds = new WeakMap();
+    this._windowHandles = new WeakMap();
+    
+    this._chromeWindowHandles = new WeakMap();
   }
 
   get windowHandles() {
@@ -135,17 +144,10 @@ class WindowManager {
 
     return {
       win,
-      id: win.browsingContext.id,
+      id: this.getIdForWindow(win),
       hasTabBrowser: !!browser.getTabBrowser(win),
       tabIndex: options.tabIndex,
     };
-  }
-
-  
-
-
-  updateIdForBrowser(browserElement, newId) {
-    this._browserIds.set(browserElement.permanentKey, newId);
   }
 
   
@@ -162,17 +164,12 @@ class WindowManager {
       return null;
     }
 
-    const permKey = browserElement.permanentKey;
-    if (this._browserIds.has(permKey)) {
-      return this._browserIds.get(permKey);
+    const key = browserElement.permanentKey;
+    if (!this._windowHandles.has(key)) {
+      const uuid = uuidGen.generateUUID().toString();
+      this._windowHandles.set(key, uuid.substring(1, uuid.length - 1));
     }
-
-    const winId = browserElement.browsingContext.id;
-    if (winId) {
-      this._browserIds.set(permKey, winId);
-      return winId;
-    }
-    return null;
+    return this._windowHandles.get(key);
   }
 
   
@@ -182,8 +179,13 @@ class WindowManager {
 
 
 
+
   getIdForWindow(win) {
-    return win.browsingContext.id;
+    if (!this._chromeWindowHandles.has(win)) {
+      const uuid = uuidGen.generateUUID().toString();
+      this._chromeWindowHandles.set(win, uuid.substring(1, uuid.length - 1));
+    }
+    return this._chromeWindowHandles.get(win);
   }
 
   
