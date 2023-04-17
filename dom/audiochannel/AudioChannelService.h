@@ -152,8 +152,6 @@ class AudioChannelService final : public nsIObserver {
 
   void RefreshAgentsVolume(nsPIDOMWindowOuter* aWindow, float aVolume,
                            bool aMuted);
-  void RefreshAgentsSuspend(nsPIDOMWindowOuter* aWindow,
-                            nsSuspendedTypes aSuspend);
 
   
   
@@ -162,7 +160,7 @@ class AudioChannelService final : public nsIObserver {
   void SetWindowAudioCaptured(nsPIDOMWindowOuter* aWindow,
                               uint64_t aInnerWindowID, bool aCapture);
 
-  void NotifyMediaResumedFromBlock(nsPIDOMWindowOuter* aWindow);
+  void NotifyResumingDelayedMedia(nsPIDOMWindowOuter* aWindow);
 
  private:
   AudioChannelService();
@@ -170,6 +168,9 @@ class AudioChannelService final : public nsIObserver {
 
   void RefreshAgents(nsPIDOMWindowOuter* aWindow,
                      const std::function<void(AudioChannelAgent*)>& aFunc);
+
+  void RefreshAgentsSuspend(nsPIDOMWindowOuter* aWindow,
+                            nsSuspendedTypes aSuspend);
 
   static void CreateServiceIfNeeded();
 
