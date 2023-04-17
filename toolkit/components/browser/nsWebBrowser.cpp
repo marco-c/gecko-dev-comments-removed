@@ -131,9 +131,9 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   
   
   
-  browser->mBackgroundColor = LookAndFeel::Color(
-      LookAndFeel::ColorID::WindowBackground, LookAndFeel::ColorScheme::Light,
-      LookAndFeel::UseStandins::No);
+  browser->mBackgroundColor =
+      LookAndFeel::Color(LookAndFeel::ColorID::Window, ColorScheme::Light,
+                         LookAndFeel::UseStandins::No);
 
   
   
