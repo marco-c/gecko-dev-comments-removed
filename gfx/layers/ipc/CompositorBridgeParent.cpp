@@ -1296,7 +1296,13 @@ bool CompositorBridgeParent::DeallocPWebRenderBridgeParent(
 }
 
 webgpu::PWebGPUParent* CompositorBridgeParent::AllocPWebGPUParent() {
+  
+  MOZ_ASSERT(XRE_IsGPUProcess());
+  
   MOZ_ASSERT(!mWebGPUBridge);
+  
+  MOZ_RELEASE_ASSERT(mOptions.UseWebGPU());
+
   mWebGPUBridge = new webgpu::WebGPUParent();
   mWebGPUBridge.get()->AddRef();  
   return mWebGPUBridge;
