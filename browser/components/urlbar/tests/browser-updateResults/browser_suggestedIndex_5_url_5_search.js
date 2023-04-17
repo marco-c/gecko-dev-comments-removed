@@ -1,0 +1,1174 @@
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 2,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      hidden: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+    },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 2,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      hidden: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -3,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -3,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 2,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      hidden: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -3,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -3,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 2,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      hidden: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 2,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: 9,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 9,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+      stale: true,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndex: -2,
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -2,
+    },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 3, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndexes: [1, -1],
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: 1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndexes: [1, -1],
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});
+
+
+
+
+
+
+
+add_suggestedIndex_task({
+  search1: {
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 2, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
+    suggestedIndex: -1,
+    viewCount: 5,
+  },
+  search2: {
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    suggestedIndexes: [1, -1],
+    viewCount: 5,
+  },
+  duringUpdate: [
+    { count: 1 },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      stale: true,
+    },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: 1,
+      hidden: true,
+    },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
+    {
+      count: 1,
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      suggestedIndex: -1,
+      hidden: true,
+    },
+  ],
+});

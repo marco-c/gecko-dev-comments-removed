@@ -7,6 +7,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -17,26 +19,29 @@
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -48,27 +53,29 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 2,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 2,
       hidden: true,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -80,20 +87,22 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -111,20 +120,22 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -142,27 +153,29 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -2,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -2,
       hidden: true,
     },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -174,26 +187,29 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -9,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -203,17 +219,18 @@ add_suggestedIndex_task({
 
 
 
-
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
@@ -224,8 +241,7 @@ add_suggestedIndex_task({
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 1,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
   ],
 });
 
@@ -237,14 +253,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 2,
     viewCount: 10,
   },
@@ -256,15 +274,16 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 2,
       hidden: true,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -276,14 +295,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
@@ -295,8 +316,9 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -314,14 +336,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
@@ -333,8 +357,9 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -352,14 +377,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -2,
     viewCount: 10,
   },
@@ -371,15 +398,16 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -2,
       hidden: true,
     },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -391,14 +419,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -9,
     viewCount: 10,
   },
@@ -410,14 +440,15 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -9,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -429,20 +460,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -455,7 +489,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -467,32 +501,26 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 9,
-      stale: true,
-    },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
-    {
-      count: 1,
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      suggestedIndex: 9,
-      hidden: true,
     },
   ],
 });
@@ -505,27 +533,28 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 9,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -543,20 +572,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -569,7 +601,7 @@ add_suggestedIndex_task({
       suggestedIndex: -9,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -581,20 +613,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -607,7 +642,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -619,27 +654,28 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -1,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -657,32 +693,26 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -1,
-      stale: true,
-    },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
-    {
-      count: 1,
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      suggestedIndex: -1,
-      hidden: true,
     },
   ],
 });
@@ -695,20 +725,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -9,
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -721,7 +754,7 @@ add_suggestedIndex_task({
       suggestedIndex: -9,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -733,14 +766,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
@@ -752,14 +787,15 @@ add_suggestedIndex_task({
       suggestedIndex: -9,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -771,14 +807,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
@@ -790,8 +828,9 @@ add_suggestedIndex_task({
       suggestedIndex: -9,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -809,14 +848,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
@@ -828,8 +869,9 @@ add_suggestedIndex_task({
       suggestedIndex: -9,
       stale: true,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -847,14 +889,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -9,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -9,
     viewCount: 10,
   },
@@ -865,8 +909,7 @@ add_suggestedIndex_task({
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: -9,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH },
   ],
 });
 
@@ -878,26 +921,29 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [1, -1],
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -915,14 +961,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [1, -1],
     viewCount: 10,
   },
@@ -933,8 +981,8 @@ add_suggestedIndex_task({
       type: UrlbarUtils.RESULT_TYPE.URL,
       suggestedIndex: 1,
     },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -952,20 +1000,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [1, -1],
     viewCount: 10,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -978,7 +1029,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -996,20 +1047,23 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     resultSpan: 2,
     viewCount: 9,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -1017,7 +1071,7 @@ add_suggestedIndex_task({
       resultSpan: 2,
       hidden: true,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
   ],
 });
 
@@ -1031,19 +1085,22 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 9, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     viewCount: 10,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [[1, 2], -1],
     viewCount: 9,
   },
   duringUpdate: [
     { count: 1 },
-    { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 8, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -1051,7 +1108,7 @@ add_suggestedIndex_task({
       resultSpan: 2,
       hidden: true,
     },
-    { count: 6, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 6, type: UrlbarUtils.RESULT_TYPE.SEARCH, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -1071,14 +1128,16 @@ add_suggestedIndex_task({
 
 add_suggestedIndex_task({
   search1: {
-    otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
+    other: [
+      { count: 1, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+      { count: 8, type: UrlbarUtils.RESULT_TYPE.URL },
+    ],
     suggestedIndexes: [[1, 2]],
     viewCount: 9,
   },
   search2: {
     otherCount: 10,
-    otherType: UrlbarUtils.RESULT_TYPE.URL,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [[1, 2], -1],
     viewCount: 9,
   },
@@ -1090,8 +1149,8 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       resultSpan: 2,
     },
-    { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 6, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 6, type: UrlbarUtils.RESULT_TYPE.SEARCH },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, stale: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,

@@ -1000,14 +1000,20 @@ class UrlbarView {
       let row = this._createRow();
       let result = results[resultIndex];
       this._updateRow(row, result);
-      
-      
       if (!seenMisplacedSuggestedIndex && result.hasSuggestedIndex) {
-        let targetIndex =
+        
+        
+        
+        
+        
+        
+        
+        
+        let finalIndex =
           result.suggestedIndex >= 0
-            ? Math.min(this._rows.children.length, result.suggestedIndex)
-            : Math.max(0, this._rows.children.length + result.suggestedIndex);
-        if (this._rows.children.length != targetIndex) {
+            ? Math.min(results.length - 1, result.suggestedIndex)
+            : Math.max(0, results.length + result.suggestedIndex);
+        if (this._rows.children.length != finalIndex) {
           seenMisplacedSuggestedIndex = true;
         }
       }

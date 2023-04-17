@@ -15,17 +15,17 @@
 
 
 
-
-
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -36,7 +36,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
   ],
 });
 
@@ -49,12 +49,14 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 2,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -66,7 +68,7 @@ add_suggestedIndex_task({
       suggestedIndex: 2,
       hidden: true,
     },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
   ],
 });
 
@@ -79,17 +81,19 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 9,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
     { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -108,17 +112,19 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: -1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
     { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -137,17 +143,19 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: -2,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
     { count: 9, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -167,13 +175,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -183,7 +193,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
     },
     { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
   ],
 });
 
@@ -196,13 +206,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 9,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -213,7 +225,7 @@ add_suggestedIndex_task({
       stale: true,
     },
     { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -232,13 +244,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: -1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -249,7 +263,7 @@ add_suggestedIndex_task({
       stale: true,
     },
     { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -268,13 +282,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: -3,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -285,6 +301,7 @@ add_suggestedIndex_task({
       stale: true,
     },
     { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
+    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -304,13 +321,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -327,7 +346,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
   ],
 });
 
@@ -340,13 +359,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 9,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 9,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -357,7 +378,7 @@ add_suggestedIndex_task({
       suggestedIndex: 9,
       stale: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -376,13 +397,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -399,7 +422,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
   ],
 });
 
@@ -412,13 +435,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: 9,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -429,7 +454,7 @@ add_suggestedIndex_task({
       suggestedIndex: -1,
       stale: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -448,13 +473,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 2,
+    otherCount: 3,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndex: -1,
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -465,7 +492,7 @@ add_suggestedIndex_task({
       suggestedIndex: -1,
       stale: true,
     },
-    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 3, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -484,12 +511,14 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     viewCount: 10,
   },
   search2: {
-    otherCount: 1,
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndexes: [1, -1],
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -500,7 +529,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -519,13 +548,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: 1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 1,
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndexes: [1, -1],
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -535,7 +566,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
     },
     { count: 8, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -554,13 +585,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndex: -1,
     viewCount: 10,
   },
   search2: {
-    otherCount: 1,
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndexes: [1, -1],
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -577,7 +610,7 @@ add_suggestedIndex_task({
       suggestedIndex: 1,
       hidden: true,
     },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -598,13 +631,15 @@ add_suggestedIndex_task({
 add_suggestedIndex_task({
   search1: {
     otherCount: 10,
+    otherType: UrlbarUtils.RESULT_TYPE.SEARCH,
     suggestedIndexes: [[1, 2]],
     viewCount: 9,
   },
   search2: {
-    otherCount: 1,
+    otherCount: 2,
+    otherType: UrlbarUtils.RESULT_TYPE.URL,
     suggestedIndexes: [[1, 2], -1],
-    viewCount: 4,
+    viewCount: 5,
   },
   duringUpdate: [
     { count: 1 },
@@ -615,7 +650,7 @@ add_suggestedIndex_task({
       resultSpan: 2,
     },
     { count: 7, type: UrlbarUtils.RESULT_TYPE.SEARCH, stale: true },
-    { count: 1, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
+    { count: 2, type: UrlbarUtils.RESULT_TYPE.URL, hidden: true },
     {
       count: 1,
       type: UrlbarUtils.RESULT_TYPE.URL,

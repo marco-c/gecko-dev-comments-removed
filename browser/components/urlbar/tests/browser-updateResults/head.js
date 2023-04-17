@@ -89,6 +89,87 @@ function makeSuggestedIndexResult(suggestedIndex, resultSpan = 1) {
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
+  if (count) {
+    specs.push({ count, type });
+  }
+
+  let query = "test";
+  let results = [
+    Object.assign(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        {
+          query,
+          engine: Services.search.defaultEngine.name,
+        }
+      ),
+      { heuristic: true }
+    ),
+  ];
+
+  for (let { count: specCount, type: specType } of specs) {
+    for (let i = 0; i < specCount; i++) {
+      let str = `${query} ${results.length}`;
+      switch (specType) {
+        case UrlbarUtils.RESULT_TYPE.SEARCH:
+          results.push(
+            new UrlbarResult(
+              UrlbarUtils.RESULT_TYPE.SEARCH,
+              UrlbarUtils.RESULT_SOURCE.SEARCH,
+              {
+                query,
+                suggestion: str,
+                lowerCaseSuggestion: str.toLowerCase(),
+                engine: Services.search.defaultEngine.name,
+              }
+            )
+          );
+          break;
+        case UrlbarUtils.RESULT_TYPE.URL:
+          results.push(
+            new UrlbarResult(
+              UrlbarUtils.RESULT_TYPE.URL,
+              UrlbarUtils.RESULT_SOURCE.HISTORY,
+              {
+                url: "http://example.com/" + i,
+                displayUrl: "http://example.com/" + i,
+                title: str,
+              }
+            )
+          );
+          break;
+        default:
+          throw new Error(`Unsupported makeProviderResults type: ${specType}`);
+      }
+    }
+  }
+
+  return results;
+}
+
 let gSuggestedIndexTaskIndex = 0;
 
 
@@ -171,36 +252,37 @@ function initSuggestedIndexTest() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
-  let provider = new DelayingTestProvider();
+  
+  
+  
+  let provider = new DelayingTestProvider({ priority: Infinity });
   UrlbarProvidersManager.registerProvider(provider);
   registerCleanupFunction(() => {
     UrlbarProvidersManager.unregisterProvider(provider);
   });
 
-  let maxResults = UrlbarPrefs.get("maxRichResults");
-
-  let query = "test";
-  let queryStrings = [];
-  for (let i = 0; i < maxResults; i++) {
-    queryStrings.push(`${query} ${i}`);
-  }
-
   
-  provider._results = queryStrings.slice(0, search1.otherCount).map(
-    suggestion =>
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          query,
-          suggestion,
-          lowerCaseSuggestion: suggestion.toLocaleLowerCase(),
-          engine: Services.search.defaultEngine.name,
-        }
-      )
-  );
+  
+  provider._results = makeProviderResults({
+    specs: search1.other,
+    count: search1.otherCount,
+    type: search1.otherType,
+  });
 
   
   
@@ -228,7 +310,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   provider.finishQueryPromise = Promise.resolve();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    value: query,
+    value: "test",
   });
 
   
@@ -240,8 +322,8 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   for (let [suggestedIndex, resultSpan] of search1.suggestedIndexes) {
     let index =
       suggestedIndex >= 0
-        ? Math.min(suggestedIndex, search1.viewCount - 1)
-        : search1.viewCount + suggestedIndex;
+        ? Math.min(search1.viewCount - 1, suggestedIndex)
+        : Math.max(0, search1.viewCount + suggestedIndex);
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     Assert.equal(
       result.element.row.result.suggestedIndex,
@@ -256,13 +338,11 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   }
 
   
-  provider._results = queryStrings.slice(0, search2.otherCount).map(str => {
-    let url = "http://example.com/" + str;
-    return new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      { url, title: str, displayUrl: url }
-    );
+  
+  provider._results = makeProviderResults({
+    specs: search2.other,
+    count: search2.otherCount,
+    type: search2.otherType,
   });
 
   
@@ -287,6 +367,11 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     );
   }
 
+  let rowCountDuringUpdate = duringUpdate.reduce(
+    (count, rowState) => count + rowState.count,
+    0
+  );
+
   
   
   
@@ -296,13 +381,23 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
       observer.disconnect();
       resolve();
     });
-    
-    
-    
     if (lastRowState.stale) {
+      
+      
+      
       let { children } = gURLBar.view._rows;
       observer.observe(children[children.length - 1], { attributes: true });
+    } else if (search1.viewCount == rowCountDuringUpdate) {
+      
+      
+      
+      observer.observe(gURLBar.view._rows, {
+        subtree: true,
+        attributes: true,
+        characterData: true,
+      });
     } else {
+      
       observer.observe(gURLBar.view._rows, { childList: true });
     }
   });
@@ -314,7 +409,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   );
   let queryPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    value: query,
+    value: "test",
   });
 
   
@@ -324,7 +419,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   
   Assert.equal(
     gURLBar.view._rows.children.length,
-    duringUpdate.reduce((count, rowState) => count + rowState.count, 0),
+    rowCountDuringUpdate,
     "Row count during update"
   );
   let rowIndex = 0;
@@ -403,7 +498,7 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     let realIndex =
       suggestedIndex >= 0
         ? Math.min(suggestedIndex, search2.viewCount - 1)
-        : search2.viewCount + suggestedIndex;
+        : Math.max(0, search2.viewCount + suggestedIndex);
     suggestedIndexesByRealIndex.set(realIndex, [suggestedIndex, resultSpan]);
   }
 
