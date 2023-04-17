@@ -748,11 +748,6 @@ ClientEngine.prototype = {
       desc: "Delete all client data for engine",
     },
     logout: { args: 0, importance: 0, desc: "Log out client" },
-    displayURI: {
-      args: 3,
-      importance: 1,
-      desc: "Instruct a client to display a URI",
-    },
   },
 
   
@@ -825,7 +820,6 @@ ClientEngine.prototype = {
         command => !hasDupeCommand(clearedCommands, command)
       );
       let didRemoveCommand = false;
-      let URIsToDisplay = [];
       
       for (let rawCommand of commands) {
         let shouldRemoveCommand = true; 
@@ -853,10 +847,6 @@ ClientEngine.prototype = {
           case "logout":
             this.service.logout();
             return false;
-          case "displayURI":
-            let [uri, clientId, title] = args;
-            URIsToDisplay.push({ uri, clientId, title });
-            break;
           default:
             this._log.warn("Received an unknown command: " + command);
             break;
@@ -869,10 +859,6 @@ ClientEngine.prototype = {
       }
       if (didRemoveCommand) {
         await this._tracker.addChangedID(this.localID);
-      }
-
-      if (URIsToDisplay.length) {
-        this._handleDisplayURIs(URIsToDisplay);
       }
 
       return true;
@@ -932,66 +918,6 @@ ClientEngine.prototype = {
         }
       }
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async sendURIToClientForDisplay(uri, clientId, title) {
-    this._log.trace(
-      "Sending URI to client: " + uri + " -> " + clientId + " (" + title + ")"
-    );
-    await this.sendCommand("displayURI", [uri, this.localID, title], clientId);
-
-    this._tracker.score += SCORE_INCREMENT_XLARGE;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _handleDisplayURIs(uris) {
-    uris.forEach(uri => {
-      uri.sender = {
-        id: uri.clientId,
-        name: this.getClientName(uri.clientId),
-      };
-    });
-    Svc.Obs.notify("weave:engine:clients:display-uris", uris);
   },
 
   async _removeRemoteClient(id) {
