@@ -12,11 +12,7 @@ use neqo_common::{qdebug, qinfo, Datagram};
 
 
 
-
-
-
-
-const MAX_SAVED_DATAGRAMS: usize = 32;
+const MAX_SAVED_DATAGRAMS: usize = 4;
 
 pub struct SavedDatagram {
     

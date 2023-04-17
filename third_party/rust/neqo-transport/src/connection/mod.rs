@@ -64,7 +64,6 @@ mod state;
 pub mod test_internal;
 
 use idle::IdleTimeout;
-pub use idle::LOCAL_IDLE_TIMEOUT;
 use params::PreferredAddressConfig;
 pub use params::{ConnectionParameters, ACK_RATIO_SCALE};
 use saved::SavedDatagrams;
@@ -379,7 +378,7 @@ impl Connection {
             saved_datagrams: SavedDatagrams::default(),
             crypto,
             acks: AckTracker::default(),
-            idle_timeout: IdleTimeout::default(),
+            idle_timeout: IdleTimeout::new(conn_params.get_idle_timeout()),
             streams: Streams::new(tphandler, role, events.clone()),
             connection_ids: ConnectionIdStore::default(),
             state_signaling: StateSignaling::Idle,
@@ -897,8 +896,9 @@ impl Connection {
             let rtt = path.rtt();
             let pto = rtt.pto(PacketNumberSpace::ApplicationData);
 
-            let idle_time = self.idle_timeout.expiry(now, pto);
-            qtrace!([self], "Idle timer {:?}", idle_time);
+            let keep_alive = self.streams.need_keep_alive();
+            let idle_time = self.idle_timeout.expiry(now, pto, keep_alive);
+            qtrace!([self], "Idle/keepalive timer {:?}", idle_time);
             delays.push(idle_time);
 
             if let Some(lr_time) = self.loss_recovery.next_timeout(rtt) {
@@ -1860,6 +1860,53 @@ impl Connection {
     }
 
     
+    fn maybe_probe(
+        &mut self,
+        path: &PathRef,
+        force_probe: bool,
+        builder: &mut PacketBuilder,
+        ack_end: usize,
+        tokens: &mut Vec<RecoveryToken>,
+        now: Instant,
+    ) -> bool {
+        
+        
+        if builder.len() > ack_end {
+            return true;
+        }
+        let probe = if force_probe {
+            
+            true
+        } else {
+            let pto = path.borrow().rtt().pto(PacketNumberSpace::ApplicationData);
+            if !builder.packet_empty() {
+                
+                
+                self.loss_recovery.should_probe(pto, now)
+            } else if self.streams.need_keep_alive() {
+                
+                
+                let keep_alive = self.idle_timeout.send_keep_alive(now, pto);
+                if keep_alive {
+                    tokens.push(RecoveryToken::KeepAlive);
+                }
+                keep_alive
+            } else {
+                false
+            }
+        };
+        if probe {
+            
+            debug_assert_ne!(builder.remaining(), 0);
+            builder.encode_varint(crate::frame::FRAME_TYPE_PING);
+            let stats = &mut self.stats.borrow_mut().frame_tx;
+            stats.ping += 1;
+            stats.all += 1;
+        }
+        probe
+    }
+
+    
     
     
     fn write_frames(
@@ -1911,40 +1958,17 @@ impl Connection {
             }
         }
 
-        let stats = &mut self.stats.borrow_mut().frame_tx;
         
+        let force_probe = profile.should_probe(space);
+        let ack_eliciting = self.maybe_probe(path, force_probe, builder, ack_end, &mut tokens, now);
         
-        if builder.len() == ack_end {
-            let probe = if profile.should_probe(space) {
-                
-                true
-            } else if !builder.packet_empty() {
-                
-                
-                let pto = path.borrow().rtt().pto(PacketNumberSpace::ApplicationData);
-                self.loss_recovery.should_probe(pto, now)
-            } else {
-                false
-            };
-            if probe {
-                
-                debug_assert_ne!(builder.remaining(), 0);
-                builder.encode_varint(crate::frame::FRAME_TYPE_PING);
-                if builder.len() > builder.limit() {
-                    return Err(Error::InternalError(11));
-                }
-                stats.ping += 1;
-                stats.all += 1;
-            }
-        }
-        
-        let ack_eliciting = builder.len() > ack_end;
         debug_assert!(primary || ack_eliciting);
 
         
         
         
         
+        let stats = &mut self.stats.borrow_mut().frame_tx;
         let padded = if ack_eliciting && full_mtu && builder.pad() {
             stats.padding += 1;
             stats.all += 1;
@@ -2185,9 +2209,11 @@ impl Connection {
 
             let max_ad = Duration::from_millis(remote.get_integer(tparams::MAX_ACK_DELAY));
             let min_ad = if remote.has_value(tparams::MIN_ACK_DELAY) {
-                Some(Duration::from_micros(
-                    remote.get_integer(tparams::MIN_ACK_DELAY),
-                ))
+                let min_ad = Duration::from_micros(remote.get_integer(tparams::MIN_ACK_DELAY));
+                if min_ad > max_ad {
+                    return Err(Error::TransportParameterError);
+                }
+                Some(min_ad)
             } else {
                 None
             };
@@ -2494,6 +2520,7 @@ impl Connection {
                     RecoveryToken::NewConnectionId(ncid) => self.cid_manager.lost(ncid),
                     RecoveryToken::RetireConnectionId(seqno) => self.paths.lost_retire_cid(*seqno),
                     RecoveryToken::AckFrequency(rate) => self.paths.lost_ack_frequency(rate),
+                    RecoveryToken::KeepAlive => self.idle_timeout.lost_keep_alive(),
                     _ => unreachable!("All other tokens are for streams"),
                 }
             }
@@ -2760,6 +2787,17 @@ impl Connection {
 
         stream.set_stream_max_data(max_data);
         Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn stream_keep_alive(&mut self, stream_id: u64, keep: bool) -> Res<()> {
+        self.streams.keep_alive(stream_id.into(), keep)
     }
 }
 
