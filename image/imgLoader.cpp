@@ -37,6 +37,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
+#include "nsHttpChannel.h"
 #include "nsIApplicationCache.h"
 #include "nsIApplicationCacheContainer.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
@@ -2709,7 +2710,21 @@ imgLoader::GetMIMETypeFromContent(nsIRequest* aRequest,
       return NS_ERROR_NOT_AVAILABLE;
     }
   }
-  return GetMimeTypeFromContent((const char*)aContents, aLength, aContentType);
+
+  nsresult rv =
+      GetMimeTypeFromContent((const char*)aContents, aLength, aContentType);
+  if (NS_SUCCEEDED(rv) && channel && XRE_IsParentProcess()) {
+    if (RefPtr<mozilla::net::nsHttpChannel> httpChannel =
+            do_QueryObject(channel)) {
+      
+      
+      
+      httpChannel->DisableIsOpaqueResponseAllowedAfterSniffCheck(
+          mozilla::net::nsHttpChannel::SnifferType::Image);
+    }
+  }
+
+  return rv;
 }
 
 

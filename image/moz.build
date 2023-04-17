@@ -120,6 +120,8 @@ LOCAL_INCLUDES += [
     
     "/netwerk/base",
     
+    "/netwerk/protocol/http",
+    
     "/xpcom/threads",
 ]
 
