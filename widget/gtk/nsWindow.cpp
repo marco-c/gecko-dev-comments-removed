@@ -2718,41 +2718,33 @@ guint32 nsWindow::GetLastUserInputTime() {
 
 
 
-void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
-  
-  
 
+
+
+void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   LOG("nsWindow::SetFocus Raise %d\n", aRaise == Raise::Yes);
 
   
   
-  GtkWidget* owningWidget = GTK_WIDGET(mContainer);
-  if (!owningWidget) {
-    return;
-  }
+  GtkWidget* toplevelWidget = gtk_widget_get_toplevel(GTK_WIDGET(mContainer));
 
-  LOG("  Gtk widget (owningWidget) [%p]\n", owningWidget);
-
-  
-  
-  GtkWidget* toplevelWidget = gtk_widget_get_toplevel(owningWidget);
-
+  LOG("  mContainer [%p]\n", GTK_WIDGET(mContainer));
   LOG("  Toplevel widget [%p]\n", toplevelWidget);
 
+  
+  
   if (gRaiseWindows && aRaise == Raise::Yes && toplevelWidget &&
-      !gtk_widget_has_focus(owningWidget) &&
       !gtk_widget_has_focus(toplevelWidget)) {
-    GtkWidget* top_window = GetToplevelWidget();
-    if (top_window && (gtk_widget_get_visible(top_window))) {
-      gdk_window_show_unraised(gtk_widget_get_window(top_window));
+    if (gtk_widget_get_visible(mShell)) {
+      gdk_window_show_unraised(gtk_widget_get_window(mShell));
       
-      SetUrgencyHint(top_window, false);
+      SetUrgencyHint(mShell, false);
     }
   }
 
-  RefPtr<nsWindow> owningWindow = get_window_for_gtk_widget(owningWidget);
-  if (!owningWindow) {
-    LOG("  missing nsWindow, quit\n");
+  RefPtr<nsWindow> toplevelWindow = get_window_for_gtk_widget(toplevelWidget);
+  if (!toplevelWindow) {
+    LOG("  missing toplevel nsWindow, quit\n");
     return;
   }
 
@@ -2762,17 +2754,17 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
     
     
     
-    if (gRaiseWindows && owningWindow->mIsShown && owningWindow->mShell &&
-        !gtk_window_is_active(GTK_WINDOW(owningWindow->mShell))) {
+    if (gRaiseWindows && toplevelWindow->mIsShown && toplevelWindow->mShell &&
+        !gtk_window_is_active(GTK_WINDOW(toplevelWindow->mShell))) {
       if (GdkIsWaylandDisplay() &&
           Preferences::GetBool("widget.wayland.test-workarounds.enabled",
                                false)) {
         
         
-        owningWindow->NativeShow(false);
+        toplevelWindow->NativeShow(false);
         NS_DispatchToMainThread(NS_NewRunnableFunction(
             "nsWindow::NativeShow()",
-            [self = RefPtr<nsWindow>(owningWindow)]() -> void {
+            [self = RefPtr<nsWindow>(toplevelWindow)]() -> void {
               self->NativeShow(true);
             }));
         return;
@@ -2783,10 +2775,9 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
       nsGTKToolkit* GTKToolkit = nsGTKToolkit::GetToolkit();
       if (GTKToolkit) timestamp = GTKToolkit->GetFocusTimestamp();
 
-      LOG("  requesting toplevel activation [%p]\n", (void*)this);
-      NS_ASSERTION(owningWindow->mWindowType != eWindowType_popup || mParent,
-                   "Presenting an override-redirect window");
-      gtk_window_present_with_time(GTK_WINDOW(owningWindow->mShell), timestamp);
+      LOG("  requesting toplevel activation [%p]\n", (void*)toplevelWindow);
+      gtk_window_present_with_time(GTK_WINDOW(toplevelWindow->mShell),
+                                   timestamp);
 
       if (GTKToolkit) GTKToolkit->SetFocusTimestamp(0);
     }
@@ -2800,13 +2791,14 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   
   
   
-  if (!gtk_widget_is_focus(owningWidget)) {
+  
+  if (!gtk_widget_is_focus(GTK_WIDGET(mContainer))) {
     
     
     
     
     gBlockActivateEvent = true;
-    gtk_widget_grab_focus(owningWidget);
+    gtk_widget_grab_focus(GTK_WIDGET(mContainer));
     gBlockActivateEvent = false;
   }
 
