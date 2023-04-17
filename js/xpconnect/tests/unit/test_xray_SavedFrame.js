@@ -1,10 +1,11 @@
 
 
 
+const {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
 const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(this);
 
-const lowP = Cc["@mozilla.org/nullprincipal;1"].createInstance(Ci.nsIPrincipal);
+const lowP = Services.scriptSecurityManager.createNullPrincipal({});
 const midP = [lowP, "http://other.com"];
 const highP = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
 
