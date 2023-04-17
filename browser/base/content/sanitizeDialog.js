@@ -30,7 +30,7 @@ var gSanitizePromptDialog = {
     return document.getElementById("sanitizeEverythingWarningBox");
   },
 
-  init() {
+  async init() {
     
     this._inited = true;
     this._dialog = document.querySelector("dialog");
@@ -53,13 +53,9 @@ var gSanitizePromptDialog = {
       );
       let warningDesc = document.getElementById("sanitizeEverythingWarning");
       
-      document.mozSubdialogReady = document.l10n
-        .translateFragment(warningDesc)
-        .then(() => {
-          
-          let rootWin = window.browsingContext.topChromeWindow;
-          return rootWin.promiseDocumentFlushed(() => {});
-        });
+      await document.l10n.translateFragment(warningDesc);
+      let rootWin = window.browsingContext.topChromeWindow;
+      await rootWin.promiseDocumentFlushed(() => {});
     } else {
       this.warningBox.hidden = true;
     }
@@ -221,3 +217,20 @@ var gSanitizePromptDialog = {
     }
   },
 };
+
+
+
+
+
+
+document.mozSubdialogReady = new Promise(resolve => {
+  window.addEventListener(
+    "load",
+    function() {
+      gSanitizePromptDialog.init().then(resolve);
+    },
+    {
+      once: true,
+    }
+  );
+});
