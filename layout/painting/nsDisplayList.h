@@ -1787,9 +1787,12 @@ class nsDisplayListBuilder {
 
   
   
+  
+  
   class Linkifier {
    public:
-    Linkifier(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
+    Linkifier(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+              nsDisplayList* aList);
 
     ~Linkifier() {
       if (mBuilderToReset) {
@@ -1797,11 +1800,11 @@ class nsDisplayListBuilder {
       }
     }
 
-    void MaybeAppendLink(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                         nsDisplayList* aList);
+    void MaybeAppendLink(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
 
    private:
     nsDisplayListBuilder* mBuilderToReset = nullptr;
+    nsDisplayList* mList;
   };
 
  private:
@@ -1984,6 +1987,7 @@ class nsDisplayListBuilder {
   const ActiveScrolledRoot* mFilterASR;
   std::unordered_set<nsIScrollableFrame*> mScrollFramesToNotify;
   nsCString mLinkSpec;  
+  nsTHashSet<nsCString> mDestinations;  
   bool mContainsBlendMode;
   bool mIsBuildingScrollbar;
   bool mCurrentScrollbarWillHaveLayer;
@@ -7305,6 +7309,26 @@ class nsDisplayLink : public nsPaintedDisplayItem {
  private:
   nsCString mLinkSpec;
   nsRect mRect;
+};
+
+
+
+
+class nsDisplayDestination : public nsPaintedDisplayItem {
+ public:
+  nsDisplayDestination(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                       const char* aDestinationName, const nsPoint& aPosition)
+      : nsPaintedDisplayItem(aBuilder, aFrame),
+        mDestinationName(aDestinationName),
+        mPosition(aPosition) {}
+
+  NS_DISPLAY_DECL_NAME("Destination", TYPE_DESTINATION)
+
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+
+ private:
+  nsCString mDestinationName;
+  nsPoint mPosition;
 };
 
 class FlattenedDisplayListIterator {

@@ -552,13 +552,9 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
 }
 
 nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
-                                           nsIFrame* aFrame) {
-  
-  
-  if (!aBuilder->mLinkSpec.IsEmpty()) {
-    return;
-  }
-
+                                           nsIFrame* aFrame,
+                                           nsDisplayList* aList)
+    : mList(aList) {
   
   
   Element* elem = Element::FromNodeOrNull(aFrame->GetContent());
@@ -567,13 +563,64 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
   }
 
   
-  nsCOMPtr<nsIURI> linkURI;
-  if (!elem->IsLink(getter_AddRefs(linkURI))) {
+  
+  auto maybeGenerateDest = [&](const nsAtom* aAttr) {
+    nsAutoString attrValue;
+    elem->GetAttr(aAttr, attrValue);
+    if (!attrValue.IsEmpty()) {
+      NS_ConvertUTF16toUTF8 dest(attrValue);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aBuilder->mDestinations.EnsureInserted(dest)) {
+        auto* destination = MakeDisplayItem<nsDisplayDestination>(
+            aBuilder, aFrame, dest.get(), aFrame->GetRect().TopLeft());
+        mList->AppendToTop(destination);
+      }
+    }
+  };
+  if (elem->HasID()) {
+    maybeGenerateDest(nsGkAtoms::id);
+  }
+  if (elem->HasName()) {
+    maybeGenerateDest(nsGkAtoms::name);
+  }
+
+  
+  
+  if (!aBuilder->mLinkSpec.IsEmpty()) {
     return;
   }
-  if (NS_FAILED(linkURI->GetSpec(aBuilder->mLinkSpec)) ||
-      aBuilder->mLinkSpec.IsEmpty()) {
+
+  
+  nsCOMPtr<nsIURI> uri;
+  if (!elem->IsLink(getter_AddRefs(uri))) {
     return;
+  }
+
+  
+  bool hasRef, eqExRef;
+  nsIURI* docURI;
+  if (NS_SUCCEEDED(uri->GetHasRef(&hasRef)) && hasRef &&
+      (docURI = aFrame->PresContext()->Document()->GetDocumentURI()) &&
+      NS_SUCCEEDED(uri->EqualsExceptRef(docURI, &eqExRef)) && eqExRef) {
+    if (NS_FAILED(uri->GetRef(aBuilder->mLinkSpec)) ||
+        aBuilder->mLinkSpec.IsEmpty()) {
+      return;
+    }
+    
+    aBuilder->mLinkSpec.Insert('#', 0);
+  } else {
+    if (NS_FAILED(uri->GetSpec(aBuilder->mLinkSpec)) ||
+        aBuilder->mLinkSpec.IsEmpty()) {
+      return;
+    }
   }
 
   
@@ -581,14 +628,14 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
 }
 
 void nsDisplayListBuilder::Linkifier::MaybeAppendLink(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList) {
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
   
   
   
   if (!aBuilder->mLinkSpec.IsEmpty()) {
     auto* link = MakeDisplayItem<nsDisplayLink>(
         aBuilder, aFrame, aBuilder->mLinkSpec.get(), aFrame->GetRect());
-    aList->AppendToTop(link);
+    mList->AppendToTop(link);
   }
 }
 
@@ -8323,7 +8370,9 @@ void nsDisplayTransform::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
   }
 
   gfxContextMatrixAutoSaveRestore saveMatrix(aCtx);
-  Matrix4x4 trans = ShouldSkipTransform(aBuilder) ? Matrix4x4() : GetAccumulatedPreserved3DTransform(aBuilder);
+  Matrix4x4 trans = ShouldSkipTransform(aBuilder)
+                        ? Matrix4x4()
+                        : GetAccumulatedPreserved3DTransform(aBuilder);
   if (!IsFrameVisible(mFrame, trans)) {
     return;
   }
@@ -10345,6 +10394,14 @@ void nsDisplayLink::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
   auto appPerDev = mFrame->PresContext()->AppUnitsPerDevPixel();
   aCtx->GetDrawTarget()->Link(mLinkSpec.get(),
                               NSRectToRect(GetPaintRect(), appPerDev));
+}
+
+void nsDisplayDestination::Paint(nsDisplayListBuilder* aBuilder,
+                                 gfxContext* aCtx) {
+  auto appPerDev = mFrame->PresContext()->AppUnitsPerDevPixel();
+  aCtx->GetDrawTarget()->Destination(
+      mDestinationName.get(),
+      NSPointToPoint(GetPaintRect().TopLeft(), appPerDev));
 }
 
 void nsDisplayListCollection::SerializeWithCorrectZOrder(
