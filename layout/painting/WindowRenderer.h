@@ -177,6 +177,12 @@ class WindowRenderer : public FrameRecorder {
   
 
 
+
+  virtual int32_t GetMaxTextureSize() const { return INT32_MAX; }
+
+  
+
+
   virtual void GetBackendName(nsAString& aName) = 0;
 
   virtual void GetFrameUniformity(layers::FrameUniformityData* aOutData) {}

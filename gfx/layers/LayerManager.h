@@ -409,12 +409,6 @@ class LayerManager : public WindowRenderer {
 
 
 
-  virtual int32_t GetMaxTextureSize() const = 0;
-
-  
-
-
-
   void SetUserData(void* aKey, LayerUserData* aData) {
     mUserData.Add(static_cast<gfx::UserDataKey*>(aKey), aData,
                   LayerUserDataDestroy);

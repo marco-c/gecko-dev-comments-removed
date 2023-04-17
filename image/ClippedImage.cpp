@@ -299,7 +299,7 @@ ClippedImage::IsImageContainerAvailable(LayerManager* aManager,
 }
 
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
-ClippedImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags) {
+ClippedImage::GetImageContainer(WindowRenderer* aRenderer, uint32_t aFlags) {
   
   
   
@@ -307,7 +307,7 @@ ClippedImage::GetImageContainer(LayerManager* aManager, uint32_t aFlags) {
   
 
   if (!ShouldClip()) {
-    return InnerImage()->GetImageContainer(aManager, aFlags);
+    return InnerImage()->GetImageContainer(aRenderer, aFlags);
   }
 
   return nullptr;
@@ -325,7 +325,7 @@ ClippedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
-ClippedImage::GetImageContainerAtSize(layers::LayerManager* aManager,
+ClippedImage::GetImageContainerAtSize(WindowRenderer* aRenderer,
                                       const gfx::IntSize& aSize,
                                       const Maybe<SVGImageContext>& aSVGContext,
                                       const Maybe<ImageIntRegion>& aRegion,
@@ -339,7 +339,7 @@ ClippedImage::GetImageContainerAtSize(layers::LayerManager* aManager,
 
   if (!ShouldClip()) {
     return InnerImage()->GetImageContainerAtSize(
-        aManager, aSize, aSVGContext, aRegion, aFlags, aOutContainer);
+        aRenderer, aSize, aSVGContext, aRegion, aFlags, aOutContainer);
   }
 
   return ImgDrawResult::NOT_SUPPORTED;
