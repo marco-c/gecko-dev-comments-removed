@@ -32,6 +32,7 @@
 #include "base/logging.h"
 #include "base/string_util.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "prenv.h"
 #include "GeckoProfiler.h"
@@ -355,49 +356,53 @@ bool SharedMemory::CreateInternal(size_t size, bool freezeable) {
     return false;
   }
 
+  mozilla::Maybe<int> fallocateError;
 #  if defined(HAVE_POSIX_FALLOCATE)
   
   
   
-  int rv;
   {
+    int rv;
     
     
     
     
-    AUTO_PROFILER_THREAD_SLEEP;
-    rv =
-        HANDLE_RV_EINTR(posix_fallocate(fd.get(), 0, static_cast<off_t>(size)));
-  }
-  if (rv != 0) {
-    if (rv == EOPNOTSUPP || rv == EINVAL || rv == ENODEV) {
-      
-      
-      
-      
-      int fallocate_errno = rv;
-      rv = HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size)));
-      if (rv != 0) {
-        CHROMIUM_LOG(WARNING) << "fallocate failed to set shm size: "
-                              << strerror(fallocate_errno);
-        CHROMIUM_LOG(WARNING)
-            << "ftruncate failed to set shm size: " << strerror(errno);
-        return false;
-      }
-    } else {
+    {
+      AUTO_PROFILER_THREAD_SLEEP;
+
+      rv = HANDLE_RV_EINTR(
+          posix_fallocate(fd.get(), 0, static_cast<off_t>(size)));
+    }
+
+    
+    
+    
+    
+    if (rv != 0 && rv != EOPNOTSUPP && rv != EINVAL && rv != ENODEV) {
       CHROMIUM_LOG(WARNING)
           << "fallocate failed to set shm size: " << strerror(rv);
       return false;
     }
-  }
-#  else
-  int rv = HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size)));
-  if (rv != 0) {
-    CHROMIUM_LOG(WARNING) << "ftruncate failed to set shm size: "
-                          << strerror(errno);
-    return false;
+    fallocateError = mozilla::Some(rv);
   }
 #  endif
+
+  
+  
+  
+  if (fallocateError != mozilla::Some(0)) {
+    int rv = HANDLE_EINTR(ftruncate(fd.get(), static_cast<off_t>(size)));
+    if (rv != 0) {
+      int ftruncate_errno = errno;
+      if (fallocateError) {
+        CHROMIUM_LOG(WARNING) << "fallocate failed to set shm size: "
+                              << strerror(*fallocateError);
+      }
+      CHROMIUM_LOG(WARNING)
+          << "ftruncate failed to set shm size: " << strerror(ftruncate_errno);
+      return false;
+    }
+  }
 
   mapped_file_ = std::move(fd);
   frozen_file_ = std::move(frozen_fd);
