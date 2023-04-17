@@ -155,7 +155,7 @@ ppc_aes_gcmInitCounter(ppc_AES_GCMContext *gcm,
     
     gcm->CTR[14] += !(++gcm->CTR[15]);
     gcm->CTR[13] += !(gcm->CTR[15]) && !(gcm->CTR[14]);
-    gcm->CTR[12] += !(gcm->CTR[15]) && !(gcm->CTR[13]) && !(gcm->CTR[12]);
+    gcm->CTR[12] += !(gcm->CTR[15]) && !(gcm->CTR[14]) && !(gcm->CTR[13]);
 
     
 

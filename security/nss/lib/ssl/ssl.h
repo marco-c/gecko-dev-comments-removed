@@ -404,6 +404,13 @@ SSL_IMPORT SECStatus SSL_SetNextProtoCallback(PRFileDesc *fd,
 
 
 
+
+
+
+
+
+
+
 SSL_IMPORT SECStatus SSL_SetNextProtoNego(PRFileDesc *fd,
                                           const unsigned char *data,
                                           unsigned int length);
