@@ -34,12 +34,6 @@ const OTHER_URI = `
 ignoreGetGridsPromiseRejections();
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { gridInspector, inspector } = await openLayoutView();
   const { document: doc } = gridInspector;

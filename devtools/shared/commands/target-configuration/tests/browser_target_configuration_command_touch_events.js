@@ -9,12 +9,6 @@ const TEST_URI = URL_ROOT_COM_SSL + TEST_DOCUMENT;
 
 add_task(async function() {
   
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
-  
   await pushPref("ui.click_hold_context_menus", false);
   await pushPref("apz.allow_double_tap_zooming", false);
   

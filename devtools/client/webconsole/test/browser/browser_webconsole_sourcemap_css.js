@@ -26,12 +26,6 @@ const PAGE_URL = `data:text/html,
 </html>`;
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   await pushPref("devtools.source-map.client-service.enabled", true);
   await pushPref("devtools.webconsole.filter.css", true);
 

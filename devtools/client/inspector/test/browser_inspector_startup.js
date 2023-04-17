@@ -34,12 +34,6 @@ const TEST_URL =
   "</html>";
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const { inspector, tab } = await openInspectorForURL("about:blank");
 
   const domContentLoaded = waitForLinkedBrowserEvent(tab, "DOMContentLoaded");

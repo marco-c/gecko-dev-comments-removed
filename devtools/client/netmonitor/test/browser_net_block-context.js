@@ -8,12 +8,6 @@
 
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const { tab, monitor } = await initNetMonitor(SIMPLE_URL, {
     requestCount: 1,
   });

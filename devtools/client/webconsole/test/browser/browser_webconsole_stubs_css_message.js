@@ -17,12 +17,6 @@ const TEST_URI =
 const STUB_FILE = "cssMessage.js";
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const isStubsUpdate = env.get(STUBS_UPDATE_ENV) == "true";
   info(`${isStubsUpdate ? "Update" : "Check"} ${STUB_FILE}`);
 

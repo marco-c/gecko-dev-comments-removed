@@ -7,12 +7,6 @@
 
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const dbg = await initDebugger("doc-reload-link.html", "doc-reload-link.html");
   const {
     selectors: { getSelectedSource, getIsPaused, getCurrentThread },

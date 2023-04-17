@@ -12,12 +12,6 @@ const SIMPLE_URL = URL_ROOT + "resources/service-workers/simple.html";
 const OTHER_SCOPE_URL = URL_ROOT + "resources/service-workers/scope-page.html";
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   await enableApplicationPanel();
 
   const { panel, commands, tab } = await openNewTabAndApplicationPanel(

@@ -5,12 +5,6 @@
 
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const dbg = await initDebugger("doc-scripts.html");
 
   const onNavigated = navigate(dbg, "doc-on-load.html");

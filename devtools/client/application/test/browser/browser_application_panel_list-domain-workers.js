@@ -16,12 +16,6 @@ const EMPTY_URL = (URL_ROOT + "resources/service-workers/empty.html").replace(
 );
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   await enableApplicationPanel();
 
   const { panel, commands, tab } = await openNewTabAndApplicationPanel(

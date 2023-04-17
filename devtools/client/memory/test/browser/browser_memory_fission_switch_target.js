@@ -13,12 +13,6 @@ const EXPECTED_ELEMENT_IN_PARENT_PROCESS = "button";
 const EXPECTED_ELEMENT_IN_CONTENT_PROCESS = "section";
 
 add_task(async () => {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   info("Open the memory panel with empty page");
   const tab = await addTab();
   const { panel } = await openMemoryPanel(tab);

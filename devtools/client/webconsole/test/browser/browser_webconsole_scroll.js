@@ -18,12 +18,6 @@ const TEST_URI = `data:text/html;charset=utf-8,<p>Web Console test for  scroll.<
   </script>
 `;
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const hud = await openNewTabAndConsole(TEST_URI);
   const { ui } = hud;
   const outputContainer = ui.outputNode.querySelector(".webconsole-output");

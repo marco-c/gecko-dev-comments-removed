@@ -15,12 +15,6 @@
 
 add_task(async function() {
   
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
-  
   const tab = await addTab("data:text/html,Root Node tests");
 
   const { client, resourceCommand, targetCommand } = await initResourceCommand(
@@ -75,12 +69,6 @@ add_task(async function() {
 
 
 add_task(async function testRootNodeFrontIsCorrect() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const tab = await addTab("data:text/html,<div id=div1>");
 
   const { client, resourceCommand, targetCommand } = await initResourceCommand(

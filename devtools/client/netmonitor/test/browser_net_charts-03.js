@@ -8,12 +8,6 @@
 
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
   const { monitor } = await initNetMonitor(SIMPLE_URL, { requestCount: 1 });
