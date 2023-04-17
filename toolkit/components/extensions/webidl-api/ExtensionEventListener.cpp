@@ -4,6 +4,7 @@
 
 
 #include "ExtensionEventListener.h"
+#include "ExtensionPort.h"
 
 #include "mozilla/dom/FunctionBinding.h"
 #include "nsJSPrincipals.h"   
@@ -65,11 +66,47 @@ ExtensionEventListener::SerializeCallArguments(const nsTArray<JS::Value>& aArgs,
 }
 
 NS_IMETHODIMP ExtensionEventListener::CallListener(
-    const nsTArray<JS::Value>& aArgs, JSContext* aCx,
-    dom::Promise** aPromiseResult) {
+    const nsTArray<JS::Value>& aArgs, ListenerCallOptions* aCallOptions,
+    JSContext* aCx, dom::Promise** aPromiseResult) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG_POINTER(aPromiseResult);
 
+  
+  APIObjectType apiObjectType = APIObjectType::NONE;
+  JS::Rooted<JS::Value> apiObjectDescriptor(aCx);
+  if (aCallOptions) {
+    aCallOptions->GetApiObjectType(&apiObjectType);
+    aCallOptions->GetApiObjectDescriptor(&apiObjectDescriptor);
+
+    
+    
+    
+    
+    
+    switch (apiObjectType) {
+      case APIObjectType::NONE:
+        if (NS_WARN_IF(!apiObjectDescriptor.isNullOrUndefined())) {
+          JS_ReportErrorASCII(
+              aCx,
+              "Unexpected non-null apiObjectDescriptor on apiObjectType=NONE");
+          return NS_ERROR_UNEXPECTED;
+        }
+        break;
+      case APIObjectType::RUNTIME_PORT:
+        if (NS_WARN_IF(apiObjectDescriptor.isNullOrUndefined())) {
+          JS_ReportErrorASCII(aCx,
+                              "Unexpected null apiObjectDescriptor on "
+                              "apiObjectType=RUNTIME_PORT");
+          return NS_ERROR_UNEXPECTED;
+        }
+        break;
+      default:
+        MOZ_CRASH("Unexpected APIObjectType");
+        return NS_ERROR_UNEXPECTED;
+    }
+  }
+
+  
   IgnoredErrorResult rv;
   RefPtr<dom::Promise> retPromise;
 
@@ -82,21 +119,38 @@ NS_IMETHODIMP ExtensionEventListener::CallListener(
     return rv.StealNSResult();
   }
 
+  
+  dom::Sequence<JS::Value> args;
+  if (!args.AppendElements(aArgs, fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  
+
   MutexAutoLock lock(mMutex);
 
   if (NS_WARN_IF(!mWorkerRef)) {
     return NS_ERROR_ABORT;
   }
 
+  if (apiObjectType != APIObjectType::NONE) {
+    
+    
+    
+    if (!args.InsertElementAt(0, std::move(apiObjectDescriptor), fallible)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+  }
+
   UniquePtr<dom::StructuredCloneHolder> argsHolder =
-      SerializeCallArguments(aArgs, aCx, rv);
+      SerializeCallArguments(args, aCx, rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
 
   RefPtr<ExtensionListenerCallWorkerRunnable> runnable =
       new ExtensionListenerCallWorkerRunnable(this, std::move(argsHolder),
-                                              retPromise);
+                                              aCallOptions, retPromise);
   runnable->Dispatch();
   retPromise.forget(aPromiseResult);
 
@@ -176,6 +230,43 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     return true;
   }
 
+  ExtensionListenerCallPromiseResultHandler::Create(
+      retPromise, this, new dom::ThreadSafeWorkerRef(workerRef));
+
+  
+  
+  
+  
+  if (mAPIObjectType != APIObjectType::NONE) {
+    IgnoredErrorResult rv;
+
+    
+    
+    
+    MOZ_ASSERT(!argsSequence.IsEmpty());
+
+    JS::Rooted<JS::Value> apiObjectDescriptor(aCx, argsSequence.ElementAt(0));
+    JS::Rooted<JS::Value> apiObjectValue(aCx);
+
+    
+    
+    
+    MOZ_ASSERT(mAPIObjectType == APIObjectType::RUNTIME_PORT);
+    RefPtr<ExtensionPort> port =
+        ExtensionPort::Create(global, apiObjectDescriptor, rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      retPromise->MaybeReject(rv.StealNSResult());
+      return true;
+    }
+
+    if (NS_WARN_IF(!dom::ToJSValue(aCx, port, &apiObjectValue))) {
+      retPromise->MaybeReject(NS_ERROR_UNEXPECTED);
+      return true;
+    }
+
+    argsSequence.ReplaceElementAt(0, apiObjectValue);
+  }
+
   
   dom::AutoEntryScript aes(global, "WebExtensionAPIEvent");
   JS::Rooted<JS::Value> retval(aCx);
@@ -195,8 +286,6 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     retPromise->MaybeResolve(retval);
   }
 
-  ExtensionListenerCallPromiseResultHandler::Create(
-      retPromise, this, new dom::ThreadSafeWorkerRef(workerRef));
   return true;
 }
 
