@@ -79,6 +79,9 @@ class VideoCaptureImpl : public VideoCaptureModule {
   VideoCaptureImpl();
   ~VideoCaptureImpl() override;
 
+  
+  int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
+
   char* _deviceUniqueId;  
   Mutex api_lock_;
   VideoCaptureCapability _requestedCapability;  
@@ -87,7 +90,6 @@ class VideoCaptureImpl : public VideoCaptureModule {
  private:
   void UpdateFrameCount();
   uint32_t CalculateFrameRate(int64_t now_ns);
-  int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
   
   int64_t _lastProcessTimeNanos;
