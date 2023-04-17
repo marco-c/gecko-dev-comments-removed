@@ -42,11 +42,11 @@ class ArrayObject : public NativeObject {
   }
 
   
-  static inline ArrayObject* createArray(JSContext* cx, gc::AllocKind kind,
-                                         gc::InitialHeap heap,
-                                         HandleShape shape, uint32_t length,
-                                         AutoSetNewObjectMetadata& metadata,
-                                         gc::AllocSite* site = nullptr);
+  static inline ArrayObject* create(JSContext* cx, gc::AllocKind kind,
+                                    gc::InitialHeap heap, HandleShape shape,
+                                    uint32_t length,
+                                    AutoSetNewObjectMetadata& metadata,
+                                    gc::AllocSite* site = nullptr);
 };
 
 }  
