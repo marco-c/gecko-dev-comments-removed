@@ -56,14 +56,6 @@ class CompositableForwarder : public KnowsCompositor {
 
 
 
-  virtual void UseTiledLayerBuffer(
-      CompositableClient* aCompositable,
-      const SurfaceDescriptorTiles& aTiledDescriptor) = 0;
-
-  
-
-
-
   virtual void UpdateTextureRegion(CompositableClient* aCompositable,
                                    const ThebesBufferData& aThebesBufferData,
                                    const nsIntRegion& aUpdatedRegion) = 0;

@@ -29,7 +29,6 @@
 namespace mozilla {
 namespace layers {
 
-class ClientTiledLayerBuffer;
 class Compositor;
 
 
