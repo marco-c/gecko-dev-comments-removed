@@ -58,18 +58,6 @@ static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
 
 static const uint32_t kCCPurpleLimit = 200;
 
-
-enum class GCRunnerAction {
-  MajorGC,  
-  GCSlice,  
-  None
-};
-
-struct GCRunnerStep {
-  GCRunnerAction mAction;
-  JS::GCReason mReason;
-};
-
 enum class CCRunnerAction {
   None,
   ForgetSkippable,
@@ -141,21 +129,6 @@ class CCGCScheduler {
 
   void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
 
-  void SetWantMajorGC(JS::GCReason aReason) {
-    if (mMajorGCReason == JS::GCReason::NO_REASON) {
-      
-      
-      
-      
-      mMajorGCReason = aReason;
-    }
-
-    
-    
-    if (aReason == JS::GCReason::DOM_WINDOW_UTILS) {
-      SetNeedsFullGC();
-    }
-  }
   
   
   void EnsureCCThenGC() {
@@ -314,8 +287,6 @@ class CCGCScheduler {
 
   void DeactivateCCRunner() { mCCRunnerState = CCRunnerState::Inactive; }
 
-  inline GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline);
-
   inline CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline);
 
   
@@ -354,8 +325,6 @@ class CCGCScheduler {
   bool mNeedsFullGC = true;
   bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
-
-  JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
@@ -641,20 +610,6 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline) {
     default:
       MOZ_CRASH("Unexpected CCRunner state");
   };
-}
-
-GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) {
-  if (InIncrementalGC()) {
-    return {GCRunnerAction::GCSlice, JS::GCReason::INTER_SLICE_GC};
-  }
-
-  if (mMajorGCReason != JS::GCReason::NO_REASON) {
-    GCRunnerStep step{GCRunnerAction::MajorGC, mMajorGCReason};
-    mMajorGCReason = JS::GCReason::NO_REASON;
-    return step;
-  }
-
-  return {GCRunnerAction::None, JS::GCReason::NO_REASON};
 }
 
 inline js::SliceBudget CCGCScheduler::ComputeForgetSkippableBudget(
