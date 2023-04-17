@@ -143,11 +143,9 @@ host_fetches = {
         },
         "ImageMagick": {
             "type": "static-url",
+            "url": "https://download.imagemagick.org/ImageMagick/download/binaries/ImageMagick-7.1.0-4-portable-Q16-x64.zip",  
             
-            
-            "url": "https://ftp.icm.edu.pl/packages/ImageMagick/binaries/ImageMagick-7.0.8-39-portable-Q16-x64.zip",  
-            
-            "path": "ImageMagick-7.0.8",
+            "path": "ImageMagick-7.1.0",
         },
     },
 }
