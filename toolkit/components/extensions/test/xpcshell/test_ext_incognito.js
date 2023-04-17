@@ -48,28 +48,16 @@ function assertActionAMTelemetryEvent(
   Assert.deepEqual(events, expectedActionEvents, assertMessage);
 }
 
-async function runIncognitoTest(
-  extensionData,
-  privateBrowsingAllowed,
-  allowPrivateBrowsingByDefault
-) {
-  Services.prefs.setBoolPref(
-    "extensions.allowPrivateBrowsingByDefault",
-    allowPrivateBrowsingByDefault
-  );
-
+async function runIncognitoTest(extensionData, privateBrowsingAllowed) {
   let wrapper = ExtensionTestUtils.loadExtension(extensionData);
   await wrapper.startup();
   let { extension } = wrapper;
 
-  if (!allowPrivateBrowsingByDefault) {
-    
-    equal(
-      extension.permissions.has("internal:privateBrowsingAllowed"),
-      privateBrowsingAllowed,
-      "privateBrowsingAllowed in serialized extension"
-    );
-  }
+  equal(
+    extension.permissions.has("internal:privateBrowsingAllowed"),
+    privateBrowsingAllowed,
+    "privateBrowsingAllowed in serialized extension"
+  );
   equal(
     extension.privateBrowsingAllowed,
     privateBrowsingAllowed,
@@ -82,12 +70,10 @@ async function runIncognitoTest(
   );
 
   await wrapper.unload();
-  Services.prefs.clearUserPref("extensions.allowPrivateBrowsingByDefault");
 }
 
 add_task(async function test_extension_incognito_spanning() {
-  await runIncognitoTest({}, false, false);
-  await runIncognitoTest({}, true, true);
+  await runIncognitoTest({}, false);
 });
 
 
@@ -95,7 +81,7 @@ add_task(async function test_extension_incognito_override_spanning() {
   let extensionData = {
     incognitoOverride: "spanning",
   };
-  await runIncognitoTest(extensionData, true, false);
+  await runIncognitoTest(extensionData, true);
 });
 
 
@@ -103,15 +89,13 @@ add_task(async function test_extension_incognito_privileged() {
   let extensionData = {
     isPrivileged: true,
   };
-  await runIncognitoTest(extensionData, true, true);
-  await runIncognitoTest(extensionData, true, false);
+  await runIncognitoTest(extensionData, true);
 });
 
 
 
 add_task(async function test_extension_incognito_spanning_grandfathered() {
   await AddonTestUtils.promiseStartupManager();
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", true);
   Services.prefs.setBoolPref("extensions.incognito.migrated", false);
 
   
@@ -135,8 +119,8 @@ add_task(async function test_extension_incognito_spanning_grandfathered() {
   );
   equal(
     disabledPolicy.privateBrowsingAllowed,
-    true,
-    "privateBrowsingAllowed in disabled addon"
+    false,
+    "privateBrowsingAllowed in not allowed disabled addon"
   );
 
   let disabledAddon = await AddonManager.getAddonByID(disabledAddonId);
@@ -162,12 +146,10 @@ add_task(async function test_extension_incognito_spanning_grandfathered() {
   );
   equal(
     policy.privateBrowsingAllowed,
-    true,
-    "privateBrowsingAllowed in extension"
+    false,
+    "privateBrowsingAllowed is false in extension"
   );
 
-  
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", false);
   
   
   
@@ -212,7 +194,6 @@ add_task(async function test_extension_incognito_spanning_grandfathered() {
 
   await wrapper.unload();
   await disabledWrapper.unload();
-  Services.prefs.clearUserPref("extensions.allowPrivateBrowsingByDefault");
   Services.prefs.clearUserPref("extensions.incognito.migrated");
 
   const expectedEvents = [
@@ -232,8 +213,6 @@ add_task(async function test_extension_incognito_spanning_grandfathered() {
 });
 
 add_task(async function test_extension_privileged_not_allowed() {
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", false);
-
   let addonId = "privileged_not_allowed@mochi.test";
   let extensionData = {
     manifest: {
@@ -263,8 +242,6 @@ add_task(async function test_extension_privileged_not_allowed() {
 
 
 add_task(async function test_extension_upgrade_not_allowed() {
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", false);
-
   let addonId = "upgrade@mochi.test";
   let extensionData = {
     manifest: {

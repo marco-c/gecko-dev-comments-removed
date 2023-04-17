@@ -2,12 +2,6 @@
 
 "use strict";
 
-add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["extensions.allowPrivateBrowsingByDefault", false]],
-  });
-});
-
 async function testIncognito(incognitoOverride) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

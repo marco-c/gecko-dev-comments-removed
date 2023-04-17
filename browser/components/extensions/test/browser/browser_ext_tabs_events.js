@@ -6,9 +6,6 @@
 
 let monitor;
 add_task(async function startup() {
-  SpecialPowers.pushPrefEnv({
-    set: [["extensions.allowPrivateBrowsingByDefault", false]],
-  });
   monitor = await startIncognitoMonitorExtension();
 });
 registerCleanupFunction(async function finish() {

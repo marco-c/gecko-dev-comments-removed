@@ -12,12 +12,6 @@ server.registerPathHandler("/dummy", (request, response) => {
 
 add_task(async function test_incognito_proxy_onRequest_access() {
   
-  
-  
-  
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", false);
-
-  
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["proxy", "<all_urls>"],
@@ -98,6 +92,4 @@ add_task(async function test_incognito_proxy_onRequest_access() {
 
   await pextension.unload();
   await extension.unload();
-
-  Services.prefs.clearUserPref("extensions.allowPrivateBrowsingByDefault");
 });

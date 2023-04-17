@@ -731,8 +731,6 @@ add_task(async function test_permissions_prompt() {
 
 
 add_task(async function test_internal_permissions() {
-  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", false);
-
   function background() {
     browser.test.onMessage.addListener(async (method, arg) => {
       try {
@@ -819,5 +817,4 @@ add_task(async function test_internal_permissions() {
   });
 
   await extension.unload();
-  Services.prefs.clearUserPref("extensions.allowPrivateBrowsingByDefault");
 });

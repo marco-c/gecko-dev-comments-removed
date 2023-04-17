@@ -113,13 +113,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "allowPrivateBrowsingByDefault",
-  "extensions.allowPrivateBrowsingByDefault",
-  true
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "userContextIsolation",
   "extensions.userContextIsolation.enabled",
   false
@@ -969,16 +962,6 @@ class ExtensionData {
 
     this.manifest = manifest;
     this.rawManifest = manifest;
-
-    if (
-      allowPrivateBrowsingByDefault &&
-      "incognito" in manifest &&
-      manifest.incognito == "not_allowed"
-    ) {
-      throw new Error(
-        `manifest.incognito set to "not_allowed" is currently unvailable for use.`
-      );
-    }
 
     if (manifest && manifest.default_locale) {
       await this.initLocale();
@@ -2622,32 +2605,30 @@ class Extension extends ExtensionData {
 
       
       
-      if (!allowPrivateBrowsingByDefault) {
-        let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
-        if (this.manifest.incognito === "not_allowed") {
-          
-          
-          
-          if (isAllowed) {
-            ExtensionPermissions.remove(this.id, {
-              permissions: [PRIVATE_ALLOWED_PERMISSION],
-              origins: [],
-            });
-            this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
-          }
-        } else if (
-          !isAllowed &&
-          this.isPrivileged &&
-          !this.addonData.temporarilyInstalled
-        ) {
-          
-          
-          ExtensionPermissions.add(this.id, {
+      let isAllowed = this.permissions.has(PRIVATE_ALLOWED_PERMISSION);
+      if (this.manifest.incognito === "not_allowed") {
+        
+        
+        
+        if (isAllowed) {
+          ExtensionPermissions.remove(this.id, {
             permissions: [PRIVATE_ALLOWED_PERMISSION],
             origins: [],
           });
-          this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
+          this.permissions.delete(PRIVATE_ALLOWED_PERMISSION);
         }
+      } else if (
+        !isAllowed &&
+        this.isPrivileged &&
+        !this.addonData.temporarilyInstalled
+      ) {
+        
+        
+        ExtensionPermissions.add(this.id, {
+          permissions: [PRIVATE_ALLOWED_PERMISSION],
+          origins: [],
+        });
+        this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
       }
 
       

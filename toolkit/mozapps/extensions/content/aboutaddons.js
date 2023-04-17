@@ -46,12 +46,6 @@ XPCOMUtils.defineLazyGetter(this, "extensionStylesheets", () => {
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "allowPrivateBrowsingByDefault",
-  "extensions.allowPrivateBrowsingByDefault",
-  true
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "SUPPORT_URL",
   "app.support.baseURL",
   "",
@@ -432,7 +426,6 @@ async function isAddonOptionsUIAllowed(addon) {
   
   
   return (
-    allowPrivateBrowsingByDefault ||
     
     isAllowedInPrivateBrowsing(addon)
   );
@@ -2828,7 +2821,7 @@ class AddonDetails extends HTMLElement {
     );
 
     
-    if (allowPrivateBrowsingByDefault || addon.type != "extension") {
+    if (addon.type != "extension") {
       
       
     } else if (addon.incognito == "not_allowed") {
@@ -3359,11 +3352,7 @@ class AddonCard extends HTMLElement {
     }
 
     
-    if (
-      !allowPrivateBrowsingByDefault &&
-      addon.type == "extension" &&
-      addon.incognito != "not_allowed"
-    ) {
+    if (addon.type == "extension" && addon.incognito != "not_allowed") {
       
       isAllowedInPrivateBrowsing(addon).then(isAllowed => {
         card.querySelector(
