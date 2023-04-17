@@ -276,7 +276,7 @@ nsresult HTMLEditor::Init(Document& aDoc, Element* aRoot,
   if (NS_WARN_IF(!document)) {
     return NS_ERROR_FAILURE;
   }
-  if (!IsPlaintextEditor() && !IsInteractionAllowed()) {
+  if (!IsInPlaintextMode() && !IsInteractionAllowed()) {
     mDisabledLinkHandling = true;
     mOldLinkHandlingEnabled = document->LinkHandlingEnabled();
     document->SetLinkHandlingEnabled(false);
@@ -897,7 +897,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       return rv;
     }
     case NS_VK_TAB: {
-      if (IsPlaintextEditor()) {
+      if (IsInPlaintextMode()) {
         
         
         nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
@@ -5123,7 +5123,7 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
   CommitComposition();
 
   
-  if (IsPlaintextEditor()) {
+  if (IsInPlaintextMode()) {
     return NS_OK;
   }
 

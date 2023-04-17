@@ -216,7 +216,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
   }
 
   
-  if (IsPlaintextEditor()) {
+  if (IsInPlaintextMode()) {
     return NS_OK;
   }
 
@@ -1898,7 +1898,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
   }
 
   
-  if (IsPlaintextEditor()) {
+  if (IsInPlaintextMode()) {
     return NS_OK;
   }
 

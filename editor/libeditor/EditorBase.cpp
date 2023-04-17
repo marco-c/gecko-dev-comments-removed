@@ -386,7 +386,7 @@ nsresult EditorBase::InitEditorContentAndSelection() {
     }
   }
 
-  if (IsPlaintextEditor() && !IsSingleLineEditor()) {
+  if (IsInPlaintextMode() && !IsSingleLineEditor()) {
     nsresult rv = EnsurePaddingBRElementInMultilineEditor();
     if (NS_FAILED(rv)) {
       NS_WARNING(
@@ -580,7 +580,7 @@ bool EditorBase::GetDesiredSpellCheckState() {
     return false;
   }
 
-  if (!IsPlaintextEditor()) {
+  if (!IsInPlaintextMode()) {
     
     
     
@@ -673,6 +673,10 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
   if (mFlags == aFlags) {
     return NS_OK;
   }
+
+  
+  
+  MOZ_ASSERT_IF(IsTextEditor(), !!(aFlags & nsIEditor::eEditorPlaintextMask));
 
   DebugOnly<bool> changingPasswordEditorFlagDynamically =
       mFlags != ~aFlags && ((mFlags ^ aFlags) & nsIEditor::eEditorPasswordMask);
@@ -2871,7 +2875,7 @@ EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(
     return aPoint;
   }
 
-  if (!IsPlaintextEditor()) {
+  if (!IsInPlaintextMode()) {
     
     
     
@@ -3304,7 +3308,6 @@ nsresult EditorBase::SetTextNodeWithoutTransaction(const nsAString& aString,
                                                    Text& aTextNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(IsTextEditor());
-  MOZ_ASSERT(IsPlaintextEditor());
   MOZ_ASSERT(!IsUndoRedoEnabled());
 
   const uint32_t length = aTextNode.Length();
@@ -3538,7 +3541,7 @@ nsresult EditorBase::GetEndChildNode(const Selection& aSelection,
 
 nsresult EditorBase::EnsurePaddingBRElementInMultilineEditor() {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(IsPlaintextEditor());
+  MOZ_ASSERT(IsInPlaintextMode());
   MOZ_ASSERT(!IsSingleLineEditor());
 
   Element* anonymousDivOrBodyElement = GetRoot();
@@ -4662,7 +4665,7 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
     }
   }
 
-  if (IsPlaintextEditor()) {
+  if (IsInPlaintextMode()) {
     for (nsIContent* content = droppedAt.GetContainerAsContent(); content;
          content = content->GetParent()) {
       nsCOMPtr<nsIFormControl> formControl(do_QueryInterface(content));
@@ -5239,7 +5242,7 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       return NS_OK;
     }
     case NS_VK_TAB: {
-      MOZ_ASSERT_IF(IsHTMLEditor(), IsPlaintextEditor());
+      MOZ_ASSERT_IF(IsHTMLEditor(), IsInPlaintextMode());
       if (IsTabbable()) {
         return NS_OK;  
       }
@@ -6115,7 +6118,7 @@ NS_IMETHODIMP EditorBase::SetWrapWidth(int32_t aWrapColumn) {
 
   
   
-  if (!IsPlaintextEditor()) {
+  if (!IsInPlaintextMode()) {
     return NS_OK;
   }
 

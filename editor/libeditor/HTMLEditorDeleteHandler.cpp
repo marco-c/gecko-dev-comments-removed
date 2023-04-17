@@ -2908,7 +2908,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
     }
   }
 
-  if (!aHTMLEditor.IsPlaintextEditor()) {
+  if (!aHTMLEditor.IsInPlaintextMode()) {
     EditorDOMRange firstRange(aRangesToDelete.FirstRangeRef());
     EditorDOMRange extendedRange =
         WSRunScanner::GetRangeContainingInvisibleWhiteSpacesAtRangeBoundaries(
@@ -3001,7 +3001,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
 
   
   
-  if (!aHTMLEditor.IsPlaintextEditor()) {
+  if (!aHTMLEditor.IsInPlaintextMode()) {
     AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
     AutoTrackDOMRange firstRangeTracker(aHTMLEditor.RangeUpdaterRef(),
                                         &aRangesToDelete.FirstRangeRef());
