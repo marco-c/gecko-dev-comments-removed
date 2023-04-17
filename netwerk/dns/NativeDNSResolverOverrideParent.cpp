@@ -43,14 +43,9 @@ NativeDNSResolverOverrideParent::GetSingleton() {
 
 NS_IMETHODIMP NativeDNSResolverOverrideParent::AddIPOverride(
     const nsACString& aHost, const nsACString& aIPLiteral) {
-  PRNetAddr tempAddr;
-  
-  
-  memset(&tempAddr, 0, sizeof(PRNetAddr));
-
+  NetAddr tempAddr;
   if (!aIPLiteral.Equals("N/A"_ns) &&
-      PR_StringToNetAddr(nsCString(aIPLiteral).get(), &tempAddr) !=
-          PR_SUCCESS) {
+      NS_FAILED(tempAddr.InitFromString(aIPLiteral))) {
     return NS_ERROR_UNEXPECTED;
   }
 

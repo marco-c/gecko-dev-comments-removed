@@ -578,18 +578,10 @@ bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
     return true;
   }
 
-  
-  
-  
-  PRNetAddr tempAddr;
-  memset(&tempAddr, 0, sizeof(PRNetAddr));
-  
-  
-  if (PR_StringToNetAddr(asciiHost.get(), &tempAddr) != PR_SUCCESS) {
+  mozilla::net::NetAddr addr;
+  if (NS_FAILED(addr.InitFromString(asciiHost))) {
     return false;
   }
-
-  mozilla::net::NetAddr addr(&tempAddr);
   
   if (addr.IsLoopbackAddr()) {
     return true;
