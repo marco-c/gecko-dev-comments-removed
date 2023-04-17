@@ -57,6 +57,12 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Paste(int32_t aClipboardType) override {
+    const nsresult rv = TextEditor::PasteAsAction(aClipboardType, true);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "HTMLEditor::PasteAsAction() failed");
+    return rv;
+  }
 
   
   
@@ -85,22 +91,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   virtual dom::EventTarget* GetDOMEventTarget() const override;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult PasteAsAction(int32_t aClipboardType,
-                                            bool aDispatchPasteEvent,
-                                            nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteAsAction(int32_t aClipboardType, bool aDispatchPasteEvent,
+                nsIPrincipal* aPrincipal = nullptr) override;
 
   MOZ_CAN_RUN_SCRIPT nsresult
   PasteAsQuotationAsAction(int32_t aClipboardType, bool aDispatchPasteEvent,

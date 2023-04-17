@@ -821,6 +821,23 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr) = 0;
+
+  
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
       nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr) = 0;
 
