@@ -15,6 +15,7 @@
 #include "frontend/ElemOpEmitter.h"
 #include "frontend/IfEmitter.h"
 #include "frontend/ParserAtom.h"  
+#include "frontend/PrivateOpEmitter.h"
 #include "frontend/PropOpEmitter.h"
 #include "frontend/ValueUsage.h"
 #include "js/TypeDecls.h"
@@ -25,6 +26,16 @@ namespace js {
 namespace frontend {
 
 struct BytecodeEmitter;
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -159,7 +170,12 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
 
   mozilla::Maybe<PropOpEmitter> poe_;
   mozilla::Maybe<ElemOpEmitter> eoe_;
+  mozilla::Maybe<PrivateOpEmitter> xoe_;
 
+  
+  
+  
+  
   
   
   
@@ -220,6 +236,9 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
 
     
     ElemCallee,
+
+    
+    PrivateCallee,
 
     
     FunctionCallee,
@@ -287,8 +306,9 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
  public:
   [[nodiscard]] bool emitNameCallee(TaggedParserAtomIndex name);
   [[nodiscard]] PropOpEmitter& prepareForPropCallee(bool isSuperProp);
-  [[nodiscard]] ElemOpEmitter& prepareForElemCallee(bool isSuperElem,
-                                                    bool isPrivateElem);
+  [[nodiscard]] ElemOpEmitter& prepareForElemCallee(bool isSuperElem);
+  [[nodiscard]] PrivateOpEmitter& prepareForPrivateCallee(
+      TaggedParserAtomIndex privateName);
   [[nodiscard]] bool prepareForFunctionCallee();
   [[nodiscard]] bool emitSuperCallee();
   [[nodiscard]] bool prepareForOtherCallee();
