@@ -41,6 +41,7 @@ using namespace mozilla::a11y;
 - (BOOL)providesLabelNotTitle;
 
 - (void)maybePostLiveRegionChanged;
+- (void)maybePostA11yUtilNotification;
 @end
 
 @implementation mozAccessible
@@ -971,6 +972,55 @@ struct RoleDescrComparator {
   }
 }
 
+- (void)maybePostA11yUtilNotification {
+  MOZ_ASSERT(!mGeckoAccessible.IsNull());
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mGeckoAccessible.IsAccessible() &&
+      [[self moxDOMIdentifier] isEqualToString:@"a11y-announcement"] &&
+      [[self moxParent] isKindOfClass:[mozRootAccessible class]]) {
+    
+    
+    NSArray* children = [self moxChildren];
+    MOZ_ASSERT([children count] == 1 && children[0],
+               "A11yUtil event recieved, but no announcement found?");
+
+    mozAccessible* announcement = children[0];
+    NSString* key;
+    if ([announcement providesLabelNotTitle]) {
+      key = [announcement moxLabel];
+    } else {
+      key = [announcement moxTitle];
+    }
+
+    NSDictionary* info = @{
+      NSAccessibilityAnnouncementKey : key ? key : @(""),
+      NSAccessibilityPriorityKey : @(NSAccessibilityPriorityMedium)
+    };
+
+    id window = [self moxWindow];
+
+    
+    
+    
+    
+    
+    xpcAccessibleMacEvent::FireEvent(
+        window, NSAccessibilityAnnouncementRequestedNotification, info);
+    NSAccessibilityPostNotificationWithUserInfo(
+        window, NSAccessibilityAnnouncementRequestedNotification, info);
+  }
+}
+
 - (NSArray<mozAccessible*>*)getRelationsByType:(RelationType)relationType {
   if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
     NSMutableArray<mozAccessible*>* relations =
@@ -998,6 +1048,9 @@ struct RoleDescrComparator {
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
+    case nsIAccessibleEvent::EVENT_ALERT:
+      [self maybePostA11yUtilNotification];
+      break;
     case nsIAccessibleEvent::EVENT_FOCUS:
       [self moxPostNotification:
                 NSAccessibilityFocusedUIElementChangedNotification];

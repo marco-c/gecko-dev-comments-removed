@@ -83,7 +83,8 @@ void ProxyDestroyed(RemoteAccessible* aProxy) {
 
 void ProxyEvent(RemoteAccessible* aProxy, uint32_t aEventType) {
   
-  if (aEventType != nsIAccessibleEvent::EVENT_FOCUS &&
+  if (aEventType != nsIAccessibleEvent::EVENT_ALERT &&
+      aEventType != nsIAccessibleEvent::EVENT_FOCUS &&
       aEventType != nsIAccessibleEvent::EVENT_VALUE_CHANGE &&
       aEventType != nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE &&
       aEventType != nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED &&
