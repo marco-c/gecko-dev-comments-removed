@@ -554,12 +554,9 @@ class SyncedBookmarksMirror {
 
 
 
-
-
   async apply({
     localTimeSeconds,
     remoteTimeSeconds,
-    weakUpload,
     maxFrecenciesToRecalculate,
     notifyInStableOrder,
     signal = null,
@@ -580,7 +577,6 @@ class SyncedBookmarksMirror {
         finalizeOrInterruptSignal,
         localTimeSeconds,
         remoteTimeSeconds,
-        weakUpload,
         maxFrecenciesToRecalculate,
         notifyInStableOrder
       );
@@ -595,12 +591,11 @@ class SyncedBookmarksMirror {
     signal,
     localTimeSeconds,
     remoteTimeSeconds,
-    weakUpload,
     maxFrecenciesToRecalculate = DEFAULT_MAX_FRECENCIES_TO_RECALCULATE,
     notifyInStableOrder = false
   ) {
     let wasMerged = await withTiming("Merging bookmarks in Rust", () =>
-      this.merge(signal, localTimeSeconds, remoteTimeSeconds, weakUpload)
+      this.merge(signal, localTimeSeconds, remoteTimeSeconds)
     );
 
     if (!wasMerged) {
@@ -672,12 +667,7 @@ class SyncedBookmarksMirror {
     return changeRecords;
   }
 
-  merge(
-    signal,
-    localTimeSeconds = Date.now() / 1000,
-    remoteTimeSeconds = 0,
-    weakUpload = []
-  ) {
+  merge(signal, localTimeSeconds = Date.now() / 1000, remoteTimeSeconds = 0) {
     return new Promise((resolve, reject) => {
       let op = null;
       function onAbort() {
@@ -775,12 +765,7 @@ class SyncedBookmarksMirror {
           }
         },
       };
-      op = this.merger.merge(
-        localTimeSeconds,
-        remoteTimeSeconds,
-        weakUpload,
-        callback
-      );
+      op = this.merger.merge(localTimeSeconds, remoteTimeSeconds, callback);
       if (signal.aborted) {
         op.cancel();
       } else {

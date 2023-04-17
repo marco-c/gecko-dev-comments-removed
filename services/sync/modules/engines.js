@@ -800,31 +800,6 @@ function SyncEngine(name, service) {
   );
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  this._needWeakUpload = new Map();
-
   this.asyncObserver = Async.asyncObserver(this, this._log);
 }
 
@@ -1135,10 +1110,6 @@ SyncEngine.prototype = {
     tombstone.collection = this.name;
     tombstone.deleted = true;
     return tombstone;
-  },
-
-  addForWeakUpload(id, { forceTombstone = false } = {}) {
-    this._needWeakUpload.set(id, { forceTombstone });
   },
 
   
@@ -1828,9 +1799,6 @@ SyncEngine.prototype = {
     
     let up = new Collection(this.engineURL, null, this.service);
     let modifiedIDs = new Set(this._modified.ids());
-    for (let id of this._needWeakUpload.keys()) {
-      modifiedIDs.add(id);
-    }
     let counts = { failed: 0, sent: 0 };
     this._log.info(`Uploading ${modifiedIDs.size} outgoing records`);
     if (modifiedIDs.size) {
@@ -1896,12 +1864,7 @@ SyncEngine.prototype = {
         let out;
         let ok = false;
         try {
-          let { forceTombstone = false } = this._needWeakUpload.get(id) || {};
-          if (forceTombstone) {
-            out = await this._createTombstone(id);
-          } else {
-            out = await this._createRecord(id);
-          }
+          out = await this._createRecord(id);
           if (this._log.level <= Log.Level.Trace) {
             this._log.trace("Outgoing: " + out);
           }
@@ -1943,7 +1906,6 @@ SyncEngine.prototype = {
       }
       await postQueue.flush(true);
     }
-    this._needWeakUpload.clear();
 
     if (counts.sent || counts.failed) {
       Observers.notify("weave:engine:sync:uploaded", counts, this.name);
@@ -1987,7 +1949,6 @@ SyncEngine.prototype = {
   },
 
   async _syncCleanup() {
-    this._needWeakUpload.clear();
     try {
       
       await this.trackRemainingChanges();
@@ -2159,7 +2120,6 @@ SyncEngine.prototype = {
     this.hasSyncedThisSession = false;
     this.previousFailed = new SerializableSet();
     this.toFetch = new SerializableSet();
-    this._needWeakUpload.clear();
   },
 
   
