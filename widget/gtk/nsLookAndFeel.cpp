@@ -1141,39 +1141,46 @@ void nsLookAndFeel::EnsureInit() {
     }
   }
 
-  WithAltThemeConfigured([&](bool aFellBackToDefaultTheme) {
-    mAltTheme.Init();
-    
-    
-    if (aFellBackToDefaultTheme) {
-      if (StaticPrefs::widget_gtk_alt_theme_selection()) {
-        mAltTheme.mTextSelectedText = mSystemTheme.mTextSelectedText;
-        mAltTheme.mTextSelectedBackground =
-            mSystemTheme.mTextSelectedBackground;
-      }
+  
+  
+  if (mSystemTheme.mIsDark || StaticPrefs::widget_gtk_alt_theme_dark()) {
+    WithAltThemeConfigured([&](bool aFellBackToDefaultTheme) {
+      mAltTheme.Init();
+      
+      
+      if (aFellBackToDefaultTheme) {
+        if (StaticPrefs::widget_gtk_alt_theme_selection()) {
+          mAltTheme.mTextSelectedText = mSystemTheme.mTextSelectedText;
+          mAltTheme.mTextSelectedBackground =
+              mSystemTheme.mTextSelectedBackground;
+        }
 
-      if (StaticPrefs::widget_gtk_alt_theme_scrollbar()) {
-        mAltTheme.mThemedScrollbar = mSystemTheme.mThemedScrollbar;
-        mAltTheme.mThemedScrollbarInactive =
-            mSystemTheme.mThemedScrollbarInactive;
-        mAltTheme.mThemedScrollbarThumb = mSystemTheme.mThemedScrollbarThumb;
-        mAltTheme.mThemedScrollbarThumbHover =
-            mSystemTheme.mThemedScrollbarThumbHover;
-        mAltTheme.mThemedScrollbarThumbInactive =
-            mSystemTheme.mThemedScrollbarThumbInactive;
-      }
+        if (StaticPrefs::widget_gtk_alt_theme_scrollbar()) {
+          mAltTheme.mThemedScrollbar = mSystemTheme.mThemedScrollbar;
+          mAltTheme.mThemedScrollbarInactive =
+              mSystemTheme.mThemedScrollbarInactive;
+          mAltTheme.mThemedScrollbarThumb = mSystemTheme.mThemedScrollbarThumb;
+          mAltTheme.mThemedScrollbarThumbHover =
+              mSystemTheme.mThemedScrollbarThumbHover;
+          mAltTheme.mThemedScrollbarThumbInactive =
+              mSystemTheme.mThemedScrollbarThumbInactive;
+        }
 
-      if (StaticPrefs::widget_gtk_alt_theme_scrollbar_active()) {
-        mAltTheme.mThemedScrollbarThumbActive =
-            mSystemTheme.mThemedScrollbarThumbActive;
-      }
+        if (StaticPrefs::widget_gtk_alt_theme_scrollbar_active()) {
+          mAltTheme.mThemedScrollbarThumbActive =
+              mSystemTheme.mThemedScrollbarThumbActive;
+        }
 
-      if (StaticPrefs::widget_gtk_alt_theme_selection()) {
-        mAltTheme.mAccentColor = mSystemTheme.mAccentColor;
-        mAltTheme.mAccentColorForeground = mSystemTheme.mAccentColorForeground;
+        if (StaticPrefs::widget_gtk_alt_theme_selection()) {
+          mAltTheme.mAccentColor = mSystemTheme.mAccentColor;
+          mAltTheme.mAccentColorForeground =
+              mSystemTheme.mAccentColorForeground;
+        }
       }
-    }
-  });
+    });
+  } else {
+    mAltTheme = mSystemTheme;
+  }
 
   LOG(("System Theme: %s. Alt Theme: %s\n", mSystemTheme.mName.get(),
        mAltTheme.mName.get()));
