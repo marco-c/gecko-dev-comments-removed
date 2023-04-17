@@ -14,7 +14,6 @@
 
 
 const { Cu, Cc, Ci } = require("chrome");
-const promise = require("resource://gre/modules/Promise.jsm").Promise;
 const jsmScope = require("resource://devtools/shared/Loader.jsm");
 const { Services } = require("resource://gre/modules/Services.jsm");
 
@@ -210,7 +209,6 @@ exports.modules = {
   DebuggerNotificationObserver,
   HeapSnapshot,
   InspectorUtils,
-  promise,
   
   
   
