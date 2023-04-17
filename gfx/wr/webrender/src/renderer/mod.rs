@@ -54,7 +54,7 @@ use crate::render_api::{RenderApiSender, DebugCommand, ApiMsg, FrameMsg, MemoryR
 use crate::batch::{AlphaBatchContainer, BatchKind, BatchFeatures, BatchTextures, BrushBatchKind, ClipBatchList};
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::capture::{CaptureConfig, ExternalCaptureImage, PlainExternalImage};
-use crate::composite::{CompositeState, CompositeTileSurface, CompositeTile, ResolvedExternalSurface, CompositorSurfaceTransform};
+use crate::composite::{CompositeState, CompositeTileSurface, ResolvedExternalSurface, CompositorSurfaceTransform};
 use crate::composite::{CompositorKind, Compositor, NativeTileId, CompositeFeatures, CompositeSurfaceFormat, ResolvedExternalSurfaceColorData};
 use crate::composite::{CompositorConfig, NativeSurfaceOperationDetails, NativeSurfaceId, NativeSurfaceOperation};
 use crate::c_str;
@@ -95,6 +95,7 @@ use crate::texture_cache::{TextureCache, TextureCacheConfig};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
 use crate::host_utils::{thread_started, thread_stopped};
+use crate::rectangle_occlusion as occlusion;
 use upload::{upload_to_texture_cache, UploadTexturePool};
 
 use euclid::{rect, Transform3D, Scale, default};
@@ -3255,12 +3256,12 @@ impl Renderer {
     }
 
     
-    fn draw_tile_list<'a, I: Iterator<Item = &'a CompositeTile>>(
+    fn draw_tile_list<'a, I: Iterator<Item = &'a occlusion::Item>>(
         &mut self,
         tiles_iter: I,
+        composite_state: &CompositeState,
         external_surfaces: &[ResolvedExternalSurface],
         projection: &default::Transform3D<f32>,
-        partial_present_mode: Option<PartialPresentMode>,
         stats: &mut RendererStats,
     ) {
         let mut current_shader_params = (
@@ -3285,29 +3286,16 @@ impl Renderer {
                 &mut self.renderer_errors
             );
 
-        for tile in tiles_iter {
-            
-            
-            let partial_clip_rect = match partial_present_mode {
-                Some(PartialPresentMode::Single { dirty_rect }) => dirty_rect,
-                None => tile.rect,
+        for item in tiles_iter {
+            let tile = match item.src {
+                occ::ItemSource::Opaque(idx) => &composite_state.opaque_tiles[idx],
+                occ::ItemSource::Alpha(idx) => &composite_state.alpha_tiles[idx],
+                occ::ItemSource::Clear(..) => {
+                    continue;
+                }
             };
 
-            let clip_rect = match partial_clip_rect.intersection(&tile.clip_rect) {
-                Some(rect) => rect,
-                None => continue,
-            };
-
-            
-            let valid_device_rect = tile.valid_rect.translate(
-                tile.rect.origin.to_vector()
-            );
-
-            
-            let clip_rect = match clip_rect.intersection(&valid_device_rect) {
-                Some(rect) => rect,
-                None => continue,
-            };
+            let clip_rect = item.rectangle.to_rect();
 
             
             let (instance, textures, shader_params) = match tile.surface {
@@ -3318,22 +3306,6 @@ impl Renderer {
                         tile.rect,
                         clip_rect,
                         color.premultiplied(),
-                        tile.z_id,
-                    );
-                    let features = instance.get_rgb_features();
-                    (
-                        instance,
-                        BatchTextures::composite_rgb(dummy),
-                        (CompositeSurfaceFormat::Rgba, image_buffer_kind, features, None),
-                    )
-                }
-                CompositeTileSurface::Clear => {
-                    let dummy = TextureSource::Dummy;
-                    let image_buffer_kind = dummy.image_buffer_kind();
-                    let instance = CompositeInstance::new(
-                        tile.rect,
-                        clip_rect,
-                        PremultipliedColorF::BLACK,
                         tile.z_id,
                     );
                     let features = instance.get_rgb_features();
@@ -3432,6 +3404,22 @@ impl Renderer {
                         },
                     }
                 }
+                CompositeTileSurface::Clear => {
+                    let dummy = TextureSource::Dummy;
+                    let image_buffer_kind = dummy.image_buffer_kind();
+                    let instance = CompositeInstance::new(
+                        tile.rect,
+                        clip_rect,
+                        PremultipliedColorF::BLACK,
+                        tile.z_id,
+                    );
+                    let features = instance.get_rgb_features();
+                    (
+                        instance,
+                        BatchTextures::composite_rgb(dummy),
+                        (CompositeSurfaceFormat::Rgba, image_buffer_kind, features, None),
+                    )
+                }
                 CompositeTileSurface::Texture { surface: ResolvedSurfaceTexture::Native { .. } } => {
                     unreachable!("bug: found native surface in simple composite path");
                 }
@@ -3500,8 +3488,8 @@ impl Renderer {
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_COMPOSITE);
 
         self.device.bind_draw_target(draw_target);
-        self.device.enable_depth(DepthFunction::LessEqual);
-        self.device.enable_depth_write();
+        self.device.disable_depth_write();
+        self.device.disable_depth();
 
         
         
@@ -3514,20 +3502,76 @@ impl Renderer {
             }
         }
 
+        let cap = composite_state.opaque_tiles.len() +
+            composite_state.alpha_tiles.len() +
+            composite_state.clear_tiles.len();
+
+        let mut occlusion = occlusion::FrontToBackBuilder::with_capacity(cap, cap);
+
+        let mut items = Vec::with_capacity(cap);
+
+        
+
+        for (idx, tile) in composite_state.opaque_tiles.iter().enumerate() {
+            items.push((tile.z_id.0, occ::ItemSource::Opaque(idx)));
+        }
+        for (idx, tile) in composite_state.alpha_tiles.iter().enumerate() {
+            items.push((tile.z_id.0, occ::ItemSource::Alpha(idx)));
+        }
+        for (idx, tile) in composite_state.clear_tiles.iter().enumerate() {
+            items.push((tile.z_id.0, occ::ItemSource::Clear(idx)));
+        }
+
+        items.sort_by_key(|item| -item.0);
+        for &(_, src) in &items {
+            let tile = match src {
+                occ::ItemSource::Opaque(idx) => &composite_state.opaque_tiles[idx],
+                occ::ItemSource::Alpha(idx) => &composite_state.alpha_tiles[idx],
+                occ::ItemSource::Clear(idx) => &composite_state.clear_tiles[idx],
+            };
+
+            let is_opaque = !matches!(src, occ::ItemSource::Alpha(..));
+
+            
+            
+            let partial_clip_rect = match partial_present_mode {
+                Some(PartialPresentMode::Single { dirty_rect }) => dirty_rect.to_box2d(),
+                None => tile.rect.to_box2d(),
+            };
+
+            
+            let valid_device_rect = tile.valid_rect.translate(
+                tile.rect.origin.to_vector()
+            ).to_box2d();
+
+            let rect = tile.rect.to_box2d()
+                .intersection_unchecked(&tile.clip_rect.to_box2d())
+                .intersection_unchecked(&partial_clip_rect)
+                .intersection_unchecked(&valid_device_rect);
+
+            if rect.is_empty() {
+                continue;
+            }
+
+            occlusion.add(&rect, is_opaque, src);
+        }
+
         
         let clear_color = self.clear_color.map(|color| color.to_array());
 
         match partial_present_mode {
             Some(PartialPresentMode::Single { dirty_rect }) => {
-                
-                self.device.clear_target(clear_color,
-                                         Some(1.0),
-                                         Some(draw_target.to_framebuffer_rect(dirty_rect.to_i32())));
+                if occlusion.test(&dirty_rect.to_box2d()) {
+                    
+                    self.device.clear_target(clear_color,
+                                             None,
+                                             Some(draw_target.to_framebuffer_rect(dirty_rect.to_i32())));
+                }
             }
             None => {
                 
                 self.device.clear_target(clear_color,
-                                         Some(1.0),
+                                         None,
                                          None);
             }
         }
@@ -3538,48 +3582,29 @@ impl Renderer {
             + composite_state.alpha_tiles.len();
         self.profile.set(profiler::PICTURE_TILES, num_tiles);
 
-        
-        
-        if !composite_state.opaque_tiles.is_empty() {
+        if !occlusion.opaque_items().is_empty() {
             let opaque_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_OPAQUE);
-            self.device.enable_depth_write();
             self.set_blend(false, FramebufferKind::Main);
             self.draw_tile_list(
-                composite_state.opaque_tiles.iter().rev(),
+                occlusion.opaque_items().iter(),
+                &composite_state,
                 &composite_state.external_surfaces,
                 projection,
-                partial_present_mode,
                 &mut results.stats,
             );
             self.gpu_profiler.finish_sampler(opaque_sampler);
         }
 
-        if !composite_state.clear_tiles.is_empty() {
-            let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
-            self.device.disable_depth_write();
-            self.set_blend(true, FramebufferKind::Main);
-            self.device.set_blend_mode_premultiplied_dest_out();
-            self.draw_tile_list(
-                composite_state.clear_tiles.iter(),
-                &composite_state.external_surfaces,
-                projection,
-                partial_present_mode,
-                &mut results.stats,
-            );
-            self.gpu_profiler.finish_sampler(transparent_sampler);
-        }
-
         
-        if !composite_state.alpha_tiles.is_empty() {
+        if !occlusion.alpha_items().is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
-            self.device.disable_depth_write();
             self.set_blend(true, FramebufferKind::Main);
             self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
             self.draw_tile_list(
-                composite_state.alpha_tiles.iter(),
+                occlusion.alpha_items().iter().rev(),
+                &composite_state,
                 &composite_state.external_surfaces,
                 projection,
-                partial_present_mode,
                 &mut results.stats,
             );
             self.gpu_profiler.finish_sampler(transparent_sampler);
