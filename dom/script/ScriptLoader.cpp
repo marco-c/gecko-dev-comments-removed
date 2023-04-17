@@ -1629,9 +1629,6 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
   if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled() &&
       
-      
-      !js::GlobalHasInstrumentation(globalObject->GetGlobalJSObject()) &&
-      
       !aRequest->IsModuleRequest()) {
     MOZ_ASSERT(!aRequest->GetWebExtGlobal(),
                "Can not bytecode cache WebExt code");

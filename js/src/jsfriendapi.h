@@ -754,12 +754,6 @@ class MOZ_STACK_CLASS JS_FRIEND_API AutoAssertNoContentJS {
 
 extern JS_FRIEND_API uint64_t GetGCHeapUsageForObjectZone(JSObject* obj);
 
-
-
-
-
-extern JS_FRIEND_API bool GlobalHasInstrumentation(JSObject* global);
-
 class JS_FRIEND_API CompartmentTransplantCallback {
  public:
   virtual JSObject* getObjectToTransplant(JS::Compartment* compartment) = 0;
