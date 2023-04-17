@@ -68,7 +68,7 @@ static inline gint GetMonitorScaleFactor(nsPresContext* aPresContext) {
   
   double scale = StaticPrefs::layout_css_devPixelsPerPx();
   if (scale <= 0) {
-    if (nsIWidget* rootWidget = aPresContext->GetRootWidget()) {
+    if (nsCOMPtr<nsIWidget> rootWidget = aPresContext->GetRootWidget()) {
       
       
       

@@ -1075,21 +1075,14 @@ nsIWidget* nsPresContext::GetNearestWidget(nsPoint* aOffset) {
   return rootView->GetNearestWidget(aOffset);
 }
 
-nsIWidget* nsPresContext::GetRootWidget() const {
+already_AddRefed<nsIWidget> nsPresContext::GetRootWidget() const {
   NS_ENSURE_TRUE(mPresShell, nullptr);
   nsViewManager* vm = mPresShell->GetViewManager();
   if (!vm) {
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIWidget> widget = vm->GetRootWidget();
-  return widget.get();
+  return vm->GetRootWidget();
 }
 
 
