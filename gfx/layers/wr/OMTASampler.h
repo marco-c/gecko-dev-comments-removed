@@ -12,6 +12,7 @@
 
 #include "base/platform_thread.h"           
 #include "mozilla/layers/OMTAController.h"  
+#include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -146,7 +147,7 @@ class OMTASampler final {
   
   
   TimeStamp mPreviousSampleTime;
-  bool mIsInTestMode;
+  Atomic<bool> mIsInTestMode;
 };
 
 }  
