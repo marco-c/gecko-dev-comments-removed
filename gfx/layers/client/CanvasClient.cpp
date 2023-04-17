@@ -6,7 +6,6 @@
 
 #include "CanvasClient.h"
 
-#include "ClientCanvasLayer.h"     
 #include "gfx2DGlue.h"             
 #include "gfxPlatform.h"           
 #include "mozilla/gfx/BaseSize.h"  
