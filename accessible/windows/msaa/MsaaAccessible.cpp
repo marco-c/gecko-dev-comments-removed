@@ -1016,12 +1016,13 @@ MsaaAccessible::get_accRole(
   }
 
   a11y::role geckoRole;
-  LocalAccessible* localAcc = LocalAcc();
 #ifdef DEBUG
-  NS_ASSERTION(nsAccUtils::IsTextInterfaceSupportCorrect(localAcc),
-               "Does not support Text when it should");
+  if (mAcc->IsLocal()) {
+    NS_ASSERTION(nsAccUtils::IsTextInterfaceSupportCorrect(mAcc->AsLocal()),
+                 "Does not support Text when it should");
+  }
 #endif
-  geckoRole = localAcc->Role();
+  geckoRole = mAcc->Role();
 
   uint32_t msaaRole = 0;
 
@@ -1043,7 +1044,7 @@ MsaaAccessible::get_accRole(
   
   
   if (geckoRole == roles::ROW) {
-    LocalAccessible* xpParent = localAcc->LocalParent();
+    Accessible* xpParent = mAcc->Parent();
     if (xpParent && xpParent->Role() == roles::TREE_TABLE)
       msaaRole = ROLE_SYSTEM_OUTLINEITEM;
   }
@@ -1058,6 +1059,10 @@ MsaaAccessible::get_accRole(
   
   
   
+  LocalAccessible* localAcc = mAcc->AsLocal();
+  if (!localAcc) {
+    return E_FAIL;
+  }
   nsIContent* content = localAcc->GetContent();
   if (!content) return E_FAIL;
 
