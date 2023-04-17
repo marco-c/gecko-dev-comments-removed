@@ -12,6 +12,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/PopupBlocker.h"
+#include "mozilla/dom/RadioGroupManager.h"
 #include "nsCOMPtr.h"
 #include "nsIForm.h"
 #include "nsIFormControl.h"
@@ -37,7 +38,8 @@ class FormData;
 
 class HTMLFormElement final : public nsGenericHTMLElement,
                               public nsIForm,
-                              public nsIRadioGroupContainer {
+                              public nsIRadioGroupContainer,
+                              RadioGroupManager {
   friend class HTMLFormControlsCollection;
 
  public:
@@ -550,13 +552,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   
   RefPtr<HTMLFormControlsCollection> mControls;
-  
-  nsRefPtrHashtable<nsStringHashKey, HTMLInputElement> mSelectedRadioButtons;
-  
-  nsTHashMap<nsStringCaseInsensitiveHashKey, uint32_t>
-      mRequiredRadioButtonCounts;
-  
-  nsTHashMap<nsStringCaseInsensitiveHashKey, bool> mValueMissingRadioGroups;
 
   
   UniquePtr<HTMLFormSubmission> mPendingSubmission;
