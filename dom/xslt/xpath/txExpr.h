@@ -223,11 +223,7 @@ class FunctionCall : public Expr {
 
 
 
-
-  nsresult addParam(Expr* aExpr) {
-    mParams.AppendElement(aExpr);
-    return NS_OK;
-  }
+  void addParam(Expr* aExpr) { mParams.AppendElement(aExpr); }
 
   
 
