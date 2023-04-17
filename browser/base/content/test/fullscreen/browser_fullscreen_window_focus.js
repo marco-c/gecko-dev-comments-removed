@@ -3,6 +3,11 @@
 
 "use strict";
 
+async function pause() {
+  
+  return new Promise(resolve => setTimeout(resolve, 500));
+}
+
 
 
 
@@ -18,6 +23,8 @@ async function testWindowFocus(isPopup, iframeID) {
 
   info("Calling window.open()");
   let openedWindow = await jsWindowOpen(tab.linkedBrowser, isPopup, iframeID);
+  info("Letting OOP focus to stabilize");
+  await pause(); 
   info("re-focusing main window");
   await waitForFocus(tab.linkedBrowser);
 
@@ -43,6 +50,8 @@ async function testWindowElementFocus(isPopup) {
 
   info("Calling window.open()");
   let openedWindow = await jsWindowOpen(tab.linkedBrowser, isPopup);
+  info("Letting OOP focus to stabilize");
+  await pause(); 
   info("re-focusing main window");
   await waitForFocus(tab.linkedBrowser);
 
