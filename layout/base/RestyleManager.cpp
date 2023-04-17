@@ -1328,6 +1328,64 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
   aData.mHint |= nsChangeHint_ReconstructFrame;
 }
 
+static bool IsUnsupportedFrameForContainingBlockChangeFastPath(
+    nsIFrame* aFrame) {
+  if (aFrame->IsFieldSetFrame()) {
+    return true;
+  }
+  if (aFrame->GetContentInsertionFrame() != aFrame) {
+    return true;
+  }
+  return false;
+}
+
+static void TryToHandleContainingBlockChange(nsChangeHint& aHint,
+                                             nsIFrame* aFrame) {
+  if (!(aHint & nsChangeHint_UpdateContainingBlock)) {
+    return;
+  }
+  if (aHint & nsChangeHint_ReconstructFrame) {
+    return;
+  }
+  if (!aFrame) {
+    return;
+  }
+  if (NeedToReframeToUpdateContainingBlock(aFrame) ||
+      IsUnsupportedFrameForContainingBlockChangeFastPath(aFrame)) {
+    
+    
+    aHint |= nsChangeHint_ReconstructFrame;
+    return;
+  }
+  for (nsIFrame* cont = aFrame; cont;
+       cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+    
+    
+    
+    
+    
+    
+    if (cont->IsAbsPosContainingBlock()) {
+      if (!cont->IsAbsoluteContainer() &&
+          cont->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
+        cont->MarkAsAbsoluteContainingBlock();
+      }
+    } else if (cont->IsAbsoluteContainer()) {
+      if (cont->HasAbsolutelyPositionedChildren()) {
+        
+        
+        
+        
+        
+        
+        NS_WARNING("skipping removal of absolute containing block");
+      } else {
+        cont->MarkAsNotAbsoluteContainingBlock();
+      }
+    }
+  }
+}
+
 void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "Someone forgot a script blocker");
@@ -1443,47 +1501,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       }
     }
 
-    if ((hint & nsChangeHint_UpdateContainingBlock) && frame &&
-        !(hint & nsChangeHint_ReconstructFrame)) {
-      if (NeedToReframeToUpdateContainingBlock(frame) ||
-          frame->IsFieldSetFrame() ||
-          frame->GetContentInsertionFrame() != frame) {
-        
-        
-        
-        hint |= nsChangeHint_ReconstructFrame;
-      } else {
-        for (nsIFrame* cont = frame; cont;
-             cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-          
-          
-          
-          
-          
-          
-          if (cont->IsAbsPosContainingBlock()) {
-            if (!cont->IsAbsoluteContainer() &&
-                cont->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
-              cont->MarkAsAbsoluteContainingBlock();
-            }
-          } else {
-            if (cont->IsAbsoluteContainer()) {
-              if (cont->HasAbsolutelyPositionedChildren()) {
-                
-                
-                
-                
-                
-                
-                NS_WARNING("skipping removal of absolute containing block");
-              } else {
-                cont->MarkAsNotAbsoluteContainingBlock();
-              }
-            }
-          }
-        }
-      }
-    }
+    TryToHandleContainingBlockChange(hint, frame);
 
     if ((hint & nsChangeHint_AddOrRemoveTransform) && frame &&
         !(hint & nsChangeHint_ReconstructFrame)) {
