@@ -8,8 +8,6 @@
 
 
 
-const NUMBER_OF_BACKUPS = 10;
-
 
 
 
