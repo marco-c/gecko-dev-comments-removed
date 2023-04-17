@@ -2,7 +2,10 @@
 
 
 
-import escapeRegExp from "lodash/escapeRegExp";
+function escapeRegExp(str) {
+  const reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+  return str.replace(reRegExpChar, "\\$&");
+}
 
 
 
@@ -48,12 +51,18 @@ export default function buildQuery(
   }
 
   let query = originalQuery;
-  if (ignoreSpaces) {
-    query = ignoreWhiteSpace(query);
-  }
 
+  
+  
   if (!regexMatch) {
     query = escapeRegExp(query);
+  }
+
+  
+  
+  
+  if (ignoreSpaces) {
+    query = ignoreWhiteSpace(query);
   }
 
   query = wholeMatch(query, wholeWord);
