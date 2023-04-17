@@ -377,7 +377,7 @@ class nsOuterWindowProxy : public MaybeCrossOriginObject<js::Wrapper> {
 
   bool getOwnPropertyDescriptor(
       JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
-      JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
+      JS::MutableHandle<Maybe<JS::PropertyDescriptor>> desc) const override;
 
   
 
@@ -539,7 +539,7 @@ class nsOuterWindowProxy : public MaybeCrossOriginObject<js::Wrapper> {
   
   static bool MaybeGetPDFJSPrintMethod(
       JSContext* cx, JS::Handle<JSObject*> proxy,
-      JS::MutableHandle<JS::PropertyDescriptor> desc);
+      JS::MutableHandle<Maybe<JS::PropertyDescriptor>> desc);
 
   
   static bool PDFJSPrintMethod(JSContext* cx, unsigned argc, JS::Value* vp);
@@ -603,17 +603,18 @@ static bool IsNonConfigurableReadonlyPrimitiveGlobalProp(JSContext* cx,
 
 bool nsOuterWindowProxy::getOwnPropertyDescriptor(
     JSContext* cx, JS::Handle<JSObject*> proxy, JS::Handle<jsid> id,
-    JS::MutableHandle<JS::PropertyDescriptor> desc) const {
+    JS::MutableHandle<Maybe<JS::PropertyDescriptor>> desc) const {
   
   
   
+  JS::Rooted<JS::Value> subframe(cx);
   bool found;
-  if (!GetSubframeWindow(cx, proxy, id, desc.value(), found)) {
+  if (!GetSubframeWindow(cx, proxy, id, &subframe, found)) {
     return false;
   }
   if (found) {
     
-    FillPropertyDescriptor(desc, proxy, true);
+    FillPropertyDescriptor(cx, desc, proxy, subframe, true);
     return true;
   }
 
@@ -651,8 +652,9 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
       }
 
 #ifndef RELEASE_OR_BETA  
-      if (!IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
-        desc.setConfigurable(true);
+      if (desc.isSome() &&
+          !IsNonConfigurableReadonlyPrimitiveGlobalProp(cx, id)) {
+        (*desc).setConfigurable(true);
       }
 #endif
     }
@@ -667,7 +669,7 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
   }
 
   
-  if (desc.object()) {
+  if (desc.isSome()) {
     return true;
   }
 
@@ -679,7 +681,7 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
       return false;
     }
 
-    if (desc.object()) {
+    if (desc.isSome()) {
       return true;
     }
   }
@@ -696,7 +698,7 @@ bool nsOuterWindowProxy::getOwnPropertyDescriptor(
       if (!ToJSValue(cx, WindowProxyHolder(childDOMWin), &childValue)) {
         return false;
       }
-      FillPropertyDescriptor(desc, proxy, childValue,
+      FillPropertyDescriptor(cx, desc, proxy, childValue,
                               true,
                               false);
       return true;
@@ -737,12 +739,12 @@ bool nsOuterWindowProxy::definePropertySameOrigin(
       return true;
     }
 
-    JS::Rooted<JS::PropertyDescriptor> existingDesc(cx);
+    JS::Rooted<Maybe<JS::PropertyDescriptor>> existingDesc(cx);
     ok = js::Wrapper::getOwnPropertyDescriptor(cx, proxy, id, &existingDesc);
     if (!ok) {
       return false;
     }
-    if (!existingDesc.object() || existingDesc.configurable()) {
+    if (existingDesc.isNothing() || existingDesc->configurable()) {
       
       
       
@@ -1110,8 +1112,9 @@ enum { PDFJS_SLOT_CALLEE = 0 };
 
 bool nsOuterWindowProxy::MaybeGetPDFJSPrintMethod(
     JSContext* cx, JS::Handle<JSObject*> proxy,
-    JS::MutableHandle<JS::PropertyDescriptor> desc) {
+    JS::MutableHandle<Maybe<JS::PropertyDescriptor>> desc) {
   MOZ_ASSERT(proxy);
+  MOZ_ASSERT(!desc.isSome());
 
   nsGlobalWindowOuter* outer = GetOuterWindow(proxy);
   nsGlobalWindowInner* inner =
@@ -1172,10 +1175,12 @@ bool nsOuterWindowProxy::MaybeGetPDFJSPrintMethod(
   js::SetFunctionNativeReserved(funObj, PDFJS_SLOT_CALLEE, targetFunc);
 
   JS::Rooted<JS::Value> funVal(cx, JS::ObjectValue(*funObj));
+  JS::Rooted<JS::PropertyDescriptor> pd(cx);
   
   
-  desc.setDataDescriptor(funVal, JSPROP_ENUMERATE);
-  desc.object().set(proxy);
+  pd.setDataDescriptor(funVal, JSPROP_ENUMERATE);
+  pd.object().set(proxy);
+  desc.set(Some(pd.get()));
   return true;
 }
 
