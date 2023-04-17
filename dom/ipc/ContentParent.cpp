@@ -314,8 +314,8 @@
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "nsIProfiler.h"
-#  include "ProfilerParent.h"
 #endif
+#include "ProfilerParent.h"
 
 #ifdef MOZ_CODE_COVERAGE
 #  include "mozilla/CodeCoverageHandler.h"
@@ -1699,9 +1699,7 @@ void ContentParent::Init() {
   }
 #endif  
 
-#ifdef MOZ_GECKO_PROFILER
   Unused << SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
-#endif
 
   
   
