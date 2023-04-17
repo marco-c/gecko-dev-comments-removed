@@ -16,6 +16,18 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
+XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
+  return console.createInstance({
+    prefix: "InteractionsManager",
+    maxLogLevel: Services.prefs.getBoolPref(
+      "browser.places.interactions.log",
+      false
+    )
+      ? "Debug"
+      : "Warn",
+  });
+});
+
 XPCOMUtils.defineLazyServiceGetters(this, {
   idleService: ["@mozilla.org/widget/useridleservice;1", "nsIUserIdleService"],
 });
@@ -28,6 +40,204 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
+
+
+
+
+
+class TypingInteraction {
+  
+
+
+
+
+  #typingStartTime = null;
+  
+
+
+
+
+  #typingEndTime = null;
+  
+
+
+
+
+  #keypresses = 0;
+
+  
+
+
+
+
+  static _TYPING_TIMEOUT = 3000;
+
+  
+
+
+
+
+
+  #accumulatedKeypresses = 0;
+
+  
+
+
+
+
+
+  #accumulatedTypingTime = 0;
+
+  
+
+
+
+
+
+  registerWindow(win) {
+    Services.els.addSystemEventListener(
+      win.document,
+      "keyup",
+      this,
+       false
+    );
+  }
+
+  
+
+
+
+
+
+  unregisterWindow(win) {
+    Services.els.removeSystemEventListener(
+      win.document,
+      "keyup",
+      this,
+       false
+    );
+  }
+
+  
+
+
+
+
+
+
+  #isTypingKey(code) {
+    if (["Space", "Comma", "Period", "Quote"].includes(code)) {
+      return true;
+    }
+
+    return (
+      code.startsWith("Key") ||
+      code.startsWith("Digit") ||
+      code.startsWith("Numpad")
+    );
+  }
+
+  
+
+
+  #resetCurrentTypingMetrics() {
+    this.#keypresses = 0;
+    this.#typingStartTime = null;
+    this.#typingEndTime = null;
+  }
+
+  
+
+
+  resetTypingInteraction() {
+    this.#resetCurrentTypingMetrics();
+    this.#accumulatedKeypresses = 0;
+    this.#accumulatedTypingTime = 0;
+  }
+
+  
+
+
+
+
+  getTypingInteraction() {
+    let typingInteraction = this.#getCurrentTypingMetrics();
+
+    typingInteraction.typingTime += this.#accumulatedTypingTime;
+    typingInteraction.keypresses += this.#accumulatedKeypresses;
+
+    return typingInteraction;
+  }
+
+  
+
+
+
+
+  #getCurrentTypingMetrics() {
+    let typingInteraction = { typingTime: 0, keypresses: 0 };
+
+    
+    
+    if (this.#keypresses > 1) {
+      let typingTime = this.#typingEndTime - this.#typingStartTime;
+      typingInteraction.typingTime = typingTime;
+      typingInteraction.keypresses = this.#keypresses;
+    }
+
+    return typingInteraction;
+  }
+
+  
+
+
+
+  #onTypingEnded() {
+    let typingInteraction = this.#getCurrentTypingMetrics();
+
+    this.#accumulatedTypingTime += typingInteraction.typingTime;
+    this.#accumulatedKeypresses += typingInteraction.keypresses;
+
+    this.#resetCurrentTypingMetrics();
+  }
+
+  
+
+
+
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "keyup":
+        if (
+          event.target.ownerGlobal.gBrowser?.selectedBrowser == event.target &&
+          this.#isTypingKey(event.code)
+        ) {
+          const now = Cu.now();
+          
+          const lastKeyDelay = now - this.#typingEndTime;
+          if (
+            this.#keypresses > 0 &&
+            lastKeyDelay > TypingInteraction._TYPING_TIMEOUT
+          ) {
+            this.#onTypingEnded();
+          }
+
+          this.#keypresses++;
+          if (!this.#typingStartTime) {
+            this.#typingStartTime = now;
+          }
+
+          this.#typingEndTime = now;
+        }
+        break;
+    }
+  }
+}
+
+
+
+
 
 
 
@@ -69,6 +279,13 @@ class _Interactions {
 
 
 
+  #typingInteraction = new TypingInteraction();
+
+  
+
+
+
+
 
   #activeWindow = undefined;
 
@@ -97,17 +314,6 @@ class _Interactions {
     ) {
       return;
     }
-
-    this.logConsole = console.createInstance({
-      prefix: "InteractionsManager",
-      maxLogLevel: Services.prefs.getBoolPref(
-        "browser.places.interactions.log",
-        false
-      )
-        ? "Debug"
-        : "Warn",
-    });
-    this.logConsole.debug("init");
 
     ChromeUtils.registerWindowActor("Interactions", {
       parent: {
@@ -145,6 +351,18 @@ class _Interactions {
 
 
 
+  reset() {
+    logConsole.debug("Reset");
+    this.#interactions = new WeakMap();
+    this.#userIsIdle = false;
+    this._pageViewStartTime = Cu.now();
+    this.#typingInteraction?.resetTypingInteraction();
+  }
+
+  
+
+
+
 
 
 
@@ -155,10 +373,12 @@ class _Interactions {
       this.registerEndOfInteraction(browser);
     }
 
-    this.logConsole.debug("New interaction", docInfo);
+    logConsole.debug("New interaction", docInfo);
     interaction = {
       url: docInfo.url,
       totalViewTime: 0,
+      typingTime: 0,
+      keypresses: 0,
     };
     this.#interactions.set(browser, interaction);
 
@@ -186,7 +406,7 @@ class _Interactions {
     if (!browser) {
       return;
     }
-    this.logConsole.debug("End of interaction");
+    logConsole.debug("End of interaction");
 
     this.#updateInteraction(browser);
     this.#interactions.delete(browser);
@@ -205,7 +425,7 @@ class _Interactions {
       !this.#activeWindow ||
       (browser && browser.ownerGlobal != this.#activeWindow)
     ) {
-      this.logConsole.debug("No update due to no active window");
+      logConsole.debug("No update due to no active window");
       return;
     }
 
@@ -214,7 +434,7 @@ class _Interactions {
     
     
     if (this.#userIsIdle) {
-      this.logConsole.debug("No update due to user is idle");
+      logConsole.debug("No update due to user is idle");
       return;
     }
 
@@ -224,12 +444,18 @@ class _Interactions {
 
     let interaction = this.#interactions.get(browser);
     if (!interaction) {
-      this.logConsole.debug("No interaction to update");
+      logConsole.debug("No interaction to update");
       return;
     }
 
     interaction.totalViewTime += Cu.now() - this._pageViewStartTime;
     this._pageViewStartTime = Cu.now();
+
+    const typingInteraction = this.#typingInteraction.getTypingInteraction();
+    interaction.typingTime += typingInteraction.typingTime;
+    interaction.keypresses += typingInteraction.keypresses;
+    this.#typingInteraction.resetTypingInteraction();
+
     this._updateDatabase(interaction);
   }
 
@@ -239,7 +465,7 @@ class _Interactions {
 
 
   #onActivateWindow(win) {
-    this.logConsole.debug("Activate window");
+    logConsole.debug("Activate window");
 
     if (PrivateBrowsingUtils.isWindowPrivate(win)) {
       return;
@@ -255,10 +481,30 @@ class _Interactions {
 
 
   #onDeactivateWindow(win) {
-    this.logConsole.debug("Deactivate window");
+    logConsole.debug("Deactivate window");
 
     this.#updateInteraction();
     this.#activeWindow = undefined;
+  }
+
+  
+
+
+
+
+  _getTypingTimeout() {
+    return TypingInteraction._TYPING_TIMEOUT;
+  }
+
+  
+
+
+
+
+
+
+  _setTypingTimeout(timeout) {
+    TypingInteraction._TYPING_TIMEOUT = timeout;
   }
 
   
@@ -270,7 +516,7 @@ class _Interactions {
 
 
   #onTabSelect(previousBrowser) {
-    this.logConsole.debug("Tab switch notified");
+    logConsole.debug("Tab switch notified");
 
     this.#updateInteraction(previousBrowser);
     this._pageViewStartTime = Cu.now();
@@ -311,14 +557,14 @@ class _Interactions {
         this.#onWindowOpen(subject);
         break;
       case "idle":
-        this.logConsole.debug("idle");
+        logConsole.debug("idle");
         
         
         this.#updateInteraction();
         this.#userIsIdle = true;
         break;
       case "active":
-        this.logConsole.debug("active");
+        logConsole.debug("active");
         this.#userIsIdle = false;
         this._pageViewStartTime = Cu.now();
         break;
@@ -339,6 +585,7 @@ class _Interactions {
     win.addEventListener("TabSelect", this, true);
     win.addEventListener("deactivate", this, true);
     win.addEventListener("activate", this, true);
+    this.#typingInteraction.registerWindow(win);
   }
 
   
@@ -351,6 +598,7 @@ class _Interactions {
     win.removeEventListener("TabSelect", this, true);
     win.removeEventListener("deactivate", this, true);
     win.removeEventListener("activate", this, true);
+    this.#typingInteraction.unregisterWindow(win);
   }
 
   
@@ -389,7 +637,7 @@ class _Interactions {
 
 
   async _updateDatabase(interactionInfo) {
-    this.logConsole.debug("Would update database: ", interactionInfo);
+    logConsole.debug("Would update database: ", interactionInfo);
   }
 }
 
