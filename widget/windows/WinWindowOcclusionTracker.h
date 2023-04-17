@@ -51,7 +51,7 @@ class WinWindowOcclusionTracker final
   static RefPtr<WinWindowOcclusionTracker> Get();
 
   
-  static void Start();
+  static void Ensure();
 
   
   static void ShutDown();

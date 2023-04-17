@@ -439,15 +439,35 @@ void nsWindow::NotifyOcclusionState(mozilla::widget::OcclusionState aState) {
   }
 }
 
+void nsWindow::MaybeEnableWindowOcclusion(bool aEnable) {
+  bool enabled = gfxConfig::IsEnabled(gfx::Feature::WINDOW_OCCLUSION);
+
+  if (aEnable) {
+    
+    if (enabled && NeedsToTrackWindowOcclusionState()) {
+      WinWindowOcclusionTracker::Get()->Enable(this, mWnd);
+    }
+    return;
+  }
+
+  
+  MOZ_ASSERT(!aEnable);
+
+  if (!NeedsToTrackWindowOcclusionState()) {
+    return;
+  }
+
+  WinWindowOcclusionTracker::Get()->Disable(this, mWnd);
+  NotifyOcclusionState(OcclusionState::VISIBLE);
+}
+
 
 
 
 void nsWindow::CreateCompositor() {
   nsWindowBase::CreateCompositor();
 
-  if (NeedsToTrackWindowOcclusionState()) {
-    WinWindowOcclusionTracker::Get()->Enable(this, mWnd);
-  }
+  MaybeEnableWindowOcclusion( true);
 
   if (mRequestFxrOutputPending) {
     GetRemoteRenderer()->SendRequestFxrOutput();
@@ -455,9 +475,7 @@ void nsWindow::CreateCompositor() {
 }
 
 void nsWindow::DestroyCompositor() {
-  if (NeedsToTrackWindowOcclusionState()) {
-    WinWindowOcclusionTracker::Get()->Disable(this, mWnd);
-  }
+  MaybeEnableWindowOcclusion( false);
 
   nsWindowBase::DestroyCompositor();
 }
