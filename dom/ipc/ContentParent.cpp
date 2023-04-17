@@ -2410,8 +2410,11 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
   }
 
   
+  
+  
   if (!Preferences::GetBool(
-          "security.sandbox.content.mac.disconnect-windowserver")) {
+          "security.sandbox.content.mac.disconnect-windowserver") ||
+      !Preferences::GetBool("webgl.out-of-process")) {
     info.hasWindowServer = true;
   }
 
