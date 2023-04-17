@@ -321,7 +321,7 @@ mozilla::ipc::IPCResult HandlerServiceParent::RecvExistsForProtocol(
     *aHandlerExists = false;
     return IPC_OK();
   }
-#if defined(XP_MACOSX)
+#if defined(XP_MACOSX) || defined(XP_WIN)
   
   
   nsresult rv;
