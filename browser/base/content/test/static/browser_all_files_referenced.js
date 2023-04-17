@@ -237,9 +237,6 @@ var whitelist = [
   },
 
   
-  { file: "resource://gre/modules/RustFxAccount.js" },
-
-  
   { file: "resource://gre/localization/en-US/dom/media.ftl" },
 
   
