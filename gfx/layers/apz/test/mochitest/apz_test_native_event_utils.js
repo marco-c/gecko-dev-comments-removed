@@ -191,11 +191,6 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
 
 
 
-function getTargetOrigin(aTarget) {
-  const rect = getTargetRect(aTarget);
-  return { left: rect.left, top: rect.top };
-}
-
 function getTargetRect(aTarget) {
   let rect = { left: 0, top: 0, width: 0, height: 0 };
 
