@@ -72,11 +72,6 @@ class RtpRtcp : public Module, public RtpRtcpInterface {
       uint32_t* packets_sent) const = 0;
 
   
-  virtual void RemoteRTCPSenderInfo(uint32_t* packet_count,
-                                    uint32_t* octet_count,
-                                    NtpTime* ntp_timestamp) const = 0;
-
-  
   
   void SendPictureLossIndication() { SendRTCP(kRtcpPli); }
   

@@ -364,6 +364,11 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
       StreamDataCounters* rtp_counters,
       StreamDataCounters* rtx_counters) const = 0;
 
+
+  
+  virtual void RemoteRTCPSenderInfo(uint32_t* packet_count,
+                                    uint32_t* octet_count,
+                                    int64_t* ntp_timestamp_ms) const = 0;
   
   
   
