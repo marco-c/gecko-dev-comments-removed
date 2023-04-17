@@ -132,6 +132,7 @@ class BlockReflowInput {
 
 
 
+
   bool AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
                 nscoord aAvailableISize);
 

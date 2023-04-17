@@ -6751,8 +6751,12 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowInput& aState,
 
     
     
-    aState.FlowAndPlaceFloat(f);
-    ConsiderChildOverflow(aOverflowAreas, f);
+    
+    
+    
+    if (aState.FlowAndPlaceFloat(f)) {
+      ConsiderChildOverflow(aOverflowAreas, f);
+    }
 
     nsIFrame* next = !prev ? mFloats.FirstChild() : prev->GetNextSibling();
     if (next == f) {
