@@ -13,6 +13,7 @@
 #include "mozilla/Variant.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 
 namespace mozilla {
 namespace dom {
@@ -148,7 +149,11 @@ class DOMIntersectionObserver final : public nsISupports,
   nsTArray<double> mThresholds;
 
   
+  
+  
+  
   nsTArray<Element*> mObservationTargets;
+  nsTHashSet<Element*> mObservationTargetSet;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
   bool mConnected;
