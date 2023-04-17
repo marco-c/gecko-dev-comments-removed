@@ -29,7 +29,6 @@ include protocol PGMP;
 include protocol PPrinting;
 include protocol PChildToParentStream;
 include protocol PParentToChildStream;
-include protocol POfflineCacheUpdate;
 #ifdef MOZ_WEBSPEECH
 include protocol PSpeechSynthesis;
 #endif
@@ -414,7 +413,6 @@ nested(upto inside_cpow) sync protocol PContent
     manages PRemoteLazyInputStream;
     manages PMedia;
     manages PNecko;
-    manages POfflineCacheUpdate;
     manages PPrinting;
     manages PChildToParentStream;
     manages PParentToChildStream;
@@ -1170,36 +1168,6 @@ parent:
     async BackUpXResources(FileDescriptor aXSocketFd);
 
     async RequestAnonymousTemporaryFile(uint64_t aID);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    async POfflineCacheUpdate(nsIURI manifestURI, nsIURI documentURI,
-                              PrincipalInfo loadingPrincipal, bool stickDocument,
-                              CookieJarSettingsArgs cookieJarSettings);
 
     
 
