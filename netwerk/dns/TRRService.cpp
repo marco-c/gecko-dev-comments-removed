@@ -609,13 +609,19 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
   } else if (!strcmp(aTopic, NS_CAPTIVE_PORTAL_CONNECTIVITY)) {
     nsAutoCString data = NS_ConvertUTF16toUTF8(aData);
     LOG(("TRRservice captive portal was %s\n", data.get()));
-    HandleConfirmationEvent(ConfirmationEvent::CaptivePortalConnectivity);
-
-    mCaptiveIsPassed = true;
     nsCOMPtr<nsICaptivePortalService> cps = do_QueryInterface(aSubject);
     if (cps) {
-      cps->GetState(&mConfirmation.mCaptivePortalStatus);
+      mConfirmation.mCaptivePortalStatus = cps->State();
     }
+
+    
+    
+    
+    if (!mCaptiveIsPassed) {
+      HandleConfirmationEvent(ConfirmationEvent::CaptivePortalConnectivity);
+    }
+
+    mCaptiveIsPassed = true;
   } else if (!strcmp(aTopic, kClearPrivateData) || !strcmp(aTopic, kPurge)) {
     
     auto bl = mTRRBLStorage.Lock();
