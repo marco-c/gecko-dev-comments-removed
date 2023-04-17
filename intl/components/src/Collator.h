@@ -141,6 +141,18 @@ class Collator final {
   static SpanResult<char> KeywordValueToBcp47Extension(const char* aKeyword,
                                                        int32_t aLength);
 
+  enum class CommonlyUsed : bool {
+    
+
+
+    No,
+
+    
+
+
+    Yes,
+  };
+
   using Bcp47ExtEnumeration =
       Enumeration<char, SpanResult<char>,
                   Collator::KeywordValueToBcp47Extension>;
@@ -155,7 +167,7 @@ class Collator final {
 
 
   static Result<Bcp47ExtEnumeration, ICUError> GetBcp47KeywordValuesForLocale(
-      const char* aLocale);
+      const char* aLocale, CommonlyUsed aCommonlyUsed = CommonlyUsed::No);
 
   
 

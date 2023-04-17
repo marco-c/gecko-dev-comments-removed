@@ -117,13 +117,27 @@ class Calendar final {
                                                   int32_t aLength);
 
  public:
+  enum class CommonlyUsed : bool {
+    
+
+
+    No,
+
+    
+
+
+    Yes,
+  };
+
   using Bcp47IdentifierEnumeration =
       Enumeration<char, SpanResult<char>, Calendar::LegacyIdentifierToBcp47>;
+
   
 
 
   static Result<Bcp47IdentifierEnumeration, ICUError>
-  GetBcp47KeywordValuesForLocale(const char* aLocale);
+  GetBcp47KeywordValuesForLocale(const char* aLocale,
+                                 CommonlyUsed aCommonlyUsed = CommonlyUsed::No);
 
   ~Calendar();
 
