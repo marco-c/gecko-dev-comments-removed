@@ -32,6 +32,14 @@ class TestMarionette(MarionetteTestCase):
         self.assertRaises(socket.timeout, self.marionette.raise_for_port, timeout=5)
         self.assertLess(time.time() - start_time, 5)
 
+    def test_single_active_session(self):
+        self.assertEqual(1, self.marionette.execute_script("return 1"))
+
+        
+        
+        marionette = Marionette(host=self.marionette.host, port=self.marionette.port)
+        self.assertRaises(socket.timeout, marionette.raise_for_port, timeout=1.0)
+
     def test_disable_enable_new_connections(self):
         
         self.marionette._send_message("Marionette:AcceptConnections", {"value": True})
@@ -44,20 +52,17 @@ class TestMarionette(MarionetteTestCase):
             self.assertEqual(1, self.marionette.execute_script("return 1"))
 
             
+            self.marionette.delete_session()
+
+            
+            
             marionette = Marionette(
                 host=self.marionette.host, port=self.marionette.port
             )
             self.assertRaises(socket.timeout, marionette.raise_for_port, timeout=1.0)
 
-            self.marionette._send_message(
-                "Marionette:AcceptConnections", {"value": True}
-            )
-            marionette.raise_for_port(timeout=10.0)
-
         finally:
-            self.marionette._send_message(
-                "Marionette:AcceptConnections", {"value": True}
-            )
+            self.marionette.quit()
 
     def test_client_socket_uses_expected_socket_timeout(self):
         current_socket_timeout = self.marionette.socket_timeout

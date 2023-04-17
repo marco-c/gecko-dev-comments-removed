@@ -132,6 +132,22 @@ class TCPListener {
     let output = clientSocket.openOutputStream(0, 0, 0);
     let transport = new DebuggerTransport(input, output);
 
+    
+    const hasActiveSession = [...this.conns].find(
+      conn => !!conn.driver.currentSession
+    );
+    if (hasActiveSession) {
+      logger.warn(
+        "Connection attempt denied because an active session has been found"
+      );
+
+      
+      
+      
+      transport.close();
+      return;
+    }
+
     let conn = new TCPConnection(
       this.nextConnID++,
       transport,
