@@ -2560,10 +2560,7 @@ void nsFocusManager::Focus(
         aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
       }
 
-      
-      
-      
-      if (aFocusChanged || !focusInOtherContentProcess) {
+      if (!focusInOtherContentProcess) {
         SendFocusOrBlurEvent(
             eFocus, presShell, aElement->GetComposedDoc(), aElement,
             aFlags & FOCUSMETHOD_MASK, aWindowRaised, isRefocus,
