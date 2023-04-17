@@ -30,6 +30,12 @@ function closeWindow(aClose, aPromptFunction, aSource) {
     ) {
       return false;
     }
+
+    
+    
+    if (aClose && windowCount == 1) {
+      window.SessionStore?.maybeDontSaveTabs(window);
+    }
   } else if (
     typeof aPromptFunction == "function" &&
     !aPromptFunction(aSource)
