@@ -339,6 +339,16 @@ class DisplayPortUtils {
 
 
   static void ExpireDisplayPortOnAsyncScrollableAncestor(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+  static Maybe<nsRect> GetRootDisplayportBase(PresShell* aPresShell);
 };
 
 }  
