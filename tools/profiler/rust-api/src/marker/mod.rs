@@ -121,14 +121,11 @@ pub(crate) mod deserializer_tags_state;
 pub mod options;
 pub mod schema;
 
-pub use options::*;
-pub use schema::MarkerSchema;
-
 use crate::gecko_bindings::{bindings, profiling_categories::ProfilingCategoryPair};
 use crate::json_writer::JSONWriter;
 use crate::marker::deserializer_tags_state::get_or_insert_deserializer_tag;
 use crate::marker::options::MarkerOptions;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
 use std::os::raw::c_char;
 
 
@@ -247,38 +244,5 @@ pub fn add_marker<T>(
             encoded_payload.as_ptr(),
             payload_size,
         )
-    }
-}
-
-
-
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Tracing(pub String);
-
-impl ProfilerMarker for Tracing {
-    fn marker_type_name() -> &'static str {
-        "tracing"
-    }
-
-    fn stream_json_marker_data(&self, json_writer: &mut JSONWriter) {
-        if self.0.len() != 0 {
-            json_writer.string_property("category", &self.0);
-        }
-    }
-
-    
-    
-    
-    
-    fn marker_type_display() -> schema::MarkerSchema {
-        use crate::marker::schema::*;
-        let mut schema = MarkerSchema::new(&[
-            Location::MarkerChart,
-            Location::MarkerTable,
-            Location::TimelineOverview,
-        ]);
-        schema.add_key_label_format("category", "Type", Format::String);
-        schema
     }
 }

@@ -148,8 +148,6 @@ struct TextMarker {
   }
 };
 
-
-
 struct Tracing {
   static constexpr Span<const char> MarkerTypeName() {
     return MakeStringSpan("tracing");

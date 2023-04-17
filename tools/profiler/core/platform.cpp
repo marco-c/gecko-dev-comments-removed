@@ -2477,10 +2477,7 @@ static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
   }
 
   
-  
-  
-  profiler::ffi::gecko_profiler_stream_marker_schemas(
-      &aWriter, static_cast<void*>(&names));
+  profiler::ffi::gecko_profiler_stream_marker_schemas(&aWriter);
 }
 
 

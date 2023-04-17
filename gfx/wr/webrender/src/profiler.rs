@@ -29,6 +29,7 @@ use api::units::DeviceIntSize;
 use std::collections::vec_deque::VecDeque;
 use std::fmt::{Write, Debug};
 use std::f32;
+use std::ffi::CStr;
 use std::ops::Range;
 use std::time::Duration;
 use time::precise_time_ns;
@@ -1226,22 +1227,25 @@ pub trait ProfilerHooks : Send + Sync {
     fn unregister_thread(&self);
 
     
-    fn begin_marker(&self, label: &str);
-
     
-    fn end_marker(&self, label: &str);
-
-    
-    fn event_marker(&self, label: &str);
+    fn begin_marker(&self, label: &CStr);
 
     
     
+    fn end_marker(&self, label: &CStr);
+
+    
+    
+    fn event_marker(&self, label: &CStr);
+
     
     
     
     
     
-    fn add_text_marker(&self, label: &str, text: &str, duration: Duration);
+    
+    
+    fn add_text_marker(&self, label: &CStr, text: &str, duration: Duration);
 
     
     fn thread_is_being_profiled(&self) -> bool;
@@ -1263,7 +1267,7 @@ pub fn set_profiler_hooks(hooks: Option<&'static dyn ProfilerHooks>) {
 
 
 pub struct ProfileScope {
-    name: &'static str,
+    name: &'static CStr,
 }
 
 
@@ -1287,7 +1291,7 @@ pub fn unregister_thread() {
 }
 
 
-pub fn add_text_marker(label: &str, text: &str, duration: Duration) {
+pub fn add_text_marker(label: &CStr, text: &str, duration: Duration) {
     unsafe {
         if let Some(ref hooks) = PROFILER_HOOKS {
             hooks.add_text_marker(label, text, duration);
@@ -1296,7 +1300,7 @@ pub fn add_text_marker(label: &str, text: &str, duration: Duration) {
 }
 
 
-pub fn add_event_marker(label: &str) {
+pub fn add_event_marker(label: &CStr) {
     unsafe {
         if let Some(ref hooks) = PROFILER_HOOKS {
             hooks.event_marker(label);
@@ -1313,7 +1317,7 @@ pub fn thread_is_being_profiled() -> bool {
 
 impl ProfileScope {
     
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: &'static CStr) -> Self {
         unsafe {
             if let Some(ref hooks) = PROFILER_HOOKS {
                 hooks.begin_marker(name);
@@ -1339,7 +1343,7 @@ impl Drop for ProfileScope {
 
 macro_rules! profile_marker {
     ($string:expr) => {
-        let _scope = $crate::profiler::ProfileScope::new($string);
+        let _scope = $crate::profiler::ProfileScope::new(cstr!($string));
     };
 }
 
