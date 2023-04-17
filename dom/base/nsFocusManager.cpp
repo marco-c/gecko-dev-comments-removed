@@ -429,16 +429,6 @@ nsresult nsFocusManager::SetFocusedWindowWithCallerType(
     
     
     SetFocusInner(frameElement, 0, false, true, aActionId);
-  } else {
-    
-    
-    
-    
-    nsIContent* content = windowToFocus->GetFocusedElement();
-    if (content) {
-      if (nsCOMPtr<nsPIDOMWindowOuter> childWindow = GetContentWindow(content))
-        ClearFocus(windowToFocus);
-    }
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> rootWindow = windowToFocus->GetPrivateRoot();
@@ -876,7 +866,6 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
     if (window->GetBrowsingContext() == GetFocusedBrowsingContext()) {
       mFocusedElement = nullptr;
     } else {
-      
       
       
       
