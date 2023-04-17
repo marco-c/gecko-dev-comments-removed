@@ -7,7 +7,6 @@
 
 
 
-
 const formatRange = Intl.DateTimeFormat.prototype.formatRange;
 
 assert.throws(TypeError, function() {

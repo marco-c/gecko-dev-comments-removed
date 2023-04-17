@@ -12,7 +12,6 @@
 
 
 
-
 const date1 = new Date("2019-01-03T00:00:00");
 const date2 = new Date("2019-01-05T00:00:00");
 const date3 = new Date("2019-03-04T00:00:00");

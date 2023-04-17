@@ -6,7 +6,6 @@
 
 
 
-
 verifyProperty(Intl.DateTimeFormat.prototype.formatRangeToParts, 'length', {
   value: 2,
   enumerable: false,

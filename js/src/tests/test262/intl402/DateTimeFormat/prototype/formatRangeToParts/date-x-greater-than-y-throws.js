@@ -22,7 +22,6 @@
 
 
 
-
 var dtf = new Intl.DateTimeFormat();
 
 var x = new Date();

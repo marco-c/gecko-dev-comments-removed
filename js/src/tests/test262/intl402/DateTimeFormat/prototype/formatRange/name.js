@@ -6,7 +6,6 @@
 
 
 
-
 verifyProperty(Intl.DateTimeFormat.prototype.formatRange, 'name', {
   value: 'formatRange',
   enumerable: false,

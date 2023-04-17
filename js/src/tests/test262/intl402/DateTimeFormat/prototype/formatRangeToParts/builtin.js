@@ -12,7 +12,6 @@
 
 
 
-
 const formatRangeToParts = Intl.DateTimeFormat.prototype.formatRangeToParts;
 
 assert.sameValue(Object.prototype.toString.call(formatRangeToParts), "[object Function]",

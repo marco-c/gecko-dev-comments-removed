@@ -17,7 +17,6 @@
 
 
 
-
 var dtf = new Intl.DateTimeFormat();
 
 assert.throws(TypeError, function() {
