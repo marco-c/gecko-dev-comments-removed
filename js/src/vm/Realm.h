@@ -495,9 +495,6 @@ class JS::Realm : public JS::shadow::Realm {
   }
 
   
-  inline bool globalIsAboutToBeFinalized();
-
-  
   inline bool hasLiveGlobal() const;
 
   inline void initGlobal(js::GlobalObject& global);

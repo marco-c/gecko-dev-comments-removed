@@ -23,7 +23,6 @@ namespace js {
 namespace gc {
 JS_PUBLIC_API void TraceRealm(JSTracer* trc, JS::Realm* realm,
                               const char* name);
-JS_PUBLIC_API bool RealmNeedsSweep(JS::Realm* realm);
 }  
 }  
 
@@ -37,9 +36,6 @@ struct GCPolicy<Realm*> : public NonGCPointerPolicy<Realm*> {
     if (*vp) {
       ::js::gc::TraceRealm(trc, *vp, name);
     }
-  }
-  static bool needsSweep(Realm** vp) {
-    return *vp && ::js::gc::RealmNeedsSweep(*vp);
   }
 };
 
