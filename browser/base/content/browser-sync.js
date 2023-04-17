@@ -240,7 +240,6 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
     } else {
       
       
-      
       let hasNextPage = client.tabs.length > maxTabs;
       let nextPageIsLastPage =
         hasNextPage &&
