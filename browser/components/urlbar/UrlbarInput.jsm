@@ -1377,10 +1377,13 @@ class UrlbarInput {
     if (focus) {
       this.focus();
     }
-
-    let tokens = value.trim().split(UrlbarTokenizer.REGEXP_SPACES);
+    let trimmedValue = value.trim();
+    let firstToken = trimmedValue.substring(
+      0,
+      trimmedValue.search(UrlbarTokenizer.REGEXP_SPACES)
+    );
     
-    let searchMode = UrlbarUtils.searchModeForToken(tokens[0]);
+    let searchMode = UrlbarUtils.searchModeForToken(firstToken);
     if (!searchMode && searchEngine) {
       searchMode = { engineName: searchEngine.name };
     }
@@ -1390,25 +1393,22 @@ class UrlbarInput {
       this.searchMode = searchMode;
       
       
-      value = value.replace(tokens[0], "");
+      value = value.replace(firstToken, "");
       if (UrlbarTokenizer.REGEXP_SPACES.test(value[0])) {
         
         
         value = value.slice(1);
       }
-      this.inputField.value = value;
-      this._revertOnBlurValue = this.value;
-    } else if (Object.values(UrlbarTokenizer.RESTRICT).includes(tokens[0])) {
+      this._revertOnBlurValue = value;
+    } else if (Object.values(UrlbarTokenizer.RESTRICT).includes(firstToken)) {
       this.searchMode = null;
       
       if (Object.values(UrlbarTokenizer.RESTRICT).includes(value)) {
         value += " ";
       }
-      this.inputField.value = value;
-      this._revertOnBlurValue = this.value;
-    } else {
-      this.inputField.value = value;
+      this._revertOnBlurValue = value;
     }
+    this.inputField.value = value;
 
     
     this.selectionStart = -1;
@@ -1420,8 +1420,12 @@ class UrlbarInput {
     
     
     this._lastSearchString = "";
-    let event = this.document.createEvent("UIEvents");
-    event.initUIEvent("input", true, false, this.window, 0);
+    let event = new UIEvent("input", {
+      bubbles: true,
+      cancelable: false,
+      view: this.window,
+      detail: 0,
+    });
     this.inputField.dispatchEvent(event);
   }
 
@@ -3533,8 +3537,12 @@ class CopyCutController {
         urlbar.inputField.value.substring(end);
       urlbar.selectionStart = urlbar.selectionEnd = start;
 
-      let event = urlbar.document.createEvent("UIEvents");
-      event.initUIEvent("input", true, false, urlbar.window, 0);
+      let event = new UIEvent("input", {
+        bubbles: true,
+        cancelable: false,
+        view: urlbar.window,
+        detail: 0,
+      });
       urlbar.inputField.dispatchEvent(event);
     }
 
