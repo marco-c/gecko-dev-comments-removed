@@ -422,9 +422,9 @@ function isLimitConstructor(typeInfo, edgeType, varName)
 
     
     var type = edgeType.TypeFunctionCSU.Type.Name;
-    let limit = 0;
+    let attrs = 0;
     if (type in typeInfo.GCSuppressors)
-        limit = limit | LIMIT_CANNOT_GC;
+        attrs = attrs | ATTR_GC_SUPPRESSED;
 
     
     
@@ -438,7 +438,7 @@ function isLimitConstructor(typeInfo, edgeType, varName)
     if (m[1] != type_stem)
         return 0;
 
-    return limit;
+    return attrs;
 }
 
 

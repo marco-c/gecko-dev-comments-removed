@@ -11,16 +11,19 @@ loadRelativeToScript('dumpCFG.js');
 
 
 
-var LIMIT_NONE = 0;
-var LIMIT_CANNOT_GC = 1;
-var LIMIT_ALL = 1;
+var ATTR_GC_SUPPRESSED     = 1;
+var ATTR_CANSCRIPT_BOUNDED = 2; 
+var ATTR_DOM_ITERATING     = 4; 
+
+var ATTRS_NONE             = 0;
+var ATTRS_ALL              = 7; 
 
 
 
 
 
 
-var LIMIT_UNVISITED = 0xffff;
+var ATTRS_UNVISITED = 0xffff;
 
 
 

@@ -692,7 +692,7 @@ function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
 
             var src_gcInfo = gcInfo;
             var src_preGCLive = preGCLive;
-            if (!gcInfo && !(body.limits[source] & LIMIT_CANNOT_GC) && !(suppressed & LIMIT_CANNOT_GC)) {
+            if (!gcInfo && !(body.attrs[source] & ATTR_GC_SUPPRESSED) && !(suppressed & ATTR_GC_SUPPRESSED)) {
                 var gcName = edgeCanGC(edge, body);
                 if (gcName)
                     src_gcInfo = {name:gcName, body:body, ppoint:source};
@@ -830,7 +830,7 @@ function unsafeVariableAddressTaken(suppressed, variable)
             continue;
         for (var edge of body.PEdge) {
             if (edgeTakesVariableAddress(edge, variable, body)) {
-                if (edge.Kind == "Assign" || (!(suppressed & LIMIT_CANNOT_GC) && edgeCanGC(edge)))
+                if (edge.Kind == "Assign" || (!(suppressed & ATTR_GC_SUPPRESSED) && edgeCanGC(edge)))
                     return {body:body, ppoint:edge.Index[0]};
             }
         }
@@ -974,12 +974,12 @@ function typeDesc(type)
     }
 }
 
-function processBodies(functionName, wholeBodyLimits)
+function processBodies(functionName, wholeBodyAttrs)
 {
     if (!("DefineVariable" in functionBodies[0]))
       return;
-    const funcInfo = limitedFunctions[mangled(functionName)] || {};
-    const suppressed = funcInfo.limits | wholeBodyLimits;
+    const funcInfo = limitedFunctions[mangled(functionName)] || { attributes: 0 };
+    const suppressed = funcInfo.attributes | wholeBodyAttrs;
 
     
     
@@ -1128,13 +1128,13 @@ function process(name, json) {
     
     
     for (var body of functionBodies)
-        body.limits = [];
+        body.attrs = [];
 
     for (var body of functionBodies) {
-        for (var [pbody, id, limits] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isLimitConstructor))
+        for (var [pbody, id, attrs] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isLimitConstructor))
         {
-            if (limits)
-                pbody.limits[id] = limits;
+            if (attrs)
+                pbody.attrs[id] = attrs;
         }
     }
 
@@ -1142,12 +1142,12 @@ function process(name, json) {
     
     
     
-    let wholeBodyLimits = 0;
+    let wholeBodyAttrs = 0;
     if (functionName.includes("std::swap") || functionName.includes("mozilla::Swap")) {
-        wholeBodyLimits = LIMIT_CANNOT_GC;
+        wholeBodyAttrs = ATTR_GC_SUPPRESSED;
     }
 
-    processBodies(functionName, wholeBodyLimits);
+    processBodies(functionName, wholeBodyAttrs);
 }
 
 if (theFunctionNameToFind) {

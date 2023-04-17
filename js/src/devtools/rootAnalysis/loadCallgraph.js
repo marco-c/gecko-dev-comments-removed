@@ -46,9 +46,9 @@ var mangledToId = {};
 
 
 
-function addGCFunction(caller, reason, functionLimits)
+function addGCFunction(caller, reason, functionAttrs)
 {
-    if (functionLimits[caller] & LIMIT_CANNOT_GC)
+    if (functionAttrs[caller] && functionAttrs[caller][1] & ATTR_GC_SUPPRESSED)
         return false;
 
     if (ignoreGCFunction(functionNames[caller]))
@@ -72,36 +72,41 @@ function addGCFunction(caller, reason, functionLimits)
 
 
 
-
 function merge_repeated_calls(calleesOf) {
     const callersOf = Object.create(null);
 
-    for (const [caller_prop, callee_limits] of Object.entries(calleesOf)) {
+    for (const [caller_prop, callee_attrs] of Object.entries(calleesOf)) {
         const caller = caller_prop|0;
         const ordered_callees = [];
 
         
-        const callee2limit = new Map();
-        for (const {callee, limits} of callee_limits) {
-            const prev_limits = callee2limit.get(callee);
-            if (prev_limits === undefined) {
-                callee2limit.set(callee, limits);
+        const callee2any = new Map();
+        const callee2all = new Map();
+        for (const {callee, any, all} of callee_attrs) {
+            const prev_any = callee2any.get(callee);
+            if (prev_any === undefined) {
+                assert(!callee2all.has(callee));
+                callee2any.set(callee, any);
+                callee2all.set(callee, all);
                 ordered_callees.push(callee);
             } else {
-                callee2limit.set(callee, prev_limits & limits);
+                const prev_all = callee2all.get(callee);
+                callee2any.set(callee, prev_any | any);
+                callee2all.set(callee, prev_all & all);
             }
         }
 
         
         
         
-        callee_limits.length = 0;
+        callee_attrs.length = 0;
         for (const callee of ordered_callees) {
-            const limits = callee2limit.get(callee);
-            callee_limits.push({callee, limits});
+            const any = callee2any.get(callee);
+            const all = callee2all.get(callee);
+            callee_attrs.push({callee, any, all});
             if (!(callee in callersOf))
                 callersOf[callee] = [];
-            callersOf[callee].push({caller, limits});
+            callersOf[callee].push({caller, any, all});
         }
     }
 
@@ -110,11 +115,11 @@ function merge_repeated_calls(calleesOf) {
 
 function loadCallgraph(file)
 {
-    const fieldCallLimits = {};
+    const fieldCallAttrs = {};
     const fieldCallCSU = new Map(); 
 
     
-    var functionLimits = {};
+    var functionAttrs = {};
 
     let numGCCalls = 0;
 
@@ -139,7 +144,7 @@ function loadCallgraph(file)
             continue;
         }
 
-        let limits = 0;
+        let attrs = 0;
         
         
         
@@ -149,16 +154,18 @@ function loadCallgraph(file)
         if (line.indexOf("/") != -1) {
             match = /^(..)\/(\d+) (.*)/.exec(line);
             line = match[1] + match[3];
-            limits = match[2]|0;
+            attrs = match[2]|0;
         }
         const tag = line.charAt(0);
         if (match = tag == 'I' && /^I (\d+) VARIABLE ([^\,]*)/.exec(line)) {
             const caller = match[1]|0;
             const name = match[2];
             if (!indirectCallCannotGC(functionNames[caller], name) &&
-                !(limits & LIMIT_CANNOT_GC))
+                !(attrs & ATTR_GC_SUPPRESSED))
             {
-                addGCFunction(caller, "IndirectCall: " + name, functionLimits);
+                
+                
+                addGCFunction(caller, "IndirectCall: " + name, functionAttrs);
             }
         } else if (match = tag == 'F' && /^F (\d+) (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
             const caller = match[1]|0;
@@ -166,9 +173,9 @@ function loadCallgraph(file)
             const csu = match[3];
             const fullfield_str = csu + "." + match[4];
             assert(functionNames[fullfield] == fullfield_str);
-            if (limits)
-                fieldCallLimits[fullfield] = limits;
-            addToKeyedList(calleesOf, caller, {callee:fullfield, limits});
+            if (attrs)
+                fieldCallAttrs[fullfield] = attrs;
+            addToKeyedList(calleesOf, caller, {callee:fullfield, any:attrs, all:attrs});
             fieldCallCSU.set(fullfield, csu);
         } else if (match = tag == 'V' && /^V (\d+) (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
             
@@ -176,14 +183,14 @@ function loadCallgraph(file)
         } else if (match = tag == 'D' && /^D (\d+) (\d+)/.exec(line)) {
             const caller = match[1]|0;
             const callee = match[2]|0;
-            addToKeyedList(calleesOf, caller, {callee:callee, limits:limits});
+            addToKeyedList(calleesOf, caller, {callee, any:attrs, all:attrs});
         } else if (match = tag == 'R' && /^R (\d+) (\d+)/.exec(line)) {
             assert(false, "R tag is no longer used");
         } else if (match = tag == 'T' && /^T (\d+) (.*)/.exec(line)) {
             const id = match[1]|0;
             let tag = match[2];
             if (tag == 'GC Call') {
-                addGCFunction(id, "GC", functionLimits);
+                addGCFunction(id, "GC", functionAttrs);
                 numGCCalls++;
             }
         } else {
@@ -194,37 +201,33 @@ function loadCallgraph(file)
     
     
     
-    
     callersOf = merge_repeated_calls(calleesOf);
 
     
     
     
     for (var func of extraGCFunctions()) {
-        addGCFunction(mangledToId[func], "annotation", functionLimits);
+        addGCFunction(mangledToId[func], "annotation", functionAttrs);
     }
     const unknown = mangledToId['(unknown-definition)'];
     if (unknown) {
-        addGCFunction(unknown, "internal", functionLimits);
+        addGCFunction(unknown, "internal", functionAttrs);
     }
 
     
     
-    
 
     
-    for (var [name, limits] of Object.entries(fieldCallLimits)) {
-        if (limits)
-            functionLimits[name] = limits;
-    }
+    for (var [name, attrs] of Object.entries(fieldCallAttrs))
+        functionAttrs[name] = [attrs, attrs];
 
     
     
     
-    var roots = gather_simple_roots(functionLimits, callersOf);
+    const simple_roots = gather_simple_roots(functionAttrs, callersOf);
 
     
-    propagate_limits(roots, functionLimits, calleesOf);
+    propagate_attrs(simple_roots, functionAttrs, calleesOf);
 
     
     
@@ -232,17 +235,26 @@ function loadCallgraph(file)
     
     
     
-    const recursive_roots = gather_recursive_roots(functionLimits, calleesOf, callersOf);
+    
+    
+    
+    const recursive_roots = gather_recursive_roots(functionAttrs, calleesOf, callersOf);
 
     
-    propagate_limits(recursive_roots, functionLimits, calleesOf);
+    propagate_attrs(recursive_roots, functionAttrs, calleesOf);
 
-    
-    for (var name in gcFunctions) {
-        if (functionLimits[name] & LIMIT_CANNOT_GC)
+    for (const [f, [any, all]] of Object.entries(functionAttrs)) {
+        
+        
+        if (any == 0 && all == 0)
+            delete functionAttrs[f];
+
+        
+        if (all & ATTR_GC_SUPPRESSED)
             delete gcFunctions[name];
     }
 
+    
     
     
 
@@ -273,9 +285,9 @@ function loadCallgraph(file)
         assert(name in gcFunctions, "gcFunctions does not contain " + name);
         if (!(name in callersOf))
             continue;
-        for (const {caller, limits} of callersOf[name]) {
-            if (!(limits & LIMIT_CANNOT_GC)) {
-                if (addGCFunction(caller, name, functionLimits))
+        for (const {caller, any, all} of callersOf[name]) {
+            if (!(all & ATTR_GC_SUPPRESSED)) {
+                if (addGCFunction(caller, name, functionAttrs))
                     worklist.push(caller);
             }
         }
@@ -284,8 +296,8 @@ function loadCallgraph(file)
     
     
 
-    for (const [id, limits] of Object.entries(functionLimits))
-        limitedFunctions[functionNames[id]] = { limits };
+    for (const [id, [any, all]] of Object.entries(functionAttrs))
+        limitedFunctions[functionNames[id]] = { attributes: all };
 
     for (const [id, limits, label] of recursive_roots) {
         const name = functionNames[id];
@@ -301,15 +313,15 @@ function loadCallgraph(file)
 
 
 
-function gather_simple_roots(functionLimits, callersOf) {
+
+function gather_simple_roots(functionAttrs, callersOf) {
     const roots = [];
     for (let callee in callersOf)
-        functionLimits[callee] = LIMIT_UNVISITED;
+        functionAttrs[callee] = [ATTRS_NONE, ATTRS_UNVISITED];
     for (let caller in calleesOf) {
-        if (!(caller in callersOf)) {
-            functionLimits[caller] = LIMIT_UNVISITED;
-            roots.push([caller, LIMIT_NONE, 'root']);
-        }
+        functionAttrs[caller] = [ATTRS_NONE, ATTRS_UNVISITED];
+        if (!(caller in callersOf))
+            roots.push([caller, ATTRS_NONE, 'root']);
     }
 
     return roots;
@@ -318,33 +330,30 @@ function gather_simple_roots(functionLimits, callersOf) {
 
 
 
-function propagate_limits(roots, functionLimits, calleesOf) {
+function propagate_attrs(roots, functionAttrs, calleesOf) {
     const worklist = Array.from(roots);
     let top = worklist.length;
     while (top > 0) {
         
         
-        const [caller, edge_limits, callercaller] = worklist[--top];
-        const prev_limits = functionLimits[caller];
-        if (prev_limits & ~edge_limits) {
+        const [caller, edge_attrs, callercaller] = worklist[--top];
+        const [prev_any, prev_all] = functionAttrs[caller];
+        assert(prev_any !== undefined);
+        assert(prev_all !== undefined);
+        const [new_any, new_all] = [prev_any | edge_attrs, prev_all & edge_attrs];
+        if (prev_any != new_any || prev_all != new_all) {
             
             
-            
-            
-            const new_limits = prev_limits & edge_limits;
-            if (new_limits)
-                functionLimits[caller] = new_limits;
-            else
-                delete functionLimits[caller];
-            for (const {callee, limits} of (calleesOf[caller] || []))
-                worklist[top++] = [callee, limits | edge_limits, caller];
+            functionAttrs[caller] = [new_any, new_all];
+            for (const {callee, any, all} of (calleesOf[caller] || []))
+                worklist[top++] = [callee, all | edge_attrs, caller];
         }
     }
 }
 
 
 
-function gather_recursive_roots(functionLimits, calleesOf, callersOf) {
+function gather_recursive_roots(functionAttrs, calleesOf, callersOf) {
     const roots = [];
 
     
@@ -356,9 +365,9 @@ function gather_recursive_roots(functionLimits, calleesOf, callersOf) {
     
     
     const seen = new Set();
-    for (let func in functionLimits) {
+    for (let [func, [any, all]] of Object.entries(functionAttrs)) {
         func = func|0;
-        if (functionLimits[func] != LIMIT_UNVISITED)
+        if (all != ATTRS_UNVISITED)
             continue;
 
         
@@ -374,7 +383,7 @@ function gather_recursive_roots(functionLimits, calleesOf, callersOf) {
             for (const callee of (calleesOf[f] || []).map(o => o.callee)) {
                 if (!seen.has(callee) &&
                     callee != func &&
-                    functionLimits[callee] == LIMIT_UNVISITED)
+                    functionAttrs[callee][1] == ATTRS_UNVISITED)
                 {
                     work.push(callee);
                     seen.add(callee);
@@ -387,7 +396,7 @@ function gather_recursive_roots(functionLimits, calleesOf, callersOf) {
         if (callersOf[func].findIndex(o => !seen.has(o.caller)) == -1) {
             
             
-            roots.push([func, LIMIT_NONE, 'recursive-root']);
+            roots.push([func, ATTRS_NONE, 'recursive-root']);
         }
     }
 

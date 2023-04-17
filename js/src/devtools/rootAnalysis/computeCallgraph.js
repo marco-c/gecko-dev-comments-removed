@@ -136,20 +136,20 @@ function processBody(functionName, body)
         
         
         
-        var edgeLimited = body.limits[edge.Index[0]] | 0;
+        var edgeAttrs = body.attrs[edge.Index[0]] | 0;
 
         for (var callee of getCallees(edge)) {
             
             
             
-            const limits = edgeLimited | callee.limits;
-            let prologue = limits ? `/${limits} ` : "";
+            const attrs = edgeAttrs | callee.attrs;
+            let prologue = attrs ? `/${attrs} ` : "";
             prologue += functionId(functionName) + " ";
             if (callee.kind == 'direct') {
-                const prev_limits = seen.has(callee.name) ? seen.get(callee.name) : LIMIT_UNVISITED;
-                if (prev_limits & ~limits) {
+                const prev_attrs = seen.has(callee.name) ? seen.get(callee.name) : ATTRS_UNVISITED;
+                if (prev_attrs & ~attrs) {
                     
-                    seen.set(callee.name, prev_limits & limits);
+                    seen.set(callee.name, prev_attrs & attrs);
                     printOnce("D " + prologue + functionId(callee.name));
                 }
             } else if (callee.kind == 'field') {
@@ -254,11 +254,11 @@ if (theFunctionNameToFind) {
 function process(functionName, functionBodies)
 {
     for (var body of functionBodies)
-        body.limits = [];
+        body.attrs = [];
 
     for (var body of functionBodies) {
-        for (var [pbody, id, limits] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isLimitConstructor)) {
-            pbody.limits[id] = limits;
+        for (var [pbody, id, attrs] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isLimitConstructor)) {
+            pbody.attrs[id] = attrs;
         }
     }
 
