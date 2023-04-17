@@ -560,7 +560,7 @@ struct CompilationInput {
   CompilationAtomCache atomCache;
 
  private:
-  BaseScript* lazy_ = nullptr;
+  InputScript lazy_ = InputScript(nullptr);
 
  public:
   RefPtr<ScriptSource> source;
@@ -633,9 +633,9 @@ struct CompilationInput {
     
     MOZ_ASSERT(lazyScript->isReadyForDelazification());
     target = CompilationTarget::Delazification;
-    lazy_ = lazyScript;
+    lazy_ = InputScript(lazyScript);
     source = ss;
-    enclosingScope = InputScope(lazy_->function()->enclosingScope());
+    enclosingScope = lazy_.enclosingScope();
   }
 
   
@@ -657,28 +657,24 @@ struct CompilationInput {
 
   
   
+  BaseScript* lazyOuterScript() { return lazy_.raw().as<BaseScript*>(); }
+
   
-  BaseScript* lazyOuterScript() {
-    MOZ_ASSERT(isInitialStencil() == !lazy_);
-    return lazy_;
+  
+  JSFunction* function() const {
+    return lazy_.raw().as<BaseScript*>()->function();
   }
 
   
   
-  JSFunction* function() const { return lazy_->function(); }
+  SourceExtent extent() const { return lazy_.extent(); }
 
   
-  
-  SourceExtent extent() const { return lazy_->extent(); }
-
-  
-  ImmutableScriptFlags immutableFlags() const {
-    return lazy_->immutableFlags();
-  }
+  ImmutableScriptFlags immutableFlags() const { return lazy_.immutableFlags(); }
 
   RO_IMMUTABLE_SCRIPT_FLAGS(immutableFlags())
 
-  FunctionFlags functionFlags() const { return function()->flags(); }
+  FunctionFlags functionFlags() const { return lazy_.functionFlags(); }
 
   
   FunctionSyntaxKind functionSyntaxKind() const;
@@ -686,12 +682,12 @@ struct CompilationInput {
   bool hasPrivateScriptData() const {
     
     
-    return lazy_->hasPrivateScriptData();
+    return lazy_.hasPrivateScriptData();
   }
 
   
   
-  bool isInitialStencil() { return !lazy_; }
+  bool isInitialStencil() { return lazy_.isNull(); }
 
   
   
