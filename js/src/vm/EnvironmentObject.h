@@ -320,6 +320,10 @@ class EnvironmentObject : public NativeObject {
   }
 
   static uint32_t enclosingEnvironmentSlot() { return ENCLOSING_ENV_SLOT; }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+#endif 
 };
 
 class CallObject : public EnvironmentObject {
@@ -1041,6 +1045,10 @@ class DebugEnvironmentProxy : public ProxyObject {
   
   
   bool isOptimizedOut() const;
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+#endif 
 };
 
 
