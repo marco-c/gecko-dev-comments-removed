@@ -140,6 +140,12 @@ union NetAddr {
   NetAddr() { memset(this, 0, sizeof(NetAddr)); }
   explicit NetAddr(const PRNetAddr* prAddr);
 
+  
+  
+  
+  
+  nsresult InitFromString(const nsACString& aString, uint16_t aPort = 0);
+
   bool IsIPAddrAny() const;
   bool IsLoopbackAddr() const;
   bool IsLoopBackAddressWithoutIPv6Mapping() const;
