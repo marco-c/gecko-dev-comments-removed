@@ -57,6 +57,12 @@ var gIdentityHandler = {
 
 
 
+  _secureInternalPages: /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback|ion)(?:[?#]|$)/i,
+
+  
+
+
+
 
   get _isBrokenConnection() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
@@ -1143,17 +1149,9 @@ var gIdentityHandler = {
       this._uriHasHost = false;
     }
 
-    if (uri.schemeIs("about")) {
-      let module = E10SUtils.getAboutModule(uri);
-      if (module) {
-        let flags = module.getURIFlags(uri);
-        this._isSecureInternalUI = !!(
-          flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI
-        );
-      }
-    } else {
-      this._isSecureInternalUI = false;
-    }
+    this._isSecureInternalUI =
+      uri.schemeIs("about") && this._secureInternalPages.test(uri.pathQueryRef);
+
     this._pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
 
     

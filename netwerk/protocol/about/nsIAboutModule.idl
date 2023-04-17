@@ -95,11 +95,6 @@ interface nsIAboutModule : nsISupports
     
 
 
-    const unsigned long IS_SECURE_CHROME_UI = (1 << 11);
-
-    
-
-
 
 
     unsigned long getURIFlags(in nsIURI aURI);
