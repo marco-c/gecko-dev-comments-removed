@@ -60,6 +60,33 @@ interface nsIFOG : nsISupports
 
 
 
+
+
+
+
+
+
+  [implicit_jscontext]
+  void setExperimentActive(in ACString aExperimentId, in ACString aBranch, [optional] in jsval aExtra);
+
+  
+
+
+
+
+
+
+
+
+  void setExperimentInactive(in ACString aExperimentId);
+
+  
+
+
+
+
+
+
   [implicit_jscontext]
   Promise testFlushAllChildren();
 };
