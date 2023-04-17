@@ -393,9 +393,6 @@ struct ParamTraitsIPC : ParamTraitsWindows<P> {};
 
 
 
-
-
-
 template <>
 struct ParamTraitsIPC<mozilla::UniqueFileHandle> {
   typedef mozilla::UniqueFileHandle param_type;
