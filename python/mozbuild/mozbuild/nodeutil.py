@@ -96,7 +96,7 @@ def find_node_executable(
     
     
     
-    return find_executable(["nodejs", "node"], min_version)
+    return find_executable(["node"], min_version)
 
 
 def find_npm_executable(min_version=NPM_MIN_VERSION):
