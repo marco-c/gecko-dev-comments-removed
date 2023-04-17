@@ -31,3 +31,12 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         inputs=["!%s" % full_libname],
     )
     FINAL_TARGET_FILES += ["!dependentlibs.list", "!dependentlibs.list.gtest"]
+
+
+
+
+if CONFIG["OS_ARCH"] == "Linux":
+    
+    
+    DEFINES["topsrcdir"] = TOPSRCDIR
+    OBJDIR_FILES.toolkit.library.build += ["../libxul.so-gdb.py"]

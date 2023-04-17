@@ -96,15 +96,6 @@ def Libxul(name, output_category=None):
         )
         SYMBOLS_FILE = "!symverscript"
 
-    
-    
-    
-    if CONFIG["OS_ARCH"] == "Linux":
-        
-        
-        DEFINES["topsrcdir"] = TOPSRCDIR
-        OBJDIR_FILES.toolkit.library.build += ["../libxul.so-gdb.py"]
-
 
 
 
