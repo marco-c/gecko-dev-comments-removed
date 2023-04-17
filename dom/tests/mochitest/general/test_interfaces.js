@@ -405,21 +405,21 @@ var interfaceNamesInGlobalScope = [
   
   { name: "GainNode", insecureContext: true },
   
-  { name: "Gamepad", insecureContext: false },
+  { name: "Gamepad", insecureContext: true },
   
-  { name: "GamepadAxisMoveEvent", insecureContext: false },
+  { name: "GamepadAxisMoveEvent", insecureContext: true },
   
-  { name: "GamepadButtonEvent", insecureContext: false },
+  { name: "GamepadButtonEvent", insecureContext: true },
   
-  { name: "GamepadButton", insecureContext: false },
+  { name: "GamepadButton", insecureContext: true },
   
-  { name: "GamepadEvent", insecureContext: false },
+  { name: "GamepadEvent", insecureContext: true },
   
-  { name: "GamepadHapticActuator", insecureContext: false },
+  { name: "GamepadHapticActuator", insecureContext: true },
   
   { name: "GamepadLightIndicator", insecureContext: false, disabled: true },
   
-  { name: "GamepadPose", insecureContext: false },
+  { name: "GamepadPose", insecureContext: true },
   
   { name: "GamepadTouch", insecureContext: false, disabled: true },
   
