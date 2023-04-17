@@ -630,8 +630,16 @@ bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
   
   
   if (mBlocks.Length() > 1) {
-    dom::ContentParent::BroadcastShmBlockAdded(GetGeneration(),
-                                               mBlocks.Length() - 1);
+    if (NS_IsMainThread()) {
+      dom::ContentParent::BroadcastShmBlockAdded(GetGeneration(),
+                                                 mBlocks.Length() - 1);
+    } else {
+      NS_DispatchToMainThread(NS_NewRunnableFunction(
+          "ShmBlockAdded callback",
+          [generation = GetGeneration(), index = mBlocks.Length() - 1] {
+            dom::ContentParent::BroadcastShmBlockAdded(generation, index);
+          }));
+    }
   }
 
   return true;

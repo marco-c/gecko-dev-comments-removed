@@ -176,6 +176,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   void InitSharedFontListForPlatform() override;
 
   
+  
+  void PreloadNamesList();
+
+  
   void InitSingleFaceList();
   void InitAliasesForSingleFaceList();
 
@@ -235,6 +239,9 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   bool mUseSizeSensitiveSystemFont;
   nsCString mSystemTextFontFamilyName;
   nsCString mSystemDisplayFontFamilyName;  
+
+  nsTArray<nsCString> mSingleFaceFonts;
+  nsTArray<nsCString> mPreloadFonts;
 };
 
 #endif 

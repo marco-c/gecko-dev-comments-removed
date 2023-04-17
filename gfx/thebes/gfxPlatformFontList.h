@@ -170,29 +170,35 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   typedef nsTArray<FontFamily> PrefFontList;
 
   static gfxPlatformFontList* PlatformFontList() {
+    if (sPlatformFontList->IsInitialized()) {
+      return sPlatformFontList;
+    }
     
     
-    if (!sPlatformFontList) {
-      if (!gfxPlatform::GetPlatform()->CreatePlatformFontList()) {
+    if (sInitFontListThread) {
+      PR_JoinThread(sInitFontListThread);
+      sInitFontListThread = nullptr;
+      
+      
+      
+      if (!sPlatformFontList) {
         MOZ_CRASH("Could not initialize gfxPlatformFontList");
       }
+    }
+    if (!sPlatformFontList->InitFontList()) {
+      MOZ_CRASH("Could not initialize gfxPlatformFontList");
     }
     return sPlatformFontList;
   }
 
-  static bool Initialize(gfxPlatformFontList* aList) {
-    sPlatformFontList = aList;
-    if (aList->InitFontList()) {
-      return true;
-    }
-    Shutdown();
-    return false;
-  }
+  static bool Initialize(gfxPlatformFontList* aList);
 
   static void Shutdown() {
     delete sPlatformFontList;
     sPlatformFontList = nullptr;
   }
+
+  bool IsInitialized() const { return mFontlistInitCount; }
 
   virtual ~gfxPlatformFontList();
 
@@ -523,6 +529,11 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   uint32_t GetGeneration() const;
 
+  
+  static bool IsInitFontListThread() {
+    return PR_GetCurrentThread() == sInitFontListThread;
+  }
+
  protected:
   friend class mozilla::fontlist::FontList;
   friend class InitOtherFamilyNamesForStylo;
@@ -720,9 +731,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                                            SlantStyleRange aStyleForEntry);
 
   
-  virtual void PreloadNamesList();
-
-  
   void LoadBadUnderlineList();
 
   void GenerateFontListKey(const nsACString& aKeyName, nsACString& aResult);
@@ -820,13 +828,13 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   FontFamilyTable mOtherFamilyNames;
 
   
-  bool mOtherFamilyNamesInitialized;
+  bool mOtherFamilyNamesInitialized = false;
 
   
   RefPtr<mozilla::CancelableRunnable> mPendingOtherFamilyNameTask;
 
   
-  bool mFaceNameListsInitialized;
+  bool mFaceNameListsInitialized = false;
 
   struct ExtraNames {
     ExtraNames() = default;
@@ -873,19 +881,21 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   nsTArray<RefPtr<gfxFontFamily>> mFontFamiliesToLoad;
-  uint32_t mStartIndex;
-  uint32_t mNumFamilies;
+  uint32_t mStartIndex = 0;
+  uint32_t mNumFamilies = 0;
 
   
   
-  uint32_t mFontlistInitCount;  
+  uint32_t mFontlistInitCount = 0;  
 
   nsTHashSet<gfxUserFontSet*> mUserFontSetList;
 
-  nsLanguageAtomService* mLangService;
+  nsLanguageAtomService* mLangService = nullptr;
 
   nsTArray<uint32_t> mCJKPrefLangs;
   nsTArray<mozilla::StyleGenericFontFamily> mDefaultGenericsLangGroup;
+
+  nsTArray<nsCString> mEnabledFontsList;
 
   mozilla::UniquePtr<mozilla::fontlist::FontList> mSharedFontList;
 
@@ -903,7 +913,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   FontVisibility mVisibilityLevel = FontVisibility::Unknown;
 
-  bool mFontFamilyWhitelistActive;
+  bool mFontFamilyWhitelistActive = false;
+
+  static PRThread* sInitFontListThread;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxPlatformFontList::FindFamiliesFlags)

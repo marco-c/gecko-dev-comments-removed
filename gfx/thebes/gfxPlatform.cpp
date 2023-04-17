@@ -968,13 +968,11 @@ void gfxPlatform::Init() {
 
   gPlatform->mHasVariationFontSupport = gPlatform->CheckVariationFontSupport();
 
-  if (!StaticPrefs::gfx_font_list_lazy_init_enabled_AtStartup()) {
-    
-    
-    
-    if (!gPlatform->CreatePlatformFontList()) {
-      MOZ_CRASH("Could not initialize gfxPlatformFontList");
-    }
+  
+  
+  
+  if (!gPlatform->CreatePlatformFontList()) {
+    MOZ_CRASH("Could not initialize gfxPlatformFontList");
   }
 
   gPlatform->mScreenReferenceSurface = gPlatform->CreateOffscreenSurface(

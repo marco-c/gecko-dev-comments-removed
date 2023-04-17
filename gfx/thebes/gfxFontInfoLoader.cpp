@@ -164,7 +164,9 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
     
     
     
-    MOZ_ASSERT(!mTimer, "duplicate use of StartLoader() with delay?");
+    
+    
+    
     if (mTimer) {
       return;
     }
