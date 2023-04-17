@@ -15,6 +15,7 @@
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "nsContainerFrame.h"
 #include "nsFrameList.h"  
 #include "nsHTMLParts.h"
 #include "nsLayoutUtils.h"
