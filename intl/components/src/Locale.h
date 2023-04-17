@@ -325,7 +325,7 @@ class MOZ_STACK_CLASS Locale final {
 
 
 
-  [[nodiscard]] bool setUnicodeExtension(const char* extension);
+  ICUResult setUnicodeExtension(const char* extension);
 
   
 
