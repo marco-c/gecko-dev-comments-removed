@@ -151,9 +151,10 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
   class RedirectSink;
 
   
-  class UsageTimer final : public nsITimerCallback {
+  class UsageTimer final : public nsITimerCallback, public nsINamed {
     NS_DECL_ISUPPORTS
     NS_DECL_NSITIMERCALLBACK
+    NS_DECL_NSINAMED
 
     UsageTimer(PreloaderBase* aPreload, dom::Document* aDocument);
 
