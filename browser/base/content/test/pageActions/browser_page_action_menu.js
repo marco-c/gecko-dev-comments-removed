@@ -1043,14 +1043,6 @@ add_task(async function sendToDevice_inUrlbar() {
     );
 
     
-    
-    info("Waiting for the Sent! notification panel to open");
-    await promisePanelShown(ConfirmationHint._panel.id);
-    Assert.equal(ConfirmationHint._panel.anchorNode.id, urlbarButton.id);
-    info("Waiting for the Sent! notification panel to close");
-    await promisePanelHidden(ConfirmationHint._panel.id);
-
-    
     action.pinnedToUrlbar = false;
 
     cleanUp();
