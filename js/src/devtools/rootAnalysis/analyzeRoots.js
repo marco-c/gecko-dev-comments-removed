@@ -205,7 +205,7 @@ function edgeUsesVariable(edge, variable, body)
             return src;
         if ("PEdgeCallInstance" in edge) {
             if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
-                if (edgeKillsVariable(edge, variable)) {
+                if (edgeStartsValueLiveRange(edge, variable)) {
                     
                     
                     
@@ -298,8 +298,7 @@ function expressionIsMethodOnVariable(exp, variable)
 
 
 
-
-function edgeKillsVariable(edge, variable)
+function edgeStartsValueLiveRange(edge, variable)
 {
     
     if (edge.Kind == "Assign") {
@@ -396,7 +395,7 @@ function bodyEatsVariable(variable, body, startpoint)
             
             
             
-            if (!edgeKillsVariable(edge, variable))
+            if (!edgeStartsValueLiveRange(edge, variable))
                 work.push(edge.Index[1]);
         }
     }
@@ -426,11 +425,7 @@ function bodyEatsVariable(variable, body, startpoint)
 
 
 
-
-
-
-
-function edgeInvalidatesVariable(edge, variable, body)
+function edgeEndsValueLiveRange(edge, variable, body)
 {
     
     if (edge.Kind == "Assign") {
@@ -442,6 +437,17 @@ function edgeInvalidatesVariable(edge, variable, body)
         return false;
 
     var callee = edge.Exp[0];
+
+    if (edge.Type.Kind == 'Function' &&
+        edge.Exp[0].Kind == 'Var' &&
+        edge.Exp[0].Variable.Kind == 'Func' &&
+        edge.Exp[0].Variable.Name[1] == 'MarkVariableAsGCSafe' &&
+        edge.Exp[0].Variable.Name[0].includes("JS::detail::MarkVariableAsGCSafe") &&
+        expressionIsVariable(edge.PEdgeCallArguments.Exp[0], variable))
+    {
+        
+        return true;
+    }
 
     if (edge.Type.Kind == 'Function' &&
         edge.Exp[0].Kind == 'Var' &&
@@ -664,14 +670,14 @@ function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
         for (var edge of predecessors[ppoint]) {
             var source = edge.Index[0];
 
-            if (edgeInvalidatesVariable(edge, variable, body)) {
+            if (edgeEndsValueLiveRange(edge, variable, body)) {
                 
                 
                 
                 continue;
             }
 
-            var edge_kills = edgeKillsVariable(edge, variable);
+            var edge_kills = edgeStartsValueLiveRange(edge, variable);
             var edge_uses = edgeUsesVariable(edge, variable, body);
 
             if (edge_kills || edge_uses) {
@@ -803,7 +809,7 @@ function variableLiveAcrossGC(suppressed, variable)
             
 
             
-            if (edgeInvalidatesVariable(edge, variable, body))
+            if (edgeEndsValueLiveRange(edge, variable, body))
                 continue;
 
             var usePoint = edgeUsesVariable(edge, variable, body);

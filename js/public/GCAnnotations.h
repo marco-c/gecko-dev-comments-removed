@@ -63,6 +63,16 @@
 
 #  define JS_HAZ_JSNATIVE_CALLER __attribute__((annotate("Calls JSNatives")))
 
+
+
+
+
+
+
+
+
+#  define JS_HAZ_VALUE_IS_GC_SAFE(var) JS::detail::MarkVariableAsGCSafe(var)
+
 #else
 
 #  define JS_EXPECT_HAZARDS
@@ -76,6 +86,24 @@
 #  define JS_HAZ_GC_SUPPRESSED
 #  define JS_HAZ_CAN_RUN_SCRIPT
 #  define JS_HAZ_JSNATIVE_CALLER
+#  define JS_HAZ_VALUE_IS_GC_SAFE(var)
+
+#endif
+
+#ifdef XGILL_PLUGIN
+
+
+
+namespace JS {
+namespace detail {
+
+template <typename T>
+static inline void MarkVariableAsGCSafe(T& var) {
+  asm("");
+}
+
+}  
+}  
 
 #endif
 

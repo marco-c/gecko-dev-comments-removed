@@ -8,6 +8,20 @@
 
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
+
+
+
+namespace JS {
+namespace detail {
+template <typename T>
+static void MarkVariableAsGCSafe(T&) {
+  asm("");
+}
+}  
+}  
+
+#define JS_HAZ_VARIABLE_IS_GC_SAFE(var) JS::detail::MarkVariableAsGCSafe(var)
+
 struct Cell {
   int f;
 } ANNOTATE("GC Thing");
@@ -314,6 +328,35 @@ void safevals() {
     mozilla::UniquePtr<Cell> unsafe10(&cell);
     GC();
     consume(std::move(unsafe10));
+  }
+
+  
+  
+  
+  
+  
+  {
+    mozilla::UniquePtr<Cell> safe11(&cell);
+    JS_HAZ_VARIABLE_IS_GC_SAFE(safe11);
+    GC();
+  }
+
+  
+  
+  
+  {
+    mozilla::UniquePtr<Cell> safe12(&cell);
+    GC();
+    JS_HAZ_VARIABLE_IS_GC_SAFE(safe12);
+  }
+
+  
+  
+  {
+    mozilla::UniquePtr<Cell> unsafe13(&cell);
+    GC();
+    use(unsafe13.get());
+    JS_HAZ_VARIABLE_IS_GC_SAFE(unsafe13);
   }
 }
 
