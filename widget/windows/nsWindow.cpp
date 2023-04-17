@@ -5925,6 +5925,15 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (WithinDraggableRegion(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
       }
+
+      
+      
+      if (wParam == HTMAXBUTTON) {
+        DispatchMouseEvent(eMouseDown, wParam, lParamToClient(lParam), false,
+                           MouseButton::ePrimary, MOUSE_INPUT_SOURCE());
+        DispatchPendingEvents();
+        result = true;
+      }
       break;
     }
 
@@ -6437,6 +6446,8 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
 
     if (mDraggableRegion.Contains(pt.x, pt.y)) {
       testResult = HTCAPTION;
+    } else if (mMaximizeBtnRect.Contains(pt.x, pt.y)) {
+      testResult = HTMAXBUTTON;
     } else {
       testResult = HTCLIENT;
     }

@@ -2173,6 +2173,14 @@ class nsIWidget : public nsISupports {
 
   virtual double GetDefaultScaleInternal() { return 1.0; }
 
+  
+
+
+
+
+
+  virtual void SetMaximizeButtonRect(const LayoutDeviceIntRect& aClientRect) {}
+
  protected:
   
   
