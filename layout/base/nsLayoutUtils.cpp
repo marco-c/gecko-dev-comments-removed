@@ -2412,7 +2412,7 @@ bool nsLayoutUtils::GetLayerTransformForFrame(nsIFrame* aFrame,
                                               Matrix4x4Flagged* aTransform) {
   
   
-  if (aFrame->Extend3DContext() || aFrame->GetTransformGetter()) {
+  if (aFrame->Extend3DContext() || aFrame->HasTransformGetter()) {
     return false;
   }
 

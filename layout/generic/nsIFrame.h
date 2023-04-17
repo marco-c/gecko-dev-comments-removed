@@ -1977,16 +1977,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-
-  using ComputeTransformFunction = Matrix4x4 (*)(const nsIFrame*,
-                                                 float aAppUnitsPerPixel);
-  
-  virtual ComputeTransformFunction GetTransformGetter() const {
-    return nullptr;
-  }
+  virtual bool HasTransformGetter() const { return false; }
 
   
 
