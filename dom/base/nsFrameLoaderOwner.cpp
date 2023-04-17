@@ -186,18 +186,13 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   
   
   
-  
-  
-  
-  bool retainPaint = true;
-  auto* browserParent = BrowserParent::GetFrom(mFrameLoader);
-  if (!bfcacheEntry || !mFrameLoader->IsRemoteFrame()) {
-    MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-            ("Previous frameLoader not entering BFCache - immediately "
-             "resetting nsSubDocumentFrame (bfcacheEntry=%p, isRemoteFrame=%d, "
-             "browserParent=%p)",
-             bfcacheEntry.get(), mFrameLoader->IsRemoteFrame(), browserParent));
-    retainPaint = false;
+  const bool retainPaint = bfcacheEntry && mFrameLoader->IsRemoteFrame();
+  if (!retainPaint) {
+    MOZ_LOG(
+        gSHIPBFCacheLog, LogLevel::Debug,
+        ("Previous frameLoader not entering BFCache - not retaining paint data"
+         "(bfcacheEntry=%p, isRemoteFrame=%d)",
+         bfcacheEntry.get(), mFrameLoader->IsRemoteFrame()));
   }
 
   ChangeFrameLoaderCommon(owner, retainPaint);
