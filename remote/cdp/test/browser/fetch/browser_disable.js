@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+add_task(async function fetchDomainDisabled({ client }) {
+  const { Fetch } = client;
+
+  await Fetch.disable();
+  ok("Disabling Fetch domain successful");
+});
