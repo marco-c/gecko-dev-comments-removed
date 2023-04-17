@@ -427,25 +427,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-  bool AddTransactionListener(nsITransactionListener& aListener) {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->AddTransactionListener(aListener);
-  }
-  bool RemoveTransactionListener(nsITransactionListener& aListener) {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->RemoveTransactionListener(aListener);
-  }
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult HandleDropEvent(dom::DragEvent* aDropEvent);
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
