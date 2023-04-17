@@ -1776,12 +1776,14 @@ static LayoutDeviceRect ToSnappedRect(
   return LayoutDeviceRect::FromAppUnits(aRect, aTwipsPerPixel);
 }
 
-auto nsNativeBasicTheme::ShouldUseSystemColors(const dom::Document& aDoc)
+auto nsNativeBasicTheme::ShouldUseSystemColors(const nsPresContext& aPc)
     -> UseSystemColors {
   
   
-  return UseSystemColors(
-      PreferenceSheet::PrefsFor(aDoc).NonNativeThemeShouldUseSystemColors());
+  
+  return UseSystemColors(aPc.GetBackgroundColorDraw() &&
+                         PreferenceSheet::PrefsFor(*aPc.Document())
+                             .NonNativeThemeShouldUseSystemColors());
 }
 
 template <typename PaintBackendData>
@@ -1798,7 +1800,7 @@ bool nsNativeBasicTheme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
   const auto devPxRect = ToSnappedRect(aRect, twipsPerPixel, aPaintData);
 
   const EventStates docState = pc->Document()->GetDocumentState();
-  const auto useSystemColors = ShouldUseSystemColors(*pc->Document());
+  const auto useSystemColors = ShouldUseSystemColors(*pc);
   EventStates eventState = GetContentState(aFrame, aAppearance);
   if (aAppearance == StyleAppearance::MozMenulistArrowButton) {
     bool isHTML = IsHTMLContent(aFrame);
