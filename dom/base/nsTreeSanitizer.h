@@ -7,8 +7,12 @@
 
 #include "nsAtom.h"
 #include "nsHashKeys.h"
+#include "nsHashtablesFwd.h"
 #include "nsIPrincipal.h"
+#include "nsTArray.h"
 #include "nsTHashSet.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SanitizerBinding.h"
 
 class nsIContent;
 class nsINode;
@@ -26,7 +30,7 @@ class Element;
 
 
 
-class MOZ_STACK_CLASS nsTreeSanitizer {
+class nsTreeSanitizer {
  public:
   
 
@@ -52,6 +56,12 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
   void Sanitize(mozilla::dom::Document* aDocument);
+
+  
+
+
+
+  void WithWebSanitizerOptions(const mozilla::dom::SanitizerConfig& aOptions);
 
  private:
   
@@ -112,6 +122,14 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
       
       return aAtom->IsStatic() && GetEntry(aAtom->AsStatic());
     }
+  };
+  
+  class DynamicAtomsTable : public nsTHashSet<RefPtr<nsAtom>> {
+   public:
+    explicit DynamicAtomsTable(uint32_t aLength)
+        : nsTHashSet<RefPtr<nsAtom>>(aLength) {}
+
+    bool Contains(nsAtom* aAtom) { return GetEntry(aAtom); }
   };
 
   void SanitizeChildren(nsINode* aRoot);
@@ -271,6 +289,25 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
   static nsIPrincipal* sNullPrincipal;
+
+  
+  bool mIsCustomized = false;
+
+  
+  mozilla::UniquePtr<DynamicAtomsTable> mAllowedElements;
+
+  
+  mozilla::UniquePtr<DynamicAtomsTable> mBlockedElements;
+
+  
+  mozilla::UniquePtr<
+      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>
+      mAllowedAttributes;
+
+  
+  mozilla::UniquePtr<
+      nsTHashMap<RefPtr<nsAtom>, mozilla::UniquePtr<DynamicAtomsTable>>>
+      mDroppedAttributes;
 };
 
 #endif  

@@ -33,11 +33,12 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Sanitizer)
 
-  explicit Sanitizer(nsIGlobalObject* aGlobal) : mGlobal(aGlobal) {
+  explicit Sanitizer(nsIGlobalObject* aGlobal, const SanitizerConfig& aOptions)
+      : mGlobal(aGlobal),
+        mTreeSanitizer(nsIParserUtils::SanitizerAllowStyle |
+                       nsIParserUtils::SanitizerAllowComments) {
     MOZ_ASSERT(aGlobal);
-    
-    mSanitizationFlags = nsIParserUtils::SanitizerAllowStyle |
-                         nsIParserUtils::SanitizerAllowComments;
+    mTreeSanitizer.WithWebSanitizerOptions(aOptions);
   }
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
@@ -50,7 +51,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
   static already_AddRefed<Sanitizer> Constructor(
-      const GlobalObject& aGlobal, const SanitizerOptions& aOptions,
+      const GlobalObject& aGlobal, const SanitizerConfig& aOptions,
       ErrorResult& aRv);
 
   
@@ -94,9 +95,9 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
                          uint64_t aInnerWindowID, bool aFromPrivateWindow);
 
-  SanitizerOptions mOptions;
-  uint32_t mSanitizationFlags;
   nsCOMPtr<nsIGlobalObject> mGlobal;
+  SanitizerConfig mOptions;
+  nsTreeSanitizer mTreeSanitizer;
 };
 }  
 }  
