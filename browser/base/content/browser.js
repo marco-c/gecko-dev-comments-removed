@@ -538,22 +538,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-var docWeak = Cu.getWeakReference(document);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gProton",
-  "browser.proton.enabled",
-  false,
-  (pref, oldValue, newValue) => {
-    let doc = docWeak.get();
-    if (doc) {
-      doc.documentElement.toggleAttribute("proton", newValue);
-    }
-  }
-);
-
-
-
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
@@ -1681,8 +1665,6 @@ var gBrowserInit = {
     ) {
       document.documentElement.setAttribute("icon", "main-window");
     }
-
-    document.documentElement.toggleAttribute("proton", gProton);
 
     
     
