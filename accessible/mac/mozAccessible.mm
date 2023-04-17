@@ -875,7 +875,8 @@ struct RoleDescrComparator {
   
   
   MOXSearchInfo* search =
-      [[MOXSearchInfo alloc] initWithParameters:searchPredicate andRoot:self];
+      [[[MOXSearchInfo alloc] initWithParameters:searchPredicate
+                                         andRoot:self] autorelease];
 
   return [search performSearch];
 }
