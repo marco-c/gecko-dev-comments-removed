@@ -173,6 +173,9 @@ class ContentParent final
 
   static void ReleaseCachedProcesses();
 
+  static void LogAndAssertFailedPrincipalValidationInfo(
+      nsIPrincipal* aPrincipal, const char* aMethod);
+
   
 
 

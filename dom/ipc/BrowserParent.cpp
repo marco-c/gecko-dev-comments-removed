@@ -1355,6 +1355,26 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   }
 
   
+  
+  EnumSet<ContentParent::ValidatePrincipalOptions> validationOptions = {};
+  nsCOMPtr<nsIURI> docURI = aInit.documentURI();
+  if (docURI->SchemeIs("about") || docURI->SchemeIs("chrome")) {
+    
+    
+    
+    
+    
+    
+    
+    validationOptions = {ContentParent::ValidatePrincipalOptions::AllowSystem};
+  }
+
+  if (!mManager->ValidatePrincipal(aInit.principal(), validationOptions)) {
+    ContentParent::LogAndAssertFailedPrincipalValidationInfo(aInit.principal(),
+                                                             __func__);
+  }
+
+  
   RefPtr<WindowGlobalParent> wgp =
       WindowGlobalParent::CreateDisconnected(aInit);
   BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
