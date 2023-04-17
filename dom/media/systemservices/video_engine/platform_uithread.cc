@@ -85,7 +85,7 @@ void PlatformUIThread::Run() {
   
   
   
-  run_function_deprecated_(obj_);
+  run_function_(obj_);
 
   do {
     
@@ -107,11 +107,11 @@ void PlatformUIThread::Run() {
 }
 
 void PlatformUIThread::NativeEventCallback() {
-  if (!run_function_deprecated_) {
+  if (!run_function_) {
     stop_ = true;
     return;
   }
-  run_function_deprecated_(obj_);
+  run_function_(obj_);
 }
 
 
