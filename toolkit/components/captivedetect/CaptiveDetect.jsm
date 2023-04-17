@@ -281,6 +281,11 @@ function CaptivePortalDetector() {
   this._requestQueue = []; 
   this._interfaceNames = {}; 
 
+  Services.telemetry.setEventRecordingEnabled(
+    "networking.captive_portal",
+    true
+  );
+
   debug(
     "CaptiveProtalDetector initiated, waiting for network connection established"
   );
