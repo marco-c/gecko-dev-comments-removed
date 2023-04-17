@@ -119,6 +119,10 @@ enum class nsLayoutPhase : uint8_t {
 };
 #endif
 
+
+#define NS_AUTHOR_SPECIFIED_BORDER_OR_BACKGROUND (1 << 0)
+#define NS_AUTHOR_SPECIFIED_PADDING (1 << 1)
+
 class nsRootPresContext;
 
 
@@ -885,6 +889,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   
   bool IsChrome() const;
+
+  
+  bool HasAuthorSpecifiedRules(const nsIFrame* aFrame,
+                               uint32_t ruleTypeMask) const;
 
   
   void SetPaintFlashing(bool aPaintFlashing) {

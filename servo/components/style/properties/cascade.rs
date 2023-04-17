@@ -802,6 +802,12 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         {
             builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
         }
+        if self
+            .author_specified
+            .contains_any(LonghandIdSet::padding_properties())
+        {
+            builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_PADDING);
+        }
 
         if self
             .author_specified
@@ -864,7 +870,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         
         
         
-        let reset_props_bits = ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND;
+        let reset_props_bits = ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND |
+            ComputedValueFlags::HAS_AUTHOR_SPECIFIED_PADDING;
         builder.add_flags(cached_style.flags & reset_props_bits);
 
         true

@@ -948,6 +948,18 @@ impl LonghandIdSet {
     
     
     #[inline]
+    pub fn padding_properties() -> &'static Self {
+        <% assert "padding" in logical_groups %>
+        ${static_longhand_id_set(
+            "PADDING_PROPERTIES",
+            lambda p: p.logical_group == "padding"
+        )}
+        &PADDING_PROPERTIES
+    }
+
+    
+    
+    #[inline]
     pub fn border_background_properties() -> &'static Self {
         ${static_longhand_id_set(
             "BORDER_BACKGROUND_PROPERTIES",
