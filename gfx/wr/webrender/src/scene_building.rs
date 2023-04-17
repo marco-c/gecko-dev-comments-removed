@@ -1703,6 +1703,7 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
             clip_id,
             &self.clip_store,
+            self.interners,
         );
     }
 
