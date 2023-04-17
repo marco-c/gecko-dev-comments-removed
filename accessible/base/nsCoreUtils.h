@@ -201,11 +201,6 @@ class nsCoreUtils {
   
 
 
-  static bool IsContentDocument(Document* aDocument);
-
-  
-
-
 
 
   static bool IsTopLevelContentDocInProcess(Document* aDocumentNode);

@@ -2454,8 +2454,7 @@ void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
       entry->role == roles::DIALOG ||
       
       
-      (entry->role == roles::ALERT &&
-       !nsCoreUtils::IsContentDocument(mDocumentNode))) {
+      (entry->role == roles::ALERT && !mDocumentNode->IsContentDocument())) {
     SetRoleMapEntry(entry);
     return;
   }

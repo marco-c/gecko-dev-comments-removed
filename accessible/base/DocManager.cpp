@@ -246,7 +246,7 @@ DocManager::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
     
     
     
-    if (NS_SUCCEEDED(aStatus) || !nsCoreUtils::IsContentDocument(document)) {
+    if (NS_SUCCEEDED(aStatus) || !document->IsContentDocument()) {
       eventType = nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE;
     }
 
