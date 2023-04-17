@@ -260,3 +260,57 @@ add_task(async function gcAbort() {
 
   SpecialPowers.popPrefEnv();
 });
+
+add_task(async function gcJSInitiated() {
+  SpecialPowers.pushPrefEnv({
+    set: [["javascript.options.concurrent_multiprocess_gcs.max", 1]],
+  });
+
+  const num_tabs = 3;
+  var tabs = await setupTabs(num_tabs);
+
+  info("Tabs ready, Asking for GCs");
+  var waits = [];
+
+  
+  
+  var tab0Waits = startNextCollection(tabs[0], 0, waits, () => {
+    if (SpecialPowers.Cu.getJSTestingFunctions().gczeal) {
+      SpecialPowers.Cu.getJSTestingFunctions().gczeal(10);
+    }
+    SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
+  });
+  await tab0Waits.waitBegin;
+
+  
+  var tab1Waits = startNextCollection(tabs[1], 1, waits);
+
+  
+  SpecialPowers.spawn(tabs[1].linkedBrowser, [], () => {
+    SpecialPowers.Cu.getJSTestingFunctions().gcslice(1);
+  });
+
+  await tab1Waits.waitBegin;
+
+  
+  var state = await SpecialPowers.spawn(tabs[0].linkedBrowser, [], () => {
+    return SpecialPowers.Cu.getJSTestingFunctions().gcstate();
+  });
+  info("State is " + state);
+  isnot(state, "NotActive", "GC is active in tab 0");
+
+  
+  startNextCollection(tabs[2], 2, waits);
+
+  let order = await resolveInOrder(waits);
+  checkAllCompleted(
+    order,
+    Array.from({ length: num_tabs }, (_, n) => n)
+  );
+
+  for (var tab of tabs) {
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  SpecialPowers.popPrefEnv();
+});
