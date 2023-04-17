@@ -214,11 +214,14 @@ add_task(async function test_browser_settings() {
     });
   }
 
-  
-  
   extension.sendMessage("get", "ftpProtocolEnabled");
   let data = await extension.awaitMessage("settingData");
-  equal(data.value, Services.prefs.getBoolPref("network.ftp.enabled"));
+  equal(data.value, false);
+  equal(
+    data.levelOfControl,
+    "not_controllable",
+    `ftpProtocolEnabled is not controllable.`
+  );
 
   await testSetting("newTabPosition", "afterCurrent", {
     "browser.tabs.insertRelatedAfterCurrent": false,
