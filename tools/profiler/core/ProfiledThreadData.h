@@ -7,10 +7,9 @@
 #ifndef ProfiledThreadData_h
 #define ProfiledThreadData_h
 
-#include "platform.h"
+#include "ThreadInfo.h"
 
 #include "mozilla/Maybe.h"
-#include "mozilla/ProfilerThreadRegistrationInfo.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/RefPtr.h"
@@ -52,9 +51,7 @@ class SpliceableJSONWriter;
 
 class ProfiledThreadData final {
  public:
-  ProfiledThreadData(
-      const mozilla::profiler::ThreadRegistrationInfo& aThreadInfo,
-      nsIEventTarget* aEventTarget);
+  ProfiledThreadData(ThreadInfo* aThreadInfo, nsIEventTarget* aEventTarget);
   ~ProfiledThreadData();
 
   void NotifyUnregistered(uint64_t aBufferPosition) {
@@ -64,7 +61,6 @@ class ProfiledThreadData final {
                "unregistered");
     mUnregisterTime = mozilla::TimeStamp::Now();
     mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
-    mPreviousThreadRunningTimes.Clear();
   }
   mozilla::Maybe<uint64_t> BufferPositionWhenUnregistered() {
     return mBufferPositionWhenUnregistered;
@@ -83,9 +79,7 @@ class ProfiledThreadData final {
       JSContext* aCx, mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
       const mozilla::TimeStamp& aProcessStartTime);
 
-  const mozilla::profiler::ThreadRegistrationInfo& Info() const {
-    return mThreadInfo;
-  }
+  const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
 
   void NotifyReceivedJSContext(uint64_t aCurrentBufferPosition) {
     mBufferPositionWhenReceivedJSContext =
@@ -98,18 +92,13 @@ class ProfiledThreadData final {
                                   const mozilla::TimeStamp& aProcessStartTime,
                                   ProfileBuffer& aBuffer);
 
-  RunningTimes& PreviousThreadRunningTimesRef() {
-    return mPreviousThreadRunningTimes;
-  }
-
  private:
   
   
   
 
   
-  
-  const mozilla::profiler::ThreadRegistrationInfo mThreadInfo;
+  const RefPtr<ThreadInfo> mThreadInfo;
 
   
   
@@ -128,9 +117,6 @@ class ProfiledThreadData final {
 
   
   mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;
-
-  
-  RunningTimes mPreviousThreadRunningTimes;
 
   
   

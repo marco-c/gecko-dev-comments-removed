@@ -4,40 +4,12 @@
 
 
 
-#include "mozilla/ProfilerThreadRegistrationData.h"
+#include "RegisteredThread.h"
 
 #include "mozilla/ProfilerMarkers.h"
 #include "js/AllocationRecording.h"
 #include "js/ProfilingStack.h"
 #include "js/TraceLoggerAPI.h"
-
-#if defined(XP_WIN)
-#  include <windows.h>
-#elif defined(XP_DARWIN)
-#  include <pthread.h>
-#endif
-
-namespace mozilla::profiler {
-
-ThreadRegistrationData::ThreadRegistrationData(const char* aName,
-                                               const void* aStackTop)
-    : mInfo(aName),
-      mPlatformData(mInfo.ThreadId()),
-      mStackTop(
-#if defined(XP_WIN)
-          
-          reinterpret_cast<const void*>(
-              reinterpret_cast<PNT_TIB>(NtCurrentTeb())->StackBase)
-#elif defined(XP_DARWIN)
-          
-          reinterpret_cast<const void*>(
-              pthread_get_stackaddr_np(pthread_self()))
-#else
-          
-          aStackTop
-#endif
-      ) {
-}
 
 
 
@@ -98,28 +70,89 @@ static void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
       info.size, info.inNursery);
 }
 
-void ThreadRegistrationLockedRWFromAnyThread::SetIsBeingProfiled(
-    bool aIsBeingProfiled, const PSAutoLock&) {
-  mIsBeingProfiled = aIsBeingProfiled;
+RacyRegisteredThread::RacyRegisteredThread(ProfilerThreadId aThreadId)
+    : mProfilingStackOwner(
+          mozilla::MakeNotNull<RefPtr<mozilla::ProfilingStackOwner>>()),
+      mThreadId(aThreadId),
+      mSleep(AWAKE),
+      mIsBeingProfiled(false) {
+  MOZ_COUNT_CTOR(RacyRegisteredThread);
 }
 
-void ThreadRegistrationLockedRWOnThread::SetJSContext(JSContext* aJSContext) {
-  MOZ_ASSERT(aJSContext && !mJSContext);
-
-  mJSContext = aJSContext;
+RegisteredThread::RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread,
+                                   void* aStackTop)
+    : mRacyRegisteredThread(aInfo->ThreadId()),
+      mPlatformData(AllocPlatformData(aInfo->ThreadId())),
+      mStackTop(aStackTop),
+      mThreadInfo(aInfo),
+      mThread(aThread),
+      mContext(nullptr),
+      mJSSampling(INACTIVE),
+      mJSFlags(0) {
+  MOZ_COUNT_CTOR(RegisteredThread);
 
   
   
-  js::SetContextProfilingStack(aJSContext, &ProfilingStackRef());
-}
 
-void ThreadRegistrationLockedRWOnThread::ClearJSContext() {
-  mJSContext = nullptr;
-}
-
-void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
   
-  if (mJSContext) {
+#if defined(GP_OS_darwin)
+  pthread_t self = pthread_self();
+  mStackTop = pthread_get_stackaddr_np(self);
+#endif
+}
+
+RegisteredThread::~RegisteredThread() { MOZ_COUNT_DTOR(RegisteredThread); }
+
+size_t RegisteredThread::SizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t n = aMallocSizeOf(this);
+
+  
+  
+  
+  
+  
+  
+
+  return n;
+}
+
+void RegisteredThread::GetRunningEventDelay(const mozilla::TimeStamp& aNow,
+                                            mozilla::TimeDuration& aDelay,
+                                            mozilla::TimeDuration& aRunning) {
+  if (mThread) {  
+    mozilla::TimeStamp start;
+    mThread->GetRunningEventDelay(&aDelay, &start);
+    if (!start.IsNull()) {
+      
+      
+      
+      aRunning = aNow - start;
+      return;
+    }
+  }
+  aDelay = mozilla::TimeDuration();
+  aRunning = mozilla::TimeDuration();
+}
+
+void RegisteredThread::SetJSContext(JSContext* aContext) {
+  
+
+  MOZ_ASSERT(aContext && !mContext);
+
+  mContext = aContext;
+
+  
+  
+  js::SetContextProfilingStack(aContext,
+                               &RacyRegisteredThread().ProfilingStack());
+}
+
+void RegisteredThread::PollJSSampling() {
+  
+
+  
+  if (mContext) {
     
     
     
@@ -131,29 +164,26 @@ void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
     
     if (mJSSampling == ACTIVE_REQUESTED) {
       mJSSampling = ACTIVE;
-      js::EnableContextProfilingStack(mJSContext, true);
+      js::EnableContextProfilingStack(mContext, true);
       if (JSTracerEnabled()) {
-        JS::StartTraceLogger(mJSContext);
+        JS::StartTraceLogger(mContext);
       }
       if (JSAllocationsEnabled()) {
         
-        JS::EnableRecordingAllocations(mJSContext,
+        JS::EnableRecordingAllocations(mContext,
                                        profiler_add_js_allocation_marker, 0.01);
       }
-      js::RegisterContextProfilingEventMarker(mJSContext,
-                                              profiler_add_js_marker);
+      js::RegisterContextProfilingEventMarker(mContext, profiler_add_js_marker);
 
     } else if (mJSSampling == INACTIVE_REQUESTED) {
       mJSSampling = INACTIVE;
-      js::EnableContextProfilingStack(mJSContext, false);
+      js::EnableContextProfilingStack(mContext, false);
       if (JSTracerEnabled()) {
-        JS::StopTraceLogger(mJSContext);
+        JS::StopTraceLogger(mContext);
       }
       if (JSAllocationsEnabled()) {
-        JS::DisableRecordingAllocations(mJSContext);
+        JS::DisableRecordingAllocations(mContext);
       }
     }
   }
 }
-
-}  
