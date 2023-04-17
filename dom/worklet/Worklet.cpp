@@ -406,20 +406,8 @@ void ExecutionRunnable::RunOnWorkletThread() {
   
   
   
-  JS::Rooted<JS::Value> rval(cx);
-  JS::ModuleEvaluate(cx, module, &rval);
-  
-  
-  
-  
-  if (!rval.isUndefined() && rval.isObject()) {
-    JS::Rooted<JSObject*> aEvaluationPromise(cx);
-    aEvaluationPromise.set(&rval.toObject());
-    if (!JS::ThrowOnModuleEvaluationFailure(cx, aEvaluationPromise)) {
-      mResult = NS_ERROR_DOM_ABORT_ERR;
-      return;
-    }
-  }
+  JS::Rooted<JS::Value> ignored(cx);
+  JS::ModuleEvaluate(cx, module, &ignored);
 
   
   mResult = NS_OK;
