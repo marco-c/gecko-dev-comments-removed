@@ -255,6 +255,25 @@ var SessionFileInternal = {
         let source = await OS.File.read(path, options);
         let parsed = JSON.parse(source);
 
+        if (parsed._cachedObjs) {
+          try {
+            let cacheMap = new Map(parsed._cachedObjs);
+            for (let win of parsed.windows.concat(
+              parsed._closedWindows || []
+            )) {
+              for (let tab of win.tabs.concat(win._closedTabs || [])) {
+                tab.image = cacheMap.get(tab.image) || tab.image;
+              }
+            }
+          } catch (e) {
+            
+            
+            
+            
+            Cu.reportError(e);
+          }
+        }
+
         if (
           !SessionStore.isFormatVersionCompatible(
             parsed.version || [
