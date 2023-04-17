@@ -30,6 +30,11 @@ using namespace js::wasm;
 extern JS::PersistentRootedObject gGlobal;
 extern JSContext* gCx;
 
+static bool gIsWasmSmith = false;
+extern "C" {
+size_t gluesmith(uint8_t* data, size_t size, uint8_t* out, size_t maxsize);
+}
+
 static int testWasmInit(int* argc, char*** argv) {
   if (!wasm::HasSupport(gCx) ||
       !GlobalObject::getOrCreateConstructor(gCx, JSProto_WebAssembly)) {
@@ -37,6 +42,11 @@ static int testWasmInit(int* argc, char*** argv) {
   }
 
   return 0;
+}
+
+static int testWasmSmithInit(int* argc, char*** argv) {
+  gIsWasmSmith = true;
+  return testWasmInit(argc, argv);
 }
 
 static bool emptyNativeFunction(JSContext* cx, unsigned argc, Value* vp) {
@@ -124,8 +134,22 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
     
     gCx->clearPendingException();
 
-    unsigned char moduleLen = buf[currentIndex];
-    currentIndex++;
+    uint16_t moduleLen;
+    if (gIsWasmSmith) {
+      
+      
+      
+      if (!currentIndex) {
+        currentIndex++;
+      }
+
+      
+      moduleLen = *((uint16_t*)&buf[currentIndex]);
+      currentIndex += 2;
+    } else {
+      moduleLen = buf[currentIndex];
+      currentIndex++;
+    }
 
     if (size - currentIndex < moduleLen) {
       moduleLen = size - currentIndex;
@@ -135,11 +159,16 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
       continue;
     }
 
-    if (currentIndex == 1) {
+    if (currentIndex == 1 || (gIsWasmSmith && currentIndex == 3)) {
       
       
       
-      uint8_t optByte = (uint8_t)buf[currentIndex];
+      uint8_t optByte;
+      if (gIsWasmSmith) {
+        optByte = (uint8_t)buf[0];
+      } else {
+        optByte = (uint8_t)buf[currentIndex];
+      }
 
       
       
@@ -197,6 +226,15 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
     
     uint32_t magic_header = 0x6d736100;
     uint32_t magic_version = 0x1;
+
+    if (gIsWasmSmith) {
+      
+      
+      MOZ_RELEASE_ASSERT(*(uint32_t*)(&buf[currentIndex]) == magic_header,
+                         "Magic header mismatch!");
+      MOZ_RELEASE_ASSERT(*(uint32_t*)(&buf[currentIndex + 4]) == magic_version,
+                         "Magic version mismatch!");
+    }
 
     
     
@@ -451,4 +489,68 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
   return 0;
 }
 
+static int testWasmSmithFuzz(const uint8_t* buf, size_t size) {
+  
+  
+  
+  
+  
+  const size_t maxInputSize = 1024;
+  const size_t maxModuleSize = 4096;
+
+  size_t maxModules = size / maxInputSize + 1;
+
+  
+  uint8_t* out =
+      new uint8_t[1 + maxModules * (maxModuleSize + sizeof(uint16_t))];
+
+  auto deleteGuard = mozilla::MakeScopeExit([&] { delete[] out; });
+
+  
+  out[0] = buf[0];
+
+  size_t outIndex = 1;
+  size_t currentIndex = 1;
+
+  while (currentIndex < size) {
+    size_t remaining = size - currentIndex;
+
+    
+    if (remaining <= sizeof(uint16_t)) {
+      break;
+    }
+
+    
+    uint16_t inSize =
+        (*((uint16_t*)&buf[currentIndex]) & (maxInputSize - 1)) + 1;
+    remaining -= sizeof(uint16_t);
+    currentIndex += sizeof(uint16_t);
+
+    
+    inSize = remaining >= inSize ? inSize : remaining;
+
+    size_t outSize =
+        gluesmith((uint8_t*)&buf[currentIndex], inSize,
+                  out + outIndex + sizeof(uint16_t), maxModuleSize);
+
+    if (!outSize) {
+      break;
+    }
+
+    currentIndex += inSize;
+
+    
+    *(uint16_t*)(&out[outIndex]) = (uint16_t)outSize;
+    outIndex += sizeof(uint16_t) + outSize;
+  }
+
+  
+  if (outIndex == 1) {
+    return 0;
+  }
+
+  return testWasmFuzz(out, outIndex);
+}
+
 MOZ_FUZZING_INTERFACE_RAW(testWasmInit, testWasmFuzz, Wasm);
+MOZ_FUZZING_INTERFACE_RAW(testWasmSmithInit, testWasmSmithFuzz, WasmSmith);
