@@ -2765,6 +2765,13 @@ bool DeallocPQuotaParent(PQuotaParent* aActor) {
 bool RecvShutdownQuotaManager() {
   AssertIsOnBackgroundThread();
 
+  
+  
+  
+  
+  
+  QM_TRY(OkIf(!gShutdown), true);
+
   QuotaManager::ShutdownInstance();
 
   return true;
@@ -3816,12 +3823,11 @@ void QuotaManager::RecordShutdownStep(const Maybe<Client::Type> aClientType,
 void QuotaManager::Shutdown() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!mShutdownStarted);
+  MOZ_DIAGNOSTIC_ASSERT(!gShutdown);
 
   
   
-  if (gShutdown.exchange(true)) {
-    NS_ERROR("Shutdown more than once?!");
-  }
+  gShutdown = true;
 
   StopIdleMaintenance();
 
