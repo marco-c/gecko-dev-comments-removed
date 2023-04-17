@@ -1524,6 +1524,8 @@ impl Device {
                 TexStorageUsage::Never
             ),
             
+            
+            
             gl::GlType::Gles if supports_gles_bgra && supports_texture_storage => (
                 TextureFormatPair::from(ImageFormat::BGRA8),
                 TextureFormatPair { internal: gl::BGRA8_EXT, external: gl::BGRA_EXT },
@@ -1534,16 +1536,6 @@ impl Device {
             
             
             
-            
-            gl::GlType::Gles if supports_gles_bgra && !avoid_tex_image => (
-                TextureFormatPair::from(ImageFormat::RGBA8),
-                TextureFormatPair::from(gl::BGRA_EXT),
-                gl::UNSIGNED_BYTE,
-                Swizzle::Rgba, 
-                TexStorageUsage::NonBGRA8,
-            ),
-            
-            
             gl::GlType::Gles if supports_texture_swizzle => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
@@ -1552,13 +1544,28 @@ impl Device {
                 TexStorageUsage::Always,
             ),
             
-            gl::GlType::Gles => (
-                TextureFormatPair::from(ImageFormat::RGBA8),
-                TextureFormatPair { internal: gl::RGBA8, external: gl::BGRA },
+            
+            
+            gl::GlType::Gles if supports_gles_bgra && !avoid_tex_image => (
+                TextureFormatPair::from(ImageFormat::BGRA8),
+                TextureFormatPair::from(gl::BGRA_EXT),
                 gl::UNSIGNED_BYTE,
-                Swizzle::Rgba,
-                TexStorageUsage::Always,
+                Swizzle::Rgba, 
+                TexStorageUsage::NonBGRA8,
             ),
+            
+            
+            
+            gl::GlType::Gles => {
+                warn!("Neither BGRA or texture swizzling are supported. Images may be rendered incorrectly.");
+                (
+                    TextureFormatPair::from(ImageFormat::RGBA8),
+                    TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
+                    gl::UNSIGNED_BYTE,
+                    Swizzle::Rgba,
+                    TexStorageUsage::Always,
+                )
+            }
         };
 
         let is_software_webrender = renderer_name.starts_with("Software WebRender");

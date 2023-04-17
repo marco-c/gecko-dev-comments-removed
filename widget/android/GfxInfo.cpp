@@ -683,6 +683,20 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 #endif
   }
 
+  if (aFeature == FEATURE_GL_SWIZZLE) {
+    
+    
+    const bool isPowerVRRogue =
+        mGLStrings->Renderer().Find("PowerVR Rogue",  true) >= 0;
+    if (isPowerVRRogue) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+      aFailureId = "FEATURE_FAILURE_POWERVR_ROGUE";
+    } else {
+      *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
+    }
+    return NS_OK;
+  }
+
   return GfxInfoBase::GetFeatureStatusImpl(
       aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, aFailureId, &os);
 }
