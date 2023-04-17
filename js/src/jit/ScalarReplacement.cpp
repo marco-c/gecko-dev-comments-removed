@@ -1401,6 +1401,14 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
 
   
   
+  
+  if (ins->isCreateArgumentsObject() && graph_.osrBlock()) {
+    JitSpew(JitSpew_Escape, "Can't replace outermost OSR arguments");
+    return true;
+  }
+
+  
+  
   for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
     MNode* consumer = (*i)->consumer();
 
@@ -1796,8 +1804,7 @@ bool ScalarReplacement(MIRGenerator* mir, MIRGraph& graph) {
   EmulateStateOf<ObjectMemoryView> replaceObject(mir, graph);
   EmulateStateOf<ArrayMemoryView> replaceArray(mir, graph);
   bool addedPhi = false;
-  bool shouldReplaceArguments =
-      JitOptions.scalarReplaceArguments && !graph.osrBlock();
+  bool shouldReplaceArguments = JitOptions.scalarReplaceArguments;
 
   for (ReversePostorderIterator block = graph.rpoBegin();
        block != graph.rpoEnd(); block++) {
