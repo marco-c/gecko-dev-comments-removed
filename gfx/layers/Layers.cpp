@@ -15,6 +15,7 @@
 #include <type_traits>         
 #include "CompositableHost.h"  
 #include "GeckoProfiler.h"  
+#include "ImageLayers.h"    
 #include "LayerUserData.h"  
 #include "ReadbackLayer.h"  
 #include "TreeTraversal.h"  
@@ -1352,6 +1353,33 @@ void ContainerLayer::PrintInfo(std::stringstream& aStream,
 void ColorLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
   Layer::PrintInfo(aStream, aPrefix);
   aStream << " [color=" << mColor << "] [bounds=" << mBounds << "]";
+}
+
+CanvasLayer::CanvasLayer(LayerManager* aManager, void* aImplData)
+    : Layer(aManager, aImplData), mSamplingFilter(SamplingFilter::GOOD) {}
+
+CanvasLayer::~CanvasLayer() = default;
+
+void CanvasLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
+  Layer::PrintInfo(aStream, aPrefix);
+  if (mSamplingFilter != SamplingFilter::GOOD) {
+    aStream << " [filter=" << mSamplingFilter << "]";
+  }
+}
+
+RefPtr<CanvasRenderer> CanvasLayer::CreateOrGetCanvasRenderer() {
+  if (!mCanvasRenderer) {
+    mCanvasRenderer = CreateCanvasRendererInternal();
+  }
+
+  return mCanvasRenderer;
+}
+
+void ImageLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
+  Layer::PrintInfo(aStream, aPrefix);
+  if (mSamplingFilter != SamplingFilter::GOOD) {
+    aStream << " [filter=" << mSamplingFilter << "]";
+  }
 }
 
 void RefLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {

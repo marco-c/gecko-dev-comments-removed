@@ -61,8 +61,10 @@ class Layer;
 class LayerMetricsWrapper;
 class PaintedLayer;
 class ContainerLayer;
+class ImageLayer;
 class ColorLayer;
 class CompositorBridgeChild;
+class CanvasLayer;
 class ReadbackLayer;
 class ReadbackProcessor;
 class RefLayer;
@@ -327,7 +329,17 @@ class LayerManager : public WindowRenderer {
 
 
 
+  virtual already_AddRefed<ImageLayer> CreateImageLayer() = 0;
+  
+
+
+
   virtual already_AddRefed<ColorLayer> CreateColorLayer() = 0;
+  
+
+
+
+  virtual already_AddRefed<CanvasLayer> CreateCanvasLayer() = 0;
   
 
 
@@ -374,6 +386,10 @@ class LayerManager : public WindowRenderer {
 
   virtual already_AddRefed<mozilla::gfx::DrawTarget> CreateDrawTarget(
       const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat);
+
+  virtual bool CanUseCanvasLayerForSize(const gfx::IntSize& aSize) {
+    return true;
+  }
 
   
 
