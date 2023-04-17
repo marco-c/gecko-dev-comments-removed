@@ -18,9 +18,6 @@ const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
 );
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 ChromeUtils.defineModuleGetter(
   this,
   "FormAutofillUtils",
@@ -226,9 +223,7 @@ class FieldScanner {
       );
     }
     
-    if (AppConstants.NIGHTLY_BUILD) {
-      this._classifyMultipleCCNumberFields();
-    }
+    this._classifyMultipleCCNumberFields();
   }
 
   
