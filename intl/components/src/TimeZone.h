@@ -146,6 +146,28 @@ class TimeZone final {
   
 
 
+  static Result<bool, ICUError> SetDefaultTimeZone(Span<const char> aTimeZone);
+
+  
+
+
+
+
+  static ICUResult SetDefaultTimeZoneFromHostTimeZone();
+
+  
+
+
+
+
+
+
+
+  static constexpr size_t TimeZoneIdentifierLength = 32;
+
+  
+
+
 
   template <typename B>
   static ICUResult GetCanonicalTimeZoneID(Span<const char16_t> inputTimeZone,
@@ -157,11 +179,7 @@ class TimeZone final {
       
       
       
-      
-      
-      
-      
-      if (!aBuffer.reserve(32)) {
+      if (!aBuffer.reserve(TimeZoneIdentifierLength)) {
         return Err(ICUError::OutOfMemory);
       }
     }
