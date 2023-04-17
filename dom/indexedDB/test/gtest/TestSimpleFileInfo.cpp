@@ -2,6 +2,7 @@
 
 
 
+#include "FileInfo.h"
 #include "FileInfoImpl.h"
 #include "FileInfoManager.h"
 

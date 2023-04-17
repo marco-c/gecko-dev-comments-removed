@@ -7,7 +7,7 @@
 #include "ActorsParentCommon.h"
 
 
-#include "DatabaseFileInfoFwd.h"  
+#include "DatabaseFileInfo.h"
 #include "DatabaseFileManager.h"
 #include "IndexedDatabase.h"  
 #include "IndexedDatabaseManager.h"

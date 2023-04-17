@@ -4,7 +4,8 @@
 
 
 
-#include "DatabaseFileManager.h"
+#include "DatabaseFileInfo.h"
+
 #include "FileInfoImpl.h"
 
 namespace mozilla::dom::indexedDB {
