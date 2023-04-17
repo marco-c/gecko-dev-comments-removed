@@ -1171,11 +1171,15 @@ static const SECItem subprime_tls_8192 =
 
 
 const SECItem *
-sftk_VerifyDH_Prime(SECItem *dhPrime)
+sftk_VerifyDH_Prime(SECItem *dhPrime, PRBool isFIPS)
 {
     
     switch (dhPrime->len) {
         case 1536 / PR_BITS_PER_BYTE:
+            
+            if (isFIPS) {
+                break;
+            }
             if (PORT_Memcmp(dhPrime->data, prime_ike_1536,
                             sizeof(prime_ike_1536)) == 0) {
                 return &subprime_ike_1536;

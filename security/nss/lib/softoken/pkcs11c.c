@@ -5193,7 +5193,7 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
                 
 
 
-                subPrimePtr = sftk_VerifyDH_Prime(&prime);
+                subPrimePtr = sftk_VerifyDH_Prime(&prime, isFIPS);
                 if (subPrimePtr == NULL) {
                     crv = CKR_GENERAL_ERROR;
                     goto done;
@@ -8351,7 +8351,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
 
             
 
-            subPrime = sftk_VerifyDH_Prime(&dhPrime);
+            subPrime = sftk_VerifyDH_Prime(&dhPrime, isFIPS);
             if (subPrime == NULL) {
                 SECItem dhSubPrime;
                 
