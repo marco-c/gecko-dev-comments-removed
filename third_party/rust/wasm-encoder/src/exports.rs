@@ -86,6 +86,8 @@ pub enum Export {
     
     Global(u32),
     
+    Tag(u32),
+    
     
     
     
@@ -120,6 +122,10 @@ impl Export {
                 bytes.push(ItemKind::Global as u8);
                 x
             }
+            Export::Tag(x) => {
+                bytes.push(ItemKind::Tag as u8);
+                x
+            }
             Export::Instance(x) => {
                 bytes.push(ItemKind::Instance as u8);
                 x
@@ -142,6 +148,7 @@ pub enum ItemKind {
     Table = 0x01,
     Memory = 0x02,
     Global = 0x03,
+    Tag = 0x04,
     Module = 0x05,
     Instance = 0x06,
 }
