@@ -123,12 +123,6 @@ function initPage() {
     showSecuritySection();
   }
 
-  if (err == "remoteXUL") {
-    
-    
-    document.getElementById("errorTryAgain").style.display = "none";
-  }
-
   if (err == "cspBlocked" || err == "xfoBlocked") {
     
     

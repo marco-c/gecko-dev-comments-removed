@@ -356,9 +356,6 @@ with modules["NETWORK"]:
     
     errors["NS_ERROR_UNSAFE_CONTENT_TYPE"] = FAILURE(74)
     
-    
-    errors["NS_ERROR_REMOTE_XUL"] = FAILURE(75)
-    
     errors["NS_ERROR_LOAD_SHOWED_ERRORPAGE"] = FAILURE(77)
     
     
