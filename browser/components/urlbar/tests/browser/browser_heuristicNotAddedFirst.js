@@ -51,30 +51,29 @@ add_task(async function slowHeuristicSelected() {
   UrlbarProvidersManager.registerProvider(nonHeuristicProvider);
 
   
+  const win = await BrowserTestUtils.openNewBrowserWindow();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
-    window,
+    window: win,
   });
 
   
-  let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
   Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
   Assert.equal(
-    UrlbarTestUtils.getSelectedElement(window),
+    UrlbarTestUtils.getSelectedElement(win),
     actualHeuristic.element.row
   );
-  Assert.equal(UrlbarTestUtils.getSelectedElementIndex(window), 0);
+  Assert.equal(UrlbarTestUtils.getSelectedElementIndex(win), 0);
 
   
-  let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(
-    window,
-    1
-  );
+  let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
   Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
 
-  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.promisePopupClose(win);
   UrlbarProvidersManager.unregisterProvider(heuristicProvider);
   UrlbarProvidersManager.unregisterProvider(nonHeuristicProvider);
+  await BrowserTestUtils.closeWindow(win);
 });
 
 
@@ -123,43 +122,42 @@ add_task(async function oneOffRemainsSelected() {
   UrlbarProvidersManager.registerProvider(nonHeuristicProvider);
 
   
+  const win = await BrowserTestUtils.openNewBrowserWindow();
   let searchPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
-    window,
+    window: win,
   });
 
   
   
   
   
-  await UrlbarTestUtils.promisePopupOpen(window, () => {});
-  EventUtils.synthesizeKey("KEY_ArrowUp");
+  await UrlbarTestUtils.promisePopupOpen(win, () => {});
+  EventUtils.synthesizeKey("KEY_ArrowUp", {}, win);
 
   
   await searchPromise;
 
   
-  let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  let actualHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
   Assert.equal(actualHeuristic.type, UrlbarUtils.RESULT_TYPE.SEARCH);
 
   
-  let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(
-    window,
-    1
-  );
+  let actualNonHeuristic = await UrlbarTestUtils.getDetailsOfResultAt(win, 1);
   Assert.equal(actualNonHeuristic.type, UrlbarUtils.RESULT_TYPE.TIP);
 
   
-  Assert.equal(UrlbarTestUtils.getSelectedElement(window), null);
-  Assert.equal(UrlbarTestUtils.getSelectedElementIndex(window), -1);
+  Assert.equal(UrlbarTestUtils.getSelectedElement(win), null);
+  Assert.equal(UrlbarTestUtils.getSelectedElementIndex(win), -1);
 
   
   Assert.equal(
-    gURLBar.view.oneOffSearchButtons.selectedButton,
-    gURLBar.view.oneOffSearchButtons.settingsButtonCompact
+    win.gURLBar.view.oneOffSearchButtons.selectedButton,
+    win.gURLBar.view.oneOffSearchButtons.settingsButton
   );
 
-  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.promisePopupClose(win);
   UrlbarProvidersManager.unregisterProvider(heuristicProvider);
   UrlbarProvidersManager.unregisterProvider(nonHeuristicProvider);
+  await BrowserTestUtils.closeWindow(win);
 });
