@@ -149,7 +149,19 @@ class PolicyDelivery(object):
     def get_another_policy(self, delivery_type):
         
         if self.key == 'referrerPolicy':
-            if self.value == 'no-referrer':
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if self.value != 'unsafe-url':
                 return PolicyDelivery(delivery_type, self.key, 'unsafe-url')
             else:
                 return PolicyDelivery(delivery_type, self.key, 'no-referrer')
