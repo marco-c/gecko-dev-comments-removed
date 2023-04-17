@@ -915,11 +915,8 @@ RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
 
 NativeObject* GlobalObject::getIntrinsicsHolder(JSContext* cx,
                                                 Handle<GlobalObject*> global) {
-  Value slot = global->getReservedSlot(INTRINSICS);
-  MOZ_ASSERT(slot.isUndefined() || slot.isObject());
-
-  if (slot.isObject()) {
-    return &slot.toObject().as<NativeObject>();
+  if (NativeObject* holder = global->data().intrinsicsHolder) {
+    return holder;
   }
 
   Rooted<NativeObject*> intrinsicsHolder(
@@ -936,7 +933,7 @@ NativeObject* GlobalObject::getIntrinsicsHolder(JSContext* cx,
   }
 
   
-  global->setReservedSlot(INTRINSICS, ObjectValue(*intrinsicsHolder));
+  global->data().intrinsicsHolder.init(intrinsicsHolder);
   return intrinsicsHolder;
 }
 
@@ -1140,4 +1137,5 @@ void GlobalObject::releaseData(JSFreeOp* fop) {
 void GlobalObjectData::trace(JSTracer* trc) {
   TraceEdge(trc, &emptyGlobalScope, "global-empty-scope");
   TraceNullableEdge(trc, &regExpStatics, "global-regexp-statics");
+  TraceNullableEdge(trc, &intrinsicsHolder, "global-intrinsics-holder");
 }
