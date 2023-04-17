@@ -9,14 +9,9 @@
 this.analytics = (function() {
   const exports = {};
 
-  const GA_PORTION = 0.1; 
-  
   let myGaSegment = 1;
   let telemetryPrefKnown = false;
   let telemetryEnabled;
-  
-  
-  let hasReturnedGone = false;
   
   
   let serverFailedResponses = 3;
@@ -33,9 +28,7 @@ this.analytics = (function() {
   };
 
   function shouldSendEvents() {
-    return (
-      !hasReturnedGone && serverFailedResponses > 0 && myGaSegment < GA_PORTION
-    );
+    return false;
   }
 
   function flushEvents() {
@@ -364,7 +357,6 @@ this.analytics = (function() {
       .then(response => {
         if (response.status === 410 || response.status === 404) {
           
-          hasReturnedGone = true;
           pendingEvents = [];
           pendingTimings = [];
         }
