@@ -27,6 +27,14 @@ interface JSWindowActorParent {
 
   readonly attribute WindowGlobalParent? manager;
 
+  
+
+
+
+
+
+  readonly attribute WindowContext? windowContext;
+
   [Throws]
   readonly attribute CanonicalBrowsingContext? browsingContext;
 };
@@ -43,6 +51,12 @@ interface JSWindowActorChild {
 
 
   readonly attribute WindowGlobalChild? manager;
+
+  
+
+
+
+  readonly attribute WindowContext? windowContext;
 
   [Throws]
   readonly attribute Document? document;
