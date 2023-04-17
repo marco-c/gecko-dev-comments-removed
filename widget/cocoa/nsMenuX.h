@@ -91,8 +91,10 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  nsEventStatus MenuOpened();
+  
+  void MenuOpened();
 
+  
   
   
   
@@ -216,6 +218,7 @@ class nsMenuX final : public nsMenuParentX,
   bool mIsEnabled = true;
   bool mNeedsRebuild = true;
 
+  
   
   bool mIsOpen = false;
 
