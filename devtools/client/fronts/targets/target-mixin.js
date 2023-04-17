@@ -208,7 +208,7 @@ function TargetMixin(parentClass) {
         if (watcherFront.traits.frame) {
           
           
-          return watcherFront.getParentBrowsingContextTarget(
+          return watcherFront.getParentWindowGlobalTarget(
             this.browsingContextID
           );
         }
@@ -229,14 +229,14 @@ function TargetMixin(parentClass) {
 
 
 
-    async getBrowsingContextTarget(browsingContextID) {
+    async getWindowGlobalTarget(browsingContextID) {
       
       
       const watcherFront = await this.getWatcherFront();
       if (watcherFront) {
         
         if (watcherFront.traits.frame) {
-          return watcherFront.getBrowsingContextTarget(browsingContextID);
+          return watcherFront.getWindowGlobalTarget(browsingContextID);
         }
         return null;
       }
@@ -246,7 +246,7 @@ function TargetMixin(parentClass) {
       
       
       throw new Error(
-        `Unable to call getBrowsingContextTarget for ${this.actorID}`
+        `Unable to call getWindowGlobalTarget for ${this.actorID}`
       );
     }
 
@@ -373,7 +373,11 @@ function TargetMixin(parentClass) {
     
     
     get isBrowsingContext() {
-      return this.typeName === "browsingContextTarget";
+      
+      return (
+        this.typeName === "windowGlobalTarget" ||
+        this.typeName == "browsingContextTarget"
+      );
     }
 
     get name() {

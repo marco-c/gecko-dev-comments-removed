@@ -15,8 +15,8 @@ const {
 } = require("devtools/client/fronts/descriptors/descriptor-mixin");
 loader.lazyRequireGetter(
   this,
-  "BrowsingContextTargetFront",
-  "devtools/client/fronts/targets/browsing-context",
+  "WindowGlobalTargetFront",
+  "devtools/client/fronts/targets/window-global",
   true
 );
 
@@ -89,7 +89,7 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
   }
 
   _createWebExtensionTarget(form) {
-    const front = new BrowsingContextTargetFront(this.conn, null, this);
+    const front = new WindowGlobalTargetFront(this.conn, null, this);
     front.form(form);
     this.manage(front);
     return front;

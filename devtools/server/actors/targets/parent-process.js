@@ -18,9 +18,9 @@ const Services = require("Services");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
   getChildDocShells,
-  BrowsingContextTargetActor,
-  browsingContextTargetPrototype,
-} = require("devtools/server/actors/targets/browsing-context");
+  WindowGlobalTargetActor,
+  windowGlobalTargetPrototype,
+} = require("devtools/server/actors/targets/window-global");
 const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 
 const { extend } = require("devtools/shared/extend");
@@ -35,7 +35,7 @@ const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mi
 
 
 
-const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
+const parentProcessTargetPrototype = extend({}, windowGlobalTargetPrototype);
 
 
 
@@ -77,7 +77,7 @@ parentProcessTargetPrototype.initialize = function(
     window = Services.appShell.hiddenDOMWindow;
   }
 
-  BrowsingContextTargetActor.prototype.initialize.call(this, connection, {
+  WindowGlobalTargetActor.prototype.initialize.call(this, connection, {
     docShell: window.docShell,
     isTopLevelTarget,
   });
@@ -111,7 +111,7 @@ Object.defineProperty(parentProcessTargetPrototype, "docShells", {
 });
 
 parentProcessTargetPrototype.observe = function(subject, topic, data) {
-  BrowsingContextTargetActor.prototype.observe.call(this, subject, topic, data);
+  WindowGlobalTargetActor.prototype.observe.call(this, subject, topic, data);
   if (!this.attached) {
     return;
   }
@@ -130,7 +130,7 @@ parentProcessTargetPrototype._attach = function() {
     return false;
   }
 
-  BrowsingContextTargetActor.prototype._attach.call(this);
+  WindowGlobalTargetActor.prototype._attach.call(this);
 
   
   Services.obs.addObserver(this, "chrome-webnavigation-create");
@@ -162,7 +162,7 @@ parentProcessTargetPrototype._detach = function() {
     this._progressListener.unwatch(docShell);
   }
 
-  return BrowsingContextTargetActor.prototype._detach.call(this);
+  return WindowGlobalTargetActor.prototype._detach.call(this);
 };
 
 exports.parentProcessTargetPrototype = parentProcessTargetPrototype;

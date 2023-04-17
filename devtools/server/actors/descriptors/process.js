@@ -45,14 +45,14 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     }
     Actor.prototype.initialize.call(this, connection);
     this.id = options.id;
-    this._browsingContextTargetActor = null;
+    this._windowGlobalTargetActor = null;
     this.isParent = options.parent;
     this.destroy = this.destroy.bind(this);
   },
 
   get browsingContextID() {
-    if (this._browsingContextTargetActor) {
-      return this._browsingContextTargetActor.docShell.browsingContext.id;
+    if (this._windowGlobalTargetActor) {
+      return this._windowGlobalTargetActor.docShell.browsingContext.id;
     }
     return null;
   },
@@ -80,12 +80,13 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
         
         
         
+        
         isTopLevelTarget: true,
       });
       
       
       
-      this._browsingContextTargetActor = targetActor;
+      this._windowGlobalTargetActor = targetActor;
     }
     this.manage(targetActor);
     
@@ -178,7 +179,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
 
     
     
-    this._browsingContextTargetActor.browsingContext.reload(
+    this._windowGlobalTargetActor.browsingContext.reload(
       bypassCache
         ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
         : Ci.nsIWebNavigation.LOAD_FLAGS_NONE
@@ -188,7 +189,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
   destroy() {
     this.emit("descriptor-destroyed");
 
-    this._browsingContextTargetActor = null;
+    this._windowGlobalTargetActor = null;
     Actor.prototype.destroy.call(this);
   },
 });

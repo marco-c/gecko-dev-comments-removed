@@ -11,8 +11,8 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "BrowsingContextTargetFront",
-  "devtools/client/fronts/targets/browsing-context",
+  "WindowGlobalTargetFront",
+  "devtools/client/fronts/targets/window-global",
   true
 );
 loader.lazyRequireGetter(
@@ -52,7 +52,7 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     } else if (form.actor.includes("/workerTarget")) {
       front = new WorkerTargetFront(this.conn, null, this);
     } else {
-      front = new BrowsingContextTargetFront(this.conn, null, this);
+      front = new WindowGlobalTargetFront(this.conn, null, this);
     }
     front.actorID = form.actor;
     front.form(form);
@@ -89,12 +89,12 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
 
 
 
-  async getParentBrowsingContextTarget(browsingContextID) {
+  async getParentWindowGlobalTarget(browsingContextID) {
     const id = await this.getParentBrowsingContextID(browsingContextID);
     if (!id) {
       return null;
     }
-    return this.getBrowsingContextTarget(id);
+    return this.getWindowGlobalTarget(id);
   }
 
   
@@ -130,7 +130,7 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
   
 
 
-  async getBrowsingContextTarget(id) {
+  async getWindowGlobalTarget(id) {
     
     for (const front of this.poolChildren()) {
       if (front.browsingContextID == id) {
@@ -154,7 +154,7 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     
     const parentBrowsingContextID = await this.getParentBrowsingContextID(id);
     if (parentBrowsingContextID && parentBrowsingContextID !== id) {
-      return this.getBrowsingContextTarget(parentBrowsingContextID);
+      return this.getWindowGlobalTarget(parentBrowsingContextID);
     }
 
     return null;

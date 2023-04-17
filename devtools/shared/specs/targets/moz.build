@@ -5,10 +5,10 @@
 
 
 DevToolsModules(
-    "browsing-context.js",
     "content-process.js",
     "frame.js",
     "parent-process.js",
     "webextension.js",
+    "window-global.js",
     "worker.js",
 )

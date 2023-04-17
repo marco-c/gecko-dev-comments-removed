@@ -47,8 +47,8 @@ const {
   createExtraActors,
 } = require("devtools/shared/protocol/lazy-pool");
 const {
-  browsingContextTargetSpec,
-} = require("devtools/shared/specs/targets/browsing-context");
+  windowGlobalTargetSpec,
+} = require("devtools/shared/specs/targets/window-global");
 const Resources = require("devtools/server/actors/resources/index");
 const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
 
@@ -128,10 +128,8 @@ function getInnerId(window) {
   return window.windowGlobalChild.innerWindowId;
 }
 
-const browsingContextTargetPrototype = {
+const windowGlobalTargetPrototype = {
   
-
-
 
 
 
@@ -275,7 +273,7 @@ const browsingContextTargetPrototype = {
 
     if (!docShell) {
       throw new Error(
-        "A docShell should be provided as constructor argument of BrowsingContextTargetActor"
+        "A docShell should be provided as constructor argument of WindowGlobalTargetActor"
       );
     }
     this.docShell = docShell;
@@ -1175,7 +1173,7 @@ const browsingContextTargetPrototype = {
         }
 
         this.webNavigation.goForward();
-      }, "BrowsingContextTargetActor.prototype.goForward's delayed body")
+      }, "WindowGlobalTargetActor.prototype.goForward's delayed body")
     );
 
     return {};
@@ -1193,7 +1191,7 @@ const browsingContextTargetPrototype = {
         }
 
         this.webNavigation.goBack();
-      }, "BrowsingContextTargetActor.prototype.goBack's delayed body")
+      }, "WindowGlobalTargetActor.prototype.goBack's delayed body")
     );
 
     return {};
@@ -1223,7 +1221,7 @@ const browsingContextTargetPrototype = {
             ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
             : Ci.nsIWebNavigation.LOAD_FLAGS_NONE
         );
-      }, "BrowsingContextTargetActor.prototype.reload's delayed body")
+      }, "WindowGlobalTargetActor.prototype.reload's delayed body")
     );
     return {};
   },
@@ -1237,7 +1235,7 @@ const browsingContextTargetPrototype = {
     Services.tm.dispatchToMainThread(
       DevToolsUtils.makeInfallible(() => {
         this.window.location = request.url;
-      }, "BrowsingContextTargetActor.prototype.navigateTo's delayed body:" + request.url)
+      }, "WindowGlobalTargetActor.prototype.navigateTo's delayed body:" + request.url)
     );
     return {};
   },
@@ -1684,11 +1682,11 @@ const browsingContextTargetPrototype = {
   },
 };
 
-exports.browsingContextTargetPrototype = browsingContextTargetPrototype;
-exports.BrowsingContextTargetActor = TargetActorMixin(
+exports.windowGlobalTargetPrototype = windowGlobalTargetPrototype;
+exports.WindowGlobalTargetActor = TargetActorMixin(
   Targets.TYPES.FRAME,
-  browsingContextTargetSpec,
-  browsingContextTargetPrototype
+  windowGlobalTargetSpec,
+  windowGlobalTargetPrototype
 );
 
 

@@ -14,8 +14,8 @@
 
 
 const {
-  browsingContextTargetPrototype,
-} = require("devtools/server/actors/targets/browsing-context");
+  windowGlobalTargetPrototype,
+} = require("devtools/server/actors/targets/window-global");
 
 const { extend } = require("devtools/shared/extend");
 const { frameTargetSpec } = require("devtools/shared/specs/targets/frame");
@@ -29,7 +29,7 @@ const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mi
 
 
 
-const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
+const frameTargetPrototype = extend({}, windowGlobalTargetPrototype);
 
 Object.defineProperty(frameTargetPrototype, "title", {
   get: function() {

@@ -11,21 +11,21 @@ const {
   Arg,
 } = require("devtools/shared/protocol");
 
-types.addDictType("browsingContextTarget.attach", {
+types.addDictType("windowGlobalTarget.attach", {
   threadActor: "number",
   javascriptEnabled: "nullable:boolean",
   traits: "json",
 });
 
-types.addDictType("browsingContextTarget.switchtoframe", {
+types.addDictType("windowGlobalTarget.switchtoframe", {
   message: "string",
 });
 
-types.addDictType("browsingContextTarget.listframes", {
-  frames: "array:browsingContextTarget.window",
+types.addDictType("windowGlobalTarget.listframes", {
+  frames: "array:windowGlobalTarget.window",
 });
 
-types.addDictType("browsingContextTarget.window", {
+types.addDictType("windowGlobalTarget.window", {
   id: "string",
   parentID: "nullable:string",
   url: "nullable:string", 
@@ -33,19 +33,19 @@ types.addDictType("browsingContextTarget.window", {
   destroy: "nullable:boolean", 
 });
 
-types.addDictType("browsingContextTarget.workers", {
+types.addDictType("windowGlobalTarget.workers", {
   workers: "array:workerDescriptor",
 });
 
 
 
 
-types.addDictType("browsingContextTarget.reload", {
+types.addDictType("windowGlobalTarget.reload", {
   force: "boolean",
 });
 
 
-types.addDictType("browsingContextTarget.reconfigure", {
+types.addDictType("windowGlobalTarget.reconfigure", {
   cacheDisabled: "nullable:boolean",
   colorSchemeSimulation: "nullable:string",
   paintFlashing: "nullable:boolean",
@@ -54,13 +54,13 @@ types.addDictType("browsingContextTarget.reconfigure", {
   serviceWorkersTestingEnabled: "nullable:boolean",
 });
 
-const browsingContextTargetSpecPrototype = {
-  typeName: "browsingContextTarget",
+const windowGlobalTargetSpecPrototype = {
+  typeName: "windowGlobalTarget",
 
   methods: {
     attach: {
       request: {},
-      response: RetVal("browsingContextTarget.attach"),
+      response: RetVal("windowGlobalTarget.attach"),
     },
     detach: {
       request: {},
@@ -87,7 +87,7 @@ const browsingContextTargetSpecPrototype = {
     
     reload: {
       request: {
-        options: Option(0, "browsingContextTarget.reload"),
+        options: Option(0, "windowGlobalTarget.reload"),
       },
       response: {},
     },
@@ -103,7 +103,7 @@ const browsingContextTargetSpecPrototype = {
     
     reconfigure: {
       request: {
-        options: Option(0, "browsingContextTarget.reconfigure"),
+        options: Option(0, "windowGlobalTarget.reconfigure"),
       },
       response: {},
     },
@@ -111,15 +111,15 @@ const browsingContextTargetSpecPrototype = {
       request: {
         windowId: Option(0, "string"),
       },
-      response: RetVal("browsingContextTarget.switchtoframe"),
+      response: RetVal("windowGlobalTarget.switchtoframe"),
     },
     listFrames: {
       request: {},
-      response: RetVal("browsingContextTarget.listframes"),
+      response: RetVal("windowGlobalTarget.listframes"),
     },
     listWorkers: {
       request: {},
-      response: RetVal("browsingContextTarget.workers"),
+      response: RetVal("windowGlobalTarget.workers"),
     },
     logInPage: {
       request: {
@@ -141,7 +141,7 @@ const browsingContextTargetSpecPrototype = {
     },
     frameUpdate: {
       type: "frameUpdate",
-      frames: Option(0, "nullable:array:browsingContextTarget.window"),
+      frames: Option(0, "nullable:array:windowGlobalTarget.window"),
       selected: Option(0, "nullable:number"),
       destroyAll: Option(0, "nullable:boolean"),
     },
@@ -164,9 +164,9 @@ const browsingContextTargetSpecPrototype = {
   },
 };
 
-const browsingContextTargetSpec = generateActorSpec(
-  browsingContextTargetSpecPrototype
+const windowGlobalTargetSpec = generateActorSpec(
+  windowGlobalTargetSpecPrototype
 );
 
-exports.browsingContextTargetSpecPrototype = browsingContextTargetSpecPrototype;
-exports.browsingContextTargetSpec = browsingContextTargetSpec;
+exports.windowGlobalTargetSpecPrototype = windowGlobalTargetSpecPrototype;
+exports.windowGlobalTargetSpec = windowGlobalTargetSpec;

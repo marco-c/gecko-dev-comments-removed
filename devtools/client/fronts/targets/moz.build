@@ -5,8 +5,8 @@
 
 
 DevToolsModules(
-    "browsing-context.js",
     "content-process.js",
     "target-mixin.js",
+    "window-global.js",
     "worker.js",
 )

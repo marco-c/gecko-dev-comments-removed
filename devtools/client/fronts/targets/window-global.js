@@ -4,16 +4,16 @@
 "use strict";
 
 const {
-  browsingContextTargetSpec,
-} = require("devtools/shared/specs/targets/browsing-context");
+  windowGlobalTargetSpec,
+} = require("devtools/shared/specs/targets/window-global");
 const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
 const { TargetMixin } = require("devtools/client/fronts/targets/target-mixin");
 
-class BrowsingContextTargetFront extends TargetMixin(
-  FrontClassWithSpec(browsingContextTargetSpec)
+class WindowGlobalTargetFront extends TargetMixin(
+  FrontClassWithSpec(windowGlobalTargetSpec)
 ) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
@@ -177,5 +177,5 @@ class BrowsingContextTargetFront extends TargetMixin(
   }
 }
 
-exports.BrowsingContextTargetFront = BrowsingContextTargetFront;
-registerFront(exports.BrowsingContextTargetFront);
+exports.WindowGlobalTargetFront = WindowGlobalTargetFront;
+registerFront(exports.WindowGlobalTargetFront);

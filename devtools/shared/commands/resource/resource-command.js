@@ -838,7 +838,7 @@ class ResourceCommand {
       );
       return null;
     }
-    return this.watcherFront.getBrowsingContextTarget(browsingContextID);
+    return this.watcherFront.getWindowGlobalTarget(browsingContextID);
   }
 
   _onWillNavigate(targetFront) {

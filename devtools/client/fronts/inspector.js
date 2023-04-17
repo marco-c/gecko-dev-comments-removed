@@ -249,7 +249,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     let target;
     if (descriptorFront && descriptorFront.traits.watcher) {
       const watcherFront = await descriptorFront.getWatcher();
-      target = await watcherFront.getBrowsingContextTarget(browsingContextId);
+      target = await watcherFront.getWindowGlobalTarget(browsingContextId);
     } else {
       
       

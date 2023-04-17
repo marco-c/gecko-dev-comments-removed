@@ -12,16 +12,16 @@ var EXPORTED_SYMBOLS = ["TargetActorRegistry"];
 
 
 
-const browsingContextTargetActors = new Set();
+const windowGlobalTargetActors = new Set();
 let xpcShellTargetActor = null;
 
 var TargetActorRegistry = {
   registerTargetActor(targetActor) {
-    browsingContextTargetActors.add(targetActor);
+    windowGlobalTargetActors.add(targetActor);
   },
 
   unregisterTargetActor(targetActor) {
-    browsingContextTargetActors.delete(targetActor);
+    windowGlobalTargetActors.delete(targetActor);
   },
 
   registerXpcShellTargetActor(targetActor) {
@@ -59,7 +59,7 @@ var TargetActorRegistry = {
 
   getTargetActors(browserId, connectionPrefix) {
     const actors = [];
-    for (const actor of browsingContextTargetActors) {
+    for (const actor of windowGlobalTargetActors) {
       if (
         ((!connectionPrefix || actor.actorID.startsWith(connectionPrefix)) &&
           actor.browserId == browserId) ||
@@ -77,7 +77,7 @@ var TargetActorRegistry = {
 
 
   getParentProcessTargetActor() {
-    for (const actor of browsingContextTargetActors) {
+    for (const actor of windowGlobalTargetActors) {
       if (actor.typeName === "parentProcessTarget") {
         return actor;
       }

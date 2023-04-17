@@ -7,8 +7,8 @@ const {
   processDescriptorSpec,
 } = require("devtools/shared/specs/descriptors/process");
 const {
-  BrowsingContextTargetFront,
-} = require("devtools/client/fronts/targets/browsing-context");
+  WindowGlobalTargetFront,
+} = require("devtools/client/fronts/targets/window-global");
 const {
   ContentProcessTargetFront,
 } = require("devtools/client/fronts/targets/content-process");
@@ -46,7 +46,7 @@ class ProcessDescriptorFront extends DescriptorMixin(
     if (form.actor.includes("parentProcessTarget")) {
       
       
-      front = new BrowsingContextTargetFront(this._client, null, this);
+      front = new WindowGlobalTargetFront(this._client, null, this);
     } else {
       front = new ContentProcessTargetFront(this._client, null, this);
     }
