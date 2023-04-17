@@ -382,6 +382,10 @@ fn system_ui_enabled(_: &ParserContext) -> bool {
 
 
 
+
+
+
+
 #[derive(
     Clone,
     Copy,
@@ -397,7 +401,7 @@ fn system_ui_enabled(_: &ParserContext) -> bool {
     ToShmem,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[repr(u8)]
+#[repr(u32)]
 #[allow(missing_docs)]
 pub enum GenericFontFamily {
     
