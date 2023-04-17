@@ -7426,7 +7426,7 @@ void nsGlobalWindowOuter::SetCursorOuter(const nsACString& aCursor,
 
     
     aError = presContext->EventStateManager()->SetCursor(
-        cursor, nullptr, 1.0f, Nothing(), widget, true);
+        cursor, nullptr, {}, Nothing(), widget, true);
   }
 }
 

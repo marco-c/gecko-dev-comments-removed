@@ -103,6 +103,9 @@ namespace gfx {
 struct RectCornerRadii;
 enum class ShapedTextFlags : uint16_t;
 }  
+namespace image {
+struct Resolution;
+}
 namespace layers {
 struct FrameMetrics;
 struct ScrollMetadata;
@@ -1920,16 +1923,11 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
-
   static ImgDrawResult DrawSingleImage(
       gfxContext& aContext, nsPresContext* aPresContext, imgIContainer* aImage,
-      float aResolution, SamplingFilter aSamplingFilter, const nsRect& aDest,
-      const nsRect& aDirty, const mozilla::Maybe<SVGImageContext>& aSVGContext,
-      uint32_t aImageFlags, const nsPoint* aAnchorPoint = nullptr,
+      SamplingFilter aSamplingFilter, const nsRect& aDest, const nsRect& aDirty,
+      const mozilla::Maybe<SVGImageContext>& aSVGContext, uint32_t aImageFlags,
+      const nsPoint* aAnchorPoint = nullptr,
       const nsRect* aSourceArea = nullptr);
 
   
@@ -1948,7 +1946,15 @@ class nsLayoutUtils {
 
 
 
-  static void ComputeSizeForDrawing(imgIContainer* aImage, float aResolution,
+
+
+
+
+
+
+
+  static void ComputeSizeForDrawing(imgIContainer* aImage,
+                                    const mozilla::image::Resolution&,
                                     CSSIntSize& aImageSize,
                                     AspectRatio& aIntrinsicRatio,
                                     bool& aGotWidth, bool& aGotHeight);
@@ -1962,7 +1968,8 @@ class nsLayoutUtils {
 
 
   static CSSIntSize ComputeSizeForDrawingWithFallback(
-      imgIContainer* aImage, float aResolution, const nsSize& aFallbackSize);
+      imgIContainer* aImage, const mozilla::image::Resolution&,
+      const nsSize& aFallbackSize);
 
   
 

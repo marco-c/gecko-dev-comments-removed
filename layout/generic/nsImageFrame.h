@@ -103,11 +103,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   void SetupForContentURLRequest();
   bool ShouldShowBrokenImageIcon() const;
 
-  
-  
-  float GetContentURLRequestResolution() const {
-    return mContentURLRequestResolution;
-  }
+  const mozilla::StyleImage* GetImageFromStyle() const;
 
 #ifdef ACCESSIBILITY
   mozilla::a11y::AccType AccessibleType() override;
@@ -359,7 +355,6 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   
   RefPtr<imgRequestProxy> mContentURLRequest;
-  float mContentURLRequestResolution = 1.0f;
 
   nsCOMPtr<imgIContainer> mImage;
   nsCOMPtr<imgIContainer> mPrevImage;
