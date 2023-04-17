@@ -9,10 +9,14 @@ import socket
 import sys
 from abc import ABCMeta, abstractmethod
 from http.client import HTTPConnection
+from typing import Any, Callable, ClassVar, Optional, Tuple, Type, TYPE_CHECKING
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from .actions import actions
 from .protocol import Protocol, BaseProtocolPart
+
+if TYPE_CHECKING:
+    from ..webdriver_server import WebDriverServer
 
 here = os.path.dirname(__file__)
 
@@ -240,8 +244,14 @@ class TestExecutor(object):
     """
     __metaclass__ = ABCMeta
 
-    test_type = None
-    convert_result = None
+    test_type = None  
+    
+    
+    
+    
+    
+    
+    convert_result = None  
     supports_testdriver = False
     supports_jsshell = False
     
@@ -588,7 +598,7 @@ class RefTestImplementation(object):
 
 class WdspecExecutor(TestExecutor):
     convert_result = pytest_result_converter
-    protocol_cls = None
+    protocol_cls = None  
 
     def __init__(self, logger, browser, server_config, webdriver_binary,
                  webdriver_args, timeout_multiplier=1, capabilities=None,
@@ -710,7 +720,7 @@ class ConnectionlessProtocol(Protocol):
 
 
 class WdspecProtocol(Protocol):
-    server_cls = None
+    server_cls = None  
 
     implements = [ConnectionlessBaseProtocolPart]
 
@@ -773,7 +783,7 @@ class CallbackHandler(object):
     WebDriver. Things that are more different to WebDriver may need to create a
     fully custom implementation."""
 
-    unimplemented_exc = (NotImplementedError,)
+    unimplemented_exc = (NotImplementedError,)  
 
     def __init__(self, logger, protocol, test_window):
         self.protocol = protocol
