@@ -123,17 +123,11 @@ add_task(async () => {
       
       
       
-      
-      let baseRootChildCount = Services.prefs.getBoolPref(
-        "browser.proton.enabled",
-        false
-      )
-        ? 6
-        : 5;
+      let baseRootChildCount = 5;
       is(
         rootChildCount(),
         baseRootChildCount,
-        "Root with no popups has 6 children"
+        "Root with no popups has 5 children"
       );
 
       
