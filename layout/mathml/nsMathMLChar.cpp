@@ -1780,11 +1780,12 @@ void nsDisplayMathMLCharDebug::Paint(nsDisplayListBuilder* aBuilder,
   
   
   Unused << nsCSSRendering::PaintBorder(presContext, *aCtx, mFrame,
-                                        GetPaintRect(), rect, computedStyle,
-                                        flags, skipSides);
+                                        GetPaintRect(aBuilder, aCtx), rect,
+                                        computedStyle, flags, skipSides);
 
   nsCSSRendering::PaintNonThemedOutline(presContext, *aCtx, mFrame,
-                                        GetPaintRect(), rect, computedStyle);
+                                        GetPaintRect(aBuilder, aCtx), rect,
+                                        computedStyle);
 }
 #endif
 

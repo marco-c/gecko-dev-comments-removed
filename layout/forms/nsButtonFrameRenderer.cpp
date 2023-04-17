@@ -254,7 +254,7 @@ void nsDisplayButtonBoxShadowOuter::Paint(nsDisplayListBuilder* aBuilder,
   nsRect frameRect = nsRect(ToReferenceFrame(), mFrame->GetSize());
 
   nsCSSRendering::PaintBoxShadowOuter(mFrame->PresContext(), *aCtx, mFrame,
-                                      frameRect, GetPaintRect());
+                                      frameRect, GetPaintRect(aBuilder, aCtx));
 }
 
 bool nsDisplayButtonBoxShadowOuter::CanBuildWebRenderDisplayItems() {
@@ -433,7 +433,7 @@ void nsDisplayButtonBorder::Paint(nsDisplayListBuilder* aBuilder,
 
   
   ImgDrawResult result =
-      mBFR->PaintBorder(aBuilder, pc, *aCtx, GetPaintRect(), r);
+      mBFR->PaintBorder(aBuilder, pc, *aCtx, GetPaintRect(aBuilder, aCtx), r);
 
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
 }
@@ -498,7 +498,7 @@ void nsDisplayButtonForeground::Paint(nsDisplayListBuilder* aBuilder,
 
   
   ImgDrawResult result = mBFR->PaintInnerFocusBorder(
-      aBuilder, mFrame->PresContext(), *aCtx, GetPaintRect(), r);
+      aBuilder, mFrame->PresContext(), *aCtx, GetPaintRect(aBuilder, aCtx), r);
 
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
 }
