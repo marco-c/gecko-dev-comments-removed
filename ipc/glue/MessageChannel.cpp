@@ -15,6 +15,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/IntentionalCrash.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
@@ -1002,6 +1003,9 @@ bool MessageChannel::SendBuildIDsMatchMessage(const char* aParentBuildID) {
   
   if (const char* dontSend = PR_GetEnv("MOZ_BUILDID_MATCH_DONTSEND")) {
     if (dontSend[0] == '1') {
+      
+      
+      NoteIntentionalCrash(XRE_GetProcessTypeString());
       if (XRE_IsContentProcess()) {
         
         PR_Sleep(PR_MillisecondsToInterval(1000));
