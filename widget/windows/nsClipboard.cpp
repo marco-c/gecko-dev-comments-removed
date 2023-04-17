@@ -11,6 +11,9 @@
 
 #include <shellapi.h>
 
+#include <thread>
+#include <chrono>
+
 #include "nsArrayUtils.h"
 #include "nsCOMPtr.h"
 #include "nsDataObj.h"
@@ -253,8 +256,9 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
 }
 
 
-void nsClipboard::IDataObjectMethodResultToString(const HRESULT aHres,
-                                                  nsACString& aResult) {
+
+static void IDataObjectMethodResultToString(const HRESULT aHres,
+                                            nsACString& aResult) {
   switch (aHres) {
     case E_INVALIDARG:
       aResult = "E_INVALIDARG";
@@ -299,18 +303,9 @@ void nsClipboard::IDataObjectMethodResultToString(const HRESULT aHres,
 }
 
 
-void nsClipboard::LogOleGetClipboardResult(const HRESULT aHres) {
-  if (MOZ_LOG_TEST(gWin32ClipboardLog, LogLevel::Debug)) {
-    nsAutoCString hresString;
-    OleGetClipboardResultToString(aHres, hresString);
-    MOZ_LOG(gWin32ClipboardLog, LogLevel::Debug,
-            ("OleGetClipboard result: %s", hresString.get()));
-  }
-}
 
-
-void nsClipboard::OleGetClipboardResultToString(const HRESULT aHres,
-                                                nsACString& aResult) {
+static void OleGetClipboardResultToString(const HRESULT aHres,
+                                          nsACString& aResult) {
   switch (aHres) {
     case S_OK:
       aResult = "S_OK";
@@ -331,8 +326,19 @@ void nsClipboard::OleGetClipboardResultToString(const HRESULT aHres,
 }
 
 
-void nsClipboard::OleSetClipboardResultToString(HRESULT aHres,
-                                                nsACString& aResult) {
+
+static void LogOleGetClipboardResult(const HRESULT aHres) {
+  if (MOZ_LOG_TEST(gWin32ClipboardLog, LogLevel::Debug)) {
+    nsAutoCString hresString;
+    OleGetClipboardResultToString(aHres, hresString);
+    MOZ_LOG(gWin32ClipboardLog, LogLevel::Debug,
+            ("OleGetClipboard result: %s", hresString.get()));
+  }
+}
+
+
+
+static void OleSetClipboardResultToString(HRESULT aHres, nsACString& aResult) {
   switch (aHres) {
     case S_OK:
       aResult = "S_OK";
@@ -359,12 +365,35 @@ void nsClipboard::OleSetClipboardResultToString(HRESULT aHres,
 }
 
 
-void nsClipboard::LogOleSetClipboardResult(const HRESULT aHres) {
+
+static void LogOleSetClipboardResult(const HRESULT aHres) {
   if (MOZ_LOG_TEST(gWin32ClipboardLog, LogLevel::Debug)) {
     nsAutoCString hresString;
     OleSetClipboardResultToString(aHres, hresString);
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Debug,
             ("OleSetClipboard result: %s", hresString.get()));
+  }
+}
+
+
+
+
+static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
+  
+  
+  
+  static constexpr int kNumberOfTries = 3;
+  static constexpr int kDelayInMs = 3;
+
+  for (int i = 0; i < kNumberOfTries; ++i) {
+    const HRESULT hres = ::OleSetClipboard(aDataObj);
+    LogOleSetClipboardResult(hres);
+
+    if (hres == S_OK) {
+      break;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(kDelayInMs));
   }
 }
 
@@ -386,11 +415,11 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   IDataObject* dataObj;
   if (NS_SUCCEEDED(CreateNativeDataObject(mTransferable, &dataObj,
                                           nullptr))) {  
-    LogOleSetClipboardResult(::OleSetClipboard(dataObj));
+    RepeatedlyTryOleSetClipboard(dataObj);
     dataObj->Release();
   } else {
     
-    LogOleSetClipboardResult(::OleSetClipboard(nullptr));
+    RepeatedlyTryOleSetClipboard(nullptr);
   }
 
   mIgnoreEmptyNotification = false;
@@ -474,11 +503,12 @@ nsresult nsClipboard::GetNativeDataOffClipboard(nsIWidget* aWidget,
 }
 
 
-void nsClipboard::LogIDataObjectMethodResult(const HRESULT aHres,
-                                             const nsCString& aMethodName) {
+
+static void LogIDataObjectMethodResult(const HRESULT aHres,
+                                       const nsCString& aMethodName) {
   if (MOZ_LOG_TEST(gWin32ClipboardLog, LogLevel::Debug)) {
     nsAutoCString hresString;
-    nsClipboard::IDataObjectMethodResultToString(aHres, hresString);
+    IDataObjectMethodResultToString(aHres, hresString);
     MOZ_LOG(
         gWin32ClipboardLog, LogLevel::Debug,
         ("IDataObject::%s result: %s", aMethodName.get(), hresString.get()));
@@ -496,10 +526,10 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
   
   HRESULT hres = S_FALSE;
   hres = aDataObject->QueryGetData(pFE);
-  nsClipboard::LogIDataObjectMethodResult(hres, "QueryGetData"_ns);
+  LogIDataObjectMethodResult(hres, "QueryGetData"_ns);
   if (S_OK == hres) {
     hres = aDataObject->GetData(pFE, pSTM);
-    nsClipboard::LogIDataObjectMethodResult(hres, "GetData"_ns);
+    LogIDataObjectMethodResult(hres, "GetData"_ns);
   }
   return hres;
 }
@@ -1159,7 +1189,7 @@ nsClipboard::EmptyClipboard(int32_t aWhichClipboard) {
   
   
   if (aWhichClipboard == kGlobalClipboard && !mEmptyingForSetData) {
-    LogOleSetClipboardResult(::OleSetClipboard(nullptr));
+    RepeatedlyTryOleSetClipboard(nullptr);
   }
   return nsBaseClipboard::EmptyClipboard(aWhichClipboard);
 }

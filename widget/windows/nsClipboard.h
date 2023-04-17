@@ -68,32 +68,6 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   static HRESULT FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
                                LPFORMATETC pFE, LPSTGMEDIUM pSTM, DWORD aTymed);
 
-  
-  
-  static void IDataObjectMethodResultToString(HRESULT aHres,
-                                              nsACString& aResult);
-
-  
-  
-  static void LogIDataObjectMethodResult(HRESULT aHres,
-                                         const nsCString& aMethodName);
-
-  
-  
-  static void LogOleGetClipboardResult(HRESULT aHres);
-
-  
-  
-  static void OleGetClipboardResultToString(HRESULT aHres, nsACString& aResult);
-
-  
-  
-  static void LogOleSetClipboardResult(HRESULT aHres);
-
-  
-  
-  static void OleSetClipboardResultToString(HRESULT aHres, nsACString& aResult);
-
   NS_IMETHOD SetNativeClipboardData(int32_t aWhichClipboard) override;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
@@ -108,6 +82,7 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   static bool FindPlatformHTML(IDataObject* inDataObject, UINT inIndex,
                                void** outData, uint32_t* outStartOfData,
                                uint32_t* outDataLen);
+
   static void ResolveShortcut(nsIFile* inFileName, nsACString& outURL);
 
   nsIWidget* mWindow;
