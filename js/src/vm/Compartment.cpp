@@ -509,8 +509,8 @@ void Compartment::sweepAfterMinorGC(JSTracer* trc) {
 }
 
 
-void Compartment::sweepCrossCompartmentObjectWrappers() {
-  crossCompartmentObjectWrappers.sweep();
+void Compartment::traceCrossCompartmentObjectWrapperEdges(JSTracer* trc) {
+  crossCompartmentObjectWrappers.traceWeak(trc);
 }
 
 void Compartment::fixupCrossCompartmentObjectWrappersAfterMovingGC(
@@ -519,7 +519,7 @@ void Compartment::fixupCrossCompartmentObjectWrappersAfterMovingGC(
 
   
   
-  sweepCrossCompartmentObjectWrappers();
+  traceCrossCompartmentObjectWrapperEdges(trc);
 
   
   
@@ -535,7 +535,7 @@ void Compartment::fixupAfterMovingGC(JSTracer* trc) {
 
   
   
-  sweepCrossCompartmentObjectWrappers();
+  traceCrossCompartmentObjectWrapperEdges(trc);
 }
 
 void Compartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,

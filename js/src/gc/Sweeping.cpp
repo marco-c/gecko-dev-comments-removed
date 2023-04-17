@@ -1202,9 +1202,10 @@ void GCRuntime::updateAtomsBitmap() {
 }
 
 void GCRuntime::sweepCCWrappers() {
+  SweepingTracer trc(rt);
   AutoSetThreadIsSweeping threadIsSweeping;  
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
-    zone->sweepAllCrossCompartmentWrappers();
+    zone->traceWeakCCWEdges(&trc);
   }
 }
 

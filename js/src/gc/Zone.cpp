@@ -341,10 +341,10 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
   }
 }
 
-void Zone::sweepAllCrossCompartmentWrappers() {
-  crossZoneStringWrappers().sweep();
+void Zone::traceWeakCCWEdges(JSTracer* trc) {
+  crossZoneStringWrappers().traceWeak(trc);
   for (CompartmentsInZoneIter comp(this); !comp.done(); comp.next()) {
-    comp->sweepCrossCompartmentObjectWrappers();
+    comp->traceCrossCompartmentObjectWrapperEdges(trc);
   }
 }
 
@@ -355,7 +355,7 @@ void Zone::fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc) {
   for (ZonesIter zone(trc->runtime(), WithAtoms); !zone.done(); zone.next()) {
     
     
-    zone->crossZoneStringWrappers().sweep();
+    zone->crossZoneStringWrappers().traceWeak(trc);
 
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
       comp->fixupCrossCompartmentObjectWrappersAfterMovingGC(trc);
