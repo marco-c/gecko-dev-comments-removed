@@ -1804,7 +1804,8 @@ class StackWalkControl {
     void* resumePc;
   };
 
-#if (defined(_MSC_VER) && defined(_M_AMD64))
+#if ((defined(USE_MOZ_STACK_WALK) || defined(USE_FRAME_POINTER_STACK_WALK)) && \
+     defined(GP_ARCH_amd64))
  public:
   static constexpr bool scIsSupported = true;
 
@@ -1860,7 +1861,7 @@ class StackWalkControl {
   static constexpr size_t scMaxResumePointCount = 32;
   ResumePoint mResumePoint[scMaxResumePointCount];
 
-#else   
+#else
  public:
   static constexpr bool scIsSupported = false;
   
@@ -1872,7 +1873,7 @@ class StackWalkControl {
   const ResumePoint* begin() const;
   const ResumePoint* end() const;
   const ResumePoint* GetResumePointCallingSp(void* aSp) const;
-#endif  
+#endif
 };
 
 
@@ -2173,9 +2174,8 @@ static void StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP,
 
 #if defined(USE_FRAME_POINTER_STACK_WALK)
 static void DoFramePointerBacktrace(
-    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
-    const Registers& aRegs, NativeStack& aNativeStack,
-    StackWalkControl* aStackWalkControlIfSupported) {
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread, Registers aRegs,
+    NativeStack& aNativeStack, StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
@@ -2186,13 +2186,62 @@ static void DoFramePointerBacktrace(
   
   StackWalkCallback( 0, aRegs.mPC, aRegs.mSP, &aNativeStack);
 
-  uint32_t maxFrames = uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount);
+  const void* const stackEnd = aRegisteredThread.StackTop();
 
-  const void* stackEnd = aRegisteredThread.StackTop();
-  if (aRegs.mFP >= aRegs.mSP && aRegs.mFP <= stackEnd) {
-    FramePointerStackWalk(StackWalkCallback, maxFrames, &aNativeStack,
-                          reinterpret_cast<void**>(aRegs.mFP),
+  
+  void* previousResumeSp = nullptr;
+
+  for (;;) {
+    if (!(aRegs.mSP && aRegs.mSP <= aRegs.mFP && aRegs.mFP <= stackEnd)) {
+      break;
+    }
+    FramePointerStackWalk(StackWalkCallback,
+                          uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount),
+                          &aNativeStack, reinterpret_cast<void**>(aRegs.mFP),
                           const_cast<void*>(stackEnd));
+
+    if constexpr (!StackWalkControl::scIsSupported) {
+      break;
+    } else {
+      if (aNativeStack.mCount >= MAX_NATIVE_FRAMES) {
+        
+        break;
+      }
+      if (!aStackWalkControlIfSupported ||
+          aStackWalkControlIfSupported->ResumePointCount() == 0) {
+        
+        break;
+      }
+      void* lastSP = aNativeStack.mSPs[aNativeStack.mCount - 1];
+      if (previousResumeSp &&
+          ((uintptr_t)lastSP <= (uintptr_t)previousResumeSp)) {
+        
+        break;
+      }
+      const StackWalkControl::ResumePoint* resumePoint =
+          aStackWalkControlIfSupported->GetResumePointCallingSp(lastSP);
+      if (!resumePoint) {
+        break;
+      }
+      void* sp = resumePoint->resumeSp;
+      if (!sp) {
+        
+        break;
+      }
+      void* pc = resumePoint->resumePc;
+      StackWalkCallback( aNativeStack.mCount, pc, sp,
+                        &aNativeStack);
+      ++aNativeStack.mCount;
+      if (aNativeStack.mCount >= MAX_NATIVE_FRAMES) {
+        break;
+      }
+      
+      aRegs.mPC = (Address)pc;
+      aRegs.mSP = (Address)sp;
+      aRegs.mFP = (Address)resumePoint->resumeBp;
+
+      previousResumeSp = sp;
+    }
   }
 }
 #endif
