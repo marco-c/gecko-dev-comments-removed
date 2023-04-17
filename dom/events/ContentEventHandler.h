@@ -249,11 +249,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
                                            bool aIsRemovingNode = false);
   
   
-  static uint32_t GetNativeTextLength(nsIContent* aContent,
+  static uint32_t GetNativeTextLength(const dom::Text& aTextNode,
                                       uint32_t aStartOffset,
                                       uint32_t aEndOffset);
   
-  static uint32_t GetNativeTextLength(nsIContent* aContent,
+  static uint32_t GetNativeTextLength(const dom::Text& aTextNode,
                                       uint32_t aMaxLength = UINT32_MAX);
   
   
