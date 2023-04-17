@@ -282,7 +282,20 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
 
         mCurrentTextLength += start + text.length() - oldEnd;
         
-        mEditableParent.onTextChange(mEditableChild.asBinder(), text, start, unboundedOldEnd);
+        if (text.length() == 0) {
+            
+            mEditableParent.onTextChange(mEditableChild.asBinder(), text, start, unboundedOldEnd);
+            return;
+        }
+        
+        int offset = 0;
+        int newUnboundedOldEnd = unboundedOldEnd;
+        while (offset < text.length()) {
+            final int end = Math.min(offset + 1024 * 64 , text.length());
+            mEditableParent.onTextChange(mEditableChild.asBinder(), text.subSequence(offset, end), start + offset, newUnboundedOldEnd);
+            offset = end;
+            newUnboundedOldEnd = start + offset;
+        }
     }
 
     @WrapForJNI(calledFrom = "gecko")

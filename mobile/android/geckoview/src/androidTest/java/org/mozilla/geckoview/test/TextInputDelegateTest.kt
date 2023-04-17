@@ -612,6 +612,17 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_largeText() {
+        val content = (1..1024000).map {
+            ('a'..'z').random()
+        }.joinToString("")
+        setupContent(content)
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set large initial text", ic, content,  false)
+    }
+
+    
     @Ignore 
     @WithDisplay(width = 512, height = 512) 
     @Test fun inputConnection_bug1133802() {
