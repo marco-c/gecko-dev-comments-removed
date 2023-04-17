@@ -4354,9 +4354,6 @@ bool GCRuntime::foregroundFinalize(JSFreeOp* fop, Zone* zone,
   
   
   
-  
-  
-  
   if (!FinalizeArenas(fop, &lists.arenasToSweep(thingKind), sweepList,
                       thingKind, sliceBudget)) {
     
