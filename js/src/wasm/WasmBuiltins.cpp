@@ -507,17 +507,15 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 
       if (tryNote) {
         cx->clearPendingException();
-        if (!exn.isObject() || !exn.toObject().is<WasmExceptionObject>()) {
-          RootedObject obj(cx, WasmJSExceptionObject::create(cx, &exn));
-          if (!obj) {
-            MOZ_ASSERT(cx->isThrowingOutOfMemory());
-            continue;
-          }
-          exn.set(ObjectValue(*obj));
+        RootedAnyRef ref(cx, AnyRef::null());
+        if (!BoxAnyRef(cx, exn, &ref)) {
+          MOZ_ASSERT(cx->isThrowingOutOfMemory());
+          continue;
         }
+
         
         
-        rfe->exception = exn;
+        rfe->exception = ObjectValue(*ref.get().asJSObject());
 
         rfe->kind = ResumeFromException::RESUME_WASM_CATCH;
         rfe->framePointer = (uint8_t*)iter.frame();
