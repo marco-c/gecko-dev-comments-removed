@@ -42,14 +42,6 @@ class LineBreaker {
 
   
   
-  
-  
-  
-  
-  int32_t DeprecatedNext(const char16_t* aText, uint32_t aLen, uint32_t aPos);
-
-  
-  
   int32_t Prev(const char16_t* aText, uint32_t aLen, uint32_t aPos);
 
   
