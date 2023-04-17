@@ -229,8 +229,10 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
   if (topLayerList.IsEmpty()) {
     return nullptr;
   }
-  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(aBuilder,
-                                                                    this);
+  nsPoint offset = aBuilder->GetCurrentFrame()->GetOffsetTo(this);
+  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
+      aBuilder, this, aBuilder->GetVisibleRect() + offset,
+      aBuilder->GetDirtyRect() + offset);
   
   
   nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapList>(
