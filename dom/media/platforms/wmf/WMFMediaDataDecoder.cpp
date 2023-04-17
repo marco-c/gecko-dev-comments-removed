@@ -124,6 +124,19 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     return ProcessError(hr, "MFTManager::Input");
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (!mHasGuardedAgainstIncorrectFirstSample &&
+      !mMFTManager->HasSeekThreshold()) {
+    mHasGuardedAgainstIncorrectFirstSample = true;
+    mMFTManager->SetSeekThreshold(aSample->mTime);
+  }
+
   if (!mLastTime || aSample->mTime > *mLastTime) {
     mLastTime = Some(aSample->mTime);
     mLastDuration = aSample->mDuration;
@@ -164,6 +177,7 @@ RefPtr<MediaDataDecoder::FlushPromise> WMFMediaDataDecoder::ProcessFlush() {
   mDrainStatus = DrainStatus::DRAINED;
   mSamplesCount = 0;
   mLastTime.reset();
+  mHasGuardedAgainstIncorrectFirstSample = false;
   return FlushPromise::CreateAndResolve(true, __func__);
 }
 
