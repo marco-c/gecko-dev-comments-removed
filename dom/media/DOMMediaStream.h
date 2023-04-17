@@ -102,7 +102,6 @@ class DOMMediaStream : public DOMEventTargetHelper,
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DOMMediaStream, DOMEventTargetHelper)
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOMMEDIASTREAM_IID)
 
-  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
@@ -223,9 +222,6 @@ class DOMMediaStream : public DOMEventTargetHelper,
   
   nsresult DispatchTrackEvent(const nsAString& aName,
                               const RefPtr<MediaStreamTrack>& aTrack);
-
-  
-  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
   
   nsTArray<RefPtr<MediaStreamTrack>> mTracks;
