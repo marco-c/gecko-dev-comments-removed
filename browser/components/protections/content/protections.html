@@ -1,6 +1,6 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!DOCTYPE html>
 <html>
@@ -11,7 +11,7 @@
     <link rel="localization" href="branding/brand.ftl"/>
     <link rel="localization" href="browser/branding/sync-brand.ftl">
     <link rel="localization" href="browser/protections.ftl">
-    
+    <!-- Temporary "en-US"-only l10n strings -->
     <link rel="localization" href="preview/protections.ftl">
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
     <link rel="stylesheet" href="chrome://browser/content/protections.css">
@@ -78,13 +78,13 @@
 
                 <input id="tab-tracker" data-type="tracker" type="radio" name="tabs" aria-labelledby="trackerLabel trackerTitle" aria-describedby="trackerContent">
                 <label id="trackerLabel" for="tab-tracker" data-type="tracker">
-                  <img class="icon-small" src="chrome://browser/skin/controlcenter/tracker-image.svg" data-type="tracker"/>
+                  <img class="icon-small" src="chrome://browser/skin/canvas.svg" data-type="tracker"/>
                   <span data-type="tracker"></span>
                 </label>
 
                 <input id="tab-fingerprinter" data-type="fingerprinter" type="radio" name="tabs" aria-labelledby="fingerprinterLabel fingerprinterTitle" aria-describedby="fingerprinterContent">
                 <label id="fingerprinterLabel" for="tab-fingerprinter" data-type="fingerprinter">
-                  <img class="icon-small" src="chrome://browser/skin/controlcenter/fingerprinters.svg" data-type="fingerprinter"/>
+                  <img class="icon-small" src="chrome://browser/skin/fingerprint.svg" data-type="fingerprinter"/>
                   <span data-type="fingerprinter"></span>
                 </label>
 
@@ -149,7 +149,7 @@
           </div>
         </div>
       </div>
-     
+     <!-- Markup for Monitor card. -->
       <section class="card card-no-hover monitor-card hidden">
           <div class="card-header">
             <img class="icon" src="chrome://browser/content/logos/monitor.svg"/>
@@ -158,7 +158,7 @@
                 <h2 id="monitor-title" class="card-title" data-l10n-id="monitor-title"></h2>
                 <p id="monitor-header-content" class="content">
                   <span>
-                    
+                    <!-- Insert Monitor header content here. -->
                   </span>
                   <a target="_blank" href="" id="monitor-link" data-l10n-id="monitor-link"></a>
                 </p>
@@ -168,7 +168,7 @@
                 </div>
               </div>
               <a target="_blank" id="sign-up-for-monitor-link">
-                
+                <!-- Insert Monitor link content here. -->
               </a>
             </div>
           </div>
@@ -181,7 +181,7 @@
                       <span class="monitor-stat">
                         <img class="icon-med" src="chrome://browser/skin/mail.svg"/>
                         <span data-type="stored-emails">
-                          
+                          <!-- Display number of stored emails here. -->
                         </span>
                       </span>
                       <span id="info-monitored-addresses" class="info-text"></span>
@@ -192,7 +192,7 @@
                       <span class="monitor-stat">
                         <img class="icon-med" src="chrome://browser/skin/fxa/avatar.svg"/>
                         <span data-type="known-breaches">
-                          
+                          <!-- Display number of known breaches here. -->
                         </span>
                       </span>
                       <span id="info-known-breaches" class="info-text"></span>
@@ -203,7 +203,7 @@
                       <span class="monitor-stat">
                         <img class="icon-med" src="chrome://browser/skin/login.svg"/>
                         <span data-type="exposed-passwords">
-                          
+                          <!-- Display number of exposed passwords here. -->
                         </span>
                       </span>
                       <span id="info-exposed-passwords" class="info-text"></span>
@@ -243,18 +243,18 @@
             </div>
           </div>
       </section>
-      
+      <!-- Markup for Lockwise card. -->
       <section class="card card-no-hover lockwise-card hidden">
         <div class="card-header">
           <img class="icon" src="chrome://browser/content/logos/lockwise.svg"/>
           <div class="wrapper">
             <div>
               <h2 id="lockwise-title" class="card-title">
-                
+                <!-- Insert Lockwise card title here. -->
               </h2>
               <p id="lockwise-header-content" class="content">
                 <span>
-                  
+                  <!-- Insert Lockwise header content here. -->
                 </span>
                 <a target="_blank" id="lockwise-how-it-works" data-l10n-id="lockwise-how-it-works-link" href=""></a>
               </p>
@@ -263,20 +263,20 @@
             <div class="lockwise-scanned-wrapper">
                 <img id="lockwise-scanned-icon" />
                 <span id="lockwise-scanned-text" class="content">
-                  
+                  <!-- Display message for stored logins here. -->
                 </span>
               </div>
             <button id="manage-passwords-button" class="primary" data-l10n-id="protection-report-manage-passwords-button"></button>
           </div>
         </div>
-        
-
-
-
-
-
+        <!-- <div class="card-body hidden">
+          <div id="lockwise-body-content" class="body-wrapper">
+            <div class="no-logins hidden">
+            </div>
+          </div>
+        </div> -->
       </section>
-      
+      <!-- Markup for Proxy card -->
       <section class="card card-no-hover proxy-card hidden">
         <div class="card-header">
           <img class="icon light" src="chrome://browser/content/logos/proxy-light.svg"/>
