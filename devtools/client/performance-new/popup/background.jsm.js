@@ -87,40 +87,70 @@ const lazy = createLazyLoaders({
 
 
 
+
+
+
+
+
+
+
+
+
+
 const presets = {
   "web-developer": {
-    label: "Web Developer",
-    description:
-      "Recommended preset for most web app debugging, with low overhead.",
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: ["screenshots", "js", "cpu"],
     threads: ["GeckoMain", "Compositor", "Renderer", "DOM Worker"],
     duration: 0,
     profilerViewMode: "active-tab",
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-web-developer-label",
+        description: "profiler-popup-presets-web-developer-description",
+      },
+      devtools: {
+        label: "perftools-presets-web-developer-label",
+        description: "perftools-presets-web-developer-description",
+      },
+    },
   },
   "firefox-platform": {
-    label: "Firefox Platform",
-    description: "Recommended preset for internal Firefox platform debugging.",
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: ["screenshots", "js", "leaf", "stackwalk", "cpu", "java"],
     threads: ["GeckoMain", "Compositor", "Renderer", "SwComposite"],
     duration: 0,
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-firefox-platform-label",
+        description: "profiler-popup-presets-firefox-platform-description",
+      },
+      devtools: {
+        label: "perftools-presets-firefox-platform-label",
+        description: "perftools-presets-firefox-platform-description",
+      },
+    },
   },
   "firefox-front-end": {
-    label: "Firefox Front-End",
-    description: "Recommended preset for internal Firefox front-end debugging.",
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: ["screenshots", "js", "leaf", "stackwalk", "cpu", "java"],
     threads: ["GeckoMain", "Compositor", "Renderer", "DOM Worker"],
     duration: 0,
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-firefox-front-end-label",
+        description: "profiler-popup-presets-firefox-front-end-description",
+      },
+      devtools: {
+        label: "perftools-presets-firefox-front-end-label",
+        description: "perftools-presets-firefox-front-end-description",
+      },
+    },
   },
   graphics: {
-    label: "Firefox Graphics",
-    description:
-      "Recommended preset for Firefox graphics performance investigation.",
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: ["leaf", "stackwalk", "js", "cpu", "java"],
@@ -135,10 +165,18 @@ const presets = {
       "CanvasWorkers",
     ],
     duration: 0,
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-firefox-graphics-label",
+        description: "profiler-popup-presets-firefox-graphics-description",
+      },
+      devtools: {
+        label: "perftools-presets-firefox-graphics-label",
+        description: "perftools-presets-firefox-graphics-description",
+      },
+    },
   },
   media: {
-    label: "Media",
-    description: "Recommended preset for diagnosing audio and video problems.",
     entries: 128 * 1024 * 1024,
     interval: 1,
     features: ["js", "leaf", "stackwalk", "cpu", "audiocallbacktracing"],
@@ -167,6 +205,16 @@ const presets = {
       "VoiceProcessThread",
     ],
     duration: 0,
+    l10nIds: {
+      popup: {
+        label: "profiler-popup-presets-media-label",
+        description: "profiler-popup-presets-media-description",
+      },
+      devtools: {
+        label: "perftools-presets-media-label",
+        description: "perftools-presets-media-description",
+      },
+    },
   },
 };
 

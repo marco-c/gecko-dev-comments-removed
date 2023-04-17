@@ -302,6 +302,18 @@ declare namespace MockedExports {
     Ci: Ci;
     Cu: Cu;
   };
+
+  interface FluentLocalization {
+    
+
+
+
+    setAttributes(
+      target: Element,
+      id?: string,
+      args?: Record<string, string>
+    ): void;
+  }
 }
 
 declare module "devtools/client/shared/vendor/react" {
@@ -400,6 +412,11 @@ declare interface ChromeDocument extends Document {
 
   createXULElement: ((type: "iframe") => XULIframeElement) &
     ((type: string) => XULElement);
+
+  
+
+
+  l10n: MockedExports.FluentLocalization;
 }
 
 

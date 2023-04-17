@@ -98,7 +98,9 @@ class DevToolsPresetSelection extends PureComponent {
     const currentPreset = presets[presetName];
     if (currentPreset) {
       
-      presetDescription = currentPreset.description;
+      presetDescription = Localized({
+        id: currentPreset.l10nIds.devtools.description,
+      });
     } else {
       
       const { interval, threads, features } = this.props;
@@ -160,9 +162,15 @@ class DevToolsPresetSelection extends PureComponent {
               value: presetName,
             },
             Object.entries(presets).map(([name, preset]) =>
-              option({ key: name, value: name }, preset.label)
+              Localized(
+                { id: preset.l10nIds.devtools.label },
+                option({ key: name, value: name })
+              )
             ),
-            option({ value: "custom" }, "Custom")
+            Localized(
+              { id: "perftools-presets-custom-label" },
+              option({ value: "custom" })
+            )
           )
           
         ),
