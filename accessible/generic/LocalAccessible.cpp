@@ -38,6 +38,7 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
 #include "nsIContent.h"
 #include "nsIForm.h"
 #include "nsIFormControl.h"
@@ -1796,6 +1797,44 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       }
 
       return Relation(mDoc, GetAtomicRegion());
+    }
+
+    case RelationType::LINKS_TO: {
+      Relation rel = Relation();
+      if (Role() == roles::LINK) {
+        dom::HTMLAnchorElement* anchor =
+            dom::HTMLAnchorElement::FromNode(mContent);
+        if (!anchor) {
+          return rel;
+        }
+        
+        
+        nsAutoString hash;
+        anchor->GetHash(hash);
+        if (hash.IsEmpty()) {
+          return rel;
+        }
+
+        
+        
+        hash.Trim("#");
+        if (dom::Element* elm = mContent->OwnerDoc()->GetElementById(hash)) {
+          rel.AppendTarget(mDoc->GetAccessibleOrContainer(elm));
+        } else if (nsCOMPtr<nsINodeList> list =
+                       mContent->OwnerDoc()->GetElementsByName(hash)) {
+          
+          uint32_t length = list->Length();
+          for (uint32_t i = 0; i < length; i++) {
+            nsIContent* node = list->Item(i);
+            if (node->IsHTMLElement(nsGkAtoms::a)) {
+              rel.AppendTarget(mDoc->GetAccessibleOrContainer(node));
+              break;
+            }
+          }
+        }
+      }
+
+      return rel;
     }
 
     case RelationType::SUBWINDOW_OF:
