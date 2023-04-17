@@ -2555,12 +2555,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool StartOrEndOfSelectionRangesIsIn(nsIContent& aContent) const;
-
-  
-
-
-
 
 
 

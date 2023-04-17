@@ -762,6 +762,30 @@ class MOZ_STACK_CLASS AutoRangeArray final {
   static bool IsEditableRange(const dom::AbstractRange& aRange,
                               const dom::Element& aEditingHost);
 
+  
+
+
+
+
+  bool IsAtLeastOneContainerOfRangeBoundariesInclusiveDescendantOf(
+      const nsIContent& aContent) const {
+    for (const OwningNonNull<nsRange>& range : mRanges) {
+      nsINode* startContainer = range->GetStartContainer();
+      if (startContainer &&
+          startContainer->IsInclusiveDescendantOf(&aContent)) {
+        return true;
+      }
+      nsINode* endContainer = range->GetEndContainer();
+      if (startContainer == endContainer) {
+        continue;
+      }
+      if (endContainer && endContainer->IsInclusiveDescendantOf(&aContent)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   auto& Ranges() { return mRanges; }
   const auto& Ranges() const { return mRanges; }
   auto& FirstRangeRef() { return mRanges[0]; }
