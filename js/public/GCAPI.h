@@ -50,13 +50,6 @@ enum class GCOptions : uint32_t {
 
 }  
 
-
-
-
-using JSGCInvocationKind = JS::GCOptions;
-static constexpr JSGCInvocationKind GC_NORMAL = JS::GCOptions::Normal;
-static constexpr JSGCInvocationKind GC_SHRINK = JS::GCOptions::Shrink;
-
 typedef enum JSGCParamKey {
   
 
