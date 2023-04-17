@@ -888,16 +888,16 @@ function hasStyleSheetWatcherSupportForTarget(targetActor) {
   
   
   const { sharedData } = Services.cpmm;
-  const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-  if (!watchedDataByWatcherActor) {
+  const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+  if (!sessionDataByWatcherActor) {
     return false;
   }
 
-  const watcherData = Array.from(watchedDataByWatcherActor.values()).find(
-    watchedData => {
+  const watcherData = Array.from(sessionDataByWatcherActor.values()).find(
+    sessionData => {
       const actors = TargetActorRegistry.getTargetActors(
         targetActor.browserId,
-        watchedData.connectionPrefix
+        sessionData.connectionPrefix
       );
       return actors.includes(targetActor);
     }

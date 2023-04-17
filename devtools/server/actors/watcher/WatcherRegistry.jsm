@@ -32,10 +32,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { ActorManagerParent } = ChromeUtils.import(
   "resource://gre/modules/ActorManagerParent.jsm"
 );
-const { WatchedDataHelpers } = ChromeUtils.import(
-  "resource://devtools/server/actors/watcher/WatchedDataHelpers.jsm"
+const { SessionDataHelpers } = ChromeUtils.import(
+  "resource://devtools/server/actors/watcher/SessionDataHelpers.jsm"
 );
-const { SUPPORTED_DATA } = WatchedDataHelpers;
+const { SUPPORTED_DATA } = SessionDataHelpers;
 
 
 
@@ -50,7 +50,7 @@ const { SUPPORTED_DATA } = WatchedDataHelpers;
 
 
 
-const watchedDataByWatcherActor = new Map();
+const sessionDataByWatcherActor = new Map();
 
 
 
@@ -67,7 +67,7 @@ const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
 
 function persistMapToSharedData() {
-  Services.ppmm.sharedData.set(SHARED_DATA_KEY_NAME, watchedDataByWatcherActor);
+  Services.ppmm.sharedData.set(SHARED_DATA_KEY_NAME, sessionDataByWatcherActor);
   
   
   
@@ -86,8 +86,8 @@ const WatcherRegistry = {
 
 
   isWatchingTargets(watcher, targetType) {
-    const watchedData = this.getWatchedData(watcher);
-    return watchedData && watchedData.targets.includes(targetType);
+    const sessionData = this.getSessionData(watcher);
+    return sessionData && sessionData.targets.includes(targetType);
   },
 
   
@@ -103,14 +103,14 @@ const WatcherRegistry = {
 
 
 
-  getWatchedData(watcher, { createData = false } = {}) {
+  getSessionData(watcher, { createData = false } = {}) {
     
     
     
     const watcherActorID = watcher.actorID;
-    let watchedData = watchedDataByWatcherActor.get(watcherActorID);
-    if (!watchedData && createData) {
-      watchedData = {
+    let sessionData = sessionDataByWatcherActor.get(watcherActorID);
+    if (!sessionData && createData) {
+      sessionData = {
         
         
         
@@ -126,12 +126,12 @@ const WatcherRegistry = {
       };
       
       for (const name of Object.values(SUPPORTED_DATA)) {
-        watchedData[name] = [];
+        sessionData[name] = [];
       }
-      watchedDataByWatcherActor.set(watcherActorID, watchedData);
+      sessionDataByWatcherActor.set(watcherActorID, sessionData);
       watcherActors.set(watcherActorID, watcher);
     }
-    return watchedData;
+    return sessionData;
   },
 
   
@@ -174,15 +174,15 @@ const WatcherRegistry = {
 
 
   addWatcherDataEntry(watcher, type, entries) {
-    const watchedData = this.getWatchedData(watcher, {
+    const sessionData = this.getSessionData(watcher, {
       createData: true,
     });
 
-    if (!(type in watchedData)) {
+    if (!(type in sessionData)) {
       throw new Error(`Unsupported watcher data type: ${type}`);
     }
 
-    WatchedDataHelpers.addWatchedDataEntry(watchedData, type, entries);
+    SessionDataHelpers.addSessionDataEntry(sessionData, type, entries);
 
     
     registerJSWindowActor();
@@ -199,26 +199,26 @@ const WatcherRegistry = {
 
 
   removeWatcherDataEntry(watcher, type, entries) {
-    const watchedData = this.getWatchedData(watcher);
-    if (!watchedData) {
+    const sessionData = this.getSessionData(watcher);
+    if (!sessionData) {
       return false;
     }
 
-    if (!(type in watchedData)) {
+    if (!(type in sessionData)) {
       throw new Error(`Unsupported watcher data type: ${type}`);
     }
 
     if (
-      !WatchedDataHelpers.removeWatchedDataEntry(watchedData, type, entries)
+      !SessionDataHelpers.removeSessionDataEntry(sessionData, type, entries)
     ) {
       return false;
     }
 
     const isWatchingSomething = Object.values(SUPPORTED_DATA).some(
-      dataType => watchedData[dataType].length > 0
+      dataType => sessionData[dataType].length > 0
     );
     if (!isWatchingSomething) {
-      watchedDataByWatcherActor.delete(watcher.actorID);
+      sessionDataByWatcherActor.delete(watcher.actorID);
       watcherActors.delete(watcher.actorID);
     }
 
@@ -236,7 +236,7 @@ const WatcherRegistry = {
 
 
   unregisterWatcher(watcher) {
-    watchedDataByWatcherActor.delete(watcher.actorID);
+    sessionDataByWatcherActor.delete(watcher.actorID);
     watcherActors.delete(watcher.actorID);
     this.maybeUnregisteringJSWindowActor();
   },
@@ -299,7 +299,7 @@ const WatcherRegistry = {
 
 
   maybeUnregisteringJSWindowActor() {
-    if (watchedDataByWatcherActor.size == 0) {
+    if (sessionDataByWatcherActor.size == 0) {
       unregisterJSWindowActor();
     }
   },

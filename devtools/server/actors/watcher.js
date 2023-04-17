@@ -128,8 +128,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  get watchedData() {
-    return WatcherRegistry.getWatchedData(this);
+  get sessionData() {
+    return WatcherRegistry.getSessionData(this);
   },
 
   form() {
@@ -654,7 +654,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  getWatchedData(type) {
-    return this.watchedData?.[type];
+  getSessionDataForType(type) {
+    return this.sessionData?.[type];
   },
 });

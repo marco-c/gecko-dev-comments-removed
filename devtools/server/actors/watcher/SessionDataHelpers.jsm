@@ -9,7 +9,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["WatchedDataHelpers"];
+var EXPORTED_SYMBOLS = ["SessionDataHelpers"];
 
 if (typeof module == "object") {
   
@@ -111,7 +111,7 @@ function idFunction(v) {
   return v;
 }
 
-const WatchedDataHelpers = {
+const SessionDataHelpers = {
   SUPPORTED_DATA,
 
   
@@ -124,11 +124,11 @@ const WatchedDataHelpers = {
 
 
 
-  addWatchedDataEntry(watchedData, type, entries) {
+  addSessionDataEntry(sessionData, type, entries) {
     const toBeAdded = [];
     const keyFunction = DATA_KEY_FUNCTION[type] || idFunction;
     for (const entry of entries) {
-      const existingIndex = watchedData[type].findIndex(existingEntry => {
+      const existingIndex = sessionData[type].findIndex(existingEntry => {
         return keyFunction(existingEntry) === keyFunction(entry);
       });
       if (existingIndex === -1) {
@@ -138,10 +138,10 @@ const WatchedDataHelpers = {
         
         
         
-        watchedData[type][existingIndex] = entry;
+        sessionData[type][existingIndex] = entry;
       }
     }
-    watchedData[type].push(...toBeAdded);
+    sessionData[type].push(...toBeAdded);
   },
 
   
@@ -157,15 +157,15 @@ const WatchedDataHelpers = {
 
 
 
-  removeWatchedDataEntry(watchedData, type, entries) {
+  removeSessionDataEntry(sessionData, type, entries) {
     let includesAtLeastOne = false;
     const keyFunction = DATA_KEY_FUNCTION[type] || idFunction;
     for (const entry of entries) {
-      const idx = watchedData[type].findIndex(existingEntry => {
+      const idx = sessionData[type].findIndex(existingEntry => {
         return keyFunction(existingEntry) === keyFunction(entry);
       });
       if (idx !== -1) {
-        watchedData[type].splice(idx, 1);
+        sessionData[type].splice(idx, 1);
         includesAtLeastOne = true;
       }
     }
@@ -181,5 +181,5 @@ const WatchedDataHelpers = {
 
 
 if (typeof module == "object") {
-  module.exports.WatchedDataHelpers = WatchedDataHelpers;
+  module.exports.SessionDataHelpers = SessionDataHelpers;
 }

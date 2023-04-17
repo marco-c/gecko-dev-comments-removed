@@ -29,8 +29,8 @@ XPCOMUtils.defineLazyGetter(this, "DevToolsUtils", () =>
   Loader.require("devtools/shared/DevToolsUtils")
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  WatchedDataHelpers:
-    "resource://devtools/server/actors/watcher/WatchedDataHelpers.jsm",
+  SessionDataHelpers:
+    "resource://devtools/server/actors/watcher/SessionDataHelpers.jsm",
 });
 
 
@@ -110,16 +110,16 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
   onDOMWindowCreated() {
     const { sharedData } = Services.cpmm;
-    const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-    if (!watchedDataByWatcherActor) {
+    const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+    if (!sessionDataByWatcherActor) {
       throw new Error(
         "Request to instantiate the target(s) for the Worker, but `sharedData` is empty about watched targets"
       );
     }
 
     
-    for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-      const { targets, connectionPrefix, browserId } = watchedData;
+    for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
+      const { targets, connectionPrefix, browserId } = sessionData;
       if (
         targets.includes("worker") &&
         shouldNotifyWindowGlobal(this.manager, browserId)
@@ -127,7 +127,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
         this._watchWorkerTargets({
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
-          watchedData,
+          sessionData,
         });
       }
     }
@@ -162,12 +162,12 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
     switch (message.name) {
       case "DevToolsWorkerParent:instantiate-already-available": {
-        const { watcherActorID, connectionPrefix, watchedData } = message.data;
+        const { watcherActorID, connectionPrefix, sessionData } = message.data;
 
         return this._watchWorkerTargets({
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
-          watchedData,
+          sessionData,
         });
       }
       case "DevToolsWorkerParent:destroy": {
@@ -208,7 +208,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
   async _watchWorkerTargets({
     watcherActorID,
     parentConnectionPrefix,
-    watchedData,
+    sessionData,
   }) {
     if (this._connections.has(watcherActorID)) {
       throw new Error(
@@ -241,7 +241,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       connection,
       workers: [],
       forwardingPrefix,
-      watchedData,
+      sessionData,
     });
 
     await Promise.all(
@@ -309,7 +309,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     } catch (e) {}
 
     const watcherConnectionData = this._connections.get(watcherActorID);
-    const { watchedData } = watcherConnectionData;
+    const { sessionData } = watcherConnectionData;
     const workerThreadServerForwardingPrefix = connection.allocID(
       "workerTarget"
     );
@@ -324,7 +324,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       dbg,
       workerThreadServerForwardingPrefix,
       {
-        watchedData,
+        sessionData,
       }
     );
 
@@ -435,8 +435,8 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       return;
     }
 
-    WatchedDataHelpers.addWatchedDataEntry(
-      watcherConnectionData.watchedData,
+    SessionDataHelpers.addSessionDataEntry(
+      watcherConnectionData.sessionData,
       type,
       entries
     );
@@ -465,8 +465,8 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       return;
     }
 
-    WatchedDataHelpers.removeWatchedDataEntry(
-      watcherConnectionData.watchedData,
+    SessionDataHelpers.removeSessionDataEntry(
+      watcherConnectionData.sessionData,
       type,
       entries
     );

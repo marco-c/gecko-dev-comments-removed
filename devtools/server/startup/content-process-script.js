@@ -111,7 +111,7 @@ class ContentProcessStartup {
         this.createTargetActor(
           msg.data.watcherActorID,
           msg.data.connectionPrefix,
-          msg.data.watchedData,
+          msg.data.sessionData,
           true
         );
         break;
@@ -160,18 +160,18 @@ class ContentProcessStartup {
       return;
     }
 
-    const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-    if (!watchedDataByWatcherActor) {
+    const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+    if (!sessionDataByWatcherActor) {
       return;
     }
 
     
-    for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-      const { connectionPrefix, targets } = watchedData;
+    for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
+      const { connectionPrefix, targets } = sessionData;
       
       
       if (targets.includes("process")) {
-        this.createTargetActor(watcherActorID, connectionPrefix, watchedData);
+        this.createTargetActor(watcherActorID, connectionPrefix, sessionData);
       }
     }
   }

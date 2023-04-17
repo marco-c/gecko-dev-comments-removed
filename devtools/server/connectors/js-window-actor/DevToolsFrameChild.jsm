@@ -156,20 +156,20 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
   instantiate({ isBFCache = false } = {}) {
     const { sharedData } = Services.cpmm;
-    const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-    if (!watchedDataByWatcherActor) {
+    const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+    if (!sessionDataByWatcherActor) {
       throw new Error(
         "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
       );
     }
 
     
-    for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
+    for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
       const {
         connectionPrefix,
         browserId,
         isServerTargetSwitchingEnabled,
-      } = watchedData;
+      } = sessionData;
       
       
       
@@ -179,7 +179,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         isServerTargetSwitchingEnabled ||
         (isBFCache && this.isBfcacheInParentEnabled);
       if (
-        watchedData.targets.includes("frame") &&
+        sessionData.targets.includes("frame") &&
         shouldNotifyWindowGlobal(this.manager, browserId, {
           acceptTopLevelTarget,
         })
@@ -227,7 +227,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         this._createTargetActor({
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
-          watchedData,
+          sessionData,
           isDocumentCreation: true,
         });
       }
@@ -257,7 +257,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
   _createTargetActor({
     watcherActorID,
     parentConnectionPrefix,
-    watchedData,
+    sessionData,
     isDocumentCreation,
     fromInstantiateAlreadyAvailable,
   }) {
@@ -301,7 +301,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     const browsingContext = this.manager.browsingContext;
     const isTopLevelTarget =
       !browsingContext.parent &&
-      browsingContext.browserId == watchedData.browserId;
+      browsingContext.browserId == sessionData.browserId;
 
     const { connection, targetActor } = this._createConnectionAndActor(
       forwardingPrefix,
@@ -329,10 +329,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
     });
 
     
-    for (const type in watchedData) {
+    for (const type in sessionData) {
       
       
-      const entries = watchedData[type];
+      const entries = sessionData[type];
       if (!Array.isArray(entries) || entries.length == 0) {
         continue;
       }
@@ -478,12 +478,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
     switch (message.name) {
       case "DevToolsFrameParent:instantiate-already-available": {
-        const { watcherActorID, connectionPrefix, watchedData } = message.data;
+        const { watcherActorID, connectionPrefix, sessionData } = message.data;
 
         return this._createTargetActor({
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
-          watchedData,
+          sessionData,
           fromInstantiateAlreadyAvailable: true,
         });
       }
@@ -644,8 +644,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       const { sharedData } = Services.cpmm;
-      const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-      if (!watchedDataByWatcherActor) {
+      const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+      if (!sessionDataByWatcherActor) {
         throw new Error(
           "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
         );
@@ -655,8 +655,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       let allActorsAreDestroyed = true;
-      for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-        const { browserId, isServerTargetSwitchingEnabled } = watchedData;
+      for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
+        const { browserId, isServerTargetSwitchingEnabled } = sessionData;
 
         
         
