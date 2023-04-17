@@ -174,6 +174,11 @@ class WebRenderLayerScrollData final {
  private:
   
   
+  friend class TestWRScrollData;
+  void InitializeForTest(int32_t aDescendantCount);
+
+  
+  
   
   int32_t mDescendantCount;
 
@@ -215,11 +220,14 @@ class WebRenderLayerScrollData final {
 
 
 
-class WebRenderScrollData final {
+class WebRenderScrollData {
  public:
   WebRenderScrollData();
   explicit WebRenderScrollData(WebRenderLayerManager* aManager,
                                nsDisplayListBuilder* aBuilder);
+  WebRenderScrollData(WebRenderScrollData&& aOther) = default;
+  WebRenderScrollData& operator=(WebRenderScrollData&& aOther) = default;
+  virtual ~WebRenderScrollData() = default;
 
   WebRenderLayerManager* GetManager() const;
 
@@ -237,6 +245,7 @@ class WebRenderScrollData final {
   
   
   const WebRenderLayerScrollData* GetLayerData(size_t aIndex) const;
+  WebRenderLayerScrollData* GetLayerData(size_t aIndex);
 
   const ScrollMetadata& GetScrollMetadata(size_t aIndex) const;
   Maybe<size_t> HasMetadataFor(
