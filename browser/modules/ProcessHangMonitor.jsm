@@ -710,10 +710,6 @@ var ProcessHangMonitor = {
     if (report.hangType == report.SLOW_SCRIPT) {
       
       Services.telemetry.getHistogramById("SLOW_SCRIPT_NOTICE_COUNT").add();
-    } else if (report.hangType == report.PLUGIN_HANG) {
-      
-      
-      Services.telemetry.getHistogramById("PLUGIN_HANG_NOTICE_COUNT").add();
     }
 
     this._activeReports.set(report, {
