@@ -3407,6 +3407,13 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
     return;
   }
 
+  
+  
+  
+  if (spec.Find("backgroundtasks") != kNotFound) {
+    return;
+  }
+
   if (xpc::IsInAutomation()) {
 #ifdef DEBUG
     if (NS_IsMainThread()) {
