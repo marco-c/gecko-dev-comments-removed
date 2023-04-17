@@ -20,14 +20,6 @@ class nsIThread;
 extern nsresult NS_GetMainThread(nsIThread** aResult);
 
 #ifdef MOZILLA_INTERNAL_API
-
-
-
-
-extern nsIThread* NS_GetCurrentThread();
-#endif
-
-#ifdef MOZILLA_INTERNAL_API
 bool NS_IsMainThreadTLSInitialized();
 extern "C" {
 bool NS_IsMainThread();
