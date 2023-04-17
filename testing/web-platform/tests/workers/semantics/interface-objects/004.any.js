@@ -18,8 +18,6 @@ var unexpected = [
   "HashChangeEvent",
   "PageTransitionEvent",
   
-  "WritableStreamDefaultController",
-  
   "IDBEnvironment",
   
   "Database",
