@@ -440,7 +440,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   
   TimeStamp mPendingTime;
-  TimeStamp mHTTPSRRQueryStart;
   TimeDuration mPendingDurationTime;
 
   uint64_t mTopBrowsingContextId{0};

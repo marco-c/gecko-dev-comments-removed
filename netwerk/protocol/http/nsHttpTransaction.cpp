@@ -373,7 +373,6 @@ nsresult nsHttpTransaction::Init(
     if (target) {
       if (StaticPrefs::network_dns_force_waiting_https_rr()) {
         mCaps |= NS_HTTP_FORCE_WAIT_HTTP_RR;
-        mHTTPSRRQueryStart = TimeStamp::Now();
       }
 
       mResolver = new HTTPSRecordResolver(this);
@@ -3033,14 +3032,6 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
   
   auto updateHTTPSSVCReceivedStage = MakeScopeExit([&] {
     mHTTPSSVCReceivedStage = receivedStage;
-
-    if (!mHTTPSRRQueryStart.IsNull()) {
-      AccumulateTimeDelta(Telemetry::HTTPS_RR_WAITING_TIME,
-                          HTTPS_RR_IS_USED(mHTTPSSVCReceivedStage)
-                              ? "with_https_rr"_ns
-                              : "no_https_rr"_ns,
-                          mHTTPSRRQueryStart, TimeStamp::Now());
-    }
 
     
     
