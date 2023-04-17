@@ -26,6 +26,7 @@
 #include "js/HashTable.h"             
 #include "js/UniquePtr.h"             
 #include "vm/Activation.h"            
+#include "wasm/WasmCodegenTypes.h"    
 #include "wasm/WasmConstants.h"       
 #include "wasm/WasmFrame.h"           
 #include "wasm/WasmFrameIter.h"  
