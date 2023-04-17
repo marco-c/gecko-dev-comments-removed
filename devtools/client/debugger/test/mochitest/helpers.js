@@ -1551,12 +1551,16 @@ async function cmdClickGutter(dbg, line) {
   clickDOMElement(dbg, el, cmdOrCtrl);
 }
 
-function findContextMenu(dbg, selector) {
+function findContextMenuPopup(dbg) {
   
   const doc = dbg.toolbox.topDoc;
 
   
-  const popup = doc.querySelector('menupopup[menu-api="true"]');
+  return doc.querySelector('menupopup[menu-api="true"]');
+}
+
+function findContextMenu(dbg, selector) {
+  const popup = findContextMenuPopup(dbg)
 
   return popup.querySelector(selector);
 }
@@ -1567,8 +1571,8 @@ async function waitForContextMenu(dbg, selector) {
 }
 
 function selectContextMenuItem(dbg, selector) {
-  const item = findContextMenu(dbg, selector);
-  return EventUtils.synthesizeMouseAtCenter(item, {}, dbg.toolbox.topWindow);
+  const popup = findContextMenuPopup(dbg);
+  popup.activateItem(popup.querySelector(selector));
 }
 
 async function assertContextMenuLabel(dbg, selector, label) {
