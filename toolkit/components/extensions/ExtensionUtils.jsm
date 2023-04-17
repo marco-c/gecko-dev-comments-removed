@@ -74,6 +74,19 @@ function filterStack(error) {
 
 
 
+
+
+
+class WorkerExtensionError extends DOMException {
+  constructor(message) {
+    super(message, "Error");
+  }
+}
+
+
+
+
+
 class DefaultWeakMap extends WeakMap {
   constructor(defaultConstructor = undefined, init = undefined) {
     super(init);
@@ -340,4 +353,5 @@ var ExtensionUtils = {
   DefaultWeakMap,
   ExtensionError,
   LimitedSet,
+  WorkerExtensionError,
 };
