@@ -149,8 +149,9 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
       return Throw(aCx, NS_ERROR_FAILURE);
     }
 
-    FillPropertyDescriptor(aCx, aDesc, aObj, JS::ObjectValue(*constructor),
-                           false, false);
+    aDesc.set(mozilla::Some(JS::PropertyDescriptor::Data(
+        JS::ObjectValue(*constructor), {JS::PropertyAttribute::Configurable,
+                                        JS::PropertyAttribute::Writable})));
     return true;
   }
 
@@ -166,9 +167,8 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
   
   
   
-  
-  FillPropertyDescriptor(aCx, aDesc, aObj, JS::UndefinedValue(), false);
-
+  aDesc.set(
+      mozilla::Some(JS::PropertyDescriptor::Data(JS::UndefinedValue(), {})));
   return true;
 }
 
