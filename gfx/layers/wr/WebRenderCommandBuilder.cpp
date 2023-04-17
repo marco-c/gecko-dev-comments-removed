@@ -1836,10 +1836,22 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
             ScrollableLayerGuid::NULL_SCROLL_ID;
         bool transformShouldGetOwnLayer = false;
         if (deferred) {
+          
+          
+          
+          
+          
+          
+          
+          if (ActiveScrolledRoot::IsProperAncestor(
+                  deferred->GetActiveScrolledRoot(), stopAtAsr)) {
+            deferred = nullptr;
+          }
+        }
+        if (deferred) {
           if (const auto* asr = deferred->GetActiveScrolledRoot()) {
             deferredId = asr->GetViewId();
           }
-
           if (deferred->GetActiveScrolledRoot() !=
               item->GetActiveScrolledRoot()) {
             transformShouldGetOwnLayer = true;
@@ -1884,7 +1896,8 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
           mLayerScrollData.emplace_back();
           mLayerScrollData.back().Initialize(
               mManager->GetScrollData(), item, descendants, stopAtAsr,
-              aSc.GetDeferredTransformMatrix(), deferredId);
+              deferred ? aSc.GetDeferredTransformMatrix() : Nothing(),
+              deferredId);
         }
       }
     }
