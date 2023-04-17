@@ -300,6 +300,8 @@ var SearchTestUtils = {
 
 
 
+
+
   createEngineManifest(options = {}) {
     options.name = options.name ?? "Example";
     options.id = options.id ?? options.name.toLowerCase().replaceAll(" ", "");
@@ -353,6 +355,10 @@ var SearchTestUtils = {
     if (options.search_form) {
       manifest.chrome_settings_overrides.search_provider.search_form =
         options.search_form;
+    }
+    if (options.favicon_url) {
+      manifest.chrome_settings_overrides.search_provider.favicon_url =
+        options.favicon_url;
     }
     return manifest;
   },
