@@ -3750,6 +3750,12 @@ bool CompilationStencilMerger::addDelazification(
     
     
     
+    
+    
+    
+    
+    
+    
     return true;
   }
 
