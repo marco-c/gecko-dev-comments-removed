@@ -891,7 +891,8 @@ class ContextMenuChild extends JSWindowActorChild {
 
     
     context.inPDFViewer =
-      context.target.ownerDocument.nodePrincipal.origin == "resource://pdf.js";
+      context.target.ownerDocument.nodePrincipal.originNoSuffix ==
+      "resource://pdf.js";
 
     
     context.inSyntheticDoc = context.target.ownerDocument.mozSyntheticDocument;

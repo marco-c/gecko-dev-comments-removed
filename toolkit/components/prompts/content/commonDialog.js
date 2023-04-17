@@ -51,7 +51,7 @@ function commonDialogOnLoad() {
         title.raw = promptPrincipal.URI.displayHostPort;
       } catch (ex) {
         
-        title.raw = promptPrincipal.origin;
+        title.raw = promptPrincipal.originNoSuffix;
       }
       
       if (!title.raw) {
