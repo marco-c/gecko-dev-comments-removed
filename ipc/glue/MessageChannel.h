@@ -605,7 +605,7 @@ class MessageChannel : HasResultCodes {
   
   
   
-  RefPtr<RefCountedMonitor> mMonitor;
+  RefPtr<RefCountedMonitor> const mMonitor;
 
   ChannelState mChannelState = ChannelClosed;
   Side mSide = UnknownSide;
