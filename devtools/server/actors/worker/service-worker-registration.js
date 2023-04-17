@@ -32,9 +32,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIPushService"
 );
 
-
-let _serviceWorkerProcessScriptLoaded = false;
-
 const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
   serviceWorkerRegistrationSpec,
   {
@@ -147,48 +144,27 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
     },
 
     start() {
-      if (swm.isParentInterceptEnabled()) {
-        const { activeWorker } = this._registration;
-
-        
-        if (activeWorker) {
-          
-          
-          
-          
-          
-          
-          activeWorker.attachDebugger();
-          activeWorker.detachDebugger();
-        }
-
-        return { type: "started" };
-      }
-
-      if (!_serviceWorkerProcessScriptLoaded) {
-        Services.ppmm.loadProcessScript(
-          "resource://devtools/server/actors/worker/service-worker-process.js",
-          true
+      if (!swm.isParentInterceptEnabled()) {
+        throw new Error(
+          "ServiceWorkerRegistrationActor.start can only be used " +
+            "in parent-intercept mode"
         );
-        _serviceWorkerProcessScriptLoaded = true;
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      Services.perms.broadcastPermissionsForPrincipalToAllContentProcesses(
-        this._registration.principal
-      );
+      const { activeWorker } = this._registration;
 
-      Services.ppmm.broadcastAsyncMessage("serviceWorkerRegistration:start", {
-        scope: this._registration.scope,
-      });
+      
+      if (activeWorker) {
+        
+        
+        
+        
+        
+        
+        activeWorker.attachDebugger();
+        activeWorker.detachDebugger();
+      }
+
       return { type: "started" };
     },
 
