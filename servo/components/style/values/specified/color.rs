@@ -300,8 +300,12 @@ pub enum SystemColor {
     Captiontext,
     #[parse(aliases = "-moz-field")]
     Field,
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozDisabledfield,
     #[parse(aliases = "-moz-fieldtext")]
     Fieldtext,
+
     Graytext,
     Highlight,
     Highlighttext,
@@ -365,6 +369,10 @@ pub enum SystemColor {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozButtonactiveface,
+
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozButtondisabledface,
 
     
     MozMacChromeActive,

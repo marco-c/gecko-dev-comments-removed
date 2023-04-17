@@ -240,6 +240,7 @@ static const char sColorPrefs[][41] = {
     "ui.buttontext",
     "ui.captiontext",
     "ui.-moz-field",
+    "ui.-moz-disabledfield",
     "ui.-moz-fieldtext",
     "ui.graytext",
     "ui.highlight",
@@ -280,6 +281,7 @@ static const char sColorPrefs[][41] = {
     "ui.-moz_oddtreerow",
     "ui.-moz-buttonactivetext",
     "ui.-moz-buttonactiveface",
+    "ui.-moz-buttondisabledface",
     "ui.-moz_mac_chrome_active",
     "ui.-moz_mac_chrome_inactive",
     "ui.-moz-mac-defaultbuttontext",
@@ -514,10 +516,15 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
 
   
   
+  
 
 #define COLOR(name_, r, g, b) \
   case ColorID::name_:        \
     return NS_RGB(r, g, b);
+
+#define COLORA(name_, r, g, b, a) \
+  case ColorID::name_:            \
+    return NS_RGBA(r, g, b, a);
 
   switch (aID) {
     
@@ -525,10 +532,19 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
     COLOR(Activecaption, 0x99, 0xB4, 0xD1)
     COLOR(Appworkspace, 0xAB, 0xAB, 0xAB)
     COLOR(Background, 0x00, 0x00, 0x00)
-    COLOR(Buttonface, 0xF0, 0xF0, 0xF0)
     COLOR(Buttonhighlight, 0xFF, 0xFF, 0xFF)
     COLOR(Buttonshadow, 0xA0, 0xA0, 0xA0)
+
+    
+    
+    COLOR(Buttonface, 0xe9, 0xe9, 0xed)
+    COLORA(MozButtondisabledface, 0xe9, 0xe9, 0xed, 128)
+
+    COLOR(MozCombobox, 0xe9, 0xe9, 0xed)
+
     COLOR(Buttontext, 0x00, 0x00, 0x00)
+    COLOR(MozComboboxtext, 0x00, 0x00, 0x00)
+
     COLOR(Captiontext, 0x00, 0x00, 0x00)
     COLOR(Graytext, 0x6D, 0x6D, 0x6D)
     COLOR(Highlight, 0x33, 0x99, 0xFF)
@@ -551,6 +567,7 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
     COLOR(Windowtext, 0x00, 0x00, 0x00)
     COLOR(MozButtondefault, 0x69, 0x69, 0x69)
     COLOR(Field, 0xFF, 0xFF, 0xFF)
+    COLORA(MozDisabledfield, 0xFF, 0xFF, 0xFF, 128)
     COLOR(Fieldtext, 0x00, 0x00, 0x00)
     COLOR(MozDialog, 0xF0, 0xF0, 0xF0)
     COLOR(MozDialogtext, 0x00, 0x00, 0x00)
@@ -561,9 +578,9 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
     COLOR(MozCellhighlighttext, 0x00, 0x00, 0x00)
     COLOR(Selecteditem, 0x33, 0x99, 0xFF)
     COLOR(Selecteditemtext, 0xFF, 0xFF, 0xFF)
-    COLOR(MozButtonhoverface, 0xF0, 0xF0, 0xF0)
+    COLOR(MozButtonhoverface, 0xd0, 0xd0, 0xd7)
     COLOR(MozButtonhovertext, 0x00, 0x00, 0x00)
-    COLOR(MozButtonactiveface, 0xF0, 0xF0, 0xF0)
+    COLOR(MozButtonactiveface, 0xb1, 0xb1, 0xb9)
     COLOR(MozButtonactivetext, 0x00, 0x00, 0x00)
     COLOR(MozMenuhover, 0x33, 0x99, 0xFF)
     COLOR(MozMenuhovertext, 0x00, 0x00, 0x00)
@@ -593,8 +610,6 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
     COLOR(MozWinCommunicationstext, 0xFF, 0xFF, 0xFF)
     COLOR(MozNativehyperlinktext, 0x00, 0x66, 0xCC)
     COLOR(MozNativevisitedhyperlinktext, 0x55, 0x1A, 0x8B)
-    COLOR(MozComboboxtext, 0x00, 0x00, 0x00)
-    COLOR(MozCombobox, 0xFF, 0xFF, 0xFF)
     default:
       break;
   }
@@ -602,16 +617,19 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
 }
 
 #undef COLOR
+#undef COLORA
 
 
 Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
   nscolor color = NS_RGB(0, 0, 0);
+  static constexpr nscolor kWindowBackground = NS_RGB(28, 27, 34);
+  static constexpr nscolor kWindowText = NS_RGB(251, 251, 254);
   switch (aID) {
     case ColorID::Window:  
     case ColorID::WindowBackground:
     case ColorID::Background:
     case ColorID::TextBackground:
-      color = NS_RGB(28, 27, 34);
+      color = kWindowBackground;
       break;
     case ColorID::MozDialog:  
       color = NS_RGB(35, 34, 43);
@@ -623,22 +641,36 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Fieldtext:
     case ColorID::Buttontext:  
                                
+    case ColorID::MozComboboxtext:
     case ColorID::MozButtonhovertext:
     case ColorID::MozButtonactivetext:
-      color = NS_RGB(251, 251, 254);
+      color = kWindowText;
       break;
+    case ColorID::Threedlightshadow:  
+                                      
+                                      
     case ColorID::Graytext:  
-      color = NS_RGB(191, 191, 201);
+                             
+                             
+      color = NS_ComposeColors(kWindowBackground, NS_RGBA(251, 251, 254, 102));
       break;
     case ColorID::Selecteditem:  
                                  
       color = NS_RGB(0, 221, 255);
       break;
     case ColorID::Field:
-    case ColorID::Buttonface:        
+    case ColorID::Buttonface:  
+    case ColorID::MozCombobox:
     case ColorID::Selecteditemtext:  
                                      
       color = NS_RGB(43, 42, 51);
+      break;
+    case ColorID::Threeddarkshadow:  
+                                     
+    case ColorID::MozDisabledfield:  
+                                     
+    case ColorID::MozButtondisabledface:
+      color = NS_ComposeColors(kWindowBackground, NS_RGBA(43, 42, 51, 102));
       break;
     case ColorID::MozButtonhoverface:  
       color = NS_RGB(82, 82, 94);
@@ -989,17 +1021,23 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
     case ColorID::MozButtonhovertext:
     case ColorID::MozButtonactiveface:
     case ColorID::MozButtonactivetext:
+    case ColorID::MozButtondisabledface:
+
+    case ColorID::Threedlightshadow:
+    case ColorID::Threeddarkshadow:
+    case ColorID::Threedface:
 
     case ColorID::MozCombobox:
     case ColorID::MozComboboxtext:
 
     case ColorID::Field:
+    case ColorID::MozDisabledfield:
     case ColorID::Fieldtext:
 
     case ColorID::Graytext:
 
       return !PreferenceSheet::PrefsFor(aDoc)
-                  .NonNativeThemeShouldUseSystemColors();
+                  .NonNativeThemeShouldBeHighContrast();
 
     default:
       break;
@@ -1157,19 +1195,13 @@ static bool ColorIsCSSAccessible(LookAndFeel::ColorID aId) {
   return true;
 }
 
-LookAndFeel::UseStandins LookAndFeel::ShouldAlwaysUseStandinsForColorInContent(
-    ColorID aId) {
-  return UseStandins(nsContentUtils::UseStandinsForNativeColors() &&
-                     ColorIsCSSAccessible(aId));
-}
-
 LookAndFeel::UseStandins LookAndFeel::ShouldUseStandins(
     const dom::Document& aDoc, ColorID aId) {
   if (ShouldUseStandinsForNativeColorForNonNativeTheme(aDoc, aId)) {
     return UseStandins::Yes;
   }
-  if (ShouldAlwaysUseStandinsForColorInContent(aId) == UseStandins::Yes &&
-      !nsContentUtils::IsChromeDoc(&aDoc)) {
+  if (nsContentUtils::UseStandinsForNativeColors() &&
+      ColorIsCSSAccessible(aId) && !nsContentUtils::IsChromeDoc(&aDoc)) {
     return UseStandins::Yes;
   }
   if (aDoc.IsStaticDocument() &&

@@ -37,7 +37,7 @@ struct PreferenceSheet {
     bool mUseDocumentColors = true;
 
     
-    bool NonNativeThemeShouldUseSystemColors() const;
+    bool NonNativeThemeShouldBeHighContrast() const;
 
     void Load(bool aIsChrome);
   };

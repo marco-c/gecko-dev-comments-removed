@@ -84,11 +84,11 @@ static bool UseDocumentColors(bool aIsChrome, bool aUseAcccessibilityTheme) {
   }
 }
 
-bool PreferenceSheet::Prefs::NonNativeThemeShouldUseSystemColors() const {
+bool PreferenceSheet::Prefs::NonNativeThemeShouldBeHighContrast() const {
   
   
   
-  return StaticPrefs::widget_non_native_theme_always_use_system_colors() ||
+  return StaticPrefs::widget_non_native_theme_always_high_contrast() ||
          !mUseDocumentColors;
 }
 
