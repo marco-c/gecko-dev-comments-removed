@@ -291,7 +291,6 @@ def virtualenv_python3(env_python, build_env, mozconfig, help):
 
     
     sys.path.insert(0, os.path.join(topsrcdir, "testing", "mozbase", "mozfile"))
-    sys.path.insert(0, os.path.join(topsrcdir, "third_party", "python", "backports"))
 
     
     
