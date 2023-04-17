@@ -138,6 +138,8 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
                         PositionErrorCallback* aErrorCallback,
                         const PositionOptions& aOptions, CallerType aCallerType,
                         ErrorResult& aRv);
+
+  MOZ_CAN_RUN_SCRIPT
   void GetCurrentPosition(PositionCallback& aCallback,
                           PositionErrorCallback* aErrorCallback,
                           const PositionOptions& aOptions,
@@ -185,10 +187,12 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
  private:
   ~Geolocation();
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult GetCurrentPosition(GeoPositionCallback aCallback,
                               GeoPositionErrorCallback aErrorCallback,
                               UniquePtr<PositionOptions>&& aOptions,
                               CallerType aCallerType);
+
   MOZ_CAN_RUN_SCRIPT
   int32_t WatchPosition(GeoPositionCallback aCallback,
                         GeoPositionErrorCallback aErrorCallback,
@@ -203,6 +207,10 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   
   
   bool ShouldBlockInsecureRequests() const;
+
+  
+  
+  bool IsFullyActiveOrChrome();
 
   
   
