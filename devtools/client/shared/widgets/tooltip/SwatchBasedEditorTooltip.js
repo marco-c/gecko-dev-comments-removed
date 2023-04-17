@@ -9,7 +9,6 @@ const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const {
   HTMLTooltip,
 } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
-const InlineTooltip = require("devtools/client/shared/widgets/tooltip/InlineTooltip");
 
 loader.lazyRequireGetter(
   this,
@@ -17,11 +16,6 @@ loader.lazyRequireGetter(
   "devtools/client/shared/keycodes",
   true
 );
-
-const INLINE_TOOLTIP_CLASS = "inline-tooltip-container";
-
-
-
 
 
 
@@ -33,24 +27,17 @@ const INLINE_TOOLTIP_CLASS = "inline-tooltip-container";
 
 
 class SwatchBasedEditorTooltip {
-  constructor(document, useInline) {
+  constructor(document) {
     EventEmitter.decorate(this);
 
-    this.useInline = useInline;
-
     
-    if (useInline) {
-      this.tooltip = new InlineTooltip(document);
-    } else {
-      
-      
-      
-      this.tooltip = new HTMLTooltip(document, {
-        type: "arrow",
-        consumeOutsideClicks: true,
-        useXulWrapper: true,
-      });
-    }
+    
+    
+    this.tooltip = new HTMLTooltip(document, {
+      type: "arrow",
+      consumeOutsideClicks: true,
+      useXulWrapper: true,
+    });
 
     
     
@@ -268,9 +255,7 @@ class SwatchBasedEditorTooltip {
   }
 
   get tooltipAnchor() {
-    return this.useInline
-      ? this.activeSwatch.closest(`.${INLINE_TOOLTIP_CLASS}`)
-      : this.activeSwatch;
+    return this.activeSwatch;
   }
 
   destroy() {
