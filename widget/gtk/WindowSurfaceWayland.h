@@ -57,8 +57,6 @@ class WindowSurfaceWayland : public WindowSurface {
       const LayoutDeviceIntRegion& aRegion) override;
   void Commit(const LayoutDeviceIntRegion& aInvalidRegion) final;
 
-  void Reset() override;
-
   
   
   

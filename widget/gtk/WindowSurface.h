@@ -31,10 +31,6 @@ class WindowSurface {
   
   virtual bool IsFallback() const { return false; }
 
-  
-  
-  virtual void Reset() {}
-
  protected:
   virtual ~WindowSurface() = default;
 };
