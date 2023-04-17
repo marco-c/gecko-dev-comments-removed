@@ -29,7 +29,6 @@
 #include "debugger/Object.h"        
 #include "ds/TraceableFifo.h"       
 #include "gc/Barrier.h"             
-#include "gc/Marking.h"             
 #include "gc/Rooting.h"             
 #include "gc/Tracer.h"              
 #include "gc/WeakMap.h"             

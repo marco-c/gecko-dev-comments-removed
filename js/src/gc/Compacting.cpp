@@ -843,7 +843,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
   }
 
   
-  DebugAPI::sweepAll(rt->defaultFreeOp());
   jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
     cache->sweep(nullptr);
