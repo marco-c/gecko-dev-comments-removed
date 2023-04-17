@@ -647,7 +647,8 @@ void LIRGenerator::visitAssertRecoveredOnBailout(
   MOZ_CRASH("AssertRecoveredOnBailout nodes are always recovered on bailouts.");
 }
 
-static JSOp ReorderComparison(JSOp op, MDefinition** lhsp, MDefinition** rhsp) {
+[[nodiscard]] static JSOp ReorderComparison(JSOp op, MDefinition** lhsp,
+                                            MDefinition** rhsp) {
   MDefinition* lhs = *lhsp;
   MDefinition* rhs = *rhsp;
 
@@ -5980,28 +5981,23 @@ void LIRGenerator::visitWasmSelect(MWasmSelect* ins) {
 
   
   
-  
-  if (condExpr->isCompare() && condExpr->isEmittedAtUses() &&
-      ins->type() == MIRType::Int32) {
+  if (condExpr->isCompare() && condExpr->isEmittedAtUses()) {
     MCompare* comp = condExpr->toCompare();
-    JSOp jsop = comp->jsop();
     MCompare::CompareType compTy = comp->compareType();
-    
-    
-    MOZ_ASSERT(jsop == JSOp::Eq || jsop == JSOp::Ne || jsop == JSOp::Lt ||
-               jsop == JSOp::Gt || jsop == JSOp::Le || jsop == JSOp::Ge);
-    if (compTy == MCompare::Compare_Int32 ||
-        compTy == MCompare::Compare_UInt32) {
-      auto* lir = new (alloc()) LWasmCompareAndSelect(
-          useRegister(comp->lhs()), useAny(comp->rhs()), compTy, jsop,
-          useRegisterAtStart(ins->trueExpr()), useAny(ins->falseExpr()));
-
-      defineReuseInput(lir, ins, LWasmCompareAndSelect::IfTrueExprIndex);
+    if (canSpecializeWasmCompareAndSelect(compTy, ins->type())) {
+      JSOp jsop = comp->jsop();
+      
+      
+      MOZ_ASSERT(jsop == JSOp::Eq || jsop == JSOp::Ne || jsop == JSOp::Lt ||
+                 jsop == JSOp::Gt || jsop == JSOp::Le || jsop == JSOp::Ge);
+      MDefinition* lhs = comp->lhs();
+      MDefinition* rhs = comp->rhs();
+      jsop = ReorderComparison(jsop, &lhs, &rhs);
+      lowerWasmCompareAndSelect(ins, lhs, rhs, compTy, jsop);
       return;
     }
-    
-    
   }
+  
 
   if (ins->type() == MIRType::Int64) {
     lowerWasmSelectI64(ins);

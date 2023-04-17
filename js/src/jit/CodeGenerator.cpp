@@ -15546,7 +15546,10 @@ void CodeGenerator::visitWasmNullConstant(LWasmNullConstant* lir) {
   masm.xorPtr(ToRegister(lir->output()), ToRegister(lir->output()));
 }
 
-void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
+
+
+
+void CodeGenerator::emitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   bool cmpIs32bit = ins->compareType() == MCompare::Compare_Int32 ||
                     ins->compareType() == MCompare::Compare_UInt32;
   bool selIs32bit = ins->mir()->type() == MIRType::Int32;
