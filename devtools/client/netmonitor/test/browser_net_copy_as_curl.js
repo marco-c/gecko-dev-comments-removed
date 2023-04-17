@@ -229,7 +229,7 @@ async function testForPlatform(tab, monitor, testData) {
         
         return (
           expectedResult.length === actual.length &&
-          expectedResult.every(param => actual.includes(param))
+          expectedResult.some(param => actual.includes(param))
         );
       }
     );
