@@ -192,29 +192,6 @@ var gIdentityHandler = {
       let wrapper = document.getElementById("template-identity-popup");
       wrapper.replaceWith(wrapper.content);
       this._popupInitialized = true;
-
-      if (this._protonEnabled) {
-        
-        
-        let button = document.createXULElement("toolbarbutton");
-        button.id = "identity-popup-security-button";
-        button.classList.add("subviewbutton-nav", "subviewbutton");
-        button.setAttribute("align", "center");
-        this.showSecuritySubView = this.showSecuritySubView.bind(this);
-        button.addEventListener("command", this.showSecuritySubView);
-        button.appendChild(
-          document
-            .getElementById("identity-popup-security")
-            .querySelector(".identity-popup-security-connection")
-        );
-
-        this._identityPopupMainView.insertBefore(
-          button,
-          this._identityPopupMainView.querySelector("toolbarseparator")
-            .nextSibling
-        );
-        this._popupExpander.hidden = true;
-      }
     }
   },
 
@@ -331,12 +308,6 @@ var gIdentityHandler = {
     delete this._identityIcon;
     return (this._identityIcon = document.getElementById("identity-icon"));
   },
-  get _popupExpander() {
-    delete this._popupExpander;
-    return (this._popupExpander = document.getElementById(
-      "identity-popup-security-expander"
-    ));
-  },
   get _clearSiteDataFooter() {
     delete this._clearSiteDataFooter;
     return (this._clearSiteDataFooter = document.getElementById(
@@ -418,16 +389,6 @@ var gIdentityHandler = {
     );
     return this._useGrayLockIcon;
   },
-  get _protonEnabled() {
-    delete this._protonEnabled;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_protonEnabled",
-      "browser.proton.doorhangers.enabled",
-      false
-    );
-    return this._protonEnabled;
-  },
 
   
 
@@ -474,7 +435,7 @@ var gIdentityHandler = {
   showSecuritySubView() {
     this._identityPopupMultiView.showSubView(
       "identity-popup-securityView",
-      this._popupExpander
+      document.getElementById("identity-popup-security-button")
     );
 
     
@@ -966,19 +927,14 @@ var gIdentityHandler = {
     
     
     this._clearSiteDataFooter.hidden = true;
-    let securityButton;
-    if (this._protonEnabled) {
-      securityButton = document.getElementById(
-        "identity-popup-security-button"
-      );
-      securityButton.removeAttribute("footerHidden");
-    }
+    let securityButton = document.getElementById(
+      "identity-popup-security-button"
+    );
+    securityButton.removeAttribute("footerHidden");
     if (this._uriHasHost && !this._pageExtensionPolicy) {
       SiteDataManager.hasSiteData(this._uri.asciiHost).then(hasData => {
         this._clearSiteDataFooter.hidden = !hasData;
-        if (securityButton) {
-          securityButton.setAttribute("footerHidden", !hasData);
-        }
+        securityButton.setAttribute("footerHidden", !hasData);
       });
     }
 
@@ -991,11 +947,6 @@ var gIdentityHandler = {
     this._identityPopupCustomRootLearnMore.setAttribute(
       "href",
       baseURL + "enterprise-roots"
-    );
-
-    
-    this._popupExpander.tooltipText = gNavigatorBundle.getString(
-      "identity.showDetails.tooltip"
     );
 
     let customRoot = false;
@@ -1027,17 +978,15 @@ var gIdentityHandler = {
       connection = "file";
     }
 
-    if (this._protonEnabled) {
-      document.getElementById("identity-popup-security-button").disabled = ![
-        "not-secure",
-        "secure",
-        "secure-ev",
-        "secure-cert-user-overridden",
-        "cert-error-page",
-        "net-error-page",
-        "https-only-error-page",
-      ].includes(connection);
-    }
+    document.getElementById("identity-popup-security-button").disabled = ![
+      "not-secure",
+      "secure",
+      "secure-ev",
+      "secure-cert-user-overridden",
+      "cert-error-page",
+      "net-error-page",
+      "https-only-error-page",
+    ].includes(connection);
 
     
     let mixedcontent = [];

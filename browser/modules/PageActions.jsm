@@ -10,8 +10,6 @@ var EXPORTED_SYMBOLS = [
   
   
   
-  
-  
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -19,7 +17,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   BinarySearch: "resource://gre/modules/BinarySearch.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -27,20 +24,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const ACTION_ID_BOOKMARK = "bookmark";
-const ACTION_ID_PIN_TAB = "pinTab";
-const ACTION_ID_BOOKMARK_SEPARATOR = "bookmarkSeparator";
 const ACTION_ID_BUILT_IN_SEPARATOR = "builtInSeparator";
 const ACTION_ID_TRANSIENT_SEPARATOR = "transientSeparator";
 
 const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
 const PERSISTED_ACTIONS_CURRENT_VERSION = 1;
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "protonEnabled",
-  "browser.proton.enabled",
-  false
-);
 
 
 
@@ -270,19 +258,8 @@ var PageActions = {
       this._persistedActions.ids.push(action.id);
     }
 
-    if (protonEnabled) {
-      
-      
-      action._pinnedToUrlbar = !action.__isSeparator;
-    } else if (!isNew) {
-      
-      
-      
-      
-      action._pinnedToUrlbar = this._persistedActions.idsInUrlbar.includes(
-        action.id
-      );
-    }
+    
+    action._pinnedToUrlbar = !action.__isSeparator;
     this._updateIDsPinnedToUrlbarForAction(action);
   },
 
@@ -446,48 +423,17 @@ var PageActions = {
   },
 
   _migratePersistedActionsProton(actions) {
-    if (protonEnabled) {
-      if (actions?.idsInUrlbarPreProton) {
-        
-      } else if (actions) {
-        
-        actions.idsInUrlbarPreProton = [...(actions.idsInUrlbar || [])];
-      } else {
-        
-        actions = {
-          ids: [],
-          idsInUrlbar: [],
-          idsInUrlbarPreProton: [],
-          version: PERSISTED_ACTIONS_CURRENT_VERSION,
-        };
-      }
-    } else if (actions?.idsInUrlbarPreProton) {
+    if (actions?.idsInUrlbarPreProton) {
       
-      
-      
-      for (let id of actions.idsInUrlbarPreProton) {
-        if (!actions.ids.includes(id)) {
-          actions.ids.push(id);
-        }
-      }
-      actions.idsInUrlbar = actions.idsInUrlbarPreProton;
-      delete actions.idsInUrlbarPreProton;
-      
-      
-      
-      
-      
-      
-      if (!actions.idsInUrlbar.length) {
-        actions.idsInUrlbar = [ACTION_ID_BOOKMARK];
-      }
     } else if (actions) {
       
+      actions.idsInUrlbarPreProton = [...(actions.idsInUrlbar || [])];
     } else {
       
       actions = {
         ids: [],
         idsInUrlbar: [],
+        idsInUrlbarPreProton: [],
         version: PERSISTED_ACTIONS_CURRENT_VERSION,
       };
     }
@@ -505,11 +451,6 @@ var PageActions = {
     idsInUrlbar: [],
   },
 };
-
-
-
-
-
 
 
 
@@ -644,11 +585,9 @@ function Action(options) {
     onSubviewPlaced: false,
     onSubviewShowing: false,
     onPinToUrlbarToggled: false,
-    panelFluentID: false,
     pinnedToUrlbar: false,
     tooltip: false,
     urlbarIDOverride: false,
-    urlbarFluentID: false,
     wantsIframe: false,
     wantsSubview: false,
     disablePrivateBrowsing: false,
@@ -718,28 +657,6 @@ Action.prototype = {
 
   get id() {
     return this._id;
-  },
-
-  
-
-
-  get panelFluentID() {
-    return this._panelFluentID;
-  },
-
-  set panelFluentID(id) {
-    this._panelFluentID = id;
-  },
-
-  
-
-
-  get urlbarFluentID() {
-    return this._urlbarFluentID;
-  },
-
-  set urlbarFluentID(id) {
-    this._urlbarFluentID = id;
   },
 
   get disablePrivateBrowsing() {
@@ -1194,7 +1111,7 @@ Action.prototype = {
     
     
     
-    const isProtonExtensionAction = this.extensionID && protonEnabled;
+    const isProtonExtensionAction = this.extensionID;
 
     return (
       (!(this.__transient || isProtonExtensionAction) ||
@@ -1238,8 +1155,6 @@ PageActions.ACTION_ID_TRANSIENT_SEPARATOR = ACTION_ID_TRANSIENT_SEPARATOR;
 
 
 PageActions.ACTION_ID_BOOKMARK = ACTION_ID_BOOKMARK;
-PageActions.ACTION_ID_PIN_TAB = ACTION_ID_PIN_TAB;
-PageActions.ACTION_ID_BOOKMARK_SEPARATOR = ACTION_ID_BOOKMARK_SEPARATOR;
 PageActions.PREF_PERSISTED_ACTIONS = PREF_PERSISTED_ACTIONS;
 
 
@@ -1266,158 +1181,6 @@ PageActions._initBuiltInActions = function() {
       },
     },
   ];
-
-  if (protonEnabled) {
-    return;
-  }
-
-  gBuiltInActions.push(
-    ...[
-      
-      {
-        id: ACTION_ID_PIN_TAB,
-        onBeforePlacedInWindow(browserWindow) {
-          function handlePinEvent() {
-            browserPageActions(browserWindow).pinTab.updateState();
-          }
-          function handleWindowUnload() {
-            for (let event of ["TabPinned", "TabUnpinned"]) {
-              browserWindow.removeEventListener(event, handlePinEvent);
-            }
-          }
-
-          for (let event of ["TabPinned", "TabUnpinned"]) {
-            browserWindow.addEventListener(event, handlePinEvent);
-          }
-          browserWindow.addEventListener("unload", handleWindowUnload, {
-            once: true,
-          });
-        },
-        onPlacedInPanel(buttonNode) {
-          browserPageActions(buttonNode).pinTab.updateState();
-        },
-        onPlacedInUrlbar(buttonNode) {
-          browserPageActions(buttonNode).pinTab.updateState();
-        },
-        onLocationChange(browserWindow) {
-          browserPageActions(browserWindow).pinTab.updateState();
-        },
-        onCommand(event, buttonNode) {
-          browserPageActions(buttonNode).pinTab.onCommand(event, buttonNode);
-        },
-      },
-
-      
-      {
-        id: ACTION_ID_BOOKMARK_SEPARATOR,
-        _isSeparator: true,
-      },
-
-      
-      {
-        id: "copyURL",
-        panelFluentID: "page-action-copy-url-panel",
-        urlbarFluentID: "page-action-copy-url-urlbar",
-        onCommand(event, buttonNode) {
-          browserPageActions(buttonNode).copyURL.onCommand(event, buttonNode);
-        },
-      },
-
-      
-      {
-        id: "emailLink",
-        panelFluentID: "page-action-email-link-panel",
-        urlbarFluentID: "page-action-email-link-urlbar",
-        onCommand(event, buttonNode) {
-          browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
-        },
-      },
-
-      
-      {
-        id: "addSearchEngine",
-        
-        isBadged: true,
-        _transient: true,
-        onShowingInPanel(buttonNode) {
-          browserPageActions(buttonNode).addSearchEngine.onShowingInPanel();
-        },
-        onCommand(event, buttonNode) {
-          browserPageActions(buttonNode).addSearchEngine.onCommand(
-            event,
-            buttonNode
-          );
-        },
-        onSubviewShowing(panelViewNode) {
-          browserPageActions(panelViewNode).addSearchEngine.onSubviewShowing(
-            panelViewNode
-          );
-        },
-      },
-    ]
-  );
-
-  
-  if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
-    gBuiltInActions.push({
-      id: "sendToDevice",
-      panelFluentID: "page-action-send-tabs-panel",
-      
-      
-      urlbarFluentID: "page-action-send-tabs-urlbar",
-      onBeforePlacedInWindow(browserWindow) {
-        browserPageActions(browserWindow).sendToDevice.onBeforePlacedInWindow(
-          browserWindow
-        );
-      },
-      onLocationChange(browserWindow) {
-        browserPageActions(browserWindow).sendToDevice.onLocationChange();
-      },
-      wantsSubview: true,
-      onSubviewPlaced(panelViewNode) {
-        browserPageActions(panelViewNode).sendToDevice.onSubviewPlaced(
-          panelViewNode
-        );
-      },
-      onSubviewShowing(panelViewNode) {
-        browserPageActions(panelViewNode).sendToDevice.onShowingSubview(
-          panelViewNode
-        );
-      },
-    });
-  }
-
-  
-  if (AppConstants.platform == "macosx") {
-    gBuiltInActions.push({
-      id: "shareURL",
-      panelFluentID: "page-action-share-url-panel",
-      urlbarFluentID: "page-action-share-url-urlbar",
-      onShowingInPanel(buttonNode) {
-        browserPageActions(buttonNode).shareURL.onShowingInPanel(buttonNode);
-      },
-      wantsSubview: true,
-      onSubviewShowing(panelViewNode) {
-        browserPageActions(panelViewNode).shareURL.onShowingSubview(
-          panelViewNode
-        );
-      },
-    });
-  }
-
-  if (AppConstants.isPlatformAndVersionAtLeast("win", "6.4")) {
-    gBuiltInActions.push(
-      
-      {
-        id: "shareURL",
-        panelFluentID: "page-action-share-url-panel",
-        urlbarFluentID: "page-action-share-url-urlbar",
-        onCommand(event, buttonNode) {
-          browserPageActions(buttonNode).shareURL.onCommand(event, buttonNode);
-        },
-      }
-    );
-  }
 };
 
 
