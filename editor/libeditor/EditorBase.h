@@ -429,6 +429,21 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  bool IsCopyToClipboardAllowed() const {
+    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return false;
+    }
+    return IsCopyToClipboardAllowedInternal();
+  }
+
+  
+
+
+
+
+
   bool AddTransactionListener(nsITransactionListener& aListener) {
     if (!mTransactionManager) {
       return false;
@@ -2360,6 +2375,14 @@ class EditorBase : public nsIEditor,
 
 
   bool EnsureComposition(WidgetCompositionEvent& aCompositionEvent);
+
+  
+
+
+  virtual bool IsCopyToClipboardAllowedInternal() const {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return !SelectionRef().IsCollapsed();
+  }
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

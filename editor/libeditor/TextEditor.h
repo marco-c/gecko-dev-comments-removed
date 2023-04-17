@@ -95,21 +95,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-
-  bool IsCopyToClipboardAllowed() const {
-    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-    if (NS_WARN_IF(!editActionData.CanHandle())) {
-      return false;
-    }
-    return IsCopyToClipboardAllowedInternal();
-  }
-
-  
-
-
-
   bool CanDeleteSelection() const;
 
   virtual bool CanPaste(int32_t aClipboardType) const;
@@ -664,10 +649,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   nsresult SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
                               nsAString& aResult) const;
 
-  
-
-
-  bool IsCopyToClipboardAllowedInternal() const;
+  bool IsCopyToClipboardAllowedInternal() const final;
 
   bool FireClipboardEvent(EventMessage aEventMessage, int32_t aSelectionType,
                           bool* aActionTaken = nullptr);
