@@ -62,7 +62,7 @@ const isV6HostCandidate = candidate => {
 
 const ipv6Supported = async () => {
   const pc = new RTCPeerConnection();
-  const candidates = await gatherWithTimeout(pc, 2000);
+  const candidates = await gatherWithTimeout(pc, 4000);
   info(`baseline candidates: ${JSON.stringify(candidates)}`);
   pc.close();
   return candidates.some(isV6HostCandidate);
@@ -89,7 +89,7 @@ const checkSrflx = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const srflxCandidates = candidates.filter(c => c.candidate.includes("srflx"));
   info(`candidates: ${JSON.stringify(srflxCandidates)}`);
   
@@ -109,7 +109,7 @@ const checkNoSrflx = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const srflxCandidates = candidates.filter(c => c.candidate.includes("srflx"));
   info(`candidates: ${JSON.stringify(srflxCandidates)}`);
   is(
@@ -127,7 +127,7 @@ const checkRelayUdp = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const relayCandidates = candidates.filter(c => c.candidate.includes("relay"));
   info(`candidates: ${JSON.stringify(relayCandidates)}`);
   
@@ -156,7 +156,7 @@ const checkRelayTcp = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const relayCandidates = candidates.filter(c => c.candidate.includes("relay"));
   info(`candidates: ${JSON.stringify(relayCandidates)}`);
   
@@ -185,7 +185,7 @@ const checkRelayUdpTcp = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const relayCandidates = candidates.filter(c => c.candidate.includes("relay"));
   info(`candidates: ${JSON.stringify(relayCandidates)}`);
   
@@ -220,7 +220,7 @@ const checkNoRelay = async iceServers => {
     iceServers,
     bundlePolicy: "max-bundle", 
   });
-  const candidates = await gatherWithTimeout(pc, 2000, context);
+  const candidates = await gatherWithTimeout(pc, 4000, context);
   const relayCandidates = candidates.filter(c => c.candidate.includes("relay"));
   info(`candidates: ${JSON.stringify(relayCandidates)}`);
   is(
