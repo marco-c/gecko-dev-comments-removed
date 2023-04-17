@@ -86,8 +86,8 @@ typedef enum {
 
 
 #define SDB_SQLITE_BUSY_TIMEOUT 1000 /* milliseconds */
-#define SDB_BUSY_RETRY_TIME 5        /* 'ticks', varies by platforms */
-#define SDB_MAX_BUSY_RETRIES 30
+#define SDB_BUSY_RETRY_TIME 5        /* seconds */
+#define SDB_MAX_BUSY_RETRIES 10
 
 
 
@@ -690,11 +690,6 @@ sdb_openDB(const char *name, sqlite3 **sqlDB, int flags)
         openFlags = SQLITE_OPEN_READONLY;
     } else {
         openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
-        
-
-        if ((_NSSUTIL_Access(name, PR_ACCESS_EXISTS) == PR_SUCCESS) && (_NSSUTIL_Access(name, PR_ACCESS_WRITE_OK) != PR_SUCCESS)) {
-            return SQLITE_READONLY;
-        }
     }
 
     
@@ -1006,7 +1001,6 @@ sdb_GetValidAttributeValueNoLock(SDB *sdb, CK_OBJECT_HANDLE object_id,
             found = 1;
         }
     } while (!sdb_done(sqlerr, &retry));
-
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
     stmt = NULL;
@@ -1530,8 +1524,6 @@ sdb_Begin(SDB *sdb)
         if (sqlerr == SQLITE_BUSY) {
             PR_Sleep(SDB_BUSY_RETRY_TIME);
         }
-        
-        retry = 0;
     } while (!sdb_done(sqlerr, &retry));
 
     if (stmt) {
@@ -2269,7 +2261,6 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
                 }
             }
         } while (!sdb_done(sqlerr, &retry));
-
         if (sqlerr != SQLITE_DONE) {
             goto loser;
         }
