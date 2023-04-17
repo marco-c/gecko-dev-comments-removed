@@ -5,7 +5,7 @@
 "use strict";
 
 
-const TEST_URL = "http://example.com/browser/netwerk/test/browser/dummy.html";
+const TEST_URL = "https://example.com/browser/netwerk/test/browser/dummy.html";
 
 const expectedRemote = gMultiProcessBrowser ? "true" : "";
 
