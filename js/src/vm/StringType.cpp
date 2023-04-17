@@ -624,14 +624,15 @@ JSLinearString* JSRope::flattenInternal() {
 template <JSRope::UsingBarrier usingBarrier>
 JSLinearString* JSRope::flattenInternal() {
   if (hasTwoByteChars()) {
-    return flattenInternal<usingBarrier, char16_t>();
+    return flattenInternal<usingBarrier, char16_t>(this);
   }
 
-  return flattenInternal<usingBarrier, Latin1Char>();
+  return flattenInternal<usingBarrier, Latin1Char>(this);
 }
 
 template <JSRope::UsingBarrier usingBarrier, typename CharT>
-JSLinearString* JSRope::flattenInternal() {
+
+JSLinearString* JSRope::flattenInternal(JSRope* root) {
   
 
 
@@ -685,10 +686,10 @@ JSLinearString* JSRope::flattenInternal() {
 
 
 
-  const size_t wholeLength = length();
+  const size_t wholeLength = root->length();
   size_t wholeCapacity;
   CharT* wholeChars;
-  JSString* str = this;
+  JSString* str = root;
   CharT* pos;
 
   
@@ -698,10 +699,10 @@ JSLinearString* JSRope::flattenInternal() {
 
   AutoCheckCannotGC nogc;
 
-  gc::StoreBuffer* bufferIfNursery = storeBuffer();
+  gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
 
   
-  JSRope* leftMostRope = this;
+  JSRope* leftMostRope = root;
   while (leftMostRope->leftChild()->isRope()) {
     leftMostRope = &leftMostRope->leftChild()->asRope();
   }
@@ -716,7 +717,7 @@ JSLinearString* JSRope::flattenInternal() {
 
       
       
-      Nursery& nursery = runtimeFromMainThread()->gc.nursery();
+      Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
       bool inTenured = !bufferIfNursery;
       if (!inTenured && left.isTenured()) {
         
@@ -763,17 +764,17 @@ JSLinearString* JSRope::flattenInternal() {
         flags |= IN_STRING_TO_ATOM_CACHE;
       }
       left.setLengthAndFlags(left_len, StringFlagsForCharType<CharT>(flags));
-      left.d.s.u3.base = (JSLinearString*)this; 
+      left.d.s.u3.base = (JSLinearString*)root; 
       goto visit_right_child;
     }
   }
 
-  if (!AllocChars(this, wholeLength, &wholeChars, &wholeCapacity)) {
+  if (!AllocChars(root, wholeLength, &wholeChars, &wholeCapacity)) {
     return nullptr;
   }
 
-  if (!isTenured()) {
-    Nursery& nursery = runtimeFromMainThread()->gc.nursery();
+  if (!root->isTenured()) {
+    Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
     if (!nursery.registerMallocedBuffer(wholeChars,
                                         wholeCapacity * sizeof(CharT))) {
       js_free(wholeChars);
@@ -809,7 +810,7 @@ visit_right_child : {
 }
 
 finish_node : {
-  if (str == this) {
+  if (str == root) {
     MOZ_ASSERT(pos == wholeChars + wholeLength);
     str->setLengthAndFlags(wholeLength,
                            StringFlagsForCharType<CharT>(EXTENSIBLE_FLAGS));
@@ -821,14 +822,14 @@ finish_node : {
                     MemoryUse::StringContents);
     }
 
-    return &this->asLinear();
+    return &root->asLinear();
   }
   JSString* parent;
   uintptr_t flattenFlags;
   uint32_t len = pos - str->nonInlineCharsRaw<CharT>();
   parent = str->unsetFlattenData(
       len, StringFlagsForCharType<CharT>(INIT_DEPENDENT_FLAGS), &flattenFlags);
-  str->d.s.u3.base = (JSLinearString*)this; 
+  str->d.s.u3.base = (JSLinearString*)root; 
 
   
   
@@ -838,7 +839,7 @@ finish_node : {
   
   
   
-  gc::StoreBuffer* bufferIfNursery = storeBuffer();
+  gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
   if (bufferIfNursery && str->isTenured()) {
     bufferIfNursery->putWholeCell(str);
   }
