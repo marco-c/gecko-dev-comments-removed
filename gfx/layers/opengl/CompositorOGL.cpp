@@ -1620,8 +1620,9 @@ bool CompositorOGL::Resume() {
 
   
   return gl()->RenewSurface(GetWidget());
-#endif
+#else
   return true;
+#endif
 }
 
 already_AddRefed<DataTextureSource> CompositorOGL::CreateDataTextureSource(
