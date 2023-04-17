@@ -38,18 +38,12 @@ function getSecurityConnectionBG() {
     .getPropertyValue("background-image");
 }
 
-async function getReaderModeURL() {
+function getReaderModeURL() {
   
   document.getElementById("identity-icon-box").click();
   gIdentityHandler.refreshIdentityPopup();
-
-  let headerSpan = document.getElementById(
-    "identity-popup-mainView-panel-header-span"
-  );
-  await BrowserTestUtils.waitForCondition(() =>
-    headerSpan.innerHTML.includes("example.com")
-  );
-  return headerSpan.innerHTML;
+  return document.getElementById("identity-popup-mainView-panel-header-span")
+    .innerHTML;
 }
 
 
@@ -587,10 +581,10 @@ async function readerUriTest(secureCheck) {
 
   let newTab = await loadNewTab("about:reader?url=http://example.com");
   gBrowser.selectedTab = newTab;
-  let readerURL = await getReaderModeURL();
+  let readerURL = getReaderModeURL();
   is(
     readerURL,
-    "Site information for example.com",
+    "Site Information for example.com",
     "should be the correct URI in reader mode"
   );
 
