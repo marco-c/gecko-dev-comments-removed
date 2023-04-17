@@ -22,6 +22,7 @@
 #include <stdint.h>  
 #include <utility>   
 
+#include "jsapi.h"             
 #include "jstypes.h"           
 #include "NamespaceImports.h"  
 

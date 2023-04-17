@@ -14,6 +14,7 @@
 
 #include <utility>  
 
+#include "jsapi.h"    
 #include "jstypes.h"  
 
 #include "frontend/BytecodeCompilation.h"  

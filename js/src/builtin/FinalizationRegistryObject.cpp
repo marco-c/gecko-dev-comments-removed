@@ -10,6 +10,8 @@
 
 #include "mozilla/ScopeExit.h"
 
+#include "jsapi.h"
+
 #include "gc/Zone.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GlobalObject.h"
