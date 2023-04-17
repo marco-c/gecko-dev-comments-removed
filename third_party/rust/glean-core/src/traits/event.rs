@@ -18,7 +18,8 @@ use crate::ErrorType;
 
 
 
-pub trait ExtraKeys: Hash + Eq + PartialEq + Copy {
+
+pub trait ExtraKeys {
     
     const ALLOWED_KEYS: &'static [&'static str];
 
@@ -27,9 +28,7 @@ pub trait ExtraKeys: Hash + Eq + PartialEq + Copy {
     
     
     
-    
-    
-    fn index(self) -> i32;
+    fn into_ffi_extra(self) -> HashMap<i32, String>;
 }
 
 
@@ -45,9 +44,8 @@ pub enum NoExtraKeys {}
 impl ExtraKeys for NoExtraKeys {
     const ALLOWED_KEYS: &'static [&'static str] = &[];
 
-    fn index(self) -> i32 {
-        
-        -1
+    fn into_ffi_extra(self) -> HashMap<i32, String> {
+        unimplemented!("non-existing extra keys can't be turned into a list")
     }
 }
 
@@ -88,10 +86,7 @@ pub trait Event {
     
     
     
-    
-    
-    
-    fn record<M: Into<Option<HashMap<Self::Extra, String>>>>(&self, extra: M);
+    fn record<M: Into<Option<Self::Extra>>>(&self, extra: M);
 
     
     
