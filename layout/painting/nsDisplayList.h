@@ -6655,15 +6655,9 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
  public:
   enum class PrerenderDecision : uint8_t { No, Full, Partial };
 
-  
-
-
-
-
-
-
-  typedef Matrix4x4 (*ComputeTransformFunction)(nsIFrame* aFrame,
-                                                float aAppUnitsPerPixel);
+  enum {
+    WithTransformGetter,
+  };
 
   
 
@@ -6677,7 +6671,7 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
-                     ComputeTransformFunction aTransformGetter);
+                     decltype(WithTransformGetter));
 
   MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayTransform)
 
@@ -6774,7 +6768,7 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
     
     
     
-    if (!mTransformGetter) {
+    if (!mHasTransformGetter) {
       return mFrame;
     }
     return nsPaintedDisplayItem::ReferenceFrameForChildren();
@@ -7009,7 +7003,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   mutable mozilla::Maybe<Matrix4x4Flagged> mInverseTransform;
   
   mozilla::UniquePtr<Matrix4x4> mTransformPreserves3D;
-  ComputeTransformFunction mTransformGetter;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForChildren;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForScrollMetadata;
   nsRect mChildrenBuildingRect;
@@ -7030,6 +7023,8 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   bool mIsTransformSeparator : 1;
   
   bool mShouldFlatten : 1;
+  
+  bool mHasTransformGetter : 1;
 };
 
 
