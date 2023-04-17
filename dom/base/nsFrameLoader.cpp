@@ -1991,7 +1991,9 @@ nsresult nsFrameLoaderDestroyRunnable::Run() {
       
       
       
-      if (mFrameLoader->mChildMessageManager) {
+      
+      if (!mFrameLoader->GetRemoteBrowser() ||
+          !mFrameLoader->GetRemoteBrowser()->CanRecv()) {
         
         
         
@@ -2611,6 +2613,16 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
+  if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(mOwnerContent)) {
+    RefPtr<nsFrameLoader> fl = flo->GetFrameLoader();
+    if (fl != this) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Got TryRemoteBrowserInternal but mOwnerContent already has a "
+          "different frameloader?");
+      return false;
+    }
+  }
+
   if (!doc->IsActive()) {
     
     
@@ -2734,6 +2746,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
 
   
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
+
+  MOZ_ASSERT(browserParent->CanSend(), "BrowserParent cannot send?");
 
   
   
