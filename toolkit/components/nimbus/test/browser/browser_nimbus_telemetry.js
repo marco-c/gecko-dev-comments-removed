@@ -44,7 +44,7 @@ add_task(async function setup() {
 
 
 async function addExperiment() {
-  const recipe = ExperimentFakes.recipe("foo" + Date.now(), {
+  const recipe = ExperimentFakes.recipe("foo" + Math.random(), {
     bucketConfig: {
       start: 0,
       count: 10000,

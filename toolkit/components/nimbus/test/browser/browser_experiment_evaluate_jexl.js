@@ -72,7 +72,7 @@ add_task(async function test_evaluate_active_experiments_isFirstStartup() {
 
 add_task(async function test_evaluate_active_experiments_activeExperiments() {
   
-  const slug = "foo" + Date.now();
+  const slug = "foo" + Math.random();
   
   await ExperimentManager.onStartup();
   ExperimentManager.store.addExperiment(ExperimentFakes.experiment(slug));

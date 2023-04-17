@@ -377,6 +377,10 @@ class _RemoteSettingsExperimentLoader {
 
 
   setTimer() {
+    if (this.intervalInSeconds === 0) {
+      
+      return;
+    }
     
     timerManager.registerTimer(
       TIMER_NAME,
