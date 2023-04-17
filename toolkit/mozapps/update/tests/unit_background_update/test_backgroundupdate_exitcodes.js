@@ -14,6 +14,16 @@ const { EXIT_CODE } = ChromeUtils.import(
 
 setupProfileService();
 
+
+
+let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+  Ci.nsIUpdateSyncManager
+);
+let lockFile = do_get_profile();
+lockFile.append("customExePath");
+lockFile.append("customExe");
+syncManager.resetLock(lockFile);
+
 add_task(async function test_default_profile_does_not_exist() {
   
   let exitCode = await do_backgroundtask("backgroundupdate", {

@@ -85,17 +85,6 @@ async function _attemptBackgroundUpdate() {
     reasons = [];
   }
 
-  
-  if (!reasons.length) {
-    log.debug(`${SLUG}: checking if other instance is running`);
-    let syncManager = Cc[
-      "@mozilla.org/updates/update-sync-manager;1"
-    ].getService(Ci.nsIUpdateSyncManager);
-    if (syncManager.isOtherInstanceRunning()) {
-      reasons.push(BackgroundUpdate.REASON.OTHER_INSTANCE);
-    }
-  }
-
   reasons.sort();
   for (let reason of reasons) {
     Glean.backgroundUpdate.reasons.add(reason);
@@ -222,6 +211,24 @@ async function runBackgroundTask() {
     UpdRootD: Services.dirsvc.get("UpdRootD", Ci.nsIFile).path,
   };
   log.debug(`${SLUG}: current configuration`, data);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  log.debug(`${SLUG}: checking if other instance is running`);
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  if (syncManager.isOtherInstanceRunning()) {
+    log.error(`${SLUG}: another instance is running`);
+    return EXIT_CODE.OTHER_INSTANCE;
+  }
 
   
   
