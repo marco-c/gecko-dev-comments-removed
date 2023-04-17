@@ -932,11 +932,6 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
   
   
   if (mWindowType == eWindowType_popup) {
-    
-    
-    if (GdkIsX11Display() && gfxVars::UseEGL()) {
-      return false;
-    }
     return HasRemoteContent() && mCompositedScreen;
   }
   
