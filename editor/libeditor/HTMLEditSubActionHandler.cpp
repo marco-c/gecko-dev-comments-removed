@@ -926,10 +926,13 @@ nsresult HTMLEditor::PrepareInlineStylesForCaret() {
 }
 
 EditActionResult HTMLEditor::HandleInsertText(
-    EditSubAction aEditSubAction, const nsAString& aInsertionString) {
+    EditSubAction aEditSubAction, const nsAString& aInsertionString,
+    SelectionHandling aSelectionHandling) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(aEditSubAction == EditSubAction::eInsertText ||
              aEditSubAction == EditSubAction::eInsertTextComingFromIME);
+  MOZ_ASSERT_IF(aSelectionHandling == SelectionHandling::Ignore,
+                aEditSubAction == EditSubAction::eInsertTextComingFromIME);
 
   EditActionResult result = CanHandleHTMLEditSubAction();
   if (result.Failed() || result.Canceled()) {
@@ -942,7 +945,8 @@ EditActionResult HTMLEditor::HandleInsertText(
 
   
   
-  if (!SelectionRef().IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed() &&
+      aSelectionHandling == SelectionHandling::Delete) {
     nsresult rv =
         DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eNoStrip);
     if (NS_FAILED(rv)) {

@@ -1665,8 +1665,11 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  InsertTextAsSubAction(const nsAString& aStringToInsert);
+
+
+  enum class SelectionHandling { Ignore, Delete };
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsSubAction(
+      const nsAString& aStringToInsert, SelectionHandling aSelectionHandling);
 
   
 
@@ -2051,8 +2054,11 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult HandleInsertText(
-      EditSubAction aEditSubAction, const nsAString& aInsertionString) = 0;
+      EditSubAction aEditSubAction, const nsAString& aInsertionString,
+      SelectionHandling aSelectionHandling) = 0;
 
   
 
