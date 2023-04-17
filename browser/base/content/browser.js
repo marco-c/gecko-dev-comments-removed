@@ -8570,7 +8570,7 @@ function safeModeRestart() {
     return;
   }
 
-  Services.obs.notifyObservers(null, "restart-in-safe-mode");
+  Services.obs.notifyObservers(window, "restart-in-safe-mode");
 }
 
 
