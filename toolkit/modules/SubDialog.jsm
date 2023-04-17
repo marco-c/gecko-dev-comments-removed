@@ -811,11 +811,15 @@ SubDialog.prototype = {
     
     
     let fm = Services.focus;
+
+    
+    
+    
     let focusedElement = fm.moveFocus(
       this._frame.contentWindow,
       null,
       fm.MOVEFOCUS_FIRST,
-      0
+      fm.FLAG_NOSHOWRING
     );
     if (!focusedElement) {
       
