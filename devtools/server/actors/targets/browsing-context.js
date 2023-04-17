@@ -264,18 +264,9 @@ const browsingContextTargetPrototype = {
 
 
 
-
-
-
-
   initialize: function(
     connection,
-    {
-      docShell,
-      doNotFireFrameUpdates,
-      followWindowGlobalLifeCycle,
-      isTopLevelTarget,
-    }
+    { docShell, followWindowGlobalLifeCycle, isTopLevelTarget }
   ) {
     Actor.prototype.initialize.call(this, connection);
 
@@ -287,7 +278,6 @@ const browsingContextTargetPrototype = {
     this.docShell = docShell;
 
     this.followWindowGlobalLifeCycle = followWindowGlobalLifeCycle;
-    this.doNotFireFrameUpdates = doNotFireFrameUpdates;
     this.isTopLevelTarget = !!isTopLevelTarget;
 
     
@@ -949,13 +939,25 @@ const browsingContextTargetPrototype = {
 
   
   _docShellsToWindows(docshells) {
-    return docshells.map(docShell => this._docShellToWindow(docShell));
+    return docshells
+      .filter(docShell => {
+        
+        docShell.QueryInterface(Ci.nsIWebNavigation);
+
+        
+        if (docShell.document.isInitialDocument) {
+          return false;
+        }
+
+        return true;
+      })
+      .map(docShell => this._docShellToWindow(docShell));
   },
 
   _notifyDocShellsUpdate(docshells) {
     
     
-    if (this.doNotFireFrameUpdates) {
+    if (!this.isTopLevelTarget) {
       return;
     }
 
@@ -978,7 +980,7 @@ const browsingContextTargetPrototype = {
   _notifyDocShellDestroy(webProgress) {
     
     
-    if (this.doNotFireFrameUpdates) {
+    if (!this.isTopLevelTarget) {
       return;
     }
 
@@ -997,7 +999,7 @@ const browsingContextTargetPrototype = {
   _notifyDocShellDestroyAll() {
     
     
-    if (this.doNotFireFrameUpdates) {
+    if (!this.isTopLevelTarget) {
       return;
     }
 

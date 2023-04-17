@@ -364,8 +364,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       
-      
-      doNotFireFrameUpdates: true,
       followWindowGlobalLifeCycle: true,
       isTopLevelTarget,
     });
