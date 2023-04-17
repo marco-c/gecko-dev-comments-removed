@@ -2880,7 +2880,7 @@ inline T* SweepingTracer::onEdge(T* thing) {
   
   
   
-  if (!thing->isMarkedAny()) {
+  if (thing->zoneFromAnyThread()->isGCSweeping() && !thing->isMarkedAny()) {
     return nullptr;
   }
 
