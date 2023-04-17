@@ -34,7 +34,6 @@ enum class SurfaceType : int8_t {
   SKIA,                   
   D2D1_1_IMAGE,           
   RECORDING,              
-  WRAP_AND_RECORD,        
   DATA_SHARED,            
   DATA_RECYCLING_SHARED,  
   OFFSET,                 

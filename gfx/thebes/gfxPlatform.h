@@ -53,7 +53,6 @@ class DrawTarget;
 class SourceSurface;
 class DataSourceSurface;
 class ScaledFont;
-class DrawEventRecorder;
 class VsyncSource;
 class ContentDeviceData;
 class GPUDeviceData;
@@ -985,8 +984,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static void InitializeCMS();
   static void ShutdownCMS();
 
-  friend void RecordingPrefChanged(const char* aPrefName, void* aClosure);
-
   
 
 
@@ -1035,8 +1032,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   mozilla::widget::GfxInfoCollector<gfxPlatform> mDisplayInfoCollector;
 
   nsTArray<mozilla::layers::FrameStats> mFrameStats;
-
-  RefPtr<mozilla::gfx::DrawEventRecorder> mRecorder;
 
   
   
