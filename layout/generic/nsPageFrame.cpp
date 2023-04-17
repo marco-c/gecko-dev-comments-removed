@@ -585,7 +585,6 @@ nsSize nsPageFrame::ComputePageSize() const {
 
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                    const nsDisplayListSet& aLists) {
-  nsPresContext* pc = PresContext();
   nsDisplayList content;
   nsDisplayListSet set(&content, &content, &content, &content, &content,
                        &content);
@@ -593,7 +592,20 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     clipState.Clear();
 
+    
+    
+    
+    
+    
+    
+    
+    const nsRect pageContentRect({0, 0}, ComputePageSize());
+    nsDisplayListBuilder::AutoBuildingDisplayList buildingForPageContentFrame(
+        aBuilder, this, pageContentRect, pageContentRect);
+
     nsContainerFrame::BuildDisplayList(aBuilder, set);
+
+    nsPresContext* const pc = PresContext();
     if (pc->IsRootPaginatedDocument()) {
       content.AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
 
