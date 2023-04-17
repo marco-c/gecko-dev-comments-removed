@@ -14,7 +14,6 @@
 
 
 
-
 class Class {
   #field;
 

@@ -19,7 +19,6 @@
 
 
 
-
 let value;
 function await() {
   return value;

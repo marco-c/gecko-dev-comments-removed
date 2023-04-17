@@ -19,7 +19,6 @@
 
 
 
-
 let caught = null;
 
 class C {

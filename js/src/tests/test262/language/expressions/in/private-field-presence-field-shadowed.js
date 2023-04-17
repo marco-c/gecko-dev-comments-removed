@@ -14,7 +14,6 @@
 
 
 
-
 let Child;
 
 class Parent {

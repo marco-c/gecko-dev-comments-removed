@@ -16,7 +16,6 @@
 
 
 
-
 let count = 0;
 
 class Class {
