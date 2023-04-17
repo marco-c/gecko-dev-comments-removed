@@ -26,6 +26,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
+
 const KNOWN_SEARCH_SOURCES = new Map([
   ["abouthome", "about_home"],
   ["contextmenu", "contextmenu"],
