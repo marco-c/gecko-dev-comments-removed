@@ -50,7 +50,7 @@ add_task(async function check_history_not_persisted() {
 
   
   BrowserTestUtils.loadURI(browser, "about:robots");
-  await promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser, false, "about:robots");
   if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await SpecialPowers.spawn(browser, [], function() {
       let sessionHistory =
@@ -124,7 +124,7 @@ add_task(async function check_history_default_persisted() {
 
   
   BrowserTestUtils.loadURI(browser, "about:robots");
-  await promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser, false, "about:robots");
   if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await SpecialPowers.spawn(browser, [], function() {
       let sessionHistory =
