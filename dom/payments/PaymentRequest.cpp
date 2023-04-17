@@ -19,7 +19,6 @@
 #include "mozilla/intl/MozLocale.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
-#include "nsIDUtils.h"
 #include "nsImportModule.h"
 #include "nsIRegion.h"
 #include "nsIScriptError.h"
@@ -651,7 +650,13 @@ already_AddRefed<PaymentRequest> PaymentRequest::CreatePaymentRequest(
     return nullptr;
   }
 
-  NSID_TrimBracketsUTF16 id(uuid);
+  
+  char buffer[NSID_LENGTH];
+  uuid.ToProvidedString(buffer);
+
+  
+  nsAutoString id;
+  id.AssignASCII(&buffer[1], NSID_LENGTH - 3);
 
   
   RefPtr<PaymentRequest> request = new PaymentRequest(aWindow, id);
