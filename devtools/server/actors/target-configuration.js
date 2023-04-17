@@ -92,7 +92,23 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
 
 
+
+  _shouldHandleConfigurationInParentProcess() {
+    
+    
+    return this.watcherActor.browserElement;
+  },
+
+  
+
+
+
+
   _onBrowsingContextAttached(browsingContext) {
+    if (!this._shouldHandleConfigurationInParentProcess()) {
+      return;
+    }
+
     
     
     if (browsingContext.parent) {
@@ -163,7 +179,7 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
 
   _updateParentProcessConfiguration(configuration) {
-    if (!this._browsingContext) {
+    if (!this._shouldHandleConfigurationInParentProcess()) {
       return;
     }
 
@@ -198,7 +214,7 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
   },
 
   _restoreParentProcessConfiguration() {
-    if (!this._browsingContext) {
+    if (!this._shouldHandleConfigurationInParentProcess()) {
       return;
     }
 
