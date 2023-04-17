@@ -58,7 +58,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     let state = {
       context,
       resultsByGroup: new Map(),
-      totalResultCount: 0,
+      
+      
+      
+      availableResultSpan: context.maxResults,
+      
+      usedResultSpan: 0,
       strippedUrlToTopPrefixAndTitle: new Map(),
       canShowPrivateSearch: context.results.length > 1,
       canShowTailSuggestions: true,
@@ -98,20 +103,34 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
+    let suggestedIndexResults = state.resultsByGroup.get(
+      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
+    );
+    if (suggestedIndexResults) {
+      let span = suggestedIndexResults.reduce((sum, result) => {
+        if (this._canAddResult(result, state)) {
+          sum += UrlbarUtils.getSpanForResult(result);
+        }
+        return sum;
+      }, 0);
+      state.availableResultSpan = Math.max(state.availableResultSpan - span, 0);
+    }
+
+    
+    
     let rootBucket = context.searchMode?.engineName
       ? UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true })
       : UrlbarPrefs.get("resultBuckets");
     logger.debug(`Buckets: ${rootBucket}`);
 
-    let sortedResults = this._fillBuckets(
+    let [sortedResults] = this._fillBuckets(
       rootBucket,
-      context.maxResults,
+      state.availableResultSpan,
       state
     );
 
     this._addSuggestedIndexResults(sortedResults, state);
 
-    this._truncateResults(sortedResults, context.maxResults);
     context.results = sortedResults;
   }
 
@@ -152,17 +171,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-  _fillBuckets(bucket, maxResultCount, state) {
+
+  _fillBuckets(bucket, availableSpan, state) {
     
     if (!bucket.children) {
-      return this._addResults(bucket.group, maxResultCount, state);
+      return this._addResults(bucket.group, availableSpan, state);
     }
 
     
     let stateCopy;
     let flexSum = 0;
     let unfilledChildIndexes = [];
-    let unfilledChildResultCount = 0;
+    let unfilledChildSpan = 0;
     if (bucket.flexChildren) {
       stateCopy = this._copyState(state);
       for (let child of bucket.children) {
@@ -177,39 +197,44 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     let results = [];
+    let usedSpan = 0;
     for (
       let i = 0;
-      i < bucket.children.length && results.length < maxResultCount;
+      i < bucket.children.length && usedSpan < availableSpan;
       i++
     ) {
       let child = bucket.children[i];
 
       
-      let childMaxResultCount;
+      let availableChildSpan;
       if (bucket.flexChildren) {
         let flex = typeof child.flex == "number" ? child.flex : 0;
-        childMaxResultCount = Math.round(maxResultCount * (flex / flexSum));
+        availableChildSpan = Math.round(availableSpan * (flex / flexSum));
       } else {
-        childMaxResultCount = Math.min(
+        availableChildSpan = Math.min(
           typeof child.maxResultCount == "number"
             ? child.maxResultCount
             : Infinity,
-          
-          maxResultCount - results.length
+          availableSpan - usedSpan
         );
       }
 
       
-      let childResults = this._fillBuckets(child, childMaxResultCount, state);
+      let [childResults, usedChildSpan] = this._fillBuckets(
+        child,
+        availableChildSpan,
+        state
+      );
       results = results.concat(childResults);
+      usedSpan += usedChildSpan;
 
-      if (bucket.flexChildren && childResults.length < childMaxResultCount) {
+      if (bucket.flexChildren && usedChildSpan < availableChildSpan) {
         
         
         let flex = typeof child.flex == "number" ? child.flex : 0;
         flexSumFilled -= flex;
         unfilledChildIndexes.push(i);
-        unfilledChildResultCount += childResults.length;
+        unfilledChildSpan += usedChildSpan;
       }
     }
 
@@ -218,14 +243,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     if (unfilledChildIndexes.length) {
       results = [];
-      let remainingResultCount = maxResultCount - unfilledChildResultCount;
+      usedSpan = 0;
+      let remainingSpan = availableSpan - unfilledChildSpan;
       for (
         let i = 0;
-        i < bucket.children.length && results.length < maxResultCount;
+        i < bucket.children.length && usedSpan < availableSpan;
         i++
       ) {
         let child = bucket.children[i];
-        let childMaxResultCount;
+        let availableChildSpan;
         if (unfilledChildIndexes.length && i == unfilledChildIndexes[0]) {
           
           
@@ -234,19 +260,20 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           
           
           unfilledChildIndexes.shift();
-          childMaxResultCount = maxResultCount;
+          availableChildSpan = availableSpan;
         } else {
           let flex = typeof child.flex == "number" ? child.flex : 0;
-          childMaxResultCount = flex
-            ? Math.round(remainingResultCount * (flex / flexSumFilled))
-            : remainingResultCount;
+          availableChildSpan = flex
+            ? Math.round(remainingSpan * (flex / flexSumFilled))
+            : remainingSpan;
         }
-        let childResults = this._fillBuckets(
+        let [childResults, usedChildSpan] = this._fillBuckets(
           child,
-          childMaxResultCount,
+          availableChildSpan,
           stateCopy
         );
         results = results.concat(childResults);
+        usedSpan += usedChildSpan;
       }
 
       
@@ -255,7 +282,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
     }
 
-    return results;
+    return [results, usedSpan];
   }
 
   
@@ -271,7 +298,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-  _addResults(group, maxResultCount, state) {
+
+
+  _addResults(group, availableSpan, state) {
     
     
     
@@ -280,7 +309,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       group == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
       !UrlbarPrefs.get("maxHistoricalSearchSuggestions")
     ) {
-      maxResultCount = 0;
+      availableSpan = 0;
     }
 
     let addQuickSuggest =
@@ -288,26 +317,39 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       group == UrlbarUtils.RESULT_GROUP.GENERAL &&
       this._canAddResult(state.quickSuggestResult, state);
     if (addQuickSuggest) {
-      maxResultCount--;
+      availableSpan -= UrlbarUtils.getSpanForResult(state.quickSuggestResult);
     }
 
     let addedResults = [];
+    let usedSpan = 0;
     let groupResults = state.resultsByGroup.get(group);
     while (
       groupResults?.length &&
-      addedResults.length < maxResultCount &&
-      state.totalResultCount < state.context.maxResults
+      usedSpan < availableSpan &&
+      state.usedResultSpan < state.availableResultSpan
     ) {
-      
-      
-      
-      
-      let result = groupResults.shift();
+      let result = groupResults[0];
       if (this._canAddResult(result, state)) {
+        let span = UrlbarUtils.getSpanForResult(result);
+        let newUsedSpan = usedSpan + span;
+        if (availableSpan < newUsedSpan && !result.heuristic) {
+          
+          
+          
+          
+          break;
+        }
         addedResults.push(result);
-        state.totalResultCount++;
+        usedSpan = newUsedSpan;
+        state.usedResultSpan += span;
         this._updateStatePostAdd(result, state);
       }
+
+      
+      
+      
+      
+      groupResults.shift();
     }
 
     if (addQuickSuggest) {
@@ -332,11 +374,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         index = Math.min(index, addedResults.length);
       }
       addedResults.splice(index, 0, quickSuggestResult);
-      state.totalResultCount++;
+      let span = UrlbarUtils.getSpanForResult(quickSuggestResult);
+      usedSpan += span;
+      state.usedResultSpan += span;
       this._updateStatePostAdd(quickSuggestResult, state);
     }
 
-    return addedResults;
+    return [addedResults, usedSpan];
   }
 
   
@@ -544,7 +588,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     
-    if (result.heuristic && state.totalResultCount) {
+    if (result.heuristic && state.usedResultSpan) {
       return false;
     }
 
@@ -701,74 +745,38 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
-    suggestedIndexResults.sort((a, b) => a.suggestedIndex - b.suggestedIndex);
+    
+    let positive = [];
+    let negative = [];
+    for (let result of suggestedIndexResults) {
+      let results = result.suggestedIndex < 0 ? negative : positive;
+      results.push(result);
+    }
+
+    
+    
+    positive.sort((a, b) => a.suggestedIndex - b.suggestedIndex);
+
+    
+    
+    negative.sort((a, b) => b.suggestedIndex - a.suggestedIndex);
 
     
     
     
-    let negativeIndexSpanCount = 0;
-    for (let result of suggestedIndexResults) {
-      if (result.suggestedIndex < 0) {
-        negativeIndexSpanCount += UrlbarUtils.getSpanForResult(result);
-      } else {
+    
+    
+    for (let results of [positive, negative]) {
+      for (let result of results) {
         this._updateStatePreAdd(result, state);
         if (this._canAddResult(result, state)) {
           let index =
-            result.suggestedIndex <= sortedResults.length
-              ? result.suggestedIndex
-              : sortedResults.length;
+            result.suggestedIndex >= 0
+              ? Math.min(result.suggestedIndex, sortedResults.length)
+              : Math.max(result.suggestedIndex + sortedResults.length + 1, 0);
           sortedResults.splice(index, 0, result);
           this._updateStatePostAdd(result, state);
         }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    this._truncateResults(
-      sortedResults,
-      state.context.maxResults - negativeIndexSpanCount
-    );
-
-    
-    if (negativeIndexSpanCount) {
-      for (let result of suggestedIndexResults) {
-        if (result.suggestedIndex >= 0) {
-          break;
-        }
-        this._updateStatePreAdd(result, state);
-        if (this._canAddResult(result, state)) {
-          let index = Math.max(
-            result.suggestedIndex + sortedResults.length + 1,
-            0
-          );
-          sortedResults.splice(index, 0, result);
-          this._updateStatePostAdd(result, state);
-        }
-      }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  _truncateResults(sortedResults, maxSpanCount) {
-    let remainingSpanCount = maxSpanCount;
-    for (let i = 0; i < sortedResults.length; i++) {
-      remainingSpanCount -= UrlbarUtils.getSpanForResult(sortedResults[i]);
-      if (remainingSpanCount < 0) {
-        sortedResults.splice(i, sortedResults.length - i);
-        break;
       }
     }
   }
