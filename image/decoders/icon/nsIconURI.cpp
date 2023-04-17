@@ -37,16 +37,10 @@ using namespace mozilla::ipc;
 static NS_DEFINE_CID(kThisIconURIImplementationCID,
                      NS_THIS_ICONURI_IMPLEMENTATION_CID);
 
+static const char* const kSizeStrings[] = {"button", "toolbar", "toolbarsmall",
+                                           "menu",   "dnd",     "dialog"};
 
-
-static void extractAttributeValue(const char* aSearchString,
-                                  const char* aAttributeName,
-                                  nsCString& aResult);
-
-static const char* kSizeStrings[] = {"button", "toolbar", "toolbarsmall",
-                                     "menu",   "dnd",     "dialog"};
-
-static const char* kStateStrings[] = {"normal", "disabled"};
+static const char* const kStateStrings[] = {"normal", "disabled"};
 
 
 
@@ -167,10 +161,11 @@ nsMozIconURI::Mutate(nsIURIMutator** aMutator) {
 
 
 
-void extractAttributeValue(const char* aSearchString,
-                           const char* aAttributeName, nsCString& aResult) {
-  
 
+
+static void extractAttributeValue(const char* aSearchString,
+                                  const char* aAttributeName,
+                                  nsCString& aResult) {
   aResult.Truncate();
 
   if (aSearchString && aAttributeName) {
