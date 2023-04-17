@@ -45,6 +45,8 @@ class RtpRtcpConfig;
 class WebrtcCallWrapper;
 
 using RtpExtList = std::vector<webrtc::RtpExtension>;
+using Ssrc = uint32_t;
+using Ssrcs = std::vector<uint32_t>;
 
 
 
@@ -198,9 +200,8 @@ class MediaSessionConduit {
 
 
 
-  virtual bool SetLocalSSRCs(const std::vector<uint32_t>& aSSRCs,
-                             const std::vector<uint32_t>& aRtxSSRCs) = 0;
-  virtual std::vector<uint32_t> GetLocalSSRCs() = 0;
+  virtual bool SetLocalSSRCs(const Ssrcs& aSSRCs, const Ssrcs& aRtxSSRCs) = 0;
+  virtual Ssrcs GetLocalSSRCs() = 0;
 
   
 
@@ -216,9 +217,9 @@ class MediaSessionConduit {
       MediaSessionConduitLocalDirection aDirection,
       const RtpExtList& aExtensions) = 0;
 
-  virtual bool GetRemoteSSRC(uint32_t* ssrc) = 0;
-  virtual bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) = 0;
-  virtual bool UnsetRemoteSSRC(uint32_t ssrc) = 0;
+  virtual bool GetRemoteSSRC(Ssrc* ssrc) = 0;
+  virtual bool SetRemoteSSRC(Ssrc ssrc, Ssrc rtxSsrc) = 0;
+  virtual bool UnsetRemoteSSRC(Ssrc ssrc) = 0;
   virtual bool SetLocalCNAME(const char* cname) = 0;
 
   virtual bool SetLocalMID(const std::string& mid) = 0;
@@ -381,8 +382,8 @@ class VideoSessionConduit : public MediaSessionConduit {
 
   virtual void DisableSsrcChanges() = 0;
 
-  bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) override = 0;
-  bool UnsetRemoteSSRC(uint32_t ssrc) override = 0;
+  bool SetRemoteSSRC(Ssrc ssrc, Ssrc rtxSsrc) override = 0;
+  bool UnsetRemoteSSRC(Ssrc ssrc) override = 0;
 
   
 
