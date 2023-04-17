@@ -229,13 +229,11 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
   if (topLayerList.IsEmpty()) {
     return nullptr;
   }
-  nsPoint offset = aBuilder->GetCurrentFrame()->GetOffsetTo(this);
-  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(
-      aBuilder, this, aBuilder->GetVisibleRect() + offset,
-      aBuilder->GetDirtyRect() + offset);
+  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(aBuilder,
+                                                                    this);
   
   
-  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
+  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapList>(
       aBuilder, this, 2, &topLayerList, aBuilder->CurrentActiveScrolledRoot(),
       false);
   if (!wrapList) {

@@ -15,8 +15,6 @@
 #include "mozilla/gfx/Polygon.h"
 #include "nsTArray.h"
 
-class nsDisplayTransform;
-
 namespace mozilla {
 namespace layers {
 
@@ -25,20 +23,19 @@ class Layer;
 
 
 
-template <typename T>
-struct BSPPolygon {
-  explicit BSPPolygon(T* aData) : data(aData) {}
+struct LayerPolygon {
+  explicit LayerPolygon(Layer* aLayer) : layer(aLayer) {}
 
-  BSPPolygon<T>(T* aData, gfx::Polygon&& aGeometry)
-      : data(aData), geometry(Some(std::move(aGeometry))) {}
+  LayerPolygon(Layer* aLayer, gfx::Polygon&& aGeometry)
+      : layer(aLayer), geometry(Some(std::move(aGeometry))) {}
 
-  BSPPolygon(T* aData, nsTArray<gfx::Point4D>&& aPoints,
-             const gfx::Point4D& aNormal)
-      : data(aData) {
+  LayerPolygon(Layer* aLayer, nsTArray<gfx::Point4D>&& aPoints,
+               const gfx::Point4D& aNormal)
+      : layer(aLayer) {
     geometry.emplace(std::move(aPoints), aNormal);
   }
 
-  T* data;
+  Layer* layer;
   Maybe<gfx::Polygon> geometry;
 };
 
@@ -53,19 +50,15 @@ typedef mozilla::ArenaAllocator<4096, 8> BSPTreeArena;
 
 
 
-template <typename T>
-using PolygonList = std::list<BSPPolygon<T>>;
-
-using LayerPolygon = BSPPolygon<Layer>;
+typedef std::list<LayerPolygon> LayerList;
 
 
 
 
 
 
-template <typename T>
 struct BSPTreeNode {
-  explicit BSPTreeNode(nsTArray<PolygonList<T>*>& aListPointers)
+  explicit BSPTreeNode(nsTArray<LayerList*>& aListPointers)
       : front(nullptr), back(nullptr) {
     
     aListPointers.AppendElement(&layers);
@@ -83,7 +76,7 @@ struct BSPTreeNode {
 
   BSPTreeNode* front;
   BSPTreeNode* back;
-  PolygonList<T> layers;
+  LayerList layers;
 };
 
 
@@ -95,13 +88,12 @@ struct BSPTreeNode {
 
 
 
-template <typename T>
 class BSPTree final {
  public:
   
 
 
-  explicit BSPTree(std::list<BSPPolygon<T>>& aLayers) {
+  explicit BSPTree(std::list<LayerPolygon>& aLayers) {
     MOZ_ASSERT(!aLayers.empty());
 
     mRoot = new (mPool) BSPTreeNode(mListPointers);
@@ -109,33 +101,33 @@ class BSPTree final {
   }
 
   ~BSPTree() {
-    for (PolygonList<T>* listPtr : mListPointers) {
-      listPtr->~list();
+    for (LayerList* listPtr : mListPointers) {
+      listPtr->~LayerList();
     }
   }
 
   
 
 
-  nsTArray<BSPPolygon<T>> GetDrawOrder() const {
-    nsTArray<BSPPolygon<T>> layers;
+  nsTArray<LayerPolygon> GetDrawOrder() const {
+    nsTArray<LayerPolygon> layers;
     BuildDrawOrder(mRoot, layers);
     return layers;
   }
 
  private:
   BSPTreeArena mPool;
-  BSPTreeNode<T>* mRoot;
-  nsTArray<PolygonList<T>*> mListPointers;
+  BSPTreeNode* mRoot;
+  nsTArray<LayerList*> mListPointers;
 
   
 
 
 
-  void BuildDrawOrder(BSPTreeNode<T>* aNode,
-                      nsTArray<BSPPolygon<T>>& aLayers) const;
+  void BuildDrawOrder(BSPTreeNode* aNode,
+                      nsTArray<LayerPolygon>& aLayers) const;
 
-  void BuildTree(BSPTreeNode<T>* aRoot, PolygonList<T>& aLayers);
+  void BuildTree(BSPTreeNode* aRoot, std::list<LayerPolygon>& aLayers);
 };
 
 }  
