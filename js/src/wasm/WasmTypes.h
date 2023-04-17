@@ -41,6 +41,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenTypes.h"
 #include "wasm/WasmConstants.h"
+#include "wasm/WasmException.h"
 #include "wasm/WasmExprType.h"
 #include "wasm/WasmInitExpr.h"
 #include "wasm/WasmLog.h"
@@ -78,40 +79,6 @@ class Memory;
 class Module;
 class Instance;
 class Table;
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct ExceptionTag : AtomicRefCounted<ExceptionTag> {
-  ExceptionTag() = default;
-};
-using SharedExceptionTag = RefPtr<ExceptionTag>;
-using SharedExceptionTagVector =
-    Vector<SharedExceptionTag, 0, SystemAllocPolicy>;
-
-
-
-
-
-class WasmJSExceptionObject : public NativeObject {
-  static const unsigned VALUE_SLOT = 0;
-
- public:
-  static const unsigned RESERVED_SLOTS = 1;
-  static const JSClass class_;
-  const Value& value() const { return getFixedSlot(VALUE_SLOT); }
-
-  static WasmJSExceptionObject* create(JSContext* cx, MutableHandleValue value);
-};
 
 
 
