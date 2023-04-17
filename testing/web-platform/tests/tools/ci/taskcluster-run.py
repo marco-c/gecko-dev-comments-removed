@@ -20,8 +20,7 @@ def get_browser_args(product, channel):
         return ["--install-browser", "--processes=12"]
     if product == "chrome":
         
-        
-        args = ["--binary-arg=--use-gl=swiftshader-webgl"]
+        args = ["--enable-swiftshader"]
         if channel == "nightly":
             args.extend(["--install-browser", "--install-webdriver"])
         return args

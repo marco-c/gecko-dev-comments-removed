@@ -85,6 +85,10 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     if kwargs["enable_mojojs"]:
         chrome_options["args"].append("--enable-blink-features=MojoJS,MojoJSTest")
 
+    if kwargs["enable_swiftshader"]:
+        
+        chrome_options["args"].extend(["--use-gl=angle", "--use-angle=swiftshader"])
+
     
     if kwargs["binary_args"] is not None:
         chrome_options["args"].extend(kwargs["binary_args"])
