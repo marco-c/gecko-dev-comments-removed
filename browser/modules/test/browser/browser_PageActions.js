@@ -4,6 +4,10 @@
 
 
 
+const PROTON_PREF = "browser.proton.urlbar.enabled";
+
+let gProton;
+
 
 add_task(async function init() {
   
@@ -22,6 +26,16 @@ add_task(async function init() {
   
   const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
   await addon.disable({ allowSystemAddons: true });
+
+  gProton = Services.prefs.getBoolPref(PROTON_PREF, false);
+  if (gProton) {
+    
+    
+    BrowserPageActions.mainButtonNode.style.visibility = "visible";
+    registerCleanupFunction(() => {
+      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+    });
+  }
 });
 
 
@@ -83,7 +97,7 @@ add_task(async function simple() {
 
   Assert.equal(action.getIconURL(), iconURL, "iconURL");
   Assert.equal(action.id, id, "id");
-  Assert.equal(action.pinnedToUrlbar, false, "pinnedToUrlbar");
+  Assert.equal(action.pinnedToUrlbar, gProton, "pinnedToUrlbar");
   Assert.equal(action.getDisabled(), false, "disabled");
   Assert.equal(action.getDisabled(window), false, "disabled in window");
   Assert.equal(action.getTitle(), title, "title");
@@ -109,8 +123,8 @@ add_task(async function simple() {
   );
   Assert.equal(
     onPlacedInUrlbarCallCount,
-    0,
-    "onPlacedInUrlbarCallCount should remain 0"
+    gProton ? 1 : 0,
+    "onPlacedInUrlbarCallCount after adding the action"
   );
   Assert.equal(
     onShowingInPanelCallCount,
@@ -180,11 +194,9 @@ add_task(async function simple() {
     "Actions in panel after adding the action"
   );
 
-  
-  
   Assert.deepEqual(
     PageActions.actionsInUrlbar(window),
-    initialActionsInUrlbar,
+    (gProton ? [action] : []).concat(initialActionsInUrlbar),
     "Actions in urlbar after adding the action"
   );
 
@@ -228,9 +240,8 @@ add_task(async function simple() {
     "sepNode.id"
   );
 
-  
   let urlbarButtonNode = document.getElementById(urlbarButtonID);
-  Assert.equal(urlbarButtonNode, null, "urlbarButtonNode");
+  Assert.equal(!!urlbarButtonNode, gProton, "urlbarButtonNode");
 
   
   await promiseOpenPageActionPanel();
@@ -777,38 +788,40 @@ add_task(async function insertBeforeActionID() {
     "PageActions._nonBuiltInActions.length should remain the same"
   );
 
-  let actionIndex = newActions.findIndex(a => a.id == id);
-  Assert.equal(
-    initialBookmarkSeparatorIndex,
-    actionIndex,
-    "initialBookmarkSeparatorIndex"
-  );
-  let newBookmarkSeparatorIndex = newActions.findIndex(a => {
-    return a.id == PageActions.ACTION_ID_BOOKMARK_SEPARATOR;
-  });
-  Assert.equal(
-    newBookmarkSeparatorIndex,
-    initialBookmarkSeparatorIndex + 1,
-    "newBookmarkSeparatorIndex"
-  );
-
   
   let panelButtonNode = document.getElementById(panelButtonID);
   Assert.notEqual(panelButtonNode, null, "panelButtonNode");
 
-  
-  Assert.notEqual(
-    panelButtonNode.nextElementSibling,
-    null,
-    "panelButtonNode.nextElementSibling"
-  );
-  Assert.equal(
-    panelButtonNode.nextElementSibling.id,
-    BrowserPageActions.panelButtonNodeIDForActionID(
-      PageActions.ACTION_ID_BOOKMARK_SEPARATOR
-    ),
-    "panelButtonNode.nextElementSibling.id"
-  );
+  if (!gProton) {
+    let actionIndex = newActions.findIndex(a => a.id == id);
+    Assert.equal(
+      initialBookmarkSeparatorIndex,
+      actionIndex,
+      "initialBookmarkSeparatorIndex"
+    );
+    let newBookmarkSeparatorIndex = newActions.findIndex(a => {
+      return a.id == PageActions.ACTION_ID_BOOKMARK_SEPARATOR;
+    });
+    Assert.equal(
+      newBookmarkSeparatorIndex,
+      initialBookmarkSeparatorIndex + 1,
+      "newBookmarkSeparatorIndex"
+    );
+
+    
+    Assert.notEqual(
+      panelButtonNode.nextElementSibling,
+      null,
+      "panelButtonNode.nextElementSibling"
+    );
+    Assert.equal(
+      panelButtonNode.nextElementSibling.id,
+      BrowserPageActions.panelButtonNodeIDForActionID(
+        PageActions.ACTION_ID_BOOKMARK_SEPARATOR
+      ),
+      "panelButtonNode.nextElementSibling.id"
+    );
+  }
 
   
   
@@ -1224,8 +1237,8 @@ add_task(async function transient() {
   Assert.equal(onPlacedInPanelCount, 0, "onPlacedInPanelCount should remain 0");
   Assert.equal(
     onBeforePlacedInWindowCount,
-    0,
-    "onBeforePlacedInWindowCount should remain 0"
+    gProton ? 1 : 0,
+    "onBeforePlacedInWindowCount after adding transient action"
   );
 
   Assert.deepEqual(
