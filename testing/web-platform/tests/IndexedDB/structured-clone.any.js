@@ -120,7 +120,7 @@ const strings = [
   }));
 
 
-[].concat(booleans, numbers, strings)
+[].concat(booleans, numbers, bigints, strings)
   .forEach(value => cloneObjectTest(Object(value), (orig, clone) => {
     assert_equals(orig.valueOf(), clone.valueOf());
   }));
