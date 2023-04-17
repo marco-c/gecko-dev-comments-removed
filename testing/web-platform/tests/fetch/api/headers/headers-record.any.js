@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 var log = [];
 function clearLog() {
   log = [];

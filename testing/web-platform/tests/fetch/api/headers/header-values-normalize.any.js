@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 for(let i = 0; i < 0x21; i++) {
   let fail = false,
       strip = false

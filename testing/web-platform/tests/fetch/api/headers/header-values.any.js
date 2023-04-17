@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 [0, 0x0A, 0x0D].forEach(val => {
   val = "x" + String.fromCharCode(val) + "x"

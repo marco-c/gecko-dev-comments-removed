@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 var headers = new Headers();
 var methods = ["append",
                 "delete",
