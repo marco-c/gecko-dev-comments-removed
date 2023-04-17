@@ -589,9 +589,9 @@ class Document : public nsINode,
   } while (0)
 
   
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
-                            bool aFlushContent) final {
-    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor, aFlushContent);
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
+                            nsIRadioVisitor* aVisitor) final {
+    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor);
   }
 
   void SetCurrentRadioButton(const nsAString& aName,

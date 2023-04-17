@@ -36,10 +36,8 @@ class nsIRadioGroupContainer : public nsISupports {
 
 
 
-
-
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
-                            bool aFlushContent) = 0;
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
+                            nsIRadioVisitor* aVisitor) = 0;
 
   
 
