@@ -20,7 +20,6 @@
 
 #include <chrono>
 
-#include "jit/JitOptions.h"
 #include "js/BuildId.h"                 
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    

@@ -21,7 +21,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Utf8.h"
 
-#include "jit/JitOptions.h"
 #include "js/Printf.h"
 #include "js/String.h"  
 #include "vm/JSContext.h"
