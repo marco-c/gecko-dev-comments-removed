@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/ICUError.h"
 #include "mozilla/intl/ICU4CGlue.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/TypedEnumBits.h"
@@ -254,7 +255,7 @@ class MOZ_STACK_CLASS Locale final {
   
 
 
-  const char* unicodeExtension() const;
+  Maybe<Span<const char>> unicodeExtension() const;
 
  private:
   ptrdiff_t unicodeExtensionIndex() const;
