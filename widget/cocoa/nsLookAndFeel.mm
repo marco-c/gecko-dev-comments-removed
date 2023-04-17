@@ -72,7 +72,14 @@ static nscolor GetColorFromNSColorWithCustomAlpha(NSColor* aColor, float alpha) 
 
 
 
-nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor) {
+
+nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor, ColorScheme aScheme) {
+  if (aScheme == ColorScheme::Dark) {
+    
+    
+    
+    return aColor;
+  }
   uint16_t hue, sat, value;
   uint8_t alpha;
   nscolor resultColor = aColor;
@@ -131,13 +138,14 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = NS_RGB(0x00, 0x00, 0x00);
       break;
     case ColorID::TextSelectBackground:
-      color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.selectedTextBackgroundColor));
+      color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.selectedTextBackgroundColor),
+                                         aScheme);
       break;
     
     
     case ColorID::TextSelectBackgroundDisabled:
-      color =
-          ProcessSelectionBackground(GetColorFromNSColor(NSColor.secondarySelectedControlColor));
+      color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.secondarySelectedControlColor),
+                                         aScheme);
       break;
     case ColorID::Highlight:  
     case ColorID::MozAccentColor:
