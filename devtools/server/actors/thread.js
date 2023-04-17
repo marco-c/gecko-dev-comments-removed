@@ -1649,7 +1649,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._pausePool.manage(this._pauseActor);
 
     
-    const poppedFrames = this._updateFrames();
+    this._updateFrames();
 
     
     const packet = {
@@ -1660,21 +1660,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       packet.frame = this._createFrameActor(frame);
     }
 
-    if (poppedFrames) {
-      packet.poppedFrames = poppedFrames;
-    }
-
     return packet;
   },
 
   
 
 
-
-
   _updateFrames() {
-    const popped = [];
-
     
     const framesPool = new Pool(this.conn, "frames");
     const frameList = [];
@@ -1683,8 +1675,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       if (frameActor.frame.onStack) {
         framesPool.manage(frameActor);
         frameList.push(frameActor);
-      } else {
-        popped.push(frameActor.actorID);
       }
     }
 
@@ -1696,8 +1686,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     this._frameActors = frameList;
     this._framesPool = framesPool;
-
-    return popped;
   },
 
   _createFrameActor(frame, depth) {
