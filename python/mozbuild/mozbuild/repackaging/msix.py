@@ -164,12 +164,13 @@ def repackage_msix(
     distribution_dirs=[],
     locale_allowlist=set(),
     version=None,
-    vendor="Mozilla",
+    vendor=None,
     displayname=None,
     app_name="firefox",
     identity=None,
-    arch=None,
     publisher=None,
+    publisher_display_name="Mozilla Corporation",
+    arch=None,
     output=None,
     force=False,
     log=None,
@@ -205,11 +206,14 @@ def repackage_msix(
     values = get_application_ini_values(
         finder,
         dict(section="App", value="CodeName", fallback="Name"),
+        dict(section="App", value="Vendor"),
         dict(section="App", value="Version"),
         dict(section="App", value="BuildID"),
     )
     first = next(values)
-    displayname = displayname or first
+    displayname = displayname or "Mozilla {}".format(first)
+    second = next(values)
+    vendor = vendor or second
     if not version:
         version = next(values)
         buildid = next(values)
@@ -263,9 +267,7 @@ def repackage_msix(
     instdir = "{} Package Root".format(displayname)
 
     
-    
-    
-    identity = identity or "{}.{}".format(vendor, displayname.replace(" ", "."))
+    identity = identity or "{}.{}".format(vendor, displayname).replace(" ", "")
 
     
     
@@ -403,11 +405,11 @@ def repackage_msix(
         
         "APPX_INSTDIR_QUOTED": urllib.parse.quote(instdir),
         "APPX_PUBLISHER": publisher,
+        "APPX_PUBLISHER_DISPLAY_NAME": publisher_display_name,
         "APPX_RESOURCE_LANGUAGE_LIST": resource_language_list,
         "APPX_VERSION": version,
         "MOZ_APP_DISPLAYNAME": displayname,
         "MOZ_APP_NAME": app_name,
-        "MOZ_APP_VENDOR": vendor,
         "MOZ_IGECKOBACKCHANNEL_IID": MOZ_IGECKOBACKCHANNEL_IID,
     }
 
@@ -686,7 +688,7 @@ powershell -c 'Get-AuthenticodeSignature -FilePath "{output}" | Format-List *'
 To install this MSIX:
 powershell -c 'Add-AppPackage -path "{output}"'
 To see details after installing:
-powershell -c 'Get-AppPackage -name Mozilla.Firefox(.Beta,...)'
+powershell -c 'Get-AppPackage -name Mozilla.MozillaFirefox(Beta,...)'
                 """.strip(),
             )
 
