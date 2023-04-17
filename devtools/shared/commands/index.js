@@ -7,6 +7,7 @@
 
 
 
+
 const Commands = {
   inspectedWindowCommand:
     "devtools/shared/commands/inspected-window/inspected-window-command",
@@ -19,6 +20,7 @@ const Commands = {
   threadConfigurationCommand:
     "devtools/shared/commands/thread-configuration/thread-configuration-command",
 };
+
 
 
 
@@ -39,13 +41,13 @@ async function createCommandsDictionary(descriptorFront) {
     
     client,
     descriptorFront,
+    watcherFront,
 
     
     waitForRequestsToSettle() {
       return descriptorFront.client.waitForRequestsToSettle();
     },
 
-    
     
     async destroy() {
       await descriptorFront.destroy();

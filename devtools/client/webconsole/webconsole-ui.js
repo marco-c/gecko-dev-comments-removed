@@ -321,27 +321,6 @@ class WebConsoleUI {
 
 
 
-  async setSaveRequestAndResponseBodies(value) {
-    if (!this.webConsoleFront) {
-      
-      return null;
-    }
-
-    const newValue = !!value;
-    const toSet = {
-      "NetworkMonitor.saveRequestAndResponseBodies": newValue,
-    };
-
-    
-    return this.webConsoleFront.setPreferences(toSet);
-  }
-
-  
-
-
-
-
-
 
   async _attachTargets() {
     this.additionalProxies = new Map();
@@ -353,6 +332,7 @@ class WebConsoleUI {
         updateRequest: (id, data) =>
           this.wrapper.batchedRequestUpdates({ id, data }),
       },
+      owner: this,
     });
 
     
@@ -383,6 +363,30 @@ class WebConsoleUI {
         onUpdated: this._onResourceUpdated,
       }
     );
+
+    
+    
+    
+    
+    
+    const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
+      resourceCommand.TYPES.NETWORK_EVENT
+    );
+    const supportsWatcherRequest = commands.targetCommand.hasTargetWatcherSupport(
+      "saveRequestAndResponseBodies"
+    );
+    if (hasNetworkResourceCommandSupport && supportsWatcherRequest) {
+      const networkFront = await commands.watcherFront.getNetworkParentActor();
+      
+      
+      
+      const saveBodies =
+        !this.isBrowserConsole &&
+        Services.prefs.getBoolPref(
+          "devtools.netmonitor.saveRequestAndResponseBodies"
+        );
+      await networkFront.setSaveRequestAndResponseBodies(saveBodies);
+    }
   }
 
   handleDocumentEvent(resource) {

@@ -54,12 +54,26 @@ class WebConsoleConnectionProxy {
 
       
       
-      const saveBodies =
-        !this.webConsoleUI.isBrowserConsole &&
-        Services.prefs.getBoolPref(
-          "devtools.netmonitor.saveRequestAndResponseBodies"
-        );
-      await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
+      
+      
+      
+      const { targetCommand, resourceCommand } = this.webConsoleUI.hud.commands;
+      const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
+        resourceCommand.TYPES.NETWORK_EVENT
+      );
+      const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport(
+        "saveRequestAndResponseBodies"
+      );
+      if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
+        
+        
+        const saveBodies =
+          !this.webConsoleUI.isBrowserConsole &&
+          Services.prefs.getBoolPref(
+            "devtools.netmonitor.saveRequestAndResponseBodies"
+          );
+        await this.setSaveRequestAndResponseBodies(saveBodies);
+      }
 
       this._addWebConsoleFrontEventListeners();
     })();
@@ -87,6 +101,27 @@ class WebConsoleConnectionProxy {
 
   getConnectionPromise() {
     return this._connecter;
+  }
+
+  
+
+
+
+
+
+  async setSaveRequestAndResponseBodies(value) {
+    if (!this.webConsoleFront) {
+      
+      return null;
+    }
+
+    const newValue = !!value;
+    const toSet = {
+      "NetworkMonitor.saveRequestAndResponseBodies": newValue,
+    };
+
+    
+    return this.webConsoleFront.setPreferences(toSet);
   }
 
   

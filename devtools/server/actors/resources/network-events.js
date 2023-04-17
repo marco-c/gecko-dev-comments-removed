@@ -82,6 +82,14 @@ class NetworkEventWatcher {
 
 
 
+  setSaveRequestAndResponseBodies(save) {
+    this.listener.saveRequestAndResponseBodies = save;
+  }
+
+  
+
+
+
   blockRequest(filters) {
     this.listener.blockRequest(filters);
   }

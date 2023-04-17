@@ -7,6 +7,7 @@ const TEST_FILE = "test-network-request.html";
 const TEST_PATH =
   "https://example.com/browser/devtools/client/webconsole/test/browser/";
 const TEST_URI = TEST_PATH + TEST_FILE;
+const XHR_URL = TEST_PATH + "sjs_slow-response-test-server.sjs";
 
 requestLongerTimeout(2);
 
@@ -27,15 +28,58 @@ pushPref("devtools.webconsole.filter.netxhr", true);
 add_task(async function task() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
-  const currentTab = gBrowser.selectedTab;
+  const messageNode = await doXhrAndExpand(hud);
+
+  await testNetworkMessage(hud.toolbox, messageNode);
+
+  await closeToolbox();
+});
+
+add_task(async function task() {
+  info(
+    "Verify that devtools.netmonitor.saveRequestAndResponseBodies=false disable response content collection"
+  );
+  await pushPref("devtools.netmonitor.saveRequestAndResponseBodies", false);
+  const hud = await openNewTabAndConsole(TEST_URI);
+
+  const messageNode = await doXhrAndExpand(hud);
+
+  const responseTab = messageNode.querySelector("#response-tab");
+  ok(responseTab, "Response tab is available");
+
+  const { TEST_EVENTS } = require("devtools/client/netmonitor/src/constants");
+  const onResponseContent = hud.ui.once(TEST_EVENTS.RECEIVED_RESPONSE_CONTENT);
+  
+  responseTab.click();
 
   
   
   
-  const toolbox = await gDevTools.getToolboxForTab(currentTab);
+  info("Wait for the async getResponseContent request");
+  await onResponseContent;
+  const responsePanel = messageNode.querySelector("#response-panel");
 
-  const xhrUrl = TEST_PATH + "sjs_slow-response-test-server.sjs";
-  const onMessage = waitForMessage(hud, xhrUrl);
+  
+  
+  info("Wait for the empty response content");
+  ok(
+    responsePanel.querySelector("div.empty-notice"),
+    "An empty notice is displayed instead of the response content"
+  );
+  const responseContent = messageNode.querySelector(
+    "#response-panel .editor-row-container .CodeMirror"
+  );
+  ok(!responseContent, "Response content is really not displayed");
+
+  await waitForLazyRequests(hud.toolbox);
+  await closeToolbox();
+});
+
+async function doXhrAndExpand(hud) {
+  
+  
+  
+  const onMessage = waitForMessage(hud, XHR_URL);
   const onRequestUpdates = waitForRequestUpdates(hud);
   const onPayloadReady = waitForPayloadReady(hud);
 
@@ -56,8 +100,9 @@ add_task(async function task() {
   ok(!toggleButtonNode, "Sidebar toggle button shouldn't be shown");
 
   await onPayloadReady;
-  await testNetworkMessage(toolbox, messageNode);
-});
+
+  return messageNode;
+}
 
 
 
