@@ -325,6 +325,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void SetTouchEventsOverride(dom::TouchEventsOverride, ErrorResult& aRv);
 
+  bool IsReplaced() const { return mIsReplaced; }
+
  protected:
   
   void CanonicalDiscard();
@@ -478,6 +480,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool mPriorityActive = false;
 
   nsCOMPtr<nsITimer> mSessionStoreSessionStorageUpdateTimer;
+
+  bool mIsReplaced = false;
 };
 
 }  

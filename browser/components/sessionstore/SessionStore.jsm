@@ -1336,15 +1336,7 @@ var SessionStoreInternal = {
       return;
     }
 
-    
-    
-    
-    
-    
-    if (
-      aBrowser.browsingContext &&
-      aBrowser.browsingContext.top != aBrowsingContext.top
-    ) {
+    if (aBrowsingContext.isReplaced) {
       return;
     }
 
