@@ -250,7 +250,7 @@ KeyBinding LocalAccessible::AccessKey() const {
   }
 
   
-  dom::Document* document = mContent->GetUncomposedDoc();
+  dom::Document* document = mContent->GetComposedDoc();
   if (!document) return KeyBinding();
 
   nsCOMPtr<nsIDocShellTreeItem> treeItem(document->GetDocShell());
