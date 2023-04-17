@@ -7879,7 +7879,6 @@ void CodeGenerator::visitGetNextEntryForIterator(
 
 
 
-
 void CodeGenerator::visitWasmRegisterPairResult(LWasmRegisterPairResult* lir) {}
 void CodeGenerator::visitWasmStackResult(LWasmStackResult* lir) {}
 void CodeGenerator::visitWasmStackResult64(LWasmStackResult64* lir) {}
@@ -7899,6 +7898,16 @@ void CodeGenerator::visitWasmStackResultArea(LWasmStackResultArea* lir) {
       masm.storePtr(temp, ToAddress(iter.alloc()));
     }
   }
+}
+
+void CodeGenerator::visitWasmRegisterResult(LWasmRegisterResult* lir) {
+#ifdef JS_64BIT
+  if (MWasmRegisterResult* mir = lir->mir()) {
+    if (mir->type() == MIRType::Int32) {
+      masm.widenInt32(ToRegister(lir->output()));
+    }
+  }
+#endif
 }
 
 void CodeGenerator::visitWasmCall(LWasmCall* lir) {

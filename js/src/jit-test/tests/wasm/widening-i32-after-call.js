@@ -3,6 +3,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 var ins = wasmEvalText(`
 (module
   (import "" "wasm2import" (func $g (result i32)))

@@ -3820,6 +3820,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  
+  
+  
+  
+  
+  
+  void widenInt32(Register r) DEFINED_ON(arm64, x64, mips64);
+
+  
+  
   void enterFakeExitFrameForWasm(Register cxreg, Register scratch,
                                  ExitFrameType type) PER_SHARED_ARCH;
 

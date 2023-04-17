@@ -1424,7 +1424,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     masm.assertStackAlignment(ABIStackAlignment);
 
     
-    
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
                       &rejoinBeforeCall);
   }
@@ -1632,10 +1631,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
       case wasm::ValType::I32:
         
         GenPrintIsize(DebugChannel::Function, masm, ReturnReg);
-#if defined(JS_CODEGEN_X64)
-        if (JitOptions.spectreIndexMasking) {
-          masm.movl(ReturnReg, ReturnReg);
-        }
+#ifdef JS_64BIT
+        masm.widenInt32(ReturnReg);
 #endif
         break;
       case wasm::ValType::I64:
@@ -2140,7 +2137,6 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
     switch (registerResultType.kind()) {
       case ValType::I32:
         masm.load32(argv, ReturnReg);
-        
         
         GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; returns ",
                   funcImportIndex);
