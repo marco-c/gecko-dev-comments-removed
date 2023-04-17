@@ -4984,6 +4984,30 @@ bool nsDisplayOpacity::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
+  
+  
+  
+  
+  Maybe<AutoDisplayItemCacheSuppressor> cacheSuppressor;
+  if (!IsReused()) {
+    cacheSuppressor.emplace(aBuilder.GetDisplayItemCache());
+  }
+
+  if (CanApplyOpacityToChildren(aManager->LayerManager(), aDisplayListBuilder,
+                                aBuilder.GetInheritedOpacity())) {
+    
+    
+    
+    float oldOpacity = aBuilder.GetInheritedOpacity();
+    aBuilder.SetInheritedOpacity(oldOpacity * mOpacity);
+
+    aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
+        &mList, this, aDisplayListBuilder, aSc, aBuilder, aResources, false);
+
+    aBuilder.SetInheritedOpacity(oldOpacity);
+    return true;
+  }
+
   MOZ_ASSERT(mChildOpacityState != ChildOpacityState::Applied);
   float oldOpacity = aBuilder.GetInheritedOpacity();
   aBuilder.SetInheritedOpacity(1.0f);
