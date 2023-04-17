@@ -136,12 +136,6 @@ add_task(async function test_open_managedbookmark() {
 
   let openInNewTabOption = document.getElementById("placesContext_open:newtab");
   context.activateItem(openInNewTabOption);
-  if (Services.prefs.getBoolPref("widget.macos.native-context-menus", false)) {
-    
-    
-    
-    managedBookmarksMenu.open = false;
-  }
   info("Click open in new tab");
 
   let lastOpenedTab = await tabCreatedPromise;
@@ -188,12 +182,6 @@ add_task(async function test_copy_managedbookmark() {
       "https://example.com/",
       () => {
         context.activateItem(copyOption);
-        if (
-          Services.prefs.getBoolPref("widget.macos.native-context-menus", false)
-        ) {
-          
-          managedBookmarksMenu.open = false;
-        }
       },
       resolve,
       () => {

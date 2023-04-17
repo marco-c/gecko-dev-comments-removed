@@ -898,6 +898,11 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   
+  mozilla::Maybe<CloseMenuMode> mNativeMenuActivatedItemCloseMenuMode;
+
+  
+  
+  
   
   
   
