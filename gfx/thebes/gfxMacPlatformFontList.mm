@@ -1384,7 +1384,12 @@ gfxFontEntry* gfxMacPlatformFontList::PlatformGlobalFontFallback(const uint32_t 
             }
           }
         }
-      } else {
+      }
+
+      
+      
+      
+      if (!fontEntry) {
         gfxFontFamily* family = FindSystemFontFamily(familyNameString);
         if (family) {
           fontEntry = family->FindFontForStyle(*aMatchStyle);
