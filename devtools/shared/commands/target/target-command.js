@@ -701,15 +701,7 @@ class TargetCommand extends EventEmitter {
       dump(" target reload exception: " + e + " >>> " + e.message + " <<<\n");
       
       
-      
-      
-      
-      
-      const shouldSwallowReloadError =
-        targetFront.getTrait("supportsFollowWindowGlobalLifeCycleFlag") &&
-        targetFront.targetForm.followWindowGlobalLifeCycle;
-
-      if (!shouldSwallowReloadError) {
+      if (!targetFront.targetForm.followWindowGlobalLifeCycle) {
         throw e;
       }
     }

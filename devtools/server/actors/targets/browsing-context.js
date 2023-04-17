@@ -565,9 +565,6 @@ const browsingContextTargetPrototype = {
         
         
         supportsTopLevelTargetFlag: true,
-        
-        
-        supportsFollowWindowGlobalLifeCycleFlag: true,
       },
     };
 
