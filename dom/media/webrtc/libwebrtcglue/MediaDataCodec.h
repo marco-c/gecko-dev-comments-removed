@@ -17,7 +17,8 @@ class MediaDataCodec {
 
 
 
-  static WebrtcVideoEncoder* CreateEncoder(webrtc::VideoCodecType aCodecType);
+  static WebrtcVideoEncoder* CreateEncoder(
+      const webrtc::SdpVideoFormat& aFormat);
 
   
 
