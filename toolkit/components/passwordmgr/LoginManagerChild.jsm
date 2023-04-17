@@ -1156,6 +1156,12 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         formlessModifiedPasswordFields: new WeakFieldSet(),
+
+        
+
+
+        cachedIsInferredUsernameField: new WeakMap(),
+        cachedIsInferredEmailField: new WeakMap(),
       };
       this._loginFormStateByDocument.set(document, loginFormState);
     }
@@ -1549,6 +1555,12 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       
       
       
+      
+      
+      
+      
+      
+      
 
       for (let i = pwFields[0].index - 1; i >= 0; i--) {
         let element = form.elements[i];
@@ -1564,8 +1576,23 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
           continue;
         }
 
-        usernameField = element;
-        break;
+        
+        
+        if (!usernameField) {
+          usernameField = element;
+        }
+
+        if (this.isProbablyAnUsernameField(element)) {
+          
+          usernameField = element;
+          break;
+        } else if (this.isProbablyAnEmailField(element)) {
+          
+          
+          
+          
+          usernameField = element;
+        }
       }
     }
 
@@ -2857,5 +2884,43 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
           (newPasswordField.disabled || newPasswordField.readOnly),
       },
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+  isProbablyAnUsernameField(inputElement) {
+    let docState = this.stateForDocument(inputElement.ownerDocument);
+    let result = docState.cachedIsInferredUsernameField.get(inputElement);
+    if (result === undefined) {
+      result = LoginHelper.isInferredUsernameField(inputElement);
+      docState.cachedIsInferredUsernameField.set(inputElement, result);
+    }
+
+    return result;
+  }
+
+  
+
+
+
+
+
+
+  isProbablyAnEmailField(inputElement) {
+    let docState = this.stateForDocument(inputElement.ownerDocument);
+    let result = docState.cachedIsInferredEmailField.get(inputElement);
+    if (result === undefined) {
+      result = LoginHelper.isInferredEmailField(inputElement);
+      docState.cachedIsInferredEmailField.set(inputElement, result);
+    }
+
+    return result;
   }
 };

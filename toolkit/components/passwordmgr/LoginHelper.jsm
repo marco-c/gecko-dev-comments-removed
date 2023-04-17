@@ -1330,6 +1330,99 @@ this.LoginHelper = {
 
 
 
+
+
+  isInferredUsernameField(element) {
+    const expr = /username/i;
+
+    let ac = element.getAutocompleteInfo()?.fieldName;
+    if (ac && ac == "username") {
+      return true;
+    }
+
+    if (
+      this._elementAttrsMatchRegex(element, expr) ||
+      this._hasLabelMatchingRegex(element, expr)
+    ) {
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+  isInferredEmailField(element) {
+    const expr = /email/i;
+
+    if (element.type == "email") {
+      return true;
+    }
+
+    let ac = element.getAutocompleteInfo()?.fieldName;
+    if (ac && ac == "email") {
+      return true;
+    }
+
+    if (
+      this._elementAttrsMatchRegex(element, expr) ||
+      this._hasLabelMatchingRegex(element, expr)
+    ) {
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+  _elementAttrsMatchRegex(element, regex) {
+    if (
+      regex.test(element.id) ||
+      regex.test(element.name) ||
+      regex.test(element.className)
+    ) {
+      return true;
+    }
+
+    let placeholder = element.getAttribute("placeholder");
+    if (placeholder && regex.test(placeholder)) {
+      return true;
+    }
+    return false;
+  },
+
+  
+
+
+
+
+  _hasLabelMatchingRegex(element, regex) {
+    if (element.labels !== null && element.labels.length) {
+      if (regex.test(element.labels[0].textContent)) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
   async maybeImportLogins(loginDatas) {
     const processor = new ImportRowProcessor();
     for (let rawLoginData of loginDatas) {
