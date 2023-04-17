@@ -2615,7 +2615,12 @@ impl Device {
     
     pub fn invalidate_depth_target(&mut self) {
         assert!(self.depth_available);
-        self.gl.invalidate_framebuffer(gl::DRAW_FRAMEBUFFER, &[gl::DEPTH_ATTACHMENT]);
+        let attachments = if self.bound_draw_fbo == self.default_draw_fbo {
+            &[gl::DEPTH] as &[gl::GLenum]
+        } else {
+            &[gl::DEPTH_ATTACHMENT] as &[gl::GLenum]
+        };
+        self.gl.invalidate_framebuffer(gl::DRAW_FRAMEBUFFER, attachments);
     }
 
     
