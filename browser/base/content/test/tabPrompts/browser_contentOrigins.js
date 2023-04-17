@@ -118,15 +118,6 @@ async function checkDialog(
     }
 
     
-    
-    await (async function() {
-      let rAFCount = 3;
-      while (rAFCount--) {
-        await new Promise(requestAnimationFrame);
-      }
-    })();
-
-    
     await PromptTestUtils.handlePrompt(dialog);
     
     
