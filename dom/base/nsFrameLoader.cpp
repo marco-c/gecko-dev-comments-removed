@@ -3267,15 +3267,15 @@ void nsFrameLoader::RequestEpochUpdate(uint32_t aEpoch) {
   }
 }
 
-void nsFrameLoader::RequestSHistoryUpdate(bool aImmediately) {
+void nsFrameLoader::RequestSHistoryUpdate() {
   if (mSessionStoreListener) {
-    mSessionStoreListener->UpdateSHistoryChanges(aImmediately);
+    mSessionStoreListener->UpdateSHistoryChanges();
     return;
   }
 
   
   if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendUpdateSHistory(aImmediately);
+    Unused << browserParent->SendUpdateSHistory();
   }
 }
 
