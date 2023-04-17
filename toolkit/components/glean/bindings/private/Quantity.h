@@ -41,8 +41,7 @@ class QuantityMetric {
 
 
 
-  Result<Maybe<int64_t>, nsCString> TestGetValue(
-      const nsACString& aPingName = nsCString()) const;
+  Maybe<int64_t> TestGetValue(const nsACString& aPingName = nsCString()) const;
 
  private:
   const uint32_t mId;

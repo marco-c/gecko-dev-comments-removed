@@ -8,7 +8,6 @@
 #define mozilla_glean_GleanString_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 
@@ -47,7 +46,7 @@ class StringMetric {
 
 
 
-  Result<Maybe<nsCString>, nsCString> TestGetValue(
+  Maybe<nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:
