@@ -1,3 +1,0 @@
-
-
-pub type LPUINT = *mut ::c_uint;
