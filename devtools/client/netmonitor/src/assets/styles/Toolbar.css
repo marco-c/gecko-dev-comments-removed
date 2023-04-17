@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Toolbar */
 
 .devtools-toolbar {
   display: flex;
@@ -10,7 +10,7 @@
 }
 
 #netmonitor-toolbar-container > .devtools-toolbar {
-  
+  /* @TODO: Remove this in bug 1535956 */
   min-height: var(--primary-toolbar-height);
 }
 
@@ -32,13 +32,13 @@
   background-image: url("chrome://devtools/content/netmonitor/src/assets/icons/play.svg");
 }
 
-
+/* Search button */
 .devtools-button.devtools-search-icon::before {
   background-image: url("chrome://devtools/skin/images/search.svg");
   background-size: 13px;
 }
 
-
+/* Request blocking button */
 .devtools-button.requests-list-blocking-button::before {
   background-image: url("chrome://devtools/skin/images/blocked.svg");
 }
@@ -59,7 +59,7 @@
   fill: var(--timing-blocked-color);
 }
 
-
+/* Throttling Button */
 
 #network-throttling-menu {
   margin-inline-start: 10px;
@@ -72,6 +72,11 @@
   bottom: 1px;
 }
 
+#devtools-cache-checkbox {
+  vertical-align: unset;
+  bottom: -1px;
+}
+
 .devtools-toolbar .devtools-checkbox-label {
   margin-inline-start: 2px;
   margin-inline-end: 2px;
@@ -82,8 +87,8 @@
   margin-inline-end: 7px;
 }
 
-
-
+/* Hide filter input learn more link if there is not enough
+   horizontal space. */
 @media (max-width: 590px) {
   .network-monitor .devtools-searchbox .learn-more-link {
     display: none;
