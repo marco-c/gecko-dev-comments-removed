@@ -2516,6 +2516,12 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   
   
   
+  ::mozilla::ipc::ExportSharedJSInit(*mSubprocess, extraArgs);
+
+  
+  
+  
+  
   Preferences::AddStrongObserver(this, "");
 
   if (gSafeMode) {

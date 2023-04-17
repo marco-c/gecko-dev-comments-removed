@@ -76,6 +76,15 @@ void SetPrefsFd(int aFd);
 void SetPrefMapFd(int aFd);
 #endif
 
+
+
+void ExportSharedJSInit(GeckoChildProcessHost& procHost,
+                        std::vector<std::string>& aExtraOpts);
+
+
+
+bool ImportSharedJSInit(char* aJsInitHandleStr, char* aJsInitLenStr);
+
 }  
 }  
 
