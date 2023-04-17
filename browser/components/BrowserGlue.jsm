@@ -338,10 +338,6 @@ let JSWINDOWACTORS = {
         
         
         DOMDocElementInserted: {},
-        
-        
-        
-        DOMWindowCreated: {},
       },
     },
     matches: ["about:welcome"],
