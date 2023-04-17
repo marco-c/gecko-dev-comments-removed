@@ -709,6 +709,15 @@ module.exports = {
   
 
 
+  getIsSjs(scope) {
+    let filepath = this.cleanUpPath(scope.getFilename());
+
+    return path.extname(filepath) == ".sjs";
+  },
+
+  
+
+
 
 
 
