@@ -119,23 +119,32 @@ var gConnectionsDialog = {
     let dnsOverHttpsResolverChoice = document.getElementById(
       "networkDnsOverHttpsResolverChoices"
     ).value;
+    let writeURIandMode = uri => {
+      Services.prefs.setStringPref("network.trr.uri", uri);
+      
+      
+      
+      
+      Services.prefs.setIntPref(
+        "network.trr.mode",
+        this.writeDnsOverHttpsMode()
+      );
+    };
+    
+    
+    
+    
     if (dnsOverHttpsResolverChoice == "custom") {
       let customValue = document
         .getElementById("networkCustomDnsOverHttpsInput")
         .value.trim();
       if (customValue) {
-        Services.prefs.setStringPref("network.trr.uri", customValue);
+        writeURIandMode(customValue);
       } else {
-        Services.prefs.setStringPref(
-          "network.trr.uri",
-          DoHConfigController.currentConfig.fallbackProviderURI
-        );
+        writeURIandMode(DoHConfigController.currentConfig.fallbackProviderURI);
       }
-    } else if (this.isDnsOverHttpsEnabled()) {
-      Services.prefs.setStringPref(
-        "network.trr.uri",
-        dnsOverHttpsResolverChoice
-      );
+    } else {
+      writeURIandMode(dnsOverHttpsResolverChoice);
     }
 
     var proxyTypePref = Preferences.get("network.proxy.type");
