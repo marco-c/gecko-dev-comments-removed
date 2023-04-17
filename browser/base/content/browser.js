@@ -4985,6 +4985,12 @@ var XULBrowserWindow = {
       document.getElementById("View:PageSource"),
     ]);
   },
+  get _menuItemForRepairTextEncoding() {
+    delete this._menuItemForRepairTextEncoding;
+    return (this._menuItemForRepairTextEncoding = document.getElementById(
+      "repair-text-encoding"
+    ));
+  },
 
   setDefaultStatus(status) {
     this.defaultStatus = status;
@@ -5133,6 +5139,18 @@ var XULBrowserWindow = {
         }
 
         this._updateElementsForContentType();
+
+        
+        
+        
+        let button = document.getElementById("characterencoding-button");
+        if (browser.mayEnableCharacterEncodingMenu) {
+          this._menuItemForRepairTextEncoding.removeAttribute("disabled");
+          button?.removeAttribute("disabled");
+        } else {
+          this._menuItemForRepairTextEncoding.setAttribute("disabled", "true");
+          button?.setAttribute("disabled", "true");
+        }
       }
 
       this.isBusy = false;
@@ -5249,6 +5267,15 @@ var XULBrowserWindow = {
     gTabletModePageCounter.inc();
 
     this._updateElementsForContentType();
+
+    
+    
+    
+    
+    
+    let button = document.getElementById("characterencoding-button");
+    this._menuItemForRepairTextEncoding.setAttribute("disabled", "true");
+    button?.setAttribute("disabled", "true");
 
     
     
