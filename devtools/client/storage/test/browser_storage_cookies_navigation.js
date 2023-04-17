@@ -5,8 +5,6 @@
 
 "use strict";
 
-const TARGET_SWITCHING_PREF = "devtools.target-switching.server.enabled";
-
 
 add_task(async function() {
   await testNavigation();
@@ -14,7 +12,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await pushPref(TARGET_SWITCHING_PREF, true);
+  enableTargetSwitching();
   await testNavigation();
 });
 
@@ -25,7 +23,13 @@ async function testNavigation() {
   );
   const URL2 = buildURLWithContent(
     "example.net",
-    `<h1>example.net</h1>` + `<script>document.cookie = "foo=bar";</script>`
+    `<h1>example.net</h1>` +
+      `<iframe></iframe>` +
+      `<script>document.cookie = "foo=bar";</script>`
+  );
+  const URL_IFRAME = buildURLWithContent(
+    "example.org",
+    `<h1>example.org</h1>` + `<script>document.cookie = "hello=world";</script>`
   );
 
   
@@ -69,4 +73,23 @@ async function testNavigation() {
   await selectTreeItem(["cookies", "http://example.net"]);
   info("Waiting for table data to update and show correct values");
   await waitUntil(() => hasCookieData("foo", "bar"));
+
+  
+  const onStorageTreeUpdated = gUI.once("store-objects-edit");
+  await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [URL_IFRAME],
+    async function(url) {
+      const iframe = content.document.querySelector("iframe");
+      iframe.src = url;
+    }
+  );
+  info("Waiting for storage tree to update");
+  await onStorageTreeUpdated;
+
+  info("Waiting for storage tree to refresh and show correct host…");
+  await waitUntil(() => isInTree(doc, ["cookies", "http://example.org"]));
+  info("Checking cookie data");
+  await selectTreeItem(["cookies", "http://example.org"]);
+  checkCookieData("hello", "world");
 }

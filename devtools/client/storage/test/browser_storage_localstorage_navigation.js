@@ -6,7 +6,18 @@
 
 "use strict";
 
+
 add_task(async function() {
+  await testNavigation();
+});
+
+
+add_task(async function() {
+  enableTargetSwitching();
+  await testNavigation();
+});
+
+async function testNavigation() {
   const URL1 = buildURLWithContent(
     "example.com",
     `<h1>example.com</h1>` +
@@ -41,7 +52,13 @@ add_task(async function() {
   
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["localStorage", "http://example.net"]));
+
+  
+  await refreshTab();
+  
+  info("Waiting for storage tree to refresh and show correct host…");
+  await waitUntil(() => isInTree(doc, ["localStorage", "http://example.net"]));
   
   await selectTreeItem(["localStorage", "http://example.net"]);
   checkStorageData("foo", "bar");
-});
+}
