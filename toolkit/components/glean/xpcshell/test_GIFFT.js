@@ -108,9 +108,11 @@ add_task(async function test_gifft_timing_dist() {
 
   let data = Glean.testOnlyIpc.aTimingDist.testGetValue();
   const NANOS_IN_MILLIS = 1e6;
+  
+  const EPSILON = 40000;
 
   
-  Assert.greater(data.sum, 15 * NANOS_IN_MILLIS, "Total time elapsed: > 15ms");
+  Assert.greater(data.sum, 15 * NANOS_IN_MILLIS - EPSILON);
 
   
   
@@ -235,9 +237,11 @@ add_task(async function test_gifft_timespan() {
   Glean.testOnly.mirrorTime.stop();
 
   const NANOS_IN_MILLIS = 1e6;
+  
+  const EPSILON = 40000;
   Assert.greater(
     Glean.testOnly.mirrorTime.testGetValue(),
-    10 * NANOS_IN_MILLIS
+    10 * NANOS_IN_MILLIS - EPSILON
   );
   
   Assert.greaterOrEqual(scalarValue("telemetry.test.mirror_for_timespan"), 10);

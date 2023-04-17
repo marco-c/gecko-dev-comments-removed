@@ -170,6 +170,7 @@ add_task(
 
 
 
+
     const mabelsCounters = Glean.testOnly.mabelsKitchenCounters;
     Assert.equal(
       mabelsCounters.near_the_sink.testGetValue(),
