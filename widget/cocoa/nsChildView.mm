@@ -3106,8 +3106,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   geckoEvent.mButton = MouseButton::eSecondary;
   geckoEvent.mClickCount = [theEvent clickCount];
 
-  nsIWidget::ContentAndAPZEventStatus eventStatus
-      = mGeckoChild->DispatchInputEvent(&geckoEvent);
+  nsIWidget::ContentAndAPZEventStatus eventStatus = mGeckoChild->DispatchInputEvent(&geckoEvent);
   if (!mGeckoChild) return;
 
   if (!StaticPrefs::ui_context_menus_after_mouseup() &&
@@ -3133,8 +3132,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   geckoEvent.mClickCount = [theEvent clickCount];
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
-  nsIWidget::ContentAndAPZEventStatus eventStatus
-      = mGeckoChild->DispatchInputEvent(&geckoEvent);
+  nsIWidget::ContentAndAPZEventStatus eventStatus = mGeckoChild->DispatchInputEvent(&geckoEvent);
   if (!mGeckoChild) return;
 
   if (StaticPrefs::ui_context_menus_after_mouseup() &&
@@ -3464,6 +3462,14 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   return nil;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
+- (void)willOpenMenu:(NSMenu*)aMenu withEvent:(NSEvent*)aEvent {
+  ChildViewMouseTracker::NativeMenuOpened();
+}
+
+- (void)didCloseMenu:(NSMenu*)aMenu withEvent:(NSEvent*)aEvent {
+  ChildViewMouseTracker::NativeMenuClosed();
 }
 
 - (void)convertCocoaMouseWheelEvent:(NSEvent*)aMouseEvent
@@ -4960,7 +4966,29 @@ void ChildViewMouseTracker::MouseEnteredWindow(NSEvent* aEvent) {
 void ChildViewMouseTracker::MouseExitedWindow(NSEvent* aEvent) {
   if (sWindowUnderMouse == [aEvent window]) {
     sWindowUnderMouse = nil;
+    [sLastMouseMoveEvent release];
+    sLastMouseMoveEvent = nil;
     ReEvaluateMouseEnterState(aEvent);
+  }
+}
+
+void ChildViewMouseTracker::NativeMenuOpened() {
+  
+  
+  
+  
+  sWindowUnderMouse = nil;
+  ReEvaluateMouseEnterState(nil);
+}
+
+void ChildViewMouseTracker::NativeMenuClosed() {
+  
+  
+  
+  
+  if (sLastMouseMoveEvent) {
+    sWindowUnderMouse = sLastMouseMoveEvent.window;
+    ReEvaluateMouseEnterState(sLastMouseMoveEvent);
   }
 }
 
