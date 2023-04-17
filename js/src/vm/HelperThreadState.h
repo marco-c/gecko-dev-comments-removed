@@ -99,8 +99,6 @@ class GlobalHelperThreadState {
   typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy>
       PromiseHelperTaskVector;
   typedef Vector<JSContext*, 0, SystemAllocPolicy> ContextVector;
-  using HelperThreadVector =
-      Vector<UniquePtr<HelperThread>, 0, SystemAllocPolicy>;
 
   
   mozilla::EnumeratedArray<ThreadType, ThreadType::THREAD_TYPE_MAX, size_t>
@@ -112,9 +110,6 @@ class GlobalHelperThreadState {
 
  private:
   
-
-  
-  HelperThreadVector threads_;
 
   
   IonCompileTaskVector ionWorklist_, ionFinishedList_;
@@ -197,7 +192,7 @@ class GlobalHelperThreadState {
 
   [[nodiscard]] bool ensureInitialized();
   [[nodiscard]] bool ensureThreadCount(size_t count,
-                                       const AutoLockHelperThreadState& lock);
+                                       AutoLockHelperThreadState& lock);
   void finish(AutoLockHelperThreadState& lock);
   void finishThreads(AutoLockHelperThreadState& lock);
 
@@ -240,14 +235,6 @@ class GlobalHelperThreadState {
   }
 
  private:
-  HelperThreadVector& threads(const AutoLockHelperThreadState& lock) {
-    return threads_;
-  }
-  const HelperThreadVector& threads(
-      const AutoLockHelperThreadState& lock) const {
-    return threads_;
-  }
-
   void notifyOne(CondVar which, const AutoLockHelperThreadState&);
 
  public:
@@ -487,43 +474,6 @@ static inline GlobalHelperThreadState& HelperThreadState() {
   MOZ_ASSERT(gHelperThreadState);
   return *gHelperThreadState;
 }
-
-
-class HelperThread {
-  Thread thread;
-
-  
-
-
-
-
-
-  ProfilingStack* profilingStack = nullptr;
-
- public:
-  HelperThread();
-  [[nodiscard]] bool init();
-
-  ThreadId threadId() { return thread.get_id(); }
-
-  void join();
-
-  static void ThreadMain(void* arg);
-  void threadLoop();
-
-  void ensureRegisteredWithProfiler();
-  void unregisterWithProfilerIfNeeded();
-
- private:
-  struct AutoProfilerLabel {
-    AutoProfilerLabel(HelperThread* helperThread, const char* label,
-                      JS::ProfilingCategoryPair categoryPair);
-    ~AutoProfilerLabel();
-
-   private:
-    ProfilingStack* profilingStack;
-  };
-};
 
 class MOZ_RAII AutoSetHelperThreadContext {
   JSContext* cx;
