@@ -22,22 +22,22 @@ function withLocale(locale, fn) {
 }
 
 
-const supported = Intl.Collator.supportedLocalesOf("de");
+const supported = Intl.Collator.supportedLocalesOf("az");
 assertEq(supported.length, 1);
-assertEq(supported[0], "de");
+assertEq(supported[0], "az");
 
-withLocale("de", () => {
+withLocale("az", () => {
     
-    assertEq(new Intl.Collator().resolvedOptions().locale, "de");
-
-    
-    assertEq(new Intl.Collator("de").resolvedOptions().locale, "de");
+    assertEq(new Intl.Collator().resolvedOptions().locale, "az");
 
     
-    assertEq(new Intl.Collator("de-ZA").resolvedOptions().locale, "de");
+    assertEq(new Intl.Collator("az").resolvedOptions().locale, "az");
 
     
-    assertEq(new Intl.Collator("de-ZA-x-private").resolvedOptions().locale, "de");
+    assertEq(new Intl.Collator("az-Cyrl").resolvedOptions().locale, "az");
+
+    
+    assertEq(new Intl.Collator("az-Cyrl-AZ").resolvedOptions().locale, "az");
 });
 
 
@@ -86,21 +86,21 @@ withLocale("de", () => {
 
 
 
-withLocale("de-ZA-x-private", () => {
+withLocale("az-Cyrl-AZ", () => {
     
-    assertEq(new Intl.Collator().resolvedOptions().locale, "de-ZA-x-private");
+    assertEq(new Intl.Collator().resolvedOptions().locale, "az-Cyrl-AZ");
 
     
     
-    assertEq(new Intl.Collator("de").resolvedOptions().locale, "de");
+    assertEq(new Intl.Collator("az").resolvedOptions().locale, "az");
 
     
     
-    assertEq(new Intl.Collator("de-ZA").resolvedOptions().locale, "de-ZA");
+    assertEq(new Intl.Collator("az-Cyrl").resolvedOptions().locale, "az-Cyrl");
 
     
     
-    assertEq(new Intl.Collator("de-ZA-x-private").resolvedOptions().locale, "de-ZA-x-private");
+    assertEq(new Intl.Collator("az-Cyrl-AZ").resolvedOptions().locale, "az-Cyrl-AZ");
 });
 
 if (typeof reportCompare === "function")

@@ -514,10 +514,26 @@ bool js::intl_GetLocaleInfo(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool SameOrParentLocale(JSLinearString* locale,
+                               JSLinearString* otherLocale) {
+  
+  if (locale->length() == otherLocale->length()) {
+    return EqualStrings(locale, otherLocale);
+  }
+
+  
+  if (locale->length() < otherLocale->length()) {
+    return HasSubstringAt(otherLocale, locale, 0) &&
+           otherLocale->latin1OrTwoByteChar(locale->length()) == '-';
+  }
+
+  return false;
+}
+
 using SupportedLocaleKind = js::intl::SharedIntlData::SupportedLocaleKind;
 
 
-static JS::Result<JSString*> BestAvailableLocale(
+static JS::Result<JSLinearString*> BestAvailableLocale(
     JSContext* cx, SupportedLocaleKind kind, HandleLinearString locale,
     HandleLinearString defaultLocale) {
   
@@ -563,16 +579,8 @@ static JS::Result<JSString*> BestAvailableLocale(
       return candidate.get();
     }
 
-    if (defaultLocale && candidate->length() <= defaultLocale->length()) {
-      if (EqualStrings(candidate, defaultLocale)) {
-        return candidate.get();
-      }
-
-      if (candidate->length() < defaultLocale->length() &&
-          HasSubstringAt(defaultLocale, candidate, 0) &&
-          defaultLocale->latin1OrTwoByteChar(candidate->length()) == '-') {
-        return candidate.get();
-      }
+    if (defaultLocale && SameOrParentLocale(candidate, defaultLocale)) {
+      return candidate.get();
     }
 
     
@@ -753,28 +761,52 @@ bool js::intl_supportedLocaleOrFallback(JSContext* cx, unsigned argc,
   
   
   
+
+  RootedLinearString supportedCollator(cx);
+  JS_TRY_VAR_OR_RETURN_FALSE(
+      cx, supportedCollator,
+      BestAvailableLocale(cx, SupportedLocaleKind::Collator, candidate,
+                          nullptr));
+
+  RootedLinearString supportedDateTimeFormat(cx);
+  JS_TRY_VAR_OR_RETURN_FALSE(
+      cx, supportedDateTimeFormat,
+      BestAvailableLocale(cx, SupportedLocaleKind::DateTimeFormat, candidate,
+                          nullptr));
+
+#ifdef DEBUG
   
   
   
-  
-  
-  
-  
-  bool isSupported = true;
   for (auto kind :
-       {SupportedLocaleKind::Collator, SupportedLocaleKind::DateTimeFormat,
-        SupportedLocaleKind::NumberFormat}) {
-    JSString* supported;
+       {SupportedLocaleKind::DisplayNames, SupportedLocaleKind::ListFormat,
+        SupportedLocaleKind::NumberFormat, SupportedLocaleKind::PluralRules,
+        SupportedLocaleKind::RelativeTimeFormat}) {
+    JSLinearString* supported;
     JS_TRY_VAR_OR_RETURN_FALSE(
         cx, supported, BestAvailableLocale(cx, kind, candidate, nullptr));
 
-    if (!supported) {
-      isSupported = false;
-      break;
-    }
+    MOZ_ASSERT(!!supported == !!supportedDateTimeFormat);
+    MOZ_ASSERT_IF(supported, EqualStrings(supported, supportedDateTimeFormat));
   }
+#endif
 
-  if (!isSupported) {
+  
+  
+  if (supportedCollator && supportedDateTimeFormat) {
+    
+    
+    
+    
+    
+    
+    
+    if (SameOrParentLocale(supportedCollator, supportedDateTimeFormat)) {
+      candidate = supportedDateTimeFormat;
+    } else {
+      candidate = supportedCollator;
+    }
+  } else {
     candidate = NewStringCopyZ<CanGC>(cx, intl::LastDitchLocale());
     if (!candidate) {
       return false;
