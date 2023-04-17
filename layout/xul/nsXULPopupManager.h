@@ -67,6 +67,7 @@ class PresShell;
 namespace dom {
 class Event;
 class KeyboardEvent;
+class UIEvent;
 }  
 }  
 
@@ -183,6 +184,36 @@ extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
   (DirectionFromKeyCodeTable[static_cast<uint8_t>( \
       (frame)->StyleVisibility()->mDirection)][(   \
       keycode)-mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
+
+
+struct PendingPopup {
+  MOZ_CAN_RUN_SCRIPT PendingPopup(nsIContent* aPopup,
+                                  mozilla::dom::Event* aEvent);
+
+  const nsCOMPtr<nsIContent> mPopup;
+  const RefPtr<mozilla::dom::Event> mEvent;
+
+  
+  
+  mozilla::LayoutDeviceIntPoint mMousePoint;
+
+  
+  mozilla::Modifiers mModifiers;
+
+  
+  nsCOMPtr<nsIContent> mRangeParentContent;
+  int32_t mRangeOffset;
+
+  already_AddRefed<nsIContent> GetTriggerContent() const;
+
+  MOZ_CAN_RUN_SCRIPT void InitMousePoint();
+
+  void SetMousePoint(mozilla::LayoutDeviceIntPoint aMousePoint) {
+    mMousePoint = aMousePoint;
+  }
+
+  uint16_t MouseInputSource() const;
+};
 
 
 
@@ -442,8 +473,12 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   
-  nsIContent* GetMouseLocationParent() const { return mRangeParentContent; }
-  int32_t MouseLocationOffset() const { return mRangeOffset; }
+  nsIContent* GetMouseLocationParent() const {
+    return mPendingPopup ? mPendingPopup->mRangeParentContent.get() : nullptr;
+  }
+  int32_t MouseLocationOffset() const {
+    return mPendingPopup ? mPendingPopup->mRangeOffset : -1;
+  }
 
   
 
@@ -746,12 +781,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   void HideOpenMenusBeforeExecutingMenu(CloseMenuMode aMode);
 
   
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void InitTriggerEvent(mozilla::dom::Event* aEvent, nsIContent* aPopup,
-                        nsIContent** aTriggerContent);
-
-  
   void ShowPopupCallback(nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame,
                          bool aIsContextMenu, bool aSelectFirstItem);
   void HidePopupCallback(nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame,
@@ -766,12 +795,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-
-
-
-  void BeginShowingPopup(nsIContent* aPopup, bool aIsContextMenu,
-                         bool aSelectFirstItem,
-                         mozilla::dom::Event* aTriggerEvent);
+  void BeginShowingPopup(const PendingPopup& aPendingPopup, bool aIsContextMenu,
+                         bool aSelectFirstItem);
 
   
 
@@ -826,9 +851,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
-  nsEventStatus FirePopupShowingEvent(nsIContent* aPopup,
-                                      nsPresContext* aPresContext,
-                                      mozilla::dom::Event* aTriggerEvent);
+  nsEventStatus FirePopupShowingEvent(const PendingPopup& aPendingPopup,
+                                      nsPresContext* aPresContext);
 
   
 
@@ -863,16 +887,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsCOMPtr<nsIWidget> mWidget;
 
   
-  nsCOMPtr<nsIContent> mRangeParentContent;
-  int32_t mRangeOffset;
-  
-  
-  mozilla::LayoutDeviceIntPoint mCachedMousePoint;
-
-  
-  mozilla::Modifiers mCachedModifiers;
-
-  
   nsMenuBarFrame* mActiveMenuBar;
 
   
@@ -885,8 +899,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsMenuPopupFrame* mTimerMenu;
 
   
-  
-  nsCOMPtr<nsIContent> mOpeningPopup;
+  const PendingPopup* mPendingPopup;
 
   
   
