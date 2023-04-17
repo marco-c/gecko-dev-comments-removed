@@ -49,36 +49,10 @@ packaging_description_schema = schema.extend(
         ),
         Optional("msix"): {
             Optional("channel"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("identity-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
+                "level", "build-platform", "release-type", "shipping-product", str
             ),
             Optional("publisher"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
-            ),
-            Optional("publisher-display-name"): optionally_keyed_by(
-                "package-format",
-                "level",
-                "build-platform",
-                "release-type",
-                "shipping-product",
-                str,
+                "level", "build-platform", "release-type", "shipping-product", str
             ),
         },
         
@@ -147,14 +121,10 @@ PACKAGE_FORMATS = {
             "msix",
             "--channel",
             "{msix-channel}",
-            "--publisher",
-            "{msix-publisher}",
-            "--publisher-display-name",
-            "{msix-publisher-display-name}",
-            "--identity-name",
-            "{msix-identity-name}",
             "--arch",
             "{architecture}",
+            "--publisher",
+            "{msix-publisher}",
             
             "--distribution-dir",
             "{fetch-dir}/distribution",
@@ -166,31 +136,6 @@ PACKAGE_FORMATS = {
             "input": "target{archive_format}",
         },
         "output": "target.installer.msix",
-    },
-    "msix-store": {
-        "args": [
-            "msix",
-            "--channel",
-            "{msix-channel}",
-            "--publisher",
-            "{msix-publisher}",
-            "--publisher-display-name",
-            "{msix-publisher-display-name}",
-            "--identity-name",
-            "{msix-identity-name}",
-            "--arch",
-            "{architecture}",
-            
-            "--distribution-dir",
-            "{fetch-dir}/distribution",
-            "--verbose",
-            "--makeappx",
-            "{fetch-dir}/msix-packaging/makemsix",
-        ],
-        "inputs": {
-            "input": "target{archive_format}",
-        },
-        "output": "target.store.msix",
     },
     "dmg": {
         "args": ["dmg"],
@@ -258,9 +203,7 @@ def handle_keyed_by(config, jobs):
         "mozharness.config",
         "package-formats",
         "msix.channel",
-        "msix.identity-name",
         "msix.publisher",
-        "msix.publisher-display-name",
     ]
     for job in jobs:
         job = copy.deepcopy(job)  
@@ -273,7 +216,6 @@ def handle_keyed_by(config, jobs):
                     "release-type": config.params["release_type"],
                     "level": config.params["level"],
                 },
-                defer=["package-format"],
             )
         yield job
 
@@ -412,27 +354,10 @@ def make_job_description(config, jobs):
             
             
             substs.update({name: f"{{{name}}}" for name in MOZHARNESS_EXPANSIONS})
-
-            
-            
-            temp_job = copy.deepcopy(job)
-            for msix_key in (
-                "channel",
-                "identity-name",
-                "publisher",
-                "publisher-display-name",
-            ):
-                resolve_keyed_by(
-                    item=temp_job,
-                    field=f"msix.{msix_key}",
-                    item_name="?",
-                    **{
-                        "package-format": format,
-                    },
-                )
-
+            for msix_key in ("channel", "publisher"):
                 
-                value = temp_job.get("msix", {}).get(msix_key)
+                
+                value = job.get("msix", {}).get(msix_key)
                 if value:
                     substs.update(
                         {f"msix-{msix_key}": value},
