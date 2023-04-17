@@ -738,7 +738,7 @@ class Raptor(
 
         
         self.device.shell_output("settings put global verifier_verify_adb_installs 0")
-        self.install_apk(chromeapk, replace=True)
+        self.install_android_app(chromeapk, replace=True)
 
         
         self.device.shell_output("settings put global verifier_verify_adb_installs 1")
@@ -966,13 +966,13 @@ class Raptor(
         if not os.path.isdir(upload_dir):
             self.mkdir_p(upload_dir)
 
-    def install_apk(self, apk, replace=False):
+    def install_android_app(self, apk, replace=False):
         
         
         
         self.logcat_start()
         try:
-            super(Raptor, self).install_apk(apk, replace=replace)
+            super(Raptor, self).install_android_app(apk, replace=replace)
         finally:
             self.logcat_stop()
 
@@ -1045,7 +1045,7 @@ class Raptor(
         if not self.config.get("noinstall", False):
             if self.app in self.firefox_android_browsers:
                 self.device.uninstall_app(self.binary_path)
-                self.install_apk(self.installer_path)
+                self.install_android_app(self.installer_path)
             else:
                 super(Raptor, self).install()
 
