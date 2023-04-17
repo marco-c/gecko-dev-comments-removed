@@ -36,7 +36,7 @@ async function testSteps() {
   
   
   
-  installPackage("caching_groupMismatch_profile");
+  installPackage("groupMismatch_profile");
 
   request = getOriginUsage(principal,  true);
   await requestFinished(request);
