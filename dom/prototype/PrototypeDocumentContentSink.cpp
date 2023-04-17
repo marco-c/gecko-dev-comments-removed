@@ -871,6 +871,12 @@ PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
                                                       nsresult aStatus) {
   
   
+  if (!mCurrentScriptProto) {
+    return NS_OK;
+  }
+
+  
+  
   if (aScript && !mCurrentScriptProto->HasScriptObject())
     mCurrentScriptProto->Set(aScript);
 
