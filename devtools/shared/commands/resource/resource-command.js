@@ -454,6 +454,7 @@ class ResourceCommand {
 
 
   async _onResourceAvailable({ targetFront, watcherFront }, resources) {
+    let includesDocumentEventWillNavigate = false;
     for (let resource of resources) {
       const { resourceType } = resource;
 
@@ -482,11 +483,25 @@ class ResourceCommand {
         });
       }
 
+      if (
+        resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.name == "will-navigate"
+      ) {
+        includesDocumentEventWillNavigate = true;
+      }
+
       this._queueResourceEvent("available", resourceType, resource);
 
       this._cache.push(resource);
     }
-    this._throttledNotifyWatchers();
+    
+    
+    
+    if (includesDocumentEventWillNavigate) {
+      this._notifyWatchers();
+    } else {
+      this._throttledNotifyWatchers();
+    }
   }
 
   
