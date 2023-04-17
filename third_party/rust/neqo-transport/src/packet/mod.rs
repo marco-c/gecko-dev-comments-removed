@@ -277,6 +277,13 @@ impl PacketBuilder {
     }
 
     
+    #[must_use]
+    pub fn is_full(&self) -> bool {
+        
+        self.limit < self.encoder.len() + 2
+    }
+
+    
     pub fn enable_padding(&mut self, needs_padding: bool) {
         self.padding = needs_padding;
     }

@@ -12,9 +12,10 @@ use super::{
 };
 use crate::path::PATH_MTU_V6;
 use crate::recovery::{MAX_OUTSTANDING_UNACK, MIN_OUTSTANDING_UNACK, PTO_PACKET_COUNT};
+use crate::rtt::GRANULARITY;
 use crate::stats::MAX_PTO_COUNTS;
 use crate::tparams::TransportParameter;
-use crate::tracking::ACK_DELAY;
+use crate::tracking::DEFAULT_ACK_DELAY;
 use crate::StreamType;
 
 use neqo_common::qdebug;
@@ -105,7 +106,10 @@ fn pto_works_ping() {
 
     
     let cb = client.process(None, now).callback();
-    assert_eq!(cb, Duration::from_millis(26)); 
+    
+    
+    
+    assert_eq!(cb, GRANULARITY * 2);
 
     
     let srv0 = server.process(Some(pkt1), now).dgram();
@@ -198,6 +202,8 @@ fn pto_initial() {
 
 #[test]
 fn pto_handshake_complete() {
+    const HALF_RTT: Duration = Duration::from_millis(10);
+
     let mut now = now();
     
     let mut client = default_client();
@@ -207,22 +213,22 @@ fn pto_handshake_complete() {
     let cb = client.process(None, now).callback();
     assert_eq!(cb, Duration::from_millis(300));
 
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
     let pkt = server.process(pkt, now).dgram();
 
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
     let pkt = client.process(pkt, now).dgram();
 
     let cb = client.process(None, now).callback();
     
     
-    assert_eq!(cb, Duration::from_millis(60));
+    assert_eq!(cb, HALF_RTT * 6);
 
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
     let pkt = server.process(pkt, now).dgram();
     assert!(pkt.is_none());
 
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
     client.authenticated(AuthenticationStatus::Ok, now);
 
     qdebug!("---- client: SH..FIN -> FIN");
@@ -231,7 +237,7 @@ fn pto_handshake_complete() {
     assert_eq!(*client.state(), State::Connected);
 
     let cb = client.process(None, now).callback();
-    assert_eq!(cb, Duration::from_millis(60));
+    assert_eq!(cb, HALF_RTT * 6);
 
     let mut pto_counts = [0; MAX_PTO_COUNTS];
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
@@ -239,7 +245,7 @@ fn pto_handshake_complete() {
     
     
     qdebug!("---- client: PTO");
-    now += Duration::from_millis(60);
+    now += HALF_RTT * 6;
     let pkt2 = client.process(None, now).dgram();
 
     pto_counts[0] = 1;
@@ -255,13 +261,13 @@ fn pto_handshake_complete() {
 
     
     let cb = client.process(None, now).callback();
-    assert_eq!(cb, Duration::from_millis(120));
+    assert_eq!(cb, HALF_RTT * 12);
 
     
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
 
     qdebug!("---- server: receive FIN and send ACK");
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
     
     
     
@@ -288,12 +294,14 @@ fn pto_handshake_complete() {
     assert_eq!(1, server.stats().dropped_rx - dropped_before2);
     assert_eq!(server.stats().frame_rx.all, server_frames);
 
-    now += Duration::from_millis(10);
+    now += HALF_RTT;
 
     
     
     let cb = client.process(ack, now).callback();
-    assert_eq!(cb, ACK_DELAY);
+    
+    let expected_ack_delay = HALF_RTT * 2 / 4;
+    assert_eq!(cb, expected_ack_delay);
 
     
     now += cb;
@@ -304,7 +312,7 @@ fn pto_handshake_complete() {
     
     
 
-    assert_eq!(cb, LOCAL_IDLE_TIMEOUT - ACK_DELAY);
+    assert_eq!(cb, LOCAL_IDLE_TIMEOUT - expected_ack_delay);
 }
 
 
@@ -667,7 +675,7 @@ fn ping_with_ack(fast: bool) {
     trickle(&mut sender, &mut receiver, 1, now);
     assert_eq!(receiver.stats().frame_tx.ping, 1);
     if let Output::Callback(t) = sender.process_output(now) {
-        assert_eq!(t, ACK_DELAY);
+        assert_eq!(t, DEFAULT_ACK_DELAY);
         assert!(sender.process_output(now + t).dgram().is_some());
     }
     assert_eq!(sender.stats().frame_tx.ack, sender_acks_before + 1);

@@ -10,10 +10,11 @@ use super::{
     Connection, ConnectionError, ConnectionId, ConnectionIdRef, Output, State, LOCAL_IDLE_TIMEOUT,
 };
 use crate::addr_valid::{AddressValidation, ValidateAddress};
-use crate::cc::CWND_INITIAL_PKTS;
+use crate::cc::{CWND_INITIAL_PKTS, CWND_MIN};
 use crate::events::ConnectionEvent;
 use crate::path::PATH_MTU_V6;
 use crate::recovery::ACK_ONLY_SIZE_LIMIT;
+use crate::stats::MAX_PTO_COUNTS;
 use crate::{ConnectionIdDecoder, ConnectionIdGenerator, ConnectionParameters, Error, StreamType};
 
 use std::cell::RefCell;
@@ -27,6 +28,7 @@ use neqo_crypto::{random, AllowZeroRtt, AuthenticationStatus, ResumptionToken};
 use test_fixture::{self, addr, fixture_init, now};
 
 
+mod ackrate;
 mod cc;
 mod close;
 mod fuzzing;
@@ -164,7 +166,9 @@ fn handshake(
         now += rtt / 2;
         mem::swap(&mut a, &mut b);
     }
-    let _ = a.process(input, now);
+    if let Some(d) = input {
+        a.process_input(d, now);
+    }
     now
 }
 
@@ -278,21 +282,8 @@ fn connect_force_idle(client: &mut Connection, server: &mut Connection) {
     connect_rtt_idle(client, server, Duration::new(0, 0));
 }
 
-
-
-
-
-
-
-fn fill_cwnd(c: &mut Connection, stream: u64, mut now: Instant) -> (Vec<Datagram>, Instant) {
+fn fill_stream(c: &mut Connection, stream: u64) {
     const BLOCK_SIZE: usize = 4_096;
-    
-    fn cwnd(c: &Connection) -> usize {
-        c.paths.primary().borrow().sender().cwnd_avail()
-    }
-
-    qtrace!("fill_cwnd starting cwnd: {}", cwnd(c));
-
     loop {
         let bytes_sent = c.stream_send(stream, &[0x42; BLOCK_SIZE]).unwrap();
         qtrace!("fill_cwnd wrote {} bytes", bytes_sent);
@@ -300,6 +291,22 @@ fn fill_cwnd(c: &mut Connection, stream: u64, mut now: Instant) -> (Vec<Datagram
             break;
         }
     }
+}
+
+
+
+
+
+
+
+fn fill_cwnd(c: &mut Connection, stream: u64, mut now: Instant) -> (Vec<Datagram>, Instant) {
+    
+    fn cwnd(c: &Connection) -> usize {
+        c.paths.primary().borrow().sender().cwnd_avail()
+    }
+
+    qtrace!("fill_cwnd starting cwnd: {}", cwnd(c));
+    fill_stream(c, stream);
 
     let mut total_dgrams = Vec::new();
     loop {
@@ -324,6 +331,126 @@ fn fill_cwnd(c: &mut Connection, stream: u64, mut now: Instant) -> (Vec<Datagram
         total_dgrams.iter().map(|d| d.len()).sum::<usize>()
     );
     (total_dgrams, now)
+}
+
+
+
+fn increase_cwnd(
+    sender: &mut Connection,
+    receiver: &mut Connection,
+    stream: u64,
+    mut now: Instant,
+) -> Instant {
+    fill_stream(sender, stream);
+    loop {
+        let pkt = sender.process_output(now);
+        match pkt {
+            Output::Datagram(dgram) => {
+                receiver.process_input(dgram, now + DEFAULT_RTT / 2);
+            }
+            Output::Callback(t) => {
+                if t < DEFAULT_RTT {
+                    now += t;
+                } else {
+                    break; 
+                }
+            }
+            Output::None => panic!(),
+        }
+    }
+
+    
+    now += DEFAULT_RTT / 2;
+    let ack = receiver.process_output(now).dgram();
+    now += DEFAULT_RTT / 2;
+    sender.process_input(ack.unwrap(), now);
+    now
+}
+
+
+
+
+
+
+fn ack_bytes<D>(dest: &mut Connection, stream: u64, in_dgrams: D, now: Instant) -> Datagram
+where
+    D: IntoIterator<Item = Datagram>,
+    D::IntoIter: ExactSizeIterator,
+{
+    let mut srv_buf = [0; 4_096];
+
+    let in_dgrams = in_dgrams.into_iter();
+    qdebug!([dest], "ack_bytes {} datagrams", in_dgrams.len());
+    for dgram in in_dgrams {
+        dest.process_input(dgram, now);
+    }
+
+    loop {
+        let (bytes_read, _fin) = dest.stream_recv(stream, &mut srv_buf).unwrap();
+        qtrace!([dest], "ack_bytes read {} bytes", bytes_read);
+        if bytes_read == 0 {
+            break;
+        }
+    }
+
+    dest.process_output(now).dgram().unwrap()
+}
+
+
+fn cwnd(c: &Connection) -> usize {
+    c.paths.primary().borrow().sender().cwnd()
+}
+fn cwnd_avail(c: &Connection) -> usize {
+    c.paths.primary().borrow().sender().cwnd_avail()
+}
+
+fn induce_persistent_congestion(
+    client: &mut Connection,
+    server: &mut Connection,
+    stream: u64,
+    mut now: Instant,
+) -> Instant {
+    
+    
+    qtrace!([client], "induce_persistent_congestion");
+    now += AT_LEAST_PTO;
+
+    let mut pto_counts = [0; MAX_PTO_COUNTS];
+    assert_eq!(client.stats.borrow().pto_counts, pto_counts);
+
+    qtrace!([client], "first PTO");
+    let (c_tx_dgrams, next_now) = fill_cwnd(client, stream, now);
+    now = next_now;
+    assert_eq!(c_tx_dgrams.len(), 2); 
+
+    pto_counts[0] = 1;
+    assert_eq!(client.stats.borrow().pto_counts, pto_counts);
+
+    qtrace!([client], "second PTO");
+    now += AT_LEAST_PTO * 2;
+    let (c_tx_dgrams, next_now) = fill_cwnd(client, stream, now);
+    now = next_now;
+    assert_eq!(c_tx_dgrams.len(), 2); 
+
+    pto_counts[0] = 0;
+    pto_counts[1] = 1;
+    assert_eq!(client.stats.borrow().pto_counts, pto_counts);
+
+    qtrace!([client], "third PTO");
+    now += AT_LEAST_PTO * 4;
+    let (c_tx_dgrams, next_now) = fill_cwnd(client, stream, now);
+    now = next_now;
+    assert_eq!(c_tx_dgrams.len(), 2); 
+
+    pto_counts[1] = 0;
+    pto_counts[2] = 1;
+    assert_eq!(client.stats.borrow().pto_counts, pto_counts);
+
+    
+    let s_ack = ack_bytes(server, stream, c_tx_dgrams, now);
+    client.process_input(s_ack, now);
+    assert_eq!(cwnd(client), CWND_MIN);
+    now
 }
 
 

@@ -7,7 +7,7 @@
 use super::super::{IdleTimeout, Output, State, LOCAL_IDLE_TIMEOUT};
 use super::{
     connect, connect_force_idle, connect_with_rtt, default_client, default_server,
-    maybe_authenticate, send_something, AT_LEAST_PTO,
+    maybe_authenticate, send_and_receive, send_something, AT_LEAST_PTO,
 };
 use crate::packet::PacketBuilder;
 use crate::stats::FrameStats;
@@ -128,61 +128,67 @@ fn tiny_idle_timeout() {
 
 #[test]
 fn idle_send_packet1() {
+    const DELTA: Duration = Duration::from_millis(10);
+
     let mut client = default_client();
     let mut server = default_server();
+    let mut now = now();
     connect_force_idle(&mut client, &mut server);
 
-    let now = now();
+    let timeout = client.process(None, now).callback();
+    assert_eq!(timeout, LOCAL_IDLE_TIMEOUT);
 
-    let res = client.process(None, now);
-    assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
-
-    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
-    assert_eq!(client.stream_send(stream_id, b"hello").unwrap(), 5);
-
-    let out = client.process(None, now + Duration::from_secs(10));
-    let out = server.process(out.dgram(), now + Duration::from_secs(10));
+    now += Duration::from_secs(10);
+    let dgram = send_and_receive(&mut client, &mut server, now);
+    assert!(dgram.is_none());
 
     
     
-    let _ = client.process(
-        out.dgram(),
-        now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(9),
-    );
-    assert!(matches!(client.state(), State::Confirmed));
+    now += LOCAL_IDLE_TIMEOUT - DELTA;
+    let dgram = client.process(None, now).dgram();
+    assert!(dgram.is_some()); 
+    assert!(client.state().connected());
 
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(10));
-
-    assert!(matches!(client.state(), State::Closed(_)));
+    now += DELTA;
+    let out = client.process(None, now);
+    assert!(matches!(out, Output::None));
+    assert!(client.state().closed());
 }
 
 #[test]
 fn idle_send_packet2() {
+    const GAP: Duration = Duration::from_secs(10);
+    const DELTA: Duration = Duration::from_millis(10);
+
     let mut client = default_client();
     let mut server = default_server();
     connect_force_idle(&mut client, &mut server);
 
-    let now = now();
+    let mut now = now();
 
-    let res = client.process(None, now);
-    assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
-
-    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
-    assert_eq!(client.stream_send(stream_id, b"hello").unwrap(), 5);
-
-    let _out = client.process(None, now + Duration::from_secs(10));
-
-    assert_eq!(client.stream_send(stream_id, b"there").unwrap(), 5);
-    let _out = client.process(None, now + Duration::from_secs(20));
+    let timeout = client.process(None, now).callback();
+    assert_eq!(timeout, LOCAL_IDLE_TIMEOUT);
 
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(9));
+    now += GAP;
+    let _ = send_something(&mut client, now);
+
+    
+    let _ = send_something(&mut client, now + GAP);
+    assert!((GAP * 2 + DELTA) < LOCAL_IDLE_TIMEOUT);
+
+    
+    now += LOCAL_IDLE_TIMEOUT - DELTA;
+    let dgram = client.process(None, now).dgram();
+    assert!(dgram.is_some()); 
     assert!(matches!(client.state(), State::Confirmed));
 
     
     
-    let _ = client.process(None, now + LOCAL_IDLE_TIMEOUT + Duration::from_secs(10));
+    now += DELTA;
+    let out = client.process(None, now);
+    assert!(matches!(out, Output::None));
     assert!(matches!(client.state(), State::Closed(_)));
 }
 

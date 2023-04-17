@@ -15,6 +15,7 @@ use std::net::{IpAddr, SocketAddr};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
+use crate::ackrate::{AckRate, PeerAckDelay};
 use crate::cc::CongestionControlAlgorithm;
 use crate::cid::{ConnectionId, ConnectionIdRef, RemoteConnectionIdEntry};
 use crate::frame::{
@@ -93,7 +94,7 @@ impl Paths {
             .unwrap_or_else(|| {
                 let mut p = Path::temporary(local, remote, cc, self.qlog.clone(), now);
                 if let Some(primary) = self.primary.as_ref() {
-                    p.set_initial_rtt(primary.borrow().rtt().estimate());
+                    p.prime_rtt(primary.borrow().rtt())
                 }
                 Rc::new(RefCell::new(p))
             })
@@ -370,6 +371,12 @@ impl Paths {
             tokens.push(RecoveryToken::RetireConnectionId(seqno));
             stats.retire_connection_id += 1;
         }
+
+        
+        self.primary()
+            .borrow_mut()
+            .write_cc_frames(builder, tokens, stats);
+
         Ok(())
     }
 
@@ -379,6 +386,14 @@ impl Paths {
 
     pub fn acked_retire_cid(&mut self, acked: u64) {
         self.to_retire.retain(|&seqno| seqno != acked);
+    }
+
+    pub fn lost_ack_frequency(&mut self, lost: &AckRate) {
+        self.primary().borrow_mut().lost_ack_frequency(lost);
+    }
+
+    pub fn acked_ack_frequency(&mut self, acked: &AckRate) {
+        self.primary().borrow_mut().acked_ack_frequency(acked);
     }
 
     
@@ -744,6 +759,24 @@ impl Path {
     }
 
     
+    pub fn write_cc_frames(
+        &mut self,
+        builder: &mut PacketBuilder,
+        tokens: &mut Vec<RecoveryToken>,
+        stats: &mut FrameStats,
+    ) {
+        self.rtt.write_frames(builder, tokens, stats);
+    }
+
+    pub fn lost_ack_frequency(&mut self, lost: &AckRate) {
+        self.rtt.frame_lost(lost);
+    }
+
+    pub fn acked_ack_frequency(&mut self, acked: &AckRate) {
+        self.rtt.frame_acked(acked);
+    }
+
+    
     
     pub fn process_timeout(&mut self, now: Instant, pto: Duration) -> bool {
         if let ProbeState::Probing { sent, .. } = &self.state {
@@ -797,13 +830,32 @@ impl Path {
     }
 
     
-    pub fn set_max_ack_delay(&mut self, mad: Duration) {
-        self.rtt.set_max_ack_delay(mad);
+    
+    pub fn set_ack_delay(
+        &mut self,
+        max_ack_delay: Duration,
+        min_ack_delay: Option<Duration>,
+        ack_ratio: u8,
+    ) {
+        let ack_delay = min_ack_delay.map_or_else(
+            || PeerAckDelay::fixed(max_ack_delay),
+            |m| {
+                PeerAckDelay::flexible(
+                    max_ack_delay,
+                    m,
+                    ack_ratio,
+                    self.sender.cwnd(),
+                    self.mtu(),
+                    self.rtt.estimate(),
+                )
+            },
+        );
+        self.rtt.set_ack_delay(ack_delay);
     }
 
     
-    pub fn set_initial_rtt(&mut self, rtt: Duration) {
-        self.rtt.set_initial(rtt);
+    pub fn prime_rtt(&mut self, rtt: &RttEstimate) {
+        self.rtt.prime_rtt(rtt);
     }
 
     
@@ -844,12 +896,15 @@ impl Path {
         lost_packets: &[SentPacket],
     ) {
         debug_assert!(self.is_primary());
-        self.sender.on_packets_lost(
+        let cwnd_reduced = self.sender.on_packets_lost(
             self.rtt.first_sample_time(),
             prev_largest_acked_sent,
             self.rtt.pto(space), 
             lost_packets,
-        )
+        );
+        if cwnd_reduced {
+            self.rtt.update_ack_delay(self.sender.cwnd(), self.mtu());
+        }
     }
 
     
