@@ -5,7 +5,9 @@
 
 
 #include "InputTaskManager.h"
+#include "InputEventStatistics.h"
 #include "VsyncTaskManager.h"
+#include "nsRefreshDriver.h"
 
 namespace mozilla {
 

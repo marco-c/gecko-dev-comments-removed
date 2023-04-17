@@ -40,7 +40,6 @@ struct CPUStats {
 
 static const uint64_t kMicrosecondsPerSecond = 1000000LL;
 static const uint64_t kNanosecondsPerMicrosecond = 1000LL;
-static const uint64_t kCPUCheckInterval = kMicrosecondsPerSecond / 2LL;
 
 static uint64_t GetMicroseconds(timeval time) {
   return ((uint64_t)time.tv_sec) * kMicrosecondsPerSecond +
@@ -104,9 +103,6 @@ static Result<CPUStats, CPUUsageWatcherError> GetGlobalCPUStats() {
 
 #  ifdef XP_WIN
 
-
-static const uint64_t kFILETIMETicksPerSecond = 10000000;
-static const uint64_t kCPUCheckInterval = kFILETIMETicksPerSecond / 2;
 
 uint64_t FiletimeToInteger(FILETIME filetime) {
   return ((uint64_t)filetime.dwLowDateTime) | (uint64_t)filetime.dwHighDateTime
