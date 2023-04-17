@@ -1668,9 +1668,8 @@ void EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
 
   
   
-  if (mGestureDownContent &&
-      nsContentUtils::HasNonEmptyAttr(mGestureDownContent, kNameSpaceID_None,
-                                      nsGkAtoms::popup)) {
+  if (mGestureDownContent && mGestureDownContent->IsElement() &&
+      mGestureDownContent->AsElement()->HasNonEmptyAttr(nsGkAtoms::popup)) {
     return;
   }
 
@@ -1764,8 +1763,8 @@ void EventStateManager::FireContextClick() {
     } else if (mGestureDownContent->IsXULElement(nsGkAtoms::toolbarbutton)) {
       
       
-      if (nsContentUtils::HasNonEmptyAttr(
-              mGestureDownContent, kNameSpaceID_None, nsGkAtoms::container)) {
+      if (mGestureDownContent->AsElement()->HasNonEmptyAttr(
+              nsGkAtoms::container)) {
         allowedToDispatch = false;
       } else {
         

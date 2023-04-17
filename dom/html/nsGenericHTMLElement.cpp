@@ -1739,8 +1739,7 @@ void nsGenericHTMLFormElement::UnbindFromTree(bool aNullParent) {
 
     
     
-    if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
-                                        nsGkAtoms::form)) {
+    if (HasNonEmptyAttr(nsGkAtoms::form)) {
       RemoveFormIdObserver();
     }
   }
@@ -1787,8 +1786,7 @@ nsresult nsGenericHTMLFormElement::BeforeSetAttr(
     if (aName == nsGkAtoms::form) {
       
       
-      if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
-                                          nsGkAtoms::form)) {
+      if (HasNonEmptyAttr(nsGkAtoms::form)) {
         
         
         RemoveFormIdObserver();
@@ -2471,8 +2469,7 @@ void nsGenericHTMLFormControlElement::UnbindFromTree(bool aNullParent) {
 
 void nsGenericHTMLFormControlElement::GetAutocapitalize(
     nsAString& aValue) const {
-  if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
-                                      nsGkAtoms::autocapitalize)) {
+  if (HasNonEmptyAttr(nsGkAtoms::autocapitalize)) {
     nsGenericHTMLFormElement::GetAutocapitalize(aValue);
     return;
   }

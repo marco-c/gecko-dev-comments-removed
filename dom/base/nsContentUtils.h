@@ -863,13 +863,6 @@ class nsContentUtils {
 
 
 
-  static bool HasNonEmptyAttr(const nsIContent* aContent, int32_t aNameSpaceID,
-                              nsAtom* aName);
-
-  
-
-
-
 
 
 

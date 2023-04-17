@@ -297,8 +297,7 @@ nsTreeColumn* nsTreeColumns::GetSortedColumn() {
   EnsureColumns();
   for (nsTreeColumn* currCol = mFirstColumn; currCol;
        currCol = currCol->GetNext()) {
-    if (nsContentUtils::HasNonEmptyAttr(currCol->mElement, kNameSpaceID_None,
-                                        nsGkAtoms::sortDirection)) {
+    if (currCol->mElement->HasNonEmptyAttr(nsGkAtoms::sortDirection)) {
       return currCol;
     }
   }
@@ -324,8 +323,7 @@ nsTreeColumn* nsTreeColumns::GetKeyColumn() {
 
     if (!first) first = currCol;
 
-    if (nsContentUtils::HasNonEmptyAttr(currCol->mElement, kNameSpaceID_None,
-                                        nsGkAtoms::sortDirection)) {
+    if (currCol->mElement->HasNonEmptyAttr(nsGkAtoms::sortDirection)) {
       
       sorted = currCol;
       break;
