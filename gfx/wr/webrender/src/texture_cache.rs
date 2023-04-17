@@ -17,7 +17,7 @@ use crate::internal_types::{
     TextureCacheAllocInfo, TextureCacheUpdate, TextureCacheCategory,
 };
 use crate::lru_cache::LRUCache;
-use crate::picture_textures::PictureTextures;
+use crate::picture_textures::{PictureTextures, PictureCacheTextureHandle};
 use crate::profiler::{self, TransactionProfile};
 use crate::render_backend::{FrameStamp, FrameId};
 use crate::resource_cache::{CacheItem, CachedImageData};
@@ -86,11 +86,6 @@ impl EntryDetails {
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum PictureCacheEntryMarker {}
-
-#[derive(Debug, PartialEq)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum AutoCacheEntryMarker {}
 
 #[derive(Debug, PartialEq)]
@@ -136,7 +131,7 @@ pub struct CacheEntry {
 
 malloc_size_of::malloc_size_of_is_0!(
     CacheEntry,
-    AutoCacheEntryMarker, ManualCacheEntryMarker, PictureCacheEntryMarker
+    AutoCacheEntryMarker, ManualCacheEntryMarker
 );
 
 impl CacheEntry {
@@ -170,7 +165,7 @@ impl CacheEntry {
     
     
     
-    fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
+    pub fn update_gpu_cache(&mut self, gpu_cache: &mut GpuCache) {
         if let Some(mut request) = gpu_cache.request(&mut self.uv_rect_handle) {
             let origin = self.details.describe();
             let image_source = ImageSource {
@@ -183,7 +178,7 @@ impl CacheEntry {
         }
     }
 
-    fn evict(&self) {
+    pub fn evict(&self) {
         if let Some(eviction_notice) = self.eviction_notice.as_ref() {
             eviction_notice.notify();
         }
@@ -214,7 +209,7 @@ pub enum TextureCacheHandle {
     Empty,
 
     
-    Picture(WeakFreeListHandle<PictureCacheEntryMarker>),
+    Picture(PictureCacheTextureHandle),
 
     
     Auto(WeakFreeListHandle<AutoCacheEntryMarker>),
@@ -600,12 +595,6 @@ pub struct TextureCache {
     lru_cache: LRUCache<CacheEntry, AutoCacheEntryMarker>,
 
     
-    picture_cache_entries: FreeList<CacheEntry, PictureCacheEntryMarker>,
-
-    
-    picture_cache_handles: Vec<FreeListHandle<PictureCacheEntryMarker>>,
-
-    
     manual_entries: FreeList<CacheEntry, ManualCacheEntryMarker>,
 
     
@@ -657,8 +646,6 @@ impl TextureCache {
             pending_updates,
             now: FrameStamp::INVALID,
             lru_cache: LRUCache::new(BudgetType::COUNT),
-            picture_cache_entries: FreeList::new(),
-            picture_cache_handles: Vec::new(),
             manual_entries: FreeList::new(),
             manual_handles: Vec::new(),
             bytes_allocated: [0 ; BudgetType::COUNT],
@@ -690,6 +677,7 @@ impl TextureCache {
 
     pub fn set_debug_flags(&mut self, flags: DebugFlags) {
         self.debug_flags = flags;
+        self.picture_textures.set_debug_flags(flags);
     }
 
     
@@ -706,16 +694,6 @@ impl TextureCache {
         }
 
         
-        let picture_handles = mem::replace(
-            &mut self.picture_cache_handles,
-            Vec::new(),
-        );
-        for handle in picture_handles {
-            let entry = self.picture_cache_entries.free(handle);
-            self.evict_impl(entry);
-        }
-
-        
         for budget_type in BudgetType::iter() {
             while let Some(entry) = self.lru_cache.pop_oldest(budget_type as u8) {
                 entry.evict();
@@ -724,7 +702,7 @@ impl TextureCache {
         }
 
         
-        self.picture_textures.clear(&mut self.pending_updates);
+        self.picture_textures.clear(self.now, &mut self.pending_updates);
         self.shared_textures.clear(&mut self.pending_updates);
         self.pending_updates.note_clear();
     }
@@ -810,7 +788,7 @@ impl TextureCache {
         let entry = match handle {
             TextureCacheHandle::Empty => None,
             TextureCacheHandle::Picture(handle) => {
-                self.picture_cache_entries.get_opt_mut(handle)
+                return self.picture_textures.request(handle, now, gpu_cache);
             },
             TextureCacheHandle::Auto(handle) => {
                 
@@ -833,7 +811,7 @@ impl TextureCache {
     fn get_entry_opt(&self, handle: &TextureCacheHandle) -> Option<&CacheEntry> {
         match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(handle) => self.picture_cache_entries.get_opt(handle),
+            TextureCacheHandle::Picture(handle) => self.picture_textures.get_entry_opt(handle),
             TextureCacheHandle::Auto(handle) => self.lru_cache.get_opt(handle),
             TextureCacheHandle::Manual(handle) => self.manual_entries.get_opt(handle),
         }
@@ -842,7 +820,7 @@ impl TextureCache {
     fn get_entry_opt_mut(&mut self, handle: &TextureCacheHandle) -> Option<&mut CacheEntry> {
         match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(handle) => self.picture_cache_entries.get_opt_mut(handle),
+            TextureCacheHandle::Picture(handle) => self.picture_textures.get_entry_opt_mut(handle),
             TextureCacheHandle::Auto(handle) => self.lru_cache.get_opt_mut(handle),
             TextureCacheHandle::Manual(handle) => self.manual_entries.get_opt_mut(handle),
         }
@@ -1082,25 +1060,7 @@ impl TextureCache {
     
     
     fn expire_old_picture_cache_tiles(&mut self) {
-        for i in (0 .. self.picture_cache_handles.len()).rev() {
-            let evict = {
-                let entry = self.picture_cache_entries.get(
-                    &self.picture_cache_handles[i]
-                );
-
-                
-                
-                
-                
-                entry.last_access.frame_id() < self.now.frame_id() - 1
-            };
-
-            if evict {
-                let handle = self.picture_cache_handles.swap_remove(i);
-                let entry = self.picture_cache_entries.free(handle);
-                self.evict_impl(entry);
-            }
-        }
+        self.picture_textures.expire_old_tiles(self.now, &mut self.pending_updates);
     }
 
     
@@ -1228,19 +1188,8 @@ impl TextureCache {
     
     fn free(&mut self, entry: &CacheEntry) {
         match entry.details {
-            EntryDetails::Picture { size } => {
-                self.picture_textures.free_tile(entry.texture_id, self.now.frame_id());
-                if self.debug_flags.contains(
-                    DebugFlags::TEXTURE_CACHE_DBG |
-                    DebugFlags::TEXTURE_CACHE_DBG_CLEAR_EVICTED)
-                {
-                    self.pending_updates.push_debug_clear(
-                        entry.texture_id,
-                        DeviceIntPoint::zero(),
-                        size.width,
-                        size.height,
-                    );
-                }
+            EntryDetails::Picture { .. } => {
+                unreachable!();
             }
             EntryDetails::Standalone { size_in_bytes, .. } => {
                 self.bytes_allocated[BudgetType::Standalone as usize] -= size_in_bytes;
@@ -1537,46 +1486,14 @@ impl TextureCache {
         handle: &mut TextureCacheHandle,
         gpu_cache: &mut GpuCache,
     ) {
-        debug_assert!(self.now.is_valid());
-        debug_assert!(tile_size.width > 0 && tile_size.height > 0);
-
-        let need_alloc = match handle {
-            TextureCacheHandle::Empty => true,
-            TextureCacheHandle::Picture(handle) => {
-                
-                self.picture_cache_entries.get_opt(handle).is_none()
-            },
-            TextureCacheHandle::Auto(_) | TextureCacheHandle::Manual(_) => {
-                panic!("Unexpected handle type in update_picture_cache");
-            }
-        };
-
-        if need_alloc {
-            let cache_entry = self.picture_textures.get_or_allocate_tile(
-                tile_size,
-                self.now,
-                &mut self.next_id,
-                &mut self.pending_updates,
-            );
-
-            
-            let strong_handle = self.picture_cache_entries.insert(cache_entry);
-            let new_handle = strong_handle.weak();
-
-            self.picture_cache_handles.push(strong_handle);
-
-            *handle = TextureCacheHandle::Picture(new_handle);
-        }
-
-        if let TextureCacheHandle::Picture(handle) = handle {
-            
-            self.picture_cache_entries
-                .get_opt_mut(handle)
-                .expect("BUG: handle must be valid now")
-                .update_gpu_cache(gpu_cache);
-        } else {
-            panic!("The handle should be valid picture cache handle now")
-        }
+        self.picture_textures.update(
+            self.now,
+            tile_size,
+            handle,
+            gpu_cache,
+            &mut self.next_id,
+            &mut self.pending_updates,
+        );
     }
 
     pub fn shared_alpha_expected_format(&self) -> ImageFormat {
