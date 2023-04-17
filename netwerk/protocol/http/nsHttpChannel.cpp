@@ -1819,9 +1819,9 @@ nsresult nsHttpChannel::ProcessSecurityHeaders() {
 
   
   
-  PRNetAddr hostAddr;
-  if (PR_SUCCESS == PR_StringToNetAddr(asciiHost.get(), &hostAddr))
+  if (HostIsIPLiteral(asciiHost)) {
     return NS_OK;
+  }
 
   
   

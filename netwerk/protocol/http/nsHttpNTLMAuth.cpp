@@ -51,13 +51,12 @@ StaticRefPtr<nsHttpNTLMAuth> nsHttpNTLMAuth::gSingleton;
 
 static bool IsNonFqdn(nsIURI* uri) {
   nsAutoCString host;
-  PRNetAddr addr;
-
-  if (NS_FAILED(uri->GetAsciiHost(host))) return false;
+  if (NS_FAILED(uri->GetAsciiHost(host))) {
+    return false;
+  }
 
   
-  return !host.IsEmpty() && !host.Contains('.') &&
-         PR_StringToNetAddr(host.BeginReading(), &addr) != PR_SUCCESS;
+  return !host.IsEmpty() && !host.Contains('.') && !HostIsIPLiteral(host);
 }
 
 
