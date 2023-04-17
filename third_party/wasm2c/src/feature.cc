@@ -41,6 +41,12 @@ void Features::UpdateDependencies() {
   if (exceptions_enabled_) {
     reference_types_enabled_ = true;
   }
+
+  
+  if (function_references_enabled_) {
+    reference_types_enabled_ = true;
+  }
+
   
   if (reference_types_enabled_) {
     bulk_memory_enabled_ = true;
