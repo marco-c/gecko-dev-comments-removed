@@ -665,7 +665,9 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
     
     
     
-    return IsThirdPartyContext(doc->GetBrowsingContext());
+    
+    RefPtr<BrowsingContext> bc = doc->GetBrowsingContext();
+    return bc ? IsThirdPartyContext(bc) : true;
   }
 
   
