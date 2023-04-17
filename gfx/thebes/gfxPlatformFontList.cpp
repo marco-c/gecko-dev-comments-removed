@@ -519,9 +519,6 @@ bool gfxPlatformFontList::InitFontList() {
     CancelLoader();
 
     gfxFontUtils::GetPrefsFontList(kFontSystemWhitelistPref, mEnabledFontsList);
-
-    
-    mVisibilityLevel = FontVisibility::Unknown;
   }
 
   SetVisibilityLevel();
@@ -594,14 +591,16 @@ bool gfxPlatformFontList::InitFontList() {
 }
 
 void gfxPlatformFontList::InitializeCodepointsWithNoFonts() {
-  mCodepointsWithNoFonts.reset();
-  mCodepointsWithNoFonts.SetRange(0, 0x1f);            
-  mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);         
-  mCodepointsWithNoFonts.SetRange(0xE000, 0xF8FF);     
-  mCodepointsWithNoFonts.SetRange(0xF0000, 0x10FFFD);  
-  mCodepointsWithNoFonts.SetRange(0xfdd0, 0xfdef);     
-  for (unsigned i = 0; i <= 0x100000; i += 0x10000) {
-    mCodepointsWithNoFonts.SetRange(i + 0xfffe, i + 0xffff);  
+  for (auto& bitset : mCodepointsWithNoFonts) {
+    bitset.reset();
+    bitset.SetRange(0, 0x1f);            
+    bitset.SetRange(0x7f, 0x9f);         
+    bitset.SetRange(0xE000, 0xF8FF);     
+    bitset.SetRange(0xF0000, 0x10FFFD);  
+    bitset.SetRange(0xfdd0, 0xfdef);     
+    for (unsigned i = 0; i <= 0x100000; i += 0x10000) {
+      bitset.SetRange(i + 0xfffe, i + 0xffff);  
+    }
   }
 }
 
@@ -615,14 +614,7 @@ void gfxPlatformFontList::SetVisibilityLevel() {
                  std::max(int32_t(FontVisibility::Base),
                           StaticPrefs::layout_css_font_visibility_level())));
   }
-  if (newLevel != mVisibilityLevel) {
-    mVisibilityLevel = newLevel;
-    
-    
-    InitializeCodepointsWithNoFonts();
-    
-    mReplacementCharFallbackFamily = FontFamily();
-  }
+  mVisibilityLevel = newLevel;
 }
 
 void gfxPlatformFontList::FontListChanged() {
@@ -921,7 +913,7 @@ gfxFont* gfxPlatformFontList::SystemFindFontForChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
     eFontPresentation aPresentation, const gfxFontStyle* aStyle,
     FontVisibility* aVisibility) {
-  MOZ_ASSERT(!mCodepointsWithNoFonts.test(aCh),
+  MOZ_ASSERT(!mCodepointsWithNoFonts[mVisibilityLevel].test(aCh),
              "don't call for codepoints already known to be unsupported");
 
   
@@ -930,21 +922,17 @@ gfxFont* gfxPlatformFontList::SystemFindFontForChar(
   
   if (aCh == 0xFFFD) {
     gfxFontEntry* fontEntry = nullptr;
-    if (mReplacementCharFallbackFamily.mIsShared &&
-        mReplacementCharFallbackFamily.mShared) {
+    auto& fallbackFamily = mReplacementCharFallbackFamily[mVisibilityLevel];
+    if (fallbackFamily.mIsShared && fallbackFamily.mShared) {
       fontlist::Face* face =
-          mReplacementCharFallbackFamily.mShared->FindFaceForStyle(
-              SharedFontList(), *aStyle);
+          fallbackFamily.mShared->FindFaceForStyle(SharedFontList(), *aStyle);
       if (face) {
-        fontEntry =
-            GetOrCreateFontEntry(face, mReplacementCharFallbackFamily.mShared);
-        *aVisibility = mReplacementCharFallbackFamily.mShared->Visibility();
+        fontEntry = GetOrCreateFontEntry(face, fallbackFamily.mShared);
+        *aVisibility = fallbackFamily.mShared->Visibility();
       }
-    } else if (!mReplacementCharFallbackFamily.mIsShared &&
-               mReplacementCharFallbackFamily.mUnshared) {
-      fontEntry =
-          mReplacementCharFallbackFamily.mUnshared->FindFontForStyle(*aStyle);
-      *aVisibility = mReplacementCharFallbackFamily.mUnshared->Visibility();
+    } else if (!fallbackFamily.mIsShared && fallbackFamily.mUnshared) {
+      fontEntry = fallbackFamily.mUnshared->FindFontForStyle(*aStyle);
+      *aVisibility = fallbackFamily.mUnshared->Visibility();
     }
 
     
@@ -1009,13 +997,13 @@ gfxFont* gfxPlatformFontList::SystemFindFontForChar(
 
   
   if (!font) {
-    mCodepointsWithNoFonts.set(aCh);
+    mCodepointsWithNoFonts[mVisibilityLevel].set(aCh);
   } else {
     *aVisibility = fallbackFamily.mIsShared
                        ? fallbackFamily.mShared->Visibility()
                        : fallbackFamily.mUnshared->Visibility();
     if (aCh == 0xFFFD) {
-      mReplacementCharFallbackFamily = fallbackFamily;
+      mReplacementCharFallbackFamily[mVisibilityLevel] = fallbackFamily;
     }
   }
 
@@ -2593,8 +2581,9 @@ void gfxPlatformFontList::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
     }
   }
 
-  aSizes->mFontListSize +=
-      mCodepointsWithNoFonts.SizeOfExcludingThis(aMallocSizeOf);
+  for (const auto& bitset : mCodepointsWithNoFonts) {
+    aSizes->mFontListSize += bitset.SizeOfExcludingThis(aMallocSizeOf);
+  }
   aSizes->mFontListSize +=
       mFontFamiliesToLoad.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
