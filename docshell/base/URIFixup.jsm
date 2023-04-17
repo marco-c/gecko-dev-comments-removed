@@ -764,7 +764,9 @@ function maybeSetAlternateFixedURI(info, fixupFlags) {
 
   let oldHost = uri.host;
   
-  if (oldHost == "localhost") {
+  
+  
+  if (oldHost == "localhost" || oldHost == "http" || oldHost == "https") {
     return false;
   }
 
