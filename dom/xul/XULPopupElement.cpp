@@ -271,8 +271,7 @@ already_AddRefed<DOMRect> XULPopupElement::GetOuterScreenRect() {
     
     
     
-    screenRect = Some(CSSRect(
-        CSSIntRect::FromUnknownRect(menuPopupFrame->GetScreenAnchorRect())));
+    screenRect = Some(CSSRect(menuPopupFrame->GetScreenAnchorRect()));
   } else {
     
     if (nsView* view = menuPopupFrame->GetView()) {

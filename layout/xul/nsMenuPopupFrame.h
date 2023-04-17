@@ -321,7 +321,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
-  void MoveTo(const mozilla::CSSIntPoint& aPos, bool aUpdateAttrs);
+  void MoveTo(const mozilla::CSSPoint& aPos, bool aUpdateAttrs);
 
   void MoveToAnchor(nsIContent* aAnchorContent, const nsAString& aPosition,
                     int32_t aXPos, int32_t aYPos, bool aAttributesOverride);
@@ -370,7 +370,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   
   
-  nsIntRect GetScreenAnchorRect() const { return mScreenRect; }
+  mozilla::CSSIntRect GetScreenAnchorRect() const {
+    return mozilla::CSSRect::FromAppUnitsRounded(mScreenRect);
+  }
 
   mozilla::LayoutDeviceIntPoint GetLastClientOffset() const {
     return mLastClientOffset;
@@ -555,7 +557,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   int32_t mXPos;
   int32_t mYPos;
-  nsIntRect mScreenRect;
+  nsRect mScreenRect;
   
   
   nsRect mAnchorRect;
