@@ -17,8 +17,7 @@ class nsIFormControl;
 template <class T>
 class RefPtr;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Element;
 class HTMLFormElement;
 class HTMLImageElement;
@@ -59,7 +58,7 @@ class HTMLFormControlsCollection final : public nsIHTMLCollection,
                                   const nsAString& aName);
   nsresult IndexOfControl(nsIFormControl* aControl, int32_t* aIndex);
 
-  nsISupports* NamedItemInternal(const nsAString& aName, bool aFlushContent);
+  nsISupports* NamedItemInternal(const nsAString& aName);
 
   
 
@@ -111,9 +110,6 @@ class HTMLFormControlsCollection final : public nsIHTMLCollection,
   void Clear();
 
   
-  void FlushPendingNotifications();
-
-  
   
   
   
@@ -122,7 +118,6 @@ class HTMLFormControlsCollection final : public nsIHTMLCollection,
   nsInterfaceHashtable<nsStringHashKey, nsISupports> mNameLookupTable;
 };
 
-}  
 }  
 
 #endif  

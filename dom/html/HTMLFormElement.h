@@ -485,8 +485,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  already_AddRefed<nsISupports> DoResolveName(const nsAString& aName,
-                                              bool aFlushContent);
+  already_AddRefed<nsISupports> DoResolveName(const nsAString& aName);
 
   
 
