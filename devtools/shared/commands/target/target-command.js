@@ -249,6 +249,14 @@ class TargetCommand extends EventEmitter {
     this._targets.delete(targetFront);
 
     if (shouldDestroyTargetFront) {
+      
+      
+      
+      
+      
+      
+      targetFront.baseFrontClassDestroy();
+
       targetFront.destroy();
     }
   }
