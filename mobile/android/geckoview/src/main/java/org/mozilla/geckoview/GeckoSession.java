@@ -5013,35 +5013,6 @@ public class GeckoSession {
 
 
 
-
-
-        @UiThread
-        default @Nullable GeckoResult<PromptResponse> onCreditCardSave(
-                @NonNull final GeckoSession session,
-                @NonNull final AutocompleteRequest<Autocomplete.CreditCardSaveOption>
-                    request) {
-            return null;
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onLoginSelect(
                 @NonNull final GeckoSession session,
