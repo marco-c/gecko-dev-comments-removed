@@ -46,10 +46,10 @@
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsBaseHashtable.h"  
-#include "nsISupportsUtils.h"              
-#include "nsPrintfCString.h"               
-#include "nsRegionFwd.h"                   
-#include "nsString.h"                      
+#include "nsISupportsUtils.h"  
+#include "nsPrintfCString.h"   
+#include "nsRegionFwd.h"       
+#include "nsString.h"          
 
 
 #undef compress
@@ -1408,7 +1408,6 @@ void ReadbackLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
     aStream << " [nobackground]";
   }
 }
-
 
 
 
