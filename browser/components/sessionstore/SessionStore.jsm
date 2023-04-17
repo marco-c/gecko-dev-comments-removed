@@ -3433,13 +3433,18 @@ var SessionStoreInternal = {
     let activePageData = tabData.entries[tabData.index - 1] || null;
 
     
-    if (activePageData) {
-      if (activePageData.title && activePageData.title != activePageData.url) {
-        win.gBrowser.setInitialTabTitle(tab, activePageData.title, {
-          isContentTitle: true,
-        });
-      } else {
-        win.gBrowser.setInitialTabTitle(tab, activePageData.url);
+    if (!tab._labelIsContentTitle) {
+      if (activePageData) {
+        if (
+          activePageData.title &&
+          activePageData.title != activePageData.url
+        ) {
+          win.gBrowser.setInitialTabTitle(tab, activePageData.title, {
+            isContentTitle: true,
+          });
+        } else {
+          win.gBrowser.setInitialTabTitle(tab, activePageData.url);
+        }
       }
     }
 
