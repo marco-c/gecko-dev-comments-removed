@@ -205,6 +205,12 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
 
   
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+      contentType == ExtContentPolicy::TYPE_OTHER) {
+    return true;
+  }
+
+  
   
   if (contentType != ExtContentPolicy::TYPE_DOCUMENT &&
       contentType != ExtContentPolicy::TYPE_SUBDOCUMENT) {
