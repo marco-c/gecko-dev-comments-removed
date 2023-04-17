@@ -200,6 +200,23 @@ uint32_t SVGPathData::GetPathSegAtLength(float aDistance) const {
 }
 
 
+uint32_t SVGPathData::GetPathSegAtLength(Span<const StylePathCommand> aPath,
+                                         float aDistance) {
+  uint32_t segIndex = 0;
+  SVGPathTraversalState state;
+
+  for (const auto& cmd : aPath) {
+    SVGPathSegUtils::TraversePathSegment(cmd, state);
+    if (state.length >= aDistance) {
+      return segIndex;
+    }
+    segIndex++;
+  }
+
+  return std::max(1U, segIndex) - 1;
+}
+
+
 
 
 
@@ -508,6 +525,16 @@ already_AddRefed<Path> SVGPathData::BuildPathForMeasuring() const {
   RefPtr<PathBuilder> builder =
       drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
   return BuildPath(builder, StyleStrokeLinecap::Butt, 0);
+}
+
+
+already_AddRefed<Path> SVGPathData::BuildPathForMeasuring(
+    Span<const StylePathCommand> aPath) {
+  RefPtr<DrawTarget> drawTarget =
+      gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+  RefPtr<PathBuilder> builder =
+      drawTarget->CreatePathBuilder(FillRule::FILL_WINDING);
+  return BuildPath(aPath, builder, StyleStrokeLinecap::Butt, 0);
 }
 
 

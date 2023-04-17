@@ -14,6 +14,8 @@
 
 namespace mozilla {
 
+struct StylePathCommand;
+
 #define NS_SVG_PATH_SEG_MAX_ARGS 7
 #define NS_SVG_PATH_SEG_FIRST_VALID_TYPE \
   dom::SVGPathSeg_Binding::PATHSEG_CLOSEPATH
@@ -254,6 +256,13 @@ class SVGPathSegUtils {
 
 
   static void TraversePathSegment(const float* aData,
+                                  SVGPathTraversalState& aState);
+
+  
+
+
+
+  static void TraversePathSegment(const StylePathCommand& aCommand,
                                   SVGPathTraversalState& aState);
 };
 

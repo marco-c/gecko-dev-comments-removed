@@ -57,6 +57,19 @@ void SVGPathElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
 NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGPathElement)
 
 uint32_t SVGPathElement::GetPathSegAtLength(float distance) {
+  uint32_t seg = 0;
+  auto callback = [&](const ComputedStyle* s) {
+    const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
+    if (styleSVGReset->mD.IsPath()) {
+      seg = SVGPathData::GetPathSegAtLength(
+          styleSVGReset->mD.AsPath()._0.AsSpan(), distance);
+    }
+  };
+
+  if (StaticPrefs::layout_css_d_property_enabled() &&
+      SVGGeometryProperty::DoForComputedStyle(this, callback)) {
+    return seg;
+  }
   return mD.GetAnimValue().GetPathSegAtLength(distance);
 }
 
@@ -207,10 +220,16 @@ SVGPathElement::CreateSVGPathSegCurvetoQuadraticSmoothRel(float x, float y) {
 }
 
 already_AddRefed<DOMSVGPathSegList> SVGPathElement::PathSegList() {
+  
+  
+  
   return DOMSVGPathSegList::GetDOMWrapper(mD.GetBaseValKey(), this, false);
 }
 
 already_AddRefed<DOMSVGPathSegList> SVGPathElement::AnimatedPathSegList() {
+  
+  
+  
   return DOMSVGPathSegList::GetDOMWrapper(mD.GetAnimValKey(), this, true);
 }
 
@@ -219,7 +238,17 @@ already_AddRefed<DOMSVGPathSegList> SVGPathElement::AnimatedPathSegList() {
 
 
 bool SVGPathElement::HasValidDimensions() const {
-  return !mD.GetAnimValue().IsEmpty();
+  bool hasPath = false;
+  auto callback = [&](const ComputedStyle* s) {
+    const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
+    hasPath =
+        styleSVGReset->mD.IsPath() && !styleSVGReset->mD.AsPath()._0.IsEmpty();
+  };
+
+  SVGGeometryProperty::DoForComputedStyle(this, callback);
+  
+  
+  return hasPath || !mD.GetAnimValue().IsEmpty();
 }
 
 
@@ -236,7 +265,24 @@ SVGPathElement::IsAttributeMapped(const nsAtom* name) const {
 }
 
 already_AddRefed<Path> SVGPathElement::GetOrBuildPathForMeasuring() {
-  return mD.GetAnimValue().BuildPathForMeasuring();
+  if (!StaticPrefs::layout_css_d_property_enabled()) {
+    return mD.GetAnimValue().BuildPathForMeasuring();
+  }
+
+  
+  
+  
+
+  RefPtr<Path> path;
+  bool success = SVGGeometryProperty::DoForComputedStyle(
+      this, [&path](const ComputedStyle* s) {
+        const auto& d = s->StyleSVGReset()->mD;
+        if (d.IsNone()) {
+          return;
+        }
+        path = SVGPathData::BuildPathForMeasuring(d.AsPath()._0.AsSpan());
+      });
+  return success ? path.forget() : mD.GetAnimValue().BuildPathForMeasuring();
 }
 
 
@@ -249,6 +295,7 @@ bool SVGPathElement::AttributeDefinesGeometry(const nsAtom* aName) {
 bool SVGPathElement::IsMarkable() { return true; }
 
 void SVGPathElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {
+  
   mD.GetAnimValue().GetMarkerPositioningData(aMarks);
 }
 
@@ -262,20 +309,44 @@ already_AddRefed<Path> SVGPathElement::BuildPath(PathBuilder* aBuilder) {
 
   auto strokeLineCap = StyleStrokeLinecap::Butt;
   Float strokeWidth = 0;
+  RefPtr<Path> path;
+  const bool useDProperty = StaticPrefs::layout_css_d_property_enabled();
 
-  SVGGeometryProperty::DoForComputedStyle(this, [&](const ComputedStyle* s) {
-    const nsStyleSVG* style = s->StyleSVG();
+  auto callback = [&](const ComputedStyle* s) {
+    const nsStyleSVG* styleSVG = s->StyleSVG();
     
     
     
     
-    if (style->mStrokeLinecap != StyleStrokeLinecap::Butt) {
-      strokeLineCap = style->mStrokeLinecap;
+    if (styleSVG->mStrokeLinecap != StyleStrokeLinecap::Butt) {
+      strokeLineCap = styleSVG->mStrokeLinecap;
       strokeWidth = SVGContentUtils::GetStrokeWidth(this, s, nullptr);
     }
-  });
 
+    if (!useDProperty) {
+      return;
+    }
+
+    const auto& d = s->StyleSVGReset()->mD;
+    if (d.IsPath()) {
+      path = SVGPathData::BuildPath(d.AsPath()._0.AsSpan(), aBuilder,
+                                    strokeLineCap, strokeWidth);
+    }
+  };
+
+  bool success = SVGGeometryProperty::DoForComputedStyle(this, callback);
+  if (success && useDProperty) {
+    return path.forget();
+  }
+
+  
   return mD.GetAnimValue().BuildPath(aBuilder, strokeLineCap, strokeWidth);
+}
+
+
+bool SVGPathElement::IsDPropertyChangedViaCSS(const ComputedStyle& aNewStyle,
+                                              const ComputedStyle& aOldStyle) {
+  return aNewStyle.StyleSVGReset()->mD != aOldStyle.StyleSVGReset()->mD;
 }
 
 }  
