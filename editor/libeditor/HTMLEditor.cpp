@@ -5137,31 +5137,6 @@ nsIContent* HTMLEditor::GetLastEditableLeaf(nsINode& aNode) const {
   return child;
 }
 
-bool HTMLEditor::IsInVisibleTextFrames(Text& aText) const {
-  nsISelectionController* selectionController = GetSelectionController();
-  if (NS_WARN_IF(!selectionController)) {
-    return false;
-  }
-
-  if (!aText.TextDataLength()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  bool isVisible = false;
-  nsresult rv = selectionController->CheckVisibilityContent(
-      &aText, 0, aText.TextDataLength(), &isVisible);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "nsISelectionController::CheckVisibilityContent() failed, but ignored");
-  return NS_SUCCEEDED(rv) && isVisible;
-}
-
 bool HTMLEditor::IsEmpty() const {
   if (mPaddingBRElementForEmptyEditor) {
     return true;
@@ -5195,7 +5170,7 @@ bool HTMLEditor::IsEmptyNodeImpl(nsINode& aNode, bool aSingleBRDoesntCount,
 
   if (Text* text = aNode.GetAsText()) {
     return aSafeToAskFrames
-               ? !IsInVisibleTextFrames(*text)
+               ? !HTMLEditUtils::IsInVisibleTextFrames(GetPresContext(), *text)
                : !HTMLEditUtils::IsVisibleTextNode(*text, editingHost);
   }
 
@@ -5227,7 +5202,8 @@ bool HTMLEditor::IsEmptyNodeImpl(nsINode& aNode, bool aSingleBRDoesntCount,
       if (Text* text = child->GetAsText()) {
         
         if (!(aSafeToAskFrames
-                  ? !IsInVisibleTextFrames(*text)
+                  ? !HTMLEditUtils::IsInVisibleTextFrames(GetPresContext(),
+                                                          *text)
                   : !HTMLEditUtils::IsVisibleTextNode(*text, editingHost))) {
           return false;
         }

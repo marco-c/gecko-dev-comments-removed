@@ -23,6 +23,7 @@
 #include "nsTArray.h"
 
 class nsAtom;
+class nsPresContext;
 
 namespace mozilla {
 
@@ -237,6 +238,13 @@ class HTMLEditUtils final {
 
   static bool IsVisibleTextNode(dom::Text& aText,
                                 Element* aEditingHost = nullptr);
+
+  
+
+
+
+  static bool IsInVisibleTextFrames(nsPresContext* aPresContext,
+                                    dom::Text& aText);
 
   
 

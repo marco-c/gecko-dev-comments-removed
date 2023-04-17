@@ -836,12 +836,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsInVisibleTextFrames(dom::Text& aText) const;
-
-  
-
-
-
 
   bool IsEmptyNode(nsINode& aNode, bool aSingleBRDoesntCount = false,
                    bool aListOrCellNotEmpty = false,
