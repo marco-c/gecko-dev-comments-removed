@@ -610,17 +610,23 @@ class EntryGetter {
 
   void Next() {
     MOZ_ASSERT(Has(), "Caller should have checked `Has()` before `Get()`");
-    for (;;) {
-      ++mBlockIt;
-      if (ReadLegacyOrEnd()) {
-        
-        break;
-      }
-      
-    }
+    ++mBlockIt;
+    ReadUntilLegacyOrEnd();
   }
 
+  
+  
   ProfileChunkedBuffer::BlockIterator Iterator() const { return mBlockIt; }
+
+  
+  
+  void RestartAfter(const ProfileChunkedBuffer::BlockIterator& it) {
+    mBlockIt = it;
+    if (!Has()) {
+      return;
+    }
+    Next();
+  }
 
   ProfileBufferBlockIndex CurBlockIndex() const {
     return mBlockIt.CurrentBlockIndex();
@@ -658,6 +664,17 @@ class EntryGetter {
     er = *mBlockIt;
     er.ReadBytes(&mEntry, er.RemainingBytes());
     return true;
+  }
+
+  void ReadUntilLegacyOrEnd() {
+    for (;;) {
+      if (ReadLegacyOrEnd()) {
+        
+        break;
+      }
+      
+      ++mBlockIt;
+    }
   }
 
   ProfileBufferEntry mEntry;
@@ -1106,7 +1123,7 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           er.SetRemainingBytes(0);
         }
 
-        e.Next();
+        e.RestartAfter(it);
       } else if (e.Has() && e.Get().IsTimeBeforeSameSample()) {
         if (sample.mTime == 0.0) {
           
@@ -1163,7 +1180,7 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           er.SetRemainingBytes(0);
         }
 
-        e.Next();
+        e.RestartAfter(it);
       } else {
         ERROR_AND_CONTINUE("expected a Time entry");
       }
