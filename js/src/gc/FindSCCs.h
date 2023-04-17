@@ -68,7 +68,7 @@ struct GraphNodeBase {
 template <typename Node>
 class ComponentFinder {
  public:
-  explicit ComponentFinder(uintptr_t sl) : stackLimit(sl) {}
+  explicit ComponentFinder(JSContext* cx) : cx(cx) {}
 
   ~ComponentFinder() {
     MOZ_ASSERT(!stack);
@@ -145,8 +145,12 @@ class ComponentFinder {
     v->gcNextGraphNode = stack;
     stack = v;
 
-    int stackDummy;
-    if (stackFull || !JS_CHECK_STACK_SIZE(stackLimit, &stackDummy)) {
+    if (stackFull) {
+      return;
+    }
+
+    AutoCheckRecursionLimit recursion(cx);
+    if (!recursion.checkSystemDontReport(cx)) {
       stackFull = true;
       return;
     }
@@ -194,7 +198,7 @@ class ComponentFinder {
   Node* stack = nullptr;
   Node* firstComponent = nullptr;
   Node* cur = nullptr;
-  uintptr_t stackLimit;
+  JSContext* cx;
   bool stackFull = false;
 };
 
