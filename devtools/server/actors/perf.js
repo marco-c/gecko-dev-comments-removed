@@ -30,10 +30,7 @@ exports.PerfActor = ActorClassWithSpec(perfSpec, {
     Actor.prototype.initialize.call(this, conn);
     
     
-    this.bridge = new ActorReadyGeckoProfilerInterface({
-      
-      gzipped: false,
-    });
+    this.bridge = new ActorReadyGeckoProfilerInterface();
 
     _bridgeEvents(this, [
       "profile-locked-by-private-browsing",
