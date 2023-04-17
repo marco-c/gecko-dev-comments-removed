@@ -163,7 +163,7 @@ struct CompileTask : public HelperThreadTask {
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
-  ThreadType threadType() override { return ThreadType::THREAD_TYPE_WASM; }
+  ThreadType threadType() override;
 };
 
 
