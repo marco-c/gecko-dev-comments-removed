@@ -158,9 +158,7 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     
-    
-    
-    if (!this.isLocalTab || this.isDevToolsExtensionContext) {
+    if (!this.isLocalTab) {
       this.destroy();
     }
   }
