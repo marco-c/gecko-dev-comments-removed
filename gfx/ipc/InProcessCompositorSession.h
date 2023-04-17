@@ -16,14 +16,14 @@ namespace mozilla {
 namespace layers {
 
 class CompositorOptions;
-class LayerManager;
+class WebRenderLayerManager;
 
 
 
 class InProcessCompositorSession final : public CompositorSession {
  public:
   static RefPtr<InProcessCompositorSession> Create(
-      nsBaseWidget* baseWidget, LayerManager* aLayerManager,
+      nsBaseWidget* baseWidget, WebRenderLayerManager* aLayerManager,
       const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
       const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
       const gfx::IntSize& aSurfaceSize, uint32_t aNamespace);

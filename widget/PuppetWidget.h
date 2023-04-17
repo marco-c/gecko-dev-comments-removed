@@ -34,6 +34,10 @@ namespace dom {
 class BrowserChild;
 }  
 
+namespace layers {
+class WebRenderLayerManager;
+}  
+
 namespace widget {
 
 struct AutoCacheNativeKeyCommands;
@@ -44,6 +48,7 @@ class PuppetWidget : public nsBaseWidget,
   typedef mozilla::CSSRect CSSRect;
   typedef mozilla::dom::BrowserChild BrowserChild;
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::layers::WebRenderLayerManager WebRenderLayerManager;
 
   
   typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
@@ -179,7 +184,7 @@ class PuppetWidget : public nsBaseWidget,
   
   
   bool CreateRemoteLayerManager(
-      const std::function<bool(LayerManager*)>& aInitializeFunc);
+      const std::function<bool(WebRenderLayerManager*)>& aInitializeFunc);
 
   bool HasLayerManager() { return !!mWindowRenderer; }
 

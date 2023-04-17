@@ -1068,22 +1068,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
       
       
       ActiveLayerTracker::NotifyRestyle(aFrame, eCSSProperty_transform);
-      
-      
-      
-      
-      if (!needInvalidatingPaint) {
-        nsDisplayItem::Layer* layer;
-        needInvalidatingPaint |= !aFrame->TryUpdateTransformOnly(&layer);
-
-        if (!needInvalidatingPaint) {
-          
-          
-          MOZ_ASSERT(layer, "this can't happen if there's no layer");
-          nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
-              layer, nullptr, nullptr, aFrame, DisplayItemType::TYPE_TRANSFORM);
-        }
-      }
+      needInvalidatingPaint = true;
     }
     if (aChange & nsChangeHint_ChildrenOnlyTransform) {
       needInvalidatingPaint = true;

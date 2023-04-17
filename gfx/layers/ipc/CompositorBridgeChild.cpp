@@ -16,7 +16,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
 #include "mozilla/layers/CanvasChild.h"
-#include "mozilla/layers/LayerManager.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/TextureClient.h"      
 #include "mozilla/layers/TextureClientPool.h"  
@@ -249,7 +249,7 @@ void CompositorBridgeChild::InitForContent(uint32_t aNamespace) {
 }
 
 void CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
-                                          LayerManager* aLayerManager,
+                                          WebRenderLayerManager* aLayerManager,
                                           uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aProcessToken);
@@ -318,7 +318,7 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
                      LayersBackend::LAYERS_CLIENT ||
                  mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR);
       
-      RefPtr<LayerManager> m = mLayerManager;
+      RefPtr<WebRenderLayerManager> m = mLayerManager;
       m->DidComposite(id, aCompositeStart, aCompositeEnd);
     } else if (aId.IsValid()) {
       RefPtr<dom::BrowserChild> child = dom::BrowserChild::GetFrom(aId);

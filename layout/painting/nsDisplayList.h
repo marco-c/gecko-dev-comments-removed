@@ -1053,19 +1053,6 @@ class nsDisplayListBuilder {
 
 
 
-
-
-  static void AddAnimationsAndTransitionsToLayer(layers::Layer* aLayer,
-                                                 nsDisplayListBuilder* aBuilder,
-                                                 nsDisplayItem* aItem,
-                                                 nsIFrame* aFrame,
-                                                 DisplayItemType aType);
-
-  
-
-
-
-
   nsDisplayWrapList* MergeItems(nsTArray<nsDisplayWrapList*>& aItems);
 
   
@@ -3460,9 +3447,8 @@ class nsDisplayList {
     PAINT_COMPRESSED = 0x10,
     PAINT_IDENTICAL_DISPLAY_LIST = 0x20
   };
-  already_AddRefed<layers::LayerManager> PaintRoot(
-      nsDisplayListBuilder* aBuilder, gfxContext* aCtx, uint32_t aFlags,
-      Maybe<double> aDisplayListBuildTime);
+  void PaintRoot(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
+                 uint32_t aFlags, Maybe<double> aDisplayListBuildTime);
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx,
              int32_t aAppUnitsPerDevPixel);
@@ -5895,7 +5881,8 @@ class nsDisplayScrollInfoLayer : public nsDisplayWrapList {
 
   void WriteDebugInfo(std::stringstream& aStream) override;
   UniquePtr<layers::ScrollMetadata> ComputeScrollMetadata(
-      nsDisplayListBuilder* aBuilder, LayerManager* aLayerManager);
+      nsDisplayListBuilder* aBuilder,
+      layers::WebRenderLayerManager* aLayerManager);
   bool UpdateScrollData(layers::WebRenderScrollData* aData,
                         layers::WebRenderLayerScrollData* aLayerData) override;
   bool CreateWebRenderCommands(

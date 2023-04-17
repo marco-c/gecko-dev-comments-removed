@@ -3508,16 +3508,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool TryUpdateTransformOnly(Layer** aLayerResult);
-
-  
-
-
-
-
-
-
-
 
   bool IsInvalid(nsRect& aRect);
 
