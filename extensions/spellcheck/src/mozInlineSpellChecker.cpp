@@ -30,8 +30,6 @@
 
 
 
-
-
 #include "mozInlineSpellChecker.h"
 
 #include "mozilla/Assertions.h"
