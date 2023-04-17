@@ -12,8 +12,9 @@
 #  include "mozilla/mscom/ActivationContext.h"
 #endif  
 #include "mozilla/mscom/ApartmentRegion.h"
-#include "mozilla/WindowsProcessMitigations.h"
-#include "nsXULAppAPI.h"
+#if defined(MOZILLA_INTERNAL_API)
+#  include "nsXULAppAPI.h"
+#endif  
 
 namespace mozilla {
 namespace mscom {
@@ -32,23 +33,22 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
   };
 
   
-  explicit ProcessRuntime(ProcessCategory aProcessCategory);
+  explicit ProcessRuntime(const ProcessCategory aProcessCategory);
 
  public:
 #if defined(MOZILLA_INTERNAL_API)
-  ProcessRuntime() : ProcessRuntime(XRE_GetProcessType()) {}
-#endif  
-
-  explicit ProcessRuntime(GeckoProcessType aProcessType);
-
+  ProcessRuntime();
+  ~ProcessRuntime();
+#else
   ~ProcessRuntime() = default;
+#endif  
 
   explicit operator bool() const { return SUCCEEDED(mInitResult); }
   HRESULT GetHResult() const { return mInitResult; }
 
-  ProcessRuntime(ProcessRuntime&) = delete;
+  ProcessRuntime(const ProcessRuntime&) = delete;
   ProcessRuntime(ProcessRuntime&&) = delete;
-  ProcessRuntime& operator=(ProcessRuntime&) = delete;
+  ProcessRuntime& operator=(const ProcessRuntime&) = delete;
   ProcessRuntime& operator=(ProcessRuntime&&) = delete;
 
   
@@ -58,16 +58,32 @@ class MOZ_NON_TEMPORARY_CLASS ProcessRuntime final {
   static DWORD GetClientThreadId();
 
  private:
+#if defined(MOZILLA_INTERNAL_API)
+  explicit ProcessRuntime(const GeckoProcessType aProcessType);
+#  if defined(MOZ_SANDBOX)
+  void InitUsingPersistentMTAThread(const nsAutoHandle& aCurThreadToken);
+#  endif  
+#endif    
   void InitInsideApartment();
-  HRESULT InitializeSecurity();
-  static COINIT GetDesiredApartmentType(ProcessCategory aProcessCategory);
 
+#if defined(MOZILLA_INTERNAL_API)
+  static void PostInit();
+#endif  
+  static HRESULT InitializeSecurity(const ProcessCategory aProcessCategory);
+  static COINIT GetDesiredApartmentType(const ProcessCategory aProcessCategory);
+
+ private:
   HRESULT mInitResult;
   const ProcessCategory mProcessCategory;
 #if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
   ActivationContextRegion mActCtxRgn;
 #endif  
   ApartmentRegion mAptRegion;
+
+ private:
+#if defined(MOZILLA_INTERNAL_API)
+  static ProcessRuntime* sInstance;
+#endif  
 };
 
 }  

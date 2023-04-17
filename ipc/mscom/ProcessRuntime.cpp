@@ -16,14 +16,16 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Vector.h"
+#include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowsHelpers.h"
 
-#if defined(MOZILLA_INTERNAL_API) && defined(MOZ_SANDBOX)
+#if defined(MOZILLA_INTERNAL_API)
 #  include "mozilla/mscom/EnsureMTA.h"
-#  include "mozilla/sandboxTarget.h"
-#  include "nsThreadManager.h"
-#endif  
+#  if defined(MOZ_SANDBOX)
+#    include "mozilla/sandboxTarget.h"
+#  endif  
+#endif    
 
 #include <accctrl.h>
 #include <aclapi.h>
@@ -36,12 +38,18 @@ extern "C" void __cdecl SetOaNoCache(void);
 namespace mozilla {
 namespace mscom {
 
-ProcessRuntime::ProcessRuntime(GeckoProcessType aProcessType)
+#if defined(MOZILLA_INTERNAL_API)
+ProcessRuntime* ProcessRuntime::sInstance = nullptr;
+
+ProcessRuntime::ProcessRuntime() : ProcessRuntime(XRE_GetProcessType()) {}
+
+ProcessRuntime::ProcessRuntime(const GeckoProcessType aProcessType)
     : ProcessRuntime(aProcessType == GeckoProcessType_Default
                          ? ProcessCategory::GeckoBrowserParent
                          : ProcessCategory::GeckoChild) {}
+#endif  
 
-ProcessRuntime::ProcessRuntime(ProcessRuntime::ProcessCategory aProcessCategory)
+ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
     : mInitResult(CO_E_NOTINITIALIZED),
       mProcessCategory(aProcessCategory)
 #if defined(ACCESSIBILITY) && defined(MOZILLA_INTERNAL_API)
@@ -49,21 +57,36 @@ ProcessRuntime::ProcessRuntime(ProcessRuntime::ProcessCategory aProcessCategory)
       mActCtxRgn(a11y::Compatibility::GetActCtxResourceId())
 #endif  
 {
-#if defined(MOZILLA_INTERNAL_API) && defined(MOZ_SANDBOX)
-  
-  
-  
-  
-  
-  if (mProcessCategory == ProcessCategory::GeckoChild && IsWin32kLockedDown()) {
-    
-    
-    nsresult rv = nsThreadManager::get().Init();
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    if (NS_FAILED(rv)) {
-      return;
-    }
+#if defined(MOZILLA_INTERNAL_API)
+  MOZ_DIAGNOSTIC_ASSERT(!sInstance);
+  sInstance = this;
 
+  EnsureMTA();
+  
+
+
+
+
+
+
+
+
+  const bool isCurThreadImplicitMTA = IsCurrentThreadImplicitMTA();
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(aProcessCategory ==
+                            ProcessCategory::GeckoBrowserParent ||
+                        isCurThreadImplicitMTA);
+
+#  if defined(MOZ_SANDBOX)
+  const bool isLockedDownChildProcess =
+      mProcessCategory == ProcessCategory::GeckoChild && IsWin32kLockedDown();
+  
+  
+  
+  
+  
+  if (isLockedDownChildProcess) {
     
     
     HANDLE rawCurThreadImpToken;
@@ -74,51 +97,26 @@ ProcessRuntime::ProcessRuntime(ProcessRuntime::ProcessCategory aProcessCategory)
     }
     nsAutoHandle curThreadImpToken(rawCurThreadImpToken);
 
-#  if defined(DEBUG)
     
     
     DWORD len;
     TOKEN_TYPE tokenType;
-    MOZ_ASSERT(::GetTokenInformation(rawCurThreadImpToken, TokenType,
-                                     &tokenType, sizeof(tokenType), &len) &&
-               len == sizeof(tokenType) && tokenType == TokenImpersonation);
-#  endif  
+    MOZ_RELEASE_ASSERT(
+        ::GetTokenInformation(rawCurThreadImpToken, TokenType, &tokenType,
+                              sizeof(tokenType), &len) &&
+        len == sizeof(tokenType) && tokenType == TokenImpersonation);
 
     
-    HANDLE rawMtaThreadImpToken = nullptr;
-    if (!::DuplicateToken(rawCurThreadImpToken, SecurityImpersonation,
-                          &rawMtaThreadImpToken)) {
-      mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+    
+    
+    
+    if (!isCurThreadImplicitMTA) {
+      InitUsingPersistentMTAThread(curThreadImpToken);
       return;
     }
-    nsAutoHandle mtaThreadImpToken(rawMtaThreadImpToken);
-
-    SandboxTarget::Instance()->RegisterSandboxStartCallback([]() -> void {
-      EnsureMTA(
-          []() -> void {
-            
-            MOZ_RELEASE_ASSERT(::RevertToSelf(),
-                               "mscom::ProcessRuntime RevertToSelf failed");
-          },
-          EnsureMTA::Option::ForceDispatch);
-    });
-
-    
-    EnsureMTA(
-        [this, rawMtaThreadImpToken]() -> void {
-          if (!::SetThreadToken(nullptr, rawMtaThreadImpToken)) {
-            mInitResult = HRESULT_FROM_WIN32(::GetLastError());
-            return;
-          }
-
-          InitInsideApartment();
-        },
-        EnsureMTA::Option::ForceDispatch);
-
-    return;
   }
-
-#endif  
+#  endif  
+#endif    
 
   mAptRegion.Init(GetDesiredApartmentType(mProcessCategory));
 
@@ -131,18 +129,94 @@ ProcessRuntime::ProcessRuntime(ProcessRuntime::ProcessCategory aProcessCategory)
   }
 
   InitInsideApartment();
+  if (FAILED(mInitResult)) {
+    return;
+  }
+
+#if defined(MOZILLA_INTERNAL_API)
+#  if defined(MOZ_SANDBOX)
+  if (isLockedDownChildProcess) {
+    
+    SandboxTarget::Instance()->RegisterSandboxStartCallback([self = this]() {
+      
+      
+      if (self == sInstance && SUCCEEDED(self->mInitResult)) {
+        PostInit();
+      }
+    });
+    return;
+  }
+#  endif  
+
+  PostInit();
+#endif  
 }
+
+#if defined(MOZILLA_INTERNAL_API)
+ProcessRuntime::~ProcessRuntime() {
+  MOZ_DIAGNOSTIC_ASSERT(sInstance == this);
+  sInstance = nullptr;
+}
+
+#  if defined(MOZ_SANDBOX)
+void ProcessRuntime::InitUsingPersistentMTAThread(
+    const nsAutoHandle& aCurThreadToken) {
+  
+  HANDLE rawMtaThreadImpToken = nullptr;
+  if (!::DuplicateToken(aCurThreadToken, SecurityImpersonation,
+                        &rawMtaThreadImpToken)) {
+    mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+    return;
+  }
+  nsAutoHandle mtaThreadImpToken(rawMtaThreadImpToken);
+
+  SandboxTarget::Instance()->RegisterSandboxStartCallback(
+      [self = this]() -> void {
+        EnsureMTA(
+            []() -> void {
+              
+              MOZ_RELEASE_ASSERT(::RevertToSelf(),
+                                 "mscom::ProcessRuntime RevertToSelf failed");
+            },
+            EnsureMTA::Option::ForceDispatchToPersistentThread);
+
+        
+        
+        if (self == sInstance && SUCCEEDED(self->mInitResult)) {
+          PostInit();
+        }
+      });
+
+  
+  EnsureMTA(
+      [this, rawMtaThreadImpToken]() -> void {
+        if (!::SetThreadToken(nullptr, rawMtaThreadImpToken)) {
+          mInitResult = HRESULT_FROM_WIN32(::GetLastError());
+          return;
+        }
+
+        InitInsideApartment();
+      },
+      EnsureMTA::Option::ForceDispatchToPersistentThread);
+}
+#  endif  
+#endif    
 
 
 COINIT ProcessRuntime::GetDesiredApartmentType(
-    ProcessRuntime::ProcessCategory aProcessCategory) {
-  
-  
-  
+    const ProcessRuntime::ProcessCategory aProcessCategory) {
   switch (aProcessCategory) {
     case ProcessCategory::GeckoBrowserParent:
-    case ProcessCategory::GeckoChild:
       return COINIT_APARTMENTTHREADED;
+    case ProcessCategory::GeckoChild:
+      if (!IsWin32kLockedDown()) {
+        
+        
+        return static_cast<COINIT>(COINIT_APARTMENTTHREADED |
+                                   COINIT_DISABLE_OLE1DDE);
+      }
+
+      [[fallthrough]];
     default:
       return COINIT_MULTITHREADED;
   }
@@ -157,16 +231,20 @@ void ProcessRuntime::InitInsideApartment() {
   }
 
   
-  mInitResult = InitializeSecurity();
-  MOZ_ASSERT(SUCCEEDED(mInitResult));
-  if (FAILED(mInitResult)) {
+  mInitResult = InitializeSecurity(mProcessCategory);
+  MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(mInitResult));
+
+  
+  
+  
+  if (FAILED(mInitResult) && mInitResult != RPC_E_TOO_LATE) {
     return;
   }
 
   RefPtr<IGlobalOptions> globalOpts;
-  mInitResult = ::CoCreateInstance(CLSID_GlobalOptions, nullptr,
-                                   CLSCTX_INPROC_SERVER, IID_IGlobalOptions,
-                                   (void**)getter_AddRefs(globalOpts));
+  mInitResult =
+      ::CoCreateInstance(CLSID_GlobalOptions, nullptr, CLSCTX_INPROC_SERVER,
+                         IID_IGlobalOptions, getter_AddRefs(globalOpts));
   MOZ_ASSERT(SUCCEEDED(mInitResult));
   if (FAILED(mInitResult)) {
     return;
@@ -187,6 +265,16 @@ void ProcessRuntime::InitInsideApartment() {
   lock.SetInitialized();
 }
 
+#if defined(MOZILLA_INTERNAL_API)
+
+
+
+
+ void ProcessRuntime::PostInit() {
+  
+}
+#endif  
+
 
 DWORD
 ProcessRuntime::GetClientThreadId() {
@@ -201,8 +289,9 @@ ProcessRuntime::GetClientThreadId() {
   return callerTid;
 }
 
+
 HRESULT
-ProcessRuntime::InitializeSecurity() {
+ProcessRuntime::InitializeSecurity(const ProcessCategory aProcessCategory) {
   HANDLE rawToken = nullptr;
   BOOL ok = ::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &rawToken);
   if (!ok) {
@@ -259,10 +348,13 @@ ProcessRuntime::InitializeSecurity() {
     return HRESULT_FROM_WIN32(::GetLastError());
   }
 
+  const bool allowAppContainers =
+      aProcessCategory == ProcessCategory::GeckoBrowserParent &&
+      IsWin8OrLater();
+
   BYTE appContainersSid[SECURITY_MAX_SID_SIZE];
   DWORD appContainersSidSize = sizeof(appContainersSid);
-  if (mProcessCategory == ProcessCategory::GeckoBrowserParent &&
-      IsWin8OrLater()) {
+  if (allowAppContainers) {
     if (!::CreateWellKnownSid(WinBuiltinAnyPackageSid, nullptr,
                               appContainersSid, &appContainersSidSize)) {
       return HRESULT_FROM_WIN32(::GetLastError());
@@ -295,8 +387,7 @@ ProcessRuntime::InitializeSecurity() {
       {nullptr, NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_SID, TRUSTEE_IS_USER,
        reinterpret_cast<LPWSTR>(tokenUser.User.Sid)}});
 
-  if (mProcessCategory == ProcessCategory::GeckoBrowserParent &&
-      IsWin8OrLater()) {
+  if (allowAppContainers) {
     Unused << entries.append(
         EXPLICIT_ACCESS_W{COM_RIGHTS_EXECUTE,
                           GRANT_ACCESS,
