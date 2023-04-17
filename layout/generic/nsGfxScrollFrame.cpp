@@ -6335,9 +6335,8 @@ nsSize ScrollFrameHelper::TrueOuterSize(nsDisplayListBuilder* aBuilder) const {
   
   
   
-  LayerManager* layerManager = aBuilder->GetWidgetLayerManager();
-  if (layerManager &&
-      layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
+  WebRenderLayerManager* layerManager = aBuilder->GetWidgetLayerManager();
+  if (layerManager) {
     displaySize.height += ViewAs<LayoutDevicePixel>(
         mOuter->PresContext()->GetDynamicToolbarMaxHeight(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds);
