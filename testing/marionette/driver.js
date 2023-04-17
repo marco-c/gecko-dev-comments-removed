@@ -1249,11 +1249,7 @@ GeckoDriver.prototype.switchToWindow = async function(cmd) {
   );
   assert.boolean(focus, pprint`Expected "focus" to be a boolean, got ${focus}`);
 
-  const id = parseInt(handle);
-  const found = this.findWindow(
-    windowManager.windows,
-    (win, winId) => id == winId
-  );
+  const found = windowManager.findWindowByHandle(parseInt(handle));
 
   let selected = false;
   if (found) {
@@ -1268,51 +1264,6 @@ GeckoDriver.prototype.switchToWindow = async function(cmd) {
   if (!selected) {
     throw new error.NoSuchWindowError(`Unable to locate window: ${handle}`);
   }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.findWindow = function(winIterable, filter) {
-  for (const win of winIterable) {
-    const browsingContext = win.docShell.browsingContext;
-    const tabBrowser = browser.getTabBrowser(win);
-
-    
-    if (filter(win, browsingContext.id)) {
-      return { win, id: browsingContext.id, hasTabBrowser: !!tabBrowser };
-
-      
-      
-    } else if (tabBrowser && tabBrowser.tabs) {
-      for (let i = 0; i < tabBrowser.tabs.length; ++i) {
-        let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
-        let contentWindowId = windowManager.getIdForBrowser(contentBrowser);
-
-        if (filter(win, contentWindowId)) {
-          return {
-            win,
-            id: browsingContext.id,
-            hasTabBrowser: true,
-            tabIndex: i,
-          };
-        }
-      }
-    }
-  }
-
-  return null;
 };
 
 
