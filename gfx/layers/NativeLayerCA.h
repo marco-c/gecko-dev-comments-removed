@@ -300,6 +300,8 @@ class NativeLayerCA : public NativeLayer {
 
     CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
 
+    bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
+
     
     
     
