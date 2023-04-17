@@ -50,7 +50,10 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Uptime.h"
-#include <pthread.h>
+
+#if !defined(__wasi__)
+#  include <pthread.h>
+#endif
 
 
 static uint64_t sResolution;

@@ -493,6 +493,12 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "threading/windows/CpuCount.cpp",
         "threading/windows/WindowsThread.cpp",
     ]
+
+elif CONFIG["OS_ARCH"] == "WASI":
+    UNIFIED_SOURCES += [
+        "threading/noop/CpuCount.cpp",
+        "threading/noop/NoopThread.cpp",
+    ]
 else:
     UNIFIED_SOURCES += [
         "threading/posix/CpuCount.cpp",

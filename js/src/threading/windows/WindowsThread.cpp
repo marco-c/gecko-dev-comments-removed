@@ -4,6 +4,9 @@
 
 
 
+#include <chrono>
+#include <thread>
+
 #include "threading/Thread.h"
 #include "threading/windows/ThreadPlatformData.h"
 
@@ -115,6 +118,10 @@ void ThisThread::SetName(const char* name) {
 void ThisThread::GetName(char* nameBuffer, size_t len) {
   MOZ_RELEASE_ASSERT(len > 0);
   *nameBuffer = '\0';
+}
+
+void ThisThread::SleepMilliseconds(size_t ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 }  
