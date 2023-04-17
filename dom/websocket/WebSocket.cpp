@@ -1644,7 +1644,9 @@ nsresult WebSocketImpl::Init(JSContext* aCx, nsIPrincipal* aLoadingPrincipal,
 
   
   
-  if (!mIsServerSide && !mSecure && originDoc) {
+  if (!mIsServerSide && !mSecure && originDoc &&
+      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(
+          originDoc->GetDocumentURI())) {
     nsCOMPtr<nsIURI> uri;
     nsresult rv = NS_NewURI(getter_AddRefs(uri), mURI);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1669,7 +1671,9 @@ nsresult WebSocketImpl::Init(JSContext* aCx, nsIPrincipal* aLoadingPrincipal,
   
   
   if (!mIsServerSide && !mSecure && originDoc &&
-      originDoc->GetUpgradeInsecureRequests(false)) {
+      originDoc->GetUpgradeInsecureRequests(false) &&
+      !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(
+          originDoc->GetDocumentURI())) {
     
     AutoTArray<nsString, 2> params;
     CopyUTF8toUTF16(mURI, *params.AppendElement());
