@@ -6,12 +6,6 @@
 var settings = [
   
   {
-    name: "Test whether same-origin non-tracker frame has storage access",
-    topPage: TEST_TOP_PAGE,
-    thirdPartyPage: TEST_DOMAIN + TEST_PATH + "3rdParty.html",
-  },
-  
-  {
     name: "Test whether 3rd-party non-tracker frame has storage access",
     topPage: TEST_TOP_PAGE,
     thirdPartyPage: TEST_4TH_PARTY_PAGE,
@@ -80,13 +74,11 @@ var testCases = [
       true ,
       true ,
       true ,
-      true ,
     ],
   },
   {
     behavior: BEHAVIOR_REJECT_FOREIGN, 
     hasStorageAccess: [
-      true ,
       false ,
       SpecialPowers.Services.prefs.getBoolPref(
         "network.cookie.rejectForeignWithExceptions.enabled"
@@ -107,14 +99,12 @@ var testCases = [
       false ,
       false ,
       false ,
-      false ,
-      false ,
+      true ,
     ],
   },
   {
     behavior: BEHAVIOR_LIMIT_FOREIGN, 
     hasStorageAccess: [
-      true ,
       false ,
       false ,
       false ,
@@ -128,7 +118,6 @@ var testCases = [
     hasStorageAccess: [
       true ,
       true ,
-      true ,
       false ,
       true ,
       true ,
@@ -138,7 +127,6 @@ var testCases = [
   {
     behavior: BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN, 
     hasStorageAccess: [
-      true ,
       false ,
       true ,
       false ,

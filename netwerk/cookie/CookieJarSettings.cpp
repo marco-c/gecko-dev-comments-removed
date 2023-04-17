@@ -219,26 +219,6 @@ CookieJarSettings::GetLimitForeignContexts(bool* aLimitForeignContexts) {
 }
 
 NS_IMETHODIMP
-CookieJarSettings::GetBlockingAllThirdPartyContexts(
-    bool* aBlockingAllThirdPartyContexts) {
-  
-  
-  
-  
-  *aBlockingAllThirdPartyContexts =
-      mCookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN ||
-      (!StaticPrefs::network_cookie_rejectForeignWithExceptions_enabled() &&
-       mCookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-CookieJarSettings::GetBlockingAllContexts(bool* aBlockingAllContexts) {
-  *aBlockingAllContexts = mCookieBehavior == nsICookieService::BEHAVIOR_REJECT;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 CookieJarSettings::GetPartitionForeign(bool* aPartitionForeign) {
   *aPartitionForeign =
       mCookieBehavior ==
