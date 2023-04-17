@@ -13,6 +13,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
 
+#include <string_view>  
 #include <type_traits>  
 
 #include "jstypes.h"  
@@ -1611,6 +1612,14 @@ inline JSLinearString* NewStringCopyN(
 template <js::AllowGC allowGC, typename CharT>
 inline JSLinearString* NewStringCopy(
     JSContext* cx, mozilla::Span<const CharT> s,
+    js::gc::InitialHeap heap = js::gc::DefaultHeap) {
+  return NewStringCopyN<allowGC>(cx, s.data(), s.size(), heap);
+}
+
+
+template <js::AllowGC allowGC, typename CharT>
+inline JSLinearString* NewStringCopy(
+    JSContext* cx, std::basic_string_view<CharT> s,
     js::gc::InitialHeap heap = js::gc::DefaultHeap) {
   return NewStringCopyN<allowGC>(cx, s.data(), s.size(), heap);
 }
