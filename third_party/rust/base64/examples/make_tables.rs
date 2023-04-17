@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::iter::Iterator;
 
 fn main() {
@@ -43,6 +43,18 @@ fn main() {
     print_decode_table(&crypt_alphabet, "CRYPT_DECODE", 0);
 
     
+    let bcrypt_alphabet: Vec<u8> = (b'.'..(b'/' + 1))
+        
+        .chain(b'A'..(b'Z' + 1))
+        
+        .chain(b'a'..(b'z' + 1))
+        
+        .chain(b'0'..(b'9' + 1))
+        .collect();
+    print_encode_table(&bcrypt_alphabet, "BCRYPT_ENCODE", 0);
+    print_decode_table(&bcrypt_alphabet, "BCRYPT_DECODE", 0);
+
+    
     let imap_alphabet: Vec<u8> = (0x41..0x5B)
         
         .chain(0x61..0x7B)
@@ -55,9 +67,30 @@ fn main() {
         .collect();
     print_encode_table(&imap_alphabet, "IMAP_MUTF7_ENCODE", 0);
     print_decode_table(&imap_alphabet, "IMAP_MUTF7_DECODE", 0);
+
+    
+    let binhex_alphabet: Vec<u8> = (0x21..0x2E)
+        
+        .chain(0x30..0x3A)
+        
+        .chain(0x40..0x4F)
+        
+        .chain(0x50..0x57)
+        
+        .chain(0x58..0x5C)
+        
+        .chain(0x60..0x66)
+        
+        .chain(0x68..0x6E)
+        
+        .chain(0x70..0x73)
+        .collect();
+    print_encode_table(&binhex_alphabet, "BINHEX_ENCODE", 0);
+    print_decode_table(&binhex_alphabet, "BINHEX_DECODE", 0);
 }
 
 fn print_encode_table(alphabet: &[u8], const_name: &str, indent_depth: usize) {
+    check_alphabet(alphabet);
     println!("#[rustfmt::skip]");
     println!(
         "{:width$}pub const {}: &[u8; 64] = &[",
@@ -83,6 +116,7 @@ fn print_encode_table(alphabet: &[u8], const_name: &str, indent_depth: usize) {
 }
 
 fn print_decode_table(alphabet: &[u8], const_name: &str, indent_depth: usize) {
+    check_alphabet(alphabet);
     
     let mut input_to_morsel = HashMap::<u8, u8>::new();
 
@@ -127,4 +161,11 @@ fn print_decode_table(alphabet: &[u8], const_name: &str, indent_depth: usize) {
         );
     }
     println!("{:width$}];", "", width = indent_depth);
+}
+
+fn check_alphabet(alphabet: &[u8]) {
+    assert_eq!(64, alphabet.len());
+    let mut set: HashSet<u8> = HashSet::new();
+    set.extend(alphabet);
+    assert_eq!(64, set.len());
 }

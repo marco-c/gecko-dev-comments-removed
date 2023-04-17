@@ -76,13 +76,6 @@ extern crate alloc;
 #[cfg(any(feature = "std", test))]
 extern crate std as alloc;
 
-#[cfg(test)]
-#[macro_use]
-extern crate doc_comment;
-
-#[cfg(test)]
-doctest!("../README.md");
-
 mod chunked_encoder;
 pub mod display;
 #[cfg(any(feature = "std", test))]
@@ -120,9 +113,15 @@ pub enum CharacterSet {
     
     Crypt,
     
+    Bcrypt,
+    
     
     
     ImapMutf7,
+    
+    
+    
+    BinHex,
 }
 
 impl CharacterSet {
@@ -131,7 +130,9 @@ impl CharacterSet {
             CharacterSet::Standard => tables::STANDARD_ENCODE,
             CharacterSet::UrlSafe => tables::URL_SAFE_ENCODE,
             CharacterSet::Crypt => tables::CRYPT_ENCODE,
+            CharacterSet::Bcrypt => tables::BCRYPT_ENCODE,
             CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_ENCODE,
+            CharacterSet::BinHex => tables::BINHEX_ENCODE,
         }
     }
 
@@ -140,7 +141,9 @@ impl CharacterSet {
             CharacterSet::Standard => tables::STANDARD_DECODE,
             CharacterSet::UrlSafe => tables::URL_SAFE_DECODE,
             CharacterSet::Crypt => tables::CRYPT_DECODE,
+            CharacterSet::Bcrypt => tables::BCRYPT_DECODE,
             CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_DECODE,
+            CharacterSet::BinHex => tables::BINHEX_DECODE,
         }
     }
 }
@@ -219,8 +222,22 @@ pub const CRYPT: Config = Config {
 };
 
 
+pub const BCRYPT: Config = Config {
+    char_set: CharacterSet::Bcrypt,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
 pub const IMAP_MUTF7: Config = Config {
     char_set: CharacterSet::ImapMutf7,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const BINHEX : Config = Config {
+    char_set: CharacterSet::BinHex,
     pad: false,
     decode_allow_trailing_bits: false,
 };
