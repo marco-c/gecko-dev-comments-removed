@@ -128,7 +128,8 @@ namespace mozilla {
 LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
   
   
-  mozilla::mscom::ProcessRuntime mscom(GeckoProcessType_Default);
+  mozilla::mscom::ProcessRuntime mscom(
+      mozilla::mscom::ProcessRuntime::ProcessCategory::Launcher);
   if (!mscom) {
     return LAUNCHER_ERROR_FROM_HRESULT(mscom.GetHResult());
   }
