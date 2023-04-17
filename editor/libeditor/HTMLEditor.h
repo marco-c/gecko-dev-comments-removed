@@ -1032,7 +1032,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureCaretNotAfterPaddingBRElement();
+  EnsureCaretNotAfterInvisibleBRElement();
 
   
 
