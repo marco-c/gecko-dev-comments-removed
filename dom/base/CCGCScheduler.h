@@ -12,6 +12,7 @@
 #include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
+#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 
@@ -182,9 +183,10 @@ class CCGCScheduler {
 
   
   
-  void EnsureCCThenGC() {
+  void EnsureCCThenGC(CCReason aReason) {
     MOZ_ASSERT(mCCRunnerState != CCRunnerState::Inactive);
-    mNeedsFullCC = true;
+    MOZ_ASSERT(aReason != CCReason::NO_REASON);
+    mNeedsFullCC = aReason;
     mNeedsGCAfterCC = true;
   }
 
@@ -310,16 +312,22 @@ class CCGCScheduler {
   
   
   
-  bool IsCCNeeded(TimeStamp aNow, uint32_t aSuspectedCCObjects) const {
-    if (mNeedsFullCC) {
-      return true;
+  CCReason IsCCNeeded(TimeStamp aNow, uint32_t aSuspectedCCObjects) const {
+    if (mNeedsFullCC != CCReason::NO_REASON) {
+      return mNeedsFullCC;
     }
-    return aSuspectedCCObjects > kCCPurpleLimit ||
-           (aSuspectedCCObjects > kCCForcedPurpleLimit && mLastCCEndTime &&
-            aNow - mLastCCEndTime > kCCForced);
+    if (aSuspectedCCObjects > kCCPurpleLimit) {
+      return CCReason::MANY_SUSPECTED;
+    }
+    if (aSuspectedCCObjects > kCCForcedPurpleLimit && mLastCCEndTime &&
+        aNow - mLastCCEndTime > kCCForced) {
+      return CCReason::TIMED;
+    }
+    return CCReason::NO_REASON;
   }
 
-  bool ShouldScheduleCC(TimeStamp aNow, uint32_t aSuspectedCCObjects) const;
+  mozilla::CCReason ShouldScheduleCC(TimeStamp aNow,
+                                     uint32_t aSuspectedCCObjects) const;
 
   
   
@@ -416,7 +424,7 @@ class CCGCScheduler {
   
   bool mHasRunGC = false;
 
-  bool mNeedsFullCC = false;
+  mozilla::CCReason mNeedsFullCC = CCReason::NO_REASON;
   bool mNeedsFullGC = true;
   bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;

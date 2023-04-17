@@ -42,6 +42,70 @@
     }                                                \
   }
 
+namespace mozilla {
+enum class CCReason : uint8_t {
+  NO_REASON,
+
+  
+  
+  MANY_SUSPECTED,
+
+  
+  
+  TIMED,
+
+  
+  GC_FINISHED,
+
+  
+  SLICE,
+
+  
+  
+  
+  FIRST_MANUAL_REASON = 128,
+
+  
+  GC_WAITING = FIRST_MANUAL_REASON,
+
+  
+  API,
+
+  
+  DUMP_HEAP,
+
+  
+  MEM_PRESSURE,
+
+  
+  
+  IPC_MESSAGE,
+
+  
+  WORKER,
+
+  
+  SHUTDOWN
+};
+
+#define FOR_EACH_CCREASON(MACRO) \
+  MACRO(NO_REASON)               \
+  MACRO(MANY_SUSPECTED)          \
+  MACRO(TIMED)                   \
+  MACRO(GC_FINISHED)             \
+  MACRO(SLICE)                   \
+  MACRO(GC_WAITING)              \
+  MACRO(API)                     \
+  MACRO(DUMP_HEAP)               \
+  MACRO(MEM_PRESSURE)            \
+  MACRO(IPC_MESSAGE)             \
+  MACRO(WORKER)                  \
+  MACRO(SHUTDOWN)
+
+static inline bool IsManualCCReason(CCReason reason) {
+  return reason >= CCReason::FIRST_MANUAL_REASON;
+}
+
 
 
 
@@ -960,4 +1024,4 @@ inline bool LowWordEquals(const nsID& aID, const nsID& aOther) {
   return (((uint32_t*)&aID.m0)[3] == ((uint32_t*)&aOther.m0)[3]);
 }
 
-#endif  
+#endif

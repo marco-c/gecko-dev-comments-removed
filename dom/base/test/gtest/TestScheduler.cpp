@@ -50,7 +50,8 @@ void TestGC::Run(int aNumSlices) {
   
   
   
-  bool neededCCAtStartOfGC = mScheduler.IsCCNeeded(Now(), SuspectedCCObjects());
+  CCReason neededCCAtStartOfGC =
+      mScheduler.IsCCNeeded(Now(), SuspectedCCObjects());
 
   mScheduler.NoteGCBegin();
 
@@ -102,7 +103,10 @@ class TestCC {
 
 void TestCC::MaybePokeCC() {
   
-  EXPECT_TRUE(mScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+
+  
+  mozilla::CCReason reason = mScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects());
+  EXPECT_EQ(reason, CCReason::GC_FINISHED);
 
   mScheduler.InitCCRunnerStateMachine(CCRunnerState::ReducePurple);
   EXPECT_TRUE(mScheduler.IsEarlyForgetSkippable());
@@ -172,6 +176,7 @@ void TestCC::EndCycleCollectionCallback() {
   results.mFreedGCed = 10;
   results.mFreedJSZones = 2;
   mScheduler.NoteCycleCollected(results);
+  mScheduler.NoteCCEnd(Now());
 
   
   EXPECT_TRUE(mScheduler.NeedsGCAfterCC());
@@ -292,25 +297,31 @@ static bool BasicScenario(CCGCScheduler& aScheduler, TestGC* aTestGC,
   
   
   SetNumSuspected(3);
-  EXPECT_TRUE(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()),
+            CCReason::GC_FINISHED);
 
   
-  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()),
+            CCReason::GC_FINISHED);
 
   
   aTestCC->Run(5);
 
   
-  EXPECT_FALSE(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()));
-  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()),
+            CCReason::NO_REASON);
+  EXPECT_EQ(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()),
+            CCReason::NO_REASON);
   SetNumSuspected(10000);
 
   
-  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()),
+            CCReason::NO_REASON);
   AdvanceTime(mozilla::kCCDelay);
 
   
-  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()),
+            CCReason::MANY_SUSPECTED);
 
   
   EXPECT_TRUE(!aScheduler.InIncrementalGC());
@@ -327,7 +338,8 @@ static TestNonIdleCC ccNonIdle(scheduler);
 TEST(TestScheduler, Idle)
 {
   
-  EXPECT_FALSE(scheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
+  EXPECT_EQ(scheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()),
+            CCReason::NO_REASON);
 
   EXPECT_TRUE(BasicScenario(scheduler, &gc, &ccIdle));
 }
