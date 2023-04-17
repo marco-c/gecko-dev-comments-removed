@@ -553,24 +553,6 @@ class MessageChannel : HasResultCodes {
                        "not on worker thread!");
   }
 
-  
-  
-  
-  void AssertLinkThread() const {
-    if (mIsSameThreadChannel) {
-      
-      
-      AssertWorkerThread();
-      return;
-    }
-
-    
-    
-    MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
-    MOZ_RELEASE_ASSERT(mWorkerThread && !mWorkerThread->IsOnCurrentThread(),
-                       "on worker thread but should not be!");
-  }
-
  private:
   class MessageTask : public CancelableRunnable,
                       public LinkedListElement<RefPtr<MessageTask>>,

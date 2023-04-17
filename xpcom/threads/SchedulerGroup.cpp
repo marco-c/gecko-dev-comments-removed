@@ -38,20 +38,21 @@ nsresult SchedulerGroup::UnlabeledDispatch(
 
 
 void SchedulerGroup::MarkVsyncReceived() {
-  if (gEarliestUnprocessedVsync) {
-    
-    
-    return;
-  }
-
-  MOZ_ASSERT(!NS_IsMainThread());
+  
+  
+  
   bool inconsistent = false;
   TimeStamp creation = TimeStamp::ProcessCreation(&inconsistent);
   if (inconsistent) {
     return;
   }
 
-  gEarliestUnprocessedVsync = (TimeStamp::Now() - creation).ToMicroseconds();
+  
+  
+  
+  uint64_t unprocessedVsync =
+      uint64_t((TimeStamp::Now() - creation).ToMicroseconds());
+  gEarliestUnprocessedVsync.compareExchange(0, unprocessedVsync);
 }
 
 

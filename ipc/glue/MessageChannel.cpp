@@ -717,7 +717,6 @@ void MessageChannel::Clear() {
   
   
   
-  
 
 #if !defined(ANDROID)
   if (!Unsound_IsClosed()) {
@@ -1042,7 +1041,6 @@ class CancelMessage : public IPC::Message {
 };
 
 bool MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg) {
-  AssertLinkThread();
   mMonitor->AssertCurrentThreadOwns();
 
   if (MSG_ROUTING_NONE == aMsg.routing_id()) {
@@ -1124,10 +1122,11 @@ bool MessageChannel::ShouldDeferMessage(const Message& aMsg) {
 }
 
 void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
-  AssertLinkThread();
   mMonitor->AssertCurrentThreadOwns();
 
-  if (MaybeInterceptSpecialIOMessage(aMsg)) return;
+  if (MaybeInterceptSpecialIOMessage(aMsg)) {
+    return;
+  }
 
   mListener->OnChannelReceivedMessage(aMsg);
 
@@ -1204,8 +1203,8 @@ void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
   
   bool shouldPostTask = !shouldWakeUp || wakeUpSyncSend;
 
-  IPC_LOG("Receive on link thread; seqno=%d, xid=%d, shouldWakeUp=%d",
-          aMsg.seqno(), aMsg.transaction_id(), shouldWakeUp);
+  IPC_LOG("Receive from link; seqno=%d, xid=%d, shouldWakeUp=%d", aMsg.seqno(),
+          aMsg.transaction_id(), shouldWakeUp);
 
   if (reuseTask) {
     return;
@@ -2425,7 +2424,6 @@ bool MessageChannel::MaybeHandleError(Result code, const Message& aMsg,
 }
 
 void MessageChannel::OnChannelErrorFromLink() {
-  AssertLinkThread();
   mMonitor->AssertCurrentThreadOwns();
 
   IPC_LOG("OnChannelErrorFromLink");
