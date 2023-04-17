@@ -141,13 +141,9 @@ class AudioInputProcessing : public AudioDataListener {
             GraphTime aTrackEnd, AudioSegment* aSegment,
             bool aLastPullThisIteration, bool* aEnded);
 
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate,
-                        uint32_t aChannels) override;
+  void NotifyOutputData(MediaTrackGraphImpl* aGraph, BufferInfo aInfo) override;
   void NotifyInputStopped(MediaTrackGraphImpl* aGraph) override;
-  void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels,
+  void NotifyInputData(MediaTrackGraphImpl* aGraph, const BufferInfo aInfo,
                        uint32_t aAlreadyBuffered) override;
   bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const override {
     
@@ -167,8 +163,8 @@ class AudioInputProcessing : public AudioDataListener {
 
   void Disconnect(MediaTrackGraphImpl* aGraph) override;
 
-  void ProcessInput(MediaTrackGraphImpl* aGraph, const AudioDataValue* aBuffer,
-                    size_t aFrames, TrackRate aRate, uint32_t aChannels);
+  
+  void ProcessInput(MediaTrackGraphImpl* aGraph, const AudioSegment* aSegment);
 
   template <typename T>
   void InsertInGraph(MediaTrackGraphImpl* aGraph, const T* aBuffer,
@@ -251,7 +247,7 @@ class AudioInputProcessing : public AudioDataListener {
   
   bool mEnded;
   
-  bool mInputProcessed;
+  Maybe<BufferInfo> mInputData;
 };
 
 

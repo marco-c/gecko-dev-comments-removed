@@ -108,14 +108,21 @@ class AudioDataListenerInterface {
 
  public:
   
+  struct BufferInfo {
+    AudioDataValue* mBuffer = nullptr;
+    size_t mFrames = 0;
+    uint32_t mChannels = 0;
+    TrackRate mRate = 0;
+  };
+
+  
   
 
 
 
 
   virtual void NotifyOutputData(MediaTrackGraphImpl* aGraph,
-                                AudioDataValue* aBuffer, size_t aFrames,
-                                TrackRate aRate, uint32_t aChannels) = 0;
+                                BufferInfo aInfo) = 0;
   
 
 
@@ -127,8 +134,7 @@ class AudioDataListenerInterface {
 
 
   virtual void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                               const AudioDataValue* aBuffer, size_t aFrames,
-                               TrackRate aRate, uint32_t aChannels,
+                               const BufferInfo aInfo,
                                uint32_t aAlreadyBuffered) = 0;
 
   
