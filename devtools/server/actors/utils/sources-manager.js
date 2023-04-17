@@ -345,6 +345,8 @@ class SourcesManager extends EventEmitter {
     if (topic == "devtools-html-content") {
       const { parserID, uri, contents, complete } = JSON.parse(data);
       if (this._urlContents.has(uri)) {
+        
+        
         const existing = this._urlContents.get(uri);
         if (existing.parserID == parserID) {
           assert(!existing.complete);
@@ -364,7 +366,11 @@ class SourcesManager extends EventEmitter {
             }
           }
         }
-      } else {
+      } else if (contents) {
+        
+        
+        
+        
         this._urlContents.set(uri, {
           content: contents,
           complete,

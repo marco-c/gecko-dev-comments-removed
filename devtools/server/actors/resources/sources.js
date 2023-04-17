@@ -29,7 +29,7 @@ class SourceWatcher {
     targetActor.attach();
 
     const { threadActor } = targetActor;
-    this.threadActor = threadActor;
+    this.sourcesManager = targetActor.sourcesManager;
     this.onAvailable = onAvailable;
 
     
@@ -56,7 +56,7 @@ class SourceWatcher {
 
 
   destroy() {
-    this.threadActor.sourcesManager.off("newSource", this.onNewSource);
+    this.sourcesManager.off("newSource", this.onNewSource);
   }
 
   onNewSource(source) {

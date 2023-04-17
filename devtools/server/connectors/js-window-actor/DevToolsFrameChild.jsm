@@ -161,7 +161,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
-  instantiate({ isBFCache = false } = {}) {
+
+
+
+  instantiate({ isBFCache = false, ignoreIfExisting = false } = {}) {
     const { sharedData } = Services.cpmm;
     const sessionDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
     if (!sessionDataByWatcherActor) {
@@ -206,6 +209,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
           context,
           browsingContextId: this.manager.browsingContext.id,
         });
+
+        
+        
+        if (existingTarget && ignoreIfExisting) {
+          continue;
+        }
 
         
         
@@ -622,6 +631,20 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     if (type == "DOMWindowCreated") {
       this.instantiate();
+      return;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (type == "DOMDocElementInserted") {
+      this.instantiate({ ignoreIfExisting: true });
       return;
     }
 
