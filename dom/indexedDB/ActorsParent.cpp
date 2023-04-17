@@ -23,6 +23,7 @@
 #include "CrashAnnotations.h"
 #include "DatabaseFileInfo.h"
 #include "DatabaseFileManager.h"
+#include "DatabaseFileManagerImpl.h"
 #include "DBSchema.h"
 #include "ErrorList.h"
 #include "IDBCursorType.h"
@@ -317,8 +318,6 @@ static_assert(kEncryptedStreamBlockSize % 4096 == 0);
 
 
 static_assert(kFileCopyBufferSize % kEncryptedStreamBlockSize == 0);
-
-constexpr auto kJournalDirectoryName = u"journals"_ns;
 
 constexpr auto kFileManagerDirectoryNameSuffix = u".files"_ns;
 constexpr auto kSQLiteSuffix = u".sqlite"_ns;
@@ -12487,78 +12486,32 @@ Result<FileUsageType, nsresult> DatabaseFileManager::GetUsage(
   AssertIsOnIOThread();
   MOZ_ASSERT(aDirectory);
 
-  QM_TRY_INSPECT(const bool& exists, MOZ_TO_RESULT_INVOKE(aDirectory, Exists));
-
-  if (!exists) {
-    return FileUsageType{};
-  }
-
   FileUsageType usage;
 
-  QM_TRY(CollectEachFile(
-      *aDirectory,
-      [&usage](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
-        QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
+  QM_TRY(TraverseFiles(
+      *aDirectory, [&usage](nsIFile& file) -> Result<Ok, nsresult> {
+        
+        
+        
+        
+        
+        QM_TRY_INSPECT(const auto& thisUsage,
+                       QM_OR_ELSE_WARN_IF(
+                           
+                           MOZ_TO_RESULT_INVOKE(file, GetFileSize)
+                               .map([](const int64_t fileSize) {
+                                 return FileUsageType(Some(uint64_t(fileSize)));
+                               }),
+                           
+                           ([](const nsresult rv) {
+                             return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+                                    rv == NS_ERROR_FILE_NOT_FOUND;
+                           }),
+                           
+                           
+                           ErrToDefaultOk<FileUsageType>));
 
-        switch (dirEntryKind) {
-          case nsIFileKind::ExistsAsDirectory: {
-            QM_TRY_INSPECT(
-                const auto& leafName,
-                MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
-
-            if (leafName.Equals(kJournalDirectoryName)) {
-              break;
-            }
-
-            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
-            break;
-          }
-
-          case nsIFileKind::ExistsAsFile: {
-            QM_TRY_INSPECT(
-                const auto& leafName,
-                MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
-
-            nsresult rv;
-            leafName.ToInteger64(&rv);
-            if (NS_SUCCEEDED(rv)) {
-              
-              
-              
-              
-              
-              
-              QM_TRY_INSPECT(
-                  const auto& thisUsage,
-                  QM_OR_ELSE_WARN_IF(
-                      
-                      MOZ_TO_RESULT_INVOKE(file, GetFileSize)
-                          .map([](const int64_t fileSize) {
-                            return FileUsageType(Some(uint64_t(fileSize)));
-                          }),
-                      
-                      ([](const nsresult rv) {
-                        return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-                               rv == NS_ERROR_FILE_NOT_FOUND;
-                      }),
-                      
-                      
-                      ErrToDefaultOk<FileUsageType>));
-
-              usage += thisUsage;
-
-              break;
-            }
-
-            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
-
-            break;
-          }
-
-          case nsIFileKind::DoesNotExist:
-            
-            break;
-        }
+        usage += thisUsage;
 
         return Ok{};
       }));
