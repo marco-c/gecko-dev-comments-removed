@@ -480,7 +480,7 @@ PlacesController.prototype = {
     attr = aMenuItem.getAttribute("hideifnodetypeisonly");
     if (attr) {
       let rules = attr.split("|");
-      if (aMetaData.every(d => rules.every(r => r in d))) {
+      if (rules.some(r => aMetaData.every(d => r in d))) {
         return false;
       }
     }
@@ -603,6 +603,11 @@ PlacesController.prototype = {
 
       if (item.id === "placesContext_deleteBookmark") {
         document.l10n.setAttributes(item, "places-remove-bookmark", {
+          count: metadata.length,
+        });
+      }
+      if (item.id === "placesContext_deleteFolder") {
+        document.l10n.setAttributes(item, "places-remove-folder", {
           count: metadata.length,
         });
       }
