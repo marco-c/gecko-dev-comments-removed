@@ -2167,9 +2167,6 @@ class nsLayoutUtils {
     SFE_USE_ELEMENT_SIZE_IF_VECTOR = 1 << 4,
     
 
-    SFE_TO_SRGB_COLORSPACE = 1 << 5,
-    
-
 
 
 
