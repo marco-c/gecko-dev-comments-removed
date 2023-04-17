@@ -159,11 +159,6 @@ pref("security.xfocsp.errorReporting.automatic", false);
 
 
 
-pref("security.cert_pinning.max_max_age_seconds", 5184000);
-
-
-
-
 pref("security.pki.crlite_mode", 1);
 
 
@@ -2167,22 +2162,6 @@ pref("security.ssl.enable_ocsp_must_staple", true);
 
 pref("security.insecure_field_warning.contextual.enabled", false);
 pref("security.insecure_field_warning.ignore_local_ip_address", true);
-
-
-pref("security.cert_pinning.enforcement_level", 0);
-
-
-
-pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
-
-
-
-
-
-
-
-
-pref("security.cert_pinning.hpkp.enabled", false);
 
 
 
