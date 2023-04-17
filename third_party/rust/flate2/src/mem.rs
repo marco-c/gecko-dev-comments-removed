@@ -215,8 +215,40 @@ impl Compress {
         zlib_header: bool,
         window_bits: u8,
     ) -> Compress {
+        assert!(
+            window_bits > 8 && window_bits < 16,
+            "window_bits must be within 9 ..= 15"
+        );
         Compress {
             inner: Deflate::make(level, zlib_header, window_bits),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "zlib")]
+    pub fn new_gzip(level: Compression, window_bits: u8) -> Compress {
+        assert!(
+            window_bits > 8 && window_bits < 16,
+            "window_bits must be within 9 ..= 15"
+        );
+        Compress {
+            inner: Deflate::make(level, true, window_bits + 16),
         }
     }
 
@@ -355,8 +387,37 @@ impl Decompress {
     
     #[cfg(feature = "any_zlib")]
     pub fn new_with_window_bits(zlib_header: bool, window_bits: u8) -> Decompress {
+        assert!(
+            window_bits > 8 && window_bits < 16,
+            "window_bits must be within 9 ..= 15"
+        );
         Decompress {
             inner: Inflate::make(zlib_header, window_bits),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "zlib")]
+    pub fn new_gzip(window_bits: u8) -> Decompress {
+        assert!(
+            window_bits > 8 && window_bits < 16,
+            "window_bits must be within 9 ..= 15"
+        );
+        Decompress {
+            inner: Inflate::make(true, window_bits + 16),
         }
     }
 
@@ -642,6 +703,32 @@ mod tests {
         let decompress_result = decoder.decompress(&encoded, &mut decoded, FlushDecompress::Finish);
 
         assert!(decompress_result.is_ok());
+
+        assert_eq!(&decoded[..decoder.total_out() as usize], string);
+    }
+
+    #[cfg(feature = "zlib")]
+    #[test]
+    fn test_gzip_flate() {
+        let string = "hello, hello!".as_bytes();
+
+        let mut encoded = Vec::with_capacity(1024);
+
+        let mut encoder = Compress::new_gzip(Compression::default(), 9);
+
+        encoder
+            .compress_vec(string, &mut encoded, FlushCompress::Finish)
+            .unwrap();
+
+        assert_eq!(encoder.total_in(), string.len() as u64);
+        assert_eq!(encoder.total_out(), encoded.len() as u64);
+
+        let mut decoder = Decompress::new_gzip(9);
+
+        let mut decoded = [0; 1024];
+        decoder
+            .decompress(&encoded, &mut decoded, FlushDecompress::Finish)
+            .unwrap();
 
         assert_eq!(&decoded[..decoder.total_out() as usize], string);
     }
