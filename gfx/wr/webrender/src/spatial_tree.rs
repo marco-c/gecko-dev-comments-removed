@@ -107,28 +107,324 @@ impl ops::Not for VisibleFace {
     }
 }
 
+
+
+
+pub trait SpatialNodeContainer {
+    fn get_spatial_node(&self, index: SpatialNodeIndex) -> &SpatialNode;
+}
+
+
+
+
+pub struct SceneSpatialTree {
+    
+    
+    spatial_nodes: Vec<SpatialNode>,
+
+    
+    
+    spatial_node_uids: FastHashSet<SpatialNodeUid>,
+
+    
+    next_static_coord_system_id: u32,
+
+    root_reference_frame_index: SpatialNodeIndex,
+}
+
+impl SpatialNodeContainer for SceneSpatialTree {
+    fn get_spatial_node(&self, index: SpatialNodeIndex) -> &SpatialNode {
+        &self.spatial_nodes[index.0 as usize]
+    }
+}
+
+impl SceneSpatialTree {
+    pub fn new() -> Self {
+        let node = SpatialNode::new_reference_frame(
+            None,
+            TransformStyle::Flat,
+            PropertyBinding::Value(LayoutTransform::identity()),
+            ReferenceFrameKind::Transform {
+                should_snap: true,
+                is_2d_scale_translation: true,
+            },
+            LayoutVector2D::zero(),
+            PipelineId::dummy(),
+            StaticCoordinateSystemId::ROOT,
+        );
+
+        let mut tree = SceneSpatialTree {
+            spatial_nodes: Vec::new(),
+            spatial_node_uids: FastHashSet::default(),
+            root_reference_frame_index: SpatialNodeIndex(0),
+            next_static_coord_system_id: 1,
+        };
+
+        tree.add_spatial_node(node, SpatialNodeUid::root());
+
+        tree
+    }
+
+    
+    pub fn is_ancestor(
+        &self,
+        maybe_parent: SpatialNodeIndex,
+        maybe_child: SpatialNodeIndex,
+    ) -> bool {
+        
+        if maybe_parent == maybe_child {
+            return false;
+        }
+
+        let mut current_node = maybe_child;
+
+        while current_node != self.root_reference_frame_index {
+            let node = self.get_spatial_node(current_node);
+            current_node = node.parent.expect("bug: no parent");
+
+            if current_node == maybe_parent {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    
+    
+    
+    pub fn find_scroll_root(
+        &self,
+        spatial_node_index: SpatialNodeIndex,
+    ) -> SpatialNodeIndex {
+        let mut real_scroll_root = self.root_reference_frame_index;
+        let mut outermost_scroll_root = self.root_reference_frame_index;
+        let mut node_index = spatial_node_index;
+
+        while node_index != self.root_reference_frame_index {
+            let node = self.get_spatial_node(node_index);
+            match node.node_type {
+                SpatialNodeType::ReferenceFrame(ref info) => {
+                    match info.kind {
+                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. } => {
+                            
+                        }
+                        ReferenceFrameKind::Transform { is_2d_scale_translation: false, .. } |
+                        ReferenceFrameKind::Perspective { .. } => {
+                            
+                            
+                            real_scroll_root = self.root_reference_frame_index;
+                            outermost_scroll_root = self.root_reference_frame_index;
+                        }
+                    }
+                }
+                SpatialNodeType::StickyFrame(..) => {}
+                SpatialNodeType::ScrollFrame(ref info) => {
+                    match info.frame_kind {
+                        ScrollFrameKind::PipelineRoot { is_root_pipeline } => {
+                            
+                            if is_root_pipeline {
+                                break;
+                            }
+                        }
+                        ScrollFrameKind::Explicit => {
+                            
+                            
+                            outermost_scroll_root = node_index;
+
+                            
+                            
+                            
+                            
+                            if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
+                               info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
+                                
+                                
+                                
+                                
+                                
+                                
+                                
+                                if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
+                                   info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
+                                    
+                                    
+                                    real_scroll_root = node_index;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            node_index = node.parent.expect("unable to find parent node");
+        }
+
+        
+        
+        
+        
+        
+        if real_scroll_root == self.root_reference_frame_index {
+            outermost_scroll_root
+        } else {
+            real_scroll_root
+        }
+    }
+
+    
+    pub fn root_reference_frame_index(&self) -> SpatialNodeIndex {
+        self.root_reference_frame_index
+    }
+
+    fn add_spatial_node(
+        &mut self,
+        mut node: SpatialNode,
+        uid: SpatialNodeUid,
+    ) -> SpatialNodeIndex {
+        let index = SpatialNodeIndex::new(self.spatial_nodes.len());
+
+        
+        
+        
+        debug_assert!(self.spatial_node_uids.insert(uid));
+
+        
+        if let Some(parent_index) = node.parent {
+            let parent_node = &mut self.spatial_nodes[parent_index.0 as usize];
+            parent_node.add_child(index);
+            node.update_snapping(Some(parent_node));
+        } else {
+            node.update_snapping(None);
+        }
+
+        self.spatial_nodes.push(node);
+        index
+    }
+
+    pub fn add_reference_frame(
+        &mut self,
+        parent_index: SpatialNodeIndex,
+        transform_style: TransformStyle,
+        source_transform: PropertyBinding<LayoutTransform>,
+        kind: ReferenceFrameKind,
+        origin_in_parent_reference_frame: LayoutVector2D,
+        pipeline_id: PipelineId,
+        uid: SpatialNodeUid,
+    ) -> SpatialNodeIndex {
+        
+        let new_static_coord_system = match kind {
+            ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. } => {
+                
+                false
+            }
+            ReferenceFrameKind::Transform { is_2d_scale_translation: false, .. } | ReferenceFrameKind::Perspective { .. } => {
+                
+                
+                
+                match source_transform {
+                    PropertyBinding::Value(m) => {
+                        !m.is_2d_scale_translation()
+                    }
+                    PropertyBinding::Binding(..) => {
+                        
+                        true
+                    }
+                }
+            }
+        };
+
+        let static_coordinate_system_id = if new_static_coord_system {
+            let id = StaticCoordinateSystemId(self.next_static_coord_system_id);
+            self.next_static_coord_system_id += 1;
+            id
+        } else {
+            self.get_static_coordinate_system_id(parent_index)
+        };
+
+        let node = SpatialNode::new_reference_frame(
+            Some(parent_index),
+            transform_style,
+            source_transform,
+            kind,
+            origin_in_parent_reference_frame,
+            pipeline_id,
+            static_coordinate_system_id,
+        );
+        self.add_spatial_node(node, uid)
+    }
+
+    pub fn add_scroll_frame(
+        &mut self,
+        parent_index: SpatialNodeIndex,
+        external_id: ExternalScrollId,
+        pipeline_id: PipelineId,
+        frame_rect: &LayoutRect,
+        content_size: &LayoutSize,
+        scroll_sensitivity: ScrollSensitivity,
+        frame_kind: ScrollFrameKind,
+        external_scroll_offset: LayoutVector2D,
+        uid: SpatialNodeUid,
+    ) -> SpatialNodeIndex {
+        
+        let static_coordinate_system_id = self.get_static_coordinate_system_id(parent_index);
+
+        let node = SpatialNode::new_scroll_frame(
+            pipeline_id,
+            parent_index,
+            external_id,
+            frame_rect,
+            content_size,
+            scroll_sensitivity,
+            frame_kind,
+            external_scroll_offset,
+            static_coordinate_system_id,
+        );
+        self.add_spatial_node(node, uid)
+    }
+
+    pub fn add_sticky_frame(
+        &mut self,
+        parent_index: SpatialNodeIndex,
+        sticky_frame_info: StickyFrameInfo,
+        pipeline_id: PipelineId,
+        key: SpatialTreeItemKey,
+    ) -> SpatialNodeIndex {
+        
+        let static_coordinate_system_id = self.get_static_coordinate_system_id(parent_index);
+        let uid = SpatialNodeUid::external(key);
+
+        let node = SpatialNode::new_sticky_frame(
+            parent_index,
+            sticky_frame_info,
+            pipeline_id,
+            static_coordinate_system_id,
+        );
+        self.add_spatial_node(node, uid)
+    }
+
+    
+    pub fn get_static_coordinate_system_id(&self, node_index: SpatialNodeIndex) -> StaticCoordinateSystemId {
+        self.get_spatial_node(node_index).static_coordinate_system_id
+    }
+}
+
+
+
 pub struct SpatialTree {
     
     
-    pub spatial_nodes: Vec<SpatialNode>,
+    spatial_nodes: Vec<SpatialNode>,
 
     
     
     
     coord_systems: Vec<CoordinateSystem>,
 
-    pub pending_scroll_offsets: FastHashMap<ExternalScrollId, (LayoutPoint, ScrollClamping)>,
+    pending_scroll_offsets: FastHashMap<ExternalScrollId, (LayoutPoint, ScrollClamping)>,
 
     
     
-    pub pipelines_to_discard: FastHashSet<PipelineId>,
-
-    
-    next_static_coord_system_id: u32,
-
-    
-    
-    spatial_node_uids: FastHashSet<SpatialNodeUid>,
+    pipelines_to_discard: FastHashSet<PipelineId>,
 
     root_reference_frame_index: SpatialNodeIndex,
 
@@ -238,45 +534,27 @@ enum TransformScroll {
     Unscrolled,
 }
 
-impl SpatialTree {
-    pub fn new() -> Self {
-        let node = SpatialNode::new_reference_frame(
-            None,
-            TransformStyle::Flat,
-            PropertyBinding::Value(LayoutTransform::identity()),
-            ReferenceFrameKind::Transform {
-                should_snap: true,
-                is_2d_scale_translation: true,
-            },
-            LayoutVector2D::zero(),
-            PipelineId::dummy(),
-            StaticCoordinateSystemId::ROOT,
-        );
+impl SpatialNodeContainer for SpatialTree {
+    fn get_spatial_node(&self, index: SpatialNodeIndex) -> &SpatialNode {
+        &self.spatial_nodes[index.0 as usize]
+    }
+}
 
-        let mut tree = SpatialTree {
-            spatial_nodes: Vec::new(),
+impl SpatialTree {
+    pub fn new(scene: SceneSpatialTree) -> Self {
+        SpatialTree {
+            spatial_nodes: scene.spatial_nodes,
             coord_systems: Vec::new(),
             pending_scroll_offsets: FastHashMap::default(),
             pipelines_to_discard: FastHashSet::default(),
-            next_static_coord_system_id: 1,
-            spatial_node_uids: FastHashSet::default(),
-            root_reference_frame_index: SpatialNodeIndex(0),
+            root_reference_frame_index: scene.root_reference_frame_index,
             update_state_stack: Vec::new(),
-        };
-
-        tree.add_spatial_node(node, SpatialNodeUid::root());
-
-        tree
+        }
     }
 
     
     pub fn spatial_node_count(&self) -> usize {
         self.spatial_nodes.len()
-    }
-
-    
-    pub fn get_spatial_node(&self, index: SpatialNodeIndex) -> &SpatialNode {
-        &self.spatial_nodes[index.0 as usize]
     }
 
     
@@ -298,35 +576,6 @@ impl SpatialTree {
         }
 
         None
-    }
-
-    
-    
-    pub fn external_scroll_offset(&self, node_index: SpatialNodeIndex) -> LayoutVector2D {
-        let mut offset = LayoutVector2D::zero();
-        let mut current_node = Some(node_index);
-
-        while let Some(node_index) = current_node {
-            let node = self.get_spatial_node(node_index);
-
-            match node.node_type {
-                SpatialNodeType::ScrollFrame(ref scrolling) => {
-                    offset += scrolling.external_scroll_offset;
-                }
-                SpatialNodeType::StickyFrame(..) => {
-                    
-                }
-                SpatialNodeType::ReferenceFrame(..) => {
-                    
-                    
-                    break;
-                }
-            }
-
-            current_node = node.parent;
-        }
-
-        offset
     }
 
     
@@ -636,241 +885,8 @@ impl SpatialTree {
         self.get_spatial_node(node_index).static_coordinate_system_id
     }
 
-    pub fn add_scroll_frame(
-        &mut self,
-        parent_index: SpatialNodeIndex,
-        external_id: ExternalScrollId,
-        pipeline_id: PipelineId,
-        frame_rect: &LayoutRect,
-        content_size: &LayoutSize,
-        scroll_sensitivity: ScrollSensitivity,
-        frame_kind: ScrollFrameKind,
-        external_scroll_offset: LayoutVector2D,
-        uid: SpatialNodeUid,
-    ) -> SpatialNodeIndex {
-        
-        let static_coordinate_system_id = self.get_static_coordinate_system_id(parent_index);
-
-        let node = SpatialNode::new_scroll_frame(
-            pipeline_id,
-            parent_index,
-            external_id,
-            frame_rect,
-            content_size,
-            scroll_sensitivity,
-            frame_kind,
-            external_scroll_offset,
-            static_coordinate_system_id,
-        );
-        self.add_spatial_node(node, uid)
-    }
-
-    pub fn add_reference_frame(
-        &mut self,
-        parent_index: SpatialNodeIndex,
-        transform_style: TransformStyle,
-        source_transform: PropertyBinding<LayoutTransform>,
-        kind: ReferenceFrameKind,
-        origin_in_parent_reference_frame: LayoutVector2D,
-        pipeline_id: PipelineId,
-        uid: SpatialNodeUid,
-    ) -> SpatialNodeIndex {
-
-        
-        let new_static_coord_system = match kind {
-            ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. } => {
-                
-                false
-            }
-            ReferenceFrameKind::Transform { is_2d_scale_translation: false, .. } | ReferenceFrameKind::Perspective { .. } => {
-                
-                
-                
-                match source_transform {
-                    PropertyBinding::Value(m) => {
-                        !m.is_2d_scale_translation()
-                    }
-                    PropertyBinding::Binding(..) => {
-                        
-                        true
-                    }
-                }
-            }
-        };
-
-        let static_coordinate_system_id = if new_static_coord_system {
-            let id = StaticCoordinateSystemId(self.next_static_coord_system_id);
-            self.next_static_coord_system_id += 1;
-            id
-        } else {
-            self.get_static_coordinate_system_id(parent_index)
-        };
-
-        let node = SpatialNode::new_reference_frame(
-            Some(parent_index),
-            transform_style,
-            source_transform,
-            kind,
-            origin_in_parent_reference_frame,
-            pipeline_id,
-            static_coordinate_system_id,
-        );
-        self.add_spatial_node(node, uid)
-    }
-
-    pub fn add_sticky_frame(
-        &mut self,
-        parent_index: SpatialNodeIndex,
-        sticky_frame_info: StickyFrameInfo,
-        pipeline_id: PipelineId,
-        key: SpatialTreeItemKey,
-    ) -> SpatialNodeIndex {
-        
-        let static_coordinate_system_id = self.get_static_coordinate_system_id(parent_index);
-        let uid = SpatialNodeUid::external(key);
-
-        let node = SpatialNode::new_sticky_frame(
-            parent_index,
-            sticky_frame_info,
-            pipeline_id,
-            static_coordinate_system_id,
-        );
-        self.add_spatial_node(node, uid)
-    }
-
-    pub fn add_spatial_node(
-        &mut self,
-        mut node: SpatialNode,
-        uid: SpatialNodeUid,
-    ) -> SpatialNodeIndex {
-        let index = SpatialNodeIndex::new(self.spatial_nodes.len());
-
-        
-        
-        
-        debug_assert!(self.spatial_node_uids.insert(uid));
-
-        
-        if let Some(parent_index) = node.parent {
-            let parent_node = &mut self.spatial_nodes[parent_index.0 as usize];
-            parent_node.add_child(index);
-            node.update_snapping(Some(parent_node));
-        } else {
-            node.update_snapping(None);
-        }
-
-        self.spatial_nodes.push(node);
-        index
-    }
-
     pub fn discard_frame_state_for_pipeline(&mut self, pipeline_id: PipelineId) {
         self.pipelines_to_discard.insert(pipeline_id);
-    }
-
-    
-    pub fn is_ancestor(
-        &self,
-        maybe_parent: SpatialNodeIndex,
-        maybe_child: SpatialNodeIndex,
-    ) -> bool {
-        
-        if maybe_parent == maybe_child {
-            return false;
-        }
-
-        let mut current_node = maybe_child;
-
-        while current_node != self.root_reference_frame_index {
-            let node = self.get_spatial_node(current_node);
-            current_node = node.parent.expect("bug: no parent");
-
-            if current_node == maybe_parent {
-                return true;
-            }
-        }
-
-        false
-    }
-
-    
-    
-    
-    pub fn find_scroll_root(
-        &self,
-        spatial_node_index: SpatialNodeIndex,
-    ) -> SpatialNodeIndex {
-        let mut real_scroll_root = self.root_reference_frame_index;
-        let mut outermost_scroll_root = self.root_reference_frame_index;
-        let mut node_index = spatial_node_index;
-
-        while node_index != self.root_reference_frame_index {
-            let node = self.get_spatial_node(node_index);
-            match node.node_type {
-                SpatialNodeType::ReferenceFrame(ref info) => {
-                    match info.kind {
-                        ReferenceFrameKind::Transform { is_2d_scale_translation: true, .. } => {
-                            
-                        }
-                        ReferenceFrameKind::Transform { is_2d_scale_translation: false, .. } |
-                        ReferenceFrameKind::Perspective { .. } => {
-                            
-                            
-                            real_scroll_root = self.root_reference_frame_index;
-                            outermost_scroll_root = self.root_reference_frame_index;
-                        }
-                    }
-                }
-                SpatialNodeType::StickyFrame(..) => {}
-                SpatialNodeType::ScrollFrame(ref info) => {
-                    match info.frame_kind {
-                        ScrollFrameKind::PipelineRoot { is_root_pipeline } => {
-                            
-                            if is_root_pipeline {
-                                break;
-                            }
-                        }
-                        ScrollFrameKind::Explicit => {
-                            
-                            
-                            outermost_scroll_root = node_index;
-
-                            
-                            
-                            
-                            
-                            if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
-                               info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
-                                   info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
-                                    
-                                    
-                                    real_scroll_root = node_index;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            node_index = node.parent.expect("unable to find parent node");
-        }
-
-        
-        
-        
-        
-        
-        if real_scroll_root == self.root_reference_frame_index {
-            outermost_scroll_root
-        } else {
-            real_scroll_root
-        }
     }
 
     fn print_node<T: PrintTreePrinter>(
@@ -948,9 +964,40 @@ impl PrintableTree for SpatialTree {
     }
 }
 
+
+pub fn get_external_scroll_offset<S: SpatialNodeContainer>(
+    spatial_tree: &S,
+    node_index: SpatialNodeIndex,
+) -> LayoutVector2D {
+    let mut offset = LayoutVector2D::zero();
+    let mut current_node = Some(node_index);
+
+    while let Some(node_index) = current_node {
+        let node = spatial_tree.get_spatial_node(node_index);
+
+        match node.node_type {
+            SpatialNodeType::ScrollFrame(ref scrolling) => {
+                offset += scrolling.external_scroll_offset;
+            }
+            SpatialNodeType::StickyFrame(..) => {
+                
+            }
+            SpatialNodeType::ReferenceFrame(..) => {
+                
+                
+                break;
+            }
+        }
+
+        current_node = node.parent;
+    }
+
+    offset
+}
+
 #[cfg(test)]
 fn add_reference_frame(
-    cst: &mut SpatialTree,
+    cst: &mut SceneSpatialTree,
     parent: SpatialNodeIndex,
     transform: LayoutTransform,
     origin_in_parent_reference_frame: LayoutVector2D,
@@ -997,7 +1044,7 @@ fn test_pt(
 fn test_cst_simple_translation() {
     
 
-    let mut cst = SpatialTree::new();
+    let mut cst = SceneSpatialTree::new();
     let root_reference_frame_index = cst.root_reference_frame_index();
 
     let root = add_reference_frame(
@@ -1032,6 +1079,7 @@ fn test_cst_simple_translation() {
         SpatialTreeItemKey::new(0, 3),
     );
 
+    let mut cst = SpatialTree::new(cst);
     cst.update_tree(&SceneProperties::new());
 
     test_pt(100.0, 100.0, &cst, child1, root, 200.0, 100.0);
@@ -1044,7 +1092,7 @@ fn test_cst_simple_translation() {
 fn test_cst_simple_scale() {
     
 
-    let mut cst = SpatialTree::new();
+    let mut cst = SceneSpatialTree::new();
     let root_reference_frame_index = cst.root_reference_frame_index();
 
     let root = add_reference_frame(
@@ -1079,6 +1127,7 @@ fn test_cst_simple_scale() {
         SpatialTreeItemKey::new(0, 3),
     );
 
+    let mut cst = SpatialTree::new(cst);
     cst.update_tree(&SceneProperties::new());
 
     test_pt(100.0, 100.0, &cst, child1, root, 400.0, 100.0);
@@ -1092,7 +1141,7 @@ fn test_cst_simple_scale() {
 fn test_cst_scale_translation() {
     
 
-    let mut cst = SpatialTree::new();
+    let mut cst = SceneSpatialTree::new();
     let root_reference_frame_index = cst.root_reference_frame_index();
 
     let root = add_reference_frame(
@@ -1135,6 +1184,7 @@ fn test_cst_scale_translation() {
         SpatialTreeItemKey::new(0, 4),
     );
 
+    let mut cst = SpatialTree::new(cst);
     cst.update_tree(&SceneProperties::new());
 
     test_pt(100.0, 100.0, &cst, child1, root, 200.0, 150.0);
@@ -1153,7 +1203,7 @@ fn test_cst_translation_rotate() {
     
     use euclid::Angle;
 
-    let mut cst = SpatialTree::new();
+    let mut cst = SceneSpatialTree::new();
     let root_reference_frame_index = cst.root_reference_frame_index();
 
     let root = add_reference_frame(
@@ -1172,6 +1222,7 @@ fn test_cst_translation_rotate() {
         SpatialTreeItemKey::new(0, 1),
     );
 
+    let mut cst = SpatialTree::new(cst);
     cst.update_tree(&SceneProperties::new());
 
     test_pt(100.0, 0.0, &cst, child1, root, 0.0, -100.0);
@@ -1179,7 +1230,7 @@ fn test_cst_translation_rotate() {
 
 #[test]
 fn test_is_ancestor1() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
     let root_reference_frame_index = st.root_reference_frame_index();
 
     let root = add_reference_frame(
@@ -1214,8 +1265,6 @@ fn test_is_ancestor1() {
         SpatialTreeItemKey::new(0, 3),
     );
 
-    st.update_tree(&SceneProperties::new());
-
     assert!(!st.is_ancestor(root, root));
     assert!(!st.is_ancestor(child1_0, child1_0));
     assert!(!st.is_ancestor(child1_1, child1_1));
@@ -1241,7 +1290,7 @@ fn test_is_ancestor1() {
 
 #[test]
 fn test_find_scroll_root_simple() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
@@ -1274,7 +1323,7 @@ fn test_find_scroll_root_simple() {
 
 #[test]
 fn test_find_scroll_root_sub_scroll_frame() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
@@ -1319,7 +1368,7 @@ fn test_find_scroll_root_sub_scroll_frame() {
 
 #[test]
 fn test_find_scroll_root_not_scrollable() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
@@ -1364,7 +1413,7 @@ fn test_find_scroll_root_not_scrollable() {
 
 #[test]
 fn test_find_scroll_root_too_small() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
@@ -1410,7 +1459,7 @@ fn test_find_scroll_root_too_small() {
 
 #[test]
 fn test_find_scroll_root_perspective() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
@@ -1468,7 +1517,7 @@ fn test_find_scroll_root_perspective() {
 
 #[test]
 fn test_find_scroll_root_2d_scale() {
-    let mut st = SpatialTree::new();
+    let mut st = SceneSpatialTree::new();
 
     let root = st.add_reference_frame(
         st.root_reference_frame_index(),
