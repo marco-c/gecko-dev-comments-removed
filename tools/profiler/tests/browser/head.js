@@ -81,26 +81,69 @@ async function stopProfilerAndGetThreads(contentPid) {
 
 
 
-function findContentThreadWithNetworkMarkerForFilename(profile, filename) {
+
+function findServiceWorkerThreads(profile) {
   const allThreads = [
     profile.threads,
     ...profile.processes.map(process => process.threads),
   ].flat();
 
-  const thread = allThreads.find(
+  const serviceWorkerThread = allThreads.find(
     ({ processType, markers }) =>
       processType === "tab" &&
       markers.data.some(markerTuple => {
         const data = markerTuple[markers.schema.data];
         return (
           data &&
-          data.type === "Network" &&
-          data.URI &&
-          data.URI.endsWith(filename)
+          data.type === "UserTiming" &&
+          data.name === "__serviceworker_event"
         );
       })
   );
-  return thread || null;
+
+  if (!serviceWorkerThread) {
+    info(
+      "We couldn't find a service worker thread. Here are all the threads in this profile:"
+    );
+    allThreads.forEach(logInformationForThread.bind(null, ""));
+    return null;
+  }
+
+  const serviceWorkerParentThread = allThreads.find(
+    ({ name, pid }) => pid === serviceWorkerThread.pid && name === "GeckoMain"
+  );
+
+  if (!serviceWorkerParentThread) {
+    info(
+      `We couldn't find a parent thread for the service worker thread (pid: ${serviceWorkerThread.pid}, tid: ${serviceWorkerThread.tid}).`
+    );
+    info("Here are all the threads in this profile:");
+    allThreads.forEach(logInformationForThread.bind(null, ""));
+
+    
+    const env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    const path = env.get("MOZ_UPLOAD_DIR");
+    if (path) {
+      const profileName = `profile_${Date.now()}.json`;
+      const profilePath = PathUtils.join(path, profileName);
+      info(
+        `We wrote down the profile on disk as an artifact, with name ${profileName}.`
+      );
+      
+      
+      
+      IOUtils.writeJSON(profilePath, profile).catch(err =>
+        console.error("An error happened when writing the profile on disk", err)
+      );
+    }
+    throw new Error(
+      "We couldn't find a parent thread for the service worker thread. Please read logs to find more information."
+    );
+  }
+
+  return { serviceWorkerThread, serviceWorkerParentThread };
 }
 
 
@@ -110,6 +153,11 @@ function findContentThreadWithNetworkMarkerForFilename(profile, filename) {
 
 
 function logInformationForThread(prefix, thread) {
+  if (!thread) {
+    info(prefix + ": thread is null or undefined.");
+    return;
+  }
+
   const { name, pid, tid, processName, processType } = thread;
   info(
     `${prefix}: ` +
