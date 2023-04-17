@@ -266,6 +266,8 @@ async function getNodeFrontInFrames(selectors, inspector) {
   let rootNode = walker.rootNode;
 
   
+  selectors = [...selectors];
+  
   const nodeSelector = selectors.pop();
 
   
