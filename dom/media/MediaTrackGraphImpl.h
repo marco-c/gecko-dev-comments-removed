@@ -258,7 +258,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void AddShutdownBlocker();
+
+  bool AddShutdownBlocker();
 
   
 
