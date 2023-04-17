@@ -828,8 +828,16 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
   }
   AccessibleWrap* localAcc = LocalAcc();
   if (IID_IEnumVARIANT == iid && localAcc) {
-    
-    if (!localAcc->HasChildren() || nsAccUtils::MustPrune(localAcc)) {
+    if (
+        
+        !localAcc->HasChildren() || nsAccUtils::MustPrune(localAcc) ||
+        
+        
+        
+        
+        (localAcc->IsOuterDoc() &&
+         !StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+         localAcc->FirstChild()->IsRemote())) {
       return E_NOINTERFACE;
     }
     *ppv = static_cast<IEnumVARIANT*>(new ChildrenEnumVariant(this));
