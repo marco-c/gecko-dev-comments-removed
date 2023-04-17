@@ -363,6 +363,79 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
   }
 }
 
+void nsHttpConnection::Check0RttEnabled(nsISSLSocketControl* ssl) {
+  if (m0RTTChecked) {
+    return;
+  }
+
+  m0RTTChecked = true;
+
+  if (mConnInfo->UsingProxy()) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (NS_FAILED(ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN))) {
+    LOG1(
+        ("nsHttpConnection::Check0RttEnabled %p - "
+         "early selected alpn not available",
+         this));
+    mEarlyDataNegotiated = false;
+  } else {
+    LOG1(
+        ("nsHttpConnection::Check0RttEnabled %p -"
+         "early selected alpn: %s",
+         this, mEarlyNegotiatedALPN.get()));
+    uint32_t infoIndex;
+    const SpdyInformation* info = gHttpHandler->SpdyInfo();
+    if (NS_FAILED(info->GetNPNIndex(mEarlyNegotiatedALPN, &infoIndex))) {
+      
+      
+      if (mTransaction->Do0RTT()) {
+        LOG(
+            ("nsHttpConnection::Check0RttEnabled [this=%p] - We "
+             "can do 0RTT (http/1)!",
+             this));
+        mWaitingFor0RTTResponse = true;
+      }
+    } else {
+      
+      
+      LOG(
+          ("nsHttpConnection::Check0RttEnabled [this=%p] - Starting "
+           "0RTT for h2!",
+           this));
+      mWaitingFor0RTTResponse = true;
+      Start0RTTSpdy(info->Version[infoIndex]);
+    }
+    mEarlyDataNegotiated = true;
+  }
+}
+
+void nsHttpConnection::EarlyDataTelemetry(int16_t tlsVersion,
+                                          bool earlyDataAccepted) {
+  
+  if (tlsVersion > nsISSLSocketControl::TLS_VERSION_1_2) {
+    Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_NEGOTIATED,
+                          (!mEarlyDataNegotiated)
+                              ? TLS_EARLY_DATA_NOT_AVAILABLE
+                              : ((mWaitingFor0RTTResponse)
+                                     ? TLS_EARLY_DATA_AVAILABLE_AND_USED
+                                     : TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED));
+    if (mWaitingFor0RTTResponse) {
+      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_ACCEPTED,
+                            earlyDataAccepted);
+    }
+    if (earlyDataAccepted) {
+      Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_BYTES_WRITTEN,
+                            mContentBytesWritten0RTT);
+    }
+  }
+}
+
 bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
                                          uint32_t& aOut0RTTBytesWritten) {
   
@@ -408,73 +481,19 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
   }
 
   rv = info->GetNegotiatedNPN(negotiatedNPN);
-  if (!m0RTTChecked && (rv == NS_ERROR_NOT_CONNECTED) &&
-      !mConnInfo->UsingProxy()) {
-    
-    
-    
-    
-    m0RTTChecked = true;
-    nsresult rvEarlyAlpn = ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN);
-    if (NS_FAILED(rvEarlyAlpn)) {
-      
-      
-      
-      LOG1(
-          ("nsHttpConnection::EnsureNPNComplete %p - "
-           "early selected alpn not available, we will try one more time.",
-           this));
-      
-      rv = ssl->DriveHandshake();
-      if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-        goto npnComplete;
-      }
-
-      
-      rv = info->GetNegotiatedNPN(negotiatedNPN);
-      if (rv == NS_ERROR_NOT_CONNECTED) {
-        rvEarlyAlpn = ssl->GetAlpnEarlySelection(mEarlyNegotiatedALPN);
-      }
+  if (rv == NS_ERROR_NOT_CONNECTED) {
+    rv = ssl->DriveHandshake();
+    if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
+      goto npnComplete;
     }
 
-    if (NS_FAILED(rvEarlyAlpn)) {
-      LOG1(
-          ("nsHttpConnection::EnsureNPNComplete %p - "
-           "early selected alpn not available",
-           this));
-      mEarlyDataNegotiated = false;
-    } else {
-      LOG1(
-          ("nsHttpConnection::EnsureNPNComplete %p -"
-           "early selected alpn: %s",
-           this, mEarlyNegotiatedALPN.get()));
-      uint32_t infoIndex;
-      const SpdyInformation* info = gHttpHandler->SpdyInfo();
-      if (NS_FAILED(info->GetNPNIndex(mEarlyNegotiatedALPN, &infoIndex))) {
-        
-        
-        if (mTransaction->Do0RTT()) {
-          LOG(
-              ("nsHttpConnection::EnsureNPNComplete [this=%p] - We "
-               "can do 0RTT (http/1)!",
-               this));
-          mWaitingFor0RTTResponse = true;
-        }
-      } else {
-        
-        
-        LOG(
-            ("nsHttpConnection::EnsureNPNComplete [this=%p] - Starting "
-             "0RTT for h2!",
-             this));
-        mWaitingFor0RTTResponse = true;
-        Start0RTTSpdy(info->Version[infoIndex]);
-      }
-      mEarlyDataNegotiated = true;
-    }
+    
+    rv = info->GetNegotiatedNPN(negotiatedNPN);
   }
 
   if (rv == NS_ERROR_NOT_CONNECTED) {
+    Check0RttEnabled(ssl);
+
     if (mWaitingFor0RTTResponse) {
       aOut0RTTWriteHandshakeValue = mTransaction->ReadSegments(
           this, nsIOService::gDefaultSegmentSize, &aOut0RTTBytesWritten);
@@ -487,11 +506,6 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
            "bytes during 0RTT",
            this, aOut0RTTBytesWritten));
       mContentBytesWritten0RTT += aOut0RTTBytesWritten;
-    }
-
-    rv = ssl->DriveHandshake();
-    if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-      goto npnComplete;
     }
 
     return false;
@@ -532,24 +546,7 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
       }
     }
 
-    
-    if (tlsVersion > nsISSLSocketControl::TLS_VERSION_1_2) {
-      Telemetry::Accumulate(
-          Telemetry::TLS_EARLY_DATA_NEGOTIATED,
-          (!mEarlyDataNegotiated)
-              ? TLS_EARLY_DATA_NOT_AVAILABLE
-              : ((mWaitingFor0RTTResponse)
-                     ? TLS_EARLY_DATA_AVAILABLE_AND_USED
-                     : TLS_EARLY_DATA_AVAILABLE_BUT_NOT_USED));
-      if (mWaitingFor0RTTResponse) {
-        Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_ACCEPTED,
-                              earlyDataAccepted);
-      }
-      if (earlyDataAccepted) {
-        Telemetry::Accumulate(Telemetry::TLS_EARLY_DATA_BYTES_WRITTEN,
-                              mContentBytesWritten0RTT);
-      }
-    }
+    EarlyDataTelemetry(tlsVersion, earlyDataAccepted);
     mWaitingFor0RTTResponse = false;
 
     if (!earlyDataAccepted) {
@@ -557,14 +554,7 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
           ("nsHttpConnection::EnsureNPNComplete [this=%p] early data not "
            "accepted",
            this));
-      if (mTransaction->QueryNullTransaction() &&
-          (mBootstrappedTimings.secureConnectionStart.IsNull() ||
-           mBootstrappedTimings.tcpConnectEnd.IsNull())) {
-        mBootstrappedTimings.secureConnectionStart =
-            mTransaction->QueryNullTransaction()->GetSecureConnectionStart();
-        mBootstrappedTimings.tcpConnectEnd =
-            mTransaction->QueryNullTransaction()->GetTcpConnectEnd();
-      }
+
       uint32_t infoIndex;
       const SpdyInformation* info = gHttpHandler->SpdyInfo();
       if (NS_SUCCEEDED(info->GetNPNIndex(negotiatedNPN, &infoIndex))) {
@@ -585,7 +575,6 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
         StartSpdy(ssl, mSpdySession->SpdyVersion());
       }
     }
-
     Telemetry::Accumulate(Telemetry::SPDY_NPN_CONNECT, UsingSpdy());
   }
 
