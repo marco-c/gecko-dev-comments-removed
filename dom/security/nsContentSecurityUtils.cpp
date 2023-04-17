@@ -524,7 +524,8 @@ void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
     
     
     MOZ_CRASH_UNSAFE_PRINTF(
-        "%s", nsContentSecurityUtils::SmartFormatCrashString(aSafeCrashString.get()));
+        "%s",
+        nsContentSecurityUtils::SmartFormatCrashString(aSafeCrashString.get()));
   }
 }
 #endif
@@ -1041,6 +1042,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
     "about:printpreview"_ns,
     
     "about:logo"_ns,
+    
+    
+    "about:sync"_ns,
 #  if defined(ANDROID)
     "about:config"_ns,
 #  endif
@@ -1206,8 +1210,20 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
+  auto kAllowedFilenames = {
+      
+      u"data:,new function() {\n  Components.utils.import(\"chrome://aboutsync/content/AboutSyncRedirector.js\");\n  AboutSyncRedirector.register();\n}"_ns,
+      
+      
+      u"about:downloads"_ns};
+  for (auto allowedFilename : kAllowedFilenames) {
+    if (filenameU == allowedFilename) {
+      return true;
+    }
+  }
+
   
-  MOZ_LOG(sCSMLog, LogLevel::Info,
+  MOZ_LOG(sCSMLog, LogLevel::Error,
           ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
            aFilename));
 
