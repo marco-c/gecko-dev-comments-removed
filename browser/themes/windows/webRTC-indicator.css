@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -22,8 +22,8 @@
     --minimize-button-active-background-color: hsla(0,0%,70%,.6);
     --control-icon-unchecked-hover-background-color: hsla(0,0%,70%,.2);
     --control-icon-unchecked-active-background-color: hsla(0,0%,70%,.6);
-    --control-icon-checked-background-color: Highlight;
-    --control-icon-checked-icon-fill: HighlightText;
+    --control-icon-checked-background-color: SelectedItem;
+    --control-icon-checked-icon-fill: SelectedItemText;
     --control-icon-checked-hover-background-color: hsla(0,0%,70%,.2);
     --control-icon-checked-active-background-color: hsla(0,0%,70%,.6);
   }

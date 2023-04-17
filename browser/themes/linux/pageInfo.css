@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/global.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-
+/* View buttons */
 #viewGroup > radio {
   list-style-image: url("chrome://browser/skin/pageInfo.png");
   appearance: none;
@@ -16,8 +16,8 @@
 }
 
 #viewGroup > radio[selected="true"] {
-  background-color: Highlight;
-  color: HighlightText;
+  background-color: SelectedItem;
+  color: SelectedItemText;
 }
 
 #viewGroup > radio > .radio-label-box {
@@ -55,7 +55,7 @@
   padding: 10px;
 }
 
-
+/* Misc */
 tree {
   margin: .5em;
 }
@@ -81,7 +81,7 @@ html|input:disabled {
   font-style: italic;
 }
 
-
+/* General Tab */
 #generalPanel > #titletext {
   margin-inline-start: 5px;
 }
@@ -95,7 +95,7 @@ html|input:disabled {
   line-height: 2em;
 }
 
-
+/* Media Tab */
 #imagetree {
   min-height: 10em;
   margin-block: 2px 0;
@@ -123,7 +123,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: graytext;
 }
 
-
+/* Permissions Tab */
 
 #permList {
   appearance: auto;
@@ -148,7 +148,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: -moz-DialogText;
 }
 
-
+/* Security Tab */
 
 #securityPanel table {
   margin-bottom: 1em;

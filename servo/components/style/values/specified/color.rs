@@ -244,10 +244,6 @@ pub enum SystemColor {
     #[css(skip)]
     TextForeground,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    TextSelectBackground,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    TextSelectForeground,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     TextSelectBackgroundDisabled,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     TextSelectBackgroundAttention,
@@ -339,9 +335,11 @@ pub enum SystemColor {
     
     MozCellhighlighttext,
     
-    MozHtmlCellhighlight,
+    #[parse(aliases = "-moz-html-cellhighlight")]
+    Selecteditem,
     
-    MozHtmlCellhighlighttext,
+    #[parse(aliases = "-moz-html-cellhighlighttext")]
+    Selecteditemtext,
     
     MozButtonhoverface,
     
