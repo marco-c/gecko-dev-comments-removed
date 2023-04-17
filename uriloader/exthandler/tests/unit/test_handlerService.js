@@ -105,7 +105,13 @@ function run_test() {
   Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.saveToDisk);
   Assert.equal(handlerInfo.preferredApplicationHandler, null);
   Assert.equal(handlerInfo.possibleApplicationHandlers.length, 0);
-  Assert.ok(handlerInfo.alwaysAskBeforeHandling);
+  Assert.equal(
+    handlerInfo.alwaysAskBeforeHandling,
+    !prefSvc.getBoolPref(
+      "browser.download.improvements_to_download_panel",
+      false
+    )
+  );
 
   
   
@@ -142,6 +148,12 @@ function run_test() {
   prefSvc.setBoolPref(kExternalWarningPrefPrefix + "http", false);
   protoInfo = protoSvc.getProtocolHandlerInfo("http");
   Assert.equal(0, protoInfo.possibleApplicationHandlers.length);
+  
+  
+  
+  
+  
+  
   Assert.ok(!protoInfo.alwaysAskBeforeHandling);
 
   
@@ -467,7 +479,12 @@ function run_test() {
     handlerInfo = mimeSvc.getFromTypeAndExtension("text/plain", null);
     Assert.equal(
       handlerInfo.preferredAction,
-      Ci.nsIHandlerInfo.useSystemDefault
+      prefSvc.getBoolPref(
+        "browser.download.improvements_to_download_panel",
+        false
+      )
+        ? Ci.nsIHandlerInfo.saveToDisk
+        : Ci.nsIHandlerInfo.useSystemDefault
     );
     Assert.equal(handlerInfo.defaultDescription, "sed");
   }
