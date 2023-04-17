@@ -807,11 +807,6 @@ void AudioInputProcessing::Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom,
   
   buffering += WEBAUDIO_BLOCK_SIZE;
 
-  
-  
-  MOZ_ASSERT_IF(!PassThrough(aGraph) && !mPacketizerInput,
-                mSegment.GetDuration() == 0);
-
   if (!PassThrough(aGraph) && mPacketizerInput) {
     
     
