@@ -994,7 +994,6 @@ pub extern "C" fn qcms_white_point_sRGB() -> qcms_CIE_xyY {
 
 
 
-#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ColourPrimaries {
     
@@ -1159,7 +1158,6 @@ impl ColourPrimaries {
 
 
 
-#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TransferCharacteristics {
     
