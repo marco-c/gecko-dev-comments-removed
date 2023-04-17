@@ -50,7 +50,7 @@ add_task(async function() {
   
   
   const promises = [hud.ui.once("messages-cleared")];
-  if (isFissionEnabled()) {
+  if (isFissionEnabled() || isServerTargetSwitchingEnabled()) {
     promises.push(hud.commands.targetCommand.once("switched-target"));
   }
 
