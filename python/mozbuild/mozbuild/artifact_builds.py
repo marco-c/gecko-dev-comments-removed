@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function
 
 
 JOB_CHOICES = {
-    "android-arm-opt",
-    "android-arm-debug",
+    "android-api-16-opt",
+    "android-api-16-debug",
     "android-x86-opt",
     "android-x86_64-opt",
     "android-x86_64-debug",

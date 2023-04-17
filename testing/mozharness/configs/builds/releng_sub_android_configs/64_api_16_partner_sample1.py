@@ -3,7 +3,7 @@
 
 
 config = {
-    "stage_platform": "android-arm-partner-sample1",
+    "stage_platform": "android-api-16-partner-sample1",
     "src_mozconfig": None,  
     "src_mozconfig_manifest": "partner/mozconfigs/mozconfig1.json",
     "tooltool_manifest_src": "mobile/android/config/tooltool-manifests/android/releng.manifest",
