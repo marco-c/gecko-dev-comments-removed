@@ -22,6 +22,22 @@
 #include "PresShell.h"
 #include "nsCocoaUtils.h"
 #include "nsIFrame.h"
+#include "nsCocoaFeatures.h"
+
+#if !defined(MAC_OS_X_VERSION_10_14) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
+@interface NSApplication (NSApplicationAppearance)
+@property(readonly, strong) NSAppearance* effectiveAppearance NS_AVAILABLE_MAC(10_14);
+@end
+#endif
+
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+@interface NSMenu (NSMenuAppearance)
+
+
+
+- (void)setAppearance:(NSAppearance*)appearance;
+@end
+#endif
 
 namespace mozilla {
 
@@ -245,6 +261,17 @@ void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {
 
   NSView* view = NativeViewForContent(mMenu->Content());
   NSMenu* nativeMenu = mMenu->NativeNSMenu();
+
+  if (@available(macOS 10.14, *)) {
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+    if (@available(macOS 11.0, *)) {
+#endif
+
+      [nativeMenu setAppearance:NSApp.effectiveAppearance];
+    }
+  }
 
   NSPoint locationOnScreen = nsCocoaUtils::GeckoPointToCocoaPoint(aPosition);
   if (view) {
