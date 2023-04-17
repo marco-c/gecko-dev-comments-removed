@@ -7,7 +7,7 @@
 #include "builtin/Object.h"
 #include "js/Object.h"  
 
-#include "mozilla/MaybeOneOf.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
 
@@ -1402,6 +1402,9 @@ static bool HasEnumerableStringNonDataProperties(NativeObject* obj) {
   
   
   
+  if (!obj->hasEnumerableProperty()) {
+    return false;
+  }
   for (ShapePropertyIter<NoGC> iter(obj->shape()); !iter.done(); iter++) {
     if (!iter->isDataProperty() && iter->enumerable() &&
         !iter->key().isSymbol()) {
@@ -1545,49 +1548,50 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     
     
 
-    size_t elements = properties.length();
     constexpr bool onlyEnumerable = kind != EnumerableOwnPropertiesKind::Names;
-    constexpr AllowGC allowGC =
-        kind != EnumerableOwnPropertiesKind::KeysAndValues ? AllowGC::NoGC
-                                                           : AllowGC::CanGC;
-    mozilla::MaybeOneOf<ShapePropertyIter<NoGC>, ShapePropertyIter<CanGC>> m;
-    if (allowGC == AllowGC::NoGC) {
-      m.construct<ShapePropertyIter<NoGC>>(nobj->shape());
-    } else {
-      m.construct<ShapePropertyIter<CanGC>>(cx, nobj->shape());
-    }
-    for (ShapePropertyIter<allowGC>& iter = m.ref<ShapePropertyIter<allowGC>>();
-         !iter.done(); iter++) {
-      jsid id = iter->key();
-      if ((onlyEnumerable && !iter->enumerable()) || id.isSymbol()) {
-        continue;
-      }
-      MOZ_ASSERT(!JSID_IS_INT(id), "Unexpected indexed property");
-      MOZ_ASSERT_IF(kind == EnumerableOwnPropertiesKind::Values ||
-                        kind == EnumerableOwnPropertiesKind::KeysAndValues,
-                    iter->isDataProperty());
-
-      if (kind == EnumerableOwnPropertiesKind::Keys ||
-          kind == EnumerableOwnPropertiesKind::Names) {
-        value.setString(JSID_TO_STRING(id));
-      } else if (kind == EnumerableOwnPropertiesKind::Values) {
-        value.set(nobj->getSlot(iter->slot()));
+    if (!onlyEnumerable || nobj->hasEnumerableProperty()) {
+      size_t elements = properties.length();
+      constexpr AllowGC allowGC =
+          kind != EnumerableOwnPropertiesKind::KeysAndValues ? AllowGC::NoGC
+                                                             : AllowGC::CanGC;
+      mozilla::Maybe<ShapePropertyIter<allowGC>> m;
+      if constexpr (allowGC == AllowGC::NoGC) {
+        m.emplace(nobj->shape());
       } else {
-        key.setString(JSID_TO_STRING(id));
-        value.set(nobj->getSlot(iter->slot()));
-        if (!NewValuePair(cx, key, value, &value)) {
+        m.emplace(cx, nobj->shape());
+      }
+      for (auto& iter = m.ref(); !iter.done(); iter++) {
+        jsid id = iter->key();
+        if ((onlyEnumerable && !iter->enumerable()) || id.isSymbol()) {
+          continue;
+        }
+        MOZ_ASSERT(!JSID_IS_INT(id), "Unexpected indexed property");
+        MOZ_ASSERT_IF(kind == EnumerableOwnPropertiesKind::Values ||
+                          kind == EnumerableOwnPropertiesKind::KeysAndValues,
+                      iter->isDataProperty());
+
+        if constexpr (kind == EnumerableOwnPropertiesKind::Keys ||
+                      kind == EnumerableOwnPropertiesKind::Names) {
+          value.setString(JSID_TO_STRING(id));
+        } else if constexpr (kind == EnumerableOwnPropertiesKind::Values) {
+          value.set(nobj->getSlot(iter->slot()));
+        } else {
+          key.setString(JSID_TO_STRING(id));
+          value.set(nobj->getSlot(iter->slot()));
+          if (!NewValuePair(cx, key, value, &value)) {
+            return false;
+          }
+        }
+
+        if (!properties.append(value)) {
           return false;
         }
       }
 
-      if (!properties.append(value)) {
-        return false;
-      }
+      
+      
+      std::reverse(properties.begin() + elements, properties.end());
     }
-
-    
-    
-    std::reverse(properties.begin() + elements, properties.end());
   } else {
     MOZ_ASSERT(kind == EnumerableOwnPropertiesKind::Values ||
                kind == EnumerableOwnPropertiesKind::KeysAndValues);
