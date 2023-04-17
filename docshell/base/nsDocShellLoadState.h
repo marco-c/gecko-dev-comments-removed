@@ -304,6 +304,14 @@ class nsDocShellLoadState final {
 
   bool IsMetaRefresh() const { return mIsMetaRefresh; }
 
+  const mozilla::Maybe<nsCString>& GetRemoteTypeOverride() const {
+    return mRemoteTypeOverride;
+  }
+
+  void SetRemoteTypeOverride(const nsCString& aRemoteTypeOverride) {
+    mRemoteTypeOverride = mozilla::Some(aRemoteTypeOverride);
+  }
+
   
   
   
@@ -524,6 +532,9 @@ class nsDocShellLoadState final {
   
   
   nsCOMPtr<nsIURI> mUnstrippedURI;
+
+  
+  mozilla::Maybe<nsCString> mRemoteTypeOverride;
 };
 
 #endif 

@@ -544,6 +544,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   bool mSupportsRedirectToRealChannel = true;
 
+  Maybe<nsCString> mRemoteTypeOverride;
+
   
   
   base::ProcessId mOtherPid = 0;
