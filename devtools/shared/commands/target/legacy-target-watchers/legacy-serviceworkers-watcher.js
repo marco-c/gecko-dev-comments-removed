@@ -12,6 +12,9 @@ const {
 } = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
+  
+  #currentTargetURL;
+
   constructor(targetCommand, onTargetAvailable, onTargetDestroyed, commands) {
     super(targetCommand, onTargetAvailable, onTargetDestroyed);
     this._registrations = [];
@@ -76,6 +79,10 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     this.target = this.targetCommand.targetFront;
 
+    if (this.targetCommand.descriptorFront.isLocalTab) {
+      this.#currentTargetURL = new URL(this.targetCommand.targetFront.url);
+    }
+
     this._workersListener.addListener(this._onRegistrationListChanged);
 
     
@@ -97,7 +104,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   
-  unlisten() {
+  unlisten(...args) {
     this._workersListener.removeListener(this._onRegistrationListChanged);
 
     if (this.targetCommand.descriptorFront.isLocalTab) {
@@ -109,7 +116,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       );
     }
 
-    super.unlisten();
+    super.unlisten(...args);
   }
 
   
@@ -120,11 +127,12 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       
       
       
-      const origin = new URL(this.target.url).origin;
       try {
         
         
-        await targetFront.pauseMatchingServiceWorkers({ origin });
+        await targetFront.pauseMatchingServiceWorkers({
+          origin: this.#currentTargetURL.origin,
+        });
       } catch (e) {
         if (targetFront.actorID) {
           throw e;
@@ -151,44 +159,55 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
   _onDocumentEvent(resources) {
     for (const resource of resources) {
-      
-      
-      
-      
-      
-      
-      
-      
       if (
         resource.resourceType !==
-          this.commands.resourceCommand.TYPES.DOCUMENT_EVENT ||
-        resource.name !== "dom-loading"
+        this.commands.resourceCommand.TYPES.DOCUMENT_EVENT
       ) {
         continue;
       }
 
-      const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
-      const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
-
-      for (const target of allServiceWorkerTargets) {
-        const isRegisteredBefore = this.targetCommand.isTargetRegistered(
-          target
-        );
-        if (shouldDestroy && isRegisteredBefore) {
-          
-          
-          
-          this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
-        }
-
+      if (resource.name === "will-navigate") {
         
         
-        const isRegisteredAfter = this.targetCommand.isTargetRegistered(target);
-        const isValidTarget = this._supportWorkerTarget(target);
-        if (isValidTarget && !isRegisteredAfter) {
+        
+        this.#currentTargetURL = new URL(resource.newURI);
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (resource.name === "dom-loading") {
+        const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
+        const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
+
+        for (const target of allServiceWorkerTargets) {
+          const isRegisteredBefore = this.targetCommand.isTargetRegistered(
+            target
+          );
+          if (shouldDestroy && isRegisteredBefore) {
+            
+            
+            
+            this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
+          }
+
           
           
-          this.onTargetAvailable(target);
+          const isRegisteredAfter = this.targetCommand.isTargetRegistered(
+            target
+          );
+          const isValidTarget = this._supportWorkerTarget(target);
+          if (isValidTarget && !isRegisteredAfter) {
+            
+            
+            this.onTargetAvailable(target);
+          }
         }
       }
     }
@@ -287,7 +306,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
     
     
-    const targetDomain = new URL(this.target.url).hostname;
+    const targetDomain = this.#currentTargetURL.hostname;
     try {
       const registrationDomain = new URL(registration.url).hostname;
       return registrationDomain === targetDomain;

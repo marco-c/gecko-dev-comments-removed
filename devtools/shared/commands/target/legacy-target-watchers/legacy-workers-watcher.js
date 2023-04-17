@@ -180,7 +180,10 @@ class LegacyWorkersWatcher {
     }
 
     
-    this.targetsByProcess.set(this.target, new Set());
+    this.targetsByProcess.set(
+      this.target,
+      this.targetsByProcess.get(this.target) || new Set()
+    );
     this._workerListChangedListener = this._workerListChanged.bind(
       this,
       this.target
@@ -193,7 +196,7 @@ class LegacyWorkersWatcher {
     return this.targetCommand.getAllTargets([this.targetCommand.TYPES.PROCESS]);
   }
 
-  unlisten() {
+  unlisten({ isTargetSwitching } = {}) {
     
     if (this.target.isParentProcess) {
       this.targetCommand.unwatchTargets(
@@ -213,7 +216,16 @@ class LegacyWorkersWatcher {
       for (const targetFront of this._getProcessTargets()) {
         const listener = this.targetsListeners.get(targetFront);
         targetFront.off("workerListChanged", listener);
-        this.targetsByProcess.delete(targetFront);
+
+        
+        
+        if (
+          !isTargetSwitching ||
+          !this._isServiceWorkerWatcher ||
+          this.targetCommand.destroyServiceWorkersOnNavigation
+        ) {
+          this.targetsByProcess.delete(targetFront);
+        }
         this.targetsListeners.delete(targetFront);
       }
     } else {

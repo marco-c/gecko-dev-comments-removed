@@ -165,19 +165,7 @@ class TargetCommand extends EventEmitter {
     if (targetFront.isTopLevel) {
       
       if (!isFirstTarget) {
-        for (const target of this._targets) {
-          
-          const isDestroyedTargetSwitching = target == this.targetFront;
-          this._onTargetDestroyed(target, {
-            isTargetSwitching: isDestroyedTargetSwitching,
-          });
-        }
-        
-        
-        this.stopListening({ onlyLegacy: true });
-
-        
-        this._targets.clear();
+        this._destroyExistingTargetsOnTargetSwitching();
       }
 
       
@@ -220,13 +208,43 @@ class TargetCommand extends EventEmitter {
     
     
     if (targetFront.isTopLevel && !isFirstTarget) {
-      await this.startListening({ onlyLegacy: true });
+      await this.startListening({ isTargetSwitching: true });
     }
 
     
     this.emitForTests("processed-available-target", targetFront);
     if (isTargetSwitching) {
       this.emitForTests("switched-target", targetFront);
+    }
+  }
+
+  _destroyExistingTargetsOnTargetSwitching() {
+    const destroyedTargets = [];
+    for (const target of this._targets) {
+      
+      const isDestroyedTargetSwitching = target == this.targetFront;
+
+      
+      if (
+        target.targetType !== this.TYPES.SERVICE_WORKER ||
+        this.destroyServiceWorkersOnNavigation
+      ) {
+        this._onTargetDestroyed(target, {
+          isTargetSwitching: isDestroyedTargetSwitching,
+        });
+        destroyedTargets.push(target);
+      }
+    }
+
+    
+    
+    this.stopListening({ isTargetSwitching: true });
+
+    
+    
+    
+    for (const target of destroyedTargets) {
+      this._targets.delete(target);
     }
   }
 
@@ -353,7 +371,8 @@ class TargetCommand extends EventEmitter {
 
 
 
-  async startListening({ onlyLegacy = false } = {}) {
+
+  async startListening({ isTargetSwitching = false } = {}) {
     
     if (
       !this.isServerTargetSwitchingEnabled() &&
@@ -391,7 +410,7 @@ class TargetCommand extends EventEmitter {
         
         
         
-        if (!onlyLegacy) {
+        if (!isTargetSwitching) {
           await this.watcherFront.watchTargets(type);
         }
       } else if (this.legacyImplementation[type]) {
@@ -473,12 +492,11 @@ class TargetCommand extends EventEmitter {
 
 
 
-  stopListening({ onlyLegacy = false } = {}) {
+
+  stopListening({ isTargetSwitching = false } = {}) {
     
     
-    
-    
-    if (this._watchingDocumentEvent && !onlyLegacy) {
+    if (this._watchingDocumentEvent && !isTargetSwitching) {
       this.commands.resourceCommand.unwatchResources(
         [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
         {
@@ -500,11 +518,11 @@ class TargetCommand extends EventEmitter {
         
         
         
-        if (!onlyLegacy) {
+        if (!isTargetSwitching) {
           this.watcherFront.unwatchTargets(type);
         }
       } else if (this.legacyImplementation[type]) {
-        this.legacyImplementation[type].unlisten();
+        this.legacyImplementation[type].unlisten({ isTargetSwitching });
       } else {
         throw new Error(`Unsupported target type '${type}'`);
       }
