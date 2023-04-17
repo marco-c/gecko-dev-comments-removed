@@ -168,8 +168,8 @@ class WebTransportH3Protocol(QuicConnectionProtocol):
                 buffer = Buffer(data=capsule.data)
                 code = buffer.pull_uint32()
                 
+                reason = buffer.pull_bytes(len(capsule.data) - 4)
                 
-                reason = buffer.data
                 self._close_info = (code, reason)
                 if fin:
                     self._call_session_closed(self._close_info, abruptly=False)
@@ -291,10 +291,9 @@ class WebTransportSession:
             buffer.push_bytes(reason)
             capsule =\
                 H3Capsule(CapsuleType.CLOSE_WEBTRANSPORT_SESSION, buffer.data)
-            self.send_stream_data(session_stream_id, capsule.encode())
+            self._http.send_data(session_stream_id, capsule.encode(), end_stream=False)
 
-        self.send_stream_data(session_stream_id, b'', end_stream=True)
-        self._protocol.transmit()
+        self._http.send_data(session_stream_id, b'', end_stream=True)
         
         
         
