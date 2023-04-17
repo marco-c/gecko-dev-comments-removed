@@ -50,6 +50,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/dom/ViewportMetaData.h"
 #include "nsAtom.h"
 #include "nsCOMArray.h"
@@ -2180,9 +2181,15 @@ class Document : public nsINode,
 
 
 
-
-
   uint8_t GetColorSchemeBits() const { return mColorSchemeBits; }
+
+  
+
+
+
+  void RecomputeColorScheme();
+  void AddColorSchemeMeta(HTMLMetaElement&);
+  void RemoveColorSchemeMeta(HTMLMetaElement&);
 
   
 
@@ -5187,6 +5194,13 @@ class Document : public nsINode,
   
   
   UniquePtr<ViewportMetaData> mLastModifiedViewportMetaData;
+
+  
+  
+  
+  
+  
+  TreeOrderedArray<HTMLMetaElement> mColorSchemeMetaTags;
 
   
   
