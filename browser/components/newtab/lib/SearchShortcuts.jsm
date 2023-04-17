@@ -64,8 +64,8 @@ this.getSearchFormURL = getSearchFormURL;
 
 
 async function checkHasSearchEngine(keyword) {
-  return (await Services.search.getAppProvidedEngines()).find(e =>
-    e.aliases.includes(keyword)
+  return (await Services.search.getAppProvidedEngines()).find(
+    e => e.aliases.includes(keyword) && !e.hidden
   );
 }
 this.checkHasSearchEngine = checkHasSearchEngine;

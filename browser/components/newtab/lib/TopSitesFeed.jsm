@@ -228,14 +228,15 @@ this.TopSitesFeed = class TopSitesFeed {
       case "browser-search-engine-modified":
         
         
+        
         if (
           data === "engine-default" &&
           this.store.getState().Prefs.values[FILTER_DEFAULT_SEARCH_PREF]
         ) {
           delete this._currentSearchHostname;
           this._currentSearchHostname = getShortURLForCurrentSearch();
-          this.refresh({ broadcast: true });
         }
+        this.refresh({ broadcast: true });
         break;
       case "browser-region-updated":
         this._readDefaults();
@@ -694,6 +695,17 @@ this.TopSitesFeed = class TopSitesFeed {
       plainPinned.map(async link => {
         if (!link) {
           return link;
+        }
+
+        
+        if (link.searchTopSite) {
+          const searchProvider = getSearchProvider(shortURL(link));
+          if (
+            !searchProvider ||
+            !(await checkHasSearchEngine(searchProvider.keyword))
+          ) {
+            return null;
+          }
         }
 
         
