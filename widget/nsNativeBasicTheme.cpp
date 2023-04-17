@@ -2237,15 +2237,13 @@ nsNativeBasicTheme::WidgetStateChanged(nsIFrame* aFrame,
     
     
     *aShouldRepaint = false;
-    if ((aAttribute == nsGkAtoms::disabled) ||
-        (aAttribute == nsGkAtoms::checked) ||
-        (aAttribute == nsGkAtoms::selected) ||
-        (aAttribute == nsGkAtoms::visuallyselected) ||
-        (aAttribute == nsGkAtoms::menuactive) ||
-        (aAttribute == nsGkAtoms::sortDirection) ||
-        (aAttribute == nsGkAtoms::focused) ||
-        (aAttribute == nsGkAtoms::_default) ||
-        (aAttribute == nsGkAtoms::open) || (aAttribute == nsGkAtoms::hover)) {
+    if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
+        aAttribute == nsGkAtoms::selected ||
+        aAttribute == nsGkAtoms::visuallyselected ||
+        aAttribute == nsGkAtoms::menuactive ||
+        aAttribute == nsGkAtoms::sortDirection ||
+        aAttribute == nsGkAtoms::focused || aAttribute == nsGkAtoms::_default ||
+        aAttribute == nsGkAtoms::open || aAttribute == nsGkAtoms::hover) {
       *aShouldRepaint = true;
     }
   }
