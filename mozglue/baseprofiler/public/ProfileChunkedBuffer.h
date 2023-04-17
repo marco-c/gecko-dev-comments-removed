@@ -751,6 +751,23 @@ class ProfileChunkedBuffer {
     return chunks;
   }
 
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool IsIndexInCurrentChunk(ProfileBufferIndex aIndex) const {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    if (MOZ_UNLIKELY(!mChunkManager || !mCurrentChunk)) {
+      
+      return false;
+    }
+    return (mCurrentChunk->RangeStart() <= aIndex) &&
+           (aIndex < (mCurrentChunk->RangeStart() +
+                      mCurrentChunk->OffsetPastLastBlock()));
+  }
+
   class Reader;
 
   
