@@ -4179,6 +4179,10 @@ nsresult QuotaManager::LoadQuota() {
                          MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 0));
 
           if (valid) {
+            if (!StaticPrefs::dom_quotaManager_caching_checkBuildId()) {
+              return true;
+            }
+
             QM_TRY_INSPECT(const auto& buildId,
                            MOZ_TO_RESULT_INVOKE_TYPED(nsAutoCString, stmt,
                                                       GetUTF8String, 1));
@@ -4195,8 +4199,8 @@ nsresult QuotaManager::LoadQuota() {
   if (!loadQuotaFromCache ||
       !StaticPrefs::dom_quotaManager_loadQuotaFromCache() ||
       ![&LoadQuotaFromCache] {
-        QM_TRY(LoadQuotaFromCache(), false);
-        return true;
+        QM_WARNONLY_TRY_UNWRAP(auto res, ToResult(LoadQuotaFromCache()));
+        return static_cast<bool>(res);
       }()) {
     
     
