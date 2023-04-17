@@ -42,18 +42,18 @@ if (topLevelDocument) {
   
 
   
-  RunTestsInIFrame("requestStorageAccess.sub.window.html?testCase=same-origin-frame&rootdocument=false");
+  RunTestsInIFrame("resources/requestStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false");
 
   
-  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/requestStorageAccess.sub.window.html?testCase=cross-origin-frame&rootdocument=false");
-
-  
-  
-  RunTestsInNestedIFrame("requestStorageAccess.sub.window.html?testCase=nested-same-origin-frame&rootdocument=false");
+  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false");
 
   
   
-  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/requestStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&rootdocument=false");
+  RunTestsInNestedIFrame("resources/requestStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false");
+
+  
+  
+  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/requestStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false");
 
   promise_test(async t => {
     await test_driver.set_permission({ name: 'storage-access' }, 'granted');

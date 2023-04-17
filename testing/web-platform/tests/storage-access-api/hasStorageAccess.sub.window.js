@@ -52,16 +52,16 @@ if (topLevelDocument) {
   
 
   
-  RunTestsInIFrame("hasStorageAccess.sub.window.html?testCase=same-origin-frame&rootdocument=false");
+  RunTestsInIFrame("resources/hasStorageAccess-iframe.html?testCase=same-origin-frame&rootdocument=false");
 
   
-  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=cross-origin-frame&rootdocument=false");
-
-  
-  
-  RunTestsInNestedIFrame("hasStorageAccess.sub.window.html?testCase=nested-same-origin-frame&rootdocument=false");
+  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/hasStorageAccess-iframe.html?testCase=cross-origin-frame&rootdocument=false");
 
   
   
-  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&rootdocument=false");
+  RunTestsInNestedIFrame("resources/hasStorageAccess-iframe.html?testCase=nested-same-origin-frame&rootdocument=false");
+
+  
+  
+  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/resources/hasStorageAccess-iframe.html?testCase=nested-cross-origin-frame&rootdocument=false");
 }
