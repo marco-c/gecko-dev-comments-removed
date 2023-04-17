@@ -595,15 +595,6 @@ parent:
 
 
 
-
-
-
-    async RemotePaintIsReady();
-
-    
-
-
-
     async RemoteIsReadyToHandleInputEvents();
 
     
@@ -913,14 +904,6 @@ child:
 
 
     async NavigateByKey(bool aForward, bool aForDocumentNavigation);
-
-    
-
-
-
-
-
-    async RequestNotifyAfterRemotePaint();
 
     
 

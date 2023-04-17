@@ -3189,16 +3189,6 @@ void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
   }
 }
 
-
-
-
-void nsFrameLoader::RequestNotifyAfterRemotePaint() {
-  
-  if (auto* browserParent = GetBrowserParent()) {
-    Unused << browserParent->SendRequestNotifyAfterRemotePaint();
-  }
-}
-
 void nsFrameLoader::RequestUpdatePosition(ErrorResult& aRv) {
   if (auto* browserParent = GetBrowserParent()) {
     nsresult rv = browserParent->UpdatePosition();

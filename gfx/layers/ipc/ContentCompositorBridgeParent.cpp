@@ -53,12 +53,6 @@ void UpdateIndirectTree(LayersId aId, Layer* aRoot,
                         const TargetConfig& aTargetConfig);
 void EraseLayerState(LayersId aId);
 
-mozilla::ipc::IPCResult
-ContentCompositorBridgeParent::RecvRequestNotifyAfterRemotePaint() {
-  mNotifyAfterRemotePaint = true;
-  return IPC_OK();
-}
-
 void ContentCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   mCanSend = false;
 
@@ -351,13 +345,6 @@ void ContentCompositorBridgeParent::ShadowLayersUpdated(
   state->mParent->NotifyShadowTreeTransaction(
       id, aInfo.isFirstPaint(), aInfo.focusTarget(), aInfo.scheduleComposite(),
       aInfo.paintSequenceNumber(), aInfo.isRepeatTransaction(), aHitTestUpdate);
-
-  
-  
-  if (mNotifyAfterRemotePaint) {
-    Unused << SendRemotePaintIsReady();
-    mNotifyAfterRemotePaint = false;
-  }
 
   if (aLayerTree->ShouldParentObserveEpoch()) {
     

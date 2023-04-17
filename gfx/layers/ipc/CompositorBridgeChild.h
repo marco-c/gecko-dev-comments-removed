@@ -128,16 +128,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   RefPtr<webgpu::WebGPUChild> GetWebGPUChild();
 
   
-
-
-
-
-
-  void RequestNotifyAfterRemotePaint(BrowserChild* aBrowserChild);
-
-  void CancelNotifyAfterRemotePaint(BrowserChild* aBrowserChild);
-
-  
   
   
   
@@ -158,7 +148,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   bool SendStopFrameTimeRecording(const uint32_t& startIndex,
                                   nsTArray<float>* intervals);
   bool SendNotifyRegionInvalidated(const nsIntRegion& region);
-  bool SendRequestNotifyAfterRemotePaint();
   bool IsSameProcess() const override;
 
   bool IPCOpen() const override { return mCanSend; }
@@ -286,8 +275,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   mozilla::ipc::IPCResult RecvReleaseSharedCompositorFrameMetrics(
       const ViewID& aId, const uint32_t& aAPZCId);
 
-  mozilla::ipc::IPCResult RecvRemotePaintIsReady();
-
   mozilla::ipc::IPCResult RecvObserveLayersUpdate(
       const LayersId& aLayersId, const LayersObserverEpoch& aEpoch,
       const bool& aActive);
@@ -339,10 +326,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   
   nsClassHashtable<nsUint64HashKey, SharedFrameMetricsData> mFrameMetricsTable;
-
-  
-  
-  nsWeakPtr mWeakBrowserChild;  
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeChild);
 

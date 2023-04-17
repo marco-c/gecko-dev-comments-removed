@@ -34,7 +34,6 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
  public:
   explicit ContentCompositorBridgeParent(CompositorManagerParent* aManager)
       : CompositorBridgeParentBase(aManager),
-        mNotifyAfterRemotePaint(false),
         mDestroyCalled(false) {}
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -109,12 +108,6 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
     aResolve(Nothing());
     return IPC_OK();
   }
-
-  
-
-
-
-  mozilla::ipc::IPCResult RecvRequestNotifyAfterRemotePaint() override;
 
   PLayerTransactionParent* AllocPLayerTransactionParent(
       const nsTArray<LayersBackend>& aBackendHints,
@@ -223,9 +216,6 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   
   RefPtr<ContentCompositorBridgeParent> mSelfRef;
 
-  
-  
-  bool mNotifyAfterRemotePaint;
   bool mDestroyCalled;
 
   RefPtr<CanvasTranslator> mCanvasTranslator;
