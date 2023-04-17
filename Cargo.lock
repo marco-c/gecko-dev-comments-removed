@@ -1798,6 +1798,7 @@ dependencies = [
  "env_logger",
  "lazy_static",
  "log",
+ "winapi",
 ]
 
 [[package]]
@@ -3322,6 +3323,7 @@ dependencies = [
 name = "neqo_glue"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "log",
  "neqo-common",
  "neqo-crypto",
@@ -5573,7 +5575,6 @@ dependencies = [
  "dwrote",
  "etagere",
  "euclid",
- "foreign-types",
  "freetype",
  "fxhash",
  "gleam",
