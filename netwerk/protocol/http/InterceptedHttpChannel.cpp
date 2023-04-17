@@ -41,6 +41,7 @@ InterceptedHttpChannel::InterceptedHttpChannel(
   
   mChannelCreationTime = aCreationTime;
   mChannelCreationTimestamp = aCreationTimestamp;
+  mInterceptedChannelCreationTimestamp = TimeStamp::Now();
   mAsyncOpenTime = aAsyncOpenTimestamp;
 }
 
@@ -525,6 +526,19 @@ InterceptedHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   
   
+  mLastStatusReported = TimeStamp::Now();
+  if (profiler_can_accept_markers()) {
+    nsAutoCString requestMethod;
+    GetRequestMethod(requestMethod);
+
+    profiler_add_network_marker(
+        mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
+        mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
+        mLoadInfo->GetInnerWindowID());
+  }
+
+  
+  
   mListener = aListener;
 
   AsyncOpenInternal();
@@ -640,12 +654,13 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
     RefPtr<HttpBaseChannel> newBaseChannel = do_QueryObject(newChannel);
     MOZ_ASSERT(newBaseChannel,
                "The redirect channel should be a base channel.");
-    profiler_add_network_marker(
-        mURI, requestMethod, priority, mChannelId,
-        NetworkLoadType::LOAD_REDIRECT, mAsyncOpenTime, TimeStamp::Now(), size,
-        kCacheUnknown, mLoadInfo->GetInnerWindowID(), &mTransactionTimings,
-        std::move(mSource), Some(nsDependentCString(contentType.get())), mURI,
-        flags, newBaseChannel->ChannelId());
+    profiler_add_network_marker(mURI, requestMethod, priority, mChannelId,
+                                NetworkLoadType::LOAD_REDIRECT,
+                                mLastStatusReported, TimeStamp::Now(), size,
+                                kCacheUnknown, mLoadInfo->GetInnerWindowID(),
+                                &mTransactionTimings, std::move(mSource),
+                                Some(nsDependentCString(contentType.get())),
+                                mURI, flags, newBaseChannel->ChannelId());
   }
 
   rv = SetupReplacementChannel(mURI, newChannel, true, flags);
@@ -1128,7 +1143,7 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     }
     profiler_add_network_marker(
         mURI, requestMethod, priority, mChannelId, NetworkLoadType::LOAD_STOP,
-        mAsyncOpenTime, TimeStamp::Now(), size, kCacheUnknown,
+        mLastStatusReported, TimeStamp::Now(), size, kCacheUnknown,
         mLoadInfo->GetInnerWindowID(), &mTransactionTimings, std::move(mSource),
         Some(nsDependentCString(contentType.get())));
   }

@@ -80,6 +80,11 @@ class InterceptedHttpChannel final
   RefPtr<nsInputStreamPump> mPump;
   TimeStamp mFinishResponseStart;
   TimeStamp mFinishResponseEnd;
+  TimeStamp mInterceptedChannelCreationTimestamp;
+
+  
+  TimeStamp mLastStatusReported;
+
   Atomic<int64_t> mProgress;
   int64_t mProgressReported;
   int64_t mSynthesizedStreamLength;

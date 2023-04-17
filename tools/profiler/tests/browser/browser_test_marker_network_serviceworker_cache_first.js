@@ -283,15 +283,15 @@ add_task(async function test_network_markers_service_worker_use() {
     );
 
     
-    const parentStopMarkers = parentPairs.map(([_, stopMarker]) => stopMarker);
+    const parentEndMarkers = parentPairs.map(([_, endMarker]) => endMarker);
     const contentStopMarkers = contentPairs.map(
       ([_, stopMarker]) => stopMarker
     );
 
     Assert.equal(
-      parentStopMarkers.length,
-      expectedFiles.length,
-      "There should be as many stop markers in the parent process as requested files."
+      parentEndMarkers.length,
+      expectedFiles.length * 2, 
+      "There should be twice as many end markers in the parent process as requested files."
     );
     Assert.equal(
       contentStopMarkers.length,
@@ -303,7 +303,7 @@ add_task(async function test_network_markers_service_worker_use() {
       info(
         `Checking if "${expectedFile}" if present in the network markers in both processes.`
       );
-      const parentMarker = parentStopMarkers.find(
+      const [parentRedirectMarker, parentStopMarker] = parentEndMarkers.filter(
         marker => marker.data.URI === expectedFile
       );
       const contentMarker = contentStopMarkers.find(
@@ -312,7 +312,6 @@ add_task(async function test_network_markers_service_worker_use() {
 
       const commonDataProperties = {
         type: "Network",
-        status: "STATUS_STOP",
         URI: expectedFile,
         requestMethod: "GET",
         contentType: Expect.stringMatches(/^(text\/html|image\/svg\+xml)$/),
@@ -322,44 +321,67 @@ add_task(async function test_network_markers_service_worker_use() {
         pri: Expect.number(),
       };
 
-      const expectedPropertiesForTopLevelNavigation = {
+      const expectedProperties = {
         name: Expect.stringMatches(
           `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
         ),
-        
-        
-        
-        data: Expect.objectContainsOnly(commonDataProperties),
       };
 
-      const expectedPropertiesForOtherRequests = {
-        name: Expect.stringMatches(
-          `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
-        ),
+      Assert.objectContains(parentRedirectMarker, expectedProperties);
+      Assert.objectContains(parentStopMarker, expectedProperties);
+      Assert.objectContains(contentMarker, expectedProperties);
+      if (i === 0) {
         
-        
-        
-        data: Expect.objectContainsOnly({
+        Assert.objectContainsOnly(parentRedirectMarker.data, {
+          ...commonDataProperties,
+          status: "STATUS_REDIRECT",
+          contentType: null,
+          cache: "Unresolved",
+          RedirectURI: expectedFile,
+          redirectType: "Internal",
+          redirectId: parentStopMarker.data.id,
+          isHttpToHttpsRedirect: false,
+        });
+
+        Assert.objectContainsOnly(parentStopMarker.data, {
+          ...commonDataProperties,
+          status: "STATUS_STOP",
+        });
+
+        Assert.objectContainsOnly(contentMarker.data, {
+          ...commonDataProperties,
+          status: "STATUS_STOP",
+        });
+      } else {
+        Assert.objectContainsOnly(parentRedirectMarker.data, {
+          ...commonDataProperties,
+          status: "STATUS_REDIRECT",
+          contentType: null,
+          cache: "Unresolved",
+          innerWindowID: Expect.number(),
+          RedirectURI: expectedFile,
+          redirectType: "Internal",
+          redirectId: parentStopMarker.data.id,
+          isHttpToHttpsRedirect: false,
+        });
+
+        Assert.objectContainsOnly(
+          parentStopMarker.data,
+          
+          
+          
+          {
+            ...commonDataProperties,
+            innerWindowID: Expect.number(),
+            status: "STATUS_STOP",
+          }
+        );
+
+        Assert.objectContainsOnly(contentMarker.data, {
           ...commonDataProperties,
           innerWindowID: Expect.number(),
-        }),
-      };
-
-      if (i === 0) {
-        Assert.objectContains(
-          parentMarker,
-          expectedPropertiesForTopLevelNavigation
-        );
-        Assert.objectContains(
-          contentMarker,
-          expectedPropertiesForTopLevelNavigation
-        );
-      } else {
-        Assert.objectContains(parentMarker, expectedPropertiesForOtherRequests);
-        Assert.objectContains(
-          contentMarker,
-          expectedPropertiesForOtherRequests
-        );
+          status: "STATUS_STOP",
+        });
       }
     }
   });
