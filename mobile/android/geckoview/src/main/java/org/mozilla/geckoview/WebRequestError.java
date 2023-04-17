@@ -45,7 +45,8 @@ public class WebRequestError extends Exception {
             ERROR_OFFLINE, ERROR_PORT_BLOCKED,
             ERROR_PROXY_CONNECTION_REFUSED, ERROR_FILE_NOT_FOUND,
             ERROR_FILE_ACCESS_DENIED, ERROR_INVALID_CONTENT_ENCODING,
-            ERROR_UNSAFE_CONTENT_TYPE, ERROR_CORRUPTED_CONTENT})
+            ERROR_UNSAFE_CONTENT_TYPE, ERROR_CORRUPTED_CONTENT,
+            ERROR_DATA_URI_TOO_LONG})
      @interface Error {}
 
     
@@ -179,6 +180,11 @@ public class WebRequestError extends Exception {
 
 
     public static final int ERROR_FILE_ACCESS_DENIED = 0x65;
+
+    
+
+
+    public static final int ERROR_DATA_URI_TOO_LONG = 0x75;
 
     
     
