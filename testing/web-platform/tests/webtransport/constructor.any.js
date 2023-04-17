@@ -1,0 +1,32 @@
+
+
+
+const HOST = get_host_info().ORIGINAL_HOST;
+
+const BAD_URLS = [
+  null,
+  '',
+  'no-scheme',
+  'http://example.com/' ,
+  'quic-transport://example.com/' ,
+  'https:///' ,
+  'https://example.com/#failing' ,
+  `https://${HOST}:999999/` ,
+];
+
+for (const url of BAD_URLS) {
+  test(() => {
+    assert_throws_dom('SyntaxError', () => new WebTransport(url),
+                      'constructor should throw');
+  }, `WebTransport constructor should reject URL '${url}'`);
+}
+
+
+
+promise_test(t => {
+  const wt = new WebTransport(`https://${HOST}:0/`);
+  return Promise.all([
+    promise_rejects_js(t, TypeError, wt.ready, 'ready promise rejects'),
+    promise_rejects_js(t, TypeError, wt.closed, 'closed promise rejects'),
+  ]);
+}, 'connection to port 0 should fail');
