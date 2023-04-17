@@ -4384,6 +4384,35 @@ void nsTextFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsIFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
+nsTArray<nsTextFrame*>* nsTextFrame::GetContinuations() {
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  MOZ_ASSERT(!GetPrevContinuation());
+  if (!mNextContinuation) {
+    return nullptr;
+  }
+  if (mHasContinuationsProperty) {
+    return GetProperty(ContinuationsProperty());
+  }
+  size_t count = 0;
+  for (nsIFrame* f = this; f; f = f->GetNextContinuation()) {
+    ++count;
+  }
+  auto* continuations = new nsTArray<nsTextFrame*>;
+  if (continuations->SetCapacity(count, fallible)) {
+    for (nsTextFrame* f = this; f;
+         f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
+      continuations->AppendElement(f);
+    }
+  } else {
+    delete continuations;
+    continuations = nullptr;
+  }
+  AddProperty(ContinuationsProperty(), continuations);
+  mHasContinuationsProperty = true;
+  return continuations;
+}
+
 class nsContinuingTextFrame final : public nsTextFrame {
  public:
   NS_DECL_FRAMEARENA_HELPERS(nsContinuingTextFrame)
@@ -4410,10 +4439,16 @@ class nsContinuingTextFrame final : public nsTextFrame {
     nsTextFrame* prevFirst = mFirstContinuation;
     if (mPrevContinuation) {
       mFirstContinuation = mPrevContinuation->FirstContinuation();
+      if (mFirstContinuation) {
+        mFirstContinuation->ClearCachedContinuations();
+      }
     } else {
       mFirstContinuation = nullptr;
     }
     if (mFirstContinuation != prevFirst) {
+      if (prevFirst) {
+        prevFirst->ClearCachedContinuations();
+      }
       auto* f = static_cast<nsContinuingTextFrame*>(mNextContinuation);
       while (f) {
         f->mFirstContinuation = mFirstContinuation;
@@ -4438,10 +4473,16 @@ class nsContinuingTextFrame final : public nsTextFrame {
     nsTextFrame* prevFirst = mFirstContinuation;
     if (mPrevContinuation) {
       mFirstContinuation = mPrevContinuation->FirstContinuation();
+      if (mFirstContinuation) {
+        mFirstContinuation->ClearCachedContinuations();
+      }
     } else {
       mFirstContinuation = nullptr;
     }
     if (mFirstContinuation != prevFirst) {
+      if (prevFirst) {
+        prevFirst->ClearCachedContinuations();
+      }
       auto* f = static_cast<nsContinuingTextFrame*>(mNextContinuation);
       while (f) {
         f->mFirstContinuation = mFirstContinuation;
@@ -4456,6 +4497,8 @@ class nsContinuingTextFrame final : public nsTextFrame {
                           "mFirstContinuation unexpectedly null!");
     return mFirstContinuation;
   };
+
+  nsTArray<nsTextFrame*>* GetContinuations() final { return nullptr; }
 
   void AddInlineMinISize(gfxContext* aRenderingContext,
                          InlineMinISizeData* aData) final;
@@ -9121,6 +9164,12 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   RemoveStateBits(TEXT_REFLOW_FLAGS | TEXT_WHITESPACE_FLAGS);
   mReflowRequestedForCharDataChange = false;
   RemoveProperty(WebRenderTextBounds());
+
+  
+  if (nsTextFrame* first = FirstContinuation()) {
+    first->ClearCachedContinuations();
+  }
+
   
   
   
