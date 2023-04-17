@@ -10,6 +10,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  setTimeout: "resource://gre/modules/Timer.jsm",
+});
+
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {})
     .ConsoleAPI;
@@ -64,7 +68,7 @@ function registerModulesProtocolHandler() {
 
 
 
-function findRunBackgroundTask(name) {
+function findBackgroundTaskModule(name) {
   const subModules = [
     "resource:///modules", 
     "resource://gre/modules", 
@@ -79,9 +83,9 @@ function findRunBackgroundTask(name) {
     log.debug(`Looking for background task at URI: ${URI}`);
 
     try {
-      const { runBackgroundTask } = ChromeUtils.import(URI);
+      const taskModule = ChromeUtils.import(URI);
       log.info(`Found background task at URI: ${URI}`);
-      return runBackgroundTask;
+      return taskModule;
     } catch (ex) {
       if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
         throw ex;
@@ -109,12 +113,27 @@ var BackgroundTasksManager = {
 
     let exitCode = BackgroundTasksManager.EXIT_CODE.NOT_FOUND;
     try {
-      let runBackgroundTask = findRunBackgroundTask(name);
+      let taskModule = findBackgroundTaskModule(name);
       addMarker("BackgroundTasksManager:AfterFindRunBackgroundTask");
 
+      let timeoutSec = Services.prefs.getIntPref(
+        "toolkit.backgroundtasks.defaultTimeoutSec",
+        10 * 60
+      );
+      if (taskModule.backgroundTaskTimeoutSec) {
+        timeoutSec = taskModule.backgroundTaskTimeoutSec;
+      }
+
       try {
-        
-        exitCode = await runBackgroundTask(commandLine);
+        exitCode = await Promise.race([
+          new Promise(resolve =>
+            setTimeout(() => {
+              log.error(`Background task named '${name}' timed out`);
+              resolve(BackgroundTasksManager.EXIT_CODE.TIMEOUT);
+            }, timeoutSec * 1000)
+          ),
+          taskModule.runBackgroundTask(commandLine),
+        ]);
         log.info(
           `Backgroundtask named '${name}' completed with exit code ${exitCode}`
         );
@@ -165,6 +184,15 @@ BackgroundTasksManager.EXIT_CODE = {
 
 
   EXCEPTION: 3,
+
+  
+
+
+
+
+
+
+  TIMEOUT: 4,
 
   
 

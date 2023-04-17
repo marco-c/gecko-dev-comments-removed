@@ -171,6 +171,7 @@ pref("app.update.langpack.enabled", true);
 
 #if defined(MOZ_UPDATE_AGENT)
   pref("app.update.background.loglevel", "error");
+  pref("app.update.background.timeoutSec", 600);
   
   
   
@@ -187,6 +188,12 @@ pref("app.update.langpack.enabled", true);
 #endif
   
   pref("app.update.background.interval", 25200);
+#endif
+
+#if defined(MOZ_BACKGROUNDTASKS)
+  
+  
+  pref("toolkit.backgroundtasks.defaultTimeoutSec", 600);
 #endif
 
 
