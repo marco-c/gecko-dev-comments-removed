@@ -59,8 +59,6 @@ class LookAndFeel {
     
     AllowOverlayScrollbarsOverlap,
     
-    ShowHideScrollbars,
-    
     SkipNavigatingDisabledMenuItem,
     
     

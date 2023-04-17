@@ -1539,26 +1539,16 @@ bool KeyframeEffect::CanThrottleOverflowChangesInScrollable(
     return true;
   }
 
-  bool hasIntersectionObservers = doc->HasIntersectionObservers();
-
   
   
 
   
-  
-  if (LookAndFeel::GetInt(LookAndFeel::IntID::ShowHideScrollbars) == 0 &&
-      !hasIntersectionObservers) {
+  if (!doc->HasIntersectionObservers()) {
     return true;
   }
 
   if (CanThrottleOverflowChanges(aFrame)) {
     return true;
-  }
-
-  
-  
-  if (hasIntersectionObservers) {
-    return false;
   }
 
   
