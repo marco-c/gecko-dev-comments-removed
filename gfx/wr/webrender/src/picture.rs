@@ -3818,24 +3818,6 @@ impl TileCacheInstance {
         self.dirty_region.reset(self.spatial_node_index);
         self.subpixel_mode = self.calculate_subpixel_mode();
 
-        
-        
-        
-        
-        let update_raster_scale =
-            !frame_context.config.low_quality_pinch_zoom ||
-            !frame_context.spatial_tree.spatial_nodes[self.spatial_node_index.0 as usize].is_ancestor_or_self_zooming;
-
-        if update_raster_scale {
-            let surface_to_device = get_relative_scale_offset(
-                self.spatial_node_index,
-                ROOT_SPATIAL_NODE_INDEX,
-                frame_context.spatial_tree,
-            );
-
-            self.current_raster_scale = surface_to_device.scale.x;
-        }
-
         self.transform_index = frame_state.composite_state.register_transform(
             self.local_to_surface,
             
@@ -6203,7 +6185,26 @@ impl PicturePrimitive {
             
             let establishes_raster_root = match composite_mode {
                 PictureCompositeMode::TileCache { slice_id } => {
-                    let tile_cache = &tile_caches[&slice_id];
+                    let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
+
+                    
+                    
+                    
+                    
+                    let update_raster_scale =
+                        !frame_context.fb_config.low_quality_pinch_zoom ||
+                        !frame_context.spatial_tree.spatial_nodes[tile_cache.spatial_node_index.0 as usize].is_ancestor_or_self_zooming;
+
+                    if update_raster_scale {
+                        
+                        let local_to_device = get_relative_scale_offset(
+                            tile_cache.spatial_node_index,
+                            ROOT_SPATIAL_NODE_INDEX,
+                            frame_context.spatial_tree,
+                        );
+
+                        tile_cache.current_raster_scale = local_to_device.scale.x;
+                    }
 
                     
                     min_scale = 0.0;
