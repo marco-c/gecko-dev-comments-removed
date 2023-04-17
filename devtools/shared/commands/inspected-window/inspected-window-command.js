@@ -8,6 +8,7 @@ const {
   getAdHocFrontOrPrimitiveGrip,
   
 } = require("devtools/client/fronts/object");
+const { Cu } = require("chrome");
 
 
 
