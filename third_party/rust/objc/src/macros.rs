@@ -111,30 +111,38 @@ macro_rules! sel {
 macro_rules! msg_send {
     (super($obj:expr, $superclass:expr), $name:ident) => ({
         let sel = sel!($name);
+        let result;
         match $crate::__send_super_message(&*$obj, $superclass, sel, ()) {
             Err(s) => panic!("{}", s),
-            Ok(r) => r,
+            Ok(r) => result = r,
         }
+        result
     });
     (super($obj:expr, $superclass:expr), $($name:ident : $arg:expr)+) => ({
         let sel = sel!($($name:)+);
+        let result;
         match $crate::__send_super_message(&*$obj, $superclass, sel, ($($arg,)*)) {
             Err(s) => panic!("{}", s),
-            Ok(r) => r,
+            Ok(r) => result = r,
         }
+        result
     });
     ($obj:expr, $name:ident) => ({
         let sel = sel!($name);
+        let result;
         match $crate::__send_message(&*$obj, sel, ()) {
             Err(s) => panic!("{}", s),
-            Ok(r) => r,
+            Ok(r) => result = r,
         }
+        result
     });
     ($obj:expr, $($name:ident : $arg:expr)+) => ({
         let sel = sel!($($name:)+);
+        let result;
         match $crate::__send_message(&*$obj, sel, ($($arg,)*)) {
             Err(s) => panic!("{}", s),
-            Ok(r) => r,
+            Ok(r) => result = r,
         }
+        result
     });
 }
