@@ -81,11 +81,15 @@ class Manager {
             return;
           }
           
-          for (const allowList of this._allowLists.values()) {
-            if (allowList.allows(url, topHost)) {
-              this._unblockedChannelIds.add(channelId);
-              channel.allow();
-              return;
+          
+          if (Manager.ENABLE_WEBCOMPAT) {
+            
+            for (const allowList of this._allowLists.values()) {
+              if (allowList.allows(url, topHost)) {
+                this._unblockedChannelIds.add(channelId);
+                channel.allow();
+                return;
+              }
             }
           }
           
@@ -202,3 +206,10 @@ this.trackingProtection = class extends ExtensionAPI {
     };
   }
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  Manager,
+  "ENABLE_WEBCOMPAT",
+  "privacy.antitracking.enableWebcompat",
+  false
+);

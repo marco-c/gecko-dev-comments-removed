@@ -37,7 +37,7 @@ StaticRefPtr<UrlClassifierFeatureTrackingProtection> gFeatureTrackingProtection;
 }  
 
 UrlClassifierFeatureTrackingProtection::UrlClassifierFeatureTrackingProtection()
-    : UrlClassifierFeatureBase(
+    : UrlClassifierFeatureAntiTrackingBase(
           nsLiteralCString(TRACKING_PROTECTION_FEATURE_NAME),
           nsLiteralCString(URLCLASSIFIER_TRACKING_BLOCKLIST),
           nsLiteralCString(URLCLASSIFIER_TRACKING_ENTITYLIST),

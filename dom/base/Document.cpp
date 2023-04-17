@@ -16771,6 +16771,10 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
 RefPtr<Document::AutomaticStorageAccessPermissionGrantPromise>
 Document::AutomaticStorageAccessPermissionCanBeGranted() {
+  if (!StaticPrefs::privacy_antitracking_enableWebcompat()) {
+    return AutomaticStorageAccessPermissionGrantPromise::CreateAndResolve(
+        false, __func__);
+  }
   if (XRE_IsContentProcess()) {
     
     
