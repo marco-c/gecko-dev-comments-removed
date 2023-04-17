@@ -79,6 +79,10 @@ static AUDIO_AMRNB_3GP: &str = "tests/amr_nb_1f.3gp";
 
 #[cfg(feature = "3gpp")]
 static AUDIO_AMRWB_3GP: &str = "tests/amr_wb_1f.3gp";
+#[cfg(feature = "mp4v")]
+
+
+static VIDEO_MP4V_MP4: &str = "tests/bbb_sunflower_QCIF_30fps_mp4v_noaudio_1f.mp4";
 
 
 #[test]
@@ -1050,6 +1054,33 @@ fn public_audio_amrwb() {
             mp4::AudioCodecSpecific::AMRSpecificBox(_) => true,
             _ => {
                 panic!("expected a AMRSpecificBox",);
+            }
+        };
+    }
+}
+
+#[test]
+#[cfg(feature = "mp4v")]
+fn public_video_mp4v() {
+    let mut fd = File::open(VIDEO_MP4V_MP4).expect("Unknown file");
+    let mut buf = Vec::new();
+    fd.read_to_end(&mut buf).expect("File error");
+
+    let mut c = Cursor::new(&buf);
+    let context = mp4::read_mp4(&mut c).expect("read_mp4 failed");
+    for track in context.tracks {
+        let stsd = track.stsd.expect("expected an stsd");
+        let v = match stsd.descriptions.first().expect("expected a SampleEntry") {
+            mp4::SampleEntry::Video(ref v) => v,
+            _ => panic!("expected a VideoSampleEntry"),
+        };
+        assert_eq!(v.codec_type, mp4::CodecType::MP4V);
+        assert_eq!(v.width, 176);
+        assert_eq!(v.height, 144);
+        let _codec_specific = match v.codec_specific {
+            mp4::VideoCodecSpecific::ESDSConfig(_) => true,
+            _ => {
+                panic!("expected a ESDSConfig",);
             }
         };
     }
