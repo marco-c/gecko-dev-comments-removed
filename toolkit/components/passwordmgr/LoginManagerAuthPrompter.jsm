@@ -415,24 +415,10 @@ LoginManagerAuthPrompter.prototype = {
 
     let foundLogins = null;
     var selectedLogin = null;
-    var checkBox = { value: false };
-    var checkBoxLabel = null;
     var [origin, realm, unused] = this._getRealmInfo(aPasswordRealm);
 
     
     if (origin) {
-      var canRememberLogin = false;
-      if (this._allowRememberLogin) {
-        canRememberLogin =
-          aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY &&
-          Services.logins.getLoginSavingEnabled(origin);
-      }
-
-      
-      if (canRememberLogin) {
-        checkBoxLabel = this._getLocalizedString("rememberPassword");
-      }
-
       
       foundLogins = Services.logins.findLogins(origin, null, realm);
 
@@ -452,7 +438,6 @@ LoginManagerAuthPrompter.prototype = {
         }
 
         if (selectedLogin) {
-          checkBox.value = true;
           aUsername.value = selectedLogin.username;
           
           if (!aPassword.value) {
@@ -468,12 +453,10 @@ LoginManagerAuthPrompter.prototype = {
       aDialogTitle,
       aText,
       aUsername,
-      aPassword,
-      checkBoxLabel,
-      checkBox
+      aPassword
     );
 
-    if (!ok || !checkBox.value || !origin) {
+    if (!ok || !origin) {
       return ok;
     }
 
@@ -541,23 +524,12 @@ LoginManagerAuthPrompter.prototype = {
       );
     }
 
-    var checkBox = { value: false };
-    var checkBoxLabel = null;
     var [origin, realm, username] = this._getRealmInfo(aPasswordRealm);
 
     username = decodeURIComponent(username);
 
     
     if (origin && !this._inPrivateBrowsing) {
-      var canRememberLogin =
-        aSavePassword == Ci.nsIAuthPrompt.SAVE_PASSWORD_PERMANENTLY &&
-        Services.logins.getLoginSavingEnabled(origin);
-
-      
-      if (canRememberLogin) {
-        checkBoxLabel = this._getLocalizedString("rememberPassword");
-      }
-
       if (!aPassword.value) {
         
         var foundLogins = Services.logins.findLogins(origin, null, realm);
@@ -580,12 +552,10 @@ LoginManagerAuthPrompter.prototype = {
       this._chromeWindow,
       aDialogTitle,
       aText,
-      aPassword,
-      checkBoxLabel,
-      checkBox
+      aPassword
     );
 
-    if (ok && checkBox.value && origin && aPassword.value) {
+    if (ok && origin && aPassword.value) {
       let newLogin = new LoginInfo(
         origin,
         null,
@@ -634,23 +604,10 @@ LoginManagerAuthPrompter.prototype = {
     return [formattedOrigin, formattedOrigin + pathname, uri.username];
   },
 
-  _canPromptToSaveLogin() {
-    
-    if (!this._chromeWindow) {
-      return false;
-    }
-
-    
-    return !!gPrompterService;
-  },
-
   async promptAuthInternal(aChannel, aLevel, aAuthInfo) {
     var selectedLogin = null;
-    var checkbox = { value: false };
-    var checkboxLabel = null;
     var epicfail = false;
     var canAutologin = false;
-    var canPromptToSave = this._canPromptToSaveLogin();
     var foundLogins;
     let autofilled = false;
 
@@ -700,19 +657,11 @@ LoginManagerAuthPrompter.prototype = {
           this.log("Autologin enabled, skipping auth prompt.");
           canAutologin = true;
         }
-
-        checkbox.value = true;
       }
 
       var canRememberLogin = Services.logins.getLoginSavingEnabled(origin);
       if (!this._allowRememberLogin) {
         canRememberLogin = false;
-      }
-
-      if (canRememberLogin && !canPromptToSave) {
-        
-        
-        checkboxLabel = this._getLocalizedString("rememberPassword");
       }
     } catch (e) {
       
@@ -760,9 +709,7 @@ LoginManagerAuthPrompter.prototype = {
         LoginManagerAuthPrompter.promptAuthModalType,
         aChannel,
         aLevel,
-        aAuthInfo,
-        checkboxLabel,
-        checkbox
+        aAuthInfo
       );
     }
 
@@ -774,12 +721,7 @@ LoginManagerAuthPrompter.prototype = {
       PromptAbuseHelper.resetPromptAbuseCounter(baseDomain, browser);
     }
 
-    
-    
-    
-    
-    var rememberLogin = canPromptToSave ? canRememberLogin : checkbox.value;
-    if (!ok || !rememberLogin || epicfail) {
+    if (!ok || !canRememberLogin || epicfail) {
       return ok;
     }
 
@@ -808,16 +750,12 @@ LoginManagerAuthPrompter.prototype = {
             ")"
         );
 
-        if (canPromptToSave) {
-          let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
-          let savePrompt = gPrompterService.promptToSavePassword(
-            promptBrowser,
-            newLogin
-          );
-          this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
-        } else {
-          Services.logins.addLogin(newLogin);
-        }
+        let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
+        let savePrompt = gPrompterService.promptToSavePassword(
+          promptBrowser,
+          newLogin
+        );
+        this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
       } else if (password != selectedLogin.password) {
         this.log(
           "Updating password for " +
@@ -828,17 +766,13 @@ LoginManagerAuthPrompter.prototype = {
             httpRealm +
             ")"
         );
-        if (canPromptToSave) {
-          let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
-          let savePrompt = gPrompterService.promptToChangePassword(
-            promptBrowser,
-            selectedLogin,
-            newLogin
-          );
-          this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
-        } else {
-          this._updateLogin(selectedLogin, newLogin);
-        }
+        let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
+        let savePrompt = gPrompterService.promptToChangePassword(
+          promptBrowser,
+          selectedLogin,
+          newLogin
+        );
+        this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
       } else {
         this.log("Login unchanged, no further action needed.");
         Services.logins.recordPasswordUse(
