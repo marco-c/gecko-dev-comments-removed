@@ -349,13 +349,22 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   }
 
   
-  if (const auto xdgConfigPath = PR_GetEnv("XDG_CONFIG_PATH")) {
-    policy->AddDir(rdonly, xdgConfigPath);
+  
+  
+  
+  
+  
+  
+  
+  
+  if (const auto* xdgConfigPath = PR_GetEnv("XDG_CONFIG_HOME")) {
+    policy->AddPath(rdonly, xdgConfigPath,
+                    SandboxBroker::Policy::AddCondition::AddAlways);
   }
-
   nsAutoCString xdgConfigDirs(PR_GetEnv("XDG_CONFIG_DIRS"));
   for (const auto& path : xdgConfigDirs.Split(':')) {
-    policy->AddDir(rdonly, PromiseFlatCString(path).get());
+    policy->AddPath(rdonly, PromiseFlatCString(path).get(),
+                    SandboxBroker::Policy::AddCondition::AddAlways);
   }
 
   
@@ -363,7 +372,8 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   if (!xdgDataHome.IsEmpty()) {
     nsAutoCString fontPath(xdgDataHome);
     fontPath.Append("/fonts");
-    policy->AddDir(rdonly, PromiseFlatCString(fontPath).get());
+    policy->AddPath(rdonly, PromiseFlatCString(fontPath).get(),
+                    SandboxBroker::Policy::AddCondition::AddAlways);
   }
 
   
@@ -371,7 +381,8 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   for (const auto& path : xdgDataDirs.Split(':')) {
     nsAutoCString fontPath(path);
     fontPath.Append("/fonts");
-    policy->AddDir(rdonly, PromiseFlatCString(fontPath).get());
+    policy->AddPath(rdonly, PromiseFlatCString(fontPath).get(),
+                    SandboxBroker::Policy::AddCondition::AddAlways);
   }
 
   
