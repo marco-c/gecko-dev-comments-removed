@@ -12,8 +12,8 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "nsRefPtrHashtable.h"  
 
+class gfxContext;
 namespace mozilla {
-
 namespace layers {
 class LayerManager;
 class WebRenderLayerManager;
@@ -81,7 +81,21 @@ class FrameRecorder {
   FramesTimingRecording mRecording;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 class WindowRenderer : public FrameRecorder {
+  NS_INLINE_DECL_REFCOUNTING(WindowRenderer)
+
  public:
   
   virtual layers::LayerManager* AsLayerManager() { return nullptr; }
@@ -116,6 +130,8 @@ class WindowRenderer : public FrameRecorder {
 
   virtual bool EndEmptyTransaction(
       EndTransactionFlags aFlags = END_DEFAULT) = 0;
+
+  virtual void Destroy() {}
 
   
 
@@ -153,6 +169,8 @@ class WindowRenderer : public FrameRecorder {
 
 
   virtual void WaitOnTransactionProcessed() {}
+
+  virtual bool IsCompositingCheap() { return true; }
 
   
 
@@ -196,13 +214,21 @@ class WindowRenderer : public FrameRecorder {
   void UpdatePartialPrerenderedAnimations(
       const nsTArray<uint64_t>& aJankedAnimations);
 
+  const TimeStamp& GetAnimationReadyTime() const { return mAnimationReadyTime; }
+
  protected:
+  virtual ~WindowRenderer() = default;
+
   
   
   
   
   nsRefPtrHashtable<nsUint64HashKey, dom::Animation>
       mPartialPrerenderedAnimations;
+
+  
+  
+  TimeStamp mAnimationReadyTime;
 };
 
 }  
