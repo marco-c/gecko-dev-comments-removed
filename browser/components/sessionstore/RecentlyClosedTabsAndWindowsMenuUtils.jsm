@@ -223,7 +223,10 @@ function createEntry(
     element.setAttribute("targetURI", tabData.entries[activeIndex].url);
   }
 
-  if (!aIsWindowsFragment) {
+  
+  
+  
+  if (!aIsWindowsFragment && aTagName != "menuitem") {
     element.addEventListener(
       "click",
       RecentlyClosedTabsAndWindowsMenuUtils._undoCloseMiddleClick
