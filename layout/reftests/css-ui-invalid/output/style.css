@@ -1,4 +1,4 @@
-
+/* Override default style */
 output {
   color: black;
 }
@@ -11,10 +11,10 @@ output.notinvalid:-moz-ui-invalid {
 }
 
 output.invalid {
-  color: red;
+  color: green;
 }
 output.invalid:-moz-ui-invalid {
-  color: green;
+  color: red;
 }
 
 output.ref {

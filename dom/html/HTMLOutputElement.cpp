@@ -27,7 +27,8 @@ HTMLOutputElement::HTMLOutputElement(
   AddMutationObserver(this);
 
   
-  AddStatesSilently(NS_EVENT_STATE_VALID | NS_EVENT_STATE_MOZ_UI_VALID);
+  
+  SetBarredFromConstraintValidation(true);
 }
 
 HTMLOutputElement::~HTMLOutputElement() = default;
@@ -74,20 +75,6 @@ void HTMLOutputElement::DoneAddingChildren(bool aHaveNotified) {
   mIsDoneAddingChildren = true;
   
   DescendantsChanged();
-}
-
-EventStates HTMLOutputElement::IntrinsicState() const {
-  EventStates states = nsGenericHTMLFormControlElement::IntrinsicState();
-
-  
-  
-  if (IsValid()) {
-    states |= NS_EVENT_STATE_VALID | NS_EVENT_STATE_MOZ_UI_VALID;
-  } else {
-    states |= NS_EVENT_STATE_INVALID | NS_EVENT_STATE_MOZ_UI_INVALID;
-  }
-
-  return states;
 }
 
 nsresult HTMLOutputElement::BindToTree(BindContext& aContext,
