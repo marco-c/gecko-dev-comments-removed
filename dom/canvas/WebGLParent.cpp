@@ -100,16 +100,16 @@ IPCResult WebGLParent::RecvGetFrontBufferSnapshot(
       NS_WARNING("Failed to alloc shmem for RecvGetFrontBufferSnapshot.");
       return IPC_FAIL(this, "Failed to allocate shmem for result");
     }
-    const auto range = shmem.ByteRange();
-    *ret = {surfSize, Some(shmem.Extract())};
 
+    const auto range = shmem.ByteRange();
+    auto retSize = surfSize;
     if (!mHost->FrontBufferSnapshotInto(Some(range))) {
       gfxCriticalNote << "WebGLParent::RecvGetFrontBufferSnapshot: "
                          "FrontBufferSnapshotInto(some) failed after "
                          "FrontBufferSnapshotInto(none)";
-      
-      ret->surfSize = {0, 0};
+      retSize = {0, 0};  
     }
+    *ret = {retSize, shmem.Extract()};
   }
   return IPC_OK();
 }
