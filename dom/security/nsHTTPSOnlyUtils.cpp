@@ -366,22 +366,63 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
 
 already_AddRefed<nsIURI>
 nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
-                                                        nsresult aError) {
+                                                        nsresult aStatus) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
   
   if (!(httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
     return nullptr;
   }
-
   
   
   loadInfo->SetHttpsOnlyStatus(
       httpsOnlyStatus | nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS);
 
+  nsresult status = aStatus;
   
   
-  if (HttpsUpgradeUnrelatedErrorCode(aError)) {
+  
+  if (NS_SUCCEEDED(aStatus)) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+    
+    if (!httpChannel) {
+      return nullptr;
+    }
+    uint32_t responseStatus = 0;
+    if (NS_FAILED(httpChannel->GetResponseStatus(&responseStatus))) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    
+    if (responseStatus >= 400 && responseStatus < 512) {
+      
+      
+      
+      
+      switch (responseStatus) {
+        case 400:
+          status = NS_ERROR_PROXY_BAD_REQUEST;
+          break;
+        case 404:
+          status = NS_ERROR_PROXY_NOT_FOUND;
+          break;
+        default:
+          status = mozilla::net::HttpProxyResponseToErrorCode(responseStatus);
+          break;
+      }
+    }
+    if (NS_SUCCEEDED(status)) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  if (HttpsUpgradeUnrelatedErrorCode(status)) {
     return nullptr;
   }
 

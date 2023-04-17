@@ -89,7 +89,7 @@ class nsHTTPSOnlyUtils {
 
 
   static already_AddRefed<nsIURI> PotentiallyDowngradeHttpsFirstRequest(
-      nsIChannel* aChannel, nsresult aError);
+      nsIChannel* aChannel, nsresult aStatus);
 
   
 

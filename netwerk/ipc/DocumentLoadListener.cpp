@@ -2134,8 +2134,9 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   
   
   
+  
   bool isHTTPSFirstFixup = false;
-  if (NS_FAILED(aStatus) && !newURI) {
+  if (!newURI) {
     newURI = nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(mChannel,
                                                                      aStatus);
     isHTTPSFirstFixup = true;
