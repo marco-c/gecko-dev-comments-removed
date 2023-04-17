@@ -850,6 +850,29 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
              "Shouldn't be loading from an entry when calling InternalLoad "
              "from LoadURI");
 
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+      aLoadState->TriggeringPrincipal();
+  if (triggeringPrincipal && triggeringPrincipal->IsSystemPrincipal()) {
+    if (mozilla::SessionHistoryInParent()) {
+      WindowContext* topWc = mBrowsingContext->GetTopWindowContext();
+      if (topWc && !topWc->IsDiscarded()) {
+        MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(true));
+      }
+    } else {
+      bool oshe = false;
+      nsCOMPtr<nsISHEntry> currentSHEntry;
+      GetCurrentSHEntry(getter_AddRefs(currentSHEntry), &oshe);
+      if (currentSHEntry) {
+        currentSHEntry->SetHasUserInteraction(true);
+      }
+    }
+  }
+
   rv = InternalLoad(aLoadState);
   NS_ENSURE_SUCCESS(rv, rv);
 

@@ -355,12 +355,6 @@ add_task(async function test_pushState() {
 
 
 
-add_task(async function test_loadURI() {
-  await runTopLevelTest(loadURI);
-});
-
-
-
 add_task(async function test_followLink() {
   await runTopLevelTest(followLink);
 });

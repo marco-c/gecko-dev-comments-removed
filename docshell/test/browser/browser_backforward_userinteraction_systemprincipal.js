@@ -9,9 +9,7 @@ const TEST_PAGE =
     "https://example.com"
   ) + "dummy_page.html";
 
-
-
-add_task(async function test_about_back() {
+async function runTest(privilegedLoad) {
   
   for (let requireUserInteraction of [true, false]) {
     Services.prefs.setBoolPref(
@@ -23,45 +21,82 @@ add_task(async function test_about_back() {
       gBrowser,
       TEST_PAGE + "?entry=0"
     );
-    let browser = tab.linkedBrowser;
+
     assertBackForwardState(false, false);
 
     await followLink(TEST_PAGE + "?entry=1");
+
     assertBackForwardState(true, false);
 
     await followLink(TEST_PAGE + "?entry=2");
+
+    assertBackForwardState(true, false);
+
+    await followLink(TEST_PAGE + "?entry=3");
+
     assertBackForwardState(true, false);
 
     
-    await BrowserTestUtils.synthesizeMouse("body", 0, 0, {}, browser, true);
+    
+    
+    await privilegedLoad(TEST_PAGE + "?entry=4");
 
-    await loadURI("about:config");
     assertBackForwardState(true, false);
 
-    await goBack(TEST_PAGE + "?entry=2");
-    assertBackForwardState(true, true);
+    await followLink(TEST_PAGE + "?entry=5");
+
+    assertBackForwardState(true, false);
 
     if (!requireUserInteraction) {
+      await goBack(TEST_PAGE + "?entry=4");
+    }
+    await goBack(TEST_PAGE + "?entry=3");
+
+    if (!requireUserInteraction) {
+      await goBack(TEST_PAGE + "?entry=2");
       await goBack(TEST_PAGE + "?entry=1");
-      assertBackForwardState(true, true);
     }
 
+    assertBackForwardState(true, true);
+
     await goBack(TEST_PAGE + "?entry=0");
+
     assertBackForwardState(false, true);
 
     if (!requireUserInteraction) {
       await goForward(TEST_PAGE + "?entry=1");
-      assertBackForwardState(true, true);
+      await goForward(TEST_PAGE + "?entry=2");
     }
 
-    await goForward(TEST_PAGE + "?entry=2");
+    await goForward(TEST_PAGE + "?entry=3");
+
     assertBackForwardState(true, true);
 
-    await goForward("about:config");
+    if (!requireUserInteraction) {
+      await goForward(TEST_PAGE + "?entry=4");
+    }
+
+    await goForward(TEST_PAGE + "?entry=5");
+
     assertBackForwardState(true, false);
 
     BrowserTestUtils.removeTab(tab);
   }
 
   Services.prefs.clearUserPref("browser.navigation.requireUserInteraction");
+}
+
+
+
+
+add_task(async function test_urlBar() {
+  await runTest(async function(url) {
+    info(`Loading ${url} via the URL bar.`);
+    let browser = gBrowser.selectedBrowser;
+    let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
+    gURLBar.focus();
+    gURLBar.value = url;
+    gURLBar.goButton.click();
+    await loaded;
+  });
 });
