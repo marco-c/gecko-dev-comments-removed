@@ -8352,6 +8352,12 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(
       }
       return true;
     }
+    case eDragExit: {
+      if (!StaticPrefs::dom_event_dragexit_enabled()) {
+        aEvent->mFlags.mOnlyChromeDispatch = true;
+      }
+      return true;
+    }
     case eContextMenu: {
       
       
