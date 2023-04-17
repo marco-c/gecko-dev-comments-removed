@@ -195,6 +195,9 @@ struct JSTimers {
   mozilla::TimeDuration executionTime;       
   mozilla::TimeDuration delazificationTime;  
   mozilla::TimeDuration xdrEncodingTime;     
+  mozilla::TimeDuration gcTime;              
+  mozilla::TimeDuration
+      protectTime;  
   mozilla::TimeDuration
       baselineCompileTime;  
 };
