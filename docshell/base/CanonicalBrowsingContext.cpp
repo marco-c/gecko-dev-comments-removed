@@ -157,61 +157,16 @@ nsISecureBrowserUI* CanonicalBrowsingContext::GetSecureBrowserUI() {
   return mSecureBrowserUI;
 }
 
-namespace {
-
-
-
-
-
-
-
-class DocShellProgressBridge : public nsIWebProgressListener {
- public:
-  NS_DECL_ISUPPORTS
-  
-  
-  
-  NS_FORWARD_SAFE_NSIWEBPROGRESSLISTENER(GetTargetContext(aWebProgress))
-
-  explicit DocShellProgressBridge(uint64_t aTopContextId)
-      : mTopContextId(aTopContextId) {}
-
- private:
-  virtual ~DocShellProgressBridge() = default;
-
-  nsIWebProgressListener* GetTargetContext(nsIWebProgress* aWebProgress) {
-    RefPtr<CanonicalBrowsingContext> context;
-    if (nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aWebProgress)) {
-      context = docShell->GetBrowsingContext()->Canonical();
-    } else {
-      context = CanonicalBrowsingContext::Get(mTopContextId);
-    }
-    return context && !context->IsDiscarded() ? context->GetWebProgress()
-                                              : nullptr;
-  }
-
-  uint64_t mTopContextId = 0;
-};
-
-NS_IMPL_ISUPPORTS(DocShellProgressBridge, nsIWebProgressListener)
-}  
-
 void CanonicalBrowsingContext::MaybeAddAsProgressListener(
     nsIWebProgress* aWebProgress) {
-  
-  
-  
-  if (!IsTopContent()) {
+  if (!GetWebProgress()) {
     return;
   }
-
-  if (!mDocShellProgressBridge) {
-    mDocShellProgressBridge = new DocShellProgressBridge(Id());
+  if (!mStatusFilter) {
     mStatusFilter = new nsBrowserStatusFilter();
-    mStatusFilter->AddProgressListener(mDocShellProgressBridge,
+    mStatusFilter->AddProgressListener(GetWebProgress(),
                                        nsIWebProgress::NOTIFY_ALL);
   }
-
   aWebProgress->AddProgressListener(mStatusFilter, nsIWebProgress::NOTIFY_ALL);
 }
 
@@ -222,10 +177,9 @@ void CanonicalBrowsingContext::ReplacedBy(
   MOZ_ASSERT(!aNewContext->mSessionHistory);
   MOZ_ASSERT(IsTop() && aNewContext->IsTop());
   if (mStatusFilter) {
-    mStatusFilter->RemoveProgressListener(mDocShellProgressBridge);
+    mStatusFilter->RemoveProgressListener(mWebProgress);
     mStatusFilter = nullptr;
   }
-  mWebProgress->ContextReplaced(aNewContext);
   aNewContext->mWebProgress = std::move(mWebProgress);
 
   
@@ -2280,7 +2234,7 @@ bool CanonicalBrowsingContext::AllowedInBFCache(
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CanonicalBrowsingContext, BrowsingContext,
                                    mSessionHistory, mContainerFeaturePolicy,
-                                   mCurrentBrowserParent, mWebProgress)
+                                   mCurrentBrowserParent)
 
 NS_IMPL_ADDREF_INHERITED(CanonicalBrowsingContext, BrowsingContext)
 NS_IMPL_RELEASE_INHERITED(CanonicalBrowsingContext, BrowsingContext)
