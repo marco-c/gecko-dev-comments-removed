@@ -182,7 +182,7 @@ bool GetWindowList(DesktopCapturer::SourceList* windows,
             
             
             if (!owner_name.empty() && (itr == pid_itr_map.end())) {
-              sources.push_back(DesktopCapturer::Source{window_id, owner_name});
+              sources.push_back(DesktopCapturer::Source{window_id, pid, owner_name});
               RTC_DCHECK(!sources.empty());
               
               std::list<DesktopCapturer::Source>::const_iterator last_source =
@@ -193,7 +193,7 @@ bool GetWindowList(DesktopCapturer::SourceList* windows,
                       pid, last_source));
             }
           } else {
-            sources.push_back(DesktopCapturer::Source{window_id, title});
+            sources.push_back(DesktopCapturer::Source{window_id, pid, title});
             
             
             if (itr != pid_itr_map.end() && (itr->second != sources.end())) {

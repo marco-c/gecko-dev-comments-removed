@@ -1103,7 +1103,7 @@ class TreeMetadataEmitter(LoggingMixin):
         varmap = dict(
             SOURCES=(Sources, GeneratedSources, all_suffixes),
             HOST_SOURCES=(HostSources, HostGeneratedSources, [".c", ".mm", ".cpp"]),
-            UNIFIED_SOURCES=(UnifiedSources, None, [".c", ".mm", ".cpp"]),
+            UNIFIED_SOURCES=(UnifiedSources, None, [".c", ".mm", ".m", ".cpp"]),
         )
         
         
