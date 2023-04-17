@@ -1490,7 +1490,9 @@ class GetUserMediaStreamTask final : public GetUserMediaTask {
   RefPtr<MediaDevice> mVideoDevice;
   const MediaEnginePrefs mPrefs;
   const bool mShouldFocusSource;
-  RefPtr<MediaManager> mManager;  
+  
+  
+  const RefPtr<MediaManager> mManager;
 };
 
 
