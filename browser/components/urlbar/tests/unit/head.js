@@ -187,8 +187,10 @@ function convertToUtf8(str) {
 
 
 
-function registerBasicTestProvider(results = [], onCancel, type) {
-  let provider = new TestProvider({ results, onCancel, type });
+
+
+function registerBasicTestProvider(results = [], onCancel, type, name) {
+  let provider = new TestProvider({ results, onCancel, type, name });
   UrlbarProvidersManager.registerProvider(provider);
   registerCleanupFunction(() =>
     UrlbarProvidersManager.unregisterProvider(provider)

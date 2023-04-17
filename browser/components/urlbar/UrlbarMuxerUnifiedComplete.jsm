@@ -67,6 +67,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       suggestions: new Set(),
       canAddTabToSearch: true,
+      hasUnitConversionResult: false,
       
     };
 
@@ -530,6 +531,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    
+    
+    if (
+      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.payload.engine == "Google" &&
+      result.payload.suggestion?.startsWith("= ") &&
+      state.hasUnitConversionResult
+    ) {
+      return false;
+    }
+
+    
     return true;
   }
 
@@ -579,6 +592,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     ) {
       state.canShowTailSuggestions = false;
     }
+
+    state.hasUnitConversionResult =
+      state.hasUnitConversionResult || result.providerName == "UnitConversion";
   }
 
   
