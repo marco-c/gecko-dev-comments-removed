@@ -253,7 +253,8 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   bool IsMenuList();
 
-  bool IsMouseTransparent() { return mMouseTransparent; }
+  bool IsMouseTransparent(const ComputedStyle&) const;
+  bool IsMouseTransparent() const { return IsMouseTransparent(*Style()); }
 
   static nsIContent* GetTriggerContent(nsMenuPopupFrame* aMenuPopupFrame);
   void ClearTriggerContent() { mTriggerContent = nullptr; }
@@ -619,8 +620,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
                               
   bool mInContentShell;       
   bool mIsMenuLocked;         
-  bool mMouseTransparent;     
-                              
 
   
   
