@@ -43,11 +43,14 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     return this.getParent();
   }
 
-  get remoteFrame() {
+  get useChildTargetToFetchChildren() {
     if (!BROWSER_TOOLBOX_FISSION_ENABLED && this.targetFront.isParentProcess) {
       return false;
     }
-    return this._form.remoteFrame;
+    
+    
+    
+    return this._form.useChildTargetToFetchChildren || this._form.remoteFrame;
   }
 
   get role() {
@@ -173,7 +176,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
   }
 
   async children() {
-    if (!this.remoteFrame) {
+    if (!this.useChildTargetToFetchChildren) {
       return super.children();
     }
 
@@ -212,7 +215,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
 
 
   async _accumulateSnapshot(snapshot) {
-    const { childCount, remoteFrame } = snapshot;
+    const { childCount, useChildTargetToFetchChildren } = snapshot;
     
     if (childCount === 0) {
       return snapshot;
@@ -220,7 +223,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
 
     
     
-    if (!remoteFrame) {
+    if (!useChildTargetToFetchChildren) {
       const childSnapshots = [];
       for (const childSnapshot of snapshot.children) {
         childSnapshots.push(this._accumulateSnapshot(childSnapshot));
@@ -237,7 +240,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     );
     
     delete snapshot.contentDOMReference;
-    delete snapshot.remoteFrame;
+    delete snapshot.useChildTargetToFetchChildren;
     if (!frameNodeFront) {
       return snapshot;
     }
@@ -484,7 +487,7 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
     
     while (currentElm) {
       
-      if (currentElm.remoteFrame) {
+      if (currentElm.useChildTargetToFetchChildren) {
         const {
           walker: domWalkerFront,
         } = await currentElm.targetFront.getFront("inspector");
