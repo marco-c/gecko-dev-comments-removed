@@ -858,7 +858,7 @@ static MOZ_ALWAYS_INLINE js::HashNumber HashId(jsid id) {
   
   
   if (MOZ_LIKELY(JSID_IS_ATOM(id))) {
-    return JSID_TO_ATOM(id)->hash();
+    return id.toAtom()->hash();
   }
   if (JSID_IS_SYMBOL(id)) {
     return JSID_TO_SYMBOL(id)->hash();
