@@ -169,6 +169,9 @@ def write_test_settings_json(args, test_details, oskey):
     
     
     test_url = transform_platform(test_details["test_url"], oskey)
+    
+    
+    test_details["test_url"] = test_url
 
     test_settings = {
         "raptor-options": {
