@@ -296,7 +296,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:webrender::profiler::register_thread\n"
 
          
-         "race:scale_blit"
+         "race:scale_blit\n"
+
+         "race:mozilla::gl::MesaMemoryLeakWorkaround"
 
       
       ;  
