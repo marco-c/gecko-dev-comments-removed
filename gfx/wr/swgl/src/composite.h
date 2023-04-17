@@ -411,7 +411,6 @@ void* GetResourceBuffer(LockedTexture* resource, int32_t* width,
 
 
 
-
 void Composite(LockedTexture* lockedDst, LockedTexture* lockedSrc, GLint srcX,
                GLint srcY, GLsizei srcWidth, GLsizei srcHeight, GLint dstX,
                GLint dstY, GLsizei dstWidth, GLsizei dstHeight,
