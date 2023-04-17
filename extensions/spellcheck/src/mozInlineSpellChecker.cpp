@@ -468,7 +468,7 @@ Document* mozInlineSpellStatus::GetDocument() const {
 
 
 already_AddRefed<nsRange> mozInlineSpellStatus::PositionToCollapsedRange(
-    nsINode* aNode, uint32_t aOffset) {
+    nsINode* aNode, uint32_t aOffset) const {
   if (NS_WARN_IF(!aNode) || NS_WARN_IF(!GetDocument())) {
     return nullptr;
   }
