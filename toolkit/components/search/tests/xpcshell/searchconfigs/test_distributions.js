@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const tests = [];
 
-// Bing should be default everywhere for Acer
+
 for (let [locale, region] of [
   ["en-US", "US"],
   ["pl", "PL"],
@@ -217,6 +217,7 @@ tests.push({
 
 tests.push({
   locale: "zh-CN",
+  region: "CN",
   distribution: "MozillaOnline",
   test: engines =>
     hasParams(engines, "百度", "searchbar", "tn=monline_4_dg") &&
@@ -231,6 +232,7 @@ tests.push({
 
 tests.push({
   locale: "zh-CN",
+  region: "CN",
   distribution: "MozillaOnline",
   test: engines =>
     hasParams(engines, "亚马逊", "searchbar", "engine=amazon_shopping") &&
@@ -500,7 +502,7 @@ tests.push({
   distribution: "yandex-drp",
   test: engines =>
     hasParams(engines, "Яндекс", "searchbar", "clid=2039342") &&
-    // Test that fallback works correct as well.
+    
     hasParams(engines, "Яндекс", "contextmenu", "clid=2039342") &&
     hasDefault(engines, "Яндекс") &&
     hasEnginesFirst(engines, ["Яндекс"]),
