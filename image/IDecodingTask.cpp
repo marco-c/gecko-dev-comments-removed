@@ -79,6 +79,11 @@ void IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
   }
 
   
+  if (gXPCOMThreadsShutDown) {
+    return;
+  }
+
+  
   NotNull<RefPtr<RasterImage>> image = aImage;
   mEventTarget->Dispatch(CreateMediumHighRunnable(NS_NewRunnableFunction(
                              "IDecodingTask::NotifyProgress",
@@ -112,6 +117,11 @@ void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
     aImage->NotifyDecodeComplete(finalStatus, metadata, telemetry, progress,
                                  invalidRect, frameCount, decoderFlags,
                                  surfaceFlags);
+    return;
+  }
+
+  
+  if (gXPCOMThreadsShutDown) {
     return;
   }
 

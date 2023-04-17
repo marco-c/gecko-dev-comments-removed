@@ -1333,7 +1333,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     bool needsDispatch = mReleasingImagesOnMainThread.IsEmpty();
     mReleasingImagesOnMainThread.AppendElement(image);
 
-    if (!needsDispatch) {
+    if (!needsDispatch || gXPCOMThreadsShutDown) {
+      
       
       return;
     }
@@ -1815,6 +1816,12 @@ void SurfaceCache::ReleaseImageOnMainThread(
     already_AddRefed<image::Image> aImage, bool aAlwaysProxy) {
   if (NS_IsMainThread() && !aAlwaysProxy) {
     RefPtr<image::Image> image = std::move(aImage);
+    return;
+  }
+
+  
+  
+  if (gXPCOMThreadsShutDown) {
     return;
   }
 
