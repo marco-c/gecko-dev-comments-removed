@@ -8,9 +8,9 @@
 
 
 #include "ActorsParentCommon.h"
-#include "DatabaseFileInfo.h"
-#include "DatabaseFileManager.h"
+#include "DatabaseFileInfoFwd.h"
 #include "DBSchema.h"
+#include "FileManager.h"
 #include "IndexedDatabase.h"
 #include "IndexedDBCommon.h"
 #include "ReportInternalError.h"
@@ -2263,7 +2263,7 @@ nsresult UpgradeSchemaFrom18_0To19_0(mozIStorageConnection& aConnection) {
 }
 
 class UpgradeFileIdsFunction final : public mozIStorageFunction {
-  SafeRefPtr<DatabaseFileManager> mFileManager;
+  SafeRefPtr<FileManager> mFileManager;
 
  public:
   UpgradeFileIdsFunction() { AssertIsOnIOThread(); }
@@ -2858,8 +2858,7 @@ nsresult UpgradeFileIdsFunction::Init(nsIFile* aFMDirectory,
                                       mozIStorageConnection& aConnection) {
   
   
-  
-  auto fileManager = MakeSafeRefPtr<DatabaseFileManager>(
+  auto fileManager = MakeSafeRefPtr<FileManager>(
       PERSISTENCE_TYPE_INVALID, quota::OriginMetadata{}, u""_ns, false);
 
   nsresult rv = fileManager->Init(aFMDirectory, aConnection);

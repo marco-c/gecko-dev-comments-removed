@@ -4,10 +4,10 @@
 
 
 
-#ifndef DOM_INDEXEDDB_FILEINFOIMPL_H_
-#define DOM_INDEXEDDB_FILEINFOIMPL_H_
+#ifndef mozilla_dom_indexeddb_fileinfotimpl_h__
+#define mozilla_dom_indexeddb_fileinfotimpl_h__
 
-#include "FileInfo.h"
+#include "FileInfoT.h"
 
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/Mutex.h"
@@ -18,36 +18,37 @@ namespace dom {
 namespace indexedDB {
 
 template <typename FileManager>
-FileInfo<FileManager>::FileInfo(
-    const typename FileManager::FileInfoManagerGuard& aGuard,
+FileInfoT<FileManager>::FileInfoT(
+    const typename FileManager::FileManagerGuard& aGuard,
     SafeRefPtr<FileManager> aFileManager, const int64_t aFileId,
     const nsrefcnt aInitialDBRefCnt)
-    : FileInfoBase{aFileId},
+    : mFileId(aFileId),
       mDBRefCnt(aInitialDBRefCnt),
       mFileManager(std::move(aFileManager)) {
+  MOZ_ASSERT(mFileId > 0);
   MOZ_ASSERT(mFileManager);
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::AddRef() {
+void FileInfoT<FileManager>::AddRef() {
   AutoLock lock(FileManager::Mutex());
 
   LockedAddRef();
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::Release(const bool aSyncDeleteFile) {
+void FileInfoT<FileManager>::Release(const bool aSyncDeleteFile) {
   UpdateReferences(mRefCnt, -1, aSyncDeleteFile);
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::UpdateDBRefs(int32_t aDelta) {
+void FileInfoT<FileManager>::UpdateDBRefs(int32_t aDelta) {
   UpdateReferences(mDBRefCnt, aDelta);
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::GetReferences(int32_t* const aRefCnt,
-                                          int32_t* const aDBRefCnt) {
+void FileInfoT<FileManager>::GetReferences(int32_t* const aRefCnt,
+                                           int32_t* const aDBRefCnt) {
   AutoLock lock(FileManager::Mutex());
 
   if (aRefCnt) {
@@ -60,14 +61,19 @@ void FileInfo<FileManager>::GetReferences(int32_t* const aRefCnt,
 }
 
 template <typename FileManager>
-FileManager& FileInfo<FileManager>::Manager() const {
+FileManager& FileInfoT<FileManager>::Manager() const {
   return *mFileManager;
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount,
-                                             const int32_t aDelta,
-                                             const bool aSyncDeleteFile) {
+int64_t FileInfoT<FileManager>::Id() const {
+  return mFileId;
+}
+
+template <typename FileManager>
+void FileInfoT<FileManager>::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount,
+                                              const int32_t aDelta,
+                                              const bool aSyncDeleteFile) {
   bool needsCleanup;
   {
     AutoLock lock(FileManager::Mutex());
@@ -99,15 +105,15 @@ void FileInfo<FileManager>::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount,
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::LockedAddRef() {
+void FileInfoT<FileManager>::LockedAddRef() {
   FileManager::Mutex().AssertCurrentThreadOwns();
 
   ++mRefCnt;
 }
 
 template <typename FileManager>
-bool FileInfo<FileManager>::LockedClearDBRefs(
-    const typename FileManager::FileInfoManagerGuard&) {
+bool FileInfoT<FileManager>::LockedClearDBRefs(
+    const typename FileManager::FileManagerGuard&) {
   FileManager::Mutex().AssertCurrentThreadOwns();
 
   mDBRefCnt = 0;
@@ -127,12 +133,12 @@ bool FileInfo<FileManager>::LockedClearDBRefs(
 }
 
 template <typename FileManager>
-void FileInfo<FileManager>::Cleanup() {
+void FileInfoT<FileManager>::Cleanup() {
   QM_WARNONLY_TRY(mFileManager->AsyncDeleteFile(Id()));
 }
 
 template <typename FileManager>
-nsCOMPtr<nsIFile> FileInfo<FileManager>::GetFileForFileInfo() const {
+nsCOMPtr<nsIFile> FileInfoT<FileManager>::GetFileForFileInfo() const {
   const nsCOMPtr<nsIFile> directory = Manager().GetDirectory();
   if (NS_WARN_IF(!directory)) {
     return nullptr;

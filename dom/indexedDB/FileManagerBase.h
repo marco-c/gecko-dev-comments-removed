@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_INDEXEDDB_FILEINFOMANAGER_H_
-#define DOM_INDEXEDDB_FILEINFOMANAGER_H_
+#ifndef mozilla_dom_indexeddb_filemanagerbase_h__
+#define mozilla_dom_indexeddb_filemanagerbase_h__
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
@@ -13,37 +13,17 @@
 #include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
-#include "FileInfo.h"
+#include "FileInfoT.h"
 #include "FlippedOnce.h"
 
 namespace mozilla {
 namespace dom {
 namespace indexedDB {
 
-class FileInfoManagerBase {
- public:
-  bool Invalidated() const { return mInvalidated; }
-
- protected:
-  bool AssertValid() const {
-    if (NS_WARN_IF(Invalidated())) {
-      MOZ_ASSERT(false);
-      return false;
-    }
-
-    return true;
-  }
-
-  void Invalidate() { mInvalidated.Flip(); }
-
- private:
-  FlippedOnce<false> mInvalidated;
-};
-
 template <typename FileManager>
-class FileInfoManager : public FileInfoManagerBase {
+class FileManagerBase {
  public:
-  using FileInfo = FileInfo<FileManager>;
+  using FileInfo = FileInfoT<FileManager>;
   using MutexType = StaticMutex;
   using AutoLock = mozilla::detail::BaseAutoLock<MutexType&>;
 
@@ -56,7 +36,7 @@ class FileInfoManager : public FileInfoManagerBase {
       const int64_t id = ++mLastFileId;
 
       auto fileInfo =
-          MakeNotNull<FileInfo*>(FileInfoManagerGuard{},
+          MakeNotNull<FileInfo*>(FileManagerGuard{},
                                  SafeRefPtr{static_cast<FileManager*>(this),
                                             AcquireStrongRefFromRawPtr{}},
                                  id);
@@ -76,20 +56,22 @@ class FileInfoManager : public FileInfoManagerBase {
   nsresult Invalidate() {
     AutoLock lock(FileManager::Mutex());
 
-    FileInfoManagerBase::Invalidate();
+    mInvalidated.Flip();
 
     mFileInfos.RemoveIf([](const auto& iter) {
       FileInfo* info = iter.Data();
       MOZ_ASSERT(info);
 
-      return !info->LockedClearDBRefs(FileInfoManagerGuard{});
+      return !info->LockedClearDBRefs(FileManagerGuard{});
     });
 
     return NS_OK;
   }
 
-  class FileInfoManagerGuard {
-    FileInfoManagerGuard() = default;
+  bool Invalidated() const { return mInvalidated; }
+
+  class FileManagerGuard {
+    FileManagerGuard() = default;
   };
 
  private:
@@ -123,16 +105,27 @@ class FileInfoManager : public FileInfoManagerBase {
   }
 
  protected:
+  bool AssertValid() const {
+    if (NS_WARN_IF(static_cast<const FileManager*>(this)->Invalidated())) {
+      MOZ_ASSERT(false);
+      return false;
+    }
+
+    return true;
+  }
+
 #ifdef DEBUG
-  ~FileInfoManager() { MOZ_ASSERT(mFileInfos.IsEmpty()); }
+  ~FileManagerBase() { MOZ_ASSERT(mFileInfos.IsEmpty()); }
 #else
-  ~FileInfoManager() = default;
+  ~FileManagerBase() = default;
 #endif
 
   
   
   int64_t mLastFileId = 0;
   nsTHashMap<nsUint64HashKey, NotNull<FileInfo*>> mFileInfos;
+
+  FlippedOnce<false> mInvalidated;
 };
 
 }  

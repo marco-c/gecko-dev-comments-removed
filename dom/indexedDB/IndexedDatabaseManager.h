@@ -27,15 +27,15 @@ class IDBFactory;
 namespace indexedDB {
 
 class BackgroundUtilsChild;
-class DatabaseFileManager;
+class FileManager;
 class FileManagerInfo;
 
 }  
 
 class IndexedDatabaseManager final {
-  using PersistenceType = mozilla::dom::quota::PersistenceType;
-  using DatabaseFileManager = mozilla::dom::indexedDB::DatabaseFileManager;
-  using FileManagerInfo = mozilla::dom::indexedDB::FileManagerInfo;
+  typedef mozilla::dom::quota::PersistenceType PersistenceType;
+  typedef mozilla::dom::indexedDB::FileManager FileManager;
+  typedef mozilla::dom::indexedDB::FileManagerInfo FileManagerInfo;
 
  public:
   enum LoggingMode {
@@ -105,11 +105,11 @@ class IndexedDatabaseManager final {
 
   void ClearBackgroundActor();
 
-  [[nodiscard]] SafeRefPtr<DatabaseFileManager> GetFileManager(
+  [[nodiscard]] SafeRefPtr<FileManager> GetFileManager(
       PersistenceType aPersistenceType, const nsACString& aOrigin,
       const nsAString& aDatabaseName);
 
-  void AddFileManager(SafeRefPtr<DatabaseFileManager> aFileManager);
+  void AddFileManager(SafeRefPtr<FileManager> aFileManager);
 
   void InvalidateAllFileManagers();
 
@@ -155,7 +155,7 @@ class IndexedDatabaseManager final {
   
   nsClassHashtable<nsCStringHashKey, FileManagerInfo> mFileManagerInfos;
 
-  nsClassHashtable<nsRefPtrHashKey<DatabaseFileManager>, nsTArray<int64_t>>
+  nsClassHashtable<nsRefPtrHashKey<FileManager>, nsTArray<int64_t>>
       mPendingDeleteInfos;
 
   nsCString mLocale;
