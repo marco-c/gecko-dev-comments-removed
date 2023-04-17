@@ -71,9 +71,11 @@ struct NurseryChunk : public ChunkBase {
   void poisonAfterEvict(size_t extent = ChunkSize);
 
   
-  void markPagesUnusedHard(size_t from);
+  void markPagesUnusedHard(size_t startOffset);
+
   
-  [[nodiscard]] bool markPagesInUseHard(size_t to);
+  
+  [[nodiscard]] bool markPagesInUseHard(size_t endOffset);
 
   uintptr_t start() const { return uintptr_t(&data); }
   uintptr_t end() const { return uintptr_t(this) + ChunkSize; }
@@ -109,17 +111,18 @@ inline void js::NurseryChunk::poisonAfterEvict(size_t extent) {
               JS_SWEPT_NURSERY_PATTERN, MemCheckKind::MakeNoAccess);
 }
 
-inline void js::NurseryChunk::markPagesUnusedHard(size_t from) {
-  MOZ_ASSERT(from >= sizeof(ChunkBase));  
-  MOZ_ASSERT(from <= ChunkSize);
-  uintptr_t start = uintptr_t(this) + from;
-  MarkPagesUnusedHard(reinterpret_cast<void*>(start), ChunkSize - from);
+inline void js::NurseryChunk::markPagesUnusedHard(size_t startOffset) {
+  MOZ_ASSERT(startOffset >= sizeof(ChunkBase));  
+  MOZ_ASSERT(startOffset <= ChunkSize);
+  uintptr_t start = uintptr_t(this) + startOffset;
+  size_t length = ChunkSize - startOffset;
+  MarkPagesUnusedHard(reinterpret_cast<void*>(start), length);
 }
 
-inline bool js::NurseryChunk::markPagesInUseHard(size_t to) {
-  MOZ_ASSERT(to >= sizeof(ChunkBase));
-  MOZ_ASSERT(to <= ChunkSize);
-  return MarkPagesInUseHard(this, to);
+inline bool js::NurseryChunk::markPagesInUseHard(size_t endOffset) {
+  MOZ_ASSERT(endOffset >= sizeof(ChunkBase));
+  MOZ_ASSERT(endOffset <= ChunkSize);
+  return MarkPagesInUseHard(this, endOffset);
 }
 
 
