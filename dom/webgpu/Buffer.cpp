@@ -58,10 +58,15 @@ void Buffer::Cleanup() {
     mValid = false;
     auto bridge = mParent->GetBridge();
     if (bridge && bridge->IsOpen()) {
+      
+      
+      
+      if (mMapped && mMapped->mShmem.IsReadable()) {
+        
+        
+        bridge->DeallocShmem(mMapped->mShmem);
+      }
       bridge->SendBufferDestroy(mId);
-    }
-    if (bridge && mMapped) {
-      bridge->DeallocShmem(mMapped->mShmem);
     }
   }
 }
