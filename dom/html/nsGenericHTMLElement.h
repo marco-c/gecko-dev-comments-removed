@@ -1040,7 +1040,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
 
 
-  void UpdateFormOwner(bool aBindToTree, Element* aFormIdElement);
+  virtual void UpdateFormOwner(bool aBindToTree, Element* aFormIdElement);
 
   
 
