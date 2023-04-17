@@ -11,16 +11,13 @@
 #include <queue>
 #include <unordered_map>
 
-#include "base/component_export.h"
-#include "base/containers/flat_map.h"
-#include "base/macros.h"
-#include "base/memory/ref_counted.h"
-#include "base/synchronization/lock.h"
 #include "mojo/core/ports/event.h"
 #include "mojo/core/ports/name.h"
 #include "mojo/core/ports/port.h"
 #include "mojo/core/ports/port_ref.h"
 #include "mojo/core/ports/user_data.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/RefPtr.h"
 
 namespace mojo {
 namespace core {
@@ -66,7 +63,7 @@ class NodeDelegate;
 
 
 
-class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
+class Node {
  public:
   enum class ShutdownPolicy {
     DONT_ALLOW_LOCAL_PORTS,
@@ -76,6 +73,9 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
   
   Node(const NodeName& name, NodeDelegate* delegate);
   ~Node();
+
+  Node(const Node&) = delete;
+  void operator=(const Node&) = delete;
 
   
   
@@ -108,8 +108,8 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
   int CreatePortPair(PortRef* port0_ref, PortRef* port1_ref);
 
   
-  int SetUserData(const PortRef& port_ref, scoped_refptr<UserData> user_data);
-  int GetUserData(const PortRef& port_ref, scoped_refptr<UserData>* user_data);
+  int SetUserData(const PortRef& port_ref, RefPtr<UserData> user_data);
+  int GetUserData(const PortRef& port_ref, RefPtr<UserData>* user_data);
 
   
   
@@ -131,14 +131,14 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
   
   
   int GetMessage(const PortRef& port_ref,
-                 std::unique_ptr<UserMessageEvent>* message,
+                 mozilla::UniquePtr<UserMessageEvent>* message,
                  MessageFilter* filter);
 
   
   
   
   int SendUserMessage(const PortRef& port_ref,
-                      std::unique_ptr<UserMessageEvent> message);
+                      mozilla::UniquePtr<UserMessageEvent> message);
 
   
   
@@ -184,13 +184,16 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
     DelegateHolder(Node* node, NodeDelegate* delegate);
     ~DelegateHolder();
 
+    DelegateHolder(const DelegateHolder&) = delete;
+    void operator=(const DelegateHolder&) = delete;
+
     NodeDelegate* operator->() const {
       EnsureSafeDelegateAccess();
       return delegate_;
     }
 
    private:
-#if DCHECK_IS_ON()
+#ifdef DEBUG
     void EnsureSafeDelegateAccess() const;
 #else
     void EnsureSafeDelegateAccess() const {}
@@ -198,25 +201,23 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
 
     Node* const node_;
     NodeDelegate* const delegate_;
-
-    DISALLOW_COPY_AND_ASSIGN(DelegateHolder);
   };
 
-  int OnUserMessage(std::unique_ptr<UserMessageEvent> message);
-  int OnPortAccepted(std::unique_ptr<PortAcceptedEvent> event);
-  int OnObserveProxy(std::unique_ptr<ObserveProxyEvent> event);
-  int OnObserveProxyAck(std::unique_ptr<ObserveProxyAckEvent> event);
-  int OnObserveClosure(std::unique_ptr<ObserveClosureEvent> event);
-  int OnMergePort(std::unique_ptr<MergePortEvent> event);
+  int OnUserMessage(mozilla::UniquePtr<UserMessageEvent> message);
+  int OnPortAccepted(mozilla::UniquePtr<PortAcceptedEvent> event);
+  int OnObserveProxy(mozilla::UniquePtr<ObserveProxyEvent> event);
+  int OnObserveProxyAck(mozilla::UniquePtr<ObserveProxyAckEvent> event);
+  int OnObserveClosure(mozilla::UniquePtr<ObserveClosureEvent> event);
+  int OnMergePort(mozilla::UniquePtr<MergePortEvent> event);
   int OnUserMessageReadAckRequest(
-      std::unique_ptr<UserMessageReadAckRequestEvent> event);
-  int OnUserMessageReadAck(std::unique_ptr<UserMessageReadAckEvent> event);
+      mozilla::UniquePtr<UserMessageReadAckRequestEvent> event);
+  int OnUserMessageReadAck(mozilla::UniquePtr<UserMessageReadAckEvent> event);
 
-  int AddPortWithName(const PortName& port_name, scoped_refptr<Port> port);
+  int AddPortWithName(const PortName& port_name, RefPtr<Port> port);
   void ErasePort(const PortName& port_name);
 
   int SendUserMessageInternal(const PortRef& port_ref,
-                              std::unique_ptr<UserMessageEvent>* message);
+                              mozilla::UniquePtr<UserMessageEvent>* message);
   int MergePortsInternal(const PortRef& port0_ref, const PortRef& port1_ref,
                          bool allow_close_on_bad_state);
   void ConvertToProxy(Port* port, const NodeName& to_node_name,
@@ -286,28 +287,31 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) Node {
   
   
   
-  base::Lock ports_lock_;
-  std::unordered_map<LocalPortName, scoped_refptr<Port>> ports_;
+  mozilla::Mutex ports_lock_{"Ports Lock"};
+  std::unordered_map<LocalPortName, RefPtr<Port>> ports_;
 
+  
+  
+  
+  
   
   
   
   
   
   using PeerPortMap =
-      std::unordered_map<PeerPortName, base::flat_map<LocalPortName, PortRef>>;
+      std::unordered_map<PeerPortName,
+                         std::unordered_map<LocalPortName, PortRef>>;
 
   
   
   
   
   std::unordered_map<NodeName, PeerPortMap> peer_port_maps_;
-
-  DISALLOW_COPY_AND_ASSIGN(Node);
 };
 
 }  
 }  
 }  
 
-#endif
+#endif  

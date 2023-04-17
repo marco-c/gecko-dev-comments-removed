@@ -7,9 +7,6 @@
 
 #include <stddef.h>
 
-#include "base/component_export.h"
-#include "base/macros.h"
-
 namespace mojo {
 namespace core {
 namespace ports {
@@ -24,12 +21,15 @@ namespace ports {
 
 
 
-class COMPONENT_EXPORT(MOJO_CORE_PORTS) UserMessage {
+class UserMessage {
  public:
   struct TypeInfo {};
 
   explicit UserMessage(const TypeInfo* type_info);
   virtual ~UserMessage();
+
+  UserMessage(const UserMessage&) = delete;
+  void operator=(const UserMessage&) = delete;
 
   const TypeInfo* type_info() const { return type_info_; }
 
@@ -47,8 +47,6 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) UserMessage {
 
  private:
   const TypeInfo* const type_info_;
-
-  DISALLOW_COPY_AND_ASSIGN(UserMessage);
 };
 
 }  

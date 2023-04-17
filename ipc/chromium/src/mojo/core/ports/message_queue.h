@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "base/component_export.h"
-#include "base/macros.h"
 #include "mojo/core/ports/event.h"
 
 namespace mojo {
@@ -28,11 +26,14 @@ class MessageFilter;
 
 
 
-class COMPONENT_EXPORT(MOJO_CORE_PORTS) MessageQueue {
+class MessageQueue {
  public:
   explicit MessageQueue();
   explicit MessageQueue(uint64_t next_sequence_num);
   ~MessageQueue();
+
+  MessageQueue(const MessageQueue&) = delete;
+  void operator=(const MessageQueue&) = delete;
 
   void set_signalable(bool value) { signalable_ = value; }
 
@@ -42,7 +43,7 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) MessageQueue {
 
   
   
-  void GetNextMessage(std::unique_ptr<UserMessageEvent>* message,
+  void GetNextMessage(mozilla::UniquePtr<UserMessageEvent>* message,
                       MessageFilter* filter);
 
   
@@ -54,13 +55,13 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) MessageQueue {
   
   
   
-  void AcceptMessage(std::unique_ptr<UserMessageEvent> message,
+  void AcceptMessage(mozilla::UniquePtr<UserMessageEvent> message,
                      bool* has_next_message);
 
   
   
   void TakeAllMessages(
-      std::vector<std::unique_ptr<UserMessageEvent>>* messages);
+      std::vector<mozilla::UniquePtr<UserMessageEvent>>* messages);
 
   
   
@@ -71,12 +72,10 @@ class COMPONENT_EXPORT(MOJO_CORE_PORTS) MessageQueue {
   size_t queued_num_bytes() const { return total_queued_bytes_; }
 
  private:
-  std::vector<std::unique_ptr<UserMessageEvent>> heap_;
+  std::vector<mozilla::UniquePtr<UserMessageEvent>> heap_;
   uint64_t next_sequence_num_;
   bool signalable_ = true;
   size_t total_queued_bytes_ = 0;
-
-  DISALLOW_COPY_AND_ASSIGN(MessageQueue);
 };
 
 }  
