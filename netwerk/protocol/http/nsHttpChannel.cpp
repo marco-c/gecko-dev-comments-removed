@@ -119,6 +119,7 @@
 #include "../../cache2/CacheFileUtils.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsINetworkLinkService.h"
+#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyStreamListener.h"
@@ -454,6 +455,18 @@ nsresult nsHttpChannel::OnBeforeConnect() {
   
   if (mAPIRedirectToURI) {
     return AsyncCall(&nsHttpChannel::HandleAsyncAPIRedirect);
+  }
+
+  
+  
+  
+  if (ContentBlockingAllowList::Check(this)) {
+    nsCOMPtr<nsIURI> unstrippedURI;
+    mLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
+
+    if (unstrippedURI) {
+      return AsyncCall(&nsHttpChannel::HandleAsyncRedirectToUnstrippedURI);
+    }
   }
 
   
@@ -2724,6 +2737,40 @@ void nsHttpChannel::HandleAsyncAPIRedirect() {
 
   nsresult rv = StartRedirectChannelToURI(
       mAPIRedirectToURI, nsIChannelEventSink::REDIRECT_PERMANENT);
+  if (NS_FAILED(rv)) {
+    rv = ContinueAsyncRedirectChannelToURI(rv);
+    if (NS_FAILED(rv)) {
+      LOG(("ContinueAsyncRedirectChannelToURI failed (%08x) [this=%p]\n",
+           static_cast<uint32_t>(rv), this));
+    }
+  }
+}
+
+void nsHttpChannel::HandleAsyncRedirectToUnstrippedURI() {
+  MOZ_ASSERT(!mCallOnResume, "How did that happen?");
+
+  if (mSuspendCount) {
+    LOG(
+        ("Waiting until resume to do async redirect to unstripped URI "
+         "[this=%p]\n",
+         this));
+    mCallOnResume = [](nsHttpChannel* self) {
+      self->HandleAsyncRedirectToUnstrippedURI();
+      return NS_OK;
+    };
+    return;
+  }
+
+  nsCOMPtr<nsIURI> unstrippedURI;
+  mLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
+
+  
+  
+  mLoadInfo->SetUnstrippedURI(nullptr);
+
+  nsresult rv = StartRedirectChannelToURI(
+      unstrippedURI, nsIChannelEventSink::REDIRECT_PERMANENT);
+
   if (NS_FAILED(rv)) {
     rv = ContinueAsyncRedirectChannelToURI(rv);
     if (NS_FAILED(rv)) {
