@@ -42,6 +42,7 @@
 #include "js/PropertyDescriptor.h"
 #include "js/PropertySpec.h"
 #include "js/Realm.h"
+#include "js/RealmIterators.h"
 #include "js/RealmOptions.h"
 #include "js/RefCounted.h"
 #include "js/RootingAPI.h"
@@ -464,64 +465,7 @@ extern JS_PUBLIC_API JS::Realm* EnterRealm(JSContext* cx, JSObject* target);
 
 extern JS_PUBLIC_API void LeaveRealm(JSContext* cx, JS::Realm* oldRealm);
 
-using IterateRealmCallback = void (*)(JSContext* cx, void* data, Realm* realm,
-                                      const AutoRequireNoGC& nogc);
-
-
-
-
-
-
-extern JS_PUBLIC_API void IterateRealms(JSContext* cx, void* data,
-                                        IterateRealmCallback realmCallback);
-
-
-
-
-extern JS_PUBLIC_API void IterateRealmsWithPrincipals(
-    JSContext* cx, JSPrincipals* principals, void* data,
-    IterateRealmCallback realmCallback);
-
-
-
-
-extern JS_PUBLIC_API void IterateRealmsInCompartment(
-    JSContext* cx, JS::Compartment* compartment, void* data,
-    IterateRealmCallback realmCallback);
-
 }  
-
-
-
-
-
-namespace JS {
-enum class CompartmentIterResult { KeepGoing, Stop };
-}  
-
-using JSIterateCompartmentCallback =
-    JS::CompartmentIterResult (*)(JSContext*, void*, JS::Compartment*);
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_IterateCompartments(
-    JSContext* cx, void* data,
-    JSIterateCompartmentCallback compartmentCallback);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_IterateCompartmentsInZone(
-    JSContext* cx, JS::Zone* zone, void* data,
-    JSIterateCompartmentCallback compartmentCallback);
 
 
 
