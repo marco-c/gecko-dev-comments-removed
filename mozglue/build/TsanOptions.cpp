@@ -313,6 +313,9 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:mozilla::layers::AsyncPanZoomController::GetZoomAnimationId\n"
 
+         
+         "race:mozilla::layers::AsyncPanZoomController::SetZoomAnimationId\n"
+
       
       ;  
 }
