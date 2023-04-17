@@ -555,15 +555,9 @@ bool DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(nsIContent* aContent) {
 bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(nsIContent* aContent,
                                                           nsRect* aResult) {
   MOZ_ASSERT(aResult);
-  
-  
-  
-  
-  
-  return GetDisplayPortImpl(aContent, aResult, 1.0f,
-                            DisplayPortOptions()
-                                .With(MaxSizeExceededBehaviour::Drop)
-                                .With(DisplayportRelativeTo::ScrollFrame));
+  return GetDisplayPortImpl(
+      aContent, aResult, 1.0f,
+      DisplayPortOptions().With(DisplayportRelativeTo::ScrollFrame));
 }
 
 void DisplayPortUtils::InvalidateForDisplayPortChange(

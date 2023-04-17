@@ -26,35 +26,18 @@ class PresShell;
 
 enum class DisplayportRelativeTo { ScrollPort, ScrollFrame };
 
-enum class MaxSizeExceededBehaviour {
-  
-  
-  Assert,
-  
-  
-  Drop,
-};
-
 
 enum class ContentGeometryType { Scrolled, Fixed };
 
 struct DisplayPortOptions {
   
   DisplayportRelativeTo mRelativeTo = DisplayportRelativeTo::ScrollPort;
-  MaxSizeExceededBehaviour mMaxSizeExceededBehaviour =
-      MaxSizeExceededBehaviour::Assert;
   ContentGeometryType mGeometryType = ContentGeometryType::Scrolled;
 
   
   DisplayPortOptions With(DisplayportRelativeTo aRelativeTo) const {
     DisplayPortOptions result = *this;
     result.mRelativeTo = aRelativeTo;
-    return result;
-  }
-  DisplayPortOptions With(
-      MaxSizeExceededBehaviour aMaxSizeExceededBehaviour) const {
-    DisplayPortOptions result = *this;
-    result.mMaxSizeExceededBehaviour = aMaxSizeExceededBehaviour;
     return result;
   }
   DisplayPortOptions With(ContentGeometryType aGeometryType) const {
