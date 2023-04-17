@@ -200,6 +200,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 class nsIChannel;
 class nsICookieJarSettings;
 class nsILoadGroup;
