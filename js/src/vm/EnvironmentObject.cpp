@@ -10,6 +10,7 @@
 
 #include "builtin/ModuleObject.h"
 #include "gc/Policy.h"
+#include "js/Exception.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
@@ -2663,6 +2664,10 @@ void DebugEnvironments::takeFrameSnapshot(
 
 
 
+
+  
+  
+  JS::AutoSaveExceptionState ases(cx);
 
   JSScript* script = frame.script();
 
