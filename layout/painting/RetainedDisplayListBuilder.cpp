@@ -1323,6 +1323,16 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
       Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::FrameType;
       return false;
     }
+
+    
+    
+    
+    
+    if (type == LayoutFrameType::Scroll && f->GetParent() &&
+        !f->GetParent()->GetParent()) {
+      Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::FrameType;
+      return false;
+    }
   }
 
   return true;
