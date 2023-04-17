@@ -69,7 +69,13 @@ PartitionedStorageHelper.runTest(
     win1stParty.sw.postMessage(win3rdParty.location.href);
     let msg = await msgPromise;
 
-    is(allowed, msg, "We want to have the 3rd party window controlled.");
+    
+    
+    is(
+      false,
+      msg,
+      "We won't have the 3rd party window controlled regardless of StorageAccess."
+    );
   },
 
   async _ => {
