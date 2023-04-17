@@ -183,14 +183,6 @@ var testSpec = protocol.generateActorSpec({
         value: RetVal("json"),
       },
     },
-    getNodeInfo: {
-      request: {
-        selector: Arg(0, "string"),
-      },
-      response: {
-        value: RetVal("json"),
-      },
-    },
     getStyleSheetsInfoForNode: {
       request: {
         selector: Arg(0, "string"),
@@ -534,43 +526,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     const parentNode = this._querySelector(parentSelector);
     const node = parentNode.childNodes[childNodeIndex];
     return getAdjustedQuads(this.content, node)[0].bounds;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  getNodeInfo: function(selector) {
-    const node = this._querySelector(selector);
-    let info = null;
-
-    if (node) {
-      info = {
-        tagName: node.tagName,
-        namespaceURI: node.namespaceURI,
-        numChildren: node.children.length,
-        numNodes: node.childNodes.length,
-        attributes: [...node.attributes].map(
-          ({ name, value, namespaceURI }) => {
-            return { name, value, namespaceURI };
-          }
-        ),
-        outerHTML: node.outerHTML,
-        innerHTML: node.innerHTML,
-        textContent: node.textContent,
-      };
-    }
-
-    return info;
   },
 
   

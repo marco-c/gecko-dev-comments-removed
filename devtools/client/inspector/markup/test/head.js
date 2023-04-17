@@ -219,17 +219,15 @@ var addNewAttributes = async function(selector, text, inspector) {
 
 
 
-
-var assertAttributes = async function(selector, expected, testActor) {
-  const { attributes: actual } = await testActor.getNodeInfo(selector);
-
+var assertAttributes = async function(selector, expected) {
+  const actualAttributes = await getContentPageElementAttributes(selector);
   is(
-    actual.length,
+    actualAttributes.length,
     Object.keys(expected).length,
     "The node " + selector + " has the expected number of attributes."
   );
   for (const attr in expected) {
-    const foundAttr = actual.find(({ name }) => name === attr);
+    const foundAttr = actualAttributes.find(({ name }) => name === attr);
     const foundValue = foundAttr ? foundAttr.value : undefined;
     ok(foundAttr, "The node " + selector + " has the attribute " + attr);
     is(

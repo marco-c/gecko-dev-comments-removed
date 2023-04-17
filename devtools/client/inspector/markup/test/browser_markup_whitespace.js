@@ -8,7 +8,7 @@
 const TEST_URL = URL_ROOT + "doc_markup_whitespace.html";
 
 add_task(async function() {
-  const { inspector, testActor } = await openInspectorForURL(TEST_URL);
+  const { inspector } = await openInspectorForURL(TEST_URL);
   const { markup } = inspector;
 
   await markup.expandAll();
@@ -17,9 +17,16 @@ add_task(async function() {
 
   
   
-  let { numNodes, numChildren } = await testActor.getNodeInfo("body");
-  is(numNodes, 11, "The body node has 11 child nodes (includes text nodes)");
-  is(numChildren, 5, "The body node has 5 child elements (only element nodes)");
+  is(
+    await getElementChildNodesCount("body"),
+    11,
+    "The body node has 11 child nodes (includes text nodes)"
+  );
+  is(
+    await getContentPageElementProperty("body", "childElementCount"),
+    5,
+    "The body node has 5 child elements (only element nodes)"
+  );
 
   
   
@@ -35,14 +42,13 @@ add_task(async function() {
   
   
   info("Verify the number of child nodes and child elements in div#inline");
-  ({ numNodes, numChildren } = await testActor.getNodeInfo("#inline"));
   is(
-    numNodes,
+    await getElementChildNodesCount("#inline"),
     7,
     "The div#inline node has 7 child nodes (includes text nodes)"
   );
   is(
-    numChildren,
+    await getContentPageElementProperty("#inline", "childElementCount"),
     3,
     "The div#inline node has 3 child elements (only element nodes)"
   );
@@ -62,10 +68,13 @@ add_task(async function() {
   
   
   info("Verify the number of child nodes and child elements in div#pre");
-  ({ numNodes, numChildren } = await testActor.getNodeInfo("#pre"));
-  is(numNodes, 5, "The div#pre node has 5 child nodes (includes text nodes)");
   is(
-    numChildren,
+    await getElementChildNodesCount("#pre"),
+    5,
+    "The div#pre node has 5 child nodes (includes text nodes)"
+  );
+  is(
+    await getContentPageElementProperty("#pre", "childElementCount"),
     2,
     "The div#pre node has 2 child elements (only element nodes)"
   );
@@ -84,3 +93,12 @@ add_task(async function() {
     "Both the element nodes and all text nodes are shown in the markup view"
   );
 });
+
+function getElementChildNodesCount(selector) {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+    innerSelector
+  ) {
+    const node = content.document.querySelector(innerSelector);
+    return node.childNodes.length;
+  });
+}

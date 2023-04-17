@@ -856,6 +856,26 @@ function setContentPageElementProperty(selector, propertyName, propertyValue) {
 
 
 
+async function getContentPageElementAttributes(selector) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector],
+    _selector => {
+      const node = content.document.querySelector(_selector);
+      return Array.from(node.attributes).map(({ name, value }) => ({
+        name,
+        value,
+      }));
+    }
+  );
+}
+
+
+
+
+
+
+
 
 async function getContentPageElementAttribute(selector, attribute) {
   return SpecialPowers.spawn(
