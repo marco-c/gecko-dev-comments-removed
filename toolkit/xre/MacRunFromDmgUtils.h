@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+#ifndef MacRunFromDmgUtils_h_
+#define MacRunFromDmgUtils_h_
+
+namespace mozilla {
+namespace MacRunFromDmgUtils {
+
+
+
+
+
+
+bool IsAppRunningFromDmg();
+
+}  
+}  
+
+#endif
