@@ -1142,25 +1142,13 @@ bool PosixProcessLauncher::DoSetup() {
 
 #  elif OS_MACOSX  
     mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = path.get();
+
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    const char* prevInterpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
-    nsCString interpose;
-    if (prevInterpose && strlen(prevInterpose) > 0) {
-      interpose.Assign(prevInterpose);
-      interpose.Append(':');
+    const char* interpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
+    if (interpose && strlen(interpose) > 0) {
+      mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose;
     }
-    interpose.Append(path.get());
-    interpose.AppendLiteral("/libplugin_child_interpose.dylib");
-    mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose.get();
 
     
     
