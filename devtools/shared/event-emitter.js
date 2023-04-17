@@ -31,9 +31,18 @@ class EventEmitter {
 
 
 
-  static on(target, type, listener) {
+
+
+
+  static on(target, type, listener, { signal } = {}) {
     if (typeof listener !== "function" && !isEventHandler(listener)) {
       throw new Error(BAD_LISTENER);
+    }
+
+    if (signal?.aborted === true) {
+      
+      
+      return () => {};
     }
 
     if (!(eventListeners in target)) {
@@ -48,7 +57,13 @@ class EventEmitter {
       events.set(type, new Set([listener]));
     }
 
-    return () => EventEmitter.off(target, type, listener);
+    const offFn = () => EventEmitter.off(target, type, listener);
+
+    if (signal) {
+      signal.addEventListener("abort", offFn, { once: true });
+    }
+
+    return offFn;
   }
 
   
@@ -134,7 +149,10 @@ class EventEmitter {
 
 
 
-  static once(target, type, listener) {
+
+
+
+  static once(target, type, listener, options) {
     return new Promise(resolve => {
       
       
@@ -164,7 +182,7 @@ class EventEmitter {
       };
 
       newListener[onceOriginalListener] = listener;
-      EventEmitter.on(target, type, newListener);
+      EventEmitter.on(target, type, newListener, options);
     });
   }
 
