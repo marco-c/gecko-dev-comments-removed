@@ -1603,15 +1603,10 @@ IdlInterface.prototype.test = function()
     this.test_members();
 };
 
-
-
 IdlInterface.prototype.constructors = function()
 {
-    var extendedAttributes = this.extAttrs
-        .filter(function(attr) { return attr.name == "Constructor"; });
-    var operations = this.members
+    return this.members
         .filter(function(m) { return m.type == "constructor"; });
-    return extendedAttributes.concat(operations);
 }
 
 IdlInterface.prototype.test_self = function()
@@ -1696,10 +1691,6 @@ IdlInterface.prototype.test_self = function()
         }
 
         if (!this.constructors().length) {
-            
-            
-            
-            
             
             var interface_object = this.get_interface_object();
             assert_throws_js(globalOf(interface_object).TypeError, function() {
