@@ -60,9 +60,6 @@ var gBookmarksObserver = {
   onItemChanged() {
     return this.validate("onItemChanged", arguments);
   },
-  onItemMoved() {
-    return this.validate("onItemMoved", arguments);
-  },
 
   
   QueryInterface: ChromeUtils.generateQI(["nsINavBookmarkObserver"]),
@@ -105,9 +102,6 @@ var gBookmarkSkipObserver = {
   
   onItemChanged() {
     return this.validate("onItemChanged", arguments);
-  },
-  onItemMoved() {
-    return this.validate("onItemMoved", arguments);
   },
 
   
