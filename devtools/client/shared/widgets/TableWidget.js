@@ -1539,11 +1539,18 @@ Column.prototype = {
     }
     this.items = {};
     
-    items.forEach((item, i) => {
+    for (const [i, item] of items.entries()) {
+      
+      
+      
+      
+      if (!this.cells[i]) {
+        continue;
+      }
       this.items[item[this.uniqueId]] = i;
       this.cells[i].value = item[this.id];
       this.cells[i].id = item[this.uniqueId];
-    });
+    }
     if (this.selectedRow) {
       this.cells[this.items[this.selectedRow]].classList.add("theme-selected");
     }
