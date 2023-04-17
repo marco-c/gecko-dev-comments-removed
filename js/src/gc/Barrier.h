@@ -290,6 +290,14 @@
 
 
 
+
+
+
+
+
+
+
+
 namespace js {
 
 class NativeObject;
@@ -829,6 +837,20 @@ class WeakHeapPtr : public ReadBarriered<T>,
   }
 };
 
+
+
+
+
+template <typename T>
+class UnsafeBarePtr : public BarrieredBase<T> {
+ public:
+  UnsafeBarePtr() : BarrieredBase<T>(JS::SafelyInitialized<T>()) {}
+  MOZ_IMPLICIT UnsafeBarePtr(T v) : BarrieredBase<T>(v) {}
+  const T& get() const { return this->value; }
+  void set(T newValue) { this->value = newValue; }
+  DECLARE_POINTER_CONSTREF_OPS(T);
+};
+
 }  
 
 namespace JS {
@@ -1085,6 +1107,16 @@ struct WeakHeapPtrHasher {
   }
 };
 
+template <class T>
+struct UnsafeBarePtrHasher {
+  using Key = UnsafeBarePtr<T>;
+  using Lookup = T;
+
+  static HashNumber hash(const Lookup& l) { return DefaultHasher<T>::hash(l); }
+  static bool match(const Key& k, Lookup l) { return k.get() == l; }
+  static void rekey(Key& k, const Key& newKey) { k.set(newKey.get()); }
+};
+
 }  
 
 namespace mozilla {
@@ -1103,6 +1135,9 @@ struct DefaultHasher<js::PreBarriered<T>> : js::PreBarrieredHasher<T> {};
 
 template <class T>
 struct DefaultHasher<js::WeakHeapPtr<T>> : js::WeakHeapPtrHasher<T> {};
+
+template <class T>
+struct DefaultHasher<js::UnsafeBarePtr<T>> : js::UnsafeBarePtrHasher<T> {};
 
 }  
 
