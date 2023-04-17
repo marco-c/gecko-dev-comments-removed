@@ -644,6 +644,19 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   
   
+  
+  
+  if (NS_FAILED(aStatus) && aStatus != NS_BINDING_ABORTED) {
+    if (RefPtr<Document> doc = do_GetInterface(GetAsSupports(this))) {
+      if (doc->IsInitialDocument()) {
+        NS_OBSERVER_ARRAY_NOTIFY_XPCOM_OBSERVERS(mChildList, Stop, ());
+      }
+    }
+  }
+
+  
+  
+  
   if (IsBlockingLoadEvent()) {
     nsCOMPtr<nsIDocShell> ds =
         do_QueryInterface(static_cast<nsIRequestObserver*>(this));
