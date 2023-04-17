@@ -4,7 +4,15 @@
 "use strict";
 
 add_task(async function() {
-  const tab = gBrowser.selectedTab;
+  
+  
+  
+  
+  
+  
+  
+  const tab = await addTab("data:text/html;charset=utf-8,Test page");
+
   const toolbox = await gDevTools.showToolboxForTab(tab);
   const doc = toolbox.doc;
   const root = doc.documentElement;
