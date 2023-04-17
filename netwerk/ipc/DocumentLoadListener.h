@@ -36,7 +36,7 @@
 namespace mozilla {
 namespace dom {
 class CanonicalBrowsingContext;
-struct NavigationIsolationOptions;
+struct RemotenessChangeOptions;
 }  
 namespace net {
 using ChildEndpointPromise =
@@ -152,15 +152,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                            const TimeStamp& aAsyncOpenTime,
                            nsDOMNavigationTiming* aTiming,
                            Maybe<dom::ClientInfo>&& aInfo, bool aUrgentStart,
-                           dom::ContentParent* aContentParent, nsresult* aRv);
+                           base::ProcessId aPid, nsresult* aRv);
 
  public:
   RefPtr<OpenPromise> OpenDocument(
       nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
       const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
       nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
-      Maybe<bool> aUriModified, Maybe<bool> aIsXFOError,
-      dom::ContentParent* aContentParent, nsresult* aRv);
+      Maybe<bool> aUriModified, Maybe<bool> aIsXFOError, base::ProcessId aPid,
+      nsresult* aRv);
 
   RefPtr<OpenPromise> OpenObject(
       nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
@@ -168,8 +168,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
       uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
       nsContentPolicyType aContentPolicyType, bool aUrgentStart,
-      dom::ContentParent* aContentParent,
-      ObjectUpgradeHandler* aObjectUpgradeHandler, nsresult* aRv);
+      base::ProcessId aPid, ObjectUpgradeHandler* aObjectUpgradeHandler,
+      nsresult* aRv);
 
   
   
@@ -262,13 +262,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     return NS_OK;
   }
 
-  
-  
-  dom::ContentParent* GetContentParent() const { return mContentParent; }
-
-  
-  
-  base::ProcessId OtherPid() const;
+  base::ProcessId OtherPid() const { return mOtherPid; }
 
   [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter(
       base::ProcessId aChildProcessId);
@@ -308,8 +302,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void TriggerRedirectToRealChannel(
-      const Maybe<dom::ContentParent*>& aDestinationProcess);
+  void TriggerRedirectToRealChannel(const Maybe<uint64_t>& aDestinationProcess);
 
   
   
@@ -329,7 +322,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
   void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
-                            const dom::NavigationIsolationOptions& aOptions);
+                            const dom::RemotenessChangeOptions& aOptions);
 
   
   
@@ -338,7 +331,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       mozilla::ipc::Endpoint<extensions::PStreamFilterParent>;
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
-                        const Maybe<dom::ContentParent*>& aDestinationProcess,
+                        const Maybe<uint64_t>& aDestinationProcess,
                         nsTArray<ParentEndpoint>&& aStreamFilterEndpoints);
 
   
@@ -551,11 +544,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   bool mSupportsRedirectToRealChannel = true;
 
-  Maybe<nsCString> mRemoteTypeOverride;
-
   
   
-  RefPtr<dom::ContentParent> mContentParent;
+  base::ProcessId mOtherPid = 0;
 
   void RejectOpenPromise(nsresult aStatus, nsresult aLoadGroupStatus,
                          bool aSwitchedProcess, const char* aLocation) {
