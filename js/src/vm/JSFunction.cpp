@@ -1118,49 +1118,32 @@ bool js::fun_apply(JSContext* cx, unsigned argc, Value* vp) {
     return fun_call(cx, (args.length() > 0) ? 1 : 0, vp);
   }
 
+  
+  if (!args[1].isObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_APPLY_ARGS, js_apply_str);
+    return false;
+  }
+
+  
+  
+  RootedObject aobj(cx, &args[1].toObject());
+  uint64_t length;
+  if (!GetLengthProperty(cx, aobj, &length)) {
+    return false;
+  }
+
+  
   InvokeArgs args2(cx);
+  if (!args2.init(cx, length)) {
+    return false;
+  }
+
+  MOZ_ASSERT(length <= ARGS_LENGTH_MAX);
 
   
-  
-  
-  
-  if (args[1].isMagic(JS_OPTIMIZED_ARGUMENTS)) {
-    
-    ScriptFrameIter iter(cx);
-    MOZ_ASSERT(iter.numActualArgs() <= ARGS_LENGTH_MAX);
-    if (!args2.init(cx, iter.numActualArgs())) {
-      return false;
-    }
-
-    
-    iter.unaliasedForEachActual(cx, CopyTo(args2.array()));
-  } else {
-    
-    if (!args[1].isObject()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_APPLY_ARGS, js_apply_str);
-      return false;
-    }
-
-    
-    
-    RootedObject aobj(cx, &args[1].toObject());
-    uint64_t length;
-    if (!GetLengthProperty(cx, aobj, &length)) {
-      return false;
-    }
-
-    
-    if (!args2.init(cx, length)) {
-      return false;
-    }
-
-    MOZ_ASSERT(length <= ARGS_LENGTH_MAX);
-
-    
-    if (!GetElements(cx, aobj, length, args2.array())) {
-      return false;
-    }
+  if (!GetElements(cx, aobj, length, args2.array())) {
+    return false;
   }
 
   

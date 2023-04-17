@@ -221,9 +221,6 @@ enum JSWhyMagic {
   JS_SERIALIZE_NO_NODE,
 
   
-  JS_OPTIMIZED_ARGUMENTS,
-
-  
   JS_IS_CONSTRUCTING,
 
   

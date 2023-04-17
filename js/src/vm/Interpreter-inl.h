@@ -36,24 +36,6 @@ namespace js {
 
 
 
-
-
-
-static inline bool IsOptimizedArguments(AbstractFramePtr frame,
-                                        MutableHandleValue vp) {
-  if (vp.isMagic(JS_OPTIMIZED_ARGUMENTS) && frame.script()->needsArgsObj()) {
-    vp.setObject(frame.argsObj());
-  }
-  return vp.isMagic(JS_OPTIMIZED_ARGUMENTS);
-}
-
-
-
-
-
-
-
-
 static inline bool IsUninitializedLexical(const Value& val) {
   
   return val.isMagic() && val.whyMagic() == JS_UNINITIALIZED_LEXICAL;
