@@ -6528,7 +6528,7 @@ static bool OffThreadDecodeScript(JSContext* cx, unsigned argc, Value* vp) {
 
   
   
-  options.setIsRunOnce(false).setSourceIsLazy(false);
+  options.setIsRunOnce(false);
 
   
   

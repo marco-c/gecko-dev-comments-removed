@@ -522,6 +522,10 @@ struct CompilationStencil {
 
   
   
+  bool canLazilyParse = false;
+
+  
+  
   using FunctionKey = uint32_t;
   static constexpr FunctionKey NullFunctionKey = 0;
 
@@ -652,6 +656,8 @@ struct CompilationStencil {
 
 
 struct ExtensibleCompilationStencil {
+  bool canLazilyParse = false;
+
   using FunctionKey = CompilationStencil::FunctionKey;
 
   FunctionKey functionKey = CompilationStencil::NullFunctionKey;
@@ -691,7 +697,8 @@ struct ExtensibleCompilationStencil {
   ExtensibleCompilationStencil(JSContext* cx, CompilationInput& input);
 
   ExtensibleCompilationStencil(ExtensibleCompilationStencil&& other) noexcept
-      : functionKey(other.functionKey),
+      : canLazilyParse(other.canLazilyParse),
+        functionKey(other.functionKey),
         alloc(CompilationStencil::LifoAllocChunkSize),
         source(std::move(other.source)),
         scriptData(std::move(other.scriptData)),
@@ -714,6 +721,7 @@ struct ExtensibleCompilationStencil {
       ExtensibleCompilationStencil&& other) noexcept {
     MOZ_ASSERT(alloc.isEmpty());
 
+    canLazilyParse = other.canLazilyParse;
     functionKey = other.functionKey;
     source = std::move(other.source);
     scriptData = std::move(other.scriptData);

@@ -13,10 +13,11 @@
 #include "mozilla/ScopeExit.h"              
 #include "mozilla/Sprintf.h"                
 
-#include "ds/LifoAlloc.h"                  
-#include "frontend/AbstractScopePtr.h"     
+#include "ds/LifoAlloc.h"               
+#include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/BytecodeSection.h"      
+#include "frontend/BytecodeCompiler.h"    
+#include "frontend/BytecodeSection.h"     
 #include "frontend/CompilationStencil.h"  
 #include "frontend/NameAnalysisTypes.h"   
 #include "frontend/SharedContext.h"
@@ -1422,7 +1423,8 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
   
 
   
-  if (CanLazilyParse(input.options)) {
+  MOZ_ASSERT(stencil.canLazilyParse == CanLazilyParse(input.options));
+  if (stencil.canLazilyParse) {
     UpdateEmittedInnerFunctions(cx, input, stencil, gcOutput);
 
     if (isInitialParse) {
@@ -1500,7 +1502,8 @@ bool CompilationStencil::deserializeStencils(JSContext* cx,
 
 ExtensibleCompilationStencil::ExtensibleCompilationStencil(
     JSContext* cx, CompilationInput& input)
-    : alloc(CompilationStencil::LifoAllocChunkSize),
+    : canLazilyParse(CanLazilyParse(input.options)),
+      alloc(CompilationStencil::LifoAllocChunkSize),
       source(input.source),
       parserAtoms(cx->runtime(), alloc) {}
 
@@ -1518,6 +1521,7 @@ BorrowingCompilationStencil::BorrowingCompilationStencil(
     : CompilationStencil(extensibleStencil.source) {
   hasExternalDependency = true;
 
+  canLazilyParse = extensibleStencil.canLazilyParse;
   functionKey = extensibleStencil.functionKey;
 
   
@@ -1803,6 +1807,7 @@ bool CompilationStencil::steal(JSContext* cx,
   other.assertNoExternalDependency();
 #endif
 
+  canLazilyParse = other.canLazilyParse;
   functionKey = other.functionKey;
 
   MOZ_ASSERT(alloc.isEmpty());
@@ -1895,6 +1900,7 @@ bool ExtensibleCompilationStencil::steal(JSContext* cx,
                                          CompilationStencil&& other) {
   MOZ_ASSERT(alloc.isEmpty());
 
+  canLazilyParse = other.canLazilyParse;
   functionKey = other.functionKey;
 
   if (!other.hasExternalDependency) {
