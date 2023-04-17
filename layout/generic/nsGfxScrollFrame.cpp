@@ -4344,6 +4344,9 @@ nsRect ScrollFrameHelper::RestrictToRootDisplayPort(
 bool ScrollFrameHelper::DecideScrollableLayer(
     nsDisplayListBuilder* aBuilder, nsRect* aVisibleRect, nsRect* aDirtyRect,
     bool aSetBase, bool* aDirtyRectHasBeenOverriden) {
+  
+  bool oldWillBuildScrollableLayer = mWillBuildScrollableLayer;
+
   nsIContent* content = mOuter->GetContent();
   
   
@@ -4464,6 +4467,13 @@ bool ScrollFrameHelper::DecideScrollableLayer(
   mWillBuildScrollableLayer = usingDisplayPort ||
                               nsContentUtils::HasScrollgrab(content) ||
                               mZoomableByAPZ;
+
+  
+  
+  if (oldWillBuildScrollableLayer != mWillBuildScrollableLayer) {
+    aBuilder->RecomputeCurrentAnimatedGeometryRoot();
+  }
+
   return mWillBuildScrollableLayer;
 }
 
@@ -4478,8 +4488,8 @@ void ScrollFrameHelper::NotifyApzTransaction() {
 }
 
 Maybe<ScrollMetadata> ScrollFrameHelper::ComputeScrollMetadata(
-    WebRenderLayerManager* aLayerManager, const nsIFrame* aItemFrame,
-    const nsPoint& aOffsetToReferenceFrame) const {
+    WebRenderLayerManager* aLayerManager,
+    const nsIFrame* aContainerReferenceFrame) const {
   if (!mWillBuildScrollableLayer) {
     return Nothing();
   }
@@ -4490,9 +4500,8 @@ Maybe<ScrollMetadata> ScrollFrameHelper::ComputeScrollMetadata(
   MOZ_ASSERT(mScrolledFrame->GetContent());
 
   return Some(nsLayoutUtils::ComputeScrollMetadata(
-      mScrolledFrame, mOuter, mOuter->GetContent(), aItemFrame,
-      aOffsetToReferenceFrame, aLayerManager, mScrollParentID,
-      mScrollPort.Size(), isRootContent));
+      mScrolledFrame, mOuter, mOuter->GetContent(), aContainerReferenceFrame,
+      aLayerManager, mScrollParentID, mScrollPort.Size(), isRootContent));
 }
 
 bool ScrollFrameHelper::IsRectNearlyVisible(const nsRect& aRect) const {

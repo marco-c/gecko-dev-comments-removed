@@ -45,29 +45,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 using mozilla::dom::Document;
 
 namespace mozilla {
@@ -124,7 +101,8 @@ static void MarkFramesWithItemsAndImagesModified(nsDisplayList* aList) {
   }
 }
 
-static nsIFrame* SelectAGRForFrame(nsIFrame* aFrame, nsIFrame* aParentAGR) {
+static AnimatedGeometryRoot* SelectAGRForFrame(
+    nsIFrame* aFrame, AnimatedGeometryRoot* aParentAGR) {
   if (!aFrame->IsStackingContext() || !aFrame->IsFixedPosContainingBlock()) {
     return aParentAGR;
   }
@@ -136,7 +114,7 @@ static nsIFrame* SelectAGRForFrame(nsIFrame* aFrame, nsIFrame* aParentAGR) {
   nsDisplayListBuilder::DisplayListBuildingData* data =
       aFrame->GetProperty(nsDisplayListBuilder::DisplayListBuildingRect());
 
-  return data && data->mModifiedAGR ? data->mModifiedAGR : nullptr;
+  return data && data->mModifiedAGR ? data->mModifiedAGR.get() : nullptr;
 }
 
 void RetainedDisplayListBuilder::AddSizeOfIncludingThis(
@@ -170,10 +148,9 @@ bool AnyContentAncestorModified(nsIFrame* aFrame, nsIFrame* aStopAtFrame) {
 
 
 bool RetainedDisplayListBuilder::PreProcessDisplayList(
-    RetainedDisplayList* aList, nsIFrame* aAGR, PartialUpdateResult& aUpdated,
-    nsIFrame* aAsyncAncestor, const ActiveScrolledRoot* aAsyncAncestorASR,
-    nsIFrame* aOuterFrame, uint32_t aCallerKey, uint32_t aNestingDepth,
-    bool aKeepLinked) {
+    RetainedDisplayList* aList, AnimatedGeometryRoot* aAGR,
+    PartialUpdateResult& aUpdated, nsIFrame* aOuterFrame, uint32_t aCallerKey,
+    uint32_t aNestingDepth, bool aKeepLinked) {
   
   
   
@@ -281,21 +258,10 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
         keepLinked = true;
       }
 
-      
-      
-      
-      
-      nsIFrame* asyncAncestor = aAsyncAncestor;
-      const ActiveScrolledRoot* asyncAncestorASR = aAsyncAncestorASR;
-      if (item->CanMoveAsync()) {
-        asyncAncestor = item->Frame();
-        asyncAncestorASR = item->GetActiveScrolledRoot();
-      }
-
-      if (!PreProcessDisplayList(
-              item->GetChildren(), SelectAGRForFrame(f, aAGR), aUpdated,
-              asyncAncestor, asyncAncestorASR, item->Frame(),
-              item->GetPerFrameKey(), aNestingDepth + 1, keepLinked)) {
+      if (!PreProcessDisplayList(item->GetChildren(),
+                                 SelectAGRForFrame(f, aAGR), aUpdated,
+                                 item->Frame(), item->GetPerFrameKey(),
+                                 aNestingDepth + 1, keepLinked)) {
         MOZ_RELEASE_ASSERT(
             !aKeepLinked,
             "Can't early return since we need to move the out list back");
@@ -310,20 +276,15 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
     
     
     
-    
-    
-    
-    nsIFrame* agrFrame = nullptr;
-    if (aAsyncAncestorASR == item->GetActiveScrolledRoot()) {
-      agrFrame = aAsyncAncestor;
-    } else {
-      MOZ_ASSERT(item->GetActiveScrolledRoot());
-      agrFrame =
-          item->GetActiveScrolledRoot()->mScrollableFrame->GetScrolledFrame();
+    if (aAGR && item->GetAnimatedGeometryRoot()->GetAsyncAGR() != aAGR) {
+      mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
     }
 
-    if (aAGR && agrFrame != aAGR) {
-      mBuilder.MarkFrameForDisplayIfVisible(f, mBuilder.RootReferenceFrame());
+    
+    
+    
+    if (item->RestoreState()) {
+      item->InvalidateItemCacheEntry();
     }
 
     
@@ -980,7 +941,7 @@ static bool CanStoreDisplayListBuildingRect(nsDisplayListBuilder* aBuilder,
 
 static bool ProcessFrameInternal(nsIFrame* aFrame,
                                  nsDisplayListBuilder* aBuilder,
-                                 nsIFrame** aAGR, nsRect& aOverflow,
+                                 AnimatedGeometryRoot** aAGR, nsRect& aOverflow,
                                  const nsIFrame* aStopAtFrame,
                                  nsTArray<nsIFrame*>& aOutFramesWithProps,
                                  const bool aStopAtStackingContext) {
@@ -1016,7 +977,7 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
       
       
-      nsIFrame* dummyAGR = nullptr;
+      AnimatedGeometryRoot* dummyAGR = nullptr;
 
       
       
@@ -1124,8 +1085,12 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
       
       
       nsRect previousVisible = wrapperItem->GetBuildingRectForChildren();
-      if (wrapperItem->ReferenceFrameForChildren() != wrapperItem->Frame()) {
+      if (wrapperItem->ReferenceFrameForChildren() ==
+          wrapperItem->ReferenceFrame()) {
         previousVisible -= wrapperItem->ToReferenceFrame();
+      } else {
+        MOZ_ASSERT(wrapperItem->ReferenceFrameForChildren() ==
+                   wrapperItem->Frame());
       }
 
       if (!previousVisible.Contains(aOverflow)) {
@@ -1158,7 +1123,7 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 bool RetainedDisplayListBuilder::ProcessFrame(
     nsIFrame* aFrame, nsDisplayListBuilder* aBuilder, nsIFrame* aStopAtFrame,
     nsTArray<nsIFrame*>& aOutFramesWithProps, const bool aStopAtStackingContext,
-    nsRect* aOutDirty, nsIFrame** aOutModifiedAGR) {
+    nsRect* aOutDirty, AnimatedGeometryRoot** aOutModifiedAGR) {
   if (aFrame->HasOverrideDirtyRegion()) {
     aOutFramesWithProps.AppendElement(aFrame);
   }
@@ -1169,7 +1134,8 @@ bool RetainedDisplayListBuilder::ProcessFrame(
 
   
   
-  nsIFrame* agrFrame = aBuilder->FindAnimatedGeometryRootFrameFor(aFrame);
+  AnimatedGeometryRoot* agr =
+      aBuilder->FindAnimatedGeometryRootFor(aFrame)->GetAsyncAGR();
 
   CRR_LOG("Processing frame %p with agr %p\n", aFrame, agr->mFrame);
 
@@ -1191,7 +1157,7 @@ bool RetainedDisplayListBuilder::ProcessFrame(
     overflow.UnionRect(overflow, aBuilder->GetCaretRect());
   }
 
-  if (!ProcessFrameInternal(aFrame, aBuilder, &agrFrame, overflow, aStopAtFrame,
+  if (!ProcessFrameInternal(aFrame, aBuilder, &agr, overflow, aStopAtFrame,
                             aOutFramesWithProps, aStopAtStackingContext)) {
     return false;
   }
@@ -1205,9 +1171,9 @@ bool RetainedDisplayListBuilder::ProcessFrame(
     
     
     if (!*aOutModifiedAGR) {
-      CRR_LOG("Setting %p as root stacking context AGR\n", agrFrame);
-      *aOutModifiedAGR = agrFrame;
-    } else if (agrFrame && *aOutModifiedAGR != agrFrame) {
+      CRR_LOG("Setting %p as root stacking context AGR\n", agr);
+      *aOutModifiedAGR = agr;
+    } else if (agr && *aOutModifiedAGR != agr) {
       CRR_LOG("Found multiple AGRs in root stacking context, giving up\n");
       return false;
     }
@@ -1281,7 +1247,8 @@ static void FindContainingBlocks(nsIFrame* aFrame,
 
 bool RetainedDisplayListBuilder::ComputeRebuildRegion(
     nsTArray<nsIFrame*>& aModifiedFrames, nsRect* aOutDirty,
-    nsIFrame** aOutModifiedAGR, nsTArray<nsIFrame*>& aOutFramesWithProps) {
+    AnimatedGeometryRoot** aOutModifiedAGR,
+    nsTArray<nsIFrame*>& aOutFramesWithProps) {
   CRR_LOG("Computing rebuild regions for %zu frames:\n",
           aModifiedFrames.Length());
   nsTArray<nsIFrame*> extraFrames;
@@ -1443,13 +1410,12 @@ PartialUpdateResult RetainedDisplayListBuilder::AttemptPartialUpdate(
   bool shouldBuildPartial = ShouldBuildPartial(modifiedFrames.Frames());
 
   nsRect modifiedDirty;
-  nsIFrame* modifiedAGR = nullptr;
+  AnimatedGeometryRoot* modifiedAGR = nullptr;
   PartialUpdateResult result = PartialUpdateResult::NoChange;
   if (!shouldBuildPartial ||
       !ComputeRebuildRegion(modifiedFrames.Frames(), &modifiedDirty,
                             &modifiedAGR, framesWithProps.Frames()) ||
-      !PreProcessDisplayList(&mList, modifiedAGR, result,
-                             mBuilder.RootReferenceFrame(), nullptr)) {
+      !PreProcessDisplayList(&mList, modifiedAGR, result)) {
     mBuilder.SetPartialBuildFailed(true);
     mBuilder.LeavePresShell(mBuilder.RootReferenceFrame(), nullptr);
     mList.DeleteAll(&mBuilder);

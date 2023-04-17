@@ -166,15 +166,14 @@ class nsDisplayListFocus : public nsPaintedDisplayItem {
     
     nsListControlFrame* listFrame = GetEnclosingListFrame(Frame());
     return listFrame->InkOverflowRectRelativeToSelf() +
-           listFrame->GetOffsetToCrossDoc(Frame()) + ToReferenceFrame();
+           listFrame->GetOffsetToCrossDoc(ReferenceFrame());
   }
   virtual void Paint(nsDisplayListBuilder* aBuilder,
                      gfxContext* aCtx) override {
     nsListControlFrame* listFrame = GetEnclosingListFrame(Frame());
     
-    listFrame->PaintFocus(
-        aCtx->GetDrawTarget(),
-        listFrame->GetOffsetToCrossDoc(Frame()) + ToReferenceFrame());
+    listFrame->PaintFocus(aCtx->GetDrawTarget(),
+                          aBuilder->ToReferenceFrame(listFrame));
   }
   NS_DISPLAY_DECL_NAME("ListFocus", TYPE_LIST_FOCUS)
 };

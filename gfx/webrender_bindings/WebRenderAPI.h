@@ -687,17 +687,6 @@ class DisplayListBuilder final {
   
   
   
-  
-  
-  
-  float GetInheritedOpacity() { return mInheritedOpacity; }
-  void SetInheritedOpacity(float aOpacity) { mInheritedOpacity = aOpacity; }
-
-  layers::DisplayItemCache* GetDisplayItemCache() { return mDisplayItemCache; }
-
-  
-  
-  
   class MOZ_RAII FixedPosScrollTargetTracker final {
    public:
     FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
@@ -761,7 +750,6 @@ class DisplayListBuilder final {
 
   layers::DisplayItemCache* mDisplayItemCache;
   Maybe<uint16_t> mCurrentCacheSlot;
-  float mInheritedOpacity = 1.0f;
 
   friend class WebRenderAPI;
   friend class SpaceAndClipChainHelper;
