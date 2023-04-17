@@ -555,10 +555,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   bool mTabProcessCrashFired : 1;
-
-  
-  
-  bool mNotifyingCrash : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsFrameLoader, NS_FRAMELOADER_IID)
