@@ -649,7 +649,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   
   
-  mozilla::ScreenRect GetTopLevelViewportVisibleRectInBrowserCoords() const;
+  Maybe<ScreenRect> GetTopLevelViewportVisibleRectInBrowserCoords() const;
 
   
   
@@ -900,6 +900,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   int32_t mCancelContentJSEpoch;
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
+  
   ScreenRect mTopLevelViewportVisibleRectInBrowserCoords;
 
 #ifdef XP_WIN
