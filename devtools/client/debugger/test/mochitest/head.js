@@ -43,9 +43,9 @@ Services.scriptloader.loadSubScript(
 );
 
 const EXAMPLE_URL =
-  "http://example.com/browser/devtools/client/debugger/test/mochitest/examples/";
+  "https://example.com/browser/devtools/client/debugger/test/mochitest/examples/";
 
 
 
 const EXAMPLE_REMOTE_URL =
-  "http://example.net/browser/devtools/client/debugger/test/mochitest/examples/";
+  "https://example.org/browser/devtools/client/debugger/test/mochitest/examples/";
