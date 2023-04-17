@@ -9,14 +9,14 @@
 
 
 const { FormAutofill } = ChromeUtils.import(
-  "resource://formautofill/FormAutofill.jsm"
+  "resource://autofill/FormAutofill.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
   this,
   "formAutofillStorage",
-  "resource://formautofill/FormAutofillStorage.jsm"
+  "resource://autofill/FormAutofillStorage.jsm"
 );
 
 class AutofillEditDialog {
