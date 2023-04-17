@@ -300,6 +300,11 @@ class nsCocoaUtils {
   
 
 
+  static NSURL* ToNSURL(const nsAString& aURLString);
+
+  
+
+
   static NSString* ToNSString(const nsACString& aCString);
 
   

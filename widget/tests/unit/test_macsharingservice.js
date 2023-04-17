@@ -9,7 +9,37 @@ function test_getSharingProviders() {
   let sharingService = Cc["@mozilla.org/widget/macsharingservice;1"].getService(
     Ci.nsIMacSharingService
   );
-  let providers = sharingService.getSharingProviders("http://example.org");
+
+  
+  
+  
+  
+  
+  
+  
+  let urls = [
+    "http://example.org",
+    "http://example.org/#",
+    "http://example.org/dkl??",
+    "http://example.org/dkl?a=b;c=d#thisisaref",
+    "http://example.org/dkl?a=b;c=d#thisisaref#double",
+    "http://example.org/#/",
+    "http://example.org/#/#",
+    "http://example.org/#/#/",
+    "http://example.org/foo/bar/x|page.html#this_is_a_fragment",
+    "http://example.org/page.html#this_is_a_fragment",
+    "http://example.org/page.html#this_is_a_fragment#and_another",
+    "http://example.org/foo/bar;#foo",
+    "http://example.org/a file with spaces.html",
+    "https://chat.mozilla.org/#/room/#macdev:mozilla.org",
+    "https://chat.mozilla.org/#/room/%23macdev:mozilla.org",
+  ];
+
+  urls.forEach(url => testGetSharingProvidersForUrl(sharingService, url));
+}
+
+function testGetSharingProvidersForUrl(sharingService, url) {
+  let providers = sharingService.getSharingProviders(url);
   Assert.greater(providers.length, 1, "There are providers returned");
   providers.forEach(provider => {
     Assert.ok("name" in provider, "Provider has name");
