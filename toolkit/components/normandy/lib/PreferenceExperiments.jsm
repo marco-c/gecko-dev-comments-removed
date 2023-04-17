@@ -502,15 +502,30 @@ var PreferenceExperiments = {
       preferences
     )) {
       const { preferenceValue, preferenceBranchType } = preferenceInfo;
-      if (
-        preferenceBranchType === "default" &&
-        Services.prefs.prefHasUserValue(preferenceName)
-      ) {
-        alreadyOverriddenPrefs.add(preferenceName);
+
+      if (preferenceBranchType === "default") {
+        if (Services.prefs.prefHasUserValue(preferenceName)) {
+          alreadyOverriddenPrefs.add(preferenceName);
+        }
+        if (
+          PrefUtils.getPref(preferenceName, { branch: "user" }) !==
+          preferenceValue
+        ) {
+          
+          
+          
+          PrefUtils.setPref(preferenceName, preferenceValue, {
+            branch: preferenceBranchType,
+          });
+        }
+      } else if (preferenceBranchType === "user") {
+        
+        PrefUtils.setPref(preferenceName, preferenceValue, {
+          branch: preferenceBranchType,
+        });
+      } else {
+        log.error(`Unexpected preference branch type ${preferenceBranchType}`);
       }
-      PrefUtils.setPref(preferenceName, preferenceValue, {
-        branch: preferenceBranchType,
-      });
     }
     PreferenceExperiments.startObserver(slug, preferences);
 
