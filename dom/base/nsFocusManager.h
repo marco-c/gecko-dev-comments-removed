@@ -344,12 +344,9 @@ class nsFocusManager final : public nsIFocusManager,
                         mozilla::dom::BrowsingContext* aContext) const;
   bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
                         nsPIDOMWindowOuter* aWindow) const;
-
- public:
   bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
                         mozilla::dom::BrowsingContext* aContext) const;
 
- protected:
   
 
 
