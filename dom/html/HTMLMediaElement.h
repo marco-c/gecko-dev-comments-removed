@@ -656,6 +656,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   double TotalPlayTime() const;
+  double VisiblePlayTime() const;
   double InvisiblePlayTime() const;
   double VideoDecodeSuspendedTime() const;
 
