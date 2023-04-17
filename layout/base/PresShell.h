@@ -90,6 +90,7 @@ struct nsCallbackEventRequest;
 namespace mozilla {
 class nsDisplayList;
 class nsDisplayListBuilder;
+class FallbackRenderer;
 
 class AccessibleCaretEventHub;
 class EventStates;
@@ -1265,8 +1266,21 @@ class PresShell final : public nsStubDocumentObserver,
 
   void BackingScaleFactorChanged() { mPresContext->UIResolutionChangedSync(); }
 
+  
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
-  void Paint(nsView* aViewToPaint, PaintFlags aFlags);
+  void PaintAndRequestComposite(nsView* aView, PaintFlags aFlags);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  void SyncPaintFallback(nsView* aView);
 
   
 
@@ -1698,6 +1712,9 @@ class PresShell final : public nsStubDocumentObserver,
 
   void SetIsActive(bool aIsActive);
   bool ShouldBeActive() const;
+
+  MOZ_CAN_RUN_SCRIPT
+  void PaintInternal(nsView* aViewToPaint, PaintInternalFlags aFlags);
 
   
 
