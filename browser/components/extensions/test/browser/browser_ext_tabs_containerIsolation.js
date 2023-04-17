@@ -2,11 +2,13 @@
 
 
 "use strict";
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
+const { XPCShellContentUtils } = ChromeUtils.import(
+  "resource://testing-common/XPCShellContentUtils.jsm"
 );
-AddonTestUtils.initMochitest(this);
-const server = AddonTestUtils.createHttpServer({ hosts: ["www.example.com"] });
+XPCShellContentUtils.initMochitest(this);
+const server = XPCShellContentUtils.createHttpServer({
+  hosts: ["www.example.com"],
+});
 server.registerPathHandler("/", (request, response) => {
   response.setHeader("Content-Type", "text/html; charset=UTF-8", false);
   response.write(`<!DOCTYPE html>

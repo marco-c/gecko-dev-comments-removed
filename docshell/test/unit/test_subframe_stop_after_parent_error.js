@@ -3,14 +3,15 @@
 
 
 
-const { ExtensionTestUtils } = ChromeUtils.import(
-  "resource://testing-common/ExtensionXPCShellUtils.jsm"
+const { XPCShellContentUtils } = ChromeUtils.import(
+  "resource://testing-common/XPCShellContentUtils.jsm"
 );
 
-AddonTestUtils.init(this);
-ExtensionTestUtils.init(this);
+XPCShellContentUtils.init(this);
 
-const server = AddonTestUtils.createHttpServer({ hosts: ["example.com"] });
+const server = XPCShellContentUtils.createHttpServer({
+  hosts: ["example.com"],
+});
 
 
 
@@ -69,7 +70,7 @@ function promiseStateStop(webProgress) {
 }
 
 async function runTest(waitForErrorPage) {
-  let page = await ExtensionTestUtils.loadContentPage("about:blank", {
+  let page = await XPCShellContentUtils.loadContentPage("about:blank", {
     remote: false,
   });
   let { browser } = page;
