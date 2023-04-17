@@ -1690,12 +1690,13 @@ pref("media.gmp-provider.enabled", true);
 #ifdef NIGHTLY_BUILD
 
 pref("network.cookie.cookieBehavior", 5 );
-pref("network.cookie.cookieBehavior.pbmode", 5 );
 #else
 
 pref("network.cookie.cookieBehavior", 4 );
-pref("network.cookie.cookieBehavior.pbmode", 4 );
 #endif
+
+
+pref("network.cookie.cookieBehavior.pbmode", 5 );
 
 
 pref("privacy.trackingprotection.fingerprinting.enabled", true);
