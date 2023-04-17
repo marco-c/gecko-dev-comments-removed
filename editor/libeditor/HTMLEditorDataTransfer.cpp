@@ -821,7 +821,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
           
           
           if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer()) &&
-              mHTMLEditor.IsEmptyNode(*pointToInsert.GetContainer(), true)) {
+              HTMLEditUtils::IsEmptyNode(*pointToInsert.GetContainer())) {
             NS_WARNING_ASSERTION(pointToInsert.GetContainerParent(),
                                  "Insertion point is out of the DOM tree");
             if (pointToInsert.GetContainerParent()) {

@@ -42,6 +42,7 @@
 namespace mozilla {
 
 using namespace dom;
+using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 
 
 
@@ -4372,7 +4373,8 @@ bool HTMLEditor::IsEmptyCell(dom::Element* aCell) {
   }
 
   
-  return IsEmptyNode(*cellChild, false, false);
+  return HTMLEditUtils::IsEmptyNode(
+      *cellChild, {EmptyCheckOption::TreatSingleBRElementAsVisible});
 }
 
 }  

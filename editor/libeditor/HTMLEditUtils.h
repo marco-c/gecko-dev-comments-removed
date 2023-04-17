@@ -250,6 +250,35 @@ class HTMLEditUtils final {
 
 
 
+
+
+
+
+
+
+
+
+  enum class EmptyCheckOption {
+    TreatSingleBRElementAsVisible,
+    TreatListItemAsVisible,
+    TreatTableCellAsVisible,
+    SafeToAskLayout,
+  };
+  using EmptyCheckOptions = EnumSet<EmptyCheckOption, uint32_t>;
+  static bool IsEmptyNode(nsPresContext* aPresContext, nsINode& aNode,
+                          const EmptyCheckOptions& aOptions = {},
+                          bool* aSeenBR = nullptr);
+  static bool IsEmptyNode(nsINode& aNode,
+                          const EmptyCheckOptions& aOptions = {},
+                          bool* aSeenBR = nullptr) {
+    MOZ_ASSERT(!aOptions.contains(EmptyCheckOption::SafeToAskLayout));
+    return IsEmptyNode(nullptr, aNode, aOptions, aSeenBR);
+  }
+
+  
+
+
+
   template <typename PT, typename CT>
   static bool IsPointAtEdgeOfLink(const EditorDOMPointBase<PT, CT>& aPoint,
                                   Element** aFoundLinkElement = nullptr) {

@@ -47,6 +47,7 @@ namespace mozilla {
 
 using namespace dom;
 
+using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
@@ -970,7 +971,11 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   if (splitResult.GetPreviousNode() &&
-      IsEmptyNode(*splitResult.GetPreviousNode(), false, true)) {
+      HTMLEditUtils::IsEmptyNode(
+          *splitResult.GetPreviousNode(),
+          {EmptyCheckOption::TreatSingleBRElementAsVisible,
+           EmptyCheckOption::TreatListItemAsVisible,
+           EmptyCheckOption::TreatTableCellAsVisible})) {
     
     nsresult rv = DeleteNodeWithTransaction(
         MOZ_KnownLive(*splitResult.GetPreviousNode()));
@@ -1030,7 +1035,11 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   if (splitResultAtStartOfNextNode.Handled() &&
       splitResultAtStartOfNextNode.GetNextNode() &&
-      IsEmptyNode(*splitResultAtStartOfNextNode.GetNextNode(), false, true)) {
+      HTMLEditUtils::IsEmptyNode(
+          *splitResultAtStartOfNextNode.GetNextNode(),
+          {EmptyCheckOption::TreatSingleBRElementAsVisible,
+           EmptyCheckOption::TreatListItemAsVisible,
+           EmptyCheckOption::TreatTableCellAsVisible})) {
     
     nsresult rv = DeleteNodeWithTransaction(
         MOZ_KnownLive(*splitResultAtStartOfNextNode.GetNextNode()));

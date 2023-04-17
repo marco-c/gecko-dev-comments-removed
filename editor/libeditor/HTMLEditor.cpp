@@ -69,6 +69,7 @@ namespace mozilla {
 using namespace dom;
 using namespace widget;
 
+using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
@@ -684,7 +685,9 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
 
     
     
-    if (IsEmptyNode(*forwardScanFromPointToPutCaretResult.GetContent())) {
+    if (HTMLEditUtils::IsEmptyNode(
+            *forwardScanFromPointToPutCaretResult.GetContent(),
+            {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
       
       pointToPutCaret =
           forwardScanFromPointToPutCaretResult.RawPointAfterContent();
@@ -902,7 +905,8 @@ bool HTMLEditor::IsEmptyInlineNode(nsIContent& aContent) const {
       !HTMLEditUtils::IsContainerNode(aContent)) {
     return false;
   }
-  return IsEmptyNode(aContent);
+  return HTMLEditUtils::IsEmptyNode(
+      aContent, {EmptyCheckOption::TreatSingleBRElementAsVisible});
 }
 
 
@@ -3172,7 +3176,9 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
   
   Element* blockElement =
       HTMLEditUtils::GetAncestorBlockElement(aContent, editingHost);
-  if (!blockElement || IsEmptyNode(*blockElement)) {
+  if (!blockElement ||
+      HTMLEditUtils::IsEmptyNode(
+          *blockElement, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
     return NS_OK;
   }
 
@@ -5155,98 +5161,6 @@ bool HTMLEditor::IsEmpty() const {
       return false;
     }
   }
-  return true;
-}
-
-
-
-
-bool HTMLEditor::IsEmptyNodeImpl(nsINode& aNode, bool aSingleBRDoesntCount,
-                                 bool aListOrCellNotEmpty,
-                                 bool aSafeToAskFrames, bool* aSeenBR) const {
-  MOZ_ASSERT(aSeenBR);
-
-  Element* editingHost = GetActiveEditingHost();
-
-  if (Text* text = aNode.GetAsText()) {
-    return aSafeToAskFrames
-               ? !HTMLEditUtils::IsInVisibleTextFrames(GetPresContext(), *text)
-               : !HTMLEditUtils::IsVisibleTextNode(*text, editingHost);
-  }
-
-  
-  
-  
-  
-  
-  
-  if (!aNode.IsContent() ||
-      !HTMLEditUtils::IsContainerNode(*aNode.AsContent()) ||
-      (HTMLEditUtils::IsNamedAnchor(&aNode) ||
-       HTMLEditUtils::IsFormWidget(&aNode) ||
-       (aListOrCellNotEmpty && (HTMLEditUtils::IsListItem(&aNode) ||
-                                HTMLEditUtils::IsTableCell(&aNode))))) {
-    return false;
-  }
-
-  
-  bool isListItemOrCell =
-      HTMLEditUtils::IsListItem(&aNode) || HTMLEditUtils::IsTableCell(&aNode);
-
-  
-  
-  for (nsCOMPtr<nsIContent> child = aNode.GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    
-    if (EditorUtils::IsEditableContent(*child, EditorType::HTML)) {
-      if (Text* text = child->GetAsText()) {
-        
-        if (!(aSafeToAskFrames
-                  ? !HTMLEditUtils::IsInVisibleTextFrames(GetPresContext(),
-                                                          *text)
-                  : !HTMLEditUtils::IsVisibleTextNode(*text, editingHost))) {
-          return false;
-        }
-      } else {
-        
-        
-        if (child == &aNode) {
-          break;
-        }
-
-        if (aSingleBRDoesntCount && !*aSeenBR &&
-            child->IsHTMLElement(nsGkAtoms::br)) {
-          
-          *aSeenBR = true;
-        } else {
-          
-          
-          
-          if (child->IsElement()) {
-            if (isListItemOrCell) {
-              if (HTMLEditUtils::IsAnyListElement(child) ||
-                  child->IsHTMLElement(nsGkAtoms::table)) {
-                
-                return false;
-              }
-            } else if (HTMLEditUtils::IsFormWidget(child)) {
-              
-              
-              return false;
-            }
-          }
-
-          if (!IsEmptyNodeImpl(*child, aSingleBRDoesntCount,
-                               aListOrCellNotEmpty, aSafeToAskFrames,
-                               aSeenBR)) {
-            
-            return false;
-          }
-        }
-      }
-    }
-  }
-
   return true;
 }
 
