@@ -531,13 +531,7 @@ void LogError(const nsACString& aExpr, const ResultType& aResult,
         res.AppendElement(
             EventExtraEntry{"frame_id"_ns, nsCString{frameIdStr}});
       }
-#    endif
 
-      
-      
-      
-
-#    ifdef QM_ERROR_STACKS_ENABLED
       if (!processIdStr.IsEmpty()) {
         res.AppendElement(
             EventExtraEntry{"process_id"_ns, nsCString{processIdStr}});
