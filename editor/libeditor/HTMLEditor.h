@@ -1681,6 +1681,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertLineBreakAsSubAction();
+
+  
+
+
+
+
 
 
 
@@ -3288,13 +3295,6 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT EditorDOMPoint InsertNodeIntoProperAncestorWithTransaction(
       nsIContent& aNode, const EditorDOMPoint& aPointToInsert,
       SplitAtEdges aSplitAtEdges);
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertBRElementAtSelectionWithTransaction();
 
   
 

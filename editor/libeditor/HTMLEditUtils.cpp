@@ -676,6 +676,31 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
   return true;
 }
 
+bool HTMLEditUtils::ShouldInsertLinefeedCharacter(
+    EditorDOMPoint& aPointToInsert, const Element& aEditingHost) {
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
+  if (!aPointToInsert.IsInContentNode()) {
+    return false;
+  }
+
+  
+  
+  Element* closestEditableBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorElement(
+          *aPointToInsert.ContainerAsContent(),
+          HTMLEditUtils::ClosestEditableBlockElement);
+
+  
+  
+  
+  return (!closestEditableBlockElement ||
+          closestEditableBlockElement == &aEditingHost) &&
+         HTMLEditUtils::IsDisplayOutsideInline(aEditingHost) &&
+         EditorUtils::IsNewLinePreformatted(
+             *aPointToInsert.ContainerAsContent());
+}
+
 
 
 

@@ -395,6 +395,13 @@ class HTMLEditUtils final {
 
 
 
+  static bool ShouldInsertLinefeedCharacter(EditorDOMPoint& aPointToInsert,
+                                            const Element& aEditingHost);
+
+  
+
+
+
 
 
 
