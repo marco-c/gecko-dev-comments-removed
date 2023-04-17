@@ -763,6 +763,8 @@ var UrlbarUtils = {
 
 
 
+
+
   stripPrefixAndTrim(spec, options = {}) {
     let prefix = "";
     let suffix = "";
@@ -788,6 +790,10 @@ var UrlbarUtils = {
     if (options.trimSlash && spec.endsWith("/")) {
       spec = spec.slice(0, -1);
       suffix = "/" + suffix;
+    }
+    if (options.trimTrailingDot && spec.endsWith(".")) {
+      spec = spec.slice(0, -1);
+      suffix = "." + suffix;
     }
     return [spec, prefix, suffix];
   },
