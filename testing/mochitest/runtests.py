@@ -2868,9 +2868,7 @@ toolbar#nav-bar {
                 
                 
                 
-                "serviceworker_e10s": self.extraPrefs.get(
-                    "dom.serviceWorkers.parent_intercept", True
-                ),
+                "serviceworker_e10s": True,
                 "sessionHistoryInParent": self.extraPrefs.get(
                     "fission.sessionHistoryInParent", False
                 )

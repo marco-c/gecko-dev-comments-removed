@@ -97,7 +97,6 @@ class ServiceWorkerUpdateFinishCallback {
 
 
 
-
 class ServiceWorkerManager final : public nsIServiceWorkerManager,
                                    public nsIObserver {
   friend class GetRegistrationsRunnable;

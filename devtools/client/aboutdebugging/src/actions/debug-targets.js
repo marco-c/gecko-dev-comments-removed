@@ -126,7 +126,6 @@ function pushServiceWorker(id, registrationFront) {
       
       
       
-      
       await registrationFront.push();
     } catch (e) {
       console.error(e);

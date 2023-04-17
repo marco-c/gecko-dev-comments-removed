@@ -121,7 +121,6 @@ static const RedirEntry kRedirMap[] = {
     
     
     
-    
     {"serviceworkers", "chrome://global/content/aboutServiceWorkers.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
 #ifndef ANDROID

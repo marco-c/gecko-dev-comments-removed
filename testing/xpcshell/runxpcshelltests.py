@@ -1536,16 +1536,7 @@ class XPCShellTests(object):
 
         self.mozInfo["fission"] = prefs.get("fission.autostart", False)
 
-        
-        
-        
-        
-        
-        
-        
-        self.mozInfo["serviceworker_e10s"] = prefs.get(
-            "dom.serviceWorkers.parent_intercept", True
-        )
+        self.mozInfo["serviceworker_e10s"] = True
 
         self.mozInfo["verify"] = options.get("verify", False)
         self.mozInfo["webrender"] = self.enable_webrender
