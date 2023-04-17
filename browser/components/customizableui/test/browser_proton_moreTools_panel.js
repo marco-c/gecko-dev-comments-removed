@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyGetter(this, "DevToolsStartup", () => {
 });
 
 
-add_task(async function testMoreToolsPanelInToolbar() {
+add_task(async function testDevToolsPanelInToolbar() {
   
   
   DevToolsStartup.developerToggleCreated = false;
@@ -25,15 +25,28 @@ add_task(async function testMoreToolsPanelInToolbar() {
 
   
   let button = document.getElementById("developer-button");
-  let moreToolsView = PanelMultiView.getViewNode(document, "appmenu-moreTools");
-  let moreToolsShownPromise = BrowserTestUtils.waitForEvent(
-    moreToolsView,
+  let devToolsView = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-developer-tools"
+  );
+  let devToolsShownPromise = BrowserTestUtils.waitForEvent(
+    devToolsView,
     "ViewShown"
   );
 
   EventUtils.synthesizeMouseAtCenter(button, {});
-  await moreToolsShownPromise;
-  ok(true, "More Tools view is showing");
+  await devToolsShownPromise;
+  ok(true, "Dev Tools view is showing");
+  is(
+    devToolsView.children.length,
+    1,
+    "Dev tools subview is the only child of panel"
+  );
+  is(
+    devToolsView.children[0].id,
+    "PanelUI-developer-tools-view",
+    "Dev tools child has correct id"
+  );
 
   
   await BrowserTestUtils.closeWindow(win);
