@@ -288,6 +288,12 @@ async function runBackgroundTask() {
   }
 
   
+
+  
+  
+  
+  await BackgroundUpdate.recordUpdateEnvironment();
+
   
   
   
