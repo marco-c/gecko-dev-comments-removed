@@ -420,6 +420,7 @@ def show_taskgraph(options):
             f"--label={options['graph_attr']}@{cur_ref}",
         ]
 
+        non_fatal_failures = []
         for spec in parameters:
             base_path = os.path.join(diffdir, f"{options['graph_attr']}_{base_ref}")
             cur_path = os.path.join(diffdir, f"{options['graph_attr']}_{cur_ref}")
@@ -429,6 +430,16 @@ def show_taskgraph(options):
                 params_name = Parameters.format_spec(spec)
                 base_path += f"_{params_name}"
                 cur_path += f"_{params_name}"
+
+            
+            
+            
+            
+            
+            
+            if not os.path.isfile(base_path):
+                non_fatal_failures.append(os.path.basename(base_path))
+                continue
 
             try:
                 proc = subprocess.run(
@@ -454,6 +465,16 @@ def show_taskgraph(options):
                 
                 path=None if returncode == 0 else output_file,
                 params_spec=spec if len(parameters) > 1 else None,
+            )
+
+        if non_fatal_failures:
+            failstr = "\n  ".join(sorted(non_fatal_failures))
+            print(
+                "WARNING: Diff skipped for the following generation{s} "
+                "due to failures:\n  {failstr}".format(
+                    s="s" if len(non_fatal_failures) > 1 else "", failstr=failstr
+                ),
+                file=sys.stderr,
             )
 
         if options["format"] != "json":
