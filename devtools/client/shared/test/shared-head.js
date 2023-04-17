@@ -411,6 +411,8 @@ var addTab = async function(url, options = {}) {
 
   if (waitForLoad) {
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    
+    await waitForPresShell(tab.linkedBrowser);
     info("Tab added and finished loading");
   } else {
     info("Tab added");

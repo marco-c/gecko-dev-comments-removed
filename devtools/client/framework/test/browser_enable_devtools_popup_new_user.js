@@ -19,7 +19,6 @@ const TEST_URL =
 
 add_task(async function() {
   const tab = await addTab(TEST_URL);
-  await waitForPresShell(tab.linkedBrowser);
   await new Promise(done => waitForFocus(done));
 
   
