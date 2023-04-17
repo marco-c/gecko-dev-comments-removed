@@ -1257,12 +1257,19 @@ static inline bool CanSkipOverflowUpdates(const nsIFrame* aFrame) {
                                  NS_FRAME_HAS_DIRTY_CHILDREN);
 }
 
-static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
+static inline void TryToDealWithScrollbarChange(nsChangeHint& aHint,
+                                                nsIContent* aContent,
+                                                nsIFrame* aFrame,
                                                 nsPresContext* aPc) {
-  if (!(aData.mHint & nsChangeHint_ScrollbarChange)) {
+  if (!(aHint & nsChangeHint_ScrollbarChange)) {
     return;
   }
-  aData.mHint &= ~nsChangeHint_ScrollbarChange;
+  aHint &= ~nsChangeHint_ScrollbarChange;
+  if (aHint & nsChangeHint_ReconstructFrame) {
+    return;
+  }
+
+  MOZ_ASSERT(aFrame, "If we're not reframing, we ought to have a frame");
 
   
   
@@ -1274,7 +1281,7 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
   
   
   
-  if (aData.mContent->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::html)) {
+  if (aContent->IsAnyOfHTMLElements(nsGkAtoms::body, nsGkAtoms::html)) {
     
     
     
@@ -1285,8 +1292,7 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
         aPc->GetViewportScrollStylesOverrideElement();
     nsIContent* newOverrideNode = aPc->UpdateViewportScrollStylesOverride();
 
-    if (aData.mContent == prevOverrideNode ||
-        aData.mContent == newOverrideNode) {
+    if (aContent == prevOverrideNode || aContent == newOverrideNode) {
       
       
       if (!prevOverrideNode || !newOverrideNode ||
@@ -1300,32 +1306,32 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
         
         
         
-        if (nsIScrollableFrame* sf = do_QueryFrame(aData.mFrame)) {
+        if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
           sf->MarkScrollbarsDirtyForReflow();
         } else if (nsIScrollableFrame* sf =
                        aPc->PresShell()->GetRootScrollFrameAsScrollable()) {
           sf->MarkScrollbarsDirtyForReflow();
         }
-        aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
+        aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
         return;
       }
     }
   }
 
-  if (nsIScrollableFrame* sf = do_QueryFrame(aData.mFrame)) {
-    if (aData.mFrame->StyleDisplay()->IsScrollableOverflow() &&
+  if (nsIScrollableFrame* sf = do_QueryFrame(aFrame)) {
+    if (aFrame->StyleDisplay()->IsScrollableOverflow() &&
         sf->HasAllNeededScrollbars()) {
       sf->MarkScrollbarsDirtyForReflow();
       
       
-      aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
+      aHint |= nsChangeHint_ReflowHintsForScrollbarChange;
       return;
     }
   }
 
   
   
-  aData.mHint |= nsChangeHint_ReconstructFrame;
+  aHint |= nsChangeHint_ReconstructFrame;
 }
 
 static bool IsUnsupportedFrameForContainingBlockChangeFastPath(
@@ -1435,12 +1441,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   nsPresContext* presContext = PresContext();
   nsCSSFrameConstructor* frameConstructor = presContext->FrameConstructor();
 
-  
-  
-  for (nsStyleChangeData& data : aChangeList) {
-    MaybeDealWithScrollbarChange(data, presContext);
-  }
-
   bool didUpdateCursor = false;
 
   for (size_t i = 0; i < aChangeList.Length(); ++i) {
@@ -1501,6 +1501,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       }
     }
 
+    TryToDealWithScrollbarChange(hint, content, frame, presContext);
     TryToHandleContainingBlockChange(hint, frame);
 
     if (hint & nsChangeHint_ReconstructFrame) {
