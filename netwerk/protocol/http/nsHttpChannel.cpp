@@ -9303,12 +9303,10 @@ nsresult nsHttpChannel::RedirectToInterceptedChannel() {
   
   
   
-  if (ServiceWorkerParentInterceptEnabled()) {
-    nsCOMPtr<nsIHttpHeaderVisitor> visitor =
-        new CopyNonDefaultHeaderVisitor(intercepted);
-    rv = VisitNonDefaultRequestHeaders(visitor);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  nsCOMPtr<nsIHttpHeaderVisitor> visitor =
+      new CopyNonDefaultHeaderVisitor(intercepted);
+  rv = VisitNonDefaultRequestHeaders(visitor);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   mRedirectChannel = intercepted;
 

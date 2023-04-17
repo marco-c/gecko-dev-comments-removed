@@ -94,40 +94,6 @@ nsresult PushNotifier::Dispatch(PushDispatcher& aDispatcher) {
     
     Unused << NS_WARN_IF(NS_FAILED(aDispatcher.NotifyObservers()));
 
-    nsTArray<ContentParent*> contentActors;
-    ContentParent::GetAll(contentActors);
-    if (!contentActors.IsEmpty() && !ServiceWorkerParentInterceptEnabled()) {
-      
-      
-      for (uint32_t i = 0; i < contentActors.Length(); ++i) {
-        
-        
-        
-        
-        if (contentActors[i]->GetRemoteType() != DEFAULT_REMOTE_TYPE) {
-          continue;
-        }
-
-        
-        
-        
-        Unused << contentActors[i]->TransmitPermissionsForPrincipal(
-            aDispatcher.GetPrincipal());
-        if (aDispatcher.SendToChild(contentActors[i])) {
-          
-          
-          break;
-        }
-      }
-      return NS_OK;
-    }
-
-    if (BrowserTabsRemoteAutostart() &&
-        !ServiceWorkerParentInterceptEnabled()) {
-      
-      return aDispatcher.HandleNoChildProcesses();
-    }
-
     
     return aDispatcher.NotifyWorkers();
   }
@@ -267,14 +233,8 @@ bool PushDispatcher::ShouldNotifyWorkers() {
   }
 
   
-  
   bool isContentProcess = XRE_GetProcessType() == GeckoProcessType_Content;
-  bool parentInterceptEnabled = ServiceWorkerParentInterceptEnabled();
-  if (parentInterceptEnabled) {
-    return !isContentProcess;
-  }
-
-  return isContentProcess;
+  return !isContentProcess;
 }
 
 nsresult PushDispatcher::DoNotifyObservers(nsISupports* aSubject,

@@ -396,9 +396,6 @@ class ContentChild final : public PContentChild,
   
   const nsACString& GetRemoteType() const override;
 
-  mozilla::ipc::IPCResult RecvInitServiceWorkers(
-      const ServiceWorkerConfiguration& aConfig);
-
   mozilla::ipc::IPCResult RecvInitBlobURLs(
       nsTArray<BlobURLRegistrationData>&& aRegistations);
 

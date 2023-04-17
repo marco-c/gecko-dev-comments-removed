@@ -527,8 +527,7 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
   
   
   
-  
-  if (!ServiceWorkerParentInterceptEnabled() || XRE_IsParentProcess()) {
+  if (XRE_IsParentProcess()) {
     ds->mInterceptController = new ServiceWorkerInterceptController();
   }
 
