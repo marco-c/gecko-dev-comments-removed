@@ -16,6 +16,8 @@ function verify_initial_state(initial_url, test_name) {
       
       assert_false(r.headers.has("device-memory-received"),
         "device-memory-received");
+      assert_false(r.headers.has("device-memory-deprecated-received"),
+        "device-memory-deprecated-received");
     });
   }, test_name + " precondition: Test that the browser does not have client " +
     "hints preferences cached");
@@ -103,6 +105,9 @@ function attempt_set(test_type, accept_url, test_name, test_name_suffix) {
           
           assert_false(r.headers.has("device-memory-received"),
             "device-memory-received",
+            "subresource request had no client hints");
+          assert_false(r.headers.has("device-memory-deprecated-received"),
+            "device-memory-deprecated-received",
             "subresource request had no client hints");
           resolve();
         });
