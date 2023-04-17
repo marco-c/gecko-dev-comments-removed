@@ -2704,7 +2704,7 @@ class MachineStackTracker {
 
 
 
-enum class HasDebugFrame { No, Yes };
+enum class HasDebugFrameWithLiveRefs { No, Maybe };
 
 struct StackMapGenerator {
  private:
@@ -2797,16 +2797,16 @@ struct StackMapGenerator {
   
   
   
-  [[nodiscard]] bool createStackMap(const char* who,
-                                    const ExitStubMapVector& extras,
-                                    uint32_t assemblerOffset,
-                                    HasDebugFrame debugFrame,
-                                    const StkVector& stk) {
+  [[nodiscard]] bool createStackMap(
+      const char* who, const ExitStubMapVector& extras,
+      uint32_t assemblerOffset,
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs, const StkVector& stk) {
     size_t countedPointers = machineStackTracker.numPtrs() + memRefsOnStk;
 #ifndef DEBUG
     
     
-    if (countedPointers == 0 && debugFrame == HasDebugFrame::No) {
+    if (countedPointers == 0 &&
+        debugFrameWithLiveRefs == HasDebugFrameWithLiveRefs::No) {
       
       
       bool extrasHasRef = false;
@@ -3017,8 +3017,8 @@ struct StackMapGenerator {
 #endif
 
     
-    if (debugFrame == HasDebugFrame::Yes) {
-      stackMap->setHasDebugFrame();
+    if (debugFrameWithLiveRefs != HasDebugFrameWithLiveRefs::No) {
+      stackMap->setHasDebugFrameWithLiveRefs();
     }
 
     
@@ -4213,24 +4213,36 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   [[nodiscard]] bool createStackMap(const char* who) {
     const ExitStubMapVector noExtras;
-    return createStackMap(who, noExtras, masm.currentOffset());
+    return stackMapGenerator_.createStackMap(
+        who, noExtras, masm.currentOffset(), HasDebugFrameWithLiveRefs::No,
+        stk_);
   }
 
   
   [[nodiscard]] bool createStackMap(const char* who,
                                     CodeOffset assemblerOffset) {
     const ExitStubMapVector noExtras;
-    return createStackMap(who, noExtras, assemblerOffset.offset());
+    return stackMapGenerator_.createStackMap(
+        who, noExtras, assemblerOffset.offset(), HasDebugFrameWithLiveRefs::No,
+        stk_);
   }
 
   
-  [[nodiscard]] bool createStackMap(const char* who,
-                                    const ExitStubMapVector& extras,
-                                    uint32_t assemblerOffset) {
-    auto debugFrame =
-        compilerEnv_.debugEnabled() ? HasDebugFrame::Yes : HasDebugFrame::No;
+  
+  [[nodiscard]] bool createStackMap(
+      const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
+    const ExitStubMapVector noExtras;
+    return stackMapGenerator_.createStackMap(
+        who, noExtras, masm.currentOffset(), debugFrameWithLiveRefs, stk_);
+  }
+
+  
+  [[nodiscard]] bool createStackMap(
+      const char* who, const ExitStubMapVector& extras,
+      uint32_t assemblerOffset,
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs) {
     return stackMapGenerator_.createStackMap(who, extras, assemblerOffset,
-                                             debugFrame, stk_);
+                                             debugFrameWithLiveRefs, stk_);
   }
 
   
@@ -5627,7 +5639,8 @@ class BaseCompiler final : public BaseCompilerInterface {
     if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
       return false;
     }
-    if (!createStackMap("stack check", extras, masm.currentOffset())) {
+    if (!createStackMap("stack check", extras, masm.currentOffset(),
+                        HasDebugFrameWithLiveRefs::No)) {
       return false;
     }
 
@@ -5869,11 +5882,13 @@ class BaseCompiler final : public BaseCompilerInterface {
       
       saveRegisterReturnValues(resultType);
       insertBreakablePoint(CallSiteDesc::Breakpoint);
-      if (!createStackMap("debug: return-point breakpoint")) {
+      if (!createStackMap("debug: return-point breakpoint",
+                          HasDebugFrameWithLiveRefs::Maybe)) {
         return false;
       }
       insertBreakablePoint(CallSiteDesc::LeaveFrame);
-      if (!createStackMap("debug: leave-frame breakpoint")) {
+      if (!createStackMap("debug: leave-frame breakpoint",
+                          HasDebugFrameWithLiveRefs::Maybe)) {
         return false;
       }
       restoreRegisterReturnValues(resultType);

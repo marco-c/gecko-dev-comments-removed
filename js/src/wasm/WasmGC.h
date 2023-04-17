@@ -66,6 +66,7 @@ struct StackMap final {
   
   
   
+  
 
   
   uint32_t numMappedWords : 30;
@@ -80,7 +81,7 @@ struct StackMap final {
   
   
   
-  uint32_t hasDebugFrame : 1;
+  uint32_t hasDebugFrameWithLiveRefs : 1;
 
  private:
   static constexpr uint32_t maxMappedWords = (1 << 30) - 1;
@@ -93,7 +94,7 @@ struct StackMap final {
       : numMappedWords(numMappedWords),
         numExitStubWords(0),
         frameOffsetFromTop(0),
-        hasDebugFrame(0) {
+        hasDebugFrameWithLiveRefs(0) {
     const uint32_t nBitmap = calcNBitmap(numMappedWords);
     memset(bitmap, 0, nBitmap * sizeof(bitmap[0]));
   }
@@ -131,9 +132,9 @@ struct StackMap final {
 
   
   
-  void setHasDebugFrame() {
-    MOZ_ASSERT(hasDebugFrame == 0);
-    hasDebugFrame = 1;
+  void setHasDebugFrameWithLiveRefs() {
+    MOZ_ASSERT(hasDebugFrameWithLiveRefs == 0);
+    hasDebugFrameWithLiveRefs = 1;
   }
 
   inline void setBit(uint32_t bitIndex) {
