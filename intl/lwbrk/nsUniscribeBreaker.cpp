@@ -9,32 +9,44 @@
 
 #include <usp10.h>
 
+#include "mozilla/SandboxSettings.h"
+#include "mozilla/sandboxTarget.h"
+#include "mozilla/WindowsProcessMitigations.h"
 #include "nsUTF8Utils.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsXULAppAPI.h"
 
-#if defined(NIGHTLY_BUILD)
-#  include "mozilla/WindowsProcessMitigations.h"
-#  define TH_UNICODE
-#  include "rulebrk.h"
-#endif
+using namespace mozilla;
+
+static bool UseBrokeredLineBreaking() {
+  
+  
+  
+  
+  
+  static bool sUseBrokeredLineBreaking =
+      IsWin32kLockedDown() ||
+      (XRE_IsContentProcess() && GetEffectiveContentSandboxLevel() >= 20);
+
+  return sUseBrokeredLineBreaking;
+}
 
 void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                              uint8_t* aBreakBefore) {
   NS_ASSERTION(aText, "aText shouldn't be null");
 
-#if defined(NIGHTLY_BUILD)
-  
-  
-  
-  
-  if (mozilla::IsWin32kLockedDown()) {
-    for (uint32_t i = 0; i < aLength; i++)
-      aBreakBefore[i] =
-          (0 == TrbWordBreakPos(aText, i, aText + i, aLength - i));
+  if (UseBrokeredLineBreaking()) {
+    
+    
+    char16ptr_t text = aText;
+    if (!SandboxTarget::Instance()->GetComplexLineBreaks(text, aLength,
+                                                         aBreakBefore)) {
+      NS_WARNING("Brokered line break failed, breaks might be incorrect.");
+    }
+
     return;
   }
-#endif
 
   int outItems = 0;
   HRESULT result;
