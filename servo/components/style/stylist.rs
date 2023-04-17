@@ -2324,7 +2324,11 @@ impl CascadeData {
                 #[cfg(feature = "gecko")]
                 CssRule::ScrollTimeline(..) => {
                     
-                }
+                    
+                    
+                    
+                    
+                },
                 #[cfg(feature = "gecko")]
                 CssRule::FontFace(ref rule) => {
                     self.extra_data.add_font_face(rule);

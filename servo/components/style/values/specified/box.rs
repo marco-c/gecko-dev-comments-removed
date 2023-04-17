@@ -13,7 +13,7 @@ use crate::values::generics::box_::Perspective as GenericPerspective;
 use crate::values::generics::box_::{GenericVerticalAlign, VerticalAlignKeyword};
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
 use crate::values::specified::{AllowQuirks, Number};
-use crate::values::{CustomIdent, KeyframesName};
+use crate::values::{CustomIdent, KeyframesName, TimelineName};
 use crate::Atom;
 use cssparser::Parser;
 use num_traits::FromPrimitive;
@@ -750,6 +750,62 @@ impl Parse for AnimationName {
 
         input.expect_ident_matching("none")?;
         Ok(AnimationName(None))
+    }
+}
+
+
+
+
+/// cbindgen:private-default-tagged-enum-constructor=false
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum AnimationTimeline {
+    
+    Auto,
+    
+    None,
+    
+    Timeline(TimelineName),
+}
+
+impl AnimationTimeline {
+    
+    pub fn auto() -> Self {
+        Self::Auto
+    }
+}
+
+impl Parse for AnimationTimeline {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        
+        
+        
+        
+        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
+            return Ok(Self::Auto);
+        }
+
+        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
+            return Ok(Self::None);
+        }
+
+        TimelineName::parse(context, input).map(AnimationTimeline::Timeline)
     }
 }
 
