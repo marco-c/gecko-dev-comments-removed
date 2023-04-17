@@ -64,6 +64,7 @@
 #include "js/Value.h"
 #include "js/ValueArray.h"
 #include "js/Vector.h"
+#include "js/WaitCallbacks.h"
 #include "js/WeakMap.h"
 #include "js/WrapperCallbacks.h"
 #include "js/Zone.h"
@@ -1075,39 +1076,6 @@ class MOZ_RAII AutoHideScriptedCaller {
 
 
 [[nodiscard]] extern JS_PUBLIC_API bool DisableWasmHugeMemory();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static constexpr size_t WAIT_CALLBACK_CLIENT_MAXMEM = 32;
-
-using BeforeWaitCallback = void* (*)(uint8_t* memory);
-using AfterWaitCallback = void (*)(void* cookie);
-
-extern JS_PUBLIC_API void SetWaitCallback(JSRuntime* rt,
-                                          BeforeWaitCallback beforeWait,
-                                          AfterWaitCallback afterWait,
-                                          size_t requiredMemory);
 
 
 

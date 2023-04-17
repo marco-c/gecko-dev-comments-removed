@@ -57,6 +57,7 @@
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
+#include "js/WaitCallbacks.h"
 #include "js/Warnings.h"  
 #include "js/WrapperCallbacks.h"
 #include "js/Zone.h"
