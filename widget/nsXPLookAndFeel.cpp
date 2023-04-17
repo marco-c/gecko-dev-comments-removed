@@ -1080,12 +1080,6 @@ LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForChrome() {
 
 static LookAndFeel::ColorScheme ColorSchemeForDocument(
     const dom::Document& aDoc, bool aContentSupportsDark) {
-  if (aDoc.ShouldAvoidNativeTheme()) {
-    
-    
-    return LookAndFeel::ColorScheme::Light;
-  }
-
   if (nsContentUtils::IsChromeDoc(&aDoc)) {
     return LookAndFeel::ColorSchemeForChrome();
   }
