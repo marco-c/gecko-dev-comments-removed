@@ -45,12 +45,6 @@ function TargetMixin(parentClass) {
 
       this.threadFront = null;
 
-      
-      
-      
-      
-      this.shouldCloseClient = false;
-
       this._client = client;
 
       
@@ -636,18 +630,13 @@ function TargetMixin(parentClass) {
 
       this.threadFront = null;
 
-      if (this.shouldCloseClient) {
-        try {
-          await this._client.close();
-        } catch (e) {
-          
-          
-          console.warn("Error while closing client:", e);
-        }
+      
+      
+      this.emit("target-destroyed");
 
-        
-        
-      } else if (this.detach && !this.isDestroyed()) {
+      
+      
+      if (this.detach && !this.isDestroyed()) {
         
         
         
@@ -658,10 +647,6 @@ function TargetMixin(parentClass) {
           this.logDetachError(e);
         }
       }
-
-      
-      
-      this.emit("target-destroyed");
 
       
       super.destroy();

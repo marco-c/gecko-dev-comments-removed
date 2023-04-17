@@ -82,6 +82,12 @@ class TabDescriptorFront extends DescriptorMixin(
   setLocalTab(localTab) {
     this._localTab = localTab;
     this._setupLocalTabListeners();
+
+    
+    
+    
+    
+    this.shouldCloseClient = true;
   }
 
   get isLocalTab() {
@@ -134,10 +140,6 @@ class TabDescriptorFront extends DescriptorMixin(
   _createTabTarget(form) {
     const front = new BrowsingContextTargetFront(this._client, null, this);
 
-    if (this.isLocalTab) {
-      front.shouldCloseClient = true;
-    }
-
     
     
     front.actorID = form.actor;
@@ -158,7 +160,12 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     
-    if (!this.traits.emitDescriptorDestroyed || !this.isLocalTab) {
+    
+    if (
+      !this.traits.emitDescriptorDestroyed ||
+      !this.isLocalTab ||
+      this.isDevToolsExtensionContext
+    ) {
       this.destroy();
     }
   }

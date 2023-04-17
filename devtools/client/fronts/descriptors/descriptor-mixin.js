@@ -26,10 +26,50 @@ function DescriptorMixin(parentClass) {
         "descriptor-destroyed",
         this.destroy.bind(this, { isServerDestroyEvent: true })
       );
+
+      
+      
+      
+      
+      
+      
+      
+      this.shouldCloseClient = false;
     }
 
     get client() {
       return this._client;
+    }
+
+    async destroy({ isServerDestroyEvent } = {}) {
+      if (this.isDestroyed()) {
+        return;
+      }
+      
+      const { client } = this;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (isServerDestroyEvent) {
+        this.baseFrontClassDestroy();
+      }
+
+      await super.destroy();
+
+      
+      if (this.shouldCloseClient) {
+        await client.close();
+      }
     }
   }
   return Descriptor;

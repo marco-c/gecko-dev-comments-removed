@@ -584,15 +584,6 @@ class TargetCommand extends EventEmitter {
     
     if (targetFront) {
       
-      
-      
-      
-      
-      
-      
-      targetFront.shouldCloseClient = false;
-
-      
       await targetFront.once("target-destroyed");
     }
 

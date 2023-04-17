@@ -118,6 +118,19 @@ class BrowsingContextTargetFront extends TargetMixin(
   }
 
   async detach() {
+    
+    
+    
+    
+    if (this._isDetaching) {
+      return;
+    }
+    this._isDetaching = true;
+
+    
+    this.off("tabNavigated", this._onTabNavigated);
+    this.off("frameUpdate", this._onFrameUpdate);
+
     try {
       await super.detach();
     } catch (e) {
@@ -125,8 +138,14 @@ class BrowsingContextTargetFront extends TargetMixin(
     }
 
     
-    this.off("tabNavigated", this._onTabNavigated);
-    this.off("frameUpdate", this._onFrameUpdate);
+    
+    
+    
+    
+    
+    if (!this.isDestroyedOrBeingDestroyed()) {
+      this.destroy();
+    }
   }
 
   destroy() {
