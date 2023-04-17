@@ -2569,40 +2569,9 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   return nsEventStatus_eConsumeNoDefault;
 }
 
-nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
-                                            bool aFingersOnTouchpad) {
-  APZC_LOG("%p got a pan-pan in state %d\n", this, mState);
-
-  if (mState == SMOOTHMSD_SCROLL) {
-    if (!aFingersOnTouchpad) {
-      
-      
-      
-      
-      
-      return nsEventStatus_eConsumeNoDefault;
-    }
-
-    
-    CancelAnimation();
-  }
-
-  if (mState == NOTHING) {
-    
-    
-    
-    if (!aFingersOnTouchpad) {
-      return nsEventStatus_eConsumeNoDefault;
-    }
-    
-    
-    return OnPanBegin(aEvent);
-  }
-
-  if (mState == OVERSCROLL_ANIMATION && !aFingersOnTouchpad) {
-    return nsEventStatus_eConsumeNoDefault;
-  }
-
+std::tuple<ParentLayerPoint, ScreenPoint>
+AsyncPanZoomController::GetDisplacementsForPanGesture(
+    const PanGestureInput& aEvent) {
   
   
   
@@ -2667,6 +2636,46 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
       logicalPanDisplacement,
       GetCurrentPanGestureBlock()->GetAllowedScrollDirections());
 
+  return {logicalPanDisplacement, physicalPanDisplacement};
+}
+
+nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
+                                            bool aFingersOnTouchpad) {
+  APZC_LOG("%p got a pan-pan in state %d\n", this, mState);
+
+  if (mState == SMOOTHMSD_SCROLL) {
+    if (!aFingersOnTouchpad) {
+      
+      
+      
+      
+      
+      return nsEventStatus_eConsumeNoDefault;
+    }
+
+    
+    CancelAnimation();
+  }
+
+  if (mState == NOTHING) {
+    
+    
+    
+    if (!aFingersOnTouchpad) {
+      return nsEventStatus_eConsumeNoDefault;
+    }
+    
+    
+    return OnPanBegin(aEvent);
+  }
+
+  if (mState == OVERSCROLL_ANIMATION && !aFingersOnTouchpad) {
+    return nsEventStatus_eConsumeNoDefault;
+  }
+
+  auto [logicalPanDisplacement, physicalPanDisplacement] =
+      GetDisplacementsForPanGesture(aEvent);
+
   
   
   
@@ -2684,6 +2693,7 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
 
   HandlePanningUpdate(physicalPanDisplacement);
 
+  MOZ_ASSERT(GetCurrentPanGestureBlock());
   ScreenPoint panDistance(fabs(physicalPanDisplacement.x),
                           fabs(physicalPanDisplacement.y));
   OverscrollHandoffState handoffState(
