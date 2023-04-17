@@ -939,6 +939,7 @@ this.ExtensionBlocklistMLBF = {
     const {
       buffer,
       record: actualRecord,
+      _source: rsAttachmentSource,
     } = await this._client.attachments.download(record, {
       attachmentId: this.RS_ATTACHMENT_ID,
       useCache: true,
@@ -953,6 +954,8 @@ this.ExtensionBlocklistMLBF = {
       
       
       generationTime: actualRecord.generation_time,
+      
+      rsAttachmentSource,
     };
   },
 
@@ -1040,6 +1043,10 @@ this.ExtensionBlocklistMLBF = {
     BlocklistTelemetry.recordRSBlocklistLastModified(
       "addons_mlbf",
       this._client
+    );
+    Services.telemetry.scalarSet(
+      "blocklist.mlbf_source",
+      this._mlbfData?.rsAttachmentSource || "unknown"
     );
     BlocklistTelemetry.recordTimeScalar(
       "mlbf_generation_time",
