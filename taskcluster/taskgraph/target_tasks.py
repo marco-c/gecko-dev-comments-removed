@@ -33,7 +33,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     r"android-hw",
     
     r"windows10-64-ref-hw",
-    r"windows10-aarch64",
+    r"windows10-aarch64-qr",
     
     r"linux-",  
     r"linux1804-32",  
