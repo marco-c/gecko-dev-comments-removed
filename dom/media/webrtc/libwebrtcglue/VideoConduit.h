@@ -127,7 +127,7 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ConfigureSendMediaCodec(
-      const VideoCodecConfig* codecInfo,
+      const VideoCodecConfig& codecInfo,
       const RtpRtcpConfig& aRtpRtcpConfig) override;
 
   
@@ -141,7 +141,7 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<UniquePtr<VideoCodecConfig>>& codecConfigList,
+      const std::vector<VideoCodecConfig>& codecConfigList,
       const RtpRtcpConfig& aRtpRtcpConfig) override;
 
   
@@ -349,11 +349,11 @@ class WebrtcVideoConduit
       mEngineReceiving;  
 
   
-  nsTArray<UniquePtr<VideoCodecConfig>> mRecvCodecList;
+  std::vector<VideoCodecConfig> mRecvCodecList;
 
   
   
-  UniquePtr<VideoCodecConfig> mCurSendCodecConfig;
+  Maybe<VideoCodecConfig> mCurSendCodecConfig;
 
   
   RunningStat mSendFramerate;
