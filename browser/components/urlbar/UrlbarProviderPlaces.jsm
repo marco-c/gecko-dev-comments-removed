@@ -240,27 +240,26 @@ function makeActionUrl(type, params) {
 
 
 
-function convertLegacyAutocompleteResult(context, acResult, urls) {
+function convertLegacyMatches(context, matches, urls) {
   let results = [];
-  for (let i = 0; i < acResult.matchCount; ++i) {
+  for (let match of matches) {
     
     
     
     
-    let url = acResult.getFinalCompleteValueAt(i);
+    let url = match.finalCompleteValue || match.value;
     if (urls.has(url)) {
       continue;
     }
     urls.add(url);
-    let style = acResult.getStyleAt(i);
     let result = makeUrlbarResult(context.tokens, {
       url,
       
       
       
-      icon: acResult.getImageAt(i) || undefined,
-      style,
-      comment: acResult.getCommentAt(i),
+      icon: match.icon || undefined,
+      style: match.style,
+      comment: match.comment,
       firstToken: context.tokens[0],
     });
     
@@ -411,11 +410,7 @@ const MATCH_TYPE = {
 
 
 
-
-
-
-
-function Search(queryContext, autocompleteListener, autocompleteSearch) {
+function Search(queryContext, listener, provider) {
   
   this._originalSearchString = queryContext.searchString;
   this._trimmedOriginalSearchString = queryContext.trimmedSearchString;
@@ -518,18 +513,9 @@ function Search(queryContext, autocompleteListener, autocompleteSearch) {
     this.setBehavior("javascript");
   }
 
-  this._listener = autocompleteListener;
-  this._autocompleteSearch = autocompleteSearch;
-
-  
-  
-  let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
-    Ci.nsIAutoCompleteSimpleResult
-  );
-  result.setSearchString(queryContext.searchString);
-  
-  result.setDefaultIndex(-1);
-  this._result = result;
+  this._listener = listener;
+  this._provider = provider;
+  this._matches = [];
 
   
   this._usedURLs = [];
@@ -657,7 +643,7 @@ Search.prototype = {
     
     let tokenAliasEngines = await UrlbarSearchUtils.tokenAliasEngines();
     if (this._trimmedOriginalSearchString == "@" && tokenAliasEngines.length) {
-      this._autocompleteSearch.finishSearch(true);
+      this._provider.finishSearch(true);
       return;
     }
 
@@ -683,7 +669,7 @@ Search.prototype = {
           this._trimmedOriginalSearchString.startsWith("@")) ||
         (this.hasBehavior("search") && this.hasBehavior("restrict"))
       ) {
-        this._autocompleteSearch.finishSearch(true);
+        this._provider.finishSearch(true);
         return;
       }
     }
@@ -919,16 +905,9 @@ Search.prototype = {
     }
     if (replace) {
       
-      this._result.removeMatchAt(index);
+      this._matches.splice(index, 1);
     }
-    this._result.insertMatchAt(
-      index,
-      match.value,
-      match.comment,
-      match.icon,
-      match.style,
-      match.finalCompleteValue
-    );
+    this._matches.splice(index, 0, match);
     this._counts[match.type]++;
 
     this.notifyResult(true);
@@ -1359,19 +1338,11 @@ Search.prototype = {
         return;
       }
       this._notifyDelaysCount = 0;
-      let resultCode = this._result.matchCount
-        ? "RESULT_SUCCESS"
-        : "RESULT_NOMATCH";
-      if (searchOngoing) {
-        resultCode += "_ONGOING";
-      }
-      let result = this._result;
-      result.setSearchResult(Ci.nsIAutoCompleteResult[resultCode]);
-      this._listener.onSearchResult(this._autocompleteSearch, result);
+      this._listener(this._matches, searchOngoing);
       if (!searchOngoing) {
         
         this._listener = null;
-        this._autocompleteSearch = null;
+        this._provider = null;
         this.stop();
       }
     };
@@ -1471,15 +1442,11 @@ class ProviderPlaces extends UrlbarProvider {
   startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
     let urls = new Set();
-    this._startLegacyQuery(queryContext, acResult => {
+    this._startLegacyQuery(queryContext, matches => {
       if (instance != this.queryInstance) {
         return;
       }
-      let results = convertLegacyAutocompleteResult(
-        queryContext,
-        acResult,
-        urls
-      );
+      let results = convertLegacyMatches(queryContext, matches, urls);
       for (let result of results) {
         addCallback(this, result);
       }
@@ -1537,20 +1504,11 @@ class ProviderPlaces extends UrlbarProvider {
 
   _startLegacyQuery(queryContext, callback) {
     let deferred = PromiseUtils.defer();
-    let listener = {
-      onSearchResult(_, result) {
-        let done =
-          [
-            Ci.nsIAutoCompleteResult.RESULT_IGNORED,
-            Ci.nsIAutoCompleteResult.RESULT_FAILURE,
-            Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
-            Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
-          ].includes(result.searchResult) || result.errorDescription;
-        callback(result);
-        if (done) {
-          deferred.resolve();
-        }
-      },
+    let listener = (matches, searchOngoing) => {
+      callback(matches);
+      if (!searchOngoing) {
+        deferred.resolve();
+      }
     };
     this._startSearch(queryContext.searchString, listener, queryContext);
     this._deferred = deferred;
