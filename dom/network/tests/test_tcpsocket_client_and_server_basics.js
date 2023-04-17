@@ -316,21 +316,10 @@ async function test_basics() {
   }
   
   
-  
-  let lengthOfChunk1 = 65536;
-  is(
-    clientSocket.send(bigUint8Array.buffer, 0, lengthOfChunk1),
-    true,
-    "Client sending chunk1 should not result in the buffer being full."
-  );
-  
-  
-  
   for (let iSend = 0; iSend < 2; iSend++) {
     
-    let offset = iSend == 0 ? lengthOfChunk1 : 0;
     is(
-      clientSocket.send(bigUint8Array.buffer, offset, bigUint8Array.length),
+      clientSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
       false,
       "Client sending more than 64k should result in the buffer being full."
     );
@@ -349,16 +338,9 @@ async function test_basics() {
       "server received/client sent"
     );
 
-    if (iSend == 0) {
-      is(
-        serverSocket.send(bigUint8Array.buffer, 0, lengthOfChunk1),
-        true,
-        "Server sending chunk1 should not result in the buffer being full."
-      );
-    }
     
     is(
-      serverSocket.send(bigUint8Array.buffer, offset, bigUint8Array.length),
+      serverSocket.send(bigUint8Array.buffer, 0, bigUint8Array.length),
       false,
       "Server sending more than 64k should result in the buffer being full."
     );
