@@ -243,18 +243,21 @@ nsresult KeyEventHandler::DispatchXBLCommand(dom::EventTarget* aTarget,
   } else {
     privateWindow = do_QueryInterface(aTarget);
     if (!privateWindow) {
-      nsCOMPtr<nsIContent> elt(do_QueryInterface(aTarget));
       nsCOMPtr<dom::Document> doc;
       
       
       
       
-      if (elt) {
-        doc = elt->OwnerDoc();
+      if (nsIContent* content = nsIContent::FromEventTargetOrNull(aTarget)) {
+        doc = content->OwnerDoc();
       }
 
       if (!doc) {
-        doc = do_QueryInterface(aTarget);
+        if (nsINode* node = nsINode::FromEventTargetOrNull(aTarget)) {
+          if (node->IsDocument()) {
+            doc = node->AsDocument();
+          }
+        }
       }
 
       if (!doc) {
@@ -402,30 +405,35 @@ Modifiers KeyEventHandler::GetModifiersMask() const {
 
 already_AddRefed<nsIController> KeyEventHandler::GetController(
     dom::EventTarget* aTarget) {
+  if (!aTarget) {
+    return nullptr;
+  }
+
   
   
   
   nsCOMPtr<nsIControllers> controllers;
 
-  nsCOMPtr<nsIContent> targetContent(do_QueryInterface(aTarget));
-  RefPtr<nsXULElement> xulElement = nsXULElement::FromNodeOrNull(targetContent);
-  if (xulElement) {
-    controllers = xulElement->GetControllers(IgnoreErrors());
-  }
-
-  if (!controllers) {
-    dom::HTMLTextAreaElement* htmlTextArea =
-        dom::HTMLTextAreaElement::FromNode(targetContent);
-    if (htmlTextArea) {
-      htmlTextArea->GetControllers(getter_AddRefs(controllers));
+  if (nsIContent* targetContent = nsIContent::FromEventTarget(aTarget)) {
+    RefPtr<nsXULElement> xulElement = nsXULElement::FromNode(targetContent);
+    if (xulElement) {
+      controllers = xulElement->GetControllers(IgnoreErrors());
     }
-  }
 
-  if (!controllers) {
-    dom::HTMLInputElement* htmlInputElement =
-        dom::HTMLInputElement::FromNode(targetContent);
-    if (htmlInputElement) {
-      htmlInputElement->GetControllers(getter_AddRefs(controllers));
+    if (!controllers) {
+      dom::HTMLTextAreaElement* htmlTextArea =
+          dom::HTMLTextAreaElement::FromNode(targetContent);
+      if (htmlTextArea) {
+        htmlTextArea->GetControllers(getter_AddRefs(controllers));
+      }
+    }
+
+    if (!controllers) {
+      dom::HTMLInputElement* htmlInputElement =
+          dom::HTMLInputElement::FromNode(targetContent);
+      if (htmlInputElement) {
+        htmlInputElement->GetControllers(getter_AddRefs(controllers));
+      }
     }
   }
 

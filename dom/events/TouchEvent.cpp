@@ -151,9 +151,10 @@ TouchList* TouchEvent::TargetTouches() {
         if (!equalTarget) {
           
           
-          nsCOMPtr<nsIContent> touchTarget =
-              do_QueryInterface(touches[i]->mTarget);
-          nsCOMPtr<nsIContent> eventTarget = do_QueryInterface(mEvent->mTarget);
+          nsIContent* touchTarget =
+              nsIContent::FromEventTargetOrNull(touches[i]->mTarget);
+          nsIContent* eventTarget =
+              nsIContent::FromEventTargetOrNull(mEvent->mTarget);
           equalTarget = touchTarget && eventTarget &&
                         touchTarget->FindFirstNonChromeOnlyAccessContent() ==
                             eventTarget->FindFirstNonChromeOnlyAccessContent();

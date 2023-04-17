@@ -666,7 +666,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
       if (aEvent->mMessage == eTouchStart) {
         
         
-        nsCOMPtr<nsIContent> content = do_QueryInterface(touch->mTarget);
+        nsCOMPtr<nsIContent> content =
+            nsIContent::FromEventTargetOrNull(touch->mTarget);
         if (!content) {
           continue;
         }
