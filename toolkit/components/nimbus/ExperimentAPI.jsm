@@ -183,9 +183,7 @@ const ExperimentAPI = {
     }
     let fullEventName = `${eventName}:${options.slug || options.featureId}`;
 
-    
-    
-    this._store.ready().then(() => {
+    if (this._store._isReady) {
       let experiment = this.getExperiment(options);
       
       if (experiment) {
@@ -194,7 +192,7 @@ const ExperimentAPI = {
         
         callback(fullEventName, experiment);
       }
-    });
+    }
 
     this._store.on(fullEventName, callback);
   },
