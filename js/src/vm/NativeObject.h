@@ -959,21 +959,23 @@ class NativeObject : public JSObject {
 
  public:
   
-  static MOZ_ALWAYS_INLINE bool addProperty(JSContext* cx,
-                                            HandleNativeObject obj, HandleId id,
-                                            uint32_t slot, unsigned attrs,
-                                            uint32_t* slotOut);
+  
+  
+  static bool addProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                          uint32_t slot, unsigned attrs, uint32_t* slotOut);
+
+  static bool addProperty(JSContext* cx, HandleNativeObject obj,
+                          HandlePropertyName name, uint32_t slot,
+                          unsigned attrs, uint32_t* slotOut) {
+    RootedId id(cx, NameToId(name));
+    return addProperty(cx, obj, id, slot, attrs, slotOut);
+  }
 
   static bool addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
                                     HandleId id, unsigned attrs);
 
   static bool addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj,
                                         HandleId id, uint32_t* slotOut);
-
-  
-  static bool addProperty(JSContext* cx, HandleNativeObject obj,
-                          HandlePropertyName name, uint32_t slot,
-                          unsigned attrs, uint32_t* slotOut);
 
   
   
@@ -988,15 +990,6 @@ class NativeObject : public JSObject {
   static bool removeProperty(JSContext* cx, HandleNativeObject obj, jsid id);
 
  protected:
-  
-  
-  
-  static bool addPropertyInternal(JSContext* cx, HandleNativeObject obj,
-                                  HandleId id, uint32_t slot, unsigned attrs,
-                                  ShapeTable* table, ShapeTable::Entry* entry,
-                                  const AutoKeepShapeCaches& keep,
-                                  uint32_t* slotOut);
-
   [[nodiscard]] static bool fillInAfterSwap(JSContext* cx,
                                             HandleNativeObject obj,
                                             NativeObject* old,
