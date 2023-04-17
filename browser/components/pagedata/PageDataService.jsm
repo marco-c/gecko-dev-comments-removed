@@ -11,7 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Services: "resource://gre/modules/Services.jsm",
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
 });
@@ -24,8 +23,6 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
       : "Warn",
   });
 });
-
-const ALLOWED_SCHEMES = ["http", "https", "data", "blob"];
 
 
 
@@ -51,79 +48,19 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
-
-
   #pageDataCache = new Map();
 
   
 
 
-  init() {
+  constructor() {
+    super();
+
     if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
       return;
     }
 
-    ChromeUtils.registerWindowActor("PageData", {
-      parent: {
-        moduleURI: "resource:///actors/PageDataParent.jsm",
-      },
-      child: {
-        moduleURI: "resource:///actors/PageDataChild.jsm",
-        events: {
-          DOMContentLoaded: {},
-          pageshow: {},
-        },
-      },
-    });
-
     logConsole.debug("Service started");
-
-    for (let win of BrowserWindowTracker.orderedWindows) {
-      if (!win.closed) {
-        
-        for (let tab of win.gBrowser.tabs) {
-          let parent = tab.linkedBrowser.browsingContext.currentWindowGlobal.getActor(
-            "PageData"
-          );
-
-          parent.sendAsyncMessage("PageData:CheckLoaded");
-        }
-      }
-    }
-  }
-
-  
-
-
-
-  uninit() {
-    logConsole.debug("Service stopped");
-  }
-
-  
-
-
-
-
-
-
-
-
-  async pageLoaded(actor, url) {
-    let uri = Services.io.newURI(url);
-    if (!ALLOWED_SCHEMES.includes(uri.scheme)) {
-      return;
-    }
-
-    let browser = actor.browsingContext?.embedderElement;
-    
-    
-    if (!browser || !this.#isATabBrowser(browser)) {
-      return;
-    }
-
-    let data = await actor.collectPageData();
-    this.pageDataDiscovered(url, data);
   }
 
   
@@ -136,8 +73,6 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
   pageDataDiscovered(url, data) {
-    logConsole.debug("Discovered page data", url, data);
-
     let pageData = {
       url,
       date: Date.now(),
@@ -147,8 +82,9 @@ const PageDataService = new (class PageDataService extends EventEmitter {
     this.#pageDataCache.set(url, pageData);
 
     
-    
-    this.emit(data.length ? "page-data" : "no-page-data", pageData);
+    if (data.length) {
+      this.emit("page-data", pageData);
+    }
   }
 
   
@@ -174,7 +110,27 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
-  #isATabBrowser(browser) {
-    return browser.ownerGlobal.gBrowser?.getTabForBrowser(browser);
+
+
+  async queueFetch(url) {
+    let cached = this.#pageDataCache.get(url);
+    if (cached) {
+      return cached;
+    }
+
+    let pageData = {
+      url,
+      date: Date.now(),
+      data: [],
+    };
+
+    this.#pageDataCache.set(url, pageData);
+
+    
+    if (pageData.data.length) {
+      this.emit("page-data", pageData);
+    }
+
+    return pageData;
   }
 })();
