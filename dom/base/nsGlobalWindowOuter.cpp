@@ -5267,6 +5267,12 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     return nullptr;
   }
 
+  nsCOMPtr<nsIPrintSettings> ps = aPrintSettings;
+  if (!ps) {
+    printSettingsService->GetDefaultPrintSettingsForPrinting(
+        getter_AddRefs(ps));
+  }
+
   RefPtr<Document> docToPrint = mDoc;
   if (NS_WARN_IF(!docToPrint)) {
     aError.ThrowNotSupportedError("Document is gone");
@@ -5375,8 +5381,8 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     AutoPrintEventDispatcher dispatcher(*docToPrint);
 
     nsAutoScriptBlocker blockScripts;
-    RefPtr<Document> clone =
-        docToPrint->CreateStaticClone(cloneDocShell, cv, &hasPrintCallbacks);
+    RefPtr<Document> clone = docToPrint->CreateStaticClone(
+        cloneDocShell, cv, ps, &hasPrintCallbacks);
     if (!clone) {
       aError.ThrowNotSupportedError("Clone operation for printing failed");
       return nullptr;
@@ -5395,7 +5401,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     
     
     if (aForWindowDotPrint == IsForWindowDotPrint::No) {
-      aError = webBrowserPrint->PrintPreview(aPrintSettings, aListener,
+      aError = webBrowserPrint->PrintPreview(ps, aListener,
                                              std::move(aPrintPreviewCallback));
       if (aError.Failed()) {
         return nullptr;
@@ -5403,7 +5409,7 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     }
   } else {
     
-    webBrowserPrint->Print(aPrintSettings, aListener);
+    webBrowserPrint->Print(ps, aListener);
   }
 
   

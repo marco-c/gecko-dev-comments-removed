@@ -153,9 +153,11 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
+                             nsIPrintSettings* aPrintSettings,
                              bool* aOutHasInProcessPrintCallbacks);
 
-  nsresult DoRemoteStaticClone(nsFrameLoader* aStaticCloneOf);
+  nsresult DoRemoteStaticClone(nsFrameLoader* aStaticCloneOf,
+                               nsIPrintSettings* aPrintSettings);
 
   
 
