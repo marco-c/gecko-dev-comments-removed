@@ -1179,6 +1179,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 55) {
+        rv = MigrateV55Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -1266,6 +1273,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
     
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_META);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA_SEARCH_QUERIES);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -1570,6 +1584,10 @@ nsresult Database::InitTempEntities() {
   NS_ENSURE_SUCCESS(rv, rv);
   rv =
       mMainConn->ExecuteSimpleSQL(CREATE_BOOKMARKS_DELETED_AFTERDELETE_TRIGGER);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = mMainConn->ExecuteSimpleSQL(
+      CREATE_PLACES_METADATA_DELETED_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
@@ -2150,6 +2168,23 @@ nsresult Database::MigrateV54Up() {
       "of day','utc') * 1000 "
       "WHERE expire_ms = 0 "_ns);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult Database::MigrateV55Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT id FROM moz_places_metadata"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA);
+    NS_ENSURE_SUCCESS(rv, rv);
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA_SEARCH_QUERIES);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return NS_OK;
 }
