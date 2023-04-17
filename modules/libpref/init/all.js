@@ -4007,9 +4007,6 @@ pref("network.trr.custom_uri", "");
 pref("network.trr.confirmationNS", "example.com");
 
 
-pref("network.trr.bootstrapAddress", "");
-
-
 pref("network.trr.blacklist-duration", 60);
 
 pref("network.trr.excluded-domains", "");
