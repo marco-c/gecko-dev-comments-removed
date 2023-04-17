@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 
 const sourceMapAssets = require("devtools-source-map/assets");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -11,11 +11,11 @@ const mozillaCentralMappings = require("./configs/mozilla-central-mappings");
 const path = require("path");
 const ObjectRestSpreadPlugin = require("@sucrase/webpack-object-rest-spread-plugin");
 
-/*
- * builds a path that's relative to the project path
- * returns an array so that we can prepend
- * hot-module-reloading in local development
- */
+
+
+
+
+
 function getEntry(filename) {
   return [path.join(__dirname, filename)];
 }
@@ -26,8 +26,8 @@ module.exports = {
   node: { fs: "empty" },
   recordsPath: path.join(__dirname, "bin/module-manifest.json"),
   entry: {
-    // We always generate the debugger bundle, but we will only copy the CSS
-    // artifact over to mozilla-central.
+    
+    
     "parser-worker": getEntry("src/workers/parser/worker.js"),
     "pretty-print-worker": getEntry("src/workers/pretty-print/worker.js"),
     "search-worker": getEntry("src/workers/search/worker.js"),
@@ -56,7 +56,6 @@ module.exports = {
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
  `,
       raw: true,
-      exclude: /\.css$/,
     }),
     new ObjectRestSpreadPlugin(),
     new ExtractTextPlugin("[name].css"),
@@ -79,7 +78,7 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: request => {
-          // Some paths are excluded from Babel
+          
           const excludedPaths = ["fs", "node_modules"];
           const excludedRe = new RegExp(`(${excludedPaths.join("|")})`);
           const excluded = !!request.match(excludedRe);
@@ -99,7 +98,7 @@ module.exports = {
         test: /\.properties$/,
         loader: "raw-loader",
       },
-      // Extract CSS into a single file
+      
       {
         test: /\.css$/,
         use: ExtractTextPlugin.extract({
@@ -119,7 +118,7 @@ module.exports = {
   },
   externals: [
     function externalsTest(context, mod, callback) {
-      // Any matching paths here won't be included in the bundle.
+      
       if (mozillaCentralMappings[mod]) {
         callback(null, mozillaCentralMappings[mod]);
         return;
