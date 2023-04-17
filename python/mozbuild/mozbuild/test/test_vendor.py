@@ -38,6 +38,13 @@ def test_up_to_date_vendor():
         shutil.copytree(existing_vendored, work_vendored)
 
         
+        
+        
+        existing_mach = os.path.join(topsrcdir, "python", "mach")
+        work_mach = os.path.join(work_dir, "python", "mach")
+        shutil.copytree(existing_mach, work_mach)
+
+        
         vendor = VendorPython(
             work_dir, None, Mock(), topobjdir=os.path.join(work_dir, "obj")
         )
