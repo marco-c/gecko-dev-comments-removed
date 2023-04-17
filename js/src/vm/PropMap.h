@@ -520,7 +520,23 @@ class SharedPropMap : public PropMap {
   };
 
  private:
+  static SharedPropMap* create(JSContext* cx, Handle<SharedPropMap*> prev,
+                               HandleId id, PropertyInfo prop);
+  static SharedPropMap* createInitial(JSContext* cx, HandleId id,
+                                      PropertyInfo prop);
+  static SharedPropMap* clone(JSContext* cx, Handle<SharedPropMap*> map,
+                              uint32_t length);
+
   inline void initProperty(uint32_t index, PropertyKey key, PropertyInfo prop);
+
+  static bool addPropertyInternal(JSContext* cx,
+                                  MutableHandle<SharedPropMap*> map,
+                                  uint32_t* mapLength, HandleId id,
+                                  PropertyInfo prop);
+
+  bool addChild(JSContext* cx, SharedPropMapAndIndex child, HandleId id,
+                PropertyInfo prop);
+  SharedPropMap* lookupChild(uint32_t length, HandleId id, PropertyInfo prop);
 
  protected:
   void initNumPreviousMaps(uint32_t value) {
@@ -577,10 +593,59 @@ class SharedPropMap : public PropMap {
     return getPropertyInfo(mapLength - 1).maybeSlot();
   }
 
+  
+  static uint32_t slotSpan(const JSClass* clasp, const SharedPropMap* map,
+                           uint32_t mapLength) {
+    MOZ_ASSERT(clasp->isNativeObject());
+    uint32_t numReserved = JSCLASS_RESERVED_SLOTS(clasp);
+    if (!map) {
+      MOZ_ASSERT(mapLength == 0);
+      return numReserved;
+    }
+    uint32_t lastSlot = map->lastUsedSlot(mapLength);
+    if (lastSlot == SHAPE_INVALID_SLOT) {
+      
+      return numReserved;
+    }
+    
+    
+    return std::max(lastSlot + 1, numReserved);
+  }
+
   static uint32_t indexOfNextProperty(uint32_t index) {
     MOZ_ASSERT(index < PropMap::Capacity);
     return (index + 1) % PropMap::Capacity;
   }
+
+  
+  
+  static bool addProperty(JSContext* cx, const JSClass* clasp,
+                          MutableHandle<SharedPropMap*> map,
+                          uint32_t* mapLength, HandleId id, PropertyFlags flags,
+                          ObjectFlags* objectFlags, uint32_t* slot);
+
+  
+  
+  static bool addPropertyInReservedSlot(JSContext* cx, const JSClass* clasp,
+                                        MutableHandle<SharedPropMap*> map,
+                                        uint32_t* mapLength, HandleId id,
+                                        PropertyFlags flags, uint32_t slot,
+                                        ObjectFlags* objectFlags);
+
+  
+  
+  static bool addPropertyWithKnownSlot(JSContext* cx, const JSClass* clasp,
+                                       MutableHandle<SharedPropMap*> map,
+                                       uint32_t* mapLength, HandleId id,
+                                       PropertyFlags flags, uint32_t slot,
+                                       ObjectFlags* objectFlags);
+
+  
+  static bool addCustomDataProperty(JSContext* cx, const JSClass* clasp,
+                                    MutableHandle<SharedPropMap*> map,
+                                    uint32_t* mapLength, HandleId id,
+                                    PropertyFlags flags,
+                                    ObjectFlags* objectFlags);
 };
 
 class CompactPropMap final : public SharedPropMap {
