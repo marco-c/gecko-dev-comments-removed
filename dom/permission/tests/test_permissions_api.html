@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 
@@ -85,12 +85,15 @@
         });
         return Promise.all(promisesToRevoke);
       },
-      checkPermissions(state) {
-        const promisesToQuery = PERMISSIONS.map(({ name }) => {
+      checkPermissions(expectedState) {
+        const promisesToQuery = PERMISSIONS.map(({ name: expectedName }) => {
           return aWindow.navigator.permissions
-            .query({ name })
+            .query({ name: expectedName })
             .then(
-              () => is(state, state, `correct state for '${name}'`),
+              ({ state, name }) => {
+                is(state, expectedState, `correct state for '${expectedName}'`)
+                is(name, expectedName, `correct name for '${expectedName}'`)
+              },
               () => ok(false, `query should not have rejected for '${name}'`)
             );
           });
