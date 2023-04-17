@@ -490,7 +490,8 @@ add_task(async function test_changeUPLoginOnUPForm_remove() {
   Services.logins.addLogin(login1);
 
   await testSubmittingLoginForm("subtst_notifications_8.html", async function(
-    fieldValues
+    fieldValues,
+    browser
   ) {
     is(fieldValues.username, "notifyu1", "Checking submitted username");
     is(fieldValues.password, "pass2", "Checking submitted password");
@@ -501,17 +502,13 @@ add_task(async function test_changeUPLoginOnUPForm_remove() {
 
     await checkDoorhangerUsernamePassword("notifyu1", "pass2");
     clickDoorhangerButton(notif, REMOVE_LOGIN_MENUITEM);
-  });
 
-  
-  const forceClosePopup = false;
-  
-  info("waiting for verifyConfirmationHint");
-  await verifyConfirmationHint(
-    gBrowser.selectedBrowser,
-    forceClosePopup,
-    "identity-icon"
-  );
+    
+    const forceClosePopup = false;
+    
+    info("waiting for verifyConfirmationHint");
+    await verifyConfirmationHint(browser, forceClosePopup, "identity-icon");
+  });
 
   let logins = Services.logins.getAllLogins();
   is(logins.length, 0, "Should have 0 logins");

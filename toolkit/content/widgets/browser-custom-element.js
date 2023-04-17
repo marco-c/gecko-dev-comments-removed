@@ -395,30 +395,6 @@
       return document.getElementById(this.getAttribute("datetimepicker"));
     }
 
-    
-
-
-
-
-    get popupAnchor() {
-      let stack = this.closest("stack");
-      if (!stack) {
-        return null;
-      }
-
-      let popupAnchor = stack.querySelector(".popup-anchor");
-      if (popupAnchor) {
-        return popupAnchor;
-      }
-
-      
-      popupAnchor = document.createElement("div");
-      popupAnchor.className = "popup-anchor";
-      popupAnchor.hidden = true;
-      stack.appendChild(popupAnchor);
-      return popupAnchor;
-    }
-
     set suspendMediaWhenInactive(val) {
       this.browsingContext.suspendMediaWhenInactive = val;
     }
