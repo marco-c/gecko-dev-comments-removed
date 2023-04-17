@@ -17,7 +17,8 @@ class nsMenuX;
 
 
 namespace nsMenuUtilsX {
-void DispatchCommandTo(nsIContent* aTargetContent, NSEventModifierFlags aModifierFlags);
+void DispatchCommandTo(nsIContent* aTargetContent, NSEventModifierFlags aModifierFlags,
+                       int16_t aButton);
 NSString* GetTruncatedCocoaLabel(const nsString& itemLabel);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);

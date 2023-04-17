@@ -158,7 +158,7 @@ EMenuItemType nsMenuItemX::GetMenuItemType() { return mType; }
 
 
 
-void nsMenuItemX::DoCommand(NSEventModifierFlags aModifierFlags) {
+void nsMenuItemX::DoCommand(NSEventModifierFlags aModifierFlags, int16_t aButton) {
   
   if (mType == eCheckboxMenuItemType || (mType == eRadioMenuItemType && !mIsChecked)) {
     if (!mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::autocheck,
@@ -168,7 +168,7 @@ void nsMenuItemX::DoCommand(NSEventModifierFlags aModifierFlags) {
     
   }
 
-  nsMenuUtilsX::DispatchCommandTo(mContent, aModifierFlags);
+  nsMenuUtilsX::DispatchCommandTo(mContent, aModifierFlags, aButton);
 }
 
 nsresult nsMenuItemX::DispatchDOMEvent(const nsString& eventName, bool* preventDefaultCalled) {

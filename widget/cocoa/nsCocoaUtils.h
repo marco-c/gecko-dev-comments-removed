@@ -381,6 +381,12 @@ class nsCocoaUtils {
   
 
 
+
+  static mozilla::MouseButton ButtonForEvent(NSEvent* aEvent);
+
+  
+
+
   static NSMutableAttributedString* GetNSMutableAttributedString(
       const nsAString& aText, const nsTArray<mozilla::FontRange>& aFontRanges,
       const bool aIsVertical, const CGFloat aBackingScaleFactor);

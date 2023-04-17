@@ -38,7 +38,7 @@ class NativeMenu {
   
   
   virtual void ActivateItem(dom::Element* aItemElement, Modifiers aModifiers,
-                            ErrorResult& aRv) = 0;
+                            int16_t aButton, ErrorResult& aRv) = 0;
 
   
   
