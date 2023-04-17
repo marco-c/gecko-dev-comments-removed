@@ -1174,9 +1174,7 @@ bool RetainedDisplayListBuilder::ProcessFrame(
 
   
   
-  AnimatedGeometryRoot* agr =
-      aBuilder->FindAnimatedGeometryRootFor(aFrame)->GetAsyncAGR();
-  nsIFrame* agrFrame = agr ? agr->mFrame : nullptr;
+  nsIFrame* agrFrame = aBuilder->FindAnimatedGeometryRootFrameFor(aFrame);
 
   CRR_LOG("Processing frame %p with agr %p\n", aFrame, agr->mFrame);
 
