@@ -27,13 +27,22 @@ exports.DocumentEventsListener = DocumentEventsListener;
 DocumentEventsListener.prototype = {
   listen() {
     EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
-    this.onWindowReady({
-      window: this.targetActor.window,
-      isTopLevel: true,
+    
+    if (!this.targetActor.attached) {
       
       
-      shouldBeIgnoredAsRedundantWithTargetAvailable: true,
-    });
+      this.targetActor.attach();
+    } else {
+      
+      
+      this.onWindowReady({
+        window: this.targetActor.window,
+        isTopLevel: true,
+        
+        
+        shouldBeIgnoredAsRedundantWithTargetAvailable: true,
+      });
+    }
   },
 
   onWindowReady({
