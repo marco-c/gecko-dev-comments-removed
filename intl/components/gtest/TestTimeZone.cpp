@@ -6,8 +6,10 @@
 #include "mozilla/intl/TimeZone.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+#include "mozilla/TextUtils.h"
 #include "TestBuffer.h"
 
+#include <algorithm>
 #include <string>
 
 namespace mozilla::intl {
@@ -206,6 +208,42 @@ TEST(IntlTimeZone, GetAvailableTimeZonesNoRegion)
   ASSERT_TRUE(hasAmericaNewYork);
   ASSERT_TRUE(hasAsiaTokyo);
   ASSERT_TRUE(hasEuropeParis);
+}
+
+TEST(IntlTimeZone, GetTZDataVersion)
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  auto version = TimeZone::GetTZDataVersion().unwrap();
+  auto [year, release] = version.SplitAt(4);
+
+  ASSERT_TRUE(std::all_of(year.begin(), year.end(), IsAsciiDigit<char>));
+  ASSERT_TRUE(IsAsciiAlpha(release[0]));
+
+  
+  ASSERT_TRUE(release.Length() == 1 || release.Length() == 2);
+
+  if (release.Length() == 2) {
+    ASSERT_TRUE(IsAsciiDigit(release[1]));
+  }
 }
 
 }  

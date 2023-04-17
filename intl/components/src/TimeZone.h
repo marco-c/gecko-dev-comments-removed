@@ -171,6 +171,13 @@ class TimeZone final {
 
 
 
+  static Result<Span<const char>, ICUError> GetTZDataVersion();
+
+  
+
+
+
+
 
 
 
