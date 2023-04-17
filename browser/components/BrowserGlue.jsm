@@ -45,7 +45,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource:///modules/DownloadsViewableInternally.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   FeatureGate: "resource://featuregates/FeatureGate.jsm",
   FirefoxMonitor: "resource:///modules/FirefoxMonitor.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
@@ -3786,38 +3785,20 @@ BrowserGlue.prototype = {
       return;
     }
 
-    
-    const [willPrompt] = await Promise.all([
-      DefaultBrowserCheck.willCheckDefaultBrowser( true),
-      ExperimentAPI.ready(),
-    ]);
-    let { DefaultBrowserNotification } = ChromeUtils.import(
-      "resource:///actors/AboutNewTabParent.jsm",
-      {}
+    const willPrompt = await DefaultBrowserCheck.willCheckDefaultBrowser(
+       true
     );
-    let isFeatureEnabled = ExperimentAPI.getExperiment({
-      featureId: "infobar",
-    })?.branch.feature.enabled;
     if (willPrompt) {
-      
-      
-      DefaultBrowserNotification.notifyModalDisplayed();
-    }
-    
-    if (willPrompt && !isFeatureEnabled) {
       let win = BrowserWindowTracker.getTopWindow();
       DefaultBrowserCheck.prompt(win);
     }
-    
-    if (isFeatureEnabled) {
-      await ASRouter.waitForInitialized;
-      ASRouter.sendTriggerMessage({
-        browser: BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser,
-        
-        id: "defaultBrowserCheck",
-        context: { willShowDefaultPrompt: willPrompt },
-      });
-    }
+    await ASRouter.waitForInitialized;
+    ASRouter.sendTriggerMessage({
+      browser: BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser,
+      
+      id: "defaultBrowserCheck",
+      context: { willShowDefaultPrompt: willPrompt, source: "startup" },
+    });
   },
 
   
@@ -4646,14 +4627,7 @@ var DefaultBrowserCheck = {
     }
 
     let shouldCheck =
-      !AppConstants.DEBUG &&
-      shellService.shouldCheckDefaultBrowser &&
-      
-      (Services.prefs.getBoolPref("browser.proton.enabled", true) ||
-        !Services.prefs.getBoolPref(
-          "browser.defaultbrowser.notificationbar",
-          false
-        ));
+      !AppConstants.DEBUG && shellService.shouldCheckDefaultBrowser;
 
     
     

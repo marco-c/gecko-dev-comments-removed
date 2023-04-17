@@ -7,26 +7,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 SearchTestUtils.init(this);
 
-
-
-
-
-const originalWaitForCondition = TestUtils.waitForCondition;
-TestUtils.waitForCondition = async function(
-  condition,
-  msg,
-  interval = 100,
-  maxTries = 50
-) {
-  
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  return originalWaitForCondition(condition, msg, interval, maxTries);
-};
-registerCleanupFunction(function() {
-  TestUtils.waitForCondition = originalWaitForCondition;
-});
-
 function getSecurityInfo(securityInfoAsString) {
   const serhelper = Cc[
     "@mozilla.org/network/serialization-helper;1"

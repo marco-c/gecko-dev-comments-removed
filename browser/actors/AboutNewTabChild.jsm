@@ -79,7 +79,7 @@ class AboutNewTabChild extends JSWindowActorChild {
           (contentWindowPrivate &&
             PrivateBrowsingUtils.permanentPrivateBrowsing))
       ) {
-        this.sendAsyncMessage("DefaultBrowserNotification");
+        this.sendAsyncMessage("AboutNewTabVisible");
 
         
         
