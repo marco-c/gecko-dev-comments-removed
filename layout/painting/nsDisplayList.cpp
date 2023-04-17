@@ -34,6 +34,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_print.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/ViewportUtils.h"
@@ -569,11 +570,14 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
       }
     }
   };
-  if (elem->HasID()) {
-    maybeGenerateDest(nsGkAtoms::id);
-  }
-  if (elem->HasName()) {
-    maybeGenerateDest(nsGkAtoms::name);
+
+  if (StaticPrefs::print_save_as_pdf_internal_destinations_enabled()) {
+    if (elem->HasID()) {
+      maybeGenerateDest(nsGkAtoms::id);
+    }
+    if (elem->HasName()) {
+      maybeGenerateDest(nsGkAtoms::name);
+    }
   }
 
   
@@ -591,7 +595,8 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
   
   bool hasRef, eqExRef;
   nsIURI* docURI;
-  if (NS_SUCCEEDED(uri->GetHasRef(&hasRef)) && hasRef &&
+  if (StaticPrefs::print_save_as_pdf_internal_destinations_enabled() &&
+      NS_SUCCEEDED(uri->GetHasRef(&hasRef)) && hasRef &&
       (docURI = aFrame->PresContext()->Document()->GetDocumentURI()) &&
       NS_SUCCEEDED(uri->EqualsExceptRef(docURI, &eqExRef)) && eqExRef) {
     if (NS_FAILED(uri->GetRef(aBuilder->mLinkSpec)) ||
