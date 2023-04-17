@@ -1053,8 +1053,7 @@ function getDefaultFileName(
     
   }
 
-  
-  if (docTitle && aURI?.scheme != "data") {
+  if (docTitle) {
     
     return docTitle;
   }
