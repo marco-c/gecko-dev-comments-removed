@@ -40,6 +40,7 @@ typedef void* (*jpegxl_alloc_func)(void* opaque, size_t size);
 
 
 
+
 typedef void (*jpegxl_free_func)(void* opaque, void* address);
 
 

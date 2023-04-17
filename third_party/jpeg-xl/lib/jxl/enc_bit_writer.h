@@ -101,18 +101,10 @@ struct BitWriter {
 
   
   
-  BitWriter& operator+=(const BitWriter& other);
-
-  
-  BitWriter& operator+=(const PaddedBytes& other);
-
-  
-  
   
   
   void Write(size_t n_bits, uint64_t bits);
 
-  
   
   
   
@@ -122,15 +114,6 @@ struct BitWriter {
     if (remainder_bits == 0) return;
     Write(remainder_bits, 0);
     JXL_ASSERT(bits_written_ % kBitsPerByte == 0);
-  }
-
-  
-  void RewindStorage(const size_t pos0) {
-    JXL_ASSERT(pos0 <= bits_written_);
-    bits_written_ = pos0;
-    static const uint8_t kRewindMasks[8] = {0x0, 0x1,  0x3,  0x7,
-                                            0xf, 0x1f, 0x3f, 0x7f};
-    storage_[pos0 >> 3] &= kRewindMasks[pos0 & 7];
   }
 
  private:

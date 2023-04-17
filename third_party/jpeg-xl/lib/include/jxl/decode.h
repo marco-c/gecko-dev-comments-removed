@@ -353,6 +353,7 @@ JxlDecoderSetParallelRunner(JxlDecoder* dec, JxlParallelRunner parallel_runner,
 
 
 
+
 JXL_EXPORT size_t JxlDecoderSizeHintBasicInfo(const JxlDecoder* dec);
 
 
@@ -979,6 +980,9 @@ JXL_EXPORT size_t JxlDecoderReleaseJPEGBuffer(JxlDecoder* dec);
 
 
 
+
+
+
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetBoxBuffer(JxlDecoder* dec,
                                                    uint8_t* data, size_t size);
 
@@ -1037,7 +1041,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
 
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
-                                                 JxlBoxType* type,
+                                                 JxlBoxType type,
                                                  JXL_BOOL decompressed);
 
 

@@ -36,8 +36,7 @@ static inline bool IsJPG(const Span<const uint8_t> bytes) {
 
 
 Status DecodeImageJPG(Span<const uint8_t> bytes, const ColorHints& color_hints,
-                      ThreadPool* pool, CodecInOut* io,
-                      double* elapsed_deinterleave = nullptr);
+                      const SizeConstraints& constraints, PackedPixelFile* ppf);
 
 
 Status EncodeImageJPG(const CodecInOut* io, JpegEncoder encoder, size_t quality,

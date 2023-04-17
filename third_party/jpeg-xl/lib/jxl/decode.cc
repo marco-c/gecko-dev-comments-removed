@@ -8,6 +8,7 @@
 #include "lib/jxl/base/byte_order.h"
 #include "lib/jxl/base/span.h"
 #include "lib/jxl/base/status.h"
+#include "lib/jxl/box_content_decoder.h"
 #include "lib/jxl/dec_external_image.h"
 #include "lib/jxl/dec_frame.h"
 #include "lib/jxl/dec_modular.h"
@@ -186,6 +187,15 @@ enum class FrameStage : uint32_t {
   kTOC,         
   kFull,        
   kFullOutput,  
+};
+
+enum class BoxStage : uint32_t {
+  kHeader,      
+                
+  kSkip,        
+  kCodestream,  
+  kPartialCodestream,  
+  kJpegRecon,          
 };
 
 
@@ -403,17 +413,34 @@ struct JxlDecoderStruct {
   
   
   size_t file_pos;
-  size_t box_begin;
-  size_t box_end;
-  bool skip_box;
+
+  size_t box_contents_begin;
+  size_t box_contents_end;
+  size_t box_contents_size;
+  size_t box_size;
+  
+  
+  bool box_contents_unbounded;
+
+  JxlBoxType box_type;
+  JxlBoxType box_decoded_type;  
+  
+  bool box_event;
+  bool decompress_boxes;
+
+  bool box_out_buffer_set;
   
   
   
   
   
+  bool box_out_buffer_set_current_box;
+  uint8_t* box_out_buffer;
+  size_t box_out_buffer_size;
   
-  size_t codestream_begin;
-  size_t codestream_end;
+  size_t box_out_buffer_begin;
+  
+  size_t box_out_buffer_pos;
 
   
   bool keep_orientation;
@@ -514,19 +541,28 @@ struct JxlDecoderStruct {
   
   
   
-  std::vector<uint8_t> codestream;
-
-  jxl::JxlToJpegDecoder jpeg_decoder;
-
+  std::vector<uint8_t> codestream_copy;
+  
   
   
   size_t codestream_pos;
+
+  BoxStage box_stage;
+
+  jxl::JxlToJpegDecoder jpeg_decoder;
+  jxl::JxlBoxContentDecoder box_content_decoder;
 
   
   uint64_t dec_pixels;
 
   const uint8_t* next_in;
   size_t avail_in;
+
+  void AdvanceInput(size_t size) {
+    next_in += size;
+    avail_in -= size;
+    file_pos += size;
+  }
 };
 
 
@@ -550,12 +586,22 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->icc_reader.Reset();
   dec->got_preview_image = false;
   dec->file_pos = 0;
-  dec->box_begin = 0;
-  dec->box_end = 0;
-  dec->skip_box = false;
-  dec->codestream_pos = 0;
-  dec->codestream_begin = 0;
-  dec->codestream_end = 0;
+  dec->box_contents_begin = 0;
+  dec->box_contents_end = 0;
+  dec->box_contents_size = 0;
+  dec->box_size = 0;
+  dec->box_contents_unbounded = false;
+  memset(dec->box_type, 0, sizeof(dec->box_type));
+  memset(dec->box_decoded_type, 0, sizeof(dec->box_decoded_type));
+  dec->box_event = false;
+  dec->box_stage = BoxStage::kHeader;
+  dec->box_out_buffer_set = false;
+  dec->box_out_buffer_set_current_box = false;
+  dec->box_out_buffer = nullptr;
+  dec->box_out_buffer_size = 0;
+  dec->box_out_buffer_begin = 0;
+  dec->box_out_buffer_pos = 0;
+
   dec->events_wanted = 0;
   dec->basic_info_size_hint = InitialBasicInfoSizeHint();
   dec->have_container = 0;
@@ -580,7 +626,8 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->ib.reset();
   dec->metadata = jxl::CodecMetadata();
   dec->frame_header.reset(new jxl::FrameHeader(&dec->metadata));
-  dec->codestream.clear();
+
+  dec->codestream_copy.clear();
 
   dec->frame_stage = FrameStage::kHeader;
   dec->frame_start = 0;
@@ -603,6 +650,7 @@ void JxlDecoderReset(JxlDecoder* dec) {
   dec->frame_saved_as.clear();
   dec->frame_external_to_internal.clear();
   dec->frame_required.clear();
+  dec->decompress_boxes = false;
 }
 
 JxlDecoder* JxlDecoderCreate(const JxlMemoryManager* memory_manager) {
@@ -993,8 +1041,10 @@ JxlDecoderStatus ParseFrameHeader(jxl::FrameHeader* frame_header,
 }
 
 
-JxlDecoderStatus JxlDecoderProcessInternal(JxlDecoder* dec, const uint8_t* in,
-                                           size_t size) {
+
+
+JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
+                                             size_t size) {
   
   
   
@@ -1215,7 +1265,8 @@ JxlDecoderStatus JxlDecoderProcessInternal(JxlDecoder* dec, const uint8_t* in,
 
       jxl::Status status = dec->frame_dec->InitFrame(
           reader.get(), dec->ib.get(), false,
-          true, false);
+          true, false,
+          dec->events_wanted & JXL_DEC_FULL_IMAGE);
       if (!status) JXL_API_RETURN_IF_ERROR(status);
 
       size_t sections_begin =
@@ -1425,9 +1476,53 @@ size_t JxlDecoderReleaseJPEGBuffer(JxlDecoder* dec) {
   return dec->jpeg_decoder.ReleaseOutputBuffer();
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static JxlDecoderStatus ParseBoxHeader(const uint8_t* in, size_t size,
+                                       size_t pos, size_t file_pos,
+                                       JxlBoxType type, uint64_t* box_size,
+                                       uint64_t* header_size) {
+  if (OutOfBounds(pos, 8, size)) {
+    *header_size = 8;
+    return JXL_DEC_NEED_MORE_INPUT;
+  }
+  size_t box_start = pos;
+  
+  *box_size = LoadBE32(in + pos);
+  memcpy(type, in + pos + 4, 4);
+  pos += 8;
+  if (*box_size == 1) {
+    *header_size = 16;
+    if (OutOfBounds(pos, 8, size)) return JXL_DEC_NEED_MORE_INPUT;
+    *box_size = LoadBE64(in + pos);
+    pos += 8;
+  }
+  *header_size = pos - box_start;
+  if (*box_size > 0 && *box_size < *header_size) {
+    return JXL_API_ERROR("invalid box size");
+  }
+  if (SumOverflows(file_pos, pos, *box_size)) {
+    return JXL_API_ERROR("Box size overflow");
+  }
+  return JXL_DEC_SUCCESS;
+}
+
+
 JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
-  const uint8_t** next_in = &dec->next_in;
-  size_t* avail_in = &dec->avail_in;
   if (dec->stage == DecoderStage::kInited) {
     dec->stage = DecoderStage::kStarted;
   }
@@ -1438,7 +1533,7 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
   }
 
   if (!dec->got_signature) {
-    JxlSignature sig = JxlSignatureCheck(*next_in, *avail_in);
+    JxlSignature sig = JxlSignatureCheck(dec->next_in, dec->avail_in);
     if (sig == JXL_SIG_INVALID) return JXL_API_ERROR("invalid signature");
     if (sig == JXL_SIG_NOT_ENOUGH_BYTES) return JXL_DEC_NEED_MORE_INPUT;
 
@@ -1450,71 +1545,186 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
   }
 
   
-  
-  size_t csize = *avail_in;
+  for (;;) {
+    if (dec->box_stage != BoxStage::kHeader) {
+      if ((dec->events_wanted & JXL_DEC_BOX) &&
+          dec->box_out_buffer_set_current_box) {
+        uint8_t* next_out = dec->box_out_buffer + dec->box_out_buffer_pos;
+        size_t avail_out = dec->box_out_buffer_size - dec->box_out_buffer_pos;
 
-  if (dec->have_container) {
-    
+        JxlDecoderStatus box_result = dec->box_content_decoder.Process(
+            dec->next_in, dec->avail_in,
+            dec->file_pos - dec->box_contents_begin, &next_out, &avail_out);
+        size_t produced =
+            next_out - (dec->box_out_buffer + dec->box_out_buffer_pos);
+        dec->box_out_buffer_pos += produced;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (dec->skip_box) {
-      
-      size_t remaining = dec->box_end - dec->file_pos;
-      if (*avail_in < remaining) {
         
-        dec->file_pos += *avail_in;
-        *next_in += *avail_in;
-        *avail_in -= *avail_in;
+        
+        
+        if (box_result != JXL_DEC_SUCCESS &&
+            box_result != JXL_DEC_NEED_MORE_INPUT) {
+          return box_result;
+        }
+      }
+    }
+
+    if (dec->box_stage == BoxStage::kHeader) {
+      if (!dec->have_container) {
+        if (dec->stage == DecoderStage::kFinished) return JXL_DEC_SUCCESS;
+        dec->box_stage = BoxStage::kCodestream;
+        dec->box_contents_unbounded = true;
+        continue;
+      }
+      if (dec->avail_in == 0) {
+        if (dec->stage == DecoderStage::kFinished) {
+          
+          
+          
+          return JXL_DEC_SUCCESS;
+        }
         return JXL_DEC_NEED_MORE_INPUT;
+      }
+
+      uint64_t box_size, header_size;
+      JxlDecoderStatus status =
+          ParseBoxHeader(dec->next_in, dec->avail_in, 0, dec->file_pos,
+                         dec->box_type, &box_size, &header_size);
+      if (status != JXL_DEC_SUCCESS) {
+        if (status == JXL_DEC_NEED_MORE_INPUT) {
+          dec->basic_info_size_hint =
+              InitialBasicInfoSizeHint() + header_size - dec->file_pos;
+        }
+        return status;
+      }
+
+      if (memcmp(dec->box_type, "brob", 4) == 0) {
+        if (dec->avail_in < header_size + 4) {
+          return JXL_DEC_NEED_MORE_INPUT;
+        }
+        memcpy(dec->box_decoded_type, dec->next_in + header_size,
+               sizeof(dec->box_decoded_type));
       } else {
+        memcpy(dec->box_decoded_type, dec->box_type,
+               sizeof(dec->box_decoded_type));
+      }
+
+      dec->AdvanceInput(header_size);
+
+      dec->box_contents_unbounded = (box_size == 0);
+      dec->box_contents_begin = dec->file_pos;
+      dec->box_contents_end = dec->box_contents_unbounded
+                                  ? 0
+                                  : (dec->file_pos + box_size - header_size);
+      dec->box_contents_size =
+          dec->box_contents_unbounded ? 0 : (box_size - header_size);
+      dec->box_size = box_size;
+
+      if (dec->events_wanted & JXL_DEC_BOX) {
+        bool decompress =
+            dec->decompress_boxes && memcmp(dec->box_type, "brob", 4) == 0;
+        dec->box_content_decoder.StartBox(
+            decompress, dec->box_contents_unbounded, dec->box_contents_size);
+      }
+
+      if (memcmp(dec->box_type, "jxlc", 4) == 0) {
+        dec->box_stage = BoxStage::kCodestream;
+      } else if (memcmp(dec->box_type, "jxlp", 4) == 0) {
+        dec->box_stage = BoxStage::kPartialCodestream;
+      } else if (memcmp(dec->box_type, "jbrd", 4) == 0) {
+        dec->box_stage = BoxStage::kJpegRecon;
+      } else {
+        dec->box_stage = BoxStage::kSkip;
+      }
+
+      if (dec->events_wanted & JXL_DEC_BOX) {
+        dec->box_event = true;
+        dec->box_out_buffer_set_current_box = false;
+        return JXL_DEC_BOX;
+      }
+    } else if (dec->box_stage == BoxStage::kPartialCodestream) {
+      if (dec->last_codestream_seen) {
+        return JXL_API_ERROR("cannot have codestream after last codestream");
+      }
+      
+      if (dec->avail_in < 4) return JXL_DEC_NEED_MORE_INPUT;
+      if (!dec->box_contents_unbounded && dec->box_contents_size < 4) {
+        return JXL_API_ERROR("jxlp box too small to contain index");
+      }
+      size_t jxlp_index = LoadBE32(dec->next_in);
+      
+      
+      if (jxlp_index & 0x80000000) {
+        dec->last_codestream_seen = true;
+      }
+      dec->AdvanceInput(4);
+      dec->box_stage = BoxStage::kCodestream;
+    } else if (dec->box_stage == BoxStage::kCodestream) {
+      size_t avail_codestream = dec->avail_in;
+      if (!dec->box_contents_unbounded) {
+        avail_codestream = std::min<size_t>(
+            avail_codestream, dec->box_contents_end - dec->file_pos);
+      }
+
+      bool have_copy = !dec->codestream_copy.empty();
+      if (have_copy) {
         
-        dec->file_pos += remaining;
-        *next_in += remaining;
-        *avail_in -= remaining;
-        dec->skip_box = false;
+        
+        dec->codestream_copy.insert(dec->codestream_copy.end(), dec->next_in,
+                                    dec->next_in + avail_codestream);
+        dec->AdvanceInput(avail_codestream);
+        avail_codestream = dec->codestream_copy.size();
       }
-    }
 
-    if (dec->first_codestream_seen && !dec->last_codestream_seen &&
-        dec->codestream_end != 0 && dec->file_pos < dec->codestream_end &&
-        dec->file_pos + *avail_in >= dec->codestream_end &&
-        !dec->codestream.empty()) {
-      
-      
-      
-      
-      
-      
+      const uint8_t* codestream =
+          have_copy ? dec->codestream_copy.data() : dec->next_in;
 
-      
-      csize = *avail_in;
-      if (dec->codestream_end && csize > dec->codestream_end - dec->file_pos) {
-        csize = dec->codestream_end - dec->file_pos;
+      JxlDecoderStatus status =
+          jxl::JxlDecoderProcessCodestream(dec, codestream, avail_codestream);
+      if (!have_copy && status == JXL_DEC_NEED_MORE_INPUT) {
+        dec->codestream_copy.insert(dec->codestream_copy.end(), dec->next_in,
+                                    dec->next_in + avail_codestream);
+        dec->AdvanceInput(avail_codestream);
       }
-      dec->codestream.insert(dec->codestream.end(), *next_in, *next_in + csize);
-      dec->file_pos += csize;
-      *next_in += csize;
-      *avail_in -= csize;
-    }
 
-    if (dec->jpeg_decoder.IsParsingBox()) {
-      
+      if (status == JXL_DEC_NEED_MORE_INPUT &&
+          dec->file_pos == dec->box_contents_end) {
+        dec->box_stage = BoxStage::kHeader;
+        continue;
+      }
+
+      if (status == JXL_DEC_SUCCESS) {
+        if (dec->box_contents_unbounded) {
+          
+          dec->AdvanceInput(dec->avail_in);
+          break;
+        }
+        if (dec->events_wanted & JXL_DEC_BOX) {
+          
+          dec->box_stage = BoxStage::kSkip;
+          continue;
+        } else {
+          
+          
+          dec->AdvanceInput(dec->avail_in);
+          break;
+        }
+      }
+      return status;
+    } else if (dec->box_stage == BoxStage::kJpegRecon) {
+      if (!dec->jpeg_decoder.IsParsingBox()) {
+        
+        dec->jpeg_decoder.StartBox(dec->box_contents_unbounded,
+                                   dec->box_contents_size);
+      }
+      const uint8_t* next_in = dec->next_in;
+      size_t avail_in = dec->avail_in;
       JxlDecoderStatus recon_result =
-          dec->jpeg_decoder.Process(next_in, avail_in);
+          dec->jpeg_decoder.Process(&next_in, &avail_in);
+      size_t consumed = next_in - dec->next_in;
+      dec->AdvanceInput(consumed);
       if (recon_result == JXL_DEC_JPEG_RECONSTRUCTION) {
+        dec->box_stage = BoxStage::kHeader;
         
         
         if (dec->events_wanted & recon_result) {
@@ -1525,245 +1735,36 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
         
         return recon_result;
       }
-    }
-
-    if (!dec->last_codestream_seen &&
-        (dec->codestream_begin == 0 ||
-         (dec->codestream_end != 0 && dec->file_pos >= dec->codestream_end))) {
-      size_t pos = 0;
-      
-      
-      for (;;) {
-        const uint8_t* in = *next_in;
-        size_t size = *avail_in;
-        if (size == pos) {
-          
-          
-          
-          
-          break;
-        }
-        if (OutOfBounds(pos, 8, size)) {
-          dec->basic_info_size_hint =
-              InitialBasicInfoSizeHint() + pos + 8 - dec->file_pos;
-          return JXL_DEC_NEED_MORE_INPUT;
-        }
-        size_t box_start = pos;
+    } else if (dec->box_stage == BoxStage::kSkip) {
+      if (dec->box_contents_unbounded) {
         
-        uint64_t box_size = LoadBE32(in + pos);
-        char type[5] = {0};
-        memcpy(type, in + pos + 4, 4);
-        pos += 8;
-        if (box_size == 1) {
-          if (OutOfBounds(pos, 8, size)) return JXL_DEC_NEED_MORE_INPUT;
-          box_size = LoadBE64(in + pos);
-          pos += 8;
-        }
-        size_t header_size = pos - box_start;
-        if (box_size > 0 && box_size < header_size) {
-          return JXL_API_ERROR("invalid box size");
-        }
-        if (SumOverflows(dec->file_pos, pos, box_size)) {
-          return JXL_API_ERROR("Box size overflow");
-        }
-        size_t contents_size =
-            (box_size == 0) ? 0 : (box_size - pos + box_start);
-
-        dec->box_begin = box_start;
-        dec->box_end = dec->file_pos + box_start + box_size;
-        if (strcmp(type, "jxlc") == 0 || strcmp(type, "jxlp") == 0) {
-          if (dec->stage == DecoderStage::kFinished) {
-            return JXL_API_ERROR(
-                "unexpected codestream box when codestream already finished");
-          }
-          size_t codestream_size = contents_size;
-          
-          
-          
-          
-          
-          bool last_codestream = false;
-          if (strcmp(type, "jxlp") == 0) {
-            if (OutOfBounds(pos, 4, size)) return JXL_DEC_NEED_MORE_INPUT;
-            if (box_size != 0 && contents_size < 4) {
-              return JXL_API_ERROR("jxlp box too small to contain index");
-            }
-            codestream_size -= 4;
-            size_t jxlp_index = LoadBE32(in + pos);
-            pos += 4;
-            
-            
-            if (jxlp_index & 0x80000000) last_codestream = true;
-          } else if (strcmp(type, "jxlc") == 0) {
-            last_codestream = true;
-          }
-          if (!last_codestream && box_size == 0) {
-            return JXL_API_ERROR(
-                "final box has unbounded size, but is a non-final codestream "
-                "box");
-          }
-          dec->first_codestream_seen = true;
-          if (last_codestream) dec->last_codestream_seen = true;
-          if (dec->codestream_begin != 0 && dec->codestream.empty()) {
-            
-            
-            
-            
-            
-            
-            if (dec->codestream_begin < dec->file_pos) {
-              return JXL_API_ERROR("earlier codestream box out of range");
-            }
-            size_t begin = dec->codestream_begin - dec->file_pos;
-            size_t end = dec->codestream_end - dec->file_pos;
-            JXL_ASSERT(end <= *avail_in);
-            dec->codestream.insert(dec->codestream.end(), *next_in + begin,
-                                   *next_in + end);
-          }
-          dec->codestream_begin = dec->file_pos + pos;
-          dec->codestream_end =
-              (box_size == 0) ? 0 : (dec->codestream_begin + codestream_size);
-          size_t avail_codestream_size =
-              (box_size == 0)
-                  ? (size - pos)
-                  : std::min<size_t>(size - pos, box_size - pos + box_start);
-          
-          if (!dec->codestream.empty()) {
-            size_t begin = pos;
-            size_t end =
-                std::min<size_t>(*avail_in, begin + avail_codestream_size);
-            dec->codestream.insert(dec->codestream.end(), *next_in + begin,
-                                   *next_in + end);
-            pos += (end - begin);
-            dec->file_pos += pos;
-            *next_in += pos;
-            *avail_in -= pos;
-            pos = 0;
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (*avail_in == 0) break;
-          } else {
-            
-            
-            
-            dec->file_pos += pos;
-            *next_in += pos;
-            *avail_in -= pos;
-            pos = 0;
-            
-            if (avail_codestream_size == *avail_in) {
-              break;  
-            }
-            pos += avail_codestream_size;
-          }
-        } else if ((JPEGXL_ENABLE_TRANSCODE_JPEG) &&
-                   (dec->orig_events_wanted & JXL_DEC_JPEG_RECONSTRUCTION) &&
-                   strcmp(type, "jbrd") == 0) {
-          
-          dec->jpeg_decoder.StartBox(box_size, contents_size);
-          dec->file_pos += pos;
-          *next_in += pos;
-          *avail_in -= pos;
-          pos = 0;
-          JxlDecoderStatus recon_result =
-              dec->jpeg_decoder.Process(next_in, avail_in);
-          if (recon_result == JXL_DEC_JPEG_RECONSTRUCTION) {
-            
-            
-            if (dec->events_wanted & recon_result) {
-              dec->events_wanted &= ~recon_result;
-              return recon_result;
-            }
-          } else {
-            
-            return recon_result;
-          }
-        } else {
-          if (box_size == 0) {
-            
-            
-            if (!dec->first_codestream_seen) {
-              return JXL_API_ERROR("didn't find any codestream box");
-            }
-            break;
-          }
-          if (OutOfBounds(pos, contents_size, size)) {
-            dec->skip_box = true;
-            dec->file_pos += pos;
-            *next_in += pos;
-            *avail_in -= pos;
-            
-            dec->basic_info_size_hint = InitialBasicInfoSizeHint() + pos +
-                                        contents_size - dec->file_pos;
-            return JXL_DEC_NEED_MORE_INPUT;
-          }
-          pos += contents_size;
-          if (!(dec->codestream.empty() && dec->first_codestream_seen)) {
-            
-            
-            dec->file_pos += pos;
-            *next_in += pos;
-            *avail_in -= pos;
-            pos = 0;
-          }
-        }
+        
+        break;
       }
-    }
-
-    
-    csize = *avail_in;
-    if (dec->codestream_end && csize > dec->codestream_end - dec->file_pos) {
-      csize = dec->codestream_end - dec->file_pos;
-    }
-  } else {
-    
-    if (dec->stage == DecoderStage::kFinished) {
-      return JXL_API_ERROR(
-          "no more input expected after non-container codestream");
-    }
-  }
-
-  
-  
-  
-  bool detected_streaming = !dec->codestream.empty();
-  JxlDecoderStatus result;
-  JXL_DASSERT(csize <= *avail_in);
-
-  if (detected_streaming) {
-    dec->codestream.insert(dec->codestream.end(), *next_in, *next_in + csize);
-    dec->file_pos += csize;
-    *next_in += csize;
-    *avail_in -= csize;
-    result = jxl::JxlDecoderProcessInternal(dec, dec->codestream.data(),
-                                            dec->codestream.size());
-  } else {
-    
-    
-    result = jxl::JxlDecoderProcessInternal(dec, *next_in, csize);
-    
-    
-    
-    
-    
-    
-    
-    if (dec->got_basic_info && result == JXL_DEC_NEED_MORE_INPUT) {
-      dec->codestream.insert(dec->codestream.end(), *next_in, *next_in + csize);
-      dec->file_pos += csize;
-      *next_in += csize;
-      *avail_in -= csize;
+      
+      size_t remaining = dec->box_contents_end - dec->file_pos;
+      if (dec->avail_in < remaining) {
+        
+        dec->AdvanceInput(dec->avail_in);
+        
+        dec->basic_info_size_hint =
+            InitialBasicInfoSizeHint() + dec->box_contents_end - dec->file_pos;
+        return JXL_DEC_NEED_MORE_INPUT;
+      } else {
+        
+        dec->AdvanceInput(remaining);
+        dec->box_stage = BoxStage::kHeader;
+      }
+    } else {
+      JXL_DASSERT(false);  
     }
   }
 
-  return result;
+  if (dec->stage != DecoderStage::kFinished) {
+    return JXL_API_ERROR("codestream never finished");
+  }
+
+  return JXL_DEC_SUCCESS;
 }
 
 
@@ -2309,4 +2310,71 @@ void SetDecoderMemoryLimitBase_(size_t memory_limit_base) {
   
   
   cpu_limit_base_ = 5 * memory_limit_base;
+}
+
+JxlDecoderStatus JxlDecoderSetBoxBuffer(JxlDecoder* dec, uint8_t* data,
+                                        size_t size) {
+  if (dec->box_out_buffer_set) {
+    return JXL_API_ERROR("must release box buffer before setting it again");
+  }
+  if (!dec->box_event) {
+    return JXL_API_ERROR("can only set box buffer after box event");
+  }
+
+  dec->box_out_buffer_set = true;
+  dec->box_out_buffer_set_current_box = true;
+  dec->box_out_buffer = data;
+  dec->box_out_buffer_size = size;
+  dec->box_out_buffer_pos = 0;
+  return JXL_DEC_SUCCESS;
+}
+
+size_t JxlDecoderReleaseBoxBuffer(JxlDecoder* dec) {
+  if (!dec->box_out_buffer_set) {
+    return 0;
+  }
+  size_t result = dec->box_out_buffer_size - dec->box_out_buffer_pos;
+  dec->box_out_buffer_set = false;
+  dec->box_out_buffer = nullptr;
+  dec->box_out_buffer_size = 0;
+  if (!dec->box_out_buffer_set_current_box) {
+    dec->box_out_buffer_begin = 0;
+  } else {
+    dec->box_out_buffer_begin += dec->box_out_buffer_pos;
+  }
+  dec->box_out_buffer_set_current_box = false;
+  return result;
+}
+
+JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
+                                              JXL_BOOL decompress) {
+  
+  
+  dec->decompress_boxes = decompress;
+  return JXL_DEC_SUCCESS;
+}
+
+JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec, JxlBoxType type,
+                                      JXL_BOOL decompressed) {
+  if (!dec->box_event) {
+    return JXL_API_ERROR("can only get box info after JXL_DEC_BOX event");
+  }
+  if (decompressed) {
+    memcpy(type, dec->box_decoded_type, sizeof(dec->box_decoded_type));
+  } else {
+    memcpy(type, dec->box_type, sizeof(dec->box_type));
+  }
+
+  return JXL_DEC_SUCCESS;
+}
+
+JxlDecoderStatus JxlDecoderGetBoxSizeRaw(const JxlDecoder* dec,
+                                         uint64_t* size) {
+  if (!dec->box_event) {
+    return JXL_API_ERROR("can only get box info after JXL_DEC_BOX event");
+  }
+  if (size) {
+    *size = dec->box_size;
+  }
+  return JXL_DEC_SUCCESS;
 }

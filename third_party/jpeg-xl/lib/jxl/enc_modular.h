@@ -42,7 +42,7 @@ class ModularFrameEncoder {
   
   
   void AddVarDCTDC(const Image3F& dc, size_t group_index, bool nl_dc,
-                   PassesEncoderState* enc_state);
+                   PassesEncoderState* enc_state, bool jpeg_transcode);
   
   
   void AddACMetadata(size_t group_index, bool jpeg_transcode,

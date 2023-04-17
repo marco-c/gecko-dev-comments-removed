@@ -125,7 +125,8 @@ void FindBestBlockEntropyModel(PassesEncoderState& enc_state) {
   std::vector<uint8_t> remap((qft.size() + 1) * kNumOrders);
   std::iota(remap.begin(), remap.end(), 0);
   std::vector<uint8_t> clusters(remap);
-  size_t nb_clusters = Clamp1((int)(tot / size_for_ctx_model / 2), 4, 8);
+  size_t nb_clusters = Clamp1((int)(tot / size_for_ctx_model / 2), 2, 9);
+  size_t nb_clusters_chroma = Clamp1((int)(tot / size_for_ctx_model / 3), 1, 5);
   
   while (clusters.size() > nb_clusters) {
     std::sort(clusters.begin(), clusters.end(),
@@ -153,8 +154,11 @@ void FindBestBlockEntropyModel(PassesEncoderState& enc_state) {
   auto& ctx_map = enc_state.shared.block_ctx_map.ctx_map;
   ctx_map = remap;
   ctx_map.resize(remap.size() * 3);
+  
+  
   for (size_t i = remap.size(); i < remap.size() * 3; i++) {
-    ctx_map[i] = remap[i % remap.size()] + num;
+    ctx_map[i] = num + Clamp1((int)remap[i % remap.size()], 0,
+                              (int)nb_clusters_chroma - 1);
   }
   enc_state.shared.block_ctx_map.num_ctxs =
       *std::max_element(ctx_map.begin(), ctx_map.end()) + 1;

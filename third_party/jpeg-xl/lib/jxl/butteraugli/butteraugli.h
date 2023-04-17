@@ -41,8 +41,6 @@ struct ButteraugliParams {
 
   
   float intensity_target = 80.0f;
-
-  bool approximate_border = false;
 };
 
 
@@ -143,15 +141,7 @@ struct PsychoImage {
 
 
 
-
 struct BlurTemp {
-  ImageF *Get(const ImageF &in) {
-    if (temp.xsize() == 0) {
-      temp = ImageF(in.xsize(), in.ysize());
-    }
-    return &temp;
-  }
-
   ImageF *GetTransposed(const ImageF &in) {
     if (transposed_temp.xsize() == 0) {
       transposed_temp = ImageF(in.ysize(), in.xsize());
@@ -159,7 +149,6 @@ struct BlurTemp {
     return &transposed_temp;
   }
 
-  ImageF temp;
   ImageF transposed_temp;
 };
 

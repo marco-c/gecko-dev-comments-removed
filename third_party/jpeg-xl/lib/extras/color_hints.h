@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "lib/extras/packed_image.h"
 #include "lib/jxl/base/status.h"
-#include "lib/jxl/codec_in_out.h"
 
 namespace jxl {
 
@@ -65,7 +65,7 @@ namespace extras {
 
 
 Status ApplyColorHints(const ColorHints& color_hints, bool color_already_set,
-                       bool is_gray, CodecInOut* io);
+                       bool is_gray, PackedPixelFile* ppf);
 
 }  
 }  

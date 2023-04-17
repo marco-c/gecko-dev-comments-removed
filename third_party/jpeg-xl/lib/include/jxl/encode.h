@@ -75,6 +75,51 @@ typedef enum {
 
 
 
+typedef enum {
+  
+
+
+
+
+
+  JXL_ENC_OPTION_RESAMPLING = 0,
+
+  
+
+
+
+  JXL_ENC_OPTION_EXTRA_CHANNEL_RESAMPLING = 1,
+
+  
+
+
+  JXL_ENC_OPTION_NOISE = 2,
+
+  
+
+
+  JXL_ENC_OPTION_DOTS = 3,
+
+  
+
+
+  JXL_ENC_OPTION_PATCHES = 4,
+
+  
+
+
+  JXL_ENC_OPTION_GABORISH = 5,
+
+  
+
+
+  JXL_ENC_OPTION_FILL_ENUM = 65535,
+
+} JxlEncoderOptionId;
+
+
+
+
 
 
 
@@ -350,6 +395,25 @@ JxlEncoderOptionsSetEffort(JxlEncoderOptions* options, int effort);
 
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderOptionsSetDistance(JxlEncoderOptions* options, float distance);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderOptionsSetAsInteger(
+    JxlEncoderOptions* options, JxlEncoderOptionId option, int32_t value);
 
 
 

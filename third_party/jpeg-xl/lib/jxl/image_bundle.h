@@ -151,12 +151,8 @@ class ImageBundle {
   Status TransformTo(const ColorEncoding& c_desired,
                      ThreadPool* pool = nullptr);
   
-  Status CopyTo(const Rect& rect, const ColorEncoding& c_desired, Image3B* out,
-                ThreadPool* pool = nullptr) const;
   Status CopyTo(const Rect& rect, const ColorEncoding& c_desired, Image3F* out,
                 ThreadPool* pool = nullptr) const;
-  Status CopyToSRGB(const Rect& rect, Image3B* out,
-                    ThreadPool* pool = nullptr) const;
 
   
   
@@ -241,16 +237,6 @@ class ImageBundle {
   
   size_t decoded_bytes_ = 0;
 };
-
-
-
-
-
-
-
-Status TransformIfNeeded(const ImageBundle& in, const ColorEncoding& c_desired,
-                         ThreadPool* pool, ImageBundle* store,
-                         const ImageBundle** out);
 
 }  
 

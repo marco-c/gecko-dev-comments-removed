@@ -38,10 +38,17 @@ typedef enum {
 
 
 
+
+
+
+
+
 typedef enum {
   
   JXL_WHITE_POINT_D65 = 1,
   
+
+
   JXL_WHITE_POINT_CUSTOM = 2,
   
   JXL_WHITE_POINT_E = 10,
@@ -51,11 +58,18 @@ typedef enum {
 
 
 
+
+
+
+
+
+
 typedef enum {
   
 
   JXL_PRIMARIES_SRGB = 1,
   
+
 
   JXL_PRIMARIES_CUSTOM = 2,
   
@@ -63,6 +77,7 @@ typedef enum {
   
   JXL_PRIMARIES_P3 = 11,
 } JxlPrimaries;
+
 
 
 

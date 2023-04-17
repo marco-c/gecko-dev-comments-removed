@@ -21,6 +21,7 @@
 #include "lib/jxl/color_management.h"
 #include "lib/jxl/dec_external_image.h"
 #include "lib/jxl/enc_external_image.h"
+#include "lib/jxl/enc_image_bundle.h"
 #include "lib/jxl/fields.h"  
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_bundle.h"
@@ -172,60 +173,69 @@ Status EncodeHeader(const ImageBundle& ib, const size_t bits_per_sample,
   }
 
   
-  *chars_written = snprintf(header, kMaxHeaderSize, "PG ML + %zu %zu %zu\n",
+  *chars_written = snprintf(header, kMaxHeaderSize,
+                            "PG ML + %" PRIuS " %" PRIuS " %" PRIuS "\n",
                             bits_per_sample, ib.xsize(), ib.ysize());
   JXL_RETURN_IF_ERROR(static_cast<unsigned int>(*chars_written) <
                       kMaxHeaderSize);
   return true;
 }
 
-template <typename T>
-void ExpectNear(T a, T b, T precision) {
-  JXL_CHECK(std::abs(a - b) <= precision);
-}
-
-Span<const uint8_t> MakeSpan(const char* str) {
-  return Span<const uint8_t>(reinterpret_cast<const uint8_t*>(str),
-                             strlen(str));
-}
-
 }  
 
 Status DecodeImagePGX(const Span<const uint8_t> bytes,
-                      const ColorHints& color_hints, ThreadPool* pool,
-                      CodecInOut* io) {
+                      const ColorHints& color_hints,
+                      const SizeConstraints& constraints,
+                      PackedPixelFile* ppf) {
   Parser parser(bytes);
   HeaderPGX header = {};
   const uint8_t* pos;
   if (!parser.ParseHeader(&header, &pos)) return false;
   JXL_RETURN_IF_ERROR(
-      VerifyDimensions(&io->constraints, header.xsize, header.ysize));
+      VerifyDimensions(&constraints, header.xsize, header.ysize));
   if (header.bits_per_sample == 0 || header.bits_per_sample > 32) {
     return JXL_FAILURE("PGX: bits_per_sample invalid");
   }
 
   JXL_RETURN_IF_ERROR(ApplyColorHints(color_hints, false,
-                                      true, io));
-  io->metadata.m.SetUintSamples(header.bits_per_sample);
-  io->metadata.m.SetAlphaBits(0);
-  io->dec_pixels = header.xsize * header.ysize;
-  io->SetSize(header.xsize, header.ysize);
-  io->frames.clear();
-  io->frames.reserve(1);
-  ImageBundle ib(&io->metadata.m);
+                                      true, ppf));
+  ppf->info.xsize = header.xsize;
+  ppf->info.ysize = header.ysize;
+  
+  ppf->info.bits_per_sample = header.bits_per_sample;
+  ppf->info.exponent_bits_per_sample = 0;
+  ppf->info.uses_original_profile = true;
 
-  const bool has_alpha = false;
-  const bool flipped_y = false;
-  const Span<const uint8_t> span(pos, bytes.data() + bytes.size() - pos);
-  JXL_RETURN_IF_ERROR(ConvertFromExternal(
-      span, header.xsize, header.ysize, io->metadata.m.color_encoding,
-      has_alpha,
-      false,
-      io->metadata.m.bit_depth.bits_per_sample,
-      header.big_endian ? JXL_BIG_ENDIAN : JXL_LITTLE_ENDIAN, flipped_y, pool,
-      &ib, false));
-  io->frames.push_back(std::move(ib));
-  SetIntensityTarget(io);
+  
+  ppf->info.alpha_bits = 0;
+  ppf->info.alpha_exponent_bits = 0;
+  ppf->info.num_color_channels = 1;  
+  ppf->info.orientation = JXL_ORIENT_IDENTITY;
+
+  JxlDataType data_type;
+  if (header.bits_per_sample > 16) {
+    data_type = JXL_TYPE_UINT32;
+  } else if (header.bits_per_sample > 8) {
+    data_type = JXL_TYPE_UINT16;
+  } else {
+    data_type = JXL_TYPE_UINT8;
+  }
+
+  const JxlPixelFormat format{
+      1,
+      data_type,
+      header.big_endian ? JXL_BIG_ENDIAN : JXL_LITTLE_ENDIAN,
+      0,
+  };
+  ppf->frames.clear();
+  
+  ppf->frames.emplace_back(header.xsize, header.ysize, format);
+  const auto& frame = ppf->frames.back();
+  size_t pgx_remaining_size = bytes.data() + bytes.size() - pos;
+  if (pgx_remaining_size < frame.color.pixels_size) {
+    return JXL_FAILURE("PGX file too small");
+  }
+  memcpy(frame.color.pixels(), pos, frame.color.pixels_size);
   return true;
 }
 

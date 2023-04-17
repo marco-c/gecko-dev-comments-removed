@@ -15,6 +15,7 @@
 #include <hwy/highway.h>
 
 #include "lib/extras/color_hints.h"
+#include "lib/extras/packed_image.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/span.h"
@@ -27,8 +28,8 @@ namespace extras {
 
 
 Status DecodeImagePNG(const Span<const uint8_t> bytes,
-                      const ColorHints& color_hints, ThreadPool* pool,
-                      CodecInOut* io);
+                      const ColorHints& color_hints,
+                      const SizeConstraints& constraints, PackedPixelFile* ppf);
 
 
 Status EncodeImagePNG(const CodecInOut* io, const ColorEncoding& c_desired,
