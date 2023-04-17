@@ -1717,6 +1717,8 @@ void nsDragService::SourceBeginDrag(GdkDragContext* aContext) {
 void nsDragService::SetDragIcon(GdkDragContext* aContext) {
   if (!mHasImage && !mSelection) return;
 
+  LOGDRAGSERVICE(("nsDragService::SetDragIcon()"));
+
   LayoutDeviceIntRect dragRect;
   nsPresContext* pc;
   RefPtr<SourceSurface> surface;
@@ -1734,13 +1736,20 @@ void nsDragService::SetDragIcon(GdkDragContext* aContext) {
   
   
   
-  if (mDragPopup && gtk_check_version(3, 19, 4)) {
+  
+  
+  
+  bool gtk_drag_set_icon_widget_is_working =
+      gtk_check_version(3, 19, 4) != nullptr ||
+      gtk_check_version(3, 24, 0) == nullptr;
+  if (mDragPopup && gtk_drag_set_icon_widget_is_working) {
     GtkWidget* gtkWidget = nullptr;
     nsIFrame* frame = mDragPopup->GetPrimaryFrame();
     if (frame) {
       
       nsCOMPtr<nsIWidget> widget = frame->GetNearestWidget();
       if (widget) {
+        LOGDRAGSERVICE(("  set drag popup [%p]", widget.get()));
         gtkWidget = (GtkWidget*)widget->GetNativeData(NS_NATIVE_SHELLWIDGET);
         if (gtkWidget) {
           OpenDragPopup();
@@ -1753,6 +1762,7 @@ void nsDragService::SetDragIcon(GdkDragContext* aContext) {
       GdkPixbuf* dragPixbuf = nsImageToPixbuf::SourceSurfaceToPixbuf(
           surface, dragRect.width, dragRect.height);
       if (dragPixbuf) {
+        LOGDRAGSERVICE(("  set drag pixbuf"));
         gtk_drag_set_icon_pixbuf(aContext, dragPixbuf, offsetX, offsetY);
         g_object_unref(dragPixbuf);
       }
