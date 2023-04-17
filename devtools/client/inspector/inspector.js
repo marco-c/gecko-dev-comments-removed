@@ -250,6 +250,193 @@ Inspector.prototype = {
     this.selection.setNodeFront(null);
   },
 
+  onResourceAvailable: function(resources) {
+    for (const resource of resources) {
+      if (
+        resource.resourceType ===
+          this.toolbox.resourceCommand.TYPES.ROOT_NODE &&
+        
+        
+        !resource.isDestroyed()
+      ) {
+        const rootNodeFront = resource;
+        const isTopLevelTarget = !!resource.targetFront.isTopLevel;
+        if (rootNodeFront.isTopLevelDocument && isTopLevelTarget) {
+          this.onRootNodeAvailable(rootNodeFront);
+        }
+      }
+
+      
+      if (
+        resource.resourceType ===
+          this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.name === "will-navigate" &&
+        resource.targetFront.isTopLevel
+      ) {
+        this._onWillNavigate();
+      }
+    }
+  },
+
+  
+
+
+  onRootNodeAvailable: async function(rootNodeFront) {
+    
+    this._newRootStart = this.panelWin.performance.now();
+
+    this._defaultNode = null;
+    this.selection.setNodeFront(null);
+    this._destroyMarkup();
+
+    try {
+      const defaultNode = await this._getDefaultNodeForSelection(rootNodeFront);
+      if (!defaultNode) {
+        return;
+      }
+
+      this.selection.setNodeFront(defaultNode, {
+        reason: "inspector-default-selection",
+      });
+
+      this._initMarkup();
+
+      
+      this.setupToolbar();
+    } catch (e) {
+      this._handleRejectionIfNotDestroyed(e);
+    }
+  },
+
+  _initMarkup: function() {
+    this.once("markuploaded", this.onMarkupLoaded);
+
+    if (!this._markupFrame) {
+      this._markupFrame = this.panelDoc.createElement("iframe");
+      this._markupFrame.setAttribute(
+        "aria-label",
+        INSPECTOR_L10N.getStr("inspector.panelLabel.markupView")
+      );
+      this._markupFrame.setAttribute("flex", "1");
+      
+      this._markupFrame.setAttribute("tooltip", "aHTMLTooltip");
+
+      this._markupBox = this.panelDoc.getElementById("markup-box");
+      this._markupBox.style.visibility = "hidden";
+      this._markupBox.appendChild(this._markupFrame);
+
+      this._markupFrame.addEventListener("load", this._onMarkupFrameLoad, true);
+      this._markupFrame.setAttribute("src", "markup/markup.xhtml");
+    } else {
+      this._onMarkupFrameLoad();
+    }
+  },
+
+  _onMarkupFrameLoad: function() {
+    this._markupFrame.removeEventListener(
+      "load",
+      this._onMarkupFrameLoad,
+      true
+    );
+    this._markupFrame.contentWindow.focus();
+    this._markupBox.style.visibility = "visible";
+    this.markup = new MarkupView(this, this._markupFrame, this._toolbox.win);
+    this.emit("markuploaded");
+  },
+
+  
+
+
+
+
+  async onMarkupLoaded() {
+    if (!this.markup) {
+      return;
+    }
+
+    const onExpand = this.markup.expandNode(this.selection.nodeFront);
+
+    
+    if (this._highlighters) {
+      await Promise.all([
+        this.highlighters.restoreFlexboxState(),
+        this.highlighters.restoreGridState(),
+      ]);
+    }
+
+    this.emit("new-root");
+
+    
+    
+    
+    
+    await onExpand;
+
+    this.emit("reloaded");
+
+    
+    if (this._newRootStart) {
+      
+      if (this.toolbox && this.toolbox.currentToolId == "inspector") {
+        const delay = this.panelWin.performance.now() - this._newRootStart;
+        const telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
+        const histogram = this.telemetry.getHistogramById(telemetryKey);
+        histogram.add(delay);
+      }
+      delete this._newRootStart;
+    }
+
+    
+    
+    if (this._resolveMarkupViewInitialized) {
+      this._resolveMarkupViewInitialized();
+      
+      delete this._resolveMarkupViewInitialized;
+    }
+  },
+
+  _deferredOpen: async function() {
+    
+    this.setupSplitter();
+
+    
+    
+    
+    this.panelDoc.getElementById("inspector-main-content").style.visibility =
+      "visible";
+
+    
+    this.setupSidebar();
+
+    await this._onMarkupViewInitialized;
+
+    
+    
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
+    this.setupExtensionSidebars();
+    this.setupSearchBox();
+
+    this.onNewSelection();
+
+    this.toolbox.on("host-changed", this.onHostChanged);
+    this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
+    this.toolbox.nodePicker.on("picker-node-canceled", this.onPickerCanceled);
+    this.toolbox.nodePicker.on("picker-node-picked", this.onPickerPicked);
+    this.selection.on("new-node-front", this.onNewSelection);
+    this.selection.on("detached-front", this.onDetached);
+
+    
+    
+    
+    this.telemetry.keyedScalarAdd(
+      THREE_PANE_ENABLED_SCALAR,
+      this.is3PaneModeEnabled,
+      1
+    );
+
+    return this;
+  },
+
   async initInspectorFront(targetFront) {
     this.inspectorFront = await targetFront.getFront("inspector");
     this.walker = this.inspectorFront.walker;
@@ -362,48 +549,6 @@ Inspector.prototype = {
     if (!this._destroyed) {
       console.error(e);
     }
-  },
-
-  _deferredOpen: async function() {
-    
-    this.setupSplitter();
-
-    
-    
-    
-    this.panelDoc.getElementById("inspector-main-content").style.visibility =
-      "visible";
-
-    
-    this.setupSidebar();
-
-    await this._onMarkupViewInitialized;
-
-    
-    
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-    this.setupExtensionSidebars();
-    this.setupSearchBox();
-
-    this.onNewSelection();
-
-    this.toolbox.on("host-changed", this.onHostChanged);
-    this.toolbox.nodePicker.on("picker-node-hovered", this.onPickerHovered);
-    this.toolbox.nodePicker.on("picker-node-canceled", this.onPickerCanceled);
-    this.toolbox.nodePicker.on("picker-node-picked", this.onPickerPicked);
-    this.selection.on("new-node-front", this.onNewSelection);
-    this.selection.on("detached-front", this.onDetached);
-
-    
-    
-    
-    this.telemetry.keyedScalarAdd(
-      THREE_PANE_ENABLED_SCALAR,
-      this.is3PaneModeEnabled,
-      1
-    );
-
-    return this;
   },
 
   _onWillNavigate: function() {
@@ -1274,115 +1419,6 @@ Inspector.prototype = {
     }
   },
 
-  onResourceAvailable: function(resources) {
-    for (const resource of resources) {
-      if (
-        resource.resourceType ===
-          this.toolbox.resourceCommand.TYPES.ROOT_NODE &&
-        
-        
-        !resource.isDestroyed()
-      ) {
-        const rootNodeFront = resource;
-        const isTopLevelTarget = !!resource.targetFront.isTopLevel;
-        if (rootNodeFront.isTopLevelDocument && isTopLevelTarget) {
-          this.onRootNodeAvailable(rootNodeFront);
-        }
-      }
-
-      
-      if (
-        resource.resourceType ===
-          this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name === "will-navigate" &&
-        resource.targetFront.isTopLevel
-      ) {
-        this._onWillNavigate();
-      }
-    }
-  },
-
-  
-
-
-  onRootNodeAvailable: async function(rootNodeFront) {
-    
-    this._newRootStart = this.panelWin.performance.now();
-
-    this._defaultNode = null;
-    this.selection.setNodeFront(null);
-    this._destroyMarkup();
-
-    try {
-      const defaultNode = await this._getDefaultNodeForSelection(rootNodeFront);
-      if (!defaultNode) {
-        return;
-      }
-
-      this.selection.setNodeFront(defaultNode, {
-        reason: "inspector-default-selection",
-      });
-
-      this._initMarkup();
-
-      
-      this.setupToolbar();
-    } catch (e) {
-      this._handleRejectionIfNotDestroyed(e);
-    }
-  },
-
-  
-
-
-
-
-  async onMarkupLoaded() {
-    if (!this.markup) {
-      return;
-    }
-
-    const onExpand = this.markup.expandNode(this.selection.nodeFront);
-
-    
-    if (this._highlighters) {
-      await Promise.all([
-        this.highlighters.restoreFlexboxState(),
-        this.highlighters.restoreGridState(),
-      ]);
-    }
-
-    this.emit("new-root");
-
-    
-    
-    
-    
-    await onExpand;
-
-    this.emit("reloaded");
-
-    
-    if (this._newRootStart) {
-      
-      if (this.toolbox && this.toolbox.currentToolId == "inspector") {
-        const delay = this.panelWin.performance.now() - this._newRootStart;
-        const telemetryKey = "DEVTOOLS_INSPECTOR_NEW_ROOT_TO_RELOAD_DELAY_MS";
-        const histogram = this.telemetry.getHistogramById(telemetryKey);
-        histogram.add(delay);
-      }
-      delete this._newRootStart;
-    }
-
-    
-    
-    if (this._resolveMarkupViewInitialized) {
-      this._resolveMarkupViewInitialized();
-      
-      delete this._resolveMarkupViewInitialized;
-    }
-  },
-
   _selectionCssSelectors: null,
 
   
@@ -1729,42 +1765,6 @@ Inspector.prototype = {
     this.sidebar = null;
     this.store = null;
     this.telemetry = null;
-  },
-
-  _initMarkup: function() {
-    this.once("markuploaded", this.onMarkupLoaded);
-
-    if (!this._markupFrame) {
-      this._markupFrame = this.panelDoc.createElement("iframe");
-      this._markupFrame.setAttribute(
-        "aria-label",
-        INSPECTOR_L10N.getStr("inspector.panelLabel.markupView")
-      );
-      this._markupFrame.setAttribute("flex", "1");
-      
-      this._markupFrame.setAttribute("tooltip", "aHTMLTooltip");
-
-      this._markupBox = this.panelDoc.getElementById("markup-box");
-      this._markupBox.style.visibility = "hidden";
-      this._markupBox.appendChild(this._markupFrame);
-
-      this._markupFrame.addEventListener("load", this._onMarkupFrameLoad, true);
-      this._markupFrame.setAttribute("src", "markup/markup.xhtml");
-    } else {
-      this._onMarkupFrameLoad();
-    }
-  },
-
-  _onMarkupFrameLoad: function() {
-    this._markupFrame.removeEventListener(
-      "load",
-      this._onMarkupFrameLoad,
-      true
-    );
-    this._markupFrame.contentWindow.focus();
-    this._markupBox.style.visibility = "visible";
-    this.markup = new MarkupView(this, this._markupFrame, this._toolbox.win);
-    this.emit("markuploaded");
   },
 
   _destroyMarkup: function() {
