@@ -13,13 +13,6 @@ const { PromptUtils } = ChromeUtils.import(
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "gPrompterService",
-  "@mozilla.org/login-manager/prompter;1",
-  Ci.nsILoginManagerPrompter
-);
-
 
 
 ChromeUtils.defineModuleGetter(
@@ -117,7 +110,6 @@ LoginManagerAuthPromptFactory.prototype = {
   
   
   _pendingPrompts: new WeakMap(),
-  _pendingSavePrompts: new WeakMap(),
   
   
   _noBrowser: {},
@@ -150,15 +142,6 @@ LoginManagerAuthPromptFactory.prototype = {
       return pendingNoBrowserPrompt;
     }
     return this._pendingPrompts.get(browser)?.get(hashKey);
-  },
-
-  _dismissPendingSavePrompt(browser) {
-    this._pendingSavePrompts.get(browser)?.dismiss();
-    this._pendingSavePrompts.delete(browser);
-  },
-
-  _setPendingSavePrompt(browser, prompt) {
-    this._pendingSavePrompts.set(browser, prompt);
   },
 
   _setPendingPrompt(prompt, hashKey) {
@@ -305,6 +288,7 @@ LoginManagerAuthPrompter.prototype = {
   _factory: null,
   _chromeWindow: null,
   _browser: null,
+  _openerBrowser: null,
 
   __strBundle: null, 
   get _strBundle() {
@@ -634,23 +618,13 @@ LoginManagerAuthPrompter.prototype = {
     return [formattedOrigin, formattedOrigin + pathname, uri.username];
   },
 
-  _canPromptToSaveLogin() {
-    
-    if (!this._chromeWindow) {
-      return false;
-    }
-
-    
-    return !!gPrompterService;
-  },
-
   async promptAuthInternal(aChannel, aLevel, aAuthInfo) {
     var selectedLogin = null;
     var checkbox = { value: false };
     var checkboxLabel = null;
     var epicfail = false;
     var canAutologin = false;
-    var canPromptToSave = this._canPromptToSaveLogin();
+    var notifyObj;
     var foundLogins;
     let autofilled = false;
 
@@ -660,12 +634,12 @@ LoginManagerAuthPrompter.prototype = {
       
       
       
-      this._factory._dismissPendingSavePrompt(this._browser);
+      this._removeLoginNotifications();
 
       var [origin, httpRealm] = this._getAuthTarget(aChannel, aAuthInfo);
 
       
-      foundLogins = await Services.logins.searchLoginsAsync({
+      foundLogins = LoginHelper.searchLoginsWithObject({
         origin,
         httpRealm,
         schemeUpgrades: LoginHelper.schemeUpgrades,
@@ -709,9 +683,9 @@ LoginManagerAuthPrompter.prototype = {
         canRememberLogin = false;
       }
 
-      if (canRememberLogin && !canPromptToSave) {
-        
-        
+      
+      notifyObj = this._getPopupNote();
+      if (canRememberLogin && !notifyObj) {
         checkboxLabel = this._getLocalizedString("rememberPassword");
       }
     } catch (e) {
@@ -778,7 +752,7 @@ LoginManagerAuthPrompter.prototype = {
     
     
     
-    var rememberLogin = canPromptToSave ? canRememberLogin : checkbox.value;
+    var rememberLogin = notifyObj ? canRememberLogin : checkbox.value;
     if (!ok || !rememberLogin || epicfail) {
       return ok;
     }
@@ -808,13 +782,17 @@ LoginManagerAuthPrompter.prototype = {
             ")"
         );
 
-        if (canPromptToSave) {
+        if (notifyObj) {
           let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
-          let savePrompt = gPrompterService.promptToSavePassword(
+          LoginManagerPrompter._showLoginCaptureDoorhanger(
             promptBrowser,
-            newLogin
+            newLogin,
+            "password-save",
+            {
+              dismissed: this._inPrivateBrowsing,
+            }
           );
-          this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
+          Services.obs.notifyObservers(newLogin, "passwordmgr-prompt-save");
         } else {
           Services.logins.addLogin(newLogin);
         }
@@ -828,14 +806,8 @@ LoginManagerAuthPrompter.prototype = {
             httpRealm +
             ")"
         );
-        if (canPromptToSave) {
-          let promptBrowser = LoginHelper.getBrowserForPrompt(browser);
-          let savePrompt = gPrompterService.promptToChangePassword(
-            promptBrowser,
-            selectedLogin,
-            newLogin
-          );
-          this._factory._setPendingSavePrompt(promptBrowser, savePrompt);
+        if (notifyObj) {
+          this._showChangeLoginNotification(browser, selectedLogin, newLogin);
         } else {
           this._updateLogin(selectedLogin, newLogin);
         }
@@ -886,7 +858,7 @@ LoginManagerAuthPrompter.prototype = {
       
       
       
-      this._factory._dismissPendingSavePrompt(this._browser);
+      this._removeLoginNotifications();
 
       cancelable = this._newAsyncPromptConsumer(aCallback, aContext);
 
@@ -948,6 +920,7 @@ LoginManagerAuthPrompter.prototype = {
       this._chromeWindow = win;
       this._browser = browser;
     }
+    this._openerBrowser = null;
     this._factory = aFactory || null;
 
     this.log("===== initialized =====");
@@ -959,6 +932,86 @@ LoginManagerAuthPrompter.prototype = {
 
   get browser() {
     return this._browser;
+  },
+
+  set openerBrowser(aOpenerBrowser) {
+    this._openerBrowser = aOpenerBrowser;
+  },
+
+  _removeLoginNotifications() {
+    var popupNote = this._getPopupNote();
+    if (popupNote) {
+      popupNote = popupNote.getNotification("password");
+    }
+    if (popupNote) {
+      popupNote.remove();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _showChangeLoginNotification(
+    aBrowser,
+    aOldLogin,
+    aNewLogin,
+    dismissed = false,
+    notifySaved = false,
+    autoSavedLoginGuid = ""
+  ) {
+    let login = aOldLogin.clone();
+    login.origin = aNewLogin.origin;
+    login.formActionOrigin = aNewLogin.formActionOrigin;
+    login.password = aNewLogin.password;
+    login.username = aNewLogin.username;
+
+    let messageStringID;
+    if (
+      aOldLogin.username === "" &&
+      login.username !== "" &&
+      login.password == aOldLogin.password
+    ) {
+      
+      
+      
+      messageStringID = "updateLoginMsgAddUsername";
+    }
+
+    let promptBrowser = LoginHelper.getBrowserForPrompt(aBrowser);
+    LoginManagerPrompter._showLoginCaptureDoorhanger(
+      promptBrowser,
+      login,
+      "password-change",
+      {
+        dismissed,
+        extraAttr: notifySaved ? "attention" : "",
+      },
+      {
+        notifySaved,
+        messageStringID,
+        autoSavedLoginGuid,
+      }
+    );
+
+    let oldGUID = aOldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid;
+    Services.obs.notifyObservers(
+      aNewLogin,
+      "passwordmgr-prompt-change",
+      oldGUID
+    );
   },
 
   
@@ -998,6 +1051,48 @@ LoginManagerAuthPrompter.prototype = {
     }
 
     return { win: chromeWin, browser };
+  },
+
+  _getNotifyWindow() {
+    if (this._openerBrowser) {
+      let chromeDoc = this._chromeWindow.document.documentElement;
+
+      
+      
+      
+      
+      if (chromeDoc.getAttribute("chromehidden") && !this._browser.canGoBack) {
+        this.log("Using opener window for notification prompt.");
+        return {
+          win: this._openerBrowser.ownerGlobal,
+          browser: this._openerBrowser,
+        };
+      }
+    }
+
+    return {
+      win: this._chromeWindow,
+      browser: this._browser,
+    };
+  },
+
+  
+
+
+
+  _getPopupNote() {
+    let popupNote = null;
+
+    try {
+      let { win: notifyWin } = this._getNotifyWindow();
+
+      
+      popupNote = notifyWin.wrappedJSObject.PopupNotifications;
+    } catch (e) {
+      this.log("Popup notifications not available on window");
+    }
+
+    return popupNote;
   },
 
   
