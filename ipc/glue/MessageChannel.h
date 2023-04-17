@@ -147,7 +147,7 @@ class MessageChannel : HasResultCodes {
   friend class PendingResponseReporter;
 
  public:
-  static const int32_t kNoTimeout;
+  static constexpr int32_t kNoTimeout = INT32_MIN;
 
   typedef IPC::Message Message;
   typedef IPC::MessageInfo MessageInfo;
@@ -360,9 +360,9 @@ class MessageChannel : HasResultCodes {
 
  protected:
   
-  SyncStackFrame* mTopFrame;
+  SyncStackFrame* mTopFrame = nullptr;
 
-  bool mIsSyncWaitingOnNonMainThread;
+  bool mIsSyncWaitingOnNonMainThread = false;
 
   
   static SyncStackFrame* sStaticTopFrame;
@@ -595,18 +595,25 @@ class MessageChannel : HasResultCodes {
 
  private:
   
-  const char* mName;
+  const char* const mName;
 
   
   
-  IToplevelProtocol* mListener;
-  ChannelState mChannelState;
+  IToplevelProtocol* const mListener;
+
+  
+  
+  
+  
   RefPtr<RefCountedMonitor> mMonitor;
-  Side mSide;
-  bool mIsCrossProcess;
+
+  ChannelState mChannelState = ChannelClosed;
+  Side mSide = UnknownSide;
+  bool mIsCrossProcess = false;
   UniquePtr<MessageLink> mLink;
-  RefPtr<CancelableRunnable>
-      mChannelErrorTask;  
+
+  
+  RefPtr<CancelableRunnable> mChannelErrorTask;
 
   
   nsCOMPtr<nsISerialEventTarget> mWorkerThread;
@@ -615,17 +622,17 @@ class MessageChannel : HasResultCodes {
   
   
   
-  int32_t mTimeoutMs;
-  bool mInTimeoutSecondHalf;
+  int32_t mTimeoutMs = kNoTimeout;
+  bool mInTimeoutSecondHalf = false;
 
   
   
-  int32_t mNextSeqno;
+  int32_t mNextSeqno = 0;
 
   static bool sIsPumpingMessages;
 
   
-  SyncSendError mLastSendError;
+  SyncSendError mLastSendError = SyncSendError::SendSuccess;
 
   template <class T>
   class AutoSetValue {
@@ -649,8 +656,8 @@ class MessageChannel : HasResultCodes {
     T mNew;
   };
 
-  bool mDispatchingAsyncMessage;
-  int mDispatchingAsyncMessageNestedLevel;
+  bool mDispatchingAsyncMessage = false;
+  int mDispatchingAsyncMessageNestedLevel = 0;
 
   
   
@@ -671,7 +678,7 @@ class MessageChannel : HasResultCodes {
   
 
   friend class AutoEnterTransaction;
-  AutoEnterTransaction* mTransactionStack;
+  AutoEnterTransaction* mTransactionStack = nullptr;
 
   int32_t CurrentNestedInsideSyncTransaction() const;
 
@@ -700,8 +707,8 @@ class MessageChannel : HasResultCodes {
   
   
   
-  int32_t mTimedOutMessageSeqno;
-  int mTimedOutMessageNestedLevel;
+  int32_t mTimedOutMessageSeqno = 0;
+  int mTimedOutMessageNestedLevel = 0;
 
   
   
@@ -743,7 +750,7 @@ class MessageChannel : HasResultCodes {
   
   
   
-  size_t mMaybeDeferredPendingCount;
+  size_t mMaybeDeferredPendingCount = 0;
 
   
   
@@ -775,7 +782,7 @@ class MessageChannel : HasResultCodes {
   
   
   
-  size_t mRemoteStackDepthGuess;
+  size_t mRemoteStackDepthGuess = 0;
 
   
   
@@ -789,12 +796,12 @@ class MessageChannel : HasResultCodes {
 
   
   
-  bool mSawInterruptOutMsg;
+  bool mSawInterruptOutMsg = false;
 
   
   
   
-  bool mIsWaitingForIncoming;
+  bool mIsWaitingForIncoming = false;
 
   
   
@@ -814,25 +821,25 @@ class MessageChannel : HasResultCodes {
 
   
   
-  bool mAbortOnError;
+  bool mAbortOnError = false;
 
   
   
-  bool mNotifiedChannelDone;
+  bool mNotifiedChannelDone = false;
 
   
-  ChannelFlags mFlags;
+  ChannelFlags mFlags = REQUIRE_DEFAULT;
 
   
   
-  bool mIsPostponingSends;
+  bool mIsPostponingSends = false;
   std::vector<UniquePtr<Message>> mPostponedSends;
 
-  bool mBuildIDsConfirmedMatch;
+  bool mBuildIDsConfirmedMatch = false;
 
   
   
-  bool mIsSameThreadChannel;
+  bool mIsSameThreadChannel = false;
 };
 
 void CancelCPOWs();
