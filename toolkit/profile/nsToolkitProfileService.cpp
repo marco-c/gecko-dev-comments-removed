@@ -4,9 +4,11 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtils.h"
+#include "nsProfileLock.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +52,8 @@
 #include "nsIToolkitShellService.h"
 #include "mozilla/Telemetry.h"
 #include "nsProxyRelease.h"
+#include "prinrval.h"
+#include "prthread.h"
 
 using namespace mozilla;
 
@@ -86,6 +90,47 @@ nsTArray<UniquePtr<KeyValue>> GetSectionStrings(nsINIParser* aParser,
   return result;
 }
 
+void RemoveProfileRecursion(const nsCOMPtr<nsIFile>& aDirectoryOrFile,
+                            bool aIsIgnoreRoot, bool aIsIgnoreLockfile,
+                            nsTArray<nsCOMPtr<nsIFile>>& aOutUndeletedFiles) {
+  auto guardDeletion = MakeScopeExit(
+      [&] { aOutUndeletedFiles.AppendElement(aDirectoryOrFile); });
+
+  
+  bool isLink = false;
+  NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->IsSymlink(&isLink));
+
+  
+  bool isDir = false;
+  if (!isLink) {
+    NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->IsDirectory(&isDir));
+  }
+
+  if (isDir) {
+    nsCOMPtr<nsIDirectoryEnumerator> dirEnum;
+    NS_ENSURE_SUCCESS_VOID(
+        aDirectoryOrFile->GetDirectoryEntries(getter_AddRefs(dirEnum)));
+
+    bool more = false;
+    while (NS_SUCCEEDED(dirEnum->HasMoreElements(&more)) && more) {
+      nsCOMPtr<nsISupports> item;
+      dirEnum->GetNext(getter_AddRefs(item));
+      nsCOMPtr<nsIFile> file = do_QueryInterface(item);
+      if (file) {
+        
+        if (aIsIgnoreLockfile && nsProfileLock::IsMaybeLockFile(file)) continue;
+        
+        RemoveProfileRecursion(file, false, false, aOutUndeletedFiles);
+      }
+    }
+  }
+  
+  if (!aIsIgnoreRoot) {
+    NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->Remove(false));
+  }
+  guardDeletion.release();
+}
+
 void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
   nsCOMPtr<nsIFile> rootDir;
   aProfile->GetRootDir(getter_AddRefs(rootDir));
@@ -94,24 +139,67 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
 
   
   
+
+  
+  
   
   nsCOMPtr<nsIProfileLock> lock;
-  nsresult rv =
-      NS_LockProfilePath(rootDir, localDir, nullptr, getter_AddRefs(lock));
-  NS_ENSURE_SUCCESS_VOID(rv);
+  NS_ENSURE_SUCCESS_VOID(
+      NS_LockProfilePath(rootDir, localDir, nullptr, getter_AddRefs(lock)));
 
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "nsToolkitProfile::RemoveProfileFiles",
       [rootDir, localDir, lock]() mutable {
+        
+        
+        nsTArray<nsCOMPtr<nsIFile>> undeletedFiles;
+        
+        
         bool equals;
         nsresult rv = rootDir->Equals(localDir, &equals);
-        
-        
         if (NS_SUCCEEDED(rv) && !equals) {
-          localDir->Remove(true);
+          RemoveProfileRecursion(localDir,
+                                  false,
+                                  false, undeletedFiles);
         }
+        
+        RemoveProfileRecursion(rootDir,
+                                true,
+                                true, undeletedFiles);
 
         
+        if (undeletedFiles.Length() > 0) {
+          uint32_t retries = 1;
+          
+          while (undeletedFiles.Length() > 0 && retries <= 1) {
+            Unused << PR_Sleep(PR_MillisecondsToInterval(10 * retries));
+            for (auto&& file :
+                 std::exchange(undeletedFiles, nsTArray<nsCOMPtr<nsIFile>>{})) {
+              RemoveProfileRecursion(file,
+                                      false,
+                                      true,
+                                     undeletedFiles);
+            }
+            retries++;
+          }
+        }
+
+#ifdef DEBUG
+        
+        if (undeletedFiles.Length() > 0) {
+          NS_WARNING("Unable to remove all files from the profile directory:");
+          
+          for (auto&& file : undeletedFiles) {
+            nsAutoString leafName;
+            if (NS_SUCCEEDED(file->GetLeafName(leafName))) {
+              NS_WARNING(NS_LossyConvertUTF16toASCII(leafName).get());
+            }
+          }
+        }
+#endif
+        
+        
+
         
         lock->Unlock();
         
@@ -119,8 +207,13 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
         NS_ReleaseOnMainThread("nsToolkitProfile::RemoveProfileFiles::Unlock",
                                lock.forget());
 
-        rv = rootDir->Remove(true);
-        NS_ENSURE_SUCCESS_VOID(rv);
+        if (undeletedFiles.Length() == 0) {
+          
+          
+          
+          
+          Unused << rootDir->Remove(true);
+        }
       });
 
   if (aInBackground) {
@@ -349,6 +442,9 @@ nsToolkitProfileLock::Unlock() {
     NS_ERROR("Unlocking a never-locked nsToolkitProfileLock!");
     return NS_ERROR_UNEXPECTED;
   }
+
+  
+  
 
   mLock.Unlock();
 

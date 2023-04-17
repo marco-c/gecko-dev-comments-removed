@@ -53,6 +53,12 @@ class nsProfileLock
   
 
 
+
+  static bool IsMaybeLockFile(nsIFile* aFile);
+
+  
+
+
   nsresult Cleanup();
 
   
