@@ -95,7 +95,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   NS_IMETHOD GetProtocolVersion(nsACString& aProtocolVersion) override;
   void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() override;
   
-  NS_IMETHOD SetupFallbackChannel(const char* aFallbackKey) override;
   NS_IMETHOD GetIsAuthChannel(bool* aIsAuthChannel) override;
   
   NS_IMETHOD SetPriority(int32_t value) override;

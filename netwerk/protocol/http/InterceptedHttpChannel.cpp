@@ -548,13 +548,6 @@ InterceptedHttpChannel::LogMimeTypeMismatch(const nsACString& aMessageName,
 }
 
 NS_IMETHODIMP
-InterceptedHttpChannel::SetupFallbackChannel(const char* aFallbackKey) {
-  
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 InterceptedHttpChannel::GetIsAuthChannel(bool* aIsAuthChannel) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }

@@ -87,11 +87,6 @@ interface nsIHttpChannelInternal : nsISupports
     
 
 
-    [must_use] void setupFallbackChannel(in string aFallbackKey);
-
-    
-
-
 
     [noscript, must_use] readonly attribute bool isAuthChannel;
 
