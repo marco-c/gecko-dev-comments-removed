@@ -321,6 +321,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 #endif
   bool mProbedMaxCount{false};
 
+  
   void AnalyzeConnection(nsTArray<SocketInfo>* data, SocketContext* context,
                          bool aActive);
 

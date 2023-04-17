@@ -6,6 +6,7 @@
 #define nsASocketHandler_h__
 
 #include "nsError.h"
+#include "nsINetAddr.h"
 #include "nsISupports.h"
 #include "prio.h"
 
@@ -82,6 +83,14 @@ class nsASocketHandler : public nsISupports {
   
   
   virtual void OnKeepaliveEnabledPrefChange(bool aEnabled) {}
+
+  
+  
+  
+  
+  virtual nsresult GetRemoteAddr(mozilla::net::NetAddr* addr) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   
   
