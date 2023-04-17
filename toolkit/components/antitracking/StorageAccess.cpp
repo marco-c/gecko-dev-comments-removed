@@ -210,64 +210,45 @@ namespace mozilla {
 
 StorageAccess StorageAllowedForWindow(nsPIDOMWindowInner* aWindow,
                                       uint32_t* aRejectedReason) {
-  MOZ_ASSERT(aWindow);
-
-  const Document* document = aWindow->GetExtantDoc();
-  if (!document) {
-    
-    if (aRejectedReason) {
-      *aRejectedReason = 0;
-    }
-    return StorageAccess::eDeny;
-  }
-
-  return StorageAllowedForDocument(document, aRejectedReason);
-}
-
-StorageAccess StorageAllowedForDocument(const Document* aDoc,
-                                        uint32_t* aRejectedReason) {
-  MOZ_ASSERT(aDoc);
-
   uint32_t rejectedReason;
   if (!aRejectedReason) {
     aRejectedReason = &rejectedReason;
   }
+
   *aRejectedReason = 0;
 
-  nsPIDOMWindowInner* inner = aDoc->GetInnerWindow();
-  if (!inner) {
-    return StorageAccess::eDeny;
+  if (Document* document = aWindow->GetExtantDoc()) {
+    nsCOMPtr<nsIPrincipal> principal = document->NodePrincipal();
+    
+    
+    
+    nsIChannel* channel = document->GetChannel();
+    return InternalStorageAllowedCheck(principal, aWindow, nullptr, channel,
+                                       document->CookieJarSettings(),
+                                       *aRejectedReason);
   }
 
-  MOZ_ASSERT(inner->GetExtantDoc() == aDoc);
+  
+  return StorageAccess::eDeny;
+}
 
-  
-  
-  
-  nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(inner);
-  if (StaticPrefs::privacy_antitracking_cacheStorageAllowedForWindow()) {
-    Maybe<StorageAccess> storageAccess = win->GetStorageAllowedCache();
-    if (storageAccess.isSome()) {
-      return storageAccess.value();
-    }
+StorageAccess StorageAllowedForDocument(const Document* aDoc) {
+  MOZ_ASSERT(aDoc);
+
+  if (nsPIDOMWindowInner* inner = aDoc->GetInnerWindow()) {
+    nsCOMPtr<nsIPrincipal> principal = aDoc->NodePrincipal();
+    
+    
+    
+    nsIChannel* channel = aDoc->GetChannel();
+
+    uint32_t rejectedReason = 0;
+    return InternalStorageAllowedCheck(
+        principal, inner, nullptr, channel,
+        const_cast<Document*>(aDoc)->CookieJarSettings(), rejectedReason);
   }
 
-  nsCOMPtr<nsIPrincipal> principal = aDoc->NodePrincipal();
-  
-  
-  
-  nsIChannel* channel = aDoc->GetChannel();
-
-  StorageAccess result = InternalStorageAllowedCheck(
-      principal, inner, nullptr, channel,
-      const_cast<Document*>(aDoc)->CookieJarSettings(), *aRejectedReason);
-
-  
-  
-  
-  win->SetStorageAllowed(result);
-
-  return result;
+  return StorageAccess::eDeny;
 }
 
 StorageAccess StorageAllowedForNewWindow(nsIPrincipal* aPrincipal, nsIURI* aURI,

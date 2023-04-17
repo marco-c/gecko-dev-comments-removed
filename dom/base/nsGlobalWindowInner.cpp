@@ -7521,10 +7521,6 @@ void nsGlobalWindowInner::ForgetSharedWorker(SharedWorker* aSharedWorker) {
 }
 
 void nsGlobalWindowInner::StorageAccessPermissionGranted() {
-  
-  
-  mStorageAllowedCache = Nothing();
-
   PropagateStorageAccessPermissionGrantedToWorkers(*this);
 
   
