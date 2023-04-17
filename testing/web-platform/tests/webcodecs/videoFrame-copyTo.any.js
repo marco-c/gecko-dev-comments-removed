@@ -34,12 +34,11 @@ function makeRGBA_2x2() {
       {data: rgbaData, stride: 8},
   ];
   const init = {
-      format: 'ABGR',
+      format: 'RGBA',
       timestamp: 0,
       codedWidth: 2,
       codedHeight: 2,
   };
-  
   return new VideoFrame(planes, init);
 }
 
