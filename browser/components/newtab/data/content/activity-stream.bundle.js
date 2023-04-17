@@ -4053,14 +4053,10 @@ class DSLinkMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureCompon
     }
   }
 
-  nextAnimationFrame() {
-    return new Promise(resolve => this.props.windowObj.requestAnimationFrame(resolve));
-  }
-
   async onMenuShow() {
     const dsLinkMenuHostDiv = this.contextMenuButtonRef.current.parentElement; 
 
-    await this.nextAnimationFrame();
+    await this.props.windowObj.document.l10n.translateFragment(dsLinkMenuHostDiv);
 
     if (this.props.windowObj.scrollMaxX > 0) {
       dsLinkMenuHostDiv.parentElement.classList.add("last-item");
