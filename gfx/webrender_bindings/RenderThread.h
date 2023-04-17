@@ -178,14 +178,14 @@ class RenderThread final {
   void SetClearColor(wr::WindowId aWindowId, wr::ColorF aColor);
 
   
-  void SetProfilerUI(wr::WindowId aWindowId, nsCString aUI);
+  void SetProfilerUI(wr::WindowId aWindowId, const nsCString& aUI);
 
   
   void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId,
                            float aWidth, float aHeight);
 
   
-  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
+  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aEvent);
 
   
   void UpdateAndRender(wr::WindowId aWindowId, const VsyncId& aStartId,
