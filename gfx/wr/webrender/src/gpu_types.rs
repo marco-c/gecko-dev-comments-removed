@@ -591,6 +591,14 @@ impl TransformPaletteId {
             TransformedRectKind::Complex
         }
     }
+
+    
+    
+    
+    
+    pub fn override_transform_kind(&self, kind: TransformedRectKind) -> Self {
+        TransformPaletteId((self.0 & 0xFFFFFFu32) | ((kind as u32) << 24))
+    }
 }
 
 
