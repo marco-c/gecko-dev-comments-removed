@@ -199,8 +199,6 @@ static_assert(ArrayLength(sFloatPrefs) == size_t(LookAndFeel::FloatID::End),
 
 
 static const char sColorPrefs[][41] = {
-    "ui.windowBackground",
-    "ui.windowForeground",
     "ui.widgetBackground",
     "ui.widgetForeground",
     "ui.widgetSelectBackground",
@@ -633,7 +631,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
   static constexpr nscolor kWindowText = NS_RGB(251, 251, 254);
   switch (aID) {
     case ColorID::Window:  
-    case ColorID::WindowBackground:
     case ColorID::Background:
     case ColorID::Menu:
     case ColorID::TextBackground:
@@ -645,7 +642,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Windowtext:  
     case ColorID::Menutext:
-    case ColorID::WindowForeground:
     case ColorID::TextForeground:
     case ColorID::MozDialogtext:
     case ColorID::Fieldtext:
@@ -1194,8 +1190,6 @@ static bool ColorIsCSSAccessible(LookAndFeel::ColorID aId) {
   using ColorID = LookAndFeel::ColorID;
 
   switch (aId) {
-    case ColorID::WindowBackground:
-    case ColorID::WindowForeground:
     case ColorID::WidgetBackground:
     case ColorID::WidgetForeground:
     case ColorID::WidgetSelectBackground:
