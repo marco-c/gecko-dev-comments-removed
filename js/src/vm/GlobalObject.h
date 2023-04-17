@@ -124,7 +124,7 @@ class GlobalObject : public NativeObject {
     GLOBAL_THIS_RESOLVED,
     INSTRUMENTATION,
     SOURCE_URLS,
-    REALM_WEAK_MAP_KEY,
+    REALM_KEY_OBJECT,
 
     
     RESERVED_SLOTS
@@ -906,8 +906,8 @@ class GlobalObject : public NativeObject {
   }
 
   
-  static JSObject* getOrCreateRealmWeakMapKey(JSContext* cx,
-                                              Handle<GlobalObject*> global);
+  static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
+                                             Handle<GlobalObject*> global);
 
   
   struct OffThreadPlaceholderObject : public NativeObject {

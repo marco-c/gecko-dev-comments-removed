@@ -294,7 +294,7 @@ bool MaybeCrossOriginObjectMixins::EnsureHolder(
   
   
   
-  JS::Rooted<JSObject*> key(cx, JS::GetRealmWeakMapKey(cx));
+  JS::Rooted<JSObject*> key(cx, JS::GetRealmKeyObject(cx));
   if (!key) {
     return false;
   }
