@@ -58,6 +58,9 @@ static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
 
 static const uint32_t kCCPurpleLimit = 200;
 
+
+static const int64_t kNumCCNodesBetweenTimeChecks = 1000;
+
 enum class CCRunnerAction {
   None,
   ForgetSkippable,
@@ -351,7 +354,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
   if (aCCBeginTime.IsNull()) {
     
-    return js::SliceBudget(baseBudget);
+    return js::SliceBudget(js::TimeBudget(baseBudget),
+                           kNumCCNodesBetweenTimeChecks);
   }
 
   
@@ -379,8 +383,9 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   
   
   
-  return js::SliceBudget(
-      std::max({delaySliceBudget, laterSliceBudget, baseBudget}));
+  return js::SliceBudget(js::TimeBudget(std::max(
+                             {delaySliceBudget, laterSliceBudget, baseBudget})),
+                         kNumCCNodesBetweenTimeChecks);
 }
 
 inline TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(
