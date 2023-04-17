@@ -58,8 +58,6 @@ namespace widget {
 enum class ThemeChangeKind : uint8_t;
 }
 
-using mozilla::loader::PScriptCacheChild;
-
 #if !defined(XP_WIN)
 
 
@@ -297,7 +295,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvNotifyVisited(nsTArray<VisitedQueryResult>&&);
 
-  mozilla::ipc::IPCResult RecvThemeChanged(LookAndFeelData&& aLookAndFeelData,
+  mozilla::ipc::IPCResult RecvThemeChanged(FullLookAndFeel&&,
                                            widget::ThemeChangeKind);
 
   mozilla::ipc::IPCResult RecvUpdateSystemParameters(
@@ -535,7 +533,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvSetXPCOMProcessAttributes(
       XPCOMInitData&& aXPCOMInit, const StructuredCloneData& aInitialData,
-      LookAndFeelData&& aLookAndFeelData,
+      FullLookAndFeel&& aLookAndFeelData,
       nsTArray<SystemFontListEntry>&& aFontList,
       const Maybe<base::SharedMemoryHandle>& aSharedUASheetHandle,
       const uintptr_t& aSharedUASheetAddress,
@@ -597,7 +595,7 @@ class ContentChild final : public PContentChild,
   bool DeallocPSessionStorageObserverChild(
       PSessionStorageObserverChild* aActor);
 
-  LookAndFeelData& BorrowLookAndFeelData() { return mLookAndFeelData; }
+  FullLookAndFeel& BorrowLookAndFeelData() { return mLookAndFeelData; }
 
   
 
@@ -858,7 +856,7 @@ class ContentChild final : public PContentChild,
   
   nsTArray<mozilla::dom::SystemFontListEntry> mFontList;
   
-  LookAndFeelData mLookAndFeelData;
+  FullLookAndFeel mLookAndFeelData;
   
   nsTArray<base::SharedMemoryHandle> mSharedFontListBlocks;
 

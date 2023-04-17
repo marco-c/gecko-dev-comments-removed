@@ -22,7 +22,6 @@ namespace mozilla {
 
 namespace widget {
 class FullLookAndFeel;
-class LookAndFeelCache;
 }  
 
 enum class StyleSystemColor : uint8_t;
@@ -538,12 +537,6 @@ class LookAndFeel {
 
   static void NativeInit();
 
-  
-
-
-
-  static widget::LookAndFeelCache GetCache();
-  static void SetCache(const widget::LookAndFeelCache& aCache);
   static void SetData(widget::FullLookAndFeel&& aTables);
   static void NotifyChangedAllWindows(widget::ThemeChangeKind);
 };

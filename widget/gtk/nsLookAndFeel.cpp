@@ -60,11 +60,7 @@ extern mozilla::LazyLogModule gWidgetLog;
   ((nscolor)NS_RGBA((int)((c).red * 255), (int)((c).green * 255), \
                     (int)((c).blue * 255), (int)((c).alpha * 255)))
 
-nsLookAndFeel::nsLookAndFeel(const LookAndFeelCache* aCache) {
-  if (aCache) {
-    DoSetCache(*aCache);
-  }
-}
+nsLookAndFeel::nsLookAndFeel() = default;
 
 nsLookAndFeel::~nsLookAndFeel() = default;
 
@@ -271,80 +267,6 @@ void nsLookAndFeel::RefreshImpl() {
   moz_gtk_refresh();
 
   mInitialized = false;
-}
-
-widget::LookAndFeelCache nsLookAndFeel::GetCacheImpl() {
-  LookAndFeelCache cache = nsXPLookAndFeel::GetCacheImpl();
-
-  constexpr IntID kIntIdsToCache[] = {IntID::SystemUsesDarkTheme,
-                                      IntID::PrefersReducedMotion,
-                                      IntID::UseAccessibilityTheme};
-
-  constexpr ColorID kColorIdsToCache[] = {
-      ColorID::ThemedScrollbar,
-      ColorID::ThemedScrollbarInactive,
-      ColorID::ThemedScrollbarThumb,
-      ColorID::ThemedScrollbarThumbHover,
-      ColorID::ThemedScrollbarThumbActive,
-      ColorID::ThemedScrollbarThumbInactive};
-
-  for (IntID id : kIntIdsToCache) {
-    cache.mInts().AppendElement(LookAndFeelInt(id, GetInt(id)));
-  }
-
-  for (ColorID id : kColorIdsToCache) {
-    cache.mColors().AppendElement(LookAndFeelColor(id, GetColor(id)));
-  }
-
-  return cache;
-}
-
-void nsLookAndFeel::SetCacheImpl(const LookAndFeelCache& aCache) {
-  DoSetCache(aCache);
-}
-
-void nsLookAndFeel::DoSetCache(const LookAndFeelCache& aCache) {
-  for (const auto& entry : aCache.mInts()) {
-    switch (entry.id()) {
-      case IntID::SystemUsesDarkTheme:
-        mSystemUsesDarkTheme = entry.value();
-        break;
-      case IntID::PrefersReducedMotion:
-        mPrefersReducedMotion = entry.value();
-        break;
-      case IntID::UseAccessibilityTheme:
-        mHighContrast = entry.value();
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Bogus Int ID in cache");
-        break;
-    }
-  }
-  for (const auto& entry : aCache.mColors()) {
-    switch (entry.id()) {
-      case ColorID::ThemedScrollbar:
-        mThemedScrollbar = entry.color();
-        break;
-      case ColorID::ThemedScrollbarInactive:
-        mThemedScrollbarInactive = entry.color();
-        break;
-      case ColorID::ThemedScrollbarThumb:
-        mThemedScrollbarThumb = entry.color();
-        break;
-      case ColorID::ThemedScrollbarThumbHover:
-        mThemedScrollbarThumbHover = entry.color();
-        break;
-      case ColorID::ThemedScrollbarThumbActive:
-        mThemedScrollbarThumbActive = entry.color();
-        break;
-      case ColorID::ThemedScrollbarThumbInactive:
-        mThemedScrollbarThumbInactive = entry.color();
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Bogus Color ID in cache");
-        break;
-    }
-  }
 }
 
 static bool IsSelectionColorForeground(LookAndFeel::ColorID aID) {
@@ -1101,9 +1023,6 @@ bool nsLookAndFeel::FromParentTheme(IntID aID) {
   switch (aID) {
     case IntID::SystemUsesDarkTheme:
     case IntID::UseAccessibilityTheme:
-      
-      
-      
       
       
       

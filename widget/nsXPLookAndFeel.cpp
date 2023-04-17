@@ -326,37 +326,24 @@ nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
   
   
   
-  
 
-  LookAndFeelCache* lnfCache = nullptr;
-  FullLookAndFeel* fullLnf = nullptr;
-  widget::LookAndFeelData* lnfData = nullptr;
+  FullLookAndFeel* lnf = nullptr;
 
   if (auto* cc = mozilla::dom::ContentChild::GetSingleton()) {
-    lnfData = &cc->BorrowLookAndFeelData();
-    switch (lnfData->type()) {
-      case widget::LookAndFeelData::TLookAndFeelCache:
-        lnfCache = &lnfData->get_LookAndFeelCache();
-        break;
-      case widget::LookAndFeelData::TFullLookAndFeel:
-        fullLnf = &lnfData->get_FullLookAndFeel();
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("unexpected LookAndFeelData type");
-    }
+    lnf = &cc->BorrowLookAndFeelData();
   }
 
-  if (fullLnf) {
-    sInstance = new widget::RemoteLookAndFeel(std::move(*fullLnf));
+  if (lnf) {
+    sInstance = new widget::RemoteLookAndFeel(std::move(*lnf));
   } else if (gfxPlatform::IsHeadless()) {
-    sInstance = new widget::HeadlessLookAndFeel(lnfCache);
+    sInstance = new widget::HeadlessLookAndFeel();
   } else {
-    sInstance = new nsLookAndFeel(lnfCache);
+    sInstance = new nsLookAndFeel();
   }
 
   
-  if (lnfData) {
-    *lnfData = widget::LookAndFeelData{};
+  if (lnf) {
+    *lnf = {};
   }
 
   nsNativeBasicTheme::Init();
@@ -1029,10 +1016,6 @@ void nsXPLookAndFeel::RefreshImpl() {
   }
 }
 
-widget::LookAndFeelCache nsXPLookAndFeel::GetCacheImpl() {
-  return LookAndFeelCache{};
-}
-
 static bool sRecordedLookAndFeelTelemetry = false;
 
 void nsXPLookAndFeel::RecordTelemetry() {
@@ -1120,16 +1103,6 @@ void LookAndFeel::Refresh() {
 
 
 void LookAndFeel::NativeInit() { nsLookAndFeel::GetInstance()->NativeInit(); }
-
-
-widget::LookAndFeelCache LookAndFeel::GetCache() {
-  return nsLookAndFeel::GetInstance()->GetCacheImpl();
-}
-
-
-void LookAndFeel::SetCache(const widget::LookAndFeelCache& aCache) {
-  nsLookAndFeel::GetInstance()->SetCacheImpl(aCache);
-}
 
 
 void LookAndFeel::SetData(widget::FullLookAndFeel&& aTables) {

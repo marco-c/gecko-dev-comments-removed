@@ -29,13 +29,9 @@ namespace widget {
 
 
 
-
-
-
-
 class HeadlessLookAndFeel : public nsXPLookAndFeel {
  public:
-  explicit HeadlessLookAndFeel(const LookAndFeelCache* aCache);
+  explicit HeadlessLookAndFeel();
   virtual ~HeadlessLookAndFeel();
 
   void NativeInit() final{};
