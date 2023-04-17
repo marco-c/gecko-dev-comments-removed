@@ -144,4 +144,17 @@ var TaskScheduler = {
   async deleteAllTasks() {
     return gImpl.deleteAllTasks();
   },
+
+  
+
+
+
+
+
+
+
+
+  async taskExists(id) {
+    return gImpl.taskExists(id);
+  },
 };
