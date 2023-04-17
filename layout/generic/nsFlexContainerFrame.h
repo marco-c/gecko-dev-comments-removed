@@ -383,7 +383,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  const CachedBAxisMeasurement& MeasureAscentAndBSizeForFlexItem(
+  const CachedBAxisMeasurement& MeasureBSizeForFlexItem(
       FlexItem& aItem, ReflowInput& aChildReflowInput);
 
   
