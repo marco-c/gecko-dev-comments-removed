@@ -65,6 +65,19 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   static UINT GetCustomClipboardFormat();
 
  protected:
+  static HRESULT FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
+                               LPFORMATETC pFE, LPSTGMEDIUM pSTM, DWORD aTymed);
+
+  
+  
+  static void IDataObjectMethodResultToString(HRESULT aHres,
+                                              nsACString& aResult);
+
+  
+  
+  static void LogIDataObjectMethodResult(HRESULT aHres,
+                                         const nsCString& aMethodName);
+
   
   
   static void LogOleGetClipboardResult(HRESULT aHres);
