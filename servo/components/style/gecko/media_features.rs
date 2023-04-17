@@ -407,17 +407,41 @@ fn eval_prefers_color_scheme(device: &Device, query_value: Option<PrefersColorSc
 }
 
 
+#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
+#[repr(u8)]
+enum ToolbarPrefersColorScheme {
+    Dark,
+    Light,
+    System,
+}
 
-fn eval_toolbar_prefers_color_scheme(_: &Device, query_value: Option<PrefersColorScheme>) -> bool {
-    let prefers_color_scheme = if static_prefs::pref!("browser.theme.dark-toolbar-theme") {
-        PrefersColorScheme::Dark
-    } else {
-        PrefersColorScheme::Light
+
+
+fn eval_toolbar_prefers_color_scheme(d: &Device, query_value: Option<ToolbarPrefersColorScheme>) -> bool {
+    let toolbar_value = match static_prefs::pref!("browser.theme.toolbar-theme") {
+        0 => ToolbarPrefersColorScheme::Dark,
+        1 => ToolbarPrefersColorScheme::Light,
+        _ => ToolbarPrefersColorScheme::System,
     };
 
+    let query_value = match query_value {
+        Some(v) => v,
+        None => return true,
+    };
+
+    if query_value == toolbar_value {
+        return true;
+    }
+
+    if toolbar_value != ToolbarPrefersColorScheme::System {
+        return false;
+    }
+
+    
     match query_value {
-        Some(v) => prefers_color_scheme == v,
-        None => true,
+        ToolbarPrefersColorScheme::Dark => eval_prefers_color_scheme(d, Some(PrefersColorScheme::Dark)),
+        ToolbarPrefersColorScheme::Light => eval_prefers_color_scheme(d, Some(PrefersColorScheme::Light)),
+        ToolbarPrefersColorScheme::System => true,
     }
 }
 
@@ -852,7 +876,7 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 62] = [
     feature!(
         atom!("-moz-toolbar-prefers-color-scheme"),
         AllowsRanges::No,
-        keyword_evaluator!(eval_toolbar_prefers_color_scheme, PrefersColorScheme),
+        keyword_evaluator!(eval_toolbar_prefers_color_scheme, ToolbarPrefersColorScheme),
         ParsingRequirements::CHROME_AND_UA_ONLY,
     ),
 
