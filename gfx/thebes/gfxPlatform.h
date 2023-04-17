@@ -271,7 +271,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-
   static already_AddRefed<SourceSurface> GetSourceSurfaceForSurface(
       RefPtr<mozilla::gfx::DrawTarget> aTarget, gfxASurface* aSurface,
       bool aIsPlugin = false);

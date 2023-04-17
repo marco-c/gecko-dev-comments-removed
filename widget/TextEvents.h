@@ -57,9 +57,6 @@ namespace dom {
 class PBrowserParent;
 class PBrowserChild;
 }  
-namespace plugins {
-class PPluginInstanceChild;
-}  
 
 enum class AccessKeyType {
   
