@@ -1277,13 +1277,6 @@ void Shape::traceChildren(JSTracer* trc) {
   if (parent) {
     TraceEdge(trc, &parent, "parent");
   }
-  if (dictNext.isObject()) {
-    JSObject* obj = dictNext.toObject();
-    TraceManuallyBarrieredEdge(trc, &obj, "dictNext object");
-    if (obj != dictNext.toObject()) {
-      dictNext.setObject(obj);
-    }
-  }
   cache_.trace(trc);
 }
 inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
@@ -1297,13 +1290,6 @@ inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
     }
 
     markAndTraverseEdge(shape, shape->propidRef().get());
-
-    
-    
-    
-    if (shape->dictNext.isObject()) {
-      markAndTraverseEdge(shape, shape->dictNext.toObject());
-    }
 
     
     

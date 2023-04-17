@@ -345,8 +345,6 @@ class Nursery {
     return cellsWithUid_.append(cell);
   }
 
-  [[nodiscard]] bool queueDictionaryModeObjectToSweep(NativeObject* obj);
-
   size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
     size_t total = 0;
     for (BufferSet::Range r = mallocedBuffers.all(); !r.empty(); r.popFront()) {
@@ -569,9 +567,6 @@ class Nursery {
   using CellsWithUniqueIdVector = Vector<gc::Cell*, 8, SystemAllocPolicy>;
   CellsWithUniqueIdVector cellsWithUid_;
 
-  using NativeObjectVector = Vector<NativeObject*, 0, SystemAllocPolicy>;
-  NativeObjectVector dictionaryModeObjects_;
-
   template <typename Key>
   struct DeduplicationStringHasher {
     using Lookup = Key;
@@ -737,7 +732,6 @@ class Nursery {
   
   void clear();
 
-  void sweepDictionaryModeObjects();
   void sweepMapAndSetObjects();
 
   

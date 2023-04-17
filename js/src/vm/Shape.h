@@ -257,7 +257,7 @@ class ShapeChildren {
 
 class DictionaryShapeLink {
   
-  enum { SHAPE = 2, OBJECT = 3, MASK = 3 };
+  enum { SHAPE = 2, MASK = 3 };
 
   uintptr_t bits = 0;
 
@@ -265,7 +265,6 @@ class DictionaryShapeLink {
   
   
   DictionaryShapeLink() {}
-  explicit DictionaryShapeLink(JSObject* obj) { setObject(obj); }
   explicit DictionaryShapeLink(Shape* shape) { setShape(shape); }
 
   bool isNone() const { return !bits; }
@@ -282,26 +281,12 @@ class DictionaryShapeLink {
     bits = uintptr_t(shape) | SHAPE;
   }
 
-  bool isObject() const { return (bits & MASK) == OBJECT; }
-  JSObject* toObject() const {
-    MOZ_ASSERT(isObject());
-    return reinterpret_cast<JSObject*>(bits & ~uintptr_t(MASK));
-  }
-  void setObject(JSObject* obj) {
-    MOZ_ASSERT(obj);
-    MOZ_ASSERT((uintptr_t(obj) & MASK) == 0);
-    bits = uintptr_t(obj) | OBJECT;
-  }
-
   bool operator==(const DictionaryShapeLink& other) const {
     return bits == other.bits;
   }
   bool operator!=(const DictionaryShapeLink& other) const {
     return !((*this) == other);
   }
-
-  inline Shape* prev();
-  inline void setPrev(Shape* shape);
 } JS_HAZ_GC_POINTER;
 
 class PropertyTree {
@@ -887,10 +872,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   };
 
   void setNextDictionaryShape(Shape* shape);
-  void setDictionaryObject(JSObject* obj);
   void setDictionaryNextPtr(DictionaryShapeLink next);
   void clearDictionaryNextPtr();
-  void dictNextPreWriteBarrier();
 
   static MOZ_ALWAYS_INLINE Shape* search(JSContext* cx, Shape* start, jsid id);
 
@@ -902,10 +885,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   static inline Shape* searchNoHashify(Shape* start, jsid id);
 
   void removeFromDictionary(NativeObject* obj);
-  void insertIntoDictionaryBefore(DictionaryShapeLink next);
 
-  inline void initDictionaryShape(const StackShape& child, uint32_t nfixed,
-                                  DictionaryShapeLink next);
+  void initDictionaryShapeAtEnd(const StackShape& child, NativeObject* obj);
+  void initDictionaryShapeAtFront(const StackShape& child, uint32_t nfixed,
+                                  Shape* next);
 
   
   

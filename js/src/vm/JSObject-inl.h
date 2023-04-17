@@ -109,29 +109,6 @@ inline void JSObject::finalize(JSFreeOp* fop) {
   }
 }
 
-MOZ_ALWAYS_INLINE void js::NativeObject::sweepDictionaryListPointer() {
-  
-  
-  
-  MOZ_ASSERT(inDictionaryMode());
-  if (shape()->dictNext == DictionaryShapeLink(this)) {
-    shape()->dictNext.setNone();
-  }
-}
-
-MOZ_ALWAYS_INLINE void
-js::NativeObject::updateDictionaryListPointerAfterMinorGC(NativeObject* old) {
-  MOZ_ASSERT(this == Forwarded(old));
-
-  
-  
-  if (shape()->dictNext == DictionaryShapeLink(old)) {
-    shape()->dictNext = DictionaryShapeLink(this);
-  }
-}
-
-
-
 inline bool JSObject::isQualifiedVarObj() const {
   if (is<js::DebugEnvironmentProxy>()) {
     return as<js::DebugEnvironmentProxy>().environment().isQualifiedVarObj();

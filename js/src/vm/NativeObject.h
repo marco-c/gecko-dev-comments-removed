@@ -1559,9 +1559,6 @@ class NativeObject : public JSObject {
   
   inline js::gc::AllocKind allocKindForTenure() const;
 
-  void sweepDictionaryListPointer();
-  void updateDictionaryListPointerAfterMinorGC(NativeObject* old);
-
   
   
   JS::Realm* realm() const { return nonCCWRealm(); }
