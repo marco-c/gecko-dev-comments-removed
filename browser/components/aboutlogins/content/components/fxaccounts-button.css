@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .logged-out-view,
 .logged-in-view {
@@ -9,8 +9,8 @@
 }
 
 .fxaccounts-extra-text {
-  
-
+  /* Only show at most 3 lines of text to limit the
+     text from overflowing the header. */
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -41,7 +41,7 @@
 .fxaccounts-enable-button {
   min-width: 120px;
   padding-inline: 16px;
-  
+  /* See bug 1626764: The width of button could go lesser than 120px in small window size which could wrap the texts into two lines in systems with different default fonts */
   flex-shrink: 0;
 }
 
@@ -69,10 +69,12 @@
   height: 32px;
 }
 
-.fxaccounts-avatar-button:hover {
-  background-color: transparent !important;
-}
+@media not (prefers-contrast) {
+  .fxaccounts-avatar-button:hover {
+    background-color: transparent !important;
+  }
 
-.fxaccounts-avatar-button:hover > .fxaccount-email {
-  text-decoration: underline;
+  .fxaccounts-avatar-button:hover > .fxaccount-email {
+    text-decoration: underline;
+  }
 }
