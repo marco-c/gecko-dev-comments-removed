@@ -30,6 +30,7 @@ class NativeMenuMac : public NativeMenu,
 
   
   bool ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) override;
+  bool Close() override;
   void AddObserver(NativeMenu::Observer* aObserver) override {
     mObservers.AppendElement(aObserver);
   }

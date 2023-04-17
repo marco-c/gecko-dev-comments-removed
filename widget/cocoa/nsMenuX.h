@@ -95,6 +95,9 @@ class nsMenuX final : public nsMenuParentX,
   
   void MenuClosedAsync();
 
+  
+  bool Close();
+
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
   nsIContent* Content() { return mContent; }
