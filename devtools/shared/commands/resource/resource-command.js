@@ -261,6 +261,9 @@ class ResourceCommand {
 
   async _watchAllTargets() {
     if (!this._watchTargetsPromise) {
+      
+      
+      
       this._watchTargetsPromise = this.targetCommand.watchTargets(
         this.targetCommand.ALL_TYPES,
         this._onTargetAvailable,
@@ -284,6 +287,37 @@ class ResourceCommand {
       this._onTargetAvailable,
       this._onTargetDestroyed
     );
+  }
+
+  
+
+
+
+  async _startLegacyListenersForExistingTargets(resourceType) {
+    
+    
+    const shouldRunLegacyListeners =
+      !this.hasResourceCommandSupport(resourceType) ||
+      this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType);
+    if (shouldRunLegacyListeners) {
+      const promises = [];
+      const targets = this.targetCommand.getAllTargets(
+        this.targetCommand.ALL_TYPES
+      );
+      for (const targetFront of targets) {
+        
+        
+        
+        promises.push(
+          this._watchResourcesForTarget({
+            targetFront,
+            resourceType,
+            disableWarning: true,
+          })
+        );
+      }
+      await Promise.all(promises);
+    }
   }
 
   
@@ -346,7 +380,7 @@ class ResourceCommand {
         
         
         
-        await this._watchResourcesForTarget(targetFront, resourceType);
+        await this._watchResourcesForTarget({ targetFront, resourceType });
       }
     }
 
@@ -778,35 +812,20 @@ class ResourceCommand {
 
     this._processingExistingResources.add(resourceType);
 
-    const shouldRunLegacyListeners =
-      !this.hasResourceCommandSupport(resourceType) ||
-      this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType);
-    if (shouldRunLegacyListeners) {
-      
-      
-      
-      
-      
-      
-      
-      const promises = [];
-      const targets = this.targetCommand.getAllTargets(
-        this.targetCommand.ALL_TYPES
-      );
-      for (const target of targets) {
-        promises.push(this._watchResourcesForTarget(target, resourceType));
-      }
-      await Promise.all(promises);
-    }
+    
+    
+    
+    
+    
+    
+    
+    await this._watchAllTargets(resourceType);
 
     
     
     
     
-    
-    
-    
-    await this._watchAllTargets();
+    await this._startLegacyListenersForExistingTargets(resourceType);
 
     
     
@@ -850,7 +869,11 @@ class ResourceCommand {
 
 
 
-  async _watchResourcesForTarget(targetFront, resourceType) {
+  async _watchResourcesForTarget({
+    targetFront,
+    resourceType,
+    disableWarning = false,
+  }) {
     if (this._hasResourceCommandSupportForTarget(resourceType, targetFront)) {
       
       
@@ -872,9 +895,11 @@ class ResourceCommand {
     const legacyListeners =
       this._existingLegacyListeners.get(targetFront) || [];
     if (legacyListeners.includes(resourceType)) {
-      console.warn(
-        `Already started legacy listener for ${resourceType} on ${targetFront.actorID}`
-      );
+      if (!disableWarning) {
+        console.warn(
+          `Already started legacy listener for ${resourceType} on ${targetFront.actorID}`
+        );
+      }
       return;
     }
     this._existingLegacyListeners.set(
