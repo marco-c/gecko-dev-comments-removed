@@ -769,25 +769,15 @@ bool GlobalObject::initStandardClasses(JSContext* cx,
 
 bool GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, HandleString code,
                                            Handle<GlobalObject*> global) {
-  Value v = global->getReservedSlot(RUNTIME_CODEGEN_ENABLED);
-  if (v.isUndefined()) {
-    
-
-
-
-    JSCSPEvalChecker allows =
-        cx->runtime()->securityCallbacks->contentSecurityPolicyAllows;
-    if (allows) {
-      return allows(cx, code);
-    }
-
-    
-    
-    
-    v = JS::TrueValue();
-    global->setReservedSlot(RUNTIME_CODEGEN_ENABLED, v);
+  
+  
+  JSCSPEvalChecker allows =
+      cx->runtime()->securityCallbacks->contentSecurityPolicyAllows;
+  if (allows) {
+    return allows(cx, code);
   }
-  return !v.isFalse();
+
+  return true;
 }
 
 
