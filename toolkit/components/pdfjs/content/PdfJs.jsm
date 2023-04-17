@@ -206,7 +206,7 @@ var PdfJs = {
       } else {
         Svc.handlerService.remove(handlerInfo);
         
-        Services.prefs.clearIntPref(PREF_MIGRATION_VERSION);
+        Services.prefs.clearUserPref(PREF_MIGRATION_VERSION);
       }
     }
   },
