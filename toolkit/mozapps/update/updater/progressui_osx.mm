@@ -96,6 +96,11 @@ int InitProgressUI(int* pargc, char*** pargv) {
 }
 
 int ShowProgressUI(bool indeterminate) {
+  if (!sUpdatePath) {
+    
+    return -1;
+  }
+
   
   
   

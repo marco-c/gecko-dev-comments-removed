@@ -2777,14 +2777,6 @@ int NS_main(int argc, NS_tchar** argv) {
     }
 #endif
 
-#ifdef XP_MACOSX
-    if (!isElevated) {
-#endif
-      InitProgressUI(&argc, &argv);
-#ifdef XP_MACOSX
-    }
-#endif
-
     
     
     
@@ -3013,6 +3005,14 @@ int NS_main(int argc, NS_tchar** argv) {
     }
 
   }  
+
+  if (!sUpdateSilently && !isDMGInstall
+#ifdef XP_MACOSX
+      && !isElevated
+#endif
+  ) {
+    InitProgressUI(&argc, &argv);
+  }
 
 #ifdef XP_MACOSX
   if (!isElevated && (!IsRecursivelyWritable(argv[2]) || isDMGInstall)) {
