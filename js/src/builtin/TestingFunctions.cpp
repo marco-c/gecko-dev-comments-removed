@@ -45,6 +45,7 @@
 #include "builtin/ModuleObject.h"
 #include "builtin/Promise.h"
 #include "builtin/SelfHostingDefines.h"
+#include "builtin/TestingUtility.h"  
 #ifdef DEBUG
 #  include "frontend/TokenStream.h"
 #endif
@@ -5903,10 +5904,6 @@ static bool CompileToStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
 
   
-  const char* filename = "compileToStencilXDR-DATA.js";
-  uint32_t lineno = 1;
-
-  
   AutoStableStringChars linearChars(cx);
   if (!linearChars.initTwoByte(cx, src)) {
     return false;
@@ -5917,13 +5914,17 @@ static bool CompileToStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
     return false;
   }
 
-  
   CompileOptions options(cx);
-  options.setFileAndLine(filename, lineno);
+  UniqueChars fileNameBytes;
+  if (args.length() == 2) {
+    RootedObject opts(cx, &args[1].toObject());
+
+    if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
+      return false;
+    }
+  }
 
   
-  options.setForceFullParse();
-
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
   auto stencil = frontend::CompileGlobalScriptToExtensibleStencil(
@@ -5972,14 +5973,17 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   }
   RootedArrayBufferObject src(cx, &args[0].toObject().as<ArrayBufferObject>());
 
-  const char* filename = "compileToStencilXDR-DATA.js";
-  uint32_t lineno = 1;
+  CompileOptions options(cx);
+  UniqueChars fileNameBytes;
+  if (args.length() == 2) {
+    RootedObject opts(cx, &args[1].toObject());
+
+    if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
+      return false;
+    }
+  }
 
   
-  CompileOptions options(cx);
-  options.setFileAndLine(filename, lineno);
-  options.setForceFullParse();
-
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
   if (!input.get().initForGlobal(cx)) {
