@@ -57,6 +57,23 @@ class RegExpStatics;
 
 
 
+class GlobalObjectData {
+  friend class js::GlobalObject;
+
+  GlobalObjectData(const GlobalObjectData&) = delete;
+  void operator=(const GlobalObjectData&) = delete;
+
+ public:
+  GlobalObjectData() = default;
+
+  HeapPtr<GlobalScope*> emptyGlobalScope;
+
+  void trace(JSTracer* trc);
+};
+
+
+
+
 
 
 
@@ -97,7 +114,7 @@ class GlobalObject : public NativeObject {
     THROWTYPEERROR,
 
     
-    EMPTY_GLOBAL_SCOPE,
+    GLOBAL_DATA_SLOT,
     ITERATOR_PROTO,
     ARRAY_ITERATOR_PROTO,
     STRING_ITERATOR_PROTO,
@@ -148,9 +165,28 @@ class GlobalObject : public NativeObject {
     return APPLICATION_SLOTS + JSProto_LIMIT + key;
   }
 
+  GlobalObjectData* maybeData() {
+    Value v = getReservedSlot(GLOBAL_DATA_SLOT);
+    return static_cast<GlobalObjectData*>(v.toPrivate());
+  }
+  const GlobalObjectData* maybeData() const {
+    Value v = getReservedSlot(GLOBAL_DATA_SLOT);
+    return static_cast<const GlobalObjectData*>(v.toPrivate());
+  }
+
+  GlobalObjectData& data() { return *maybeData(); }
+  const GlobalObjectData& data() const { return *maybeData(); }
+
  public:
   GlobalLexicalEnvironmentObject& lexicalEnvironment() const;
   GlobalScope& emptyGlobalScope() const;
+
+  void traceData(JSTracer* trc) { data().trace(trc); }
+  void releaseData(JSFreeOp* fop);
+
+  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(maybeData());
+  }
 
   void setOriginalEval(JSObject* evalobj) {
     MOZ_ASSERT(getReservedSlot(EVAL).isUndefined());
