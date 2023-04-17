@@ -3730,11 +3730,12 @@ BrowserGlue.prototype = {
       
       let defaultValue = false;
       let oldPrefName = "browser.ctrlTab.recentlyUsedOrder";
+      let oldPrefDefault = true;
       
       if (Services.prefs.getBoolPref("browser.engagement.ctrlTab.has-used")) {
         let newPrefValue = Services.prefs.getBoolPref(
           oldPrefName,
-          defaultValue
+          oldPrefDefault
         );
         Services.prefs.setBoolPref(
           "browser.ctrlTab.sortByRecentlyUsed",
