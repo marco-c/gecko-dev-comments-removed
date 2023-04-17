@@ -94,7 +94,18 @@ async function unregisterAll() {
 
 function makeRandomBlob(size) {
   const arr = new Uint8Array(size);
-  window.crypto.getRandomValues(arr);
+  let offset = 0;
+  
+
+
+
+
+
+  while (offset < size) {
+    const nextSize = Math.min(size - offset, 65536);
+    window.crypto.getRandomValues(new Uint8Array(arr.buffer, offset, nextSize));
+    offset += nextSize;
+  }
   return new Blob([arr], { type: "application/octet-stream" });
 }
 
