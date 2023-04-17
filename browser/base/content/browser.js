@@ -4819,6 +4819,18 @@ let gFileMenu = {
     }
   },
 
+  
+
+
+
+  updateTabCloseCountState() {
+    document.l10n.setAttributes(
+      document.getElementById("menu_close"),
+      "menu-file-close-tab",
+      { tabCount: gBrowser.selectedTabs.length }
+    );
+  },
+
   onPopupShowing(event) {
     
     if (event.target.id != "menu_FilePopup") {
@@ -4826,6 +4838,7 @@ let gFileMenu = {
     }
     this.updateUserContextUIVisibility();
     this.updateImportCommandEnabledState();
+    this.updateTabCloseCountState();
     if (AppConstants.platform == "macosx") {
       gShareUtils.updateShareURLMenuItem(
         gBrowser.selectedBrowser,
