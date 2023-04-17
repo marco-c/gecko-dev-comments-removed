@@ -296,6 +296,10 @@ extern "C" const char* __tsan_default_suppressions() {
 
          "race:mozilla::gl::MesaMemoryLeakWorkaround\n"
 
+         
+         "race:js::wasm::Code::bestTier\n"
+         "race:js::wasm::Code::commitTier2\n"
+
       
       ;  
 }
