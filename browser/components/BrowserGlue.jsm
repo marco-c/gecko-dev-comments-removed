@@ -917,9 +917,6 @@ const BOOKMARKS_BACKUP_IDLE_TIME_SEC = 8 * 60;
 
 const BOOKMARKS_BACKUP_MIN_INTERVAL_DAYS = 1;
 
-
-const BOOKMARKS_BACKUP_MAX_INTERVAL_DAYS = 3;
-
 const LATE_TASKS_IDLE_TIME_SEC = 20;
 
 const STARTUP_CRASHES_END_DELAY_MS = 30 * 1000;
@@ -1099,7 +1096,8 @@ BrowserGlue.prototype = {
         } else if (data == "force-distribution-customization") {
           this._distributionCustomizer.applyCustomizations();
           
-        } else if (data == "force-places-init") {
+        } else if (data == "test-force-places-init") {
+          this._placesInitialized = false;
           this._initPlaces(false);
         } else if (data == "mock-alerts-service") {
           Object.defineProperty(this, "AlertsService", {
@@ -1283,7 +1281,7 @@ BrowserGlue.prototype = {
         this,
         this._bookmarksBackupIdleTime
       );
-      delete this._bookmarksBackupIdleTime;
+      this._bookmarksBackupIdleTime = null;
     }
     if (this._lateTasksIdleObserver) {
       this._userIdleService.removeIdleObserver(
@@ -1957,7 +1955,7 @@ BrowserGlue.prototype = {
             this,
             this._bookmarksBackupIdleTime
           );
-          delete this._bookmarksBackupIdleTime;
+          this._bookmarksBackupIdleTime = null;
         }
       },
 
@@ -2997,6 +2995,11 @@ BrowserGlue.prototype = {
 
 
   _initPlaces: function BG__initPlaces(aInitialMigrationPerformed) {
+    if (this._placesInitialized) {
+      throw new Error("Cannot initialize Places more than once");
+    }
+    this._placesInitialized = true;
+
     
     
     
@@ -3063,13 +3066,9 @@ BrowserGlue.prototype = {
 
       
       
-      let lastBackupFile;
-
-      
-      
       if (importBookmarks && !restoreDefaultBookmarks && !importBookmarksHTML) {
         
-        lastBackupFile = await PlacesBackups.getMostRecentBackup();
+        let lastBackupFile = await PlacesBackups.getMostRecentBackup();
         if (lastBackupFile) {
           
           await BookmarkJSONUtils.importFromFile(lastBackupFile, {
@@ -3151,46 +3150,14 @@ BrowserGlue.prototype = {
       }
 
       
-      if (!this._bookmarksBackupIdleTime) {
-        this._bookmarksBackupIdleTime = BOOKMARKS_BACKUP_IDLE_TIME_SEC;
-
-        
-        
-        if (lastBackupFile === undefined) {
-          lastBackupFile = await PlacesBackups.getMostRecentBackup();
-        }
-        if (!lastBackupFile) {
-          this._bookmarksBackupIdleTime /= 2;
-        } else {
-          let lastBackupTime = PlacesBackups.getDateForFile(lastBackupFile);
-          let profileLastUse = Services.appinfo.replacedLockTime || Date.now();
-
-          
-          
-          
-          if (profileLastUse > lastBackupTime) {
-            let backupAge = Math.round(
-              (profileLastUse - lastBackupTime) / 86400000
-            );
-            
-            try {
-              Services.telemetry
-                .getHistogramById("PLACES_BACKUPS_DAYSFROMLAST")
-                .add(backupAge);
-            } catch (ex) {
-              Cu.reportError(new Error("Unable to report telemetry."));
-            }
-
-            if (backupAge > BOOKMARKS_BACKUP_MAX_INTERVAL_DAYS) {
-              this._bookmarksBackupIdleTime /= 2;
-            }
-          }
-        }
-        this._userIdleService.addIdleObserver(
-          this,
-          this._bookmarksBackupIdleTime
-        );
+      
+      
+      let idleTime = BOOKMARKS_BACKUP_IDLE_TIME_SEC;
+      if (!(await PlacesBackups.hasRecentBackup())) {
+        idleTime /= 2;
       }
+      this._userIdleService.addIdleObserver(this, idleTime);
+      this._bookmarksBackupIdleTime = idleTime;
 
       if (this._isNewProfile) {
         try {

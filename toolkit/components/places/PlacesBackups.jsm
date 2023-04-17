@@ -180,6 +180,13 @@ var PlacesBackups = {
   
 
 
+  invalidateCache() {
+    this._backupFiles = null;
+  },
+
+  
+
+
 
 
 
@@ -252,6 +259,37 @@ var PlacesBackups = {
       }
       return null;
     })();
+  },
+
+  
+
+
+
+
+
+
+
+
+  async hasRecentBackup({ maxDays = 3 } = {}) {
+    let lastBackupFile = await PlacesBackups.getMostRecentBackup();
+    if (!lastBackupFile) {
+      return false;
+    }
+    let lastBackupTime = PlacesBackups.getDateForFile(lastBackupFile);
+    let profileLastUse = Services.appinfo.replacedLockTime || Date.now();
+    if (lastBackupTime > profileLastUse) {
+      return true;
+    }
+    let backupAge = Math.round((profileLastUse - lastBackupTime) / 86400000);
+    
+    try {
+      Services.telemetry
+        .getHistogramById("PLACES_BACKUPS_DAYSFROMLAST")
+        .add(backupAge);
+    } catch (ex) {
+      Cu.reportError(new Error("Unable to report telemetry."));
+    }
+    return backupAge <= maxDays;
   },
 
   
