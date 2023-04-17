@@ -1903,9 +1903,19 @@ nsresult WhiteSpaceVisibilityKeeper::
   if (replaceRangeDataAtEnd.IsSet() && !replaceRangeDataAtEnd.Collapsed()) {
     MOZ_ASSERT(rangeToDelete.EndRef().EqualsOrIsBefore(
         replaceRangeDataAtEnd.EndRef()));
-    MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode(),
+    
+    
+    MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode() &&
+                      !rangeToDelete.EndRef().IsEndOfContainer(),
                   replaceRangeDataAtEnd.StartRef().EqualsOrIsBefore(
                       rangeToDelete.EndRef()));
+    
+    
+    
+    MOZ_ASSERT_IF(rangeToDelete.EndRef().IsInTextNode() &&
+                      rangeToDelete.EndRef().IsEndOfContainer(),
+                  rangeToDelete.EndRef() == replaceRangeDataAtEnd.StartRef() ||
+                      replaceRangeDataAtEnd.StartRef().IsStartOfContainer());
     MOZ_ASSERT(rangeToDelete.StartRef().EqualsOrIsBefore(
         replaceRangeDataAtEnd.StartRef()));
     if (!replaceRangeDataAtEnd.HasReplaceString()) {
