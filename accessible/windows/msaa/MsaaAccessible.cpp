@@ -1628,13 +1628,13 @@ MsaaAccessible::accHitTest(
     return E_NOTIMPL;  
   }
 
-  LocalAccessible* accessible = localAcc->LocalChildAtPoint(
+  Accessible* accessible = mAcc->ChildAtPoint(
       xLeft, yTop, Accessible::EWhichChildAtPoint::DirectChild);
 
   
   if (accessible) {
     
-    if (accessible == localAcc) {
+    if (accessible == mAcc) {
       pvarChild->vt = VT_I4;
       pvarChild->lVal = CHILDID_SELF;
     } else {  
