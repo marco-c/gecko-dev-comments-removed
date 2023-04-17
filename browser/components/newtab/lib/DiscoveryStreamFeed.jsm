@@ -476,6 +476,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         items = isBasicLayout ? 4 : 24;
       }
 
+      const newFooterSection = this.store.getState().Prefs.values?.pocketConfig
+        ?.newFooterSection;
+
       
       
       layoutResp = getHardcodedLayout({
@@ -485,6 +488,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         compactLayout,
         loadMoreEnabled,
         lastCardMessageEnabled,
+        newFooterSection,
       });
     }
 
@@ -1861,6 +1865,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
+
+
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [2, 4, 11, 20],
@@ -1868,6 +1874,7 @@ getHardcodedLayout = ({
   compactLayout = false,
   loadMoreEnabled = false,
   lastCardMessageEnabled = false,
+  newFooterSection = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -1968,11 +1975,12 @@ getHardcodedLayout = ({
         },
         {
           type: "Navigation",
+          newFooterSection,
           properties: {
             alignment: "left-align",
             links: [
               {
-                name: "Self Improvement",
+                name: "Self improvement",
                 url:
                   "https://getpocket.com/explore/self-improvement?utm_source=pocket-newtab",
               },
@@ -1997,8 +2005,20 @@ getHardcodedLayout = ({
                   "https://getpocket.com/explore/science?utm_source=pocket-newtab",
               },
               {
-                name: "More Recommendations ›",
+                name: "More recommendations ›",
                 url: "https://getpocket.com/explore?utm_source=pocket-newtab",
+              },
+            ],
+            extraLinks: [
+              {
+                name: "Career",
+                url:
+                  "https://getpocket.com/explore/career?utm_source=pocket-newtab",
+              },
+              {
+                name: "Technology",
+                url:
+                  "https://getpocket.com/explore/technology?utm_source=pocket-newtab",
               },
             ],
             privacyNoticeURL: {
@@ -2018,6 +2038,20 @@ getHardcodedLayout = ({
             ".ds-navigation": "margin-top: -10px;",
           },
         },
+        ...(newFooterSection
+          ? [
+              {
+                type: "PrivacyLink",
+                properties: {
+                  url:
+                    "https://www.mozilla.org/privacy/firefox/#suggest-relevant-content",
+                  title: {
+                    id: "newtab-section-menu-privacy-notice",
+                  },
+                },
+              },
+            ]
+          : []),
       ],
     },
   ],
