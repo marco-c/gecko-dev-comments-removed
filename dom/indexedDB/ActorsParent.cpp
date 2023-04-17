@@ -12498,44 +12498,67 @@ Result<FileUsageType, nsresult> DatabaseFileManager::GetUsage(
   QM_TRY(CollectEachFile(
       *aDirectory,
       [&usage](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
-        QM_TRY_INSPECT(const auto& leafName,
-                       MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
+        QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
 
-        if (leafName.Equals(kJournalDirectoryName)) {
-          return Ok{};
-        }
+        switch (dirEntryKind) {
+          case nsIFileKind::ExistsAsDirectory: {
+            QM_TRY_INSPECT(
+                const auto& leafName,
+                MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
 
-        nsresult rv;
-        leafName.ToInteger64(&rv);
-        if (NS_SUCCEEDED(rv)) {
-          
-          
-          
-          
-          
-          QM_TRY_INSPECT(
-              const auto& thisUsage,
-              QM_OR_ELSE_WARN_IF(
-                  
-                  MOZ_TO_RESULT_INVOKE(file, GetFileSize)
-                      .map([](const int64_t fileSize) {
-                        return FileUsageType(Some(uint64_t(fileSize)));
+            if (leafName.Equals(kJournalDirectoryName)) {
+              break;
+            }
+
+            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+            break;
+          }
+
+          case nsIFileKind::ExistsAsFile: {
+            QM_TRY_INSPECT(
+                const auto& leafName,
+                MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
+
+            nsresult rv;
+            leafName.ToInteger64(&rv);
+            if (NS_SUCCEEDED(rv)) {
+              
+              
+              
+              
+              
+              
+              QM_TRY_INSPECT(
+                  const auto& thisUsage,
+                  QM_OR_ELSE_WARN_IF(
+                      
+                      MOZ_TO_RESULT_INVOKE(file, GetFileSize)
+                          .map([](const int64_t fileSize) {
+                            return FileUsageType(Some(uint64_t(fileSize)));
+                          }),
+                      
+                      ([](const nsresult rv) {
+                        return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+                               rv == NS_ERROR_FILE_NOT_FOUND;
                       }),
-                  
-                  ([](const nsresult rv) {
-                    return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-                           rv == NS_ERROR_FILE_NOT_FOUND;
-                  }),
-                  
-                  
-                  ErrToDefaultOk<FileUsageType>));
+                      
+                      
+                      ErrToDefaultOk<FileUsageType>));
 
-          usage += thisUsage;
+              usage += thisUsage;
 
-          return Ok{};
+              break;
+            }
+
+            Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+
+            break;
+          }
+
+          case nsIFileKind::DoesNotExist:
+            
+            break;
         }
-
-        UNKNOWN_FILE_WARNING(leafName);
 
         return Ok{};
       }));

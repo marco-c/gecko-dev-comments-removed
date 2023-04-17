@@ -75,6 +75,7 @@ async function testSteps() {
   }
 
   
+  
   {
     const request = indexedDB.openForPrincipal(principal, "myIndexedDB");
     await openDBRequestUpgradeNeeded(request);
@@ -91,6 +92,9 @@ async function testSteps() {
 
     createUnknownFileIn(`${originRelativePath}/idb`);
     createUnknownFileIn(
+      `${originRelativePath}/idb/2320029346mByDIdnedxe.files`
+    );
+    createUnknownDirectoryIn(
       `${originRelativePath}/idb/2320029346mByDIdnedxe.files`
     );
     createUnknownFileIn(
