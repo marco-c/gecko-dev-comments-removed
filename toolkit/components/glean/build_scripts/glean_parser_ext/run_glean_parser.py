@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 import cpp
 import js
@@ -63,8 +63,8 @@ def parse(args):
     then return the parsed objects for further processing.
     """
 
-    # Unfortunately, GeneratedFile appends `flags` directly after `inputs`
-    # instead of listifying either, so we need to pull stuff from a *args.
+    
+    
     yaml_array = args[:-1]
     moz_app_version = args[-1]
 
@@ -76,12 +76,12 @@ def parse(args):
 
 
 def parse_with_options(input_files, options):
-    # Derived heavily from glean_parser.translate.translate.
-    # Adapted to how mozbuild sends us a fd, and to expire on versions not dates.
+    
+    
 
-    # Lint the yaml first, then lint the metrics.
+    
     if lint.lint_yaml_files(input_files, parser_config=options):
-        # Warnings are Errors
+        
         raise ParserError("linter found problems")
 
     all_objs = parser.parse_objects(input_files, options)
@@ -90,13 +90,13 @@ def parse_with_options(input_files, options):
 
     nits = lint.lint_metrics(all_objs.value, options)
     if nits is not None and any(nit.check_name != "EXPIRED" for nit in nits):
-        # Treat Warnings as Errors in FOG.
-        # But don't fail the whole build on expired metrics (it blocks testing).
+        
+        
         raise ParserError("glinter nits found during parse")
 
     objects = all_objs.value
 
-    # bug 1720494: This should be a simple call to translate.transform
+    
     counters = {}
     numerators_by_denominator: Dict[str, Any] = {}
     for category_val in objects.values():
@@ -124,7 +124,7 @@ def parse_with_options(input_files, options):
     return objects, options
 
 
-# Must be kept in sync with the length of `deps` in moz.build.
+
 DEPS_LEN = 15
 
 
@@ -151,9 +151,9 @@ def gifft_map(output_fd, *args):
     args = args[DEPS_LEN:-1]
     all_objs, options = parse(args)
 
-    # Events also need to output maps from event extra enum to strings.
-    # Sadly we need to generate code for all possible events, not just mirrored.
-    # Otherwise we won't compile.
+    
+    
+    
     if probe_type == "Event":
         output_path = Path(os.path.dirname(output_fd.name))
         with FileAvoidWrite(output_path / "EventExtraGIFFTMaps.cpp") as cpp_fd:
@@ -173,14 +173,17 @@ def output_gifft_map(output_fd, probe_type, all_objs, cpp_fd):
             ):
                 info = (metric.telemetry_mirror, f"{category_name}.{metric.name}")
                 if metric.type in GIFFT_TYPES[probe_type]:
-                    if info in ids_to_probes.values():
+                    if any(
+                        metric.telemetry_mirror == value[0]
+                        for value in ids_to_probes.values()
+                    ):
                         print(
                             f"Telemetry mirror {metric.telemetry_mirror} already registered",
                             file=sys.stderr,
                         )
                         sys.exit(1)
                     ids_to_probes[get_metric_id(metric)] = info
-                # If we don't support a mirror for this metric type: build error.
+                
                 elif not any(
                     [
                         metric.type in types_for_probe
@@ -210,9 +213,9 @@ def output_gifft_map(output_fd, probe_type, all_objs, cpp_fd):
     )
     output_fd.write("\n")
 
-    # Events also need to output maps from event extra enum to strings.
-    # Sadly we need to generate code for all possible events, not just mirrored.
-    # Otherwise we won't compile.
+    
+    
+    
     if probe_type == "Event":
         template = env.get_template("gifft_events.jinja2")
         cpp_fd.write(template.render(all_objs=all_objs))
