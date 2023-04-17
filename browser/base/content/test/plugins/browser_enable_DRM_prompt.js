@@ -74,7 +74,9 @@ add_task(async function test_drm_prompt_shows_for_toplevel() {
     );
 
     
-    let buttons = notification.querySelectorAll(".notification-button");
+    let buttons = notification.buttonContainer.querySelectorAll(
+      ".notification-button"
+    );
     is(buttons.length, 1, "Should have one button.");
 
     
@@ -206,7 +208,9 @@ add_task(async function test_drm_prompt_shows_for_cross_origin_iframe() {
     );
 
     
-    let buttons = notification.querySelectorAll(".notification-button");
+    let buttons = notification.buttonContainer.querySelectorAll(
+      ".notification-button"
+    );
     is(buttons.length, 1, "Should have one button.");
 
     
