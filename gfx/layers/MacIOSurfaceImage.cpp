@@ -64,47 +64,77 @@ bool MacIOSurfaceImage::SetData(ImageContainer* aContainer,
 
   surf->Lock(false);
 
-  
-  
-  size_t heightScale = aData.mYSize.height / aData.mCbCrSize.height;
+  if (surf->GetFormat() == SurfaceFormat::YUV422) {
+    
+    
+    size_t heightScale = aData.mYSize.height / aData.mCbCrSize.height;
 
-  MOZ_ASSERT(surf->GetFormat() == SurfaceFormat::YUV422);
-
-  
-  
-  
-  MOZ_ASSERT(aData.mYSize.height > 0);
-  uint8_t* dst = (uint8_t*)surf->GetBaseAddressOfPlane(0);
-  size_t stride = surf->GetBytesPerRow(0);
-  for (size_t i = 0; i < (size_t)aData.mYSize.height; i++) {
     
     
     
-    uint8_t* rowYSrc = aData.mYChannel + aData.mYStride * i;
-    uint8_t* rowCbSrc =
-        aData.mCbChannel + aData.mCbCrStride * (i / heightScale);
-    uint8_t* rowCrSrc =
-        aData.mCrChannel + aData.mCbCrStride * (i / heightScale);
-    uint8_t* rowDst = dst + stride * i;
+    
+    MOZ_ASSERT(aData.mYSize.height > 0);
+    uint8_t* dst = (uint8_t*)surf->GetBaseAddressOfPlane(0);
+    size_t stride = surf->GetBytesPerRow(0);
+    for (size_t i = 0; i < (size_t)aData.mYSize.height; i++) {
+      
+      
+      
+      uint8_t* rowYSrc = aData.mYChannel + aData.mYStride * i;
+      uint8_t* rowCbSrc =
+          aData.mCbChannel + aData.mCbCrStride * (i / heightScale);
+      uint8_t* rowCrSrc =
+          aData.mCrChannel + aData.mCbCrStride * (i / heightScale);
+      uint8_t* rowDst = dst + stride * i;
+
+      
+      
+      for (size_t j = 0; j < (size_t)aData.mCbCrSize.width; j++) {
+        *rowDst = *rowYSrc;
+        rowDst++;
+        rowYSrc++;
+
+        *rowDst = *rowCbSrc;
+        rowDst++;
+        rowCbSrc++;
+
+        *rowDst = *rowYSrc;
+        rowDst++;
+        rowYSrc++;
+
+        *rowDst = *rowCrSrc;
+        rowDst++;
+        rowCrSrc++;
+      }
+    }
+  } else if (surf->GetFormat() == SurfaceFormat::NV12) {
+    MOZ_ASSERT(aData.mYSize.height > 0);
+    uint8_t* dst = (uint8_t*)surf->GetBaseAddressOfPlane(0);
+    size_t stride = surf->GetBytesPerRow(0);
+    for (size_t i = 0; i < (size_t)aData.mYSize.height; i++) {
+      uint8_t* rowSrc = aData.mYChannel + aData.mYStride * i;
+      uint8_t* rowDst = dst + stride * i;
+      memcpy(rowDst, rowSrc, aData.mYSize.width);
+    }
 
     
-    
-    for (size_t j = 0; j < (size_t)aData.mCbCrSize.width; j++) {
-      *rowDst = *rowYSrc;
-      rowDst++;
-      rowYSrc++;
+    MOZ_ASSERT(aData.mCbCrSize.height > 0);
+    dst = (uint8_t*)surf->GetBaseAddressOfPlane(1);
+    stride = surf->GetBytesPerRow(1);
+    for (size_t i = 0; i < (size_t)aData.mCbCrSize.height; i++) {
+      uint8_t* rowCbSrc = aData.mCbChannel + aData.mCbCrStride * i;
+      uint8_t* rowCrSrc = aData.mCrChannel + aData.mCbCrStride * i;
+      uint8_t* rowDst = dst + stride * i;
 
-      *rowDst = *rowCbSrc;
-      rowDst++;
-      rowCbSrc++;
+      for (size_t j = 0; j < (size_t)aData.mCbCrSize.width; j++) {
+        *rowDst = *rowCbSrc;
+        rowDst++;
+        rowCbSrc++;
 
-      *rowDst = *rowYSrc;
-      rowDst++;
-      rowYSrc++;
-
-      *rowDst = *rowCrSrc;
-      rowDst++;
-      rowCrSrc++;
+        *rowDst = *rowCrSrc;
+        rowDst++;
+        rowCrSrc++;
+      }
     }
   }
 
@@ -137,8 +167,13 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
   }
 
   if (!result) {
-    result =
-        MacIOSurface::CreateYUV422Surface(aYSize, aYUVColorSpace, aColorRange);
+    if (StaticPrefs::layers_iosurfaceimage_use_nv12_AtStartup()) {
+      result = MacIOSurface::CreateNV12Surface(aYSize, aCbCrSize,
+                                               aYUVColorSpace, aColorRange);
+    } else {
+      result = MacIOSurface::CreateYUV422Surface(aYSize, aYUVColorSpace,
+                                                 aColorRange);
+    }
 
     if (mSurfaces.Length() <
         StaticPrefs::layers_iosurfaceimage_recycle_limit()) {
