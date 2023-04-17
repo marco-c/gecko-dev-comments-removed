@@ -18,7 +18,14 @@
 #define WASM_RT_H_
 
 #include <stdint.h>
+#include <stddef.h>
 #include <setjmp.h>
+
+#if defined(_WIN32)
+  #define WASM2C_FUNC_EXPORT __declspec(dllexport)
+#else
+  #define WASM2C_FUNC_EXPORT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -87,6 +94,15 @@ typedef struct {
   wasm_rt_anyfunc_t func;
 } wasm_rt_elem_t;
 
+typedef uint8_t wasm2c_shadow_memory_cell_t;
+
+typedef struct {
+  wasm2c_shadow_memory_cell_t* data;
+  size_t data_size;
+  void* allocation_sizes_map;
+  uint32_t heap_base;
+} wasm2c_shadow_memory_t;
+
 
 typedef struct {
   
@@ -100,6 +116,10 @@ typedef struct {
   uint32_t pages, max_pages;
   
   uint32_t size;
+
+#if defined(WASM_CHECK_SHADOW_MEMORY)
+  wasm2c_shadow_memory_t shadow_memory;
+#endif
 } wasm_rt_memory_t;
 
 
@@ -135,6 +155,8 @@ typedef struct wasm_sandbox_wasi_data {
 
   int wasm_fd_to_native[WASM2C_WASI_MAX_FDS];
   uint32_t next_wasm_fd;
+
+  void* clock_data;
 
 } wasm_sandbox_wasi_data;
 
@@ -244,6 +266,30 @@ extern void wasm_rt_cleanup_wasi(wasm_sandbox_wasi_data*);
 
 
 extern void wasm2c_ensure_linked();
+
+
+
+
+extern void wasm2c_shadow_memory_create(wasm_rt_memory_t* mem);
+
+extern void wasm2c_shadow_memory_expand(wasm_rt_memory_t* mem);
+
+extern void wasm2c_shadow_memory_destroy(wasm_rt_memory_t* mem);
+
+WASM2C_FUNC_EXPORT extern void wasm2c_shadow_memory_load(wasm_rt_memory_t* mem, const char* func_name, uint32_t ptr, uint32_t ptr_size);
+
+WASM2C_FUNC_EXPORT extern void wasm2c_shadow_memory_store(wasm_rt_memory_t* mem, const char* func_name, uint32_t ptr, uint32_t ptr_size);
+
+extern void wasm2c_shadow_memory_reserve(wasm_rt_memory_t* mem, uint32_t ptr, uint32_t ptr_size);
+
+extern void wasm2c_shadow_memory_dlmalloc(wasm_rt_memory_t* mem, uint32_t ptr, uint32_t ptr_size);
+
+extern void wasm2c_shadow_memory_dlfree(wasm_rt_memory_t* mem, uint32_t ptr);
+
+
+extern void wasm2c_shadow_memory_mark_globals_heap_boundary(wasm_rt_memory_t* mem, uint32_t ptr);
+
+WASM2C_FUNC_EXPORT extern void wasm2c_shadow_memory_print_allocations(wasm_rt_memory_t* mem);
 
 #ifdef __cplusplus
 }
