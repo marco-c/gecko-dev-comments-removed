@@ -100,3 +100,5 @@ LOCAL_INCLUDES += [
 
 
 include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+REQUIRES_UNIFIED_BUILD = True

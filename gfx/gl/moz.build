@@ -55,6 +55,7 @@ EXPORTS += [
 
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
+    REQUIRES_UNIFIED_BUILD = True
     EXPORTS += [
         "GLContextWGL.h",
         "SharedSurfaceANGLE.h",  

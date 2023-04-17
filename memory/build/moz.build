@@ -57,3 +57,5 @@ DisableStlWrapping()
 
 if CONFIG["CC_TYPE"] == "clang-cl":
     AllowCompilerWarnings()  
+
+REQUIRES_UNIFIED_BUILD = True
