@@ -69,7 +69,7 @@ ImageF UpsampleV2(const ImageF& src, ThreadPool* pool);
 
 
 
-ImageF UpsampleH2(const ImageF& src, ThreadPool* pool);
+ImageF UpsampleH2(const ImageF& src, size_t output_xsize, ThreadPool* pool);
 
 bool HasFastXYBTosRGB8();
 void FastXYBTosRGB8(const Image3F& input, const Rect& input_rect,

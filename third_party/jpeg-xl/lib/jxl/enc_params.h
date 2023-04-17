@@ -233,6 +233,8 @@ struct CompressParams {
   
   size_t resampling = 1;
   size_t ec_resampling = 1;
+  
+  bool already_downsampled = false;
 };
 
 static constexpr float kMinButteraugliForDynamicAR = 0.5f;

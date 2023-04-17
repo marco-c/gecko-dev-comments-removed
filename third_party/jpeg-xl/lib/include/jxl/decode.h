@@ -140,6 +140,10 @@ typedef enum {
 
 
 
+
+
+
+
   JXL_DEC_NEED_MORE_INPUT = 2,
 
   

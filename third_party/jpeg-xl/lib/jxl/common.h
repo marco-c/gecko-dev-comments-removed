@@ -87,7 +87,7 @@ constexpr size_t kGroupDimInBlocks = kGroupDim / kBlockDim;
 constexpr size_t kMaxNumPasses = 11;
 
 
-constexpr size_t kMaxNumReferenceFrames = 3;
+constexpr size_t kMaxNumReferenceFrames = 4;
 
 
 

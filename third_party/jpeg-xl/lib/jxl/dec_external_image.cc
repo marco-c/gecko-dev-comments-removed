@@ -60,15 +60,12 @@ void FloatToU32(const float* in, uint32_t* out, size_t num, float mul,
   for (size_t x = 0; x < vec_num; x += Lanes(d)) {
     auto v = Load(d, in + x);
     
-    JXL_DASSERT(AllTrue(v == v));
-    
     v = Clamp(v, Zero(d), one);
     auto i = NearestInt(v * scale);
     Store(BitCast(du, i), du, out + x);
   }
   for (size_t x = vec_num; x < num; x++) {
     float v = in[x];
-    JXL_DASSERT(!std::isnan(v));
     
     v = (v >= 0.0f) ? (v > 1.0f ? mul : (v * mul)) : 0.0f;
     out[x] = static_cast<uint32_t>(v + 0.5f);
