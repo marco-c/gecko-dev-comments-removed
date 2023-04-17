@@ -12,10 +12,11 @@ add_task(async function() {
 
   
   let wrapper = toolbox.getPanel("webconsole").hud.ui.wrapper;
+  const onSelected = toolbox.once("jsdebugger-selected");
   wrapper.dispatchEvaluateExpression("debugger");
 
   
-  await waitOnToolbox(toolbox, "jsdebugger-selected");
+  await onSelected;
   is(toolbox.threadFront.state, "paused");
 
   
@@ -26,7 +27,3 @@ add_task(async function() {
   is(getCM(dbg).getValue(), "debugger");
   assertPausedLocation(dbg);
 });
-
-async function waitOnToolbox(toolbox, event) {
-  return new Promise(resolve => toolbox.on(event, resolve));
-}
