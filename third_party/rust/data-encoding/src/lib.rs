@@ -142,56 +142,22 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![warn(unused_results, missing_docs)]
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-extern crate alloc;
-
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-mod prelude {
-    pub use alloc::borrow::Cow;
-    pub use alloc::borrow::ToOwned;
-    pub use alloc::string::String;
-    pub use alloc::vec;
-    pub use alloc::vec::Vec;
-}
-#[cfg(feature = "std")]
-mod prelude {
-    pub use std::borrow::Cow;
-}
-
-#[cfg(not(feature = "std"))]
-use core as std;
 #[cfg(feature = "alloc")]
-use prelude::*;
+extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
+
+#[cfg(feature = "alloc")]
+use alloc::borrow::{Cow, ToOwned};
+#[cfg(feature = "alloc")]
+use alloc::string::String;
+#[cfg(feature = "alloc")]
+use alloc::vec;
+#[cfg(feature = "alloc")]
+use alloc::vec::Vec;
 
 macro_rules! check {
     ($e: expr, $c: expr) => {
@@ -228,6 +194,7 @@ define!(N6: usize = 6);
 
 #[derive(Copy, Clone)]
 struct On;
+
 impl<T: Copy> Static<Option<T>> for On {
     fn val(self) -> Option<T> {
         None
@@ -236,6 +203,7 @@ impl<T: Copy> Static<Option<T>> for On {
 
 #[derive(Copy, Clone)]
 struct Os<T>(T);
+
 impl<T: Copy> Static<Option<T>> for Os<T> {
     fn val(self) -> Option<T> {
         Some(self.0)
@@ -273,20 +241,24 @@ macro_rules! dispatch {
 unsafe fn chunk_unchecked(x: &[u8], n: usize, i: usize) -> &[u8] {
     debug_assert!((i + 1) * n <= x.len());
     let ptr = x.as_ptr().add(n * i);
-    std::slice::from_raw_parts(ptr, n)
+    core::slice::from_raw_parts(ptr, n)
 }
+
 unsafe fn chunk_mut_unchecked(x: &mut [u8], n: usize, i: usize) -> &mut [u8] {
     debug_assert!((i + 1) * n <= x.len());
     let ptr = x.as_mut_ptr().add(n * i);
-    std::slice::from_raw_parts_mut(ptr, n)
+    core::slice::from_raw_parts_mut(ptr, n)
 }
+
 unsafe fn as_array(x: &[u8]) -> &[u8; 256] {
     debug_assert_eq!(x.len(), 256);
     &*(x.as_ptr() as *const [u8; 256])
 }
+
 fn div_ceil(x: usize, m: usize) -> usize {
     (x + m - 1) / m
 }
+
 fn floor(x: usize, m: usize) -> usize {
     x / m * m
 }
@@ -307,16 +279,19 @@ fn vectorize<F: FnMut(usize)>(n: usize, bs: usize, mut f: F) {
 pub enum DecodeKind {
     
     Length,
+
     
     Symbol,
+
     
     Trailing,
+
     
     Padding,
 }
-#[cfg(feature = "std")]
-impl std::fmt::Display for DecodeKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+
+impl core::fmt::Display for DecodeKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         let description = match self {
             DecodeKind::Length => "invalid length",
             DecodeKind::Symbol => "invalid symbol",
@@ -333,16 +308,17 @@ pub struct DecodeError {
     
     
     
-    
     pub position: usize,
+
     
     pub kind: DecodeKind,
 }
+
 #[cfg(feature = "std")]
 impl std::error::Error for DecodeError {}
-#[cfg(feature = "std")]
-impl std::fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+
+impl core::fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(f, "{} at {}", self.kind, self.position)
     }
 }
@@ -353,10 +329,8 @@ pub struct DecodePartial {
     
     
     
-    
     pub read: usize,
 
-    
     
     
     
@@ -377,6 +351,7 @@ fn order(msb: bool, n: usize, i: usize) -> usize {
         i
     }
 }
+
 fn enc(bit: usize) -> usize {
     debug_assert!(1 <= bit && bit <= 6);
     match bit {
@@ -386,6 +361,7 @@ fn enc(bit: usize) -> usize {
         _ => unreachable!(),
     }
 }
+
 fn dec(bit: usize) -> usize {
     enc(bit) * 8 / bit
 }
@@ -393,6 +369,7 @@ fn dec(bit: usize) -> usize {
 fn encode_len<B: Static<usize>>(bit: B, len: usize) -> usize {
     div_ceil(8 * len, bit.val())
 }
+
 fn encode_block<B: Static<usize>, M: Static<bool>>(
     bit: B, msb: M, symbols: &[u8; 256], input: &[u8], output: &mut [u8],
 ) {
@@ -409,6 +386,7 @@ fn encode_block<B: Static<usize>, M: Static<bool>>(
         *output = symbols[y as usize % 256];
     }
 }
+
 fn encode_mut<B: Static<usize>, M: Static<bool>>(
     bit: B, msb: M, symbols: &[u8; 256], input: &[u8], output: &mut [u8],
 ) {
@@ -452,6 +430,7 @@ fn decode_block<B: Static<usize>, M: Static<bool>>(
 
 
 
+
 fn decode_mut<B: Static<usize>, M: Static<bool>>(
     bit: B, msb: M, values: &[u8; 256], input: &[u8], output: &mut [u8],
 ) -> Result<(), usize> {
@@ -467,6 +446,7 @@ fn decode_mut<B: Static<usize>, M: Static<bool>>(
     decode_block(bit, msb, values, &input[dec * n ..], &mut output[enc * n ..])
         .map_err(|e| dec * n + e)
 }
+
 
 fn check_trail<B: Static<usize>, M: Static<bool>>(
     bit: B, msb: M, ctb: bool, values: &[u8; 256], input: &[u8],
@@ -487,6 +467,7 @@ fn check_trail<B: Static<usize>, M: Static<bool>>(
 }
 
 
+
 fn check_pad<B: Static<usize>>(bit: B, values: &[u8; 256], input: &[u8]) -> Result<usize, usize> {
     let bit = bit.val();
     debug_assert_eq!(input.len(), dec(bit));
@@ -500,6 +481,7 @@ fn check_pad<B: Static<usize>>(bit: B, values: &[u8; 256], input: &[u8]) -> Resu
 fn encode_base_len<B: Static<usize>>(bit: B, len: usize) -> usize {
     encode_len(bit, len)
 }
+
 fn encode_base<B: Static<usize>, M: Static<bool>>(
     bit: B, msb: M, symbols: &[u8; 256], input: &[u8], output: &mut [u8],
 ) {
@@ -513,6 +495,7 @@ fn encode_pad_len<B: Static<usize>, P: Static<Option<u8>>>(bit: B, pad: P, len: 
         Some(_) => div_ceil(len, enc(bit.val())) * dec(bit.val()),
     }
 }
+
 fn encode_pad<B: Static<usize>, M: Static<bool>, P: Static<Option<u8>>>(
     bit: B, msb: M, symbols: &[u8; 256], spad: P, input: &[u8], output: &mut [u8],
 ) {
@@ -542,6 +525,7 @@ fn encode_wrap_len<
         Some((col, end)) => olen + end.len() * div_ceil(olen, col),
     }
 }
+
 fn encode_wrap_mut<
     'a,
     B: Static<usize>,
@@ -603,6 +587,7 @@ fn decode_pad_len<B: Static<usize>, P: Static<bool>>(
 fn decode_base_len<B: Static<usize>>(bit: B, len: usize) -> Result<usize, DecodeError> {
     decode_pad_len(bit, Bf, len)
 }
+
 
 
 
@@ -708,6 +693,7 @@ fn skip_ignore(values: &[u8; 256], input: &[u8], mut inpos: usize) -> usize {
 
 
 
+
 fn decode_wrap_block<B: Static<usize>, M: Static<bool>, P: Static<bool>>(
     bit: B, msb: M, ctb: bool, values: &[u8; 256], pad: P, input: &[u8], output: &mut [u8],
 ) -> Result<(usize, usize), DecodeError> {
@@ -738,6 +724,7 @@ fn decode_wrap_block<B: Static<usize>, M: Static<bool>, P: Static<bool>>(
         })?;
     Ok((inpos, written))
 }
+
 
 
 
@@ -796,6 +783,7 @@ fn decode_wrap_mut<B: Static<usize>, M: Static<bool>, P: Static<bool>, I: Static
         })
     }
 }
+
 
 
 
@@ -886,9 +874,12 @@ pub type InternalEncoding = &'static [u8];
 
 
 
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Encoding(pub InternalEncoding);
+
+
+
+
 
 
 
@@ -901,9 +892,14 @@ pub struct Encoding(pub InternalEncoding);
 pub struct Translate {
     
     pub from: String,
+
     
     pub to: String,
 }
+
+
+
+
 
 
 
@@ -1168,16 +1164,6 @@ pub struct Wrap {
 
 
 
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, Clone)]
 #[cfg(feature = "alloc")]
 pub struct Specification {
@@ -1187,7 +1173,6 @@ pub struct Specification {
     
     pub symbols: String,
 
-    
     
     
     
@@ -1215,10 +1200,8 @@ pub struct Specification {
     
     
     
-    
     pub wrap: Wrap,
 
-    
     
     
     
@@ -1239,9 +1222,11 @@ impl Encoding {
     fn sym(&self) -> &[u8; 256] {
         unsafe { as_array(&self.0[0 .. 256]) }
     }
+
     fn val(&self) -> &[u8; 256] {
         unsafe { as_array(&self.0[256 .. 512]) }
     }
+
     fn pad(&self) -> Option<u8> {
         if self.0[512] < 128 {
             Some(self.0[512])
@@ -1249,21 +1234,26 @@ impl Encoding {
             None
         }
     }
+
     fn ctb(&self) -> bool {
         self.0[513] & 0x10 != 0
     }
+
     fn msb(&self) -> bool {
         self.0[513] & 0x8 != 0
     }
+
     fn bit(&self) -> usize {
         (self.0[513] & 0x7) as usize
     }
+
     fn wrap(&self) -> Option<(usize, &[u8])> {
         if self.0.len() <= 515 {
             return None;
         }
         Some((self.0[514] as usize, &self.0[515 ..]))
     }
+
     fn has_ignore(&self) -> bool {
         self.0.len() >= 515
     }
@@ -1325,6 +1315,10 @@ impl Encoding {
     
     
     
+    
+    
+    
+    
     #[cfg(feature = "alloc")]
     pub fn encode_append(&self, input: &[u8], output: &mut String) {
         let output = unsafe { output.as_mut_vec() };
@@ -1333,6 +1327,10 @@ impl Encoding {
         self.encode_mut(input, &mut output[output_len ..]);
     }
 
+    
+    
+    
+    
     
     
     
@@ -1373,8 +1371,6 @@ impl Encoding {
         Ok(olen)
     }
 
-    
-    
     
     
     
@@ -1454,6 +1450,10 @@ impl Encoding {
     
     
     
+    
+    
+    
+    
     #[cfg(feature = "alloc")]
     pub fn decode(&self, input: &[u8]) -> Result<Vec<u8>, DecodeError> {
         let mut output = vec![0u8; self.decode_len(input.len())?];
@@ -1497,12 +1497,16 @@ impl Encoding {
     }
 
     
+    
+    
+    
+    
     #[cfg(feature = "alloc")]
     pub fn specification(&self) -> Specification {
         let mut specification = Specification::new();
         specification
             .symbols
-            .push_str(std::str::from_utf8(&self.sym()[0 .. 1 << self.bit()]).unwrap());
+            .push_str(core::str::from_utf8(&self.sym()[0 .. 1 << self.bit()]).unwrap());
         specification.bit_order =
             if self.msb() { MostSignificantFirst } else { LeastSignificantFirst };
         specification.check_trailing_bits = self.ctb();
@@ -1517,7 +1521,7 @@ impl Encoding {
         }
         if let Some((col, end)) = self.wrap() {
             specification.wrap.width = col;
-            specification.wrap.separator = std::str::from_utf8(end).unwrap().to_owned();
+            specification.wrap.separator = core::str::from_utf8(end).unwrap().to_owned();
         }
         for i in 0 .. 128u8 {
             let canonical = if self.val()[i as usize] < 1 << self.bit() {
@@ -1567,13 +1571,17 @@ enum SpecificationErrorImpl {
 use crate::SpecificationErrorImpl::*;
 
 
+
+
+
+
 #[derive(Debug, Copy, Clone)]
 #[cfg(feature = "alloc")]
 pub struct SpecificationError(SpecificationErrorImpl);
 
 #[cfg(feature = "alloc")]
-impl std::fmt::Display for SpecificationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Display for SpecificationError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match self.0 {
             BadSize => write!(f, "invalid number of symbols"),
             NotAscii => write!(f, "non-ascii character"),
