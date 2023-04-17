@@ -398,8 +398,6 @@ var gIdentityHandler = {
       return;
     }
 
-    let host = this._uri.host;
-
     
     
     
@@ -410,13 +408,9 @@ var gIdentityHandler = {
     PanelMultiView.hidePopup(this._identityPopup);
     await hidden;
 
-    let baseDomain = SiteDataManager.getBaseDomainFromHost(host);
-    if (SiteDataManager.promptSiteDataRemoval(window, null, baseDomain)) {
-      let siteData = await SiteDataManager.getSites(baseDomain);
-      if (siteData && siteData.length) {
-        let hosts = siteData.map(site => site.host);
-        SiteDataManager.remove(hosts);
-      }
+    let baseDomain = SiteDataManager.getBaseDomainFromHost(this._uri.host);
+    if (SiteDataManager.promptSiteDataRemoval(window, [baseDomain])) {
+      SiteDataManager.remove(baseDomain);
     }
 
     event.stopPropagation();
