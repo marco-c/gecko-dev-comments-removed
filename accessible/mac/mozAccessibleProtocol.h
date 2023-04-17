@@ -19,7 +19,7 @@
 
 
 
-@protocol mozAccessible
+@protocol mozAccessible <NSObject>
 
 
 
