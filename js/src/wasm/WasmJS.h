@@ -103,6 +103,11 @@ bool AnyCompilerAvailable(JSContext* cx);
 
 
 
+bool WasmCompilerForAsmJSAvailable(JSContext* cx);
+
+
+
+
 
 
 
