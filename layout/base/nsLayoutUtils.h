@@ -1920,9 +1920,14 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
   static ImgDrawResult DrawSingleImage(
       gfxContext& aContext, nsPresContext* aPresContext, imgIContainer* aImage,
-      const SamplingFilter aSamplingFilter, const nsRect& aDest,
+      float aResolution, SamplingFilter aSamplingFilter, const nsRect& aDest,
       const nsRect& aDirty, const mozilla::Maybe<SVGImageContext>& aSVGContext,
       uint32_t aImageFlags, const nsPoint* aAnchorPoint = nullptr,
       const nsRect* aSourceArea = nullptr);
@@ -1943,7 +1948,7 @@ class nsLayoutUtils {
 
 
 
-  static void ComputeSizeForDrawing(imgIContainer* aImage,
+  static void ComputeSizeForDrawing(imgIContainer* aImage, float aResolution,
                                     CSSIntSize& aImageSize,
                                     AspectRatio& aIntrinsicRatio,
                                     bool& aGotWidth, bool& aGotHeight);
@@ -1957,7 +1962,7 @@ class nsLayoutUtils {
 
 
   static CSSIntSize ComputeSizeForDrawingWithFallback(
-      imgIContainer* aImage, const nsSize& aFallbackSize);
+      imgIContainer* aImage, float aResolution, const nsSize& aFallbackSize);
 
   
 

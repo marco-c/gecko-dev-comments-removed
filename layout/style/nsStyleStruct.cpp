@@ -1629,6 +1629,31 @@ void StyleImage::ResolveImage(Document& aDoc, const StyleImage* aOld) {
   const_cast<StyleComputedImageUrl*>(url)->ResolveImage(aDoc, old);
 }
 
+template <>
+Maybe<CSSIntSize> StyleImage::GetIntrinsicSize() const {
+  auto [finalImage, resolution] = FinalImageAndResolution();
+  imgRequestProxy* request = finalImage->GetImageRequest();
+  if (!request) {
+    return Nothing();
+  }
+  RefPtr<imgIContainer> image;
+  request->GetImage(getter_AddRefs(image));
+  if (!image) {
+    return Nothing();
+  }
+  
+  
+  
+  int32_t w = 0, h = 0;
+  image->GetWidth(&w);
+  image->GetHeight(&h);
+  if (resolution != 0.0f && resolution != 1.0f) {
+    w = std::round(float(w) / resolution);
+    h = std::round(float(h) / resolution);
+  }
+  return Some(CSSIntSize{w, h});
+}
+
 
 
 
@@ -1882,8 +1907,11 @@ static bool SizeDependsOnPositioningAreaSize(const StyleBackgroundSize& aSize,
       CSSIntSize imageSize;
       AspectRatio imageRatio;
       bool hasWidth, hasHeight;
-      nsLayoutUtils::ComputeSizeForDrawing(imgContainer, imageSize, imageRatio,
-                                           hasWidth, hasHeight);
+      
+      
+      nsLayoutUtils::ComputeSizeForDrawing(imgContainer,
+                                            1.0f, imageSize,
+                                           imageRatio, hasWidth, hasHeight);
 
       
       

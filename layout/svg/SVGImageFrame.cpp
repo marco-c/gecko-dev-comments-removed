@@ -405,7 +405,7 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       
       
       aImgParams.result &= nsLayoutUtils::DrawSingleImage(
-          aContext, PresContext(), mImageContainer,
+          aContext, PresContext(), mImageContainer,  1.0f,
           nsLayoutUtils::GetSamplingFilterForFrame(this), destRect,
           aDirtyRect ? dirtyRect : destRect, context, flags);
     } else {  
