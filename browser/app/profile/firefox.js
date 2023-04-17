@@ -1071,13 +1071,9 @@ pref("places.frecency.defaultVisitBonus", 0);
 pref("places.frecency.unvisitedBookmarkBonus", 140);
 pref("places.frecency.unvisitedTypedBonus", 200);
 
-#ifdef NIGHTLY_BUILD
-  
-  
-  pref("places.forgetThisSite.clearByBaseDomain", true);
-#else
-  pref("places.forgetThisSite.clearByBaseDomain", false);
-#endif
+
+
+pref("places.forgetThisSite.clearByBaseDomain", true);
 
 
 
