@@ -131,7 +131,7 @@ void CCGCScheduler::NoteGCEnd() {
   mCCBlockStart = TimeStamp();
   mReadyForMajorGC = false;
   mWantAtLeastRegularGC = false;
-  mNeedsFullCC = true;
+  mNeedsFullCC = CCReason::GC_FINISHED;
   mHasRunGC = true;
   mIsCompactingOnUserInactive = false;
 
@@ -187,7 +187,7 @@ void CCGCScheduler::NoteCCEnd(TimeStamp aWhen) {
 
   mIsCollectingCycles = false;
   mLastCCEndTime = aWhen;
-  mNeedsFullCC = false;
+  mNeedsFullCC = CCReason::NO_REASON;
 
   
   mNeedsGCAfterCC = false;
@@ -446,7 +446,7 @@ void CCGCScheduler::PokeGC(JS::GCReason aReason, JSObject* aObj,
   if (mCCRunner) {
     
     
-    EnsureCCThenGC();
+    EnsureCCThenGC(CCReason::GC_WAITING);
     return;
   }
 
@@ -540,7 +540,9 @@ void CCGCScheduler::MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects) {
     return;
   }
 
-  if (ShouldScheduleCC(aNow, aSuspectedCCObjects)) {
+  MOZ_ASSERT(mCCReason == CCReason::NO_REASON);
+  CCReason reason = ShouldScheduleCC(aNow, aSuspectedCCObjects);
+  if (reason != CCReason::NO_REASON) {
     
     nsCycleCollector_dispatchDeferredDeletion();
 
@@ -632,16 +634,16 @@ TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
   return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
 }
 
-bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
-                                     uint32_t aSuspectedCCObjects) const {
+CCReason CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
+                                         uint32_t aSuspectedCCObjects) const {
   if (!mHasRunGC) {
-    return false;
+    return CCReason::NO_REASON;
   }
 
   
   if (mCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
     if (aNow - mLastCCEndTime < kCCDelay) {
-      return false;
+      return CCReason::NO_REASON;
     }
   }
 
@@ -651,7 +653,7 @@ bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
       !mLastForgetSkippableCycleEndTime.IsNull()) {
     if (aNow - mLastForgetSkippableCycleEndTime <
         kTimeBetweenForgetSkippableCycles) {
-      return false;
+      return CCReason::NO_REASON;
     }
   }
 
@@ -733,7 +735,8 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
   
   
   
-  if (desc.mCanAbortCC && !IsCCNeeded(aNow, aSuspectedCCObjects)) {
+  if (desc.mCanAbortCC &&
+      IsCCNeeded(aNow, aSuspectedCCObjects) == CCReason::NO_REASON) {
     
     
     mCCRunnerState = CCRunnerState::Canceled;
