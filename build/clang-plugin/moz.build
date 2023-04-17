@@ -22,7 +22,6 @@ HOST_SOURCES += [
     "MozCheckAction.cpp",
     "MustOverrideChecker.cpp",
     "MustReturnFromCallerChecker.cpp",
-    "MustUseChecker.cpp",
     "NaNExprChecker.cpp",
     "NeedsNoVTableTypeChecker.cpp",
     "NoAddRefReleaseOnReturnChecker.cpp",
