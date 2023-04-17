@@ -28,7 +28,7 @@
 
 
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -38,6 +38,8 @@
 #include "hb-common.h"
 
 HB_BEGIN_DECLS
+
+
 
 
 
@@ -624,39 +626,11 @@ HB_EXTERN hb_script_t
 hb_unicode_script (hb_unicode_funcs_t *ufuncs,
 		   hb_codepoint_t unicode);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 HB_EXTERN hb_bool_t
 hb_unicode_compose (hb_unicode_funcs_t *ufuncs,
 		    hb_codepoint_t      a,
 		    hb_codepoint_t      b,
 		    hb_codepoint_t     *ab);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 HB_EXTERN hb_bool_t
 hb_unicode_decompose (hb_unicode_funcs_t *ufuncs,

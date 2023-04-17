@@ -26,7 +26,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -68,6 +68,8 @@ hb_ot_color_palette_color_get_name_id (hb_face_t *face,
 
 
 
+
+
 typedef enum { 
   HB_OT_COLOR_PALETTE_FLAG_DEFAULT			= 0x00000000u,
   HB_OT_COLOR_PALETTE_FLAG_USABLE_WITH_LIGHT_BACKGROUND	= 0x00000001u,
@@ -92,6 +94,8 @@ hb_ot_color_palette_get_colors (hb_face_t    *face,
 
 HB_EXTERN hb_bool_t
 hb_ot_color_has_layers (hb_face_t *face);
+
+
 
 
 

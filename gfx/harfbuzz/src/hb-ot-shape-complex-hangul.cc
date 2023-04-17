@@ -119,7 +119,7 @@ data_destroy_hangul (void *data)
 #define isHangulTone(u) (hb_in_range<hb_codepoint_t> ((u), 0x302Eu, 0x302Fu))
 
 
-#define hangul_shaping_feature() complex_var_u8_0() /* hangul jamo shaping feature */
+#define hangul_shaping_feature() complex_var_u8_auxiliary() /* hangul jamo shaping feature */
 
 static bool
 is_zero_width_char (hb_font_t *font,
@@ -205,7 +205,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
       {
 	
 	buffer->unsafe_to_break_from_outbuffer (start, buffer->idx);
-	buffer->next_glyph ();
+	if (unlikely (!buffer->next_glyph ())) break;
 	if (!is_zero_width_char (font, u))
 	{
 	  buffer->merge_out_clusters (start, end + 1);
@@ -218,23 +218,25 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
       else
       {
 	
-      if (!(buffer->flags & HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE) &&
-	  font->has_glyph (0x25CCu))
+	if (!(buffer->flags & HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE) &&
+	    font->has_glyph (0x25CCu))
 	{
 	  hb_codepoint_t chars[2];
-	  if (!is_zero_width_char (font, u)) {
+	  if (!is_zero_width_char (font, u))
+	  {
 	    chars[0] = u;
 	    chars[1] = 0x25CCu;
-	  } else {
+	  } else
+	  {
 	    chars[0] = 0x25CCu;
 	    chars[1] = u;
 	  }
-	  buffer->replace_glyphs (1, 2, chars);
+	  (void) buffer->replace_glyphs (1, 2, chars);
 	}
 	else
 	{
 	  
-	  buffer->next_glyph ();
+	  (void) buffer->next_glyph ();
 	}
       }
       start = end = buffer->out_len;
@@ -271,9 +273,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 	  hb_codepoint_t s = SBase + (l - LBase) * NCount + (v - VBase) * TCount + tindex;
 	  if (font->has_glyph (s))
 	  {
-	    buffer->replace_glyphs (t ? 3 : 2, 1, &s);
-	    if (unlikely (!buffer->successful))
-	      return;
+	    (void) buffer->replace_glyphs (t ? 3 : 2, 1, &s);
 	    end = start + 1;
 	    continue;
 	  }
@@ -285,17 +285,19 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
 
 	buffer->cur().hangul_shaping_feature() = LJMO;
-	buffer->next_glyph ();
+	(void) buffer->next_glyph ();
 	buffer->cur().hangul_shaping_feature() = VJMO;
-	buffer->next_glyph ();
+	(void) buffer->next_glyph ();
 	if (t)
 	{
 	  buffer->cur().hangul_shaping_feature() = TJMO;
-	  buffer->next_glyph ();
+	  (void) buffer->next_glyph ();
 	  end = start + 3;
 	}
 	else
 	  end = start + 2;
+	if (unlikely (!buffer->successful))
+	  break;
 	if (buffer->cluster_level == HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES)
 	  buffer->merge_out_clusters (start, end);
 	continue;
@@ -321,9 +323,7 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 	hb_codepoint_t new_s = s + new_tindex;
 	if (font->has_glyph (new_s))
 	{
-	  buffer->replace_glyphs (2, 1, &new_s);
-	  if (unlikely (!buffer->successful))
-	    return;
+	  (void) buffer->replace_glyphs (2, 1, &new_s);
 	  end = start + 1;
 	  continue;
 	}
@@ -347,19 +347,18 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
 	    (!tindex || font->has_glyph (decomposed[2])))
 	{
 	  unsigned int s_len = tindex ? 3 : 2;
-	  buffer->replace_glyphs (1, s_len, decomposed);
+	  (void) buffer->replace_glyphs (1, s_len, decomposed);
 
 	  
 
 
 	  if (has_glyph && !tindex)
 	  {
-	    buffer->next_glyph ();
+	    (void) buffer->next_glyph ();
 	    s_len++;
 	  }
-
 	  if (unlikely (!buffer->successful))
-	    return;
+	    break;
 
 	  
 
@@ -385,15 +384,13 @@ preprocess_text_hangul (const hb_ot_shape_plan_t *plan HB_UNUSED,
       {
 	
 	end = start + 1;
-	buffer->next_glyph ();
-	continue;
       }
     }
 
     
 
 
-    buffer->next_glyph ();
+    (void) buffer->next_glyph ();
   }
   buffer->swap_buffers ();
 }

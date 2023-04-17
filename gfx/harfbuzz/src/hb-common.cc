@@ -1006,6 +1006,21 @@ parse_one_variation (const char **pp, const char *end, hb_variation_t *variation
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_variation_from_string (const char *str, int len,
 			  hb_variation_t *variation)
@@ -1026,6 +1041,13 @@ hb_variation_from_string (const char *str, int len,
     memset (variation, 0, sizeof (*variation));
   return false;
 }
+
+
+
+
+
+
+
 
 
 
@@ -1061,11 +1083,15 @@ hb_variation_to_string (hb_variation_t *variation,
 
 
 
+
+
 uint8_t
 (hb_color_get_alpha) (hb_color_t color)
 {
   return hb_color_get_alpha (color);
 }
+
+
 
 
 
@@ -1089,11 +1115,15 @@ uint8_t
 
 
 
+
+
 uint8_t
 (hb_color_get_green) (hb_color_t color)
 {
   return hb_color_get_green (color);
 }
+
+
 
 
 

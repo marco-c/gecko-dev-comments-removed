@@ -50,6 +50,10 @@ using hb_true_type = hb_bool_constant<true>;
 using hb_false_type = hb_bool_constant<false>;
 
 
+template <bool cond> struct static_assert_expr;
+template <> struct static_assert_expr<true> : hb_false_type {};
+#define static_assert_expr(C) static_assert_expr<C>::value
+
 
 
 template <bool B, typename T = void> struct hb_enable_if {};
@@ -220,6 +224,8 @@ struct hb_reference_wrapper<T&>
 };
 
 
+
+
 template <typename T>
 using hb_is_integral = hb_bool_constant<
   hb_is_same (hb_decay<T>, char) ||
@@ -292,6 +298,15 @@ template <> struct hb_int_max<unsigned long long>	: hb_integral_constant<unsigne
 #define hb_int_max(T) hb_int_max<T>::value
 
 
+
+
+#define HB_DELETE_COPY_ASSIGN(TypeName) \
+  TypeName(const TypeName&) = delete; \
+  void operator=(const TypeName&) = delete
+#define HB_DELETE_CREATE_COPY_ASSIGN(TypeName) \
+  TypeName() = delete; \
+  TypeName(const TypeName&) = delete; \
+  void operator=(const TypeName&) = delete
 
 template <typename T, typename>
 struct _hb_is_destructible : hb_false_type {};

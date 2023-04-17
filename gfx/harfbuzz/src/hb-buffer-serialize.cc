@@ -555,6 +555,8 @@ hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
 
 
 
+
+
 unsigned int
 hb_buffer_serialize_unicode (hb_buffer_t *buffer,
                              unsigned int start,
@@ -736,6 +738,8 @@ parse_hex (const char *pp, const char *end, uint32_t *pv)
 
 
 
+
+
 hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
                               const char *buf,
@@ -790,6 +794,8 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
 
   }
 }
+
+
 
 
 

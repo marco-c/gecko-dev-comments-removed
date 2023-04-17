@@ -53,14 +53,19 @@ namespace OT {
 
 
 
-template <typename Type, unsigned int Size>
+template <typename Type,
+	  unsigned int Size = sizeof (Type)>
 struct IntType
 {
   typedef Type type;
-  typedef hb_conditional<hb_is_signed (Type), signed, unsigned> wide_type;
 
-  IntType& operator = (wide_type i) { v = i; return *this; }
-  operator wide_type () const { return v; }
+  IntType () = default;
+  explicit constexpr IntType (Type V) : v {V} {}
+  IntType& operator = (Type i) { v = i; return *this; }
+  
+
+  operator hb_conditional<hb_is_signed (Type), signed, unsigned> () const { return v; }
+
   bool operator == (const IntType &o) const { return (Type) v == (Type) o.v; }
   bool operator != (const IntType &o) const { return !(*this == o); }
 
@@ -80,14 +85,21 @@ struct IntType
 
     return pb->cmp (*pa);
   }
-  template <typename Type2>
+  template <typename Type2,
+	    hb_enable_if (hb_is_integral (Type2) &&
+			  sizeof (Type2) < sizeof (int) &&
+			  sizeof (Type) < sizeof (int))>
   int cmp (Type2 a) const
   {
     Type b = v;
-    if (sizeof (Type) < sizeof (int) && sizeof (Type2) < sizeof (int))
-      return (int) a - (int) b;
-    else
-      return a < b ? -1 : a == b ? 0 : +1;
+    return (int) a - (int) b;
+  }
+  template <typename Type2,
+	    hb_enable_if (hb_is_convertible (Type2, Type))>
+  int cmp (Type2 a) const
+  {
+    Type b = v;
+    return a < b ? -1 : a == b ? 0 : +1;
   }
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -100,12 +112,12 @@ struct IntType
   DEFINE_SIZE_STATIC (Size);
 };
 
-typedef IntType<uint8_t,  1> HBUINT8;	
-typedef IntType<int8_t,   1> HBINT8;	
-typedef IntType<uint16_t, 2> HBUINT16;	
-typedef IntType<int16_t,  2> HBINT16;	
-typedef IntType<uint32_t, 4> HBUINT32;	
-typedef IntType<int32_t,  4> HBINT32;	
+typedef IntType<uint8_t>  HBUINT8;	
+typedef IntType<int8_t>   HBINT8;	
+typedef IntType<uint16_t> HBUINT16;	
+typedef IntType<int16_t>  HBINT16;	
+typedef IntType<uint32_t> HBUINT32;	
+typedef IntType<int32_t>  HBINT32;	
 
 
 typedef IntType<uint32_t, 3> HBUINT24;	
@@ -163,8 +175,8 @@ struct Tag : HBUINT32
 {
   Tag& operator = (hb_tag_t i) { HBUINT32::operator= (i); return *this; }
   
-  operator const char* () const { return reinterpret_cast<const char *> (&this->v); }
-  operator char* ()             { return reinterpret_cast<char *> (&this->v); }
+  operator const char* () const { return reinterpret_cast<const char *> (this); }
+  operator char* ()             { return reinterpret_cast<char *> (this); }
   public:
   DEFINE_SIZE_STATIC (4);
 };

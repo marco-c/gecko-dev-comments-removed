@@ -27,7 +27,7 @@
 
 
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -70,6 +70,8 @@ typedef struct hb_glyph_info_t {
   hb_var_int_t   var1;
   hb_var_int_t   var2;
 } hb_glyph_info_t;
+
+
 
 
 
@@ -150,6 +152,11 @@ typedef struct hb_segment_properties_t {
   void           *reserved2;
 } hb_segment_properties_t;
 
+
+
+
+
+
 #define HB_SEGMENT_PROPERTIES_DEFAULT {HB_DIRECTION_INVALID, \
 				       HB_SCRIPT_INVALID, \
 				       HB_LANGUAGE_INVALID, \
@@ -196,6 +203,8 @@ hb_buffer_set_user_data (hb_buffer_t        *buffer,
 HB_EXTERN void *
 hb_buffer_get_user_data (hb_buffer_t        *buffer,
 			 hb_user_data_key_t *key);
+
+
 
 
 
@@ -257,6 +266,8 @@ hb_buffer_get_segment_properties (hb_buffer_t *buffer,
 
 HB_EXTERN void
 hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
+
+
 
 
 
@@ -579,6 +590,35 @@ hb_buffer_deserialize_unicode (hb_buffer_t *buffer,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum { 
   HB_BUFFER_DIFF_FLAG_EQUAL			= 0x0000,
 
@@ -612,6 +652,23 @@ hb_buffer_diff (hb_buffer_t *buffer,
 		hb_buffer_t *reference,
 		hb_codepoint_t dottedcircle_glyph,
 		unsigned int position_fuzz);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -169,6 +169,7 @@ static const LangTag ot_languages[] = {
   {"bko",	HB_TAG('B','M','L',' ')},	
   {"bla",	HB_TAG('B','K','F',' ')},	
   {"ble",	HB_TAG('B','L','N',' ')},	
+  {"blg",	HB_TAG('I','B','A',' ')},	
   {"bli",	HB_TAG_NONE	       },	
   {"blk",	HB_TAG('B','L','K',' ')},	
   {"blk",	HB_TAG('K','R','N',' ')},	
@@ -358,6 +359,7 @@ static const LangTag ot_languages[] = {
   {"czo",	HB_TAG('Z','H','S',' ')},	
   {"czt",	HB_TAG('Q','I','N',' ')},	
   {"da",	HB_TAG('D','A','N',' ')},	
+	
   {"dao",	HB_TAG('Q','I','N',' ')},	
   {"dap",	HB_TAG('N','I','S',' ')},	
 	
@@ -834,6 +836,7 @@ static const LangTag ot_languages[] = {
   {"lri",	HB_TAG('L','U','H',' ')},	
   {"lrm",	HB_TAG('L','U','H',' ')},	
   {"lrt",	HB_TAG('C','P','P',' ')},	
+  {"lsb",	HB_TAG_NONE	       },	
   {"lsm",	HB_TAG('L','U','H',' ')},	
   {"lt",	HB_TAG('L','T','H',' ')},	
   {"ltg",	HB_TAG('L','V','I',' ')},	
@@ -1520,6 +1523,8 @@ static const LangTag ot_languages[] = {
   {"xmm",	HB_TAG('C','P','P',' ')},	
   {"xmv",	HB_TAG('M','L','G',' ')},	
   {"xmw",	HB_TAG('M','L','G',' ')},	
+  {"xnj",	HB_TAG('S','X','T',' ')},	
+  {"xnq",	HB_TAG('S','X','T',' ')},	
   {"xnr",	HB_TAG('D','G','R',' ')},	
 	
   {"xpe",	HB_TAG('X','P','E',' ')},	
@@ -2808,6 +2813,8 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("hnd", -1);  
   case HB_TAG('H','Y','E',' '):  
     return hb_language_from_string ("hyw", -1);  
+  case HB_TAG('I','B','A',' '):  
+    return hb_language_from_string ("iba", -1);  
   case HB_TAG('I','J','O',' '):  
     return hb_language_from_string ("ijo", -1);  
   case HB_TAG('I','N','U',' '):  
@@ -2892,6 +2899,8 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("sq", -1);  
   case HB_TAG('S','R','B',' '):  
     return hb_language_from_string ("sr", -1);  
+  case HB_TAG('S','X','T',' '):  
+    return hb_language_from_string ("xnj", -1);  
   case HB_TAG('S','Y','R',' '):  
     return hb_language_from_string ("syr", -1);  
   case HB_TAG('S','Y','R','E'):  

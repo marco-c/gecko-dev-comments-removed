@@ -34,7 +34,6 @@
 
 #include "hb-coretext.h"
 #include "hb-aat-layout.hh"
-#include <math.h>
 
 
 
@@ -190,7 +189,10 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
 
 
   
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   if (&CTGetCoreTextVersion != nullptr && CTGetCoreTextVersion() < 0x00070000) {
+#pragma GCC diagnostic pop
     CFStringRef fontName = CTFontCopyPostScriptName (ct_font);
     bool isEmojiFont = CFStringCompare (fontName, CFSTR("AppleColorEmoji"), 0) == kCFCompareEqualTo;
     CFRelease (fontName);
@@ -346,7 +348,7 @@ retry:
   const hb_coretext_font_data_t *data = font->data.coretext;
   if (unlikely (!data)) return nullptr;
 
-  if (fabs (CTFontGetSize ((CTFontRef) data) - (CGFloat) font->ptem) > .5)
+  if (fabs (CTFontGetSize ((CTFontRef) data) - (CGFloat) font->ptem) > (CGFloat) .5)
   {
     
 
@@ -858,7 +860,7 @@ resize_and_retry:
 
     buffer->len = 0;
     uint32_t status_and = ~0, status_or = 0;
-    double advances_so_far = 0;
+    CGFloat advances_so_far = 0;
     
 
 
@@ -880,10 +882,10 @@ resize_and_retry:
       status_or  |= run_status;
       status_and &= run_status;
       DEBUG_MSG (CORETEXT, run, "CTRunStatus: %x", run_status);
-      double run_advance = CTRunGetTypographicBounds (run, range_all, nullptr, nullptr, nullptr);
+      CGFloat run_advance = CTRunGetTypographicBounds (run, range_all, nullptr, nullptr, nullptr);
       if (HB_DIRECTION_IS_VERTICAL (buffer->props.direction))
 	  run_advance = -run_advance;
-      DEBUG_MSG (CORETEXT, run, "Run advance: %g", run_advance);
+      DEBUG_MSG (CORETEXT, run, "Run advance: %g", (double) run_advance);
 
       
 
@@ -1062,7 +1064,7 @@ resize_and_retry:
 	  hb_position_t x_offset = (positions[0].x - advances_so_far) * x_mult;
 	  for (unsigned int j = 0; j < num_glyphs; j++)
 	  {
-	    double advance;
+	    CGFloat advance;
 	    if (likely (j + 1 < num_glyphs))
 	      advance = positions[j + 1].x - positions[j].x;
 	    else 
@@ -1078,7 +1080,7 @@ resize_and_retry:
 	  hb_position_t y_offset = (positions[0].y - advances_so_far) * y_mult;
 	  for (unsigned int j = 0; j < num_glyphs; j++)
 	  {
-	    double advance;
+	    CGFloat advance;
 	    if (likely (j + 1 < num_glyphs))
 	      advance = positions[j + 1].y - positions[j].y;
 	    else 

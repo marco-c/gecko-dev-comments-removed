@@ -200,6 +200,9 @@ hb_ot_metrics_get_position (hb_font_t           *font,
 
 
 
+
+
+
 float
 hb_ot_metrics_get_variation (hb_font_t *font, hb_ot_metrics_tag_t metrics_tag)
 {
@@ -215,11 +218,17 @@ hb_ot_metrics_get_variation (hb_font_t *font, hb_ot_metrics_tag_t metrics_tag)
 
 
 
+
+
+
 hb_position_t
 hb_ot_metrics_get_x_variation (hb_font_t *font, hb_ot_metrics_tag_t metrics_tag)
 {
   return font->em_scalef_x (hb_ot_metrics_get_variation (font, metrics_tag));
 }
+
+
+
 
 
 

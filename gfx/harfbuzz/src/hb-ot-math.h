@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -40,10 +40,81 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
+
+
+
+
 #define HB_OT_TAG_MATH HB_TAG('M','A','T','H')
 
 
+
+
+
+
+
+
+
 #define HB_OT_MATH_SCRIPT HB_TAG('m','a','t','h')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -122,6 +193,10 @@ typedef enum {
 
 
 
+
+
+
+
 typedef enum {
   HB_OT_MATH_KERN_TOP_RIGHT = 0,
   HB_OT_MATH_KERN_TOP_LEFT = 1,
@@ -142,6 +217,8 @@ typedef struct hb_ot_math_glyph_variant_t {
   hb_codepoint_t glyph;
   hb_position_t advance;
 } hb_ot_math_glyph_variant_t;
+
+
 
 
 

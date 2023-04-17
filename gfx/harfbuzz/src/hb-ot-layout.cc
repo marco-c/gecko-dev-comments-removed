@@ -512,6 +512,17 @@ hb_ot_layout_table_choose_script (hb_face_t      *face,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 hb_bool_t
 hb_ot_layout_table_select_script (hb_face_t      *face,
 				  hb_tag_t        table_tag,
@@ -1491,6 +1502,8 @@ hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
 
 
 
+
+
 hb_bool_t
 hb_ot_layout_has_positioning (hb_face_t *face)
 {
@@ -1769,7 +1782,7 @@ apply_forward (OT::hb_ot_apply_context_t *c,
     if (applied)
       ret = true;
     else
-      buffer->next_glyph ();
+      (void) buffer->next_glyph ();
   }
   return ret;
 }

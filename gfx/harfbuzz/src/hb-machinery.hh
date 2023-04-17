@@ -81,6 +81,11 @@ static inline Type& StructAfter(TObject &X)
 
 
 
+#ifndef HB_VAR_ARRAY
+#define HB_VAR_ARRAY 1
+#endif
+
+
 #define _DEFINE_INSTANCE_ASSERTION1(_line, _assertion) \
   void _instance_assertion_on_line_##_line () const \
   { static_assert ((_assertion), ""); }

@@ -510,7 +510,7 @@ struct StateTable
   const Entry<Extra> &get_entry (int state, unsigned int klass) const
   {
     if (unlikely (klass >= nClasses))
-      klass = StateTable<Types, Entry<Extra>>::CLASS_OUT_OF_BOUNDS;
+      klass = StateTable::CLASS_OUT_OF_BOUNDS;
 
     const HBUSHORT *states = (this+stateArrayTable).arrayZ;
     const Entry<Extra> *entries = (this+entryTable).arrayZ;
@@ -576,7 +576,7 @@ struct StateTable
 	  if (unlikely (stop > states))
 	    return_trace (false);
 	  for (const HBUSHORT *p = states; stop < p; p--)
-	    num_entries = hb_max (num_entries, *(p - 1) + 1);
+	    num_entries = hb_max (num_entries, *(p - 1) + 1u);
 	  state_neg = min_state;
 	}
       }
@@ -597,7 +597,7 @@ struct StateTable
 	  if (unlikely (stop < states))
 	    return_trace (false);
 	  for (const HBUSHORT *p = &states[state_pos * num_classes]; p < stop; p++)
-	    num_entries = hb_max (num_entries, *p + 1);
+	    num_entries = hb_max (num_entries, *p + 1u);
 	  state_pos = max_state + 1;
 	}
       }
@@ -729,7 +729,10 @@ struct ExtendedTypes
 template <typename Types, typename EntryData>
 struct StateTableDriver
 {
-  StateTableDriver (const StateTable<Types, EntryData> &machine_,
+  using StateTableT = StateTable<Types, EntryData>;
+  using EntryT = Entry<EntryData>;
+
+  StateTableDriver (const StateTableT &machine_,
 		    hb_buffer_t *buffer_,
 		    hb_face_t *face_) :
 	      machine (machine_),
@@ -742,59 +745,101 @@ struct StateTableDriver
     if (!c->in_place)
       buffer->clear_output ();
 
-    int state = StateTable<Types, EntryData>::STATE_START_OF_TEXT;
+    int state = StateTableT::STATE_START_OF_TEXT;
     for (buffer->idx = 0; buffer->successful;)
     {
       unsigned int klass = buffer->idx < buffer->len ?
 			   machine.get_class (buffer->info[buffer->idx].codepoint, num_glyphs) :
-			   (unsigned) StateTable<Types, EntryData>::CLASS_END_OF_TEXT;
+			   (unsigned) StateTableT::CLASS_END_OF_TEXT;
       DEBUG_MSG (APPLY, nullptr, "c%u at %u", klass, buffer->idx);
-      const Entry<EntryData> &entry = machine.get_entry (state, klass);
+      const EntryT &entry = machine.get_entry (state, klass);
+      const int next_state = machine.new_state (entry.newState);
 
       
 
 
 
-      if (state && buffer->backtrack_len () && buffer->idx < buffer->len)
-      {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      const EntryT *wouldbe_entry;
+      bool safe_to_break =
 	
+	!c->is_actionable (this, entry)
+      &&
+	
+	(
+	  
+	  state == StateTableT::STATE_START_OF_TEXT
+	||
+	  
+	  (
+	    (entry.flags & context_t::DontAdvance) &&
+	    next_state == StateTableT::STATE_START_OF_TEXT
+	  )
+	||
+	  
+	  (
+	    wouldbe_entry = &machine.get_entry (StateTableT::STATE_START_OF_TEXT, klass)
+	  ,
+	    
+	    !c->is_actionable (this, *wouldbe_entry)
+	  &&
+	    
+	    (
+	      next_state == machine.new_state (wouldbe_entry->newState)
+	    &&
+	      (entry.flags & context_t::DontAdvance) == (wouldbe_entry->flags & context_t::DontAdvance)
+	    )
+	  )
+	)
+      &&
+	
+	!c->is_actionable (this, machine.get_entry (state, StateTableT::CLASS_END_OF_TEXT))
+      ;
 
-	if (c->is_actionable (this, entry) ||
-	    !(entry.newState == StateTable<Types, EntryData>::STATE_START_OF_TEXT &&
-	      entry.flags == context_t::DontAdvance))
-	  buffer->unsafe_to_break_from_outbuffer (buffer->backtrack_len () - 1, buffer->idx + 1);
-      }
-
-      
-      if (buffer->idx + 2 <= buffer->len)
-      {
-	const Entry<EntryData> &end_entry = machine.get_entry (state, StateTable<Types, EntryData>::CLASS_END_OF_TEXT);
-	if (c->is_actionable (this, end_entry))
-	  buffer->unsafe_to_break (buffer->idx, buffer->idx + 2);
-      }
+      if (!safe_to_break && buffer->backtrack_len () && buffer->idx < buffer->len)
+	buffer->unsafe_to_break_from_outbuffer (buffer->backtrack_len () - 1, buffer->idx + 1);
 
       c->transition (this, entry);
 
-      state = machine.new_state (entry.newState);
+      state = next_state;
       DEBUG_MSG (APPLY, nullptr, "s%d", state);
 
-      if (buffer->idx == buffer->len)
+      if (buffer->idx == buffer->len || unlikely (!buffer->successful))
 	break;
 
       if (!(entry.flags & context_t::DontAdvance) || buffer->max_ops-- <= 0)
-	buffer->next_glyph ();
+	(void) buffer->next_glyph ();
     }
 
     if (!c->in_place)
-    {
-      for (; buffer->successful && buffer->idx < buffer->len;)
-	buffer->next_glyph ();
       buffer->swap_buffers ();
-    }
   }
 
   public:
-  const StateTable<Types, EntryData> &machine;
+  const StateTableT &machine;
   hb_buffer_t *buffer;
   unsigned int num_glyphs;
 };

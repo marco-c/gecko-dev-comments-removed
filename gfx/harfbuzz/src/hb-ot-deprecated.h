@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -38,6 +38,13 @@
 HB_BEGIN_DECLS
 
 #ifndef HB_DISABLE_DEPRECATED
+
+
+
+
+
+
+
 
 
 
@@ -74,7 +81,16 @@ hb_ot_tag_from_language (hb_language_t language);
 
 
 
+
+
 #define HB_OT_VAR_NO_AXIS_INDEX		0xFFFFFFFFu
+
+
+
+
+
+
+
 
 
 

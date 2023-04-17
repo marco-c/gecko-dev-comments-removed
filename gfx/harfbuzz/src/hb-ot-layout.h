@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -38,10 +38,35 @@
 HB_BEGIN_DECLS
 
 
+
+
+
+
+
 #define HB_OT_TAG_BASE HB_TAG('B','A','S','E')
+
+
+
+
+
 #define HB_OT_TAG_GDEF HB_TAG('G','D','E','F')
+
+
+
+
+
 #define HB_OT_TAG_GSUB HB_TAG('G','S','U','B')
+
+
+
+
+
 #define HB_OT_TAG_GPOS HB_TAG('G','P','O','S')
+
+
+
+
+
 #define HB_OT_TAG_JSTF HB_TAG('J','S','T','F')
 
 
@@ -49,7 +74,19 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
+
+
+
 #define HB_OT_TAG_DEFAULT_SCRIPT	HB_TAG ('D', 'F', 'L', 'T')
+
+
+
+
+
+
 #define HB_OT_TAG_DEFAULT_LANGUAGE	HB_TAG ('d', 'f', 'l', 't')
 
 
@@ -57,7 +94,11 @@ HB_BEGIN_DECLS
 
 
 
+
+
 #define HB_OT_MAX_TAGS_PER_SCRIPT	3u
+
+
 
 
 
@@ -144,9 +185,29 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 
 
 
+
+
+
+
+
 #define HB_OT_LAYOUT_NO_SCRIPT_INDEX		0xFFFFu
+
+
+
+
+
 #define HB_OT_LAYOUT_NO_FEATURE_INDEX		0xFFFFu
+
+
+
+
+
 #define HB_OT_LAYOUT_DEFAULT_LANGUAGE_INDEX	0xFFFFu
+
+
+
+
+
 #define HB_OT_LAYOUT_NO_VARIATIONS_INDEX	0xFFFFFFFFu
 
 HB_EXTERN unsigned int
@@ -446,6 +507,7 @@ typedef enum {
   HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT	= HB_TAG ('i','d','t','p'),
   HB_OT_LAYOUT_BASELINE_TAG_MATH			= HB_TAG ('m','a','t','h'),
 
+  
   _HB_OT_LAYOUT_BASELINE_TAG_MAX_VALUE = HB_TAG_MAX_SIGNED 
 } hb_ot_layout_baseline_tag_t;
 
@@ -459,4 +521,4 @@ hb_ot_layout_get_baseline (hb_font_t                   *font,
 
 HB_END_DECLS
 
-#endif
+#endif 

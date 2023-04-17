@@ -22,7 +22,7 @@
 
 
 
-#ifndef HB_AAT_H_IN
+#if !defined(HB_AAT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-aat.h> instead."
 #endif
 
@@ -731,6 +731,14 @@ hb_aat_layout_get_feature_types (hb_face_t                    *face,
 HB_EXTERN hb_ot_name_id_t
 hb_aat_layout_feature_type_get_name_id (hb_face_t                    *face,
 					hb_aat_layout_feature_type_t  feature_type);
+
+
+
+
+
+
+
+
 
 typedef struct hb_aat_layout_feature_selector_info_t {
   hb_ot_name_id_t			name_id;

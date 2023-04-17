@@ -35,8 +35,8 @@
 
 
 
-#define complex_var_u8_0()	var2.u8[2]
-#define complex_var_u8_1()	var2.u8[3]
+#define complex_var_u8_category()	var2.u8[2]
+#define complex_var_u8_auxiliary()	var2.u8[3]
 
 
 #define HB_OT_SHAPE_COMPLEX_MAX_COMBINING_MARKS 32
@@ -186,26 +186,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_ARABIC:
 
     
-    case HB_SCRIPT_MONGOLIAN:
     case HB_SCRIPT_SYRIAC:
-
-    
-    case HB_SCRIPT_NKO:
-    case HB_SCRIPT_PHAGS_PA:
-
-    
-    case HB_SCRIPT_MANDAIC:
-
-    
-    case HB_SCRIPT_MANICHAEAN:
-    case HB_SCRIPT_PSALTER_PAHLAVI:
-
-    
-    case HB_SCRIPT_ADLAM:
-
-    
-    case HB_SCRIPT_HANIFI_ROHINGYA:
-    case HB_SCRIPT_SOGDIAN:
 
       
 
@@ -284,8 +265,9 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 	return &_hb_ot_complex_shaper_myanmar;
 
 
-    
+#define HB_SCRIPT_MYANMAR_ZAWGYI	((hb_script_t) HB_TAG ('Q','a','a','g'))
     case HB_SCRIPT_MYANMAR_ZAWGYI:
+    
 
       return &_hb_ot_complex_shaper_myanmar_zawgyi;
 
@@ -294,7 +276,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_TIBETAN:
 
     
-    
+    case HB_SCRIPT_MONGOLIAN:
     
 
     
@@ -315,8 +297,8 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
 
     
     case HB_SCRIPT_BALINESE:
-    
-    
+    case HB_SCRIPT_NKO:
+    case HB_SCRIPT_PHAGS_PA:
 
     
     case HB_SCRIPT_CHAM:
@@ -337,7 +319,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_BATAK:
     case HB_SCRIPT_BRAHMI:
-    
+    case HB_SCRIPT_MANDAIC:
 
     
     case HB_SCRIPT_CHAKMA:
@@ -351,10 +333,10 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_KHOJKI:
     case HB_SCRIPT_KHUDAWADI:
     case HB_SCRIPT_MAHAJANI:
-    
+    case HB_SCRIPT_MANICHAEAN:
     case HB_SCRIPT_MODI:
     case HB_SCRIPT_PAHAWH_HMONG:
-    
+    case HB_SCRIPT_PSALTER_PAHLAVI:
     case HB_SCRIPT_SIDDHAM:
     case HB_SCRIPT_TIRHUTA:
 
@@ -363,7 +345,7 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_MULTANI:
 
     
-    
+    case HB_SCRIPT_ADLAM:
     case HB_SCRIPT_BHAIKSUKI:
     case HB_SCRIPT_MARCHEN:
     case HB_SCRIPT_NEWA:
@@ -376,11 +358,11 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_DOGRA:
     case HB_SCRIPT_GUNJALA_GONDI:
-    
+    case HB_SCRIPT_HANIFI_ROHINGYA:
     case HB_SCRIPT_MAKASAR:
     case HB_SCRIPT_MEDEFAIDRIN:
     case HB_SCRIPT_OLD_SOGDIAN:
-    
+    case HB_SCRIPT_SOGDIAN:
 
     
     case HB_SCRIPT_ELYMAIC:

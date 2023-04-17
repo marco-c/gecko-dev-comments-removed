@@ -22,7 +22,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -33,6 +33,7 @@
 #include "hb-ot-name.h"
 
 HB_BEGIN_DECLS
+
 
 
 
@@ -100,6 +101,7 @@ typedef enum {
   HB_OT_METRICS_TAG_UNDERLINE_SIZE		= HB_TAG ('u','n','d','s'),
   HB_OT_METRICS_TAG_UNDERLINE_OFFSET		= HB_TAG ('u','n','d','o'),
 
+  
   _HB_OT_METRICS_TAG_MAX_VALUE = HB_TAG_MAX_SIGNED 
 } hb_ot_metrics_tag_t;
 

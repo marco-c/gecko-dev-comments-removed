@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -53,10 +53,49 @@ HB_BEGIN_DECLS
 #ifndef HB_DISABLE_DEPRECATED
 
 
+
+
+
+
+
+
+
 #define HB_SCRIPT_CANADIAN_ABORIGINAL		HB_SCRIPT_CANADIAN_SYLLABICS
 
+
+
+
+
+
+
+
 #define HB_BUFFER_FLAGS_DEFAULT			HB_BUFFER_FLAG_DEFAULT
+
+
+
+
+
+
+
 #define HB_BUFFER_SERIALIZE_FLAGS_DEFAULT	HB_BUFFER_SERIALIZE_FLAG_DEFAULT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 typedef hb_bool_t (*hb_font_get_glyph_func_t) (hb_font_t *font, void *font_data,
 					       hb_codepoint_t unicode, hb_codepoint_t variation_selector,
@@ -70,6 +109,11 @@ hb_font_funcs_set_glyph_func (hb_font_funcs_t *ffuncs,
 
 HB_EXTERN HB_DEPRECATED void
 hb_set_invert (hb_set_t *set);
+
+
+
+
+
 
 
 
@@ -96,6 +140,10 @@ HB_EXTERN HB_DEPRECATED void
 hb_unicode_funcs_set_eastasian_width_func (hb_unicode_funcs_t *ufuncs,
 					   hb_unicode_eastasian_width_func_t func,
 					   void *user_data, hb_destroy_func_t destroy);
+
+
+
+
 
 
 
@@ -154,6 +202,8 @@ typedef unsigned int			(*hb_unicode_decompose_compatibility_func_t)	(hb_unicode_
 
 
 
+
+
 HB_EXTERN HB_DEPRECATED void
 hb_unicode_funcs_set_decompose_compatibility_func (hb_unicode_funcs_t *ufuncs,
 						   hb_unicode_decompose_compatibility_func_t func,
@@ -163,6 +213,15 @@ HB_EXTERN HB_DEPRECATED unsigned int
 hb_unicode_decompose_compatibility (hb_unicode_funcs_t *ufuncs,
 				    hb_codepoint_t      u,
 				    hb_codepoint_t     *decomposed);
+
+
+
+
+
+
+
+
+
 
 
 typedef hb_font_get_glyph_kerning_func_t hb_font_get_glyph_v_kerning_func_t;

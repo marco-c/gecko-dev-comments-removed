@@ -849,6 +849,12 @@ hb_font_get_nominal_glyph (hb_font_t      *font,
 
 
 
+
+
+
+
+
+
 unsigned int
 hb_font_get_nominal_glyphs (hb_font_t *font,
 			    unsigned int count,
@@ -2210,6 +2216,10 @@ hb_font_get_var_coords_normalized (hb_font_t    *font,
 }
 
 #ifdef HB_EXPERIMENTAL_API
+
+
+
+
 
 
 

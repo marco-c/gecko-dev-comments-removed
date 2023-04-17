@@ -164,6 +164,15 @@ hb_ot_all_tags_from_script (hb_script_t   script,
   *count = i;
 }
 
+
+
+
+
+
+
+
+
+
 hb_script_t
 hb_ot_tag_to_script (hb_tag_t tag)
 {
@@ -421,6 +430,8 @@ hb_ot_tags_from_script_and_language (hb_script_t   script,
   if (needs_script && script_count && script_tags && *script_count)
     hb_ot_all_tags_from_script (script, script_count, script_tags);
 }
+
+
 
 
 

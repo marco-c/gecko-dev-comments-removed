@@ -961,6 +961,8 @@ _hb_directwrite_font_release (void *data)
 
 
 
+
+
 hb_face_t *
 hb_directwrite_face_create (IDWriteFontFace *font_face)
 {
@@ -969,6 +971,8 @@ hb_directwrite_face_create (IDWriteFontFace *font_face)
   return hb_face_create_for_tables (_hb_directwrite_reference_table, font_face,
 				    _hb_directwrite_font_release);
 }
+
+
 
 
 

@@ -48,7 +48,7 @@ namespace OT {
 
 
 struct OpenTypeFontFile;
-struct OffsetTable;
+struct OpenTypeOffsetTable;
 struct TTCHeader;
 
 
@@ -78,7 +78,7 @@ typedef struct TableRecord
   DEFINE_SIZE_STATIC (16);
 } OpenTypeTable;
 
-typedef struct OffsetTable
+typedef struct OpenTypeOffsetTable
 {
   friend struct OpenTypeFontFile;
 
@@ -218,7 +218,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  LArrayOf<LOffsetTo<OffsetTable>>
+  LArrayOf<LOffsetTo<OpenTypeOffsetTable>>
 		table;		
 
   public:

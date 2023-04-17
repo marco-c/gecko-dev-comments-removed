@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -36,11 +36,40 @@
 HB_BEGIN_DECLS
 
 
-#define HB_VERSION_MAJOR 2
-#define HB_VERSION_MINOR 7
-#define HB_VERSION_MICRO 4
 
-#define HB_VERSION_STRING "2.7.4"
+
+
+
+
+#define HB_VERSION_MAJOR 2
+
+
+
+
+
+#define HB_VERSION_MINOR 8
+
+
+
+
+
+#define HB_VERSION_MICRO 0
+
+
+
+
+
+
+#define HB_VERSION_STRING "2.8.0"
+
+
+
+
+
+
+
+
+
 
 #define HB_VERSION_ATLEAST(major,minor,micro) \
 	((major)*10000+(minor)*100+(micro) <= \

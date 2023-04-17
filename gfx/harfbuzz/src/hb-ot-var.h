@@ -24,7 +24,7 @@
 
 
 
-#ifndef HB_OT_H_IN
+#if !defined(HB_OT_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb-ot.h> instead."
 #endif
 
@@ -34,6 +34,7 @@
 #include "hb.h"
 
 HB_BEGIN_DECLS
+
 
 
 
@@ -53,13 +54,16 @@ HB_BEGIN_DECLS
 
 
 
+
 #define HB_OT_TAG_VAR_AXIS_SLANT	HB_TAG('s','l','n','t')
 
 
 
 
 
+
 #define HB_OT_TAG_VAR_AXIS_WIDTH	HB_TAG('w','d','t','h')
+
 
 
 
@@ -90,9 +94,12 @@ hb_ot_var_get_axis_count (hb_face_t *face);
 
 
 
+
+
 typedef enum { 
   HB_OT_VAR_AXIS_FLAG_HIDDEN	= 0x00000001u,
 
+  
   _HB_OT_VAR_AXIS_FLAG_MAX_VALUE= HB_TAG_MAX_SIGNED 
 } hb_ot_var_axis_flags_t;
 
