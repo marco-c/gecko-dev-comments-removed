@@ -3,5 +3,6 @@
 
 
 
+mod thread;
 
-mod thread {}
+pub use thread::*;

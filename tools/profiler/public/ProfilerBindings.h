@@ -14,7 +14,8 @@
 
 extern "C" {
 
-
+void gecko_profiler_register_thread(const char* aName);
+void gecko_profiler_unregister_thread();
 
 }  
 
