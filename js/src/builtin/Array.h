@@ -59,7 +59,7 @@ extern ArrayObject* JS_FASTCALL NewDenseUnallocatedArray(
 
 extern ArrayObject* JS_FASTCALL NewDenseFullyAllocatedArray(
     JSContext* cx, uint32_t length, HandleObject proto = nullptr,
-    NewObjectKind newKind = GenericObject);
+    NewObjectKind newKind = GenericObject, gc::AllocSite* site = nullptr);
 
 
 

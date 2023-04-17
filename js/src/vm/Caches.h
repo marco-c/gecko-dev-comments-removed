@@ -147,7 +147,8 @@ class NewObjectCache {
 
 
   inline NativeObject* newObjectFromHit(JSContext* cx, EntryIndex entry,
-                                        js::gc::InitialHeap heap);
+                                        js::gc::InitialHeap heap,
+                                        gc::AllocSite* site = nullptr);
 
   
   void fillProto(EntryIndex entry, const JSClass* clasp, js::TaggedProto proto,
