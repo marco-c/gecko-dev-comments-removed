@@ -393,6 +393,9 @@ nsresult nsHttpHandler::Init() {
   
   NimbusFeatures::OnUpdate(UA_EXPERIMENT_NAME, UA_EXPERIMENT_VAR,
                            ExperimentUserAgentUpdated, &mExperimentUserAgent);
+
+  
+  ExperimentUserAgentUpdated("", &mExperimentUserAgent);
 #endif  
 
   Telemetry::ScalarSet(Telemetry::ScalarID::NETWORKING_HTTP3_ENABLED,
