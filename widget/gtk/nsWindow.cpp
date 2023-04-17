@@ -1733,11 +1733,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
 
   
   
-  static auto sGtkWidgetIsVisible =
-      (gboolean(*)(GtkWidget*))dlsym(RTLD_DEFAULT, "gtk_widget_is_visible");
-
-  bool isWidgetVisible =
-      (sGtkWidgetIsVisible != nullptr) && sGtkWidgetIsVisible(mShell);
+  bool isWidgetVisible = gtk_widget_is_visible(mShell);
   if (isWidgetVisible) {
     LOG(
         ("  temporary hide popup due to "
