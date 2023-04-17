@@ -4677,15 +4677,35 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    nsRect flexItemMarginBoxBounds;
+    
+    
+    
+    
+    
+
+    
+    nsRect itemMarginBoxes;
+    
+    nsRect relPosItemMarginBoxes;
+
     for (const FlexLine& line : lines) {
       for (const FlexItem& item : line.Items()) {
-        flexItemMarginBoxBounds =
-            flexItemMarginBoxBounds.Union(item.Frame()->GetMarginRect());
+        const nsIFrame* f = item.Frame();
+        if (MOZ_UNLIKELY(f->IsRelativelyPositioned())) {
+          const nsRect marginRect = f->GetMarginRectRelativeToSelf();
+          itemMarginBoxes =
+              itemMarginBoxes.Union(marginRect + f->GetNormalPosition());
+          relPosItemMarginBoxes =
+              relPosItemMarginBoxes.Union(marginRect + f->GetPosition());
+        } else {
+          itemMarginBoxes = itemMarginBoxes.Union(f->GetMarginRect());
+        }
       }
     }
-    flexItemMarginBoxBounds.Inflate(padding.GetPhysicalMargin(wm));
-    aReflowOutput.mOverflowAreas.UnionAllWith(flexItemMarginBoxBounds);
+
+    itemMarginBoxes.Inflate(padding.GetPhysicalMargin(wm));
+    aReflowOutput.mOverflowAreas.UnionAllWith(itemMarginBoxes);
+    aReflowOutput.mOverflowAreas.UnionAllWith(relPosItemMarginBoxes);
   }
 
   
