@@ -1251,7 +1251,7 @@ const browsingContextTargetPrototype = {
 
 
 
-  updateTargetConfiguration(options = {}) {
+  updateTargetConfiguration(options = {}, calledFromDocumentCreation = false) {
     if (!this.docShell) {
       
       return;
@@ -1271,7 +1271,8 @@ const browsingContextTargetPrototype = {
       if (
         enableTouchSimulator !== this.touchSimulator.enabled &&
         options.reloadOnTouchSimulationToggle === true &&
-        this.isTopLevelTarget
+        this.isTopLevelTarget &&
+        !calledFromDocumentCreation
       ) {
         reload = true;
       }

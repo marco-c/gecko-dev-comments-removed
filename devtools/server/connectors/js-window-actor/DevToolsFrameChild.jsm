@@ -188,7 +188,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
           return;
         }
 
-        this._createTargetActor(watcherActorID, connectionPrefix, watchedData);
+        this._createTargetActor({
+          watcherActorID,
+          parentConnectionPrefix: connectionPrefix,
+          watchedData,
+          isDocumentCreation: true,
+        });
       }
     }
   }
@@ -206,7 +211,16 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
-  _createTargetActor(watcherActorID, parentConnectionPrefix, watchedData) {
+
+
+
+
+  _createTargetActor({
+    watcherActorID,
+    parentConnectionPrefix,
+    watchedData,
+    isDocumentCreation,
+  }) {
     if (this._connections.get(watcherActorID)) {
       throw new Error(
         "DevToolsFrameChild _createTargetActor was called more than once" +
@@ -269,7 +283,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       if (!Array.isArray(entries) || entries.length == 0) {
         continue;
       }
-      targetActor.addWatcherDataEntry(type, entries);
+      targetActor.addWatcherDataEntry(type, entries, isDocumentCreation);
     }
   }
 
@@ -414,11 +428,11 @@ class DevToolsFrameChild extends JSWindowActorChild {
       case "DevToolsFrameParent:instantiate-already-available": {
         const { watcherActorID, connectionPrefix, watchedData } = message.data;
 
-        return this._createTargetActor(
+        return this._createTargetActor({
           watcherActorID,
-          connectionPrefix,
-          watchedData
-        );
+          parentConnectionPrefix: connectionPrefix,
+          watchedData,
+        });
       }
       case "DevToolsFrameParent:destroy": {
         const { watcherActorID } = message.data;
