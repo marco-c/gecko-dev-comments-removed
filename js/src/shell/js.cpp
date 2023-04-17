@@ -6298,7 +6298,7 @@ static bool OffThreadCompileToStencil(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  options.setIsRunOnce(true).setSourceIsLazy(false);
+  options.setIsRunOnce(true);
 
   
   
@@ -9547,7 +9547,7 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  exception; otherwise, run the script and return its value."),
 
     JS_FN_HELP("offThreadCompileToStencil", OffThreadCompileToStencil, 1, 0,
-"offThreadCompileToStencil(code)",
+"offThreadCompileToStencil(code[, options])",
 "  Compile |code| on a helper thread, returning a job ID. To wait for the\n"
 "  compilation to finish and get the stencil object, call\n"
 "  |finishOffThreadCompileToStencil| passing the job ID."),
