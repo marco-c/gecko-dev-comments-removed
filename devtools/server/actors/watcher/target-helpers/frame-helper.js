@@ -42,7 +42,8 @@ async function createTargets(watcher) {
     
     
     
-    if (browsingContext.top === browsingContext) {
+    
+    if (!browsingContext.parent) {
       browsingContext.watchedByDevTools = true;
     }
 
@@ -80,8 +81,9 @@ async function createTargets(watcher) {
       
       
       
+      
       if (
-        browsingContext.top === browsingContext &&
+        !browsingContext.parent &&
         (!watcher.browserElement || browserId === browsingContext.browserId)
       ) {
         browsingContext.watchedByDevTools = true;
@@ -118,7 +120,7 @@ function destroyTargets(watcher) {
       "Existing WindowGlobal"
     );
 
-    if (browsingContext.top === browsingContext) {
+    if (!browsingContext.parent) {
       browsingContext.watchedByDevTools = false;
     }
 

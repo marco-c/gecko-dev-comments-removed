@@ -1670,10 +1670,7 @@ DebuggerProgressListener.prototype = {
     
     
     
-    if (
-      this._targetActor.typeName === "parentProcessTarget" &&
-      docShell.browsingContext.top == docShell.browsingContext
-    ) {
+    if (this._targetActor.typeName === "parentProcessTarget") {
       docShell.browsingContext.watchedByDevTools = true;
     }
   },
@@ -1710,10 +1707,7 @@ DebuggerProgressListener.prototype = {
 
     
     
-    if (
-      this._targetActor.typeName === "parentProcessTarget" &&
-      docShell.browsingContext.top == docShell.browsingContext
-    ) {
+    if (this._targetActor.typeName === "parentProcessTarget") {
       docShell.browsingContext.watchedByDevTools = false;
     }
   },

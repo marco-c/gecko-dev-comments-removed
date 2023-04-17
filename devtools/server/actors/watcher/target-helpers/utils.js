@@ -54,10 +54,7 @@ function shouldNotifyWindowGlobal(
 
   
   
-  return (
-    !browsingContext.parent ||
-    windowGlobal.osPid != browsingContext.parent.currentWindowGlobal.osPid
-  );
+  return windowGlobal.isProcessRoot;
 }
 
 

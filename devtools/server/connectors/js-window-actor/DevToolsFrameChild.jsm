@@ -74,11 +74,9 @@ function shouldNotifyWindowGlobal(
   
   
   
-  if (
-    !browsingContext.parent &&
-    browsingContext.browserId == watchedBrowserId &&
-    !acceptTopLevelTarget
-  ) {
+  
+  
+  if (!acceptTopLevelTarget && watchedBrowserId && !browsingContext.parent) {
     return false;
   }
 
@@ -88,21 +86,7 @@ function shouldNotifyWindowGlobal(
   
   
   
-  
-  if (Cu.isRemoteProxy(windowGlobal.window)) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  if (
-    browsingContext.parent &&
-    browsingContext.parent.window &&
-    !Cu.isRemoteProxy(browsingContext.parent.window)
-  ) {
+  if (!windowGlobal.isProcessRoot) {
     return false;
   }
 
