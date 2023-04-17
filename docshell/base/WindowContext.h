@@ -109,7 +109,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   uint64_t OuterWindowId() const { return mOuterWindowId; }
   bool IsDiscarded() const { return mIsDiscarded; }
 
-  bool IsCached() const;
+  
+  
+  bool IsCurrent() const;
 
   bool IsInProcess() const { return mIsInProcess; }
 

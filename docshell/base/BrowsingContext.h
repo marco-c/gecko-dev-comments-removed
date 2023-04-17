@@ -377,9 +377,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void DisplayLoadError(const nsAString& aURI);
 
   
-  bool IsCached() const;
-
-  
   
   bool IsTargetable() const;
 
