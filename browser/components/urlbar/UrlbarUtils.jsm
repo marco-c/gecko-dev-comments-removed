@@ -1162,6 +1162,20 @@ var UrlbarUtils = {
     }
     return "unknown";
   },
+
+  
+
+
+
+
+
+
+
+  unEscapeURIForUI(uri) {
+    return uri.length > UrlbarUtils.MAX_TEXT_LENGTH
+      ? uri
+      : Services.textToSubURI.unEscapeURIForUI(uri);
+  },
 };
 
 XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
