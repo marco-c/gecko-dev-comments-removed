@@ -5488,7 +5488,9 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mCanceled = true;
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
 
-  if (!mEndMarkerAdded && profiler_can_accept_markers()) {
+  if (mLastStatusReported && !mEndMarkerAdded && profiler_can_accept_markers()) {
+    
+    
     
     mEndMarkerAdded = true;
 
@@ -5707,19 +5709,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   LOG(("nsHttpChannel::AsyncOpen [this=%p]\n", this));
   LogCallingScriptLocation(this);
-
-  mLastStatusReported =
-      TimeStamp::Now();  
-  if (profiler_can_accept_markers()) {
-    nsAutoCString requestMethod;
-    GetRequestMethod(requestMethod);
-
-    profiler_add_network_marker(
-        mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
-        mChannelCreationTimestamp, mLastStatusReported, 0, mCacheDisposition,
-        mLoadInfo->GetInnerWindowID());
-  }
-
   NS_CompareLoadInfoAndLoadContext(this);
 
 #ifdef DEBUG
@@ -5816,6 +5805,20 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
 }
 
 void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
+  
+  
+  mLastStatusReported =
+    TimeStamp::Now();
+  if (profiler_can_accept_markers()) {
+    nsAutoCString requestMethod;
+    GetRequestMethod(requestMethod);
+
+    profiler_add_network_marker(
+        mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
+        mChannelCreationTimestamp, mLastStatusReported, 0, mCacheDisposition,
+        mLoadInfo->GetInnerWindowID());
+  }
+
   
   if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
 

@@ -90,6 +90,19 @@ nsresult InterceptedHttpChannel::SetupReplacementChannel(
 void InterceptedHttpChannel::AsyncOpenInternal() {
   
   
+  mLastStatusReported = TimeStamp::Now();
+  if (profiler_can_accept_markers()) {
+    nsAutoCString requestMethod;
+    GetRequestMethod(requestMethod);
+
+    profiler_add_network_marker(
+        mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
+        mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
+        mLoadInfo->GetInnerWindowID());
+  }
+
+  
+  
   
   nsresult rv = NS_OK;
 
@@ -491,7 +504,9 @@ InterceptedHttpChannel::Cancel(nsresult aStatus) {
 
   mCanceled = true;
 
-  if (profiler_can_accept_markers()) {
+  if (mLastStatusReported && profiler_can_accept_markers()) {
+    
+    
     
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
@@ -549,19 +564,6 @@ InterceptedHttpChannel::GetSecurityInfo(nsISupports** aSecurityInfo) {
 NS_IMETHODIMP
 InterceptedHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   nsCOMPtr<nsIStreamListener> listener(aListener);
-
-  
-  
-  mLastStatusReported = TimeStamp::Now();
-  if (profiler_can_accept_markers()) {
-    nsAutoCString requestMethod;
-    GetRequestMethod(requestMethod);
-
-    profiler_add_network_marker(
-        mURI, requestMethod, mPriority, mChannelId, NetworkLoadType::LOAD_START,
-        mChannelCreationTimestamp, mLastStatusReported, 0, kCacheUnknown,
-        mLoadInfo->GetInnerWindowID());
-  }
 
   nsresult rv =
       nsContentSecurityManager::doContentSecurityCheck(this, listener);
