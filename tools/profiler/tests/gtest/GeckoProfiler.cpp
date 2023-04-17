@@ -12,6 +12,7 @@
 #include "GeckoProfiler.h"
 #include "mozilla/ProfilerMarkerTypes.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "NetworkMarker.h"
 #include "platform.h"
 #include "ProfileBuffer.h"
 
@@ -925,7 +926,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        1,
-       NetworkLoadType::LOAD_START,
+       net::NetworkLoadType::LOAD_START,
        ts1,
        ts2,
        56,
@@ -946,7 +947,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        2,
-       NetworkLoadType::LOAD_STOP,
+       net::NetworkLoadType::LOAD_STOP,
        ts1,
        ts2,
        56,
@@ -971,7 +972,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        3,
-       NetworkLoadType::LOAD_REDIRECT,
+       net::NetworkLoadType::LOAD_REDIRECT,
        ts1,
        ts2,
        56,
@@ -995,7 +996,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        4,
-       NetworkLoadType::LOAD_REDIRECT,
+       net::NetworkLoadType::LOAD_REDIRECT,
        ts1,
        ts2,
        56,
@@ -1019,7 +1020,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        5,
-       NetworkLoadType::LOAD_REDIRECT,
+       net::NetworkLoadType::LOAD_REDIRECT,
        ts1,
        ts2,
        56,
@@ -1042,7 +1043,7 @@ TEST(GeckoProfiler, Markers)
        "GET"_ns,
        34,
        6,
-       NetworkLoadType::LOAD_REDIRECT,
+       net::NetworkLoadType::LOAD_REDIRECT,
        ts1,
        ts2,
        56,
