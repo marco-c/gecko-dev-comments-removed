@@ -845,7 +845,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     MOZ_ASSERT(stencil);
 
     
-    rv = WriteCachedStencil(cache, cachePath, cx, options, stencil);
+    rv = WriteCachedStencil(cache, cachePath, cx, stencil);
 
     
     
