@@ -631,12 +631,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  gfxASurface* ScreenReferenceSurface() { return mScreenReferenceSurface; }
-
-  
-
-
-
 
   RefPtr<mozilla::gfx::DrawTarget> ScreenReferenceDrawTarget();
 
