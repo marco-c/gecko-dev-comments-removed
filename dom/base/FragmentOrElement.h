@@ -197,7 +197,7 @@ class FragmentOrElement : public nsIContent {
     
 
 
-    RefPtr<CustomElementData> mCustomElementData;
+    UniquePtr<CustomElementData> mCustomElementData;
   };
 
   class nsDOMSlots : public nsIContent::nsContentSlots {

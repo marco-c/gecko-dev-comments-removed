@@ -1143,7 +1143,7 @@ static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
     return;
   }
 
-  RefPtr<CustomElementData> data = aElement->GetCustomElementData();
+  CustomElementData* data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
   data->mState = CustomElementData::State::ePrecustomized;
 
@@ -1173,7 +1173,7 @@ static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
 void CustomElementRegistry::Upgrade(Element* aElement,
                                     CustomElementDefinition* aDefinition,
                                     ErrorResult& aRv) {
-  RefPtr<CustomElementData> data = aElement->GetCustomElementData();
+  CustomElementData* data = aElement->GetCustomElementData();
   MOZ_ASSERT(data, "CustomElementData should exist");
 
   
@@ -1365,7 +1365,7 @@ void CustomElementReactionsStack::EnqueueCallbackReaction(
 
 void CustomElementReactionsStack::Enqueue(Element* aElement,
                                           CustomElementReaction* aReaction) {
-  RefPtr<CustomElementData> elementData = aElement->GetCustomElementData();
+  CustomElementData* elementData = aElement->GetCustomElementData();
   MOZ_ASSERT(elementData, "CustomElementData should exist");
 
   if (mRecursionDepth) {
@@ -1427,7 +1427,7 @@ void CustomElementReactionsStack::InvokeReactions(ElementQueue* aElementQueue,
     
     MOZ_ASSERT(element);
 
-    RefPtr<CustomElementData> elementData = element->GetCustomElementData();
+    CustomElementData* elementData = element->GetCustomElementData();
     if (!elementData || !element->GetOwnerGlobal()) {
       
       

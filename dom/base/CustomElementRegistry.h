@@ -91,8 +91,6 @@ class CustomElementCallback {
 
 
 struct CustomElementData {
-  NS_INLINE_DECL_REFCOUNTING(CustomElementData)
-
   
   
   
@@ -101,6 +99,7 @@ struct CustomElementData {
 
   explicit CustomElementData(nsAtom* aType);
   CustomElementData(nsAtom* aType, State aState);
+  ~CustomElementData() = default;
 
   
   State mState;
@@ -129,8 +128,6 @@ struct CustomElementData {
   }
 
  private:
-  virtual ~CustomElementData() = default;
-
   
   
   RefPtr<nsAtom> mType;

@@ -573,7 +573,7 @@ class Element : public FragmentOrElement {
 
 
 
-  void SetCustomElementData(CustomElementData* aData);
+  void SetCustomElementData(UniquePtr<CustomElementData> aData);
 
   
 
