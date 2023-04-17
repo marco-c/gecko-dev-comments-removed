@@ -611,72 +611,64 @@ void nsContentList::ContentAppended(nsIContent* aFirstNewContent) {
 
 
 
-  int32_t count = container->GetChildCount();
-
-  if (count > 0) {
-    uint32_t ourCount = mElements.Length();
-    bool appendToList = false;
+  uint32_t ourCount = mElements.Length();
+  const bool appendingToList = [&] {
     if (ourCount == 0) {
-      appendToList = true;
-    } else {
-      nsIContent* ourLastContent = mElements[ourCount - 1];
-      
-
-
-
-      if (nsContentUtils::PositionIsBefore(ourLastContent, aFirstNewContent)) {
-        appendToList = true;
-      }
+      return true;
     }
-
-    if (!appendToList) {
-      
-      
-      for (nsIContent* cur = aFirstNewContent; cur;
-           cur = cur->GetNextSibling()) {
-        if (MatchSelf(cur)) {
-          
-          
-          SetDirty();
-          break;
-        }
-      }
-
-      ASSERT_IN_SYNC;
-      return;
+    if (mRootNode == container) {
+      return true;
     }
+    return nsContentUtils::PositionIsBefore(mElements.LastElement(),
+                                            aFirstNewContent);
+  }();
 
+  if (!appendingToList) {
     
-
-
-
-
-
-    if (mState == LIST_LAZY)  
-      return;
-
     
-
-
-
-    if (mDeep) {
-      for (nsIContent* cur = aFirstNewContent; cur;
-           cur = cur->GetNextNode(container)) {
-        if (cur->IsElement() && Match(cur->AsElement())) {
-          mElements.AppendElement(cur);
-        }
-      }
-    } else {
-      for (nsIContent* cur = aFirstNewContent; cur;
-           cur = cur->GetNextSibling()) {
-        if (cur->IsElement() && Match(cur->AsElement())) {
-          mElements.AppendElement(cur);
-        }
+    for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
+      if (MatchSelf(cur)) {
+        
+        
+        SetDirty();
+        break;
       }
     }
 
     ASSERT_IN_SYNC;
+    return;
   }
+
+  
+
+
+
+
+
+  if (mState == LIST_LAZY) {
+    return;
+  }
+
+  
+
+
+
+  if (mDeep) {
+    for (nsIContent* cur = aFirstNewContent; cur;
+         cur = cur->GetNextNode(container)) {
+      if (cur->IsElement() && Match(cur->AsElement())) {
+        mElements.AppendElement(cur);
+      }
+    }
+  } else {
+    for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
+      if (cur->IsElement() && Match(cur->AsElement())) {
+        mElements.AppendElement(cur);
+      }
+    }
+  }
+
+  ASSERT_IN_SYNC;
 }
 
 void nsContentList::ContentInserted(nsIContent* aChild) {
