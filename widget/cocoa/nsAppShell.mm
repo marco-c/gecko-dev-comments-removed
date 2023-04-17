@@ -698,7 +698,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       
       
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
       eventProcessed = false;
       break;
 #else
