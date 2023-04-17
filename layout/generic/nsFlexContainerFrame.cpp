@@ -413,6 +413,13 @@ class nsFlexContainerFrame::FlexItem final {
     }
 
     
+    auto baselineGroup = aUseFirstBaseline ? BaselineSharingGroup::First
+                                           : BaselineSharingGroup::Last;
+    if (mFrame->GetNaturalBaselineBOffset(mWM, baselineGroup, &mAscent)) {
+      return mAscent;
+    }
+
+    
     mAscent = mFrame->SynthesizeBaselineBOffsetFromBorderBox(
         mWM, BaselineSharingGroup::First);
     return mAscent;
