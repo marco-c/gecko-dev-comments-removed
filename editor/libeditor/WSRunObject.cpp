@@ -1161,23 +1161,11 @@ nsresult WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
   }
 
   
-  if (EditorUtils::IsWhiteSpacePreformatted(
-          *atPreviousCharOfStart.ContainerAsText())) {
-    if (!atPreviousCharOfStart.IsCharASCIISpaceOrNBSP()) {
-      return NS_OK;
-    }
-    nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-        atPreviousCharOfStart, atPreviousCharOfStart.NextPoint(),
-        HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-    return rv;
-  }
-
   
   
-  if (atPreviousCharOfStart.IsCharASCIISpace()) {
+  if (atPreviousCharOfStart.IsCharCollapsibleASCIISpace() ||
+      atPreviousCharOfStart
+          .IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
     EditorDOMPoint startToDelete =
         textFragmentDataAtDeletion.GetFirstASCIIWhiteSpacePointCollapsedTo(
             atPreviousCharOfStart, nsIEditor::ePrevious);
@@ -1194,7 +1182,6 @@ nsresult WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
       return rv;
     }
 
-    
     rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
         startToDelete, endToDelete,
         HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
@@ -1204,7 +1191,7 @@ nsresult WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
     return rv;
   }
 
-  if (atPreviousCharOfStart.IsCharNBSP()) {
+  if (atPreviousCharOfStart.IsCharCollapsibleNBSP()) {
     EditorDOMPoint startToDelete(atPreviousCharOfStart);
     EditorDOMPoint endToDelete(startToDelete.NextPoint());
     nsresult rv =
@@ -1217,7 +1204,6 @@ nsresult WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
       return rv;
     }
 
-    
     rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
         startToDelete, endToDelete,
         HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
@@ -1227,7 +1213,13 @@ nsresult WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
     return rv;
   }
 
-  return NS_OK;
+  nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
+      atPreviousCharOfStart, atPreviousCharOfStart.NextPoint(),
+      HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+  return rv;
 }
 
 
@@ -1245,23 +1237,10 @@ nsresult WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
   }
 
   
-  if (EditorUtils::IsWhiteSpacePreformatted(
-          *atNextCharOfStart.ContainerAsText())) {
-    if (!atNextCharOfStart.IsCharASCIISpaceOrNBSP()) {
-      return NS_OK;
-    }
-    nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
-        atNextCharOfStart, atNextCharOfStart.NextPoint(),
-        HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-    return rv;
-  }
-
   
   
-  if (atNextCharOfStart.IsCharASCIISpace()) {
+  if (atNextCharOfStart.IsCharCollapsibleASCIISpace() ||
+      atNextCharOfStart.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
     EditorDOMPoint startToDelete =
         textFragmentDataAtDeletion.GetFirstASCIIWhiteSpacePointCollapsedTo(
             atNextCharOfStart, nsIEditor::eNext);
@@ -1278,7 +1257,6 @@ nsresult WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
       return rv;
     }
 
-    
     rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
         startToDelete, endToDelete,
         HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
@@ -1288,7 +1266,7 @@ nsresult WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
     return rv;
   }
 
-  if (atNextCharOfStart.IsCharNBSP()) {
+  if (atNextCharOfStart.IsCharCollapsibleNBSP()) {
     EditorDOMPoint startToDelete(atNextCharOfStart);
     EditorDOMPoint endToDelete(startToDelete.NextPoint());
     nsresult rv =
@@ -1301,7 +1279,6 @@ nsresult WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
       return rv;
     }
 
-    
     rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
         startToDelete, endToDelete,
         HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
@@ -1311,7 +1288,13 @@ nsresult WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
     return rv;
   }
 
-  return NS_OK;
+  nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
+      atNextCharOfStart, atNextCharOfStart.NextPoint(),
+      HTMLEditor::TreatEmptyTextNodes::KeepIfContainerOfRangeBoundaries);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+  return rv;
 }
 
 
@@ -3492,14 +3475,10 @@ WSRunScanner::GetRangeInTextNodesToBackspaceFrom(Element* aEditingHost,
   }
 
   
-  if (!textFragmentDataAtCaret.IsWhiteSpaceCollapsible()) {
-    return EditorDOMRangeInTexts(atPreviousChar, atNextChar);
-  }
-
-  
   
   EditorDOMRangeInTexts rangeToDelete;
-  if (atPreviousChar.IsCharASCIISpace()) {
+  if (atPreviousChar.IsCharCollapsibleASCIISpace() ||
+      atPreviousChar.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
     EditorDOMPointInText startToDelete =
         textFragmentDataAtCaret.GetFirstASCIIWhiteSpacePointCollapsedTo(
             atPreviousChar, nsIEditor::ePrevious);
@@ -3587,14 +3566,10 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
   }
 
   
-  if (!textFragmentDataAtCaret.IsWhiteSpaceCollapsible()) {
-    return EditorDOMRangeInTexts(atCaret, atNextChar);
-  }
-
-  
   
   EditorDOMRangeInTexts rangeToDelete;
-  if (atCaret.IsCharASCIISpace()) {
+  if (atCaret.IsCharCollapsibleASCIISpace() ||
+      atCaret.IsCharPreformattedNewLineCollapsedWithWhiteSpaces()) {
     EditorDOMPointInText startToDelete =
         textFragmentDataAtCaret.GetFirstASCIIWhiteSpacePointCollapsedTo(
             atCaret, nsIEditor::eNext);
