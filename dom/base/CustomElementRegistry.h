@@ -40,6 +40,7 @@ enum class ElementCallbackType {
   eAdopted,
   eAttributeChanged,
   eFormReset,
+  eFormDisabled,
   eGetCustomInterface
 };
 
@@ -53,6 +54,9 @@ struct LifecycleCallbackArgs {
   
   RefPtr<Document> mOldDocument;
   RefPtr<Document> mNewDocument;
+
+  
+  bool mDisabled;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 };

@@ -979,12 +979,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
   virtual void FieldSetDisabledChanged(bool aNotify);
 
-  
-
-
-
-  void UpdateDisabledState(bool aNotify);
-
   void FieldSetFirstLegendChanged(bool aNotify) { UpdateFieldSet(aNotify); }
 
   
@@ -1014,6 +1008,12 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
   virtual void BeforeSetForm(bool aBindToTree) {}
 
   virtual void AfterClearForm(bool aUnbindOrDelete) {}
+
+  
+
+
+
+  virtual void UpdateDisabledState(bool aNotify);
 
   virtual void SetFormInternal(mozilla::dom::HTMLFormElement* aForm,
                                bool aBindToTree) {}
