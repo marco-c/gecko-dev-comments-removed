@@ -6,56 +6,117 @@
 
 
 """
-Requests HTTP library
+Requests HTTP Library
 ~~~~~~~~~~~~~~~~~~~~~
 
-Requests is an HTTP library, written in Python, for human beings. Basic GET
-usage:
+Requests is an HTTP library, written in Python, for human beings.
+Basic GET usage:
 
    >>> import requests
    >>> r = requests.get('https://www.python.org')
    >>> r.status_code
    200
-   >>> 'Python is a programming language' in r.content
+   >>> b'Python is a programming language' in r.content
    True
 
 ... or POST:
 
    >>> payload = dict(key1='value1', key2='value2')
-   >>> r = requests.post('http://httpbin.org/post', data=payload)
+   >>> r = requests.post('https://httpbin.org/post', data=payload)
    >>> print(r.text)
    {
      ...
      "form": {
-       "key2": "value2",
-       "key1": "value1"
+       "key1": "value1",
+       "key2": "value2"
      },
      ...
    }
 
 The other HTTP methods are supported - see `requests.api`. Full documentation
-is at <http://python-requests.org>.
+is at <https://requests.readthedocs.io>.
 
-:copyright: (c) 2015 by Kenneth Reitz.
+:copyright: (c) 2017 by Kenneth Reitz.
 :license: Apache 2.0, see LICENSE for more details.
-
 """
 
-__title__ = 'requests'
-__version__ = '2.9.1'
-__build__ = 0x020901
-__author__ = 'Kenneth Reitz'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2015 Kenneth Reitz'
+import urllib3
+import chardet
+import warnings
+from .exceptions import RequestsDependencyWarning
+
+
+def check_compatibility(urllib3_version, chardet_version):
+    urllib3_version = urllib3_version.split('.')
+    assert urllib3_version != ['dev']  
+
+    
+    if len(urllib3_version) == 2:
+        urllib3_version.append('0')
+
+    
+    major, minor, patch = urllib3_version  
+    major, minor, patch = int(major), int(minor), int(patch)
+    
+    assert major == 1
+    assert minor >= 21
+    assert minor <= 26
+
+    
+    major, minor, patch = chardet_version.split('.')[:3]
+    major, minor, patch = int(major), int(minor), int(patch)
+    
+    assert (3, 0, 2) <= (major, minor, patch) < (5, 0, 0)
+
+
+def _check_cryptography(cryptography_version):
+    
+    try:
+        cryptography_version = list(map(int, cryptography_version.split('.')))
+    except ValueError:
+        return
+
+    if cryptography_version < [1, 3, 4]:
+        warning = 'Old version of cryptography ({}) may cause slowdown.'.format(cryptography_version)
+        warnings.warn(warning, RequestsDependencyWarning)
 
 
 try:
-    from .packages.urllib3.contrib import pyopenssl
-    pyopenssl.inject_into_urllib3()
+    check_compatibility(urllib3.__version__, chardet.__version__)
+except (AssertionError, ValueError):
+    warnings.warn("urllib3 ({}) or chardet ({}) doesn't match a supported "
+                  "version!".format(urllib3.__version__, chardet.__version__),
+                  RequestsDependencyWarning)
+
+
+
+
+try:
+    try:
+        import ssl
+    except ImportError:
+        ssl = None
+
+    if not getattr(ssl, "HAS_SNI", False):
+        from urllib3.contrib import pyopenssl
+        pyopenssl.inject_into_urllib3()
+
+        
+        from cryptography import __version__ as cryptography_version
+        _check_cryptography(cryptography_version)
 except ImportError:
     pass
 
+
+from urllib3.exceptions import DependencyWarning
+warnings.simplefilter('ignore', DependencyWarning)
+
+from .__version__ import __title__, __description__, __url__, __version__
+from .__version__ import __build__, __author__, __author_email__, __license__
+from .__version__ import __copyright__, __cake__
+
 from . import utils
+from . import packages
 from .models import Request, Response, PreparedRequest
 from .api import request, get, head, post, patch, put, delete, options
 from .sessions import session, Session
@@ -63,21 +124,14 @@ from .status_codes import codes
 from .exceptions import (
     RequestException, Timeout, URLRequired,
     TooManyRedirects, HTTPError, ConnectionError,
-    FileModeWarning,
+    FileModeWarning, ConnectTimeout, ReadTimeout
 )
 
 
 import logging
-try:  
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
+from logging import NullHandler
 
 logging.getLogger(__name__).addHandler(NullHandler())
-
-import warnings
 
 
 warnings.simplefilter('default', FileModeWarning, append=True)
