@@ -1356,6 +1356,13 @@ void nsWindow::HideWaylandPopupWindow(bool aTemporaryHide,
   if (visible) {
     HideWaylandWindow();
   }
+
+  
+  
+  
+  if (mPopupClosed) {
+    RevokeTransactionIdAllocator();
+  }
 }
 
 void nsWindow::HideWaylandToplevelWindow() {
