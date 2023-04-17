@@ -20,8 +20,7 @@ using base::ProcessHandle;
 namespace mozilla {
 namespace ipc {
 
-nsresult CreateTransport(base::ProcessId aProcIdOne, TransportDescriptor* aOne,
-                         TransportDescriptor* aTwo) {
+nsresult CreateTransport(TransportDescriptor* aOne, TransportDescriptor* aTwo) {
   auto id = IPC::Channel::GenerateVerifiedChannelID();
   
   Transport t(id, Transport::MODE_SERVER, nullptr);

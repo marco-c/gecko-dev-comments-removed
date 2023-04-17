@@ -8,15 +8,22 @@
 
 #include "mozilla/ipc/Transport.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include <windows.h>
 
 using base::ProcessHandle;
 
 namespace mozilla {
 namespace ipc {
 
-nsresult CreateTransport(base::ProcessId aProcIdOne, TransportDescriptor* aOne,
-                         TransportDescriptor* aTwo) {
+nsresult CreateTransport(TransportDescriptor* aOne, TransportDescriptor* aTwo) {
   auto id = IPC::Channel::GenerateVerifiedChannelID();
+
+  
+  
+  
+  
+  
+  
   
   Transport t(id, Transport::MODE_SERVER, nullptr);
   HANDLE serverPipe = t.GetServerPipeHandle();
@@ -26,53 +33,19 @@ nsresult CreateTransport(base::ProcessId aProcIdOne, TransportDescriptor* aOne,
 
   
   
-  
-  
-  
-  
-  HANDLE serverDup;
-  DWORD access = 0;
-  DWORD options = DUPLICATE_SAME_ACCESS;
-  if (!DuplicateHandle(serverPipe, base::GetCurrentProcId(), &serverDup, access,
-                       options)) {
+  if (!::DuplicateHandle(GetCurrentProcess(), serverPipe, GetCurrentProcess(),
+                         &aOne->mServerPipeHandle, 0, false,
+                         DUPLICATE_SAME_ACCESS)) {
     return NS_ERROR_DUPLICATE_HANDLE;
   }
 
   aOne->mPipeName = aTwo->mPipeName = id;
-  aOne->mServerPipeHandle = serverDup;
-  aOne->mDestinationProcessId = aProcIdOne;
   aTwo->mServerPipeHandle = INVALID_HANDLE_VALUE;
-  aTwo->mDestinationProcessId = 0;
   return NS_OK;
-}
-
-HANDLE
-TransferHandleToProcess(HANDLE source, base::ProcessId pid) {
-  
-
-  if (source == INVALID_HANDLE_VALUE) {
-    return source;
-  }
-  HANDLE handleDup;
-  DWORD access = 0;
-  DWORD options = DUPLICATE_SAME_ACCESS;
-  bool ok = DuplicateHandle(source, pid, &handleDup, access, options);
-  if (!ok) {
-    return nullptr;
-  }
-
-  
-  
-  CloseHandle(source);
-
-  return handleDup;
 }
 
 UniquePtr<Transport> OpenDescriptor(const TransportDescriptor& aTd,
                                     Transport::Mode aMode) {
-  if (aTd.mServerPipeHandle != INVALID_HANDLE_VALUE) {
-    MOZ_RELEASE_ASSERT(aTd.mDestinationProcessId == base::GetCurrentProcId());
-  }
   return MakeUnique<Transport>(aTd.mPipeName, aTd.mServerPipeHandle, aMode,
                                nullptr);
 }
@@ -85,10 +58,9 @@ TransportDescriptor DuplicateDescriptor(const TransportDescriptor& aTd) {
   }
 
   HANDLE serverDup;
-  DWORD access = 0;
-  DWORD options = DUPLICATE_SAME_ACCESS;
-  bool ok = DuplicateHandle(aTd.mServerPipeHandle, base::GetCurrentProcId(),
-                            &serverDup, access, options);
+  bool ok = ::DuplicateHandle(GetCurrentProcess(), aTd.mServerPipeHandle,
+                              GetCurrentProcess(), &serverDup, 0, false,
+                              DUPLICATE_SAME_ACCESS);
   if (!ok) {
     AnnotateSystemError();
   }
