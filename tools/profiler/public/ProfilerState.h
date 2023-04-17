@@ -9,12 +9,12 @@
 
 
 
-
 #ifndef ProfilerState_h
 #define ProfilerState_h
 
 #include <mozilla/DefineEnum.h>
 #include <mozilla/EnumSet.h>
+#include "mozilla/ProfilerUtils.h"
 
 #include <functional>
 
@@ -174,7 +174,6 @@ using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
 [[nodiscard]] inline bool profiler_is_locked_on_current_thread() {
   return false;
 }
-[[nodiscard]] inline int profiler_current_thread_id() { return 0; }
 inline void profiler_add_state_change_callback(
     ProfilingStateSet aProfilingStateSet,
     ProfilingStateChangeCallback&& aCallback, uintptr_t aUniqueIdentifier = 0) {
@@ -367,26 +366,6 @@ profiler_features_if_active_and_unpaused() {
 
 
 [[nodiscard]] bool profiler_feature_active(uint32_t aFeature);
-
-
-[[nodiscard]] int profiler_current_process_id();
-
-
-[[nodiscard]] int profiler_current_thread_id();
-
-namespace mozilla::profiler::detail {
-
-
-extern int scProfilerMainThreadId;
-}  
-
-[[nodiscard]] inline int profiler_main_thread_id() {
-  return mozilla::profiler::detail::scProfilerMainThreadId;
-}
-
-[[nodiscard]] inline bool profiler_is_main_thread() {
-  return profiler_current_thread_id() == profiler_main_thread_id();
-}
 
 
 
