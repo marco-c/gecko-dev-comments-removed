@@ -3043,6 +3043,11 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
     if (begin.IsSet() && end.IsSet()) {
       TopLevelEditSubActionDataRef().DidInsertText(*this, begin, end);
     }
+    if (isIMETransaction) {
+      
+      
+      aPointToInsert.ContainerAsText()->MarkAsMaybeModifiedFrequently();
+    }
   }
 
   
