@@ -303,14 +303,6 @@ var SessionHistoryInternal = {
         let child = shEntry.GetChildAt(i);
 
         if (child) {
-          
-          
-          
-          if (child.URI.schemeIs("wyciwyg")) {
-            children.length = 0;
-            break;
-          }
-
           children.push(this.serializeEntry(child));
         }
       }
