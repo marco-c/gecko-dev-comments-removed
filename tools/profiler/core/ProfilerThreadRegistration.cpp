@@ -44,18 +44,11 @@ ThreadRegistration::ThreadRegistration(const char* aName, const void* aStackTop)
 }
 
 ThreadRegistration::~ThreadRegistration() {
-#ifdef DEBUG
   MOZ_ASSERT(profiler_current_thread_id() == mData.mInfo.ThreadId(),
              "ThreadRegistration must be destroyed on its thread");
   MOZ_ASSERT(!mDataMutex.IsLockedOnCurrentThread(),
              "Mutex shouldn't be locked here, as it's about to be destroyed "
              "in ~ThreadRegistration()");
-  MOZ_ASSERT(mDataMutex.TryLock(),
-             "Mutex shouldn't be locked in any thread, as it's about to be "
-             "destroyed in ~ThreadRegistration()");
-  
-  mDataMutex.Unlock();
-#endif  
   auto* tls = GetTLS();
   if (MOZ_UNLIKELY(!tls)) {
     
@@ -73,6 +66,17 @@ ThreadRegistration::~ThreadRegistration() {
     }
 
     ThreadRegistry::Unregister(OnThreadRef{*this});
+#ifdef DEBUG
+    
+    
+    
+    MOZ_ASSERT(mDataMutex.TryLock(),
+               "Mutex shouldn't be locked in any thread, as it's about to be "
+               "destroyed in ~ThreadRegistration()");
+    
+    mDataMutex.Unlock();
+#endif  
+
     tls->set(nullptr);
     return;
   }
