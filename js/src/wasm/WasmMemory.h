@@ -120,18 +120,18 @@ struct Pages {
 };
 
 
-extern Pages MaxMemoryPages();
+extern Pages MaxMemoryPages(IndexType t);
 
 
-static inline size_t MaxMemoryBytes() { return MaxMemoryPages().byteLength(); }
+static inline size_t MaxMemoryBytes(IndexType t) {
+  return MaxMemoryPages(t).byteLength();
+}
 
 
 
 
 
-extern size_t MaxMemoryBoundsCheckLimit();
-
-
+extern size_t MaxMemoryBoundsCheckLimit(IndexType t);
 
 static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
   return indexType == IndexType::I32 ? MaxMemory32LimitField
@@ -140,7 +140,7 @@ static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
 
 
 
-extern Pages ClampedMaxPages(Pages initialPages,
+extern Pages ClampedMaxPages(IndexType t, Pages initialPages,
                              const mozilla::Maybe<Pages>& sourceMaxPages,
                              bool useHugeMemory);
 
