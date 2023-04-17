@@ -126,7 +126,7 @@ union TimingFunction {
 
 struct LayerColor { DeviceColor value; };
 
-comparable union Animatable {
+[Comparable] union Animatable {
   null_t;
   float;
   nscolor;
@@ -150,7 +150,7 @@ struct AnimationSegment {
   TimingFunction sampleFn;
 };
 
-comparable struct MotionPathData {
+[Comparable] struct MotionPathData {
   
   CSSPoint origin;
   
@@ -158,7 +158,7 @@ comparable struct MotionPathData {
   RayReferenceData rayReferenceData;
 };
 
-comparable struct PartialPrerenderData {
+[Comparable] struct PartialPrerenderData {
   LayoutDeviceRect rect;
   SideBits overflowedSides;
   
@@ -177,7 +177,7 @@ comparable struct PartialPrerenderData {
 
 
 
-comparable struct TransformData {
+[Comparable] struct TransformData {
   
   nsPoint origin;
   
@@ -307,14 +307,6 @@ union SpecificLayerAttributes {
 struct LayerAttributes {
   CommonLayerAttributes common;
   SpecificLayerAttributes specific;
-};
-
-
-comparable struct PluginWindowData {
-  uintptr_t windowId;
-  LayoutDeviceIntRect[] clip;
-  LayoutDeviceIntRect bounds;
-  bool visible;
 };
 
 struct OpSetSimpleLayerAttributes {
@@ -543,7 +535,6 @@ struct TransactionInfo
   uint64_t fwdTransactionId;
   TransactionId id;
   TargetConfig targetConfig;
-  PluginWindowData[] plugins;
   bool isFirstPaint;
   FocusTarget focusTarget;
   bool scheduleComposite;
