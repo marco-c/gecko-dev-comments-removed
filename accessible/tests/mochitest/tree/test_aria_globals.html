@@ -19,6 +19,7 @@
         "busy",
         "controls",
         "describedby",
+        "description",
         "disabled",
         "dropeffect",
         "flowto",
@@ -79,14 +80,15 @@
   <pre id="test">
   </pre>
 
-  
-
+  <!-- Test that global aria states and properties are enough to cause the
+  creation of accessible objects -->
   <div id="global_aria_states_and_props" role="group">
     <span id="pawn"></span>
     <span id="atomic" aria-atomic="true"></span>
     <span id="busy" aria-busy="false"></span>
     <span id="controls" aria-controls="pawn"></span>
     <span id="describedby" aria-describedby="pawn"></span>
+    <span id="description" aria-description="hi"></span>
     <span id="disabled" aria-disabled="true"></span>
     <span id="dropeffect" aria-dropeffect="move"></span>
     <span id="flowto" aria-flowto="pawn"></span>
@@ -107,6 +109,7 @@
       <td id="td_busy" aria-busy="false"></td>
       <td id="td_controls" aria-controls="pawn"></td>
       <td id="td_describedby" aria-describedby="pawn"></td>
+      <td id="td_description" aria-description="hi"></td>
       <td id="td_disabled" aria-disabled="true"></td>
       <td id="td_dropeffect" aria-dropeffect="move"></td>
       <td id="td_flowto" aria-flowto="pawn"></td>
