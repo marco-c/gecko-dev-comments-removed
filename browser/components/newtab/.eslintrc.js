@@ -32,7 +32,7 @@ module.exports = {
     "plugin:mozilla/mochitest-test",
     "plugin:mozilla/xpcshell-test",
     "plugin:prettier/recommended", 
-    "prettier/react", 
+    "prettier", 
   ],
   overrides: [
     {

@@ -5893,61 +5893,66 @@ class _CollapsibleSection extends react__WEBPACK_IMPORTED_MODULE_3___default.a.P
       };
     }
 
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("section", {
-      className: `collapsible-section ${this.props.className}${enableAnimation ? " animation-enabled" : ""}${collapsed ? " collapsed" : ""}${active ? " active" : ""}`,
-      "aria-expanded": !collapsed 
-      ,
-      "data-section-id": id
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: "section-top-bar"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
-      className: "section-title",
-      style: titleStyle
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      className: "click-target-container"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      className: "click-target",
-      role: "button",
-      tabIndex: "0",
-      onKeyPress: this.onKeyPress,
-      onClick: this.onHeaderClick
-    }, !isNewNewtabExperienceEnabled && this.renderIcon(), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
-      message: title
-    }), !isNewNewtabExperienceEnabled && isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      "data-l10n-id": collapsed ? "newtab-section-expand-section-label" : "newtab-section-collapse-section-label",
-      className: `collapsible-arrow icon ${collapsed ? "icon-arrowhead-forward-small" : "icon-arrowhead-down-small"}`
-    })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      className: "learn-more-link-wrapper"
-    }, learnMore && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-      className: "learn-more-link"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
-      message: learnMore.link.message
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
-      href: learnMore.link.href
-    })))))), !isNewNewtabExperienceEnabled && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__["ContextMenuButton"], {
-      tooltip: "newtab-menu-section-tooltip",
-      onUpdate: this.onMenuUpdate,
-      refFunction: this.setContextMenuButtonRef
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_5__["SectionMenu"], {
-      id: id,
-      extraOptions: extraMenuOptions,
-      source: eventSource,
-      showPrefName: showPrefName,
-      privacyNoticeURL: privacyNoticeURL,
-      collapsed: collapsed,
-      isFixed: isFixed,
-      isFirst: isFirst,
-      isLast: isLast,
-      dispatch: dispatch,
-      isWebExtension: isWebExtension
-    })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__["ErrorBoundary"], {
-      className: "section-body-fallback"
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: `section-body${isAnimating ? " animating" : ""}`,
-      onTransitionEnd: this.onTransitionEnd,
-      ref: this.onBodyMount,
-      style: bodyStyle
-    }, this.props.children)));
+    return (
+      
+      
+      
+      react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("section", {
+        className: `collapsible-section ${this.props.className}${enableAnimation ? " animation-enabled" : ""}${collapsed ? " collapsed" : ""}${active ? " active" : ""}`,
+        "aria-expanded": !collapsed 
+        ,
+        "data-section-id": id
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+        className: "section-top-bar"
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("h3", {
+        className: "section-title",
+        style: titleStyle
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+        className: "click-target-container"
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+        className: "click-target",
+        role: "button",
+        tabIndex: "0",
+        onKeyPress: this.onKeyPress,
+        onClick: this.onHeaderClick
+      }, !isNewNewtabExperienceEnabled && this.renderIcon(), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+        message: title
+      }), !isNewNewtabExperienceEnabled && isCollapsible && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+        "data-l10n-id": collapsed ? "newtab-section-expand-section-label" : "newtab-section-collapse-section-label",
+        className: `collapsible-arrow icon ${collapsed ? "icon-arrowhead-forward-small" : "icon-arrowhead-down-small"}`
+      })), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+        className: "learn-more-link-wrapper"
+      }, learnMore && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
+        className: "learn-more-link"
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+        message: learnMore.link.message
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("a", {
+        href: learnMore.link.href
+      })))))), !isNewNewtabExperienceEnabled && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__["ContextMenuButton"], {
+        tooltip: "newtab-menu-section-tooltip",
+        onUpdate: this.onMenuUpdate,
+        refFunction: this.setContextMenuButtonRef
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_5__["SectionMenu"], {
+        id: id,
+        extraOptions: extraMenuOptions,
+        source: eventSource,
+        showPrefName: showPrefName,
+        privacyNoticeURL: privacyNoticeURL,
+        collapsed: collapsed,
+        isFixed: isFixed,
+        isFirst: isFirst,
+        isLast: isLast,
+        dispatch: dispatch,
+        isWebExtension: isWebExtension
+      })))), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_1__["ErrorBoundary"], {
+        className: "section-body-fallback"
+      }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
+        className: `section-body${isAnimating ? " animating" : ""}`,
+        onTransitionEnd: this.onTransitionEnd,
+        ref: this.onBodyMount,
+        style: bodyStyle
+      }, this.props.children)))
+    );
   }
 
 }
@@ -11816,6 +11821,7 @@ function convertLinks(links, sendClick, doNotAutoBlock, openNewWindow = false) {
         "data-do_not_autoblock": doNotAutoBlock,
         "data-entrypoint_name": links[linkTag].entrypoint_name,
         "data-entrypoint_value": links[linkTag].entrypoint_value,
+        rel: "noreferrer",
         onClick: sendClick
       });
       return acc;
