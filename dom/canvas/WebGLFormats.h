@@ -15,7 +15,7 @@
 namespace mozilla {
 namespace webgl {
 
-typedef uint8_t EffectiveFormatValueT;
+using EffectiveFormatValueT = uint8_t;
 
 enum class EffectiveFormat : EffectiveFormatValueT {
   
