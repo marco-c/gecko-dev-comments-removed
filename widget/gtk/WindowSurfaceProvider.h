@@ -40,8 +40,7 @@ class WindowSurfaceProvider final {
 
 
 
-  void Initialize(Display* aDisplay, Window aWindow, Visual* aVisual,
-                  int aDepth, bool aIsShaped);
+  void Initialize(Window aWindow, Visual* aVisual, int aDepth, bool aIsShaped);
 
 #ifdef MOZ_WAYLAND
   void Initialize(nsWindow* aWidget);
@@ -65,7 +64,6 @@ class WindowSurfaceProvider final {
 
   
   bool mIsX11Display;
-  Display* mXDisplay;
   Window mXWindow;
   Visual* mXVisual;
   int mXDepth;

@@ -9,6 +9,7 @@
 #include "mozilla/widget/InProcessCompositorWidget.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsWindow.h"
+#include "mozilla/X11Util.h"
 
 namespace mozilla {
 namespace widget {
@@ -29,18 +30,11 @@ GtkCompositorWidget::GtkCompositorWidget(
 #endif
 #if defined(MOZ_X11)
   if (aInitData.IsX11Display()) {
-    
-    
-    if (aWindow) {
-      mXDisplay = aWindow->XDisplay();
-    } else {
-      mXDisplay = XOpenDisplay(aInitData.XDisplayString().get());
-    }
     mXWindow = (Window)aInitData.XWindow();
 
     
     XWindowAttributes windowAttrs;
-    if (!XGetWindowAttributes(mXDisplay, mXWindow, &windowAttrs)) {
+    if (!XGetWindowAttributes(DefaultXDisplay(), mXWindow, &windowAttrs)) {
       NS_WARNING("GtkCompositorWidget(): XGetWindowAttributes() failed!");
     }
 
@@ -48,25 +42,14 @@ GtkCompositorWidget::GtkCompositorWidget(
     mDepth = windowAttrs.depth;
 
     
-    mProvider.Initialize(mXDisplay, mXWindow, visual, mDepth,
-                         aInitData.Shaped());
+    mProvider.Initialize(mXWindow, visual, mDepth, aInitData.Shaped());
   }
 #endif
   auto size = mClientSize.Lock();
   *size = aInitData.InitialClientSize();
 }
 
-GtkCompositorWidget::~GtkCompositorWidget() {
-  mProvider.CleanupResources();
-
-#if defined(MOZ_X11)
-  
-  if (!mWidget && mXDisplay) {
-    XCloseDisplay(mXDisplay);
-    mXDisplay = nullptr;
-  }
-#endif
-}
+GtkCompositorWidget::~GtkCompositorWidget() { mProvider.CleanupResources(); }
 
 already_AddRefed<gfx::DrawTarget> GtkCompositorWidget::StartRemoteDrawing() {
   return nullptr;
