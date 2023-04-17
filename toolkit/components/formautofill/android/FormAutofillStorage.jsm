@@ -64,7 +64,7 @@ class GeckoViewStorage extends JSONFile {
   }
 
   async _save() {
-    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+    
   }
 }
 
@@ -188,33 +188,6 @@ class CreditCards extends CreditCardsBase {
   async getSavedFieldNames() {
     await this._store.updateCreditCards();
     return super.getSavedFieldNames();
-  }
-
-  
-
-
-
-
-
-
-  async getDuplicateGuid(targetCreditCard) {
-    let clonedTargetCreditCard = this._clone(targetCreditCard);
-    this._normalizeRecord(clonedTargetCreditCard);
-    if (!clonedTargetCreditCard["cc-number"]) {
-      return null;
-    }
-
-    await this._store.updateCreditCards();
-    for (let creditCard of this._data) {
-      if (creditCard.deleted) {
-        continue;
-      }
-
-      if (creditCard["cc-number"] == clonedTargetCreditCard["cc-number"]) {
-        return creditCard.guid;
-      }
-    }
-    return null;
   }
 
   async reconcile(remoteRecord) {
