@@ -2511,6 +2511,20 @@ void MacroAssembler::concatAndRightShiftSimd128(FloatRegister lhs,
 
 
 
+void MacroAssembler::reverseInt16x8(FloatRegister src, FloatRegister dest) {
+  Rev16(Simd16B(dest), Simd16B(src));
+}
+
+void MacroAssembler::reverseInt32x4(FloatRegister src, FloatRegister dest) {
+  Rev32(Simd16B(dest), Simd16B(src));
+}
+
+void MacroAssembler::reverseInt64x2(FloatRegister src, FloatRegister dest) {
+  Rev64(Simd16B(dest), Simd16B(src));
+}
+
+
+
 void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest) {
   Tbl(Simd16B(lhsDest), Simd16B(lhsDest), Simd16B(rhs));
 }

@@ -54,6 +54,15 @@ enum class SimdPermuteOp {
   
   
   SHIFT_LEFT_8x16,
+
+  
+  REVERSE_16x8,
+
+  
+  REVERSE_32x4,
+
+  
+  REVERSE_64x2,
 };
 
 
