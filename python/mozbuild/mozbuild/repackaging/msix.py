@@ -266,25 +266,6 @@ def repackage_msix(
     
     identity = identity or "{}.{}".format(vendor, displayname.replace(" ", "."))
 
-    defines = {
-        "APPX_ARCH": _MSIX_ARCH[arch],
-        "APPX_DISPLAYNAME": brandFullName,
-        "APPX_DESCRIPTION": brandFullName,
-        
-        "APPX_IDENTITY": identity,
-        
-        
-        "APPX_INSTDIR": instdir,
-        
-        "APPX_INSTDIR_QUOTED": urllib.parse.quote(instdir),
-        "APPX_PUBLISHER": publisher,
-        "APPX_VERSION": version,
-        "MOZ_APP_DISPLAYNAME": displayname,
-        "MOZ_APP_NAME": app_name,
-        "MOZ_APP_VENDOR": vendor,
-        "MOZ_IGECKOBACKCHANNEL_IID": MOZ_IGECKOBACKCHANNEL_IID,
-    }
-
     
     
     
@@ -302,26 +283,21 @@ def repackage_msix(
     log(logging.INFO, "msix", {"output": output}, "Repackaging to: {output}")
 
     m = InstallManifest()
-    m.add_preprocess(
-        mozpath.join(template, "AppxManifest.xml.in"),
-        "AppxManifest.xml",
-        [],
-        defines=defines,
-        marker="<!-- #",  
-    )
     m.add_copy(mozpath.join(template, "Resources.pri"), "Resources.pri")
 
     m.add_pattern_copy(mozpath.join(branding, "msix", "Assets"), "**", "Assets")
     m.add_pattern_copy(mozpath.join(template, "VFS"), "**", "VFS")
 
     copier = FileCopier()
-    m.populate_registry(copier)
 
     
     for p, f in finder:
         
         pp = os.path.relpath(p, "firefox")
         copier.add(mozpath.normsep(mozpath.join("VFS", "ProgramFiles", instdir, pp)), f)
+
+    
+    locales = set(["en-US"])
 
     for distribution_dir in [
         mozpath.join(template, "distribution")
@@ -343,6 +319,7 @@ def repackage_msix(
             if os.path.basename(p) == "target.langpack.xpi":
                 
                 base, locale = os.path.split(os.path.dirname(p))
+                locales.add(locale)
 
                 
                 
@@ -370,6 +347,41 @@ def repackage_msix(
                 ),
                 f,
             )
+
+    locales.remove("en-US")
+    locales = ["en-US"] + list(sorted(locales))
+    resource_language_list = "\n".join(
+        f'    <Resource Language="{locale}" />' for locale in sorted(locales)
+    )
+
+    defines = {
+        "APPX_ARCH": _MSIX_ARCH[arch],
+        "APPX_DISPLAYNAME": brandFullName,
+        "APPX_DESCRIPTION": brandFullName,
+        
+        "APPX_IDENTITY": identity,
+        
+        
+        "APPX_INSTDIR": instdir,
+        
+        "APPX_INSTDIR_QUOTED": urllib.parse.quote(instdir),
+        "APPX_PUBLISHER": publisher,
+        "APPX_RESOURCE_LANGUAGE_LIST": resource_language_list,
+        "APPX_VERSION": version,
+        "MOZ_APP_DISPLAYNAME": displayname,
+        "MOZ_APP_NAME": app_name,
+        "MOZ_APP_VENDOR": vendor,
+        "MOZ_IGECKOBACKCHANNEL_IID": MOZ_IGECKOBACKCHANNEL_IID,
+    }
+
+    m.add_preprocess(
+        mozpath.join(template, "AppxManifest.xml.in"),
+        "AppxManifest.xml",
+        [],
+        defines=defines,
+        marker="<!-- #",  
+    )
+    m.populate_registry(copier)
 
     output_dir = mozpath.abspath(output_dir)
     ensureParentDir(output_dir)
