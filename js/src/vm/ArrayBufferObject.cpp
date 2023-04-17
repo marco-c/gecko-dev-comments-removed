@@ -21,7 +21,7 @@
 #include <algorithm>  
 #include <memory>     
 #include <string.h>
-#ifndef XP_WIN
+#if !defined(XP_WIN) && !defined(__wasi__)
 #  include <sys/mman.h>
 #endif
 #include <tuple>  
@@ -180,6 +180,14 @@ void* js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize) {
     VirtualFree(data, 0, MEM_RELEASE);
     return nullptr;
   }
+#elif defined(__wasi__)
+  void* data = nullptr;
+  if (int err = posix_memalign(&data, gc::SystemPageSize(), mappedSize)) {
+    MOZ_ASSERT(err == ENOMEM);
+    return nullptr;
+  }
+  MOZ_ASSERT(data);
+  memset(data, 0, mappedSize);
 #else   
   void* data =
       MozTaggedAnonymousMmap(nullptr, mappedSize, PROT_NONE,
@@ -214,7 +222,10 @@ bool js::CommitBufferMemory(void* dataEnd, size_t delta) {
   if (!VirtualAlloc(dataEnd, delta, MEM_COMMIT, PAGE_READWRITE)) {
     return false;
   }
-#else   
+#elif defined(__wasi__)
+  
+  return true;
+#else
   if (mprotect(dataEnd, delta, PROT_READ | PROT_WRITE)) {
     return false;
   }
@@ -241,6 +252,8 @@ bool js::ExtendBufferMapping(void* dataPointer, size_t mappedSize,
     return false;
   }
   return true;
+#elif defined(__wasi__)
+  return false;
 #elif defined(XP_LINUX)
   
   if (MAP_FAILED == mremap(dataPointer, mappedSize, newMappedSize, 0)) {
@@ -259,7 +272,9 @@ void js::UnmapBufferMemory(void* base, size_t mappedSize) {
 
 #ifdef XP_WIN
   VirtualFree(base, 0, MEM_RELEASE);
-#else   
+#elif defined(__wasi__)
+  free(base);
+#else
   munmap(base, mappedSize);
 #endif  
 
