@@ -2597,18 +2597,10 @@ StorageActors.createActor(
 
 
     async preListStores() {
-      if (this._pendingPreListStores) {
-        return this._pendingPreListStores;
-      }
-
       this.hostVsStores = new Map();
-      this._pendingPreListStores = (async () => {
-        for (const host of await this.getHosts()) {
-          await this.populateStoresForHost(host);
-        }
-        this._pendingPreListStores = null;
-      })();
-      return this._pendingPreListStores;
+      for (const host of await this.getHosts()) {
+        await this.populateStoresForHost(host);
+      }
     },
 
     async populateStoresForHost(host) {
@@ -3681,17 +3673,26 @@ const StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
 
 
 
+
   async listStores() {
-    const toReturn = {};
-
-    for (const [name, value] of this.childActorPool) {
-      if (value.preListStores) {
-        await value.preListStores();
-      }
-      toReturn[name] = value;
+    
+    
+    if (this._cachedStores) {
+      return this._cachedStores;
     }
+    this._cachedStores = (async () => {
+      const toReturn = {};
 
-    return toReturn;
+      for (const [name, value] of this.childActorPool) {
+        if (value.preListStores) {
+          await value.preListStores();
+        }
+        toReturn[name] = value;
+      }
+
+      return toReturn;
+    })();
+    return this._cachedStores;
   },
 
   

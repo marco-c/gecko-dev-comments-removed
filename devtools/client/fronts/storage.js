@@ -61,6 +61,19 @@ class StorageFront extends FrontClassWithSpec(storageSpec) {
     
     this.formAttributeName = "storageActor";
   }
+
+  
+  
+  
+  
+  
+  listStores() {
+    if (this.stores) {
+      return this.stores;
+    }
+    this.stores = super.listStores();
+    return this.stores;
+  }
 }
 
 exports.StorageFront = StorageFront;
