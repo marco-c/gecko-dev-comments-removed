@@ -86,6 +86,7 @@
 #include "ServiceWorkerUnregisterJob.h"
 #include "ServiceWorkerUpdateJob.h"
 #include "ServiceWorkerUtils.h"
+#include "ServiceWorkerQuotaUtils.h"
 
 #ifdef PostMessage
 #  undef PostMessage
@@ -2299,6 +2300,20 @@ void ServiceWorkerManager::CheckPrincipalQuotaUsage(nsIPrincipal* aPrincipal,
   ++data->mQuotaUsageCheckCount;
 
   
+  
+  
+  
+  
+  RefPtr<ServiceWorkerRegistrationInfo> info;
+  data->mInfos.Get(aScope, getter_AddRefs(info));
+  MOZ_ASSERT(info);
+
+  RefPtr<ServiceWorkerManager> self = this;
+
+  ClearQuotaUsageIfNeeded(aPrincipal, [self, info](bool aResult) {
+    MOZ_ASSERT(NS_IsMainThread());
+    self->NotifyListenersOnQuotaUsageCheckFinish(info);
+  });
 }
 
 void ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
