@@ -23,6 +23,8 @@ const coop_same_origin =
 const corp_cross_origin =
     '|header(Cross-Origin-Resource-Policy,cross-origin)';
 
+const cookie_same_site_none = ';SameSite=None;Secure';
+
 
 
 
