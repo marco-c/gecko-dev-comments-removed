@@ -8,10 +8,21 @@
 
 const URL = MAIN_DOMAIN + "animation.html";
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",
+  this
+);
+
 add_task(async function() {
   info("Creating a test document with 2 iframes containing animated nodes");
 
-  const { target, walker, animations } = await initAnimationsFrontForUrl(
+  const {
+    inspector,
+    target,
+    walker,
+    animations,
+  } = await initAnimationsFrontForUrl(
     "data:text/html;charset=utf-8," +
       "<iframe id='iframe' src='" +
       URL +
@@ -24,10 +35,9 @@ add_task(async function() {
   is(players.length, 0, "The node has no animation players");
 
   info("Retrieve all animations from the iframe's <body> node");
-  const iframe = await walker.querySelector(walker.rootNode, "#iframe");
-  const { nodes } = await walker.children(iframe);
-  const frameBody = await walker.querySelector(nodes[0], "body");
-  players = await animations.getAnimationPlayersForNode(frameBody);
+  const frameBody = await getNodeFrontInFrames(["#iframe", "body"], inspector);
+  const animationsForFrame = await frameBody.targetFront.getFront("animations");
+  players = await animationsForFrame.getAnimationPlayersForNode(frameBody);
 
   
   
