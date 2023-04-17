@@ -396,7 +396,7 @@ XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
   return new MozElements.NotificationBox(element => {
     element.classList.add("global-notificationbox");
     element.setAttribute("notificationside", "top");
-    if (gProtonInfobarsEnabled) {
+    if (Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)) {
       
       let tabNotifications = document.getElementById("tab-notification-deck");
       gNavToolbox.insertBefore(element, tabNotifications);
@@ -408,7 +408,7 @@ XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
 
 
 XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
-  return gProtonInfobarsEnabled
+  return Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)
     ? gHighPriorityNotificationBox
     : new MozElements.NotificationBox(element => {
         element.classList.add("global-notificationbox");
@@ -585,14 +585,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       doc.documentElement.toggleAttribute("proton", newValue);
     }
   }
-);
-
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gProtonInfobarsEnabled",
-  "browser.proton.infobars.enabled",
-  false
 );
 
 
@@ -1055,9 +1047,7 @@ const gStoragePressureObserver = {
       null,
       gHighPriorityNotificationBox.PRIORITY_WARNING_HIGH,
       buttons,
-      null,
-      null,
-      ["branding/brand.ftl", "browser/preferences/preferences.ftl"]
+      null
     );
 
     
