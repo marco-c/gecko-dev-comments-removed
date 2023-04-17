@@ -16,7 +16,6 @@
 #include "js/CharacterEncoding.h"
 #include "js/GCAPI.h"
 #include "js/GCHashTable.h"
-#include "js/Result.h"
 #include "js/RootingAPI.h"
 #include "js/Utility.h"
 #include "vm/StringType.h"
@@ -72,7 +71,7 @@ class SharedIntlData {
     }
   };
 
- public:
+ private:
   
 
 
@@ -114,7 +113,6 @@ class SharedIntlData {
   using TimeZoneMap =
       GCHashMap<TimeZoneName, TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
 
- private:
   
 
 
@@ -178,12 +176,6 @@ class SharedIntlData {
   bool tryCanonicalizeTimeZoneConsistentWithIANA(
       JSContext* cx, JS::Handle<JSString*> timeZone,
       JS::MutableHandle<JSAtom*> result);
-
-  
-
-
-
-  JS::Result<TimeZoneSet::Iterator> availableTimeZonesIteration(JSContext* cx);
 
  private:
   using Locale = JSAtom*;
