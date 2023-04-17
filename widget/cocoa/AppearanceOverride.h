@@ -12,9 +12,6 @@
 
 
 
-
-
-
 @interface MOZGlobalAppearance : NSObject <NSAppearanceCustomization>
 @property(class, readonly) MOZGlobalAppearance* sharedInstance;
 @end
