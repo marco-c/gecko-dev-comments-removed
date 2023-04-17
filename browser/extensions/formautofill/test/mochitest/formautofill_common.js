@@ -93,13 +93,10 @@ function _getAdaptedProfile(profile) {
   return adaptedProfile;
 }
 
-
-
 async function checkFieldHighlighted(elem, expectedValue) {
   let isHighlightApplied;
   await SimpleTest.promiseWaitForCondition(function checkHighlight() {
-    const computedStyle = window.getComputedStyle(elem);
-    isHighlightApplied = computedStyle.getPropertyValue("filter") !== "none";
+    isHighlightApplied = elem.matches(":autofill");
     return isHighlightApplied === expectedValue;
   }, `Checking #${elem.id} highlight style`);
 
