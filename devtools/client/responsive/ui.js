@@ -742,7 +742,9 @@ class ResponsiveUI {
   
 
 
-  async restoreActorState() {
+
+
+  async restoreActorState(isTargetSwitching) {
     
     
     
@@ -754,6 +756,18 @@ class ResponsiveUI {
 
     
     await this.currentTarget.attach();
+
+    
+    
+    
+    
+    if (
+      isTargetSwitching &&
+      this.commands.targetCommand.targetFront.targetForm
+        .followWindowGlobalLifeCycle
+    ) {
+      return;
+    }
 
     const hasDeviceState = await this.hasDeviceState();
     if (hasDeviceState) {
@@ -1022,7 +1036,7 @@ class ResponsiveUI {
     return this.browserWindow;
   }
 
-  async onTargetAvailable({ targetFront }) {
+  async onTargetAvailable({ targetFront, isTargetSwitching }) {
     if (this.destroying) {
       return;
     }
@@ -1034,7 +1048,7 @@ class ResponsiveUI {
         return;
       }
 
-      await this.restoreActorState();
+      await this.restoreActorState(isTargetSwitching);
     }
   }
   
