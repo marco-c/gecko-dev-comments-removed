@@ -117,13 +117,14 @@
 
 
 #ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+
+
 struct UPlugData;
-
-
-
-
-
-
 typedef struct UPlugData UPlugData;
 
 

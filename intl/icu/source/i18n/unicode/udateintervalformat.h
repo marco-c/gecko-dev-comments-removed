@@ -252,6 +252,7 @@ udtitvfmt_format(const UDateIntervalFormat* formatter,
                 UErrorCode*     status);
 
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -300,6 +301,7 @@ udtitvfmt_formatCalendarToResult(
                 UCalendar*      toCalendar,
                 UFormattedDateInterval* result,
                 UErrorCode*     status);
+#endif 
 
 #ifndef U_HIDE_DRAFT_API
 

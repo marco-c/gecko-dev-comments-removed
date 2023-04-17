@@ -492,6 +492,7 @@ public:
 
 #if !UCONFIG_NO_FORMATTING
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -505,6 +506,7 @@ public:
 
 
     UDateFormatHourCycle getDefaultHourCycle(UErrorCode& status) const;
+#endif  
 
 #endif 
     

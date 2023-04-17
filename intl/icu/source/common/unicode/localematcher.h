@@ -91,6 +91,8 @@ enum ULocMatchDemotion {
 typedef enum ULocMatchDemotion ULocMatchDemotion;
 #endif
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+
 
 
 
@@ -126,6 +128,8 @@ enum ULocMatchDirection {
 #ifndef U_IN_DOXYGEN
 typedef enum ULocMatchDirection ULocMatchDirection;
 #endif
+
+#endif  
 
 struct UHashtable;
 
@@ -459,6 +463,7 @@ public:
 
         Builder &setDemotionPerDesiredLocale(ULocMatchDemotion demotion);
 
+#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -473,6 +478,7 @@ public:
             }
             return *this;
         }
+#endif  
 
 #ifndef U_HIDE_DRAFT_API
         

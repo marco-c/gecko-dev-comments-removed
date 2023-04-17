@@ -119,9 +119,7 @@ private:
 
 
 struct U_I18N_API SpanInfo {
-    UFieldCategory category;
     int32_t spanValue;
-    int32_t start;
     int32_t length;
 };
 
@@ -176,16 +174,13 @@ public:
 
 
 
-
-
-    void appendSpanInfo(UFieldCategory category, int32_t spanValue, int32_t start, int32_t length, UErrorCode& status);
-    void prependSpanInfo(UFieldCategory category, int32_t spanValue, int32_t start, int32_t length, UErrorCode& status);
+    void appendSpanInfo(int32_t spanValue, int32_t length, UErrorCode& status);
+    void prependSpanInfo(int32_t spanValue, int32_t length, UErrorCode& status);
 
 private:
     FormattedStringBuilder fString;
     FormattedStringBuilder::Field fNumericField;
     MaybeStackArray<SpanInfo, 8> spanIndices;
-    int32_t spanIndicesCount = 0;
 
     bool nextPositionImpl(ConstrainedFieldPosition& cfpos, FormattedStringBuilder::Field numericField, UErrorCode& status) const;
     static bool isIntOrGroup(FormattedStringBuilder::Field field);

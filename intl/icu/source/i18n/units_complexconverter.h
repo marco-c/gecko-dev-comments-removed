@@ -24,9 +24,9 @@ U_NAMESPACE_BEGIN
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackArray<units::UnitsConverter*, 8>;
-template class U_I18N_API MemoryPool<units::UnitsConverter, 8>;
-template class U_I18N_API MaybeStackVector<units::UnitsConverter, 8>;
+template class U_I18N_API MaybeStackArray<units::UnitConverter*, 8>;
+template class U_I18N_API MemoryPool<units::UnitConverter, 8>;
+template class U_I18N_API MaybeStackVector<units::UnitConverter, 8>;
 template class U_I18N_API MaybeStackArray<MeasureUnitImpl*, 8>;
 template class U_I18N_API MemoryPool<MeasureUnitImpl, 8>;
 template class U_I18N_API MaybeStackVector<MeasureUnitImpl, 8>;
@@ -58,37 +58,6 @@ class U_I18N_API ComplexUnitsConverter : public UMemory {
 
 
 
-
-
-
-
-
-    ComplexUnitsConverter(const MeasureUnitImpl &targetUnit, const ConversionRates &ratesInfo,
-                          UErrorCode &status);
-    
-
-
-
-
-
-
-
-
-
-    ComplexUnitsConverter(StringPiece inputUnitIdentifier, StringPiece outputUnitsIdentifier,
-                          UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-
-
-
     ComplexUnitsConverter(const MeasureUnitImpl &inputUnit, const MeasureUnitImpl &outputUnits,
                           const ConversionRates &ratesInfo, UErrorCode &status);
 
@@ -109,21 +78,11 @@ class U_I18N_API ComplexUnitsConverter : public UMemory {
     convert(double quantity, icu::number::impl::RoundingImpl *rounder, UErrorCode &status) const;
 
   private:
-    MaybeStackVector<UnitsConverter> unitsConverters_;
-
+    MaybeStackVector<UnitConverter> unitConverters_;
     
+    MaybeStackVector<MeasureUnitImpl> units_;
     
-    MaybeStackVector<MeasureUnitImplWithIndex> units_;
-
-    
-    
-    void init(const MeasureUnitImpl &inputUnit, const ConversionRates &ratesInfo, UErrorCode &status);
-
-    
-    
-    
-    void applyRounder(MaybeStackArray<int64_t, 5> &intValues, double &quantity,
-                      icu::number::impl::RoundingImpl *rounder, UErrorCode &status) const;
+    MaybeStackVector<MeasureUnit> outputUnits_;
 };
 
 } 

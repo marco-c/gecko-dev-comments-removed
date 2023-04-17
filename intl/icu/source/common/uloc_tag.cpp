@@ -129,6 +129,7 @@ static const char* const LEGACY[] = {
     
     
     
+    "cel-gaulish",  "xtg-x-cel-gaulish",
     "i-default",    "en-x-i-default",
     "i-enochian",   "und-x-i-enochian",
     "i-mingo",      "see-x-i-mingo",
@@ -646,22 +647,6 @@ _isTKey(const char* s, int32_t len)
     return FALSE;
 }
 
-U_CAPI const char * U_EXPORT2
-ultag_getTKeyStart(const char *localeID) {
-    const char *result = localeID;
-    const char *sep;
-    while((sep = uprv_strchr(result, SEP)) != nullptr) {
-        if (_isTKey(result, static_cast<int32_t>(sep - result))) {
-            return result;
-        }
-        result = ++sep;
-    }
-    if (_isTKey(result, -1)) {
-        return result;
-    }
-    return nullptr;
-}
-
 static UBool
 _isTValue(const char* s, int32_t len)
 {
@@ -686,13 +671,9 @@ _isTransformedExtensionSubtag(int32_t& state, const char* s, int32_t len)
     const int32_t kGotTKey = -1;    
     const int32_t kGotTValue = 6;   
 
-
-    if (len < 0) {
-        len = (int32_t)uprv_strlen(s);
-    }
     switch (state) {
         case kStart:
-            if (ultag_isLanguageSubtag(s, len) && len != 4) {
+            if (ultag_isLanguageSubtag(s, len)) {
                 state = kGotLanguage;
                 return TRUE;
             }
@@ -1794,6 +1775,11 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
         return;
     }
 
+    
+    if (ultag_getVariantsSize(langtag)) {
+        posixVariant = TRUE;
+    }
+
     n = ultag_getExtensionsSize(langtag);
 
     
@@ -1801,11 +1787,6 @@ _appendKeywords(ULanguageTag* langtag, icu::ByteSink& sink, UErrorCode* status) 
         key = ultag_getExtensionKey(langtag, i);
         type = ultag_getExtensionValue(langtag, i);
         if (*key == LDMLEXT) {
-            
-            if (ultag_getVariantsSize(langtag)) {
-                posixVariant = TRUE;
-            }
-
             _appendLDMLExtensionAsKeywords(type, &kwdFirst, extPool, kwdBuf, &posixVariant, status);
             if (U_FAILURE(*status)) {
                 break;
@@ -2047,10 +2028,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
         *status = U_MEMORY_ALLOCATION_ERROR;
         return NULL;
     }
-    
-    if (tagLen > 0) {
-        uprv_memcpy(tagBuf, tag, tagLen);
-    }
+    uprv_memcpy(tagBuf, tag, tagLen);
     *(tagBuf + tagLen) = 0;
 
     
@@ -2714,7 +2692,8 @@ ulocimp_toLanguageTag(const char* localeID,
                     if (U_SUCCESS(tmpStatus)) {
                         if (ultag_isPrivateuseValueSubtags(buf.data(), buf.length())) {
                             
-                            sink.Append("und-x-", 6);
+                            static const char PREFIX[] = { PRIVATEUSE, SEP };
+                            sink.Append(PREFIX, sizeof(PREFIX));
                             sink.Append(buf.data(), buf.length());
                             done = TRUE;
                         } else if (strict) {

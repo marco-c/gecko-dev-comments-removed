@@ -33,7 +33,7 @@ assertEq(Intl.getCanonicalLocales("nld")[0], "nl");
 
 
 
-assertEq(Intl.getCanonicalLocales("tl")[0], "fil");
+assertEq(Intl.getCanonicalLocales("no")[0], "nb");
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);

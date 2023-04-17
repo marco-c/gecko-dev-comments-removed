@@ -302,24 +302,7 @@ typedef enum UNumberFormatRoundingMode {
 
 
 
-    UNUM_ROUND_UNNECESSARY,
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-    UNUM_ROUND_HALF_ODD,
-    
-
-
-
-    UNUM_ROUND_HALF_CEILING,
-    
-
-
-
-    UNUM_ROUND_HALF_FLOOR,
-#endif  
+    UNUM_ROUND_UNNECESSARY
 } UNumberFormatRoundingMode;
 
 
@@ -705,12 +688,6 @@ unum_formatDecimal(    const    UNumberFormat*  fmt,
             int32_t         resultLength,
             UFieldPosition  *pos, 
             UErrorCode*     status);
-
-
-
-
-
-
 
 
 

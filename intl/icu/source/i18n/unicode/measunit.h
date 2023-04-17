@@ -26,18 +26,13 @@
 
 
 
-
+ 
 U_NAMESPACE_BEGIN
 
 class StringEnumeration;
-class MeasureUnitImpl;
+struct MeasureUnitImpl;
 
-namespace number {
-namespace impl {
-class LongNameHandler;
-}
-} 
-
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -77,286 +72,159 @@ enum UMeasureUnitComplexity {
 };
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
 
-
-
-
-
-
-
-typedef enum UMeasurePrefix {
-    
-
-
-
-
-
-
-
-
-    UMEASURE_PREFIX_ONE = 30 + 0,
+typedef enum UMeasureSIPrefix {
 
     
 
 
 
 
-    UMEASURE_PREFIX_YOTTA = UMEASURE_PREFIX_ONE + 24,
+    UMEASURE_SI_PREFIX_YOTTA = 24,
 
     
 
 
 
 
-    UMEASURE_PREFIX_INTERNAL_MAX_SI = UMEASURE_PREFIX_YOTTA,
+    UMEASURE_SI_PREFIX_ZETTA = 21,
 
     
 
 
 
 
-    UMEASURE_PREFIX_ZETTA = UMEASURE_PREFIX_ONE + 21,
+    UMEASURE_SI_PREFIX_EXA = 18,
 
     
 
 
 
 
-    UMEASURE_PREFIX_EXA = UMEASURE_PREFIX_ONE + 18,
+    UMEASURE_SI_PREFIX_PETA = 15,
 
     
 
 
 
 
-    UMEASURE_PREFIX_PETA = UMEASURE_PREFIX_ONE + 15,
+    UMEASURE_SI_PREFIX_TERA = 12,
 
     
 
 
 
 
-    UMEASURE_PREFIX_TERA = UMEASURE_PREFIX_ONE + 12,
+    UMEASURE_SI_PREFIX_GIGA = 9,
 
     
 
 
 
 
-    UMEASURE_PREFIX_GIGA = UMEASURE_PREFIX_ONE + 9,
+    UMEASURE_SI_PREFIX_MEGA = 6,
 
     
 
 
 
 
-    UMEASURE_PREFIX_MEGA = UMEASURE_PREFIX_ONE + 6,
+    UMEASURE_SI_PREFIX_KILO = 3,
 
     
 
 
 
 
-    UMEASURE_PREFIX_KILO = UMEASURE_PREFIX_ONE + 3,
+    UMEASURE_SI_PREFIX_HECTO = 2,
 
     
 
 
 
 
-    UMEASURE_PREFIX_HECTO = UMEASURE_PREFIX_ONE + 2,
+    UMEASURE_SI_PREFIX_DEKA = 1,
 
     
 
 
 
 
-    UMEASURE_PREFIX_DEKA = UMEASURE_PREFIX_ONE + 1,
+    UMEASURE_SI_PREFIX_ONE = 0,
 
     
 
 
 
 
-    UMEASURE_PREFIX_DECI = UMEASURE_PREFIX_ONE + -1,
+    UMEASURE_SI_PREFIX_DECI = -1,
 
     
 
 
 
 
-    UMEASURE_PREFIX_CENTI = UMEASURE_PREFIX_ONE + -2,
+    UMEASURE_SI_PREFIX_CENTI = -2,
 
     
 
 
 
 
-    UMEASURE_PREFIX_MILLI = UMEASURE_PREFIX_ONE + -3,
+    UMEASURE_SI_PREFIX_MILLI = -3,
 
     
 
 
 
 
-    UMEASURE_PREFIX_MICRO = UMEASURE_PREFIX_ONE + -6,
+    UMEASURE_SI_PREFIX_MICRO = -6,
 
     
 
 
 
 
-    UMEASURE_PREFIX_NANO = UMEASURE_PREFIX_ONE + -9,
+    UMEASURE_SI_PREFIX_NANO = -9,
 
     
 
 
 
 
-    UMEASURE_PREFIX_PICO = UMEASURE_PREFIX_ONE + -12,
+    UMEASURE_SI_PREFIX_PICO = -12,
 
     
 
 
 
 
-    UMEASURE_PREFIX_FEMTO = UMEASURE_PREFIX_ONE + -15,
+    UMEASURE_SI_PREFIX_FEMTO = -15,
 
     
 
 
 
 
-    UMEASURE_PREFIX_ATTO = UMEASURE_PREFIX_ONE + -18,
+    UMEASURE_SI_PREFIX_ATTO = -18,
 
     
 
 
 
 
-    UMEASURE_PREFIX_ZEPTO = UMEASURE_PREFIX_ONE + -21,
+    UMEASURE_SI_PREFIX_ZEPTO = -21,
 
     
 
 
 
 
-    UMEASURE_PREFIX_YOCTO = UMEASURE_PREFIX_ONE + -24,
-
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-    UMEASURE_PREFIX_INTERNAL_MIN_SI = UMEASURE_PREFIX_YOCTO,
-#endif  
-
-    
-    
-    
-
-
-
-
-    UMEASURE_PREFIX_INTERNAL_ONE_BIN = -60,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_KIBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 1,
-
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-    UMEASURE_PREFIX_INTERNAL_MIN_BIN = UMEASURE_PREFIX_KIBI,
-#endif  
-
-    
-
-
-
-
-    UMEASURE_PREFIX_MEBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 2,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_GIBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 3,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_TEBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 4,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_PEBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 5,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_EXBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 6,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_ZEBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 7,
-
-    
-
-
-
-
-    UMEASURE_PREFIX_YOBI = UMEASURE_PREFIX_INTERNAL_ONE_BIN + 8,
-
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-    UMEASURE_PREFIX_INTERNAL_MAX_BIN = UMEASURE_PREFIX_YOBI,
-#endif  
-} UMeasurePrefix;
-
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2 umeas_getPrefixBase(UMeasurePrefix unitPrefix);
-
-
-
-
-
-
-
-U_CAPI int32_t U_EXPORT2 umeas_getPrefixPower(UMeasurePrefix unitPrefix);
-
+    UMEASURE_SI_PREFIX_YOCTO = -24
+} UMeasureSIPrefix;
 #endif 
 
 
@@ -375,13 +243,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     MeasureUnit();
-
+    
     
 
 
 
     MeasureUnit(const MeasureUnit &other);
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -400,8 +269,8 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
     static MeasureUnit forIdentifier(StringPiece identifier, UErrorCode& status);
+#endif 
 
     
 
@@ -409,11 +278,13 @@ class U_I18N_API MeasureUnit: public UObject {
 
     MeasureUnit &operator=(const MeasureUnit &other);
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
 
     MeasureUnit &operator=(MeasureUnit &&other) noexcept;
+#endif 
 
     
 
@@ -462,6 +333,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     const char *getSubtype() const;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -479,7 +351,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     UMeasureUnitComplexity getComplexity(UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -494,7 +365,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    MeasureUnit withPrefix(UMeasurePrefix prefix, UErrorCode& status) const;
+    MeasureUnit withSIPrefix(UMeasureSIPrefix prefix, UErrorCode& status) const;
 
     
 
@@ -507,11 +378,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-
-
-    UMeasurePrefix getPrefix(UErrorCode& status) const;
-#endif 
+    UMeasureSIPrefix getSIPrefix(UErrorCode& status) const;
 
     
 
@@ -576,6 +443,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     MeasureUnit product(const MeasureUnit& other, UErrorCode& status) const;
+#endif 
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -970,24 +838,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getKarat();
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-    static MeasureUnit *createMilligramOfglucosePerDeciliter(UErrorCode &status);
-
-    
-
-
-
-
-    static MeasureUnit getMilligramOfglucosePerDeciliter();
-#endif 
 
     
 
@@ -3671,6 +3521,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
  protected:
 
 #ifndef U_HIDE_INTERNAL_API
@@ -3718,14 +3569,10 @@ private:
     
     LocalArray<MeasureUnit> splitToSingleUnitsImpl(int32_t& outCount, UErrorCode& status) const;
 
-    friend class MeasureUnitImpl;
-
-    
-    friend class number::impl::LongNameHandler;
+    friend struct MeasureUnitImpl;
 };
 
-#ifndef U_HIDE_DRAFT_API
-
+#ifndef U_HIDE_DRAFT_API  
 inline std::pair<LocalArray<MeasureUnit>, int32_t>
 MeasureUnit::splitToSingleUnits(UErrorCode& status) const {
     int32_t length;

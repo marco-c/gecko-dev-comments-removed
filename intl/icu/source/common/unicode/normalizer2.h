@@ -243,6 +243,8 @@ public:
 
 
 
+
+
     virtual void
     normalizeUTF8(uint32_t options, StringPiece src, ByteSink &sink,
                   Edits *edits, UErrorCode &errorCode) const;
@@ -373,6 +375,8 @@ public:
     virtual UBool
     isNormalized(const UnicodeString &s, UErrorCode &errorCode) const = 0;
     
+
+
 
 
 
@@ -557,6 +561,8 @@ public:
 
 
 
+
+
     virtual void
     normalizeUTF8(uint32_t options, StringPiece src, ByteSink &sink,
                   Edits *edits, UErrorCode &errorCode) const U_OVERRIDE;
@@ -664,6 +670,8 @@ public:
     virtual UBool
     isNormalized(const UnicodeString &s, UErrorCode &errorCode) const U_OVERRIDE;
     
+
+
 
 
 

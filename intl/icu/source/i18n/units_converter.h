@@ -20,21 +20,17 @@ namespace units {
 
 
 
-
 enum Constants {
-    CONSTANT_FT2M,       
-    CONSTANT_PI,         
-    CONSTANT_GRAVITY,    
-    CONSTANT_G,          
+    CONSTANT_FT2M,    
+    CONSTANT_PI,      
+    CONSTANT_GRAVITY, 
+    CONSTANT_G,
     CONSTANT_GAL_IMP2M3, 
     CONSTANT_LB2KG,      
-    CONSTANT_GLUCOSE_MOLAR_MASS,
-    CONSTANT_ITEM_PER_MOLE,
 
     
     CONSTANTS_COUNT
 };
-
 
 
 
@@ -47,8 +43,6 @@ static const double constantsValues[CONSTANTS_COUNT] = {
     6.67408E-11,               
     0.00454609,                
     0.45359237,                
-    180.1557,                  
-    6.02214076E+23,            
 };
 
 typedef enum Signum {
@@ -62,9 +56,7 @@ struct U_I18N_API Factor {
     double factorDen = 1;
     double offset = 0;
     bool reciprocal = false;
-
-    
-    int32_t constantExponents[CONSTANTS_COUNT] = {};
+    int32_t constants[CONSTANTS_COUNT] = {};
 
     void multiplyBy(const Factor &rhs);
     void divideBy(const Factor &rhs);
@@ -73,19 +65,11 @@ struct U_I18N_API Factor {
     void power(int32_t power);
 
     
-    void applyPrefix(UMeasurePrefix unitPrefix);
+    void flip();
 
     
-    
-    
-    
+    void applySiPrefix(UMeasureSIPrefix siPrefix);
     void substituteConstants();
-};
-
-struct U_I18N_API ConversionInfo {
-    double conversionRate;
-    double offset;
-    bool reciprocal;
 };
 
 
@@ -143,7 +127,7 @@ Convertibility U_I18N_API extractConvertibility(const MeasureUnitImpl &source,
 
 
 
-class U_I18N_API UnitsConverter : public UMemory {
+class U_I18N_API UnitConverter : public UMemory {
   public:
     
 
@@ -156,32 +140,8 @@ class U_I18N_API UnitsConverter : public UMemory {
 
 
 
-
-    UnitsConverter(StringPiece sourceIdentifier, StringPiece targetIdentifier, UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-
-
-
-    UnitsConverter(const MeasureUnitImpl &source, const MeasureUnitImpl &target,
+    UnitConverter(const MeasureUnitImpl &source, const MeasureUnitImpl &target,
                   const ConversionRates &ratesInfo, UErrorCode &status);
-
-    
-
-
-
-
-
-
-    static int32_t compareTwoUnits(const MeasureUnitImpl &firstUnit, const MeasureUnitImpl &SecondUnit,
-                                   const ConversionRates &ratesInfo, UErrorCode &status);
 
     
 
@@ -201,15 +161,8 @@ class U_I18N_API UnitsConverter : public UMemory {
 
     double convertInverse(double inputValue) const;
 
-    ConversionInfo getConversionInfo() const;
-
   private:
     ConversionRate conversionRate_;
-
-    
-
- 
-    void init(const ConversionRates &ratesInfo, UErrorCode &status);
 };
 
 } 

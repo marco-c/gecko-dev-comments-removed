@@ -42,9 +42,6 @@ public:
     
     
     MeasureUnit outputUnit;
-
-    
-    const char *gender = "";
 };
 
 

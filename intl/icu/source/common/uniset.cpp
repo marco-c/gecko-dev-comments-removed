@@ -31,6 +31,24 @@
 #include "unisetspan.h"
 
 
+
+#define SET_OPEN        ((UChar)0x005B) /*[*/
+#define SET_CLOSE       ((UChar)0x005D) /*]*/
+#define HYPHEN          ((UChar)0x002D) /*-*/
+#define COMPLEMENT      ((UChar)0x005E) /*^*/
+#define COLON           ((UChar)0x003A) /*:*/
+#define BACKSLASH       ((UChar)0x005C) /*\*/
+#define INTERSECTION    ((UChar)0x0026) /*&*/
+#define UPPER_U         ((UChar)0x0055) /*U*/
+#define LOWER_U         ((UChar)0x0075) /*u*/
+#define OPEN_BRACE      ((UChar)123)    /*{*/
+#define CLOSE_BRACE     ((UChar)125)    /*}*/
+#define UPPER_P         ((UChar)0x0050) /*P*/
+#define LOWER_P         ((UChar)0x0070) /*p*/
+#define UPPER_N         ((UChar)78)     /*N*/
+#define EQUALS          ((UChar)0x003D) /*=*/
+
+
 #define UNICODESET_HIGH 0x0110000
 
 
@@ -426,6 +444,7 @@ UBool UnicodeSet::contains(UChar32 start, UChar32 end) const {
 
 
 UBool UnicodeSet::contains(const UnicodeString& s) const {
+    if (s.length() == 0) return FALSE;
     int32_t cp = getSingleCP(s);
     if (cp < 0) {
         return stringsContains(s);
@@ -540,9 +559,11 @@ UBool UnicodeSet::matchesIndexValue(uint8_t v) const {
     if (hasStrings()) {
         for (i=0; i<strings->size(); ++i) {
             const UnicodeString& s = *(const UnicodeString*)strings->elementAt(i);
-            if (s.isEmpty()) {
-                continue;  
-            }
+            
+            
+            
+            
+            
             UChar32 c = s.char32At(0);
             if ((c & 0xFF) == v) {
                 return TRUE;
@@ -561,6 +582,9 @@ UMatchDegree UnicodeSet::matches(const Replaceable& text,
                                  int32_t limit,
                                  UBool incremental) {
     if (offset == limit) {
+        
+        
+        
         if (contains(U_ETHER)) {
             return incremental ? U_PARTIAL_MATCH : U_MATCH;
         } else {
@@ -590,9 +614,11 @@ UMatchDegree UnicodeSet::matches(const Replaceable& text,
 
             for (i=0; i<strings->size(); ++i) {
                 const UnicodeString& trial = *(const UnicodeString*)strings->elementAt(i);
-                if (trial.isEmpty()) {
-                    continue;  
-                }
+
+                
+                
+                
+                
 
                 UChar c = trial.charAt(forward ? 0 : trial.length() - 1);
 
@@ -950,7 +976,7 @@ UnicodeSet& UnicodeSet::add(UChar32 c) {
 
 
 UnicodeSet& UnicodeSet::add(const UnicodeString& s) {
-    if (isFrozen() || isBogus()) return *this;
+    if (s.length() == 0 || isFrozen() || isBogus()) return *this;
     int32_t cp = getSingleCP(s);
     if (cp < 0) {
         if (!stringsContains(s)) {
@@ -962,6 +988,7 @@ UnicodeSet& UnicodeSet::add(const UnicodeString& s) {
     }
     return *this;
 }
+
 
 
 
@@ -994,13 +1021,16 @@ void UnicodeSet::_add(const UnicodeString& s) {
 
 
 int32_t UnicodeSet::getSingleCP(const UnicodeString& s) {
-    int32_t sLength = s.length();
-    if (sLength == 1) return s.charAt(0);
-    if (sLength == 2) {
-        UChar32 cp = s.char32At(0);
-        if (cp > 0xFFFF) { 
-            return cp;
-        }
+    
+    
+    
+    if (s.length() > 2) return -1;
+    if (s.length() == 1) return s.charAt(0);
+
+    
+    UChar32 cp = s.char32At(0);
+    if (cp > 0xFFFF) { 
+        return cp;
     }
     return -1;
 }
@@ -1120,26 +1150,6 @@ UnicodeSet& UnicodeSet::retain(UChar32 c) {
     return retain(c, c);
 }
 
-UnicodeSet& UnicodeSet::retain(const UnicodeString &s) {
-    if (isFrozen() || isBogus()) { return *this; }
-    UChar32 cp = getSingleCP(s);
-    if (cp < 0) {
-        bool isIn = stringsContains(s);
-        
-        
-        if (isIn && getRangeCount() == 0 && size() == 1) {
-            return *this;
-        }
-        clear();
-        if (isIn) {
-            _add(s);
-        }
-    } else {
-        retain(cp, cp);
-    }
-    return *this;
-}
-
 
 
 
@@ -1176,7 +1186,7 @@ UnicodeSet& UnicodeSet::remove(UChar32 c) {
 
 
 UnicodeSet& UnicodeSet::remove(const UnicodeString& s) {
-    if (isFrozen() || isBogus()) return *this;
+    if (s.length() == 0 || isFrozen() || isBogus()) return *this;
     int32_t cp = getSingleCP(s);
     if (cp < 0) {
         if (strings != nullptr && strings->removeElement((void*) &s)) {
@@ -1247,7 +1257,7 @@ UnicodeSet& UnicodeSet::complement(void) {
 
 
 UnicodeSet& UnicodeSet::complement(const UnicodeString& s) {
-    if (isFrozen() || isBogus()) return *this;
+    if (s.length() == 0 || isFrozen() || isBogus()) return *this;
     int32_t cp = getSingleCP(s);
     if (cp < 0) {
         if (stringsContains(s)) {
@@ -1991,22 +2001,22 @@ escapeUnprintable) {
     }
     
     switch (c) {
-    case u'[':
-    case u']':
-    case u'-':
-    case u'^':
-    case u'&':
-    case u'\\':
-    case u'{':
-    case u'}':
-    case u':':
+    case SET_OPEN:
+    case SET_CLOSE:
+    case HYPHEN:
+    case COMPLEMENT:
+    case INTERSECTION:
+    case BACKSLASH:
+    case OPEN_BRACE:
+    case CLOSE_BRACE:
+    case COLON:
     case SymbolTable::SYMBOL_REF:
-        buf.append(u'\\');
+        buf.append(BACKSLASH);
         break;
     default:
         
         if (PatternProps::isWhiteSpace(c)) {
-            buf.append(u'\\');
+            buf.append(BACKSLASH);
         }
         break;
     }
@@ -2039,7 +2049,7 @@ UnicodeString& UnicodeSet::_toPattern(UnicodeString& result,
                 backslashCount = 0;
             } else {
                 result.append(c);
-                if (c == u'\\') {
+                if (c == BACKSLASH) {
                     ++backslashCount;
                 } else {
                     backslashCount = 0;
@@ -2072,7 +2082,7 @@ UnicodeString& UnicodeSet::toPattern(UnicodeString& result,
 UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
                                             UBool escapeUnprintable) const
 {
-    result.append(u'[');
+    result.append(SET_OPEN);
 
 
 
@@ -2094,7 +2104,7 @@ UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
         getRangeEnd(count-1) == MAX_VALUE) {
 
         
-        result.append(u'^');
+        result.append(COMPLEMENT);
 
         for (int32_t i = 1; i < count; ++i) {
             UChar32 start = getRangeEnd(i-1)+1;
@@ -2102,7 +2112,7 @@ UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
             _appendToPat(result, start, escapeUnprintable);
             if (start != end) {
                 if ((start+1) != end) {
-                    result.append(u'-');
+                    result.append(HYPHEN);
                 }
                 _appendToPat(result, end, escapeUnprintable);
             }
@@ -2117,7 +2127,7 @@ UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
             _appendToPat(result, start, escapeUnprintable);
             if (start != end) {
                 if ((start+1) != end) {
-                    result.append(u'-');
+                    result.append(HYPHEN);
                 }
                 _appendToPat(result, end, escapeUnprintable);
             }
@@ -2126,14 +2136,14 @@ UnicodeString& UnicodeSet::_generatePattern(UnicodeString& result,
 
     if (strings != nullptr) {
         for (int32_t i = 0; i<strings->size(); ++i) {
-            result.append(u'{');
+            result.append(OPEN_BRACE);
             _appendToPat(result,
                          *(const UnicodeString*) strings->elementAt(i),
                          escapeUnprintable);
-            result.append(u'}');
+            result.append(CLOSE_BRACE);
         }
     }
-    return result.append(u']');
+    return result.append(SET_CLOSE);
 }
 
 

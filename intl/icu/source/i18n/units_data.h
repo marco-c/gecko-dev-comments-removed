@@ -26,6 +26,22 @@ namespace units {
 
 
 
+
+
+
+
+
+CharString U_I18N_API getUnitCategory(const char *baseUnitIdentifier, UErrorCode &status);
+
+
+
+
+
+
+
+
+
+
 class U_I18N_API ConversionRateInfo : public UMemory {
   public:
     ConversionRateInfo() {}

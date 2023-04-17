@@ -2529,6 +2529,7 @@ def otherICULegacyLinks():
 
     return {
         
+        Zone("US/Pacific-New"): "America/Los_Angeles",
     }
 
 

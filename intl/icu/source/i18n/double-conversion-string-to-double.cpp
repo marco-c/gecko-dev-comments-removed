@@ -51,18 +51,6 @@
 
 U_NAMESPACE_BEGIN
 
-#ifdef _MSC_VER
-#  if _MSC_VER >= 1900
-
-
-
- __pragma(warning(disable: 4244))
-#  endif
-#  if _MSC_VER <= 1700 
-#    define VS2012_RADIXWARN
-#  endif
-#endif
-
 namespace double_conversion {
 
 namespace {
@@ -184,7 +172,7 @@ static double SignedZero(bool sign) {
 
 
 
-#ifdef VS2012_RADIXWARN
+#ifdef _MSC_VER
 #pragma optimize("",off)
 static bool IsDecimalDigitForRadix(int c, int radix) {
   return '0' <= c && c <= '9' && (c - '0') < radix;
@@ -750,17 +738,11 @@ double StringToDoubleConverter::StringToIeee(
   DOUBLE_CONVERSION_ASSERT(buffer_pos < kBufferSize);
   buffer[buffer_pos] = '\0';
 
-  
-  
-  Vector<const char> chars(buffer, buffer_pos);
-  chars = TrimTrailingZeros(chars);
-  exponent += buffer_pos - chars.length();
-
   double converted;
   if (read_as_double) {
-    converted = StrtodTrimmed(chars, exponent);
+    converted = Strtod(Vector<const char>(buffer, buffer_pos), exponent);
   } else {
-    converted = StrtofTrimmed(chars, exponent);
+    converted = Strtof(Vector<const char>(buffer, buffer_pos), exponent);
   }
   *processed_characters_count = static_cast<int>(current - input);
   return sign? -converted: converted;
