@@ -3,8 +3,7 @@
 
 
 
-async function testSteps()
-{
+async function testSteps() {
   const originDirPath = "storage/default/https+++foo.example.com";
 
   info("Initializing");
