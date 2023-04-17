@@ -5816,6 +5816,23 @@ nsresult DeleteFile(nsIFile& aDirectory, const nsAString& aFilename,
 
 
 
+nsresult DeleteFilesNoQuota(nsIFile& aFile) {
+  AssertIsOnIOThread();
+
+  QM_TRY_INSPECT(const auto& didExist,
+                 QM_OR_ELSE_WARN_IF(
+                     
+                     ToResult(aFile.Remove(true)).map(Some<Ok>),
+                     
+                     IsFileNotFoundError,
+                     
+                     ErrToDefaultOk<Maybe<Ok>>));
+
+  Unused << didExist;
+
+  return NS_OK;
+}
+
 nsresult DeleteFilesNoQuota(nsIFile* aDirectory, const nsAString& aFilename) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aDirectory);
@@ -5829,16 +5846,7 @@ nsresult DeleteFilesNoQuota(nsIFile* aDirectory, const nsAString& aFilename) {
 
   QM_TRY_INSPECT(const auto& file, CloneFileAndAppend(*aDirectory, aFilename));
 
-  QM_TRY_INSPECT(const auto& didExist,
-                 QM_OR_ELSE_WARN_IF(
-                     
-                     ToResult(file->Remove(true)).map(Some<Ok>),
-                     
-                     IsFileNotFoundError,
-                     
-                     ErrToDefaultOk<Maybe<Ok>>));
-
-  Unused << didExist;
+  QM_TRY(DeleteFilesNoQuota(*file));
 
   return NS_OK;
 }
@@ -5901,59 +5909,40 @@ Result<Ok, nsresult> DeleteFileManagerDirectory(
     nsIFile& aFileManagerDirectory, QuotaManager* aQuotaManager,
     const PersistenceType aPersistenceType,
     const OriginMetadata& aOriginMetadata) {
-  if (!aQuotaManager) {
-    QM_TRY(aFileManagerDirectory.Remove(true));
-
-    return Ok{};
-  }
-
   
   
   
-
-  QM_TRY_UNWRAP(auto fileUsage,
-                DatabaseFileManager::GetUsage(&aFileManagerDirectory));
-
-  uint64_t usageValue = fileUsage.GetValue().valueOr(0);
-
   
   
-  auto res = QM_OR_ELSE_WARN(
+  QM_TRY(DatabaseFileManager::TraverseFiles(
+      aFileManagerDirectory,
       
-      MOZ_TO_RESULT_INVOKE(aFileManagerDirectory, Remove, true),
+      [&aQuotaManager, aPersistenceType, &aOriginMetadata](
+          nsIFile& file, const bool isDirectory) -> Result<Ok, nsresult> {
+        if (isDirectory) {
+          
+          QM_TRY_RETURN(DeleteFilesNoQuota(file));
+        }
+
+        
+        QM_TRY_RETURN(DeleteFile(file, aQuotaManager, aPersistenceType,
+                                 aOriginMetadata, Idempotency::Yes));
+      },
       
-      ([&usageValue, &aFileManagerDirectory](nsresult rv) {
-        
+      [aPersistenceType, &aOriginMetadata](
+          nsIFile& file, const bool isDirectory) -> Result<Ok, nsresult> {
         
 
-        
-        
-        
-        
-        
-        
-        
-        Unused << DatabaseFileManager::GetUsage(&aFileManagerDirectory)
-                      .andThen([&usageValue](const auto& newFileUsage) {
-                        const auto newFileUsageValue =
-                            newFileUsage.GetValue().valueOr(0);
-                        MOZ_ASSERT(newFileUsageValue <= usageValue);
-                        usageValue -= newFileUsageValue;
+        if (isDirectory) {
+          QM_TRY_RETURN(DeleteFilesNoQuota(file));
+        }
 
-                        
-                        
-                        return Result<Ok, nsresult>{Ok{}};
-                      });
-
-        return Result<Ok, nsresult>{Err(rv)};
+        QM_TRY_RETURN(DeleteFile(file,  nullptr,
+                                 aPersistenceType, aOriginMetadata,
+                                 Idempotency::Yes));
       }));
 
-  if (usageValue) {
-    aQuotaManager->DecreaseUsageForClient(
-        ClientMetadata{aOriginMetadata, Client::IDB}, usageValue);
-  }
-
-  return res;
+  QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE(aFileManagerDirectory, Remove, false));
 }
 
 
@@ -12489,7 +12478,13 @@ Result<FileUsageType, nsresult> DatabaseFileManager::GetUsage(
   FileUsageType usage;
 
   QM_TRY(TraverseFiles(
-      *aDirectory, [&usage](nsIFile& file) -> Result<Ok, nsresult> {
+      *aDirectory,
+      
+      [&usage](nsIFile& file, const bool isDirectory) -> Result<Ok, nsresult> {
+        if (isDirectory) {
+          return Ok{};
+        }
+
         
         
         
@@ -12514,7 +12509,9 @@ Result<FileUsageType, nsresult> DatabaseFileManager::GetUsage(
         usage += thisUsage;
 
         return Ok{};
-      }));
+      },
+      
+      [](nsIFile&, const bool) -> Result<Ok, nsresult> { return Ok{}; }));
 
   return usage;
 }
