@@ -166,12 +166,13 @@ class PatchDictionary {
 
   bool HasAny() const { return !positions_.empty(); }
 
-  Status Decode(BitReader* br, size_t xsize, size_t ysize);
+  Status Decode(BitReader* br, size_t xsize, size_t ysize,
+                bool* uses_extra_channels);
 
   
   
-  void AddTo(Image3F* opsin, const Rect& opsin_rect,
-             const Rect& image_rect) const;
+  Status AddTo(Image3F* opsin, const Rect& opsin_rect,
+               float* const* extra_channels, const Rect& image_rect) const;
 
  private:
   friend class PatchDictionaryEncoder;
@@ -192,11 +193,6 @@ class PatchDictionary {
 
   
   void ComputePatchCache();
-
-  
-  template <bool >
-  void Apply(Image3F* opsin, const Rect& opsin_rect,
-             const Rect& image_rect) const;
 };
 
 }  

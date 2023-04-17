@@ -816,6 +816,7 @@ void PadImageToBlockMultipleInPlace(Image3F* JXL_RESTRICT in);
 
 
 void DownsampleImage(Image3F* opsin, size_t factor);
+void DownsampleImage(ImageF* image, size_t factor);
 
 }  
 

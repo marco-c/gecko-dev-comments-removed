@@ -78,16 +78,6 @@ constexpr size_t kBlockDim = 8;
 
 constexpr size_t kDCTBlockSize = kBlockDim * kBlockDim;
 
-
-
-
-
-
-constexpr size_t kDcGroupDimInBlocks = 256;
-constexpr size_t kDcGroupDim = kDcGroupDimInBlocks * kBlockDim;
-
-
-
 constexpr size_t kGroupDim = 256;
 static_assert(kGroupDim % kBlockDim == 0,
               "Group dim should be divisible by block dim");
@@ -107,9 +97,7 @@ struct FrameDimensions {
            size_t max_hshift, size_t max_vshift, bool modular_mode,
            size_t upsampling) {
     group_dim = (kGroupDim >> 1) << group_size_shift;
-    static_assert(
-        kGroupDim == kDcGroupDimInBlocks,
-        "DC groups (in blocks) and groups (in pixels) have different size");
+    dc_group_dim = group_dim * kBlockDim;
     xsize_upsampled = xsize;
     ysize_upsampled = ysize;
     this->xsize = DivCeil(xsize, upsampling);
@@ -159,6 +147,7 @@ struct FrameDimensions {
   size_t num_dc_groups;
   
   size_t group_dim;
+  size_t dc_group_dim;
 };
 
 

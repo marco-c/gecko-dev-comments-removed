@@ -15,9 +15,16 @@
 #ifndef LIB_JXL_BLENDING_H_
 #define LIB_JXL_BLENDING_H_
 #include "lib/jxl/dec_cache.h"
+#include "lib/jxl/dec_patch_dictionary.h"
 #include "lib/jxl/image_bundle.h"
 
 namespace jxl {
+
+Status PerformBlending(const float* const* bg, const float* const* fg,
+                       float* const* out, size_t xsize,
+                       const PatchBlending& color_blending,
+                       const PatchBlending* ec_blending,
+                       const std::vector<ExtraChannelInfo>& extra_channel_info);
 
 class ImageBlender {
  public:
@@ -25,8 +32,7 @@ class ImageBlender {
    public:
     
     
-    
-    Status DoBlending(size_t y) const;
+    Status DoBlending(size_t y);
 
     
     
@@ -40,17 +46,28 @@ class ImageBlender {
     Rect current_overlap_;
     Rect current_cropbox_;
     ImageBundle foreground_;
-    BlendingInfo info_;
     ImageBundle* dest_;
-    const std::vector<BlendingInfo>* ec_info_;
-    size_t first_alpha_;
+    std::vector<const float*> fg_ptrs_;
+    std::vector<float*> bg_ptrs_;
+    std::vector<PatchBlending> blending_info_;
   };
 
-  Status PrepareBlending(PassesDecoderState* dec_state, ImageBundle* foreground,
+  static bool NeedsBlending(PassesDecoderState* dec_state);
+
+  Status PrepareBlending(PassesDecoderState* dec_state,
+                         FrameOrigin foreground_origin, size_t foreground_xsize,
+                         size_t foreground_ysize,
+                         const ColorEncoding& frame_color_encoding,
                          ImageBundle* output);
   
-  RectBlender PrepareRect(const Rect& rect,
-                          const ImageBundle& foreground) const;
+  
+  
+  
+  
+  
+  ImageBlender::RectBlender PrepareRect(
+      const Rect& rect, const Image3F& foreground,
+      const std::vector<ImageF>& extra_channels, const Rect& input_rect) const;
 
   
   
@@ -65,7 +82,6 @@ class ImageBlender {
   Rect overlap_;
   bool done_ = false;
   const std::vector<BlendingInfo>* ec_info_;
-  size_t first_alpha_;
   FrameOrigin o_{};
 };
 

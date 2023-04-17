@@ -100,36 +100,6 @@ jxl::CodecInOut ConvertTestImage(const std::vector<uint8_t>& buf,
   return io;
 }
 
-
-void StoreBEFloat(float value, uint8_t* p) {
-  uint32_t u;
-  memcpy(&u, &value, 4);
-  StoreBE32(u, p);
-}
-
-
-void StoreLEFloat(float value, uint8_t* p) {
-  uint32_t u;
-  memcpy(&u, &value, 4);
-  StoreLE32(u, p);
-}
-
-
-float LoadBEFloat(const uint8_t* p) {
-  float value;
-  const uint32_t u = LoadBE32(p);
-  memcpy(&value, &u, 4);
-  return value;
-}
-
-
-float LoadLEFloat(const uint8_t* p) {
-  float value;
-  const uint32_t u = LoadLE32(p);
-  memcpy(&value, &u, 4);
-  return value;
-}
-
 template <typename T>
 T ConvertTestPixel(const float val);
 

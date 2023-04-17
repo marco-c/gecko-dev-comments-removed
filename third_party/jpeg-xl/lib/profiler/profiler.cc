@@ -23,17 +23,57 @@
 #include <algorithm>  
 #include <atomic>
 #include <cinttypes>  
-#include <hwy/highway.h>
+#include <hwy/cache_control.h>
 #include <new>
 
-#include "lib/jxl/base/robust_statistics.h"
+#include "lib/jxl/base/robust_statistics.h"  
+
+
+#undef HWY_TARGET_INCLUDE
+#define HWY_TARGET_INCLUDE "lib/profiler/profiler.cc"
+#include <hwy/foreach_target.h>
+#include <hwy/highway.h>
+
+HWY_BEFORE_NAMESPACE();
+namespace profiler {
+namespace HWY_NAMESPACE {
 
 
 
+void StreamCacheLine(const Packet* HWY_RESTRICT from, Packet* HWY_RESTRICT to) {
+#if HWY_TARGET == HWY_SCALAR
+  hwy::CopyBytes<64>(from, to);
+#else
+  const HWY_CAPPED(uint64_t, 2) d;
+  HWY_FENCE;
+  const uint64_t* HWY_RESTRICT from64 = reinterpret_cast<const uint64_t*>(from);
+  const auto v0 = Load(d, from64 + 0);
+  const auto v1 = Load(d, from64 + 2);
+  const auto v2 = Load(d, from64 + 4);
+  const auto v3 = Load(d, from64 + 6);
+  
+  
+  HWY_FENCE;
+  uint64_t* HWY_RESTRICT to64 = reinterpret_cast<uint64_t*>(to);
+  Stream(v0, d, to64 + 0);
+  Stream(v1, d, to64 + 2);
+  Stream(v2, d, to64 + 4);
+  Stream(v3, d, to64 + 6);
+  HWY_FENCE;
+#endif
+}
 
 
+}  
+}  
+HWY_AFTER_NAMESPACE();
 
+#if HWY_ONCE
+namespace profiler {
 
+HWY_EXPORT(StreamCacheLine);
+
+namespace {
 
 
 
@@ -44,93 +84,24 @@
 
 #define PROFILER_PRINT_OVERHEAD 0
 
-#if PROFILER_BUFFER
 
-HWY_BEFORE_NAMESPACE();
-namespace jxl {
-namespace HWY_NAMESPACE {
+constexpr size_t kMaxDepth = 64;   
+constexpr size_t kMaxZones = 256;  
 
 
 
-void StreamCacheLine(const Packet* JXL_RESTRICT from, Packet* JXL_RESTRICT to) {
-  constexpr size_t kLanes = 16 / sizeof(Packet);
-  static_assert(kLanes == 2, "Update descriptor type");
-  const HWY_CAPPED(uint64_t, kLanes) d;
-  JXL_COMPILER_FENCE;
-  const uint64_t* JXL_RESTRICT from64 = reinterpret_cast<const uint64_t*>(from);
-  const auto v0 = Load(d, from64 + 0 * kLanes);
-  const auto v1 = Load(d, from64 + 1 * kLanes);
-  const auto v2 = Load(d, from64 + 2 * kLanes);
-  const auto v3 = Load(d, from64 + 3 * kLanes);
-  
-  
-  JXL_COMPILER_FENCE;
-  uint64_t* JXL_RESTRICT to64 = reinterpret_cast<uint64_t*>(to);
-  Stream(v0, d, to64 + 0 * kLanes);
-  Stream(v1, d, to64 + 1 * kLanes);
-  Stream(v2, d, to64 + 2 * kLanes);
-  Stream(v3, d, to64 + 3 * kLanes);
-  JXL_COMPILER_FENCE;
-}
-
-
-}  
-}  
-HWY_AFTER_NAMESPACE();
-
-#endif  
-
-namespace jxl {
-namespace {
-
-
-
-
-
-
-constexpr size_t kMaxThreads = 1024;
-
-
-constexpr size_t kMaxDepth = 64;
-
-
-constexpr size_t kMaxZones = 256;
-
-
-
-
-
-
-
-uintptr_t StringOrigin() {
-  
-  
-  static const char* string_origin = "__#Origin#__";
-
-  return reinterpret_cast<uintptr_t>(string_origin) - Packet::kOffsetBias;
-}
-
-
-
-struct ProfilerNode {
-  Packet packet;
+struct ActiveZone {
+  const char* name;
+  uint64_t entry_timestamp;
   uint64_t child_total;
 };
 
 
-struct Accumulator {
-  static constexpr size_t kNumCallBits = 64 - Packet::kOffsetBits;
-
-  uintptr_t BiasedOffset() const { return num_calls >> kNumCallBits; }
-  uint64_t NumCalls() const { return num_calls & ((1ULL << kNumCallBits) - 1); }
-
-  
-  uint64_t num_calls = 0;  
-  uint64_t total_duration = 0;
+struct ZoneTotals {
+  uint64_t total_duration;
+  const char* name;
+  uint64_t num_calls;
 };
-#if JXL_ARCH_X64
-static_assert(sizeof(Accumulator) == 2 * sizeof(uint64_t), "Accumulator size");
-#endif
 
 template <typename T>
 inline T ClampedSubtract(const T minuend, const T subtrahend) {
@@ -147,19 +118,19 @@ class Results {
  public:
   Results() {
     
-    memset(zones_, 0, sizeof(Accumulator));
+    memset(zones_, 0, sizeof(zones_));
   }
 
   
   
   uint64_t ZoneDuration(const Packet* packets) {
-    JXL_CHECK(depth_ == 0);
-    JXL_CHECK(num_zones_ == 0);
+    HWY_ASSERT(depth_ == 0);
+    HWY_ASSERT(num_zones_ == 0);
     AnalyzePackets(packets, 2);
     const uint64_t duration = zones_[0].total_duration;
     zones_[0].num_calls = 0;
     zones_[0].total_duration = 0;
-    JXL_CHECK(depth_ == 0);
+    HWY_ASSERT(depth_ == 0);
     num_zones_ = 0;
     return duration;
   }
@@ -174,34 +145,37 @@ class Results {
 
   
   
-  void AnalyzePackets(const Packet* packets, const size_t num_packets) {
+  void AnalyzePackets(const Packet* HWY_RESTRICT packets,
+                      const size_t num_packets) {
+    
+    hwy::StoreFence();
+
     const uint64_t t0 = TicksBefore();
 
     for (size_t i = 0; i < num_packets; ++i) {
-      const Packet p = packets[i];
+      const uint64_t timestamp = packets[i].timestamp;
       
-      if (p.BiasedOffset() != Packet::kOffsetBias) {
-        JXL_ASSERT(depth_ < kMaxDepth);
-        nodes_[depth_].packet = p;
-        nodes_[depth_].child_total = 0;
+      if (packets[i].name != nullptr) {
+        HWY_ASSERT(depth_ < kMaxDepth);
+        zone_stack_[depth_].name = packets[i].name;
+        zone_stack_[depth_].entry_timestamp = timestamp;
+        zone_stack_[depth_].child_total = 0;
         ++depth_;
         continue;
       }
 
-      JXL_ASSERT(depth_ != 0);
-      const ProfilerNode& node = nodes_[depth_ - 1];
-      
-      const uint64_t duration =
-          (p.Timestamp() - node.packet.Timestamp()) & Packet::kTimestampMask;
+      HWY_ASSERT(depth_ != 0);
+      const ActiveZone& active = zone_stack_[depth_ - 1];
+      const uint64_t duration = timestamp - active.entry_timestamp;
       const uint64_t self_duration = ClampedSubtract(
-          duration, self_overhead_ + child_overhead_ + node.child_total);
+          duration, self_overhead_ + child_overhead_ + active.child_total);
 
-      UpdateOrAdd(node.packet.BiasedOffset(), 1, self_duration);
+      UpdateOrAdd(active.name, 1, self_duration);
       --depth_;
 
       
       if (depth_ != 0) {
-        nodes_[depth_ - 1].child_total += duration + child_overhead_;
+        zone_stack_[depth_ - 1].child_total += duration + child_overhead_;
       }
     }
 
@@ -213,12 +187,12 @@ class Results {
   
   void Assimilate(const Results& other) {
     const uint64_t t0 = TicksBefore();
-    JXL_ASSERT(depth_ == 0);
-    JXL_ASSERT(other.depth_ == 0);
+    HWY_ASSERT(depth_ == 0);
+    HWY_ASSERT(other.depth_ == 0);
 
     for (size_t i = 0; i < other.num_zones_; ++i) {
-      const Accumulator& zone = other.zones_[i];
-      UpdateOrAdd(zone.BiasedOffset(), zone.NumCalls(), zone.total_duration);
+      const ZoneTotals& zone = other.zones_[i];
+      UpdateOrAdd(zone.name, zone.num_calls, zone.total_duration);
     }
     const uint64_t t1 = TicksAfter();
     analyze_elapsed_ += t1 - t0 + other.analyze_elapsed_;
@@ -231,21 +205,17 @@ class Results {
 
     
     std::sort(zones_, zones_ + num_zones_,
-              [](const Accumulator& r1, const Accumulator& r2) {
+              [](const ZoneTotals& r1, const ZoneTotals& r2) {
                 return r1.total_duration > r2.total_duration;
               });
 
-    const uintptr_t string_origin = StringOrigin();
     uint64_t total_visible_duration = 0;
     for (size_t i = 0; i < num_zones_; ++i) {
-      const Accumulator& r = zones_[i];
-      const uint64_t num_calls = r.NumCalls();
-      const char* name =
-          reinterpret_cast<const char*>(string_origin + r.BiasedOffset());
-      if (name[0] != '@') {
+      const ZoneTotals& r = zones_[i];
+      if (r.name[0] != '@') {
         total_visible_duration += r.total_duration;
-        printf("%-40s: %10" PRIu64 " x %15" PRIu64 "= %15" PRIu64 "\n", name,
-               num_calls, r.total_duration / num_calls, r.total_duration);
+        printf("%-40s: %10" PRIu64 " x %15" PRIu64 "= %15" PRIu64 "\n", r.name,
+               r.num_calls, r.total_duration / r.num_calls, r.total_duration);
       }
     }
 
@@ -258,121 +228,55 @@ class Results {
   
   void Reset() {
     analyze_elapsed_ = 0;
-    JXL_CHECK(depth_ == 0);
+    HWY_ASSERT(depth_ == 0);
     num_zones_ = 0;
-    memset(nodes_, 0, sizeof(nodes_));
+    memset(zone_stack_, 0, sizeof(zone_stack_));
     memset(zones_, 0, sizeof(zones_));
   }
 
  private:
-#if JXL_ARCH_X64
-  static bool SameOffset(const __m128i zone, const uint64_t biased_offset) {
-    const uint64_t num_calls = _mm_cvtsi128_si64(zone);
-    return (num_calls >> Accumulator::kNumCallBits) == biased_offset;
-  }
-#endif
-
   
   
   
-  
-  
-  void UpdateOrAdd(const uint64_t biased_offset, const uint64_t num_calls,
+  void UpdateOrAdd(const char* name, const uint64_t num_calls,
                    const uint64_t duration) {
-    JXL_ASSERT(biased_offset < (1ULL << Packet::kOffsetBits));
-
-#if JXL_ARCH_X64
-    const __m128i num_calls_64 = _mm_cvtsi64_si128(num_calls);
-    const __m128i duration_64 = _mm_cvtsi64_si128(duration);
-    const __m128i add_duration_call =
-        _mm_unpacklo_epi64(num_calls_64, duration_64);
-
-    __m128i* const JXL_RESTRICT zones = reinterpret_cast<__m128i*>(zones_);
-
     
-    __m128i prev = _mm_load_si128(zones);
-    if (SameOffset(prev, biased_offset)) {
-      prev = _mm_add_epi64(prev, add_duration_call);
-      JXL_ASSERT(SameOffset(prev, biased_offset));
-      _mm_store_si128(zones, prev);
-      return;
-    }
-
-    
-    for (size_t i = 1; i < num_zones_; ++i) {
-      __m128i zone = _mm_load_si128(zones + i);
-      if (SameOffset(zone, biased_offset)) {
-        zone = _mm_add_epi64(zone, add_duration_call);
-        JXL_ASSERT(SameOffset(zone, biased_offset));
-        
-        
-        _mm_store_si128(zones + i - 1, zone);
-        _mm_store_si128(zones + i, prev);
-        return;
-      }
-      prev = zone;
-    }
-
-    
-    const __m128i biased_offset_64 = _mm_slli_epi64(
-        _mm_cvtsi64_si128(biased_offset), Accumulator::kNumCallBits);
-    const __m128i zone = _mm_add_epi64(biased_offset_64, add_duration_call);
-    JXL_ASSERT(SameOffset(zone, biased_offset));
-
-    JXL_ASSERT(num_zones_ < kMaxZones);
-    _mm_store_si128(zones + num_zones_, zone);
-    ++num_zones_;
-#else
-    
-    if (zones_[0].BiasedOffset() == biased_offset) {
+    if (zones_[0].name == name) {
       zones_[0].total_duration += duration;
       zones_[0].num_calls += num_calls;
-      JXL_ASSERT(zones_[0].BiasedOffset() == biased_offset);
       return;
     }
 
     
     for (size_t i = 1; i < num_zones_; ++i) {
-      if (zones_[i].BiasedOffset() == biased_offset) {
+      if (zones_[i].name == name) {
         zones_[i].total_duration += duration;
         zones_[i].num_calls += num_calls;
-        JXL_ASSERT(zones_[i].BiasedOffset() == biased_offset);
         
         
-        const Accumulator prev = zones_[i - 1];
-        zones_[i - 1] = zones_[i];
-        zones_[i] = prev;
+        std::swap(zones_[i - 1], zones_[i]);
         return;
       }
     }
 
     
-    JXL_ASSERT(num_zones_ < kMaxZones);
-    Accumulator* JXL_RESTRICT zone = zones_ + num_zones_;
-    zone->num_calls = (biased_offset << Accumulator::kNumCallBits) + num_calls;
+    HWY_ASSERT(num_zones_ < kMaxZones);
+    ZoneTotals* HWY_RESTRICT zone = zones_ + num_zones_;
+    zone->name = name;
+    zone->num_calls = num_calls;
     zone->total_duration = duration;
-    JXL_ASSERT(zone->BiasedOffset() == biased_offset);
     ++num_zones_;
-#endif
   }
 
   
   
   
   void MergeDuplicates() {
-    const uintptr_t string_origin = StringOrigin();
     for (size_t i = 0; i < num_zones_; ++i) {
-      const uint64_t biased_offset = zones_[i].BiasedOffset();
-      const char* name =
-          reinterpret_cast<const char*>(string_origin + biased_offset);
-      
-      uint64_t num_calls = zones_[i].NumCalls();
-
       
       for (size_t j = i + 1; j < num_zones_;) {
-        if (!strcmp(name, reinterpret_cast<const char*>(
-                              string_origin + zones_[j].BiasedOffset()))) {
-          num_calls += zones_[j].NumCalls();
+        if (!strcmp(zones_[i].name, zones_[j].name)) {
+          zones_[i].num_calls += zones_[j].num_calls;
           zones_[i].total_duration += zones_[j].total_duration;
           
           zones_[j] = zones_[--num_zones_];
@@ -380,12 +284,6 @@ class Results {
           ++j;
         }
       }
-
-      JXL_ASSERT(num_calls < (1ULL << Accumulator::kNumCallBits));
-
-      
-      zones_[i].num_calls =
-          (biased_offset << Accumulator::kNumCallBits) + num_calls;
     }
   }
 
@@ -397,69 +295,44 @@ class Results {
   size_t num_zones_ = 0;  
 
   
-  alignas(64) ProfilerNode nodes_[kMaxDepth];  
-  alignas(64) Accumulator zones_[kMaxZones];   
+  alignas(64) ActiveZone zone_stack_[kMaxDepth];  
+  alignas(64) ZoneTotals zones_[kMaxZones];       
 };
 
-
-ThreadSpecific::ThreadSpecific(const char* zone_name)
-    : packets_(static_cast<Packet*>(
-          CacheAligned::Allocate(PROFILER_THREAD_STORAGE << 20))),
+ThreadSpecific::ThreadSpecific()
+    : max_packets_(PROFILER_THREAD_STORAGE << 16),  
+      packets_(hwy::AllocateAligned<Packet>(max_packets_)),
       num_packets_(0),
-      max_packets_(PROFILER_THREAD_STORAGE << 17),
-      string_origin_(StringOrigin()),
-      results_(static_cast<Results*>(CacheAligned::Allocate(sizeof(Results)))) {
-  new (results_) Results();
-  
-  
-  
-  
-  
-  const uint64_t biased_offset =
-      reinterpret_cast<uintptr_t>(zone_name) - string_origin_;
-  JXL_CHECK(biased_offset <= (1ULL << Packet::kOffsetBits));
-}
+      results_(hwy::MakeUniqueAligned<Results>()) {}
 
-ThreadSpecific::~ThreadSpecific() {
-  results_->~Results();
-  CacheAligned::Free(packets_);
-  CacheAligned::Free(results_);
-}
+ThreadSpecific::~ThreadSpecific() {}
 
-void ThreadSpecific::FlushStorage() {
-  results_->AnalyzePackets(packets_, num_packets_);
-  num_packets_ = 0;
-}
-
-#if PROFILER_BUFFER
 void ThreadSpecific::FlushBuffer() {
   if (num_packets_ + kBufferCapacity > max_packets_) {
-    FlushStorage();
+    results_->AnalyzePackets(packets_.get(), num_packets_);
+    num_packets_ = 0;
   }
   
   
-  HWY_STATIC_DISPATCH(StreamCacheLine)(buffer_, packets_ + num_packets_);
+  HWY_DYNAMIC_DISPATCH(StreamCacheLine)
+  (buffer_, packets_.get() + num_packets_);
   num_packets_ += kBufferCapacity;
   buffer_size_ = 0;
 }
-#endif  
 
 void ThreadSpecific::AnalyzeRemainingPackets() {
-#if PROFILER_BUFFER
-  
-  hwy::StoreFence();
-
   
   if (num_packets_ + buffer_size_ > max_packets_) {
-    results_->AnalyzePackets(packets_, num_packets_);
+    results_->AnalyzePackets(packets_.get(), num_packets_);
     num_packets_ = 0;
   }
-  memcpy(packets_ + num_packets_, buffer_, buffer_size_ * sizeof(Packet));
+
+  
+  memcpy(packets_.get() + num_packets_, buffer_, buffer_size_ * sizeof(Packet));
   num_packets_ += buffer_size_;
   buffer_size_ = 0;
-#endif  
 
-  results_->AnalyzePackets(packets_, num_packets_);
+  results_->AnalyzePackets(packets_.get(), num_packets_);
   num_packets_ = 0;
 }
 
@@ -477,24 +350,19 @@ void ThreadSpecific::ComputeOverhead() {
 
       for (size_t idx_duration = 0; idx_duration < kNumDurations;
            ++idx_duration) {
-        {
+        {  
           PROFILER_ZONE("Dummy Zone (never shown)");
         }
-#if PROFILER_BUFFER
         const uint64_t duration = results_->ZoneDuration(buffer_);
         buffer_size_ = 0;
-#else
-        const uint64_t duration = results_->ZoneDuration(packets_);
-        num_packets_ = 0;
-#endif
         durations[idx_duration] = static_cast<uint32_t>(duration);
-        JXL_CHECK(num_packets_ == 0);
+        HWY_ASSERT(num_packets_ == 0);
       }
-      CountingSort(durations, durations + kNumDurations);
-      samples[idx_sample] = HalfSampleMode()(durations, kNumDurations);
+      jxl::CountingSort(durations, durations + kNumDurations);
+      samples[idx_sample] = jxl::HalfSampleMode()(durations, kNumDurations);
     }
     
-    CountingSort(samples, samples + kNumSamples);
+    jxl::CountingSort(samples, samples + kNumSamples);
     self_overhead = samples[kNumSamples / 2];
 #if PROFILER_PRINT_OVERHEAD
     printf("Overhead: %zu\n", self_overhead);
@@ -512,31 +380,25 @@ void ThreadSpecific::ComputeOverhead() {
          ++idx_duration) {
       const size_t kReps = 10000;
       
-      JXL_CHECK(kReps * 2 < max_packets_);
-#if JXL_ARCH_X64
-      _mm_mfence();
-#endif
+      HWY_ASSERT(kReps * 2 < max_packets_);
+      hwy::StoreFence();
       const uint64_t t0 = TicksBefore();
       for (size_t i = 0; i < kReps; ++i) {
         PROFILER_ZONE("Dummy");
       }
       hwy::StoreFence();
       const uint64_t t1 = TicksAfter();
-#if PROFILER_BUFFER
-      JXL_CHECK(num_packets_ + buffer_size_ == kReps * 2);
+      HWY_ASSERT(num_packets_ + buffer_size_ == kReps * 2);
       buffer_size_ = 0;
-#else
-      JXL_CHECK(num_packets_ == kReps * 2);
-#endif
       num_packets_ = 0;
       const uint64_t avg_duration = (t1 - t0 + kReps / 2) / kReps;
       durations[idx_duration] =
           static_cast<uint32_t>(ClampedSubtract(avg_duration, self_overhead));
     }
-    CountingSort(durations, durations + kNumDurations);
-    samples[idx_sample] = HalfSampleMode()(durations, kNumDurations);
+    jxl::CountingSort(durations, durations + kNumDurations);
+    samples[idx_sample] = jxl::HalfSampleMode()(durations, kNumDurations);
   }
-  CountingSort(samples, samples + kNumSamples);
+  jxl::CountingSort(samples, samples + kNumSamples);
   const uint64_t child_overhead = samples[9 * kNumSamples / 10];
 #if PROFILER_PRINT_OVERHEAD
   printf("Child overhead: %zu\n", child_overhead);
@@ -546,61 +408,61 @@ void ThreadSpecific::ComputeOverhead() {
 
 namespace {
 
-class ThreadList {
- public:
-  
-  void Add(ThreadSpecific* const ts) {
-    const uint32_t index = num_threads_.fetch_add(1, std::memory_order_relaxed);
-    JXL_CHECK(index < kMaxThreads);
-    threads_[index] = ts;
-  }
 
-  
-  void PrintResults() {
-    const uint32_t num_threads = num_threads_.load(std::memory_order_relaxed);
-    for (uint32_t i = 0; i < num_threads; ++i) {
-      threads_[i]->AnalyzeRemainingPackets();
-    }
-
-    
-    for (uint32_t i = 1; i < num_threads; ++i) {
-      threads_[0]->GetResults().Assimilate(threads_[i]->GetResults());
-    }
-
-    if (num_threads != 0) {
-      threads_[0]->GetResults().Print();
-
-      for (uint32_t i = 0; i < num_threads; ++i) {
-        threads_[i]->GetResults().Reset();
-      }
-    }
-  }
-
- private:
-  
-  alignas(64) ThreadSpecific* threads_[kMaxThreads];
-  std::atomic<uint32_t> num_threads_{0};
-};
-
-ThreadList& GetThreadList() {
-  static ThreadList threads_;
-  return threads_;
+std::atomic<ThreadSpecific*>& GetHead() {
+  static std::atomic<ThreadSpecific*> head_{nullptr};  
+  return head_;
 }
 
 }  
 
-ThreadSpecific* Zone::InitThreadSpecific(const char* zone_name) {
-  void* mem = CacheAligned::Allocate(sizeof(ThreadSpecific));
-  ThreadSpecific* thread_specific = new (mem) ThreadSpecific(zone_name);
+
+ThreadSpecific* Zone::InitThreadSpecific() {
+  ThreadSpecific* thread_specific =
+      hwy::MakeUniqueAligned<ThreadSpecific>().release();
+
   
-  GetThreadList().Add(thread_specific);
+  std::atomic<ThreadSpecific*>& head = GetHead();
+  ThreadSpecific* old_head = head.load(std::memory_order_relaxed);
+  thread_specific->SetNext(old_head);
+  while (!head.compare_exchange_weak(old_head, thread_specific,
+                                     std::memory_order_release,
+                                     std::memory_order_relaxed)) {
+    thread_specific->SetNext(old_head);
+    
+  }
+
+  
+  
   GetThreadSpecific() = thread_specific;
+
   thread_specific->ComputeOverhead();
   return thread_specific;
 }
 
- void Zone::PrintResults() { GetThreadList().PrintResults(); }
+
+ void Zone::PrintResults() {
+  ThreadSpecific* head = GetHead().load(std::memory_order_relaxed);
+  ThreadSpecific* p = head;
+  while (p) {
+    p->AnalyzeRemainingPackets();
+
+    
+    if (p != head) {
+      head->GetResults().Assimilate(p->GetResults());
+      p->GetResults().Reset();
+    }
+
+    p = p->GetNext();
+  }
+
+  if (head != nullptr) {
+    head->GetResults().Print();
+    head->GetResults().Reset();
+  }
+}
 
 }  
 
+#endif
 #endif

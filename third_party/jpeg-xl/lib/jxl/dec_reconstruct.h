@@ -56,9 +56,9 @@ Status FinalizeFrameDecoding(ImageBundle* JXL_RESTRICT decoded,
 
 Status FinalizeImageRect(
     Image3F* input_image, const Rect& input_rect,
-    const std::vector<std::pair<const ImageF*, Rect>>& extra_channels,
+    const std::vector<std::pair<ImageF*, Rect>>& extra_channels,
     PassesDecoderState* dec_state, size_t thread,
-    ImageBundle* JXL_RESTRICT output_image, const Rect& output_rect);
+    ImageBundle* JXL_RESTRICT output_image, const Rect& frame_rect);
 
 
 

@@ -39,8 +39,9 @@ TEST(PatchDictionaryTest, GrayscaleModular) {
   DecompressParams dparams;
 
   CodecInOut io2;
-  Roundtrip(&io, cparams, dparams, pool, &io2);
-  VerifyEqual(*io.Main().color(), *io2.Main().color());
+  
+  EXPECT_LE(Roundtrip(&io, cparams, dparams, pool, &io2), 8000);
+  VerifyRelativeError(*io.Main().color(), *io2.Main().color(), 1e-7f, 0);
 }
 
 TEST(PatchDictionaryTest, GrayscaleVarDCT) {
@@ -54,10 +55,12 @@ TEST(PatchDictionaryTest, GrayscaleVarDCT) {
   DecompressParams dparams;
 
   CodecInOut io2;
-  Roundtrip(&io, cparams, dparams, pool, &io2);
+  
+  EXPECT_LE(Roundtrip(&io, cparams, dparams, pool, &io2), 14000);
+  
   EXPECT_LE(ButteraugliDistance(io, io2, cparams.ba_params,
                                 nullptr, pool),
-            2);
+            1.1);
 }
 
 }  

@@ -270,6 +270,11 @@ class Rect {
     return image.ConstPlaneRow(c, y + y0_) + x0_;
   }
 
+  bool IsInside(const Rect& other) const {
+    return x0_ >= other.x0() && x0_ + xsize_ <= other.x0() + other.xsize_ &&
+           y0_ >= other.y0() && y0_ + ysize_ <= other.y0() + other.ysize();
+  }
+
   
   
   template <class ImageT>

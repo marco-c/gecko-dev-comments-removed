@@ -25,7 +25,6 @@
 
 
 
-
 #ifndef PROFILER_ENABLED
 #define PROFILER_ENABLED 0
 #endif
@@ -34,153 +33,105 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <hwy/targets.h>
+#include <hwy/aligned_allocator.h>
+#include <hwy/base.h>
 
-#include "lib/jxl/base/arch_macros.h"  
-#include "lib/jxl/base/cache_aligned.h"
-#include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/base/status.h"
 #include "lib/profiler/tsc_timer.h"
 
-#if JXL_ARCH_X64 && HWY_TARGET != HWY_SCALAR
-#define PROFILER_BUFFER 1
+#if HWY_COMPILER_MSVC
+#define PROFILER_PUBLIC
 #else
-#define PROFILER_BUFFER 0
+#define PROFILER_PUBLIC __attribute__((visibility("default")))
 #endif
 
-namespace jxl {
+namespace profiler {
 
 
-
-class Packet {
- public:
-  
-  
-  static constexpr size_t kOffsetBits = 27;
-  static constexpr uintptr_t kOffsetBias = 1ULL << (kOffsetBits - 1);
-
+#pragma pack(push, 1)
+struct Packet {
   
   
   
-  static constexpr size_t kTimestampBits = 64 - kOffsetBits;
-  static constexpr uint64_t kTimestampMask = (1ULL << kTimestampBits) - 1;
-
-  static Packet Make(const uint64_t biased_offset, const uint64_t timestamp) {
-    JXL_DASSERT(biased_offset < (1ULL << kOffsetBits));
-
-    Packet packet;
-    packet.bits_ =
-        (biased_offset << kTimestampBits) + (timestamp & kTimestampMask);
-    return packet;
-  }
-
-  uint64_t Timestamp() const { return bits_ & kTimestampMask; }
-
-  uintptr_t BiasedOffset() const { return (bits_ >> kTimestampBits); }
-
- private:
-  uint64_t bits_;
+  uint64_t timestamp;
+  const char* name;  
+#if UINTPTR_MAX <= 0xFFFFFFFFu
+  uint32_t padding;
+#endif
 };
-static_assert(sizeof(Packet) == 8, "Wrong Packet size");
+#pragma pack(pop)
+static_assert(sizeof(Packet) == 16, "Wrong Packet size");
 
-class Results;
+class Results;  
 
 
 class ThreadSpecific {
-  static constexpr size_t kBufferCapacity =
-      CacheAligned::kCacheLineSize / sizeof(Packet);
+  static constexpr size_t kBufferCapacity = 64 / sizeof(Packet);
 
  public:
-  
-  explicit ThreadSpecific(const char* zone_name);
-  ~ThreadSpecific();
+  PROFILER_PUBLIC explicit ThreadSpecific();
+  PROFILER_PUBLIC ~ThreadSpecific();
 
   
-  void ComputeOverhead();
+  PROFILER_PUBLIC void ComputeOverhead();
 
-  void WriteEntry(const char* name, const uint64_t timestamp) {
-    const uint64_t biased_offset =
-        reinterpret_cast<uintptr_t>(name) - string_origin_;
-    Write(Packet::Make(biased_offset, timestamp));
-  }
+  HWY_INLINE void WriteEntry(const char* name) { Write(name, TicksBefore()); }
+  HWY_INLINE void WriteExit() { Write(nullptr, TicksAfter()); }
 
-  void WriteExit(const uint64_t timestamp) {
-    const uint64_t biased_offset = Packet::kOffsetBias;
-    Write(Packet::Make(biased_offset, timestamp));
-  }
+  PROFILER_PUBLIC void AnalyzeRemainingPackets();
 
-  void AnalyzeRemainingPackets();
+  
+  void SetNext(ThreadSpecific* next) { next_ = next; }
+  ThreadSpecific* GetNext() const { return next_; }
 
   Results& GetResults() { return *results_; }
 
  private:
-  void FlushStorage();
-#if PROFILER_BUFFER
-  void FlushBuffer();
-#endif
+  PROFILER_PUBLIC void FlushBuffer();
 
   
-  void Write(const Packet packet) {
-#if PROFILER_BUFFER
+  void Write(const char* name, const uint64_t timestamp) {
     if (buffer_size_ == kBufferCapacity) {  
       FlushBuffer();
     }
-    buffer_[buffer_size_] = packet;
+    buffer_[buffer_size_].name = name;
+    buffer_[buffer_size_].timestamp = timestamp;
     ++buffer_size_;
-#else
-    if (num_packets_ >= max_packets_) {  
-      FlushStorage();
-    }
-    packets_[num_packets_] = packet;
-    ++num_packets_;
-#endif  
   }
 
   
   
-#if PROFILER_BUFFER
   Packet buffer_[kBufferCapacity];
   size_t buffer_size_ = 0;
-#endif
 
   
-  Packet* const JXL_RESTRICT packets_;
-  size_t num_packets_;
   const size_t max_packets_;
+  hwy::AlignedFreeUniquePtr<Packet[]> packets_;
+  size_t num_packets_;
 
   
-  uintptr_t string_origin_;
+  ThreadSpecific* next_ = nullptr;  
 
-  Results* results_;
+  hwy::AlignedUniquePtr<Results> results_;
 };
 
 
 
 class Zone {
  public:
-  
-  JXL_NOINLINE explicit Zone(const char* name) {
-    JXL_COMPILER_FENCE;
-    ThreadSpecific* JXL_RESTRICT thread_specific = GetThreadSpecific();
-    if (JXL_UNLIKELY(thread_specific == nullptr)) {
-      thread_specific = InitThreadSpecific(name);
+  HWY_NOINLINE explicit Zone(const char* name) {
+    HWY_FENCE;
+    ThreadSpecific* HWY_RESTRICT thread_specific = GetThreadSpecific();
+    if (HWY_UNLIKELY(thread_specific == nullptr)) {
+      thread_specific = InitThreadSpecific();
     }
 
-    
-    JXL_COMPILER_FENCE;
-    const uint64_t timestamp = TicksBefore();
-    thread_specific->WriteEntry(name, timestamp);
+    thread_specific->WriteEntry(name);
   }
 
-  JXL_NOINLINE ~Zone() {
-    JXL_COMPILER_FENCE;
-    const uint64_t timestamp = TicksAfter();
-    GetThreadSpecific()->WriteExit(timestamp);
-    JXL_COMPILER_FENCE;
-  }
+  HWY_NOINLINE ~Zone() { GetThreadSpecific()->WriteExit(); }
 
   
-  static void PrintResults();
+  PROFILER_PUBLIC static void PrintResults();
 
  private:
   
@@ -191,25 +142,26 @@ class Zone {
   }
 
   
-  ThreadSpecific* InitThreadSpecific(const char* zone_name);
+  PROFILER_PUBLIC ThreadSpecific* InitThreadSpecific();
 };
 
 
 
 
-#define PROFILER_ZONE(name)        \
-  JXL_COMPILER_FENCE;              \
-  const ::jxl::Zone zone("" name); \
-  JXL_COMPILER_FENCE
+
+#define PROFILER_ZONE(name)             \
+  HWY_FENCE;                            \
+  const ::profiler::Zone zone("" name); \
+  HWY_FENCE
 
 
 
-#define PROFILER_FUNC               \
-  JXL_COMPILER_FENCE;               \
-  const ::jxl::Zone zone(__func__); \
-  JXL_COMPILER_FENCE
+#define PROFILER_FUNC                    \
+  HWY_FENCE;                             \
+  const ::profiler::Zone zone(__func__); \
+  HWY_FENCE
 
-#define PROFILER_PRINT_RESULTS ::jxl::Zone::PrintResults
+#define PROFILER_PRINT_RESULTS ::profiler::Zone::PrintResults
 
 }  
 
