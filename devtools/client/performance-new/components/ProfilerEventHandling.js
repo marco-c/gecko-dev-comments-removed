@@ -33,9 +33,6 @@
 
 
 
-
-
-
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -222,8 +219,6 @@ function mapStateToProps(state) {
     perfFront: selectors.getPerfFront(state),
     recordingState: selectors.getRecordingState(state),
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
-    pageContext: selectors.getPageContext(state),
-    promptEnvRestart: selectors.getPromptEnvRestart(state),
   };
 }
 
