@@ -743,7 +743,7 @@ MDefinition* MDefinition::maybeMostRecentlyAddedDefUse() const {
 
 void MDefinition::replaceAllUsesWith(MDefinition* dom) {
   for (size_t i = 0, e = numOperands(); i < e; ++i) {
-    getOperand(i)->setUseRemovedUnchecked();
+    getOperand(i)->setImplicitlyUsedUnchecked();
   }
 
   justReplaceAllUsesWith(dom);
@@ -755,9 +755,6 @@ void MDefinition::justReplaceAllUsesWith(MDefinition* dom) {
 
   
   
-  if (isUseRemoved()) {
-    dom->setUseRemovedUnchecked();
-  }
   if (isImplicitlyUsed()) {
     dom->setImplicitlyUsedUnchecked();
   }

@@ -2929,7 +2929,7 @@ static bool CloneForDeadBranches(TempAllocator& alloc,
 
   
   
-  clone->setUseRemovedUnchecked();
+  clone->setImplicitlyUsedUnchecked();
 
   candidate->block()->insertBefore(candidate, clone);
 
@@ -2962,7 +2962,7 @@ static TruncateKind ComputeRequestedTruncateKind(MDefinition* candidate,
   bool isObservableResult =
       false;  
   bool isRecoverableResult = true;  
-  bool hasUseRemoved = candidate->isUseRemoved();
+  bool isImplicitlyUsed = candidate->isImplicitlyUsed();
 
   TruncateKind kind = TruncateKind::Truncate;
   for (MUseIterator use(candidate->usesBegin()); use != candidate->usesEnd();
@@ -2985,7 +2985,7 @@ static TruncateKind ComputeRequestedTruncateKind(MDefinition* candidate,
     MDefinition* consumer = use->consumer()->toDefinition();
     if (consumer->isRecoveredOnBailout()) {
       isCapturedResult = true;
-      hasUseRemoved = hasUseRemoved || consumer->isUseRemoved();
+      isImplicitlyUsed = isImplicitlyUsed || consumer->isImplicitlyUsed();
       continue;
     }
 
@@ -3015,8 +3015,8 @@ static TruncateKind ComputeRequestedTruncateKind(MDefinition* candidate,
   
   
   
-  bool safeToConvert =
-      kind == TruncateKind::Truncate && !hasUseRemoved && !isObservableResult;
+  bool safeToConvert = kind == TruncateKind::Truncate && !isImplicitlyUsed &&
+                       !isObservableResult;
 
   
   

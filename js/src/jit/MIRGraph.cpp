@@ -804,7 +804,7 @@ void MBasicBlock::flagOperandsOfPrunedBranches(MInstruction* ins) {
   
   while (rp) {
     for (size_t i = 0, end = rp->numOperands(); i < end; i++) {
-      rp->getOperand(i)->setUseRemovedUnchecked();
+      rp->getOperand(i)->setImplicitlyUsedUnchecked();
     }
     rp = rp->caller();
   }

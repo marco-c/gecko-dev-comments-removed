@@ -229,15 +229,15 @@ static bool IsDominatorRefined(MBasicBlock* block) {
 
 
 bool ValueNumberer::handleUseReleased(MDefinition* def,
-                                      UseRemovedOption useRemovedOption) {
+                                      ImplicitUseOption implicitUseOption) {
   if (IsDiscardable(def)) {
     values_.forget(def);
     if (!deadDefs_.append(def)) {
       return false;
     }
   } else {
-    if (useRemovedOption == SetUseRemoved) {
-      def->setUseRemovedUnchecked();
+    if (implicitUseOption == SetImplicitUse) {
+      def->setImplicitlyUsedUnchecked();
     }
   }
   return true;
@@ -265,7 +265,7 @@ bool ValueNumberer::releaseResumePointOperands(MResumePoint* resume) {
     
     
     
-    if (!handleUseReleased(op, SetUseRemoved)) {
+    if (!handleUseReleased(op, SetImplicitUse)) {
       return false;
     }
   }
@@ -279,7 +279,7 @@ bool ValueNumberer::releaseAndRemovePhiOperands(MPhi* phi) {
   for (int o = phi->numOperands() - 1; o >= 0; --o) {
     MDefinition* op = phi->getOperand(o);
     phi->removeOperand(o);
-    if (!handleUseReleased(op, DontSetUseRemoved)) {
+    if (!handleUseReleased(op, DontSetImplicitUse)) {
       return false;
     }
   }
@@ -292,7 +292,7 @@ bool ValueNumberer::releaseOperands(MDefinition* def) {
   for (size_t o = 0, e = def->numOperands(); o < e; ++o) {
     MDefinition* op = def->getOperand(o);
     def->releaseOperand(o);
-    if (!handleUseReleased(op, DontSetUseRemoved)) {
+    if (!handleUseReleased(op, DontSetImplicitUse)) {
       return false;
     }
   }
@@ -440,7 +440,7 @@ bool ValueNumberer::removePredecessorAndDoDCE(MBasicBlock* block,
     phi->removeOperand(predIndex);
 
     nextDef_ = iter != end ? *iter : nullptr;
-    if (!handleUseReleased(op, DontSetUseRemoved) || !processDeadDefs()) {
+    if (!handleUseReleased(op, DontSetImplicitUse) || !processDeadDefs()) {
       return false;
     }
 

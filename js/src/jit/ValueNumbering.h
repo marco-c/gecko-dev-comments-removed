@@ -70,10 +70,10 @@ class ValueNumberer {
   bool dependenciesBroken_;        
   bool hasOSRFixups_;              
 
-  enum UseRemovedOption { DontSetUseRemoved, SetUseRemoved };
+  enum ImplicitUseOption { DontSetImplicitUse, SetImplicitUse };
 
   [[nodiscard]] bool handleUseReleased(MDefinition* def,
-                                       UseRemovedOption useRemovedOption);
+                                       ImplicitUseOption implicitUseOption);
   [[nodiscard]] bool discardDefsRecursively(MDefinition* def);
   [[nodiscard]] bool releaseResumePointOperands(MResumePoint* resume);
   [[nodiscard]] bool releaseAndRemovePhiOperands(MPhi* phi);
