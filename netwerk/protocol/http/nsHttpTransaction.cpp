@@ -1213,7 +1213,11 @@ nsHttpTransaction::PrepareFastFallbackConnInfo(bool aEchConfigUsed) {
       return nullptr;
     }
 
-    fallbackConnInfo = mOrigConnInfo;
+    if (mOrigConnInfo->IsHttp3()) {
+      mOrigConnInfo->CloneAsDirectRoute(getter_AddRefs(fallbackConnInfo));
+    } else {
+      fallbackConnInfo = mOrigConnInfo;
+    }
     return fallbackConnInfo.forget();
   }
 
@@ -1233,13 +1237,27 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
 
   if (mFastFallbackTriggered) {
     mFastFallbackTriggered = false;
-    mConnInfo = PrepareFastFallbackConnInfo(echConfigUsed);
+    MOZ_ASSERT(mBackupConnInfo);
+    mConnInfo.swap(mBackupConnInfo);
     return;
   }
 
+  auto useOrigConnInfoToRetry = [&]() {
+    mOrigConnInfo.swap(mConnInfo);
+    if (mConnInfo->IsHttp3() &&
+        ((mCaps & NS_HTTP_DISALLOW_HTTP3) ||
+         gHttpHandler->IsHttp3Excluded(mConnInfo->GetRoutedHost().IsEmpty()
+                                           ? mConnInfo->GetOrigin()
+                                           : mConnInfo->GetRoutedHost()))) {
+      RefPtr<nsHttpConnectionInfo> ci;
+      mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
+      mConnInfo = ci;
+    }
+  };
+
   if (!echConfigUsed) {
     LOG((" echConfig is not used, fallback to origin conn info"));
-    mOrigConnInfo.swap(mConnInfo);
+    useOrigConnInfoToRetry();
     return;
   }
 
@@ -1303,7 +1321,7 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
                allRecordsHaveEchConfig));
           if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() ||
               !allRecordsHaveEchConfig) {
-            mOrigConnInfo.swap(mConnInfo);
+            useOrigConnInfoToRetry();
           }
           return;
         }
@@ -1314,7 +1332,7 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
              mAllRecordsInH3ExcludedListBefore));
         if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() &&
             !mAllRecordsInH3ExcludedListBefore) {
-          mOrigConnInfo.swap(mConnInfo);
+          useOrigConnInfoToRetry();
         }
         return;
       }
@@ -2529,6 +2547,8 @@ void nsHttpTransaction::DisableSpdy() {
 void nsHttpTransaction::DisableHttp3() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
+  mCaps |= NS_HTTP_DISALLOW_HTTP3;
+
   
   
   
@@ -2539,7 +2559,6 @@ void nsHttpTransaction::DisableHttp3() {
     return;
   }
 
-  mCaps |= NS_HTTP_DISALLOW_HTTP3;
   MOZ_ASSERT(mConnInfo);
   if (mConnInfo) {
     
@@ -3190,12 +3209,17 @@ void nsHttpTransaction::MaybeCancelFallbackTimer() {
   }
 }
 
-void nsHttpTransaction::OnBackupConnectionReady(bool aHTTPSRRUsed) {
+void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
   LOG(
       ("nsHttpTransaction::OnBackupConnectionReady [%p] mConnected=%d "
-       "aHTTPSRRUsed=%d",
-       this, mConnected, aHTTPSRRUsed));
+       "aTriggeredByHTTPSRR=%d",
+       this, mConnected, aTriggeredByHTTPSRR));
   if (mConnected || mClosed || mRestarted) {
+    return;
+  }
+
+  
+  if (!aTriggeredByHTTPSRR && mOrigConnInfo) {
     return;
   }
 
@@ -3203,9 +3227,12 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aHTTPSRRUsed) {
     
     
     
-    SetRestartReason(aHTTPSRRUsed ? TRANSACTION_RESTART_HTTPS_RR_FAST_FALLBACK
-                                  : TRANSACTION_RESTART_HTTP3_FAST_FALLBACK);
+    SetRestartReason(aTriggeredByHTTPSRR
+                         ? TRANSACTION_RESTART_HTTPS_RR_FAST_FALLBACK
+                         : TRANSACTION_RESTART_HTTP3_FAST_FALLBACK);
   }
+
+  mCaps |= NS_HTTP_DISALLOW_HTTP3;
 
   
   
@@ -3214,18 +3241,22 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aHTTPSRRUsed) {
   HandleFallback(mBackupConnInfo);
   mOrigConnInfo.swap(backup);
 
-  
-  
-  if (!aHTTPSRRUsed) {
-    mCaps |= NS_HTTP_DISALLOW_HTTP3;
-  }
   RemoveAlternateServiceUsedHeader(mRequestHead);
 
-  if (mResolver && mBackupConnInfo) {
-    const nsCString& host = mBackupConnInfo->GetRoutedHost().IsEmpty()
-                                ? mBackupConnInfo->GetOrigin()
-                                : mBackupConnInfo->GetRoutedHost();
-    mResolver->PrefetchAddrRecord(host, Caps() & NS_HTTP_REFRESH_DNS);
+  if (mResolver) {
+    if (mBackupConnInfo) {
+      const nsCString& host = mBackupConnInfo->GetRoutedHost().IsEmpty()
+                                  ? mBackupConnInfo->GetOrigin()
+                                  : mBackupConnInfo->GetRoutedHost();
+      mResolver->PrefetchAddrRecord(host, Caps() & NS_HTTP_REFRESH_DNS);
+    }
+
+    if (!aTriggeredByHTTPSRR) {
+      
+      
+      mResolver->Close();
+      mResolver = nullptr;
+    }
   }
 }
 
