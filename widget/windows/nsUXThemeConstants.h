@@ -177,6 +177,9 @@
 #ifndef SPI_GETMENUSHOWDELAY
 #  define SPI_GETMENUSHOWDELAY 106
 #endif  
+#ifndef SPI_GETCARETTIMEOUT
+#  define SPI_GETCARETTIMEOUT 0x2022
+#endif  
 #ifndef WS_EX_LAYOUTRTL
 #  define WS_EX_LAYOUTRTL 0x00400000L  // Right to left mirroring
 #endif
