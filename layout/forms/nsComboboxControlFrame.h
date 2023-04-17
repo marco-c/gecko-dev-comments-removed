@@ -285,7 +285,6 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   nsContainerFrame* mDisplayFrame;     
   nsIFrame* mButtonFrame;              
   nsListControlFrame* mDropdownFrame;  
-  nsListControlFrame* mListControlFrame;  
 
   
   

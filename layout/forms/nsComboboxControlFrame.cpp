@@ -227,7 +227,6 @@ nsComboboxControlFrame::nsComboboxControlFrame(ComputedStyle* aStyle,
       mDisplayFrame(nullptr),
       mButtonFrame(nullptr),
       mDropdownFrame(nullptr),
-      mListControlFrame(nullptr),
       mDisplayISize(0),
       mMaxDisplayISize(0),
       mRecentSelectedIndex(NS_SKIP_NOTIFY_INDEX),
@@ -275,13 +274,13 @@ void nsComboboxControlFrame::SetFocus(bool aOn, bool aRepaint) {
     sFocused = nullptr;
     mDelayedShowDropDown = false;
     if (mDroppedDown) {
-      mListControlFrame->ComboboxFinish(mDisplayedIndex);  
+      mDropdownFrame->ComboboxFinish(mDisplayedIndex);  
       if (!weakFrame.IsAlive()) {
         return;
       }
     }
     
-    mListControlFrame->FireOnInputAndOnChange();
+    mDropdownFrame->FireOnInputAndOnChange();
   }
 
   if (!weakFrame.IsAlive()) {
@@ -355,8 +354,8 @@ bool nsComboboxControlFrame::ShowList(bool aShowList) {
   if (mDroppedDown) {
     
     
-    mListControlFrame->AboutToDropDown();
-    mListControlFrame->CaptureMouseEvents(true);
+    mDropdownFrame->AboutToDropDown();
+    mDropdownFrame->CaptureMouseEvents(true);
     if (widget) {
       widget->CaptureRollupEvents(this, true);
     }
@@ -739,15 +738,13 @@ nscoord nsComboboxControlFrame::DropDownButtonISize() {
 
 nscoord nsComboboxControlFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
                                                   IntrinsicISizeType aType) {
+  MOZ_ASSERT(mDropdownFrame, "No dropdown frame!");
+
   
   nscoord scrollbarWidth = 0;
   nsPresContext* presContext = PresContext();
-  if (mListControlFrame) {
-    nsIScrollableFrame* scrollable = do_QueryFrame(mListControlFrame);
-    NS_ASSERTION(scrollable, "List must be a scrollable frame");
-    scrollbarWidth = scrollable->GetNondisappearingScrollbarWidth(
-        presContext, aRenderingContext, GetWritingMode());
-  }
+  scrollbarWidth = mDropdownFrame->GetNondisappearingScrollbarWidth(
+      presContext, aRenderingContext, GetWritingMode());
 
   const bool isContainSize = StyleDisplay()->IsContainSize();
   nscoord displayISize = 0;
@@ -831,7 +828,7 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (!mDroppedDown) {
-    mDisplayedIndex = mListControlFrame->GetSelectedIndex();
+    mDisplayedIndex = mDropdownFrame->GetSelectedIndex();
   }
   
   
@@ -921,7 +918,6 @@ void nsComboboxControlFrame::ShowDropDown(bool aDoDropDown) {
 
 void nsComboboxControlFrame::SetDropDown(nsListControlFrame* aDropDownFrame) {
   mDropdownFrame = aDropDownFrame;
-  mListControlFrame = do_QueryFrame(mDropdownFrame);
   if (!sFocused && nsContentUtils::IsFocusedContent(GetContent())) {
     sFocused = this;
     nsListControlFrame::ComboboxFocusSet();
@@ -934,7 +930,7 @@ nsIFrame* nsComboboxControlFrame::GetDropDown() { return mDropdownFrame; }
 
 nsresult nsComboboxControlFrame::RedisplaySelectedText() {
   nsAutoScriptBlocker scriptBlocker;
-  mDisplayedIndex = mListControlFrame->GetSelectedIndex();
+  mDisplayedIndex = mDropdownFrame->GetSelectedIndex();
   return RedisplayText();
 }
 
@@ -948,8 +944,8 @@ nsresult nsComboboxControlFrame::RedisplayText() {
   if (!previewValue.IsEmpty()) {
     mDisplayedOptionTextOrPreview = previewValue;
   } else if (mDisplayedIndex != -1 && !StyleContent()->mContent.IsNone()) {
-    mListControlFrame->GetOptionText(mDisplayedIndex,
-                                     mDisplayedOptionTextOrPreview);
+    mDropdownFrame->GetOptionText(mDisplayedIndex,
+                                  mDisplayedOptionTextOrPreview);
   } else {
     mDisplayedOptionTextOrPreview.Truncate();
   }
@@ -1054,7 +1050,7 @@ nsComboboxControlFrame::AddOption(int32_t aIndex) {
 NS_IMETHODIMP
 nsComboboxControlFrame::RemoveOption(int32_t aIndex) {
   AutoWeakFrame weakThis(this);
-  if (mListControlFrame->GetNumberOfOptions() > 0) {
+  if (mDropdownFrame->GetNumberOfOptions() > 0) {
     if (aIndex < mDisplayedIndex) {
       --mDisplayedIndex;
     } else if (aIndex == mDisplayedIndex) {
@@ -1162,10 +1158,10 @@ nsresult nsComboboxControlFrame::CreateAnonymousContent(
   mDisplayContent = new (nimgr) nsTextNode(nimgr);
 
   
-  mDisplayedIndex = mListControlFrame->GetSelectedIndex();
+  mDisplayedIndex = mDropdownFrame->GetSelectedIndex();
   if (mDisplayedIndex != -1) {
-    mListControlFrame->GetOptionText(mDisplayedIndex,
-                                     mDisplayedOptionTextOrPreview);
+    mDropdownFrame->GetOptionText(mDisplayedIndex,
+                                  mDisplayedOptionTextOrPreview);
   }
   ActuallyDisplayText(false);
 
@@ -1429,13 +1425,13 @@ bool nsComboboxControlFrame::Rollup(uint32_t aCount, bool aFlush,
 
   bool consume = !!COMBOBOX_ROLLUP_CONSUME_EVENT;
   AutoWeakFrame weakFrame(this);
-  mListControlFrame->AboutToRollup();  
+  mDropdownFrame->AboutToRollup();  
   if (!weakFrame.IsAlive()) {
     return consume;
   }
   ShowDropDown(false);  
   if (weakFrame.IsAlive()) {
-    mListControlFrame->CaptureMouseEvents(false);
+    mDropdownFrame->CaptureMouseEvents(false);
   }
 
   if (aFlush && weakFrame.IsAlive()) {
@@ -1463,7 +1459,9 @@ nsIWidget* nsComboboxControlFrame::GetRollupWidget() {
 }
 
 void nsComboboxControlFrame::RollupFromList() {
-  if (ShowList(false)) mListControlFrame->CaptureMouseEvents(false);
+  if (ShowList(false)) {
+    mDropdownFrame->CaptureMouseEvents(false);
+  }
 }
 
 int32_t nsComboboxControlFrame::UpdateRecentIndex(int32_t aIndex) {
@@ -1557,10 +1555,7 @@ void nsComboboxControlFrame::PaintFocus(DrawTarget& aDrawTarget, nsPoint aPt) {
 NS_IMETHODIMP
 nsComboboxControlFrame::OnOptionSelected(int32_t aIndex, bool aSelected) {
   if (mDroppedDown) {
-    nsISelectControlFrame* selectFrame = do_QueryFrame(mListControlFrame);
-    if (selectFrame) {
-      selectFrame->OnOptionSelected(aIndex, aSelected);
-    }
+    mDropdownFrame->OnOptionSelected(aIndex, aSelected);
   } else {
     if (aSelected) {
       nsAutoScriptBlocker blocker;
@@ -1585,9 +1580,7 @@ void nsComboboxControlFrame::FireValueChangeEvent() {
 }
 
 void nsComboboxControlFrame::OnContentReset() {
-  if (mListControlFrame) {
-    mListControlFrame->OnContentReset();
-  }
+  mDropdownFrame->OnContentReset();
 }
 
 
