@@ -26,12 +26,6 @@ add_task(async function setup() {
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
   await Services.search.moveEngine(engineOneOff, 0);
 
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.select_events.enabled", true], 
-    ],
-  });
-
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
