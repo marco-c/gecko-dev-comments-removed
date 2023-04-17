@@ -1401,3 +1401,15 @@ async function deleteNodeWithContextMenu(node, inspector) {
     await inspector.once("breadcrumbs-updated");
   }
 }
+
+
+
+
+function reflowContentPage() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    return new Promise(resolve => {
+      content.document.documentElement.offsetWidth;
+      content.requestAnimationFrame(resolve);
+    });
+  });
+}
