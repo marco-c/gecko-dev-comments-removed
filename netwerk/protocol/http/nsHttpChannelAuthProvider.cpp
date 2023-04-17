@@ -479,7 +479,7 @@ nsresult nsHttpChannelAuthProvider::PrepareForAuthentication(bool proxyAuth) {
   nsresult rv;
   nsCOMPtr<nsIHttpAuthenticator> precedingAuth;
   nsCString proxyAuthType;
-  rv = GetAuthenticator(mProxyAuthType.get(), proxyAuthType,
+  rv = GetAuthenticator(mProxyAuthType, proxyAuthType,
                         getter_AddRefs(precedingAuth));
   if (NS_FAILED(rv)) return rv;
 
@@ -573,8 +573,7 @@ nsresult nsHttpChannelAuthProvider::GetCredentials(
 
   
   for (size_t i = 0; i < cc.Length(); i++) {
-    rv = GetAuthenticator(nsCString(cc[i].challenge).get(), authType,
-                          getter_AddRefs(auth));
+    rv = GetAuthenticator(cc[i].challenge, authType, getter_AddRefs(auth));
     if (NS_SUCCEEDED(rv)) {
       
       
@@ -1061,25 +1060,20 @@ bool nsHttpChannelAuthProvider::BlockPrompt(bool proxyAuth) {
   return false;
 }
 
-inline void GetAuthType(const char* challenge, nsCString& authType) {
-  const char* p;
-
+inline void GetAuthType(const nsACString& aChallenge, nsCString& authType) {
+  auto spaceIndex = aChallenge.FindChar(' ');
+  authType = Substring(aChallenge, 0, spaceIndex);
   
-  if ((p = strchr(challenge, ' ')) != nullptr)
-    authType.Assign(challenge, p - challenge);
-  else
-    authType.Assign(challenge);
+  ToLowerCase(authType);
 }
 
 nsresult nsHttpChannelAuthProvider::GetAuthenticator(
-    const char* challenge, nsCString& authType, nsIHttpAuthenticator** auth) {
+    const nsACString& aChallenge, nsCString& authType,
+    nsIHttpAuthenticator** auth) {
   LOG(("nsHttpChannelAuthProvider::GetAuthenticator [this=%p channel=%p]\n",
        this, mAuthChannel));
 
-  GetAuthType(challenge, authType);
-
-  
-  ToLowerCase(authType);
+  GetAuthType(aChallenge, authType);
 
   nsCOMPtr<nsIHttpAuthenticator> authenticator;
   if (authType.EqualsLiteral("negotiate")) {
@@ -1329,7 +1323,7 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnAuthAvailable(
 
   nsAutoCString unused;
   nsCOMPtr<nsIHttpAuthenticator> auth;
-  rv = GetAuthenticator(mCurrentChallenge.get(), unused, getter_AddRefs(auth));
+  rv = GetAuthenticator(mCurrentChallenge, unused, getter_AddRefs(auth));
   if (NS_FAILED(rv)) {
     MOZ_ASSERT(false, "GetAuthenticator failed");
     OnAuthCancelled(aContext, true);
@@ -1448,7 +1442,7 @@ NS_IMETHODIMP nsHttpChannelAuthProvider::OnCredsGenerated(
 
   nsCOMPtr<nsIHttpAuthenticator> auth;
   nsAutoCString unused;
-  rv = GetAuthenticator(mCurrentChallenge.get(), unused, getter_AddRefs(auth));
+  rv = GetAuthenticator(mCurrentChallenge, unused, getter_AddRefs(auth));
   NS_ENSURE_SUCCESS(rv, rv);
 
   const char* host;
@@ -1702,7 +1696,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     if ((!creds[0] || identFromURI) && challenge[0]) {
       nsCOMPtr<nsIHttpAuthenticator> auth;
       nsAutoCString unused;
-      rv = GetAuthenticator(challenge, unused, getter_AddRefs(auth));
+      rv = GetAuthenticator(nsCString(challenge), unused, getter_AddRefs(auth));
       if (NS_SUCCEEDED(rv)) {
         bool proxyAuth = (header == nsHttp::Proxy_Authorization);
         rv = GenCredsAndSetEntry(auth, proxyAuth, scheme, host, port, path,
