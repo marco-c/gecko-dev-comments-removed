@@ -553,7 +553,23 @@ void UntrustedModulesProcessor::ProcessModuleLoadQueue() {
   {  
     MutexAutoLock lock(mUnprocessedMutex);
     CancelScheduledProcessing(lock);
-    loadsToProcess.swap(mUnprocessedModuleLoads);
+
+    
+    
+    const size_t newDataLength = mProcessedModuleLoads.mEvents.length() +
+                                 mUnprocessedModuleLoads.length();
+    if (newDataLength <= UntrustedModulesData::kMaxEvents) {
+      loadsToProcess.swap(mUnprocessedModuleLoads);
+    } else {
+      
+      
+      
+      const size_t capacity = newDataLength - UntrustedModulesData::kMaxEvents;
+      auto moveRangeBegin = mUnprocessedModuleLoads.begin();
+      auto moveRangeEnd = moveRangeBegin + capacity;
+      Unused << loadsToProcess.moveAppend(moveRangeBegin, moveRangeEnd);
+      mUnprocessedModuleLoads.erase(moveRangeBegin, moveRangeEnd);
+    }
   }
 
   if (!mAllowProcessing || loadsToProcess.empty()) {
