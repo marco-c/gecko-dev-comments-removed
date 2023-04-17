@@ -10,6 +10,14 @@
 
 namespace mozilla::intl {
 
+
+TEST(IntlLocale, SystemDependentTests)
+{
+  
+  const char* locale = Locale::GetDefaultLocale();
+  ASSERT_TRUE(locale != nullptr);
+}
+
 TEST(IntlLocale, GetAvailableLocales)
 {
   using namespace std::literals;

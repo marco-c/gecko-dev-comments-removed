@@ -21,6 +21,14 @@ class Locale final {
 
 
 
+  static const char* GetDefaultLocale() { return uloc_getDefault(); }
+
+  
+
+
+
+
+
 
 
   static auto GetAvailableLocales() {
