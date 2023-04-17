@@ -1333,10 +1333,7 @@ add_resultBuckets_task({
     
     ...makeRemoteSuggestionResults(MAX_RESULTS),
     
-    Object.assign(
-      makeHistoryResults(1)[0],
-      { resultSpan: 3 },
-    )
+    Object.assign(makeHistoryResults(1)[0], { resultSpan: 3 }),
   ],
   expectedResultIndexes: [
     
