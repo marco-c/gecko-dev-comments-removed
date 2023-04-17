@@ -107,8 +107,12 @@ impl PartialOrd for Leaf {
         }
 
         match (self, other) {
+            
+            
+            
+            
+            (&Percentage(..), &Percentage(..)) => None,
             (&Length(ref one), &Length(ref other)) => one.partial_cmp(other),
-            (&Percentage(ref one), &Percentage(ref other)) => one.partial_cmp(other),
             (&Angle(ref one), &Angle(ref other)) => one.degrees().partial_cmp(&other.degrees()),
             (&Time(ref one), &Time(ref other)) => one.seconds().partial_cmp(&other.seconds()),
             (&Number(ref one), &Number(ref other)) => one.partial_cmp(other),
