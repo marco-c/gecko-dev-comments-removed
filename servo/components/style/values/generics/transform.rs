@@ -582,10 +582,17 @@ impl<T: ToMatrix> Transform<T> {
 
 #[inline]
 pub fn create_perspective_matrix(d: CSSFloat) -> Transform3D<CSSFloat> {
-    if d < 0.0 {
+    
+    
+    
+    
+    
+    
+    
+    if d <= 0.0 {
         Transform3D::identity()
     } else {
-        Transform3D::perspective(d.max(1.))
+        Transform3D::perspective(d)
     }
 }
 
