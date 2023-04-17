@@ -1,17 +1,17 @@
 
 
 
-
 'use strict';
 
 promise_test(async testCase => {
   assert_true(self.crossOriginIsolated);
 
   const result = await performance.measureUserAgentSpecificMemory();
+
   checkMeasureMemory(result, [
     {
-      url: window.location.href,
-      scope: 'Window',
+      url: self.location.href,
+      scope: 'ServiceWorkerGlobalScope',
       container: null,
     },
   ]);

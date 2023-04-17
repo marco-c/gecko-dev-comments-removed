@@ -1,11 +1,12 @@
 
 
 
+
 'use strict';
 
-assert_true(self.crossOriginIsolated);
-
 promise_test(async testCase => {
+  assert_true(self.crossOriginIsolated);
+
   const BYTES_PER_WORKER = 10 * 1024 * 1024;
   const worker_url = await createWorker(BYTES_PER_WORKER);
   const result = await performance.measureUserAgentSpecificMemory();
