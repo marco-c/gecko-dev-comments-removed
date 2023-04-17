@@ -518,7 +518,7 @@ bool ScriptedProxyHandler::isExtensible(JSContext* cx, HandleObject proxy,
 
 bool ScriptedProxyHandler::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject proxy, HandleId id,
-    MutableHandle<PropertyDescriptor> desc) const {
+    MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
   
   RootedObject handler(cx, ScriptedProxyHandler::handlerObject(proxy));
   if (!handler) {
@@ -569,7 +569,7 @@ bool ScriptedProxyHandler::getOwnPropertyDescriptor(
   if (trapResult.isUndefined()) {
     
     if (targetDesc.isNothing()) {
-      desc.object().set(nullptr);
+      desc.reset();
       return true;
     }
 
@@ -590,7 +590,7 @@ bool ScriptedProxyHandler::getOwnPropertyDescriptor(
     }
 
     
-    desc.object().set(nullptr);
+    desc.reset();
     return true;
   }
 
@@ -638,8 +638,8 @@ bool ScriptedProxyHandler::getOwnPropertyDescriptor(
   }
 
   
-  desc.set(resultDesc);
-  desc.object().set(proxy);
+  resultDesc.object().set(proxy);
+  desc.set(mozilla::Some(resultDesc.get()));
   return true;
 }
 
