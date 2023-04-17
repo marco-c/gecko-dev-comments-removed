@@ -60,6 +60,9 @@ add_task(async function do_test() {
   let permIsolateUserContext = Services.prefs.getBoolPref(
     "permissions.isolateBy.userContext"
   );
+  let permIsolatePrivateBrowsing = Services.prefs.getBoolPref(
+    "permissions.isolateBy.privateBrowsing"
+  );
 
   let pm = Services.perms;
 
@@ -92,7 +95,12 @@ add_task(async function do_test() {
   );
 
   attrs = { userContextId: 1 };
-  let principal6 = Services.scriptSecurityManager.createContentPrincipal(
+  let principal1UserContext = Services.scriptSecurityManager.createContentPrincipal(
+    TEST_ORIGIN,
+    attrs
+  );
+  attrs = { privateBrowsingId: 1 };
+  let principal1PrivateBrowsing = Services.scriptSecurityManager.createContentPrincipal(
     TEST_ORIGIN,
     attrs
   );
@@ -122,6 +130,16 @@ add_task(async function do_test() {
   Assert.equal(
     Ci.nsIPermissionManager.ALLOW_ACTION,
     pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
+  );
+  
+  
+  
+  
+  
+  
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
   );
 
   
@@ -159,12 +177,17 @@ add_task(async function do_test() {
     pm.testPermissionFromPrincipal(principal4, TEST_PERMISSION)
   );
   
+  Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
+  );
+  
   
   Assert.equal(
     permIsolateUserContext
       ? Ci.nsIPermissionManager.UNKNOWN_ACTION
       : Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal1UserContext, TEST_PERMISSION)
   );
   
   Assert.equal(
@@ -187,7 +210,15 @@ add_task(async function do_test() {
   
   Assert.equal(
     Ci.nsIPermissionManager.UNKNOWN_ACTION,
-    pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal1UserContext, TEST_PERMISSION)
+  );
+  
+  
+  Assert.equal(
+    permIsolatePrivateBrowsing
+      ? Ci.nsIPermissionManager.ALLOW_ACTION
+      : Ci.nsIPermissionManager.UNKNOWN_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
   );
   
   await checkCapabilityViaDB(Ci.nsIPermissionManager.UNKNOWN_ACTION);
@@ -203,10 +234,15 @@ add_task(async function do_test() {
   );
   
   Assert.equal(
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
+  );
+  
+  Assert.equal(
     permIsolateUserContext
       ? Ci.nsIPermissionManager.UNKNOWN_ACTION
       : Ci.nsIPermissionManager.ALLOW_ACTION,
-    pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal1UserContext, TEST_PERMISSION)
   );
   
   Assert.equal(
@@ -233,11 +269,20 @@ add_task(async function do_test() {
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
   );
   
+  
   Assert.equal(
     permIsolateUserContext
       ? Ci.nsIPermissionManager.UNKNOWN_ACTION
       : Ci.nsIPermissionManager.DENY_ACTION,
-    pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal1UserContext, TEST_PERMISSION)
+  );
+  
+  
+  Assert.equal(
+    permIsolatePrivateBrowsing
+      ? Ci.nsIPermissionManager.ALLOW_ACTION
+      : Ci.nsIPermissionManager.DENY_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
   );
   
   Assert.equal(
@@ -265,11 +310,20 @@ add_task(async function do_test() {
     pm.testPermissionFromPrincipal(principal, TEST_PERMISSION)
   );
   
+  
   Assert.equal(
     permIsolateUserContext
       ? Ci.nsIPermissionManager.UNKNOWN_ACTION
       : Ci.nsIPermissionManager.PROMPT_ACTION,
-    pm.testPermissionFromPrincipal(principal6, TEST_PERMISSION)
+    pm.testPermissionFromPrincipal(principal1UserContext, TEST_PERMISSION)
+  );
+  
+  
+  Assert.equal(
+    permIsolatePrivateBrowsing
+      ? Ci.nsIPermissionManager.ALLOW_ACTION
+      : Ci.nsIPermissionManager.PROMPT_ACTION,
+    pm.testPermissionFromPrincipal(principal1PrivateBrowsing, TEST_PERMISSION)
   );
   
   Assert.equal(

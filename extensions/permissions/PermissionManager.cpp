@@ -1599,7 +1599,9 @@ nsresult PermissionManager::AddInternal(
   }
 
   
-  if (aExpireType != EXPIRE_SESSION) {
+  
+  
+  if (aID != cIDPermissionIsDefault && aExpireType != EXPIRE_SESSION) {
     uint32_t privateBrowsingId =
         nsScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID;
     nsresult rv = aPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
@@ -3412,12 +3414,31 @@ nsresult PermissionManager::ImportLatestDefaults() {
                 GetPrincipalFromOrigin(aOrigin, IsOAForceStripPermission(aType),
                                        getter_AddRefs(principal));
             NS_ENSURE_SUCCESS(rv, rv);
+            rv =
+                AddInternal(principal, aType, aPermission,
+                            cIDPermissionIsDefault, aExpireType, aExpireTime,
+                            aModificationTime, PermissionManager::eDontNotify,
+                            PermissionManager::eNoDBOperation, false, &aOrigin);
+            NS_ENSURE_SUCCESS(rv, rv);
 
-            return AddInternal(
-                principal, aType, aPermission, cIDPermissionIsDefault,
-                aExpireType, aExpireTime, aModificationTime,
-                PermissionManager::eDontNotify,
-                PermissionManager::eNoDBOperation, false, &aOrigin);
+            if (StaticPrefs::permissions_isolateBy_privateBrowsing()) {
+              
+              OriginAttributes attrs =
+                  OriginAttributes(principal->OriginAttributesRef());
+              attrs.mPrivateBrowsingId = 1;
+              nsCOMPtr<nsIPrincipal> pbPrincipal =
+                  BasePrincipal::Cast(principal)->CloneForcingOriginAttributes(
+                      attrs);
+
+              rv = AddInternal(
+                  pbPrincipal, aType, aPermission, cIDPermissionIsDefault,
+                  aExpireType, aExpireTime, aModificationTime,
+                  PermissionManager::eDontNotify,
+                  PermissionManager::eNoDBOperation, false, &aOrigin);
+              NS_ENSURE_SUCCESS(rv, rv);
+            }
+
+            return NS_OK;
           });
 
       if (NS_FAILED(rv)) {
@@ -3446,6 +3467,25 @@ nsresult PermissionManager::ImportLatestDefaults() {
                      0, modificationTime, eDontNotify, eNoDBOperation);
     if (NS_FAILED(rv)) {
       NS_WARNING("There was a problem importing an origin permission");
+    }
+
+    if (StaticPrefs::permissions_isolateBy_privateBrowsing()) {
+      
+      OriginAttributes attrs =
+          OriginAttributes(principal->OriginAttributesRef());
+      attrs.mPrivateBrowsingId = 1;
+      nsCOMPtr<nsIPrincipal> pbPrincipal =
+          BasePrincipal::Cast(principal)->CloneForcingOriginAttributes(attrs);
+
+      rv = AddInternal(pbPrincipal, entry.mType, entry.mPermission,
+                       cIDPermissionIsDefault,
+                       nsIPermissionManager::EXPIRE_NEVER, 0, modificationTime,
+                       eDontNotify, eNoDBOperation);
+      if (NS_FAILED(rv)) {
+        NS_WARNING(
+            "There was a problem importing an origin permission for private "
+            "browsing");
+      }
     }
   }
 
