@@ -80,6 +80,15 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 void AddHighValuePermission(nsIPrincipal* aResultPrincipal,
                             const nsACString& aPermissionType);
 
+void AddHighValuePermission(const nsACString& aOrigin,
+                            const nsACString& aPermissionType);
+
+
+
+
+
+bool IsIsolateHighValueSiteEnabled();
+
 }  
 
 #endif

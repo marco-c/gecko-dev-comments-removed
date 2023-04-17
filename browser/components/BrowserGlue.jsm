@@ -2674,6 +2674,16 @@ BrowserGlue.prototype = {
       },
 
       
+      {
+        task: () => {
+          let loginDetection = Cc[
+            "@mozilla.org/login-detection-service;1"
+          ].createInstance(Ci.nsILoginDetectionService);
+          loginDetection.init();
+        },
+      },
+
+      
       
       {
         condition: AppConstants.ENABLE_WEBDRIVER,
