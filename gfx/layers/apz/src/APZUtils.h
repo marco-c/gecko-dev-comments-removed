@@ -46,9 +46,6 @@ inline CancelAnimationFlags operator|(CancelAnimationFlags a,
 
 enum class ScrollSource {
   
-  DOM,
-
-  
   Touchscreen,
 
   
