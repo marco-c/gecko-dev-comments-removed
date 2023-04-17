@@ -4910,47 +4910,44 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
   bool isMainThreadBeingProfiled = false;
 #endif
-  const Vector<UniquePtr<RegisteredThread>>& registeredThreads =
-      CorePS::RegisteredThreads(aLock);
-  for (auto& registeredThread : registeredThreads) {
-    const ThreadRegistrationInfo& info = registeredThread->Info();
+  ThreadRegistry::LockedRegistry lockedRegistry;
+  for (ThreadRegistry::OffThreadRef offThreadRef : lockedRegistry) {
+    const ThreadRegistrationInfo& info =
+        offThreadRef.UnlockedConstReaderCRef().Info();
 
     if (ActivePS::ShouldProfileThread(aLock, info)) {
-      nsCOMPtr<nsIEventTarget> eventTarget = registeredThread->GetEventTarget();
+      ThreadRegistry::OffThreadRef::RWFromAnyThreadWithLock lockedThreadData =
+          offThreadRef.LockedRWFromAnyThread();
+      nsCOMPtr<nsIEventTarget> eventTarget = lockedThreadData->GetEventTarget();
       ProfiledThreadData* profiledThreadData = ActivePS::AddLiveProfiledThread(
-          aLock, registeredThread.get(),
+          aLock, &lockedThreadData->RegisteredThreadRef(),
           MakeUnique<ProfiledThreadData>(info, eventTarget));
-      ThreadRegistry::WithOffThreadRef(
-          info.ThreadId(), [&](ThreadRegistry::OffThreadRef aOffThreadRef) {
-            ThreadRegistry::OffThreadRef::RWFromAnyThreadWithLock
-                lockedThreadData = aOffThreadRef.LockedRWFromAnyThread();
-            lockedThreadData->SetIsBeingProfiledWithProfiledThreadData(
-                profiledThreadData, aLock);
-            if (ActivePS::FeatureJS(aLock)) {
-              lockedThreadData->StartJSSampling(ActivePS::JSFlags(aLock));
-              if (ThreadRegistration::LockedRWOnThread* lockedRWOnThread =
-                      lockedThreadData.GetLockedRWOnThread();
-                  lockedRWOnThread) {
-                
-                
-                lockedRWOnThread->PollJSSampling();
-              } else if (info.IsMainThread()) {
-                
-                
-                
-                TriggerPollJSSamplingOnMainThread();
-              }
-            }
+      lockedThreadData->SetIsBeingProfiledWithProfiledThreadData(
+          profiledThreadData, aLock);
+      if (ActivePS::FeatureJS(aLock)) {
+        lockedThreadData->StartJSSampling(ActivePS::JSFlags(aLock));
+        if (ThreadRegistration::LockedRWOnThread* lockedRWOnThread =
+                lockedThreadData.GetLockedRWOnThread();
+            lockedRWOnThread) {
+          
+          
+          lockedRWOnThread->PollJSSampling();
+        } else if (info.IsMainThread()) {
+          
+          
+          
+          TriggerPollJSSamplingOnMainThread();
+        }
+      }
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
-            if (info.IsMainThread()) {
-              isMainThreadBeingProfiled = true;
-            }
+      if (info.IsMainThread()) {
+        isMainThreadBeingProfiled = true;
+      }
 #endif
-            lockedThreadData->ReinitializeOnResume();
-            if (lockedThreadData->GetJSContext()) {
-              profiledThreadData->NotifyReceivedJSContext(0);
-            }
-          });
+      lockedThreadData->ReinitializeOnResume();
+      if (lockedThreadData->GetJSContext()) {
+        profiledThreadData->NotifyReceivedJSContext(0);
+      }
     }
   }
 
