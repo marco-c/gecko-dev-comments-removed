@@ -10262,9 +10262,21 @@ bool BaseCompiler::emitEnd() {
       }
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
-    case LabelKind::Try:
-      MOZ_CRASH("Try-catch block cannot end without catch.");
+    case LabelKind::Try: {
+      
+      
+      
+      WasmTryNoteVector& tryNotes = masm.tryNotes();
+      
+      
+      
+      
+      tryNotes.erase(&tryNotes[controlItem().tryNoteIndex]);
+      if (!endBlock(type)) {
+        return false;
+      }
       break;
+    }
     case LabelKind::Catch:
     case LabelKind::CatchAll:
       if (!endTryCatch(type)) {

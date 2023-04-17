@@ -20,6 +20,17 @@ assertWasmThrowsExn(() =>
        (type (func (param)))
        (event $exn (type 0))
        (func (export "f")
+         try (throw $exn) end))`
+  ).exports.f()
+);
+
+
+assertWasmThrowsExn(() =>
+  wasmEvalText(
+    `(module
+       (type (func (param)))
+       (event $exn (type 0))
+       (func (export "f")
          (throw $exn)))`
   ).exports.f()
 );
