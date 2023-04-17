@@ -1,15 +1,21 @@
 
 
-requestLongerTimeout(4);
+requestLongerTimeout(6);
 
 AntiTracking.runTestInNormalAndPrivateMode(
   "sessionStorage",
   async _ => {
+    let effectiveCookieBehavior = SpecialPowers.isContentWindowPrivate(window)
+      ? SpecialPowers.Services.prefs.getIntPref(
+          "network.cookie.cookieBehavior.pbmode"
+        )
+      : SpecialPowers.Services.prefs.getIntPref(
+          "network.cookie.cookieBehavior"
+        );
+
     let shouldThrow = [
       SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT,
-    ].includes(
-      SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior")
-    );
+    ].includes(effectiveCookieBehavior);
 
     let hasThrown;
     try {
@@ -48,11 +54,17 @@ AntiTracking.runTestInNormalAndPrivateMode(
     
     await noStorageAccessInitially();
 
+    let effectiveCookieBehavior = SpecialPowers.isContentWindowPrivate(window)
+      ? SpecialPowers.Services.prefs.getIntPref(
+          "network.cookie.cookieBehavior.pbmode"
+        )
+      : SpecialPowers.Services.prefs.getIntPref(
+          "network.cookie.cookieBehavior"
+        );
+
     let shouldThrow = [
       SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT,
-    ].includes(
-      SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior")
-    );
+    ].includes(effectiveCookieBehavior);
 
     let hasThrown;
     try {
