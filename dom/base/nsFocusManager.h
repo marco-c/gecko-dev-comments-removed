@@ -755,7 +755,7 @@ class nsFocusManager final : public nsIFocusManager,
                                      int32_t aFlags, bool aGettingFocus,
                                      bool aShouldShowFocusRing);
 
-  void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow, uint64_t aActionId,
+  void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow,
                                 bool aSyncBrowsingContext = true);
 
   bool TryDocumentNavigation(nsIContent* aCurrentContent,
@@ -770,28 +770,24 @@ class nsFocusManager final : public nsIFocusManager,
 
   
   
-  void SetFocusedBrowsingContext(mozilla::dom::BrowsingContext* aContext,
-                                 uint64_t aActionId);
+  void SetFocusedBrowsingContext(mozilla::dom::BrowsingContext* aContext);
 
   
   
   
   void SetFocusedBrowsingContextFromOtherProcess(
-      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
+      mozilla::dom::BrowsingContext* aContext);
 
   
   
   
-  
-  bool SetFocusedBrowsingContextInChrome(
-      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
+  void SetFocusedBrowsingContextInChrome(
+      mozilla::dom::BrowsingContext* aContext);
 
   void InsertNewFocusActionId(uint64_t aActionId);
 
   bool ProcessPendingActiveBrowsingContextActionId(uint64_t aActionId,
                                                    bool aSettingToNonNull);
-
-  bool ProcessPendingFocusedBrowsingContextActionId(uint64_t aActionId);
 
  public:
   
@@ -841,17 +837,6 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  
-  
-  void ReviseFocusedBrowsingContext(uint64_t aOldActionId,
-                                    mozilla::dom::BrowsingContext* aContext,
-                                    uint64_t aNewActionId);
-
-  
-  
-  
-  
-  
   bool SetActiveBrowsingContextInChrome(mozilla::dom::BrowsingContext* aContext,
                                         uint64_t aActionId);
 
@@ -863,8 +848,6 @@ class nsFocusManager final : public nsIFocusManager,
   mozilla::dom::BrowsingContext* GetActiveBrowsingContextInChrome();
 
   uint64_t GetActionIdForActiveBrowsingContextInChrome() const;
-
-  uint64_t GetActionIdForFocusedBrowsingContextInChrome() const;
 
   static uint64_t GenerateFocusActionId();
 
@@ -898,16 +881,6 @@ class nsFocusManager final : public nsIFocusManager,
   uint64_t mActionIdForActiveBrowsingContextInContent;
 
   uint64_t mActionIdForActiveBrowsingContextInChrome;
-
-  
-  
-  
-  
-  
-  
-  uint64_t mActionIdForFocusedBrowsingContextInContent;
-
-  uint64_t mActionIdForFocusedBrowsingContextInChrome;
 
   
   
@@ -1007,11 +980,13 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
+  
+  
+  
+  
+  
+  
   nsTArray<uint64_t> mPendingActiveBrowsingContextActions;
-
-  
-  
-  nsTArray<uint64_t> mPendingFocusedBrowsingContextActions;
 
   
   
