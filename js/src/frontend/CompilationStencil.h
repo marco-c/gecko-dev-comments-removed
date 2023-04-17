@@ -226,8 +226,10 @@ struct CompilationInput {
 
   CompilationAtomCache atomCache;
 
-  BaseScript* lazy = nullptr;
+ private:
+  BaseScript* lazy_ = nullptr;
 
+ public:
   RefPtr<ScriptSource> source;
 
   
@@ -303,11 +305,17 @@ struct CompilationInput {
     return true;
   }
 
-  void initFromLazy(BaseScript* lazyScript, ScriptSource* ss) {
+  void initFromLazy(JSContext* cx, BaseScript* lazyScript, ScriptSource* ss) {
+    MOZ_ASSERT(cx->compartment() == lazyScript->compartment());
+
+    
+    
+    
+    MOZ_ASSERT(lazyScript->isReadyForDelazification());
     target = CompilationTarget::Delazification;
-    lazy = lazyScript;
+    lazy_ = lazyScript;
     source = ss;
-    enclosingScope = lazy->function()->enclosingScope();
+    enclosingScope = lazy_->function()->enclosingScope();
   }
 
   
@@ -326,6 +334,39 @@ struct CompilationInput {
     }
     return nullptr;
   }
+
+  
+  
+  
+  BaseScript* lazyOuterScript() {
+    MOZ_ASSERT(isInitialStencil() == !lazy_);
+    return lazy_;
+  }
+
+  
+  
+  JSFunction* function() { return lazy_->function(); }
+
+  
+  
+  SourceExtent extent() const { return lazy_->extent(); }
+
+  
+  ImmutableScriptFlags immutableFlags() const {
+    return lazy_->immutableFlags();
+  }
+
+  RO_IMMUTABLE_SCRIPT_FLAGS(immutableFlags())
+
+  bool hasPrivateScriptData() const {
+    
+    
+    return lazy_->hasPrivateScriptData();
+  }
+
+  
+  
+  bool isInitialStencil() { return !lazy_; }
 
   void trace(JSTracer* trc);
 
@@ -743,8 +784,8 @@ struct ExtensibleCompilationStencil {
     return *this;
   }
 
-  void setFunctionKey(BaseScript* lazy) {
-    functionKey = CompilationStencil::toFunctionKey(lazy->extent());
+  void setFunctionKey(const SourceExtent& extent) {
+    functionKey = CompilationStencil::toFunctionKey(extent);
   }
 
   bool isInitialStencil() const {
