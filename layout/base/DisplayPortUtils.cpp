@@ -338,15 +338,13 @@ static nsRect GetDisplayPortFromMarginsData(
   PresShell* presShell = presContext->PresShell();
   MOZ_ASSERT(presShell);
 
-  bool useWebRender = gfxVars::UseWebRender();
-
   ScreenMargin margins = aMarginsData->mMargins.GetRelativeToLayoutViewport(
       aOptions.mGeometryType, scrollableFrame);
 
   if (presShell->IsDisplayportSuppressed() ||
       aContent->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
     alignment = ScreenSize(1, 1);
-  } else if (useWebRender) {
+  } else {
     
     
     
@@ -359,18 +357,6 @@ static nsRect GetDisplayPortFromMarginsData(
     IntSize multiplier =
         layers::apz::GetDisplayportAlignmentMultiplier(screenRect.Size());
     alignment = ScreenSize(128 * multiplier.width, 128 * multiplier.height);
-  } else if (StaticPrefs::layers_enable_tiles_AtStartup()) {
-    
-    
-    
-    IntSize tileSize = gfxVars::TileSize();
-    alignment = ScreenSize(std::min(256, tileSize.width),
-                           std::min(256, tileSize.height));
-  } else {
-    
-    
-    
-    alignment = ScreenSize(128, 128);
   }
 
   
@@ -381,53 +367,8 @@ static nsRect GetDisplayPortFromMarginsData(
     alignment.height = 128;
   }
 
-  if (StaticPrefs::layers_enable_tiles_AtStartup() || useWebRender) {
-    
-    screenRect.Inflate(margins);
-  } else {
-    
-    
-    nscoord maxSizeAppUnits = GetMaxDisplayPortSize(aContent, presContext);
-    MOZ_ASSERT(maxSizeAppUnits < nscoord_MAX);
-
-    
-    
-    
-    const int MAX_ALIGN_ROUNDING = 3;
-
-    
-    int32_t maxSizeDevPx = presContext->AppUnitsToDevPixels(maxSizeAppUnits);
-    int32_t maxWidthScreenPx = floor(double(maxSizeDevPx) * res.xScale) -
-                               MAX_ALIGN_ROUNDING * alignment.width;
-    int32_t maxHeightScreenPx = floor(double(maxSizeDevPx) * res.yScale) -
-                                MAX_ALIGN_ROUNDING * alignment.height;
-
-    
-    if (screenRect.height < maxHeightScreenPx) {
-      int32_t budget = maxHeightScreenPx - screenRect.height;
-      
-      
-      float scale = 1.0f;
-      if (float(budget) < margins.TopBottom()) {
-        scale = float(budget) / margins.TopBottom();
-      }
-      float top = margins.top * scale;
-      float bottom = margins.bottom * scale;
-      screenRect.y -= top;
-      screenRect.height += top + bottom;
-    }
-    if (screenRect.width < maxWidthScreenPx) {
-      int32_t budget = maxWidthScreenPx - screenRect.width;
-      float scale = 1.0f;
-      if (float(budget) < margins.LeftRight()) {
-        scale = float(budget) / margins.LeftRight();
-      }
-      float left = margins.left * scale;
-      float right = margins.right * scale;
-      screenRect.x -= left;
-      screenRect.width += left + right;
-    }
-  }
+  
+  screenRect.Inflate(margins);
 
   ScreenPoint scrollPosScreen =
       LayoutDevicePoint::FromAppUnits(scrollPos, auPerDevPixel) * res;

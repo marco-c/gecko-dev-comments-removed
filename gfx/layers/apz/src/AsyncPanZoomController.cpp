@@ -3967,8 +3967,6 @@ void AsyncPanZoomController::ScaleWithFocus(float aScale,
 
 gfx::IntSize AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
     const ScreenSize& aBaseSize) {
-  MOZ_ASSERT(gfx::gfxVars::UseWebRender());
-
   gfx::IntSize multiplier(1, 1);
   float baseWidth = aBaseSize.width;
   while (baseWidth > 500) {
@@ -4032,26 +4030,24 @@ static CSSSize CalculateDisplayPortSize(
     yMultiplier = xMultiplier;
   }
 
-  if (gfx::gfxVars::UseWebRender()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    gfx::IntSize alignmentMultipler =
-        AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
-            aCompositionSize * aDpPerCSS);
-    if (xMultiplier > 1) {
-      xMultiplier = ((xMultiplier - 1) / alignmentMultipler.width) + 1;
-    }
-    if (yMultiplier > 1) {
-      yMultiplier = ((yMultiplier - 1) / alignmentMultipler.height) + 1;
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  gfx::IntSize alignmentMultipler =
+      AsyncPanZoomController::GetDisplayportAlignmentMultiplier(
+          aCompositionSize * aDpPerCSS);
+  if (xMultiplier > 1) {
+    xMultiplier = ((xMultiplier - 1) / alignmentMultipler.width) + 1;
+  }
+  if (yMultiplier > 1) {
+    yMultiplier = ((yMultiplier - 1) / alignmentMultipler.height) + 1;
   }
 
   return aCompositionSize * CSSSize(xMultiplier, yMultiplier);
