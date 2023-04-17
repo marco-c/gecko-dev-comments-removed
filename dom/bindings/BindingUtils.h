@@ -726,6 +726,14 @@ struct LegacyFactoryFunction {
 
 
 
+
+
+
+
+
+
+
+
 void CreateInterfaceObjects(
     JSContext* cx, JS::Handle<JSObject*> global,
     JS::Handle<JSObject*> protoProto, const JSClass* protoClass,
