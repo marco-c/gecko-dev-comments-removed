@@ -598,8 +598,6 @@ static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
   
   
   MOZ_ASSERT(!js::gc::IsInsideNursery(res));
-
-  MOZ_ASSERT(res->numFixedSlots() == PropertyIteratorObject::NUM_FIXED_SLOTS);
   return res;
 }
 
@@ -716,7 +714,7 @@ NativeIterator::NativeIterator(JSContext* cx,
   
   
   
-  propIter->setNativeIterator(this);
+  propIter->initNativeIterator(this);
 
   
   
@@ -1082,7 +1080,7 @@ PlainObject* Realm::createIterResultTemplateObject(
 
 size_t PropertyIteratorObject::sizeOfMisc(
     mozilla::MallocSizeOf mallocSizeOf) const {
-  return mallocSizeOf(getPrivate());
+  return mallocSizeOf(getNativeIterator());
 }
 
 void PropertyIteratorObject::trace(JSTracer* trc, JSObject* obj) {
@@ -1114,7 +1112,8 @@ const JSClassOps PropertyIteratorObject::classOps_ = {
 };
 
 const JSClass PropertyIteratorObject::class_ = {
-    "Iterator", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,
+    "Iterator",
+    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
     &PropertyIteratorObject::classOps_};
 
 static const JSClass ArrayIteratorPrototypeClass = {"Array Iterator", 0};
