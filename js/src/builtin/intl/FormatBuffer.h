@@ -82,7 +82,7 @@ class FormatBuffer {
 
 
 
-  JSString* toString() const {
+  JSLinearString* toString() const {
     if constexpr (std::is_same_v<CharT, uint8_t> ||
                   std::is_same_v<CharT, unsigned char> ||
                   std::is_same_v<CharT, char>) {
