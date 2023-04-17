@@ -10264,21 +10264,7 @@ bool BaseCompiler::emitEnd() {
       }
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
-    case LabelKind::Try: {
-      
-      
-      
-      WasmTryNoteVector& tryNotes = masm.tryNotes();
-      
-      
-      
-      
-      tryNotes.erase(&tryNotes[controlItem().tryNoteIndex]);
-      if (!endBlock(type)) {
-        return false;
-      }
-      break;
-    }
+    case LabelKind::Try:
     case LabelKind::Catch:
     case LabelKind::CatchAll:
       if (!endTryCatch(type)) {
@@ -10797,6 +10783,7 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
   Control& tryCatch = controlItem();
+  LabelKind tryKind = iter_.controlKind(0);
 
   if (deadCode_) {
     fr.resetStackHeight(tryCatch.stackHeight, type);
@@ -10804,10 +10791,15 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   } else {
     
     
-    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + type.length() + 1);
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + type.length() +
+                                    (tryKind == LabelKind::Try ? 0 : 1));
     
     
-    popCatchResults(type, tryCatch.stackHeight);
+    if (tryKind == LabelKind::Try) {
+      popBlockResults(type, tryCatch.stackHeight, ContinuationKind::Jump);
+    } else {
+      popCatchResults(type, tryCatch.stackHeight);
+    }
     MOZ_ASSERT(stk_.length() == tryCatch.stackSize);
     
     
@@ -10824,6 +10816,8 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   }
 
   
+  
+  
   masm.bind(&tryCatch.otherLabel);
 
   
@@ -10835,6 +10829,12 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
   tryNote.entryPoint = masm.currentOffset();
   tryNote.framePushed = masm.framePushed();
+
+  
+  
+  if (tryKind == LabelKind::Try) {
+    tryNote.end = tryNote.entryPoint;
+  }
 
   RegRef exn = RegRef(WasmExceptionReg);
   needRef(exn);
