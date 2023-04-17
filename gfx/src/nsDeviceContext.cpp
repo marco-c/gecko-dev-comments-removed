@@ -150,7 +150,8 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
         fm->GetUserFontSet() == aParams.userFontSet &&
         fm->Language() == language &&
         fm->Orientation() == aParams.orientation &&
-        fm->ExplicitLanguage() == aParams.explicitLanguage) {
+        fm->ExplicitLanguage() == aParams.explicitLanguage &&
+        fm->GetThebesFontGroup()->GetFontMatchingStats() == aParams.fontStats) {
       if (i != n) {
         
         mFontMetrics.RemoveElementAt(i);

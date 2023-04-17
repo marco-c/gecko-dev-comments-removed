@@ -4041,12 +4041,36 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
 
 gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   
-  if (!CurrentState().fontGroup) {
+
+  RefPtr<PresShell> presShell = GetPresShell();
+  gfxTextPerfMetrics* tp = nullptr;
+  FontMatchingStats* fontStats = nullptr;
+  if (presShell && !presShell->IsDestroying()) {
+    nsPresContext* pc = presShell->GetPresContext();
+    tp = pc->GetTextPerfMetrics();
+    fontStats = pc->GetFontMatchingStats();
+  }
+
+  
+  
+  RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
+  if (fontGroup) {
+    if (fontGroup->GetFontMatchingStats() != fontStats ||
+        fontGroup->GetTextPerfMetrics() != tp) {
+      fontGroup = nullptr;
+    }
+  }
+
+  if (!fontGroup) {
     ErrorResult err;
     constexpr auto kDefaultFontStyle = "10px sans-serif"_ns;
-    static float kDefaultFontSize = 10.0;
-    RefPtr<PresShell> presShell = GetPresShell();
-    bool fontUpdated = SetFontInternal(kDefaultFontStyle, err);
+    const float kDefaultFontSize = 10.0;
+    
+    
+    
+    const nsCString& currentFont = CurrentState().font;
+    bool fontUpdated = SetFontInternal(
+        currentFont.IsEmpty() ? kDefaultFontStyle : currentFont, err);
     if (err.Failed() || !fontUpdated) {
       err.SuppressException();
       
@@ -4054,19 +4078,13 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
       bool explicitLanguage = false;
       gfxFontStyle style;
       style.size = kDefaultFontSize;
-      gfxTextPerfMetrics* tp = nullptr;
-      FontMatchingStats* fontStats = nullptr;
-      if (presShell && !presShell->IsDestroying()) {
-        tp = presShell->GetPresContext()->GetTextPerfMetrics();
-        fontStats = presShell->GetPresContext()->GetFontMatchingStats();
-      }
       int32_t perDevPixel, perCSSPixel;
       GetAppUnitsValues(&perDevPixel, &perCSSPixel);
       gfxFloat devToCssSize = gfxFloat(perDevPixel) / gfxFloat(perCSSPixel);
-      CurrentState().fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
+      fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
           FontFamilyList(StyleGenericFontFamily::SansSerif), &style, language,
           explicitLanguage, tp, fontStats, nullptr, devToCssSize);
-      if (CurrentState().fontGroup) {
+      if (fontGroup) {
         CurrentState().font = kDefaultFontStyle;
       } else {
         NS_ERROR("Default canvas font is invalid");
@@ -4074,10 +4092,10 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
     }
   } else {
     
-    CurrentState().fontGroup->CheckForUpdatedPlatformList();
+    fontGroup->CheckForUpdatedPlatformList();
   }
 
-  return CurrentState().fontGroup;
+  return fontGroup;
 }
 
 

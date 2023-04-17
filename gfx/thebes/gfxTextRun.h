@@ -1049,7 +1049,9 @@ class gfxFontGroup final : public gfxTextRunFactory {
   uint64_t GetRebuildGeneration();
 
   
-  gfxTextPerfMetrics* GetTextPerfMetrics() { return mTextPerf; }
+  gfxTextPerfMetrics* GetTextPerfMetrics() const { return mTextPerf; }
+
+  FontMatchingStats* GetFontMatchingStats() const { return mFontMatchingStats; }
 
   
   void SetUserFontSet(gfxUserFontSet* aUserFontSet);
