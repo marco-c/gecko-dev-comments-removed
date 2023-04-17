@@ -1364,8 +1364,8 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
       MOZ_ASSERT(!atPreviousChar.IsEndOfContainer());
       return WSScanResult(atPreviousChar.NextPoint(),
                           atPreviousChar.IsCharASCIISpaceOrNBSP()
-                              ? WSType::NormalWhiteSpaces
-                              : WSType::NormalText);
+                              ? WSType::CollapsibleWhiteSpaces
+                              : WSType::NonCollapsibleCharacters);
     }
   }
 
@@ -1408,8 +1408,8 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
       return WSScanResult(
           atNextChar,
           !atNextChar.IsEndOfContainer() && atNextChar.IsCharASCIISpaceOrNBSP()
-              ? WSType::NormalWhiteSpaces
-              : WSType::NormalText);
+              ? WSType::CollapsibleWhiteSpaces
+              : WSType::NonCollapsibleCharacters);
     }
   }
 
@@ -1480,7 +1480,8 @@ WSRunScanner::TextFragmentData::TextFragmentData(
                              !mEnd.AcrossPreformattedCharacter() &&
                              !(EditorUtils::IsWhiteSpacePreformatted(
                                    *mScanStartPoint.ContainerAsContent()) &&
-                               !mStart.IsNormalText() && !mEnd.IsNormalText());
+                               !mStart.IsNonCollapsibleCharacters() &&
+                               !mEnd.IsNonCollapsibleCharacters());
 }
 
 
@@ -1510,9 +1511,9 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
       continue;
     }
 
-    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                             *aPoint.ContainerAsText(), WSType::NormalText,
-                             Preformatted::No));
+    return Some(BoundaryData(
+        EditorDOMPoint(aPoint.ContainerAsText(), i), *aPoint.ContainerAsText(),
+        WSType::NonCollapsibleCharacters, Preformatted::No));
   }
 
   return Nothing();
@@ -1531,8 +1532,8 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     
     
     if (EditorUtils::IsWhiteSpacePreformatted(*aPoint.ContainerAsText())) {
-      return BoundaryData(aPoint, *aPoint.ContainerAsText(), WSType::NormalText,
-                          Preformatted::Yes);
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
+                          WSType::NonCollapsibleCharacters, Preformatted::Yes);
     }
     
     
@@ -1598,8 +1599,8 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     
     
     return BoundaryData(EditorDOMPoint::AtEndOf(*previousLeafContentOrBlock),
-                        *previousLeafContentOrBlock, WSType::NormalText,
-                        Preformatted::No);
+                        *previousLeafContentOrBlock,
+                        WSType::NonCollapsibleCharacters, Preformatted::No);
   }
 
   Maybe<BoundaryData> startInTextNode =
@@ -1643,9 +1644,9 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
       continue;
     }
 
-    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                             *aPoint.ContainerAsText(), WSType::NormalText,
-                             Preformatted::No));
+    return Some(BoundaryData(
+        EditorDOMPoint(aPoint.ContainerAsText(), i), *aPoint.ContainerAsText(),
+        WSType::NonCollapsibleCharacters, Preformatted::No));
   }
 
   return Nothing();
@@ -1664,8 +1665,8 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     
     
     if (EditorUtils::IsWhiteSpacePreformatted(*aPoint.ContainerAsText())) {
-      return BoundaryData(aPoint, *aPoint.ContainerAsText(), WSType::NormalText,
-                          Preformatted::Yes);
+      return BoundaryData(aPoint, *aPoint.ContainerAsText(),
+                          WSType::NonCollapsibleCharacters, Preformatted::Yes);
     }
     
     
@@ -1732,8 +1733,8 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     
     
     return BoundaryData(EditorDOMPoint(nextLeafContentOrBlock, 0),
-                        *nextLeafContentOrBlock, WSType::NormalText,
-                        Preformatted::No);
+                        *nextLeafContentOrBlock,
+                        WSType::NonCollapsibleCharacters, Preformatted::No);
   }
 
   Maybe<BoundaryData> endInTextNode =
@@ -2819,7 +2820,7 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
         (atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
          !isPreviousCharASCIIWhiteSpace) ||
         (!atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-         (visibleWhiteSpaces.StartsFromNormalText() ||
+         (visibleWhiteSpaces.StartsFromNonCollapsibleCharacters() ||
           visibleWhiteSpaces.StartsFromSpecialContent()));
     bool followedByVisibleContentOrBRElement = false;
 
@@ -2828,7 +2829,7 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
     
     if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhiteSpace) {
       followedByVisibleContentOrBRElement =
-          visibleWhiteSpaces.EndsByNormalText() ||
+          visibleWhiteSpaces.EndsByNonCollapsibleCharacters() ||
           visibleWhiteSpaces.EndsBySpecialContent() ||
           visibleWhiteSpaces.EndsByBRElement();
       
@@ -3085,7 +3086,7 @@ EditorDOMPointInText WSRunScanner::TextFragmentData::
   
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
       VisibleWhiteSpacesDataRef();
-  if (!visibleWhiteSpaces.StartsFromNormalText() &&
+  if (!visibleWhiteSpaces.StartsFromNonCollapsibleCharacters() &&
       !visibleWhiteSpaces.StartsFromSpecialContent()) {
     return EditorDOMPointInText();
   }
@@ -3140,7 +3141,7 @@ EditorDOMPointInText WSRunScanner::TextFragmentData::
   
   const VisibleWhiteSpacesData& visibleWhiteSpaces =
       VisibleWhiteSpacesDataRef();
-  if (!visibleWhiteSpaces.EndsByNormalText() &&
+  if (!visibleWhiteSpaces.EndsByNonCollapsibleCharacters() &&
       !visibleWhiteSpaces.EndsBySpecialContent() &&
       !visibleWhiteSpaces.EndsByBRElement()) {
     return EditorDOMPointInText();
