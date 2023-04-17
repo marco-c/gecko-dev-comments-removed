@@ -605,25 +605,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1704663",
-    platform: "android",
-    domain: "automotivesuperstore.com.au",
-    bug: "1704663",
-    config: {
-      matches: ["*://automotivesuperstore.com.au/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1704673",
     platform: "android",
     domain: "app.xiaomi.com",
@@ -728,6 +709,44 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.saxoinvestor.fr/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome/91.0.4472.114";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1722955",
+    platform: "android",
+    domain: "frontgate.com",
+    bug: "1722955",
+    config: {
+      matches: ["*://frontgate.com/*"],
+      uaTransformer: () => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1722954",
+    platform: "android",
+    domain: "granbluefantasy.jp",
+    bug: "1722954",
+    config: {
+      matches: ["*://*.granbluefantasy.jp/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " iPhone OS 12_0 like Mac OS X";
       },
     },
   },
