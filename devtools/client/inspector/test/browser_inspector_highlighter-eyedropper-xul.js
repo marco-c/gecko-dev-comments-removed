@@ -40,6 +40,10 @@ add_task(async function() {
   button = cPicker.tooltip.container.querySelector("#eyedropper-button");
   ok(isDisabled(button), "The button is disabled in the color picker");
 
+  
+  
+  cPicker.hide();
+
   info("Navigate to a HTML document");
   const toolbarUpdated = inspector.once("inspector-toolbar-updated");
   await navigateTo(TEST_URL_2);
