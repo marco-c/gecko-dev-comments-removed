@@ -5135,9 +5135,6 @@ nsCString nsWindow::GetPopupTypeName() {
 
 static void GtkWidgetDisableUpdates(GtkWidget* aWidget) {
   
-  GTK_WIDGET_GET_CLASS(aWidget)->draw = nullptr;
-
-  
   GdkWindow* window = gtk_widget_get_window(aWidget);
   gdk_window_set_events(window, (GdkEventMask)(gdk_window_get_events(window) &
                                                (~GDK_EXPOSURE_MASK)));
@@ -5631,6 +5628,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
 #ifdef MOZ_WAYLAND
       if (mIsDragPopup && GdkIsWaylandDisplay()) {
+        LOG("  set commit to parent");
         moz_container_wayland_set_commit_to_parent(mContainer);
       }
 #endif
@@ -8370,11 +8368,13 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
 
   if (mIsPIPWindow && aState == mDrawInTitlebar) {
     gtk_window_set_decorated(GTK_WINDOW(mShell), !aState);
+    LOG("  set decoration for PIP %d", aState);
     return;
   }
 
-  if (!mShell || mGtkWindowDecoration == GTK_DECORATION_NONE ||
+  if (mGtkWindowDecoration == GTK_DECORATION_NONE ||
       aState == mDrawInTitlebar) {
+    LOG("  already set, quit");
     return;
   }
 
