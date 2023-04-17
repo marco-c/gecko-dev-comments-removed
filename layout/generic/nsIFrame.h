@@ -1488,9 +1488,6 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
   static bool ComputeBorderRadii(const mozilla::BorderRadius&,
                                  const nsSize& aFrameSize,
                                  const nsSize& aBorderArea, Sides aSkipSides,

@@ -622,8 +622,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
 
   nsChangeHint CalcDifference(const nsStyleOutline& aNewData) const;
 
-  mozilla::StyleBorderRadius mOutlineRadius;
-
   
   
   

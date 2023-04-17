@@ -313,20 +313,6 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: [
-          "-moz-outline-radius",
-          "-moz-outline-radius-topleft",
-          "-moz-outline-radius-topright",
-          "-moz-outline-radius-bottomleft",
-          "-moz-outline-radius-bottomright",
-        ],
-        when: () => this.checkComputedStyle("outline-style", ["auto", "none"]),
-        fixId: "inactive-outline-radius-when-outline-style-auto-or-none-fix",
-        msgId: "inactive-outline-radius-when-outline-style-auto-or-none",
-        numFixProps: 1,
-      },
-      
-      {
-        invalidProperties: [
           "margin",
           "margin-block",
           "margin-block-end",
