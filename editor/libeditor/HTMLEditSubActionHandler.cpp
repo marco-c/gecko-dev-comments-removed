@@ -140,10 +140,6 @@ template already_AddRefed<nsRange>
 HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
     const RawRangeBoundary& aStartRef, const RawRangeBoundary& aEndRef,
     EditSubAction aEditSubAction) const;
-template EditorDOMPoint HTMLEditor::GetWhiteSpaceEndPoint(
-    const RangeBoundary& aPoint, ScanDirection aScanDirection);
-template EditorDOMPoint HTMLEditor::GetWhiteSpaceEndPoint(
-    const RawRangeBoundary& aPoint, ScanDirection aScanDirection);
 template EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
     const RangeBoundary& aPoint, EditSubAction aEditSubAction) const;
 template EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
@@ -5480,40 +5476,6 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
   return error.StealNSResult();
 }
 
-
-template <typename PT, typename RT>
-EditorDOMPoint HTMLEditor::GetWhiteSpaceEndPoint(
-    const RangeBoundaryBase<PT, RT>& aPoint, ScanDirection aScanDirection) {
-  if (NS_WARN_IF(!aPoint.IsSetAndValid()) ||
-      NS_WARN_IF(!aPoint.Container()->IsContent())) {
-    return EditorDOMPoint();
-  }
-
-  if (aScanDirection == ScanDirection::Backward) {
-    EditorDOMPoint point(aPoint);
-    if (point.IsInTextNode()) {
-      while (!point.IsStartOfContainer()) {
-        if (!point.IsPreviousCharASCIISpaceOrNBSP()) {
-          break;
-        }
-        MOZ_ALWAYS_TRUE(point.RewindOffset());
-      }
-    }
-    return point;
-  }
-
-  EditorDOMPoint point(aPoint);
-  if (point.IsInTextNode()) {
-    while (!point.IsEndOfContainer()) {
-      if (!point.IsCharASCIISpaceOrNBSP()) {
-        break;
-      }
-      MOZ_ALWAYS_TRUE(point.AdvanceOffset());
-    }
-  }
-  return point;
-}
-
 template <typename PT, typename RT>
 EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
     const RangeBoundaryBase<PT, RT>& aPoint,
@@ -5765,8 +5727,6 @@ void HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock(
   
   
   
-  
-  
   if (aStartRef != aEndRef) {
     return;
   }
@@ -5823,6 +5783,14 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
   RangeBoundaryBase<EPT, ERT> endRef(aEndRef);
   SelectBRElementIfCollapsedInEmptyBlock(startRef, endRef);
 
+  if (NS_WARN_IF(!startRef.IsSet()) ||
+      NS_WARN_IF(!startRef.Container()->IsContent()) ||
+      NS_WARN_IF(!endRef.IsSet()) ||
+      NS_WARN_IF(!endRef.Container()->IsContent())) {
+    NS_WARNING("HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock() failed");
+    return nullptr;
+  }
+
   
   
   
@@ -5830,18 +5798,30 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
   
   
   
-  
-  
-  EditorDOMPoint startPoint = HTMLEditor::GetWhiteSpaceEndPoint(
-      startRef, HTMLEditor::ScanDirection::Backward);
+  EditorRawDOMPoint startPoint(startRef);
+  if (startPoint.IsInTextNode()) {
+    while (!startPoint.IsStartOfContainer()) {
+      if (!startPoint.IsPreviousCharASCIISpaceOrNBSP()) {
+        break;
+      }
+      MOZ_ALWAYS_TRUE(startPoint.RewindOffset());
+    }
+  }
   if (!IsDescendantOfEditorRoot(
           EditorBase::GetNodeAtRangeOffsetPoint(startPoint))) {
     return nullptr;
   }
-  EditorDOMPoint endPoint = HTMLEditor::GetWhiteSpaceEndPoint(
-      endRef, HTMLEditor::ScanDirection::Forward);
+  EditorRawDOMPoint endPoint(endRef);
+  if (endPoint.IsInTextNode()) {
+    while (!endPoint.IsEndOfContainer()) {
+      if (!endPoint.IsCharASCIISpaceOrNBSP()) {
+        break;
+      }
+      MOZ_ALWAYS_TRUE(endPoint.AdvanceOffset());
+    }
+  }
   EditorRawDOMPoint lastRawPoint(endPoint);
-  lastRawPoint.RewindOffset();
+  lastRawPoint.RewindOffset();  
   if (!IsDescendantOfEditorRoot(
           EditorBase::GetNodeAtRangeOffsetPoint(lastRawPoint))) {
     return nullptr;
