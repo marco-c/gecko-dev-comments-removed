@@ -166,6 +166,54 @@ static ScrollDirections ScrollDirectionsForDelta(
   return result;
 }
 
+
+
+
+
+
+
+static ScrollDirections ScrollableDirectionsForDelta(
+    const AsyncPanZoomController* aTarget, const ParentLayerPoint& aDelta) {
+  return ScrollDirectionsForDelta(aDelta) & aTarget->GetScrollableDirections();
+}
+
+
+bool OverscrollHandoffChain::AllowHandoffToRoot(
+    const AsyncPanZoomController* aChild, const AsyncPanZoomController* aRoot,
+    const InputData& aInput) {
+  MOZ_ASSERT(aChild && !aChild->IsRootContent() && !aChild->CanScroll(aInput),
+             "This function is supposed to be called with a child subframe "
+             "which should NOT be scrollable to the given input direction");
+  MOZ_ASSERT(
+      aRoot && aRoot->IsRootContent() && !aRoot->CanScroll(aInput),
+      "This function is supposed to be called with the root content "
+      "frame which should NOT be scrollable to the given input direction");
+
+  
+  
+  ScrollDirections scrollableDirectionsOnSubframe =
+      ScrollableDirectionsForDelta(aChild, aChild->GetDeltaForEvent(aInput));
+  if (scrollableDirectionsOnSubframe.isEmpty()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return true;
+  }
+
+  
+  
+  
+  ScrollDirections scrollDirectionsOnRoot =
+      ScrollableDirectionsForDelta(aRoot, aRoot->GetDeltaForEvent(aInput));
+  return !(scrollableDirectionsOnSubframe & scrollDirectionsOnRoot).isEmpty();
+}
+
 RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
     const InputData& aInput,
     ScrollDirections* aOutAllowedScrollDirections) const {
@@ -179,27 +227,15 @@ RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
       return mChain[i];
     }
 
-    
-    
-    
-    
-    
     if (StaticPrefs::apz_overscroll_enabled() &&
         
         aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
       
       
-      
-      
-      
-      
-      ScrollDirections allowedOverscrollDirections =
-          mChain[i]->GetOverscrollableDirections() &
-          ScrollDirectionsForDelta(mChain[i]->GetDeltaForEvent(aInput));
-
-      allowedOverscrollDirections &= *aOutAllowedScrollDirections;
-      if (!allowedOverscrollDirections.isEmpty()) {
-        *aOutAllowedScrollDirections = allowedOverscrollDirections;
+      if (i > 0 && AllowHandoffToRoot(mChain[i - 1], mChain[i], aInput)) {
+        *aOutAllowedScrollDirections &=
+            mChain[i]->GetOverscrollableDirections() &
+            ScrollDirectionsForDelta(mChain[i]->GetDeltaForEvent(aInput));
         return mChain[i];
       }
     }
