@@ -1730,6 +1730,37 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
 
     
     
+    
+    
+    Maybe<AutoDisplayItemCacheSuppressor> cacheSuppressor;
+
+    if (itemType == DisplayItemType::TYPE_OPACITY) {
+      nsDisplayOpacity* opacity = static_cast<nsDisplayOpacity*>(item);
+
+      if (!opacity->IsReused()) {
+        cacheSuppressor.emplace(aBuilder.GetDisplayItemCache());
+      }
+
+      if (opacity->CanApplyOpacityToChildren(
+              mManager->GetRenderRootStateManager()->LayerManager(),
+              aDisplayListBuilder, aBuilder.GetInheritedOpacity())) {
+        
+        
+        
+        float oldOpacity = aBuilder.GetInheritedOpacity();
+        aBuilder.SetInheritedOpacity(oldOpacity * opacity->GetOpacity());
+
+        CreateWebRenderCommandsFromDisplayList(opacity->GetChildren(), item,
+                                               aDisplayListBuilder, aSc,
+                                               aBuilder, aResources, false);
+
+        aBuilder.SetInheritedOpacity(oldOpacity);
+        continue;
+      }
+    }
+
+    
+    
     if (XRE_IsParentProcess() && !aWrappingItem &&
         itemType == DisplayItemType::TYPE_BACKGROUND_COLOR &&
         !item->GetActiveScrolledRoot() &&
