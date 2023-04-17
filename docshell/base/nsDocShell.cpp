@@ -1190,6 +1190,7 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
   
   nsCOMPtr<nsIContentViewer> contentViewer(mContentViewer);
   if (aShow) {
+    contentViewer->SetIsHidden(false);
     mRefreshURIList = std::move(mBFCachedRefreshURIList);
     RefreshURIFromQueue();
     mFiredUnloadEvent = false;
