@@ -195,12 +195,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  void UpdateListBullet(mozilla::PresShell* aPresShell,
-                        nsIContent* aHTMLListItemContent, bool aHasBullet);
-
-  
-
-
   void UpdateImageMap(nsImageFrame* aImageFrame);
 
   

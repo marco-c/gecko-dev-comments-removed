@@ -49,24 +49,15 @@ class HTMLLIAccessible : public HyperTextAccessibleWrap {
                                        HyperTextAccessibleWrap)
 
   
-  virtual void Shutdown() override;
   virtual nsRect BoundsInAppUnits() const override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
 
-  virtual bool InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) override;
-  virtual void RelocateChild(uint32_t aNewIndex,
-                             LocalAccessible* aChild) override;
-
   
-  HTMLListBulletAccessible* Bullet() const { return mBullet; }
-  void UpdateBullet(bool aHasBullet);
+  LocalAccessible* Bullet() const;
 
  protected:
   virtual ~HTMLLIAccessible() {}
-
- private:
-  HTMLListBulletAccessible* mBullet;
 };
 
 
@@ -78,19 +69,12 @@ class HTMLListBulletAccessible : public LeafAccessible {
   virtual ~HTMLListBulletAccessible() {}
 
   
-  virtual nsIFrame* GetFrame() const override;
   virtual ENameValueFlag Name(nsString& aName) const override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
+  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() override;
   virtual void AppendTextTo(nsAString& aText, uint32_t aStartOffset = 0,
                             uint32_t aLength = UINT32_MAX) override;
-
-  
-
-  
-
-
-  bool IsInside() const;
 };
 
 inline HTMLLIAccessible* LocalAccessible::AsHTMLListItem() {

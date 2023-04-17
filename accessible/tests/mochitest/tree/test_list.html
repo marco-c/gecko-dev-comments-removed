@@ -188,13 +188,9 @@
           { // li
             role: ROLE_LISTITEM,
             children: [
-              { // ::marker content text
-                role: ROLE_STATICTEXT,
-                name: "foo",
-              },
-              { // ::marker content counter
-                role: ROLE_STATICTEXT,
-                name: "1",
+              { // ::marker content text and counter
+                role: ROLE_LISTITEM_MARKER,
+                name: "foo 1",
               },
               {
                 role: ROLE_TEXT_LEAF,
@@ -205,13 +201,9 @@
           { // li
             role: ROLE_LISTITEM,
             children: [
-              { // ::marker content text
-                role: ROLE_STATICTEXT,
-                name: "foo",
-              },
-              { // ::marker content counter
-                role: ROLE_STATICTEXT,
-                name: "2",
+              { // ::marker content text and counter
+                role: ROLE_LISTITEM_MARKER,
+                name: "foo 2",
               },
               {
                 role: ROLE_TEXT_LEAF,
@@ -299,7 +291,7 @@
     </li>
   </ol>
 
-  
+  <!-- display style different than list-item -->
   <ul id="list7">
     <li id="l7_li1" style="display:inline-block;">Oranges</li>
     <li id="l7_li2" style="display:inline-block;">Apples</li>
@@ -310,20 +302,20 @@
     <li id="l8_li2" style="display:inline; float:right;">Apples</li>
   </ul>
 
-  
+  <!-- list-item display style -->
   <ul id="list9">
     <span id="l9_li1" style="display:list-item">Oranges</span>
     <span id="l9_li2" style="display:list-item">Apples</span>
     <span id="l9_li3" style="display:list-item">Bananas</span>
   </ul>
 
-  
+  <!-- dl with div grouping dd/dt elements (bug 1476347) -->
   <dl id="list10">
     <div><dt>item1</dt><dd>description</dd></div>
     <div><dt>item2</td><dd>description</dd></div>
   </dl>
 
-  
+  <!-- list-style-image -->
   <ul id="list11"
       style="list-style-type: none; list-style-image: url('../moz.png');">
     <li>Oranges</li>
@@ -331,13 +323,13 @@
     <li>Bananas</li>
   </ul>
 
-  
+  <!-- list-style: none -->
   <ul id="list12" style="list-style: none;">
     <li>Oranges</li>
     <li>Apples</li>
   </ul>
 
-  
+  <!-- ::marker with content -->
   <style>
     #list13 li {
       counter-increment: list13counter;
