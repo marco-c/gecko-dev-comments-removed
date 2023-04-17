@@ -3583,42 +3583,38 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
                          Register memoryBase, Register ptr, Register ptrScratch,
                          Register output, Register tmp)
-      DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(mips32, mips64);
 
-  
-  
-  
   
   void wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access,
                            Register memoryBase, Register ptr,
                            Register ptrScratch, FloatRegister output,
                            Register tmp1, Register tmp2, Register tmp3)
-      DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(mips32, mips64);
 
   
   void wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access,
                             Register memoryBase, Register ptr,
                             Register ptrScratch, Register64 output,
-                            Register tmp) DEFINED_ON(arm, mips32, mips64);
+                            Register tmp) DEFINED_ON(mips32, mips64);
 
-  
   
   void wasmUnalignedStore(const wasm::MemoryAccessDesc& access, Register value,
                           Register memoryBase, Register ptr,
                           Register ptrScratch, Register tmp)
-      DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(mips32, mips64);
 
   
   void wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access,
                             FloatRegister floatValue, Register memoryBase,
                             Register ptr, Register ptrScratch, Register tmp)
-      DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(mips32, mips64);
 
   
   void wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access,
                              Register64 value, Register memoryBase,
                              Register ptr, Register ptrScratch, Register tmp)
-      DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(mips32, mips64);
 
   
 
