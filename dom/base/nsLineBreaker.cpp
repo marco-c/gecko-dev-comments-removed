@@ -9,10 +9,12 @@
 #include "gfxTextRun.h"  
 #include "nsHyphenationManager.h"
 #include "nsHyphenator.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/LineBreaker.h"
 #include "mozilla/intl/MozLocale.h"
 
+using mozilla::AutoRestore;
 using mozilla::intl::LineBreaker;
 using mozilla::intl::MozLocale;
 
@@ -80,7 +82,7 @@ nsresult nsLineBreaker::FlushCurrentWord() {
                : gfxTextRun::CompressedGlyph::FLAG_BREAK_TYPE_NONE,
            length * sizeof(uint8_t));
   } else {
-    nsContentUtils::LineBreaker()->GetJISx4051Breaks(
+    LineBreaker::ComputeBreakPositions(
         mCurrentWord.Elements(), length, mWordBreak, mStrictness,
         mScriptIsChineseOrJapanese, breakState.Elements());
   }
@@ -259,11 +261,10 @@ nsresult nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage,
           } else if (wordHasComplexChar) {
             
             
-            uint8_t currentStart = breakState[wordStart];
-            nsContentUtils::LineBreaker()->GetJISx4051Breaks(
+            AutoRestore<uint8_t> saveWordStartBreakState(breakState[wordStart]);
+            LineBreaker::ComputeBreakPositions(
                 aText + wordStart, offset - wordStart, mWordBreak, mStrictness,
                 mScriptIsChineseOrJapanese, breakState.Elements() + wordStart);
-            breakState[wordStart] = currentStart;
           }
           if (hyphenator) {
             FindHyphenationPoints(hyphenator, aText + wordStart, aText + offset,
@@ -424,11 +425,10 @@ nsresult nsLineBreaker::AppendText(nsAtom* aHyphenationLanguage,
         } else if (wordHasComplexChar) {
           
           
-          uint8_t currentStart = breakState[wordStart];
-          nsContentUtils::LineBreaker()->GetJISx4051Breaks(
+          AutoRestore<uint8_t> saveWordStartBreakState(breakState[wordStart]);
+          LineBreaker::ComputeBreakPositions(
               aText + wordStart, offset - wordStart, mWordBreak, mStrictness,
               mScriptIsChineseOrJapanese, breakState.Elements() + wordStart);
-          breakState[wordStart] = currentStart;
         }
       }
 

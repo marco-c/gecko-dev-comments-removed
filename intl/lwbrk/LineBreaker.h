@@ -38,7 +38,7 @@ class LineBreaker {
   
   
   
-  int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
+  static int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
 
   
   
@@ -46,12 +46,14 @@ class LineBreaker {
   
   
   
-  void GetJISx4051Breaks(const char16_t* aText, uint32_t aLength,
-                         WordBreak aWordBreak, Strictness aLevel,
-                         bool aIsChineseOrJapanese, uint8_t* aBreakBefore);
-  void GetJISx4051Breaks(const uint8_t* aText, uint32_t aLength,
-                         WordBreak aWordBreak, Strictness aLevel,
-                         bool aIsChineseOrJapanese, uint8_t* aBreakBefore);
+  static void ComputeBreakPositions(const char16_t* aText, uint32_t aLength,
+                                    WordBreak aWordBreak, Strictness aLevel,
+                                    bool aIsChineseOrJapanese,
+                                    uint8_t* aBreakBefore);
+  static void ComputeBreakPositions(const uint8_t* aText, uint32_t aLength,
+                                    WordBreak aWordBreak, Strictness aLevel,
+                                    bool aIsChineseOrJapanese,
+                                    uint8_t* aBreakBefore);
 
  private:
   ~LineBreaker() = default;
