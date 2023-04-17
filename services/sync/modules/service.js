@@ -1579,13 +1579,8 @@ Sync11Service.prototype = {
 
       
       let extra = { reason: "wipe-remote" };
-      if (engines) {
-        for (const e of engines) {
-          await this.clientsEngine.sendCommand("wipeEngine", [e], null, extra);
-        }
-      } else {
-        
-        await this.clientsEngine.sendCommand("wipeAll", [], null, extra);
+      for (const e of engines) {
+        await this.clientsEngine.sendCommand("wipeEngine", [e], null, extra);
       }
 
       
