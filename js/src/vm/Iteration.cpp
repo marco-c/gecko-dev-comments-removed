@@ -598,6 +598,8 @@ static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
   
   
   MOZ_ASSERT(!js::gc::IsInsideNursery(res));
+
+  MOZ_ASSERT(res->numFixedSlots() == PropertyIteratorObject::NUM_FIXED_SLOTS);
   return res;
 }
 
@@ -714,7 +716,7 @@ NativeIterator::NativeIterator(JSContext* cx,
   
   
   
-  propIter->initNativeIterator(this);
+  propIter->setNativeIterator(this);
 
   
   
@@ -1112,8 +1114,7 @@ const JSClassOps PropertyIteratorObject::classOps_ = {
 };
 
 const JSClass PropertyIteratorObject::class_ = {
-    "Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
+    "Iterator", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,
     &PropertyIteratorObject::classOps_};
 
 static const JSClass ArrayIteratorPrototypeClass = {"Array Iterator", 0};
