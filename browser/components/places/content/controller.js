@@ -382,55 +382,50 @@ PlacesController.prototype = {
 
 
 
-  _buildSelectionMetadata: function PC__buildSelectionMetadata() {
-    var metadata = [];
-    var nodes = this._view.selectedNodes;
+  _buildSelectionMetadata() {
+    return this._view.selectedNodes.map(n => this._selectionMetadataForNode(n));
+  },
 
-    for (var i = 0; i < nodes.length; i++) {
-      var nodeData = {};
-      var node = nodes[i];
-      var nodeType = node.type;
-
-      
-      
-      switch (nodeType) {
-        case Ci.nsINavHistoryResultNode.RESULT_TYPE_QUERY:
-          nodeData.query = true;
-          if (node.parent) {
-            switch (PlacesUtils.asQuery(node.parent).queryOptions.resultType) {
-              case Ci.nsINavHistoryQueryOptions.RESULTS_AS_SITE_QUERY:
-                nodeData.host = true;
-                break;
-              case Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY:
-              case Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY:
-                nodeData.day = true;
-                break;
-            }
+  _selectionMetadataForNode(node) {
+    let nodeData = {};
+    
+    
+    switch (node.type) {
+      case Ci.nsINavHistoryResultNode.RESULT_TYPE_QUERY:
+        nodeData.query = true;
+        if (node.parent) {
+          switch (PlacesUtils.asQuery(node.parent).queryOptions.resultType) {
+            case Ci.nsINavHistoryQueryOptions.RESULTS_AS_SITE_QUERY:
+              nodeData.query_host = true;
+              break;
+            case Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY:
+            case Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY:
+              nodeData.query_day = true;
+              break;
+            case Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT:
+              nodeData.query_tag = true;
           }
-          break;
-        case Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER:
-        case Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT:
-          nodeData.folder = true;
-          break;
-        case Ci.nsINavHistoryResultNode.RESULT_TYPE_SEPARATOR:
-          nodeData.separator = true;
-          break;
-        case Ci.nsINavHistoryResultNode.RESULT_TYPE_URI:
-          nodeData.link = true;
-          if (PlacesUtils.nodeIsBookmark(node)) {
-            nodeData.bookmark = true;
-            var parentNode = node.parent;
-            if (parentNode && PlacesUtils.nodeIsTagQuery(parentNode)) {
-              nodeData.tagChild = true;
-            }
+        }
+        break;
+      case Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER:
+      case Ci.nsINavHistoryResultNode.RESULT_TYPE_FOLDER_SHORTCUT:
+        nodeData.folder = true;
+        break;
+      case Ci.nsINavHistoryResultNode.RESULT_TYPE_SEPARATOR:
+        nodeData.separator = true;
+        break;
+      case Ci.nsINavHistoryResultNode.RESULT_TYPE_URI:
+        nodeData.link = true;
+        if (PlacesUtils.nodeIsBookmark(node)) {
+          nodeData.link_bookmark = true;
+          var parentNode = node.parent;
+          if (parentNode && PlacesUtils.nodeIsTagQuery(parentNode)) {
+            nodeData.link_bookmark_tag = true;
           }
-          break;
-      }
-
-      metadata.push(nodeData);
+        }
+        break;
     }
-
-    return metadata;
+    return nodeData;
   },
 
   
@@ -442,7 +437,7 @@ PlacesController.prototype = {
 
 
 
-  _shouldShowMenuItem: function PC__shouldShowMenuItem(aMenuItem, aMetaData) {
+  _shouldShowMenuItem(aMenuItem, aMetaData) {
     if (
       aMenuItem.hasAttribute("hideifprivatebrowsing") &&
       !PrivateBrowsingUtils.enabled
@@ -450,10 +445,9 @@ PlacesController.prototype = {
       return false;
     }
 
-    var selectiontype = aMenuItem.getAttribute("selectiontype");
-    if (!selectiontype) {
-      selectiontype = "single|multiple";
-    }
+    let selectiontype =
+      aMenuItem.getAttribute("selectiontype") || "single|multiple";
+
     var selectionTypes = selectiontype.split("|");
     if (selectionTypes.includes("any")) {
       return true;
@@ -469,43 +463,37 @@ PlacesController.prototype = {
     
     
     if (count == 0) {
-      return selectionTypes.includes("none");
+      if (!selectionTypes.includes("none")) {
+        return false;
+      }
+      aMetaData = [this._selectionMetadataForNode(this._view.result.root)];
     }
 
-    var hideAttr = aMenuItem.getAttribute("hideifnodetype");
-    if (hideAttr) {
-      var hideRules = hideAttr.split("|");
-      for (let i = 0; i < aMetaData.length; ++i) {
-        for (let j = 0; j < hideRules.length; ++j) {
-          if (hideRules[j] in aMetaData[i]) {
-            return false;
-          }
-        }
+    let attr = aMenuItem.getAttribute("hideifnodetype");
+    if (attr) {
+      let rules = attr.split("|");
+      if (aMetaData.some(d => rules.some(r => r in d))) {
+        return false;
       }
     }
 
-    var selectionAttr = aMenuItem.getAttribute("nodetype");
-    if (!selectionAttr) {
-      return !aMenuItem.hidden;
+    attr = aMenuItem.getAttribute("hideifnodetypeisonly");
+    if (attr) {
+      let rules = attr.split("|");
+      if (aMetaData.every(d => rules.every(r => r in d))) {
+        return false;
+      }
     }
 
-    if (selectionAttr == "any") {
+    attr = aMenuItem.getAttribute("nodetype");
+    if (!attr) {
       return true;
     }
 
-    var showRules = selectionAttr.split("|");
-    var anyMatched = false;
-    function metaDataNodeMatches(metaDataNode, rules) {
-      for (var i = 0; i < rules.length; i++) {
-        if (rules[i] in metaDataNode) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    for (var i = 0; i < aMetaData.length; ++i) {
-      if (metaDataNodeMatches(aMetaData[i], showRules)) {
+    let anyMatched = false;
+    let rules = attr.split("|");
+    for (let metaData of aMetaData) {
+      if (rules.some(r => r in metaData)) {
         anyMatched = true;
       } else {
         return false;
@@ -552,20 +540,7 @@ PlacesController.prototype = {
 
 
 
-
-  buildContextMenu: function PC_buildContextMenu(aPopup) {
-    
-    
-    
-    
-    if (window.top.gBrowser) {
-      var openInCurrentTab = document.getElementById("placesContext_open");
-      if (!PlacesUIUtils.loadBookmarksInTabs) {
-        openInCurrentTab.setAttribute("hideiftabbrowser", "true");
-      } else {
-        openInCurrentTab.removeAttribute("hideiftabbrowser");
-      }
-    }
+  buildContextMenu(aPopup) {
     var metadata = this._buildSelectionMetadata();
     var ip = this._view.insertionPoint;
     var noIp = !ip || ip.isTag;
@@ -580,27 +555,22 @@ PlacesController.prototype = {
       }
       if (item.localName != "menuseparator") {
         
-        var hideIfNoIP =
+        let hideIfNoIP =
           item.getAttribute("hideifnoinsertionpoint") == "true" &&
           noIp &&
           !(ip && ip.isTag && item.id == "placesContext_paste");
-        var hideIfTabBrowser =
-          item.getAttribute("hideiftabbrowser") == "true" &&
-          window.top.gBrowser;
-        var hideIfNotTabBrowser =
-          item.getAttribute("hidenifnottabbrowser") == "true" &&
-          !window.top.gBrowser;
-        var hideIfPrivate =
+        let hideIfPrivate =
           item.getAttribute("hideifprivatebrowsing") == "true" &&
           PrivateBrowsingUtils.isWindowPrivate(window);
-        var hideIfSingleClickOpens =
+        
+        let hideIfSingleClickOpens =
           item.getAttribute("hideifsingleclickopens") == "true" &&
+          !PlacesUIUtils.loadBookmarksInBackground &&
+          !PlacesUIUtils.loadBookmarksInTabs &&
           this._view.singleClickOpens;
 
-        var shouldHideItem =
+        let shouldHideItem =
           hideIfNoIP ||
-          hideIfTabBrowser ||
-          hideIfNotTabBrowser ||
           hideIfPrivate ||
           hideIfSingleClickOpens ||
           !this._shouldShowMenuItem(item, metadata);

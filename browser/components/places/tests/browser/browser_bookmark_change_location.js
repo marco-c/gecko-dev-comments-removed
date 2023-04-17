@@ -13,12 +13,39 @@ const TEST_URL3 = "about:credits";
 
 
 add_task(async function setup() {
-  let toolbar = document.getElementById("PersonalToolbar");
-  let wasCollapsed = toolbar.collapsed;
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.toolbars.bookmarks.visibility", "always"]],
+  });
 
   
+  
+  
+  
+  info("Ensure Places init is complete");
+  let placesInitCompleteObserved = TestUtils.topicObserved(
+    "places-browser-init-complete"
+  );
+  Cc["@mozilla.org/browser/browserglue;1"]
+    .getService(Ci.nsIObserver)
+    .observe(null, "browser-glue-test", "places-browser-init-complete");
+  await placesInitCompleteObserved;
+  info("Add a bookmark to avoid showing the empty toolbar placeholder.");
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.toolbarGuid,
+    title: "initial",
+    url: TEST_URL,
+  });
+
+  let toolbar = document.getElementById("PersonalToolbar");
+  let wasCollapsed = toolbar.collapsed;
   if (wasCollapsed) {
+    info("Show the bookmarks toolbar");
     await promiseSetToolbarVisibility(toolbar, true);
+    info("Ensure toolbar visibility was updated");
+    await BrowserTestUtils.waitForEvent(
+      toolbar,
+      "BookmarksToolbarVisibilityUpdated"
+    );
   }
 
   
