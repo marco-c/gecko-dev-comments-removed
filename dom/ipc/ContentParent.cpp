@@ -1277,8 +1277,9 @@ mozilla::ipc::IPCResult ContentParent::RecvUngrabPointer(
 
 Atomic<bool, mozilla::Relaxed> sContentParentTelemetryEventEnabled(false);
 
-static void LogAndAssertFailedPrincipalValidationInfo(nsIPrincipal* aPrincipal,
-                                                      const char* aMethod) {
+
+void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
+    nsIPrincipal* aPrincipal, const char* aMethod) {
   
   if (!sContentParentTelemetryEventEnabled.exchange(true)) {
     sContentParentTelemetryEventEnabled = true;
@@ -1331,6 +1332,11 @@ bool ContentParent::ValidatePrincipal(
     nsIPrincipal* aPrincipal,
     const EnumSet<ValidatePrincipalOptions>& aOptions) {
   
+  if (!StaticPrefs::dom_security_enforceIPCBasedPrincipalVetting()) {
+    return true;
+  }
+
+  
   if (!aPrincipal) {
     return aOptions.contains(ValidatePrincipalOptions::AllowNullPtr);
   }
@@ -1377,6 +1383,10 @@ bool ContentParent::ValidatePrincipal(
   
   
   if (aPrincipal->SchemeIs("file")) {
+    
+    if (!StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
+      return true;
+    }
     return mRemoteType == FILE_REMOTE_TYPE;
   }
 
