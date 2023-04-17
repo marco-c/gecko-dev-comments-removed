@@ -3575,7 +3575,6 @@ void NativeKey::WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
       }
       if (foundPrintableCharMessages++ == aIndex) {
         
-        
         break;
       }
     }

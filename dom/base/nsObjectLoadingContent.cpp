@@ -23,7 +23,6 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIOService.h"
 #include "nsIPermissionManager.h"
-#include "nsNPAPIPluginInstance.h"
 #include "nsPluginHost.h"
 #include "nsIHttpChannel.h"
 #include "nsINestedURI.h"
@@ -99,6 +98,7 @@
 #include "nsChannelClassifier.h"
 #include "nsFocusManager.h"
 #include "ReferrerInfo.h"
+#include "nsIEffectiveTLDService.h"
 
 #ifdef XP_WIN
 
@@ -915,10 +915,6 @@ NS_IMETHODIMP
 nsObjectLoadingContent::GetDisplayedType(uint32_t* aType) {
   *aType = DisplayedType();
   return NS_OK;
-}
-
-nsNPAPIPluginInstance* nsObjectLoadingContent::GetPluginInstance() {
-  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -2442,51 +2438,6 @@ nsObjectLoadingContent::PluginCrashed(nsIPluginTag* aPluginTag,
   return NS_OK;
 }
 
-nsNPAPIPluginInstance* nsObjectLoadingContent::ScriptRequestPluginInstance(
-    JSContext* aCx) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT_IF(nsContentUtils::GetCurrentJSContext(),
-                aCx == nsContentUtils::GetCurrentJSContext());
-  
-  bool callerIsContentJS = (nsContentUtils::GetCurrentJSContext() &&
-                            !nsContentUtils::IsCallerChrome());
-
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-
-  
-  
-  
-  if (callerIsContentJS && !mScriptRequested && InActiveDocument(thisContent) &&
-      mType == eType_Null && mFallbackType >= eFallbackClickToPlay &&
-      mFallbackType <= eFallbackClickToPlayQuiet) {
-    nsCOMPtr<nsIRunnable> ev =
-        new nsSimplePluginEvent(thisContent, u"PluginScripted"_ns);
-    nsresult rv = NS_DispatchToCurrentThread(ev);
-    if (NS_FAILED(rv)) {
-      MOZ_ASSERT_UNREACHABLE("failed to dispatch PluginScripted event");
-    }
-    mScriptRequested = true;
-  } else if (callerIsContentJS && mType == eType_Plugin &&
-             nsContentUtils::IsSafeToRunScript() &&
-             InActiveDocument(thisContent)) {
-    
-    
-    SyncStartPluginInstance();
-  }
-
-  
-  return nullptr;
-}
-
 NS_IMETHODIMP
 nsObjectLoadingContent::SyncStartPluginInstance() {
   NS_ASSERTION(
@@ -2621,24 +2572,6 @@ nsObjectLoadingContent::StopPluginInstance() {
   mInstantiating = false;
 
   return NS_OK;
-}
-
-void nsObjectLoadingContent::NotifyContentObjectWrapper() {
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-
-  AutoJSAPI jsapi;
-  jsapi.Init();
-  JSContext* cx = jsapi.cx();
-
-  JS::Rooted<JSObject*> obj(cx, thisContent->GetWrapper());
-  if (!obj) {
-    
-    
-    return;
-  }
-
-  SetupProtoChain(cx, obj);
 }
 
 void nsObjectLoadingContent::PlayPlugin(SystemCallerGuarantee,
@@ -2922,141 +2855,9 @@ Document* nsObjectLoadingContent::GetContentDocument(
   return sub_doc;
 }
 
-void nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
-                                             JS::Handle<JSObject*> aObject) {
-  if (mType != eType_Plugin) {
-    return;
-  }
-
-  if (!nsContentUtils::IsSafeToRunScript()) {
-    RefPtr<SetupProtoChainRunner> runner = new SetupProtoChainRunner(this);
-    nsContentUtils::AddScriptRunner(runner);
-    return;
-  }
-
-  
-  
-  
-  MOZ_ASSERT(aCx == nsContentUtils::GetCurrentJSContext());
-
-  MOZ_ASSERT(IsDOMObject(aObject));
-  JSAutoRealm ar(aCx, aObject);
-
-  RefPtr<nsNPAPIPluginInstance> pi = ScriptRequestPluginInstance(aCx);
-
-  if (!pi) {
-    
-    return;
-  }
-
-  JS::Rooted<JSObject*> pi_obj(
-      aCx);  
-  JS::Rooted<JSObject*> pi_proto(aCx);  
-
-  nsresult rv = GetPluginJSObject(aCx, pi, &pi_obj, &pi_proto);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  if (!pi_obj) {
-    
-    return;
-  }
-
-  
-  
-
-  JS::Handle<JSObject*> my_proto = GetDOMClass(aObject)->mGetProto(aCx);
-  MOZ_ASSERT(my_proto);
-
-  
-  if (!::JS_SetPrototype(aCx, aObject, pi_obj)) {
-    return;
-  }
-
-  if (pi_proto && JS::GetClass(pi_proto) != js::ObjectClassPtr) {
-    
-    
-    if (pi_proto != my_proto && !::JS_SetPrototype(aCx, pi_proto, my_proto)) {
-      return;
-    }
-  } else {
-    
-    
-    
-    if (!::JS_SetPrototype(aCx, pi_obj, my_proto)) {
-      return;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-}
-
-
-nsresult nsObjectLoadingContent::GetPluginJSObject(
-    JSContext* cx, nsNPAPIPluginInstance* plugin_inst,
-    JS::MutableHandle<JSObject*> plugin_obj,
-    JS::MutableHandle<JSObject*> plugin_proto) {
-  if (plugin_inst) {
-    plugin_inst->GetJSObject(cx, plugin_obj.address());
-    if (plugin_obj) {
-      if (!::JS_GetPrototype(cx, plugin_obj, plugin_proto)) {
-        return NS_ERROR_UNEXPECTED;
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
 bool nsObjectLoadingContent::DoResolve(
     JSContext* aCx, JS::Handle<JSObject*> aObject, JS::Handle<jsid> aId,
     JS::MutableHandle<JS::PropertyDescriptor> aDesc) {
-  
-  
-  Unused << ScriptRequestPluginInstance(aCx);
   return true;
 }
 
@@ -3068,12 +2869,7 @@ bool nsObjectLoadingContent::MayResolve(jsid aId) {
 
 void nsObjectLoadingContent::GetOwnPropertyNames(
     JSContext* aCx, JS::MutableHandleVector<jsid> ,
-    bool , ErrorResult& aRv) {
-  
-  
-  
-  Unused << ScriptRequestPluginInstance(aCx);
-}
+    bool , ErrorResult& aRv) {}
 
 void nsObjectLoadingContent::MaybeFireErrorEvent() {
   nsCOMPtr<nsIContent> thisContent =
@@ -3130,29 +2926,3 @@ void nsObjectLoadingContent::SubdocumentIntrinsicSizeOrRatioChanged(
     sdf->SubdocumentIntrinsicSizeOrRatioChanged();
   }
 }
-
-
-nsObjectLoadingContent::SetupProtoChainRunner::SetupProtoChainRunner(
-    nsObjectLoadingContent* aContent)
-    : mContent(aContent) {}
-
-NS_IMETHODIMP
-nsObjectLoadingContent::SetupProtoChainRunner::Run() {
-  AutoJSAPI jsapi;
-  jsapi.Init();
-  JSContext* cx = jsapi.cx();
-
-  nsCOMPtr<nsIContent> content;
-  CallQueryInterface(mContent.get(), getter_AddRefs(content));
-  JS::Rooted<JSObject*> obj(cx, content->GetWrapper());
-  if (!obj) {
-    
-    return NS_OK;
-  }
-  nsObjectLoadingContent* objectLoadingContent =
-      static_cast<nsObjectLoadingContent*>(mContent.get());
-  objectLoadingContent->SetupProtoChain(cx, obj);
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(nsObjectLoadingContent::SetupProtoChainRunner, nsIRunnable)

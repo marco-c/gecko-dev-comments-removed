@@ -2239,16 +2239,6 @@ void TextInputHandler::DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
   WidgetKeyboardEvent keyEvent(true, message, mWidget);
   InitKeyEvent(aNativeEvent, keyEvent, false);
 
-  
-  
-  
-  
-  
-  NPCocoaEvent cocoaEvent;
-  nsCocoaUtils::InitNPCocoaEvent(&cocoaEvent);
-  cocoaEvent.type = NPCocoaEventFlagsChanged;
-  keyEvent.mPluginEvent.Copy(cocoaEvent);
-
   KeyEventState currentKeyEvent(aNativeEvent);
   nsEventStatus status = nsEventStatus_eIgnore;
   mDispatcher->DispatchKeyboardEvent(message, keyEvent, status, &currentKeyEvent);

@@ -13,11 +13,6 @@ interface nsIURI;
 
 webidl BrowsingContext;
 
-%{C++
-class nsNPAPIPluginInstance;
-%}
-[ptr] native nsNPAPIPluginInstancePtr(nsNPAPIPluginInstance);
-
 
 
 
@@ -96,12 +91,6 @@ interface nsIObjectLoadingContent : nsISupports
 
   
 
-
-
-
-  [notxpcom,nostdcall] readonly attribute nsNPAPIPluginInstancePtr pluginInstance;
-
-  
 
 
   [noscript] void pluginDestroyed();

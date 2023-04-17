@@ -58,7 +58,6 @@
 #include "mozilla/StaticPrefs_page_load.h"
 #include "nsViewManager.h"
 #include "GeckoProfiler.h"
-#include "nsNPAPIPluginInstance.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CallbackDebuggerNotification.h"
 #include "mozilla/dom/Event.h"
@@ -1970,12 +1969,6 @@ static CallState ReduceAnimations(Document& aDocument) {
 void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
              "Shouldn't have a JSContext on the stack");
-
-  if (nsNPAPIPluginInstance::InPluginCallUnsafeForReentry()) {
-    NS_ERROR("Refresh driver should not run during plugin call!");
-    
-    return;
-  }
 
   
   
