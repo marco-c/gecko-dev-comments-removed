@@ -232,6 +232,8 @@ class ArrayOfRemoteMediaRawData {
   struct RemoteMediaRawData {
     MediaDataIPDL mBase;
     bool mEOS;
+    
+    int32_t mHeight;
     uint32_t mDiscardPadding;
     Maybe<media::TimeInterval> mOriginalPresentationWindow;
   };

@@ -12,6 +12,7 @@
 #include "ImageContainer.h"
 #include "MFTDecoder.h"
 #include "MediaTelemetryConstants.h"
+#include "PerformanceRecorder.h"
 #include "VideoUtils.h"
 #include "WMFUtils.h"
 #include "gfxCrashReporterUtils.h"
@@ -896,6 +897,10 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
       NS_ENSURE_TRUE(mSyncObject, E_FAIL);
     }
 
+    UINT height = std::min(inDesc.Height, outDesc.Height);
+    PerformanceRecorder perfRecorder(
+        PerformanceRecorder::Stage::CopyDecodedVideo, height);
+    perfRecorder.Start();
     
     
     if (outDesc.Format == inDesc.Format) {
@@ -903,7 +908,6 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
       
       
       UINT width = std::min(inDesc.Width, outDesc.Width);
-      UINT height = std::min(inDesc.Height, outDesc.Height);
       D3D11_BOX srcBox = {0, 0, 0, width, height, 1};
 
       UINT index;
@@ -925,6 +929,7 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
           [&]() -> void { hr = mTransform->Output(&sample); });
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
     }
+    perfRecorder.End();
   }
 
   if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice() &&
