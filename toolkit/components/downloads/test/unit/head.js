@@ -30,6 +30,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
 });
 
@@ -360,6 +361,9 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
         let isPrivate = aOptions && aOptions.isPrivate;
         let referrerInfo = aOptions ? aOptions.referrerInfo : null;
         let cookieJarSettings = aOptions ? aOptions.cookieJarSettings : null;
+        let classification =
+          aOptions?.downloadClassification ??
+          Ci.nsITransfer.DOWNLOAD_ACCEPTABLE;
         
         
         transfer.init(
@@ -371,7 +375,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
           null,
           persist,
           isPrivate,
-          Ci.nsITransfer.DOWNLOAD_ACCEPTABLE,
+          classification,
           null
         );
         persist.progressListener = transfer;
@@ -752,16 +756,18 @@ async function promisePartFileReady(aDownload) {
 
 
 
+
 async function promiseBlockedDownload({
   keepPartialData,
   keepBlockedData,
   useLegacySaver,
+  verdict = Downloads.Error.BLOCK_VERDICT_UNCOMMON,
 } = {}) {
   let blockFn = base => ({
     shouldBlockForReputationCheck: () =>
       Promise.resolve({
         shouldBlock: true,
-        verdict: Downloads.Error.BLOCK_VERDICT_UNCOMMON,
+        verdict,
       }),
     shouldKeepBlockedData: () => Promise.resolve(keepBlockedData),
   });
@@ -795,15 +801,9 @@ async function promiseBlockedDownload({
       throw ex;
     }
     Assert.ok(ex.becauseBlockedByReputationCheck);
-    Assert.equal(
-      ex.reputationCheckVerdict,
-      Downloads.Error.BLOCK_VERDICT_UNCOMMON
-    );
+    Assert.equal(ex.reputationCheckVerdict, verdict);
     Assert.ok(download.error.becauseBlockedByReputationCheck);
-    Assert.equal(
-      download.error.reputationCheckVerdict,
-      Downloads.Error.BLOCK_VERDICT_UNCOMMON
-    );
+    Assert.equal(download.error.reputationCheckVerdict, verdict);
   }
 
   Assert.ok(download.stopped);
