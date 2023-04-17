@@ -9,30 +9,20 @@
   <link rel="author" title="Gérard Talbot" href="http://www.gtalbot.org/BrowserBugsSection/css21testsuite/" />
 
   <style type="text/css"><![CDATA[
-  li
-  {
-  color: green;
-  font: 2em/1 serif;
-  list-style-type: "\2022";
-  }
+  body {margin-left: 100px;}
+
+  ul {list-style-image: url("../support/cat.png");}
+  li::marker { font-family: inherit; }
   ]]></style>
 
  </head>
 
  <body>
 
-  <p>Test passes if <strong>3 green "PASS"</strong> are each preceded by a filled disc.</p>
+  <p>Test passes if there is a <strong>cat image</strong>.</p>
 
   <ul>
-    <li>PASS</li>
-  </ul>
-
-  <ul>
-    <li>PASS</li>
-  </ul>
-
-  <ul>
-    <li>PASS</li>
+   <li>&nbsp;</li>
   </ul>
 
  </body>

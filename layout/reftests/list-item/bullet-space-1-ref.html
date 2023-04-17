@@ -24,18 +24,17 @@
   .L {
     width:40px;
     text-align:right;
+    white-space: pre;
   }
   .R {
     width:40px;
     text-align:left;
+    white-space: pre;
   }
   .bullet {
     background:yellow;
-    padding:0 2px;
   }
-  .spacer {
-    width:calc(0.5em - 2px);
-  }
+  ::marker { font-family:inherit; }
  </style>
 </head>
 
@@ -55,18 +54,18 @@
 </div>
 </div>
 
-
-
-
-
-
+<!-- The yellow background of the bullet spans here should completely cover the
+     bullets from the <ul> items above, even though the exact positioning of the
+     list item images may not match the plain-text version of the bullets.
+     Therefore, the testcase (with list-style-type:disc) and reference (none)
+     should match. -->
 <div class="outer">
 <div>
- <span class="L"><span class="bullet">&#x2022;</span><span class="spacer"></span></span>foo
+ <span class="L"><span class="bullet">&#x2022;</span> </span>foo
 </div>
 
 <div dir="rtl">
- <span class="R"><span class="bullet">&#x2022;</span><span class="spacer"></span></span>bar
+ <span class="R"><span class="bullet">&#x2022;</span> </span>bar
 </div>
 </div>
 
