@@ -3650,8 +3650,6 @@ class Document : public nsINode,
   
   bool ConsumeTransientUserGestureActivation();
 
-  
-  
   BrowsingContext* GetBrowsingContext() const;
 
   

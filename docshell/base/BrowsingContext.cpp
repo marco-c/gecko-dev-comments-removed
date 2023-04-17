@@ -2842,14 +2842,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsInBFCache>) {
   });
 
   if (isInBFCache) {
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      aContext->mIsInBFCache = true;
-      Document* doc = aContext->GetDocument();
-      if (doc) {
-        
-        doc->SetContainer(nullptr);
-      }
-    });
+    PreOrderWalk(
+        [&](BrowsingContext* aContext) { aContext->mIsInBFCache = true; });
   }
 }
 
