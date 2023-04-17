@@ -16,7 +16,6 @@
 
 
 
-
 const expected = [
   
   "day", "dayPeriod",

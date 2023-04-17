@@ -8,7 +8,6 @@
 
 
 
-
 const options = new Intl.DateTimeFormat([], {
   "dayPeriod": "short",
   "hour": "numeric",
