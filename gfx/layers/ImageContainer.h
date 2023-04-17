@@ -55,6 +55,7 @@ class TextureClient;
 class TextureClientRecycleAllocator;
 class KnowsCompositor;
 class NVImage;
+class MemoryOrShmem;
 #ifdef XP_WIN
 class D3D11YCbCrRecycleAllocator;
 #endif
@@ -771,9 +772,9 @@ class PlanarYCbCrImage : public Image {
 
 
 
-
   virtual nsresult BuildSurfaceDescriptorBuffer(
-      SurfaceDescriptorBuffer& aSdBuffer);
+      SurfaceDescriptorBuffer& aSdBuffer,
+      const std::function<MemoryOrShmem(uint32_t)>& aAllocate);
 
  protected:
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
