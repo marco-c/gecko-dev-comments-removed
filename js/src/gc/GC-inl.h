@@ -242,7 +242,7 @@ class ZoneAllCellIter : public ZoneAllCellIter<TenuredCell> {
   
   
   explicit ZoneAllCellIter(JS::Zone* zone) : ZoneAllCellIter<TenuredCell>() {
-    init(zone, MapTypeToFinalizeKind<GCType>::kind);
+    init(zone, MapTypeToAllocKind<GCType>::kind);
   }
 
   

@@ -203,30 +203,30 @@ using ObjectAllocKindArray =
 
 
 template <typename T>
-struct MapTypeToFinalizeKind {};
-#define EXPAND_MAPTYPETOFINALIZEKIND(allocKind, traceKind, type, sizedType, \
-                                     bgFinal, nursery, compact)             \
-  template <>                                                               \
-  struct MapTypeToFinalizeKind<type> {                                      \
-    static const AllocKind kind = AllocKind::allocKind;                     \
+struct MapTypeToAllocKind {};
+#define EXPAND_MAPTYPETOALLOCKIND(allocKind, traceKind, type, sizedType, \
+                                  bgFinal, nursery, compact)             \
+  template <>                                                            \
+  struct MapTypeToAllocKind<type> {                                      \
+    static const AllocKind kind = AllocKind::allocKind;                  \
   };
-FOR_EACH_NONOBJECT_ALLOCKIND(EXPAND_MAPTYPETOFINALIZEKIND)
-#undef EXPAND_MAPTYPETOFINALIZEKIND
+FOR_EACH_NONOBJECT_ALLOCKIND(EXPAND_MAPTYPETOALLOCKIND)
+#undef EXPAND_MAPTYPETOALLOCKIND
 
 template <>
-struct MapTypeToFinalizeKind<JSDependentString> {
+struct MapTypeToAllocKind<JSDependentString> {
   static const AllocKind kind = AllocKind::STRING;
 };
 template <>
-struct MapTypeToFinalizeKind<JSRope> {
+struct MapTypeToAllocKind<JSRope> {
   static const AllocKind kind = AllocKind::STRING;
 };
 template <>
-struct MapTypeToFinalizeKind<JSLinearString> {
+struct MapTypeToAllocKind<JSLinearString> {
   static const AllocKind kind = AllocKind::STRING;
 };
 template <>
-struct MapTypeToFinalizeKind<JSThinInlineString> {
+struct MapTypeToAllocKind<JSThinInlineString> {
   static const AllocKind kind = AllocKind::STRING;
 };
 
