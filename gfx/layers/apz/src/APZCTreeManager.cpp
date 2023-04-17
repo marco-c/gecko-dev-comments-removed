@@ -2380,6 +2380,11 @@ void APZCTreeManager::SetTargetAPZC(
   mInputQueue->SetConfirmedTargetApzc(aInputBlockId, target);
 }
 
+static bool GuidComparatorIgnoringPresShell(const ScrollableLayerGuid& aOne,
+                                            const ScrollableLayerGuid& aTwo) {
+  return aOne.mLayersId == aTwo.mLayersId && aOne.mScrollId == aTwo.mScrollId;
+}
+
 void APZCTreeManager::UpdateZoomConstraints(
     const ScrollableLayerGuid& aGuid,
     const Maybe<ZoomConstraints>& aConstraints) {
@@ -2400,10 +2405,6 @@ void APZCTreeManager::UpdateZoomConstraints(
 
   AssertOnUpdaterThread();
 
-  RecursiveMutexAutoLock lock(mTreeLock);
-  RefPtr<HitTestingTreeNode> node = GetTargetNode(aGuid, nullptr);
-  MOZ_ASSERT(!node || node->GetApzc());  
-
   
   
   if (aConstraints) {
@@ -2414,26 +2415,60 @@ void APZCTreeManager::UpdateZoomConstraints(
     APZCTM_LOG("Removing constraints for guid %s\n", ToString(aGuid).c_str());
     mZoomConstraints.erase(aGuid);
   }
+
+  RecursiveMutexAutoLock lock(mTreeLock);
+  RefPtr<HitTestingTreeNode> node = DepthFirstSearchPostOrder<ReverseIterator>(
+      mRootNode.get(), [&aGuid](HitTestingTreeNode* aNode) {
+        bool matches = false;
+        if (auto zoomId = aNode->GetAsyncZoomContainerId()) {
+          matches = GuidComparatorIgnoringPresShell(
+              aGuid, ScrollableLayerGuid(aNode->GetLayersId(), 0, *zoomId));
+        }
+        return matches;
+      });
+
+  MOZ_ASSERT(!node ||
+             !node->GetApzc());  
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+
   if (node && aConstraints) {
-    ForEachNode<ReverseIterator>(
-        node.get(), [&aConstraints, &node, this](HitTestingTreeNode* aNode) {
-          if (aNode != node) {
-            if (AsyncPanZoomController* childApzc = aNode->GetApzc()) {
-              
-              
-              if (childApzc->HasNoParentWithSameLayersId() ||
-                  this->mZoomConstraints.find(childApzc->GetGuid()) !=
-                      this->mZoomConstraints.end()) {
-                return TraversalFlag::Skip;
-              }
+    ForEachNode<ReverseIterator>(node.get(), [&aConstraints, &node, &aGuid,
+                                              this](HitTestingTreeNode* aNode) {
+      if (aNode != node) {
+        
+        if (auto zoomId = aNode->GetAsyncZoomContainerId()) {
+          MOZ_ASSERT(!GuidComparatorIgnoringPresShell(
+              aGuid, ScrollableLayerGuid(aNode->GetLayersId(), 0, *zoomId)));
+          return TraversalFlag::Skip;
+        }
+        if (AsyncPanZoomController* childApzc = aNode->GetApzc()) {
+          if (!GuidComparatorIgnoringPresShell(aGuid, childApzc->GetGuid())) {
+            
+            
+            if (this->mZoomConstraints.find(childApzc->GetGuid()) !=
+                this->mZoomConstraints.end()) {
+              return TraversalFlag::Skip;
             }
           }
-          if (aNode->IsPrimaryHolder()) {
-            MOZ_ASSERT(aNode->GetApzc());
-            aNode->GetApzc()->UpdateZoomConstraints(aConstraints.ref());
-          }
-          return TraversalFlag::Continue;
-        });
+        }
+      }
+      if (aNode->IsPrimaryHolder()) {
+        MOZ_ASSERT(aNode->GetApzc());
+        aNode->GetApzc()->UpdateZoomConstraints(aConstraints.ref());
+      }
+      return TraversalFlag::Continue;
+    });
   }
 }
 
@@ -2720,11 +2755,6 @@ already_AddRefed<AsyncPanZoomController> APZCTreeManager::GetTargetAPZC(
   MOZ_ASSERT(!node || node->GetApzc());  
   RefPtr<AsyncPanZoomController> apzc = node ? node->GetApzc() : nullptr;
   return apzc.forget();
-}
-
-static bool GuidComparatorIgnoringPresShell(const ScrollableLayerGuid& aOne,
-                                            const ScrollableLayerGuid& aTwo) {
-  return aOne.mLayersId == aTwo.mLayersId && aOne.mScrollId == aTwo.mScrollId;
 }
 
 already_AddRefed<AsyncPanZoomController> APZCTreeManager::GetTargetAPZC(
