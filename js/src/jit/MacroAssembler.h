@@ -418,6 +418,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
   void storeRegsInMask(LiveRegisterSet set, Address dest, Register scratch)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
