@@ -4984,6 +4984,12 @@ nsDisplayCaret::nsDisplayCaret(nsDisplayListBuilder* aBuilder,
       mCaret(aBuilder->GetCaret()),
       mBounds(aBuilder->GetCaretRect() + ToReferenceFrame()) {
   MOZ_COUNT_CTOR(nsDisplayCaret);
+  
+  
+  
+  
+  
+  SetBuildingRect(mBounds);
 }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
