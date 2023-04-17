@@ -995,7 +995,7 @@ bool GlobalObject::getSelfHostedFunction(JSContext* cx,
     
     
     
-    cx->runtime()->assertSelfHostedFunctionHasCanonicalName(cx, selfHostedName);
+    cx->runtime()->assertSelfHostedFunctionHasCanonicalName(selfHostedName);
     return true;
   }
 
