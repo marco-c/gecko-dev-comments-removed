@@ -360,10 +360,12 @@ pub enum SystemColor {
 
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozGtkButtonactivetext,
+    MozButtonactivetext,
 
     
-    MozMacButtonactivetext,
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozButtonactiveface,
+
     
     MozMacChromeActive,
     
