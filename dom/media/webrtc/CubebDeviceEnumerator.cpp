@@ -256,7 +256,7 @@ void CubebDeviceEnumerator::EnumerateAudioDevices(
     name = u"Default audio output device"_ns;
   }
 
-  if (devices.IsEmpty() || manualInvalidation) {
+  if (devices.IsEmpty()) {
     
     
     
