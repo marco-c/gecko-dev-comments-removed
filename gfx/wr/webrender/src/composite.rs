@@ -161,7 +161,6 @@ pub enum ExternalSurfaceDependency {
     },
     Rgb {
         image_dependency: ImageDependency,
-        flip_y: bool,
     },
 }
 
@@ -228,7 +227,6 @@ pub enum ResolvedExternalSurfaceColorData {
     Rgb {
         image_dependency: ImageDependency,
         plane: ExternalPlaneDescriptor,
-        flip_y: bool,
     },
 }
 
@@ -344,15 +342,6 @@ impl CompositorKind {
         match self {
             CompositorKind::Draw { .. } => 0,
             CompositorKind::Native { capabilities, .. } => capabilities.virtual_surface_size,
-        }
-    }
-
-    
-    
-    pub fn supports_transforms(&self) -> bool {
-        match self {
-            CompositorKind::Draw { .. } => false,
-            CompositorKind::Native { .. } => true,
         }
     }
 
@@ -600,12 +589,21 @@ impl CompositeState {
     }
 
     
+    pub fn get_device_transform(
+        &self,
+        transform_index: CompositorTransformIndex,
+    ) -> ScaleOffset {
+        let transform = &self.transforms[transform_index.0];
+        transform.local_to_device
+    }
+
+    
     pub fn get_compositor_transform(
         &self,
         transform_index: CompositorTransformIndex,
-    ) -> CompositorSurfaceTransform {
+    ) -> ScaleOffset {
         let transform = &self.transforms[transform_index.0];
-        transform.surface_to_device.to_transform()
+        transform.surface_to_device
     }
 
     
@@ -629,7 +627,7 @@ impl CompositeState {
         gpu_cache: &mut GpuCache,
         deferred_resolves: &mut Vec<DeferredResolve>,
     ) {
-        let slice_transform = self.get_compositor_transform(tile_cache.transform_index);
+        let slice_transform = self.get_compositor_transform(tile_cache.transform_index).to_transform();
 
         for sub_slice in &tile_cache.sub_slices {
             let mut surface_device_rect = DeviceRect::zero();
@@ -770,7 +768,7 @@ impl CompositeState {
                     CompositeSurfaceDescriptor {
                         surface_id: external_surface.native_surface_id,
                         clip_rect,
-                        transform: self.get_compositor_transform(external_surface.transform_index),
+                        transform: self.get_compositor_transform(external_surface.transform_index).to_transform(),
                         image_dependencies: image_dependencies,
                         image_rendering: external_surface.image_rendering,
                         tile_descriptors: Vec::new(),
@@ -860,17 +858,13 @@ impl CompositeState {
                     update_params,
                 });
             },
-            ExternalSurfaceDependency::Rgb{ flip_y, .. } => {
-
+            ExternalSurfaceDependency::Rgb { .. } => {
                 let image_buffer_kind = planes[0].texture.image_buffer_kind();
 
-                
-                
                 self.external_surfaces.push(ResolvedExternalSurface {
                     color_data: ResolvedExternalSurfaceColorData::Rgb {
                         image_dependency: image_dependencies[0],
                         plane: planes[0],
-                        flip_y: flip_y && !self.compositor_kind.supports_transforms(),
                     },
                     image_buffer_kind,
                     update_params,

@@ -15,7 +15,7 @@ use crate::renderer::ShaderColorMode;
 use std::i32;
 use crate::util::{TransformedRectKind, MatrixHelpers};
 use crate::glyph_rasterizer::SubpixelDirection;
-use crate::util::pack_as_float;
+use crate::util::{ScaleOffset, pack_as_float};
 
 
 
@@ -237,13 +237,45 @@ const UV_TYPE_NORMALIZED: u32 = 0;
 const UV_TYPE_UNNORMALIZED: u32 = 1;
 
 
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct CompositorTransform {
+    pub sx: f32,
+    pub sy: f32,
+    pub tx: f32,
+    pub ty: f32,
+}
+
+impl CompositorTransform {
+    pub fn identity() -> Self {
+        CompositorTransform {
+            sx: 1.0,
+            sy: 1.0,
+            tx: 0.0,
+            ty: 0.0,
+        }
+    }
+}
+
+impl From<ScaleOffset> for CompositorTransform {
+    fn from(scale_offset: ScaleOffset) -> Self {
+        CompositorTransform {
+            sx: scale_offset.scale.x,
+            sy: scale_offset.scale.y,
+            tx: scale_offset.offset.x,
+            ty: scale_offset.offset.y,
+        }
+    }
+}
+
+
 
 
 #[derive(Clone, Debug)]
 #[repr(C)]
 pub struct CompositeInstance {
     
-    rect: DeviceRect,
+    rect: PictureRect,
     
     clip_rect: DeviceRect,
     
@@ -258,14 +290,18 @@ pub struct CompositeInstance {
 
     
     uv_rects: [TexelRect; 3],
+
+    
+    transform: CompositorTransform,
 }
 
 impl CompositeInstance {
     pub fn new(
-        rect: DeviceRect,
+        rect: PictureRect,
         clip_rect: DeviceRect,
         color: PremultipliedColorF,
         z_id: ZBufferId,
+        transform: CompositorTransform,
     ) -> Self {
         let uv = TexelRect::new(0.0, 0.0, 1.0, 1.0);
         CompositeInstance {
@@ -277,15 +313,17 @@ impl CompositeInstance {
             yuv_format: 0.0,
             yuv_rescale: 0.0,
             uv_rects: [uv, uv, uv],
+            transform,
         }
     }
 
     pub fn new_rgb(
-        rect: DeviceRect,
+        rect: PictureRect,
         clip_rect: DeviceRect,
         color: PremultipliedColorF,
         z_id: ZBufferId,
         uv_rect: TexelRect,
+        transform: CompositorTransform,
     ) -> Self {
         CompositeInstance {
             rect,
@@ -296,17 +334,19 @@ impl CompositeInstance {
             yuv_format: 0.0,
             yuv_rescale: 0.0,
             uv_rects: [uv_rect, uv_rect, uv_rect],
+            transform,
         }
     }
 
     pub fn new_yuv(
-        rect: DeviceRect,
+        rect: PictureRect,
         clip_rect: DeviceRect,
         z_id: ZBufferId,
         yuv_color_space: YuvColorSpace,
         yuv_format: YuvFormat,
         yuv_rescale: f32,
         uv_rects: [TexelRect; 3],
+        transform: CompositorTransform,
     ) -> Self {
         CompositeInstance {
             rect,
@@ -317,6 +357,7 @@ impl CompositeInstance {
             yuv_format: pack_as_float(yuv_format as u32),
             yuv_rescale,
             uv_rects,
+            transform,
         }
     }
 
