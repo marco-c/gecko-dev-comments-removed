@@ -38,3 +38,20 @@ async function waitForMessageFromServiceWorker() {
     navigator.serviceWorker.addEventListener('message', listener);
   });
 }
+
+
+
+async function fetchesIconsChromium() {
+  const {fetchesIcons} =
+      await import('/resources/chromium/content-index-helpers.js');
+  return fetchesIcons();
+}
+
+
+
+async function fetchesIcons() {
+  if (isChromiumBased) {
+    return fetchesIconsChromium();
+  }
+  return false;
+}

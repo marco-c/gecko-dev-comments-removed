@@ -1,5 +1,6 @@
 
 
+
 'use strict';
 
 contentIndexTest(async (t, index) => {
@@ -19,8 +20,19 @@ contentIndexTest(async (t, index) => {
 
   await expectTypeError(
       index.add(createDescription({iconUrl: 'file://some-local-file.png'})));
-  await expectTypeError(index.add(createDescription({iconUrl: '/non-existent-icon.png'})));
-  await expectTypeError(index.add(createDescription({iconUrl: '/images/broken.png'})));
+
+  const isFetchingIcons = await fetchesIcons();
+  if (isFetchingIcons) {
+    
+    await expectTypeError(
+        index.add(createDescription({iconUrl: '/non-existent-icon.png'})));
+    await expectTypeError(
+        index.add(createDescription({iconUrl: '/images/broken.png'})));
+  } else {
+    
+    await index.add(createDescription({iconUrl: '/non-existent-icon.png'}));
+    await index.add(createDescription({iconUrl: '/images/broken.png'}));
+  }
 
   await expectTypeError(index.add(createDescription({url: 'https://other-domain.com/'})));
   await expectTypeError(index.add(createDescription({url: '/different-scope'})));
