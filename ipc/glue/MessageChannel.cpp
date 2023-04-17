@@ -127,7 +127,7 @@ using mozilla::dom::AutoNoJSAPI;
     if (!(_cond)) DebugAbort(__FILE__, __LINE__, #_cond, ##__VA_ARGS__); \
   } while (0)
 
-static MessageChannel* gParentProcessBlocker;
+static MessageChannel* gParentProcessBlocker = nullptr;
 
 namespace mozilla {
 namespace ipc {
@@ -584,6 +584,7 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
 
 MessageChannel::~MessageChannel() {
   MOZ_COUNT_DTOR(ipc::MessageChannel);
+  MonitorAutoLock lock(*mMonitor);
   IPC_ASSERT(mCxxStackFrames.empty(), "mismatched CxxStackFrame ctor/dtors");
 #ifdef OS_WIN
   if (mEvent) {
@@ -600,11 +601,54 @@ MessageChannel::~MessageChannel() {
         << "MessageChannel destructor ran without an mEvent Handle";
   }
 #endif
-  Clear();
+
+  
+  
+  
+  
+  if (!Unsound_IsClosed()) {
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::IPCFatalErrorProtocol,
+        nsDependentCString(mName));
+    switch (mChannelState) {
+      case ChannelConnected:
+        MOZ_CRASH(
+            "MessageChannel destroyed without being closed "
+            "(mChannelState == ChannelConnected).");
+        break;
+      case ChannelTimeout:
+        MOZ_CRASH(
+            "MessageChannel destroyed without being closed "
+            "(mChannelState == ChannelTimeout).");
+        break;
+      case ChannelClosing:
+        MOZ_CRASH(
+            "MessageChannel destroyed without being closed "
+            "(mChannelState == ChannelClosing).");
+        break;
+      case ChannelError:
+        MOZ_CRASH(
+            "MessageChannel destroyed without being closed "
+            "(mChannelState == ChannelError).");
+        break;
+      default:
+        MOZ_CRASH("MessageChannel destroyed without being closed.");
+    }
+  }
+
+  
+  MOZ_RELEASE_ASSERT(!mLink);
+  MOZ_RELEASE_ASSERT(mPendingResponses.empty());
+  MOZ_RELEASE_ASSERT(!mChannelErrorTask);
+  MOZ_RELEASE_ASSERT(mPending.isEmpty());
+  MOZ_RELEASE_ASSERT(mOutOfTurnReplies.empty());
+  MOZ_RELEASE_ASSERT(mDeferred.empty());
 }
 
 #ifdef DEBUG
 void MessageChannel::AssertMaybeDeferredCountCorrect() {
+  mMonitor->AssertCurrentThreadOwns();
+
   size_t count = 0;
   for (MessageTask* task : mPending) {
     if (!IsAlwaysDeferred(task->Msg())) {
@@ -678,65 +722,34 @@ bool MessageChannel::CanSend() const {
 }
 
 void MessageChannel::Clear() {
-  
-  
-  
+  AssertWorkerThread();
+  mMonitor->AssertCurrentThreadOwns();
+  MOZ_DIAGNOSTIC_ASSERT(Unsound_IsClosed(),
+                        "MessageChannel cleared too early?");
+
   
   
   
   
   
 
-#if !defined(ANDROID)
-  if (!Unsound_IsClosed()) {
-    CrashReporter::AnnotateCrashReport(
-        CrashReporter::Annotation::IPCFatalErrorProtocol,
-        nsDependentCString(mName));
-    switch (mChannelState) {
-      case ChannelConnected:
-        MOZ_CRASH(
-            "MessageChannel destroyed without being closed "
-            "(mChannelState == ChannelConnected).");
-        break;
-      case ChannelTimeout:
-        MOZ_CRASH(
-            "MessageChannel destroyed without being closed "
-            "(mChannelState == ChannelTimeout).");
-        break;
-      case ChannelClosing:
-        MOZ_CRASH(
-            "MessageChannel destroyed without being closed "
-            "(mChannelState == ChannelClosing).");
-        break;
-      case ChannelError:
-        MOZ_CRASH(
-            "MessageChannel destroyed without being closed "
-            "(mChannelState == ChannelError).");
-        break;
-      default:
-        MOZ_CRASH("MessageChannel destroyed without being closed.");
-    }
-  }
-#endif
-
-  if (gParentProcessBlocker == this) {
+  if (NS_IsMainThread() && gParentProcessBlocker == this) {
     gParentProcessBlocker = nullptr;
   }
 
   gUnresolvedResponses -= mPendingResponses.size();
-  for (auto& pair : mPendingResponses) {
-    pair.second.get()->Reject(ResponseRejectReason::ChannelClosed);
+  {
+    CallbackMap map = std::move(mPendingResponses);
+    MonitorAutoUnlock unlock(*mMonitor);
+    for (auto& pair : map) {
+      pair.second->Reject(ResponseRejectReason::ChannelClosed);
+    }
   }
   mPendingResponses.clear();
 
-  if (mLink != nullptr && mIsCrossProcess) {
-    ChannelCountReporter::Decrement(mName);
-  }
+  SetIsCrossProcess(false);
 
-  if (mLink) {
-    mLink->PrepareToDestroy();
-    mLink = nullptr;
-  }
+  mLink = nullptr;
 
   if (mChannelErrorTask) {
     mChannelErrorTask->Cancel();
@@ -2407,15 +2420,17 @@ void MessageChannel::OnChannelErrorFromLink() {
   PostErrorNotifyTask();
 }
 
-void MessageChannel::NotifyMaybeChannelError() {
-  mMonitor->AssertNotCurrentThreadOwns();
+void MessageChannel::NotifyMaybeChannelError(Maybe<MonitorAutoLock>& aLock) {
+  AssertWorkerThread();
+  mMonitor->AssertCurrentThreadOwns();
+  MOZ_RELEASE_ASSERT(aLock.isSome());
 
   
   if (ChannelClosing == mChannelState) {
     
     
     mChannelState = ChannelClosed;
-    NotifyChannelClosed();
+    NotifyChannelClosed(aLock);
     return;
   }
 
@@ -2434,6 +2449,8 @@ void MessageChannel::NotifyMaybeChannelError() {
   
   
   
+  
+  aLock.reset();
   mListener->OnChannelError();
 }
 
@@ -2441,43 +2458,40 @@ void MessageChannel::OnNotifyMaybeChannelError() {
   AssertWorkerThread();
   mMonitor->AssertNotCurrentThreadOwns();
 
+  
+  
+  
+  
+  
+  
+  Maybe<MonitorAutoLock> lock(std::in_place, *mMonitor);
+
   mChannelErrorTask = nullptr;
 
-  
-  
-  
-  
-  {
-    MonitorAutoLock lock(*mMonitor);
-    
-  }
-
   if (IsOnCxxStack()) {
-    mChannelErrorTask = NewNonOwningCancelableRunnableMethod(
-        "ipc::MessageChannel::OnNotifyMaybeChannelError", this,
-        &MessageChannel::OnNotifyMaybeChannelError);
-    RefPtr<Runnable> task = mChannelErrorTask;
     
     
     
-    mWorkerThread->Dispatch(task.forget());
+    PostErrorNotifyTask();
     return;
   }
 
-  NotifyMaybeChannelError();
+  
+  NotifyMaybeChannelError(lock);
 }
 
 void MessageChannel::PostErrorNotifyTask() {
   mMonitor->AssertCurrentThreadOwns();
 
-  if (mChannelErrorTask) return;
+  if (mChannelErrorTask) {
+    return;
+  }
 
   
   mChannelErrorTask = NewNonOwningCancelableRunnableMethod(
       "ipc::MessageChannel::OnNotifyMaybeChannelError", this,
       &MessageChannel::OnNotifyMaybeChannelError);
-  RefPtr<Runnable> task = mChannelErrorTask;
-  mWorkerThread->Dispatch(task.forget());
+  mWorkerThread->Dispatch(do_AddRef(mChannelErrorTask));
 }
 
 
@@ -2535,53 +2549,47 @@ void MessageChannel::NotifyImpendingShutdown() {
 
 void MessageChannel::Close() {
   AssertWorkerThread();
-
-  {
-    
-    
-    
-    mMonitor->Lock();
-
-    
-    RefPtr<RefCountedMonitor> monitor(mMonitor);
-    auto exit = MakeScopeExit([m = std::move(monitor)]() { m->Unlock(); });
-
-    if (ChannelError == mChannelState || ChannelTimeout == mChannelState) {
-      
-      
-      
-      
-      
-      if (mListener) {
-        exit.release();  
-        mMonitor->Unlock();
-        NotifyMaybeChannelError();
-      }
-      return;
-    }
-
-    if (ChannelClosed == mChannelState) {
-      
-      return;
-    }
-
-    
-    
-    
-    if (ChannelConnected == mChannelState) {
-      mLink->SendMessage(MakeUnique<GoodbyeMessage>());
-    }
-    SynchronouslyClose();
-  }
-
-  NotifyChannelClosed();
-}
-
-void MessageChannel::NotifyChannelClosed() {
   mMonitor->AssertNotCurrentThreadOwns();
 
-  if (ChannelClosed != mChannelState)
+  
+  
+  Maybe<MonitorAutoLock> lock(std::in_place, *mMonitor);
+
+  switch (mChannelState) {
+    case ChannelError:
+    case ChannelTimeout:
+      
+      
+      
+      
+      
+      NotifyMaybeChannelError(lock);
+      return;
+    case ChannelClosed:
+      
+      return;
+
+    default:
+      
+      
+      
+      if (ChannelConnected == mChannelState) {
+        mLink->SendMessage(MakeUnique<GoodbyeMessage>());
+      }
+      SynchronouslyClose();
+      NotifyChannelClosed(lock);
+      return;
+  }
+}
+
+void MessageChannel::NotifyChannelClosed(Maybe<MonitorAutoLock>& aLock) {
+  AssertWorkerThread();
+  mMonitor->AssertCurrentThreadOwns();
+  MOZ_RELEASE_ASSERT(aLock.isSome());
+
+  if (ChannelClosed != mChannelState) {
     MOZ_CRASH("channel should have been closed!");
+  }
 
   Clear();
 
@@ -2595,6 +2603,8 @@ void MessageChannel::NotifyChannelClosed() {
   
   
   
+  
+  aLock.reset();
   mListener->OnChannelClose();
 }
 
@@ -2687,6 +2697,8 @@ void MessageChannel::EndTimeout() {
 }
 
 void MessageChannel::RepostAllMessages() {
+  mMonitor->AssertCurrentThreadOwns();
+
   bool needRepost = false;
   for (MessageTask* task : mPending) {
     if (!task->IsScheduled()) {
@@ -2800,6 +2812,8 @@ void MessageChannel::CancelCurrentTransaction() {
 }
 
 void CancelCPOWs() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (gParentProcessBlocker) {
     mozilla::Telemetry::Accumulate(mozilla::Telemetry::IPC_TRANSACTION_CANCEL,
                                    true);

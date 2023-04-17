@@ -51,10 +51,6 @@ class MessageLink {
 
   
   
-  virtual void PrepareToDestroy(){};
-
-  
-  
   virtual void SendMessage(mozilla::UniquePtr<Message> msg) = 0;
   virtual void SendClose() = 0;
 

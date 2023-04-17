@@ -520,8 +520,14 @@ class MessageChannel : HasResultCodes {
 
  private:
   
-  void NotifyChannelClosed();
-  void NotifyMaybeChannelError();
+  
+  
+  
+  
+  
+  
+  void NotifyChannelClosed(Maybe<MonitorAutoLock>& aLock);
+  void NotifyMaybeChannelError(Maybe<MonitorAutoLock>& aLock);
 
  private:
   void AssertWorkerThread() const {
