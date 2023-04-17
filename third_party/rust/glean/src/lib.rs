@@ -2,7 +2,7 @@
 
 
 
-#![deny(broken_intra_doc_links)]
+#![deny(rustdoc::broken_intra_doc_links)]
 #![deny(missing_docs)]
 
 
@@ -358,9 +358,6 @@ fn initialize_internal(
 }
 
 
-
-
-
 pub fn shutdown() {
     if global_glean().is_none() {
         log::warn!("Shutdown called before Glean is initialized");
@@ -379,6 +376,13 @@ pub fn shutdown() {
     if let Err(e) = dispatcher::shutdown() {
         log::error!("Can't shutdown dispatcher thread: {:?}", e);
     }
+
+    
+    crate::with_glean(|glean| {
+        if let Err(e) = glean.persist_ping_lifetime_data() {
+            log::error!("Can't persist ping lifetime data: {:?}", e);
+        }
+    });
 }
 
 
@@ -782,6 +786,23 @@ pub fn set_source_tags(tags: Vec<String>) {
 
 pub fn get_timestamp_ms() -> u64 {
     glean_core::get_timestamp_ms()
+}
+
+
+
+
+
+pub fn persist_ping_lifetime_data() -> Result<()> {
+    if !was_initialize_called() {
+        crate::launch_with_glean(|glean| {
+            
+            let _ = glean.persist_ping_lifetime_data();
+        });
+        Ok(())
+    } else {
+        block_on_dispatcher();
+        with_glean(|glean| glean.persist_ping_lifetime_data())
+    }
 }
 
 #[cfg(test)]

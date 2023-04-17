@@ -2,7 +2,7 @@
 
 
 
-#![deny(broken_intra_doc_links)]
+#![deny(rustdoc::broken_intra_doc_links)]
 
 use std::convert::TryFrom;
 use std::ffi::CStr;
