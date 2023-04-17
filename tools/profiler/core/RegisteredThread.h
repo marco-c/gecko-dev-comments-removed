@@ -35,10 +35,6 @@ class RacyRegisteredThread final {
     mThreadRegistration.mData.mIsBeingProfiled = aIsBeingProfiled;
   }
 
-  bool IsBeingProfiled() const {
-    return mThreadRegistration.mData.mIsBeingProfiled;
-  }
-
   
   
   void ReinitializeOnResume() {

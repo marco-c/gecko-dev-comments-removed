@@ -22,4 +22,17 @@
          mozilla::profiler::ThreadRegistration::IsRegistered();
 }
 
+
+
+[[nodiscard]] inline bool profiler_thread_is_being_profiled() {
+  return profiler_is_active() &&
+         mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
+             [](mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
+               return aTR.UnlockedConstReaderAndAtomicRWCRef()
+                   .IsBeingProfiled();
+             },
+             false);
+  ;
+}
+
 #endif  
