@@ -8,7 +8,7 @@
 
 #include "ImageContainer.h"
 #include "ImageToI420.h"
-#include "Pacer.h"
+#include "MediaTimer.h"
 #include "VideoSegment.h"
 #include "VideoUtils.h"
 #include "nsISupportsImpl.h"
@@ -34,6 +34,16 @@ namespace mozilla {
 
 static mozilla::LazyLogModule gVideoFrameConverterLog("VideoFrameConverter");
 
+class VideoConverterListener {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoConverterListener)
+
+  virtual void OnVideoFrameConverted(const webrtc::VideoFrame& aVideoFrame) = 0;
+
+ protected:
+  virtual ~VideoConverterListener() = default;
+};
+
 
 
 
@@ -47,20 +57,14 @@ class VideoFrameConverter {
   explicit VideoFrameConverter(
       const dom::RTCStatsTimestampMaker& aTimestampMaker)
       : mTimestampMaker(aTimestampMaker),
-        mTaskQueue(MakeAndAddRef<TaskQueue>(
-            GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
-            "VideoFrameConverter")),
-        mPacer(MakeAndAddRef<Pacer<FrameToProcess>>(
-            mTaskQueue, TimeDuration::FromSeconds(1))),
-        mBufferPool(false, CONVERTER_BUFFER_POOL_SIZE) {
+        mTaskQueue(
+            new TaskQueue(GetMediaThreadPool(MediaThreadType::WEBRTC_WORKER),
+                          "VideoFrameConverter")),
+        mPacingTimer(new MediaTimer()),
+        mBufferPool(false, CONVERTER_BUFFER_POOL_SIZE),
+        mActive(false),
+        mTrackEnabled(true) {
     MOZ_COUNT_CTOR(VideoFrameConverter);
-
-    mPacingListener = mPacer->PacedItemEvent().Connect(
-        mTaskQueue, [self = RefPtr<VideoFrameConverter>(this), this](
-                        FrameToProcess aFrame, TimeStamp aTime) {
-          QueueForProcessing(std::move(aFrame.mImage), aTime, aFrame.mSize,
-                             aFrame.mForceBlack);
-        });
   }
 
   void QueueVideoChunk(const VideoChunk& aChunk, bool aForceBlack) {
@@ -72,8 +76,31 @@ class VideoFrameConverter {
     TimeStamp t = aChunk.mTimeStamp;
     MOZ_ASSERT(!t.IsNull());
 
-    mPacer->Enqueue(
-        FrameToProcess(aChunk.mFrame.GetImage(), t, size, aForceBlack), t);
+    if (!mLastFrameQueuedForPacing.IsNull() && t < mLastFrameQueuedForPacing) {
+      
+      
+      
+      
+      
+      
+      
+      MOZ_LOG(gVideoFrameConverterLog, LogLevel::Debug,
+              ("Clearing pacer because of source reset (%.3f)",
+               (mLastFrameQueuedForPacing - t).ToSeconds()));
+      mPacingTimer->Cancel();
+    }
+
+    mLastFrameQueuedForPacing = t;
+
+    mPacingTimer->WaitUntil(t, __func__)
+        ->Then(
+            mTaskQueue, __func__,
+            [self = RefPtr<VideoFrameConverter>(this), this,
+             image = RefPtr<layers::Image>(aChunk.mFrame.GetImage()), t, size,
+             aForceBlack]() mutable {
+              QueueForProcessing(std::move(image), t, size, aForceBlack);
+            },
+            [] {});
   }
 
   
@@ -82,90 +109,104 @@ class VideoFrameConverter {
 
 
   void SetActive(bool aActive) {
-    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(NS_NewRunnableFunction(
-        __func__, [self = RefPtr<VideoFrameConverter>(this), this, aActive,
-                   time = TimeStamp::Now()] {
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        __func__, [self = RefPtr<VideoFrameConverter>(this), this, aActive] {
           if (mActive == aActive) {
             return;
           }
           MOZ_LOG(gVideoFrameConverterLog, LogLevel::Debug,
-                  ("VideoFrameConverter %p is now %s", this,
+                  ("VideoFrameConverter is now %s",
                    aActive ? "active" : "inactive"));
           mActive = aActive;
           if (aActive && mLastFrameQueuedForProcessing.Serial() != -2) {
             
             
-            mLastFrameQueuedForProcessing.mTime = time;
-
-            MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(
-                NewRunnableMethod<StoreCopyPassByLRef<FrameToProcess>>(
-                    "VideoFrameConverter::ProcessVideoFrame", this,
-                    &VideoFrameConverter::ProcessVideoFrame,
-                    mLastFrameQueuedForProcessing)));
+            FrameToProcess f = mLastFrameQueuedForProcessing;
+            f.mTime = TimeStamp::Now();
+            ProcessVideoFrame(std::move(f));
           }
-        })));
+        }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
   }
 
   void SetTrackEnabled(bool aTrackEnabled) {
-    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(NS_NewRunnableFunction(
-        __func__, [self = RefPtr<VideoFrameConverter>(this), this,
-                   aTrackEnabled, time = TimeStamp::Now()] {
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        __func__,
+        [self = RefPtr<VideoFrameConverter>(this), this, aTrackEnabled] {
           if (mTrackEnabled == aTrackEnabled) {
             return;
           }
           MOZ_LOG(gVideoFrameConverterLog, LogLevel::Debug,
-                  ("VideoFrameConverter %p Track is now %s", this,
+                  ("VideoFrameConverter Track is now %s",
                    aTrackEnabled ? "enabled" : "disabled"));
           mTrackEnabled = aTrackEnabled;
           if (!aTrackEnabled) {
             
             
-            
-            
-            mLastFrameQueuedForProcessing.mTime = time;
-            mLastFrameQueuedForProcessing.mForceBlack = true;
-            mLastFrameQueuedForProcessing.mImage = nullptr;
-
-            MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(
-                NewRunnableMethod<StoreCopyPassByLRef<FrameToProcess>>(
-                    "VideoFrameConverter::ProcessVideoFrame", this,
-                    &VideoFrameConverter::ProcessVideoFrame,
-                    mLastFrameQueuedForProcessing)));
+            if (mLastFrameQueuedForProcessing.Serial() != -2) {
+              
+              
+              QueueForProcessing(nullptr, TimeStamp::Now(),
+                                 mLastFrameQueuedForProcessing.mSize, true);
+            } else {
+              
+              QueueForProcessing(nullptr, TimeStamp::Now(),
+                                 gfx::IntSize(640, 480), true);
+            }
           }
-        })));
+        }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
+  }
+
+  void AddListener(const RefPtr<VideoConverterListener>& aListener) {
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        "VideoFrameConverter::AddListener",
+        [self = RefPtr<VideoFrameConverter>(this), this, aListener] {
+          MOZ_ASSERT(!mListeners.Contains(aListener));
+          mListeners.AppendElement(aListener);
+        }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
+  }
+
+  void RemoveListener(const RefPtr<VideoConverterListener>& aListener) {
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        "VideoFrameConverter::RemoveListener",
+        [self = RefPtr<VideoFrameConverter>(this), this, aListener] {
+          mListeners.RemoveElement(aListener);
+        }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
   }
 
   void Shutdown() {
-    mPacer->Shutdown()->Then(mTaskQueue, __func__,
-                             [self = RefPtr<VideoFrameConverter>(this), this] {
-                               mPacingListener.DisconnectIfExists();
-                               mBufferPool.Release();
-                               mLastFrameQueuedForProcessing = FrameToProcess();
-                               mLastFrameConverted = Nothing();
-                             });
-  }
+    mPacingTimer->Cancel();
 
-  MediaEventSourceExc<webrtc::VideoFrame>& VideoFrameConvertedEvent() {
-    return mVideoFrameConvertedEvent;
+    nsresult rv = mTaskQueue->Dispatch(NS_NewRunnableFunction(
+        "VideoFrameConverter::Shutdown",
+        [self = RefPtr<VideoFrameConverter>(this), this] {
+          if (mSameFrameTimer) {
+            mSameFrameTimer->Cancel();
+          }
+          mListeners.Clear();
+          mBufferPool.Release();
+          mLastFrameQueuedForProcessing = FrameToProcess();
+          mLastFrameConverted = nullptr;
+        }));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
   }
 
  protected:
   struct FrameToProcess {
-    FrameToProcess() = default;
-
-    FrameToProcess(RefPtr<layers::Image> aImage, TimeStamp aTime,
-                   gfx::IntSize aSize, bool aForceBlack)
-        : mImage(std::move(aImage)),
-          mTime(aTime),
-          mSize(aSize),
-          mForceBlack(aForceBlack) {}
-
     RefPtr<layers::Image> mImage;
     TimeStamp mTime = TimeStamp::Now();
-    gfx::IntSize mSize = gfx::IntSize(640, 480);
+    gfx::IntSize mSize;
     bool mForceBlack = false;
 
-    int32_t Serial() const {
+    int32_t Serial() {
       if (mForceBlack) {
         
         
@@ -180,38 +221,42 @@ class VideoFrameConverter {
     }
   };
 
-  struct FrameConverted {
-    FrameConverted(webrtc::VideoFrame aFrame, int32_t aSerial)
-        : mFrame(std::move(aFrame)), mSerial(aSerial) {}
-
-    webrtc::VideoFrame mFrame;
-    int32_t mSerial;
-  };
-
   MOZ_COUNTED_DTOR_VIRTUAL(VideoFrameConverter)
 
-  void VideoFrameConverted(const webrtc::VideoFrame& aVideoFrame,
-                           int32_t aSerial) {
+  static void SameFrameTick(nsITimer* aTimer, void* aClosure) {
+    MOZ_ASSERT(aClosure);
+    VideoFrameConverter* self = static_cast<VideoFrameConverter*>(aClosure);
+    MOZ_ASSERT(self->mTaskQueue->IsCurrentThreadIn());
+
+    if (!self->mLastFrameConverted) {
+      return;
+    }
+
+    self->mLastFrameConverted->set_timestamp_us(
+        self->mTimestampMaker.GetNowRealtime().us());
+    for (RefPtr<VideoConverterListener>& listener : self->mListeners) {
+      listener->OnVideoFrameConverted(*self->mLastFrameConverted);
+    }
+  }
+
+  void VideoFrameConverted(const webrtc::VideoFrame& aVideoFrame) {
     MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
 
-    MOZ_LOG(
-        gVideoFrameConverterLog, LogLevel::Verbose,
-        ("VideoFrameConverter %p: Converted a frame. Diff from last: %.3fms",
-         this,
-         static_cast<double>(aVideoFrame.timestamp_us() -
-                             (mLastFrameConverted
-                                  ? mLastFrameConverted->mFrame.timestamp_us()
-                                  : aVideoFrame.timestamp_us())) /
-             1000));
+    if (mSameFrameTimer) {
+      mSameFrameTimer->Cancel();
+    }
 
-    
-    MOZ_ASSERT_IF(mLastFrameConverted,
-                  aVideoFrame.timestamp_us() >
-                      mLastFrameConverted->mFrame.timestamp_us());
+    const int sameFrameIntervalInMs = 1000;
+    NS_NewTimerWithFuncCallback(
+        getter_AddRefs(mSameFrameTimer), &SameFrameTick, this,
+        sameFrameIntervalInMs, nsITimer::TYPE_REPEATING_SLACK,
+        "VideoFrameConverter::mSameFrameTimer", mTaskQueue);
 
-    mLastFrameConverted = Some(FrameConverted(aVideoFrame, aSerial));
+    mLastFrameConverted = MakeUnique<webrtc::VideoFrame>(aVideoFrame);
 
-    mVideoFrameConvertedEvent.Notify(std::move(aVideoFrame));
+    for (RefPtr<VideoConverterListener>& listener : mListeners) {
+      listener->OnVideoFrameConverted(aVideoFrame);
+    }
   }
 
   void QueueForProcessing(RefPtr<layers::Image> aImage, TimeStamp aTime,
@@ -221,64 +266,35 @@ class VideoFrameConverter {
     FrameToProcess frame{std::move(aImage), aTime, aSize,
                          aForceBlack || !mTrackEnabled};
 
-    if (frame.mTime <= mLastFrameQueuedForProcessing.mTime) {
-      MOZ_LOG(
-          gVideoFrameConverterLog, LogLevel::Debug,
-          ("VideoFrameConverter %p: Dropping a frame because time did not "
-           "progress (%.3fs)",
-           this,
-           (mLastFrameQueuedForProcessing.mTime - frame.mTime).ToSeconds()));
-      return;
-    }
-
     if (frame.Serial() == mLastFrameQueuedForProcessing.Serial()) {
       
       
-      
-      
-      
-      
-      
-      
-      
-      if (int32_t diffSec = static_cast<int32_t>(
-              (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds());
-          diffSec != 0) {
-        MOZ_LOG(
-            gVideoFrameConverterLog, LogLevel::Verbose,
-            ("VideoFrameConverter %p: Rewrote time interval for a duplicate "
-             "frame from %.3fs to %.3fs",
-             this,
-             (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds(),
-             static_cast<float>(diffSec)));
-        frame.mTime = mLastFrameQueuedForProcessing.mTime +
-                      TimeDuration::FromSeconds(diffSec);
-      } else {
-        MOZ_LOG(
-            gVideoFrameConverterLog, LogLevel::Verbose,
-            ("VideoFrameConverter %p: Dropping a duplicate frame because a "
-             "second hasn't passed (%.3fs)",
-             this,
-             (frame.mTime - mLastFrameQueuedForProcessing.mTime).ToSeconds()));
-        return;
-      }
+      return;
+    }
+
+    if (frame.mTime <= mLastFrameQueuedForProcessing.mTime) {
+      MOZ_LOG(
+          gVideoFrameConverterLog, LogLevel::Debug,
+          ("Dropping a frame because time did not progress (%.3f)",
+           (mLastFrameQueuedForProcessing.mTime - frame.mTime).ToSeconds()));
+      return;
     }
 
     mLastFrameQueuedForProcessing = std::move(frame);
 
     if (!mActive) {
-      MOZ_LOG(
-          gVideoFrameConverterLog, LogLevel::Debug,
-          ("VideoFrameConverter %p: Ignoring a frame because we're inactive",
-           this));
+      MOZ_LOG(gVideoFrameConverterLog, LogLevel::Debug,
+              ("Ignoring a frame because we're inactive"));
       return;
     }
 
-    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->Dispatch(
+    nsresult rv = mTaskQueue->Dispatch(
         NewRunnableMethod<StoreCopyPassByLRef<FrameToProcess>>(
             "VideoFrameConverter::ProcessVideoFrame", this,
             &VideoFrameConverter::ProcessVideoFrame,
-            mLastFrameQueuedForProcessing)));
+            mLastFrameQueuedForProcessing));
+    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
+    Unused << rv;
   }
 
   void ProcessVideoFrame(const FrameToProcess& aFrame) {
@@ -287,24 +303,14 @@ class VideoFrameConverter {
     if (aFrame.mTime < mLastFrameQueuedForProcessing.mTime) {
       MOZ_LOG(
           gVideoFrameConverterLog, LogLevel::Debug,
-          ("VideoFrameConverter %p: Dropping a frame that is %.3f seconds "
-           "behind latest",
-           this,
+          ("Dropping a frame that is %.3f seconds behind latest",
            (mLastFrameQueuedForProcessing.mTime - aFrame.mTime).ToSeconds()));
       return;
     }
 
-    const webrtc::Timestamp time =
-        mTimestampMaker.ConvertMozTimeToRealtime(aFrame.mTime);
-
-    if (mLastFrameConverted &&
-        aFrame.Serial() == mLastFrameConverted->mSerial) {
-      
-      webrtc::VideoFrame frame = mLastFrameConverted->mFrame;
-      frame.set_timestamp_us(time.us());
-      VideoFrameConverted(frame, mLastFrameConverted->mSerial);
-      return;
-    }
+    
+    
+    const webrtc::Timestamp now = mTimestampMaker.GetNowRealtime();
 
     if (aFrame.mForceBlack) {
       
@@ -315,21 +321,17 @@ class VideoFrameConverter {
                               "Buffers not leaving scope except for "
                               "reconfig, should never leak");
         MOZ_LOG(gVideoFrameConverterLog, LogLevel::Warning,
-                ("VideoFrameConverter %p: Creating a buffer for a black video "
-                 "frame failed",
-                 this));
+                ("Creating a buffer for a black video frame failed"));
         return;
       }
 
       MOZ_LOG(gVideoFrameConverterLog, LogLevel::Verbose,
-              ("VideoFrameConverter %p: Sending a black video frame", this));
+              ("Sending a black video frame"));
       webrtc::I420Buffer::SetBlack(buffer);
 
-      VideoFrameConverted(webrtc::VideoFrame::Builder()
-                              .set_video_frame_buffer(buffer)
-                              .set_timestamp_us(time.us())
-                              .build(),
-                          aFrame.Serial());
+      webrtc::VideoFrame frame(buffer, 0,  
+                               now.ms(), webrtc::kVideoRotation_0);
+      VideoFrameConverted(frame);
       return;
     }
 
@@ -352,13 +354,12 @@ class VideoFrameConverter {
                 data->mCbCrStride, data->mCrChannel, data->mCbCrStride,
                 rtc::KeepRefUntilDone(image));
 
+        webrtc::VideoFrame i420_frame(video_frame_buffer,
+                                      0,  
+                                      now.ms(), webrtc::kVideoRotation_0);
         MOZ_LOG(gVideoFrameConverterLog, LogLevel::Verbose,
-                ("VideoFrameConverter %p: Sending an I420 video frame", this));
-        VideoFrameConverted(webrtc::VideoFrame::Builder()
-                                .set_video_frame_buffer(video_frame_buffer)
-                                .set_timestamp_us(time.us())
-                                .build(),
-                            aFrame.Serial());
+                ("Sending an I420 video frame"));
+        VideoFrameConverted(i420_frame);
         return;
       }
     }
@@ -371,7 +372,7 @@ class VideoFrameConverter {
 #endif
       MOZ_DIAGNOSTIC_ASSERT(mFramesDropped <= 100, "Buffers must be leaking");
       MOZ_LOG(gVideoFrameConverterLog, LogLevel::Warning,
-              ("VideoFrameConverter %p: Creating a buffer failed", this));
+              ("Creating a buffer failed"));
       return;
     }
 
@@ -386,38 +387,37 @@ class VideoFrameConverter {
 
     if (NS_FAILED(rv)) {
       MOZ_LOG(gVideoFrameConverterLog, LogLevel::Warning,
-              ("VideoFrameConverter %p: Image conversion failed", this));
+              ("Image conversion failed"));
       return;
     }
 
-    VideoFrameConverted(webrtc::VideoFrame::Builder()
-                            .set_video_frame_buffer(buffer)
-                            .set_timestamp_us(time.us())
-                            .build(),
-                        aFrame.Serial());
+    webrtc::VideoFrame frame(buffer, 0,  
+                             now.ms(), webrtc::kVideoRotation_0);
+    VideoFrameConverted(frame);
   }
 
- public:
   const dom::RTCStatsTimestampMaker mTimestampMaker;
 
   const RefPtr<TaskQueue> mTaskQueue;
 
- protected:
   
-  const RefPtr<Pacer<FrameToProcess>> mPacer;
-
-  MediaEventProducerExc<webrtc::VideoFrame> mVideoFrameConvertedEvent;
+  const RefPtr<MediaTimer> mPacingTimer;
 
   
-  MediaEventListener mPacingListener;
+  
+  TimeStamp mLastFrameQueuedForPacing;
+
+  
   webrtc::I420BufferPool mBufferPool;
+  nsCOMPtr<nsITimer> mSameFrameTimer;
   FrameToProcess mLastFrameQueuedForProcessing;
-  Maybe<FrameConverted> mLastFrameConverted;
-  bool mActive = false;
-  bool mTrackEnabled = true;
+  UniquePtr<webrtc::VideoFrame> mLastFrameConverted;
+  bool mActive;
+  bool mTrackEnabled;
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   size_t mFramesDropped = 0;
 #endif
+  nsTArray<RefPtr<VideoConverterListener>> mListeners;
 };
 
 }  

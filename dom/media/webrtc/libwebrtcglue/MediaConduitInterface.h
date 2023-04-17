@@ -368,7 +368,8 @@ class VideoSessionConduit : public MediaSessionConduit {
 
 
 
-  virtual MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame aFrame) = 0;
+  virtual MediaConduitErrorCode SendVideoFrame(
+      const webrtc::VideoFrame& frame) = 0;
 
   
 
