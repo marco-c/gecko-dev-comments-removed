@@ -9,103 +9,6 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsRefreshDriver.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace mozilla {
 
 void CCGCScheduler::NoteGCBegin() {
@@ -156,7 +59,6 @@ void CCGCScheduler::NoteWontGC() {
 
 bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
   MOZ_ASSERT(!mDidShutdown, "GCRunner still alive during shutdown");
-  MOZ_ASSERT(!mHaveAskedParent, "GCRunner alive after asking the parent");
 
   GCRunnerStep step = GetNextGCRunnerAction();
   switch (step.mAction) {
@@ -171,12 +73,10 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
         break;
       }
 
-      mHaveAskedParent = true;
       KillGCRunner();
       mbPromise->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [this](bool aMayGC) {
-            mHaveAskedParent = false;
             if (aMayGC) {
               if (!NoteReadyForMajorGC()) {
                 
@@ -194,7 +94,6 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
             }
           },
           [this](mozilla::ipc::ResponseRejectReason r) {
-            mHaveAskedParent = false;
             if (!InIncrementalGC()) {
               KillGCRunner();
               NoteWontGC();
@@ -389,7 +288,7 @@ void CCGCScheduler::PokeGC(JS::GCReason aReason, JSObject* aObj,
     SetNeedsFullGC();
   }
 
-  if (mGCRunner || mHaveAskedParent) {
+  if (mGCRunner) {
     
     return;
   }
@@ -416,7 +315,7 @@ void CCGCScheduler::PokeGC(JS::GCReason aReason, JSObject* aObj,
 }
 
 void CCGCScheduler::EnsureGCRunner(TimeDuration aDelay) {
-  if (mGCRunner || mHaveAskedParent) {
+  if (mGCRunner) {
     return;
   }
 

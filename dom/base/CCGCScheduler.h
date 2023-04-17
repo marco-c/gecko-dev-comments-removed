@@ -166,38 +166,17 @@ class CCGCScheduler {
   void SetWantMajorGC(JS::GCReason aReason) {
     MOZ_ASSERT(aReason != JS::GCReason::NO_REASON);
 
-    
-    
-    
-    
-    if (aReason != JS::GCReason::USER_INACTIVE) {
+    if (mMajorGCReason != JS::GCReason::NO_REASON &&
+        mMajorGCReason != JS::GCReason::USER_INACTIVE &&
+        aReason != JS::GCReason::USER_INACTIVE) {
       mWantAtLeastRegularGC = true;
     }
+    mMajorGCReason = aReason;
 
     
     
     if (aReason == JS::GCReason::DOM_WINDOW_UTILS) {
       SetNeedsFullGC();
-    }
-
-    
-    
-    
-    switch (aReason) {
-      case JS::GCReason::USER_INACTIVE:
-        mMajorGCReason = aReason;
-        break;
-      case JS::GCReason::FULL_GC_TIMER:
-        if (mMajorGCReason != JS::GCReason::USER_INACTIVE) {
-          mMajorGCReason = aReason;
-        }
-        break;
-      default:
-        if (mMajorGCReason != JS::GCReason::USER_INACTIVE &&
-            mMajorGCReason != JS::GCReason::FULL_GC_TIMER) {
-          mMajorGCReason = aReason;
-        }
-        break;
     }
   }
 
@@ -408,10 +387,6 @@ class CCGCScheduler {
   
   
   bool mInIncrementalGC = false;
-
-  
-  
-  bool mHaveAskedParent = false;
 
   
   bool mReadyForMajorGC = false;
