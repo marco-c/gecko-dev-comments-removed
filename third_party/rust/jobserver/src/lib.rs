@@ -226,8 +226,8 @@ impl Client {
     
     pub unsafe fn from_env() -> Option<Client> {
         let var = match env::var("CARGO_MAKEFLAGS")
-            .or(env::var("MAKEFLAGS"))
-            .or(env::var("MFLAGS"))
+            .or_else(|_| env::var("MAKEFLAGS"))
+            .or_else(|_| env::var("MFLAGS"))
         {
             Ok(s) => s,
             Err(_) => return None,
@@ -268,7 +268,7 @@ impl Client {
         let data = self.inner.acquire()?;
         Ok(Acquired {
             client: self.inner.clone(),
-            data: data,
+            data,
             disabled: false,
         })
     }
@@ -294,7 +294,7 @@ impl Client {
         
         
         
-        let value = format!("--jobserver-fds={0} --jobserver-auth={0}", arg);
+        let value = format!("-j --jobserver-fds={0} --jobserver-auth={0}", arg);
         cmd.env("CARGO_MAKEFLAGS", &value);
         self.inner.configure(cmd);
     }

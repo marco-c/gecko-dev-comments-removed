@@ -26,7 +26,7 @@ impl Client {
         
         
         for _ in 0..limit {
-            (&client.write).write(&[b'|'])?;
+            (&client.write).write_all(&[b'|'])?;
         }
         Ok(client)
     }
@@ -134,22 +134,12 @@ impl Client {
         
         
         
+        
         unsafe {
             let mut fd: libc::pollfd = mem::zeroed();
             fd.fd = self.read.as_raw_fd();
             fd.events = libc::POLLIN;
             loop {
-                fd.revents = 0;
-                if libc::poll(&mut fd, 1, -1) == -1 {
-                    let e = io::Error::last_os_error();
-                    match e.kind() {
-                        io::ErrorKind::Interrupted => return Ok(None),
-                        _ => return Err(e),
-                    }
-                }
-                if fd.revents == 0 {
-                    continue;
-                }
                 let mut buf = [0];
                 match (&self.read).read(&mut buf) {
                     Ok(1) => return Ok(Some(Acquired { byte: buf[0] })),
@@ -160,9 +150,24 @@ impl Client {
                         ))
                     }
                     Err(e) => match e.kind() {
-                        io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted => return Ok(None),
+                        io::ErrorKind::WouldBlock => {  }
+                        io::ErrorKind::Interrupted => return Ok(None),
                         _ => return Err(e),
                     },
+                }
+
+                loop {
+                    fd.revents = 0;
+                    if libc::poll(&mut fd, 1, -1) == -1 {
+                        let e = io::Error::last_os_error();
+                        return match e.kind() {
+                            io::ErrorKind::Interrupted => Ok(None),
+                            _ => Err(e),
+                        };
+                    }
+                    if fd.revents != 0 {
+                        break;
+                    }
                 }
             }
         }
@@ -184,7 +189,7 @@ impl Client {
     }
 
     pub fn string_arg(&self) -> String {
-        format!("{},{} -j", self.read.as_raw_fd(), self.write.as_raw_fd())
+        format!("{},{}", self.read.as_raw_fd(), self.write.as_raw_fd())
     }
 
     pub fn configure(&self, cmd: &mut Command) {
@@ -299,9 +304,7 @@ impl Helper {
 }
 
 fn is_valid_fd(fd: c_int) -> bool {
-    unsafe {
-        return libc::fcntl(fd, libc::F_GETFD) != -1;
-    }
+    unsafe { libc::fcntl(fd, libc::F_GETFD) != -1 }
 }
 
 fn set_cloexec(fd: c_int, set: bool) -> io::Result<()> {
