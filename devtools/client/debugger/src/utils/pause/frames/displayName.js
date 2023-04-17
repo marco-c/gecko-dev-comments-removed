@@ -7,7 +7,7 @@
 
 
 
-const objectProperty = /([\w\d\$]+)$/;
+const objectProperty = /([\w\d\$#]+)$/;
 const arrayProperty = /\[(.*?)\]$/;
 const functionProperty = /([\w\d]+)[\/\.<]*?$/;
 const annonymousProperty = /([\w\d]+)\(\^\)$/;
