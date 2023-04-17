@@ -563,7 +563,6 @@ ParticularProcessPriorityManager::ParticularProcessPriorityManager(
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_RELEASE_ASSERT(!aContentParent->IsDead());
   LOGP("Creating ParticularProcessPriorityManager.");
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -581,7 +580,6 @@ ParticularProcessPriorityManager::ParticularProcessPriorityManager(
                         aProfilingState);
       },
       self);
-#endif  
 }
 
 void ParticularProcessPriorityManager::Init() {
@@ -612,9 +610,7 @@ bool ParticularProcessPriorityManager::IsHoldingWakeLock(
 ParticularProcessPriorityManager::~ParticularProcessPriorityManager() {
   LOGP("Destroying ParticularProcessPriorityManager.");
 
-#ifdef MOZ_GECKO_PROFILER
   profiler_remove_state_change_callback(reinterpret_cast<uintptr_t>(this));
-#endif  
 
   ShutDown();
 }

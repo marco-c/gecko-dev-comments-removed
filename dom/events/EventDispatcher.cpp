@@ -1006,7 +1006,6 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
         MOZ_RELEASE_ASSERT(!aEvent->mPath);
         aEvent->mPath = &chain;
 
-#ifdef MOZ_GECKO_PROFILER
         if (profiler_is_active()) {
           
           
@@ -1079,9 +1078,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
               "DOMEvent", geckoprofiler::category::DOM,
               {MarkerTiming::IntervalEnd(), std::move(innerWindowId)},
               DOMEventMarker{}, typeStr, startTime, aEvent->mTimeStamp);
-        } else
-#endif
-        {
+        } else {
           EventTargetChainItem::HandleEventTargetChain(chain, postVisitor,
                                                        aCallback, cd);
         }

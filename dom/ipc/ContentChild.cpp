@@ -311,7 +311,6 @@ using namespace mozilla::net;
 using namespace mozilla::widget;
 using mozilla::loader::PScriptCacheChild;
 
-#ifdef MOZ_GECKO_PROFILER
 namespace geckoprofiler::markers {
 struct ProcessPriorityChange {
   static constexpr Span<const char> MarkerTypeName() {
@@ -359,7 +358,6 @@ struct ProcessPriority {
   }
 };
 }  
-#endif  
 
 namespace mozilla {
 
@@ -624,7 +622,6 @@ ContentChild::ContentChild()
   
   nsDebugImpl::SetMultiprocessMode("Child");
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -641,7 +638,6 @@ ContentChild::ContentChild()
                         aProfilingState);
       },
       self);
-#endif  
 
   
   
@@ -662,9 +658,7 @@ ContentChild::ContentChild()
 #endif
 
 ContentChild::~ContentChild() {
-#ifdef MOZ_GECKO_PROFILER
   profiler_remove_state_change_callback(reinterpret_cast<uintptr_t>(this));
-#endif  
 
 #ifndef NS_FREE_PERMANENT_DATA
   MOZ_CRASH("Content Child shouldn't be destroyed.");
