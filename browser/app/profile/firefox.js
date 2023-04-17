@@ -1521,7 +1521,6 @@ pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 pref("trailhead.firstrun.newtab.triplets", "");
 
 pref("browser.aboutwelcome.enabled", true);
-pref("browser.aboutwelcome.protonDesign", true);
 
 pref("browser.aboutwelcome.screens", "");
 pref("browser.aboutwelcome.skipFocus", true);
