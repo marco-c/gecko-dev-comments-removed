@@ -4,60 +4,61 @@
 
 const {
   AddonManager,
-  AppConstants,
   document: gDoc,
-  getShellService,
   Services,
+  XPCOMUtils,
 } = window.docShell.chromeEventHandler.ownerGlobal;
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
+});
 
-
-
-
-const COMPACT_MODE_HEIGHT = 649;
-
-const SHELL = getShellService();
-const IS_DEFAULT = SHELL.isDefaultBrowser();
-const NEED_PIN = SHELL.doesAppNeedPin();
+const HOMEPAGE_PREF = "browser.startup.homepage";
 
 
 const SCREEN_STRINGS = [
-  NEED_PIN.then(pin =>
-    pin
-      ? {
-          title: "upgrade-dialog-pin-title",
-          subtitle: "upgrade-dialog-pin-subtitle",
-          primary: "upgrade-dialog-pin-primary-button",
-          secondary: "upgrade-dialog-pin-secondary-button",
-        }
-      : {
-          title: "upgrade-dialog-new-title",
-          subtitle: "upgrade-dialog-new-subtitle",
-          primary: IS_DEFAULT
-            ? "upgrade-dialog-new-primary-theme-button"
-            : "upgrade-dialog-new-primary-default-button",
-          secondary: "upgrade-dialog-new-secondary-button",
-        }
-  ),
   {
-    title: "upgrade-dialog-default-title-2",
-    subtitle: "upgrade-dialog-default-subtitle-2",
-    primary: "upgrade-dialog-default-primary-button-2",
-    secondary: "upgrade-dialog-default-secondary-button",
+    title: "upgrade-dialog-start-title",
+    subtitle: "upgrade-dialog-start-subtitle",
+    primary: "upgrade-dialog-start-primary-button",
+    secondary: "upgrade-dialog-start-secondary-button",
   },
   {
-    title: "upgrade-dialog-theme-title-2",
-    primary: "upgrade-dialog-theme-primary-button",
-    secondary: "upgrade-dialog-theme-secondary-button",
+    title: "upgrade-dialog-colorway-title",
+    primary: "upgrade-dialog-colorway-primary-button",
+    secondary: "upgrade-dialog-colorway-secondary-button",
+  },
+  {
+    title: "upgrade-dialog-thankyou-title",
+    subtitle: "upgrade-dialog-thankyou-subtitle",
+    primary: "upgrade-dialog-thankyou-primary-button",
   },
 ];
 
 
 const THEME_IDS = [
   "default-theme@mozilla.org",
-  "firefox-compact-light@mozilla.org",
-  "firefox-compact-dark@mozilla.org",
-  "firefox-alpenglow@mozilla.org",
+  "abstract-soft-colorway@mozilla.org",
+  "cheers-soft-colorway@mozilla.org",
+  "foto-soft-colorway@mozilla.org",
+  "lush-soft-colorway@mozilla.org",
+  "graffiti-soft-colorway@mozilla.org",
+  "elemental-soft-colorway@mozilla.org",
 ];
+
+
+const VARIATION_IDS = {
+  auto: "default-theme@mozilla.org",
+  light: "firefox-compact-light@mozilla.org",
+  dark: "firefox-compact-dark@mozilla.org",
+
+  
+  soft: "",
+  balanced: "",
+  bold: "",
+};
+function variantFromId(l10nId) {
+  return l10nId.split("-").slice(-1)[0];
+}
 
 
 const CLEANUP = [];
@@ -65,19 +66,11 @@ addEventListener("pagehide", () => CLEANUP.forEach(f => f()), { once: true });
 
 
 let gPrevTheme = AddonManager.getAddonsByTypes(["theme"]).then(addons => {
-  for (const { id, isActive, screenshots } of addons) {
+  for (const { id, isActive } of addons) {
     if (isActive) {
       
-      if (!THEME_IDS.includes(id)) {
-        THEME_IDS.push(id);
-      }
-
-      
       CLEANUP.push(() => gPrevTheme && enableTheme(id));
-      return {
-        id,
-        swatch: screenshots?.[0].url,
-      };
+      return { id };
     }
   }
 
@@ -87,6 +80,7 @@ let gPrevTheme = AddonManager.getAddonsByTypes(["theme"]).then(addons => {
 
 
 async function enableTheme(id) {
+  await BuiltInThemes.ensureBuiltInThemes();
   (await AddonManager.getAddonByID(id)).enable();
 }
 
@@ -118,18 +112,167 @@ Services.obs.addObserver(QUIT_OBSERVER, QUIT_TOPIC);
 CLEANUP.push(() => Services.obs.removeObserver(QUIT_OBSERVER, QUIT_TOPIC));
 
 
-function onLoad(ready) {
-  
-  const win7Content = AppConstants.isPlatformAndVersionAtMost("win", "6.1");
+function triggerTransition(callback) {
+  requestAnimationFrame(() => requestAnimationFrame(callback));
+}
 
+
+function onLoad(ready) {
   const { body } = document;
+  const logo = document.querySelector(".logo");
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
-  const items = document.querySelector(".items");
+  const colorways = document.querySelector(".colorways");
   const themes = document.querySelector(".themes");
+  const variations = document.querySelector(".variations");
+  const checkbox = document.querySelector(".checkbox");
   const primary = document.getElementById("primary");
   const secondary = document.getElementById("secondary");
-  const steps = document.querySelector(".steps");
+
+  
+  function showVariations(themeRadio) {
+    let l10nIds, themeName;
+    const { l10nArgs } = themeRadio.dataset;
+    if (l10nArgs) {
+      
+      const { colorwayName } = JSON.parse(l10nArgs);
+      variations.firstElementChild.textContent = colorwayName;
+
+      l10nIds = [
+        "upgrade-dialog-colorway-variation-soft",
+        "upgrade-dialog-colorway-variation-balanced",
+        "upgrade-dialog-colorway-variation-bold",
+      ];
+      themeName = colorwayName.toLowerCase();
+
+      
+      l10nIds.forEach(id => {
+        const variant = variantFromId(id);
+        VARIATION_IDS[variant] = `${themeName}-${variant}-colorway@mozilla.org`;
+      });
+    } else {
+      l10nIds = [
+        "upgrade-dialog-colorway-default-theme",
+        "upgrade-dialog-colorway-theme-auto",
+        "upgrade-dialog-theme-light",
+        "upgrade-dialog-theme-dark",
+      ];
+      themeName = "default";
+    }
+
+    
+    l10nIds.reduceRight((node, l10nId) => {
+      
+      node.checked = true;
+
+      
+      node.dataset.l10nId = "";
+      document.l10n.setAttributes(node, l10nId);
+      return node.previousElementSibling;
+    }, variations.lastElementChild);
+
+    
+    variations.classList = `variations ${themeName} in`;
+    triggerTransition(() => variations.classList.remove("in"));
+
+    
+    dispatchEvent(new CustomEvent("variations"));
+  }
+
+  
+  function showColorways() {
+    
+    const random = Math.floor(Math.random() * (THEME_IDS.length - 1)) + 1;
+    const selected = themes.children[random];
+    selected.checked = true;
+    recordEvent("show", `random-${random}`);
+
+    
+    triggerTransition(() => variations.setAttribute("next", random));
+    setTimeout(() => {
+      enableTheme(THEME_IDS[random]);
+      showVariations(selected);
+    }, 400);
+
+    
+    variations.addEventListener("click", ({ target: button }) => {
+      
+      if (button.type === "radio") {
+        const variant = variantFromId(button.dataset.l10nId);
+        enableTheme(VARIATION_IDS[variant]);
+        recordEvent("theme", variant);
+      }
+    });
+
+    
+    let nextButton;
+    themes.addEventListener("click", ({ target: button }) => {
+      const indexOf = node => [...themes.children].indexOf(node);
+
+      
+      if (button.parentNode === themes) {
+        
+        variations.setAttribute("next", indexOf(button));
+
+        
+        if (!nextButton) {
+          variations.classList.add("out");
+          setTimeout(() => {
+            variations.classList.remove("out");
+
+            
+            const index = indexOf(nextButton);
+            enableTheme(THEME_IDS[index]);
+            recordEvent("theme", index);
+
+            
+            showVariations(nextButton);
+            nextButton = null;
+          }, 500);
+        }
+
+        
+        nextButton = button;
+      }
+    });
+
+    
+    [...themes.children].forEach(input => {
+      new Image().src = getComputedStyle(
+        input,
+        "::before"
+      ).backgroundImage.match(/resource:[^"]+/)?.[0];
+    });
+
+    
+    body.classList.remove("confetti");
+    logo.classList.add("hidden");
+    colorways.classList.remove("hidden");
+    adjustModalBackdrop();
+
+    
+    if (Services.prefs.prefHasUserValue(HOMEPAGE_PREF)) {
+      checkbox.classList.remove("hidden");
+      recordEvent("show", "revert-home");
+    } else {
+      checkbox.remove();
+    }
+
+    return selected;
+  }
+
+  
+  function removeColorways() {
+    body.classList.add("confetti");
+    logo.classList.remove("hidden");
+    colorways.remove();
+    checkbox.remove();
+
+    
+    if (checkbox.firstElementChild.checked) {
+      Services.prefs.clearUserPref(HOMEPAGE_PREF);
+    }
+  }
 
   
   let current = -1;
@@ -140,148 +283,67 @@ function onLoad(ready) {
     }
 
     
-    const strings = await SCREEN_STRINGS[++current];
-    
     let toFocus = primary;
-    switch (current) {
+
+    
+    if (++current === 0) {
       
-      case 0:
-        
-        primary.addEventListener("click", advance);
-        secondary.addEventListener("click", advance);
+      primary.addEventListener("click", advance);
+      secondary.addEventListener("click", advance);
 
-        
-        if (gDoc.ownerGlobal.outerHeight < COMPACT_MODE_HEIGHT) {
-          body.classList.add("compact");
-          recordEvent("show", "compact");
-        }
-
-        
-        if (win7Content) {
-          steps.style.visibility = "hidden";
-
-          if (IS_DEFAULT) {
-            strings.primary = "upgrade-dialog-new-primary-win7-button";
-            secondary.style.display = "none";
-          }
-        }
-
-        
-        let removeDefaultScreen = true;
-        if (await NEED_PIN) {
-          items.remove();
-          removeDefaultScreen = IS_DEFAULT;
-        }
-
-        
-        if (removeDefaultScreen) {
-          SCREEN_STRINGS.splice(1, 1);
-        }
-
-        
-        
-        recordEvent("show", `${SCREEN_STRINGS.length}-screens`);
-
-        
-        for (let i = SCREEN_STRINGS.length; i > 1; i--) {
-          steps.append(steps.lastChild.cloneNode(true));
-        }
-        steps.lastChild.classList.add("current");
-        break;
-
+      recordEvent("show", `${SCREEN_STRINGS.length}-screens`);
+      await document.l10n.ready;
+    } else {
       
-      default:
-        const { l10nId } = primary.dataset;
-        if (target === primary) {
-          switch (l10nId) {
-            case "upgrade-dialog-new-primary-default-button":
-            case "upgrade-dialog-default-primary-button-2":
-              SHELL.setAsDefault();
-              break;
-            case "upgrade-dialog-pin-primary-button":
-              SHELL.pinToTaskbar();
-              break;
-          }
-        } else if (
-          target === secondary &&
-          l10nId === "upgrade-dialog-new-primary-theme-button"
-        ) {
-          closeDialog("early");
-          return;
-        }
-
+      const { l10nId } = target.dataset;
+      switch (l10nId) {
         
-        if (win7Content) {
-          closeDialog("win7");
-          return;
-        }
-
-        
-        if (current !== SCREEN_STRINGS.length - 1) {
+        case "upgrade-dialog-start-primary-button":
+          toFocus = showColorways();
           break;
-        }
 
         
-        const { id, swatch } = await gPrevTheme;
-        toFocus = themes.children[THEME_IDS.indexOf(id)];
-        toFocus.checked = true;
-        themes.addEventListener("click", ({ target: button }) => {
-          
-          if (button.parentNode === themes) {
-            
-            const index = [...themes.children].indexOf(button);
-            enableTheme(THEME_IDS[index]);
-            recordEvent("theme", index);
-          }
-        });
+        case "upgrade-dialog-start-secondary-button":
+          current++;
+          break;
 
         
-        if (themes.childElementCount > THEME_IDS.length) {
-          themes.removeChild(themes.lastElementChild);
-        } else if (swatch) {
-          themes.lastElementChild.style.setProperty(
-            "--theme-swatch",
-            `url("${swatch}")`
-          );
-        }
-
-        
-        [...themes.children].forEach(input => {
-          new Image().src = getComputedStyle(
-            input,
-            "::before"
-          ).backgroundImage.match(/resource:[^"]+/)?.[0];
-        });
-
-        
-        subtitle.remove();
-        items.remove();
-        themes.classList.remove("hidden");
-        adjustModalBackdrop();
-        break;
-
-      
-      case SCREEN_STRINGS.length:
-        
-        if (target === primary) {
+        case "upgrade-dialog-colorway-primary-button":
           gPrevTheme = null;
-        }
+          removeColorways();
+          break;
 
-        closeDialog("complete");
-        return;
+        
+        case "upgrade-dialog-colorway-secondary-button":
+          enableTheme((await gPrevTheme).id);
+          removeColorways();
+          break;
+
+        
+        case "upgrade-dialog-thankyou-primary-button":
+          closeDialog("complete");
+          return;
+      }
     }
 
     
-    steps.prepend(steps.lastChild);
+    if (current === SCREEN_STRINGS.length - 1) {
+      setTimeout(() => closeDialog("autoclose"), 20000);
+    }
 
     
-    await document.l10n.ready;
+    const strings = SCREEN_STRINGS[current];
     const translatedElements = [];
     for (let el of [title, subtitle, primary, secondary]) {
       const stringId = strings[el.id];
       if (stringId) {
         document.l10n.setAttributes(el, stringId);
         translatedElements.push(el);
+        el.classList.remove("hidden");
+      } else {
+        el.classList.add("hidden");
+        
+        el.textContent = "";
       }
     }
 
@@ -307,6 +369,8 @@ function onLoad(ready) {
     recordEvent("show", primary.dataset.l10nId);
   })();
 }
+
+
 document.mozSubdialogReady = new Promise(resolve =>
   document.addEventListener("DOMContentLoaded", () => onLoad(resolve), {
     once: true,

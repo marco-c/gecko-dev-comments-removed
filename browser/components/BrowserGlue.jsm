@@ -3982,15 +3982,17 @@ BrowserGlue.prototype = {
     );
   },
 
+  
+  _onWindows7() {
+    return AppConstants.isPlatformAndVersionAtMost("win", "6.1");
+  },
+
   async _maybeShowDefaultBrowserPrompt() {
     
     
-    const dialogVersion = 89;
+    const dialogVersion = 94;
     const dialogVersionPref = "browser.startup.upgradeDialog.version";
     const dialogReason = await (async () => {
-      if (!Services.prefs.getBoolPref("browser.proton.enabled", true)) {
-        return "no-proton";
-      }
       if (!BrowserHandler.majorUpgrade) {
         return "not-major";
       }
@@ -4018,6 +4020,9 @@ BrowserGlue.prototype = {
       if (!Services.policies.isAllowed("postUpdateCustomPage")) {
         return "disallow-postUpdate";
       }
+      if (this._onWindows7()) {
+        return "win7";
+      }
 
       return NimbusFeatures.upgradeDialog.isEnabled() ? "" : "disabled";
     })();
@@ -4034,6 +4039,10 @@ BrowserGlue.prototype = {
     
     if (!dialogReason) {
       Services.prefs.setIntPref(dialogVersionPref, dialogVersion);
+
+      
+      const { gBrowser } = BrowserWindowTracker.getTopWindow();
+      gBrowser.selectedTab = gBrowser.addTrustedTab("about:home");
       this._showUpgradeDialog();
       return;
     }
