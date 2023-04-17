@@ -513,10 +513,13 @@ inline void gfxSparseBitSet::Union(const SharedBitSet& aBitset) {
       continue;
     }
     
-    uint32_t* dst = reinterpret_cast<uint32_t*>(&mBlocks[mBlockIndex[i]].mBits);
-    const uint32_t* src =
-        reinterpret_cast<const uint32_t*>(&blocks[blockIndex[i]].mBits);
-    for (uint32_t j = 0; j < BLOCK_SIZE / 4; ++j) {
+    
+    
+    
+    uint8_t* dst = reinterpret_cast<uint8_t*>(&mBlocks[mBlockIndex[i]].mBits);
+    const uint8_t* src =
+        reinterpret_cast<const uint8_t*>(&blocks[blockIndex[i]].mBits);
+    for (uint32_t j = 0; j < BLOCK_SIZE; ++j) {
       dst[j] |= src[j];
     }
   }
