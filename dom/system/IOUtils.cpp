@@ -860,7 +860,7 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
   bool exists = false;
   MOZ_TRY(aFile->Exists(&exists));
 
-  if (aOptions.mNoOverwrite && exists) {
+  if (exists && aOptions.mNoOverwrite) {
     return Err(IOError(NS_ERROR_DOM_TYPE_MISMATCH_ERR)
                    .WithMessage("Refusing to overwrite the file at %s\n"
                                 "Specify `noOverwrite: false` to allow "
@@ -924,6 +924,11 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
 
     RefPtr<nsFileOutputStream> stream = new nsFileOutputStream();
     if (nsresult rv = stream->Init(writeFile, flags, 0666, 0); NS_FAILED(rv)) {
+      
+      
+      if (rv == nsresult::NS_ERROR_FILE_IS_DIRECTORY) {
+        rv = NS_ERROR_FILE_ACCESS_DENIED;
+      }
       return Err(
           IOError(rv).WithMessage("Could not open the file at %s for writing",
                                   writeFile->HumanReadablePath().get()));
@@ -964,12 +969,38 @@ Result<uint32_t, IOUtils::IOError> IOUtils::WriteSync(
 
     
     
-    if (destPath != writePath && MoveSync(writeFile, aFile, false).isErr()) {
-      return Err(IOError(NS_ERROR_FILE_COPY_OR_MOVE_FAILED)
-                     .WithMessage(
-                         "Could not move temporary file(%s) to destination(%s)",
-                         writeFile->HumanReadablePath().get(),
-                         aFile->HumanReadablePath().get()));
+    if (destPath != writePath) {
+      if (aOptions.mTmpFile) {
+        bool isDir = false;
+        if (nsresult rv = aFile->IsDirectory(&isDir);
+            NS_FAILED(rv) && !IsFileNotFound(rv)) {
+          return Err(IOError(rv).WithMessage("Could not stat the file at %s",
+                                             aFile->HumanReadablePath().get()));
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if (isDir) {
+          return Err(
+              IOError(NS_ERROR_FILE_ACCESS_DENIED)
+                  .WithMessage("Could not open the file at %s for writing",
+                               aFile->HumanReadablePath().get()));
+        }
+      }
+
+      if (MoveSync(writeFile, aFile,  false).isErr()) {
+        return Err(
+            IOError(NS_ERROR_FILE_COPY_OR_MOVE_FAILED)
+                .WithMessage(
+                    "Could not move temporary file(%s) to destination(%s)",
+                    writeFile->HumanReadablePath().get(),
+                    aFile->HumanReadablePath().get()));
+      }
     }
   }
   return totalWritten;
