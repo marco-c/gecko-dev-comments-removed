@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .extension-controlled-notification > .popup-notification-body-container > .popup-notification-body {
   width: 30em;
@@ -21,8 +21,8 @@
 }
 
 .extension-controlled-icon.alltabs-icon {
-  background: url("chrome://global/skin/icons/arrow-dropdown-16.svg");
-  
+  background: url("chrome://global/skin/icons/arrow-down.svg");
+  /* This icon has a lot of extra space to the sides, reduce that a little. */
   margin: 0 -1px 1px;
 }
 
