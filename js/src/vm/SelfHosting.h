@@ -14,6 +14,8 @@
 
 namespace js {
 
+ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx);
+
 
 
 
@@ -27,6 +29,7 @@ bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
 
 PropertyName* GetClonedSelfHostedFunctionName(const JSFunction* fun);
+void SetClonedSelfHostedFunctionName(JSFunction* fun, PropertyName* name);
 
 
 

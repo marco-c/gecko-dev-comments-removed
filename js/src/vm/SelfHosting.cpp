@@ -935,7 +935,8 @@ void js::SetUnclonedSelfHostedCanonicalName(JSFunction* fun, JSAtom* name) {
   fun->setExtendedSlot(CANONICAL_FUNCTION_NAME_SLOT, StringValue(name));
 }
 
-static void SetClonedSelfHostedFunctionName(JSFunction* fun, JSAtom* name) {
+void js::SetClonedSelfHostedFunctionName(JSFunction* fun,
+                                         js::PropertyName* name) {
   fun->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(name));
 }
 
@@ -2797,8 +2798,9 @@ void JSRuntime::traceSelfHostingGlobal(JSTracer* trc) {
   }
 }
 
-GeneratorKind JSRuntime::getSelfHostedFunctionGeneratorKind(JSAtom* name) {
-  JSFunction* fun = getUnclonedSelfHostedFunction(name->asPropertyName());
+GeneratorKind JSRuntime::getSelfHostedFunctionGeneratorKind(
+    js::PropertyName* name) {
+  JSFunction* fun = getUnclonedSelfHostedFunction(name);
   return fun->generatorKind();
 }
 
@@ -2922,7 +2924,7 @@ static JSString* CloneString(JSContext* cx, JSLinearString* selfHostedString) {
 
 
 
-static ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx) {
+ScriptSourceObject* js::SelfHostingScriptSourceObject(JSContext* cx) {
   if (ScriptSourceObject* sso = cx->realm()->selfHostingScriptSource) {
     return sso;
   }
@@ -3002,8 +3004,9 @@ static JSObject* CloneObject(JSContext* cx,
 
       
       
-      SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(),
-                                      selfHostedFunction->explicitName());
+      SetClonedSelfHostedFunctionName(
+          &clone->as<JSFunction>(),
+          selfHostedFunction->explicitName()->asPropertyName());
 
       
       
