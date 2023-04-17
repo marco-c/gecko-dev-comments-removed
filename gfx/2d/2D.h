@@ -1079,6 +1079,11 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   
 
 
+  virtual void Link(const char* aDestination, const Rect& aRect) {}
+
+  
+
+
 
 
   virtual already_AddRefed<SourceSurface> Snapshot() = 0;

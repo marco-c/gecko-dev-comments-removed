@@ -15,6 +15,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "mozilla/StaticPrefs_print.h"
+#include "nsPrintfCString.h"
 
 #include "cairo.h"
 #include "cairo-tee.h"
@@ -654,6 +655,37 @@ SurfaceFormat GfxFormatForCairoSurface(cairo_surface_t* surface) {
   }
 #endif
   return CairoContentToGfxFormat(cairo_surface_get_content(surface));
+}
+
+void DrawTargetCairo::Link(const char* aDestination, const Rect& aRect) {
+  if (!aDestination || !*aDestination) {
+    
+    return;
+  }
+
+  
+  
+  
+  nsAutoCString dest(aDestination);
+  for (size_t i = dest.Length(); i > 0;) {
+    --i;
+    if (dest[i] == '\'') {
+      dest.ReplaceLiteral(i, 1, "\\'");
+    }
+  }
+
+  double x = aRect.x, y = aRect.y, w = aRect.width, h = aRect.height;
+  cairo_user_to_device(mContext, &x, &y);
+  cairo_user_to_device_distance(mContext, &w, &h);
+
+  nsPrintfCString attributes("rect=[%f %f %f %f] uri='%s'", x, y, w, h,
+                             dest.get());
+
+  
+  
+  
+  cairo_tag_begin(mContext, CAIRO_TAG_LINK, attributes.get());
+  cairo_tag_end(mContext, CAIRO_TAG_LINK);
 }
 
 already_AddRefed<SourceSurface> DrawTargetCairo::Snapshot() {
