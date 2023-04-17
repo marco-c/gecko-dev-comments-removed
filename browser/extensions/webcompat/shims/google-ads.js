@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+if (window.adsbygoogle?.loaded === undefined) {
+  window.adsbygoogle = {
+    loaded: true,
+    push() {},
+  };
+}
