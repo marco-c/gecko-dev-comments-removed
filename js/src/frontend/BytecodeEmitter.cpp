@@ -112,13 +112,14 @@ static bool NeedsFieldInitializer(ParseNode* member, bool isStatic) {
          member->as<ClassField>().isStatic() == isStatic;
 }
 
-static bool NeedsMethodInitializer(ParseNode* member, bool isStatic) {
+static bool NeedsAccessorInitializer(ParseNode* member, bool isStatic) {
   if (isStatic) {
     return false;
   }
   return member->is<ClassMethod>() &&
          member->as<ClassMethod>().name().isKind(ParseNodeKind::PrivateName) &&
-         !member->as<ClassMethod>().isStatic();
+         !member->as<ClassMethod>().isStatic() &&
+         member->as<ClassMethod>().accessorType() != AccessorType::None;
 }
 
 static bool ShouldSuppressBreakpointsAndSourceNotes(
@@ -9028,14 +9029,15 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     ParseNode* propVal = prop->right();
     AccessorType accessorType;
     if (prop->is<ClassMethod>()) {
-      if (!prop->as<ClassMethod>().isStatic() &&
-          key->isKind(ParseNodeKind::PrivateName)) {
+      ClassMethod& method = prop->as<ClassMethod>();
+      accessorType = method.accessorType();
+
+      if (!method.isStatic() && key->isKind(ParseNodeKind::PrivateName) &&
+          accessorType != AccessorType::None) {
         
         
         continue;
       }
-
-      accessorType = prop->as<ClassMethod>().accessorType();
     } else if (prop->is<PropertyDefinition>()) {
       accessorType = prop->as<PropertyDefinition>().accessorType();
     } else {
@@ -9172,6 +9174,38 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         return false;
       }
 
+      continue;
+    }
+
+    if (key->isKind(ParseNodeKind::PrivateName) &&
+        !prop->as<ClassMethod>().isStatic()) {
+      MOZ_ASSERT(accessorType == AccessorType::None);
+      if (!pe.prepareForPrivateMethod()) {
+        
+        return false;
+      }
+      NameOpEmitter noe(this, key->as<NameNode>().atom(),
+                        NameOpEmitter::Kind::SimpleAssignment);
+      if (!noe.prepareForRhs()) {
+        
+        return false;
+      }
+      if (!emitValue()) {
+        
+        return false;
+      }
+      if (!noe.emitAssignment()) {
+        
+        return false;
+      }
+      if (!emit1(JSOp::Pop)) {
+        
+        return false;
+      }
+      if (!pe.skipInit()) {
+        
+        return false;
+      }
       continue;
     }
 
@@ -9441,28 +9475,37 @@ bool BytecodeEmitter::emitObjLiteralValue(ObjLiteralWriter& writer,
   return true;
 }
 
+static bool NeedsPrivateBrand(ParseNode* member) {
+  return member->is<ClassMethod>() &&
+         member->as<ClassMethod>().name().isKind(ParseNodeKind::PrivateName) &&
+         !member->as<ClassMethod>().isStatic();
+}
+
 mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
     ListNode* classMembers, FieldPlacement placement) {
   bool isStatic = placement == FieldPlacement::Static;
 
-  size_t numFields = std::count_if(
-      classMembers->contents().begin(), classMembers->contents().end(),
-      [&isStatic](ParseNode* member) {
-        return NeedsFieldInitializer(member, isStatic);
-      });
-  size_t numPrivateMethods = std::count_if(
-      classMembers->contents().begin(), classMembers->contents().end(),
-      [&isStatic](ParseNode* member) {
-        return NeedsMethodInitializer(member, isStatic);
-      });
+  size_t numFields = 0;
+  size_t numPrivateInitializers = 0;
+  bool hasPrivateBrand = false;
+  for (ParseNode* member : classMembers->contents()) {
+    if (NeedsFieldInitializer(member, isStatic)) {
+      numFields++;
+    } else if (NeedsAccessorInitializer(member, isStatic)) {
+      numPrivateInitializers++;
+      hasPrivateBrand = true;
+    } else if (NeedsPrivateBrand(member)) {
+      hasPrivateBrand = true;
+    }
+  }
 
   
-  if (numFields + numPrivateMethods > MemberInitializers::MaxInitializers) {
+  if (numFields + numPrivateInitializers >
+      MemberInitializers::MaxInitializers) {
     return Nothing();
   }
-  bool hasPrivateBrand = numPrivateMethods > 0;
   return Some(
-      MemberInitializers(hasPrivateBrand, numFields + numPrivateMethods));
+      MemberInitializers(hasPrivateBrand, numFields + numPrivateInitializers));
 }
 
 
@@ -9563,8 +9606,11 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
   
   
   
-  if (!isStatic && !emitPrivateMethodInitializers(ce, obj)) {
-    return false;
+  
+  if (!isStatic) {
+    if (!emitPrivateMethodInitializers(ce, obj)) {
+      return false;
+    }
   }
 
   for (ParseNode* propdef : obj->contents()) {
@@ -9623,6 +9669,11 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
     if (!propName->isKind(ParseNodeKind::PrivateName)) {
       continue;
     }
+    AccessorType accessorType = propdef->as<ClassMethod>().accessorType();
+    if (accessorType == AccessorType::None) {
+      
+      continue;
+    }
 
     if (!ce.prepareForMemberInitializer()) {
       
@@ -9638,25 +9689,9 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
                                  propName->as<NameNode>().atom())) {
       return false;
     }
-    AccessorType accessorType = propdef->as<ClassMethod>().accessorType();
-    switch (accessorType) {
-      case AccessorType::None:
-        if (!storedMethodName.append(".method")) {
-          return false;
-        }
-        break;
-      case AccessorType::Getter:
-        if (!storedMethodName.append(".getter")) {
-          return false;
-        }
-        break;
-      case AccessorType::Setter:
-        if (!storedMethodName.append(".setter")) {
-          return false;
-        }
-        break;
-      default:
-        MOZ_CRASH("Invalid private method accessor type");
+    if (!storedMethodName.append(
+            accessorType == AccessorType::Getter ? ".getter" : ".setter")) {
+      return false;
     }
     auto storedMethodAtom = storedMethodName.finishParserAtom(parserAtoms());
 
@@ -10595,7 +10630,7 @@ bool BytecodeEmitter::emitNewPrivateName(TaggedParserAtomIndex bindingName,
 
 bool BytecodeEmitter::emitNewPrivateNames(
     TaggedParserAtomIndex privateBrandName, ListNode* classMembers) {
-  bool emittedPrivateBrand = false;
+  bool hasPrivateBrand = false;
 
   for (ParseNode* classElement : classMembers->contents()) {
     ParseNode* elementName;
@@ -10611,19 +10646,30 @@ bool BytecodeEmitter::emitNewPrivateNames(
       continue;
     }
 
-    if (!emittedPrivateBrand && classElement->is<ClassMethod>() &&
+    
+    bool isOptimized = false;
+    if (classElement->is<ClassMethod>() &&
         !classElement->as<ClassMethod>().isStatic()) {
-      
-      if (!emitNewPrivateName(
-              TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
-              privateBrandName)) {
-        return false;
+      hasPrivateBrand = true;
+      if (classElement->as<ClassMethod>().accessorType() ==
+          AccessorType::None) {
+        isOptimized = true;
       }
-      emittedPrivateBrand = true;
     }
 
-    auto privateName = elementName->as<NameNode>().name();
-    if (!emitNewPrivateName(privateName, privateName)) {
+    if (!isOptimized) {
+      auto privateName = elementName->as<NameNode>().name();
+      if (!emitNewPrivateName(privateName, privateName)) {
+        return false;
+      }
+    }
+  }
+
+  if (hasPrivateBrand) {
+    
+    
+    if (!emitNewPrivateName(TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
+                            privateBrandName)) {
       return false;
     }
   }
@@ -10742,7 +10788,7 @@ bool BytecodeEmitter::emitClass(
 
     auto needsInitializer = [](ParseNode* propdef) {
       return NeedsFieldInitializer(propdef, false) ||
-             NeedsMethodInitializer(propdef, false);
+             NeedsAccessorInitializer(propdef, false);
     };
 
     

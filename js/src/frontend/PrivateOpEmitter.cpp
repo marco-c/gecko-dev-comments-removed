@@ -106,8 +106,9 @@ bool PrivateOpEmitter::skipReference() {
 }
 
 bool PrivateOpEmitter::emitGet() {
-  
   MOZ_ASSERT(state_ == State::Reference);
+
+  
 
   if (loc_.bindingKind() == BindingKind::PrivateMethod) {
     
@@ -121,11 +122,27 @@ bool PrivateOpEmitter::emitGet() {
       
       return false;
     }
-    if (!bce_->emitPopN(isCall() ? 2 : 3)) {
-      
-      return false;
+
+    if (isCompoundAssignment()) {
+      if (!bce_->emit1(JSOp::Pop)) {
+        
+        return false;
+      }
+    } else if (isCall()) {
+      if (!bce_->emitPopN(2)) {
+        
+        return false;
+      }
+    } else {
+      if (!bce_->emitPopN(3)) {
+        
+        return false;
+      }
     }
+
     if (!emitLoad(name_, loc_)) {
+      
+      
       
       return false;
     }
@@ -159,6 +176,8 @@ bool PrivateOpEmitter::emitGet() {
 
     if (!bce_->emitElemOpBase(JSOp::GetElem, ShouldInstrument::Yes)) {
       
+      
+      
       return false;
     }
   }
@@ -172,6 +191,7 @@ bool PrivateOpEmitter::emitGet() {
 
   
   
+  
 
 #ifdef DEBUG
   state_ = State::Get;
@@ -182,11 +202,9 @@ bool PrivateOpEmitter::emitGet() {
 bool PrivateOpEmitter::emitGetForCallOrNew() { return emitGet(); }
 
 bool PrivateOpEmitter::emitAssignment() {
-  MOZ_ASSERT(isSimpleAssignment() || isFieldInit() || isCompoundAssignment() ||
-             isIncDec());
-  bool alreadyEmittedGet = isCompoundAssignment() || isIncDec();
-  MOZ_ASSERT_IF(!alreadyEmittedGet, state_ == State::Reference);
-  MOZ_ASSERT_IF(alreadyEmittedGet, state_ == State::Get);
+  MOZ_ASSERT(isSimpleAssignment() || isFieldInit() || isCompoundAssignment());
+  MOZ_ASSERT_IF(!isCompoundAssignment(), state_ == State::Reference);
+  MOZ_ASSERT_IF(isCompoundAssignment(), state_ == State::Get);
 
   
 
@@ -205,7 +223,7 @@ bool PrivateOpEmitter::emitAssignment() {
     
     
     
-    if (!alreadyEmittedGet) {
+    if (!isCompoundAssignment()) {
       if (!bce_->emitUnpickN(2)) {
         
         return false;
@@ -276,8 +294,9 @@ bool PrivateOpEmitter::emitIncDec() {
     return false;
   }
 
-  if (!emitAssignment()) {
+  if (!bce_->emitElemOpBase(JSOp::StrictSetElem, ShouldInstrument::Yes)) {
     
+    return false;
   }
 
   if (isPostIncDec()) {
