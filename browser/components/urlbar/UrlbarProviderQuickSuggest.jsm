@@ -13,7 +13,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.jsm",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -21,6 +20,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "urlbarExperimentFeature", () => {
+  const { ExperimentFeature } = ChromeUtils.import(
+    "resource://nimbus/ExperimentAPI.jsm"
+  );
+  return new ExperimentFeature("urlbar");
 });
 
 
@@ -45,7 +51,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     super(...args);
     this._updateExperimentState();
     UrlbarPrefs.addObserver(this);
-    NimbusFeatures.urlbar.onUpdate(this._updateExperimentState);
+    urlbarExperimentFeature.onUpdate(this._updateExperimentState);
   }
 
   
@@ -96,7 +102,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return (
       queryContext.trimmedSearchString &&
       !queryContext.searchMode &&
-      NimbusFeatures.urlbar.getValue().quickSuggestEnabled &&
+      urlbarExperimentFeature.getValue().quickSuggestEnabled &&
       UrlbarPrefs.get(SUGGEST_PREF) &&
       UrlbarPrefs.get("suggest.searches") &&
       UrlbarPrefs.get("browser.search.suggest.enabled") &&
@@ -277,12 +283,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
   _updateExperimentState() {
     Services.telemetry.setEventRecordingEnabled(
       TELEMETRY_EVENT_CATEGORY,
-      NimbusFeatures.urlbar.getValue().quickSuggestEnabled
+      urlbarExperimentFeature.getValue().quickSuggestEnabled
     );
     
     
     
-    if (NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
+    if (urlbarExperimentFeature.getValue().quickSuggestEnabled) {
       UrlbarQuickSuggest; 
     }
   }

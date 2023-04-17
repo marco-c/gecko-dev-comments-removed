@@ -19,7 +19,7 @@ const { PrivateBrowsingUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  ExperimentFeature: "resource://nimbus/ExperimentAPI.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -29,13 +29,23 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyGetter(this, "awExperimentFeature", () => {
+  return new ExperimentFeature("aboutwelcome");
+});
+
+
+
+XPCOMUtils.defineLazyGetter(this, "newtabExperimentFeature", () => {
+  return new ExperimentFeature("newtab");
+});
+
 class AboutNewTabChild extends JSWindowActorChild {
   handleEvent(event) {
     if (event.type == "DOMContentLoaded") {
       
       
       if (
-        NimbusFeatures.aboutwelcome.isEnabled({ defaultValue: true }) &&
+        awExperimentFeature.isEnabled({ defaultValue: true }) &&
         this.contentWindow.location.pathname.includes("welcome")
       ) {
         return;
@@ -82,8 +92,7 @@ class AboutNewTabChild extends JSWindowActorChild {
         this.sendAsyncMessage("DefaultBrowserNotification");
 
         
-        
-        NimbusFeatures.newtab.recordExposureEvent();
+        newtabExperimentFeature.recordExposureEvent();
       }
     }
   }
