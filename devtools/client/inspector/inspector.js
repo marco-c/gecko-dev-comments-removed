@@ -860,19 +860,23 @@ Inspector.prototype = {
 
   onSidebarHidden: function() {
     
-    const state = this.splitBox.state;
-    Services.prefs.setIntPref(
-      "devtools.toolsidebar-width.inspector",
-      state.width
-    );
-    Services.prefs.setIntPref(
-      "devtools.toolsidebar-height.inspector",
-      state.height
-    );
-    Services.prefs.setIntPref(
-      "devtools.toolsidebar-width.inspector.splitsidebar",
-      this.sidebarSplitBoxRef.current.state.width
-    );
+    if (this.splitBox) {
+      const state = this.splitBox.state;
+      Services.prefs.setIntPref(
+        "devtools.toolsidebar-width.inspector",
+        state.width
+      );
+      Services.prefs.setIntPref(
+        "devtools.toolsidebar-height.inspector",
+        state.height
+      );
+    }
+    if (this.sidebarSplitBoxRef?.current) {
+      Services.prefs.setIntPref(
+        "devtools.toolsidebar-width.inspector.splitsidebar",
+        this.sidebarSplitBoxRef.current.state.width
+      );
+    }
   },
 
   onSidebarResized: function(width, height) {
@@ -1661,18 +1665,23 @@ Inspector.prototype = {
 
     this.cancelUpdate();
 
-    this.sidebar.destroy();
-
     this.panelWin.removeEventListener("resize", this.onPanelWindowResize, true);
     this.selection.off("new-node-front", this.onNewSelection);
     this.selection.off("detached-front", this.onDetached);
+    this.toolbox.nodePicker.off("picker-node-canceled", this.onPickerCanceled);
+    this.toolbox.nodePicker.off("picker-node-hovered", this.onPickerHovered);
+    this.toolbox.nodePicker.off("picker-node-picked", this.onPickerPicked);
+
+    
+    
+    this.sidebar.destroy();
+    
+    
     this.sidebar.off("select", this.onSidebarSelect);
     this.sidebar.off("show", this.onSidebarShown);
     this.sidebar.off("hide", this.onSidebarHidden);
     this.sidebar.off("destroy", this.onSidebarHidden);
-    this.toolbox.nodePicker.off("picker-node-canceled", this.onPickerCanceled);
-    this.toolbox.nodePicker.off("picker-node-hovered", this.onPickerHovered);
-    this.toolbox.nodePicker.off("picker-node-picked", this.onPickerPicked);
+    this.sidebar = null;
 
     for (const [, panel] of this._panels) {
       panel.destroy();
@@ -1688,10 +1697,9 @@ Inspector.prototype = {
       this._search = null;
     }
 
-    this.sidebar.destroy();
-    if (this.ruleViewSideBar) {
-      this.ruleViewSideBar.destroy();
-    }
+    this.ruleViewSideBar.destroy();
+    this.ruleViewSideBar = null;
+
     this._destroyMarkup();
 
     this.teardownToolbar();
@@ -1699,6 +1707,7 @@ Inspector.prototype = {
     this.breadcrumbs.destroy();
     this.styleChangeTracker.destroy();
     this.searchboxShortcuts.destroy();
+    this.searchboxShortcuts = null;
 
     this.commands.targetCommand.unwatchTargets(
       [this.commands.targetCommand.TYPES.FRAME],
@@ -1715,6 +1724,13 @@ Inspector.prototype = {
       { onAvailable: this.onResourceAvailable }
     );
     this.untrackReflowsInSelection();
+
+    this._InspectorTabPanel = this._TabBar = this._InspectorSplitBox = null;
+    this.sidebarSplitBoxRef = null;
+    
+    
+    
+    this.splitBox = null;
 
     this._is3PaneModeChromeEnabled = null;
     this._is3PaneModeEnabled = null;
