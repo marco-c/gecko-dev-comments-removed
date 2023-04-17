@@ -6855,7 +6855,7 @@
 # Whether the `color-scheme` css property and meta tags are enabled.
 - name: layout.css.color-scheme.enabled
   type: RelaxedAtomicBool
-  value: @EARLY_BETA_OR_EARLIER@
+  value: @IS_EARLY_BETA_OR_EARLIER@
   mirror: always
   rust: true
 
@@ -12078,7 +12078,7 @@
 
 - name: widget.windows.window_occlusion_tracking.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 - name: widget.windows.window_occlusion_tracking_display_state.enabled
