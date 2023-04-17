@@ -289,6 +289,10 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   
   
   mozilla::Maybe<mozilla::HashNumber> failedICHash_;
+
+  
+  
+  bool hasPurgedStubs_ = false;
 #endif
 
   ICScript icScript_;
@@ -494,7 +498,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   mozilla::HashNumber getFailedICHash() { return failedICHash_.extract(); }
   void setFailedICHash(mozilla::HashNumber hash) {
     MOZ_ASSERT(failedICHash_.isNothing());
-    failedICHash_.emplace(hash);
+    if (!hasPurgedStubs_) {
+      failedICHash_.emplace(hash);
+    }
   }
 #endif
 };

@@ -182,6 +182,7 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   
   
   
+  
   HashNumber hash = icScript->hash();
   if (outerScript_->jitScript()->hasFailedICHash()) {
     HashNumber oldHash = outerScript_->jitScript()->getFailedICHash();
