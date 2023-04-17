@@ -23,10 +23,9 @@ class nsMenuParentX {
 
   
   
-  virtual void InsertChildNativeMenuItem(const MenuChild& aChild) = 0;
-
   
-  virtual void RemoveChildNativeMenuItem(const MenuChild& aChild) = 0;
+  virtual void MenuChildChangedVisibility(const MenuChild& aChild,
+                                          bool aIsVisible) = 0;
 };
 
 #endif  

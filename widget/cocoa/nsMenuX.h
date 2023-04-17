@@ -141,11 +141,7 @@ class nsMenuX final : public nsMenuParentX,
   void ClearIconListener() { mIconListener = nullptr; }
 
   
-  
-  void InsertChildNativeMenuItem(const MenuChild& aChild) override;
-
-  
-  void RemoveChildNativeMenuItem(const MenuChild& aChild) override;
+  void MenuChildChangedVisibility(const MenuChild& aChild, bool aIsVisible) override;
 
   void Dump(uint32_t aIndent) const;
 

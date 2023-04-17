@@ -116,11 +116,7 @@ class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
   
-  
-  void InsertChildNativeMenuItem(const MenuChild& aChild) override;
-
-  
-  void RemoveChildNativeMenuItem(const MenuChild& aChild) override;
+  void MenuChildChangedVisibility(const MenuChild& aChild, bool aIsVisible) override;
 
  protected:
   virtual ~nsMenuBarX();
