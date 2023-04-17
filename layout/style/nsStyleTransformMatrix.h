@@ -35,14 +35,11 @@ namespace nsStyleTransformMatrix {
 enum class MatrixTransformOperator : uint8_t { Interpolate, Accumulate };
 
 
+
+
 inline void ApplyPerspectiveToMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                                      float aDepth) {
-  
-  
-  
-  if (!std::isinf(aDepth) && aDepth != std::numeric_limits<float>::max()) {
-    aMatrix.Perspective(std::max(aDepth, 1.0f));
-  }
+  aMatrix.Perspective(std::max(aDepth, 1.0f));
 }
 
 

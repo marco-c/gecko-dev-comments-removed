@@ -1112,12 +1112,8 @@ impl Animate for ComputedTransformOperation {
 
                 let decomposed = decompose_3d_matrix(interpolated)?;
                 let perspective_z = decomposed.perspective.2;
-                
-                
-                let used_value = if perspective_z >= 0. {
-                    std::f32::INFINITY
-                } else if perspective_z <= -1. {
-                    1.
+                let used_value = if perspective_z == 0. {
+                    0.
                 } else {
                     -1. / perspective_z
                 };
