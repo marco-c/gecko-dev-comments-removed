@@ -88,9 +88,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(TextEditor)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(TextEditor, EditorBase)
   if (tmp->mPasswordMaskData) {
-    if (tmp->HasAutoMaskingTimer()) {
-      tmp->mPasswordMaskData->mTimer->Cancel();
-    }
+    tmp->mPasswordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::No);
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mPasswordMaskData->mTimer)
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -115,14 +113,8 @@ nsresult TextEditor::Init(Document& aDocument, Element& aAnonymousDivElement,
                           UniquePtr<PasswordMaskData>&& aPasswordMaskData) {
   MOZ_ASSERT(!mInitSucceeded,
              "TextEditor::Init() called again without calling PreDestroy()?");
-  MOZ_ASSERT_IF(aFlags & nsIEditor::eEditorPasswordMask,
-                !aPasswordMaskData != !mPasswordMaskData);
-
-  if (aPasswordMaskData) {
-    MOZ_ASSERT(!mPasswordMaskData);
-    MOZ_ASSERT(aFlags & nsIEditor::eEditorPasswordMask);
-    mPasswordMaskData = std::move(aPasswordMaskData);
-  }
+  MOZ_ASSERT(!(aFlags & nsIEditor::eEditorPasswordMask) == !aPasswordMaskData);
+  mPasswordMaskData = std::move(aPasswordMaskData);
 
   
   nsresult rv = InitInternal(aDocument, &aAnonymousDivElement,
@@ -180,19 +172,24 @@ nsresult TextEditor::PostCreate() {
   return rv;
 }
 
-void TextEditor::PreDestroy() {
+UniquePtr<PasswordMaskData> TextEditor::PreDestroy() {
   if (mDidPreDestroy) {
-    return;
+    return nullptr;
   }
 
-  if (IsPasswordEditor() && !IsAllMasked()) {
+  UniquePtr<PasswordMaskData> passwordMaskData = std::move(mPasswordMaskData);
+  if (passwordMaskData) {
     
     
-    MOZ_ASSERT(mPasswordMaskData);
-    MaskAllCharacters();
+    passwordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::Yes);
+    
+    
+    passwordMaskData->mEchoingPasswordPrevented = false;
   }
 
   PreDestroyInternal();
+
+  return passwordMaskData;
 }
 
 nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
@@ -670,18 +667,14 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     if (!IsAllMasked()) {
       mPasswordMaskData->mUnmaskedLength = 0;
-      if (HasAutoMaskingTimer()) {
-        mPasswordMaskData->mTimer->Cancel();
-      }
+      mPasswordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::No);
     }
   }
 
   
   
   if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData)) {
-    if (HasAutoMaskingTimer()) {
-      mPasswordMaskData->mTimer = nullptr;
-    }
+    mPasswordMaskData->CancelTimer(PasswordMaskData::ReleaseTimer::Yes);
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -731,8 +724,7 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     if (NS_WARN_IF(aLength != 0)) {
       return NS_ERROR_INVALID_ARG;
     }
-    mPasswordMaskData->mUnmaskedStart = UINT32_MAX;
-    mPasswordMaskData->mUnmaskedLength = 0;
+    mPasswordMaskData->MaskAll();
   }
 
   

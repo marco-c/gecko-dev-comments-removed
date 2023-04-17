@@ -91,7 +91,8 @@ class TextEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void PreDestroy();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY UniquePtr<PasswordMaskData>
+  PreDestroy();
 
   static TextEditor* GetFrom(nsIEditor* aEditor) {
     return aEditor ? aEditor->GetAsTextEditor() : nullptr;
@@ -329,6 +330,9 @@ class TextEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaskAllCharacters() {
+    if (!mPasswordMaskData) {
+      return NS_OK;  
+    }
     return SetUnmaskRangeInternal(UINT32_MAX, 0, 0, false, true);
   }
 
