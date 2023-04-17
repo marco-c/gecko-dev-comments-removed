@@ -4343,10 +4343,12 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
   sweepActions->assertFinished();
 }
 
-bool ArenaLists::foregroundFinalize(JSFreeOp* fop, AllocKind thingKind,
-                                    SliceBudget& sliceBudget,
-                                    SortedArenaList& sweepList) {
-  checkNoArenasToUpdateForKind(thingKind);
+bool GCRuntime::foregroundFinalize(JSFreeOp* fop, Zone* zone,
+                                   AllocKind thingKind,
+                                   SliceBudget& sliceBudget,
+                                   SortedArenaList& sweepList) {
+  ArenaLists& lists = zone->arenas;
+  lists.checkNoArenasToUpdateForKind(thingKind);
 
   
   
@@ -4355,22 +4357,16 @@ bool ArenaLists::foregroundFinalize(JSFreeOp* fop, AllocKind thingKind,
   
   
   
-  if (!FinalizeArenas(fop, &arenasToSweep(thingKind), sweepList, thingKind,
-                      sliceBudget)) {
+  if (!FinalizeArenas(fop, &lists.arenasToSweep(thingKind), sweepList,
+                      thingKind, sliceBudget)) {
     
-    incrementalSweptArenaKind = thingKind;
-    incrementalSweptArenas.ref().clear();
-    incrementalSweptArenas = sweepList.toArenaList();
+    lists.setIncrementalSweptArenas(thingKind, sweepList);
     return false;
   }
 
-  
-  
-  incrementalSweptArenaKind = AllocKind::LIMIT;
-  incrementalSweptArenas.ref().clear();
-
-  sweepList.extractEmpty(&savedEmptyArenas.ref());
-  mergeFinalizedArenas(thingKind, sweepList);
+  sweepList.extractEmpty(&lists.savedEmptyArenas.ref());
+  lists.mergeFinalizedArenas(thingKind, sweepList);
+  lists.clearIncrementalSweptArenas();
 
   return true;
 }
@@ -4587,8 +4583,7 @@ IncrementalProgress GCRuntime::finalizeAllocKind(JSFreeOp* fop,
 
   AutoSetThreadIsSweeping threadIsSweeping(sweepZone);
 
-  if (!sweepZone->arenas.foregroundFinalize(fop, sweepAllocKind, budget,
-                                            sweepList)) {
+  if (!foregroundFinalize(fop, sweepZone, sweepAllocKind, budget, sweepList)) {
     return NotFinished;
   }
 
