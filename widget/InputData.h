@@ -256,7 +256,7 @@ class MultiTouchInput : public InputData {
   bool mHandledByAPZ;
   
   
-  int16_t mButton = eNotPressed;
+  int16_t mButton = 0;
   int16_t mButtons = 0;
 };
 
