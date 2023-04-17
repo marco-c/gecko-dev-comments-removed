@@ -16,6 +16,14 @@
       "--newtab-background-color",
       {
         lwtProperty: "ntp_background",
+        processColor(rgbaChannels) {
+          if (!rgbaChannels) {
+            return null;
+          }
+          const { r, g, b } = rgbaChannels;
+          
+          return `rgb(${r}, ${g}, ${b})`;
+        },
       },
     ],
     [

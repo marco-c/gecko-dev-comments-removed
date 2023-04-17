@@ -317,6 +317,11 @@ LightweightThemeConsumer.prototype = {
 
     let contentThemeData = _getContentProperties(this._doc, active, theme);
     Services.ppmm.sharedData.set(`theme/${this._winId}`, contentThemeData);
+    
+    
+    
+    
+    Services.ppmm.sharedData.flush();
 
     this._win.dispatchEvent(new CustomEvent("windowlwthemeupdate"));
   },

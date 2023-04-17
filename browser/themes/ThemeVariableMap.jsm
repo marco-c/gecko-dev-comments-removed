@@ -181,6 +181,29 @@ const ThemeVariableMap = [
       optionalElementID: "browser",
     },
   ],
+  [
+    "--tabpanel-background-color",
+    {
+      lwtProperty: "ntp_background",
+      processColor(rgbaChannels) {
+        if (!rgbaChannels) {
+          return null;
+        }
+        if (!Services.prefs.getBoolPref("browser.newtabpage.enabled")) {
+          
+          
+          
+          
+          
+          
+          return null;
+        }
+        const { r, g, b } = rgbaChannels;
+        
+        return `rgb(${r}, ${g}, ${b})`;
+      },
+    },
+  ],
 ];
 
 const ThemeContentPropertyList = [
