@@ -2548,49 +2548,39 @@ void CanvasRenderingContext2D::FillRect(double aX, double aY, double aW,
 
   const ContextState* state = &CurrentState();
   if (state->patternStyles[Style::FILL]) {
-    CanvasPattern::RepeatMode repeat =
-        state->patternStyles[Style::FILL]->mRepeat;
+    auto& style = state->patternStyles[Style::FILL];
+    CanvasPattern::RepeatMode repeat = style->mRepeat;
     
     bool limitx = repeat == CanvasPattern::RepeatMode::NOREPEAT ||
                   repeat == CanvasPattern::RepeatMode::REPEATY;
     bool limity = repeat == CanvasPattern::RepeatMode::NOREPEAT ||
                   repeat == CanvasPattern::RepeatMode::REPEATX;
-
-    IntSize patternSize =
-        state->patternStyles[Style::FILL]->mSurface->GetSize();
-
-    
-    
-    if (limitx) {
-      if (aX < 0) {
-        aW += aX;
-        if (aW < 0) {
-          aW = 0;
-        }
-
-        aX = 0;
+    if ((limitx || limity) && style->mTransform.IsRectilinear()) {
+      
+      
+      
+      
+      
+      
+      
+      gfx::Rect patternBounds(style->mSurface->GetRect());
+        patternBounds = style->mTransform.TransformBounds(patternBounds);
+      gfx::Rect bounds(aX, aY, aW, aH);
+      
+      
+      bounds = bounds.Intersect(patternBounds);
+      if (style->mTransform.HasNonAxisAlignedTransform()) {
+        
+        
+        std::swap(limitx, limity);
       }
-      if (aX + aW > patternSize.width) {
-        aW = patternSize.width - aX;
-        if (aW < 0) {
-          aW = 0;
-        }
+      if (limitx) {
+        aX = bounds.x;
+        aW = bounds.width;
       }
-    }
-    if (limity) {
-      if (aY < 0) {
-        aH += aY;
-        if (aH < 0) {
-          aH = 0;
-        }
-
-        aY = 0;
-      }
-      if (aY + aH > patternSize.height) {
-        aH = patternSize.height - aY;
-        if (aH < 0) {
-          aH = 0;
-        }
+      if (limity) {
+        aY = bounds.y;
+        aH = bounds.height;
       }
     }
   }
