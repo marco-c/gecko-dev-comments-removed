@@ -225,8 +225,24 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
                        contentType.EqualsLiteral(u"text/plain");
 
     
+    
+    bool httpOk = false;
+    nsCOMPtr<nsIChannel> channel;
+    nsresult rv = GetParser()->GetChannel(getter_AddRefs(channel));
+    if (NS_SUCCEEDED(rv) && channel) {
+      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
+      if (httpChannel) {
+        uint32_t httpStatus;
+        rv = httpChannel->GetResponseStatus(&httpStatus);
+        if (NS_SUCCEEDED(rv) && httpStatus == 200) {
+          httpOk = true;
+        }
+      }
+    }
+
+    
     MOZ_ASSERT(mDocument->IsHTMLDocument());
-    if (htmlOrPlain && topLevel && !aTerminated &&
+    if (httpOk && htmlOrPlain && topLevel && !aTerminated &&
         !mDocument->AsHTMLDocument()->IsViewSource()) {
       
       
