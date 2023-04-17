@@ -50,8 +50,6 @@ class ProviderAliasEngines extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return false;
-    
     return (
       (!queryContext.restrictSource ||
         queryContext.restrictSource == UrlbarTokenizer.RESTRICT.SEARCH) &&
@@ -69,19 +67,14 @@ class ProviderAliasEngines extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let instance = this.queryInstance;
     let alias = queryContext.tokens[0]?.value;
-    let engine = await UrlbarSearchUtils.engineForAlias(alias);
+    let engine = await UrlbarSearchUtils.engineForAlias(
+      alias,
+      queryContext.searchString
+    );
     if (!engine || instance != this.queryInstance) {
       return;
     }
-
     let query = UrlbarUtils.substringAfter(queryContext.searchString, alias);
-
-    
-    
-    if (!UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
-      return;
-    }
-
     let result = new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.SEARCH,
       UrlbarUtils.RESULT_SOURCE.SEARCH,
