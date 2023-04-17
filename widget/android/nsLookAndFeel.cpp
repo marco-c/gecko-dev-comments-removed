@@ -398,8 +398,6 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     case IntID::SystemUsesDarkTheme: {
       if (!mSystemUsesDarkThemeCached && XRE_IsParentProcess()) {
         
-        
-        
         if (!jni::IsAvailable()) {
           return NS_ERROR_FAILURE;
         }
