@@ -24,9 +24,32 @@ let { release_or_beta } = getBuildConfiguration();
 let nightly = !release_or_beta;
 
 let nightlyOnlyFeatures = [
-  ['exceptions', wasmExceptionsEnabled(), `(module (type (func)) (event (type 0)))`],
-  ['function-references', wasmFunctionReferencesEnabled(), `(module (func (param (ref extern))))`],
-  ['gc', wasmGcEnabled(), `(module (type $s (struct)) (func (param (ref null $s))))`],
+  [
+    'extended-const',
+    wasmExtendedConstEnabled(),
+    `(module
+      (global i32
+        i32.const 0
+        i32.const 0
+        i32.add
+      )
+    )`
+  ],
+  [
+    'exceptions',
+    wasmExceptionsEnabled(),
+    `(module (type (func)) (event (type 0)))`
+  ],
+  [
+    'function-references',
+    wasmFunctionReferencesEnabled(),
+    `(module (func (param (ref extern))))`
+  ],
+  [
+    'gc',
+    wasmGcEnabled(),
+    `(module (type $s (struct)) (func (param (ref null $s))))`
+  ],
 ];
 
 for (let [name, enabled, test] of nightlyOnlyFeatures) {
