@@ -67,9 +67,7 @@ const TargetingEnvironment = {
 };
 
 class TargetingContext {
-  #telemetrySource = null;
-
-  constructor(customContext, options = { source: null }) {
+  constructor(customContext) {
     if (customContext) {
       this.ctx = new Proxy(customContext, {
         get: (customCtx, prop) => {
@@ -84,35 +82,16 @@ class TargetingContext {
     }
 
     
-    this.#telemetrySource = options.source;
-
-    
     Services.telemetry.setEventRecordingEnabled(TARGETING_EVENT_CATEGORY, true);
   }
 
-  setTelemetrySource(source) {
-    if (source) {
-      this.#telemetrySource = source;
-    }
-  }
-
   _sendUndesiredEvent(eventData) {
-    if (this.#telemetrySource) {
-      Services.telemetry.recordEvent(
-        TARGETING_EVENT_CATEGORY,
-        TARGETING_EVENT_METHOD,
-        eventData.event,
-        eventData.value,
-        { source: this.#telemetrySource }
-      );
-    } else {
-      Services.telemetry.recordEvent(
-        TARGETING_EVENT_CATEGORY,
-        TARGETING_EVENT_METHOD,
-        eventData.event,
-        eventData.value
-      );
-    }
+    Services.telemetry.recordEvent(
+      TARGETING_EVENT_CATEGORY,
+      TARGETING_EVENT_METHOD,
+      eventData.event,
+      eventData.value
+    );
   }
 
   
@@ -236,7 +215,7 @@ class TargetingContext {
 
 
 
-  evalWithDefault(expression, options = { source: null }) {
+  evalWithDefault(expression) {
     return FilterExpressions.eval(
       expression,
       this.createContextWithTimeout(this.ctx)
