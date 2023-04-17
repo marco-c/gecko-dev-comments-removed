@@ -513,17 +513,20 @@ StorageManager* Navigator::Storage() {
 }
 
 bool Navigator::CookieEnabled() {
-  nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
-  bool cookieEnabled =
-      nsICookieManager::GetCookieBehavior(loadContext->UsePrivateBrowsing()) !=
-      nsICookieService::BEHAVIOR_REJECT;
-
   
   
   
   if (!mWindow || !mWindow->GetDocShell()) {
-    return cookieEnabled;
+    return nsICookieManager::GetCookieBehavior(false) !=
+           nsICookieService::BEHAVIOR_REJECT;
   }
+
+  nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
+  uint32_t cookieBehavior = loadContext
+                                ? nsICookieManager::GetCookieBehavior(
+                                      loadContext->UsePrivateBrowsing())
+                                : nsICookieManager::GetCookieBehavior(false);
+  bool cookieEnabled = cookieBehavior != nsICookieService::BEHAVIOR_REJECT;
 
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
   if (!doc) {
