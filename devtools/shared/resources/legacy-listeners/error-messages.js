@@ -9,17 +9,17 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
 
-module.exports = async function({ targetList, targetFront, onAvailable }) {
+module.exports = async function({ targetCommand, targetFront, onAvailable }) {
   
   
   
   
   
-  const listenForFrames = targetList.descriptorFront.isLocalTab;
+  const listenForFrames = targetCommand.descriptorFront.isLocalTab;
   const isAllowed =
     targetFront.isTopLevel ||
-    targetFront.targetType === targetList.TYPES.PROCESS ||
-    (targetFront.targetType === targetList.TYPES.FRAME && listenForFrames);
+    targetFront.targetType === targetCommand.TYPES.PROCESS ||
+    (targetFront.targetType === targetCommand.TYPES.FRAME && listenForFrames);
 
   if (!isAllowed) {
     return;

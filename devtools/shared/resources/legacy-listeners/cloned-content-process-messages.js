@@ -13,7 +13,7 @@ const Services = require("Services");
 
 
 
-module.exports = async function({ targetList, targetFront, onAvailable }) {
+module.exports = async function({ targetCommand, targetFront, onAvailable }) {
   const browserToolboxFissionSupport = Services.prefs.getBoolPref(
     "devtools.browsertoolbox.fission",
     false

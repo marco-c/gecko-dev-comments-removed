@@ -25,11 +25,11 @@ const {
 
 
 
-module.exports = async function({ targetList, targetFront, onAvailable }) {
-  const isBrowserToolbox = targetList.targetFront.isParentProcess;
+module.exports = async function({ targetCommand, targetFront, onAvailable }) {
+  const isBrowserToolbox = targetCommand.targetFront.isParentProcess;
   const isNonTopLevelFrameTarget =
     !targetFront.isTopLevel &&
-    targetFront.targetType === targetList.TYPES.FRAME;
+    targetFront.targetType === targetCommand.TYPES.FRAME;
 
   if (isBrowserToolbox && isNonTopLevelFrameTarget) {
     

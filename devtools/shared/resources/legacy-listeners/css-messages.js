@@ -9,13 +9,13 @@ const {
 } = require("devtools/shared/resources/resource-watcher");
 const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
 
-module.exports = async function({ targetList, targetFront, onAvailable }) {
+module.exports = async function({ targetCommand, targetFront, onAvailable }) {
   
   
   const isAllowed =
     typeof targetFront.ensureCSSErrorReportingEnabled == "function" &&
     (targetFront.isTopLevel ||
-      targetFront.targetType === targetList.TYPES.FRAME);
+      targetFront.targetType === targetCommand.TYPES.FRAME);
 
   if (!isAllowed) {
     return;
