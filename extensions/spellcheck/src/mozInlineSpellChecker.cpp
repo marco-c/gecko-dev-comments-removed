@@ -1341,7 +1341,9 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
     return NS_ERROR_FAILURE;
   }
 
-  if (mStatus->mRange->Collapsed()) return NS_OK;
+  if (mStatus->mRange->Collapsed()) {
+    return NS_OK;
+  }
 
   
   
@@ -1442,13 +1444,16 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
         mSpellCheckSelection->GetRangesForInterval(
             *beginNode, beginOffset, *endNode, endOffset, true, ranges, erv);
         ENSURE_SUCCESS(erv, erv.StealNSResult());
-        for (uint32_t i = 0; i < ranges.Length(); i++)
+        for (uint32_t i = 0; i < ranges.Length(); i++) {
           mInlineSpellChecker.RemoveRange(mSpellCheckSelection, ranges[i]);
+        }
       }
     }
 
     
-    if (dontCheckWord) continue;
+    if (dontCheckWord) {
+      continue;
+    }
 
     
     if (!mInlineSpellChecker.ShouldSpellCheckNode(textEditor, beginNode)) {
