@@ -9291,7 +9291,7 @@ CSSPoint nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame) {
 
     
     nsPresContext* pc = frame->PresContext();
-    if (pc->IsRootContentDocument()) {
+    if (pc->IsRootContentDocumentCrossProcess()) {
       if (PresShell* shell = pc->GetPresShell()) {
         if (nsIFrame* rsf = shell->GetRootScrollFrame()) {
           if (frame->GetContent() == rsf->GetContent()) {
@@ -9308,7 +9308,7 @@ CSSPoint nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame) {
     
     ViewportFrame* viewportFrame = do_QueryFrame(frame);
     if (viewportFrame) {
-      if (pc->IsRootContentDocument() && !seenRcdRsf) {
+      if (pc->IsRootContentDocumentCrossProcess() && !seenRcdRsf) {
         applyCallbackTransformForFrame(pc->PresShell()->GetRootScrollFrame());
       }
     }
