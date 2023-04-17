@@ -33,6 +33,7 @@
 #include "js/Class.h"
 #include "js/CompileOptions.h"
 #include "js/Context.h"
+#include "js/ErrorInterceptor.h"
 #include "js/ErrorReport.h"
 #include "js/Exception.h"
 #include "js/GCAPI.h"
@@ -129,18 +130,6 @@ struct JSWrapObjectCallbacks {
 
 
 
-
-struct JSErrorInterceptor {
-  
-
-
-
-
-  virtual void interceptError(JSContext* cx, JS::HandleValue error) = 0;
-};
-
-
-
 static MOZ_ALWAYS_INLINE JS::Value JS_NumberValue(double d) {
   int32_t i;
   d = JS::CanonicalizeNaN(d);
@@ -206,26 +195,6 @@ extern JS_PUBLIC_API const char* JS_GetImplementationVersion(void);
 
 extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
     JSContext* cx, const JSWrapObjectCallbacks* callbacks);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_SetErrorInterceptorCallback(
-    JSRuntime*, JSErrorInterceptor* callback);
-
-
-extern JS_PUBLIC_API JSErrorInterceptor* JS_GetErrorInterceptorCallback(
-    JSRuntime*);
 
 
 

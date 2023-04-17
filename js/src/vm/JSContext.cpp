@@ -42,6 +42,7 @@
 #include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/ContextOptions.h"        
+#include "js/ErrorInterceptor.h"      
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Printf.h"
