@@ -33,6 +33,7 @@
 #include "nsDocShellLoadState.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsDOMNavigationTiming.h"
+#include "nsObjectLoadingContent.h"
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
 #include "nsIBrowser.h"
@@ -1526,9 +1527,16 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   
   
   
-  if (!mIsDocumentLoad && !mChannel->IsDocument()) {
-    LOG(("Process Switch Abort: non-document load"));
-    return false;
+  if (!mIsDocumentLoad) {
+    if (!mChannel->IsDocument()) {
+      LOG(("Process Switch Abort: non-document load"));
+      return false;
+    }
+    nsresult status;
+    if (!nsObjectLoadingContent::IsSuccessfulRequest(mChannel, &status)) {
+      LOG(("Process Switch Abort: error page"));
+      return false;
+    }
   }
 
   
