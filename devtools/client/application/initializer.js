@@ -46,7 +46,7 @@ const { safeAsyncMethod } = require("devtools/shared/async-utils");
 
 
 window.Application = {
-  async bootstrap({ toolbox, panel }) {
+  async bootstrap({ toolbox, commands, panel }) {
     
     this.handleOnNavigate = this.handleOnNavigate.bind(this);
     this.updateDomain = this.updateDomain.bind(this);
@@ -60,9 +60,8 @@ window.Application = {
     );
 
     this.toolbox = toolbox;
-    
-    
-    this.client = toolbox.target.client;
+    this._commands = commands;
+    this.client = commands.client;
 
     this.telemetry = new Telemetry();
     this.store = configureStore(this.telemetry, toolbox.sessionId);
@@ -83,8 +82,8 @@ window.Application = {
 
     
     
-    await this.toolbox.targetList.watchTargets(
-      [this.toolbox.targetList.TYPES.FRAME],
+    await this._commands.targetCommand.watchTargets(
+      [this._commands.targetCommand.TYPES.FRAME],
       this.onTargetAvailable,
       this.onTargetDestroyed
     );
@@ -140,8 +139,8 @@ window.Application = {
   destroy() {
     this.workersListener.removeListener();
 
-    this.toolbox.targetList.unwatchTargets(
-      [this.toolbox.targetList.TYPES.FRAME],
+    this._commands.targetCommand.unwatchTargets(
+      [this._commands.targetCommand.TYPES.FRAME],
       this.onTargetAvailable,
       this.onTargetDestroyed
     );
@@ -152,6 +151,7 @@ window.Application = {
     this.mount = null;
     this.toolbox = null;
     this.client = null;
+    this._commands = null;
     this.workersListener = null;
     this._destroyed = true;
   },
