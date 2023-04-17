@@ -2107,7 +2107,7 @@ class CGGetWrapperCacheHook(CGAbstractClassHook):
 
 def finalizeHook(descriptor, hookName, freeOp, obj):
     finalize = "JS::SetReservedSlot(%s, DOM_OBJECT_SLOT, JS::UndefinedValue());\n" % obj
-    if descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+    if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
         finalize += fill(
             """
             // Either our proxy created an expando object or not.  If it did,
@@ -4303,7 +4303,7 @@ def CreateBindingJSObject(descriptor, properties):
     
     
     if descriptor.proxy:
-        if descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+        if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
             assert not descriptor.isMaybeCrossOriginObject()
             create = dedent(
                 """
@@ -14520,7 +14520,7 @@ class CGDOMJSProxyHandler_getOwnPropDescriptor(ClassMethod):
                 callNamedGetter = !hasOnProto;
                 """
             )
-            if self.descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+            if self.descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
                 computeCondition = fill(
                     """
                     if (!isXray) {
@@ -14906,7 +14906,9 @@ class CGDOMJSProxyHandler_delete(ClassMethod):
                 """
             )
 
-            if not self.descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+            if not self.descriptor.interface.getExtendedAttribute(
+                "LegacyOverrideBuiltIns"
+            ):
                 delete += dedent(
                     """
                     if (tryNamedDelete) {
@@ -15015,7 +15017,7 @@ class CGDOMJSProxyHandler_ownPropNames(ClassMethod):
             addIndices = ""
 
         if self.descriptor.supportsNamedProperties():
-            if self.descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+            if self.descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
                 shadow = "!isXray"
             else:
                 shadow = "false"
@@ -15155,7 +15157,9 @@ class CGDOMJSProxyHandler_hasOwn(ClassMethod):
                     self.descriptor, foundVar="found"
                 ).define(),
             )
-            if not self.descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+            if not self.descriptor.interface.getExtendedAttribute(
+                "LegacyOverrideBuiltIns"
+            ):
                 named = fill(
                     """
                     bool hasOnProto;
@@ -15371,7 +15375,7 @@ class CGDOMJSProxyHandler_get(ClassMethod):
                 getOnPrototype=getOnPrototype,
             )
 
-        if self.descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+        if self.descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
             getNamed = getNamed + getOnPrototype
         else:
             getNamed = getOnPrototype + getNamed
@@ -15422,7 +15426,7 @@ class CGDOMJSProxyHandler_setCustom(ClassMethod):
         
         namedSetter = self.descriptor.operations["NamedSetter"]
         if namedSetter is not None and self.descriptor.interface.getExtendedAttribute(
-            "OverrideBuiltins"
+            "LegacyOverrideBuiltIns"
         ):
             
             if self.descriptor.supportsIndexedProperties():
@@ -15430,14 +15434,14 @@ class CGDOMJSProxyHandler_setCustom(ClassMethod):
                     "In interface "
                     + self.descriptor.name
                     + ": "
-                    + "Can't cope with [OverrideBuiltins] and an indexed getter"
+                    + "Can't cope with [LegacyOverrideBuiltIns] and an indexed getter"
                 )
             if self.descriptor.hasLegacyUnforgeableMembers:
                 raise ValueError(
                     "In interface "
                     + self.descriptor.name
                     + ": "
-                    + "Can't cope with [OverrideBuiltins] and unforgeable members"
+                    + "Can't cope with [LegacyOverrideBuiltIns] and unforgeable members"
                 )
 
             tailCode = dedent(
@@ -16001,7 +16005,7 @@ class CGDOMJSProxyHandler(CGClass):
             methods.append(CGDOMJSProxyHandler_getElements(descriptor))
         if descriptor.operations["IndexedSetter"] is not None or (
             descriptor.operations["NamedSetter"] is not None
-            and descriptor.interface.getExtendedAttribute("OverrideBuiltins")
+            and descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns")
         ):
             methods.append(CGDOMJSProxyHandler_setCustom(descriptor))
         if descriptor.operations["LegacyCaller"]:
@@ -16031,7 +16035,7 @@ class CGDOMJSProxyHandler(CGClass):
                 ]
             )
 
-        if descriptor.interface.getExtendedAttribute("OverrideBuiltins"):
+        if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
             assert not descriptor.isMaybeCrossOriginObject()
             parentClass = "ShadowingDOMProxyHandler"
         elif descriptor.isMaybeCrossOriginObject():

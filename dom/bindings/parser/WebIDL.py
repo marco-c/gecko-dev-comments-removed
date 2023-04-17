@@ -1427,19 +1427,19 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
                         [self.location, specialMembersSeen[memberId].location],
                     )
             
-            if self.getExtendedAttribute("OverrideBuiltins"):
+            if self.getExtendedAttribute("LegacyOverrideBuiltIns"):
                 raise WebIDLError(
-                    "Interface with [Global] also has " "[OverrideBuiltins]",
+                    "Interface with [Global] also has " "[LegacyOverrideBuiltIns]",
                     [self.location],
                 )
             
             parent = self.parent
             while parent:
                 
-                if parent.getExtendedAttribute("OverrideBuiltins"):
+                if parent.getExtendedAttribute("LegacyOverrideBuiltIns"):
                     raise WebIDLError(
                         "Interface with [Global] inherits from "
-                        "interface with [OverrideBuiltins]",
+                        "interface with [LegacyOverrideBuiltIns]",
                         [self.location, parent.location],
                     )
                 parent._isOnGlobalProtoChain = True
@@ -1927,7 +1927,7 @@ class IDLInterface(IDLInterfaceOrNamespace):
                     member.addExtendedAttributes([attr])
             elif (
                 identifier == "NeedResolve"
-                or identifier == "OverrideBuiltins"
+                or identifier == "LegacyOverrideBuiltIns"
                 or identifier == "ChromeOnly"
                 or identifier == "LegacyUnforgeable"
                 or identifier == "LegacyEventInit"
