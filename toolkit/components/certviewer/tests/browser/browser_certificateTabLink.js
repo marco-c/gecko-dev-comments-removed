@@ -37,6 +37,8 @@ add_task(async function test_certificateTabLink() {
         issuerNames[i].shadowRoot.querySelector("a").click();
         await ContentTaskUtils.waitForCondition(() => {
           return (
+            
+            
             certificateTabs[i + 1].classList.contains("selected"),
             "Clicking link should select new tab."
           );
@@ -48,6 +50,8 @@ add_task(async function test_certificateTabLink() {
       } else {
         await ContentTaskUtils.waitForCondition(() => {
           return (
+            
+            
             certificateTabs[i].classList.contains("selected"),
             "Clicking link should select new tab."
           );
