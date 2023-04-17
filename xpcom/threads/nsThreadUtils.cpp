@@ -818,13 +818,6 @@ nsresult NS_DispatchBackgroundTask(nsIRunnable* aEvent,
 
 nsresult NS_CreateBackgroundTaskQueue(const char* aName,
                                       nsISerialEventTarget** aTarget) {
-  if (gXPCOMThreadsShutDown) {
-    
-    
-    
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
   nsCOMPtr<nsISerialEventTarget> target =
       nsThreadManager::get().CreateBackgroundTaskQueue(aName);
   if (!target) {

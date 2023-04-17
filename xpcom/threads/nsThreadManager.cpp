@@ -195,10 +195,6 @@ void BackgroundEventTarget::FinishShutdown() {
 already_AddRefed<nsISerialEventTarget>
 BackgroundEventTarget::CreateBackgroundTaskQueue(const char* aName) {
   MutexAutoLock lock(mMutex);
-  
-  
-  
-  MOZ_RELEASE_ASSERT(!mIsBackgroundDelayedRunnablesCanceled);
 
   RefPtr<TaskQueue> queue = new TaskQueue(do_AddRef(this), aName);
   mTaskQueues.AppendElement(queue);
