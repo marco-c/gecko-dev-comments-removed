@@ -215,30 +215,31 @@ class WebrtcVideoConduit
 
   uint8_t TemporalLayers() const { return mTemporalLayers; }
 
-  webrtc::VideoCodecMode CodecMode() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mCodecMode;
-  }
+  webrtc::VideoCodecMode CodecMode() const;
 
   WebrtcVideoConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread,
                      Options aOptions, std::string aPCHandle);
   virtual ~WebrtcVideoConduit();
 
+  
   MediaConduitErrorCode Init();
+  
+  void InitCall();
 
   std::vector<uint32_t> GetLocalSSRCs() override;
-  bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
-                     const std::vector<uint32_t>& rtxSsrcs) override;
+
   
   bool GetRemoteSSRC(uint32_t* ssrc) override;
+
+  
+  bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
+                     const std::vector<uint32_t>& rtxSsrcs) override;
   bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) override;
   bool UnsetRemoteSSRC(uint32_t ssrc) override;
   bool SetLocalCNAME(const char* cname) override;
   bool SetLocalMID(const std::string& mid) override;
-
   void SetSyncGroup(const std::string& group) override;
-
   bool SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc);
 
   Maybe<webrtc::VideoReceiveStream::Stats> GetReceiverStats() const override;
@@ -301,6 +302,9 @@ class WebrtcVideoConduit
   unsigned short mReceivingHeight = 0;
 
   
+  const nsCOMPtr<nsISerialEventTarget> mCallThread;
+
+  
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
 
@@ -316,6 +320,7 @@ class WebrtcVideoConduit
   
   const UniquePtr<WebrtcVideoEncoderFactory> mEncoderFactory;
 
+  
   
   
   UniquePtr<cricket::VideoAdapter> mVideoAdapter;
@@ -347,6 +352,7 @@ class WebrtcVideoConduit
   nsTArray<UniquePtr<VideoCodecConfig>> mRecvCodecList;
 
   
+  
   UniquePtr<VideoCodecConfig> mCurSendCodecConfig;
 
   
@@ -357,8 +363,10 @@ class WebrtcVideoConduit
 
   
   
+  
   webrtc::VideoReceiveStream* mRecvStream = nullptr;
 
+  
   
   
   webrtc::VideoSendStream* mSendStream = nullptr;
@@ -402,9 +410,6 @@ class WebrtcVideoConduit
   static const unsigned int sRoundingPadding = 1024;
 
   
-  RefPtr<WebrtcAudioConduit> mSyncedTo;
-
-  
   webrtc::VideoCodecMode mActiveCodecMode;
   webrtc::VideoCodecMode mCodecMode;
 
@@ -413,6 +418,8 @@ class WebrtcVideoConduit
   
   const RefPtr<WebrtcCallWrapper> mCall;
 
+  
+  
   
   webrtc::VideoSendStream::Config mSendStreamConfig;
 
@@ -448,6 +455,7 @@ class WebrtcVideoConduit
   
   nsTArray<uint64_t> mRecvCodecPluginIDs;
 
+  
   MediaEventListener mSendPluginCreated;
   MediaEventListener mSendPluginReleased;
   MediaEventListener mRecvPluginCreated;

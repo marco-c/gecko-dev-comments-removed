@@ -334,6 +334,11 @@ class VideoSessionConduit : public MediaSessionConduit {
 
 
 
+
+
+
+
+
   static RefPtr<VideoSessionConduit> Create(
       RefPtr<WebrtcCallWrapper> aCall,
       nsCOMPtr<nsISerialEventTarget> aStsThread, Options aOptions,
