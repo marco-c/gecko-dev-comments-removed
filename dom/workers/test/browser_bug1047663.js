@@ -3,6 +3,7 @@
 
 "use strict";
 
+const EXAMPLE_URL = "https://example.com/browser/dom/workers/test/";
 const TAB_URL = EXAMPLE_URL + "bug1047663_tab.html";
 const WORKER_URL = EXAMPLE_URL + "bug1047663_worker.sjs";
 

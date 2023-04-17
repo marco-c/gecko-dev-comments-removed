@@ -3,8 +3,6 @@
 
 "use strict";
 
-const EXAMPLE_URL = "http://example.com/browser/dom/workers/test/";
-
 
 
 
