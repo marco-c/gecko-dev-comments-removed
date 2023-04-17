@@ -59,7 +59,8 @@ WARNING! This test involves background update, but background tasks are
   
   
   let defaultValue =
-    AppConstants.NIGHTLY_BUILD && AppConstants.platform == "win";
+    (AppConstants.EARLY_BETA_OR_EARLIER || AppConstants.MOZ_DEV_EDITION) &&
+    AppConstants.platform == "win";
   is(
     Services.prefs.getBoolPref(ENABLE_UI_PREF, false),
     defaultValue,
