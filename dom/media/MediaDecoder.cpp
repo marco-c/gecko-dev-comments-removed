@@ -874,11 +874,12 @@ MediaDecoder::PositionUpdate MediaDecoder::GetPositionUpdateReason(
   
   
   
-  if (mLooping && !mSeekRequest.Exists() && aCurPos < aPrevPos) {
+  const bool notSeeking = !mSeekRequest.Exists();
+  if (mLooping && notSeeking && aCurPos < aPrevPos) {
     return PositionUpdate::eSeamlessLoopingSeeking;
   }
-  return aPrevPos != aCurPos ? PositionUpdate::ePeriodicUpdate
-                             : PositionUpdate::eOther;
+  return aPrevPos != aCurPos && notSeeking ? PositionUpdate::ePeriodicUpdate
+                                           : PositionUpdate::eOther;
 }
 
 void MediaDecoder::UpdateLogicalPositionInternal() {
