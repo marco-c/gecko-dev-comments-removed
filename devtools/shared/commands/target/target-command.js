@@ -223,14 +223,15 @@ class TargetCommand extends EventEmitter {
     for (const target of this._targets) {
       
       const isDestroyedTargetSwitching = target == this.targetFront;
+      const isServiceWorker = target.targetType === this.TYPES.SERVICE_WORKER;
 
       
-      if (
-        target.targetType !== this.TYPES.SERVICE_WORKER ||
-        this.destroyServiceWorkersOnNavigation
-      ) {
+      
+      if (!isServiceWorker || this.destroyServiceWorkersOnNavigation) {
         this._onTargetDestroyed(target, {
           isTargetSwitching: isDestroyedTargetSwitching,
+          
+          shouldDestroyTargetFront: !isServiceWorker,
         });
         destroyedTargets.push(target);
       }
