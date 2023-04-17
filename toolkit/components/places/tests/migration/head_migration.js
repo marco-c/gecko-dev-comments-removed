@@ -15,7 +15,7 @@ var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-const CURRENT_SCHEMA_VERSION = 56;
+const CURRENT_SCHEMA_VERSION = 57;
 const FIRST_UPGRADABLE_SCHEMA_VERSION = 43;
 
 async function assertAnnotationsRemoved(db, expectedAnnos) {

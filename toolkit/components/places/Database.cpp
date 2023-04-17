@@ -1189,6 +1189,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 57) {
+        rv = MigrateV57Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -2202,6 +2207,31 @@ nsresult Database::MigrateV56Up() {
   
   return mMainConn->ExecuteSimpleSQL(
       CREATE_IDX_MOZ_PLACES_METADATA_PLACECREATED);
+}
+
+nsresult Database::MigrateV57Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT scrolling_time FROM moz_places_metadata"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places_metadata "
+        "ADD COLUMN scrolling_time INTEGER NOT NULL DEFAULT 0 "_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  rv = mMainConn->CreateStatement(
+      "SELECT scrolling_distance FROM moz_places_metadata"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places_metadata "
+        "ADD COLUMN scrolling_distance INTEGER NOT NULL DEFAULT 0 "_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
 }
 
 nsresult Database::ConvertOldStyleQuery(nsCString& aURL) {
