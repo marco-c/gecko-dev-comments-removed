@@ -1,7 +1,6 @@
 
 
-const dispatcher_path =
-  "/html/cross-origin-embedder-policy/credentialless/resources/dispatcher.py";
+const dispatcher_path = "/common/dispatcher/dispatcher.py";
 const dispatcher_url = new URL(dispatcher_path, location.href).href;
 
 
@@ -78,6 +77,11 @@ const receive = async function(uuid) {
 
 
 
-const showRequestHeaders= function(origin, uuid) {
+const showRequestHeaders = function(origin, uuid) {
   return origin + dispatcher_path + `?uuid=${uuid}&show-headers`;
+}
+
+
+const cacheableShowRequestHeaders = function(origin, uuid) {
+  return origin + dispatcher_path + `?uuid=${uuid}&cacheable&show-headers`;
 }
