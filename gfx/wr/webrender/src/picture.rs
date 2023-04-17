@@ -2908,7 +2908,7 @@ impl TileCacheInstance {
         flags: PrimitiveFlags,
         prim_clip_chain: &ClipChainInstance,
         prim_spatial_node_index: SpatialNodeIndex,
-        on_picture_surface: bool,
+        is_root_tile_cache: bool,
         sub_slice_index: usize,
         frame_context: &FrameVisibilityContext,
     ) -> SurfacePromotionResult {
@@ -2932,7 +2932,7 @@ impl TileCacheInstance {
 
         
         
-        if !on_picture_surface {
+        if !is_root_tile_cache {
             return SurfacePromotionResult::Failed;
         }
 
@@ -3261,7 +3261,7 @@ impl TileCacheInstance {
 
         
         
-        debug_assert!(sub_slice_index < self.sub_slices.len() - 1);
+        assert!(sub_slice_index < self.sub_slices.len() - 1);
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
         
@@ -3301,6 +3301,7 @@ impl TileCacheInstance {
         surface_stack: &[SurfaceIndex],
         composite_state: &mut CompositeState,
         gpu_cache: &mut GpuCache,
+        is_root_tile_cache: bool,
     ) {
         
         profile_scope!("update_prim_dependencies");
@@ -3465,7 +3466,7 @@ impl TileCacheInstance {
                 match self.can_promote_to_surface(image_key.common.flags,
                                                   prim_clip_chain,
                                                   prim_spatial_node_index,
-                                                  on_picture_surface,
+                                                  is_root_tile_cache,
                                                   sub_slice_index,
                                                   frame_context) {
                     SurfacePromotionResult::Failed => {
@@ -3531,7 +3532,7 @@ impl TileCacheInstance {
                                             prim_data.common.flags,
                                             prim_clip_chain,
                                             prim_spatial_node_index,
-                                            on_picture_surface,
+                                            is_root_tile_cache,
                                             sub_slice_index,
                                             frame_context) {
                     SurfacePromotionResult::Failed => false,
