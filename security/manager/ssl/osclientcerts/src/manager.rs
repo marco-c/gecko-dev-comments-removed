@@ -390,7 +390,7 @@ struct Manager {
 
 impl Manager {
     pub fn new() -> Manager {
-        let mut manager = Manager {
+        Manager {
             sessions: BTreeMap::new(),
             searches: BTreeMap::new(),
             signs: BTreeMap::new(),
@@ -400,12 +400,9 @@ impl Manager {
             next_session: 1,
             next_handle: 1,
             last_scan_time: None,
-        };
-        manager.maybe_find_new_objects();
-        manager
+        }
     }
 
-    
     
     
     
