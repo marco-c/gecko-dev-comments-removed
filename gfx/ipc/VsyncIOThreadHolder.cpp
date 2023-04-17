@@ -33,6 +33,13 @@ VsyncIOThreadHolder::~VsyncIOThreadHolder() {
 }
 
 bool VsyncIOThreadHolder::Start() {
+  
+
+
+
+
+
+
   nsresult rv = NS_NewNamedThread("VsyncIOThread", getter_AddRefs(mThread));
   return NS_SUCCEEDED(rv);
 }
