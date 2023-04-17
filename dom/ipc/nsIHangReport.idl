@@ -21,14 +21,6 @@ webidl Element;
 [scriptable, uuid(5fcffbb9-be62-49b1-b8a1-36e820787a74)]
 interface nsIHangReport : nsISupports
 {
-  const unsigned long SLOW_SCRIPT = 1;
-
-  
-  readonly attribute unsigned long hangType;
-
-  
-  
-  
   readonly attribute Element scriptBrowser;
   readonly attribute ACString scriptFileName;
   
@@ -43,15 +35,11 @@ interface nsIHangReport : nsISupports
   void userCanceled();
 
   
-  
   void terminateScript();
 
-
-  
   
   void beginStartingDebugger();
 
-  
   
   
   

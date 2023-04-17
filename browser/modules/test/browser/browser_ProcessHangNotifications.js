@@ -64,25 +64,15 @@ let TestHangReport = function(
 
   if (hangType == ADDON_HANG) {
     
-    
-    this._hangType = SLOW_SCRIPT;
     this._addonId = ADDON_ID;
-  } else {
-    this._hangType = hangType;
   }
 
   this._browser = browser;
 };
 
 TestHangReport.prototype = {
-  SLOW_SCRIPT,
-
   get addonId() {
     return this._addonId;
-  },
-
-  get hangType() {
-    return this._hangType;
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsIHangReport"]),

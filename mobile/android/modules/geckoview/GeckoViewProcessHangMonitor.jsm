@@ -134,12 +134,7 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
 
 
   stopHang(report) {
-    switch (report.hangType) {
-      case report.SLOW_SCRIPT: {
-        report.terminateScript();
-        break;
-      }
-    }
+    report.terminateScript();
   }
 
   
@@ -169,16 +164,11 @@ class GeckoViewProcessHangMonitor extends GeckoViewModule {
 
 
   notifyReport(report) {
-    const message = {
+    this.eventDispatcher.sendRequest({
       type: "GeckoView:HangReport",
       hangId: this._reportLookupIndex.get(report),
-    };
-
-    if (report.hangType == report.SLOW_SCRIPT) {
-      message.hangType = "SLOW_SCRIPT";
-      message.scriptFileName = report.scriptFileName;
-      this.eventDispatcher.sendRequest(message);
-    }
+      scriptFileName: report.scriptFileName,
+    });
   }
 
   

@@ -141,12 +141,8 @@ var ProcessHangMonitor = {
       return;
     }
 
-    switch (report.hangType) {
-      case report.SLOW_SCRIPT:
-        this._recordTelemetryForReport(report, "user-aborted");
-        this.terminateScript(win);
-        break;
-    }
+    this._recordTelemetryForReport(report, "user-aborted");
+    this.terminateScript(win);
   },
 
   
@@ -154,13 +150,8 @@ var ProcessHangMonitor = {
 
 
   stopHang(report, endReason, backupInfo) {
-    switch (report.hangType) {
-      case report.SLOW_SCRIPT: {
-        this._recordTelemetryForReport(report, endReason, backupInfo);
-        report.terminateScript();
-        break;
-      }
-    }
+    this._recordTelemetryForReport(report, endReason, backupInfo);
+    report.terminateScript();
   },
 
   
@@ -286,24 +277,17 @@ var ProcessHangMonitor = {
 
   onWindowClosed(win) {
     let maybeStopHang = report => {
-      if (report.hangType == report.SLOW_SCRIPT) {
-        let hungBrowserWindow = null;
-        try {
-          hungBrowserWindow = report.scriptBrowser.ownerGlobal;
-        } catch (e) {
-          
-          
-          
-          
-        }
-        if (!hungBrowserWindow || hungBrowserWindow == win) {
-          this.stopHang(report, "window-closed");
-          return true;
-        }
-      } else if (report.hangType == report.PLUGIN_HANG) {
+      let hungBrowserWindow = null;
+      try {
+        hungBrowserWindow = report.scriptBrowser.ownerGlobal;
+      } catch (e) {
         
         
-        this.stopHang(report);
+        
+        
+      }
+      if (!hungBrowserWindow || hungBrowserWindow == win) {
+        this.stopHang(report, "window-closed");
         return true;
       }
       return false;
@@ -377,10 +361,6 @@ var ProcessHangMonitor = {
       return;
     }
     try {
-      
-      if (report.hangType != report.SLOW_SCRIPT) {
-        return;
-      }
       let uri_type;
       if (report.addonId) {
         uri_type = "extension";
@@ -578,7 +558,7 @@ var ProcessHangMonitor = {
       return;
     }
 
-    if (AppConstants.MOZ_DEV_EDITION && report.hangType == report.SLOW_SCRIPT) {
+    if (AppConstants.MOZ_DEV_EDITION) {
       buttons.push({
         label: bundle.getString("processHang.button_debug.label"),
         accessKey: bundle.getString("processHang.button_debug.accessKey"),
@@ -691,10 +671,7 @@ var ProcessHangMonitor = {
 
     
     
-    if (report.hangType == report.SLOW_SCRIPT) {
-      
-      Services.telemetry.getHistogramById("SLOW_SCRIPT_NOTICE_COUNT").add();
-    }
+    Services.telemetry.getHistogramById("SLOW_SCRIPT_NOTICE_COUNT").add();
 
     this._activeReports.set(report, {
       deselectCount: 0,
