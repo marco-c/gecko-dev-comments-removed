@@ -139,7 +139,6 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
        UniqueCERTCertList& builtChain,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
-       CRLiteLookupResult* crliteLookupResult = nullptr,
        const char* hostname = nullptr);
 
   virtual Result FindIssuer(mozilla::pkix::Input encodedIssuerName,
@@ -263,7 +262,6 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;  
   UniqueCERTCertList& mBuiltChain;                               
   PinningTelemetryInfo* mPinningTelemetryInfo;
-  CRLiteLookupResult* mCRLiteLookupResult;
   const char* mHostname;  
   nsCOMPtr<nsICertStorage> mCertStorage;
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
