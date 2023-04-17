@@ -101,6 +101,29 @@ inline gfx::SurfaceFormat ImageFormatToSurfaceFormat(ImageFormat aFormat) {
   }
 }
 
+
+
+
+
+
+enum class SpatialKeyKind : uint32_t {
+  Transform,
+  Perspective,
+  Scroll,
+  Sticky,
+  ImagePipeline,
+  APZ,
+};
+
+
+
+
+inline wr::SpatialTreeItemKey SpatialKey(uint64_t aFrame, uint32_t aPerFrameKey,
+                                         SpatialKeyKind aKind) {
+  return wr::SpatialTreeItemKey{
+      aFrame, uint64_t(aPerFrameKey) | (uint64_t(aKind) << 32)};
+}
+
 struct ImageDescriptor : public wr::WrImageDescriptor {
   
   ImageDescriptor() {
