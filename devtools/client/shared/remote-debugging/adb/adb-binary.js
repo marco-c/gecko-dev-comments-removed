@@ -142,7 +142,8 @@ async function extractFiles() {
     let architecture = Services.appinfo.XPCOMABI.split("-")[0];
     if (architecture === "aarch64") {
       
-      architecture = "x86";
+      const hasX86Binary = !!adbInfo[Services.appinfo.OS].x86;
+      architecture = hasX86Binary ? "x86" : "x86_64";
     }
     filesForAdb = adbInfo[Services.appinfo.OS][architecture];
   } catch (e) {
