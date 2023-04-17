@@ -1842,6 +1842,43 @@ class nsFlexContainerFrame::CachedBAxisMeasurement {
 
 
 
+class CachedFinalReflowMetrics final {
+ public:
+  CachedFinalReflowMetrics(const ReflowInput& aReflowInput,
+                           const ReflowOutput& aReflowOutput)
+      : CachedFinalReflowMetrics(aReflowInput.GetWritingMode(), aReflowInput,
+                                 aReflowOutput) {}
+
+  CachedFinalReflowMetrics(const FlexItem& aItem, const LogicalSize& aSize)
+      : mSize(aSize), mTreatBSizeAsIndefinite(aItem.TreatBSizeAsIndefinite()) {}
+
+  const LogicalSize& Size() const { return mSize; }
+  bool TreatBSizeAsIndefinite() const { return mTreatBSizeAsIndefinite; }
+
+ private:
+  
+  CachedFinalReflowMetrics(WritingMode aWM, const ReflowInput& aReflowInput,
+                           const ReflowOutput& aReflowOutput)
+      : mSize(aReflowOutput.Size(aWM) -
+              aReflowInput.ComputedLogicalBorderPadding(aWM).Size(aWM)),
+        mTreatBSizeAsIndefinite(aReflowInput.mFlags.mTreatBSizeAsIndefinite) {}
+
+  
+  
+  LogicalSize mSize;
+
+  
+  
+  
+  
+  bool mTreatBSizeAsIndefinite;
+};
+
+
+
+
+
+
 enum class FlexItemReflowType {
   
   
@@ -1875,27 +1912,13 @@ class nsFlexContainerFrame::CachedFlexItemData {
       mBAxisMeasurement.emplace(aReflowInput, aReflowOutput);
       
       
-      mFinalReflowSize.reset();
+      mFinalReflowMetrics.reset();
       return;
     }
 
     MOZ_ASSERT(aType == FlexItemReflowType::Final);
-    auto wm = aReflowInput.GetWritingMode();
-
-    
-    mFinalReflowSize.reset();
-    mFinalReflowSize.emplace(
-        aReflowOutput.Size(wm) -
-        aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
-    
-    
-    
-    
-    
-    
-    
-    mLastReflowTreatedBSizeAsIndefinite =
-        aReflowInput.mFlags.mTreatBSizeAsIndefinite;
+    mFinalReflowMetrics.reset();
+    mFinalReflowMetrics.emplace(aReflowInput, aReflowOutput);
   }
 
   
@@ -1906,15 +1929,13 @@ class nsFlexContainerFrame::CachedFlexItemData {
   
   
   void Update(const FlexItem& aItem, const LogicalSize& aSize) {
-    MOZ_ASSERT(!mFinalReflowSize,
+    MOZ_ASSERT(!mFinalReflowMetrics,
                "This version of the method is only intended to be called when "
                "the most recent reflow was a 'measuring reflow'; and that "
-               "should have cleared out mFinalReflowSize");
+               "should have cleared out mFinalReflowMetrics");
 
-    mFinalReflowSize.reset();  
-    mFinalReflowSize.emplace(aSize);
-
-    mLastReflowTreatedBSizeAsIndefinite = aItem.TreatBSizeAsIndefinite();
+    mFinalReflowMetrics.reset();  
+    mFinalReflowMetrics.emplace(aItem, aSize);
   }
 
   
@@ -1928,13 +1949,7 @@ class nsFlexContainerFrame::CachedFlexItemData {
   
   
   
-  Maybe<LogicalSize> mFinalReflowSize;
-
-  
-  
-  
-  
-  bool mLastReflowTreatedBSizeAsIndefinite = false;
+  Maybe<CachedFinalReflowMetrics> mFinalReflowMetrics;
 
   
   
@@ -1946,7 +1961,7 @@ void nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(
   MOZ_ASSERT(aItemFrame->IsFlexItem());
   if (auto* cache = aItemFrame->GetProperty(CachedFlexItemData::Prop())) {
     cache->mBAxisMeasurement.reset();
-    cache->mFinalReflowSize.reset();
+    cache->mFinalReflowMetrics.reset();
   }
 }
 
@@ -2538,16 +2553,16 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
 
   
   auto* cache = mFrame->GetProperty(CachedFlexItemData::Prop());
-  if (!cache || !cache->mFinalReflowSize) {
+  if (!cache || !cache->mFinalReflowMetrics) {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to lacking a "
-        "cached mFinalReflowSize (maybe cache was cleared)",
+        "cached mFinalReflowMetrics (maybe cache was cleared)",
         mFrame);
     return true;
   }
 
   
-  if (*cache->mFinalReflowSize != finalSize) {
+  if (cache->mFinalReflowMetrics->Size() != finalSize) {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to having a "
         "different content box size vs. its most recent final reflow",
@@ -2558,7 +2573,8 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
   
   
   
-  if (cache->mLastReflowTreatedBSizeAsIndefinite != mTreatBSizeAsIndefinite &&
+  if (cache->mFinalReflowMetrics->TreatBSizeAsIndefinite() !=
+          mTreatBSizeAsIndefinite &&
       FrameHasRelativeBSizeDependency(mFrame)) {
     FLEX_LOG(
         "[perf] Flex item %p needed a final reflow due to having "
