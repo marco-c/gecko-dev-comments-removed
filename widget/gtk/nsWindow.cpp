@@ -4058,7 +4058,10 @@ gboolean nsWindow::OnKeyReleaseEvent(GdkEventKey* aEvent) {
 
 void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
   
-  if (CheckForRollup(aEvent->x_root, aEvent->y_root, true, false)) return;
+  if (CheckForRollup(aEvent->x_root, aEvent->y_root, true, false)) {
+    return;
+  }
+
   
   if (aEvent->direction != GDK_SCROLL_SMOOTH &&
       mLastScrollEventTime == aEvent->time) {
@@ -4119,21 +4122,27 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
       
       wheelEvent.mDeltaX = aEvent->delta_x * 3;
       wheelEvent.mDeltaY = aEvent->delta_y * 3;
+      wheelEvent.mWheelTicksX = aEvent->delta_x;
+      wheelEvent.mWheelTicksY = aEvent->delta_y;
       wheelEvent.mIsNoLineOrPageDelta = true;
 
       break;
     }
     case GDK_SCROLL_UP:
       wheelEvent.mDeltaY = wheelEvent.mLineOrPageDeltaY = -3;
+      wheelEvent.mWheelTicksY = -1;
       break;
     case GDK_SCROLL_DOWN:
       wheelEvent.mDeltaY = wheelEvent.mLineOrPageDeltaY = 3;
+      wheelEvent.mWheelTicksY = 1;
       break;
     case GDK_SCROLL_LEFT:
       wheelEvent.mDeltaX = wheelEvent.mLineOrPageDeltaX = -1;
+      wheelEvent.mWheelTicksX = -1;
       break;
     case GDK_SCROLL_RIGHT:
       wheelEvent.mDeltaX = wheelEvent.mLineOrPageDeltaX = 1;
+      wheelEvent.mWheelTicksX = 1;
       break;
   }
 

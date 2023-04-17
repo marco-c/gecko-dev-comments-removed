@@ -516,6 +516,10 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
   double mDeltaY;
   double mDeltaZ;
 
+  
+  double mWheelTicksX = 0.0;
+  double mWheelTicksY = 0.0;
+
   enum class DeltaModeCheckingState : uint8_t {
     
     Unknown,
