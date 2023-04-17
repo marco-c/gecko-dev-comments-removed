@@ -3086,14 +3086,6 @@ class nsContentUtils {
   }
 
   
-  
-  
-  
-  static bool IsImageAvailable(nsIContent*, nsIURI*,
-                               nsIPrincipal* aDefaultTriggeringPrincipal,
-                               mozilla::CORSMode);
-
-  
 
 
 
