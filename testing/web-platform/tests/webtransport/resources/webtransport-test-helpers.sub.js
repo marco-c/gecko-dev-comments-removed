@@ -32,21 +32,8 @@ async function read_stream_as_string(readable_stream) {
 
 
 async function read_stream_as_json(readable_stream) {
-  const decoder = new TextDecoderStream('utf-8');
-  const decode_stream = readable_stream.pipeThrough(decoder);
-  const reader = decode_stream.getReader();
-
-  let chunks = '';
-  while (true) {
-    const {value: chunk, done} = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks += chunk;
-  }
-  reader.releaseLock();
-
-  return JSON.parse(chunks);
+  const text = await read_stream_as_string(readable_stream);
+  return JSON.parse(text);
 }
 
 
