@@ -265,11 +265,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
     mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
   }
 
-  
-  
-  
-  mFontStats = MakeUnique<FontMatchingStats>();
-
   if (StaticPrefs::layout_dynamic_toolbar_max_height() > 0) {
     
     

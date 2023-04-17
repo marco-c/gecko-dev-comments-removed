@@ -234,8 +234,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
                                  Script aRunScript,
                                  eFontPresentation aPresentation,
                                  const gfxFontStyle* aStyle,
-                                 FontVisibility* aVisibility,
-                                 FontMatchingStats* aFontMatchingStats);
+                                 FontVisibility* aVisibility);
 
   
   
@@ -699,8 +698,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   gfxFont* GlobalFontFallback(uint32_t aCh, uint32_t aNextCh, Script aRunScript,
                               eFontPresentation aPresentation,
                               const gfxFontStyle* aMatchStyle,
-                              uint32_t& aCmapCount, FontFamily& aMatchedFamily,
-                              FontMatchingStats* aFontMatchingStats);
+                              uint32_t& aCmapCount, FontFamily& aMatchedFamily);
 
   
   

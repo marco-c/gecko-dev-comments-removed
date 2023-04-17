@@ -861,7 +861,6 @@ bool nsMathMLChar::SetFontFamily(nsPresContext* aPresContext,
     params.explicitLanguage = styleFont->mExplicitLanguage;
     params.userFontSet = aPresContext->GetUserFontSet();
     params.textPerf = aPresContext->GetTextPerfMetrics();
-    params.fontStats = aPresContext->GetFontMatchingStats();
     params.featureValueLookup = aPresContext->GetFontFeatureValuesLookup();
     RefPtr<nsFontMetrics> fm = aPresContext->GetMetricsFor(font, params);
     
@@ -1387,7 +1386,6 @@ nsresult nsMathMLChar::StretchInternal(
   params.explicitLanguage = styleFont->mExplicitLanguage;
   params.userFontSet = presContext->GetUserFontSet();
   params.textPerf = presContext->GetTextPerfMetrics();
-  params.fontStats = presContext->GetFontMatchingStats();
   RefPtr<nsFontMetrics> fm = presContext->GetMetricsFor(font, params);
   uint32_t len = uint32_t(mData.Length());
   mGlyphs[0] = fm->GetThebesFontGroup()->MakeTextRun(

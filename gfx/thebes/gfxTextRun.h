@@ -894,36 +894,6 @@ class gfxTextRun : public gfxShapedText {
   ShapingState mShapingState;
 };
 
-enum class FallbackTypes : uint8_t {
-  
-  FallbackToPrefsFont = 1 << 0,
-  
-  FallbackToBaseFont = 1 << 1,
-  
-  FallbackToLangPackFont = 1 << 2,
-  
-  FallbackToUserFont = 1 << 3,
-  
-  MissingFont = 1 << 4,
-  
-  MissingFontLangPack = 1 << 5,
-  
-  MissingFontUser = 1 << 6,
-};
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(FallbackTypes)
-
-struct FontMatchingStats {
-  
-  nsTHashSet<nsCString> mFamilyNames;
-  
-  uint32_t mBaseFonts = 0;
-  uint32_t mLangPackFonts = 0;
-  uint32_t mUserFonts = 0;
-  uint32_t mWebFonts = 0;
-  FallbackTypes mFallbacks = FallbackTypes(0);
-};
-
 class gfxFontGroup final : public gfxTextRunFactory {
  public:
   typedef mozilla::unicode::Script Script;
@@ -935,7 +905,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
   gfxFontGroup(const mozilla::StyleFontFamilyList& aFontFamilyList,
                const gfxFontStyle* aStyle, nsAtom* aLanguage,
                bool aExplicitLanguage, gfxTextPerfMetrics* aTextPerf,
-               FontMatchingStats* aFontMatchingStats,
                gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize);
 
   virtual ~gfxFontGroup();
@@ -1050,8 +1019,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   
   gfxTextPerfMetrics* GetTextPerfMetrics() const { return mTextPerf; }
-
-  FontMatchingStats* GetFontMatchingStats() const { return mFontMatchingStats; }
 
   
   void SetUserFontSet(gfxUserFontSet* aUserFontSet);
@@ -1395,8 +1362,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
                              
 
   gfxTextPerfMetrics* mTextPerf;
-
-  FontMatchingStats* mFontMatchingStats;
 
   
   
