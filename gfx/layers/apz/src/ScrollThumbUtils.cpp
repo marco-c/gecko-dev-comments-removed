@@ -124,6 +124,23 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   
   ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
 
+  
+  
+  ParentLayerCoord overscroll =
+      aAxis.GetPointOffset(mApzc->GetOverscrollAmount());
+  if (overscroll != 0) {
+    float overscrollScale =
+        1.0f - (std::abs(overscroll.value) /
+                aAxis.GetRectLength(mMetrics.GetCompositionBounds()));
+    MOZ_ASSERT(overscrollScale > 0.0f && overscrollScale <= 1.0f);
+    
+    
+    
+    ScaleThumbBy(
+        aAxis, overscrollScale,
+        overscroll < 0 ? ScrollThumbExtent::Start : ScrollThumbExtent::End);
+  }
+
   aAxis.PostTranslate(mScrollbarTransform, translation);
 }
 
