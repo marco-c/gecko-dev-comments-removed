@@ -526,50 +526,18 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
     if (!(flags & RES_BYPASS_CACHE) &&
         rec->HasUsableResult(TimeStamp::NowLoRes(), flags)) {
-      LOG(("  Using cached record for host [%s].\n", host.get()));
-      
-      result = rec;
-      if (IS_ADDR_TYPE(type)) {
-        Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_HIT);
-      }
-
-      
-      
-      
-      ConditionallyRefreshRecord(rec, host);
-
-      if (rec->negative) {
-        LOG(("  Negative cache entry for host [%s].\n", host.get()));
-        if (IS_ADDR_TYPE(type)) {
-          Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
-                                METHOD_NEGATIVE_HIT);
-        }
-        status = NS_ERROR_UNKNOWN_HOST;
-      }
-
-      
-      
-      
+      result = FromCache(rec, host, type, status);
     } else if (addrRec && addrRec->addr) {
       
       
       LOG(("  Using cached address for IP Literal [%s].\n", host.get()));
-      Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
-      result = rec;
+      result = FromCachedIPLiteral(rec);
     } else if (addrRec && NS_SUCCEEDED(tempAddr.InitFromString(host))) {
       
       
       
       LOG(("  Host is IP Literal [%s].\n", host.get()));
-
-      
-      
-      addrRec->addr = MakeUnique<NetAddr>(tempAddr);
-      
-      Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
-      result = rec;
-
-      
+      result = FromIPLiteral(addrRec, tempAddr);
     } else if (mPendingCount >= MAX_NON_PRIORITY_REQUESTS &&
                !IsHighPriority(flags) && !rec->mResolving) {
       LOG(
@@ -591,89 +559,9 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
       
       
     } else if (!rec->mResolving) {
-      
-      
-      if (addrRec && !(flags & RES_BYPASS_CACHE) &&
-          ((af == PR_AF_INET) || (af == PR_AF_INET6))) {
-        
-
-        const nsHostKey unspecKey(
-            host, aTrrServer, nsIDNSService::RESOLVE_TYPE_DEFAULT, flags,
-            PR_AF_UNSPEC, (aOriginAttributes.mPrivateBrowsingId > 0),
-            originSuffix);
-        RefPtr<nsHostRecord> unspecRec = mRecordDB.Get(unspecKey);
-
-        TimeStamp now = TimeStamp::NowLoRes();
-        if (unspecRec && unspecRec->HasUsableResult(now, flags)) {
-          MOZ_ASSERT(unspecRec->IsAddrRecord());
-
-          RefPtr<AddrHostRecord> addrUnspecRec = do_QueryObject(unspecRec);
-          MOZ_ASSERT(addrUnspecRec);
-          MOZ_ASSERT(addrUnspecRec->addr_info || addrUnspecRec->negative,
-                     "Entry should be resolved or negative.");
-
-          LOG(("  Trying AF_UNSPEC entry for host [%s] af: %s.\n", host.get(),
-               (af == PR_AF_INET) ? "AF_INET" : "AF_INET6"));
-
-          
-          
-          MutexAutoLock lock(addrRec->addr_info_lock);
-
-          addrRec->addr_info = nullptr;
-          addrRec->addr_info_gencnt++;
-          if (unspecRec->negative) {
-            rec->negative = unspecRec->negative;
-            rec->CopyExpirationTimesAndFlagsFrom(unspecRec);
-          } else if (addrUnspecRec->addr_info) {
-            MutexAutoLock lock(addrUnspecRec->addr_info_lock);
-            if (addrUnspecRec->addr_info) {
-              
-              
-              
-              nsTArray<NetAddr> addresses;
-              for (const auto& addr : addrUnspecRec->addr_info->Addresses()) {
-                if ((af == addr.inet.family) &&
-                    !addrUnspecRec->Blocklisted(&addr)) {
-                  addresses.AppendElement(addr);
-                }
-              }
-              if (!addresses.IsEmpty()) {
-                addrRec->addr_info = new AddrInfo(
-                    addrUnspecRec->addr_info->Hostname(),
-                    addrUnspecRec->addr_info->CanonicalHostname(),
-                    addrUnspecRec->addr_info->ResolverType(),
-                    addrUnspecRec->addr_info->TRRType(), std::move(addresses));
-                addrRec->addr_info_gencnt++;
-                rec->CopyExpirationTimesAndFlagsFrom(unspecRec);
-              }
-            }
-          }
-          
-          if (rec->HasUsableResult(now, flags)) {
-            result = rec;
-            if (rec->negative) {
-              status = NS_ERROR_UNKNOWN_HOST;
-            }
-            Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_HIT);
-            ConditionallyRefreshRecord(rec, host);
-          } else if (af == PR_AF_INET6) {
-            
-            
-            
-            
-            LOG(
-                ("  No AF_INET6 in AF_UNSPEC entry: "
-                 "host [%s] unknown host.",
-                 host.get()));
-            result = rec;
-            rec->negative = true;
-            status = NS_ERROR_UNKNOWN_HOST;
-            Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
-                                  METHOD_NEGATIVE_HIT);
-          }
-        }
-      }
-
+      result =
+          FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags, af,
+                          aOriginAttributes.mPrivateBrowsingId > 0, status);
       
       
       
@@ -748,6 +636,145 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   }
 
   return rv;
+}
+
+already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
+    nsHostRecord* aRec, const nsACString& aHost, uint16_t aType,
+    nsresult& aStatus) {
+  LOG(("  Using cached record for host [%s].\n",
+       nsPromiseFlatCString(aHost).get()));
+
+  
+  RefPtr<nsHostRecord> result = aRec;
+  if (IS_ADDR_TYPE(aType)) {
+    Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_HIT);
+  }
+
+  
+  
+  
+  ConditionallyRefreshRecord(aRec, aHost);
+
+  if (aRec->negative) {
+    LOG(("  Negative cache entry for host [%s].\n",
+         nsPromiseFlatCString(aHost).get()));
+    if (IS_ADDR_TYPE(aType)) {
+      Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_NEGATIVE_HIT);
+    }
+    aStatus = NS_ERROR_UNKNOWN_HOST;
+  }
+
+  return result.forget();
+}
+
+already_AddRefed<nsHostRecord> nsHostResolver::FromCachedIPLiteral(
+    nsHostRecord* aRec) {
+  Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
+  RefPtr<nsHostRecord> result = aRec;
+  return result.forget();
+}
+
+already_AddRefed<nsHostRecord> nsHostResolver::FromIPLiteral(
+    AddrHostRecord* aAddrRec, const NetAddr& aAddr) {
+  
+  
+  aAddrRec->addr = MakeUnique<NetAddr>(aAddr);
+  Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
+  
+  RefPtr<nsHostRecord> result = aAddrRec;
+  return result.forget();
+}
+
+already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
+    nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
+    const nsACString& aOriginSuffix, uint16_t aType, uint16_t aFlags,
+    uint16_t af, bool aPb, nsresult& aStatus) {
+  RefPtr<nsHostRecord> result = nullptr;
+  
+  
+  RefPtr<AddrHostRecord> addrRec = do_QueryObject(aRec);
+  if (addrRec && !(aFlags & RES_BYPASS_CACHE) &&
+      ((af == PR_AF_INET) || (af == PR_AF_INET6))) {
+    
+
+    const nsHostKey unspecKey(aHost, aTrrServer,
+                              nsIDNSService::RESOLVE_TYPE_DEFAULT, aFlags,
+                              PR_AF_UNSPEC, aPb, aOriginSuffix);
+    RefPtr<nsHostRecord> unspecRec = mRecordDB.Get(unspecKey);
+
+    TimeStamp now = TimeStamp::NowLoRes();
+    if (unspecRec && unspecRec->HasUsableResult(now, aFlags)) {
+      MOZ_ASSERT(unspecRec->IsAddrRecord());
+
+      RefPtr<AddrHostRecord> addrUnspecRec = do_QueryObject(unspecRec);
+      MOZ_ASSERT(addrUnspecRec);
+      MOZ_ASSERT(addrUnspecRec->addr_info || addrUnspecRec->negative,
+                 "Entry should be resolved or negative.");
+
+      LOG(("  Trying AF_UNSPEC entry for host [%s] af: %s.\n",
+           PromiseFlatCString(aHost).get(),
+           (af == PR_AF_INET) ? "AF_INET" : "AF_INET6"));
+
+      
+      
+      MutexAutoLock lock(addrRec->addr_info_lock);
+
+      addrRec->addr_info = nullptr;
+      addrRec->addr_info_gencnt++;
+      if (unspecRec->negative) {
+        aRec->negative = unspecRec->negative;
+        aRec->CopyExpirationTimesAndFlagsFrom(unspecRec);
+      } else if (addrUnspecRec->addr_info) {
+        MutexAutoLock lock(addrUnspecRec->addr_info_lock);
+        if (addrUnspecRec->addr_info) {
+          
+          
+          
+          nsTArray<NetAddr> addresses;
+          for (const auto& addr : addrUnspecRec->addr_info->Addresses()) {
+            if ((af == addr.inet.family) &&
+                !addrUnspecRec->Blocklisted(&addr)) {
+              addresses.AppendElement(addr);
+            }
+          }
+          if (!addresses.IsEmpty()) {
+            addrRec->addr_info = new AddrInfo(
+                addrUnspecRec->addr_info->Hostname(),
+                addrUnspecRec->addr_info->CanonicalHostname(),
+                addrUnspecRec->addr_info->ResolverType(),
+                addrUnspecRec->addr_info->TRRType(), std::move(addresses));
+            addrRec->addr_info_gencnt++;
+            aRec->CopyExpirationTimesAndFlagsFrom(unspecRec);
+          }
+        }
+      }
+      
+      if (aRec->HasUsableResult(now, aFlags)) {
+        result = aRec;
+        if (aRec->negative) {
+          aStatus = NS_ERROR_UNKNOWN_HOST;
+        }
+        Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_HIT);
+        ConditionallyRefreshRecord(aRec, aHost);
+      } else if (af == PR_AF_INET6) {
+        
+        
+        
+        
+        LOG(
+            ("  No AF_INET6 in AF_UNSPEC entry: "
+             "host [%s] unknown host.",
+             nsPromiseFlatCString(aHost).get()));
+        result = aRec;
+        aRec->negative = true;
+        aStatus = NS_ERROR_UNKNOWN_HOST;
+        Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2,
+                              METHOD_NEGATIVE_HIT);
+      }
+    }
+  }
+
+  return result.forget();
 }
 
 void nsHostResolver::DetachCallback(

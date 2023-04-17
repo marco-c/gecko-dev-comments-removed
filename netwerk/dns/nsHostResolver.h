@@ -245,6 +245,22 @@ class nsHostResolver : public nsISupports, public AHostResolver {
 
   void ThreadFunc();
 
+  
+  already_AddRefed<nsHostRecord> FromCache(nsHostRecord* aRec,
+                                           const nsACString& aHost,
+                                           uint16_t aType, nsresult& aStatus,
+                                           const mozilla::MutexAutoLock& aLock);
+  
+  already_AddRefed<nsHostRecord> FromCachedIPLiteral(nsHostRecord* aRec);
+  
+  already_AddRefed<nsHostRecord> FromIPLiteral(
+      AddrHostRecord* aAddrRec, const mozilla::net::NetAddr& aAddr);
+  
+  already_AddRefed<nsHostRecord> FromUnspecEntry(
+      nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
+      const nsACString& aOriginSuffix, uint16_t aType, uint16_t aFlags,
+      uint16_t af, bool aPb, nsresult& aStatus);
+
   enum {
     METHOD_HIT = 1,
     METHOD_RENEWAL = 2,
