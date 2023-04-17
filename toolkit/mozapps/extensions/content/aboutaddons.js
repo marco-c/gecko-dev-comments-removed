@@ -1239,77 +1239,6 @@ class SearchAddons extends HTMLElement {
 }
 customElements.define("search-addons", SearchAddons);
 
-class MessageBarStackElement extends HTMLElement {
-  constructor() {
-    super();
-    this._observer = null;
-    const shadowRoot = this.attachShadow({ mode: "open" });
-    shadowRoot.append(this.constructor.template.content.cloneNode(true));
-  }
-
-  connectedCallback() {
-    
-    
-    this.closeMessageBars();
-
-    
-    
-    this._observer = new MutationObserver(() => {
-      this._observer.disconnect();
-      this.closeMessageBars();
-      this._observer.observe(this, { childList: true });
-    });
-    this._observer.observe(this, { childList: true });
-  }
-
-  disconnectedCallback() {
-    this._observer.disconnect();
-    this._observer = null;
-  }
-
-  closeMessageBars() {
-    const { maxMessageBarCount } = this;
-    if (maxMessageBarCount > 1) {
-      
-      
-      while (this.childElementCount > maxMessageBarCount) {
-        this.firstElementChild.remove();
-      }
-    }
-  }
-
-  get maxMessageBarCount() {
-    return parseInt(this.getAttribute("max-message-bar-count"), 10);
-  }
-
-  static get template() {
-    const template = document.createElement("template");
-
-    const style = document.createElement("style");
-    
-    
-    style.textContent = `
-      :host {
-        display: block;
-      }
-      :host([reverse]) > slot {
-        display: flex;
-        flex-direction: column-reverse;
-      }
-    `;
-    template.content.append(style);
-    template.content.append(document.createElement("slot"));
-
-    Object.defineProperty(this, "template", {
-      value: template,
-    });
-
-    return template;
-  }
-}
-
-customElements.define("message-bar-stack", MessageBarStackElement);
-
 class GlobalWarnings extends MessageBarStackElement {
   constructor() {
     super();
@@ -4452,6 +4381,7 @@ class TaarMessageBar extends HTMLElement {
       e.type == "click" &&
       e.target.getAttribute("action") == "notice-learn-more"
     ) {
+      
       AMTelemetry.recordLinkEvent({
         object: "aboutAddons",
         value: "disconotice",
@@ -4459,6 +4389,10 @@ class TaarMessageBar extends HTMLElement {
           view: getTelemetryViewName(this),
         },
       });
+      windowRoot.ownerGlobal.openTrustedLinkIn(
+        SUPPORT_URL + "personalized-addons",
+        "tab"
+      );
     } else if (e.type == "message-bar:user-dismissed") {
       Services.prefs.setBoolPref(PREF_RECOMMENDATION_HIDE_NOTICE, true);
     }
