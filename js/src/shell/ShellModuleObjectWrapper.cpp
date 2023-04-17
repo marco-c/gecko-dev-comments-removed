@@ -9,10 +9,12 @@
 #include "jsapi.h"  
 
 #include "builtin/ModuleObject.h"     
+#include "js/CallAndConstruct.h"      
 #include "js/CallArgs.h"              
 #include "js/CallNonGenericMethod.h"  
 #include "js/Class.h"                 
 #include "js/ErrorReport.h"           
+#include "js/PropertyAndElement.h"    
 #include "js/PropertySpec.h"  
 #include "js/RootingAPI.h"    
 #include "js/Value.h"         

@@ -20,6 +20,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/StencilXdr.h"          
 #include "js/BuildId.h"                   
+#include "js/OffThreadScriptCompilation.h"
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
 #include "vm/SharedStencil.h"  
