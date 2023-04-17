@@ -202,87 +202,12 @@ Matrix4x4 Layer::SnapTransformTranslation(const Matrix4x4& aTransform,
     return aTransform;
   }
 
-  Matrix matrix2D;
-  if (aTransform.CanDraw2D(&matrix2D) && !matrix2D.HasNonTranslation() &&
-      matrix2D.HasNonIntegerTranslation()) {
-    auto snappedTranslation = IntPoint::Round(matrix2D.GetTranslation());
-    Matrix snappedMatrix =
-        Matrix::Translation(snappedTranslation.x, snappedTranslation.y);
-    Matrix4x4 result = Matrix4x4::From2D(snappedMatrix);
-    if (aResidualTransform) {
-      
-      
-      
-      *aResidualTransform =
-          Matrix::Translation(matrix2D._31 - snappedTranslation.x,
-                              matrix2D._32 - snappedTranslation.y);
-    }
-    return result;
-  }
-
-  return SnapTransformTranslation3D(aTransform, aResidualTransform);
+  return gfxUtils::SnapTransformTranslation(aTransform, aResidualTransform);
 }
 
 Matrix4x4 Layer::SnapTransformTranslation3D(const Matrix4x4& aTransform,
                                             Matrix* aResidualTransform) {
-  if (aTransform.IsSingular() || aTransform.HasPerspectiveComponent() ||
-      aTransform.HasNonTranslation() ||
-      !aTransform.HasNonIntegerTranslation()) {
-    
-    
-    
-    
-    return aTransform;
-  }
-
-  
-
-  Point3D transformedOrigin = aTransform.TransformPoint(Point3D());
-
-  
-  
-  auto transformedSnapXY =
-      IntPoint::Round(transformedOrigin.x, transformedOrigin.y);
-  Matrix4x4 inverse = aTransform;
-  inverse.Invert();
-  
-  Float transformedSnapZ =
-      inverse._33 == 0 ? 0
-                       : (-(transformedSnapXY.x * inverse._13 +
-                            transformedSnapXY.y * inverse._23 + inverse._43) /
-                          inverse._33);
-  Point3D transformedSnap =
-      Point3D(transformedSnapXY.x, transformedSnapXY.y, transformedSnapZ);
-  if (transformedOrigin == transformedSnap) {
-    return aTransform;
-  }
-
-  
-  Point3D snap = inverse.TransformPoint(transformedSnap);
-  if (snap.z > 0.001 || snap.z < -0.001) {
-    
-    MOZ_ASSERT(inverse._33 == 0.0);
-    return aTransform;
-  }
-
-  
-  if (aResidualTransform) {
-    
-    
-    *aResidualTransform = Matrix::Translation(-snap.x, -snap.y);
-  }
-
-  
-  
-  Point3D transformedShift = transformedSnap - transformedOrigin;
-  Matrix4x4 result = aTransform;
-  result.PostTranslate(transformedShift.x, transformedShift.y,
-                       transformedShift.z);
-
-  
-  
-
-  return result;
+  return gfxUtils::SnapTransformTranslation3D(aTransform, aResidualTransform);
 }
 
 Matrix4x4 Layer::SnapTransform(const Matrix4x4& aTransform,
@@ -292,35 +217,11 @@ Matrix4x4 Layer::SnapTransform(const Matrix4x4& aTransform,
     *aResidualTransform = Matrix();
   }
 
-  Matrix matrix2D;
-  Matrix4x4 result;
-  if (mManager->IsSnappingEffectiveTransforms() && aTransform.Is2D(&matrix2D) &&
-      gfxSize(1.0, 1.0) <= aSnapRect.Size() &&
-      matrix2D.PreservesAxisAlignedRectangles()) {
-    auto transformedTopLeft =
-        IntPoint::Round(matrix2D.TransformPoint(ToPoint(aSnapRect.TopLeft())));
-    auto transformedTopRight =
-        IntPoint::Round(matrix2D.TransformPoint(ToPoint(aSnapRect.TopRight())));
-    auto transformedBottomRight = IntPoint::Round(
-        matrix2D.TransformPoint(ToPoint(aSnapRect.BottomRight())));
-
-    Matrix snappedMatrix = gfxUtils::TransformRectToRect(
-        aSnapRect, transformedTopLeft, transformedTopRight,
-        transformedBottomRight);
-
-    result = Matrix4x4::From2D(snappedMatrix);
-    if (aResidualTransform && !snappedMatrix.IsSingular()) {
-      
-      
-      
-      Matrix snappedMatrixInverse = snappedMatrix;
-      snappedMatrixInverse.Invert();
-      *aResidualTransform = matrix2D * snappedMatrixInverse;
-    }
-  } else {
-    result = aTransform;
+  if (!mManager->IsSnappingEffectiveTransforms()) {
+    return aTransform;
   }
-  return result;
+
+  return gfxUtils::SnapTransform(aTransform, aSnapRect, aResidualTransform);
 }
 
 static bool AncestorLayerMayChangeTransform(Layer* aLayer) {

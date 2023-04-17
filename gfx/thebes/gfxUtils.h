@@ -60,6 +60,7 @@ class gfxUtils {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::IntPoint IntPoint;
   typedef mozilla::gfx::Matrix Matrix;
+  typedef mozilla::gfx::Matrix4x4 Matrix4x4;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::SurfaceFormat SurfaceFormat;
   typedef mozilla::image::ImageRegion ImageRegion;
@@ -164,6 +165,50 @@ class gfxUtils {
 
 
   static float ClampToScaleFactor(float aVal, bool aRoundDown = false);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static Matrix4x4 SnapTransformTranslation(const Matrix4x4& aTransform,
+                                            Matrix* aResidualTransform);
+  static Matrix4x4 SnapTransformTranslation3D(const Matrix4x4& aTransform,
+                                              Matrix* aResidualTransform);
+  
+
+
+
+
+
+
+
+
+
+
+  static Matrix4x4 SnapTransform(const Matrix4x4& aTransform,
+                                 const gfxRect& aSnapRect,
+                                 Matrix* aResidualTransform);
 
   
 
