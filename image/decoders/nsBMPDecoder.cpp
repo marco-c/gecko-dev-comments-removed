@@ -488,9 +488,14 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadFileHeader(
 
 LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderSize(
     const char* aData, size_t aLength) {
-  mPreGapLength += aLength;
-
   mH.mBIHSize = LittleEndian::readUint32(aData);
+
+  
+  if (!mIsForClipboard && mH.mDataOffset < mPreGapLength + mH.mBIHSize) {
+    mH.mDataOffset = mPreGapLength + mH.mBIHSize;
+  }
+
+  mPreGapLength += aLength;
 
   bool bihSizeOk = mH.mBIHSize == InfoHeaderLength::WIN_V2 ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
@@ -586,9 +591,10 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
 
   
   MOZ_LOG(sBMPLog, LogLevel::Debug,
-          ("BMP: bihsize=%u, %d x %d, bpp=%u, compression=%u, colors=%u\n",
+          ("BMP: bihsize=%u, %d x %d, bpp=%u, compression=%u, colors=%u, "
+           "data-offset=%u\n",
            mH.mBIHSize, mH.mWidth, mH.mHeight, uint32_t(mH.mBpp),
-           mH.mCompression, mH.mNumColors));
+           mH.mCompression, mH.mNumColors, mH.mDataOffset));
 
   
   
@@ -940,6 +946,7 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadColorTable(
   }
 
   uint32_t gapLength = mH.mDataOffset - mPreGapLength;
+
   return Transition::ToUnbuffered(State::AFTER_GAP, State::GAP, gapLength);
 }
 
