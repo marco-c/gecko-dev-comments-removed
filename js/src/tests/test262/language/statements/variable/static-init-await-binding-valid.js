@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static {
+    (() => { var await; });
+  }
+}
+
+reportCompare(0, 0);

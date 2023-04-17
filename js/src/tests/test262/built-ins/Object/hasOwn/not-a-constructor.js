@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  isConstructor(Object.hasOwn),
+  false,
+  'isConstructor(Object.hasOwn) must return false'
+);
+
+assert.throws(TypeError, () => {
+  new Object.hasOwn('');
+}, '`new Object.hasOwn(\'\')` throws TypeError');
+
+reportCompare(0, 0);

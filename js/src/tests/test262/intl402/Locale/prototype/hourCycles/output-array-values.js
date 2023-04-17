@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const output = new Intl.Locale('en').hourCycles;
+output.forEach(hc => {
+  if(!['h11', 'h12', 'h23', 'h24'].includes(hc))
+    throw new Test262Error();
+});
+
+reportCompare(0, 0);

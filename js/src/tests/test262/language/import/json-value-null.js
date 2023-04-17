@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import value from './json-value-null_FIXTURE.json' assert { type: 'json' };
+
+assert.sameValue(value, null);
+
+reportCompare(0, 0);

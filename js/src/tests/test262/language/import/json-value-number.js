@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import value from './json-value-number_FIXTURE.json' assert { type: 'json' };
+
+assert.sameValue(value, -1.2345);
+
+reportCompare(0, 0);

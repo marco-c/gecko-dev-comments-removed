@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').calendars));
+
+reportCompare(0, 0);

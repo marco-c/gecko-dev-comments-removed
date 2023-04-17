@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var probe;
+
+class C {
+  static #test262 = 'private';
+
+  static {
+    probe = C.#test262;
+  }
+}
+
+assert.sameValue(probe, 'private');
+
+reportCompare(0, 0);

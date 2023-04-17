@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(ArrayBuffer.prototype.transfer, 'name', {
+  value: 'transfer',
+  enumerable: false,
+  wrtiable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

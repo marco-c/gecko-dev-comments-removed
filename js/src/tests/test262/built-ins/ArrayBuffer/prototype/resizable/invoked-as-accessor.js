@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  ArrayBuffer.prototype.resizable;
+});
+
+reportCompare(0, 0);

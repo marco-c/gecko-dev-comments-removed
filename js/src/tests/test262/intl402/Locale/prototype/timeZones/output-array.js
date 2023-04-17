@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en-US').timeZones));
+
+reportCompare(0, 0);

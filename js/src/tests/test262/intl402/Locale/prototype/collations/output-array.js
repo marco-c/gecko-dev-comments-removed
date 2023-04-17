@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').collations));
+
+reportCompare(0, 0);

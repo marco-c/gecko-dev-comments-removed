@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ab = new SharedArrayBuffer(4, {maxByteLength: 4});
+
+assert.throws(RangeError, function() {
+  ab.grow(-1);
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(Temporal.now.instant));
+
+reportCompare(0, 0);

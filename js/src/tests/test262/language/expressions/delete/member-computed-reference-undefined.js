@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var base = undefined;
+
+assert.throws(TypeError, function() {
+  delete base[0];
+});
+
+reportCompare(0, 0);

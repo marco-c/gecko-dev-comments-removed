@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Object.hasOwn(null, 'foo');
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.hasOwn.prototype, undefined);
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var base = {
+  foo: 42
+};
+var o = Object.create(base);
+
+assert.sameValue(Object.hasOwn(o, "foo"), false, 'Object.hasOwn(o, "foo")');
+
+reportCompare(0, 0);

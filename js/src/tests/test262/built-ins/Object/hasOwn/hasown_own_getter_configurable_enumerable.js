@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+Object.defineProperty(o, "foo", {
+  get: function() {
+    return 42;
+  },
+  enumerable: true,
+  configurable: true
+});
+
+assert.sameValue(Object.hasOwn(o, "foo"), true, 'Object.hasOwn(o, "foo") !== true');
+
+reportCompare(0, 0);

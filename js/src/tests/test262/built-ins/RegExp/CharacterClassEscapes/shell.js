@@ -8,7 +8,12 @@
 
 
 
-function buildString({ loneCodePoints, ranges }) {
+function buildString(args) {
+  
+  
+  
+  const loneCodePoints = args.loneCodePoints;
+  const ranges = args.ranges;
   const CHUNK_SIZE = 10000;
   let result = Reflect.apply(String.fromCodePoint, null, loneCodePoints);
   for (let i = 0; i < ranges.length; i++) {

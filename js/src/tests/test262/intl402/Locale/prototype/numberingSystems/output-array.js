@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').numberingSystems));
+
+reportCompare(0, 0);

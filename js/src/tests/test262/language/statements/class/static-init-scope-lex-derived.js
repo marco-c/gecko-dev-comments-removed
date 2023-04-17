@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let probe;
+
+class C {
+  static {
+    probe = C;
+  }
+}
+
+assert.sameValue(probe, C);
+
+reportCompare(0, 0);

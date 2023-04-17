@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+var o = {};
+
+assert.sameValue(Object.hasOwn(o, "foo"), false, 'Object.hasOwn(o, "foo")');
+
+reportCompare(0, 0);

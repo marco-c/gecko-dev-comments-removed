@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var options = {
+  get maxByteLength() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, function() {
+  new SharedArrayBuffer(0, options);
+});
+
+reportCompare(0, 0);

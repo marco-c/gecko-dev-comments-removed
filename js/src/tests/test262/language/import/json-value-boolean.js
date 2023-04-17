@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import value from './json-value-boolean_FIXTURE.json' assert { type: 'json' };
+
+assert.sameValue(value, true);
+
+reportCompare(0, 0);

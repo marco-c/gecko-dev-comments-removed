@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static {
+    ({set accessor(await) {}});
+  }
+}
+
+reportCompare(0, 0);

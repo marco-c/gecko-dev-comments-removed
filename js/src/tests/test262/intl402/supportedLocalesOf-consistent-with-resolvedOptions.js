@@ -11,9 +11,9 @@
 
 
 testWithIntlConstructors(function (Constructor) {
-    var info = getLocaleSupportInfo(Constructor);
     
     ["lookup", "best fit"].forEach(function (matcher) {
+        var info = getLocaleSupportInfo(Constructor, {localeMatcher: matcher});
         var supportedByConstructor = info.supported.concat(info.byFallback);
         var supported = Constructor.supportedLocalesOf(supportedByConstructor,
             {localeMatcher: matcher});
@@ -28,6 +28,7 @@ testWithIntlConstructors(function (Constructor) {
     });
     
     
+    var info = getLocaleSupportInfo(Constructor, {localeMatcher: "lookup"});
     var unsupportedByConstructor = info.unsupported;
     var supported = Constructor.supportedLocalesOf(unsupportedByConstructor,
             {localeMatcher: "lookup"});

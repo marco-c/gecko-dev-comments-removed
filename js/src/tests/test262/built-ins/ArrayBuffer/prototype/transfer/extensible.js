@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(ArrayBuffer.prototype.transfer));
+
+reportCompare(0, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer.prototype.maxByteLength;
+});
+
+reportCompare(0, 0);

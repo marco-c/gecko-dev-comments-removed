@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+Object.defineProperty(o, "foo", {
+  set: function() {;
+  }
+});
+
+assert.sameValue(Object.hasOwn(o, "foo"), true, 'Object.hasOwn(o, "foo") !== true');
+
+reportCompare(0, 0);

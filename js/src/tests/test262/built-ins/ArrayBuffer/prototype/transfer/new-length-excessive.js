@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ab = new ArrayBuffer(0);
+
+assert.throws(RangeError, function() {
+  
+  ab.transfer(9007199254740992);
+});
+
+reportCompare(0, 0);

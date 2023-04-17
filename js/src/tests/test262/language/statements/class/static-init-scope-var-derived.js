@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var test262 = 'outer scope';
+var probe;
+
+class C {
+  static {
+    probe = test262;
+  }
+}
+
+assert.sameValue(probe, 'outer scope');
+
+reportCompare(0, 0);

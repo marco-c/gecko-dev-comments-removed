@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value;
+
+class C {
+  static {
+    value = this;
+  }
+}
+
+assert.sameValue(value, C);
+
+reportCompare(0, 0);

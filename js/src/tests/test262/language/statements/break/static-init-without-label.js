@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+label: while(false) {
+  class C {
+    static {
+      break;
+    }
+  }
+}

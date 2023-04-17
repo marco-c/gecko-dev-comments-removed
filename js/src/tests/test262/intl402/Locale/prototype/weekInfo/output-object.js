@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(new Intl.Locale('en').weekInfo), Object.prototype);
+
+reportCompare(0, 0);

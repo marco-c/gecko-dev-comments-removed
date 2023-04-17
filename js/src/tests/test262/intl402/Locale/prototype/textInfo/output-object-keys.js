@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const result = new Intl.Locale('en').textInfo;
+
+assert.compareArray(Reflect.ownKeys(result), ['direction']);
+
+verifyProperty(result, 'direction', {
+  writable: true,
+  enumerable: true,
+  configurable: true
+});
+
+reportCompare(0, 0);

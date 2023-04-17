@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(ArrayBuffer.prototype.resize, 'name', {
+  value: 'resize',
+  enumerable: false,
+  wrtiable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

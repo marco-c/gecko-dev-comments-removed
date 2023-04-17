@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(SharedArrayBuffer.prototype.grow));
+
+reportCompare(0, 0);

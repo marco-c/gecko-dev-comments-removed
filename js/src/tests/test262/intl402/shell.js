@@ -135,7 +135,8 @@ function taintArray() {
 
 
 
-function getLocaleSupportInfo(Constructor) {
+
+function getLocaleSupportInfo(Constructor, options) {
   var languages = ["zh", "es", "en", "hi", "ur", "ar", "ja", "pa"];
   var scripts = ["Latn", "Hans", "Deva", "Arab", "Jpan", "Hant", "Guru"];
   var countries = ["CN", "IN", "US", "PK", "JP", "TW", "HK", "SG", "419"];
@@ -165,7 +166,7 @@ function getLocaleSupportInfo(Constructor) {
   var unsupported = [];
   for (i = 0; i < allTags.length; i++) {
     var request = allTags[i];
-    var result = new Constructor([request], {localeMatcher: "lookup"}).resolvedOptions().locale;
+    var result = new Constructor([request], options).resolvedOptions().locale;
     if (request === result) {
       supported.push(request);
     } else if (request.indexOf(result) === 0) {

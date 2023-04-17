@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'maxByteLength');
+
+verifyProperty(desc.get, 'name', {
+  value: 'get maxByteLength',
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

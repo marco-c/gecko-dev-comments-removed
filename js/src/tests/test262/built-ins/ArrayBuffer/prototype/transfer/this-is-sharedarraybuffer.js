@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var sab = new SharedArrayBuffer(0);
+
+assert.throws(TypeError, function() {
+  ArrayBuffer.prototype.transfer.call(sab);
+}, '`this` value cannot be a SharedArrayBuffer');
+
+reportCompare(0, 0);

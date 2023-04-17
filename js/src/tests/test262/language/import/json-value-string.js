@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import value from './json-value-string_FIXTURE.json' assert { type: 'json' };
+
+assert.sameValue(value, 'a string value');
+
+reportCompare(0, 0);

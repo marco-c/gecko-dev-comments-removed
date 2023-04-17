@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(Temporal.now.timeZone));
+
+reportCompare(0, 0);

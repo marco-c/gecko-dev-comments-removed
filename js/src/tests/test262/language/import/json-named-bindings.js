@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+import {name} from './json-named-bindings_FIXTURE.json' assert { type: 'json' };

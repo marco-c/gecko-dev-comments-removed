@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').hourCycles));
+
+reportCompare(0, 0);

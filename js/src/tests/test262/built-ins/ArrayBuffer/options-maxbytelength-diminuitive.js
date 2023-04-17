@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  new ArrayBuffer(1, {maxByteLength: 0});
+});
+
+reportCompare(0, 0);

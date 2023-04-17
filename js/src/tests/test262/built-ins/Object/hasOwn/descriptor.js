@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyWritable(Object, "hasOwn");
+verifyNotEnumerable(Object, "hasOwn");
+verifyConfigurable(Object, "hasOwn");
+
+reportCompare(0, 0);
