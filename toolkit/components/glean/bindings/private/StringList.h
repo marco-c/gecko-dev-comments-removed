@@ -7,10 +7,7 @@
 #ifndef mozilla_glean_GleanStringList_h
 #define mozilla_glean_GleanStringList_h
 
-#include "mozilla/glean/bindings/ScalarGIFFTMap.h"
-#include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/Maybe.h"
-#include "nsDebug.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -30,16 +27,7 @@ class StringListMetric {
 
 
 
-  void Add(const nsACString& aValue) const {
-    auto scalarId = ScalarIdForMetric(mId);
-    if (scalarId) {
-      Telemetry::ScalarSet(scalarId.extract(), NS_ConvertUTF8toUTF16(aValue),
-                           true);
-    }
-#ifndef MOZ_GLEAN_ANDROID
-    fog_string_list_add(mId, &aValue);
-#endif
-  }
+  void Add(const nsACString& aValue) const;
 
   
 
@@ -51,15 +39,7 @@ class StringListMetric {
 
 
 
-  void Set(const nsTArray<nsCString>& aValue) const {
-    
-    
-    
-    (void)NS_WARN_IF(ScalarIdForMetric(mId).isSome());
-#ifndef MOZ_GLEAN_ANDROID
-    fog_string_list_set(mId, &aValue);
-#endif
-  }
+  void Set(const nsTArray<nsCString>& aValue) const;
 
   
 
@@ -79,19 +59,7 @@ class StringListMetric {
 
 
   Maybe<nsTArray<nsCString>> TestGetValue(
-      const nsACString& aPingName = nsCString()) const {
-#ifdef MOZ_GLEAN_ANDROID
-    Unused << mId;
-    return Nothing();
-#else
-    if (!fog_string_list_test_has_value(mId, &aPingName)) {
-      return Nothing();
-    }
-    nsTArray<nsCString> ret;
-    fog_string_list_test_get_value(mId, &aPingName, &ret);
-    return Some(std::move(ret));
-#endif
-  }
+      const nsACString& aPingName = nsCString()) const;
 
  private:
   const uint32_t mId;

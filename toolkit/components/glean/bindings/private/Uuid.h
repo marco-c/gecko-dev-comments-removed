@@ -8,11 +8,8 @@
 #define mozilla_glean_GleanUuid_h
 
 #include "mozilla/Maybe.h"
-#include "nsDebug.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
-#include "mozilla/glean/bindings/ScalarGIFFTMap.h"
-#include "mozilla/glean/fog_ffi_generated.h"
 
 namespace mozilla::glean {
 
@@ -27,27 +24,12 @@ class UuidMetric {
 
 
 
-  void Set(const nsACString& aValue) const {
-    auto scalarId = ScalarIdForMetric(mId);
-    if (scalarId) {
-      Telemetry::ScalarSet(scalarId.extract(), NS_ConvertUTF8toUTF16(aValue));
-    }
-#ifndef MOZ_GLEAN_ANDROID
-    fog_uuid_set(mId, &aValue);
-#endif
-  }
+  void Set(const nsACString& aValue) const;
 
   
 
 
-  void GenerateAndSet() const {
-    
-    
-    (void)NS_WARN_IF(ScalarIdForMetric(mId).isSome());
-#ifndef MOZ_GLEAN_ANDROID
-    fog_uuid_generate_and_set(mId);
-#endif
-  }
+  void GenerateAndSet() const;
 
   
 
@@ -67,19 +49,7 @@ class UuidMetric {
 
 
   Maybe<nsCString> TestGetValue(
-      const nsACString& aPingName = nsCString()) const {
-#ifdef MOZ_GLEAN_ANDROID
-    Unused << mId;
-    return Nothing();
-#else
-    if (!fog_uuid_test_has_value(mId, &aPingName)) {
-      return Nothing();
-    }
-    nsCString ret;
-    fog_uuid_test_get_value(mId, &aPingName, &ret);
-    return Some(ret);
-#endif
-  }
+      const nsACString& aPingName = nsCString()) const;
 
  private:
   const uint32_t mId;
