@@ -250,8 +250,8 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
 
   
   if (IsWin10AnniversaryUpdateOrLater()) {
-    static const StaticDynamicallyLinkedFunctionPtr<decltype(
-        &SetProcessMitigationPolicy)>
+    static const StaticDynamicallyLinkedFunctionPtr<
+        decltype(&SetProcessMitigationPolicy)>
         pSetProcessMitigationPolicy(L"kernel32.dll",
                                     "SetProcessMitigationPolicy");
     if (pSetProcessMitigationPolicy) {
