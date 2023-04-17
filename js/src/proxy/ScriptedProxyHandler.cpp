@@ -52,35 +52,12 @@ static bool IsCompatiblePropertyDescriptor(
     return true;
   }
 
+  current->assertComplete();
+
   
   if (!desc.hasValue() && !desc.hasWritable() && !desc.hasGetter() &&
       !desc.hasSetter() && !desc.hasEnumerable() && !desc.hasConfigurable()) {
     return true;
-  }
-
-  
-  JSObject* currentGetter = current->hasGetter() ? current->getter() : nullptr;
-  JSObject* currentSetter = current->hasSetter() ? current->setter() : nullptr;
-  if ((!desc.hasWritable() ||
-       (current->hasWritable() && desc.writable() == current->writable())) &&
-      (!desc.hasGetter() || desc.getter() == currentGetter) &&
-      (!desc.hasSetter() || desc.setter() == currentSetter) &&
-      (!desc.hasEnumerable() || desc.enumerable() == current->enumerable()) &&
-      (!desc.hasConfigurable() ||
-       desc.configurable() == current->configurable())) {
-    if (!desc.hasValue()) {
-      return true;
-    }
-
-    RootedValue value(cx, current->value());
-    bool same = false;
-    if (!SameValue(cx, desc.value(), value, &same)) {
-      return false;
-    }
-
-    if (same) {
-      return true;
-    }
   }
 
   
@@ -124,7 +101,9 @@ static bool IsCompatiblePropertyDescriptor(
   
   if (current->isDataDescriptor()) {
     MOZ_ASSERT(desc.isDataDescriptor());  
+    
     if (!current->configurable() && !current->writable()) {
+      
       if (desc.hasWritable() && desc.writable()) {
         static const char DETAILS_CANT_REPORT_NW_AS_W[] =
             "proxy can't report a non-configurable, non-writable property as "
@@ -133,6 +112,7 @@ static bool IsCompatiblePropertyDescriptor(
         return true;
       }
 
+      
       if (desc.hasValue()) {
         RootedValue value(cx, current->value());
         bool same;
@@ -149,27 +129,37 @@ static bool IsCompatiblePropertyDescriptor(
       }
     }
 
+    
     return true;
   }
+
+  
 
   
   MOZ_ASSERT(current->isAccessorDescriptor());  
   MOZ_ASSERT(desc.isAccessorDescriptor());      
 
+  
   if (current->configurable()) {
     return true;
   }
-  if (desc.hasSetter() && desc.setter() != currentSetter) {
+  
+  if (desc.hasSetter() && desc.setter() != current->setter()) {
     static const char DETAILS_SETTERS_DIFFERENT[] =
         "proxy can't report different setters for a currently non-configurable "
         "property";
     *errorDetails = DETAILS_SETTERS_DIFFERENT;
-  } else if (desc.hasGetter() && desc.getter() != currentGetter) {
+  } else if (desc.hasGetter() && desc.getter() != current->getter()) {
     static const char DETAILS_GETTERS_DIFFERENT[] =
         "proxy can't report different getters for a currently non-configurable "
         "property";
     *errorDetails = DETAILS_GETTERS_DIFFERENT;
   }
+
+  
+  
+
+  
   return true;
 }
 
@@ -512,7 +502,6 @@ bool ScriptedProxyHandler::isExtensible(JSContext* cx, HandleObject proxy,
   *extensible = booleanTrapResult;
   return true;
 }
-
 
 
 bool ScriptedProxyHandler::getOwnPropertyDescriptor(
