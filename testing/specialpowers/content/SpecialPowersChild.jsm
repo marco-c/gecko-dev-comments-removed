@@ -309,6 +309,52 @@ class SpecialPowersChild extends JSWindowActorChild {
         let { task, args, caller, taskId, imports } = message.data;
         return this._spawnTask(task, args, caller, taskId, imports);
 
+      case "EnsureFocus":
+        
+        
+        
+
+        
+        
+        
+        
+        
+        
+        let focusedNode = this.document.activeElement;
+        let subframeFocused =
+          ChromeUtils.getClassName(focusedNode) == "HTMLIFrameElement" ||
+          ChromeUtils.getClassName(focusedNode) == "HTMLFrameElement" ||
+          ChromeUtils.getClassName(focusedNode) == "XULFrameElement";
+        if (subframeFocused) {
+          if (message.data.blurSubframe) {
+            Services.focus.clearFocus(this.contentWindow);
+          } else {
+            if (!this.document.hasFocus()) {
+              this.contentWindow.focus();
+            }
+            return Promise.resolve(focusedNode.browsingContext);
+          }
+        }
+
+        
+        
+        if (!this.document.hasFocus()) {
+          return new Promise(resolve => {
+            this.document.addEventListener(
+              "focus",
+              () => {
+                resolve();
+              },
+              {
+                capture: true,
+                once: true,
+              }
+            );
+            this.contentWindow.focus();
+          });
+        }
+        break;
+
       case "Assert":
         {
           if ("info" in message.data) {
@@ -1653,6 +1699,10 @@ class SpecialPowersChild extends JSWindowActorChild {
     return Services.focus.focusedWindow;
   }
 
+  clearFocus(aWindow) {
+    Services.focus.clearFocus(aWindow);
+  }
+
   focus(aWindow) {
     
     
@@ -1668,6 +1718,13 @@ class SpecialPowersChild extends JSWindowActorChild {
     } catch (e) {
       Cu.reportError(e);
     }
+  }
+
+  ensureFocus(aBrowsingContext, aBlurSubframe) {
+    return this.sendQuery("EnsureFocus", {
+      browsingContext: aBrowsingContext,
+      blurSubframe: aBlurSubframe,
+    });
   }
 
   getClipboardData(flavor, whichClipboard) {

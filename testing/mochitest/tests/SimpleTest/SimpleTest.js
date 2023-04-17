@@ -928,7 +928,6 @@ SimpleTest.requestFlakyTimeout = function(reason) {
   SimpleTest._flakyTimeoutReason = reason;
 };
 
-SimpleTest._pendingWaitForFocusCount = 0;
 
 
 
@@ -936,17 +935,100 @@ SimpleTest._pendingWaitForFocusCount = 0;
 
 
 
-SimpleTest.promiseFocus = function(targetWindow, expectBlankPage) {
-  return new Promise(function(resolve, reject) {
-    SimpleTest.waitForFocus(
-      win => {
-        
-        resolve();
-      },
-      targetWindow,
-      expectBlankPage
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SimpleTest.promiseFocus = async function(
+  aObject,
+  aExpectBlankPage = false,
+  aBlurSubframe = false
+) {
+  let browser;
+  let browsingContext;
+  let windowToFocus;
+
+  if (!aObject) {
+    aObject = window;
+  }
+
+  async function waitForEvent(aTarget, aEventName) {
+    return new Promise(resolve => {
+      aTarget.addEventListener(aEventName, resolve, {
+        capture: true,
+        once: true,
+      });
+    });
+  }
+
+  if (SpecialPowers.wrap(Window).isInstance(aObject)) {
+    windowToFocus = aObject;
+
+    let isBlank = windowToFocus.location.href == "about:blank";
+    if (
+      aExpectBlankPage != isBlank ||
+      windowToFocus.document.readyState != "complete"
+    ) {
+      info("must wait for load");
+      await waitForEvent(windowToFocus, "load");
+    }
+  } else {
+    if (SpecialPowers.wrap(Element).isInstance(aObject)) {
+      
+      browsingContext = aObject.browsingContext;
+    } else {
+      browsingContext = aObject;
+    }
+
+    browser =
+      browsingContext == aObject ? aObject.top.embedderElement : aObject;
+    windowToFocus = browser.ownerGlobal;
+  }
+
+  if (!windowToFocus.document.hasFocus()) {
+    info("must wait for focus");
+    let focusPromise = waitForEvent(windowToFocus.document, "focus");
+    SpecialPowers.focus(windowToFocus);
+    await focusPromise;
+  }
+
+  if (browser) {
+    if (windowToFocus.document.activeElement != browser) {
+      browser.focus();
+    }
+
+    info("must wait for focus in content");
+
+    
+    await SpecialPowers.ensureFocus(browsingContext, aBlurSubframe);
+  } else {
+    if (aBlurSubframe) {
+      SpecialPowers.clearFocus(windowToFocus);
+    }
+
+    browsingContext = windowToFocus.browsingContext;
+  }
+
+  
+  await new Promise(resolve => {
+    SimpleTest.executeSoon(resolve);
   });
+
+  return browsingContext;
 };
 
 
@@ -954,229 +1036,10 @@ SimpleTest.promiseFocus = function(targetWindow, expectBlankPage) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
-  
-  
-  
-  
-  
-  
-  
-  function waitForFocusInner(targetWin, isChildProcess, expectBlank) {
-    
-
-
-    var loaded = false,
-      focused = false,
-      finished = false;
-
-    function info(msg) {
-      if (!isChildProcess) {
-        SimpleTest.info(msg);
-      }
-    }
-
-    function focusedWindow() {
-      if (isChildProcess) {
-        return Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager)
-          .focusedWindow;
-      }
-      return SpecialPowers.focusedWindow();
-    }
-
-    function getHref(aWindow) {
-      return isChildProcess
-        ? aWindow.location.href
-        : SpecialPowers.getPrivilegedProps(aWindow, "location.href");
-    }
-
-    
-
-    function focusedOrLoaded(event) {
-      try {
-        if (event) {
-          if (event.type == "load") {
-            if (expectBlank != (event.target.location == "about:blank")) {
-              return;
-            }
-
-            loaded = true;
-          } else if (event.type == "focus") {
-            focused = true;
-          }
-
-          event.currentTarget.removeEventListener(
-            event.type,
-            focusedOrLoaded,
-            true
-          );
-        }
-
-        if (loaded && focused && !finished) {
-          finished = true;
-          if (isChildProcess) {
-            sendAsyncMessage("WaitForFocus:ChildFocused", {});
-          } else {
-            SimpleTest._pendingWaitForFocusCount--;
-            SimpleTest.executeSoon(function() {
-              callback(targetWin);
-            });
-          }
-        }
-      } catch (e) {
-        if (!isChildProcess) {
-          SimpleTest.ok(
-            false,
-            "Exception caught in focusedOrLoaded: " +
-              e.message +
-              ", at: " +
-              e.fileName +
-              " (" +
-              e.lineNumber +
-              ")"
-          );
-        }
-      }
-    }
-
-    function waitForLoadAndFocusOnWindow(desiredWindow) {
-      
-
-
-
-
-      loaded = expectBlank
-        ? getHref(desiredWindow) == "about:blank"
-        : getHref(desiredWindow) != "about:blank" &&
-          desiredWindow.document.readyState == "complete";
-      if (!loaded) {
-        info("must wait for load");
-        desiredWindow.addEventListener("load", focusedOrLoaded, true);
-      }
-
-      var childDesiredWindow = {};
-      if (isChildProcess) {
-        var fm = Cc["@mozilla.org/focus-manager;1"].getService(
-          Ci.nsIFocusManager
-        );
-        fm.getFocusedElementForWindow(desiredWindow, true, childDesiredWindow);
-        childDesiredWindow = childDesiredWindow.value;
-      } else {
-        childDesiredWindow = SpecialPowers.getFocusedElementForWindow(
-          desiredWindow,
-          true
-        );
-      }
-
-      
-      if (isChildProcess) {
-        focused = focusedWindow() == childDesiredWindow;
-      } else {
-        focused = SpecialPowers.compare(focusedWindow(), childDesiredWindow);
-      }
-      if (!focused) {
-        info("must wait for focus");
-        childDesiredWindow.addEventListener("focus", focusedOrLoaded, true);
-        if (isChildProcess) {
-          childDesiredWindow.focus();
-        } else {
-          SpecialPowers.focus(childDesiredWindow);
-        }
-      }
-
-      focusedOrLoaded(null);
-    }
-
-    if (isChildProcess) {
-      
-      addMessageListener("WaitForFocus:FocusChild", function focusChild(msg) {
-        removeMessageListener("WaitForFocus:FocusChild", focusChild);
-        finished = false;
-        waitForLoadAndFocusOnWindow(msg.objects.child);
-      });
-    }
-
-    waitForLoadAndFocusOnWindow(targetWin);
-  }
-
-  SimpleTest._pendingWaitForFocusCount++;
-  if (!targetWindow) {
-    targetWindow = window;
-  }
-
-  expectBlankPage = !!expectBlankPage;
-
-  
-  
-  
-  
-  
-  
-  
-  var c = Object.getOwnPropertyDescriptor(window, "Components");
-  var Ci;
-  if (c && c.value && !c.writable) {
-    
-    Ci = Components.interfaces;
-  } else {
-    Ci = SpecialPowers.Ci;
-  }
-
-  var browser = null;
-  if (
-    typeof XULElement != "undefined" &&
-    targetWindow instanceof XULElement &&
-    targetWindow.localName == "browser"
-  ) {
-    browser = targetWindow;
-  }
-
-  if (browser && browser.isRemoteBrowser) {
-    browser.messageManager.addMessageListener(
-      "WaitForFocus:ChildFocused",
-      function waitTest(msg) {
-        browser.messageManager.removeMessageListener(
-          "WaitForFocus:ChildFocused",
-          waitTest
-        );
-        SimpleTest._pendingWaitForFocusCount--;
-        setTimeout(callback, 0, browser);
-      }
-    );
-
-    
-    var frameScript =
-      "data:,(" +
-      waitForFocusInner.toString() +
-      ")(content, true, " +
-      expectBlankPage +
-      ");";
-    browser.messageManager.loadFrameScript(frameScript, true);
-    browser.focus();
-  } else {
-    
-    
-    if (browser) {
-      targetWindow = browser.contentWindow;
-    }
-
-    waitForFocusInner(targetWindow, false, expectBlankPage);
-  }
+SimpleTest.waitForFocus = function(callback, aObject, expectBlankPage) {
+  SimpleTest.promiseFocus(aObject, expectBlankPage).then(focusedBC => {
+    callback(focusedBC?.window);
+  });
 };
 
 
@@ -1554,17 +1417,6 @@ SimpleTest.finish = function() {
       SimpleTest.ok(
         false,
         "expectUncaughtException was called but no uncaught exception was detected!"
-      );
-    }
-    if (SimpleTest._pendingWaitForFocusCount != 0) {
-      SimpleTest.is(
-        SimpleTest._pendingWaitForFocusCount,
-        0,
-        "[SimpleTest.finish()] waitForFocus() was called a " +
-          "different number of times from the number of " +
-          "callbacks run.  Maybe the test terminated " +
-          "prematurely -- be sure to use " +
-          "SimpleTest.waitForExplicitFinish()."
       );
     }
     if (SimpleTest._tests.length == 0) {

@@ -685,7 +685,7 @@ class SpecialPowersParent extends JSWindowActorParent {
 
 
   
-  receiveMessage(aMessage) {
+  async receiveMessage(aMessage) {
     let startTime = Cu.now();
     
     
@@ -712,6 +712,23 @@ class SpecialPowersParent extends JSWindowActorParent {
           } else {
             Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
           }
+          return undefined;
+
+        case "EnsureFocus":
+          let bc = aMessage.data.browsingContext;
+          
+          
+          
+          
+          
+          do {
+            let spParent = bc.currentWindowGlobal.getActor("SpecialPowers");
+            if (spParent) {
+              bc = await spParent.sendQuery("EnsureFocus", {
+                blurSubframe: aMessage.data.blurSubframe,
+              });
+            }
+          } while (bc && !aMessage.data.blurSubframe);
           return undefined;
 
         case "SpecialPowers.Focus":
