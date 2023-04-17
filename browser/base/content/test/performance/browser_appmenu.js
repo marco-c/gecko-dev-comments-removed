@@ -32,6 +32,13 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
   },
 ];
 
+if (gProton) {
+  EXPECTED_APPMENU_OPEN_REFLOWS.push({
+    stack: ["collectItems@resource:///modules/PanelMultiView.jsm"],
+    maxCount: 1, 
+  });
+}
+
 add_task(async function() {
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
