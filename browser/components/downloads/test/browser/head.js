@@ -47,60 +47,6 @@ const DATA_PDF = atob(
   "JVBERi0xLjANCjEgMCBvYmo8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PmVuZG9iaiAyIDAgb2JqPDwvVHlwZS9QYWdlcy9LaWRzWzMgMCBSXS9Db3VudCAxPj5lbmRvYmogMyAwIG9iajw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgMyAzXT4+ZW5kb2JqDQp4cmVmDQowIDQNCjAwMDAwMDAwMDAgNjU1MzUgZg0KMDAwMDAwMDAxMCAwMDAwMCBuDQowMDAwMDAwMDUzIDAwMDAwIG4NCjAwMDAwMDAxMDIgMDAwMDAgbg0KdHJhaWxlcjw8L1NpemUgNC9Sb290IDEgMCBSPj4NCnN0YXJ0eHJlZg0KMTQ5DQolRU9G"
 );
 
-const TEST_DATA_SHORT = "This test string is downloaded.";
-
-
-
-
-var _gDeferResponses = PromiseUtils.defer();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function mustInterruptResponses() {
-  
-  
-  
-  
-  _gDeferResponses.resolve();
-
-  info("Interruptible responses will be blocked midway.");
-  _gDeferResponses = PromiseUtils.defer();
-}
-
-
-
-
-function continueResponses() {
-  info("Interruptible responses are now allowed to continue.");
-  _gDeferResponses.resolve();
-}
-
-
-
-
-function promiseInterruptibleDownload() {
-  return Downloads.createDownload({
-    source: httpUrl("interruptible.txt"),
-    target: { path: gTestTargetFile.path },
-  });
-}
-
 
 
 async function createDownloadedFile(pathname, contents) {
@@ -246,20 +192,11 @@ let gHttpServer = null;
 function startServer() {
   gHttpServer = new HttpServer();
   gHttpServer.start(-1);
-  registerCleanupFunction(() => {
-    return new Promise(resolve => {
-      
-      continueResponses();
-      
+  registerCleanupFunction(async function() {
+    await new Promise(function(resolve) {
       gHttpServer.stop(resolve);
     });
   });
-
-  gHttpServer.identity.setPrimary(
-    "http",
-    "www.example.com",
-    gHttpServer.identity.primaryPort
-  );
 
   gHttpServer.registerPathHandler("/file1.txt", (request, response) => {
     response.setStatusLine(null, 200, "OK");
@@ -279,32 +216,6 @@ function startServer() {
     response.processAsync();
     response.finish();
   });
-
-  gHttpServer.registerPathHandler("/interruptible.txt", function(
-    aRequest,
-    aResponse
-  ) {
-    info("Interruptible request started.");
-
-    
-    aResponse.processAsync();
-    aResponse.setHeader("Content-Type", "text/plain", false);
-    aResponse.setHeader(
-      "Content-Length",
-      "" + TEST_DATA_SHORT.length * 2,
-      false
-    );
-    aResponse.write(TEST_DATA_SHORT);
-
-    
-    _gDeferResponses.promise
-      .then(function RIH_onSuccess() {
-        aResponse.write(TEST_DATA_SHORT);
-        aResponse.finish();
-        info("Interruptible request finished.");
-      })
-      .catch(Cu.reportError);
-  });
 }
 
 function httpUrl(aFileName) {
@@ -323,41 +234,6 @@ function openLibrary(aLeftPaneRoot) {
 
   return new Promise(resolve => {
     waitForFocus(resolve, library);
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function promiseDownloadHasProgress(aDownload, progress) {
-  return new Promise(resolve => {
-    
-    let onchange = function() {
-      let downloadInProgress =
-        !aDownload.stopped && aDownload.progress == progress;
-      let downloadFinished =
-        progress == 100 &&
-        aDownload.progress == progress &&
-        aDownload.succeeded;
-      if (downloadInProgress || downloadFinished) {
-        info(`Download reached ${progress}%`);
-        aDownload.onchange = null;
-        resolve();
-      }
-    };
-
-    
-    
-    aDownload.onchange = onchange;
-    onchange();
   });
 }
 
