@@ -2307,13 +2307,9 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
         
         
         EventStates docState = aFrame->GetContent()->OwnerDoc()->GetDocumentState();
-        bool isInActiveWindow = !docState.HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE);
-        bool hasDefaultButtonLook = isInActiveWindow && !eventState.HasState(NS_EVENT_STATE_ACTIVE);
-        ButtonType buttonType =
-            hasDefaultButtonLook ? ButtonType::eDefaultPushButton : ButtonType::eRegularPushButton;
         ControlParams params = ComputeControlParams(aFrame, eventState);
-        params.insideActiveWindow = isInActiveWindow;
-        return Some(WidgetInfo::Button(ButtonParams{params, buttonType}));
+        params.insideActiveWindow = !docState.HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE);
+        return Some(WidgetInfo::Button(ButtonParams{params, ButtonType::eDefaultPushButton}));
       }
       if (IsButtonTypeMenu(aFrame)) {
         ControlParams controlParams = ComputeControlParams(aFrame, eventState);
