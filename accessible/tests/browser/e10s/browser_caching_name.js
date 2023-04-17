@@ -20,18 +20,10 @@ loadScripts({ name: "name.js", dir: MOCHITESTS_DIR });
 
 
 
-
-
-
-
-
-const ARIARule = [
-  { attr: "aria-labelledby" },
-  { attr: "aria-label", waitFor: EVENT_NAME_CHANGE },
-];
-const HTMLControlHeadRule = [...ARIARule, { elm: "label", isSibling: true }];
+const ARIARule = [{ attr: "aria-labelledby" }, { attr: "aria-label" }];
+const HTMLControlHeadRule = [...ARIARule, { elm: "label" }];
 const rules = {
-  CSSContent: [{ elm: "style", isSibling: true }, { fromsubtree: true }],
+  CSSContent: [{ elm: "style" }, { fromsubtree: true }],
   HTMLARIAGridCell: [...ARIARule, { fromsubtree: true }, { attr: "title" }],
   HTMLControl: [
     ...HTMLControlHeadRule,
@@ -39,11 +31,7 @@ const rules = {
     { attr: "title" },
   ],
   HTMLElm: [...ARIARule, { attr: "title" }],
-  HTMLImg: [
-    ...ARIARule,
-    { attr: "alt", waitFor: EVENT_NAME_CHANGE },
-    { attr: "title" },
-  ],
+  HTMLImg: [...ARIARule, { attr: "alt" }, { attr: "title" }],
   HTMLImgEmptyAlt: [...ARIARule, { attr: "title" }, { attr: "alt" }],
   HTMLInputButton: [
     ...HTMLControlHeadRule,
@@ -52,25 +40,19 @@ const rules = {
   ],
   HTMLInputImage: [
     ...HTMLControlHeadRule,
-    { attr: "alt", waitFor: EVENT_NAME_CHANGE },
+    { attr: "alt" },
     { attr: "value" },
     { attr: "title" },
   ],
   HTMLInputImageNoValidSrc: [
     ...HTMLControlHeadRule,
-    { attr: "alt", waitFor: EVENT_NAME_CHANGE },
+    { attr: "alt" },
     { attr: "value" },
   ],
-  HTMLInputReset: [
-    ...HTMLControlHeadRule,
-    { attr: "value", waitFor: EVENT_TEXT_INSERTED },
-  ],
-  HTMLInputSubmit: [
-    ...HTMLControlHeadRule,
-    { attr: "value", waitFor: EVENT_TEXT_INSERTED },
-  ],
+  HTMLInputReset: [...HTMLControlHeadRule, { attr: "value" }],
+  HTMLInputSubmit: [...HTMLControlHeadRule, { attr: "value" }],
   HTMLLink: [...ARIARule, { fromsubtree: true }, { attr: "title" }],
-  HTMLLinkImage: [...ARIARule, { elm: "img" }, { attr: "title" }],
+  HTMLLinkImage: [...ARIARule, { fromsubtree: true }, { attr: "title" }],
   HTMLOption: [
     ...ARIARule,
     { attr: "label" },
@@ -403,27 +385,19 @@ const markupTests = [
 
 
 async function testAttrRule(browser, target, rule, expected) {
-  let { id, parent, acc } = target;
-  let { waitFor, attr } = rule;
+  let { id, acc } = target;
+  let { attr } = rule;
 
   testName(acc, expected);
 
-  if (waitFor) {
-    let [event] = await contentSpawnMutation(
-      browser,
-      {
-        expected: [[waitFor, waitFor === EVENT_REORDER ? parent : id]],
-      },
-      (contentId, contentAttr) =>
-        content.document.getElementById(contentId).removeAttribute(contentAttr),
-      [id, attr]
-    );
+  let nameChange = waitForEvent(EVENT_NAME_CHANGE, id);
+  await invokeContentTask(browser, [id, attr], (contentId, contentAttr) => {
+    content.document.getElementById(contentId).removeAttribute(contentAttr);
+  });
+  let event = await nameChange;
 
-    
-    target.acc = findAccessibleChildByID(event.accessible, id);
-  } else {
-    await invokeSetAttribute(browser, id, attr);
-  }
+  
+  target.acc = findAccessibleChildByID(event.accessible, id);
 }
 
 
@@ -439,18 +413,16 @@ async function testAttrRule(browser, target, rule, expected) {
 
 
 async function testElmRule(browser, target, rule, expected) {
-  let { id, parent, acc } = target;
-  let { isSibling, elm } = rule;
+  let { id, acc } = target;
+  let { elm } = rule;
 
   testName(acc, expected);
-  let [event] = await contentSpawnMutation(
-    browser,
-    {
-      expected: [[EVENT_REORDER, isSibling ? parent : id]],
-    },
-    contentElm => content.document.querySelector(`${contentElm}`).remove(),
-    [elm]
-  );
+  let nameChange = waitForEvent(EVENT_NAME_CHANGE, id);
+
+  await invokeContentTask(browser, [elm], contentElm => {
+    content.document.querySelector(`${contentElm}`).remove();
+  });
+  let event = await nameChange;
 
   
   target.acc = findAccessibleChildByID(event.accessible, id);
@@ -472,19 +444,15 @@ async function testSubtreeRule(browser, target, rule, expected) {
   let { id, acc } = target;
 
   testName(acc, expected);
-  let [event] = await contentSpawnMutation(
-    browser,
-    {
-      expected: [[EVENT_REORDER, id]],
-    },
-    contentId => {
-      let elm = content.document.getElementById(contentId);
-      while (elm.firstChild) {
-        elm.firstChild.remove();
-      }
-    },
-    [id]
-  );
+  let nameChange = waitForEvent(EVENT_NAME_CHANGE, id);
+
+  await invokeContentTask(browser, [id], contentId => {
+    let elm = content.document.getElementById(contentId);
+    while (elm.firstChild) {
+      elm.firstChild.remove();
+    }
+  });
+  let event = await nameChange;
 
   
   target.acc = findAccessibleChildByID(event.accessible, id);
@@ -528,9 +496,7 @@ markupTests.forEach(({ id, ruleset, markup, expected }) =>
       Services.obs.addObserver(observer, "accessible-event");
       
       let acc = findAccessibleChildByID(accDoc, id);
-      
-      let parent = getAccessibleDOMNodeID(acc.parent);
-      let target = { id, parent, acc };
+      let target = { id, acc };
       await testNameRule(browser, target, rules[ruleset], expected);
       Services.obs.removeObserver(observer, "accessible-event");
     },

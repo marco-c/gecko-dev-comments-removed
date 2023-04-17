@@ -63,12 +63,11 @@ bool EventQueue::PushNameOrDescriptionChange(LocalAccessible* aTarget) {
   
   
   
-  LocalAccessible* parent = aTarget->LocalParent();
-  while (parent &&
-         nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
+  LocalAccessible* parent = aTarget;
+  do {
     
     if (doName) {
-      if (nameCheckAncestor &&
+      if (nameCheckAncestor && parent != aTarget &&
           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
         nsAutoString name;
         ENameValueFlag nameFlag = parent->Name(name);
@@ -99,7 +98,9 @@ bool EventQueue::PushNameOrDescriptionChange(LocalAccessible* aTarget) {
     }
 
     parent = parent->LocalParent();
-  }
+  } while (parent &&
+           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule));
+
   return pushed;
 }
 
