@@ -25,20 +25,16 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-
-
-
-XPCOMUtils.defineLazyGetter(this, "isServerTargetSwitchingEnabled", () =>
-  Services.prefs.getBoolPref("devtools.target-switching.server.enabled", false)
-);
-
-
 const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
 
 
 
-function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
+function shouldNotifyWindowGlobal(
+  windowGlobal,
+  watchedBrowserId,
+  { acceptTopLevelTarget = false }
+) {
   const browsingContext = windowGlobal.browsingContext;
   
   
@@ -75,10 +71,13 @@ function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
   
   
   
+  
+  
+  
   if (
-    !isServerTargetSwitchingEnabled &&
     !browsingContext.parent &&
-    browsingContext.browserId == watchedBrowserId
+    browsingContext.browserId == watchedBrowserId &&
+    !acceptTopLevelTarget
   ) {
     return false;
   }
@@ -131,9 +130,38 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     this._onConnectionChange = this._onConnectionChange.bind(this);
     EventEmitter.decorate(this);
+
+    
+    
+
+    
+    
+    
+    
+    XPCOMUtils.defineLazyGetter(this, "isServerTargetSwitchingEnabled", () =>
+      Services.prefs.getBoolPref(
+        "devtools.target-switching.server.enabled",
+        false
+      )
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    XPCOMUtils.defineLazyGetter(
+      this,
+      "isBfcacheInParentEnabled",
+      () =>
+        Services.appinfo.sessionHistoryInParent &&
+        Services.prefs.getBoolPref("fission.bfcacheInParent", false)
+    );
   }
 
-  instantiate() {
+  instantiate({ forceOverridingFirstTarget = false } = {}) {
     const { sharedData } = Services.cpmm;
     const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
     if (!watchedDataByWatcherActor) {
@@ -147,7 +175,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
       const { connectionPrefix, browserId } = watchedData;
       if (
         watchedData.targets.includes("frame") &&
-        shouldNotifyWindowGlobal(this.manager, browserId)
+        shouldNotifyWindowGlobal(this.manager, browserId, {
+          acceptTopLevelTarget:
+            forceOverridingFirstTarget || this.isServerTargetSwitchingEnabled,
+        })
       ) {
         const browsingContext = this.manager.browsingContext;
 
@@ -164,7 +195,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         
         
-        if (existingTarget && !existingTarget.createdFromJsWindowActor) {
+        
+        
+        if (
+          existingTarget &&
+          !existingTarget.createdFromJsWindowActor &&
+          !forceOverridingFirstTarget
+        ) {
           return;
         }
 
@@ -370,7 +407,9 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       if (
         this.manager.browsingContext.browserId != browserId &&
-        !shouldNotifyWindowGlobal(this.manager, browserId)
+        !shouldNotifyWindowGlobal(this.manager, browserId, {
+          acceptTopLevelTarget: true,
+        })
       ) {
         throw new Error(
           "Mismatch between DevToolsFrameParent and DevToolsFrameChild  " +
@@ -476,15 +515,73 @@ class DevToolsFrameChild extends JSWindowActorChild {
     return null;
   }
 
-  handleEvent({ type }) {
+  handleEvent({ type, persisted, target }) {
+    
+    if (target != this.document) {
+      return;
+    }
+
     
     
     if (type == "DOMWindowCreated") {
       this.instantiate();
+    } else if (
+      this.isBfcacheInParentEnabled &&
+      type == "pageshow" &&
+      persisted
+    ) {
+      
+      
+      
+      
+      
+      
+      
+      this.instantiate({ forceOverridingFirstTarget: true });
+    }
+    if (this.isBfcacheInParentEnabled && type == "pagehide" && persisted) {
+      this.didDestroy();
+
+      
+      
+      
+      
+      const { sharedData } = Services.cpmm;
+      const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+      if (!watchedDataByWatcherActor) {
+        throw new Error(
+          "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
+        );
+      }
+
+      const actors = [];
+      for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
+        const { browserId } = watchedData;
+        const existingTarget = this._getTargetActorForWatcherActorID(
+          watcherActorID,
+          browserId
+        );
+
+        if (!existingTarget) {
+          continue;
+        }
+        if (existingTarget.window.document != target) {
+          throw new Error("Existing target actor is for a distinct document");
+        }
+        actors.push({ watcherActorID, form: existingTarget.form() });
+        existingTarget.destroy();
+      }
+      
+      
+      
+      
+      
+      this.sendAsyncMessage("DevToolsFrameChild:destroy", { actors });
     }
   }
 
   didDestroy() {
+    logWindowGlobal(this.manager, "Destroy WindowGlobalTarget");
     for (const [, connectionInfo] of this._connections) {
       connectionInfo.connection.close();
     }
