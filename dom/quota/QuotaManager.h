@@ -374,13 +374,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   static void MaybeRecordQuotaClientShutdownStep(
-      const Client::Type aClientType, const nsACString& aStepDescription) {
-    
-
-    MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
-    QuotaManager::Get()->MaybeRecordShutdownStep(Some(aClientType),
-                                                 aStepDescription);
-  }
+      const Client::Type aClientType, const nsACString& aStepDescription);
 
   
   
@@ -553,8 +547,10 @@ class QuotaManager final : public BackgroundThreadObject {
 
   int64_t GenerateDirectoryLockId();
 
-  void MaybeRecordShutdownStep(Maybe<Client::Type> aClientType,
-                               const nsACString& aStepDescription);
+  bool ShutdownStarted() const;
+
+  void RecordShutdownStep(Maybe<Client::Type> aClientType,
+                          const nsACString& aStepDescription);
 
   template <typename Func>
   auto ExecuteInitialization(Initialization aInitialization, Func&& aFunc)
