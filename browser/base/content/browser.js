@@ -4560,8 +4560,10 @@ function FillHistoryMenu(aParent) {
     }
   }
 
+  
+  
   let sessionHistory = gBrowser.selectedBrowser.browsingContext.sessionHistory;
-  if (sessionHistory) {
+  if (sessionHistory?.count) {
     
     if (sessionHistory.count <= 1) {
       return false;
