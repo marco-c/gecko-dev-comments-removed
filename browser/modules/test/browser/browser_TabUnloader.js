@@ -128,12 +128,25 @@ const PREF_AUDIO_LOOPBACK = "media.audio_loopback_dev";
 const PREF_VIDEO_LOOPBACK = "media.video_loopback_dev";
 const PREF_FAKE_STREAMS = "media.navigator.streams.fake";
 const PREF_ENABLE_UNLOADER = "browser.tabs.unloadOnLowMemory";
+const PREF_MAC_LOW_MEM_RESPONSE = "browser.lowMemoryResponseMask";
 
 add_task(async function test() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(PREF_ENABLE_UNLOADER);
+    if (AppConstants.platform == "macosx") {
+      Services.prefs.clearUserPref(PREF_MAC_LOW_MEM_RESPONSE);
+    }
   });
   Services.prefs.setBoolPref(PREF_ENABLE_UNLOADER, true);
+
+  
+  
+  
+  
+  if (AppConstants.platform == "macosx") {
+    Services.prefs.setIntPref(PREF_MAC_LOW_MEM_RESPONSE, 3);
+  }
+
   TabUnloader.init();
 
   
