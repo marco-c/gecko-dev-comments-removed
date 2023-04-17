@@ -11,6 +11,7 @@ mod font_face_rule;
 pub mod font_feature_values_rule;
 pub mod import_rule;
 pub mod keyframes_rule;
+mod layer_rule;
 mod loader;
 mod media_rule;
 mod namespace_rule;
@@ -49,6 +50,7 @@ pub use self::font_face_rule::FontFaceRule;
 pub use self::font_feature_values_rule::FontFeatureValuesRule;
 pub use self::import_rule::ImportRule;
 pub use self::keyframes_rule::KeyframesRule;
+pub use self::layer_rule::LayerRule;
 pub use self::loader::StylesheetLoader;
 pub use self::media_rule::MediaRule;
 pub use self::namespace_rule::NamespaceRule;
@@ -257,6 +259,7 @@ pub enum CssRule {
     Supports(Arc<Locked<SupportsRule>>),
     Page(Arc<Locked<PageRule>>),
     Document(Arc<Locked<DocumentRule>>),
+    Layer(Arc<Locked<LayerRule>>),
 }
 
 impl CssRule {
@@ -297,11 +300,14 @@ impl CssRule {
             CssRule::Document(ref lock) => {
                 lock.unconditional_shallow_size_of(ops) + lock.read_with(guard).size_of(guard, ops)
             },
+
+            
+            CssRule::Layer(_) => 0,
         }
     }
 }
 
-#[allow(missing_docs)]
+
 #[derive(Clone, Copy, Debug, Eq, FromPrimitive, PartialEq)]
 pub enum CssRuleType {
     
@@ -327,6 +333,9 @@ pub enum CssRuleType {
     FontFeatureValues = 14,
     
     Viewport = 15,
+    
+    
+    Layer = 16,
 }
 
 #[allow(missing_docs)]
@@ -353,6 +362,7 @@ impl CssRule {
             CssRule::Supports(_) => CssRuleType::Supports,
             CssRule::Page(_) => CssRuleType::Page,
             CssRule::Document(_) => CssRuleType::Document,
+            CssRule::Layer(_) => CssRuleType::Layer,
         }
     }
 
@@ -361,6 +371,8 @@ impl CssRule {
             
             CssRule::Import(..) => State::Imports,
             CssRule::Namespace(..) => State::Namespaces,
+            
+            
             _ => State::Body,
         }
     }
@@ -485,6 +497,12 @@ impl DeepCloneWithLock for CssRule {
                     lock.wrap(rule.deep_clone_with_lock(lock, guard, params)),
                 ))
             },
+            CssRule::Layer(ref arc) => {
+                let rule = arc.read_with(guard);
+                CssRule::Layer(Arc::new(
+                    lock.wrap(rule.deep_clone_with_lock(lock, guard, params)),
+                ))
+            }
         }
     }
 }
@@ -505,6 +523,7 @@ impl ToCssWithGuard for CssRule {
             CssRule::Supports(ref lock) => lock.read_with(guard).to_css(guard, dest),
             CssRule::Page(ref lock) => lock.read_with(guard).to_css(guard, dest),
             CssRule::Document(ref lock) => lock.read_with(guard).to_css(guard, dest),
+            CssRule::Layer(ref lock) => lock.read_with(guard).to_css(guard, dest),
         }
     }
 }

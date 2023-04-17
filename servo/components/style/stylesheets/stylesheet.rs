@@ -367,7 +367,10 @@ impl SanitizationKind {
             CssRule::Document(..) |
             CssRule::Media(..) |
             CssRule::Supports(..) |
-            CssRule::Import(..) => false,
+            CssRule::Import(..) |
+            
+            
+            CssRule::Layer(..) => false,
 
             CssRule::FontFace(..) | CssRule::Namespace(..) | CssRule::Style(..) => true,
 
