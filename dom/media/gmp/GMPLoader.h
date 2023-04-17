@@ -11,7 +11,6 @@
 #include "prlink.h"
 #include "gmp-entrypoints.h"
 #include "mozilla/UniquePtr.h"
-#include "nsString.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
@@ -37,11 +36,8 @@ class GMPAdapter {
 
   
   virtual GMPErr GMPInit(const GMPPlatformAPI* aPlatformAPI) = 0;
-  
-  
-  
   virtual GMPErr GMPGetAPI(const char* aAPIName, void* aHostAPI,
-                           void** aPluginAPI, const nsCString& aKeySystem) = 0;
+                           void** aPluginAPI) = 0;
   virtual void GMPShutdown() = 0;
 };
 
@@ -60,10 +56,7 @@ class GMPLoader {
             const GMPPlatformAPI* aPlatformAPI, GMPAdapter* aAdapter = nullptr);
 
   
-  
-  
-  GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI,
-                const nsCString& aKeySystem);
+  GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI);
 
   
   
