@@ -58,7 +58,7 @@ class Calendar final {
 
 
 
-  Result<const char*, ICUError> GetBcp47Type();
+  Result<Span<const char>, ICUError> GetBcp47Type();
 
   
 
