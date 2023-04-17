@@ -15,6 +15,7 @@
 #include "nsTHashMap.h"
 #include "nsIProxyInfo.h"
 #include "nsISSLSocketControl.h"
+#include "nsITlsHandshakeListener.h"
 #include "nsNSSCertificate.h"
 #include "nsTHashtable.h"
 #include "sslt.h"
@@ -73,6 +74,8 @@ class nsNSSSocketInfo final : public CommonSocketControl {
   NS_IMETHOD GetPeerId(nsACString& aResult) override;
   NS_IMETHOD GetRetryEchConfig(nsACString& aEchConfig) override;
   NS_IMETHOD DisableEarlyData(void) override;
+  NS_IMETHOD SetHandshakeCallbackListener(
+      nsITlsHandshakeCallbackListener* callback) override;
 
   PRStatus CloseSocketAndDestroy();
 
@@ -241,6 +244,8 @@ class nsNSSSocketInfo final : public CommonSocketControl {
   
   
   RefPtr<mozilla::psm::SharedSSLState> mOwningSharedRef;
+
+  nsCOMPtr<nsITlsHandshakeCallbackListener> mTlsHandshakeCallback;
 };
 
 
