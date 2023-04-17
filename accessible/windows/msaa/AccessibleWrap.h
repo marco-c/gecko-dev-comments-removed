@@ -36,9 +36,7 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
   
   NS_DECL_ISUPPORTS_INHERITED
 
- public:  
-  STDMETHODIMP QueryInterface(REFIID, void**) override;
-
+ public:
   
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
   virtual void Shutdown() override;

@@ -4,6 +4,7 @@
 
 
 
+#include "EnumVariant.h"
 #include "MsaaAccessible.h"
 #include "mozilla/a11y/AccessibleWrap.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
@@ -627,12 +628,80 @@ MsaaAccessible* MsaaAccessible::GetFrom(Accessible* aAcc) {
 }
 
 
+STDMETHODIMP
+MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
+  if (!ppv) return E_INVALIDARG;
 
+  *ppv = nullptr;
 
+  if (IID_IClientSecurity == iid) {
+    
+    
+    
+    
+    return E_NOINTERFACE;
+  }
 
-STDMETHODIMP MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
-  return static_cast<AccessibleWrap*>(this)->QueryInterface(iid, ppv);
+  AccessibleWrap* acc = LocalAcc();
+  if (!acc) {
+    
+    
+    
+    return E_NOINTERFACE;
+  }
+  if (IID_IUnknown == iid)
+    *ppv = static_cast<IAccessible*>(this);
+  else if (IID_IDispatch == iid || IID_IAccessible == iid)
+    *ppv = static_cast<IAccessible*>(this);
+  else if (IID_IEnumVARIANT == iid && !acc->IsProxy()) {
+    
+    if (!acc->HasChildren() || nsAccUtils::MustPrune(acc)) return E_NOINTERFACE;
+
+    *ppv = static_cast<IEnumVARIANT*>(new ChildrenEnumVariant(this));
+  } else if (IID_IServiceProvider == iid)
+    *ppv = new ServiceProvider(this);
+  else if (IID_ISimpleDOMNode == iid && !acc->IsProxy()) {
+    if (!acc->HasOwnContent() && !acc->IsDoc()) {
+      return E_NOINTERFACE;
+    }
+
+    *ppv = static_cast<ISimpleDOMNode*>(new sdnAccessible(WrapNotNull(this)));
+  }
+
+  if (nullptr == *ppv) {
+    HRESULT hr = ia2Accessible::QueryInterface(iid, ppv);
+    if (SUCCEEDED(hr)) return hr;
+  }
+
+  if (nullptr == *ppv && !acc->IsProxy()) {
+    HRESULT hr = ia2AccessibleComponent::QueryInterface(iid, ppv);
+    if (SUCCEEDED(hr)) return hr;
+  }
+
+  if (nullptr == *ppv) {
+    HRESULT hr = ia2AccessibleHyperlink::QueryInterface(iid, ppv);
+    if (SUCCEEDED(hr)) return hr;
+  }
+
+  if (nullptr == *ppv && !acc->IsProxy()) {
+    HRESULT hr = ia2AccessibleValue::QueryInterface(iid, ppv);
+    if (SUCCEEDED(hr)) return hr;
+  }
+
+  if (!*ppv && iid == IID_IGeckoCustom) {
+    RefPtr<GeckoCustom> gkCrap = new GeckoCustom(this);
+    gkCrap.forget(ppv);
+    return S_OK;
+  }
+
+  if (nullptr == *ppv) return E_NOINTERFACE;
+
+  (reinterpret_cast<IUnknown*>(*ppv))->AddRef();
+  return S_OK;
 }
+
+
+
 ULONG STDMETHODCALLTYPE MsaaAccessible::AddRef() {
   return static_cast<AccessibleWrap*>(this)->AddRef();
 }
