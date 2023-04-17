@@ -259,10 +259,6 @@ pub enum CompositorConfig {
     
     Native {
         
-        
-        
-        max_update_rects: usize,
-        
         compositor: Box<dyn Compositor>,
     }
 }
@@ -319,8 +315,6 @@ pub enum CompositorKind {
     },
     
     Native {
-        
-        max_update_rects: usize,
         
         capabilities: CompositorCapabilities,
     },
@@ -929,6 +923,10 @@ pub struct CompositorCapabilities {
     pub virtual_surface_size: i32,
     
     pub redraw_on_invalidation: bool,
+    
+    
+    
+    pub max_update_rects: usize,
 }
 
 impl Default for CompositorCapabilities {
@@ -940,6 +938,9 @@ impl Default for CompositorCapabilities {
         CompositorCapabilities {
             virtual_surface_size: 0,
             redraw_on_invalidation: false,
+            
+            
+            max_update_rects: 1,
         }
     }
 }

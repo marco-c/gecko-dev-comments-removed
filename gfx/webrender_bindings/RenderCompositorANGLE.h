@@ -77,7 +77,6 @@ class RenderCompositorANGLE : public RenderCompositor {
   bool SupportAsyncScreenshot() override;
 
   bool ShouldUseNativeCompositor() override;
-  uint32_t GetMaxUpdateRects() override;
 
   
   void CompositorBeginFrame() override;

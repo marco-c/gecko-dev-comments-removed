@@ -113,7 +113,6 @@ class RenderCompositor {
   virtual bool SupportAsyncScreenshot() { return true; }
 
   virtual bool ShouldUseNativeCompositor() { return false; }
-  virtual uint32_t GetMaxUpdateRects() { return 0; }
 
   
   virtual void CompositorBeginFrame() {}
@@ -151,7 +150,7 @@ class RenderCompositor {
   virtual void DeInit() {}
   
   
-  virtual void GetCompositorCapabilities(CompositorCapabilities* aCaps) {}
+  virtual void GetCompositorCapabilities(CompositorCapabilities* aCaps);
 
   
   virtual bool UsePartialPresent() { return false; }
