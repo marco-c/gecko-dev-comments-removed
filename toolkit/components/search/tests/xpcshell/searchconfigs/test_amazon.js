@@ -1,27 +1,27 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
 const test = new SearchConfigTest({
   identifier: "amazon",
   default: {
-    // Not included anywhere.
+    
   },
   available: {
     included: [
-      // Note: These should be based on region, but we don't currently enforce that.
-      // Note: the order here is important. A region/locale match higher up in the
-      // list will override a region/locale match lower down.
+      
+      
+      
       {
         regions: ["au", "ca"],
       },
       {
-        // We don't currently enforce by region, but do locale instead.
-        // regions: [
-        //   "at", "au", "be", "ca", "ch", "de", "fr", "gb", "ie", "it", "jp", "nl",
-        //   "us",
-        // ],
+        
+        
+        
+        
+        
         locales: {
           matches: [
             "ach",
@@ -102,7 +102,8 @@ const test = new SearchConfigTest({
         },
       ],
       searchUrlCode: "tag=mozillaaustra-22",
-      noSuggestionsURL: true,
+      suggestionUrlBase: "https://completion.amazon.com.au/search/complete",
+      suggestUrlCode: "mkt=111172",
     },
     {
       domain: "amazon.ca",
@@ -358,7 +359,7 @@ const test = new SearchConfigTest({
 });
 
 add_task(async function setup() {
-  // We only need to do setup on one of the tests.
+  
   await test.setup();
 });
 
