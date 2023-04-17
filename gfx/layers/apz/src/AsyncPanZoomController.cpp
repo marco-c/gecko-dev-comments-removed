@@ -519,9 +519,6 @@ static const double kDefaultEstimatedPaintDurationMs = 50;
 static bool gIsHighMemSystem = false;
 static bool IsHighMemSystem() { return gIsHighMemSystem; }
 
-
-static uint32_t sAsyncPanZoomControllerCount = 0;
-
 AsyncPanZoomAnimation* PlatformSpecificStateBase::CreateFlingAnimation(
     AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
     float aPLPPI) {
@@ -732,7 +729,7 @@ AsyncPanZoomController::AsyncPanZoomController(
       mNotificationBlockers(0),
       mInputQueue(aInputQueue),
       mPinchPaintTimerSet(false),
-      mAPZCId(sAsyncPanZoomControllerCount++),
+      mAPZCId(0),
       mSharedLock(nullptr),
       mTestAttributeAppliers(0),
       mAsyncTransformAppliedToContent(false),
