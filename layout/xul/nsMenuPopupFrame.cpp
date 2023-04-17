@@ -550,7 +550,12 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   }
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
 
-  if (mozilla::widget::GdkIsWaylandDisplay()) {
+#ifdef MOZ_WAYLAND
+  static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
+#else
+  static bool inWayland = false;
+#endif
+  if (inWayland) {
     
     
     
@@ -900,9 +905,7 @@ void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
   mPopupAlignment = POPUPALIGNMENT_NONE;
   mPosition = POPUPPOSITION_UNKNOWN;
   mIsContextMenu = aIsContextMenu;
-  
-  mAdjustOffsetForContextMenu =
-      mozilla::widget::GdkIsWaylandDisplay() ? false : aIsContextMenu;
+  mAdjustOffsetForContextMenu = aIsContextMenu;
   mIsNativeMenu = false;
   mAnchorType = MenuPopupAnchorType_Point;
   mPositionedOffset = 0;
@@ -921,8 +924,7 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mPopupAlignment = POPUPALIGNMENT_NONE;
   mPosition = POPUPPOSITION_UNKNOWN;
   mIsContextMenu = true;
-  
-  mAdjustOffsetForContextMenu = !mozilla::widget::GdkIsWaylandDisplay();
+  mAdjustOffsetForContextMenu = true;
   mIsNativeMenu = true;
   mAnchorType = MenuPopupAnchorType_Point;
   mPositionedOffset = 0;
@@ -1627,11 +1629,16 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     if (mRect.width > screenRect.width) mRect.width = screenRect.width;
     if (mRect.height > screenRect.height) mRect.height = screenRect.height;
 
-    
-    
-    
-    
-    if (!mozilla::widget::GdkIsWaylandDisplay()) {
+      
+      
+      
+      
+#ifdef MOZ_WAYLAND
+    static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
+#else
+    static bool inWayland = false;
+#endif
+    if (!inWayland) {
       
       
       
@@ -1774,7 +1781,12 @@ LayoutDeviceIntRect nsMenuPopupFrame::GetConstraintRect(
   nsCOMPtr<nsIScreen> screen;
   nsCOMPtr<nsIScreenManager> sm(
       do_GetService("@mozilla.org/gfx/screenmanager;1"));
-  if (sm && !mozilla::widget::GdkIsWaylandDisplay()) {
+#ifdef MOZ_WAYLAND
+  static bool inWayland = mozilla::widget::GdkIsWaylandDisplay();
+#else
+  static bool inWayland = false;
+#endif
+  if (sm && !inWayland) {
     
     
     
