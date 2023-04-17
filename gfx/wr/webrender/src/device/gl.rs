@@ -975,6 +975,9 @@ pub struct Capabilities {
     
     pub supports_alpha_target_clears: bool,
     
+    
+    pub requires_alpha_target_full_clear: bool,
+    
     pub supports_r8_texture_upload: bool,
     
     
@@ -1709,6 +1712,11 @@ impl Device {
 
         
         
+        let is_adreno_4xx = renderer_name.starts_with("Adreno (TM) 4");
+        let requires_alpha_target_full_clear = is_adreno_4xx;
+
+        
+        
         
         let supports_r8_texture_upload = if cfg!(target_os = "linux")
             && renderer_name.starts_with("AMD Radeon RX")
@@ -1750,6 +1758,7 @@ impl Device {
                 supports_shader_storage_object,
                 requires_batched_texture_uploads,
                 supports_alpha_target_clears,
+                requires_alpha_target_full_clear,
                 supports_r8_texture_upload,
                 uses_native_clip_mask,
                 uses_native_antialiasing,

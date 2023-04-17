@@ -3716,6 +3716,16 @@ impl Renderer {
 
             
             
+            if self.device.get_capabilities().requires_alpha_target_full_clear {
+                self.device.clear_target(
+                    Some(zero_color),
+                    None,
+                    None,
+                );
+            }
+
+            
+            
             
             if self.clear_alpha_targets_with_quads
                 && !(target.zero_clears.is_empty() && target.one_clears.is_empty())
