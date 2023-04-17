@@ -39,8 +39,18 @@ exports.CommandsFactory = {
     return commands;
   },
 
-  async forMainProcess() {
-    const client = await createLocalClient();
+  
+
+
+
+
+
+
+
+  async forMainProcess({ client } = {}) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getMainProcess();
     const commands = await createCommandsDictionary(descriptor);

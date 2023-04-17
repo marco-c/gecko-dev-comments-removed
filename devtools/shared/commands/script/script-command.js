@@ -4,6 +4,11 @@
 
 "use strict";
 
+const {
+  getAdHocFrontOrPrimitiveGrip,
+  
+} = require("devtools/client/fronts/object");
+
 class ScriptCommand {
   constructor({ commands }) {
     this._commands = commands;
@@ -58,9 +63,78 @@ class ScriptCommand {
       }
     }
 
-    const front = await targetFront.getFront("console");
+    const consoleFront = await targetFront.getFront("console");
 
-    return front.evaluateJSAsync(expression, options);
+    
+    
+    
+    let resultID;
+    const response = await new Promise(resolve => {
+      const offEvaluationResult = consoleFront.on(
+        "evaluationResult",
+        async packet => {
+          
+          
+          
+          await onEvaluateJSAsync;
+
+          if (packet.resultID === resultID) {
+            resolve(packet);
+            offEvaluationResult();
+          }
+        }
+      );
+
+      const onEvaluateJSAsync = consoleFront
+        .evaluateJSAsync({
+          text: expression,
+          eager: options.eager,
+          frameActor,
+          innerWindowID: options.innerWindowID,
+          mapped: options.mapped,
+          selectedNodeActor,
+          selectedObjectActor,
+          url: options.url,
+        })
+        .then(packet => {
+          resultID = packet.resultID;
+        });
+    });
+
+    
+    if (response.error) {
+      throw response;
+    }
+
+    if (response.result) {
+      response.result = getAdHocFrontOrPrimitiveGrip(
+        response.result,
+        consoleFront
+      );
+    }
+
+    if (response.helperResult?.object) {
+      response.helperResult.object = getAdHocFrontOrPrimitiveGrip(
+        response.helperResult.object,
+        consoleFront
+      );
+    }
+
+    if (response.exception) {
+      response.exception = getAdHocFrontOrPrimitiveGrip(
+        response.exception,
+        consoleFront
+      );
+    }
+
+    if (response.exceptionMessage) {
+      response.exceptionMessage = getAdHocFrontOrPrimitiveGrip(
+        response.exceptionMessage,
+        consoleFront
+      );
+    }
+
+    return response;
   }
 }
 

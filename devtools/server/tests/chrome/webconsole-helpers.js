@@ -4,8 +4,8 @@
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
-  TabDescriptorFactory,
-} = require("devtools/client/framework/tab-descriptor-factory");
+  CommandsFactory,
+} = require("devtools/shared/commands/commands-factory");
 
 const Services = require("Services");
 
@@ -31,20 +31,11 @@ if (!DevToolsServer.initialized) {
 
 
 
-
-
-
-
-
-async function attachURL(url) {
+async function addTabAndCreateCommands(url) {
   const tab = await addTab(url);
-  const descriptor = await TabDescriptorFactory.createDescriptorForTab(tab);
-  const target = await descriptor.getTarget();
-  await target.attach();
-  const webConsoleFront = await target.getFront("console");
-  return {
-    webConsoleFront,
-  };
+  const commands = await CommandsFactory.forTab(tab);
+  await commands.targetCommand.startListening();
+  return commands;
 }
 
 

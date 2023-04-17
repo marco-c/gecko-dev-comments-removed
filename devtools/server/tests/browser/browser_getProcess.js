@@ -57,8 +57,10 @@ add_task(async () => {
     ok(targetForm.threadActor, "Got the thread actor");
 
     
-    const consoleFront = await front.getFront("console");
-    const { result } = await consoleFront.evaluateJSAsync("var a = 42; a");
+    const commands = await CommandsFactory.forProcess(osPid);
+    await commands.targetCommand.startListening();
+    const { result } = await commands.scriptCommand.execute("var a = 42; a");
+
     is(result, 42, "console.eval worked");
 
     return [front, content.id];
