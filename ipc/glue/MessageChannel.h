@@ -174,14 +174,6 @@ class MessageChannel : HasResultCodes {
   
   
   
-  bool Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop = 0,
-            Side aSide = UnknownSide);
-
-  
-  
-  
-  
-  
   
   
   
