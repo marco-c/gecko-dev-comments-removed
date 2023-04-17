@@ -236,6 +236,7 @@ impl ComputePipelineDescriptorRef {
     }
 
     
+    
     pub fn set_binary_archives(&self, archives: &[&BinaryArchiveRef]) {
         let ns_array = Array::<BinaryArchive>::from_slice(archives);
         unsafe { msg_send![self, setBinaryArchives: ns_array] }

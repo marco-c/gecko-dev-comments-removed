@@ -287,6 +287,8 @@ bitflags! {
         const MESH_SHADER = 0x0002 << 96;
         /// Mask for all the features associated with mesh shader stages.
         const MESH_SHADER_MASK = Features::TASK_SHADER.bits | Features::MESH_SHADER.bits;
+        /// Support sampler min/max reduction mode.
+        const SAMPLER_REDUCTION = 0x0004 << 96;
     }
 }
 
@@ -312,8 +314,8 @@ bitflags! {
         const SCISSOR = 0x0002;
         /// Supports `Rasterizer::line_width == State::Dynamic(_)`
         const LINE_WIDTH = 0x0004;
-        /// Supports `BakedStates::blend_color == None`
-        const BLEND_COLOR = 0x0008;
+        /// Supports `BakedStates::blend_constants == None`
+        const BLEND_CONSTANTS = 0x0008;
         /// Supports `Rasterizer::depth_bias == Some(State::Dynamic(_))`
         const DEPTH_BIAS = 0x0010;
         /// Supports `BakedStates::depth_bounds == None`
@@ -340,6 +342,8 @@ pub struct PhysicalDeviceProperties {
     pub descriptor_indexing: DescriptorIndexingProperties,
     
     pub mesh_shader: MeshShaderProperties,
+    
+    pub sampler_reduction: SamplerReductionProperties,
     
     pub downlevel: DownlevelProperties,
     
@@ -569,6 +573,16 @@ pub struct MeshShaderProperties {
     
     
     pub mesh_output_per_primitive_granularity: u32,
+}
+
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SamplerReductionProperties {
+    
+    pub single_component_formats: bool,
+    
+    pub image_component_mapping: bool,
 }
 
 

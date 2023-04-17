@@ -61,7 +61,7 @@ pub struct BakedStates {
     
     pub scissor: Option<Rect>,
     
-    pub blend_color: Option<ColorValue>,
+    pub blend_constants: Option<ColorValue>,
     
     pub depth_bounds: Option<Range<f32>>,
 }

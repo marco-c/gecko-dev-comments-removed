@@ -48,9 +48,10 @@ use crate::{
     valid::{FunctionInfo, ModuleInfo},
     Arena, ArraySize, BinaryOperator, Binding, BuiltIn, Bytes, ConservativeDepth, Constant,
     ConstantInner, DerivativeAxis, Expression, FastHashMap, Function, GlobalVariable, Handle,
-    ImageClass, Interpolation, LocalVariable, Module, RelationalFunction, ScalarKind, ScalarValue,
-    ShaderStage, Statement, StorageAccess, StorageClass, StorageFormat, StructMember, Type,
-    TypeInner, UnaryOperator,
+    ImageClass, Interpolation, LocalVariable, Module, RelationalFunction, Sampling, ScalarKind,
+    ScalarValue, ShaderStage, Statement, StorageAccess, StorageClass, StorageFormat, StructMember,
+    Type, TypeInner, UnaryOperator,
+
 };
 use features::FeaturesManager;
 use std::{
@@ -234,6 +235,8 @@ impl IdGenerator {
 
 
 
+
+
 struct VaryingName<'a> {
     binding: &'a Binding,
     stage: ShaderStage,
@@ -242,7 +245,7 @@ struct VaryingName<'a> {
 impl fmt::Display for VaryingName<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self.binding {
-            Binding::Location(location, _) => {
+            Binding::Location { location, .. } => {
                 let prefix = match (self.stage, self.output) {
                     (ShaderStage::Compute, _) => unreachable!(),
                     
@@ -448,11 +451,7 @@ impl<'a, W: Write> Writer<'a, W> {
         
         
         for (handle, ty) in self.module.types.iter() {
-            if let TypeInner::Struct {
-                block: _,
-                ref members,
-            } = ty.inner
-            {
+            if let TypeInner::Struct { ref members, .. } = ty.inner {
                 
                 let is_global_struct = self
                     .module
@@ -670,11 +669,12 @@ impl<'a, W: Write> Writer<'a, W> {
             
             TypeInner::Pointer { base, .. } => self.write_type(base),
             TypeInner::Struct {
-                block: true,
+                level: crate::StructLevel::Root,
                 ref members,
+                span: _,
             } => self.write_struct(true, ty, members),
             
-            TypeInner::Struct { block: false, .. } => {
+            TypeInner::Struct { .. } => {
                 
                 let name = &self.names[&NameKey::Type(ty)];
                 write!(self.out, "{}", name)?;
@@ -790,25 +790,28 @@ impl<'a, W: Write> Writer<'a, W> {
         output: bool,
     ) -> Result<(), Error> {
         match self.module.types[ty].inner {
-            crate::TypeInner::Struct {
-                block: _,
-                ref members,
-            } => {
+            crate::TypeInner::Struct { ref members, .. } => {
                 for member in members {
                     self.write_varying(member.binding.as_ref(), member.ty, output)?;
                 }
             }
             _ => {
-                let (location, interpolation) = match binding {
-                    Some(&Binding::Location(location, interpolation)) => (location, interpolation),
+                let (location, interpolation, sampling) = match binding {
+                    Some(&Binding::Location { location, interpolation, sampling }) => (location, interpolation, sampling),
                     _ => return Ok(()),
                 };
+
                 
                 
                 
                 
+                let emit_interpolation_and_auxiliary = match self.options.shader_stage {
+                    ShaderStage::Vertex => output,
+                    ShaderStage::Fragment => !output,
+                    _ => false,
+                };
                 if let Some(interp) = interpolation {
-                    if self.options.shader_stage == ShaderStage::Fragment {
+                    if emit_interpolation_and_auxiliary {
                         write!(self.out, "{} ", glsl_interpolation(interp))?;
                     }
                 }
@@ -817,13 +820,26 @@ impl<'a, W: Write> Writer<'a, W> {
                 if self.options.version.supports_explicit_locations() {
                     write!(
                         self.out,
-                        "layout(location = {}) {} ",
-                        location,
-                        if output { "out" } else { "in" }
-                    )?;
-                } else {
-                    write!(self.out, "{} ", if output { "out" } else { "in" })?;
+                        "layout(location = {}) ",
+                        location)?;
                 }
+
+                
+                
+                
+                
+                
+                if let Some(sampling) = sampling {
+                    if emit_interpolation_and_auxiliary {
+                        if let Some(qualifier) = glsl_sampling(sampling) {
+                            write!(self.out, "{} ", qualifier)?;
+                        }
+                    }
+                }
+
+                
+                write!(self.out, "{} ", if output { "out" } else { "in" })?;
+
                 
                 
                 self.write_type(ty)?;
@@ -831,7 +847,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 
                 
                 let vname = VaryingName {
-                    binding: &Binding::Location(location, None),
+                    binding: &Binding::Location { location, interpolation: None, sampling: None },
                     stage: self.entry_point.stage,
                     output,
                 };
@@ -918,10 +934,7 @@ impl<'a, W: Write> Writer<'a, W> {
                 write!(self.out, " {}", name)?;
                 write!(self.out, " = ")?;
                 match self.module.types[arg.ty].inner {
-                    crate::TypeInner::Struct {
-                        block: _,
-                        ref members,
-                    } => {
+                    crate::TypeInner::Struct { ref members, .. } => {
                         self.write_type(arg.ty)?;
                         write!(self.out, "(")?;
                         for (index, member) in members.iter().enumerate() {
@@ -1338,10 +1351,7 @@ impl<'a, W: Write> Writer<'a, W> {
                         if let Some(ref result) = ep.function.result {
                             let value = value.unwrap();
                             match self.module.types[result.ty].inner {
-                                crate::TypeInner::Struct {
-                                    block: _,
-                                    ref members,
-                                } => {
+                                crate::TypeInner::Struct { ref members, .. } => {
                                     for (index, member) in members.iter().enumerate() {
                                         let varying_name = VaryingName {
                                             binding: member.binding.as_ref().unwrap(),
@@ -1488,6 +1498,14 @@ impl<'a, W: Write> Writer<'a, W> {
             
             Expression::Constant(constant) => {
                 self.write_constant(&self.module.constants[constant])?
+            }
+            
+            Expression::Splat { size: _, value } => {
+                let resolved = ctx.info[expr].ty.inner_with(&self.module.types);
+                self.write_value_type(resolved)?;
+                write!(self.out, "(")?;
+                self.write_expr(value, ctx)?;
+                write!(self.out, ")")?
             }
             
             
@@ -2205,8 +2223,15 @@ fn glsl_interpolation(interpolation: Interpolation) -> &'static str {
         Interpolation::Perspective => "smooth",
         Interpolation::Linear => "noperspective",
         Interpolation::Flat => "flat",
-        Interpolation::Centroid => "centroid",
-        Interpolation::Sample => "sample",
+    }
+}
+
+
+fn glsl_sampling(sampling: Sampling) -> Option<&'static str> {
+    match sampling {
+        Sampling::Center => None,
+        Sampling::Centroid => Some("centroid"),
+        Sampling::Sample => Some("sample"),
     }
 }
 

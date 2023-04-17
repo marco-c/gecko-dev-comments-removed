@@ -708,6 +708,7 @@ pub struct RawDevice {
     
     flip_y_requires_shift: bool,
     imageless_framebuffers: bool,
+    image_view_usage: bool,
     timestamp_period: f32,
 }
 

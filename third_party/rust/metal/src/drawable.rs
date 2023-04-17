@@ -5,6 +5,8 @@
 
 
 
+use cocoa_foundation::foundation::NSUInteger;
+
 pub enum MTLDrawable {}
 
 foreign_obj_type! {
@@ -16,5 +18,9 @@ foreign_obj_type! {
 impl DrawableRef {
     pub fn present(&self) {
         unsafe { msg_send![self, present] }
+    }
+
+    pub fn drawable_id(&self) -> NSUInteger {
+        unsafe { msg_send![self, drawableID] }
     }
 }

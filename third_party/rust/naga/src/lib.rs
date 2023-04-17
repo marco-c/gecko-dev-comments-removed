@@ -168,6 +168,7 @@ pub enum BuiltIn {
 
 
 pub type Bytes = u8;
+pub type Alignment = NonZeroU32;
 
 
 #[repr(u8)]
@@ -225,9 +226,21 @@ pub enum Interpolation {
     Linear,
     
     Flat,
+}
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum Sampling {
+    
+    Center,
+
+    
     
     
     Centroid,
+
     
     
     Sample,
@@ -245,9 +258,7 @@ pub struct StructMember {
     
     pub binding: Option<Binding>,
     
-    pub size: Option<NonZeroU32>,
-    
-    pub align: Option<NonZeroU32>,
+    pub offset: u32,
 }
 
 
@@ -347,6 +358,18 @@ pub enum ImageClass {
 }
 
 
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum StructLevel {
+    
+    
+    Root,
+    
+    Normal { alignment: Alignment },
+}
+
+
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -392,13 +415,13 @@ pub enum TypeInner {
     Array {
         base: Handle<Type>,
         size: ArraySize,
-        stride: Option<NonZeroU32>,
+        stride: u32,
     },
     
     Struct {
-        
-        block: bool,
+        level: StructLevel,
         members: Vec<StructMember>,
+        span: u32,
     },
     
     Image {
@@ -454,7 +477,11 @@ pub enum Binding {
     
     BuiltIn(BuiltIn),
     
-    Location(u32, Option<Interpolation>),
+    Location {
+        location: u32,
+        interpolation: Option<Interpolation>,
+        sampling: Option<Sampling>
+    },
 }
 
 
@@ -672,6 +699,11 @@ pub enum Expression {
     },
     
     Constant(Handle<Constant>),
+    
+    Splat {
+        size: VectorSize,
+        value: Handle<Expression>,
+    },
     
     Compose {
         ty: Handle<Type>,

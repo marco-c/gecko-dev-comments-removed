@@ -41,6 +41,8 @@ pub const BIND_BUFFER_ALIGNMENT: BufferAddress = 256;
 
 pub const COPY_BUFFER_ALIGNMENT: BufferAddress = 4;
 
+pub const MAP_ALIGNMENT: BufferAddress = 8;
+
 pub const VERTEX_STRIDE_ALIGNMENT: BufferAddress = 4;
 
 pub const PUSH_CONSTANT_ALIGNMENT: u32 = 4;
@@ -604,7 +606,7 @@ pub enum ShaderModel {
 
 
 #[repr(u8)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub enum DeviceType {
@@ -756,17 +758,17 @@ pub enum BlendFactor {
     
     One = 1,
     
-    SrcColor = 2,
+    Src = 2,
     
-    OneMinusSrcColor = 3,
+    OneMinusSrc = 3,
     
     SrcAlpha = 4,
     
     OneMinusSrcAlpha = 5,
     
-    DstColor = 6,
+    Dst = 6,
     
-    OneMinusDstColor = 7,
+    OneMinusDst = 7,
     
     DstAlpha = 8,
     
@@ -774,9 +776,9 @@ pub enum BlendFactor {
     
     SrcAlphaSaturated = 10,
     
-    BlendColor = 11,
+    Constant = 11,
     
-    OneMinusBlendColor = 12,
+    OneMinusConstant = 12,
 }
 
 
@@ -807,7 +809,7 @@ impl Default for BlendOperation {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BlendComponent {
@@ -822,14 +824,14 @@ pub struct BlendComponent {
 
 impl BlendComponent {
     
-    pub const REPLACE: Self = BlendComponent {
+    pub const REPLACE: Self = Self {
         src_factor: BlendFactor::One,
         dst_factor: BlendFactor::Zero,
         operation: BlendOperation::Add,
     };
 
     
-    pub const OVER: Self = BlendComponent {
+    pub const OVER: Self = Self {
         src_factor: BlendFactor::One,
         dst_factor: BlendFactor::OneMinusSrcAlpha,
         operation: BlendOperation::Add,
@@ -837,12 +839,12 @@ impl BlendComponent {
 
     
     
-    pub fn uses_color(&self) -> bool {
+    pub fn uses_constant(&self) -> bool {
         match (self.src_factor, self.dst_factor) {
-            (BlendFactor::BlendColor, _)
-            | (BlendFactor::OneMinusBlendColor, _)
-            | (_, BlendFactor::BlendColor)
-            | (_, BlendFactor::OneMinusBlendColor) => true,
+            (BlendFactor::Constant, _)
+            | (BlendFactor::OneMinusConstant, _)
+            | (_, BlendFactor::Constant)
+            | (_, BlendFactor::OneMinusConstant) => true,
             (_, _) => false,
         }
     }
@@ -858,7 +860,7 @@ impl Default for BlendComponent {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BlendState {
@@ -1007,7 +1009,7 @@ impl Default for PolygonMode {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveState {
@@ -1042,7 +1044,7 @@ pub struct PrimitiveState {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct MultisampleState {
@@ -1718,7 +1720,7 @@ impl StencilState {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct DepthBiasState {
@@ -1820,7 +1822,7 @@ impl Default for StencilOperation {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct StencilFaceState {
@@ -1906,7 +1908,7 @@ impl Default for InputStepMode {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct VertexAttribute {
@@ -2594,7 +2596,7 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub struct ImageDataLayout {
@@ -2835,7 +2837,7 @@ impl BindingType {
 }
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct BindGroupLayoutEntry {
@@ -2970,7 +2972,7 @@ bitflags::bitflags! {
 
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct DrawIndirectArgs {
     
     pub vertex_count: u32,
@@ -2984,7 +2986,7 @@ pub struct DrawIndirectArgs {
 
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct DrawIndexedIndirectArgs {
     
     pub index_count: u32,
@@ -3000,7 +3002,7 @@ pub struct DrawIndexedIndirectArgs {
 
 
 #[repr(C)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct DispatchIndirectArgs {
     
     pub group_size_x: u32,

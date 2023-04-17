@@ -398,6 +398,20 @@ pub enum WrapMode {
 }
 
 
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ReductionMode {
+    
+    WeightedAverage,
+    
+    
+    Minimum,
+    
+    
+    Maximum,
+}
+
+
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -467,7 +481,6 @@ impl Into<[f32; 4]> for BorderColor {
 
 
 
-
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SamplerDesc {
@@ -477,6 +490,8 @@ pub struct SamplerDesc {
     pub mag_filter: Filter,
     
     pub mip_filter: Filter,
+    
+    pub reduction_mode: ReductionMode,
     
     
     pub wrap_mode: (WrapMode, WrapMode, WrapMode),
@@ -506,6 +521,7 @@ impl SamplerDesc {
             min_filter: filter,
             mag_filter: filter,
             mip_filter: filter,
+            reduction_mode: ReductionMode::WeightedAverage,
             wrap_mode: (wrap, wrap, wrap),
             lod_bias: Lod(0.0),
             lod_range: Lod::RANGE.clone(),
