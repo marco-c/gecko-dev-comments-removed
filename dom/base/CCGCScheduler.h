@@ -63,9 +63,9 @@ static const int64_t kNumCCNodesBetweenTimeChecks = 1000;
 
 
 enum class GCRunnerAction {
-  WaitToMajorGC,  
-  StartMajorGC,   
-  GCSlice,        
+  MajorGC,       
+  MajorGCReady,  
+  GCSlice,       
   None
 };
 
@@ -146,7 +146,13 @@ class CCGCScheduler {
   void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
 
   void SetWantMajorGC(JS::GCReason aReason) {
-    mMajorGCReason = aReason;
+    if (mMajorGCReason == JS::GCReason::NO_REASON) {
+      
+      
+      
+      
+      mMajorGCReason = aReason;
+    }
 
     
     
@@ -162,14 +168,9 @@ class CCGCScheduler {
     mNeedsGCAfterCC = true;
   }
 
-  
-  
-  [[nodiscard]] bool NoteReadyForMajorGC() {
-    if (mMajorGCReason == JS::GCReason::NO_REASON) {
-      return false;
-    }
+  void NoteReadyForMajorGC(JS::GCReason aReason) {
+    mMajorGCReason = aReason;
     mReadyForMajorGC = true;
-    return true;
   }
 
   void NoteGCBegin() {
@@ -180,8 +181,6 @@ class CCGCScheduler {
   }
 
   void NoteGCEnd() {
-    mMajorGCReason = JS::GCReason::NO_REASON;
-
     mInIncrementalGC = false;
     mCCBlockStart = TimeStamp();
     mInIncrementalGC = false;
@@ -193,27 +192,6 @@ class CCGCScheduler {
     mCCollectedWaitingForGC = 0;
     mCCollectedZonesWaitingForGC = 0;
     mLikelyShortLivingObjectsNeedingGC = 0;
-  }
-
-  void NoteGCSliceEnd() {
-    if (mMajorGCReason == JS::GCReason::NO_REASON) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
-
-      
-      
-      
-      mReadyForMajorGC = true;
-    }
   }
 
   
@@ -349,7 +327,7 @@ class CCGCScheduler {
 
   inline GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline);
 
-  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline);
+  inline CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline);
 
   
   
@@ -391,11 +369,11 @@ class CCGCScheduler {
   bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
 
+  JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
+
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
  public:
-  JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
-
   uint32_t mCCollectedWaitingForGC = 0;
   uint32_t mCCollectedZonesWaitingForGC = 0;
   uint32_t mLikelyShortLivingObjectsNeedingGC = 0;
@@ -498,7 +476,7 @@ bool CCGCScheduler::ShouldScheduleCC() const {
   return IsCCNeeded(now);
 }
 
-CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
+CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline) {
   struct StateDescriptor {
     
     
@@ -682,17 +660,23 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
 }
 
 GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) {
-  MOZ_ASSERT(mMajorGCReason != JS::GCReason::NO_REASON);
-
   if (InIncrementalGC()) {
-    return {GCRunnerAction::GCSlice, mMajorGCReason};
+    return {GCRunnerAction::GCSlice, JS::GCReason::INTER_SLICE_GC};
   }
 
   if (mReadyForMajorGC) {
-    return {GCRunnerAction::StartMajorGC, mMajorGCReason};
+    GCRunnerStep step{GCRunnerAction::MajorGCReady, mMajorGCReason};
+    mMajorGCReason = JS::GCReason::NO_REASON;
+    return step;
   }
 
-  return {GCRunnerAction::WaitToMajorGC, mMajorGCReason};
+  if (mMajorGCReason != JS::GCReason::NO_REASON) {
+    GCRunnerStep step{GCRunnerAction::MajorGC, mMajorGCReason};
+    mMajorGCReason = JS::GCReason::NO_REASON;
+    return step;
+  }
+
+  return {GCRunnerAction::None, JS::GCReason::NO_REASON};
 }
 
 inline js::SliceBudget CCGCScheduler::ComputeForgetSkippableBudget(

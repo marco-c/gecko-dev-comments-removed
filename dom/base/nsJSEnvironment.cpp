@@ -1599,48 +1599,50 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 }
 
 
-bool GCRunnerFired(TimeStamp aDeadline, void* aClosure) {
-  MOZ_ASSERT(!aClosure, "Don't pass a closure to GCRunnerFired");
+bool GCRunnerFired(TimeStamp aDeadline, void* ) {
   MOZ_ASSERT(!sShuttingDown, "GCRunner still alive during shutdown");
 
   GCRunnerStep step = sScheduler.GetNextGCRunnerAction(aDeadline);
   switch (step.mAction) {
     case GCRunnerAction::None:
-      MOZ_CRASH("Unexpected GCRunnerAction");
-
-    case GCRunnerAction::WaitToMajorGC: {
-      RefPtr<MayGCPromise> mbPromise = MayGCNow(step.mReason);
-      if (!mbPromise || mbPromise->IsResolved()) {
-        
-        
-        break;
-      }
-
       nsJSContext::KillGCRunner();
-      mbPromise->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [](bool aIgnored) {
-            if (!sScheduler.NoteReadyForMajorGC()) {
-              return;  
-            }
-            
-            
-            nsJSContext::KillGCRunner();
-            sGCRunner = IdleTaskRunner::Create(
-                [](TimeStamp aDeadline) {
-                  return GCRunnerFired(aDeadline, nullptr);
-                },
-                "GCRunnerFired", 0,
-                StaticPrefs::javascript_options_gc_delay_interslice(),
-                int64_t(sScheduler.mActiveIntersliceGCBudget.ToMilliseconds()),
-                true, [] { return sShuttingDown; });
-          },
-          [](mozilla::ipc::ResponseRejectReason r) {});
+      return false;
 
-      return true;
+    case GCRunnerAction::MajorGC: {
+      RefPtr<MayGCPromise> mbPromise = MayGCNow(step.mReason);
+      if (mbPromise) {
+        
+        
+        if (!mbPromise->IsResolved()) {
+          nsJSContext::KillGCRunner();
+          JS::GCReason reason = step.mReason;
+          mbPromise->Then(
+              GetMainThreadSerialEventTarget(), __func__,
+              [reason](bool aIgnored) {
+                sScheduler.NoteReadyForMajorGC(reason);
+                if (sGCRunner) {
+                  
+                  
+                  sGCRunner->Cancel();
+                }
+                
+                sGCRunner = IdleTaskRunner::Create(
+                    [](TimeStamp aDeadline) {
+                      return GCRunnerFired(aDeadline, nullptr);
+                    },
+                    "GCRunnerFired", 0,
+                    StaticPrefs::javascript_options_gc_delay_interslice(),
+                    int64_t(
+                        sScheduler.mActiveIntersliceGCBudget.ToMilliseconds()),
+                    true, [] { return sShuttingDown; });
+              },
+              [](mozilla::ipc::ResponseRejectReason r) {});
+          return true;
+        }
+      }
+      break;
     }
-
-    case GCRunnerAction::StartMajorGC:
+    case GCRunnerAction::MajorGCReady:
     case GCRunnerAction::GCSlice:
       break;
   }
@@ -1724,7 +1726,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
   
   CCRunnerStep step;
   do {
-    step = sScheduler.AdvanceCCRunner(aDeadline);
+    step = sScheduler.GetNextCCRunnerAction(aDeadline);
     switch (step.mAction) {
       case CCRunnerAction::None:
         break;
@@ -1803,11 +1805,7 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
     
     
     
-    
-    
-    if (!sScheduler.InIncrementalGC() && sScheduler.mMajorGCReason != JS::GCReason::INTER_SLICE_GC) {
-      sScheduler.SetWantMajorGC(aReason);
-    }
+    sScheduler.SetWantMajorGC(aReason);
     sGCRunner->SetIdleDeadline(aDeadline);
     runnable = sGCRunner;
   } else {
@@ -2067,8 +2065,6 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       break;
 
     case JS::GC_SLICE_END:
-      sScheduler.NoteGCSliceEnd();
-
       sGCUnnotifiedTotalTime +=
           aDesc.lastSliceEnd(aCx) - aDesc.lastSliceStart(aCx);
 
