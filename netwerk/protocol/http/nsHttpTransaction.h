@@ -482,6 +482,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   void CollectTelemetryForUploads();
 
+  
+  
+  void CheckCert();
+
  public:
   uint32_t ClassOfService() { return mClassOfService; }
 
