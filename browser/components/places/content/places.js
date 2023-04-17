@@ -556,7 +556,7 @@ var PlacesOrganizer = {
 
       
       for (let i = 0; i < backupFiles.length; i++) {
-        let fileSize = (await OS.File.stat(backupFiles[i])).size;
+        let fileSize = (await IOUtils.stat(backupFiles[i])).size;
         let [size, unit] = DownloadUtils.convertByteUnits(fileSize);
         let sizeString = PlacesUtils.getFormattedString("backupFileSizeText", [
           size,
