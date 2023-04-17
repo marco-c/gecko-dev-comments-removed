@@ -2967,7 +2967,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   layers::ScrollableLayerGuid mMouseEventTargetGuid;
 
-  
   nsSize mVisualViewportSize;
 
   
