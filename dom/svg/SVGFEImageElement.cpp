@@ -267,7 +267,7 @@ bool SVGFEImageElement::OutputIsTainted(const nsTArray<bool>& aInputsAreTainted,
 
   int32_t corsmode;
   if (NS_SUCCEEDED(currentRequest->GetCORSMode(&corsmode)) &&
-      corsmode != imgIRequest::CORS_NONE) {
+      corsmode != CORS_NONE) {
     
     return false;
   }

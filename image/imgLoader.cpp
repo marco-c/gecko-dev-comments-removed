@@ -740,37 +740,44 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
 
 
 
-
-static bool ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
-                                 int32_t corsmode,
-                                 nsIPrincipal* triggeringPrincipal,
-                                 Document* aLoadingDocument,
-                                 nsContentPolicyType aPolicyType) {
+static bool ValidateCORSMode(imgRequest* aRequest, bool aForcePrincipalCheck,
+                             CORSMode aCORSMode,
+                             nsIPrincipal* aTriggeringPrincipal) {
   
   
-  if (request->GetCORSMode() != corsmode) {
+  if (aRequest->GetCORSMode() != aCORSMode) {
     return false;
   }
-  if (request->GetCORSMode() != imgIRequest::CORS_NONE || forcePrincipalCheck) {
-    nsCOMPtr<nsIPrincipal> otherprincipal = request->GetTriggeringPrincipal();
+
+  if (aRequest->GetCORSMode() != CORS_NONE || aForcePrincipalCheck) {
+    nsCOMPtr<nsIPrincipal> otherprincipal = aRequest->GetTriggeringPrincipal();
 
     
     
-    if (otherprincipal && !triggeringPrincipal) {
+    if (otherprincipal && !aTriggeringPrincipal) {
       return false;
     }
 
-    if (otherprincipal && triggeringPrincipal) {
-      bool equals = false;
-      otherprincipal->Equals(triggeringPrincipal, &equals);
-      if (!equals) {
-        return false;
-      }
+    if (otherprincipal && aTriggeringPrincipal &&
+        !otherprincipal->Equals(aTriggeringPrincipal)) {
+      return false;
     }
   }
 
+  return true;
+}
+
+static bool ValidateSecurityInfo(imgRequest* aRequest,
+                                 bool aForcePrincipalCheck, CORSMode aCORSMode,
+                                 nsIPrincipal* aTriggeringPrincipal,
+                                 Document* aLoadingDocument,
+                                 nsContentPolicyType aPolicyType) {
+  if (!ValidateCORSMode(aRequest, aForcePrincipalCheck, aCORSMode,
+                        aTriggeringPrincipal)) {
+    return false;
+  }
   
-  return ShouldLoadCachedImage(request, aLoadingDocument, triggeringPrincipal,
+  return ShouldLoadCachedImage(aRequest, aLoadingDocument, aTriggeringPrincipal,
                                aPolicyType,
                                 false);
 }
@@ -784,7 +791,7 @@ static nsresult NewImageChannel(
     
     
     bool* aForcePrincipalCheckForCacheEntry, nsIURI* aURI,
-    nsIURI* aInitialDocumentURI, int32_t aCORSMode,
+    nsIURI* aInitialDocumentURI, CORSMode aCORSMode,
     nsIReferrerInfo* aReferrerInfo, nsILoadGroup* aLoadGroup,
     nsLoadFlags aLoadFlags, nsContentPolicyType aPolicyType,
     nsIPrincipal* aTriggeringPrincipal, nsINode* aRequestingNode,
@@ -815,12 +822,12 @@ static nsresult NewImageChannel(
   
 
   nsSecurityFlags securityFlags =
-      aCORSMode == imgIRequest::CORS_NONE
+      aCORSMode == CORS_NONE
           ? nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT
           : nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT;
-  if (aCORSMode == imgIRequest::CORS_ANONYMOUS) {
+  if (aCORSMode == CORS_ANONYMOUS) {
     securityFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
-  } else if (aCORSMode == imgIRequest::CORS_USE_CREDENTIALS) {
+  } else if (aCORSMode == CORS_USE_CREDENTIALS) {
     securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
   }
   securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
@@ -1171,21 +1178,6 @@ NS_IMPL_ISUPPORTS(imgLoader, imgILoader, nsIContentSniffer, imgICache,
 
 static imgLoader* gNormalLoader = nullptr;
 static imgLoader* gPrivateBrowsingLoader = nullptr;
-
-
-mozilla::CORSMode imgLoader::ConvertToCORSMode(uint32_t aImgCORS) {
-  switch (aImgCORS) {
-    case imgIRequest::CORS_NONE:
-      return CORSMode::CORS_NONE;
-    case imgIRequest::CORS_ANONYMOUS:
-      return CORSMode::CORS_ANONYMOUS;
-    case imgIRequest::CORS_USE_CREDENTIALS:
-      return CORSMode::CORS_USE_CREDENTIALS;
-  }
-
-  MOZ_ASSERT(false, "Unexpected imgIRequest CORS value");
-  return CORSMode::CORS_NONE;
-}
 
 
 already_AddRefed<imgLoader> imgLoader::CreateImageLoader() {
@@ -1653,7 +1645,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
     imgINotificationObserver* aObserver, Document* aLoadingDocument,
     uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
     nsContentPolicyType aLoadPolicyType, imgRequestProxy** aProxyRequest,
-    nsIPrincipal* aTriggeringPrincipal, int32_t aCORSMode, bool aLinkPreload,
+    nsIPrincipal* aTriggeringPrincipal, CORSMode aCORSMode, bool aLinkPreload,
     bool* aNewChannelCreated) {
   
   
@@ -1683,7 +1675,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
         MOZ_ASSERT(aLoadingDocument);
         proxy->PrioritizeAsPreload();
         auto preloadKey = PreloadHashKey::CreateAsImage(
-            aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode));
+            aURI, aTriggeringPrincipal, aCORSMode);
         proxy->NotifyOpen(preloadKey, aLoadingDocument, true);
       }
 
@@ -1749,8 +1741,8 @@ bool imgLoader::ValidateRequestWithNewChannel(
   if (aLinkPreload) {
     MOZ_ASSERT(aLoadingDocument);
     req->PrioritizeAsPreload();
-    auto preloadKey = PreloadHashKey::CreateAsImage(
-        aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode));
+    auto preloadKey =
+        PreloadHashKey::CreateAsImage(aURI, aTriggeringPrincipal, aCORSMode);
     req->NotifyOpen(preloadKey, aLoadingDocument, true);
   }
 
@@ -1784,7 +1776,7 @@ bool imgLoader::ValidateEntry(
     nsLoadFlags aLoadFlags, nsContentPolicyType aLoadPolicyType,
     bool aCanMakeNewChannel, bool* aNewChannelCreated,
     imgRequestProxy** aProxyRequest, nsIPrincipal* aTriggeringPrincipal,
-    int32_t aCORSMode, bool aLinkPreload) {
+    CORSMode aCORSMode, bool aLinkPreload) {
   LOG_SCOPE(gImgLog, "imgLoader::ValidateEntry");
 
   
@@ -2193,17 +2185,17 @@ nsresult imgLoader::LoadImage(
     requestFlags |= nsIRequest::LOAD_BACKGROUND;
   }
 
-  int32_t corsmode = imgIRequest::CORS_NONE;
+  CORSMode corsmode = CORS_NONE;
   if (aLoadFlags & imgILoader::LOAD_CORS_ANONYMOUS) {
-    corsmode = imgIRequest::CORS_ANONYMOUS;
+    corsmode = CORS_ANONYMOUS;
   } else if (aLoadFlags & imgILoader::LOAD_CORS_USE_CREDENTIALS) {
-    corsmode = imgIRequest::CORS_USE_CREDENTIALS;
+    corsmode = CORS_USE_CREDENTIALS;
   }
 
   
   if (StaticPrefs::network_preload() && !aLinkPreload && aLoadingDocument) {
     auto key = PreloadHashKey::CreateAsImage(aURI, aTriggeringPrincipal,
-                                             ConvertToCORSMode(corsmode));
+                                             corsmode);
     if (RefPtr<PreloaderBase> preload =
             aLoadingDocument->Preloads().LookupPreload(key)) {
       RefPtr<imgRequestProxy> proxy = do_QueryObject(preload);
@@ -2433,7 +2425,7 @@ nsresult imgLoader::LoadImage(
       MOZ_ASSERT(aLoadingDocument);
       proxy->PrioritizeAsPreload();
       auto preloadKey = PreloadHashKey::CreateAsImage(
-          aURI, aTriggeringPrincipal, ConvertToCORSMode(corsmode));
+          aURI, aTriggeringPrincipal, corsmode);
       proxy->NotifyOpen(preloadKey, aLoadingDocument, true);
     }
 
@@ -2535,7 +2527,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
       if (ValidateEntry(entry, uri, nullptr, nullptr, nullptr, aObserver,
                         aLoadingDocument, requestFlags, policyType, false,
-                        nullptr, nullptr, nullptr, imgIRequest::CORS_NONE,
+                        nullptr, nullptr, nullptr, CORS_NONE,
                         false)) {
         request = entry->GetRequest();
       } else {
@@ -2632,7 +2624,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     rv = request->Init(originalURI, uri,  false,
                        channel, channel, entry, aLoadingDocument, nullptr,
-                       imgIRequest::CORS_NONE, nullptr);
+                       CORS_NONE, nullptr);
     NS_ENSURE_SUCCESS(rv, rv);
 
     RefPtr<ProxyListener> pl =
@@ -3037,7 +3029,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
                      "imgCacheValidator::OnStartRequest creating new request",
                      "uri", uri);
 
-  int32_t corsmode = mRequest->GetCORSMode();
+  CORSMode corsmode = mRequest->GetCORSMode();
   nsCOMPtr<nsIReferrerInfo> referrerInfo = mRequest->GetReferrerInfo();
   nsCOMPtr<nsIPrincipal> triggeringPrincipal =
       mRequest->GetTriggeringPrincipal();

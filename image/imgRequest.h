@@ -32,6 +32,7 @@ class nsIURI;
 class nsIReferrerInfo;
 
 namespace mozilla {
+enum CORSMode : uint8_t;
 namespace image {
 class Image;
 class ProgressTracker;
@@ -66,7 +67,7 @@ class imgRequest final : public nsIStreamListener,
                               nsIChannel* aChannel, imgCacheEntry* aCacheEntry,
                               mozilla::dom::Document* aLoadingDocument,
                               nsIPrincipal* aTriggeringPrincipal,
-                              int32_t aCORSMode,
+                              mozilla::CORSMode aCORSMode,
                               nsIReferrerInfo* aReferrerInfo);
 
   void ClearLoader();
@@ -112,7 +113,7 @@ class imgRequest final : public nsIStreamListener,
   bool HadInsecureRedirect() const;
 
   
-  int32_t GetCORSMode() const { return mCORSMode; }
+  mozilla::CORSMode GetCORSMode() const { return mCORSMode; }
 
   
   nsIReferrerInfo* GetReferrerInfo() const { return mReferrerInfo; }
@@ -267,7 +268,7 @@ class imgRequest final : public nsIStreamListener,
 
   
   
-  int32_t mCORSMode;
+  mozilla::CORSMode mCORSMode;
 
   
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;

@@ -126,22 +126,6 @@ interface imgIRequest : nsIRequest
   
 
 
-
-
-
-
-
-
-
-  
-  const long CORS_NONE = 1;
-  const long CORS_ANONYMOUS = 2;
-  const long CORS_USE_CREDENTIALS = 3;
-  
-
-  
-
-
   readonly attribute long CORSMode;
 
   
