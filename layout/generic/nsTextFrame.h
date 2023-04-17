@@ -214,6 +214,9 @@ class nsTextFrame : public nsIFrame {
   
   NS_DECL_QUERYFRAME
 
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ContinuationsProperty,
+                                      nsTArray<nsTextFrame*>)
+
   
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) final;
@@ -781,6 +784,11 @@ class nsTextFrame : public nsIFrame {
 
   nsRect WebRenderBounds();
 
+  
+  
+  
+  virtual nsTArray<nsTextFrame*>* GetContinuations();
+
  protected:
   virtual ~nsTextFrame();
 
@@ -814,6 +822,9 @@ class nsTextFrame : public nsIFrame {
     NotSelected,
   };
   mutable SelectionState mIsSelected;
+
+  
+  bool mHasContinuationsProperty = false;
 
   
 
@@ -1000,6 +1011,15 @@ class nsTextFrame : public nsIFrame {
   void ClearMetrics(ReflowOutput& aMetrics);
 
   
+  
+  void ClearCachedContinuations() {
+    if (mHasContinuationsProperty) {
+      RemoveProperty(ContinuationsProperty());
+      mHasContinuationsProperty = false;
+    }
+  }
+
+  
 
 
 
@@ -1010,8 +1030,6 @@ class nsTextFrame : public nsIFrame {
 
   nsPoint GetPointFromIterator(const gfxSkipCharsIterator& aIter,
                                PropertyProvider& aProperties);
-
- public:
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::TrimmedOffsetFlags)
