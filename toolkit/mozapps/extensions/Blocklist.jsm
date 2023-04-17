@@ -1180,13 +1180,18 @@ this.ExtensionBlocklistMLBF = {
   },
 
   async getEntry(addon) {
-    if (!this._mlbfData) {
+    if (!this._stashes) {
       this.ensureInitialized();
       await this._updateMLBF(false);
+    } else if (this._updatePromise) {
+      
+      
+      await this._updatePromise;
     }
 
     let blockKey = addon.id + ":" + addon.version;
 
+    
     if (this._stashes) {
       
       for (let stash of this._stashes) {
