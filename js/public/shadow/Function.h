@@ -29,7 +29,7 @@ struct Function {
   JS::Value flagsAndArgCount;
   
   JS::Value native;
-  const JSJitInfo* jitinfo;
+  JS::Value jitinfo;
   void* _1;
 };
 
