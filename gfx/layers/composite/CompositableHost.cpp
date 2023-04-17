@@ -5,12 +5,10 @@
 
 
 #include "CompositableHost.h"
-#include <map>            
-#include <utility>        
-#include "ContentHost.h"  
-#include "Effects.h"      
+#include <map>        
+#include <utility>    
+#include "Effects.h"  
 #include "gfxUtils.h"
-#include "ImageHost.h"  
 #include "Layers.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  
@@ -106,26 +104,11 @@ void CompositableHost::RemoveMaskEffect() {
 
 
 already_AddRefed<CompositableHost> CompositableHost::Create(
-    const TextureInfo& aTextureInfo, bool aUseWebRender) {
+    const TextureInfo& aTextureInfo) {
   RefPtr<CompositableHost> result;
   switch (aTextureInfo.mCompositableType) {
     case CompositableType::IMAGE:
-      if (aUseWebRender) {
-        result = new WebRenderImageHost(aTextureInfo);
-      } else {
-        result = new ImageHost(aTextureInfo);
-      }
-      break;
-    case CompositableType::CONTENT_SINGLE:
-      if (aUseWebRender) {
-        result = new WebRenderImageHost(aTextureInfo);
-      } else {
-        result = new ContentHostSingleBuffered(aTextureInfo);
-      }
-      break;
-    case CompositableType::CONTENT_DOUBLE:
-      MOZ_ASSERT(!aUseWebRender);
-      result = new ContentHostDoubleBuffered(aTextureInfo);
+      result = new WebRenderImageHost(aTextureInfo);
       break;
     default:
       NS_ERROR("Unknown CompositableType");

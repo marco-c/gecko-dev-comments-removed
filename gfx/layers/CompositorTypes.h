@@ -156,10 +156,7 @@ enum class EffectTypes : uint8_t {
 
 enum class CompositableType : uint8_t {
   UNKNOWN,
-  CONTENT_TILED,   
-  IMAGE,           
-  CONTENT_SINGLE,  
-  CONTENT_DOUBLE,  
+  IMAGE,  
   COUNT
 };
 

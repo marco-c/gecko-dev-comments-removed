@@ -12,13 +12,12 @@
 #include "mozilla/Assertions.h"      
 #include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/ContentHost.h"        
 #include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/LayersTypes.h"        
 #include "mozilla/layers/TextureHost.h"        
 #include "mozilla/layers/TextureHostOGL.h"     
-#include "mozilla/mozalloc.h"  
+#include "mozilla/mozalloc.h"                  
 #include "mozilla/Unused.h"
 #include "nsDebug.h"   
 #include "nsRegion.h"  
@@ -81,12 +80,6 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
   }
 
   switch (aDetail.type()) {
-    case CompositableOperationDetail::TOpPaintTextureRegion: {
-      return false;
-    }
-    case CompositableOperationDetail::TOpUseTiledLayerBuffer: {
-      return false;
-    }
     case CompositableOperationDetail::TOpRemoveTexture: {
       const OpRemoveTexture& op = aDetail.get_OpRemoveTexture();
 
@@ -132,42 +125,6 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
       }
       break;
     }
-    case CompositableOperationDetail::TOpUseComponentAlphaTextures: {
-      const OpUseComponentAlphaTextures& op =
-          aDetail.get_OpUseComponentAlphaTextures();
-      RefPtr<TextureHost> texOnBlack =
-          TextureHost::AsTextureHost(op.textureOnBlackParent());
-      RefPtr<TextureHost> texOnWhite =
-          TextureHost::AsTextureHost(op.textureOnWhiteParent());
-      if (op.readLockedBlack()) {
-        texOnBlack->SetReadLocked();
-      }
-      if (op.readLockedWhite()) {
-        texOnWhite->SetReadLocked();
-      }
-
-      MOZ_ASSERT(texOnBlack && texOnWhite);
-      aCompositable->UseComponentAlphaTextures(texOnBlack, texOnWhite);
-
-      if (texOnBlack) {
-        texOnBlack->SetLastFwdTransactionId(mFwdTransactionId);
-        
-        
-        MOZ_ASSERT(texOnBlack->NumCompositableRefs() > 0);
-      }
-
-      if (texOnWhite) {
-        texOnWhite->SetLastFwdTransactionId(mFwdTransactionId);
-        
-        
-        MOZ_ASSERT(texOnWhite->NumCompositableRefs() > 0);
-      }
-
-      if (UsesImageBridge()) {
-        ScheduleComposition(aCompositable);
-      }
-      break;
-    }
     case CompositableOperationDetail::TOpDeliverAcquireFence: {
       const OpDeliverAcquireFence& op = aDetail.get_OpDeliverAcquireFence();
       RefPtr<TextureHost> tex = TextureHost::AsTextureHost(op.textureParent());
@@ -204,8 +161,7 @@ void CompositableParentManager::DestroyActor(const OpDestroy& aOp) {
 }
 
 RefPtr<CompositableHost> CompositableParentManager::AddCompositable(
-    const CompositableHandle& aHandle, const TextureInfo& aInfo,
-    bool aUseWebRender) {
+    const CompositableHandle& aHandle, const TextureInfo& aInfo) {
   if (mCompositables.find(aHandle.Value()) != mCompositables.end()) {
     NS_ERROR("Client should not allocate duplicate handles");
     return nullptr;
@@ -215,8 +171,7 @@ RefPtr<CompositableHost> CompositableParentManager::AddCompositable(
     return nullptr;
   }
 
-  RefPtr<CompositableHost> host =
-      CompositableHost::Create(aInfo, aUseWebRender);
+  RefPtr<CompositableHost> host = CompositableHost::Create(aInfo);
   if (!host) {
     return nullptr;
   }
@@ -226,33 +181,13 @@ RefPtr<CompositableHost> CompositableParentManager::AddCompositable(
 }
 
 RefPtr<CompositableHost> CompositableParentManager::FindCompositable(
-    const CompositableHandle& aHandle, bool aAllowDisablingWebRender) {
+    const CompositableHandle& aHandle) {
   auto iter = mCompositables.find(aHandle.Value());
   if (iter == mCompositables.end()) {
     return nullptr;
   }
 
-  RefPtr<CompositableHost> host = iter->second;
-  if (!aAllowDisablingWebRender) {
-    return host;
-  }
-
-  if (!host->AsWebRenderImageHost() || !host->GetAsyncRef()) {
-    return host;
-  }
-
-  
-  RefPtr<CompositableHost> newHost = CompositableHost::Create(
-      host->GetTextureInfo(),  false);
-  if (!newHost || !newHost->AsImageHost()) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
-    return host;
-  }
-
-  newHost->SetAsyncRef(host->GetAsyncRef());
-  mCompositables[aHandle.Value()] = newHost;
-
-  return newHost;
+  return iter->second;
 }
 
 void CompositableParentManager::ReleaseCompositable(
