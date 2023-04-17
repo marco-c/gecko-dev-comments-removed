@@ -120,6 +120,20 @@ class SharedDataMap extends EventEmitter {
     this._notifyUpdate();
   }
 
+  
+
+
+
+
+
+
+  _removeEntriesByKeys(keysToRemove) {
+    for (let key of keysToRemove) {
+      delete this._store.data[key];
+    }
+    this._store.saveSoon();
+  }
+
   setNonPersistent(key, value) {
     if (!this.isParent) {
       throw new Error(

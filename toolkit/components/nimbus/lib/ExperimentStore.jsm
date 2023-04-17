@@ -224,6 +224,8 @@ class ExperimentStore extends SharedDataMap {
         );
       }
     });
+
+    Services.tm.idleDispatchToMainThread(() => this._cleanupOldRecipes());
   }
 
   
@@ -281,6 +283,24 @@ class ExperimentStore extends SharedDataMap {
 
   getAllActive() {
     return this.getAll().filter(experiment => experiment.active);
+  }
+
+  
+
+
+  _cleanupOldRecipes() {
+    
+    const threshold = 15552000000;
+    const nowTimestamp = new Date().getTime();
+    const recipesToRemove = this.getAll().filter(
+      experiment =>
+        !experiment.active &&
+        
+        
+        
+        !(nowTimestamp - new Date(experiment.lastSeen).getTime() < threshold)
+    );
+    this._removeEntriesByKeys(recipesToRemove.map(r => r.slug));
   }
 
   _emitExperimentUpdates(experiment) {
