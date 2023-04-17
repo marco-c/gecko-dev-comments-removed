@@ -101,6 +101,24 @@ void SelectionManager::RemoveDocSelectionListener(PresShell* aPresShell) {
   
   Selection* spellSel = frameSel->GetSelection(SelectionType::eSpellCheck);
   spellSel->RemoveSelectionListener(this);
+
+  if (mCurrCtrlNormalSel) {
+    if (mCurrCtrlNormalSel->GetPresShell() == aPresShell) {
+      
+      
+      mCurrCtrlNormalSel->RemoveSelectionListener(this);
+      mCurrCtrlNormalSel = nullptr;
+    }
+  }
+
+  if (mCurrCtrlSpellSel) {
+    if (mCurrCtrlSpellSel->GetPresShell() == aPresShell) {
+      
+      
+      mCurrCtrlSpellSel->RemoveSelectionListener(this);
+      mCurrCtrlSpellSel = nullptr;
+    }
+  }
 }
 
 void SelectionManager::ProcessTextSelChangeEvent(AccEvent* aEvent) {
