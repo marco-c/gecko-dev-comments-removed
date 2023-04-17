@@ -83,8 +83,7 @@ struct ColorPalette {
 
   constexpr static ColorPalette Default() {
     return ColorPalette(
-        sRGBColor::UnusualFromARGB(0xff0060df),  
-        sColorWhite,
+        sDefaultAccent, sDefaultAccentForeground,
         sRGBColor::UnusualFromARGB(0x4d008deb),  
         sRGBColor::UnusualFromARGB(0xff0250bb),  
         sRGBColor::UnusualFromARGB(0xff054096)   
@@ -160,7 +159,9 @@ ColorPalette::ColorPalette(nscolor aAccent, nscolor aForeground) {
   mAccentDarker = sRGBColor::FromABGR(GetDarker(aAccent));
 }
 
-static nscolor ComputeCustomAccentForeground(nscolor aColor) {
+}  
+
+nscolor nsNativeBasicTheme::ComputeCustomAccentForeground(nscolor aColor) {
   
   
   
@@ -193,8 +194,6 @@ static nscolor ComputeCustomAccentForeground(nscolor aColor) {
   const float targetLuminance = (luminance + 0.05f) / targetRatio - 0.05f;
   return RelativeLuminanceUtils::Adjust(aColor, targetLuminance);
 }
-
-}  
 
 class nsNativeBasicTheme::AccentColor {
   Maybe<nscolor> mAccentColor;

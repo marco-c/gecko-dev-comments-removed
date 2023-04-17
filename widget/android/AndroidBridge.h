@@ -56,7 +56,7 @@ class NetworkInformation;
 
 
 
-typedef struct AndroidSystemColors {
+struct AndroidSystemColors {
   nscolor textColorPrimary;
   nscolor textColorPrimaryInverse;
   nscolor textColorSecondary;
@@ -68,7 +68,8 @@ typedef struct AndroidSystemColors {
   nscolor colorBackground;
   nscolor panelColorForeground;
   nscolor panelColorBackground;
-} AndroidSystemColors;
+  nscolor colorAccent;
+};
 
 class AndroidBridge final {
  public:

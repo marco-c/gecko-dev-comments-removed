@@ -6,10 +6,13 @@
 #include "nsStyleConsts.h"
 #include "nsXULAppAPI.h"
 #include "nsLookAndFeel.h"
+#include "nsNativeBasicTheme.h"
 #include "gfxFont.h"
 #include "gfxFontConstants.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/GeckoRuntimeWrappers.h"
 #include "mozilla/java/GeckoSystemStateListenerWrappers.h"
@@ -18,9 +21,23 @@ using namespace mozilla;
 
 static const char16_t UNICODE_BULLET = 0x2022;
 
-nsLookAndFeel::nsLookAndFeel() = default;
+static void AccentColorPrefChanged(const char*, void*) {
+  LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind::Style);
+}
 
-nsLookAndFeel::~nsLookAndFeel() = default;
+nsLookAndFeel::nsLookAndFeel() {
+  Preferences::RegisterCallback(
+      AccentColorPrefChanged,
+      nsDependentCString(
+          StaticPrefs::GetPrefName_widget_non_native_theme_use_theme_accent()));
+}
+
+nsLookAndFeel::~nsLookAndFeel() {
+  Preferences::UnregisterCallback(
+      AccentColorPrefChanged,
+      nsDependentCString(
+          StaticPrefs::GetPrefName_widget_non_native_theme_use_theme_accent()));
+}
 
 nsresult nsLookAndFeel::GetSystemColors() {
   if (!jni::IsAvailable()) {
@@ -68,7 +85,7 @@ void nsLookAndFeel::RefreshImpl() {
   mInitializedShowPassword = false;
 }
 
-nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
+nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
                                        nscolor& aColor) {
   EnsureInitSystemColors();
   if (!mInitializedSystemColors) {
@@ -79,6 +96,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
 
   
   
+  auto UseNativeAccent = [this] {
+    return mSystemColors.colorAccent &&
+           StaticPrefs::widget_non_native_theme_use_theme_accent();
+  };
 
   switch (aID) {
       
@@ -101,14 +122,15 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
       
       aColor = mSystemColors.textColorPrimary;
       break;
-    case ColorID::TextSelectBackground:
+    case ColorID::TextSelectBackground: {
       
       
-      
-      
-      
-      aColor = NS_RGBA(10, 132, 255, 153);
+      nscolor accent =
+          Color(ColorID::MozAccentColor, aColorScheme, UseStandins::No);
+      aColor =
+          NS_RGBA(NS_GET_R(accent), NS_GET_G(accent), NS_GET_B(accent), 153);
       break;
+    }
     case ColorID::TextSelectForeground:
       
       
@@ -160,16 +182,17 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
     case ColorID::MozHtmlCellhighlight:
     case ColorID::Highlight:
     case ColorID::MozAccentColor:
-      
-      
-      
-      aColor = NS_RGB(0x06, 0x4e, 0x99);
+      aColor = UseNativeAccent() ? mSystemColors.colorAccent
+                                 : widget::sDefaultAccent.ToABGR();
       break;
     case ColorID::MozCellhighlighttext:
     case ColorID::MozHtmlCellhighlighttext:
     case ColorID::Highlighttext:
     case ColorID::MozAccentColorForeground:
-      aColor = NS_RGB(0xff, 0xff, 0xff);
+      aColor = UseNativeAccent()
+                   ? nsNativeBasicTheme::ComputeCustomAccentForeground(
+                         mSystemColors.colorAccent)
+                   : widget::sDefaultAccentForeground.ToABGR();
       break;
     case ColorID::Fieldtext:
       aColor = NS_RGB(0x1a, 0x1a, 0x1a);
