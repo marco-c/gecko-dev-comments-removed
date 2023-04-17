@@ -5617,20 +5617,11 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
     
     
-    
-    if (rect.Y() + sizeAfterZoom.height > cssPageRect.YMost()) {
-      rect.MoveToY(std::max(cssPageRect.Y(),
-                            cssPageRect.YMost() - sizeAfterZoom.height));
+    if (rect.Y() + sizeAfterZoom.height > cssPageRect.Height()) {
+      rect.MoveToY(std::max(0.f, cssPageRect.Height() - sizeAfterZoom.height));
     }
-    if (rect.Y() < cssPageRect.Y()) {
-      rect.MoveToY(cssPageRect.Y());
-    }
-    if (rect.X() + sizeAfterZoom.width > cssPageRect.XMost()) {
-      rect.MoveToX(
-          std::max(cssPageRect.X(), cssPageRect.XMost() - sizeAfterZoom.width));
-    }
-    if (rect.X() < cssPageRect.X()) {
-      rect.MoveToY(cssPageRect.X());
+    if (rect.X() + sizeAfterZoom.width > cssPageRect.Width()) {
+      rect.MoveToX(std::max(0.f, cssPageRect.Width() - sizeAfterZoom.width));
     }
 
     endZoomToMetrics.SetVisualScrollOffset(rect.TopLeft());
