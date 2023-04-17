@@ -1232,7 +1232,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
   MOZ_ASSERT(!!maybeDebug_ == metadata().debugEnabled);
 #ifdef ENABLE_WASM_EXCEPTIONS
   
-  MOZ_ASSERT(exceptionTags_.length() == metadata().events.length());
+  MOZ_ASSERT(exceptionTags_.length() == metadata().tags.length());
 #else
   MOZ_ASSERT(exceptionTags_.length() == 0);
 #endif
