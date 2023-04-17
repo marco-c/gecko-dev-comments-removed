@@ -1035,6 +1035,9 @@ impl AsyncPropertySampler for SamplerCallback {
             None => ptr::null_mut(),
         };
         let mut transaction = Transaction::new();
+        
+        
+        transaction.reset_dynamic_properties();
         unsafe {
             
             
