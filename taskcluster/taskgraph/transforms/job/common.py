@@ -113,6 +113,12 @@ def support_vcs_checkout(config, job, taskdesc, sparse=False):
     if sparse:
         cache_name += "-sparse"
 
+    
+    
+    
+    if is_docker:
+        cache_name += "-hg58"
+
     add_cache(job, taskdesc, cache_name, checkoutdir)
 
     taskdesc["worker"].setdefault("env", {}).update(
