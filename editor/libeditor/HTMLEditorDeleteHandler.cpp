@@ -5139,7 +5139,8 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
   
   
   
-  if (!aHTMLEditor.IsFirstEditableChild(mEmptyInclusiveAncestorBlockElement)) {
+  if (!HTMLEditUtils::IsFirstChild(*mEmptyInclusiveAncestorBlockElement,
+                                   {WalkTreeOption::IgnoreNonEditableNode})) {
     return RefPtr<Element>();
   }
 

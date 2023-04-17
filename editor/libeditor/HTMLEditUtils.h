@@ -536,6 +536,15 @@ class HTMLEditUtils final {
     return nullptr;
   }
 
+  static bool IsFirstChild(const nsIContent& aContent,
+                           const WalkTreeOptions& aOptions) {
+    nsINode* parentNode = aContent.GetParentNode();
+    if (!parentNode) {
+      return false;
+    }
+    return HTMLEditUtils::GetFirstChild(*parentNode, aOptions) == &aContent;
+  }
+
   
 
 

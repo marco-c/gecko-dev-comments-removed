@@ -8614,7 +8614,8 @@ nsresult HTMLEditor::LiftUpListItemElement(
 
   
   
-  bool isFirstListItem = IsFirstEditableChild(&aListItemElement);
+  bool isFirstListItem = HTMLEditUtils::IsFirstChild(
+      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
   bool isLastListItem = IsLastEditableChild(&aListItemElement);
 
   Element* leftListElement = aListItemElement.GetParentElement();
