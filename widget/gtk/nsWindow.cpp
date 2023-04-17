@@ -5902,7 +5902,12 @@ void nsWindow::PauseCompositor() {
 
   
   
-  if (!mIsAccelerated || mIsDestroyed) {
+
+  
+  
+  
+  if ((!mIsAccelerated && !gfx::gfxVars::UseWebRenderCompositor()) ||
+      mIsDestroyed) {
     return;
   }
 
