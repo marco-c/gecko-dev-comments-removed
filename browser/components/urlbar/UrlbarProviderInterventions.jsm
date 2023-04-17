@@ -567,6 +567,12 @@ class ProviderInterventions extends UrlbarProvider {
         
         this.currentTip = TIPS.UPDATE_CHECKING;
         break;
+      case AppUpdater.STATUS.NO_UPDATER:
+      case AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY:
+        
+        
+        this.currentTip = TIPS.NONE;
+        break;
       default:
         
         
