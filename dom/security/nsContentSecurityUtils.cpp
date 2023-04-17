@@ -468,7 +468,8 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
 #ifdef NIGHTLY_BUILD
 
 
-void PossiblyCrash(const char* pref_suffix, const nsCString crash_string) {
+void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
+                   const nsCString& aSafeCrashString) {
   if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
     
     
@@ -477,11 +478,11 @@ void PossiblyCrash(const char* pref_suffix, const nsCString crash_string) {
   }
 
   nsCString previous_crashes("security.crash_tracking.");
-  previous_crashes.Append(pref_suffix);
+  previous_crashes.Append(aPrefSuffix);
   previous_crashes.Append(".prevCrashes");
 
   nsCString max_crashes("security.crash_tracking.");
-  max_crashes.Append(pref_suffix);
+  max_crashes.Append(aPrefSuffix);
   max_crashes.Append(".maxCrashes");
 
   int32_t numberOfPreviousCrashes = 0;
@@ -510,7 +511,12 @@ void PossiblyCrash(const char* pref_suffix, const nsCString crash_string) {
 
   rv = prefs->SavePrefFileBlocking();
   if (!NS_FAILED(rv)) {
-    MOZ_CRASH_UNSAFE_PRINTF("%s", nsContentSecurityUtils::SmartFormatCrashString(crash_string.get()));
+    
+    
+    
+    
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "%s", nsContentSecurityUtils::SmartFormatCrashString(aSafeCrashString.get()));
   }
 }
 #endif
@@ -1226,10 +1232,10 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   
   
   if (fileNameTypeAndDetails.second.isSome()) {
-    PossiblyCrash("js_load_1",
+    PossiblyCrash("js_load_1", aFilename,
                   NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()));
   } else {
-    PossiblyCrash("js_load_1", "(None)"_ns);
+    PossiblyCrash("js_load_1", aFilename, "(None)"_ns);
   }
 #endif
 
