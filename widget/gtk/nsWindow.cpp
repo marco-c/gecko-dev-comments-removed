@@ -7137,19 +7137,13 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (mWidgetListener) {
-    
-    
-    
-    
-    
+  bool wasFullscreen = mSizeState == nsSizeMode_Fullscreen;
+  if (aFullScreen != wasFullscreen && mWidgetListener) {
     mWidgetListener->FullscreenWillChange(aFullScreen);
   }
 
   if (aFullScreen) {
-    if (mSizeMode != nsSizeMode_Fullscreen) {
-      mLastSizeMode = mSizeMode;
-    }
+    if (mSizeMode != nsSizeMode_Fullscreen) mLastSizeMode = mSizeMode;
 
     mSizeMode = nsSizeMode_Fullscreen;
 

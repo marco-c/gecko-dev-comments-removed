@@ -106,11 +106,6 @@
 
 
 
-#define NON_GUARANTEED_WINDOW_EVENT_TIMEOUT_MS 80
-
-
-
-
 
 namespace mozilla {
 
@@ -2175,19 +2170,6 @@ AppWindow::GetPrimaryContentSize(int32_t* aWidth, int32_t* aHeight) {
   return NS_ERROR_UNEXPECTED;
 }
 
-bool AppWindow::IsWaitingForFullscreenChange(
-    FullscreenChangeState changeState) {
-  switch (changeState) {
-    case FullscreenChangeState::WillChange:
-    case FullscreenChangeState::WidgetResized:
-      return true;
-    case FullscreenChangeState::NotChanging:
-    case FullscreenChangeState::WidgetEnteredFullscreen:
-    case FullscreenChangeState::WidgetExitedFullscreen:
-      return false;
-  }
-}
-
 nsresult AppWindow::GetPrimaryRemoteTabSize(int32_t* aWidth, int32_t* aHeight) {
   BrowserHost* host = BrowserHost::GetFrom(mPrimaryBrowserParent.get());
   
@@ -2923,21 +2905,6 @@ void AppWindow::FullscreenWillChange(bool aInFullscreen) {
   }
   MOZ_ASSERT(mFullscreenChangeState == FullscreenChangeState::NotChanging);
   mFullscreenChangeState = FullscreenChangeState::WillChange;
-
-  
-  
-  
-  
-  
-  NS_DelayedDispatchToCurrentThread(
-      NS_NewRunnableFunction("AppWindow::FullscreenWillChange",
-                             [self = RefPtr<AppWindow>(this), aInFullscreen]() {
-                               if (self->IsWaitingForFullscreenChange(
-                                       self->mFullscreenChangeState)) {
-                                 self->FinishFullscreenChange(aInFullscreen);
-                               }
-                             }),
-      NON_GUARANTEED_WINDOW_EVENT_TIMEOUT_MS);
 }
 
 void AppWindow::FullscreenChanged(bool aInFullscreen) {
@@ -2955,6 +2922,7 @@ void AppWindow::FullscreenChanged(bool aInFullscreen) {
     
     
     
+    
     NS_DelayedDispatchToCurrentThread(
         NS_NewRunnableFunction(
             "AppWindow::FullscreenChanged",
@@ -2963,7 +2931,7 @@ void AppWindow::FullscreenChanged(bool aInFullscreen) {
                 FinishFullscreenChange(aInFullscreen);
               }
             }),
-        NON_GUARANTEED_WINDOW_EVENT_TIMEOUT_MS);
+        80);
   }
 }
 

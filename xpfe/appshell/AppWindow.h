@@ -291,9 +291,6 @@ class AppWindow final : public nsIBaseWindow,
   
   
   
-  
-  
-  
   enum class FullscreenChangeState : uint8_t {
     
     NotChanging,
@@ -351,7 +348,6 @@ class AppWindow final : public nsIBaseWindow,
   WidgetListenerDelegate mWidgetListenerDelegate;
 
  private:
-  static bool IsWaitingForFullscreenChange(FullscreenChangeState changeState);
   
   
   
