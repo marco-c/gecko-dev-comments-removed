@@ -8,6 +8,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/experimental/TypedData.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/Stream.h"
 #include "jsapi-tests/tests.h"
 

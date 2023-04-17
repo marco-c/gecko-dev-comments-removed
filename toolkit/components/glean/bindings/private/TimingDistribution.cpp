@@ -16,6 +16,7 @@
 #include "nsJSUtils.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
+#include "js/PropertyAndElement.h"  
 
 namespace mozilla::glean {
 

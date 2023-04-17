@@ -5,7 +5,8 @@
 
 
 
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 static int callCount = 0;

@@ -35,6 +35,7 @@
 #include "js/experimental/Intl.h"     
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCVector.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"
 #include "js/PropertySpec.h"
 #include "js/Result.h"

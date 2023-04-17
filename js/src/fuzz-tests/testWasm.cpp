@@ -8,6 +8,7 @@
 #include "jspubtd.h"
 
 #include "fuzz-tests/tests.h"
+#include "js/PropertyAndElement.h"  
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/TypedArrayObject.h"

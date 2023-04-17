@@ -69,7 +69,8 @@
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"  
 #include "js/HeapAPI.h"
-#include "js/Warnings.h"  
+#include "js/PropertyAndElement.h"  
+#include "js/Warnings.h"            
 
 #include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"

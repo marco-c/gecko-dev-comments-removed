@@ -59,6 +59,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/friend/ErrorMessages.h"  
+#include "js/PropertyAndElement.h"  
 #include "BindingUtils.h"
 
 

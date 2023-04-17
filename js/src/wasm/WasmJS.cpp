@@ -38,7 +38,8 @@
 #endif
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
-#include "js/PropertySpec.h"  
+#include "js/PropertyAndElement.h"  
+#include "js/PropertySpec.h"        
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/ErrorObject.h"

@@ -11,6 +11,8 @@
 
 #include <algorithm>
 
+#include "js/PropertyAndElement.h"  
+
 
 
 inline void XPCJSRuntime::AddVariantRoot(XPCTraceableVariant* variant) {

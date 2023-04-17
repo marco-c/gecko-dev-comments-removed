@@ -5,6 +5,7 @@
 
 
 
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 static int g_counter;

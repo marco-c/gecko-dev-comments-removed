@@ -8,6 +8,7 @@
 
 #include "js/Array.h"  
 #include "js/JSON.h"
+#include "js/PropertyAndElement.h"  
 #include "mozilla/dom/ReportingBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"

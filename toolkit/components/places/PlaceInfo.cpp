@@ -8,7 +8,8 @@
 #include "nsServiceManagerUtils.h"
 #include "nsIXPConnect.h"
 #include "jsapi.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 
 namespace mozilla {
 namespace places {

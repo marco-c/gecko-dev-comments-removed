@@ -6,6 +6,7 @@
 
 #include "js/Array.h"  
 #include "js/JSON.h"
+#include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/AutocompleteInfoBinding.h"

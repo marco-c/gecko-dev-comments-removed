@@ -27,8 +27,9 @@
 #include "js/CharacterEncoding.h"
 #include "js/experimental/TypedData.h"  
 #include "js/MemoryFunctions.h"
-#include "js/Object.h"  
-#include "js/String.h"  
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
+#include "js/String.h"              
 
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"

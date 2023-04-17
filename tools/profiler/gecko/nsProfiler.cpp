@@ -14,6 +14,7 @@
 #include "ProfilerParent.h"
 #include "js/Array.h"  
 #include "js/JSON.h"
+#include "js/PropertyAndElement.h"  
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/SchedulerGroup.h"

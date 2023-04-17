@@ -96,6 +96,7 @@
 #include "js/HashTable.h"
 #include "js/GCHashTable.h"
 #include "js/Object.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/TracingAPI.h"
 #include "js/WeakMapPtr.h"
 #include "PLDHashTable.h"

@@ -6,6 +6,7 @@
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/friend/JSMEnvironment.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "jsapi-tests/tests.h"

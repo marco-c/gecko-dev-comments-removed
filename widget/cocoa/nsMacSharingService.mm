@@ -9,6 +9,7 @@
 
 #include "jsapi.h"
 #include "js/Array.h"  
+#include "js/PropertyAndElement.h"  
 #include "nsCocoaUtils.h"
 #include "mozilla/MacStringHelpers.h"
 

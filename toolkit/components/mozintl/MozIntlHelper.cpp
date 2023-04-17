@@ -5,7 +5,8 @@
 
 #include "MozIntlHelper.h"
 #include "jsapi.h"
-#include "js/experimental/Intl.h"  
+#include "js/experimental/Intl.h"   
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 

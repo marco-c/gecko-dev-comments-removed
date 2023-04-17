@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 
 #include "jsapi.h"
+#include "js/PropertyAndElement.h"  
 #include "nsContentUtils.h"
 #include "nsNetUtil.h"
 #include "mozilla/CycleCollectedJSContext.h"

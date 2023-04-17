@@ -20,9 +20,10 @@
 #include "js/ErrorReport.h"               
 #include "js/Exception.h"                 
 #include "js/experimental/TypedData.h"  
-#include "js/RootingAPI.h"  
-#include "js/SourceText.h"  
-#include "js/Value.h"       
+#include "js/PropertyAndElement.h"  
+#include "js/RootingAPI.h"          
+#include "js/SourceText.h"          
+#include "js/Value.h"               
 
 using mozilla::dom::AutoJSAPI;
 

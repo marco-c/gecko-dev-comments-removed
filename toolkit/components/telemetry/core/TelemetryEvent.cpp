@@ -11,6 +11,7 @@
 #include "ipc/TelemetryIPCAccumulator.h"
 #include "jsapi.h"
 #include "js/Array.h"  
+#include "js/PropertyAndElement.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticMutex.h"

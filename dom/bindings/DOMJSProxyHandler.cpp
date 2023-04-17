@@ -14,7 +14,8 @@
 
 #include "jsapi.h"
 #include "js/friend/DOMProxy.h"  
-#include "js/Object.h"           
+#include "js/PropertyAndElement.h"  
+#include "js/Object.h"              
 
 using namespace JS;
 

@@ -38,6 +38,7 @@
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"  
 #include "js/Object.h"                  
+#include "js/PropertyAndElement.h"      
 #include "js/PropertySpec.h"
 #include "js/Value.h"  
 #include "js/Wrapper.h"

@@ -7,6 +7,7 @@
 #include "jsapi.h"
 #include "js/experimental/CTypes.h"  
 #include "js/MemoryFunctions.h"
+#include "js/PropertyAndElement.h"  
 #include "nsMemory.h"
 #include "nsString.h"
 #include "nsNativeCharsetUtils.h"

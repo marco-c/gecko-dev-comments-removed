@@ -5,7 +5,8 @@
 
 
 
-#include "js/Object.h"  
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 

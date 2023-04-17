@@ -6,6 +6,7 @@
 #include "core/TelemetryScalar.h"
 #include "gtest/gtest.h"
 #include "js/Conversions.h"
+#include "js/PropertyAndElement.h"  
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryProcessEnums.h"
 #include "mozilla/Unused.h"

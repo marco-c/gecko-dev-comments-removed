@@ -47,6 +47,7 @@
 #include "js/friend/ErrorMessages.h"        
 #include "js/friend/WindowProxy.h"          
 #include "js/OffThreadScriptCompilation.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/ProtoKey.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"

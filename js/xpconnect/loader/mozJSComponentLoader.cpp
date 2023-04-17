@@ -25,6 +25,7 @@
 #include "js/friend/JSMEnvironment.h"  
 #include "js/Object.h"                 
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "nsCOMPtr.h"

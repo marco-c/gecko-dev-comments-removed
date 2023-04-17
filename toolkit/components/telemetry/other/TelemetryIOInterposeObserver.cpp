@@ -6,7 +6,8 @@
 
 #include "TelemetryIOInterposeObserver.h"
 #include "core/TelemetryCommon.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "nsIFile.h"
 
 namespace mozilla::Telemetry {

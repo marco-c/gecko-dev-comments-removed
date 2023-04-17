@@ -14,6 +14,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/Object.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
 #include "js/PropertySpec.h"
 #include "js/Proxy.h"

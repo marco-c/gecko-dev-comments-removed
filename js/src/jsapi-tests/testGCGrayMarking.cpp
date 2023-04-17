@@ -9,6 +9,7 @@
 
 #include "gc/WeakMap.h"
 #include "gc/Zone.h"
+#include "js/PropertyAndElement.h"  
 #include "js/Proxy.h"
 #include "jsapi-tests/tests.h"
 

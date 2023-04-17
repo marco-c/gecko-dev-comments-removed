@@ -14,7 +14,8 @@
 #include "TelemetryCommon.h"
 #include "TelemetryOriginEnums.h"
 
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "mozilla/Atomics.h"
 #include "mozilla/Base64.h"
 #include "mozilla/dom/PrioEncoder.h"

@@ -14,6 +14,7 @@
 #include "nsIObserverService.h"
 #include "TelemetryFixture.h"
 #include "TelemetryTestHelpers.h"
+#include "js/PropertyAndElement.h"  
 
 using namespace mozilla;
 using namespace TelemetryTestHelpers;

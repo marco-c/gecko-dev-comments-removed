@@ -21,8 +21,9 @@
 #include "IndexedDatabase.h"
 #include "IndexedDatabaseInlines.h"
 #include "IndexedDBCommon.h"
-#include "js/Array.h"  
-#include "js/Date.h"   
+#include "js/Array.h"               
+#include "js/Date.h"                
+#include "js/PropertyAndElement.h"  
 #include <mozIRemoteLazyInputStream.h>
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BasicEvents.h"

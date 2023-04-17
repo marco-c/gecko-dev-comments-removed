@@ -31,6 +31,7 @@
 #include "js/experimental/Intl.h"     
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/StableStringChars.h"
 #include "unicode/udat.h"

@@ -5,6 +5,7 @@
 
 
 
+#include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
 #include "jsapi-tests/tests.h"
 

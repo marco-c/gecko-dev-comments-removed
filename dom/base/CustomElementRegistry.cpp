@@ -24,7 +24,8 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "nsHTMLTags.h"
 #include "jsapi.h"
-#include "js/ForOfIterator.h"  
+#include "js/ForOfIterator.h"       
+#include "js/PropertyAndElement.h"  
 #include "xpcprivate.h"
 #include "nsGlobalWindow.h"
 

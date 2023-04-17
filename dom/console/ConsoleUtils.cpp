@@ -16,6 +16,7 @@
 #include "mozilla/dom/ConsoleBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "js/PropertyAndElement.h"  
 
 namespace mozilla::dom {
 

@@ -11,6 +11,7 @@
 #include "mozJSComponentLoader.h"
 #include "xpcpublic.h"
 #include "xpcprivate.h"
+#include "js/PropertyAndElement.h"  
 
 using mozilla::dom::AutoJSAPI;
 

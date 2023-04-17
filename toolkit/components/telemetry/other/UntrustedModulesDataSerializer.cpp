@@ -7,7 +7,8 @@
 #include "UntrustedModulesDataSerializer.h"
 
 #include "core/TelemetryCommon.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "jsapi.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "nsITelemetry.h"

@@ -10,7 +10,8 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "jsapi.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "mozilla/FloatingPoint.h"
 
 class nsIPrincipal;

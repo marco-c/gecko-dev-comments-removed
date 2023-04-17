@@ -18,6 +18,7 @@
 #include "js/CompilationAndEvaluation.h"  
 #include "js/ContextOptions.h"
 #include "js/Initialization.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "js/Utility.h"

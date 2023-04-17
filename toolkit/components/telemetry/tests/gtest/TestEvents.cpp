@@ -5,7 +5,8 @@
 
 #include "core/TelemetryEvent.h"
 #include "gtest/gtest.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"

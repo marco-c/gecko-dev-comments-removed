@@ -81,6 +81,7 @@
 #include "jsfriendapi.h"
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/Wrapper.h"
 #include "nsLayoutUtils.h"

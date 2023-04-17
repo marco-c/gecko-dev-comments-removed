@@ -17,6 +17,7 @@
 #include "mozStorageAsyncStatementParams.h"
 
 #include "jsapi.h"
+#include "js/PropertyAndElement.h"  
 
 #include "xpc_make_class.h"
 

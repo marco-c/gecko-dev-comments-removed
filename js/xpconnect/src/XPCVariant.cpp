@@ -14,6 +14,7 @@
 #include "js/Array.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/Wrapper.h"
 
 using namespace JS;

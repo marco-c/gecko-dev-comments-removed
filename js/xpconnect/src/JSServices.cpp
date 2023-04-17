@@ -8,7 +8,8 @@
 #include "StaticComponents.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ProfilerLabels.h"
-#include "js/String.h"  
+#include "js/PropertyAndElement.h"  
+#include "js/String.h"              
 #include "nsJSUtils.h"
 
 using namespace mozilla;

@@ -12,6 +12,7 @@
 #include "mozilla/glean/bindings/GleanJSPingsLookup.h"
 #include "mozilla/glean/bindings/Ping.h"
 #include "MainThreadUtils.h"
+#include "js/PropertyAndElement.h"  
 
 namespace mozilla::glean {
 

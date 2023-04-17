@@ -3,6 +3,7 @@
 
 
 #include "js/CompilationAndEvaluation.h"
+#include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"

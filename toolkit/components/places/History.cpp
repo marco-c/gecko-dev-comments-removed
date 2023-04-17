@@ -39,6 +39,7 @@
 #include "nsTHashtable.h"
 #include "jsapi.h"
 #include "js/Array.h"  
+#include "js/PropertyAndElement.h"  
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/ContentProcessMessageManager.h"
 #include "mozilla/dom/Element.h"

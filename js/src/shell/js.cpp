@@ -135,6 +135,7 @@
 #include "js/Object.h"  
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/Realm.h"
 #include "js/RegExp.h"  

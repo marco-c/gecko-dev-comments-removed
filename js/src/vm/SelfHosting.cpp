@@ -57,6 +57,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
 #include "js/Modules.h"                 
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/ScalarType.h"  
 #include "js/SourceText.h"  
@@ -2386,7 +2387,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("UnsafeSetReservedSlot", intrinsic_UnsafeSetReservedSlot, 3,
                     0, IntrinsicUnsafeSetReservedSlot),
 
-    
+
 #ifdef JS_HAS_INTL_API
     JS_FN("intl_BestAvailableLocale", intl_BestAvailableLocale, 3, 0),
     JS_FN("intl_CallCollatorMethodIfWrapped",

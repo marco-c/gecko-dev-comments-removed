@@ -14,6 +14,7 @@
 #include "js/Class.h"
 #include "js/Object.h"  
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "js/Symbol.h"
 
 using namespace mozilla;

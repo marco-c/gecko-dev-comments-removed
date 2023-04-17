@@ -67,6 +67,7 @@
 #include "js/GCAPI.h"                 
 #include "js/HeapAPI.h"               
 #include "js/Promise.h"               
+#include "js/PropertyAndElement.h"    
 #include "js/Proxy.h"                 
 #include "js/SourceText.h"            
 #include "js/StableStringChars.h"     

@@ -10,8 +10,9 @@
 #include "nsAppShell.h"
 #include "nsJSUtils.h"
 #include "js/Array.h"  
-#include "js/String.h"    
-#include "js/Warnings.h"  
+#include "js/PropertyAndElement.h"  
+#include "js/String.h"              
+#include "js/Warnings.h"            
 #include "xpcpublic.h"
 
 #include "mozilla/fallible.h"

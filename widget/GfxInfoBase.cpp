@@ -12,7 +12,8 @@
 #include <mutex>  
 
 #include "GfxDriverInfo.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "nsString.h"

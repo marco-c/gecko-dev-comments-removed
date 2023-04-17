@@ -12,6 +12,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "nsIClassInfoImpl.h"
 #include "jsapi.h"
+#include "js/PropertyAndElement.h"  
 #include "nsIScriptError.h"
 
 namespace mozilla::glean {

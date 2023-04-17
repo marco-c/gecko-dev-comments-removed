@@ -51,6 +51,7 @@
 #include "VideoStreamTrack.h"
 #include "base/basictypes.h"
 #include "jsapi.h"
+#include "js/PropertyAndElement.h"  
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EMEUtils.h"

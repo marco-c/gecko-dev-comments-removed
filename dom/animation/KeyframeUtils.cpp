@@ -9,8 +9,9 @@
 #include <algorithm>  
 #include <utility>
 
-#include "js/ForOfIterator.h"  
 #include "jsapi.h"             
+#include "js/ForOfIterator.h"  
+#include "js/PropertyAndElement.h"  
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RangedArray.h"

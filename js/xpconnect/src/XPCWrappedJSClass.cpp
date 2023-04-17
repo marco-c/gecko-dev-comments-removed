@@ -9,6 +9,7 @@
 #include "xpcprivate.h"
 #include "js/Object.h"  
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "nsArrayEnumerator.h"
 #include "nsINamed.h"
 #include "nsIScriptError.h"

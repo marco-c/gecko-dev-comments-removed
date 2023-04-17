@@ -13,6 +13,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/friend/WindowProxy.h"    
+#include "js/PropertyAndElement.h"  
 #include "vm/ArgumentsObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/BytecodeIterator.h"

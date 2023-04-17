@@ -5,8 +5,9 @@
 
 
 
-#include "js/Array.h"   
-#include "js/Object.h"  
+#include "js/Array.h"               
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 static bool constructHook(JSContext* cx, unsigned argc, JS::Value* vp) {

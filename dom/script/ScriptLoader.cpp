@@ -21,6 +21,7 @@
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"
+#include "js/PropertyAndElement.h"  
 #include "js/Realm.h"
 #include "js/SourceText.h"
 #include "js/Utility.h"

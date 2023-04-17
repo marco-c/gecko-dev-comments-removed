@@ -24,6 +24,7 @@
 #include "jsfriendapi.h"
 #include "js/Array.h"  
 #include "js/GCAPI.h"
+#include "js/PropertyAndElement.h"  
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/Atomics.h"

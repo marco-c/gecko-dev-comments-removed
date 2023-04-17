@@ -78,6 +78,7 @@
 #include "js/LocaleSensitive.h"
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  
 #include "js/SourceText.h"

@@ -11,6 +11,7 @@
 
 #include "js/Array.h"  
 #include "js/Debug.h"
+#include "js/PropertyAndElement.h"  
 #include "js/TypeDecls.h"
 #include "js/UbiNodeBreadthFirst.h"
 #include "js/UbiNodeCensus.h"

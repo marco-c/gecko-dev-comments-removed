@@ -11,7 +11,8 @@
 #include "nsIScriptGlobalObject.h"
 
 #include "jsapi.h"
-#include "js/Object.h"  
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"

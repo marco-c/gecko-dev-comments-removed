@@ -13,6 +13,7 @@
 #include "js/ArrayBuffer.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Initialization.h"
+#include "js/PropertyAndElement.h"  
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"  
 

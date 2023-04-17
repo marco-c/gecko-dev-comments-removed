@@ -28,6 +28,7 @@
 #include "js/friend/WindowProxy.h"    
 #include "js/Object.h"                
 #include "js/Printf.h"
+#include "js/PropertyAndElement.h"  
 #include "js/Proxy.h"
 #include "js/shadow/Object.h"  
 #include "js/String.h"         

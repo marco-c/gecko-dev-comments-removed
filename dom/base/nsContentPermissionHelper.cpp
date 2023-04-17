@@ -29,6 +29,7 @@
 #include "nsServiceManagerUtils.h"
 #include "mozilla/dom/Document.h"
 #include "nsIWeakReferenceUtils.h"
+#include "js/PropertyAndElement.h"  
 
 using mozilla::Unused;  
 using namespace mozilla::dom;

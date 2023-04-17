@@ -11,6 +11,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
 #include "js/MemoryFunctions.h"
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testArrayBuffer_bug720949_steal) {

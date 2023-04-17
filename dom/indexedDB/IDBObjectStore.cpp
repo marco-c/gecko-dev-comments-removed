@@ -29,6 +29,7 @@
 #include "js/Class.h"
 #include "js/Date.h"
 #include "js/Object.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/StructuredClone.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/ErrorResult.h"

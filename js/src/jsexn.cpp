@@ -34,6 +34,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/Object.h"                
+#include "js/PropertyAndElement.h"    
 #include "js/SavedFrameAPI.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"

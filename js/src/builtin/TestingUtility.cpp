@@ -8,16 +8,16 @@
 
 #include <stdint.h>  
 
-#include "jsapi.h"                 
 #include "js/CharacterEncoding.h"  
 #include "js/CompileOptions.h"     
 #include "js/Conversions.h"  
-#include "js/RootingAPI.h"  
-#include "js/Utility.h"     
-#include "js/Value.h"       
-#include "vm/JSContext.h"   
-#include "vm/JSObject.h"    
-#include "vm/StringType.h"  
+#include "js/PropertyAndElement.h"  
+#include "js/RootingAPI.h"          
+#include "js/Utility.h"             
+#include "js/Value.h"               
+#include "vm/JSContext.h"           
+#include "vm/JSObject.h"            
+#include "vm/StringType.h"          
 
 bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
                              JS::Handle<JSObject*> opts,

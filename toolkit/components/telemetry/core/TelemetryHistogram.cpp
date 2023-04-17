@@ -15,6 +15,7 @@
 #include "js/Array.h"  
 #include "js/GCAPI.h"
 #include "js/Object.h"  
+#include "js/PropertyAndElement.h"  
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/Atomics.h"

@@ -18140,6 +18140,12 @@ class CGBindingRoot(CGThing):
         bindingHeaders["js/Object.h"] = True
 
         
+        
+        
+        
+        bindingHeaders["js/PropertyAndElement.h"] = True
+
+        
         bindingHeaders["js/PropertyDescriptor.h"] = True
 
         def descriptorDeprecated(desc):

@@ -5,6 +5,7 @@
 
 
 
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testDefineProperty_bug564344) {

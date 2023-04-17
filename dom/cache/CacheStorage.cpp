@@ -35,7 +35,8 @@
 #include "nsIGlobalObject.h"
 #include "nsMixedContentBlocker.h"
 #include "nsURLParsers.h"
-#include "js/Object.h"  
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
 
 namespace mozilla::dom::cache {
 

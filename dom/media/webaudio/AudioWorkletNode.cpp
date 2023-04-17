@@ -12,6 +12,7 @@
 #include "js/Array.h"  
 #include "js/Exception.h"
 #include "js/experimental/TypedData.h"  
+#include "js/PropertyAndElement.h"  
 #include "mozilla/dom/AudioWorkletNodeBinding.h"
 #include "mozilla/dom/AudioParamMapBinding.h"
 #include "mozilla/dom/AutoEntryScript.h"

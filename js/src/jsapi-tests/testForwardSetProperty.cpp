@@ -5,6 +5,7 @@
 
 
 
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 using namespace JS;

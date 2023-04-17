@@ -45,6 +45,7 @@
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
 #include "js/Object.h"  
+#include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
 #include "js/SharedArrayBuffer.h"  
 #include "js/StableStringChars.h"

@@ -6,7 +6,8 @@
 
 #include "JavaBuiltins.h"
 #include "jsapi.h"
-#include "js/Array.h"  
+#include "js/Array.h"               
+#include "js/PropertyAndElement.h"  
 #include "nsIURI.h"
 #include "nsXULAppAPI.h"
 
