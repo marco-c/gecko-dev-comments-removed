@@ -180,4 +180,38 @@ TextLeafPoint HyperTextAccessibleBase::ToTextLeafPoint(int32_t aOffset,
   return TextLeafPoint(child, offset);
 }
 
+uint32_t HyperTextAccessibleBase::TransformOffset(Accessible* aDescendant,
+                                                  uint32_t aOffset,
+                                                  bool aIsEndOffset) const {
+  const Accessible* thisAcc = Acc();
+  
+  uint32_t offset = aOffset;
+  Accessible* descendant = aDescendant;
+  while (descendant) {
+    Accessible* parent = descendant->Parent();
+    if (parent == thisAcc) {
+      return GetChildOffset(descendant) + offset;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (aIsEndOffset) {
+      offset = (offset > 0 || descendant->IndexInParent() > 0) ? 1 : 0;
+    } else {
+      offset = 0;
+    }
+
+    descendant = parent;
+  }
+
+  
+  
+  return CharacterCount();
+}
+
 }  

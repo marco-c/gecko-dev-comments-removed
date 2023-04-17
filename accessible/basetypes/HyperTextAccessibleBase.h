@@ -109,6 +109,13 @@ class HyperTextAccessibleBase {
         const_cast<const HyperTextAccessibleBase*>(this)->Acc();
     return const_cast<Accessible*>(acc);
   }
+
+ private:
+  
+
+
+  uint32_t TransformOffset(Accessible* aDescendant, uint32_t aOffset,
+                           bool aIsEndOffset) const;
 };
 
 }  
