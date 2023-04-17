@@ -1188,7 +1188,23 @@ static void LinkEnclosingLazyScript(const CompilationStencil& stencil,
       if (!inner.is<JSObject>()) {
         continue;
       }
-      inner.as<JSObject>().as<JSFunction>().setEnclosingLazyScript(script);
+      JSFunction* innerFun = &inner.as<JSObject>().as<JSFunction>();
+
+      MOZ_ASSERT(innerFun->hasBaseScript(),
+                 "inner function should have base script");
+      if (!innerFun->hasBaseScript()) {
+        continue;
+      }
+
+      
+      
+      
+      
+      if (!innerFun->baseScript()) {
+        continue;
+      }
+
+      innerFun->setEnclosingLazyScript(script);
     }
   }
 }
