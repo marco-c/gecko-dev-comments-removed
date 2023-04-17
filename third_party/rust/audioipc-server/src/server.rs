@@ -759,7 +759,14 @@ impl CubebServer {
         let user_ptr = server_stream.cbs.as_ref() as *const ServerStreamCallbacks as *mut c_void;
 
         
-        server_stream.shm_setup.take().wait().unwrap();
+        if let Err(e) = server_stream.shm_setup.take().wait() {
+            
+            debug!(
+                "Shmem setup for stream {:?} failed (error {:?})",
+                stm_tok, e
+            );
+            return Err(e.into());
+        }
 
         let stream = unsafe {
             let stream = context.stream_init(
