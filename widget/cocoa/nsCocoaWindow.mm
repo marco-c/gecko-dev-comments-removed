@@ -3542,11 +3542,7 @@ typedef NS_ENUM(NSInteger, NSTitlebarSeparatorStyle) {
                                     context:nil];
     
     
-    
-    if (!nsCocoaFeatures::OnBigSurOrLater() ||
-        Preferences::GetBool("full-screen-api.macos.shiftToolbar", false)) {
-      [(NSWindow*)self addTitlebarAccessoryViewController:mFullscreenTitlebarTracker];
-    }
+    [(NSWindow*)self addTitlebarAccessoryViewController:mFullscreenTitlebarTracker];
   }
   return self;
 
