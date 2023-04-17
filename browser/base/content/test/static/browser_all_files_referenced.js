@@ -270,9 +270,6 @@ var whitelist = [
   },
   { file: "chrome://browser/content/screenshots/menu-fullpage.svg" },
   { file: "chrome://browser/content/screenshots/menu-visible.svg" },
-
-  
-  { file: "resource://app/modules/pagedata/PageDataService.jsm" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
