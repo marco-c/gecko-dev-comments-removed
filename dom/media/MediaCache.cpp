@@ -1595,33 +1595,20 @@ void MediaCache::DetermineActionsForStreams(AutoLock& aLock,
   }
 }
 
-class UpdateEvent : public Runnable {
- public:
-  explicit UpdateEvent(MediaCache* aMediaCache)
-      : Runnable("MediaCache::UpdateEvent"), mMediaCache(aMediaCache) {}
-
-  NS_IMETHOD Run() override {
-    mMediaCache->Update();
-    
-    NS_ReleaseOnMainThread("UpdateEvent::mMediaCache", mMediaCache.forget());
-    return NS_OK;
-  }
-
- private:
-  RefPtr<MediaCache> mMediaCache;
-};
-
 void MediaCache::QueueUpdate(AutoLock&) {
   
   
   NS_ASSERTION(!mInUpdate, "Queuing an update while we're in an update");
-  if (mUpdateQueued) return;
+  if (mUpdateQueued) {
+    return;
+  }
   mUpdateQueued = true;
-  
-  
-  
-  nsCOMPtr<nsIRunnable> event = new UpdateEvent(this);
-  sThread->Dispatch(event.forget());
+  sThread->Dispatch(NS_NewRunnableFunction(
+      "MediaCache::QueueUpdate", [self = RefPtr<MediaCache>(this)]() mutable {
+        self->Update();
+        
+        NS_ReleaseOnMainThread("UpdateEvent::mMediaCache", self.forget());
+      }));
 }
 
 void MediaCache::QueueSuspendedStatusUpdate(AutoLock&, int64_t aResourceID) {
