@@ -1132,6 +1132,13 @@ bool SVGElement::UpdateDeclarationBlockFromPath(
   
   
   
+  
+  
+  
+  
+  
+  
+  
   const nsTArray<float>& asInFallibleArray = pathData.RawData();
   Servo_DeclarationBlock_SetPathValue(aBlock.Raw(), eCSSProperty_d,
                                       &asInFallibleArray);
@@ -1155,6 +1162,7 @@ class MOZ_STACK_CLASS MappedAttrParser {
 
   void TellStyleAlreadyParsedResult(nsAtom const* aAtom,
                                     SVGAnimatedLength const& aLength);
+  void TellStyleAlreadyParsedResult(const SVGAnimatedPathSegList& aPath);
 
   
   
@@ -1241,6 +1249,15 @@ void MappedAttrParser::TellStyleAlreadyParsedResult(
                                                SVGElement::ValToUse::Base);
 }
 
+void MappedAttrParser::TellStyleAlreadyParsedResult(
+    const SVGAnimatedPathSegList& aPath) {
+  if (!mDecl) {
+    mDecl = new DeclarationBlock();
+  }
+  SVGElement::UpdateDeclarationBlockFromPath(*mDecl, aPath,
+                                             SVGElement::ValToUse::Base);
+}
+
 already_AddRefed<DeclarationBlock> MappedAttrParser::GetDeclarationBlock() {
   return mDecl.forget();
 }
@@ -1294,23 +1311,32 @@ void SVGElement::UpdateContentDeclarationBlock() {
       }
     }
 
-    nsAutoString value;
-    mAttrs.AttrAt(i)->ToString(value);
-
-    
-    
-    
     if (attrName->Equals(nsGkAtoms::d, kNameSpaceID_None)) {
+      const auto* path = GetAnimPathSegList();
+      
+      MOZ_ASSERT(
+          path,
+          "SVGPathElement should have the non-null SVGAnimatedPathSegList");
       
       
       
-      nsAutoString path;
-      path.AppendLiteral("path(\"");
-      path.Append(value);
-      path.AppendLiteral("\")");
-      value = path;
+      mappedAttrParser.TellStyleAlreadyParsedResult(*path);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      continue;
     }
 
+    nsAutoString value;
+    mAttrs.AttrAt(i)->ToString(value);
     mappedAttrParser.ParseMappedAttrValue(attrName->Atom(), value);
   }
   mContentDeclarationBlock = mappedAttrParser.GetDeclarationBlock();
