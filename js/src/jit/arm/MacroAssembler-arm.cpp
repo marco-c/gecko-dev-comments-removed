@@ -6168,7 +6168,17 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
         
         
         
-        load = as_vldr_unaligned(dest, scratch);
+        
+        
+        
+        
+        if (byteSize == 4 && dest.code() & 1) {
+          ScratchFloat32Scope fscratch(asMasm());
+          load = as_vldr_unaligned(fscratch, scratch);
+          as_vmov(dest, fscratch);
+        } else {
+          load = as_vldr_unaligned(dest, scratch);
+        }
       } else {
         
         
@@ -6253,7 +6263,13 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
 
       
       if (HasNEON()) {
-        store = as_vstr_unaligned(val, scratch);
+        if (byteSize == 4 && (val.code() & 1)) {
+          ScratchFloat32Scope fscratch(asMasm());
+          as_vmov(fscratch, val);
+          store = as_vstr_unaligned(fscratch, scratch);
+        } else {
+          store = as_vstr_unaligned(val, scratch);
+        }
       } else {
         
         
