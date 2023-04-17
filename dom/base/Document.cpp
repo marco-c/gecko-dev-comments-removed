@@ -9411,7 +9411,7 @@ Document* Document::Open(const Optional<nsAString>& ,
     return this;
   }
 
-  nsCOMPtr<nsIDocShell> shell(mDocumentContainer);
+  RefPtr<nsDocShell> shell(mDocumentContainer);
   if (shell) {
     bool inUnload;
     shell->GetIsInUnload(&inUnload);
@@ -9441,8 +9441,7 @@ Document* Document::Open(const Optional<nsAString>& ,
   
   if (shell && IsCurrentActiveDocument() &&
       shell->GetIsAttemptingToNavigate()) {
-    nsCOMPtr<nsIWebNavigation> webnav(do_QueryInterface(shell));
-    webnav->Stop(nsIWebNavigation::STOP_NETWORK);
+    shell->Stop(nsIWebNavigation::STOP_NETWORK);
 
     
     
@@ -9575,7 +9574,7 @@ Document* Document::Open(const Optional<nsAString>& ,
   mParserAborted = false;
   RefPtr<nsHtml5Parser> parser = nsHtml5Module::NewHtml5Parser();
   mParser = parser;
-  parser->Initialize(this, GetDocumentURI(), shell, nullptr);
+  parser->Initialize(this, GetDocumentURI(), ToSupports(shell), nullptr);
   nsresult rv = parser->StartExecutor();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aError.Throw(rv);

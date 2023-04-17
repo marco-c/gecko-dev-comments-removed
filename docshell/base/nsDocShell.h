@@ -1095,6 +1095,31 @@ class nsDocShell final : public nsDocLoader,
   }
   void MaybeDisconnectChildListenersOnPageHide();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult UpdateURLAndHistory(mozilla::dom::Document* aDocument,
+                               nsIURI* aNewURI,
+                               nsIStructuredCloneContainer* aData,
+                               const nsAString& aTitle, bool aReplace,
+                               nsIURI* aCurrentURI, bool aEqualURIs);
+
  private:  
   nsString mTitle;
   nsCString mOriginalUriString;
@@ -1307,5 +1332,9 @@ class nsDocShell final : public nsDocLoader,
   
   bool mForcedAutodetection : 1;
 };
+
+inline nsISupports* ToSupports(nsDocShell* aDocShell) {
+  return static_cast<nsIDocumentLoader*>(aDocShell);
+}
 
 #endif 
