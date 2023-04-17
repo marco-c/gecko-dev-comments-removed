@@ -403,14 +403,25 @@ class SpecialPowersParent extends JSWindowActorParent {
 
 
 
+
+
+
+
   _applyPrefs(actions) {
+    let requiresRefresh = false;
     for (let pref of actions) {
+      requiresRefresh =
+        requiresRefresh ||
+        pref.name.startsWith("ui.") ||
+        pref.name.startsWith("browser.display.") ||
+        pref.name.startsWith("font.");
       if (pref.action == "set") {
         this._setPref(pref.name, pref.type, pref.value, pref.iid);
       } else if (pref.action == "clear") {
         Services.prefs.clearUserPref(pref.name);
       }
     }
+    return requiresRefresh;
   }
 
   
@@ -492,7 +503,8 @@ class SpecialPowersParent extends JSWindowActorParent {
       }
 
       prefUndoStack.push(cleanupActions);
-      this._applyPrefs(pendingActions);
+      let requiresRefresh = this._applyPrefs(pendingActions);
+      return { requiresRefresh };
     });
   }
 
@@ -500,17 +512,19 @@ class SpecialPowersParent extends JSWindowActorParent {
     return doPrefEnvOp(() => {
       let env = prefUndoStack.pop();
       if (env) {
-        this._applyPrefs(env);
-        return true;
+        let requiresRefresh = this._applyPrefs(env);
+        return { popped: true, requiresRefresh };
       }
-      return false;
+      return { popped: false, requiresRefresh: false };
     });
   }
 
   flushPrefEnv() {
+    let requiresRefresh = false;
     while (prefUndoStack.length) {
-      this.popPrefEnv();
+      requiresRefresh |= this.popPrefEnv().requiresRefresh;
     }
+    return { requiresRefresh };
   }
 
   _setPref(name, type, value, iid) {
