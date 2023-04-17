@@ -5028,10 +5028,9 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
 
 JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
                                  jsbytecode* pc) {
-  
   if (JSOp(*pc) == JSOp::NewObject) {
-    RootedPlainObject baseObject(cx, &script->getObject(pc)->as<PlainObject>());
-    return CopyTemplateObject(cx, baseObject, GenericObject);
+    RootedShape shape(cx, script->getShape(pc));
+    return PlainObject::createWithShape(cx, shape);
   }
 
   MOZ_ASSERT(JSOp(*pc) == JSOp::NewInit);
