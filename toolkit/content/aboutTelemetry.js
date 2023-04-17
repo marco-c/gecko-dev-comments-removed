@@ -175,25 +175,7 @@ function removeAllChildNodes(node) {
 }
 
 var Settings = {
-  SETTINGS: [
-    
-    {
-      pref: PREF_FHR_UPLOAD_ENABLED,
-      defaultPrefValue: false,
-    },
-    
-    {
-      pref: PREF_TELEMETRY_ENABLED,
-      defaultPrefValue: false,
-    },
-  ],
-
   attachObservers() {
-    for (let s of this.SETTINGS) {
-      let setting = s;
-      Preferences.observe(setting.pref, this.render, this);
-    }
-
     let elements = document.getElementsByClassName("change-data-choices-link");
     for (let el of elements) {
       el.parentElement.addEventListener("click", function(event) {
@@ -213,12 +195,6 @@ var Settings = {
           }
         }
       });
-    }
-  },
-
-  detachObservers() {
-    for (let setting of this.SETTINGS) {
-      Preferences.ignore(setting.pref, this.render, this);
     }
   },
 
@@ -2296,15 +2272,6 @@ function setupListeners() {
 
   let search = document.getElementById("search");
   search.addEventListener("input", Search.searchHandler);
-
-  
-  window.addEventListener(
-    "unload",
-    function(aEvent) {
-      Settings.detachObservers();
-    },
-    { once: true }
-  );
 
   document
     .getElementById("captured-stacks-fetch-symbols")
