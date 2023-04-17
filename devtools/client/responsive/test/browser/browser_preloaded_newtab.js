@@ -10,17 +10,15 @@ const TEST_URL = "http://example.com/";
 addRDMTask(
   null,
   async function() {
+    const preloadedBrowser = gBrowser.preloadedBrowser;
+
     
     
     const tab = await addTab(BROWSER_NEW_TAB_URL, {
       waitForLoad: false,
     });
     const browser = tab.linkedBrowser;
-    is(
-      browser.getAttribute("preloadedState"),
-      "consumed",
-      "Got a preloaded browser for newtab"
-    );
+    is(browser, preloadedBrowser, "Got a preloaded browser for newtab");
 
     
     const { ui } = await openRDM(tab);
