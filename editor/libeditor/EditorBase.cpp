@@ -248,8 +248,8 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(EditorBase)
 nsresult EditorBase::Init(Document& aDocument, Element* aRoot,
                           nsISelectionController* aSelectionController,
                           uint32_t aFlags, const nsAString& aValue) {
-  MOZ_ASSERT(GetTopLevelEditSubAction() == EditSubAction::eNone,
-             "Initializing during an edit action is an error");
+  MOZ_ASSERT_IF(!mEditActionData || !mEditActionData->HasEditorDestroyed(),
+                GetTopLevelEditSubAction() == EditSubAction::eNone);
 
   
   
@@ -286,8 +286,6 @@ nsresult EditorBase::Init(Document& aDocument, Element* aRoot,
   if (aRoot) {
     mRootElement = aRoot;
   }
-
-  mUpdateCount = 0;
 
   
   
@@ -582,6 +580,10 @@ void EditorBase::PreDestroy(bool aDestroyingFrames) {
     NS_WARNING_ASSERTION(disabledUndoRedo,
                          "EditorBase::DisableUndoRedo() failed, but ignored");
     mTransactionManager = nullptr;
+  }
+
+  if (mEditActionData) {
+    mEditActionData->OnEditorDestroy();
   }
 
   mDidPreDestroy = true;
@@ -5128,7 +5130,8 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
       mHasTriedToDispatchBeforeInputEvent(false),
       mBeforeInputEventCanceled(false),
       mMakeBeforeInputEventNonCancelable(false),
-      mHasTriedToDispatchClipboardEvent(false) {
+      mHasTriedToDispatchClipboardEvent(false),
+      mEditorWasDestroyed(mParentData && mParentData->mEditorWasDestroyed) {
   
   if (mParentData) {
     mSelection = mParentData->mSelection;
