@@ -1485,11 +1485,13 @@ function handleUpdateFailure(update, errorCode) {
     
     
 
+    let bestState = getBestPendingState();
     LOG(
       "handleUpdateFailure - witnessed BACKGROUND_TASK_NEEDED_ELEVATION_ERROR, " +
-        "returning to STATE_PENDING"
+        "returning to " +
+        bestState
     );
-    writeStatusFile(getReadyUpdateDir(), (update.state = STATE_PENDING));
+    writeStatusFile(getReadyUpdateDir(), (update.state = bestState));
 
     
     return true;
@@ -2543,6 +2545,13 @@ UpdateService.prototype = {
 
 
   observe: async function AUS_observe(subject, topic, data) {
+    
+    
+    let bts = Cc["@mozilla.org/backgroundtasks;1"].getService(
+      Ci.nsIBackgroundTasks
+    );
+    let isBackgroundTaskMode = bts && bts.isBackgroundTaskMode;
+
     switch (topic) {
       case "post-update-processing":
         
@@ -2551,7 +2560,7 @@ UpdateService.prototype = {
         Services.prefs.clearUserPref("app.update.enabled");
         Services.prefs.clearUserPref("app.update.BITS.inTrialGroup");
 
-        if (Services.appinfo.ID in APPID_TO_TOPIC) {
+        if (!isBackgroundTaskMode && Services.appinfo.ID in APPID_TO_TOPIC) {
           
           
           
@@ -2561,7 +2570,7 @@ UpdateService.prototype = {
       
       case "sessionstore-windows-restored":
       case "mail-startup-done":
-        if (Services.appinfo.ID in APPID_TO_TOPIC) {
+        if (!isBackgroundTaskMode && Services.appinfo.ID in APPID_TO_TOPIC) {
           Services.obs.removeObserver(
             this,
             APPID_TO_TOPIC[Services.appinfo.ID]

@@ -48,6 +48,18 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 async function _attemptBackgroundUpdate() {
   let SLUG = "_attemptBackgroundUpdate";
 
+  
+  
+  
+  
+  
+  log.debug(
+    `${SLUG}: creating UpdateServiceStub() for "post-update-processing"`
+  );
+  Cc["@mozilla.org/updates/update-service-stub;1"].createInstance(
+    Ci.nsISupports
+  );
+
   log.debug(
     `${SLUG}: checking for preconditions necessary to update this installation`
   );
