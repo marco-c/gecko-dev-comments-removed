@@ -30,6 +30,7 @@
 #include "nsThreadUtils.h"
 
 class nsIInputStream;
+class nsICancelable;
 
 
 
@@ -102,8 +103,21 @@ class nsBaseChannel
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   virtual nsresult BeginAsyncRead(nsIStreamListener* listener,
-                                  nsIRequest** request) {
+                                  nsIRequest** request,
+                                  nsICancelable** cancelableRequest) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -271,6 +285,7 @@ class nsBaseChannel
 
   RefPtr<nsInputStreamPump> mPump;
   RefPtr<nsIRequest> mRequest;
+  nsCOMPtr<nsICancelable> mCancelableAsyncRequest;
   bool mPumpingData{false};
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
   nsCOMPtr<nsIURI> mOriginalURI;
