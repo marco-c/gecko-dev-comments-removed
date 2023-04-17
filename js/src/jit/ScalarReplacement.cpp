@@ -1702,7 +1702,7 @@ void ArgumentsReplacer::visitLoadArgumentsObjectArg(
 void ArgumentsReplacer::visitArgumentsObjectLength(
     MArgumentsObjectLength* ins) {
   
-  if (ins->getArgsObject() != args_) {
+  if (ins->argsObject() != args_) {
     return;
   }
 
