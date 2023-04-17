@@ -4601,7 +4601,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
 
   
   Shape* newShape = holder->lastProperty();
-  MOZ_RELEASE_ASSERT(ShapeProperty(newShape) == shapeProp);
+  MOZ_RELEASE_ASSERT(newShape->property() == shapeProp);
 
   
   

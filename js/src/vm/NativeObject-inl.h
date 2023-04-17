@@ -745,7 +745,7 @@ static MOZ_ALWAYS_INLINE bool NativeLookupOwnPropertyInline(
   
   
   if (Shape* shape = obj->lastProperty()->search(cx, id)) {
-    propp->setNativeProperty(ShapeProperty(shape));
+    propp->setNativeProperty(shape->property());
     return true;
   }
 
