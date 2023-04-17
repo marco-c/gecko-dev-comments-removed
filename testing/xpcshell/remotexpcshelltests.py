@@ -140,6 +140,8 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
         self.device.mkdir(path, parents=True, timeout=timeout)
 
     def updateTestPrefsFile(self):
+        
+        
         testPrefsFile = xpcshell.XPCShellTestThread.updateTestPrefsFile(self)
         if testPrefsFile == self.rootPrefsFile:
             
@@ -498,7 +500,9 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         remotePrefsFile = posixpath.join(self.remoteTestRoot, "user.js")
         self.device.push(self.prefsFile, remotePrefsFile)
         self.device.chmod(remotePrefsFile)
-        os.remove(self.prefsFile)
+        
+        
+        
         self.prefsFile = remotePrefsFile
         return prefs
 
