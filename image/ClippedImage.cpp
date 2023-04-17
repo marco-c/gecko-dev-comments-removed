@@ -318,6 +318,27 @@ ClippedImage::GetImageContainerAtSize(WindowRenderer* aRenderer,
   return ImgDrawResult::NOT_SUPPORTED;
 }
 
+NS_IMETHODIMP_(ImgDrawResult)
+ClippedImage::GetImageProvider(WindowRenderer* aRenderer,
+                               const gfx::IntSize& aSize,
+                               const Maybe<SVGImageContext>& aSVGContext,
+                               const Maybe<ImageIntRegion>& aRegion,
+                               uint32_t aFlags,
+                               WebRenderImageProvider** aProvider) {
+  
+  
+  
+  
+  
+
+  if (!ShouldClip()) {
+    return InnerImage()->GetImageProvider(aRenderer, aSize, aSVGContext,
+                                          aRegion, aFlags, aProvider);
+  }
+
+  return ImgDrawResult::NOT_SUPPORTED;
+}
+
 static bool MustCreateSurface(gfxContext* aContext, const nsIntSize& aSize,
                               const ImageRegion& aRegion,
                               const uint32_t aFlags) {
