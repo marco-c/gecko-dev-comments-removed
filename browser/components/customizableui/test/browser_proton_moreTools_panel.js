@@ -15,10 +15,7 @@ add_task(async function testMoreToolsPanelInToolbar() {
   
   DevToolsStartup.developerToggleCreated = false;
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.proton.enabled", true],
-      ["browser.proton.doorhangers.enabled", true],
-    ],
+    set: [["browser.proton.enabled", true]],
   });
   CustomizableUI.destroyWidget("developer-button");
 
