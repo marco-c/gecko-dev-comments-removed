@@ -15,42 +15,17 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function() {
+  
+  const xdgConfigHome = GetEnvironmentVariable("XDG_CONFIG_HOME");
+  ok(xdgConfigHome.length > 1, "XDG_CONFIG_HOME is defined");
+
+  
   sanityChecks();
 
   
-  add_task(createFileInHome); 
-
   
-  add_task(createTempFile); 
-
-  
-  add_task(testFileAccessAllPlatforms); 
-
-  add_task(testFileAccessMacOnly); 
-
   add_task(testFileAccessLinuxOnly); 
-
-  add_task(testFileAccessWindowsOnly); 
 
   add_task(cleanupBrowserTabs); 
 });

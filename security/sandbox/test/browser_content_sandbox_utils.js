@@ -13,6 +13,43 @@ const environment = Cc["@mozilla.org/process/environment;1"].getService(
 
 
 
+function sanityChecks() {
+  
+  if (!gMultiProcessBrowser) {
+    ok(false, "e10s is enabled");
+    info("e10s is not enabled, exiting");
+    return;
+  }
+
+  let level = 0;
+  let prefExists = true;
+
+  
+  
+  try {
+    level = Services.prefs.getIntPref("security.sandbox.content.level");
+  } catch (e) {
+    prefExists = false;
+  }
+
+  ok(prefExists, "pref security.sandbox.content.level exists");
+  if (!prefExists) {
+    return;
+  }
+
+  info(`security.sandbox.content.level=${level}`);
+  ok(level > 0, "content sandbox is enabled.");
+
+  let isFileIOSandboxed = isContentFileIOSandboxed(level);
+
+  
+  ok(isFileIOSandboxed, "content file I/O sandboxing is enabled.");
+  if (!isFileIOSandboxed) {
+    info("content sandbox level too low for file I/O tests, exiting\n");
+  }
+}
+
+
 
 
 
@@ -22,13 +59,14 @@ function createFile(path) {
   let array = encoder.encode("TEST FILE DUMMY DATA");
   return OS.File.writeAtomic(path, array).then(
     function(value) {
-      return true;
+      return { ok: true };
     },
     function(reason) {
-      return false;
+      return { ok: false };
     }
   );
 }
+
 
 
 
@@ -38,13 +76,14 @@ function createSymlink(path) {
   
   return OS.File.unixSymLink("/Users", path).then(
     function(value) {
-      return true;
+      return { ok: true };
     },
     function(reason) {
-      return false;
+      return { ok: false };
     }
   );
 }
+
 
 
 
@@ -53,10 +92,10 @@ function deleteFile(path) {
   const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   return OS.File.remove(path, { ignoreAbsent: false })
     .then(function(value) {
-      return true;
+      return { ok: true };
     })
     .catch(function(err) {
-      return false;
+      return { ok: false };
     });
 }
 
@@ -228,6 +267,26 @@ function GetHomeDir() {
   
   let homeDir = Services.dirsvc.get("Home", Ci.nsIFile);
   return homeDir;
+}
+
+function GetHomeSubdir(subdir) {
+  return GetSubdir(GetHomeDir(), subdir);
+}
+
+function GetHomeSubdirFile(subdir) {
+  return GetSubdirFile(GetHomeSubdir(subdir));
+}
+
+function GetSubdir(dir, subdir) {
+  let newSubdir = dir.clone();
+  newSubdir.appendRelativePath(subdir);
+  return newSubdir;
+}
+
+function GetSubdirFile(dir) {
+  let newFile = dir.clone();
+  newFile.appendRelativePath(uuid());
+  return newFile;
 }
 
 function GetSystemExtensionsDevDir() {
