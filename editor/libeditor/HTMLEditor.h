@@ -3486,8 +3486,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT EditorDOMPoint
-  PrepareToInsertBRElement(const EditorDOMPoint& aPointToInsert);
+  MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult> PrepareToInsertBRElement(
+      const EditorDOMPoint& aPointToInsert);
 
   
 
