@@ -94,8 +94,10 @@ static const char kMaxSpellCheckSelectionSize[] =
 static const PRTime kMaxSpellCheckTimeInUsec =
     INLINESPELL_CHECK_TIMEOUT * PR_USEC_PER_MSEC;
 
-mozInlineSpellStatus::mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker)
-    : mSpellChecker(aSpellChecker) {}
+mozInlineSpellStatus::mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
+                                           const bool aForceNavigationWordCheck)
+    : mSpellChecker(aSpellChecker),
+      mForceNavigationWordCheck(aForceNavigationWordCheck) {}
 
 
 
@@ -119,7 +121,7 @@ mozInlineSpellStatus::CreateForEditorChange(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker}};
+      new mozInlineSpellStatus{&aSpellChecker, false}};
 
   
   status->mAnchorRange =
@@ -227,11 +229,10 @@ mozInlineSpellStatus::CreateForNavigation(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker}};
+      new mozInlineSpellStatus{&aSpellChecker, aForceCheck}};
 
   status->mOp = eOpNavigation;
 
-  status->mForceNavigationWordCheck = aForceCheck;
   status->mNewNavigationPositionOffset = aNewPositionOffset;
 
   
@@ -277,7 +278,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForSelection(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker}};
+      new mozInlineSpellStatus{&aSpellChecker, false}};
   status->mOp = eOpSelection;
   return status;
 }
@@ -295,7 +296,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForRange(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker}};
+      new mozInlineSpellStatus{&aSpellChecker, false}};
 
   status->mOp = eOpChange;
   status->mRange = aRange;
