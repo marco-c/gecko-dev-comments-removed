@@ -29,11 +29,7 @@ from mozpack.unify import UnifiedBuildFinder
 
 
 
-WASM_LIBS = (
-    "Contents/MacOS/liboggwasm.dylib",
-    "Contents/MacOS/libgraphitewasm.dylib",
-    "Contents/MacOS/libhunspellwasm.dylib",
-)
+WASM_LIBS = ("Contents/MacOS/librlbox.dylib",)
 
 
 class UnifiedBuildFinderWasmHack(UnifiedBuildFinder):

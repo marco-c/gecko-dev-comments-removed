@@ -639,7 +639,7 @@ struct gfxFontEntry::GrSandboxData {
     
     
     const bool allow_stdio = false;
-    sandbox.create_sandbox(mozilla::ipc::GetSandboxedGraphitePath().get(),
+    sandbox.create_sandbox(mozilla::ipc::GetSandboxedRLBoxPath().get(),
                            external_loads_exist, allow_stdio);
 #else
     sandbox.create_sandbox();

@@ -41,14 +41,9 @@ static nsAutoCString GetSandboxedPath(const nsACString& libName) {
   return converted_path;
 }
 
-nsAutoCString GetSandboxedGraphitePath() {
+nsAutoCString GetSandboxedRLBoxPath() {
   return GetSandboxedPath(
-      nsLiteralCString(MOZ_DLL_PREFIX "graphitewasm" MOZ_DLL_SUFFIX));
-}
-
-nsAutoCString GetSandboxedOggPath() {
-  return GetSandboxedPath(
-      nsLiteralCString(MOZ_DLL_PREFIX "oggwasm" MOZ_DLL_SUFFIX));
+      nsLiteralCString(MOZ_DLL_PREFIX "rlbox" MOZ_DLL_SUFFIX));
 }
 
 PRLibrary* PreloadLibrary(const nsAutoCString& path) {
@@ -59,22 +54,15 @@ PRLibrary* PreloadLibrary(const nsAutoCString& path) {
   return ret;
 }
 
-void PreloadSandboxedDynamicLibraries() {
+void PreloadSandboxedDynamicLibrary() {
   
   
   
   
-#if defined(XP_LINUX)
-#  if defined(MOZ_WASM_SANDBOXING_GRAPHITE)
-  if (!PreloadLibrary(GetSandboxedGraphitePath())) {
-    MOZ_CRASH("Library preload failure: Failed to load libgraphite\n");
+#if defined(XP_LINUX) && defined(MOZ_USING_WASM_SANDBOXING)
+  if (!PreloadLibrary(GetSandboxedRLBoxPath())) {
+    MOZ_CRASH("Library preload failure: Failed to load librlbox\n");
   }
-#  endif
-#  if defined(MOZ_WASM_SANDBOXING_OGG)
-  if (!PreloadLibrary(GetSandboxedOggPath())) {
-    MOZ_CRASH("Library preload failure: Failed to load libogg\n");
-  }
-#  endif
 #endif
 }
 

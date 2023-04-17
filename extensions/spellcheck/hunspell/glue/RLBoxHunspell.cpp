@@ -45,7 +45,7 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
   
   
   const bool allow_stdio = false;
-  mSandbox.create_sandbox(mozilla::ipc::GetSandboxedHunspellPath().get(),
+  mSandbox.create_sandbox(mozilla::ipc::GetSandboxedRLBoxPath().get(),
                           external_loads_exist, allow_stdio);
 #else
   mSandbox.create_sandbox();

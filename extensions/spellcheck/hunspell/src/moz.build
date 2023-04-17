@@ -4,17 +4,9 @@
 
 
 
-UNIFIED_SOURCES += [
-    '../glue/mozHunspellFileMgrSandbox.cpp',
-    'affentry.cxx',
-    'affixmgr.cxx',
-    'csutil.cxx',
-    'hashmgr.cxx',
-    'hunspell.cxx',
-    'phonet.cxx',
-    'replist.cxx',
-    'suggestmgr.cxx',
-]
+include("sources.mozbuild")
+
+UNIFIED_SOURCES += hunspell_sources
 
 DEFINES['HUNSPELL_STATIC'] = True
 
