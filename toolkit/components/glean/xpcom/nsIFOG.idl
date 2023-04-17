@@ -27,6 +27,13 @@ interface nsIFOG : nsISupports
 
 
 
+  void registerCustomPings();
+
+  
+
+
+
+
 
 
   void setLogPings(in boolean aEnableLogPings);

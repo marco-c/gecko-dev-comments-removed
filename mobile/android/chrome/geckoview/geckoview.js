@@ -774,6 +774,13 @@ function startup() {
       SafeBrowsing.init();
     });
 
+    InitLater(() => {
+      
+      
+      const FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
+      FOG.registerCustomPings();
+    });
+
     
     
     
