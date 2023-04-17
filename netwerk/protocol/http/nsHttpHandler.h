@@ -501,6 +501,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   bool UseHTTPSRRForSpeculativeConnection() const;
 
+  
+  
+  static void PresetAcceptLanguages();
+
  private:
   nsHttpHandler();
 
