@@ -185,12 +185,6 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
     return true;
   }
 
-  
-  
-  if (ShouldIgnoreFrameOptions(aChannel, aCsp)) {
-    return true;
-  }
-
   nsCOMPtr<nsIHttpChannel> httpChannel;
   nsresult rv = nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
       aChannel, getter_AddRefs(httpChannel));
@@ -223,6 +217,12 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
 
   
   if (xfoHeaderValue.IsEmpty()) {
+    return true;
+  }
+
+  
+  
+  if (ShouldIgnoreFrameOptions(aChannel, aCsp)) {
     return true;
   }
 
