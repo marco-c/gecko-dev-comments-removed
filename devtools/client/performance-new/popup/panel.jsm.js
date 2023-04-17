@@ -58,10 +58,16 @@ function selectElementsInPanelview(panelview) {
     return element;
   }
 
+  
+  
+  const chromeWindowAny = document.defaultView;
+  
+  const chromeWindow = chromeWindowAny;
+
   return {
     document,
     panelview,
-    window:  (document.defaultView),
+    window: chromeWindow,
     inactive: getElementById("PanelUI-profiler-inactive"),
     active: getElementById("PanelUI-profiler-active"),
     locked: getElementById("PanelUI-profiler-locked"),
