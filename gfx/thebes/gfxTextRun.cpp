@@ -1015,8 +1015,11 @@ uint32_t gfxTextRun::BreakAndMeasureText(
       
       
       
+      
+      
+      
       bool atHyphenationBreak = !atNaturalBreak && haveHyphenation &&
-                                hyphenBuffer[i - aStart] > HyphenType::Explicit;
+                                IsOptionalHyphenBreak(hyphenBuffer[i - aStart]);
       bool atAutoHyphenWithManualHyphenInSameWord =
           atHyphenationBreak &&
           hyphenBuffer[i - aStart] == HyphenType::AutoWithManualInSameWord;

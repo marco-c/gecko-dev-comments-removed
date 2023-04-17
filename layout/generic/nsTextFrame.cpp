@@ -8574,7 +8574,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       if (!textRun->CanBreakLineBefore(i) && !preformattedNewline &&
           !preformattedTab &&
           (!hyphenating ||
-           hyphBuffer[i - start] == gfxTextRun::HyphenType::None)) {
+           !gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start]))) {
         
         continue;
       }
@@ -8624,7 +8624,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
       if (preformattedNewline) {
         aData->ForceBreak();
       } else if (i < flowEndInTextRun && hyphenating &&
-                 hyphBuffer[i - start] != gfxTextRun::HyphenType::None) {
+                 gfxTextRun::IsOptionalHyphenBreak(hyphBuffer[i - start])) {
         aData->OptionallyBreak(NSToCoordRound(provider.GetHyphenWidth()));
       } else {
         aData->OptionallyBreak();
