@@ -152,7 +152,7 @@ nsresult NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc) {
 
 
 
-class nsAnonTempFileRemover final : public nsIObserver {
+class nsAnonTempFileRemover final : public nsIObserver, public nsINamed {
  public:
   NS_DECL_ISUPPORTS
 
@@ -212,6 +212,11 @@ class nsAnonTempFileRemover final : public nsIObserver {
     return NS_OK;
   }
 
+  NS_IMETHODIMP GetName(nsACString& aName) {
+    aName.AssignLiteral("nsAnonTempFileRemover");
+    return NS_OK;
+  }
+
   nsresult RegisterIdleObserver() {
     
     
@@ -241,7 +246,7 @@ class nsAnonTempFileRemover final : public nsIObserver {
   nsCOMPtr<nsITimer> mTimer;
 };
 
-NS_IMPL_ISUPPORTS(nsAnonTempFileRemover, nsIObserver)
+NS_IMPL_ISUPPORTS(nsAnonTempFileRemover, nsIObserver, nsINamed)
 
 nsresult CreateAnonTempFileRemover() {
   

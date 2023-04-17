@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_StorageObserver_h
 #define mozilla_dom_StorageObserver_h
 
+#include "nsINamed.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsWeakReference.h"
@@ -35,10 +36,13 @@ class StorageObserverSink {
 
 
 
-class StorageObserver : public nsIObserver, public nsSupportsWeakReference {
+class StorageObserver : public nsIObserver,
+                        public nsINamed,
+                        public nsSupportsWeakReference {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
+  NS_DECL_NSINAMED
 
   static nsresult Init();
   static nsresult Shutdown();
