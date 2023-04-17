@@ -694,7 +694,10 @@
       
       
       this.firstElementChild.style.width =
-        Math.max(minWidth, popup.width) + "px";
+        Math.max(
+          minWidth,
+          parseFloat(popup.style.getPropertyValue("--panel-width") || "0")
+        ) + "px";
     }
 
     _onOverflow() {}

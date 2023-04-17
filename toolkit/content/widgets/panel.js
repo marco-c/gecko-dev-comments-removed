@@ -10,12 +10,11 @@
   class MozPanel extends MozElements.MozElementMixin(XULPopupElement) {
     static get markup() {
       return `
-      <html:link rel="stylesheet" href="chrome://global/skin/global.css"/>
       <vbox class="panel-arrowcontainer" flex="1">
         <box class="panel-arrowbox" part="arrowbox">
           <image class="panel-arrow" part="arrow"/>
         </box>
-        <box class="panel-arrowcontent" flex="1" part="arrowcontent"><html:slot/></box>
+        <html:slot part="content" />
       </vbox>
       `;
     }
@@ -68,15 +67,22 @@
       }
 
       if (!this.isArrowPanel) {
-        this.shadowRoot.appendChild(document.createElement("slot"));
+        let slot = document.createElement("slot");
+        slot.part = "content";
+        this.shadowRoot.appendChild(slot);
       } else {
         this.shadowRoot.appendChild(this.constructor.fragment);
       }
     }
 
+    get panelContent() {
+      return this.shadowRoot.querySelector("[part=content]");
+    }
+
     get hidden() {
       return super.hidden;
     }
+
     set hidden(v) {
       if (!v) {
         this.initialize();
