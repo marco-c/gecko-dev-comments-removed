@@ -2096,8 +2096,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
     return NS_OK;
   }
 
-  auto resetFlagSyncLooping = MakeScopeExit([&] { mFlagSyncLooping = false; });
-
   
   
   if (mDecoder && ((mResponseType == XMLHttpRequestResponseType::Text) ||
@@ -2217,9 +2215,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest* request, nsresult status) {
       status = NS_ERROR_UNEXPECTED;
     }
   }
-
-  
-  resetFlagSyncLooping.release();
 
   nsCOMPtr<nsIChannel> channel(do_QueryInterface(request));
   NS_ENSURE_TRUE(channel, NS_ERROR_UNEXPECTED);
