@@ -14,8 +14,7 @@ namespace dom {
 class ClientManagerService;
 class ClientSourceParent;
 
-typedef MozPromise<ClientSourceParent*, CopyableErrorResult,
-                    false>
+typedef MozPromise<bool, CopyableErrorResult,  false>
     SourcePromise;
 
 class ClientHandleParent final : public PClientHandleParent {
@@ -54,6 +53,7 @@ class ClientHandleParent final : public PClientHandleParent {
 
   void FoundSource(ClientSourceParent* aSource);
 
+  
   ClientSourceParent* GetSource() const;
 
   RefPtr<SourcePromise> EnsureSource();

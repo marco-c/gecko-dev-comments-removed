@@ -59,9 +59,8 @@ class ClientManagerService final {
       return mPromiseHolder.Ensure(__func__);
     }
 
-    void ResolvePromiseIfExists(ClientSourceParent* aSource) {
-      MOZ_ASSERT(aSource);
-      mPromiseHolder.ResolveIfExists(aSource, __func__);
+    void ResolvePromiseIfExists() {
+      mPromiseHolder.ResolveIfExists(true, __func__);
     }
 
     void RejectPromiseIfExists(const CopyableErrorResult& aRv) {
@@ -101,11 +100,6 @@ class ClientManagerService final {
   ClientSourceParent* MaybeUnwrapAsExistingSource(
       const SourceTableEntry& aEntry) const;
 
-  
-  
-  ClientSourceParent* FindExistingSource(
-      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo) const;
-
  public:
   static already_AddRefed<ClientManagerService> GetOrCreateInstance();
 
@@ -123,8 +117,17 @@ class ClientManagerService final {
   
   void ForgetFutureSource(const IPCClientInfo& aClientInfo);
 
+  
+  
+  
+  
   RefPtr<SourcePromise> FindSource(
       const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+
+  
+  
+  ClientSourceParent* FindExistingSource(
+      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo) const;
 
   void AddManager(ClientManagerParent* aManager);
 
