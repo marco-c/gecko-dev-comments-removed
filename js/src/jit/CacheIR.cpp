@@ -668,6 +668,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   
   
+  
 
   MOZ_ASSERT(holder);
   MOZ_ASSERT(obj != holder);
