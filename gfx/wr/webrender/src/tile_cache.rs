@@ -128,7 +128,7 @@ impl TileCacheBuilder {
         
         
         
-        let mut found_scroll_roots = FastHashMap::default();
+        let mut scroll_root_occurrences = FastHashMap::default();
 
         for cluster in &prim_list.clusters {
             let scroll_root = self.find_scroll_root(
@@ -136,15 +136,36 @@ impl TileCacheBuilder {
                 spatial_tree,
             );
 
-            *found_scroll_roots.entry(scroll_root).or_insert(0) += 1;
+            *scroll_root_occurrences.entry(scroll_root).or_insert(0) += 1;
         }
 
         
-        let scroll_root = *found_scroll_roots
+        
+        
+        
+        
+        
+        let scroll_roots: Vec<SpatialNodeIndex> = scroll_root_occurrences
+            .keys()
+            .cloned()
+            .collect();
+
+        scroll_root_occurrences.retain(|parent_spatial_node_index, _| {
+            scroll_roots.iter().all(|child_spatial_node_index| {
+                parent_spatial_node_index == child_spatial_node_index ||
+                spatial_tree.is_ancestor(
+                    *parent_spatial_node_index,
+                    *child_spatial_node_index,
+                )
+            })
+        });
+
+        
+        let scroll_root = scroll_root_occurrences
             .iter()
             .max_by_key(|entry | entry.1)
-            .unwrap()
-            .0;
+            .map(|(spatial_node_index, _)| *spatial_node_index)
+            .unwrap_or(ROOT_SPATIAL_NODE_INDEX);
 
         let mut first = true;
         let prim_clips_buffer = &mut self.prim_clips_buffer;
