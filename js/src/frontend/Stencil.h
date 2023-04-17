@@ -622,6 +622,14 @@ class EmptyGlobalScopeType {};
 
 
 
+class OpaqueThingType {};
+
+
+
+
+
+
+
 
 
 
@@ -650,6 +658,7 @@ class TaggedScriptThingIndex {
     Scope,
     Function,
     EmptyGlobalScope,
+    OpaqueThing,
   };
 
  private:
@@ -671,6 +680,8 @@ class TaggedScriptThingIndex {
   static constexpr uint32_t FunctionTag = uint32_t(Kind::Function) << TagShift;
   static constexpr uint32_t EmptyGlobalScopeTag =
       uint32_t(Kind::EmptyGlobalScope) << TagShift;
+  static constexpr uint32_t OpaqueThingTag = uint32_t(Kind::OpaqueThing)
+                                             << TagShift;
 
  public:
   static constexpr uint32_t IndexLimit = Bit(IndexBit);
@@ -701,6 +712,7 @@ class TaggedScriptThingIndex {
   }
   explicit TaggedScriptThingIndex(EmptyGlobalScopeType t)
       : data_(EmptyGlobalScopeTag) {}
+  explicit TaggedScriptThingIndex(OpaqueThingType t) : data_(OpaqueThingTag) {}
 
   bool isAtom() const {
     return (data_ & TagMask) == ParserAtomIndexTag ||
@@ -719,6 +731,7 @@ class TaggedScriptThingIndex {
   bool isEmptyGlobalScope() const {
     return (data_ & TagMask) == EmptyGlobalScopeTag;
   }
+  bool isOpaqueThing() const { return (data_ & TagMask) == OpaqueThingTag; }
 
   TaggedParserAtomIndex toAtom() const {
     MOZ_ASSERT(isAtom());
