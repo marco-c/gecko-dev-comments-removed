@@ -64,7 +64,7 @@ impl StringMetric {
     
     
     pub(crate) fn get_value(&self, glean: &Glean, storage_name: &str) -> Option<String> {
-        self.test_get_value(&glean, &storage_name)
+        self.test_get_value(glean, storage_name)
     }
 
     

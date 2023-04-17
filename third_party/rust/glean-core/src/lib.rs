@@ -401,7 +401,7 @@ impl Glean {
     
     
     pub fn on_ready_to_submit_pings(&self) -> bool {
-        self.event_data_store.flush_pending_events_on_startup(&self)
+        self.event_data_store.flush_pending_events_on_startup(self)
     }
 
     
@@ -560,7 +560,7 @@ impl Glean {
 
     
     pub fn storage(&self) -> &Database {
-        &self.data_store.as_ref().expect("No database found")
+        self.data_store.as_ref().expect("No database found")
     }
 
     
@@ -614,7 +614,7 @@ impl Glean {
     
     pub fn snapshot(&mut self, store_name: &str, clear_store: bool) -> String {
         StorageManager
-            .snapshot(&self.storage(), store_name, clear_store)
+            .snapshot(self.storage(), store_name, clear_store)
             .unwrap_or_else(|| String::from(""))
     }
 
@@ -653,7 +653,7 @@ impl Glean {
         let ping_maker = PingMaker::new();
         let doc_id = Uuid::new_v4().to_string();
         let url_path = self.make_path(&ping.name, &doc_id);
-        match ping_maker.collect(self, &ping, reason, &doc_id, &url_path) {
+        match ping_maker.collect(self, ping, reason, &doc_id, &url_path) {
             None => {
                 log::info!(
                     "No content for ping '{}', therefore no ping queued.",
@@ -668,10 +668,10 @@ impl Glean {
                 
                 self.additional_metrics
                     .pings_submitted
-                    .get(&ping.name)
-                    .add(&self, 1);
+                    .get(ping.name)
+                    .add(self, 1);
 
-                if let Err(e) = ping_maker.store_ping(&self.get_data_path(), &ping) {
+                if let Err(e) = ping_maker.store_ping(self.get_data_path(), &ping) {
                     log::warn!("IO error while writing ping to file: {}. Enqueuing upload of what we have in memory.", e);
                     self.additional_metrics.io_errors.add(self, 1);
                     
@@ -772,8 +772,8 @@ impl Glean {
         branch: String,
         extra: Option<HashMap<String, String>>,
     ) {
-        let metric = metrics::ExperimentMetric::new(&self, experiment_id);
-        metric.set_active(&self, branch, extra);
+        let metric = metrics::ExperimentMetric::new(self, experiment_id);
+        metric.set_active(self, branch, extra);
     }
 
     
@@ -782,8 +782,8 @@ impl Glean {
     
     
     pub fn set_experiment_inactive(&self, experiment_id: String) {
-        let metric = metrics::ExperimentMetric::new(&self, experiment_id);
-        metric.set_inactive(&self);
+        let metric = metrics::ExperimentMetric::new(self, experiment_id);
+        metric.set_inactive(self);
     }
 
     
@@ -995,8 +995,8 @@ impl Glean {
     
     
     pub fn test_get_experiment_data_as_json(&self, experiment_id: String) -> Option<String> {
-        let metric = metrics::ExperimentMetric::new(&self, experiment_id);
-        metric.test_get_value_as_json_string(&self)
+        let metric = metrics::ExperimentMetric::new(self, experiment_id);
+        metric.test_get_value_as_json_string(self)
     }
 
     
@@ -1025,7 +1025,7 @@ impl Glean {
     
     pub fn start_metrics_ping_scheduler(&self) {
         if self.schedule_metrics_pings {
-            scheduler::schedule(&self);
+            scheduler::schedule(self);
         }
     }
 }
