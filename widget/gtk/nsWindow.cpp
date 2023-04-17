@@ -5436,11 +5436,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       mGdkWindow = gtk_widget_get_window(eventWidget);
 
-      if (GdkIsX11Display() && gfx::gfxVars::UseEGL() && mIsAccelerated) {
-        mCompositorState = COMPOSITOR_PAUSED_MISSING_EGL_WINDOW;
-        ResumeCompositorHiddenWindow();
-      }
-
       if (mIsWaylandPanelWindow) {
         gtk_window_set_decorated(GTK_WINDOW(mShell), false);
       }
@@ -8375,6 +8370,11 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
     MOZ_ASSERT(mCompositorWidgetDelegate,
                "nsWindow::SetCompositorWidgetDelegate called with a "
                "non-PlatformCompositorWidgetDelegate");
+    if (GdkIsX11Display() && gfxVars::UseEGL() && mIsAccelerated) {
+      
+      
+      mCompositorState = COMPOSITOR_PAUSED_MISSING_EGL_WINDOW;
+    }
     ResumeCompositorHiddenWindow();
     WaylandStartVsync();
   } else {
