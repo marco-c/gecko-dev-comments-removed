@@ -373,7 +373,7 @@ void MediaDecoder::NotifyXPCOMShutdown() {
   
   
   RefPtr<MediaDecoder> kungFuDeathGrip = this;
-  if (auto owner = GetOwner()) {
+  if (auto* owner = GetOwner()) {
     owner->NotifyXPCOMShutdown();
   } else if (!IsShutdown()) {
     Shutdown();
