@@ -4,15 +4,6 @@
 "use strict";
 
 add_task(async function test_character_encoding_menu() {
-  
-  
-  
-  
-  if (AppConstants.platform == "macosx") {
-    ok(true, "The test is ignored on Mac");
-    return;
-  }
-
   CustomizableUI.addWidgetToArea(
     "characterencoding-button",
     CustomizableUI.AREA_NAVBAR,

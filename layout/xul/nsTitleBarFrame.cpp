@@ -134,14 +134,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
     case eMouseClick: {
       WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-      if (mouseEvent->IsLeftClickEvent()
-#ifdef XP_MACOSX
-          
-          
-          
-          && !mouseEvent->IsControl()
-#endif
-      ) {
+      if (mouseEvent->IsLeftClickEvent()) {
         MouseClicked(mouseEvent);
       }
       break;
