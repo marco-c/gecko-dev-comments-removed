@@ -342,8 +342,7 @@ CommonSocketControl::GetEchConfig(nsACString& aEchConfig) {
 
 NS_IMETHODIMP
 CommonSocketControl::SetEchConfig(const nsACString& aEchConfig) {
-  
-  return NS_OK;
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
