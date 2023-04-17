@@ -98,6 +98,16 @@ class ExperimentStore extends SharedDataMap {
     super(sharedDataKey || DEFAULT_STORE_ID, options);
   }
 
+  async init() {
+    await super.init();
+
+    this.getAllActive().forEach(experiment => {
+      experiment.featureIds?.forEach(feature =>
+        this._emitFeatureUpdate(feature, "feature-experiment-loaded")
+      );
+    });
+  }
+
   
 
 
