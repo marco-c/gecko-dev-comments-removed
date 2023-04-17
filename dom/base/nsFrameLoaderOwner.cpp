@@ -184,7 +184,7 @@ void nsFrameLoaderOwner::ChangeFrameLoaderCommon(Element* aOwner) {
   
   
   if (nsSubDocumentFrame* ourFrame = do_QueryFrame(aOwner->GetPrimaryFrame())) {
-    ourFrame->ResetFrameLoader();
+    ourFrame->ResetFrameLoader(nsSubDocumentFrame::RetainPaintData::No);
   }
 
   
