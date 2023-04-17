@@ -3,8 +3,13 @@
 
 "use strict";
 
-const ORIGINAL_URL = "about:home";
-const OTHER_URL = "about:blank";
+
+
+
+
+
+const ORIGINAL_URL = "http://example.com/document-builder.sjs?html=page1";
+const OTHER_URL = "http://example.com/document-builder.sjs?html=page2";
 
 async function waitForUrl(url, toolbox, browserTab, win) {
   const {
