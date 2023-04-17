@@ -22,6 +22,7 @@
 #include "DefaultBrowser.h"
 #include "EventLog.h"
 #include "Registry.h"
+#include "SetDefaultBrowser.h"
 
 #include "wintoastlib.h"
 
@@ -88,6 +89,14 @@ static ULONGLONG GetFollowupNotificationRequestTime() {
   return RegistryGetValueQword(IsPrefixed::Unprefixed, L"FollowupRequestTime")
       .unwrapOr(mozilla::Some(0))
       .valueOr(0);
+}
+
+
+static bool GetPrefSetDefaultBrowserUserChoice() {
+  return RegistryGetValueBool(IsPrefixed::Prefixed,
+                              L"SetDefaultBrowserUserChoice")
+      .unwrapOr(mozilla::Some(false))
+      .valueOr(false);
 }
 
 struct ToastStrings {
@@ -231,6 +240,35 @@ static bool GetStrings(Strings& strings) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+static HRESULT SetDefaultBrowserFromNotification(const wchar_t* aumi) {
+  
+
+  HRESULT hr = E_FAIL;
+  if (GetPrefSetDefaultBrowserUserChoice()) {
+    hr = SetDefaultBrowserUserChoice(aumi);
+  }
+
+  if (FAILED(hr)) {
+    LaunchModernSettingsDialogDefaultApps();
+  }
+  return hr;
+}
+
+
+
+
+
+
 struct HandlerData {
   NotificationActivities activitiesPerformed;
   bool handlerDataHasBeenSet;
@@ -254,14 +292,15 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
   NotificationType mWhichNotification;
   bool mIsLocalizedNotification;
   HANDLE mEvent;
+  const std::wstring mAumiStr;
 
  public:
   ToastHandler(NotificationType whichNotification, bool isEnglishInstall,
-               HANDLE event) {
-    mWhichNotification = whichNotification;
-    mIsLocalizedNotification = !isEnglishInstall;
-    mEvent = event;
-  }
+               HANDLE event, const wchar_t* aumi)
+      : mWhichNotification(whichNotification),
+        mIsLocalizedNotification(!isEnglishInstall),
+        mEvent(event),
+        mAumiStr(aumi) {}
 
   void FinishHandler(NotificationActivities& returnData) const {
     SetReturnData(returnData);
@@ -305,6 +344,9 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
     activitiesPerformed.shown = NotificationShown::Shown;
     activitiesPerformed.action = NotificationAction::ToastClicked;
 
+    
+    
+    
     LaunchModernSettingsDialogDefaultApps();
 
     FinishHandler(activitiesPerformed);
@@ -343,7 +385,8 @@ class ToastHandler : public WinToastLib::IWinToastHandler {
       
       
       activitiesPerformed.action = NotificationAction::MakeFirefoxDefaultButton;
-      LaunchModernSettingsDialogDefaultApps();
+
+      SetDefaultBrowserFromNotification(mAumiStr.c_str());
     }
 
     FinishHandler(activitiesPerformed);
@@ -481,7 +524,7 @@ static NotificationActivities ShowNotification(
   toastTemplate.addAction(toastStrings->action2.get());
   toastTemplate.setImagePath(absImagePath.get());
   ToastHandler* handler =
-      new ToastHandler(whichNotification, isEnglishInstall, event.get());
+      new ToastHandler(whichNotification, isEnglishInstall, event.get(), aumi);
   INT64 id = WinToast::instance()->showToast(toastTemplate, handler, &error);
   if (id < 0) {
     LOG_ERROR_MESSAGE(WinToast::strerror(error).c_str());
