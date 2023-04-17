@@ -1413,6 +1413,17 @@ GeckoEditableSupport::GetIMENotificationRequests() {
   return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
 }
 
+static bool ShouldKeyboardDismiss(const nsAString& aInputType,
+                                  const nsAString& aInputmode) {
+  
+  
+  return aInputmode.EqualsLiteral("none") || aInputType.EqualsLiteral("date") ||
+         aInputType.EqualsLiteral("time") ||
+         aInputType.EqualsLiteral("month") ||
+         aInputType.EqualsLiteral("week") ||
+         aInputType.EqualsLiteral("datetime-local");
+}
+
 void GeckoEditableSupport::SetInputContext(const InputContext& aContext,
                                            const InputContextAction& aAction) {
   
@@ -1428,7 +1439,8 @@ void GeckoEditableSupport::SetInputContext(const InputContext& aContext,
   mInputContext = aContext;
 
   if (mInputContext.mIMEState.mEnabled != IMEEnabled::Disabled &&
-      !mInputContext.mHTMLInputInputmode.EqualsLiteral("none") &&
+      !ShouldKeyboardDismiss(mInputContext.mHTMLInputType,
+                             mInputContext.mHTMLInputInputmode) &&
       aAction.UserMightRequestOpenVKB()) {
     
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OPEN_VKB);
