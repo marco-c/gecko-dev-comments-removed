@@ -159,9 +159,6 @@ class OSXBootstrapper(BaseBootstrapper):
         
 
         
-        packages = ["wget"]
-        self._ensure_homebrew_packages(packages)
-
         casks = ["adoptopenjdk8"]
         self._ensure_homebrew_casks(casks)
 

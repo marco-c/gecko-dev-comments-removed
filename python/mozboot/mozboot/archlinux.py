@@ -53,8 +53,6 @@ class ArchlinuxBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         
         "jdk8-openjdk",
         
-        "wget",
-        
         "multilib/lib32-ncurses",
         "multilib/lib32-readline",
         "multilib/lib32-zlib",

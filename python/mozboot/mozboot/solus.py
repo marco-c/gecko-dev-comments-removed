@@ -41,8 +41,6 @@ class SolusBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     MOBILE_ANDROID_COMMON_PACKAGES = [
         "openjdk-8",
         
-        "wget",
-        
         "ncurses-32bit",
         "readline-32bit",
         "zlib-32bit",

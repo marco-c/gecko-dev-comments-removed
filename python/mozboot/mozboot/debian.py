@@ -65,7 +65,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     
     MOBILE_ANDROID_COMMON_PACKAGES = [
         "openjdk-8-jdk-headless",  
-        "wget",  
         "libncurses5",  
     ]
 

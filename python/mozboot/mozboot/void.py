@@ -29,7 +29,6 @@ class VoidBootstrapper(LinuxBootstrapper, BaseBootstrapper):
 
     MOBILE_ANDROID_PACKAGES = [
         "openjdk8",  
-        "wget",  
     ]
 
     def __init__(self, version, dist_id, **kwargs):
