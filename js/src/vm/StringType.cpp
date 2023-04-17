@@ -725,13 +725,15 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
 
   
-  JSRope* leftMostRope = root;
-  while (leftMostRope->leftChild()->isRope()) {
-    leftMostRope = &leftMostRope->leftChild()->asRope();
+  JSRope* leftmostRope = root;
+  while (leftmostRope->leftChild()->isRope()) {
+    leftmostRope = &leftmostRope->leftChild()->asRope();
   }
 
-  if (leftMostRope->leftChild()->isExtensible()) {
-    JSExtensibleString& left = leftMostRope->leftChild()->asExtensible();
+  bool reuseLeftmostBuffer = false;
+
+  if (leftmostRope->leftChild()->isExtensible()) {
+    JSExtensibleString& left = leftmostRope->leftChild()->asExtensible();
     size_t capacity = left.capacity();
     if (capacity >= wholeLength &&
         left.hasTwoByteChars() == std::is_same_v<CharT, char16_t>) {
@@ -745,24 +747,9 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
         return nullptr;
       }
 
-      
-
-
-
-      MOZ_ASSERT(str->isRope());
-      while (str != leftMostRope) {
-        ropeBarrierDuringFlattening<usingBarrier>(str);
-        JSString* child = str->d.s.u2.left;
-        
-        MOZ_ASSERT(child->isRope());
-        str->setNonInlineChars(wholeChars);
-        child->setFlattenData(str, Flag_VisitRightChild);
-        str = child;
-      }
-      ropeBarrierDuringFlattening<usingBarrier>(str);
-      str->setNonInlineChars(wholeChars);
+      ropeBarrierDuringFlattening<usingBarrier>(leftmostRope);
+      leftmostRope->setNonInlineChars(wholeChars);
       uint32_t left_len = left.length();
-      pos = wholeChars + left_len;
 
       
       
@@ -780,7 +767,11 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
         
         bufferIfNursery->putWholeCell(&left);
       }
-      goto visit_right_child;
+
+      reuseLeftmostBuffer = true;
+      pos = wholeChars + left_len;
+
+      goto first_visit_node;
     }
   }
 
@@ -798,9 +789,12 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
   pos = wholeChars;
 first_visit_node : {
-  ropeBarrierDuringFlattening<usingBarrier>(str);
-
+  if (reuseLeftmostBuffer && str == leftmostRope) {
+    
+    goto visit_right_child;
+  }
   JSString& left = *str->d.s.u2.left;
+  ropeBarrierDuringFlattening<usingBarrier>(str);
   str->setNonInlineChars(pos);
   if (left.isRope()) {
     
