@@ -25,109 +25,49 @@ class ProfilingStack;
 
 class RacyRegisteredThread final {
  public:
-  explicit RacyRegisteredThread(ProfilerThreadId aThreadId);
+  explicit RacyRegisteredThread(
+      mozilla::profiler::ThreadRegistration& aThreadRegistration,
+      ProfilerThreadId aThreadId);
 
   MOZ_COUNTED_DTOR(RacyRegisteredThread)
 
   void SetIsBeingProfiled(bool aIsBeingProfiled) {
-    mIsBeingProfiled = aIsBeingProfiled;
+    mThreadRegistration.mData.mIsBeingProfiled = aIsBeingProfiled;
   }
 
-  bool IsBeingProfiled() const { return mIsBeingProfiled; }
+  bool IsBeingProfiled() const {
+    return mThreadRegistration.mData.mIsBeingProfiled;
+  }
 
   
   
   void ReinitializeOnResume() {
-    
-    
-    
-    
-    (void)mSleep.compareExchange(SLEEPING_OBSERVED, SLEEPING_NOT_OBSERVED);
+    mThreadRegistration.mData.ReinitializeOnResume();
   }
 
   
   bool CanDuplicateLastSampleDueToSleep() {
-    if (mSleep == AWAKE) {
-      return false;
-    }
-
-    if (mSleep.compareExchange(SLEEPING_NOT_OBSERVED, SLEEPING_OBSERVED)) {
-      return false;
-    }
-
-    return true;
+    return mThreadRegistration.mData.CanDuplicateLastSampleDueToSleep();
   }
 
   
   
-  void SetSleeping() {
-    MOZ_ASSERT(mSleep == AWAKE);
-    mSleep = SLEEPING_NOT_OBSERVED;
-  }
+  void SetSleeping() { mThreadRegistration.mData.SetSleeping(); }
 
   
   
-  void SetAwake() {
-    MOZ_ASSERT(mSleep != AWAKE);
-    mSleep = AWAKE;
-  }
+  void SetAwake() { mThreadRegistration.mData.SetAwake(); }
 
-  bool IsSleeping() { return mSleep != AWAKE; }
-
-  ProfilerThreadId ThreadId() const { return mThreadId; }
+  bool IsSleeping() { return mThreadRegistration.mData.IsSleeping(); }
 
   class ProfilingStack& ProfilingStack() {
-    return mProfilingStack;
+    return mThreadRegistration.mData.ProfilingStackRef();
   }
-  const class ProfilingStack& ProfilingStack() const { return mProfilingStack; }
+  const class ProfilingStack& ProfilingStack() const {
+    return mThreadRegistration.mData.ProfilingStackCRef();
+  }
 
- private:
-  class ProfilingStack& mProfilingStack;
-
-  
-  
-  const ProfilerThreadId mThreadId;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const int AWAKE = 0;
-  static const int SLEEPING_NOT_OBSERVED = 1;
-  static const int SLEEPING_OBSERVED = 2;
-  mozilla::Atomic<int> mSleep;
-
-  
-  mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed> mIsBeingProfiled;
+  mozilla::profiler::ThreadRegistration& mThreadRegistration;
 };
 
 
@@ -136,7 +76,8 @@ class RacyRegisteredThread final {
 
 class RegisteredThread final {
  public:
-  RegisteredThread(ThreadInfo* aInfo, nsIThread* aThread, void* aStackTop);
+  RegisteredThread(mozilla::profiler::ThreadRegistration& aThreadRegistration,
+                   ThreadInfo* aInfo, nsIThread* aThread, void* aStackTop);
   ~RegisteredThread();
 
   class RacyRegisteredThread& RacyRegisteredThread() {
@@ -147,7 +88,9 @@ class RegisteredThread final {
   }
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
-  const void* StackTop() const { return mStackTop; }
+  const void* StackTop() const {
+    return mRacyRegisteredThread.mThreadRegistration.mData.mStackTop;
+  }
 
   
   
@@ -168,35 +111,32 @@ class RegisteredThread final {
 
   void ClearJSContext() {
     
-    mContext = nullptr;
+    mRacyRegisteredThread.mThreadRegistration.mData.mJSContext = nullptr;
   }
 
-  JSContext* GetJSContext() const { return mContext; }
+  JSContext* GetJSContext() const {
+    return mRacyRegisteredThread.mThreadRegistration.mData.mJSContext;
+  }
 
   const RefPtr<ThreadInfo> Info() const { return mThreadInfo; }
-  const nsCOMPtr<nsIEventTarget> GetEventTarget() const { return mThread; }
-  void ResetMainThread(nsIThread* aThread) { mThread = aThread; }
+  nsCOMPtr<nsIEventTarget> GetEventTarget() const {
+    return mRacyRegisteredThread.mThreadRegistration.mData.mThread;
+  }
+  void ResetMainThread(nsIThread* aThread) {
+    mRacyRegisteredThread.mThreadRegistration.mData.mThread = aThread;
+  }
 
   
   
   
   void StartJSSampling(uint32_t aJSFlags) {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
-                       mJSSampling == INACTIVE_REQUESTED);
-    mJSSampling = ACTIVE_REQUESTED;
-    mJSFlags = aJSFlags;
+    mRacyRegisteredThread.mThreadRegistration.mData.StartJSSampling(aJSFlags);
   }
 
   
   
   void StopJSSampling() {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
-                       mJSSampling == ACTIVE_REQUESTED);
-    mJSSampling = INACTIVE_REQUESTED;
+    mRacyRegisteredThread.mThreadRegistration.mData.StopJSSampling();
   }
 
   
@@ -206,71 +146,8 @@ class RegisteredThread final {
   class RacyRegisteredThread mRacyRegisteredThread;
 
   const UniquePlatformData mPlatformData;
-  const void* mStackTop;
 
   const RefPtr<ThreadInfo> mThreadInfo;
-  nsCOMPtr<nsIThread> mThread;
-
-  
-  
-  JSContext* mContext;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum {
-    INACTIVE = 0,
-    ACTIVE_REQUESTED = 1,
-    ACTIVE = 2,
-    INACTIVE_REQUESTED = 3,
-  } mJSSampling;
-
-  uint32_t mJSFlags;
-
-  bool JSTracerEnabled() {
-    return mJSFlags & uint32_t(JSInstrumentationFlags::TraceLogging);
-  }
-
-  bool JSAllocationsEnabled() {
-    return mJSFlags & uint32_t(JSInstrumentationFlags::Allocations);
-  }
 };
 
 #endif  

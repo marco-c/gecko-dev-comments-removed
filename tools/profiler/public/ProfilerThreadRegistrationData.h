@@ -47,6 +47,10 @@
 class PSAutoLock;
 struct JSContext;
 
+
+class RacyRegisteredThread;
+class RegisteredThread;
+
 namespace mozilla::profiler {
 
 
@@ -61,6 +65,11 @@ class ThreadRegistrationData {
   
  protected:
   ThreadRegistrationData(const char* aName, const void* aStackTop);
+
+  
+  
+  friend class ::RacyRegisteredThread;
+  friend class ::RegisteredThread;
 
   
   

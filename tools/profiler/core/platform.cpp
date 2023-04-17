@@ -4113,8 +4113,12 @@ static ProfilingStack* locked_register_thread(
       aOffThreadRef.UnlockedConstReaderCRef().Info().Name(),
       aOffThreadRef.UnlockedConstReaderCRef().Info().ThreadId(),
       aOffThreadRef.UnlockedConstReaderCRef().Info().IsMainThread());
+  
+  ThreadRegistration* tr;
+  static_assert(sizeof(tr) == sizeof(aOffThreadRef));
+  memcpy(&tr, &aOffThreadRef, sizeof(tr));
   UniquePtr<RegisteredThread> registeredThread = MakeUnique<RegisteredThread>(
-      info, NS_GetCurrentThreadNoCreate(),
+      *tr, info, NS_GetCurrentThreadNoCreate(),
       (void*)aOffThreadRef.UnlockedConstReaderCRef().StackTop());
 
   TLSRegisteredThread::SetRegisteredThread(aLock, registeredThread.get());
