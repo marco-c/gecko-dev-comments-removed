@@ -16,12 +16,17 @@
 
 
 
-#ifndef wasm_pages_h
-#define wasm_pages_h
+#ifndef wasm_memory_h
+#define wasm_memory_h
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Maybe.h"
 
 #include <stdint.h>
+
+#include "js/Value.h"
+#include "vm/NativeObject.h"
+#include "wasm/WasmConstants.h"
 
 namespace js {
 namespace wasm {
@@ -108,6 +113,43 @@ struct Pages {
   bool operator>=(Pages other) const { return value_ >= other.value_; }
   bool operator>(Pages other) const { return value_ > other.value_; }
 };
+
+extern Pages MaxMemoryPages();
+
+extern size_t MaxMemoryBoundsCheckLimit();
+
+static inline size_t MaxMemoryBytes() { return MaxMemoryPages().byteLength(); }
+
+static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
+  return indexType == IndexType::I32 ? MaxMemory32LimitField
+                                     : MaxMemory64LimitField;
+}
+
+
+
+extern Pages ClampedMaxPages(Pages initialPages,
+                             const mozilla::Maybe<Pages>& sourceMaxPages,
+                             bool useHugeMemory);
+
+
+
+
+
+
+extern size_t ComputeMappedSize(Pages clampedMaxPages);
+
+
+extern bool IsValidBoundsCheckImmediate(uint32_t i);
+
+
+extern bool IsValidARMImmediate(uint32_t i);
+
+
+
+extern uint64_t RoundUpToNextValidBoundsCheckImmediate(uint64_t i);
+
+
+extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 }  
 }  

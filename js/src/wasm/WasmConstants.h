@@ -1081,10 +1081,6 @@ static const unsigned MaxRegisterResults = 1;
 
 
 
-static const uint64_t MaxAsmJSHeapLength = 0x7f000000;
-
-
-
 static const uint32_t RttDepthNone = MaxRttDepth + 1;
 
 
@@ -1111,11 +1107,6 @@ enum class CompileMode { Once, Tier1, Tier2 };
 
 
 enum class DebugEnabled { False, True };
-
-
-
-
-enum class MemoryUsage { None = false, Unshared = 1, Shared = 2 };
 
 }  
 }  

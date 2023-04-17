@@ -156,21 +156,6 @@ void ReportSimdAnalysis(const char* data);
 
 bool ExceptionsAvailable(JSContext* cx);
 
-Pages MaxMemoryPages();
-size_t MaxMemoryBoundsCheckLimit();
-
-static inline size_t MaxMemoryBytes() { return MaxMemoryPages().byteLength(); }
-
-static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
-  return indexType == IndexType::I32 ? MaxMemory32LimitField
-                                     : MaxMemory64LimitField;
-}
-
-
-
-Pages ClampedMaxPages(Pages initialPages, const Maybe<Pages>& sourceMaxPages,
-                      bool useHugeMemory);
-
 
 
 

@@ -42,7 +42,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmInitExpr.h"
-#include "wasm/WasmPages.h"
+#include "wasm/WasmMemory.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
 #include "wasm/WasmTlsData.h"
@@ -1283,7 +1283,10 @@ struct Limits {
   Limits() = default;
   explicit Limits(uint64_t initial, const Maybe<uint64_t>& maximum = Nothing(),
                   Shareable shared = Shareable::False)
-      : indexType(IndexType::I32), initial(initial), maximum(maximum), shared(shared) {}
+      : indexType(IndexType::I32),
+        initial(initial),
+        maximum(maximum),
+        shared(shared) {}
 };
 
 
@@ -1480,15 +1483,6 @@ class CalleeDesc {
 
 
 
-static const uint64_t HighestValidARMImmediate = 0xff000000;
-
-extern bool IsValidARMImmediate(uint32_t i);
-
-extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
-
-
-
-
 
 
 
@@ -1541,19 +1535,6 @@ static constexpr size_t GetMaxOffsetGuardLimit(bool hugeMemory) {
 }
 
 static const size_t MinOffsetGuardLimit = OffsetGuardLimit;
-
-
-
-
-extern bool IsValidBoundsCheckImmediate(uint32_t i);
-
-
-
-
-
-
-
-extern size_t ComputeMappedSize(Pages maxPages);
 
 
 
