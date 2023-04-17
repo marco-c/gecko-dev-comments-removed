@@ -472,19 +472,19 @@ PlacesController.prototype = {
       return selectionTypes.includes("none");
     }
 
-    var forceHideAttr = aMenuItem.getAttribute("forcehideselection");
-    if (forceHideAttr) {
-      var forceHideRules = forceHideAttr.split("|");
+    var hideAttr = aMenuItem.getAttribute("hideifnodetype");
+    if (hideAttr) {
+      var hideRules = hideAttr.split("|");
       for (let i = 0; i < aMetaData.length; ++i) {
-        for (let j = 0; j < forceHideRules.length; ++j) {
-          if (forceHideRules[j] in aMetaData[i]) {
+        for (let j = 0; j < hideRules.length; ++j) {
+          if (hideRules[j] in aMetaData[i]) {
             return false;
           }
         }
       }
     }
 
-    var selectionAttr = aMenuItem.getAttribute("selection");
+    var selectionAttr = aMenuItem.getAttribute("nodetype");
     if (!selectionAttr) {
       return !aMenuItem.hidden;
     }
@@ -550,11 +550,6 @@ PlacesController.prototype = {
 
 
 
-
-
-
-
-
   buildContextMenu: function PC_buildContextMenu(aPopup) {
     
     
@@ -563,9 +558,9 @@ PlacesController.prototype = {
     if (window.top.gBrowser) {
       var openInCurrentTab = document.getElementById("placesContext_open");
       if (!PlacesUIUtils.loadBookmarksInTabs) {
-        openInCurrentTab.setAttribute("forcehideintabbrowser", "true");
+        openInCurrentTab.setAttribute("hideiftabbrowser", "true");
       } else {
-        openInCurrentTab.removeAttribute("forcehideintabbrowser");
+        openInCurrentTab.removeAttribute("hideiftabbrowser");
       }
     }
     var metadata = this._buildSelectionMetadata();
@@ -586,19 +581,19 @@ PlacesController.prototype = {
           item.getAttribute("hideifnoinsertionpoint") == "true" &&
           noIp &&
           !(ip && ip.isTag && item.id == "placesContext_paste");
-        var hideIfInTabBrowser =
-          item.getAttribute("forcehideintabbrowser") == "true" &&
+        var hideIfTabBrowser =
+          item.getAttribute("hideiftabbrowser") == "true" &&
           window.top.gBrowser;
-        var hideIfNotInTabBrowser =
-          item.getAttribute("forcehidenotintabbrowser") == "true" &&
+        var hideIfNotTabBrowser =
+          item.getAttribute("hidenifnottabbrowser") == "true" &&
           !window.top.gBrowser;
         var hideIfPrivate =
           item.getAttribute("hideifprivatebrowsing") == "true" &&
           PrivateBrowsingUtils.isWindowPrivate(window);
         var shouldHideItem =
           hideIfNoIP ||
-          hideIfInTabBrowser ||
-          hideIfNotInTabBrowser ||
+          hideIfTabBrowser ||
+          hideIfNotTabBrowser ||
           hideIfPrivate ||
           !this._shouldShowMenuItem(item, metadata);
         item.hidden = item.disabled = shouldHideItem;
