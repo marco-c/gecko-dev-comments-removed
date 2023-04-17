@@ -38,7 +38,6 @@
 
 #include "RemoteServiceWorkerContainerImpl.h"
 #include "ServiceWorker.h"
-#include "ServiceWorkerContainerImpl.h"
 #include "ServiceWorkerRegistration.h"
 #include "ServiceWorkerUtils.h"
 
@@ -109,13 +108,7 @@ bool ServiceWorkerContainer::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
 
 already_AddRefed<ServiceWorkerContainer> ServiceWorkerContainer::Create(
     nsIGlobalObject* aGlobal) {
-  RefPtr<Inner> inner;
-  if (ServiceWorkerParentInterceptEnabled()) {
-    inner = new RemoteServiceWorkerContainerImpl();
-  } else {
-    inner = new ServiceWorkerContainerImpl();
-  }
-
+  RefPtr<Inner> inner = new RemoteServiceWorkerContainerImpl();
   RefPtr<ServiceWorkerContainer> ref =
       new ServiceWorkerContainer(aGlobal, inner.forget());
   return ref.forget();
@@ -757,32 +750,6 @@ nsresult FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker,
   return NS_OK;
 }
 
-already_AddRefed<ServiceWorker> GetOrCreateServiceWorkerWithoutWarnings(
-    nsIGlobalObject* const aGlobal,
-    const ServiceWorkerDescriptor& aDescriptor) {
-  
-  
-  
-  
-  
-  if (!ServiceWorkerParentInterceptEnabled()) {
-    const RefPtr<ServiceWorkerManager> serviceWorkerManager =
-        ServiceWorkerManager::GetInstance();
-    if (!serviceWorkerManager) {
-      return nullptr;
-    }
-
-    const RefPtr<ServiceWorkerRegistrationInfo> registration =
-        serviceWorkerManager->GetRegistration(aDescriptor.PrincipalInfo(),
-                                              aDescriptor.Scope());
-    if (!registration) {
-      return nullptr;
-    }
-  }
-
-  return aGlobal->GetOrCreateServiceWorker(aDescriptor).forget();
-}
-
 }  
 
 Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
@@ -798,7 +765,7 @@ Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
   
   
   const RefPtr<ServiceWorker> serviceWorkerInstance =
-      GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
+      aGlobal->GetOrCreateServiceWorker(aMessage.mServiceWorker);
   if (serviceWorkerInstance) {
     aInit.mSource.SetValue().SetAsServiceWorker() = serviceWorkerInstance;
   }

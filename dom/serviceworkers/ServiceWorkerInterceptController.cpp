@@ -38,12 +38,6 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
     const Maybe<ServiceWorkerDescriptor>& controller =
         loadInfo->GetController();
     
-    if (!ServiceWorkerParentInterceptEnabled()) {
-      *aShouldIntercept = controller.isSome();
-      return NS_OK;
-    }
-
-    
     if (controller.isSome()) {
       *aShouldIntercept = controller.ref().HandlesFetch();
 
