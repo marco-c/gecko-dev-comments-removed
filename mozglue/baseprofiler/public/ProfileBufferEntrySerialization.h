@@ -206,36 +206,103 @@ class ProfileBufferEntryReader {
   }
 
   
-  void ReadBytes(void* aDest, Length aBytes) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct DoubleSpanOfConstBytes {
+    SpanOfConstBytes mFirstOrOnly;
+    SpanOfConstBytes mSecondOrEmpty;
+
+    void CheckInvariants() const {
+      MOZ_ASSERT(mFirstOrOnly.IsEmpty() ? mSecondOrEmpty.IsEmpty() : true,
+                 "mSecondOrEmpty should not be the only span to contain data");
+    }
+
+    DoubleSpanOfConstBytes() : mFirstOrOnly(), mSecondOrEmpty() {
+      CheckInvariants();
+    }
+
+    DoubleSpanOfConstBytes(const Byte* aOnlyPointer, size_t aOnlyLength)
+        : mFirstOrOnly(aOnlyPointer, aOnlyLength), mSecondOrEmpty() {
+      CheckInvariants();
+    }
+
+    DoubleSpanOfConstBytes(const Byte* aFirstPointer, size_t aFirstLength,
+                           const Byte* aSecondPointer, size_t aSecondLength)
+        : mFirstOrOnly(aFirstPointer, aFirstLength),
+          mSecondOrEmpty(aSecondPointer, aSecondLength) {
+      CheckInvariants();
+    }
+
+    
+    [[nodiscard]] bool IsEmpty() const {
+      
+      
+      return mFirstOrOnly.IsEmpty();
+    }
+
+    
+    [[nodiscard]] size_t LengthBytes() const {
+      return mFirstOrOnly.LengthBytes() + mSecondOrEmpty.LengthBytes();
+    }
+
+    
+    void CopyBytesTo(void* aDest) const {
+      memcpy(aDest, mFirstOrOnly.Elements(), mFirstOrOnly.LengthBytes());
+      if (MOZ_UNLIKELY(!mSecondOrEmpty.IsEmpty())) {
+        memcpy(static_cast<Byte*>(aDest) + mFirstOrOnly.LengthBytes(),
+               mSecondOrEmpty.Elements(), mSecondOrEmpty.LengthBytes());
+      }
+    }
+
+    
+    [[nodiscard]] bool IsSingleSpan() const { return mSecondOrEmpty.IsEmpty(); }
+  };
+
+  
+  
+  [[nodiscard]] DoubleSpanOfConstBytes PeekSpans(Length aBytes) const {
     MOZ_RELEASE_ASSERT(aBytes <= RemainingBytes());
     if (MOZ_LIKELY(aBytes <= mCurrentSpan.LengthBytes())) {
       
-      memcpy(aDest, mCurrentSpan.Elements(), aBytes);
-      
-      mCurrentSpan = mCurrentSpan.From(aBytes);
-      if (mCurrentSpan.IsEmpty() && !mNextSpanOrEmpty.IsEmpty()) {
-        
-        
-        mCurrentSpan = mNextSpanOrEmpty;
-        mNextSpanOrEmpty = mNextSpanOrEmpty.Last(0);
-      }
-    } else {
-      
-      
-      
-      
-      
-      memcpy(aDest, mCurrentSpan.Elements(), mCurrentSpan.LengthBytes());
-      const Length tail =
-          aBytes - static_cast<Length>(mCurrentSpan.LengthBytes());
-      memcpy(reinterpret_cast<Byte*>(aDest) + mCurrentSpan.LengthBytes(),
-             mNextSpanOrEmpty.Elements(), tail);
-      
-      
-      mCurrentSpan = mNextSpanOrEmpty.From(tail);
-      mNextSpanOrEmpty = mNextSpanOrEmpty.Last(0);
+      return DoubleSpanOfConstBytes{mCurrentSpan.Elements(), aBytes};
     }
-    CheckInvariants();
+    
+    
+    return DoubleSpanOfConstBytes{
+        mCurrentSpan.Elements(), mCurrentSpan.LengthBytes(),
+        mNextSpanOrEmpty.Elements(), aBytes - mCurrentSpan.LengthBytes()};
+  }
+
+  
+  
+  [[nodiscard]] DoubleSpanOfConstBytes ReadSpans(Length aBytes) {
+    DoubleSpanOfConstBytes spans = PeekSpans(aBytes);
+    (*this) += aBytes;
+    return spans;
+  }
+
+  
+  void ReadBytes(void* aDest, Length aBytes) {
+    DoubleSpanOfConstBytes spans = ReadSpans(aBytes);
+    MOZ_ASSERT(spans.LengthBytes() == aBytes);
+    spans.CopyBytesTo(aDest);
   }
 
   template <typename T>
