@@ -223,6 +223,7 @@ function createLibraryMap(sharedLibraries) {
 
 
 
+
 function createMultiModalGetSymbolTableFn(sharedLibraries, objdirs, perfFront) {
   const libraryGetter = createLibraryMap(sharedLibraries);
 
