@@ -391,24 +391,13 @@ class RasterImage final : public ImageResource,
                               bool aInvert = false) const;
 
   
-
-
-
-
-
-
-  Orientation UsedOrientation() const {
-    return LoadHandledOrientation() ? mOrientation : Orientation();
-  }
-
-  
   UnorientedIntSize ToUnoriented(OrientedIntSize aSize) const {
-    return UsedOrientation().SwapsWidthAndHeight()
+    return mOrientation.SwapsWidthAndHeight()
                ? UnorientedIntSize(aSize.height, aSize.width)
                : UnorientedIntSize(aSize.width, aSize.height);
   }
   OrientedIntSize ToOriented(UnorientedIntSize aSize) const {
-    return UsedOrientation().SwapsWidthAndHeight()
+    return mOrientation.SwapsWidthAndHeight()
                ? OrientedIntSize(aSize.height, aSize.width)
                : OrientedIntSize(aSize.width, aSize.height);
   }
@@ -419,12 +408,6 @@ class RasterImage final : public ImageResource,
   OrientedIntSize mSize;
   nsTArray<OrientedIntSize> mNativeSizes;
 
-  
-  
-  
-  
-  
-  
   
   
   Orientation mOrientation;
@@ -485,18 +468,7 @@ class RasterImage final : public ImageResource,
 
        
        
-       (bool, WantFullDecode, 1),
-
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       (bool, HandledOrientation, 1)))
+       (bool, WantFullDecode, 1)))
 
   TimeStamp mDrawStartTime;
 
