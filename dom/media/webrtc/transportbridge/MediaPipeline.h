@@ -155,8 +155,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   
   DOMHighResTimeStamp GetNow() const;
 
-  MediaSessionConduit* Conduit() const { return mConduit; }
-
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaPipeline)
 
@@ -217,12 +215,14 @@ class MediaPipeline : public sigslot::has_slots<> {
   
   virtual void MakePrincipalPrivate_s() {}
 
+ public:
+  const RefPtr<MediaSessionConduit> mConduit;
   const DirectionType mDirection;
+
+ protected:
   Atomic<size_t> mLevel;
   std::string mTransportId;
   const RefPtr<MediaTransportHandler> mTransportHandler;
-  RefPtr<MediaSessionConduit> mConduit;  
-                                         
 
   TransportLayer::State mRtpState = TransportLayer::TS_NONE;
   TransportLayer::State mRtcpState = TransportLayer::TS_NONE;

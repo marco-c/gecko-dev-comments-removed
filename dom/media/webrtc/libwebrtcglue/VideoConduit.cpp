@@ -224,18 +224,12 @@ WebrtcVideoConduit::WebrtcVideoConduit(
       ,
       mRecvSSRC(0),
       mRemoteSSRC(0) {
-  mCall->RegisterConduit(this);
   mRecvStreamConfig.renderer = this;
 }
 
 WebrtcVideoConduit::~WebrtcVideoConduit() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
-  mCall->UnregisterConduit(this);
 
-  
-  
   MOZ_ASSERT(!mSendStream && !mRecvStream,
              "Call DeleteStreams prior to ~WebrtcVideoConduit.");
 }
@@ -762,6 +756,9 @@ bool WebrtcVideoConduit::SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc) {
     }
   }
 
+  
+  mCall->RegisterConduit(this);
+
   mRemoteSSRC = ssrc;
   mRecvStreamConfig.rtp.remote_ssrc = ssrc;
   mRecvStreamConfig.rtp.rtx_ssrc = rtxSsrc;
@@ -769,8 +766,6 @@ bool WebrtcVideoConduit::SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc) {
       "WebrtcVideoConduit::WaitingForInitialSsrcNoMore",
       [this, self = RefPtr<WebrtcVideoConduit>(this)]() mutable {
         mWaitingForInitialSsrc = false;
-        NS_ReleaseOnMainThread(
-            "WebrtcVideoConduit::WaitingForInitialSsrcNoMore", self.forget());
       }));
   
   
@@ -998,8 +993,7 @@ void WebrtcVideoConduit::DeleteStreams() {
     mRecvFramerate.Clear();
   }
 
-  
-  
+  mCall->UnregisterConduit(this);
   MutexAutoLock lock(mMutex);
   DeleteSendStream();
   DeleteRecvStream();
@@ -1187,7 +1181,8 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureRecvMediaCodecs(
         
         return kMediaConduitUnknownError;
       }
-
+      
+      mCall->RegisterConduit(this);
       mRecvStreamConfig.rtp.remote_ssrc = ssrc;
       mRecvSSRC = ssrc;
     }
@@ -1656,9 +1651,6 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(
                     return;
                   }
                   mRtpPacketQueue.DequeueAll(this);
-                  NS_ReleaseOnMainThread(
-                      "WebrtcVideoConduit::QueuedPacketsHandler",
-                      self.forget());
                 }));
           }));
       return kMediaConduitNoError;
