@@ -15,6 +15,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
+  ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
   FormHistoryTestUtils: "resource://testing-common/FormHistoryTestUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -33,6 +35,14 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/uuid-generator;1",
   "nsIUUIDGenerator"
 );
+
+
+
+
+const DEFAULT_EXPERIMENT_FEATURE_VARIABLES = {
+  quickSuggestEnabled: false,
+  firefoxSuggestLabelsEnabled: false,
+};
 
 var UrlbarTestUtils = {
   
@@ -793,6 +803,76 @@ var UrlbarTestUtils = {
         throw error;
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+  async withExperiment({ callback, ...options }) {
+    let doExperimentCleanup = await this.enrollExperiment(options);
+    await callback();
+    await doExperimentCleanup();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async enrollExperiment({
+    valueOverrides = {},
+    recipe = null,
+    name = "UrlbarTestUtils-experiment",
+  }) {
+    await ExperimentAPI.ready();
+    let {
+      enrollmentPromise,
+      doExperimentCleanup,
+    } = ExperimentFakes.enrollmentHelper(
+      ExperimentFakes.recipe(
+        name,
+        recipe || {
+          branches: [
+            {
+              slug: "treatment-branch",
+              ratio: 1,
+              feature: {
+                enabled: true,
+                featureId: "urlbar",
+                value: Object.assign(
+                  DEFAULT_EXPERIMENT_FEATURE_VARIABLES,
+                  valueOverrides
+                ),
+              },
+            },
+          ],
+          bucketConfig: {
+            start: 0,
+            
+            count: 10000,
+            total: 10000,
+            namespace: "UrlbarTestUtils",
+            randomizationUnit: "normandy_id",
+          },
+        }
+      )
+    );
+    await enrollmentPromise;
+    return doExperimentCleanup;
   },
 };
 

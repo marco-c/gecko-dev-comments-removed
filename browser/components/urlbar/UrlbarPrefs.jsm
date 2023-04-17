@@ -9,6 +9,7 @@
 
 
 
+
 var EXPORTED_SYMBOLS = ["UrlbarPrefs", "UrlbarPrefsObserver"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -17,10 +18,16 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
+
+
+
+
+
 
 
 
@@ -366,6 +373,7 @@ class Preferences {
     }
     this._observerWeakRefs = [];
     this.addObserver(this);
+    NimbusFeatures.urlbar.onUpdate(() => this._onNimbusUpdate());
   }
 
   
@@ -496,6 +504,23 @@ class Preferences {
   
 
 
+  _onNimbusUpdate() {
+    for (let key of Object.keys(this._nimbus)) {
+      this._map.delete(key);
+    }
+    this.__nimbus = null;
+  }
+
+  get _nimbus() {
+    if (!this.__nimbus) {
+      this.__nimbus = NimbusFeatures.urlbar.getValue();
+    }
+    return this.__nimbus;
+  }
+
+  
+
+
 
 
 
@@ -554,9 +579,13 @@ class Preferences {
     if (defaultValue === undefined) {
       branch = Services.prefs;
       defaultValue = PREF_OTHER_DEFAULTS.get(pref);
-    }
-    if (defaultValue === undefined) {
-      throw new Error("Trying to access an unknown pref " + pref);
+      if (defaultValue === undefined) {
+        let nimbus = this._getNimbusDescriptor(pref);
+        if (nimbus) {
+          return nimbus;
+        }
+        throw new Error("Trying to access an unknown pref " + pref);
+      }
     }
 
     let type;
@@ -578,6 +607,34 @@ class Preferences {
       
       set: branch[`set${type == "Float" ? "Char" : type}Pref`],
       clear: branch.clearUserPref,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _getNimbusDescriptor(name) {
+    if (!this._nimbus.hasOwnProperty(name)) {
+      return null;
+    }
+    return {
+      defaultValue: this._nimbus[name],
+      get: () => this._nimbus[name],
+      set() {
+        throw new Error(`'${name}' is a Nimbus value and cannot be set`);
+      },
+      clear() {
+        throw new Error(`'${name}' is a Nimbus value and cannot be cleared`);
+      },
     };
   }
 

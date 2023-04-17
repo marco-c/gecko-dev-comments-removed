@@ -26,8 +26,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const SUGGEST_PREF = "suggest.quicksuggest";
 
-const NONSPONSORED_ACTION_TEXT = "Firefox Suggest";
-const HELP_TITLE = "Learn more about Firefox Suggest";
+const FEATURE_NAME = "Firefox Suggest";
+const NONSPONSORED_ACTION_TEXT = FEATURE_NAME;
+const HELP_TITLE = `Learn more about ${FEATURE_NAME}`;
 
 const TELEMETRY_SCALAR_IMPRESSION =
   "contextual.services.quicksuggest.impression";
@@ -61,6 +62,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   get type() {
     return UrlbarUtils.PROVIDER_TYPE.NETWORK;
+  }
+
+  
+
+
+
+  get featureName() {
+    return FEATURE_NAME;
   }
 
   
