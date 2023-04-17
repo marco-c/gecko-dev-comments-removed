@@ -145,7 +145,7 @@ impl<P, B> SyncTester for GenerateBundlesSync<P, B> {
         self.reg
             .lock()
             .source_idx(source_idx)
-            .fetch_file_sync(locale, res, false)
+            .fetch_file_sync(locale, res,  true)
             .is_some()
     }
 }
