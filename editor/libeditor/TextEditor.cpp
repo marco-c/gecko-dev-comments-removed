@@ -177,7 +177,10 @@ nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
     case NS_VK_CONTROL:
     case NS_VK_ALT:
       
-      return EditorBase::HandleKeyPressEvent(aKeyboardEvent);
+      
+      aKeyboardEvent->PreventDefault();
+      return NS_OK;
+
     case NS_VK_BACK: {
       if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
           aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {

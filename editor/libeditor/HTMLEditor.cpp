@@ -883,14 +883,12 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
     case NS_VK_WIN:
     case NS_VK_SHIFT:
     case NS_VK_CONTROL:
-    case NS_VK_ALT: {
+    case NS_VK_ALT:
       
       
-      nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "EditorBase::HandleKeyPressEvent() failed");
-      return rv;
-    }
+      aKeyboardEvent->PreventDefault();
+      return NS_OK;
+
     case NS_VK_BACK:
     case NS_VK_DELETE: {
       
