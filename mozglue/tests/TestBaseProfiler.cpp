@@ -124,6 +124,15 @@ void TestProfilerUtils() {
   }
 
   {
+#ifdef MOZ_GECKO_PROFILER
+    if (!mozilla::baseprofiler::detail::scProfilerMainThreadId.IsSpecified()) {
+      
+      
+      mozilla::baseprofiler::detail::scProfilerMainThreadId =
+          mozilla::baseprofiler::profiler_current_thread_id();
+    }
+#endif  
+
     using mozilla::baseprofiler::BaseProfilerThreadId;
     using Number = BaseProfilerThreadId::NumberType;
     static constexpr Number scMaxNumber = std::numeric_limits<Number>::max();
@@ -197,13 +206,6 @@ void TestProfilerUtils() {
 
     BaseProfilerThreadId mainThreadId =
         mozilla::baseprofiler::profiler_main_thread_id();
-    if (!mainThreadId.IsSpecified()) {
-      
-      
-      mozilla::baseprofiler::detail::scProfilerMainThreadId = mainTestThreadId;
-      
-      mainThreadId = mozilla::baseprofiler::profiler_main_thread_id();
-    }
     MOZ_RELEASE_ASSERT(mainThreadId.IsSpecified());
 
     MOZ_RELEASE_ASSERT(mainThreadId == mainTestThreadId,
