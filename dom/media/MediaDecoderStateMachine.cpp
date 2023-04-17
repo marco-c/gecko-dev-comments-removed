@@ -2895,7 +2895,18 @@ bool MediaDecoderStateMachine::HaveEnoughDecodedAudio() {
 
 bool MediaDecoderStateMachine::HaveEnoughDecodedVideo() {
   MOZ_ASSERT(OnTaskQueue());
-  return VideoQueue().GetSize() >= GetAmpleVideoFrames() * mPlaybackRate + 1;
+  
+  
+  
+  
+  
+  bool isVideoEnoughComparedWithAudio = true;
+  if (HasAudio()) {
+    isVideoEnoughComparedWithAudio =
+        VideoQueue().Duration() >= AudioQueue().Duration();
+  }
+  return VideoQueue().GetSize() >= GetAmpleVideoFrames() * mPlaybackRate + 1 &&
+         isVideoEnoughComparedWithAudio;
 }
 
 void MediaDecoderStateMachine::PushAudio(AudioData* aSample) {
