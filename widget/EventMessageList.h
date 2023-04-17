@@ -463,6 +463,9 @@ NS_EVENT_MESSAGE(eSlotChange)
 NS_EVENT_MESSAGE(eVisibilityChange)
 
 
+NS_EVENT_MESSAGE(eSecurityPolicyViolation)
+
+
 NS_EVENT_MESSAGE(eToggle)
 
 
