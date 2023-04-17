@@ -8,6 +8,7 @@
 
 namespace mozilla::a11y {
 class Accessible;
+class TextLeafPoint;
 
 
 
@@ -92,6 +93,14 @@ class HyperTextAccessibleBase {
 
   bool CharAt(int32_t aOffset, nsAString& aChar,
               int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr);
+
+  
+
+
+
+
+
+  TextLeafPoint ToTextLeafPoint(int32_t aOffset, bool aDescendToEnd = false);
 
  protected:
   virtual const Accessible* Acc() const = 0;
