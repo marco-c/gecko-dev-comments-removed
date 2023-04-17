@@ -12,8 +12,11 @@
 #include "base/basictypes.h"
 #include "base/pickle.h"
 #include "mojo/core/ports/user_message.h"
+#include "mojo/core/ports/port_ref.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/ipc/ScopedPort.h"
+#include "nsTArray.h"
 
 #ifdef FUZZING
 #  include "mozilla/ipc/Faulty.h"
@@ -174,8 +177,6 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   Message& operator=(const Message& other) = delete;
   Message& operator=(Message&& other);
 
-  void CopyFrom(const Message& other);
-
   
   
   
@@ -280,6 +281,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   
   size_t GetSizeIfSerialized() const override { return size(); }
+  bool WillBeRoutedExternally(mojo::core::ports::UserMessageEvent&) override;
 
   void WriteFooter(const void* data, uint32_t data_len);
   [[nodiscard]] bool ReadFooter(void* buffer, uint32_t buffer_len,
@@ -314,6 +316,20 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   uint32_t fd_cookie() const { return header()->cookie; }
 #  endif
 #endif
+
+  void WritePort(mozilla::ipc::ScopedPort port);
+
+  
+  
+  
+  
+  
+  
+  bool ConsumePort(PickleIterator* iter, mozilla::ipc::ScopedPort* port) const;
+
+  
+  
+  void SetAttachedPorts(nsTArray<mozilla::ipc::ScopedPort> ports);
 
   friend class Channel;
   friend class MessageReplyDeserializer;
@@ -371,6 +387,12 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     return file_descriptor_set_.get();
   }
 #endif
+
+  
+  
+  
+  
+  mutable nsTArray<mozilla::ipc::ScopedPort> attached_ports_;
 
   mozilla::TimeStamp create_time_;
 };

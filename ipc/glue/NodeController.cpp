@@ -119,9 +119,22 @@ bool NodeController::GetMessage(const PortRef& aPort,
 
   if (messageEvent) {
     UniquePtr<IPC::Message> message = messageEvent->TakeMessage<IPC::Message>();
+
     
-    MOZ_ASSERT(messageEvent->num_ports() == 0,
-               "We don't handle port attachments yet!");
+    
+    
+    
+    
+    
+    if (messageEvent->num_ports() > 0) {
+      nsTArray<ScopedPort> attachedPorts(messageEvent->num_ports());
+      for (size_t i = 0; i < messageEvent->num_ports(); ++i) {
+        attachedPorts.AppendElement(
+            ScopedPort{GetPort(messageEvent->ports()[i]), this});
+      }
+      message->SetAttachedPorts(std::move(attachedPorts));
+    }
+
     *aMessage = std::move(message);
   } else {
     *aMessage = nullptr;
