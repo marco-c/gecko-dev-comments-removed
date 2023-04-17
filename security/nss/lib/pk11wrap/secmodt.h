@@ -74,6 +74,9 @@ struct SECMODModuleStr {
 
     CK_VERSION cryptokiVersion;  
     CK_FLAGS flags;              
+    
+
+    CK_NSS_GetFIPSStatus fipsIndicator;
 };
 
 

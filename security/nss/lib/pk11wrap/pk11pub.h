@@ -1029,6 +1029,24 @@ PRBool SECMOD_HasRootCerts(void);
 
 int SECMOD_GetSystemFIPSEnabled(void);
 
+
+
+
+
+
+
+
+
+
+PRBool PK11_SlotGetLastFIPSStatus(PK11SlotInfo *slot);
+
+
+
+PRBool PK11_ContextGetFIPSStatus(PK11Context *context);
+
+
+PRBool PK11_ObjectGetFIPSStatus(PK11ObjectType objType, void *objSpec);
+
 SEC_END_PROTOS
 
 #endif

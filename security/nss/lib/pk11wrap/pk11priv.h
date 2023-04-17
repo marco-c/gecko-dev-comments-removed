@@ -200,6 +200,11 @@ SECStatus pk11_setGlobalOptions(PRBool noSingleThreadedModules,
 
 PRBool pk11_getFinalizeModulesOption(void);
 
+
+
+PRBool pk11slot_GetFIPSStatus(PK11SlotInfo *slot, CK_SESSION_HANDLE session,
+                              CK_OBJECT_HANDLE object, CK_ULONG operationType);
+
 SEC_END_PROTOS
 
 #endif

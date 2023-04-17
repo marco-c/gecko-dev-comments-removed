@@ -13880,6 +13880,41 @@ ssl3_DestroySSL3Info(sslSocket *ss)
 
 
 
+static PRBool
+ssl_cipherSpecIsFips(ssl3CipherSpec *spec)
+{
+    if (!spec || !spec->cipherDef) {
+        return PR_FALSE;
+    }
+
+    if (spec->cipherDef->type != type_aead) {
+        if (spec->keyMaterial.macContext == NULL) {
+            return PR_FALSE;
+        }
+        if (!PK11_ContextGetFIPSStatus(spec->keyMaterial.macContext)) {
+            return PR_FALSE;
+        }
+    }
+    if (!spec->cipherContext) {
+        return PR_FALSE;
+    }
+    return PK11_ContextGetFIPSStatus(spec->cipherContext);
+}
+
+
+PRBool
+ssl_isFIPS(sslSocket *ss)
+{
+    if (!ssl_cipherSpecIsFips(ss->ssl3.crSpec)) {
+        return PR_FALSE;
+    }
+    return ssl_cipherSpecIsFips(ss->ssl3.cwSpec);
+}
+
+
+
+
+
 
 
 

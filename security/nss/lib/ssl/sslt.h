@@ -374,6 +374,11 @@ typedef struct SSLChannelInfoStr {
     PRBool echAccepted;
 
     
+    
+
+    PRBool isFIPS;
+
+    
 
 } SSLChannelInfo;
 

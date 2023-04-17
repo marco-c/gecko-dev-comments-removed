@@ -1848,6 +1848,9 @@ PK11SymKey *ssl_unwrapSymKey(PK11SymKey *wrapKey,
                              int keySize, CK_FLAGS keyFlags, void *pinArg);
 
 
+PRBool ssl_isFIPS(sslSocket *ss);
+
+
 
 SECStatus SSLExp_SetResumptionTokenCallback(PRFileDesc *fd,
                                             SSLResumptionTokenCallback cb,

@@ -191,6 +191,7 @@ struct SFTKObjectStr {
     SFTKSlot *slot;
     void *objectInfo;
     SFTKFree infoFree;
+    PRBool isFIPS;
 };
 
 struct SFTKTokenObjectStr {
@@ -266,6 +267,7 @@ struct SFTKSessionContextStr {
     PRBool rsa;                 
     PRBool doPad;               
     PRBool isXCBC;              
+    PRBool isFIPS;              
     unsigned int blockSize;     
     unsigned int padDataLength; 
     
@@ -307,6 +309,7 @@ struct SFTKSessionStr {
     SFTKSessionContext *enc_context;
     SFTKSessionContext *hash_context;
     SFTKSessionContext *sign_context;
+    PRBool lastOpWasFIPS;
     SFTKObjectList *objects[1];
 };
 
@@ -689,6 +692,7 @@ struct sftk_MACCtxStr {
 typedef struct sftk_MACCtxStr sftk_MACCtx;
 
 extern CK_NSS_MODULE_FUNCTIONS sftk_module_funcList;
+extern CK_NSS_FIPS_FUNCTIONS sftk_fips_funcList;
 
 SEC_BEGIN_PROTOS
 
@@ -795,6 +799,7 @@ extern void sftk_CleanupFreeLists(void);
 
 
 extern CK_RV sftk_InitGeneric(SFTKSession *session,
+                              CK_MECHANISM *pMechanism,
                               SFTKSessionContext **contextPtr,
                               SFTKContextType ctype, SFTKObject **keyPtr,
                               CK_OBJECT_HANDLE hKey, CK_KEY_TYPE *keyTypePtr,
@@ -945,6 +950,11 @@ const SECItem *sftk_VerifyDH_Prime(SECItem *dhPrime);
 
 SECStatus sftk_IsSafePrime(SECItem *dhPrime, SECItem *dhSubPrime, PRBool *isSafe);
 
+CK_FLAGS sftk_AttributeToFlags(CK_ATTRIBUTE_TYPE op);
+
+
+PRBool sftk_operationIsFIPS(SFTKSlot *slot, CK_MECHANISM *mech,
+                            CK_ATTRIBUTE_TYPE op, SFTKObject *source);
 SEC_END_PROTOS
 
 #endif 
