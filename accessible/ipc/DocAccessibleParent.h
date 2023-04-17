@@ -10,7 +10,7 @@
 #include "nsAccessibilityService.h"
 #include "mozilla/a11y/PDocAccessibleParent.h"
 #include "mozilla/a11y/RemoteAccessible.h"
-#include "mozilla/Tuple.h"
+#include "mozilla/dom/BrowserBridgeParent.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
@@ -176,8 +176,21 @@ class DocAccessibleParent : public RemoteAccessible,
 
 
 
+
+
+
   ipc::IPCResult AddChildDoc(DocAccessibleParent* aChildDoc, uint64_t aParentID,
                              bool aCreating = true);
+
+  
+
+
+
+  ipc::IPCResult AddChildDoc(dom::BrowserBridgeParent* aBridge);
+
+  void RemovePendingOOPChildDoc(dom::BrowserBridgeParent* aBridge) {
+    mPendingOOPChildDocs.Remove(aBridge);
+  }
 
   
 
@@ -256,13 +269,6 @@ class DocAccessibleParent : public RemoteAccessible,
 #endif
 
   
-
-
-
-
-  Tuple<DocAccessibleParent*, uint64_t> GetRemoteEmbedder();
-
-  
   virtual int32_t IndexInParent() const override {
     if (IsTopLevel() && OuterDocOfRemoteBrowser()) {
       
@@ -270,9 +276,6 @@ class DocAccessibleParent : public RemoteAccessible,
     }
     return RemoteAccessible::IndexInParent();
   }
-
-  void RemovePendingChildDoc(DocAccessibleParent* aChildDoc,
-                             uint64_t aParentID);
 
  private:
   ~DocAccessibleParent() {
@@ -335,14 +338,7 @@ class DocAccessibleParent : public RemoteAccessible,
   bool mTopLevelInContentProcess;
   bool mShutdown;
 
-  struct PendingChildDoc {
-    PendingChildDoc(DocAccessibleParent* aChildDoc, uint64_t aParentID)
-        : mChildDoc(aChildDoc), mParentID(aParentID) {}
-    RefPtr<DocAccessibleParent> mChildDoc;
-    uint64_t mParentID;
-  };
-  
-  nsTArray<PendingChildDoc> mPendingChildDocs;
+  nsTHashSet<RefPtr<dom::BrowserBridgeParent>> mPendingOOPChildDocs;
 
   static uint64_t sMaxDocID;
   static nsTHashMap<nsUint64HashKey, DocAccessibleParent*>& LiveDocs() {
