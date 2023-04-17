@@ -1832,6 +1832,13 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         Maybe<nsDisplayTransform*> deferred = aSc.GetDeferredTransformItem();
+        ScrollableLayerGuid::ViewID deferredId =
+            ScrollableLayerGuid::NULL_SCROLL_ID;
+        if (deferred) {
+          if (const auto* asr = (*deferred)->GetActiveScrolledRoot()) {
+            deferredId = asr->GetViewId();
+          }
+        }
         if (deferred && (*deferred)->GetActiveScrolledRoot() !=
                             item->GetActiveScrolledRoot()) {
           
@@ -1842,7 +1849,8 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
           mLayerScrollData.emplace_back();
           mLayerScrollData.back().Initialize(
               mManager->GetScrollData(), item, descendants,
-              (*deferred)->GetActiveScrolledRoot(), Nothing());
+              (*deferred)->GetActiveScrolledRoot(), Nothing(),
+              ScrollableLayerGuid::NULL_SCROLL_ID);
 
           
           
@@ -1854,17 +1862,17 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
           
           
           mLayerScrollData.emplace_back();
-          mLayerScrollData.back().Initialize(mManager->GetScrollData(),
-                                             *deferred, descendants, stopAtAsr,
-                                             aSc.GetDeferredTransformMatrix());
+          mLayerScrollData.back().Initialize(
+              mManager->GetScrollData(), *deferred, descendants, stopAtAsr,
+              aSc.GetDeferredTransformMatrix(), deferredId);
         } else {
           
           
           
           mLayerScrollData.emplace_back();
-          mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
-                                             descendants, stopAtAsr,
-                                             aSc.GetDeferredTransformMatrix());
+          mLayerScrollData.back().Initialize(
+              mManager->GetScrollData(), item, descendants, stopAtAsr,
+              aSc.GetDeferredTransformMatrix(), deferredId);
         }
       }
     }

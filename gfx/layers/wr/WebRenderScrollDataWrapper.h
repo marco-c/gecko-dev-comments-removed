@@ -210,12 +210,26 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
     
     
     
+    
+    
+    
 
     gfx::Matrix4x4 transform;
+    
+    
+    
+    
+    
+    bool emitAncestorTransform =
+        !Metrics().IsScrollable() ||
+        Metrics().GetScrollId() == mLayer->GetAncestorTransformId();
+    if (emitAncestorTransform) {
+      transform = mLayer->GetAncestorTransform();
+    }
     if (AtTopLayer()) {
       float resolution = mLayer->GetResolution();
-      transform = mLayer->GetAncestorTransform() *
-                  gfx::Matrix4x4::Scaling(resolution, resolution, 1.f);
+      transform =
+          transform * gfx::Matrix4x4::Scaling(resolution, resolution, 1.f);
     }
     if (AtBottomLayer()) {
       transform = mLayer->GetTransform() * transform;

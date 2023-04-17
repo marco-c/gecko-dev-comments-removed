@@ -38,7 +38,8 @@ void WebRenderLayerScrollData::InitializeRoot(int32_t aDescendantCount) {
 void WebRenderLayerScrollData::Initialize(
     WebRenderScrollData& aOwner, nsDisplayItem* aItem, int32_t aDescendantCount,
     const ActiveScrolledRoot* aStopAtAsr,
-    const Maybe<gfx::Matrix4x4>& aAncestorTransform) {
+    const Maybe<gfx::Matrix4x4>& aAncestorTransform,
+    const ViewID& aAncestorTransformId) {
   MOZ_ASSERT(aDescendantCount >= 0);  
   MOZ_ASSERT(mDescendantCount ==
              -1);  
@@ -55,9 +56,13 @@ void WebRenderLayerScrollData::Initialize(
     asr = nullptr;
   }
 
+  bool seenAncestorTransformId = false;
   while (asr && asr != aStopAtAsr) {
     MOZ_ASSERT(aOwner.GetManager());
     ScrollableLayerGuid::ViewID scrollId = asr->GetViewId();
+    if (aAncestorTransformId == scrollId) {
+      seenAncestorTransformId = true;
+    }
     if (Maybe<size_t> index = aOwner.HasMetadataFor(scrollId)) {
       mScrollIds.AppendElement(index.ref());
     } else {
@@ -80,6 +85,16 @@ void WebRenderLayerScrollData::Initialize(
   
   
   
+  MOZ_ASSERT(aAncestorTransformId == ScrollableLayerGuid::NULL_SCROLL_ID ||
+                 mScrollIds.IsEmpty() || seenAncestorTransformId,
+             "The ancestor transform's view ID should match one of the metrics "
+             "on this node");
+
+  
+  
+  
+  
+  
   
   
   
@@ -92,6 +107,7 @@ void WebRenderLayerScrollData::Initialize(
   if (aAncestorTransform &&
       mScrollbarData.mScrollbarLayerType != ScrollbarLayerType::Thumb) {
     mAncestorTransform = *aAncestorTransform;
+    mAncestorTransformId = aAncestorTransformId;
   }
 }
 
@@ -312,6 +328,7 @@ void ParamTraits<mozilla::layers::WebRenderLayerScrollData>::Write(
   WriteParam(aMsg, aParam.mDescendantCount);
   WriteParam(aMsg, aParam.mScrollIds);
   WriteParam(aMsg, aParam.mAncestorTransform);
+  WriteParam(aMsg, aParam.mAncestorTransformId);
   WriteParam(aMsg, aParam.mTransform);
   WriteParam(aMsg, aParam.mTransformIsPerspective);
   WriteParam(aMsg, aParam.mResolution);
@@ -337,6 +354,7 @@ bool ParamTraits<mozilla::layers::WebRenderLayerScrollData>::Read(
   return ReadParam(aMsg, aIter, &aResult->mDescendantCount) &&
          ReadParam(aMsg, aIter, &aResult->mScrollIds) &&
          ReadParam(aMsg, aIter, &aResult->mAncestorTransform) &&
+         ReadParam(aMsg, aIter, &aResult->mAncestorTransformId) &&
          ReadParam(aMsg, aIter, &aResult->mTransform) &&
          ReadParam(aMsg, aIter, &aResult->mTransformIsPerspective) &&
          ReadParam(aMsg, aIter, &aResult->mResolution) &&
