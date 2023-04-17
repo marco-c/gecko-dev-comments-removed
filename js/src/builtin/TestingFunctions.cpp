@@ -4766,7 +4766,7 @@ void ShapeSnapshot::checkSelf(JSContext* cx) const {
   
 
   
-  if (!shape_->inDictionary()) {
+  if (!shape_->isDictionary()) {
     MOZ_RELEASE_ASSERT(shape_->base() == baseShape_);
     MOZ_RELEASE_ASSERT(shape_->objectFlags() == objectFlags_);
   }

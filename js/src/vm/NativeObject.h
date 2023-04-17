@@ -606,7 +606,7 @@ class NativeObject : public JSObject {
     if (lastProperty()->numFixedSlots() != shape->numFixedSlots()) {
       return false;
     }
-    if (lastProperty()->inDictionary() || shape->inDictionary()) {
+    if (lastProperty()->isDictionary() || shape->isDictionary()) {
       return false;
     }
     if (lastProperty()->base() != shape->base()) {
@@ -979,8 +979,7 @@ class NativeObject : public JSObject {
  public:
   
   
-  
-  bool inDictionaryMode() const { return lastProperty()->inDictionary(); }
+  bool inDictionaryMode() const { return shape()->isDictionary(); }
 
   const Value& getSlot(uint32_t slot) const {
     MOZ_ASSERT(slotInRange(slot));
