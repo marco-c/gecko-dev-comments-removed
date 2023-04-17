@@ -2673,6 +2673,15 @@ void gfxPlatform::InitWebRenderConfig() {
   bool hasSoftware = gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE);
   bool hasWebRender = hasHardware || hasSoftware;
 
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  if (!gfxConfig::IsForcedOnByUser(Feature::WEBRENDER) &&
+      StaticPrefs::gfx_webrender_reject_software_driver_AtStartup()) {
+    gfxVars::SetWebRenderRequiresHardwareDriver(true);
+  }
+#endif
+
 #ifdef XP_WIN
   if (gfxConfig::IsEnabled(Feature::WEBRENDER_ANGLE)) {
     gfxVars::SetUseWebRenderANGLE(hasWebRender);
