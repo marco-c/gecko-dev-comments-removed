@@ -32,6 +32,22 @@ function futureMessage() {
   });
 };
 
+const kTreatAsPublicAddressSuffix =
+      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,29 +59,19 @@ function resolveUrl(url, options) {
     return result;
   }
 
-  const { port, protocol } = options;
+  const { port, protocol, treatAsPublicAddress } = options;
   if (port !== undefined) {
     result.port = port;
   }
   if (protocol !== undefined) {
     result.protocol = protocol;
   }
-
-  return result;
-}
-
-const kDefaultSourcePath = "resources/fetcher.html";
-
-const kTreatAsPublicAddressSuffix =
-      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
-
-function sourceUrl({ protocol, port, treatAsPublicAddress }) {
-  let path = kDefaultSourcePath;
   if (treatAsPublicAddress) {
-    path += kTreatAsPublicAddressSuffix;
+    result.searchParams.append(
+        "pipe", "header(Content-Security-Policy,treat-as-public-address)");
   }
 
-  return resolveUrl(path, { protocol, port });
+  return result;
 }
 
 const kFetchTestResult = {
@@ -88,32 +94,36 @@ const kFetchTestResult = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function fetchTest(t, { source, target, expected }) {
-  if (source === undefined) {
-    source = {};
-  }
-  const iframe = await appendIframe(t, document, sourceUrl(source));
+  const sourceUrl = resolveUrl("resources/fetcher.html", source);
+  const iframe = await appendIframe(t, document, sourceUrl);
 
   const targetUrl = resolveUrl("/common/blank-with-cors.html", target);
+  const reply = futureMessage();
+  iframe.contentWindow.postMessage(targetUrl.href, "*");
+  assert_equals(await reply, expected);
+}
+
+const kWebsocketTestResult = {
+  success: "open",
+
+  
+  
+  failure: "close: code 1006",
+};
+
+
+
+
+
+
+
+
+async function websocketTest(t, { source, target, expected }) {
+  const sourceUrl = resolveUrl("resources/socket-opener.html", source);
+  const iframe = await appendIframe(t, document, sourceUrl);
+
+  const targetUrl = resolveUrl("/echo", target);
   const reply = futureMessage();
   iframe.contentWindow.postMessage(targetUrl.href, "*");
   assert_equals(await reply, expected);
