@@ -8,7 +8,10 @@ const {
   TYPES: { THREAD_STATE },
 } = require("devtools/server/actors/resources/index");
 
-const { PAUSE_REASONS } = require("devtools/server/actors/thread");
+const {
+  PAUSE_REASONS,
+  STATES: THREAD_STATES,
+} = require("devtools/server/actors/thread");
 
 
 const STATES = {
@@ -51,6 +54,15 @@ class BreakpointWatcher {
     const { threadActor } = targetActor;
     this.threadActor = threadActor;
     this.onAvailable = onAvailable;
+
+    
+    
+    
+    
+    const isTargetCreation = this.threadActor.state == THREAD_STATES.DETACHED;
+    if (isTargetCreation && !targetActor.targetType.endsWith("worker")) {
+      await this.threadActor.attach({});
+    }
 
     this.isInterrupted = false;
 
