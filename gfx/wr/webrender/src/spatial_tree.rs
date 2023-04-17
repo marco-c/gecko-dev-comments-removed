@@ -774,8 +774,8 @@ impl SpatialTree {
                                 
                                 
                                 
-                                if info.viewport_rect.width() > MIN_SCROLL_ROOT_SIZE &&
-                                   info.viewport_rect.height() > MIN_SCROLL_ROOT_SIZE {
+                                if info.viewport_rect.size.width > MIN_SCROLL_ROOT_SIZE &&
+                                   info.viewport_rect.size.height > MIN_SCROLL_ROOT_SIZE {
                                     
                                     
                                     real_scroll_root = node_index;
