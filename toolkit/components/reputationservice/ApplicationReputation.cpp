@@ -1632,38 +1632,6 @@ nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
   }
 
   
-  const auto originalHashLength = sha256Hash.Length();
-  if (originalHashLength == 0) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            OriginalHashEmpty);
-  } else if (originalHashLength < 32) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            OriginalHashTooShort);
-  } else if (originalHashLength > 32) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            OriginalHashTooLong);
-  } else if (!mRequest.has_digests()) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            MissingDigest);
-  } else if (!mRequest.digests().has_sha256()) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            MissingSha256);
-  } else if (mRequest.digests().sha256().size() != originalHashLength) {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            InvalidSha256);
-  } else {
-    AccumulateCategorical(
-        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
-            ValidHash);
-  }
-
-  
   
   
   std::string serialized;
