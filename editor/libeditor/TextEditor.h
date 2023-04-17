@@ -482,18 +482,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult SelectEntireDocument() override;
 
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAt(const nsAString& aStringToInsert,
-                                           const EditorDOMPoint& aPointToInsert,
-                                           bool aDoDeleteSelection);
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) override;
 
