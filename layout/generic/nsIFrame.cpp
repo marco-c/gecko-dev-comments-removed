@@ -7012,7 +7012,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
     
     
     
-    *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(this);
+    *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrameInProcess(this);
     nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
     
     result.PostTranslate(NSAppUnitsToFloatPixels(delta.x, scaleFactor),
@@ -7082,7 +7082,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
     }
   }
 
-  *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(this);
+  *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrameInProcess(this);
 
   
 
@@ -7107,7 +7107,8 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
   while (*aOutAncestor != aStopAtAncestor.mFrame &&
          !shouldStopAt(current, *aOutAncestor, aFlags)) {
     
-    nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrame(*aOutAncestor);
+    nsIFrame* parent =
+        nsLayoutUtils::GetCrossDocParentFrameInProcess(*aOutAncestor);
     if (!parent) break;
 
     current = *aOutAncestor;
