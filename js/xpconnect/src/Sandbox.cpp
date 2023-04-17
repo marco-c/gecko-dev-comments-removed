@@ -435,29 +435,27 @@ static bool SandboxCloneInto(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static void sandbox_finalize(JSFreeOp* fop, JSObject* obj) {
-  nsIScriptObjectPrincipal* sop =
-      static_cast<nsIScriptObjectPrincipal*>(xpc_GetJSPrivate(obj));
-  if (!sop) {
+  SandboxPrivate* priv = SandboxPrivate::GetPrivate(obj);
+  if (!priv) {
     
     return;
   }
 
-  static_cast<SandboxPrivate*>(sop)->ForgetGlobalObject(obj);
+  priv->ForgetGlobalObject(obj);
   DestroyProtoAndIfaceCache(obj);
-  DeferredFinalize(sop);
+  DeferredFinalize(static_cast<nsIScriptObjectPrincipal*>(priv));
 }
 
 static size_t sandbox_moved(JSObject* obj, JSObject* old) {
   
   
   
-  nsIScriptObjectPrincipal* sop =
-      static_cast<nsIScriptObjectPrincipal*>(xpc_GetJSPrivate(obj));
-  if (!sop) {
+  SandboxPrivate* priv = SandboxPrivate::GetPrivate(obj);
+  if (!priv) {
     return 0;
   }
 
-  return static_cast<SandboxPrivate*>(sop)->ObjectMoved(obj, old);
+  return priv->ObjectMoved(obj, old);
 }
 
 #define XPCONNECT_SANDBOX_CLASS_METADATA_SLOT \
@@ -1983,10 +1981,9 @@ nsresult xpc::EvalInSandbox(JSContext* cx, HandleObject sandboxArg,
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsIScriptObjectPrincipal* sop =
-      static_cast<nsIScriptObjectPrincipal*>(xpc_GetJSPrivate(sandbox));
+  SandboxPrivate* priv = SandboxPrivate::GetPrivate(sandbox);
+  nsIScriptObjectPrincipal* sop = priv;
   MOZ_ASSERT(sop, "Invalid sandbox passed");
-  SandboxPrivate* priv = static_cast<SandboxPrivate*>(sop);
   nsCOMPtr<nsIPrincipal> prin = sop->GetPrincipal();
   NS_ENSURE_TRUE(prin, NS_ERROR_FAILURE);
 
