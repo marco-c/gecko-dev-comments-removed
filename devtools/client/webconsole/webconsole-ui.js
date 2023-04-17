@@ -366,15 +366,10 @@ class WebConsoleUI {
 
     
     
-    
-    
-    
     const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
       resourceCommand.TYPES.NETWORK_EVENT
     );
-    const supportsWatcherRequest = commands.targetCommand.hasTargetWatcherSupport(
-      "saveRequestAndResponseBodies"
-    );
+    const supportsWatcherRequest = commands.targetCommand.hasTargetWatcherSupport();
     if (hasNetworkResourceCommandSupport && supportsWatcherRequest) {
       const networkFront = await commands.watcherFront.getNetworkParentActor();
       

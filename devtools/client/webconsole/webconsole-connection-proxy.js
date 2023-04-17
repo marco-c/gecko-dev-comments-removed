@@ -85,15 +85,11 @@ class WebConsoleConnectionProxy {
     
     
     
-    
-    
     const { targetCommand, resourceCommand } = this.webConsoleUI.hud.commands;
     const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
       resourceCommand.TYPES.NETWORK_EVENT
     );
-    const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport(
-      "saveRequestAndResponseBodies"
-    );
+    const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport();
     if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
       
       
