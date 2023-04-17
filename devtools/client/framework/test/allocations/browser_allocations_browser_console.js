@@ -36,6 +36,12 @@ async function testScript() {
 }
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["devtools.browsertoolbox.fission", true]],
+  });
+
   const tab = await addTab(TEST_URL);
 
   
