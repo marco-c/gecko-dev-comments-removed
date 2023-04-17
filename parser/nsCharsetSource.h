@@ -35,6 +35,8 @@ enum {
   kCharsetFromFinalUserForcedAutoDetection,
   kCharsetFromXmlDeclarationUtf16,        
                                           
+  kCharsetFromIrreversibleAutoDetection,  
+                                          
   kCharsetFromByteOrderMark,
   kCharsetFromUtf8OnlyMime,  
   kCharsetFromBuiltIn,       
