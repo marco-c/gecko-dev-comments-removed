@@ -657,7 +657,8 @@ struct CompilationInput {
 
   
   
-  BaseScript* lazyOuterScript() { return lazy_.raw().as<BaseScript*>(); }
+  InputScript lazyOuterScript() { return lazy_; }
+  BaseScript* lazyOuterBaseScript() { return lazy_.raw().as<BaseScript*>(); }
 
   
   
@@ -774,7 +775,8 @@ class CompilationSyntaxParseCache {
   
   [[nodiscard]] bool init(JSContext* cx, LifoAlloc& alloc,
                           ParserAtomsTable& parseAtoms,
-                          CompilationAtomCache& atomCache, BaseScript* lazy);
+                          CompilationAtomCache& atomCache,
+                          const InputScript& lazy);
 
  private:
   
@@ -794,15 +796,23 @@ class CompilationSyntaxParseCache {
   [[nodiscard]] bool copyFunctionInfo(JSContext* cx,
                                       ParserAtomsTable& parseAtoms,
                                       CompilationAtomCache& atomCache,
-                                      BaseScript* lazy);
+                                      const InputScript& lazy);
   [[nodiscard]] bool copyScriptInfo(JSContext* cx, LifoAlloc& alloc,
                                     ParserAtomsTable& parseAtoms,
                                     CompilationAtomCache& atomCache,
                                     BaseScript* lazy);
+  [[nodiscard]] bool copyScriptInfo(JSContext* cx, LifoAlloc& alloc,
+                                    ParserAtomsTable& parseAtoms,
+                                    CompilationAtomCache& atomCache,
+                                    const ScriptStencilRef& lazy);
   [[nodiscard]] bool copyClosedOverBindings(JSContext* cx, LifoAlloc& alloc,
                                             ParserAtomsTable& parseAtoms,
                                             CompilationAtomCache& atomCache,
                                             BaseScript* lazy);
+  [[nodiscard]] bool copyClosedOverBindings(JSContext* cx, LifoAlloc& alloc,
+                                            ParserAtomsTable& parseAtoms,
+                                            CompilationAtomCache& atomCache,
+                                            const ScriptStencilRef& lazy);
 };
 
 
@@ -1284,7 +1294,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
     
     if (input.isDelazifying()) {
-      BaseScript* lazy = input.lazyOuterScript();
+      InputScript lazy = input.lazyOuterScript();
       auto& atomCache = input.atomCache;
       if (!previousParseCache.init(cx, alloc, parserAtoms, atomCache, lazy)) {
         return false;
