@@ -685,6 +685,32 @@ class EditorBase : public nsIEditor,
                           nsIEditor::EStripWrappers aStripWrappers,
                           nsIPrincipal* aPrincipal = nullptr);
 
+  enum class AllowBeforeInputEventCancelable {
+    No,
+    Yes,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextAsAction(
+      const nsAString& aString, nsRange* aReplaceRange,
+      AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
+      nsIPrincipal* aPrincipal = nullptr);
+
  protected:  
   class AutoEditActionDataSetter;
 
@@ -1933,6 +1959,14 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers) = 0;
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ReplaceSelectionAsSubAction(const nsAString& aString);
 
  protected:  
   

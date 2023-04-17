@@ -216,11 +216,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   int32_t MaxTextLength() const { return mMaxTextLength; }
   void SetMaxTextLength(int32_t aLength) { mMaxTextLength = aLength; }
 
-  enum class AllowBeforeInputEventCancelable {
-    No,
-    Yes,
-  };
-
   
 
 
@@ -235,25 +230,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   MOZ_CAN_RUN_SCRIPT nsresult SetTextAsAction(
       const nsAString& aString,
-      AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
-      nsIPrincipal* aPrincipal = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextAsAction(
-      const nsAString& aString, nsRange* aReplaceRange,
       AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
       nsIPrincipal* aPrincipal = nullptr);
 
@@ -366,14 +342,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetTextAsSubAction(const nsAString& aString);
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult
-  ReplaceSelectionAsSubAction(const nsAString& aString);
 
   
 
