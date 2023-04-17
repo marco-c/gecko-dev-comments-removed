@@ -11,10 +11,9 @@ function webtransport_url(handler) {
 }
 
 
-
-async function read_stream_as_string(readable_stream) {
-  const decoder = new TextDecoderStream();
-  const decode_stream = readable_stream.pipeThrough(decoder);
+async function read_stream_as_json(stream) {
+  const decoder = new TextDecoderStream('utf-8');
+  const decode_stream = stream.readable.pipeThrough(decoder);
   const reader = decode_stream.getReader();
 
   let chunks = '';
@@ -27,13 +26,7 @@ async function read_stream_as_string(readable_stream) {
   }
   reader.releaseLock();
 
-  return chunks;
-}
-
-
-async function read_stream_as_json(readable_stream) {
-  const text = await read_stream_as_string(readable_stream);
-  return JSON.parse(text);
+  return JSON.parse(chunks);
 }
 
 

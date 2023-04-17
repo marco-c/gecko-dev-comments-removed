@@ -1,0 +1,12 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['payment-method-basic-card'],
+  [], 
+  null, 
+);
