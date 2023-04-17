@@ -983,7 +983,7 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
                               HandleValue onFulfilled, HandleValue onRejected,
-                              MutableHandleValue rval, bool rvalUsed);
+                              MutableHandleValue rval, bool rvalExplicitlyUsed);
 
 
 [[nodiscard]] static bool ResolvePromiseInternal(JSContext* cx,
@@ -4426,16 +4426,56 @@ static bool CanCallOriginalPromiseThenBuiltin(JSContext* cx,
              cx, &promise.toObject().as<PromiseObject>());
 }
 
+static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
+    JSContext* cx, PromiseObject* promise) {
+  
+  
+  
+  if (promise->requiresUserInteractionHandling()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (!cx->options().asyncStack()) {
+    return false;
+  }
+
+  
+  if (cx->realm()->isDebuggee()) {
+    return true;
+  }
+
+  
+  if (cx->runtime()->geckoProfiler().enabled()) {
+    return true;
+  }
+  if (JS::IsProfileTimelineRecordingEnabled()) {
+    return true;
+  }
+
+  
+  
+  return false;
+}
+
 
 static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
                                        HandleValue onFulfilled,
                                        HandleValue onRejected,
-                                       MutableHandleValue rval, bool rvalUsed) {
+                                       MutableHandleValue rval,
+                                       bool rvalExplicitlyUsed) {
   cx->check(promiseVal, onFulfilled, onRejected);
   MOZ_ASSERT(CanCallOriginalPromiseThenBuiltin(cx, promiseVal));
 
   Rooted<PromiseObject*> promise(cx,
                                  &promiseVal.toObject().as<PromiseObject>());
+
+  bool rvalUsed = rvalExplicitlyUsed ||
+                  IsPromiseThenOrCatchRetValImplicitlyUsed(cx, promise);
 
   
   Rooted<PromiseCapability> resultCapability(cx);
@@ -5161,7 +5201,7 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
 }
 
 static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
-                               bool rvalUsed) {
+                               bool rvalExplicitlyUsed) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   HandleValue thisVal = args.thisv();
@@ -5171,7 +5211,7 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
   
   if (CanCallOriginalPromiseThenBuiltin(cx, thisVal)) {
     return OriginalPromiseThenBuiltin(cx, thisVal, onFulfilled, onRejected,
-                                      args.rval(), rvalUsed);
+                                      args.rval(), rvalExplicitlyUsed);
   }
 
   
@@ -5183,46 +5223,16 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
   if (IsNativeFunction(thenVal, &Promise_then) &&
       thenVal.toObject().nonCCWRealm() == cx->realm()) {
     return Promise_then_impl(cx, thisVal, onFulfilled, onRejected, args.rval(),
-                             rvalUsed);
+                             rvalExplicitlyUsed);
   }
 
   return Call(cx, thenVal, thisVal, UndefinedHandleValue, onRejected,
               args.rval());
 }
 
-static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
-    JSContext* cx) {
-  
-  
-  
-  
-  
-  if (!cx->options().asyncStack()) {
-    return false;
-  }
-
-  
-  if (cx->realm()->isDebuggee()) {
-    return true;
-  }
-
-  
-  if (cx->runtime()->geckoProfiler().enabled()) {
-    return true;
-  }
-  if (JS::IsProfileTimelineRecordingEnabled()) {
-    return true;
-  }
-
-  
-  
-  return false;
-}
-
 
 static bool Promise_catch_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
-  return Promise_catch_impl(cx, argc, vp,
-                            IsPromiseThenOrCatchRetValImplicitlyUsed(cx));
+  return Promise_catch_impl(cx, argc, vp, false);
 }
 
 
@@ -5232,7 +5242,8 @@ static bool Promise_catch(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
                               HandleValue onFulfilled, HandleValue onRejected,
-                              MutableHandleValue rval, bool rvalUsed) {
+                              MutableHandleValue rval,
+                              bool rvalExplicitlyUsed) {
   
   
   if (!promiseVal.isObject()) {
@@ -5245,7 +5256,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
   
   if (CanCallOriginalPromiseThenBuiltin(cx, promiseVal)) {
     return OriginalPromiseThenBuiltin(cx, promiseVal, onFulfilled, onRejected,
-                                      rval, rvalUsed);
+                                      rval, rvalExplicitlyUsed);
   }
 
   RootedObject promiseObj(cx, &promiseVal.toObject());
@@ -5259,6 +5270,10 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
   if (!unwrappedPromise) {
     return false;
   }
+
+  bool rvalUsed =
+      rvalExplicitlyUsed ||
+      IsPromiseThenOrCatchRetValImplicitlyUsed(cx, unwrappedPromise);
 
   
   CreateDependentPromise createDependent =
@@ -5288,8 +5303,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 bool Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1),
-                           args.rval(),
-                           IsPromiseThenOrCatchRetValImplicitlyUsed(cx));
+                           args.rval(), false);
 }
 
 

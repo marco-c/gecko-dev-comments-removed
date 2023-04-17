@@ -49,6 +49,10 @@ class JS_PUBLIC_API JobQueue {
 
 
 
+
+
+
+
   virtual bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
                                  JS::HandleObject job,
                                  JS::HandleObject allocationSite,
