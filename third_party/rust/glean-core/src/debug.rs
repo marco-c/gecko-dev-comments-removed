@@ -229,7 +229,6 @@ fn validate_source_tags(tags: &Vec<String>) -> bool {
         return false;
     }
 
-    
     if tags.iter().any(|s| s.starts_with("glean")) {
         log::error!("Tags starting with `glean` are reserved and must not be used.");
         return false;
@@ -312,7 +311,6 @@ mod test {
         ]));
         
         assert!(!validate_source_tags(&vec!["!nv@lid-val*e".to_string()]));
-        
         assert!(!validate_source_tags(&vec![
             "glean-test1".to_string(),
             "test2".to_string()

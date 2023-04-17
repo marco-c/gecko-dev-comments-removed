@@ -3,6 +3,7 @@
 
 
 use crate::ErrorType;
+use std::time::Duration;
 
 
 
@@ -27,6 +28,17 @@ pub trait Timespan {
     
     
     fn cancel(&self);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn set_raw(&self, elapsed: Duration);
 
     
     

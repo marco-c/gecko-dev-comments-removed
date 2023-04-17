@@ -38,7 +38,6 @@ const MAX_LABEL_LENGTH: usize = 61;
 
 
 
-
 fn matches_label_regex(value: &str) -> bool {
     let mut iter = value.chars();
 
@@ -200,7 +199,7 @@ pub fn strip_label(identifier: &str) -> &str {
 
 
 
-pub fn dynamic_label(
+pub fn validate_dynamic_label(
     glean: &Glean,
     meta: &CommonMetricData,
     base_identifier: &str,

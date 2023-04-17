@@ -199,9 +199,6 @@ impl Glean {
             return Err(ErrorKind::InvalidConfig.into());
         }
 
-        
-        
-        let data_store = Some(Database::new(&cfg.data_path, cfg.delay_ping_lifetime_io)?);
         let event_data_store = EventDatabase::new(&cfg.data_path)?;
 
         
@@ -218,7 +215,9 @@ impl Glean {
 
         Ok(Self {
             upload_enabled: cfg.upload_enabled,
-            data_store,
+            
+            
+            data_store: None,
             event_data_store,
             core_metrics: CoreMetrics::new(),
             database_metrics: DatabaseMetrics::new(),
@@ -241,6 +240,10 @@ impl Glean {
     
     pub fn new(cfg: Configuration) -> Result<Self> {
         let mut glean = Self::new_for_subprocess(&cfg, false)?;
+
+        
+        
+        glean.data_store = Some(Database::new(&cfg.data_path, cfg.delay_ping_lifetime_io)?);
 
         
         
@@ -803,6 +806,8 @@ impl Glean {
         self.debug.debug_view_tag.get()
     }
 
+    
+    
     
     
     

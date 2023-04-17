@@ -746,6 +746,8 @@ pub fn set_log_pings(value: bool) {
 
 
 
+
+
 pub fn set_source_tags(tags: Vec<String>) -> bool {
     if was_initialize_called() {
         with_glean_mut(|glean| glean.set_source_tags(tags))
