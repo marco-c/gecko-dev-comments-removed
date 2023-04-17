@@ -449,13 +449,13 @@ nsresult Decoder::FinishWithErrorInternal() {
 
 
 void Decoder::PostSize(int32_t aWidth, int32_t aHeight,
-                       Orientation aOrientation, Resolution aResolution) {
+                       Orientation aOrientation ) {
   
   MOZ_ASSERT(aWidth >= 0, "Width can't be negative!");
   MOZ_ASSERT(aHeight >= 0, "Height can't be negative!");
 
   
-  mImageMetadata.SetSize(aWidth, aHeight, aOrientation, aResolution);
+  mImageMetadata.SetSize(aWidth, aHeight, aOrientation);
 
   
   

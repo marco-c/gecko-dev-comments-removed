@@ -236,9 +236,8 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::ReadJPEGData(
       }
 
       
-      EXIFData exif = ReadExifData();
-      PostSize(mInfo.image_width, mInfo.image_height, exif.orientation,
-               exif.resolution);
+      PostSize(mInfo.image_width, mInfo.image_height,
+               ReadOrientationFromEXIF());
       if (HasError()) {
         
         mState = JPEG_ERROR;
@@ -602,7 +601,7 @@ LexerTransition<nsJPEGDecoder::State> nsJPEGDecoder::FinishedJPEGData() {
   return Transition::TerminateFailure();
 }
 
-EXIFData nsJPEGDecoder::ReadExifData() const {
+Orientation nsJPEGDecoder::ReadOrientationFromEXIF() {
   jpeg_saved_marker_ptr marker;
 
   
@@ -614,11 +613,13 @@ EXIFData nsJPEGDecoder::ReadExifData() const {
 
   
   if (!marker) {
-    return EXIFData();
+    return Orientation();
   }
 
-  return EXIFParser::Parse(marker->data,
-                           static_cast<uint32_t>(marker->data_length));
+  
+  EXIFData exif = EXIFParser::Parse(marker->data,
+                                    static_cast<uint32_t>(marker->data_length));
+  return exif.orientation;
 }
 
 void nsJPEGDecoder::NotifyDone() {

@@ -37,7 +37,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/image/Resolution.h"
 #include "ImageContainer.h"
 #include "PlaybackType.h"
 #ifdef DEBUG
@@ -412,9 +411,6 @@ class RasterImage final : public ImageResource,
   
   
   Orientation mOrientation;
-
-  
-  Resolution mResolution;
 
   
   Maybe<Progress> mLoadProgress;

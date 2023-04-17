@@ -78,12 +78,10 @@ class nsImageBoxFrame final : public nsLeafBoxFrame {
 
 
 
-  const mozilla::StyleImage* GetImageFromStyle(const ComputedStyle&) const;
-  const mozilla::StyleImage* GetImageFromStyle() const {
+  const mozilla::StyleImage* GetImageFromStyle(const ComputedStyle&);
+  const mozilla::StyleImage* GetImageFromStyle() {
     return GetImageFromStyle(*Style());
   }
-
-  mozilla::ImageResolution GetImageResolution() const;
 
   
 
@@ -143,6 +141,7 @@ class nsImageBoxFrame final : public nsLeafBoxFrame {
   nsSize mImageSize;
 
   RefPtr<imgRequestProxy> mImageRequest;
+  float mImageResolution = 1.0f;
   nsCOMPtr<imgINotificationObserver> mListener;
 
   int32_t mLoadFlags;

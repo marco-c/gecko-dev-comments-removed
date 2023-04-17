@@ -14,16 +14,19 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/image/Resolution.h"
 #include "nsSize.h"
 #include "nsTArray.h"
 
-namespace mozilla::image {
+namespace mozilla {
+namespace image {
 
 
 class ImageMetadata {
  public:
-  ImageMetadata() = default;
+  ImageMetadata()
+      : mLoopCount(-1),
+        mFirstFrameTimeout(FrameTimeout::Forever()),
+        mHasAnimation(false) {}
 
   void SetHotspot(uint16_t aHotspotX, uint16_t aHotspotY) {
     mHotspot = Some(gfx::IntPoint(aHotspotX, aHotspotY));
@@ -53,12 +56,10 @@ class ImageMetadata {
     return mFirstFrameRefreshArea.isSome();
   }
 
-  void SetSize(int32_t aWidth, int32_t aHeight, Orientation aOrientation,
-               Resolution aResolution) {
+  void SetSize(int32_t width, int32_t height, Orientation orientation) {
     if (!HasSize()) {
-      mSize.emplace(nsIntSize(aWidth, aHeight));
-      mOrientation.emplace(aOrientation);
-      mResolution = aResolution;
+      mSize.emplace(nsIntSize(width, height));
+      mOrientation.emplace(orientation);
     }
   }
   nsIntSize GetSize() const { return *mSize; }
@@ -67,8 +68,6 @@ class ImageMetadata {
   void AddNativeSize(const nsIntSize& aSize) {
     mNativeSizes.AppendElement(aSize);
   }
-
-  Resolution GetResolution() const { return mResolution; }
 
   const nsTArray<nsIntSize>& GetNativeSizes() const { return mNativeSizes; }
 
@@ -83,16 +82,13 @@ class ImageMetadata {
   Maybe<gfx::IntPoint> mHotspot;
 
   
-  int32_t mLoopCount = -1;
-
-  
-  Resolution mResolution;
+  int32_t mLoopCount;
 
   
   Maybe<FrameTimeout> mLoopLength;
 
   
-  FrameTimeout mFirstFrameTimeout = FrameTimeout::Forever();
+  FrameTimeout mFirstFrameTimeout;
 
   
   
@@ -104,9 +100,10 @@ class ImageMetadata {
   
   CopyableTArray<nsIntSize> mNativeSizes;
 
-  bool mHasAnimation = false;
+  bool mHasAnimation : 1;
 };
 
+}  
 }  
 
 #endif  
