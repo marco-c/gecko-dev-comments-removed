@@ -16,6 +16,7 @@
 #include "mozilla/EditorUtils.h"     
 #include "mozilla/dom/Element.h"     
 #include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/Text.h"  
 
 #include "nsAString.h"  
@@ -437,70 +438,106 @@ bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
   return NS_SUCCEEDED(rv) && isVisible;
 }
 
-bool HTMLEditUtils::IsVisibleBRElement(
-    const nsIContent& aContent, const Element* aEditingHost ) {
+bool HTMLEditUtils::IsVisibleBRElement(const nsIContent& aContent) {
   if (!aContent.IsHTMLElement(nsGkAtoms::br)) {
     return false;
   }
+
   
   
+  Element* maybeNonEditableAncestorBlock = HTMLEditUtils::GetAncestorElement(
+      aContent, HTMLEditUtils::ClosestBlockElement);
+  if (NS_WARN_IF(!maybeNonEditableAncestorBlock)) {
+    return true;
+  }
+
   
-  
-  
-  
-  if (!aEditingHost) {
-    aEditingHost = HTMLEditUtils::GetInclusiveAncestorElement(
-        aContent,
-        HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost);
-    if (NS_WARN_IF(!aEditingHost)) {
-      return false;
+  for (nsIContent* nextContent = HTMLEditUtils::GetNextContent(
+           aContent,
+           {WalkTreeOption::IgnoreDataNodeExceptText,
+            WalkTreeOption::StopAtBlockBoundary},
+           maybeNonEditableAncestorBlock);
+       nextContent; nextContent = HTMLEditUtils::GetNextContent(
+                        *nextContent,
+                        {WalkTreeOption::IgnoreDataNodeExceptText,
+                         WalkTreeOption::StopAtBlockBoundary},
+                        maybeNonEditableAncestorBlock)) {
+    if (nextContent->IsElement()) {
+      
+      if (HTMLEditUtils::IsBlockElement(*nextContent)) {
+        return false;
+      }
+
+      
+      
+      if (!nextContent->IsHTMLElement()) {
+        return false;
+      }
+
+      
+      
+      if (nextContent->IsAnyOfHTMLElements(
+              nsGkAtoms::br, nsGkAtoms::applet, nsGkAtoms::iframe,
+              nsGkAtoms::img, nsGkAtoms::meter, nsGkAtoms::progress,
+              nsGkAtoms::select, nsGkAtoms::textarea)) {
+        return true;
+      }
+
+      if (HTMLInputElement* inputElement =
+              HTMLInputElement::FromNode(nextContent)) {
+        if (inputElement->ControlType() == FormControlType::InputHidden) {
+          continue;  
+        }
+        return true;  
+                      
+      }
+
+      continue;
     }
-  }
-  nsIContent* nextContent =
-      HTMLEditUtils::GetNextContent(aContent,
-                                    {WalkTreeOption::IgnoreDataNodeExceptText,
-                                     WalkTreeOption::StopAtBlockBoundary},
-                                    aEditingHost);
-  if (nextContent && nextContent->IsHTMLElement(nsGkAtoms::br)) {
-    return true;
-  }
 
-  
-  
-  
-  if (!nextContent) {
     
-    return false;
-  }
-  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
     
-    return false;
+    Text* textNode = Text::FromNode(nextContent);
+    if (!textNode) {
+      continue;  
+    }
+    if (!textNode->TextLength()) {
+      continue;  
+    }
+    if (!textNode->TextIsOnlyWhitespace()) {
+      return true;  
+    }
+    const nsTextFragment& textFragment = textNode->TextFragment();
+    const bool isWhiteSpacePreformatted =
+        EditorUtils::IsWhiteSpacePreformatted(*textNode);
+    const bool isNewLinePreformatted =
+        EditorUtils::IsNewLinePreformatted(*textNode);
+    if (!isWhiteSpacePreformatted && !isNewLinePreformatted) {
+      
+      continue;
+    }
+    for (uint32_t i = 0; i < textFragment.GetLength(); i++) {
+      
+      if (textFragment.CharAt(AssertedCast<int32_t>(i)) ==
+          HTMLEditUtils::kNewLine) {
+        if (isNewLinePreformatted) {
+          return true;
+        }
+        continue;
+      }
+      
+      
+      if (isWhiteSpacePreformatted) {
+        return true;
+      }
+    }
+    
   }
 
   
   
   
-  
-  
-  
-  nsIContent* previousContent = HTMLEditUtils::GetPreviousContent(
-      aContent,
-      {WalkTreeOption::IgnoreDataNodeExceptText,
-       WalkTreeOption::StopAtBlockBoundary},
-      aEditingHost);
-  if (previousContent && previousContent->IsHTMLElement(nsGkAtoms::br)) {
-    return true;
-  }
-
-  
-  
-  EditorRawDOMPoint afterBRElement(EditorRawDOMPoint::After(aContent));
-  if (NS_WARN_IF(!afterBRElement.IsSet())) {
-    return false;
-  }
-  return !WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-              const_cast<Element*>(aEditingHost), afterBRElement)
-              .ReachedBlockBoundary();
+  return false;
 }
 
 bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,

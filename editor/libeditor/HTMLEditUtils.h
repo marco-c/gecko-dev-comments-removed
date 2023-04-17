@@ -311,16 +311,10 @@ class HTMLEditUtils final {
 
 
 
-
-
-
-
-  static bool IsVisibleBRElement(const nsIContent& aContent,
-                                 const Element* aEditingHost = nullptr);
-  static bool IsInvisibleBRElement(const nsIContent& aContent,
-                                   const Element* aEditingHost = nullptr) {
+  static bool IsVisibleBRElement(const nsIContent& aContent);
+  static bool IsInvisibleBRElement(const nsIContent& aContent) {
     return aContent.IsHTMLElement(nsGkAtoms::br) &&
-           !HTMLEditUtils::IsVisibleBRElement(aContent, aEditingHost);
+           !HTMLEditUtils::IsVisibleBRElement(aContent);
   }
 
   
