@@ -225,7 +225,7 @@ static nsIContent* GetClickableAncestor(
   
   
   
-  if (aFrame->StyleUI()->Cursor().keyword == StyleCursorKind::Pointer) {
+  if (aFrame->StyleUI()->mCursor.keyword == StyleCursorKind::Pointer) {
     return aFrame->GetContent();
   }
 

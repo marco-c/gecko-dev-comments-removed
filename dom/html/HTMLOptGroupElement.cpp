@@ -39,7 +39,7 @@ void HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   if (nsIFrame* frame = GetPrimaryFrame()) {
     
     
-    if (frame->StyleUI()->UserInput() == StyleUserInput::None) {
+    if (frame->StyleUI()->mUserInput == StyleUserInput::None) {
       return;
     }
   }

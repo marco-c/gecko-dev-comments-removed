@@ -334,8 +334,8 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   bool isRemoteFrame = frameLoader && frameLoader->IsRemoteFrame();
 
   
-  const bool pointerEventsNone =
-      Style()->PointerEvents() == StylePointerEvents::None;
+  bool pointerEventsNone =
+      StyleUI()->mPointerEvents == StylePointerEvents::None;
   if (!aBuilder->IsForEventDelivery() || !pointerEventsNone) {
     nsDisplayListCollection decorations(aBuilder);
     DisplayBorderBackgroundOutline(aBuilder, decorations);
@@ -1265,8 +1265,8 @@ nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
                                  nsSubDocumentFrame* aFrame)
     : nsPaintedDisplayItem(aBuilder, aFrame),
       mEventRegionsOverride(EventRegionsOverride::NoOverride) {
-  const bool frameIsPointerEventsNone =
-      aFrame->Style()->PointerEvents() == StylePointerEvents::None;
+  bool frameIsPointerEventsNone = aFrame->StyleUI()->GetEffectivePointerEvents(
+                                      aFrame) == StylePointerEvents::None;
   if (aBuilder->IsInsidePointerEventsNoneDoc() || frameIsPointerEventsNone) {
     mEventRegionsOverride |= EventRegionsOverride::ForceEmptyHitRegion;
   }
