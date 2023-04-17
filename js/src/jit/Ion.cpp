@@ -62,7 +62,7 @@
 #include "util/Memory.h"
 #include "util/Windows.h"
 #include "vm/BytecodeIterator.h"
-#include "vm/HelperThreads.h"
+#include "vm/HelperThreadState.h"
 #include "vm/Realm.h"
 #include "vm/TraceLogging.h"
 #ifdef MOZ_VTUNE
@@ -1938,7 +1938,7 @@ bool jit::OffThreadCompilationAvailable(JSContext* cx) {
   
   
   return cx->runtime()->canUseOffthreadIonCompilation() &&
-         GetHelperThreadCPUCount() > 1 && CanUseExtraThreads();
+         HelperThreadState().cpuCount > 1 && CanUseExtraThreads();
 }
 
 MethodStatus jit::CanEnterIon(JSContext* cx, RunState& state) {

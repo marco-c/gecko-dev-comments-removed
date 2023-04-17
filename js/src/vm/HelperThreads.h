@@ -79,10 +79,6 @@ void DestroyHelperThreadsState();
 
 bool EnsureHelperThreadsInitialized();
 
-size_t GetHelperThreadCount();
-size_t GetHelperThreadCPUCount();
-size_t GetMaxWasmCompilationThreads();
-
 
 
 bool SetFakeCPUCount(size_t count);
