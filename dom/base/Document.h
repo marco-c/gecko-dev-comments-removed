@@ -2874,10 +2874,9 @@ class Document : public nsINode,
 
 
 
-
   already_AddRefed<Document> CreateStaticClone(
       nsIDocShell* aCloneContainer, nsIContentViewer* aContentViewer,
-      nsIPrintSettings* aPrintSettings, bool* aOutHasInProcessPrintCallbacks);
+      bool* aOutHasInProcessPrintCallbacks);
 
   
 
