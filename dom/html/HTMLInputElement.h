@@ -115,8 +115,8 @@ class HTMLInputElement final : public TextControlElement,
   friend class InputType;
 
  public:
-  using nsGenericHTMLFormElementWithState::GetForm;
-  using nsGenericHTMLFormElementWithState::GetFormAction;
+  using nsGenericHTMLFormControlElementWithState::GetForm;
+  using nsGenericHTMLFormControlElementWithState::GetFormAction;
   using nsIConstraintValidation::GetValidationMessage;
   using ValueSetterOption = TextControlState::ValueSetterOption;
   using ValueSetterOptions = TextControlState::ValueSetterOptions;
@@ -862,7 +862,7 @@ class HTMLInputElement final : public TextControlElement,
 
   
   
-  using nsGenericHTMLFormElementWithState::IsSingleLineTextControl;
+  using nsGenericHTMLFormControlElementWithState::IsSingleLineTextControl;
 
   
 

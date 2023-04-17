@@ -182,7 +182,7 @@ class HTMLTextAreaElement final : public TextControlElement,
     SetHTMLBoolAttr(nsGkAtoms::disabled, aDisabled, aError);
   }
   
-  using nsGenericHTMLFormElementWithState::GetForm;
+  using nsGenericHTMLFormControlElementWithState::GetForm;
   int32_t MaxLength() const { return GetIntAttr(nsGkAtoms::maxlength, -1); }
   int32_t UsedMaxLength() const final { return MaxLength(); }
   void SetMaxLength(int32_t aMaxLength, ErrorResult& aError) {
@@ -291,7 +291,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLTextAreaElement();
 
   
-  using nsGenericHTMLFormElementWithState::IsSingleLineTextControl;
+  using nsGenericHTMLFormControlElementWithState::IsSingleLineTextControl;
 
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
