@@ -79,7 +79,7 @@ async function _attemptBackgroundUpdate() {
       "@mozilla.org/updates/update-sync-manager;1"
     ].getService(Ci.nsIUpdateSyncManager);
     if (syncManager.isOtherInstanceRunning()) {
-      reasons = BackgroundUpdate.REASON.OTHER_INSTANCE;
+      reasons.push(BackgroundUpdate.REASON.OTHER_INSTANCE);
     }
   }
 
