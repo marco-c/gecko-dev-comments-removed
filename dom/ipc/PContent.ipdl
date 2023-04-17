@@ -635,13 +635,6 @@ child:
 
     async FontListChanged();
 
-    
-
-
-
-    async FontListShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
-                                SharedMemoryHandle aHandle);
-
     async UpdateAppLocales(nsCString[] appLocales);
     async UpdateRequestedLocales(nsCString[] requestedLocales);
 
