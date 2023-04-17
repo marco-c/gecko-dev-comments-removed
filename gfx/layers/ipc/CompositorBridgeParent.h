@@ -488,7 +488,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     
     
     ContentCompositorBridgeParent* mContentCompositorBridgeParent;
-    TargetConfig mTargetConfig;
 
     CompositorController* GetCompositorController() const;
     RefPtr<UiCompositorControllerParent> mUiControllerParent;
