@@ -55,8 +55,6 @@ const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
 const EXAMPLE_URL =
   "http://example.com/browser/devtools/client/netmonitor/test/";
-const EXAMPLE_ORG_URL =
-  "http://example.org/browser/devtools/client/netmonitor/test/";
 const HTTPS_EXAMPLE_URL =
   "https://example.com/browser/devtools/client/netmonitor/test/";
 

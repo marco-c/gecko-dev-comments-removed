@@ -54,31 +54,20 @@ function TargetMixin(parentClass) {
       
       
       
+      this._resourceCache = [];
+      this._onResourceAvailable = this._onResourceAvailable.bind(this);
       
-      this._resourceCache = {};
-
       
-      
-      super.on(
-        "resource-available-form",
-        this._onResourceEvent.bind(this, "resource-available-form")
-      );
-      super.on(
-        "resource-updated-form",
-        this._onResourceEvent.bind(this, "resource-updated-form")
-      );
-
-      this._addListeners();
+      super.on("resource-available-form", this._onResourceAvailable);
     }
 
     on(eventName, listener) {
-      const cachedEvents = ["resource-available-form", "resource-updated-form"];
-      if (cachedEvents.includes(eventName) && this._resourceCache[eventName]) {
-        this.off(eventName, this._onResourceEvent.bind(this, eventName));
-        for (const cache of this._resourceCache[eventName]) {
+      if (eventName === "resource-available-form" && this._resourceCache) {
+        this.off("resource-available-form", this._onResourceAvailable);
+        for (const cache of this._resourceCache) {
           listener(cache);
         }
-        delete this._resourceCache[eventName];
+        this._resourceCache = null;
       }
 
       super.on(eventName, listener);
@@ -704,11 +693,10 @@ function TargetMixin(parentClass) {
       this._url = null;
     }
 
-    _onResourceEvent(eventName, resources) {
-      if (!this._resourceCache[eventName]) {
-        this._resourceCache[eventName] = [];
+    _onResourceAvailable(resources) {
+      if (this._resourceCache) {
+        this._resourceCache.push(resources);
       }
-      this._resourceCache[eventName].push(resources);
     }
 
     toString() {
