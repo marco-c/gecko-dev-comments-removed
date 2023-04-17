@@ -320,19 +320,14 @@ nsresult HTMLTextAreaElement::SetValueChanged(bool aValueChanged) {
   }
 
   if (mValueChanged != previousValue) {
-    ValueChangedOrLastValueChangeWasInteractiveChanged();
+    UpdateTooLongValidityState();
+    UpdateTooShortValidityState();
+    
+    
+    UpdateState(true);
   }
 
   return NS_OK;
-}
-
-void HTMLTextAreaElement::ValueChangedOrLastValueChangeWasInteractiveChanged() {
-  const bool wasValid = IsValid();
-  UpdateTooLongValidityState();
-  UpdateTooShortValidityState();
-  if (wasValid != IsValid()) {
-    UpdateState(true);
-  }
 }
 
 void HTMLTextAreaElement::SetLastValueChangeWasInteractive(
@@ -341,7 +336,12 @@ void HTMLTextAreaElement::SetLastValueChangeWasInteractive(
     return;
   }
   mLastValueChangeWasInteractive = aWasInteractive;
-  ValueChangedOrLastValueChangeWasInteractiveChanged();
+  const bool wasValid = IsValid();
+  UpdateTooLongValidityState();
+  UpdateTooShortValidityState();
+  if (wasValid != IsValid()) {
+    UpdateState(true);
+  }
 }
 
 void HTMLTextAreaElement::GetDefaultValue(nsAString& aDefaultValue,

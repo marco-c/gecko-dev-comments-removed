@@ -201,7 +201,6 @@ class HTMLInputElement final : public TextControlElement,
   virtual EventStates IntrinsicState() const override;
 
   void SetLastValueChangeWasInteractive(bool);
-  void ValueChangedOrLastValueChangeWasInteractiveChanged();
 
   
   virtual nsresult SetValueChanged(bool aValueChanged) override;
