@@ -263,9 +263,11 @@ class ResponsiveUI {
       await this.inited;
 
       
-      await this.updateScreenOrientation("landscape-primary", 0);
-      await this.updateMaxTouchPointsEnabled(false);
-      await this.responsiveFront.setFloatingScrollbars(false);
+      await Promise.all([
+        this.updateScreenOrientation("landscape-primary", 0),
+        this.updateMaxTouchPointsEnabled(false),
+        this.responsiveFront.setFloatingScrollbars(false),
+      ]);
 
       
       this.hideBrowserUI();

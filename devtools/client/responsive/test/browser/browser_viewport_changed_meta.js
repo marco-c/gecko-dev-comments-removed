@@ -63,12 +63,13 @@ const TESTS = [
   { content: "width=500, initial-scale=1, user-scalable=no", res_target: 1.0 },
 ];
 
-const TEST_URL =
-  `data:text/html;charset=utf-8,` +
-  `<html><head><meta name="viewport" content="${INITIAL_CONTENT}"></head>` +
-  `<body style="margin:0">` +
-  `<div id="box" style="width:400px;height:400px;background-color:green">` +
-  `Initial</div></body></html>`;
+const TEST_URL = `data:text/html;charset=utf-8,
+  <html>
+    <head><meta name="viewport" content="${INITIAL_CONTENT}"></head>
+    <body style="margin:0">
+      <div id="box" style="width:400px;height:400px;background-color:green">Initial</div>
+    </body>
+  </html>`;
 
 addRDMTask(TEST_URL, async function({ ui, manager, browser }) {
   await setViewportSize(ui, manager, WIDTH, HEIGHT);
@@ -117,9 +118,18 @@ addRDMTask(TEST_URL, async function({ ui, manager, browser }) {
       );
     }
 
-    
-    const reload = waitForViewportLoad(ui);
+    info("Reload and wait for document to be loaded to prepare for next test.");
+    const {
+      onResource: onDomComplete,
+    } = await ui.commands.resourceCommand.waitForNextResource(
+      ui.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+      {
+        ignoreExistingResources: true,
+        predicate: resource =>
+          resource.targetFront.isTopLevel && resource.name === "dom-complete",
+      }
+    );
     browser.reload();
-    await reload;
+    await onDomComplete;
   }
 });
