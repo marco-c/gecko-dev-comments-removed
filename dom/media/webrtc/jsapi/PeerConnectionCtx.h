@@ -41,7 +41,8 @@ class SharedWebrtcState {
 
   SharedWebrtcState(RefPtr<AbstractThread> aCallWorkerThread,
                     webrtc::AudioState::Config&& aAudioStateConfig,
-                    RefPtr<webrtc::AudioDecoderFactory> aAudioDecoderFactory);
+                    RefPtr<webrtc::AudioDecoderFactory> aAudioDecoderFactory,
+                    UniquePtr<webrtc::WebRtcKeyValueConfig> aTrials);
 
   webrtc::SharedModuleThread* GetModuleThread();
 
@@ -58,6 +59,10 @@ class SharedWebrtcState {
   
   
   const RefPtr<webrtc::AudioDecoderFactory> mAudioDecoderFactory;
+
+  
+  
+  const UniquePtr<webrtc::WebRtcKeyValueConfig> mTrials;
 
  private:
   virtual ~SharedWebrtcState();
@@ -100,8 +105,6 @@ class PeerConnectionCtx {
   }
 
   SharedWebrtcState* GetSharedWebrtcState() const;
-
-  webrtc::WebRtcKeyValueConfig* GetTrials() const { return mTrials.get(); }
 
   
   
@@ -156,12 +159,8 @@ class PeerConnectionCtx {
   
   
   
+  
   RefPtr<SharedWebrtcState> mSharedWebrtcState;
-
-  
-  
-  
-  UniquePtr<webrtc::WebRtcKeyValueConfig> mTrials;
 
   static PeerConnectionCtx* gInstance;
 
