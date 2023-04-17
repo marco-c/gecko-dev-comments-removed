@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "mozilla/HangDetails.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/ProcessedStack.h"
@@ -13,6 +14,7 @@
 #include "mozilla/Scoped.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/ThreadStackHelper.h"
 #include "mozilla/Unused.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
@@ -79,13 +81,6 @@ class SHA1Stream {
   mozilla::SHA1Sum mSHA1;
 };
 
-static void RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP,
-                              void* aClosure) {
-  std::vector<uintptr_t>* stack =
-      static_cast<std::vector<uintptr_t>*>(aClosure);
-  stack->push_back(reinterpret_cast<uintptr_t>(aPC));
-}
-
 
 
 
@@ -129,9 +124,13 @@ void LateWriteObserver::Observe(
   
   std::vector<uintptr_t> rawStack;
 
-  MozStackWalk(RecordStackWalker, nullptr,  0, &rawStack);
-  mozilla::Telemetry::ProcessedStack stack =
-      mozilla::Telemetry::GetStackAndModules(rawStack);
+  mozilla::HangStack stack;
+  nsCString runnableName;
+#ifdef MOZ_GECKO_PROFILER
+  mozilla::ThreadStackHelper stackHelper;
+  stackHelper.GetStack(stack, runnableName, true);
+  ReadModuleInformation(stack);
+#endif
 
   nsTAutoString<char_type> nameAux(mProfileDirectory);
   nameAux.AppendLiteral(NS_SLASH "Telemetry.LateWriteTmpXXXXXX");
@@ -170,28 +169,82 @@ void LateWriteObserver::Observe(
 
   SHA1Stream sha1Stream(stream);
 
-  size_t numModules = stack.GetNumModules();
+  size_t numModules = stack.modules().Length();
   sha1Stream.Printf("%u\n", (unsigned)numModules);
   for (size_t i = 0; i < numModules; ++i) {
-    mozilla::Telemetry::ProcessedStack::Module module = stack.GetModule(i);
-    sha1Stream.Printf("%s %s\n", module.mBreakpadId.get(),
-                      NS_ConvertUTF16toUTF8(module.mName).get());
+    auto& module = stack.modules()[i];
+    sha1Stream.Printf("%s %s\n", module.breakpadId().get(),
+                      NS_ConvertUTF16toUTF8(module.name()).get());
   }
 
-  size_t numFrames = stack.GetStackSize();
+  size_t numFrames = stack.stack().Length();
   sha1Stream.Printf("%u\n", (unsigned)numFrames);
   for (size_t i = 0; i < numFrames; ++i) {
-    const mozilla::Telemetry::ProcessedStack::Frame& frame = stack.GetFrame(i);
+    auto& entry = stack.stack()[i];
+
     
     
     
-    
-    
-    
-    
-    
-    
-    sha1Stream.Printf("%d %x\n", frame.mModIndex, (unsigned)frame.mOffset);
+    switch (entry.type()) {
+      case mozilla::HangEntry::TnsCString: {
+        if (entry.get_nsCString().Length()) {
+          sha1Stream.Printf("s %s\n", entry.get_nsCString().get());
+        }
+        break;
+      }
+      case mozilla::HangEntry::THangEntryBufOffset: {
+        uint32_t offset = entry.get_HangEntryBufOffset().index();
+
+        if (NS_WARN_IF(stack.strbuffer().IsEmpty() ||
+                       offset >= stack.strbuffer().Length())) {
+          MOZ_ASSERT_UNREACHABLE("Corrupted offset data");
+          break;
+        }
+
+        if (stack.strbuffer().LastElement() != '\0') {
+          MOZ_ASSERT_UNREACHABLE("Corrupted strbuffer data");
+          break;
+        }
+
+        
+        const int8_t* start = stack.strbuffer().Elements() + offset;
+        if (start[0]) {
+          sha1Stream.Printf("s %s\n", reinterpret_cast<const char*>(start));
+        }
+        break;
+      }
+      case mozilla::HangEntry::THangEntryModOffset: {
+        auto& mo = entry.get_HangEntryModOffset();
+        sha1Stream.Printf("o %d %x\n", mo.module(), mo.offset());
+        break;
+      }
+      case mozilla::HangEntry::THangEntryProgCounter: {
+        sha1Stream.Printf("s (unresolved)\n");
+        break;
+      }
+      case mozilla::HangEntry::THangEntryContent: {
+        sha1Stream.Printf("s (content script)\n");
+        break;
+      }
+      case mozilla::HangEntry::THangEntryJit: {
+        sha1Stream.Printf("s (jit frame)");
+        break;
+      }
+      case mozilla::HangEntry::THangEntryWasm: {
+        sha1Stream.Printf("s (wasm)");
+        break;
+      }
+      case mozilla::HangEntry::THangEntryChromeScript: {
+        sha1Stream.Printf("s (chrome script)");
+        break;
+      }
+      case mozilla::HangEntry::THangEntrySuppressed: {
+        sha1Stream.Printf("s (profiling suppressed)");
+        break;
+      }
+      default:
+        MOZ_CRASH("Unsupported HangEntry type?");
+    }
   }
 
   mozilla::SHA1Sum::Hash sha1;

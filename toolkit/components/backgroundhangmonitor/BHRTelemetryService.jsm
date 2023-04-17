@@ -77,9 +77,6 @@ BHRTelemetryService.prototype = Object.freeze({
         
         
         
-        
-        
-        
         let match = /[^\s]+:\/\/.*/.exec(stack[i]);
         if (
           match &&
