@@ -483,8 +483,6 @@ class ExperimentFeature {
     if (!remoteConfig) {
       return null;
     }
-    
-    delete remoteConfig.targeting;
 
     return remoteConfig;
   }
