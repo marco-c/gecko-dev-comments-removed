@@ -1452,23 +1452,22 @@ class UrlbarView {
       result.type != UrlbarUtils.RESULT_TYPE.TAB_SWITCH
     ) {
       item.toggleAttribute("sponsored", true);
-      if (result.payload.sponsoredL10nId) {
-        actionSetter = () => {
-          this.document.l10n.setAttributes(
-            action,
-            result.payload.sponsoredL10nId
-          );
-        };
-      } else {
-        actionSetter = () => {
-          this.document.l10n.setAttributes(
-            action,
-            "urlbar-result-action-sponsored"
-          );
-        };
-      }
+      actionSetter = () => {
+        this._setElementL10n(action, {
+          id: "urlbar-result-action-sponsored",
+        });
+      };
     } else {
       item.removeAttribute("sponsored");
+    }
+
+    if (
+      result.providerName == "UrlbarProviderQuickSuggest" &&
+      result.payload.isSponsored
+    ) {
+      item.toggleAttribute("firefox-suggest-sponsored", true);
+    } else {
+      item.removeAttribute("firefox-suggest-sponsored");
     }
 
     let url = item._elements.get("url");
@@ -1689,20 +1688,13 @@ class UrlbarView {
         }
       }
       if (label) {
-        
-        let message = this._l10nCache.get(label.id, label.args);
-        if (message) {
-          item.setAttribute("label", message.attributes.label);
-        } else {
-          
-          
-          item.setAttribute("data-l10n-attrs", "label");
-          this.document.l10n.setAttributes(item, label.id, label.args);
-        }
+        this._setElementL10n(item, {
+          attribute: "label",
+          id: label.id,
+          args: label.args,
+        });
       } else {
-        item.removeAttribute("label");
-        item.removeAttribute("data-l10n-attrs");
-        item.removeAttribute("data-l10n-id");
+        this._removeElementL10n(item, { attribute: "label" });
       }
     }
 
@@ -2162,25 +2154,78 @@ class UrlbarView {
 
 
   async _cacheL10nStrings() {
-    if (!UrlbarPrefs.get("groupLabels.enabled")) {
-      
-      return;
+    let idArgs = [];
+
+    if (UrlbarPrefs.get("groupLabels.enabled")) {
+      idArgs.push(
+        { id: "urlbar-group-firefox-suggest" },
+        ...[
+          Services.search.defaultEngine?.name,
+          Services.search.defaultPrivateEngine?.name,
+        ]
+          .filter(engineName => engineName)
+          .map(engineName => ({
+            id: "urlbar-group-search-suggestions",
+            args: { engine: engineName },
+          }))
+      );
     }
 
-    let idArgs = [
-      { id: "urlbar-group-firefox-suggest" },
-      ...[
-        Services.search.defaultEngine?.name,
-        Services.search.defaultPrivateEngine?.name,
-      ]
-        .filter(engineName => engineName)
-        .map(engineName => ({
-          id: "urlbar-group-search-suggestions",
-          args: { engine: engineName },
-        })),
-    ];
+    if (UrlbarPrefs.get("quicksuggest.enabled")) {
+      idArgs.push({ id: "urlbar-result-action-sponsored" });
+    }
 
     await this._l10nCache.ensureAll(idArgs);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _setElementL10n(element, { id, args = undefined, attribute = undefined }) {
+    let message = this._l10nCache.get(id, args);
+    if (message) {
+      if (attribute) {
+        element.setAttribute(attribute, message.attributes[attribute]);
+      } else {
+        element.textContent = message.value;
+      }
+    } else {
+      if (attribute) {
+        element.setAttribute("data-l10n-attrs", attribute);
+      }
+      this.document.l10n.setAttributes(element, id, args);
+    }
+  }
+
+  
+
+
+
+
+
+
+  _removeElementL10n(element, { attribute = undefined }) {
+    if (attribute) {
+      element.removeAttribute(attribute);
+      element.removeAttribute("data-l10n-attrs");
+    } else {
+      element.textContent = "";
+    }
+    element.removeAttribute("data-l10n-id");
   }
 
   
