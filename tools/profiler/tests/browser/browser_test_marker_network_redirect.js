@@ -6,6 +6,16 @@
 
 
 
+add_task(async function test_network_markers_service_worker_setup() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.cache.disk.enable", false],
+      ["browser.cache.memory.enable", false],
+    ],
+  });
+});
+
 add_task(async function test_network_markers_redirect_simple() {
   
   
@@ -19,7 +29,7 @@ add_task(async function test_network_markers_redirect_simple() {
 
   startProfilerForMarkerTests();
 
-  const targetFileNameWithCacheBust = "simple.html?cacheBust=" + Math.random();
+  const targetFileNameWithCacheBust = "simple.html";
   const url =
     BASE_URL +
     "redirect.sjs?" +
@@ -63,7 +73,8 @@ add_task(async function test_network_markers_redirect_simple() {
 
     Assert.objectContains(parentRedirectMarker, {
       name: Expect.stringMatches(`Load \\d+:.*${escapeStringRegexp(url)}`),
-      data: Expect.objectContains({
+      data: Expect.objectContainsOnly({
+        type: "Network",
         status: "STATUS_REDIRECT",
         URI: url,
         RedirectURI: targetUrl,
@@ -81,6 +92,7 @@ add_task(async function test_network_markers_redirect_simple() {
         responseEnd: Expect.number(),
         id: Expect.number(),
         pri: Expect.number(),
+        cache: Expect.stringMatches(/Missed|Unresolved/),
       }),
     });
 
@@ -88,37 +100,41 @@ add_task(async function test_network_markers_redirect_simple() {
       name: Expect.stringMatches(
         `Load \\d+:.*${escapeStringRegexp(targetUrl)}`
       ),
-      data: Expect.objectContains({
-        status: "STATUS_STOP",
-        URI: targetUrl,
-        requestMethod: "GET",
-        contentType: "text/html",
-        startTime: Expect.number(),
-        endTime: Expect.number(),
-        domainLookupStart: Expect.number(),
-        domainLookupEnd: Expect.number(),
-        connectStart: Expect.number(),
-        tcpConnectEnd: Expect.number(),
-        connectEnd: Expect.number(),
-        requestStart: Expect.number(),
-        responseStart: Expect.number(),
-        responseEnd: Expect.number(),
-        id: Expect.number(),
-        count: Expect.number(),
-        pri: Expect.number(),
-      }),
+    };
+    const expectedDataProperties = {
+      type: "Network",
+      status: "STATUS_STOP",
+      URI: targetUrl,
+      requestMethod: "GET",
+      contentType: "text/html",
+      startTime: Expect.number(),
+      endTime: Expect.number(),
+      domainLookupStart: Expect.number(),
+      domainLookupEnd: Expect.number(),
+      connectStart: Expect.number(),
+      tcpConnectEnd: Expect.number(),
+      connectEnd: Expect.number(),
+      requestStart: Expect.number(),
+      responseStart: Expect.number(),
+      responseEnd: Expect.number(),
+      id: Expect.number(),
+      count: Expect.number(),
+      pri: Expect.number(),
     };
 
     Assert.objectContains(parentStopMarker, expectedProperties);
+    Assert.objectContains(contentStopMarker, expectedProperties);
+
     
     
-    Assert.objectContains(parentStopMarker.data, {
+    Assert.objectContainsOnly(parentStopMarker.data, {
+      ...expectedDataProperties,
       
       
       
       cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
     });
-    Assert.objectContains(contentStopMarker, expectedProperties);
+    Assert.objectContainsOnly(contentStopMarker.data, expectedDataProperties);
   });
 });
 
@@ -203,103 +219,122 @@ add_task(async function test_network_markers_redirect_resources() {
     const contentRedirectMarker = contentPairs[2][1];
     const contentSecondStopMarker = contentPairs[3][1];
 
-    const expectedCommonProperties = {
+    const expectedCommonDataProperties = {
+      type: "Network",
       requestMethod: "GET",
       startTime: Expect.number(),
       endTime: Expect.number(),
       id: Expect.number(),
       pri: Expect.number(),
+      innerWindowID: Expect.number(),
     };
 
-    const expectedPropertiesForFirstMarker = {
-      name: Expect.stringMatches(/Load \d+:.*firefox-logo-nightly\.svg/),
-      data: Expect.objectContains({
-        ...expectedCommonProperties,
-        status: "STATUS_STOP",
-        URI: Expect.stringContains("/firefox-logo-nightly.svg"),
-        contentType: "image/svg+xml",
-        domainLookupStart: Expect.number(),
-        domainLookupEnd: Expect.number(),
-        connectStart: Expect.number(),
-        tcpConnectEnd: Expect.number(),
-        connectEnd: Expect.number(),
-        requestStart: Expect.number(),
-        responseStart: Expect.number(),
-        responseEnd: Expect.number(),
-      }),
+    
+    
+    
+    
+    
+    
+    const expectedConnectionProperties = {
+      domainLookupStart: Expect.number(),
+      domainLookupEnd: Expect.number(),
+      connectStart: Expect.number(),
+      tcpConnectEnd: Expect.number(),
+      connectEnd: Expect.number(),
+      requestStart: Expect.number(),
+      responseStart: Expect.number(),
+      responseEnd: Expect.number(),
+    };
+
+    const expectedPropertiesForStopMarker = {
+      name: Expect.stringMatches(/Load \d+:.*\/firefox-logo-nightly\.svg/),
+    };
+
+    const expectedDataPropertiesForStopMarker = {
+      ...expectedCommonDataProperties,
+      ...expectedConnectionProperties,
+      status: "STATUS_STOP",
+      URI: Expect.stringContains("/firefox-logo-nightly.svg"),
+      contentType: "image/svg+xml",
+      count: Expect.number(),
     };
 
     const expectedPropertiesForRedirectMarker = {
       name: Expect.stringMatches(
-        /Load \d+:.*redirect.sjs\?firefox-logo-nightly\.svg/
+        /Load \d+:.*\/redirect.sjs\?firefox-logo-nightly\.svg/
       ),
-      data: Expect.objectContains({
-        ...expectedCommonProperties,
-        status: "STATUS_REDIRECT",
-        URI: Expect.stringContains("/redirect.sjs?firefox-logo-nightly.svg"),
-        RedirectURI: Expect.stringContains("/firefox-logo-nightly.svg"),
-        contentType: null,
-        domainLookupStart: Expect.number(),
-        domainLookupEnd: Expect.number(),
-        connectStart: Expect.number(),
-        tcpConnectEnd: Expect.number(),
-        connectEnd: Expect.number(),
-        requestStart: Expect.number(),
-        responseStart: Expect.number(),
-        responseEnd: Expect.number(),
-      }),
     };
 
-    const expectedPropertiesForSecondMarker = {
-      name: Expect.stringMatches(/Load \d+:.*firefox-logo-nightly\.svg/),
-      data: Expect.objectContains({
-        ...expectedCommonProperties,
-        status: "STATUS_STOP",
-        URI: Expect.stringContains("/firefox-logo-nightly.svg"),
-        contentType: "image/svg+xml",
-      }),
+    const expectedDataPropertiesForRedirectMarker = {
+      ...expectedCommonDataProperties,
+      ...expectedConnectionProperties,
+      status: "STATUS_REDIRECT",
+      URI: Expect.stringContains("/redirect.sjs?firefox-logo-nightly.svg"),
+      RedirectURI: Expect.stringContains("/firefox-logo-nightly.svg"),
+      contentType: null,
     };
 
     Assert.objectContains(
       parentFirstStopMarker,
-      expectedPropertiesForFirstMarker
+      expectedPropertiesForStopMarker
     );
+    Assert.objectContainsOnly(parentFirstStopMarker.data, {
+      ...expectedDataPropertiesForStopMarker,
+      
+      
+      
+      
+      
+      cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
+    });
+
     Assert.objectContains(
       contentFirstStopMarker,
-      expectedPropertiesForFirstMarker
+      expectedPropertiesForStopMarker
     );
+    Assert.objectContainsOnly(
+      contentFirstStopMarker.data,
+      expectedDataPropertiesForStopMarker
+    );
+
     Assert.objectContains(
       parentRedirectMarker,
       expectedPropertiesForRedirectMarker
     );
+    Assert.objectContainsOnly(parentRedirectMarker.data, {
+      ...expectedDataPropertiesForRedirectMarker,
+      
+      cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
+    });
+
     Assert.objectContains(
       contentRedirectMarker,
       expectedPropertiesForRedirectMarker
     );
-    Assert.objectContains(
-      parentSecondStopMarker,
-      expectedPropertiesForSecondMarker
-    );
-    Assert.objectContains(
-      contentSecondStopMarker,
-      expectedPropertiesForSecondMarker
+    Assert.objectContainsOnly(
+      contentRedirectMarker.data,
+      expectedDataPropertiesForRedirectMarker
     );
 
-    
-    
-    
-    
-    
-    Assert.objectContains(parentFirstStopMarker.data, {
+    Assert.objectContains(
+      parentSecondStopMarker,
+      expectedPropertiesForStopMarker
+    );
+    Assert.objectContainsOnly(parentSecondStopMarker.data, {
+      ...expectedDataPropertiesForStopMarker,
+      
+      count: Expect.number(),
+      
       cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
     });
-    Assert.objectContains(parentRedirectMarker.data, {
-      cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
-    });
-    
-    
-    Assert.objectContains(parentSecondStopMarker.data, {
-      cache: Expect.stringMatches(/^(Hit|Unresolved)$/),
-    });
+
+    Assert.objectContains(
+      contentSecondStopMarker,
+      expectedPropertiesForStopMarker
+    );
+    Assert.objectContainsOnly(
+      contentSecondStopMarker.data,
+      expectedDataPropertiesForStopMarker
+    );
   });
 });
