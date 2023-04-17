@@ -510,13 +510,6 @@ BaselineStackBuilder::BaselineStackBuilder(JSContext* cx,
   MOZ_ASSERT(bufferTotal_ >= sizeof(BaselineBailoutInfo));
 }
 
-#ifdef DEBUG
-static inline bool IsInlinableFallback(ICFallbackStub* icEntry) {
-  return icEntry->isCall_Fallback() || icEntry->isGetProp_Fallback() ||
-         icEntry->isSetProp_Fallback() || icEntry->isGetElem_Fallback();
-}
-#endif
-
 bool BaselineStackBuilder::initFrame() {
   
   
@@ -977,7 +970,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   
   uint32_t pcOff = script_->pcToOffset(pc_);
   ICEntry& icEntry = script_->jitScript()->icEntryFromPCOffset(pcOff);
-  MOZ_ASSERT(IsInlinableFallback(icEntry.fallbackStub()));
   if (!writePtr(icEntry.fallbackStub(), "StubPtr")) {
     return false;
   }
