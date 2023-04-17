@@ -18,9 +18,10 @@
 
 namespace js {
 
- inline ArrayObject* ArrayObject::create(
+ MOZ_ALWAYS_INLINE ArrayObject* ArrayObject::create(
     JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap, HandleShape shape,
-    uint32_t length, AutoSetNewObjectMetadata& metadata, gc::AllocSite* site) {
+    uint32_t length, uint32_t slotSpan, AutoSetNewObjectMetadata& metadata,
+    gc::AllocSite* site) {
   debugCheckNewObject(shape, kind, heap);
 
   const JSClass* clasp = &ArrayObject::class_;
@@ -31,9 +32,12 @@ namespace js {
 
   
   
+  MOZ_ASSERT(shape->slotSpan() == slotSpan);
+
+  
+  
   MOZ_ASSERT(shape->numFixedSlots() == 0);
 
-  size_t slotSpan = shape->slotSpan();
   size_t nDynamicSlots = calculateDynamicSlots(0, slotSpan, clasp);
   JSObject* obj =
       js::AllocateObject(cx, kind, nDynamicSlots, heap, clasp, site);
