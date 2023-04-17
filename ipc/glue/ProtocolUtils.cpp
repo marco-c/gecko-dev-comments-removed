@@ -293,6 +293,10 @@ IProtocol* WeakActorLifecycleProxy::Get() const {
   return mProxy ? mProxy->Get() : nullptr;
 }
 
+WeakActorLifecycleProxy* IProtocol::GetWeakLifecycleProxy() {
+  return mLifecycleProxy ? mLifecycleProxy->GetWeakProxy() : nullptr;
+}
+
 IProtocol::~IProtocol() {
   
   
