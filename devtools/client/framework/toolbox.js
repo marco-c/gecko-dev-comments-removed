@@ -289,7 +289,6 @@ function Toolbox(
 
   this._toolRegistered = this._toolRegistered.bind(this);
   this._toolUnregistered = this._toolUnregistered.bind(this);
-  this._onWillNavigate = this._onWillNavigate.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
   this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
   this._updateFrames = this._updateFrames.bind(this);
@@ -698,7 +697,6 @@ Toolbox.prototype = {
 
       
       
-      targetFront.on("will-navigate", this._onWillNavigate);
       targetFront.on("frame-update", this._updateFrames);
       targetFront.on("inspect-object", this._onInspectObject);
     }
@@ -733,7 +731,6 @@ Toolbox.prototype = {
   _onTargetDestroyed({ targetFront }) {
     if (targetFront.isTopLevel) {
       this.target.off("inspect-object", this._onInspectObject);
-      this.target.off("will-navigate", this._onWillNavigate);
       this.target.off("frame-update", this._updateFrames);
     }
 
@@ -4334,6 +4331,17 @@ Toolbox.prototype = {
         if (level === "clear") {
           errors = 0;
         }
+      }
+
+      if (
+        resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.name === "will-navigate"
+      ) {
+        this._onWillNavigate();
+        
+        
+        
+        errors = 0;
       }
 
       if (
