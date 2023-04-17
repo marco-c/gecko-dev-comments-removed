@@ -542,6 +542,9 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
                                                          HandleValue val,
                                                          HandleValue idval,
                                                          bool* result) {
+  MOZ_ASSERT(idval.isSymbol());
+  MOZ_ASSERT(idval.toSymbol()->isPrivateName());
+
   
   MOZ_ASSERT(result);
 
@@ -560,12 +563,6 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
       return false;
     }
   }
-
-  
-  
-
-  MOZ_ASSERT(idval.isSymbol());
-  MOZ_ASSERT(idval.toSymbol()->isPrivateName());
 
   if (!HasOwnProperty(cx, val, idval, result)) {
     return false;
