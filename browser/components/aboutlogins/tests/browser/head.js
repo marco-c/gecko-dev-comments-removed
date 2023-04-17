@@ -151,6 +151,13 @@ add_task(async function setup_head() {
       
       return;
     }
+    if (
+      msg.errorMessage ==
+      "NotFoundError: No such JSWindowActor 'MarionetteEvents'"
+    ) {
+      
+      return;
+    }
     ok(false, msg.message || msg.errorMessage);
   });
 
