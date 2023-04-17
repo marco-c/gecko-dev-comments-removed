@@ -115,6 +115,13 @@ var TaskScheduler = {
 
 
 
+
+
+
+
+
+
+
   async registerTask(id, command, intervalSeconds, options) {
     if (typeof id !== "string") {
       throw new Error("id is not a string");
