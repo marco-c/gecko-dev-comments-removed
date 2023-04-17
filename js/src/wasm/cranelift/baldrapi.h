@@ -182,14 +182,14 @@ struct BD_ValType {
 
 
 enum class BD_SymbolicAddress : uint32_t {
-  MemoryGrow = 0,
-  MemorySize,
-  MemoryCopy,
-  MemoryCopyShared,
+  MemoryGrow = 0,   
+  MemorySize,       
+  MemoryCopy,       
+  MemoryCopyShared, 
   DataDrop,
-  MemoryFill,
-  MemoryFillShared,
-  MemoryInit,
+  MemoryFill,       
+  MemoryFillShared, 
+  MemoryInit,       
   TableSize,
   TableGrow,
   TableGet,
