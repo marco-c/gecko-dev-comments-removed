@@ -14,7 +14,7 @@
 #include "nsISupportsImpl.h"
 #include "VsyncSource.h"
 
-class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display {
+class SoftwareDisplay : public mozilla::gfx::VsyncSource::Display {
  public:
   SoftwareDisplay();
   void EnableVsync() override;
@@ -29,7 +29,7 @@ class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display {
 
   virtual ~SoftwareDisplay();
 
- private:
+ protected:
   mozilla::TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
@@ -43,7 +43,7 @@ class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display {
 
 class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
  public:
-  SoftwareVsyncSource();
+  explicit SoftwareVsyncSource(bool aInit = true);
   virtual ~SoftwareVsyncSource();
 
   Display& GetGlobalDisplay() override {
@@ -51,7 +51,7 @@ class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
     return *mGlobalDisplay;
   }
 
- private:
+ protected:
   RefPtr<SoftwareDisplay> mGlobalDisplay;
 };
 
