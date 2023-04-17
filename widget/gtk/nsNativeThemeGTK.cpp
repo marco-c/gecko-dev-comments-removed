@@ -1091,7 +1091,10 @@ nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
   
   
   
-  bool snapped = ctx->UserToDevicePixelSnapped(rect);
+  
+  
+  bool snapped = ctx->UserToDevicePixelSnapped(
+      rect, gfxContext::SnapOption::PrioritizeSize);
   if (snapped) {
     
     dirtyRect = ctx->UserToDevice(dirtyRect);

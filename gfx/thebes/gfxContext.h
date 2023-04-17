@@ -15,6 +15,7 @@
 #include "gfxPattern.h"
 #include "nsTArray.h"
 
+#include "mozilla/EnumSet.h"
 #include "mozilla/gfx/2D.h"
 
 typedef struct _cairo cairo_t;
@@ -231,7 +232,17 @@ class gfxContext final {
 
 
 
-  bool UserToDevicePixelSnapped(gfxRect& rect, bool ignoreScale = false) const;
+
+
+
+
+
+  enum class SnapOption : uint8_t {
+    IgnoreScale = 1,
+    PrioritizeSize = 2,
+  };
+  using SnapOptions = mozilla::EnumSet<SnapOption>;
+  bool UserToDevicePixelSnapped(gfxRect& rect, SnapOptions aOptions = {}) const;
 
   
 
