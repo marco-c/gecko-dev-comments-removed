@@ -176,6 +176,8 @@ struct WindowsErrorReportingData {
   DWORD mChildPid;
   
   char mMinidumpFile[40];
+  
+  size_t mOOMAllocationSize;
 };
 #endif  
 
