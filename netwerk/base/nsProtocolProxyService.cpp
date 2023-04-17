@@ -1675,13 +1675,10 @@ nsProtocolProxyService::GetFailoverForProxy(nsIProxyInfo* aProxy, nsIURI* aURI,
                                             nsIProxyInfo** aResult) {
   
   
-  
-  
-  
-  
-  
-  
-  
+  if (mProxyConfig != PROXYCONFIG_PAC && mProxyConfig != PROXYCONFIG_WPAD &&
+      mProxyConfig != PROXYCONFIG_SYSTEM) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
 
   
   nsCOMPtr<nsProxyInfo> pi = do_QueryInterface(aProxy);
@@ -1689,10 +1686,7 @@ nsProtocolProxyService::GetFailoverForProxy(nsIProxyInfo* aProxy, nsIURI* aURI,
   
 
   
-  
-  if (mProxyConfig != PROXYCONFIG_MANUAL) {
-    DisableProxy(pi);
-  }
+  DisableProxy(pi);
 
   
   
