@@ -42,7 +42,14 @@ void FontFaceSetIterator::Next(JSContext* aCx,
     return;
   }
 
-  FontFace* face = mFontFaceSet->GetFontFaceAt(mNextIndex++);
+  
+  
+  FontFace* face;
+  while (!(face = mFontFaceSet->GetFontFaceAt(mNextIndex++))) {
+    if (mNextIndex >= mFontFaceSet->SizeIncludingNonAuthorOrigins()) {
+      break;  
+    }
+  }
 
   if (!face) {
     aResult.mValue.setUndefined();
