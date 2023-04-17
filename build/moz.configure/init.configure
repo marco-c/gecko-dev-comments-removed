@@ -353,10 +353,6 @@ def virtualenv_python3(env_python, build_env, mozconfig, help):
         
         
         
-        os.environ["PYTHONEXECUTABLE"] = python
-        
-        
-        
         os.environ.pop("__PYVENV_LAUNCHER__", None)
         
         
@@ -365,11 +361,6 @@ def virtualenv_python3(env_python, build_env, mozconfig, help):
     
     if not distutils.sysconfig.get_python_lib():
         die("Could not determine python site packages directory")
-
-    
-    
-    
-    os.environ.pop("PYTHONEXECUTABLE", None)
 
     str_version = ".".join(str(v) for v in version)
 

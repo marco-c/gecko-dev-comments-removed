@@ -223,8 +223,6 @@ class VirtualenvManager(VirtualenvHelper):
 
     def _log_process_output(self, *args, **kwargs):
         env = kwargs.pop("env", None) or os.environ.copy()
-        
-        env.pop("PYTHONEXECUTABLE", None)
         kwargs["env"] = ensure_subprocess_env(env)
 
         if hasattr(self.log_handle, "fileno"):
