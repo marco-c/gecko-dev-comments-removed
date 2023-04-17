@@ -1830,8 +1830,14 @@ impl DisplayListBuilder {
             fill_rule,
         });
 
-        self.push_item(&di::DisplayItem::SetPoints);
-        self.push_iter(points);
+        
+        
+        
+        
+        if points.len() >= 3 {
+            self.push_item(&di::DisplayItem::SetPoints);
+            self.push_iter(points);
+        }
         self.push_item(&item);
         id
     }
