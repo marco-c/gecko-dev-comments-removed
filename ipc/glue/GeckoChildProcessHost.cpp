@@ -173,6 +173,7 @@ class BaseProcessLauncher {
 
   
   
+  virtual bool SetChannel(IPC::Channel*) = 0;
   virtual bool DoSetup();
   virtual RefPtr<ProcessHandlePromise> DoLaunch() = 0;
   virtual bool DoFinishLaunch() { return true; };
@@ -212,7 +213,6 @@ class BaseProcessLauncher {
   char mPidString[32];
 
   
-  IPC::Channel* mChannel = nullptr;
   IPC::Channel::ChannelId mChannelId;
   ScopedPRFileDesc mCrashAnnotationReadPipe;
   ScopedPRFileDesc mCrashAnnotationWritePipe;
@@ -229,6 +229,7 @@ class WindowsProcessLauncher : public BaseProcessLauncher {
         mCachedNtdllThunk(aHost->sCachedNtDllThunk) {}
 
  protected:
+  bool SetChannel(IPC::Channel*) override { return true; }
   virtual bool DoSetup() override;
   virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
   virtual bool DoFinishLaunch() override;
@@ -252,6 +253,21 @@ class PosixProcessLauncher : public BaseProcessLauncher {
         mProfileDir(aHost->mProfileDir) {}
 
  protected:
+  bool SetChannel(IPC::Channel* aChannel) override {
+    
+    
+    
+    
+    int origSrcFd;
+    aChannel->GetClientFileDescriptorMapping(&origSrcFd, &mChannelDstFd);
+    mChannelSrcFd.reset(dup(origSrcFd));
+    if (!mChannelSrcFd) {
+      return false;
+    }
+    aChannel->CloseClientFileDescriptor();
+    return true;
+  }
+
   virtual bool DoSetup() override;
   virtual RefPtr<ProcessHandlePromise> DoLaunch() override;
   virtual bool DoFinishLaunch() override;
@@ -259,6 +275,8 @@ class PosixProcessLauncher : public BaseProcessLauncher {
   nsCOMPtr<nsIFile> mProfileDir;
 
   std::vector<std::string> mChildArgv;
+  UniqueFileHandle mChannelSrcFd;
+  int mChannelDstFd;
 };
 
 #  if defined(XP_MACOSX)
@@ -1157,10 +1175,8 @@ bool PosixProcessLauncher::DoSetup() {
 
   
   
-  int srcChannelFd, dstChannelFd;
-  mChannel->GetClientFileDescriptorMapping(&srcChannelFd, &dstChannelFd);
   mLaunchOptions->fds_to_remap.push_back(
-      std::pair<int, int>(srcChannelFd, dstChannelFd));
+      std::pair<int, int>(mChannelSrcFd.get(), mChannelDstFd));
 
   
   
@@ -1257,7 +1273,7 @@ bool PosixProcessLauncher::DoFinishLaunch() {
   
   
   
-  mChannel->CloseClientFileDescriptor();
+  mChannelSrcFd = nullptr;
 
   return true;
 }
@@ -1766,14 +1782,9 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::Launch(
   
   
   
-  
-  
-  
-  
-  
   aHost->InitializeChannel();
-  mChannel = aHost->GetChannel();
-  if (!mChannel) {
+  IPC::Channel* channel = aHost->GetChannel();
+  if (!channel || !SetChannel(channel)) {
     return ProcessLaunchPromise::CreateAndReject(LaunchError{}, __func__);
   }
   mChannelId = aHost->GetChannelId();
