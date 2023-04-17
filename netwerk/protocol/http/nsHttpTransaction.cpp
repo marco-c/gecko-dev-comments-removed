@@ -481,7 +481,8 @@ static inline void CreateAndStartTimer(nsCOMPtr<nsITimer>& aTimer,
 void nsHttpTransaction::OnPendingQueueInserted() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  if (mConnInfo->IsHttp3() && !mResolver) {
+  
+  if (mConnInfo->IsHttp3() && !mOrigConnInfo) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -3132,7 +3133,7 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
 
   RefPtr<nsHttpConnectionInfo> newInfo =
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
-  bool needFastFallback = !mConnInfo->IsHttp3() && newInfo->IsHttp3();
+  bool needFastFallback = newInfo->IsHttp3();
   if (!gHttpHandler->ConnMgr()->MoveTransToNewConnEntry(this, newInfo)) {
     
     
@@ -3141,6 +3142,9 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     
     UpdateConnectionInfo(newInfo);
   }
+
+  
+  MaybeCancelFallbackTimer();
 
   if (needFastFallback) {
     CreateAndStartTimer(
