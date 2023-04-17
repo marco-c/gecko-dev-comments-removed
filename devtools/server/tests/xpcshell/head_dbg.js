@@ -45,6 +45,7 @@ const { DevToolsServer: WorkerDevToolsServer } = worker.require(
 const { DevToolsClient } = require("devtools/client/devtools-client");
 const { ObjectFront } = require("devtools/client/fronts/object");
 const { LongStringFront } = require("devtools/client/fronts/string");
+const { createCommandsDictionary } = require("devtools/shared/commands/index");
 
 const { addDebuggerToGlobal } = ChromeUtils.import(
   "resource://gre/modules/jsdebugger.jsm"
@@ -373,24 +374,35 @@ async function getTestTab(client, title) {
 
 
 
+
+
+
 async function attachTestTab(client, title) {
   const descriptorFront = await getTestTab(client, title);
-  const targetFront = await descriptorFront.getTarget();
-  await targetFront.attach();
-  return targetFront;
+  const commands = await createCommandsDictionary(descriptorFront);
+  await commands.targetCommand.startListening();
+  return commands;
 }
 
 
 
 
+
+
+
+
+
+
+
 async function attachTestThread(client, title) {
-  const targetFront = await attachTestTab(client, title);
+  const commands = await attachTestTab(client, title);
+  const targetFront = commands.targetCommand.targetFront;
   const threadFront = await targetFront.getFront("thread");
   await targetFront.attachThread({
     autoBlackBox: true,
   });
   Assert.equal(threadFront.state, "attached", "Thread front is attached");
-  return { targetFront, threadFront };
+  return { targetFront, threadFront, commands };
 }
 
 
@@ -857,7 +869,7 @@ function threadFrontTest(test, options = {}) {
 
     
     
-    const { targetFront, threadFront } = await attachTestThread(
+    const { targetFront, threadFront, commands } = await attachTestThread(
       client,
       scriptName
     );
@@ -878,6 +890,7 @@ function threadFrontTest(test, options = {}) {
       client,
       server,
       targetFront,
+      commands,
     };
     if (waitForFinish) {
       
