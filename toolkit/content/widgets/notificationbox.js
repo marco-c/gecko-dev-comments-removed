@@ -165,17 +165,6 @@
         throw new Error("Invalid notification priority " + aPriority);
       }
 
-      
-      
-      var notifications = this.allNotifications;
-      var insertPos = null;
-      for (var n = notifications.length - 1; n >= 0; n--) {
-        if (notifications[n].priority < aPriority) {
-          break;
-        }
-        insertPos = notifications[n];
-      }
-
       MozXULElement.insertFTLIfNeeded("toolkit/global/notification.ftl");
 
       
@@ -194,7 +183,27 @@
           aNotificationIs ? { is: aNotificationIs } : {}
         );
       }
-      this.stack.insertBefore(newitem, insertPos);
+
+      if (this.gProton) {
+        
+        if (this.stack.hasAttribute("prepend-notifications")) {
+          this.stack.prepend(newitem);
+        } else {
+          this.stack.append(newitem);
+        }
+      } else {
+        
+        
+        var notifications = this.allNotifications;
+        var insertPos = null;
+        for (var n = notifications.length - 1; n >= 0; n--) {
+          if (notifications[n].priority < aPriority) {
+            break;
+          }
+          insertPos = notifications[n];
+        }
+        this.stack.insertBefore(newitem, insertPos);
+      }
 
       
       if (newitem.messageText) {
@@ -232,7 +241,10 @@
         newitem.setAttribute("type", "warning");
       }
 
-      if (!insertPos) {
+      
+      
+      
+      if (this.gProton || !insertPos) {
         newitem.style.display = "block";
         newitem.style.position = "fixed";
         newitem.style.top = "100%";
