@@ -563,8 +563,8 @@ bool LanguageTag::canonicalizeUnicodeExtension(
   using StringSpan = mozilla::Span<const char>;
 
   static auto isTrue = [](StringSpan type) {
-    constexpr char True[] = "true";
-    const size_t TrueLength = strlen(True);
+    static constexpr char True[] = "true";
+    constexpr size_t TrueLength = std::char_traits<char>::length(True);
     return type.size() == TrueLength &&
            std::char_traits<char>::compare(type.data(), True, TrueLength) == 0;
   };
@@ -959,7 +959,7 @@ static bool AssignFromLocaleId(JSContext* cx, LocaleId& localeId,
   
   if (localeId[0] == '\0' || localeId[0] == '-') {
     static constexpr char und[] = "und";
-    size_t length = strlen(und);
+    constexpr size_t length = std::char_traits<char>::length(und);
 
     
     if (!localeId.growBy(length)) {
@@ -1046,34 +1046,13 @@ static bool LikelySubtags(JSContext* cx, LikelySubtags likelySubtags,
   }
 
   
-  
-  
-  
-
   LocaleId localeLikelySubtags(cx);
-
-  
-  
-  
-  bool addLikelySubtags = likelySubtags == LikelySubtags::Add ||
-                          !HasLikelySubtags(LikelySubtags::Add, tag);
-
-  if (addLikelySubtags) {
+  if (likelySubtags == LikelySubtags::Add) {
     if (!CallLikelySubtags<uloc_addLikelySubtags>(cx, locale,
                                                   localeLikelySubtags)) {
       return false;
     }
-  }
-
-  
-  if (likelySubtags == LikelySubtags::Remove) {
-    if (addLikelySubtags) {
-      
-      locale = std::move(localeLikelySubtags);
-      localeLikelySubtags = LocaleId(cx);
-    }
-
-    
+  } else {
     if (!CallLikelySubtags<uloc_minimizeSubtags>(cx, locale,
                                                  localeLikelySubtags)) {
       return false;
