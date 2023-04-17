@@ -1191,15 +1191,6 @@ bool gfxPlatform::IsHeadless() {
 bool gfxPlatform::UseWebRender() { return gfx::gfxVars::UseWebRender(); }
 
 
-bool gfxPlatform::DoesFissionForceWebRender() {
-  
-  
-  
-  
-  return FissionExperimentEnrolled();
-}
-
-
 bool gfxPlatform::UseRemoteCanvas() {
   return XRE_IsContentProcess() && gfx::gfxVars::RemoteCanvasEnabled();
 }
