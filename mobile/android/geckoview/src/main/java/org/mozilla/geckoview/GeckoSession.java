@@ -1117,6 +1117,7 @@ public class GeckoSession {
             getEventDispatcher().registerUiThreadListener(this,
                 "GeckoView:PinOnScreen",
                 "GeckoView:Prompt",
+                "GeckoView:Prompt:Dismiss",
                 null);
         }
 
@@ -1132,6 +1133,8 @@ public class GeckoSession {
             } else if ("GeckoView:Prompt".equals(event)) {
                 mPromptController.handleEvent(
                         GeckoSession.this, message, callback);
+            } else if ("GeckoView:Prompt:Dismiss".equals(event)) {
+                mPromptController.dismissPrompt(message.getString("id"));
             }
         }
     }
@@ -3634,21 +3637,57 @@ public class GeckoSession {
             }
         }
 
+        interface PromptInstanceDelegate {
+            
+
+
+
+
+
+
+
+
+
+            @UiThread
+            default void onPromptDismiss(final @NonNull BasePrompt prompt) {}
+        }
+
         
         public class BasePrompt {
             private boolean mIsCompleted;
             private boolean mIsConfirmed;
             private GeckoBundle mResult;
+            private final WeakReference<Observer> mObserver;
+            private PromptInstanceDelegate mDelegate;
+
+            protected interface Observer {
+                @AnyThread
+                default void onPromptCompleted(@NonNull BasePrompt prompt) {}
+            }
+
+            private void complete() {
+                mIsCompleted = true;
+                final Observer observer = mObserver.get();
+                if (observer != null) {
+                    observer.onPromptCompleted(this);
+                }
+            }
 
             
 
 
             public final @Nullable String title;
+             String id;
 
-            private BasePrompt(@Nullable final String title) {
+            private BasePrompt(
+                    @NonNull final String id,
+                    @Nullable final String title,
+                    final Observer observer) {
                 this.title = title;
+                this.id = id;
                 mIsConfirmed = false;
                 mIsCompleted = false;
+                mObserver = new WeakReference<>(observer);
             }
 
             @UiThread
@@ -3657,8 +3696,8 @@ public class GeckoSession {
                     throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
                 }
 
-                mIsCompleted = true;
                 mIsConfirmed = true;
+                complete();
                 return new PromptResponse(this);
             }
 
@@ -3675,8 +3714,29 @@ public class GeckoSession {
                     throw new RuntimeException("Cannot confirm/dismiss a Prompt twice.");
                 }
 
-                mIsCompleted = true;
+                complete();
                 return new PromptResponse(this);
+            }
+
+            
+
+
+
+
+            @UiThread
+            public void setDelegate(final @Nullable PromptInstanceDelegate delegate) {
+                mDelegate = delegate;
+            }
+
+            
+
+
+
+
+            @UiThread
+            @Nullable
+            public PromptInstanceDelegate getDelegate() {
+                return mDelegate;
             }
 
              GeckoBundle ensureResult() {
@@ -3716,8 +3776,10 @@ public class GeckoSession {
 
 
         class BeforeUnloadPrompt extends BasePrompt {
-            protected BeforeUnloadPrompt() {
-                super(null);
+            protected BeforeUnloadPrompt(
+                    @NonNull final String id,
+                    @NonNull final Observer observer) {
+                super(id, null, observer);
             }
 
             
@@ -3740,8 +3802,10 @@ public class GeckoSession {
 
 
         class RepostConfirmPrompt extends BasePrompt {
-            protected RepostConfirmPrompt() {
-                super(null);
+            protected RepostConfirmPrompt(
+                    @NonNull final String id,
+                    @NonNull final Observer observer) {
+                super(id, null, observer);
             }
 
             
@@ -3770,9 +3834,11 @@ public class GeckoSession {
 
             public final @Nullable String message;
 
-            protected AlertPrompt(@Nullable final String title,
-                                  @Nullable final String message) {
-                super(title);
+            protected AlertPrompt(@NonNull final String id,
+                                  @Nullable final String title,
+                                  @Nullable final String message,
+                                  @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.message = message;
             }
         }
@@ -3805,9 +3871,11 @@ public class GeckoSession {
 
             public final @Nullable String message;
 
-            protected ButtonPrompt(@Nullable final String title,
-                                   @Nullable final String message) {
-                super(title);
+            protected ButtonPrompt(@NonNull final String id,
+                                   @Nullable final String title,
+                                   @Nullable final String message,
+                                   @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.message = message;
             }
 
@@ -3842,10 +3910,12 @@ public class GeckoSession {
 
             public final @Nullable String defaultValue;
 
-            protected TextPrompt(@Nullable final String title,
+            protected TextPrompt(@NonNull final String id,
+                                 @Nullable final String title,
                                  @Nullable final String message,
-                                 @Nullable final String defaultValue) {
-                super(title);
+                                 @Nullable final String defaultValue,
+                                 @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.message = message;
                 this.defaultValue = defaultValue;
             }
@@ -3984,10 +4054,12 @@ public class GeckoSession {
 
             public final @NonNull AuthOptions authOptions;
 
-            protected AuthPrompt(@Nullable final String title,
+            protected AuthPrompt(@NonNull final String id,
+                                 @Nullable final String title,
                                  @Nullable final String message,
-                                 @NonNull final AuthOptions authOptions) {
-                super(title);
+                                 @NonNull final AuthOptions authOptions,
+                                 @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.message = message;
                 this.authOptions = authOptions;
             }
@@ -4140,11 +4212,13 @@ public class GeckoSession {
 
             public final @NonNull Choice[] choices;
 
-            protected ChoicePrompt(@Nullable final String title,
+            protected ChoicePrompt(@NonNull final String id,
+                                   @Nullable final String title,
                                    @Nullable final String message,
                                    @ChoiceType final int type,
-                                   @NonNull final Choice[] choices) {
-                super(title);
+                                   @NonNull final Choice[] choices,
+                                   @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.message = message;
                 this.type = type;
                 this.choices = choices;
@@ -4232,9 +4306,11 @@ public class GeckoSession {
 
             public final @Nullable String defaultValue;
 
-            protected ColorPrompt(@Nullable final String title,
-                                  @Nullable final String defaultValue) {
-                super(title);
+            protected ColorPrompt(@NonNull final String id,
+                                  @Nullable final String title,
+                                  @Nullable final String defaultValue,
+                                  @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.defaultValue = defaultValue;
             }
 
@@ -4311,12 +4387,14 @@ public class GeckoSession {
 
             public final @Nullable String maxValue;
 
-            protected DateTimePrompt(@Nullable final String title,
+            protected DateTimePrompt(@NonNull final String id,
+                                     @Nullable final String title,
                                      @DatetimeType final int type,
                                      @Nullable final String defaultValue,
                                      @Nullable final String minValue,
-                                     @Nullable final String maxValue) {
-                super(title);
+                                     @Nullable final String maxValue,
+                                     @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.type = type;
                 this.defaultValue = defaultValue;
                 this.minValue = minValue;
@@ -4412,11 +4490,13 @@ public class GeckoSession {
 
             public final @CaptureType int capture;
 
-            protected FilePrompt(@Nullable final String title,
+            protected FilePrompt(@NonNull final String id,
+                                 @Nullable final String title,
                                  @FileType final int type,
                                  @CaptureType final int capture,
-                                 @Nullable final String[] mimeTypes) {
-                super(title);
+                                 @Nullable final String[] mimeTypes,
+                                 @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.type = type;
                 this.capture = capture;
                 this.mimeTypes = mimeTypes;
@@ -4509,8 +4589,11 @@ public class GeckoSession {
 
             public final @Nullable String targetUri;
 
-            protected PopupPrompt(@Nullable final String targetUri) {
-                super(null);
+            protected PopupPrompt(
+                    @NonNull final String id,
+                    @Nullable final String targetUri,
+                    @NonNull final Observer observer) {
+                super(id, null, observer);
                 this.targetUri = targetUri;
             }
 
@@ -4573,10 +4656,12 @@ public class GeckoSession {
 
             public final @Nullable String uri;
 
-            protected SharePrompt(@Nullable final String title,
+            protected SharePrompt(@NonNull final String id,
+                                  @Nullable final String title,
                                   @Nullable final String text,
-                                  @Nullable final String uri) {
-                super(title);
+                                  @Nullable final String uri,
+                                  @NonNull final Observer observer) {
+                super(id, title, observer);
                 this.text = text;
                 this.uri = uri;
             }
@@ -4621,8 +4706,10 @@ public class GeckoSession {
 
             public final @NonNull T[] options;
 
-            protected AutocompleteRequest(final @NonNull T[] options) {
-                super(null);
+            protected AutocompleteRequest(final @NonNull String id,
+                                          final @NonNull T[] options,
+                                          final Observer observer) {
+                super(id, null, observer);
                 this.options = options;
             }
 
@@ -4989,7 +5076,6 @@ public class GeckoSession {
                         request) {
             return null;
         }
-
     }
 
     
