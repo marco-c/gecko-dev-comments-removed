@@ -422,6 +422,16 @@ var View = {
       this._removeRow(insertPoint);
     }
   },
+  
+  
+  discardUpdate() {
+    for (let row of this._orderedRows) {
+      if (!row.parentNode) {
+        this._rowsById.delete(row.rowId);
+      }
+    }
+    this._orderedRows = [];
+  },
   insertAfterRow(row) {
     let tbody = row.parentNode;
     let nextRow;
@@ -1152,13 +1162,6 @@ var Control = {
   
   
   async _updateDisplay(force = false) {
-    if (
-      !force &&
-      Date.now() - this._lastMouseEvent < TIME_BEFORE_SORTING_AGAIN
-    ) {
-      return;
-    }
-
     let counters = State.getCounters();
     let units = await gPromisePrefetchedUnits;
 
@@ -1201,6 +1204,20 @@ var Control = {
         processRow.classList.add("separate-from-previous-process-group");
       }
       previousProcess = process;
+    }
+
+    if (
+      !force &&
+      Date.now() - this._lastMouseEvent < TIME_BEFORE_SORTING_AGAIN
+    ) {
+      
+      
+      
+      
+      
+      
+      View.discardUpdate();
+      return;
     }
 
     View.commit();
