@@ -7,6 +7,7 @@
 #include "DNS.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "ODoHService.h"
 
 #include "DNSLogging.h"
@@ -345,8 +346,10 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
   aBody += '\0';
   aBody += '\0';  
 
-  aBody += '\0';                    
-  aBody += aDisableECS ? 1 : '\0';  
+  char additionalRecords =
+      (aDisableECS || StaticPrefs::network_trr_padding()) ? 1 : 0;
+  aBody += '\0';               
+  aBody += additionalRecords;  
 
   
 
@@ -390,7 +393,7 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
   aBody += '\0';           
   aBody += kDNS_CLASS_IN;  
 
-  if (aDisableECS) {
+  if (additionalRecords) {
     
     aBody += '\0';  
     aBody += '\0';
@@ -403,27 +406,65 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
     aBody += '\0';
     aBody += '\0';
 
-    aBody += '\0';  
-    aBody += 8;  
+    
+    unsigned int paddingLen = 0;
+    unsigned int rdlen = 0;
+    if (StaticPrefs::network_trr_padding()) {
+      
+      
+
+      
+      unsigned int packetLen = aBody.Length() + 2 + 4;
+      if (aDisableECS) {
+        
+        packetLen += 8;
+      }
+      
+      paddingLen = (16 - (packetLen & 15)) & 15;
+      
+      rdlen += 4 + paddingLen;
+    }
+    if (aDisableECS) {
+      rdlen += 8;
+    }
+
+    
+    aBody += (char)((rdlen >> 8) & 0xff);  
+    aBody += (char)(rdlen & 0xff);
 
     
     
 
-    aBody += '\0';  
-    aBody += 8;     
+    if (aDisableECS) {
+      aBody += '\0';  
+      aBody += 8;     
 
-    aBody += '\0';  
-    aBody += 4;  
-                 
-    aBody += '\0';  
-                    
-    aBody += 1;     
+      aBody += '\0';  
+      aBody += 4;     
+                      
+      aBody += '\0';  
+                      
+      aBody += 1;     
 
-    aBody += '\0';  
-    aBody += '\0';
+      aBody += '\0';  
+      aBody += '\0';
 
-    
+      
+    }
+
+    if (StaticPrefs::network_trr_padding()) {
+      aBody += '\0';  
+      aBody += 12;    
+
+      
+      aBody += (char)((paddingLen >> 8) & 0xff);
+      aBody += (char)(paddingLen & 0xff);
+      for (unsigned int i = 0; i < paddingLen; i++) {
+        aBody += '\0';
+      }
+    }
   }
+
   SetDNSPacketStatus(DNSPacketStatus::Success);
   return NS_OK;
 }
