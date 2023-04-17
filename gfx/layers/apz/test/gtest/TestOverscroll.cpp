@@ -5,6 +5,7 @@
 
 
 #include "APZCBasicTester.h"
+#include "APZCTreeManagerTester.h"
 #include "APZTestCommon.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 
@@ -87,8 +88,7 @@ class APZCOverscrollTester : public APZCBasicTester {
     rootLayerScrollData.AppendScrollMetadata(scrollData, metadata);
     scrollData.AddLayerData(rootLayerScrollData);
 
-    registration =
-        MakeUnique<ScopedLayerTreeRegistration>(guid.mLayersId, mcc);
+    registration = MakeUnique<ScopedLayerTreeRegistration>(guid.mLayersId, mcc);
     tm->UpdateHitTestingTree(WebRenderScrollDataWrapper(*updater, &scrollData),
                              false, guid.mLayersId, 0);
     return guid;
@@ -1318,3 +1318,43 @@ TEST_F(APZCOverscrollTester, OverscrollByPanGesturesInterruptedByReflowZoom) {
   EXPECT_TRUE(!apzc->IsOverscrolled());
 }
 #endif
+
+class APZCOverscrollTesterForLayersOnly : public APZCTreeManagerTester {
+ public:
+  APZCOverscrollTesterForLayersOnly() { mLayersOnly = true; }
+
+  UniquePtr<ScopedLayerTreeRegistration> registration;
+  TestAsyncPanZoomController* rootApzc;
+};
+
+TEST_F(APZCOverscrollTesterForLayersOnly, OverscrollHandoff) {
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+
+  const char* layerTreeSyntax = "c(c)";
+  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
+                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  root =
+      CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 200, 200));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+                            
+                            
+                            
+                            
+                            
+                            CSSRect(0, 0, 100, 50));
+
+  SetScrollHandoff(layers[1], root);
+
+  registration =
+      MakeUnique<ScopedLayerTreeRegistration>(LayersId{0}, root, mcc);
+  UpdateHitTestingTree();
+  rootApzc = ApzcOf(root);
+  rootApzc->GetFrameMetrics().SetIsRootContent(true);
+
+  
+  PanGesture(PanGestureInput::PANGESTURE_START, manager, ScreenIntPoint(50, 20),
+             ScreenPoint(0, -2), mcc->Time());
+  EXPECT_TRUE(rootApzc->IsOverscrolled());
+}
