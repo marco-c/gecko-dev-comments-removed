@@ -209,6 +209,7 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
                            
       u"msmpeg2vdec.dll",  
       u"nss3.dll",         
+      u"ole32.dll",        
       u"psapi.dll",        
       u"softokn3.dll",     
   };
