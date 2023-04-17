@@ -137,22 +137,22 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
 
  protected:
   
-  enum Operation {
+  enum class Operation {
     
     
     
-    eOperation_Read,
+    Read,
 
     
     
     
     
-    eOperation_Modify,
+    Modify,
 
     
     
     
-    eOperation_RemoveProperty
+    RemoveProperty,
   };
 
   
