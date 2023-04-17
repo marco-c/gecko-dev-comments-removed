@@ -12,7 +12,12 @@
 
 
 
-assertEq(Intl.getCanonicalLocales("sgn-DE")[0], "sgn-DE");
+assertEq(Intl.getCanonicalLocales("sgn-DE")[0], "gsg");
+assertEq(Intl.getCanonicalLocales("sgn-DD")[0], "gsg");
+
+assertEq(Intl.getCanonicalLocales("sgn-276")[0], "gsg");
+assertEq(Intl.getCanonicalLocales("sgn-278")[0], "gsg");
+assertEq(Intl.getCanonicalLocales("sgn-280")[0], "gsg");
 
 if (typeof reportCompare === "function")
     reportCompare(true, true);

@@ -23,8 +23,8 @@ const languageTags = {
 
     
     
-    "ja-Latn-hepburn-heploc": "ja-Latn-alalc97-hepburn",
-    "ja-Latn-JP-hepburn-heploc": "ja-Latn-JP-alalc97-hepburn",
+    "ja-Latn-hepburn-heploc": "ja-Latn-alalc97",
+    "ja-Latn-JP-hepburn-heploc": "ja-Latn-JP-alalc97",
 
     
     "sv-aaland": "sv-AX",
@@ -33,13 +33,13 @@ const languageTags = {
     
 
     
-    "ja-Latn-alalc97-hepburn-heploc": "ja-Latn-alalc97-hepburn",
-    "ja-Latn-hepburn-alalc97-heploc": "ja-Latn-alalc97-hepburn",
-    "ja-Latn-hepburn-heploc-alalc97": "ja-Latn-alalc97-hepburn",
+    "ja-Latn-alalc97-hepburn-heploc": "ja-Latn-alalc97",
+    "ja-Latn-hepburn-alalc97-heploc": "ja-Latn-alalc97",
+    "ja-Latn-hepburn-heploc-alalc97": "ja-Latn-alalc97",
 
     
     
-    "ja-Latn-heploc-hepburn": "ja-Latn-alalc97-hepburn",
+    "ja-Latn-heploc-hepburn": "ja-Latn-alalc97",
 
     
     "ja-Latn-heploc": "ja-Latn-alalc97",

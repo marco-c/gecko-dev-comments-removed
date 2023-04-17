@@ -1,7 +1,7 @@
 
 
 
-var irregularGrandfathered = [
+var irregularLegacy = [
     "en-gb-oed",
     "i-ami",
     "i-bnn",
@@ -23,7 +23,7 @@ var irregularGrandfathered = [
 
 
 
-var regularGrandfatheredWithExtlangLike = [
+var regularLegacyWithExtlangLike = [
     "no-bok",
     "no-nyn",
     "zh-min",
@@ -32,19 +32,19 @@ var regularGrandfatheredWithExtlangLike = [
 
 
 
-var regularGrandfatheredWithVariantLike = {
+var regularLegacyWithVariantLike = {
     "art-lojban": "jbo",
-    "cel-gaulish": "xtg-x-cel-gaulish",
+    "cel-gaulish": "xtg",
     "zh-guoyu": "zh",
     "zh-hakka": "hak",
     "zh-xiang": "hsn",
 };
 
-for (let locale of [...irregularGrandfathered, ...regularGrandfatheredWithExtlangLike]) {
+for (let locale of [...irregularLegacy, ...regularLegacyWithExtlangLike]) {
     assertThrowsInstanceOf(() => Intl.getCanonicalLocales(locale), RangeError);
 }
 
-for (let [locale, canonical] of Object.entries(regularGrandfatheredWithVariantLike)) {
+for (let [locale, canonical] of Object.entries(regularLegacyWithVariantLike)) {
     assertEq(Intl.getCanonicalLocales(locale)[0], canonical);
 }
 

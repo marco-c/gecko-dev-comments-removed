@@ -337,7 +337,7 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
 
-  if (!updateGrandfatheredMappings(cx)) {
+  if (!updateLegacyMappings(cx)) {
     return false;
   }
 
@@ -347,6 +347,9 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   }
 
   
+  if (script().present()) {
+    scriptMapping(script_);
+  }
 
   
   if (region().present()) {
