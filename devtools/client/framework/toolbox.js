@@ -3755,10 +3755,6 @@ Toolbox.prototype = {
       this._componentMount = null;
       this._tabBar = null;
     }
-    if (this._nodePicker) {
-      this._nodePicker.stop();
-      this._nodePicker = null;
-    }
     this.destroyHarAutomation();
 
     const outstanding = [];
@@ -3833,6 +3829,12 @@ Toolbox.prototype = {
         settleAll(outstanding)
           .catch(console.error)
           .then(async () => {
+            
+            
+            if (this._nodePicker) {
+              this._nodePicker.destroy();
+              this._nodePicker = null;
+            }
             this.selection.destroy();
             this.selection = null;
 
