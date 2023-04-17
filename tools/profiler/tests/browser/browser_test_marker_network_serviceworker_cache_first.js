@@ -7,6 +7,8 @@
 
 
 
+
+
 const serviceWorkerFileName = "serviceworker_cache_first.js";
 registerCleanupFunction(() => SpecialPowers.removeAllServiceWorkerData());
 
@@ -100,7 +102,13 @@ add_task(async function test_network_markers_service_worker_register() {
     );
 
     
-    const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread);
+    const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread)
+      
+      
+      
+      
+      
+      .filter(marker => !marker.data.URI.includes(serviceWorkerFileName));
     const contentNetworkMarkers = getInflatedNetworkMarkers(contentThread);
     const serviceWorkerNetworkMarkers = getInflatedNetworkMarkers(
       serviceWorkerThread
