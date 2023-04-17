@@ -52,13 +52,14 @@ class TelemetryProbesReporter final {
   using AudibleState = dom::AudioChannelService::AudibleState;
 
   
-  void OnPlay(Visibility aVisibility, MediaContent aContent);
+  void OnPlay(Visibility aVisibility, MediaContent aContent, bool aIsMuted);
   void OnPause(Visibility aVisibility);
   void OnShutdown();
 
   void OnVisibilityChanged(Visibility aVisibility);
   void OnAudibleChanged(AudibleState aAudible);
   void OnMediaContentChanged(MediaContent aContent);
+  void OnMutedChanged(bool aMuted);
   void OnDecodeSuspended();
   void OnDecodeResumed();
 
@@ -70,12 +71,15 @@ class TelemetryProbesReporter final {
   double GetTotalAudioPlayTimeInSeconds() const;
   double GetInaudiblePlayTimeInSeconds() const;
   double GetAudiblePlayTimeInSeconds() const;
+  double GetMutedPlayTimeInSeconds() const;
 
  private:
   void StartInvisibleVideoTimeAccumulator();
   void PauseInvisibleVideoTimeAccumulator();
   void StartInaudibleAudioTimeAccumulator();
   void PauseInaudibleAudioTimeAccumulator();
+  void StartMutedAudioTimeAccumulator();
+  void PauseMutedAudioTimeAccumulator();
   bool HasOwnerHadValidVideo() const;
   void AssertOnMainThreadAndNotShutdown() const;
 
@@ -142,6 +146,9 @@ class TelemetryProbesReporter final {
   TimeDurationAccumulator mInaudibleAudioPlayTime;
 
   
+  TimeDurationAccumulator mMutedAudioPlayTime;
+
+  
   TimeDurationAccumulator mVideoDecodeSuspendedTime;
 
   Visibility mMediaElementVisibility = Visibility::eInitial;
@@ -151,6 +158,8 @@ class TelemetryProbesReporter final {
   MediaContent mMediaContent = MediaContent::MEDIA_HAS_NOTHING;
 
   bool mIsPlaying = false;
+
+  bool mIsMuted = false;
 };
 
 }  

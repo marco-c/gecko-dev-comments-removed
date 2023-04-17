@@ -662,6 +662,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   double TotalAudioPlayTime() const;
   double AudiblePlayTime() const;
   double InaudiblePlayTime() const;
+  double MutedPlayTime() const;
 
   
   void SetFormatDiagnosticsReportForMimeType(const nsAString& aMimeType,
