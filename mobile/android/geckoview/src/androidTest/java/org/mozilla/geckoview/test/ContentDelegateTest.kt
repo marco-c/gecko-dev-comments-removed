@@ -73,6 +73,9 @@ class ContentDelegateTest : BaseSessionTest() {
 
     @IgnoreCrash
     @Test fun crashContent() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         mainSession.loadUri(CONTENT_CRASH_URL)
         mainSession.waitUntilCalled(object : Callbacks.ContentDelegate {
             @AssertCalled(count = 1)
@@ -96,6 +99,9 @@ class ContentDelegateTest : BaseSessionTest() {
     @IgnoreCrash
     @WithDisplay(width = 10, height = 10)
     @Test fun crashContent_tapAfterCrash() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         mainSession.delegateUntilTestEnd(object : Callbacks.ContentDelegate {
             override fun onCrash(session: GeckoSession) {
                 mainSession.open()

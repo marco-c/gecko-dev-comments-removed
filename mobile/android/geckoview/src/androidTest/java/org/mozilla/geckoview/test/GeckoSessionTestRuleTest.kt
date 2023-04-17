@@ -1692,6 +1692,9 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         mainSession.loadUri(CONTENT_CRASH_URL)
         mainSession.waitUntilCalled(object : Callbacks.ContentDelegate {
             @AssertCalled(count = 1)

@@ -164,6 +164,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun loadFileNotFound() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         testLoadExpectError("file:///test.mozilla",
                 WebRequestError.ERROR_CATEGORY_URI,
                 WebRequestError.ERROR_FILE_NOT_FOUND)
@@ -182,6 +186,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun loadUnknownHost() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         testLoadExpectError(UNKNOWN_HOST_URI,
                 WebRequestError.ERROR_CATEGORY_URI,
                 WebRequestError.ERROR_UNKNOWN_HOST)
@@ -191,6 +199,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun loadExternalDenied() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         testLoadExpectError(TestLoader().uri("file:///").flags(LOAD_FLAGS_EXTERNAL),
                 WebRequestError.ERROR_CATEGORY_UNKNOWN,
                 WebRequestError.ERROR_UNKNOWN)
@@ -203,12 +215,18 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadInvalidUri() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         testLoadEarlyError(INVALID_URI,
                 WebRequestError.ERROR_CATEGORY_URI,
                 WebRequestError.ERROR_MALFORMED_URI)
     }
 
     @Test fun loadBadPort() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         testLoadEarlyError("http://localhost:1/",
                 WebRequestError.ERROR_CATEGORY_NETWORK,
                 WebRequestError.ERROR_PORT_BLOCKED)
@@ -248,6 +266,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun loadDeprecatedTls() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         
         testLoadExpectError(UNKNOWN_HOST_URI,
                 WebRequestError.ERROR_CATEGORY_URI,
@@ -385,6 +407,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun loadUnknownProtocolIframe() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         val iframeUri = "foo://bar"
         sessionRule.session.loadTestPath(IFRAME_UNKNOWN_PROTOCOL)
         sessionRule.session.waitForPageStop()
@@ -456,6 +481,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun redirectLoad() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val redirectUri = if (sessionRule.env.isAutomation) {
             "http://example.org/tests/junit/hello.html"
         } else {
@@ -494,6 +522,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun redirectLoadIframe() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val path = if (sessionRule.env.isAutomation) {
             IFRAME_REDIRECT_AUTOMATION
         } else {
@@ -534,6 +565,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun redirectDenyLoad() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val redirectUri = if (sessionRule.env.isAutomation) {
             "http://example.org/tests/junit/hello.html"
         } else {
@@ -586,6 +621,9 @@ class NavigationDelegateTest : BaseSessionTest() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val redirectUri = "intent://test"
         val uri = "http://example.org/tests/junit/simple_redirect.sjs?$redirectUri"
 
@@ -607,6 +645,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
 
     @Test fun bypassClassifier() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val phishingUri = "https://www.itisatrap.org/firefox/its-a-trap.html"
         val category = ContentBlocking.SafeBrowsing.PHISHING
 
@@ -630,6 +671,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun safebrowsingPhishing() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val phishingUri = "https://www.itisatrap.org/firefox/its-a-trap.html"
         val category = ContentBlocking.SafeBrowsing.PHISHING
 
@@ -658,6 +703,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun safebrowsingMalware() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val malwareUri = "https://www.itisatrap.org/firefox/its-an-attack.html"
         val category = ContentBlocking.SafeBrowsing.MALWARE
 
@@ -712,6 +761,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun safebrowsingHarmful() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val harmfulUri = "https://www.itisatrap.org/firefox/harmful.html"
         val category = ContentBlocking.SafeBrowsing.HARMFUL
 
@@ -806,6 +859,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun uaOverrideNewSession() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val newSession = sessionRule.createClosedSession()
         newSession.settings.userAgentOverride = "Test user agent override"
 
@@ -818,6 +874,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun uaOverride() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("https://example.com")
         sessionRule.waitForPageStop()
 
@@ -881,6 +940,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 600, height = 200)
     @Test fun viewportMode() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadTestPath(VIEWPORT_PATH)
         sessionRule.waitForPageStop()
 
@@ -914,6 +976,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun load() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
         sessionRule.waitForPageStop()
 
@@ -964,6 +1029,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun load_dataUri() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val dataUrl = "data:,Hello%2C%20World!"
         sessionRule.session.loadUri(dataUrl)
         sessionRule.waitForPageStop()
@@ -984,6 +1052,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     @NullDelegate(GeckoSession.NavigationDelegate::class)
     @Test fun load_withoutNavigationDelegate() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
         sessionRule.session.waitForPageStop()
 
@@ -993,6 +1064,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @NullDelegate(GeckoSession.NavigationDelegate::class)
     @Test fun load_canUnsetNavigationDelegate() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         
         var onLocationCount = 0
         sessionRule.session.navigationDelegate = object : Callbacks.NavigationDelegate {
@@ -1015,6 +1089,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadString() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val dataString = "<html><head><title>TheTitle</title></head><body>TheBody</body></html>"
         val mimeType = "text/html"
         sessionRule.session.load(Loader().data(dataString, mimeType))
@@ -1057,6 +1134,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadData_html() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val bytes = getTestBytes(HELLO_HTML_PATH)
         assertThat("test html should have data", bytes.size, greaterThan(0))
 
@@ -1122,6 +1202,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun reload() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
         sessionRule.waitForPageStop()
 
@@ -1166,6 +1249,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun goBackAndForward() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
         sessionRule.waitForPageStop()
 
@@ -1249,6 +1335,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onLoadUri_returnTrueCancelsLoad() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.delegateDuringNextWait(object : Callbacks.NavigationDelegate {
             @AssertCalled(count = 2)
             override fun onLoadRequest(session: GeckoSession,
@@ -1280,6 +1369,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_calledForWindowOpen() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
@@ -1313,6 +1405,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test(expected = GeckoSessionTestRule.RejectedPromiseException::class)
     fun onNewSession_rejectLocal() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
@@ -1369,6 +1464,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun onNewSession_childShouldLoad() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         sessionRule.session.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -1396,6 +1494,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun onNewSession_setWindowOpener() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         sessionRule.session.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -1412,6 +1513,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun onNewSession_supportNoOpener() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         sessionRule.session.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -1427,6 +1531,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_notCalledForHandledLoads() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
@@ -1472,6 +1579,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun onNewSession_submitFormWithTargetBlank() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadTestPath(FORM_BLANK_HTML_PATH)
         sessionRule.waitForPageStop()
 
@@ -1511,6 +1621,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadUriReferrer() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val uri = "https://example.com"
         val referrer = "https://foo.org/"
 
@@ -1526,6 +1639,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadUriReferrerSession() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val uri = "https://example.com/bar"
         val referrer = "https://example.org/"
 
@@ -1545,6 +1661,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun loadUriReferrerSessionFileUrl() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val uri = "file:///system/etc/fonts.xml"
         val referrer = "https://example.org"
 
@@ -1810,6 +1929,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test(expected = GeckoResult.UncaughtException::class)
     fun onNewSession_doesNotAllowOpened() {
         
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
+        
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.disable_open_during_load" to false))
 
         sessionRule.session.loadTestPath(NEW_SESSION_HTML_PATH)
@@ -1831,6 +1953,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun extensionProcessSwitching() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.setPrefsUntilTestEnd(mapOf(
                 "xpinstall.signatures.required" to false,
                 "extensions.install.requireBuiltInCerts" to false,
@@ -1864,6 +1989,8 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun mainProcessSwitching() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
         processSwitchingTest("about:config")
     }
 
@@ -1936,6 +2063,9 @@ class NavigationDelegateTest : BaseSessionTest() {
     }
 
     @Test fun setLocationHash() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
         sessionRule.waitForPageStop()
 
@@ -1977,6 +2107,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun purgeHistory() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.loadUri("$TEST_ENDPOINT$HELLO_HTML_PATH")
         sessionRule.waitUntilCalled(object : Callbacks.NavigationDelegate {
             @AssertCalled(count = 1)
@@ -2030,6 +2164,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @WithDisplay(width = 100, height = 100)
     @Test fun userGesture() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         mainSession.loadUri("$TEST_ENDPOINT$CLICK_TO_RELOAD_HTML_PATH")
         mainSession.waitForPageStop()
 
@@ -2049,6 +2186,10 @@ class NavigationDelegateTest : BaseSessionTest() {
     @Test fun loadAfterLoad() {
         
         assumeThat(sessionRule.env.isFission, equalTo(false))
+
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         sessionRule.session.delegateDuringNextWait(object : Callbacks.NavigationDelegate {
             @AssertCalled(count = 2)
             override fun onLoadRequest(session: GeckoSession, request: LoadRequest): GeckoResult<AllowOrDeny>? {
@@ -2093,6 +2234,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test
     fun loadLongDataUriToplevelIndirect() {
+        
+        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+
         val dataBytes = ByteArray(3 * 1024 * 1024)
         val dataUri = createDataUri(dataBytes, "*/*")
 
