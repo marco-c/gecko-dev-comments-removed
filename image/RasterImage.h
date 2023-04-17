@@ -194,12 +194,11 @@ class RasterImage final : public ImageResource,
 
 
 
-  void NotifyProgress(
-      Progress aProgress,
-      const UnorientedIntRect& aInvalidRect = UnorientedIntRect(),
-      const Maybe<uint32_t>& aFrameCount = Nothing(),
-      DecoderFlags aDecoderFlags = DefaultDecoderFlags(),
-      SurfaceFlags aSurfaceFlags = DefaultSurfaceFlags());
+  void NotifyProgress(Progress aProgress,
+                      const OrientedIntRect& aInvalidRect = OrientedIntRect(),
+                      const Maybe<uint32_t>& aFrameCount = Nothing(),
+                      DecoderFlags aDecoderFlags = DefaultDecoderFlags(),
+                      SurfaceFlags aSurfaceFlags = DefaultSurfaceFlags());
 
   
 
@@ -222,7 +221,7 @@ class RasterImage final : public ImageResource,
   void NotifyDecodeComplete(
       const DecoderFinalStatus& aStatus, const ImageMetadata& aMetadata,
       const DecoderTelemetry& aTelemetry, Progress aProgress,
-      const UnorientedIntRect& aInvalidRect, const Maybe<uint32_t>& aFrameCount,
+      const OrientedIntRect& aInvalidRect, const Maybe<uint32_t>& aFrameCount,
       DecoderFlags aDecoderFlags, SurfaceFlags aSurfaceFlags);
 
   
@@ -281,16 +280,16 @@ class RasterImage final : public ImageResource,
 
 
 
-  LookupResult LookupFrame(const UnorientedIntSize& aSize, uint32_t aFlags,
+  LookupResult LookupFrame(const OrientedIntSize& aSize, uint32_t aFlags,
                            PlaybackType aPlaybackType, bool aMarkUsed);
 
   
-  LookupResult LookupFrameInternal(const UnorientedIntSize& aSize,
+  LookupResult LookupFrameInternal(const OrientedIntSize& aSize,
                                    uint32_t aFlags, PlaybackType aPlaybackType,
                                    bool aMarkUsed);
 
   ImgDrawResult DrawInternal(DrawableSurface&& aFrameRef, gfxContext* aContext,
-                             const UnorientedIntSize& aSize,
+                             const OrientedIntSize& aSize,
                              const ImageRegion& aRegion,
                              gfx::SamplingFilter aSamplingFilter,
                              uint32_t aFlags, float aOpacity);
@@ -322,7 +321,7 @@ class RasterImage final : public ImageResource,
 
 
 
-  void Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
+  void Decode(const OrientedIntSize& aSize, uint32_t aFlags,
               PlaybackType aPlaybackType, bool& aOutRanSync, bool& aOutFailed);
 
   
@@ -358,8 +357,7 @@ class RasterImage final : public ImageResource,
 
 
 
-  void RecoverFromInvalidFrames(const UnorientedIntSize& aSize,
-                                uint32_t aFlags);
+  void RecoverFromInvalidFrames(const OrientedIntSize& aSize, uint32_t aFlags);
 
   void OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded);
 
@@ -463,8 +461,7 @@ class RasterImage final : public ImageResource,
 
   
   
-  bool CanDownscaleDuringDecode(const UnorientedIntSize& aSize,
-                                uint32_t aFlags);
+  bool CanDownscaleDuringDecode(const OrientedIntSize& aSize, uint32_t aFlags);
 
   
   void DoError();
@@ -491,7 +488,7 @@ class RasterImage final : public ImageResource,
 
   bool IsOpaque();
 
-  LookupResult RequestDecodeForSizeInternal(const UnorientedIntSize& aSize,
+  LookupResult RequestDecodeForSizeInternal(const OrientedIntSize& aSize,
                                             uint32_t aFlags,
                                             uint32_t aWhichFrame);
 

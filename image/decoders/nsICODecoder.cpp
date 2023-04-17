@@ -154,7 +154,7 @@ LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
     e.mBitCount = LittleEndian::readUint16(aData + 6);
     e.mBytesInRes = LittleEndian::readUint32(aData + 8);
     e.mImageOffset = offset;
-    e.mSize = IntSize(e.mWidth, e.mHeight);
+    e.mSize = OrientedIntSize(e.mWidth, e.mHeight);
 
     
     
@@ -234,7 +234,7 @@ LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
 
   
   
-  const Maybe<IntSize> desiredSize = ExplicitOutputSize();
+  const Maybe<OrientedIntSize> desiredSize = ExplicitOutputSize();
 
   
   
@@ -309,7 +309,7 @@ LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
     
     
     
-    mDownscaler.emplace(OutputSize());
+    mDownscaler.emplace(OutputSize().ToUnknownSize());
   }
 
   size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();
@@ -348,7 +348,7 @@ LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
 
     
     bool metadataDecode = mReturnIterator.isSome();
-    Maybe<IntSize> expectedSize =
+    Maybe<OrientedIntSize> expectedSize =
         metadataDecode ? Nothing() : Some(mDirEntry->mSize);
     mContainedDecoder = DecoderFactory::CreateDecoderForICOResource(
         DecoderType::PNG, std::move(containedIterator.ref()), WrapNotNull(this),
@@ -412,7 +412,7 @@ LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
   
   
   bool metadataDecode = mReturnIterator.isSome();
-  Maybe<IntSize> expectedSize =
+  Maybe<OrientedIntSize> expectedSize =
       metadataDecode ? Nothing() : Some(mDirEntry->mSize);
   mContainedDecoder = DecoderFactory::CreateDecoderForICOResource(
       DecoderType::BMP, std::move(containedIterator.ref()), WrapNotNull(this),
@@ -491,10 +491,10 @@ LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
                mDownscaler->TargetSize().width *
                    mDownscaler->TargetSize().height * sizeof(uint32_t));
     mMaskBuffer = MakeUnique<uint8_t[]>(bmpDecoder->GetImageDataLength());
-    nsresult rv =
-        mDownscaler->BeginFrame(mDirEntry->mSize, Nothing(), mMaskBuffer.get(),
-                                 true,
-                                 true);
+    nsresult rv = mDownscaler->BeginFrame(mDirEntry->mSize.ToUnknownSize(),
+                                          Nothing(), mMaskBuffer.get(),
+                                           true,
+                                           true);
     if (NS_FAILED(rv)) {
       return Transition::TerminateFailure();
     }

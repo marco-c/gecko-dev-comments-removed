@@ -65,8 +65,7 @@ void IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
   
   
   Progress progress = aDecoder->TakeProgress();
-  UnorientedIntRect invalidRect =
-      UnorientedIntRect::FromUnknownRect(aDecoder->TakeInvalidRect());
+  OrientedIntRect invalidRect = aDecoder->TakeInvalidRect();
   Maybe<uint32_t> frameCount = aDecoder->TakeCompleteFrameCount();
   DecoderFlags decoderFlags = aDecoder->GetDecoderFlags();
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();
@@ -106,8 +105,7 @@ void IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
   ImageMetadata metadata = aDecoder->GetImageMetadata();
   DecoderTelemetry telemetry = aDecoder->Telemetry();
   Progress progress = aDecoder->TakeProgress();
-  UnorientedIntRect invalidRect =
-      UnorientedIntRect::FromUnknownRect(aDecoder->TakeInvalidRect());
+  OrientedIntRect invalidRect = aDecoder->TakeInvalidRect();
   Maybe<uint32_t> frameCount = aDecoder->TakeCompleteFrameCount();
   DecoderFlags decoderFlags = aDecoder->GetDecoderFlags();
   SurfaceFlags surfaceFlags = aDecoder->GetSurfaceFlags();

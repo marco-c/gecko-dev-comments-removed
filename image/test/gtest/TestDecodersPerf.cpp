@@ -44,7 +44,7 @@ static void CheckDecoderState(const ImageTestCase& aTestCase,
             bool(progress & FLAG_IS_ANIMATED));
 
   
-  IntSize size = aDecoder->Size();
+  OrientedIntSize size = aDecoder->Size();
   EXPECT_EQ(aTestCase.mSize.width, size.width);
   EXPECT_EQ(aTestCase.mSize.height, size.height);
 

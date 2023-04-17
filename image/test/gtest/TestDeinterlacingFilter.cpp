@@ -424,7 +424,7 @@ TEST_F(ImageDeinterlacingFilter, WritePixelsOutput1_1) {
 void WriteRowAndCheckInterlacerOutput(image::Decoder* aDecoder,
                                       SurfaceFilter* aFilter, BGRAColor aColor,
                                       WriteState aNextState,
-                                      IntRect aInvalidRect,
+                                      OrientedIntRect aInvalidRect,
                                       uint32_t aFirstHaeberliRow,
                                       uint32_t aLastHaeberliRow) {
   uint32_t count = 0;
@@ -474,7 +474,7 @@ TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7) {
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 0, 4);
+                                         OrientedIntRect(0, 0, 7, 7), 0, 4);
 
         
 
@@ -482,7 +482,7 @@ TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7) {
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 1, 4);
+                                         OrientedIntRect(0, 0, 7, 7), 1, 4);
 
         
 
@@ -491,13 +491,13 @@ TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7) {
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 2, 7, 4), 2, 3);
+                                         OrientedIntRect(0, 2, 7, 4), 2, 3);
 
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 6, 6);
+                                         OrientedIntRect(0, 0, 7, 7), 6, 6);
 
         
 
@@ -506,21 +506,21 @@ TEST_F(ImageDeinterlacingFilter, WritePixelsIntermediateOutput7_7) {
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 1, 7, 2), 1, 1);
+                                         OrientedIntRect(0, 1, 7, 2), 1, 1);
 
         
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 3, 7, 2), 3, 3);
+                                         OrientedIntRect(0, 3, 7, 2), 3, 3);
 
         
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::FINISHED,
-                                         IntRect(0, 5, 7, 2), 5, 5);
+                                         OrientedIntRect(0, 5, 7, 2), 5, 5);
 
         
         EXPECT_TRUE(aFilter->IsSurfaceFinished());
@@ -557,7 +557,7 @@ TEST_F(ImageDeinterlacingFilter,
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 0, 0);
+                                         OrientedIntRect(0, 0, 7, 7), 0, 0);
 
         
 
@@ -565,7 +565,7 @@ TEST_F(ImageDeinterlacingFilter,
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 4, 4);
+                                         OrientedIntRect(0, 0, 7, 7), 4, 4);
 
         
 
@@ -574,13 +574,13 @@ TEST_F(ImageDeinterlacingFilter,
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 2, 7, 4), 2, 2);
+                                         OrientedIntRect(0, 2, 7, 4), 2, 2);
 
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 0, 7, 7), 6, 6);
+                                         OrientedIntRect(0, 0, 7, 7), 6, 6);
 
         
 
@@ -589,21 +589,21 @@ TEST_F(ImageDeinterlacingFilter,
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 1, 7, 2), 1, 1);
+                                         OrientedIntRect(0, 1, 7, 2), 1, 1);
 
         
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Red(),
                                          WriteState::NEED_MORE_DATA,
-                                         IntRect(0, 3, 7, 2), 3, 3);
+                                         OrientedIntRect(0, 3, 7, 2), 3, 3);
 
         
         
         
         WriteRowAndCheckInterlacerOutput(aDecoder, aFilter, BGRAColor::Green(),
                                          WriteState::FINISHED,
-                                         IntRect(0, 5, 7, 2), 5, 5);
+                                         OrientedIntRect(0, 5, 7, 2), 5, 5);
 
         
         EXPECT_TRUE(aFilter->IsSurfaceFinished());

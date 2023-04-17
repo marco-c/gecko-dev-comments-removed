@@ -266,12 +266,12 @@ void Decoder::CompleteDecode() {
   }
 }
 
-void Decoder::SetOutputSize(const gfx::IntSize& aSize) {
+void Decoder::SetOutputSize(const OrientedIntSize& aSize) {
   mOutputSize = Some(aSize);
   mHaveExplicitOutputSize = true;
 }
 
-Maybe<gfx::IntSize> Decoder::ExplicitOutputSize() const {
+Maybe<OrientedIntSize> Decoder::ExplicitOutputSize() const {
   MOZ_ASSERT_IF(mHaveExplicitOutputSize, mOutputSize);
   return mHaveExplicitOutputSize ? mOutputSize : Nothing();
 }
@@ -448,10 +448,11 @@ void Decoder::PostSize(int32_t aWidth, int32_t aHeight,
 
   
   if (!mOutputSize) {
-    mOutputSize = Some(IntSize(aWidth, aHeight));
+    mOutputSize = Some(mImageMetadata.GetSize());
   }
 
-  MOZ_ASSERT(mOutputSize->width <= aWidth && mOutputSize->height <= aHeight,
+  MOZ_ASSERT(mOutputSize->width <= mImageMetadata.GetSize().width &&
+                 mOutputSize->height <= mImageMetadata.GetSize().height,
              "Output size will result in upscaling");
 
   
@@ -486,7 +487,8 @@ void Decoder::PostFrameStop(Opacity aFrameOpacity) {
     
     
     if (!ShouldSendPartialInvalidations()) {
-      mInvalidRect.UnionRect(mInvalidRect, IntRect(IntPoint(), Size()));
+      mInvalidRect.UnionRect(mInvalidRect,
+                             OrientedIntRect(OrientedIntPoint(), Size()));
     }
 
     
@@ -498,7 +500,7 @@ void Decoder::PostFrameStop(Opacity aFrameOpacity) {
       case DisposalMethod::CLEAR:
       case DisposalMethod::CLEAR_ALL:
       case DisposalMethod::RESTORE_PREVIOUS:
-        mFirstFrameRefreshArea = IntRect(IntPoint(), Size());
+        mFirstFrameRefreshArea = IntRect(IntPoint(), Size().ToUnknownSize());
         break;
       case DisposalMethod::KEEP:
       case DisposalMethod::NOT_SPECIFIED:
@@ -512,8 +514,8 @@ void Decoder::PostFrameStop(Opacity aFrameOpacity) {
   }
 }
 
-void Decoder::PostInvalidation(const gfx::IntRect& aRect,
-                               const Maybe<gfx::IntRect>& aRectAtOutputSize
+void Decoder::PostInvalidation(const OrientedIntRect& aRect,
+                               const Maybe<OrientedIntRect>& aRectAtOutputSize
                                ) {
   
   MOZ_ASSERT(mInFrame, "Can't invalidate when not mid-frame!");
@@ -523,7 +525,8 @@ void Decoder::PostInvalidation(const gfx::IntRect& aRect,
   
   if (ShouldSendPartialInvalidations() && mFrameCount == 1) {
     mInvalidRect.UnionRect(mInvalidRect, aRect);
-    mCurrentFrame->ImageUpdated(aRectAtOutputSize.valueOr(aRect));
+    mCurrentFrame->ImageUpdated(
+        aRectAtOutputSize.valueOr(aRect).ToUnknownRect());
   }
 }
 

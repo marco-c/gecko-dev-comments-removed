@@ -50,7 +50,7 @@ class nsGIFDecoder2 : public Decoder {
 
 
 
-  nsresult BeginImageFrame(const gfx::IntRect& aFrameRect, uint16_t aDepth,
+  nsresult BeginImageFrame(const OrientedIntRect& aFrameRect, uint16_t aDepth,
                            bool aIsInterlaced);
 
   
@@ -76,7 +76,7 @@ class nsGIFDecoder2 : public Decoder {
 
   
   
-  bool CheckForTransparency(const gfx::IntRect& aFrameRect);
+  bool CheckForTransparency(const OrientedIntRect& aFrameRect);
 
   
   int ClearCode() const {

@@ -157,8 +157,8 @@ class Decoder {
 
 
 
-  nsIntRect TakeInvalidRect() {
-    nsIntRect invalidRect = mInvalidRect;
+  OrientedIntRect TakeInvalidRect() {
+    OrientedIntRect invalidRect = mInvalidRect;
     mInvalidRect.SetEmpty();
     return invalidRect;
   }
@@ -211,7 +211,7 @@ class Decoder {
 
 
 
-  void SetOutputSize(const gfx::IntSize& aSize);
+  void SetOutputSize(const OrientedIntSize& aSize);
 
   
 
@@ -220,7 +220,7 @@ class Decoder {
 
 
 
-  gfx::IntSize OutputSize() const {
+  OrientedIntSize OutputSize() const {
     MOZ_ASSERT(HasSize());
     return *mOutputSize;
   }
@@ -229,13 +229,13 @@ class Decoder {
 
 
 
-  Maybe<gfx::IntSize> ExplicitOutputSize() const;
+  Maybe<OrientedIntSize> ExplicitOutputSize() const;
 
   
 
 
 
-  void SetExpectedSize(const gfx::IntSize& aSize) {
+  void SetExpectedSize(const OrientedIntSize& aSize) {
     mExpectedSize.emplace(aSize);
   }
 
@@ -342,7 +342,7 @@ class Decoder {
 
 
 
-  gfx::IntSize Size() const {
+  OrientedIntSize Size() const {
     MOZ_ASSERT(HasSize());
     return mImageMetadata.GetSize();
   }
@@ -354,8 +354,8 @@ class Decoder {
 
 
 
-  gfx::IntRect FullFrame() const {
-    return gfx::IntRect(gfx::IntPoint(), Size());
+  OrientedIntRect FullFrame() const {
+    return OrientedIntRect(OrientedIntPoint(), Size());
   }
 
   
@@ -369,8 +369,18 @@ class Decoder {
 
 
 
-  gfx::IntRect FullOutputFrame() const {
-    return gfx::IntRect(gfx::IntPoint(), OutputSize());
+  OrientedIntRect FullOutputFrame() const {
+    return OrientedIntRect(OrientedIntPoint(), OutputSize());
+  }
+
+  
+
+
+
+
+  Orientation GetOrientation() const {
+    MOZ_ASSERT(HasSize());
+    return mImageMetadata.GetOrientation();
   }
 
   
@@ -514,8 +524,8 @@ class Decoder {
 
 
   void PostInvalidation(
-      const gfx::IntRect& aRect,
-      const Maybe<gfx::IntRect>& aRectAtOutputSize = Nothing());
+      const OrientedIntRect& aRect,
+      const Maybe<OrientedIntRect>& aRectAtOutputSize = Nothing());
 
   
   
@@ -586,14 +596,14 @@ class Decoder {
 
   ImageMetadata mImageMetadata;
 
-  gfx::IntRect
+  OrientedIntRect
       mInvalidRect;  
-  gfx::IntRect mRestoreDirtyRect;   
-                                    
-  gfx::IntRect mRecycleRect;        
-                                    
-  Maybe<gfx::IntSize> mOutputSize;  
-  Maybe<gfx::IntSize> mExpectedSize;  
+  gfx::IntRect mRestoreDirtyRect;  
+                                   
+  gfx::IntRect mRecycleRect;       
+                                   
+  Maybe<OrientedIntSize> mOutputSize;    
+  Maybe<OrientedIntSize> mExpectedSize;  
   Progress mProgress;
 
   uint32_t mFrameCount;      

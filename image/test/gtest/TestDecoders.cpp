@@ -58,7 +58,7 @@ static already_AddRefed<SourceSurface> CheckDecoderState(
             bool(progress & FLAG_IS_ANIMATED));
 
   
-  IntSize size = aDecoder->Size();
+  OrientedIntSize size = aDecoder->Size();
   EXPECT_EQ(aTestCase.mSize.width, size.width);
   EXPECT_EQ(aTestCase.mSize.height, size.height);
 
@@ -316,7 +316,7 @@ static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
   }
 
   
-  IntSize size = aDecoder->Size();
+  OrientedIntSize size = aDecoder->Size();
   EXPECT_EQ(aTestCase.mSize.width, size.width);
   EXPECT_EQ(aTestCase.mSize.height, size.height);
 

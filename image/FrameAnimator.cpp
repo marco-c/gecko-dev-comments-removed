@@ -467,7 +467,7 @@ LookupResult FrameAnimator::GetCompositedFrame(AnimationState& aState,
       
       
       
-      UnorientedIntRect rect = UnorientedIntRect::FromUnknownRect(
+      OrientedIntRect rect = OrientedIntRect::FromUnknownRect(
           aState.UpdateStateInternal(result, mSize));
 
       if (!rect.IsEmpty()) {

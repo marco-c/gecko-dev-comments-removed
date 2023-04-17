@@ -141,7 +141,7 @@ void nsGIFDecoder2::BeginGIF() {
   PostSize(mGIFStruct.screen_width, mGIFStruct.screen_height);
 }
 
-bool nsGIFDecoder2::CheckForTransparency(const IntRect& aFrameRect) {
+bool nsGIFDecoder2::CheckForTransparency(const OrientedIntRect& aFrameRect) {
   
   if (mGIFStruct.is_transparent) {
     PostHasTransparency();
@@ -154,7 +154,8 @@ bool nsGIFDecoder2::CheckForTransparency(const IntRect& aFrameRect) {
 
   
   
-  IntRect imageRect(0, 0, mGIFStruct.screen_width, mGIFStruct.screen_height);
+  OrientedIntRect imageRect(0, 0, mGIFStruct.screen_width,
+                            mGIFStruct.screen_height);
   if (!imageRect.IsEqualEdges(aFrameRect)) {
     PostHasTransparency();
     mSawTransparency = true;  
@@ -165,7 +166,7 @@ bool nsGIFDecoder2::CheckForTransparency(const IntRect& aFrameRect) {
 }
 
 
-nsresult nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
+nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
                                         uint16_t aDepth, bool aIsInterlaced) {
   MOZ_ASSERT(HasSize());
 
@@ -176,7 +177,7 @@ nsresult nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
 
   Maybe<AnimationParams> animParams;
   if (!IsFirstFrameDecode()) {
-    animParams.emplace(aFrameRect,
+    animParams.emplace(aFrameRect.ToUnknownRect(),
                        FrameTimeout::FromRawMilliseconds(mGIFStruct.delay_time),
                        uint32_t(mGIFStruct.images_decoded), BlendMethod::OVER,
                        DisposalMethod(mGIFStruct.disposal_method));
@@ -752,7 +753,7 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::ReadImageDescriptor(
 
 LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::FinishImageDescriptor(
     const char* aData) {
-  IntRect frameRect;
+  OrientedIntRect frameRect;
 
   
   frameRect.SetRect(

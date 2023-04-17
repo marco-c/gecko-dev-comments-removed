@@ -222,63 +222,63 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit)
 
 TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRow)
 {
-  WithSurfaceSink<Orient::NORMAL>(
-      [](image::Decoder* aDecoder, SurfaceSink* aSink) {
-        
-        
-        
-        for (int row = 0; row < 99; ++row) {
-          uint32_t count = 0;
-          WriteState result = aSink->WritePixelsToRow<uint32_t>([&] {
-            ++count;
-            return AsVariant(BGRAColor::Green().AsPixel());
-          });
-
-          EXPECT_EQ(WriteState::NEED_MORE_DATA, result);
-          EXPECT_EQ(100u, count);
-          EXPECT_FALSE(aSink->IsSurfaceFinished());
-
-          Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
-          EXPECT_TRUE(invalidRect.isSome());
-          EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mInputSpaceRect);
-          EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mOutputSpaceRect);
-
-          CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, row + 1));
-        }
-
-        
-        uint32_t count = 0;
-        WriteState result = aSink->WritePixelsToRow<uint32_t>([&] {
-          ++count;
-          return AsVariant(BGRAColor::Green().AsPixel());
-        });
-
-        EXPECT_EQ(WriteState::FINISHED, result);
-        EXPECT_EQ(100u, count);
-
-        
-        
-        
-        AssertCorrectPipelineFinalState(aSink, IntRect(0, 99, 100, 1),
-                                        IntRect(0, 99, 100, 1));
-
-        
-        CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 100));
-
-        
-        count = 0;
-        result = aSink->WritePixelsToRow<uint32_t>([&] {
-          count++;
-          return AsVariant(BGRAColor::Red().AsPixel());
-        });
-
-        EXPECT_EQ(WriteState::FINISHED, result);
-        EXPECT_EQ(0u, count);
-        EXPECT_TRUE(aSink->IsSurfaceFinished());
-
-        
-        CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 100));
+  WithSurfaceSink<Orient::NORMAL>([](image::Decoder* aDecoder,
+                                     SurfaceSink* aSink) {
+    
+    
+    
+    for (int row = 0; row < 99; ++row) {
+      uint32_t count = 0;
+      WriteState result = aSink->WritePixelsToRow<uint32_t>([&] {
+        ++count;
+        return AsVariant(BGRAColor::Green().AsPixel());
       });
+
+      EXPECT_EQ(WriteState::NEED_MORE_DATA, result);
+      EXPECT_EQ(100u, count);
+      EXPECT_FALSE(aSink->IsSurfaceFinished());
+
+      Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
+      EXPECT_TRUE(invalidRect.isSome());
+      EXPECT_EQ(OrientedIntRect(0, row, 100, 1), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, row, 100, 1), invalidRect->mOutputSpaceRect);
+
+      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, row + 1));
+    }
+
+    
+    uint32_t count = 0;
+    WriteState result = aSink->WritePixelsToRow<uint32_t>([&] {
+      ++count;
+      return AsVariant(BGRAColor::Green().AsPixel());
+    });
+
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(100u, count);
+
+    
+    
+    
+    AssertCorrectPipelineFinalState(aSink, IntRect(0, 99, 100, 1),
+                                    IntRect(0, 99, 100, 1));
+
+    
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 100));
+
+    
+    count = 0;
+    result = aSink->WritePixelsToRow<uint32_t>([&] {
+      count++;
+      return AsVariant(BGRAColor::Red().AsPixel());
+    });
+
+    EXPECT_EQ(WriteState::FINISHED, result);
+    EXPECT_EQ(0u, count);
+    EXPECT_TRUE(aSink->IsSurfaceFinished());
+
+    
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 100));
+  });
 }
 
 TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit)
@@ -673,8 +673,8 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelBlocksPartialRow)
 
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, row, 100, 1), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, row, 100, 1), invalidRect->mOutputSpaceRect);
 
       CheckGeneratedImage(aDecoder, IntRect(20, 0, 60, row + 1));
     }
@@ -794,8 +794,8 @@ TEST(ImageSurfaceSink, SurfaceSinkInvalidRect)
       
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, 0, 100, 1), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, 0, 100, 1), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 0, 100, 1), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 0, 100, 1), invalidRect->mOutputSpaceRect);
     }
 
     {
@@ -815,8 +815,8 @@ TEST(ImageSurfaceSink, SurfaceSinkInvalidRect)
       
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, 1, 100, 8), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, 1, 100, 8), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 1, 100, 8), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 1, 100, 8), invalidRect->mOutputSpaceRect);
     }
 
     {
@@ -857,8 +857,8 @@ TEST(ImageSurfaceSink, SurfaceSinkInvalidRect)
       
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, 9, 100, 1), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, 9, 100, 1), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 9, 100, 1), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 9, 100, 1), invalidRect->mOutputSpaceRect);
     }
 
     {
@@ -887,8 +887,8 @@ TEST(ImageSurfaceSink, SurfaceSinkInvalidRect)
       
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, 10, 100, 90), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, 10, 100, 90), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 10, 100, 90), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 10, 100, 90), invalidRect->mOutputSpaceRect);
 
       
       RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();
@@ -948,8 +948,8 @@ TEST(ImageSurfaceSink, SurfaceSinkFlipVertically)
       
       Maybe<SurfaceInvalidRect> invalidRect = aSink->TakeInvalidRect();
       EXPECT_TRUE(invalidRect.isSome());
-      EXPECT_EQ(IntRect(0, 75, 100, 25), invalidRect->mInputSpaceRect);
-      EXPECT_EQ(IntRect(0, 75, 100, 25), invalidRect->mOutputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 75, 100, 25), invalidRect->mInputSpaceRect);
+      EXPECT_EQ(OrientedIntRect(0, 75, 100, 25), invalidRect->mOutputSpaceRect);
 
       
       RawAccessFrameRef currentFrame = aDecoder->GetCurrentFrameRef();

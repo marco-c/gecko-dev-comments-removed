@@ -35,6 +35,7 @@
 #include "mozilla/Variant.h"
 #include "mozilla/gfx/2D.h"
 #include "nsDebug.h"
+#include "Orientation.h"
 
 namespace mozilla {
 namespace image {
@@ -47,8 +48,9 @@ class Decoder;
 
 
 struct SurfaceInvalidRect {
-  gfx::IntRect mInputSpaceRect;  
-  gfx::IntRect
+  OrientedIntRect
+      mInputSpaceRect;  
+  OrientedIntRect
       mOutputSpaceRect;  
 };
 
@@ -774,7 +776,7 @@ class AbstractSurfaceSink : public SurfaceFilter {
   uint8_t* DoAdvanceRow() final;
   virtual uint8_t* GetRowPointer() const = 0;
 
-  gfx::IntRect
+  OrientedIntRect
       mInvalidRect;     
                         
   uint8_t* mImageData;  
