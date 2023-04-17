@@ -480,5 +480,5 @@ function _rgbaToString(parsedColor) {
 
 
 function _isColorDark(r, g, b) {
-  return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 110;
+  return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 127;
 }
