@@ -1261,43 +1261,29 @@ Result<Ok, IOUtils::IOError> IOUtils::MakeDirectorySync(nsIFile* aFile,
                                                         int32_t aMode) {
   MOZ_ASSERT(!NS_IsMainThread());
 
-  
-  
-  
-  if (!aCreateAncestors) {
-    nsCOMPtr<nsIFile> parent;
-    MOZ_TRY(aFile->GetParent(getter_AddRefs(parent)));
-    if (parent) {
-      bool parentExists = false;
-      MOZ_TRY(parent->Exists(&parentExists));
-      if (!parentExists) {
-        return Err(IOError(NS_ERROR_FILE_NOT_FOUND)
-                       .WithMessage("Could not create directory at %s because "
-                                    "the path has missing "
-                                    "ancestor components",
-                                    aFile->HumanReadablePath().get()));
-      }
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      bool exists = false;
-      MOZ_TRY(aFile->Exists(&exists));
-      if (exists) {
-        return Ok();
-      }
+  nsCOMPtr<nsIFile> parent;
+  MOZ_TRY(aFile->GetParent(getter_AddRefs(parent)));
+  if (!parent) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool exists = false;
+    MOZ_TRY(aFile->Exists(&exists));
+    if (exists) {
+      return Ok();
     }
   }
 
-  nsresult rv = aFile->Create(nsIFile::DIRECTORY_TYPE, aMode);
+  nsresult rv =
+      aFile->Create(nsIFile::DIRECTORY_TYPE, aMode, !aCreateAncestors);
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_FILE_ALREADY_EXISTS) {
       

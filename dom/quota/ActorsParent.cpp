@@ -2396,7 +2396,8 @@ Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
                  QM_OR_ELSE_LOG_VERBOSE_IF(
                      
                      MOZ_TO_RESULT_INVOKE(aDirectory, Create,
-                                          nsIFile::DIRECTORY_TYPE, 0755)
+                                          nsIFile::DIRECTORY_TYPE, 0755,
+                                           false)
                          .map([](Ok) { return false; }),
                      
                      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
