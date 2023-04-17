@@ -74,6 +74,8 @@
 
 
 
+
+
 "use strict";
 
 ChromeUtils.defineModuleGetter(
@@ -115,6 +117,11 @@ ChromeUtils.defineModuleGetter(
   this,
   "NormandyUtils",
   "resource://normandy/lib/NormandyUtils.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "PrefUtils",
+  "resource://normandy/lib/PrefUtils.jsm"
 );
 
 var EXPORTED_SYMBOLS = ["PreferenceExperiments"];
@@ -180,51 +187,6 @@ CleanupManager.addCleanupHandler(() =>
   PreferenceExperiments.stopAllObservers()
 );
 
-function getPref(prefBranch, prefName, prefType) {
-  if (prefBranch.getPrefType(prefName) === 0) {
-    
-    return null;
-  }
-
-  switch (prefType) {
-    case "boolean": {
-      return prefBranch.getBoolPref(prefName);
-    }
-
-    case "string":
-      return prefBranch.getStringPref(prefName);
-
-    case "integer":
-      return prefBranch.getIntPref(prefName);
-
-    default:
-      throw new TypeError(
-        `Unexpected preference type (${prefType}) for ${prefName}.`
-      );
-  }
-}
-
-function setPref(prefBranch, prefName, prefType, prefValue) {
-  switch (prefType) {
-    case "boolean":
-      prefBranch.setBoolPref(prefName, prefValue);
-      break;
-
-    case "string":
-      prefBranch.setStringPref(prefName, prefValue);
-      break;
-
-    case "integer":
-      prefBranch.setIntPref(prefName, prefValue);
-      break;
-
-    default:
-      throw new TypeError(
-        `Unexpected preference type (${prefType}) for ${prefName}.`
-      );
-  }
-}
-
 var PreferenceExperiments = {
   
 
@@ -267,29 +229,20 @@ var PreferenceExperiments = {
 
     for (const experiment of await this.getAllActive()) {
       
-      let stopped = false;
-      for (const [prefName, prefInfo] of Object.entries(
+      for (const [preferenceName, spec] of Object.entries(
         experiment.preferences
       )) {
         if (
-          getPref(UserPreferences, prefName, prefInfo.preferenceType) !==
-          prefInfo.preferenceValue
+          !spec.overridden &&
+          PrefUtils.getPref(preferenceName) !== spec.preferenceValue
         ) {
           
-          log.info(
-            `Stopping experiment "${experiment.slug}" because its value changed`
-          );
-          await this.stop(experiment.slug, {
-            resetValue: false,
-            reason: "user-preference-changed-sideload",
-            changedPref: prefName,
+          await this.recordPrefChange({
+            experiment,
+            preferenceName,
+            reason: "sideload",
           });
-          stopped = true;
-          break;
         }
-      }
-      if (stopped) {
-        continue;
       }
 
       
@@ -501,10 +454,12 @@ var PreferenceExperiments = {
       preferenceInfo.preferenceBranchType =
         preferenceInfo.preferenceBranchType || "default";
       const { preferenceBranchType, preferenceType } = preferenceInfo;
-      const preferenceBranch = PreferenceBranchType[preferenceBranchType];
-      if (!preferenceBranch) {
+      if (
+        !(preferenceBranchType === "user" || preferenceBranchType === "default")
+      ) {
         TelemetryEvents.sendEvent("enrollFailed", "preference_study", slug, {
           reason: "invalid-branch",
+          prefBranch: preferenceBranchType.slice(0, 80),
         });
         throw new Error(
           `Invalid value for preferenceBranchType: ${preferenceBranchType}`
@@ -536,28 +491,26 @@ var PreferenceExperiments = {
         );
       }
 
-      preferenceInfo.previousPreferenceValue = getPref(
-        preferenceBranch,
+      preferenceInfo.previousPreferenceValue = PrefUtils.getPref(
         preferenceName,
-        preferenceType
+        { branch: preferenceBranchType }
       );
     }
 
+    const alreadyOverriddenPrefs = new Set();
     for (const [preferenceName, preferenceInfo] of Object.entries(
       preferences
     )) {
-      const {
-        preferenceType,
-        preferenceValue,
-        preferenceBranchType,
-      } = preferenceInfo;
-      const preferenceBranch = PreferenceBranchType[preferenceBranchType];
-      setPref(
-        preferenceBranch,
-        preferenceName,
-        preferenceType,
-        preferenceValue
-      );
+      const { preferenceValue, preferenceBranchType } = preferenceInfo;
+      if (
+        preferenceBranchType === "default" &&
+        Services.prefs.prefHasUserValue(preferenceName)
+      ) {
+        alreadyOverriddenPrefs.add(preferenceName);
+      }
+      PrefUtils.setPref(preferenceName, preferenceValue, {
+        branch: preferenceBranchType,
+      });
     }
     PreferenceExperiments.startObserver(slug, preferences);
 
@@ -580,6 +533,7 @@ var PreferenceExperiments = {
     store.data.experiments[slug] = experiment;
     store.saveSoon();
 
+    
     TelemetryEnvironment.setExperimentActive(slug, branch, {
       type: EXPERIMENT_TYPE_PREFIX + experimentType,
       enrollmentId: enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
@@ -589,6 +543,16 @@ var PreferenceExperiments = {
       branch,
       enrollmentId: enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
     });
+
+    
+    
+    for (const preferenceName of alreadyOverriddenPrefs) {
+      await this.recordPrefChange({
+        experiment,
+        preferenceName,
+        reason: "onEnroll",
+      });
+    }
     await this.saveStartupPrefs();
 
     return experiment;
@@ -615,25 +579,30 @@ var PreferenceExperiments = {
     const observerInfo = {
       preferences,
       observe(aSubject, aTopic, preferenceName) {
-        const { preferenceValue, preferenceType } = preferences[preferenceName];
-        const newValue = getPref(
-          UserPreferences,
-          preferenceName,
-          preferenceType
-        );
-        if (newValue !== preferenceValue) {
-          PreferenceExperiments.stop(experimentSlug, {
-            resetValue: false,
-            reason: "user-preference-changed",
-            changedPref: preferenceName,
-            caller: "PreferenceExperiments.startObserver.observerInfo.observer",
-          }).catch(Cu.reportError);
+        const prefInfo = preferences[preferenceName];
+        
+        
+        
+        if (!prefInfo) {
+          return;
+        }
+        const originalValue = prefInfo.preferenceValue;
+        const newValue = PrefUtils.getPref(preferenceName);
+        if (newValue !== originalValue) {
+          PreferenceExperiments.recordPrefChange({
+            experimentSlug,
+            preferenceName,
+            reason: "observer",
+          });
+          Services.prefs.removeObserver(preferenceName, observerInfo);
         }
       },
     };
     experimentObservers.set(experimentSlug, observerInfo);
-    for (const preferenceName of Object.keys(preferences)) {
-      Services.prefs.addObserver(preferenceName, observerInfo);
+    for (const [preferenceName, spec] of Object.entries(preferences)) {
+      if (!spec.overridden) {
+        Services.prefs.addObserver(preferenceName, observerInfo);
+      }
     }
   },
 
@@ -718,6 +687,53 @@ var PreferenceExperiments = {
 
 
 
+  async recordPrefChange({
+    experiment = null,
+    experimentSlug = null,
+    preferenceName,
+    reason,
+  }) {
+    if (!experiment) {
+      experiment = await PreferenceExperiments.get(experimentSlug);
+    }
+    let preferenceSpecification = experiment.preferences[preferenceName];
+    if (!preferenceSpecification) {
+      throw new PreferenceExperiments.InvalidPreferenceName(
+        `Preference "${preferenceName}" is not a part of experiment "${experimentSlug}"`
+      );
+    }
+
+    preferenceSpecification.overridden = true;
+    await this.update(experiment);
+
+    TelemetryEvents.sendEvent(
+      "expPrefChanged",
+      "preference_study",
+      experiment.slug,
+      {
+        preferenceName,
+        reason,
+        enrollmentId:
+          experiment.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
+      }
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async stop(
     experimentSlug,
     { resetValue = true, reason = "unknown", changedPref, caller } = {}
@@ -779,20 +795,13 @@ var PreferenceExperiments = {
       for (const [preferenceName, prefInfo] of Object.entries(
         experiment.preferences
       )) {
-        const {
-          preferenceType,
-          previousPreferenceValue,
-          preferenceBranchType,
-        } = prefInfo;
+        const { previousPreferenceValue, preferenceBranchType } = prefInfo;
         const preferences = PreferenceBranchType[preferenceBranchType];
 
         if (previousPreferenceValue !== null) {
-          setPref(
-            preferences,
-            preferenceName,
-            preferenceType,
-            previousPreferenceValue
-          );
+          PrefUtils.setPref(preferenceName, previousPreferenceValue, {
+            branch: preferenceBranchType,
+          });
         } else if (preferenceBranchType === "user") {
           
           preferences.clearUserPref(preferenceName);
@@ -920,6 +929,7 @@ var PreferenceExperiments = {
   },
 
   NotFoundError: class extends Error {},
+  InvalidPreferenceName: class extends Error {},
 
   
 
@@ -1028,6 +1038,24 @@ var PreferenceExperiments = {
           }
         }
       }
+    },
+
+    async migration06TrackOverriddenPrefs(storage = null) {
+      if (!storage) {
+        storage = await ensureStorage();
+      }
+      for (const experiment of Object.values(storage.data.experiments)) {
+        for (const [preferenceName, specification] of Object.entries(
+          experiment.preferences
+        )) {
+          if (specification.overridden !== undefined) {
+            continue;
+          }
+          specification.overridden =
+            PrefUtils.getPref(preferenceName) !== specification.preferenceValue;
+        }
+      }
+      storage.saveSoon();
     },
   },
 };

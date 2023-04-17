@@ -32,27 +32,33 @@ var PrefUtils = {
 
 
 
-  getPref(branchName, pref, defaultValue = null) {
-    const branch = kPrefBranches[branchName];
-    const type = branch.getPrefType(pref);
+
+  getPref(pref, { branch = "user", defaultValue = null } = {}) {
+    const branchObj = kPrefBranches[branch];
+    if (!branchObj) {
+      throw new this.UnexpectedPreferenceBranch(
+        `"${branch}" is not a valid preference branch`
+      );
+    }
+    const type = branchObj.getPrefType(pref);
 
     try {
       switch (type) {
         case Services.prefs.PREF_BOOL: {
-          return branch.getBoolPref(pref);
+          return branchObj.getBoolPref(pref);
         }
         case Services.prefs.PREF_STRING: {
-          return branch.getStringPref(pref);
+          return branchObj.getStringPref(pref);
         }
         case Services.prefs.PREF_INT: {
-          return branch.getIntPref(pref);
+          return branchObj.getIntPref(pref);
         }
         case Services.prefs.PREF_INVALID: {
           return defaultValue;
         }
       }
     } catch (e) {
-      if (branchName === "default" && e.result === Cr.NS_ERROR_UNEXPECTED) {
+      if (branch === "default" && e.result === Cr.NS_ERROR_UNEXPECTED) {
         
         return defaultValue;
       }
@@ -72,23 +78,28 @@ var PrefUtils = {
 
 
 
-  setPref(branchName, pref, value) {
+  setPref(pref, value, { branch = "user" } = {}) {
     if (value === null) {
-      this.clearPref(branchName, pref);
+      this.clearPref(pref, { branch });
       return;
     }
-    const branch = kPrefBranches[branchName];
+    const branchObj = kPrefBranches[branch];
+    if (!branchObj) {
+      throw new this.UnexpectedPreferenceBranch(
+        `"${branch}" is not a valid preference branch`
+      );
+    }
     switch (typeof value) {
       case "boolean": {
-        branch.setBoolPref(pref, value);
+        branchObj.setBoolPref(pref, value);
         break;
       }
       case "string": {
-        branch.setStringPref(pref, value);
+        branchObj.setStringPref(pref, value);
         break;
       }
       case "number": {
-        branch.setIntPref(pref, value);
+        branchObj.setIntPref(pref, value);
         break;
       }
       default: {
@@ -104,13 +115,24 @@ var PrefUtils = {
 
 
 
-  clearPref(branchName, pref) {
-    if (branchName === "user") {
+
+
+
+
+  clearPref(pref, { branch = "user" } = {}) {
+    if (branch === "user") {
       kPrefBranches.user.clearUserPref(pref);
-    } else if (branchName === "default") {
+    } else if (branch === "default") {
       log.warn(
-        `Cannot not reset pref ${pref} on the default branch. Pref will be cleared at next restart.`
+        `Cannot reset pref ${pref} on the default branch. Pref will be cleared at next restart.`
+      );
+    } else {
+      throw new this.UnexpectedPreferenceBranch(
+        `"${branch}" is not a valid preference branch`
       );
     }
   },
+
+  UnexpectedPreferenceType: class extends Error {},
+  UnexpectedPreferenceBranch: class extends Error {},
 };

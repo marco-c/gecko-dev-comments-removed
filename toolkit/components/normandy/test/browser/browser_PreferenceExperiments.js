@@ -475,12 +475,14 @@ decorate_task(
           preferenceType: "string",
           previousPreferenceValue: "oldvalue",
           preferenceBranchType: "default",
+          overridden: true,
         },
         "fake.preferenceinteger": {
           preferenceValue: 2,
           preferenceType: "integer",
           previousPreferenceValue: 1,
           preferenceBranchType: "default",
+          overridden: true,
         },
       },
     };
@@ -650,7 +652,11 @@ decorate_task(withMockExperiments(), async function() {
 decorate_task(
   withMockExperiments(),
   withMockPreferences(),
-  async function testObserversCanObserveChanges({ mockPreferences }) {
+  withStub(PreferenceExperiments, "recordPrefChange"),
+  async function testObserversCanObserveChanges({
+    mockPreferences,
+    recordPrefChangeStub,
+  }) {
     const preferences = {
       "fake.preferencestring": {
         preferenceType: "string",
@@ -676,33 +682,70 @@ decorate_task(
     };
 
     for (const [testPref, newValue] of Object.entries(newValues)) {
-      const stopStub = sinon.stub(PreferenceExperiments, "stop");
+      const experimentSlug = "test-" + testPref;
       for (const [prefName, prefInfo] of Object.entries(preferences)) {
         mockPreferences.set(prefName, prefInfo.previousPreferenceValue);
       }
 
       
-      PreferenceExperiments.startObserver("test" + testPref, preferences);
+      PreferenceExperiments.startObserver(experimentSlug, preferences);
 
       
       for (const [prefName, prefInfo] of Object.entries(preferences)) {
         mockPreferences.set(prefName, prefInfo.preferenceValue);
         ok(
-          !stopStub.called,
+          !recordPrefChangeStub.called,
           "Changing to the experimental pref value did not trigger the observer"
         );
       }
 
       
       mockPreferences.set(testPref, newValue);
-      ok(
-        stopStub.called,
+      Assert.deepEqual(
+        recordPrefChangeStub.args,
+        [[{ experimentSlug, preferenceName: testPref, reason: "observer" }]],
         "Changing to a different value triggered the observer"
       );
 
       PreferenceExperiments.stopAllObservers();
-      stopStub.restore();
+      recordPrefChangeStub.resetHistory();
     }
+  }
+);
+
+
+decorate_task(
+  withMockExperiments(),
+  withMockPreferences(),
+  withStub(PreferenceExperiments, "recordPrefChange"),
+  async function testObserversCanObserveChanges({
+    mockPreferences,
+    recordPrefChangeStub,
+  }) {
+    const preferences = {
+      "fake.preference": {
+        preferenceType: "string",
+        previousPreferenceValue: "startvalue",
+        preferenceValue: "experimentvalue",
+      },
+    };
+
+    const experimentSlug = "test-prefix";
+    for (const [prefName, prefInfo] of Object.entries(preferences)) {
+      mockPreferences.set(prefName, prefInfo.preferenceValue);
+    }
+    PreferenceExperiments.startObserver(experimentSlug, preferences);
+
+    
+    
+    mockPreferences.set("fake.preference.extra", "value");
+    
+    ok(
+      !recordPrefChangeStub.called,
+      "Changing to the experimental pref value did not trigger the observer"
+    );
+
+    PreferenceExperiments.stopAllObservers();
   }
 );
 
@@ -1422,6 +1465,96 @@ decorate_task(
 );
 
 
+
+decorate_task(
+  withMockExperiments(),
+  withStub(TelemetryEnvironment, "setExperimentActive"),
+  withStub(TelemetryEnvironment, "setExperimentInactive"),
+  withSendEventSpy(),
+  withMockPreferences(),
+  async function testOverriddenAtEnroll({ sendEventSpy, mockPreferences }) {
+    
+    const prefNames = {
+      defaultNoOverride: "fake.preference.default-no-override",
+      defaultWithOverride: "fake.preference.default-with-override",
+      userNoOverride: "fake.preference.user-no-override",
+      userWithOverride: "fake.preference.user-with-override",
+    };
+
+    
+    
+    mockPreferences.set(
+      prefNames.defaultNoOverride,
+      "default value",
+      "default"
+    );
+    mockPreferences.set(
+      prefNames.defaultWithOverride,
+      "default value",
+      "default"
+    );
+    mockPreferences.set(prefNames.defaultWithOverride, "user value", "user");
+    mockPreferences.set(prefNames.userNoOverride, "default value", "default");
+    mockPreferences.set(prefNames.userWithOverride, "default value", "default");
+    mockPreferences.set(prefNames.userWithOverride, "user value", "user");
+
+    
+    
+    const { enrollmentId, slug } = await PreferenceExperiments.start({
+      slug: "test-experiment",
+      actionName: "someAction",
+      branch: "experimental-branch",
+      preferences: {
+        [prefNames.defaultNoOverride]: {
+          preferenceValue: "experimental value",
+          preferenceType: "string",
+          preferenceBranchType: "default",
+        },
+        [prefNames.defaultWithOverride]: {
+          preferenceValue: "experimental value",
+          preferenceType: "string",
+          preferenceBranchType: "default",
+        },
+        [prefNames.userNoOverride]: {
+          preferenceValue: "experimental value",
+          preferenceType: "string",
+          preferenceBranchType: "user",
+        },
+        [prefNames.userWithOverride]: {
+          preferenceValue: "experimental value",
+          preferenceType: "string",
+          preferenceBranchType: "user",
+        },
+      },
+      experimentType: "pref-test",
+    });
+
+    sendEventSpy.assertEvents([
+      [
+        "enroll",
+        "preference_study",
+        slug,
+        {
+          experimentType: "pref-test",
+          branch: "experimental-branch",
+          enrollmentId,
+        },
+      ],
+      [
+        "expPrefChanged",
+        "preference_study",
+        slug,
+        {
+          preferenceName: prefNames.defaultWithOverride,
+          reason: "onEnroll",
+          enrollmentId,
+        },
+      ],
+    ]);
+  }
+);
+
+
 decorate_task(
   withMockExperiments([
     preferenceStudyFactory({
@@ -1441,42 +1574,61 @@ decorate_task(
 );
 
 
+
 decorate_task(
   withMockExperiments([
     preferenceStudyFactory({
       slug: "test",
       preferences: {
-        "fake.preference": {
-          preferenceValue: "experiment value",
+        "fake.preference.1": {
+          preferenceValue: "experiment value 1",
           preferenceType: "string",
+          overridden: false,
+        },
+        "fake.preference.2": {
+          preferenceValue: "experiment value 2",
+          preferenceType: "string",
+          overridden: true,
         },
       },
     }),
   ]),
   withMockPreferences(),
-  withStub(PreferenceExperiments, "stop"),
-  async function testInitChanges({ mockPreferences, stopStub }) {
-    mockPreferences.set("fake.preference", "experiment value", "default");
-    mockPreferences.set("fake.preference", "changed value", "user");
+  withStub(PreferenceExperiments, "recordPrefChange"),
+  async function testInitChanges({
+    mockPreferences,
+    recordPrefChangeStub,
+    prefExperiments: [experiment],
+  }) {
+    mockPreferences.set("fake.preference.1", "experiment value 1", "default");
+    mockPreferences.set("fake.preference.1", "changed value 1", "user");
+    mockPreferences.set("fake.preference.2", "experiment value 2", "default");
+    mockPreferences.set("fake.preference.2", "changed value 2", "user");
     await PreferenceExperiments.init();
 
     is(
-      Preferences.get("fake.preference"),
-      "changed value",
+      Preferences.get("fake.preference.1"),
+      "changed value 1",
+      "Preference value was not changed"
+    );
+    is(
+      Preferences.get("fake.preference.2"),
+      "changed value 2",
       "Preference value was not changed"
     );
 
     Assert.deepEqual(
-      stopStub.getCall(0).args,
+      recordPrefChangeStub.args,
       [
-        "test",
-        {
-          resetValue: false,
-          reason: "user-preference-changed-sideload",
-          changedPref: "fake.preference",
-        },
+        [
+          {
+            experiment,
+            preferenceName: "fake.preference.1",
+            reason: "sideload",
+          },
+        ],
       ],
-      "Experiment is stopped correctly because value changed"
+      "Only one experiment preference change should be recorded"
     );
   }
 );
@@ -1524,6 +1676,7 @@ decorate_task(
             preferenceValue: "experiment value",
             previousPreferenceValue: "oldfakevalue",
             preferenceBranchType: "default",
+            overridden: false,
           },
         },
       ],
@@ -1807,6 +1960,7 @@ decorate_task(
         "fake.preference1": {
           preferenceValue: "experiment value",
           preferenceType: "string",
+          previousValue: "previous",
         },
       },
     }),
@@ -1816,6 +1970,7 @@ decorate_task(
         "fake.preference2": {
           preferenceValue: "experiment value",
           preferenceType: "string",
+          previousValue: "previous",
         },
       },
     }),
@@ -1847,59 +2002,93 @@ decorate_task(
 
 
 decorate_task(
-  withMockPreferences(),
-  withSendEventSpy(),
   withMockExperiments([
     preferenceStudyFactory({
-      slug: "test",
-      expired: false,
-      branch: "fakebranch",
       preferences: {
-        "fake.preference": {
-          preferenceValue: "experimentvalue",
-          preferenceType: "string",
-          previousPreferenceValue: "oldvalue",
-          preferenceBranchType: "default",
-        },
+        "test.pref": {},
       },
     }),
   ]),
-  async function testPrefChangeEventTelemetry({
-    mockPreferences,
+  withSendEventSpy(),
+  async function testRecordPrefChangeWorks({
     sendEventSpy,
-    prefExperiments,
+    prefExperiments: [experiment],
   }) {
-    ok(!Preferences.get("fake.preference"), "preference should start unset");
-    mockPreferences.set("fake.preference", "oldvalue", "default");
-    PreferenceExperiments.startObserver("test", {
-      "fake.preference": {
-        preferenceType: "string",
-        preferenceValue: "experimentvalue",
-      },
-    });
-
-    
-    mockPreferences.set("fake.preference", "uservalue", "user");
-
-    
-    await TestUtils.topicObserved(
-      "normandy:preference-experiment:stopped",
-      (subject, message) => {
-        return message == "test";
-      }
+    is(
+      experiment.preferences["test.pref"].overridden,
+      false,
+      "Precondition: the pref should not be overridden yet"
     );
 
+    await PreferenceExperiments.recordPrefChange({
+      experiment,
+      preferenceName: "test.pref",
+      reason: "test-run",
+    });
+
+    experiment = await PreferenceExperiments.get(experiment.slug);
+    is(
+      experiment.preferences["test.pref"].overridden,
+      true,
+      "The pref should be marked as overridden"
+    );
     sendEventSpy.assertEvents([
       [
-        "unenroll",
+        "expPrefChanged",
         "preference_study",
-        "test",
+        experiment.slug,
         {
-          didResetValue: "false",
-          reason: "user-preference-changed",
-          branch: "fakebranch",
-          enrollmentId: prefExperiments[0].enrollmentId,
-          changedPref: "fake.preference",
+          preferenceName: "test.pref",
+          reason: "test-run",
+          enrollmentId: experiment.enrollmentId,
+        },
+      ],
+    ]);
+  }
+);
+
+
+
+decorate_task(
+  withMockExperiments([
+    preferenceStudyFactory({
+      preferences: {
+        "test.pref": {},
+      },
+    }),
+  ]),
+  withSendEventSpy(),
+  async function testRecordPrefChangeWorks({
+    sendEventSpy,
+    prefExperiments: [experiment],
+  }) {
+    is(
+      experiment.preferences["test.pref"].overridden,
+      false,
+      "Precondition: the pref should not be overridden yet"
+    );
+
+    await PreferenceExperiments.recordPrefChange({
+      experimentSlug: experiment.slug,
+      preferenceName: "test.pref",
+      reason: "test-run",
+    });
+
+    experiment = await PreferenceExperiments.get(experiment.slug);
+    is(
+      experiment.preferences["test.pref"].overridden,
+      true,
+      "The pref should be marked as overridden"
+    );
+    sendEventSpy.assertEvents([
+      [
+        "expPrefChanged",
+        "preference_study",
+        experiment.slug,
+        {
+          preferenceName: "test.pref",
+          reason: "test-run",
+          enrollmentId: experiment.enrollmentId,
         },
       ],
     ]);

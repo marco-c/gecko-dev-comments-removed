@@ -101,8 +101,9 @@ const NormandyTestUtils = {
       const defaultPrefInfo = {
         preferenceValue: false,
         preferenceType: "boolean",
-        previousPreferenceValue: undefined,
+        previousPreferenceValue: null,
         preferenceBranchType: "default",
+        overridden: false,
       };
       const preferences = {};
       for (const [prefName, prefInfo] of Object.entries(
@@ -396,7 +397,11 @@ class TestConsoleListener {
 
 
 
-  assertAtLeast(expectedMessages, assertMessage = null) {
+
+  assertAtLeast(
+    expectedMessages,
+    assertMessage = "Console should contain the expected messages."
+  ) {
     let expectedSet = new Set(expectedMessages);
     for (let { message } of this.messages) {
       let found = false;
@@ -418,12 +423,18 @@ class TestConsoleListener {
       if (assertMessage) {
         errorMessageParts.push(assertMessage);
       }
-      errorMessageParts.push(remaining[0]);
+      errorMessageParts.push(`"${remaining[0]}"`);
       if (remaining.length > 1) {
         errorMessageParts.push(`and ${remaining.length - 1} more log messages`);
       }
       errorMessageParts.push("expected in the console but not found.");
-      testGlobals.Assert.ok(false, errorMessageParts.join(" "));
+      testGlobals.Assert.equal(
+        expectedSet.size,
+        0,
+        errorMessageParts.join(" ")
+      );
+    } else {
+      testGlobals.Assert.equal(expectedSet.size, 0, assertMessage);
     }
   }
 
