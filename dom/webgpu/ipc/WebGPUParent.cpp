@@ -35,11 +35,13 @@ class ErrorBuffer {
     return errorBuf;
   }
 
-  bool CheckError() {
+  Maybe<nsCString> GetError() {
     mGuard = false;
-    return mUtf8[0] != 0;
+    if (!mUtf8[0]) {
+      return Nothing();
+    }
+    return Some(nsCString(mUtf8));
   }
-  nsDependentCString GetError() const { return nsDependentCString(mUtf8); };
 };
 
 class PresentationData {
@@ -207,22 +209,21 @@ void WebGPUParent::MaintainDevices() {
 
 bool WebGPUParent::ForwardError(RawId aDeviceId, ErrorBuffer& aError) {
   
-  if (!aError.CheckError()) {
+  auto cString = aError.GetError();
+  if (!cString) {
     return false;
   }
-
-  auto cString = aError.GetError();
 
   
   const auto& lookup = mErrorScopeMap.find(aDeviceId);
   if (lookup != mErrorScopeMap.end() && !lookup->second.mStack.IsEmpty()) {
     auto& last = lookup->second.mStack.LastElement();
     if (last.isNothing()) {
-      last.emplace(ScopedError{false, std::move(cString)});
+      last.emplace(ScopedError{false, cString.value()});
     }
   } else {
     
-    if (!SendDeviceUncapturedError(aDeviceId, cString)) {
+    if (!SendDeviceUncapturedError(aDeviceId, cString.value())) {
       NS_ERROR("Unable to SendError");
     }
   }
