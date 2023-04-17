@@ -24,6 +24,7 @@ DEFAULTS = dict(
     init_url="getInfo.html",
     env={"NO_EM_RESTART": "1"},
     
+    
     basetest=dict(
         cycles=1,
         profile_path="${talos}/base_profile",
@@ -67,6 +68,8 @@ GLOBAL_OVERRIDES = (
     "gecko_profile",
     "gecko_profile_interval",
     "gecko_profile_entries",
+    "gecko_profile_features",
+    "gecko_profile_threads",
     "tpcycles",
     "tppagecycles",
     "tpmanifest",
