@@ -62,8 +62,9 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   [
-    "registerWalkerListeners",
+    "refreshTargets",
     "registerTarget",
+    "registerWalkerListeners",
     "selectTarget",
     "unregisterTarget",
   ],
@@ -4319,7 +4320,6 @@ Toolbox.prototype = {
 
       if (
         resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource?.targetFront.isTopLevel &&
         !resource.isFrameSwitching &&
         
         
@@ -4330,9 +4330,14 @@ Toolbox.prototype = {
         
         
         setTimeout(() => {
-          this._refreshHostTitle();
+          
+          this.store.dispatch(refreshTargets());
+
+          if (resource.targetFront.isTopLevel) {
+            this._refreshHostTitle();
+            this._setDebugTargetData();
+          }
         }, 0);
-        this._setDebugTargetData();
       }
     }
 

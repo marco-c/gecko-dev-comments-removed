@@ -62,12 +62,20 @@ add_task(async function() {
   });
 
   
-  await waitFor(() => getContextSelectorItems(hud).length === 4);
+  await waitFor(() => {
+    const items = getContextSelectorItems(hud);
+    return (
+      items.length === 4 &&
+      items.some(el =>
+        el
+          .querySelector(".label")
+          ?.textContent.includes("iframe-2|test1.example.org")
+      )
+    );
+  });
 
   const expectedSecondIframeItem = {
-    
-    
-    label: `http://test1.example.org/${IFRAME_PATH}?id=iframe-2`,
+    label: `iframe-2|test1.example.org`,
     tooltip: `http://test1.example.org/${IFRAME_PATH}?id=iframe-2`,
   };
 
@@ -78,11 +86,11 @@ add_task(async function() {
     },
     expectedSeparatorItem,
     {
-      ...expectedSecondIframeItem,
+      ...expectedFirstIframeItem,
       checked: false,
     },
     {
-      ...expectedFirstIframeItem,
+      ...expectedSecondIframeItem,
       checked: false,
     },
   ]);

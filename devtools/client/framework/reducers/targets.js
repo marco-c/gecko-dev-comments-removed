@@ -8,6 +8,10 @@ const initialReducerState = {
   targets: [],
   
   selected: null,
+  
+  
+  
+  lastTargetRefresh: Date.now(),
 };
 
 exports.reducer = targetsReducer;
@@ -40,6 +44,15 @@ function targetsReducer(state = initialReducerState, action) {
       };
     }
 
+    case "REFRESH_TARGETS": {
+      
+      
+      return {
+        ...state,
+        lastTargetRefresh: Date.now(),
+      };
+    }
+
     case "UNREGISTER_TARGET": {
       const targets = state.targets.filter(
         target => target !== action.targetFront
@@ -56,12 +69,18 @@ function targetsReducer(state = initialReducerState, action) {
   return state;
 }
 
-exports.getToolboxTargets = getToolboxTargets;
 function getToolboxTargets(state) {
   return state.targets.targets;
 }
 
-exports.getSelectedTarget = getSelectedTarget;
 function getSelectedTarget(state) {
   return state.targets.selected;
 }
+
+function getLastTargetRefresh(state) {
+  return state.targets.lastTargetRefresh;
+}
+
+exports.getToolboxTargets = getToolboxTargets;
+exports.getSelectedTarget = getSelectedTarget;
+exports.getLastTargetRefresh = getLastTargetRefresh;
