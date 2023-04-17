@@ -6992,6 +6992,7 @@ bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
   return doc && canSavePresentation;
 }
 
+
 void nsDocShell::ReportBFCacheComboTelemetry(uint16_t aCombo) {
   
   

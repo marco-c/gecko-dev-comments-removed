@@ -1189,48 +1189,49 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(aFrameLoader);
 
+  aEntry->SetFrameLoader(nullptr);
+
   nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
       do_QueryInterface(aBrowsingContext->GetEmbedderElement());
-  if (frameLoaderOwner) {
-    aEntry->SetFrameLoader(nullptr);
-    if (aFrameLoader->GetMaybePendingBrowsingContext()) {
-      RefPtr<CanonicalBrowsingContext> loadingBC =
-          aFrameLoader->GetMaybePendingBrowsingContext()->Canonical();
-      RefPtr<nsFrameLoader> currentFrameLoader =
-          frameLoaderOwner->GetFrameLoader();
-      
-      
-      if (aCanSave && aBrowsingContext->GetActiveSessionHistoryEntry()) {
-        aBrowsingContext->GetActiveSessionHistoryEntry()->SetFrameLoader(
-            currentFrameLoader);
-        Unused << aBrowsingContext->SetIsInBFCache(true);
-      }
-
-      
-      aBrowsingContext->SetActiveSessionHistoryEntry(aEntry);
-      loadingBC->SetActiveSessionHistoryEntry(nullptr);
-      RemotenessChangeOptions options;
-      aBrowsingContext->ReplacedBy(loadingBC, options);
-      frameLoaderOwner->ReplaceFrameLoader(aFrameLoader);
-
-      
-      
-      if (!aCanSave && currentFrameLoader) {
-        currentFrameLoader->Destroy();
-      }
-
-      
-      if (loadingBC->GetSessionHistory()) {
-        loadingBC->GetSessionHistory()->UpdateIndex();
-      }
-      loadingBC->HistoryCommitIndexAndLength();
-      Unused << loadingBC->SetIsInBFCache(false);
-      
-      
-      
-      return;
+  if (frameLoaderOwner && aFrameLoader->GetMaybePendingBrowsingContext()) {
+    RefPtr<CanonicalBrowsingContext> loadingBC =
+        aFrameLoader->GetMaybePendingBrowsingContext()->Canonical();
+    RefPtr<nsFrameLoader> currentFrameLoader =
+        frameLoaderOwner->GetFrameLoader();
+    
+    
+    if (aCanSave && aBrowsingContext->GetActiveSessionHistoryEntry()) {
+      aBrowsingContext->GetActiveSessionHistoryEntry()->SetFrameLoader(
+          currentFrameLoader);
+      Unused << aBrowsingContext->SetIsInBFCache(true);
     }
+
+    
+    aBrowsingContext->SetActiveSessionHistoryEntry(aEntry);
+    loadingBC->SetActiveSessionHistoryEntry(nullptr);
+    RemotenessChangeOptions options;
+    aBrowsingContext->ReplacedBy(loadingBC, options);
+    frameLoaderOwner->ReplaceFrameLoader(aFrameLoader);
+
+    
+    
+    if (!aCanSave && currentFrameLoader) {
+      currentFrameLoader->Destroy();
+    }
+
+    
+    if (loadingBC->GetSessionHistory()) {
+      loadingBC->GetSessionHistory()->UpdateIndex();
+    }
+    loadingBC->HistoryCommitIndexAndLength();
+    Unused << loadingBC->SetIsInBFCache(false);
+    
+    
+    
+    return;
   }
+
+  aFrameLoader->Destroy();
 
   
   aBrowsingContext->LoadURI(aLoadState, false);
@@ -1248,82 +1249,52 @@ void nsSHistory::LoadURIOrBFCache(LoadEntryResult& aLoadEntry) {
         canonicalBC->GetActiveSessionHistoryEntry();
     MOZ_ASSERT(she);
     RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader();
-    if (canonicalBC->Group()->Toplevels().Length() == 1 && frameLoader &&
+    if (frameLoader &&
         (!currentShe || she->SharedInfo() != currentShe->SharedInfo())) {
-      auto restoreInitialStep = [canonicalBC, loadState, she,
-                                 frameLoader](const nsTArray<bool> aCanSaves) {
-        bool canSave = !aCanSaves.Contains(false);
-        MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-                ("nsSHistory::LoadURIOrBFCache "
-                 "saving presentation=%i",
-                 canSave));
+      bool canSave = (!currentShe || currentShe->GetSaveLayoutStateFlag()) &&
+                     canonicalBC->AllowedInBFCache(Nothing());
 
-        if (!canSave) {
-          nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
-              do_QueryInterface(canonicalBC->GetEmbedderElement());
-          if (frameLoaderOwner) {
-            RefPtr<nsFrameLoader> currentFrameLoader =
-                frameLoaderOwner->GetFrameLoader();
-            if (currentFrameLoader &&
-                currentFrameLoader->GetMaybePendingBrowsingContext()) {
-              WindowGlobalParent* wgp =
-                  currentFrameLoader->GetMaybePendingBrowsingContext()
-                      ->Canonical()
-                      ->GetCurrentWindowGlobal();
-              if (wgp) {
-                wgp->PermitUnload([canonicalBC, loadState, she, frameLoader,
-                                   currentFrameLoader](bool aAllow) {
-                  if (aAllow) {
-                    FinishRestore(canonicalBC, loadState, she, frameLoader,
-                                  false);
-                  } else if (currentFrameLoader
-                                 ->GetMaybePendingBrowsingContext()) {
-                    nsISHistory* shistory =
-                        currentFrameLoader->GetMaybePendingBrowsingContext()
-                            ->Canonical()
-                            ->GetSessionHistory();
-                    if (shistory) {
-                      shistory->InternalSetRequestedIndex(-1);
-                    }
+      MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
+              ("nsSHistory::LoadURIOrBFCache "
+               "saving presentation=%i",
+               canSave));
+
+      if (!canSave) {
+        nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
+            do_QueryInterface(canonicalBC->GetEmbedderElement());
+        if (frameLoaderOwner) {
+          RefPtr<nsFrameLoader> currentFrameLoader =
+              frameLoaderOwner->GetFrameLoader();
+          if (currentFrameLoader &&
+              currentFrameLoader->GetMaybePendingBrowsingContext()) {
+            WindowGlobalParent* wgp =
+                currentFrameLoader->GetMaybePendingBrowsingContext()
+                    ->Canonical()
+                    ->GetCurrentWindowGlobal();
+            if (wgp) {
+              wgp->PermitUnload([canonicalBC, loadState, she, frameLoader,
+                                 currentFrameLoader](bool aAllow) {
+                if (aAllow) {
+                  FinishRestore(canonicalBC, loadState, she, frameLoader,
+                                false);
+                } else if (currentFrameLoader
+                               ->GetMaybePendingBrowsingContext()) {
+                  nsISHistory* shistory =
+                      currentFrameLoader->GetMaybePendingBrowsingContext()
+                          ->Canonical()
+                          ->GetSessionHistory();
+                  if (shistory) {
+                    shistory->InternalSetRequestedIndex(-1);
                   }
-                });
-                return;
-              }
+                }
+              });
+              return;
             }
           }
         }
-
-        FinishRestore(canonicalBC, loadState, she, frameLoader, canSave);
-      };
-
-      if (currentShe && !currentShe->GetSaveLayoutStateFlag()) {
-        
-        
-        nsTArray<bool> canSaves;
-        canSaves.AppendElement(false);
-        restoreInitialStep(std::move(canSaves));
-        return;
       }
 
-      nsTArray<RefPtr<PContentParent::CanSavePresentationPromise>>
-          canSavePromises;
-      canonicalBC->Group()->EachParent([&](ContentParent* aParent) {
-        RefPtr<PContentParent::CanSavePresentationPromise> canSave =
-            aParent->SendCanSavePresentation(canonicalBC, Nothing());
-        canSavePromises.AppendElement(canSave);
-      });
-
-      
-      PContentParent::CanSavePresentationPromise::All(
-          GetCurrentSerialEventTarget(), canSavePromises)
-          ->Then(GetMainThreadSerialEventTarget(), __func__,
-                 std::move(restoreInitialStep),
-                 [canonicalBC, loadState](mozilla::ipc::ResponseRejectReason) {
-                   MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-                           ("nsSHistory::LoadURIOrBFCache "
-                            "error in trying to save presentation"));
-                   canonicalBC->LoadURI(loadState, false);
-                 });
+      FinishRestore(canonicalBC, loadState, she, frameLoader, canSave);
       return;
     }
     if (frameLoader) {
