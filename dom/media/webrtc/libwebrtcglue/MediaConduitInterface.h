@@ -13,6 +13,7 @@
 #include "jsapi/PeerConnectionCtx.h"
 #include "jsapi/RTCStatsReport.h"
 #include "MediaConduitErrors.h"
+#include "mozilla/media/MediaUtils.h"
 #include "mozilla/RefCounted.h"
 #include "TaskQueueWrapper.h"
 #include "VideoTypes.h"
@@ -246,15 +247,18 @@ class WebRtcCallWrapper {
 
   static RefPtr<WebRtcCallWrapper> Create(
       const dom::RTCStatsTimestampMaker& aTimestampMaker,
+      UniquePtr<media::ShutdownBlockingTicket> aShutdownTicket,
       SharedWebrtcState* aSharedState, webrtc::WebRtcKeyValueConfig* aTrials) {
     auto current = TaskQueueWrapper::MainAsCurrent();
-    return Create(aTimestampMaker, aSharedState->GetModuleThread(),
+    return Create(aTimestampMaker, std::move(aShutdownTicket),
+                  aSharedState->GetModuleThread(),
                   aSharedState->mAudioStateConfig,
                   aSharedState->mAudioDecoderFactory, aTrials);
   }
 
   static RefPtr<WebRtcCallWrapper> Create(
       const dom::RTCStatsTimestampMaker& aTimestampMaker,
+      UniquePtr<media::ShutdownBlockingTicket> aShutdownTicket,
       webrtc::SharedModuleThread* aModuleThread,
       const webrtc::AudioState::Config& aAudioStateConfig,
       webrtc::AudioDecoderFactory* aAudioDecoderFactory,
@@ -272,7 +276,8 @@ class WebRtcCallWrapper {
     return new WebRtcCallWrapper(
         aAudioDecoderFactory, std::move(videoBitrateAllocatorFactory),
         WrapUnique(webrtc::Call::Create(config, aModuleThread)),
-        std::move(eventLog), std::move(taskQueueFactory), aTimestampMaker);
+        std::move(eventLog), std::move(taskQueueFactory), aTimestampMaker,
+        std::move(aShutdownTicket));
   }
 
   static RefPtr<WebRtcCallWrapper> Create(UniquePtr<webrtc::Call> aCall) {
@@ -330,10 +335,13 @@ class WebRtcCallWrapper {
   
   
   
+  
+  
   void Destroy() {
     MOZ_ASSERT(NS_IsMainThread());
     auto current = TaskQueueWrapper::MainAsCurrent();
     mCall = nullptr;
+    mShutdownTicket = nullptr;
   }
 
   const dom::RTCStatsTimestampMaker& GetTimestampMaker() const {
@@ -350,8 +358,10 @@ class WebRtcCallWrapper {
                     UniquePtr<webrtc::Call> aCall,
                     UniquePtr<webrtc::RtcEventLog> aEventLog,
                     UniquePtr<webrtc::TaskQueueFactory> aTaskQueueFactory,
-                    const dom::RTCStatsTimestampMaker& aTimestampMaker)
+                    const dom::RTCStatsTimestampMaker& aTimestampMaker,
+                    UniquePtr<media::ShutdownBlockingTicket> aShutdownTicket)
       : mTimestampMaker(aTimestampMaker),
+        mShutdownTicket(std::move(aShutdownTicket)),
         mAudioDecoderFactory(std::move(aAudioDecoderFactory)),
         mVideoBitrateAllocatorFactory(std::move(aVideoBitrateAllocatorFactory)),
         mEventLog(std::move(aEventLog)),
@@ -367,6 +377,7 @@ class WebRtcCallWrapper {
   
   std::set<MediaSessionConduit*> mConduits;
   dom::RTCStatsTimestampMaker mTimestampMaker;
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownTicket;
 
  public:
   const RefPtr<webrtc::AudioDecoderFactory> mAudioDecoderFactory;
