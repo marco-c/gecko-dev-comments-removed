@@ -211,11 +211,6 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 - (nsresult)setMacCursor:(nsMacCursor*)aMacCursor {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  
-  
-  
-  [[NSCursor currentCursor] set];
-
   nsCursor oldType = [mCurrentMacCursor type];
   nsCursor newType = [aMacCursor type];
   if (oldType != newType) {
@@ -245,7 +240,6 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
   
   if (sCurrentCursor == aCursor && sCurrentCursorScaleFactor == scaleFactor && mCurrentMacCursor) {
-    [self setMacCursor:mCurrentMacCursor];
     return NS_OK;
   }
 
