@@ -6,7 +6,6 @@
 #ifndef mozilla_EditorBase_h
 #define mozilla_EditorBase_h
 
-#include "mozilla/intl/Bidi.h"
 #include "mozilla/Assertions.h"          
 #include "mozilla/EditAction.h"          
 #include "mozilla/EditorDOMPoint.h"      
@@ -29,6 +28,7 @@
 #include "nsGkAtoms.h"
 #include "nsIContentInlines.h"       
 #include "nsIEditor.h"               
+#include "nsIFrame.h"                
 #include "nsISelectionController.h"  
 #include "nsISelectionListener.h"    
 #include "nsISupportsImpl.h"         
@@ -1985,7 +1985,7 @@ class EditorBase : public nsIEditor,
     void MaybeUpdateCaretBidiLevel(const EditorBase& aEditorBase) const;
 
    private:
-    Maybe<mozilla::intl::Bidi::EmbeddingLevel> mNewCaretBidiLevel;
+    Maybe<nsBidiLevel> mNewCaretBidiLevel;
     bool mFailed = false;
     bool mCanceled = false;
   };

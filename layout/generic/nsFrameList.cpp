@@ -6,7 +6,6 @@
 
 #include "nsFrameList.h"
 
-#include "mozilla/intl/Bidi.h"
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/PresShell.h"
 #include "nsBidiPresUtils.h"
@@ -306,8 +305,7 @@ nsIFrame* nsFrameList::GetPrevVisualFor(nsIFrame* aFrame) const {
   nsIFrame* parent = mFirstChild->GetParent();
   if (!parent) return aFrame ? aFrame->GetPrevSibling() : LastChild();
 
-  mozilla::intl::Bidi::Direction paraDir =
-      nsBidiPresUtils::ParagraphDirection(mFirstChild);
+  nsBidiDirection paraDir = nsBidiPresUtils::ParagraphDirection(mFirstChild);
 
   nsAutoLineIterator iter = parent->GetLineIterator();
   if (!iter) {
@@ -315,7 +313,7 @@ nsIFrame* nsFrameList::GetPrevVisualFor(nsIFrame* aFrame) const {
     if (parent->IsLineFrame()) {
       
       
-      if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+      if (paraDir == NSBIDI_LTR) {
         return nsBidiPresUtils::GetFrameToLeftOf(aFrame, mFirstChild, -1);
       } else {  
         return nsBidiPresUtils::GetFrameToRightOf(aFrame, mFirstChild, -1);
@@ -347,7 +345,7 @@ nsIFrame* nsFrameList::GetPrevVisualFor(nsIFrame* aFrame) const {
   if (aFrame) {
     auto line = iter->GetLine(thisLine).unwrap();
 
-    if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+    if (paraDir == NSBIDI_LTR) {
       frame = nsBidiPresUtils::GetFrameToLeftOf(aFrame, line.mFirstFrameOnLine,
                                                 line.mNumFramesOnLine);
     } else {  
@@ -360,7 +358,7 @@ nsIFrame* nsFrameList::GetPrevVisualFor(nsIFrame* aFrame) const {
     
     auto line = iter->GetLine(thisLine - 1).unwrap();
 
-    if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+    if (paraDir == NSBIDI_LTR) {
       frame = nsBidiPresUtils::GetFrameToLeftOf(nullptr, line.mFirstFrameOnLine,
                                                 line.mNumFramesOnLine);
     } else {  
@@ -377,8 +375,7 @@ nsIFrame* nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const {
   nsIFrame* parent = mFirstChild->GetParent();
   if (!parent) return aFrame ? aFrame->GetPrevSibling() : mFirstChild;
 
-  mozilla::intl::Bidi::Direction paraDir =
-      nsBidiPresUtils::ParagraphDirection(mFirstChild);
+  nsBidiDirection paraDir = nsBidiPresUtils::ParagraphDirection(mFirstChild);
 
   nsAutoLineIterator iter = parent->GetLineIterator();
   if (!iter) {
@@ -386,7 +383,7 @@ nsIFrame* nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const {
     if (parent->IsLineFrame()) {
       
       
-      if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+      if (paraDir == NSBIDI_LTR) {
         return nsBidiPresUtils::GetFrameToRightOf(aFrame, mFirstChild, -1);
       } else {  
         return nsBidiPresUtils::GetFrameToLeftOf(aFrame, mFirstChild, -1);
@@ -418,7 +415,7 @@ nsIFrame* nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const {
   if (aFrame) {
     auto line = iter->GetLine(thisLine).unwrap();
 
-    if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+    if (paraDir == NSBIDI_LTR) {
       frame = nsBidiPresUtils::GetFrameToRightOf(aFrame, line.mFirstFrameOnLine,
                                                  line.mNumFramesOnLine);
     } else {  
@@ -432,7 +429,7 @@ nsIFrame* nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const {
     
     auto line = iter->GetLine(thisLine + 1).unwrap();
 
-    if (paraDir == mozilla::intl::Bidi::Direction::LTR) {
+    if (paraDir == NSBIDI_LTR) {
       frame = nsBidiPresUtils::GetFrameToRightOf(
           nullptr, line.mFirstFrameOnLine, line.mNumFramesOnLine);
     } else {  

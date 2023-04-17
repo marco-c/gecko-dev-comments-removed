@@ -78,7 +78,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/intl/Bidi.h"
 #include "nsDisplayItemTypes.h"
 #include "nsPresContext.h"
 #include "nsTHashSet.h"
@@ -360,6 +359,76 @@ class nsReflowStatus final {
 
 std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef uint8_t nsBidiLevel;
+
+
+
+
+
+
+#define NSBIDI_DEFAULT_LTR 0xfe
+
+
+
+
+
+
+#define NSBIDI_DEFAULT_RTL 0xff
+
+
+
+
+
+
+#define NSBIDI_MAX_EXPLICIT_LEVEL 125
+
+
+
+
+#define NSBIDI_LEVEL_OVERRIDE 0x80
+
+
+
+
+enum nsBidiDirection {
+  
+  NSBIDI_LTR,
+  
+  NSBIDI_RTL,
+  
+  NSBIDI_MIXED
+};
+
 namespace mozilla {
 
 
@@ -404,16 +473,15 @@ struct IntrinsicSize {
 };
 
 
-static const mozilla::intl::Bidi::EmbeddingLevel kBidiLevelNone =
-    mozilla::intl::Bidi::EmbeddingLevel(0xff);
+static const nsBidiLevel kBidiLevelNone = 0xff;
 
 struct FrameBidiData {
-  mozilla::intl::Bidi::EmbeddingLevel baseLevel;
-  mozilla::intl::Bidi::EmbeddingLevel embeddingLevel;
+  nsBidiLevel baseLevel;
+  nsBidiLevel embeddingLevel;
   
   
   
-  mozilla::intl::Bidi::EmbeddingLevel precedingControl;
+  nsBidiLevel precedingControl;
 };
 
 }  
@@ -1330,13 +1398,9 @@ class nsIFrame : public nsQueryFrame {
     return bidiData;
   }
 
-  mozilla::intl::Bidi::EmbeddingLevel GetBaseLevel() const {
-    return GetBidiData().baseLevel;
-  }
+  nsBidiLevel GetBaseLevel() const { return GetBidiData().baseLevel; }
 
-  mozilla::intl::Bidi::EmbeddingLevel GetEmbeddingLevel() const {
-    return GetBidiData().embeddingLevel;
-  }
+  nsBidiLevel GetEmbeddingLevel() const { return GetBidiData().embeddingLevel; }
 
   
 

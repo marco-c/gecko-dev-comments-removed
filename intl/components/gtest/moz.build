@@ -5,7 +5,6 @@
 
 
 UNIFIED_SOURCES += [
-    "TestBidi.cpp",
     "TestCalendar.cpp",
     "TestCollator.cpp",
     "TestCurrency.cpp",

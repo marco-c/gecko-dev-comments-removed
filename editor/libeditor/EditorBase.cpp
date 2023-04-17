@@ -10,23 +10,22 @@
 #include <stdio.h>   
 #include <string.h>  
 
-#include "ChangeAttributeTransaction.h"  
-#include "CompositionTransaction.h"      
-#include "CreateElementTransaction.h"    
-#include "DeleteNodeTransaction.h"       
-#include "DeleteRangeTransaction.h"      
-#include "DeleteTextTransaction.h"       
-#include "EditAggregateTransaction.h"    
-#include "EditTransactionBase.h"         
-#include "EditorEventListener.h"         
-#include "gfxFontUtils.h"                
-#include "HTMLEditUtils.h"               
-#include "InsertNodeTransaction.h"       
-#include "InsertTextTransaction.h"       
-#include "JoinNodeTransaction.h"         
-#include "PlaceholderTransaction.h"      
-#include "SplitNodeTransaction.h"        
-#include "mozilla/intl/Bidi.h"
+#include "ChangeAttributeTransaction.h"       
+#include "CompositionTransaction.h"           
+#include "CreateElementTransaction.h"         
+#include "DeleteNodeTransaction.h"            
+#include "DeleteRangeTransaction.h"           
+#include "DeleteTextTransaction.h"            
+#include "EditAggregateTransaction.h"         
+#include "EditTransactionBase.h"              
+#include "EditorEventListener.h"              
+#include "gfxFontUtils.h"                     
+#include "HTMLEditUtils.h"                    
+#include "InsertNodeTransaction.h"            
+#include "InsertTextTransaction.h"            
+#include "JoinNodeTransaction.h"              
+#include "PlaceholderTransaction.h"           
+#include "SplitNodeTransaction.h"             
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
@@ -5768,13 +5767,12 @@ EditorBase::AutoCaretBidiLevelManager::AutoCaretBidiLevelManager(
   nsPrevNextBidiLevels levels = frameSelection->GetPrevNextBidiLevels(
       aPointAtCaret.GetContainerAsContent(), aPointAtCaret.Offset(), true);
 
-  mozilla::intl::Bidi::EmbeddingLevel levelBefore = levels.mLevelBefore;
-  mozilla::intl::Bidi::EmbeddingLevel levelAfter = levels.mLevelAfter;
+  nsBidiLevel levelBefore = levels.mLevelBefore;
+  nsBidiLevel levelAfter = levels.mLevelAfter;
 
-  mozilla::intl::Bidi::EmbeddingLevel currentCaretLevel =
-      frameSelection->GetCaretBidiLevel();
+  nsBidiLevel currentCaretLevel = frameSelection->GetCaretBidiLevel();
 
-  mozilla::intl::Bidi::EmbeddingLevel levelOfDeletion;
+  nsBidiLevel levelOfDeletion;
   levelOfDeletion = (nsIEditor::eNext == aDirectionAndAmount ||
                      nsIEditor::eNextWord == aDirectionAndAmount)
                         ? levelAfter
