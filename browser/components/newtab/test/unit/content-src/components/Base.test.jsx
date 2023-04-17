@@ -8,6 +8,7 @@ import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundar
 import React from "react";
 import { Search } from "content-src/components/Search/Search";
 import { shallow } from "enzyme";
+import { actionCreators as ac } from "common/Actions.jsm";
 
 describe("<Base>", () => {
   let DEFAULT_PROPS = {
@@ -95,15 +96,15 @@ describe("<BaseContent>", () => {
     );
   });
 
-  it("should render the PrefsButton component with featureConfig values", () => {
+  it("should dispatch a user event when the customize menu is opened or closed", () => {
+    const dispatch = sinon.stub();
     const wrapper = shallow(
-      <BaseContent
-        {...DEFAULT_PROPS}
-        Prefs={{ values: { featureConfig: { prefsButtonIcon: "icon-foo" } } }}
-      />
+      <BaseContent {...DEFAULT_PROPS} dispatch={dispatch} />
     );
-    assert.lengthOf(wrapper.find(PrefsButton), 1);
-    assert.equal(wrapper.find(PrefsButton).prop("icon"), "icon-foo");
+    wrapper.instance().openCustomizationMenu();
+    assert.calledWith(dispatch, ac.UserEvent({ event: "SHOW_PERSONALIZE" }));
+    wrapper.instance().closeCustomizationMenu();
+    assert.calledWith(dispatch, ac.UserEvent({ event: "HIDE_PERSONALIZE" }));
   });
 
   it("should render only search if no Sections are enabled", () => {
