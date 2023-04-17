@@ -205,6 +205,10 @@ add_task(async function navigate_around() {
     "network.loadinfo.skip_type_assertion": {
       
     },
+    "toolkit.telemetry.cachedClientID": {
+      
+      
+    },
   };
 
   if (SpecialPowers.useRemoteSubframes) {
