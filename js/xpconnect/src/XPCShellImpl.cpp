@@ -81,6 +81,13 @@
 #  include "xpctest_private.h"
 #endif
 
+
+#ifdef FUZZING_INTERFACES
+#  include "xpcrtfuzzing/xpcrtfuzzing.h"
+static bool fuzzDoDebug = !!getenv("MOZ_FUZZ_DEBUG");
+static bool fuzzHaveModule = !!getenv("FUZZER");
+#endif  
+
 using namespace mozilla;
 using namespace JS;
 using mozilla::dom::AutoEntryScript;
@@ -278,6 +285,15 @@ static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
 static bool Print(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setUndefined();
+
+#ifdef FUZZING_INTERFACES
+  if (fuzzHaveModule && !fuzzDoDebug) {
+    
+    
+    
+    return true;
+  }
+#endif  
 
   RootedString str(cx);
   nsAutoCString utf8output;
@@ -1343,22 +1359,34 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
                         0);
 
       {
-        
-        
-        AutoEntryScript aes(backstagePass, "xpcshell argument processing");
+#ifdef FUZZING_INTERFACES
+        if (fuzzHaveModule) {
+          
+          argc++;
+          argv--;
 
-        
-        
-        
-        if (!ProcessArgs(aes, argv, argc, &dirprovider)) {
-          if (gExitCode) {
-            result = gExitCode;
-          } else if (gQuitting) {
-            result = 0;
-          } else {
-            result = EXITCODE_RUNTIME_ERROR;
+          result = FuzzXPCRuntimeStart(&jsapi, &argc, &argv);
+        } else {
+#endif
+
+
+          AutoEntryScript aes(backstagePass, "xpcshell argument processing");
+
+          
+          
+          
+          if (!ProcessArgs(aes, argv, argc, &dirprovider)) {
+            if (gExitCode) {
+              result = gExitCode;
+            } else if (gQuitting) {
+              result = 0;
+            } else {
+              result = EXITCODE_RUNTIME_ERROR;
+            }
           }
+#ifdef FUZZING_INTERFACES
         }
+#endif
       }
 
       
