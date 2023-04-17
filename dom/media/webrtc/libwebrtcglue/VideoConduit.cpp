@@ -1471,28 +1471,27 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(
       
       mRecvSSRC = header.ssrc;
 
-      
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "WebrtcVideoConduit::SetRemoteSSRC",
-          [this, self = RefPtr<WebrtcVideoConduit>(this),
-           ssrc = header.ssrc]() mutable {
-            
-            
-            
-            SetRemoteSSRC(
-                ssrc, 0);  
-            
-            mStsThread->Dispatch(NS_NewRunnableFunction(
-                "WebrtcVideoConduit::QueuedPacketsHandler",
-                [this, self = RefPtr<WebrtcVideoConduit>(this),
-                 ssrc]() mutable {
-                  if (ssrc != mRecvSSRC) {
+      InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+                  [this, self = RefPtr<WebrtcVideoConduit>(this),
+                   ssrc = header.ssrc]() mutable {
                     
-                    return;
-                  }
-                  mRtpPacketQueue.DequeueAll(this);
-                }));
-          }));
+                    
+                    
+                    
+                    SetRemoteSSRC(ssrc, 0);
+                    return GenericPromise::CreateAndResolve(true, __func__);
+                  })
+          ->Then(mStsThread, __func__,
+                 [this, self = RefPtr<WebrtcVideoConduit>(this),
+                  ssrc = header.ssrc]() mutable {
+                   
+                   
+                   if (ssrc != mRecvSSRC) {
+                     
+                     return;
+                   }
+                   mRtpPacketQueue.DequeueAll(this);
+                 });
       return kMediaConduitNoError;
     }
   }
