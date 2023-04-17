@@ -335,6 +335,9 @@ class LookAndFeel {
     TitlebarRadius,
 
     
+    GtkMenuRadius,
+
+    
 
 
     End,

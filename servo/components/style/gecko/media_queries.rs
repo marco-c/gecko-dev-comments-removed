@@ -376,6 +376,13 @@ impl Device {
     }
 
     
+    pub fn menu_radius(&self) -> f32 {
+        unsafe {
+            bindings::Gecko_GetLookAndFeelInt(bindings::LookAndFeel_IntID::GtkMenuRadius as i32) as f32
+        }
+    }
+
+    
     #[inline]
     pub fn is_chrome_document(&self) -> bool {
         self.pref_sheet_prefs().mIsChrome
