@@ -101,8 +101,6 @@ class HTMLButtonElement final : public nsGenericHTMLFormControlElementWithState,
     SetHTMLBoolAttr(nsGkAtoms::disabled, aDisabled, aError);
   }
   
-  using nsGenericHTMLFormElement::GetForm;
-  
   void SetFormAction(const nsAString& aFormAction, ErrorResult& aRv) {
     SetHTMLAttr(nsGkAtoms::formaction, aFormAction, aRv);
   }

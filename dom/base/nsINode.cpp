@@ -679,16 +679,16 @@ void nsINode::LastRelease() {
       document->RemoveAllPropertiesFor(this);
     }
 
-    
-    if (IsNodeOfType(nsINode::eHTML_FORM_CONTROL) && HasFlag(ADDED_TO_FORM)) {
-      
-      
-      static_cast<nsGenericHTMLFormElement*>(this)->ClearForm(true, true);
-    }
-
-    if (IsHTMLElement(nsGkAtoms::img) && HasFlag(ADDED_TO_FORM)) {
-      HTMLImageElement* imageElem = static_cast<HTMLImageElement*>(this);
-      imageElem->ClearForm(true);
+    if (HasFlag(ADDED_TO_FORM)) {
+      if (nsGenericHTMLFormControlElement* formControl =
+              nsGenericHTMLFormControlElement::FromNode(this)) {
+        
+        
+        formControl->ClearForm(true, true);
+      } else if (HTMLImageElement* imageElem =
+                     HTMLImageElement::FromNode(this)) {
+        imageElem->ClearForm(true);
+      }
     }
   }
   UnsetFlags(NODE_HAS_PROPERTIES);

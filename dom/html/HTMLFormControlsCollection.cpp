@@ -8,11 +8,12 @@
 
 #include "mozilla/FlushType.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLFormControlsCollectionBinding.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsGenericHTMLElement.h"  
-#include "mozilla/dom/Document.h"
+#include "nsQueryObject.h"
 #include "nsIFormControl.h"
 #include "RadioNodeList.h"
 #include "jsfriendapi.h"
@@ -89,12 +90,16 @@ void HTMLFormControlsCollection::DropFormReference() {
 void HTMLFormControlsCollection::Clear() {
   
   for (int32_t i = mElements.Length() - 1; i >= 0; i--) {
-    mElements[i]->ClearForm(false, false);
+    nsCOMPtr<nsIFormControl> formControl = do_QueryObject(mElements[i]);
+    MOZ_ASSERT(formControl);
+    formControl->ClearForm(false, false);
   }
   mElements.Clear();
 
   for (int32_t i = mNotInElements.Length() - 1; i >= 0; i--) {
-    mNotInElements[i]->ClearForm(false, false);
+    nsCOMPtr<nsIFormControl> formControl = do_QueryObject(mNotInElements[i]);
+    MOZ_ASSERT(formControl);
+    formControl->ClearForm(false, false);
   }
   mNotInElements.Clear();
 
@@ -138,27 +143,31 @@ nsISupports* HTMLFormControlsCollection::NamedItemInternal(
 
 nsresult HTMLFormControlsCollection::AddElementToTable(
     nsGenericHTMLFormElement* aChild, const nsAString& aName) {
-  if (!ShouldBeInElements(aChild)) {
+  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(aChild);
+  MOZ_ASSERT(formControl);
+  if (!ShouldBeInElements(formControl)) {
     return NS_OK;
   }
 
   return mForm->AddElementToTableInternal(mNameLookupTable, aChild, aName);
 }
 
-nsresult HTMLFormControlsCollection::IndexOfControl(nsIFormControl* aControl,
+nsresult HTMLFormControlsCollection::IndexOfContent(nsIContent* aContent,
                                                     int32_t* aIndex) {
   
 
   NS_ENSURE_ARG_POINTER(aIndex);
 
-  *aIndex = mElements.IndexOf(aControl);
+  *aIndex = mElements.IndexOf(aContent);
 
   return NS_OK;
 }
 
 nsresult HTMLFormControlsCollection::RemoveElementFromTable(
     nsGenericHTMLFormElement* aChild, const nsAString& aName) {
-  if (!ShouldBeInElements(aChild)) {
+  nsCOMPtr<nsIFormControl> formControl = do_QueryObject(aChild);
+  MOZ_ASSERT(formControl);
+  if (!ShouldBeInElements(formControl)) {
     return NS_OK;
   }
 

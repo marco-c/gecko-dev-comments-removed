@@ -53,7 +53,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   NS_DECL_ISUPPORTS_INHERITED
 
-  int32_t IndexOfControl(nsIFormControl* aControl);
+  int32_t IndexOfContent(nsIContent* aContent);
   nsGenericHTMLFormElement* GetDefaultSubmitElement() const;
 
   

@@ -1650,9 +1650,8 @@ bool nsGenericHTMLElement::IsFormControlDefaultFocusable(
 
 
 nsGenericHTMLFormElement::nsGenericHTMLFormElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, FormControlType aType)
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)),
-      nsIFormControl(aType),
       mForm(nullptr),
       mFieldSet(nullptr) {
   
@@ -1667,31 +1666,6 @@ nsGenericHTMLFormElement::~nsGenericHTMLFormElement() {
 
   
   NS_ASSERTION(!mForm, "mForm should be null at this point!");
-}
-
-NS_IMPL_ISUPPORTS_INHERITED(nsGenericHTMLFormElement, nsGenericHTMLElement,
-                            nsIFormControl)
-
-bool nsGenericHTMLFormElement::IsNodeOfType(uint32_t aFlags) const {
-  return !(aFlags & ~eHTML_FORM_CONTROL);
-}
-
-void nsGenericHTMLFormElement::SetForm(HTMLFormElement* aForm) {
-  MOZ_ASSERT(aForm, "Don't pass null here");
-  NS_ASSERTION(!mForm,
-               "We don't support switching from one non-null form to another.");
-
-  SetForm(aForm, false);
-}
-
-void nsGenericHTMLFormElement::SetForm(HTMLFormElement* aForm,
-                                       bool aBindToTree) {
-  if (aForm) {
-    BeforeSetForm(aBindToTree);
-  }
-
-  
-  mForm = aForm;
 }
 
 void nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm,
@@ -1725,19 +1699,10 @@ void nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm,
   AfterClearForm(aUnbindOrDelete);
 }
 
-HTMLFieldSetElement* nsGenericHTMLFormElement::GetFieldSet() {
-  return mFieldSet;
-}
-
 nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
                                               nsINode& aParent) {
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  if (IsAutofocusable() && HasAttr(nsGkAtoms::autofocus) &&
-      aContext.AllowsAutoFocus()) {
-    aContext.OwnerDoc().SetAutoFocusElement(this);
-  }
 
   
   
@@ -1757,9 +1722,6 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
 }
 
 void nsGenericHTMLFormElement::UnbindFromTree(bool aNullParent) {
-  
-  SaveState();
-
   if (mForm) {
     
     if (aNullParent) {
@@ -2026,7 +1988,7 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 
         if (element && element->IsHTMLElement(nsGkAtoms::form) &&
             nsContentUtils::IsInSameAnonymousTree(this, element)) {
-          SetForm(static_cast<HTMLFormElement*>(element), aBindToTree);
+          SetFormInternal(static_cast<HTMLFormElement*>(element), aBindToTree);
         }
       }
     } else {
@@ -2036,7 +1998,7 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
       
       
       
-      SetForm(FindAncestorForm(), aBindToTree);
+      SetFormInternal(FindAncestorForm(), aBindToTree);
     }
   }
 
@@ -2438,12 +2400,19 @@ void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
 
 nsGenericHTMLFormControlElement::nsGenericHTMLFormControlElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, FormControlType aType)
-    : nsGenericHTMLFormElement(std::move(aNodeInfo), aType) {}
+    : nsGenericHTMLFormElement(std::move(aNodeInfo)), nsIFormControl(aType) {}
 
 nsGenericHTMLFormControlElement::~nsGenericHTMLFormControlElement() = default;
 
+NS_IMPL_ISUPPORTS_INHERITED(nsGenericHTMLFormControlElement,
+                            nsGenericHTMLFormElement, nsIFormControl)
+
 nsINode* nsGenericHTMLFormControlElement::GetScopeChainParent() const {
   return mForm ? mForm : nsGenericHTMLElement::GetScopeChainParent();
+}
+
+bool nsGenericHTMLFormControlElement::IsNodeOfType(uint32_t aFlags) const {
+  return !(aFlags & ~eHTML_FORM_CONTROL);
 }
 
 void nsGenericHTMLFormControlElement::SaveSubtreeState() {
@@ -2463,6 +2432,26 @@ nsIContent::IMEState nsGenericHTMLFormControlElement::GetDesiredIMEState() {
     return nsGenericHTMLFormElement::GetDesiredIMEState();
   }
   return state;
+}
+
+nsresult nsGenericHTMLFormControlElement::BindToTree(BindContext& aContext,
+                                                     nsINode& aParent) {
+  nsresult rv = nsGenericHTMLFormElement::BindToTree(aContext, aParent);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (IsAutofocusable() && HasAttr(nsGkAtoms::autofocus) &&
+      aContext.AllowsAutoFocus()) {
+    aContext.OwnerDoc().SetAutoFocusElement(this);
+  }
+
+  return NS_OK;
+}
+
+void nsGenericHTMLFormControlElement::UnbindFromTree(bool aNullParent) {
+  
+  SaveState();
+
+  nsGenericHTMLFormElement::UnbindFromTree(aNullParent);
 }
 
 void nsGenericHTMLFormControlElement::GetAutocapitalize(
@@ -2528,6 +2517,23 @@ nsresult nsGenericHTMLFormControlElement::PreHandleEvent(
     }
   }
   return nsGenericHTMLFormElement::PreHandleEvent(aVisitor);
+}
+
+HTMLFieldSetElement* nsGenericHTMLFormControlElement::GetFieldSet() {
+  return mFieldSet;
+}
+
+void nsGenericHTMLFormControlElement::SetForm(HTMLFormElement* aForm) {
+  MOZ_ASSERT(aForm, "Don't pass null here");
+  NS_ASSERTION(!mForm,
+               "We don't support switching from one non-null form to another.");
+
+  SetFormInternal(aForm, false);
+}
+
+void nsGenericHTMLFormControlElement::ClearForm(bool aRemoveFromForm,
+                                                bool aUnbindOrDelete) {
+  nsGenericHTMLFormElement::ClearForm(aRemoveFromForm, aUnbindOrDelete);
 }
 
 EventStates nsGenericHTMLFormControlElement::IntrinsicState() const {
@@ -2608,6 +2614,16 @@ bool nsGenericHTMLFormControlElement::DoesReadOnlyApply() const {
       return true;
 #endif  
   }
+}
+
+void nsGenericHTMLFormControlElement::SetFormInternal(HTMLFormElement* aForm,
+                                                      bool aBindToTree) {
+  if (aForm) {
+    BeforeSetForm(aBindToTree);
+  }
+
+  
+  mForm = aForm;
 }
 
 void nsGenericHTMLFormControlElement::UpdateRequiredState(bool aIsRequired,

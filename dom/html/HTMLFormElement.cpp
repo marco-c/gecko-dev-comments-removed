@@ -382,7 +382,9 @@ static void CollectOrphans(nsINode* aRemovalRoot,
     if (node->HasFlag(MAYBE_ORPHAN_FORM_ELEMENT)) {
       node->UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
       if (!node->IsInclusiveDescendantOf(aRemovalRoot)) {
-        node->ClearForm(true, false);
+        nsCOMPtr<nsIFormControl> fc = do_QueryInterface(node);
+        MOZ_ASSERT(fc);
+        fc->ClearForm(true, false);
 
         
         node->UpdateState(true);
@@ -394,7 +396,9 @@ static void CollectOrphans(nsINode* aRemovalRoot,
 
 #ifdef DEBUG
     if (!removed) {
-      HTMLFormElement* form = node->GetForm();
+      nsCOMPtr<nsIFormControl> fc = do_QueryInterface(node);
+      MOZ_ASSERT(fc);
+      HTMLFormElement* form = fc->GetForm();
       NS_ASSERTION(form == aThisForm, "How did that happen?");
     }
 #endif 
@@ -603,8 +607,8 @@ nsresult HTMLFormElement::DoReset() {
   uint32_t numElements = mControls->Length();
   for (uint32_t elementX = 0; elementX < numElements; ++elementX) {
     
-    nsCOMPtr<nsIFormControl> controlNode =
-        mControls->mElements.SafeElementAt(elementX, nullptr);
+    nsCOMPtr<nsIFormControl> controlNode = do_QueryInterface(
+        mControls->mElements.SafeElementAt(elementX, nullptr));
     if (controlNode) {
       controlNode->Reset();
     }
@@ -1017,8 +1021,10 @@ nsresult HTMLFormElement::ConstructEntryList(FormData* aFormData) {
   
   
   for (uint32_t i = 0; i < len; ++i) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(sortedControls[i]);
+    MOZ_ASSERT(fc);
     
-    sortedControls[i]->SubmitNamesValues(aFormData);
+    fc->SubmitNamesValues(aFormData);
   }
 
   FormDataEventInit init;
@@ -1254,10 +1260,11 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   NS_ASSERTION(aChild->HasAttr(kNameSpaceID_None, nsGkAtoms::form) ||
                    aChild->GetParent(),
                "Form control should have a parent");
-
+  nsCOMPtr<nsIFormControl> fc = do_QueryObject(aChild);
+  MOZ_ASSERT(fc);
   
   
-  bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(aChild);
+  bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(fc);
   nsTArray<nsGenericHTMLFormElement*>& controlList =
       childInElements ? mControls->mElements : mControls->mNotInElements;
 
@@ -1267,7 +1274,7 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   AssertDocumentOrder(controlList, this);
 #endif
 
-  auto type = aChild->ControlType();
+  auto type = fc->ControlType();
 
   
   if (type == FormControlType::InputPassword) {
@@ -1280,7 +1287,7 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   }
 
   
-  if (aChild->IsSubmitControl()) {
+  if (fc->IsSubmitControl()) {
     
     
 
@@ -1359,14 +1366,16 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
   
   
   nsresult rv = NS_OK;
-  if (aChild->ControlType() == FormControlType::InputRadio) {
+  nsCOMPtr<nsIFormControl> fc = do_QueryInterface(aChild);
+  MOZ_ASSERT(fc);
+  if (fc->ControlType() == FormControlType::InputRadio) {
     RefPtr<HTMLInputElement> radio = static_cast<HTMLInputElement*>(aChild);
     radio->WillRemoveFromRadioGroup();
   }
 
   
   
-  bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(aChild);
+  bool childInElements = HTMLFormControlsCollection::ShouldBeInElements(fc);
   nsTArray<nsGenericHTMLFormElement*>& controls =
       childInElements ? mControls->mElements : mControls->mNotInElements;
 
@@ -1386,9 +1395,10 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
     
     uint32_t length = controls.Length();
     for (uint32_t i = index; i < length; ++i) {
-      nsGenericHTMLFormElement* currentControl = controls[i];
+      nsCOMPtr<nsIFormControl> currentControl = do_QueryInterface(controls[i]);
+      MOZ_ASSERT(currentControl);
       if (currentControl->IsSubmitControl()) {
-        *firstSubmitSlot = currentControl;
+        *firstSubmitSlot = controls[i];
         break;
       }
     }
@@ -1794,7 +1804,9 @@ bool HTMLFormElement::ImplicitSubmissionIsDisabled() const {
   uint32_t numDisablingControlsFound = 0;
   uint32_t length = mControls->mElements.Length();
   for (uint32_t i = 0; i < length && numDisablingControlsFound < 2; ++i) {
-    if (mControls->mElements[i]->IsSingleLineTextControl(false)) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(mControls->mElements[i]);
+    MOZ_ASSERT(fc);
+    if (fc->IsSingleLineTextControl(false)) {
       numDisablingControlsFound++;
     }
   }
@@ -1806,8 +1818,10 @@ bool HTMLFormElement::IsLastActiveElement(
   MOZ_ASSERT(aElement, "Unexpected call");
 
   for (auto* element : Reversed(mControls->mElements)) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(element);
+    MOZ_ASSERT(fc);
     
-    if (element->IsTextControl(false) && !element->IsDisabled()) {
+    if (fc->IsTextControl(false) && !element->IsDisabled()) {
       return element == aElement;
     }
   }
@@ -2015,7 +2029,9 @@ void HTMLFormElement::UpdateValidity(bool aElementValidity) {
   
   for (uint32_t i = 0, length = mControls->mElements.Length(); i < length;
        ++i) {
-    if (mControls->mElements[i]->IsSubmitControl()) {
+    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(mControls->mElements[i]);
+    MOZ_ASSERT(fc);
+    if (fc->IsSubmitControl()) {
       mControls->mElements[i]->UpdateState(true);
     }
   }
@@ -2024,7 +2040,10 @@ void HTMLFormElement::UpdateValidity(bool aElementValidity) {
   
   uint32_t length = mControls->mNotInElements.Length();
   for (uint32_t i = 0; i < length; ++i) {
-    if (mControls->mNotInElements[i]->IsSubmitControl()) {
+    nsCOMPtr<nsIFormControl> fc =
+        do_QueryInterface(mControls->mNotInElements[i]);
+    MOZ_ASSERT(fc);
+    if (fc->IsSubmitControl()) {
       mControls->mNotInElements[i]->UpdateState(true);
     }
   }
@@ -2032,9 +2051,9 @@ void HTMLFormElement::UpdateValidity(bool aElementValidity) {
   UpdateState(true);
 }
 
-int32_t HTMLFormElement::IndexOfControl(nsIFormControl* aControl) {
+int32_t HTMLFormElement::IndexOfContent(nsIContent* aContent) {
   int32_t index = 0;
-  return mControls->IndexOfControl(aControl, &index) == NS_OK ? index : 0;
+  return mControls->IndexOfContent(aContent, &index) == NS_OK ? index : 0;
 }
 
 void HTMLFormElement::SetCurrentRadioButton(const nsAString& aName,
