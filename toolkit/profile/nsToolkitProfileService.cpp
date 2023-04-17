@@ -4,9 +4,11 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtils.h"
+#include "nsProfileLock.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,6 +88,47 @@ nsTArray<UniquePtr<KeyValue>> GetSectionStrings(nsINIParser* aParser,
   return result;
 }
 
+void RemoveProfileRecursion(const nsCOMPtr<nsIFile>& aDirectoryOrFile,
+                            bool aIsRootDirectory,
+                            nsTArray<nsCOMPtr<nsIFile>>& aOutUndeletedFiles) {
+  auto guardDeletion = MakeScopeExit(
+      [&] { aOutUndeletedFiles.AppendElement(aDirectoryOrFile); });
+
+  
+  bool isLink = false;
+  NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->IsSymlink(&isLink));
+
+  
+  bool isDir = false;
+  if (!isLink) {
+    NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->IsDirectory(&isDir));
+  }
+
+  if (isDir) {
+    nsCOMPtr<nsIDirectoryEnumerator> dirEnum;
+    NS_ENSURE_SUCCESS_VOID(
+        aDirectoryOrFile->GetDirectoryEntries(getter_AddRefs(dirEnum)));
+
+    bool more = false;
+    while (NS_SUCCEEDED(dirEnum->HasMoreElements(&more)) && more) {
+      nsCOMPtr<nsISupports> item;
+      dirEnum->GetNext(getter_AddRefs(item));
+      nsCOMPtr<nsIFile> file = do_QueryInterface(item);
+      if (file) {
+        
+        if (aIsRootDirectory && nsProfileLock::IsMaybeLockFile(file)) continue;
+        
+        RemoveProfileRecursion(file, false, aOutUndeletedFiles);
+      }
+    }
+  }
+  
+  if (!aIsRootDirectory) {
+    NS_ENSURE_SUCCESS_VOID(aDirectoryOrFile->Remove(false));
+  }
+  guardDeletion.release();
+}
+
 void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
   nsCOMPtr<nsIFile> rootDir;
   aProfile->GetRootDir(getter_AddRefs(rootDir));
@@ -94,24 +137,39 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
 
   
   
+
+  
+  
   
   nsCOMPtr<nsIProfileLock> lock;
-  nsresult rv =
-      NS_LockProfilePath(rootDir, localDir, nullptr, getter_AddRefs(lock));
-  NS_ENSURE_SUCCESS_VOID(rv);
+  NS_ENSURE_SUCCESS_VOID(
+      NS_LockProfilePath(rootDir, localDir, nullptr, getter_AddRefs(lock)));
 
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "nsToolkitProfile::RemoveProfileFiles",
       [rootDir, localDir, lock]() mutable {
+        
+        
+        nsTArray<nsCOMPtr<nsIFile>> undeletedFiles;
+        
+        
         bool equals;
         nsresult rv = rootDir->Equals(localDir, &equals);
-        
-        
         if (NS_SUCCEEDED(rv) && !equals) {
-          localDir->Remove(true);
+          RemoveProfileRecursion(localDir,  false,
+                                 undeletedFiles);
+        }
+        
+        RemoveProfileRecursion(rootDir,  true,
+                               undeletedFiles);
+        MOZ_ASSERT(undeletedFiles.Length() == 0);
+        if (undeletedFiles.Length() > 0) {
+          
+          
+          
+          NS_WARNING("Unable to remove all files from the profile directory.");
         }
 
-        
         
         lock->Unlock();
         
@@ -119,8 +177,9 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
         NS_ReleaseOnMainThread("nsToolkitProfile::RemoveProfileFiles::Unlock",
                                lock.forget());
 
-        rv = rootDir->Remove(true);
-        NS_ENSURE_SUCCESS_VOID(rv);
+        
+        
+        NS_ENSURE_SUCCESS_VOID(rootDir->Remove(true));
       });
 
   if (aInBackground) {
@@ -349,6 +408,9 @@ nsToolkitProfileLock::Unlock() {
     NS_ERROR("Unlocking a never-locked nsToolkitProfileLock!");
     return NS_ERROR_UNEXPECTED;
   }
+
+  
+  
 
   mLock.Unlock();
 
