@@ -18,12 +18,11 @@
 
 
 
-
-function runEditOuterHTMLTests(tests, inspector, testActor) {
+function runEditOuterHTMLTests(tests, inspector) {
   info("Running " + tests.length + " edit-outer-html tests");
   return (async function() {
     for (const step of tests) {
-      await runEditOuterHTMLTest(step, inspector, testActor);
+      await runEditOuterHTMLTest(step, inspector);
     }
   })();
 }
@@ -41,8 +40,7 @@ function runEditOuterHTMLTests(tests, inspector, testActor) {
 
 
 
-
-async function runEditOuterHTMLTest(test, inspector, testActor) {
+async function runEditOuterHTMLTest(test, inspector) {
   info("Running an edit outerHTML test on '" + test.selector + "'");
   await selectNode(test.selector, inspector);
 
@@ -70,7 +68,6 @@ async function runEditOuterHTMLTest(test, inspector, testActor) {
       pageNodeFront,
       selectedNodeFront,
       inspector,
-      testActor,
     });
   } else {
     is(
