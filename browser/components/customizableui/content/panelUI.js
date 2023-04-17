@@ -475,11 +475,6 @@ const PanelUI = {
       document
         .getElementById(CustomizableUI.AREA_NAVBAR)
         .appendChild(tempPanel);
-      
-      tempPanel.classList.toggle(
-        "cui-widget-panelWithFooter",
-        viewNode.querySelector(".panel-subview-footer")
-      );
 
       let multiView = document.createXULElement("panelmultiview");
       multiView.setAttribute("id", "customizationui-widget-multiview");
