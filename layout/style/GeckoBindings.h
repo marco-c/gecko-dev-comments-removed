@@ -506,7 +506,6 @@ bool Gecko_IsDocumentBody(const mozilla::dom::Element* element);
 
 nscolor Gecko_GetLookAndFeelSystemColor(int32_t color_id,
                                         const mozilla::dom::Document*,
-                                        mozilla::StyleSystemColorScheme,
                                         const mozilla::StyleColorScheme*);
 
 int32_t Gecko_GetLookAndFeelInt(int32_t int_id);
