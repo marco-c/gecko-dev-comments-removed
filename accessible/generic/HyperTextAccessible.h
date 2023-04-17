@@ -222,38 +222,13 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   already_AddRefed<AccAttributes> DefaultTextAttributes();
 
   
+  using HyperTextAccessibleBase::GetChildOffset;
+  virtual int32_t GetChildOffset(uint32_t aChildIndex,
+                                 bool aInvalidateAfter = false) const override;
 
+  virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const override;
 
-
-
-
-
-
-  int32_t GetChildOffset(const LocalAccessible* aChild,
-                         bool aInvalidateAfter = false) const {
-    int32_t index = GetIndexOf(aChild);
-    return index == -1 ? -1 : GetChildOffset(index, aInvalidateAfter);
-  }
-
-  
-
-
-  int32_t GetChildOffset(uint32_t aChildIndex,
-                         bool aInvalidateAfter = false) const;
-
-  
-
-
-
-
-  int32_t GetChildIndexAtOffset(uint32_t aOffset) const;
-
-  
-
-
-
-
-  LocalAccessible* GetChildAtOffset(uint32_t aOffset) const {
+  virtual LocalAccessible* GetChildAtOffset(uint32_t aOffset) const override {
     return LocalChildAt(GetChildIndexAtOffset(aOffset));
   }
 
@@ -542,6 +517,9 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
 
 
   void SetMathMLXMLRoles(AccAttributes* aAttributes);
+
+  
+  virtual const Accessible* Acc() const override { return this; }
 
  private:
   

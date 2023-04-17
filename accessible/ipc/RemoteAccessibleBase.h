@@ -262,6 +262,8 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   uint64_t mID;
 
  protected:
+  virtual const Accessible* Acc() const override { return this; }
+
   RefPtr<AccAttributes> mCachedFields;
 
   

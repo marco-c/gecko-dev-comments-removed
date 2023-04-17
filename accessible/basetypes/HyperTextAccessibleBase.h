@@ -7,6 +7,7 @@
 #define _HyperTextAccessibleBase_H_
 
 namespace mozilla::a11y {
+class Accessible;
 
 
 
@@ -14,7 +15,47 @@ const char16_t kEmbeddedObjectChar = 0xfffc;
 const char16_t kImaginaryEmbeddedObjectChar = ' ';
 const char16_t kForcedNewLineChar = '\n';
 
-class HyperTextAccessibleBase {};
+class HyperTextAccessibleBase {
+ public:
+  
+
+
+
+
+  virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const;
+
+  
+
+
+
+
+  virtual Accessible* GetChildAtOffset(uint32_t aOffset) const;
+
+  
+
+
+
+
+
+
+
+  int32_t GetChildOffset(const Accessible* aChild,
+                         bool aInvalidateAfter = false) const;
+
+  
+
+
+  virtual int32_t GetChildOffset(uint32_t aChildIndex,
+                                 bool aInvalidateAfter = false) const;
+
+ protected:
+  virtual const Accessible* Acc() const = 0;
+  Accessible* Acc() {
+    const Accessible* acc =
+        const_cast<const HyperTextAccessibleBase*>(this)->Acc();
+    return const_cast<Accessible*>(acc);
+  }
+};
 
 }  
 
