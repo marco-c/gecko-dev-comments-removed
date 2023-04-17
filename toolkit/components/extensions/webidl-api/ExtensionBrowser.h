@@ -35,7 +35,7 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   RefPtr<ExtensionMockAPI> mExtensionMockAPI;
   RefPtr<ExtensionRuntime> mExtensionRuntime;
   RefPtr<ExtensionTest> mExtensionTest;
-  nsRefPtrHashtable<nsStringHashKey, ExtensionPort> mPortsLookup;
+  nsTHashMap<nsStringHashKey, WeakPtr<ExtensionPort>> mPortsLookup;
 
   ~ExtensionBrowser() = default;
 
@@ -53,8 +53,17 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   bool ClearLastError();
 
   
+
+  
+  
+  
   already_AddRefed<ExtensionPort> GetPort(
       JS::Handle<JS::Value> aDescriptorValue, ErrorResult& aRv);
+
+  
+  
+  
+  void ForgetReleasedPort(const nsAString& aPortId);
 
   
   JSObject* WrapObject(JSContext* aCx,
