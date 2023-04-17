@@ -678,6 +678,11 @@ TestHTTPAnswerRunnable::TestHTTPAnswerRunnable(
 bool TestHTTPAnswerRunnable::IsBackgroundRequestRedirected(
     nsIHttpChannel* aChannel) {
   
+  
+  if (!aChannel) {
+    return false;
+  }
+  
   nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();
   if (loadinfo->RedirectChain().IsEmpty()) {
     return false;
