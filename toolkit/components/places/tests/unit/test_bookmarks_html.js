@@ -95,7 +95,9 @@ add_task(async function setup() {
     OS.Constants.Path.profileDir,
     "bookmarks.exported.html"
   );
-  await IOUtils.remove(gBookmarksFileNew, { ignoreAbsent: true });
+  if (await OS.File.exists(gBookmarksFileNew)) {
+    await OS.File.remove(gBookmarksFileNew);
+  }
 
   
   

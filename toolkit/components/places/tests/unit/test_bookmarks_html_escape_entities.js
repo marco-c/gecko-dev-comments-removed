@@ -8,7 +8,9 @@
 add_task(async function() {
   
   let HTMLFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.html");
-  await IOUtils.remove(HTMLFile, { ignoreAbsent: true });
+  if (await OS.File.exists(HTMLFile)) {
+    await OS.File.remove(HTMLFile);
+  }
 
   let unescaped = '<unescaped="test">';
   

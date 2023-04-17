@@ -7,41 +7,43 @@
 
 
 
-async function countChildren(path) {
-  let children = await IOUtils.getChildren(path);
-  let count = 0;
-  let lastBackupPath = null;
-  for (let entry of children) {
-    count++;
-    if (PlacesBackups.filenamesRegex.test(OS.Path.basename(entry))) {
-      lastBackupPath = entry;
-    }
-  }
-  return { count, lastBackupPath };
-}
-
 add_task(async function check_max_backups_is_respected() {
   
   let backupFolder = await PlacesBackups.getBackupFolder();
 
   
   let oldJsonPath = OS.Path.join(backupFolder, "bookmarks-2008-01-01.json");
-  await IOUtils.writeUTF8(oldJsonPath, "");
-  Assert.ok(await IOUtils.exists(oldJsonPath));
+  let oldJsonFile = await OS.File.open(oldJsonPath, { truncate: true });
+  oldJsonFile.close();
+  Assert.ok(await OS.File.exists(oldJsonPath));
 
   let jsonPath = OS.Path.join(backupFolder, "bookmarks-2008-01-31.json");
-  await IOUtils.writeUTF8(jsonPath, "");
-  Assert.ok(await IOUtils.exists(jsonPath));
+  let jsonFile = await OS.File.open(jsonPath, { truncate: true });
+  jsonFile.close();
+  Assert.ok(await OS.File.exists(jsonPath));
 
   
   
   await PlacesBackups.create(2);
 
-  let { count, lastBackupPath } = await countChildren(backupFolder);
+  let count = 0;
+  let lastBackupPath = null;
+  let iterator = new OS.File.DirectoryIterator(backupFolder);
+  try {
+    await iterator.forEach(aEntry => {
+      count++;
+      if (PlacesBackups.filenamesRegex.test(aEntry.name)) {
+        lastBackupPath = aEntry.path;
+      }
+    });
+  } finally {
+    iterator.close();
+  }
+
   Assert.equal(count, 2);
   Assert.notEqual(lastBackupPath, null);
-  Assert.equal(false, await IOUtils.exists(oldJsonPath));
-  Assert.ok(await IOUtils.exists(jsonPath));
+  Assert.equal(false, await OS.File.exists(oldJsonPath));
+  Assert.ok(await OS.File.exists(jsonPath));
 });
 
 add_task(async function check_max_backups_greater_than_backups() {
@@ -52,7 +54,19 @@ add_task(async function check_max_backups_greater_than_backups() {
   
   await PlacesBackups.create(3);
 
-  let { count, lastBackupPath } = await countChildren(backupFolder);
+  let count = 0;
+  let lastBackupPath = null;
+  let iterator = new OS.File.DirectoryIterator(backupFolder);
+  try {
+    await iterator.forEach(aEntry => {
+      count++;
+      if (PlacesBackups.filenamesRegex.test(aEntry.name)) {
+        lastBackupPath = aEntry.path;
+      }
+    });
+  } finally {
+    iterator.close();
+  }
   Assert.equal(count, 2);
   Assert.notEqual(lastBackupPath, null);
 });
@@ -66,7 +80,19 @@ add_task(async function check_max_backups_null() {
   
   await PlacesBackups.create(null);
 
-  let { count, lastBackupPath } = await countChildren(backupFolder);
+  let count = 0;
+  let lastBackupPath = null;
+  let iterator = new OS.File.DirectoryIterator(backupFolder);
+  try {
+    await iterator.forEach(aEntry => {
+      count++;
+      if (PlacesBackups.filenamesRegex.test(aEntry.name)) {
+        lastBackupPath = aEntry.path;
+      }
+    });
+  } finally {
+    iterator.close();
+  }
   Assert.equal(count, 2);
   Assert.notEqual(lastBackupPath, null);
 });
@@ -80,7 +106,19 @@ add_task(async function check_max_backups_undefined() {
   
   await PlacesBackups.create();
 
-  let { count, lastBackupPath } = await countChildren(backupFolder);
+  let count = 0;
+  let lastBackupPath = null;
+  let iterator = new OS.File.DirectoryIterator(backupFolder);
+  try {
+    await iterator.forEach(aEntry => {
+      count++;
+      if (PlacesBackups.filenamesRegex.test(aEntry.name)) {
+        lastBackupPath = aEntry.path;
+      }
+    });
+  } finally {
+    iterator.close();
+  }
   Assert.equal(count, 2);
   Assert.notEqual(lastBackupPath, null);
 });

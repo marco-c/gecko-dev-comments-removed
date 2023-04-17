@@ -27,7 +27,7 @@ add_task(async function test_same_date_same_hash() {
     hash +
     ".json";
   let backupFile = OS.Path.join(backupFolder, filename);
-  await IOUtils.move(tempPath, backupFile);
+  await OS.File.move(tempPath, backupFile);
 
   
   await PlacesBackups.create();
@@ -35,14 +35,15 @@ add_task(async function test_same_date_same_hash() {
   
   Assert.equal(mostRecentBackupFile, backupFile);
   
+  let result = await OS.File.read(mostRecentBackupFile);
+  let decoder = new TextDecoder();
+  let jsonString = decoder.decode(result);
   info("Check is valid JSON");
-  
-  
-  await IOUtils.readJSON(mostRecentBackupFile);
+  JSON.parse(jsonString);
 
   
-  await IOUtils.remove(backupFile);
-  await IOUtils.remove(tempPath);
+  await OS.File.remove(backupFile);
+  await OS.File.remove(tempPath);
   PlacesBackups._backupFiles = null; 
 });
 
@@ -63,17 +64,20 @@ add_task(async function test_same_date_diff_hash() {
     count +
     "_differentHash==.json";
   let backupFile = OS.Path.join(backupFolder, filename);
-  await IOUtils.move(tempPath, backupFile);
+  await OS.File.move(tempPath, backupFile);
   await PlacesBackups.create(); 
   let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
 
   
+  let result = await OS.File.read(mostRecentBackupFile, { compression: "lz4" });
+  let decoder = new TextDecoder();
+  let jsonString = decoder.decode(result);
   info("Check is valid JSON");
-  await IOUtils.readJSON(mostRecentBackupFile, { decompress: true });
+  JSON.parse(jsonString);
 
   
-  await IOUtils.remove(mostRecentBackupFile);
-  await IOUtils.remove(tempPath);
+  await OS.File.remove(mostRecentBackupFile);
+  await OS.File.remove(tempPath);
   PlacesBackups._backupFiles = null; 
 });
 
@@ -106,7 +110,7 @@ add_task(async function test_diff_date_same_hash() {
     ".json";
   let backupFile = OS.Path.join(backupFolder, oldFilename);
   let newBackupFile = OS.Path.join(backupFolder, newFilename);
-  await IOUtils.move(tempPath, backupFile);
+  await OS.File.move(tempPath, backupFile);
 
   
   await PlacesBackups.create();
@@ -114,6 +118,6 @@ add_task(async function test_diff_date_same_hash() {
   Assert.equal(mostRecentBackupFile, newBackupFile);
 
   
-  await IOUtils.remove(mostRecentBackupFile);
-  await IOUtils.remove(tempPath);
+  await OS.File.remove(mostRecentBackupFile);
+  await OS.File.remove(tempPath);
 });

@@ -43,5 +43,5 @@ add_task(async function() {
   checkQuotedFolder();
 
   
-  await IOUtils.remove(jsonFile);
+  await OS.File.remove(jsonFile);
 });
