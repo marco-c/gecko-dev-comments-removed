@@ -88,6 +88,43 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
     nsresult SplitElementAt(size_t aIndex, uint32_t aOffsetInTextNode);
+
+    class Selection final {
+     public:
+      size_t StartIndex() const {
+        MOZ_ASSERT(IsSet());
+        return *mStartIndex;
+      }
+      size_t EndIndex() const {
+        MOZ_ASSERT(IsSet());
+        return *mEndIndex;
+      }
+
+      bool IsSet() const { return mStartIndex.isSome() && mEndIndex.isSome(); }
+      bool IsInSameElement() const {
+        return IsSet() && StartIndex() == EndIndex();
+      }
+
+      void Reset() {
+        mStartIndex.reset();
+        mEndIndex.reset();
+      }
+      void Set(size_t aIndex) { mEndIndex = mStartIndex = Some(aIndex); }
+      void Set(size_t aStartIndex, size_t aEndIndex) {
+        mStartIndex = Some(aStartIndex);
+        mEndIndex = Some(aEndIndex);
+      }
+
+      void CollapseToStart() {
+        MOZ_ASSERT(mStartIndex.isSome());
+        mEndIndex = mStartIndex;
+      }
+
+     private:
+      Maybe<size_t> mStartIndex;
+      Maybe<size_t> mEndIndex;
+    };
+    Selection mSelection;
   };
 
   RefPtr<dom::Document> mDocument;
@@ -100,9 +137,6 @@ class TextServicesDocument final : public nsIEditActionListener {
   RefPtr<nsRange> mExtent;
 
   
-  
-  Maybe<size_t> mSelStartIndex;
-  Maybe<size_t> mSelEndIndex;
   
   Maybe<uint32_t> mSelectionStartOffsetInTextInBlock;
   Maybe<uint32_t> mSelectionEndOffsetInTextInBlock;
