@@ -1,392 +1,392 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+/*****************************************************************************/
+/* This is an automatically generated file. If you're not                    */
+/* PublicKeyPinningService.cpp, you shouldn't be #including it.              */
+/*****************************************************************************/
 #include <stdint.h>
-
+/* AffirmTrust Commercial */
 static const char kAffirmTrust_CommercialFingerprint[] =
   "bEZLmlsjOl6HTadlwm8EUBDS3c/0V5TwtMfkqvpQFJU=";
 
-
+/* AffirmTrust Networking */
 static const char kAffirmTrust_NetworkingFingerprint[] =
   "lAcq0/WPcPkwmOWl9sBMlscQvYSdgxhJGa6Q64kK5AA=";
 
-
+/* AffirmTrust Premium */
 static const char kAffirmTrust_PremiumFingerprint[] =
   "x/Q7TPW3FWgpT4IrU3YmBfbd0Vyt7Oc56eLDy6YenWc=";
 
-
+/* AffirmTrust Premium ECC */
 static const char kAffirmTrust_Premium_ECCFingerprint[] =
   "MhmwkRT/SVo+tusAwu/qs0ACrl8KVsdnnqCHo/oDfk8=";
 
-
+/* Baltimore CyberTrust Root */
 static const char kBaltimore_CyberTrust_RootFingerprint[] =
   "Y9mvm0exBk1JoQ57f9Vm28jKo5lFm/woKcVxrYxu80o=";
 
-
+/* COMODO Certification Authority */
 static const char kCOMODO_Certification_AuthorityFingerprint[] =
   "AG1751Vd2CAmRCxPGieoDomhmJy4ezREjtIZTBgZbV4=";
 
-
+/* COMODO ECC Certification Authority */
 static const char kCOMODO_ECC_Certification_AuthorityFingerprint[] =
   "58qRu/uxh4gFezqAcERupSkRYBlBAvfcw7mEjGPLnNU=";
 
-
+/* COMODO RSA Certification Authority */
 static const char kCOMODO_RSA_Certification_AuthorityFingerprint[] =
   "grX4Ta9HpZx6tSHkmCrvpApTQGo67CYDnvprLg5yRME=";
 
-
+/* Comodo AAA Services root */
 static const char kComodo_AAA_Services_rootFingerprint[] =
   "vRU+17BDT2iGsXvOi76E7TQMcTLXAqj0+jGPdW7L1vM=";
 
-
+/* Cybertrust Global Root */
 static const char kCybertrust_Global_RootFingerprint[] =
   "foeCwVDOOVL4AuY2AjpdPpW7XWjjPoWtsroXgSXOvxU=";
 
-
+/* DST Root CA X3 */
 static const char kDST_Root_CA_X3Fingerprint[] =
   "Vjs8r4z+80wjNcr1YKepWQboSIRi63WsWXhIMN+eWys=";
 
-
+/* DigiCert Assured ID Root CA */
 static const char kDigiCert_Assured_ID_Root_CAFingerprint[] =
   "I/Lt/z7ekCWanjD0Cvj5EqXls2lOaThEA0H2Bg4BT/o=";
 
-
+/* DigiCert Assured ID Root G2 */
 static const char kDigiCert_Assured_ID_Root_G2Fingerprint[] =
   "8ca6Zwz8iOTfUpc8rkIPCgid1HQUT+WAbEIAZOFZEik=";
 
-
+/* DigiCert Assured ID Root G3 */
 static const char kDigiCert_Assured_ID_Root_G3Fingerprint[] =
   "Fe7TOVlLME+M+Ee0dzcdjW/sYfTbKwGvWJ58U7Ncrkw=";
 
-
+/* DigiCert Global Root CA */
 static const char kDigiCert_Global_Root_CAFingerprint[] =
   "r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E=";
 
-
+/* DigiCert Global Root G2 */
 static const char kDigiCert_Global_Root_G2Fingerprint[] =
   "i7WTqTvh0OioIruIfFR4kMPnBqrS2rdiVPl/s2uC/CY=";
 
-
+/* DigiCert Global Root G3 */
 static const char kDigiCert_Global_Root_G3Fingerprint[] =
   "uUwZgwDOxcBXrQcntwu+kYFpkiVkOaezL0WYEZ3anJc=";
 
-
+/* DigiCert High Assurance EV Root CA */
 static const char kDigiCert_High_Assurance_EV_Root_CAFingerprint[] =
   "WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18=";
 
-
+/* DigiCert Trusted Root G4 */
 static const char kDigiCert_Trusted_Root_G4Fingerprint[] =
   "Wd8xe/qfTwq3ylFNd3IpaqLHZbh2ZNCLluVzmeNkcpw=";
 
-
+/* End Entity Test Cert */
 static const char kEnd_Entity_Test_CertFingerprint[] =
   "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=";
 
-
+/* Entrust Root Certification Authority */
 static const char kEntrust_Root_Certification_AuthorityFingerprint[] =
   "bb+uANN7nNc/j7R95lkXrwDg3d9C286sIMF8AnXuIJU=";
 
-
+/* Entrust Root Certification Authority - EC1 */
 static const char kEntrust_Root_Certification_Authority___EC1Fingerprint[] =
   "/qK31kX7pz11PB7Jp4cMQOH3sMVh6Se5hb9xGGbjbyI=";
 
-
+/* Entrust Root Certification Authority - G2 */
 static const char kEntrust_Root_Certification_Authority___G2Fingerprint[] =
   "du6FkDdMcVQ3u8prumAo6t3i3G27uMP2EOhR8R0at/U=";
 
-
+/* Entrust.net Premium 2048 Secure Server CA */
 static const char kEntrust_net_Premium_2048_Secure_Server_CAFingerprint[] =
   "HqPF5D7WbC2imDpCpKebHpBnhs6fG1hiFBmgBGOofTg=";
 
-
+/* FacebookBackup */
 static const char kFacebookBackupFingerprint[] =
   "q4PO2G2cbkZhZ82+JgmRUyGMoAeozA+BSXVXQWB8XWQ=";
 
-
+/* GOOGLE_PIN_AddTrustClass1CARoot */
 static const char kGOOGLE_PIN_AddTrustClass1CARootFingerprint[] =
   "BStocQfshOhzA4JFLsKidFF0XXSFpX1vRk4Np6G2ryo=";
 
-
+/* GOOGLE_PIN_AddTrustExternalCARoot */
 static const char kGOOGLE_PIN_AddTrustExternalCARootFingerprint[] =
   "lCppFqbkrlJ3EcVFAkeip0+44VaoJUymbnOaEUk7tEU=";
 
-
+/* GOOGLE_PIN_AddTrustPublicCARoot */
 static const char kGOOGLE_PIN_AddTrustPublicCARootFingerprint[] =
   "OGHXtpYfzbISBFb/b8LrdwSxp0G0vZM6g3b14ZFcppg=";
 
-
+/* GOOGLE_PIN_AddTrustQualifiedCARoot */
 static const char kGOOGLE_PIN_AddTrustQualifiedCARootFingerprint[] =
   "xzr8Lrp3DQy8HuQfJStS6Kk9ErctzOwDHY2DnL+Bink=";
 
-
+/* GOOGLE_PIN_COMODORSADomainValidationSecureServerCA */
 static const char kGOOGLE_PIN_COMODORSADomainValidationSecureServerCAFingerprint[] =
   "klO23nT2ehFDXCfx3eHTDRESMz3asj1muO+4aIdjiuY=";
 
-
+/* GOOGLE_PIN_DigiCertECCSecureServerCA */
 static const char kGOOGLE_PIN_DigiCertECCSecureServerCAFingerprint[] =
   "PZXN3lRAy+8tBKk2Ox6F7jIlnzr2Yzmwqc3JnyfXoCw=";
 
-
+/* GOOGLE_PIN_Entrust_SSL */
 static const char kGOOGLE_PIN_Entrust_SSLFingerprint[] =
   "nsxRNo6G40YPZsKV5JQt1TCA8nseQQr/LRqp1Oa8fnw=";
 
-
+/* GOOGLE_PIN_GTECyberTrustGlobalRoot */
 static const char kGOOGLE_PIN_GTECyberTrustGlobalRootFingerprint[] =
   "EGn6R6CqT4z3ERscrqNl7q7RC//zJmDe9uBhS/rnCHU=";
 
-
+/* GOOGLE_PIN_GTSCA1O1 */
 static const char kGOOGLE_PIN_GTSCA1O1Fingerprint[] =
   "YZPgTZ+woNCCCIW3LH2CxQeLzB/1m42QcCTBSdgayjs=";
 
-
+/* GOOGLE_PIN_GeoTrustGlobal */
 static const char kGOOGLE_PIN_GeoTrustGlobalFingerprint[] =
   "h6801m+z8v3zbgkRHpq6L29Esgfzhj89C1SyUCOQmqU=";
 
-
+/* GOOGLE_PIN_GeoTrustGlobal2 */
 static const char kGOOGLE_PIN_GeoTrustGlobal2Fingerprint[] =
   "F3VaXClfPS1y5vAxofB/QAxYi55YKyLxfq4xoVkNEYU=";
 
-
+/* GOOGLE_PIN_GeoTrustPrimary */
 static const char kGOOGLE_PIN_GeoTrustPrimaryFingerprint[] =
   "SQVGZiOrQXi+kqxcvWWE96HhfydlLVqFr4lQTqI5qqo=";
 
-
+/* GOOGLE_PIN_GeoTrustPrimary_G2 */
 static const char kGOOGLE_PIN_GeoTrustPrimary_G2Fingerprint[] =
   "vPtEqrmtAhAVcGtBIep2HIHJ6IlnWQ9vlK50TciLePs=";
 
-
+/* GOOGLE_PIN_GeoTrustPrimary_G3 */
 static const char kGOOGLE_PIN_GeoTrustPrimary_G3Fingerprint[] =
   "q5hJUnat8eyv8o81xTBIeB5cFxjaucjmelBPT2pRMo8=";
 
-
+/* GOOGLE_PIN_GeoTrustUniversal */
 static const char kGOOGLE_PIN_GeoTrustUniversalFingerprint[] =
   "lpkiXF3lLlbN0y3y6W0c/qWqPKC7Us2JM8I7XCdEOCA=";
 
-
+/* GOOGLE_PIN_GeoTrustUniversal2 */
 static const char kGOOGLE_PIN_GeoTrustUniversal2Fingerprint[] =
   "fKoDRlEkWQxgHlZ+UhSOlSwM/+iQAFMP4NlbbVDqrkE=";
 
-
+/* GOOGLE_PIN_GoDaddySecure */
 static const char kGOOGLE_PIN_GoDaddySecureFingerprint[] =
   "MrZLZnJ6IGPkBm87lYywqu5Xal7O/ZUzmbuIdHMdlYc=";
 
-
+/* GOOGLE_PIN_R3LetsEncrypt */
 static const char kGOOGLE_PIN_R3LetsEncryptFingerprint[] =
   "jQJTbIh0grw0/1TkHSumWb+Fs0Ggogr621gT3PvPKG0=";
 
-
+/* GOOGLE_PIN_R4LetsEncrypt */
 static const char kGOOGLE_PIN_R4LetsEncryptFingerprint[] =
   "5VReIRNHJBiRxVSgOTTN6bdJZkpZ0m1hX+WPd5kPLQM=";
 
-
+/* GOOGLE_PIN_RapidSSL */
 static const char kGOOGLE_PIN_RapidSSLFingerprint[] =
   "lT09gPUeQfbYrlxRtpsHrjDblj9Rpz+u7ajfCrg4qDM=";
 
-
+/* GOOGLE_PIN_SecureCertificateServices */
 static const char kGOOGLE_PIN_SecureCertificateServicesFingerprint[] =
   "RpHL/ehKa2BS3b4VK7DCFq4lqG5XR4E9vA8UfzOFcL4=";
 
-
+/* GOOGLE_PIN_SymantecClass3EVG3 */
 static const char kGOOGLE_PIN_SymantecClass3EVG3Fingerprint[] =
   "gMxWOrX4PMQesK9qFNbYBxjBfjUvlkn/vN1n+L9lE5E=";
 
-
+/* GOOGLE_PIN_TrustedCertificateServices */
 static const char kGOOGLE_PIN_TrustedCertificateServicesFingerprint[] =
   "4tiR77c4ZpEF1TDeXtcuKyrD9KZweLU0mz/ayklvXrg=";
 
-
+/* GOOGLE_PIN_UTNDATACorpSGC */
 static const char kGOOGLE_PIN_UTNDATACorpSGCFingerprint[] =
   "QAL80xHQczFWfnG82XHkYEjI3OjRZZcRdTs9qiommvo=";
 
-
+/* GOOGLE_PIN_UTNUSERFirstClientAuthenticationandEmail */
 static const char kGOOGLE_PIN_UTNUSERFirstClientAuthenticationandEmailFingerprint[] =
   "Laj56jRU0hFGRko/nQKNxMf7tXscUsc8KwVyovWZotM=";
 
-
+/* GOOGLE_PIN_UTNUSERFirstHardware */
 static const char kGOOGLE_PIN_UTNUSERFirstHardwareFingerprint[] =
   "TUDnr0MEoJ3of7+YliBMBVFB4/gJsv5zO7IxD9+YoWI=";
 
-
+/* GOOGLE_PIN_UTNUSERFirstObject */
 static const char kGOOGLE_PIN_UTNUSERFirstObjectFingerprint[] =
   "D+FMJksXu28NZT56cOs2Pb9UvhWAOe3a5cJXEd9IwQM=";
 
-
+/* GOOGLE_PIN_VeriSignClass1 */
 static const char kGOOGLE_PIN_VeriSignClass1Fingerprint[] =
   "LclHC+Y+9KzxvYKGCUArt7h72ZY4pkOTTohoLRvowwg=";
 
-
+/* GOOGLE_PIN_VeriSignClass2_G2 */
 static const char kGOOGLE_PIN_VeriSignClass2_G2Fingerprint[] =
   "2oALgLKofTmeZvoZ1y/fSZg7R9jPMix8eVA6DH4o/q8=";
 
-
+/* GOOGLE_PIN_VeriSignClass3_G2 */
 static const char kGOOGLE_PIN_VeriSignClass3_G2Fingerprint[] =
   "AjyBzOjnxk+pQtPBUEhwfTXZu1uH9PVExb8bxWQ68vo=";
 
-
+/* GOOGLE_PIN_VeriSignClass3_G3 */
 static const char kGOOGLE_PIN_VeriSignClass3_G3Fingerprint[] =
   "SVqWumuteCQHvVIaALrOZXuzVVVeS7f4FGxxu6V+es4=";
 
-
+/* GOOGLE_PIN_VeriSignClass3_G4 */
 static const char kGOOGLE_PIN_VeriSignClass3_G4Fingerprint[] =
   "UZJDjsNp1+4M5x9cbbdflB779y5YRBcV6Z6rBMLIrO4=";
 
-
+/* GOOGLE_PIN_VeriSignClass3_G5 */
 static const char kGOOGLE_PIN_VeriSignClass3_G5Fingerprint[] =
   "JbQbUG5JMJUoI6brnx0x3vZF6jilxsapbXGVfjhN8Fg=";
 
-
+/* GOOGLE_PIN_VeriSignClass4_G3 */
 static const char kGOOGLE_PIN_VeriSignClass4_G3Fingerprint[] =
   "VnuCEf0g09KD7gzXzgZyy52ZvFtIeljJ1U7Gf3fUqPU=";
 
-
+/* GOOGLE_PIN_VeriSignUniversal */
 static const char kGOOGLE_PIN_VeriSignUniversalFingerprint[] =
   "lnsM2T/O9/J84sJFdnrpsFp3awZJ+ZZbYpCWhGloaHI=";
 
-
+/* GTS Root R1 */
 static const char kGTS_Root_R1Fingerprint[] =
   "hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgfaAp63Gc=";
 
-
+/* GTS Root R2 */
 static const char kGTS_Root_R2Fingerprint[] =
   "Vfd95BwDeSQo+NUYxVEEIlvkOlWY2SalKK1lPhzOx78=";
 
-
+/* GTS Root R3 */
 static const char kGTS_Root_R3Fingerprint[] =
   "QXnt2YHvdHR3tJYmQIr0Paosp6t/nggsEGD4QJZ3Q0g=";
 
-
+/* GTS Root R4 */
 static const char kGTS_Root_R4Fingerprint[] =
   "mEflZT5enoR1FuXLgYYGqnVEoZvmf9c2bVBpiOjYQ0c=";
 
-
+/* GlobalSign ECC Root CA - R4 */
 static const char kGlobalSign_ECC_Root_CA___R4Fingerprint[] =
   "CLOmM1/OXvSPjw5UOYbAf9GKOxImEp9hhku9W90fHMk=";
 
-
+/* GlobalSign ECC Root CA - R5 */
 static const char kGlobalSign_ECC_Root_CA___R5Fingerprint[] =
   "fg6tdrtoGdwvVFEahDVPboswe53YIFjqbABPAdndpd8=";
 
-
+/* GlobalSign Root CA */
 static const char kGlobalSign_Root_CAFingerprint[] =
   "K87oWBWM9UZfyddvDfoxL+8lpNyoUB2ptGtn0fv6G2Q=";
 
-
+/* GlobalSign Root CA - R2 */
 static const char kGlobalSign_Root_CA___R2Fingerprint[] =
   "iie1VXtL7HzAMF+/PVPR9xzT80kQxdZeJ+zduCB3uj0=";
 
-
+/* GlobalSign Root CA - R3 */
 static const char kGlobalSign_Root_CA___R3Fingerprint[] =
   "cGuxAXyFXFkWm61cF4HPWX8S0srS9j0aSqN0k4AP+4A=";
 
-
+/* GlobalSign Root CA - R6 */
 static const char kGlobalSign_Root_CA___R6Fingerprint[] =
   "aCdH+LpiG4fN07wpXtXKvOciocDANj0daLOJKNJ4fx4=";
 
-
+/* Go Daddy Class 2 CA */
 static const char kGo_Daddy_Class_2_CAFingerprint[] =
   "VjLZe/p3W/PJnd6lL8JVNBCGQBZynFLdZSTIqcO0SJ8=";
 
-
+/* Go Daddy Root Certificate Authority - G2 */
 static const char kGo_Daddy_Root_Certificate_Authority___G2Fingerprint[] =
   "Ko8tivDrEjiY90yGasP6ZpBU4jwXvHqVvQI0GS3GNdA=";
 
-
+/* GoogleBackup2048 */
 static const char kGoogleBackup2048Fingerprint[] =
   "IPMbDAjLVSGntGO3WP53X/zilCVndez5YJ2+vJvhJsA=";
 
-
+/* ISRG Root X1 */
 static const char kISRG_Root_X1Fingerprint[] =
   "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=";
 
-
+/* Let's Encrypt Authority X3 */
 static const char kLet_s_Encrypt_Authority_X3Fingerprint[] =
   "YLh1dUR9y6Kja30RrAn7JKnbQG/uEtLMkBgFF2Fuihg=";
 
-
+/* Let's Encrypt Authority X4 */
 static const char kLet_s_Encrypt_Authority_X4Fingerprint[] =
   "sRHdihwgkaib1P1gxX8HFszlD+7/gTfNvuAybgLPNis=";
 
-
+/* SpiderOak2 */
 static const char kSpiderOak2Fingerprint[] =
   "7Y3UnxbffL8aFPXsOJBpGasgpDmngpIhAxGKdQRklQQ=";
 
-
+/* SpiderOak3 */
 static const char kSpiderOak3Fingerprint[] =
   "LkER54vOdlygpTsbYvlpMq1CE/lDAG1AP9xmdtwvV2A=";
 
-
+/* Starfield Class 2 CA */
 static const char kStarfield_Class_2_CAFingerprint[] =
   "FfFKxFycfaIz00eRZOgTf+Ne4POK6FgYPwhBDqgqxLQ=";
 
-
+/* Starfield Root Certificate Authority - G2 */
 static const char kStarfield_Root_Certificate_Authority___G2Fingerprint[] =
   "gI1os/q0iEpflxrOfRBVDXqVoWN3Tz7Dav/7IT++THQ=";
 
-
+/* Swehack */
 static const char kSwehackFingerprint[] =
   "FdaffE799rVb3oyAuhJ2mBW/XJwD07Uajb2G6YwSAEw=";
 
-
+/* SwehackBackup */
 static const char kSwehackBackupFingerprint[] =
   "z6cuswA6E1vgFkCjUsbEYo0Lf3aP8M8YOvwkoiGzDCo=";
 
-
+/* TestSPKI */
 static const char kTestSPKIFingerprint[] =
   "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 
-
+/* Tor1 */
 static const char kTor1Fingerprint[] =
   "bYz9JTDk89X3qu3fgswG+lBQso5vI0N1f0Rx4go4nLo=";
 
-
+/* Tor2 */
 static const char kTor2Fingerprint[] =
   "xXCxhTdn7uxXneJSbQCqoAvuW3ZtQl2pDVTf2sewS8w=";
 
-
+/* Tor3 */
 static const char kTor3Fingerprint[] =
   "CleC1qwUR8JPgH1nXvSe2VHxDe5/KfNs96EusbfSOfo=";
 
-
+/* Twitter1 */
 static const char kTwitter1Fingerprint[] =
   "vU9M48LzD/CF34wE5PPf4nBwRyosy06X21J0ap8yS5s=";
 
-
+/* USERTrust ECC Certification Authority */
 static const char kUSERTrust_ECC_Certification_AuthorityFingerprint[] =
   "ICGRfpgmOUXIWcQ/HXPLQTkFPEFPoDyjvH7ohhQpjzs=";
 
-
+/* USERTrust RSA Certification Authority */
 static const char kUSERTrust_RSA_Certification_AuthorityFingerprint[] =
   "x4QzPSC810K5/cMjb05Qm4k3Bw5zBn4lTdO/nEW/Td4=";
 
-
+/* Verisign Class 1 Public Primary Certification Authority - G3 */
 static const char kVerisign_Class_1_Public_Primary_Certification_Authority___G3Fingerprint[] =
   "IgduWu9Eu5pBaii30cRDItcFn2D+/6XK9sW+hEeJEwM=";
 
-
+/* Verisign Class 2 Public Primary Certification Authority - G3 */
 static const char kVerisign_Class_2_Public_Primary_Certification_Authority___G3Fingerprint[] =
   "cAajgxHlj7GTSEIzIYIQxmEloOSoJq7VOaxWHfv72QM=";
 
-
+/* YahooBackup1 */
 static const char kYahooBackup1Fingerprint[] =
   "2fRAUXyxl4A1/XHrKNBmc8bTkzA7y4FB/GLJuNAzCqY=";
 
-
+/* YahooBackup2 */
 static const char kYahooBackup2Fingerprint[] =
   "dolnbtzEBnELx/9lOEQ22e6OZO/QNb6VSSX2XHA3E7A=";
 
-
+/* Pinsets are each an ordered list by the actual value of the fingerprint */
 struct StaticFingerprints {
-  
+  // See bug 1338873 about making these fields const.
   size_t size;
   const char* const* data;
 };
 
-
+/* PreloadedHPKPins.json pinsets */
 static const char* const kPinset_google_root_pems_Data[] = {
   kEntrust_Root_Certification_Authority___EC1Fingerprint,
   kCOMODO_ECC_Certification_AuthorityFingerprint,
@@ -450,7 +450,7 @@ static const StaticFingerprints kPinset_mozilla_test = {
   kPinset_mozilla_test_Data
 };
 
-
+/* Chrome static pinsets */
 static const char* const kPinset_test_Data[] = {
   kTestSPKIFingerprint,
 };
@@ -635,9 +635,9 @@ static const StaticFingerprints kPinset_swehackCom = {
   kPinset_swehackCom_Data
 };
 
-
+/* Domainlist */
 struct TransportSecurityPreload {
-  
+  // See bug 1338873 about making these fields const.
   const char* mHost;
   bool mIncludeSubdomains;
   bool mTestMode;
@@ -646,7 +646,7 @@ struct TransportSecurityPreload {
   const StaticFingerprints* pinset;
 };
 
-
+/* Sort hostnames for binary search. */
 static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "2mdn.net", true, false, false, -1, &kPinset_google_root_pems },
   { "accounts.firefox.com", true, false, true, 4, &kPinset_mozilla_services },
@@ -1145,8 +1145,8 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "zh.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
 };
 
-
+// Pinning Preload List Length = 495;
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1639046873042000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1638787538702000);
