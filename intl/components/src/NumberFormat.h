@@ -110,7 +110,12 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
 
 
-  bool mUseGrouping = true;
+  enum class Grouping {
+    Auto,
+    Always,
+    Min2,
+    Never,
+  } mGrouping = Grouping::Auto;
 
   
 
