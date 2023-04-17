@@ -111,6 +111,9 @@ Time Now();
 
 Time TimeFromEpochInSeconds(uint64_t secondsSinceEpoch);
 
+
+Result SecondsSinceEpochFromTime(Time time, uint64_t* outSeconds);
+
 class Duration final {
  public:
   Duration(Time timeA, Time timeB)
@@ -129,6 +132,8 @@ class Duration final {
   }
 
  private:
+  friend Result SecondsSinceEpochFromTime(Time time, uint64_t* outSeconds);
+
   uint64_t durationInSeconds;
 };
 }
