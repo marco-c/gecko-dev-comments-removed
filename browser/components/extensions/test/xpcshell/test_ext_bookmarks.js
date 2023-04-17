@@ -166,9 +166,9 @@ add_task(async function test_bookmarks() {
         "onChanged event received the expected id"
       );
       browser.test.assertEq(
-        title,
-        changedData.info.title,
-        "onChanged event received the expected title"
+        url,
+        changedData.info.url,
+        "onChanged event received the expected url"
       );
       
       changedData = collectedEvents.pop();
@@ -183,9 +183,9 @@ add_task(async function test_bookmarks() {
         "onChanged event received the expected id"
       );
       browser.test.assertEq(
-        url,
-        changedData.info.url,
-        "onChanged event received the expected url"
+        title,
+        changedData.info.title,
+        "onChanged event received the expected title"
       );
     }
 
