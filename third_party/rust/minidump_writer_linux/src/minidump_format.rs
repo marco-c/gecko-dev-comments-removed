@@ -67,6 +67,16 @@ pub const MD_HEADER_SIGNATURE: u32 = 0x504d444d;
 pub const MD_HEADER_VERSION: u32 = 0x0000a793; 
 
 
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct MDRawThreadName {
+    
+    pub thread_id: u32,
+    
+    pub thread_name_rva: u64,
+}
+
 #[repr(C)]
 #[derive(Debug, Default, PartialEq)]
 pub struct MDRawThread {
@@ -403,6 +413,8 @@ pub enum MDStreamType {
     JavascriptDataStream = 20,
     SystemMemoryInfoStream = 21,
     ProcessVmCountersStream = 22,
+    IptTraceStream = 23,
+    ThreadNamesStream = 24,
     LastReservedStream = 0x0000ffff,
 
     

@@ -32,7 +32,7 @@ pub fn write(
         
         let identifier = dumper
             .elf_identifier_for_mapping_index(map_idx)
-            .unwrap_or(Default::default());
+            .unwrap_or_default();
 
         
         if identifier.is_empty() || identifier.iter().all(|&x| x == 0) {

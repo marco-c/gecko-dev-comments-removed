@@ -56,11 +56,7 @@ impl Iterator for ProcfsAuxvIter {
         
         self.keep_going = false;
 
-        self.buf.clear();
-        
-        for _ in 0..self.pair_size {
-            self.buf.push(0);
-        }
+        self.buf = vec![0; self.pair_size];
 
         let mut read_bytes: usize = 0;
         while read_bytes < self.pair_size {
