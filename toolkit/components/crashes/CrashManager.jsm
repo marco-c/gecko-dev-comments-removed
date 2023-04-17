@@ -167,9 +167,6 @@ CrashManager.prototype = Object.freeze({
   PROCESS_TYPE_CONTENT: "content",
 
   
-  PROCESS_TYPE_PLUGIN: "plugin",
-
-  
   PROCESS_TYPE_GMPLUGIN: "gmplugin",
 
   
@@ -907,7 +904,6 @@ CrashManager.prototype = Object.freeze({
 });
 
 var gCrashManager;
-
 
 
 
