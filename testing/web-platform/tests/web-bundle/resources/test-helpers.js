@@ -158,9 +158,11 @@ function createWebBundleElement(url, resources, options) {
   }
   const script = document.createElement("script");
   script.type = "webbundle";
-  script.textContent =
-      JSON.stringify({"source": url, "resources": resources});
-  
+  const json_rule  = {"source": url, "resources": resources};
+  if (options && options.credentials) {
+    json_rule.credentials = options.credentials;
+  }
+  script.textContent = JSON.stringify(json_rule);
   
   return script;
 }
