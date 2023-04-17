@@ -13,6 +13,7 @@
 
 
 
+const STATE_ANIMATED = nsIAccessibleStates.STATE_ANIMATED;
 const STATE_CHECKED = nsIAccessibleStates.STATE_CHECKED;
 const STATE_CHECKABLE = nsIAccessibleStates.STATE_CHECKABLE;
 const STATE_COLLAPSED = nsIAccessibleStates.STATE_COLLAPSED;
