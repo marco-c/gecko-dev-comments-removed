@@ -437,12 +437,35 @@ this.FormAutofillUtils = {
     return doc.querySelectorAll("input, select");
   },
 
+  
+
+
+
+
+
+
+
+
+  isFieldVisible(element) {
+    if (element.hidden) {
+      return false;
+    }
+    if (element.style.display == "none") {
+      return false;
+    }
+    return true;
+  },
+
   ALLOWED_TYPES: ["text", "email", "tel", "number", "month"],
   isFieldEligibleForAutofill(element) {
     let tagName = element.tagName;
     if (tagName == "INPUT") {
       
       if (!this.ALLOWED_TYPES.includes(element.type)) {
+        return false;
+      }
+      
+      if (!this.isFieldVisible(element)) {
         return false;
       }
     } else if (tagName != "SELECT") {
