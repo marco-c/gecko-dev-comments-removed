@@ -15,9 +15,11 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
+import android.os.TransactionTooLargeException;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -54,6 +56,9 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
     private static final String[] FIXED_TOOLBAR_ACTIONS = new String[] {
         ACTION_SELECT_ALL, ACTION_CUT, ACTION_COPY, ACTION_PASTE
     };
+
+    
+    private static final int MAX_INTENT_TEXT_LENGTH = 100000;
 
     protected final @NonNull Activity mActivity;
     protected final boolean mUseFloatingToolbar;
@@ -267,11 +272,24 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
         }
     }
 
+    private String getSelectedText(final int maxLength) {
+        if (mSelection == null) {
+            return "";
+        }
+
+        if (TextUtils.isEmpty(mSelection.text) || mSelection.text.length() < maxLength) {
+            return mSelection.text;
+        }
+
+        return mSelection.text.substring(0, maxLength);
+    }
+
     private Intent getProcessTextIntent() {
         final Intent intent = new Intent(Intent.ACTION_PROCESS_TEXT);
         intent.addCategory(Intent.CATEGORY_DEFAULT);
         intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_PROCESS_TEXT, mSelection.text);
+        
+        intent.putExtra(Intent.EXTRA_PROCESS_TEXT, getSelectedText(MAX_INTENT_TEXT_LENGTH));
         
         intent.putExtra(Intent.EXTRA_PROCESS_TEXT_READONLY, true);
         return intent;
@@ -311,11 +329,20 @@ public class BasicSelectionActionDelegate implements ActionMode.Callback,
 
             if (ACTION_PROCESS_TEXT.equals(actionId)) {
                 if (mExternalActionsEnabled && !mSelection.text.isEmpty()) {
-                    menu.addIntentOptions(menuId, menuId, menuId,
-                                          mActivity.getComponentName(),
-                                           null, getProcessTextIntent(),
-                                           0,  null);
-                    changed = true;
+                    try {
+                        menu.addIntentOptions(menuId, menuId, menuId,
+                                              mActivity.getComponentName(),
+                                               null, getProcessTextIntent(),
+                                               0,  null);
+                        changed = true;
+                    } catch (final RuntimeException e) {
+                        if (e.getCause() instanceof TransactionTooLargeException) {
+                            
+                            Log.e(LOGTAG, "Cannot add intent option", e);
+                        } else {
+                            throw e;
+                        }
+                    }
                 } else if (menu.findItem(menuId) != null) {
                     menu.removeGroup(menuId);
                     changed = true;
