@@ -98,7 +98,7 @@ already_AddRefed<Buffer> Device::CreateBuffer(
   
   
   RawId id = mBridge->DeviceCreateBuffer(mId, aDesc);
-  RefPtr<Buffer> buffer = new Buffer(this, id, aDesc.mSize);
+  RefPtr<Buffer> buffer = new Buffer(this, id, aDesc.mSize, hasMapFlags);
   if (aDesc.mMappedAtCreation) {
     buffer->SetMapped(std::move(shmem),
                       !(aDesc.mUsage & dom::GPUBufferUsage_Binding::MAP_READ));
@@ -140,8 +140,9 @@ RefPtr<MappingPromise> Device::MapBufferAsync(RawId aId, uint32_t aMode,
   return mBridge->SendBufferMap(aId, mode, offset.value(), size.value());
 }
 
-void Device::UnmapBuffer(RawId aId, ipc::Shmem&& aShmem, bool aFlush) {
-  mBridge->SendBufferUnmap(aId, std::move(aShmem), aFlush);
+void Device::UnmapBuffer(RawId aId, ipc::Shmem&& aShmem, bool aFlush,
+                         bool aKeepShmem) {
+  mBridge->SendBufferUnmap(aId, std::move(aShmem), aFlush, aKeepShmem);
 }
 
 already_AddRefed<Texture> Device::CreateTexture(
