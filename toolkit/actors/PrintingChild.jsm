@@ -191,160 +191,165 @@ class PrintingChild extends JSWindowActorChild {
       Cu.reportError(ex);
     }
 
-    
-    
-    
-    let actor = thisWindow.windowGlobalChild.getActor("Printing");
-    let webProgressListener = {
-      onStateChange(webProgress, req, flags, status) {
-        if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
-          webProgress.removeProgressListener(webProgressListener);
-          let domUtils = contentWindow.windowUtils;
-          
-          
-          if (domUtils.isMozAfterPaintPending) {
-            let onPaint = function() {
-              contentWindow.removeEventListener("MozAfterPaint", onPaint);
-              actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
-            };
-            contentWindow.addEventListener("MozAfterPaint", onPaint);
+    await new Promise(resolve => {
+      
+      
+      
+      let actor = thisWindow.windowGlobalChild.getActor("Printing");
+      let webProgressListener = {
+        onStateChange(webProgress, req, flags, status) {
+          if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
+            webProgress.removeProgressListener(webProgressListener);
+            let domUtils = contentWindow.windowUtils;
             
-            setTimeout(() => {
-              contentWindow.removeEventListener("MozAfterPaint", onPaint);
+            
+            if (domUtils.isMozAfterPaintPending) {
+              let onPaint = function() {
+                contentWindow.removeEventListener("MozAfterPaint", onPaint);
+                actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+                resolve();
+              };
+              contentWindow.addEventListener("MozAfterPaint", onPaint);
+              
+              setTimeout(() => {
+                contentWindow.removeEventListener("MozAfterPaint", onPaint);
+                actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+                resolve();
+              }, 100);
+            } else {
               actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
-            }, 100);
-          } else {
-            actor.sendAsyncMessage("Printing:Preview:ReaderModeReady");
+              resolve();
+            }
           }
-        }
-      },
+        },
 
-      QueryInterface: ChromeUtils.generateQI([
-        "nsIWebProgressListener",
-        "nsISupportsWeakReference",
-        "nsIObserver",
-      ]),
-    };
-
-    
-    let webProgress = thisWindow.docShell
-      .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebProgress);
-    webProgress.addProgressListener(
-      webProgressListener,
-      Ci.nsIWebProgress.NOTIFY_STATE_REQUEST
-    );
-
-    let document = thisWindow.document;
-    document.head.innerHTML = "";
-
-    
-    
-    
-    let headBaseElement = document.createElement("base");
-    headBaseElement.setAttribute("href", URL);
-    document.head.appendChild(headBaseElement);
-
-    
-    let headStyleElement = document.createElement("link");
-    headStyleElement.setAttribute("rel", "stylesheet");
-    headStyleElement.setAttribute(
-      "href",
-      "chrome://global/skin/aboutReader.css"
-    );
-    headStyleElement.setAttribute("type", "text/css");
-    document.head.appendChild(headStyleElement);
-
-    
-    headStyleElement = document.createElement("link");
-    headStyleElement.setAttribute("rel", "stylesheet");
-    headStyleElement.setAttribute(
-      "href",
-      "chrome://global/content/simplifyMode.css"
-    );
-    headStyleElement.setAttribute("type", "text/css");
-    document.head.appendChild(headStyleElement);
-
-    document.body.innerHTML = "";
-
-    
-    let containerElement = document.createElement("div");
-    containerElement.setAttribute("id", "container");
-    document.body.appendChild(containerElement);
-
-    
-    
-    if (article) {
-      
-      document.title = article.title;
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIWebProgressListener",
+          "nsISupportsWeakReference",
+          "nsIObserver",
+        ]),
+      };
 
       
-      let headerElement = document.createElement("div");
-      headerElement.setAttribute("id", "reader-header");
-      headerElement.setAttribute("class", "header");
-      containerElement.appendChild(headerElement);
-
-      
-      let titleElement = document.createElement("h1");
-      titleElement.setAttribute("id", "reader-title");
-      titleElement.textContent = article.title;
-      headerElement.appendChild(titleElement);
-
-      let bylineElement = document.createElement("div");
-      bylineElement.setAttribute("id", "reader-credits");
-      bylineElement.setAttribute("class", "credits");
-      bylineElement.textContent = article.byline;
-      headerElement.appendChild(bylineElement);
-
-      
-      headerElement.style.display = "block";
-
-      
-      let contentElement = document.createElement("div");
-      contentElement.setAttribute("class", "content");
-      containerElement.appendChild(contentElement);
-
-      
-      let readerContent = document.createElement("div");
-      readerContent.setAttribute("id", "moz-reader-content");
-      contentElement.appendChild(readerContent);
-
-      let articleUri = Services.io.newURI(article.url);
-      let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(
-        Ci.nsIParserUtils
-      );
-      let contentFragment = parserUtils.parseFragment(
-        article.content,
-        Ci.nsIParserUtils.SanitizerDropForms |
-          Ci.nsIParserUtils.SanitizerAllowStyle,
-        false,
-        articleUri,
-        readerContent
+      let webProgress = thisWindow.docShell
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIWebProgress);
+      webProgress.addProgressListener(
+        webProgressListener,
+        Ci.nsIWebProgress.NOTIFY_STATE_REQUEST
       );
 
-      readerContent.appendChild(contentFragment);
+      let document = thisWindow.document;
+      document.head.innerHTML = "";
 
       
-      readerContent.style.display = "block";
-    } else {
-      let aboutReaderStrings = Services.strings.createBundle(
-        "chrome://global/locale/aboutReader.properties"
+      
+      
+      let headBaseElement = document.createElement("base");
+      headBaseElement.setAttribute("href", URL);
+      document.head.appendChild(headBaseElement);
+
+      
+      let headStyleElement = document.createElement("link");
+      headStyleElement.setAttribute("rel", "stylesheet");
+      headStyleElement.setAttribute(
+        "href",
+        "chrome://global/skin/aboutReader.css"
       );
-      let errorMessage = aboutReaderStrings.GetStringFromName(
-        "aboutReader.loadError"
+      headStyleElement.setAttribute("type", "text/css");
+      document.head.appendChild(headStyleElement);
+
+      
+      headStyleElement = document.createElement("link");
+      headStyleElement.setAttribute("rel", "stylesheet");
+      headStyleElement.setAttribute(
+        "href",
+        "chrome://global/content/simplifyMode.css"
       );
+      headStyleElement.setAttribute("type", "text/css");
+      document.head.appendChild(headStyleElement);
 
-      document.title = errorMessage;
-
-      
-      let readerMessageElement = document.createElement("div");
-      readerMessageElement.setAttribute("class", "reader-message");
-      readerMessageElement.textContent = errorMessage;
-      containerElement.appendChild(readerMessageElement);
+      document.body.innerHTML = "";
 
       
-      readerMessageElement.style.display = "block";
-    }
+      let containerElement = document.createElement("div");
+      containerElement.setAttribute("id", "container");
+      document.body.appendChild(containerElement);
+
+      
+      
+      if (article) {
+        
+        document.title = article.title;
+
+        
+        let headerElement = document.createElement("div");
+        headerElement.setAttribute("id", "reader-header");
+        headerElement.setAttribute("class", "header");
+        containerElement.appendChild(headerElement);
+
+        
+        let titleElement = document.createElement("h1");
+        titleElement.setAttribute("id", "reader-title");
+        titleElement.textContent = article.title;
+        headerElement.appendChild(titleElement);
+
+        let bylineElement = document.createElement("div");
+        bylineElement.setAttribute("id", "reader-credits");
+        bylineElement.setAttribute("class", "credits");
+        bylineElement.textContent = article.byline;
+        headerElement.appendChild(bylineElement);
+
+        
+        headerElement.style.display = "block";
+
+        
+        let contentElement = document.createElement("div");
+        contentElement.setAttribute("class", "content");
+        containerElement.appendChild(contentElement);
+
+        
+        let readerContent = document.createElement("div");
+        readerContent.setAttribute("id", "moz-reader-content");
+        contentElement.appendChild(readerContent);
+
+        let articleUri = Services.io.newURI(article.url);
+        let parserUtils = Cc["@mozilla.org/parserutils;1"].getService(
+          Ci.nsIParserUtils
+        );
+        let contentFragment = parserUtils.parseFragment(
+          article.content,
+          Ci.nsIParserUtils.SanitizerDropForms |
+            Ci.nsIParserUtils.SanitizerAllowStyle,
+          false,
+          articleUri,
+          readerContent
+        );
+
+        readerContent.appendChild(contentFragment);
+
+        
+        readerContent.style.display = "block";
+      } else {
+        let aboutReaderStrings = Services.strings.createBundle(
+          "chrome://global/locale/aboutReader.properties"
+        );
+        let errorMessage = aboutReaderStrings.GetStringFromName(
+          "aboutReader.loadError"
+        );
+
+        document.title = errorMessage;
+
+        
+        let readerMessageElement = document.createElement("div");
+        readerMessageElement.setAttribute("class", "reader-message");
+        readerMessageElement.textContent = errorMessage;
+        containerElement.appendChild(readerMessageElement);
+
+        
+        readerMessageElement.style.display = "block";
+      }
+    });
   }
 
   enterPrintPreview(

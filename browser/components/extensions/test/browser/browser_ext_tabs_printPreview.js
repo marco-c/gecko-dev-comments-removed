@@ -50,9 +50,10 @@ async function testPrintPreview() {
     await BrowserTestUtils.waitForCondition(() => !window.gInPrintPreviewMode);
   } else {
     
-    await BrowserTestUtils.waitForCondition(
-      () => !!document.querySelector(".printPreviewBrowser")
-    );
+    await BrowserTestUtils.waitForCondition(() => {
+      let preview = document.querySelector(".printPreviewBrowser");
+      return preview && BrowserTestUtils.is_visible(preview);
+    });
 
     gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
     
