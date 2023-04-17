@@ -31,7 +31,6 @@ import java.util.List;
 public class ContentBlockingController {
     private static final String LOGTAG = "GeckoContentBlocking";
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @AnyThread
     public static class ContentBlockingException {
         private final @NonNull String mEncodedPrincipal;
@@ -99,7 +98,6 @@ public class ContentBlockingController {
 
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @UiThread
     public void removeException(final @NonNull GeckoSession session) {
         final GeckoBundle msg = new GeckoBundle(1);
@@ -115,7 +113,6 @@ public class ContentBlockingController {
 
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @AnyThread
     public void removeException(final @NonNull ContentBlockingException exception) {
         final GeckoBundle msg = new GeckoBundle(1);
@@ -133,7 +130,6 @@ public class ContentBlockingController {
 
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @UiThread
     public @NonNull GeckoResult<Boolean> checkException(final @NonNull GeckoSession session) {
         final GeckoBundle msg = new GeckoBundle(1);
@@ -165,7 +161,6 @@ public class ContentBlockingController {
 
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @UiThread
     public @NonNull GeckoResult<List<ContentBlockingException>> saveExceptionList() {
         return EventDispatcher.getInstance()
@@ -178,7 +173,6 @@ public class ContentBlockingController {
 
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @AnyThread
     public void restoreExceptionList(final @NonNull List<ContentBlockingException> list) {
         final GeckoBundle bundle = new GeckoBundle(2);
@@ -199,7 +193,6 @@ public class ContentBlockingController {
     
 
 
-    @DeprecationSchedule(version = 93, id = "content-blocking-exception")
     @UiThread
     public void clearExceptionList() {
         EventDispatcher.getInstance().dispatch("ContentBlocking:ClearList", null);

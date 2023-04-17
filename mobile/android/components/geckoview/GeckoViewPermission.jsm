@@ -10,7 +10,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -246,37 +245,31 @@ class GeckoViewPermission {
       .sendRequestForResult({
         type: "GeckoView:ContentPermission",
         uri: aRequest.principal.URI.displaySpec,
-        principal: E10SUtils.serializePrincipal(aRequest.principal),
         perm: perm.type,
-        value: perm.capability,
-        contextId:
-          aRequest.principal.originAttributes.geckoViewSessionContextId ?? null,
-        privateMode: aRequest.principal.privateBrowsingId != 0,
       })
-      .then(value => {
-        if (value == Services.perms.ALLOW_ACTION) {
-          
-          if (perm.type === "geolocation") {
-            return this.getAppPermissions(dispatcher, [
-              PERM_ACCESS_FINE_LOCATION,
-            ]);
-          }
+      .then(granted => {
+        if (!granted) {
+          return false;
         }
-        return value;
+        
+        if (perm.type === "geolocation") {
+          return this.getAppPermissions(dispatcher, [
+            PERM_ACCESS_FINE_LOCATION,
+          ]);
+        }
+        return true;
       })
       .catch(error => {
         Cu.reportError("Permission error: " + error);
-        return  Services.perms.DENY_ACTION;
+        return  false;
       })
-      .then(value => {
-        (value == Services.perms.ALLOW_ACTION
-          ? aRequest.allow
-          : aRequest.cancel)();
+      .then(granted => {
+        (granted ? aRequest.allow : aRequest.cancel)();
         Services.perms.addFromPrincipal(
           aRequest.principal,
           perm.type,
-          value,
-          Services.perms.EXPIRE_NEVER
+          granted ? Services.perms.ALLOW_ACTION : Services.perms.DENY_ACTION,
+          Services.perms.EXPIRE_SESSION
         );
         
         aRequest = undefined;

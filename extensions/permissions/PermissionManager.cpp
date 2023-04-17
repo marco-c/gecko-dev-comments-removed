@@ -129,6 +129,16 @@ static const nsLiteralCString kPreloadPermissions[] = {
 
 
 
+
+#ifdef ANDROID
+static const nsLiteralCString kGeckoViewRestrictedPermissions[] = {
+    "MediaManagerVideo"_ns,    "geolocation"_ns,
+    "desktop-notification"_ns, "persistent-storage"_ns,
+    "trackingprotection"_ns,   "trackingprotection-pb"_ns};
+#endif
+
+
+
 bool IsPreloadPermission(const nsACString& aType) {
   if (!aType.IsEmpty()) {
     for (const auto& perm : kPreloadPermissions) {
@@ -544,6 +554,11 @@ bool IsExpandedPrincipal(nsIPrincipal* aPrincipal) {
 bool IsPersistentExpire(uint32_t aExpire, const nsACString& aType) {
   bool res = (aExpire != nsIPermissionManager::EXPIRE_SESSION &&
               aExpire != nsIPermissionManager::EXPIRE_POLICY);
+#ifdef ANDROID
+  for (const auto& perm : kGeckoViewRestrictedPermissions) {
+    res = res && !perm.Equals(aType);
+  }
+#endif
   return res;
 }
 
