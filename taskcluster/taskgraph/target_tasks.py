@@ -860,11 +860,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 
                 if "tp6" in try_name:
                     return False
-                
-                if "-chrome" in try_name:
-                    return True
-                if "-chromium" in try_name:
-                    return True
         
         elif accept_raptor_android_build(platform):
             
