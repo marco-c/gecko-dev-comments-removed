@@ -2216,6 +2216,14 @@ class Repackage(MachCommandBase):
         template = os.path.join(
             command_context.topsrcdir, "browser", "installer", "windows", "msix"
         )
+
+        
+        locale_allowlist = set(
+            locale.partition("#")[0].strip().lower()
+            for locale in open(os.path.join(template, "msix-all-locales")).readlines()
+            if locale.partition("#")[0].strip()
+        )
+
         
         branding = os.path.join(
             command_context.topsrcdir,
@@ -2233,6 +2241,7 @@ class Repackage(MachCommandBase):
             publisher=publisher,
             version=version,
             distribution_dirs=distribution_dirs,
+            locale_allowlist=locale_allowlist,
             
             force=True,
             verbose=verbose,

@@ -162,6 +162,7 @@ def repackage_msix(
     branding=None,
     template=None,
     distribution_dirs=[],
+    locale_allowlist=set(),
     version=None,
     vendor="Mozilla",
     displayname=None,
@@ -316,10 +317,10 @@ def repackage_msix(
         finder = FileFinder(distribution_dir)
 
         for p, f in finder:
+            locale = None
             if os.path.basename(p) == "target.langpack.xpi":
                 
                 base, locale = os.path.split(os.path.dirname(p))
-                locales.add(locale)
 
                 
                 
@@ -341,6 +342,16 @@ def repackage_msix(
             else:
                 dest = p
 
+            if locale:
+                locale = locale.strip().lower()
+                locales.add(locale)
+                log(
+                    logging.DEBUG,
+                    "msix",
+                    {"locale": locale, "dest": dest},
+                    "Distributing locale '{locale}' from {dest}",
+                )
+
             copier.add(
                 mozpath.normsep(
                     mozpath.join("VFS", "ProgramFiles", instdir, "distribution", dest)
@@ -349,6 +360,32 @@ def repackage_msix(
             )
 
     locales.remove("en-US")
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unadvertised = set()
+    if locale_allowlist:
+        unadvertised = locales - locale_allowlist
+        locales = locales & locale_allowlist
+    for locale in sorted(unadvertised):
+        log(
+            logging.INFO,
+            "msix",
+            {"locale": locale},
+            "Not advertising distributed locale '{locale}' that is not recognized by Windows",
+        )
+
     locales = ["en-US"] + list(sorted(locales))
     resource_language_list = "\n".join(
         f'    <Resource Language="{locale}" />' for locale in sorted(locales)
