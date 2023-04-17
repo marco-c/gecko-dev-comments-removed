@@ -90,6 +90,13 @@ fn generate_bindings() {
         .whitelist_var("mozilla::profiler::detail::RacyFeatures::sActiveAndFeatures")
         .whitelist_type("mozilla::profiler::detail::RacyFeatures")
         .rustified_enum("mozilla::StackCaptureOptions")
+        .rustified_enum("mozilla::MarkerSchema_Location")
+        .rustified_enum("mozilla::MarkerSchema_Format")
+        .rustified_enum("mozilla::MarkerSchema_Searchable")
+        
+        
+        
+        .opaque_type("std::string")
         .raw_line("pub use self::root::*;")
         
         

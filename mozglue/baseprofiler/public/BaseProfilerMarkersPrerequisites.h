@@ -761,6 +761,11 @@ class MarkerSchema {
       : mLocations{aLocation, aLocations...} {}
 
   
+  explicit MarkerSchema(const mozilla::MarkerSchema::Location* aLocations,
+                        size_t aLength)
+      : mLocations(aLocations, aLocations + aLength) {}
+
+  
   
   
   MOZ_IMPLICIT MarkerSchema(SpecialFrontendLocation) {}

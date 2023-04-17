@@ -67,6 +67,7 @@
 
 
 pub mod options;
+pub mod schema;
 
 use crate::gecko_bindings::{bindings, profiling_categories::ProfilingCategoryPair};
 use crate::marker::options::MarkerOptions;
