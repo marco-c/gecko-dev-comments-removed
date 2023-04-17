@@ -1683,8 +1683,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> CreateNodeWithTransaction(
-      nsAtom& aTag, const EditorDOMPoint& aPointToInsert);
+  MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  CreateNodeWithTransaction(nsAtom& aTag, const EditorDOMPoint& aPointToInsert);
 
   
 
