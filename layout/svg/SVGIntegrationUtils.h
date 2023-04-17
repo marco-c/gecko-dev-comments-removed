@@ -38,10 +38,6 @@ namespace gfx {
 class DrawTarget;
 }  
 
-namespace layers {
-class LayerManager;
-}  
-
 
 
 
@@ -154,7 +150,6 @@ class SVGIntegrationUtils final {
     nsRect dirtyRect;
     nsRect borderArea;
     nsDisplayListBuilder* builder;
-    layers::LayerManager* layerManager;
     bool handleOpacity;  
                          
     Maybe<gfx::Rect> maskRect;
@@ -164,7 +159,6 @@ class SVGIntegrationUtils final {
                                const nsRect& aDirtyRect,
                                const nsRect& aBorderArea,
                                nsDisplayListBuilder* aBuilder,
-                               layers::LayerManager* aLayerManager,
                                bool aHandleOpacity,
                                imgDrawingParams& aImgParams)
         : ctx(aCtx),
@@ -172,7 +166,6 @@ class SVGIntegrationUtils final {
           dirtyRect(aDirtyRect),
           borderArea(aBorderArea),
           builder(aBuilder),
-          layerManager(aLayerManager),
           handleOpacity(aHandleOpacity),
           imgParams(aImgParams) {}
   };
