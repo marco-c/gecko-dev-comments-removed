@@ -86,7 +86,7 @@ class TimerCallback final : public nsITimerCallback {
   }
 
  private:
-  ~TimerCallback() {}
+  ~TimerCallback() = default;
 
   nsIThread** mThreadPtr;
   ReentrantMonitor* mReentrantMonitor;
@@ -631,4 +631,35 @@ TEST(Timers, FuzzTestTimers)
       PR_Sleep(PR_MillisecondsToInterval(10));
     }
   }
+}
+
+TEST(Timers, ClosureCallback)
+{
+  AutoCreateAndDestroyReentrantMonitor newMon;
+  ASSERT_TRUE(newMon);
+
+  AutoTestThread testThread;
+  ASSERT_TRUE(testThread);
+
+  nsIThread* notifiedThread = nullptr;
+
+  nsCOMPtr<nsITimer> timer;
+  nsresult rv = NS_NewTimerWithCallback(
+      getter_AddRefs(timer),
+      [&](nsITimer*) {
+        nsCOMPtr<nsIThread> current(do_GetCurrentThread());
+
+        ReentrantMonitorAutoEnter mon(*newMon);
+        ASSERT_FALSE(notifiedThread);
+        notifiedThread = current;
+        mon.Notify();
+      },
+      50, nsITimer::TYPE_ONE_SHOT, "(test) Timers.ClosureCallback", testThread);
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+
+  ReentrantMonitorAutoEnter mon(*newMon);
+  while (!notifiedThread) {
+    mon.Wait();
+  }
+  ASSERT_EQ(notifiedThread, testThread);
 }

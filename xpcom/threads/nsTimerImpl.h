@@ -88,8 +88,15 @@ class nsTimerImpl {
     Name mName;
   };
 
-  using Callback = mozilla::Variant<UnknownCallback, InterfaceCallback,
-                                    ObserverCallback, FuncCallback>;
+  
+  struct ClosureCallback {
+    std::function<void(nsITimer*)> mFunc;
+    const char* mName;
+  };
+
+  using Callback =
+      mozilla::Variant<UnknownCallback, InterfaceCallback, ObserverCallback,
+                       FuncCallback, ClosureCallback>;
 
   nsresult InitCommon(uint32_t aDelayMS, uint32_t aType,
                       Callback&& newCallback);
@@ -137,6 +144,10 @@ class nsTimerImpl {
                                       uint32_t aDelay, uint32_t aType,
                                       const FuncCallback::Name& aName);
 
+  nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
+                                   const mozilla::TimeDuration& aDelay,
+                                   uint32_t aType, const char* aNameString);
+
   
   
   nsTimerImplHolder* mHolder;
@@ -181,6 +192,16 @@ class nsTimer final : public nsITimer {
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_FORWARD_SAFE_NSITIMER(mImpl);
+
+  
+  
+  nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
+                                   const mozilla::TimeDuration& aDelay,
+                                   uint32_t aType, const char* aNameString) {
+    return mImpl ? mImpl->InitWithClosureCallback(std::move(aCallback), aDelay,
+                                                  aType, aNameString)
+                 : NS_ERROR_NULL_POINTER;
+  }
 
   virtual size_t SizeOfIncludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const override;
