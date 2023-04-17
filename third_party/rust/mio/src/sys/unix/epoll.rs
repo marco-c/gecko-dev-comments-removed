@@ -62,8 +62,16 @@ impl Selector {
 
     
     pub fn select(&self, evts: &mut Events, awakener: Token, timeout: Option<Duration>) -> io::Result<bool> {
+        
+        
+        
+        #[cfg(target_pointer_width = "32")]
+        const MAX_SAFE_TIMEOUT: u64 = 1789569;
+        #[cfg(not(target_pointer_width = "32"))]
+        const MAX_SAFE_TIMEOUT: u64 = c_int::max_value() as u64;
+
         let timeout_ms = timeout
-            .map(|to| cmp::min(millis(to), i32::MAX as u64) as i32)
+            .map(|to| cmp::min(millis(to), MAX_SAFE_TIMEOUT) as c_int)
             .unwrap_or(-1);
 
         
