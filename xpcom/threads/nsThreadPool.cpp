@@ -4,9 +4,11 @@
 
 
 
+#include "nsThreadPool.h"
+
+#include "GeckoProfiler.h"
 #include "nsCOMArray.h"
 #include "ThreadDelay.h"
-#include "nsThreadPool.h"
 #include "nsThreadManager.h"
 #include "nsThread.h"
 #include "nsMemory.h"
