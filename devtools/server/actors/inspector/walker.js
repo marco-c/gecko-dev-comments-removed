@@ -1257,15 +1257,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
-  multiFrameQuerySelectorAll: function(selector) {
-    return new NodeListActor(this, this._multiFrameQuerySelectorAll(selector));
-  },
-
-  
-
-
-
-
 
   _multiFrameXPath: function(xPath) {
     const nodes = [];
