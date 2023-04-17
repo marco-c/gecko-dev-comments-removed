@@ -411,8 +411,11 @@ class SourcesManager extends EventEmitter {
     
     
     let loadFromCache = canUseCache;
-    if (canUseCache && this._thread._parent._getCacheDisabled) {
-      loadFromCache = !this._thread._parent._getCacheDisabled();
+    if (canUseCache && this._thread._parent.browsingContext) {
+      loadFromCache = !(
+        this._thread._parent.browsingContext.defaultLoadFlags ===
+        Ci.nsIRequest.LOAD_BYPASS_CACHE
+      );
     }
 
     

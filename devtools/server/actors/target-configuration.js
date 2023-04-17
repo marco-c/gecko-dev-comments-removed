@@ -5,7 +5,6 @@
 "use strict";
 
 const { Ci } = require("chrome");
-
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const {
   targetConfigurationSpec,
@@ -224,6 +223,9 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
         case "touchEventsOverride":
           this._setTouchEventsOverride(value);
           break;
+        case "cacheDisabled":
+          this._setCacheDisabled(value);
+          break;
       }
     }
 
@@ -239,6 +241,7 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
     this._setServiceWorkersTestingEnabled(false);
     this._setPrintSimulationEnabled(false);
+    this._setCacheDisabled(false);
 
     
     
@@ -393,6 +396,20 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
 
   _setRDMPaneOrientation({ type, angle }) {
     this._browsingContext.setRDMPaneOrientation(type, angle);
+  },
+
+  
+
+
+
+
+  _setCacheDisabled(disabled) {
+    const value = disabled
+      ? Ci.nsIRequest.LOAD_BYPASS_CACHE
+      : Ci.nsIRequest.LOAD_NORMAL;
+    if (this._browsingContext.defaultLoadFlags != value) {
+      this._browsingContext.defaultLoadFlags = value;
+    }
   },
 
   destroy() {

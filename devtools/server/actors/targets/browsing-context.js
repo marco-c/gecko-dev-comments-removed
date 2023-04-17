@@ -1093,7 +1093,6 @@ const browsingContextTargetPrototype = {
 
     return {
       threadActor: this.threadActor.actorID,
-      cacheDisabled: this._getCacheDisabled(),
       traits: this.traits,
     };
   },
@@ -1282,12 +1281,6 @@ const browsingContextTargetPrototype = {
       return;
     }
     if (
-      typeof options.cacheDisabled !== "undefined" &&
-      options.cacheDisabled !== this._getCacheDisabled()
-    ) {
-      this._setCacheDisabled(options.cacheDisabled);
-    }
-    if (
       typeof options.paintFlashing !== "undefined" &&
       options.PaintFlashing !== this._getPaintFlashing()
     ) {
@@ -1315,7 +1308,6 @@ const browsingContextTargetPrototype = {
 
 
   _restoreTargetConfiguration() {
-    this._setCacheDisabled(false);
     this._setPaintFlashingEnabled(false);
 
     if (this._restoreFocus && this.browsingContext?.isActive) {
@@ -1326,32 +1318,9 @@ const browsingContextTargetPrototype = {
   
 
 
-  _setCacheDisabled(disabled) {
-    const enable = Ci.nsIRequest.LOAD_NORMAL;
-    const disable = Ci.nsIRequest.LOAD_BYPASS_CACHE;
-
-    this.browsingContext.defaultLoadFlags = disabled ? disable : enable;
-  },
-
-  
-
-
   _setPaintFlashingEnabled(enabled) {
     const windowUtils = this.window.windowUtils;
     windowUtils.paintFlashing = enabled;
-  },
-
-  
-
-
-  _getCacheDisabled() {
-    if (!this.browsingContext) {
-      
-      return null;
-    }
-
-    const disable = Ci.nsIRequest.LOAD_BYPASS_CACHE;
-    return this.browsingContext.defaultLoadFlags === disable;
   },
 
   
