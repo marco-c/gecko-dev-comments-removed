@@ -36,6 +36,12 @@ function renderSpotlight() {
       params.primaryBtn = true;
       window.close();
     });
+
+    
+    
+    requestAnimationFrame(() => {
+      primaryBtn.focus({ preventFocusRing: true });
+    });
   }
   if (secondaryBtn) {
     secondaryBtn.addEventListener("click", () => {
