@@ -8,21 +8,12 @@ use rustc_version::{version, Version};
 
 fn main() {
     let ver = version().unwrap();
-    let mut bootstrap = false;
     let max_oom_hook_version = Version::parse("1.55.0-alpha").unwrap();
 
-    if ver >= Version::parse("1.28.0-alpha").unwrap() && ver < max_oom_hook_version {
+    if ver < max_oom_hook_version {
         println!("cargo:rustc-cfg=feature=\"oom_with_hook\"");
-        bootstrap = true;
     } else if std::env::var("MOZ_AUTOMATION").is_ok() {
         panic!("Builds on automation must use a version of rust for which we know how to hook OOM: want < {}, have {}",
                max_oom_hook_version, ver);
-    }
-
-    
-    
-    
-    if bootstrap && ver < Version::parse("1.50.0").unwrap() {
-        println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
     }
 }
