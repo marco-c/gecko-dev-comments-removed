@@ -117,44 +117,33 @@ void nsPlainTextSerializer::CurrentLine::ResetContentAndIndentationHeader() {
 }
 
 int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
-    const uint32_t aWrapColumn, const uint32_t aContentWidth,
+    const uint32_t aWrapColumn,
     mozilla::intl::LineBreaker* aLineBreaker) const {
   MOZ_ASSERT(!mContent.IsEmpty());
-  MOZ_ASSERT(aContentWidth < std::numeric_limits<int32_t>::max());
-  MOZ_ASSERT(static_cast<int32_t>(aContentWidth) ==
-             GetUnicharStringWidth(mContent));
 
   const uint32_t prefixwidth = DeterminePrefixWidth();
-  int32_t goodSpace = mContent.Length();
+  int32_t goodSpace = 0;
 
   if (aLineBreaker) {
     
     
-    uint32_t width = aContentWidth;
-    while (goodSpace > 0 && (width + prefixwidth > aWrapColumn)) {
-      goodSpace--;
-      width -= GetUnicharWidth(mContent[goodSpace]);
-    }
-
-    goodSpace++;
-
-    goodSpace =
-        aLineBreaker->Prev(mContent.get(), mContent.Length(), goodSpace);
-    if (goodSpace != NS_LINEBREAKER_NEED_MORE_TEXT &&
-        nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace - 1))) {
-      --goodSpace;  
-                    
-    }
-    if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
-      
-      
-      goodSpace =
-          (prefixwidth > aWrapColumn + 1) ? 1 : aWrapColumn - prefixwidth + 1;
-      if ((uint32_t)goodSpace < mContent.Length())
-        goodSpace = aLineBreaker->DeprecatedNext(mContent.get(),
-                                                 mContent.Length(), goodSpace);
-      if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
-        goodSpace = mContent.Length();
+    uint32_t width = 0;
+    const auto len = mContent.Length();
+    while (true) {
+      int32_t nextGoodSpace =
+          aLineBreaker->Next(mContent.get(), len, goodSpace);
+      if (nextGoodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
+        
+        break;
+      }
+      width += GetUnicharStringWidth(
+          Span(mContent.get() + goodSpace, nextGoodSpace - goodSpace));
+      if (prefixwidth + width > aWrapColumn) {
+        
+        
+        break;
+      }
+      goodSpace = nextGoodSpace;
     }
 
     return goodSpace;
@@ -1243,8 +1232,8 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
       break;
     }
 
-    const int32_t goodSpace = mCurrentLine.FindWrapIndexForContent(
-        wrapColumn, currentLineContentWidth, mLineBreaker);
+    const int32_t goodSpace =
+        mCurrentLine.FindWrapIndexForContent(wrapColumn, mLineBreaker);
 
     const int32_t contentLength = mCurrentLine.mContent.Length();
     if ((goodSpace < contentLength) && (goodSpace > 0)) {
