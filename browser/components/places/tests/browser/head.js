@@ -9,6 +9,10 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/TestUtils.jsm"
 );
 
+XPCOMUtils.defineLazyGetter(this, "gFluentStrings", function() {
+  return new Localization(["branding/brand.ftl", "browser/browser.ftl"], true);
+});
+
 if (AppConstants.TSAN) {
   
   
