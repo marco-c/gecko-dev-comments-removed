@@ -926,16 +926,8 @@ bool js::ObjectMayHaveExtraIndexedProperties(JSObject* obj) {
 
 static bool AddLengthProperty(JSContext* cx, HandleArrayObject obj) {
   
-  
-  
-  
 
-  Shape* shape = obj->lastProperty();
-  if (!shape->isEmptyShape()) {
-    MOZ_ASSERT(shape->propidRaw().isAtom(cx->names().length));
-    MOZ_ASSERT(shape->previous()->isEmptyShape());
-    return true;
-  }
+  MOZ_ASSERT(obj->empty());
 
   RootedId lengthId(cx, NameToId(cx->names().length));
   return NativeObject::addCustomDataProperty(
