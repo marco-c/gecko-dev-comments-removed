@@ -72,11 +72,18 @@ fn main() {
     }
 
     
+    if minor >= 31 {
+        println!("cargo:rustc-cfg=serde_derive");
+    }
+
+    
+    
     
     
     if minor >= 34 {
         println!("cargo:rustc-cfg=core_try_from");
         println!("cargo:rustc-cfg=num_nonzero_signed");
+        println!("cargo:rustc-cfg=systemtime_checked_add");
 
         
         

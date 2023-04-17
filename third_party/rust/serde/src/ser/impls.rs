@@ -428,11 +428,11 @@ deref_impl! {
 #[cfg(any(feature = "std", feature = "alloc"))]
 deref_impl!(<'a, T: ?Sized> Serialize for Cow<'a, T> where T: Serialize + ToOwned);
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
+/// This impl requires the [`"rc"`] Cargo feature of Serde.
+///
+/// [`"rc"`]: https://serde.rs/feature-flags.html#-features-rc
 #[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
 impl<T: ?Sized> Serialize for RcWeak<T>
 where
@@ -446,9 +446,9 @@ where
     }
 }
 
-
-
-
+/// This impl requires the [`"rc"`] Cargo feature of Serde.
+///
+/// [`"rc"`]: https://serde.rs/feature-flags.html#-features-rc
 #[cfg(all(feature = "rc", any(feature = "std", feature = "alloc")))]
 impl<T: ?Sized> Serialize for ArcWeak<T>
 where
@@ -462,7 +462,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 macro_rules! nonzero_integers {
     ( $( $T: ident, )+ ) => {
@@ -497,8 +497,8 @@ nonzero_integers! {
     NonZeroIsize,
 }
 
-
-
+// Currently 128-bit integers do not work on Emscripten targets so we need an
+// additional `#[cfg]`
 serde_if_integer128! {
     nonzero_integers! {
         NonZeroU128,
@@ -569,7 +569,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 impl<T, E> Serialize for Result<T, E>
 where
@@ -589,7 +589,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(any(core_duration, feature = "std"))]
 impl Serialize for Duration {
@@ -605,7 +605,7 @@ impl Serialize for Duration {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl Serialize for SystemTime {
@@ -624,12 +624,12 @@ impl Serialize for SystemTime {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
+/// Serialize a value that implements `Display` as a string, when that string is
+/// statically known to never have more than a constant `MAX_LEN` bytes.
+///
+/// Panics if the `Display` impl tries to write more than `MAX_LEN` bytes.
 #[cfg(feature = "std")]
 macro_rules! serialize_display_bounded_length {
     ($value:expr, $max:expr, $serializer:expr) => {{
@@ -675,6 +675,52 @@ impl Serialize for net::IpAddr {
 }
 
 #[cfg(feature = "std")]
+const DEC_DIGITS_LUT: &'static [u8] = b"\
+      0001020304050607080910111213141516171819\
+      2021222324252627282930313233343536373839\
+      4041424344454647484950515253545556575859\
+      6061626364656667686970717273747576777879\
+      8081828384858687888990919293949596979899";
+
+#[cfg(feature = "std")]
+#[inline]
+fn format_u8(mut n: u8, out: &mut [u8]) -> usize {
+    if n >= 100 {
+        let d1 = ((n % 100) << 1) as usize;
+        n /= 100;
+        out[0] = b'0' + n;
+        out[1] = DEC_DIGITS_LUT[d1];
+        out[2] = DEC_DIGITS_LUT[d1 + 1];
+        3
+    } else if n >= 10 {
+        let d1 = (n << 1) as usize;
+        out[0] = DEC_DIGITS_LUT[d1];
+        out[1] = DEC_DIGITS_LUT[d1 + 1];
+        2
+    } else {
+        out[0] = b'0' + n;
+        1
+    }
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn test_format_u8() {
+    let mut i = 0u8;
+
+    loop {
+        let mut buf = [0u8; 3];
+        let written = format_u8(i, &mut buf);
+        assert_eq!(i.to_string().as_bytes(), &buf[..written]);
+
+        match i.checked_add(1) {
+            Some(next) => i = next,
+            None => break,
+        }
+    }
+}
+
+#[cfg(feature = "std")]
 impl Serialize for net::Ipv4Addr {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -683,7 +729,14 @@ impl Serialize for net::Ipv4Addr {
         if serializer.is_human_readable() {
             const MAX_LEN: usize = 15;
             debug_assert_eq!(MAX_LEN, "101.102.103.104".len());
-            serialize_display_bounded_length!(self, MAX_LEN, serializer)
+            let mut buf = [b'.'; MAX_LEN];
+            let mut written = format_u8(self.octets()[0], &mut buf);
+            for oct in &self.octets()[1..] {
+                // Skip over delimiters that we initialized buf with
+                written += format_u8(*oct, &mut buf[written + 1..]) + 1;
+            }
+            // We've only written ASCII bytes to the buffer, so it is valid UTF-8
+            serializer.serialize_str(unsafe { str::from_utf8_unchecked(&buf[..written]) })
         } else {
             self.octets().serialize(serializer)
         }
@@ -753,10 +806,10 @@ impl Serialize for net::SocketAddrV6 {
         S: Serializer,
     {
         if serializer.is_human_readable() {
-            const MAX_LEN: usize = 47;
+            const MAX_LEN: usize = 58;
             debug_assert_eq!(
                 MAX_LEN,
-                "[1001:1002:1003:1004:1005:1006:1007:1008]:65000".len()
+                "[1001:1002:1003:1004:1005:1006:1007:1008%4294967295]:65000".len()
             );
             serialize_display_bounded_length!(self, MAX_LEN, serializer)
         } else {
@@ -765,7 +818,7 @@ impl Serialize for net::SocketAddrV6 {
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(feature = "std")]
 impl Serialize for Path {
@@ -822,9 +875,8 @@ impl Serialize for OsString {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-
-#[cfg(feature = "std")]
 impl<T> Serialize for Wrapping<T>
 where
     T: Serialize,
@@ -852,7 +904,7 @@ where
     }
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 #[cfg(all(feature = "std", std_atomic))]
 macro_rules! atomic_impl {

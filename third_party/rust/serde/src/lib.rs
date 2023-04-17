@@ -82,7 +82,9 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.116")]
+
+
+#![doc(html_root_url = "https://docs.rs/serde/1.0.126")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -118,6 +120,9 @@
         zero_prefixed_literal,
         
         enum_glob_use,
+        let_underscore_drop,
+        map_err_ignore,
+        result_unit_err,
         wildcard_imports,
         
         needless_pass_by_value,
@@ -134,7 +139,6 @@
     )
 )]
 
-#![forbid(unsafe_code)]
 #![deny(missing_docs, unused_imports)]
 
 
@@ -164,6 +168,7 @@ mod lib {
     pub use self::core::default::{self, Default};
     pub use self::core::fmt::{self, Debug, Display};
     pub use self::core::marker::{self, PhantomData};
+    pub use self::core::num::Wrapping;
     pub use self::core::ops::Range;
     pub use self::core::option::{self, Option};
     pub use self::core::result::{self, Result};
@@ -215,8 +220,6 @@ mod lib {
     #[cfg(feature = "std")]
     pub use std::io::Write;
     #[cfg(feature = "std")]
-    pub use std::num::Wrapping;
-    #[cfg(feature = "std")]
     pub use std::path::{Path, PathBuf};
     #[cfg(feature = "std")]
     pub use std::sync::{Mutex, RwLock};
@@ -265,11 +268,16 @@ pub use ser::{Serialize, Serializer};
 
 
 #[doc(hidden)]
-pub mod export;
+#[path = "private/mod.rs"]
+pub mod __private;
 
+#[allow(unused_imports)]
+use self::__private as export;
+#[allow(unused_imports)]
+use self::__private as private;
 
-#[doc(hidden)]
-pub mod private;
+#[path = "de/seed.rs"]
+mod seed;
 
 #[cfg(not(feature = "std"))]
 mod std_error;
