@@ -73,7 +73,10 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          "mutex:GetMaiAtkType\n"
-
+         
+         
+         
+         "race:fire_glxtest_process\n"
 
 
 
