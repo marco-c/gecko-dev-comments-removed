@@ -4371,6 +4371,7 @@ impl Renderer {
 
             if can_use_partial_present {
                 let mut combined_dirty_rect = DeviceRect::zero();
+                let fb_rect = DeviceRect::from_size(draw_target_dimensions.to_f32());
 
                 
                 
@@ -4382,7 +4383,14 @@ impl Renderer {
                         &tile.local_dirty_rect,
                         tile.transform_index,
                     );
-                    combined_dirty_rect = combined_dirty_rect.union(&dirty_rect);
+
+                    
+                    
+                    
+                    
+                    if let Some(dirty_rect) = dirty_rect.intersection(&fb_rect) {
+                        combined_dirty_rect = combined_dirty_rect.union(&dirty_rect);
+                    }
                 }
 
                 let combined_dirty_rect = combined_dirty_rect.round();
