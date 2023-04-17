@@ -1113,7 +1113,7 @@ static bool ExtractCharsetFromXmlDeclaration(const unsigned char* aBytes,
         
         
         if ((((char*)aBytes)[i] == 'n') && (i >= 12) &&
-            (0 == PL_strncmp("versio", (char*)(aBytes + i - 6), 6))) {
+            (0 == strncmp("versio", (char*)(aBytes + i - 6), 6))) {
           
           char q = 0;
           for (++i; i < aLen; ++i) {
@@ -1138,7 +1138,7 @@ static bool ExtractCharsetFromXmlDeclaration(const unsigned char* aBytes,
         
         
         if ((((char*)aBytes)[i] == 'g') && (i >= 25) &&
-            (0 == PL_strncmp("encodin", (char*)(aBytes + i - 7), 7))) {
+            (0 == strncmp("encodin", (char*)(aBytes + i - 7), 7))) {
           int32_t encStart = 0;
           char q = 0;
           for (++i; i < aLen; ++i) {
