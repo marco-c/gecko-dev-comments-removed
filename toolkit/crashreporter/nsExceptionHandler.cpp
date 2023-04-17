@@ -59,6 +59,7 @@
 #    define HREPORT HANDLE
 #    define PWER_SUBMIT_RESULT WER_SUBMIT_RESULT*
 #    define WER_MAX_PREFERRED_MODULES_BUFFER (256)
+#    define WER_FAULT_REPORTING_DISABLE_SNAPSHOT_HANG (256)
 #  endif               
 #  include "werapi.h"  
 #elif defined(XP_MACOSX)
