@@ -36,6 +36,7 @@
 #include "nsGfxCIID.h"
 #include "gfxContext.h"
 #include "WinUtils.h"
+#include "WinWindowOcclusionTracker.h"
 #include "nsIWidgetListener.h"
 #include "mozilla/Unused.h"
 #include "nsDebug.h"
@@ -53,6 +54,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::layers;
 using namespace mozilla::widget;
 using namespace mozilla::plugins;
+extern mozilla::LazyLogModule gWindowsLog;
 
 
 
@@ -399,15 +401,65 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   return result;
 }
 
+bool nsWindow::NeedsToTrackWindowOcclusionState() {
+  if (!WinWindowOcclusionTracker::Get()) {
+    return false;
+  }
+
+  if (mCompositorSession && mWindowType == eWindowType_toplevel) {
+    return true;
+  }
+
+  return false;
+}
+
+void nsWindow::NotifyOcclusionState(mozilla::widget::OcclusionState aState) {
+  MOZ_ASSERT(NeedsToTrackWindowOcclusionState());
+
+  bool isFullyOccluded = aState == mozilla::widget::OcclusionState::OCCLUDED;
+  
+  if (mSizeMode == nsSizeMode_Minimized) {
+    isFullyOccluded = false;
+  }
+
+  
+  
+  if (mIsFullyOccluded == isFullyOccluded) {
+    return;
+  }
+
+  mIsFullyOccluded = isFullyOccluded;
+
+  MOZ_LOG(gWindowsLog, LogLevel::Info,
+          ("nsWindow::NotifyOcclusionState() mIsFullyOccluded %d mSizeMode %d",
+           mIsFullyOccluded, mSizeMode));
+
+  if (mWidgetListener) {
+    mWidgetListener->OcclusionStateChanged(mIsFullyOccluded);
+  }
+}
+
 
 
 
 void nsWindow::CreateCompositor() {
   nsWindowBase::CreateCompositor();
 
+  if (NeedsToTrackWindowOcclusionState()) {
+    WinWindowOcclusionTracker::Get()->Enable(this, mWnd);
+  }
+
   if (mRequestFxrOutputPending) {
     GetRemoteRenderer()->SendRequestFxrOutput();
   }
+}
+
+void nsWindow::DestroyCompositor() {
+  if (NeedsToTrackWindowOcclusionState()) {
+    WinWindowOcclusionTracker::Get()->Disable(this, mWnd);
+  }
+
+  nsWindowBase::DestroyCompositor();
 }
 
 void nsWindow::RequestFxrOutput() {
