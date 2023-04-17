@@ -1537,6 +1537,25 @@ void ServiceWorkerManager::StoreRegistration(
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aPrincipal->SchemeIs("moz-extension")) {
+    RefPtr<extensions::WebExtensionPolicy> addonPolicy =
+        BasePrincipal::Cast(aPrincipal)->AddonPolicy();
+    if (!addonPolicy || !addonPolicy->Active() ||
+        (addonPolicy->TemporarilyInstalled() &&
+         !StaticPrefs::
+             dom_serviceWorkers_testing_persistTemporarilyInstalledAddons())) {
+      return;
+    }
+  }
+
   ServiceWorkerRegistrationData data;
   nsresult rv = PopulateRegistrationData(aPrincipal, aRegistration, data);
   if (NS_WARN_IF(NS_FAILED(rv))) {
