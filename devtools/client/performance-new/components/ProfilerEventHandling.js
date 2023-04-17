@@ -52,19 +52,14 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 class ProfilerEventHandling extends PureComponent {
   componentDidMount() {
-    const { perfFront, reportProfilerReady } = this.props;
+    const { perfFront, isSupportedPlatform, reportProfilerReady } = this.props;
 
     
     Promise.all([
       perfFront.isActive(),
-      perfFront.isSupportedPlatform(),
       perfFront.isLockedForPrivateBrowsing(),
     ]).then(results => {
-      const [
-        isActive,
-        isSupportedPlatform,
-        isLockedForPrivateBrowsing,
-      ] = results;
+      const [isActive, isLockedForPrivateBrowsing] = results;
 
       let recordingState = this.props.recordingState;
       
@@ -78,7 +73,7 @@ class ProfilerEventHandling extends PureComponent {
           recordingState = "available-to-record";
         }
       }
-      reportProfilerReady(isSupportedPlatform, recordingState);
+      reportProfilerReady(recordingState);
     });
 
     

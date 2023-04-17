@@ -46,10 +46,8 @@ const changeRecordingState = (exports.changeRecordingState = (
 
 
 
-
-exports.reportProfilerReady = (isSupportedPlatform, recordingState) => ({
+exports.reportProfilerReady = recordingState => ({
   type: "REPORT_PROFILER_READY",
-  isSupportedPlatform,
   recordingState,
 });
 
