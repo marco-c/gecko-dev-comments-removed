@@ -28,6 +28,7 @@
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
+#include "js/PropertyAndElement.h"    
 #include "js/PropertySpec.h"
 #include "util/Poison.h"
 #include "util/StringBuffer.h"
@@ -2769,6 +2770,69 @@ static bool CopyArrayElements(JSContext* cx, HandleObject obj, uint64_t begin,
   return true;
 }
 
+
+
+
+
+
+
+
+
+static bool GetActualStart(JSContext* cx, const CallArgs& args, uint64_t len,
+                           uint64_t* result) {
+  double relativeStart;
+  if (!ToInteger(cx, args.get(0), &relativeStart)) {
+    return false;
+  }
+  if (relativeStart < 0) {
+    *result = uint64_t(std::max(double(len) + relativeStart, 0.0));
+  } else {
+    *result = uint64_t(std::min(relativeStart, double(len)));
+  }
+  return true;
+}
+
+static uint32_t GetItemCount(const CallArgs& args) {
+  if (args.length() < 2) {
+    return 0;
+  }
+  return (args.length() - 2);
+}
+
+static bool GetActualDeleteCount(JSContext* cx, const CallArgs& args,
+                                 HandleObject obj, uint64_t len,
+                                 uint64_t actualStart, uint64_t itemCount,
+                                 uint64_t* result) {
+  if (args.length() < 1) {
+    *result = 0;
+  } else if (args.length() < 2) {
+    *result = len - actualStart;
+  } else {
+    double deleteCount;
+    if (!ToInteger(cx, args.get(1), &deleteCount)) {
+      return false;
+    }
+    *result = uint64_t(std::min(std::max(0.0, deleteCount),
+                                double(len) - double(actualStart)));
+
+    if (double(len + itemCount - *result) >= DOUBLE_INTEGRAL_PRECISION_LIMIT) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TOO_LONG_ARRAY);
+      return false;
+    }
+  }
+  MOZ_ASSERT(actualStart + *result <= len);
+
+  if (IsArraySpecies(cx, obj)) {
+    if (*result > UINT32_MAX) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_BAD_ARRAY_LENGTH);
+      return false;
+    }
+  }
+  return true;
+}
+
 static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
                               bool returnValueIsUsed) {
   AutoGeckoProfilerEntry pseudoFrame(
@@ -2789,57 +2853,26 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
   }
 
   
-  double relativeStart;
-  if (!ToInteger(cx, args.get(0), &relativeStart)) {
+  
+
+  uint64_t actualStart;
+  if (!GetActualStart(cx, args, len, &actualStart)) {
     return false;
   }
 
   
-  uint64_t actualStart;
-  if (relativeStart < 0) {
-    actualStart = std::max(len + relativeStart, 0.0);
-  } else {
-    actualStart = std::min(relativeStart, double(len));
-  }
+  
+  uint32_t itemCount = GetItemCount(args);
 
   
   uint64_t actualDeleteCount;
-  if (args.length() == 0) {
-    
-    actualDeleteCount = 0;
-  } else if (args.length() == 1) {
-    
-    actualDeleteCount = len - actualStart;
-  } else {
-    
-    double deleteCountDouble;
-    if (!ToInteger(cx, args[1], &deleteCountDouble)) {
-      return false;
-    }
-
-    
-    actualDeleteCount =
-        std::min(std::max(deleteCountDouble, 0.0), double(len - actualStart));
-
-    
-    uint32_t insertCount = args.length() - 2;
-    if (len + insertCount - actualDeleteCount >=
-        DOUBLE_INTEGRAL_PRECISION_LIMIT) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TOO_LONG_ARRAY);
-      return false;
-    }
+  if (!GetActualDeleteCount(cx, args, obj, len, actualStart, itemCount,
+                            &actualDeleteCount)) {
+    return false;
   }
-
-  MOZ_ASSERT(actualStart + actualDeleteCount <= len);
 
   RootedObject arr(cx);
   if (IsArraySpecies(cx, obj)) {
-    if (actualDeleteCount > UINT32_MAX) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_ARRAY_LENGTH);
-      return false;
-    }
     uint32_t count = uint32_t(actualDeleteCount);
 
     if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj,
@@ -2867,8 +2900,6 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
                              arr.as<ArrayObject>())) {
         return false;
       }
-
-      
     }
   } else {
     
@@ -2879,8 +2910,6 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
     
     RootedValue fromValue(cx);
     for (uint64_t k = 0; k < actualDeleteCount; k++) {
-      
-
       if (!CheckForInterrupt(cx)) {
         return false;
       }
@@ -2907,7 +2936,6 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
   }
 
   
-  uint32_t itemCount = (args.length() >= 2) ? (args.length() - 2) : 0;
   uint64_t finalLength = len - actualDeleteCount + itemCount;
 
   if (itemCount < actualDeleteCount) {
@@ -2954,14 +2982,11 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
           return false;
         }
 
-        
         if (hole) {
-          
           if (!DeletePropertyOrThrow(cx, obj, to)) {
             return false;
           }
         } else {
-          
           if (!SetArrayElement(cx, obj, to, fromValue)) {
             return false;
           }
@@ -3072,7 +3097,6 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
     }
   }
 
-  
   Value* items = args.array() + 2;
 
   
@@ -3101,6 +3125,212 @@ static bool array_splice(JSContext* cx, unsigned argc, Value* vp) {
 static bool array_splice_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
   return array_splice_impl(cx, argc, vp, false);
 }
+
+#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
+
+static ArrayObject* NewDenseArray(JSContext* cx, const CallArgs& args,
+                                  uint64_t len) {
+  RootedObject proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Array, &proto)) {
+    return nullptr;
+  }
+  return NewDensePartlyAllocatedArrayWithProto(cx, len, proto);
+}
+
+
+
+
+
+static bool array_with_spliced(JSContext* cx, unsigned argc, Value* vp) {
+  
+
+
+
+  AutoGeckoProfilerEntry pseudoFrame(
+      cx, "Array.prototype.withSpliced", JS::ProfilingCategoryPair::JS,
+      uint32_t(ProfilingStackFrame::Flags::RELEVANT_FOR_JS));
+
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  uint64_t len;
+  if (!GetLengthPropertyInlined(cx, obj, &len)) {
+    return false;
+  }
+
+  
+  
+
+
+  uint64_t actualStart;
+  if (!GetActualStart(cx, args, len, &actualStart)) {
+    return false;
+  }
+
+  
+  uint32_t insertCount = GetItemCount(args);
+
+  
+  uint64_t actualDeleteCount;
+  if (!GetActualDeleteCount(cx, args, obj, len, actualStart, insertCount,
+                            &actualDeleteCount)) {
+    return false;
+  }
+
+  
+  uint64_t newLen = len + insertCount - actualDeleteCount;
+
+  
+  RootedObject A(cx, NewDenseArray(cx, args, newLen));
+  if (!A) {
+    return false;
+  }
+
+  
+  
+  uint64_t k = 0;
+  while (k < actualStart) {
+    RootedValue kValue(cx);
+    if (!GetArrayElement(cx, obj, k, &kValue)) {
+      return false;
+    }
+    if (!SetArrayElement(cx, A, k, kValue)) {
+      return false;
+    }
+    k++;
+  }
+
+  
+
+  
+  
+  Value* items = args.array() + 2;
+
+  if (!SetArrayElements(cx, A, actualStart, insertCount, items)) {
+    return false;
+  }
+  k += insertCount;
+
+  
+  
+  while (k < newLen) {
+    uint64_t from = k + actualDeleteCount - insertCount;
+    RootedValue fromValue(cx);
+    if (!GetArrayElement(cx, obj, from, &fromValue)) {
+      return false;
+    }
+    if (!SetArrayElement(cx, A, k, fromValue)) {
+      return false;
+    }
+    k++;
+  }
+
+  
+  args.rval().setObject(*A);
+
+  return true;
+}
+
+bool IsIntegralNumber(JSContext* cx, HandleValue v, bool* result) {
+  double d;
+  if (!ToNumber(cx, v, &d)) {
+    return false;
+  }
+
+  if (mozilla::IsNaN(d) || !mozilla::IsFinite(d)) {
+    *result = false;
+    return true;
+  }
+
+  double integer = trunc(d);
+  *result = d - integer == 0;
+  return true;
+}
+
+
+
+
+
+static bool array_with_at(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  uint64_t len;
+  if (!GetLengthPropertyInlined(cx, obj, &len)) {
+    return false;
+  }
+
+  
+  int64_t index;
+  bool result;
+  if (!IsIntegralNumber(cx, args.get(0), &result)) {
+    return false;
+  }
+
+  if (!result) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+    return false;
+  }
+  if (!ToInt64(cx, args.get(0), &index)) {
+    return false;
+  }
+  
+  if (index >= int64_t(len)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+    return false;
+  }
+
+  
+  int64_t actualIndex = index;
+  if (index < 0) {
+    actualIndex = int64_t(len + index);
+  }
+
+  
+  if (actualIndex < 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+    return false;
+  }
+  
+
+  
+  RootedObject A(cx, NewDenseArray(cx, args, len));
+  if (!A) {
+    return false;
+  }
+
+  
+  for (uint64_t k = 0; k < len; k++) {
+    RootedValue fromValue(cx);
+    if (k == uint64_t(actualIndex)) {
+      fromValue = args.get(1);
+    } else {
+      if (!GetArrayElement(cx, obj, k, &fromValue)) {
+        return false;
+      }
+    }
+    if (!SetArrayElement(cx, A, k, fromValue)) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setObject(*A);
+  return true;
+}
+#endif
 
 struct SortComparatorIndexes {
   bool operator()(uint32_t a, uint32_t b, bool* lessOrEqualp) {
@@ -3635,6 +3865,16 @@ static const JSFunctionSpec array_methods[] = {
 
     JS_FS_END};
 
+#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
+static const JSFunctionSpec change_array_by_copy_methods[] = {
+    JS_SELF_HOSTED_FN("withReversed", "ArrayWithReversed", 0, 0),
+    JS_SELF_HOSTED_FN("withSorted", "ArrayWithSorted", 1, 0),
+    JS_FN("withSpliced", array_with_spliced, 2, 0),
+    JS_FN("withAt", array_with_at, 2, 0),
+
+    JS_FS_END};
+#endif
+
 static const JSFunctionSpec array_static_methods[] = {
     JS_INLINABLE_FN("isArray", array_isArray, 1, 0, ArrayIsArray),
     JS_SELF_HOSTED_FN("from", "ArrayFrom", 3, 0), JS_FN("of", array_of, 0, 0),
@@ -3883,6 +4123,21 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
       !DefineDataProperty(cx, unscopables, cx->names().values, value)) {
     return false;
   }
+
+#ifdef ENABLE_CHANGE_ARRAY_BY_COPY
+  if (cx->options().changeArrayByCopy()) {
+    if (!DefineDataProperty(cx, unscopables, cx->names().withAt, value) ||
+        !DefineDataProperty(cx, unscopables, cx->names().withReversed, value) ||
+        !DefineDataProperty(cx, unscopables, cx->names().withSorted, value) ||
+        !DefineDataProperty(cx, unscopables, cx->names().withSpliced, value)) {
+      return false;
+    }
+
+    if (!JS_DefineFunctions(cx, proto, change_array_by_copy_methods)) {
+      return false;
+    }
+  }
+#endif
 
   RootedId id(cx, SYMBOL_TO_JSID(
                       cx->wellKnownSymbols().get(JS::SymbolCode::unscopables)));
