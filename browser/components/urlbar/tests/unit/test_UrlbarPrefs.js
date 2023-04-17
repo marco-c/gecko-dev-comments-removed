@@ -40,7 +40,150 @@ add_task(function test() {
 });
 
 
-add_task(function showSearchSuggestionsFirst() {
+add_task(function makeResultBuckets_true() {
+  Assert.deepEqual(
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
+    {
+      children: [
+        
+        {
+          maxResultCount: 1,
+          children: [
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_UNIFIED_COMPLETE },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+          ],
+        },
+        
+        {
+          group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
+          maxResultCount: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
+        },
+        
+        {
+          flexChildren: true,
+          children: [
+            
+            {
+              flex: 2,
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+                {
+                  flex: 0,
+                  group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+                },
+              ],
+            },
+            
+            {
+              flex: 1,
+              children: [
+                {
+                  maxResultCount: 3,
+                  group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+                },
+                {
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                },
+                {
+                  group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+  );
+});
+
+
+add_task(function makeResultBuckets_false() {
+  Assert.deepEqual(
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: false }),
+
+    {
+      children: [
+        
+        {
+          maxResultCount: 1,
+          children: [
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_UNIFIED_COMPLETE },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
+            { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+          ],
+        },
+        
+        {
+          group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
+          maxResultCount: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
+        },
+        
+        {
+          flexChildren: true,
+          children: [
+            
+            {
+              flex: 2,
+              children: [
+                {
+                  maxResultCount: 3,
+                  group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+                },
+                {
+                  group: UrlbarUtils.RESULT_GROUP.GENERAL,
+                },
+                {
+                  group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+                },
+              ],
+            },
+            
+            {
+              flex: 1,
+              flexChildren: true,
+              children: [
+                {
+                  flex: 2,
+                  group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                },
+                {
+                  flex: 4,
+                  group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                },
+                {
+                  flex: 0,
+                  group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+  );
+});
+
+
+add_task(function showSearchSuggestionsFirst_resultBuckets() {
   
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
@@ -48,60 +191,68 @@ add_task(function showSearchSuggestionsFirst() {
     "showSearchSuggestionsFirst is true initially"
   );
   Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets", ""),
+    Services.prefs.getCharPref("browser.urlbar.resultBuckets", ""),
     "",
-    "matchBuckets is empty initially"
+    "resultBuckets is empty initially"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
-  Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-    "general:5,suggestion:Infinity",
-    "matchBuckets is updated after setting showSearchSuggestionsFirst = false"
+  Assert.ok(
+    Services.prefs.getCharPref("browser.urlbar.resultBuckets", ""),
+    "resultBuckets should exist after setting showSearchSuggestionsFirst"
+  );
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: false }),
+    "resultBuckets is updated after setting showSearchSuggestionsFirst = false"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", true);
-  Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-    "suggestion:4,general:Infinity",
-    "matchBuckets is updated after setting showSearchSuggestionsFirst = true"
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
+    "resultBuckets is updated after setting showSearchSuggestionsFirst = true"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
-  Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-    "general:5,suggestion:Infinity",
-    "matchBuckets is updated after setting showSearchSuggestionsFirst = false"
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: false }),
+    "resultBuckets is updated after setting showSearchSuggestionsFirst = false"
   );
 
   
   Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
-  Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-    "suggestion:4,general:Infinity",
-    "matchBuckets is updated immediately after clearing showSearchSuggestionsFirst"
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
+    "resultBuckets is updated immediately after clearing showSearchSuggestionsFirst"
   );
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
     true,
     "showSearchSuggestionsFirst defaults to true after clearing it"
   );
-  Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-    "suggestion:4,general:Infinity",
-    "matchBuckets remains correct updated after getting showSearchSuggestionsFirst"
+  Assert.deepEqual(
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
+    "resultBuckets remains correct after getting showSearchSuggestionsFirst"
   );
 });
 
 
+
+
+
+
+
+
+
+
 add_task(function initializeShowSearchSuggestionsFirstPref() {
-  
-  
-  
-  
   
   let tests = [
     ["suggestion:4,general:Infinity", true],
@@ -135,19 +286,27 @@ add_task(function initializeShowSearchSuggestionsFirstPref() {
   for (let [matchBuckets, expectedValue] of tests) {
     info("Running test: " + JSON.stringify({ matchBuckets, expectedValue }));
     Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
+
+    
     Services.prefs.setCharPref("browser.urlbar.matchBuckets", matchBuckets);
+
+    
     UrlbarPrefs.initializeShowSearchSuggestionsFirstPref();
+
+    
     Assert.equal(
       Services.prefs.getBoolPref("browser.urlbar.showSearchSuggestionsFirst"),
       expectedValue,
       "showSearchSuggestionsFirst has the expected value"
     );
-    Assert.equal(
-      Services.prefs.getCharPref("browser.urlbar.matchBuckets"),
-      expectedValue
-        ? "suggestion:4,general:Infinity"
-        : "general:5,suggestion:Infinity",
-      "matchBuckets value should be updated with the appropriate default"
+    Assert.deepEqual(
+      JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+      UrlbarPrefs.makeResultBuckets({
+        showSearchSuggestionsFirst: expectedValue,
+      }),
+      "resultBuckets should be updated with the appropriate default"
     );
   }
+
+  Services.prefs.clearUserPref("browser.urlbar.matchBuckets");
 });
