@@ -3325,6 +3325,21 @@ JSRuntime::getSelfHostedScriptIndexRange(js::PropertyName* name) {
 
 bool JSRuntime::cloneSelfHostedValue(JSContext* cx, HandlePropertyName name,
                                      MutableHandleValue vp) {
+  
+  
+  
+  if (auto index = getSelfHostedScriptIndexRange(name)) {
+    JSFunction* fun =
+        cx->runtime()->selfHostStencil().instantiateSelfHostedLazyFunction(
+            cx, cx->runtime()->selfHostStencilInput().atomCache, index->start,
+            name);
+    if (!fun) {
+      return false;
+    }
+    vp.setObject(*fun);
+    return true;
+  }
+
   RootedValue selfHostedValue(cx);
   getUnclonedSelfHostedValue(name, selfHostedValue.address());
 
