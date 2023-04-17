@@ -306,16 +306,23 @@ nsresult nsWindowsShellService::LaunchHTTPHandlerPane() {
 NS_IMETHODIMP
 nsWindowsShellService::SetDefaultBrowser(bool aClaimAllTypes,
                                          bool aForAllUsers) {
-  nsAutoString appHelperPath;
-  if (NS_FAILED(GetHelperPath(appHelperPath))) return NS_ERROR_FAILURE;
+  
+  
+  
+  nsresult rv = NS_OK;
+  if (!widget::WinUtils::HasPackageIdentity()) {
+    nsAutoString appHelperPath;
+    if (NS_FAILED(GetHelperPath(appHelperPath))) return NS_ERROR_FAILURE;
 
-  if (aForAllUsers) {
-    appHelperPath.AppendLiteral(" /SetAsDefaultAppGlobal");
-  } else {
-    appHelperPath.AppendLiteral(" /SetAsDefaultAppUser");
+    if (aForAllUsers) {
+      appHelperPath.AppendLiteral(" /SetAsDefaultAppGlobal");
+    } else {
+      appHelperPath.AppendLiteral(" /SetAsDefaultAppUser");
+    }
+
+    rv = LaunchHelper(appHelperPath);
   }
 
-  nsresult rv = LaunchHelper(appHelperPath);
   if (NS_SUCCEEDED(rv) && IsWin8OrLater()) {
     if (aClaimAllTypes) {
       if (IsWin10OrLater()) {
