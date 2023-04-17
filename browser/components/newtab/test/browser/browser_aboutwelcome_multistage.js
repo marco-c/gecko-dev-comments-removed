@@ -353,6 +353,7 @@ add_task(async function test_multistage_zeroOnboarding_experimentAPI() {
 
 add_task(async function test_multistage_aboutwelcome_experimentAPI() {
   const sandbox = sinon.createSandbox();
+  NimbusFeatures.aboutwelcome._sendExposureEventOnce = true;
   await setAboutWelcomePref(true);
 
   let {
@@ -482,8 +483,7 @@ add_task(async function test_multistage_aboutwelcome_experimentAPI() {
     scalars,
     "telemetry.event_counts",
     "normandy#expose#nimbus_experiment",
-    
-    2
+    1
   );
 
   await doExperimentCleanup();
