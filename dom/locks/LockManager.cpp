@@ -47,26 +47,6 @@ void LockManager::Shutdown() {
   
 }
 
-static bool HasStorageAccess(nsIGlobalObject* aGlobal) {
-  StorageAccess access;
-
-  if (NS_IsMainThread()) {
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
-    if (NS_WARN_IF(!window)) {
-      return true;
-    }
-
-    access = StorageAllowedForWindow(window);
-  } else {
-    WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-    MOZ_ASSERT(workerPrivate);
-
-    access = workerPrivate->StorageAccess();
-  }
-
-  return access > StorageAccess::eDeny;
-}
-
 static nsString GetClientId(nsIGlobalObject* aGlobal) {
   return NSID_TrimBracketsUTF16(aGlobal->GetClientInfo()->Id());
 }
@@ -137,7 +117,7 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& name,
                                                const LockOptions& options,
                                                LockGrantedCallback& callback,
                                                ErrorResult& aRv) {
-  if (!HasStorageAccess(mOwner)) {
+  if (mOwner->GetStorageAccess() <= StorageAccess::eDeny) {
     
     
     
