@@ -58,6 +58,39 @@ class RegExpStatics;
 
 
 
+enum class PlainObjectSlotsKind {
+  Slots0,
+  Slots2,
+  Slots4,
+  Slots8,
+  Slots12,
+  Slots16,
+  Limit
+};
+
+static PlainObjectSlotsKind PlainObjectSlotsKindFromAllocKind(
+    gc::AllocKind kind) {
+  switch (kind) {
+    case gc::AllocKind::OBJECT0:
+      return PlainObjectSlotsKind::Slots0;
+    case gc::AllocKind::OBJECT2:
+      return PlainObjectSlotsKind::Slots2;
+    case gc::AllocKind::OBJECT4:
+      return PlainObjectSlotsKind::Slots4;
+    case gc::AllocKind::OBJECT8:
+      return PlainObjectSlotsKind::Slots8;
+    case gc::AllocKind::OBJECT12:
+      return PlainObjectSlotsKind::Slots12;
+    case gc::AllocKind::OBJECT16:
+      return PlainObjectSlotsKind::Slots16;
+    default:
+      break;
+  }
+  MOZ_CRASH("Invalid kind");
+}
+
+
+
 
 class GlobalObjectData {
   friend class js::GlobalObject;
@@ -148,6 +181,13 @@ class GlobalObjectData {
 
   
   HeapPtr<Shape*> arrayShapeWithDefaultProto;
+
+  
+  
+  using PlainObjectShapeArray =
+      mozilla::EnumeratedArray<PlainObjectSlotsKind,
+                               PlainObjectSlotsKind::Limit, HeapPtr<Shape*>>;
+  PlainObjectShapeArray plainObjectShapesWithDefaultProto;
 
   
   UniquePtr<RegExpStatics> regExpStatics;
@@ -974,6 +1014,19 @@ class GlobalObject : public NativeObject {
     return createArrayShapeWithDefaultProto(cx);
   }
   static Shape* createArrayShapeWithDefaultProto(JSContext* cx);
+
+  static Shape* getPlainObjectShapeWithDefaultProto(JSContext* cx,
+                                                    gc::AllocKind kind) {
+    PlainObjectSlotsKind slotsKind = PlainObjectSlotsKindFromAllocKind(kind);
+    Shape* shape =
+        cx->global()->data().plainObjectShapesWithDefaultProto[slotsKind];
+    if (MOZ_LIKELY(shape)) {
+      return shape;
+    }
+    return createPlainObjectShapeWithDefaultProto(cx, kind);
+  }
+  static Shape* createPlainObjectShapeWithDefaultProto(JSContext* cx,
+                                                       gc::AllocKind kind);
 
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
