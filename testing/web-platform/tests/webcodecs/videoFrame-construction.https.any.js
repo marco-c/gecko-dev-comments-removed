@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+test(t => {
+  testBufferConstructedI420Frame('Uint8Array(SharedArrayBuffer)');
+}, 'Test Uint8Array(SharedArrayBuffer) constructed I420 VideoFrame');
