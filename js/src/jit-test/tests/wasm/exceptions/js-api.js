@@ -62,6 +62,22 @@ assertErrorMessage(
 );
 
 
+{
+  let params = [
+    [],
+    ["i32"],
+    ["i32", "i64"],
+    ["f32", "externref"],
+    ["i32", "i64", "f32", "f64"],
+  ];
+
+  for (const arg of params) {
+    const tag = new WebAssembly.Tag({ parameters: arg });
+    assertEqArray(tag.type().parameters, arg);
+  }
+}
+
+
 assertErrorMessage(
   () => WebAssembly.Exception(),
   TypeError,
