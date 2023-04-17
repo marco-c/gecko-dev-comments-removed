@@ -263,10 +263,17 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
       content->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
   const SVGAnimatedLength& height =
       content->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT];
-
   if (!width.IsPercentage() && !height.IsPercentage()) {
-    return AspectRatio::FromSize(width.GetAnimValue(content),
-                                 height.GetAnimValue(content));
+    
+    
+    
+    
+    
+    const float w = width.GetAnimValue(content);
+    const float h = height.GetAnimValue(content);
+    if (w > 0.0f && h > 0.0f) {
+      return AspectRatio::FromSize(w, h);
+    }
   }
 
   SVGViewElement* viewElement = content->GetCurrentViewElement();
