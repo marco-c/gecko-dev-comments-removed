@@ -167,20 +167,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
   static void UpdateSystemCaretFor(RemoteAccessible* aProxy,
                                    const LayoutDeviceIntRect& aCaretRect);
 
-  
-
-
-
-
-
-  void AssociateCOMObjectForDisconnection(IUnknown* aObject) {
-    
-    
-    if (XRE_IsContentProcess()) {
-      mAssociatedCOMObjectsForDisconnection.AppendElement(aObject);
-    }
-  }
-
  private:
   static void UpdateSystemCaretFor(HWND aCaretWnd,
                                    const LayoutDeviceIntRect& aCaretRect);
@@ -268,8 +254,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
   };
 
   static StaticAutoPtr<nsTArray<HandlerControllerData>> sHandlerControllers;
-
-  nsTArray<RefPtr<IUnknown>> mAssociatedCOMObjectsForDisconnection;
 };
 
 static inline AccessibleWrap* WrapperFor(const RemoteAccessible* aProxy) {

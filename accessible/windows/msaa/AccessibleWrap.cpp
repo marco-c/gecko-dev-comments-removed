@@ -44,7 +44,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ReverseIterator.h"
 #include "mozilla/mscom/AsyncInvoker.h"
-#include "mozilla/mscom/Interceptor.h"
 
 #include "oleacc.h"
 
@@ -81,37 +80,7 @@ ITypeInfo* AccessibleWrap::gTypeInfo = nullptr;
 NS_IMPL_ISUPPORTS_INHERITED0(AccessibleWrap, LocalAccessible)
 
 void AccessibleWrap::Shutdown() {
-  if (mID != kNoID) {
-    auto doc = static_cast<DocAccessibleWrap*>(mDoc.get());
-    
-    
-    if (doc) {
-      doc->RemoveID(mID);
-    }
-  }
-
-  if (XRE_IsContentProcess()) {
-    
-    
-    
-    
-    
-    
-    IUnknown* unk = static_cast<IAccessible*>(this);
-    mscom::Interceptor::DisconnectRemotesForTarget(unk);
-    
-    
-    
-    
-    
-    unk = static_cast<IAccessibleHyperlink*>(this);
-    mscom::Interceptor::DisconnectRemotesForTarget(unk);
-    for (auto& assocUnk : mAssociatedCOMObjectsForDisconnection) {
-      mscom::Interceptor::DisconnectRemotesForTarget(assocUnk);
-    }
-    mAssociatedCOMObjectsForDisconnection.Clear();
-  }
-
+  MsaaShutdown();
   LocalAccessible::Shutdown();
 }
 

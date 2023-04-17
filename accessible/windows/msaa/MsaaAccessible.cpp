@@ -7,6 +7,7 @@
 #include "MsaaAccessible.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/mscom/Interceptor.h"
 #include "sdnAccessible.h"
 
 using namespace mozilla;
@@ -19,6 +20,39 @@ MsaaAccessible::MsaaAccessible() : mID(kNoID) {}
 MsaaAccessible::~MsaaAccessible() {
   if (mID != kNoID) {
     sIDGen.ReleaseID(WrapNotNull(this));
+  }
+}
+
+void MsaaAccessible::MsaaShutdown() {
+  if (mID != kNoID) {
+    auto doc = static_cast<DocAccessibleWrap*>(LocalAcc()->Document());
+    
+    
+    if (doc) {
+      doc->RemoveID(mID);
+    }
+  }
+
+  if (XRE_IsContentProcess()) {
+    
+    
+    
+    
+    
+    
+    IUnknown* unk = static_cast<IAccessible*>(this);
+    mscom::Interceptor::DisconnectRemotesForTarget(unk);
+    
+    
+    
+    
+    
+    unk = static_cast<IAccessibleHyperlink*>(this);
+    mscom::Interceptor::DisconnectRemotesForTarget(unk);
+    for (auto& assocUnk : mAssociatedCOMObjectsForDisconnection) {
+      mscom::Interceptor::DisconnectRemotesForTarget(assocUnk);
+    }
+    mAssociatedCOMObjectsForDisconnection.Clear();
   }
 }
 

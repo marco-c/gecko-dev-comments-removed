@@ -13,6 +13,7 @@
 #include "ia2AccessibleValue.h"
 #include "mozilla/a11y/MsaaIdGenerator.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace a11y {
@@ -45,6 +46,22 @@ class MsaaAccessible : public ia2Accessible,
   [[nodiscard]] already_AddRefed<IAccessible> GetIAccessibleFor(
       const VARIANT& aVarChild, bool* aIsDefunct);
 
+  
+
+
+
+
+
+  void AssociateCOMObjectForDisconnection(IUnknown* aObject) {
+    
+    
+    if (XRE_IsContentProcess()) {
+      mAssociatedCOMObjectsForDisconnection.AppendElement(aObject);
+    }
+  }
+
+  void MsaaShutdown();
+
  protected:
   virtual ~MsaaAccessible();
 
@@ -60,6 +77,8 @@ class MsaaAccessible : public ia2Accessible,
 
   [[nodiscard]] already_AddRefed<IAccessible> GetRemoteIAccessibleFor(
       const VARIANT& aVarChild);
+
+  nsTArray<RefPtr<IUnknown>> mAssociatedCOMObjectsForDisconnection;
 };
 
 }  
