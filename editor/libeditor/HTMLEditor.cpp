@@ -1031,14 +1031,16 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
         break;
       }
 
-      Element* blockParent = HTMLEditUtils::GetInclusiveAncestorBlockElement(
-          *startContainer->AsContent());
-      if (!blockParent) {
+      const Element* editableBlockElement =
+          HTMLEditUtils::GetInclusiveAncestorElement(
+              *startContainer->AsContent(),
+              HTMLEditUtils::ClosestEditableBlockElement);
+      if (!editableBlockElement) {
         break;
       }
 
       
-      if (HTMLEditUtils::IsAnyTableElement(blockParent)) {
+      if (HTMLEditUtils::IsAnyTableElement(editableBlockElement)) {
         EditActionResult result = HandleTabKeyPressInTable(aKeyboardEvent);
         if (result.Failed()) {
           NS_WARNING("HTMLEditor::HandleTabKeyPressInTable() failed");
@@ -1055,7 +1057,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       }
 
       
-      if (HTMLEditUtils::IsListItem(blockParent)) {
+      if (HTMLEditUtils::IsListItem(editableBlockElement)) {
         aKeyboardEvent->PreventDefault();
         if (!aKeyboardEvent->IsShift()) {
           nsresult rv = IndentAsAction();
