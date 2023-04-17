@@ -135,12 +135,12 @@ add_task(async function themeUnregistration() {
 
   is(
     gDevTools.getTheme(),
-    gDevTools.getAutoTheme(),
+    LIGHT_THEME_NAME,
     "getTheme returns the expected theme"
   );
   is(
     eventsRecorded.pop(),
-    gDevTools.getAutoTheme(),
+    LIGHT_THEME_NAME,
     "theme-changed fired with the expected theme"
   );
   ok(
@@ -152,9 +152,11 @@ add_task(async function themeUnregistration() {
   const themeBox = doc.getElementById("devtools-theme-box");
 
   
-  ok(
-    themeBox.querySelector(`#devtools-theme-box [value=auto]`).checked,
-    `auto theme must be selected`
+  is(
+    themeBox.querySelector(`#devtools-theme-box [value=${LIGHT_THEME_NAME}]`)
+      .checked,
+    true,
+    `${LIGHT_THEME_NAME} theme must be selected`
   );
 
   gDevTools.off("theme-changed", onThemeChanged);
