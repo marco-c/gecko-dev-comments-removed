@@ -221,6 +221,8 @@ class EmbedderPort {
 class GeckoViewConnection {
   constructor(sender, target, nativeApp, allowContentMessaging) {
     this.sender = sender;
+    
+    sender.extensionId = sender.id;
     this.target = target;
     this.nativeApp = nativeApp;
     this.allowContentMessaging = allowContentMessaging;
@@ -263,7 +265,6 @@ class GeckoViewConnection {
       sender: this.sender,
       data,
       portId,
-      extensionId: this.sender.id,
       nativeApp: this.nativeApp,
     };
 
