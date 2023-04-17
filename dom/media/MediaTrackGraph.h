@@ -1048,10 +1048,6 @@ class MediaTrackGraph {
       TrackRate aSampleRate, nsPIDOMWindowInner* aWindowId);
 
   
-  
-  AbstractThread* AbstractMainThread();
-
-  
   void ForceShutDown();
 
   virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
