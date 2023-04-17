@@ -417,6 +417,12 @@ interface nsIContentPolicy : nsISupports
 
 
 
+    TYPE_UA_FONT = 55,
+
+    
+
+
+
 
 
 
@@ -569,6 +575,7 @@ enum class ExtContentPolicyType : uint8_t {
   TYPE_WEB_MANIFEST = nsIContentPolicy::TYPE_WEB_MANIFEST,
   TYPE_SAVEAS_DOWNLOAD = nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
   TYPE_SPECULATIVE = nsIContentPolicy::TYPE_SPECULATIVE,
+  TYPE_UA_FONT = nsIContentPolicy::TYPE_UA_FONT,
 };
 
 typedef ExtContentPolicyType ExtContentPolicy;
