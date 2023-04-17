@@ -10,6 +10,8 @@ pub struct Instance<'a> {
     
     pub id: Option<ast::Id<'a>>,
     
+    pub name: Option<ast::NameAnnotation<'a>>,
+    
     
     pub exports: ast::InlineExport<'a>,
     
@@ -48,6 +50,7 @@ impl<'a> Parse<'a> for Instance<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::instance>()?.0;
         let id = parser.parse()?;
+        let name = parser.parse()?;
         let exports = parser.parse()?;
 
         let kind = if let Some(import) = parser.parse()? {
@@ -70,6 +73,7 @@ impl<'a> Parse<'a> for Instance<'a> {
         Ok(Instance {
             span,
             id,
+            name,
             exports,
             kind,
         })
