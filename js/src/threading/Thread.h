@@ -217,7 +217,7 @@ class ThreadTrampoline {
     
     createMutex.lock();
     createMutex.unlock();
-    f(mozilla::Get<Indices>(args)...);
+    f(std::move(mozilla::Get<Indices>(args))...);
   }
 };
 
