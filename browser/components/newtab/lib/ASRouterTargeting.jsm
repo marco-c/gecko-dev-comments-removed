@@ -743,9 +743,6 @@ this.ASRouterTargeting = {
           return result.value;
         }
       }
-      
-      
-      targetingContext.setTelemetrySource(message.id);
       result = await targetingContext.evalWithDefault(message.targeting);
       if (shouldCache) {
         jexlEvaluationCache.set(message.targeting, {
