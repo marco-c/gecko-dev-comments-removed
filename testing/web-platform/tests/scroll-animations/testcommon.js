@@ -90,7 +90,7 @@ function createScrollLinkedAnimationWithTiming(test, timing, timeline) {
     new KeyframeEffect(createDiv(test), KEYFRAMES, timing), timeline);
 }
 
-function assert_approx_equals_or_null(actual, expected, tolerance, name){
+function assert_approx_equals_or_null(actual, expected, tolerance, name) {
   if (actual === null || expected === null){
     assert_equals(actual, expected, name);
   }
@@ -99,7 +99,10 @@ function assert_approx_equals_or_null(actual, expected, tolerance, name){
   }
 }
 
-function assert_percents_equal(actual, expected, description){
+function assert_percents_approx_equal(actual, expected, maxScroll,
+                                      description) {
+  
+  const tolerance = 0.5 / maxScroll * 100;
   assert_equals(actual.unit, "percent", `'actual' unit type must be ` +
       `'percent' for "${description}"`);
   assert_true(actual instanceof CSSUnitValue, `'actual' must be of type ` +
@@ -109,12 +112,22 @@ function assert_percents_equal(actual, expected, description){
     
     assert_equals(expected.unit, "percent", `'expected' unit type must be ` +
         `'percent' for "${description}"`);
-    assert_approx_equals(actual.value, expected.value, 0.01, `values do not ` +
-        `match for "${description}"`);
+    assert_approx_equals(actual.value, expected.value, tolerance,
+        `values do not match for "${description}"`);
   } else if (typeof expected, "number"){
-    assert_approx_equals(actual.value, expected, 0.01, `values do not match ` +
-        `for "${description}"`);
+    assert_approx_equals(actual.value, expected, tolerance,
+        `values do not match for "${description}"`);
   }
+}
+
+function assert_percents_equal(actual, expected, description) {
+  
+  
+  
+  
+  const defaultScrollRange = 400;
+  return assert_percents_approx_equal(actual, expected, defaultScrollRange,
+                                      description);
 }
 
 
