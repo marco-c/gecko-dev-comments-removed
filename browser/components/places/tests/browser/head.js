@@ -13,33 +13,6 @@ XPCOMUtils.defineLazyGetter(this, "gFluentStrings", function() {
   return new Localization(["branding/brand.ftl", "browser/browser.ftl"], true);
 });
 
-if (AppConstants.TSAN) {
-  
-  
-  
-  
-  
-  const originalWaitForCondition = TestUtils.waitForCondition;
-  TestUtils.waitForCondition = async function(
-    condition,
-    msg,
-    interval = 100,
-    maxTries = 50
-  ) {
-    
-    const { setTimeout } = ChromeUtils.import(
-      "resource://gre/modules/Timer.jsm"
-    );
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    return originalWaitForCondition(condition, msg, interval, maxTries);
-  };
-  registerCleanupFunction(function() {
-    TestUtils.waitForCondition = originalWaitForCondition;
-  });
-}
-
 function openLibrary(callback, aLeftPaneRoot) {
   let library = window.openDialog(
     "chrome://browser/content/places/places.xhtml",

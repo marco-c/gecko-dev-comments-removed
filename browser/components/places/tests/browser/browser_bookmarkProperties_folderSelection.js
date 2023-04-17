@@ -156,6 +156,11 @@ add_task(async function test_selectBookmarksMenu() {
     win
   );
 
+  
+  
+  
+  
+  await new Promise(r => setTimeout(r, 100));
   await TestUtils.waitForCondition(
     () =>
       menuList.getAttribute("selectedGuid") == PlacesUtils.bookmarks.menuGuid,
