@@ -74,7 +74,7 @@ nsresult TextEditor::InitEditorContentAndSelection() {
     nsresult rv = EnsurePaddingBRElementInMultilineEditor();
     if (NS_FAILED(rv)) {
       NS_WARNING(
-          "TextEditor::EnsurePaddingBRElementInMultilineEditor() failed");
+          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
       return rv;
     }
   }
@@ -159,7 +159,7 @@ nsresult TextEditor::OnEndHandlingTopLevelEditSubAction() {
     if (!IsSingleLineEditor() &&
         NS_FAILED(rv = EnsurePaddingBRElementInMultilineEditor())) {
       NS_WARNING(
-          "TextEditor::EnsurePaddingBRElementInMultilineEditor() failed");
+          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
       break;
     }
 
@@ -887,55 +887,6 @@ EditActionResult TextEditor::ComputeValueFromTextNodeAndBRElement(
   
   textNode->GetData(aValue);
   return EditActionHandled();
-}
-
-nsresult TextEditor::EnsurePaddingBRElementInMultilineEditor() {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(IsPlaintextEditor());
-  MOZ_ASSERT(!IsSingleLineEditor());
-
-  Element* anonymousDivElement = GetRoot();
-  if (NS_WARN_IF(!anonymousDivElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  
-  if (NS_WARN_IF(!anonymousDivElement->GetLastChild())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<HTMLBRElement> brElement =
-      HTMLBRElement::FromNode(anonymousDivElement->GetLastChild());
-  if (!brElement) {
-    AutoTransactionsConserveSelection dontChangeMySelection(*this);
-    EditorDOMPoint endOfAnonymousDiv(
-        EditorDOMPoint::AtEndOf(*anonymousDivElement));
-    CreateElementResult createPaddingBRResult =
-        InsertPaddingBRElementForEmptyLastLineWithTransaction(
-            endOfAnonymousDiv);
-    NS_WARNING_ASSERTION(
-        createPaddingBRResult.Succeeded(),
-        "EditorBase::InsertPaddingBRElementForEmptyLastLineWithTransaction() "
-        "failed");
-    return createPaddingBRResult.Rv();
-  }
-
-  
-  
-  
-  if (!brElement->IsPaddingForEmptyEditor()) {
-    return NS_OK;
-  }
-
-  
-  brElement->UnsetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
-  brElement->SetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
-
-  return NS_OK;
 }
 
 EditActionResult TextEditor::MaybeTruncateInsertionStringForMaxLength(
