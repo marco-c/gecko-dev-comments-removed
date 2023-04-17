@@ -629,12 +629,6 @@ var Impl = {
       return Promise.reject(new Error("Invalid payload type submitted."));
     }
 
-    
-    
-    if (aType == "sync" && aPayload.why == "shutdown") {
-      Telemetry.scalarSet("telemetry.sync_shutdown_ping_sent", true);
-    }
-
     let promise = this._submitPingLogic(aType, aPayload, aOptions);
     this._trackPendingPingTask(promise);
     return promise;
