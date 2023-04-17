@@ -1380,18 +1380,6 @@ impl<J> ClipRegion<ComplexTranslateIter<J>> {
     }
 }
 
-impl ClipRegion<Option<ComplexClipRegion>> {
-    pub fn create_for_clip_node_with_local_clip(
-        local_clip: &LayoutRect,
-        reference_frame_relative_offset: &LayoutVector2D
-    ) -> Self {
-        ClipRegion {
-            main: local_clip.translate(*reference_frame_relative_offset),
-            complex_clips: None,
-        }
-    }
-}
-
 
 
 
