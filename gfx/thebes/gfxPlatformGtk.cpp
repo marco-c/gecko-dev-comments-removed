@@ -862,6 +862,12 @@ class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
         Window root = gdk_x11_get_default_root_xwindow();
         XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
 
+        
+        
+        
+        
+        highestRefreshRate -= 1.0;
+
         for (int i = 0; i < res->noutput; i++) {
           XRROutputInfo* outputInfo =
               XRRGetOutputInfo(dpy, res, res->outputs[i]);
