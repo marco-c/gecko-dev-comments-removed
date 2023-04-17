@@ -148,7 +148,7 @@ class LinkHandlerChild extends JSWindowActorChild {
 
             
             
-            let re = /^(?:https?|ftp):/i;
+            let re = /^https?/i;
             if (
               type == "application/opensearchdescription+xml" &&
               link.title &&
