@@ -188,6 +188,7 @@ class VirtualenvManager(VirtualenvHelper):
         
         
         
+        
         existing_metadata = MozVirtualenvMetadata.from_path(self._metadata.file_path)
         if existing_metadata != self._metadata:
             return False
@@ -304,9 +305,7 @@ class VirtualenvManager(VirtualenvHelper):
                 % (self.virtualenv_root, result)
             )
 
-        self._metadata.write()
         self._disable_pip_outdated_warning()
-
         return self.virtualenv_root
 
     def _requirements(self):
@@ -424,6 +423,7 @@ class VirtualenvManager(VirtualenvHelper):
             raise Exception("Error populating virtualenv.")
 
         os.utime(self.activate_path, None)
+        self._metadata.write()
 
         return self.virtualenv_root
 
