@@ -426,7 +426,10 @@ class Page extends Domain {
 
 
 
-  async handleJavaScriptDialog({ accept, promptText }) {
+
+  async handleJavaScriptDialog(options = {}) {
+    const { accept, promptText } = options;
+
     if (!this.enabled) {
       throw new Error("Page domain is not enabled");
     }

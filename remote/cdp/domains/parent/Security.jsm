@@ -32,7 +32,16 @@ class Security extends Domain {
     this.setIgnoreCertificateErrors({ ignore: false });
   }
 
-  setIgnoreCertificateErrors({ ignore }) {
+  
+
+
+
+
+
+
+  setIgnoreCertificateErrors(options = {}) {
+    const { ignore } = options;
+
     if (ignore) {
       
       
