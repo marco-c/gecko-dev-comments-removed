@@ -1396,25 +1396,32 @@ BrowserGlue.prototype = {
       
       
       
-      const kMonochromaticThemeID = "firefox-monochromatic-purple@mozilla.org";
-      AddonManager.maybeInstallBuiltinAddon(
-        kMonochromaticThemeID,
-        "1.0",
-        "resource://builtin-themes/monochromatic-purple/"
-      );
-      AsyncShutdown.profileChangeTeardown.addBlocker(
-        "Uninstall Prototype Monochromatic Theme",
-        async () => {
-          try {
-            let addon = await AddonManager.getAddonByID(kMonochromaticThemeID);
-            await addon.uninstall();
-          } catch (e) {
-            Cu.reportError(
-              "Failed to uninstall firefox-monochromatic-purple on shutdown"
-            );
+      const kMonochromaticThemeList = [
+        {
+          id: "firefox-lush-bold@mozilla.org",
+          version: "1.0",
+          path: "lush/bold/",
+        },
+      ];
+      for (let { id, version, path } of kMonochromaticThemeList) {
+        AddonManager.maybeInstallBuiltinAddon(
+          id,
+          version,
+          `resource://builtin-themes/monochromatic/${path}`
+        );
+
+        AsyncShutdown.profileChangeTeardown.addBlocker(
+          "Uninstall Monochromatic Theme",
+          async () => {
+            try {
+              let addon = await AddonManager.getAddonByID(id);
+              await addon.uninstall();
+            } catch (e) {
+              Cu.reportError(`Failed to uninstall ${id} on shutdown`);
+            }
           }
-        }
-      );
+        );
+      }
     }
 
     if (AppConstants.MOZ_NORMANDY) {
@@ -3315,7 +3322,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 117;
+    const UI_VERSION = 118;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3941,6 +3948,18 @@ BrowserGlue.prototype = {
       
       
       UrlbarPrefs.migrateResultBuckets();
+    }
+
+    if (currentUIVersion < 118 && AppConstants.NIGHTLY_BUILD) {
+      
+      (async () => {
+        let addon = await AddonManager.getAddonByID(
+          "firefox-monochromatic-purple@mozilla.org"
+        );
+        if (addon) {
+          addon.uninstall().catch(Cu.reportError);
+        }
+      })();
     }
 
     
