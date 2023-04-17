@@ -4795,9 +4795,9 @@ nsDocShell::GetVisibility(bool* aVisibility) {
 }
 
 void nsDocShell::ActivenessMaybeChanged() {
-  const bool isActive = mBrowsingContext->IsActive();
+  bool isActive = mBrowsingContext->IsActive();
   if (RefPtr<PresShell> presShell = GetPresShell()) {
-    presShell->ActivenessMaybeChanged();
+    presShell->SetIsActive(isActive);
   }
 
   
@@ -8064,6 +8064,7 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
   }
 
   nscolor bgcolor = NS_RGBA(0, 0, 0, 0);
+  bool isActive = false;
   
   nsCOMPtr<nsIContentViewer> contentViewer = mContentViewer;
   if (contentViewer) {
@@ -8075,6 +8076,7 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
     
     if (PresShell* presShell = contentViewer->GetPresShell()) {
       bgcolor = presShell->GetCanvasBackground();
+      isActive = presShell->IsActive();
     }
 
     contentViewer->Close(mSavingOldViewer ? mOSHE.get() : nullptr);
@@ -8119,7 +8121,9 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
   
   if (RefPtr<PresShell> presShell = mContentViewer->GetPresShell()) {
     presShell->SetCanvasBackground(bgcolor);
-    presShell->ActivenessMaybeChanged();
+    if (isActive) {
+      presShell->SetIsActive(isActive);
+    }
   }
 
   
