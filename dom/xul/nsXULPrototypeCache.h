@@ -16,6 +16,8 @@
 #include "nsIStorageStream.h"
 
 #include "mozilla/scache/StartupCache.h"
+#include "js/experimental/JSStencil.h"
+#include "mozilla/RefPtr.h"
 
 class nsIHandleReportCallback;
 namespace mozilla {
@@ -56,8 +58,8 @@ class nsXULPrototypeCache : public nsIObserver {
   nsXULPrototypeDocument* GetPrototype(nsIURI* aURI);
   nsresult PutPrototype(nsXULPrototypeDocument* aDocument);
 
-  JSScript* GetScript(nsIURI* aURI);
-  nsresult PutScript(nsIURI* aURI, JS::Handle<JSScript*> aScriptObject);
+  JS::Stencil* GetStencil(nsIURI* aURI);
+  nsresult PutStencil(nsIURI* aURI, JS::Stencil* aStencil);
 
   
 
@@ -81,8 +83,6 @@ class nsXULPrototypeCache : public nsIObserver {
   static void ReleaseGlobals() { NS_IF_RELEASE(sInstance); }
 
   void MarkInCCGeneration(uint32_t aGeneration);
-  void MarkInGC(JSTracer* aTrc);
-  void FlushScripts();
 
   static void CollectMemoryReports(nsIHandleReportCallback* aHandleReport,
                                    nsISupports* aData);
@@ -92,26 +92,22 @@ class nsXULPrototypeCache : public nsIObserver {
                                           void** aResult);
 
   nsXULPrototypeCache();
-  virtual ~nsXULPrototypeCache();
+  virtual ~nsXULPrototypeCache() = default;
 
   static nsXULPrototypeCache* sInstance;
 
   nsRefPtrHashtable<nsURIHashKey, nsXULPrototypeDocument>
       mPrototypeTable;  
 
-  class ScriptHashKey : public nsURIHashKey {
+  class StencilHashKey : public nsURIHashKey {
    public:
-    explicit ScriptHashKey(const nsIURI* aKey) : nsURIHashKey(aKey) {}
-    ScriptHashKey(ScriptHashKey&&) = default;
+    explicit StencilHashKey(const nsIURI* aKey) : nsURIHashKey(aKey) {}
+    StencilHashKey(StencilHashKey&&) = default;
 
-    
-    
-    enum { ALLOW_MEMMOVE = false };
-
-    JS::Heap<JSScript*> mScript;
+    RefPtr<JS::Stencil> mStencil;
   };
 
-  nsTHashtable<ScriptHashKey> mScriptTable;
+  nsTHashtable<StencilHashKey> mStencilTable;
 
   
   nsTHashtable<nsURIHashKey> mStartupCacheURITable;
