@@ -203,6 +203,16 @@ class CCGCScheduler {
   
   void NoteWontGC();
 
+  
+  
+  void NoteCCBegin(TimeStamp aWhen);
+
+  
+  
+  
+  
+  void NoteCCEnd(TimeStamp aWhen);
+
   void NoteGCSliceEnd(TimeDuration aSliceDuration) {
     if (mMajorGCReason == JS::GCReason::NO_REASON) {
       
@@ -262,16 +272,7 @@ class CCGCScheduler {
   }
 
   
-  
-  
-  
-  void NoteCCEnd(TimeStamp aWhen) {
-    mLastCCEndTime = aWhen;
-    mNeedsFullCC = false;
-
-    
-    mNeedsGCAfterCC = false;
-  }
+  bool IsCollectingCycles() const { return mIsCollectingCycles; }
 
   
   
@@ -432,6 +433,7 @@ class CCGCScheduler {
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
   bool mIsCompactingOnUserInactive = false;
+  bool mIsCollectingCycles = false;
   bool mUserIsActive = true;
 
  public:
