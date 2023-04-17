@@ -410,7 +410,8 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
       UniquePtr<JsepCodecDescription> clone(codec->Clone());
       if (clone->Negotiate(fmt, remote, isOffer)) {
         
-        codec->mDefaultPt = clone->mDefaultPt;
+        
+        codec->mDefaultPt = fmt;
 
         
         if (codec->mType == SdpMediaSection::kVideo) {
