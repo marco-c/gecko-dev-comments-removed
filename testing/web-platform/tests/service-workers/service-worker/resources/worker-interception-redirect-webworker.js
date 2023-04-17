@@ -5,7 +5,8 @@
 
 
 
-
+const resources_url = new URL("/service-workers/service-worker/resources/",
+                              self.location);
 
 
 
@@ -15,42 +16,29 @@
 
 let greeting = '%GREETING_TEXT%';
 if (!greeting)
-  greeting = 'the worker script was served from network';
+  greeting = 'the shared worker script was served from network';
 
 
 
 let echo_output;
 const import_scripts_msg = encodeURIComponent(
     'importScripts: served from network');
-let import_scripts_greeting = 'not set';
-try {
-  importScripts(`import-scripts-echo.py?msg=${import_scripts_msg}`);
-  import_scripts_greeting = echo_output;
-} catch(e) {
-  import_scripts_greeting = 'importScripts failed';
-}
+const import_scripts_url =
+    new URL(`import-scripts-echo.py?msg=${import_scripts_msg}`, resources_url);
+importScripts(import_scripts_url);
+const import_scripts_greeting = echo_output;
 
-async function runTest(port) {
+self.onconnect = async function(e) {
+  const port = e.ports[0];
+  port.start();
   port.postMessage(greeting);
 
   port.postMessage(import_scripts_greeting);
 
-  const response = await fetch('simple.txt');
+  const fetch_url = new URL('simple.txt', resources_url);
+  const response = await fetch(fetch_url);
   const text = await response.text();
   port.postMessage('fetch(): ' + text);
 
   port.postMessage(self.location.href);
-}
-
-if ('DedicatedWorkerGlobalScope' in self &&
-    self instanceof DedicatedWorkerGlobalScope) {
-  runTest(self);
-} else if (
-    'SharedWorkerGlobalScope' in self &&
-    self instanceof SharedWorkerGlobalScope) {
-  self.onconnect = function(e) {
-    const port = e.ports[0];
-    port.start();
-    runTest(port);
-  };
-}
+};

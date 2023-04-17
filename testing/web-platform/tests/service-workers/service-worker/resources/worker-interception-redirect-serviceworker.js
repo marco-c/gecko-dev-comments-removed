@@ -27,19 +27,14 @@ self.addEventListener('fetch', evt => {
   
   if (evt.request.url.indexOf('webworker.py') != -1) {
     const greeting = encodeURIComponent(`${name} saw the request for the worker script`);
-    
-    
-    
-    evt.respondWith(fetch(`subdir/worker_interception_redirect_webworker.py?greeting=${greeting}`));
+    evt.respondWith(fetch(`worker_interception_redirect_webworker.py?greeting=${greeting}`));
     return;
   }
-
-  const path = (new URL(evt.request.url)).pathname;
 
   
   
   if (evt.request.url.indexOf('import-scripts-echo.py') != -1) {
-    const msg = encodeURIComponent(`${name} saw importScripts from the worker: ${path}`);
+    const msg = encodeURIComponent(`${name} saw importScripts from the worker`);
     evt.respondWith(fetch(`import-scripts-echo.py?msg=${msg}`));
     return;
   }
@@ -47,7 +42,7 @@ self.addEventListener('fetch', evt => {
   
   
   if (evt.request.url.indexOf('simple.txt') != -1) {
-    evt.respondWith(new Response(`${name} saw the fetch from the worker: ${path}`));
+    evt.respondWith(new Response(`${name} saw the fetch from the worker`));
     return;
   }
 });
