@@ -26,9 +26,7 @@
 #include "mozilla/interceptor/TargetFunction.h"
 
 #if defined(MOZILLA_INTERNAL_API)
-#  include "nsHashKeys.h"
 #  include "nsString.h"
-#  include "nsTHashtable.h"
 #endif  
 
 
@@ -742,17 +740,6 @@ class MOZ_RAII PEHeaders final {
       aCallback(curName);
     }
   }
-
-#if defined(MOZILLA_INTERNAL_API)
-  nsTHashtable<nsStringCaseInsensitiveHashKey> GenerateDependentModuleSet()
-      const {
-    nsTHashtable<nsStringCaseInsensitiveHashKey> dependentModuleSet;
-    EnumImportChunks([&dependentModuleSet](const char* aModule) {
-      dependentModuleSet.PutEntry(GetLeafName(NS_ConvertASCIItoUTF16(aModule)));
-    });
-    return dependentModuleSet;
-  }
-#endif  
 
   
 

@@ -141,15 +141,6 @@ class UntrustedModulesProcessor final : public nsIObserver {
 
   
   Atomic<bool> mAllowProcessing;
-
-  
-  
-  
-  
-  
-  
-  
-  bool mIsFirstBatchProcessed;
 };
 
 }  

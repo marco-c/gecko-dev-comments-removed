@@ -34,7 +34,8 @@ struct ModuleLoadInfo final {
         mThreadId(nt::RtlGetCurrentThreadId()),
         mRequestedDllName(aRequestedDllName),
         mBaseAddr(nullptr),
-        mStatus(Status::Loaded) {
+        mStatus(Status::Loaded),
+        mIsDependent(false) {
 #  if defined(IMPL_MFBT)
     ::QueryPerformanceCounter(&mBeginTimestamp);
 #  else
@@ -49,12 +50,13 @@ struct ModuleLoadInfo final {
 
 
   ModuleLoadInfo(nt::AllocatedUnicodeString&& aSectionName,
-                 const void* aBaseAddr, Status aLoadStatus)
+                 const void* aBaseAddr, Status aLoadStatus, bool aIsDependent)
       : mLoadTimeInfo(),
         mThreadId(nt::RtlGetCurrentThreadId()),
         mSectionName(std::move(aSectionName)),
         mBaseAddr(aBaseAddr),
-        mStatus(aLoadStatus) {
+        mStatus(aLoadStatus),
+        mIsDependent(aIsDependent) {
 #  if defined(IMPL_MFBT)
     ::QueryPerformanceCounter(&mBeginTimestamp);
 #  else
@@ -164,6 +166,8 @@ struct ModuleLoadInfo final {
   Vector<PVOID, 0, nt::RtlAllocPolicy> mBacktrace;
   
   Status mStatus;
+  
+  bool mIsDependent;
 };
 
 using ModuleLoadInfoVec = Vector<ModuleLoadInfo, 0, nt::RtlAllocPolicy>;
