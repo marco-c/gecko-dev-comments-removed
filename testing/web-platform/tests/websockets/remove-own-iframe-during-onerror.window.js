@@ -1,9 +1,11 @@
 
 
 
+
+
+
 async_test(t => {
-  window.wsurl = 'wss://' + __SERVER__NAME + ':' + __SECURE__PORT +
-      '/does-not-exist';
+  window.wsurl = SCHEME_DOMAIN_PORT + '/does-not-exist';
   let wsframe;
   window.wsonerror = () => {
     wsframe.remove();
