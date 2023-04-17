@@ -1348,7 +1348,8 @@ bool nsChildView::PaintWindowInDrawTarget(gfx::DrawTarget* aDT,
   targetContext->Clip();
 
   nsAutoRetainCocoaObject kungFuDeathGrip(mView);
-  if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
+  if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_NONE ||
+      GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
     nsBaseWidget::AutoLayerManagerSetup setupLayerManager(this, targetContext,
                                                           BufferMode::BUFFER_NONE);
     return PaintWindow(aRegion);
@@ -1399,7 +1400,8 @@ void nsChildView::PaintWindowInContentLayer() {
 void nsChildView::HandleMainThreadCATransaction() {
   WillPaintWindow();
 
-  if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
+  if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_NONE ||
+      GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
     
     
     PaintWindowInContentLayer();

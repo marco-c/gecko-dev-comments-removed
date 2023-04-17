@@ -6450,8 +6450,14 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
   bgcolor = NS_ComposeColors(bgcolor, mCanvasBackgroundColor);
 
   if (!layerManager) {
-    
-    
+    FallbackRenderer* fallback = renderer->AsFallback();
+    MOZ_ASSERT(fallback);
+
+    if (aFlags & PaintFlags::PaintComposite) {
+      nsIntRect bounds = presContext->GetVisibleArea().ToOutsidePixels(
+          presContext->AppUnitsPerDevPixel());
+      fallback->EndTransactionWithColor(bounds, ToDeviceColor(bgcolor));
+    }
     return;
   }
 
