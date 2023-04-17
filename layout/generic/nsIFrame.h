@@ -851,7 +851,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual std::pair<int32_t, int32_t> GetOffsets() const;
+  virtual nsresult GetOffsets(int32_t& start, int32_t& end) const;
 
   
 
