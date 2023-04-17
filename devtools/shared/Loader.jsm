@@ -53,10 +53,6 @@ function DevToolsLoader({
     
     devtools: "resource://devtools",
     
-    acorn: "resource://devtools/shared/acorn",
-    
-    "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
-    
     
     "xpcshell-test": "resource://test",
 
