@@ -648,7 +648,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsCString mSpoofedUserAgent;
   nsCString mUserAgentOverride;
 
-#if defined(MOZ_BUILD_APP_IS_BROWSER) && !defined(ANDROID)
+#ifndef ANDROID
   nsCString mExperimentUserAgent;
 #endif  
 
