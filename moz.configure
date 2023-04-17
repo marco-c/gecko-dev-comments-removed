@@ -591,7 +591,11 @@ def build_backend_defaults(
     
     
     
-    if sys.platform == "win32" and compile_environment and project != "mobile/android":
+    if (
+        sys.platform == "win32"
+        and compile_environment
+        and project not in ("mobile/android", "memory", "tools/update-programs")
+    ):
         all_backends.append("VisualStudio")
     return tuple(all_backends) or None
 
