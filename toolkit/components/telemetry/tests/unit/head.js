@@ -529,13 +529,6 @@ if (runningInParent) {
 
   
   
-  Services.prefs.setBoolPref(
-    TelemetryUtils.Preferences.EcosystemTelemetryEnabled,
-    false
-  );
-
-  
-  
   if (Services.prefs.getBoolPref(TelemetryUtils.Preferences.Unified, false)) {
     Services.prefs.setBoolPref(
       TelemetryUtils.Preferences.OverridePreRelease,

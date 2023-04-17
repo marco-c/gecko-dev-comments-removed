@@ -83,11 +83,6 @@ var TelemetryUtils = {
     EventPingMaximumFrequency: "toolkit.telemetry.eventping.maximumFrequency",
 
     
-    EcosystemTelemetryEnabled: "toolkit.telemetry.ecosystemtelemetry.enabled",
-    EcosystemTelemetryAllowForNonProductionFxA:
-      "toolkit.telemetry.ecosystemtelemetry.allowForNonProductionFxA",
-
-    
     PrioPingEnabled: "toolkit.telemetry.prioping.enabled",
     PrioPingDataLimit: "toolkit.telemetry.prioping.dataLimit",
 
