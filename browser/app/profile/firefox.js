@@ -1392,6 +1392,9 @@ pref("prompts.defaultModalType", 3);
 
 pref("browser.topsites.useRemoteSetting", true);
 
+pref("browser.topsites.contile.enabled", false);
+pref("browser.topsites.contile.endpoint", "https://contile.services.mozilla.com/v1/tiles");
+
 
 
 pref("browser.partnerlink.attributionURL", "https://topsites.services.mozilla.com/cid/");
