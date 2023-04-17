@@ -73,7 +73,7 @@ const ExperimentAPI = {
 
 
 
-  getExperiment({ slug, featureId, sendExposureEvent } = {}) {
+  getExperiment({ slug, featureId } = {}) {
     if (!slug && !featureId) {
       throw new Error(
         "getExperiment(options) must include a slug or a feature."
@@ -93,7 +93,7 @@ const ExperimentAPI = {
       return {
         slug: experimentData.slug,
         active: experimentData.active,
-        branch: this.activateBranch({ slug, featureId, sendExposureEvent }),
+        branch: this.activateBranch({ slug, featureId }),
       };
     }
 
@@ -137,7 +137,7 @@ const ExperimentAPI = {
 
 
 
-  activateBranch({ slug, featureId, sendExposureEvent }) {
+  activateBranch({ slug, featureId }) {
     let experiment = null;
     try {
       if (slug) {
@@ -151,14 +151,6 @@ const ExperimentAPI = {
 
     if (!experiment) {
       return null;
-    }
-
-    if (sendExposureEvent) {
-      this.recordExposureEvent({
-        experimentSlug: experiment.slug,
-        branchSlug: experiment.branch.slug,
-        featureId,
-      });
     }
 
     
@@ -410,16 +402,8 @@ class _ExperimentFeature {
 
 
 
-  isEnabled({ sendExposureEvent, defaultValue = null } = {}) {
-    const branch = ExperimentAPI.activateBranch({
-      featureId: this.featureId,
-      sendExposureEvent: sendExposureEvent && this._sendExposureEventOnce,
-    });
-
-    
-    if (branch && sendExposureEvent) {
-      this._sendExposureEventOnce = false;
-    }
+  isEnabled({ defaultValue = null } = {}) {
+    const branch = ExperimentAPI.activateBranch({ featureId: this.featureId });
 
     
     if (isBooleanValueDefined(branch?.feature.enabled)) {
@@ -432,7 +416,7 @@ class _ExperimentFeature {
 
     let enabled;
     try {
-      enabled = this.getVariable("enabled", { sendExposureEvent });
+      enabled = this.getVariable("enabled");
     } catch (e) {
       
     }
@@ -448,18 +432,10 @@ class _ExperimentFeature {
 
 
 
-  getAllVariables({ sendExposureEvent, defaultValues = null } = {}) {
+  getAllVariables({ defaultValues = null } = {}) {
     
     let userPrefs = this._getUserPrefsValues();
-    const branch = ExperimentAPI.activateBranch({
-      featureId: this.featureId,
-      sendExposureEvent: sendExposureEvent && this._sendExposureEventOnce,
-    });
-
-    
-    if (branch && sendExposureEvent) {
-      this._sendExposureEventOnce = false;
-    }
+    const branch = ExperimentAPI.activateBranch({ featureId: this.featureId });
 
     return {
       ...this.prefGetters,
@@ -470,7 +446,7 @@ class _ExperimentFeature {
     };
   }
 
-  getVariable(variable, { sendExposureEvent } = {}) {
+  getVariable(variable) {
     const prefName = this.getPreferenceName(variable);
     const prefValue = prefName ? this.prefGetters[variable] : undefined;
 
@@ -491,13 +467,7 @@ class _ExperimentFeature {
     
     const experimentValue = ExperimentAPI.activateBranch({
       featureId: this.featureId,
-      sendExposureEvent: sendExposureEvent && this._sendExposureEventOnce,
     })?.feature?.value?.[variable];
-
-    
-    if (typeof experimentValue !== "undefined" && sendExposureEvent) {
-      this._sendExposureEventOnce = false;
-    }
 
     if (typeof experimentValue !== "undefined") {
       return experimentValue;
@@ -523,13 +493,16 @@ class _ExperimentFeature {
 
   recordExposureEvent() {
     if (this._sendExposureEventOnce) {
-      let experimentData = ExperimentAPI.activateBranch({
+      let experimentData = ExperimentAPI.getExperiment({
         featureId: this.featureId,
-        sendExposureEvent: true,
       });
-
       
       if (experimentData) {
+        ExperimentAPI.recordExposureEvent({
+          featureId: this.featureId,
+          experimentSlug: experimentData.slug,
+          branchSlug: experimentData.branch?.slug,
+        });
         this._sendExposureEventOnce = false;
       }
     }
