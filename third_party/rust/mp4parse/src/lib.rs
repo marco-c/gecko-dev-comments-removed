@@ -151,6 +151,87 @@ struct String;
 
 
 
+#[repr(C)]
+#[derive(PartialEq, Debug)]
+pub enum Status {
+    Ok = 0,
+    BadArg = 1,
+    Invalid = 2,
+    Unsupported = 3,
+    Eof = 4,
+    Io = 5,
+    Oom = 6,
+    UnsupportedA1lx,
+    UnsupportedA1op,
+    UnsupportedClap,
+    UnsupportedGrid,
+    UnsupportedIpro,
+    UnsupportedLsel,
+}
+
+
+
+impl From<Status> for Error {
+    fn from(parse_status: Status) -> Self {
+        let msg = match parse_status {
+            Status::Ok
+            | Status::BadArg
+            | Status::Invalid
+            | Status::Unsupported
+            | Status::Eof
+            | Status::Io
+            | Status::Oom => {
+                panic!("Status -> Error is only for Status:UnsupportedXXX errors")
+            }
+
+            Status::UnsupportedA1lx => "AV1 layered image indexing (a1lx) is unsupported",
+            Status::UnsupportedA1op => "Operating point selection (a1op) is unsupported",
+            Status::UnsupportedClap => "Clean aperture (clap) transform is unsupported",
+            Status::UnsupportedGrid => "Grid-based images are unsupported",
+            Status::UnsupportedIpro => "Item protection (ipro) is unsupported",
+            Status::UnsupportedLsel => "Layer selection (lsel) is unsupported",
+        };
+        Self::UnsupportedDetail(parse_status, msg)
+    }
+}
+
+impl From<Error> for Status {
+    fn from(error: Error) -> Self {
+        match error {
+            Error::NoMoov | Error::InvalidData(_) => Self::Invalid,
+            Error::Unsupported(_) => Self::Unsupported,
+            Error::UnsupportedDetail(parse_status, _msg) => parse_status,
+            Error::UnexpectedEOF => Self::Eof,
+            Error::Io(_) => {
+                
+                
+                
+                Self::Io
+            }
+            Error::OutOfMemory => Self::Oom,
+        }
+    }
+}
+
+impl From<Result<(), Status>> for Status {
+    fn from(result: Result<(), Status>) -> Self {
+        match result {
+            Ok(()) => Status::Ok,
+            Err(Status::Ok) => unreachable!(),
+            Err(e) => e,
+        }
+    }
+}
+
+impl From<fallible_collections::TryReserveError> for Status {
+    fn from(_: fallible_collections::TryReserveError) -> Self {
+        Status::Oom
+    }
+}
+
+
+
+
 
 #[derive(Debug)]
 pub enum Error {
@@ -158,6 +239,10 @@ pub enum Error {
     InvalidData(&'static str),
     
     Unsupported(&'static str),
+    
+    
+    
+    UnsupportedDetail(Status, &'static str),
     
     UnexpectedEOF,
     
@@ -502,7 +587,6 @@ pub struct AV1ConfigBox {
 }
 
 impl AV1ConfigBox {
-    
     const CONFIG_OBUS_OFFSET: usize = 4;
 
     pub fn config_obus(&self) -> &[u8] {
@@ -1711,8 +1795,16 @@ pub fn read_avif<T: Read>(f: &mut T, strictness: ParseStrictness) -> Result<Avif
             .map_or(false, |opt| opt.is_some())
     };
     if !has_pixi(primary_item_id) || !alpha_item_id.map_or(true, has_pixi) {
+        
+        
+        
+        
         fail_if(
-            strictness != ParseStrictness::Permissive,
+            if cfg!(feature = "missing-pixi-permitted") {
+                strictness == ParseStrictness::Strict
+            } else {
+                strictness != ParseStrictness::Permissive
+            },
             "The pixel information property shall be associated with every image \
              that is displayable (not hidden) \
              per MIAF (ISO/IEC 23000-22:2019) specification § 7.3.6.6",
@@ -1850,9 +1942,15 @@ fn read_avif_meta<T: Read + Offset>(
     let item_infos = item_infos.ok_or(Error::InvalidData("iinf missing"))?;
 
     if let Some(item_info) = item_infos.iter().find(|x| x.item_id == primary_item_id) {
-        if &item_info.item_type.to_be_bytes() != b"av01" {
-            warn!("primary_item_id type: {}", U32BE(item_info.item_type));
-            return Err(Error::InvalidData("primary_item_id type is not av01"));
+        debug!("primary_item_id type: {}", U32BE(item_info.item_type));
+        match &item_info.item_type.to_be_bytes() {
+            b"av01" => {}
+            b"grid" => return Err(Error::from(Status::UnsupportedGrid)),
+            _ => {
+                return Err(Error::InvalidData(
+                    "primary_item_id type is neither 'av01' nor 'grid'",
+                ))
+            }
         }
     } else {
         return Err(Error::InvalidData(
@@ -1957,9 +2055,7 @@ fn read_infe<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Resu
     let item_protection_index = be_u16(src)?;
 
     if item_protection_index != 0 {
-        return Err(Error::Unsupported(
-            "protected items (infe.item_protection_index != 0) are not supported",
-        ));
+        return Err(Error::from(Status::UnsupportedIpro));
     }
 
     let item_type = be_u32(src)?;
@@ -2102,6 +2198,9 @@ fn read_iprp<T: Read>(
                         | ItemProperty::Rotation(_) => {
                             if !a.essential {
                                 warn!("{:?} is invalid", property);
+                                
+                                
+                                
                                 fail_if(
                                     strictness == ParseStrictness::Strict,
                                     "All transformative properties associated with coded and \
@@ -2526,6 +2625,11 @@ fn read_ipma<T: Read>(
 
 
 
+
+
+
+
+
 fn read_ipco<T: Read>(
     src: &mut BMFFBox<T>,
     strictness: ParseStrictness,
@@ -2538,6 +2642,14 @@ fn read_ipco<T: Read>(
         if let Some(property) = match b.head.name {
             BoxType::AuxiliaryTypeProperty => Some(ItemProperty::AuxiliaryType(read_auxc(&mut b)?)),
             BoxType::AV1CodecConfigurationBox => Some(ItemProperty::AV1Config(read_av1c(&mut b)?)),
+            BoxType::AV1LayeredImageIndexingProperty
+                if strictness != ParseStrictness::Permissive =>
+            {
+                return Err(Error::from(Status::UnsupportedA1lx))
+            }
+            BoxType::CleanApertureBox if strictness != ParseStrictness::Permissive => {
+                return Err(Error::from(Status::UnsupportedClap))
+            }
             BoxType::ColourInformationBox => {
                 Some(ItemProperty::Colour(read_colr(&mut b, strictness)?))
             }
@@ -2545,6 +2657,14 @@ fn read_ipco<T: Read>(
             BoxType::ImageRotation => Some(ItemProperty::Rotation(read_irot(&mut b)?)),
             BoxType::ImageSpatialExtentsProperty => {
                 Some(ItemProperty::ImageSpatialExtents(read_ispe(&mut b)?))
+            }
+            BoxType::LayerSelectorProperty if strictness != ParseStrictness::Permissive => {
+                return Err(Error::from(Status::UnsupportedLsel))
+            }
+            BoxType::OperatingPointSelectorProperty
+                if strictness != ParseStrictness::Permissive =>
+            {
+                return Err(Error::from(Status::UnsupportedA1op))
             }
             BoxType::PixelInformationBox => Some(ItemProperty::Channels(read_pixi(&mut b)?)),
             other_box_type => {
