@@ -113,9 +113,15 @@ void nsXULTooltipListener::MouseOut(Event* aEvent) {
     if (pm) {
       nsCOMPtr<nsINode> tooltipNode =
           pm->GetLastTriggerTooltipNode(currentTooltip->GetComposedDoc());
-      if (tooltipNode == targetNode) {
-        
-        
+
+      
+      
+      
+      
+      nsCOMPtr<EventTarget> relatedTarget =
+          aEvent->AsMouseEvent()->GetRelatedTarget();
+      nsCOMPtr<nsIContent> relatedContent = do_QueryInterface(relatedTarget);
+      if (tooltipNode == targetNode && relatedContent != currentTooltip) {
         HideTooltip();
         
         if (mIsSourceTree) {
