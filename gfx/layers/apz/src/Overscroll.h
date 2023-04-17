@@ -37,10 +37,10 @@ class OverscrollAnimation : public AsyncPanZoomAnimation {
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) override {
     
-    bool continueX = mApzc.mX.IsOverscrollAnimationRunning() &&
-                     mApzc.mX.SampleOverscrollAnimation(aDelta);
-    bool continueY = mApzc.mY.IsOverscrollAnimationRunning() &&
-                     mApzc.mY.SampleOverscrollAnimation(aDelta);
+    bool continueX =
+        mApzc.mX.IsOverscrolled() && mApzc.mX.SampleOverscrollAnimation(aDelta);
+    bool continueY =
+        mApzc.mY.IsOverscrolled() && mApzc.mY.SampleOverscrollAnimation(aDelta);
     if (!continueX && !continueY) {
       
       
