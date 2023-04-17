@@ -126,9 +126,15 @@ LocalAccessible* XULButtonAccessible::ContainerWidget() const {
 
 bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
   
-  
-  return aEl->IsXULElement(nsGkAtoms::menupopup) ||
-         aEl->IsXULElement(nsGkAtoms::popup);
+  return
+      
+      
+      aEl->IsXULElement(nsGkAtoms::menupopup) ||
+      aEl->IsXULElement(nsGkAtoms::popup) ||
+      
+      
+      
+      aEl->IsText();
 }
 
 
