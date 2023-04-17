@@ -31,7 +31,6 @@ class CParserContext {
 
   CParserContext(CParserContext* aPrevContext, nsScanner* aScanner,
                  void* aKey = 0, eParserCommands aCommand = eViewNormal,
-                 nsIRequestObserver* aListener = 0,
                  eAutoDetectResult aStatus = eUnknownDetect,
                  bool aCopyUnused = false);
 
@@ -44,7 +43,6 @@ class CParserContext {
   nsCOMPtr<nsIRequest>
       mRequest;  
                  
-  nsCOMPtr<nsIRequestObserver> mListener;
   void* const mKey;
   nsCOMPtr<nsITokenizer> mTokenizer;
   CParserContext* const mPrevContext;

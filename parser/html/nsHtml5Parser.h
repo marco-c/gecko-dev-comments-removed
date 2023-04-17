@@ -122,11 +122,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-
-
-  NS_IMETHOD Parse(nsIURI* aURL, nsIRequestObserver* aListener = nullptr,
-                   void* aKey = 0,
-                   nsDTDMode aMode = eDTDMode_autodetect) override;
+  NS_IMETHOD Parse(nsIURI* aURL, void* aKey = nullptr) override;
 
   
 

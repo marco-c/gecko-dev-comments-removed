@@ -156,10 +156,7 @@ NS_IMETHODIMP_(bool)
 nsHtml5Parser::IsComplete() { return mExecutor->IsComplete(); }
 
 NS_IMETHODIMP
-nsHtml5Parser::Parse(nsIURI* aURL, nsIRequestObserver* aObserver,
-                     void* aKey,       
-                     nsDTDMode aMode)  
-{
+nsHtml5Parser::Parse(nsIURI* aURL, void* ) {
   
 
 
@@ -169,7 +166,6 @@ nsHtml5Parser::Parse(nsIURI* aURL, nsIRequestObserver* aObserver,
   MOZ_ASSERT(GetStreamParser(),
              "Can't call this Parse() variant on script-created parser");
 
-  GetStreamParser()->SetObserver(aObserver);
   GetStreamParser()->SetViewSourceTitle(aURL);  
   mExecutor->SetStreamParser(GetStreamParser());
   mExecutor->SetParser(this);
