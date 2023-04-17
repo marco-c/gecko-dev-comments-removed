@@ -31,6 +31,11 @@ namespace gmp {
 
 class GMPContentParent;
 
+
+
+
+
+
 class ChromiumCDMParent final : public PChromiumCDMParent,
                                 public GMPCrashHelperHolder {
   friend class PChromiumCDMParent;
@@ -212,6 +217,11 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   
   uint32_t mMaxRefFrames = 0;
   ReorderQueue mReorderQueue;
+
+#ifdef DEBUG
+  
+  const nsCOMPtr<nsISerialEventTarget> mGMPThread;
+#endif
 };
 
 }  
