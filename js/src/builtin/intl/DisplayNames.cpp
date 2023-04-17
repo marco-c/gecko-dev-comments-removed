@@ -182,11 +182,6 @@ static bool DisplayNames(JSContext* cx, const CallArgs& args,
     }
   }
 
-  
-  if (!args.requireAtLeast(cx, "DisplayNames", 2)) {
-    return false;
-  }
-
   Rooted<DisplayNamesObject*> displayNames(cx);
   displayNames = NewObjectWithClassProto<DisplayNamesObject>(cx, proto);
   if (!displayNames) {
