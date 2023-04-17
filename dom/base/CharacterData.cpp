@@ -268,16 +268,13 @@ nsresult CharacterData::SetTextInternal(
     
     
     
-    
-    bool ok =
-        mText.SetTo(aBuffer, aLength, !document || !document->GetBidiEnabled(),
-                    HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
+    bool ok = mText.SetTo(aBuffer, aLength, true,
+                          HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
     NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   } else if (aOffset == textLength) {
     
-    bool ok =
-        mText.Append(aBuffer, aLength, !document || !document->GetBidiEnabled(),
-                     HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
+    bool ok = mText.Append(aBuffer, aLength, !mText.IsBidi(),
+                           HasFlag(NS_MAYBE_MODIFIED_FREQUENTLY));
     NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
   } else {
     
@@ -297,7 +294,7 @@ nsresult CharacterData::SetTextInternal(
     }
     if (aLength) {
       to.Append(aBuffer, aLength);
-      if (!bidi && (!document || !document->GetBidiEnabled())) {
+      if (!bidi) {
         bidi = HasRTLChars(Span(aBuffer, aLength));
       }
     }
