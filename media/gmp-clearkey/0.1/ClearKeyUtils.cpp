@@ -139,6 +139,20 @@ bool ClearKeyUtils::DecryptCbcs(const vector<uint8_t>& aKey,
   const uint32_t totalBlocks = aSubsample.Length() / BLOCK_SIZE;
   uint32_t blocksProcessed = 0;
 
+  if (aSkipByteBlock == 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(skipBytes == 0);
+    aCryptByteBlock = totalBlocks;
+  }
+
   while (blocksProcessed < totalBlocks) {
     uint32_t blocksToDecrypt = aCryptByteBlock <= totalBlocks - blocksProcessed
                                    ? aCryptByteBlock
