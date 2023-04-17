@@ -55,7 +55,6 @@ CubebDeviceEnumerator::CubebDeviceEnumerator()
   
   
   
-  mozilla::mscom::EnsureMTA();
   mozilla::mscom::EnsureMTA([&]() -> void {
 #endif
     int rv = cubeb_register_device_collection_changed(
