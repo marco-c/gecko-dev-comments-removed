@@ -32,7 +32,9 @@ class MarionetteReftestParent extends JSWindowActorParent {
 
       if (isCorrectUrl) {
         
-        await this._flushRenderingInSubtree();
+        await this._flushRenderingInSubtree({
+          ignoreThrottledAnimations: false,
+        });
       }
 
       return isCorrectUrl;
@@ -52,7 +54,7 @@ class MarionetteReftestParent extends JSWindowActorParent {
 
 
 
-  async _flushRenderingInSubtree() {
+  async _flushRenderingInSubtree({ ignoreThrottledAnimations }) {
     const browsingContext = this.manager.browsingContext;
     const contexts = browsingContext.getAllBrowsingContextsInSubtree();
 
@@ -78,7 +80,9 @@ class MarionetteReftestParent extends JSWindowActorParent {
         }
 
         const reftestActor = windowGlobal.getActor("MarionetteReftest");
-        await reftestActor.sendQuery("MarionetteReftestParent:flushRendering");
+        await reftestActor.sendQuery("MarionetteReftestParent:flushRendering", {
+          ignoreThrottledAnimations,
+        });
       })
     );
   }
