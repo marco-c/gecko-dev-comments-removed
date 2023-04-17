@@ -2125,6 +2125,18 @@ bool CanonicalBrowsingContext::AllowedInBFCache(
 
   
   
+  MOZ_ASSERT(IsTop(), "Trying to put a non top level BC into BFCache");
+
+  nsCOMPtr<nsIURI> currentURI = GetCurrentURI();
+  
+  if (currentURI && currentURI->SchemeIs("about") &&
+      !currentURI->GetSpecOrDefault().EqualsLiteral("about:blank")) {
+    bfcacheCombo |= BFCacheStatus::ABOUT_PAGE;
+    MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug, (" * about:* page"));
+  }
+
+  
+  
   PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
     WindowGlobalParent* wgp =
         aBrowsingContext->Canonical()->GetCurrentWindowGlobal();

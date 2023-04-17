@@ -104,7 +104,7 @@ async function testNavigate() {
     containerPages.push(containerPage);
   }
 
-  let privatePage = await openURIInPrivateTab("about:blank");
+  let privatePage = await openURIInPrivateTab();
   gPrevRemoteTypePrivateTab = privatePage.tab.linkedBrowser.remoteType;
 
   for (const testCase of TEST_CASES) {
