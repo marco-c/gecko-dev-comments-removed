@@ -2919,12 +2919,8 @@ nsresult HTMLInputElement::MaybeSubmitForm(nsPresContext* aPresContext) {
   }
 
   
-  nsIFormControl* submitControl = mForm->GetDefaultSubmitElement();
-  if (submitControl) {
-    nsCOMPtr<nsIContent> submitContent = do_QueryInterface(submitControl);
-    NS_ASSERTION(submitContent, "Form control not implementing nsIContent?!");
-    
-    
+  if (RefPtr<nsGenericHTMLFormElement> submitContent =
+          mForm->GetDefaultSubmitElement()) {
     WidgetMouseEvent event(true, eMouseClick, nullptr, WidgetMouseEvent::eReal);
     nsEventStatus status = nsEventStatus_eIgnore;
     presShell->HandleDOMEventWithTarget(submitContent, &event, &status);
