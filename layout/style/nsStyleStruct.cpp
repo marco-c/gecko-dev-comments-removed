@@ -188,13 +188,10 @@ class StyleImageRequestCleanupTask final : public mozilla::Runnable {
 
 void Gecko_LoadData_Drop(StyleLoadData* aData) {
   if (aData->resolved_image) {
+    
+    
     auto task = MakeRefPtr<StyleImageRequestCleanupTask>(*aData);
-    if (NS_IsMainThread()) {
-      task->Run();
-    } else {
-      
-      SchedulerGroup::Dispatch(TaskCategory::Other, task.forget());
-    }
+    SchedulerGroup::Dispatch(TaskCategory::Other, task.forget());
   }
 
   
