@@ -55,11 +55,8 @@ class MOZ_NON_TEMPORARY_CLASS PromiseLookup final {
   
   MOZ_INIT_OUTSIDE_CTOR Shape* promiseConstructorShape_;
 
-#ifdef DEBUG
-  
   
   MOZ_INIT_OUTSIDE_CTOR Shape* promiseSpeciesShape_;
-#endif
 
   
   MOZ_INIT_OUTSIDE_CTOR Shape* promiseProtoShape_;

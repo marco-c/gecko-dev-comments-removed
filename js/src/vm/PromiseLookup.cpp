@@ -148,9 +148,7 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   state_ = State::Initialized;
   promiseConstructorShape_ = promiseCtor->lastProperty();
-#ifdef DEBUG
   promiseSpeciesShape_ = speciesShape;
-#endif
   promiseProtoShape_ = promiseProto->lastProperty();
   promiseResolveSlot_ = resolveShape->slot();
   promiseProtoConstructorSlot_ = ctorShape->slot();
@@ -195,13 +193,10 @@ bool js::PromiseLookup::isPromiseStateStillSane(JSContext* cx) {
   }
 
   
-  
-  
-  
-#ifdef DEBUG
-  MOZ_ASSERT(isAccessorPropertyNative(cx, promiseCtor, promiseSpeciesShape_,
-                                      Promise_static_species));
-#endif
+  if (!isAccessorPropertyNative(cx, promiseCtor, promiseSpeciesShape_,
+                                Promise_static_species)) {
+    return false;
+  }
 
   
   if (!isDataPropertyNative(cx, promiseCtor, promiseResolveSlot_,
