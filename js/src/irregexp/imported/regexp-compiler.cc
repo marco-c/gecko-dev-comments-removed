@@ -663,10 +663,19 @@ ActionNode* ActionNode::ClearCaptures(Interval range, RegExpNode* on_success) {
   return result;
 }
 
-ActionNode* ActionNode::BeginSubmatch(int stack_reg, int position_reg,
-                                      RegExpNode* on_success) {
+ActionNode* ActionNode::BeginPositiveSubmatch(int stack_reg, int position_reg,
+                                              RegExpNode* on_success) {
   ActionNode* result =
-      on_success->zone()->New<ActionNode>(BEGIN_SUBMATCH, on_success);
+      on_success->zone()->New<ActionNode>(BEGIN_POSITIVE_SUBMATCH, on_success);
+  result->data_.u_submatch.stack_pointer_register = stack_reg;
+  result->data_.u_submatch.current_position_register = position_reg;
+  return result;
+}
+
+ActionNode* ActionNode::BeginNegativeSubmatch(int stack_reg, int position_reg,
+                                              RegExpNode* on_success) {
+  ActionNode* result =
+      on_success->zone()->New<ActionNode>(BEGIN_NEGATIVE_SUBMATCH, on_success);
   result->data_.u_submatch.stack_pointer_register = stack_reg;
   result->data_.u_submatch.current_position_register = position_reg;
   return result;
@@ -3335,7 +3344,8 @@ void ActionNode::Emit(RegExpCompiler* compiler, Trace* trace) {
       on_success()->Emit(compiler, &new_trace);
       break;
     }
-    case BEGIN_SUBMATCH:
+    case BEGIN_POSITIVE_SUBMATCH:
+    case BEGIN_NEGATIVE_SUBMATCH:
       if (!trace->is_trivial()) {
         trace->Flush(compiler, this);
       } else {
@@ -3528,28 +3538,32 @@ class EatsAtLeastPropagator : public AllStatic {
   }
 
   static void VisitAction(ActionNode* that) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     switch (that->action_type()) {
-      case ActionNode::BEGIN_SUBMATCH:
+      case ActionNode::BEGIN_POSITIVE_SUBMATCH:
       case ActionNode::POSITIVE_SUBMATCH_SUCCESS:
+        
+        
+        
+        
+        
+        
+        
+        
         DCHECK(that->eats_at_least_info()->IsZero());
         break;
       case ActionNode::SET_REGISTER_FOR_LOOP:
+        
+        
+        
         that->set_eats_at_least_info(
             that->on_success()->EatsAtLeastFromLoopEntry());
         break;
+      case ActionNode::BEGIN_NEGATIVE_SUBMATCH:
       default:
+        
+        
+        
+        
         that->set_eats_at_least_info(*that->on_success()->eats_at_least_info());
         break;
     }

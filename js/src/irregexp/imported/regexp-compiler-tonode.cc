@@ -826,7 +826,7 @@ RegExpNode* RegExpAssertion::ToNode(RegExpCompiler* compiler,
                                   -1,  
                                   on_success));
       
-      RegExpNode* end_of_line = ActionNode::BeginSubmatch(
+      RegExpNode* end_of_line = ActionNode::BeginPositiveSubmatch(
           stack_pointer_register, position_register, newline_matcher);
       
       GuardedAlternative eol_alternative(end_of_line);
@@ -877,8 +877,8 @@ RegExpLookaround::Builder::Builder(bool is_positive, RegExpNode* on_success,
 
 RegExpNode* RegExpLookaround::Builder::ForMatch(RegExpNode* match) {
   if (is_positive_) {
-    return ActionNode::BeginSubmatch(stack_pointer_register_,
-                                     position_register_, match);
+    return ActionNode::BeginPositiveSubmatch(stack_pointer_register_,
+                                             position_register_, match);
   } else {
     Zone* zone = on_success_->zone();
     
@@ -888,8 +888,8 @@ RegExpNode* RegExpLookaround::Builder::ForMatch(RegExpNode* match) {
     
     ChoiceNode* choice_node = zone->New<NegativeLookaroundChoiceNode>(
         GuardedAlternative(match), GuardedAlternative(on_success_), zone);
-    return ActionNode::BeginSubmatch(stack_pointer_register_,
-                                     position_register_, choice_node);
+    return ActionNode::BeginNegativeSubmatch(stack_pointer_register_,
+                                             position_register_, choice_node);
   }
 }
 
