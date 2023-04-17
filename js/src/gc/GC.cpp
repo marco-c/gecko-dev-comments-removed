@@ -1817,21 +1817,6 @@ void GCRuntime::queueBuffersForFreeAfterMinorGC(Nursery::BufferSet& buffers) {
   std::swap(buffersToFreeAfterMinorGC.ref(), buffers);
 }
 
-
-bool UniqueIdGCPolicy::needsSweep(Cell** cellp, uint64_t*) {
-  Cell* cell = *cellp;
-  return MapGCThingTyped(cell, cell->getTraceKind(), [](auto t) {
-    mozilla::DebugOnly<const Cell*> prior = t;
-    bool result = IsAboutToBeFinalizedUnbarriered(&t);
-    
-    
-    MOZ_ASSERT(t == prior);
-    return result;
-  });
-}
-
-void JS::Zone::sweepUniqueIds() { uniqueIds().sweep(); }
-
 void Realm::destroy(JSFreeOp* fop) {
   JSRuntime* rt = fop->runtime();
   if (auto callback = rt->destroyRealmCallback) {
