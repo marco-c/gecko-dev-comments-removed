@@ -15,6 +15,7 @@
 #include "js/OffThreadScriptCompilation.h"
 #include "js/Transcoding.h"
 #include "jsapi-tests/tests.h"
+#include "vm/HelperThreadState.h"  
 #include "vm/Monitor.h"  
 
 BEGIN_TEST(testStencil_Basic) {
@@ -140,6 +141,12 @@ END_TEST(testStencil_NonSyntactic)
 
 BEGIN_TEST(testStencil_MultiGlobal) {
   const char* chars =
+      "/**************************************/"
+      "/**************************************/"
+      "/**************************************/"
+      "/**************************************/"
+      "/**************************************/"
+      "/**************************************/"
       "function f() { return 42; }"
       "f();";
 
@@ -154,6 +161,11 @@ BEGIN_TEST(testStencil_MultiGlobal) {
   CHECK(RunInNewGlobal(cx, stencil));
   CHECK(RunInNewGlobal(cx, stencil));
   CHECK(RunInNewGlobal(cx, stencil));
+
+  
+  
+  CHECK(strlen(chars) > js::ScriptSource::MinimumCompressibleLength);
+  js::RunPendingSourceCompressions(cx->runtime());
 
   return true;
 }

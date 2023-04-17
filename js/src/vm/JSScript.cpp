@@ -2318,6 +2318,11 @@ bool ScriptSource::tryCompressOffThread(JSContext* cx) {
   MOZ_ASSERT(!cx->isHelperThreadContext());
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 
+  
+  if (hadCompressionTask_) {
+    return true;
+  }
+
   if (!hasUncompressedSource()) {
     
     return true;

@@ -525,6 +525,9 @@ class ScriptSource {
       pendingCompressed_;
 
   
+  bool hadCompressionTask_ = false;
+
+  
   mozilla::Maybe<SharedImmutableString> filename_;
 
   
@@ -884,6 +887,10 @@ class ScriptSource {
                                         size_t length);
 
   [[nodiscard]] bool tryCompressOffThread(JSContext* cx);
+
+  
+  
+  void noteSourceCompressionTask() { hadCompressionTask_ = true; }
 
   
   
