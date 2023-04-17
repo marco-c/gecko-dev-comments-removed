@@ -1059,22 +1059,8 @@ static bool ShouldRespectSystemColorSchemeForChromeDoc() {
 #endif
 }
 
-static bool ShouldRespectGlobalToolbarThemeAppearanceForChromeDoc() {
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  return StaticPrefs::widget_macos_support_dark_appearance();
-#elif defined(MOZ_WIDGET_GTK)
-  return StaticPrefs::widget_gtk_follow_firefox_theme();
-#else
-  return false;
-#endif
-}
-
 LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForChrome() {
-  if (ShouldRespectGlobalToolbarThemeAppearanceForChromeDoc()) {
+  if (StaticPrefs::widget_color_scheme_follow_firefox_theme()) {
     switch (StaticPrefs::browser_theme_toolbar_theme()) {
       case 0:  
         return ColorScheme::Dark;
