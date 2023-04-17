@@ -20,15 +20,17 @@ typedef MozPromise<ClientSourceParent*, CopyableErrorResult,
 
 class ClientHandleParent final : public PClientHandleParent {
   RefPtr<ClientManagerService> mService;
+
+  
   ClientSourceParent* mSource;
+
+  
+  MozPromiseHolder<SourcePromise> mSourcePromiseHolder;
+
+  MozPromiseRequestHolder<SourcePromise> mSourcePromiseRequestHolder;
 
   nsID mClientId;
   PrincipalInfo mPrincipalInfo;
-
-  
-  
-  
-  RefPtr<SourcePromise::Private> mSourcePromise;
 
   
   mozilla::ipc::IPCResult RecvTeardown() override;

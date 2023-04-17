@@ -86,10 +86,6 @@ class ClientManagerService final {
   
   nsTHashMap<nsIDHashKey, SourceTableEntry> mSourceTable;
 
-  
-  
-  nsTHashMap<nsIDHashKey, nsTArray<ClientHandleParent*>> mPendingHandles;
-
   nsTArray<ClientManagerParent*> mManagerList;
 
   bool mShutdown;
@@ -119,14 +115,8 @@ class ClientManagerService final {
 
   bool RemoveSource(ClientSourceParent* aSource);
 
-  ClientSourceParent* FindSource(
+  RefPtr<SourcePromise> FindSource(
       const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
-
-  
-  
-  
-  void WaitForSource(ClientHandleParent* aHandle, const nsID& aID);
-  void StopWaitingForSource(ClientHandleParent* aHandle, const nsID& aID);
 
   void AddManager(ClientManagerParent* aManager);
 
