@@ -61,34 +61,14 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
-  virtual bool CanPaste(int32_t aClipboardType) const;
-
   
   
   using EditorBase::CanCopy;
   using EditorBase::CanCut;
   using EditorBase::CanPaste;
 
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
-      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr);
-
   NS_IMETHOD OutputToString(const nsAString& aFormatType, uint32_t aFlags,
                             nsAString& aOutputString) override;
-
-  
-
-
-
-
-  virtual bool CanPasteTransferable(nsITransferable* aTransferable);
 
   
   MOZ_CAN_RUN_SCRIPT virtual nsresult Init(Document& aDoc, Element* aRoot,
@@ -97,6 +77,14 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
                                            const nsAString& aValue) override;
 
   bool IsEmpty() const override;
+
+  bool CanPaste(int32_t aClipboardType) const override;
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteTransferableAsAction(nsITransferable* aTransferable,
+                            nsIPrincipal* aPrincipal = nullptr) override;
+
+  virtual bool CanPasteTransferable(nsITransferable* aTransferable) override;
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
       WidgetKeyboardEvent* aKeyboardEvent) override;
@@ -120,22 +108,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
                                             bool aDispatchPasteEvent,
                                             nsIPrincipal* aPrincipal = nullptr);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
-      int32_t aClipboardType, bool aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  PasteAsQuotationAsAction(int32_t aClipboardType, bool aDispatchPasteEvent,
+                           nsIPrincipal* aPrincipal = nullptr) override;
 
   
 
@@ -161,16 +136,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
       AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
       nsIPrincipal* aPrincipal = nullptr);
 
-  
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction(
-      nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InsertLineBreakAsAction(nsIPrincipal* aPrincipal = nullptr) override;
 
   
 
@@ -412,15 +379,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   void HandleNewLinesInStringForSingleLineEditor(nsString& aString) const;
 
-  
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult HandleInsertText(
-      EditSubAction aEditSubAction, const nsAString& aInsertionString);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult HandleInsertText(
+      EditSubAction aEditSubAction, const nsAString& aInsertionString) override;
 
   
 
@@ -555,15 +515,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
                                            const EditorDOMPoint& aPointToInsert,
                                            bool aDoDeleteSelection);
 
-  
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
-  InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) override;
 
   
 

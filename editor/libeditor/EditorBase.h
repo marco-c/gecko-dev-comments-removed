@@ -706,6 +706,11 @@ class EditorBase : public nsIEditor,
   
 
 
+  virtual bool CanPaste(int32_t aClipboardType) const = 0;
+
+  
+
+
 
 
 
@@ -730,6 +735,18 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
       const nsAString& aStringToInsert, nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertLineBreakAsAction(
+      nsIPrincipal* aPrincipal = nullptr) = 0;
 
   
 
@@ -786,6 +803,44 @@ class EditorBase : public nsIEditor,
       const nsAString& aString, nsRange* aReplaceRange,
       AllowBeforeInputEventCancelable aAllowBeforeInputEventCancelable,
       nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+  virtual bool CanPasteTransferable(nsITransferable* aTransferable) = 0;
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteTransferableAsAction(
+      nsITransferable* aTransferable, nsIPrincipal* aPrincipal = nullptr) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
+      int32_t aClipboardType, bool aDispatchPasteEvent,
+      nsIPrincipal* aPrincipal = nullptr) = 0;
 
  protected:  
   class AutoEditActionDataSetter;
@@ -2043,6 +2098,26 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult
   ReplaceSelectionAsSubAction(const nsAString& aString);
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult HandleInsertText(
+      EditSubAction aEditSubAction, const nsAString& aInsertionString) = 0;
+
+  
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
+  InsertWithQuotationsAsSubAction(const nsAString& aQuotedText) = 0;
 
  protected:  
   
