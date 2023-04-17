@@ -279,7 +279,8 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   auto preWrap = cx->runtime()->wrapObjectCallbacks->preWrap;
-  if (!CheckSystemRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkSystem(cx)) {
     return false;
   }
   if (preWrap) {
