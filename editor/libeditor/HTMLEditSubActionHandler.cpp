@@ -2527,7 +2527,8 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
   bool bOnlyBreaks = true;
   for (auto& content : arrayOfContents) {
     
-    if (!content->IsHTMLElement(nsGkAtoms::br) && !IsEmptyInlineNode(content)) {
+    if (!content->IsHTMLElement(nsGkAtoms::br) &&
+        !HTMLEditUtils::IsEmptyInlineContent(content)) {
       bOnlyBreaks = false;
       break;
     }
@@ -2647,7 +2648,8 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
     
     
     if (EditorUtils::IsEditableContent(content, EditorType::HTML) &&
-        (content->IsHTMLElement(nsGkAtoms::br) || IsEmptyInlineNode(content))) {
+        (content->IsHTMLElement(nsGkAtoms::br) ||
+         HTMLEditUtils::IsEmptyInlineContent(content))) {
       nsresult rv = DeleteNodeWithTransaction(*content);
       if (NS_WARN_IF(Destroyed())) {
         return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
@@ -3097,7 +3099,7 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
   
   
   
-  if (IsEmptyOneHardLine(arrayOfContents)) {
+  if (HTMLEditUtils::IsEmptyOneHardLine(arrayOfContents)) {
     const nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
@@ -3555,7 +3557,7 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
   
   
   
-  if (IsEmptyOneHardLine(arrayOfContents)) {
+  if (HTMLEditUtils::IsEmptyOneHardLine(arrayOfContents)) {
     
     const nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
@@ -3776,7 +3778,7 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
   
   
   
-  if (IsEmptyOneHardLine(arrayOfContents)) {
+  if (HTMLEditUtils::IsEmptyOneHardLine(arrayOfContents)) {
     const nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
@@ -9365,7 +9367,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
   
   
   
-  if (IsEmptyOneHardLine(arrayOfContents)) {
+  if (HTMLEditUtils::IsEmptyOneHardLine(arrayOfContents)) {
     const nsRange* firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
       return NS_ERROR_FAILURE;
