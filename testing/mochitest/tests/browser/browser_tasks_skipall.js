@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 add_task(async function skipMe1() {
   Assert.ok(false, "Not skipped after all.");
 });
