@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <html>
-
+<!--https://bugzilla.mozilla.org/show_bug.cgi?id=1662587-->
 <head>
 <title>Bug 1662587</title>
 <script src="/tests/SimpleTest/EventUtils.js"></script>
@@ -80,6 +80,16 @@ async function start() {
       info("Got mousemove");
       ok("movementX" in e, "has movementX");
       ok("movementY" in e, "has movementY");
+      is(e.target, target, "event.target");
+      aResolve();
+    }, { once: true });
+  });
+
+  // Mouse wheel event should be dispatched to locked element.
+  synthesizeWheel(iframe, 10, 10, { deltaY: 3.0, deltaMode: WheelEvent.DOM_DELTA_LINE });
+  await new Promise((aResolve) => {
+    document.addEventListener("wheel", function(e) {
+      info("Got wheel");
       is(e.target, target, "event.target");
       aResolve();
     }, { once: true });
