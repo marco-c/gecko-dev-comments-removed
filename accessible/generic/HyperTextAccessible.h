@@ -186,12 +186,6 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  void TextSubstring(int32_t aStartOffset, int32_t aEndOffset,
-                     nsAString& aText);
-
-  
-
-
 
   void TextBeforeOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
                         int32_t* aStartOffset, int32_t* aEndOffset,
