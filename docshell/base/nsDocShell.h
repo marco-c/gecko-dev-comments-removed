@@ -511,6 +511,10 @@ class nsDocShell final : public nsDocLoader,
   
   bool IsLoadingFromSessionHistory();
 
+  NS_IMETHODIMP OnStartRequest(nsIRequest* aRequest) override;
+  NS_IMETHODIMP OnStopRequest(nsIRequest* aRequest,
+                              nsresult aStatusCode) override;
+
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -712,6 +716,8 @@ class nsDocShell final : public nsDocLoader,
                 nsIPrincipal* aPartitionedPrincipalToInehrit,
                 nsIContentSecurityPolicy* aCsp, bool aFireOnLocationChange,
                 bool aAddToGlobalHistory, bool aCloneSHChildren);
+
+  void RecordSingleChannelId();
 
  public:
   
@@ -1214,6 +1220,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   MetaViewportOverride mMetaViewportOverride;
+
+  
+  mozilla::Maybe<uint64_t> mSingleChannelId;
 
   
   
