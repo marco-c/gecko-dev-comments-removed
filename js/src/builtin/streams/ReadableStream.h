@@ -43,6 +43,12 @@ class ReadableStream : public NativeObject {
 
 
   enum Slots {
+    
+
+
+
+    Slot_ISupports,
+
     Slot_Controller,
     Slot_Reader,
     Slot_State,

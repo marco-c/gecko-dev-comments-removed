@@ -37,6 +37,12 @@ class WritableStream : public NativeObject {
 
 
 
+    Slot_ISupports,
+
+    
+
+
+
     Slot_Controller,
 
     

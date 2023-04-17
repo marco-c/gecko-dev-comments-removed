@@ -277,5 +277,4 @@ static const JSPropertySpec WritableStream_properties[] = {
     JS_PSG("locked", WritableStream_locked, 0), JS_PS_END};
 
 JS_STREAMS_CLASS_SPEC(WritableStream, 0, SlotCount, 0,
-                      JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE,
-                      JS_NULL_CLASS_OPS);
+                      JSCLASS_SLOT0_IS_NSISUPPORTS, JS_NULL_CLASS_OPS);

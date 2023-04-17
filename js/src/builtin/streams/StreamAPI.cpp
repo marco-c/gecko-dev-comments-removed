@@ -399,7 +399,7 @@ JS_PUBLIC_API bool JS::ReadableStreamUpdateDataAvailableFromSource(
 
 JS_PUBLIC_API void JS::ReadableStreamReleaseCCObject(JSObject* streamObj) {
   MOZ_ASSERT(JS::IsReadableStream(streamObj));
-  JS::SetPrivate(streamObj, nullptr);
+  JS::SetObjectISupports(streamObj, nullptr);
 }
 
 JS_PUBLIC_API bool JS::ReadableStreamTee(JSContext* cx,

@@ -228,7 +228,9 @@ nsresult XPCWrappedNative::WrapNewGlobal(JSContext* cx,
   wrapper->SetFlatJSObject(global);
 
   
-  JS::SetPrivate(global, wrapper);
+  static_assert(JSCLASS_GLOBAL_APPLICATION_SLOTS > 0,
+                "Need at least one slot for JSCLASS_SLOT0_IS_NSISUPPORTS");
+  JS::SetObjectISupports(global, wrapper);
 
   
   
@@ -651,7 +653,7 @@ bool XPCWrappedNative::Init(JSContext* cx, nsIXPCScriptable* aScriptable) {
 
   SetFlatJSObject(object);
 
-  JS::SetPrivate(mFlatJSObject, this);
+  JS::SetObjectISupports(mFlatJSObject, this);
 
   return FinishInit(cx);
 }
@@ -809,7 +811,7 @@ void XPCWrappedNative::SystemIsBeingShutDown() {
   
 
   
-  JS::SetPrivate(mFlatJSObject, nullptr);
+  JS::SetObjectISupports(mFlatJSObject, nullptr);
   UnsetFlatJSObject();
 
   XPCWrappedNativeProto* proto = GetProto();

@@ -779,13 +779,12 @@ nsIGlobalObject* NativeGlobal(JSObject* obj) {
 
   
   
-  MOZ_ASSERT((JS::GetClass(obj)->flags &
-              (JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE)) ||
+  MOZ_ASSERT(JS::GetClass(obj)->slot0IsISupports() ||
              dom::UnwrapDOMObjectToISupports(obj));
 
   nsISupports* native = dom::UnwrapDOMObjectToISupports(obj);
   if (!native) {
-    native = static_cast<nsISupports*>(JS::GetPrivate(obj));
+    native = JS::GetObjectISupports<nsISupports>(obj);
     MOZ_ASSERT(native);
 
     

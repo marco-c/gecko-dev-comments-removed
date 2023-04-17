@@ -36,13 +36,14 @@ class SandboxPrivate : public nsIGlobalObject,
     
     nsIScriptObjectPrincipal* sop =
         static_cast<nsIScriptObjectPrincipal*>(sbp.forget().take());
-    JS::SetPrivate(global, sop);
+    JS::SetObjectISupports(global, sop);
   }
 
   static SandboxPrivate* GetPrivate(JSObject* obj) {
     
-    return static_cast<SandboxPrivate*>(
-        static_cast<nsIScriptObjectPrincipal*>(JS::GetPrivate(obj)));
+    nsIScriptObjectPrincipal* sop =
+        JS::GetObjectISupports<nsIScriptObjectPrincipal>(obj);
+    return static_cast<SandboxPrivate*>(sop);
   }
 
   nsIPrincipal* GetPrincipal() override { return mPrincipal; }

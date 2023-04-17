@@ -575,7 +575,7 @@ const JSClass ReadableStream::class_ = {
     "ReadableStream",
     JSCLASS_HAS_RESERVED_SLOTS(ReadableStream::SlotCount) |
         JSCLASS_HAS_CACHED_PROTO(JSProto_ReadableStream) |
-        JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE,
+        JSCLASS_SLOT0_IS_NSISUPPORTS,
     JS_NULL_CLASS_OPS, &ReadableStream::classSpec_};
 
 const JSClass ReadableStream::protoClass_ = {
