@@ -1521,7 +1521,7 @@ extern SECStatus BLAKE2B_MAC_HashBuf(unsigned char *output,
 
 
 
-extern BLAKE2BContext *BLAKE2B_NewContext();
+extern BLAKE2BContext *BLAKE2B_NewContext(void);
 
 
 
