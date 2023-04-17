@@ -3645,7 +3645,7 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   }
 
   
-  for (int32_t i = mOutputStreams.Length() - 1; i >= 0; --i) {
+  for (size_t i = mOutputStreams.Length(); i-- > 0;) {
     if (!mOutputStreams[i].mFinishWhenEnded) {
       continue;
     }
