@@ -240,9 +240,9 @@ GeckoDriver.prototype.getBrowsingContext = function(options = {}) {
 
   let browsingContext = null;
   if (context === Context.Chrome) {
-    browsingContext = this.currentSession.chromeBrowsingContext;
+    browsingContext = this.currentSession?.chromeBrowsingContext;
   } else {
-    browsingContext = this.currentSession.contentBrowsingContext;
+    browsingContext = this.currentSession?.contentBrowsingContext;
   }
 
   if (browsingContext && parent) {
