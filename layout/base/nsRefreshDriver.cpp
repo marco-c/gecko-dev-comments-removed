@@ -1467,6 +1467,13 @@ bool nsRefreshDriver::CanDoCatchUpTick() {
     return false;
   }
 
+  if (mPresContext && mPresContext->Document()->GetReadyStateEnum() <
+                          Document::READYSTATE_COMPLETE) {
+    
+    
+    return false;
+  }
+
   return true;
 }
 
