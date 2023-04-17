@@ -411,7 +411,8 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
     
     unsigned int paddingLen = 0;
     unsigned int rdlen = 0;
-    if (StaticPrefs::network_trr_padding()) {
+    bool padding = StaticPrefs::network_trr_padding();
+    if (padding) {
       
       
 
@@ -421,8 +422,17 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
         
         packetLen += 8;
       }
+
       
-      paddingLen = (16 - (packetLen & 15)) & 15;
+      
+      uint32_t padTo = std::clamp<uint32_t>(
+          StaticPrefs::network_trr_padding_length(), 0, 1024);
+
+      
+      
+      if (padTo > 0) {
+        paddingLen = (padTo - (packetLen % padTo)) % padTo;
+      }
       
       rdlen += 4 + paddingLen;
     }
@@ -454,7 +464,7 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
       
     }
 
-    if (StaticPrefs::network_trr_padding()) {
+    if (padding) {
       aBody += '\0';  
       aBody += 12;    
 
