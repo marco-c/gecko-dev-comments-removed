@@ -946,7 +946,7 @@ char **NSC_ModuleDBFunc(unsigned long function, char *parameters, void *args);
 
 
 
-const SECItem *sftk_VerifyDH_Prime(SECItem *dhPrime);
+const SECItem *sftk_VerifyDH_Prime(SECItem *dhPrime, PRBool isFIPS);
 
 SECStatus sftk_IsSafePrime(SECItem *dhPrime, SECItem *dhSubPrime, PRBool *isSafe);
 
