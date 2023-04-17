@@ -71,9 +71,28 @@ void CSSImportRule::List(FILE* out, int32_t aIndent) const {
 }
 #endif
 
-dom::MediaList* CSSImportRule::GetMedia() const {
+void CSSImportRule::SetRawAfterClone(RefPtr<RawServoImportRule> aRaw) {
+  mRawRule = std::move(aRaw);
+  mChildSheet =
+      const_cast<StyleSheet*>(Servo_ImportRule_GetSheet(mRawRule.get()));
+}
+
+StyleSheet* CSSImportRule::GetStyleSheetForBindings() {
   
-  return mChildSheet ? mChildSheet->Media() : nullptr;
+  
+  
+  
+  
+  if (StyleSheet* parent = GetParentStyleSheet()) {
+    parent->EnsureUniqueInner();
+  }
+  return mChildSheet;
+}
+
+dom::MediaList* CSSImportRule::GetMedia() {
+  auto* sheet = GetStyleSheetForBindings();
+  
+  return sheet ? sheet->Media() : nullptr;
 }
 
 void CSSImportRule::DropSheetReference() {
