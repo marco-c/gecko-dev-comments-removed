@@ -188,7 +188,9 @@ fn main() {
             build.flag("/fp:fast")
                  .flag("-Xclang")
                  .flag("-mrecip=none");
-        } else {
+        } else if tool.is_like_clang() {
+            
+            
             build.flag("-ffast-math")
                  .flag("-mrecip=none");
         }
