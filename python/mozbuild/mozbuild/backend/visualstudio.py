@@ -625,6 +625,10 @@ class VisualStudioBackend(CommonBackend):
             n = pg.appendChild(doc.createElement("LocalDebuggerCommandArguments"))
             n.appendChild(doc.createTextNode(debugger[1]))
 
+        
+        n = pg.appendChild(doc.createElement("AdditionalOptions"))
+        n.appendChild(doc.createTextNode("/std:c++17"))
+
         i = project.appendChild(doc.createElement("Import"))
         i.setAttribute("Project", "$(VCTargetsPath)\\Microsoft.Cpp.props")
 
