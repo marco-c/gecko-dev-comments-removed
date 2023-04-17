@@ -7,6 +7,8 @@
 #if !defined(WMFMediaDataDecoder_h_)
 #  define WMFMediaDataDecoder_h_
 
+#  include <set>
+
 #  include "MFTDecoder.h"
 #  include "PlatformDecoderModule.h"
 #  include "WMF.h"
@@ -135,6 +137,12 @@ class WMFMediaDataDecoder
   
   RefPtr<DecodePromise> ProcessDrain();
 
+  
+  
+  
+  
+  bool ShouldGuardAgaintIncorrectFirstSample(MediaData* aOutput) const;
+
   const RefPtr<TaskQueue> mTaskQueue;
 
   UniquePtr<MFTManager> mMFTManager;
@@ -146,8 +154,9 @@ class WMFMediaDataDecoder
   media::TimeUnit mLastDuration;
   
   
-  bool mHasGuardedAgainstIncorrectFirstSample = false;
+  std::set<int64_t> mInputTimesSet;
   int64_t mSamplesCount = 0;
+  int64_t mOutputsCount = 0;
 
   bool mIsShutDown = false;
 

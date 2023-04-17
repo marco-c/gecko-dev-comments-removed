@@ -110,6 +110,8 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     MediaRawData* aSample) {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   DecodedData results;
+  LOG("ProcessDecode, type=%s, sample=%" PRId64,
+      TrackTypeToStr(mMFTManager->GetType()), aSample->mTime.ToMicroseconds());
   HRESULT hr = mMFTManager->Input(aSample);
   if (hr == MF_E_NOTACCEPTING) {
     hr = ProcessOutput(results);
@@ -124,19 +126,8 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     return ProcessError(hr, "MFTManager::Input");
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (IsWin10OrLater() && !mHasGuardedAgainstIncorrectFirstSample &&
-      !mMFTManager->HasSeekThreshold()) {
-    mHasGuardedAgainstIncorrectFirstSample = true;
-    mMFTManager->SetSeekThreshold(aSample->mTime);
+  if (mOutputsCount == 0) {
+    mInputTimesSet.insert(aSample->mTime.ToMicroseconds());
   }
 
   if (!mLastTime || aSample->mTime > *mLastTime) {
@@ -155,6 +146,35 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
   return ProcessError(hr, "MFTManager::Output(2)");
 }
 
+bool WMFMediaDataDecoder::ShouldGuardAgaintIncorrectFirstSample(
+    MediaData* aOutput) const {
+  
+  
+  if (mMFTManager->GetType() != TrackInfo::kVideoTrack) {
+    return false;
+  }
+
+  
+  
+  if (!IsWin10OrLater()) {
+    return false;
+  }
+
+  
+  if (mOutputsCount != 0) {
+    return false;
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT(!mInputTimesSet.empty());
+  return mInputTimesSet.find(aOutput->mTime.ToMicroseconds()) ==
+             mInputTimesSet.end() &&
+         aOutput->mTime.ToMicroseconds() == 0;
+}
+
 HRESULT
 WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
@@ -163,6 +183,16 @@ WMFMediaDataDecoder::ProcessOutput(DecodedData& aResults) {
   while (SUCCEEDED(hr = mMFTManager->Output(mLastStreamOffset, output))) {
     MOZ_ASSERT(output.get(), "Upon success, we must receive an output");
     mHasSuccessfulOutput = true;
+    if (ShouldGuardAgaintIncorrectFirstSample(output)) {
+      LOG("Discarding sample with time %" PRId64
+          " because of ShouldGuardAgaintIncorrectFirstSample check",
+          output->mTime.ToMicroseconds());
+      continue;
+    }
+    if (++mOutputsCount == 1) {
+      
+      mInputTimesSet.clear();
+    }
     aResults.AppendElement(std::move(output));
     if (mDrainStatus == DrainStatus::DRAINING) {
       break;
@@ -176,10 +206,12 @@ RefPtr<MediaDataDecoder::FlushPromise> WMFMediaDataDecoder::ProcessFlush() {
   if (mMFTManager) {
     mMFTManager->Flush();
   }
+  LOG("ProcessFlush, type=%s", TrackTypeToStr(mMFTManager->GetType()));
   mDrainStatus = DrainStatus::DRAINED;
   mSamplesCount = 0;
+  mOutputsCount = 0;
   mLastTime.reset();
-  mHasGuardedAgainstIncorrectFirstSample = false;
+  mInputTimesSet.clear();
   return FlushPromise::CreateAndResolve(true, __func__);
 }
 
