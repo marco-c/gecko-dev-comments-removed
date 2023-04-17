@@ -97,6 +97,8 @@ interface nsITimer : nsISupports
 
 
 
+
+
   const short TYPE_REPEATING_PRECISE_CAN_SKIP = 3;
 
   
