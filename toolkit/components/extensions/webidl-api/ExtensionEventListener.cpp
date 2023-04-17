@@ -280,11 +280,19 @@ NS_IMETHODIMP ExtensionEventListener::CallListener(
   }
 
   if (apiObjectType != APIObjectType::NONE) {
+    bool prependArgument = false;
+    aCallOptions->GetApiObjectPrepended(&prependArgument);
     
     
     
-    if (!args.InsertElementAt(0, std::move(apiObjectDescriptor), fallible)) {
-      return NS_ERROR_OUT_OF_MEMORY;
+    if (prependArgument) {
+      if (!args.InsertElementAt(0, std::move(apiObjectDescriptor), fallible)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+    } else {
+      if (!args.AppendElement(std::move(apiObjectDescriptor), fallible)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
     }
   }
 
@@ -396,7 +404,9 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     
     MOZ_ASSERT(!argsSequence.IsEmpty());
 
-    JS::Rooted<JS::Value> apiObjectDescriptor(aCx, argsSequence.ElementAt(0));
+    uint32_t apiObjectIdx = mAPIObjectPrepended ? 0 : argsSequence.Length() - 1;
+    JS::Rooted<JS::Value> apiObjectDescriptor(
+        aCx, argsSequence.ElementAt(apiObjectIdx));
     JS::Rooted<JS::Value> apiObjectValue(aCx);
 
     
@@ -415,7 +425,7 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
       return true;
     }
 
-    argsSequence.ReplaceElementAt(0, apiObjectValue);
+    argsSequence.ReplaceElementAt(apiObjectIdx, apiObjectValue);
   }
 
   
