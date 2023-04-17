@@ -1455,15 +1455,19 @@ async function pinchZoomOutWithTouchAtCenter() {
 }
 
 
-async function doubleTapOn(element, x, y, useTouchpad) {
-  let transformEndPromise = promiseTransformEnd();
-
+function synthesizeDoubleTap(element, x, y, useTouchpad) {
   if (useTouchpad) {
     synthesizeNativeTouchpadDoubleTap(element, x, y);
   } else {
     synthesizeNativeTap(element, x, y);
     synthesizeNativeTap(element, x, y);
   }
+}
+
+async function doubleTapOn(element, x, y, useTouchpad) {
+  let transformEndPromise = promiseTransformEnd();
+
+  synthesizeDoubleTap(element, x, y, useTouchpad);
 
   
   await transformEndPromise;
