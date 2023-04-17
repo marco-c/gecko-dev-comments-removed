@@ -9211,6 +9211,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       }
 
       if (!pe.emitInitIndexOrComputed(accessorType)) {
+        
         return false;
       }
 
@@ -9241,6 +9242,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       }
 
       if (!pe.emitInit(accessorType, keyAtom)) {
+        
         return false;
       }
 
@@ -9268,6 +9270,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       }
 
       if (!pe.emitInitIndexOrComputed(accessorType)) {
+        
         return false;
       }
 
@@ -9275,10 +9278,11 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     }
 
     MOZ_ASSERT(key->isKind(ParseNodeKind::PrivateName));
+    MOZ_ASSERT(type == ClassBody);
 
     auto* privateName = &key->as<NameNode>();
 
-    if (!prop->as<ClassMethod>().isStatic()) {
+    if (kind == PropertyEmitter::Kind::Prototype) {
       MOZ_ASSERT(accessorType == AccessorType::None);
       if (!pe.prepareForPrivateMethod()) {
         
