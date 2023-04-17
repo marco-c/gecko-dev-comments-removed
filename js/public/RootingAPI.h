@@ -1051,6 +1051,26 @@ class JS_PUBLIC_API AutoGCRooter {
   void operator=(AutoGCRooter& ida) = delete;
 } JS_HAZ_ROOTED_BASE;
 
+
+
+
+
+
+class MOZ_RAII JS_PUBLIC_API CustomAutoRooter : private AutoGCRooter {
+ public:
+  template <typename CX>
+  explicit CustomAutoRooter(const CX& cx)
+      : AutoGCRooter(cx, AutoGCRooter::Kind::Custom) {}
+
+  friend void AutoGCRooter::trace(JSTracer* trc);
+
+ protected:
+  virtual ~CustomAutoRooter() = default;
+
+  
+  virtual void trace(JSTracer* trc) = 0;
+};
+
 namespace detail {
 
 template <typename T>
