@@ -5714,7 +5714,7 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     if (compilerEnv_.debugEnabled()) {
       insertBreakablePoint(CallSiteDesc::EnterFrame);
-      if (!createStackMap("debug: breakable point")) {
+      if (!createStackMap("debug: enter-frame breakpoint")) {
         return false;
       }
     }
@@ -5866,11 +5866,11 @@ class BaseCompiler final : public BaseCompilerInterface {
       
       saveRegisterReturnValues(resultType);
       insertBreakablePoint(CallSiteDesc::Breakpoint);
-      if (!createStackMap("debug: breakpoint")) {
+      if (!createStackMap("debug: return-point breakpoint")) {
         return false;
       }
       insertBreakablePoint(CallSiteDesc::LeaveFrame);
-      if (!createStackMap("debug: leave frame")) {
+      if (!createStackMap("debug: leave-frame breakpoint")) {
         return false;
       }
       restoreRegisterReturnValues(resultType);
@@ -15612,7 +15612,7 @@ bool BaseCompiler::emitBody() {
       sync();
 
       insertBreakablePoint(CallSiteDesc::Breakpoint);
-      if (!createStackMap("debug: per insn")) {
+      if (!createStackMap("debug: per-insn breakpoint")) {
         return false;
       }
     }

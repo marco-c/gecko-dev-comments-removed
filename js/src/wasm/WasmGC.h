@@ -63,6 +63,7 @@ struct StackMap final {
   
   
   
+  
 
   
   uint32_t numMappedWords : 30;
@@ -73,6 +74,9 @@ struct StackMap final {
   
   uint32_t frameOffsetFromTop : 11;
 
+  
+  
+  
   
   uint32_t hasDebugFrame : 1;
 

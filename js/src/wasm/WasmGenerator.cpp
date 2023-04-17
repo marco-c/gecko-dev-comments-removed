@@ -1080,7 +1080,7 @@ UniqueCodeTier ModuleGenerator::finishCodeTier() {
   for (size_t i = 0; i < metadataTier_->stackMaps.length(); i++) {
     MOZ_ASSERT(IsValidStackMapKey(compilerEnv_->debugEnabled(),
                                   metadataTier_->stackMaps.get(i).nextInsnAddr),
-               "wasm stack map does not reference a valid insn");
+               "wasm stackmap does not reference a valid insn");
   }
 #endif
 
