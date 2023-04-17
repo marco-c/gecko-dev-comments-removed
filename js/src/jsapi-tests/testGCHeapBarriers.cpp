@@ -346,6 +346,9 @@ BEGIN_TEST(testGCHeapReadBarriers) {
   CHECK((TestWrapperType<JS::TenuredHeap<JSObject*>, JSObject*>()));
   CHECK((TestWrapperType<WeakHeapPtr<JSObject*>, JSObject*>()));
 
+  
+  CHECK((TestConstructorBarrier<JS::Heap<JSObject*>, JSObject*>()));
+
   return true;
 }
 
@@ -443,6 +446,46 @@ bool TestReadBarrierMarksBlack(bool fromWhite) {
 
     (void)*wrapper;
 
+    CHECK(obj->color() == gc::CellColor::Black);
+
+    return true;
+  });
+
+  return true;
+}
+
+template <typename WrapperT, typename ObjectT>
+bool TestConstructorBarrier() {
+  AutoLeaveZeal noZeal(cx);
+
+  
+  void* ptr = CreateTenuredGCThing<ObjectT>(cx);
+  CHECK(ptr);
+
+  CallDuringIncrementalGC(9 , [&]() -> bool {
+    CHECK(JS::IsIncrementalBarrierNeeded(cx));
+
+    auto obj = reinterpret_cast<ObjectT>(ptr);
+    WrapperT wrapper(obj);
+    CHECK(obj->color() == gc::CellColor::White);
+
+    WrapperT copiedWrapper(wrapper);
+    CHECK(obj->color() == gc::CellColor::Black);
+
+    return true;
+  });
+
+  ptr = CreateTenuredGCThing<ObjectT>(cx);
+  CHECK(ptr);
+
+  CallDuringIncrementalGC(9 , [&]() -> bool {
+    CHECK(JS::IsIncrementalBarrierNeeded(cx));
+
+    auto obj = reinterpret_cast<ObjectT>(ptr);
+    WrapperT wrapper(obj);
+    CHECK(obj->color() == gc::CellColor::White);
+
+    WrapperT movedWrapper(std::move(wrapper));
     CHECK(obj->color() == gc::CellColor::Black);
 
     return true;
