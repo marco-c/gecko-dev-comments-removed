@@ -268,14 +268,14 @@ Result<bool, ICUError> TimeZone::SetDefaultTimeZone(
 
   
   TimeZoneIdentifierVector defaultTimeZone;
-  MOZ_TRY(FillVectorWithICUCall(defaultTimeZone, ucal_getDefaultTimeZone));
+  MOZ_TRY(FillBufferWithICUCall(defaultTimeZone, ucal_getDefaultTimeZone));
 
   
   MOZ_TRY(mozilla::intl::SetDefaultTimeZone(tzid));
 
   
   TimeZoneIdentifierVector newTimeZone;
-  MOZ_TRY(FillVectorWithICUCall(newTimeZone, ucal_getDefaultTimeZone));
+  MOZ_TRY(FillBufferWithICUCall(newTimeZone, ucal_getDefaultTimeZone));
 
   
   if (!IsUnknownTimeZone(newTimeZone)) {
@@ -296,7 +296,7 @@ ICUResult TimeZone::SetDefaultTimeZoneFromHostTimeZone() {
   }
 #else
   TimeZoneIdentifierVector hostTimeZone;
-  MOZ_TRY(FillVectorWithICUCall(hostTimeZone, ucal_getHostTimeZone));
+  MOZ_TRY(FillBufferWithICUCall(hostTimeZone, ucal_getHostTimeZone));
 
   MOZ_TRY(mozilla::intl::SetDefaultTimeZone(hostTimeZone));
 #endif
