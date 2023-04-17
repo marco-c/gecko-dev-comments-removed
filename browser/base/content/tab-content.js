@@ -5,14 +5,6 @@
 
 
 
-
-
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-
-var global = this;
-
 Services.obs.notifyObservers(this, "tab-content-frameloader-created");
-
-
-void content;

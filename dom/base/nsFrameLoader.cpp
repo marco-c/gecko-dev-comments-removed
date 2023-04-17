@@ -2311,6 +2311,19 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   ReallyLoadFrameScripts();
   InitializeBrowserAPI();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIsTopLevelContent &&
+      mPendingBrowsingContext->GetMessageManagerGroup() == u"browsers"_ns) {
+    Unused << mDocShell->GetDocument();
+  }
+
   return NS_OK;
 }
 
