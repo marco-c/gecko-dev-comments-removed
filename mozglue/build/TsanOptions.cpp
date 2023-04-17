@@ -310,6 +310,9 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:mozilla::layers::APZCTreeManager::NewAPZCInstance\n"
 
+         
+         "race:mozilla::layers::AsyncPanZoomController::GetZoomAnimationId\n"
+
       
       ;  
 }
