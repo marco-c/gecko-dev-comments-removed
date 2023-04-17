@@ -490,8 +490,9 @@ class Nursery {
   mozilla::TimeDuration timeInChunkAlloc_;
 
   
-  mozilla::TimeDuration profileThreshold_;
   bool enableProfiling_;
+  bool profileWorkers_;
+  mozilla::TimeDuration profileThreshold_;
 
   
   bool canAllocateStrings_;
