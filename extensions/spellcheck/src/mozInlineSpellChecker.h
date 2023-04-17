@@ -89,8 +89,10 @@ class mozInlineSpellStatus {
   
   
   
+  
   explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
                                 Operation aOp, RefPtr<nsRange>&& aRange,
+                                RefPtr<nsRange>&& aCreatedRange,
                                 RefPtr<nsRange>&& aAnchorRange,
                                 bool aForceNavigationWordCheck,
                                 int32_t aNewNavigationPositionOffset);
@@ -102,7 +104,7 @@ class mozInlineSpellStatus {
   
   
   
-  RefPtr<nsRange> mCreatedRange;
+  const RefPtr<const nsRange> mCreatedRange;
 
   
   RefPtr<nsRange> mNoCheckRange;

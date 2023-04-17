@@ -96,12 +96,13 @@ static const PRTime kMaxSpellCheckTimeInUsec =
 
 mozInlineSpellStatus::mozInlineSpellStatus(
     mozInlineSpellChecker* aSpellChecker, const Operation aOp,
-    RefPtr<nsRange>&& aRange, RefPtr<nsRange>&& aAnchorRange,
-    const bool aForceNavigationWordCheck,
+    RefPtr<nsRange>&& aRange, RefPtr<nsRange>&& aCreatedRange,
+    RefPtr<nsRange>&& aAnchorRange, const bool aForceNavigationWordCheck,
     const int32_t aNewNavigationPositionOffset)
     : mSpellChecker(aSpellChecker),
       mRange(std::move(aRange)),
       mOp(aOp),
+      mCreatedRange(std::move(aCreatedRange)),
       mAnchorRange(std::move(aAnchorRange)),
       mForceNavigationWordCheck(aForceNavigationWordCheck),
       mNewNavigationPositionOffset(aNewNavigationPositionOffset) {}
@@ -145,11 +146,17 @@ mozInlineSpellStatus::CreateForEditorChange(
   
   RefPtr<nsRange> range = deleted ? nullptr : nsRange::Create(aPreviousNode);
 
+  
+  
+  RefPtr<nsRange> createdRange =
+      (aEditSubAction == EditSubAction::eInsertText) ? range : nullptr;
+
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{
-          &aSpellChecker, deleted ? eOpChangeDelete : eOpChange,
-          std::move(range), std::move(anchorRange), false, 0}};
+      new mozInlineSpellStatus{&aSpellChecker,
+                               deleted ? eOpChangeDelete : eOpChange,
+                               std::move(range), std::move(createdRange),
+                               std::move(anchorRange), false, 0}};
   if (deleted) {
     return status;
   }
@@ -176,12 +183,6 @@ mozInlineSpellStatus::CreateForEditorChange(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
     }
-  }
-
-  
-  
-  if (aEditSubAction == EditSubAction::eInsertText) {
-    status->mCreatedRange = status->mRange;
   }
 
   
@@ -238,7 +239,7 @@ mozInlineSpellStatus::CreateForNavigation(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker, eOpNavigation, nullptr,
+      new mozInlineSpellStatus{&aSpellChecker, eOpNavigation, nullptr, nullptr,
                                std::move(anchorRange), aForceCheck,
                                aNewPositionOffset}};
 
@@ -282,7 +283,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForSelection(
   UniquePtr<mozInlineSpellStatus> status{
       
       new mozInlineSpellStatus{&aSpellChecker, eOpSelection, nullptr, nullptr,
-                               false, 0}};
+                               nullptr, false, 0}};
   return status;
 }
 
@@ -300,7 +301,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForRange(
   UniquePtr<mozInlineSpellStatus> status{
       
       new mozInlineSpellStatus{&aSpellChecker, eOpChange, nullptr, nullptr,
-                               false, 0}};
+                               nullptr, false, 0}};
 
   status->mRange = aRange;
   return status;
