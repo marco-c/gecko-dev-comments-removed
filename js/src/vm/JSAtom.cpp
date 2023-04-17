@@ -446,23 +446,14 @@ static void TracePermanentAtoms(JSTracer* trc, AtomSet::Range atoms) {
   }
 }
 
-void JSRuntime::tracePermanentAtoms(JSTracer* trc) {
+void JSRuntime::tracePermanentAtomsDuringInit(JSTracer* trc) {
   
   if (parentRuntime) {
     return;
   }
 
-  
-  if (staticStrings) {
-    staticStrings->trace(trc);
-  }
-
   if (permanentAtomsDuringInit_) {
     TracePermanentAtoms(trc, permanentAtomsDuringInit_->all());
-  }
-
-  if (permanentAtoms_) {
-    TracePermanentAtoms(trc, permanentAtoms_->all());
   }
 }
 
@@ -635,6 +626,8 @@ size_t AtomsTable::sizeOfIncludingThis(
 bool JSRuntime::initMainAtomsTables(JSContext* cx) {
   MOZ_ASSERT(!parentRuntime);
   MOZ_ASSERT(!permanentAtomsPopulated());
+
+  gc.freezePermanentAtoms();
 
   
   permanentAtoms_ =

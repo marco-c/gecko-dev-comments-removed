@@ -288,6 +288,11 @@ class GCRuntime {
   void finishRoots();
   void finish();
 
+  void freezePermanentAtoms();
+  void freezePermanentAtomsOfKind(AllocKind kind, ArenaList& arenaList);
+  void restorePermanentAtoms();
+  void restorePermanentAtomsOfKind(AllocKind kind, ArenaList& arenaList);
+
   JS::HeapState heapState() const { return heapState_; }
 
   inline bool hasZealMode(ZealMode mode);
@@ -934,6 +939,10 @@ class GCRuntime {
   AtomMarkingRuntime atomMarking;
 
  private:
+  
+  MainThreadData<ArenaList> permanentAtoms;
+  MainThreadData<ArenaList> permanentFatInlineAtoms;
+
   
   
   

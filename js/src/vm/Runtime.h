@@ -860,7 +860,7 @@ struct JSRuntime {
   }
 
   bool initMainAtomsTables(JSContext* cx);
-  void tracePermanentAtoms(JSTracer* trc);
+  void tracePermanentAtomsDuringInit(JSTracer* trc);
 
   
   
