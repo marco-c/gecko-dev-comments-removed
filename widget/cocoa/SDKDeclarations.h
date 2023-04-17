@@ -45,6 +45,11 @@ const NSAppearanceName NSAppearanceNameDarkAqua = @"NSAppearanceNameDarkAqua";
     NS_AVAILABLE_MAC(10_14);
 @end
 
+@interface NSColor (NSColor10_14)
+
+@property(class, strong, readonly) NSColor *linkColor NS_AVAILABLE_MAC(10_10);
+@end
+
 enum {
   NSVisualEffectMaterialToolTip NS_ENUM_AVAILABLE_MAC(10_14) = 17,
 };
