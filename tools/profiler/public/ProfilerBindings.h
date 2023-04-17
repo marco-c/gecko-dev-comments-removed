@@ -45,7 +45,17 @@ void gecko_profiler_destruct_label(mozilla::AutoProfilerLabel* aAutoLabel);
 
 
 void gecko_profiler_construct_timestamp_now(mozilla::TimeStamp* aTimeStamp);
+void gecko_profiler_clone_timestamp(const mozilla::TimeStamp* aSrcTimeStamp,
+                                    mozilla::TimeStamp* aDestTimeStamp);
 void gecko_profiler_destruct_timestamp(mozilla::TimeStamp* aTimeStamp);
+
+
+void gecko_profiler_add_timestamp(const mozilla::TimeStamp* aTimeStamp,
+                                  mozilla::TimeStamp* aDestTimeStamp,
+                                  double aMicroseconds);
+void gecko_profiler_subtract_timestamp(const mozilla::TimeStamp* aTimeStamp,
+                                       mozilla::TimeStamp* aDestTimeStamp,
+                                       double aMicroseconds);
 
 
 void gecko_profiler_construct_marker_timing_instant_at(
