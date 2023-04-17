@@ -32,9 +32,14 @@ def gen_test_backend():
 
         print("No build detected, test metadata may be incomplete.")
 
-        
-        
         substs = EmptyConfig.default_substs
+
+        
+        
+        substs["ENABLE_TESTS"] = "1"
+
+        
+        
         if "JS_STANDALONE" in substs:
             del substs["JS_STANDALONE"]
 
