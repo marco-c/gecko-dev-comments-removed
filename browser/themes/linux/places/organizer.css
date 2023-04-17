@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Toolbar */
 
 #placesToolbar {
   appearance: auto;
@@ -27,7 +27,7 @@
   color: GrayText;
 }
 
-
+/* Back button */
 
 #back-button {
   list-style-image: url("moz-icon://stock/gtk-go-back-ltr?size=toolbar");
@@ -43,7 +43,7 @@
   list-style-image: url("moz-icon://stock/gtk-go-back-rtl?size=toolbar&state=disabled");
 }
 
-
+/* Forward button */
 
 #forward-button {
   list-style-image: url("moz-icon://stock/gtk-go-forward-ltr?size=toolbar");
@@ -59,7 +59,7 @@
   list-style-image: url("moz-icon://stock/gtk-go-forward-rtl?size=toolbar&state=disabled");
 }
 
-
+/* Menus */
 #placesMenu > menu {
   padding-inline-start: 4px;
   appearance: auto;
@@ -85,17 +85,36 @@
   fill: currentColor;
 }
 
-
+/* Root View */
 #placesView {
   background-color: Window;
 }
 
-
+/* Info box */
 #detailsPane {
   padding: 5px;
 }
 
+/* Expanders */
 
+.expander-up,
+.expander-down {
+  min-width: 0;
+  padding: 2px 0;
+  padding-inline-start: 2px;
+}
+
+.expander-up > .button-box {
+  appearance: auto;
+  -moz-default-appearance: button-arrow-up;
+}
+
+.expander-down > .button-box {
+  appearance: auto;
+  -moz-default-appearance: button-arrow-down;
+}
+
+/* Downloads pane */
 #clearDownloadsButton > .toolbarbutton-icon {
   display: none;
 }
