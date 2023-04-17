@@ -2228,8 +2228,8 @@ nsresult IMMHandler::OnMouseButtonEvent(
   
   
   
-  nsIntPoint cursorPos =
-      aIMENotification.mMouseButtonEventData.mCursorPos.AsIntPoint();
+  LayoutDeviceIntPoint cursorPos =
+      aIMENotification.mMouseButtonEventData.mCursorPos;
   nsIntRect charRect =
       aIMENotification.mMouseButtonEventData.mCharRect.AsIntRect();
   int32_t cursorXInChar = cursorPos.x - charRect.X();

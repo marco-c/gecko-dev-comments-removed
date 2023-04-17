@@ -637,7 +637,7 @@ struct IMENotification final {
       case NOTIFY_IME_OF_MOUSE_BUTTON_EVENT:
         mMouseButtonEventData.mEventMessage = eVoidEvent;
         mMouseButtonEventData.mOffset = UINT32_MAX;
-        mMouseButtonEventData.mCursorPos.Set(nsIntPoint(0, 0));
+        mMouseButtonEventData.mCursorPos.MoveTo(0, 0);
         mMouseButtonEventData.mCharRect.Set(nsIntRect(0, 0, 0, 0));
         mMouseButtonEventData.mButton = -1;
         mMouseButtonEventData.mButtons = 0;
@@ -713,17 +713,6 @@ struct IMENotification final {
   }
 
   IMEMessage mMessage;
-
-  struct Point {
-    int32_t mX;
-    int32_t mY;
-
-    void Set(const nsIntPoint& aPoint) {
-      mX = aPoint.x;
-      mY = aPoint.y;
-    }
-    nsIntPoint AsIntPoint() const { return nsIntPoint(mX, mY); }
-  };
 
   struct Rect {
     int32_t mX;
@@ -923,7 +912,7 @@ struct IMENotification final {
     
     uint32_t mOffset;
     
-    Point mCursorPos;
+    LayoutDeviceIntPoint mCursorPos;
     
     Rect mCharRect;
     
