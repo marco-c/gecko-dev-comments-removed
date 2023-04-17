@@ -395,7 +395,6 @@ nsresult nsComponentManagerImpl::Init() {
     
     
     case GeckoProcessType_Default:
-    case GeckoProcessType_Plugin:
     case GeckoProcessType_Content:
     case GeckoProcessType_IPDLUnitTest:
     case GeckoProcessType_GMPlugin:

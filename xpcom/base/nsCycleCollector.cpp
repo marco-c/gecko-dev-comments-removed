@@ -268,7 +268,6 @@ static void SuspectUsingNurseryPurpleBuffer(
 
 
 
-
 struct nsCycleCollectorParams {
   bool mLogAll;
   bool mLogShutdown;
@@ -297,9 +296,6 @@ struct nsCycleCollectorParams {
       switch (XRE_GetProcessType()) {
         case GeckoProcessType_Default:
           processLogging = !strcmp(logProcessEnv, "main");
-          break;
-        case GeckoProcessType_Plugin:
-          processLogging = !strcmp(logProcessEnv, "plugins");
           break;
         case GeckoProcessType_Content:
           processLogging = !strcmp(logProcessEnv, "content");
