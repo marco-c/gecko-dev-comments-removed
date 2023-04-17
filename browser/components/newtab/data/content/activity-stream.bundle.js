@@ -10005,13 +10005,13 @@ class Navigation extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCompon
       message: header.title
     }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("span", {
       className: "ds-navigation-header"
-    })) : null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("ul", null, links && links.map(t => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("li", {
+    })) : null, english ? react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("ul", null, links && links.map(t => react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("li", {
       key: t.name
     }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(Topic, {
       url: t.url,
       name: t.name,
       dispatch: this.props.dispatch
-    })))), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_2__["SafeAnchor"], {
+    })))) : null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_2__["SafeAnchor"], {
       onLinkClick: this.onLinkClick,
       className: this.props.className,
       url: privacyNotice.url
