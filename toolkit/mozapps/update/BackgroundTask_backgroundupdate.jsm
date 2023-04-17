@@ -127,8 +127,8 @@ async function _attemptBackgroundUpdate() {
         UpdateService.onlyDownloadUpdatesThisSession = true;
       } else if (
         status == AppUpdater.STATUS.DOWNLOADING &&
-        progress !== undefined &&
-        progressMax !== undefined
+        (UpdateService.onlyDownloadUpdatesThisSession ||
+          (progress !== undefined && progressMax !== undefined))
       ) {
         
         
@@ -137,9 +137,9 @@ async function _attemptBackgroundUpdate() {
         
         
         if (
+          UpdateService.onlyDownloadUpdatesThisSession ||
           progressMax < 0 ||
-          progress != progressMax ||
-          UpdateService.onlyDownloadUpdatesThisSession
+          progress != progressMax
         ) {
           log.debug(
             `${SLUG}: Download in progress. Exiting task while download ` +
