@@ -286,6 +286,12 @@ class StoragePrincipalHelper final {
                                nsIPrincipal** aPrincipal);
 
   
+  
+  
+  static bool ShouldUsePartitionPrincipalForServiceWorker(
+      nsIDocShell* aDocShell);
+
+  
 
 
 
