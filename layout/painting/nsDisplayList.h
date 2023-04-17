@@ -4382,16 +4382,6 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
 
   
   
-  enum ImageLayerization {
-    WHENEVER_POSSIBLE,
-    ONLY_FOR_SCALING,
-    NO_LAYER_NEEDED
-  };
-  ImageLayerization ShouldCreateOwnLayer(nsDisplayListBuilder* aBuilder,
-                                         LayerManager* aManager);
-
-  
-  
   RefPtr<ComputedStyle> mBackgroundStyle;
   nsCOMPtr<imgIContainer> mImage;
   nsIFrame* mDependentFrame;
