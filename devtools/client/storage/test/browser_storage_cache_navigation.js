@@ -6,25 +6,7 @@
 
 "use strict";
 
-
 add_task(async function() {
-  
-  
-  
-  
-  
-  
-  await pushPref("devtools.target-switching.server.enabled", false);
-  await testNavigation();
-});
-
-
-add_task(async function() {
-  enableTargetSwitching();
-  await testNavigation();
-});
-
-async function testNavigation() {
   const URL1 = buildURLWithContent(
     "example.com",
     `<h1>example.com</h1>` +
@@ -70,6 +52,10 @@ async function testNavigation() {
 
   
   await navigateTo(URL2);
+
+  
+  await selectTreeItem(["Cache", "http://example.net"]);
+
   
   info("Waiting for storage tree to update…");
   await waitUntil(() => isInTree(doc, ["Cache", "http://example.net", "foo"]));
@@ -89,7 +75,7 @@ async function testNavigation() {
     "Cache Storage",
     "Cache item is properly displayed"
   );
-}
+});
 
 function checkCacheData(url, status) {
   is(

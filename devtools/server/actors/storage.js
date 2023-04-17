@@ -2180,6 +2180,27 @@ StorageActors.createActor(
 
     async getValuesForHost(host, name) {
       if (!name) {
+        
+        
+        
+        
+        
+        
+        const previousCaches = [...this.hostVsStores.get(host).keys()];
+        await this.preListStores();
+        const updatedCaches = [...this.hostVsStores.get(host).keys()];
+        const newCaches = updatedCaches.filter(
+          cacheName => !previousCaches.includes(cacheName)
+        );
+        newCaches.forEach(cacheName =>
+          this.onItemUpdated("added", host, [cacheName])
+        );
+        const removedCaches = previousCaches.filter(
+          cacheName => !updatedCaches.includes(cacheName)
+        );
+        removedCaches.forEach(cacheName =>
+          this.onItemUpdated("deleted", host, [cacheName])
+        );
         return [];
       }
       
