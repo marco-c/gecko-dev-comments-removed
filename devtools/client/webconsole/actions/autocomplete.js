@@ -11,6 +11,11 @@ const {
   AUTOCOMPLETE_RETRIEVE_FROM_CACHE,
 } = require("devtools/client/webconsole/constants");
 
+const {
+  analyzeInputString,
+  shouldInputBeAutocompleted,
+} = require("devtools/shared/webconsole/analyze-input-string");
+
 
 
 
@@ -27,6 +32,8 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
     }
 
     const inputValue = hud.getInputValue();
+    const mappedVars = hud.getMappedVariables() ?? {};
+    const allVars = (expressionVars ?? []).concat(Object.keys(mappedVars));
     const frameActorId = await webConsoleUI.getFrameActor();
     const webconsoleFront = await webConsoleUI.getWebconsoleFront({
       frameActorId,
@@ -43,39 +50,31 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
       return dispatch(autocompleteClear());
     }
 
-    const input = inputValue.substring(0, cursor);
+    const rawInput = inputValue.substring(0, cursor);
     const retrieveFromCache =
       !force &&
       cache &&
       cache.input &&
-      input.startsWith(cache.input) &&
-      /[a-zA-Z0-9]$/.test(input) &&
+      rawInput.startsWith(cache.input) &&
+      /[a-zA-Z0-9]$/.test(rawInput) &&
       frameActorId === cache.frameActorId;
 
     if (retrieveFromCache) {
-      return dispatch(autoCompleteDataRetrieveFromCache(input));
+      return dispatch(autoCompleteDataRetrieveFromCache(rawInput));
     }
 
-    let authorizedEvaluations =
-      Array.isArray(state.authorizedEvaluations) &&
-      state.authorizedEvaluations.length > 0
-        ? state.authorizedEvaluations
-        : [];
+    const authorizedEvaluations = updateAuthorizedEvaluations(
+      state.authorizedEvaluations,
+      getterPath,
+      mappedVars
+    );
 
-    if (Array.isArray(getterPath) && getterPath.length > 0) {
-      
-      
-      
-      
-      
-      const last = authorizedEvaluations[authorizedEvaluations.length - 1];
-      const concat = !last || last.every((x, index) => x === getterPath[index]);
-      if (concat) {
-        authorizedEvaluations.push(getterPath);
-      } else {
-        authorizedEvaluations = [getterPath];
-      }
-    }
+    const { input, originalExpression } = await getMappedInput(
+      rawInput,
+      mappedVars,
+      hud,
+      webconsoleFront
+    );
 
     return dispatch(
       autocompleteDataFetch({
@@ -84,10 +83,114 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
         webconsoleFront,
         authorizedEvaluations,
         force,
-        expressionVars,
+        allVars,
+        mappedVars,
+        originalExpression,
       })
     );
   };
+}
+
+
+
+
+
+
+
+
+
+function updateAuthorizedEvaluations(
+  authorizedEvaluations,
+  getterPath,
+  mappedVars
+) {
+  if (
+    !Array.isArray(authorizedEvaluations) ||
+    authorizedEvaluations.length == 0
+  ) {
+    authorizedEvaluations = [];
+  }
+
+  if (Array.isArray(getterPath) && getterPath.length > 0) {
+    
+    
+    
+    
+    
+    const last = authorizedEvaluations[authorizedEvaluations.length - 1];
+
+    const generatedPath = mappedVars[getterPath[0]]?.split(".");
+    if (generatedPath) {
+      getterPath = generatedPath.concat(getterPath.slice(1));
+    }
+
+    const isMappedVariable =
+      generatedPath && getterPath.length === generatedPath.length;
+    const concat = !last || last.every((x, index) => x === getterPath[index]);
+    if (isMappedVariable) {
+      
+      
+      
+      
+      authorizedEvaluations = generatedPath.map((_, i) =>
+        generatedPath.slice(0, i + 1)
+      );
+    } else if (concat) {
+      authorizedEvaluations.push(getterPath);
+    } else {
+      authorizedEvaluations = [getterPath];
+    }
+  }
+  return authorizedEvaluations;
+}
+
+
+
+
+
+
+
+
+
+async function getMappedInput(rawInput, mappedVars, hud, webconsoleFront) {
+  if (!mappedVars || Object.keys(mappedVars).length == 0) {
+    return { input: rawInput, originalExpression: undefined };
+  }
+
+  const inputAnalysis = analyzeInputString(rawInput, 500);
+  if (!shouldInputBeAutocompleted(inputAnalysis)) {
+    return { input: rawInput, originalExpression: undefined };
+  }
+
+  const {
+    mainExpression: originalExpression,
+    isPropertyAccess,
+    isElementAccess,
+    lastStatement,
+  } = inputAnalysis;
+
+  
+  
+  
+  
+  if (!isPropertyAccess && !isElementAccess) {
+    return { input: lastStatement, originalExpression };
+  }
+
+  let generated =
+    (await hud.getMappedExpression(originalExpression))?.expression ??
+    originalExpression;
+  
+  const trailingSemicolon = /;\s*$/;
+  if (
+    trailingSemicolon.test(generated) &&
+    !trailingSemicolon.test(originalExpression)
+  ) {
+    generated = generated.slice(0, generated.lastIndexOf(";"));
+  }
+
+  const suffix = lastStatement.slice(originalExpression.length);
+  return { input: generated + suffix, originalExpression };
 }
 
 
@@ -136,7 +239,9 @@ function autocompleteDataFetch({
   force,
   webconsoleFront,
   authorizedEvaluations,
-  expressionVars,
+  allVars,
+  mappedVars,
+  originalExpression,
 }) {
   return async ({ dispatch, webConsoleUI }) => {
     const selectedNodeActor = webConsoleUI.getSelectedNodeActorID();
@@ -150,10 +255,17 @@ function autocompleteDataFetch({
         frameActorId,
         selectedNodeActor,
         authorizedEvaluations,
-        expressionVars
+        allVars
       )
       .then(data => {
-        dispatch(
+        if (data.isUnsafeGetter && originalExpression !== undefined) {
+          data.getterPath = unmapGetterPath(
+            data.getterPath,
+            originalExpression,
+            mappedVars
+          );
+        }
+        return dispatch(
           autocompleteDataReceive({
             id,
             input,
@@ -161,7 +273,6 @@ function autocompleteDataFetch({
             frameActorId,
             data,
             authorizedEvaluations,
-            expressionVars,
           })
         );
       })
@@ -170,6 +281,38 @@ function autocompleteDataFetch({
         dispatch(autocompleteClear());
       });
   };
+}
+
+
+
+
+
+
+
+
+
+
+function unmapGetterPath(getterPath, originalExpression, mappedVars) {
+  
+  
+  
+
+  
+  
+  const originalVariable = /^[^.[?]*/s.exec(originalExpression)[0].trim();
+  const generatedVariable = mappedVars[originalVariable];
+  if (generatedVariable) {
+    
+    const generatedVariableParts = generatedVariable.split(".");
+    
+    
+    
+    return [
+      originalVariable,
+      ...getterPath.slice(generatedVariableParts.length),
+    ];
+  }
+  return getterPath;
 }
 
 
