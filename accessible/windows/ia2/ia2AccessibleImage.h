@@ -23,6 +23,12 @@ class ia2AccessibleImage : public IAccessibleImage, public MsaaAccessible {
   IMPL_IUNKNOWN_REFCOUNTING_INHERITED(MsaaAccessible)
 
   
+  
+  
+  
+  using MsaaAccessible::get_description;
+
+  
   virtual  HRESULT STDMETHODCALLTYPE get_description(
        BSTR* description);
 

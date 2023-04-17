@@ -18,13 +18,6 @@
 #include "nsXULAppAPI.h"
 #include "Units.h"
 
-#if defined(__GNUC__) || defined(__clang__)
-
-
-
-#  pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#endif
-
 namespace mozilla {
 namespace a11y {
 class DocRemoteAccessibleWrap;
