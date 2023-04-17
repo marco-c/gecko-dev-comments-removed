@@ -2478,12 +2478,20 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
+pref("browser.tabs.remote.dataUriInDefaultWebProcess", false);
+
+
+
 pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
 
 
 
 
 pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
+
+
+
+pref("browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
 
 
 

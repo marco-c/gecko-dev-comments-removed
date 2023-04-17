@@ -15,17 +15,14 @@
 
 
 #define PREALLOC_REMOTE_TYPE "prealloc"_ns
-#define WEB_REMOTE_TYPE "web"_ns
+#define DEFAULT_REMOTE_TYPE "web"_ns
 #define FILE_REMOTE_TYPE "file"_ns
 #define EXTENSION_REMOTE_TYPE "extension"_ns
 #define PRIVILEGEDABOUT_REMOTE_TYPE "privilegedabout"_ns
 #define PRIVILEGEDMOZILLA_REMOTE_TYPE "privilegedmozilla"_ns
 
-#define DEFAULT_REMOTE_TYPE WEB_REMOTE_TYPE
-
 
 #define FISSION_WEB_REMOTE_TYPE "webIsolated"_ns
-#define WITH_COOP_COEP_REMOTE_TYPE "webCOOP+COEP"_ns
 #define WITH_COOP_COEP_REMOTE_TYPE_PREFIX "webCOOP+COEP="_ns
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"_ns
 
