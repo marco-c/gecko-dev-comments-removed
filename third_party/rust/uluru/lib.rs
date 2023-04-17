@@ -3,6 +3,7 @@
 
 
 #![no_std]
+#![deny(unsafe_code)]
 
 
 
@@ -15,7 +16,17 @@ extern crate arrayvec;
 
 use arrayvec::{Array, ArrayVec};
 
-#[cfg(test)] mod tests;
+use core::fmt;
+
+#[cfg(test)]
+extern crate quickcheck;
+
+#[cfg(test)]
+#[macro_use(quickcheck)]
+extern crate quickcheck_macros;
+
+#[cfg(test)]
+mod tests;
 
 
 
@@ -68,6 +79,7 @@ pub struct LRUCache<A: Array> {
 }
 
 
+#[derive(Debug, Clone)]
 pub struct Entry<T> {
     val: T,
     
@@ -83,24 +95,28 @@ impl<A: Array> Default for LRUCache<A> {
             head: 0,
             tail: 0,
         };
-        assert!(cache.entries.capacity() < u16::max_value() as usize, "Capacity overflow");
+        assert!(
+            cache.entries.capacity() < u16::max_value() as usize,
+            "Capacity overflow"
+        );
         cache
     }
 }
 
-impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
+impl<T, A> LRUCache<A>
+where
+    A: Array<Item = Entry<T>>,
+{
     
-    pub fn num_entries(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.entries.len()
     }
 
-    #[inline]
     
-    fn touch(&mut self, idx: u16) {
-        if idx != self.head {
-            self.remove(idx);
-            self.push_front(idx);
-        }
+    #[inline]
+    #[deprecated = "Use the 'len' method instead."]
+    pub fn num_entries(&self) -> usize {
+        self.len()
     }
 
     
@@ -114,32 +130,24 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
     }
 
     
-    fn iter_mut(&mut self) -> LRUCacheMutIterator<A> {
-        LRUCacheMutIterator {
-            pos: self.head,
-            done: self.entries.len() == 0,
-            cache: self,
-        }
-    }
-
-    
     
     pub fn lookup<F, R>(&mut self, mut test_one: F) -> Option<R>
     where
-        F: FnMut(&mut T) -> Option<R>
+        F: FnMut(&mut T) -> Option<R>,
     {
         let mut result = None;
-        for (i, candidate) in self.iter_mut() {
-            if let Some(r) = test_one(candidate) {
+        let mut iter = self.iter_mut();
+        while let Some((i, val)) = iter.next() {
+            if let Some(r) = test_one(val) {
                 result = Some((i, r));
                 break;
             }
-        };
+        }
 
         match result {
             None => None,
             Some((i, r)) => {
-                self.touch(i);
+                self.touch_index(i);
                 Some(r)
             }
         }
@@ -147,16 +155,30 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
 
     
     
-    pub fn find<F>(&mut self, mut pred: F) -> Option<&mut T>
+    pub fn touch<F>(&mut self, mut pred: F) -> bool
     where
-        F: FnMut(&T) -> bool
+        F: FnMut(&T) -> bool,
     {
-        match self.iter_mut().find(|&(_, ref x)| pred(x)) {
-            Some((i, _)) => {
-                self.touch(i);
-                self.front_mut()
+        let mut iter = self.iter_mut();
+        while let Some((i, val)) = iter.next() {
+            if pred(val) {
+                self.touch_index(i);
+                return true
             }
-            None => None
+        }
+        false
+    }
+
+    
+    
+    pub fn find<F>(&mut self, pred: F) -> Option<&mut T>
+    where
+        F: FnMut(&T) -> bool,
+    {
+        if self.touch(pred) {
+            self.front_mut()
+        } else {
+            None
         }
     }
 
@@ -165,7 +187,11 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
     
     
     pub fn insert(&mut self, val: T) {
-        let entry = Entry { val, prev: 0, next: 0 };
+        let entry = Entry {
+            val,
+            prev: 0,
+            next: 0,
+        };
 
         
         let new_head = if self.entries.len() == self.entries.capacity() {
@@ -178,6 +204,35 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
         };
 
         self.push_front(new_head);
+    }
+
+    
+    pub fn clear(&mut self) {
+        self.entries.clear();
+    }
+
+    
+    #[inline]
+    #[deprecated = "Use the 'clear' method instead."]
+    pub fn evict_all(&mut self) {
+        self.clear();
+    }
+
+    
+    fn iter_mut(&mut self) -> IterMut<A> {
+        IterMut {
+            pos: self.head,
+            cache: self,
+        }
+    }
+
+    
+    #[inline]
+    fn touch_index(&mut self, idx: u16) {
+        if idx != self.head {
+            self.remove(idx);
+            self.push_front(idx);
+        }
     }
 
     
@@ -220,40 +275,55 @@ impl<T, A: Array<Item=Entry<T>>> LRUCache<A> {
         self.tail = new_tail;
         old_tail
     }
+}
 
-    
-    pub fn evict_all(&mut self) {
-        self.entries.clear();
+impl<T, A> Clone for LRUCache<A>
+where
+    A: Array<Item = Entry<T>>,
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            entries: self.entries.clone(),
+            head: self.head,
+            tail: self.tail,
+        }
+    }
+}
+
+impl<T, A> fmt::Debug for LRUCache<A>
+where
+    A: Array<Item = Entry<T>>,
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("LRUCache")
+            .field("head", &self.head)
+            .field("tail", &self.tail)
+            .field("entries", &self.entries)
+            .finish()
     }
 }
 
 
-struct LRUCacheMutIterator<'a, A: 'a + Array> {
+struct IterMut<'a, A: 'a + Array> {
     cache: &'a mut LRUCache<A>,
     pos: u16,
-    done: bool,
 }
 
-impl<'a, T, A> Iterator for LRUCacheMutIterator<'a, A>
-where T: 'a,
-      A: 'a + Array<Item=Entry<T>>
+impl<'a, A, T> IterMut<'a, A>
+where
+    A: Array<Item = Entry<T>>,
 {
-    type Item = (u16, &'a mut T);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.done { return None }
-
-        
-        let entry = unsafe {
-            &mut *(&mut self.cache.entries[self.pos as usize] as *mut Entry<T>)
-        };
-
+    fn next(&mut self) -> Option<(u16, &mut T)> {
         let index = self.pos;
-        if self.pos == self.cache.tail {
-            self.done = true;
-        }
-        self.pos = entry.next;
+        let entry = self.cache.entries.get_mut(index as usize)?;
 
+        self.pos = if index == self.cache.tail {
+            A::CAPACITY as u16 
+        } else {
+            entry.next
+        };
         Some((index, &mut entry.val))
     }
 }
