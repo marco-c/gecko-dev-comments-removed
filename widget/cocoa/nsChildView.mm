@@ -94,6 +94,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_ui.h"
@@ -1096,7 +1097,7 @@ void nsChildView::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
   
   
   
-  if ([cocoaEvent keyCode] == kVK_Escape &&
+  if (StaticPrefs::browser_fullscreen_exit_on_escape() && [cocoaEvent keyCode] == kVK_Escape &&
       [[mView window] styleMask] & NSWindowStyleMaskFullScreen) {
     [[mView window] toggleFullScreen:nil];
   }
