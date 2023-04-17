@@ -6554,6 +6554,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   bool isTopFrame = mBrowsingContext->IsTop();
 
+  bool hadErrorStatus = false;
   
   
   if (NS_FAILED(aStatus)) {
@@ -6574,6 +6575,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                                        mBrowsingContext->GetUseErrorPages(),
                                        isInitialDocument,
                                        &skippedUnknownProtocolNavigation);
+    hadErrorStatus = true;
     if (NS_FAILED(aStatus)) {
       if (!mIsBeingDestroyed) {
         DisplayLoadError(aStatus, url, nullptr, aChannel);
@@ -6595,6 +6597,12 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     PredictorLearnRedirect(url, aChannel, loadInfo->GetOriginAttributes());
   }
 
+  if (hadErrorStatus) {
+    
+    
+    
+    return NS_OK;
+  }
   if constexpr (SessionStoreUtils::NATIVE_LISTENER) {
     if (Document* document = GetDocument()) {
       if (WindowGlobalChild* windowChild = document->GetWindowGlobalChild()) {
