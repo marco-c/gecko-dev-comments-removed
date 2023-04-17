@@ -36,6 +36,7 @@
 #ifndef GOOGLE_BREAKPAD_PROCESSOR_SYMBOLIC_CONSTANTS_WIN_H_
 #define GOOGLE_BREAKPAD_PROCESSOR_SYMBOLIC_CONSTANTS_WIN_H_
 
+#include <stdint.h>
 #include <string>
 
 #include "common/using_std_string.h"
@@ -44,10 +45,16 @@
 namespace google_breakpad {
 
 
-string NTStatusToString(uint32_t ntstatus);
+
+const char* NTStatusToString(uint32_t ntstatus);
 
 
-string FastFailToString(uint32_t fast_fail_code);
+
+const char* FastFailToString(uint32_t fast_fail_code);
+
+
+
+const char* WinErrorToString(uint16_t error);
 
 }  
 
