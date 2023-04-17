@@ -50,6 +50,8 @@ class ICCacheIRStub;
 
 
 
+
+
 enum SpewContext : uint8_t { Shell, Transition, TrialInlining };
 
 class CacheIRHealth {
@@ -75,11 +77,12 @@ class CacheIRHealth {
   void spewScriptFinalWarmUpCount(JSContext* cx, const char* filename,
                                   JSScript* script, uint32_t warmUpCount);
   
-  void rateIC(JSContext* cx, ICEntry* entry, HandleScript script,
-              SpewContext context);
+  void healthReportForIC(JSContext* cx, ICEntry* entry, HandleScript script,
+                         SpewContext context);
   
   
-  void rateScript(JSContext* cx, HandleScript script, SpewContext context);
+  void healthReportForScript(JSContext* cx, HandleScript script,
+                             SpewContext context);
 };
 
 }  
