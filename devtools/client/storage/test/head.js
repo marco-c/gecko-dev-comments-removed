@@ -1155,13 +1155,6 @@ function buildURLWithContent(domain, html, protocol = "https") {
 
 
 
-function buildInsecureURLWithContent(domain, html) {
-  return buildURLWithContent(domain, html, "http");
-}
-
-
-
-
 
 
 function checkCookieData(name, value) {
