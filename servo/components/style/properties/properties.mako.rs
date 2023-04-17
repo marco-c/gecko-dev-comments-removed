@@ -232,7 +232,7 @@ pub mod shorthands {
 
 
 <%
-    extra = [
+    extra_variants = [
         {
             "name": "CSSWideKeyword",
             "type": "WideKeywordDeclaration",
@@ -252,7 +252,7 @@ pub mod shorthands {
             "copy": False,
         },
     ]
-    for v in extra:
+    for v in extra_variants:
         variants.append(v)
         groups[v["type"]] = [v]
 %>
@@ -396,6 +396,17 @@ impl MallocSizeOf for PropertyDeclaration {
 impl PropertyDeclaration {
     
     
+    fn is_longhand_value(&self) -> bool {
+        match *self {
+            % for v in extra_variants:
+            PropertyDeclaration::${v["name"]}(..) => false,
+            % endfor
+            _ => true,
+        }
+    }
+
+    
+    
     
     pub fn to_css(&self, dest: &mut CssStringWriter) -> fmt::Result {
         use self::PropertyDeclaration::*;
@@ -408,6 +419,24 @@ impl PropertyDeclaration {
             }
             % endfor
         }
+    }
+
+    
+    
+    pub(crate) fn color_value(&self) -> Option<<&crate::values::specified::Color> {
+        ${static_longhand_id_set("COLOR_PROPERTIES", lambda p: p.predefined_type == "Color")}
+        <%
+            # sanity check
+            assert data.longhands_by_name["background-color"].predefined_type == "Color"
+
+            color_specified_type = data.longhands_by_name["background-color"].specified_type()
+        %>
+        let id = self.id().as_longhand()?;
+        if !COLOR_PROPERTIES.contains(id) || !self.is_longhand_value() {
+            return None;
+        }
+        let repr = self as *const _ as *const PropertyDeclarationVariantRepr<${color_specified_type}>;
+        Some(unsafe { &(*repr).value })
     }
 }
 
