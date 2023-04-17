@@ -185,9 +185,14 @@ mod test {
         assert_eq!(43008, metric_data.sum);
 
         
-        
         let buf = ipc::take_buf().unwrap();
         assert!(buf.len() > 0);
         assert!(ipc::replay_from_buf(&buf).is_ok());
+
+        let data = parent_metric.test_get_value(None).expect("must have data");
+        assert_eq!(2, data.values.values().fold(0, |acc, count| acc + count));
+        assert_eq!(1, data.values[&42494]);
+        assert_eq!(1, data.values[&115097]);
+        assert_eq!(162816, data.sum);
     }
 }
