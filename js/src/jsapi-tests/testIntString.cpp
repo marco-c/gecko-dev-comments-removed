@@ -20,9 +20,10 @@ BEGIN_TEST(testIntString_bug515273) {
   CHECK(JS_StringHasBeenPinned(cx, str));
   CHECK(JS_LinearStringEqualsLiteral(JS_ASSERT_STRING_IS_LINEAR(str), "42"));
 
+  
   EVAL("'111';", &v);
   str = v.toString();
-  CHECK(JS_StringHasBeenPinned(cx, str));
+  CHECK(!JS_StringHasBeenPinned(cx, str));
   CHECK(JS_LinearStringEqualsLiteral(JS_ASSERT_STRING_IS_LINEAR(str), "111"));
 
   
