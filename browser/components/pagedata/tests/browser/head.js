@@ -1,7 +1,0 @@
-
-
-
-
-const { PageDataService } = ChromeUtils.import(
-  "resource:///modules/pagedata/PageDataService.jsm"
-);
