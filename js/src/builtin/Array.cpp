@@ -4081,8 +4081,7 @@ void js::ArraySpeciesLookup::initialize(JSContext* cx) {
   
   Maybe<ShapeProperty> speciesProp =
       arrayCtor->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().species));
-  if (speciesProp.isNothing() ||
-      !arrayCtor->hasGetter(speciesProp->shapeDeprecated())) {
+  if (speciesProp.isNothing() || !arrayCtor->hasGetter(*speciesProp)) {
     return;
   }
 

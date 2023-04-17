@@ -1094,9 +1094,9 @@ class NativeObject : public JSObject {
   GetterSetter* getGetterSetter(uint32_t slot) const {
     return getSlot(slot).toGCThing()->as<GetterSetter>();
   }
-  GetterSetter* getGetterSetter(Shape* shape) const {
-    MOZ_ASSERT(shape->isAccessorDescriptor());
-    return getGetterSetter(shape->slot());
+  GetterSetter* getGetterSetter(ShapeProperty prop) const {
+    MOZ_ASSERT(prop.isAccessorProperty());
+    return getGetterSetter(prop.slot());
   }
 
   
@@ -1104,34 +1104,34 @@ class NativeObject : public JSObject {
   JSObject* getGetter(uint32_t slot) const {
     return getGetterSetter(slot)->getter();
   }
-  JSObject* getGetter(Shape* shape) const {
-    return getGetterSetter(shape)->getter();
+  JSObject* getGetter(ShapeProperty prop) const {
+    return getGetterSetter(prop)->getter();
   }
-  JSObject* getSetter(Shape* shape) const {
-    return getGetterSetter(shape)->setter();
-  }
-
-  
-  
-  bool hasGetter(Shape* shape) const {
-    return shape->hasGetterValue() && getGetter(shape);
-  }
-  bool hasSetter(Shape* shape) const {
-    return shape->hasSetterValue() && getSetter(shape);
+  JSObject* getSetter(ShapeProperty prop) const {
+    return getGetterSetter(prop)->setter();
   }
 
   
   
-  Value getGetterValue(Shape* shape) const {
-    MOZ_ASSERT(shape->hasGetterValue());
-    if (JSObject* getterObj = getGetter(shape)) {
+  bool hasGetter(ShapeProperty prop) const {
+    return prop.isAccessorProperty() && getGetter(prop);
+  }
+  bool hasSetter(ShapeProperty prop) const {
+    return prop.isAccessorProperty() && getSetter(prop);
+  }
+
+  
+  
+  Value getGetterValue(ShapeProperty prop) const {
+    MOZ_ASSERT(prop.isAccessorProperty());
+    if (JSObject* getterObj = getGetter(prop)) {
       return ObjectValue(*getterObj);
     }
     return UndefinedValue();
   }
-  Value getSetterValue(Shape* shape) const {
-    MOZ_ASSERT(shape->hasSetterValue());
-    if (JSObject* setterObj = getSetter(shape)) {
+  Value getSetterValue(ShapeProperty prop) const {
+    MOZ_ASSERT(prop.isAccessorProperty());
+    if (JSObject* setterObj = getSetter(prop)) {
       return ObjectValue(*setterObj);
     }
     return UndefinedValue();
