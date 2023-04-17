@@ -573,10 +573,6 @@ pref("browser.tabs.tabmanager.enabled", false);
 
 
 
-pref("browser.tabs.extraDragSpace", false);
-
-
-
 
 
 
