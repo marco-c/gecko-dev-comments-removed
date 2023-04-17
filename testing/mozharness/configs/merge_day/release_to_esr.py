@@ -13,8 +13,7 @@ config = {
     "version_files": [
         {"file": "browser/config/version_display.txt", "suffix": "esr"},
     ],
-    "replacements": [
-    ],
+    "replacements": [],
     "vcs_share_base": os.path.join(ABS_WORK_DIR, "hg-shared"),
     
     
