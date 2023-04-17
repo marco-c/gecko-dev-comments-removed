@@ -61,8 +61,7 @@ class nsILineIterator {
   };
 
   
-  virtual mozilla::Result<LineInfo, nsresult> GetLine(
-      int32_t aLineNumber) const = 0;
+  virtual mozilla::Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) = 0;
 
   
 
@@ -80,7 +79,7 @@ class nsILineIterator {
   
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
-                         bool* aPosIsAfterLastFrame) const = 0;
+                         bool* aPosIsAfterLastFrame) = 0;
 
   
   
