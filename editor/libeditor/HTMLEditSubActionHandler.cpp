@@ -2322,48 +2322,6 @@ nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
   return NS_OK;
 }
 
-EditorDOMPoint HTMLEditor::GetGoodCaretPointFor(
-    nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount) const {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(aDirectionAndAmount == nsIEditor::eNext ||
-             aDirectionAndAmount == nsIEditor::eNextWord ||
-             aDirectionAndAmount == nsIEditor::ePrevious ||
-             aDirectionAndAmount == nsIEditor::ePreviousWord ||
-             aDirectionAndAmount == nsIEditor::eToBeginningOfLine ||
-             aDirectionAndAmount == nsIEditor::eToEndOfLine);
-
-  bool goingForward = (aDirectionAndAmount == nsIEditor::eNext ||
-                       aDirectionAndAmount == nsIEditor::eNextWord ||
-                       aDirectionAndAmount == nsIEditor::eToEndOfLine);
-
-  
-  
-  
-
-  
-  if (aContent.IsText() || HTMLEditUtils::IsContainerNode(aContent) ||
-      NS_WARN_IF(!aContent.GetParentNode())) {
-    return EditorDOMPoint(&aContent, goingForward ? 0 : aContent.Length());
-  }
-
-  
-  if (goingForward) {
-    return EditorDOMPoint(&aContent);
-  }
-
-  
-  
-  
-  if (!HTMLEditUtils::IsInvisibleBRElement(aContent)) {
-    EditorDOMPoint ret(EditorDOMPoint::After(aContent));
-    NS_WARNING_ASSERTION(ret.IsSet(), "Failed to set after aContent");
-    return ret;
-  }
-
-  
-  return EditorDOMPoint(&aContent);
-}
-
 EditActionResult HTMLEditor::MakeOrChangeListAndListItemAsSubAction(
     nsAtom& aListElementOrListItemElementTagName, const nsAString& aBulletType,
     SelectAllOfCurrentList aSelectAllOfCurrentList) {
@@ -8323,10 +8281,11 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
     return NS_OK;
   }
 
-  EditorDOMPoint pointToPutCaret =
-      GetGoodCaretPointFor(*nearEditableContent, aDirectionAndAmount);
+  EditorRawDOMPoint pointToPutCaret =
+      HTMLEditUtils::GetGoodCaretPointFor<EditorRawDOMPoint>(
+          *nearEditableContent, aDirectionAndAmount);
   if (!pointToPutCaret.IsSet()) {
-    NS_WARNING("HTMLEditor::GetGoodCaretPointFor() failed");
+    NS_WARNING("HTMLEditUtils::GetGoodCaretPointFor() failed");
     return NS_ERROR_FAILURE;
   }
   nsresult rv = CollapseSelectionTo(pointToPutCaret);

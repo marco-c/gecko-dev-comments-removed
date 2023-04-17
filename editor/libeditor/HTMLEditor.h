@@ -2128,19 +2128,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-  EditorDOMPoint GetGoodCaretPointFor(
-      nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount) const;
-
-  
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   RemoveEmptyInclusiveAncestorInlineElements(nsIContent& aContent);
 
