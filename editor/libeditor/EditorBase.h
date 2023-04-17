@@ -1921,13 +1921,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeCreatePaddingBRElementForEmptyEditor();
-
-  
-
-
-
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
