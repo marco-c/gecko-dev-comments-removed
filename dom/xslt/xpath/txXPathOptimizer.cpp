@@ -191,7 +191,6 @@ nsresult txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
   
   
 
-  nsresult rv;
   uint32_t current;
   Expr* subExpr;
   for (current = 0; (subExpr = uni->getSubExprAt(current)); ++current) {
@@ -222,16 +221,14 @@ nsresult txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
       
       if (!unionTest) {
         UniquePtr<txNodeTest> owner(unionTest = new txUnionNodeTest);
-        rv = unionTest->addNodeTest(currentStep->getNodeTest());
-        NS_ENSURE_SUCCESS(rv, rv);
+        unionTest->addNodeTest(currentStep->getNodeTest());
 
         currentStep->setNodeTest(unionTest);
         Unused << owner.release();
       }
 
       
-      rv = unionTest->addNodeTest(step->getNodeTest());
-      NS_ENSURE_SUCCESS(rv, rv);
+      unionTest->addNodeTest(step->getNodeTest());
 
       step->setNodeTest(nullptr);
 
