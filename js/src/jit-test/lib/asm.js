@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 load(libdir + "asserts.js");
 
@@ -45,10 +45,10 @@ function assertAsmTypeFail()
     if (!isAsmJSCompilationAvailable())
         return;
 
-    // Verify no error is thrown with warnings off
+    
     Function.apply(null, arguments);
 
-    // Turn on throwing on validation errors
+    
     var oldOpts = options("throw_on_asmjs_validation_failure");
     assertEq(oldOpts.indexOf("throw_on_asmjs_validation_failure"), -1);
 
@@ -63,7 +63,7 @@ function assertAsmTypeFail()
     if (!caught)
         throw new Error("Didn't catch the type failure error");
 
-    // Turn warnings-as-errors back off
+    
     options("throw_on_asmjs_validation_failure");
 }
 
@@ -74,7 +74,7 @@ function assertAsmLinkFail(f, ...args)
 
     assertEq(isAsmJSModule(f), true);
 
-    // Verify no error is thrown with warnings off
+    
     var ret = f.apply(null, args);
 
     assertEq(isAsmJSFunction(ret), false);
@@ -86,10 +86,10 @@ function assertAsmLinkFail(f, ...args)
 
     assertWarning(() => {
         f.apply(null, args);
-    }, /Disabled by .*? runtime option/);
+    }, /Disabled by linker/);
 }
 
-// Linking should throw an exception even without warnings-as-errors
+
 function assertAsmLinkAlwaysFail(f, ...args)
 {
     var caught = false;
