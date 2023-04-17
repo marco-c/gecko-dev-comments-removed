@@ -1058,6 +1058,7 @@ WEBIDL_FILES += [
 
 
 WEBIDL_FILES += [
+    "ExtensionAlarms.webidl",
     "ExtensionBrowser.webidl",
     "ExtensionEventManager.webidl",
     
