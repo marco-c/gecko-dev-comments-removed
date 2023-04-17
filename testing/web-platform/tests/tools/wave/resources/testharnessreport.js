@@ -147,6 +147,15 @@ if (location.search && location.search.indexOf("token=") != -1) {
 
    function loadNext() {
       logToConsole("Loading next test ...");
+      if (window.gc) {
+         
+         
+         
+         
+         
+         logToConsole("Forcing garbage collection using window.gc()");
+         window.gc();
+      }
       readNextTest(
          __WAVE__TOKEN,
          function (url) {
