@@ -1417,9 +1417,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   ScriptWarmUpData warmUpData_ = {};
 
   
-  
-  
-  const GCPtrObject functionOrGlobal_ = {};
+  const GCPtr<JSFunction*> function_ = {};
 
   
   
@@ -1453,24 +1451,14 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
   
 
-  BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
+  BaseScript(uint8_t* stubEntry, JSFunction* function,
              ScriptSourceObject* sourceObject, const SourceExtent& extent,
-             uint32_t immutableFlags)
-      : TenuredCellWithNonGCPointer(stubEntry),
-        functionOrGlobal_(functionOrGlobal),
-        sourceObject_(sourceObject),
-        extent_(extent),
-        immutableFlags_(immutableFlags) {
-    MOZ_ASSERT(functionOrGlobal->compartment() == sourceObject->compartment());
-    MOZ_ASSERT(extent_.toStringStart <= extent_.sourceStart);
-    MOZ_ASSERT(extent_.sourceStart <= extent_.sourceEnd);
-    MOZ_ASSERT(extent_.sourceEnd <= extent_.toStringEnd);
-  }
+             uint32_t immutableFlags);
 
   void setJitCodeRaw(uint8_t* code) { setHeaderPtr(code); }
 
  public:
-  static BaseScript* New(JSContext* cx, js::HandleObject functionOrGlobal,
+  static BaseScript* New(JSContext* cx, JS::Handle<JSFunction*> function,
                          js::HandleScriptSourceObject sourceObject,
                          const js::SourceExtent& extent,
                          uint32_t immutableFlags);
@@ -1486,19 +1474,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
   
   
-  JSFunction* function() const {
-    
-    
-    if (isFunction()) {
-      return reinterpret_cast<JSFunction*>(functionOrGlobal_.get());
-    }
-    return nullptr;
-  }
+  JSFunction* function() const { return function_; }
 
-  JS::Realm* realm() const { return functionOrGlobal_->nonCCWRealm(); }
-  JS::Compartment* compartment() const {
-    return functionOrGlobal_->compartment();
-  }
+  JS::Realm* realm() const { return sourceObject()->realm(); }
+  JS::Compartment* compartment() const { return sourceObject()->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
   inline JSPrincipals* principals() const;
 
@@ -1657,7 +1636,7 @@ class JSScript : public js::BaseScript {
   using js::BaseScript::BaseScript;
 
  public:
-  static JSScript* Create(JSContext* cx, js::HandleObject functionOrGlobal,
+  static JSScript* Create(JSContext* cx, JS::Handle<JSFunction*> function,
                           js::HandleScriptSourceObject sourceObject,
                           const js::SourceExtent& extent,
                           js::ImmutableScriptFlags flags);
