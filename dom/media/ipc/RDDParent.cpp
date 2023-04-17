@@ -68,7 +68,7 @@ RDDParent* RDDParent::GetSingleton() {
 }
 
 bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
-                     MessageLoop* aIOLoop, UniquePtr<IPC::Channel> aChannel) {
+                     mozilla::ipc::ScopedPort aPort) {
   
   
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
@@ -76,7 +76,7 @@ bool RDDParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
   }
 
   
-  if (NS_WARN_IF(!Open(std::move(aChannel), aParentPid, aIOLoop))) {
+  if (NS_WARN_IF(!Open(std::move(aPort), aParentPid))) {
     return false;
   }
 
