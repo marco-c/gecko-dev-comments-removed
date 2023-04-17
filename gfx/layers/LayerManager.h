@@ -523,18 +523,6 @@ class LayerManager : public WindowRenderer {
 
   virtual TransactionId GetLastTransactionId() { return TransactionId{0}; }
 
-  void RegisterPayload(const CompositionPayload& aPayload) {
-    mPayload.AppendElement(aPayload);
-    MOZ_ASSERT(mPayload.Length() < 10000);
-  }
-
-  void RegisterPayloads(const nsTArray<CompositionPayload>& aPayload) {
-    mPayload.AppendElements(aPayload);
-    MOZ_ASSERT(mPayload.Length() < 10000);
-  }
-
-  virtual void PayloadPresented(const TimeStamp& aTimeStamp);
-
   void SetContainsSVG(bool aContainsSVG) { mContainsSVG = aContainsSVG; }
 
  protected:
@@ -559,14 +547,6 @@ class LayerManager : public WindowRenderer {
   bool mContainsSVG;
   
   uint32_t mPaintedPixelCount;
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<CompositionPayload> mPayload;
 
  public:
   

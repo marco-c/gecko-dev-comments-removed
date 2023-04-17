@@ -188,11 +188,14 @@ class WebRenderLayerManager final : public LayerManager {
 
   RenderRootStateManager* GetRenderRootStateManager() { return &mStateManager; }
 
-  virtual void PayloadPresented(const TimeStamp& aTimeStamp) override;
-
   void TakeCompositionPayloads(nsTArray<CompositionPayload>& aPayloads);
 
   void GetFrameUniformity(FrameUniformityData* aOutData) override;
+
+  void RegisterPayloads(const nsTArray<CompositionPayload>& aPayload) {
+    mPayload.AppendElements(aPayload);
+    MOZ_ASSERT(mPayload.Length() < 10000);
+  }
 
  private:
   
@@ -218,6 +221,15 @@ class WebRenderLayerManager final : public LayerManager {
   bool mNeedsComposite;
   bool mIsFirstPaint;
   FocusTarget mFocusTarget;
+
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<CompositionPayload> mPayload;
 
   
   
