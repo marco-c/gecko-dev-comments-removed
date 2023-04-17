@@ -14,8 +14,23 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   JSONHandler: "chrome://remote/content/cdp/JSONHandler.jsm",
+  RecommendedPreferences:
+    "chrome://remote/content/shared/RecommendedPreferences.jsm",
   TargetList: "chrome://remote/content/cdp/targets/TargetList.jsm",
 });
+
+
+
+const RECOMMENDED_PREFS = new Map([
+  
+  
+  [
+    "browser.contentblocking.features.standard",
+    "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
+  ],
+  
+  ["network.cookie.cookieBehavior", 0],
+]);
 
 
 
@@ -44,6 +59,8 @@ class CDP {
     this.targetList.on("target-destroyed", (eventName, target) => {
       this.server.registerPathHandler(target.path, null);
     });
+
+    RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
   }
 
   
@@ -67,5 +84,6 @@ class CDP {
 
   stop() {
     this.targetList.destructor();
+    RecommendedPreferences.restorePreferences(RECOMMENDED_PREFS);
   }
 }

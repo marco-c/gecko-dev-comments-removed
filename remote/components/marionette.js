@@ -16,6 +16,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "chrome://remote/content/shared/Log.jsm",
   MarionettePrefs: "chrome://remote/content/marionette/prefs.js",
   Preferences: "resource://gre/modules/Preferences.jsm",
+  RecommendedPreferences:
+    "chrome://remote/content/shared/RecommendedPreferences.jsm",
   TCPListener: "chrome://remote/content/marionette/server.js",
 });
 
@@ -55,232 +57,9 @@ const ENV_PRESERVE_PREFS = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 const RECOMMENDED_PREFS = new Map([
   
-  ["app.normandy.api_url", ""],
-
-  
-  
-  
-  
-  
-  ["app.update.disabledForTesting", true],
-
-  
-  
-  
-  
-  
-  
-  
-  ["apz.content_response_timeout", 60000],
-
-  
-  
-  
-  ["browser.contentblocking.introCount", 99],
-
-  
-  
-  
-  ["browser.download.panel.shown", true],
-
-  
-  ["browser.newtabpage.enabled", false],
-
-  
-  
-  ["browser.pagethumbnails.capturing_disabled", true],
-
-  
-  
-  
-  
-  ["browser.safebrowsing.blockedURIs.enabled", false],
-  ["browser.safebrowsing.downloads.enabled", false],
-  ["browser.safebrowsing.passwords.enabled", false],
-  ["browser.safebrowsing.malware.enabled", false],
-  ["browser.safebrowsing.phishing.enabled", false],
-
-  
-  
-  
-  ["browser.search.update", false],
-
-  
-  ["browser.sessionstore.resume_from_crash", false],
-
-  
-  
-  
-  
-  ["browser.shell.checkDefaultBrowser", false],
-
-  
-  ["browser.startup.homepage_override.mstone", "ignore"],
-
-  
-  ["browser.tabs.closeWindowWithLastTab", false],
-
-  
-  
-  
-  ["browser.tabs.disableBackgroundZombification", false],
-
-  
-  ["browser.tabs.remote.separatePrivilegedContentProcess", false],
-
-  
-  ["browser.tabs.unloadOnLowMemory", false],
-
-  
-  ["browser.tabs.warnOnClose", false],
-
-  
-  ["browser.tabs.warnOnCloseOtherTabs", false],
-
-  
-  ["browser.tabs.warnOnOpen", false],
-
-  
-  
-  ["browser.toolbars.bookmarks.visibility", "never"],
-
-  
-  ["browser.usedOnWindows10.introURL", ""],
-
-  
-  
-  
-  ["browser.uitour.enabled", false],
-
-  
-  
-  ["browser.urlbar.suggest.searches", false],
-
-  
-  ["browser.warnOnQuit", false],
-
-  
-  
-  [
-    "datareporting.healthreport.documentServerURI",
-    "http://%(server)s/dummy/healthreport/",
-  ],
-  ["datareporting.healthreport.logging.consoleEnabled", false],
-  ["datareporting.healthreport.service.enabled", false],
-  ["datareporting.healthreport.service.firstRun", false],
-  ["datareporting.healthreport.uploadEnabled", false],
-  ["datareporting.policy.dataSubmissionEnabled", false],
-  ["datareporting.policy.dataSubmissionPolicyAccepted", false],
-  ["datareporting.policy.dataSubmissionPolicyBypassNotification", true],
-
-  
   ["dom.disable_beforeunload", true],
-
-  
-  ["dom.disable_open_during_load", false],
-
-  
-  ["dom.file.createInChild", true],
-
-  
-  ["dom.ipc.reportProcessHangs", false],
-
-  
-  ["dom.max_chrome_script_run_time", 0],
-  ["dom.max_script_run_time", 0],
-
-  
-  ["dom.push.connection.enabled", false],
-
-  
-  
-  
-  
-  ["extensions.autoDisableScopes", 0],
-  ["extensions.enabledScopes", 5],
-
-  
-  ["extensions.getAddons.cache.enabled", false],
-
-  
-  
-  ["extensions.installDistroAddons", false],
-
-  
-  ["extensions.update.enabled", false],
-  ["extensions.update.notifyUser", false],
-
-  
-  ["extensions.getAddons.discovery.api_url", "data:, "],
-
-  
-  ["focusmanager.testmode", true],
-
-  
-  ["general.useragent.updates.enabled", false],
-
-  
-  
-  ["geo.provider.testing", true],
-
-  
-  ["geo.wifi.scan", false],
-
-  
-  ["network.http.phishy-userpass-length", 255],
-
-  
-  ["network.http.prompt-temp-redirect", false],
-
-  
-  ["network.manage-offline-status", false],
-
-  
-  ["network.sntp.pools", "%(server)s"],
-
-  
-  ["privacy.trackingprotection.enabled", false],
-
-  
-  ["security.certerrors.mitm.priming.enabled", false],
-
-  
-  
-  ["security.fileuri.strict_origin_policy", false],
-
-  
-  ["security.notification_enable_delay", 0],
-
-  
-  ["services.settings.server", "http://%(server)s/dummy/blocklist/"],
-
-  
-  
-  ["signon.autofillForms", false],
-
-  
-  
-  ["signon.rememberSignons", false],
-
-  
-  ["startup.homepage_welcome_url", "about:blank"],
-  ["startup.homepage_welcome_url.additional", ""],
-
-  
-  ["toolkit.startup.max_resumed_crashes", -1],
 ]);
 
 const isRemote =
@@ -297,8 +76,6 @@ class MarionetteParentProcess {
     
     
     this.finalUIStartup = false;
-
-    this.alteredPrefs = new Set();
 
     
     this.enabled = env.exists(ENV_ENABLED);
@@ -486,13 +263,7 @@ class MarionetteParentProcess {
       logger.trace(`All scripts recorded.`);
 
       if (MarionettePrefs.recommendedPrefs) {
-        for (let [k, v] of RECOMMENDED_PREFS) {
-          if (!Preferences.isSet(k)) {
-            logger.debug(`Setting recommended pref ${k} to ${v}`);
-            Preferences.set(k, v);
-            this.alteredPrefs.add(k);
-          }
-        }
+        RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
       }
 
       try {
@@ -514,12 +285,6 @@ class MarionetteParentProcess {
   }
 
   uninit() {
-    for (let k of this.alteredPrefs) {
-      logger.debug(`Resetting recommended pref ${k}`);
-      Preferences.reset(k);
-    }
-    this.alteredPrefs.clear();
-
     if (this.running) {
       this.server.stop();
       Services.obs.notifyObservers(this, NOTIFY_LISTENING);
