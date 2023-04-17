@@ -14,13 +14,14 @@
 #include "nsStyleConsts.h"
 #include "nsUXThemeConstants.h"
 #include "nsUXThemeData.h"
+#include "nsNativeBasicThemeWin.h"
 #include "gfxTypes.h"
 #include <windows.h>
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 #include "nsSize.h"
 
-class nsNativeThemeWin : private nsNativeTheme, public nsITheme {
+class nsNativeThemeWin : public nsNativeBasicThemeWin {
   virtual ~nsNativeThemeWin();
 
  public:
@@ -28,6 +29,17 @@ class nsNativeThemeWin : private nsNativeTheme, public nsITheme {
   typedef mozilla::TimeDuration TimeDuration;
 
   NS_DECL_ISUPPORTS_INHERITED
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsWidgetNonNative(nsIFrame*, StyleAppearance);
 
   
   NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,

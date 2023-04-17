@@ -67,6 +67,16 @@ nsNativeThemeWin::nsNativeThemeWin()
 
 nsNativeThemeWin::~nsNativeThemeWin() { nsUXThemeData::Invalidate(); }
 
+bool nsNativeThemeWin::IsWidgetNonNative(nsIFrame* aFrame,
+                                         StyleAppearance aAppearance) {
+  
+  
+  return nsNativeBasicTheme::ThemeSupportsWidget(aFrame->PresContext(), aFrame,
+                                                 aAppearance) &&
+         LookAndFeel::ColorSchemeForFrame(aFrame) ==
+             LookAndFeel::ColorScheme::Dark;
+}
+
 static int32_t GetTopLevelWindowActiveState(nsIFrame* aFrame) {
   
   
@@ -1479,7 +1489,13 @@ NS_IMETHODIMP
 nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
                                        const nsRect& aRect,
-                                       const nsRect& aDirtyRect, DrawOverflow) {
+                                       const nsRect& aDirtyRect,
+                                       DrawOverflow aDrawOverflow) {
+  if (IsWidgetNonNative(aFrame, aAppearance)) {
+    return nsNativeBasicThemeWin::DrawWidgetBackground(
+        aContext, aFrame, aAppearance, aRect, aDirtyRect, aDrawOverflow);
+  }
+
   if (IsWidgetScrollbarPart(aAppearance)) {
     if (MayDrawCustomScrollbarPart(aContext, aFrame, aAppearance, aRect,
                                    aDirtyRect)) {
@@ -2119,6 +2135,11 @@ bool nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
                                          nsIFrame* aFrame,
                                          StyleAppearance aAppearance,
                                          nsRect* aOverflowRect) {
+  if (IsWidgetNonNative(aFrame, aAppearance)) {
+    return nsNativeBasicThemeWin::GetWidgetOverflow(aContext, aFrame,
+                                                    aAppearance, aOverflowRect);
+  }
+
   
 
 
@@ -2557,6 +2578,10 @@ nsITheme::ThemeGeometryType nsNativeThemeWin::ThemeGeometryTypeForWidget(
 
 nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
     nsIFrame* aFrame, StyleAppearance aAppearance) {
+  if (IsWidgetNonNative(aFrame, aAppearance)) {
+    return nsNativeBasicThemeWin::GetWidgetTransparency(aFrame, aAppearance);
+  }
+
   if (auto transparency =
           ScrollbarUtil::GetScrollbarPartTransparency(aFrame, aAppearance)) {
     return *transparency;
@@ -3747,7 +3772,7 @@ RENDER_AGAIN:
       int32_t offset = GetSystemMetrics(SM_CXFRAME);
 
       
-      FillRect(hdc, &rect, (HBRUSH)(COLOR_3DFACE + 1));
+      ::FillRect(hdc, &rect, (HBRUSH)(COLOR_3DFACE + 1));
 
       
       rect.top += offset;
@@ -3757,9 +3782,9 @@ RENDER_AGAIN:
       SystemParametersInfo(SPI_GETGRADIENTCAPTIONS, 0, &bFlag, 0);
       if (!bFlag) {
         if (state == mozilla::widget::themeconst::FS_ACTIVE)
-          FillRect(hdc, &rect, (HBRUSH)(COLOR_ACTIVECAPTION + 1));
+          ::FillRect(hdc, &rect, (HBRUSH)(COLOR_ACTIVECAPTION + 1));
         else
-          FillRect(hdc, &rect, (HBRUSH)(COLOR_INACTIVECAPTION + 1));
+          ::FillRect(hdc, &rect, (HBRUSH)(COLOR_INACTIVECAPTION + 1));
       } else {
         DWORD startColor, endColor;
         if (state == mozilla::widget::themeconst::FS_ACTIVE) {
