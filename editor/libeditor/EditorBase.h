@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"          
 #include "mozilla/EditAction.h"          
 #include "mozilla/EditorDOMPoint.h"      
+#include "mozilla/EnumSet.h"             
 #include "mozilla/EventForwards.h"       
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
@@ -1726,42 +1727,58 @@ class EditorBase : public nsIEditor,
 
 
   nsIContent* GetPreviousNode(const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, false, true, false);
+    return GetPreviousNodeInternal(aPoint, {WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetPreviousElementOrText(const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, false, false, false);
+    return GetPreviousNodeInternal(aPoint, {});
   }
   nsIContent* GetPreviousEditableNode(const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, true, true, false);
+    return GetPreviousNodeInternal(aPoint,
+                                   {WalkTreeOption::IgnoreNonEditableNode,
+                                    WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetPreviousNodeInBlock(const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, false, true, true);
+    return GetPreviousNodeInternal(
+        aPoint,
+        {WalkTreeOption::FindAnyDataNode, WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetPreviousElementOrTextInBlock(
       const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, false, false, true);
+    return GetPreviousNodeInternal(aPoint,
+                                   {WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetPreviousEditableNodeInBlock(
       const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousNodeInternal(aPoint, true, true, true);
+    return GetPreviousNodeInternal(
+        aPoint,
+        {WalkTreeOption::IgnoreNonEditableNode, WalkTreeOption::FindAnyDataNode,
+         WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetPreviousNode(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, false, true, false);
+    return GetPreviousNodeInternal(aNode, {WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetPreviousElementOrText(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, false, false, false);
+    return GetPreviousNodeInternal(aNode, {});
   }
   nsIContent* GetPreviousEditableNode(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, true, true, false);
+    return GetPreviousNodeInternal(aNode,
+                                   {WalkTreeOption::IgnoreNonEditableNode,
+                                    WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetPreviousNodeInBlock(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, false, true, true);
+    return GetPreviousNodeInternal(
+        aNode,
+        {WalkTreeOption::FindAnyDataNode, WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetPreviousElementOrTextInBlock(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, false, false, true);
+    return GetPreviousNodeInternal(aNode,
+                                   {WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetPreviousEditableNodeInBlock(const nsINode& aNode) const {
-    return GetPreviousNodeInternal(aNode, true, true, true);
+    return GetPreviousNodeInternal(
+        aNode,
+        {WalkTreeOption::IgnoreNonEditableNode, WalkTreeOption::FindAnyDataNode,
+         WalkTreeOption::StopAtBlockBoundary});
   }
 
   
@@ -1792,50 +1809,58 @@ class EditorBase : public nsIEditor,
 
   template <typename PT, typename CT>
   nsIContent* GetNextNode(const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, false, true, false);
+    return GetNextNodeInternal(aPoint, {WalkTreeOption::FindAnyDataNode});
   }
   template <typename PT, typename CT>
   nsIContent* GetNextElementOrText(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, false, false, false);
+    return GetNextNodeInternal(aPoint, {});
   }
   template <typename PT, typename CT>
   nsIContent* GetNextEditableNode(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, true, true, false);
+    return GetNextNodeInternal(aPoint, {WalkTreeOption::IgnoreNonEditableNode,
+                                        WalkTreeOption::FindAnyDataNode});
   }
   template <typename PT, typename CT>
   nsIContent* GetNextNodeInBlock(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, false, true, true);
+    return GetNextNodeInternal(aPoint, {WalkTreeOption::FindAnyDataNode,
+                                        WalkTreeOption::StopAtBlockBoundary});
   }
   template <typename PT, typename CT>
   nsIContent* GetNextElementOrTextInBlock(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, false, false, true);
+    return GetNextNodeInternal(aPoint, {WalkTreeOption::StopAtBlockBoundary});
   }
   template <typename PT, typename CT>
   nsIContent* GetNextEditableNodeInBlock(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextNodeInternal(aPoint, true, true, true);
+    return GetNextNodeInternal(aPoint, {WalkTreeOption::IgnoreNonEditableNode,
+                                        WalkTreeOption::FindAnyDataNode,
+                                        WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetNextNode(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, false, true, false);
+    return GetNextNodeInternal(aNode, {WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetNextElementOrText(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, false, false, false);
+    return GetNextNodeInternal(aNode, {});
   }
   nsIContent* GetNextEditableNode(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, true, true, false);
+    return GetNextNodeInternal(aNode, {WalkTreeOption::IgnoreNonEditableNode,
+                                       WalkTreeOption::FindAnyDataNode});
   }
   nsIContent* GetNextNodeInBlock(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, false, true, true);
+    return GetNextNodeInternal(aNode, {WalkTreeOption::FindAnyDataNode,
+                                       WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetNextElementOrTextInBlock(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, false, false, true);
+    return GetNextNodeInternal(aNode, {WalkTreeOption::StopAtBlockBoundary});
   }
   nsIContent* GetNextEditableNodeInBlock(const nsINode& aNode) const {
-    return GetNextNodeInternal(aNode, true, true, true);
+    return GetNextNodeInternal(aNode, {WalkTreeOption::IgnoreNonEditableNode,
+                                       WalkTreeOption::FindAnyDataNode,
+                                       WalkTreeOption::StopAtBlockBoundary});
   }
 
   
@@ -2210,37 +2235,25 @@ class EditorBase : public nsIEditor,
   
 
 
-  nsIContent* FindNextLeafNode(const nsINode* aCurrentNode, bool aGoForward,
-                               bool bNoBlockCrossing) const;
-  nsIContent* FindNode(const nsINode* aCurrentNode, bool aGoForward,
-                       bool aEditableNode, bool aFindAnyDataNode,
-                       bool bNoBlockCrossing) const;
-
-  
 
 
 
 
 
-
-
-
-
-
-
-
+  enum class WalkTreeOption {
+    IgnoreNonEditableNode,  
+    FindAnyDataNode,        
+    StopAtBlockBoundary,    
+  };
+  using WalkTreeOptions = EnumSet<WalkTreeOption>;
   nsIContent* GetPreviousNodeInternal(const nsINode& aNode,
-                                      bool aFindEditableNode,
-                                      bool aFindAnyDataNode,
-                                      bool aNoBlockCrossing) const;
+                                      const WalkTreeOptions& aOptions) const;
 
   
 
 
   nsIContent* GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
-                                      bool aFindEditableNode,
-                                      bool aFindAnyDataNode,
-                                      bool aNoBlockCrossing) const;
+                                      const WalkTreeOptions& aOptions) const;
 
   
 
@@ -2250,21 +2263,22 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-  nsIContent* GetNextNodeInternal(const nsINode& aNode, bool aFindEditableNode,
-                                  bool aFindAnyDataNode,
-                                  bool aNoBlockCrossing) const;
+  nsIContent* GetNextNodeInternal(const nsINode& aNode,
+                                  const WalkTreeOptions& aOptions) const;
 
   
 
 
   nsIContent* GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
-                                  bool aFindEditableNode, bool aFindAnyDataNode,
-                                  bool aNoBlockCrossing) const;
+                                  const WalkTreeOptions& aOptions) const;
+
+  
+
+
+  nsIContent* FindNextLeafNode(const nsINode* aCurrentNode, bool aGoForward,
+                               const WalkTreeOptions& aOptions) const;
+  nsIContent* FindNode(const nsINode* aCurrentNode, bool aGoForward,
+                       const WalkTreeOptions& aOptions) const;
 
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
