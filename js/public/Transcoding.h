@@ -122,11 +122,6 @@ DecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 
 
-
-
-
-
-
 extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
@@ -143,18 +138,10 @@ extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
 
 
 
-
-
-
-
-
 extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
     size_t cursorIndex = 0);
-
-
-
 
 
 
