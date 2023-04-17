@@ -15,9 +15,7 @@ add_task(async function() {
       
       let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
       await UrlbarTestUtils.promisePopupClose(window, () => {
-        let button = document.getElementById(
-          "urlbar-anon-search-settings-compact"
-        );
+        let button = document.getElementById("urlbar-anon-search-settings");
         EventUtils.synthesizeMouseAtCenter(button, {});
       });
       await loaded;
