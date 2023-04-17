@@ -218,6 +218,10 @@ ContentRestoreInternal.prototype = {
         let loadURIOptions = {
           triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
           loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
+          
+          
+          
+          remoteTypeOverride: Services.appinfo.remoteType,
         };
         webNavigation.loadURI("about:blank", loadURIOptions);
       }
