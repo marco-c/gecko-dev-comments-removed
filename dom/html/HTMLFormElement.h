@@ -557,8 +557,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   UniquePtr<HTMLFormSubmission> mPendingSubmission;
   
-  nsCOMPtr<nsIRequest> mSubmittingRequest;
-  
   nsWeakPtr mWebProgress;
 
   
