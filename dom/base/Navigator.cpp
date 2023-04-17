@@ -968,15 +968,6 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
   }
 
   
-  
-  
-  nsCOMPtr<nsIExternalProtocolHandler> externalHandler =
-      do_QueryInterface(handler);
-  MOZ_RELEASE_ASSERT(
-      externalHandler,
-      "We should never allow overriding a builtin protocol handler");
-
-  
   bool defaultExternal =
       Preferences::GetBool("network.protocol-handler.external-default");
   nsPrintfCString specificPref("network.protocol-handler.external.%s",
@@ -985,6 +976,15 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
     raisePermissionDeniedScheme();
     return;
   }
+
+  
+  
+  
+  nsCOMPtr<nsIExternalProtocolHandler> externalHandler =
+      do_QueryInterface(handler);
+  MOZ_RELEASE_ASSERT(
+      externalHandler,
+      "We should never allow overriding a builtin protocol handler");
 }
 
 void Navigator::RegisterProtocolHandler(const nsAString& aScheme,
