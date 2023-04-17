@@ -1018,7 +1018,7 @@ bool CanvasRenderingContext2D::ParseColor(const nsACString& aString,
     
     
     RefPtr<ComputedStyle> canvasStyle =
-        nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+        nsComputedDOMStyle::GetComputedStyle(mCanvasElement);
     if (canvasStyle) {
       *aColor = canvasStyle->StyleText()->mColor.ToColor();
     }
@@ -1545,7 +1545,7 @@ void CanvasRenderingContext2D::ClearTarget(int32_t aWidth, int32_t aHeight) {
   
   
   RefPtr<ComputedStyle> canvasStyle =
-      nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+      nsComputedDOMStyle::GetComputedStyle(mCanvasElement);
   if (canvasStyle) {
     WritingMode wm(canvasStyle);
     if (wm.IsVertical() && !wm.IsSideways()) {
@@ -2290,7 +2290,7 @@ static already_AddRefed<ComputedStyle> GetFontStyleForServo(
   
   
   if (aElement && aElement->IsInComposedDoc()) {
-    parentStyle = nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
+    parentStyle = nsComputedDOMStyle::GetComputedStyle(aElement);
     if (!parentStyle) {
       
       
@@ -3790,7 +3790,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   RefPtr<ComputedStyle> canvasStyle;
   if (mCanvasElement && mCanvasElement->IsInComposedDoc()) {
     
-    canvasStyle = nsComputedDOMStyle::GetComputedStyle(mCanvasElement, nullptr);
+    canvasStyle = nsComputedDOMStyle::GetComputedStyle(mCanvasElement);
     if (!canvasStyle) {
       aError = NS_ERROR_FAILURE;
       return nullptr;

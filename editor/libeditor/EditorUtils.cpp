@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "EditorUtils.h"
 
@@ -51,48 +51,48 @@ template void DOMIterator::AppendNodesToArray(
     BoolFunctor aFunctor, nsTArray<OwningNonNull<Text>>& aArrayOfNodes,
     void* aClosure) const;
 
-/******************************************************************************
- * mozilla::EditActionResult
- *****************************************************************************/
+
+
+
 
 EditActionResult& EditActionResult::operator|=(
     const MoveNodeResult& aMoveNodeResult) {
   mHandled |= aMoveNodeResult.Handled();
-  // When both result are same, keep the result.
+  
   if (mRv == aMoveNodeResult.Rv()) {
     return *this;
   }
-  // If one of the result is NS_ERROR_EDITOR_DESTROYED, use it since it's
-  // the most important error code for editor.
+  
+  
   if (EditorDestroyed() || aMoveNodeResult.EditorDestroyed()) {
     mRv = NS_ERROR_EDITOR_DESTROYED;
     return *this;
   }
-  // If aMoveNodeResult hasn't been set explicit nsresult value, keep current
-  // result.
+  
+  
   if (aMoveNodeResult.Rv() == NS_ERROR_NOT_INITIALIZED) {
     return *this;
   }
-  // If one of the results is error, use NS_ERROR_FAILURE.
+  
   if (Failed() || aMoveNodeResult.Failed()) {
     mRv = NS_ERROR_FAILURE;
     return *this;
   }
-  // Otherwise, use generic success code, NS_OK.
+  
   mRv = NS_OK;
   return *this;
 }
 
-/******************************************************************************
- * mozilla::AutoRangeArray
- *****************************************************************************/
 
-// static
+
+
+
+
 bool AutoRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
                                      const Element& aEditingHost) {
-  // TODO: Perhaps, we should check whether the start/end boundaries are
-  //       first/last point of non-editable element.
-  //       See https://github.com/w3c/editing/issues/283#issuecomment-788654850
+  
+  
+  
   EditorRawDOMPoint atStart(aRange.StartRef());
   const bool isStartEditable =
       atStart.IsInContentNode() &&
@@ -116,8 +116,8 @@ bool AutoRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
       return false;
     }
 
-    // Now, both start and end points are editable, but if they are in
-    // different editing host, we cannot edit the range.
+    
+    
     if (atStart.ContainerAsContent() != atEnd.ContainerAsContent() &&
         atStart.ContainerAsContent()->GetEditingHost() !=
             atEnd.ContainerAsContent()->GetEditingHost()) {
@@ -125,7 +125,7 @@ bool AutoRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
     }
   }
 
-  // HTMLEditor does not support modifying outside `<body>` element for now.
+  
   nsINode* commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
   return commonAncestor && commonAncestor->IsContent() &&
          commonAncestor->IsInclusiveDescendantOf(&aEditingHost);
@@ -159,8 +159,8 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
     return Err(NS_ERROR_FAILURE);
   }
 
-  // At this point, the anchor-focus ranges must match for bidi information.
-  // See `EditorBase::AutoCaretBidiLevelManager`.
+  
+  
   MOZ_ASSERT(aEditorBase.SelectionRef().GetAnchorFocusRange()->StartRef() ==
              mAnchorFocusRange->StartRef());
   MOZ_ASSERT(aEditorBase.SelectionRef().GetAnchorFocusRange()->EndRef() ==
@@ -191,8 +191,8 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
       NS_WARNING_ASSERTION(
           result.isOk(),
           "nsFrameSelection::CreateRangeExtendedToNextWordBoundary() failed");
-      // DeleteSelectionWithTransaction() doesn't handle these actions
-      // because it's inside batching, so don't confuse it:
+      
+      
       directionAndAmountResult = nsIEditor::eNone;
       break;
     case nsIEditor::ePreviousWord:
@@ -205,8 +205,8 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
           result.isOk(),
           "nsFrameSelection::CreateRangeExtendedToPreviousWordBoundary() "
           "failed");
-      // DeleteSelectionWithTransaction() doesn't handle these actions
-      // because it's inside batching, so don't confuse it:
+      
+      
       directionAndAmountResult = nsIEditor::eNone;
       break;
     case nsIEditor::eNext:
@@ -220,22 +220,22 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
                            "nsFrameSelection::"
                            "CreateRangeExtendedToNextGraphemeClusterBoundary() "
                            "failed");
-      // Don't set directionAndAmount to eNone (see Bug 502259)
+      
       break;
     case nsIEditor::ePrevious: {
-      // Only extend the selection where the selection is after a UTF-16
-      // surrogate pair or a variation selector.
-      // For other cases we don't want to do that, in order
-      // to make sure that pressing backspace will only delete the last
-      // typed character.
-      // XXX This is odd if the previous one is a sequence for a grapheme
-      //     cluster.
+      
+      
+      
+      
+      
+      
+      
       EditorDOMPoint atStartOfSelection(GetStartPointOfFirstRange());
       if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
         return Err(NS_ERROR_FAILURE);
       }
 
-      // node might be anonymous DIV, so we find better text node
+      
       EditorRawDOMPoint insertionPoint =
           aEditorBase.FindBetterInsertionPoint(atStartOfSelection);
       if (!insertionPoint.IsSet()) {
@@ -257,9 +257,9 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
             gfxFontUtils::IsVarSelector(data->CharAt(offset - 1)))) {
         return aDirectionAndAmount;
       }
-      // Different from the `eNext` case, we look for character boundary.
-      // I'm not sure whether this inconsistency between "Delete" and
-      // "Backspace" is intentional or not.
+      
+      
+      
       result = frameSelection
                    ->CreateRangeExtendedToPreviousCharacterBoundary<nsRange>();
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
@@ -307,7 +307,7 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
     return directionAndAmountResult;
   }
 
-  // If the new range isn't editable, keep using the original range.
+  
   if (aEditorBase.IsHTMLEditor() &&
       !AutoRangeArray::IsEditableRange(*extendedRange, *editingHost)) {
     return aDirectionAndAmount;
@@ -321,7 +321,7 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
     return Err(NS_ERROR_FAILURE);
   }
 
-  // Swap focus/anchor range with the extended range.
+  
   DebugOnly<bool> found = false;
   for (OwningNonNull<nsRange>& range : mRanges) {
     if (range == mAnchorFocusRange) {
@@ -387,9 +387,9 @@ AutoRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
   return changed;
 }
 
-/******************************************************************************
- * some helper classes for iterating the dom tree
- *****************************************************************************/
+
+
+
 
 DOMIterator::DOMIterator(nsINode& aNode) : mIter(&mPostOrderIter) {
   DebugOnly<nsresult> rv = mIter->Init(&aNode);
@@ -418,7 +418,7 @@ void DOMIterator::AppendAllNodesToArray(
 template <class NodeClass>
 void DOMIterator::AppendNodesToArray(
     BoolFunctor aFunctor, nsTArray<OwningNonNull<NodeClass>>& aArrayOfNodes,
-    void* aClosure /* = nullptr */) const {
+    void* aClosure ) const {
   for (; !mIter->IsDone(); mIter->Next()) {
     NodeClass* node = NodeClass::FromNode(mIter->GetCurrentNode());
     if (node && aFunctor(*node, aClosure)) {
@@ -435,12 +435,12 @@ nsresult DOMSubtreeIterator::Init(nsRange& aRange) {
   return mIter->Init(&aRange);
 }
 
-/******************************************************************************
- * some general purpose editor utils
- *****************************************************************************/
+
+
+
 
 bool EditorUtils::IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
-                                 EditorRawDOMPoint* aOutPoint /* = nullptr */) {
+                                 EditorRawDOMPoint* aOutPoint ) {
   if (aOutPoint) {
     aOutPoint->Clear();
   }
@@ -481,7 +481,7 @@ bool EditorUtils::IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
   return false;
 }
 
-// static
+
 void EditorUtils::MaskString(nsString& aString, Text* aText,
                              uint32_t aStartOffsetInString,
                              uint32_t aStartOffsetInText) {
@@ -494,24 +494,24 @@ void EditorUtils::MaskString(nsString& aString, Text* aText,
   if (textEditor && textEditor->UnmaskedLength() > 0) {
     unmaskStart = textEditor->UnmaskedStart();
     unmaskLength = textEditor->UnmaskedLength();
-    // If text is copied from after unmasked range, we can treat this case
-    // as mask all.
+    
+    
     if (aStartOffsetInText >= unmaskStart + unmaskLength) {
       unmaskLength = 0;
       unmaskStart = UINT32_MAX;
     } else {
-      // If text is copied from middle of unmasked range, reduce the length
-      // and adjust start offset.
+      
+      
       if (aStartOffsetInText > unmaskStart) {
         unmaskLength = unmaskStart + unmaskLength - aStartOffsetInText;
         unmaskStart = 0;
       }
-      // If text is copied from before start of unmasked range, just adjust
-      // the start offset.
+      
+      
       else {
         unmaskStart -= aStartOffsetInText;
       }
-      // Make the range is in the string.
+      
       unmaskStart += aStartOffsetInString;
     }
   }
@@ -530,28 +530,28 @@ void EditorUtils::MaskString(nsString& aString, Text* aText,
       }
     }
 
-    // Skip the following low surrogate.
+    
     if (isSurrogatePair) {
       ++i;
     }
   }
 }
 
-// static
+
 bool EditorUtils::IsContentPreformatted(nsIContent& aContent) {
-  // Look at the node (and its parent if it's not an element), and grab its
-  // ComputedStyle.
+  
+  
   Element* element = aContent.GetAsElementOrParentElement();
   if (!element) {
     return false;
   }
 
   RefPtr<ComputedStyle> elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
+      nsComputedDOMStyle::GetComputedStyleNoFlush(element);
   if (!elementStyle) {
-    // Consider nodes without a ComputedStyle to be NOT preformatted:
-    // For instance, this is true of JS tags inside the body (which show
-    // up as #text nodes but have no ComputedStyle).
+    
+    
+    
     return false;
   }
 
@@ -569,7 +569,7 @@ bool EditorUtils::IsPointInSelection(const Selection& aSelection,
   for (uint32_t i = 0; i < rangeCount; i++) {
     RefPtr<const nsRange> range = aSelection.GetRangeAt(i);
     if (!range) {
-      // Don't bail yet, iterate through them all
+      
       continue;
     }
 
@@ -580,7 +580,7 @@ bool EditorUtils::IsPointInSelection(const Selection& aSelection,
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "nsRange::IsPointInRange() failed");
 
-    // Done when we find a range that we are in
+    
     if (nodeIsInSelection) {
       return true;
     }
@@ -589,10 +589,10 @@ bool EditorUtils::IsPointInSelection(const Selection& aSelection,
   return false;
 }
 
-// static
+
 Result<nsCOMPtr<nsITransferable>, nsresult>
 EditorUtils::CreateTransferableForPlainText(const Document& aDocument) {
-  // Create generic Transferable for getting the data
+  
   nsresult rv;
   nsCOMPtr<nsITransferable> transferable =
       do_CreateInstance("@mozilla.org/widget/transferable;1", &rv);
@@ -622,4 +622,4 @@ EditorUtils::CreateTransferableForPlainText(const Document& aDocument) {
   return transferable;
 }
 
-}  // namespace mozilla
+}  

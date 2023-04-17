@@ -30,41 +30,6 @@ nsStaticAtom* nsCSSPseudoElements::GetAtomBase() {
       nsGkAtoms::GetAtomByIndex(kAtomIndex_PseudoElements));
 }
 
-bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
-  return nsStaticAtomUtils::IsMember(aAtom, GetAtomBase(),
-                                     kAtomCount_PseudoElements);
-}
-
-
-bool nsCSSPseudoElements::IsCSS2PseudoElement(nsAtom* aAtom) {
-  
-  
-  MOZ_ASSERT(IsPseudoElement(aAtom), "must be pseudo element");
-  bool result = aAtom == nsCSSPseudoElements::after() ||
-                aAtom == nsCSSPseudoElements::before() ||
-                aAtom == nsCSSPseudoElements::firstLetter() ||
-                aAtom == nsCSSPseudoElements::firstLine();
-  NS_ASSERTION(
-      result == PseudoElementHasFlags(
-                    GetPseudoType(aAtom, EnabledState::IgnoreEnabledState),
-                    CSS_PSEUDO_ELEMENT_IS_CSS2),
-      "result doesn't match flags");
-  return result;
-}
-
-
-PseudoStyleType nsCSSPseudoElements::GetPseudoType(nsAtom* aAtom,
-                                                   EnabledState aEnabledState) {
-  Maybe<uint32_t> index = nsStaticAtomUtils::Lookup(aAtom, GetAtomBase(),
-                                                    kAtomCount_PseudoElements);
-  if (index.isSome()) {
-    auto type = static_cast<Type>(*index);
-    return IsEnabled(type, aEnabledState) ? type : Type::NotPseudo;
-  }
-
-  return Type::NotPseudo;
-}
-
 
 nsAtom* nsCSSPseudoElements::GetPseudoAtom(Type aType) {
   MOZ_ASSERT(PseudoStyle::IsPseudoElement(aType), "Unexpected type");
@@ -73,11 +38,14 @@ nsAtom* nsCSSPseudoElements::GetPseudoAtom(Type aType) {
 }
 
 
-already_AddRefed<nsAtom> nsCSSPseudoElements::GetPseudoAtom(
-    const nsAString& aPseudoElement) {
-  if (DOMStringIsNull(aPseudoElement) || aPseudoElement.IsEmpty() ||
-      aPseudoElement.First() != char16_t(':')) {
-    return nullptr;
+Maybe<PseudoStyleType> nsCSSPseudoElements::GetPseudoType(
+    const nsAString& aPseudoElement, CSSEnabledState aEnabledState) {
+  if (DOMStringIsNull(aPseudoElement) || aPseudoElement.IsEmpty()) {
+    return Some(PseudoStyleType::NotPseudo);
+  }
+
+  if (aPseudoElement.First() != char16_t(':')) {
+    return Nothing();
   }
 
   
@@ -94,15 +62,17 @@ already_AddRefed<nsAtom> nsCSSPseudoElements::GetPseudoAtom(
   RefPtr<nsAtom> pseudo = NS_Atomize(Substring(start, end));
   MOZ_ASSERT(pseudo);
 
-  
-  if (!haveTwoColons &&
-      (!IsPseudoElement(pseudo) || !IsCSS2PseudoElement(pseudo))) {
-    
-    
-    return nullptr;
+  Maybe<uint32_t> index = nsStaticAtomUtils::Lookup(pseudo, GetAtomBase(),
+                                                    kAtomCount_PseudoElements);
+  if (index.isNothing()) {
+    return Nothing();
   }
-
-  return pseudo.forget();
+  auto type = static_cast<Type>(*index);
+  if (!haveTwoColons &&
+      !PseudoElementHasFlags(type, CSS_PSEUDO_ELEMENT_IS_CSS2)) {
+    return Nothing();
+  }
+  return IsEnabled(type, aEnabledState) ? Some(type) : Nothing();
 }
 
 
