@@ -73,6 +73,8 @@ PRBool ssl_IsDsaSignatureScheme(SSLSignatureScheme scheme);
 static SECStatus ssl3_UpdateDefaultHandshakeHashes(sslSocket *ss,
                                                    const unsigned char *b,
                                                    unsigned int l);
+const PRUint32 kSSLSigSchemePolicy =
+    NSS_USE_ALG_IN_SSL_KX | NSS_USE_ALG_IN_ANY_SIGNATURE;
 
 const PRUint8 ssl_hello_retry_random[] = {
     0xCF, 0x21, 0xAD, 0x74, 0xE5, 0x9A, 0x61, 0x11,
@@ -786,6 +788,41 @@ ssl_HasCert(const sslSocket *ss, PRUint16 maxVersion, SSLAuthType authType)
 
 
 
+
+static PRBool
+ssl_SchemePolicyOK(SSLSignatureScheme scheme, PRUint32 require)
+{
+    
+    PRUint32 policy;
+    SECOidTag hashOID = ssl3_HashTypeToOID(ssl_SignatureSchemeToHashType(scheme));
+    SECOidTag sigOID;
+
+    
+    SECStatus rv = NSS_GetAlgorithmPolicy(hashOID, &policy);
+    if (rv == SECSuccess &&
+        (policy & require) != require) {
+        return PR_FALSE;
+    }
+
+    
+
+
+    if (ssl_IsRsaPssSignatureScheme(scheme)) {
+        sigOID = SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
+    } else {
+        sigOID = ssl3_AuthTypeToOID(ssl_SignatureSchemeToAuthType(scheme));
+    }
+    
+    rv = NSS_GetAlgorithmPolicy(sigOID, &policy);
+    if (rv == SECSuccess &&
+        (policy & require) != require) {
+        return PR_FALSE;
+    }
+    return PR_TRUE;
+}
+
+
+
 static PRBool
 ssl_SignatureSchemeAccepted(PRUint16 minVersion,
                             SSLSignatureScheme scheme,
@@ -809,23 +846,9 @@ ssl_SignatureSchemeAccepted(PRUint16 minVersion,
         if (minVersion >= SSL_LIBRARY_VERSION_TLS_1_3) {
             return PR_FALSE;
         }
-        PRUint32 dsaPolicy;
-        SECStatus rv = NSS_GetAlgorithmPolicy(SEC_OID_ANSIX9_DSA_SIGNATURE,
-                                              &dsaPolicy);
-        if (rv == SECSuccess && (dsaPolicy & NSS_USE_ALG_IN_SSL_KX) == 0) {
-            return PR_FALSE;
-        }
     }
 
-    
-    PRUint32 hashPolicy;
-    SSLHashType hashType = ssl_SignatureSchemeToHashType(scheme);
-    SECOidTag hashOID = ssl3_HashTypeToOID(hashType);
-    SECStatus rv = NSS_GetAlgorithmPolicy(hashOID, &hashPolicy);
-    if (rv == SECSuccess && (hashPolicy & NSS_USE_ALG_IN_SSL_KX) == 0) {
-        return PR_FALSE;
-    }
-    return PR_TRUE;
+    return ssl_SchemePolicyOK(scheme, kSSLSigSchemePolicy);
 }
 
 static SECStatus
@@ -4237,6 +4260,26 @@ ssl3_HashTypeToOID(SSLHashType hashType)
     return SEC_OID_UNKNOWN;
 }
 
+SECOidTag
+ssl3_AuthTypeToOID(SSLAuthType authType)
+{
+    switch (authType) {
+        case ssl_auth_rsa_sign:
+            return SEC_OID_PKCS1_RSA_ENCRYPTION;
+        case ssl_auth_rsa_pss:
+            return SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
+        case ssl_auth_ecdsa:
+            return SEC_OID_ANSIX962_EC_PUBLIC_KEY;
+        case ssl_auth_dsa:
+            return SEC_OID_ANSIX9_DSA_SIGNATURE;
+        default:
+            break;
+    }
+    
+    PORT_Assert(0);
+    return SEC_OID_UNKNOWN;
+}
+
 SSLHashType
 ssl_SignatureSchemeToHashType(SSLSignatureScheme scheme)
 {
@@ -4277,37 +4320,15 @@ ssl_SignatureSchemeToHashType(SSLSignatureScheme scheme)
 static PRBool
 ssl_SignatureSchemeMatchesSpkiOid(SSLSignatureScheme scheme, SECOidTag spkiOid)
 {
-    switch (scheme) {
-        case ssl_sig_rsa_pkcs1_sha256:
-        case ssl_sig_rsa_pkcs1_sha384:
-        case ssl_sig_rsa_pkcs1_sha512:
-        case ssl_sig_rsa_pkcs1_sha1:
-        case ssl_sig_rsa_pss_rsae_sha256:
-        case ssl_sig_rsa_pss_rsae_sha384:
-        case ssl_sig_rsa_pss_rsae_sha512:
-        case ssl_sig_rsa_pkcs1_sha1md5:
-            return (spkiOid == SEC_OID_X500_RSA_ENCRYPTION) ||
-                   (spkiOid == SEC_OID_PKCS1_RSA_ENCRYPTION);
-        case ssl_sig_rsa_pss_pss_sha256:
-        case ssl_sig_rsa_pss_pss_sha384:
-        case ssl_sig_rsa_pss_pss_sha512:
-            return spkiOid == SEC_OID_PKCS1_RSA_PSS_SIGNATURE;
-        case ssl_sig_ecdsa_secp256r1_sha256:
-        case ssl_sig_ecdsa_secp384r1_sha384:
-        case ssl_sig_ecdsa_secp521r1_sha512:
-        case ssl_sig_ecdsa_sha1:
-            return spkiOid == SEC_OID_ANSIX962_EC_PUBLIC_KEY;
-        case ssl_sig_dsa_sha256:
-        case ssl_sig_dsa_sha384:
-        case ssl_sig_dsa_sha512:
-        case ssl_sig_dsa_sha1:
-            return spkiOid == SEC_OID_ANSIX9_DSA_SIGNATURE;
-        case ssl_sig_none:
-        case ssl_sig_ed25519:
-        case ssl_sig_ed448:
-            break;
+    SECOidTag authOid = ssl3_AuthTypeToOID(ssl_SignatureSchemeToAuthType(scheme));
+
+    if (spkiOid == authOid) {
+        return PR_TRUE;
     }
-    PORT_Assert(0);
+    if ((authOid == SEC_OID_PKCS1_RSA_ENCRYPTION) &&
+        (spkiOid == SEC_OID_X500_RSA_ENCRYPTION)) {
+        return PR_TRUE;
+    }
     return PR_FALSE;
 }
 
@@ -4319,7 +4340,11 @@ ssl_SignatureSchemeValid(SSLSignatureScheme scheme, SECOidTag spkiOid,
     if (!ssl_IsSupportedSignatureScheme(scheme)) {
         return PR_FALSE;
     }
-    if (!ssl_SignatureSchemeMatchesSpkiOid(scheme, spkiOid)) {
+    
+
+
+    if ((spkiOid != SEC_OID_UNKNOWN) &&
+        !ssl_SignatureSchemeMatchesSpkiOid(scheme, spkiOid)) {
         return PR_FALSE;
     }
     if (isTls13) {
@@ -4517,7 +4542,8 @@ ssl_CheckSignatureSchemeConsistency(sslSocket *ss, SSLSignatureScheme scheme,
     }
 
     
-    if (!ssl_SignatureSchemeValid(scheme, spkiOid, isTLS13)) {
+    if ((spkiOid == SEC_OID_UNKNOWN) ||
+        !ssl_SignatureSchemeValid(scheme, spkiOid, isTLS13)) {
         PORT_SetError(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM);
         return SECFailure;
     }
@@ -4552,7 +4578,8 @@ ssl_IsSupportedSignatureScheme(SSLSignatureScheme scheme)
         case ssl_sig_dsa_sha384:
         case ssl_sig_dsa_sha512:
         case ssl_sig_ecdsa_sha1:
-            return PR_TRUE;
+            return ssl_SchemePolicyOK(scheme, kSSLSigSchemePolicy);
+            break;
 
         case ssl_sig_rsa_pkcs1_sha1md5:
         case ssl_sig_none:
@@ -4680,6 +4707,7 @@ ssl_ConsumeSignatureScheme(sslSocket *ss, PRUint8 **b,
         return SECFailure; 
     }
     if (!ssl_IsSupportedSignatureScheme((SSLSignatureScheme)tmp)) {
+        SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
         PORT_SetError(SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM);
         return SECFailure;
     }
@@ -6436,8 +6464,6 @@ ssl_CanUseSignatureScheme(SSLSignatureScheme scheme,
                           PRBool slotDoesPss)
 {
     SSLHashType hashType;
-    SECOidTag hashOID;
-    PRUint32 policy;
     unsigned int i;
 
     
@@ -6446,20 +6472,12 @@ ssl_CanUseSignatureScheme(SSLSignatureScheme scheme,
         return PR_FALSE;
     }
 
-    if (ssl_IsDsaSignatureScheme(scheme) &&
-        (NSS_GetAlgorithmPolicy(SEC_OID_ANSIX9_DSA_SIGNATURE, &policy) ==
-         SECSuccess) &&
-        !(policy & NSS_USE_ALG_IN_SSL_KX)) {
-        return PR_FALSE;
-    }
-
     hashType = ssl_SignatureSchemeToHashType(scheme);
     if (requireSha1 && (hashType != ssl_hash_sha1)) {
         return PR_FALSE;
     }
-    hashOID = ssl3_HashTypeToOID(hashType);
-    if ((NSS_GetAlgorithmPolicy(hashOID, &policy) == SECSuccess) &&
-        !(policy & NSS_USE_ALG_IN_SSL_KX)) {
+
+    if (!ssl_SchemePolicyOK(scheme, kSSLSigSchemePolicy)) {
         return PR_FALSE;
     }
 
@@ -6533,6 +6551,9 @@ ssl_PickSignatureScheme(sslSocket *ss,
     }
 
     spkiOid = SECOID_GetAlgorithmTag(&cert->subjectPublicKeyInfo.algorithm);
+    if (spkiOid == SEC_OID_UNKNOWN) {
+        return SECFailure;
+    }
 
     
 
@@ -7430,7 +7451,7 @@ ssl_HandleDHServerKeyExchange(sslSocket *ss, PRUint8 *b, PRUint32 length)
     if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_2) {
         rv = ssl_ConsumeSignatureScheme(ss, &b, &length, &sigScheme);
         if (rv != SECSuccess) {
-            goto alert_loser; 
+            goto loser; 
         }
         rv = ssl_CheckSignatureSchemeConsistency(
             ss, sigScheme, &ss->sec.peerCert->subjectPublicKeyInfo);
@@ -7700,7 +7721,9 @@ ssl_ParseSignatureSchemes(const sslSocket *ss, PLArenaPool *arena,
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             return SECFailure;
         }
-        if (ssl_IsSupportedSignatureScheme((SSLSignatureScheme)tmp)) {
+        if (ssl_SignatureSchemeValid((SSLSignatureScheme)tmp, SEC_OID_UNKNOWN,
+                                     (PRBool)ss->version >= SSL_LIBRARY_VERSION_TLS_1_3)) {
+            ;
             schemes[numSupported++] = (SSLSignatureScheme)tmp;
         }
     }
@@ -10286,6 +10309,9 @@ ssl3_HandleCertificateVerify(sslSocket *ss, PRUint8 *b, PRUint32 length)
         PORT_Assert(ss->ssl3.hs.hashType == handshake_hash_record);
         rv = ssl_ConsumeSignatureScheme(ss, &b, &length, &sigScheme);
         if (rv != SECSuccess) {
+            if (PORT_GetError() == SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM) {
+                errCode = SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM;
+            }
             goto loser; 
         }
         rv = ssl_CheckSignatureSchemeConsistency(

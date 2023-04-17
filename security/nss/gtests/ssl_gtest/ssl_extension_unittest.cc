@@ -430,7 +430,10 @@ TEST_P(TlsExtensionTest12Plus, SignatureAlgorithmsBadLength) {
 }
 
 TEST_P(TlsExtensionTest12Plus, SignatureAlgorithmsTrailingData) {
-  const uint8_t val[] = {0x00, 0x02, 0x04, 0x01, 0x00};  
+  
+  
+  
+  const uint8_t val[] = {0x00, 0x02, 0x08, 0x09, 0x00};  
   DataBuffer extension(val, sizeof(val));
   ClientHelloErrorTest(std::make_shared<TlsExtensionReplacer>(
       client_, ssl_signature_algorithms_xtn, extension));
@@ -1129,6 +1132,15 @@ TEST_P(TlsExtensionTest13, EmptyVersionList) {
 TEST_P(TlsExtensionTest13, OddVersionList) {
   static const uint8_t kExt[] = {0x00, 0x01, 0x00};
   ConnectWithBogusVersionList(kExt, sizeof(kExt));
+}
+
+TEST_P(TlsExtensionTest13, SignatureAlgorithmsInvalidTls13) {
+  
+  const uint8_t val[] = {0x00, 0x02, 0x04, 0x01};  
+  DataBuffer extension(val, sizeof(val));
+  ClientHelloErrorTest(std::make_shared<TlsExtensionReplacer>(
+                           client_, ssl_signature_algorithms_xtn, extension),
+                       kTlsAlertHandshakeFailure);
 }
 
 
