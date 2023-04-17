@@ -809,7 +809,7 @@ nsresult HTMLTableAccessible::RemoveRowsOrColumnsFromSelection(
       mContent, startRowIdx, startColIdx, endRowIdx, endColIdx);
 }
 
-void HTMLTableAccessible::Description(nsString& aDescription) {
+void HTMLTableAccessible::Description(nsString& aDescription) const {
   
   aDescription.Truncate();
   LocalAccessible::Description(aDescription);

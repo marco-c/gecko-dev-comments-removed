@@ -161,7 +161,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual void Description(nsString& aDescription);
+  virtual void Description(nsString& aDescription) const;
 
   
 
@@ -901,7 +901,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  virtual void NativeDescription(nsString& aDescription);
+  void NativeDescription(nsString& aDescription) const;
 
   
 

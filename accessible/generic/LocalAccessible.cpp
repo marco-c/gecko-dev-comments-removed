@@ -169,7 +169,7 @@ ENameValueFlag LocalAccessible::Name(nsString& aName) const {
   return nameFlag;
 }
 
-void LocalAccessible::Description(nsString& aDescription) {
+void LocalAccessible::Description(nsString& aDescription) const {
   
   
   
@@ -2351,7 +2351,7 @@ ENameValueFlag LocalAccessible::NativeName(nsString& aName) const {
 }
 
 
-void LocalAccessible::NativeDescription(nsString& aDescription) {
+void LocalAccessible::NativeDescription(nsString& aDescription) const {
   bool isXUL = mContent->IsXULElement();
   if (isXUL) {
     
