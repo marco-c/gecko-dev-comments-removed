@@ -22,7 +22,6 @@
 #include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Services.h"
-#include "mozilla/SyncRunnable.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "mozpkix/Result.h"
@@ -34,7 +33,6 @@
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSCertificateDB.h"
-#include "nsNetCID.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -332,43 +330,27 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     return Success;
   }
 
-  
-  
-  
   nsTArray<nsTArray<uint8_t>> nssRootCandidates;
   nsTArray<nsTArray<uint8_t>> nssIntermediateCandidates;
-  RefPtr<Runnable> getCandidatesTask =
-      NS_NewRunnableFunction("NSSCertDBTrustDomain::FindIssuer", [&]() {
-        
-        
-        
-        
-        UniqueCERTCertList candidates(
-            CERT_CreateSubjectCertList(nullptr, CERT_GetDefaultCertDB(),
-                                       &encodedIssuerNameItem, 0, false));
-        if (candidates) {
-          for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
-               !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
-            nsTArray<uint8_t> candidate;
-            candidate.AppendElements(n->cert->derCert.data,
-                                     n->cert->derCert.len);
-            if (n->cert->isRoot) {
-              nssRootCandidates.AppendElement(std::move(candidate));
-            } else {
-              nssIntermediateCandidates.AppendElement(std::move(candidate));
-            }
-          }
-        }
-      });
-  nsCOMPtr<nsIEventTarget> socketThread(
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID));
-  if (!socketThread) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  
+  
+  
+  
+  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
+      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
+  if (candidates) {
+    for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
+         !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
+      nsTArray<uint8_t> candidate;
+      candidate.AppendElements(n->cert->derCert.data, n->cert->derCert.len);
+      if (n->cert->isRoot) {
+        nssRootCandidates.AppendElement(std::move(candidate));
+      } else {
+        nssIntermediateCandidates.AppendElement(std::move(candidate));
+      }
+    }
   }
-  rv = SyncRunnable::DispatchToThread(socketThread, getCandidatesTask);
-  if (NS_FAILED(rv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
+
   nsTArray<Input> nssCandidates;
   for (const auto& rootCandidate : nssRootCandidates) {
     Input certDER;
@@ -451,82 +433,59 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   
   
   
-  Result result = Result::FATAL_ERROR_LIBRARY_FAILURE;
-  RefPtr<Runnable> getTrustTask =
-      NS_NewRunnableFunction("NSSCertDBTrustDomain::GetCertTrust", [&]() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        SECItem candidateCertDERSECItem =
-            UnsafeMapInputToSECItem(candidateCertDER);
-        UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
-            CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false,
-            true));
-        if (!candidateCert) {
-          result = MapPRErrorCodeToResult(PR_GetError());
-          return;
-        }
-        
-        
-        
-        
-        
-        CERTCertTrust trust;
-        if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
-          uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
-
-          
-          
-          
-          
-          
-          uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
-                                          ? CERTDB_TRUSTED_CA
-                                          : CERTDB_TRUSTED;
-          if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
-              CERTDB_TERMINAL_RECORD) {
-            trustLevel = TrustLevel::ActivelyDistrusted;
-            result = Success;
-            return;
-          }
-
-          
-          if (flags & CERTDB_TRUSTED_CA) {
-            if (policy.IsAnyPolicy()) {
-              trustLevel = TrustLevel::TrustAnchor;
-              result = Success;
-              return;
-            }
-
-            nsTArray<uint8_t> certBytes(candidateCert->derCert.data,
-                                        candidateCert->derCert.len);
-            if (CertIsAuthoritativeForEVPolicy(certBytes, policy)) {
-              trustLevel = TrustLevel::TrustAnchor;
-              result = Success;
-              return;
-            }
-          }
-        }
-        trustLevel = TrustLevel::InheritsTrust;
-        result = Success;
-      });
-  nsCOMPtr<nsIEventTarget> socketThread(
-      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID));
-  if (!socketThread) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  
+  
+  
+  
+  
+  
+  
+  SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
+  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
+  if (!candidateCert) {
+    return MapPRErrorCodeToResult(PR_GetError());
   }
-  nsresult rv = SyncRunnable::DispatchToThread(socketThread, getTrustTask);
-  if (NS_FAILED(rv)) {
-    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  
+  
+  
+  
+  
+  CERTCertTrust trust;
+  if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
+    uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
+
+    
+    
+    
+    
+    
+    uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
+                                    ? CERTDB_TRUSTED_CA
+                                    : CERTDB_TRUSTED;
+    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
+        CERTDB_TERMINAL_RECORD) {
+      trustLevel = TrustLevel::ActivelyDistrusted;
+      return Success;
+    }
+
+    
+    if (flags & CERTDB_TRUSTED_CA) {
+      if (policy.IsAnyPolicy()) {
+        trustLevel = TrustLevel::TrustAnchor;
+        return Success;
+      }
+
+      nsTArray<uint8_t> certBytes(candidateCert->derCert.data,
+                                  candidateCert->derCert.len);
+      if (CertIsAuthoritativeForEVPolicy(certBytes, policy)) {
+        trustLevel = TrustLevel::TrustAnchor;
+        return Success;
+      }
+    }
   }
-  return result;
+  trustLevel = TrustLevel::InheritsTrust;
+  return Success;
 }
 
 Result NSSCertDBTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
