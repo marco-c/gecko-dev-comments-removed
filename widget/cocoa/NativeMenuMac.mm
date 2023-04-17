@@ -193,7 +193,15 @@ void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
 }
 
 void NativeMenuMac::OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
-                                           mozilla::dom::Element* aMenuItemElement) {}
+                                           mozilla::dom::Element* aMenuItemElement) {
+  
+  
+  RefPtr<NativeMenuMac> kungFuDeathGrip(this);
+
+  for (NativeMenu::Observer* observer : mObservers.Clone()) {
+    observer->OnNativeMenuWillActivateItem(aMenuItemElement);
+  }
+}
 
 void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
   
