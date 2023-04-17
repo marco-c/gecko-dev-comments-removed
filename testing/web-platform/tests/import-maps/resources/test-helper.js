@@ -61,9 +61,7 @@ function getHandlers(t, specifier, expected) {
     handlers[Handler.DynamicImportReject] = () => expect_log(t, []);
   } else if (expected === Result.PARSE_ERROR) {
     let error_occurred = false;
-    handlers[Handler.WindowErrorEvent] = () => {
-      error_occurred = true;
-    };
+    handlers[Handler.WindowErrorEvent] = () => { error_occurred = true; };
     handlers[Handler.ScriptLoadEvent] = t.step_func(() => {
       
       
