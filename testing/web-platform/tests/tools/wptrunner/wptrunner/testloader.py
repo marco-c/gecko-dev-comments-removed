@@ -20,9 +20,9 @@ download_from_github = None
 def do_delayed_imports():
     
     global manifest, manifest_update, download_from_github
-    from manifest import manifest
+    from manifest import manifest  
     from manifest import update as manifest_update
-    from manifest.download import download_from_github
+    from manifest.download import download_from_github  
 
 
 class TestGroupsFile(object):
