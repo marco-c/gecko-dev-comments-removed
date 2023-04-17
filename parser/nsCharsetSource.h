@@ -9,6 +9,7 @@
 enum {
   kCharsetUninitialized,
   kCharsetFromFallback,
+  kCharsetFromTopLevelDomain,
   kCharsetFromDocTypeDefault,  
   
   kCharsetFromInitialAutoDetectionASCII,
@@ -16,6 +17,7 @@ enum {
   kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Generic,
   kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8Content,
   kCharsetFromInitialAutoDetectionWouldNotHaveBeenUTF8DependedOnTLD,
+  kCharsetFromFinalJapaneseAutoDetection,
   
   kCharsetFromFinalAutoDetectionWouldHaveBeenUTF8,
   kCharsetFromFinalAutoDetectionWouldNotHaveBeenUTF8Generic,
@@ -35,6 +37,8 @@ enum {
                                                
   kCharsetFromInitialUserForcedAutoDetection,
   kCharsetFromFinalUserForcedAutoDetection,
+  kCharsetFromUserForced,  
+  kCharsetFromUserForcedJapaneseAutoDetection,
   kCharsetFromXmlDeclarationUtf16,        
                                           
   kCharsetFromIrreversibleAutoDetection,  

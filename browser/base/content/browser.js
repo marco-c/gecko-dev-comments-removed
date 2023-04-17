@@ -27,6 +27,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   CFRPageActions: "resource://activity-stream/lib/CFRPageActions.jsm",
+  CharsetMenu: "resource://gre/modules/CharsetMenu.jsm",
   Color: "resource://gre/modules/Color.jsm",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.jsm",
@@ -4883,6 +4884,24 @@ function updateUserContextUIIndicator() {
   hbox.hidden = false;
 }
 
+
+
+
+
+function updateCharacterEncodingMenuState() {
+  let charsetMenu = document.getElementById("charsetMenu");
+  
+  
+  
+  if (gBrowser && gBrowser.selectedBrowser.mayEnableCharacterEncodingMenu) {
+    if (charsetMenu) {
+      charsetMenu.removeAttribute("disabled");
+    }
+  } else if (charsetMenu) {
+    charsetMenu.setAttribute("disabled", "true");
+  }
+}
+
 var XULBrowserWindow = {
   
   status: "",
@@ -7059,9 +7078,35 @@ function handleDroppedLink(
   }
 }
 
-function BrowserForceEncodingDetection() {
-  gBrowser.selectedBrowser.forceEncodingDetection();
+function BrowserSetForcedCharacterSet(aCharset) {
+  if (aCharset) {
+    if (aCharset == "Japanese") {
+      aCharset = "Shift_JIS";
+    }
+    gBrowser.selectedBrowser.characterSet = aCharset;
+    
+    PlacesUIUtils.setCharsetForPage(
+      gBrowser.currentURI,
+      aCharset,
+      window
+    ).catch(Cu.reportError);
+  }
+  BrowserCharsetReload();
+}
+
+function BrowserCharsetReload() {
   BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE);
+}
+
+function UpdateCurrentCharset(target) {
+  let selectedCharset = CharsetMenu.foldCharset(
+    gBrowser.selectedBrowser.characterSet,
+    gBrowser.selectedBrowser.charsetAutodetected
+  );
+  for (let menuItem of target.getElementsByTagName("menuitem")) {
+    let isSelected = menuItem.getAttribute("charset") === selectedCharset;
+    menuItem.setAttribute("checked", isSelected);
+  }
 }
 
 var ToolbarContextMenu = {

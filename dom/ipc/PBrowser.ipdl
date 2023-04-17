@@ -130,6 +130,7 @@ struct WebProgressStateChangeData
 {
   bool isNavigating;
   bool mayEnableCharacterEncodingMenu;
+  bool charsetAutodetected;
 
   
   
@@ -143,6 +144,7 @@ struct WebProgressLocationChangeData
   bool isNavigating;
   bool isSyntheticDocument;
   bool mayEnableCharacterEncodingMenu;
+  bool charsetAutodetected;
   nsString contentType;
   nsString title;
   nsString charset;
