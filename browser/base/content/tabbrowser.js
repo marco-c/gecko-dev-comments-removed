@@ -3132,6 +3132,9 @@
         return true;
       }
 
+      
+      gDialogBox.replaceDialogIfOpen();
+
       var ps = Services.prompt;
 
       

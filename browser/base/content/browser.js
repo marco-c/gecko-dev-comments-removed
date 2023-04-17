@@ -9416,6 +9416,7 @@ TabModalPromptBox.prototype = {
 
 var gDialogBox = {
   _dialog: null,
+  _nextOpenJumpsQueue: false,
   _queued: [],
 
   
@@ -9436,12 +9437,21 @@ var gDialogBox = {
     return !!this._dialog;
   },
 
+  replaceDialogIfOpen() {
+    this._dialog?.close();
+    this._nextOpenJumpsQueue = true;
+  },
+
   async open(uri, args) {
+    
+    const queueMethod = this._nextOpenJumpsQueue ? "unshift" : "push";
+    this._nextOpenJumpsQueue = false;
+
     
     
     if (this.isOpen) {
       return new Promise((resolve, reject) => {
-        this._queued.push({ resolve, reject, uri, args });
+        this._queued[queueMethod]({ resolve, reject, uri, args });
       });
     }
 

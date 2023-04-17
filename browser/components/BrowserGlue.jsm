@@ -2736,6 +2736,9 @@ BrowserGlue.prototype = {
 
     let win = BrowserWindowTracker.getTopWindow();
 
+    
+    win.gDialogBox.replaceDialogIfOpen();
+
     let warningMessage;
     
     if (windowcount > 1) {
