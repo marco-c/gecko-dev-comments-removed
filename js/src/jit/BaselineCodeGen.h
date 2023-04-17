@@ -235,8 +235,6 @@ class BaselineCodeGen {
   [[nodiscard]] bool emitSetElemSuper(bool strict);
   [[nodiscard]] bool emitSetPropSuper(bool strict);
 
-  [[nodiscard]] bool emitBindName(JSOp op);
-
   
   
   bool tryOptimizeGetGlobalName();
