@@ -337,20 +337,6 @@ class nsDocumentViewer final : public nsIContentViewer,
   using CallChildFunc = FunctionRef<void(nsDocumentViewer*)>;
   void CallChildren(CallChildFunc aFunc);
 
-  using PresContextFunc = FunctionRef<void(nsPresContext*)>;
-  
-
-
-
-
-
-
-
-
-
-
-  void PropagateToPresContextsHelper(CallChildFunc, PresContextFunc);
-
   
   NS_DECL_NSIDOCUMENTVIEWERPRINT
 
@@ -2555,25 +2541,6 @@ NS_IMETHODIMP nsDocumentViewer::SetCommandNode(nsINode* aNode) {
 
   root->SetPopupNode(aNode);
   return NS_OK;
-}
-
-void nsDocumentViewer::PropagateToPresContextsHelper(CallChildFunc aChildFunc,
-                                                     PresContextFunc aPcFunc) {
-  CallChildren(aChildFunc);
-
-  if (mDocument) {
-    auto resourceDoc = [aPcFunc](Document& aResourceDoc) {
-      if (nsPresContext* pc = aResourceDoc.GetPresContext()) {
-        aPcFunc(pc);
-      }
-      return CallState::Continue;
-    };
-    mDocument->EnumerateExternalResources(resourceDoc);
-  }
-
-  if (mPresContext) {
-    aPcFunc(mPresContext);
-  }
 }
 
 void nsDocumentViewer::CallChildren(CallChildFunc aFunc) {
