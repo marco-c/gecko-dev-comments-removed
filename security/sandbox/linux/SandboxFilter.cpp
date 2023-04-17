@@ -1778,8 +1778,13 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
   }
 
   ResultExpr PrctlPolicy() const override {
-    
-    return Allow();
+    Arg<int> op(0);
+    return Switch(op)
+        .CASES((PR_SET_NAME,      
+                PR_SET_DUMPABLE,  
+                PR_SET_PTRACER),  
+               Allow())
+        .Default(InvalidSyscall());
   }
 
   ResultExpr EvaluateSyscall(int sysno) const override {
