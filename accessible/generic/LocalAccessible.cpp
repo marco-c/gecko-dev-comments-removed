@@ -300,6 +300,12 @@ void LocalAccessible::TranslateString(const nsString& aKey,
 }
 
 uint64_t LocalAccessible::VisibilityState() const {
+  if (IPCAccessibilityActive() &&
+      StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
+    
+    return 0;
+  }
   nsIFrame* frame = GetFrame();
   if (!frame) {
     
@@ -3206,6 +3212,16 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     } else if (aUpdateType == CacheUpdateType::Update) {
       fields->SetAttribute(nsGkAtoms::id, DeleteEntry());
     }
+  }
+
+  
+  
+  if (aCacheDomain & CacheDomain::State &&
+      aUpdateType == CacheUpdateType::Initial) {
+    uint64_t state = State();
+    
+    state &= ~kRemoteCalculatedStates;
+    fields->SetAttribute(nsGkAtoms::state, state);
   }
 
   return fields.forget();
