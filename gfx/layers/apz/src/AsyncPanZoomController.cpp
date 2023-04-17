@@ -1927,8 +1927,7 @@ ParentLayerPoint AsyncPanZoomController::GetScrollWheelDelta(
   
   
   
-  if (StaticPrefs::
-          mousewheel_system_scroll_override_on_root_content_enabled() &&
+  if (StaticPrefs::mousewheel_system_scroll_override_enabled() &&
       !aEvent.IsCustomizedByUserPrefs() &&
       aEvent.mDeltaType == ScrollWheelInput::SCROLLDELTA_LINE &&
       aEvent.mAllowToOverrideSystemScrollSpeed) {
