@@ -4,11 +4,7 @@ except ImportError:
     pass
 import json
 import os
-try:
-    
-    import Queue as queue  
-except ImportError:
-    import queue
+import queue
 import tempfile
 import threading
 
