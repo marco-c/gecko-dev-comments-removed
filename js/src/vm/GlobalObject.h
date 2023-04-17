@@ -51,6 +51,7 @@ class JS_PUBLIC_API RealmOptions;
 
 namespace js {
 
+class ArgumentsObject;
 class GlobalScope;
 class GlobalLexicalEnvironmentObject;
 class PlainObject;
@@ -199,6 +200,9 @@ class GlobalObjectData {
 
   
   UniquePtr<RegExpStatics> regExpStatics;
+
+  HeapPtr<ArgumentsObject*> mappedArgumentsTemplate;
+  HeapPtr<ArgumentsObject*> unmappedArgumentsTemplate;
 
   
   bool globalThisResolved = false;
@@ -963,6 +967,10 @@ class GlobalObject : public NativeObject {
 
   
   [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
+
+  static ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx,
+                                                             bool mapped);
+  ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
 
   
   static bool initIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
