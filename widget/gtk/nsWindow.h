@@ -112,8 +112,6 @@ class nsWindow final : public nsBaseWidget {
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
 
-  void CommonCreate(nsIWidget* aParent, bool aListenForResizes);
-
   virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                                  nsEventStatus& aStatus) override;
 
@@ -443,12 +441,7 @@ class nsWindow final : public nsBaseWidget {
   }
   nsCOMPtr<nsIWidget> mParent;
   
-  bool mIsTopLevel;
-  
   bool mIsDestroyed;
-
-  
-  bool mListenForResizes;
   
   bool mNeedsDispatchResized;
   
