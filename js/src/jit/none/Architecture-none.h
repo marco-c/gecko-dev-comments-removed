@@ -22,9 +22,8 @@ static const uint32_t WasmStackAlignment = 8;
 static const uint32_t WasmTrapInstructionLength = 0;
 
 
-
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
-static constexpr uint32_t WasmCheckedTailEntryOffset = 0u;
+static constexpr uint32_t WasmCheckedTailEntryOffset = 1u;
 
 class Registers {
  public:

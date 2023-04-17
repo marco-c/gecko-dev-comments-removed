@@ -412,6 +412,12 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   
   
   
+
+  
+  
+  
+  
+
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
   {
     *entry = masm.currentOffset();
@@ -455,7 +461,7 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   {
 #  if defined(JS_CODEGEN_ARM)
     AutoForbidPoolsAndNops afp(&masm,
-                                6);
+                                3);
 
     *entry = masm.currentOffset();
 
@@ -549,38 +555,34 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   MOZ_ASSERT_IF(!masm.oom(), PoppedFP == *ret - poppedFP);
 }
 
-static void EnsureOffset(MacroAssembler& masm, uint32_t base,
-                         uint32_t targetOffset) {
-  MOZ_ASSERT(targetOffset % CodeAlignment == 0);
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - base <= targetOffset);
-
-  while (masm.currentOffset() - base < targetOffset) {
-    masm.nopAlign(CodeAlignment);
-    if (masm.currentOffset() - base < targetOffset) {
-      masm.nop();
-    }
-  }
-
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - base == targetOffset);
-}
-
 void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
                                     const TypeIdDesc& funcTypeId,
                                     const Maybe<uint32_t>& tier1FuncIndex,
                                     FuncOffsets* offsets) {
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static_assert(WasmCheckedCallEntryOffset % CodeAlignment == 0,
                 "code aligned");
-  static_assert(WasmCheckedTailEntryOffset % CodeAlignment == 0,
-                "code aligned");
+  static_assert(WasmCheckedTailEntryOffset > WasmCheckedCallEntryOffset);
 
+  
   
   
   
   masm.flushBuffer();
   masm.haltingAlign(CodeAlignment);
 
+  
+  
   
   
   
@@ -605,7 +607,20 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   uint32_t dummy;
   GenerateCallablePrologue(masm, &dummy);
 
-  EnsureOffset(masm, offsets->begin, WasmCheckedTailEntryOffset);
+  
+  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin <=
+                                 WasmCheckedTailEntryOffset);
+
+  
+  
+  
+  while (masm.currentOffset() - offsets->begin < WasmCheckedTailEntryOffset) {
+    masm.nop();
+  }
+
+  
+  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - offsets->begin ==
+                                 WasmCheckedTailEntryOffset);
   switch (funcTypeId.kind()) {
     case TypeIdDescKind::Global: {
       Register scratch = WasmTableCallScratchReg0;

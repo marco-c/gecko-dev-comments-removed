@@ -184,8 +184,10 @@ static constexpr uint32_t WasmTrapInstructionLength = 2;
 
 
 
+
+
 static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
-static constexpr uint32_t WasmCheckedTailEntryOffset = 16u;
+static constexpr uint32_t WasmCheckedTailEntryOffset = 4u;
 
 struct ImmTag : public Imm32 {
   explicit ImmTag(JSValueTag mask) : Imm32(int32_t(mask)) {}
