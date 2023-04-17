@@ -1073,7 +1073,13 @@ function clickElementInTab(selector) {
     gBrowser.selectedBrowser,
     [{ selector }],
     function({ selector }) {
-      content.wrappedJSObject.document.querySelector(selector).click();
+      const element = content.document.querySelector(selector);
+      
+      
+      
+      content.setTimeout(() => {
+        element.click();
+      });
     }
   );
 }
