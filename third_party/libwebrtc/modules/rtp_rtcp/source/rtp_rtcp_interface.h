@@ -153,6 +153,27 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
+  struct SenderReportStats {
+    
+    NtpTime last_arrival_timestamp;
+    
+    NtpTime last_remote_timestamp;
+    
+    
+    
+    uint32_t packets_sent;
+    
+    
+    
+    
+    uint64_t bytes_sent;
+    
+    
+    uint64_t reports_count;
+  };
+
+  
+  
   
 
   virtual void IncomingRtcpPacket(const uint8_t* incoming_packet,
@@ -383,6 +404,8 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
+  
+  virtual absl::optional<SenderReportStats> GetSenderReportStats() const = 0;
 
   
   virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
