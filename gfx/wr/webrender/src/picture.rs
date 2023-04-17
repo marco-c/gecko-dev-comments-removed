@@ -2612,13 +2612,18 @@ impl TileCacheInstance {
             ROOT_SPATIAL_NODE_INDEX,
             frame_context.spatial_tree,
         );
-        self.surface_to_device.scale = Vector2D::new(1.0, 1.0);
 
-        self.local_to_surface = get_relative_scale_offset(
-            self.spatial_node_index,
-            ROOT_SPATIAL_NODE_INDEX,
-            frame_context.spatial_tree,
-        ).accumulate(&self.surface_to_device.inverse());
+        if frame_context.config.low_quality_pinch_zoom {
+            self.local_to_surface = ScaleOffset::identity();
+        } else {
+            self.surface_to_device.scale = Vector2D::new(1.0, 1.0);
+
+            self.local_to_surface = get_relative_scale_offset(
+                self.spatial_node_index,
+                ROOT_SPATIAL_NODE_INDEX,
+                frame_context.spatial_tree,
+            ).accumulate(&self.surface_to_device.inverse());
+        }
 
         
         
@@ -6165,6 +6170,7 @@ impl PicturePrimitive {
 
             
             let mut min_scale = 1.0;
+            let mut max_scale = 1.0e32;
 
             
             
@@ -6172,6 +6178,14 @@ impl PicturePrimitive {
                 PictureCompositeMode::TileCache { .. } => {
                     
                     min_scale = 0.0;
+
+                    if frame_context.fb_config.low_quality_pinch_zoom {
+                        
+                        
+                        
+                        min_scale = 1.0;
+                        max_scale = 1.0;
+                    }
 
                     
                     
@@ -6197,7 +6211,7 @@ impl PicturePrimitive {
                 let scale_factors = surface_to_parent_transform.scale_factors();
 
                 
-                let scaling_factor = scale_factors.0.max(scale_factors.1).max(min_scale);
+                let scaling_factor = scale_factors.0.max(scale_factors.1).max(min_scale).min(max_scale);
 
                 let device_pixel_scale = parent_device_pixel_scale * Scale::new(scaling_factor);
                 (surface_spatial_node_index, device_pixel_scale)
