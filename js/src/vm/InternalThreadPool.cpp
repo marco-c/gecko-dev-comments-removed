@@ -155,11 +155,12 @@ size_t InternalThreadPool::sizeOfIncludingThis(
          threads(lock).sizeOfExcludingThis(mallocSizeOf);
 }
 
-void InternalThreadPool::dispatchTask(const AutoLockHelperThreadState& lock) {
-  notifyOne(lock);
-}
 
-void InternalThreadPool::notifyOne(const AutoLockHelperThreadState& lock) {
+void InternalThreadPool::DispatchTask() { Get().dispatchTask(); }
+
+void InternalThreadPool::dispatchTask() {
+  gHelperThreadLock.assertOwnedByCurrentThread();
+  queuedTasks++;
   wakeup.notify_one();
 }
 
@@ -240,20 +241,13 @@ void HelperThread::threadLoop(InternalThreadPool* pool) {
   AutoLockHelperThreadState lock;
 
   while (!pool->terminating) {
-    
-    
-    
-    
-    
-
-    HelperThreadTask* task = HelperThreadState().findHighestPriorityTask(lock);
-    if (!task) {
-      AUTO_PROFILER_LABEL("HelperThread::threadLoop::wait", IDLE);
-      pool->wait(lock);
+    if (pool->queuedTasks != 0) {
+      pool->queuedTasks--;
+      HelperThreadState().runOneTask(lock);
       continue;
     }
 
-    HelperThreadState().runTaskLocked(task, lock);
-    HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, lock);
+    AUTO_PROFILER_LABEL("HelperThread::threadLoop::wait", IDLE);
+    pool->wait(lock);
   }
 }
