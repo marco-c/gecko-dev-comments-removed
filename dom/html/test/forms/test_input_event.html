@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=851780
+-->
 <head>
 <title>Test for input event</title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -398,10 +398,7 @@
   }
 
   SimpleTest.waitForExplicitFinish();
-  document.addEventListener("DOMContentLoaded", async () => {
-    await SpecialPowers.pushPrefEnv({
-      set: [["dom.input_events.beforeinput.enabled", true]],
-    });
+  document.addEventListener("DOMContentLoaded", () => {
     init();
     SimpleTest.waitForFocus(testUserInput);
   }, {once: true});

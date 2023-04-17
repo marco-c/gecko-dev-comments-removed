@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1473515
+-->
 <html>
 <head>
   <title>Test for Bug 1473515</title>
@@ -26,11 +26,7 @@
 
 SimpleTest.waitForExplicitFinish();
 SimpleTest.expectAssertions(0, 1);  // In a11y module
-SimpleTest.waitForFocus(async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.input_events.beforeinput.enabled", true]],
-  });
-
+SimpleTest.waitForFocus(() => {
   let editableElements = [
     document.getElementById("input"),
     document.getElementById("textarea"),

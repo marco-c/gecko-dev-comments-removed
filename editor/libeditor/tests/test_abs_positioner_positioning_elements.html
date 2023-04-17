@@ -15,17 +15,13 @@
 <p id="display"></p>
 <div id="content" contenteditable style="height: 200px; width: 200px;"></div>
 <div id="clickaway" style="position: absolute; top: 250px; width: 10px; height: 10px; z-index: 100;"></div>
-<img src="green.png">
+<img src="green.png"><!-- for ensuring to load the image at first test of <img> case -->
 <pre id="test">
 <script type="application/javascript">
 "use strict";
 
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.input_events.beforeinput.enabled", true]],
-  });
-
   document.execCommand("enableAbsolutePositionEditing", false, true);
   ok(document.queryCommandState("enableAbsolutePositionEditing"),
      "Absolute positioned element editor should be enabled by the call of execCommand");

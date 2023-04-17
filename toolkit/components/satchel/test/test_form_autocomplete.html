@@ -11,125 +11,125 @@
 Form History test: form field autocomplete
 <p id="display"></p>
 
-
-
+<!-- We presumably can't hide the content for this test. The large top padding is to allow
+     listening for scrolls to occur. -->
 <div id="content" style="padding-top: 20000px;">
 
-  
+  <!-- normal, basic form -->
   <form id="form1" onsubmit="return false;">
     <input  type="text" name="field1">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- normal, basic form (new fieldname) -->
   <form id="form2" onsubmit="return false;">
     <input  type="text" name="field2">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with autocomplete=off on input -->
   <form id="form3" onsubmit="return false;">
     <input  type="text" name="field2" autocomplete="off">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with autocomplete=off on form -->
   <form id="form4" autocomplete="off" onsubmit="return false;">
     <input  type="text" name="field2">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- normal form for testing filtering -->
   <form id="form5" onsubmit="return false;">
     <input  type="text" name="field3">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- normal form for testing word boundary filtering -->
   <form id="form6" onsubmit="return false;">
     <input  type="text" name="field4">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with maxlength attribute on input -->
   <form id="form7" onsubmit="return false;">
     <input  type="text" name="field5" maxlength="10">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='email' -->
   <form id="form8" onsubmit="return false;">
     <input  type="email" name="field6">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='tel' -->
   <form id="form9" onsubmit="return false;">
     <input  type="tel" name="field7">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='url' -->
   <form id="form10" onsubmit="return false;">
     <input  type="url" name="field8">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='search' -->
   <form id="form11" onsubmit="return false;">
     <input  type="search" name="field9">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='number' -->
   <form id="form12" onsubmit="return false;">
-    <input  type="text" name="field10"> 
+    <input  type="text" name="field10"> <!-- TODO: change back to type=number -->
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- normal, basic form (with fieldname='searchbar-history') -->
   <form id="form13" onsubmit="return false;">
     <input  type="text" name="searchbar-history">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='date' -->
   <form id="form14" onsubmit="return false;">
     <input  type="date" name="field11">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='time' -->
   <form id="form15" onsubmit="return false;">
     <input  type="time" name="field12">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='range' -->
   <form id="form16" onsubmit="return false;">
     <input  type="range" name="field13" max="64">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='color' -->
   <form id="form17" onsubmit="return false;">
     <input  type="color" name="field14">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='month' -->
   <form id="form18" onsubmit="return false;">
     <input  type="month" name="field15">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='week' -->
   <form id="form19" onsubmit="return false;">
     <input  type="week" name="field16">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- form with input type='datetime-local' -->
   <form id="form20" onsubmit="return false;">
     <input  type="datetime-local" name="field17">
     <button type="submit">Submit</button>
@@ -141,8 +141,7 @@ Form History test: form field autocomplete
 <script class="testbody" type="text/javascript">
 /** Test for Form History autocomplete **/
 
-SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal", true],
-                                   ["dom.input_events.beforeinput.enabled", true]]});
+SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal", true]]});
 var kSetUserInputCancelable = SpecialPowers.getBoolPref("dom.input_event.allow_to_cancel_set_user_input");
 
 var input = $_(1, "field1");
