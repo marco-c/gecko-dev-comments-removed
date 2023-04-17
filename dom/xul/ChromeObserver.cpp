@@ -102,16 +102,25 @@ void ChromeObserver::SetDrawsTitle(bool aState) {
   }
 }
 
-void ChromeObserver::UpdateBrightTitlebarForeground() {
+void ChromeObserver::UpdateWindowAppearance() {
   nsIWidget* mainWidget = GetWindowWidget();
   if (mainWidget) {
-    
-    
-    mainWidget->SetUseBrightTitlebarForeground(
-        mDocument->GetDocumentLWTheme() == Document::Doc_Theme_Bright ||
-        mDocument->GetRootElement()->AttrValueIs(
-            kNameSpaceID_None, nsGkAtoms::brighttitlebarforeground, u"true"_ns,
-            eCaseMatters));
+    nsIWidget::WindowAppearance appearance;
+    switch (mDocument->GetDocumentLWTheme()) {
+      case Document::Doc_Theme_Bright:
+        
+        
+        appearance = nsIWidget::WindowAppearance::eDark;
+        break;
+      case Document::Doc_Theme_Dark:
+        
+        
+        appearance = nsIWidget::WindowAppearance::eLight;
+        break;
+      default:
+        appearance = nsIWidget::WindowAppearance::eSystem;
+    }
+    mainWidget->SetWindowAppearance(appearance);
   }
 }
 
@@ -196,9 +205,7 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentLWTheme();
-      UpdateBrightTitlebarForeground();
-    } else if (aName == nsGkAtoms::brighttitlebarforeground) {
-      UpdateBrightTitlebarForeground();
+      UpdateWindowAppearance();
     }
   } else {
     if (aName == nsGkAtoms::hidechrome) {
@@ -213,9 +220,7 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
                 aName == nsGkAtoms::lwthemetextcolor)) {
       
       mDocument->ResetDocumentLWTheme();
-      UpdateBrightTitlebarForeground();
-    } else if (aName == nsGkAtoms::brighttitlebarforeground) {
-      UpdateBrightTitlebarForeground();
+      UpdateWindowAppearance();
     } else if (aName == nsGkAtoms::drawintitlebar) {
       SetDrawsInTitlebar(false);
     } else if (aName == nsGkAtoms::drawtitle) {

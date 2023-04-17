@@ -29,7 +29,7 @@ class ChromeObserver final : public nsStubMutationObserver {
   nsIWidget* GetWindowWidget();
   void SetDrawsInTitlebar(bool aState);
   void SetDrawsTitle(bool aState);
-  void UpdateBrightTitlebarForeground();
+  void UpdateWindowAppearance();
   void SetChromeMargins(const nsAttrValue* aValue);
   nsresult HideWindowChrome(bool aShouldHide);
 
