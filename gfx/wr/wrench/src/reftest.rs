@@ -966,7 +966,7 @@ impl<'a> ReftestHarness<'a> {
         );
 
         
-        let rect = FramebufferIntRect::from_origin_and_size(
+        let rect = FramebufferIntRect::new(
             FramebufferIntPoint::new(0, window_size.height - size.height),
             FramebufferIntSize::new(size.width, size.height),
         );
