@@ -35,10 +35,8 @@ impl fmt::Display for BuildInfo {
     }
 }
 
-
-
-impl Into<Value> for BuildInfo {
-    fn into(self) -> Value {
+impl From<BuildInfo> for Value {
+    fn from(_: BuildInfo) -> Value {
         Value::String(BuildInfo::version().to_string())
     }
 }
