@@ -508,12 +508,35 @@ struct CompilationStencil {
 
   
   
+  
+  
+  
+  
+  
+  
+  mutable mozilla::Atomic<uintptr_t> refCount{0};
+
+  
+  
   bool hasExternalDependency = false;
 
   
   
   using FunctionKey = uint32_t;
   static constexpr FunctionKey NullFunctionKey = 0;
+
+  
+  
+  FunctionKey functionKey = NullFunctionKey;
+
+  
+  
+  LifoAlloc alloc;
+
+  
+  
+  
+  RefPtr<ScriptSource> source;
 
   
   
@@ -539,35 +562,12 @@ struct CompilationStencil {
 
   
   
-  SharedDataContainer sharedData;
-
-  
-  
   
   ParserAtomSpan parserAtomData;
 
   
   
-  FunctionKey functionKey = NullFunctionKey;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  mutable mozilla::Atomic<uintptr_t> refCount{0};
-
-  
-  
-  LifoAlloc alloc;
-
-  
-  
-  
-  RefPtr<ScriptSource> source;
+  SharedDataContainer sharedData;
 
   
   RefPtr<StencilModuleMetadata> moduleMetadata;
@@ -654,6 +654,8 @@ struct CompilationStencil {
 struct ExtensibleCompilationStencil {
   using FunctionKey = CompilationStencil::FunctionKey;
 
+  FunctionKey functionKey = CompilationStencil::NullFunctionKey;
+
   
   
   LifoAlloc alloc;
@@ -677,21 +679,20 @@ struct ExtensibleCompilationStencil {
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
 
+  
+  ParserAtomsTable parserAtoms;
+
+  SharedDataContainer sharedData;
+
   RefPtr<StencilModuleMetadata> moduleMetadata;
 
   RefPtr<StencilAsmJSContainer> asmJS;
 
-  SharedDataContainer sharedData;
-
-  
-  ParserAtomsTable parserAtoms;
-
-  FunctionKey functionKey = CompilationStencil::NullFunctionKey;
-
   ExtensibleCompilationStencil(JSContext* cx, CompilationInput& input);
 
   ExtensibleCompilationStencil(ExtensibleCompilationStencil&& other) noexcept
-      : alloc(CompilationStencil::LifoAllocChunkSize),
+      : functionKey(other.functionKey),
+        alloc(CompilationStencil::LifoAllocChunkSize),
         source(std::move(other.source)),
         scriptData(std::move(other.scriptData)),
         scriptExtra(std::move(other.scriptExtra)),
@@ -701,11 +702,10 @@ struct ExtensibleCompilationStencil {
         regExpData(std::move(other.regExpData)),
         bigIntData(std::move(other.bigIntData)),
         objLiteralData(std::move(other.objLiteralData)),
-        moduleMetadata(std::move(other.moduleMetadata)),
-        asmJS(std::move(other.asmJS)),
-        sharedData(std::move(other.sharedData)),
         parserAtoms(std::move(other.parserAtoms)),
-        functionKey(other.functionKey) {
+        sharedData(std::move(other.sharedData)),
+        moduleMetadata(std::move(other.moduleMetadata)),
+        asmJS(std::move(other.asmJS)) {
     alloc.steal(&other.alloc);
     parserAtoms.fixupAlloc(alloc);
   }
@@ -714,6 +714,7 @@ struct ExtensibleCompilationStencil {
       ExtensibleCompilationStencil&& other) noexcept {
     MOZ_ASSERT(alloc.isEmpty());
 
+    functionKey = other.functionKey;
     source = std::move(other.source);
     scriptData = std::move(other.scriptData);
     scriptExtra = std::move(other.scriptExtra);
@@ -723,11 +724,10 @@ struct ExtensibleCompilationStencil {
     regExpData = std::move(other.regExpData);
     bigIntData = std::move(other.bigIntData);
     objLiteralData = std::move(other.objLiteralData);
+    parserAtoms = std::move(other.parserAtoms);
+    sharedData = std::move(other.sharedData);
     moduleMetadata = std::move(other.moduleMetadata);
     asmJS = std::move(other.asmJS);
-    sharedData = std::move(other.sharedData);
-    parserAtoms = std::move(other.parserAtoms);
-    functionKey = other.functionKey;
 
     alloc.steal(&other.alloc);
     parserAtoms.fixupAlloc(alloc);
@@ -837,8 +837,9 @@ inline size_t CompilationStencil::sizeOfExcludingThis(
       moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
 
-  return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJSSize + sharedData.sizeOfExcludingThis(mallocSizeOf);
+  return alloc.sizeOfExcludingThis(mallocSizeOf) +
+         sharedData.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
+         asmJSSize;
 }
 
 inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(
@@ -855,9 +856,10 @@ inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(
          scopeNames.sizeOfExcludingThis(mallocSizeOf) +
          regExpData.sizeOfExcludingThis(mallocSizeOf) +
          bigIntData.sizeOfExcludingThis(mallocSizeOf) +
-         objLiteralData.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJSSize + sharedData.sizeOfExcludingThis(mallocSizeOf) +
-         parserAtoms.sizeOfExcludingThis(mallocSizeOf);
+         objLiteralData.sizeOfExcludingThis(mallocSizeOf) +
+         parserAtoms.sizeOfExcludingThis(mallocSizeOf) +
+         sharedData.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
+         asmJSSize;
 }
 
 
