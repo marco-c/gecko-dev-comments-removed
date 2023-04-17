@@ -9806,7 +9806,8 @@ PresShell::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   if (!nsCRT::strcmp(aTopic, "memory-pressure")) {
-    if (!AssumeAllFramesVisible() && mPresContext->IsRootContentDocument()) {
+    if (!AssumeAllFramesVisible() &&
+        mPresContext->IsRootContentDocumentInProcess()) {
       DoUpdateApproximateFrameVisibility( true);
     }
     return NS_OK;
