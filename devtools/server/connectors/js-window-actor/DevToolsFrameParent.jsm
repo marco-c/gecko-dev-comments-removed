@@ -197,14 +197,6 @@ class DevToolsFrameParent extends JSWindowActorParent {
     for (const { actor, connection, watcher } of this._connections.values()) {
       watcher.notifyTargetDestroyed(actor);
 
-      
-      if (actor && connection.transport) {
-        
-        
-        
-        connection.send({ from: actor.actor, type: "tabDetached" });
-      }
-
       this._cleanupConnection(connection);
     }
     this._connections.clear();

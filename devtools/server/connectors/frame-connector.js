@@ -217,10 +217,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
       spawnInParentActorPool.destroy();
 
       if (actor) {
-        
-        
-        
-        connection.send({ from: actor.actor, type: "tabDetached" });
         actor = null;
       }
 

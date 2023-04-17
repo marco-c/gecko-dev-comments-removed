@@ -102,13 +102,6 @@ function connectToContentProcess(connection, mm, onDestroy) {
     const onMessageManagerClose = DevToolsUtils.makeInfallible(
       (subject, topic, data) => {
         if (subject == mm) {
-          
-          
-          
-          
-          if (actor) {
-            connection.send({ from: actor.actor, type: "tabDetached" });
-          }
           onClose();
         }
       }
