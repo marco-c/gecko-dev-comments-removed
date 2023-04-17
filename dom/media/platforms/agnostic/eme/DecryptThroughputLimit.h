@@ -19,8 +19,10 @@ namespace mozilla {
 
 class DecryptThroughputLimit {
  public:
-  explicit DecryptThroughputLimit(nsISerialEventTarget* aTargetThread)
-      : mThrottleScheduler(aTargetThread) {}
+  explicit DecryptThroughputLimit(nsISerialEventTarget* aTargetThread,
+                                  uint32_t aMaxThroughputMs)
+      : mThrottleScheduler(aTargetThread),
+        mMaxThroughput(aMaxThroughputMs / 1000.0) {}
 
   typedef MozPromise<RefPtr<MediaRawData>, MediaResult, true> ThrottlePromise;
 
@@ -31,7 +33,8 @@ class DecryptThroughputLimit {
     MOZ_RELEASE_ASSERT(!mThrottleScheduler.IsScheduled());
 
     const TimeDuration WindowSize = TimeDuration::FromSeconds(0.1);
-    const TimeDuration MaxThroughput = TimeDuration::FromSeconds(0.2);
+    const TimeDuration MaxThroughput =
+        TimeDuration::FromSeconds(mMaxThroughput);
 
     
     const TimeStamp now = TimeStamp::Now();
@@ -85,6 +88,8 @@ class DecryptThroughputLimit {
  private:
   DelayedScheduler mThrottleScheduler;
   MozPromiseHolder<ThrottlePromise> mPromiseHolder;
+
+  double mMaxThroughput;
 
   struct DecryptedJob {
     TimeStamp mTimestamp;
