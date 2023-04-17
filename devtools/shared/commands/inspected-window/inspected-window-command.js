@@ -97,9 +97,50 @@ class InspectedWindowCommand {
 
 
 
-  async reload(callerInfo, options) {
-    const front = await this.getFront();
-    return front.reload(callerInfo, options);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async reload(callerInfo, options = {}) {
+    if (this._reloadPending) {
+      return null;
+    }
+
+    this._reloadPending = true;
+
+    try {
+      
+      
+      if (typeof options.userAgent !== undefined) {
+        await this.commands.targetConfigurationCommand.updateConfiguration({
+          customUserAgent: options.userAgent,
+        });
+      }
+
+      const front = await this.getFront();
+      const result = await front.reload(callerInfo, options);
+      this._reloadPending = false;
+
+      return result;
+    } catch (e) {
+      this._reloadPending = false;
+      Cu.reportError(e);
+      return Promise.reject({
+        message: "An unexpected error occurred",
+      });
+    }
   }
 }
 

@@ -5,6 +5,12 @@
 
 
 
+
+
+
+
+
+
 ChromeUtils.defineModuleGetter(
   this,
   "loader",
@@ -94,5 +100,81 @@ function assertDevToolsExtensionEnabled(uuid, enabled) {
       !!toolbox.isWebExtensionEnabled(uuid),
       `extension is ${enabled ? "enabled" : "disabled"} on toolbox`
     );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function navigateToWithDevToolsOpen(tab, uri, isErrorPage = false) {
+  const toolbox = await gDevTools.getToolboxForTab(tab);
+  const target = toolbox.target;
+
+  
+  
+  
+  
+  
+  const onTargetSwitched = toolbox.commands.targetCommand.once(
+    "switched-target"
+  );
+  
+  const onNavigate = target.once("navigate");
+
+  
+  
+  const targetFollowsWindowLifecycle =
+    target.targetForm.followWindowGlobalLifeCycle;
+
+  info(`Load document "${uri}"`);
+  const browser = gBrowser.selectedBrowser;
+  const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
+  const currentBrowsingContextID = browser.browsingContext.id;
+  const onBrowserLoaded = BrowserTestUtils.browserLoaded(
+    browser,
+    false,
+    null,
+    isErrorPage
+  );
+  BrowserTestUtils.loadURI(browser, uri);
+
+  info(`Waiting for page to be loaded…`);
+  await onBrowserLoaded;
+  info(`→ page loaded`);
+
+  
+  
+  const switchedToAnotherProcess =
+    currentPID !== browser.browsingContext.currentWindowGlobal.osPid;
+  const switchedToAnotherBrowsingContext =
+    currentBrowsingContextID !== browser.browsingContext.id;
+
+  
+  
+  
+  
+  
+  if (
+    switchedToAnotherProcess ||
+    targetFollowsWindowLifecycle ||
+    switchedToAnotherBrowsingContext
+  ) {
+    info(`Waiting for target switch…`);
+    await onTargetSwitched;
+    info(`→ switched-target emitted`);
+  } else {
+    info(`Waiting for target 'navigate' event…`);
+    await onNavigate;
+    info(`→ 'navigate' emitted`);
   }
 }
