@@ -128,8 +128,14 @@ nsresult HTMLEmbedElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
       
       
       if (aNotify && IsInComposedDoc() && !BlockEmbedOrObjectContentLoading()) {
-        nsresult rv = LoadObject(aNotify, true);
-        NS_ENSURE_SUCCESS(rv, rv);
+        nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+            "HTMLEmbedElement::LoadObject",
+            [self = RefPtr<HTMLEmbedElement>(this), aNotify]() {
+              if (self->IsInComposedDoc()) {
+                self->LoadObject(aNotify, true);
+              }
+            }));
+        return NS_OK;
       }
     }
   }
