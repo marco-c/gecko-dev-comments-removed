@@ -1278,6 +1278,21 @@ void SVGElement::UpdateContentDeclarationBlock() {
 
     nsAutoString value;
     mAttrs.AttrAt(i)->ToString(value);
+
+    
+    
+    
+    if (attrName->Equals(nsGkAtoms::d, kNameSpaceID_None)) {
+      
+      
+      
+      nsAutoString path;
+      path.AppendLiteral("path(\"");
+      path.Append(value);
+      path.AppendLiteral("\")");
+      value = path;
+    }
+
     mappedAttrParser.ParseMappedAttrValue(attrName->Atom(), value);
   }
   mContentDeclarationBlock = mappedAttrParser.GetDeclarationBlock();
