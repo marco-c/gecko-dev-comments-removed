@@ -250,6 +250,11 @@ def repackage_msix(
         )
     )
 
+    if channel == "beta":
+        
+        displayname += " Beta"
+        brandFullName += " Beta"
+
     
     
     
@@ -263,6 +268,7 @@ def repackage_msix(
 
     defines = {
         "APPX_ARCH": _MSIX_ARCH[arch],
+        "APPX_DISPLAYNAME": brandFullName,
         "APPX_DESCRIPTION": brandFullName,
         
         "APPX_IDENTITY": identity,
