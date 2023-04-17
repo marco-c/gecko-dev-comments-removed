@@ -115,7 +115,13 @@ add_task(async function test_without_stashes() {
 
 
 add_task(async function test_without_collection_but_cache() {
-  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [] });
+  await AddonTestUtils.loadBlocklistRawData({
+    
+    
+    
+    
+    extensionsMLBF: [{ last_modified: Date.now() }],
+  });
   assertTelemetryScalars({
     "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_source": "cache_fallback",
