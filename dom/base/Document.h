@@ -1421,6 +1421,10 @@ class Document : public nsINode,
   bool HasStorageAccessPermissionGranted();
 
   
+  
+  bool HasStorageAccessPermissionGrantedByAllowList();
+
+  
   inline void Changed() { ++mGeneration; }
 
   
