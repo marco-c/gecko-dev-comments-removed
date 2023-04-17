@@ -4,7 +4,11 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["UrlbarQuickSuggest", "KeywordTree"];
+const EXPORTED_SYMBOLS = [
+  "KeywordTree",
+  "ONBOARDING_CHOICE",
+  "UrlbarQuickSuggest",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -36,6 +40,20 @@ const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
 const FEATURE_AVAILABLE = "quickSuggestEnabled";
 const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
 const RESTARTS_PREF = "quicksuggest.seenRestarts";
+
+
+
+const ONBOARDING_CHOICE = {
+  ACCEPT: "accept",
+  DISMISSED_ESCAPE_KEY: "dismissed_escape_key",
+  DISMISSED_OTHER: "dismissed_other",
+  LEARN_MORE: "learn_more",
+  NOT_NOW: "not_now_link",
+  SETTINGS: "settings",
+};
+
+const ONBOARDING_URI =
+  "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml";
 
 
 
@@ -246,37 +264,73 @@ class Suggestions {
       return;
     }
 
-    let params = { accept: false, openSettings: false, learnMore: false };
     let win = BrowserWindowTracker.getTopWindow();
-    await win.gDialogBox.open(
-      "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml",
-      params
-    );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let escapeKeyPressed = false;
+    let keyListener = keyEvent => {
+      if (
+        keyEvent.keyCode == keyEvent.DOM_VK_ESCAPE &&
+        win.gDialogBox.dialog?.frameContentWindow?.document?.documentURI ==
+          ONBOARDING_URI
+      ) {
+        escapeKeyPressed = true;
+      }
+    };
+    win.addEventListener("keydown", keyListener, true);
+
+    let params = { choice: undefined };
+    await win.gDialogBox.open(ONBOARDING_URI, params);
+
+    win.removeEventListener("keydown", keyListener, true);
 
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
 
-    let telemetryEventObject;
-    if (params.accept) {
-      
-      UrlbarPrefs.set("suggest.quicksuggest", true);
-      UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-      telemetryEventObject = "accept";
-    } else if (params.openSettings) {
-      win.openPreferences("privacy-locationBar");
-      telemetryEventObject = "settings";
-    } else if (params.learnMore) {
-      win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {
-        fromChrome: true,
-      });
-      telemetryEventObject = "learn_more";
-    } else {
-      telemetryEventObject = "not_now";
+    switch (params.choice) {
+      case ONBOARDING_CHOICE.ACCEPT:
+        
+        UrlbarPrefs.set("suggest.quicksuggest", true);
+        UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+        break;
+      case ONBOARDING_CHOICE.LEARN_MORE:
+        win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {
+          fromChrome: true,
+        });
+        break;
+      case ONBOARDING_CHOICE.NOT_NOW:
+        break;
+      case ONBOARDING_CHOICE.SETTINGS:
+        win.openPreferences("privacy-locationBar");
+        break;
+      default:
+        if (escapeKeyPressed) {
+          params.choice = ONBOARDING_CHOICE.DISMISSED_ESCAPE_KEY;
+          break;
+        }
+        
+        
+        
+        params.choice = ONBOARDING_CHOICE.DISMISSED_OTHER;
+        break;
     }
+
+    UrlbarPrefs.set("quicksuggest.onboardingDialogChoice", params.choice);
 
     Services.telemetry.recordEvent(
       "contextservices.quicksuggest",
       "opt_in_dialog",
-      telemetryEventObject
+      params.choice
     );
   }
 

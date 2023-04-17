@@ -9619,6 +9619,10 @@ var gDialogBox = {
   
   _didOpenHTMLDialog: false,
 
+  get dialog() {
+    return this._dialog;
+  },
+
   get isOpen() {
     return !!this._dialog;
   },
