@@ -235,7 +235,7 @@ static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
       
       
       const nsRect visibleRect =
-          overflowRect.GetPhysicalRect(wm, prevPageCF->GetSize()) +
+          overflowRect.GetPhysicalRect(wm, aPageFrame->GetSize()) +
           prevPageCF->GetOffsetTo(aPageFrame);
       nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
           aBuilder, aPageFrame, visibleRect, visibleRect);

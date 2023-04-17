@@ -3262,7 +3262,7 @@ static void AppendToTop(nsDisplayListBuilder* aBuilder,
   } else {
     
     
-    newItem = MakeDisplayItemWithIndex<nsDisplayWrapper>(
+    newItem = MakeDisplayItemWithIndex<nsDisplayWrapList>(
         aBuilder, aSourceFrame, 1, aSource, asr, false);
   }
   if (!newItem) {

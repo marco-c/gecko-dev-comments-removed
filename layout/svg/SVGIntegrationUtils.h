@@ -206,24 +206,7 @@ class SVGIntegrationUtils final {
   
 
 
-
-
-
-
-
-
-
-
-
-  using SVGFilterPaintCallback = std::function<void(
-      gfxContext& aContext, nsIFrame* aTarget, const gfxMatrix& aTransform,
-      const nsIntRect* aDirtyRect, image::imgDrawingParams& aImgParams)>;
-
-  
-
-
-  static void PaintFilter(const PaintFramesParams& aParams,
-                          const SVGFilterPaintCallback& aCallback);
+  static void PaintFilter(const PaintFramesParams& aParams);
 
   
 
@@ -285,13 +268,6 @@ class SVGIntegrationUtils final {
 
 
   static nsPoint GetOffsetToBoundingBox(nsIFrame* aFrame);
-
-  
-
-
-
-  static gfxPoint GetOffsetToUserSpaceInDevPx(nsIFrame* aFrame,
-                                              const PaintFramesParams& aParams);
 };
 
 }  
