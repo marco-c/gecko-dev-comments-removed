@@ -105,6 +105,11 @@ class Linter(visitor.Visitor):
         self.state["can_have_group_comment"] = True
         super().generic_visit(node)
 
+    def visit_Term(self, node):
+        
+        self.state["can_have_group_comment"] = True
+        super().generic_visit(node)
+
     def visit_MessageReference(self, node):
         
         
@@ -214,9 +219,10 @@ class Linter(visitor.Visitor):
             self.add_error(
                 node,
                 "GC04",
-                "Group comments (##) must be followed by at least one message. Make sure "
-                "that a single group comment with multiple pararaphs is not separated by "
-                "whitespace, as it will be interpreted as two different comments.",
+                "Group comments (##) must be followed by at least one message "
+                "or term. Make sure that a single group comment with multiple "
+                "pararaphs is not separated by whitespace, as it will be "
+                "interpreted as two different comments.",
             )
             return
 
