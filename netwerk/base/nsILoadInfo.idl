@@ -861,8 +861,7 @@ interface nsILoadInfo : nsISupports
 
 
 
-
-  void appendRedirectHistoryEntry(in nsIRedirectHistoryEntry entry,
+  void appendRedirectHistoryEntry(in nsIChannel channelToDeriveFrom,
                                   in boolean isInternalRedirect);
 
   

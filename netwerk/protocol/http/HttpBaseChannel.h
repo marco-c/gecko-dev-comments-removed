@@ -575,9 +575,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   virtual bool SameOriginWithOriginalUri(nsIURI* aURI);
 
-  
-  nsIPrincipal* GetURIPrincipal();
-
   [[nodiscard]] bool BypassServiceWorker() const;
 
   
