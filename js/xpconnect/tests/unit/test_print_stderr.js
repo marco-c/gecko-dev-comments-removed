@@ -1,0 +1,14 @@
+
+
+
+
+add_task(async function() {
+  Assert.throws(
+    () => Cu.printStderr(),
+    /Not enough arguments/,
+    "Without argument printStderr throws"
+  );
+
+  const types = ["", "foo", 42, true, null, {foo: "bar"}];
+  types.forEach(type => Cu.printStderr(type));
+});
