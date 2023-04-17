@@ -615,6 +615,33 @@ class MOZ_RAII AutoScratchRegister64 {
 
 
 
+class MOZ_RAII AutoScratchValueRegister {
+  AutoScratchRegister reg1_;
+#if JS_BITS_PER_WORD == 32
+  AutoScratchRegister reg2_;
+#endif
+
+ public:
+  AutoScratchValueRegister(const AutoScratchValueRegister&) = delete;
+  void operator=(const AutoScratchValueRegister&) = delete;
+
+#if JS_BITS_PER_WORD == 32
+  AutoScratchValueRegister(CacheRegisterAllocator& alloc, MacroAssembler& masm)
+      : reg1_(alloc, masm), reg2_(alloc, masm) {}
+
+  ValueOperand get() const { return ValueOperand(reg1_, reg2_); }
+#else
+  AutoScratchValueRegister(CacheRegisterAllocator& alloc, MacroAssembler& masm)
+      : reg1_(alloc, masm) {}
+
+  ValueOperand get() const { return ValueOperand(reg1_); }
+#endif
+
+  operator ValueOperand() const { return get(); }
+};
+
+
+
 
 class FailurePath {
   Vector<OperandLocation, 4, SystemAllocPolicy> inputs_;
@@ -831,6 +858,8 @@ class MOZ_RAII CacheIRCompiler {
   void emitLoadStubField(StubFieldOffset val, Register dest);
   void emitLoadStubFieldConstant(StubFieldOffset val, Register dest);
 
+  void emitLoadValueStubField(StubFieldOffset val, ValueOperand dest);
+
   uintptr_t readStubWord(uint32_t offset, StubField::Type type) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     MOZ_ASSERT((offset % sizeof(uintptr_t)) == 0);
@@ -856,6 +885,11 @@ class MOZ_RAII CacheIRCompiler {
   JSObject* objectStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return (JSObject*)readStubWord(offset, StubField::Type::JSObject);
+  }
+  Value valueStubField(uint32_t offset) {
+    MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
+    uint64_t raw = readStubInt64(offset, StubField::Type::Value);
+    return Value::fromRawBits(raw);
   }
   
   
