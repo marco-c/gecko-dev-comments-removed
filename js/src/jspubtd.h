@@ -89,7 +89,7 @@ JS_FRIEND_API bool CurrentThreadIsPerformingGC();
 
 namespace JS {
 
-struct JS_PUBLIC_API PropertyDescriptor;
+class JS_PUBLIC_API PropertyDescriptor;
 
 
 
