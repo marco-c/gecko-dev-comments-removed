@@ -1359,7 +1359,7 @@ impl ClipStore {
         
         
         if needs_mask {
-            pic_clip_rect = pic_clip_rect.intersection(&self.active_pic_clip_rect.to_box2d())?;
+            pic_clip_rect = pic_clip_rect.intersection(&self.active_pic_clip_rect)?;
         }
 
         
@@ -1367,7 +1367,7 @@ impl ClipStore {
             clips_range,
             has_non_local_clips,
             local_clip_rect: local_clip_rect.to_rect(),
-            pic_clip_rect: pic_clip_rect.to_rect(),
+            pic_clip_rect: pic_clip_rect,
             pic_spatial_node_index: prim_to_pic_mapper.ref_spatial_node_index,
             needs_mask,
         })
@@ -2166,12 +2166,12 @@ fn add_clip_node_to_current_chain(
                     let mapper = SpaceMapper::new_with_target(
                         pic_spatial_node_index,
                         node.spatial_node_index,
-                        PictureRect::max_rect().to_box2d(),
+                        PictureRect::max_rect(),
                         spatial_tree,
                     );
 
                     if let Some(pic_clip_rect) = mapper.map(&clip_rect.to_box2d()) {
-                        *current_pic_clip_rect = pic_clip_rect.to_rect()
+                        *current_pic_clip_rect = pic_clip_rect
                             .intersection(current_pic_clip_rect)
                             .unwrap_or(PictureRect::zero());
                     }
