@@ -995,6 +995,16 @@ NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
 
   
   
+  if (resumeMode == ResumeMode::Return) {
+    if (args.isConstructing() && !rval.isObject()) {
+      JS_ReportErrorASCII(
+          cx, "onNativeCall hook must return an object for constructor call");
+      return NativeResumeMode::Abort;
+    }
+  }
+
+  
+  
   if (!cx->compartment()->wrap(cx, &rval)) {
     return NativeResumeMode::Abort;
   }
