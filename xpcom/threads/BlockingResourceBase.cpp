@@ -287,11 +287,6 @@ void BlockingResourceBase::Release() {
     ResourceChainRemove();
   } else {
     
-    NS_WARNING("Resource acquired is being released in non-LIFO order; why?\n");
-    nsCString tmp;
-    Print(tmp);
-
-    
     
     
     
