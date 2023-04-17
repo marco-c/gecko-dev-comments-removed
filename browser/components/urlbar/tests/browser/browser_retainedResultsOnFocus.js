@@ -76,11 +76,11 @@ add_task(async function setup() {
   
   await PlacesTestUtils.addVisits([
     {
-      uri: "http://example.com/",
+      uri: "https://example.com/",
       transition: PlacesUtils.history.TRANSITIONS.TYPED,
     },
     {
-      uri: "http://example.com/foo/",
+      uri: "https://example.com/foo/",
       transition: PlacesUtils.history.TRANSITIONS.TYPED,
     },
   ]);
@@ -90,7 +90,7 @@ add_task(async function setup() {
 });
 
 async function test_window(win) {
-  for (let url of ["about:newtab", "about:home", "http://example.com/"]) {
+  for (let url of ["about:newtab", "about:home", "https://example.com/"]) {
     
     
     await BrowserTestUtils.withNewTab(
@@ -102,7 +102,7 @@ async function test_window(win) {
         );
 
         
-        let autofill = url == "http://example.com/";
+        let autofill = url == "https://example.com/";
         await UrlbarTestUtils.promiseAutocompleteResultPopup({
           window: win,
           value: autofill ? "ex" : "foo",
@@ -262,8 +262,8 @@ add_task(async function test_tabSwitch_pageproxystate() {
 
   info("Adding some visits for the empty panel");
   await PlacesTestUtils.addVisits([
-    "http://example.com/",
-    "http://mochi.test:8888/",
+    "https://example.com/",
+    "https://example.org/",
   ]);
   registerCleanupFunction(PlacesUtils.history.clear);
 
