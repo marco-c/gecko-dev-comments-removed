@@ -987,6 +987,8 @@ pub struct Capabilities {
     
     pub supports_image_external_essl3: bool,
     
+    pub requires_vao_rebind_after_orphaning: bool,
+    
     pub renderer_name: String,
 }
 
@@ -1718,6 +1720,10 @@ impl Device {
             true
         };
 
+        
+        
+        let requires_vao_rebind_after_orphaning = is_adreno_3xx;
+
         Device {
             gl,
             base_gl: None,
@@ -1749,6 +1755,7 @@ impl Device {
                 uses_native_clip_mask,
                 uses_native_antialiasing,
                 supports_image_external_essl3,
+                requires_vao_rebind_after_orphaning,
                 renderer_name,
             },
 
@@ -3410,6 +3417,14 @@ impl Device {
             None => {
                 self.update_vbo_data(vao.instance_vbo_id, instances, usage_hint);
             }
+        }
+
+        
+        
+        
+        if self.capabilities.requires_vao_rebind_after_orphaning {
+            self.bind_vao_impl(0);
+            self.bind_vao_impl(vao.id);
         }
     }
 
