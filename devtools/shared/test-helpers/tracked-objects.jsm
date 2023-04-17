@@ -12,7 +12,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["track", "getAllNodeIds"];
+var EXPORTED_SYMBOLS = ["track", "getAllNodeIds", "clear"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -46,4 +46,11 @@ function getAllNodeIds() {
       
       .map(ChromeUtils.getObjectNodeId)
   );
+}
+
+
+
+
+function clear() {
+  objects.length = 0;
 }
