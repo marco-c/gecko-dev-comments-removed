@@ -3285,13 +3285,6 @@ QuotaManager* QuotaManager::Get() {
 }
 
 
-QuotaManager& QuotaManager::GetRef() {
-  MOZ_ASSERT(gInstance);
-
-  return *gInstance;
-}
-
-
 bool QuotaManager::IsShuttingDown() { return gShutdown; }
 
 
@@ -3640,11 +3633,14 @@ nsresult QuotaManager::Init() {
   return NS_OK;
 }
 
-void QuotaManager::MaybeRecordShutdownStep(const Client::Type aClientType,
-                                           const nsACString& aStepDescription) {
+
+void QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
+    const Client::Type aClientType, const nsACString& aStepDescription) {
   
 
-  MaybeRecordShutdownStep(Some(aClientType), aStepDescription);
+  if (auto* const quotaManager = QuotaManager::Get()) {
+    quotaManager->MaybeRecordShutdownStep(Some(aClientType), aStepDescription);
+  }
 }
 
 void QuotaManager::MaybeRecordQuotaManagerShutdownStep(

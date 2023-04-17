@@ -267,7 +267,10 @@ class Manager::Factory {
 
     MOZ_ALWAYS_TRUE(sFactory->mManagerList.RemoveElement(&aManager));
 
-    quota::QuotaManager::GetRef().MaybeRecordShutdownStep(
+    
+    
+    
+    quota::QuotaManager::SafeMaybeRecordQuotaClientShutdownStep(
         quota::Client::DOMCACHE, "Manager removed"_ns);
 
     

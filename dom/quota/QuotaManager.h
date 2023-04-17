@@ -112,8 +112,6 @@ class QuotaManager final : public BackgroundThreadObject {
   
   static QuotaManager* Get();
 
-  static QuotaManager& GetRef();
-
   
   static bool IsShuttingDown();
 
@@ -371,8 +369,20 @@ class QuotaManager final : public BackgroundThreadObject {
   void NotifyStoragePressure(uint64_t aUsage);
 
   
-  void MaybeRecordShutdownStep(Client::Type aClientType,
-                               const nsACString& aStepDescription);
+  
+  static void MaybeRecordQuotaClientShutdownStep(
+      const Client::Type aClientType, const nsACString& aStepDescription) {
+    
+
+    MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
+    QuotaManager::Get()->MaybeRecordShutdownStep(Some(aClientType),
+                                                 aStepDescription);
+  }
+
+  
+  
+  static void SafeMaybeRecordQuotaClientShutdownStep(
+      Client::Type aClientType, const nsACString& aStepDescription);
 
   
   void MaybeRecordQuotaManagerShutdownStep(const nsACString& aStepDescription);
