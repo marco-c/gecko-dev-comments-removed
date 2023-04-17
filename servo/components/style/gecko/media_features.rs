@@ -655,7 +655,32 @@ macro_rules! lnf_int_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 58] = [
+
+
+
+
+macro_rules! bool_pref_feature {
+    ($feature_name:expr, $pref:tt) => {{
+        fn __eval(_: &Device, query_value: Option<bool>, _: Option<RangeOrOperator>) -> bool {
+            let value = static_prefs::pref!($pref);
+            query_value.map_or(value, |v| v == value)
+        }
+
+        feature!(
+            $feature_name,
+            AllowsRanges::No,
+            Evaluator::BoolInteger(__eval),
+            ParsingRequirements::CHROME_AND_UA_ONLY,
+        )
+    }};
+}
+
+
+
+
+
+
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 60] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -901,4 +926,6 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 58] = [
     lnf_int_feature!(atom!("-moz-gtk-csd-close-button"), GTKCSDCloseButton),
     lnf_int_feature!(atom!("-moz-gtk-csd-reversed-placement"), GTKCSDReversedPlacement),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
+    bool_pref_feature!(atom!("-moz-proton"), "browser.proton.enabled"),
+    bool_pref_feature!(atom!("-moz-proton-places-tooltip"), "browser.proton.places-tooltip.enabled"),
 ];

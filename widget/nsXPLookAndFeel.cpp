@@ -428,6 +428,8 @@ static constexpr struct {
       widget::ThemeChangeKind::MediaQueriesOnly;
 } kMediaQueryPrefs[] = {
     {"browser.display.windows.native_menus"_ns},
+    {"browser.proton.enabled"_ns},
+    {"browser.proton.places-tooltip.enabled"_ns},
     
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
