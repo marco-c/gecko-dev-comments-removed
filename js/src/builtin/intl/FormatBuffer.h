@@ -25,7 +25,8 @@ namespace js::intl {
 
 
 
-template <typename CharT, size_t MinInlineCapacity = 0>
+template <typename CharT, size_t MinInlineCapacity = 0,
+          class AllocPolicy = TempAllocPolicy>
 class FormatBuffer {
  public:
   using CharType = CharT;
@@ -35,9 +36,8 @@ class FormatBuffer {
   FormatBuffer(FormatBuffer&& other) noexcept = default;
   FormatBuffer& operator=(FormatBuffer&& other) noexcept = default;
 
-  explicit FormatBuffer(JSContext* cx) : cx_(cx), buffer_(cx) {
-    MOZ_ASSERT(cx);
-  }
+  explicit FormatBuffer(AllocPolicy aP = AllocPolicy())
+      : buffer_(std::move(aP)) {}
 
   
   operator mozilla::Span<CharType>() { return buffer_; }
@@ -82,24 +82,23 @@ class FormatBuffer {
 
 
 
-  JSLinearString* toString() const {
+  JSLinearString* toString(JSContext* cx) const {
     if constexpr (std::is_same_v<CharT, uint8_t> ||
                   std::is_same_v<CharT, unsigned char> ||
                   std::is_same_v<CharT, char>) {
       
       return NewStringCopyUTF8N<CanGC>(
-          cx_, mozilla::Range(reinterpret_cast<unsigned char>(buffer_.begin()),
-                              buffer_.length()));
+          cx, mozilla::Range(reinterpret_cast<unsigned char>(buffer_.begin()),
+                             buffer_.length()));
     } else {
       
       static_assert(std::is_same_v<CharT, char16_t>);
-      return NewStringCopyN<CanGC>(cx_, buffer_.begin(), buffer_.length());
+      return NewStringCopyN<CanGC>(cx, buffer_.begin(), buffer_.length());
     }
   }
 
  private:
-  JSContext* cx_;
-  js::Vector<CharT, MinInlineCapacity> buffer_;
+  js::Vector<CharT, MinInlineCapacity, AllocPolicy> buffer_;
 };
 
 }  
