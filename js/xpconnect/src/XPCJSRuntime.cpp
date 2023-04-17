@@ -908,11 +908,10 @@ void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
       
       
 
-      for (auto i = self->mDyingWrappedNativeProtoMap->Iter(); !i.Done();
-           i.Next()) {
-        auto* entry = static_cast<XPCWrappedNativeProtoMap::Entry*>(i.Get());
-        delete static_cast<const XPCWrappedNativeProto*>(entry->key);
-        i.Remove();
+      for (auto i = self->mDyingWrappedNativeProtoMap->ModIter(); !i.done();
+           i.next()) {
+        delete i.get();
+        i.remove();
       }
 
       MOZ_ASSERT(self->mGCIsRunning, "bad state");

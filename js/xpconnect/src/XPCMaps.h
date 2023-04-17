@@ -18,16 +18,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #define XPC_JS_MAP_LENGTH 32
 
 #define XPC_NATIVE_MAP_LENGTH 8
@@ -358,30 +348,24 @@ class NativeSetMap {
 
 class XPCWrappedNativeProtoMap {
  public:
-  using Entry = PLDHashEntryStub;
+  using Map = mozilla::HashSet<XPCWrappedNativeProto*,
+                               mozilla::DefaultHasher<XPCWrappedNativeProto*>,
+                               mozilla::MallocAllocPolicy>;
 
   XPCWrappedNativeProtoMap();
 
-  inline XPCWrappedNativeProto* Add(XPCWrappedNativeProto* proto) {
+  XPCWrappedNativeProto* Add(XPCWrappedNativeProto* proto) {
     MOZ_ASSERT(proto, "bad param");
-    auto entry =
-        static_cast<PLDHashEntryStub*>(mTable.Add(proto, mozilla::fallible));
-    if (!entry) {
+    if (!mMap.put(proto)) {
       return nullptr;
     }
-    if (entry->key) {
-      return (XPCWrappedNativeProto*)entry->key;
-    }
-    entry->key = proto;
     return proto;
   }
 
-  inline uint32_t Count() { return mTable.EntryCount(); }
-
-  PLDHashTable::Iterator Iter() { return mTable.Iter(); }
+  Map::ModIterator ModIter() { return mMap.modIter(); }
 
  private:
-  PLDHashTable mTable;
+  Map mMap;
 };
 
 
