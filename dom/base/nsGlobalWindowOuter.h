@@ -328,9 +328,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   virtual void EnsureSizeAndPositionUpToDate() override;
 
-  virtual void SuppressEventHandling() override;
-  virtual void UnsuppressEventHandling() override;
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual nsGlobalWindowOuter* EnterModalState()
       override;
   virtual void LeaveModalState() override;
@@ -1134,7 +1131,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   
-  nsTArray<RefPtr<Document>> mSuspendedDocs;
+  RefPtr<Document> mSuspendedDoc;
 
   
   uint32_t mCanSkipCCGeneration;

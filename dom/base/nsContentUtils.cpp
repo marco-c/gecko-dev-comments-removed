@@ -673,7 +673,7 @@ class SameOriginCheckerImpl final : public nsIChannelEventSink,
 
 }  
 
-void AutoSuppressEventHandling::SuppressDocument(Document* aDoc) {
+void AutoSuppressEventHandlingAndSuspend::SuppressDocument(Document* aDoc) {
   
   
   
@@ -682,28 +682,21 @@ void AutoSuppressEventHandling::SuppressDocument(Document* aDoc) {
   
   
   aDoc->SuppressEventHandling();
-}
-
-void AutoSuppressEventHandling::UnsuppressDocument(Document* aDoc) {
-  aDoc->UnsuppressEventHandlingAndFireEvents(true);
-}
-
-AutoSuppressEventHandling::~AutoSuppressEventHandling() {
-  UnsuppressDocuments();
-}
-
-void AutoSuppressEventHandlingAndSuspend::SuppressDocument(Document* aDoc) {
-  AutoSuppressEventHandling::SuppressDocument(aDoc);
   if (nsCOMPtr<nsPIDOMWindowInner> win = aDoc->GetInnerWindow()) {
     win->Suspend();
     mWindows.AppendElement(win);
   }
 }
 
+void AutoSuppressEventHandlingAndSuspend::UnsuppressDocument(Document* aDoc) {
+  aDoc->UnsuppressEventHandlingAndFireEvents(true);
+}
+
 AutoSuppressEventHandlingAndSuspend::~AutoSuppressEventHandlingAndSuspend() {
   for (const auto& win : mWindows) {
     win->Resume();
   }
+  UnsuppressDocuments();
 }
 
 
