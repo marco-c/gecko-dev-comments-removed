@@ -908,7 +908,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  bool AttributeChangesState(nsAtom* aAttribute);
+  virtual bool AttributeChangesState(nsAtom* aAttribute);
 
   
 
