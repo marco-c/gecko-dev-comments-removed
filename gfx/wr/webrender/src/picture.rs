@@ -267,6 +267,9 @@ pub struct TileCoordinate;
 
 
 pub type TileOffset = Point2D<i32, TileCoordinate>;
+
+
+/// cbindgen:ignore
 pub type TileSize = Size2D<i32, TileCoordinate>;
 pub type TileRect = Rect<i32, TileCoordinate>;
 
