@@ -48,6 +48,7 @@
 #include "js/ErrorInterceptor.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
+#include "js/GlobalObject.h"
 #include "js/Initialization.h"
 #include "js/Interrupt.h"
 #include "js/JSON.h"

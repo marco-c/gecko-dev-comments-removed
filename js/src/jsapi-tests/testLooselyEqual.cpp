@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "js/Equality.h"  
+#include "js/GlobalObject.h"
 #include "jsapi-tests/tests.h"
 
 using namespace std;

@@ -4,6 +4,7 @@
 
 #include "builtin/TestingFunctions.h"
 #include "js/ArrayBuffer.h"  
+#include "js/GlobalObject.h"        
 #include "js/PropertyAndElement.h"  
 #include "js/StructuredClone.h"
 

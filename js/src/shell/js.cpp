@@ -129,6 +129,7 @@
 #include "js/friend/WindowProxy.h"  
 #include "js/GCAPI.h"               
 #include "js/GCVector.h"
+#include "js/GlobalObject.h"
 #include "js/Initialization.h"
 #include "js/Interrupt.h"
 #include "js/JSON.h"

@@ -6,6 +6,7 @@
 
 
 #include "js/CallAndConstruct.h"
+#include "js/GlobalObject.h"        
 #include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 #include "vm/JSContext.h"

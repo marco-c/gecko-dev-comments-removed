@@ -8,6 +8,7 @@
 
 
 #include "js/friend/WindowProxy.h"  
+#include "js/GlobalObject.h"        
 #include "js/Wrapper.h"
 #include "js/WrapperCallbacks.h"
 #include "jsapi-tests/tests.h"

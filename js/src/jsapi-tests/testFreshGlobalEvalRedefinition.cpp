@@ -8,6 +8,7 @@
 #include "mozilla/Utf8.h"  
 
 #include "js/CompilationAndEvaluation.h"  
+#include "js/GlobalObject.h"              
 #include "js/PropertyAndElement.h"        
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"

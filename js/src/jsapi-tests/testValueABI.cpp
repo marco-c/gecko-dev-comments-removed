@@ -2,6 +2,7 @@
 
 
 
+#include "js/GlobalObject.h"
 #include "jsapi-tests/tests.h"
 
 

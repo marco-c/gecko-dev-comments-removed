@@ -22,6 +22,7 @@
 #include "jit/JitRuntime.h"
 #include "js/ContextOptions.h"      
 #include "js/friend/StackLimits.h"  
+#include "js/GlobalObject.h"
 #include "js/HelperThreadAPI.h"
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"

@@ -3,6 +3,7 @@
 
 
 #include "js/CallAndConstruct.h"
+#include "js/GlobalObject.h"
 #include "js/Object.h"  
 #include "jsapi-tests/tests.h"
 

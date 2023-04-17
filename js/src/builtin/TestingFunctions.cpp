@@ -75,6 +75,7 @@
 #include "js/friend/DumpFunctions.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/WindowProxy.h"    
+#include "js/GlobalObject.h"
 #include "js/HashTable.h"
 #include "js/Interrupt.h"
 #include "js/LocaleSensitive.h"

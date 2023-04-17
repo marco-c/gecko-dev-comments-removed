@@ -6,6 +6,7 @@
 
 #include "builtin/TestingFunctions.h"
 #include "js/CompilationAndEvaluation.h"  
+#include "js/GlobalObject.h"              
 #include "js/SourceText.h"                
 #include "js/UbiNode.h"
 #include "js/UbiNodeDominatorTree.h"

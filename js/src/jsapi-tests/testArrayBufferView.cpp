@@ -4,6 +4,7 @@
 
 #include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
+#include "js/GlobalObject.h"            
 #include "js/PropertyAndElement.h"      
 #include "js/ScalarType.h"              
 #include "jsapi-tests/tests.h"

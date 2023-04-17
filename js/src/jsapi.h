@@ -38,6 +38,7 @@
 #include "js/Exception.h"
 #include "js/GCAPI.h"
 #include "js/GCVector.h"
+#include "js/GlobalObject.h"
 #include "js/HashTable.h"
 #include "js/Id.h"
 #include "js/Interrupt.h"
@@ -245,30 +246,11 @@ extern JS_PUBLIC_API void ProtoKeyToId(JSContext* cx, JSProtoKey key,
 
 extern JS_PUBLIC_API JSProtoKey JS_IdToProtoKey(JSContext* cx, JS::HandleId id);
 
-extern JS_PUBLIC_API bool JS_IsGlobalObject(JSObject* obj);
-
 extern JS_PUBLIC_API JSObject* JS_GlobalLexicalEnvironment(JSObject* obj);
 
 extern JS_PUBLIC_API bool JS_HasExtensibleLexicalEnvironment(JSObject* obj);
 
 extern JS_PUBLIC_API JSObject* JS_ExtensibleLexicalEnvironment(JSObject* obj);
-
-namespace JS {
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* CurrentGlobalOrNull(JSContext* cx);
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* GetNonCCWObjectGlobal(JSObject* obj);
-
-}  
 
 
 
@@ -383,68 +365,6 @@ extern JS_PUBLIC_API bool InstanceofOperator(JSContext* cx, HandleObject obj,
 
 extern JS_PUBLIC_API JSObject* JS_GetConstructor(JSContext* cx,
                                                  JS::Handle<JSObject*> proto);
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum OnNewGlobalHookOption { FireOnNewGlobalHook, DontFireOnNewGlobalHook };
-
-} 
-
-extern JS_PUBLIC_API JSObject* JS_NewGlobalObject(
-    JSContext* cx, const JSClass* clasp, JSPrincipals* principals,
-    JS::OnNewGlobalHookOption hookOption, const JS::RealmOptions& options);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc,
-                                                   JSObject* global);
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_DATA const JSClassOps DefaultGlobalClassOps;
-
-}  
-
-extern JS_PUBLIC_API void JS_FireOnNewGlobalObject(JSContext* cx,
-                                                   JS::HandleObject global);
 
 extern JS_PUBLIC_API JSObject* JS_NewObject(JSContext* cx,
                                             const JSClass* clasp);

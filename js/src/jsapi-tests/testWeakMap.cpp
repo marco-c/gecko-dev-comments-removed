@@ -7,6 +7,7 @@
 
 #include "gc/Zone.h"
 #include "js/Array.h"               
+#include "js/GlobalObject.h"        
 #include "js/PropertyAndElement.h"  
 #include "js/WeakMap.h"
 #include "jsapi-tests/tests.h"

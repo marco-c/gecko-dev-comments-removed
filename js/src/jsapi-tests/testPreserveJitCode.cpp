@@ -7,6 +7,7 @@
 #include "jit/Ion.h"                      
 #include "js/CallAndConstruct.h"          
 #include "js/CompilationAndEvaluation.h"  
+#include "js/GlobalObject.h"              
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"
