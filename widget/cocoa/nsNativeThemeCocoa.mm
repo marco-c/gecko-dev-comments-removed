@@ -4,6 +4,7 @@
 
 
 #include "nsNativeThemeCocoa.h"
+#include <objc/NSObjCRuntime.h>
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
@@ -111,6 +112,7 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
 
 @interface MOZCellDrawView : NSControl
 
+@property BOOL _drawingEndSeparator;
 @end
 
 @implementation MOZCellDrawView
@@ -451,6 +453,8 @@ nsNativeThemeCocoa::nsNativeThemeCocoa() {
   mMeterBarCell = [[NSLevelIndicatorCell alloc]
       initWithLevelIndicatorStyle:NSContinuousCapacityLevelIndicatorStyle];
 
+  mTreeHeaderCell = [[NSTableHeaderCell alloc] init];
+
   mCellDrawView = [[MOZCellDrawView alloc] init];
 
   if (XRE_IsParentProcess()) {
@@ -487,6 +491,7 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
   [mSearchFieldCell release];
   [mDropdownCell release];
   [mComboBoxCell release];
+  [mTreeHeaderCell release];
   [mCellDrawWindow release];
   [mCellDrawView release];
 
@@ -1471,55 +1476,63 @@ nsNativeThemeCocoa::TreeHeaderCellParams nsNativeThemeCocoa::ComputeTreeHeaderCe
   return params;
 }
 
+@interface NSTableHeaderCell (NSTableHeaderCell_setSortable)
+
+- (void)_setSortable:(BOOL)arg1
+    showSortIndicator:(BOOL)arg2
+            ascending:(BOOL)arg3
+             priority:(NSInteger)arg4
+     highlightForSort:(BOOL)arg5;
+@end
+
 void nsNativeThemeCocoa::DrawTreeHeaderCell(CGContextRef cgContext, const HIRect& inBoxRect,
                                             const TreeHeaderCellParams& aParams) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  HIThemeButtonDrawInfo bdi;
-  bdi.version = 0;
-  bdi.kind = kThemeListHeaderButton;
-  bdi.value = kThemeButtonOff;
-  bdi.adornment = kThemeAdornmentNone;
-
-  switch (aParams.sortDirection) {
-    case eTreeSortDirection_Natural:
-      break;
-    case eTreeSortDirection_Ascending:
-      bdi.value = kThemeButtonOn;
-      bdi.adornment = kThemeAdornmentHeaderButtonSortUp;
-      break;
-    case eTreeSortDirection_Descending:
-      bdi.value = kThemeButtonOn;
-      break;
-  }
-
-  if (aParams.controlParams.disabled) {
-    bdi.state = kThemeStateUnavailable;
-  } else if (aParams.controlParams.pressed) {
-    bdi.state = kThemeStatePressed;
-  } else if (!aParams.controlParams.insideActiveWindow) {
-    bdi.state = kThemeStateInactive;
-  } else {
-    bdi.state = kThemeStateActive;
-  }
-
-  CGContextClipToRect(cgContext, inBoxRect);
-
-  HIRect drawFrame = inBoxRect;
   
-  drawFrame.origin.y -= 1;
-  drawFrame.size.height += 1;
   
-  drawFrame.size.width += 1;
-  if (aParams.lastTreeHeaderCell) {
-    drawFrame.size.width += 1;  
-  }
-  if (!aParams.controlParams.rtl || aParams.lastTreeHeaderCell) {
-    drawFrame.origin.x -= 1;
+  NSCell* cell = (NSCell*)mTreeHeaderCell;
+  cell.title = @"";
+
+  if ([mTreeHeaderCell respondsToSelector:@selector
+                       (_setSortable:showSortIndicator:ascending:priority:highlightForSort:)]) {
+    switch (aParams.sortDirection) {
+      case eTreeSortDirection_Ascending:
+        [mTreeHeaderCell _setSortable:YES
+                    showSortIndicator:YES
+                            ascending:YES
+                             priority:0
+                     highlightForSort:YES];
+        break;
+      case eTreeSortDirection_Descending:
+        [mTreeHeaderCell _setSortable:YES
+                    showSortIndicator:YES
+                            ascending:NO
+                             priority:0
+                     highlightForSort:YES];
+        break;
+      default:
+        
+        [mTreeHeaderCell _setSortable:YES
+                    showSortIndicator:NO
+                            ascending:YES
+                             priority:0
+                     highlightForSort:NO];
+        break;
+    }
   }
 
-  RenderTransformedHIThemeControl(cgContext, drawFrame, RenderButton, &bdi,
-                                  aParams.controlParams.rtl);
+  mTreeHeaderCell.enabled = !aParams.controlParams.disabled;
+  mTreeHeaderCell.state =
+      (mTreeHeaderCell.enabled && aParams.controlParams.pressed) ? NSOnState : NSOffState;
+
+  mCellDrawView._drawingEndSeparator = !aParams.lastTreeHeaderCell;
+
+  NSGraphicsContext* savedContext = NSGraphicsContext.currentContext;
+  NSGraphicsContext.currentContext = [NSGraphicsContext graphicsContextWithCGContext:cgContext
+                                                                             flipped:YES];
+  DrawCellIncludingFocusRing(mTreeHeaderCell, inBoxRect, mCellDrawView);
+  NSGraphicsContext.currentContext = savedContext;
 
 #if DRAW_IN_FRAME_DEBUG
   CGContextSetRGBFillColor(cgContext, 0.0, 0.0, 0.5, 0.25);
@@ -2964,9 +2977,9 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     case StyleAppearance::Searchfield:
     case StyleAppearance::ProgressBar:
     case StyleAppearance::Meter:
+    case StyleAppearance::Treeheadercell:
     case StyleAppearance::Treetwisty:
     case StyleAppearance::Treetwistyopen:
-    case StyleAppearance::Treeheadercell:
     case StyleAppearance::Treeitem:
     case StyleAppearance::Treeview:
     case StyleAppearance::Range:
@@ -3337,7 +3350,7 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
     case StyleAppearance::Treeheadercell: {
       SInt32 headerHeight = 0;
       ::GetThemeMetric(kThemeMetricListHeaderHeight, &headerHeight);
-      aResult->SizeTo(0, headerHeight - 1);  
+      aResult->SizeTo(0, headerHeight);
       break;
     }
 
