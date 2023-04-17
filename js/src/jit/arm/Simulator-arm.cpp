@@ -4802,8 +4802,12 @@ void Simulator::decodeSpecialCondition(SimInstruction* instr) {
           get_d_register(Vd + r, data);
           
           
-          writeW(address, data[0], instr, AllowUnaligned);
-          writeW(address + 4, data[1], instr, AllowUnaligned);
+          
+          
+          
+          
+          writeQ(address, (uint64_t(data[1]) << 32) | uint64_t(data[0]), instr,
+                 AllowUnaligned);
           address += 8;
           r++;
         }
@@ -4844,12 +4848,59 @@ void Simulator::decodeSpecialCondition(SimInstruction* instr) {
           uint32_t data[2];
           
           
-          data[0] = readW(address, instr, AllowUnaligned);
-          data[1] = readW(address + 4, instr, AllowUnaligned);
+          
+          
+          
+          uint64_t tmp = readQ(address, instr, AllowUnaligned);
+          data[0] = tmp;
+          data[1] = tmp >> 32;
           set_d_register(Vd + r, data);
           address += 8;
           r++;
         }
+        if (Rm != 15) {
+          if (Rm == 13) {
+            set_register(Rn, address);
+          } else {
+            set_register(Rn, get_register(Rn) + get_register(Rm));
+          }
+        }
+      } else {
+        MOZ_CRASH();
+      }
+      break;
+    case 9:
+      if (instr->bits(9, 8) == 0) {
+        int Vd = (instr->bit(22) << 4) | instr->vdValue();
+        int Rn = instr->vnValue();
+        int size = instr->bits(11, 10);
+        int Rm = instr->vmValue();
+        int index = instr->bits(7, 5);
+        int align = instr->bit(4);
+        int32_t address = get_register(Rn);
+        if (size != 2 || align) {
+          MOZ_CRASH("NYI");
+        }
+        if (index > 1) {
+          Vd++;
+          index -= 2;
+        }
+        uint32_t data[2];
+        get_d_register(Vd, data);
+        switch (instr->bits(21, 20)) {
+          case 0:
+            
+            writeW(address, data[index], instr, AllowUnaligned);
+            break;
+          case 2:
+            
+            data[index] = readW(address, instr, AllowUnaligned);
+            set_d_register(Vd, data);
+            break;
+          default:
+            MOZ_CRASH("NYI");
+        }
+        address += 4;
         if (Rm != 15) {
           if (Rm == 13) {
             set_register(Rn, address);

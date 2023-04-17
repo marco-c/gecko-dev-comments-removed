@@ -6158,11 +6158,37 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
     if (isFloat) {
       MOZ_ASSERT((byteSize == 4) == output.fpu().isSingle());
       ScratchRegisterScope scratch(asMasm());
+      FloatRegister dest = output.fpu();
       ma_add(memoryBase, ptr, scratch);
 
       
       
-      load = ma_vldr(Operand(Address(scratch, 0)).toVFPAddr(), output.fpu());
+      
+      if (HasNEON()) {
+        
+        
+        
+        load = as_vldr_unaligned(dest, scratch);
+      } else {
+        
+        
+        
+        SecondScratchRegisterScope scratch2(asMasm());
+        if (byteSize == 4) {
+          load = as_dtr(IsLoad, 32, Offset, scratch2,
+                        DTRAddr(scratch, DtrOffImm(0)), Always);
+          as_vxfer(scratch2, InvalidReg, VFPRegister(dest), CoreToFloat,
+                   Always);
+        } else {
+          
+          
+          load = as_dtr(IsLoad, 32, Offset, scratch2,
+                        DTRAddr(scratch, DtrOffImm(4)), Always);
+          as_dtr(IsLoad, 32, Offset, scratch, DTRAddr(scratch, DtrOffImm(0)),
+                 Always);
+          as_vxfer(scratch, scratch2, VFPRegister(dest), CoreToFloat, Always);
+        }
+      }
       append(access, load.getOffset());
     } else {
       load = ma_dataTransferN(IsLoad, byteSize * 8, isSigned, memoryBase, ptr,
@@ -6226,8 +6252,31 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
       ma_add(memoryBase, ptr, scratch);
 
       
-      
-      store = ma_vstr(val, Operand(Address(scratch, 0)).toVFPAddr());
+      if (HasNEON()) {
+        store = as_vstr_unaligned(val, scratch);
+      } else {
+        
+        
+        
+        
+        SecondScratchRegisterScope scratch2(asMasm());
+        if (byteSize == 4) {
+          as_vxfer(scratch2, InvalidReg, VFPRegister(val), FloatToCore, Always);
+          store = as_dtr(IsStore, 32, Offset, scratch2,
+                         DTRAddr(scratch, DtrOffImm(0)), Always);
+        } else {
+          
+          
+          as_vxfer(scratch2, InvalidReg, VFPRegister(val).singleOverlay(1),
+                   FloatToCore, Always);
+          store = as_dtr(IsStore, 32, Offset, scratch2,
+                         DTRAddr(scratch, DtrOffImm(4)), Always);
+          as_vxfer(scratch2, InvalidReg, VFPRegister(val).singleOverlay(0),
+                   FloatToCore, Always);
+          as_dtr(IsStore, 32, Offset, scratch2, DTRAddr(scratch, DtrOffImm(0)),
+                 Always);
+        }
+      }
       append(access, store.getOffset());
     } else {
       bool isSigned = type == Scalar::Uint32 ||

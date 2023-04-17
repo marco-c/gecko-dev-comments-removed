@@ -1645,6 +1645,12 @@ class Assembler : public AssemblerShared {
   BufferOffset as_vdtm(LoadStore st, Register rn, VFPRegister vd, int length,
                         Condition c = Always);
 
+  
+  
+  
+  BufferOffset as_vldr_unaligned(VFPRegister vd, Register rn);
+  BufferOffset as_vstr_unaligned(VFPRegister vd, Register rn);
+
   BufferOffset as_vimm(VFPRegister vd, VFPImm imm, Condition c = Always);
 
   BufferOffset as_vmrs(Register r, Condition c = Always);
