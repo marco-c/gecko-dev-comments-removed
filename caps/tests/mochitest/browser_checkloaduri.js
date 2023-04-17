@@ -293,6 +293,13 @@ function testURL(
 }
 
 add_task(async function() {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
+
   await kAboutPagesRegistered;
   let baseFlags = ssm.STANDARD | ssm.DONT_REPORT_ERRORS;
   for (let [sourceString, targetsAndExpectations] of URLs) {
