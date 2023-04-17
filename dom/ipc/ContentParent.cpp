@@ -1971,6 +1971,12 @@ void ContentParent::OnChannelError() {
   PContentParent::OnChannelError();
 }
 
+void ContentParent::OnChannelConnected(int32_t pid) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  SetOtherProcessId(pid);
+}
+
 void ContentParent::ProcessingError(Result aCode, const char* aReason) {
   if (MsgDropped == aCode) {
     return;
@@ -2570,14 +2576,16 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
                                             ProcessPriority aPriority) {
   AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess::resolve", OTHER);
 
-  if (mLaunchResolved) {
+  
+  
+  UniquePtr<IPC::Channel> channel = mSubprocess->TakeChannel();
+  if (!channel) {
     
     MOZ_ASSERT(sCreatedFirstContentProcess);
     MOZ_ASSERT(!mPrefSerializer);
     MOZ_ASSERT(mLifecycleState != LifecycleState::LAUNCHING);
     return true;
   }
-  mLaunchResolved = true;
 
   
   
@@ -2602,7 +2610,7 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
 
   base::ProcessId procId =
       base::GetProcId(mSubprocess->GetChildProcessHandle());
-  Open(mSubprocess->TakeInitialPort(), procId);
+  Open(std::move(channel), procId);
 
   ContentProcessManager::GetSingleton()->AddContentProcess(this);
 
@@ -2730,7 +2738,6 @@ ContentParent::ContentParent(const nsACString& aRemoteType, int32_t aJSPluginID)
       mCalledKillHard(false),
       mCreatedPairedMinidumps(false),
       mShutdownPending(false),
-      mLaunchResolved(false),
       mIsRemoteInputEventQueueEnabled(false),
       mIsInputPriorityEventEnabled(false),
       mIsInPool(false),

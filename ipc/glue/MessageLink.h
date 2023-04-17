@@ -10,12 +10,9 @@
 
 #include <cstdint>
 #include "base/message_loop.h"
-#include "mojo/core/ports/node.h"
-#include "mojo/core/ports/port_ref.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ipc/Transport.h"
-#include "mozilla/ipc/ScopedPort.h"
 
 namespace IPC {
 class Message;
@@ -25,7 +22,6 @@ namespace mozilla {
 namespace ipc {
 
 class MessageChannel;
-class NodeController;
 
 struct HasResultCodes {
   enum Result {
@@ -65,36 +61,66 @@ class MessageLink {
   MessageChannel* mChan;
 };
 
-class PortLink final : public MessageLink {
-  using PortRef = mojo::core::ports::PortRef;
-  using PortStatus = mojo::core::ports::PortStatus;
-  using UserMessage = mojo::core::ports::UserMessage;
-  using UserMessageEvent = mojo::core::ports::UserMessageEvent;
+class ProcessLink : public MessageLink, public Transport::Listener {
+  void OnCloseChannel();
+  void OnChannelOpened();
+  void OnTakeConnectedChannel();
+
+  void AssertIOThread() const {
+    MOZ_ASSERT(mIOLoop == MessageLoop::current(), "not on I/O thread!");
+  }
 
  public:
-  PortLink(MessageChannel* aChan, ScopedPort aPort);
-  virtual ~PortLink();
-
-  void SendMessage(UniquePtr<Message> aMessage) override;
-  void SendClose() override;
-
-  bool Unsound_IsClosed() const override;
-  uint32_t Unsound_NumQueuedMessages() const override;
-
- private:
-  class PortObserverThunk;
-  friend class PortObserverThunk;
-
-  void OnPortStatusChanged();
+  explicit ProcessLink(MessageChannel* chan);
+  virtual ~ProcessLink();
 
   
   
-  void Clear();
+  
+  
+  
+  
+  
+  void Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop, Side aSide);
 
-  const RefPtr<NodeController> mNode;
-  const PortRef mPort;
+  
+  
+  
+  
+  virtual void OnMessageReceived(Message&& msg) override;
+  virtual void OnChannelConnected(int32_t peer_pid) override;
+  virtual void OnChannelError() override;
 
-  RefPtr<PortObserverThunk> mObserver;
+  virtual void SendMessage(mozilla::UniquePtr<Message> msg) override;
+  virtual void SendClose() override;
+
+  virtual bool Unsound_IsClosed() const override;
+  virtual uint32_t Unsound_NumQueuedMessages() const override;
+
+ protected:
+  void OnChannelConnectError();
+
+ protected:
+  UniquePtr<Transport> mTransport;
+  MessageLoop* mIOLoop;                    
+  Transport::Listener* mExistingListener;  
+};
+
+class ThreadLink : public MessageLink {
+ public:
+  ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan);
+  virtual ~ThreadLink() = default;
+
+  virtual void PrepareToDestroy() override;
+
+  virtual void SendMessage(mozilla::UniquePtr<Message> msg) override;
+  virtual void SendClose() override;
+
+  virtual bool Unsound_IsClosed() const override;
+  virtual uint32_t Unsound_NumQueuedMessages() const override;
+
+ protected:
+  MessageChannel* mTargetChan;
 };
 
 }  

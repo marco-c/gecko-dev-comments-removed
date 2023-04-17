@@ -46,8 +46,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   }
   bool Send(mozilla::UniquePtr<Message> message);
 
-  int32_t OtherPid() const { return other_pid_; }
-
   
   
   bool Unsound_IsClosed() const;

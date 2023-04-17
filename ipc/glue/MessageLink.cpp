@@ -6,12 +6,9 @@
 
 
 #include "mozilla/ipc/MessageLink.h"
-#include "mojo/core/ports/event.h"
-#include "mojo/core/ports/node.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/NodeController.h"
 #include "chrome/common/ipc_channel.h"
 #include "base/task.h"
 
@@ -49,170 +46,340 @@ MessageLink::~MessageLink() {
 #endif
 }
 
-class PortLink::PortObserverThunk : public NodeController::PortObserver {
- public:
-  PortObserverThunk(RefCountedMonitor* aMonitor, PortLink* aLink)
-      : mMonitor(aMonitor), mLink(aLink) {}
+ProcessLink::ProcessLink(MessageChannel* aChan)
+    : MessageLink(aChan), mIOLoop(nullptr), mExistingListener(nullptr) {}
 
-  void OnPortStatusChanged() override {
-    MonitorAutoLock lock(*mMonitor);
-    if (mLink) {
-      mLink->OnPortStatusChanged();
+ProcessLink::~ProcessLink() {
+  
+  RefPtr<DeleteTask<IPC::Channel>> task =
+      new DeleteTask<IPC::Channel>(mTransport.release());
+  XRE_GetIOMessageLoop()->PostTask(task.forget());
+
+#ifdef DEBUG
+  mIOLoop = nullptr;
+  mExistingListener = nullptr;
+#endif
+}
+
+void ProcessLink::Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop,
+                       Side aSide) {
+  mChan->AssertWorkerThread();
+
+  MOZ_ASSERT(aTransport, "need transport layer");
+
+  
+
+  mTransport = std::move(aTransport);
+
+  
+  
+  bool needOpen = true;
+  if (aIOLoop) {
+    
+    
+    needOpen = true;
+    mChan->mSide = (aSide == UnknownSide) ? ChildSide : aSide;
+  } else {
+    MOZ_ASSERT(aSide == UnknownSide, "expected default side arg");
+
+    
+    mChan->mSide = ParentSide;
+    needOpen = false;
+    aIOLoop = XRE_GetIOMessageLoop();
+  }
+
+  mIOLoop = aIOLoop;
+
+  NS_ASSERTION(mIOLoop, "need an IO loop");
+  NS_ASSERTION(mChan->mWorkerThread, "need a worker thread");
+
+  
+  
+  if (mTransport->Unsound_IsClosed()) {
+    mIOLoop->PostTask(
+        NewNonOwningRunnableMethod("ipc::ProcessLink::OnChannelConnectError",
+                                   this, &ProcessLink::OnChannelConnectError));
+    return;
+  }
+
+  {
+    MonitorAutoLock lock(*mChan->mMonitor);
+
+    if (needOpen) {
+      
+      
+      
+      mIOLoop->PostTask(
+          NewNonOwningRunnableMethod("ipc::ProcessLink::OnChannelOpened", this,
+                                     &ProcessLink::OnChannelOpened));
+    } else {
+      
+      
+      
+      mIOLoop->PostTask(NewNonOwningRunnableMethod(
+          "ipc::ProcessLink::OnTakeConnectedChannel", this,
+          &ProcessLink::OnTakeConnectedChannel));
+    }
+
+    
+    
+    
+    
+    
+    while (mChan->mChannelState == ChannelClosed) {
+      mChan->mMonitor->Wait();
     }
   }
-
- private:
-  friend class PortLink;
-
-  
-  RefPtr<RefCountedMonitor> mMonitor;
-
-  
-  PortLink* MOZ_NON_OWNING_REF mLink;
-};
-
-PortLink::PortLink(MessageChannel* aChan, ScopedPort aPort)
-    : MessageLink(aChan), mNode(aPort.Controller()), mPort(aPort.Release()) {
-  mObserver = new PortObserverThunk(mChan->mMonitor, this);
-  mNode->SetPortObserver(mPort, mObserver);
-
-  mChan->mChannelState = ChannelConnected;
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIRunnable> openRunnable = NewRunnableMethod(
-      "PortLink::Open", mObserver, &PortObserverThunk::OnPortStatusChanged);
-  if (aChan->mIsSameThreadChannel) {
-    aChan->mWorkerThread->Dispatch(openRunnable.forget());
-  } else {
-    XRE_GetIOMessageLoop()->PostTask(openRunnable.forget());
-  }
 }
 
-PortLink::~PortLink() {
-  MOZ_RELEASE_ASSERT(!mObserver, "PortLink destroyed without being closed!");
-}
-
-void PortLink::SendMessage(UniquePtr<Message> aMessage) {
-  mChan->mMonitor->AssertCurrentThreadOwns();
-
-  if (aMessage->size() > IPC::Channel::kMaximumMessageSize) {
+void ProcessLink::SendMessage(UniquePtr<Message> msg) {
+  if (msg->size() > IPC::Channel::kMaximumMessageSize) {
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::IPCMessageName,
-        nsDependentCString(aMessage->name()));
+        nsDependentCString(msg->name()));
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::IPCMessageSize,
-        static_cast<unsigned int>(aMessage->size()));
+        static_cast<unsigned int>(msg->size()));
     MOZ_CRASH("IPC message size is too large");
   }
-  aMessage->AssertAsLargeAsHeader();
 
-  RefPtr<PortObserverThunk> observer = mObserver;
-  if (!observer) {
-    NS_WARNING("Ignoring message to closed PortLink");
-    return;
+  if (!mChan->mIsPostponingSends) {
+    mChan->AssertWorkerThread();
   }
-
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<RefCountedMonitor> monitor = mChan->mMonitor;
-  RefPtr<NodeController> node = mNode;
-  PortRef port = mPort;
-
-  bool ok = false;
-  {
-    MonitorAutoUnlock guard(*monitor);
-    ok = node->SendUserMessage(port, std::move(aMessage));
-  }
-  if (!ok) {
-    
-    
-    if (observer->mLink) {
-      MOZ_CRASH("Invalid argument to SendUserMessage");
-    }
-    NS_WARNING("Message dropped as PortLink was closed");
-  }
-}
-
-void PortLink::SendClose() {
   mChan->mMonitor->AssertCurrentThreadOwns();
 
+  msg->AssertAsLargeAsHeader();
+
+  mIOLoop->PostTask(NewNonOwningRunnableMethod<UniquePtr<Message>&&>(
+      "IPC::Channel::Send", mTransport.get(), &Transport::Send,
+      std::move(msg)));
+}
+
+void ProcessLink::SendClose() {
+  mChan->AssertWorkerThread();
+  mChan->mMonitor->AssertCurrentThreadOwns();
+
+  mIOLoop->PostTask(NewNonOwningRunnableMethod(
+      "ipc::ProcessLink::OnCloseChannel", this, &ProcessLink::OnCloseChannel));
+}
+
+ThreadLink::ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan)
+    : MessageLink(aChan), mTargetChan(aTargetChan) {}
+
+void ThreadLink::PrepareToDestroy() {
+  MOZ_ASSERT(mChan);
+  MOZ_ASSERT(mChan->mMonitor);
+  MonitorAutoLock lock(*mChan->mMonitor);
+
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mTargetChan) {
+    MOZ_ASSERT(mTargetChan->mLink);
+    static_cast<ThreadLink*>(mTargetChan->mLink.get())->mTargetChan = nullptr;
+  }
+  mTargetChan = nullptr;
+}
+
+void ThreadLink::SendMessage(UniquePtr<Message> msg) {
+  if (!mChan->mIsPostponingSends) {
+    mChan->AssertWorkerThread();
+  }
+  mChan->mMonitor->AssertCurrentThreadOwns();
+
+  if (mTargetChan) mTargetChan->OnMessageReceivedFromLink(std::move(*msg));
+}
+
+void ThreadLink::SendClose() {
+  mChan->AssertWorkerThread();
+  mChan->mMonitor->AssertCurrentThreadOwns();
+
   mChan->mChannelState = ChannelClosed;
-  mChan->mMonitor->Notify();
 
-  if (!mObserver) {
-    
-    return;
-  }
-
-  Clear();
+  
+  
+  
+  
+  
+  if (mTargetChan) mTargetChan->OnChannelErrorFromLink();
 }
 
-void PortLink::Clear() {
-  mChan->mMonitor->AssertCurrentThreadOwns();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mNode->SetPortObserver(mPort, nullptr);
-  mObserver->mLink = nullptr;
-  mObserver = nullptr;
-  mNode->ClosePort(mPort);
+bool ThreadLink::Unsound_IsClosed() const {
+  MonitorAutoLock lock(*mChan->mMonitor);
+  return mChan->mChannelState == ChannelClosed;
 }
 
-void PortLink::OnPortStatusChanged() {
-  mChan->mMonitor->AssertCurrentThreadOwns();
-
-  
-  
-  if (Maybe<PortStatus> status = mNode->GetStatus(mPort);
-      status && status->peer_remote != mChan->IsCrossProcess()) {
-    mChan->SetIsCrossProcess(status->peer_remote);
-  }
-
-  while (mObserver) {
-    UniquePtr<IPC::Message> message;
-    if (!mNode->GetMessage(mPort, &message)) {
-      Clear();
-      mChan->OnChannelErrorFromLink();
-      return;
-    }
-    if (!message) {
-      return;
-    }
-
-    mChan->OnMessageReceivedFromLink(std::move(*message));
-  }
-}
-
-bool PortLink::Unsound_IsClosed() const {
-  if (Maybe<PortStatus> status = mNode->GetStatus(mPort)) {
-    return !(status->has_messages || status->receiving_messages);
-  }
-  return true;
-}
-
-uint32_t PortLink::Unsound_NumQueuedMessages() const {
-  
-  
-  
+uint32_t ThreadLink::Unsound_NumQueuedMessages() const {
   
   return 0;
+}
+
+
+
+
+
+void ProcessLink::OnMessageReceived(Message&& msg) {
+  AssertIOThread();
+  NS_ASSERTION(mChan->mChannelState != ChannelError, "Shouldn't get here!");
+  MonitorAutoLock lock(*mChan->mMonitor);
+  mChan->OnMessageReceivedFromLink(std::move(msg));
+}
+
+void ProcessLink::OnChannelOpened() {
+  AssertIOThread();
+
+  {
+    MonitorAutoLock lock(*mChan->mMonitor);
+
+    mExistingListener = mTransport->set_listener(this);
+#ifdef DEBUG
+    if (mExistingListener) {
+      std::queue<Message> pending;
+      mExistingListener->GetQueuedMessages(pending);
+      MOZ_ASSERT(pending.empty());
+    }
+#endif  
+
+    mChan->mChannelState = ChannelOpening;
+    lock.Notify();
+  }
+
+  if (!mTransport->Connect()) {
+    mTransport->Close();
+    OnChannelError();
+  }
+}
+
+void ProcessLink::OnTakeConnectedChannel() {
+  AssertIOThread();
+
+  std::queue<Message> pending;
+  {
+    MonitorAutoLock lock(*mChan->mMonitor);
+
+    mChan->mChannelState = ChannelConnected;
+
+    mExistingListener = mTransport->set_listener(this);
+    if (mExistingListener) {
+      mExistingListener->GetQueuedMessages(pending);
+    }
+    lock.Notify();
+  }
+
+  
+  while (!pending.empty()) {
+    OnMessageReceived(std::move(pending.front()));
+    pending.pop();
+  }
+}
+
+void ProcessLink::OnChannelConnected(int32_t peer_pid) {
+  AssertIOThread();
+
+  bool notifyChannel = false;
+
+  {
+    MonitorAutoLock lock(*mChan->mMonitor);
+    
+    
+    
+    if (mChan->mChannelState == ChannelOpening ||
+        mChan->mChannelState == ChannelConnected) {
+      mChan->mChannelState = ChannelConnected;
+      mChan->mMonitor->Notify();
+      notifyChannel = true;
+    }
+  }
+
+  if (mExistingListener) {
+    mExistingListener->OnChannelConnected(peer_pid);
+  }
+
+  if (notifyChannel) {
+    mChan->OnChannelConnected(peer_pid);
+  }
+}
+
+void ProcessLink::OnChannelConnectError() {
+  AssertIOThread();
+
+  MonitorAutoLock lock(*mChan->mMonitor);
+
+  mChan->OnChannelErrorFromLink();
+}
+
+void ProcessLink::OnChannelError() {
+  AssertIOThread();
+
+  MonitorAutoLock lock(*mChan->mMonitor);
+
+  MOZ_ALWAYS_TRUE(this == mTransport->set_listener(mExistingListener));
+
+  mChan->OnChannelErrorFromLink();
+}
+
+void ProcessLink::OnCloseChannel() {
+  AssertIOThread();
+
+  mTransport->Close();
+
+  MonitorAutoLock lock(*mChan->mMonitor);
+
+  DebugOnly<IPC::Channel::Listener*> previousListener =
+      mTransport->set_listener(mExistingListener);
+
+  
+  MOZ_ASSERT(previousListener == this || previousListener == mExistingListener);
+
+  mChan->mChannelState = ChannelClosed;
+  mChan->mMonitor->Notify();
+}
+
+bool ProcessLink::Unsound_IsClosed() const {
+  return mTransport->Unsound_IsClosed();
+}
+
+uint32_t ProcessLink::Unsound_NumQueuedMessages() const {
+  return mTransport->Unsound_NumQueuedMessages();
 }
 
 }  

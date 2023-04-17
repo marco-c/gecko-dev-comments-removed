@@ -27,7 +27,7 @@ RefPtr<GenericPromise> RemoteSandboxBrokerParent::Launch(
   
   
   auto resolve = [this](base::ProcessHandle handle) {
-    mOpened = Open(mProcess->TakeInitialPort(), base::GetProcId(handle));
+    mOpened = Open(mProcess->TakeChannel(), base::GetProcId(handle));
     if (!mOpened) {
       mProcess->Destroy();
       mProcess = nullptr;

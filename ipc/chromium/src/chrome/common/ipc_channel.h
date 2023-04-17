@@ -12,7 +12,6 @@
 #include "base/basictypes.h"
 #include "build/build_config.h"
 #include "mozilla/UniquePtr.h"
-#include "chrome/common/ipc_message.h"
 
 #ifdef OS_WIN
 #  include <string>
@@ -121,10 +120,6 @@ class Channel {
   
   
   bool Send(mozilla::UniquePtr<Message> message);
-
-  
-  
-  int32_t OtherPid() const;
 
   
   

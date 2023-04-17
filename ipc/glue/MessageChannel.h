@@ -24,7 +24,6 @@
 
 #include "MessageLink.h"  
 #include "mozilla/ipc/Transport.h"
-#include "mozilla/ipc/ScopedPort.h"
 
 #ifdef MOZ_GECKO_PROFILER
 #  include "mozilla/BaseProfilerMarkers.h"
@@ -105,7 +104,6 @@ class AutoEnterTransaction;
 class MessageChannel : HasResultCodes {
   friend class ProcessLink;
   friend class ThreadLink;
-  friend class PortLink;
 #ifdef FUZZING
   friend class ProtocolFuzzerHelper;
 #endif
@@ -155,7 +153,6 @@ class MessageChannel : HasResultCodes {
   typedef IPC::Message Message;
   typedef IPC::MessageInfo MessageInfo;
   typedef mozilla::ipc::Transport Transport;
-  using ScopedPort = mozilla::ipc::ScopedPort;
 
   explicit MessageChannel(const char* aName, IToplevelProtocol* aListener);
   ~MessageChannel();
@@ -166,8 +163,9 @@ class MessageChannel : HasResultCodes {
   
   
   
-  bool Open(ScopedPort aPort, Side aSide,
-            nsISerialEventTarget* aEventTarget = nullptr);
+  
+  bool Open(UniquePtr<Transport> aTransport, MessageLoop* aIOLoop = 0,
+            Side aSide = UnknownSide);
 
   
   
@@ -333,8 +331,7 @@ class MessageChannel : HasResultCodes {
   
 
 
-  bool IsCrossProcess() const;
-  void SetIsCrossProcess(bool aIsCrossProcess);
+  bool IsCrossProcess() const { return mIsCrossProcess; }
 
 #ifdef OS_WIN
   struct MOZ_STACK_CLASS SyncStackFrame {
@@ -382,6 +379,11 @@ class MessageChannel : HasResultCodes {
 #endif    
 
  private:
+  void CommonThreadOpenInit(MessageChannel* aTargetChan,
+                            nsISerialEventTarget* aThread, Side aSide);
+  void OpenAsOtherThread(MessageChannel* aTargetChan,
+                         nsISerialEventTarget* aThread, Side aSide);
+
   void PostErrorNotifyTask();
   void OnNotifyMaybeChannelError();
   void ReportConnectionError(const char* aChannelName,
@@ -391,6 +393,9 @@ class MessageChannel : HasResultCodes {
                         const char* channelName);
 
   void Clear();
+
+  
+  void DispatchOnChannelConnected();
 
   bool InterruptEventOccurred();
   bool HasPendingEvents();
@@ -525,6 +530,8 @@ class MessageChannel : HasResultCodes {
   
   
   bool MaybeInterceptSpecialIOMessage(const Message& aMsg);
+
+  void OnChannelConnected(int32_t peer_id);
 
   
   void SynchronouslyClose();
@@ -843,6 +850,13 @@ class MessageChannel : HasResultCodes {
 
   
   ChannelFlags mFlags;
+
+  
+  
+  
+  RefPtr<CancelableRunnable> mOnChannelConnectedTask;
+  bool mPeerPidSet;
+  int32_t mPeerPid;
 
   
   

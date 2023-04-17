@@ -25,7 +25,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/ipc/NodeController.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "nsAppRunner.h"
@@ -36,7 +35,6 @@
 #include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsPrintfCString.h"
-#include "nsThreadUtils.h"
 
 #ifdef OS_WIN
 #  include "mozilla/gfx/Logging.h"
@@ -585,6 +583,8 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
       mAbortOnError(false),
       mNotifiedChannelDone(false),
       mFlags(REQUIRE_DEFAULT),
+      mPeerPidSet(false),
+      mPeerPid(-1),
       mIsPostponingSends(false),
       mBuildIDsConfirmedMatch(false),
       mIsSameThreadChannel(false) {
@@ -593,7 +593,13 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
 #ifdef OS_WIN
   mTopFrame = nullptr;
   mIsSyncWaitingOnNonMainThread = false;
+#endif
 
+  mOnChannelConnectedTask = NewNonOwningCancelableRunnableMethod(
+      "ipc::MessageChannel::DispatchOnChannelConnected", this,
+      &MessageChannel::DispatchOnChannelConnected);
+
+#ifdef OS_WIN
   mEvent = CreateEventW(nullptr, TRUE, FALSE, nullptr);
   MOZ_RELEASE_ASSERT(mEvent, "CreateEvent failed! Nothing is going to work!");
 #endif
@@ -767,6 +773,8 @@ void MessageChannel::Clear() {
     mLink = nullptr;
   }
 
+  mOnChannelConnectedTask->Cancel();
+
   if (mChannelErrorTask) {
     mChannelErrorTask->Cancel();
     mChannelErrorTask = nullptr;
@@ -786,71 +794,134 @@ void MessageChannel::Clear() {
   }
 }
 
-bool MessageChannel::Open(ScopedPort aPort, Side aSide,
-                          nsISerialEventTarget* aEventTarget) {
+bool MessageChannel::Open(mozilla::UniquePtr<Transport> aTransport,
+                          MessageLoop* aIOLoop, Side aSide) {
   MOZ_ASSERT(!mLink, "Open() called > once");
 
   mMonitor = new RefCountedMonitor();
-  mWorkerThread = aEventTarget ? aEventTarget : GetCurrentSerialEventTarget();
+  mWorkerThread = GetCurrentSerialEventTarget();
   MOZ_ASSERT(mWorkerThread, "We should always be on a nsISerialEventTarget");
   mListener->OnIPCChannelOpened();
 
-  mLink = MakeUnique<PortLink>(this, std::move(aPort));
-  mSide = aSide;
+  auto link = MakeUnique<ProcessLink>(this);
+  link->Open(std::move(aTransport), aIOLoop,
+             aSide);  
+  mLink = std::move(link);
+  mIsCrossProcess = true;
+  ChannelCountReporter::Increment(mName);
   return true;
-}
-
-static Side GetOppSide(Side aSide) {
-  switch (aSide) {
-    case ChildSide:
-      return ParentSide;
-    case ParentSide:
-      return ChildSide;
-    case UnknownSide:
-      return UnknownSide;
-  }
 }
 
 bool MessageChannel::Open(MessageChannel* aTargetChan,
                           nsISerialEventTarget* aEventTarget, Side aSide) {
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(aTargetChan, "Need a target channel");
   MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
 
-  std::pair<ScopedPort, ScopedPort> ports =
-      NodeController::GetSingleton()->CreatePortPair();
+  CommonThreadOpenInit(aTargetChan, GetCurrentSerialEventTarget(), aSide);
 
-  
-  
-  
-  
-  base::WaitableEvent event( true,
-                             false);
-  MOZ_ALWAYS_SUCCEEDS(aEventTarget->Dispatch(NS_NewCancelableRunnableFunction(
-      "ipc::MessageChannel::OpenAsOtherThread", [&]() {
-        aTargetChan->Open(std::move(ports.second), GetOppSide(aSide),
-                          aEventTarget);
-        event.Signal();
-      })));
-  bool ok = event.Wait();
-  MOZ_RELEASE_ASSERT(ok);
+  Side oppSide = UnknownSide;
+  switch (aSide) {
+    case ChildSide:
+      oppSide = ParentSide;
+      break;
+    case ParentSide:
+      oppSide = ChildSide;
+      break;
+    case UnknownSide:
+      break;
+  }
 
+  mMonitor = new RefCountedMonitor();
+
+  MonitorAutoLock lock(*mMonitor);
+  mChannelState = ChannelOpening;
+  MOZ_ALWAYS_SUCCEEDS(aEventTarget->Dispatch(
+      NewNonOwningRunnableMethod<MessageChannel*, nsISerialEventTarget*, Side>(
+          "ipc::MessageChannel::OpenAsOtherThread", aTargetChan,
+          &MessageChannel::OpenAsOtherThread, this, aEventTarget, oppSide)));
+
+  while (ChannelOpening == mChannelState) mMonitor->Wait();
+  MOZ_RELEASE_ASSERT(ChannelConnected == mChannelState,
+                     "not connected when awoken");
+  return (ChannelConnected == mChannelState);
+}
+
+void MessageChannel::OpenAsOtherThread(MessageChannel* aTargetChan,
+                                       nsISerialEventTarget* aThread,
+                                       Side aSide) {
   
-  return Open(std::move(ports.first), aSide);
+  MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
+  MOZ_ASSERT(ChannelOpening == aTargetChan->mChannelState,
+             "Target channel not in the process of opening");
+
+  CommonThreadOpenInit(aTargetChan, aThread, aSide);
+  mMonitor = aTargetChan->mMonitor;
+
+  MonitorAutoLock lock(*mMonitor);
+  MOZ_RELEASE_ASSERT(ChannelOpening == aTargetChan->mChannelState,
+                     "Target channel not in the process of opening");
+  mChannelState = ChannelConnected;
+  aTargetChan->mChannelState = ChannelConnected;
+  aTargetChan->mMonitor->Notify();
+}
+
+void MessageChannel::CommonThreadOpenInit(MessageChannel* aTargetChan,
+                                          nsISerialEventTarget* aThread,
+                                          Side aSide) {
+  MOZ_ASSERT(aThread);
+  mWorkerThread = aThread;
+  mListener->OnIPCChannelOpened();
+
+  mLink = MakeUnique<ThreadLink>(this, aTargetChan);
+  mSide = aSide;
 }
 
 bool MessageChannel::OpenOnSameThread(MessageChannel* aTargetChan,
                                       mozilla::ipc::Side aSide) {
-  auto [porta, portb] = NodeController::GetSingleton()->CreatePortPair();
+  nsCOMPtr<nsISerialEventTarget> currentThread = GetCurrentSerialEventTarget();
+  CommonThreadOpenInit(aTargetChan, currentThread, aSide);
 
-  aTargetChan->mIsSameThreadChannel = true;
+  Side oppSide = UnknownSide;
+  switch (aSide) {
+    case ChildSide:
+      oppSide = ParentSide;
+      break;
+    case ParentSide:
+      oppSide = ChildSide;
+      break;
+    case UnknownSide:
+      break;
+  }
   mIsSameThreadChannel = true;
 
-  auto* currentThread = GetCurrentSerialEventTarget();
-  return aTargetChan->Open(std::move(portb), GetOppSide(aSide),
-                           currentThread) &&
-         Open(std::move(porta), aSide, currentThread);
+  
+  
+  mMonitor = new RefCountedMonitor();
+
+  mChannelState = ChannelOpening;
+  aTargetChan->CommonThreadOpenInit(this, currentThread, oppSide);
+
+  aTargetChan->mIsSameThreadChannel = true;
+  aTargetChan->mMonitor = mMonitor;
+
+  mChannelState = ChannelConnected;
+  aTargetChan->mChannelState = ChannelConnected;
+  return true;
 }
 
 bool MessageChannel::Send(UniquePtr<Message> aMsg) {
@@ -2315,6 +2386,20 @@ void MessageChannel::SetReplyTimeoutMs(int32_t aTimeoutMs) {
       (aTimeoutMs <= 0) ? kNoTimeout : (int32_t)ceil((double)aTimeoutMs / 2.0);
 }
 
+void MessageChannel::OnChannelConnected(int32_t peer_id) {
+  MOZ_RELEASE_ASSERT(!mPeerPidSet);
+  mPeerPidSet = true;
+  mPeerPid = peer_id;
+  RefPtr<CancelableRunnable> task = mOnChannelConnectedTask;
+  mWorkerThread->Dispatch(task.forget());
+}
+
+void MessageChannel::DispatchOnChannelConnected() {
+  AssertWorkerThread();
+  MOZ_RELEASE_ASSERT(mPeerPidSet);
+  mListener->OnChannelConnected(mPeerPid);
+}
+
 void MessageChannel::ReportMessageRouteError(const char* channelName) const {
   PrintErrorMessage(mSide, channelName, "Need a route");
   mListener->ProcessingError(MsgRouteError, "MsgRouteError");
@@ -2568,6 +2653,7 @@ void MessageChannel::NotifyImpendingShutdown() {
       MakeUnique<Message>(MSG_ROUTING_NONE, IMPENDING_SHUTDOWN_MESSAGE_TYPE);
   MonitorAutoLock lock(*mMonitor);
   if (Connected()) {
+    MOZ_DIAGNOSTIC_ASSERT(mIsCrossProcess);
     mLink->SendMessage(std::move(msg));
   }
 }
@@ -2852,24 +2938,6 @@ void CancelCPOWs() {
     mozilla::Telemetry::Accumulate(mozilla::Telemetry::IPC_TRANSACTION_CANCEL,
                                    true);
     gParentProcessBlocker->CancelCurrentTransaction();
-  }
-}
-
-bool MessageChannel::IsCrossProcess() const {
-  mMonitor->AssertCurrentThreadOwns();
-  return mIsCrossProcess;
-}
-
-void MessageChannel::SetIsCrossProcess(bool aIsCrossProcess) {
-  mMonitor->AssertCurrentThreadOwns();
-  if (aIsCrossProcess == mIsCrossProcess) {
-    return;
-  }
-  mIsCrossProcess = aIsCrossProcess;
-  if (mIsCrossProcess) {
-    ChannelCountReporter::Increment(mName);
-  } else {
-    ChannelCountReporter::Decrement(mName);
   }
 }
 
