@@ -6637,6 +6637,10 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
                                                  const uint8_t* bytecode,
                                                  size_t bytecodeLength,
                                                  wasm::Bytes* serialized) {
+#if defined(__wasi__)
+  MOZ_CRASH("WASI doesn't support Wasm.");
+  return false;
+#else
   AutoPipe stdIn, stdOut;
   if (!stdIn.init() || !stdOut.init()) {
     return false;
@@ -6665,7 +6669,7 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
     return false;
   }
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   
   
   
@@ -6691,14 +6695,14 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
   if (!arg || !argv.append(std::move(arg))) {
     return false;
   }
-#endif
+#  endif
 
   
   if (!argv.append(nullptr)) {
     return false;
   }
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
   if (!EscapeForShell(cx, argv)) {
     return false;
   }
@@ -6707,7 +6711,7 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
   if (childPid == -1) {
     return false;
   }
-#else
+#  else
   pid_t childPid = fork();
   switch (childPid) {
     case -1:
@@ -6730,7 +6734,7 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
       execv(sArgv[0], argv.get());
       exit(-1);
   }
-#endif
+#  endif
 
   
   
@@ -6750,11 +6754,11 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
   stdOut.closeReader();
 
   int status;
-#ifdef XP_WIN
+#  ifdef XP_WIN
   if (_cwait(&status, childPid, WAIT_CHILD) == -1) {
     return false;
   }
-#else
+#  else
   while (true) {
     if (waitpid(childPid, &status, 0) >= 0) {
       break;
@@ -6763,9 +6767,10 @@ static bool CompileAndSerializeInSeparateProcess(JSContext* cx,
       return false;
     }
   }
-#endif
+#  endif
 
   return status == 0;
+#endif  
 }
 
 static bool WasmCompileAndSerialize(JSContext* cx) {
