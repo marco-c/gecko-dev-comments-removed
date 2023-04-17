@@ -10,6 +10,7 @@
 #define vm_ObjectOperations_h
 
 #include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"
 
 #include <stdint.h>  
 
@@ -79,10 +80,9 @@ extern bool PreventExtensions(JSContext* cx, JS::Handle<JSObject*> obj);
 
 
 
-
 extern bool GetOwnPropertyDescriptor(
     JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
-    JS::MutableHandle<JS::PropertyDescriptor> desc);
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc);
 
 
 extern bool DefineProperty(JSContext* cx, JS::Handle<JSObject*> obj,

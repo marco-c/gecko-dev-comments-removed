@@ -73,23 +73,23 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
   
   
   
-  Rooted<PropertyDescriptor> desc(cx);
+  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
   if (!GetOwnPropertyDescriptor(cx, expando, id, &desc)) {
     return false;
   }
+  
+  MOZ_ASSERT(desc.isSome());
 
   
-  if (desc.hasGetterObject()) {
-    RootedValue getter(cx, JS::ObjectValue(*desc.getterObject().get()));
+  if (desc->hasGetterObject()) {
+    RootedValue getter(cx, JS::ObjectValue(*desc->getterObject().get()));
     return js::CallGetter(cx, receiver, getter, vp);
   }
 
-  
-  MOZ_ASSERT(desc.object());
-  MOZ_ASSERT(desc.hasValue());
-  MOZ_ASSERT(desc.isDataDescriptor());
+  MOZ_ASSERT(desc->hasValue());
+  MOZ_ASSERT(desc->isDataDescriptor());
 
-  vp.set(desc.value());
+  vp.set(desc->value());
   return true;
 }
 

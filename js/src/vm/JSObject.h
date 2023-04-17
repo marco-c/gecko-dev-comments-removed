@@ -892,14 +892,6 @@ bool HasOwnDataPropertyPure(JSContext* cx, JSObject* obj, jsid id,
                             bool* result);
 
 
-bool GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
-                              MutableHandle<JS::PropertyDescriptor> desc);
-
-bool GetOwnPropertyDescriptor(
-    JSContext* cx, HandleObject obj, HandleId id,
-    MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc);
-
-
 
 
 
