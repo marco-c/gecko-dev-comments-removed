@@ -4,7 +4,7 @@
 
 
 
-if not (CONFIG["CPU_ARCH"] == "arm" and CONFIG["TARGET_ENDIANNESS"] == "little"):
-    DIRS += ["executable"]
-
-RustLibrary("http3server")
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    RUST_PROGRAMS += [
+        "http3server",
+    ]
