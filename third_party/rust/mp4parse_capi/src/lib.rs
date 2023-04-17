@@ -171,6 +171,16 @@ pub struct Mp4parseByteData {
     pub indices: *const Indice,
 }
 
+impl Mp4parseByteData {
+    fn with_data(slice: &[u8]) -> Self {
+        Self {
+            length: slice.len(),
+            data: slice.as_ptr(),
+            indices: std::ptr::null(),
+        }
+    }
+}
+
 impl Default for Mp4parseByteData {
     fn default() -> Self {
         Self {
@@ -313,9 +323,14 @@ pub struct Mp4parseParser {
 }
 
 #[repr(C)]
-#[derive(Default)]
-pub struct AvifImage {
+#[derive(Debug)]
+pub struct Mp4parseAvifImage {
     pub primary_item: Mp4parseByteData,
+    
+    pub spatial_extents: *const mp4parse::ImageSpatialExtentsProperty,
+    pub image_rotation: mp4parse::ImageRotation,
+    pub image_mirror: *const mp4parse::ImageMirror,
+    
     pub alpha_item: Mp4parseByteData,
     pub premultiplied_alpha: bool,
 }
@@ -1048,24 +1063,32 @@ fn mp4parse_get_track_video_info_safe(
 
 #[no_mangle]
 pub unsafe extern "C" fn mp4parse_avif_get_image(
-    parser: *mut Mp4parseAvifParser,
-    avif_image: *mut AvifImage,
+    parser: *const Mp4parseAvifParser,
+    avif_image: *mut Mp4parseAvifImage,
 ) -> Mp4parseStatus {
     if parser.is_null() || avif_image.is_null() {
         return Mp4parseStatus::BadArg;
     }
 
-    
-    *avif_image = Default::default();
-    let context = (*parser).context();
-
-    (*avif_image).primary_item.set_data(context.primary_item());
-    if let Some(context_alpha_item) = context.alpha_item() {
-        (*avif_image).alpha_item.set_data(context_alpha_item);
-        (*avif_image).premultiplied_alpha = context.premultiplied_alpha;
-    }
+    *avif_image = mp4parse_avif_get_image_safe(&*parser);
 
     Mp4parseStatus::Ok
+}
+
+pub fn mp4parse_avif_get_image_safe(parser: &Mp4parseAvifParser) -> Mp4parseAvifImage {
+    let context = parser.context();
+
+    Mp4parseAvifImage {
+        primary_item: Mp4parseByteData::with_data(context.primary_item()),
+        spatial_extents: context.spatial_extents_ptr(),
+        image_rotation: context.image_rotation(),
+        image_mirror: context.image_mirror_ptr(),
+        alpha_item: context
+            .alpha_item()
+            .map(Mp4parseByteData::with_data)
+            .unwrap_or_default(),
+        premultiplied_alpha: context.premultiplied_alpha,
+    }
 }
 
 

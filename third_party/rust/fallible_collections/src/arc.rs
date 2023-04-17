@@ -7,6 +7,10 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 
 
+#[deprecated(
+	since = "0.3.1",
+	note = "⚠️️️this function is not completely fallible, it can panic !, see [issue](https://github.com/vcombey/fallible_collections/issues/13). help wanted"
+)]
 pub trait FallibleArc<T> {
     
     
@@ -15,10 +19,12 @@ pub trait FallibleArc<T> {
         Self: Sized;
 }
 
+#[allow(deprecated)]
 impl<T> FallibleArc<T> for Arc<T> {
     fn try_new(t: T) -> Result<Self, TryReserveError> {
         
-        let b = Box::try_new(t)?;
+
+        let b = <Box<T> as FallibleBox<T>>::try_new(t)?;
         Ok(Arc::from(b))
     }
 }
