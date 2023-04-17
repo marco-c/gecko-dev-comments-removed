@@ -803,10 +803,6 @@ class HTMLEditor final : public TextEditor,
                                          bool* outIsSpace, bool* outIsNBSP,
                                          nsIContent** outNode = nullptr,
                                          int32_t* outOffset = 0);
-  static void IsPrevCharInNodeWhiteSpace(nsIContent* aContent, int32_t aOffset,
-                                         bool* outIsSpace, bool* outIsNBSP,
-                                         nsIContent** outNode = nullptr,
-                                         int32_t* outOffset = 0);
 
   
 
