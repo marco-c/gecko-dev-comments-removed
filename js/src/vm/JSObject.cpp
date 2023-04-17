@@ -2299,8 +2299,7 @@ bool js::PreventExtensions(JSContext* cx, HandleObject obj,
   }
 
   
-  if (!JSObject::setFlag(cx, obj, ObjectFlag::NotExtensible,
-                         JSObject::GENERATE_SHAPE)) {
+  if (!JSObject::setFlag(cx, obj, ObjectFlag::NotExtensible)) {
     return false;
   }
   if (obj->is<NativeObject>()) {
