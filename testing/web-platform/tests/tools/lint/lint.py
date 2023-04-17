@@ -694,8 +694,7 @@ ast_checkers = [item() for item in [OpenModeCheck]]
 
 def check_python_ast(repo_root, path, f):
     
-    
-    if not path.endswith(".py") or path.endswith(".quic.py"):
+    if not path.endswith(".py"):
         return []
 
     try:
