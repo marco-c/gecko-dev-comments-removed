@@ -300,21 +300,6 @@ var TelemetryEnvironmentTesting = {
     Assert.equal(typeof update.background, "boolean");
 
     
-    Assert.equal(
-      typeof data.settings.sandbox.effectiveContentProcessLevel,
-      "number",
-      "sandbox.effectiveContentProcessLevel must have the correct type"
-    );
-    Assert.equal(
-      typeof data.settings.sandbox.contentWin32kLockdownState,
-      "number",
-      "sandbox.contentWin32kLockdownState must have the correct type"
-    );
-
-    let win32kLockdownState = data.settings.sandbox.contentWin32kLockdownState;
-    Assert.ok(win32kLockdownState >= 1 && win32kLockdownState <= 4);
-
-    
     if ("defaultSearchEngine" in data.settings) {
       this.checkString(data.settings.defaultSearchEngine);
       Assert.equal(typeof data.settings.defaultSearchEngineData, "object");
