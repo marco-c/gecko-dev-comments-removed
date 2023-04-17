@@ -325,7 +325,11 @@ class FindExpirationTimeState final {
 
       
       
-      TimeStamp t = NS_GetTimerDeadlineHintOnCurrentThread(clearUntil, 100);
+      
+      
+      
+      
+      TimeStamp t = NS_GetTimerDeadlineHintOnCurrentThread(clearUntil, 0);
       if (t >= clearUntil) {
         break;
       }
