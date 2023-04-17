@@ -9,6 +9,7 @@ package org.mozilla.geckoview;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 
@@ -168,7 +169,7 @@ public final class StorageController {
             "GeckoView:ClearSessionContextData", bundle);
     }
 
-     static @NonNull String createSafeSessionContextId(
+     static @Nullable String createSafeSessionContextId(
             final @Nullable String contextId) {
         if (contextId == null) {
             return null;
@@ -182,6 +183,18 @@ public final class StorageController {
         
         return String.format("gvctx%x", new BigInteger(contextId.getBytes()))
                .toLowerCase(Locale.ROOT);
+    }
+
+     static @Nullable String retrieveUnsafeSessionContextId(
+            final @Nullable String contextId) {
+        if (contextId == null || contextId.isEmpty()) {
+            return null;
+        }
+        if ("gvctxempty".equals(contextId)) {
+            return "";
+        }
+        final byte[] bytes = new BigInteger(contextId.substring(5), 16).toByteArray();
+        return new String(bytes, Charset.forName("UTF-8"));
     }
 
     
@@ -208,11 +221,39 @@ public final class StorageController {
 
     @AnyThread
     public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri) {
-        final GeckoBundle msg = new GeckoBundle(1);
+        return getPermissions(uri, null);
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri, final @Nullable String contextId) {
+        final GeckoBundle msg = new GeckoBundle(2);
         msg.putString("uri", uri);
+        msg.putString("contextId", createSafeSessionContextId(contextId));
         return EventDispatcher.getInstance().queryBundle("GeckoView:GetPermissionsByURI", msg).map(bundle -> {
             final GeckoBundle[] permsArray = bundle.getBundleArray("permissions");
             return ContentPermission.fromBundleArray(permsArray);
         });
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    public void setPermission(final @NonNull ContentPermission perm, final @ContentPermission.Value int value) {
+        final GeckoBundle msg = perm.toGeckoBundle();
+        msg.putInt("newValue", value);
+        EventDispatcher.getInstance().dispatch("GeckoView:SetPermission", msg);
     }
 }
