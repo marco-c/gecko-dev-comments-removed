@@ -210,6 +210,23 @@ void ChromeUtils::AddProfilerMarker(
     innerWindowId = opt.mInnerWindowId;
 
     if (opt.mCaptureStack) {
+      
+      
+      
+      
+      JSContext* cx = aGlobal.Context();
+      ProfilingStack* stack = js::GetContextProfilingStackIfEnabled(cx);
+      if (MOZ_LIKELY(stack)) {
+        uint32_t sp = stack->stackPointer;
+        if (MOZ_LIKELY(sp > 0)) {
+          js::ProfilingStackFrame& frame = stack->frames[sp - 1];
+          if (frame.isLabelFrame() && "ChromeUtils"_ns.Equals(frame.label()) &&
+              "addProfilerMarker"_ns.Equals(frame.dynamicString())) {
+            frame.setLabelCategory(JS::ProfilingCategoryPair::PROFILER);
+          }
+        }
+      }
+
       options.Set(MarkerStack::Capture());
     }
 #define BEGIN_CATEGORY(name, labelAsString, color) \
