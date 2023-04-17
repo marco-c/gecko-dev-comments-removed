@@ -45,7 +45,7 @@ macro_rules! cfg_if {
     (@__items ($($not:meta,)*) ; ) => {};
     (@__items ($($not:meta,)*) ; ( ($($m:meta),*) ($($it:item)*) ),
      $($rest:tt)*) => {
-        // Emit all items within one block, applying an approprate #[cfg]. The
+        // Emit all items within one block, applying an appropriate #[cfg]. The
         // #[cfg] will require all `$m` matchers specified and must also negate
         // all previous matchers.
         cfg_if! { @__apply cfg(all($($m,)* not(any($($not),*)))), $($it)* }
@@ -114,7 +114,9 @@ macro_rules! s_no_extra_traits {
             $(#[$attr])*
             pub struct $i { $($field)* }
         }
+        #[allow(deprecated)]
         impl ::Copy for $i {}
+        #[allow(deprecated)]
         impl ::Clone for $i {
             fn clone(&self) -> $i { *self }
         }
@@ -182,12 +184,13 @@ cfg_if! {
     if #[cfg(libc_const_extern_fn)] {
         #[allow(unused_macros)]
         macro_rules! f {
-            ($(pub $({$constness:ident})* fn $i:ident(
+            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
                         $($arg:ident: $argty:ty),*
             ) -> $ret:ty {
                 $($body:stmt);*
             })*) => ($(
                 #[inline]
+                $(#[$attr])*
                 pub $($constness)* unsafe extern fn $i($($arg: $argty),*
                 ) -> $ret {
                     $($body);*
@@ -196,13 +199,30 @@ cfg_if! {
         }
 
         #[allow(unused_macros)]
-        macro_rules! const_fn {
-            ($($({$constness:ident})* fn $i:ident(
+        macro_rules! safe_f {
+            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
                         $($arg:ident: $argty:ty),*
             ) -> $ret:ty {
                 $($body:stmt);*
             })*) => ($(
                 #[inline]
+                $(#[$attr])*
+                pub $($constness)* extern fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+
+        #[allow(unused_macros)]
+        macro_rules! const_fn {
+            ($($(#[$attr:meta])* $({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                $(#[$attr])*
                 $($constness)* fn $i($($arg: $argty),*
                 ) -> $ret {
                     $($body);*
@@ -213,12 +233,13 @@ cfg_if! {
     } else {
         #[allow(unused_macros)]
         macro_rules! f {
-            ($(pub $({$constness:ident})* fn $i:ident(
+            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
                         $($arg:ident: $argty:ty),*
             ) -> $ret:ty {
                 $($body:stmt);*
             })*) => ($(
                 #[inline]
+                $(#[$attr])*
                 pub unsafe extern fn $i($($arg: $argty),*
                 ) -> $ret {
                     $($body);*
@@ -227,13 +248,30 @@ cfg_if! {
         }
 
         #[allow(unused_macros)]
-        macro_rules! const_fn {
-            ($($({$constness:ident})* fn $i:ident(
+        macro_rules! safe_f {
+            ($($(#[$attr:meta])* pub $({$constness:ident})* fn $i:ident(
                         $($arg:ident: $argty:ty),*
             ) -> $ret:ty {
                 $($body:stmt);*
             })*) => ($(
                 #[inline]
+                $(#[$attr])*
+                pub extern fn $i($($arg: $argty),*
+                ) -> $ret {
+                    $($body);*
+                }
+            )*)
+        }
+
+        #[allow(unused_macros)]
+        macro_rules! const_fn {
+            ($($(#[$attr:meta])* $({$constness:ident})* fn $i:ident(
+                        $($arg:ident: $argty:ty),*
+            ) -> $ret:ty {
+                $($body:stmt);*
+            })*) => ($(
+                #[inline]
+                $(#[$attr])*
                 fn $i($($arg: $argty),*
                 ) -> $ret {
                     $($body);*
