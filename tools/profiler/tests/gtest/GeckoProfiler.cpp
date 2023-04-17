@@ -931,10 +931,11 @@ TEST(GeckoProfiler, Markers)
        78
       
       
+
       
 
       
-);
+  );
 
   profiler_add_network_marker(
        uri,
@@ -949,13 +950,13 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        nullptr,
-       nullptr,
       
 
       nullptr,
       
 
-      Some(nsDependentCString("text/html")));
+      Some(nsDependentCString("text/html")),
+       nullptr);
 
   nsCOMPtr<nsIURI> redirectURI;
   ASSERT_TRUE(NS_SUCCEEDED(
@@ -973,11 +974,13 @@ TEST(GeckoProfiler, Markers)
       net::kCacheUnresolved,
        78,
        nullptr,
-       redirectURI
       
 
+      nullptr,
       
-);
+
+      mozilla::Nothing(),
+       redirectURI);
 
   MOZ_RELEASE_ASSERT(profiler_add_marker(
       "Text in main thread with stack", geckoprofiler::category::OTHER,
