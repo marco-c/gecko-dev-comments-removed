@@ -14,16 +14,16 @@
 
 
 
-#include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"  
-#include "mozilla/Utf8.h"       
+#include "mozilla/RefPtr.h"  
+#include "mozilla/Utf8.h"    
 
 #include <stddef.h>  
 
 #include "jstypes.h"  
 
-#include "js/CompileOptions.h"  
-#include "js/SourceText.h"      
+#include "js/CompileOptions.h"              
+#include "js/OffThreadScriptCompilation.h"  
+#include "js/SourceText.h"                  
 #include "js/Transcoding.h"
 
 struct JS_PUBLIC_API JSContext;
@@ -97,6 +97,19 @@ EncodeStencil(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API TranscodeResult
 DecodeStencil(JSContext* cx, const ReadOnlyCompileOptions& options,
               const TranscodeRange& range, RefPtr<Stencil>& stencilOut);
+
+extern JS_PUBLIC_API OffThreadToken* CompileToStencilOffThread(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData);
+
+extern JS_PUBLIC_API OffThreadToken* CompileToStencilOffThread(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData);
+
+extern JS_PUBLIC_API RefPtr<Stencil> FinishOffThreadCompileToStencil(
+    JSContext* cx, OffThreadToken* token);
 
 }  
 

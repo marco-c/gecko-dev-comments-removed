@@ -17,7 +17,8 @@
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
-#include "js/SourceText.h"      
+#include "js/experimental/JSStencil.h"  
+#include "js/SourceText.h"  
 #include "vm/HelperThreadState.h"  
 #include "vm/JSContext.h"  
 #include "vm/Runtime.h"    
@@ -92,6 +93,32 @@ JS_PUBLIC_API JSScript* JS::FinishOffThreadScript(JSContext* cx,
   MOZ_ASSERT(cx);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
   return HelperThreadState().finishScriptParseTask(cx, token);
+}
+
+JS_PUBLIC_API JS::OffThreadToken* JS::CompileToStencilOffThread(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    JS::SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData) {
+  MOZ_ASSERT(CanCompileOffThread(cx, options, srcBuf.length()));
+  return StartOffThreadCompileToStencil(cx, options, srcBuf, callback,
+                                        callbackData);
+}
+
+JS_PUBLIC_API JS::OffThreadToken* JS::CompileToStencilOffThread(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    JS::SourceText<Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
+    void* callbackData) {
+  MOZ_ASSERT(CanCompileOffThread(cx, options, srcBuf.length()));
+  return StartOffThreadCompileToStencil(cx, options, srcBuf, callback,
+                                        callbackData);
+}
+
+JS_PUBLIC_API RefPtr<JS::Stencil> JS::FinishOffThreadCompileToStencil(
+    JSContext* cx, JS::OffThreadToken* token) {
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+  auto stencil = HelperThreadState().finishCompileToStencilTask(cx, token);
+  return do_AddRef(stencil.release());
 }
 
 JS_PUBLIC_API JSScript* JS::FinishOffThreadScriptAndStartIncrementalEncoding(
