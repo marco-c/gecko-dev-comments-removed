@@ -23,7 +23,7 @@ def WebIDLTest(parser, harness):
         "no arguments",
         """
         interface I {
-          [LenientSetter=X] readonly attribute long A;
+          [LegacyLenientSetter=X] readonly attribute long A;
         };
     """,
     )
@@ -36,7 +36,7 @@ def WebIDLTest(parser, harness):
         "PutForwards",
         """
         interface I {
-          [PutForwards=B, LenientSetter] readonly attribute J A;
+          [PutForwards=B, LegacyLenientSetter] readonly attribute J A;
         };
         interface J {
           attribute long B;
@@ -52,7 +52,7 @@ def WebIDLTest(parser, harness):
         "Replaceable",
         """
         interface I {
-          [Replaceable, LenientSetter] readonly attribute J A;
+          [Replaceable, LegacyLenientSetter] readonly attribute J A;
         };
     """,
     )
@@ -65,7 +65,7 @@ def WebIDLTest(parser, harness):
         "writable attribute",
         """
         interface I {
-          [LenientSetter] attribute long A;
+          [LegacyLenientSetter] attribute long A;
         };
     """,
     )
@@ -78,7 +78,7 @@ def WebIDLTest(parser, harness):
         "static attribute",
         """
         interface I {
-          [LenientSetter] static readonly attribute long A;
+          [LegacyLenientSetter] static readonly attribute long A;
         };
     """,
     )
