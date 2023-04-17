@@ -218,6 +218,14 @@ LocalAccessible* OuterDocAccessible::RemoteChildDocAccessible() const {
 
 
 
+uint32_t OuterDocAccessible::ChildCount() const {
+  uint32_t result = mChildren.Length();
+  if (!result && RemoteChildDocAccessible()) {
+    result = 1;
+  }
+  return result;
+}
+
 LocalAccessible* OuterDocAccessible::LocalChildAt(uint32_t aIndex) const {
   LocalAccessible* result = AccessibleWrap::LocalChildAt(aIndex);
   if (result || aIndex) {
@@ -232,29 +240,19 @@ LocalAccessible* OuterDocAccessible::LocalChildAt(uint32_t aIndex) const {
 
 
 
-uint32_t OuterDocAccessible::ChildCount() const {
-  uint32_t result = mChildren.Length();
-  if (!result &&
-#if defined(XP_WIN)
-      
-      
-      
-      RemoteChildDocAccessible()
-#else
-      RemoteChildDoc()
-#endif
-  ) {
-    result = 1;
-  }
-  return result;
-}
-
 Accessible* OuterDocAccessible::ChildAt(uint32_t aIndex) const {
-  
-  
   LocalAccessible* result = AccessibleWrap::LocalChildAt(aIndex);
   if (result || aIndex) {
+#if defined(XP_WIN)
+    
+    
+    
+    if (!result || !result->IsProxy()) {
+      return result;
+    }
+#else
     return result;
+#endif  
   }
 
   return RemoteChildDoc();

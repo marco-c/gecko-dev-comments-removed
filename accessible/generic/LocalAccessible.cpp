@@ -590,11 +590,6 @@ LocalAccessible* LocalAccessible::LocalChildAtPoint(
   
   
   uint32_t childCount = accessible->ChildCount();
-  if (childCount == 1 && accessible->IsOuterDoc() &&
-      accessible->FirstChild()->IsRemote()) {
-    
-    return accessible;
-  }
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
     LocalAccessible* child = accessible->LocalChildAt(childIdx);
 
