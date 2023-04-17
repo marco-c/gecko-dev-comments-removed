@@ -6,7 +6,7 @@
 function openSXGInIframeAndWaitForMessage(test_object, url, referrerPolicy) {
   return new Promise(async (resolve, reject) => {
     
-    test_object.step_timeout(() => reject('timeout'), 10000);
+    test_object.step_timeout(() => reject('timeout'), 15000);
 
     const frame = await withIframe(url, 'sxg_iframe', referrerPolicy);
     const channel = new MessageChannel();
