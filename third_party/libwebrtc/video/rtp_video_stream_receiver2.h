@@ -185,7 +185,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   
   
   void RemoteRTCPSenderInfo(uint32_t* packet_count, uint32_t* octet_count,
-                            int64_t* ntp_timestamp_ms) const;
+                            int64_t* ntp_timestamp_ms,
+                            int64_t* remote_ntp_timestamp_ms) const;
 
  private:
   
