@@ -127,6 +127,9 @@ public:
         return append(s.data(), s.length(), errorCode);
     }
     CharString &append(const char *s, int32_t sLength, UErrorCode &status);
+
+    CharString &appendNumber(int32_t number, UErrorCode &status);
+
     
 
 

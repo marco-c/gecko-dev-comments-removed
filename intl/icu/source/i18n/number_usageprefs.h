@@ -103,8 +103,9 @@ class U_I18N_API UnitConversionHandler : public MicroPropsGenerator, public UMem
 
 
 
-    UnitConversionHandler(const MeasureUnit &inputUnit, const MeasureUnit &outputUnit,
-                          const MicroPropsGenerator *parent, UErrorCode &status);
+
+    UnitConversionHandler(const MeasureUnit &targetUnit, const MicroPropsGenerator *parent,
+                          UErrorCode &status);
 
     
 

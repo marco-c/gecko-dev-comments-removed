@@ -197,22 +197,6 @@ class U_I18N_API ListFormatter : public UObject{
 
     static ListFormatter* createInstance(
       const Locale& locale, UListFormatterType type, UListFormatterWidth width, UErrorCode& errorCode);
-  
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-
-
-
-
-
-
-
-
-    static ListFormatter* createInstance(const Locale& locale, const char* style, UErrorCode& errorCode);
-#endif  
 
     
 
@@ -273,6 +257,15 @@ class U_I18N_API ListFormatter : public UObject{
 #endif  
 
   private:
+  
+    
+
+
+
+
+
+    static ListFormatter* createInstance(const Locale& locale, const char* style, UErrorCode& errorCode);
+
     static void initializeHash(UErrorCode& errorCode);
     static const ListFormatInternal* getListFormatInternal(const Locale& locale, const char *style, UErrorCode& errorCode);
     struct ListPatternsSink;

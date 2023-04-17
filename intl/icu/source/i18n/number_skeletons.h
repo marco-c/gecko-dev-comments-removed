@@ -42,6 +42,7 @@ enum ParseState {
 
     STATE_SCIENTIFIC,
     STATE_FRACTION_PRECISION,
+    STATE_PRECISION,
 
     
 
@@ -85,6 +86,9 @@ enum StemEnum {
     STEM_ROUNDING_MODE_DOWN,
     STEM_ROUNDING_MODE_UP,
     STEM_ROUNDING_MODE_HALF_EVEN,
+    STEM_ROUNDING_MODE_HALF_ODD,
+    STEM_ROUNDING_MODE_HALF_CEILING,
+    STEM_ROUNDING_MODE_HALF_FLOOR,
     STEM_ROUNDING_MODE_HALF_DOWN,
     STEM_ROUNDING_MODE_HALF_UP,
     STEM_ROUNDING_MODE_UNNECESSARY,
@@ -108,6 +112,8 @@ enum StemEnum {
     STEM_SIGN_ACCOUNTING_ALWAYS,
     STEM_SIGN_EXCEPT_ZERO,
     STEM_SIGN_ACCOUNTING_EXCEPT_ZERO,
+    STEM_SIGN_NEGATIVE,
+    STEM_SIGN_ACCOUNTING_NEGATIVE,
     STEM_DECIMAL_AUTO,
     STEM_DECIMAL_ALWAYS,
 
@@ -272,6 +278,9 @@ void parseIntegerStem(const StringSegment& segment, MacroProps& macros, UErrorCo
 
 
 bool parseFracSigOption(const StringSegment& segment, MacroProps& macros, UErrorCode& status);
+
+
+bool parseTrailingZeroOption(const StringSegment& segment, MacroProps& macros, UErrorCode& status);
 
 void parseIncrementOption(const StringSegment& segment, MacroProps& macros, UErrorCode& status);
 

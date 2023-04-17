@@ -354,7 +354,6 @@ unumrf_resultGetIdentityResult(
     UErrorCode* ec);
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -407,7 +406,6 @@ unumrf_resultGetSecondDecimalNumber(
     char* dest,
     int32_t destCapacity,
     UErrorCode* ec);
-#endif 
 
 
 

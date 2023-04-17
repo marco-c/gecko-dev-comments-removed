@@ -657,7 +657,6 @@ udatpg_getPatternForSkeleton(const UDateTimePatternGenerator *dtpg,
 
 #if !UCONFIG_NO_FORMATTING
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -673,7 +672,6 @@ udatpg_getPatternForSkeleton(const UDateTimePatternGenerator *dtpg,
 
 U_CAPI UDateFormatHourCycle U_EXPORT2
 udatpg_getDefaultHourCycle(const UDateTimePatternGenerator *dtpg, UErrorCode* pErrorCode);
-#endif  
 
 #endif 
 

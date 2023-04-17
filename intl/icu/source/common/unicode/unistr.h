@@ -45,8 +45,9 @@ struct UConverter;
 
 
 
-U_CAPI int32_t U_EXPORT2
-u_strlen(const UChar *s);
+
+
+U_CAPI int32_t U_EXPORT2 u_strlen(const UChar *s);
 #endif
 
 U_NAMESPACE_BEGIN
@@ -2740,7 +2741,6 @@ public:
   UnicodeString &toTitle(BreakIterator *titleIter, const Locale &locale);
 
   
-
 
 
 

@@ -14,10 +14,28 @@
 
 U_NAMESPACE_BEGIN
 
+namespace number {
+namespace impl {
+class LongNameHandler;
+}
+} 
 
 static const char16_t kDefaultCurrency[] = u"XXX";
 static const char kDefaultCurrency8[] = "XXX";
 
+
+
+
+
+
+
+
+
+
+
+
+
+CharString U_I18N_API getUnitQuantity(StringPiece baseUnitIdentifier, UErrorCode &status);
 
 
 
@@ -46,6 +64,22 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
 
 
 
+    void appendNeutralIdentifier(CharString &result, UErrorCode &status) const;
+
+    
+
+
+
+
+    int32_t getUnitCategoryIndex() const;
+
+    
+
+
+
+
+
+
 
 
 
@@ -62,16 +96,29 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
         if (dimensionality > 0 && other.dimensionality < 0) {
             return -1;
         }
+        
+        int32_t thisQuantity = this->getUnitCategoryIndex();
+        int32_t otherQuantity = other.getUnitCategoryIndex();
+        if (thisQuantity < otherQuantity) {
+            return -1;
+        }
+        if (thisQuantity > otherQuantity) {
+            return 1;
+        }
+        
         if (index < other.index) {
             return -1;
         }
         if (index > other.index) {
             return 1;
         }
-        if (siPrefix < other.siPrefix) {
+        
+        
+        
+        if (unitPrefix < other.unitPrefix) {
             return -1;
         }
-        if (siPrefix > other.siPrefix) {
+        if (unitPrefix > other.unitPrefix) {
             return 1;
         }
         return 0;
@@ -103,6 +150,7 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
 
 
 
+
     int32_t index = -1;
 
     
@@ -110,7 +158,7 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
 
 
 
-    UMeasureSIPrefix siPrefix = UMEASURE_SI_PREFIX_ONE;
+    UMeasurePrefix unitPrefix = UMEASURE_PREFIX_ONE;
 
     
 
@@ -121,10 +169,13 @@ struct U_I18N_API SingleUnitImpl : public UMemory {
 };
 
 
+struct MeasureUnitImplWithIndex;
+
+
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
-template class U_I18N_API MaybeStackArray<SingleUnitImpl*, 8>;
+template class U_I18N_API MaybeStackArray<SingleUnitImpl *, 8>;
 template class U_I18N_API MemoryPool<SingleUnitImpl, 8>;
 template class U_I18N_API MaybeStackVector<SingleUnitImpl, 8>;
 #endif
@@ -133,16 +184,18 @@ template class U_I18N_API MaybeStackVector<SingleUnitImpl, 8>;
 
 
 
-struct U_I18N_API MeasureUnitImpl : public UMemory {
+class U_I18N_API MeasureUnitImpl : public UMemory {
+  public:
     MeasureUnitImpl() = default;
     MeasureUnitImpl(MeasureUnitImpl &&other) = default;
-    MeasureUnitImpl(const MeasureUnitImpl &other, UErrorCode &status);
+    
+    MeasureUnitImpl(const MeasureUnitImpl &other, UErrorCode &status) = delete;
     MeasureUnitImpl(const SingleUnitImpl &singleUnit, UErrorCode &status);
 
     MeasureUnitImpl &operator=(MeasureUnitImpl &&other) noexcept = default;
 
     
-    static inline const MeasureUnitImpl* get(const MeasureUnit& measureUnit) {
+    static inline const MeasureUnitImpl *get(const MeasureUnit &measureUnit) {
         return measureUnit.fImpl;
     }
 
@@ -204,7 +257,8 @@ struct U_I18N_API MeasureUnitImpl : public UMemory {
 
 
 
-    MaybeStackVector<MeasureUnitImpl> extractIndividualUnits(UErrorCode &status) const;
+    MaybeStackVector<MeasureUnitImplWithIndex>
+    extractIndividualUnitsWithIndices(UErrorCode &status) const;
 
     
     void takeReciprocal(UErrorCode& status);
@@ -215,7 +269,7 @@ struct U_I18N_API MeasureUnitImpl : public UMemory {
 
 
 
-    bool append(const SingleUnitImpl& singleUnit, UErrorCode& status);
+    bool appendSingleUnit(const SingleUnitImpl& singleUnit, UErrorCode& status);
 
     
     UMeasureUnitComplexity complexity = UMEASURE_UNIT_SINGLE;
@@ -227,13 +281,58 @@ struct U_I18N_API MeasureUnitImpl : public UMemory {
 
 
 
-    MaybeStackVector<SingleUnitImpl> units;
+    MaybeStackVector<SingleUnitImpl> singleUnits;
 
     
 
 
     CharString identifier;
+
+  private:
+    
+
+
+    void serialize(UErrorCode &status);
+
+    
+    
+    friend class number::impl::LongNameHandler;
 };
+
+struct U_I18N_API MeasureUnitImplWithIndex : public UMemory {
+    const int32_t index;
+    MeasureUnitImpl unitImpl;
+    
+    MeasureUnitImplWithIndex(int32_t index, const MeasureUnitImpl &unitImpl, UErrorCode &status)
+        : index(index), unitImpl(unitImpl.copy(status)) {
+    }
+    MeasureUnitImplWithIndex(int32_t index, const SingleUnitImpl &singleUnitImpl, UErrorCode &status)
+        : index(index), unitImpl(MeasureUnitImpl(singleUnitImpl, status)) {
+    }
+};
+
+
+
+
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+template class U_I18N_API MaybeStackArray<MeasureUnitImplWithIndex *, 8>;
+template class U_I18N_API MemoryPool<MeasureUnitImplWithIndex, 8>;
+template class U_I18N_API MaybeStackVector<MeasureUnitImplWithIndex, 8>;
+
+
+
+
+#if defined(_MSC_VER)
+
+#pragma warning(push)
+#pragma warning(disable : 4661)
+#endif
+template class U_I18N_API LocalPointerBase<MeasureUnitImpl>;
+template class U_I18N_API LocalPointer<MeasureUnitImpl>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+#endif
 
 U_NAMESPACE_END
 

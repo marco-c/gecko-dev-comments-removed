@@ -268,6 +268,7 @@ Win32NumberFormat::~Win32NumberFormat()
 
 Win32NumberFormat &Win32NumberFormat::operator=(const Win32NumberFormat &other)
 {
+    if (this == &other) { return *this; }  
     NumberFormat::operator=(other);
 
     this->fCurrency          = other.fCurrency;

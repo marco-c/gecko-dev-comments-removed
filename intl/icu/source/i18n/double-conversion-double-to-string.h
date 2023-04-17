@@ -48,12 +48,11 @@ namespace double_conversion {
 
 class DoubleToStringConverter {
  public:
-#if 0 
   
   
   
   static const int kMaxFixedDigitsBeforePoint = 60;
-  static const int kMaxFixedDigitsAfterPoint = 60;
+  static const int kMaxFixedDigitsAfterPoint = 100;
 
   
   
@@ -65,14 +64,42 @@ class DoubleToStringConverter {
   static const int kMinPrecisionDigits = 1;
   static const int kMaxPrecisionDigits = 120;
 
+  
+  
+  
+  
+  
+  
+  static const int kBase10MaximalLength = 17;
+
+  
+  
+  
+  
+  static const int kBase10MaximalLengthSingle = 9;
+
+  
+  
+  
+  
+  
+  
+  static const int kMaxCharsEcmaScriptShortest = 25;
+
+#if 0 
   enum Flags {
     NO_FLAGS = 0,
     EMIT_POSITIVE_EXPONENT_SIGN = 1,
     EMIT_TRAILING_DECIMAL_POINT = 2,
     EMIT_TRAILING_ZERO_AFTER_POINT = 4,
-    UNIQUE_ZERO = 8
+    UNIQUE_ZERO = 8,
+    NO_TRAILING_ZERO = 16
   };
 
+  
+  
+  
+  
   
   
   
@@ -152,8 +179,31 @@ class DoubleToStringConverter {
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
   static const DoubleToStringConverter& EcmaScriptConverter();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -220,6 +270,8 @@ class DoubleToStringConverter {
   
   
   
+  
+  
   bool ToFixed(double value,
                int requested_digits,
                StringBuilder* result_builder) const;
@@ -252,10 +304,15 @@ class DoubleToStringConverter {
   
   
   
+  
+  
   bool ToExponential(double value,
                      int requested_digits,
                      StringBuilder* result_builder) const;
 
+
+  
+  
   
   
   
@@ -309,14 +366,6 @@ class DoubleToStringConverter {
     
     PRECISION
   };
-
-  
-  
-  
-  
-  
-  
-  static const int kBase10MaximalLength = 17;
 
   
   

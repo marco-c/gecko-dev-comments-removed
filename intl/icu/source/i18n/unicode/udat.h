@@ -976,7 +976,6 @@ udat_getBooleanAttribute(const UDateFormat* fmt, UDateFormatBooleanAttribute att
 U_CAPI void U_EXPORT2
 udat_setBooleanAttribute(UDateFormat *fmt, UDateFormatBooleanAttribute attr, UBool newValue, UErrorCode* status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1006,7 +1005,6 @@ typedef enum UDateFormatHourCycle {
 
     UDAT_HOUR_CYCLE_24
 } UDateFormatHourCycle;
-#endif  
 
 #if U_SHOW_CPLUSPLUS_API
 

@@ -20,6 +20,7 @@
 #include "ubrkimpl.h" 
 #include "uvector.h"
 #include "cmemory.h"
+#include "umutex.h"
 
 U_NAMESPACE_BEGIN
 
@@ -139,13 +140,30 @@ class SimpleFilteredSentenceBreakData : public UMemory {
 public:
   SimpleFilteredSentenceBreakData(UCharsTrie *forwards, UCharsTrie *backwards ) 
       : fForwardsPartialTrie(forwards), fBackwardsTrie(backwards), refcount(1) { }
-  SimpleFilteredSentenceBreakData *incr() { refcount++;  return this; }
-  SimpleFilteredSentenceBreakData *decr() { if((--refcount) <= 0) delete this; return 0; }
-  virtual ~SimpleFilteredSentenceBreakData();
+    SimpleFilteredSentenceBreakData *incr() {
+        umtx_atomic_inc(&refcount);
+        return this;
+    }
+    SimpleFilteredSentenceBreakData *decr() {
+        if(umtx_atomic_dec(&refcount) <= 0) {
+            delete this;
+        }
+        return 0;
+    }
+    virtual ~SimpleFilteredSentenceBreakData();
 
-  LocalPointer<UCharsTrie>    fForwardsPartialTrie; 
-  LocalPointer<UCharsTrie>    fBackwardsTrie; 
-  int32_t                     refcount;
+    bool hasForwardsPartialTrie() const { return fForwardsPartialTrie.isValid(); }
+    bool hasBackwardsTrie() const { return fBackwardsTrie.isValid(); }
+
+    const UCharsTrie &getForwardsPartialTrie() const { return *fForwardsPartialTrie; }
+    const UCharsTrie &getBackwardsTrie() const { return *fBackwardsTrie; }
+
+private:
+    
+    
+    LocalPointer<UCharsTrie>    fForwardsPartialTrie; 
+    LocalPointer<UCharsTrie>    fBackwardsTrie; 
+    u_atomic_int32_t            refcount;
 };
 
 SimpleFilteredSentenceBreakData::~SimpleFilteredSentenceBreakData() {}
@@ -244,7 +262,13 @@ SimpleFilteredSentenceBreakIterator::SimpleFilteredSentenceBreakIterator(BreakIt
   fData(new SimpleFilteredSentenceBreakData(forwards, backwards)),
   fDelegate(adopt)
 {
-  
+    if (fData == nullptr) {
+        delete forwards;
+        delete backwards;
+        if (U_SUCCESS(status)) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+        }
+    }
 }
 
 SimpleFilteredSentenceBreakIterator::~SimpleFilteredSentenceBreakIterator() {
@@ -261,37 +285,38 @@ SimpleFilteredSentenceBreakIterator::breakExceptionAt(int32_t n) {
     int32_t bestValue = -1;
     
     utext_setNativeIndex(fText.getAlias(), n); 
-    fData->fBackwardsTrie->reset();
-    UChar32 uch;
 
     
     
-    if((uch=utext_previous32(fText.getAlias()))==(UChar32)0x0020) {  
+    if(utext_previous32(fText.getAlias())==u' ') {  
       
       
     } else {
       
-      uch = utext_next32(fText.getAlias());
+      utext_next32(fText.getAlias());
       
     }
 
-    UStringTrieResult r = USTRINGTRIE_INTERMEDIATE_VALUE;
-
-    while((uch=utext_previous32(fText.getAlias()))!=U_SENTINEL  &&   
-          USTRINGTRIE_HAS_NEXT(r=fData->fBackwardsTrie->nextForCodePoint(uch))) {
-      if(USTRINGTRIE_HAS_VALUE(r)) { 
-        bestPosn = utext_getNativeIndex(fText.getAlias());
-        bestValue = fData->fBackwardsTrie->getValue();
-      }
-      
+    {
+        
+        UCharsTrie iter(fData->getBackwardsTrie());
+        UChar32 uch;
+        while((uch=utext_previous32(fText.getAlias()))!=U_SENTINEL) {  
+            UStringTrieResult r = iter.nextForCodePoint(uch);
+            if(USTRINGTRIE_HAS_VALUE(r)) { 
+                bestPosn = utext_getNativeIndex(fText.getAlias());
+                bestValue = iter.getValue();
+            }
+            if(!USTRINGTRIE_HAS_NEXT(r)) {
+                break;
+            }
+            
+        }
     }
 
-    if(USTRINGTRIE_MATCHES(r)) { 
-      
-      bestValue = fData->fBackwardsTrie->getValue();
-      bestPosn = utext_getNativeIndex(fText.getAlias());
-      
-    }
+    
+        
+    
 
     if(bestPosn>=0) {
       
@@ -304,16 +329,18 @@ SimpleFilteredSentenceBreakIterator::breakExceptionAt(int32_t n) {
         
         return kExceptionHere; 
       } else if(bestValue == kPARTIAL
-                && fData->fForwardsPartialTrie.isValid()) { 
+                && fData->hasForwardsPartialTrie()) { 
         
         
         
-        fData->fForwardsPartialTrie->reset();
         UStringTrieResult rfwd = USTRINGTRIE_INTERMEDIATE_VALUE;
         utext_setNativeIndex(fText.getAlias(), bestPosn); 
         
+        
+        UCharsTrie iter(fData->getForwardsPartialTrie());
+        UChar32 uch;
         while((uch=utext_next32(fText.getAlias()))!=U_SENTINEL &&
-              USTRINGTRIE_HAS_NEXT(rfwd=fData->fForwardsPartialTrie->nextForCodePoint(uch))) {
+              USTRINGTRIE_HAS_NEXT(rfwd=iter.nextForCodePoint(uch))) {
           
         }
         if(USTRINGTRIE_MATCHES(rfwd)) {
@@ -339,7 +366,7 @@ SimpleFilteredSentenceBreakIterator::breakExceptionAt(int32_t n) {
 int32_t
 SimpleFilteredSentenceBreakIterator::internalNext(int32_t n) {
   if(n == UBRK_DONE || 
-    fData->fBackwardsTrie.isNull()) { 
+    !fData->hasBackwardsTrie()) { 
       return n;
   }
   
@@ -369,7 +396,7 @@ SimpleFilteredSentenceBreakIterator::internalNext(int32_t n) {
 int32_t
 SimpleFilteredSentenceBreakIterator::internalPrev(int32_t n) {
   if(n == 0 || n == UBRK_DONE || 
-    fData->fBackwardsTrie.isNull()) { 
+    !fData->hasBackwardsTrie()) { 
       return n;
   }
   
@@ -420,7 +447,7 @@ SimpleFilteredSentenceBreakIterator::previous(void) {
 UBool SimpleFilteredSentenceBreakIterator::isBoundary(int32_t offset) {
   if (!fDelegate->isBoundary(offset)) return false; 
 
-  if (fData->fBackwardsTrie.isNull()) return true; 
+  if (!fData->hasBackwardsTrie()) return true; 
 
   UErrorCode status = U_ZERO_ERROR;
   resetState(status);
@@ -707,4 +734,4 @@ FilteredBreakIteratorBuilder::createEmptyInstance(UErrorCode& status) {
 
 U_NAMESPACE_END
 
-#endif 
+#endif

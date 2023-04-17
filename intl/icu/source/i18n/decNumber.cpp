@@ -4889,13 +4889,13 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
     
     
     #if DECDPUN & 1                
-      #define FASTBASE 1000000000  
-      #define FASTDIGS          9  
-      #define FASTLAZY         18  
+      #define FASTBASE 1000000000  /* base  */
+      #define FASTDIGS          9  /* digits in base  */
+      #define FASTLAZY         18  /* carry resolution point [1->18]  */
     #else
       #define FASTBASE  100000000
       #define FASTDIGS          8
-      #define FASTLAZY       1844  
+      #define FASTLAZY       1844  /* carry resolution point [1->1844]  */
     #endif
     
     
@@ -4982,7 +4982,7 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
     #if FASTMUL                    
     
     
-    #define NEEDTWO (DECDPUN*2)    
+    #define NEEDTWO (DECDPUN*2)    /* within two decUnitAddSub calls  */
     if (rhs->digits>NEEDTWO) {     
       
       ilhs=(lhs->digits+FASTDIGS-1)/FASTDIGS; 
@@ -5108,8 +5108,8 @@ static decNumber * decMultiplyOp(decNumber *res, const decNumber *lhs,
      else { 
     #endif
 
-      
-      acc=accbuff;                 
+
+      acc=accbuff;                 /* -> assume buffer for accumulator  */
       needbytes=(D2U(lhs->digits)+D2U(rhs->digits))*sizeof(Unit);
       if (needbytes>(Int)sizeof(accbuff)) {
         allocacc=(Unit *)malloc(needbytes);

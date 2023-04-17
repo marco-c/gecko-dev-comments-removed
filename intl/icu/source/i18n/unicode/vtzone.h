@@ -264,6 +264,17 @@ public:
     virtual void getOffset(UDate date, UBool local, int32_t& rawOffset,
                            int32_t& dstOffset, UErrorCode& ec) const;
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+    
+
+
+
+    virtual void getOffsetFromLocal(
+        UDate date, UTimeZoneLocalOption nonExistingTimeOpt,
+        UTimeZoneLocalOption duplicatedTimeOpt,
+        int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const;
+#endif 
+
     
 
 

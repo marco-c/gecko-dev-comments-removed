@@ -194,7 +194,7 @@ u_isISOControl(UChar32 c) {
 
 
 #define IS_THAT_CONTROL_SPACE(c) \
-    (c<=0x9f && ((c>=TAB && c<=CR) || (c>=0x1c && c <=0x1f) || c==NL))
+    (c<=0x9f && ((c>=TAB && c<=CR) || (c>=0x1c && c <=0x1f) || c==0x85))
 
 
 #define IS_THAT_ASCII_CONTROL_SPACE(c) \
@@ -677,14 +677,14 @@ uchar_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode) {
     sa->add(sa->set, CR+1); 
     sa->add(sa->set, 0x1c);
     sa->add(sa->set, 0x1f+1);
-    USET_ADD_CP_AND_NEXT(sa, NL);
+    USET_ADD_CP_AND_NEXT(sa, 0x85);  
 
     
-    sa->add(sa->set, DEL); 
+    sa->add(sa->set, 0x7f); 
     sa->add(sa->set, HAIRSP);
     sa->add(sa->set, RLM+1);
-    sa->add(sa->set, INHSWAP);
-    sa->add(sa->set, NOMDIG+1);
+    sa->add(sa->set, 0x206a);  
+    sa->add(sa->set, 0x206f+1);  
     USET_ADD_CP_AND_NEXT(sa, ZWNBSP);
 
     
@@ -693,23 +693,25 @@ uchar_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode) {
     USET_ADD_CP_AND_NEXT(sa, NNBSP);
 
     
-    sa->add(sa->set, U_a);
-    sa->add(sa->set, U_z+1);
-    sa->add(sa->set, U_A);
-    sa->add(sa->set, U_Z+1);
-    sa->add(sa->set, U_FW_a);
-    sa->add(sa->set, U_FW_z+1);
-    sa->add(sa->set, U_FW_A);
-    sa->add(sa->set, U_FW_Z+1);
+    sa->add(sa->set, u'a');
+    sa->add(sa->set, u'z'+1);
+    sa->add(sa->set, u'A');
+    sa->add(sa->set, u'Z'+1);
+    
+    sa->add(sa->set, u'ａ');
+    sa->add(sa->set, u'ｚ'+1);
+    sa->add(sa->set, u'Ａ');
+    sa->add(sa->set, u'Ｚ'+1);
 
     
-    sa->add(sa->set, U_f+1);
-    sa->add(sa->set, U_F+1);
-    sa->add(sa->set, U_FW_f+1);
-    sa->add(sa->set, U_FW_F+1);
+    sa->add(sa->set, u'f'+1);
+    sa->add(sa->set, u'F'+1);
+    
+    sa->add(sa->set, u'ｆ'+1);
+    sa->add(sa->set, u'Ｆ'+1);
 
     
-    sa->add(sa->set, WJ); 
+    sa->add(sa->set, 0x2060); 
     sa->add(sa->set, 0xfff0);
     sa->add(sa->set, 0xfffb+1);
     sa->add(sa->set, 0xe0000);

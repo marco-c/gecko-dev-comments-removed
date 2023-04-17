@@ -265,13 +265,9 @@ ThaiBreakEngine::divideUpDictionaryRange( UText *text,
                 goto foundBest;
             }
             do {
-                int32_t wordsMatched = 1;
                 if (words[(wordsFound + 1) % THAI_LOOKAHEAD].candidates(text, fDictionary, rangeEnd) > 0) {
-                    if (wordsMatched < 2) {
-                        
-                        words[wordsFound%THAI_LOOKAHEAD].markCurrent();
-                        wordsMatched = 2;
-                    }
+                    
+                    words[wordsFound%THAI_LOOKAHEAD].markCurrent();
                     
                     
                     if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
@@ -503,13 +499,9 @@ LaoBreakEngine::divideUpDictionaryRange( UText *text,
                 goto foundBest;
             }
             do {
-                int32_t wordsMatched = 1;
                 if (words[(wordsFound + 1) % LAO_LOOKAHEAD].candidates(text, fDictionary, rangeEnd) > 0) {
-                    if (wordsMatched < 2) {
-                        
-                        words[wordsFound%LAO_LOOKAHEAD].markCurrent();
-                        wordsMatched = 2;
-                    }
+                    
+                    words[wordsFound%LAO_LOOKAHEAD].markCurrent();
                     
                     
                     if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
@@ -699,13 +691,9 @@ BurmeseBreakEngine::divideUpDictionaryRange( UText *text,
                 goto foundBest;
             }
             do {
-                int32_t wordsMatched = 1;
                 if (words[(wordsFound + 1) % BURMESE_LOOKAHEAD].candidates(text, fDictionary, rangeEnd) > 0) {
-                    if (wordsMatched < 2) {
-                        
-                        words[wordsFound%BURMESE_LOOKAHEAD].markCurrent();
-                        wordsMatched = 2;
-                    }
+                    
+                    words[wordsFound%BURMESE_LOOKAHEAD].markCurrent();
                     
                     
                     if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
@@ -908,13 +896,9 @@ KhmerBreakEngine::divideUpDictionaryRange( UText *text,
                 goto foundBest;
             }
             do {
-                int32_t wordsMatched = 1;
                 if (words[(wordsFound + 1) % KHMER_LOOKAHEAD].candidates(text, fDictionary, rangeEnd) > 0) {
-                    if (wordsMatched < 2) {
-                        
-                        words[wordsFound % KHMER_LOOKAHEAD].markCurrent();
-                        wordsMatched = 2;
-                    }
+                    
+                    words[wordsFound % KHMER_LOOKAHEAD].markCurrent();
 
                     
                     if ((int32_t)utext_getNativeIndex(text) >= rangeEnd) {
