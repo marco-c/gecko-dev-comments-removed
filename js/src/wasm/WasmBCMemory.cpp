@@ -87,15 +87,6 @@ namespace wasm {
 
 
 
-
-
-
-
-
-
-
-
-
 void BaseCompiler::bceCheckLocal(MemoryAccessDesc* access, AccessCheck* check,
                                  uint32_t local) {
   if (local >= sizeof(BCESet) * 8) {
@@ -121,6 +112,13 @@ void BaseCompiler::bceLocalIsUpdated(uint32_t local) {
 
   bceSafe_ &= ~(BCESet(1) << local);
 }
+
+
+
+
+
+
+
 
 
 
@@ -163,10 +161,6 @@ RegI32 BaseCompiler::popMemory32Access(MemoryAccessDesc* access,
 
   return popI32();
 }
-
-
-
-
 
 #ifdef RABALDR_HAS_HEAPREG
 void BaseCompiler::pushHeapBase() {
@@ -219,7 +213,7 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
     
     MOZ_ASSERT_IF(check->omitBoundsCheck, tls.isInvalid());
   }
-#ifdef JS_CODEGEN_ARM
+#ifdef RABALDR_HAS_HEAPREG
   
   MOZ_ASSERT_IF(check->omitBoundsCheck, tls.isInvalid());
 #endif
@@ -243,9 +237,7 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
 
       
       
-#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
-      
-      
+#  ifdef RABALDR_ZERO_EXTENDS
       masm.assertCanonicalInt32(ptr);
 #  else
       MOZ_CRASH("Platform code needed here");
@@ -259,7 +251,7 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
       
       
       
-#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+#  ifdef RABALDR_ZERO_EXTENDS
       
 #  else
       MOZ_CRASH("Platform code needed here");
@@ -292,13 +284,35 @@ void BaseCompiler::computeEffectiveAddress(MemoryAccessDesc* access) {
 }
 
 [[nodiscard]] bool BaseCompiler::needTlsForAccess(const AccessCheck& check) {
-#if defined(JS_CODEGEN_X86)
+#ifndef RABALDR_HAS_HEAPREG
   
   return true;
 #else
   return !moduleEnv_.hugeMemoryEnabled() && !check.omitBoundsCheck;
 #endif
 }
+
+RegI32 BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check) {
+  if (needTlsForAccess(check)) {
+    RegI32 tls = needI32();
+    fr.loadTlsPtr(tls);
+    return tls;
+  }
+  return RegI32::Invalid();
+}
+
+RegI32 BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check,
+                                           RegI32 specific) {
+  if (needTlsForAccess(check)) {
+    fr.loadTlsPtr(specific);
+    return specific;
+  }
+  return RegI32::Invalid();
+}
+
+
+
+
 
 
 
@@ -460,24 +474,6 @@ void BaseCompiler::computeEffectiveAddress(MemoryAccessDesc* access) {
 #endif
 
   return true;
-}
-
-RegI32 BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check) {
-  RegI32 tls;
-  if (needTlsForAccess(check)) {
-    tls = needI32();
-    fr.loadTlsPtr(tls);
-  }
-  return tls;
-}
-
-RegI32 BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check,
-                                           RegI32 specific) {
-  if (needTlsForAccess(check)) {
-    fr.loadTlsPtr(specific);
-    return specific;
-  }
-  return RegI32::Invalid();
 }
 
 bool BaseCompiler::loadCommon(MemoryAccessDesc* access, AccessCheck check,
