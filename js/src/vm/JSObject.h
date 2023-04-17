@@ -764,8 +764,7 @@ namespace js {
 
 bool NewObjectWithTaggedProtoIsCachable(JSContext* cx,
                                         Handle<TaggedProto> proto,
-                                        NewObjectKind newKind,
-                                        const JSClass* clasp);
+                                        NewObjectKind newKind);
 
 
 extern bool GetPrototypeFromConstructor(JSContext* cx,
