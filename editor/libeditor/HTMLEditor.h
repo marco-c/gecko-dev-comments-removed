@@ -1651,13 +1651,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-  Element* GetNearestAncestorListItemElement(nsIContent& aContent) const;
-
-  
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   InsertParagraphSeparatorAsSubAction();
 

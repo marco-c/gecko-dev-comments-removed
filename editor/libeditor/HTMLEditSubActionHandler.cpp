@@ -1402,7 +1402,8 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     MOZ_ASSERT(resultOfInsertingBRElement.inspect());
   }
 
-  RefPtr<Element> listItem = GetNearestAncestorListItemElement(*blockElement);
+  RefPtr<Element> listItem = HTMLEditUtils::GetClosestAncestorListItemElement(
+      *blockElement, editingHost);
   if (listItem && listItem != editingHost) {
     nsresult rv = HandleInsertParagraphInListItemElement(
         *listItem, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
@@ -3794,6 +3795,11 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
     return rv;
   }
 
+  RefPtr<Element> editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   RefPtr<Element> curList, curQuote, indentedLI;
@@ -3832,7 +3838,9 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
     
     
     
-    if (RefPtr<Element> listItem = GetNearestAncestorListItemElement(content)) {
+    if (RefPtr<Element> listItem =
+            HTMLEditUtils::GetClosestAncestorListItemElement(content,
+                                                             editingHost)) {
       if (indentedLI == listItem) {
         
         continue;
@@ -6378,27 +6386,6 @@ void HTMLEditor::MakeTransitionList(
     aTransitionArray[i] = aArrayOfContents[i]->GetParentNode() != prevParent;
     prevParent = aArrayOfContents[i]->GetParentNode();
   }
-}
-
-Element* HTMLEditor::GetNearestAncestorListItemElement(
-    nsIContent& aContent) const {
-  
-  if (HTMLEditUtils::IsListItem(&aContent)) {
-    return aContent.AsElement();
-  }
-
-  
-  
-  
-  for (Element* parentElement = aContent.GetParentElement();
-       parentElement && IsDescendantOfEditorRoot(parentElement) &&
-       !HTMLEditUtils::IsAnyTableElement(parentElement);
-       parentElement = parentElement->GetParentElement()) {
-    if (HTMLEditUtils::IsListItem(parentElement)) {
-      return parentElement;
-    }
-  }
-  return nullptr;
 }
 
 nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(Element& aHeader,
@@ -9346,6 +9333,11 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     return rv;
   }
 
+  RefPtr<Element> editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   RefPtr<Element> targetDivElement;
@@ -9433,7 +9425,8 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     
     
     if (RefPtr<Element> listItemElement =
-            GetNearestAncestorListItemElement(content)) {
+            HTMLEditUtils::GetClosestAncestorListItemElement(content,
+                                                             editingHost)) {
       if (handledListItemElement == listItemElement) {
         
         continue;
