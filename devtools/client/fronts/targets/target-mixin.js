@@ -270,7 +270,14 @@ function TargetMixin(parentClass) {
 
 
 
+
     getTrait(traitName) {
+      
+      
+      if (this.traits && this.traits[traitName]) {
+        return this.traits[traitName];
+      }
+
       
       
       if (this.targetForm.traits && traitName in this.targetForm.traits) {
@@ -738,7 +745,7 @@ function TargetMixin(parentClass) {
 
 
     logErrorInPage(text, category) {
-      if (this.traits.logInPage) {
+      if (this.getTrait("logInPage")) {
         const errorFlag = 0;
         return this.logInPage({ text, category, flags: errorFlag });
       }
@@ -755,7 +762,7 @@ function TargetMixin(parentClass) {
 
 
     logWarningInPage(text, category) {
-      if (this.traits.logInPage) {
+      if (this.getTrait("logInPage")) {
         const warningFlag = 1;
         return this.logInPage({ text, category, flags: warningFlag });
       }

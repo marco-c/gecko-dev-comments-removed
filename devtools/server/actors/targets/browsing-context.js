@@ -302,20 +302,6 @@ const browsingContextTargetPrototype = {
     
     this.watchNewDocShells = false;
 
-    this.traits = {
-      
-      
-      frames: true,
-      
-      logInPage: true,
-      
-      
-      
-      watchpoints: true,
-      
-      navigation: true,
-    };
-
     this._workerDescriptorActorList = null;
     this._workerDescriptorActorPool = null;
     this._onWorkerDescriptorActorListChanged = this._onWorkerDescriptorActorListChanged.bind(
@@ -324,8 +310,6 @@ const browsingContextTargetPrototype = {
 
     TargetActorRegistry.registerTargetActor(this);
   },
-
-  traits: null,
 
   
   
@@ -560,6 +544,17 @@ const browsingContextTargetPrototype = {
         
         
         supportsTopLevelTargetFlag: true,
+        
+        
+        frames: true,
+        
+        logInPage: true,
+        
+        
+        
+        watchpoints: true,
+        
+        navigation: true,
       },
     };
 
@@ -1092,7 +1087,6 @@ const browsingContextTargetPrototype = {
 
     return {
       threadActor: this.threadActor.actorID,
-      traits: this.traits,
     };
   },
 
