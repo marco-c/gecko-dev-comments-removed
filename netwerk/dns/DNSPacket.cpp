@@ -12,8 +12,6 @@
 
 #include "DNSLogging.h"
 
-#include "nsIInputStream.h"
-
 namespace mozilla {
 namespace net {
 

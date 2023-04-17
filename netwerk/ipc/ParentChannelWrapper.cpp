@@ -6,13 +6,8 @@
 
 
 #include "ParentChannelWrapper.h"
-#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/net/RedirectChannelRegistrar.h"
-#include "nsIViewSourceChannel.h"
-#include "nsNetUtil.h"
-#include "nsQueryObject.h"
-#include "mozilla/dom/RemoteType.h"
+#include "nsIRedirectChannelRegistrar.h"
 
 namespace mozilla {
 namespace net {

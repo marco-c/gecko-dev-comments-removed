@@ -42,7 +42,6 @@
 #include "sslt.h"
 #include "NSSErrorsService.h"
 #include "TunnelUtils.h"
-#include "mozilla/StaticPrefs_network.h"
 
 namespace mozilla {
 namespace net {
@@ -1805,7 +1804,8 @@ nsresult nsHttpConnection::OnSocketWritable() {
     
     
     
-    if (mConnInfo->UsingHttpsProxy() && !EnsureNPNComplete()) {
+    if (mConnInfo->UsingHttpsProxy() &&
+        !EnsureNPNComplete()) {
       MOZ_DIAGNOSTIC_ASSERT(!EarlyDataAvailable());
       mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
     } else if (mProxyConnectStream) {
@@ -2549,7 +2549,8 @@ nsHttpConnection::HandshakeDone() {
   
   RefPtr<nsHttpConnection> self(this);
   NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-      "nsHttpConnection::HandshakeDoneInternal", [self{std::move(self)}]() {
+      "nsHttpConnection::HandshakeDoneInternal",
+      [self{std::move(self)}]() {
         if (self->mTlsHandshakeComplitionPending) {
           self->HandshakeDoneInternal();
           self->mTlsHandshakeComplitionPending = false;
@@ -2600,9 +2601,8 @@ void nsHttpConnection::HandshakeDoneInternal() {
          static_cast<uint32_t>(rv)));
 
     if (NS_FAILED(rvEarlyData) ||
-        (mTransaction &&
-         NS_FAILED(mTransaction->Finish0RTT(
-             !earlyDataAccepted, negotiatedNPN != mEarlyNegotiatedALPN)))) {
+        (mTransaction && NS_FAILED(mTransaction->Finish0RTT(
+            !earlyDataAccepted, negotiatedNPN != mEarlyNegotiatedALPN)))) {
       LOG(
           ("nsHttpConection::HandshakeDone [this=%p] closing transaction "
            "%p",
