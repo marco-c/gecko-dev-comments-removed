@@ -34,12 +34,6 @@ async function logAndAssertInitialMessages(hud) {
 }
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   info("Testing that messages disappear on a refresh if logs aren't persisted");
   const hud = await openNewTabAndConsole(TEST_COM_URI);
 
@@ -72,12 +66,83 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
+  info("Testing that messages disappear on bfcache navigations");
+  const firstLocation =
+    "data:text/html,<script>console.log('first document load');window.onpageshow=()=>console.log('first document show');</script>";
+  const secondLocation =
+    "data:text/html,<script>console.log('second document load');window.onpageshow=()=>console.log('second document show');</script>";
+  const hud = await openNewTabAndConsole(firstLocation);
 
+  info("Wait for first page messages");
+  
+  
+  await waitFor(
+    () =>
+      findMessages(hud, "first document load", ".message-body").length === 1 &&
+      findMessages(hud, "first document show", ".message-body").length === 1
+  );
+  const firstPageInnerWindowId =
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId;
+
+  await navigateTo(secondLocation);
+
+  const secondPageInnerWindowId =
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId;
+  isnot(
+    firstPageInnerWindowId,
+    secondPageInnerWindowId,
+    "The second page is having a distinct inner window id"
+  );
+  await waitFor(
+    () => findMessages(hud, "second", ".message-body").length === 2
+  );
+  ok("Second page message appeared");
+  is(
+    findMessages(hud, "first", ".message-body").length,
+    0,
+    "First page message disappeared"
+  );
+
+  info("Go back to the first page");
+  gBrowser.selectedBrowser.goBack();
+  
+  await waitFor(
+    () => findMessages(hud, "first document show", ".message-body").length === 1
+  );
+  ok("First page message re-appeared");
+  is(
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId,
+    firstPageInnerWindowId,
+    "The first page is really a bfcache navigation, keeping the same WindowGlobal"
+  );
+  is(
+    findMessages(hud, "second", ".message-body").length,
+    0,
+    "Second page message disappeared"
+  );
+
+  info("Go forward to the original second page");
+  gBrowser.selectedBrowser.goForward();
+  await waitFor(
+    () =>
+      findMessages(hud, "second document show", ".message-body").length === 1
+  );
+  ok("Second page message appeared");
+  is(
+    gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.innerWindowId,
+    secondPageInnerWindowId,
+    "The second page is really a bfcache navigation, keeping the same WindowGlobal"
+  );
+  is(
+    findMessages(hud, "first", ".message-body").length,
+    0,
+    "First page message disappeared"
+  );
+
+  await closeToolbox();
+});
+
+add_task(async function() {
   info("Testing that messages persist on a refresh if logs are persisted");
 
   const hud = await openNewTabAndConsole(TEST_COM_URI);
