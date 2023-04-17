@@ -13,6 +13,9 @@ const isCacheEnabled = Services.prefs.getBoolPref(
 );
 
 
+const isWinNoCache = !isCacheEnabled && AppConstants.platform == "win";
+
+
 
 
 
@@ -30,7 +33,7 @@ ef gh</pre>
   async function(browser, docAcc) {
     for (const id of ["br", "pre"]) {
       const acc = findAccessibleChildByID(docAcc, id);
-      if (!isCacheEnabled && AppConstants.platform == "win") {
+      if (isWinNoCache) {
         todo(
           false,
           "Cache disabled, so RemoteAccessible doesn't support CharacterCount on Windows"
@@ -76,4 +79,25 @@ ef gh</pre>
     }
   },
   { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
+);
+
+
+
+
+addAccessibleTask(
+  `<div id="container">a<a id="link" href="https://example.com/">b</a>c</div>`,
+  async function(browser, docAcc) {
+    const container = findAccessibleChildByID(docAcc, "container", [
+      nsIAccessibleHyperText,
+    ]);
+    let embeddedAcc = container.getLinkAt(0);
+    queryInterfaces(embeddedAcc, [nsIAccessible]);
+    is(getAccessibleDOMNodeID(embeddedAcc), "link", "LinkAt 0 is the link");
+  },
+  {
+    chrome: true,
+    topLevel: !isWinNoCache,
+    iframe: !isWinNoCache,
+    remoteIframe: !isWinNoCache,
+  }
 );
