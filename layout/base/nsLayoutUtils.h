@@ -2165,6 +2165,12 @@ class nsLayoutUtils {
     
 
     SFE_TO_SRGB_COLORSPACE = 1 << 5,
+    
+
+
+
+
+    SFE_EXACT_SIZE_SURFACE = 1 << 6,
   };
 
   
