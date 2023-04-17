@@ -70,11 +70,6 @@ if (AppConstants.MOZ_BACKGROUNDTASKS) {
 }
 
 
-if (AppConstants.NIGHTLY_BUILD) {
-  gExceptionPaths.push("resource://builtin-addons/translations/");
-}
-
-
 
 
 var whitelist = [
