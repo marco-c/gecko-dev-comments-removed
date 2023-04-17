@@ -1,5 +1,9 @@
 importScripts("mediasource-worker-util.js");
 
+
+
+
+
 onmessage = function(evt) {
   postMessage({ subject: messageSubject.ERROR, info: "No message expected by Worker"});
 };
@@ -24,6 +28,15 @@ util.mediaSource.addEventListener("sourceopen", () => {
       
       sourceBuffer.changeType(util.mediaMetadata.type);
       util.mediaSource.endOfStream();
+      
+      
+      var duration = util.mediaSource.duration;
+      if (isNaN(duration) || duration <= 0.0 || duration >= 1.0) {
+        postMessage({
+          subject: messageSubject.ERROR,
+          info: "mediaSource.duration " + duration + " is not within expected range (0,1)"
+        });
+      }
     };
   };
   util.mediaLoadPromise.then(mediaData => { sourceBuffer.appendBuffer(mediaData); },
