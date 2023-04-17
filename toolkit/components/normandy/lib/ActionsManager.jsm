@@ -78,7 +78,7 @@ class ActionsManager {
 
       
       
-    } else if (suitability !== BaseAction.suitability.CAPABILITES_MISMATCH) {
+    } else if (suitability !== BaseAction.suitability.CAPABILITIES_MISMATCH) {
       log.error(
         `Could not execute recipe ${recipe.name}:`,
         `Action ${recipe.action} is either missing or invalid.`

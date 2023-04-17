@@ -167,7 +167,7 @@ class BaseAction {
 
     
     
-    if (suitability !== BaseAction.suitability.CAPABILITES_MISMATCH) {
+    if (suitability !== BaseAction.suitability.CAPABILITIES_MISMATCH) {
       try {
         recipe.arguments = this.validateArguments(recipe.arguments);
       } catch (error) {
@@ -308,7 +308,7 @@ BaseAction.suitability = {
 
 
 
-  CAPABILITES_MISMATCH: "RECIPE_SUITABILITY_CAPABILITIES_MISMATCH",
+  CAPABILITIES_MISMATCH: "RECIPE_SUITABILITY_CAPABILITIES_MISMATCH",
 
   
 
@@ -339,7 +339,7 @@ BaseAction.suitabilitySet = new Set(Object.values(BaseAction.suitability));
 
 BaseAction.suitabilityToUptakeStatus = {
   [BaseAction.suitability.SIGNATURE_ERROR]: Uptake.RECIPE_INVALID_SIGNATURE,
-  [BaseAction.suitability.CAPABILITES_MISMATCH]:
+  [BaseAction.suitability.CAPABILITIES_MISMATCH]:
     Uptake.RECIPE_INCOMPATIBLE_CAPABILITIES,
   [BaseAction.suitability.FILTER_MATCH]: Uptake.RECIPE_SUCCESS,
   [BaseAction.suitability.FILTER_MISMATCH]: Uptake.RECIPE_DIDNT_MATCH_FILTER,
