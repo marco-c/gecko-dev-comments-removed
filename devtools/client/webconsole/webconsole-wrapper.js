@@ -143,9 +143,16 @@ class WebConsoleWrapper {
     
     
     
-    this.queuedMessageAdds = [];
-    this.queuedMessageUpdates = [];
-    this.queuedRequestUpdates = [];
+    
+    function filter(l) {
+      return l.filter(update => update.isNavigationRequest);
+    }
+    this.queuedMessageAdds = filter(this.queuedMessageAdds);
+    this.queuedMessageUpdates = filter(this.queuedMessageUpdates);
+    this.queuedRequestUpdates = this.queuedRequestUpdates.filter(
+      update => update.data.isNavigationRequest
+    );
+
     store?.dispatch(actions.messagesClear());
     this.webConsoleUI.emitForTests("messages-cleared");
   }
