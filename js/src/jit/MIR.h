@@ -9931,19 +9931,22 @@ class MRotate : public MBinaryInstruction, public NoTypePolicy::Data {
 
 
 
-class MWasmBitselectSimd128 : public MTernaryInstruction,
-                              public NoTypePolicy::Data {
-  MWasmBitselectSimd128(MDefinition* lhs, MDefinition* rhs,
-                        MDefinition* control)
-      : MTernaryInstruction(classOpcode, lhs, rhs, control) {
+
+class MWasmTernarySimd128 : public MTernaryInstruction,
+                            public NoTypePolicy::Data {
+  wasm::SimdOp simdOp_;
+
+  MWasmTernarySimd128(MDefinition* v0, MDefinition* v1, MDefinition* v2,
+                      wasm::SimdOp simdOp)
+      : MTernaryInstruction(classOpcode, v0, v1, v2), simdOp_(simdOp) {
     setMovable();
     setResultType(MIRType::Simd128);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmBitselectSimd128)
+  INSTRUCTION_HEADER(WasmTernarySimd128)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, lhs), (1, rhs), (2, control))
+  NAMED_OPERANDS((0, v0), (1, v1), (2, v2))
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
   bool congruentTo(const MDefinition* ins) const override {
@@ -9955,10 +9958,12 @@ class MWasmBitselectSimd128 : public MTernaryInstruction,
   
   
   
-  bool specializeConstantMaskAsShuffle(int8_t shuffle[16]);
+  bool specializeBitselectConstantMaskAsShuffle(int8_t shuffle[16]);
 #endif
 
-  ALLOW_CLONE(MWasmBitselectSimd128)
+  wasm::SimdOp simdOp() const { return simdOp_; }
+
+  ALLOW_CLONE(MWasmTernarySimd128)
 };
 
 
@@ -10407,4 +10412,4 @@ class AlignmentFinder<js::jit::MInstruction>
 
 }  
 
-#endif 
+#endif
