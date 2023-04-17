@@ -288,8 +288,23 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   RefPtr<BrowsingContext> opener;
   if (aOpenWindowInfo && !aOpenWindowInfo->GetForceNoOpener()) {
     opener = aOpenWindowInfo->GetParent();
-    
-    MOZ_ASSERT_IF(opener, opener->IsInProcess());
+    if (opener) {
+      
+      MOZ_ASSERT(opener->IsInProcess());
+
+      
+      
+      
+      
+      
+      
+      if (opener->IsDiscarded()) {
+        NS_WARNING(
+            "Opener was closed from a nested event loop in the parent process. "
+            "Please fix this.");
+        opener = nullptr;
+      }
+    }
   }
 
   RefPtr<nsGlobalWindowInner> parentInner =

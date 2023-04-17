@@ -986,8 +986,17 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     if (windowIsNew && newBC->IsContent()) {
-      MOZ_RELEASE_ASSERT(newBC->GetOpenerId() == parentBC->Id());
-      MOZ_RELEASE_ASSERT(!!parentBC == newBC->HadOriginalOpener());
+      if (parentBC->IsDiscarded()) {
+        
+        
+        
+        
+        
+        MOZ_RELEASE_ASSERT(newBC->GetOpenerId() == 0);
+      } else {
+        MOZ_RELEASE_ASSERT(newBC->GetOpenerId() == parentBC->Id());
+        MOZ_RELEASE_ASSERT(newBC->HadOriginalOpener());
+      }
     } else {
       
       newBC->SetOpener(parentBC);
