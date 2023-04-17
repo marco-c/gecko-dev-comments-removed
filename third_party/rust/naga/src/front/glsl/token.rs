@@ -1,7 +1,42 @@
-pub use pp_rs::token::{Float, Integer, PreprocessorError};
+use pp_rs::token::Location;
+pub use pp_rs::token::{Float, Integer, PreprocessorError, Token as PPToken};
 
+use super::ast::Precision;
 use crate::{Interpolation, Sampling, Type};
-use std::{fmt, ops::Range};
+use std::ops::Range;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug, Clone, Copy, Default)]
 #[cfg_attr(test, derive(PartialEq))]
@@ -14,10 +49,27 @@ pub struct SourceMetadata {
 }
 
 impl SourceMetadata {
-    pub fn union(&self, other: &Self) -> Self {
+    pub(crate) fn union(&self, other: &Self) -> Self {
         SourceMetadata {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
+        }
+    }
+
+    pub fn as_span(&self) -> crate::Span {
+        crate::Span::ByteRange(self.start..self.end)
+    }
+
+    pub(crate) fn none() -> Self {
+        SourceMetadata::default()
+    }
+}
+
+impl From<Location> for SourceMetadata {
+    fn from(loc: Location) -> Self {
+        SourceMetadata {
+            start: loc.start as usize,
+            end: loc.end as usize,
         }
     }
 }
@@ -35,14 +87,13 @@ pub struct Token {
     pub meta: SourceMetadata,
 }
 
+
+
+
+
 #[derive(Debug, PartialEq)]
 pub enum TokenValue {
-    Unknown(PreprocessorError),
     Identifier(String),
-
-    Extension,
-    Version,
-    Pragma,
 
     FloatConstant(Float),
     IntConstant(Integer),
@@ -55,8 +106,15 @@ pub enum TokenValue {
     Uniform,
     Buffer,
     Const,
+    Shared,
+
+    Restrict,
+    StorageAccess(crate::StorageAccess),
+
     Interpolation(Interpolation),
     Sampling(Sampling),
+    Precision,
+    PrecisionQualifier(Precision),
 
     Continue,
     Break,
@@ -129,8 +187,17 @@ pub enum TokenValue {
     Question,
 }
 
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.value)
-    }
+#[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq))]
+pub struct Directive {
+    pub kind: DirectiveKind,
+    pub tokens: Vec<PPToken>,
+}
+
+#[derive(Debug)]
+#[cfg_attr(test, derive(PartialEq))]
+pub enum DirectiveKind {
+    Version { is_first_directive: bool },
+    Extension,
+    Pragma,
 }

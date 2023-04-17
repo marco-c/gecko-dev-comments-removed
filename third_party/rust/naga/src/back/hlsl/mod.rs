@@ -1,57 +1,155 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mod conv;
+mod help;
 mod keywords;
+mod storage;
 mod writer;
 
 use std::fmt::Error as FmtError;
 use thiserror::Error;
 
-pub use writer::Writer;
+use crate::proc;
 
-pub const DEFAULT_SHADER_MODEL: u16 = 50;
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
-pub struct ShaderModel(u16);
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct BindTarget {
+    pub space: u8,
+    pub register: u32,
+}
+
+
+pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindTarget>;
+
+
+#[allow(non_snake_case, non_camel_case_types)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub enum ShaderModel {
+    V5_0,
+    V5_1,
+    V6_0,
+}
 
 impl ShaderModel {
-    pub fn new(shader_model: u16) -> Self {
-        Self(shader_model)
+    pub fn to_str(self) -> &'static str {
+        match self {
+            Self::V5_0 => "5_0",
+            Self::V5_1 => "5_1",
+            Self::V6_0 => "6_0",
+        }
     }
 }
 
-impl Default for ShaderModel {
-    fn default() -> Self {
-        Self(DEFAULT_SHADER_MODEL)
+impl crate::ShaderStage {
+    pub fn to_hlsl_str(self) -> &'static str {
+        match self {
+            Self::Vertex => "vs",
+            Self::Fragment => "ps",
+            Self::Compute => "cs",
+        }
+    }
+}
+
+impl crate::ImageDimension {
+    fn to_hlsl_str(self) -> &'static str {
+        match self {
+            Self::D1 => "1D",
+            Self::D2 => "2D",
+            Self::D3 => "3D",
+            Self::Cube => "Cube",
+        }
     }
 }
 
 
-#[derive(Debug, Clone)]
+type BackendResult = Result<(), Error>;
+
+#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub enum EntryPointError {
+    #[error("mapping of {0:?} is missing")]
+    MissingBinding(crate::ResourceBinding),
+}
+
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub struct Options {
     
     pub shader_model: ShaderModel,
     
-    pub vertex_entry_point_name: String,
+    pub binding_map: BindingMap,
     
-    pub fragment_entry_point_name: String,
+    pub fake_missing_bindings: bool,
     
-    pub compute_entry_point_name: String,
+    
+    pub special_constants_binding: Option<BindTarget>,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Options {
-            shader_model: ShaderModel(50),
-            vertex_entry_point_name: String::from("vert_main"),
-            fragment_entry_point_name: String::from("frag_main"),
-            compute_entry_point_name: String::from("comp_main"),
+            shader_model: ShaderModel::V5_1,
+            binding_map: BindingMap::default(),
+            fake_missing_bindings: true,
+            special_constants_binding: None,
         }
     }
+}
+
+impl Options {
+    fn resolve_resource_binding(
+        &self,
+        res_binding: &crate::ResourceBinding,
+    ) -> Result<BindTarget, EntryPointError> {
+        match self.binding_map.get(res_binding) {
+            Some(target) => Ok(target.clone()),
+            None if self.fake_missing_bindings => Ok(BindTarget {
+                space: res_binding.group as u8,
+                register: res_binding.binding,
+            }),
+            None => Err(EntryPointError::MissingBinding(res_binding.clone())),
+        }
+    }
+}
+
+
+#[derive(Default)]
+pub struct ReflectionInfo {
+    
+    
+    
+    
+    
+    pub entry_point_names: Vec<Result<String, EntryPointError>>,
 }
 
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
     IoError(#[from] FmtError),
-    #[error("BuiltIn {0:?} is not supported")]
-    UnsupportedShaderModel(ShaderModel),
     #[error("A scalar with an unsupported width was requested: {0:?} {1:?}")]
     UnsupportedScalar(crate::ScalarKind, crate::Bytes),
     #[error("{0}")]
@@ -60,13 +158,17 @@ pub enum Error {
     Custom(String),
 }
 
-pub fn write_string(
-    module: &crate::Module,
-    info: &crate::valid::ModuleInfo,
-    options: &Options,
-) -> Result<String, Error> {
-    let mut w = Writer::new(String::new(), options);
-    w.write(module, info)?;
-    let output = w.finish();
-    Ok(output)
+pub struct Writer<'a, W> {
+    out: W,
+    names: crate::FastHashMap<proc::NameKey, String>,
+    namer: proc::Namer,
+    
+    options: &'a Options,
+    
+    entry_point_io: Vec<writer::EntryPointInterface>,
+    
+    named_expressions: crate::NamedExpressions,
+    wrapped_array_lengths: crate::FastHashSet<help::WrappedArrayLength>,
+    wrapped_image_queries: crate::FastHashSet<help::WrappedImageQuery>,
+    temp_access_chain: Vec<storage::SubAccess>,
 }

@@ -26,6 +26,12 @@
 
 
 
+
+
+
+
+
+
 pub use crate::device::Device;
 pub use crate::entry::{EntryCustom, InstanceError};
 #[cfg(feature = "libloading")]
@@ -39,9 +45,10 @@ mod entry_libloading;
 mod instance;
 pub mod prelude;
 pub mod util;
-pub mod version;
+
 #[macro_use]
 pub mod vk;
+
 
 
 pub mod extensions;

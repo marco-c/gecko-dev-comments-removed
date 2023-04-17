@@ -1,7 +1,8 @@
 use super::{
     constants::ConstantSolvingError,
-    token::{SourceMetadata, Token, TokenValue},
+    token::{SourceMetadata, TokenValue},
 };
+use pp_rs::token::PreprocessorError;
 use std::borrow::Cow;
 use thiserror::Error;
 
@@ -18,14 +19,22 @@ fn join_with_comma(list: &[ExpectedToken]) -> String {
     string
 }
 
+
 #[derive(Debug, PartialEq)]
 pub enum ExpectedToken {
+    
     Token(TokenValue),
+    
     TypeName,
+    
     Identifier,
+    
     IntLiteral,
+    
     FloatLiteral,
+    
     BoolLiteral,
+    
     Eof,
 }
 impl From<TokenValue> for ExpectedToken {
@@ -47,80 +56,71 @@ impl std::fmt::Display for ExpectedToken {
     }
 }
 
+
 #[derive(Debug, Error)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum ErrorKind {
+    
     #[error("Unexpected end of file")]
     EndOfFile,
-    #[error("Invalid profile: {1}")]
-    InvalidProfile(SourceMetadata, String),
-    #[error("Invalid version: {1}")]
-    InvalidVersion(SourceMetadata, u64),
-    #[error("Expected {}, found {0}", join_with_comma(.1))]
-    InvalidToken(Token, Vec<ExpectedToken>),
-    #[error("Not implemented {0}")]
-    NotImplemented(&'static str),
-    #[error("Unknown variable: {1}")]
-    UnknownVariable(SourceMetadata, String),
-    #[error("Unknown type: {1}")]
-    UnknownType(SourceMetadata, String),
-    #[error("Unknown field: {1}")]
-    UnknownField(SourceMetadata, String),
-    #[error("Unknown layout qualifier: {1}")]
-    UnknownLayoutQualifier(SourceMetadata, String),
-    #[cfg(feature = "glsl-validate")]
-    #[error("Variable already declared: {1}")]
-    VariableAlreadyDeclared(SourceMetadata, String),
-    #[error("{1}")]
-    SemanticError(SourceMetadata, Cow<'static, str>),
-}
-
-impl ErrorKind {
     
-    pub fn metadata(&self) -> Option<SourceMetadata> {
-        match *self {
-            ErrorKind::UnknownVariable(metadata, _)
-            | ErrorKind::InvalidProfile(metadata, _)
-            | ErrorKind::InvalidVersion(metadata, _)
-            | ErrorKind::UnknownLayoutQualifier(metadata, _)
-            | ErrorKind::SemanticError(metadata, _)
-            | ErrorKind::UnknownField(metadata, _) => Some(metadata),
-            #[cfg(feature = "glsl-validate")]
-            ErrorKind::VariableAlreadyDeclared(metadata, _) => Some(metadata),
-            ErrorKind::InvalidToken(ref token, _) => Some(token.meta),
-            _ => None,
-        }
-    }
+    #[error("Invalid profile: {0}")]
+    InvalidProfile(String),
+    
+    #[error("Invalid version: {0}")]
+    InvalidVersion(u64),
+    
+    
+    
+    #[error("Expected {}, found {0:?}", join_with_comma(.1))]
+    InvalidToken(TokenValue, Vec<ExpectedToken>),
+    
+    
+    
+    
+    #[error("Not implemented: {0}")]
+    NotImplemented(&'static str),
+    
+    #[error("Unknown variable: {0}")]
+    UnknownVariable(String),
+    
+    #[error("Unknown type: {0}")]
+    UnknownType(String),
+    
+    #[error("Unknown field: {0}")]
+    UnknownField(String),
+    
+    
+    
+    
+    
+    #[error("Unknown layout qualifier: {0}")]
+    UnknownLayoutQualifier(String),
+    
+    #[cfg(feature = "glsl-validate")]
+    #[error("Variable already declared: {0}")]
+    VariableAlreadyDeclared(String),
+    
+    #[error("{0}")]
+    SemanticError(Cow<'static, str>),
+    
+    #[error("{0:?}")]
+    PreprocessorError(PreprocessorError),
+}
 
-    pub(crate) fn wrong_function_args(
-        name: String,
-        expected: usize,
-        got: usize,
-        meta: SourceMetadata,
-    ) -> Self {
-        let msg = format!(
-            "Function \"{}\" expects {} arguments, got {}",
-            name, expected, got
-        );
-
-        ErrorKind::SemanticError(meta, msg.into())
+impl From<ConstantSolvingError> for ErrorKind {
+    fn from(err: ConstantSolvingError) -> Self {
+        ErrorKind::SemanticError(err.to_string().into())
     }
 }
 
-impl From<(SourceMetadata, ConstantSolvingError)> for ErrorKind {
-    fn from((meta, err): (SourceMetadata, ConstantSolvingError)) -> Self {
-        ErrorKind::SemanticError(meta, err.to_string().into())
-    }
-}
 
 #[derive(Debug, Error)]
 #[error("{kind}")]
-pub struct ParseError {
+#[cfg_attr(test, derive(PartialEq))]
+pub struct Error {
+    
     pub kind: ErrorKind,
-}
-
-impl From<ErrorKind> for ParseError {
-    fn from(kind: ErrorKind) -> Self {
-        ParseError { kind }
-    }
+    
+    pub meta: SourceMetadata,
 }

@@ -58,15 +58,11 @@ mod block;
 mod buddy;
 mod config;
 mod error;
+mod freelist;
 mod heap;
-mod linear;
 mod slab;
 mod usage;
 mod util;
-
-
-#[cfg(feature = "freelist")]
-mod freelist;
 
 pub use {
     self::{allocator::*, block::MemoryBlock, config::*, error::*, usage::*},

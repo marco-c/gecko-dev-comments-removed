@@ -107,6 +107,30 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(
     renamed_and_removed_lints,
     unknown_lints, 
@@ -127,8 +151,10 @@
 
 mod arena;
 pub mod back;
+mod block;
 pub mod front;
 pub mod proc;
+mod span;
 pub mod valid;
 
 pub use crate::arena::{Arena, Handle, Range};
@@ -138,6 +164,7 @@ use std::{
     hash::BuildHasherDefault,
 };
 
+pub use crate::span::Span;
 #[cfg(feature = "deserialize")]
 use serde::Deserialize;
 #[cfg(feature = "serialize")]
@@ -221,7 +248,7 @@ pub enum StorageClass {
     
     Uniform,
     
-    Storage,
+    Storage { access: StorageAccess },
     
     Handle,
     
@@ -245,6 +272,7 @@ pub enum BuiltIn {
     
     FragDepth,
     FrontFacing,
+    PrimitiveIndex,
     SampleIndex,
     SampleMask,
     
@@ -253,6 +281,7 @@ pub enum BuiltIn {
     LocalInvocationIndex,
     WorkGroupId,
     WorkGroupSize,
+    NumWorkGroups,
 }
 
 
@@ -437,12 +466,21 @@ pub enum ImageClass {
         
         kind: ScalarKind,
         
+        
+        
+        
         multi: bool,
     },
     
-    Depth,
+    Depth {
+        
+        multi: bool,
+    },
     
-    Storage(StorageFormat),
+    Storage {
+        format: StorageFormat,
+        access: StorageAccess,
+    },
 }
 
 
@@ -476,6 +514,28 @@ pub enum TypeInner {
         width: Bytes,
     },
     
+    Atomic { kind: ScalarKind, width: Bytes },
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Pointer {
         base: Handle<Type>,
         class: StorageClass,
@@ -487,14 +547,57 @@ pub enum TypeInner {
         width: Bytes,
         class: StorageClass,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Array {
         base: Handle<Type>,
         size: ArraySize,
         stride: u32,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Struct {
+        
         top_level: bool,
         members: Vec<StructMember>,
         
@@ -504,6 +607,7 @@ pub enum TypeInner {
     Image {
         dim: ImageDimension,
         arrayed: bool,
+        
         class: ImageClass,
     },
     
@@ -562,7 +666,7 @@ pub enum Binding {
 }
 
 
-#[derive(Clone, Debug, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct ResourceBinding {
@@ -587,8 +691,6 @@ pub struct GlobalVariable {
     pub ty: Handle<Type>,
     
     pub init: Option<Handle<Constant>>,
-    
-    pub storage_access: StorageAccess,
 }
 
 
@@ -640,6 +742,23 @@ pub enum BinaryOperator {
 }
 
 
+
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum AtomicFunction {
+    Add,
+    And,
+    ExclusiveOr,
+    InclusiveOr,
+    Min,
+    Max,
+    Exchange { compare: Option<Handle<Expression>> },
+}
+
+
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -683,6 +802,9 @@ pub enum MathFunction {
     Asin,
     Atan,
     Atan2,
+    Asinh,
+    Acosh,
+    Atanh,
     
     Ceil,
     Floor,
@@ -854,6 +976,8 @@ pub enum Expression {
         index: u32,
     },
     
+    
+    
     Constant(Handle<Constant>),
     
     Splat {
@@ -871,12 +995,43 @@ pub enum Expression {
         ty: Handle<Type>,
         components: Vec<Handle<Expression>>,
     },
+
+    
+    
+    
+    
+    
+    
+    
     
     FunctionArgument(u32),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     GlobalVariable(Handle<GlobalVariable>),
+
+    
+    
+    
+    
     
     LocalVariable(Handle<LocalVariable>),
+
+    
+    
+    
     
     Load { pointer: Handle<Expression> },
     
@@ -889,16 +1044,88 @@ pub enum Expression {
         level: SampleLevel,
         depth_ref: Option<Handle<Expression>>,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     ImageLoad {
+        
+        
+        
+        
+        
+        
+        
+        
         image: Handle<Expression>,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         coordinate: Handle<Expression>,
+
+        
+        
+        
+        
+        
+        
         array_index: Option<Handle<Expression>>,
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
         index: Option<Handle<Expression>>,
     },
+
     
     ImageQuery {
         image: Handle<Expression>,
@@ -954,7 +1181,13 @@ pub enum Expression {
         convert: Option<Bytes>,
     },
     
-    Call(Handle<Function>),
+    CallResult(Handle<Function>),
+    
+    AtomicResult {
+        kind: ScalarKind,
+        width: Bytes,
+        comparison: bool,
+    },
     
     
     
@@ -963,8 +1196,7 @@ pub enum Expression {
     ArrayLength(Handle<Expression>),
 }
 
-
-pub type Block = Vec<Statement>;
+pub use block::Block;
 
 
 
@@ -1008,20 +1240,73 @@ pub enum Statement {
         cases: Vec<SwitchCase>,
         default: Block,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Loop { body: Block, continuing: Block },
+
+    
+    
+    
+    
+    
+    
+    
     
     Break,
+
+    
+    
+    
+    
+    
+    
     
     Continue,
+
+    
+    
+    
+    
+    
     
     Return { value: Option<Handle<Expression>> },
+
+    
+    
+    
+    
+    
     
     Kill,
+
     
     
     
     Barrier(Barrier),
+    
+    
+    
+    
     
     
     
@@ -1037,11 +1322,28 @@ pub enum Statement {
     
     
     
+    
+    
+    
+    
+    
+    
     ImageStore {
         image: Handle<Expression>,
         coordinate: Handle<Expression>,
         array_index: Option<Handle<Expression>>,
         value: Handle<Expression>,
+    },
+    
+    Atomic {
+        
+        pointer: Handle<Expression>,
+        
+        fun: AtomicFunction,
+        
+        value: Handle<Expression>,
+        
+        result: Handle<Expression>,
     },
     
     
@@ -1100,6 +1402,45 @@ pub struct Function {
     
     pub body: Block,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Debug)]

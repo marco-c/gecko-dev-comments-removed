@@ -24,10 +24,17 @@ pub type LPCWSTR = *const u16;
 #[allow(non_camel_case_types)]
 pub type zx_handle_t = u32;
 #[allow(non_camel_case_types)]
-pub type SECURITY_ATTRIBUTES = ();
+pub type _screen_context = c_void;
+#[allow(non_camel_case_types)]
+pub type _screen_window = c_void;
+#[allow(non_camel_case_types)]
+pub type SECURITY_ATTRIBUTES = c_void;
+
 pub type ANativeWindow = c_void;
 pub type AHardwareBuffer = c_void;
 pub type CAMetalLayer = c_void;
+
+
 pub type GgpStreamDescriptor = u32;
 pub type GgpFrameToken = u64;
 pub type IDirectFB = c_void;
