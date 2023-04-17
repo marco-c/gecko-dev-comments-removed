@@ -168,6 +168,9 @@ class ScrollAnchorContainer final {
   bool mDisabled : 1;
 
   
+  
+  bool mAnchorMightBeSubOptimal : 1;
+  
   bool mAnchorNodeIsDirty : 1;
   
   bool mApplyingAnchorAdjustment : 1;
