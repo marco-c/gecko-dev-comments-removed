@@ -19,6 +19,8 @@ namespace mozilla::intl {
 
 enum class DateTimeStyle { Full, Long, Medium, Short, None };
 
+class Calendar;
+
 
 
 
@@ -178,6 +180,13 @@ class DateTimeFormat final {
 
 
   UDateFormat* UnsafeGetUDateFormat() const { return mDateFormat; }
+
+  
+
+
+
+  Result<UniquePtr<Calendar>, InternalError> CloneCalendar(
+      double aUnixEpoch) const;
 
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);
