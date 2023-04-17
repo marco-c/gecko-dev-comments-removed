@@ -4,6 +4,25 @@
 
 
 
+def sanitize(rows):
+    newrows = []
+    pcid = "unset"
+    psid = "unset"
+    pseq = "unset"
+    for row in rows:
+        cid = row["client_id"]
+        sid = row["session_id"]
+        seq = row["seq"]
+        if cid != pcid or sid != psid or seq != pseq:
+            newrows.append(row)
+        pcid = cid
+        psid = sid
+        pseq = seq
+
+    return newrows
+
+
+
 def extractBuildIDs(rows):
     buildids = {}
     for row in rows:
@@ -99,7 +118,7 @@ def collectTopmostFrames(rows):
     
     
     
-    delta = 500
+    delta = 800
     prev_event_time = -99999
     for row in rows:
         et = int(row["event_timestamp"])

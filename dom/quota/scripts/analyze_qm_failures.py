@@ -73,6 +73,7 @@ def getFname(prefix):
 
 rows = utils.readJSONFile(getFname("qmrows"))
 print("Found {} rows of data.".format(len(rows)))
+rows = stackanalysis.sanitize(rows)
 
 
 buildids = stackanalysis.extractBuildIDs(rows)
