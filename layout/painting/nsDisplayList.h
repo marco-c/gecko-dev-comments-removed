@@ -2394,7 +2394,6 @@ class nsDisplayItem : public nsDisplayItemLink {
         mExtraPageForPageNum(aOther.mExtraPageForPageNum),
         mPerFrameIndex(aOther.mPerFrameIndex),
         mBuildingRect(aOther.mBuildingRect),
-        mPaintRect(aOther.mPaintRect),
         mReferenceFrame(aOther.mReferenceFrame),
         mToReferenceFrame(aOther.mToReferenceFrame),
         mAnimatedGeometryRoot(aOther.mAnimatedGeometryRoot),
@@ -2807,16 +2806,7 @@ class nsDisplayItem : public nsDisplayItemLink {
       
       return;
     }
-    mPaintRect = mBuildingRect = aBuildingRect;
-    mItemFlags -= ItemFlag::PaintRectValid;
-  }
-
-  void SetPaintRect(const nsRect& aPaintRect) {
-    mPaintRect = aPaintRect;
-    mItemFlags += ItemFlag::PaintRectValid;
-  }
-  bool HasPaintRect() const {
-    return mItemFlags.contains(ItemFlag::PaintRectValid);
+    mBuildingRect = aBuildingRect;
   }
 
   
@@ -2957,7 +2947,7 @@ class nsDisplayItem : public nsDisplayItemLink {
   virtual Maybe<nsRect> GetClipWithRespectToASR(
       nsDisplayListBuilder* aBuilder, const ActiveScrolledRoot* aASR) const;
 
-  const nsRect& GetPaintRect() const { return mPaintRect; }
+  const nsRect& GetPaintRect() const { return mBuildingRect; }
 
   virtual const nsRect& GetUntransformedPaintRect() const {
     return GetPaintRect();
@@ -2984,7 +2974,6 @@ class nsDisplayItem : public nsDisplayItemLink {
     ForceNotVisible,
     HasHitTestInfo,
     IsGlassItem,
-    PaintRectValid,
 #ifdef MOZ_DUMP_PAINTING
     
     Painted,
@@ -3002,9 +2991,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   
   
   nsRect mBuildingRect;
-
-  
-  nsRect mPaintRect;
 
  protected:
   void SetItemFlag(ItemFlag aFlag, const bool aValue) {
@@ -3222,8 +3208,7 @@ class nsDisplayList {
   
 
 
-  nsDisplayList()
-      : mLength(0), mForceTransparentSurface(false) {
+  nsDisplayList() : mLength(0), mForceTransparentSurface(false) {
     mTop = &mSentinel;
     mSentinel.mAbove = nullptr;
   }
@@ -3540,9 +3525,7 @@ class nsDisplayList {
 
   void SetNeedsTransparentSurface() { mForceTransparentSurface = true; }
 
-  void RestoreState() {
-    mForceTransparentSurface = false;
-  }
+  void RestoreState() { mForceTransparentSurface = false; }
 
  private:
   nsDisplayItemLink mSentinel;
@@ -4864,7 +4847,6 @@ class nsDisplayBoxShadowInner : public nsPaintedDisplayItem {
       const StackingContextHelper& aSc,
       layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
-
 };
 
 
