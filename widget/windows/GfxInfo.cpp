@@ -32,8 +32,6 @@
 #include <winioctl.h>  
 #include <batclass.h>  
 
-#define NS_CRASHREPORTER_CONTRACTID "@mozilla.org/toolkit/crash-reporter;1"
-
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::widget;
