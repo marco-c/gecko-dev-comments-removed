@@ -3708,8 +3708,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  bool createLayersForScrollbars =
-      mIsRoot && mOuter->PresContext()->IsRootContentDocument();
+  bool createLayersForScrollbars = isRootContent;
 
   nsIScrollableFrame* sf = do_QueryFrame(mOuter);
   MOZ_ASSERT(sf);
