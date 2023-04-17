@@ -1,9 +1,5 @@
-<!doctype html>
-<title>onmessage implied start()</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<div id="log"></div>
-<script>
+
+
 async_test(function(t) {
   var channel = new MessageChannel();
   channel.port1.postMessage(1);
@@ -14,6 +10,5 @@ async_test(function(t) {
     channel.port2.onmessage = t.step_func(function() {
       assert_unreached();
     });
-  }; // implies start()
+  }; 
 });
-</script>

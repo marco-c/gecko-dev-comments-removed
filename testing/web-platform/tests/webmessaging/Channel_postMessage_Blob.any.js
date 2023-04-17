@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title> postMessage() with a Blob </title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-</head>
-<body>
-<div id=log></div>
-<script>
+
+
     var TARGET = null;
     var SOURCE = null;
     var description = "Messages can contain Blobs.";
@@ -23,8 +15,8 @@
     (function() {
       SOURCE.postMessage({blob: new Blob(['foo', 'bar'])});
     })();
-    // TODO(https://github.com/web-platform-tests/wpt/issues/7899): Change to
-    // some sort of cross-browser GC trigger.
+    
+    
     if (self.gc) self.gc();
 
     function TestMessageEvent(evt)
@@ -40,6 +32,3 @@
           });
         reader.readAsText(evt.data.blob);
     }
-</script>
-</body>
-</html>

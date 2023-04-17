@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<title>MessagePort message events are trusted</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<link rel="help" href="https://html.spec.whatwg.org/multipage/comms.html#dom-messageport-postmessage">
 
 
 
 
 
-<script>
+
 "use strict";
 
 async_test(t => {
@@ -32,14 +27,6 @@ async_test(t => {
     assert_equals(e.isTrusted, true);
   });
 
-  new Worker("MessageEvent-trusted-worker.js");
+  new Worker("support/MessageEvent-trusted-worker.js");
 }, "With a BroadcastChannel");
 
-async_test(t => {
-  window.onmessage = t.step_func_done(e => {
-    assert_equals(e.isTrusted, true);
-  });
-
-  window.postMessage("ping", "*");
-}, "With window");
-</script>
