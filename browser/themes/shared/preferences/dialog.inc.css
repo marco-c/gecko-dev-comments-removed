@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 window,
@@ -13,13 +13,17 @@ dialog {
   padding: 0;
 }
 
+:root {
+  padding: 6px;
+}
+
 .contentPane {
   -moz-box-flex: 1;
 }
 
 .contentPane,
 dialog::part(content-box) {
-  
+  /* This allows the focus ring to display fully when scrolling is enabled. */
   padding: 4px;
 }
 
