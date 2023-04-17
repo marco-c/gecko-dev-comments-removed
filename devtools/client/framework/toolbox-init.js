@@ -105,26 +105,20 @@ async function initToolbox(url, host) {
       }
     }
 
-    const options = { customIframe: host };
-    const newToolbox = await gDevTools.showToolbox(descriptor, {
-      toolId: tool,
-      hostType: Toolbox.HostType.PAGE,
-      hostOptions: options,
-    });
-
     
-    
-    
-    
-    const target = newToolbox.target;
-    
-    const { descriptorFront } = target;
-    descriptorFront.once("descriptor-destroyed", function() {
+    descriptor.once("descriptor-destroyed", function() {
       
       if (host.contentDocument) {
         const error = new Error("Debug target was disconnected");
         showErrorPage(host.contentDocument, `${error}`);
       }
+    });
+
+    const options = { customIframe: host };
+    await gDevTools.showToolbox(descriptor, {
+      toolId: tool,
+      hostType: Toolbox.HostType.PAGE,
+      hostOptions: options,
     });
   } catch (error) {
     
