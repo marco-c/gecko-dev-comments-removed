@@ -222,6 +222,14 @@ pref("general.warnOnAboutConfig", true);
 #endif
 
 
+
+pref("general.autoscroll.prevent_to_start.shiftKey", true); 
+pref("general.autoscroll.prevent_to_start.ctrlKey", false); 
+pref("general.autoscroll.prevent_to_start.altKey", false);  
+pref("general.autoscroll.prevent_to_start.metaKey", false); 
+pref("general.autoscroll.prevent_to_start.osKey", false);   
+
+
 pref("browser.bookmarks.max_backups",       5);
 
 pref("browser.cache.disk_cache_ssl",        true);
