@@ -14,16 +14,8 @@ import time
 import mozpack.path as mozpath
 from mozpack.files import FileFinder
 from .sandbox import alphabetical_sorted
-from .context import (
-    ObjDirPath,
-    SourcePath,
-    TemplateContext,
-    VARIABLES,
-)
-from mozbuild.util import (
-    ensure_subprocess_env,
-    expand_variables,
-)
+from .context import ObjDirPath, SourcePath, TemplateContext, VARIABLES
+from mozbuild.util import expand_variables
 
 
 
@@ -436,12 +428,10 @@ class GypProcessor(object):
             
             
             os.environ.update(
-                ensure_subprocess_env(
-                    {
-                        "GYP_MSVS_OVERRIDE_PATH": "fake_path",
-                        "GYP_MSVS_VERSION": config.substs["MSVS_VERSION"],
-                    }
-                )
+                {
+                    "GYP_MSVS_OVERRIDE_PATH": "fake_path",
+                    "GYP_MSVS_VERSION": config.substs["MSVS_VERSION"],
+                }
             )
 
         params = {
