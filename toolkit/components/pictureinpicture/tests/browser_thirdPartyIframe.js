@@ -3,6 +3,17 @@
 
 "use strict";
 
+const EXAMPLE_COM = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
+const EXAMPLE_ORG = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.org"
+);
+const EXAMPLE_COM_TEST_PAGE = EXAMPLE_COM + "test-page.html";
+const EXAMPLE_ORG_WITH_IFRAME = EXAMPLE_ORG + "test-page-with-iframe.html";
+
 
 
 
@@ -13,19 +24,23 @@ add_task(async () => {
 
     await BrowserTestUtils.withNewTab(
       {
-        url: TEST_PAGE_WITH_IFRAME,
+        url: EXAMPLE_ORG_WITH_IFRAME,
         gBrowser,
       },
       async browser => {
         
         
         
-        await SpecialPowers.spawn(browser, [TEST_PAGE], async TEST_PAGE => {
-          let iframe = content.document.getElementById("iframe");
-          let loadPromise = ContentTaskUtils.waitForEvent(iframe, "load");
-          iframe.src = TEST_PAGE;
-          await loadPromise;
-        });
+        await SpecialPowers.spawn(
+          browser,
+          [EXAMPLE_COM_TEST_PAGE],
+          async EXAMPLE_COM_TEST_PAGE => {
+            let iframe = content.document.getElementById("iframe");
+            let loadPromise = ContentTaskUtils.waitForEvent(iframe, "load");
+            iframe.src = EXAMPLE_COM_TEST_PAGE;
+            await loadPromise;
+          }
+        );
 
         let iframeBc = browser.browsingContext.children[0];
 

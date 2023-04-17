@@ -21,7 +21,7 @@ let nsLoginInfo = SpecialPowers.wrap(SpecialPowers.Components).Constructor("@moz
 </script>
 <p id="display"></p>
 
-
+<!-- we presumably can't hide the content for this test. -->
 <div id="content">
 </div>
 
@@ -59,7 +59,10 @@ async function checkFormsWithLogin(formUrls, login, expectedUsername, expectedPa
 }
 
 add_task(async function setup() {
-  await SpecialPowers.pushPrefEnv({"set": [["signon.schemeUpgrades", true]]});
+  await SpecialPowers.pushPrefEnv({"set": [
+    ["signon.schemeUpgrades", true],
+    ["dom.security.https_first", false],
+    ]});
 });
 
 add_task(async function test_sanityCheckHTTPS() {
