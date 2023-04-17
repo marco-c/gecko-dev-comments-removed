@@ -205,6 +205,7 @@ typedef enum PRSockOption
     PR_SockOpt_Broadcast,       
     PR_SockOpt_Reuseport,       
 
+    PR_SockOpt_DontFrag,        
     PR_SockOpt_Last
 } PRSockOption;
 
@@ -230,6 +231,7 @@ typedef struct PRSocketOptionData
         PRBool reuse_addr;          
         PRBool reuse_port;          
 
+        PRBool dont_fragment;       
         PRBool keep_alive;          
         PRBool mcast_loopback;      
         PRBool no_delay;            
