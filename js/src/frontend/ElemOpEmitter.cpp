@@ -14,13 +14,8 @@
 using namespace js;
 using namespace js::frontend;
 
-ElemOpEmitter::ElemOpEmitter(BytecodeEmitter* bce, Kind kind, ObjKind objKind,
-                             NameVisibility visibility)
-    : bce_(bce), kind_(kind), objKind_(objKind), visibility_(visibility) {
-  
-  MOZ_ASSERT_IF(visibility == NameVisibility::Private,
-                objKind != ObjKind::Super);
-}
+ElemOpEmitter::ElemOpEmitter(BytecodeEmitter* bce, Kind kind, ObjKind objKind)
+    : bce_(bce), kind_(kind), objKind_(objKind) {}
 
 bool ElemOpEmitter::prepareForObj() {
   MOZ_ASSERT(state_ == State::Start);
@@ -56,66 +51,12 @@ bool ElemOpEmitter::prepareForKey() {
   return true;
 }
 
-bool ElemOpEmitter::emitPrivateGuard() {
-  MOZ_ASSERT(state_ == State::Key || state_ == State::Rhs);
-
-  if (!isPrivate()) {
-    return true;
-  }
-
-  if (isPropInit()) {
-    
-    if (!bce_->emitCheckPrivateField(ThrowCondition::ThrowHas,
-                                     ThrowMsgKind::PrivateDoubleInit)) {
-      
-      return false;
-    }
-  } else {
-    if (!bce_->emitCheckPrivateField(ThrowCondition::ThrowHasNot,
-                                     isPrivateGet()
-                                         ? ThrowMsgKind::MissingPrivateOnGet
-                                         : ThrowMsgKind::MissingPrivateOnSet)) {
-      
-      return false;
-    }
-  }
-
-  
-  return bce_->emit1(JSOp::Pop);
-  
-}
-
-bool ElemOpEmitter::emitPrivateGuardForAssignment() {
-  if (!isPrivate()) {
-    return true;
-  }
-
-  
-  if (!bce_->emitUnpickN(2)) {
-    
-    return false;
-  }
-
-  if (!emitPrivateGuard()) {
-    
-    return false;
-  }
-
-  if (!bce_->emitPickN(2)) {
-    
-    return false;
-  }
-
-  return true;
-}
-
 bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
   
   
-  
-  if ((isIncDec() || isCompoundAssignment()) && !isPrivate()) {
+  if (isIncDec() || isCompoundAssignment()) {
     if (!bce_->emit1(JSOp::ToPropertyKey)) {
       
       
@@ -123,10 +64,6 @@ bool ElemOpEmitter::emitGet() {
       
       return false;
     }
-  }
-
-  if (!emitPrivateGuard()) {
-    return false;
   }
 
   if (isSuper()) {
@@ -213,7 +150,6 @@ bool ElemOpEmitter::skipObjAndKeyAndRhs() {
 bool ElemOpEmitter::emitDelete() {
   MOZ_ASSERT(state_ == State::Key);
   MOZ_ASSERT(isDelete());
-  MOZ_ASSERT(!isPrivate());
 
   if (isSuper()) {
     if (!bce_->emit1(JSOp::ToPropertyKey)) {
@@ -238,7 +174,6 @@ bool ElemOpEmitter::emitDelete() {
       return false;
     }
   } else {
-    MOZ_ASSERT(!isPrivate());
     JSOp op = bce_->sc->strict() ? JSOp::StrictDelElem : JSOp::DelElem;
     if (!bce_->emitElemOpBase(op)) {
       
@@ -257,16 +192,6 @@ bool ElemOpEmitter::emitAssignment() {
   MOZ_ASSERT(state_ == State::Rhs);
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
-
-  if (!isCompoundAssignment()) {
-    
-    
-    
-    
-    if (!emitPrivateGuardForAssignment()) {
-      return false;
-    }
-  }
 
   JSOp setOp = isPropInit() ? JSOp::InitElem
                : isSuper()  ? bce_->sc->strict() ? JSOp::StrictSetElemSuper
