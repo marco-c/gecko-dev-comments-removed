@@ -166,22 +166,8 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
     return zoomOut;
   }
 
-  CSSRect rounded(rect);
-  rounded.Round();
-
-  
-  
-  
-  
-  
-  
-  CSSCoord cssTapY = visualScrollOffset.y + aPoint.y;
-  if ((rect.Height() > rounded.Height()) &&
-      (cssTapY > rounded.Y() + (rounded.Height() * 1.2))) {
-    rounded.MoveToY(cssTapY - (rounded.Height() / 2));
-  }
-
-  return rounded;
+  rect.Round();
+  return rect;
 }
 
 }  
