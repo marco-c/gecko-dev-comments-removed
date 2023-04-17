@@ -10,6 +10,11 @@
 #include "ThreadAllows.h"
 #include "plugin.h"
 
+#if CLANG_VERSION_FULL >= 1300
+
+#define compare_lower compare_insensitive
+#endif
+
 inline StringRef getFilename(const SourceManager &SM, SourceLocation Loc) {
   
   
@@ -489,4 +494,5 @@ inline bool isInfixBinaryOp(const CXXOperatorCallExpr *OpCall) {
 #endif
 }
 
+#undef compare_lower
 #endif
