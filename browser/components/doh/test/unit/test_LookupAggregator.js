@@ -13,7 +13,7 @@ async function helper_SuccessfulLookupAggregator(
   captivePortal = false
 ) {
   let deferred = PromiseUtils.defer();
-  let aggregator = new LookupAggregator(() => deferred.resolve(), trrList);
+  let aggregator = new LookupAggregator(() => deferred.resolve());
   
   
   
@@ -124,7 +124,7 @@ add_task(async function test_SuccessfulLookupAggregator() {
 
 add_task(async function test_AbortedLookupAggregator() {
   let deferred = PromiseUtils.defer();
-  let aggregator = new LookupAggregator(() => deferred.resolve(), trrList);
+  let aggregator = new LookupAggregator(() => deferred.resolve());
   
   
   
