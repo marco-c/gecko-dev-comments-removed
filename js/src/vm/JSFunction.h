@@ -774,6 +774,8 @@ extern void ThrowTypeErrorBehavior(JSContext* cx);
 
 class FunctionExtended : public JSFunction {
  public:
+  static const JSClass class_;
+
   static const unsigned NUM_EXTENDED_SLOTS = 2;
 
   
@@ -833,6 +835,11 @@ extern JSFunction* CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
 extern JSFunction* CloneAsmJSModuleFunction(JSContext* cx, HandleFunction fun);
 
 }  
+
+template <>
+inline bool JSObject::is<JSFunction>() const {
+  return getClass()->isJSFunction();
+}
 
 inline js::FunctionExtended* JSFunction::toExtended() {
   MOZ_ASSERT(isExtended());
