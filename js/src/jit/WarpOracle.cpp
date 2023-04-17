@@ -327,10 +327,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
 
   ModuleObject* moduleObject = nullptr;
 
-  mozilla::Maybe<bool> instrumentationActive;
-  mozilla::Maybe<int32_t> instrumentationScriptId;
-  JSObject* instrumentationCallback = nullptr;
-
   
   
   for (BytecodeLocation loc : AllBytecodesIterable(script_)) {
@@ -450,45 +446,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
         }
 #endif
         MOZ_TRY(maybeInlineIC(opSnapshots, loc));
-        break;
-      }
-
-      case JSOp::InstrumentationActive: {
-        
-        
-        if (instrumentationActive.isNothing()) {
-          bool active = RealmInstrumentation::isActive(cx_->global());
-          instrumentationActive.emplace(active);
-        }
-        break;
-      }
-
-      case JSOp::InstrumentationCallback: {
-        if (!instrumentationCallback) {
-          JSObject* obj = RealmInstrumentation::getCallback(cx_->global());
-          if (IsInsideNursery(obj)) {
-            
-            
-            
-            return abort(AbortReason::Disable,
-                         "Nursery-allocated instrumentation callback");
-          }
-          instrumentationCallback = obj;
-        }
-        break;
-      }
-
-      case JSOp::InstrumentationScriptId: {
-        
-        
-        if (instrumentationScriptId.isNothing()) {
-          int32_t id = 0;
-          if (!RealmInstrumentation::getScriptId(cx_, cx_->global(), script_,
-                                                 &id)) {
-            return abort(AbortReason::Error);
-          }
-          instrumentationScriptId.emplace(id);
-        }
         break;
       }
 
@@ -728,8 +685,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
   }
 
   auto* scriptSnapshot = new (alloc_.fallible()) WarpScriptSnapshot(
-      script_, environment, std::move(opSnapshots), moduleObject,
-      instrumentationCallback, instrumentationScriptId, instrumentationActive);
+      script_, environment, std::move(opSnapshots), moduleObject);
   if (!scriptSnapshot) {
     return abort(AbortReason::Alloc);
   }

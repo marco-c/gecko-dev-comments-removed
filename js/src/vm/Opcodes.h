@@ -3486,30 +3486,6 @@
 
 
 
- \
-    MACRO(InstrumentationActive, instrumentation_active, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
- \
-    MACRO(InstrumentationCallback, instrumentation_callback, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
- \
-    MACRO(InstrumentationScriptId, instrumentation_script_id, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
 
 
 
@@ -3527,6 +3503,9 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(226)                                   \
+  MACRO(227)                                   \
+  MACRO(228)                                   \
   MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \

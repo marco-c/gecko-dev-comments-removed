@@ -475,32 +475,17 @@ class WarpScriptSnapshot
   WarpGCPtr<ModuleObject*> moduleObject_;
 
   
-  WarpGCPtr<JSObject*> instrumentationCallback_;
-  mozilla::Maybe<int32_t> instrumentationScriptId_;
-  mozilla::Maybe<bool> instrumentationActive_;
-
-  
   bool isArrowFunction_;
 
  public:
   WarpScriptSnapshot(JSScript* script, const WarpEnvironment& env,
                      WarpOpSnapshotList&& opSnapshots,
-                     ModuleObject* moduleObject,
-                     JSObject* instrumentationCallback,
-                     mozilla::Maybe<int32_t> instrumentationScriptId,
-                     mozilla::Maybe<bool> instrumentationActive);
+                     ModuleObject* moduleObject);
 
   JSScript* script() const { return script_; }
   const WarpEnvironment& environment() const { return environment_; }
   const WarpOpSnapshotList& opSnapshots() const { return opSnapshots_; }
   ModuleObject* moduleObject() const { return moduleObject_; }
-
-  JSObject* instrumentationCallback() const {
-    MOZ_ASSERT(instrumentationCallback_);
-    return instrumentationCallback_;
-  }
-  int32_t instrumentationScriptId() const { return *instrumentationScriptId_; }
-  bool instrumentationActive() const { return *instrumentationActive_; }
 
   bool isArrowFunction() const { return isArrowFunction_; }
 
