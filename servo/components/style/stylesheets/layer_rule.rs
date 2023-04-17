@@ -20,8 +20,37 @@ use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ToCss};
 
 
-#[derive(Clone, Debug, ToShmem)]
-pub struct LayerName(SmallVec<[AtomIdent; 1]>);
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+pub struct LayerName(pub SmallVec<[AtomIdent; 1]>);
+
+impl LayerName {
+    
+    
+    pub fn new_empty() -> Self {
+        Self(Default::default())
+    }
+
+    
+    pub fn new_anonymous() -> Self {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        static NEXT_ANONYMOUS_LAYER_NAME: AtomicUsize = AtomicUsize::new(0);
+
+        let mut name = SmallVec::new();
+        let next_id = NEXT_ANONYMOUS_LAYER_NAME.fetch_add(1, Ordering::Relaxed);
+        
+        
+        
+        name.push(AtomIdent::from(&*format!("-moz-anon-layer({})", next_id)));
+
+        LayerName(name)
+    }
+
+    
+    
+    pub fn layer_names(&self) -> &[AtomIdent] {
+        &self.0
+    }
+}
 
 impl Parse for LayerName {
     fn parse<'i, 't>(
@@ -83,9 +112,12 @@ pub enum LayerRuleKind {
     
     Block {
         
-        name: Option<LayerName>,
+        name: LayerName,
         
         rules: Arc<Locked<CssRules>>,
+        
+        
+        is_anonymous: bool,
     },
     
     Statement {
@@ -116,8 +148,9 @@ impl ToCssWithGuard for LayerRule {
             LayerRuleKind::Block {
                 ref name,
                 ref rules,
+                ref is_anonymous,
             } => {
-                if let Some(ref name) = *name {
+                if !*is_anonymous {
                     name.to_css(&mut CssWriter::new(dest))?;
                     dest.write_char(' ')?;
                 }
@@ -151,8 +184,13 @@ impl DeepCloneWithLock for LayerRule {
                 LayerRuleKind::Block {
                     ref name,
                     ref rules,
+                    ref is_anonymous,
                 } => LayerRuleKind::Block {
-                    name: name.clone(),
+                    name: if *is_anonymous {
+                        LayerName::new_anonymous()
+                    } else {
+                        name.clone()
+                    },
                     rules: Arc::new(
                         lock.wrap(
                             rules
@@ -160,6 +198,7 @@ impl DeepCloneWithLock for LayerRule {
                                 .deep_clone_with_lock(lock, guard, params),
                         ),
                     ),
+                    is_anonymous: *is_anonymous,
                 },
                 LayerRuleKind::Statement { ref names } => LayerRuleKind::Statement {
                     names: names.clone(),
