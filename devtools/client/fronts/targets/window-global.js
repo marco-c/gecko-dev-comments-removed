@@ -125,12 +125,6 @@ class WindowGlobalTargetFront extends TargetMixin(
       
       
       this.traits = response.traits || {};
-
-      
-      
-      if (this.targetForm.consoleActor) {
-        await this.attachConsole();
-      }
     })();
     return this._attach;
   }

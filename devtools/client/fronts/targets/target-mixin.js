@@ -469,19 +469,6 @@ function TargetMixin(parentClass) {
     }
 
     
-    async attachConsole() {
-      const consoleFront = await this.getFront("console");
-
-      if (this.isDestroyedOrBeingDestroyed()) {
-        return;
-      }
-
-      
-      
-      await consoleFront.startListeners([]);
-    }
-
-    
 
 
 

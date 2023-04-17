@@ -96,7 +96,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
       const workerTargetForm = await super.getTarget();
 
       
-      
       this.targetForm.consoleActor = workerTargetForm.consoleActor;
       this.targetForm.threadActor = workerTargetForm.threadActor;
 
@@ -104,7 +103,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
         return this;
       }
 
-      await this.attachConsole();
       return this;
     })();
     return this._attach;

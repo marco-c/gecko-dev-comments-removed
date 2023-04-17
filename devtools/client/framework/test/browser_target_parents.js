@@ -21,7 +21,8 @@ add_task(async function() {
 
   await testGetTargetWithConcurrentCalls(tabDescriptors, tabTarget => {
     
-    return !!tabTarget.getCachedFront("console");
+    
+    return !!tabTarget.traits;
   });
 
   await client.close();
@@ -41,7 +42,8 @@ add_task(async function() {
   
   await testGetTargetWithConcurrentCalls(processes, processTarget => {
     
-    return !!processTarget.getCachedFront("console");
+    
+    return true;
   });
 
   await client.close();

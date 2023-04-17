@@ -44,11 +44,6 @@ class ContentProcessTargetFront extends TargetMixin(
   }
 
   attach() {
-    
-    
-    if (this.targetForm.consoleActor) {
-      return this.attachConsole();
-    }
     return Promise.resolve();
   }
 
