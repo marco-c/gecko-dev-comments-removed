@@ -1326,8 +1326,11 @@ PermitUnloadResult nsDocumentViewer::DispatchBeforeUnload() {
     
     AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
+    RefPtr<BrowsingContext> bc = mContainer->GetBrowsingContext();
+    NS_ASSERTION(bc, "should have a browsing context in document viewer");
+
     
-    nsGlobalWindowOuter::TemporarilyDisableDialogs disableDialogs(window);
+    nsGlobalWindowOuter::TemporarilyDisableDialogs disableDialogs(bc);
 
     Document::PageUnloadingEventTimeStamp timestamp(mDocument);
 

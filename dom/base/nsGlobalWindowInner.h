@@ -414,16 +414,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   inline nsIBrowserChild* GetBrowserChild() { return mBrowserChild.get(); }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  bool DialogsAreBeingAbused();
-
   nsIScriptContext* GetContextInternal();
 
   nsGlobalWindowOuter* GetOuterWindowInternal() const;
@@ -1440,22 +1430,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   RefPtr<nsDOMOfflineResourceList> mApplicationCache;
 
   RefPtr<mozilla::dom::IDBFactory> mIndexedDB;
-
-  
-  
-  
-  
-  uint32_t mDialogAbuseCount;
-
-  
-  
-  
-  
-  TimeStamp mLastDialogQuitTime;
-
-  
-  
-  bool mAreDialogsEnabled;
 
   
   

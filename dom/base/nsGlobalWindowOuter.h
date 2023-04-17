@@ -383,12 +383,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   
-  
-  
-  
-  
   bool ShouldPromptToBlockDialogs();
 
+  
   
   
   
@@ -401,18 +398,18 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   class MOZ_RAII TemporarilyDisableDialogs {
    public:
-    explicit TemporarilyDisableDialogs(nsGlobalWindowOuter* aWindow);
+    explicit TemporarilyDisableDialogs(mozilla::dom::BrowsingContext* aBC);
     ~TemporarilyDisableDialogs();
 
    private:
     
     
     
-    RefPtr<nsGlobalWindowInner> mTopWindow;
+    RefPtr<mozilla::dom::BrowsingContextGroup> mGroup;
     
     
     
-    bool mSavedDialogsEnabled;
+    bool mSavedDialogsEnabled = false;
   };
   friend class TemporarilyDisableDialogs;
 

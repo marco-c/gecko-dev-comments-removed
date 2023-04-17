@@ -21,6 +21,10 @@ class ThrottledEventQueue;
 
 namespace dom {
 
+
+
+#define DEFAULT_SUCCESSIVE_DIALOG_TIME_LIMIT 3  // 3 sec
+
 class BrowsingContext;
 class WindowContext;
 class ContentParent;
@@ -164,6 +168,25 @@ class BrowsingContextGroup final : public nsWrapperCache {
     return mWorkerEventQueue;
   }
 
+  void SetAreDialogsEnabled(bool aAreDialogsEnabled) {
+    mAreDialogsEnabled = aAreDialogsEnabled;
+  }
+
+  bool GetAreDialogsEnabled() { return mAreDialogsEnabled; }
+
+  bool GetDialogAbuseCount() { return mDialogAbuseCount; }
+
+  
+  void ResetDialogAbuseState();
+
+  bool DialogsAreBeingAbused();
+
+  TimeStamp GetLastDialogQuitTime() { return mLastDialogQuitTime; }
+
+  void SetLastDialogQuitTime(TimeStamp aLastDialogQuitTime) {
+    mLastDialogQuitTime = aLastDialogQuitTime;
+  }
+
   static void GetAllGroups(nsTArray<RefPtr<BrowsingContextGroup>>& aGroups);
 
   void IncInputEventSuspensionLevel();
@@ -241,6 +264,28 @@ class BrowsingContextGroup final : public nsWrapperCache {
   uint32_t mInputEventSuspensionLevel = 0;
   
   bool mHasIncreasedInputTaskManagerSuspensionLevel = false;
+
+  
+  
+  
+  
+  
+  
+  bool mAreDialogsEnabled = true;
+
+  
+  
+  
+  
+  
+  
+  uint32_t mDialogAbuseCount = 0;
+
+  
+  
+  
+  
+  TimeStamp mLastDialogQuitTime;
 };
 }  
 }  
