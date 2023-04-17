@@ -58,81 +58,6 @@ function promiseStartDownload(aSourceUrl) {
 
 
 
-function promiseStartDownload_tryToKeepPartialData() {
-  return (async function() {
-    mustInterruptResponses();
-
-    
-    let download;
-    if (!gUseLegacySaver) {
-      let targetFilePath = getTempFile(TEST_TARGET_FILE_NAME).path;
-      download = await Downloads.createDownload({
-        source: httpUrl("interruptible_resumable.txt"),
-        target: {
-          path: targetFilePath,
-          partFilePath: targetFilePath + ".part",
-        },
-      });
-      download.tryToKeepPartialData = true;
-      download.start().catch(() => {});
-    } else {
-      
-      
-      download = await promiseStartExternalHelperAppServiceDownload();
-    }
-
-    await promiseDownloadMidway(download);
-    await promisePartFileReady(download);
-
-    return download;
-  })();
-}
-
-
-
-
-
-
-
-
-
-
-function promisePartFileReady(aDownload) {
-  return (async function() {
-    
-    
-    
-    
-    try {
-      do {
-        await promiseTimeout(50);
-      } while (!(await OS.File.exists(aDownload.target.partFilePath)));
-    } catch (ex) {
-      if (!(ex instanceof OS.File.Error)) {
-        throw ex;
-      }
-      
-      
-      info("Expected exception while checking existence: " + ex.toString());
-      
-      await promiseTimeout(100);
-    }
-  })();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var promiseVerifyTarget = async function(downloadTarget, expectedContents) {
   await promiseVerifyContents(downloadTarget.path, expectedContents);
   Assert.ok(downloadTarget.exists);
@@ -227,7 +152,9 @@ add_task(async function test_basic() {
 
 
 add_task(async function test_basic_tryToKeepPartialData() {
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
   continueResponses();
   await promiseDownloadStopped(download);
 
@@ -957,7 +884,9 @@ add_task(async function test_cancel_midway() {
 
 
 add_task(async function test_cancel_midway_tryToKeepPartialData() {
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
 
   Assert.ok(await OS.File.exists(download.target.path));
   Assert.ok(await OS.File.exists(download.target.partFilePath));
@@ -1056,7 +985,9 @@ add_task(async function test_cancel_midway_restart() {
 
 
 add_task(async function test_cancel_midway_restart_tryToKeepPartialData() {
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
   await download.cancel();
 
   Assert.ok(download.stopped);
@@ -1112,7 +1043,9 @@ add_task(async function test_cancel_midway_restart_tryToKeepPartialData() {
 
 
 add_task(async function test_cancel_midway_restart_removePartialData() {
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
   await download.cancel();
   await download.removePartialData();
 
@@ -1141,7 +1074,9 @@ add_task(async function test_cancel_midway_restart_removePartialData() {
 
 add_task(
   async function test_cancel_midway_restart_tryToKeepPartialData_false() {
-    let download = await promiseStartDownload_tryToKeepPartialData();
+    let download = await promiseStartDownload_tryToKeepPartialData({
+      useLegacySaver: gUseLegacySaver,
+    });
     await download.cancel();
 
     download.tryToKeepPartialData = false;
@@ -1412,7 +1347,9 @@ add_task(async function test_finalize() {
 
 add_task(async function test_finalize_tryToKeepPartialData() {
   
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
   await download.finalize();
 
   Assert.ok(download.hasPartialData);
@@ -1423,7 +1360,9 @@ add_task(async function test_finalize_tryToKeepPartialData() {
   await download.removePartialData();
 
   
-  download = await promiseStartDownload_tryToKeepPartialData();
+  download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
   await download.finalize(true);
 
   Assert.ok(!download.hasPartialData);
@@ -2055,73 +1994,6 @@ add_task(async function test_getSha256Hash() {
 
 
 
-
-
-
-
-
-
-
-
-var promiseBlockedDownload = async function(options) {
-  let blockFn = base => ({
-    shouldBlockForReputationCheck: () =>
-      Promise.resolve({
-        shouldBlock: true,
-        verdict: Downloads.Error.BLOCK_VERDICT_UNCOMMON,
-      }),
-    shouldKeepBlockedData: () => Promise.resolve(options.keepBlockedData),
-  });
-
-  Integration.downloads.register(blockFn);
-  function cleanup() {
-    Integration.downloads.unregister(blockFn);
-  }
-  registerCleanupFunction(cleanup);
-
-  let download;
-
-  try {
-    if (options.keepPartialData) {
-      download = await promiseStartDownload_tryToKeepPartialData();
-      continueResponses();
-    } else if (gUseLegacySaver) {
-      download = await promiseStartLegacyDownload();
-    } else {
-      download = await promiseNewDownload();
-      await download.start();
-      do_throw("The download should have blocked.");
-    }
-
-    await promiseDownloadStopped(download);
-    do_throw("The download should have blocked.");
-  } catch (ex) {
-    if (!(ex instanceof Downloads.Error) || !ex.becauseBlocked) {
-      throw ex;
-    }
-    Assert.ok(ex.becauseBlockedByReputationCheck);
-    Assert.equal(
-      ex.reputationCheckVerdict,
-      Downloads.Error.BLOCK_VERDICT_UNCOMMON
-    );
-    Assert.ok(download.error.becauseBlockedByReputationCheck);
-    Assert.equal(
-      download.error.reputationCheckVerdict,
-      Downloads.Error.BLOCK_VERDICT_UNCOMMON
-    );
-  }
-
-  Assert.ok(download.stopped);
-  Assert.ok(!download.succeeded);
-
-  cleanup();
-  return download;
-};
-
-
-
-
-
 add_task(async function test_blocked_applicationReputation() {
   let download = await promiseBlockedDownload({
     keepPartialData: false,
@@ -2184,7 +2056,9 @@ add_task(async function test_blocked_applicationReputation_race() {
   try {
     
     
-    download = await promiseStartDownload_tryToKeepPartialData();
+    download = await promiseStartDownload_tryToKeepPartialData({
+      useLegacySaver: gUseLegacySaver,
+    });
     let firstAttempt = promiseDownloadStopped(download);
     continueResponses();
 
@@ -2244,6 +2118,7 @@ add_task(async function test_blocked_applicationReputation_unblock() {
   let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
+    useLegacySaver: gUseLegacySaver,
   });
 
   Assert.ok(download.hasBlockedData);
@@ -2654,7 +2529,9 @@ add_task(async function test_history_tryToKeepPartialData() {
 
   
   let beforeStartTimeMs = Date.now();
-  let download = await promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData({
+    useLegacySaver: gUseLegacySaver,
+  });
 
   
   let [time, transitionType] = await promiseVisit;
