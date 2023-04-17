@@ -2157,26 +2157,30 @@ void nsHostResolver::CancelAsyncRequest(
   nsHostKey key(host, aTrrServer, aType, flags, af,
                 (aOriginAttributes.mPrivateBrowsingId > 0), originSuffix);
   RefPtr<nsHostRecord> rec = mRecordDB.Get(key);
-  if (rec) {
-    nsHostRecord* recPtr = nullptr;
 
-    for (const RefPtr<nsResolveHostCallback>& c : rec->mCallbacks) {
-      if (c->EqualsAsyncListener(aListener)) {
-        RefPtr<nsResolveHostCallback> callback = c;
-        c->remove();
-        recPtr = rec;
-        callback->OnResolveHostComplete(this, recPtr, status);
-        break;
-      }
+  if (!rec) {
+    return;
+  }
+
+  for (RefPtr<nsResolveHostCallback> c : rec->mCallbacks) {
+    if (c->EqualsAsyncListener(aListener)) {
+      c->remove();
+      c->OnResolveHostComplete(this, rec.get(), status);
+      break;
     }
+  }
 
+  
+  if (rec->mCallbacks.isEmpty()) {
+    mRecordDB.Remove(*static_cast<nsHostKey*>(rec.get()));
     
-    if (recPtr && recPtr->mCallbacks.isEmpty()) {
-      mRecordDB.Remove(*static_cast<nsHostKey*>(recPtr));
+    if (rec->isInList()) {
       
-      if (recPtr->isInList()) {
-        recPtr->remove();
+      
+      if (mEvictionQ.contains(rec)) {
+        mEvictionQSize--;
       }
+      rec->remove();
     }
   }
 }
