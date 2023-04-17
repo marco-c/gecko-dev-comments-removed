@@ -224,8 +224,12 @@ bool TRRService::GetParentalControlEnabledInternal() {
 }
 
 void TRRService::SetDetectedTrrURI(const nsACString& aURI) {
+  LOG(("SetDetectedTrrURI(%s", nsPromiseFlatCString(aURI).get()));
+  
+  
   
   if (mURIPrefHasUserValue) {
+    LOG(("Already has user value. Not setting URI"));
     return;
   }
 
@@ -286,8 +290,9 @@ void TRRService::GetPrefBranch(nsIPrefBranch** result) {
 bool TRRService::MaybeSetPrivateURI(const nsACString& aURI) {
   bool clearCache = false;
   nsAutoCString newURI(aURI);
-  ProcessURITemplate(newURI);
+  LOG(("MaybeSetPrivateURI(%s)", newURI.get()));
 
+  ProcessURITemplate(newURI);
   {
     MutexAutoLock lock(mLock);
     if (mPrivateURI.Equals(newURI)) {
@@ -586,9 +591,16 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
   LOG(("TRR::Observe() topic=%s\n", aTopic));
   if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
+    TRR* prevConf = mConfirmation.mTask;
+
     ReadPrefs(NS_ConvertUTF16toUTF8(aData).get());
     mConfirmation.RecordEvent("pref-change");
-    HandleConfirmationEvent(ConfirmationEvent::PrefChange);
+
+    
+    
+    if (prevConf == mConfirmation.mTask) {
+      HandleConfirmationEvent(ConfirmationEvent::PrefChange);
+    }
   } else if (!strcmp(aTopic, kOpenCaptivePortalLoginEvent)) {
     
     LOG(("TRRservice in captive portal\n"));
