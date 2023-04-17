@@ -5798,6 +5798,10 @@ nsresult DeleteFile(nsIFile& aDirectory, const nsAString& aFilename,
                     aIdempotent);
 }
 
+
+
+
+
 nsresult DeleteFilesNoQuota(nsIFile* aDirectory, const nsAString& aFilename) {
   AssertIsOnIOThread();
   MOZ_ASSERT(aDirectory);
@@ -12453,6 +12457,11 @@ Result<FileUsageType, nsresult> FileManager::GetUsage(nsIFile* aDirectory) {
         nsresult rv;
         leafName.ToInteger64(&rv);
         if (NS_SUCCEEDED(rv)) {
+          
+          
+          
+          
+          
           QM_TRY_INSPECT(
               const auto& thisUsage,
               QM_OR_ELSE_WARN(

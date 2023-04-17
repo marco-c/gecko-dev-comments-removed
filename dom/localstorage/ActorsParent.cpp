@@ -473,6 +473,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
             if (IsDatabaseCorruptionError(rv)) {
               
               
+
+              
+              
+              
+              
+              
               QM_TRY(QM_OR_ELSE_WARN(
                   ToResult(aUsageFile.Remove(false)),
                   ([](const nsresult rv) -> Result<Ok, nsresult> {

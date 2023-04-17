@@ -76,6 +76,10 @@ bool MarkerFileExists(const QuotaInfo& aQuotaInfo);
 nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
                                   bool aTrackQuota = true);
 
+
+
+
+
 nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
                        bool aTrackQuota = true);
 
