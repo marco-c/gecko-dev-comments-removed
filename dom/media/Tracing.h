@@ -31,33 +31,18 @@ void StartAudioCallbackTracing();
 void StopAudioCallbackTracing();
 
 #ifdef TRACING
-
-
-
-
-
-
-
-
-
-
-#  define TRACE_AUDIO_CALLBACK() \
-    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE);
-#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)          \
-    AutoTracer budget(gAudioCallbackTraceLogger, "Real-time budget", \
-                      AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
-#  define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)                   \
-    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, \
-                     AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
 #  define TRACE() \
     AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE);
 #  define TRACE_COMMENT(aFmt, ...)                                  \
     AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, \
                      AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
+#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)          \
+    AutoTracer budget(gAudioCallbackTraceLogger, "Real-time budget", \
+                      AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
 #else
 #  define TRACE()
-#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)
 #  define TRACE_COMMENT(aFmt, ...)
+#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)
 #endif
 
 class MOZ_RAII AutoTracer {
