@@ -46,14 +46,17 @@ extern "C" {
 
 
 
+#if defined(WASM_USE_GUARD_PAGES) && defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)
+#  error "Cannot define both WASM_USE_GUARD_PAGES and WASM_USE_EXPLICIT_BOUNDS_CHECKS"
+#elif !defined(WASM_USE_GUARD_PAGES) && !defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS)
 
-#if !defined(WASM_USING_GUARD_PAGES)
-  #if !defined(WASM_USE_EXPLICIT_BOUNDS_CHECKS) && UINTPTR_MAX == 0xffffffffffffffff
-    #define WASM_USING_GUARD_PAGES 1
-  #else
-    #define WASM_USING_GUARD_PAGES 0
-  #endif
+#  define WASM_USE_GUARD_PAGES
 #endif
+
+
+
+
+
 #if defined(_MSC_VER)
 #define WASM_RT_NO_RETURN __declspec(noreturn)
 #else
@@ -106,7 +109,11 @@ typedef struct {
 
 typedef struct {
   
+#if defined(WASM_USE_GUARD_PAGES) || !defined(WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC)
   uint8_t* const data;
+#else
+  uint8_t* data;
+#endif
   
 
   uint32_t pages, max_pages;
