@@ -29,6 +29,7 @@ add_task(async function() {
   });
   await ToolboxTask.importFunctions({
     getNodeFront,
+    getNodeFrontInFrames,
     selectNode,
     
     selectNodeInFrames,

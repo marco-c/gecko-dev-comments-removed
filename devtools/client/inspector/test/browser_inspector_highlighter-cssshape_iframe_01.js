@@ -27,9 +27,8 @@ async function testPolygonIframeMovePoint(config) {
 
   info(`Turn on shapes highlighter for ${selector}`);
   
-  const highlightedNode = await getNodeFrontInFrame(
-    selector,
-    "#frame",
+  const highlightedNode = await getNodeFrontInFrames(
+    ["#frame", selector],
     inspector
   );
   

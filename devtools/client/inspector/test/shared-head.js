@@ -253,19 +253,7 @@ var selectNode = async function(
 
 
 
-
-
-
-
-
-
-
-async function selectNodeInFrames(
-  selectors,
-  inspector,
-  reason = "test",
-  isSlotted
-) {
+async function getNodeFrontInFrames(selectors, inspector) {
   let walker = inspector.walker;
   let rootNode = walker.rootNode;
 
@@ -281,7 +269,6 @@ async function selectNodeInFrames(
     info(`Find the frame element for selector ${frameSelector} in ${url}`);
 
     const frameFront = await walker.querySelector(rootNode, frameSelector);
-    await selectNode(frameFront, inspector);
 
     
     
@@ -305,7 +292,36 @@ async function selectNodeInFrames(
     }
   }
 
-  const nodeFront = await walker.querySelector(rootNode, nodeSelector);
+  return walker.querySelector(rootNode, nodeSelector);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function selectNodeInFrames(
+  selectors,
+  inspector,
+  reason = "test",
+  isSlotted
+) {
+  const nodeFront = await getNodeFrontInFrames(selectors, inspector);
   await selectNode(nodeFront, inspector, reason, isSlotted);
   return nodeFront;
 }

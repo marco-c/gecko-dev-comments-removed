@@ -293,66 +293,6 @@ var clickOnInspectMenuItem = async function(testActor, selector) {
 
 
 
-var getNodeFrontInFrame = async function(selector, frameSelector, inspector) {
-  let walker;
-
-  
-  if (frameSelector._form) {
-    walker = frameSelector.walkerFront;
-  } else {
-    
-    const iframeBrowsingContextId = await SpecialPowers.spawn(
-      gBrowser.selectedTab.linkedBrowser,
-      [frameSelector],
-      function(innerFrameSelector) {
-        const el = content.document.querySelector(innerFrameSelector);
-        if (!el) {
-          return null;
-        }
-
-        return el.browsingContext.id;
-      }
-    );
-
-    if (!iframeBrowsingContextId) {
-      throw new Error(`Couldn't find an iframe matching "${frameSelector}"`);
-    }
-
-    const { descriptorFront } = inspector.inspectorFront.targetFront;
-    const watcherFront = await descriptorFront.getWatcher();
-    const target = await watcherFront.getBrowsingContextTarget(
-      iframeBrowsingContextId
-    );
-    const inspectorFront = await target.getFront("inspector");
-    walker = inspectorFront.walker;
-  }
-
-  let queryNode;
-  if (walker === inspector.inspectorFront.walker) {
-    
-    
-    const iframe = await getNodeFront(frameSelector, inspector);
-    const { nodes } = await walker.children(iframe);
-    queryNode = nodes[0];
-  } else {
-    
-    
-    queryNode = walker.rootNode;
-  }
-
-  return walker.querySelector(queryNode, selector);
-};
-
-
-
-
-
-
-
-
-
-
-
 var getFrameDocument = async function(frameSelector, inspector) {
   const iframe = await getNodeFront(frameSelector, inspector);
   const { nodes } = await inspector.walker.children(iframe);
@@ -677,9 +617,8 @@ const getHighlighterHelperFor = type =>
 
       show: async function(selector = ":root", options, frameSelector = null) {
         if (frameSelector) {
-          highlightedNode = await getNodeFrontInFrame(
-            selector,
-            frameSelector,
+          highlightedNode = await getNodeFrontInFrames(
+            [frameSelector, selector],
             inspector
           );
         } else {

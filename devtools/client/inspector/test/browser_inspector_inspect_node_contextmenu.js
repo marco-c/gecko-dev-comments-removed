@@ -26,7 +26,7 @@ add_task(async function() {
 
   
   await testContextMenuWithinIframe(testActor, async inspector => {
-    return getNodeFrontInFrame("#in-frame", "iframe", inspector);
+    return getNodeFrontInFrames(["iframe", "#in-frame"], inspector);
   });
 
   
