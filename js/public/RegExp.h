@@ -42,11 +42,23 @@ extern JS_PUBLIC_API bool SetRegExpInput(JSContext* cx, Handle<JSObject*> obj,
 extern JS_PUBLIC_API bool ClearRegExpStatics(JSContext* cx,
                                              Handle<JSObject*> obj);
 
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API bool ExecuteRegExp(JSContext* cx, Handle<JSObject*> obj,
                                         Handle<JSObject*> reobj,
                                         const char16_t* chars, size_t length,
                                         size_t* indexp, bool test,
                                         MutableHandle<Value> rval);
+
+
+
 
 
 
