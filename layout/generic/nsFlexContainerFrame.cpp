@@ -364,7 +364,6 @@ class nsFlexContainerFrame::FlexItem final {
                "aContinuation should be in aItem's continuation chain!");
     FlexItem item(*this);
     item.mFrame = aContinuation;
-    item.mHadMeasuringReflow = false;
     return item;
   }
 
@@ -410,8 +409,6 @@ class nsFlexContainerFrame::FlexItem final {
         mAscent = mFrame->SynthesizeBaselineBOffsetFromBorderBox(
             mWM, BaselineSharingGroup::First);
       }
-
-      FLEX_LOGV("Resolved ascent %d for flex item %p", mAscent, Frame());
     }
     return mAscent;
   }
@@ -1792,6 +1789,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
 
 
 
+
 class nsFlexContainerFrame::CachedBAxisMeasurement {
   struct Key {
     const LogicalSize mComputedSize;
@@ -1818,11 +1816,12 @@ class nsFlexContainerFrame::CachedBAxisMeasurement {
   
   
   nscoord mBSize;
+  const nscoord mAscent;
 
  public:
   CachedBAxisMeasurement(const ReflowInput& aReflowInput,
                          const ReflowOutput& aReflowOutput)
-      : mKey(aReflowInput) {
+      : mKey(aReflowInput), mAscent(aReflowOutput.BlockStartAscent()) {
     
     
     WritingMode itemWM = aReflowInput.GetWritingMode();
@@ -1843,6 +1842,8 @@ class nsFlexContainerFrame::CachedBAxisMeasurement {
   }
 
   nscoord BSize() const { return mBSize; }
+
+  nscoord Ascent() const { return mAscent; }
 };
 
 
@@ -1952,13 +1953,13 @@ void nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(
   }
 }
 
-const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
+const CachedBAxisMeasurement&
+nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
     FlexItem& aItem, ReflowInput& aChildReflowInput) {
   auto* cachedData = aItem.Frame()->GetProperty(CachedFlexItemData::Prop());
 
   if (cachedData && cachedData->mBAxisMeasurement) {
-    if (!aItem.Frame()->IsSubtreeDirty() &&
-        cachedData->mBAxisMeasurement->IsValidFor(aChildReflowInput)) {
+    if (cachedData->mBAxisMeasurement->IsValidFor(aChildReflowInput)) {
       return *(cachedData->mBAxisMeasurement);
     }
     FLEX_LOG("[perf] MeasureAscentAndBSizeForFlexItem rejected cached value");
@@ -1993,8 +1994,6 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
   FinishReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
                     &aChildReflowInput, outerWM, dummyPosition,
                     dummyContainerSize, flags);
-
-  aItem.SetAscent(childReflowOutput.BlockStartAscent());
 
   
   
@@ -2064,8 +2063,9 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   }
 
   const CachedBAxisMeasurement& measurement =
-      MeasureBSizeForFlexItem(aFlexItem, childRIForMeasuringBSize);
+      MeasureAscentAndBSizeForFlexItem(aFlexItem, childRIForMeasuringBSize);
 
+  aFlexItem.SetAscent(measurement.Ascent());
   return measurement.BSize();
 }
 
@@ -4412,13 +4412,14 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(ReflowInput& aChildReflowInput,
 
   
   const CachedBAxisMeasurement& measurement =
-      MeasureBSizeForFlexItem(aItem, aChildReflowInput);
+      MeasureAscentAndBSizeForFlexItem(aItem, aChildReflowInput);
 
   
   
 
   
   aItem.SetCrossSize(measurement.BSize());
+  aItem.SetAscent(measurement.Ascent());
 }
 
 void FlexLine::PositionItemsInCrossAxis(
