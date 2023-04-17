@@ -28,6 +28,8 @@ bool ExtensionAPIAllowed(JSContext* aCx, JSObject* aGlobal);
 
 class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
+  JS::Heap<JS::Value> mLastError;
+  bool mCheckedLastError;
   RefPtr<ExtensionAlarms> mExtensionAlarms;
   RefPtr<ExtensionMockAPI> mExtensionMockAPI;
   RefPtr<ExtensionRuntime> mExtensionRuntime;
@@ -37,6 +39,16 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
 
  public:
   explicit ExtensionBrowser(nsIGlobalObject* aGlobal);
+
+  
+  
+  void SetLastError(JS::Handle<JS::Value> aLastError);
+  void GetLastError(JS::MutableHandle<JS::Value> aRetVal);
+  
+  
+  
+  
+  bool ClearLastError();
 
   
   JSObject* WrapObject(JSContext* aCx,
