@@ -2559,12 +2559,7 @@ bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
   
   if (hitTesting || aForceBackground ||
       !StyleBackground()->IsTransparent(this) ||
-      StyleDisplay()->HasAppearance() ||
-      
-      
-      
-      EffectCompositor::HasAnimationsForCompositor(
-          this, DisplayItemType::TYPE_BACKGROUND_COLOR)) {
+      StyleDisplay()->HasAppearance()) {
     result = nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
         aBuilder, this,
         GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this),
