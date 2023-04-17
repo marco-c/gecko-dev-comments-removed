@@ -516,7 +516,7 @@ DevToolsStartup.prototype = {
     
     
     if (!this.initialized) {
-      this.hookWebDeveloperMenu(window);
+      this.hookBrowserToolsMenu(window);
     }
 
     this.createDevToolsEnableMenuItem(window);
@@ -686,8 +686,8 @@ DevToolsStartup.prototype = {
 
 
 
-  hookWebDeveloperMenu(window) {
-    const menu = window.document.getElementById("webDeveloperMenu");
+  hookBrowserToolsMenu(window) {
+    const menu = window.document.getElementById("browserToolsMenu");
     const onPopupShowing = () => {
       if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
         return;

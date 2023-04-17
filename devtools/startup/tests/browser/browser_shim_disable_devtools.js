@@ -110,12 +110,10 @@ add_task(async function() {
 
   info("Open the menubar Tools menu");
   const toolsMenuPopup = win.document.getElementById("menu_ToolsPopup");
-  
-  
-  const browserToolsMenu = win.document.getElementById("webDeveloperMenu");
+  const browserToolsMenu = win.document.getElementById("browserToolsMenu");
   ok(
     !browserToolsMenu.hidden,
-    "The Web Developer item of the tools menu is visible"
+    "The Browser Tools item of the tools menu is visible"
   );
 
   await simulateMenuOpen(toolsMenuPopup);
