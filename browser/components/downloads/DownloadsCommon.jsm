@@ -147,6 +147,7 @@ var DownloadsCommon = {
   
   ATTENTION_NONE: "",
   ATTENTION_SUCCESS: "success",
+  ATTENTION_INFO: "info",
   ATTENTION_WARNING: "warning",
   ATTENTION_SEVERE: "severe",
 
@@ -1251,8 +1252,16 @@ DownloadsIndicatorDataCtor.prototype = {
       download.error.reputationCheckVerdict
     ) {
       switch (download.error.reputationCheckVerdict) {
-        case Downloads.Error.BLOCK_VERDICT_UNCOMMON: 
-        case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+        case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
+          
+          if (
+            this._attention != DownloadsCommon.ATTENTION_SEVERE &&
+            this._attention != DownloadsCommon.ATTENTION_WARNING
+          ) {
+            this.attention = DownloadsCommon.ATTENTION_INFO;
+          }
+          break;
+        case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED: 
         case Downloads.Error.BLOCK_VERDICT_INSECURE:
           
           if (this._attention != DownloadsCommon.ATTENTION_SEVERE) {
