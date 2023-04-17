@@ -64,13 +64,13 @@ class nsSocketInputStream : public nsIAsyncInputStream {
 
  private:
   nsSocketTransport* mTransport;
-  ThreadSafeAutoRefCnt mReaderRefCnt;
+  ThreadSafeAutoRefCnt mReaderRefCnt{0};
 
   
-  nsresult mCondition;
+  nsresult mCondition{NS_OK};
   nsCOMPtr<nsIInputStreamCallback> mCallback;
-  uint32_t mCallbackFlags;
-  uint64_t mByteCount;
+  uint32_t mCallbackFlags{0};
+  uint64_t mByteCount{0};
 };
 
 
@@ -97,13 +97,13 @@ class nsSocketOutputStream : public nsIAsyncOutputStream {
                                     uint32_t* countRead);
 
   nsSocketTransport* mTransport;
-  ThreadSafeAutoRefCnt mWriterRefCnt;
+  ThreadSafeAutoRefCnt mWriterRefCnt{0};
 
   
-  nsresult mCondition;
+  nsresult mCondition{NS_OK};
   nsCOMPtr<nsIOutputStreamCallback> mCallback;
-  uint32_t mCallbackFlags;
-  uint64_t mByteCount;
+  uint32_t mCallbackFlags{0};
+  uint64_t mByteCount{0};
 };
 
 
@@ -275,19 +275,19 @@ class nsSocketTransport final : public nsASocketHandler,
   nsCString mHost;
   nsCString mProxyHost;
   nsCString mOriginHost;
-  uint16_t mPort;
+  uint16_t mPort{0};
   nsCOMPtr<nsIProxyInfo> mProxyInfo;
-  uint16_t mProxyPort;
-  uint16_t mOriginPort;
-  bool mProxyTransparent;
-  bool mProxyTransparentResolvesHost;
-  bool mHttpsProxy;
-  uint32_t mConnectionFlags;
+  uint16_t mProxyPort{0};
+  uint16_t mOriginPort{0};
+  bool mProxyTransparent{false};
+  bool mProxyTransparentResolvesHost{false};
+  bool mHttpsProxy{false};
+  uint32_t mConnectionFlags{0};
   
   
-  bool mResetFamilyPreference;
-  uint32_t mTlsFlags;
-  bool mReuseAddrPort;
+  bool mResetFamilyPreference{false};
+  uint32_t mTlsFlags{0};
+  bool mReuseAddrPort{false};
 
   
   
@@ -309,29 +309,29 @@ class nsSocketTransport final : public nsASocketHandler,
   
 
   
-  uint32_t mState;  
-  bool mAttached;
-  bool mInputClosed;
-  bool mOutputClosed;
+  uint32_t mState{STATE_CLOSED};  
+  bool mAttached{false};
+  bool mInputClosed{true};
+  bool mOutputClosed{true};
 
   
   
-  bool mResolving;
+  bool mResolving{false};
 
   nsCOMPtr<nsICancelable> mDNSRequest;
   nsCOMPtr<nsIDNSAddrRecord> mDNSRecord;
 
   nsCString mEchConfig;
   bool mEchConfigUsed = false;
-  bool mResolvedByTRR;
+  bool mResolvedByTRR{false};
 
   
   
   void SetSocketName(PRFileDesc* fd);
   NetAddr mNetAddr;
   NetAddr mSelfAddr;  
-  Atomic<bool, Relaxed> mNetAddrIsSet;
-  Atomic<bool, Relaxed> mSelfAddrIsSet;
+  Atomic<bool, Relaxed> mNetAddrIsSet{false};
+  Atomic<bool, Relaxed> mSelfAddrIsSet{false};
 
   UniquePtr<NetAddr> mBindAddr;
 
@@ -363,10 +363,11 @@ class nsSocketTransport final : public nsASocketHandler,
   
   
 
-  Mutex mLock;  
+  
+  Mutex mLock{"nsSocketTransport.mLock"};
   LockedPRFileDesc mFD;
-  nsrefcnt mFDref;    
-  bool mFDconnected;  
+  nsrefcnt mFDref{0};        
+  bool mFDconnected{false};  
 
   
   
@@ -387,11 +388,11 @@ class nsSocketTransport final : public nsASocketHandler,
   uint16_t mTimeouts[2]{0};
 
   
-  bool mLingerPolarity;
-  int16_t mLingerTimeout;
+  bool mLingerPolarity{false};
+  int16_t mLingerTimeout{0};
 
   
-  uint8_t mQoSBits;
+  uint8_t mQoSBits{0x00};
 
   
   
@@ -448,14 +449,14 @@ class nsSocketTransport final : public nsASocketHandler,
 
   
   
-  bool mKeepaliveEnabled;
+  bool mKeepaliveEnabled{false};
 
   
-  int32_t mKeepaliveIdleTimeS;
-  int32_t mKeepaliveRetryIntervalS;
-  int32_t mKeepaliveProbeCount;
+  int32_t mKeepaliveIdleTimeS{-1};
+  int32_t mKeepaliveRetryIntervalS{-1};
+  int32_t mKeepaliveProbeCount{-1};
 
-  bool mDoNotRetryToConnect;
+  bool mDoNotRetryToConnect{false};
 
   
   

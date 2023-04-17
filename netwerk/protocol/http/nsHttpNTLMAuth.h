@@ -16,7 +16,7 @@ class nsHttpNTLMAuth : public nsIHttpAuthenticator {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIHTTPAUTHENTICATOR
 
-  nsHttpNTLMAuth() : mUseNative(false) {}
+  nsHttpNTLMAuth() = default;
 
   static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
@@ -25,7 +25,7 @@ class nsHttpNTLMAuth : public nsIHttpAuthenticator {
 
   
   
-  bool mUseNative;
+  bool mUseNative{false};
 
   static StaticRefPtr<nsHttpNTLMAuth> gSingleton;
 };

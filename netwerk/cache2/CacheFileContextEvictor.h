@@ -79,12 +79,12 @@ class CacheFileContextEvictor {
   void EvictEntries();
 
   
-  bool mEvicting;
+  bool mEvicting{false};
   
   
   
   
-  bool mIndexIsUpToDate;
+  bool mIndexIsUpToDate{false};
   
   
   static bool sDiskAlreadySearched;

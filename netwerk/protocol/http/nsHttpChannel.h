@@ -263,7 +263,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   }
   TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
 
-  CacheDisposition mCacheDisposition;
+  CacheDisposition mCacheDisposition{kCacheUnresolved};
 
  protected:
   virtual ~nsHttpChannel();
@@ -555,7 +555,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsIRequest> mTransactionPump;
   RefPtr<HttpTransactionShell> mTransaction;
 
-  uint64_t mLogicalOffset;
+  uint64_t mLogicalOffset{0};
 
   
   nsCOMPtr<nsICacheEntry> mCacheEntry;
@@ -574,8 +574,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   RefPtr<nsInputStreamPump> mCachePump;
   UniquePtr<nsHttpResponseHead> mCachedResponseHead;
   nsCOMPtr<nsISupports> mCachedSecurityInfo;
-  uint32_t mPostID;
-  uint32_t mRequestTime;
+  uint32_t mPostID{0};
+  uint32_t mRequestTime{0};
 
   nsTArray<StreamFilterRequest> mStreamFilterRequests;
 
@@ -589,21 +589,21 @@ class nsHttpChannel final : public HttpBaseChannel,
 #endif
   
   
-  uint32_t mSuspendTotalTime;
+  uint32_t mSuspendTotalTime{0};
 
   friend class AutoRedirectVetoNotifier;
   friend class HttpAsyncAborter<nsHttpChannel>;
 
-  uint32_t mRedirectType;
+  uint32_t mRedirectType{0};
 
   static const uint32_t WAIT_FOR_CACHE_ENTRY = 1;
 
-  bool mCacheOpenWithPriority;
-  uint32_t mCacheQueueSizeWhenOpen;
+  bool mCacheOpenWithPriority{false};
+  uint32_t mCacheQueueSizeWhenOpen{0};
 
-  Atomic<bool, Relaxed> mCachedContentIsValid;
-  Atomic<bool> mIsAuthChannel;
-  Atomic<bool> mAuthRetryPending;
+  Atomic<bool, Relaxed> mCachedContentIsValid{false};
+  Atomic<bool> mIsAuthChannel{false};
+  Atomic<bool> mAuthRetryPending{false};
 
   
   
@@ -688,12 +688,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   RefPtr<nsDNSPrefetch> mDNSPrefetch;
 
-  uint32_t mPushedStreamId;
+  uint32_t mPushedStreamId{0};
   RefPtr<HttpTransactionShell> mTransWithPushedStream;
 
   
   
-  bool mLocalBlocklist;
+  bool mLocalBlocklist{false};
 
   [[nodiscard]] nsresult WaitForRedirectCallback();
   void PushRedirectAsyncFunc(nsContinueRedirectionFunc func);
@@ -713,7 +713,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  nsresult (nsHttpChannel::*mOnTailUnblock)();
+  using TailUnblockCallback = nsresult (nsHttpChannel::*)();
+  TailUnblockCallback mOnTailUnblock{nullptr};
   
   nsresult AsyncOpenOnTailUnblock();
   
@@ -725,7 +726,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   RefPtr<HttpChannelSecurityWarningReporter> mWarningReporter;
 
   
-  Atomic<bool> mIsReadingFromCache;
+  Atomic<bool> mIsReadingFromCache{false};
 
   
   
@@ -739,7 +740,7 @@ class nsHttpChannel final : public HttpBaseChannel,
     RESPONSE_FROM_CACHE = 1,   
     RESPONSE_FROM_NETWORK = 2  
   };
-  Atomic<ResponseSource, Relaxed> mFirstResponseSource;
+  Atomic<ResponseSource, Relaxed> mFirstResponseSource{RESPONSE_PENDING};
 
   
   
@@ -765,15 +766,15 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mStaleRevalidation = false;
   
   
-  Atomic<bool> mRaceCacheWithNetwork;
-  uint32_t mRaceDelay;
+  Atomic<bool> mRaceCacheWithNetwork{false};
+  uint32_t mRaceDelay{0};
   
   
   
-  bool mIgnoreCacheEntry;
+  bool mIgnoreCacheEntry{false};
   
   
-  mozilla::Mutex mRCWNLock;
+  mozilla::Mutex mRCWNLock{"nsHttpChannel.mRCWNLock"};
 
   TimeStamp mNavigationStartTimeStamp;
 
@@ -787,7 +788,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  int32_t mProxyConnectResponseCode;
+  int32_t mProxyConnectResponseCode{0};
 
   
   
@@ -804,7 +805,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   virtual void DoAsyncAbort(nsresult aStatus) override;
 
  private:  
-  bool mDidReval;
+  bool mDidReval{false};
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpChannel, NS_HTTPCHANNEL_IID)

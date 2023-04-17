@@ -22,6 +22,7 @@
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsISupportsPriority.h"
 #include "nsITimer.h"
 
 class nsISocketTransport;
@@ -248,8 +249,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
 
-  nsresult mSocketInCondition;
-  nsresult mSocketOutCondition;
+  nsresult mSocketInCondition{NS_ERROR_NOT_INITIALIZED};
+  nsresult mSocketOutCondition{NS_ERROR_NOT_INITIALIZED};
 
   nsCOMPtr<nsIInputStream> mProxyConnectStream;
   nsCOMPtr<nsIInputStream> mRequestStream;
@@ -259,97 +260,95 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   RefPtr<nsHttpHandler> mHttpHandler;  
 
-  PRIntervalTime mLastReadTime;
-  PRIntervalTime mLastWriteTime;
-  PRIntervalTime
-      mMaxHangTime;  
+  PRIntervalTime mLastReadTime{0};
+  PRIntervalTime mLastWriteTime{0};
+  
+  PRIntervalTime mMaxHangTime{0};
   PRIntervalTime mIdleTimeout;  
-  PRIntervalTime mConsiderReusedAfterInterval;
-  PRIntervalTime mConsiderReusedAfterEpoch;
-  int64_t mCurrentBytesRead;     
-  int64_t mMaxBytesRead;         
-  int64_t mTotalBytesRead;       
-  int64_t mContentBytesWritten;  
+  PRIntervalTime mConsiderReusedAfterInterval{0};
+  PRIntervalTime mConsiderReusedAfterEpoch{0};
+  int64_t mCurrentBytesRead{0};     
+  int64_t mMaxBytesRead{0};         
+  int64_t mTotalBytesRead{0};       
+  int64_t mContentBytesWritten{0};  
 
   RefPtr<nsIAsyncInputStream> mInputOverflow;
 
   
   
-  bool mUrgentStartPreferred;
+  bool mUrgentStartPreferred{false};
   
-  bool mUrgentStartPreferredKnown;
-  bool mConnectedTransport;
-  bool mKeepAlive;
-  bool mKeepAliveMask;
-  bool mDontReuse;
-  bool mIsReused;
-  bool mCompletedProxyConnect;
-  bool mLastTransactionExpectedNoContent;
-  bool mIdleMonitoring;
-  bool mProxyConnectInProgress;
-  bool mInSpdyTunnel;
-  bool mForcePlainText;
+  bool mUrgentStartPreferredKnown{false};
+  bool mConnectedTransport{false};
+  
+  bool mKeepAlive{true};
+  bool mKeepAliveMask{true};
+  bool mDontReuse{false};
+  bool mIsReused{false};
+  bool mCompletedProxyConnect{false};
+  bool mLastTransactionExpectedNoContent{false};
+  bool mIdleMonitoring{false};
+  bool mProxyConnectInProgress{false};
+  bool mInSpdyTunnel{false};
+  bool mForcePlainText{false};
 
   
-  int64_t mTrafficCount;
-  bool mTrafficStamp;  
-
-  
-  
-  uint32_t mHttp1xTransactionCount;
+  int64_t mTrafficCount{0};
+  bool mTrafficStamp{false};  
 
   
   
-  
-  uint32_t mRemainingConnectionUses;
+  uint32_t mHttp1xTransactionCount{0};
 
   
-  bool mNPNComplete;
-  bool mSetupSSLCalled;
+  
+  
+  uint32_t mRemainingConnectionUses{0xffffffff};
 
   
-  SpdyVersion mUsingSpdyVersion;
+  bool mNPNComplete{false};
+  bool mSetupSSLCalled{false};
+
+  
+  SpdyVersion mUsingSpdyVersion{SpdyVersion::NONE};
 
   RefPtr<ASpdySession> mSpdySession;
-  int32_t mPriority;
-  bool mReportedSpdy;
+  int32_t mPriority{nsISupportsPriority::PRIORITY_NORMAL};
+  bool mReportedSpdy{false};
 
   
-  bool mEverUsedSpdy;
+  bool mEverUsedSpdy{false};
 
   
-  HttpVersion mLastHttpResponseVersion;
+  HttpVersion mLastHttpResponseVersion{HttpVersion::v1_1};
 
   
   
-  uint32_t mDefaultTimeoutFactor;
+  uint32_t mDefaultTimeoutFactor{1};
 
-  bool mResponseTimeoutEnabled;
+  bool mResponseTimeoutEnabled{false};
 
   
-  uint32_t mTCPKeepaliveConfig;
+  uint32_t mTCPKeepaliveConfig{kTCPKeepaliveDisabled};
   nsCOMPtr<nsITimer> mTCPKeepaliveTransitionTimer;
 
  private:
   
   static void ForceSendIO(nsITimer* aTimer, void* aClosure);
   [[nodiscard]] nsresult MaybeForceSendIO();
-  bool mForceSendPending;
+  bool mForceSendPending{false};
   nsCOMPtr<nsITimer> mForceSendTimer;
 
   
-  bool m0RTTChecked;             
-                                 
-  bool mWaitingFor0RTTResponse;  
-                                 
-                                 
-                                 
-                                 
-                                 
-  int64_t mContentBytesWritten0RTT;
-  bool mEarlyDataNegotiated;  
+  
+  bool m0RTTChecked{false};
+  
+  
+  bool mWaitingFor0RTTResponse{false};
+  int64_t mContentBytesWritten0RTT{0};
+  bool mEarlyDataNegotiated{false};  
   nsCString mEarlyNegotiatedALPN;
-  bool mDid0RTTSpdy;
+  bool mDid0RTTSpdy{false};
 
   nsresult mErrorBeforeConnect = NS_OK;
 

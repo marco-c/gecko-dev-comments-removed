@@ -16,9 +16,6 @@ namespace net {
 
 NS_IMPL_ISUPPORTS(nsHttpAuthManager, nsIHttpAuthManager)
 
-nsHttpAuthManager::nsHttpAuthManager()
-    : mAuthCache(nullptr), mPrivateAuthCache(nullptr) {}
-
 nsresult nsHttpAuthManager::Init() {
   
   
@@ -58,14 +55,15 @@ nsHttpAuthManager::GetAuthIdentity(
     aPrincipal->OriginAttributesRef().CreateSuffix(originSuffix);
   }
 
-  if (!aPath.IsEmpty())
+  if (!aPath.IsEmpty()) {
     rv = auth_cache->GetAuthEntryForPath(
         PromiseFlatCString(aScheme).get(), PromiseFlatCString(aHost).get(),
         aPort, PromiseFlatCString(aPath).get(), originSuffix, &entry);
-  else
+  } else {
     rv = auth_cache->GetAuthEntryForDomain(
         PromiseFlatCString(aScheme).get(), PromiseFlatCString(aHost).get(),
         aPort, PromiseFlatCString(aRealm).get(), originSuffix, &entry);
+  }
 
   if (NS_FAILED(rv)) return rv;
   if (!entry) return NS_ERROR_UNEXPECTED;
