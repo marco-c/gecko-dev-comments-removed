@@ -165,8 +165,8 @@ class ExceptionHandler {
 
   
   static bool WriteForwardedExceptionMinidump(int exception_type,
-					      int64_t exception_code,
-					      int64_t exception_subcode,
+					      int exception_code,
+					      int exception_subcode,
 					      mach_port_t thread,
 					      mach_port_t task);
 
@@ -202,7 +202,7 @@ class ExceptionHandler {
   
   
   bool WriteMinidumpWithException(int exception_type,
-                                  int64_t exception_code,
+                                  int exception_code,
                                   int64_t exception_subcode,
                                   breakpad_ucontext_t *task_context,
                                   mach_port_t thread_name,
