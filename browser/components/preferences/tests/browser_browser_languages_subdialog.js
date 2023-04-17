@@ -285,6 +285,12 @@ add_task(async function testDisabledBrowserLanguages() {
   assertLocaleOrder(selected, "en-US,he");
 
   
+  await BrowserTestUtils.waitForCondition(
+    () => !!available.children.length,
+    "Children list populated"
+  );
+
+  
   assertAvailableLocales(available, ["fr"]);
 
   
@@ -413,7 +419,7 @@ add_task(async function testReorderingBrowserLanguages() {
   ok(secondDialogId, "There was an id on the second dialog");
   ok(firstDialogId != secondDialogId, "The dialog ids are different");
   ok(
-    firstDialogId < secondDialogId,
+    parseInt(firstDialogId) < parseInt(secondDialogId),
     "The second dialog id is larger than the first"
   );
 
