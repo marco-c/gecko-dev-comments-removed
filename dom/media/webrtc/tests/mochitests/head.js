@@ -445,9 +445,7 @@ function setupEnvironment() {
     ],
   };
 
-  const isAndroid = !!navigator.userAgent.includes("Android");
-
-  if (isAndroid) {
+  if (navigator.userAgent.includes("Android")) {
     defaultMochitestPrefs.set.push(
       ["media.navigator.video.default_width", 320],
       ["media.navigator.video.default_height", 240],
@@ -458,14 +456,12 @@ function setupEnvironment() {
 
   
   
-  
-  
-  const alwaysHasHW264 =
-    !!navigator.userAgent.includes("Android") ||
-    !!navigator.userAgent.includes("Mac OS X");
+  const platformEncoderEnabled = SpecialPowers.getBoolPref(
+    "media.webrtc.platformencoder"
+  );
   defaultMochitestPrefs.set.push([
     "media.navigator.mediadatadecoder_h264_enabled",
-    alwaysHasHW264,
+    platformEncoderEnabled,
   ]);
 
   
@@ -476,6 +472,19 @@ function setupEnvironment() {
   
   
   SpecialPowers.exactGC();
+}
+
+
+async function matchPlatformH264CodecPrefs() {
+  const hasHW264 =
+    SpecialPowers.getBoolPref("media.webrtc.platformencoder") &&
+    (navigator.userAgent.includes("Android") ||
+      navigator.userAgent.includes("Mac OS X"));
+
+  await pushPrefs(
+    ["media.webrtc.platformencoder", hasHW264],
+    ["media.navigator.mediadatadecoder_h264_enabled", hasHW264]
+  );
 }
 
 async function runTestWhenReady(testFunc) {
