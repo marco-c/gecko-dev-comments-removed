@@ -2446,8 +2446,9 @@
 
 
 
+
  \
-    MACRO(CheckReturn, check_return, NULL, 1, 1, 0, JOF_BYTE) \
+    MACRO(CheckReturn, check_return, NULL, 1, 1, 1, JOF_BYTE) \
     
 
 
