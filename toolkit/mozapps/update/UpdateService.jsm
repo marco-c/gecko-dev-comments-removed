@@ -39,6 +39,19 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "AUS",
+  "@mozilla.org/updates/update-service;1",
+  "nsIApplicationUpdateService"
+);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UM",
+  "@mozilla.org/updates/update-manager;1",
+  "nsIUpdateManager"
+);
+
 if (AppConstants.ENABLE_WEBDRIVER) {
   XPCOMUtils.defineLazyServiceGetter(
     this,
@@ -1361,18 +1374,15 @@ function cleanUpDownloadingUpdateDir() {
 
 function cleanupReadyUpdate() {
   
-  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-    Ci.nsIUpdateManager
-  );
-  if (um.readyUpdate) {
-    um.addUpdateToHistory(um.readyUpdate);
-    um.readyUpdate = null;
+  if (UM.readyUpdate) {
+    UM.addUpdateToHistory(UM.readyUpdate);
+    UM.readyUpdate = null;
   }
-  um.saveUpdates();
+  UM.saveUpdates();
 
   let readyUpdateDir = getReadyUpdateDir();
   let shouldSetDownloadingStatus =
-    um.downloadingUpdate || readStatusFile(readyUpdateDir) == STATE_DOWNLOADING;
+    UM.downloadingUpdate || readStatusFile(readyUpdateDir) == STATE_DOWNLOADING;
 
   
   cleanUpReadyUpdateDir();
@@ -1400,14 +1410,11 @@ function cleanupReadyUpdate() {
 
 function cleanupDownloadingUpdate() {
   
-  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-    Ci.nsIUpdateManager
-  );
-  if (um.downloadingUpdate) {
-    um.addUpdateToHistory(um.downloadingUpdate);
-    um.downloadingUpdate = null;
+  if (UM.downloadingUpdate) {
+    UM.addUpdateToHistory(UM.downloadingUpdate);
+    UM.downloadingUpdate = null;
   }
-  um.saveUpdates();
+  UM.saveUpdates();
 
   
   cleanUpDownloadingUpdateDir();
@@ -1439,18 +1446,15 @@ function cleanupDownloadingUpdate() {
 
 function cleanupActiveUpdates() {
   
-  var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-    Ci.nsIUpdateManager
-  );
-  if (um.readyUpdate) {
-    um.addUpdateToHistory(um.readyUpdate);
-    um.readyUpdate = null;
+  if (UM.readyUpdate) {
+    UM.addUpdateToHistory(UM.readyUpdate);
+    UM.readyUpdate = null;
   }
-  if (um.downloadingUpdate) {
-    um.addUpdateToHistory(um.downloadingUpdate);
-    um.downloadingUpdate = null;
+  if (UM.downloadingUpdate) {
+    UM.addUpdateToHistory(UM.downloadingUpdate);
+    UM.downloadingUpdate = null;
   }
-  um.saveUpdates();
+  UM.saveUpdates();
 
   
   cleanUpReadyUpdateDir();
@@ -1677,16 +1681,9 @@ async function handleFallbackToCompleteUpdate(postStaging) {
   
   
 
-  let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-    Ci.nsIUpdateManager
-  );
-  let aus = Cc["@mozilla.org/updates/update-service;1"].getService(
-    Ci.nsIApplicationUpdateService
-  );
-
   
   
-  let update = um.downloadingUpdate || um.readyUpdate;
+  let update = UM.downloadingUpdate || UM.readyUpdate;
   if (!update) {
     LOG(
       "handleFallbackToCompleteUpdate - Unable to find an update to fall " +
@@ -1695,7 +1692,7 @@ async function handleFallbackToCompleteUpdate(postStaging) {
     return;
   }
 
-  await aus.stopDownload();
+  await AUS.stopDownload();
   cleanupActiveUpdates();
 
   if (!update.selectedPatch) {
@@ -1716,7 +1713,7 @@ async function handleFallbackToCompleteUpdate(postStaging) {
       "handleFallbackToCompleteUpdate - install of partial patch " +
         "failed, downloading complete patch"
     );
-    var success = aus.downloadUpdate(update, !postStaging);
+    var success = AUS.downloadUpdate(update, !postStaging);
     if (!success) {
       cleanupDownloadingUpdate();
     }
@@ -1869,10 +1866,7 @@ function handleCriticalWriteFailure(path) {
   if (!gUpdateFileWriteInfo.failure) {
     gUpdateFileWriteInfo.failure = true;
     let patchType = AUSTLMY.PATCH_UNKNOWN;
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-    let update = um.readyUpdate || um.downloadingUpdate;
+    let update = UM.readyUpdate || UM.downloadingUpdate;
     if (update) {
       let patch = update.selectedPatch;
       if (patch.type == "complete") {
@@ -2733,16 +2727,12 @@ UpdateService.prototype = {
       return;
     }
 
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-
     let updates = [];
-    if (um.readyUpdate) {
-      updates.push(um.readyUpdate);
+    if (UM.readyUpdate) {
+      updates.push(UM.readyUpdate);
     }
-    if (um.downloadingUpdate) {
-      updates.push(um.downloadingUpdate);
+    if (UM.downloadingUpdate) {
+      updates.push(UM.downloadingUpdate);
     }
 
     if (status == STATE_NONE) {
@@ -2784,9 +2774,9 @@ UpdateService.prototype = {
       let prefSvc = Services.prefs.QueryInterface(Ci.nsIObserver);
       prefSvc.observe(null, "reload-default-prefs", null);
       if (channelChanged(updates)) {
-        let channel = um.readyUpdate
-          ? um.readyUpdate.channel
-          : um.downloadingUpdate.channel;
+        let channel = UM.readyUpdate
+          ? UM.readyUpdate.channel
+          : UM.downloadingUpdate.channel;
         LOG(
           "UpdateService:_postUpdateProcessing - update channel is " +
             "different than application's channel, removing update. update " +
@@ -2824,20 +2814,20 @@ UpdateService.prototype = {
       let tooOldUpdate;
       if (
         updateIsAtLeastAsOldAs(
-          um.readyUpdate,
+          UM.readyUpdate,
           Services.appinfo.version,
           Services.appinfo.appBuildID
         )
       ) {
-        tooOldUpdate = um.readyUpdate;
+        tooOldUpdate = UM.readyUpdate;
       } else if (
         updateIsAtLeastAsOldAs(
-          um.downloadingUpdate,
+          UM.downloadingUpdate,
           Services.appinfo.version,
           Services.appinfo.appBuildID
         )
       ) {
-        tooOldUpdate = um.downloadingUpdate;
+        tooOldUpdate = UM.downloadingUpdate;
       }
       if (tooOldUpdate) {
         LOG(
@@ -2872,11 +2862,11 @@ UpdateService.prototype = {
     }
 
     pingStateAndStatusCodes(
-      status == STATE_DOWNLOADING ? um.downloadingUpdate : um.readyUpdate,
+      status == STATE_DOWNLOADING ? UM.downloadingUpdate : UM.readyUpdate,
       true,
       status
     );
-    if (um.downloadingUpdate || status == STATE_DOWNLOADING) {
+    if (UM.downloadingUpdate || status == STATE_DOWNLOADING) {
       if (status == STATE_SUCCEEDED) {
         
         
@@ -2891,12 +2881,12 @@ UpdateService.prototype = {
         cleanupDownloadingUpdate();
       } else {
         
-        if (um.downloadingUpdate) {
+        if (UM.downloadingUpdate) {
           LOG(
             "UpdateService:_postUpdateProcessing - resuming patch found in " +
               "downloading state"
           );
-          let success = this.downloadUpdate(um.downloadingUpdate, true);
+          let success = this.downloadUpdate(UM.downloadingUpdate, true);
           if (!success) {
             cleanupDownloadingUpdate();
           }
@@ -2916,7 +2906,7 @@ UpdateService.prototype = {
       }
     }
 
-    let update = um.readyUpdate;
+    let update = UM.readyUpdate;
 
     if (status == STATE_APPLYING) {
       
@@ -2941,7 +2931,7 @@ UpdateService.prototype = {
             "state for the first time"
         );
         update.state = STATE_APPLYING;
-        um.saveUpdates();
+        UM.saveUpdates();
       } else {
         
         LOG(
@@ -2985,8 +2975,8 @@ UpdateService.prototype = {
 
       
       
-      if (!um.readyUpdate) {
-        um.readyUpdate = update;
+      if (!UM.readyUpdate) {
+        UM.readyUpdate = update;
       }
 
       
@@ -3096,10 +3086,7 @@ UpdateService.prototype = {
     
     
     
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-    if (um.readyUpdate) {
+    if (UM.readyUpdate) {
       LOG(
         "UpdateService:onError - Ignoring error because another update is " +
           "ready."
@@ -3188,10 +3175,7 @@ UpdateService.prototype = {
 
   
   get _pingSuffix() {
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-    if (um.readyUpdate) {
+    if (UM.readyUpdate) {
       
       
       
@@ -3350,13 +3334,10 @@ UpdateService.prototype = {
     
     
     
-    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
     if (
-      um.readyUpdate &&
-      um.readyUpdate.selectedPatch &&
-      um.readyUpdate.selectedPatch.type == "complete"
+      UM.readyUpdate &&
+      UM.readyUpdate.selectedPatch &&
+      UM.readyUpdate.selectedPatch.type == "complete"
     ) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_IS_DOWNLOADED);
       return false;
@@ -3567,10 +3548,7 @@ UpdateService.prototype = {
   _selectAndInstallUpdate: async function AUS__selectAndInstallUpdate(updates) {
     
     
-    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-    if (um.downloadingUpdate) {
+    if (UM.downloadingUpdate) {
       AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_HAS_ACTIVEUPDATE);
       return;
     }
@@ -3924,17 +3902,14 @@ UpdateService.prototype = {
       cleanupDownloadingUpdate();
       return false;
     }
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
     if (
-      um.readyUpdate &&
-      um.readyUpdate.appVersion &&
-      um.readyUpdate.buildID &&
+      UM.readyUpdate &&
+      UM.readyUpdate.appVersion &&
+      UM.readyUpdate.buildID &&
       updateIsAtLeastAsOldAs(
         update,
-        um.readyUpdate.appVersion,
-        um.readyUpdate.buildID
+        UM.readyUpdate.appVersion,
+        UM.readyUpdate.buildID
       )
     ) {
       LOG(
@@ -3942,13 +3917,13 @@ UpdateService.prototype = {
           "update that's already been downloaded is the same version or " +
           "newer.\n" +
           "currently downloaded update application version: " +
-          um.readyUpdate.appVersion +
+          UM.readyUpdate.appVersion +
           "\n" +
           "available update application version : " +
           update.appVersion +
           "\n" +
           "currently downloaded update build ID: " +
-          um.readyUpdate.buildID +
+          UM.readyUpdate.buildID +
           "\n" +
           "available update build ID : " +
           update.buildID
@@ -5215,10 +5190,6 @@ Downloader.prototype = {
       selectedPatch = null;
     }
 
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-
     
     
     var partialPatch = getPatchOfType(update, "partial");
@@ -5226,7 +5197,7 @@ Downloader.prototype = {
       selectedPatch = partialPatch;
     }
     if (!selectedPatch) {
-      if (um.readyUpdate) {
+      if (UM.readyUpdate) {
         
         LOG(
           "Downloader:_selectPatch - not selecting a complete patch because " +
@@ -5249,7 +5220,7 @@ Downloader.prototype = {
       update.isCompleteUpdate = selectedPatch.type == "complete";
     }
 
-    um.downloadingUpdate = update;
+    UM.downloadingUpdate = update;
 
     return selectedPatch;
   },
@@ -5504,9 +5475,7 @@ Downloader.prototype = {
             this._maybeStopActiveNotifications();
           }
 
-          Cc["@mozilla.org/updates/update-manager;1"]
-            .getService(Ci.nsIUpdateManager)
-            .saveUpdates();
+          UM.saveUpdates();
           this._pendingRequest = null;
         },
         error => {
@@ -5540,9 +5509,7 @@ Downloader.prototype = {
             gBITSInUseByAnotherUser = true;
           } else {
             this._patch.setProperty("bitsResult", Cr.NS_ERROR_FAILURE);
-            Cc["@mozilla.org/updates/update-manager;1"]
-              .getService(Ci.nsIUpdateManager)
-              .saveUpdates();
+            UM.saveUpdates();
 
             LOG(
               "Downloader:downloadUpdate - Failed to start to BITS job. " +
@@ -5566,17 +5533,12 @@ Downloader.prototype = {
       );
     }
 
-    let um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
-    if (!um.readyUpdate) {
+    if (!UM.readyUpdate) {
       writeStatusFile(getReadyUpdateDir(), STATE_DOWNLOADING);
     }
     if (this._patch.state != STATE_DOWNLOADING) {
       this._patch.state = STATE_DOWNLOADING;
-      Cc["@mozilla.org/updates/update-manager;1"]
-        .getService(Ci.nsIUpdateManager)
-        .saveUpdates();
+      UM.saveUpdates();
     }
 
     this._startLangPackUpdates();
@@ -5702,9 +5664,7 @@ Downloader.prototype = {
       
       if (this._patch.finalURL != request.finalURI.spec) {
         this._patch.finalURL = request.finalURI.spec;
-        Cc["@mozilla.org/updates/update-manager;1"]
-          .getService(Ci.nsIUpdateManager)
-          .saveUpdates();
+        UM.saveUpdates();
       }
     }
 
@@ -6078,21 +6038,18 @@ Downloader.prototype = {
     if (this._patch.state != state) {
       this._patch.state = state;
     }
-    var um = Cc["@mozilla.org/updates/update-manager;1"].getService(
-      Ci.nsIUpdateManager
-    );
     if (deleteActiveUpdate) {
       this._update.installDate = new Date().getTime();
-      um.addUpdateToHistory(um.downloadingUpdate);
-      um.downloadingUpdate = null;
-    } else if (um.downloadingUpdate && um.downloadingUpdate.state != state) {
-      um.downloadingUpdate.state = state;
+      UM.addUpdateToHistory(UM.downloadingUpdate);
+      UM.downloadingUpdate = null;
+    } else if (UM.downloadingUpdate && UM.downloadingUpdate.state != state) {
+      UM.downloadingUpdate.state = state;
     }
     if (migratedToReadyUpdate) {
-      um.readyUpdate = um.downloadingUpdate;
-      um.downloadingUpdate = null;
+      UM.readyUpdate = UM.downloadingUpdate;
+      UM.downloadingUpdate = null;
     }
-    um.saveUpdates();
+    UM.saveUpdates();
 
     
     
