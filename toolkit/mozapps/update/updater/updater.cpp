@@ -293,6 +293,13 @@ static bool sUsingService = false;
 
 
 
+
+
+
+
+
+
+
 static bool sUpdateSilently = false;
 
 #ifdef XP_WIN
@@ -352,13 +359,8 @@ static NS_tchar* mstrtok(const NS_tchar* delims, NS_tchar** str) {
   return ret;
 }
 
-#if defined(TEST_UPDATER)
-#  define HAS_ENV_CHECK 1
-#elif defined(MOZ_MAINTENANCE_SERVICE)
-#  define HAS_ENV_CHECK 1
-#endif
-
-#if defined(HAS_ENV_CHECK)
+#if defined(TEST_UPDATER) || defined(MOZ_MAINTENANCE_SERVICE) || \
+    defined(XP_MACOSX)
 static bool EnvHasValue(const char* name) {
   const char* val = getenv(name);
   return (val && *val);
@@ -2704,6 +2706,13 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
     }
   }
 #endif  
+
+#ifdef XP_MACOSX
+  if (EnvHasValue("MOZ_APP_SILENT_RESTART")) {
+    return true;
+  }
+#endif  
+
   return false;
 }
 
@@ -2976,19 +2985,33 @@ int NS_main(int argc, NS_tchar** argv) {
   if (!isElevated && !IsRecursivelyWritable(argv[2])) {
     
     
-    UpdateServerThreadArgs threadArgs;
-    threadArgs.argc = argc;
-    threadArgs.argv = const_cast<const NS_tchar**>(argv);
+    if (sUpdateSilently) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      WriteStatusFile(SILENT_UPDATE_NEEDED_ELEVATION_ERROR);
+      fprintf(stderr,
+              "Skipping update to avoid elevation prompt from silent update.");
+    } else {
+      UpdateServerThreadArgs threadArgs;
+      threadArgs.argc = argc;
+      threadArgs.argv = const_cast<const NS_tchar**>(argv);
 
-    Thread t1;
-    if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
-      
-      
-      if (!sUpdateSilently) {
+      Thread t1;
+      if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
+        
+        
         ShowProgressUI(true);
       }
+      t1.Join();
     }
-    t1.Join();
 
     LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false);
     return gSucceeded ? 0 : 1;

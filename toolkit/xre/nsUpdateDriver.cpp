@@ -441,6 +441,35 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     return;
   }
 
+#if defined(XP_MACOSX)
+  
+  
+  
+  
+  
+  
+  bool needElevation = false;
+  if (restart) {
+    needElevation = !IsRecursivelyWritable(installDirPath.get());
+    if (needElevation) {
+      
+      
+      char* mozAppSilentRestart = PR_GetEnv("MOZ_APP_SILENT_RESTART");
+      bool wasSilentlyRestarted =
+          mozAppSilentRestart && (strcmp(mozAppSilentRestart, "") != 0);
+      if (wasSilentlyRestarted) {
+        
+        
+        
+        
+        
+        
+        return;
+      }
+    }
+  }
+#endif
+
   nsAutoCString applyToDirPath;
   nsCOMPtr<nsIFile> updatedDir;
   if (restart && !isStaged) {
@@ -582,10 +611,7 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
   }
 #elif defined(XP_MACOSX)
 UpdateDriverSetupMacCommandLine(argc, argv, restart);
-
-
-
-if (restart && !IsRecursivelyWritable(installDirPath.get())) {
+if (restart && needElevation) {
   bool hasLaunched = LaunchElevatedUpdate(argc, argv, outpid);
   free(argv);
   if (!hasLaunched) {
