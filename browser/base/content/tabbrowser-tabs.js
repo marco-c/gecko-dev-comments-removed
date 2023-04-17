@@ -255,6 +255,7 @@
             animate: true,
             byMouse: event.mozInputSource == MouseEvent.MOZ_SOURCE_MOUSE,
           });
+          event.preventDefault();
         } else if (event.originalTarget.localName == "scrollbox") {
           
           
