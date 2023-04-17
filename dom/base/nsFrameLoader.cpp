@@ -719,6 +719,16 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
     loadState->SetLoadFlags(flags);
 
     loadState->SetFirstParty(false);
+
+    
+    
+    
+    if (mPendingBrowsingContext->IsTopContent() &&
+        mOwnerContent->IsXULElement(nsGkAtoms::browser) &&
+        NS_IsAboutBlank(mURIToLoad) &&
+        loadState->TriggeringPrincipal()->IsSystemPrincipal()) {
+      loadState->SetRemoteTypeOverride(mRemoteType);
+    }
   }
 
   if (IsRemoteFrame()) {
