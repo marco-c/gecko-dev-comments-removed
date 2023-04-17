@@ -12,7 +12,7 @@
 #include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TextControlElement.h"
-#include "mozilla/TextEditor.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/Nullable.h"
@@ -28,6 +28,7 @@ namespace mozilla {
 
 class AutoTextControlHandlingState;
 class ErrorResult;
+class TextEditor;
 class TextInputListener;
 class TextInputSelectionController;
 
@@ -35,6 +36,37 @@ namespace dom {
 class Element;
 class HTMLInputElement;
 }  
+
+
+
+
+
+struct PasswordMaskData final {
+  
+  
+  nsCOMPtr<nsITimer> mTimer;
+
+  
+  
+  uint32_t mUnmaskedStart = UINT32_MAX;
+  uint32_t mUnmaskedLength = 0;
+
+  
+  
+  
+  bool mIsMaskingPassword = true;
+
+  
+  
+  bool mEchoingPasswordPrevented = false;
+
+  MOZ_ALWAYS_INLINE bool IsAllMasked() const {
+    return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
+  }
+  MOZ_ALWAYS_INLINE uint32_t UnmaskedEnd() const {
+    return mUnmaskedStart + mUnmaskedLength;
+  }
+};
 
 
 

@@ -135,6 +135,24 @@ class HTMLEditor final : public EditorBase,
 
   HTMLEditor();
 
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult Init(Document& aDocument, uint32_t aFlags);
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult PostCreate();
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void PreDestroy();
+
   static HTMLEditor* GetFrom(nsIEditor* aEditor) {
     return aEditor ? aEditor->GetAsHTMLEditor() : nullptr;
   }
@@ -142,15 +160,9 @@ class HTMLEditor final : public EditorBase,
     return aEditor ? aEditor->GetAsHTMLEditor() : nullptr;
   }
 
-  MOZ_CAN_RUN_SCRIPT void PreDestroy(bool aDestroyingFrames) final;
-
   bool GetReturnInParagraphCreatesNewParagraph();
 
   
-  MOZ_CAN_RUN_SCRIPT nsresult Init(Document& aDoc, Element* aRoot,
-                                   nsISelectionController* aSelCon,
-                                   uint32_t aFlags,
-                                   const nsAString& aValue) final;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD BeginningOfDocument() final;
 
   NS_IMETHOD GetDocumentCharacterSet(nsACString& aCharacterSet) final;

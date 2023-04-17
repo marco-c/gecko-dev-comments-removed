@@ -159,37 +159,6 @@ class EditorBase : public nsIEditor,
 
   EditorBase();
 
-  
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult Init(Document& doc, Element* aRoot,
-                                           nsISelectionController* aSelCon,
-                                           uint32_t aFlags,
-                                           const nsAString& aInitialValue);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult PostCreate();
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT virtual void PreDestroy(bool aDestroyingFrames);
-
   bool IsInitialized() const { return !!mDocument; }
   bool Destroyed() const { return mDidPreDestroy; }
 
@@ -2221,6 +2190,35 @@ class EditorBase : public nsIEditor,
 
 
   virtual ~EditorBase();
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InitInternal(Document& aDocument, Element* aRootElement,
+               nsISelectionController& aSelectionController, uint32_t aFlags);
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult PostCreateInternal();
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual void PreDestroyInternal();
 
   MOZ_ALWAYS_INLINE EditorType GetEditorType() const {
     return mIsHTMLEditorClass ? EditorType::HTML : EditorType::Text;

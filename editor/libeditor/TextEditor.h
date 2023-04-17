@@ -7,6 +7,7 @@
 #define mozilla_TextEditor_h
 
 #include "mozilla/EditorBase.h"
+#include "mozilla/TextControlState.h"
 #include "mozilla/UniquePtr.h"
 
 #include "nsCOMPtr.h"
@@ -55,6 +56,43 @@ class TextEditor final : public EditorBase,
 
   TextEditor();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  Init(Document& aDocument, Element& aAnonymousDivElement,
+       nsISelectionController& aSelectionController, uint32_t aFlags,
+       UniquePtr<PasswordMaskData>&& aPasswordMaskData);
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult PostCreate();
+
+  
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void PreDestroy();
+
   static TextEditor* GetFrom(nsIEditor* aEditor) {
     return aEditor ? aEditor->GetAsTextEditor() : nullptr;
   }
@@ -81,11 +119,6 @@ class TextEditor final : public EditorBase,
   using EditorBase::CanPaste;
 
   
-  MOZ_CAN_RUN_SCRIPT nsresult Init(Document& aDoc, Element* aRoot,
-                                   nsISelectionController* aSelCon,
-                                   uint32_t aFlags,
-                                   const nsAString& aInitialValue) final;
-
   bool IsEmpty() const final;
 
   bool CanPaste(int32_t aClipboardType) const final;
@@ -498,32 +531,6 @@ class TextEditor final : public EditorBase,
   }
 
  protected:
-  struct PasswordMaskData final {
-    
-    
-    nsCOMPtr<nsITimer> mTimer;
-
-    
-    
-    uint32_t mUnmaskedStart = UINT32_MAX;
-    uint32_t mUnmaskedLength = 0;
-
-    
-    
-    
-    bool mIsMaskingPassword = true;
-
-    
-    
-    bool mEchoingPasswordPrevented = false;
-
-    MOZ_ALWAYS_INLINE bool IsAllMasked() const {
-      return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
-    }
-    MOZ_ALWAYS_INLINE uint32_t UnmaskedEnd() const {
-      return mUnmaskedStart + mUnmaskedLength;
-    }
-  };
   UniquePtr<PasswordMaskData> mPasswordMaskData;
 
   int32_t mMaxTextLength = -1;
