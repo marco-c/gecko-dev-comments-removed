@@ -275,6 +275,9 @@ class DWriteFontFallbackRenderer final : public IDWriteTextRenderer {
   ~DWriteFontFallbackRenderer() {}
 
   
+  bool IsValid() const { return mSystemFonts; }
+
+  
   IFACEMETHOD(DrawGlyphRun)
   (void* clientDrawingContext, FLOAT baselineOriginX, FLOAT baselineOriginY,
    DWRITE_MEASURING_MODE measuringMode, DWRITE_GLYPH_RUN const* glyphRun,
