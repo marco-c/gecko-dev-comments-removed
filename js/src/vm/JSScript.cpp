@@ -4396,11 +4396,6 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   }
 
   
-  if (src->isInlinableLargeFunction()) {
-    dst->setIsInlinableLargeFunction();
-  }
-
-  
   if (!PrivateScriptData::Clone(cx, src, dst, scopes)) {
     return nullptr;
   }

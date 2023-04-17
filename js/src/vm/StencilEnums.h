@@ -250,6 +250,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   HasMappedArgsObj = 1 << 28,
+
+  
+  
+  IsInlinableLargeFunction = 1 << 29,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -301,8 +305,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
   Uninlineable = 1 << 19,
 
   
-  
-  IsInlinableLargeFunction = 1 << 20,
 
   
   

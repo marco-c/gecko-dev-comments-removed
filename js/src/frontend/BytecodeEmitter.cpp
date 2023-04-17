@@ -5860,10 +5860,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       return false;
     }
     MOZ_ASSERT(funNode->functionIsHoisted());
-    return true;
-  }
-
-  if (funbox->isInterpreted()) {
+  } else if (funbox->isInterpreted()) {
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
       
@@ -5888,13 +5885,19 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       
       return false;
     }
-
-    return true;
+  } else {
+    if (!fe.emitAsmJSModule()) {
+      
+      return false;
+    }
   }
 
-  if (!fe.emitAsmJSModule()) {
-    
-    return false;
+  
+  
+  if (emitterMode == EmitterMode::SelfHosting) {
+    if (sc->isTopLevelContext() && funbox->explicitName()) {
+      prevSelfHostedTopLevelFunction = funbox;
+    }
   }
 
   return true;
@@ -7512,6 +7515,57 @@ bool BytecodeEmitter::emitSelfHostedGetBuiltinPrototype(BinaryNode* callNode) {
 }
 
 #ifdef DEBUG
+bool BytecodeEmitter::checkSelfHostedExpectedTopLevel(BinaryNode* callNode,
+                                                      ParseNode* node) {
+  
+  
+  if (!node->isKind(ParseNodeKind::Name)) {
+    reportError(callNode, JSMSG_UNEXPECTED_TYPE, "function argument",
+                "not a binding name");
+    return false;
+  }
+  TaggedParserAtomIndex targetName = node->as<NameNode>().name();
+
+  
+  
+  
+  MOZ_ASSERT(prevSelfHostedTopLevelFunction);
+
+  
+  
+  if (prevSelfHostedTopLevelFunction->explicitName() != targetName) {
+    reportError(callNode, JSMSG_SELFHOST_DECORATOR_MUST_FOLLOW);
+    return false;
+  }
+
+  return true;
+}
+#endif
+
+bool BytecodeEmitter::emitSelfHostedSetIsInlinableLargeFunction(
+    BinaryNode* callNode) {
+  ListNode* argsList = &callNode->right()->as<ListNode>();
+
+  if (argsList->count() != 1) {
+    reportNeedMoreArgsError(callNode, "_SetIsInlinableLargeFunction", "1", "",
+                            argsList);
+    return false;
+  }
+
+#ifdef DEBUG
+  if (!checkSelfHostedExpectedTopLevel(callNode, argsList->head())) {
+    return false;
+  }
+#endif
+
+  MOZ_ASSERT(prevSelfHostedTopLevelFunction->isInitialCompilation);
+  prevSelfHostedTopLevelFunction->setIsInlinableLargeFunction();
+
+  
+  return emit1(JSOp::Undefined);
+}
+
+#ifdef DEBUG
 bool BytecodeEmitter::checkSelfHostedUnsafeGetReservedSlot(
     BinaryNode* callNode) {
   ListNode* argsList = &callNode->right()->as<ListNode>();
@@ -8016,6 +8070,10 @@ bool BytecodeEmitter::emitCallOrNew(
     }
     if (calleeName == TaggedParserAtomIndex::WellKnown::GetBuiltinPrototype()) {
       return emitSelfHostedGetBuiltinPrototype(callNode);
+    }
+    if (calleeName ==
+        TaggedParserAtomIndex::WellKnown::SetIsInlinableLargeFunction()) {
+      return emitSelfHostedSetIsInlinableLargeFunction(callNode);
     }
 #ifdef DEBUG
     if (calleeName ==

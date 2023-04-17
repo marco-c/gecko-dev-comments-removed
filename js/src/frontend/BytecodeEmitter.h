@@ -119,6 +119,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   EmitterScope* innermostEmitterScope_ = nullptr;
   TDZCheckCache* innermostTDZCheckCache = nullptr;
 
+  
+  
+  
+  
+  FunctionBox* prevSelfHostedTopLevelFunction = nullptr;
+
 #ifdef DEBUG
   bool unstableEmitterScope = false;
 
@@ -790,7 +796,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitSelfHostedToString(BinaryNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetBuiltinConstructor(BinaryNode* callNode);
   [[nodiscard]] bool emitSelfHostedGetBuiltinPrototype(BinaryNode* callNode);
+  [[nodiscard]] bool emitSelfHostedSetIsInlinableLargeFunction(
+      BinaryNode* callNode);
 #ifdef DEBUG
+  [[nodiscard]] bool checkSelfHostedExpectedTopLevel(BinaryNode* callNode,
+                                                     ParseNode* node);
   [[nodiscard]] bool checkSelfHostedUnsafeGetReservedSlot(BinaryNode* callNode);
   [[nodiscard]] bool checkSelfHostedUnsafeSetReservedSlot(BinaryNode* callNode);
 #endif

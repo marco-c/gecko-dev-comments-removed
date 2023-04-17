@@ -649,6 +649,13 @@ class FunctionBox : public SuspendableContext {
     }
   }
 
+  void setIsInlinableLargeFunction() {
+    immutableFlags_.setFlag(ImmutableFlags::IsInlinableLargeFunction, true);
+    if (isScriptExtraFieldCopiedToStencil) {
+      copyUpdatedImmutableFlags();
+    }
+  }
+
   uint16_t length() { return length_; }
   void setLength(uint16_t length) { length_ = length; }
 
@@ -678,6 +685,8 @@ class FunctionBox : public SuspendableContext {
   void copyFunctionFields(ScriptStencil& script);
   void copyFunctionExtraFields(ScriptStencilExtra& scriptExtra);
 
+  
+  
   
   
   void copyUpdatedImmutableFlags();
