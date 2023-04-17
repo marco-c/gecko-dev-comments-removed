@@ -1122,10 +1122,18 @@ class SearchEngine {
 
   removeExtensionOverride() {
     if (this.getAttr("overriddenBy")) {
-      this._urls = this._overriddenData.urls;
-      this._queryCharset = this._overriddenData.queryCharset;
-      this.__searchForm = this._overriddenData.searchForm;
-      delete this._overriddenData;
+      
+      
+      if (this._overriddenData) {
+        this._urls = this._overriddenData.urls;
+        this._queryCharset = this._overriddenData.queryCharset;
+        this.__searchForm = this._overriddenData.searchForm;
+        delete this._overriddenData;
+      } else {
+        logConsole.error(
+          `${this._name} had overriddenBy set, but no _overriddenData`
+        );
+      }
       this.clearAttr("overriddenBy");
       SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
     }
