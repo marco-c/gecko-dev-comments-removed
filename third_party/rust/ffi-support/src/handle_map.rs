@@ -926,6 +926,8 @@ impl<T> ConcurrentHandleMap<T> {
     }
 
     
+    
+    
     pub fn call_with_result_mut<R, E, F>(
         &self,
         out_error: &mut ExternError,
@@ -950,6 +952,8 @@ impl<T> ConcurrentHandleMap<T> {
     }
 
     
+    
+    
     pub fn call_with_result<R, E, F>(
         &self,
         out_error: &mut ExternError,
@@ -964,6 +968,8 @@ impl<T> ConcurrentHandleMap<T> {
         self.call_with_result_mut(out_error, h, |r| callback(r))
     }
 
+    
+    
     
     pub fn call_with_output<R, F>(
         &self,
@@ -980,6 +986,8 @@ impl<T> ConcurrentHandleMap<T> {
         })
     }
 
+    
+    
     
     pub fn call_with_output_mut<R, F>(
         &self,
@@ -1014,6 +1022,7 @@ impl<T> ConcurrentHandleMap<T> {
         })
     }
 
+    
     
     
     

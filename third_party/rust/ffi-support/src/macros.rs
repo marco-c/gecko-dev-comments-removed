@@ -25,6 +25,8 @@
 
 
 
+
+
 #[macro_export]
 macro_rules! implement_into_ffi_by_pointer {
     ($($T:ty),* $(,)*) => {$(
@@ -104,6 +106,7 @@ macro_rules! implement_into_ffi_by_json {
 
 
 
+
 #[macro_export]
 macro_rules! implement_into_ffi_by_protobuf {
     ($($FFIType:ty),* $(,)*) => {$(
@@ -126,6 +129,7 @@ macro_rules! implement_into_ffi_by_protobuf {
         }
     )*}
 }
+
 
 
 
