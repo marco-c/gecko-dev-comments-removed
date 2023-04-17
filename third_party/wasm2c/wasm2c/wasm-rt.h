@@ -106,11 +106,7 @@ typedef struct {
 
 typedef struct {
   
-#if WASM_USING_GUARD_PAGES == 1
   uint8_t* const data;
-#else
-  uint8_t* data;
-#endif
   
 
   uint32_t pages, max_pages;
