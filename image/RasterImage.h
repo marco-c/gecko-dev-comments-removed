@@ -125,26 +125,6 @@ class nsIRequest;
 
 
 namespace mozilla {
-
-
-
-
-
-
-struct OrientedPixel {};
-template <>
-struct IsPixel<OrientedPixel> : std::true_type {};
-typedef gfx::IntSizeTyped<OrientedPixel> OrientedIntSize;
-typedef gfx::IntRectTyped<OrientedPixel> OrientedIntRect;
-
-
-
-struct UnorientedPixel {};
-template <>
-struct IsPixel<UnorientedPixel> : std::true_type {};
-typedef gfx::IntSizeTyped<UnorientedPixel> UnorientedIntSize;
-typedef gfx::IntRectTyped<UnorientedPixel> UnorientedIntRect;
-
 namespace layers {
 class ImageContainer;
 class Image;

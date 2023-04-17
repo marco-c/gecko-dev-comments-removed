@@ -7,8 +7,31 @@
 #define mozilla_image_Orientation_h
 
 #include <stdint.h>
+#include "mozilla/gfx/Rect.h"
 
 namespace mozilla {
+
+
+
+
+
+
+struct OrientedPixel {};
+template <>
+struct IsPixel<OrientedPixel> : std::true_type {};
+typedef gfx::IntPointTyped<OrientedPixel> OrientedIntPoint;
+typedef gfx::IntSizeTyped<OrientedPixel> OrientedIntSize;
+typedef gfx::IntRectTyped<OrientedPixel> OrientedIntRect;
+
+
+
+struct UnorientedPixel {};
+template <>
+struct IsPixel<UnorientedPixel> : std::true_type {};
+typedef gfx::IntPointTyped<UnorientedPixel> UnorientedIntPoint;
+typedef gfx::IntSizeTyped<UnorientedPixel> UnorientedIntSize;
+typedef gfx::IntRectTyped<UnorientedPixel> UnorientedIntRect;
+
 namespace image {
 
 enum class Angle : uint8_t { D0, D90, D180, D270 };
@@ -48,6 +71,22 @@ struct Orientation {
 
   bool operator!=(const Orientation& aOther) const {
     return !(*this == aOther);
+  }
+
+  OrientedIntSize ToOriented(const UnorientedIntSize& aSize) const {
+    if (SwapsWidthAndHeight()) {
+      return OrientedIntSize(aSize.height, aSize.width);
+    } else {
+      return OrientedIntSize(aSize.width, aSize.height);
+    }
+  }
+
+  UnorientedIntSize ToUnoriented(const OrientedIntSize& aSize) const {
+    if (SwapsWidthAndHeight()) {
+      return UnorientedIntSize(aSize.height, aSize.width);
+    } else {
+      return UnorientedIntSize(aSize.width, aSize.height);
+    }
   }
 
   static Angle InvertAngle(Angle aAngle) {
