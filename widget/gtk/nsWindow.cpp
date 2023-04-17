@@ -2388,6 +2388,9 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
   if (!aCursor.IsCustom()) {
     return nullptr;
   }
+  
+  
+  
   nsIntSize size = nsIWidget::CustomCursorSize(aCursor);
   GdkPixbuf* pixbuf =
       nsImageToPixbuf::ImageToPixbuf(aCursor.mContainer, Some(size));
