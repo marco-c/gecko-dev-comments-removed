@@ -3346,14 +3346,34 @@ RunningTimes GetRunningTimesWithTightTimestamp(
   TimeStamp before = TimeStamp::Now();
   aGetCPURunningTimesFunction(runningTimes);
   TimeStamp after = TimeStamp::Now();
+  const TimeDuration duration = after - before;
+
   
-  while (MOZ_UNLIKELY(after - before > scMaxRunningTimesReadDuration)) {
+  
+  if (MOZ_UNLIKELY(duration > scMaxRunningTimesReadDuration)) {
     AUTO_PROFILER_STATS(GetRunningTimes_REDO);
-    before = after;
-    aGetCPURunningTimesFunction(runningTimes);
-    after = TimeStamp::Now();
+    RunningTimes runningTimes2;
+    aGetCPURunningTimesFunction(runningTimes2);
+    TimeStamp after2 = TimeStamp::Now();
+    const TimeDuration duration2 = after2 - after;
+    if (duration2 < duration) {
+      
+      
+      
+      runningTimes2.SetPostMeasurementTimeStamp(after2);
+      return runningTimes2;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    AUTO_PROFILER_STATS(GetRunningTimes_RedoWasWorse);
   }
-  
+
   
   runningTimes.SetPostMeasurementTimeStamp(after);
 
