@@ -1221,46 +1221,6 @@ function getCurrentTestFilePath() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-function waitForNextResource(
-  resourceCommand,
-  resourceType,
-  { ignoreExistingResources = false, predicate } = {}
-) {
-  
-  
-  predicate = predicate || (resource => !!resource);
-
-  return new Promise(resolve => {
-    const onAvailable = resources => {
-      const matchingResource = resources.find(resource => predicate(resource));
-      if (matchingResource) {
-        resolve(matchingResource);
-        resourceCommand.unwatchResources([resourceType], { onAvailable });
-      }
-    };
-
-    resourceCommand.watchResources([resourceType], {
-      ignoreExistingResources,
-      onAvailable,
-    });
-  });
-}
-
-
-
-
-
-
 async function unregisterAllServiceWorkers(client) {
   info("Wait until all workers have a valid registrationFront");
   let workers;

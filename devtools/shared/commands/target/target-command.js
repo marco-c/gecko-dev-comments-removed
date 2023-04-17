@@ -751,22 +751,20 @@ class TargetCommand extends EventEmitter {
     }
 
     
-    let resolve = null;
-    const onReloaded = new Promise(r => (resolve = r));
-    const { resourceCommand } = this.commands;
-    const { DOCUMENT_EVENT } = resourceCommand.TYPES;
-    const onAvailable = resources => {
-      if (resources.find(resource => resource.name == "dom-complete")) {
-        resourceCommand.unwatchResources([DOCUMENT_EVENT], { onAvailable });
-        resolve();
+    
+    
+    
+    const {
+      onResource: onReloaded,
+    } = await this.commands.resourceCommand.waitForNextResource(
+      this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+      {
+        ignoreExistingResources: true,
+        predicate(resource) {
+          return resource.name == "dom-complete";
+        },
       }
-    };
-    
-    
-    await resourceCommand.watchResources([DOCUMENT_EVENT], {
-      onAvailable,
-      ignoreExistingResources: true,
-    });
+    );
 
     const { targetFront } = this;
     try {
