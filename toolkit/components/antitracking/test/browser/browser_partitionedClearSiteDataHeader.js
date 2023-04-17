@@ -144,10 +144,7 @@ async function runClearSiteDataTest(
   if (clearDataContext == "firstParty") {
     
     
-    await BrowserTestUtils.withNewTab(
-      (browserA, CLEAR_SITE_DATA_URL_ORIGIN_A),
-      () => {}
-    );
+    await BrowserTestUtils.withNewTab(CLEAR_SITE_DATA_URL_ORIGIN_A, () => {});
   } else if (clearDataContext == "thirdPartyPartitioned") {
     
     await SpecialPowers.spawn(
