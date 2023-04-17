@@ -394,6 +394,10 @@ pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 pref("browser.urlbar.quicksuggest.remoteSettings.enabled", true);
 
 
+
+pref("browser.urlbar.quicksuggest.scenario", "history");
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else

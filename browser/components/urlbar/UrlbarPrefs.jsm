@@ -205,6 +205,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["quicksuggest.remoteSettings.enabled", true],
 
   
+  
+  ["quicksuggest.scenario", "history"],
+
+  
   ["quicksuggest.shouldShowOnboardingDialog", true],
 
   
