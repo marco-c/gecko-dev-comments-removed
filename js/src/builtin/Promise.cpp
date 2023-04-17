@@ -55,9 +55,17 @@ enum PromiseHandler {
   PromiseHandlerThrower,
 
   
+  
+  
+  
+  
+  
+  
   PromiseHandlerAsyncFunctionAwaitedFulfilled,
   PromiseHandlerAsyncFunctionAwaitedRejected,
 
+  
+  
   
   
   
@@ -67,17 +75,18 @@ enum PromiseHandler {
   
   
   
+  
+  
   PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled,
   PromiseHandlerAsyncGeneratorResumeNextReturnRejected,
 
   
   
+  
+  
   PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled,
   PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected,
 
-  
-  
-  
   
   
   
@@ -600,8 +609,17 @@ static bool MaybeGetAndClearExceptionAndStack(JSContext* cx,
 
 
 
+
+
+
+
+
+
+
+
 static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
                                 HandleObject promiseObj, HandleObject reject) {
+  
   
   RootedValue reason(cx);
   RootedSavedFrame stack(cx);
@@ -707,13 +725,50 @@ enum ReactionRecordSlots {
 };
 
 
+
+
+
+
+
 class PromiseReactionRecord : public NativeObject {
+  
+  
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_RESOLVED = 0x1;
+
+  
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_FULFILLED = 0x2;
+
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
+
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_ASYNC_FUNCTION = 0x8;
+
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_ASYNC_GENERATOR = 0x10;
+
+  
+  
   static constexpr uint32_t REACTION_FLAG_DEBUGGER_DUMMY = 0x20;
+
+  
+  
+  
+  
+  
+  
   static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
 
   void setFlagOnInitialState(uint32_t flag) {
@@ -743,9 +798,11 @@ class PromiseReactionRecord : public NativeObject {
   JSObject* promise() {
     return getFixedSlot(ReactionRecordSlot_Promise).toObjectOrNull();
   }
+
   int32_t flags() const {
     return getFixedSlot(ReactionRecordSlot_Flags).toInt32();
   }
+
   JS::PromiseState targetState() {
     int32_t flags = this->flags();
     if (!(flags & REACTION_FLAG_RESOLVED)) {
@@ -794,6 +851,7 @@ class PromiseReactionRecord : public NativeObject {
         getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
     return &promiseToResolve.toObject().as<PromiseObject>();
   }
+
   void setIsAsyncFunction(AsyncFunctionGeneratorObject* genObj) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
     setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
@@ -809,6 +867,7 @@ class PromiseReactionRecord : public NativeObject {
         getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
     return &generator.toObject().as<AsyncFunctionGeneratorObject>();
   }
+
   void setIsAsyncGenerator(AsyncGeneratorObject* asyncGenObj) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
     setFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve,
@@ -824,6 +883,7 @@ class PromiseReactionRecord : public NativeObject {
         getFixedSlot(ReactionRecordSlot_GeneratorOrPromiseToResolve);
     return &generator.toObject().as<AsyncGeneratorObject>();
   }
+
   void setIsDebuggerDummy() {
     setFlagOnInitialState(REACTION_FLAG_DEBUGGER_DUMMY);
   }
@@ -831,6 +891,7 @@ class PromiseReactionRecord : public NativeObject {
     int32_t flags = this->flags();
     return flags & REACTION_FLAG_DEBUGGER_DUMMY;
   }
+
   Value handler() {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerSlot());
@@ -839,6 +900,7 @@ class PromiseReactionRecord : public NativeObject {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerArgSlot());
   }
+
   JSObject* getAndClearIncumbentGlobalObject() {
     JSObject* obj =
         getFixedSlot(ReactionRecordSlot_IncumbentGlobalObject).toObjectOrNull();
@@ -868,9 +930,22 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp);
 static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
 
 
+
+
+
+
+
 [[nodiscard]] static MOZ_ALWAYS_INLINE bool CreateResolvingFunctions(
     JSContext* cx, HandleObject promise, MutableHandleObject resolveFn,
     MutableHandleObject rejectFn) {
+  
+  
+  
+  
+  
+  
+  
+  
   HandlePropertyName funName = cx->names().empty;
   resolveFn.set(NewNativeFunction(cx, ResolvePromiseFunction, 1, funName,
                                   gc::AllocKind::FUNCTION_EXTENDED,
@@ -879,6 +954,13 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
   rejectFn.set(NewNativeFunction(cx, RejectPromiseFunction, 1, funName,
                                  gc::AllocKind::FUNCTION_EXTENDED,
                                  GenericObject));
@@ -889,16 +971,27 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
   JSFunction* resolveFun = &resolveFn->as<JSFunction>();
   JSFunction* rejectFun = &rejectFn->as<JSFunction>();
 
+  
   resolveFun->initExtendedSlot(ResolveFunctionSlot_Promise,
                                ObjectValue(*promise));
+
+  
+  
+  
   resolveFun->initExtendedSlot(ResolveFunctionSlot_RejectFunction,
                                ObjectValue(*rejectFun));
 
+  
   rejectFun->initExtendedSlot(RejectFunctionSlot_Promise,
                               ObjectValue(*promise));
+
+  
+  
+  
   rejectFun->initExtendedSlot(RejectFunctionSlot_ResolveFunction,
                               ObjectValue(*resolveFun));
 
+  
   return true;
 }
 
@@ -917,15 +1010,18 @@ static bool IsSettledMaybeWrappedPromise(JSObject* promise) {
   return promise->as<PromiseObject>().state() != JS::PromiseState::Pending;
 }
 
-
 [[nodiscard]] static bool RejectMaybeWrappedPromise(
     JSContext* cx, HandleObject promiseObj, HandleValue reason,
     HandleSavedFrame unwrappedRejectionStack);
 
-
 [[nodiscard]] static bool RejectPromiseInternal(
     JSContext* cx, Handle<PromiseObject*> promise, HandleValue reason,
     HandleSavedFrame unwrappedRejectionStack = nullptr);
+
+
+
+
+
 
 
 static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
@@ -935,8 +1031,14 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue reasonVal = args.get(0);
 
   
+  
+  
+
+  
   const Value& promiseVal = reject->getExtendedSlot(RejectFunctionSlot_Promise);
 
+  
+  
   
   
   
@@ -949,6 +1051,7 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   
   RootedObject promise(cx, &promiseVal.toObject());
 
+  
   
   
   
@@ -986,6 +1089,13 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
                               MutableHandleValue rval, bool rvalExplicitlyUsed);
 
 
+
+
+
+
+
+
+
 [[nodiscard]] static bool ResolvePromiseInternal(JSContext* cx,
                                                  HandleObject promise,
                                                  HandleValue resolutionVal) {
@@ -993,7 +1103,9 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
   MOZ_ASSERT(!IsSettledMaybeWrappedPromise(promise));
 
   
+  
   if (!resolutionVal.isObject()) {
+    
     return FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
   }
 
@@ -1021,7 +1133,10 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 
   RootedValue error(cx);
   RootedSavedFrame errorStack(cx);
+
+  
   if (!status) {
+    
     if (!MaybeGetAndClearExceptionAndStack(cx, &error, &errorStack)) {
       return false;
     }
@@ -1038,15 +1153,26 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 
   
   if (!status) {
+    
     return RejectMaybeWrappedPromise(cx, promise, error, errorStack);
   }
 
   
+  
 
   
   if (!IsCallable(thenVal)) {
+    
     return FulfillMaybeWrappedPromise(cx, promise, resolutionVal);
   }
+
+  
+  
+
+  
+  
+  
+  
 
   
   
@@ -1060,7 +1186,6 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
     isBuiltinThen = true;
   }
 
-  
   if (!isBuiltinThen) {
     RootedValue promiseVal(cx, ObjectValue(*promise));
     if (!EnqueuePromiseResolveThenableJob(cx, promiseVal, resolutionVal,
@@ -1073,13 +1198,21 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
     }
   }
 
-  
   return true;
 }
 
 
+
+
+
+
+
 static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
 
   JSFunction* resolve = &args.callee().as<JSFunction>();
   HandleValue resolutionVal = args.get(0);
@@ -1095,9 +1228,11 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
   RootedObject promise(
       cx, &resolve->getExtendedSlot(ResolveFunctionSlot_Promise).toObject());
 
+  
   
   
   
@@ -1115,11 +1250,20 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   if (!ResolvePromiseInternal(cx, promise, resolutionVal)) {
     return false;
   }
+
+  
   args.rval().setUndefined();
   return true;
 }
 
 static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
 
 
 
@@ -1171,6 +1315,10 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   MOZ_ASSERT(reaction->targetState() == JS::PromiseState::Pending);
 
+  
+  
+  
+  
   cx->check(handlerArg);
   reaction->setTargetStateAndHandlerArg(targetState, handlerArg);
 
@@ -1202,9 +1350,20 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
-  
   mozilla::Maybe<AutoFunctionOrCurrentRealm> ar2;
+
+  
+  
   if (handler.isObject()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     RootedObject handlerObj(cx, &handler.toObject());
     ar2.emplace(cx, handlerObj);
 
@@ -1215,6 +1374,9 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   }
 
   
+  
+  
+  
   HandlePropertyName funName = cx->names().empty;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseReactionJob, 0, funName,
@@ -1223,7 +1385,6 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
     return false;
   }
 
-  
   job->setExtendedSlot(ReactionJobSlot_ReactionRecord, reactionVal);
 
   
@@ -1276,6 +1437,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
+  
+  
   return cx->runtime()->enqueuePromiseJob(cx, job, promise, global);
 }
 
@@ -1283,6 +1446,13 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
                                                   HandleValue reactionsVal,
                                                   JS::PromiseState state,
                                                   HandleValue valueOrReason);
+
+
+
+
+
+
+
 
 
 
@@ -1305,13 +1475,27 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
+  
+  
+  
+  
   RootedValue reactionsVal(cx, promise->reactions());
 
   
   
   
+  
+  
+  
+  
+  
+  
+  
   promise->setFixedSlot(PromiseSlot_ReactionsOrResult, valueOrReason);
 
+  
+  
+  
   
   int32_t flags = promise->flags();
   flags |= PROMISE_FLAG_RESOLVED;
@@ -1324,13 +1508,23 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   promise->setFixedSlot(PromiseSlot_RejectFunction, UndefinedValue());
 
   
+
+  
+  
   
   PromiseObject::onSettled(cx, promise, unwrappedRejectionStack);
 
   
   
+  
+  
   return TriggerPromiseReactions(cx, reactionsVal, state, valueOrReason);
 }
+
+
+
+
+
 
 
 [[nodiscard]] static bool RejectPromiseInternal(
@@ -1339,6 +1533,11 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected,
                         unwrappedRejectionStack);
 }
+
+
+
+
+
 
 
 [[nodiscard]] static bool FulfillMaybeWrappedPromise(JSContext* cx,
@@ -1378,24 +1577,36 @@ enum GetCapabilitiesExecutorSlots {
   GetCapabilitiesExecutorSlots_Reject
 };
 
+
+
+
+
+
+
 [[nodiscard]] static PromiseObject*
 CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
+  
   PromiseObject* promise = CreatePromiseObjectInternal(cx);
   if (!promise) {
     return nullptr;
   }
 
   AddPromiseFlags(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS);
+
+  
   return promise;
 }
 
+
+
+
+
+
+
+
+
 [[nodiscard]] static PromiseObject* CreatePromiseWithDefaultResolutionFunctions(
     JSContext* cx, MutableHandleObject resolve, MutableHandleObject reject) {
-  
-  
-
-  
-
   
   Rooted<PromiseObject*> promise(cx, CreatePromiseObjectInternal(cx));
   if (!promise) {
@@ -1410,10 +1621,13 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   promise->setFixedSlot(PromiseSlot_RejectFunction, ObjectValue(*reject));
 
   
-
-  
   return promise;
 }
+
+
+
+
+
 
 
 [[nodiscard]] static bool NewPromiseCapability(
@@ -1421,6 +1635,8 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
     bool canOmitResolutionFunctions) {
   RootedValue cVal(cx, ObjectValue(*C));
 
+  
+  
   
   if (!IsConstructor(C)) {
     ReportValueError(cx, JSMSG_NOT_CONSTRUCTOR, JSDVG_SEARCH_STACK, cVal,
@@ -1454,12 +1670,17 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
       return false;
     }
 
+    
+    
+    
     capability.promise().set(promise);
+
+    
     return true;
   }
 
   
-
+  
   
   HandlePropertyName funName = cx->names().empty;
   RootedFunction executor(
@@ -1470,7 +1691,10 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   }
 
   
+  
+  
 
+  
   
   FixedConstructArgs<1> cargs(cx);
   cargs[0].setObject(*executor);
@@ -1478,6 +1702,7 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
     return false;
   }
 
+  
   
   const Value& resolveVal =
       executor->getExtendedSlot(GetCapabilitiesExecutorSlots_Resolve);
@@ -1488,6 +1713,7 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   }
 
   
+  
   const Value& rejectVal =
       executor->getExtendedSlot(GetCapabilitiesExecutorSlots_Reject);
   if (!IsCallable(rejectVal)) {
@@ -1497,6 +1723,9 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   }
 
   
+  
+  
+  
   capability.resolve().set(&resolveVal.toObject());
   capability.reject().set(&rejectVal.toObject());
 
@@ -1505,12 +1734,20 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
 }
 
 
+
+
+
+
+
+
+
 static bool GetCapabilitiesExecutor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JSFunction* F = &args.callee().as<JSFunction>();
 
   
-
+  
+  
   
   if (!F->getExtendedSlot(GetCapabilitiesExecutorSlots_Resolve).isUndefined() ||
       !F->getExtendedSlot(GetCapabilitiesExecutorSlots_Reject).isUndefined()) {
@@ -1529,6 +1766,11 @@ static bool GetCapabilitiesExecutor(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setUndefined();
   return true;
 }
+
+
+
+
+
 
 
 [[nodiscard]] static bool RejectMaybeWrappedPromise(
@@ -1630,6 +1872,11 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 }
 
 
+
+
+
+
+
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
                                                   HandleValue reactionsVal,
                                                   JS::PromiseState state,
@@ -1637,7 +1884,11 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   MOZ_ASSERT(state == JS::PromiseState::Fulfilled ||
              state == JS::PromiseState::Rejected);
 
+  
+  
   return ForEachReaction(cx, reactionsVal, [&](MutableHandleObject reaction) {
+    
+    
     return EnqueuePromiseReactionJob(cx, reaction, valueOrReason, state);
   });
 }
@@ -1646,6 +1897,15 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
                                              HandleObject onFulfilledFunc,
                                              HandleValue result,
                                              HandleObject promiseObj);
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1669,6 +1929,7 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
     RootedValue argument(cx, reaction->handlerArg());
 
     
+    
     bool ok;
     if (reaction->targetState() == JS::PromiseState::Fulfilled) {
       ok = ResolvePromiseInternal(cx, promiseToResolve, argument);
@@ -1686,15 +1947,26 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   }
 
   
+  
   RootedObject promiseObj(cx, reaction->promise());
   RootedObject callee(cx);
   if (resolutionMode == ResolveMode) {
+    
+    
+    
+    
     callee =
         reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
 
     return RunFulfillFunction(cx, callee, handlerResult, promiseObj);
   }
 
+  
+  
+  
+  
+  
+  
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
   return RunRejectFunction(cx, callee, handlerResult, promiseObj,
@@ -1832,6 +2104,9 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
 
 
+
+
+
 static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1921,6 +2196,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
     MOZ_ASSERT(IsCallable(handlerVal));
 
     
+    
     if (!Call(cx, handlerVal, UndefinedHandleValue, argument, &handlerResult)) {
       resolutionMode = RejectMode;
       if (!MaybeGetAndClearExceptionAndStack(cx, &handlerResult,
@@ -1961,6 +2237,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
 static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -1977,12 +2254,16 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
                        jobArgs->getDenseElement(ThenableJobDataIndex_Thenable));
 
   
+  
   RootedObject resolveFn(cx);
   RootedObject rejectFn(cx);
   if (!CreateResolvingFunctions(cx, promise, &resolveFn, &rejectFn)) {
     return false;
   }
 
+  
+  
+  
   
   FixedInvokeArgs<2> args2(cx);
   args2[0].setObject(*resolveFn);
@@ -1991,16 +2272,21 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   
   RootedValue rval(cx);
   if (Call(cx, then, thenable, args2, &rval)) {
+    
     return true;
   }
 
   
-  
+
   RootedSavedFrame stack(cx);
   if (!MaybeGetAndClearExceptionAndStack(cx, &rval, &stack)) {
     return false;
   }
 
+  
+  
+  
+  
   RootedValue rejectVal(cx, ObjectValue(*rejectFn));
   return Call(cx, rejectVal, UndefinedHandleValue, rval, &rval);
 }
@@ -2008,6 +2294,13 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
 [[nodiscard]] static bool OriginalPromiseThenWithoutSettleHandlers(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseObject*> promiseToResolve);
+
+
+
+
+
+
+
 
 
 
@@ -2036,11 +2329,18 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   MOZ_ASSERT(thenable->is<PromiseObject>());
 
   
+  
+  
 
+  
+  
+  
+  
   
   
   if (OriginalPromiseThenWithoutSettleHandlers(cx, thenable.as<PromiseObject>(),
                                                promise.as<PromiseObject>())) {
+    
     return true;
   }
 
@@ -2060,9 +2360,20 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
     return true;
   }
 
+  
+  
+  
+  
   return RejectPromiseInternal(cx, promise.as<PromiseObject>(), exception,
                                stack);
 }
+
+
+
+
+
+
+
 
 
 
@@ -2078,6 +2389,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   RootedValue promiseToResolve(cx, promiseToResolve_);
   RootedValue thenable(cx, thenable_);
 
+  
+  
+  
+  
+  
   
   
   
@@ -2110,6 +2426,9 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
+  
+  
   HandlePropertyName funName = cx->names().empty;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
@@ -2144,8 +2463,17 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
 
   Rooted<GlobalObject*> incumbentGlobal(cx,
                                         cx->runtime()->getIncumbentGlobal(cx));
+
+  
   return cx->runtime()->enqueuePromiseJob(cx, job, promise, incumbentGlobal);
 }
+
+
+
+
+
+
+
 
 
 
@@ -2159,6 +2487,9 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   MOZ_ASSERT(promiseToResolve->is<PromiseObject>());
   MOZ_ASSERT(thenable->is<PromiseObject>());
 
+  
+  
+  
   HandlePropertyName funName = cx->names().empty;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseResolveBuiltinThenableJob, 0, funName,
@@ -2168,12 +2499,19 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   }
 
   
+  
+  
+  
+
+  
   job->setExtendedSlot(BuiltinThenableJobSlot_Promise,
                        ObjectValue(*promiseToResolve));
   job->setExtendedSlot(BuiltinThenableJobSlot_Thenable, ObjectValue(*thenable));
 
   Rooted<GlobalObject*> incumbentGlobal(cx,
                                         cx->runtime()->getIncumbentGlobal(cx));
+
+  
   return cx->runtime()->enqueuePromiseJob(cx, job, promiseToResolve,
                                           incumbentGlobal);
 }
@@ -2257,11 +2595,17 @@ static void ClearResolutionFunctionSlots(JSFunction* resolutionFun) {
 }
 
 
+
+
+
+
+
+
+
 [[nodiscard]] static MOZ_ALWAYS_INLINE PromiseObject*
 CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
                             bool protoIsWrapped ,
                             bool informDebugger ) {
-  
   
   
   
@@ -2272,6 +2616,12 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
     ar.emplace(cx, proto);
   }
 
+  
+  
+  
+  
+  
+  
   PromiseObject* promise = NewObjectWithClassProto<PromiseObject>(cx, proto);
   if (!promise) {
     return nullptr;
@@ -2282,7 +2632,10 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
 
   
   
+  
+  
 
+  
   
   
 
@@ -2310,6 +2663,11 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
 }
 
 
+
+
+
+
+
 static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2325,7 +2683,6 @@ static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
   RootedObject executor(cx, &executorVal.toObject());
 
-  
   RootedObject newTarget(cx, &args.newTarget().toObject());
 
   
@@ -2412,6 +2769,13 @@ static bool PromiseConstructor(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+
+
+
+
 PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
                                      HandleObject proto ,
                                      bool needsWrapping ) {
@@ -2447,6 +2811,7 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   
   
   
+  
   RootedObject resolveFn(cx);
   RootedObject rejectFn(cx);
   if (!CreateResolvingFunctions(cx, promiseObj, &resolveFn, &rejectFn)) {
@@ -2469,6 +2834,8 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   }
 
   
+  
+  
   bool success;
   {
     FixedInvokeArgs<2> args(cx);
@@ -2482,12 +2849,14 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   
   if (!success) {
     RootedValue exceptionVal(cx);
-    
     RootedSavedFrame stack(cx);
     if (!MaybeGetAndClearExceptionAndStack(cx, &exceptionVal, &stack)) {
       return nullptr;
     }
 
+    
+    
+    
     RootedValue calleeOrRval(cx, ObjectValue(*rejectFn));
     if (!Call(cx, calleeOrRval, UndefinedHandleValue, exceptionVal,
               &calleeOrRval)) {
@@ -2501,6 +2870,12 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   
   return promise;
 }
+
+
+
+
+
+
 
 
 
@@ -2829,6 +3204,14 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   return resultCapability.promise();
 }
 
+
+
+
+
+
+
+
+
 [[nodiscard]] static bool RunFulfillFunction(JSContext* cx,
                                              HandleObject onFulfilledFunc,
                                              HandleValue result,
@@ -2838,16 +3221,40 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   cx->check(promiseObj);
 
   
+  
+  
+  
+  
+
+  
+  
+
+  
+  
   if (onFulfilledFunc) {
+    
+    
+    
+    
     RootedValue calleeOrRval(cx, ObjectValue(*onFulfilledFunc));
     return Call(cx, calleeOrRval, UndefinedHandleValue, result, &calleeOrRval);
   }
 
   
+  
+  
+  
   if (!promiseObj) {
+    
+    
     return true;
   }
 
+  
+  
+  
+  
+  
   
   Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
   if (promise->state() != JS::PromiseState::Pending) {
@@ -3987,6 +4394,9 @@ static void ThrowAggregateError(JSContext* cx,
         isPromise = true;
       }
     }
+
+    
+    
     if (isPromise) {
       
       RootedValue ctorVal(cx);
@@ -4001,6 +4411,7 @@ static void ThrowAggregateError(JSContext* cx,
     }
   }
 
+  
   
   
   
@@ -4026,6 +4437,9 @@ static void ThrowAggregateError(JSContext* cx,
   }
 
   
+  
+  
+  
   return promise;
 }
 
@@ -4035,6 +4449,9 @@ static void ThrowAggregateError(JSContext* cx,
   RootedValue C(cx, ObjectValue(*constructor));
   return CommonStaticResolveRejectImpl(cx, C, value, ResolveMode);
 }
+
+
+
 
 
 
@@ -4056,10 +4473,17 @@ static bool Promise_reject(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+
+
 PromiseObject* PromiseObject::unforgeableReject(JSContext* cx,
                                                 HandleValue value) {
   cx->check(value);
 
+  
+  
   Rooted<PromiseObject*> promise(
       cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!promise) {
@@ -4070,12 +4494,17 @@ PromiseObject* PromiseObject::unforgeableReject(JSContext* cx,
   MOZ_ASSERT(
       PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS));
 
+  
   if (!RejectPromiseInternal(cx, promise, value)) {
     return nullptr;
   }
 
+  
   return promise;
 }
+
+
+
 
 
 
@@ -4097,6 +4526,11 @@ bool js::Promise_static_resolve(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+
+
 JSObject* PromiseObject::unforgeableResolve(JSContext* cx, HandleValue value) {
   JSObject* promiseCtor = JS::GetPromiseConstructor(cx);
   if (!promiseCtor) {
@@ -4105,6 +4539,12 @@ JSObject* PromiseObject::unforgeableResolve(JSContext* cx, HandleValue value) {
   RootedValue cVal(cx, ObjectValue(*promiseCtor));
   return CommonStaticResolveRejectImpl(cx, cVal, value, ResolveMode);
 }
+
+
+
+
+
+
 
 
 
@@ -4135,6 +4575,11 @@ PromiseObject* PromiseObject::unforgeableResolveWithNonPromise(
   MOZ_ASSERT(!IsPromise(value), "must use unforgeableResolve with this value");
 #endif
 
+  
+  
+
+  
+  
   Rooted<PromiseObject*> promise(
       cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!promise) {
@@ -4145,12 +4590,19 @@ PromiseObject* PromiseObject::unforgeableResolveWithNonPromise(
   MOZ_ASSERT(
       PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS));
 
+  
+  
   if (!ResolvePromiseInternal(cx, promise, value)) {
     return nullptr;
   }
 
+  
+  
   return promise;
 }
+
+
+
 
 
 
@@ -4163,8 +4615,6 @@ bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-
-
 enum class IncumbentGlobalObject {
   
   
@@ -4173,6 +4623,16 @@ enum class IncumbentGlobalObject {
   
   Yes
 };
+
+
+
+
+
+
+
+
+
+
 
 static PromiseReactionRecord* NewReactionRecord(
     JSContext* cx, Handle<PromiseCapability> resultCapability,
@@ -4258,8 +4718,19 @@ static PromiseReactionRecord* NewReactionRecord(
   cx->check(resultCapability.reject());
   cx->check(incumbentGlobalObject);
 
+  
+  
+  
+  
+  
+  
+
+  
+  
   reaction->setFixedSlot(ReactionRecordSlot_Promise,
                          ObjectOrNullValue(resultCapability.promise()));
+  
+  
   reaction->setFixedSlot(ReactionRecordSlot_Flags, Int32Value(0));
   reaction->setFixedSlot(ReactionRecordSlot_OnFulfilled, onFulfilled);
   reaction->setFixedSlot(ReactionRecordSlot_OnRejected, onRejected);
@@ -4282,6 +4753,14 @@ static bool IsPromiseSpecies(JSContext* cx, JSFunction* species) {
 
 enum class CreateDependentPromise { Always, SkipIfCtorUnobservable };
 
+
+
+
+
+
+
+
+
 static bool PromiseThenNewPromiseCapability(
     JSContext* cx, HandleObject promiseObj,
     CreateDependentPromise createDependent,
@@ -4293,30 +4772,39 @@ static bool PromiseThenNewPromiseCapability(
     return false;
   }
 
-  if (createDependent == CreateDependentPromise::Always ||
-      !IsNativeFunction(C, PromiseConstructor)) {
-    
-    if (!NewPromiseCapability(cx, C, resultCapability, true)) {
-      return false;
-    }
+  if (createDependent != CreateDependentPromise::Always &&
+      IsNativeFunction(C, PromiseConstructor)) {
+    return true;
+  }
 
-    RootedObject unwrappedPromise(cx, promiseObj);
-    if (IsWrapper(promiseObj)) {
-      unwrappedPromise = UncheckedUnwrap(promiseObj);
-    }
-    RootedObject unwrappedNewPromise(cx, resultCapability.promise());
-    if (IsWrapper(resultCapability.promise())) {
-      unwrappedNewPromise = UncheckedUnwrap(resultCapability.promise());
-    }
-    if (unwrappedPromise->is<PromiseObject>() &&
-        unwrappedNewPromise->is<PromiseObject>()) {
-      unwrappedNewPromise->as<PromiseObject>().copyUserInteractionFlagsFrom(
-          *unwrappedPromise.as<PromiseObject>());
-    }
+  
+  if (!NewPromiseCapability(cx, C, resultCapability, true)) {
+    return false;
+  }
+
+  RootedObject unwrappedPromise(cx, promiseObj);
+  if (IsWrapper(promiseObj)) {
+    unwrappedPromise = UncheckedUnwrap(promiseObj);
+  }
+  RootedObject unwrappedNewPromise(cx, resultCapability.promise());
+  if (IsWrapper(resultCapability.promise())) {
+    unwrappedNewPromise = UncheckedUnwrap(resultCapability.promise());
+  }
+  if (unwrappedPromise->is<PromiseObject>() &&
+      unwrappedNewPromise->is<PromiseObject>()) {
+    unwrappedNewPromise->as<PromiseObject>().copyUserInteractionFlagsFrom(
+        *unwrappedPromise.as<PromiseObject>());
   }
 
   return true;
 }
+
+
+
+
+
+
+
 
 
 [[nodiscard]] PromiseObject* js::OriginalPromiseThen(JSContext* cx,
@@ -4340,6 +4828,7 @@ static bool PromiseThenNewPromiseCapability(
   }
 
   
+  
   Rooted<PromiseObject*> newPromise(
       cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
   if (!newPromise) {
@@ -4350,6 +4839,7 @@ static bool PromiseThenNewPromiseCapability(
   Rooted<PromiseCapability> resultCapability(cx);
   resultCapability.promise().set(newPromise);
 
+  
   
   {
     RootedValue onFulfilledVal(cx, ObjectOrNullValue(onFulfilled));
@@ -4363,11 +4853,20 @@ static bool PromiseThenNewPromiseCapability(
   return newPromise;
 }
 
+
+
+
+
+
+
+
+
 [[nodiscard]] static bool OriginalPromiseThenWithoutSettleHandlers(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseObject*> promiseToResolve) {
   cx->check(promise);
 
+  
   
   Rooted<PromiseCapability> resultCapability(cx);
   if (!PromiseThenNewPromiseCapability(
@@ -4376,6 +4875,7 @@ static bool PromiseThenNewPromiseCapability(
     return false;
   }
 
+  
   
   return PerformPromiseThenWithoutSettleHandlers(cx, promise, promiseToResolve,
                                                  resultCapability);
@@ -4463,6 +4963,13 @@ static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
 }
 
 
+
+
+
+
+
+
+
 static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
                                        HandleValue onFulfilled,
                                        HandleValue onRejected,
@@ -4478,6 +4985,7 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
                   IsPromiseThenOrCatchRetValImplicitlyUsed(cx, promise);
 
   
+  
   Rooted<PromiseCapability> resultCapability(cx);
   if (rvalUsed) {
     PromiseObject* resultPromise =
@@ -4491,6 +4999,7 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
     resultCapability.promise().set(resultPromise);
   }
 
+  
   
   if (!PerformPromiseThen(cx, promise, onFulfilled, onRejected,
                           resultCapability)) {
@@ -5200,10 +5709,17 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
   return !wrapResult || cx->compartment()->wrap(cx, result);
 }
 
+
+
+
+
+
+
 static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
                                bool rvalExplicitlyUsed) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
   HandleValue thisVal = args.thisv();
   HandleValue onFulfilled = UndefinedHandleValue;
   HandleValue onRejected = args.get(0);
@@ -5231,20 +5747,38 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
 }
 
 
+
+
+
+
+
 static bool Promise_catch_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
   return Promise_catch_impl(cx, argc, vp, false);
 }
+
+
+
+
+
 
 
 static bool Promise_catch(JSContext* cx, unsigned argc, Value* vp) {
   return Promise_catch_impl(cx, argc, vp, true);
 }
 
+
+
+
+
+
+
 static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
                               HandleValue onFulfilled, HandleValue onRejected,
                               MutableHandleValue rval,
                               bool rvalExplicitlyUsed) {
   
+  
+
   
   if (!promiseVal.isObject()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -5255,6 +5789,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 
   
   if (CanCallOriginalPromiseThenBuiltin(cx, promiseVal)) {
+    
     return OriginalPromiseThenBuiltin(cx, promiseVal, onFulfilled, onRejected,
                                       rval, rvalExplicitlyUsed);
   }
@@ -5276,6 +5811,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
       IsPromiseThenOrCatchRetValImplicitlyUsed(cx, unwrappedPromise);
 
   
+  
   CreateDependentPromise createDependent =
       rvalUsed ? CreateDependentPromise::Always
                : CreateDependentPromise::SkipIfCtorUnobservable;
@@ -5285,6 +5821,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
     return false;
   }
 
+  
   
   if (!PerformPromiseThen(cx, unwrappedPromise, onFulfilled, onRejected,
                           resultCapability)) {
@@ -5300,11 +5837,21 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
 }
 
 
+
+
+
+
+
 bool Promise_then_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return Promise_then_impl(cx, args.thisv(), args.get(0), args.get(1),
                            args.rval(), false);
 }
+
+
+
+
+
 
 
 bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
@@ -5314,24 +5861,51 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
+
+
+
+
+
+
+
 [[nodiscard]] static bool PerformPromiseThen(
     JSContext* cx, Handle<PromiseObject*> promise, HandleValue onFulfilled_,
     HandleValue onRejected_, Handle<PromiseCapability> resultCapability) {
   
   
+  
+  
 
   
+  
+  
   RootedValue onFulfilled(cx, onFulfilled_);
+
+  
   if (!IsCallable(onFulfilled)) {
+    
     onFulfilled = Int32Value(PromiseHandlerIdentity);
   }
 
   
+  
+  
   RootedValue onRejected(cx, onRejected_);
+
+  
   if (!IsCallable(onRejected)) {
+    
     onRejected = Int32Value(PromiseHandlerThrower);
   }
 
+  
+  
+  
+  
+  
+  
+  
   
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
@@ -5340,8 +5914,16 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  
   return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
+
+
+
+
+
+
+
 
 [[nodiscard]] static bool PerformPromiseThenWithoutSettleHandlers(
     JSContext* cx, Handle<PromiseObject*> promise,
@@ -5349,13 +5931,21 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     Handle<PromiseCapability> resultCapability) {
   
   
+  
 
+  
   
   HandleValue onFulfilled = NullHandleValue;
 
   
+  
   HandleValue onRejected = NullHandleValue;
 
+  
+  
+  
+  
+  
   
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
@@ -5366,8 +5956,16 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   reaction->setIsDefaultResolvingHandler(promiseToResolve);
 
+  
   return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
+
+
+
+
+
+
+
 
 
 
@@ -5391,7 +5989,6 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  
   
   else {
     
@@ -5419,6 +6016,10 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
+    
+    
+    
+    
     if (!EnqueuePromiseReactionJob(cx, reaction, valueOrReason, state)) {
       return false;
     }
@@ -5429,6 +6030,15 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   return true;
 }
+
+
+
+
+
+
+
+
+
 
 [[nodiscard]] static bool AddPromiseReaction(
     JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
@@ -5450,6 +6060,9 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   }
   Handle<PromiseObject*> promise = unwrappedPromise;
 
+  
+  
+  
   
   RootedValue reactionsVal(cx, promise->reactions());
 
@@ -5703,10 +6316,20 @@ bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
 }
 
 
+
+
+
+
+
+
+
+
 void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise,
                               HandleSavedFrame unwrappedRejectionStack) {
   PromiseDebugInfo::setResolutionInfo(cx, promise, unwrappedRejectionStack);
 
+  
+  
   if (promise->state() == JS::PromiseState::Rejected &&
       promise->isUnhandled()) {
     cx->runtime()->addUnhandledRejectedPromise(cx, promise);
