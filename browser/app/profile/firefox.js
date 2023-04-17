@@ -2028,7 +2028,7 @@ pref("doh-rollout.trr-selection.enabled", false);
 
 
 
-pref("doh-rollout.provider-steering.enabled", false);
+pref("doh-rollout.provider-steering.enabled", true);
 
 
 pref("doh-rollout.provider-steering.provider-list", "[{ \"name\": \"comcast\", \"canonicalName\": \"doh-discovery.xfinity.com\", \"uri\": \"https://doh.xfinity.com/dns-query\" }]");

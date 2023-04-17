@@ -87,10 +87,6 @@ async function setup() {
   Preferences.set(prefs.TRR_SELECT_COMMIT_PREF, true);
 
   
-  
-  Preferences.set(prefs.PROVIDER_STEERING_PREF, true);
-
-  
   Preferences.set(prefs.CLEAR_ON_SHUTDOWN_PREF, true);
 
   
