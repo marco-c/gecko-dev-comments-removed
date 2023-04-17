@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/SandboxSettings.h"
 #include "mozISandboxSettings.h"
 
 #include "mozilla/Components.h"
@@ -13,9 +14,70 @@
 
 #include "prenv.h"
 
+#ifdef XP_WIN
+#  include "mozilla/gfx/gfxVars.h"
+#  include "mozilla/WindowsVersion.h"
+
+#endif  
+
 using namespace mozilla;
 
 namespace mozilla {
+
+const char* ContentWin32kLockdownStateToString(
+    ContentWin32kLockdownState aValue) {
+  switch (aValue) {
+    case ContentWin32kLockdownState::LockdownEnabled:
+      return "Win32k Lockdown enabled";
+
+    case ContentWin32kLockdownState::MissingWebRender:
+      return "Win32k Lockdown disabled -- Missing WebRender";
+
+    case ContentWin32kLockdownState::OperatingSystemNotSupported:
+      return "Win32k Lockdown disabled -- Operating system not supported";
+
+    case ContentWin32kLockdownState::PrefNotSet:
+      return "Win32k Lockdown disabled -- Preference not set";
+  }
+
+  MOZ_CRASH("Should never reach here");
+}
+
+ContentWin32kLockdownState GetContentWin32kLockdownState() {
+#ifdef XP_WIN
+  static ContentWin32kLockdownState result = [] {
+    if (!IsWin8OrLater()) {
+      return ContentWin32kLockdownState::OperatingSystemNotSupported;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (!gfx::gfxVars::UseWebRender()) {
+      return ContentWin32kLockdownState::MissingWebRender;
+    }
+
+    
+    
+    
+    if (!StaticPrefs::security_sandbox_content_win32k_disable()) {
+      return ContentWin32kLockdownState::PrefNotSet;
+    }
+
+    return ContentWin32kLockdownState::LockdownEnabled;
+  }();
+
+  return result;
+
+#else  
+
+  return ContentWin32kLockdownState::OperatingSystemNotSupported;
+
+#endif  
+}
 
 int GetEffectiveContentSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_CONTENT_SANDBOX")) {
