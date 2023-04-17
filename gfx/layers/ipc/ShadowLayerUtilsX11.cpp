@@ -24,6 +24,7 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/LayersSurfaces.h"  
+#include "mozilla/layers/ShadowLayers.h"    
 #include "mozilla/mozalloc.h"               
 #include "gfxEnv.h"
 #include "nsCOMPtr.h"  
@@ -100,6 +101,17 @@ already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
   if (mGLXPixmap) surf->BindGLXPixmap(mGLXPixmap);
 
   return surf->CairoStatus() ? nullptr : surf.forget();
+}
+
+
+void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {
+  if (UsingXCompositing()) {
+    
+    
+    
+    
+    FinishX(DefaultXDisplay());
+  }
 }
 
 

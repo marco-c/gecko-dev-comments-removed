@@ -158,6 +158,7 @@ enum class CompositableType : uint8_t {
   UNKNOWN,
   CONTENT_TILED,   
   IMAGE,           
+  IMAGE_BRIDGE,    
   CONTENT_SINGLE,  
   CONTENT_DOUBLE,  
   COUNT

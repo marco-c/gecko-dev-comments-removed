@@ -11,6 +11,7 @@
 
 #include "gfxPoint.h"               
 #include "gfxUtils.h"               
+#include "ipc/ShadowLayers.h"       
 #include "mozilla/ArrayUtils.h"     
 #include "mozilla/gfx/2D.h"         
 #include "mozilla/gfx/BasePoint.h"  
@@ -376,7 +377,9 @@ ContentClient::BufferDecision ContentClient::CalculateBufferForPaint(
       mode = SurfaceMode::SURFACE_SINGLE_CHANNEL_ALPHA;
 #else
       if (!aLayer->GetParent() ||
-          !aLayer->GetParent()->SupportsComponentAlphaChildren()) {
+          !aLayer->GetParent()->SupportsComponentAlphaChildren() ||
+          !aLayer->AsShadowableLayer() ||
+          !aLayer->AsShadowableLayer()->HasShadow()) {
         mode = SurfaceMode::SURFACE_SINGLE_CHANNEL_ALPHA;
       } else {
         contentType = gfxContentType::COLOR;
