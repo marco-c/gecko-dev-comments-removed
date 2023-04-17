@@ -4087,6 +4087,7 @@ var SessionStoreInternal = {
 
     
     
+    this._sendWindowRestoringNotification(aWindow);
     this._setWindowStateBusy(aWindow);
 
     if (winData.workspaceID) {
@@ -5563,6 +5564,17 @@ var SessionStoreInternal = {
   _sendWindowStateEvent: function ssi_sendWindowStateEvent(aWindow, aType) {
     let event = aWindow.document.createEvent("Events");
     event.initEvent("SSWindowState" + aType, true, false);
+    aWindow.dispatchEvent(event);
+  },
+
+  
+
+
+
+
+  _sendWindowRestoringNotification(aWindow) {
+    let event = aWindow.document.createEvent("Events");
+    event.initEvent("SSWindowRestoring", true, false);
     aWindow.dispatchEvent(event);
   },
 
