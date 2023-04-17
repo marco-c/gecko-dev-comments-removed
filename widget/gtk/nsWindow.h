@@ -135,6 +135,7 @@ class nsWindow final : public nsBaseWidget {
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScaleByScreen()
       override;
+  virtual void SetParent(nsIWidget* aNewParent) override;
   virtual void SetModal(bool aModal) override;
   virtual bool IsVisible() const override;
   virtual void ConstrainPosition(bool aAllowSlop, int32_t* aX,
@@ -257,7 +258,8 @@ class nsWindow final : public nsBaseWidget {
   
   
   GtkWidget* GetMozContainerWidget();
-  GdkWindow* GetGdkWindow() { return mGdkWindow; }
+  GdkWindow* GetGdkWindow() { return mGdkWindow; };
+  GdkWindow* GetToplevelGdkWindow();
   GtkWidget* GetGtkWidget() { return mShell; }
   nsIFrame* GetFrame() const;
   bool IsDestroyed() const { return mIsDestroyed; }
@@ -297,6 +299,8 @@ class nsWindow final : public nsBaseWidget {
   nsresult UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
                                                 uint8_t* aAlphas,
                                                 int32_t aStride);
+  virtual void ReparentNativeWidget(nsIWidget* aNewParent) override;
+
   void UpdateTitlebarTransparencyBitmap();
 
   virtual nsresult SynthesizeNativeMouseEvent(
@@ -491,6 +495,7 @@ class nsWindow final : public nsBaseWidget {
   void PauseCompositorHiddenWindow();
   void WaylandStartVsync();
   void WaylandStopVsync();
+  void DestroyChildWindows();
   GtkWidget* GetToplevelWidget();
   nsWindow* GetContainerWindow();
   void SetUrgencyHint(GtkWidget* top_window, bool state);
@@ -571,6 +576,10 @@ class nsWindow final : public nsBaseWidget {
   
   
   bool mIsWaylandPanelWindow;
+  
+  
+  
+  bool mIsChildWindow;
   bool mAlwaysOnTop;
   bool mNoAutoHide;
   bool mMouseTransparent;
