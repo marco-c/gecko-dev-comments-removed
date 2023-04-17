@@ -37,6 +37,25 @@ struct JS_PUBLIC_API JSContext;
 
 namespace js {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_RAII AutoCheckRecursionLimit {
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkLimit(JSContext* cx,
                                                   uintptr_t limit) const;
@@ -90,15 +109,6 @@ MOZ_ALWAYS_INLINE uintptr_t AutoCheckRecursionLimit::getStackLimitHelper(
 #endif
   return limit;
 }
-
-
-
-
-
-
-
-
-
 
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimit(
     JSContext* cx, uintptr_t limit) const {
