@@ -2598,6 +2598,7 @@ inline size_t BindingJSObjectMallocBytes(void* aNativePtr) { return 0; }
 
 
 
+
 template <class T>
 class MOZ_STACK_CLASS BindingJSObjectCreator {
  public:
