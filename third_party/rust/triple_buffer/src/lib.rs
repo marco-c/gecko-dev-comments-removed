@@ -67,13 +67,6 @@
 
 
 
-
-
-
-
-
-
-
 #![deny(missing_debug_implementations, missing_docs)]
 
 use cache_padded::CachePadded;
@@ -93,10 +86,6 @@ use std::{
 
 
 
-
-
-
-
 #[derive(Debug)]
 pub struct TripleBuffer<T: Send> {
     
@@ -107,6 +96,11 @@ pub struct TripleBuffer<T: Send> {
 }
 
 impl<T: Clone + Send> TripleBuffer<T> {
+    
+    
+    
+    
+    
     
     #[allow(clippy::needless_pass_by_value)]
     pub fn new(initial: T) -> Self {
@@ -141,10 +135,20 @@ impl<T: Send> TripleBuffer<T> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn split(self) -> (Input<T>, Output<T>) {
         (self.input, self.output)
     }
 }
+
 
 
 
@@ -243,32 +247,10 @@ impl<T: Send> Input<T> {
     
     
     
-    #[cfg(any(feature = "raw", test))]
-    pub fn raw_input_buffer(&mut self) -> &mut T {
-        self.input_buffer()
-    }
-
     
-    
-    
-    
-    
-    
-    
-    #[cfg(any(feature = "raw", test))]
-    pub fn raw_publish(&mut self) -> bool {
-        self.publish()
-    }
-}
-
-
-impl<T: Send> Input<T> {
-    
-    
-    
-    
-    
-    fn input_buffer(&mut self) -> &mut T {
+    pub fn input_buffer(&mut self) -> &mut T {
+        
+        
         let input_ptr = self.shared.buffers[self.input_idx as usize].get();
         unsafe { &mut *input_ptr }
     }
@@ -279,27 +261,64 @@ impl<T: Send> Input<T> {
     
     
     
-    fn swap_ordering() -> Ordering {
-        if cfg!(feature = "raw") {
-            Ordering::AcqRel
-        } else {
-            Ordering::Release
-        }
-    }
-
     
-    fn publish(&mut self) -> bool {
+    
+    
+    
+    
+    pub fn publish(&mut self) -> bool {
         
-        let former_back_info = self.shared.back_info.swap(
-            self.input_idx | BACK_DIRTY_BIT,
-            Self::swap_ordering(), 
-        );
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let former_back_info = self
+            .shared
+            .back_info
+            .swap(self.input_idx | BACK_DIRTY_BIT, Ordering::AcqRel);
 
         
         self.input_idx = former_back_info & BACK_INDEX_MASK;
 
         
         former_back_info & BACK_DIRTY_BIT != 0
+    }
+
+    
+    #[cfg(any(feature = "raw", test))]
+    #[deprecated(
+        since = "5.0.5",
+        note = "The \"raw\" feature is deprecated as the performance \
+                optimization that motivated it turned out to be incorrect. \
+                All functionality is now available without using feature flags."
+    )]
+    pub fn raw_input_buffer(&mut self) -> &mut T {
+        self.input_buffer()
+    }
+
+    
+    #[cfg(any(feature = "raw", test))]
+    #[deprecated(
+        since = "5.0.5",
+        note = "The \"raw\" feature is deprecated as the performance \
+                optimization that motivated it turned out to be incorrect. \
+                All functionality is now available without using feature flags."
+    )]
+    pub fn raw_publish(&mut self) -> bool {
+        self.publish()
     }
 }
 
@@ -361,35 +380,9 @@ impl<T: Send> Output<T> {
     
     
     
-    
-    #[cfg(any(feature = "raw", test))]
-    pub fn raw_output_buffer(&mut self) -> &mut T {
-        self.output_buffer()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(any(feature = "raw", test))]
-    pub fn raw_update(&mut self) -> bool {
-        self.update()
-    }
-}
-
-
-impl<T: Send> Output<T> {
-    
-    
-    
-    
-    
-    fn output_buffer(&mut self) -> &mut T {
+    pub fn output_buffer(&mut self) -> &mut T {
+        
+        
         let output_ptr = self.shared.buffers[self.output_idx as usize].get();
         unsafe { &mut *output_ptr }
     }
@@ -400,16 +393,10 @@ impl<T: Send> Output<T> {
     
     
     
-    fn swap_ordering() -> Ordering {
-        if cfg!(feature = "raw") {
-            Ordering::AcqRel
-        } else {
-            Ordering::Acquire
-        }
-    }
-
     
-    fn update(&mut self) -> bool {
+    
+    
+    pub fn update(&mut self) -> bool {
         
         let shared_state = &(*self.shared);
 
@@ -419,10 +406,25 @@ impl<T: Send> Output<T> {
             
             
             
-            let former_back_info = shared_state.back_info.swap(
-                self.output_idx,
-                Self::swap_ordering(), 
-            );
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let former_back_info = shared_state
+                .back_info
+                .swap(self.output_idx, Ordering::AcqRel);
 
             
             self.output_idx = former_back_info & BACK_INDEX_MASK;
@@ -430,6 +432,30 @@ impl<T: Send> Output<T> {
 
         
         updated
+    }
+
+    
+    #[cfg(any(feature = "raw", test))]
+    #[deprecated(
+        since = "5.0.5",
+        note = "The \"raw\" feature is deprecated as the performance \
+                optimization that motivated it turned out to be incorrect. \
+                All functionality is now available without using feature flags."
+    )]
+    pub fn raw_output_buffer(&mut self) -> &mut T {
+        self.output_buffer()
+    }
+    
+    #[cfg(any(feature = "raw", test))]
+    #[deprecated(
+        since = "5.0.5",
+        note = "The \"raw\" feature is deprecated as the performance \
+                optimization that motivated it turned out to be incorrect. \
+                All functionality is now available without using feature flags."
+    )]
+    #[cfg(any(feature = "raw", test))]
+    pub fn raw_update(&mut self) -> bool {
+        self.update()
     }
 }
 
@@ -670,12 +696,12 @@ mod tests {
         let old_output_idx = old_buf.output.output_idx;
 
         
-        assert!(!buf.output.raw_update());
+        assert!(!buf.output.update());
         assert_eq!(buf, old_buf);
         check_buf_state(&mut buf, false);
 
         
-        assert!(!buf.input.raw_publish());
+        assert!(!buf.input.publish());
         let mut expected_buf = old_buf.clone();
         expected_buf.input.input_idx = old_back_idx;
         expected_buf
@@ -687,7 +713,7 @@ mod tests {
         check_buf_state(&mut buf, true);
 
         
-        assert!(buf.input.raw_publish());
+        assert!(buf.input.publish());
         let mut expected_buf = old_buf.clone();
         expected_buf.input.input_idx = old_input_idx;
         expected_buf
@@ -699,7 +725,7 @@ mod tests {
         check_buf_state(&mut buf, true);
 
         
-        assert!(buf.output.raw_update());
+        assert!(buf.output.update());
         expected_buf.output.output_idx = old_back_idx;
         expected_buf
             .output
@@ -728,8 +754,8 @@ mod tests {
             let mut expected_buf = old_buf.clone();
 
             
-            *expected_buf.input.raw_input_buffer() = true;
-            expected_buf.input.raw_publish();
+            *expected_buf.input.input_buffer() = true;
+            expected_buf.input.publish();
 
             
             assert_eq!(buf, expected_buf);
@@ -757,7 +783,7 @@ mod tests {
 
             
             let mut expected_buf = old_buf.clone();
-            assert!(expected_buf.output.raw_update());
+            assert!(expected_buf.output.update());
             assert_eq!(buf, expected_buf);
             check_buf_state(&mut buf, false);
         }
@@ -871,7 +897,6 @@ mod tests {
     
     #[test]
     #[ignore]
-    #[cfg(feature = "raw")]
     fn concurrent_bidirectional_exchange() {
         
         
@@ -886,9 +911,9 @@ mod tests {
         testbench::concurrent_test_2(
             move || {
                 for new_value in 1..=TEST_WRITE_COUNT {
-                    match buf_input.raw_input_buffer().get() {
+                    match buf_input.input_buffer().get() {
                         Racey::Consistent(curr_value) => {
-                            assert!(curr_value <= TEST_WRITE_COUNT);
+                            assert!(curr_value <= new_value);
                         }
                         Racey::Inconsistent => {
                             panic!("Inconsistent state exposed by the buffer!");
@@ -900,7 +925,7 @@ mod tests {
             move || {
                 let mut last_value = 0usize;
                 while last_value < TEST_WRITE_COUNT {
-                    match buf_output.raw_output_buffer().get() {
+                    match buf_output.output_buffer().get() {
                         Racey::Consistent(new_value) => {
                             assert!((new_value >= last_value) && (new_value <= TEST_WRITE_COUNT));
                             last_value = new_value;
@@ -910,8 +935,8 @@ mod tests {
                         }
                     }
                     if buf_output.updated() {
-                        buf_output.raw_output_buffer().set(last_value / 2);
-                        buf_output.raw_update();
+                        buf_output.output_buffer().set(last_value / 2);
+                        buf_output.update();
                     }
                 }
             },
@@ -960,7 +985,7 @@ mod tests {
 
         
         assert_eq!(
-            as_ptr(&buf.input.raw_input_buffer()),
+            as_ptr(&buf.input.input_buffer()),
             buf.input.shared.buffers[buf.input.input_idx as usize].get()
         );
         assert_eq!(*buf, initial_buf);
@@ -971,7 +996,7 @@ mod tests {
 
         
         assert_eq!(
-            as_ptr(&buf.output.raw_output_buffer()),
+            as_ptr(&buf.output.output_buffer()),
             buf.output.shared.buffers[buf.output.output_idx as usize].get()
         );
         assert_eq!(*buf, initial_buf);
@@ -979,114 +1004,5 @@ mod tests {
         
         assert_eq!(buf.output.updated(), expected_dirty_bit);
         assert_eq!(*buf, initial_buf);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(test)]
-mod benchmarks {
-    use super::TripleBuffer;
-    use testbench;
-
-    
-    #[test]
-    #[ignore]
-    fn clean_read() {
-        
-        let mut buf = TripleBuffer::new(0u32);
-
-        
-        testbench::benchmark(2_500_000_000, || {
-            let read = *buf.output.read();
-            assert!(read < u32::max_value());
-        });
-    }
-
-    
-    #[test]
-    #[ignore]
-    fn write() {
-        
-        let mut buf = TripleBuffer::new(0u32);
-
-        
-        let mut iter = 1u32;
-        testbench::benchmark(640_000_000, || {
-            buf.input.write(iter);
-            iter += 1;
-        });
-    }
-
-    
-    #[test]
-    #[ignore]
-    fn write_and_dirty_read() {
-        
-        let mut buf = TripleBuffer::new(0u32);
-
-        
-        let mut iter = 1u32;
-        testbench::benchmark(290_000_000u32, || {
-            buf.input.write(iter);
-            iter += 1;
-            let read = *buf.output.read();
-            assert!(read < u32::max_value());
-        });
-    }
-
-    
-    #[test]
-    #[ignore]
-    fn concurrent_read() {
-        
-        let buf = TripleBuffer::new(0u32);
-        let (mut buf_input, mut buf_output) = buf.split();
-
-        
-        let mut counter = 0u32;
-        testbench::concurrent_benchmark(
-            56_000_000u32,
-            move || {
-                let read = *buf_output.read();
-                assert!(read < u32::max_value());
-            },
-            move || {
-                buf_input.write(counter);
-                counter = (counter + 1) % u32::max_value();
-            },
-        );
-    }
-
-    
-    #[test]
-    #[ignore]
-    fn concurrent_write() {
-        
-        let buf = TripleBuffer::new(0u32);
-        let (mut buf_input, mut buf_output) = buf.split();
-
-        
-        let mut iter = 1u32;
-        testbench::concurrent_benchmark(
-            88_000_000u32,
-            move || {
-                buf_input.write(iter);
-                iter += 1;
-            },
-            move || {
-                let read = *buf_output.read();
-                assert!(read < u32::max_value());
-            },
-        );
     }
 }
