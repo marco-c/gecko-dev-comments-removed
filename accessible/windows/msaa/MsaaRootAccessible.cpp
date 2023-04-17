@@ -126,6 +126,9 @@ MsaaRootAccessible::get_accFocus(
   
   
   
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    return S_FALSE;
+  }
   
   RootAccessible* rootAcc = RootAcc();
   if (!rootAcc) {

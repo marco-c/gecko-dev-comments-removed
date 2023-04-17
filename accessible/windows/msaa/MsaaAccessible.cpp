@@ -927,6 +927,9 @@ MsaaAccessible::get_accName(
   if (accessible) {
     return accessible->get_accName(kVarChildIdSelf, pszName);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
   nsAutoString name;
   LocalAcc()->Name(name);
@@ -958,6 +961,9 @@ MsaaAccessible::get_accValue(
   if (accessible) {
     return accessible->get_accValue(kVarChildIdSelf, pszValue);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
   nsAutoString value;
   LocalAcc()->Value(value);
@@ -987,6 +993,9 @@ MsaaAccessible::get_accDescription(VARIANT varChild,
 
   if (accessible) {
     return accessible->get_accDescription(kVarChildIdSelf, pszDescription);
+  }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
   }
 
   nsAutoString description;
@@ -1118,6 +1127,9 @@ MsaaAccessible::get_accState(
   if (accessible) {
     return accessible->get_accState(kVarChildIdSelf, pvarState);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
   
   
@@ -1176,6 +1188,9 @@ MsaaAccessible::get_accKeyboardShortcut(
   }
 
   LocalAccessible* localAcc = LocalAcc();
+  if (!localAcc) {
+    return E_NOTIMPL;  
+  }
   KeyBinding keyBinding = localAcc->AccessKey();
   if (keyBinding.IsEmpty()) keyBinding = localAcc->KeyboardShortcut();
 
@@ -1201,8 +1216,13 @@ MsaaAccessible::get_accFocus(
   
   
   
+  if (!mAcc) {
+    return CO_E_OBJNOTCONNECTED;
+  }
   LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) return CO_E_OBJNOTCONNECTED;
+  if (!localAcc) {
+    return E_NOTIMPL;  
+  }
 
   
   LocalAccessible* focusedAccessible = localAcc->FocusedChild();
@@ -1333,8 +1353,13 @@ MsaaAccessible::get_accSelection(VARIANT __RPC_FAR* pvarChildren) {
   VariantInit(pvarChildren);
   pvarChildren->vt = VT_EMPTY;
 
+  if (!mAcc) {
+    return CO_E_OBJNOTCONNECTED;
+  }
   LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) return CO_E_OBJNOTCONNECTED;
+  if (!localAcc) {
+    return E_NOTIMPL;  
+  }
 
   if (!localAcc->IsSelect()) {
     return S_OK;
@@ -1376,6 +1401,9 @@ MsaaAccessible::get_accDefaultAction(
   if (accessible) {
     return accessible->get_accDefaultAction(kVarChildIdSelf, pszDefaultAction);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
   nsAutoString defaultAction;
   LocalAcc()->ActionNameAt(0, defaultAction);
@@ -1397,6 +1425,9 @@ MsaaAccessible::accSelect(
 
   if (accessible) {
     return accessible->accSelect(flagsSelect, kVarChildIdSelf);
+  }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
   }
 
   LocalAccessible* localAcc = LocalAcc();
@@ -1460,7 +1491,7 @@ MsaaAccessible::accLocation(
 
   LocalAccessible* localAcc = LocalAcc();
   if (!localAcc) {
-    return CO_E_OBJNOTCONNECTED;
+    return E_NOTIMPL;  
   }
 
   nsIntRect rect = localAcc->Bounds();
@@ -1572,8 +1603,13 @@ MsaaAccessible::accHitTest(
 
   VariantInit(pvarChild);
 
+  if (!mAcc) {
+    return CO_E_OBJNOTCONNECTED;
+  }
   LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) return CO_E_OBJNOTCONNECTED;
+  if (!localAcc) {
+    return E_NOTIMPL;  
+  }
 
   LocalAccessible* accessible = localAcc->LocalChildAtPoint(
       xLeft, yTop, Accessible::EWhichChildAtPoint::DirectChild);
@@ -1608,6 +1644,9 @@ MsaaAccessible::accDoDefaultAction(
   if (accessible) {
     return accessible->accDoDefaultAction(kVarChildIdSelf);
   }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
+  }
 
   return LocalAcc()->DoAction(0) ? S_OK : E_INVALIDARG;
 }
@@ -1631,6 +1670,9 @@ MsaaAccessible::put_accValue(
 
   if (accessible) {
     return accessible->put_accValue(kVarChildIdSelf, szValue);
+  }
+  if (mAcc->IsRemote()) {
+    return E_NOTIMPL;  
   }
 
   HyperTextAccessible* ht = LocalAcc()->AsHyperText();
