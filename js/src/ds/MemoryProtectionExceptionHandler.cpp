@@ -11,8 +11,6 @@
 
 #if defined(XP_WIN)
 #  include "util/Windows.h"
-#elif defined(__wasi__)
-
 #elif defined(XP_UNIX) && !defined(XP_DARWIN)
 #  include <signal.h>
 #  include <sys/types.h>
@@ -122,8 +120,6 @@ bool MemoryProtectionExceptionHandler::isDisabled() {
   return true;
 #elif !defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
   
-  return true;
-#elif defined(__wasi__)
   return true;
 #else
   return false;
@@ -235,12 +231,6 @@ void MemoryProtectionExceptionHandler::uninstall() {
     sExceptionHandlerInstalled = false;
   }
 }
-
-#elif defined(__wasi__)
-
-bool MemoryProtectionExceptionHandler::install() { return true; }
-
-void MemoryProtectionExceptionHandler::uninstall() {}
 
 #elif defined(XP_UNIX) && !defined(XP_DARWIN)
 
