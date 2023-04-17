@@ -150,6 +150,15 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       this.slotchangeListener = null;
     }
 
+    if (this._waitForFrameLoadAbortController) {
+      this._waitForFrameLoadAbortController.abort();
+      this._waitForFrameLoadAbortController = null;
+    }
+    if (this._waitForFrameLoadIntervalId) {
+      clearInterval(this._waitForFrameLoadIntervalId);
+      this._waitForFrameLoadIntervalId = null;
+    }
+
     this._eventCollector.destroy();
     this._eventCollector = null;
     this.rawNode = null;
@@ -220,8 +229,8 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       
       
       form.numChildren = 1;
-      form.browsingContextID = this.rawNode.browsingContext.id;
     }
+    form.browsingContextID = this.rawNode.browsingContext?.id;
 
     return form;
   },
@@ -669,14 +678,68 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   async waitForFrameLoad() {
-    if (Cu.isDeadWrapper(this.rawNode)) {
-      return;
+    if (this.useChildTargetToFetchChildren) {
+      
+      
+      throw new Error(
+        "iframe content document has its own target, use that one instead"
+      );
     }
 
-    const { contentDocument, contentWindow } = this.rawNode;
-    if (contentDocument && contentDocument.readyState === "loading") {
+    if (Cu.isDeadWrapper(this.rawNode)) {
+      throw new Error("Node is dead");
+    }
+
+    const { contentDocument } = this.rawNode;
+    if (!contentDocument) {
+      throw new Error("Can't access contentDocument");
+    }
+
+    if (contentDocument.readyState === "uninitialized") {
+      
+      
+      
+
+      const { chromeEventHandler } = this.rawNode.ownerGlobal.docShell;
+      const browsingContextID = this.rawNode.browsingContext.id;
+      await new Promise((resolve, reject) => {
+        this._waitForFrameLoadAbortController = new AbortController();
+
+        chromeEventHandler.addEventListener(
+          "DOMDocElementInserted",
+          e => {
+            const { browsingContext } = e.target.defaultView;
+            
+            if (browsingContext.id == browsingContextID) {
+              resolve();
+              this._waitForFrameLoadAbortController.abort();
+            }
+          },
+          { signal: this._waitForFrameLoadAbortController.signal }
+        );
+
+        
+        
+        
+        
+        
+        
+        
+        
+        this._waitForFrameLoadIntervalId = setInterval(() => {
+          if (Cu.isDeadWrapper(this.rawNode) || !this.rawNode.contentDocument) {
+            reject("Can't access the iframe content document");
+            clearInterval(this._waitForFrameLoadIntervalId);
+            this._waitForFrameLoadIntervalId = null;
+            this._waitForFrameLoadAbortController.abort();
+          }
+        }, 50);
+      });
+    }
+
+    if (this.rawNode.contentDocument.readyState === "loading") {
       await new Promise(resolve => {
-        DOMHelpers.onceDOMReady(contentWindow, resolve);
+        DOMHelpers.onceDOMReady(this.rawNode.contentWindow, resolve);
       });
     }
   },
