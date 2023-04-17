@@ -73,8 +73,23 @@ const transformTests = {
   matrix: [
     
     ['matrix(1,0,0,1,0,0) rotate(0deg)', 'matrix(1.5,0,0,1.5,0,0) rotate(180deg)', 'matrix(2,0,0,2,0,0) rotate(360deg)']
+  ],
+  perspective: [
+    
+    
+    ['perspective(none) translateZ(15px)', 'perspective(none) translateZ(15px)', 'perspective(none) translateZ(15px)'],
+    ['perspective(100px) translateZ(50px)', 'perspective(200px) translateZ(50px)', 'perspective(none) translateZ(50px)'],
+    ['perspective(none) translateZ(15px)', 'perspective(50px) translateZ(15px)', 'perspective(25px) translateZ(15px)'],
+    ['perspective(100px) translateZ(15px)', 'perspective(40px) translateZ(15px)', 'perspective(25px) translateZ(15px)'],
+
+    
+    ['perspective(0.1px) translateZ(0.25px)', 'perspective(1px) translateZ(0.25px)', 'perspective(0.1px) translateZ(0.25px)'],
+    ['perspective(0px) translateZ(0.25px)', 'perspective(1px) translateZ(0.25px)', 'perspective(0px) translateZ(0.25px)'],
+    ['perspective(0px) translateZ(0.5px)', 'perspective(1.5px) translateZ(0.5px)', 'perspective(3px) translateZ(0.5px)'],
+    { test: ['perspective(10px) translateZ(0.5px)', 'translateZ(0.5px)', 'perspective(1px) translateZ(0.5px)'], midpoint: -1 },
+    { test: ['perspective(1px) translateZ(0.5px)', 'perspective(1px) translateZ(0.5px)', 'perspective(10px) translateZ(0.5px)'], midpoint: -1 }
   ]
-}
+};
 
 
 
@@ -105,9 +120,21 @@ function styleBody(){
 
 
 
-const easing = 'cubic-bezier(0,1,1,0)';
 const duration = 1e9;
-const delay = -duration/2;
+const midpointOptions = {
+  easing: 'cubic-bezier(0,1,1,0)',
+  duration: duration,
+  delay: -duration/2
+};
+
+
+
+
+const negoneOptions = {
+  easing: 'cubic-bezier(0,-1,1,-2)',
+  duration: duration,
+  delay: -duration/2
+};
 
 
 
@@ -117,13 +144,22 @@ const endIndex = 2;
 
 async function createTests(tests) {
   styleBody();
-  for (const test of tests) {
+  for (const obj of tests) {
+    let test = ("test" in obj) ? obj.test : obj;
+    let midpoint = ("midpoint" in obj) ? obj.midpoint : 0.5;
+    let options;
+    if (midpoint == 0.5) {
+      options = midpointOptions;
+    } else if (midpoint == -1) {
+      options = negoneOptions;
+    } else {
+      document.appendChild(document.createTextNode("unexpected midpoint " + midpoint));
+    }
     let div = document.createElement('div');
     document.body.appendChild(div);
     initialStyle(div);
-    var anim = div.animate(
-        {transform: [test[startIndex], test[endIndex]]},
-        {duration: duration, delay: delay, easing: easing});
+    var anim =
+      div.animate({transform: [test[startIndex], test[endIndex]]}, options);
     await anim.ready;
     finalStyle(div);  
   }
@@ -138,14 +174,15 @@ async function createTests(tests) {
 
 async function createRefs(tests) {
   styleBody();
-  for (const test of tests) {
+  for (const obj of tests) {
+    let test = ("test" in obj) ? obj.test : obj;
     let div = document.createElement('div');
     document.body.appendChild(div);
     initialStyle(div);
     finalStyle(div);
     var anim = div.animate(
         {transform: [test[midIndex], test[midIndex]]},
-        {duration: duration, delay: delay, easing: easing});
+        midpointOptions);
     await anim.ready;
   }
 
