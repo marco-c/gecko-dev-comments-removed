@@ -99,8 +99,6 @@ enum ChannelState {
 class AutoEnterTransaction;
 
 class MessageChannel : HasResultCodes {
-  friend class ProcessLink;
-  friend class ThreadLink;
   friend class PortLink;
 #ifdef FUZZING
   friend class ProtocolFuzzerHelper;
@@ -272,9 +270,6 @@ class MessageChannel : HasResultCodes {
     return mLastSendError;
   }
 
-  
-  ChannelState GetChannelState__TotallyRacy() const { return mChannelState; }
-
   void SetReplyTimeoutMs(int32_t aTimeoutMs);
 
   bool IsOnCxxStack() const { return !mCxxStackFrames.empty(); }
@@ -296,14 +291,6 @@ class MessageChannel : HasResultCodes {
   
   
   void StopPostponingSends();
-
-  
-
-
-
-
-
-  int32_t GetTopmostMessageRoutingId() const;
 
   
   
