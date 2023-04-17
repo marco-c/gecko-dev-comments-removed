@@ -26,3 +26,24 @@ registerCleanupFunction(async function() {
   Services.prefs.clearUserPref("devtools.toolbox.footer.height");
   await asyncStorage.removeItem("gridInspectorHostColors");
 });
+
+
+
+
+
+
+
+
+
+
+function synthesizeMouseOverOnGridCell(doc, gridCellIndex = 0) {
+  
+  
+  const gridCell = doc.querySelectorAll("#grid-cell-group rect")[gridCellIndex];
+
+  EventUtils.synthesizeMouseAtCenter(
+    gridCell,
+    { type: "mouseover" },
+    doc.defaultView
+  );
+}
