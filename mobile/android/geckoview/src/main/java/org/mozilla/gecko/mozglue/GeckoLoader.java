@@ -5,11 +5,11 @@
 
 package org.mozilla.gecko.mozglue;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
+import dalvik.system.BaseDexClassLoader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -188,9 +188,45 @@ public final class GeckoLoader {
     loadLibsSetupLocked(context);
   }
 
+  
+  
+  private static String getLibraryPath(final String libraryName) {
+    
+    
+    
+    String path =
+        ((BaseDexClassLoader) GeckoAppShell.class.getClassLoader()).findLibrary(libraryName);
+    if (path != null) {
+      return path;
+    }
+
+    
+    
+    final ClassLoader classLoader = GeckoAppShell.getApplicationContext().getClassLoader();
+    if (classLoader instanceof BaseDexClassLoader) {
+      path = ((BaseDexClassLoader) classLoader).findLibrary(libraryName);
+      if (path != null) {
+        return path;
+      }
+    }
+
+    throw new RuntimeException("Could not find mozglue path.");
+  }
+
+  private static String getLibraryBase() {
+    final String mozglue = getLibraryPath("mozglue");
+    final int lastSlash = mozglue.lastIndexOf('/');
+    if (lastSlash < 0) {
+      throw new IllegalStateException("Invalid library path for libmozglue.so: " + mozglue);
+    }
+    final String base = mozglue.substring(0, lastSlash);
+    Log.i(LOGTAG, "Library base=" + base);
+    return base;
+  }
+
   private static void loadLibsSetupLocked(final Context context) {
     putenv("GRE_HOME=" + getGREDir(context).getPath());
-    putenv("MOZ_ANDROID_LIBDIR=" + context.getApplicationInfo().nativeLibraryDir);
+    putenv("MOZ_ANDROID_LIBDIR=" + getLibraryBase());
   }
 
   @RobocopTarget
@@ -385,90 +421,25 @@ public final class GeckoLoader {
 
 
 
-  private static Throwable doLoadLibraryExpected(final Context context, final String lib) {
+  public static Throwable doLoadLibrary(final Context context, final String lib) {
     try {
       
       System.loadLibrary(lib);
       return null;
     } catch (final Throwable e) {
-      Log.wtf(LOGTAG, "Couldn't load " + lib + ". Trying native library dir.");
-
-      
-      final String libDir = context.getApplicationInfo().nativeLibraryDir;
-      final String libPath = libDir + "/lib" + lib + ".so";
-
+      final String libPath = getLibraryPath(lib);
       
       if (new File(libPath).exists()) {
         if (attemptLoad(libPath)) {
           
           return null;
         }
-        Log.wtf(LOGTAG, "Library exists but couldn't load!");
-      } else {
-        Log.wtf(LOGTAG, "Library doesn't exist when it should.");
+        throw new RuntimeException(
+            "Library exists but couldn't load." + "Path: " + libPath + " lib: " + lib, e);
       }
-
-      
-      return e;
+      throw new RuntimeException(
+          "Library doesn't exist when it should." + "Path: " + libPath + " lib: " + lib, e);
     }
-  }
-
-  @SuppressLint("SdCardPath")
-  public static void doLoadLibrary(final Context context, final String lib) {
-    final Throwable e = doLoadLibraryExpected(context, lib);
-    if (e == null) {
-      
-      return;
-    }
-
-    
-    
-    final String nativeLibPath = context.getApplicationInfo().nativeLibraryDir;
-    if (nativeLibPath.contains("mismatched_uid")) {
-      throw new RuntimeException("Fatal: mismatched UID: cannot load.");
-    }
-
-    
-    final String dataLibPath = context.getApplicationInfo().dataDir + "/lib/lib" + lib + ".so";
-    if (attemptLoad(dataLibPath)) {
-      return;
-    }
-
-    
-    final String androidPackageName = context.getPackageName();
-    if (attemptLoad("/data/app-lib/" + androidPackageName + "/lib" + lib + ".so")) {
-      return;
-    }
-
-    
-    if (attemptLoad("/data/data/" + androidPackageName + "/lib/lib" + lib + ".so")) {
-      return;
-    }
-
-    
-    final String filesLibDir = context.getFilesDir() + "/lib";
-    final String filesLibPath = filesLibDir + "/lib" + lib + ".so";
-    if (new File(filesLibPath).exists()) {
-      if (attemptLoad(filesLibPath)) {
-        return;
-      }
-    } else {
-      
-      if (extractLibrary(context, lib, filesLibDir)) {
-        
-        if (attemptLoad(filesLibPath)) {
-          return;
-        }
-      }
-    }
-
-    
-    final String message = getLoadDiagnostics(context, lib);
-    Log.e(LOGTAG, "Load diagnostics: " + message);
-
-    
-    
-    throw new RuntimeException(message, e);
   }
 
   public static synchronized void loadMozGlue(final Context context) {
