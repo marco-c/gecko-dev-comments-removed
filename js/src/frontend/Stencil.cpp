@@ -7,6 +7,7 @@
 #include "frontend/Stencil.h"
 
 #include "mozilla/AlreadyAddRefed.h"        
+#include "mozilla/Maybe.h"                  
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/PodOperations.h"          
 #include "mozilla/RefPtr.h"                 
@@ -547,56 +548,54 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
              input.target == CompilationInput::CompilationTarget::Eval);
 
   
-  
-  
-  
-  
-  
-  
-  
   JSAtom* jsname = nullptr;
-  {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    jsname = parserAtoms.toJSAtom(cx, name, input.atomCache);
-    if (!jsname) {
-      oomUnsafe.crash("EmitterScope::searchAndCache");
-    }
-  }
 
-  for (ScopeIter si(input.enclosingScope); si; si++) {
-    MOZ_ASSERT(NameIsOnEnvironment(cx, input, parserAtoms,
-                                   InputScope(si.scope()), name));
+  
+  mozilla::Maybe<NameLocation> result;
+
+  InputScope enclosingScope(input.enclosingScope);
+  for (InputScopeIter si(enclosingScope); si; si++) {
+    MOZ_ASSERT(NameIsOnEnvironment(cx, parserAtoms, input.atomCache, si.scope(),
+                                   name));
 
     bool hasEnv = si.hasSyntacticEnvironment();
 
     switch (si.kind()) {
       case ScopeKind::Function:
         if (hasEnv) {
-          JSScript* script = si.scope()->as<FunctionScope>().script();
-          if (script->funHasExtensibleScope()) {
+          if (si.scope().funHasExtensibleScope()) {
             return NameLocation::Dynamic();
           }
 
-          for (BindingIter bi(si.scope()); bi; bi++) {
-            if (bi.name() != jsname) {
-              continue;
-            }
+          si.scope().match([&](auto& scope_ref) {
+            for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
+              InputName binding(scope_ref, bi.name());
+              if (!binding.isEqualTo(cx, parserAtoms, input.atomCache, name,
+                                     &jsname)) {
+                continue;
+              }
 
-            BindingLocation bindLoc = bi.location();
-            if (bi.hasArgumentSlot() &&
-                script->functionAllowsParameterRedeclaration()) {
+              BindingLocation bindLoc = bi.location();
               
-              for (BindingIter bi2(bi); bi2 && bi2.hasArgumentSlot(); bi2++) {
-                if (bi2.name() == jsname) {
-                  bindLoc = bi2.location();
+              if (bi.hasArgumentSlot() && si.scope().hasMappedArgsObj()) {
+                
+                using InputBindingIter = decltype(bi);
+                for (InputBindingIter bi2(bi); bi2 && bi2.hasArgumentSlot();
+                     bi2++) {
+                  InputName binding2(scope_ref, bi2.name());
+                  if (binding2.isEqualTo(cx, parserAtoms, input.atomCache, name,
+                                         &jsname)) {
+                    bindLoc = bi2.location();
+                  }
                 }
               }
-            }
 
-            MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
-            return NameLocation::EnvironmentCoordinate(bi.kind(), hops,
-                                                       bindLoc.slot());
-          }
+              MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
+              result.emplace(NameLocation::EnvironmentCoordinate(
+                  bi.kind(), hops, bindLoc.slot()));
+              return;
+            }
+          });
         }
         break;
 
@@ -610,19 +609,24 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
       case ScopeKind::FunctionLexical:
       case ScopeKind::ClassBody:
         if (hasEnv) {
-          for (BindingIter bi(si.scope()); bi; bi++) {
-            if (bi.name() != jsname) {
-              continue;
-            }
+          si.scope().match([&](auto& scope_ref) {
+            for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
+              InputName binding(scope_ref, bi.name());
+              if (!binding.isEqualTo(cx, parserAtoms, input.atomCache, name,
+                                     &jsname)) {
+                continue;
+              }
 
-            
-            
-            
-            BindingLocation bindLoc = bi.location();
-            MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
-            return NameLocation::EnvironmentCoordinate(bi.kind(), hops,
-                                                       bindLoc.slot());
-          }
+              
+              
+              
+              BindingLocation bindLoc = bi.location();
+              MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
+              result.emplace(NameLocation::EnvironmentCoordinate(
+                  bi.kind(), hops, bindLoc.slot()));
+              return;
+            }
+          });
         }
         break;
 
@@ -631,25 +635,31 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
         
         
         if (hasEnv) {
-          for (BindingIter bi(si.scope()); bi; bi++) {
-            if (bi.name() != jsname) {
-              continue;
+          si.scope().match([&](auto& scope_ref) {
+            for (auto bi = InputBindingIter(scope_ref); bi; bi++) {
+              InputName binding(scope_ref, bi.name());
+              if (!binding.isEqualTo(cx, parserAtoms, input.atomCache, name,
+                                     &jsname)) {
+                continue;
+              }
+
+              BindingLocation bindLoc = bi.location();
+
+              
+              
+              
+              if (bindLoc.kind() == BindingLocation::Kind::Import) {
+                MOZ_ASSERT(si.kind() == ScopeKind::Module);
+                result.emplace(NameLocation::Import());
+                return;
+              }
+
+              MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
+              result.emplace(NameLocation::EnvironmentCoordinate(
+                  bi.kind(), hops, bindLoc.slot()));
+              return;
             }
-
-            BindingLocation bindLoc = bi.location();
-
-            
-            
-            
-            if (bindLoc.kind() == BindingLocation::Kind::Import) {
-              MOZ_ASSERT(si.kind() == ScopeKind::Module);
-              return NameLocation::Import();
-            }
-
-            MOZ_ASSERT(bindLoc.kind() == BindingLocation::Kind::Environment);
-            return NameLocation::EnvironmentCoordinate(bi.kind(), hops,
-                                                       bindLoc.slot());
-          }
+          });
         }
         break;
 
@@ -657,8 +667,11 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
         
         
         
-        if (!hasEnv && si.scope()->enclosing()->is<GlobalScope>()) {
-          return NameLocation::Global(BindingKind::Var);
+        if (!hasEnv) {
+          ScopeKind kind = si.scope().enclosing().kind();
+          if (kind == ScopeKind::Global || kind == ScopeKind::NonSyntactic) {
+            return NameLocation::Global(BindingKind::Var);
+          }
         }
         return NameLocation::Dynamic();
 
@@ -672,6 +685,10 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
       case ScopeKind::WasmInstance:
       case ScopeKind::WasmFunction:
         MOZ_CRASH("No direct eval inside wasm functions");
+    }
+
+    if (result.isSome()) {
+      return result.value();
     }
 
     if (hasEnv) {
