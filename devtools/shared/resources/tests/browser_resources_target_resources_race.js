@@ -19,7 +19,7 @@ add_task(async function() {
 
   const {
     client,
-    resourceWatcher,
+    resourceCommand,
     targetCommand,
   } = await initMultiProcessResourceCommand();
 
@@ -38,8 +38,8 @@ add_task(async function() {
   
   
   
-  const initialWatchPromise = resourceWatcher.watchResources(
-    [resourceWatcher.TYPES.CSS_MESSAGE],
+  const initialWatchPromise = resourceCommand.watchResources(
+    [resourceCommand.TYPES.CSS_MESSAGE],
     {
       onAvailable: onCssMessageAvailable,
     }
@@ -47,8 +47,8 @@ add_task(async function() {
 
   
   const onMessageReceived = waitForNextResource(
-    resourceWatcher,
-    resourceWatcher.TYPES.PLATFORM_MESSAGE,
+    resourceCommand,
+    resourceCommand.TYPES.PLATFORM_MESSAGE,
     {
       ignoreExistingResources: false,
       predicate: r => r.message === expectedPlatformMessage,
@@ -63,7 +63,7 @@ add_task(async function() {
   await initialWatchPromise;
 
   
-  resourceWatcher.unwatchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+  resourceCommand.unwatchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable: onCssMessageAvailable,
   });
 

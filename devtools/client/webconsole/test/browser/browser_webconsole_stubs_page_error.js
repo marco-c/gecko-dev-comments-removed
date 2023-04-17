@@ -65,7 +65,7 @@ async function generatePageErrorStubs() {
   const tab = await addTab(TEST_URI);
   const commands = await createCommandsForTab(tab);
   await commands.targetCommand.startListening();
-  const resourceWatcher = commands.resourceCommand;
+  const resourceCommand = commands.resourceCommand;
 
   
   
@@ -77,7 +77,7 @@ async function generatePageErrorStubs() {
       handleErrorMessage(resource);
     }
   };
-  await resourceWatcher.watchResources([resourceWatcher.TYPES.ERROR_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.ERROR_MESSAGE], {
     onAvailable: onErrorMessageAvailable,
   });
 

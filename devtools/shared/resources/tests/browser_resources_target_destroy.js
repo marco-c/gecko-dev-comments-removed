@@ -8,14 +8,14 @@
 
 add_task(async function() {
   const tab = await addTab("data:text/html,Test");
-  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
   
   
-  await resourceWatcher.watchResources(
-    [resourceWatcher.TYPES.CONSOLE_MESSAGE],
+  await resourceCommand.watchResources(
+    [resourceCommand.TYPES.CONSOLE_MESSAGE],
     {
       onAvailable: () => {},
     }

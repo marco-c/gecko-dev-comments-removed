@@ -303,7 +303,7 @@ class ResourceCommand {
     
     
     
-    targetFront.resourceWatcher = this;
+    targetFront.resourceCommand = this;
 
     const resources = [];
     if (isTargetSwitching) {

@@ -19,11 +19,11 @@ add_task(async function() {
 
   const {
     client,
-    resourceWatcher,
+    resourceCommand,
     targetCommand,
   } = await initMultiProcessResourceCommand();
 
-  const { CONSOLE_MESSAGE, ROOT_NODE } = resourceWatcher.TYPES;
+  const { CONSOLE_MESSAGE, ROOT_NODE } = resourceCommand.TYPES;
 
   
   
@@ -37,7 +37,7 @@ add_task(async function() {
   };
 
   info("Call watchResources([CONSOLE_MESSAGE, ROOT_NODE], ...)");
-  await resourceWatcher.watchResources([CONSOLE_MESSAGE, ROOT_NODE], {
+  await resourceCommand.watchResources([CONSOLE_MESSAGE, ROOT_NODE], {
     onAvailable,
   });
 
@@ -69,7 +69,7 @@ add_task(async function() {
   );
 
   info("Stop watching ROOT_NODE resources");
-  await resourceWatcher.unwatchResources([ROOT_NODE], { onAvailable });
+  await resourceCommand.unwatchResources([ROOT_NODE], { onAvailable });
 
   
   
@@ -89,7 +89,7 @@ add_task(async function() {
   );
 
   info("Stop watching CONSOLE_MESSAGE resources");
-  await resourceWatcher.unwatchResources([CONSOLE_MESSAGE], { onAvailable });
+  await resourceCommand.unwatchResources([CONSOLE_MESSAGE], { onAvailable });
   await logInTab(tab, "test-again");
 
   
@@ -101,7 +101,7 @@ add_task(async function() {
       resource => resource.message.arguments[0] === "test-again"
     ),
     undefined,
-    "The resource watcher should not watch CONSOLE_MESSAGE anymore"
+    "The resource command should not watch CONSOLE_MESSAGE anymore"
   );
 
   

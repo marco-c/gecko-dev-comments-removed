@@ -35,7 +35,7 @@ async function testWatchingCssMessages() {
   
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -45,7 +45,7 @@ async function testWatchingCssMessages() {
     receivedMessages,
     false
   );
-  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable,
   });
 
@@ -98,7 +98,7 @@ async function testWatchingCachedCssMessages() {
 
   
   
-  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
+  const { client, resourceCommand, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -108,7 +108,7 @@ async function testWatchingCachedCssMessages() {
     receivedMessages,
     true
   );
-  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+  await resourceCommand.watchResources([resourceCommand.TYPES.CSS_MESSAGE], {
     onAvailable,
   });
   is(receivedMessages.length, 3, "Cached messages were retrieved as expected");

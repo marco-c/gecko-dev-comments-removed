@@ -1207,7 +1207,7 @@ function getCurrentTestFilePath() {
 
 
 function waitForNextResource(
-  resourceWatcher,
+  resourceCommand,
   resourceType,
   { ignoreExistingResources = false, predicate } = {}
 ) {
@@ -1220,11 +1220,11 @@ function waitForNextResource(
       const matchingResource = resources.find(resource => predicate(resource));
       if (matchingResource) {
         resolve(matchingResource);
-        resourceWatcher.unwatchResources([resourceType], { onAvailable });
+        resourceCommand.unwatchResources([resourceType], { onAvailable });
       }
     };
 
-    resourceWatcher.watchResources([resourceType], {
+    resourceCommand.watchResources([resourceType], {
       ignoreExistingResources,
       onAvailable,
     });

@@ -30,7 +30,7 @@ async function _initResourceCommandFromCommands(
   return {
     client: commands.client,
     commands,
-    resourceWatcher: commands.resourceCommand,
+    resourceCommand: commands.resourceCommand,
     targetCommand,
   };
 }
