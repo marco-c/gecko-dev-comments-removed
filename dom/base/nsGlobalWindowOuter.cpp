@@ -1179,7 +1179,6 @@ bool nsOuterWindowProxy::MaybeGetPDFJSPrintMethod(
   
   
   pd.setDataDescriptor(funVal, JSPROP_ENUMERATE);
-  pd.object().set(proxy);
   desc.set(Some(pd.get()));
   return true;
 }

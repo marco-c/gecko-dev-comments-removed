@@ -95,7 +95,7 @@ nsresult GetJSValFromKeyPathString(
 
       
       
-      JS::Rooted<JS::PropertyDescriptor> desc(aCx);
+      JS::Rooted<mozilla::Maybe<JS::PropertyDescriptor>> desc(aCx);
       QM_TRY(OkIf(JS_GetOwnUCPropertyDescriptor(aCx, obj, keyPathChars,
                                                 keyPathLen, &desc)),
              NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR,
@@ -104,8 +104,9 @@ nsresult GetJSValFromKeyPathString(
       JS::Rooted<JS::Value> intermediate(aCx);
       bool hasProp = false;
 
-      if (desc.object()) {
-        intermediate = desc.value();
+      
+      if (desc.isSome()) {
+        intermediate = desc->value();
         hasProp = true;
       } else {
         
