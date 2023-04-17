@@ -492,13 +492,13 @@ function getBindingElementAndPseudo(node) {
   let pseudo = null;
   if (node.nodeName == "_moz_generated_content_marker") {
     bindingElement = node.parentNode;
-    pseudo = "::marker";
+    pseudo = ":marker";
   } else if (node.nodeName == "_moz_generated_content_before") {
     bindingElement = node.parentNode;
-    pseudo = "::before";
+    pseudo = ":before";
   } else if (node.nodeName == "_moz_generated_content_after") {
     bindingElement = node.parentNode;
-    pseudo = "::after";
+    pseudo = ":after";
   }
   return {
     bindingElement: bindingElement,
