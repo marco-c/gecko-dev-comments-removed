@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/layers/KnowsCompositor.h"
 #if !defined(GMPVideoDecoder_h_)
 #  define GMPVideoDecoder_h_
 
@@ -22,6 +23,7 @@ struct MOZ_STACK_CLASS GMPVideoDecoderParams {
   const VideoInfo& mConfig;
   layers::ImageContainer* mImageContainer;
   GMPCrashHelper* mCrashHelper;
+  layers::KnowsCompositor* mKnowsCompositor;
 };
 
 DDLoggedTypeDeclNameAndBase(GMPVideoDecoder, MediaDataDecoder);
@@ -87,6 +89,7 @@ class GMPVideoDecoder : public MediaDataDecoder,
 
   int64_t mLastStreamOffset = 0;
   RefPtr<layers::ImageContainer> mImageContainer;
+  RefPtr<layers::KnowsCompositor> mKnowsCompositor;
 
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseHolder<DecodePromise> mDrainPromise;

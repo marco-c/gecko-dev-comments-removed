@@ -952,7 +952,7 @@ already_AddRefed<VideoData> MediaDataHelper::CreateYUV420VideoData(
       media::TimeUnit::FromMicroseconds(1),  
       b,
       0,  
-      media::TimeUnit::FromMicroseconds(-1), info.ImageRect());
+      media::TimeUnit::FromMicroseconds(-1), info.ImageRect(), nullptr);
 
   MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug,
           ("YUV420 VideoData: disp width %d, height %d, pic width %d, height "
