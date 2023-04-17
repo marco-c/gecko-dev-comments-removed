@@ -812,7 +812,7 @@ impl CompositeState {
             );
             return ResolvedExternalSurfaceIndex::INVALID;
         }
-            
+
         let external_surface_index = ResolvedExternalSurfaceIndex(self.external_surfaces.len());
 
         
@@ -864,7 +864,7 @@ impl CompositeState {
 
     pub fn end_frame(&mut self) {
         
-        self.tiles.sort_by_key(|tile| -tile.z_id.0);        
+        self.tiles.sort_by_key(|tile| tile.z_id.0);
     }
 }
 
@@ -1270,7 +1270,7 @@ impl Occluders {
         
         for occluder in &self.occluders {
             
-            if occluder.z_id.0 > z_id.0 {
+            if occluder.z_id.0 < z_id.0 {
                 
                 
                 if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
