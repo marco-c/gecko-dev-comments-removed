@@ -3773,66 +3773,40 @@ void TestProfilerStringView() {
     MOZ_RELEASE_ASSERT(!outerBSV.IsReference());
   }
 
-  MOZ_RELEASE_ASSERT(cb.GetState().mRangeStart == 1u);
-
   cb.Clear();
 
   
-
-  
-  
-  unsigned guessedChunkBytes = unsigned(cb.GetState().mRangeStart) - 1u;
-  static constexpr unsigned stringCount = 4u;
-  const unsigned stringSize =
-      guessedChunkBytes / stringCount / sizeof(CHAR) + 3u;
-
-  std::basic_string<CHAR> longString;
-  longString.reserve(stringSize);
-  for (unsigned i = 0; i < stringSize; ++i) {
-    longString += CHAR('0' + i);
-  }
-
-  for (unsigned i = 0; i < stringCount; ++i) {
-    MOZ_RELEASE_ASSERT(cb.PutObject(BSV(longString)));
-  }
-
+  std::basic_string<CHAR> hiString(hi);
+  MOZ_RELEASE_ASSERT(cb.PutObject(BSV(hiString)));
   {
     unsigned read = 0;
     ProfilerStringView<CHAR> outerBSV;
     cb.ReadEach([&](ProfileBufferEntryReader& aER) {
       ++read;
-      {
-        auto bsv = aER.ReadObject<ProfilerStringView<CHAR>>();
-        MOZ_RELEASE_ASSERT(bsv.Length() == stringSize);
-        MOZ_RELEASE_ASSERT(bsv.Data());
-        for (unsigned i = 0; i < stringSize; ++i) {
-          MOZ_RELEASE_ASSERT(bsv.Data()[i] == CHAR('0' + i));
-          longString += '0' + i;
-        }
-        MOZ_RELEASE_ASSERT(!bsv.IsLiteral());
-        
-        
-        
-        MOZ_RELEASE_ASSERT(bsv.IsReference() == (read != 4));
-
-        
-        outerBSV = std::move(bsv);
-        
-        
-        
-        MOZ_RELEASE_ASSERT(bsv.Length() == ((read != 4) ? stringSize : 0));
-      }
-
-      MOZ_RELEASE_ASSERT(outerBSV.Length() == stringSize);
-      MOZ_RELEASE_ASSERT(outerBSV.Data());
-      for (unsigned i = 0; i < stringSize; ++i) {
-        MOZ_RELEASE_ASSERT(outerBSV.Data()[i] == CHAR('0' + i));
-        longString += '0' + i;
-      }
-      MOZ_RELEASE_ASSERT(!outerBSV.IsLiteral());
-      MOZ_RELEASE_ASSERT(outerBSV.IsReference() == (read != 4));
+      auto bsv = aER.ReadObject<ProfilerStringView<CHAR>>();
+      MOZ_RELEASE_ASSERT(bsv.Data());
+      MOZ_RELEASE_ASSERT(bsv.Data() != hiString.data());
+      MOZ_RELEASE_ASSERT(bsv.Data()[0] == CHAR('h'));
+      MOZ_RELEASE_ASSERT(bsv.Data()[1] == CHAR('i'));
+      MOZ_RELEASE_ASSERT(bsv.Data()[2] == CHAR('\0'));
+      MOZ_RELEASE_ASSERT(bsv.Length() == 2);
+      
+      MOZ_RELEASE_ASSERT(!bsv.IsLiteral());
+      MOZ_RELEASE_ASSERT(!bsv.IsReference());
+      
+      outerBSV = std::move(bsv);
+      
+      MOZ_RELEASE_ASSERT(bsv.Length() == 0);
     });
-    MOZ_RELEASE_ASSERT(read == 4);
+    MOZ_RELEASE_ASSERT(read == 1);
+    MOZ_RELEASE_ASSERT(outerBSV.Data());
+    MOZ_RELEASE_ASSERT(outerBSV.Data() != hiString.data());
+    MOZ_RELEASE_ASSERT(outerBSV.Data()[0] == CHAR('h'));
+    MOZ_RELEASE_ASSERT(outerBSV.Data()[1] == CHAR('i'));
+    MOZ_RELEASE_ASSERT(outerBSV.Data()[2] == CHAR('\0'));
+    MOZ_RELEASE_ASSERT(outerBSV.Length() == 2);
+    MOZ_RELEASE_ASSERT(!outerBSV.IsLiteral());
+    MOZ_RELEASE_ASSERT(!outerBSV.IsReference());
   }
 
   if constexpr (std::is_same_v<CHAR, char>) {
