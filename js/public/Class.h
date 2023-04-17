@@ -34,7 +34,6 @@ namespace js {
 class PropertyResult;
 
 
-
 extern JS_PUBLIC_DATA const JSClass* const FunctionClassPtr;
 extern JS_PUBLIC_DATA const JSClass* const FunctionExtendedClassPtr;
 
