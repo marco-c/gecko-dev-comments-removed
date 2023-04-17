@@ -127,7 +127,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
-  ["resultBuckets", ""],
+  ["resultGroups", ""],
 
   
   ["richSuggestions.tail", true],
@@ -467,7 +467,7 @@ class Preferences {
 
   migrateResultBuckets() {
     this.set(
-      "resultBuckets",
+      "resultGroups",
       JSON.stringify(
         makeResultBuckets({
           showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
@@ -528,7 +528,7 @@ class Preferences {
     switch (pref) {
       case "showSearchSuggestionsFirst":
         this.set(
-          "resultBuckets",
+          "resultGroups",
           JSON.stringify(
             makeResultBuckets({ showSearchSuggestionsFirst: this.get(pref) })
           )
@@ -596,7 +596,7 @@ class Preferences {
         }
         return val;
       }
-      case "resultBuckets":
+      case "resultGroups":
         try {
           return JSON.parse(this._readPref(pref));
         } catch (ex) {}

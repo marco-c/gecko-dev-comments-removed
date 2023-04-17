@@ -8,7 +8,7 @@
 
 "use strict";
 
-const RESULT_BUCKETS_PREF = "browser.urlbar.resultBuckets";
+const RESULT_BUCKETS_PREF = "browser.urlbar.resultGroups";
 const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 
 
@@ -1362,7 +1362,7 @@ function add_resultBuckets_task({
   expectedResultIndexes,
 }) {
   let func = async () => {
-    info(`Running resultBuckest test: ${testName}`);
+    info(`Running resultGroups test: ${testName}`);
     setResultBuckets(resultBuckets);
     let provider = registerBasicTestProvider(providerResults);
     let context = createContext("foo", { providers: [provider.name] });

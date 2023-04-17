@@ -578,7 +578,7 @@ add_task(async function test_badHeuristicsBuckets_notFirst_4() {
 
 async function doBadHeuristicBucketsTest(resultBuckets, expectedResults) {
   Services.prefs.setCharPref(
-    "browser.urlbar.resultBuckets",
+    "browser.urlbar.resultGroups",
     JSON.stringify({ children: resultBuckets })
   );
 
@@ -588,5 +588,5 @@ async function doBadHeuristicBucketsTest(resultBuckets, expectedResults) {
   await UrlbarProvidersManager.startQuery(context, controller);
   Assert.deepEqual(context.results, expectedResults);
 
-  Services.prefs.clearUserPref("browser.urlbar.resultBuckets");
+  Services.prefs.clearUserPref("browser.urlbar.resultGroups");
 }

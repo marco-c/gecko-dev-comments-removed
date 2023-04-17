@@ -211,7 +211,7 @@ add_task(function makeResultBuckets_false() {
 });
 
 
-add_task(function showSearchSuggestionsFirst_resultBuckets() {
+add_task(function showSearchSuggestionsFirst_resultGroups() {
   
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
@@ -219,45 +219,45 @@ add_task(function showSearchSuggestionsFirst_resultBuckets() {
     "showSearchSuggestionsFirst is true initially"
   );
   Assert.equal(
-    Services.prefs.getCharPref("browser.urlbar.resultBuckets", ""),
+    Services.prefs.getCharPref("browser.urlbar.resultGroups", ""),
     "",
-    "resultBuckets is empty initially"
+    "resultGroups is empty initially"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
   Assert.ok(
-    Services.prefs.getCharPref("browser.urlbar.resultBuckets", ""),
-    "resultBuckets should exist after setting showSearchSuggestionsFirst"
+    Services.prefs.getCharPref("browser.urlbar.resultGroups", ""),
+    "resultGroups should exist after setting showSearchSuggestionsFirst"
   );
   Assert.deepEqual(
-    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
     UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: false }),
-    "resultBuckets is updated after setting showSearchSuggestionsFirst = false"
+    "resultGroups is updated after setting showSearchSuggestionsFirst = false"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", true);
   Assert.deepEqual(
-    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
     UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
-    "resultBuckets is updated after setting showSearchSuggestionsFirst = true"
+    "resultGroups is updated after setting showSearchSuggestionsFirst = true"
   );
 
   
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
   Assert.deepEqual(
-    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
     UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: false }),
-    "resultBuckets is updated after setting showSearchSuggestionsFirst = false"
+    "resultGroups is updated after setting showSearchSuggestionsFirst = false"
   );
 
   
   Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
   Assert.deepEqual(
-    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
     UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
-    "resultBuckets is updated immediately after clearing showSearchSuggestionsFirst"
+    "resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
   );
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
@@ -265,9 +265,9 @@ add_task(function showSearchSuggestionsFirst_resultBuckets() {
     "showSearchSuggestionsFirst defaults to true after clearing it"
   );
   Assert.deepEqual(
-    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+    JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
     UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true }),
-    "resultBuckets remains correct after getting showSearchSuggestionsFirst"
+    "resultGroups remains correct after getting showSearchSuggestionsFirst"
   );
 });
 
@@ -328,11 +328,11 @@ add_task(function initializeShowSearchSuggestionsFirstPref() {
       "showSearchSuggestionsFirst has the expected value"
     );
     Assert.deepEqual(
-      JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultBuckets")),
+      JSON.parse(Services.prefs.getCharPref("browser.urlbar.resultGroups")),
       UrlbarPrefs.makeResultBuckets({
         showSearchSuggestionsFirst: expectedValue,
       }),
-      "resultBuckets should be updated with the appropriate default"
+      "resultGroups should be updated with the appropriate default"
     );
   }
 
