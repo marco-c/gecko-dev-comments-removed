@@ -157,7 +157,7 @@ class ProviderPreloadedSites extends UrlbarProvider {
     
     
     let result = await this._getAutofillResult(queryContext);
-    if (!result || instance != this.queryInstance) {
+    if (instance != this.queryInstance) {
       return false;
     }
     this._autofillData = { result, instance };
@@ -176,20 +176,12 @@ class ProviderPreloadedSites extends UrlbarProvider {
     
     
     if (
-      !this._autofillData ||
-      this._autofillData.instance != this.queryInstance
+      this._autofillData.result &&
+      this._autofillData.instance == this.queryInstance
     ) {
-      this.logger.error("startQuery invoked with an invalid _autofillData");
-      return;
-    }
-
-    this._autofillData.result.heuristic = true;
-    addCallback(this, this._autofillData.result);
-    this._autofillData = null;
-
-    if (!this._searchString) {
-      
-      return;
+      this._autofillData.result.heuristic = true;
+      addCallback(this, this._autofillData.result);
+      this._autofillData = null;
     }
 
     
