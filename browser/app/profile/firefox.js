@@ -2557,3 +2557,10 @@ pref("first-startup.timeout", 30000);
   pref("app.normandy.test-prefs.integer", 0);
   pref("app.normandy.test-prefs.string", "");
 #endif
+
+
+
+
+
+
+pref("svg.context-properties.content.allowed-domains", "profile.accounts.firefox.com,profile.stage.mozaws.net");
