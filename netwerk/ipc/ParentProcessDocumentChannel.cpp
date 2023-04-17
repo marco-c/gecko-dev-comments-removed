@@ -173,13 +173,13 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
     promise = mDocumentLoadListener->OpenDocument(
         mLoadState, mCacheKey, Some(mChannelId), mAsyncOpenTime, mTiming,
         std::move(initialClientInfo), Some(mUriModified), Some(mIsXFOError),
-        nullptr , &rv);
+        0 , &rv);
   } else {
     promise = mDocumentLoadListener->OpenObject(
         mLoadState, mCacheKey, Some(mChannelId), mAsyncOpenTime, mTiming,
         std::move(initialClientInfo), InnerWindowIDForExtantDoc(docShell),
         mLoadFlags, mLoadInfo->InternalContentPolicyType(),
-        UserActivation::IsHandlingUserInput(), nullptr ,
+        UserActivation::IsHandlingUserInput(), 0 ,
         nullptr , &rv);
   }
 

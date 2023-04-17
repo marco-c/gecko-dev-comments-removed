@@ -1235,7 +1235,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     aBrowsingContext->SetActiveSessionHistoryEntry(aEntry);
     loadingBC->SetActiveSessionHistoryEntry(nullptr);
-    NavigationIsolationOptions options;
+    RemotenessChangeOptions options;
     aBrowsingContext->ReplacedBy(loadingBC, options);
 
     
