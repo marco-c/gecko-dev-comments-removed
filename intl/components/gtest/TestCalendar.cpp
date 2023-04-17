@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "mozilla/intl/Calendar.h"
+#include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/Span.h"
 #include "TestBuffer.h"
 
@@ -81,18 +82,10 @@ TEST(IntlCalendar, GetBcp47Type)
   ASSERT_STREQ(calendar->GetBcp47Type().unwrap(), "gregory");
 }
 
-
-
-TEST(IntlCalendar, SystemDependentTests)
+TEST(IntlCalendar, SetTimeInMs)
 {
   auto calendar =
       Calendar::TryCreate("en-US", Some(MakeStringSpan(u"GMT+3"))).unwrap();
-  TestBuffer<char16_t> buffer;
-  
-  calendar->GetDefaultTimeZoneOffsetMs().unwrap();
-
-  
-  Calendar::GetDefaultTimeZone(buffer).unwrap();
 
   
   
@@ -113,26 +106,6 @@ TEST(IntlCalendar, CloneFrom)
                       .unwrap();
 
   dtFormat->CloneCalendar(CALENDAR_DATE).unwrap();
-}
-
-TEST(IntlCalendar, GetCanonicalTimeZoneID)
-{
-  TestBuffer<char16_t> buffer;
-
-  
-  Calendar::GetCanonicalTimeZoneID(MakeStringSpan(u"America/Chicago"), buffer)
-      .unwrap();
-  ASSERT_EQ(buffer.get_string_view(), u"America/Chicago");
-
-  
-  Calendar::GetCanonicalTimeZoneID(MakeStringSpan(u"Europe/Belfast"), buffer)
-      .unwrap();
-  ASSERT_EQ(buffer.get_string_view(), u"Europe/London");
-
-  
-  ASSERT_TRUE(Calendar::GetCanonicalTimeZoneID(
-                  MakeStringSpan(u"Not a time zone"), buffer)
-                  .isErr());
 }
 
 }  

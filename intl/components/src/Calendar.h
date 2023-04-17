@@ -3,18 +3,16 @@
 
 #ifndef intl_components_Calendar_h_
 #define intl_components_Calendar_h_
-#include "unicode/ucal.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Utf8.h"
-#include "mozilla/Vector.h"
+
+using UCalendar = void*;
 
 namespace mozilla::intl {
 
@@ -47,53 +45,6 @@ class Calendar final {
 
 
   Result<const char*, ICUError> GetBcp47Type();
-
-  
-
-
-  Result<int32_t, ICUError> GetDefaultTimeZoneOffsetMs();
-
-  
-
-
-
-  template <typename B>
-  static ICUResult GetDefaultTimeZone(B& aBuffer) {
-    return FillBufferWithICUCall(aBuffer, ucal_getDefaultTimeZone);
-  }
-
-  
-
-
-
-  template <typename B>
-  static ICUResult GetCanonicalTimeZoneID(Span<const char16_t> inputTimeZone,
-                                          B& aBuffer) {
-    static_assert(std::is_same_v<typename B::CharType, char16_t>,
-                  "Currently only UTF-16 buffers are supported.");
-
-    if (aBuffer.capacity() == 0) {
-      
-      
-      
-      
-      
-      
-      
-      if (!aBuffer.reserve(32)) {
-        return Err(ICUError::OutOfMemory);
-      }
-    }
-
-    return FillBufferWithICUCall(
-        aBuffer,
-        [&inputTimeZone](UChar* target, int32_t length, UErrorCode* status) {
-          return ucal_getCanonicalTimeZoneID(
-              inputTimeZone.Elements(),
-              static_cast<int32_t>(inputTimeZone.Length()), target, length,
-               nullptr, status);
-        });
-  }
 
   
 
