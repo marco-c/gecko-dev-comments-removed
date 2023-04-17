@@ -184,8 +184,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         },
 
         
-        "network-persist": true,
-        
         "event-breakpoints": true,
       },
     };

@@ -441,11 +441,7 @@ class Connector {
     );
 
     
-    
-    
-    const hasServerSupport = this.commands.targetCommand.hasTargetWatcherSupport(
-      "network-persist"
-    );
+    const hasServerSupport = this.commands.targetCommand.hasTargetWatcherSupport();
     if (
       hasServerSupport &&
       this.hasResourceCommandSupport &&
