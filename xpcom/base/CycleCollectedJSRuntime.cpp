@@ -501,10 +501,8 @@ void JSHolderMap::EntryVectorIter::Settle() {
 
 inline JSHolderMap::Iter::Iter(JSHolderMap& aMap, WhichHolders aWhich)
     : mHolderMap(aMap), mIter(aMap, aMap.mAnyZoneJSHolders) {
-#ifdef DEBUG
   MOZ_RELEASE_ASSERT(!mHolderMap.mHasIterator);
   mHolderMap.mHasIterator = true;
-#endif
 
   
   for (auto i = aMap.mPerZoneJSHolders.iter(); !i.done(); i.next()) {
