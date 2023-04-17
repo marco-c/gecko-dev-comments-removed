@@ -428,6 +428,20 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT bool IsCutCommandEnabled() const;
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool IsCopyCommandEnabled() const;
+
+  
+
+
+
+
 
 
   bool IsCopyToClipboardAllowed() const {
@@ -2383,6 +2397,13 @@ class EditorBase : public nsIEditor,
     MOZ_ASSERT(IsEditActionDataAvailable());
     return !SelectionRef().IsCollapsed();
   }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT bool CheckForClipboardCommandListener(
+      nsAtom* aCommand, EventMessage aEventMessage) const;
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

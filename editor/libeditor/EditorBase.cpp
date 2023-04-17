@@ -30,12 +30,14 @@
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
+#include "mozilla/ContentEvents.h"            
 #include "mozilla/CSSEditUtils.h"             
 #include "mozilla/EditAction.h"               
 #include "mozilla/EditorDOMPoint.h"           
 #include "mozilla/EditorSpellCheck.h"         
 #include "mozilla/EditorUtils.h"              
 #include "mozilla/EditTransactionBase.h"      
+#include "mozilla/EventDispatcher.h"          
 #include "mozilla/FlushType.h"                
 #include "mozilla/HTMLEditor.h"               
 #include "mozilla/IMEContentObserver.h"       
@@ -61,12 +63,13 @@
 #include "mozilla/TextEvents.h"
 #include "mozilla/TransactionManager.h"  
 #include "mozilla/Tuple.h"
-#include "mozilla/dom/AbstractRange.h"  
-#include "mozilla/dom/Attr.h"           
-#include "mozilla/dom/CharacterData.h"  
-#include "mozilla/dom/DataTransfer.h"   
-#include "mozilla/dom/Element.h"        
-#include "mozilla/dom/EventTarget.h"    
+#include "mozilla/dom/AbstractRange.h"    
+#include "mozilla/dom/Attr.h"             
+#include "mozilla/dom/CharacterData.h"    
+#include "mozilla/dom/DataTransfer.h"     
+#include "mozilla/dom/DocumentInlines.h"  
+#include "mozilla/dom/Element.h"          
+#include "mozilla/dom/EventTarget.h"      
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"    
@@ -1418,6 +1421,49 @@ NS_IMETHODIMP EditorBase::SetDocumentCharacterSet(
   return NS_OK;
 }
 
+bool EditorBase::CheckForClipboardCommandListener(
+    nsAtom* aCommand, EventMessage aEventMessage) const {
+  RefPtr<Document> document = GetDocument();
+  if (!document) {
+    return false;
+  }
+
+  
+  
+  
+  if (!document->AreClipboardCommandsUnconditionallyEnabled()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  RefPtr<PresShell> presShell = document->GetObservingPresShell();
+  if (!presShell) {
+    return false;
+  }
+  RefPtr<nsPresContext> presContext = presShell->GetPresContext();
+  if (!presContext) {
+    return false;
+  }
+
+  RefPtr<EventTarget> et = GetDOMEventTarget();
+  while (et) {
+    EventListenerManager* elm = et->GetExistingListenerManager();
+    if (elm && elm->HasListenersFor(aCommand)) {
+      return true;
+    }
+    InternalClipboardEvent event(true, aEventMessage);
+    EventChainPreVisitor visitor(presContext, &event, nullptr,
+                                 nsEventStatus_eIgnore, false, et);
+    et->GetEventTargetParent(visitor);
+    et = visitor.GetParentTarget();
+  }
+
+  return false;
+}
+
 NS_IMETHODIMP EditorBase::Cut() {
   nsresult rv = MOZ_KnownLive(AsTextEditor())->CutAsAction();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "TextEditor::CutAsAction() failed");
@@ -1428,8 +1474,25 @@ NS_IMETHODIMP EditorBase::CanCut(bool* aCanCut) {
   if (NS_WARN_IF(!aCanCut)) {
     return NS_ERROR_INVALID_ARG;
   }
-  *aCanCut = MOZ_KnownLive(AsTextEditor())->IsCutCommandEnabled();
+  *aCanCut = IsCutCommandEnabled();
   return NS_OK;
+}
+
+bool EditorBase::IsCutCommandEnabled() const {
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return false;
+  }
+
+  if (IsModifiable() && IsCopyToClipboardAllowedInternal()) {
+    return true;
+  }
+
+  
+  
+  
+  
+  return CheckForClipboardCommandListener(nsGkAtoms::oncut, eCut);
 }
 
 NS_IMETHODIMP EditorBase::Copy() { return NS_ERROR_NOT_IMPLEMENTED; }
@@ -1438,8 +1501,22 @@ NS_IMETHODIMP EditorBase::CanCopy(bool* aCanCopy) {
   if (NS_WARN_IF(!aCanCopy)) {
     return NS_ERROR_INVALID_ARG;
   }
-  *aCanCopy = MOZ_KnownLive(AsTextEditor())->IsCopyCommandEnabled();
+  *aCanCopy = IsCopyCommandEnabled();
   return NS_OK;
+}
+
+bool EditorBase::IsCopyCommandEnabled() const {
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return false;
+  }
+
+  if (IsCopyToClipboardAllowedInternal()) {
+    return true;
+  }
+
+  
+  return CheckForClipboardCommandListener(nsGkAtoms::oncopy, eCopy);
 }
 
 NS_IMETHODIMP EditorBase::Paste(int32_t aClipboardType) {
