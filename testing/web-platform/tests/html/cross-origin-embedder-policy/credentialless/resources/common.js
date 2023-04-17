@@ -89,39 +89,44 @@ const newCredentiallessIframe = (parent_token, child_origin) => {
   return sub_document_token;
 };
 
+
+
+
+
+
 const environments = {
   document: headers => {
     const tok = token();
     const url = window.origin + executor_path + headers + `&uuid=${tok}`;
     const context = window.open(url);
     add_completion_callback(() => context.close());
-    return tok;
+    return [tok, new Promise(resolve => {})];
   },
 
   dedicated_worker: headers => {
     const tok = token();
     const url = window.origin + executor_js_path + headers + `&uuid=${tok}`;
     const context = new Worker(url);
-    return tok;
+    return [tok, new Promise(resolve => context.onerror = resolve)];
   },
 
   shared_worker: headers => {
     const tok = token();
     const url = window.origin + executor_js_path + headers + `&uuid=${tok}`;
     const context = new SharedWorker(url);
-    return tok;
+    return [tok, new Promise(resolve => context.onerror = resolve)];
   },
 
   service_worker: headers => {
     const tok = token();
     const url = window.origin + executor_js_path + headers + `&uuid=${tok}`;
     const scope = url; 
-    navigator.serviceWorker.register(url, {scope: scope})
-    .then(registration => {
-      add_completion_callback(() => registration.unregister());
+    const error = new Promise(resolve => {
+      navigator.serviceWorker.register(url, {scope: scope})
+        .then(registration => {
+          add_completion_callback(() => registration.unregister());
+        },  resolve);
     });
-    return tok;
+    return [tok, error];
   },
 };
-
-
