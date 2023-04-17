@@ -234,8 +234,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:nsSocketTransport::Close\n"
          "race:nsSocketTransport::OnSocketDetached\n"
-         "race:nsSocketTransport::OnMsgInputClosed\n"
-         "race:nsSocketTransport::OpenOutputStream\n"
 
          
          "race:CacheFileMetadata::SetHash\n"

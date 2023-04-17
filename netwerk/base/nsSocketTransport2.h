@@ -303,6 +303,9 @@ class nsSocketTransport final : public nsASocketHandler,
     return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyHost : mHost;
   }
 
+  Atomic<bool> mInputClosed{true};
+  Atomic<bool> mOutputClosed{true};
+
   
   
   
@@ -311,8 +314,6 @@ class nsSocketTransport final : public nsASocketHandler,
   
   uint32_t mState{STATE_CLOSED};  
   bool mAttached{false};
-  bool mInputClosed{true};
-  bool mOutputClosed{true};
 
   
   
