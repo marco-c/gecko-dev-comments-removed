@@ -97,15 +97,15 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "renderCache", function() { return renderCache; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(65);
- var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(66);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(58);
+ var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(59);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
  var react_dom__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_6__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(72);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(66);
 
 
 
@@ -519,12 +519,12 @@ __webpack_require__.r(__webpack_exports__);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
  var content_src_components_DiscoveryStreamBase_DiscoveryStreamBase__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(16);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(35);
- var content_src_components_CustomizeMenu_CustomizeMenu__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(71);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(30);
+ var content_src_components_CustomizeMenu_CustomizeMenu__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(65);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(64);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(45);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(57);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(38);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -2441,15 +2441,15 @@ __webpack_require__.r(__webpack_exports__);
  var common_ActorConstants_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1);
  var _asrouter_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
- var _rich_text_strings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(70);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(63);
  var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
- var fluent_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(68);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(61);
  var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(13);
  var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
  var react_dom__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(14);
  var react_dom__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_8__);
- var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(69);
+ var _templates_template_manifest__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(62);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -3088,28 +3088,24 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "isAllowedCSS", function() { return isAllowedCSS; });
  __webpack_require__.d(__webpack_exports__, "_DiscoveryStreamBase", function() { return _DiscoveryStreamBase; });
  __webpack_require__.d(__webpack_exports__, "DiscoveryStreamBase", function() { return DiscoveryStreamBase; });
- var content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
- var content_src_components_DiscoveryStreamComponents_CollectionCardGrid_CollectionCardGrid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(32);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
+ var content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(64);
+ var content_src_components_DiscoveryStreamComponents_CollectionCardGrid_CollectionCardGrid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
  var react_redux__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(37);
- var content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
- var content_src_components_DiscoveryStreamComponents_DSSignup_DSSignup__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(40);
- var content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(41);
- var content_src_components_DiscoveryStreamComponents_Hero_Hero__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(42);
- var content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(44);
- var content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(58);
- var content_src_components_DiscoveryStreamComponents_List_List__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(43);
- var content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(59);
- var content_src_components_DiscoveryStreamComponents_PrivacyLink_PrivacyLink__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(60);
- var react__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_14___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_14__);
- var content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(61);
- var content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(62);
- var content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(63);
-
-
+ var content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
+ var content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(33);
+ var content_src_components_DiscoveryStreamComponents_DSSignup_DSSignup__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(35);
+ var content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(36);
+ var content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(37);
+ var content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(51);
+ var content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(52);
+ var content_src_components_DiscoveryStreamComponents_PrivacyLink_PrivacyLink__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(53);
+ var react__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(8);
+ var react__WEBPACK_IMPORTED_MODULE_12___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_12__);
+ var content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(54);
+ var content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(55);
+ var content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(56);
 
 
 
@@ -3147,7 +3143,7 @@ function isAllowedCSS(property, value) {
   const urls = value.match(/url\("[^"]+"\)/g);
   return !urls || urls.every(url => ALLOWED_CSS_URL_PREFIXES.some(prefix => url.slice(5).startsWith(prefix)));
 }
-class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a.PureComponent {
+class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_12___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onStyleMount = this.onStyleMount.bind(this);
@@ -3205,7 +3201,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
 
     switch (component.type) {
       case "Highlights":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_9__["Highlights"], null);
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_Highlights_Highlights__WEBPACK_IMPORTED_MODULE_8__["Highlights"], null);
 
       case "TopSites":
         let promoAlignment;
@@ -3214,28 +3210,28 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
           promoAlignment = component.spocs.positions[0].index === 0 ? "left" : "right";
         }
 
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_17__["TopSites"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_15__["TopSites"], {
           header: component.header,
           data: component.data,
           promoAlignment: promoAlignment
         });
 
       case "TextPromo":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__["DSTextPromo"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSTextPromo_DSTextPromo__WEBPACK_IMPORTED_MODULE_7__["DSTextPromo"], {
           dispatch: this.props.dispatch,
           type: component.type,
           data: component.data
         });
 
       case "Signup":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSSignup_DSSignup__WEBPACK_IMPORTED_MODULE_6__["DSSignup"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSSignup_DSSignup__WEBPACK_IMPORTED_MODULE_6__["DSSignup"], {
           dispatch: this.props.dispatch,
           type: component.type,
           data: component.data
         });
 
       case "Message":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_4__["DSMessage"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSMessage_DSMessage__WEBPACK_IMPORTED_MODULE_4__["DSMessage"], {
           title: component.header && component.header.title,
           subtitle: component.header && component.header.subtitle,
           link_text: component.header && component.header.link_text,
@@ -3244,12 +3240,12 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
         });
 
       case "SectionTitle":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_15__["SectionTitle"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_SectionTitle_SectionTitle__WEBPACK_IMPORTED_MODULE_13__["SectionTitle"], {
           header: component.header
         });
 
       case "Navigation":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_12__["Navigation"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_Navigation_Navigation__WEBPACK_IMPORTED_MODULE_10__["Navigation"], {
           dispatch: this.props.dispatch,
           links: component.properties.links,
           extraLinks: component.properties.extraLinks,
@@ -3266,7 +3262,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
         const {
           DiscoveryStream
         } = this.props;
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_CollectionCardGrid_CollectionCardGrid__WEBPACK_IMPORTED_MODULE_1__["CollectionCardGrid"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_CollectionCardGrid_CollectionCardGrid__WEBPACK_IMPORTED_MODULE_1__["CollectionCardGrid"], {
           data: component.data,
           feed: component.feed,
           spocs: DiscoveryStream.spocs,
@@ -3281,7 +3277,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
         });
 
       case "CardGrid":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_0__["CardGrid"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_0__["CardGrid"], {
           enable_video_playheads: !!component.properties.enable_video_playheads,
           title: component.header && component.header.title,
           display_variant: component.properties.display_variant,
@@ -3300,41 +3296,16 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
           display_engagement_labels: ENGAGEMENT_LABEL_ENABLED
         });
 
-      case "Hero":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_Hero_Hero__WEBPACK_IMPORTED_MODULE_8__["Hero"], {
-          subComponentType: embedWidth >= 9 ? `cards` : `list`,
-          feed: component.feed,
-          title: component.header && component.header.title,
-          data: component.data,
-          border: component.properties.border,
-          type: component.type,
-          dispatch: this.props.dispatch,
-          items: component.properties.items
-        });
-
       case "HorizontalRule":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_10__["HorizontalRule"], null);
-
-      case "List":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_List_List__WEBPACK_IMPORTED_MODULE_11__["List"], {
-          data: component.data,
-          feed: component.feed,
-          fullWidth: component.properties.full_width,
-          hasBorders: component.properties.border === "border",
-          hasImages: component.properties.has_images,
-          hasNumbers: component.properties.has_numbers,
-          items: component.properties.items,
-          type: component.type,
-          header: component.header
-        });
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_HorizontalRule_HorizontalRule__WEBPACK_IMPORTED_MODULE_9__["HorizontalRule"], null);
 
       case "PrivacyLink":
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_PrivacyLink_PrivacyLink__WEBPACK_IMPORTED_MODULE_13__["PrivacyLink"], {
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_PrivacyLink_PrivacyLink__WEBPACK_IMPORTED_MODULE_11__["PrivacyLink"], {
           properties: component.properties
         });
 
       default:
-        return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("div", null, component.type);
+        return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("div", null, component.type);
     }
   }
 
@@ -3342,7 +3313,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
     
     
     const json = JSON.stringify(styles);
-    return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("style", {
+    return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("style", {
       key: json,
       "data-styles": json,
       ref: this.onStyleMount
@@ -3353,7 +3324,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
     
     const {
       layoutRender
-    } = Object(content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_16__["selectLayoutRender"])({
+    } = Object(content_src_lib_selectLayoutRender__WEBPACK_IMPORTED_MODULE_14__["selectLayoutRender"])({
       state: this.props.DiscoveryStream,
       prefs: this.props.Prefs.values,
       locale: this.props.locale
@@ -3405,7 +3376,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
     };
     const privacyLinkComponent = extractComponent("PrivacyLink"); 
 
-    return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_14___default.a.Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_5__["DSPrivacyModal"], {
+    return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_12___default.a.Fragment, null, this.props.DiscoveryStream.isPrivacyInfoModalVisible && react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_DiscoveryStreamComponents_DSPrivacyModal_DSPrivacyModal__WEBPACK_IMPORTED_MODULE_5__["DSPrivacyModal"], {
       dispatch: this.props.dispatch
     }), topSites && this.renderLayout([{
       width: 12,
@@ -3413,7 +3384,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
     }]), sponsoredCollection && this.renderLayout([{
       width: 12,
       components: [sponsoredCollection]
-    }]), !!layoutRender.length && react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement(content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__["CollapsibleSection"], {
+    }]), !!layoutRender.length && react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement(content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__["CollapsibleSection"], {
       className: "ds-layout",
       collapsed: topStories.pref.collapsed,
       dispatch: this.props.dispatch,
@@ -3442,12 +3413,12 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
 
   renderLayout(layoutRender) {
     const styles = [];
-    return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("div", {
+    return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("div", {
       className: "discovery-stream ds-layout"
-    }, layoutRender.map((row, rowIndex) => react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("div", {
+    }, layoutRender.map((row, rowIndex) => react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("div", {
       key: `row-${rowIndex}`,
       className: `ds-column ds-column-${row.width}`
-    }, react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("div", {
       className: "ds-column-grid"
     }, row.components.map((component, componentIndex) => {
       if (!component) {
@@ -3455,7 +3426,7 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_14___default.a
       }
 
       styles[rowIndex] = [...(styles[rowIndex] || []), component.styles];
-      return react__WEBPACK_IMPORTED_MODULE_14___default.a.createElement("div", {
+      return react__WEBPACK_IMPORTED_MODULE_12___default.a.createElement("div", {
         key: `component-${componentIndex}`
       }, this.renderComponent(component, row.width));
     })))), this.renderStyles(styles));
@@ -3470,681 +3441,6 @@ const DiscoveryStreamBase = Object(react_redux__WEBPACK_IMPORTED_MODULE_3__["con
   App: state.App
 }))(_DiscoveryStreamBase);
 }.call(this, __webpack_require__(3)))
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "CardGrid", function() { return CardGrid; });
- var _DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(18);
- var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(31);
- var _FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(1);
- var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
-
-
-
-
-
-
-
-
-class CardGrid extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.state = {
-      moreLoaded: false
-    };
-    this.loadMoreClicked = this.loadMoreClicked.bind(this);
-  }
-
-  loadMoreClicked() {
-    this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_3__["actionCreators"].UserEvent({
-      event: "CLICK",
-      source: "DS_LOAD_MORE_BUTTON"
-    }));
-    this.setState({
-      moreLoaded: true
-    });
-  }
-
-  renderCards() {
-    let {
-      items
-    } = this.props;
-    const {
-      loadMoreEnabled,
-      lastCardMessageEnabled
-    } = this.props;
-    let showLastCardMessage = lastCardMessageEnabled;
-
-    if (loadMoreEnabled && !this.state.moreLoaded) {
-      items = 12; 
-
-      showLastCardMessage = false;
-    }
-
-    const recs = this.props.data.recommendations.slice(0, items);
-    const cards = [];
-
-    for (let index = 0; index < items; index++) {
-      const rec = recs[index];
-      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
-        key: `dscard-${index}`
-      }) : react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
-        key: `dscard-${rec.id}`,
-        pos: rec.pos,
-        flightId: rec.flight_id,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        word_count: rec.word_count,
-        time_to_read: rec.time_to_read,
-        title: rec.title,
-        excerpt: rec.excerpt,
-        url: rec.url,
-        id: rec.id,
-        shim: rec.shim,
-        type: this.props.type,
-        context: rec.context,
-        compact: this.props.compact,
-        sponsor: rec.sponsor,
-        sponsored_by_override: rec.sponsored_by_override,
-        dispatch: this.props.dispatch,
-        source: rec.domain,
-        pocket_id: rec.pocket_id,
-        context_type: rec.context_type,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement,
-        display_engagement_labels: this.props.display_engagement_labels,
-        include_descriptions: this.props.include_descriptions,
-        saveToPocketCard: this.props.saveToPocketCard,
-        cta: rec.cta,
-        cta_variant: this.props.cta_variant,
-        is_video: this.props.enable_video_playheads && rec.is_video,
-        is_collection: this.props.is_collection
-      }));
-    } 
-
-
-    if (showLastCardMessage) {
-      cards.splice(cards.length - 1, 1, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["LastCardMessage"], {
-        key: `dscard-last-${cards.length - 1}`
-      }));
-    } 
-
-
-    const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
-    const compactClass = this.props.compact ? `ds-card-grid-compact-variant` : ``;
-    const includeDescriptions = this.props.include_descriptions ? `ds-card-grid-include-descriptions` : ``;
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${compactClass} ${includeDescriptions}`
-    }, cards);
-  }
-
-  render() {
-    const {
-      data
-    } = this.props; 
-
-    if (!data) {
-      return null;
-    } 
-
-
-    const isEmpty = data.recommendations.length === 0;
-    const {
-      loadMoreEnabled
-    } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", null, this.props.title && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "ds-header"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "title"
-    }, this.props.title), this.props.context && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
-      message: this.props.context
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "ds-context"
-    }))), isEmpty ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "ds-card-grid empty"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__["DSEmptyState"], {
-      status: data.status,
-      dispatch: this.props.dispatch,
-      feed: this.props.feed
-    })) : this.renderCards(), loadMoreEnabled && !this.state.moreLoaded && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
-      className: "ASRouterButton primary ds-card-grid-load-more-button",
-      onClick: this.loadMoreClicked,
-      "data-l10n-id": "newtab-pocket-load-more-stories-button"
-    }));
-  }
-
-}
-CardGrid.defaultProps = {
-  border: `border`,
-  items: 4,
-  
-  enable_video_playheads: false,
-  lastCardMessageEnabled: false,
-  saveToPocketCard: false
-};
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "readTimeFromWordCount", function() { return readTimeFromWordCount; });
- __webpack_require__.d(__webpack_exports__, "DSSource", function() { return DSSource; });
- __webpack_require__.d(__webpack_exports__, "DefaultMeta", function() { return DefaultMeta; });
- __webpack_require__.d(__webpack_exports__, "CTAButtonMeta", function() { return CTAButtonMeta; });
- __webpack_require__.d(__webpack_exports__, "_DSCard", function() { return _DSCard; });
- __webpack_require__.d(__webpack_exports__, "DSCard", function() { return DSCard; });
- __webpack_require__.d(__webpack_exports__, "PlaceholderDSCard", function() { return PlaceholderDSCard; });
- __webpack_require__.d(__webpack_exports__, "LastCardMessage", function() { return LastCardMessage; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(19);
- var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(20);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
- var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(26);
- var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(27);
- var _FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(30);
- var react_redux__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(7);
- var react_redux__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_8__);
-
-
-
-
-
-
-
-
-
-
-
-
-const READING_WPM = 220;
-
-
-
-
-
-
-function readTimeFromWordCount(wordCount) {
-  if (!wordCount) return false;
-  return Math.ceil(parseInt(wordCount, 10) / READING_WPM);
-}
-const DSSource = ({
-  source,
-  timeToRead,
-  compact,
-  context,
-  sponsor,
-  sponsored_by_override
-}) => {
-  
-  if (compact) {
-    
-    if (sponsored_by_override || sponsor || context) {
-      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["SponsorLabel"], {
-        context: context,
-        sponsor: sponsor,
-        sponsored_by_override: sponsored_by_override
-      });
-    } 
-
-
-    if (timeToRead) {
-      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-        className: "source clamp time-to-read"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_7__["FluentOrText"], {
-        message: {
-          id: `newtab-label-source-read-time`,
-          values: {
-            source,
-            timeToRead
-          }
-        }
-      }));
-    }
-  } 
-
-
-  return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-    className: "source clamp"
-  }, source);
-}; 
-
-const DefaultMeta = ({
-  display_engagement_labels,
-  source,
-  title,
-  excerpt,
-  timeToRead,
-  compact,
-  context,
-  context_type,
-  cta,
-  engagement,
-  cta_variant,
-  sponsor,
-  sponsored_by_override,
-  saveToPocketCard
-}) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  className: "meta"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  className: "info-wrap"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSSource, {
-  source: source,
-  compact: compact,
-  timeToRead: timeToRead,
-  context: context,
-  sponsor: sponsor,
-  sponsored_by_override: sponsored_by_override
-}), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
-  title: title,
-  className: "title clamp"
-}, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-  className: "excerpt clamp"
-}, excerpt), cta_variant === "link" && cta && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  role: "link",
-  className: "cta-link icon icon-arrow",
-  tabIndex: "0"
-}, cta)), !compact && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
-  context_type: context_type,
-  context: context,
-  sponsor: sponsor,
-  sponsored_by_override: sponsored_by_override,
-  display_engagement_labels: display_engagement_labels,
-  engagement: engagement
-}), compact && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  className: "story-footer"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSMessageFooter"], {
-  context_type: context_type,
-  context: null,
-  display_engagement_labels: display_engagement_labels,
-  engagement: engagement,
-  saveToPocketCard: saveToPocketCard
-})));
-const CTAButtonMeta = ({
-  display_engagement_labels,
-  source,
-  title,
-  excerpt,
-  context,
-  context_type,
-  cta,
-  engagement,
-  sponsor,
-  sponsored_by_override
-}) => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  className: "meta"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-  className: "info-wrap"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-  className: "source clamp"
-}, context && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_7__["FluentOrText"], {
-  message: {
-    id: `newtab-label-sponsored`,
-    values: {
-      sponsorOrSource: sponsor ? sponsor : source
-    }
-  }
-}), !context && (sponsor ? sponsor : source)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
-  title: title,
-  className: "title clamp"
-}, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-  className: "excerpt clamp"
-}, excerpt)), context && cta && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
-  className: "button cta-button"
-}, cta), !context && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
-  context_type: context_type,
-  context: context,
-  sponsor: sponsor,
-  sponsored_by_override: sponsored_by_override,
-  display_engagement_labels: display_engagement_labels,
-  engagement: engagement
-}));
-class _DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-    this.onSaveClick = this.onSaveClick.bind(this);
-    this.onMenuUpdate = this.onMenuUpdate.bind(this);
-    this.onMenuShow = this.onMenuShow.bind(this);
-
-    this.setContextMenuButtonHostRef = element => {
-      this.contextMenuButtonHostElement = element;
-    };
-
-    this.setPlaceholderRef = element => {
-      this.placeholderElement = element;
-    };
-
-    this.state = {
-      isSeen: false
-    }; 
-    
-
-    if (props.App.isForStartupCache) {
-      this.state.isSeen = true;
-    } 
-    
-    
-    
-    
-    
-    
-    
-
-
-    this.dsImageSizes = [{
-      mediaMatcher: "(min-width: 1122px)",
-      width: 296,
-      height: 148
-    }, {
-      mediaMatcher: "(min-width: 866px)",
-      width: 218,
-      height: 109
-    }, {
-      mediaMatcher: "(max-width: 610px)",
-      width: 202,
-      height: 101
-    }];
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type.toUpperCase(),
-        action_position: this.props.pos,
-        value: {
-          card_type: this.props.flightId ? "spoc" : "organic"
-        }
-      }));
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-        source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.click ? {
-            shim: this.props.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  onSaveClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
-        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].SAVE_TO_POCKET,
-        data: {
-          site: {
-            url: this.props.url,
-            title: this.props.title
-          }
-        }
-      }));
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-        event: "SAVE_TO_POCKET",
-        source: "CARDGRID_HOVER",
-        action_position: this.props.pos
-      }));
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-        source: "CARDGRID_HOVER",
-        pocket: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.save ? {
-            shim: this.props.shim.save
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  onMenuUpdate(showContextMenu) {
-    if (!showContextMenu) {
-      const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
-
-      if (dsLinkMenuHostDiv) {
-        dsLinkMenuHostDiv.classList.remove("active", "last-item");
-      }
-    }
-  }
-
-  async onMenuShow() {
-    const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
-
-    if (dsLinkMenuHostDiv) {
-      
-      await this.props.windowObj.document.l10n.translateFragment(dsLinkMenuHostDiv);
-
-      if (this.props.windowObj.scrollMaxX > 0) {
-        dsLinkMenuHostDiv.classList.add("last-item");
-      }
-
-      dsLinkMenuHostDiv.classList.add("active");
-    }
-  }
-
-  onSeen(entries) {
-    if (this.state) {
-      const entry = entries.find(e => e.isIntersecting);
-
-      if (entry) {
-        if (this.placeholderElement) {
-          this.observer.unobserve(this.placeholderElement);
-        } 
-
-
-        this.setState({
-          isSeen: true
-        });
-      }
-    }
-  }
-
-  onIdleCallback() {
-    if (!this.state.isSeen) {
-      if (this.observer && this.placeholderElement) {
-        this.observer.unobserve(this.placeholderElement);
-      }
-
-      this.setState({
-        isSeen: true
-      });
-    }
-  }
-
-  componentDidMount() {
-    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
-
-    if (this.placeholderElement) {
-      this.observer = new IntersectionObserver(this.onSeen.bind(this));
-      this.observer.observe(this.placeholderElement);
-    }
-  }
-
-  componentWillUnmount() {
-    
-    if (this.observer && this.placeholderElement) {
-      this.observer.unobserve(this.placeholderElement);
-    }
-
-    if (this.idleCallbackId) {
-      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
-    }
-  }
-
-  render() {
-    if (this.props.placeholder || !this.state.isSeen) {
-      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-        className: "ds-card placeholder",
-        ref: this.setPlaceholderRef
-      });
-    }
-
-    if (this.props.lastCard) {
-      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-        className: "ds-card last-card-message"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-        className: "img-wrapper"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("picture", {
-        className: "ds-image img loaded"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("img", {
-        "data-l10n-id": "newtab-pocket-last-card-image",
-        className: "last-card-message-image",
-        src: "chrome://activity-stream/content/data/content/assets/caught-up-illustration.svg",
-        alt: "You\u2019re all caught up"
-      }))), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-        className: "meta"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-        className: "info-wrap"
-      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
-        className: "title clamp",
-        "data-l10n-id": "newtab-pocket-last-card-title"
-      }), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-        className: "ds-last-card-desc",
-        "data-l10n-id": "newtab-pocket-last-card-desc"
-      }))));
-    }
-
-    const isButtonCTA = this.props.cta_variant === "button";
-    const includeDescriptions = this.props.include_descriptions;
-    const {
-      saveToPocketCard
-    } = this.props;
-    const baseClass = `ds-card ${this.props.is_video ? `video-card` : ``}`;
-    const excerpt = includeDescriptions ? this.props.excerpt : "";
-    const timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
-    return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: baseClass,
-      ref: this.setContextMenuButtonHostRef
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__["SafeAnchor"], {
-      className: "ds-card-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
-      url: this.props.url
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "img-wrapper"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_1__["DSImage"], {
-      extraClassNames: "img",
-      source: this.props.image_src,
-      rawSource: this.props.raw_image_src,
-      sizes: this.dsImageSizes
-    }), this.props.is_video && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "playhead"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", null, "Video Content"))), isButtonCTA ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(CTAButtonMeta, {
-      display_engagement_labels: this.props.display_engagement_labels,
-      source: this.props.source,
-      title: this.props.title,
-      excerpt: excerpt,
-      timeToRead: timeToRead,
-      context: this.props.context,
-      context_type: this.props.context_type,
-      compact: this.props.compact,
-      engagement: this.props.engagement,
-      cta: this.props.cta,
-      sponsor: this.props.sponsor,
-      sponsored_by_override: this.props.sponsored_by_override
-    }) : react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DefaultMeta, {
-      display_engagement_labels: this.props.display_engagement_labels,
-      source: this.props.source,
-      title: this.props.title,
-      excerpt: excerpt,
-      timeToRead: timeToRead,
-      context: this.props.context,
-      engagement: this.props.engagement,
-      context_type: this.props.context_type,
-      compact: this.props.compact,
-      cta: this.props.cta,
-      cta_variant: this.props.cta_variant,
-      sponsor: this.props.sponsor,
-      sponsored_by_override: this.props.sponsored_by_override,
-      saveToPocketCard: saveToPocketCard
-    }), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__["ImpressionStats"], {
-      flightId: this.props.flightId,
-      rows: [{
-        id: this.props.id,
-        pos: this.props.pos,
-        ...(this.props.shim && this.props.shim.impression ? {
-          shim: this.props.shim.impression
-        } : {})
-      }],
-      dispatch: this.props.dispatch,
-      source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type
-    })), saveToPocketCard && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "card-stp-button-hover-background"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: "card-stp-button-position-wrapper"
-    }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("button", {
-      className: "card-stp-button",
-      onClick: this.onSaveClick
-    }, this.props.context_type === "pocket" ? react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
-      className: "story-badge-icon icon icon-pocket"
-    }), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
-      "data-l10n-id": "newtab-pocket-saved-to-pocket"
-    })) : react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_4___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
-      className: "story-badge-icon icon icon-pocket-save"
-    }), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
-      "data-l10n-id": "newtab-pocket-save-to-pocket"
-    }))), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_2__["DSLinkMenu"], {
-      id: this.props.id,
-      index: this.props.pos,
-      dispatch: this.props.dispatch,
-      url: this.props.url,
-      title: this.props.title,
-      source: this.props.source,
-      type: this.props.type,
-      pocket_id: this.props.pocket_id,
-      shim: this.props.shim,
-      bookmarkGuid: this.props.bookmarkGuid,
-      flightId: !this.props.is_collection ? this.props.flightId : undefined,
-      showPrivacyInfo: !!this.props.flightId,
-      onMenuUpdate: this.onMenuUpdate,
-      onMenuShow: this.onMenuShow,
-      saveToPocketCard: saveToPocketCard
-    }))), !saveToPocketCard && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_2__["DSLinkMenu"], {
-      id: this.props.id,
-      index: this.props.pos,
-      dispatch: this.props.dispatch,
-      url: this.props.url,
-      title: this.props.title,
-      source: this.props.source,
-      type: this.props.type,
-      pocket_id: this.props.pocket_id,
-      shim: this.props.shim,
-      bookmarkGuid: this.props.bookmarkGuid,
-      flightId: !this.props.is_collection ? this.props.flightId : undefined,
-      showPrivacyInfo: !!this.props.flightId,
-      hostRef: this.contextMenuButtonHostRef,
-      onMenuUpdate: this.onMenuUpdate,
-      onMenuShow: this.onMenuShow
-    }));
-  }
-
-}
-_DSCard.defaultProps = {
-  windowObj: window 
-
-};
-const DSCard = Object(react_redux__WEBPACK_IMPORTED_MODULE_8__["connect"])(state => ({
-  App: state.App
-}))(_DSCard);
-const PlaceholderDSCard = props => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSCard, {
-  placeholder: true
-});
-const LastCardMessage = props => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSCard, {
-  lastCard: true
-});
 
  }),
 
@@ -4304,70 +3600,13 @@ DSImage.defaultProps = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "DSLinkMenu", function() { return DSLinkMenu; });
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(21);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
-
-
-
-
-
-
-class DSLinkMenu extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
-  render() {
-    const {
-      index,
-      dispatch
-    } = this.props;
-    const TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", "CheckArchiveFromPocket", ...(this.props.saveToPocketCard ? ["CheckDeleteFromPocket"] : ["CheckSavedToPocket"]), "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : [])];
-    const type = this.props.type || "DISCOVERY_STREAM";
-    const title = this.props.title || this.props.source;
-    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
-      className: "context-menu-position-container"
-    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_1__["ContextMenuButton"], {
-      tooltip: "newtab-menu-content-tooltip",
-      tooltipArgs: {
-        title
-      },
-      onUpdate: this.props.onMenuUpdate
-    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_0__["LinkMenu"], {
-      dispatch: dispatch,
-      index: index,
-      source: type.toUpperCase(),
-      onShow: this.props.onMenuShow,
-      options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
-      shouldSendImpressionStats: true,
-      site: {
-        referrer: "https://getpocket.com/recommendations",
-        title: this.props.title,
-        type: this.props.type,
-        url: this.props.url,
-        guid: this.props.id,
-        pocket_id: this.props.pocket_id,
-        shim: this.props.shim,
-        bookmarkGuid: this.props.bookmarkGuid,
-        flight_id: this.props.flightId
-      }
-    })));
-  }
-
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
  __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(22);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(23);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(19);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(20);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
 
@@ -5363,135 +4602,6 @@ class SafeAnchor extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureCompon
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "DSMessageFooter", function() { return DSMessageFooter; });
- __webpack_require__.d(__webpack_exports__, "StatusMessage", function() { return StatusMessage; });
- __webpack_require__.d(__webpack_exports__, "SponsorLabel", function() { return SponsorLabel; });
- __webpack_require__.d(__webpack_exports__, "DSContextFooter", function() { return DSContextFooter; });
- var _Card_types_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
- var react_transition_group__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
- var react_transition_group__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_transition_group__WEBPACK_IMPORTED_MODULE_1__);
- var _FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
-
-
- 
-
-const ANIMATION_DURATION = 3000;
-const DSMessageFooter = props => {
-  const {
-    context,
-    context_type,
-    display_engagement_labels,
-    engagement,
-    saveToPocketCard
-  } = props;
-  const {
-    icon,
-    fluentID
-  } = _Card_types_js__WEBPACK_IMPORTED_MODULE_0__["cardContextTypes"][context_type] || {}; 
-
-  if (saveToPocketCard && context_type === "pocket") {
-    return null;
-  }
-
-  return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_transition_group__WEBPACK_IMPORTED_MODULE_1__["TransitionGroup"], {
-    component: null
-  }, !context && (context_type || display_engagement_labels && engagement) && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(react_transition_group__WEBPACK_IMPORTED_MODULE_1__["CSSTransition"], {
-    key: fluentID,
-    timeout: ANIMATION_DURATION,
-    classNames: "story-animate"
-  }, engagement && !context_type ? react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-    className: "story-view-count"
-  }, engagement) : react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(StatusMessage, {
-    icon: icon,
-    fluentID: fluentID
-  })));
-};
-const StatusMessage = ({
-  icon,
-  fluentID
-}) => react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-  className: "status-message"
-}, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("span", {
-  "aria-haspopup": "true",
-  className: `story-badge-icon icon icon-${icon}`
-}), react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-  className: "story-context-label",
-  "data-l10n-id": fluentID
-}));
-const SponsorLabel = ({
-  sponsored_by_override,
-  sponsor,
-  context
-}) => {
-  const classList = "story-sponsored-label clamp"; 
-
-  if (sponsored_by_override) {
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      className: classList
-    }, sponsored_by_override);
-  } else if (sponsored_by_override === "") {
-    
-    
-    
-    return null;
-  } else if (sponsor) {
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      className: classList
-    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
-      message: {
-        id: `newtab-label-sponsored-by`,
-        values: {
-          sponsor
-        }
-      }
-    }));
-  } else if (context) {
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("p", {
-      className: classList
-    }, context);
-  }
-
-  return null;
-};
-class DSContextFooter extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
-  render() {
-    
-    const {
-      context,
-      context_type,
-      engagement,
-      display_engagement_labels,
-      sponsor,
-      sponsored_by_override
-    } = this.props;
-    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: "story-footer"
-    }, SponsorLabel({
-      sponsored_by_override,
-      sponsor,
-      context
-    }), DSMessageFooter({
-      context,
-      context_type,
-      display_engagement_labels,
-      engagement
-    }));
-  }
-
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "cardContextTypes", function() { return cardContextTypes; });
 
 
@@ -5581,115 +4691,11 @@ class FluentOrText extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "DSEmptyState", function() { return DSEmptyState; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
-
-
-
-
-
-class DSEmptyState extends react__WEBPACK_IMPORTED_MODULE_1___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onReset = this.onReset.bind(this);
-    this.state = {};
-  }
-
-  componentWillUnmount() {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-    }
-  }
-
-  onReset() {
-    if (this.props.dispatch && this.props.feed) {
-      const {
-        feed
-      } = this.props;
-      const {
-        url
-      } = feed;
-      this.props.dispatch({
-        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_FEED_UPDATE,
-        data: {
-          feed: { ...feed,
-            data: { ...feed.data,
-              status: "waiting"
-            }
-          },
-          url
-        }
-      });
-      this.setState({
-        waiting: true
-      });
-      this.timeout = setTimeout(() => {
-        this.timeout = null;
-        this.setState({
-          waiting: false
-        });
-      }, 300);
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].OnlyToMain({
-        type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].DISCOVERY_STREAM_RETRY_FEED,
-        data: {
-          feed
-        }
-      }));
-    }
-  }
-
-  renderButton() {
-    if (this.props.status === "waiting" || this.state.waiting) {
-      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
-        className: "try-again-button waiting",
-        "data-l10n-id": "newtab-discovery-empty-section-topstories-loading"
-      });
-    }
-
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("button", {
-      className: "try-again-button",
-      onClick: this.onReset,
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-try-again-button"
-    });
-  }
-
-  renderState() {
-    if (this.props.status === "waiting" || this.props.status === "failed") {
-      return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_1___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h2", {
-        "data-l10n-id": "newtab-discovery-empty-section-topstories-timed-out"
-      }), this.renderButton());
-    }
-
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_1___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("h2", {
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-header"
-    }), react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("p", {
-      "data-l10n-id": "newtab-discovery-empty-section-topstories-content"
-    }));
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
-      className: "section-empty-state"
-    }, react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("div", {
-      className: "empty-state-message"
-    }, this.renderState()));
-  }
-
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "CollectionCardGrid", function() { return CollectionCardGrid; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
- var content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(33);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(23);
+ var content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(64);
+ var content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(28);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(20);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
 
@@ -5906,8 +4912,8 @@ class DSDismiss extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompone
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_CollapsibleSection", function() { return _CollapsibleSection; });
  __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(35);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(30);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(30);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
  var react_redux__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7);
@@ -6048,7 +5054,7 @@ const CollapsibleSection = Object(react_redux__WEBPACK_IMPORTED_MODULE_3__["conn
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
  __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(36);
+ var content_src_components_A11yLinkButton_A11yLinkButton__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(31);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
@@ -6166,8 +5172,8 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "DSMessage", function() { return DSMessage; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(23);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(26);
 
 
 
@@ -6209,7 +5215,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1);
- var content_src_asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(39);
+ var content_src_asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
 
 
 
@@ -6348,12 +5354,12 @@ ModalOverlayWrapper.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "DSSignup", function() { return DSSignup; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(21);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(24);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(18);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(22);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(26);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(23);
 
 
 
@@ -6515,13 +5521,13 @@ DSSignup.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "DSTextPromo", function() { return DSTextPromo; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
- var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(19);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(23);
+ var content_src_components_DiscoveryStreamComponents_DSDismiss_DSDismiss__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(28);
+ var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(17);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(22);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(26);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(23);
 
 
 
@@ -6662,410 +5668,13 @@ class DSTextPromo extends react__WEBPACK_IMPORTED_MODULE_5___default.a.PureCompo
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "Hero", function() { return Hero; });
- var _DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(18);
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(1);
- var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
- var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
- var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(25);
- var _List_List_jsx__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(43);
- var react__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_7__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(26);
- var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(27);
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Hero extends react__WEBPACK_IMPORTED_MODULE_7___default.a.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.heroRec.pos
-      }));
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.heroRec.id,
-          pos: this.heroRec.pos,
-          ...(this.heroRec.shim && this.heroRec.shim.click ? {
-            shim: this.heroRec.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  renderHero() {
-    let [heroRec, ...otherRecs] = this.props.data.recommendations.slice(0, this.props.items);
-    this.heroRec = heroRec;
-    const cards = [];
-
-    for (let index = 0; index < this.props.items - 1; index++) {
-      const rec = otherRecs[index];
-      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
-        key: `dscard-${index}`
-      }) : react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
-        flightId: rec.flight_id,
-        key: `dscard-${rec.id}`,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        title: rec.title,
-        url: rec.url,
-        id: rec.id,
-        shim: rec.shim,
-        pos: rec.pos,
-        type: this.props.type,
-        dispatch: this.props.dispatch,
-        context: rec.context,
-        context_type: rec.context_type,
-        source: rec.domain,
-        pocket_id: rec.pocket_id,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement
-      }));
-    }
-
-    let heroCard = null;
-
-    if (!heroRec || heroRec.placeholder) {
-      heroCard = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], null);
-    } else {
-      heroCard = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-        className: "ds-hero-item",
-        key: `dscard-${heroRec.id}`
-      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_8__["SafeAnchor"], {
-        className: "wrapper",
-        dispatch: this.props.dispatch,
-        onLinkClick: this.onLinkClick,
-        url: heroRec.url
-      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-        className: "img-wrapper"
-      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__["DSImage"], {
-        extraClassNames: "img",
-        source: heroRec.image_src,
-        rawSource: heroRec.raw_image_src
-      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-        className: "meta"
-      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-        className: "header-and-excerpt"
-      }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("p", {
-        className: "source clamp"
-      }, heroRec.domain), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("header", {
-        className: "clamp"
-      }, heroRec.title), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("p", {
-        className: "excerpt clamp"
-      }, heroRec.excerpt)), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_9__["DSContextFooter"], {
-        context: heroRec.context,
-        context_type: heroRec.context_type,
-        engagement: heroRec.engagement
-      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__["ImpressionStats"], {
-        flightId: heroRec.flight_id,
-        rows: [{
-          id: heroRec.id,
-          pos: heroRec.pos,
-          ...(heroRec.shim && heroRec.shim.impression ? {
-            shim: heroRec.shim.impression
-          } : {})
-        }],
-        dispatch: this.props.dispatch,
-        source: this.props.type
-      })), react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__["DSLinkMenu"], {
-        id: heroRec.id,
-        index: heroRec.pos,
-        dispatch: this.props.dispatch,
-        url: heroRec.url,
-        title: heroRec.title,
-        source: heroRec.domain,
-        type: this.props.type,
-        pocket_id: heroRec.pocket_id,
-        shim: heroRec.shim,
-        bookmarkGuid: heroRec.bookmarkGuid,
-        flightId: heroRec.flight_id
-      }));
-    }
-
-    let list = react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_List_List_jsx__WEBPACK_IMPORTED_MODULE_6__["List"], {
-      recStartingPoint: 1,
-      data: this.props.data,
-      feed: this.props.feed,
-      hasImages: true,
-      hasBorders: this.props.border === `border`,
-      items: this.props.items - 1,
-      type: `Hero`
-    });
-    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-      className: `ds-hero ds-hero-${this.props.border}`
-    }, heroCard, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-      className: `${this.props.subComponentType}`
-    }, this.props.subComponentType === `cards` ? cards : list));
-  }
-
-  render() {
-    const {
-      data
-    } = this.props; 
-
-    if (!data || !data.recommendations) {
-      return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", null);
-    } 
-
-
-    const isEmpty = data.recommendations.length === 0;
-    return react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-      className: "ds-header"
-    }, this.props.title), isEmpty ? react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
-      className: "ds-hero empty"
-    }, react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__["DSEmptyState"], {
-      status: data.status,
-      dispatch: this.props.dispatch,
-      feed: this.props.feed
-    })) : this.renderHero());
-  }
-
-}
-Hero.defaultProps = {
-  data: {},
-  border: `border`,
-  items: 1 
-
-};
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "ListItem", function() { return ListItem; });
- __webpack_require__.d(__webpack_exports__, "PlaceholderListItem", function() { return PlaceholderListItem; });
- __webpack_require__.d(__webpack_exports__, "_List", function() { return _List; });
- __webpack_require__.d(__webpack_exports__, "List", function() { return List; });
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7);
- var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
- var _DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
- var _DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(25);
- var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8);
- var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(26);
- var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(27);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ListItem extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
-  
-  
-  constructor(props) {
-    super(props);
-    this.onLinkClick = this.onLinkClick.bind(this);
-  }
-
-  onLinkClick(event) {
-    if (this.props.dispatch) {
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].UserEvent({
-        event: "CLICK",
-        source: this.props.type.toUpperCase(),
-        action_position: this.props.pos,
-        value: {
-          card_type: this.props.flightId ? "spoc" : "organic"
-        }
-      }));
-      this.props.dispatch(common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
-        source: this.props.type.toUpperCase(),
-        click: 0,
-        tiles: [{
-          id: this.props.id,
-          pos: this.props.pos,
-          ...(this.props.shim && this.props.shim.click ? {
-            shim: this.props.shim.click
-          } : {})
-        }]
-      }));
-    }
-  }
-
-  render() {
-    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("li", {
-      className: `ds-list-item${this.props.placeholder ? " placeholder" : ""}`
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_7__["SafeAnchor"], {
-      className: "ds-list-item-link",
-      dispatch: this.props.dispatch,
-      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
-      url: this.props.url
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-      className: "ds-list-item-text"
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("p", null, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("span", {
-      className: "ds-list-item-info clamp"
-    }, this.props.domain)), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-      className: "ds-list-item-body"
-    }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-      className: "ds-list-item-title clamp"
-    }, this.props.title), this.props.excerpt && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-      className: "ds-list-item-excerpt clamp"
-    }, this.props.excerpt)), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_8__["DSContextFooter"], {
-      context: this.props.context,
-      context_type: this.props.context_type,
-      engagement: this.props.engagement
-    })), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSImage_DSImage_jsx__WEBPACK_IMPORTED_MODULE_3__["DSImage"], {
-      extraClassNames: "ds-list-image",
-      source: this.props.image_src,
-      rawSource: this.props.raw_image_src
-    }), react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_5__["ImpressionStats"], {
-      flightId: this.props.flightId,
-      rows: [{
-        id: this.props.id,
-        pos: this.props.pos,
-        ...(this.props.shim && this.props.shim.impression ? {
-          shim: this.props.shim.impression
-        } : {})
-      }],
-      dispatch: this.props.dispatch,
-      source: this.props.type
-    })), !this.props.placeholder && react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSLinkMenu_DSLinkMenu__WEBPACK_IMPORTED_MODULE_4__["DSLinkMenu"], {
-      id: this.props.id,
-      index: this.props.pos,
-      dispatch: this.props.dispatch,
-      url: this.props.url,
-      title: this.props.title,
-      source: this.props.source,
-      type: this.props.type,
-      pocket_id: this.props.pocket_id,
-      shim: this.props.shim,
-      bookmarkGuid: this.props.bookmarkGuid,
-      flightId: this.props.flightId
-    }));
-  }
-
-}
-const PlaceholderListItem = props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(ListItem, {
-  placeholder: true
-});
-
-
-
-
-function _List(props) {
-  const renderList = () => {
-    const recs = props.data.recommendations.slice(props.recStartingPoint, props.recStartingPoint + props.items);
-    const recMarkup = [];
-
-    for (let index = 0; index < props.items; index++) {
-      const rec = recs[index];
-      recMarkup.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(PlaceholderListItem, {
-        key: `ds-list-item-${index}`
-      }) : react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(ListItem, {
-        key: `ds-list-item-${rec.id}`,
-        dispatch: props.dispatch,
-        flightId: rec.flight_id,
-        domain: rec.domain,
-        excerpt: rec.excerpt,
-        id: rec.id,
-        shim: rec.shim,
-        image_src: rec.image_src,
-        raw_image_src: rec.raw_image_src,
-        pos: rec.pos,
-        title: rec.title,
-        context: rec.context,
-        context_type: rec.context_type,
-        type: props.type,
-        url: rec.url,
-        pocket_id: rec.pocket_id,
-        bookmarkGuid: rec.bookmarkGuid,
-        engagement: rec.engagement
-      }));
-    }
-
-    const listStyles = ["ds-list", props.fullWidth ? "ds-list-full-width" : "", props.hasBorders ? "ds-list-borders" : "", props.hasImages ? "ds-list-images" : "", props.hasNumbers ? "ds-list-numbers" : ""];
-    return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("ul", {
-      className: listStyles.join(" ")
-    }, recMarkup);
-  };
-
-  const {
-    data
-  } = props;
-
-  if (!data || !data.recommendations) {
-    return null;
-  } 
-
-
-  const isEmpty = data.recommendations.length === 0;
-  return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", null, props.header && props.header.title ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-    className: "ds-header"
-  }, props.header.title) : null, isEmpty ? react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("div", {
-    className: "ds-list empty"
-  }, react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_2__["DSEmptyState"], {
-    status: data.status,
-    dispatch: props.dispatch,
-    feed: props.feed
-  })) : renderList());
-}
-_List.defaultProps = {
-  recStartingPoint: 0,
-  
-  fullWidth: false,
-  
-  hasBorders: false,
-  
-  hasImages: false,
-  
-  hasNumbers: false,
-  
-  items: 6 
-
-};
-const List = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(state => ({
-  DiscoveryStream: state.DiscoveryStream
-}))(_List);
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Highlights", function() { return _Highlights; });
  __webpack_require__.d(__webpack_exports__, "Highlights", function() { return Highlights; });
  var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(45);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -7105,18 +5714,18 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(46);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(48);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(30);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(26);
  var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(50);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(51);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(43);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(44);
  var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(52);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(53);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(45);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(46);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -7463,14 +6072,14 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Card", function() { return Card; });
  __webpack_require__.d(__webpack_exports__, "PlaceholderCard", function() { return PlaceholderCard; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var _types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(28);
+ var _types__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(24);
  var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(24);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(21);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(21);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(18);
  var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(47);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(40);
 
 
 
@@ -7888,7 +6497,7 @@ const ScreenshotUtils = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_lib_perf_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(49);
+ var content_src_lib_perf_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
  var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
@@ -8299,18 +6908,18 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(54);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(34);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(48);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(41);
  var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(39);
+ var _asrouter_components_ModalOverlay_ModalOverlay__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(34);
  var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(55);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(72);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(73);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(56);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(48);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(66);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(67);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(49);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -8552,7 +7161,7 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(54);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(47);
 
 
 
@@ -8743,15 +7352,15 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TopSitePlaceholder", function() { return TopSitePlaceholder; });
  __webpack_require__.d(__webpack_exports__, "TopSiteList", function() { return TopSiteList; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(54);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
- var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(18);
+ var _DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(22);
  var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(47);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(72);
- var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
- var _TopSiteImpressionWrapper__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(57);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(40);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(66);
+ var content_src_components_ContextMenu_ContextMenuButton__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(21);
+ var _TopSiteImpressionWrapper__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(50);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -9690,8 +8299,8 @@ __webpack_require__.r(__webpack_exports__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(26);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(30);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(23);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(26);
 
 
 
@@ -9796,8 +8405,8 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "PrivacyLink", function() { return PrivacyLink; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(26);
- var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(30);
+ var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(23);
+ var content_src_components_FluentOrText_FluentOrText__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(26);
 
 
 
@@ -9910,7 +8519,7 @@ const selectLayoutRender = ({
   }
 
   const positions = {};
-  const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Signup", "Navigation", "CardGrid", "CollectionCardGrid", "Hero", "HorizontalRule", "List", "PrivacyLink"];
+  const DS_COMPONENTS = ["Message", "TextPromo", "SectionTitle", "Signup", "Navigation", "CardGrid", "CollectionCardGrid", "HorizontalRule", "PrivacyLink"];
   const filterArray = [];
 
   if (!prefs["feeds.topsites"]) {
@@ -10085,8 +8694,8 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
  var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(53);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(72);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(46);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(66);
  var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 
@@ -10454,7 +9063,7 @@ const Search = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(state
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var content_src_lib_perf_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(49);
+ var content_src_lib_perf_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(42);
 
 
 
@@ -10542,7 +9151,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "queueEarlyMessageMiddleware", function() { return queueEarlyMessageMiddleware; });
  __webpack_require__.d(__webpack_exports__, "initStore", function() { return initStore; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(67);
+ var redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(60);
  var redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(redux__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -11560,10 +10169,10 @@ const ConditionalWrapper = ({
 
  var ConditionalWrapper_ConditionalWrapper = (ConditionalWrapper);
 
-var src = __webpack_require__(68);
+var src = __webpack_require__(61);
 
 
-var rich_text_strings = __webpack_require__(70);
+var rich_text_strings = __webpack_require__(63);
 
 
 
@@ -14273,6 +12882,939 @@ function generateBundles(content) {
 __webpack_require__.r(__webpack_exports__);
 
 
+var Actions = __webpack_require__(1);
+
+
+var DSImage = __webpack_require__(17);
+
+
+var LinkMenu = __webpack_require__(18);
+
+
+var ContextMenuButton = __webpack_require__(21);
+
+
+var external_React_ = __webpack_require__(8);
+var external_React_default = __webpack_require__.n(external_React_);
+
+
+
+
+
+
+
+
+class DSLinkMenu_DSLinkMenu extends external_React_default.a.PureComponent {
+  render() {
+    const {
+      index,
+      dispatch
+    } = this.props;
+    const TOP_STORIES_CONTEXT_MENU_OPTIONS = ["CheckBookmark", "CheckArchiveFromPocket", ...(this.props.saveToPocketCard ? ["CheckDeleteFromPocket"] : ["CheckSavedToPocket"]), "Separator", "OpenInNewWindow", "OpenInPrivateWindow", "Separator", "BlockUrl", ...(this.props.showPrivacyInfo ? ["ShowPrivacyInfo"] : [])];
+    const type = this.props.type || "DISCOVERY_STREAM";
+    const title = this.props.title || this.props.source;
+    return external_React_default.a.createElement("div", {
+      className: "context-menu-position-container"
+    }, external_React_default.a.createElement(ContextMenuButton["ContextMenuButton"], {
+      tooltip: "newtab-menu-content-tooltip",
+      tooltipArgs: {
+        title
+      },
+      onUpdate: this.props.onMenuUpdate
+    }, external_React_default.a.createElement(LinkMenu["LinkMenu"], {
+      dispatch: dispatch,
+      index: index,
+      source: type.toUpperCase(),
+      onShow: this.props.onMenuShow,
+      options: TOP_STORIES_CONTEXT_MENU_OPTIONS,
+      shouldSendImpressionStats: true,
+      site: {
+        referrer: "https://getpocket.com/recommendations",
+        title: this.props.title,
+        type: this.props.type,
+        url: this.props.url,
+        guid: this.props.id,
+        pocket_id: this.props.pocket_id,
+        shim: this.props.shim,
+        bookmarkGuid: this.props.bookmarkGuid,
+        flight_id: this.props.flightId
+      }
+    })));
+  }
+
+}
+
+var ImpressionStats = __webpack_require__(22);
+
+
+var SafeAnchor = __webpack_require__(23);
+
+
+var types = __webpack_require__(24);
+
+
+var external_ReactTransitionGroup_ = __webpack_require__(25);
+
+
+var FluentOrText = __webpack_require__(26);
+
+
+
+
+
+
+
+
+ 
+
+const ANIMATION_DURATION = 3000;
+const DSMessageFooter = props => {
+  const {
+    context,
+    context_type,
+    display_engagement_labels,
+    engagement,
+    saveToPocketCard
+  } = props;
+  const {
+    icon,
+    fluentID
+  } = types["cardContextTypes"][context_type] || {}; 
+
+  if (saveToPocketCard && context_type === "pocket") {
+    return null;
+  }
+
+  return external_React_default.a.createElement(external_ReactTransitionGroup_["TransitionGroup"], {
+    component: null
+  }, !context && (context_type || display_engagement_labels && engagement) && external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
+    key: fluentID,
+    timeout: ANIMATION_DURATION,
+    classNames: "story-animate"
+  }, engagement && !context_type ? external_React_default.a.createElement("div", {
+    className: "story-view-count"
+  }, engagement) : external_React_default.a.createElement(StatusMessage, {
+    icon: icon,
+    fluentID: fluentID
+  })));
+};
+const StatusMessage = ({
+  icon,
+  fluentID
+}) => external_React_default.a.createElement("div", {
+  className: "status-message"
+}, external_React_default.a.createElement("span", {
+  "aria-haspopup": "true",
+  className: `story-badge-icon icon icon-${icon}`
+}), external_React_default.a.createElement("div", {
+  className: "story-context-label",
+  "data-l10n-id": fluentID
+}));
+const SponsorLabel = ({
+  sponsored_by_override,
+  sponsor,
+  context
+}) => {
+  const classList = "story-sponsored-label clamp"; 
+
+  if (sponsored_by_override) {
+    return external_React_default.a.createElement("p", {
+      className: classList
+    }, sponsored_by_override);
+  } else if (sponsored_by_override === "") {
+    
+    
+    
+    return null;
+  } else if (sponsor) {
+    return external_React_default.a.createElement("p", {
+      className: classList
+    }, external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+      message: {
+        id: `newtab-label-sponsored-by`,
+        values: {
+          sponsor
+        }
+      }
+    }));
+  } else if (context) {
+    return external_React_default.a.createElement("p", {
+      className: classList
+    }, context);
+  }
+
+  return null;
+};
+class DSContextFooter_DSContextFooter extends external_React_default.a.PureComponent {
+  render() {
+    
+    const {
+      context,
+      context_type,
+      engagement,
+      display_engagement_labels,
+      sponsor,
+      sponsored_by_override
+    } = this.props;
+    return external_React_default.a.createElement("div", {
+      className: "story-footer"
+    }, SponsorLabel({
+      sponsored_by_override,
+      sponsor,
+      context
+    }), DSMessageFooter({
+      context,
+      context_type,
+      display_engagement_labels,
+      engagement
+    }));
+  }
+
+}
+
+var external_ReactRedux_ = __webpack_require__(7);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const READING_WPM = 220;
+
+
+
+
+
+
+function readTimeFromWordCount(wordCount) {
+  if (!wordCount) return false;
+  return Math.ceil(parseInt(wordCount, 10) / READING_WPM);
+}
+const DSSource = ({
+  source,
+  timeToRead,
+  compact,
+  context,
+  sponsor,
+  sponsored_by_override
+}) => {
+  
+  if (compact) {
+    
+    if (sponsored_by_override || sponsor || context) {
+      return external_React_default.a.createElement(SponsorLabel, {
+        context: context,
+        sponsor: sponsor,
+        sponsored_by_override: sponsored_by_override
+      });
+    } 
+
+
+    if (timeToRead) {
+      return external_React_default.a.createElement("p", {
+        className: "source clamp time-to-read"
+      }, external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+        message: {
+          id: `newtab-label-source-read-time`,
+          values: {
+            source,
+            timeToRead
+          }
+        }
+      }));
+    }
+  } 
+
+
+  return external_React_default.a.createElement("p", {
+    className: "source clamp"
+  }, source);
+}; 
+
+const DefaultMeta = ({
+  display_engagement_labels,
+  source,
+  title,
+  excerpt,
+  timeToRead,
+  compact,
+  context,
+  context_type,
+  cta,
+  engagement,
+  cta_variant,
+  sponsor,
+  sponsored_by_override,
+  saveToPocketCard
+}) => external_React_default.a.createElement("div", {
+  className: "meta"
+}, external_React_default.a.createElement("div", {
+  className: "info-wrap"
+}, external_React_default.a.createElement(DSSource, {
+  source: source,
+  compact: compact,
+  timeToRead: timeToRead,
+  context: context,
+  sponsor: sponsor,
+  sponsored_by_override: sponsored_by_override
+}), external_React_default.a.createElement("header", {
+  title: title,
+  className: "title clamp"
+}, title), excerpt && external_React_default.a.createElement("p", {
+  className: "excerpt clamp"
+}, excerpt), cta_variant === "link" && cta && external_React_default.a.createElement("div", {
+  role: "link",
+  className: "cta-link icon icon-arrow",
+  tabIndex: "0"
+}, cta)), !compact && external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
+  context_type: context_type,
+  context: context,
+  sponsor: sponsor,
+  sponsored_by_override: sponsored_by_override,
+  display_engagement_labels: display_engagement_labels,
+  engagement: engagement
+}), compact && external_React_default.a.createElement("div", {
+  className: "story-footer"
+}, external_React_default.a.createElement(DSMessageFooter, {
+  context_type: context_type,
+  context: null,
+  display_engagement_labels: display_engagement_labels,
+  engagement: engagement,
+  saveToPocketCard: saveToPocketCard
+})));
+const CTAButtonMeta = ({
+  display_engagement_labels,
+  source,
+  title,
+  excerpt,
+  context,
+  context_type,
+  cta,
+  engagement,
+  sponsor,
+  sponsored_by_override
+}) => external_React_default.a.createElement("div", {
+  className: "meta"
+}, external_React_default.a.createElement("div", {
+  className: "info-wrap"
+}, external_React_default.a.createElement("p", {
+  className: "source clamp"
+}, context && external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+  message: {
+    id: `newtab-label-sponsored`,
+    values: {
+      sponsorOrSource: sponsor ? sponsor : source
+    }
+  }
+}), !context && (sponsor ? sponsor : source)), external_React_default.a.createElement("header", {
+  title: title,
+  className: "title clamp"
+}, title), excerpt && external_React_default.a.createElement("p", {
+  className: "excerpt clamp"
+}, excerpt)), context && cta && external_React_default.a.createElement("button", {
+  className: "button cta-button"
+}, cta), !context && external_React_default.a.createElement(DSContextFooter_DSContextFooter, {
+  context_type: context_type,
+  context: context,
+  sponsor: sponsor,
+  sponsored_by_override: sponsored_by_override,
+  display_engagement_labels: display_engagement_labels,
+  engagement: engagement
+}));
+class DSCard_DSCard extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onLinkClick = this.onLinkClick.bind(this);
+    this.onSaveClick = this.onSaveClick.bind(this);
+    this.onMenuUpdate = this.onMenuUpdate.bind(this);
+    this.onMenuShow = this.onMenuShow.bind(this);
+
+    this.setContextMenuButtonHostRef = element => {
+      this.contextMenuButtonHostElement = element;
+    };
+
+    this.setPlaceholderRef = element => {
+      this.placeholderElement = element;
+    };
+
+    this.state = {
+      isSeen: false
+    }; 
+    
+
+    if (props.App.isForStartupCache) {
+      this.state.isSeen = true;
+    } 
+    
+    
+    
+    
+    
+    
+    
+
+
+    this.dsImageSizes = [{
+      mediaMatcher: "(min-width: 1122px)",
+      width: 296,
+      height: 148
+    }, {
+      mediaMatcher: "(min-width: 866px)",
+      width: 218,
+      height: 109
+    }, {
+      mediaMatcher: "(max-width: 610px)",
+      width: 202,
+      height: 101
+    }];
+  }
+
+  onLinkClick(event) {
+    if (this.props.dispatch) {
+      this.props.dispatch(Actions["actionCreators"].UserEvent({
+        event: "CLICK",
+        source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type.toUpperCase(),
+        action_position: this.props.pos,
+        value: {
+          card_type: this.props.flightId ? "spoc" : "organic"
+        }
+      }));
+      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
+        source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type.toUpperCase(),
+        click: 0,
+        tiles: [{
+          id: this.props.id,
+          pos: this.props.pos,
+          ...(this.props.shim && this.props.shim.click ? {
+            shim: this.props.shim.click
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  onSaveClick(event) {
+    if (this.props.dispatch) {
+      this.props.dispatch(Actions["actionCreators"].AlsoToMain({
+        type: Actions["actionTypes"].SAVE_TO_POCKET,
+        data: {
+          site: {
+            url: this.props.url,
+            title: this.props.title
+          }
+        }
+      }));
+      this.props.dispatch(Actions["actionCreators"].UserEvent({
+        event: "SAVE_TO_POCKET",
+        source: "CARDGRID_HOVER",
+        action_position: this.props.pos
+      }));
+      this.props.dispatch(Actions["actionCreators"].ImpressionStats({
+        source: "CARDGRID_HOVER",
+        pocket: 0,
+        tiles: [{
+          id: this.props.id,
+          pos: this.props.pos,
+          ...(this.props.shim && this.props.shim.save ? {
+            shim: this.props.shim.save
+          } : {})
+        }]
+      }));
+    }
+  }
+
+  onMenuUpdate(showContextMenu) {
+    if (!showContextMenu) {
+      const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
+
+      if (dsLinkMenuHostDiv) {
+        dsLinkMenuHostDiv.classList.remove("active", "last-item");
+      }
+    }
+  }
+
+  async onMenuShow() {
+    const dsLinkMenuHostDiv = this.contextMenuButtonHostElement;
+
+    if (dsLinkMenuHostDiv) {
+      
+      await this.props.windowObj.document.l10n.translateFragment(dsLinkMenuHostDiv);
+
+      if (this.props.windowObj.scrollMaxX > 0) {
+        dsLinkMenuHostDiv.classList.add("last-item");
+      }
+
+      dsLinkMenuHostDiv.classList.add("active");
+    }
+  }
+
+  onSeen(entries) {
+    if (this.state) {
+      const entry = entries.find(e => e.isIntersecting);
+
+      if (entry) {
+        if (this.placeholderElement) {
+          this.observer.unobserve(this.placeholderElement);
+        } 
+
+
+        this.setState({
+          isSeen: true
+        });
+      }
+    }
+  }
+
+  onIdleCallback() {
+    if (!this.state.isSeen) {
+      if (this.observer && this.placeholderElement) {
+        this.observer.unobserve(this.placeholderElement);
+      }
+
+      this.setState({
+        isSeen: true
+      });
+    }
+  }
+
+  componentDidMount() {
+    this.idleCallbackId = this.props.windowObj.requestIdleCallback(this.onIdleCallback.bind(this));
+
+    if (this.placeholderElement) {
+      this.observer = new IntersectionObserver(this.onSeen.bind(this));
+      this.observer.observe(this.placeholderElement);
+    }
+  }
+
+  componentWillUnmount() {
+    
+    if (this.observer && this.placeholderElement) {
+      this.observer.unobserve(this.placeholderElement);
+    }
+
+    if (this.idleCallbackId) {
+      this.props.windowObj.cancelIdleCallback(this.idleCallbackId);
+    }
+  }
+
+  render() {
+    if (this.props.placeholder || !this.state.isSeen) {
+      return external_React_default.a.createElement("div", {
+        className: "ds-card placeholder",
+        ref: this.setPlaceholderRef
+      });
+    }
+
+    if (this.props.lastCard) {
+      return external_React_default.a.createElement("div", {
+        className: "ds-card last-card-message"
+      }, external_React_default.a.createElement("div", {
+        className: "img-wrapper"
+      }, external_React_default.a.createElement("picture", {
+        className: "ds-image img loaded"
+      }, external_React_default.a.createElement("img", {
+        "data-l10n-id": "newtab-pocket-last-card-image",
+        className: "last-card-message-image",
+        src: "chrome://activity-stream/content/data/content/assets/caught-up-illustration.svg",
+        alt: "You\u2019re all caught up"
+      }))), external_React_default.a.createElement("div", {
+        className: "meta"
+      }, external_React_default.a.createElement("div", {
+        className: "info-wrap"
+      }, external_React_default.a.createElement("header", {
+        className: "title clamp",
+        "data-l10n-id": "newtab-pocket-last-card-title"
+      }), external_React_default.a.createElement("p", {
+        className: "ds-last-card-desc",
+        "data-l10n-id": "newtab-pocket-last-card-desc"
+      }))));
+    }
+
+    const isButtonCTA = this.props.cta_variant === "button";
+    const includeDescriptions = this.props.include_descriptions;
+    const {
+      saveToPocketCard
+    } = this.props;
+    const baseClass = `ds-card ${this.props.is_video ? `video-card` : ``}`;
+    const excerpt = includeDescriptions ? this.props.excerpt : "";
+    const timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
+    return external_React_default.a.createElement("div", {
+      className: baseClass,
+      ref: this.setContextMenuButtonHostRef
+    }, external_React_default.a.createElement(SafeAnchor["SafeAnchor"], {
+      className: "ds-card-link",
+      dispatch: this.props.dispatch,
+      onLinkClick: !this.props.placeholder ? this.onLinkClick : undefined,
+      url: this.props.url
+    }, external_React_default.a.createElement("div", {
+      className: "img-wrapper"
+    }, external_React_default.a.createElement(DSImage["DSImage"], {
+      extraClassNames: "img",
+      source: this.props.image_src,
+      rawSource: this.props.raw_image_src,
+      sizes: this.dsImageSizes
+    }), this.props.is_video && external_React_default.a.createElement("div", {
+      className: "playhead"
+    }, external_React_default.a.createElement("span", null, "Video Content"))), isButtonCTA ? external_React_default.a.createElement(CTAButtonMeta, {
+      display_engagement_labels: this.props.display_engagement_labels,
+      source: this.props.source,
+      title: this.props.title,
+      excerpt: excerpt,
+      timeToRead: timeToRead,
+      context: this.props.context,
+      context_type: this.props.context_type,
+      compact: this.props.compact,
+      engagement: this.props.engagement,
+      cta: this.props.cta,
+      sponsor: this.props.sponsor,
+      sponsored_by_override: this.props.sponsored_by_override
+    }) : external_React_default.a.createElement(DefaultMeta, {
+      display_engagement_labels: this.props.display_engagement_labels,
+      source: this.props.source,
+      title: this.props.title,
+      excerpt: excerpt,
+      timeToRead: timeToRead,
+      context: this.props.context,
+      engagement: this.props.engagement,
+      context_type: this.props.context_type,
+      compact: this.props.compact,
+      cta: this.props.cta,
+      cta_variant: this.props.cta_variant,
+      sponsor: this.props.sponsor,
+      sponsored_by_override: this.props.sponsored_by_override,
+      saveToPocketCard: saveToPocketCard
+    }), external_React_default.a.createElement(ImpressionStats["ImpressionStats"], {
+      flightId: this.props.flightId,
+      rows: [{
+        id: this.props.id,
+        pos: this.props.pos,
+        ...(this.props.shim && this.props.shim.impression ? {
+          shim: this.props.shim.impression
+        } : {})
+      }],
+      dispatch: this.props.dispatch,
+      source: this.props.is_video ? "CARDGRID_VIDEO" : this.props.type
+    })), saveToPocketCard && external_React_default.a.createElement("div", {
+      className: "card-stp-button-hover-background"
+    }, external_React_default.a.createElement("div", {
+      className: "card-stp-button-position-wrapper"
+    }, external_React_default.a.createElement("button", {
+      className: "card-stp-button",
+      onClick: this.onSaveClick
+    }, this.props.context_type === "pocket" ? external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("span", {
+      className: "story-badge-icon icon icon-pocket"
+    }), external_React_default.a.createElement("span", {
+      "data-l10n-id": "newtab-pocket-saved-to-pocket"
+    })) : external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("span", {
+      className: "story-badge-icon icon icon-pocket-save"
+    }), external_React_default.a.createElement("span", {
+      "data-l10n-id": "newtab-pocket-save-to-pocket"
+    }))), external_React_default.a.createElement(DSLinkMenu_DSLinkMenu, {
+      id: this.props.id,
+      index: this.props.pos,
+      dispatch: this.props.dispatch,
+      url: this.props.url,
+      title: this.props.title,
+      source: this.props.source,
+      type: this.props.type,
+      pocket_id: this.props.pocket_id,
+      shim: this.props.shim,
+      bookmarkGuid: this.props.bookmarkGuid,
+      flightId: !this.props.is_collection ? this.props.flightId : undefined,
+      showPrivacyInfo: !!this.props.flightId,
+      onMenuUpdate: this.onMenuUpdate,
+      onMenuShow: this.onMenuShow,
+      saveToPocketCard: saveToPocketCard
+    }))), !saveToPocketCard && external_React_default.a.createElement(DSLinkMenu_DSLinkMenu, {
+      id: this.props.id,
+      index: this.props.pos,
+      dispatch: this.props.dispatch,
+      url: this.props.url,
+      title: this.props.title,
+      source: this.props.source,
+      type: this.props.type,
+      pocket_id: this.props.pocket_id,
+      shim: this.props.shim,
+      bookmarkGuid: this.props.bookmarkGuid,
+      flightId: !this.props.is_collection ? this.props.flightId : undefined,
+      showPrivacyInfo: !!this.props.flightId,
+      hostRef: this.contextMenuButtonHostRef,
+      onMenuUpdate: this.onMenuUpdate,
+      onMenuShow: this.onMenuShow
+    }));
+  }
+
+}
+DSCard_DSCard.defaultProps = {
+  windowObj: window 
+
+};
+const DSCard = Object(external_ReactRedux_["connect"])(state => ({
+  App: state.App
+}))(DSCard_DSCard);
+const PlaceholderDSCard = props => external_React_default.a.createElement(DSCard, {
+  placeholder: true
+});
+const LastCardMessage = props => external_React_default.a.createElement(DSCard, {
+  lastCard: true
+});
+
+
+
+
+
+
+class DSEmptyState_DSEmptyState extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onReset = this.onReset.bind(this);
+    this.state = {};
+  }
+
+  componentWillUnmount() {
+    if (this.timeout) {
+      clearTimeout(this.timeout);
+    }
+  }
+
+  onReset() {
+    if (this.props.dispatch && this.props.feed) {
+      const {
+        feed
+      } = this.props;
+      const {
+        url
+      } = feed;
+      this.props.dispatch({
+        type: Actions["actionTypes"].DISCOVERY_STREAM_FEED_UPDATE,
+        data: {
+          feed: { ...feed,
+            data: { ...feed.data,
+              status: "waiting"
+            }
+          },
+          url
+        }
+      });
+      this.setState({
+        waiting: true
+      });
+      this.timeout = setTimeout(() => {
+        this.timeout = null;
+        this.setState({
+          waiting: false
+        });
+      }, 300);
+      this.props.dispatch(Actions["actionCreators"].OnlyToMain({
+        type: Actions["actionTypes"].DISCOVERY_STREAM_RETRY_FEED,
+        data: {
+          feed
+        }
+      }));
+    }
+  }
+
+  renderButton() {
+    if (this.props.status === "waiting" || this.state.waiting) {
+      return external_React_default.a.createElement("button", {
+        className: "try-again-button waiting",
+        "data-l10n-id": "newtab-discovery-empty-section-topstories-loading"
+      });
+    }
+
+    return external_React_default.a.createElement("button", {
+      className: "try-again-button",
+      onClick: this.onReset,
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-try-again-button"
+    });
+  }
+
+  renderState() {
+    if (this.props.status === "waiting" || this.props.status === "failed") {
+      return external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("h2", {
+        "data-l10n-id": "newtab-discovery-empty-section-topstories-timed-out"
+      }), this.renderButton());
+    }
+
+    return external_React_default.a.createElement(external_React_default.a.Fragment, null, external_React_default.a.createElement("h2", {
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-header"
+    }), external_React_default.a.createElement("p", {
+      "data-l10n-id": "newtab-discovery-empty-section-topstories-content"
+    }));
+  }
+
+  render() {
+    return external_React_default.a.createElement("div", {
+      className: "section-empty-state"
+    }, external_React_default.a.createElement("div", {
+      className: "empty-state-message"
+    }, this.renderState()));
+  }
+
+}
+
+ __webpack_require__.d(__webpack_exports__, "CardGrid", function() { return CardGrid_CardGrid; });
+
+
+
+
+
+
+
+
+class CardGrid_CardGrid extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      moreLoaded: false
+    };
+    this.loadMoreClicked = this.loadMoreClicked.bind(this);
+  }
+
+  loadMoreClicked() {
+    this.props.dispatch(Actions["actionCreators"].UserEvent({
+      event: "CLICK",
+      source: "DS_LOAD_MORE_BUTTON"
+    }));
+    this.setState({
+      moreLoaded: true
+    });
+  }
+
+  renderCards() {
+    let {
+      items
+    } = this.props;
+    const {
+      loadMoreEnabled,
+      lastCardMessageEnabled
+    } = this.props;
+    let showLastCardMessage = lastCardMessageEnabled;
+
+    if (loadMoreEnabled && !this.state.moreLoaded) {
+      items = 12; 
+
+      showLastCardMessage = false;
+    }
+
+    const recs = this.props.data.recommendations.slice(0, items);
+    const cards = [];
+
+    for (let index = 0; index < items; index++) {
+      const rec = recs[index];
+      cards.push(!rec || rec.placeholder ? external_React_default.a.createElement(PlaceholderDSCard, {
+        key: `dscard-${index}`
+      }) : external_React_default.a.createElement(DSCard, {
+        key: `dscard-${rec.id}`,
+        pos: rec.pos,
+        flightId: rec.flight_id,
+        image_src: rec.image_src,
+        raw_image_src: rec.raw_image_src,
+        word_count: rec.word_count,
+        time_to_read: rec.time_to_read,
+        title: rec.title,
+        excerpt: rec.excerpt,
+        url: rec.url,
+        id: rec.id,
+        shim: rec.shim,
+        type: this.props.type,
+        context: rec.context,
+        compact: this.props.compact,
+        sponsor: rec.sponsor,
+        sponsored_by_override: rec.sponsored_by_override,
+        dispatch: this.props.dispatch,
+        source: rec.domain,
+        pocket_id: rec.pocket_id,
+        context_type: rec.context_type,
+        bookmarkGuid: rec.bookmarkGuid,
+        engagement: rec.engagement,
+        display_engagement_labels: this.props.display_engagement_labels,
+        include_descriptions: this.props.include_descriptions,
+        saveToPocketCard: this.props.saveToPocketCard,
+        cta: rec.cta,
+        cta_variant: this.props.cta_variant,
+        is_video: this.props.enable_video_playheads && rec.is_video,
+        is_collection: this.props.is_collection
+      }));
+    } 
+
+
+    if (showLastCardMessage) {
+      cards.splice(cards.length - 1, 1, external_React_default.a.createElement(LastCardMessage, {
+        key: `dscard-last-${cards.length - 1}`
+      }));
+    } 
+
+
+    const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
+    const compactClass = this.props.compact ? `ds-card-grid-compact-variant` : ``;
+    const includeDescriptions = this.props.include_descriptions ? `ds-card-grid-include-descriptions` : ``;
+    return external_React_default.a.createElement("div", {
+      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${compactClass} ${includeDescriptions}`
+    }, cards);
+  }
+
+  render() {
+    const {
+      data
+    } = this.props; 
+
+    if (!data) {
+      return null;
+    } 
+
+
+    const isEmpty = data.recommendations.length === 0;
+    const {
+      loadMoreEnabled
+    } = this.props;
+    return external_React_default.a.createElement("div", null, this.props.title && external_React_default.a.createElement("div", {
+      className: "ds-header"
+    }, external_React_default.a.createElement("div", {
+      className: "title"
+    }, this.props.title), this.props.context && external_React_default.a.createElement(FluentOrText["FluentOrText"], {
+      message: this.props.context
+    }, external_React_default.a.createElement("div", {
+      className: "ds-context"
+    }))), isEmpty ? external_React_default.a.createElement("div", {
+      className: "ds-card-grid empty"
+    }, external_React_default.a.createElement(DSEmptyState_DSEmptyState, {
+      status: data.status,
+      dispatch: this.props.dispatch,
+      feed: this.props.feed
+    })) : this.renderCards(), loadMoreEnabled && !this.state.moreLoaded && external_React_default.a.createElement("button", {
+      className: "ASRouterButton primary ds-card-grid-load-more-button",
+      onClick: this.loadMoreClicked,
+      "data-l10n-id": "newtab-pocket-load-more-stories-button"
+    }));
+  }
+
+}
+CardGrid_CardGrid.defaultProps = {
+  border: `border`,
+  items: 4,
+  
+  enable_video_playheads: false,
+  lastCardMessageEnabled: false,
+  saveToPocketCard: false
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+
+
 var external_React_ = __webpack_require__(8);
 var external_React_default = __webpack_require__.n(external_React_);
 
@@ -14515,7 +14057,7 @@ class ContentSection_ContentSection extends external_React_default.a.PureCompone
 var external_ReactRedux_ = __webpack_require__(7);
 
 
-var external_ReactTransitionGroup_ = __webpack_require__(29);
+var external_ReactTransitionGroup_ = __webpack_require__(25);
 
 
  __webpack_require__.d(__webpack_exports__, "_CustomizeMenu", function() { return CustomizeMenu_CustomizeMenu; });
@@ -15566,14 +15108,14 @@ __webpack_require__.r(__webpack_exports__);
 var Actions = __webpack_require__(1);
 
 
-var A11yLinkButton = __webpack_require__(36);
+var A11yLinkButton = __webpack_require__(31);
 
 
 var external_React_ = __webpack_require__(8);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(54);
+var TopSitesConstants = __webpack_require__(47);
 
 
 
@@ -15688,7 +15230,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(56);
+var TopSite = __webpack_require__(49);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });
