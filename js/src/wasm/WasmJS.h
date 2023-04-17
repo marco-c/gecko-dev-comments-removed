@@ -491,7 +491,7 @@ class WasmTableObject : public NativeObject {
 
 
 
-class WasmExceptionObject : public NativeObject {
+class WasmTagObject : public NativeObject {
   static const unsigned TAG_SLOT = 0;
   static const unsigned TYPE_SLOT = 1;
 
@@ -509,9 +509,8 @@ class WasmExceptionObject : public NativeObject {
   static const JSFunctionSpec static_methods[];
   static bool construct(JSContext*, unsigned, Value*);
 
-  static WasmExceptionObject* create(JSContext* cx,
-                                     const wasm::ValTypeVector& type,
-                                     HandleObject proto);
+  static WasmTagObject* create(JSContext* cx, const wasm::ValTypeVector& type,
+                               HandleObject proto);
   bool isNewborn() const;
 
   wasm::ValTypeVector& valueTypes() const;
@@ -523,7 +522,7 @@ class WasmExceptionObject : public NativeObject {
 
 
 
-class WasmRuntimeExceptionObject : public NativeObject {
+class WasmExceptionObject : public NativeObject {
   static const unsigned TAG_SLOT = 0;
   static const unsigned VALUES_SLOT = 1;
   static const unsigned REFS_SLOT = 2;
@@ -542,10 +541,10 @@ class WasmRuntimeExceptionObject : public NativeObject {
   static const JSFunctionSpec static_methods[];
   static bool construct(JSContext*, unsigned, Value*);
 
-  static WasmRuntimeExceptionObject* create(JSContext* cx,
-                                            wasm::SharedExceptionTag tag,
-                                            Handle<ArrayBufferObject*> values,
-                                            HandleArrayObject refs);
+  static WasmExceptionObject* create(JSContext* cx,
+                                     wasm::SharedExceptionTag tag,
+                                     Handle<ArrayBufferObject*> values,
+                                     HandleArrayObject refs);
   bool isNewborn() const;
 
   wasm::ExceptionTag& tag() const;
