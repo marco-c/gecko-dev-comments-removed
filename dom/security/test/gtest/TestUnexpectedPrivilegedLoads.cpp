@@ -33,14 +33,20 @@ using namespace TelemetryTestHelpers;
 
 extern Atomic<bool, mozilla::Relaxed> sJSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sJSHacksPresent;
+extern Atomic<bool, mozilla::Relaxed> sCSSHacksChecked;
+extern Atomic<bool, mozilla::Relaxed> sCSSHacksPresent;
 
 TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
   
   
-  bool hacksPresent = sJSHacksPresent;
-  bool hacksChecked = sJSHacksChecked;
+  bool origJSHacksPresent = sJSHacksPresent;
+  bool origJSHacksChecked = sJSHacksChecked;
   sJSHacksPresent = false;
   sJSHacksChecked = true;
+  bool origCSSHacksPresent = sCSSHacksPresent;
+  bool origCSSHacksChecked = sCSSHacksChecked;
+  sCSSHacksPresent = false;
+  sCSSHacksChecked = true;
 
   struct testResults {
     nsCString fileinfo;
@@ -291,6 +297,8 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
   }
 
   
-  sJSHacksPresent = hacksPresent;
-  sJSHacksChecked = hacksChecked;
+  sJSHacksPresent = origJSHacksPresent;
+  sJSHacksChecked = origJSHacksChecked;
+  sCSSHacksPresent = origCSSHacksPresent;
+  sCSSHacksChecked = origCSSHacksChecked;
 }
