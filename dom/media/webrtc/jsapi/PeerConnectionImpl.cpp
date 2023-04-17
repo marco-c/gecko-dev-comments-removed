@@ -343,8 +343,9 @@ PeerConnectionImpl::~PeerConnectionImpl() {
     destroy_timecard(mTimeCard);
     mTimeCard = nullptr;
   }
-  
-  PC_AUTO_ENTER_API_CALL_NO_CHECK();
+
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (mWindow && mActiveOnWindow) {
     mWindow->RemovePeerConnection();
     
@@ -2125,7 +2126,7 @@ nsresult PeerConnectionImpl::CloseInt() {
 }
 
 void PeerConnectionImpl::ShutdownMedia() {
-  PC_AUTO_ENTER_API_CALL_NO_CHECK();
+  MOZ_ASSERT(NS_IsMainThread());
 
   if (!mMedia) return;
 
