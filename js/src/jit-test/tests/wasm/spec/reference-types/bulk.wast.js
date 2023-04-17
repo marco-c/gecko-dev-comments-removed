@@ -1,351 +1,519 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0b\x86\x80\x80\x80\x00\x01\x01\x03\x66\x6f\x6f");
 
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x83\x80\x80\x80\x00\x02\x00\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x03\x09\x8d\x80\x80\x80\x00\x01\x05\x70\x03\xd2\x00\x0b\xd0\x70\x0b\xd2\x01\x0b\x0a\x8f\x80\x80\x80\x00\x02\x82\x80\x80\x80\x00\x00\x0b\x82\x80\x80\x80\x00\x00\x0b");
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x83\x80\x80\x80\x00\x01\x00\x01\x07\x92\x80\x80\x80\x00\x02\x04\x66\x69\x6c\x6c\x00\x00\x07\x6c\x6f\x61\x64\x38\x5f\x75\x00\x01\x0a\x9d\x80\x80\x80\x00\x02\x8b\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0b\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x2d\x00\x00\x0b");
 
 
-run(() => call($3, "fill", [1, 255, 3]));
 
 
-assert_return(() => call($3, "load8_u", [0]), 0);
 
 
-assert_return(() => call($3, "load8_u", [1]), 255);
 
 
-assert_return(() => call($3, "load8_u", [2]), 255);
 
 
-assert_return(() => call($3, "load8_u", [3]), 255);
 
 
-assert_return(() => call($3, "load8_u", [4]), 0);
+let $0 = instantiate(`(module
+  (memory 1)
+  (data "foo"))`);
 
 
-run(() => call($3, "fill", [0, 48_042, 2]));
+let $1 = instantiate(`(module
+  (table 3 funcref)
+  (elem funcref (ref.func 0) (ref.null func) (ref.func 1))
+  (func)
+  (func))`);
 
 
-assert_return(() => call($3, "load8_u", [0]), 170);
+let $2 = instantiate(`(module
+  (memory 1)
 
+  (func (export "fill") (param i32 i32 i32)
+    (memory.fill
+      (local.get 0)
+      (local.get 1)
+      (local.get 2)))
 
-assert_return(() => call($3, "load8_u", [1]), 170);
+  (func (export "load8_u") (param i32) (result i32)
+    (i32.load8_u (local.get 0)))
+)`);
 
 
-run(() => call($3, "fill", [0, 0, 65_536]));
+invoke($2, `fill`, [1, 255, 3]);
 
 
-assert_trap(() => call($3, "fill", [65_280, 1, 257]));
+assert_return(() => invoke($2, `load8_u`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => call($3, "load8_u", [65_280]), 0);
+assert_return(() => invoke($2, `load8_u`, [1]), [value("i32", 255)]);
 
 
-assert_return(() => call($3, "load8_u", [65_535]), 0);
+assert_return(() => invoke($2, `load8_u`, [2]), [value("i32", 255)]);
 
 
-run(() => call($3, "fill", [65_536, 0, 0]));
+assert_return(() => invoke($2, `load8_u`, [3]), [value("i32", 255)]);
 
 
-assert_trap(() => call($3, "fill", [65_537, 0, 0]));
+assert_return(() => invoke($2, `load8_u`, [4]), [value("i32", 0)]);
 
 
-let $4 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x84\x80\x80\x80\x00\x01\x01\x01\x01\x07\x92\x80\x80\x80\x00\x02\x04\x63\x6f\x70\x79\x00\x00\x07\x6c\x6f\x61\x64\x38\x5f\x75\x00\x01\x0a\x9e\x80\x80\x80\x00\x02\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0a\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x2d\x00\x00\x0b\x0b\x8a\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x04\xaa\xbb\xcc\xdd");
+invoke($2, `fill`, [0, 48042, 2]);
 
 
-run(() => call($4, "copy", [10, 0, 4]));
+assert_return(() => invoke($2, `load8_u`, [0]), [value("i32", 170)]);
 
 
-assert_return(() => call($4, "load8_u", [9]), 0);
+assert_return(() => invoke($2, `load8_u`, [1]), [value("i32", 170)]);
 
 
-assert_return(() => call($4, "load8_u", [10]), 170);
+invoke($2, `fill`, [0, 0, 65536]);
 
 
-assert_return(() => call($4, "load8_u", [11]), 187);
+assert_trap(
+  () => invoke($2, `fill`, [65280, 1, 257]),
+  `out of bounds memory access`,
+);
 
 
-assert_return(() => call($4, "load8_u", [12]), 204);
+assert_return(() => invoke($2, `load8_u`, [65280]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "load8_u", [13]), 221);
+assert_return(() => invoke($2, `load8_u`, [65535]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "load8_u", [14]), 0);
+invoke($2, `fill`, [65536, 0, 0]);
 
 
-run(() => call($4, "copy", [8, 10, 4]));
+assert_trap(
+  () => invoke($2, `fill`, [65537, 0, 0]),
+  `out of bounds memory access`,
+);
 
 
-assert_return(() => call($4, "load8_u", [8]), 170);
+let $3 = instantiate(`(module
+  (memory (data "\\aa\\bb\\cc\\dd"))
 
+  (func (export "copy") (param i32 i32 i32)
+    (memory.copy
+      (local.get 0)
+      (local.get 1)
+      (local.get 2)))
 
-assert_return(() => call($4, "load8_u", [9]), 187);
+  (func (export "load8_u") (param i32) (result i32)
+    (i32.load8_u (local.get 0)))
+)`);
 
 
-assert_return(() => call($4, "load8_u", [10]), 204);
+invoke($3, `copy`, [10, 0, 4]);
 
 
-assert_return(() => call($4, "load8_u", [11]), 221);
+assert_return(() => invoke($3, `load8_u`, [9]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "load8_u", [12]), 204);
+assert_return(() => invoke($3, `load8_u`, [10]), [value("i32", 170)]);
 
 
-assert_return(() => call($4, "load8_u", [13]), 221);
+assert_return(() => invoke($3, `load8_u`, [11]), [value("i32", 187)]);
 
 
-run(() => call($4, "copy", [10, 7, 6]));
+assert_return(() => invoke($3, `load8_u`, [12]), [value("i32", 204)]);
 
 
-assert_return(() => call($4, "load8_u", [10]), 0);
+assert_return(() => invoke($3, `load8_u`, [13]), [value("i32", 221)]);
 
 
-assert_return(() => call($4, "load8_u", [11]), 170);
+assert_return(() => invoke($3, `load8_u`, [14]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "load8_u", [12]), 187);
+invoke($3, `copy`, [8, 10, 4]);
 
 
-assert_return(() => call($4, "load8_u", [13]), 204);
+assert_return(() => invoke($3, `load8_u`, [8]), [value("i32", 170)]);
 
 
-assert_return(() => call($4, "load8_u", [14]), 221);
+assert_return(() => invoke($3, `load8_u`, [9]), [value("i32", 187)]);
 
 
-assert_return(() => call($4, "load8_u", [15]), 204);
+assert_return(() => invoke($3, `load8_u`, [10]), [value("i32", 204)]);
 
 
-assert_return(() => call($4, "load8_u", [16]), 0);
+assert_return(() => invoke($3, `load8_u`, [11]), [value("i32", 221)]);
 
 
-run(() => call($4, "copy", [65_280, 0, 256]));
+assert_return(() => invoke($3, `load8_u`, [12]), [value("i32", 204)]);
 
 
-run(() => call($4, "copy", [65_024, 65_280, 256]));
+assert_return(() => invoke($3, `load8_u`, [13]), [value("i32", 221)]);
 
 
-run(() => call($4, "copy", [65_536, 0, 0]));
+invoke($3, `copy`, [10, 7, 6]);
 
 
-run(() => call($4, "copy", [0, 65_536, 0]));
+assert_return(() => invoke($3, `load8_u`, [10]), [value("i32", 0)]);
 
 
-assert_trap(() => call($4, "copy", [65_537, 0, 0]));
+assert_return(() => invoke($3, `load8_u`, [11]), [value("i32", 170)]);
 
 
-assert_trap(() => call($4, "copy", [0, 65_537, 0]));
+assert_return(() => invoke($3, `load8_u`, [12]), [value("i32", 187)]);
 
 
-let $5 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x83\x80\x80\x80\x00\x01\x00\x01\x07\x92\x80\x80\x80\x00\x02\x04\x69\x6e\x69\x74\x00\x00\x07\x6c\x6f\x61\x64\x38\x5f\x75\x00\x01\x0c\x81\x80\x80\x80\x00\x01\x0a\x9e\x80\x80\x80\x00\x02\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x08\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x2d\x00\x00\x0b\x0b\x87\x80\x80\x80\x00\x01\x01\x04\xaa\xbb\xcc\xdd");
+assert_return(() => invoke($3, `load8_u`, [13]), [value("i32", 204)]);
 
 
-run(() => call($5, "init", [0, 1, 2]));
+assert_return(() => invoke($3, `load8_u`, [14]), [value("i32", 221)]);
 
 
-assert_return(() => call($5, "load8_u", [0]), 187);
+assert_return(() => invoke($3, `load8_u`, [15]), [value("i32", 204)]);
 
 
-assert_return(() => call($5, "load8_u", [1]), 204);
+assert_return(() => invoke($3, `load8_u`, [16]), [value("i32", 0)]);
 
 
-assert_return(() => call($5, "load8_u", [2]), 0);
+invoke($3, `copy`, [65280, 0, 256]);
 
 
-run(() => call($5, "init", [65_532, 0, 4]));
+invoke($3, `copy`, [65024, 65280, 256]);
 
 
-assert_trap(() => call($5, "init", [65_534, 0, 3]));
+invoke($3, `copy`, [65536, 0, 0]);
 
 
-assert_return(() => call($5, "load8_u", [65_534]), 204);
+invoke($3, `copy`, [0, 65536, 0]);
 
 
-assert_return(() => call($5, "load8_u", [65_535]), 221);
+assert_trap(
+  () => invoke($3, `copy`, [65537, 0, 0]),
+  `out of bounds memory access`,
+);
 
 
-run(() => call($5, "init", [65_536, 0, 0]));
+assert_trap(
+  () => invoke($3, `copy`, [0, 65537, 0]),
+  `out of bounds memory access`,
+);
 
 
-run(() => call($5, "init", [0, 4, 0]));
+let $4 = instantiate(`(module
+  (memory 1)
+  (data "\\aa\\bb\\cc\\dd")
 
+  (func (export "init") (param i32 i32 i32)
+    (memory.init 0
+      (local.get 0)
+      (local.get 1)
+      (local.get 2)))
 
-assert_trap(() => call($5, "init", [65_537, 0, 0]));
+  (func (export "load8_u") (param i32) (result i32)
+    (i32.load8_u (local.get 0)))
+)`);
 
 
-assert_trap(() => call($5, "init", [0, 5, 0]));
+invoke($4, `init`, [0, 1, 2]);
 
 
-let $6 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7f\x00\x03\x85\x80\x80\x80\x00\x04\x00\x01\x00\x01\x05\x83\x80\x80\x80\x00\x01\x00\x01\x07\xbb\x80\x80\x80\x00\x04\x0c\x64\x72\x6f\x70\x5f\x70\x61\x73\x73\x69\x76\x65\x00\x00\x0c\x69\x6e\x69\x74\x5f\x70\x61\x73\x73\x69\x76\x65\x00\x01\x0b\x64\x72\x6f\x70\x5f\x61\x63\x74\x69\x76\x65\x00\x02\x0b\x69\x6e\x69\x74\x5f\x61\x63\x74\x69\x76\x65\x00\x03\x0c\x81\x80\x80\x80\x00\x02\x0a\xb7\x80\x80\x80\x00\x04\x85\x80\x80\x80\x00\x00\xfc\x09\x00\x0b\x8c\x80\x80\x80\x00\x00\x41\x00\x41\x00\x20\x00\xfc\x08\x00\x00\x0b\x85\x80\x80\x80\x00\x00\xfc\x09\x01\x0b\x8c\x80\x80\x80\x00\x00\x41\x00\x41\x00\x20\x00\xfc\x08\x01\x00\x0b\x0b\x8a\x80\x80\x80\x00\x02\x01\x01\x78\x00\x41\x00\x0b\x01\x78");
+assert_return(() => invoke($4, `load8_u`, [0]), [value("i32", 187)]);
 
 
-run(() => call($6, "init_passive", [1]));
+assert_return(() => invoke($4, `load8_u`, [1]), [value("i32", 204)]);
 
 
-run(() => call($6, "drop_passive", []));
+assert_return(() => invoke($4, `load8_u`, [2]), [value("i32", 0)]);
 
 
-run(() => call($6, "drop_passive", []));
+invoke($4, `init`, [65532, 0, 4]);
 
 
-assert_return(() => call($6, "init_passive", [0]));
+assert_trap(
+  () => invoke($4, `init`, [65534, 0, 3]),
+  `out of bounds memory access`,
+);
 
 
-assert_trap(() => call($6, "init_passive", [1]));
+assert_return(() => invoke($4, `load8_u`, [65534]), [value("i32", 204)]);
 
 
-run(() => call($6, "init_passive", [0]));
+assert_return(() => invoke($4, `load8_u`, [65535]), [value("i32", 221)]);
 
 
-run(() => call($6, "drop_active", []));
+invoke($4, `init`, [65536, 0, 0]);
 
 
-assert_return(() => call($6, "init_active", [0]));
+invoke($4, `init`, [0, 4, 0]);
 
 
-assert_trap(() => call($6, "init_active", [1]));
+assert_trap(
+  () => invoke($4, `init`, [65537, 0, 0]),
+  `out of bounds memory access`,
+);
 
 
-run(() => call($6, "init_active", [0]));
+assert_trap(() => invoke($4, `init`, [0, 5, 0]), `out of bounds memory access`);
 
 
-let $7 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0c\x81\x80\x80\x80\x00\x41\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x09\x40\x0b\x0b\x83\x81\x80\x80\x00\x41\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00");
+let $5 = instantiate(`(module
+  (memory 1)
+  (data $$p "x")
+  (data $$a (memory 0) (i32.const 0) "x")
 
+  (func (export "drop_passive") (data.drop $$p))
+  (func (export "init_passive") (param $$len i32)
+    (memory.init $$p (i32.const 0) (i32.const 0) (local.get $$len)))
 
-let $8 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0c\x81\x80\x80\x80\x00\x01\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x09\x00\x0b\x0b\x8a\x80\x80\x80\x00\x01\x01\x07\x67\x6f\x6f\x64\x62\x79\x65");
+  (func (export "drop_active") (data.drop $$a))
+  (func (export "init_active") (param $$len i32)
+    (memory.init $$a (i32.const 0) (i32.const 0) (local.get $$len)))
+)`);
 
 
-let $9 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x85\x80\x80\x80\x00\x04\x00\x00\x01\x02\x04\x84\x80\x80\x80\x00\x01\x70\x00\x03\x07\x8f\x80\x80\x80\x00\x02\x04\x69\x6e\x69\x74\x00\x02\x04\x63\x61\x6c\x6c\x00\x03\x09\x88\x80\x80\x80\x00\x01\x01\x00\x04\x00\x01\x00\x01\x0a\xb0\x80\x80\x80\x00\x04\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0c\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+invoke($5, `init_passive`, [1]);
 
 
-assert_trap(() => call($9, "init", [2, 0, 2]));
+invoke($5, `drop_passive`, []);
 
 
-assert_trap(() => call($9, "call", [2]));
+invoke($5, `drop_passive`, []);
 
 
-run(() => call($9, "init", [0, 1, 2]));
+assert_return(() => invoke($5, `init_passive`, [0]), []);
 
 
-assert_return(() => call($9, "call", [0]), 1);
+assert_trap(() => invoke($5, `init_passive`, [1]), `out of bounds`);
 
 
-assert_return(() => call($9, "call", [1]), 0);
+invoke($5, `init_passive`, [0]);
 
 
-assert_trap(() => call($9, "call", [2]));
+invoke($5, `drop_active`, []);
 
 
-run(() => call($9, "init", [1, 2, 2]));
+assert_return(() => invoke($5, `init_active`, [0]), []);
 
 
-run(() => call($9, "init", [3, 0, 0]));
+assert_trap(() => invoke($5, `init_active`, [1]), `out of bounds`);
 
 
-run(() => call($9, "init", [0, 4, 0]));
+invoke($5, `init_active`, [0]);
 
 
-assert_trap(() => call($9, "init", [4, 0, 0]));
+let $6 = instantiate(`(module
+  ;; 65 data segments. 64 is the smallest positive number that is encoded
+  ;; differently as a signed LEB.
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "") (data "") (data "") (data "") (data "") (data "") (data "") (data "")
+  (data "")
+  (func (data.drop 64)))`);
 
 
-assert_trap(() => call($9, "init", [0, 5, 0]));
+let $7 = instantiate(`(module (data "goodbye") (func (data.drop 0)))`);
 
 
-let $10 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7f\x00\x03\x86\x80\x80\x80\x00\x05\x00\x00\x01\x00\x01\x04\x84\x80\x80\x80\x00\x01\x70\x00\x01\x07\xbb\x80\x80\x80\x00\x04\x0c\x64\x72\x6f\x70\x5f\x70\x61\x73\x73\x69\x76\x65\x00\x01\x0c\x69\x6e\x69\x74\x5f\x70\x61\x73\x73\x69\x76\x65\x00\x02\x0b\x64\x72\x6f\x70\x5f\x61\x63\x74\x69\x76\x65\x00\x03\x0b\x69\x6e\x69\x74\x5f\x61\x63\x74\x69\x76\x65\x00\x04\x09\x8b\x80\x80\x80\x00\x02\x01\x00\x01\x00\x00\x41\x00\x0b\x01\x00\x0a\xbe\x80\x80\x80\x00\x05\x82\x80\x80\x80\x00\x00\x0b\x85\x80\x80\x80\x00\x00\xfc\x0d\x00\x0b\x8c\x80\x80\x80\x00\x00\x41\x00\x41\x00\x20\x00\xfc\x0c\x00\x00\x0b\x85\x80\x80\x80\x00\x00\xfc\x0d\x01\x0b\x8c\x80\x80\x80\x00\x00\x41\x00\x41\x00\x20\x00\xfc\x0c\x01\x00\x0b");
+let $8 = instantiate(`(module
+  (table 3 funcref)
+  (elem funcref
+    (ref.func $$zero) (ref.func $$one) (ref.func $$zero) (ref.func $$one))
 
+  (func $$zero (result i32) (i32.const 0))
+  (func $$one (result i32) (i32.const 1))
 
-run(() => call($10, "init_passive", [1]));
+  (func (export "init") (param i32 i32 i32)
+    (table.init 0
+      (local.get 0)
+      (local.get 1)
+      (local.get 2)))
 
+  (func (export "call") (param i32) (result i32)
+    (call_indirect (result i32)
+      (local.get 0)))
+)`);
 
-run(() => call($10, "drop_passive", []));
 
+assert_trap(() => invoke($8, `init`, [2, 0, 2]), `out of bounds table access`);
 
-run(() => call($10, "drop_passive", []));
 
+assert_trap(() => invoke($8, `call`, [2]), `uninitialized element 2`);
 
-assert_return(() => call($10, "init_passive", [0]));
 
+invoke($8, `init`, [0, 1, 2]);
 
-assert_trap(() => call($10, "init_passive", [1]));
 
+assert_return(() => invoke($8, `call`, [0]), [value("i32", 1)]);
 
-run(() => call($10, "init_passive", [0]));
 
+assert_return(() => invoke($8, `call`, [1]), [value("i32", 0)]);
 
-run(() => call($10, "drop_active", []));
 
+assert_trap(() => invoke($8, `call`, [2]), `uninitialized element`);
 
-assert_return(() => call($10, "init_active", [0]));
 
+invoke($8, `init`, [1, 2, 2]);
 
-assert_trap(() => call($10, "init_active", [1]));
 
+invoke($8, `init`, [3, 0, 0]);
 
-run(() => call($10, "init_active", [0]));
 
+invoke($8, `init`, [0, 4, 0]);
 
-let $11 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x09\xc4\x81\x80\x80\x00\x41\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x01\x00\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x0d\x40\x0b");
 
+assert_trap(() => invoke($8, `init`, [4, 0, 0]), `out of bounds table access`);
 
-let $12 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x09\x85\x80\x80\x80\x00\x01\x01\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x0d\x00\x0b");
 
+assert_trap(() => invoke($8, `init`, [0, 5, 0]), `out of bounds table access`);
 
-let $13 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x60\x01\x7f\x01\x7f\x03\x86\x80\x80\x80\x00\x05\x00\x00\x00\x01\x02\x04\x84\x80\x80\x80\x00\x01\x70\x00\x0a\x07\x8f\x80\x80\x80\x00\x02\x04\x63\x6f\x70\x79\x00\x03\x04\x63\x61\x6c\x6c\x00\x04\x09\x89\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x03\x00\x01\x02\x0a\xb9\x80\x80\x80\x00\x05\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
 
+let $9 = instantiate(`(module
+  (table 1 funcref)
+  (func $$f)
+  (elem $$p funcref (ref.func $$f))
+  (elem $$a (table 0) (i32.const 0) func $$f)
 
-run(() => call($13, "copy", [3, 0, 3]));
+  (func (export "drop_passive") (elem.drop $$p))
+  (func (export "init_passive") (param $$len i32)
+    (table.init $$p (i32.const 0) (i32.const 0) (local.get $$len))
+  )
 
+  (func (export "drop_active") (elem.drop $$a))
+  (func (export "init_active") (param $$len i32)
+    (table.init $$a (i32.const 0) (i32.const 0) (local.get $$len))
+  )
+)`);
 
-assert_return(() => call($13, "call", [3]), 0);
 
+invoke($9, `init_passive`, [1]);
 
-assert_return(() => call($13, "call", [4]), 1);
 
+invoke($9, `drop_passive`, []);
 
-assert_return(() => call($13, "call", [5]), 2);
 
+invoke($9, `drop_passive`, []);
 
-run(() => call($13, "copy", [0, 1, 3]));
 
+assert_return(() => invoke($9, `init_passive`, [0]), []);
 
-assert_return(() => call($13, "call", [0]), 1);
 
+assert_trap(() => invoke($9, `init_passive`, [1]), `out of bounds`);
 
-assert_return(() => call($13, "call", [1]), 2);
 
+invoke($9, `init_passive`, [0]);
 
-assert_return(() => call($13, "call", [2]), 0);
 
+invoke($9, `drop_active`, []);
 
-run(() => call($13, "copy", [2, 0, 3]));
 
+assert_return(() => invoke($9, `init_active`, [0]), []);
 
-assert_return(() => call($13, "call", [2]), 1);
 
+assert_trap(() => invoke($9, `init_active`, [1]), `out of bounds`);
 
-assert_return(() => call($13, "call", [3]), 2);
 
+invoke($9, `init_active`, [0]);
 
-assert_return(() => call($13, "call", [4]), 0);
 
+let $10 = instantiate(`(module
+  ;; 65 elem segments. 64 is the smallest positive number that is encoded
+  ;; differently as a signed LEB.
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref) (elem funcref) (elem funcref) (elem funcref)
+  (elem funcref)
+  (func (elem.drop 64)))`);
 
-run(() => call($13, "copy", [6, 8, 2]));
 
+let $11 = instantiate(
+  `(module (elem funcref (ref.func 0)) (func (elem.drop 0)))`,
+);
 
-run(() => call($13, "copy", [8, 6, 2]));
 
+let $12 = instantiate(`(module
+  (table 10 funcref)
+  (elem (i32.const 0) $$zero $$one $$two)
+  (func $$zero (result i32) (i32.const 0))
+  (func $$one (result i32) (i32.const 1))
+  (func $$two (result i32) (i32.const 2))
 
-run(() => call($13, "copy", [10, 0, 0]));
+  (func (export "copy") (param i32 i32 i32)
+    (table.copy
+      (local.get 0)
+      (local.get 1)
+      (local.get 2)))
 
+  (func (export "call") (param i32) (result i32)
+    (call_indirect (result i32)
+      (local.get 0)))
+)`);
 
-run(() => call($13, "copy", [0, 10, 0]));
 
+invoke($12, `copy`, [3, 0, 3]);
 
-assert_trap(() => call($13, "copy", [11, 0, 0]));
 
+assert_return(() => invoke($12, `call`, [3]), [value("i32", 0)]);
 
-assert_trap(() => call($13, "copy", [0, 11, 0]));
+
+assert_return(() => invoke($12, `call`, [4]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($12, `call`, [5]), [value("i32", 2)]);
+
+
+invoke($12, `copy`, [0, 1, 3]);
+
+
+assert_return(() => invoke($12, `call`, [0]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($12, `call`, [1]), [value("i32", 2)]);
+
+
+assert_return(() => invoke($12, `call`, [2]), [value("i32", 0)]);
+
+
+invoke($12, `copy`, [2, 0, 3]);
+
+
+assert_return(() => invoke($12, `call`, [2]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($12, `call`, [3]), [value("i32", 2)]);
+
+
+assert_return(() => invoke($12, `call`, [4]), [value("i32", 0)]);
+
+
+invoke($12, `copy`, [6, 8, 2]);
+
+
+invoke($12, `copy`, [8, 6, 2]);
+
+
+invoke($12, `copy`, [10, 0, 0]);
+
+
+invoke($12, `copy`, [0, 10, 0]);
+
+
+assert_trap(() => invoke($12, `copy`, [11, 0, 0]), `out of bounds`);
+
+
+assert_trap(() => invoke($12, `copy`, [0, 11, 0]), `out of bounds`);

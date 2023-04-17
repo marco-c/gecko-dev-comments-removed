@@ -1,117 +1,168 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x00\x03\x89\x80\x80\x80\x00\x08\x00\x00\x00\x00\x01\x01\x01\x01\x04\x8f\x80\x80\x80\x00\x04\x6f\x00\x00\x6f\x00\x01\x6f\x01\x00\x02\x6f\x01\x03\x08\x07\xd1\x80\x80\x80\x00\x08\x07\x73\x69\x7a\x65\x2d\x74\x30\x00\x00\x07\x73\x69\x7a\x65\x2d\x74\x31\x00\x01\x07\x73\x69\x7a\x65\x2d\x74\x32\x00\x02\x07\x73\x69\x7a\x65\x2d\x74\x33\x00\x03\x07\x67\x72\x6f\x77\x2d\x74\x30\x00\x04\x07\x67\x72\x6f\x77\x2d\x74\x31\x00\x05\x07\x67\x72\x6f\x77\x2d\x74\x32\x00\x06\x07\x67\x72\x6f\x77\x2d\x74\x33\x00\x07\x0a\xe5\x80\x80\x80\x00\x08\x85\x80\x80\x80\x00\x00\xfc\x10\x00\x0b\x85\x80\x80\x80\x00\x00\xfc\x10\x01\x0b\x85\x80\x80\x80\x00\x00\xfc\x10\x02\x0b\x85\x80\x80\x80\x00\x00\xfc\x10\x03\x0b\x8a\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x00\x1a\x0b\x8a\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x01\x1a\x0b\x8a\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x02\x1a\x0b\x8a\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x03\x1a\x0b");
 
 
-assert_return(() => call($1, "size-t0", []), 0);
 
 
-assert_return(() => call($1, "grow-t0", [1]));
 
 
-assert_return(() => call($1, "size-t0", []), 1);
 
 
-assert_return(() => call($1, "grow-t0", [4]));
 
 
-assert_return(() => call($1, "size-t0", []), 5);
 
 
-assert_return(() => call($1, "grow-t0", [0]));
 
 
-assert_return(() => call($1, "size-t0", []), 5);
 
 
-assert_return(() => call($1, "size-t1", []), 1);
+let $0 = instantiate(`(module
+  (table $$t0 0 externref)
+  (table $$t1 1 externref)
+  (table $$t2 0 2 externref)
+  (table $$t3 3 8 externref)
 
+  (func (export "size-t0") (result i32) (table.size $$t0))
+  (func (export "size-t1") (result i32) (table.size $$t1))
+  (func (export "size-t2") (result i32) (table.size $$t2))
+  (func (export "size-t3") (result i32) (table.size $$t3))
 
-assert_return(() => call($1, "grow-t1", [1]));
+  (func (export "grow-t0") (param $$sz i32)
+    (drop (table.grow $$t0 (ref.null extern) (local.get $$sz)))
+  )
+  (func (export "grow-t1") (param $$sz i32)
+    (drop (table.grow $$t1 (ref.null extern) (local.get $$sz)))
+  )
+  (func (export "grow-t2") (param $$sz i32)
+    (drop (table.grow $$t2 (ref.null extern) (local.get $$sz)))
+  )
+  (func (export "grow-t3") (param $$sz i32)
+    (drop (table.grow $$t3 (ref.null extern) (local.get $$sz)))
+  )
+)`);
 
 
-assert_return(() => call($1, "size-t1", []), 2);
+assert_return(() => invoke($0, `size-t0`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "grow-t1", [4]));
+assert_return(() => invoke($0, `grow-t0`, [1]), []);
 
 
-assert_return(() => call($1, "size-t1", []), 6);
+assert_return(() => invoke($0, `size-t0`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "grow-t1", [0]));
+assert_return(() => invoke($0, `grow-t0`, [4]), []);
 
 
-assert_return(() => call($1, "size-t1", []), 6);
+assert_return(() => invoke($0, `size-t0`, []), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "size-t2", []), 0);
+assert_return(() => invoke($0, `grow-t0`, [0]), []);
 
 
-assert_return(() => call($1, "grow-t2", [3]));
+assert_return(() => invoke($0, `size-t0`, []), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "size-t2", []), 0);
+assert_return(() => invoke($0, `size-t1`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "grow-t2", [1]));
+assert_return(() => invoke($0, `grow-t1`, [1]), []);
 
 
-assert_return(() => call($1, "size-t2", []), 1);
+assert_return(() => invoke($0, `size-t1`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "grow-t2", [0]));
+assert_return(() => invoke($0, `grow-t1`, [4]), []);
 
 
-assert_return(() => call($1, "size-t2", []), 1);
+assert_return(() => invoke($0, `size-t1`, []), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "grow-t2", [4]));
+assert_return(() => invoke($0, `grow-t1`, [0]), []);
 
 
-assert_return(() => call($1, "size-t2", []), 1);
+assert_return(() => invoke($0, `size-t1`, []), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "grow-t2", [1]));
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "size-t2", []), 2);
+assert_return(() => invoke($0, `grow-t2`, [3]), []);
 
 
-assert_return(() => call($1, "size-t3", []), 3);
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "grow-t3", [1]));
+assert_return(() => invoke($0, `grow-t2`, [1]), []);
 
 
-assert_return(() => call($1, "size-t3", []), 4);
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "grow-t3", [3]));
+assert_return(() => invoke($0, `grow-t2`, [0]), []);
 
 
-assert_return(() => call($1, "size-t3", []), 7);
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "grow-t3", [0]));
+assert_return(() => invoke($0, `grow-t2`, [4]), []);
 
 
-assert_return(() => call($1, "size-t3", []), 7);
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "grow-t3", [2]));
+assert_return(() => invoke($0, `grow-t2`, [1]), []);
 
 
-assert_return(() => call($1, "size-t3", []), 7);
+assert_return(() => invoke($0, `size-t2`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "grow-t3", [1]));
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "size-t3", []), 8);
+assert_return(() => invoke($0, `grow-t3`, [1]), []);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x01\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x10\x00\x0b");
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 4)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7d\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x01\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x10\x00\x0b");
+assert_return(() => invoke($0, `grow-t3`, [3]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [0]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [2]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($0, `grow-t3`, [1]), []);
+
+
+assert_return(() => invoke($0, `size-t3`, []), [value("i32", 8)]);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 1 externref)
+    (func $$type-result-i32-vs-empty
+      (table.size $$t)
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 1 externref)
+    (func $$type-result-i32-vs-f32 (result f32)
+      (table.size $$t)
+    )
+  )`), `type mismatch`);

@@ -1,528 +1,2304 @@
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\x80\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\x8f\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\x90\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\x9f\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xa0\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xbf\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xc2\x80\x80\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xc2\x03\x7f\x00");
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc2\x2e\x03\x7f\x00");
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\80"                       ;; "\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
 
 
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc0\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc1\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc1\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc2\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc2\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc2\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xc2\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xdf\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xdf\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xdf\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xdf\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xe1\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xe1\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x80\x2e\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xe1\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xe1\x2e\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x00\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x7f\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x80\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x9f\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\x9f\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xc0\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xfd\xa0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xa0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xa0\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xbf\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xbf\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xa0\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xa0\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xa0\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe0\xa0\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xe1\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xec\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xed\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xee\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xef\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xf1\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xf1\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xf1\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xf1\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xf1\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xf1\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x00\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x7f\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x80\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x8f\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x8f\xbf\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\xc0\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\xfd\x90\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x00\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x7f\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\xc0\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\xfd\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x00\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x7f\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\xc0\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\xfd\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x00\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x7f\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x90\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\xbf\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\xc0\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\xfd\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf5\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf7\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf7\xbf\xbf\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x00\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x7f\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\xc0\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\xfd\x90\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x00\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x7f\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\xc0\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\xfd\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x90\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x90\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x90\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf0\x90\x90\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf1\x80\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf3\x80\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x80\x00\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x80\x7f\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x80\xc0\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf4\x80\x80\xfd\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x10\x01\x04\x74\x65\x73\x74\x06\xf8\x80\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf8\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xf8\x80\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xf8\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xf8\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xf8\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xf8\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xf8\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xf8\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xf8\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xfb\xbf\xbf\xbf\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x11\x01\x04\x74\x65\x73\x74\x07\xfc\x80\x80\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xfc\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x10\x01\x04\x74\x65\x73\x74\x06\xfc\x80\x80\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xfc\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0f\x01\x04\x74\x65\x73\x74\x05\xfc\x80\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xfc\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xfc\x80\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xfc\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0d\x01\x04\x74\x65\x73\x74\x03\xfc\x80\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xfc\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xfc\x23\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x10\x01\x04\x74\x65\x73\x74\x06\xfc\x80\x80\x80\x80\x80\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x10\x01\x04\x74\x65\x73\x74\x06\xfd\xbf\xbf\xbf\xbf\xbf\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xfe\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0b\x01\x04\x74\x65\x73\x74\x01\xff\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xfe\xff\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\x00\x00\xfe\xff\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0c\x01\x04\x74\x65\x73\x74\x02\xff\xfe\x03\x7f\x00");
-
-
-assert_malformed("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x0e\x01\x04\x74\x65\x73\x74\x04\xff\xfe\x00\x00\x03\x7f\x00");
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\8f"                       ;; "\\8f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\90"                       ;; "\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\9f"                       ;; "\\9f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\a0"                       ;; "\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\bf"                       ;; "\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\c2\\80\\80"                 ;; "\\c2\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\c2"                       ;; "\\c2"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c2\\2e"                    ;; "\\c2."
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c0\\80"                    ;; "\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c0\\bf"                    ;; "\\c0\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c1\\80"                    ;; "\\c1\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c1\\bf"                    ;; "\\c1\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c2\\00"                    ;; "\\c2\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c2\\7f"                    ;; "\\c2\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c2\\c0"                    ;; "\\c2\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\c2\\fd"                    ;; "\\c2\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\df\\00"                    ;; "\\df\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\df\\7f"                    ;; "\\df\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\df\\c0"                    ;; "\\df\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\df\\fd"                    ;; "\\df\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\e1\\80\\80\\80"              ;; "\\e1\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\e1\\80"                    ;; "\\e1\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\80\\2e"                 ;; "\\e1\\80."
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\e1"                       ;; "\\e1"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\e1\\2e"                    ;; "\\e1."
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\00\\a0"                 ;; "\\e0\\00\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\7f\\a0"                 ;; "\\e0\\7f\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\80\\80"                 ;; "\\e0\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\80\\a0"                 ;; "\\e0\\80\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\9f\\a0"                 ;; "\\e0\\9f\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\9f\\bf"                 ;; "\\e0\\9f\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\c0\\a0"                 ;; "\\e0\\c0\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\fd\\a0"                 ;; "\\e0\\fd\\a0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\00\\80"                 ;; "\\e1\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\7f\\80"                 ;; "\\e1\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\c0\\80"                 ;; "\\e1\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\fd\\80"                 ;; "\\e1\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\00\\80"                 ;; "\\ec\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\7f\\80"                 ;; "\\ec\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\c0\\80"                 ;; "\\ec\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\fd\\80"                 ;; "\\ec\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\00\\80"                 ;; "\\ed\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\7f\\80"                 ;; "\\ed\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\a0\\80"                 ;; "\\ed\\a0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\a0\\bf"                 ;; "\\ed\\a0\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\bf\\80"                 ;; "\\ed\\bf\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\bf\\bf"                 ;; "\\ed\\bf\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\c0\\80"                 ;; "\\ed\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\fd\\80"                 ;; "\\ed\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\00\\80"                 ;; "\\ee\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\7f\\80"                 ;; "\\ee\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\c0\\80"                 ;; "\\ee\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\fd\\80"                 ;; "\\ee\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\00\\80"                 ;; "\\ef\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\7f\\80"                 ;; "\\ef\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\c0\\80"                 ;; "\\ef\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\fd\\80"                 ;; "\\ef\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\a0\\00"                 ;; "\\e0\\a0\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\a0\\7f"                 ;; "\\e0\\a0\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\a0\\c0"                 ;; "\\e0\\a0\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e0\\a0\\fd"                 ;; "\\e0\\a0\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\80\\00"                 ;; "\\e1\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\80\\7f"                 ;; "\\e1\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\80\\c0"                 ;; "\\e1\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\e1\\80\\fd"                 ;; "\\e1\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\80\\00"                 ;; "\\ec\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\80\\7f"                 ;; "\\ec\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\80\\c0"                 ;; "\\ec\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ec\\80\\fd"                 ;; "\\ec\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\80\\00"                 ;; "\\ed\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\80\\7f"                 ;; "\\ed\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\80\\c0"                 ;; "\\ed\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ed\\80\\fd"                 ;; "\\ed\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\80\\00"                 ;; "\\ee\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\80\\7f"                 ;; "\\ee\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\80\\c0"                 ;; "\\ee\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ee\\80\\fd"                 ;; "\\ee\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\80\\00"                 ;; "\\ef\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\80\\7f"                 ;; "\\ef\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\80\\c0"                 ;; "\\ef\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\ef\\80\\fd"                 ;; "\\ef\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\f1\\80\\80\\80\\80"           ;; "\\f1\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\f1\\80\\80"                 ;; "\\f1\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\80\\23"              ;; "\\f1\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\f1\\80"                    ;; "\\f1\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\f1\\80\\23"                 ;; "\\f1\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\f1"                       ;; "\\f1"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\f1\\23"                    ;; "\\f1#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\00\\90\\90"              ;; "\\f0\\00\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\7f\\90\\90"              ;; "\\f0\\7f\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\80\\80\\80"              ;; "\\f0\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\80\\90\\90"              ;; "\\f0\\80\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\8f\\90\\90"              ;; "\\f0\\8f\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\8f\\bf\\bf"              ;; "\\f0\\8f\\bf\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\c0\\90\\90"              ;; "\\f0\\c0\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\fd\\90\\90"              ;; "\\f0\\fd\\90\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\00\\80\\80"              ;; "\\f1\\00\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\7f\\80\\80"              ;; "\\f1\\7f\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\c0\\80\\80"              ;; "\\f1\\c0\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\fd\\80\\80"              ;; "\\f1\\fd\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\00\\80\\80"              ;; "\\f3\\00\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\7f\\80\\80"              ;; "\\f3\\7f\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\c0\\80\\80"              ;; "\\f3\\c0\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\fd\\80\\80"              ;; "\\f3\\fd\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\00\\80\\80"              ;; "\\f4\\00\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\7f\\80\\80"              ;; "\\f4\\7f\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\90\\80\\80"              ;; "\\f4\\90\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\bf\\80\\80"              ;; "\\f4\\bf\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\c0\\80\\80"              ;; "\\f4\\c0\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\fd\\80\\80"              ;; "\\f4\\fd\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f5\\80\\80\\80"              ;; "\\f5\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f7\\80\\80\\80"              ;; "\\f7\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f7\\bf\\bf\\bf"              ;; "\\f7\\bf\\bf\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\00\\90"              ;; "\\f0\\90\\00\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\7f\\90"              ;; "\\f0\\90\\7f\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\c0\\90"              ;; "\\f0\\90\\c0\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\fd\\90"              ;; "\\f0\\90\\fd\\90"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\00\\80"              ;; "\\f1\\80\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\7f\\80"              ;; "\\f1\\80\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\c0\\80"              ;; "\\f1\\80\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\fd\\80"              ;; "\\f1\\80\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\00\\80"              ;; "\\f3\\80\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\7f\\80"              ;; "\\f3\\80\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\c0\\80"              ;; "\\f3\\80\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\fd\\80"              ;; "\\f3\\80\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\00\\80"              ;; "\\f4\\80\\00\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\7f\\80"              ;; "\\f4\\80\\7f\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\c0\\80"              ;; "\\f4\\80\\c0\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\fd\\80"              ;; "\\f4\\80\\fd\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\90\\00"              ;; "\\f0\\90\\90\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\90\\7f"              ;; "\\f0\\90\\90\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\90\\c0"              ;; "\\f0\\90\\90\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f0\\90\\90\\fd"              ;; "\\f0\\90\\90\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\80\\00"              ;; "\\f1\\80\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\80\\7f"              ;; "\\f1\\80\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\80\\c0"              ;; "\\f1\\80\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f1\\80\\80\\fd"              ;; "\\f1\\80\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\80\\00"              ;; "\\f3\\80\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\80\\7f"              ;; "\\f3\\80\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\80\\c0"              ;; "\\f3\\80\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f3\\80\\80\\fd"              ;; "\\f3\\80\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\80\\00"              ;; "\\f4\\80\\80\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\80\\7f"              ;; "\\f4\\80\\80\\7f"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\80\\c0"              ;; "\\f4\\80\\80\\c0"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f4\\80\\80\\fd"              ;; "\\f4\\80\\80\\fd"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\10"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\06\\f8\\80\\80\\80\\80\\80"        ;; "\\f8\\80\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f8\\80\\80\\80"              ;; "\\f8\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\f8\\80\\80\\80\\23"           ;; "\\f8\\80\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\f8\\80\\80"                 ;; "\\f8\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\f8\\80\\80\\23"              ;; "\\f8\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\f8\\80"                    ;; "\\f8\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\f8\\80\\23"                 ;; "\\f8\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\f8"                       ;; "\\f8"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\f8\\23"                    ;; "\\f8#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\f8\\80\\80\\80\\80"           ;; "\\f8\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\fb\\bf\\bf\\bf\\bf"           ;; "\\fb\\bf\\bf\\bf\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\11"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\07\\fc\\80\\80\\80\\80\\80\\80"     ;; "\\fc\\80\\80\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\fc\\80\\80\\80\\80"           ;; "\\fc\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\10"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\06\\fc\\80\\80\\80\\80\\23"        ;; "\\fc\\80\\80\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\fc\\80\\80\\80"              ;; "\\fc\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0f"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\05\\fc\\80\\80\\80\\23"           ;; "\\fc\\80\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\fc\\80\\80"                 ;; "\\fc\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\fc\\80\\80\\23"              ;; "\\fc\\80\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\fc\\80"                    ;; "\\fc\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0d"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\03\\fc\\80\\23"                 ;; "\\fc\\80#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\fc"                       ;; "\\fc"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\fc\\23"                    ;; "\\fc#"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\10"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\06\\fc\\80\\80\\80\\80\\80"        ;; "\\fc\\80\\80\\80\\80\\80"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\10"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\06\\fd\\bf\\bf\\bf\\bf\\bf"        ;; "\\fd\\bf\\bf\\bf\\bf\\bf"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\fe"                       ;; "\\fe"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0b"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\01\\ff"                       ;; "\\ff"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\fe\\ff"                    ;; "\\fe\\ff"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\00\\00\\fe\\ff"              ;; "\\00\\00\\fe\\ff"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0c"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\02\\ff\\fe"                    ;; "\\ff\\fe"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);
+
+
+assert_malformed(() =>
+  instantiate(`(module binary
+    "\\00asm" "\\01\\00\\00\\00"
+    "\\02\\0e"                       ;; import section
+    "\\01"                          ;; length 1
+    "\\04\\74\\65\\73\\74"              ;; "test"
+    "\\04\\ff\\fe\\00\\00"              ;; "\\ff\\fe\\00\\00"
+    "\\03"                          ;; GlobalImport
+    "\\7f"                          ;; i32
+    "\\00"                          ;; immutable
+  )`), `malformed UTF-8 encoding`);

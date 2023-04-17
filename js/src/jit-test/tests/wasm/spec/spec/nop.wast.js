@@ -1,264 +1,613 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\xa3\x80\x80\x80\x00\x07\x60\x02\x7f\x7f\x01\x7f\x60\x00\x00\x60\x03\x7f\x7f\x7f\x01\x7f\x60\x00\x01\x7f\x60\x01\x7f\x00\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x00\x03\xd4\x80\x80\x80\x00\x53\x01\x02\x03\x03\x03\x03\x04\x04\x04\x05\x05\x05\x05\x05\x03\x03\x03\x03\x03\x03\x03\x03\x04\x04\x04\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x02\x02\x02\x02\x02\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x05\x00\x03\x03\x03\x03\x03\x05\x05\x05\x05\x05\x05\x03\x03\x03\x05\x05\x05\x06\x06\x06\x06\x04\x85\x80\x80\x80\x00\x01\x70\x01\x01\x01\x05\x83\x80\x80\x80\x00\x01\x00\x01\x06\x86\x80\x80\x80\x00\x01\x7f\x01\x41\x00\x0b\x07\xea\x8b\x80\x80\x00\x50\x0d\x61\x73\x2d\x66\x75\x6e\x63\x2d\x66\x69\x72\x73\x74\x00\x02\x0b\x61\x73\x2d\x66\x75\x6e\x63\x2d\x6d\x69\x64\x00\x03\x0c\x61\x73\x2d\x66\x75\x6e\x63\x2d\x6c\x61\x73\x74\x00\x04\x12\x61\x73\x2d\x66\x75\x6e\x63\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x05\x0d\x61\x73\x2d\x64\x72\x6f\x70\x2d\x66\x69\x72\x73\x74\x00\x06\x0c\x61\x73\x2d\x64\x72\x6f\x70\x2d\x6c\x61\x73\x74\x00\x07\x12\x61\x73\x2d\x64\x72\x6f\x70\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x08\x0f\x61\x73\x2d\x73\x65\x6c\x65\x63\x74\x2d\x66\x69\x72\x73\x74\x00\x09\x0e\x61\x73\x2d\x73\x65\x6c\x65\x63\x74\x2d\x6d\x69\x64\x31\x00\x0a\x0e\x61\x73\x2d\x73\x65\x6c\x65\x63\x74\x2d\x6d\x69\x64\x32\x00\x0b\x0e\x61\x73\x2d\x73\x65\x6c\x65\x63\x74\x2d\x6c\x61\x73\x74\x00\x0c\x14\x61\x73\x2d\x73\x65\x6c\x65\x63\x74\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x0d\x0e\x61\x73\x2d\x62\x6c\x6f\x63\x6b\x2d\x66\x69\x72\x73\x74\x00\x0e\x0c\x61\x73\x2d\x62\x6c\x6f\x63\x6b\x2d\x6d\x69\x64\x00\x0f\x0d\x61\x73\x2d\x62\x6c\x6f\x63\x6b\x2d\x6c\x61\x73\x74\x00\x10\x13\x61\x73\x2d\x62\x6c\x6f\x63\x6b\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x11\x0d\x61\x73\x2d\x6c\x6f\x6f\x70\x2d\x66\x69\x72\x73\x74\x00\x12\x0b\x61\x73\x2d\x6c\x6f\x6f\x70\x2d\x6d\x69\x64\x00\x13\x0c\x61\x73\x2d\x6c\x6f\x6f\x70\x2d\x6c\x61\x73\x74\x00\x14\x12\x61\x73\x2d\x6c\x6f\x6f\x70\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x15\x0f\x61\x73\x2d\x69\x66\x2d\x63\x6f\x6e\x64\x69\x74\x69\x6f\x6e\x00\x16\x0a\x61\x73\x2d\x69\x66\x2d\x74\x68\x65\x6e\x00\x17\x0a\x61\x73\x2d\x69\x66\x2d\x65\x6c\x73\x65\x00\x18\x0b\x61\x73\x2d\x62\x72\x2d\x66\x69\x72\x73\x74\x00\x19\x0a\x61\x73\x2d\x62\x72\x2d\x6c\x61\x73\x74\x00\x1a\x10\x61\x73\x2d\x62\x72\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x1b\x0e\x61\x73\x2d\x62\x72\x5f\x69\x66\x2d\x66\x69\x72\x73\x74\x00\x1c\x0c\x61\x73\x2d\x62\x72\x5f\x69\x66\x2d\x6d\x69\x64\x00\x1d\x0d\x61\x73\x2d\x62\x72\x5f\x69\x66\x2d\x6c\x61\x73\x74\x00\x1e\x13\x61\x73\x2d\x62\x72\x5f\x69\x66\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x1f\x11\x61\x73\x2d\x62\x72\x5f\x74\x61\x62\x6c\x65\x2d\x66\x69\x72\x73\x74\x00\x20\x0f\x61\x73\x2d\x62\x72\x5f\x74\x61\x62\x6c\x65\x2d\x6d\x69\x64\x00\x21\x10\x61\x73\x2d\x62\x72\x5f\x74\x61\x62\x6c\x65\x2d\x6c\x61\x73\x74\x00\x22\x16\x61\x73\x2d\x62\x72\x5f\x74\x61\x62\x6c\x65\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x23\x0f\x61\x73\x2d\x72\x65\x74\x75\x72\x6e\x2d\x66\x69\x72\x73\x74\x00\x24\x0e\x61\x73\x2d\x72\x65\x74\x75\x72\x6e\x2d\x6c\x61\x73\x74\x00\x25\x14\x61\x73\x2d\x72\x65\x74\x75\x72\x6e\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x26\x0d\x61\x73\x2d\x63\x61\x6c\x6c\x2d\x66\x69\x72\x73\x74\x00\x27\x0c\x61\x73\x2d\x63\x61\x6c\x6c\x2d\x6d\x69\x64\x31\x00\x28\x0c\x61\x73\x2d\x63\x61\x6c\x6c\x2d\x6d\x69\x64\x32\x00\x29\x0c\x61\x73\x2d\x63\x61\x6c\x6c\x2d\x6c\x61\x73\x74\x00\x2a\x12\x61\x73\x2d\x63\x61\x6c\x6c\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x2b\x0e\x61\x73\x2d\x75\x6e\x61\x72\x79\x2d\x66\x69\x72\x73\x74\x00\x2c\x0d\x61\x73\x2d\x75\x6e\x61\x72\x79\x2d\x6c\x61\x73\x74\x00\x2d\x13\x61\x73\x2d\x75\x6e\x61\x72\x79\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x2e\x0f\x61\x73\x2d\x62\x69\x6e\x61\x72\x79\x2d\x66\x69\x72\x73\x74\x00\x2f\x0d\x61\x73\x2d\x62\x69\x6e\x61\x72\x79\x2d\x6d\x69\x64\x00\x30\x0e\x61\x73\x2d\x62\x69\x6e\x61\x72\x79\x2d\x6c\x61\x73\x74\x00\x31\x14\x61\x73\x2d\x62\x69\x6e\x61\x72\x79\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x32\x0d\x61\x73\x2d\x74\x65\x73\x74\x2d\x66\x69\x72\x73\x74\x00\x33\x0c\x61\x73\x2d\x74\x65\x73\x74\x2d\x6c\x61\x73\x74\x00\x34\x12\x61\x73\x2d\x74\x65\x73\x74\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x35\x10\x61\x73\x2d\x63\x6f\x6d\x70\x61\x72\x65\x2d\x66\x69\x72\x73\x74\x00\x36\x0e\x61\x73\x2d\x63\x6f\x6d\x70\x61\x72\x65\x2d\x6d\x69\x64\x00\x37\x0f\x61\x73\x2d\x63\x6f\x6d\x70\x61\x72\x65\x2d\x6c\x61\x73\x74\x00\x38\x15\x61\x73\x2d\x63\x6f\x6d\x70\x61\x72\x65\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x39\x14\x61\x73\x2d\x6d\x65\x6d\x6f\x72\x79\x2e\x67\x72\x6f\x77\x2d\x66\x69\x72\x73\x74\x00\x3a\x13\x61\x73\x2d\x6d\x65\x6d\x6f\x72\x79\x2e\x67\x72\x6f\x77\x2d\x6c\x61\x73\x74\x00\x3b\x19\x61\x73\x2d\x6d\x65\x6d\x6f\x72\x79\x2e\x67\x72\x6f\x77\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x3c\x16\x61\x73\x2d\x63\x61\x6c\x6c\x5f\x69\x6e\x64\x69\x72\x65\x63\x74\x2d\x66\x69\x72\x73\x74\x00\x3e\x15\x61\x73\x2d\x63\x61\x6c\x6c\x5f\x69\x6e\x64\x69\x72\x65\x63\x74\x2d\x6d\x69\x64\x31\x00\x3f\x15\x61\x73\x2d\x63\x61\x6c\x6c\x5f\x69\x6e\x64\x69\x72\x65\x63\x74\x2d\x6d\x69\x64\x32\x00\x40\x15\x61\x73\x2d\x63\x61\x6c\x6c\x5f\x69\x6e\x64\x69\x72\x65\x63\x74\x2d\x6c\x61\x73\x74\x00\x41\x1b\x61\x73\x2d\x63\x61\x6c\x6c\x5f\x69\x6e\x64\x69\x72\x65\x63\x74\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x42\x12\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x73\x65\x74\x2d\x66\x69\x72\x73\x74\x00\x43\x11\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x73\x65\x74\x2d\x6c\x61\x73\x74\x00\x44\x17\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x73\x65\x74\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x45\x12\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x74\x65\x65\x2d\x66\x69\x72\x73\x74\x00\x46\x11\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x74\x65\x65\x2d\x6c\x61\x73\x74\x00\x47\x17\x61\x73\x2d\x6c\x6f\x63\x61\x6c\x2e\x74\x65\x65\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x48\x13\x61\x73\x2d\x67\x6c\x6f\x62\x61\x6c\x2e\x73\x65\x74\x2d\x66\x69\x72\x73\x74\x00\x49\x12\x61\x73\x2d\x67\x6c\x6f\x62\x61\x6c\x2e\x73\x65\x74\x2d\x6c\x61\x73\x74\x00\x4a\x18\x61\x73\x2d\x67\x6c\x6f\x62\x61\x6c\x2e\x73\x65\x74\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x4b\x0d\x61\x73\x2d\x6c\x6f\x61\x64\x2d\x66\x69\x72\x73\x74\x00\x4c\x0c\x61\x73\x2d\x6c\x6f\x61\x64\x2d\x6c\x61\x73\x74\x00\x4d\x12\x61\x73\x2d\x6c\x6f\x61\x64\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x4e\x0e\x61\x73\x2d\x73\x74\x6f\x72\x65\x2d\x66\x69\x72\x73\x74\x00\x4f\x0c\x61\x73\x2d\x73\x74\x6f\x72\x65\x2d\x6d\x69\x64\x00\x50\x0d\x61\x73\x2d\x73\x74\x6f\x72\x65\x2d\x6c\x61\x73\x74\x00\x51\x13\x61\x73\x2d\x73\x74\x6f\x72\x65\x2d\x65\x76\x65\x72\x79\x77\x68\x65\x72\x65\x00\x52\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x01\x3d\x0a\xee\x89\x80\x80\x00\x53\x82\x80\x80\x80\x00\x00\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\x6b\x6a\x0b\x85\x80\x80\x80\x00\x00\x01\x41\x01\x0b\x87\x80\x80\x80\x00\x00\x10\x00\x01\x41\x02\x0b\x87\x80\x80\x80\x00\x00\x10\x00\x41\x03\x01\x0b\x8b\x80\x80\x80\x00\x00\x01\x01\x10\x00\x01\x41\x04\x01\x01\x0b\x86\x80\x80\x80\x00\x00\x01\x20\x00\x1a\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x01\x1a\x0b\x89\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x1a\x0b\x8a\x80\x80\x80\x00\x00\x01\x20\x00\x20\x00\x20\x00\x1b\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x01\x20\x00\x20\x00\x1b\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x20\x00\x01\x20\x00\x1b\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x20\x00\x20\x00\x01\x1b\x0b\x90\x80\x80\x80\x00\x00\x01\x20\x00\x01\x01\x20\x00\x01\x01\x20\x00\x01\x01\x1b\x0b\x88\x80\x80\x80\x00\x00\x02\x7f\x01\x41\x02\x0b\x0b\x8a\x80\x80\x80\x00\x00\x02\x7f\x10\x00\x01\x41\x02\x0b\x0b\x8b\x80\x80\x80\x00\x00\x02\x7f\x01\x10\x00\x41\x03\x01\x0b\x0b\x8e\x80\x80\x80\x00\x00\x02\x7f\x01\x01\x10\x00\x01\x41\x04\x01\x01\x0b\x0b\x88\x80\x80\x80\x00\x00\x03\x7f\x01\x41\x02\x0b\x0b\x8a\x80\x80\x80\x00\x00\x03\x7f\x10\x00\x01\x41\x02\x0b\x0b\x8a\x80\x80\x80\x00\x00\x03\x7f\x10\x00\x41\x03\x01\x0b\x0b\x8e\x80\x80\x80\x00\x00\x03\x7f\x01\x01\x10\x00\x01\x41\x04\x01\x01\x0b\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x01\x04\x40\x10\x00\x0b\x0b\x8b\x80\x80\x80\x00\x00\x20\x00\x04\x40\x01\x05\x10\x00\x0b\x0b\x8b\x80\x80\x80\x00\x00\x20\x00\x04\x40\x10\x00\x05\x01\x0b\x0b\x8a\x80\x80\x80\x00\x00\x02\x7f\x01\x20\x00\x0c\x00\x0b\x0b\x8a\x80\x80\x80\x00\x00\x02\x7f\x20\x00\x01\x0c\x00\x0b\x0b\x8d\x80\x80\x80\x00\x00\x02\x7f\x01\x01\x20\x00\x01\x01\x0c\x00\x0b\x0b\x8c\x80\x80\x80\x00\x00\x02\x7f\x01\x20\x00\x20\x00\x0d\x00\x0b\x0b\x8c\x80\x80\x80\x00\x00\x02\x7f\x20\x00\x01\x20\x00\x0d\x00\x0b\x0b\x8c\x80\x80\x80\x00\x00\x02\x7f\x20\x00\x20\x00\x01\x0d\x00\x0b\x0b\x91\x80\x80\x80\x00\x00\x02\x7f\x01\x01\x20\x00\x01\x01\x20\x00\x01\x01\x0d\x00\x0b\x0b\x8e\x80\x80\x80\x00\x00\x02\x7f\x01\x20\x00\x20\x00\x0e\x01\x00\x00\x0b\x0b\x8e\x80\x80\x80\x00\x00\x02\x7f\x20\x00\x01\x20\x00\x0e\x01\x00\x00\x0b\x0b\x8e\x80\x80\x80\x00\x00\x02\x7f\x20\x00\x20\x00\x01\x0e\x01\x00\x00\x0b\x0b\x93\x80\x80\x80\x00\x00\x02\x7f\x01\x01\x20\x00\x01\x01\x20\x00\x01\x01\x0e\x01\x00\x00\x0b\x0b\x86\x80\x80\x80\x00\x00\x01\x20\x00\x0f\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x01\x0f\x0b\x89\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x0f\x0b\x8b\x80\x80\x80\x00\x00\x01\x20\x00\x20\x01\x20\x02\x10\x01\x0b\x8b\x80\x80\x80\x00\x00\x20\x00\x01\x20\x01\x20\x02\x10\x01\x0b\x8b\x80\x80\x80\x00\x00\x20\x00\x20\x01\x01\x20\x02\x10\x01\x0b\x8b\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\x01\x10\x01\x0b\x92\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x20\x01\x01\x01\x20\x02\x01\x01\x10\x01\x0b\x86\x80\x80\x80\x00\x00\x01\x20\x00\x68\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x01\x68\x0b\x89\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x68\x0b\x88\x80\x80\x80\x00\x00\x01\x20\x00\x20\x00\x6a\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x01\x20\x00\x6a\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x20\x00\x01\x6a\x0b\x8c\x80\x80\x80\x00\x00\x01\x20\x00\x01\x01\x20\x00\x01\x01\x6a\x0b\x86\x80\x80\x80\x00\x00\x01\x20\x00\x45\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x01\x45\x0b\x89\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x45\x0b\x88\x80\x80\x80\x00\x00\x01\x20\x00\x20\x00\x47\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x01\x20\x00\x47\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x20\x00\x01\x49\x0b\x8c\x80\x80\x80\x00\x00\x01\x20\x00\x01\x01\x20\x00\x01\x01\x4c\x0b\x87\x80\x80\x80\x00\x00\x01\x20\x00\x40\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x01\x40\x00\x0b\x8a\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x40\x00\x0b\x84\x80\x80\x80\x00\x00\x20\x00\x0b\x8f\x80\x80\x80\x00\x00\x02\x7f\x01\x41\x01\x41\x02\x41\x00\x11\x00\x00\x0b\x0b\x8f\x80\x80\x80\x00\x00\x02\x7f\x41\x01\x01\x41\x02\x41\x00\x11\x00\x00\x0b\x0b\x8f\x80\x80\x80\x00\x00\x02\x7f\x41\x01\x41\x02\x01\x41\x00\x11\x00\x00\x0b\x0b\x8f\x80\x80\x80\x00\x00\x02\x7f\x41\x01\x41\x02\x41\x00\x01\x11\x00\x00\x0b\x0b\x96\x80\x80\x80\x00\x00\x02\x7f\x01\x01\x41\x01\x01\x01\x41\x02\x01\x01\x41\x00\x01\x01\x11\x00\x00\x0b\x0b\x89\x80\x80\x80\x00\x00\x01\x41\x02\x21\x00\x20\x00\x0b\x89\x80\x80\x80\x00\x00\x41\x02\x01\x21\x00\x20\x00\x0b\x8c\x80\x80\x80\x00\x00\x01\x01\x41\x02\x01\x01\x21\x00\x20\x00\x0b\x87\x80\x80\x80\x00\x00\x01\x41\x02\x22\x00\x0b\x87\x80\x80\x80\x00\x00\x41\x02\x01\x22\x00\x0b\x8a\x80\x80\x80\x00\x00\x01\x01\x41\x02\x01\x01\x22\x00\x0b\x89\x80\x80\x80\x00\x00\x01\x41\x02\x24\x00\x23\x00\x0b\x89\x80\x80\x80\x00\x00\x41\x02\x01\x24\x00\x23\x00\x0b\x8c\x80\x80\x80\x00\x00\x01\x01\x41\x02\x01\x01\x24\x00\x23\x00\x0b\x88\x80\x80\x80\x00\x00\x01\x20\x00\x28\x02\x00\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x01\x28\x02\x00\x0b\x8b\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x28\x02\x00\x0b\x8a\x80\x80\x80\x00\x00\x01\x20\x00\x20\x01\x36\x02\x00\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x01\x20\x01\x36\x02\x00\x0b\x8a\x80\x80\x80\x00\x00\x20\x00\x20\x01\x01\x36\x02\x00\x0b\x8f\x80\x80\x80\x00\x00\x01\x01\x20\x00\x01\x01\x20\x01\x01\x01\x36\x02\x00\x0b");
 
 
-assert_return(() => call($1, "as-func-first", []), 1);
 
 
-assert_return(() => call($1, "as-func-mid", []), 2);
 
 
-assert_return(() => call($1, "as-func-last", []), 3);
 
 
-assert_return(() => call($1, "as-func-everywhere", []), 4);
 
 
-assert_return(() => call($1, "as-drop-first", [0]));
 
 
-assert_return(() => call($1, "as-drop-last", [0]));
 
 
-assert_return(() => call($1, "as-drop-everywhere", [0]));
 
 
-assert_return(() => call($1, "as-select-first", [3]), 3);
+let $0 = instantiate(`(module
+  ;; Auxiliary definitions
+  (func $$dummy)
+  (func $$3-ary (param i32 i32 i32) (result i32)
+    local.get 0 local.get 1 local.get 2 i32.sub i32.add
+  )
+  (memory 1)
+
+  (func (export "as-func-first") (result i32)
+    (nop) (i32.const 1)
+  )
+  (func (export "as-func-mid") (result i32)
+    (call $$dummy) (nop) (i32.const 2)
+  )
+  (func (export "as-func-last") (result i32)
+    (call $$dummy) (i32.const 3) (nop)
+  )
+  (func (export "as-func-everywhere") (result i32)
+    (nop) (nop) (call $$dummy) (nop) (i32.const 4) (nop) (nop)
+  )
+
+  (func (export "as-drop-first") (param i32)
+    (nop) (local.get 0) (drop)
+  )
+  (func (export "as-drop-last") (param i32)
+    (local.get 0) (nop) (drop)
+  )
+  (func (export "as-drop-everywhere") (param i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (drop)
+  )
+
+  (func (export "as-select-first") (param i32) (result i32)
+    (nop) (local.get 0) (local.get 0) (local.get 0) (select)
+  )
+  (func (export "as-select-mid1") (param i32) (result i32)
+    (local.get 0) (nop) (local.get 0) (local.get 0) (select)
+  )
+  (func (export "as-select-mid2") (param i32) (result i32)
+    (local.get 0) (local.get 0) (nop) (local.get 0) (select)
+  )
+  (func (export "as-select-last") (param i32) (result i32)
+    (local.get 0) (local.get 0) (local.get 0) (nop) (select)
+  )
+  (func (export "as-select-everywhere") (param i32) (result i32)
+    (nop) (local.get 0) (nop) (nop) (local.get 0)
+    (nop) (nop) (local.get 0) (nop) (nop) (select)
+  )
+
+  (func (export "as-block-first") (result i32)
+    (block (result i32) (nop) (i32.const 2))
+  )
+  (func (export "as-block-mid") (result i32)
+    (block (result i32) (call $$dummy) (nop) (i32.const 2))
+  )
+  (func (export "as-block-last") (result i32)
+    (block (result i32) (nop) (call $$dummy) (i32.const 3) (nop))
+  )
+  (func (export "as-block-everywhere") (result i32)
+    (block (result i32)
+      (nop) (nop) (call $$dummy) (nop) (i32.const 4) (nop) (nop)
+    )
+  )
+
+  (func (export "as-loop-first") (result i32)
+    (loop (result i32) (nop) (i32.const 2))
+  )
+  (func (export "as-loop-mid") (result i32)
+    (loop (result i32) (call $$dummy) (nop) (i32.const 2))
+  )
+  (func (export "as-loop-last") (result i32)
+    (loop (result i32) (call $$dummy) (i32.const 3) (nop))
+  )
+  (func (export "as-loop-everywhere") (result i32)
+    (loop (result i32)
+      (nop) (nop) (call $$dummy) (nop) (i32.const 4) (nop) (nop)
+    )
+  )
+
+  (func (export "as-if-condition") (param i32)
+    (local.get 0) (nop) (if (then (call $$dummy)))
+  )
+  (func (export "as-if-then") (param i32)
+    (if (local.get 0) (then (nop)) (else (call $$dummy)))
+  )
+  (func (export "as-if-else") (param i32)
+    (if (local.get 0) (then (call $$dummy)) (else (nop)))
+  )
+
+  (func (export "as-br-first") (param i32) (result i32)
+    (block (result i32) (nop) (local.get 0) (br 0))
+  )
+  (func (export "as-br-last") (param i32) (result i32)
+    (block (result i32) (local.get 0) (nop) (br 0))
+  )
+  (func (export "as-br-everywhere") (param i32) (result i32)
+    (block (result i32) (nop) (nop) (local.get 0) (nop) (nop) (br 0))
+  )
+
+  (func (export "as-br_if-first") (param i32) (result i32)
+    (block (result i32) (nop) (local.get 0) (local.get 0) (br_if 0))
+  )
+  (func (export "as-br_if-mid") (param i32) (result i32)
+    (block (result i32) (local.get 0) (nop) (local.get 0) (br_if 0))
+  )
+  (func (export "as-br_if-last") (param i32) (result i32)
+    (block (result i32) (local.get 0) (local.get 0) (nop) (br_if 0))
+  )
+  (func (export "as-br_if-everywhere") (param i32) (result i32)
+    (block (result i32)
+      (nop) (nop) (local.get 0) (nop) (nop) (local.get 0) (nop) (nop)
+      (br_if 0)
+    )
+  )
+
+  (func (export "as-br_table-first") (param i32) (result i32)
+    (block (result i32) (nop) (local.get 0) (local.get 0) (br_table 0 0))
+  )
+  (func (export "as-br_table-mid") (param i32) (result i32)
+    (block (result i32) (local.get 0) (nop) (local.get 0) (br_table 0 0))
+  )
+  (func (export "as-br_table-last") (param i32) (result i32)
+    (block (result i32) (local.get 0) (local.get 0) (nop) (br_table 0 0))
+  )
+  (func (export "as-br_table-everywhere") (param i32) (result i32)
+    (block (result i32)
+      (nop) (nop) (local.get 0) (nop) (nop) (local.get 0) (nop) (nop)
+      (br_table 0 0)
+    )
+  )
+
+  (func (export "as-return-first") (param i32) (result i32)
+    (nop) (local.get 0) (return)
+  )
+  (func (export "as-return-last") (param i32) (result i32)
+    (local.get 0) (nop) (return)
+  )
+  (func (export "as-return-everywhere") (param i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (return)
+  )
+
+  (func (export "as-call-first") (param i32 i32 i32) (result i32)
+    (nop) (local.get 0) (local.get 1) (local.get 2) (call $$3-ary)
+  )
+  (func (export "as-call-mid1") (param i32 i32 i32) (result i32)
+    (local.get 0) (nop) (local.get 1) (local.get 2) (call $$3-ary)
+  )
+  (func (export "as-call-mid2") (param i32 i32 i32) (result i32)
+    (local.get 0) (local.get 1) (nop) (local.get 2) (call $$3-ary)
+  )
+  (func (export "as-call-last") (param i32 i32 i32) (result i32)
+    (local.get 0) (local.get 1) (local.get 2) (nop) (call $$3-ary)
+  )
+  (func (export "as-call-everywhere") (param i32 i32 i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (local.get 1)
+    (nop) (nop) (local.get 2) (nop) (nop) (call $$3-ary)
+  )
+
+  (func (export "as-unary-first") (param i32) (result i32)
+    (nop) (local.get 0) (i32.ctz)
+  )
+  (func (export "as-unary-last") (param i32) (result i32)
+    (local.get 0) (nop) (i32.ctz)
+  )
+  (func (export "as-unary-everywhere") (param i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (i32.ctz)
+  )
+
+  (func (export "as-binary-first") (param i32) (result i32)
+    (nop) (local.get 0) (local.get 0) (i32.add)
+  )
+  (func (export "as-binary-mid") (param i32) (result i32)
+    (local.get 0) (nop) (local.get 0) (i32.add)
+  )
+  (func (export "as-binary-last") (param i32) (result i32)
+    (local.get 0) (local.get 0) (nop) (i32.add)
+  )
+  (func (export "as-binary-everywhere") (param i32) (result i32)
+    (nop) (local.get 0) (nop) (nop) (local.get 0) (nop) (nop) (i32.add)
+  )
+
+  (func (export "as-test-first") (param i32) (result i32)
+    (nop) (local.get 0) (i32.eqz)
+  )
+  (func (export "as-test-last") (param i32) (result i32)
+    (local.get 0) (nop) (i32.eqz)
+  )
+  (func (export "as-test-everywhere") (param i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) i32.eqz
+  )
+
+  (func (export "as-compare-first") (param i32) (result i32)
+    (nop) (local.get 0) (local.get 0) (i32.ne)
+  )
+  (func (export "as-compare-mid") (param i32) (result i32)
+    (local.get 0) (nop) (local.get 0) (i32.ne)
+  )
+  (func (export "as-compare-last") (param i32) (result i32)
+    (local.get 0) (local.get 0) (nop) (i32.lt_u)
+  )
+  (func (export "as-compare-everywhere") (param i32) (result i32)
+    (nop) (local.get 0) (nop) (nop) (local.get 0) (nop) (nop) (i32.le_s)
+  )
+
+  (func (export "as-memory.grow-first") (param i32) (result i32)
+    (nop) (local.get 0) (memory.grow)
+  )
+  (func (export "as-memory.grow-last") (param i32) (result i32)
+    (local.get 0) (nop) (memory.grow)
+  )
+  (func (export "as-memory.grow-everywhere") (param i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (memory.grow)
+  )
+
+  (func $$func (param i32 i32) (result i32) (local.get 0))
+  (type $$check (func (param i32 i32) (result i32)))
+  (table funcref (elem $$func))
+  (func (export "as-call_indirect-first") (result i32)
+    (block (result i32)
+      (nop) (i32.const 1) (i32.const 2) (i32.const 0)
+      (call_indirect (type $$check))
+    )
+  )
+  (func (export "as-call_indirect-mid1") (result i32)
+    (block (result i32)
+      (i32.const 1) (nop) (i32.const 2) (i32.const 0)
+      (call_indirect (type $$check))
+    )
+  )
+  (func (export "as-call_indirect-mid2") (result i32)
+    (block (result i32)
+      (i32.const 1) (i32.const 2) (nop) (i32.const 0)
+      (call_indirect (type $$check))
+    )
+  )
+  (func (export "as-call_indirect-last") (result i32)
+    (block (result i32)
+      (i32.const 1) (i32.const 2) (i32.const 0) (nop)
+      (call_indirect (type $$check))
+    )
+  )
+  (func (export "as-call_indirect-everywhere") (result i32)
+    (block (result i32)
+      (nop) (nop) (i32.const 1) (nop) (nop) (i32.const 2) (nop) (nop) (i32.const 0) (nop) (nop)
+      (call_indirect (type $$check))
+    )
+  )
+
+  (func (export "as-local.set-first") (param i32) (result i32)
+    (nop) (i32.const 2) (local.set 0) (local.get 0)
+  )
+  (func (export "as-local.set-last") (param i32) (result i32)
+    (i32.const 2) (nop) (local.set 0) (local.get 0)
+  )
+  (func (export "as-local.set-everywhere") (param i32) (result i32)
+    (nop) (nop) (i32.const 2) (nop) (nop) (local.set 0) (local.get 0)
+  )
+
+  (func (export "as-local.tee-first") (param i32) (result i32)
+    (nop) (i32.const 2) (local.tee 0)
+  )
+  (func (export "as-local.tee-last") (param i32) (result i32)
+    (i32.const 2) (nop) (local.tee 0)
+  )
+  (func (export "as-local.tee-everywhere") (param i32) (result i32)
+    (nop) (nop) (i32.const 2) (nop) (nop) (local.tee 0)
+  )
+
+  (global $$a (mut i32) (i32.const 0))
+  (func (export "as-global.set-first") (result i32)
+    (nop) (i32.const 2) (global.set $$a) (global.get $$a)
+  )
+  (func (export "as-global.set-last") (result i32)
+    (i32.const 2) (nop) (global.set $$a) (global.get $$a)
+  )
+  (func (export "as-global.set-everywhere") (result i32)
+    (nop) (nop) (i32.const 2) (nop) (nop) (global.set 0)
+    (global.get $$a)
+  )
+
+  (func (export "as-load-first") (param i32) (result i32)
+    (nop) (local.get 0) (i32.load)
+  )
+  (func (export "as-load-last") (param i32) (result i32)
+    (local.get 0) (nop) (i32.load)
+  )
+  (func (export "as-load-everywhere") (param i32) (result i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (i32.load)
+  )
+
+  (func (export "as-store-first") (param i32 i32)
+    (nop) (local.get 0) (local.get 1) (i32.store)
+  )
+  (func (export "as-store-mid") (param i32 i32)
+    (local.get 0) (nop) (local.get 1) (i32.store)
+  )
+  (func (export "as-store-last") (param i32 i32)
+    (local.get 0) (local.get 1) (nop) (i32.store)
+  )
+  (func (export "as-store-everywhere") (param i32 i32)
+    (nop) (nop) (local.get 0) (nop) (nop) (local.get 1) (nop) (nop) (i32.store)
+  )
+)`);
 
 
-assert_return(() => call($1, "as-select-mid1", [3]), 3);
+assert_return(() => invoke($0, `as-func-first`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-select-mid2", [3]), 3);
+assert_return(() => invoke($0, `as-func-mid`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-select-last", [3]), 3);
+assert_return(() => invoke($0, `as-func-last`, []), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-select-everywhere", [3]), 3);
+assert_return(() => invoke($0, `as-func-everywhere`, []), [value("i32", 4)]);
 
 
-assert_return(() => call($1, "as-block-first", []), 2);
+assert_return(() => invoke($0, `as-drop-first`, [0]), []);
 
 
-assert_return(() => call($1, "as-block-mid", []), 2);
+assert_return(() => invoke($0, `as-drop-last`, [0]), []);
 
 
-assert_return(() => call($1, "as-block-last", []), 3);
+assert_return(() => invoke($0, `as-drop-everywhere`, [0]), []);
 
 
-assert_return(() => call($1, "as-block-everywhere", []), 4);
+assert_return(() => invoke($0, `as-select-first`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-loop-first", []), 2);
+assert_return(() => invoke($0, `as-select-mid1`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-loop-mid", []), 2);
+assert_return(() => invoke($0, `as-select-mid2`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-loop-last", []), 3);
+assert_return(() => invoke($0, `as-select-last`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-loop-everywhere", []), 4);
+assert_return(() => invoke($0, `as-select-everywhere`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-if-condition", [0]));
+assert_return(() => invoke($0, `as-block-first`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-if-condition", [-1]));
+assert_return(() => invoke($0, `as-block-mid`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-if-then", [0]));
+assert_return(() => invoke($0, `as-block-last`, []), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-if-then", [4]));
+assert_return(() => invoke($0, `as-block-everywhere`, []), [value("i32", 4)]);
 
 
-assert_return(() => call($1, "as-if-else", [0]));
+assert_return(() => invoke($0, `as-loop-first`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-if-else", [3]));
+assert_return(() => invoke($0, `as-loop-mid`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-br-first", [5]), 5);
+assert_return(() => invoke($0, `as-loop-last`, []), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "as-br-last", [6]), 6);
+assert_return(() => invoke($0, `as-loop-everywhere`, []), [value("i32", 4)]);
 
 
-assert_return(() => call($1, "as-br-everywhere", [7]), 7);
+assert_return(() => invoke($0, `as-if-condition`, [0]), []);
 
 
-assert_return(() => call($1, "as-br_if-first", [4]), 4);
+assert_return(() => invoke($0, `as-if-condition`, [-1]), []);
 
 
-assert_return(() => call($1, "as-br_if-mid", [5]), 5);
+assert_return(() => invoke($0, `as-if-then`, [0]), []);
 
 
-assert_return(() => call($1, "as-br_if-last", [6]), 6);
+assert_return(() => invoke($0, `as-if-then`, [4]), []);
 
 
-assert_return(() => call($1, "as-br_if-everywhere", [7]), 7);
+assert_return(() => invoke($0, `as-if-else`, [0]), []);
 
 
-assert_return(() => call($1, "as-br_table-first", [4]), 4);
+assert_return(() => invoke($0, `as-if-else`, [3]), []);
 
 
-assert_return(() => call($1, "as-br_table-mid", [5]), 5);
+assert_return(() => invoke($0, `as-br-first`, [5]), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "as-br_table-last", [6]), 6);
+assert_return(() => invoke($0, `as-br-last`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-br_table-everywhere", [7]), 7);
+assert_return(() => invoke($0, `as-br-everywhere`, [7]), [value("i32", 7)]);
 
 
-assert_return(() => call($1, "as-return-first", [5]), 5);
+assert_return(() => invoke($0, `as-br_if-first`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($1, "as-return-last", [6]), 6);
+assert_return(() => invoke($0, `as-br_if-mid`, [5]), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "as-return-everywhere", [7]), 7);
+assert_return(() => invoke($0, `as-br_if-last`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-call-first", [3, 1, 2]), 2);
+assert_return(() => invoke($0, `as-br_if-everywhere`, [7]), [value("i32", 7)]);
 
 
-assert_return(() => call($1, "as-call-mid1", [3, 1, 2]), 2);
+assert_return(() => invoke($0, `as-br_table-first`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($1, "as-call-mid2", [0, 3, 1]), 2);
+assert_return(() => invoke($0, `as-br_table-mid`, [5]), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "as-call-last", [10, 9, -1]), 20);
+assert_return(() => invoke($0, `as-br_table-last`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-call-everywhere", [2, 1, 5]), -2);
+assert_return(() => invoke($0, `as-br_table-everywhere`, [7]), [
+  value("i32", 7),
+]);
 
 
-assert_return(() => call($1, "as-unary-first", [30]), 1);
+assert_return(() => invoke($0, `as-return-first`, [5]), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "as-unary-last", [30]), 1);
+assert_return(() => invoke($0, `as-return-last`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-unary-everywhere", [12]), 2);
+assert_return(() => invoke($0, `as-return-everywhere`, [7]), [value("i32", 7)]);
 
 
-assert_return(() => call($1, "as-binary-first", [3]), 6);
+assert_return(() => invoke($0, `as-call-first`, [3, 1, 2]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-binary-mid", [3]), 6);
+assert_return(() => invoke($0, `as-call-mid1`, [3, 1, 2]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-binary-last", [3]), 6);
+assert_return(() => invoke($0, `as-call-mid2`, [0, 3, 1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-binary-everywhere", [3]), 6);
+assert_return(() => invoke($0, `as-call-last`, [10, 9, -1]), [
+  value("i32", 20),
+]);
 
 
-assert_return(() => call($1, "as-test-first", [0]), 1);
+assert_return(() => invoke($0, `as-call-everywhere`, [2, 1, 5]), [
+  value("i32", -2),
+]);
 
 
-assert_return(() => call($1, "as-test-last", [0]), 1);
+assert_return(() => invoke($0, `as-unary-first`, [30]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-test-everywhere", [0]), 1);
+assert_return(() => invoke($0, `as-unary-last`, [30]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-compare-first", [3]), 0);
+assert_return(() => invoke($0, `as-unary-everywhere`, [12]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-compare-mid", [3]), 0);
+assert_return(() => invoke($0, `as-binary-first`, [3]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-compare-last", [3]), 0);
+assert_return(() => invoke($0, `as-binary-mid`, [3]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-compare-everywhere", [3]), 1);
+assert_return(() => invoke($0, `as-binary-last`, [3]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-memory.grow-first", [0]), 1);
+assert_return(() => invoke($0, `as-binary-everywhere`, [3]), [value("i32", 6)]);
 
 
-assert_return(() => call($1, "as-memory.grow-last", [2]), 1);
+assert_return(() => invoke($0, `as-test-first`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-memory.grow-everywhere", [12]), 3);
+assert_return(() => invoke($0, `as-test-last`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-call_indirect-first", []), 1);
+assert_return(() => invoke($0, `as-test-everywhere`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-call_indirect-mid1", []), 1);
+assert_return(() => invoke($0, `as-compare-first`, [3]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "as-call_indirect-mid2", []), 1);
+assert_return(() => invoke($0, `as-compare-mid`, [3]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "as-call_indirect-last", []), 1);
+assert_return(() => invoke($0, `as-compare-last`, [3]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "as-call_indirect-everywhere", []), 1);
+assert_return(() => invoke($0, `as-compare-everywhere`, [3]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "as-local.set-first", [1]), 2);
+assert_return(() => invoke($0, `as-memory.grow-first`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-local.set-last", [1]), 2);
+assert_return(() => invoke($0, `as-memory.grow-last`, [2]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-local.set-everywhere", [1]), 2);
+assert_return(() => invoke($0, `as-memory.grow-everywhere`, [12]), [
+  value("i32", 3),
+]);
 
 
-assert_return(() => call($1, "as-local.tee-first", [1]), 2);
+assert_return(() => invoke($0, `as-call_indirect-first`, []), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "as-local.tee-last", [1]), 2);
+assert_return(() => invoke($0, `as-call_indirect-mid1`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-local.tee-everywhere", [1]), 2);
+assert_return(() => invoke($0, `as-call_indirect-mid2`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-global.set-first", []), 2);
+assert_return(() => invoke($0, `as-call_indirect-last`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "as-global.set-last", []), 2);
+assert_return(() => invoke($0, `as-call_indirect-everywhere`, []), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "as-global.set-everywhere", []), 2);
+assert_return(() => invoke($0, `as-local.set-first`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-load-first", [100]), 0);
+assert_return(() => invoke($0, `as-local.set-last`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-load-last", [100]), 0);
+assert_return(() => invoke($0, `as-local.set-everywhere`, [1]), [
+  value("i32", 2),
+]);
 
 
-assert_return(() => call($1, "as-load-everywhere", [100]), 0);
+assert_return(() => invoke($0, `as-local.tee-first`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-store-first", [0, 1]));
+assert_return(() => invoke($0, `as-local.tee-last`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-store-mid", [0, 2]));
+assert_return(() => invoke($0, `as-local.tee-everywhere`, [1]), [
+  value("i32", 2),
+]);
 
 
-assert_return(() => call($1, "as-store-last", [0, 3]));
+assert_return(() => invoke($0, `as-global.set-first`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "as-store-everywhere", [0, 4]));
+assert_return(() => invoke($0, `as-global.set-last`, []), [value("i32", 2)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x89\x80\x80\x80\x00\x01\x83\x80\x80\x80\x00\x00\x01\x0b");
+assert_return(() => invoke($0, `as-global.set-everywhere`, []), [
+  value("i32", 2),
+]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7e\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x89\x80\x80\x80\x00\x01\x83\x80\x80\x80\x00\x00\x01\x0b");
+assert_return(() => invoke($0, `as-load-first`, [100]), [value("i32", 0)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7d\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x89\x80\x80\x80\x00\x01\x83\x80\x80\x80\x00\x00\x01\x0b");
+assert_return(() => invoke($0, `as-load-last`, [100]), [value("i32", 0)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7c\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x89\x80\x80\x80\x00\x01\x83\x80\x80\x80\x00\x00\x01\x0b");
+assert_return(() => invoke($0, `as-load-everywhere`, [100]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($0, `as-store-first`, [0, 1]), []);
+
+
+assert_return(() => invoke($0, `as-store-mid`, [0, 2]), []);
+
+
+assert_return(() => invoke($0, `as-store-last`, [0, 3]), []);
+
+
+assert_return(() => invoke($0, `as-store-everywhere`, [0, 4]), []);
+
+
+assert_invalid(
+  () => instantiate(`(module (func $$type-i32 (result i32) (nop)))`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (func $$type-i64 (result i64) (nop)))`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (func $$type-f32 (result f32) (nop)))`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (func $$type-f64 (result f64) (nop)))`),
+  `type mismatch`,
+);

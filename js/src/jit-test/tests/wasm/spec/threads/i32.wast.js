@@ -1,1332 +1,2061 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x02\x7f\x7f\x01\x7f\x60\x01\x7f\x01\x7f\x03\x9e\x80\x80\x80\x00\x1d\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\xc5\x81\x80\x80\x00\x1d\x03\x61\x64\x64\x00\x00\x03\x73\x75\x62\x00\x01\x03\x6d\x75\x6c\x00\x02\x05\x64\x69\x76\x5f\x73\x00\x03\x05\x64\x69\x76\x5f\x75\x00\x04\x05\x72\x65\x6d\x5f\x73\x00\x05\x05\x72\x65\x6d\x5f\x75\x00\x06\x03\x61\x6e\x64\x00\x07\x02\x6f\x72\x00\x08\x03\x78\x6f\x72\x00\x09\x03\x73\x68\x6c\x00\x0a\x05\x73\x68\x72\x5f\x73\x00\x0b\x05\x73\x68\x72\x5f\x75\x00\x0c\x04\x72\x6f\x74\x6c\x00\x0d\x04\x72\x6f\x74\x72\x00\x0e\x03\x63\x6c\x7a\x00\x0f\x03\x63\x74\x7a\x00\x10\x06\x70\x6f\x70\x63\x6e\x74\x00\x11\x03\x65\x71\x7a\x00\x12\x02\x65\x71\x00\x13\x02\x6e\x65\x00\x14\x04\x6c\x74\x5f\x73\x00\x15\x04\x6c\x74\x5f\x75\x00\x16\x04\x6c\x65\x5f\x73\x00\x17\x04\x6c\x65\x5f\x75\x00\x18\x04\x67\x74\x5f\x73\x00\x19\x04\x67\x74\x5f\x75\x00\x1a\x04\x67\x65\x5f\x73\x00\x1b\x04\x67\x65\x5f\x75\x00\x1c\x0a\xd5\x82\x80\x80\x00\x1d\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6a\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6b\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6c\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6d\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6e\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x6f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x70\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x71\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x72\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x73\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x74\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x75\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x76\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x77\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x78\x0b\x85\x80\x80\x80\x00\x00\x20\x00\x67\x0b\x85\x80\x80\x80\x00\x00\x20\x00\x68\x0b\x85\x80\x80\x80\x00\x00\x20\x00\x69\x0b\x85\x80\x80\x80\x00\x00\x20\x00\x45\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x46\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x47\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x48\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x49\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4c\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4d\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4a\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4b\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4e\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x20\x01\x4f\x0b");
 
 
-assert_return(() => call($1, "add", [1, 1]), 2);
 
 
-assert_return(() => call($1, "add", [1, 0]), 1);
 
 
-assert_return(() => call($1, "add", [-1, -1]), -2);
 
 
-assert_return(() => call($1, "add", [-1, 1]), 0);
 
 
-assert_return(() => call($1, "add", [2_147_483_647, 1]), -2_147_483_648);
 
 
-assert_return(() => call($1, "add", [-2_147_483_648, -1]), 2_147_483_647);
 
 
-assert_return(() => call($1, "add", [-2_147_483_648, -2_147_483_648]), 0);
 
 
-assert_return(() => call($1, "add", [1_073_741_823, 1]), 1_073_741_824);
+let $0 = instantiate(`(module
+  (func (export "add") (param $$x i32) (param $$y i32) (result i32) (i32.add (local.get $$x) (local.get $$y)))
+  (func (export "sub") (param $$x i32) (param $$y i32) (result i32) (i32.sub (local.get $$x) (local.get $$y)))
+  (func (export "mul") (param $$x i32) (param $$y i32) (result i32) (i32.mul (local.get $$x) (local.get $$y)))
+  (func (export "div_s") (param $$x i32) (param $$y i32) (result i32) (i32.div_s (local.get $$x) (local.get $$y)))
+  (func (export "div_u") (param $$x i32) (param $$y i32) (result i32) (i32.div_u (local.get $$x) (local.get $$y)))
+  (func (export "rem_s") (param $$x i32) (param $$y i32) (result i32) (i32.rem_s (local.get $$x) (local.get $$y)))
+  (func (export "rem_u") (param $$x i32) (param $$y i32) (result i32) (i32.rem_u (local.get $$x) (local.get $$y)))
+  (func (export "and") (param $$x i32) (param $$y i32) (result i32) (i32.and (local.get $$x) (local.get $$y)))
+  (func (export "or") (param $$x i32) (param $$y i32) (result i32) (i32.or (local.get $$x) (local.get $$y)))
+  (func (export "xor") (param $$x i32) (param $$y i32) (result i32) (i32.xor (local.get $$x) (local.get $$y)))
+  (func (export "shl") (param $$x i32) (param $$y i32) (result i32) (i32.shl (local.get $$x) (local.get $$y)))
+  (func (export "shr_s") (param $$x i32) (param $$y i32) (result i32) (i32.shr_s (local.get $$x) (local.get $$y)))
+  (func (export "shr_u") (param $$x i32) (param $$y i32) (result i32) (i32.shr_u (local.get $$x) (local.get $$y)))
+  (func (export "rotl") (param $$x i32) (param $$y i32) (result i32) (i32.rotl (local.get $$x) (local.get $$y)))
+  (func (export "rotr") (param $$x i32) (param $$y i32) (result i32) (i32.rotr (local.get $$x) (local.get $$y)))
+  (func (export "clz") (param $$x i32) (result i32) (i32.clz (local.get $$x)))
+  (func (export "ctz") (param $$x i32) (result i32) (i32.ctz (local.get $$x)))
+  (func (export "popcnt") (param $$x i32) (result i32) (i32.popcnt (local.get $$x)))
+  (func (export "eqz") (param $$x i32) (result i32) (i32.eqz (local.get $$x)))
+  (func (export "eq") (param $$x i32) (param $$y i32) (result i32) (i32.eq (local.get $$x) (local.get $$y)))
+  (func (export "ne") (param $$x i32) (param $$y i32) (result i32) (i32.ne (local.get $$x) (local.get $$y)))
+  (func (export "lt_s") (param $$x i32) (param $$y i32) (result i32) (i32.lt_s (local.get $$x) (local.get $$y)))
+  (func (export "lt_u") (param $$x i32) (param $$y i32) (result i32) (i32.lt_u (local.get $$x) (local.get $$y)))
+  (func (export "le_s") (param $$x i32) (param $$y i32) (result i32) (i32.le_s (local.get $$x) (local.get $$y)))
+  (func (export "le_u") (param $$x i32) (param $$y i32) (result i32) (i32.le_u (local.get $$x) (local.get $$y)))
+  (func (export "gt_s") (param $$x i32) (param $$y i32) (result i32) (i32.gt_s (local.get $$x) (local.get $$y)))
+  (func (export "gt_u") (param $$x i32) (param $$y i32) (result i32) (i32.gt_u (local.get $$x) (local.get $$y)))
+  (func (export "ge_s") (param $$x i32) (param $$y i32) (result i32) (i32.ge_s (local.get $$x) (local.get $$y)))
+  (func (export "ge_u") (param $$x i32) (param $$y i32) (result i32) (i32.ge_u (local.get $$x) (local.get $$y)))
+)`);
 
 
-assert_return(() => call($1, "sub", [1, 1]), 0);
+assert_return(() => invoke($0, `add`, [1, 1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "sub", [1, 0]), 1);
+assert_return(() => invoke($0, `add`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "sub", [-1, -1]), 0);
+assert_return(() => invoke($0, `add`, [-1, -1]), [value("i32", -2)]);
 
 
-assert_return(() => call($1, "sub", [2_147_483_647, -1]), -2_147_483_648);
+assert_return(() => invoke($0, `add`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "sub", [-2_147_483_648, 1]), 2_147_483_647);
+assert_return(() => invoke($0, `add`, [2147483647, 1]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "sub", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `add`, [-2147483648, -1]), [
+  value("i32", 2147483647),
+]);
 
 
-assert_return(() => call($1, "sub", [1_073_741_823, -1]), 1_073_741_824);
+assert_return(() => invoke($0, `add`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "mul", [1, 1]), 1);
+assert_return(() => invoke($0, `add`, [1073741823, 1]), [
+  value("i32", 1073741824),
+]);
 
 
-assert_return(() => call($1, "mul", [1, 0]), 0);
+assert_return(() => invoke($0, `sub`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "mul", [-1, -1]), 1);
+assert_return(() => invoke($0, `sub`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "mul", [268_435_456, 4_096]), 0);
+assert_return(() => invoke($0, `sub`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "mul", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `sub`, [2147483647, -1]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "mul", [-2_147_483_648, -1]), -2_147_483_648);
+assert_return(() => invoke($0, `sub`, [-2147483648, 1]), [
+  value("i32", 2147483647),
+]);
 
 
-assert_return(() => call($1, "mul", [2_147_483_647, -1]), -2_147_483_647);
+assert_return(() => invoke($0, `sub`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "mul", [19_088_743, 1_985_229_328]), 898_528_368);
+assert_return(() => invoke($0, `sub`, [1073741823, -1]), [
+  value("i32", 1073741824),
+]);
 
 
-assert_return(() => call($1, "mul", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `mul`, [1, 1]), [value("i32", 1)]);
 
 
-assert_trap(() => call($1, "div_s", [1, 0]));
+assert_return(() => invoke($0, `mul`, [1, 0]), [value("i32", 0)]);
 
 
-assert_trap(() => call($1, "div_s", [0, 0]));
+assert_return(() => invoke($0, `mul`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_trap(() => call($1, "div_s", [-2_147_483_648, -1]));
+assert_return(() => invoke($0, `mul`, [268435456, 4096]), [value("i32", 0)]);
 
 
-assert_trap(() => call($1, "div_s", [-2_147_483_648, 0]));
+assert_return(() => invoke($0, `mul`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "div_s", [1, 1]), 1);
+assert_return(() => invoke($0, `mul`, [-2147483648, -1]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "div_s", [0, 1]), 0);
+assert_return(() => invoke($0, `mul`, [2147483647, -1]), [
+  value("i32", -2147483647),
+]);
 
 
-assert_return(() => call($1, "div_s", [0, -1]), 0);
+assert_return(() => invoke($0, `mul`, [19088743, 1985229328]), [
+  value("i32", 898528368),
+]);
 
 
-assert_return(() => call($1, "div_s", [-1, -1]), 1);
+assert_return(() => invoke($0, `mul`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "div_s", [-2_147_483_648, 2]), -1_073_741_824);
+assert_trap(() => invoke($0, `div_s`, [1, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "div_s", [-2_147_483_647, 1_000]), -2_147_483);
+assert_trap(() => invoke($0, `div_s`, [0, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "div_s", [5, 2]), 2);
+assert_trap(() => invoke($0, `div_s`, [-2147483648, -1]), `integer overflow`);
 
 
-assert_return(() => call($1, "div_s", [-5, 2]), -2);
+assert_trap(
+  () => invoke($0, `div_s`, [-2147483648, 0]),
+  `integer divide by zero`,
+);
 
 
-assert_return(() => call($1, "div_s", [5, -2]), -2);
+assert_return(() => invoke($0, `div_s`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "div_s", [-5, -2]), 2);
+assert_return(() => invoke($0, `div_s`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "div_s", [7, 3]), 2);
+assert_return(() => invoke($0, `div_s`, [0, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "div_s", [-7, 3]), -2);
+assert_return(() => invoke($0, `div_s`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "div_s", [7, -3]), -2);
+assert_return(() => invoke($0, `div_s`, [-2147483648, 2]), [
+  value("i32", -1073741824),
+]);
 
 
-assert_return(() => call($1, "div_s", [-7, -3]), 2);
+assert_return(() => invoke($0, `div_s`, [-2147483647, 1000]), [
+  value("i32", -2147483),
+]);
 
 
-assert_return(() => call($1, "div_s", [11, 5]), 2);
+assert_return(() => invoke($0, `div_s`, [5, 2]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_s", [17, 7]), 2);
+assert_return(() => invoke($0, `div_s`, [-5, 2]), [value("i32", -2)]);
 
 
-assert_trap(() => call($1, "div_u", [1, 0]));
+assert_return(() => invoke($0, `div_s`, [5, -2]), [value("i32", -2)]);
 
 
-assert_trap(() => call($1, "div_u", [0, 0]));
+assert_return(() => invoke($0, `div_s`, [-5, -2]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_u", [1, 1]), 1);
+assert_return(() => invoke($0, `div_s`, [7, 3]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_u", [0, 1]), 0);
+assert_return(() => invoke($0, `div_s`, [-7, 3]), [value("i32", -2)]);
 
 
-assert_return(() => call($1, "div_u", [-1, -1]), 1);
+assert_return(() => invoke($0, `div_s`, [7, -3]), [value("i32", -2)]);
 
 
-assert_return(() => call($1, "div_u", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `div_s`, [-7, -3]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_u", [-2_147_483_648, 2]), 1_073_741_824);
+assert_return(() => invoke($0, `div_s`, [11, 5]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_u", [-1_880_092_688, 65_537]), 36_847);
+assert_return(() => invoke($0, `div_s`, [17, 7]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "div_u", [-2_147_483_647, 1_000]), 2_147_483);
+assert_trap(() => invoke($0, `div_u`, [1, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "div_u", [5, 2]), 2);
+assert_trap(() => invoke($0, `div_u`, [0, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "div_u", [-5, 2]), 2_147_483_645);
+assert_return(() => invoke($0, `div_u`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "div_u", [5, -2]), 0);
+assert_return(() => invoke($0, `div_u`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "div_u", [-5, -2]), 0);
+assert_return(() => invoke($0, `div_u`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "div_u", [7, 3]), 2);
+assert_return(() => invoke($0, `div_u`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "div_u", [11, 5]), 2);
+assert_return(() => invoke($0, `div_u`, [-2147483648, 2]), [
+  value("i32", 1073741824),
+]);
 
 
-assert_return(() => call($1, "div_u", [17, 7]), 2);
+assert_return(() => invoke($0, `div_u`, [-1880092688, 65537]), [
+  value("i32", 36847),
+]);
 
 
-assert_trap(() => call($1, "rem_s", [1, 0]));
+assert_return(() => invoke($0, `div_u`, [-2147483647, 1000]), [
+  value("i32", 2147483),
+]);
 
 
-assert_trap(() => call($1, "rem_s", [0, 0]));
+assert_return(() => invoke($0, `div_u`, [5, 2]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "rem_s", [2_147_483_647, -1]), 0);
+assert_return(() => invoke($0, `div_u`, [-5, 2]), [value("i32", 2147483645)]);
 
 
-assert_return(() => call($1, "rem_s", [1, 1]), 0);
+assert_return(() => invoke($0, `div_u`, [5, -2]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [0, 1]), 0);
+assert_return(() => invoke($0, `div_u`, [-5, -2]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [0, -1]), 0);
+assert_return(() => invoke($0, `div_u`, [7, 3]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "rem_s", [-1, -1]), 0);
+assert_return(() => invoke($0, `div_u`, [11, 5]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "rem_s", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `div_u`, [17, 7]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "rem_s", [-2_147_483_648, 2]), 0);
+assert_trap(() => invoke($0, `rem_s`, [1, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "rem_s", [-2_147_483_647, 1_000]), -647);
+assert_trap(() => invoke($0, `rem_s`, [0, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "rem_s", [5, 2]), 1);
+assert_return(() => invoke($0, `rem_s`, [2147483647, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [-5, 2]), -1);
+assert_return(() => invoke($0, `rem_s`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [5, -2]), 1);
+assert_return(() => invoke($0, `rem_s`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [-5, -2]), -1);
+assert_return(() => invoke($0, `rem_s`, [0, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [7, 3]), 1);
+assert_return(() => invoke($0, `rem_s`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [-7, 3]), -1);
+assert_return(() => invoke($0, `rem_s`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [7, -3]), 1);
+assert_return(() => invoke($0, `rem_s`, [-2147483648, 2]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_s", [-7, -3]), -1);
+assert_return(() => invoke($0, `rem_s`, [-2147483647, 1000]), [
+  value("i32", -647),
+]);
 
 
-assert_return(() => call($1, "rem_s", [11, 5]), 1);
+assert_return(() => invoke($0, `rem_s`, [5, 2]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rem_s", [17, 7]), 3);
+assert_return(() => invoke($0, `rem_s`, [-5, 2]), [value("i32", -1)]);
 
 
-assert_trap(() => call($1, "rem_u", [1, 0]));
+assert_return(() => invoke($0, `rem_s`, [5, -2]), [value("i32", 1)]);
 
 
-assert_trap(() => call($1, "rem_u", [0, 0]));
+assert_return(() => invoke($0, `rem_s`, [-5, -2]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rem_u", [1, 1]), 0);
+assert_return(() => invoke($0, `rem_s`, [7, 3]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rem_u", [0, 1]), 0);
+assert_return(() => invoke($0, `rem_s`, [-7, 3]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rem_u", [-1, -1]), 0);
+assert_return(() => invoke($0, `rem_s`, [7, -3]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rem_u", [-2_147_483_648, -1]), -2_147_483_648);
+assert_return(() => invoke($0, `rem_s`, [-7, -3]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rem_u", [-2_147_483_648, 2]), 0);
+assert_return(() => invoke($0, `rem_s`, [11, 5]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rem_u", [-1_880_092_688, 65_537]), 32_769);
+assert_return(() => invoke($0, `rem_s`, [17, 7]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "rem_u", [-2_147_483_647, 1_000]), 649);
+assert_trap(() => invoke($0, `rem_u`, [1, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "rem_u", [5, 2]), 1);
+assert_trap(() => invoke($0, `rem_u`, [0, 0]), `integer divide by zero`);
 
 
-assert_return(() => call($1, "rem_u", [-5, 2]), 1);
+assert_return(() => invoke($0, `rem_u`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_u", [5, -2]), 5);
+assert_return(() => invoke($0, `rem_u`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_u", [-5, -2]), -5);
+assert_return(() => invoke($0, `rem_u`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_u", [7, 3]), 1);
+assert_return(() => invoke($0, `rem_u`, [-2147483648, -1]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "rem_u", [11, 5]), 1);
+assert_return(() => invoke($0, `rem_u`, [-2147483648, 2]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rem_u", [17, 7]), 3);
+assert_return(() => invoke($0, `rem_u`, [-1880092688, 65537]), [
+  value("i32", 32769),
+]);
 
 
-assert_return(() => call($1, "and", [1, 0]), 0);
+assert_return(() => invoke($0, `rem_u`, [-2147483647, 1000]), [
+  value("i32", 649),
+]);
 
 
-assert_return(() => call($1, "and", [0, 1]), 0);
+assert_return(() => invoke($0, `rem_u`, [5, 2]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "and", [1, 1]), 1);
+assert_return(() => invoke($0, `rem_u`, [-5, 2]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "and", [0, 0]), 0);
+assert_return(() => invoke($0, `rem_u`, [5, -2]), [value("i32", 5)]);
 
 
-assert_return(() => call($1, "and", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `rem_u`, [-5, -2]), [value("i32", -5)]);
 
 
-assert_return(() => call($1, "and", [2_147_483_647, -1]), 2_147_483_647);
+assert_return(() => invoke($0, `rem_u`, [7, 3]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "and", [-252_641_281, -3_856]), -252_645_136);
+assert_return(() => invoke($0, `rem_u`, [11, 5]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "and", [-1, -1]), -1);
+assert_return(() => invoke($0, `rem_u`, [17, 7]), [value("i32", 3)]);
 
 
-assert_return(() => call($1, "or", [1, 0]), 1);
+assert_return(() => invoke($0, `and`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "or", [0, 1]), 1);
+assert_return(() => invoke($0, `and`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "or", [1, 1]), 1);
+assert_return(() => invoke($0, `and`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "or", [0, 0]), 0);
+assert_return(() => invoke($0, `and`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "or", [2_147_483_647, -2_147_483_648]), -1);
+assert_return(() => invoke($0, `and`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "or", [-2_147_483_648, 0]), -2_147_483_648);
+assert_return(() => invoke($0, `and`, [2147483647, -1]), [
+  value("i32", 2147483647),
+]);
 
 
-assert_return(() => call($1, "or", [-252_641_281, -3_856]), -1);
+assert_return(() => invoke($0, `and`, [-252641281, -3856]), [
+  value("i32", -252645136),
+]);
 
 
-assert_return(() => call($1, "or", [-1, -1]), -1);
+assert_return(() => invoke($0, `and`, [-1, -1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "xor", [1, 0]), 1);
+assert_return(() => invoke($0, `or`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "xor", [0, 1]), 1);
+assert_return(() => invoke($0, `or`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "xor", [1, 1]), 0);
+assert_return(() => invoke($0, `or`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "xor", [0, 0]), 0);
+assert_return(() => invoke($0, `or`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "xor", [2_147_483_647, -2_147_483_648]), -1);
+assert_return(() => invoke($0, `or`, [2147483647, -2147483648]), [
+  value("i32", -1),
+]);
 
 
-assert_return(() => call($1, "xor", [-2_147_483_648, 0]), -2_147_483_648);
+assert_return(() => invoke($0, `or`, [-2147483648, 0]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "xor", [-1, -2_147_483_648]), 2_147_483_647);
+assert_return(() => invoke($0, `or`, [-252641281, -3856]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "xor", [-1, 2_147_483_647]), -2_147_483_648);
+assert_return(() => invoke($0, `or`, [-1, -1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "xor", [-252_641_281, -3_856]), 252_645_135);
+assert_return(() => invoke($0, `xor`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "xor", [-1, -1]), 0);
+assert_return(() => invoke($0, `xor`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shl", [1, 1]), 2);
+assert_return(() => invoke($0, `xor`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shl", [1, 0]), 1);
+assert_return(() => invoke($0, `xor`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shl", [2_147_483_647, 1]), -2);
+assert_return(() => invoke($0, `xor`, [2147483647, -2147483648]), [
+  value("i32", -1),
+]);
 
 
-assert_return(() => call($1, "shl", [-1, 1]), -2);
+assert_return(() => invoke($0, `xor`, [-2147483648, 0]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "shl", [-2_147_483_648, 1]), 0);
+assert_return(() => invoke($0, `xor`, [-1, -2147483648]), [
+  value("i32", 2147483647),
+]);
 
 
-assert_return(() => call($1, "shl", [1_073_741_824, 1]), -2_147_483_648);
+assert_return(() => invoke($0, `xor`, [-1, 2147483647]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "shl", [1, 31]), -2_147_483_648);
+assert_return(() => invoke($0, `xor`, [-252641281, -3856]), [
+  value("i32", 252645135),
+]);
 
 
-assert_return(() => call($1, "shl", [1, 32]), 1);
+assert_return(() => invoke($0, `xor`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shl", [1, 33]), 2);
+assert_return(() => invoke($0, `shl`, [1, 1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "shl", [1, -1]), -2_147_483_648);
+assert_return(() => invoke($0, `shl`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shl", [1, 2_147_483_647]), -2_147_483_648);
+assert_return(() => invoke($0, `shl`, [2147483647, 1]), [value("i32", -2)]);
 
 
-assert_return(() => call($1, "shr_s", [1, 1]), 0);
+assert_return(() => invoke($0, `shl`, [-1, 1]), [value("i32", -2)]);
 
 
-assert_return(() => call($1, "shr_s", [1, 0]), 1);
+assert_return(() => invoke($0, `shl`, [-2147483648, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_s", [-1, 1]), -1);
+assert_return(() => invoke($0, `shl`, [1073741824, 1]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "shr_s", [2_147_483_647, 1]), 1_073_741_823);
+assert_return(() => invoke($0, `shl`, [1, 31]), [value("i32", -2147483648)]);
 
 
-assert_return(() => call($1, "shr_s", [-2_147_483_648, 1]), -1_073_741_824);
+assert_return(() => invoke($0, `shl`, [1, 32]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_s", [1_073_741_824, 1]), 536_870_912);
+assert_return(() => invoke($0, `shl`, [1, 33]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "shr_s", [1, 32]), 1);
+assert_return(() => invoke($0, `shl`, [1, -1]), [value("i32", -2147483648)]);
 
 
-assert_return(() => call($1, "shr_s", [1, 33]), 0);
+assert_return(() => invoke($0, `shl`, [1, 2147483647]), [
+  value("i32", -2147483648),
+]);
 
 
-assert_return(() => call($1, "shr_s", [1, -1]), 0);
+assert_return(() => invoke($0, `shr_s`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_s", [1, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `shr_s`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_s", [1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `shr_s`, [-1, 1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_s", [-2_147_483_648, 31]), -1);
+assert_return(() => invoke($0, `shr_s`, [2147483647, 1]), [
+  value("i32", 1073741823),
+]);
 
 
-assert_return(() => call($1, "shr_s", [-1, 32]), -1);
+assert_return(() => invoke($0, `shr_s`, [-2147483648, 1]), [
+  value("i32", -1073741824),
+]);
 
 
-assert_return(() => call($1, "shr_s", [-1, 33]), -1);
+assert_return(() => invoke($0, `shr_s`, [1073741824, 1]), [
+  value("i32", 536870912),
+]);
 
 
-assert_return(() => call($1, "shr_s", [-1, -1]), -1);
+assert_return(() => invoke($0, `shr_s`, [1, 32]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_s", [-1, 2_147_483_647]), -1);
+assert_return(() => invoke($0, `shr_s`, [1, 33]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_s", [-1, -2_147_483_648]), -1);
+assert_return(() => invoke($0, `shr_s`, [1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_u", [1, 1]), 0);
+assert_return(() => invoke($0, `shr_s`, [1, 2147483647]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_u", [1, 0]), 1);
+assert_return(() => invoke($0, `shr_s`, [1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_u", [-1, 1]), 2_147_483_647);
+assert_return(() => invoke($0, `shr_s`, [-2147483648, 31]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [2_147_483_647, 1]), 1_073_741_823);
+assert_return(() => invoke($0, `shr_s`, [-1, 32]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [-2_147_483_648, 1]), 1_073_741_824);
+assert_return(() => invoke($0, `shr_s`, [-1, 33]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [1_073_741_824, 1]), 536_870_912);
+assert_return(() => invoke($0, `shr_s`, [-1, -1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [1, 32]), 1);
+assert_return(() => invoke($0, `shr_s`, [-1, 2147483647]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [1, 33]), 0);
+assert_return(() => invoke($0, `shr_s`, [-1, -2147483648]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "shr_u", [1, -1]), 0);
+assert_return(() => invoke($0, `shr_u`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_u", [1, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `shr_u`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_u", [1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `shr_u`, [-1, 1]), [value("i32", 2147483647)]);
 
 
-assert_return(() => call($1, "shr_u", [-2_147_483_648, 31]), 1);
+assert_return(() => invoke($0, `shr_u`, [2147483647, 1]), [
+  value("i32", 1073741823),
+]);
 
 
-assert_return(() => call($1, "shr_u", [-1, 32]), -1);
+assert_return(() => invoke($0, `shr_u`, [-2147483648, 1]), [
+  value("i32", 1073741824),
+]);
 
 
-assert_return(() => call($1, "shr_u", [-1, 33]), 2_147_483_647);
+assert_return(() => invoke($0, `shr_u`, [1073741824, 1]), [
+  value("i32", 536870912),
+]);
 
 
-assert_return(() => call($1, "shr_u", [-1, -1]), 1);
+assert_return(() => invoke($0, `shr_u`, [1, 32]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "shr_u", [-1, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `shr_u`, [1, 33]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "shr_u", [-1, -2_147_483_648]), -1);
+assert_return(() => invoke($0, `shr_u`, [1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rotl", [1, 1]), 2);
+assert_return(() => invoke($0, `shr_u`, [1, 2147483647]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "rotl", [1, 0]), 1);
+assert_return(() => invoke($0, `shr_u`, [1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [-1, 1]), -1);
+assert_return(() => invoke($0, `shr_u`, [-2147483648, 31]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [1, 32]), 1);
+assert_return(() => invoke($0, `shr_u`, [-1, 32]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rotl", [-1_412_589_450, 1]), 1_469_788_397);
+assert_return(() => invoke($0, `shr_u`, [-1, 33]), [value("i32", 2147483647)]);
 
 
-assert_return(() => call($1, "rotl", [-33_498_112, 4]), -535_969_777);
+assert_return(() => invoke($0, `shr_u`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [-1_329_474_845, 5]), 406_477_942);
+assert_return(() => invoke($0, `shr_u`, [-1, 2147483647]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [32_768, 37]), 1_048_576);
+assert_return(() => invoke($0, `shr_u`, [-1, -2147483648]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rotl", [-1_329_474_845, 65_285]), 406_477_942);
+assert_return(() => invoke($0, `rotl`, [1, 1]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "rotl", [1_989_852_383, -19]), 1_469_837_011);
+assert_return(() => invoke($0, `rotl`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [1_989_852_383, -2_147_483_635]), 1_469_837_011);
+assert_return(() => invoke($0, `rotl`, [-1, 1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rotl", [1, 31]), -2_147_483_648);
+assert_return(() => invoke($0, `rotl`, [1, 32]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotl", [-2_147_483_648, 1]), 1);
+assert_return(() => invoke($0, `rotl`, [-1412589450, 1]), [
+  value("i32", 1469788397),
+]);
 
 
-assert_return(() => call($1, "rotr", [1, 1]), -2_147_483_648);
+assert_return(() => invoke($0, `rotl`, [-33498112, 4]), [
+  value("i32", -535969777),
+]);
 
 
-assert_return(() => call($1, "rotr", [1, 0]), 1);
+assert_return(() => invoke($0, `rotl`, [-1329474845, 5]), [
+  value("i32", 406477942),
+]);
 
 
-assert_return(() => call($1, "rotr", [-1, 1]), -1);
+assert_return(() => invoke($0, `rotl`, [32768, 37]), [value("i32", 1048576)]);
 
 
-assert_return(() => call($1, "rotr", [1, 32]), 1);
+assert_return(() => invoke($0, `rotl`, [-1329474845, 65285]), [
+  value("i32", 406477942),
+]);
 
 
-assert_return(() => call($1, "rotr", [-16_724_992, 1]), 2_139_121_152);
+assert_return(() => invoke($0, `rotl`, [1989852383, -19]), [
+  value("i32", 1469837011),
+]);
 
 
-assert_return(() => call($1, "rotr", [524_288, 4]), 32_768);
+assert_return(() => invoke($0, `rotl`, [1989852383, -2147483635]), [
+  value("i32", 1469837011),
+]);
 
 
-assert_return(() => call($1, "rotr", [-1_329_474_845, 5]), 495_324_823);
+assert_return(() => invoke($0, `rotl`, [1, 31]), [value("i32", -2147483648)]);
 
 
-assert_return(() => call($1, "rotr", [32_768, 37]), 1_024);
+assert_return(() => invoke($0, `rotl`, [-2147483648, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotr", [-1_329_474_845, 65_285]), 495_324_823);
+assert_return(() => invoke($0, `rotr`, [1, 1]), [value("i32", -2147483648)]);
 
 
-assert_return(() => call($1, "rotr", [1_989_852_383, -19]), -419_711_787);
+assert_return(() => invoke($0, `rotr`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotr", [1_989_852_383, -2_147_483_635]), -419_711_787);
+assert_return(() => invoke($0, `rotr`, [-1, 1]), [value("i32", -1)]);
 
 
-assert_return(() => call($1, "rotr", [1, 31]), 2);
+assert_return(() => invoke($0, `rotr`, [1, 32]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "rotr", [-2_147_483_648, 31]), 1);
+assert_return(() => invoke($0, `rotr`, [-16724992, 1]), [
+  value("i32", 2139121152),
+]);
 
 
-assert_return(() => call($1, "clz", [-1]), 0);
+assert_return(() => invoke($0, `rotr`, [524288, 4]), [value("i32", 32768)]);
 
 
-assert_return(() => call($1, "clz", [0]), 32);
+assert_return(() => invoke($0, `rotr`, [-1329474845, 5]), [
+  value("i32", 495324823),
+]);
 
 
-assert_return(() => call($1, "clz", [32_768]), 16);
+assert_return(() => invoke($0, `rotr`, [32768, 37]), [value("i32", 1024)]);
 
 
-assert_return(() => call($1, "clz", [255]), 24);
+assert_return(() => invoke($0, `rotr`, [-1329474845, 65285]), [
+  value("i32", 495324823),
+]);
 
 
-assert_return(() => call($1, "clz", [-2_147_483_648]), 0);
+assert_return(() => invoke($0, `rotr`, [1989852383, -19]), [
+  value("i32", -419711787),
+]);
 
 
-assert_return(() => call($1, "clz", [1]), 31);
+assert_return(() => invoke($0, `rotr`, [1989852383, -2147483635]), [
+  value("i32", -419711787),
+]);
 
 
-assert_return(() => call($1, "clz", [2]), 30);
+assert_return(() => invoke($0, `rotr`, [1, 31]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "clz", [2_147_483_647]), 1);
+assert_return(() => invoke($0, `rotr`, [-2147483648, 31]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ctz", [-1]), 0);
+assert_return(() => invoke($0, `clz`, [-1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ctz", [0]), 32);
+assert_return(() => invoke($0, `clz`, [0]), [value("i32", 32)]);
 
 
-assert_return(() => call($1, "ctz", [32_768]), 15);
+assert_return(() => invoke($0, `clz`, [32768]), [value("i32", 16)]);
 
 
-assert_return(() => call($1, "ctz", [65_536]), 16);
+assert_return(() => invoke($0, `clz`, [255]), [value("i32", 24)]);
 
 
-assert_return(() => call($1, "ctz", [-2_147_483_648]), 31);
+assert_return(() => invoke($0, `clz`, [-2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ctz", [2_147_483_647]), 0);
+assert_return(() => invoke($0, `clz`, [1]), [value("i32", 31)]);
 
 
-assert_return(() => call($1, "popcnt", [-1]), 32);
+assert_return(() => invoke($0, `clz`, [2]), [value("i32", 30)]);
 
 
-assert_return(() => call($1, "popcnt", [0]), 0);
+assert_return(() => invoke($0, `clz`, [2147483647]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "popcnt", [32_768]), 1);
+assert_return(() => invoke($0, `ctz`, [-1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "popcnt", [-2_147_450_880]), 2);
+assert_return(() => invoke($0, `ctz`, [0]), [value("i32", 32)]);
 
 
-assert_return(() => call($1, "popcnt", [2_147_483_647]), 31);
+assert_return(() => invoke($0, `ctz`, [32768]), [value("i32", 15)]);
 
 
-assert_return(() => call($1, "popcnt", [-1_431_655_766]), 16);
+assert_return(() => invoke($0, `ctz`, [65536]), [value("i32", 16)]);
 
 
-assert_return(() => call($1, "popcnt", [1_431_655_765]), 16);
+assert_return(() => invoke($0, `ctz`, [-2147483648]), [value("i32", 31)]);
 
 
-assert_return(() => call($1, "popcnt", [-559_038_737]), 24);
+assert_return(() => invoke($0, `ctz`, [2147483647]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eqz", [0]), 1);
+assert_return(() => invoke($0, `popcnt`, [-1]), [value("i32", 32)]);
 
 
-assert_return(() => call($1, "eqz", [1]), 0);
+assert_return(() => invoke($0, `popcnt`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eqz", [-2_147_483_648]), 0);
+assert_return(() => invoke($0, `popcnt`, [32768]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "eqz", [2_147_483_647]), 0);
+assert_return(() => invoke($0, `popcnt`, [-2147450880]), [value("i32", 2)]);
 
 
-assert_return(() => call($1, "eqz", [-1]), 0);
+assert_return(() => invoke($0, `popcnt`, [2147483647]), [value("i32", 31)]);
 
 
-assert_return(() => call($1, "eq", [0, 0]), 1);
+assert_return(() => invoke($0, `popcnt`, [-1431655766]), [value("i32", 16)]);
 
 
-assert_return(() => call($1, "eq", [1, 1]), 1);
+assert_return(() => invoke($0, `popcnt`, [1431655765]), [value("i32", 16)]);
 
 
-assert_return(() => call($1, "eq", [-1, 1]), 0);
+assert_return(() => invoke($0, `popcnt`, [-559038737]), [value("i32", 24)]);
 
 
-assert_return(() => call($1, "eq", [-2_147_483_648, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `eqz`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "eq", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `eqz`, [1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eq", [-1, -1]), 1);
+assert_return(() => invoke($0, `eqz`, [-2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eq", [1, 0]), 0);
+assert_return(() => invoke($0, `eqz`, [2147483647]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eq", [0, 1]), 0);
+assert_return(() => invoke($0, `eqz`, [-1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eq", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `eq`, [0, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "eq", [0, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `eq`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "eq", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `eq`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "eq", [-1, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `eq`, [-2147483648, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "eq", [-2_147_483_648, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `eq`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "eq", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `eq`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ne", [0, 0]), 0);
+assert_return(() => invoke($0, `eq`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [1, 1]), 0);
+assert_return(() => invoke($0, `eq`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [-1, 1]), 1);
+assert_return(() => invoke($0, `eq`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `eq`, [0, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [2_147_483_647, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `eq`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [-1, -1]), 0);
+assert_return(() => invoke($0, `eq`, [-1, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [1, 0]), 1);
+assert_return(() => invoke($0, `eq`, [-2147483648, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ne", [0, 1]), 1);
+assert_return(() => invoke($0, `eq`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ne", [-2_147_483_648, 0]), 1);
+assert_return(() => invoke($0, `ne`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [0, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ne`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ne", [-2_147_483_648, -1]), 1);
+assert_return(() => invoke($0, `ne`, [-1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ne", [-1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ne`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ne", [-2_147_483_648, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `ne`, [2147483647, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ne", [2_147_483_647, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ne`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_s", [0, 0]), 0);
+assert_return(() => invoke($0, `ne`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [1, 1]), 0);
+assert_return(() => invoke($0, `ne`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [-1, 1]), 1);
+assert_return(() => invoke($0, `ne`, [-2147483648, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `ne`, [0, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [2_147_483_647, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `ne`, [-2147483648, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [-1, -1]), 0);
+assert_return(() => invoke($0, `ne`, [-1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [1, 0]), 0);
+assert_return(() => invoke($0, `ne`, [-2147483648, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "lt_s", [0, 1]), 1);
+assert_return(() => invoke($0, `ne`, [2147483647, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "lt_s", [-2_147_483_648, 0]), 1);
+assert_return(() => invoke($0, `lt_s`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_s", [0, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `lt_s`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_s", [-2_147_483_648, -1]), 1);
+assert_return(() => invoke($0, `lt_s`, [-1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_s", [-1, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `lt_s`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "lt_s", [-2_147_483_648, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `lt_s`, [2147483647, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "lt_s", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `lt_s`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [0, 0]), 0);
+assert_return(() => invoke($0, `lt_s`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [1, 1]), 0);
+assert_return(() => invoke($0, `lt_s`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_u", [-1, 1]), 0);
+assert_return(() => invoke($0, `lt_s`, [-2147483648, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_u", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `lt_s`, [0, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [2_147_483_647, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `lt_s`, [-2147483648, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "lt_u", [-1, -1]), 0);
+assert_return(() => invoke($0, `lt_s`, [-1, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [1, 0]), 0);
+assert_return(() => invoke($0, `lt_s`, [-2147483648, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "lt_u", [0, 1]), 1);
+assert_return(() => invoke($0, `lt_s`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "lt_u", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `lt_u`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [0, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `lt_u`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [-2_147_483_648, -1]), 1);
+assert_return(() => invoke($0, `lt_u`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "lt_u", [-1, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `lt_u`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "lt_u", [-2_147_483_648, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `lt_u`, [2147483647, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "lt_u", [2_147_483_647, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `lt_u`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_s", [0, 0]), 1);
+assert_return(() => invoke($0, `lt_u`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_s", [1, 1]), 1);
+assert_return(() => invoke($0, `lt_u`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [-1, 1]), 1);
+assert_return(() => invoke($0, `lt_u`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_s", [-2_147_483_648, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `lt_u`, [0, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `lt_u`, [-2147483648, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [-1, -1]), 1);
+assert_return(() => invoke($0, `lt_u`, [-1, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_s", [1, 0]), 0);
+assert_return(() => invoke($0, `lt_u`, [-2147483648, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "le_s", [0, 1]), 1);
+assert_return(() => invoke($0, `lt_u`, [2147483647, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_s", [-2_147_483_648, 0]), 1);
+assert_return(() => invoke($0, `le_s`, [0, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [0, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `le_s`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [-2_147_483_648, -1]), 1);
+assert_return(() => invoke($0, `le_s`, [-1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_s", [-1, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `le_s`, [-2147483648, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_s", [-2_147_483_648, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `le_s`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_s", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `le_s`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [0, 0]), 1);
+assert_return(() => invoke($0, `le_s`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_u", [1, 1]), 1);
+assert_return(() => invoke($0, `le_s`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [-1, 1]), 0);
+assert_return(() => invoke($0, `le_s`, [-2147483648, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [-2_147_483_648, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `le_s`, [0, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_u", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `le_s`, [-2147483648, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [-1, -1]), 1);
+assert_return(() => invoke($0, `le_s`, [-1, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_u", [1, 0]), 0);
+assert_return(() => invoke($0, `le_s`, [-2147483648, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_u", [0, 1]), 1);
+assert_return(() => invoke($0, `le_s`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "le_u", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `le_u`, [0, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [0, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `le_u`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "le_u", [-2_147_483_648, -1]), 1);
+assert_return(() => invoke($0, `le_u`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "le_u", [-1, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `le_u`, [-2147483648, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_u", [-2_147_483_648, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `le_u`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "le_u", [2_147_483_647, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `le_u`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_s", [0, 0]), 0);
+assert_return(() => invoke($0, `le_u`, [1, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [1, 1]), 0);
+assert_return(() => invoke($0, `le_u`, [0, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_s", [-1, 1]), 0);
+assert_return(() => invoke($0, `le_u`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `le_u`, [0, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_s", [2_147_483_647, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `le_u`, [-2147483648, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_s", [-1, -1]), 0);
+assert_return(() => invoke($0, `le_u`, [-1, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [1, 0]), 1);
+assert_return(() => invoke($0, `le_u`, [-2147483648, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_s", [0, 1]), 0);
+assert_return(() => invoke($0, `le_u`, [2147483647, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "gt_s", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `gt_s`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [0, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `gt_s`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `gt_s`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_s", [-1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `gt_s`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_s", [-2_147_483_648, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `gt_s`, [2147483647, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_s", [2_147_483_647, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `gt_s`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [0, 0]), 0);
+assert_return(() => invoke($0, `gt_s`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_u", [1, 1]), 0);
+assert_return(() => invoke($0, `gt_s`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [-1, 1]), 1);
+assert_return(() => invoke($0, `gt_s`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [-2_147_483_648, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `gt_s`, [0, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_u", [2_147_483_647, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `gt_s`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [-1, -1]), 0);
+assert_return(() => invoke($0, `gt_s`, [-1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_u", [1, 0]), 1);
+assert_return(() => invoke($0, `gt_s`, [-2147483648, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_u", [0, 1]), 0);
+assert_return(() => invoke($0, `gt_s`, [2147483647, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "gt_u", [-2_147_483_648, 0]), 1);
+assert_return(() => invoke($0, `gt_u`, [0, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [0, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `gt_u`, [1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "gt_u", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `gt_u`, [-1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "gt_u", [-1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `gt_u`, [-2147483648, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_u", [-2_147_483_648, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `gt_u`, [2147483647, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "gt_u", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `gt_u`, [-1, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_s", [0, 0]), 1);
+assert_return(() => invoke($0, `gt_u`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_s", [1, 1]), 1);
+assert_return(() => invoke($0, `gt_u`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_s", [-1, 1]), 0);
+assert_return(() => invoke($0, `gt_u`, [-2147483648, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_s", [-2_147_483_648, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `gt_u`, [0, -2147483648]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_s", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `gt_u`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_s", [-1, -1]), 1);
+assert_return(() => invoke($0, `gt_u`, [-1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_s", [1, 0]), 1);
+assert_return(() => invoke($0, `gt_u`, [-2147483648, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_s", [0, 1]), 0);
+assert_return(() => invoke($0, `gt_u`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ge_s", [-2_147_483_648, 0]), 0);
+assert_return(() => invoke($0, `ge_s`, [0, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_s", [0, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ge_s`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_s", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `ge_s`, [-1, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_s", [-1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ge_s`, [-2147483648, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_s", [-2_147_483_648, 2_147_483_647]), 0);
+assert_return(() => invoke($0, `ge_s`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_s", [2_147_483_647, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ge_s`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [0, 0]), 1);
+assert_return(() => invoke($0, `ge_s`, [1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [1, 1]), 1);
+assert_return(() => invoke($0, `ge_s`, [0, 1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_u", [-1, 1]), 1);
+assert_return(() => invoke($0, `ge_s`, [-2147483648, 0]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_u", [-2_147_483_648, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ge_s`, [0, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [2_147_483_647, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `ge_s`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "ge_u", [-1, -1]), 1);
+assert_return(() => invoke($0, `ge_s`, [-1, -2147483648]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [1, 0]), 1);
+assert_return(() => invoke($0, `ge_s`, [-2147483648, 2147483647]), [
+  value("i32", 0),
+]);
 
 
-assert_return(() => call($1, "ge_u", [0, 1]), 0);
+assert_return(() => invoke($0, `ge_s`, [2147483647, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_u", [-2_147_483_648, 0]), 1);
+assert_return(() => invoke($0, `ge_u`, [0, 0]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [0, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `ge_u`, [1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [-2_147_483_648, -1]), 0);
+assert_return(() => invoke($0, `ge_u`, [-1, 1]), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "ge_u", [-1, -2_147_483_648]), 1);
+assert_return(() => invoke($0, `ge_u`, [-2147483648, -2147483648]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_u", [-2_147_483_648, 2_147_483_647]), 1);
+assert_return(() => invoke($0, `ge_u`, [2147483647, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_return(() => call($1, "ge_u", [2_147_483_647, -2_147_483_648]), 0);
+assert_return(() => invoke($0, `ge_u`, [-1, -1]), [value("i32", 1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8a\x80\x80\x80\x00\x01\x84\x80\x80\x80\x00\x00\x45\x1a\x0b");
+assert_return(() => invoke($0, `ge_u`, [1, 0]), [value("i32", 1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x41\x00\x02\x40\x45\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [0, 1]), [value("i32", 0)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x41\x00\x03\x40\x45\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [-2147483648, 0]), [value("i32", 1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x41\x00\x04\x40\x45\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [0, -2147483648]), [value("i32", 0)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x00\x41\x00\x04\x7f\x41\x00\x05\x45\x0b\x1a\x0b");
+assert_return(() => invoke($0, `ge_u`, [-2147483648, -1]), [value("i32", 0)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x02\x40\x45\x0c\x00\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [-1, -2147483648]), [value("i32", 1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x93\x80\x80\x80\x00\x01\x8d\x80\x80\x80\x00\x00\x41\x00\x02\x40\x45\x41\x01\x0d\x00\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [-2147483648, 2147483647]), [
+  value("i32", 1),
+]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x92\x80\x80\x80\x00\x01\x8c\x80\x80\x80\x00\x00\x41\x00\x02\x40\x45\x0e\x00\x00\x1a\x0b\x0b");
+assert_return(() => invoke($0, `ge_u`, [2147483647, -2147483648]), [
+  value("i32", 0),
+]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x45\x0f\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty
+      (i32.eqz) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x45\x41\x01\x41\x02\x1b\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-block
+      (i32.const 0)
+      (block (i32.eqz) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x00\x60\x01\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x0a\x95\x80\x80\x80\x00\x02\x86\x80\x80\x80\x00\x00\x45\x10\x01\x1a\x0b\x84\x80\x80\x80\x00\x00\x20\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-loop
+      (i32.const 0)
+      (loop (i32.eqz) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x01\x7f\x01\x7f\x60\x00\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x01\x01\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x01\x00\x0a\x9b\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x20\x00\x0b\x8c\x80\x80\x80\x00\x00\x02\x7f\x45\x41\x00\x11\x00\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-if
+      (i32.const 0) (i32.const 0)
+      (if (then (i32.eqz) (drop)))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x01\x01\x7f\x45\x21\x00\x20\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-else
+      (i32.const 0) (i32.const 0)
+      (if (result i32) (then (i32.const 0)) (else (i32.eqz))) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x01\x01\x7f\x45\x22\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-br
+      (i32.const 0)
+      (block (br 0 (i32.eqz)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x06\x86\x80\x80\x80\x00\x01\x7f\x01\x41\x00\x0b\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x00\x45\x24\x00\x23\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-br_if
+      (i32.const 0)
+      (block (br_if 0 (i32.eqz) (i32.const 1)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8c\x80\x80\x80\x00\x01\x86\x80\x80\x80\x00\x00\x45\x40\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-br_table
+      (i32.const 0)
+      (block (br_table 0 (i32.eqz)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8d\x80\x80\x80\x00\x01\x87\x80\x80\x80\x00\x00\x45\x28\x02\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-return
+      (return (i32.eqz)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x00\x45\x41\x01\x36\x02\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-select
+      (select (i32.eqz) (i32.const 1) (i32.const 2)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8a\x80\x80\x80\x00\x01\x84\x80\x80\x80\x00\x00\x6a\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-call
+      (call 1 (i32.eqz)) (drop)
+    )
+    (func (param i32) (result i32) (local.get 0))
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8c\x80\x80\x80\x00\x01\x86\x80\x80\x80\x00\x00\x41\x00\x6a\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$f (param i32) (result i32) (local.get 0))
+    (type $$sig (func (param i32) (result i32)))
+    (table funcref (elem $$f))
+    (func $$type-unary-operand-empty-in-call_indirect
+      (block (result i32)
+        (call_indirect (type $$sig)
+          (i32.eqz) (i32.const 0)
+        )
+        (drop)
+      )
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x41\x00\x02\x40\x6a\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-local.set
+      (local i32)
+      (local.set 0 (i32.eqz)) (local.get 0) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x02\x40\x41\x00\x6a\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-unary-operand-empty-in-local.tee
+      (local i32)
+      (local.tee 0 (i32.eqz)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x41\x00\x03\x40\x6a\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (global $$x (mut i32) (i32.const 0))
+    (func $$type-unary-operand-empty-in-global.set
+      (global.set $$x (i32.eqz)) (global.get $$x) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x03\x40\x41\x00\x6a\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-unary-operand-empty-in-memory.grow
+      (memory.grow (i32.eqz)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x93\x80\x80\x80\x00\x01\x8d\x80\x80\x80\x00\x00\x41\x00\x41\x00\x41\x00\x6a\x04\x40\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-unary-operand-empty-in-load
+      (i32.load (i32.eqz)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x00\x41\x00\x41\x00\x04\x40\x6a\x05\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 1)
+    (func $$type-unary-operand-empty-in-store
+      (i32.store (i32.eqz) (i32.const 1))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x99\x80\x80\x80\x00\x01\x93\x80\x80\x80\x00\x00\x41\x00\x41\x00\x41\x00\x04\x7f\x41\x00\x05\x6a\x41\x00\x0b\x1a\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty
+      (i32.add) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x00\x41\x00\x04\x7f\x41\x00\x05\x6a\x0b\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty
+      (i32.const 0) (i32.add) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x93\x80\x80\x80\x00\x01\x8d\x80\x80\x80\x00\x00\x41\x00\x41\x00\x02\x40\x6a\x0c\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-block
+      (i32.const 0) (i32.const 0)
+      (block (i32.add) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x93\x80\x80\x80\x00\x01\x8d\x80\x80\x80\x00\x00\x41\x00\x02\x40\x41\x00\x6a\x0c\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-block
+      (i32.const 0)
+      (block (i32.const 0) (i32.add) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x95\x80\x80\x80\x00\x01\x8f\x80\x80\x80\x00\x00\x41\x00\x41\x00\x02\x40\x6a\x41\x01\x0d\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-loop
+      (i32.const 0) (i32.const 0)
+      (loop (i32.add) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x95\x80\x80\x80\x00\x01\x8f\x80\x80\x80\x00\x00\x41\x00\x02\x40\x41\x00\x6a\x41\x01\x0d\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-loop
+      (i32.const 0)
+      (loop (i32.const 0) (i32.add) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x00\x41\x00\x02\x40\x6a\x0e\x00\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-if
+      (i32.const 0) (i32.const 0) (i32.const 0)
+      (if (i32.add) (then (drop)))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x00\x02\x40\x41\x00\x6a\x0e\x00\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-if
+      (i32.const 0) (i32.const 0)
+      (if (i32.const 0) (then (i32.add)) (else (drop)))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x6a\x0f\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-else
+      (i32.const 0) (i32.const 0) (i32.const 0)
+      (if (result i32) (then (i32.const 0)) (else (i32.add) (i32.const 0)))
+      (drop) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8d\x80\x80\x80\x00\x01\x87\x80\x80\x80\x00\x00\x41\x00\x6a\x0f\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-else
+      (i32.const 0) (i32.const 0)
+      (if (result i32) (then (i32.const 0)) (else (i32.add)))
+      (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x6a\x41\x01\x41\x02\x1b\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-br
+      (i32.const 0) (i32.const 0)
+      (block (br 0 (i32.add)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x6a\x41\x01\x41\x02\x1b\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-br
+      (i32.const 0)
+      (block (br 0 (i32.const 0) (i32.add)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8a\x80\x80\x80\x00\x02\x60\x00\x00\x60\x02\x7f\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x0a\x95\x80\x80\x80\x00\x02\x86\x80\x80\x80\x00\x00\x6a\x10\x01\x1a\x0b\x84\x80\x80\x80\x00\x00\x20\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-br_if
+      (i32.const 0) (i32.const 0)
+      (block (br_if 0 (i32.add) (i32.const 1)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8a\x80\x80\x80\x00\x02\x60\x00\x00\x60\x02\x7f\x7f\x01\x7f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x0a\x97\x80\x80\x80\x00\x02\x88\x80\x80\x80\x00\x00\x41\x00\x6a\x10\x01\x1a\x0b\x84\x80\x80\x80\x00\x00\x20\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-br_if
+      (i32.const 0)
+      (block (br_if 0 (i32.const 0) (i32.add) (i32.const 1)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x01\x7f\x01\x7f\x60\x00\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x01\x01\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x01\x00\x0a\x9b\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x20\x00\x0b\x8c\x80\x80\x80\x00\x00\x02\x7f\x6a\x41\x00\x11\x00\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-br_table
+      (i32.const 0) (i32.const 0)
+      (block (br_table 0 (i32.add)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x01\x7f\x01\x7f\x60\x00\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x01\x01\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x01\x00\x0a\x9d\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x20\x00\x0b\x8e\x80\x80\x80\x00\x00\x02\x7f\x41\x00\x6a\x41\x00\x11\x00\x00\x1a\x0b\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-br_table
+      (i32.const 0)
+      (block (br_table 0 (i32.const 0) (i32.add)) (drop))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x01\x01\x7f\x6a\x21\x00\x20\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-return
+      (return (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x92\x80\x80\x80\x00\x01\x8c\x80\x80\x80\x00\x01\x01\x7f\x41\x00\x6a\x21\x00\x20\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-return
+      (return (i32.const 0) (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x01\x01\x7f\x6a\x22\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-select
+      (select (i32.add) (i32.const 1) (i32.const 2)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x01\x01\x7f\x41\x00\x6a\x22\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-select
+      (select (i32.const 0) (i32.add) (i32.const 1) (i32.const 2)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x06\x86\x80\x80\x80\x00\x01\x7f\x01\x41\x00\x0b\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x00\x6a\x24\x00\x23\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-call
+      (call 1 (i32.add)) (drop)
+    )
+    (func (param i32 i32) (result i32) (local.get 0))
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x06\x86\x80\x80\x80\x00\x01\x7f\x01\x41\x00\x0b\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x41\x00\x6a\x24\x00\x23\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-call
+      (call 1 (i32.const 0) (i32.add)) (drop)
+    )
+    (func (param i32 i32) (result i32) (local.get 0))
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8c\x80\x80\x80\x00\x01\x86\x80\x80\x80\x00\x00\x6a\x40\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$f (param i32) (result i32) (local.get 0))
+    (type $$sig (func (param i32) (result i32)))
+    (table funcref (elem $$f))
+    (func $$type-binary-1st-operand-empty-in-call_indirect
+      (block (result i32)
+        (call_indirect (type $$sig)
+          (i32.add) (i32.const 0)
+        )
+        (drop)
+      )
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x00\x41\x00\x6a\x40\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$f (param i32) (result i32) (local.get 0))
+    (type $$sig (func (param i32) (result i32)))
+    (table funcref (elem $$f))
+    (func $$type-binary-2nd-operand-empty-in-call_indirect
+      (block (result i32)
+        (call_indirect (type $$sig)
+          (i32.const 0) (i32.add) (i32.const 0)
+        )
+        (drop)
+      )
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8d\x80\x80\x80\x00\x01\x87\x80\x80\x80\x00\x00\x6a\x28\x02\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-local.set
+      (local i32)
+      (local.set 0 (i32.add)) (local.get 0) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x41\x00\x6a\x28\x02\x00\x1a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-local.set
+      (local i32)
+      (local.set 0 (i32.const 0) (i32.add)) (local.get 0) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0a\x8e\x80\x80\x80\x00\x01\x88\x80\x80\x80\x00\x00\x6a\x41\x01\x36\x02\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-1st-operand-empty-in-local.tee
+      (local i32)
+      (local.tee 0 (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x41\x01\x6a\x41\x00\x36\x02\x00\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (func $$type-binary-2nd-operand-empty-in-local.tee
+      (local i32)
+      (local.tee 0 (i32.const 0) (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6a\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (global $$x (mut i32) (i32.const 0))
+    (func $$type-binary-1st-operand-empty-in-global.set
+      (global.set $$x (i32.add)) (global.get $$x) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x71\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (global $$x (mut i32) (i32.const 0))
+    (func $$type-binary-2nd-operand-empty-in-global.set
+      (global.set $$x (i32.const 0) (i32.add)) (global.get $$x) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6d\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-binary-1st-operand-empty-in-memory.grow
+      (memory.grow (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6e\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-binary-2nd-operand-empty-in-memory.grow
+      (memory.grow (i32.const 0) (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6c\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-binary-1st-operand-empty-in-load
+      (i32.load (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x72\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 0)
+    (func $$type-binary-2nd-operand-empty-in-load
+      (i32.load (i32.const 0) (i32.add)) (drop)
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6f\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 1)
+    (func $$type-binary-1st-operand-empty-in-store
+      (i32.store (i32.add) (i32.const 1))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x70\x0b");
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 1)
+    (func $$type-binary-2nd-operand-empty-in-store
+      (i32.store (i32.const 1) (i32.add) (i32.const 0))
+    )
+  )`), `type mismatch`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x77\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.add (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x78\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.and (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x74\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.div_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x75\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.div_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x76\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.mul (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x6b\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.or (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x73\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.rem_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x42\x00\x45\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.rem_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x42\x00\x67\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.rotl (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x42\x00\x68\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.rotr (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\x42\x00\x69\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.shl (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x46\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.shr_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4e\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.shr_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4f\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.sub (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4a\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.xor (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4b\x0b");
+assert_invalid(
+  () => instantiate(`(module (func (result i32) (i32.eqz (i64.const 0))))`),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4c\x0b");
+assert_invalid(
+  () => instantiate(`(module (func (result i32) (i32.clz (i64.const 0))))`),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x4d\x0b");
+assert_invalid(
+  () => instantiate(`(module (func (result i32) (i32.ctz (i64.const 0))))`),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x48\x0b");
+assert_invalid(
+  () => instantiate(`(module (func (result i32) (i32.popcnt (i64.const 0))))`),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x49\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.eq (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x0a\x90\x80\x80\x80\x00\x01\x8a\x80\x80\x80\x00\x00\x42\x00\x43\x00\x00\x00\x00\x47\x0b");
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.ge_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.ge_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.gt_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.gt_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.le_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.le_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.lt_s (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.lt_u (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func (result i32) (i32.ne (i64.const 0) (f32.const 0))))`,
+    ),
+  `type mismatch`,
+);

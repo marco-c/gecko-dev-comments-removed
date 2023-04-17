@@ -1,12 +1,34 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00");
 
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00");
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00");
 
 
-let $4 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00");
+
+
+
+
+
+
+
+
+
+
+let $0 = instantiate(`(module;;comment
+)`);
+
+
+let $1 = instantiate(`(module(;comment;)
+(;comment;))`);
+
+
+let $2 = instantiate(`(module
+  (;comment(;nested(;further;)nested;)comment;)
+)`);
+
+
+let $3 = instantiate(`(module
+  (;comment;;comment(;nested;)comment;)
+)`);

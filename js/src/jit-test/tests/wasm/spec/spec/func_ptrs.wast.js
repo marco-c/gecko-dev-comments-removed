@@ -1,108 +1,196 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x9b\x80\x80\x80\x00\x07\x60\x00\x00\x60\x00\x00\x60\x00\x00\x60\x00\x01\x7f\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x01\x7f\x00\x02\x96\x80\x80\x80\x00\x01\x08\x73\x70\x65\x63\x74\x65\x73\x74\x09\x70\x72\x69\x6e\x74\x5f\x69\x33\x32\x00\x06\x03\x87\x80\x80\x80\x00\x06\x00\x01\x04\x05\x05\x06\x07\x9c\x80\x80\x80\x00\x04\x03\x6f\x6e\x65\x00\x03\x03\x74\x77\x6f\x00\x04\x05\x74\x68\x72\x65\x65\x00\x05\x04\x66\x6f\x75\x72\x00\x06\x0a\xbb\x80\x80\x80\x00\x06\x82\x80\x80\x80\x00\x00\x0b\x82\x80\x80\x80\x00\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x41\x01\x6a\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x41\x02\x6b\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x10\x00\x0b");
 
 
-assert_return(() => call($1, "one", []), 13);
 
 
-assert_return(() => call($1, "two", [13]), 14);
 
 
-assert_return(() => call($1, "three", [13]), 11);
 
 
-run(() => call($1, "four", [83]));
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x09\x86\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x00");
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x01\x00\x0a\x88\x80\x80\x80\x00\x01\x82\x80\x80\x80\x00\x00\x0b");
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x01\x09\x86\x80\x80\x80\x00\x01\x00\x42\x00\x0b\x00");
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x01\x09\x87\x80\x80\x80\x00\x01\x00\x41\x00\x68\x0b\x00");
+let $0 = instantiate(`(module
+  (type    (func))                           ;; 0: void -> void
+  (type $$S (func))                           ;; 1: void -> void
+  (type    (func (param)))                   ;; 2: void -> void
+  (type    (func (result i32)))              ;; 3: void -> i32
+  (type    (func (param) (result i32)))      ;; 4: void -> i32
+  (type $$T (func (param i32) (result i32)))  ;; 5: i32 -> i32
+  (type $$U (func (param i32)))               ;; 6: i32 -> void
 
+  (func $$print (import "spectest" "print_i32") (type 6))
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x01\x09\x85\x80\x80\x80\x00\x01\x00\x01\x0b\x00");
+  (func (type 0))
+  (func (type $$S))
 
+  (func (export "one") (type 4) (i32.const 13))
+  (func (export "two") (type $$T) (i32.add (local.get 0) (i32.const 1)))
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x03\x82\x80\x80\x80\x00\x01\x2a\x0a\x88\x80\x80\x80\x00\x01\x82\x80\x80\x80\x00\x00\x0b");
+  ;; Both signature and parameters are allowed (and required to match)
+  ;; since this allows the naming of parameters.
+  (func (export "three") (type $$T) (param $$a i32) (result i32)
+    (i32.sub (local.get 0) (i32.const 2))
+  )
 
+  (func (export "four") (type $$U) (call $$print (local.get 0)))
+)`);
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x02\x96\x80\x80\x80\x00\x01\x08\x73\x70\x65\x63\x74\x65\x73\x74\x09\x70\x72\x69\x6e\x74\x5f\x69\x33\x32\x00\x2b");
 
+assert_return(() => invoke($0, `one`, []), [value("i32", 13)]);
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8e\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x01\x01\x02\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x07\x07\x07\x91\x80\x80\x80\x00\x02\x05\x63\x61\x6c\x6c\x74\x00\x05\x05\x63\x61\x6c\x6c\x75\x00\x06\x09\x8d\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x07\x00\x01\x02\x03\x04\x00\x02\x0a\xc6\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x01\x00\x0b");
 
+assert_return(() => invoke($0, `two`, [13]), [value("i32", 14)]);
 
-assert_return(() => call($2, "callt", [0]), 1);
 
+assert_return(() => invoke($0, `three`, [13]), [value("i32", 11)]);
 
-assert_return(() => call($2, "callt", [1]), 2);
 
+invoke($0, `four`, [83]);
 
-assert_return(() => call($2, "callt", [2]), 3);
 
+assert_invalid(
+  () => instantiate(`(module (elem (i32.const 0)))`),
+  `unknown table`,
+);
 
-assert_return(() => call($2, "callt", [3]), 4);
 
+assert_invalid(
+  () => instantiate(`(module (elem (i32.const 0) 0) (func))`),
+  `unknown table`,
+);
 
-assert_return(() => call($2, "callt", [4]), 5);
 
+assert_invalid(
+  () => instantiate(`(module (table 1 funcref) (elem (i64.const 0)))`),
+  `type mismatch`,
+);
 
-assert_return(() => call($2, "callt", [5]), 1);
 
+assert_invalid(
+  () =>
+    instantiate(`(module (table 1 funcref) (elem (i32.ctz (i32.const 0))))`),
+  `constant expression required`,
+);
 
-assert_return(() => call($2, "callt", [6]), 3);
 
+assert_invalid(
+  () => instantiate(`(module (table 1 funcref) (elem (nop)))`),
+  `constant expression required`,
+);
 
-assert_trap(() => call($2, "callt", [7]));
 
+assert_invalid(() => instantiate(`(module (func (type 42)))`), `unknown type`);
 
-assert_trap(() => call($2, "callt", [100]));
 
+assert_invalid(
+  () =>
+    instantiate(`(module (import "spectest" "print_i32" (func (type 43))))`),
+  `unknown type`,
+);
 
-assert_trap(() => call($2, "callt", [-1]));
 
+let $1 = instantiate(`(module
+  (type $$T (func (param) (result i32)))
+  (type $$U (func (param) (result i32)))
+  (table funcref (elem $$t1 $$t2 $$t3 $$u1 $$u2 $$t1 $$t3))
 
-assert_return(() => call($2, "callu", [0]), 1);
+  (func $$t1 (type $$T) (i32.const 1))
+  (func $$t2 (type $$T) (i32.const 2))
+  (func $$t3 (type $$T) (i32.const 3))
+  (func $$u1 (type $$U) (i32.const 4))
+  (func $$u2 (type $$U) (i32.const 5))
 
+  (func (export "callt") (param $$i i32) (result i32)
+    (call_indirect (type $$T) (local.get $$i))
+  )
 
-assert_return(() => call($2, "callu", [1]), 2);
+  (func (export "callu") (param $$i i32) (result i32)
+    (call_indirect (type $$U) (local.get $$i))
+  )
+)`);
 
 
-assert_return(() => call($2, "callu", [2]), 3);
+assert_return(() => invoke($1, `callt`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($2, "callu", [3]), 4);
+assert_return(() => invoke($1, `callt`, [1]), [value("i32", 2)]);
 
 
-assert_return(() => call($2, "callu", [4]), 5);
+assert_return(() => invoke($1, `callt`, [2]), [value("i32", 3)]);
 
 
-assert_return(() => call($2, "callu", [5]), 1);
+assert_return(() => invoke($1, `callt`, [3]), [value("i32", 4)]);
 
 
-assert_return(() => call($2, "callu", [6]), 3);
+assert_return(() => invoke($1, `callt`, [4]), [value("i32", 5)]);
 
 
-assert_trap(() => call($2, "callu", [7]));
+assert_return(() => invoke($1, `callt`, [5]), [value("i32", 1)]);
 
 
-assert_trap(() => call($2, "callu", [100]));
+assert_return(() => invoke($1, `callt`, [6]), [value("i32", 3)]);
 
 
-assert_trap(() => call($2, "callu", [-1]));
+assert_trap(() => invoke($1, `callt`, [7]), `undefined element`);
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8a\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x03\x84\x80\x80\x80\x00\x03\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x02\x02\x07\x89\x80\x80\x80\x00\x01\x05\x63\x61\x6c\x6c\x74\x00\x02\x09\x88\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x02\x00\x01\x0a\x9f\x80\x80\x80\x00\x03\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($1, `callt`, [100]), `undefined element`);
 
 
-assert_return(() => call($3, "callt", [0]), 1);
+assert_trap(() => invoke($1, `callt`, [-1]), `undefined element`);
 
 
-assert_return(() => call($3, "callt", [1]), 2);
+assert_return(() => invoke($1, `callu`, [0]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($1, `callu`, [1]), [value("i32", 2)]);
+
+
+assert_return(() => invoke($1, `callu`, [2]), [value("i32", 3)]);
+
+
+assert_return(() => invoke($1, `callu`, [3]), [value("i32", 4)]);
+
+
+assert_return(() => invoke($1, `callu`, [4]), [value("i32", 5)]);
+
+
+assert_return(() => invoke($1, `callu`, [5]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($1, `callu`, [6]), [value("i32", 3)]);
+
+
+assert_trap(() => invoke($1, `callu`, [7]), `undefined element`);
+
+
+assert_trap(() => invoke($1, `callu`, [100]), `undefined element`);
+
+
+assert_trap(() => invoke($1, `callu`, [-1]), `undefined element`);
+
+
+let $2 = instantiate(`(module
+  (type $$T (func (result i32)))
+  (table funcref (elem 0 1))
+
+  (func $$t1 (type $$T) (i32.const 1))
+  (func $$t2 (type $$T) (i32.const 2))
+
+  (func (export "callt") (param $$i i32) (result i32)
+    (call_indirect (type $$T) (local.get $$i))
+  )
+)`);
+
+
+assert_return(() => invoke($2, `callt`, [0]), [value("i32", 1)]);
+
+
+assert_return(() => invoke($2, `callt`, [1]), [value("i32", 2)]);

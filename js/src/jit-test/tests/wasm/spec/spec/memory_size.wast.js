@@ -1,126 +1,170 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x83\x80\x80\x80\x00\x01\x00\x00\x07\x8f\x80\x80\x80\x00\x02\x04\x73\x69\x7a\x65\x00\x00\x04\x67\x72\x6f\x77\x00\x01\x0a\x96\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x3f\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x40\x00\x1a\x0b");
 
 
-assert_return(() => call($1, "size", []), 0);
 
 
-assert_return(() => call($1, "grow", [1]));
 
 
-assert_return(() => call($1, "size", []), 1);
 
 
-assert_return(() => call($1, "grow", [4]));
 
 
-assert_return(() => call($1, "size", []), 5);
 
 
-assert_return(() => call($1, "grow", [0]));
 
 
-assert_return(() => call($1, "size", []), 5);
 
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x83\x80\x80\x80\x00\x01\x00\x01\x07\x8f\x80\x80\x80\x00\x02\x04\x73\x69\x7a\x65\x00\x00\x04\x67\x72\x6f\x77\x00\x01\x0a\x96\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x3f\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x40\x00\x1a\x0b");
+let $0 = instantiate(`(module
+  (memory 0)
+  (func (export "size") (result i32) (memory.size))
+  (func (export "grow") (param $$sz i32) (drop (memory.grow (local.get $$sz))))
+)`);
 
 
-assert_return(() => call($2, "size", []), 1);
+assert_return(() => invoke($0, `size`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($2, "grow", [1]));
+assert_return(() => invoke($0, `grow`, [1]), []);
 
 
-assert_return(() => call($2, "size", []), 2);
+assert_return(() => invoke($0, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($2, "grow", [4]));
+assert_return(() => invoke($0, `grow`, [4]), []);
 
 
-assert_return(() => call($2, "size", []), 6);
+assert_return(() => invoke($0, `size`, []), [value("i32", 5)]);
 
 
-assert_return(() => call($2, "grow", [0]));
+assert_return(() => invoke($0, `grow`, [0]), []);
 
 
-assert_return(() => call($2, "size", []), 6);
+assert_return(() => invoke($0, `size`, []), [value("i32", 5)]);
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x84\x80\x80\x80\x00\x01\x01\x00\x02\x07\x8f\x80\x80\x80\x00\x02\x04\x73\x69\x7a\x65\x00\x00\x04\x67\x72\x6f\x77\x00\x01\x0a\x96\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x3f\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x40\x00\x1a\x0b");
+let $1 = instantiate(`(module
+  (memory 1)
+  (func (export "size") (result i32) (memory.size))
+  (func (export "grow") (param $$sz i32) (drop (memory.grow (local.get $$sz))))
+)`);
 
 
-assert_return(() => call($3, "size", []), 0);
+assert_return(() => invoke($1, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($3, "grow", [3]));
+assert_return(() => invoke($1, `grow`, [1]), []);
 
 
-assert_return(() => call($3, "size", []), 0);
+assert_return(() => invoke($1, `size`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($3, "grow", [1]));
+assert_return(() => invoke($1, `grow`, [4]), []);
 
 
-assert_return(() => call($3, "size", []), 1);
+assert_return(() => invoke($1, `size`, []), [value("i32", 6)]);
 
 
-assert_return(() => call($3, "grow", [0]));
+assert_return(() => invoke($1, `grow`, [0]), []);
 
 
-assert_return(() => call($3, "size", []), 1);
+assert_return(() => invoke($1, `size`, []), [value("i32", 6)]);
 
 
-assert_return(() => call($3, "grow", [4]));
+let $2 = instantiate(`(module
+  (memory 0 2)
+  (func (export "size") (result i32) (memory.size))
+  (func (export "grow") (param $$sz i32) (drop (memory.grow (local.get $$sz))))
+)`);
 
 
-assert_return(() => call($3, "size", []), 1);
+assert_return(() => invoke($2, `size`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($3, "grow", [1]));
+assert_return(() => invoke($2, `grow`, [3]), []);
 
 
-assert_return(() => call($3, "size", []), 2);
+assert_return(() => invoke($2, `size`, []), [value("i32", 0)]);
 
 
-let $4 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x89\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x01\x7f\x00\x03\x83\x80\x80\x80\x00\x02\x00\x01\x05\x84\x80\x80\x80\x00\x01\x01\x03\x08\x07\x8f\x80\x80\x80\x00\x02\x04\x73\x69\x7a\x65\x00\x00\x04\x67\x72\x6f\x77\x00\x01\x0a\x96\x80\x80\x80\x00\x02\x84\x80\x80\x80\x00\x00\x3f\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x40\x00\x1a\x0b");
+assert_return(() => invoke($2, `grow`, [1]), []);
 
 
-assert_return(() => call($4, "size", []), 3);
+assert_return(() => invoke($2, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "grow", [1]));
+assert_return(() => invoke($2, `grow`, [0]), []);
 
 
-assert_return(() => call($4, "size", []), 4);
+assert_return(() => invoke($2, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "grow", [3]));
+assert_return(() => invoke($2, `grow`, [4]), []);
 
 
-assert_return(() => call($4, "size", []), 7);
+assert_return(() => invoke($2, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "grow", [0]));
+assert_return(() => invoke($2, `grow`, [1]), []);
 
 
-assert_return(() => call($4, "size", []), 7);
+assert_return(() => invoke($2, `size`, []), [value("i32", 2)]);
 
 
-assert_return(() => call($4, "grow", [2]));
+let $3 = instantiate(`(module
+  (memory 3 8)
+  (func (export "size") (result i32) (memory.size))
+  (func (export "grow") (param $$sz i32) (drop (memory.grow (local.get $$sz))))
+)`);
 
 
-assert_return(() => call($4, "size", []), 7);
+assert_return(() => invoke($3, `size`, []), [value("i32", 3)]);
 
 
-assert_return(() => call($4, "grow", [1]));
+assert_return(() => invoke($3, `grow`, [1]), []);
 
 
-assert_return(() => call($4, "size", []), 8);
+assert_return(() => invoke($3, `size`, []), [value("i32", 4)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0a\x8a\x80\x80\x80\x00\x01\x84\x80\x80\x80\x00\x00\x3f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [3]), []);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7d\x03\x82\x80\x80\x80\x00\x01\x00\x05\x83\x80\x80\x80\x00\x01\x00\x01\x0a\x8a\x80\x80\x80\x00\x01\x84\x80\x80\x80\x00\x00\x3f\x00\x0b");
+assert_return(() => invoke($3, `size`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($3, `grow`, [0]), []);
+
+
+assert_return(() => invoke($3, `size`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($3, `grow`, [2]), []);
+
+
+assert_return(() => invoke($3, `size`, []), [value("i32", 7)]);
+
+
+assert_return(() => invoke($3, `grow`, [1]), []);
+
+
+assert_return(() => invoke($3, `size`, []), [value("i32", 8)]);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 1)
+    (func $$type-result-i32-vs-empty
+      (memory.size)
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (memory 1)
+    (func $$type-result-i32-vs-f32 (result f32)
+      (memory.size)
+    )
+  )`), `type mismatch`);

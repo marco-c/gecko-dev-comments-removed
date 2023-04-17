@@ -1,2538 +1,3228 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x86\x80\x80\x80\x00\x05\x00\x00\x00\x00\x00\x07\x9f\x80\x80\x80\x00\x05\x03\x65\x66\x30\x00\x00\x03\x65\x66\x31\x00\x01\x03\x65\x66\x32\x00\x02\x03\x65\x66\x33\x00\x03\x03\x65\x66\x34\x00\x04\x0a\xae\x80\x80\x80\x00\x05\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b");
 
 
-register("a", $1)
 
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xc2\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x83\x80\x80\x80\x00\x00\x01\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
 
 
-run(() => call($2, "test", []));
 
 
-assert_trap(() => call($2, "check", [0]));
 
 
-assert_trap(() => call($2, "check", [1]));
 
 
-assert_return(() => call($2, "check", [2]), 3);
 
 
-assert_return(() => call($2, "check", [3]), 1);
 
 
-assert_return(() => call($2, "check", [4]), 4);
+let $0 = instantiate(`(module
+  (func (export "ef0") (result i32) (i32.const 0))
+  (func (export "ef1") (result i32) (i32.const 1))
+  (func (export "ef2") (result i32) (i32.const 2))
+  (func (export "ef3") (result i32) (i32.const 3))
+  (func (export "ef4") (result i32) (i32.const 4))
+)`);
 
 
-assert_return(() => call($2, "check", [5]), 1);
+register($0, `a`);
 
 
-assert_trap(() => call($2, "check", [6]));
+let $1 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (nop))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($2, "check", [7]));
+invoke($1, `test`, []);
 
 
-assert_trap(() => call($2, "check", [8]));
+assert_trap(() => invoke($1, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [9]));
+assert_trap(() => invoke($1, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [10]));
+assert_return(() => invoke($1, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($2, "check", [11]));
+assert_return(() => invoke($1, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($2, "check", [12]), 7);
+assert_return(() => invoke($1, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($2, "check", [13]), 5);
+assert_return(() => invoke($1, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($2, "check", [14]), 2);
+assert_trap(() => invoke($1, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($2, "check", [15]), 3);
+assert_trap(() => invoke($1, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($2, "check", [16]), 6);
+assert_trap(() => invoke($1, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [17]));
+assert_trap(() => invoke($1, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [18]));
+assert_trap(() => invoke($1, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [19]));
+assert_trap(() => invoke($1, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [20]));
+assert_return(() => invoke($1, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($2, "check", [21]));
+assert_return(() => invoke($1, `check`, [13]), [value("i32", 5)]);
 
 
-assert_trap(() => call($2, "check", [22]));
+assert_return(() => invoke($1, `check`, [14]), [value("i32", 2)]);
 
 
-assert_trap(() => call($2, "check", [23]));
+assert_return(() => invoke($1, `check`, [15]), [value("i32", 3)]);
 
 
-assert_trap(() => call($2, "check", [24]));
+assert_return(() => invoke($1, `check`, [16]), [value("i32", 6)]);
 
 
-assert_trap(() => call($2, "check", [25]));
+assert_trap(() => invoke($1, `check`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [26]));
+assert_trap(() => invoke($1, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [27]));
+assert_trap(() => invoke($1, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [28]));
+assert_trap(() => invoke($1, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($2, "check", [29]));
+assert_trap(() => invoke($1, `check`, [21]), `uninitialized element`);
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0d\x41\x02\x41\x03\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($1, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($3, "test", []));
+assert_trap(() => invoke($1, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [0]));
+assert_trap(() => invoke($1, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [1]));
+assert_trap(() => invoke($1, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [2]), 3);
+assert_trap(() => invoke($1, `check`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [3]), 1);
+assert_trap(() => invoke($1, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [4]), 4);
+assert_trap(() => invoke($1, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [5]), 1);
+assert_trap(() => invoke($1, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [6]));
+let $2 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 13) (i32.const 2) (i32.const 3)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($3, "check", [7]));
+invoke($2, `test`, []);
 
 
-assert_trap(() => call($3, "check", [8]));
+assert_trap(() => invoke($2, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [9]));
+assert_trap(() => invoke($2, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [10]));
+assert_return(() => invoke($2, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($3, "check", [11]));
+assert_return(() => invoke($2, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($3, "check", [12]), 7);
+assert_return(() => invoke($2, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($3, "check", [13]), 3);
+assert_return(() => invoke($2, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($3, "check", [14]), 1);
+assert_trap(() => invoke($2, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [15]), 4);
+assert_trap(() => invoke($2, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($3, "check", [16]), 6);
+assert_trap(() => invoke($2, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [17]));
+assert_trap(() => invoke($2, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [18]));
+assert_trap(() => invoke($2, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [19]));
+assert_trap(() => invoke($2, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [20]));
+assert_return(() => invoke($2, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($3, "check", [21]));
+assert_return(() => invoke($2, `check`, [13]), [value("i32", 3)]);
 
 
-assert_trap(() => call($3, "check", [22]));
+assert_return(() => invoke($2, `check`, [14]), [value("i32", 1)]);
 
 
-assert_trap(() => call($3, "check", [23]));
+assert_return(() => invoke($2, `check`, [15]), [value("i32", 4)]);
 
 
-assert_trap(() => call($3, "check", [24]));
+assert_return(() => invoke($2, `check`, [16]), [value("i32", 6)]);
 
 
-assert_trap(() => call($3, "check", [25]));
+assert_trap(() => invoke($2, `check`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [26]));
+assert_trap(() => invoke($2, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [27]));
+assert_trap(() => invoke($2, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [28]));
+assert_trap(() => invoke($2, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($3, "check", [29]));
+assert_trap(() => invoke($2, `check`, [21]), `uninitialized element`);
 
 
-let $4 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x19\x41\x0f\x41\x02\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($2, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($4, "test", []));
+assert_trap(() => invoke($2, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [0]));
+assert_trap(() => invoke($2, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [1]));
+assert_trap(() => invoke($2, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [2]), 3);
+assert_trap(() => invoke($2, `check`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [3]), 1);
+assert_trap(() => invoke($2, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [4]), 4);
+assert_trap(() => invoke($2, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [5]), 1);
+assert_trap(() => invoke($2, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [6]));
+let $3 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 25) (i32.const 15) (i32.const 2)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($4, "check", [7]));
+invoke($3, `test`, []);
 
 
-assert_trap(() => call($4, "check", [8]));
+assert_trap(() => invoke($3, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [9]));
+assert_trap(() => invoke($3, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [10]));
+assert_return(() => invoke($3, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($4, "check", [11]));
+assert_return(() => invoke($3, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "check", [12]), 7);
+assert_return(() => invoke($3, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($4, "check", [13]), 5);
+assert_return(() => invoke($3, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "check", [14]), 2);
+assert_trap(() => invoke($3, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [15]), 3);
+assert_trap(() => invoke($3, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [16]), 6);
+assert_trap(() => invoke($3, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [17]));
+assert_trap(() => invoke($3, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [18]));
+assert_trap(() => invoke($3, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [19]));
+assert_trap(() => invoke($3, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [20]));
+assert_return(() => invoke($3, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($4, "check", [21]));
+assert_return(() => invoke($3, `check`, [13]), [value("i32", 5)]);
 
 
-assert_trap(() => call($4, "check", [22]));
+assert_return(() => invoke($3, `check`, [14]), [value("i32", 2)]);
 
 
-assert_trap(() => call($4, "check", [23]));
+assert_return(() => invoke($3, `check`, [15]), [value("i32", 3)]);
 
 
-assert_trap(() => call($4, "check", [24]));
+assert_return(() => invoke($3, `check`, [16]), [value("i32", 6)]);
 
 
-assert_return(() => call($4, "check", [25]), 3);
+assert_trap(() => invoke($3, `check`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($4, "check", [26]), 6);
+assert_trap(() => invoke($3, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [27]));
+assert_trap(() => invoke($3, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [28]));
+assert_trap(() => invoke($3, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($4, "check", [29]));
+assert_trap(() => invoke($3, `check`, [21]), `uninitialized element`);
 
 
-let $5 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0d\x41\x19\x41\x03\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($3, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($5, "test", []));
+assert_trap(() => invoke($3, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [0]));
+assert_trap(() => invoke($3, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [1]));
+assert_return(() => invoke($3, `check`, [25]), [value("i32", 3)]);
 
 
-assert_return(() => call($5, "check", [2]), 3);
+assert_return(() => invoke($3, `check`, [26]), [value("i32", 6)]);
 
 
-assert_return(() => call($5, "check", [3]), 1);
+assert_trap(() => invoke($3, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($5, "check", [4]), 4);
+assert_trap(() => invoke($3, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($5, "check", [5]), 1);
+assert_trap(() => invoke($3, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [6]));
+let $4 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 13) (i32.const 25) (i32.const 3)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($5, "check", [7]));
+invoke($4, `test`, []);
 
 
-assert_trap(() => call($5, "check", [8]));
+assert_trap(() => invoke($4, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [9]));
+assert_trap(() => invoke($4, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [10]));
+assert_return(() => invoke($4, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($5, "check", [11]));
+assert_return(() => invoke($4, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($5, "check", [12]), 7);
+assert_return(() => invoke($4, `check`, [4]), [value("i32", 4)]);
 
 
-assert_trap(() => call($5, "check", [13]));
+assert_return(() => invoke($4, `check`, [5]), [value("i32", 1)]);
 
 
-assert_trap(() => call($5, "check", [14]));
+assert_trap(() => invoke($4, `check`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [15]));
+assert_trap(() => invoke($4, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($5, "check", [16]), 6);
+assert_trap(() => invoke($4, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [17]));
+assert_trap(() => invoke($4, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [18]));
+assert_trap(() => invoke($4, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [19]));
+assert_trap(() => invoke($4, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [20]));
+assert_return(() => invoke($4, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($5, "check", [21]));
+assert_trap(() => invoke($4, `check`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [22]));
+assert_trap(() => invoke($4, `check`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [23]));
+assert_trap(() => invoke($4, `check`, [15]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [24]));
+assert_return(() => invoke($4, `check`, [16]), [value("i32", 6)]);
 
 
-assert_trap(() => call($5, "check", [25]));
+assert_trap(() => invoke($4, `check`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [26]));
+assert_trap(() => invoke($4, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [27]));
+assert_trap(() => invoke($4, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [28]));
+assert_trap(() => invoke($4, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($5, "check", [29]));
+assert_trap(() => invoke($4, `check`, [21]), `uninitialized element`);
 
 
-let $6 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x14\x41\x16\x41\x04\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($4, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($6, "test", []));
+assert_trap(() => invoke($4, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [0]));
+assert_trap(() => invoke($4, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [1]));
+assert_trap(() => invoke($4, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [2]), 3);
+assert_trap(() => invoke($4, `check`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [3]), 1);
+assert_trap(() => invoke($4, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [4]), 4);
+assert_trap(() => invoke($4, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [5]), 1);
+assert_trap(() => invoke($4, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [6]));
+let $5 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 20) (i32.const 22) (i32.const 4)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($6, "check", [7]));
+invoke($5, `test`, []);
 
 
-assert_trap(() => call($6, "check", [8]));
+assert_trap(() => invoke($5, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [9]));
+assert_trap(() => invoke($5, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [10]));
+assert_return(() => invoke($5, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($6, "check", [11]));
+assert_return(() => invoke($5, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($6, "check", [12]), 7);
+assert_return(() => invoke($5, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($6, "check", [13]), 5);
+assert_return(() => invoke($5, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($6, "check", [14]), 2);
+assert_trap(() => invoke($5, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [15]), 3);
+assert_trap(() => invoke($5, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($6, "check", [16]), 6);
+assert_trap(() => invoke($5, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [17]));
+assert_trap(() => invoke($5, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [18]));
+assert_trap(() => invoke($5, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [19]));
+assert_trap(() => invoke($5, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [20]));
+assert_return(() => invoke($5, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($6, "check", [21]));
+assert_return(() => invoke($5, `check`, [13]), [value("i32", 5)]);
 
 
-assert_trap(() => call($6, "check", [22]));
+assert_return(() => invoke($5, `check`, [14]), [value("i32", 2)]);
 
 
-assert_trap(() => call($6, "check", [23]));
+assert_return(() => invoke($5, `check`, [15]), [value("i32", 3)]);
 
 
-assert_trap(() => call($6, "check", [24]));
+assert_return(() => invoke($5, `check`, [16]), [value("i32", 6)]);
 
 
-assert_trap(() => call($6, "check", [25]));
+assert_trap(() => invoke($5, `check`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [26]));
+assert_trap(() => invoke($5, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [27]));
+assert_trap(() => invoke($5, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [28]));
+assert_trap(() => invoke($5, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($6, "check", [29]));
+assert_trap(() => invoke($5, `check`, [21]), `uninitialized element`);
 
 
-let $7 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x19\x41\x01\x41\x03\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($5, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($7, "test", []));
+assert_trap(() => invoke($5, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [0]));
+assert_trap(() => invoke($5, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [1]));
+assert_trap(() => invoke($5, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [2]), 3);
+assert_trap(() => invoke($5, `check`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [3]), 1);
+assert_trap(() => invoke($5, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [4]), 4);
+assert_trap(() => invoke($5, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [5]), 1);
+assert_trap(() => invoke($5, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [6]));
+let $6 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 25) (i32.const 1) (i32.const 3)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($7, "check", [7]));
+invoke($6, `test`, []);
 
 
-assert_trap(() => call($7, "check", [8]));
+assert_trap(() => invoke($6, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [9]));
+assert_trap(() => invoke($6, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [10]));
+assert_return(() => invoke($6, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($7, "check", [11]));
+assert_return(() => invoke($6, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($7, "check", [12]), 7);
+assert_return(() => invoke($6, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($7, "check", [13]), 5);
+assert_return(() => invoke($6, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($7, "check", [14]), 2);
+assert_trap(() => invoke($6, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [15]), 3);
+assert_trap(() => invoke($6, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [16]), 6);
+assert_trap(() => invoke($6, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [17]));
+assert_trap(() => invoke($6, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [18]));
+assert_trap(() => invoke($6, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [19]));
+assert_trap(() => invoke($6, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [20]));
+assert_return(() => invoke($6, `check`, [12]), [value("i32", 7)]);
 
 
-assert_trap(() => call($7, "check", [21]));
+assert_return(() => invoke($6, `check`, [13]), [value("i32", 5)]);
 
 
-assert_trap(() => call($7, "check", [22]));
+assert_return(() => invoke($6, `check`, [14]), [value("i32", 2)]);
 
 
-assert_trap(() => call($7, "check", [23]));
+assert_return(() => invoke($6, `check`, [15]), [value("i32", 3)]);
 
 
-assert_trap(() => call($7, "check", [24]));
+assert_return(() => invoke($6, `check`, [16]), [value("i32", 6)]);
 
 
-assert_trap(() => call($7, "check", [25]));
+assert_trap(() => invoke($6, `check`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [26]), 3);
+assert_trap(() => invoke($6, `check`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($7, "check", [27]), 1);
+assert_trap(() => invoke($6, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [28]));
+assert_trap(() => invoke($6, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($7, "check", [29]));
+assert_trap(() => invoke($6, `check`, [21]), `uninitialized element`);
 
 
-let $8 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0a\x41\x0c\x41\x07\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($6, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($8, "test", []));
+assert_trap(() => invoke($6, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [0]));
+assert_trap(() => invoke($6, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [1]));
+assert_trap(() => invoke($6, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($8, "check", [2]), 3);
+assert_return(() => invoke($6, `check`, [26]), [value("i32", 3)]);
 
 
-assert_return(() => call($8, "check", [3]), 1);
+assert_return(() => invoke($6, `check`, [27]), [value("i32", 1)]);
 
 
-assert_return(() => call($8, "check", [4]), 4);
+assert_trap(() => invoke($6, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($8, "check", [5]), 1);
+assert_trap(() => invoke($6, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [6]));
+let $7 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 10) (i32.const 12) (i32.const 7)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($8, "check", [7]));
+invoke($7, `test`, []);
 
 
-assert_trap(() => call($8, "check", [8]));
+assert_trap(() => invoke($7, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [9]));
+assert_trap(() => invoke($7, `check`, [1]), `uninitialized element`);
 
 
-assert_return(() => call($8, "check", [10]), 7);
+assert_return(() => invoke($7, `check`, [2]), [value("i32", 3)]);
 
 
-assert_return(() => call($8, "check", [11]), 5);
+assert_return(() => invoke($7, `check`, [3]), [value("i32", 1)]);
 
 
-assert_return(() => call($8, "check", [12]), 2);
+assert_return(() => invoke($7, `check`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($8, "check", [13]), 3);
+assert_return(() => invoke($7, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($8, "check", [14]), 6);
+assert_trap(() => invoke($7, `check`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [15]));
+assert_trap(() => invoke($7, `check`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [16]));
+assert_trap(() => invoke($7, `check`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [17]));
+assert_trap(() => invoke($7, `check`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [18]));
+assert_return(() => invoke($7, `check`, [10]), [value("i32", 7)]);
 
 
-assert_trap(() => call($8, "check", [19]));
+assert_return(() => invoke($7, `check`, [11]), [value("i32", 5)]);
 
 
-assert_trap(() => call($8, "check", [20]));
+assert_return(() => invoke($7, `check`, [12]), [value("i32", 2)]);
 
 
-assert_trap(() => call($8, "check", [21]));
+assert_return(() => invoke($7, `check`, [13]), [value("i32", 3)]);
 
 
-assert_trap(() => call($8, "check", [22]));
+assert_return(() => invoke($7, `check`, [14]), [value("i32", 6)]);
 
 
-assert_trap(() => call($8, "check", [23]));
+assert_trap(() => invoke($7, `check`, [15]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [24]));
+assert_trap(() => invoke($7, `check`, [16]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [25]));
+assert_trap(() => invoke($7, `check`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [26]));
+assert_trap(() => invoke($7, `check`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [27]));
+assert_trap(() => invoke($7, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [28]));
+assert_trap(() => invoke($7, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($8, "check", [29]));
+assert_trap(() => invoke($7, `check`, [21]), `uninitialized element`);
 
 
-let $9 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8d\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x00\x00\x60\x01\x7f\x01\x7f\x02\xa9\x80\x80\x80\x00\x05\x01\x61\x03\x65\x66\x30\x00\x00\x01\x61\x03\x65\x66\x31\x00\x00\x01\x61\x03\x65\x66\x32\x00\x00\x01\x61\x03\x65\x66\x33\x00\x00\x01\x61\x03\x65\x66\x34\x00\x00\x03\x88\x80\x80\x80\x00\x07\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x90\x80\x80\x80\x00\x02\x04\x74\x65\x73\x74\x00\x0a\x05\x63\x68\x65\x63\x6b\x00\x0b\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xcb\x80\x80\x80\x00\x07\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0c\x41\x0a\x41\x07\xfc\x0e\x00\x00\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b");
+assert_trap(() => invoke($7, `check`, [22]), `uninitialized element`);
 
 
-run(() => call($9, "test", []));
+assert_trap(() => invoke($7, `check`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [0]));
+assert_trap(() => invoke($7, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [1]));
+assert_trap(() => invoke($7, `check`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [2]), 3);
+assert_trap(() => invoke($7, `check`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [3]), 1);
+assert_trap(() => invoke($7, `check`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [4]), 4);
+assert_trap(() => invoke($7, `check`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [5]), 1);
+assert_trap(() => invoke($7, `check`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [6]));
+let $8 = instantiate(`(module
+  (type (func (result i32)))  ;; type #0
+  (import "a" "ef0" (func (result i32)))    ;; index 0
+  (import "a" "ef1" (func (result i32)))
+  (import "a" "ef2" (func (result i32)))
+  (import "a" "ef3" (func (result i32)))
+  (import "a" "ef4" (func (result i32)))    ;; index 4
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 5))  ;; index 5
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))  ;; index 9
+  (func (export "test")
+    (table.copy (i32.const 12) (i32.const 10) (i32.const 7)))
+  (func (export "check") (param i32) (result i32)
+    (call_indirect (type 0) (local.get 0)))
+)`);
 
 
-assert_trap(() => call($9, "check", [7]));
+invoke($8, `test`, []);
 
 
-assert_trap(() => call($9, "check", [8]));
+assert_trap(() => invoke($8, `check`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [9]));
+assert_trap(() => invoke($8, `check`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [10]));
+assert_return(() => invoke($8, `check`, [2]), [value("i32", 3)]);
 
 
-assert_trap(() => call($9, "check", [11]));
+assert_return(() => invoke($8, `check`, [3]), [value("i32", 1)]);
 
 
-assert_trap(() => call($9, "check", [12]));
+assert_return(() => invoke($8, `check`, [4]), [value("i32", 4)]);
 
 
-assert_trap(() => call($9, "check", [13]));
+assert_return(() => invoke($8, `check`, [5]), [value("i32", 1)]);
 
 
-assert_return(() => call($9, "check", [14]), 7);
+assert_trap(() => invoke($8, `check`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [15]), 5);
+assert_trap(() => invoke($8, `check`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [16]), 2);
+assert_trap(() => invoke($8, `check`, [8]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [17]), 3);
+assert_trap(() => invoke($8, `check`, [9]), `uninitialized element`);
 
 
-assert_return(() => call($9, "check", [18]), 6);
+assert_trap(() => invoke($8, `check`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [19]));
+assert_trap(() => invoke($8, `check`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [20]));
+assert_trap(() => invoke($8, `check`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [21]));
+assert_trap(() => invoke($8, `check`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [22]));
+assert_return(() => invoke($8, `check`, [14]), [value("i32", 7)]);
 
 
-assert_trap(() => call($9, "check", [23]));
+assert_return(() => invoke($8, `check`, [15]), [value("i32", 5)]);
 
 
-assert_trap(() => call($9, "check", [24]));
+assert_return(() => invoke($8, `check`, [16]), [value("i32", 2)]);
 
 
-assert_trap(() => call($9, "check", [25]));
+assert_return(() => invoke($8, `check`, [17]), [value("i32", 3)]);
 
 
-assert_trap(() => call($9, "check", [26]));
+assert_return(() => invoke($8, `check`, [18]), [value("i32", 6)]);
 
 
-assert_trap(() => call($9, "check", [27]));
+assert_trap(() => invoke($8, `check`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [28]));
+assert_trap(() => invoke($8, `check`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($9, "check", [29]));
+assert_trap(() => invoke($8, `check`, [21]), `uninitialized element`);
 
 
-let $10 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x1c\x41\x01\x41\x03\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($8, `check`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($10, "test", []));
+assert_trap(() => invoke($8, `check`, [23]), `uninitialized element`);
 
 
-let $11 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x7e\x41\x01\x41\x02\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($8, `check`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($11, "test", []));
+assert_trap(() => invoke($8, `check`, [25]), `uninitialized element`);
 
 
-let $12 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0f\x41\x19\x41\x06\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($8, `check`, [26]), `uninitialized element`);
 
 
-assert_trap(() => call($12, "test", []));
+assert_trap(() => invoke($8, `check`, [27]), `uninitialized element`);
 
 
-let $13 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0f\x41\x7e\x41\x02\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($8, `check`, [28]), `uninitialized element`);
 
 
-assert_trap(() => call($13, "test", []));
+assert_trap(() => invoke($8, `check`, [29]), `uninitialized element`);
 
 
-let $14 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0f\x41\x19\x41\x00\xfc\x0e\x00\x00\x0b");
+let $9 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 28) (i32.const 1) (i32.const 3))
+    ))`);
 
 
-run(() => call($14, "test", []));
+assert_trap(() => invoke($9, `test`, []), `out of bounds`);
 
 
-let $15 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x1e\x41\x0f\x41\x00\xfc\x0e\x00\x00\x0b");
+let $10 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 0xFFFFFFFE) (i32.const 1) (i32.const 2))
+    ))`);
 
 
-run(() => call($15, "test", []));
+assert_trap(() => invoke($10, `test`, []), `out of bounds`);
 
 
-let $16 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x1f\x41\x0f\x41\x00\xfc\x0e\x00\x00\x0b");
+let $11 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 15) (i32.const 25) (i32.const 6))
+    ))`);
 
 
-assert_trap(() => call($16, "test", []));
+assert_trap(() => invoke($11, `test`, []), `out of bounds`);
 
 
-let $17 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0f\x41\x1e\x41\x00\xfc\x0e\x00\x00\x0b");
+let $12 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 15) (i32.const 0xFFFFFFFE) (i32.const 2))
+    ))`);
 
 
-run(() => call($17, "test", []));
+assert_trap(() => invoke($12, `test`, []), `out of bounds`);
 
 
-let $18 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x0f\x41\x1f\x41\x00\xfc\x0e\x00\x00\x0b");
+let $13 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 15) (i32.const 25) (i32.const 0))
+    ))`);
 
 
-assert_trap(() => call($18, "test", []));
+invoke($13, `test`, []);
 
 
-let $19 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x1e\x41\x1e\x41\x00\xfc\x0e\x00\x00\x0b");
+let $14 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 30) (i32.const 15) (i32.const 0))
+    ))`);
 
 
-run(() => call($19, "test", []));
+invoke($14, `test`, []);
 
 
-let $20 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x88\x80\x80\x80\x00\x02\x60\x00\x01\x7f\x60\x00\x00\x03\x8c\x80\x80\x80\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x04\x85\x80\x80\x80\x00\x01\x70\x01\x1e\x1e\x07\x88\x80\x80\x80\x00\x01\x04\x74\x65\x73\x74\x00\x0a\x09\xa3\x80\x80\x80\x00\x04\x00\x41\x02\x0b\x04\x03\x01\x04\x01\x01\x00\x04\x02\x07\x01\x08\x00\x41\x0c\x0b\x05\x07\x05\x02\x03\x06\x01\x00\x05\x05\x09\x02\x07\x06\x0a\xec\x80\x80\x80\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x8c\x80\x80\x80\x00\x00\x41\x1f\x41\x1f\x41\x00\xfc\x0e\x00\x00\x0b");
+let $15 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 31) (i32.const 15) (i32.const 0))
+    ))`);
 
 
-assert_trap(() => call($20, "test", []));
+assert_trap(() => invoke($15, `test`, []), `out of bounds`);
 
 
-let $21 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+let $16 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 15) (i32.const 30) (i32.const 0))
+    ))`);
 
 
-assert_trap(() => call($21, "run", [24, 0, 16]));
+invoke($16, `test`, []);
 
 
-assert_return(() => call($21, "test", [0]), 0);
+let $17 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 15) (i32.const 31) (i32.const 0))
+    ))`);
 
 
-assert_return(() => call($21, "test", [1]), 1);
+assert_trap(() => invoke($17, `test`, []), `out of bounds`);
 
 
-assert_return(() => call($21, "test", [2]), 2);
+let $18 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 30) (i32.const 30) (i32.const 0))
+    ))`);
 
 
-assert_return(() => call($21, "test", [3]), 3);
+invoke($18, `test`, []);
 
 
-assert_return(() => call($21, "test", [4]), 4);
+let $19 = instantiate(`(module
+  (table 30 30 funcref)
+  (elem (i32.const 2) 3 1 4 1)
+  (elem funcref
+    (ref.func 2) (ref.func 7) (ref.func 1) (ref.func 8))
+  (elem (i32.const 12) 7 5 2 3 6)
+  (elem funcref
+    (ref.func 5) (ref.func 9) (ref.func 2) (ref.func 7) (ref.func 6))
+  (func (result i32) (i32.const 0))
+  (func (result i32) (i32.const 1))
+  (func (result i32) (i32.const 2))
+  (func (result i32) (i32.const 3))
+  (func (result i32) (i32.const 4))
+  (func (result i32) (i32.const 5))
+  (func (result i32) (i32.const 6))
+  (func (result i32) (i32.const 7))
+  (func (result i32) (i32.const 8))
+  (func (result i32) (i32.const 9))
+  (func (export "test")
+    (table.copy (i32.const 31) (i32.const 31) (i32.const 0))
+    ))`);
 
 
-assert_return(() => call($21, "test", [5]), 5);
+assert_trap(() => invoke($19, `test`, []), `out of bounds`);
 
 
-assert_return(() => call($21, "test", [6]), 6);
+let $20 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 0)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_return(() => call($21, "test", [7]), 7);
+assert_trap(() => invoke($20, `run`, [24, 0, 16]), `out of bounds`);
 
 
-assert_trap(() => call($21, "test", [8]));
+assert_return(() => invoke($20, `test`, [0]), [value("i32", 0)]);
 
 
-assert_trap(() => call($21, "test", [9]));
+assert_return(() => invoke($20, `test`, [1]), [value("i32", 1)]);
 
 
-assert_trap(() => call($21, "test", [10]));
+assert_return(() => invoke($20, `test`, [2]), [value("i32", 2)]);
 
 
-assert_trap(() => call($21, "test", [11]));
+assert_return(() => invoke($20, `test`, [3]), [value("i32", 3)]);
 
 
-assert_trap(() => call($21, "test", [12]));
+assert_return(() => invoke($20, `test`, [4]), [value("i32", 4)]);
 
 
-assert_trap(() => call($21, "test", [13]));
+assert_return(() => invoke($20, `test`, [5]), [value("i32", 5)]);
 
 
-assert_trap(() => call($21, "test", [14]));
+assert_return(() => invoke($20, `test`, [6]), [value("i32", 6)]);
 
 
-assert_trap(() => call($21, "test", [15]));
+assert_return(() => invoke($20, `test`, [7]), [value("i32", 7)]);
 
 
-assert_trap(() => call($21, "test", [16]));
+assert_trap(() => invoke($20, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [17]));
+assert_trap(() => invoke($20, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [18]));
+assert_trap(() => invoke($20, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [19]));
+assert_trap(() => invoke($20, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [20]));
+assert_trap(() => invoke($20, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [21]));
+assert_trap(() => invoke($20, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [22]));
+assert_trap(() => invoke($20, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [23]));
+assert_trap(() => invoke($20, `test`, [15]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [24]));
+assert_trap(() => invoke($20, `test`, [16]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [25]));
+assert_trap(() => invoke($20, `test`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [26]));
+assert_trap(() => invoke($20, `test`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [27]));
+assert_trap(() => invoke($20, `test`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [28]));
+assert_trap(() => invoke($20, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [29]));
+assert_trap(() => invoke($20, `test`, [21]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [30]));
+assert_trap(() => invoke($20, `test`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($21, "test", [31]));
+assert_trap(() => invoke($20, `test`, [23]), `uninitialized element`);
 
 
-let $22 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8f\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x09\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($20, `test`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "run", [23, 0, 15]));
+assert_trap(() => invoke($20, `test`, [25]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [0]), 0);
+assert_trap(() => invoke($20, `test`, [26]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [1]), 1);
+assert_trap(() => invoke($20, `test`, [27]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [2]), 2);
+assert_trap(() => invoke($20, `test`, [28]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [3]), 3);
+assert_trap(() => invoke($20, `test`, [29]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [4]), 4);
+assert_trap(() => invoke($20, `test`, [30]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [5]), 5);
+assert_trap(() => invoke($20, `test`, [31]), `uninitialized element`);
 
 
-assert_return(() => call($22, "test", [6]), 6);
+let $21 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 0)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7 $$f8)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_return(() => call($22, "test", [7]), 7);
+assert_trap(() => invoke($21, `run`, [23, 0, 15]), `out of bounds`);
 
 
-assert_return(() => call($22, "test", [8]), 8);
+assert_return(() => invoke($21, `test`, [0]), [value("i32", 0)]);
 
 
-assert_trap(() => call($22, "test", [9]));
+assert_return(() => invoke($21, `test`, [1]), [value("i32", 1)]);
 
 
-assert_trap(() => call($22, "test", [10]));
+assert_return(() => invoke($21, `test`, [2]), [value("i32", 2)]);
 
 
-assert_trap(() => call($22, "test", [11]));
+assert_return(() => invoke($21, `test`, [3]), [value("i32", 3)]);
 
 
-assert_trap(() => call($22, "test", [12]));
+assert_return(() => invoke($21, `test`, [4]), [value("i32", 4)]);
 
 
-assert_trap(() => call($22, "test", [13]));
+assert_return(() => invoke($21, `test`, [5]), [value("i32", 5)]);
 
 
-assert_trap(() => call($22, "test", [14]));
+assert_return(() => invoke($21, `test`, [6]), [value("i32", 6)]);
 
 
-assert_trap(() => call($22, "test", [15]));
+assert_return(() => invoke($21, `test`, [7]), [value("i32", 7)]);
 
 
-assert_trap(() => call($22, "test", [16]));
+assert_return(() => invoke($21, `test`, [8]), [value("i32", 8)]);
 
 
-assert_trap(() => call($22, "test", [17]));
+assert_trap(() => invoke($21, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [18]));
+assert_trap(() => invoke($21, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [19]));
+assert_trap(() => invoke($21, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [20]));
+assert_trap(() => invoke($21, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [21]));
+assert_trap(() => invoke($21, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [22]));
+assert_trap(() => invoke($21, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [23]));
+assert_trap(() => invoke($21, `test`, [15]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [24]));
+assert_trap(() => invoke($21, `test`, [16]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [25]));
+assert_trap(() => invoke($21, `test`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [26]));
+assert_trap(() => invoke($21, `test`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [27]));
+assert_trap(() => invoke($21, `test`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [28]));
+assert_trap(() => invoke($21, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [29]));
+assert_trap(() => invoke($21, `test`, [21]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [30]));
+assert_trap(() => invoke($21, `test`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($22, "test", [31]));
+assert_trap(() => invoke($21, `test`, [23]), `uninitialized element`);
 
 
-let $23 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x18\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($21, `test`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "run", [0, 24, 16]));
+assert_trap(() => invoke($21, `test`, [25]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [0]));
+assert_trap(() => invoke($21, `test`, [26]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [1]));
+assert_trap(() => invoke($21, `test`, [27]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [2]));
+assert_trap(() => invoke($21, `test`, [28]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [3]));
+assert_trap(() => invoke($21, `test`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [4]));
+assert_trap(() => invoke($21, `test`, [30]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [5]));
+assert_trap(() => invoke($21, `test`, [31]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [6]));
+let $22 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 24)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($23, "test", [7]));
+assert_trap(() => invoke($22, `run`, [0, 24, 16]), `out of bounds`);
 
 
-assert_trap(() => call($23, "test", [8]));
+assert_trap(() => invoke($22, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [9]));
+assert_trap(() => invoke($22, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [10]));
+assert_trap(() => invoke($22, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [11]));
+assert_trap(() => invoke($22, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [12]));
+assert_trap(() => invoke($22, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [13]));
+assert_trap(() => invoke($22, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [14]));
+assert_trap(() => invoke($22, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [15]));
+assert_trap(() => invoke($22, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [16]));
+assert_trap(() => invoke($22, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [17]));
+assert_trap(() => invoke($22, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [18]));
+assert_trap(() => invoke($22, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [19]));
+assert_trap(() => invoke($22, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [20]));
+assert_trap(() => invoke($22, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [21]));
+assert_trap(() => invoke($22, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [22]));
+assert_trap(() => invoke($22, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($23, "test", [23]));
+assert_trap(() => invoke($22, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [24]), 0);
+assert_trap(() => invoke($22, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [25]), 1);
+assert_trap(() => invoke($22, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [26]), 2);
+assert_trap(() => invoke($22, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [27]), 3);
+assert_trap(() => invoke($22, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [28]), 4);
+assert_trap(() => invoke($22, `test`, [20]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [29]), 5);
+assert_trap(() => invoke($22, `test`, [21]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [30]), 6);
+assert_trap(() => invoke($22, `test`, [22]), `uninitialized element`);
 
 
-assert_return(() => call($23, "test", [31]), 7);
+assert_trap(() => invoke($22, `test`, [23]), `uninitialized element`);
 
 
-let $24 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8f\x80\x80\x80\x00\x01\x00\x41\x17\x0b\x09\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($22, `test`, [24]), [value("i32", 0)]);
 
 
-assert_trap(() => call($24, "run", [0, 23, 15]));
+assert_return(() => invoke($22, `test`, [25]), [value("i32", 1)]);
 
 
-assert_trap(() => call($24, "test", [0]));
+assert_return(() => invoke($22, `test`, [26]), [value("i32", 2)]);
 
 
-assert_trap(() => call($24, "test", [1]));
+assert_return(() => invoke($22, `test`, [27]), [value("i32", 3)]);
 
 
-assert_trap(() => call($24, "test", [2]));
+assert_return(() => invoke($22, `test`, [28]), [value("i32", 4)]);
 
 
-assert_trap(() => call($24, "test", [3]));
+assert_return(() => invoke($22, `test`, [29]), [value("i32", 5)]);
 
 
-assert_trap(() => call($24, "test", [4]));
+assert_return(() => invoke($22, `test`, [30]), [value("i32", 6)]);
 
 
-assert_trap(() => call($24, "test", [5]));
+assert_return(() => invoke($22, `test`, [31]), [value("i32", 7)]);
 
 
-assert_trap(() => call($24, "test", [6]));
+let $23 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 23)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7 $$f8)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($24, "test", [7]));
+assert_trap(() => invoke($23, `run`, [0, 23, 15]), `out of bounds`);
 
 
-assert_trap(() => call($24, "test", [8]));
+assert_trap(() => invoke($23, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [9]));
+assert_trap(() => invoke($23, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [10]));
+assert_trap(() => invoke($23, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [11]));
+assert_trap(() => invoke($23, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [12]));
+assert_trap(() => invoke($23, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [13]));
+assert_trap(() => invoke($23, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [14]));
+assert_trap(() => invoke($23, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [15]));
+assert_trap(() => invoke($23, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [16]));
+assert_trap(() => invoke($23, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [17]));
+assert_trap(() => invoke($23, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [18]));
+assert_trap(() => invoke($23, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [19]));
+assert_trap(() => invoke($23, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [20]));
+assert_trap(() => invoke($23, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [21]));
+assert_trap(() => invoke($23, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($24, "test", [22]));
+assert_trap(() => invoke($23, `test`, [14]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [23]), 0);
+assert_trap(() => invoke($23, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [24]), 1);
+assert_trap(() => invoke($23, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [25]), 2);
+assert_trap(() => invoke($23, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [26]), 3);
+assert_trap(() => invoke($23, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [27]), 4);
+assert_trap(() => invoke($23, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [28]), 5);
+assert_trap(() => invoke($23, `test`, [20]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [29]), 6);
+assert_trap(() => invoke($23, `test`, [21]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [30]), 7);
+assert_trap(() => invoke($23, `test`, [22]), `uninitialized element`);
 
 
-assert_return(() => call($24, "test", [31]), 8);
+assert_return(() => invoke($23, `test`, [23]), [value("i32", 0)]);
 
 
-let $25 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x0b\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($23, `test`, [24]), [value("i32", 1)]);
 
 
-assert_trap(() => call($25, "run", [24, 11, 16]));
+assert_return(() => invoke($23, `test`, [25]), [value("i32", 2)]);
 
 
-assert_trap(() => call($25, "test", [0]));
+assert_return(() => invoke($23, `test`, [26]), [value("i32", 3)]);
 
 
-assert_trap(() => call($25, "test", [1]));
+assert_return(() => invoke($23, `test`, [27]), [value("i32", 4)]);
 
 
-assert_trap(() => call($25, "test", [2]));
+assert_return(() => invoke($23, `test`, [28]), [value("i32", 5)]);
 
 
-assert_trap(() => call($25, "test", [3]));
+assert_return(() => invoke($23, `test`, [29]), [value("i32", 6)]);
 
 
-assert_trap(() => call($25, "test", [4]));
+assert_return(() => invoke($23, `test`, [30]), [value("i32", 7)]);
 
 
-assert_trap(() => call($25, "test", [5]));
+assert_return(() => invoke($23, `test`, [31]), [value("i32", 8)]);
 
 
-assert_trap(() => call($25, "test", [6]));
+let $24 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 11)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($25, "test", [7]));
+assert_trap(() => invoke($24, `run`, [24, 11, 16]), `out of bounds`);
 
 
-assert_trap(() => call($25, "test", [8]));
+assert_trap(() => invoke($24, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [9]));
+assert_trap(() => invoke($24, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [10]));
+assert_trap(() => invoke($24, `test`, [2]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [11]), 0);
+assert_trap(() => invoke($24, `test`, [3]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [12]), 1);
+assert_trap(() => invoke($24, `test`, [4]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [13]), 2);
+assert_trap(() => invoke($24, `test`, [5]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [14]), 3);
+assert_trap(() => invoke($24, `test`, [6]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [15]), 4);
+assert_trap(() => invoke($24, `test`, [7]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [16]), 5);
+assert_trap(() => invoke($24, `test`, [8]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [17]), 6);
+assert_trap(() => invoke($24, `test`, [9]), `uninitialized element`);
 
 
-assert_return(() => call($25, "test", [18]), 7);
+assert_trap(() => invoke($24, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [19]));
+assert_return(() => invoke($24, `test`, [11]), [value("i32", 0)]);
 
 
-assert_trap(() => call($25, "test", [20]));
+assert_return(() => invoke($24, `test`, [12]), [value("i32", 1)]);
 
 
-assert_trap(() => call($25, "test", [21]));
+assert_return(() => invoke($24, `test`, [13]), [value("i32", 2)]);
 
 
-assert_trap(() => call($25, "test", [22]));
+assert_return(() => invoke($24, `test`, [14]), [value("i32", 3)]);
 
 
-assert_trap(() => call($25, "test", [23]));
+assert_return(() => invoke($24, `test`, [15]), [value("i32", 4)]);
 
 
-assert_trap(() => call($25, "test", [24]));
+assert_return(() => invoke($24, `test`, [16]), [value("i32", 5)]);
 
 
-assert_trap(() => call($25, "test", [25]));
+assert_return(() => invoke($24, `test`, [17]), [value("i32", 6)]);
 
 
-assert_trap(() => call($25, "test", [26]));
+assert_return(() => invoke($24, `test`, [18]), [value("i32", 7)]);
 
 
-assert_trap(() => call($25, "test", [27]));
+assert_trap(() => invoke($24, `test`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [28]));
+assert_trap(() => invoke($24, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [29]));
+assert_trap(() => invoke($24, `test`, [21]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [30]));
+assert_trap(() => invoke($24, `test`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($25, "test", [31]));
+assert_trap(() => invoke($24, `test`, [23]), `uninitialized element`);
 
 
-let $26 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x18\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_trap(() => invoke($24, `test`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "run", [11, 24, 16]));
+assert_trap(() => invoke($24, `test`, [25]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [0]));
+assert_trap(() => invoke($24, `test`, [26]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [1]));
+assert_trap(() => invoke($24, `test`, [27]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [2]));
+assert_trap(() => invoke($24, `test`, [28]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [3]));
+assert_trap(() => invoke($24, `test`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [4]));
+assert_trap(() => invoke($24, `test`, [30]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [5]));
+assert_trap(() => invoke($24, `test`, [31]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [6]));
+let $25 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 24)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($26, "test", [7]));
+assert_trap(() => invoke($25, `run`, [11, 24, 16]), `out of bounds`);
 
 
-assert_trap(() => call($26, "test", [8]));
+assert_trap(() => invoke($25, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [9]));
+assert_trap(() => invoke($25, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [10]));
+assert_trap(() => invoke($25, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [11]));
+assert_trap(() => invoke($25, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [12]));
+assert_trap(() => invoke($25, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [13]));
+assert_trap(() => invoke($25, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [14]));
+assert_trap(() => invoke($25, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [15]));
+assert_trap(() => invoke($25, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [16]));
+assert_trap(() => invoke($25, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [17]));
+assert_trap(() => invoke($25, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [18]));
+assert_trap(() => invoke($25, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [19]));
+assert_trap(() => invoke($25, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [20]));
+assert_trap(() => invoke($25, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [21]));
+assert_trap(() => invoke($25, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [22]));
+assert_trap(() => invoke($25, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($26, "test", [23]));
+assert_trap(() => invoke($25, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [24]), 0);
+assert_trap(() => invoke($25, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [25]), 1);
+assert_trap(() => invoke($25, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [26]), 2);
+assert_trap(() => invoke($25, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [27]), 3);
+assert_trap(() => invoke($25, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [28]), 4);
+assert_trap(() => invoke($25, `test`, [20]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [29]), 5);
+assert_trap(() => invoke($25, `test`, [21]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [30]), 6);
+assert_trap(() => invoke($25, `test`, [22]), `uninitialized element`);
 
 
-assert_return(() => call($26, "test", [31]), 7);
+assert_trap(() => invoke($25, `test`, [23]), `uninitialized element`);
 
 
-let $27 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x15\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($25, `test`, [24]), [value("i32", 0)]);
 
 
-assert_trap(() => call($27, "run", [24, 21, 16]));
+assert_return(() => invoke($25, `test`, [25]), [value("i32", 1)]);
 
 
-assert_trap(() => call($27, "test", [0]));
+assert_return(() => invoke($25, `test`, [26]), [value("i32", 2)]);
 
 
-assert_trap(() => call($27, "test", [1]));
+assert_return(() => invoke($25, `test`, [27]), [value("i32", 3)]);
 
 
-assert_trap(() => call($27, "test", [2]));
+assert_return(() => invoke($25, `test`, [28]), [value("i32", 4)]);
 
 
-assert_trap(() => call($27, "test", [3]));
+assert_return(() => invoke($25, `test`, [29]), [value("i32", 5)]);
 
 
-assert_trap(() => call($27, "test", [4]));
+assert_return(() => invoke($25, `test`, [30]), [value("i32", 6)]);
 
 
-assert_trap(() => call($27, "test", [5]));
+assert_return(() => invoke($25, `test`, [31]), [value("i32", 7)]);
 
 
-assert_trap(() => call($27, "test", [6]));
+let $26 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 21)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($27, "test", [7]));
+assert_trap(() => invoke($26, `run`, [24, 21, 16]), `out of bounds`);
 
 
-assert_trap(() => call($27, "test", [8]));
+assert_trap(() => invoke($26, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [9]));
+assert_trap(() => invoke($26, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [10]));
+assert_trap(() => invoke($26, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [11]));
+assert_trap(() => invoke($26, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [12]));
+assert_trap(() => invoke($26, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [13]));
+assert_trap(() => invoke($26, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [14]));
+assert_trap(() => invoke($26, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [15]));
+assert_trap(() => invoke($26, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [16]));
+assert_trap(() => invoke($26, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [17]));
+assert_trap(() => invoke($26, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [18]));
+assert_trap(() => invoke($26, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [19]));
+assert_trap(() => invoke($26, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [20]));
+assert_trap(() => invoke($26, `test`, [12]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [21]), 0);
+assert_trap(() => invoke($26, `test`, [13]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [22]), 1);
+assert_trap(() => invoke($26, `test`, [14]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [23]), 2);
+assert_trap(() => invoke($26, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [24]), 3);
+assert_trap(() => invoke($26, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [25]), 4);
+assert_trap(() => invoke($26, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [26]), 5);
+assert_trap(() => invoke($26, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [27]), 6);
+assert_trap(() => invoke($26, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($27, "test", [28]), 7);
+assert_trap(() => invoke($26, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($27, "test", [29]));
+assert_return(() => invoke($26, `test`, [21]), [value("i32", 0)]);
 
 
-assert_trap(() => call($27, "test", [30]));
+assert_return(() => invoke($26, `test`, [22]), [value("i32", 1)]);
 
 
-assert_trap(() => call($27, "test", [31]));
+assert_return(() => invoke($26, `test`, [23]), [value("i32", 2)]);
 
 
-let $28 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x8e\x80\x80\x80\x00\x01\x00\x41\x18\x0b\x08\x00\x01\x02\x03\x04\x05\x06\x07\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($26, `test`, [24]), [value("i32", 3)]);
 
 
-assert_trap(() => call($28, "run", [21, 24, 16]));
+assert_return(() => invoke($26, `test`, [25]), [value("i32", 4)]);
 
 
-assert_trap(() => call($28, "test", [0]));
+assert_return(() => invoke($26, `test`, [26]), [value("i32", 5)]);
 
 
-assert_trap(() => call($28, "test", [1]));
+assert_return(() => invoke($26, `test`, [27]), [value("i32", 6)]);
 
 
-assert_trap(() => call($28, "test", [2]));
+assert_return(() => invoke($26, `test`, [28]), [value("i32", 7)]);
 
 
-assert_trap(() => call($28, "test", [3]));
+assert_trap(() => invoke($26, `test`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [4]));
+assert_trap(() => invoke($26, `test`, [30]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [5]));
+assert_trap(() => invoke($26, `test`, [31]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [6]));
+let $27 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 24)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($28, "test", [7]));
+assert_trap(() => invoke($27, `run`, [21, 24, 16]), `out of bounds`);
 
 
-assert_trap(() => call($28, "test", [8]));
+assert_trap(() => invoke($27, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [9]));
+assert_trap(() => invoke($27, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [10]));
+assert_trap(() => invoke($27, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [11]));
+assert_trap(() => invoke($27, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [12]));
+assert_trap(() => invoke($27, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [13]));
+assert_trap(() => invoke($27, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [14]));
+assert_trap(() => invoke($27, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [15]));
+assert_trap(() => invoke($27, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [16]));
+assert_trap(() => invoke($27, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [17]));
+assert_trap(() => invoke($27, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [18]));
+assert_trap(() => invoke($27, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [19]));
+assert_trap(() => invoke($27, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [20]));
+assert_trap(() => invoke($27, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [21]));
+assert_trap(() => invoke($27, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [22]));
+assert_trap(() => invoke($27, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($28, "test", [23]));
+assert_trap(() => invoke($27, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [24]), 0);
+assert_trap(() => invoke($27, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [25]), 1);
+assert_trap(() => invoke($27, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [26]), 2);
+assert_trap(() => invoke($27, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [27]), 3);
+assert_trap(() => invoke($27, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [28]), 4);
+assert_trap(() => invoke($27, `test`, [20]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [29]), 5);
+assert_trap(() => invoke($27, `test`, [21]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [30]), 6);
+assert_trap(() => invoke($27, `test`, [22]), `uninitialized element`);
 
 
-assert_return(() => call($28, "test", [31]), 7);
+assert_trap(() => invoke($27, `test`, [23]), `uninitialized element`);
 
 
-let $29 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x85\x80\x80\x80\x00\x01\x70\x01\x20\x40\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x91\x80\x80\x80\x00\x01\x00\x41\x15\x0b\x0b\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($27, `test`, [24]), [value("i32", 0)]);
 
 
-assert_trap(() => call($29, "run", [21, 21, 16]));
+assert_return(() => invoke($27, `test`, [25]), [value("i32", 1)]);
 
 
-assert_trap(() => call($29, "test", [0]));
+assert_return(() => invoke($27, `test`, [26]), [value("i32", 2)]);
 
 
-assert_trap(() => call($29, "test", [1]));
+assert_return(() => invoke($27, `test`, [27]), [value("i32", 3)]);
 
 
-assert_trap(() => call($29, "test", [2]));
+assert_return(() => invoke($27, `test`, [28]), [value("i32", 4)]);
 
 
-assert_trap(() => call($29, "test", [3]));
+assert_return(() => invoke($27, `test`, [29]), [value("i32", 5)]);
 
 
-assert_trap(() => call($29, "test", [4]));
+assert_return(() => invoke($27, `test`, [30]), [value("i32", 6)]);
 
 
-assert_trap(() => call($29, "test", [5]));
+assert_return(() => invoke($27, `test`, [31]), [value("i32", 7)]);
 
 
-assert_trap(() => call($29, "test", [6]));
+let $28 = instantiate(`(module
+  (type (func (result i32)))
+  (table 32 64 funcref)
+  (elem (i32.const 21)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7 $$f8 $$f9 $$f10)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($29, "test", [7]));
+assert_trap(() => invoke($28, `run`, [21, 21, 16]), `out of bounds`);
 
 
-assert_trap(() => call($29, "test", [8]));
+assert_trap(() => invoke($28, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [9]));
+assert_trap(() => invoke($28, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [10]));
+assert_trap(() => invoke($28, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [11]));
+assert_trap(() => invoke($28, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [12]));
+assert_trap(() => invoke($28, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [13]));
+assert_trap(() => invoke($28, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [14]));
+assert_trap(() => invoke($28, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [15]));
+assert_trap(() => invoke($28, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [16]));
+assert_trap(() => invoke($28, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [17]));
+assert_trap(() => invoke($28, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [18]));
+assert_trap(() => invoke($28, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [19]));
+assert_trap(() => invoke($28, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($29, "test", [20]));
+assert_trap(() => invoke($28, `test`, [12]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [21]), 0);
+assert_trap(() => invoke($28, `test`, [13]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [22]), 1);
+assert_trap(() => invoke($28, `test`, [14]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [23]), 2);
+assert_trap(() => invoke($28, `test`, [15]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [24]), 3);
+assert_trap(() => invoke($28, `test`, [16]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [25]), 4);
+assert_trap(() => invoke($28, `test`, [17]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [26]), 5);
+assert_trap(() => invoke($28, `test`, [18]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [27]), 6);
+assert_trap(() => invoke($28, `test`, [19]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [28]), 7);
+assert_trap(() => invoke($28, `test`, [20]), `uninitialized element`);
 
 
-assert_return(() => call($29, "test", [29]), 8);
+assert_return(() => invoke($28, `test`, [21]), [value("i32", 0)]);
 
 
-assert_return(() => call($29, "test", [30]), 9);
+assert_return(() => invoke($28, `test`, [22]), [value("i32", 1)]);
 
 
-assert_return(() => call($29, "test", [31]), 10);
+assert_return(() => invoke($28, `test`, [23]), [value("i32", 2)]);
 
 
-let $30 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x87\x80\x80\x80\x00\x01\x70\x01\x80\x01\x80\x01\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x97\x80\x80\x80\x00\x01\x00\x41\xf0\x00\x0b\x10\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($28, `test`, [24]), [value("i32", 3)]);
 
 
-assert_trap(() => call($30, "run", [0, 112, -32]));
+assert_return(() => invoke($28, `test`, [25]), [value("i32", 4)]);
 
 
-assert_trap(() => call($30, "test", [0]));
+assert_return(() => invoke($28, `test`, [26]), [value("i32", 5)]);
 
 
-assert_trap(() => call($30, "test", [1]));
+assert_return(() => invoke($28, `test`, [27]), [value("i32", 6)]);
 
 
-assert_trap(() => call($30, "test", [2]));
+assert_return(() => invoke($28, `test`, [28]), [value("i32", 7)]);
 
 
-assert_trap(() => call($30, "test", [3]));
+assert_return(() => invoke($28, `test`, [29]), [value("i32", 8)]);
 
 
-assert_trap(() => call($30, "test", [4]));
+assert_return(() => invoke($28, `test`, [30]), [value("i32", 9)]);
 
 
-assert_trap(() => call($30, "test", [5]));
+assert_return(() => invoke($28, `test`, [31]), [value("i32", 10)]);
 
 
-assert_trap(() => call($30, "test", [6]));
+let $29 = instantiate(`(module
+  (type (func (result i32)))
+  (table 128 128 funcref)
+  (elem (i32.const 112)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7 $$f8 $$f9 $$f10 $$f11 $$f12 $$f13 $$f14 $$f15)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_trap(() => call($30, "test", [7]));
+assert_trap(() => invoke($29, `run`, [0, 112, -32]), `out of bounds`);
 
 
-assert_trap(() => call($30, "test", [8]));
+assert_trap(() => invoke($29, `test`, [0]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [9]));
+assert_trap(() => invoke($29, `test`, [1]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [10]));
+assert_trap(() => invoke($29, `test`, [2]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [11]));
+assert_trap(() => invoke($29, `test`, [3]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [12]));
+assert_trap(() => invoke($29, `test`, [4]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [13]));
+assert_trap(() => invoke($29, `test`, [5]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [14]));
+assert_trap(() => invoke($29, `test`, [6]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [15]));
+assert_trap(() => invoke($29, `test`, [7]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [16]));
+assert_trap(() => invoke($29, `test`, [8]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [17]));
+assert_trap(() => invoke($29, `test`, [9]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [18]));
+assert_trap(() => invoke($29, `test`, [10]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [19]));
+assert_trap(() => invoke($29, `test`, [11]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [20]));
+assert_trap(() => invoke($29, `test`, [12]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [21]));
+assert_trap(() => invoke($29, `test`, [13]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [22]));
+assert_trap(() => invoke($29, `test`, [14]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [23]));
+assert_trap(() => invoke($29, `test`, [15]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [24]));
+assert_trap(() => invoke($29, `test`, [16]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [25]));
+assert_trap(() => invoke($29, `test`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [26]));
+assert_trap(() => invoke($29, `test`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [27]));
+assert_trap(() => invoke($29, `test`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [28]));
+assert_trap(() => invoke($29, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [29]));
+assert_trap(() => invoke($29, `test`, [21]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [30]));
+assert_trap(() => invoke($29, `test`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [31]));
+assert_trap(() => invoke($29, `test`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [32]));
+assert_trap(() => invoke($29, `test`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [33]));
+assert_trap(() => invoke($29, `test`, [25]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [34]));
+assert_trap(() => invoke($29, `test`, [26]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [35]));
+assert_trap(() => invoke($29, `test`, [27]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [36]));
+assert_trap(() => invoke($29, `test`, [28]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [37]));
+assert_trap(() => invoke($29, `test`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [38]));
+assert_trap(() => invoke($29, `test`, [30]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [39]));
+assert_trap(() => invoke($29, `test`, [31]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [40]));
+assert_trap(() => invoke($29, `test`, [32]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [41]));
+assert_trap(() => invoke($29, `test`, [33]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [42]));
+assert_trap(() => invoke($29, `test`, [34]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [43]));
+assert_trap(() => invoke($29, `test`, [35]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [44]));
+assert_trap(() => invoke($29, `test`, [36]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [45]));
+assert_trap(() => invoke($29, `test`, [37]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [46]));
+assert_trap(() => invoke($29, `test`, [38]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [47]));
+assert_trap(() => invoke($29, `test`, [39]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [48]));
+assert_trap(() => invoke($29, `test`, [40]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [49]));
+assert_trap(() => invoke($29, `test`, [41]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [50]));
+assert_trap(() => invoke($29, `test`, [42]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [51]));
+assert_trap(() => invoke($29, `test`, [43]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [52]));
+assert_trap(() => invoke($29, `test`, [44]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [53]));
+assert_trap(() => invoke($29, `test`, [45]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [54]));
+assert_trap(() => invoke($29, `test`, [46]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [55]));
+assert_trap(() => invoke($29, `test`, [47]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [56]));
+assert_trap(() => invoke($29, `test`, [48]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [57]));
+assert_trap(() => invoke($29, `test`, [49]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [58]));
+assert_trap(() => invoke($29, `test`, [50]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [59]));
+assert_trap(() => invoke($29, `test`, [51]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [60]));
+assert_trap(() => invoke($29, `test`, [52]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [61]));
+assert_trap(() => invoke($29, `test`, [53]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [62]));
+assert_trap(() => invoke($29, `test`, [54]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [63]));
+assert_trap(() => invoke($29, `test`, [55]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [64]));
+assert_trap(() => invoke($29, `test`, [56]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [65]));
+assert_trap(() => invoke($29, `test`, [57]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [66]));
+assert_trap(() => invoke($29, `test`, [58]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [67]));
+assert_trap(() => invoke($29, `test`, [59]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [68]));
+assert_trap(() => invoke($29, `test`, [60]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [69]));
+assert_trap(() => invoke($29, `test`, [61]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [70]));
+assert_trap(() => invoke($29, `test`, [62]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [71]));
+assert_trap(() => invoke($29, `test`, [63]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [72]));
+assert_trap(() => invoke($29, `test`, [64]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [73]));
+assert_trap(() => invoke($29, `test`, [65]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [74]));
+assert_trap(() => invoke($29, `test`, [66]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [75]));
+assert_trap(() => invoke($29, `test`, [67]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [76]));
+assert_trap(() => invoke($29, `test`, [68]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [77]));
+assert_trap(() => invoke($29, `test`, [69]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [78]));
+assert_trap(() => invoke($29, `test`, [70]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [79]));
+assert_trap(() => invoke($29, `test`, [71]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [80]));
+assert_trap(() => invoke($29, `test`, [72]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [81]));
+assert_trap(() => invoke($29, `test`, [73]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [82]));
+assert_trap(() => invoke($29, `test`, [74]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [83]));
+assert_trap(() => invoke($29, `test`, [75]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [84]));
+assert_trap(() => invoke($29, `test`, [76]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [85]));
+assert_trap(() => invoke($29, `test`, [77]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [86]));
+assert_trap(() => invoke($29, `test`, [78]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [87]));
+assert_trap(() => invoke($29, `test`, [79]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [88]));
+assert_trap(() => invoke($29, `test`, [80]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [89]));
+assert_trap(() => invoke($29, `test`, [81]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [90]));
+assert_trap(() => invoke($29, `test`, [82]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [91]));
+assert_trap(() => invoke($29, `test`, [83]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [92]));
+assert_trap(() => invoke($29, `test`, [84]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [93]));
+assert_trap(() => invoke($29, `test`, [85]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [94]));
+assert_trap(() => invoke($29, `test`, [86]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [95]));
+assert_trap(() => invoke($29, `test`, [87]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [96]));
+assert_trap(() => invoke($29, `test`, [88]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [97]));
+assert_trap(() => invoke($29, `test`, [89]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [98]));
+assert_trap(() => invoke($29, `test`, [90]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [99]));
+assert_trap(() => invoke($29, `test`, [91]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [100]));
+assert_trap(() => invoke($29, `test`, [92]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [101]));
+assert_trap(() => invoke($29, `test`, [93]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [102]));
+assert_trap(() => invoke($29, `test`, [94]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [103]));
+assert_trap(() => invoke($29, `test`, [95]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [104]));
+assert_trap(() => invoke($29, `test`, [96]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [105]));
+assert_trap(() => invoke($29, `test`, [97]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [106]));
+assert_trap(() => invoke($29, `test`, [98]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [107]));
+assert_trap(() => invoke($29, `test`, [99]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [108]));
+assert_trap(() => invoke($29, `test`, [100]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [109]));
+assert_trap(() => invoke($29, `test`, [101]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [110]));
+assert_trap(() => invoke($29, `test`, [102]), `uninitialized element`);
 
 
-assert_trap(() => call($30, "test", [111]));
+assert_trap(() => invoke($29, `test`, [103]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [112]), 0);
+assert_trap(() => invoke($29, `test`, [104]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [113]), 1);
+assert_trap(() => invoke($29, `test`, [105]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [114]), 2);
+assert_trap(() => invoke($29, `test`, [106]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [115]), 3);
+assert_trap(() => invoke($29, `test`, [107]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [116]), 4);
+assert_trap(() => invoke($29, `test`, [108]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [117]), 5);
+assert_trap(() => invoke($29, `test`, [109]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [118]), 6);
+assert_trap(() => invoke($29, `test`, [110]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [119]), 7);
+assert_trap(() => invoke($29, `test`, [111]), `uninitialized element`);
 
 
-assert_return(() => call($30, "test", [120]), 8);
+assert_return(() => invoke($29, `test`, [112]), [value("i32", 0)]);
 
 
-assert_return(() => call($30, "test", [121]), 9);
+assert_return(() => invoke($29, `test`, [113]), [value("i32", 1)]);
 
 
-assert_return(() => call($30, "test", [122]), 10);
+assert_return(() => invoke($29, `test`, [114]), [value("i32", 2)]);
 
 
-assert_return(() => call($30, "test", [123]), 11);
+assert_return(() => invoke($29, `test`, [115]), [value("i32", 3)]);
 
 
-assert_return(() => call($30, "test", [124]), 12);
+assert_return(() => invoke($29, `test`, [116]), [value("i32", 4)]);
 
 
-assert_return(() => call($30, "test", [125]), 13);
+assert_return(() => invoke($29, `test`, [117]), [value("i32", 5)]);
 
 
-assert_return(() => call($30, "test", [126]), 14);
+assert_return(() => invoke($29, `test`, [118]), [value("i32", 6)]);
 
 
-assert_return(() => call($30, "test", [127]), 15);
+assert_return(() => invoke($29, `test`, [119]), [value("i32", 7)]);
 
 
-let $31 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x90\x80\x80\x80\x00\x03\x60\x00\x01\x7f\x60\x01\x7f\x01\x7f\x60\x03\x7f\x7f\x7f\x00\x03\x93\x80\x80\x80\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x04\x87\x80\x80\x80\x00\x01\x70\x01\x80\x01\x80\x01\x07\xe4\x80\x80\x80\x00\x12\x02\x66\x30\x00\x00\x02\x66\x31\x00\x01\x02\x66\x32\x00\x02\x02\x66\x33\x00\x03\x02\x66\x34\x00\x04\x02\x66\x35\x00\x05\x02\x66\x36\x00\x06\x02\x66\x37\x00\x07\x02\x66\x38\x00\x08\x02\x66\x39\x00\x09\x03\x66\x31\x30\x00\x0a\x03\x66\x31\x31\x00\x0b\x03\x66\x31\x32\x00\x0c\x03\x66\x31\x33\x00\x0d\x03\x66\x31\x34\x00\x0e\x03\x66\x31\x35\x00\x0f\x04\x74\x65\x73\x74\x00\x10\x03\x72\x75\x6e\x00\x11\x09\x96\x80\x80\x80\x00\x01\x00\x41\x00\x0b\x10\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x0a\xae\x81\x80\x80\x00\x12\x84\x80\x80\x80\x00\x00\x41\x00\x0b\x84\x80\x80\x80\x00\x00\x41\x01\x0b\x84\x80\x80\x80\x00\x00\x41\x02\x0b\x84\x80\x80\x80\x00\x00\x41\x03\x0b\x84\x80\x80\x80\x00\x00\x41\x04\x0b\x84\x80\x80\x80\x00\x00\x41\x05\x0b\x84\x80\x80\x80\x00\x00\x41\x06\x0b\x84\x80\x80\x80\x00\x00\x41\x07\x0b\x84\x80\x80\x80\x00\x00\x41\x08\x0b\x84\x80\x80\x80\x00\x00\x41\x09\x0b\x84\x80\x80\x80\x00\x00\x41\x0a\x0b\x84\x80\x80\x80\x00\x00\x41\x0b\x0b\x84\x80\x80\x80\x00\x00\x41\x0c\x0b\x84\x80\x80\x80\x00\x00\x41\x0d\x0b\x84\x80\x80\x80\x00\x00\x41\x0e\x0b\x84\x80\x80\x80\x00\x00\x41\x0f\x0b\x87\x80\x80\x80\x00\x00\x20\x00\x11\x00\x00\x0b\x8c\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x0e\x00\x00\x0b");
+assert_return(() => invoke($29, `test`, [120]), [value("i32", 8)]);
 
 
-assert_trap(() => call($31, "run", [112, 0, -32]));
+assert_return(() => invoke($29, `test`, [121]), [value("i32", 9)]);
 
 
-assert_return(() => call($31, "test", [0]), 0);
+assert_return(() => invoke($29, `test`, [122]), [value("i32", 10)]);
 
 
-assert_return(() => call($31, "test", [1]), 1);
+assert_return(() => invoke($29, `test`, [123]), [value("i32", 11)]);
 
 
-assert_return(() => call($31, "test", [2]), 2);
+assert_return(() => invoke($29, `test`, [124]), [value("i32", 12)]);
 
 
-assert_return(() => call($31, "test", [3]), 3);
+assert_return(() => invoke($29, `test`, [125]), [value("i32", 13)]);
 
 
-assert_return(() => call($31, "test", [4]), 4);
+assert_return(() => invoke($29, `test`, [126]), [value("i32", 14)]);
 
 
-assert_return(() => call($31, "test", [5]), 5);
+assert_return(() => invoke($29, `test`, [127]), [value("i32", 15)]);
 
 
-assert_return(() => call($31, "test", [6]), 6);
+let $30 = instantiate(`(module
+  (type (func (result i32)))
+  (table 128 128 funcref)
+  (elem (i32.const 0)
+         $$f0 $$f1 $$f2 $$f3 $$f4 $$f5 $$f6 $$f7 $$f8 $$f9 $$f10 $$f11 $$f12 $$f13 $$f14 $$f15)
+  (func $$f0 (export "f0") (result i32) (i32.const 0))
+  (func $$f1 (export "f1") (result i32) (i32.const 1))
+  (func $$f2 (export "f2") (result i32) (i32.const 2))
+  (func $$f3 (export "f3") (result i32) (i32.const 3))
+  (func $$f4 (export "f4") (result i32) (i32.const 4))
+  (func $$f5 (export "f5") (result i32) (i32.const 5))
+  (func $$f6 (export "f6") (result i32) (i32.const 6))
+  (func $$f7 (export "f7") (result i32) (i32.const 7))
+  (func $$f8 (export "f8") (result i32) (i32.const 8))
+  (func $$f9 (export "f9") (result i32) (i32.const 9))
+  (func $$f10 (export "f10") (result i32) (i32.const 10))
+  (func $$f11 (export "f11") (result i32) (i32.const 11))
+  (func $$f12 (export "f12") (result i32) (i32.const 12))
+  (func $$f13 (export "f13") (result i32) (i32.const 13))
+  (func $$f14 (export "f14") (result i32) (i32.const 14))
+  (func $$f15 (export "f15") (result i32) (i32.const 15))
+  (func (export "test") (param $$n i32) (result i32)
+    (call_indirect (type 0) (local.get $$n)))
+  (func (export "run") (param $$targetOffs i32) (param $$srcOffs i32) (param $$len i32)
+    (table.copy (local.get $$targetOffs) (local.get $$srcOffs) (local.get $$len))))`);
 
 
-assert_return(() => call($31, "test", [7]), 7);
+assert_trap(() => invoke($30, `run`, [112, 0, -32]), `out of bounds`);
 
 
-assert_return(() => call($31, "test", [8]), 8);
+assert_return(() => invoke($30, `test`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => call($31, "test", [9]), 9);
+assert_return(() => invoke($30, `test`, [1]), [value("i32", 1)]);
 
 
-assert_return(() => call($31, "test", [10]), 10);
+assert_return(() => invoke($30, `test`, [2]), [value("i32", 2)]);
 
 
-assert_return(() => call($31, "test", [11]), 11);
+assert_return(() => invoke($30, `test`, [3]), [value("i32", 3)]);
 
 
-assert_return(() => call($31, "test", [12]), 12);
+assert_return(() => invoke($30, `test`, [4]), [value("i32", 4)]);
 
 
-assert_return(() => call($31, "test", [13]), 13);
+assert_return(() => invoke($30, `test`, [5]), [value("i32", 5)]);
 
 
-assert_return(() => call($31, "test", [14]), 14);
+assert_return(() => invoke($30, `test`, [6]), [value("i32", 6)]);
 
 
-assert_return(() => call($31, "test", [15]), 15);
+assert_return(() => invoke($30, `test`, [7]), [value("i32", 7)]);
 
 
-assert_trap(() => call($31, "test", [16]));
+assert_return(() => invoke($30, `test`, [8]), [value("i32", 8)]);
 
 
-assert_trap(() => call($31, "test", [17]));
+assert_return(() => invoke($30, `test`, [9]), [value("i32", 9)]);
 
 
-assert_trap(() => call($31, "test", [18]));
+assert_return(() => invoke($30, `test`, [10]), [value("i32", 10)]);
 
 
-assert_trap(() => call($31, "test", [19]));
+assert_return(() => invoke($30, `test`, [11]), [value("i32", 11)]);
 
 
-assert_trap(() => call($31, "test", [20]));
+assert_return(() => invoke($30, `test`, [12]), [value("i32", 12)]);
 
 
-assert_trap(() => call($31, "test", [21]));
+assert_return(() => invoke($30, `test`, [13]), [value("i32", 13)]);
 
 
-assert_trap(() => call($31, "test", [22]));
+assert_return(() => invoke($30, `test`, [14]), [value("i32", 14)]);
 
 
-assert_trap(() => call($31, "test", [23]));
+assert_return(() => invoke($30, `test`, [15]), [value("i32", 15)]);
 
 
-assert_trap(() => call($31, "test", [24]));
+assert_trap(() => invoke($30, `test`, [16]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [25]));
+assert_trap(() => invoke($30, `test`, [17]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [26]));
+assert_trap(() => invoke($30, `test`, [18]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [27]));
+assert_trap(() => invoke($30, `test`, [19]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [28]));
+assert_trap(() => invoke($30, `test`, [20]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [29]));
+assert_trap(() => invoke($30, `test`, [21]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [30]));
+assert_trap(() => invoke($30, `test`, [22]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [31]));
+assert_trap(() => invoke($30, `test`, [23]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [32]));
+assert_trap(() => invoke($30, `test`, [24]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [33]));
+assert_trap(() => invoke($30, `test`, [25]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [34]));
+assert_trap(() => invoke($30, `test`, [26]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [35]));
+assert_trap(() => invoke($30, `test`, [27]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [36]));
+assert_trap(() => invoke($30, `test`, [28]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [37]));
+assert_trap(() => invoke($30, `test`, [29]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [38]));
+assert_trap(() => invoke($30, `test`, [30]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [39]));
+assert_trap(() => invoke($30, `test`, [31]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [40]));
+assert_trap(() => invoke($30, `test`, [32]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [41]));
+assert_trap(() => invoke($30, `test`, [33]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [42]));
+assert_trap(() => invoke($30, `test`, [34]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [43]));
+assert_trap(() => invoke($30, `test`, [35]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [44]));
+assert_trap(() => invoke($30, `test`, [36]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [45]));
+assert_trap(() => invoke($30, `test`, [37]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [46]));
+assert_trap(() => invoke($30, `test`, [38]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [47]));
+assert_trap(() => invoke($30, `test`, [39]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [48]));
+assert_trap(() => invoke($30, `test`, [40]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [49]));
+assert_trap(() => invoke($30, `test`, [41]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [50]));
+assert_trap(() => invoke($30, `test`, [42]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [51]));
+assert_trap(() => invoke($30, `test`, [43]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [52]));
+assert_trap(() => invoke($30, `test`, [44]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [53]));
+assert_trap(() => invoke($30, `test`, [45]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [54]));
+assert_trap(() => invoke($30, `test`, [46]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [55]));
+assert_trap(() => invoke($30, `test`, [47]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [56]));
+assert_trap(() => invoke($30, `test`, [48]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [57]));
+assert_trap(() => invoke($30, `test`, [49]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [58]));
+assert_trap(() => invoke($30, `test`, [50]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [59]));
+assert_trap(() => invoke($30, `test`, [51]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [60]));
+assert_trap(() => invoke($30, `test`, [52]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [61]));
+assert_trap(() => invoke($30, `test`, [53]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [62]));
+assert_trap(() => invoke($30, `test`, [54]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [63]));
+assert_trap(() => invoke($30, `test`, [55]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [64]));
+assert_trap(() => invoke($30, `test`, [56]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [65]));
+assert_trap(() => invoke($30, `test`, [57]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [66]));
+assert_trap(() => invoke($30, `test`, [58]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [67]));
+assert_trap(() => invoke($30, `test`, [59]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [68]));
+assert_trap(() => invoke($30, `test`, [60]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [69]));
+assert_trap(() => invoke($30, `test`, [61]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [70]));
+assert_trap(() => invoke($30, `test`, [62]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [71]));
+assert_trap(() => invoke($30, `test`, [63]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [72]));
+assert_trap(() => invoke($30, `test`, [64]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [73]));
+assert_trap(() => invoke($30, `test`, [65]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [74]));
+assert_trap(() => invoke($30, `test`, [66]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [75]));
+assert_trap(() => invoke($30, `test`, [67]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [76]));
+assert_trap(() => invoke($30, `test`, [68]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [77]));
+assert_trap(() => invoke($30, `test`, [69]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [78]));
+assert_trap(() => invoke($30, `test`, [70]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [79]));
+assert_trap(() => invoke($30, `test`, [71]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [80]));
+assert_trap(() => invoke($30, `test`, [72]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [81]));
+assert_trap(() => invoke($30, `test`, [73]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [82]));
+assert_trap(() => invoke($30, `test`, [74]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [83]));
+assert_trap(() => invoke($30, `test`, [75]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [84]));
+assert_trap(() => invoke($30, `test`, [76]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [85]));
+assert_trap(() => invoke($30, `test`, [77]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [86]));
+assert_trap(() => invoke($30, `test`, [78]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [87]));
+assert_trap(() => invoke($30, `test`, [79]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [88]));
+assert_trap(() => invoke($30, `test`, [80]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [89]));
+assert_trap(() => invoke($30, `test`, [81]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [90]));
+assert_trap(() => invoke($30, `test`, [82]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [91]));
+assert_trap(() => invoke($30, `test`, [83]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [92]));
+assert_trap(() => invoke($30, `test`, [84]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [93]));
+assert_trap(() => invoke($30, `test`, [85]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [94]));
+assert_trap(() => invoke($30, `test`, [86]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [95]));
+assert_trap(() => invoke($30, `test`, [87]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [96]));
+assert_trap(() => invoke($30, `test`, [88]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [97]));
+assert_trap(() => invoke($30, `test`, [89]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [98]));
+assert_trap(() => invoke($30, `test`, [90]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [99]));
+assert_trap(() => invoke($30, `test`, [91]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [100]));
+assert_trap(() => invoke($30, `test`, [92]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [101]));
+assert_trap(() => invoke($30, `test`, [93]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [102]));
+assert_trap(() => invoke($30, `test`, [94]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [103]));
+assert_trap(() => invoke($30, `test`, [95]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [104]));
+assert_trap(() => invoke($30, `test`, [96]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [105]));
+assert_trap(() => invoke($30, `test`, [97]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [106]));
+assert_trap(() => invoke($30, `test`, [98]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [107]));
+assert_trap(() => invoke($30, `test`, [99]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [108]));
+assert_trap(() => invoke($30, `test`, [100]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [109]));
+assert_trap(() => invoke($30, `test`, [101]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [110]));
+assert_trap(() => invoke($30, `test`, [102]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [111]));
+assert_trap(() => invoke($30, `test`, [103]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [112]));
+assert_trap(() => invoke($30, `test`, [104]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [113]));
+assert_trap(() => invoke($30, `test`, [105]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [114]));
+assert_trap(() => invoke($30, `test`, [106]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [115]));
+assert_trap(() => invoke($30, `test`, [107]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [116]));
+assert_trap(() => invoke($30, `test`, [108]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [117]));
+assert_trap(() => invoke($30, `test`, [109]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [118]));
+assert_trap(() => invoke($30, `test`, [110]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [119]));
+assert_trap(() => invoke($30, `test`, [111]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [120]));
+assert_trap(() => invoke($30, `test`, [112]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [121]));
+assert_trap(() => invoke($30, `test`, [113]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [122]));
+assert_trap(() => invoke($30, `test`, [114]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [123]));
+assert_trap(() => invoke($30, `test`, [115]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [124]));
+assert_trap(() => invoke($30, `test`, [116]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [125]));
+assert_trap(() => invoke($30, `test`, [117]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [126]));
+assert_trap(() => invoke($30, `test`, [118]), `uninitialized element`);
 
 
-assert_trap(() => call($31, "test", [127]));
+assert_trap(() => invoke($30, `test`, [119]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [120]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [121]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [122]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [123]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [124]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [125]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [126]), `uninitialized element`);
+
+
+assert_trap(() => invoke($30, `test`, [127]), `uninitialized element`);

@@ -1,150 +1,267 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x95\x80\x80\x80\x00\x04\x60\x01\x7f\x01\x6f\x60\x02\x7f\x6f\x00\x60\x02\x7f\x6f\x01\x7f\x60\x00\x01\x7f\x03\x85\x80\x80\x80\x00\x04\x00\x01\x02\x03\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x07\x9b\x80\x80\x80\x00\x04\x03\x67\x65\x74\x00\x00\x03\x73\x65\x74\x00\x01\x04\x67\x72\x6f\x77\x00\x02\x04\x73\x69\x7a\x65\x00\x03\x0a\xb1\x80\x80\x80\x00\x04\x86\x80\x80\x80\x00\x00\x20\x00\x25\x00\x0b\x88\x80\x80\x80\x00\x00\x20\x00\x20\x01\x26\x00\x0b\x89\x80\x80\x80\x00\x00\x20\x01\x20\x00\xfc\x0f\x00\x0b\x85\x80\x80\x80\x00\x00\xfc\x10\x00\x0b");
 
 
-assert_return(() => call($1, "size", []), 0);
 
 
-assert_trap(() => call($1, "set", [0, externref(2)]));
 
 
-assert_trap(() => call($1, "get", [0]));
 
 
-assert_return(() => call($1, "grow", [1, null]), 0);
 
 
-assert_return(() => call($1, "size", []), 1);
 
 
-assert_return(() => call($1, "get", [0]), null);
 
 
-assert_return(() => call($1, "set", [0, externref(2)]));
 
 
-assert_return(() => call($1, "get", [0]), externref(2));
+let $0 = instantiate(`(module
+  (table $$t 0 externref)
 
+  (func (export "get") (param $$i i32) (result externref) (table.get $$t (local.get $$i)))
+  (func (export "set") (param $$i i32) (param $$r externref) (table.set $$t (local.get $$i) (local.get $$r)))
 
-assert_trap(() => call($1, "set", [1, externref(2)]));
+  (func (export "grow") (param $$sz i32) (param $$init externref) (result i32)
+    (table.grow $$t (local.get $$init) (local.get $$sz))
+  )
+  (func (export "size") (result i32) (table.size $$t))
+)`);
 
 
-assert_trap(() => call($1, "get", [1]));
+assert_return(() => invoke($0, `size`, []), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "grow", [4, externref(3)]), 1);
+assert_trap(
+  () => invoke($0, `set`, [0, externref(2)]),
+  `out of bounds table access`,
+);
 
 
-assert_return(() => call($1, "size", []), 5);
+assert_trap(() => invoke($0, `get`, [0]), `out of bounds table access`);
 
 
-assert_return(() => call($1, "get", [0]), externref(2));
+assert_return(() => invoke($0, `grow`, [1, null]), [value("i32", 0)]);
 
 
-assert_return(() => call($1, "set", [0, externref(2)]));
+assert_return(() => invoke($0, `size`, []), [value("i32", 1)]);
 
 
-assert_return(() => call($1, "get", [0]), externref(2));
+assert_return(() => invoke($0, `get`, [0]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [1]), externref(3));
+assert_return(() => invoke($0, `set`, [0, externref(2)]), []);
 
 
-assert_return(() => call($1, "get", [4]), externref(3));
+assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($1, "set", [4, externref(4)]));
+assert_trap(
+  () => invoke($0, `set`, [1, externref(2)]),
+  `out of bounds table access`,
+);
 
 
-assert_return(() => call($1, "get", [4]), externref(4));
+assert_trap(() => invoke($0, `get`, [1]), `out of bounds table access`);
 
 
-assert_trap(() => call($1, "set", [5, externref(2)]));
+assert_return(() => invoke($0, `grow`, [4, externref(3)]), [value("i32", 1)]);
 
 
-assert_trap(() => call($1, "get", [5]));
+assert_return(() => invoke($0, `size`, []), [value("i32", 5)]);
 
 
-let $2 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x10\x07\x88\x80\x80\x80\x00\x01\x04\x67\x72\x6f\x77\x00\x00\x09\x85\x80\x80\x80\x00\x01\x03\x00\x01\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd2\x00\x41\x70\xfc\x0f\x00\x0b");
+assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($2, "grow", []), -1);
+assert_return(() => invoke($0, `set`, [0, externref(2)]), []);
 
 
-let $3 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x86\x80\x80\x80\x00\x01\x60\x01\x7f\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x07\x88\x80\x80\x80\x00\x01\x04\x67\x72\x6f\x77\x00\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x00\x0b");
+assert_return(() => invoke($0, `get`, [0]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($3, "grow", [0]), 0);
+assert_return(() => invoke($0, `get`, [1]), [value("externref", externref(3))]);
 
 
-assert_return(() => call($3, "grow", [1]), 0);
+assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(3))]);
 
 
-assert_return(() => call($3, "grow", [0]), 1);
+assert_return(() => invoke($0, `set`, [4, externref(4)]), []);
 
 
-assert_return(() => call($3, "grow", [2]), 1);
+assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(4))]);
 
 
-assert_return(() => call($3, "grow", [800]), 3);
+assert_trap(
+  () => invoke($0, `set`, [5, externref(2)]),
+  `out of bounds table access`,
+);
 
 
-let $4 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x86\x80\x80\x80\x00\x01\x60\x01\x7f\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x85\x80\x80\x80\x00\x01\x6f\x01\x00\x0a\x07\x88\x80\x80\x80\x00\x01\x04\x67\x72\x6f\x77\x00\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd0\x6f\x20\x00\xfc\x0f\x00\x0b");
+assert_trap(() => invoke($0, `get`, [5]), `out of bounds table access`);
 
 
-assert_return(() => call($4, "grow", [0]), 0);
+let $1 = instantiate(`(module
+  (table $$t 0x10 funcref)
+  (elem declare func $$f)
+  (func $$f (export "grow") (result i32)
+    (table.grow $$t (ref.func $$f) (i32.const 0xffff_fff0))
+  )
+)`);
 
 
-assert_return(() => call($4, "grow", [1]), 0);
+assert_return(() => invoke($1, `grow`, []), [value("i32", -1)]);
 
 
-assert_return(() => call($4, "grow", [1]), 1);
+let $2 = instantiate(`(module
+  (table $$t 0 externref)
+  (func (export "grow") (param i32) (result i32)
+    (table.grow $$t (ref.null extern) (local.get 0))
+  )
+)`);
 
 
-assert_return(() => call($4, "grow", [2]), 2);
+assert_return(() => invoke($2, `grow`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "grow", [6]), 4);
+assert_return(() => invoke($2, `grow`, [1]), [value("i32", 0)]);
 
 
-assert_return(() => call($4, "grow", [0]), 10);
+assert_return(() => invoke($2, `grow`, [0]), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "grow", [1]), -1);
+assert_return(() => invoke($2, `grow`, [2]), [value("i32", 1)]);
 
 
-assert_return(() => call($4, "grow", [65_536]), -1);
+assert_return(() => invoke($2, `grow`, [800]), [value("i32", 3)]);
 
 
-let $5 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x01\x7f\x01\x7f\x60\x02\x7f\x7f\x01\x70\x03\x83\x80\x80\x80\x00\x02\x00\x01\x04\x84\x80\x80\x80\x00\x01\x70\x00\x0a\x07\x9b\x80\x80\x80\x00\x02\x04\x67\x72\x6f\x77\x00\x00\x10\x63\x68\x65\x63\x6b\x2d\x74\x61\x62\x6c\x65\x2d\x6e\x75\x6c\x6c\x00\x01\x09\x85\x80\x80\x80\x00\x01\x03\x00\x01\x01\x0a\xc5\x80\x80\x80\x00\x02\x89\x80\x80\x80\x00\x00\xd0\x70\x20\x00\xfc\x0f\x00\x0b\xb1\x80\x80\x80\x00\x01\x01\x70\xd2\x01\x21\x02\x02\x40\x03\x40\x20\x00\x25\x00\x21\x02\x20\x02\xd1\x45\x0d\x01\x20\x00\x20\x01\x4f\x0d\x01\x20\x00\x41\x01\x6a\x21\x00\x20\x00\x20\x01\x4d\x0d\x00\x0b\x0b\x20\x02\x0b");
+let $3 = instantiate(`(module
+  (table $$t 0 10 externref)
+  (func (export "grow") (param i32) (result i32)
+    (table.grow $$t (ref.null extern) (local.get 0))
+  )
+)`);
 
 
-assert_return(() => call($5, "check-table-null", [0, 9]), null);
+assert_return(() => invoke($3, `grow`, [0]), [value("i32", 0)]);
 
 
-assert_return(() => call($5, "grow", [10]), 10);
+assert_return(() => invoke($3, `grow`, [1]), [value("i32", 0)]);
 
 
-assert_return(() => call($5, "check-table-null", [0, 19]), null);
+assert_return(() => invoke($3, `grow`, [1]), [value("i32", 1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x0f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [2]), [value("i32", 2)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x8d\x80\x80\x80\x00\x01\x87\x80\x80\x80\x00\x00\xd0\x6f\xfc\x0f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [6]), [value("i32", 4)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x8d\x80\x80\x80\x00\x01\x87\x80\x80\x80\x00\x00\x41\x01\xfc\x0f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [0]), [value("i32", 10)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x92\x80\x80\x80\x00\x01\x8c\x80\x80\x80\x00\x00\xd0\x6f\x43\x00\x00\x80\x3f\xfc\x0f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [1]), [value("i32", -1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x86\x80\x80\x80\x00\x01\x60\x01\x6f\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x00\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x20\x00\x41\x01\xfc\x0f\x00\x0b");
+assert_return(() => invoke($3, `grow`, [65536]), [value("i32", -1)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x01\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd0\x6f\x41\x00\xfc\x0f\x00\x0b");
+let $4 = instantiate(`(module
+  (table $$t 10 funcref)
+  (func (export "grow") (param i32) (result i32)
+    (table.grow $$t (ref.null func) (local.get 0))
+  )
+  (elem declare func 1)
+  (func (export "check-table-null") (param i32 i32) (result funcref)
+    (local funcref)
+    (local.set 2 (ref.func 1))
+    (block
+      (loop
+        (local.set 2 (table.get $$t (local.get 0)))
+        (br_if 1 (i32.eqz (ref.is_null (local.get 2))))
+        (br_if 1 (i32.ge_u (local.get 0) (local.get 1)))
+        (local.set 0 (i32.add (local.get 0) (i32.const 1)))
+        (br_if 0 (i32.le_u (local.get 0) (local.get 1)))
+      )
+    )
+    (local.get 2)
+  )
+)`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7d\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x01\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd0\x6f\x41\x00\xfc\x0f\x00\x0b");
+assert_return(() => invoke($4, `check-table-null`, [0, 9]), [
+  value("funcref", null),
+]);
+
+
+assert_return(() => invoke($4, `grow`, [10]), [value("i32", 10)]);
+
+
+assert_return(() => invoke($4, `check-table-null`, [0, 19]), [
+  value("funcref", null),
+]);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-init-size-empty-vs-i32-externref (result i32)
+      (table.grow $$t)
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-size-empty-vs-i32 (result i32)
+      (table.grow $$t (ref.null extern))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-init-empty-vs-externref (result i32)
+      (table.grow $$t (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-size-f32-vs-i32 (result i32)
+      (table.grow $$t (ref.null extern) (f32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 funcref)
+    (func $$type-init-externref-vs-funcref (param $$r externref) (result i32)
+      (table.grow $$t (local.get $$r) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 1 externref)
+    (func $$type-result-i32-vs-empty
+      (table.grow $$t (ref.null extern) (i32.const 0))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 1 externref)
+    (func $$type-result-i32-vs-f32 (result f32)
+      (table.grow $$t (ref.null extern) (i32.const 0))
+    )
+  )`), `type mismatch`);

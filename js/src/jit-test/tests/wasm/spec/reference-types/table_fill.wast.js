@@ -1,135 +1,216 @@
 
 
-let $1 = instance("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x8c\x80\x80\x80\x00\x02\x60\x03\x7f\x6f\x7f\x00\x60\x01\x7f\x01\x6f\x03\x83\x80\x80\x80\x00\x02\x00\x01\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x0a\x07\x8e\x80\x80\x80\x00\x02\x04\x66\x69\x6c\x6c\x00\x00\x03\x67\x65\x74\x00\x01\x0a\x9c\x80\x80\x80\x00\x02\x8b\x80\x80\x80\x00\x00\x20\x00\x20\x01\x20\x02\xfc\x11\x00\x0b\x86\x80\x80\x80\x00\x00\x20\x00\x25\x00\x0b");
 
 
-assert_return(() => call($1, "get", [1]), null);
 
 
-assert_return(() => call($1, "get", [2]), null);
 
 
-assert_return(() => call($1, "get", [3]), null);
 
 
-assert_return(() => call($1, "get", [4]), null);
 
 
-assert_return(() => call($1, "get", [5]), null);
 
 
-assert_return(() => call($1, "fill", [2, externref(1), 3]));
 
 
-assert_return(() => call($1, "get", [1]), null);
 
 
-assert_return(() => call($1, "get", [2]), externref(1));
+let $0 = instantiate(`(module
+  (table $$t 10 externref)
 
+  (func (export "fill") (param $$i i32) (param $$r externref) (param $$n i32)
+    (table.fill $$t (local.get $$i) (local.get $$r) (local.get $$n))
+  )
 
-assert_return(() => call($1, "get", [3]), externref(1));
+  (func (export "get") (param $$i i32) (result externref)
+    (table.get $$t (local.get $$i))
+  )
+)`);
 
 
-assert_return(() => call($1, "get", [4]), externref(1));
+assert_return(() => invoke($0, `get`, [1]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [5]), null);
+assert_return(() => invoke($0, `get`, [2]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "fill", [4, externref(2), 2]));
+assert_return(() => invoke($0, `get`, [3]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [3]), externref(1));
+assert_return(() => invoke($0, `get`, [4]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [4]), externref(2));
+assert_return(() => invoke($0, `get`, [5]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [5]), externref(2));
+assert_return(() => invoke($0, `fill`, [2, externref(1), 3]), []);
 
 
-assert_return(() => call($1, "get", [6]), null);
+assert_return(() => invoke($0, `get`, [1]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "fill", [4, externref(3), 0]));
+assert_return(() => invoke($0, `get`, [2]), [value("externref", externref(1))]);
 
 
-assert_return(() => call($1, "get", [3]), externref(1));
+assert_return(() => invoke($0, `get`, [3]), [value("externref", externref(1))]);
 
 
-assert_return(() => call($1, "get", [4]), externref(2));
+assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(1))]);
 
 
-assert_return(() => call($1, "get", [5]), externref(2));
+assert_return(() => invoke($0, `get`, [5]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "fill", [8, externref(4), 2]));
+assert_return(() => invoke($0, `fill`, [4, externref(2), 2]), []);
 
 
-assert_return(() => call($1, "get", [7]), null);
+assert_return(() => invoke($0, `get`, [3]), [value("externref", externref(1))]);
 
 
-assert_return(() => call($1, "get", [8]), externref(4));
+assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($1, "get", [9]), externref(4));
+assert_return(() => invoke($0, `get`, [5]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($1, "fill", [9, null, 1]));
+assert_return(() => invoke($0, `get`, [6]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [8]), externref(4));
+assert_return(() => invoke($0, `fill`, [4, externref(3), 0]), []);
 
 
-assert_return(() => call($1, "get", [9]), null);
+assert_return(() => invoke($0, `get`, [3]), [value("externref", externref(1))]);
 
 
-assert_return(() => call($1, "fill", [10, externref(5), 0]));
+assert_return(() => invoke($0, `get`, [4]), [value("externref", externref(2))]);
 
 
-assert_return(() => call($1, "get", [9]), null);
+assert_return(() => invoke($0, `get`, [5]), [value("externref", externref(2))]);
 
 
-assert_trap(() => call($1, "fill", [8, externref(6), 3]));
+assert_return(() => invoke($0, `fill`, [8, externref(4), 2]), []);
 
 
-assert_return(() => call($1, "get", [7]), null);
+assert_return(() => invoke($0, `get`, [7]), [value("externref", null)]);
 
 
-assert_return(() => call($1, "get", [8]), externref(4));
+assert_return(() => invoke($0, `get`, [8]), [value("externref", externref(4))]);
 
 
-assert_return(() => call($1, "get", [9]), null);
+assert_return(() => invoke($0, `get`, [9]), [value("externref", externref(4))]);
 
 
-assert_trap(() => call($1, "fill", [11, null, 0]));
+assert_return(() => invoke($0, `fill`, [9, null, 1]), []);
 
 
-assert_trap(() => call($1, "fill", [11, null, 10]));
+assert_return(() => invoke($0, `get`, [8]), [value("externref", externref(4))]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x0a\x0a\x8b\x80\x80\x80\x00\x01\x85\x80\x80\x80\x00\x00\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `get`, [9]), [value("externref", null)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x0a\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\xd0\x6f\x41\x01\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `fill`, [10, externref(5), 0]), []);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x0a\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x41\x01\x41\x01\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `get`, [9]), [value("externref", null)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x0a\x0a\x8f\x80\x80\x80\x00\x01\x89\x80\x80\x80\x00\x00\x41\x01\xd0\x6f\xfc\x11\x00\x0b");
+assert_trap(() => invoke($0, `fill`, [8, externref(6), 3]), `out of bounds`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x43\x00\x00\x80\x3f\xd0\x6f\x41\x01\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `get`, [7]), [value("externref", null)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x01\x6f\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x70\x00\x00\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x01\x20\x00\x41\x01\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `get`, [8]), [value("externref", externref(4))]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x84\x80\x80\x80\x00\x01\x60\x00\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x00\x0a\x94\x80\x80\x80\x00\x01\x8e\x80\x80\x80\x00\x00\x41\x01\xd0\x6f\x43\x00\x00\x80\x3f\xfc\x11\x00\x0b");
+assert_return(() => invoke($0, `get`, [9]), [value("externref", null)]);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x01\x6f\x00\x03\x82\x80\x80\x80\x00\x01\x00\x04\x87\x80\x80\x80\x00\x02\x6f\x00\x01\x70\x00\x01\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\x20\x00\x41\x01\xfc\x11\x01\x0b");
+assert_trap(() => invoke($0, `fill`, [11, null, 0]), `out of bounds`);
 
 
-assert_invalid("\x00\x61\x73\x6d\x01\x00\x00\x00\x01\x85\x80\x80\x80\x00\x01\x60\x00\x01\x7f\x03\x82\x80\x80\x80\x00\x01\x00\x04\x84\x80\x80\x80\x00\x01\x6f\x00\x01\x0a\x91\x80\x80\x80\x00\x01\x8b\x80\x80\x80\x00\x00\x41\x00\xd0\x6f\x41\x01\xfc\x11\x00\x0b");
+assert_trap(() => invoke($0, `fill`, [11, null, 10]), `out of bounds`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 10 externref)
+    (func $$type-index-value-length-empty-vs-i32-i32
+      (table.fill $$t)
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 10 externref)
+    (func $$type-index-empty-vs-i32
+      (table.fill $$t (ref.null extern) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 10 externref)
+    (func $$type-value-empty-vs
+      (table.fill $$t (i32.const 1) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 10 externref)
+    (func $$type-length-empty-vs-i32
+      (table.fill $$t (i32.const 1) (ref.null extern))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-index-f32-vs-i32
+      (table.fill $$t (f32.const 1) (ref.null extern) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 funcref)
+    (func $$type-value-vs-funcref (param $$r externref)
+      (table.fill $$t (i32.const 1) (local.get $$r) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 0 externref)
+    (func $$type-length-f32-vs-i32
+      (table.fill $$t (i32.const 1) (ref.null extern) (f32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t1 1 externref)
+    (table $$t2 1 funcref)
+    (func $$type-value-externref-vs-funcref-multi (param $$r externref)
+      (table.fill $$t2 (i32.const 0) (local.get $$r) (i32.const 1))
+    )
+  )`), `type mismatch`);
+
+
+assert_invalid(() =>
+  instantiate(`(module
+    (table $$t 1 externref)
+    (func $$type-result-empty-vs-num (result i32)
+      (table.fill $$t (i32.const 0) (ref.null extern) (i32.const 1))
+    )
+  )`), `type mismatch`);
