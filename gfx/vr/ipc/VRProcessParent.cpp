@@ -11,12 +11,12 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GPUChild.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/ipc/ProtocolUtils.h"  
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/Unused.h"
-#include "ProcessUtils.h"
 #include "VRChild.h"
 #include "VRThread.h"
 

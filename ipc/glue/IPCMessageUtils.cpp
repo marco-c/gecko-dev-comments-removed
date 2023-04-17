@@ -4,7 +4,7 @@
 
 
 
-#include "IPCMessageUtils.h"
+#include "ipc/IPCMessageUtils.h"
 
 #include <cstddef>
 #include "mozilla/CheckedInt.h"

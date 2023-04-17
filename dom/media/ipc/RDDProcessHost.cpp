@@ -5,7 +5,7 @@
 
 #include "RDDProcessHost.h"
 
-#include "ProcessUtils.h"
+#include "mozilla/ipc/ProcessUtils.h"
 #include "RDDChild.h"
 #include "chrome/common/process_watcher.h"
 #include "mozilla/Preferences.h"

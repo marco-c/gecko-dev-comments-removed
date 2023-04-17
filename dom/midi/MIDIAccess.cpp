@@ -23,7 +23,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsContentPermissionHelper.h"
 #include "nsISupportsImpl.h"  
-#include "IPCMessageUtils.h"
+#include "ipc/IPCMessageUtils.h"
 
 namespace mozilla::dom {
 
