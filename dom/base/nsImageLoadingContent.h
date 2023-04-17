@@ -233,9 +233,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   virtual nsIContent* AsContent() = 0;
 
   
-  uint32_t NaturalWidth();
-  uint32_t NaturalHeight();
-  
 
 
 

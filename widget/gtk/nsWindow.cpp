@@ -2351,8 +2351,9 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor,
   
   
   
-  int32_t gtkScale =
-      std::max(aWidgetScaleFactor, int32_t(std::ceil(aCursor.mResolution)));
+  int32_t gtkScale = std::max(
+      aWidgetScaleFactor, int32_t(std::ceil(std::max(aCursor.mResolution.mX,
+                                                     aCursor.mResolution.mY))));
 
   
   
