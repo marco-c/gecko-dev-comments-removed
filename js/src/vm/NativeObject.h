@@ -940,7 +940,7 @@ class NativeObject : public JSObject {
   void freeSlot(JSContext* cx, uint32_t slot);
 
  private:
-  static MOZ_ALWAYS_INLINE Shape* getChildDataProperty(
+  static MOZ_ALWAYS_INLINE Shape* getChildProperty(
       JSContext* cx, HandleNativeObject obj, HandleShape parent,
       MutableHandle<StackShape> child);
   static MOZ_ALWAYS_INLINE Shape* getChildCustomDataProperty(
@@ -956,10 +956,10 @@ class NativeObject : public JSObject {
 
  public:
   
-  static MOZ_ALWAYS_INLINE Shape* addDataProperty(JSContext* cx,
-                                                  HandleNativeObject obj,
-                                                  HandleId id, uint32_t slot,
-                                                  unsigned attrs);
+  static MOZ_ALWAYS_INLINE Shape* addProperty(JSContext* cx,
+                                              HandleNativeObject obj,
+                                              HandleId id, uint32_t slot,
+                                              unsigned attrs);
 
   static Shape* addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
                                       HandleId id, unsigned attrs);
@@ -968,13 +968,13 @@ class NativeObject : public JSObject {
                                           HandleId id);
 
   
-  static Shape* addDataProperty(JSContext* cx, HandleNativeObject obj,
-                                HandlePropertyName name, uint32_t slot,
-                                unsigned attrs);
+  static Shape* addProperty(JSContext* cx, HandleNativeObject obj,
+                            HandlePropertyName name, uint32_t slot,
+                            unsigned attrs);
 
   
-  static Shape* putDataProperty(JSContext* cx, HandleNativeObject obj,
-                                HandleId id, unsigned attrs);
+  static Shape* putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                            unsigned attrs);
 
   static Shape* changeCustomDataPropAttributes(JSContext* cx,
                                                HandleNativeObject obj,
@@ -988,14 +988,10 @@ class NativeObject : public JSObject {
 
 
 
-
-
-
-  static Shape* addDataPropertyInternal(JSContext* cx, HandleNativeObject obj,
-                                        HandleId id, uint32_t slot,
-                                        unsigned attrs, ShapeTable* table,
-                                        ShapeTable::Entry* entry,
-                                        const AutoKeepShapeCaches& keep);
+  static Shape* addPropertyInternal(JSContext* cx, HandleNativeObject obj,
+                                    HandleId id, uint32_t slot, unsigned attrs,
+                                    ShapeTable* table, ShapeTable::Entry* entry,
+                                    const AutoKeepShapeCaches& keep);
 
   [[nodiscard]] static bool fillInAfterSwap(JSContext* cx,
                                             HandleNativeObject obj,

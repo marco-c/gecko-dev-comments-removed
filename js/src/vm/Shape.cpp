@@ -355,7 +355,7 @@ Shape* Shape::replaceLastProperty(JSContext* cx, ObjectFlags objectFlags,
 
 
 
- MOZ_ALWAYS_INLINE Shape* NativeObject::getChildDataProperty(
+ MOZ_ALWAYS_INLINE Shape* NativeObject::getChildProperty(
     JSContext* cx, HandleNativeObject obj, HandleShape parent,
     MutableHandle<StackShape> child) {
   MOZ_ASSERT(!child.isCustomDataProperty());
@@ -657,13 +657,14 @@ Shape* NativeObject::addCustomDataProperty(JSContext* cx,
 }
 
 
-Shape* NativeObject::addDataPropertyInternal(JSContext* cx,
-                                             HandleNativeObject obj,
-                                             HandleId id, uint32_t slot,
-                                             unsigned attrs, ShapeTable* table,
-                                             ShapeTable::Entry* entry,
-                                             const AutoKeepShapeCaches& keep) {
+Shape* NativeObject::addPropertyInternal(JSContext* cx, HandleNativeObject obj,
+                                         HandleId id, uint32_t slot,
+                                         unsigned attrs, ShapeTable* table,
+                                         ShapeTable::Entry* entry,
+                                         const AutoKeepShapeCaches& keep) {
   AutoCheckShapeConsistency check(obj);
+  MOZ_ASSERT(!(attrs & JSPROP_CUSTOM_DATA_PROP),
+             "Use addCustomDataProperty for custom data properties");
 
   
   MOZ_ASSERT(slot == SHAPE_INVALID_SLOT ||
@@ -682,7 +683,7 @@ Shape* NativeObject::addDataPropertyInternal(JSContext* cx,
 
     Rooted<StackShape> child(
         cx, StackShape(last->base(), objectFlags, id, slot, attrs));
-    shape = getChildDataProperty(cx, obj, last, &child);
+    shape = getChildProperty(cx, obj, last, &child);
     if (!shape) {
       return nullptr;
     }
@@ -910,12 +911,14 @@ bool NativeObject::maybeToDictionaryModeForPut(JSContext* cx,
 }
 
 
-Shape* NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj,
-                                     HandleId id, unsigned attrs) {
+Shape* NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
+                                 HandleId id, unsigned attrs) {
   MOZ_ASSERT(!JSID_IS_VOID(id));
 
   AutoCheckShapeConsistency check(obj);
   AssertValidArrayIndex(obj, id);
+  MOZ_ASSERT(!(attrs & JSPROP_CUSTOM_DATA_PROP),
+             "Use changeCustomDataPropAttributes for custom data properties");
 
   
   AutoKeepShapeCaches keep(cx);
@@ -933,8 +936,8 @@ Shape* NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj,
           obj->isExtensible() ||
               (JSID_IS_INT(id) && obj->containsDenseElement(JSID_TO_INT(id))),
           "Can't add new property to non-extensible object");
-      return addDataPropertyInternal(cx, obj, id, SHAPE_INVALID_SLOT, attrs,
-                                     table, entry, keep);
+      return addPropertyInternal(cx, obj, id, SHAPE_INVALID_SLOT, attrs, table,
+                                 entry, keep);
     }
 
     
@@ -1010,7 +1013,7 @@ Shape* NativeObject::putDataProperty(JSContext* cx, HandleNativeObject obj,
     Rooted<StackShape> child(cx, StackShape(obj->lastProperty()->base(),
                                             objectFlags, id, slot, attrs));
     RootedShape parent(cx, shape->parent);
-    shape = getChildDataProperty(cx, obj, parent, &child);
+    shape = getChildProperty(cx, obj, parent, &child);
     if (!shape) {
       return nullptr;
     }
