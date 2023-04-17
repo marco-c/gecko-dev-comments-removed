@@ -1904,7 +1904,7 @@ var BookmarkingUI = {
       }
     }
 
-    if (!this.star) {
+    if (!this.starBox) {
       
       
       
@@ -2012,18 +2012,11 @@ var BookmarkingUI = {
         let label = l10n[0].attributes[0].value;
 
         
-        
         let panelButton = BrowserPageActions.panelButtonNodeForActionID(
           PageActions.ACTION_ID_BOOKMARK
         );
         if (panelButton) {
           panelButton.setAttribute("label", label);
-        }
-        let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(
-          PageActions.ACTION_ID_BOOKMARK
-        );
-        if (urlbarButton) {
-          urlbarButton.setAttribute("tooltiptext", label);
         }
       });
     }
