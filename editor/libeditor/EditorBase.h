@@ -59,7 +59,6 @@ class nsRange;
 namespace mozilla {
 class AlignStateAtSelection;
 class AutoRangeArray;
-class AutoSelectionRestorer;
 class AutoTopLevelEditSubActionNotifier;
 class AutoTransactionBatch;
 class AutoTransactionsConserveSelection;
@@ -1586,10 +1585,12 @@ class EditorBase : public nsIEditor,
 
 
   SelectionState& SavedSelectionRef() {
+    MOZ_ASSERT(IsHTMLEditor());
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
   const SelectionState& SavedSelectionRef() const {
+    MOZ_ASSERT(IsHTMLEditor());
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
@@ -2131,15 +2132,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  bool ArePreservingSelection();
-  void PreserveSelectionAcrossActions();
-  nsresult RestorePreservedSelection();
-  void StopPreservingSelection();
-
-  
-
-
-
 
 
 
@@ -2666,32 +2658,6 @@ class EditorBase : public nsIEditor,
    protected:
     OwningNonNull<EditorBase> mEditorBase;
     ScrollSelectionIntoView mScrollSelectionIntoView;
-  };
-
-  
-
-
-
-  class MOZ_RAII AutoSelectionRestorer final {
-   public:
-    
-
-
-
-    explicit AutoSelectionRestorer(EditorBase& aEditorBase);
-
-    
-
-
-    ~AutoSelectionRestorer();
-
-    
-
-
-    void Abort();
-
-   protected:
-    EditorBase* mEditorBase;
   };
 
   
