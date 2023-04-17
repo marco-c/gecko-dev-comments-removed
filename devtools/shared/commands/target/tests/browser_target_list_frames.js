@@ -29,19 +29,19 @@ async function testBrowserFrames() {
   info("Test TargetCommand against frames via the parent process target");
 
   const commands = await CommandsFactory.forMainProcess();
-  const targetList = commands.targetCommand;
-  const { TYPES } = targetList;
-  await targetList.startListening();
+  const targetCommand = commands.targetCommand;
+  const { TYPES } = targetCommand;
+  await targetCommand.startListening();
 
   
-  const frames = await targetList.getAllTargets([TYPES.FRAME]);
+  const frames = await targetCommand.getAllTargets([TYPES.FRAME]);
   const hasBrowserDocument = frames.find(
     frameTarget => frameTarget.url == window.location.href
   );
   ok(hasBrowserDocument, "retrieve the target for the browser document");
 
   
-  const frames2 = await targetList.getAllTargets([TYPES.FRAME]);
+  const frames2 = await targetCommand.getAllTargets([TYPES.FRAME]);
   is(frames2.length, frames.length, "retrieved the same number of frames");
 
   function sortFronts(f1, f2) {
@@ -55,7 +55,7 @@ async function testBrowserFrames() {
 
   
   const targets = [];
-  const topLevelTarget = targetList.targetFront;
+  const topLevelTarget = targetCommand.targetFront;
   const onAvailable = ({ targetFront }) => {
     is(
       targetFront.targetType,
@@ -70,7 +70,7 @@ async function testBrowserFrames() {
     );
     targets.push(targetFront);
   };
-  await targetList.watchTargets([TYPES.FRAME], onAvailable);
+  await targetCommand.watchTargets([TYPES.FRAME], onAvailable);
   is(
     targets.length,
     frames.length,
@@ -86,7 +86,7 @@ async function testBrowserFrames() {
       `frame ${i} targets are the same via watchTargets`
     );
   }
-  targetList.unwatchTargets([TYPES.FRAME], onAvailable);
+  targetCommand.unwatchTargets([TYPES.FRAME], onAvailable);
 
   
 
@@ -100,8 +100,8 @@ async function testBrowserFrames() {
 
 
 
-  targetList.destroy();
-  await waitForAllTargetsToBeAttached(targetList);
+  targetCommand.destroy();
+  await waitForAllTargetsToBeAttached(targetCommand);
 
   await commands.destroy();
 }
@@ -112,13 +112,13 @@ async function testTabFrames(mainRoot) {
   
   const tab = await addTab(FISSION_TEST_URL);
   const commands = await CommandsFactory.forTab(tab);
-  const targetList = commands.targetCommand;
-  const { TYPES } = targetList;
+  const targetCommand = commands.targetCommand;
+  const { TYPES } = targetCommand;
 
-  await targetList.startListening();
+  await targetCommand.startListening();
 
   
-  const frames = await targetList.getAllTargets([TYPES.FRAME]);
+  const frames = await targetCommand.getAllTargets([TYPES.FRAME]);
   
   const expectedFramesCount = isFissionEnabled() ? 2 : 1;
   is(
@@ -130,7 +130,7 @@ async function testTabFrames(mainRoot) {
   
   const targets = [];
   const destroyedTargets = [];
-  const topLevelTarget = targetList.targetFront;
+  const topLevelTarget = targetCommand.targetFront;
   const onAvailable = ({ targetFront, isTargetSwitching }) => {
     is(
       targetFront.targetType,
@@ -153,7 +153,7 @@ async function testTabFrames(mainRoot) {
     );
     destroyedTargets.push({ targetFront, isTargetSwitching });
   };
-  await targetList.watchTargets([TYPES.FRAME], onAvailable, onDestroyed);
+  await targetCommand.watchTargets([TYPES.FRAME], onAvailable, onDestroyed);
   is(
     targets.length,
     frames.length,
@@ -201,7 +201,7 @@ async function testTabFrames(mainRoot) {
   }
 
   
-  await waitForAllTargetsToBeAttached(targetList);
+  await waitForAllTargetsToBeAttached(targetCommand);
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     
     const registration = await content.wrappedJSObject.registrationPromise;
@@ -270,19 +270,19 @@ async function testTabFrames(mainRoot) {
     is(targets.length, 1, "without fission, we always have only one target");
     is(destroyedTargets.length, 0, "no target should be destroyed");
     is(
-      targetList.targetFront,
+      targetCommand.targetFront,
       targets[0].targetFront,
       "and that unique target is always the same"
     );
     ok(
-      !targetList.targetFront.isDestroyed(),
+      !targetCommand.targetFront.isDestroyed(),
       "and that target is never destroyed"
     );
   }
 
-  targetList.unwatchTargets([TYPES.FRAME], onAvailable);
+  targetCommand.unwatchTargets([TYPES.FRAME], onAvailable);
 
-  targetList.destroy();
+  targetCommand.destroy();
 
   BrowserTestUtils.removeTab(tab);
 

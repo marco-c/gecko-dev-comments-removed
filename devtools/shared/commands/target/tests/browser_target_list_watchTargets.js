@@ -26,10 +26,10 @@ async function testWatchTargets() {
   info("Test TargetCommand watchTargets function");
 
   const commands = await CommandsFactory.forMainProcess();
-  const targetList = commands.targetCommand;
-  const { TYPES } = targetList;
+  const targetCommand = commands.targetCommand;
+  const { TYPES } = targetCommand;
 
-  await targetList.startListening();
+  await targetCommand.startListening();
 
   
   const originalProcessesCount = Services.ppmm.childCount - 1;
@@ -38,7 +38,7 @@ async function testWatchTargets() {
     "Check that onAvailable is called for processes already created *before* the call to watchTargets"
   );
   const targets = new Set();
-  const topLevelTarget = targetList.targetFront;
+  const topLevelTarget = targetCommand.targetFront;
   const onAvailable = ({ targetFront }) => {
     if (targets.has(targetFront)) {
       ok(false, "The same target is notified multiple times via onAvailable");
@@ -74,7 +74,7 @@ async function testWatchTargets() {
     );
     targets.delete(targetFront);
   };
-  await targetList.watchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
+  await targetCommand.watchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
   is(
     targets.size,
     originalProcessesCount,
@@ -101,10 +101,10 @@ async function testWatchTargets() {
       if (previousTargets.has(targetFront)) {
         return;
       }
-      targetList.unwatchTargets([TYPES.PROCESS], onAvailable2);
+      targetCommand.unwatchTargets([TYPES.PROCESS], onAvailable2);
       resolve(targetFront);
     };
-    targetList.watchTargets([TYPES.PROCESS], onAvailable2);
+    targetCommand.watchTargets([TYPES.PROCESS], onAvailable2);
   });
   const tab1 = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -124,9 +124,9 @@ async function testWatchTargets() {
     const onAvailable3 = () => {};
     const onDestroyed3 = ({ targetFront }) => {
       resolve(targetFront);
-      targetList.unwatchTargets([TYPES.PROCESS], onAvailable3, onDestroyed3);
+      targetCommand.unwatchTargets([TYPES.PROCESS], onAvailable3, onDestroyed3);
     };
-    targetList.watchTargets([TYPES.PROCESS], onAvailable3, onDestroyed3);
+    targetCommand.watchTargets([TYPES.PROCESS], onAvailable3, onDestroyed3);
   });
 
   BrowserTestUtils.removeTab(tab1);
@@ -147,9 +147,9 @@ async function testWatchTargets() {
     "The destroyed target is the one that has been reported as created"
   );
 
-  targetList.unwatchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
+  targetCommand.unwatchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
 
-  targetList.destroy();
+  targetCommand.destroy();
 
   await commands.destroy();
 }
@@ -161,16 +161,16 @@ async function testContentProcessTarget() {
     osPid,
   } = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal;
   const commands = await CommandsFactory.forProcess(osPid);
-  const targetList = commands.targetCommand;
-  const { TYPES } = targetList;
+  const targetCommand = commands.targetCommand;
+  const { TYPES } = targetCommand;
 
-  await targetList.startListening();
+  await targetCommand.startListening();
 
   
   
   
   const targets = new Set();
-  const topLevelTarget = targetList.targetFront;
+  const topLevelTarget = targetCommand.targetFront;
   const onAvailable = ({ targetFront }) => {
     if (targets.has(targetFront)) {
       
@@ -192,14 +192,14 @@ async function testContentProcessTarget() {
   const onDestroyed = _ => {
     ok(false, "onDestroyed should never be called in this test");
   };
-  await targetList.watchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
+  await targetCommand.watchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
 
   
   
   is(targets.size, 1, "We were only notified about the top level target");
 
-  targetList.unwatchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
-  targetList.destroy();
+  targetCommand.unwatchTargets([TYPES.PROCESS], onAvailable, onDestroyed);
+  targetCommand.destroy();
 
   await commands.destroy();
 }
@@ -210,10 +210,10 @@ async function testThrowingInOnAvailable() {
   );
 
   const commands = await CommandsFactory.forMainProcess();
-  const targetList = commands.targetCommand;
-  const { TYPES } = targetList;
+  const targetCommand = commands.targetCommand;
+  const { TYPES } = targetCommand;
 
-  await targetList.startListening();
+  await targetCommand.startListening();
 
   
   const originalProcessesCount = Services.ppmm.childCount - 1;
@@ -230,14 +230,14 @@ async function testThrowingInOnAvailable() {
     }
     targets.add(targetFront);
   };
-  await targetList.watchTargets([TYPES.PROCESS], onAvailable);
+  await targetCommand.watchTargets([TYPES.PROCESS], onAvailable);
   is(
     targets.size,
     originalProcessesCount - 1,
     "retrieved the expected number of processes via onAvailable. All but the first one where we have thrown."
   );
 
-  targetList.destroy();
+  targetCommand.destroy();
 
   await commands.destroy();
 }
