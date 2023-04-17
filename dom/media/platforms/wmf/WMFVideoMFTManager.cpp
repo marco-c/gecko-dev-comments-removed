@@ -523,7 +523,7 @@ TimeUnit WMFVideoMFTManager::GetSampleDurationOrLastKnownDuration(
     
     
     
-    LOG("Got negative sample duration: %d seconds. Using mLastDuration "
+    LOG("Got negative sample duration: %f seconds. Using mLastDuration "
         "instead.",
         duration.ToSeconds());
   } else {
