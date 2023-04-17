@@ -2721,6 +2721,17 @@ nscoord ReflowInput::GetLineHeight() const {
   return mLineHeight;
 }
 
+void ReflowInput::SetLineHeight(nscoord aLineHeight) {
+  MOZ_ASSERT(aLineHeight >= 0, "aLineHeight must be >= 0!");
+
+  if (mLineHeight != aLineHeight) {
+    mLineHeight = aLineHeight;
+    
+    
+    InitResizeFlags(mFrame->PresContext(), mFrame->Type());
+  }
+}
+
 
 nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
                                     ComputedStyle* aComputedStyle,

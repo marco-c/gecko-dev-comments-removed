@@ -700,6 +700,11 @@ struct ReflowInput : public SizeComputationInput {
   
 
 
+  void SetLineHeight(nscoord aLineHeight);
+
+  
+
+
 
 
 
