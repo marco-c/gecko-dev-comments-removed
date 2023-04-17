@@ -50,7 +50,10 @@ extern mozilla::LazyLogModule gWidgetLog;
 extern mozilla::LazyLogModule gWidgetDragLog;
 extern mozilla::LazyLogModule gWidgetPopupLog;
 
-#  define LOG(args) MOZ_LOG(gWidgetLog, mozilla::LogLevel::Debug, args)
+#  define LOG(args)                                   \
+    MOZ_LOG(IsPopup() ? gWidgetPopupLog : gWidgetLog, \
+            mozilla::LogLevel::Debug, args)
+#  define LOGW(args) MOZ_LOG(gWidgetLog, mozilla::LogLevel::Debug, args)
 #  define LOGDRAG(args) MOZ_LOG(gWidgetDragLog, mozilla::LogLevel::Debug, args)
 #  define LOG_POPUP(args) \
     MOZ_LOG(gWidgetPopupLog, mozilla::LogLevel::Debug, args)
@@ -58,6 +61,7 @@ extern mozilla::LazyLogModule gWidgetPopupLog;
 #else
 
 #  define LOG(args)
+#  define LOGW(args)
 #  define LOGDRAG(args)
 #  define LOG_POPUP(args)
 
@@ -611,29 +615,129 @@ class nsWindow final : public nsBaseWidget {
 
   void ApplySizeConstraints(void);
 
-  bool IsMainMenuWindow();
-  GtkWidget* ConfigureWaylandPopupWindows();
-  void PauseRemoteRenderer();
-  void HideWaylandWindow();
-  void HideWaylandTooltip();
-  void HideWaylandPopupAndAllChildren();
-  void HideAllWaylandPopups();
-  void HidePopupsOfParentWindow(nsWindow* aParentWindow);
-  void HidePopupWindowAndAllChildPopups(nsWindow* aWindow);
-  void HideToplevelWindowAndAllChildPopups(nsWindow* aWindow);
-  void CloseUntrackedWaylandPopups();
-  void ConfigureWaylandPopupHierarchy();
-  GtkWindow* GetCurrentTopmostWindow();
-  GtkWindow* GetCurrentWindow();
-  GtkWindow* GetTopmostWindow();
+  
+  bool WaylandPopupNeedsTrackInHierarchy();
+  bool WaylandPopupIsAnchored();
+  bool WaylandPopupIsMenu();
+  bool WaylandPopupIsPermanent();
   bool IsWidgetOverflowWindow();
+  void PauseRemoteRenderer();
+  void RemovePopupFromHierarchyList();
+  void HideWaylandWindow();
+  void HideWaylandPopupWindow(bool aTemporaryHidden, bool aRemoveFromPopupList);
+  void HideWaylandToplevelWindow();
+  void WaylandPopupHideTooltips();
+  void AppendPopupToHierarchyList(nsWindow* aToplevelWindow);
+  void WaylandPopupHierarchyHideTemporary();
+  void WaylandPopupHierarchyShowTemporaryHidden();
+  void WaylandPopupHierarchyCalculatePositions();
+  bool IsInPopupHierarchy();
+  void AddWindowToPopupHierarchy();
+  void UpdateWaylandPopupHierarchy();
+  void WaylandPopupHierarchyUpdateByLayout();
+  void CloseAllPopupsBeforeRemotePopup();
+  void WaylandPopupHideClosedPopups();
+  void WaylandPopupMove(bool aUseMoveToRect);
+  nsWindow* WaylandPopupGetTopmostWindow();
+  bool IsPopupInLayoutPopupChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy,
+                                 bool aMustMatchParent);
+  void WaylandPopupMarkAsClosed();
+  void WaylandPopupRemoveClosedPopups();
+  nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
+  GtkWindow* GetCurrentTopmostWindow();
   nsCString GetWindowNodeName();
   nsCString GetPopupTypeName();
+
 #ifdef MOZ_LOGGING
   void LogPopupHierarchy();
 #endif
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool mPopupTrackInHierarchy;
+  bool mPopupTrackInHierarchyConfigured;
+
+  
+
+
+  GdkPoint mPopupPosition;
+
+  
+
+  bool mPopupAnchored;
+
+  
+
+  GdkPoint mTranslatedPopupPosition;
+
+  
+
+
+  bool mPopupMatchesLayout;
+
+  
+
+
+  bool mPopupChanged;
+
+  
+
+  bool mPopupTemporaryHidden;
+
+  
+
+  bool mPopupClosed;
+
+  
+
+
+  RefPtr<nsWindow> mWaylandToplevel;
+
+  
+
+  RefPtr<nsWindow> mWaylandPopupNext;
+  RefPtr<nsWindow> mWaylandPopupPrev;
+
+  
+
+
   nsRect mPreferredPopupRect;
   bool mPreferredPopupRectFlushed;
+
+  
+
+
+
+
   bool mWaitingForMoveToRectCB;
   LayoutDeviceIntRect mPendingSizeRect;
 
