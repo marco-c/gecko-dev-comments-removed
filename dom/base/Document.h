@@ -302,6 +302,7 @@ enum BFCacheStatus {
   CONTAINS_REMOTE_SUBFRAMES = 1 << 11,   
   NOT_ONLY_TOPLEVEL_IN_BCG = 1 << 12,    
   ABOUT_PAGE = 1 << 13,                  
+  RESTORING = 1 << 14,                   
 };
 
 }  
