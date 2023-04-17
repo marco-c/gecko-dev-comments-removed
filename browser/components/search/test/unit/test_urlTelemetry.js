@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -74,15 +74,15 @@ const TESTS = [
     expectedAdKey: "bing:sap",
     adUrls: [
       "https://www.bing.com/aclick?ld=foo",
-      "https://www.bing.com/fd/ls/GLinkPingPost.aspx?IG=bar&url=https%3A%2F%2Fwww.bing.com%2Faclick",
       "https://www.bing.com/aclk?ld=foo",
-      "https://www.bing.com/fd/ls/GLinkPingPost.aspx?IG=bar&url=https%3A%2F%2Fwww.bing.com%2Faclk",
     ],
     nonAdUrls: [
       "https://www.bing.com/fd/ls/ls.gif?IG=foo",
       "https://www.bing.com/fd/ls/l?IG=bar",
       "https://www.bing.com/aclook?",
       "https://www.bing.com/fd/ls/GLinkPingPost.aspx?IG=baz&url=%2Fvideos%2Fsearch%3Fq%3Dfoo",
+      "https://www.bing.com/fd/ls/GLinkPingPost.aspx?IG=bar&url=https%3A%2F%2Fwww.bing.com%2Faclick",
+      "https://www.bing.com/fd/ls/GLinkPingPost.aspx?IG=bar&url=https%3A%2F%2Fwww.bing.com%2Faclk",
     ],
   },
   {
@@ -165,19 +165,19 @@ const TESTS = [
   },
 ];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * This function is primarily for testing the Ad URL regexps that are triggered
+ * when a URL is clicked on. These regexps are also used for the `with_ads`
+ * probe. However, we test the ad_clicks route as that is easier to hit.
+ *
+ * @param {string} serpUrl
+ *   The url to simulate where the page the click came from.
+ * @param {string} adUrl
+ *   The ad url to simulate being clicked.
+ * @param {string} [expectedAdKey]
+ *   The expected key to be logged for the scalar. Omit if no scalar should be
+ *   logged.
+ */
 async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
   info(`Testing Ad URL: ${adUrl}`);
   let channel = NetUtil.newChannel({
@@ -193,8 +193,8 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
     Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
   );
-  
-  
+  // Since the content handler takes a moment to allow the channel information
+  // to settle down, wait the same amount of time here.
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
