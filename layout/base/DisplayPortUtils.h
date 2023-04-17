@@ -204,15 +204,6 @@ class DisplayPortUtils {
 
 
 
-  static void UpdateDisplayPortMarginsFromPendingMessages();
-
-  
-
-
-
-
-
-
   static bool GetDisplayPortForVisibilityTesting(nsIContent* aContent,
                                                  nsRect* aResult);
 
