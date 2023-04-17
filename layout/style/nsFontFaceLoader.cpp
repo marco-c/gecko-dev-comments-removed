@@ -44,15 +44,21 @@ static uint32_t GetShortFallbackDelay() {
 }
 
 nsFontFaceLoader::nsFontFaceLoader(gfxUserFontEntry* aUserFontEntry,
-                                   nsIURI* aFontURI, FontFaceSet* aFontFaceSet,
+                                   uint32_t aSrcIndex,
+                                   FontFaceSet* aFontFaceSet,
                                    nsIChannel* aChannel)
     : mUserFontEntry(aUserFontEntry),
-      mFontURI(aFontURI),
       mFontFaceSet(aFontFaceSet),
       mChannel(aChannel),
-      mStreamLoader(nullptr) {
+      mStreamLoader(nullptr),
+      mSrcIndex(aSrcIndex) {
   MOZ_ASSERT(mFontFaceSet,
              "We should get a valid FontFaceSet from the caller!");
+
+  const gfxFontFaceSrc& src = aUserFontEntry->SourceAt(mSrcIndex);
+  MOZ_ASSERT(src.mSourceType == gfxFontFaceSrc::eSourceType_URL);
+
+  mFontURI = src.mURI->get();
   mStartTime = TimeStamp::Now();
 
   
@@ -276,7 +282,8 @@ nsFontFaceLoader::OnStreamComplete(nsIStreamLoader* aLoader,
 
   
   
-  mUserFontEntry->FontDataDownloadComplete(aString, aStringLen, aStatus, this);
+  mUserFontEntry->FontDataDownloadComplete(mSrcIndex, aString, aStringLen,
+                                           aStatus, this);
   return NS_SUCCESS_ADOPTED_DATA;
 }
 

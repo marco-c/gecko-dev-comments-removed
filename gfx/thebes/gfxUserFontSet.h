@@ -266,8 +266,8 @@ class gfxUserFontSet {
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
       mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
-      float aAscentOverride, float aDescentOverride,
-      float aLineGapOverride, float aSizeAdjust) = 0;
+      float aAscentOverride, float aDescentOverride, float aLineGapOverride,
+      float aSizeAdjust) = 0;
 
   
   
@@ -308,7 +308,7 @@ class gfxUserFontSet {
   
   
   virtual nsresult StartLoad(gfxUserFontEntry* aUserFontEntry,
-                             const gfxFontFaceSrc* aFontFaceSrc) = 0;
+                             uint32_t aSrcIndex) = 0;
 
   
   
@@ -514,7 +514,7 @@ class gfxUserFontSet {
 
   
   virtual nsresult LogMessage(gfxUserFontEntry* aUserFontEntry,
-                              const char* aMessage,
+                              uint32_t aSrcIndex, const char* aMessage,
                               uint32_t aFlags = nsIScriptError::errorFlag,
                               nsresult aStatus = NS_OK) = 0;
 
@@ -649,8 +649,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   void SetLoader(nsFontFaceLoader* aLoader) { mLoader = aLoader; }
   nsFontFaceLoader* GetLoader() const { return mLoader; }
   gfxFontSrcPrincipal* GetPrincipal() const { return mPrincipal; }
-  uint32_t GetSrcIndex() const { return mSrcIndex; }
-  void GetFamilyNameAndURIForLogging(nsACString& aFamilyName, nsACString& aURI);
+  void GetFamilyNameAndURIForLogging(uint32_t aSrcIndex,
+                                     nsACString& aFamilyName, nsACString& aURI);
 
   gfxFontEntry* Clone() const override {
     MOZ_ASSERT_UNREACHABLE("cannot Clone user fonts");
@@ -662,6 +662,12 @@ class gfxUserFontEntry : public gfxFontEntry {
 #endif
 
   const nsTArray<gfxFontFaceSrc>& SourceList() const { return mSrcList; }
+
+  
+  
+  const gfxFontFaceSrc& SourceAt(uint32_t aSrcIndex) const {
+    return mSrcList[aSrcIndex];
+  }
 
   
   bool HasVariations() override {
@@ -698,34 +704,37 @@ class gfxUserFontEntry : public gfxFontEntry {
   
   
   
-  void FontDataDownloadComplete(const uint8_t* aFontData, uint32_t aLength,
-                                nsresult aDownloadStatus,
+  void FontDataDownloadComplete(uint32_t aSrcIndex, const uint8_t* aFontData,
+                                uint32_t aLength, nsresult aDownloadStatus,
                                 nsIFontLoadCompleteCallback* aCallback);
 
   
   
   
   
-  bool LoadPlatformFontSync(const uint8_t* aFontData, uint32_t aLength);
+  bool LoadPlatformFontSync(uint32_t aSrcIndex, const uint8_t* aFontData,
+                            uint32_t aLength);
 
-  void LoadPlatformFontAsync(const uint8_t* aFontData, uint32_t aLength,
+  void LoadPlatformFontAsync(uint32_t aSrcIndex, const uint8_t* aFontData,
+                             uint32_t aLength,
                              nsIFontLoadCompleteCallback* aCallback);
 
   
   void StartPlatformFontLoadOnBackgroundThread(
-      const uint8_t* aFontData, uint32_t aLength,
+      uint32_t aSrcIndex, const uint8_t* aFontData, uint32_t aLength,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
   void ContinuePlatformFontLoadOnMainThread(
-      const uint8_t* aOriginalFontData, uint32_t aOriginalLength,
-      gfxUserFontType aFontType, const uint8_t* aSanitizedFontData,
-      uint32_t aSanitizedLength, nsTArray<OTSMessage>&& aMessages,
+      uint32_t aSrcIndex, const uint8_t* aOriginalFontData,
+      uint32_t aOriginalLength, gfxUserFontType aFontType,
+      const uint8_t* aSanitizedFontData, uint32_t aSanitizedLength,
+      nsTArray<OTSMessage>&& aMessages,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
   
   
-  bool LoadPlatformFont(const uint8_t* aOriginalFontData,
+  bool LoadPlatformFont(uint32_t aSrcIndex, const uint8_t* aOriginalFontData,
                         uint32_t aOriginalLength, gfxUserFontType aFontType,
                         const uint8_t* aSanitizedFontData,
                         uint32_t aSanitizedLength,
@@ -736,8 +745,8 @@ class gfxUserFontEntry : public gfxFontEntry {
   void FontLoadFailed(nsIFontLoadCompleteCallback* aCallback);
 
   
-  void StoreUserFontData(gfxFontEntry* aFontEntry, bool aPrivate,
-                         const nsACString& aOriginalName,
+  void StoreUserFontData(gfxFontEntry* aFontEntry, uint32_t aSrcIndex,
+                         bool aPrivate, const nsACString& aOriginalName,
                          FallibleTArray<uint8_t>* aMetadata,
                          uint32_t aMetaOrigLen, uint8_t aCompression);
 
@@ -773,7 +782,7 @@ class gfxUserFontEntry : public gfxFontEntry {
 
   RefPtr<gfxFontEntry> mPlatformFontEntry;
   nsTArray<gfxFontFaceSrc> mSrcList;
-  uint32_t mSrcIndex;  
+  uint32_t mCurrentSrcIndex;  
   
   
   nsFontFaceLoader* MOZ_NON_OWNING_REF

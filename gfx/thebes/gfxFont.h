@@ -1492,7 +1492,9 @@ class gfxFont {
     
     
     if (mAdjustedSize < 0.0) {
-      mAdjustedSize = mStyle.sizeAdjust == 0.0 ? 0.0 : mStyle.size * mFontEntry->mSizeAdjust;
+      mAdjustedSize = mStyle.sizeAdjust == 0.0
+                          ? 0.0
+                          : mStyle.size * mFontEntry->mSizeAdjust;
     }
     return mAdjustedSize;
   }
