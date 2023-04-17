@@ -591,9 +591,13 @@ void PK11PasswordPromptRunnable::RunOnTargetThread() {
   }
 
   nsString password;
+  
+  
+  bool checkState = false;
   bool userClickedOK = false;
   rv = prompt->PromptPassword(nullptr, promptString.get(),
-                              getter_Copies(password), &userClickedOK);
+                              getter_Copies(password), nullptr, &checkState,
+                              &userClickedOK);
   if (NS_FAILED(rv) || !userClickedOK) {
     return;
   }

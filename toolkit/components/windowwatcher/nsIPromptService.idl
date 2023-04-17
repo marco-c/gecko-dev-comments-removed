@@ -423,9 +423,17 @@ interface nsIPromptService : nsISupports
                    in unsigned long modalType,
                    in wstring aDialogTitle,
                    in wstring aText,
-                   in wstring aValue);
+                   in wstring aValue,
+                   in wstring aCheckMsg,
+                   in boolean aCheckState);
 
   
+
+
+
+
+
+
 
 
 
@@ -451,7 +459,9 @@ interface nsIPromptService : nsISupports
                                     in wstring aDialogTitle,
                                     in wstring aText,
                                     inout wstring aUsername,
-                                    inout wstring aPassword);
+                                    inout wstring aPassword,
+                                    in wstring aCheckMsg,
+                                    inout boolean aCheckState);
   
 
 
@@ -465,7 +475,9 @@ interface nsIPromptService : nsISupports
                                       in wstring aDialogTitle,
                                       in wstring aText,
                                       inout wstring aUsername,
-                                      inout wstring aPassword);
+                                      inout wstring aPassword,
+                                      in wstring aCheckMsg,
+                                      inout boolean aCheckState);
   
 
 
@@ -478,9 +490,16 @@ interface nsIPromptService : nsISupports
                                       in wstring aDialogTitle,
                                       in wstring aText,
                                       in wstring aUsername,
-                                      in wstring aPassword);
+                                      in wstring aPassword,
+                                      in wstring aCheckMsg,
+                                      in boolean aCheckState);
 
   
+
+
+
+
+
 
 
 
@@ -500,7 +519,9 @@ interface nsIPromptService : nsISupports
   boolean promptPassword(in mozIDOMWindowProxy aParent,
                          in wstring aDialogTitle,
                          in wstring aText,
-                         inout wstring aPassword);
+                         inout wstring aPassword,
+                         in wstring aCheckMsg,
+                         inout boolean aCheckState);
   
 
 
@@ -513,7 +534,9 @@ interface nsIPromptService : nsISupports
                            in unsigned long modalType,
                            in wstring aDialogTitle,
                            in wstring aText,
-                           inout wstring aPassword);
+                           inout wstring aPassword,
+                           in wstring aCheckMsg,
+                           inout boolean aCheckState);
   
 
 
@@ -525,7 +548,9 @@ interface nsIPromptService : nsISupports
                            in unsigned long modalType,
                            in wstring aDialogTitle,
                            in wstring aText,
-                           in wstring aPassword);
+                           in wstring aPassword,
+                           in wstring aCheckMsg,
+                           in boolean aCheckState);
   
 
 
@@ -581,10 +606,15 @@ interface nsIPromptService : nsISupports
   
   
   
+  
+  
+  
   boolean promptAuth(in mozIDOMWindowProxy aParent,
                      in nsIChannel aChannel,
                      in uint32_t level,
-                     in nsIAuthInformation authInfo);
+                     in nsIAuthInformation authInfo,
+                     in wstring checkboxLabel,
+                     inout boolean checkValue);
   
 
 
@@ -597,7 +627,9 @@ interface nsIPromptService : nsISupports
                        in unsigned long modalType,
                        in nsIChannel aChannel,
                        in uint32_t level,
-                       in nsIAuthInformation authInfo);
+                       in nsIAuthInformation authInfo,
+                       in wstring checkboxLabel,
+                       inout boolean checkValue);
   
 
 
@@ -609,5 +641,7 @@ interface nsIPromptService : nsISupports
                       in unsigned long modalType,
                       in nsIChannel aChannel,
                       in uint32_t level,
-                      in nsIAuthInformation authInfo);
+                      in nsIAuthInformation authInfo,
+                      in wstring checkboxLabel,
+                      in boolean checkValue);
 };

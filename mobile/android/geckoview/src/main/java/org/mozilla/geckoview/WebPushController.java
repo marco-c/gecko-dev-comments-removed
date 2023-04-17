@@ -49,18 +49,6 @@ public class WebPushController {
 
 
     @UiThread
-    @Nullable
-    public WebPushDelegate getDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return mDelegate;
-    }
-
-    
-
-
-
-
-    @UiThread
     public void onPushEvent(final @NonNull String scope) {
         ThreadUtils.assertOnUiThread();
         onPushEvent(scope, null);

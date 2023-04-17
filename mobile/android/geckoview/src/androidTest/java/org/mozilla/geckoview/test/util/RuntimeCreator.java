@@ -12,6 +12,7 @@ import org.mozilla.geckoview.test.TestCrashHandler;
 
 import static org.mozilla.geckoview.ContentBlocking.SafeBrowsingProvider;
 
+import android.os.Looper;
 import android.os.Process;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,6 +21,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import android.util.Log;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 public class RuntimeCreator {
     public static final int TEST_SUPPORT_INITIAL = 0;
@@ -126,6 +129,20 @@ public class RuntimeCreator {
         sPortDelegate = portDelegate;
     }
 
+    private static GeckoRuntime.Delegate sShutdownDelegate;
+
+    private static GeckoRuntime.Delegate sWrapperShutdownDelegate = new GeckoRuntime.Delegate() {
+        @Override
+        public void onShutdown() {
+            if (sShutdownDelegate != null) {
+                sShutdownDelegate.onShutdown();
+                return;
+            }
+
+            Process.killProcess(Process.myPid());
+        }
+    };
+
     @UiThread
     public static GeckoRuntime getRuntime() {
         if (sRuntime != null) {
@@ -162,8 +179,76 @@ public class RuntimeCreator {
 
         registerTestSupport();
 
-        sRuntime.setDelegate(() -> Process.killProcess(Process.myPid()));
+        sRuntime.setDelegate(sWrapperShutdownDelegate);
 
         return sRuntime;
+    }
+
+    private static final class ShutdownCompleteIndicator implements GeckoRuntime.Delegate {
+        private boolean mDone = false;
+
+        @Override
+        public void onShutdown() {
+            mDone = true;
+        }
+
+        public boolean isDone() {
+            return mDone;
+        }
+    }
+
+    @UiThread
+    private static void shutdownRuntimeInternal(final long timeoutMillis) {
+        if (sRuntime == null) {
+            return;
+        }
+
+        final ShutdownCompleteIndicator indicator = new ShutdownCompleteIndicator();
+        sShutdownDelegate = indicator;
+
+        sRuntime.shutdown();
+
+        UiThreadUtils.waitForCondition(() -> indicator.isDone(), timeoutMillis);
+        if (!indicator.isDone()) {
+            throw new RuntimeException("Timed out waiting for GeckoRuntime shutdown to complete");
+        }
+
+        sRuntime = null;
+        sShutdownDelegate = null;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public static void shutdownRuntime() {
+        
+        
+        final long timeoutMillis = 2 * env.getDefaultTimeoutMillis();
+
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            shutdownRuntimeInternal(timeoutMillis);
+            return;
+        }
+
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                RuntimeCreator.shutdownRuntimeInternal(timeoutMillis);
+            }
+        };
+
+        final FutureTask<Void> task = new FutureTask<>(runnable, null);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(task);
+        try {
+            task.get(timeoutMillis, TimeUnit.MILLISECONDS);
+        } catch (final Throwable e) {
+            throw new RuntimeException(e.toString());
+        }
     }
 }

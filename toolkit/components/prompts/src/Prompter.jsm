@@ -444,12 +444,40 @@ Prompter.prototype = {
 
 
 
-  promptUsernameAndPassword(domWin, title, text, user, pass) {
+
+
+
+
+
+
+  promptUsernameAndPassword(
+    domWin,
+    title,
+    text,
+    user,
+    pass,
+    checkLabel,
+    checkValue
+  ) {
     let p = this.pickPrompter({ domWin });
-    return p.nsIPrompt_promptUsernameAndPassword(null, title, text, user, pass);
+    return p.nsIPrompt_promptUsernameAndPassword(
+      null,
+      title,
+      text,
+      user,
+      pass,
+      checkLabel,
+      checkValue
+    );
   },
 
   
+
+
+
+
+
+
 
 
 
@@ -486,6 +514,10 @@ Prompter.prototype = {
 
 
 
+
+
+
+
   asyncPromptUsernameAndPassword(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.nsIPrompt_promptUsernameAndPassword(null, ...promptArgs);
@@ -502,17 +534,29 @@ Prompter.prototype = {
 
 
 
-  promptPassword(domWin, title, text, pass) {
+
+
+
+
+
+  promptPassword(domWin, title, text, pass, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
     return p.nsIPrompt_promptPassword(
       null, 
       title,
       text,
-      pass
+      pass,
+      checkLabel,
+      checkValue
     );
   },
 
   
+
+
+
+
+
 
 
 
@@ -532,6 +576,9 @@ Prompter.prototype = {
   },
 
   
+
+
+
 
 
 
@@ -615,12 +662,22 @@ Prompter.prototype = {
 
 
 
-  promptAuth(domWin, channel, level, authInfo) {
+
+
+
+
+
+  promptAuth(domWin, channel, level, authInfo, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
-    return p.promptAuth(channel, level, authInfo);
+    return p.promptAuth(channel, level, authInfo, checkLabel, checkValue);
   },
 
   
+
+
+
+
+
 
 
 
@@ -643,6 +700,9 @@ Prompter.prototype = {
   },
 
   
+
+
+
 
 
 
@@ -1507,7 +1567,15 @@ class ModalPrompter {
     return ok;
   }
 
-  nsIPrompt_promptUsernameAndPassword(channel, title, text, user, pass) {
+  nsIPrompt_promptUsernameAndPassword(
+    channel,
+    title,
+    text,
+    user,
+    pass,
+    checkLabel,
+    checkValue
+  ) {
     if (!title) {
       title = PromptUtils.getLocalizedString("PromptUsernameAndPassword3", [
         PromptUtils.getBrandFullName(),
@@ -1521,12 +1589,15 @@ class ModalPrompter {
       text,
       user: this.async ? user : user.value,
       pass: this.async ? pass : pass.value,
+      checkLabel,
+      checked: this.async ? checkValue : checkValue.value,
       button0Label: PromptUtils.getLocalizedString("SignIn"),
       ok: false,
     };
 
     if (this.async) {
       return this.openPromptAsync(args, result => ({
+        checked: result.checked,
         user: result.user,
         pass: result.pass,
         ok: result.ok,
@@ -1538,6 +1609,7 @@ class ModalPrompter {
     
     let ok = args.ok;
     if (ok) {
+      checkValue.value = args.checked;
       user.value = args.user;
       pass.value = args.pass;
     }
@@ -1545,7 +1617,7 @@ class ModalPrompter {
     return ok;
   }
 
-  nsIPrompt_promptPassword(channel, title, text, pass) {
+  nsIPrompt_promptPassword(channel, title, text, pass, checkLabel, checkValue) {
     if (!title) {
       title = PromptUtils.getLocalizedString("PromptPassword3", [
         PromptUtils.getBrandFullName(),
@@ -1558,12 +1630,15 @@ class ModalPrompter {
       title,
       text,
       pass: this.async ? pass : pass.value,
+      checkLabel,
+      checked: this.async ? checkValue : checkValue.value,
       button0Label: PromptUtils.getLocalizedString("SignIn"),
       ok: false,
     };
 
     if (this.async) {
       return this.openPromptAsync(args, result => ({
+        checked: result.checked,
         pass: result.pass,
         ok: result.ok,
       }));
@@ -1574,6 +1649,7 @@ class ModalPrompter {
     
     let ok = args.ok;
     if (ok) {
+      checkValue.value = args.checked;
       pass.value = args.pass;
     }
 
@@ -1643,19 +1719,21 @@ class ModalPrompter {
       title,
       text,
       user,
-      pass
+      pass,
+      null,
+      {}
     );
   }
 
   nsIAuthPrompt_promptPassword(title, text, passwordRealm, savePassword, pass) {
     
     
-    return this.nsIPrompt_promptPassword(null, title, text, pass);
+    return this.nsIPrompt_promptPassword(null, title, text, pass, null, {});
   }
 
   
 
-  promptAuth(channel, level, authInfo) {
+  promptAuth(channel, level, authInfo, checkLabel, checkValue) {
     let message = PromptUtils.makeAuthMessage(this, channel, authInfo);
 
     let [username, password] = PromptUtils.getAuthInfo(authInfo);
@@ -1665,14 +1743,23 @@ class ModalPrompter {
 
     let result;
     if (authInfo.flags & Ci.nsIAuthInformation.ONLY_PASSWORD) {
-      result = this.nsIPrompt_promptPassword(channel, null, message, passParam);
+      result = this.nsIPrompt_promptPassword(
+        channel,
+        null,
+        message,
+        passParam,
+        checkLabel,
+        checkValue
+      );
     } else {
       result = this.nsIPrompt_promptUsernameAndPassword(
         channel,
         null,
         message,
         userParam,
-        passParam
+        passParam,
+        checkLabel,
+        checkValue
       );
     }
 
