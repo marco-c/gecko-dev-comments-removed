@@ -159,13 +159,15 @@ class ResourceCommand {
     
     await this._watchAllTargets();
 
+    const promises = [];
     for (const resource of resources) {
       
       
       if (!this._hasListenerForResource(resource)) {
-        await this._startListening(resource);
+        promises.push(this._startListening(resource));
       }
     }
+    await Promise.all(promises);
 
     
     
