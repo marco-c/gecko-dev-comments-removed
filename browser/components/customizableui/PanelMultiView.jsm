@@ -1467,6 +1467,8 @@ var PanelView = class extends AssociatedToNode {
       return;
     }
 
+    const profilerMarkerStartTime = Cu.now();
+
     
     
     
@@ -1556,6 +1558,12 @@ var PanelView = class extends AssociatedToNode {
       });
       element.style.height = bounds.height + "px";
     }
+
+    ChromeUtils.addProfilerMarker(
+      "PMV.descriptionHeightWorkaround()",
+      profilerMarkerStartTime,
+      `<${this.node.tagName} id="${this.node.id}">`
+    );
   }
 
   
