@@ -17,6 +17,29 @@
 
 
 
+
+
+static const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
+
+
+
+
+
+
+
+
+
+
+
+#if defined(MOZ_TSAN)
+static const uint32_t HELPER_STACK_SIZE = 2 * kDefaultHelperStackSize;
+#else
+static const uint32_t HELPER_STACK_SIZE = kDefaultHelperStackSize;
+#endif
+
+
+
+
 #define PROFILER_RAII_PASTE(id, line) id##line
 #define PROFILER_RAII_EXPAND(id, line) PROFILER_RAII_PASTE(id, line)
 #define PROFILER_RAII PROFILER_RAII_EXPAND(raiiObject, __LINE__)
@@ -91,6 +114,8 @@ bool InternalThreadPool::Initialize(size_t threadCount,
   }
 
   Instance = instance.release();
+  HelperThreadState().setDispatchTaskCallback(DispatchTask, threadCount,
+                                              HELPER_STACK_SIZE, lock);
   return true;
 }
 

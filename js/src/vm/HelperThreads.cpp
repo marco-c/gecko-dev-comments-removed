@@ -134,23 +134,31 @@ void JS::SetProfilingThreadCallbacks(
   HelperThreadState().unregisterThread = unregisterThread;
 }
 
+static size_t ThreadStackQuotaForSize(size_t size) {
+  
+  return size_t(double(size) * 0.9);
+}
+
 
 
 JS_PUBLIC_API MOZ_NEVER_INLINE void JS::SetHelperThreadTaskCallback(
-    HelperThreadTaskCallback callback, size_t threadCount) {
-  HelperThreadState().setDispatchTaskCallback(callback, threadCount);
+    HelperThreadTaskCallback callback, size_t threadCount, size_t stackSize) {
+  AutoLockHelperThreadState lock;
+  HelperThreadState().setDispatchTaskCallback(callback, threadCount, stackSize,
+                                              lock);
 }
 
 void GlobalHelperThreadState::setDispatchTaskCallback(
-    JS::HelperThreadTaskCallback callback, size_t threadCount) {
-  AutoLockHelperThreadState lock;
+    JS::HelperThreadTaskCallback callback, size_t threadCount, size_t stackSize,
+    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(!isInitialized(lock));
   MOZ_ASSERT(!dispatchTaskCallback);
   MOZ_ASSERT(threadCount != 0);
+  MOZ_ASSERT(stackSize >= 16 * 1024);
 
   dispatchTaskCallback = callback;
   this->threadCount = threadCount;
-  useInternalThreadPool_ = false;
+  this->stackQuota = ThreadStackQuotaForSize(stackSize);
 }
 
 bool js::StartOffThreadWasmCompile(wasm::CompileTask* task,
@@ -498,7 +506,7 @@ AutoSetHelperThreadContext::AutoSetHelperThreadContext(
   cx->setHelperThread(lock);
   
   
-  JS_SetNativeStackQuota(cx, HELPER_STACK_QUOTA);
+  JS_SetNativeStackQuota(cx, HelperThreadState().stackQuota);
 }
 
 AutoSetHelperThreadContext::~AutoSetHelperThreadContext() {
@@ -1300,13 +1308,14 @@ bool GlobalHelperThreadState::ensureInitialized() {
     i = 0;
   }
 
+  useInternalThreadPool_ = !dispatchTaskCallback;
   if (useInternalThreadPool(lock)) {
     if (!InternalThreadPool::Initialize(threadCount, lock)) {
       return false;
     }
-
-    dispatchTaskCallback = InternalThreadPool::DispatchTask;
   }
+
+  MOZ_ASSERT(dispatchTaskCallback);
 
   if (!ensureThreadCount(threadCount, lock)) {
     finishThreads(lock);

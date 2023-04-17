@@ -18,32 +18,6 @@
 #include "threading/ConditionVariable.h"
 #include "threading/ProtectedData.h"
 
-
-
-
-
-
-static const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
-static const uint32_t kDefaultHelperStackQuota = 1800 * 1024;
-
-
-
-
-
-
-
-
-
-
-
-#if defined(MOZ_TSAN)
-static const uint32_t HELPER_STACK_SIZE = 2 * kDefaultHelperStackSize;
-static const uint32_t HELPER_STACK_QUOTA = 2 * kDefaultHelperStackQuota;
-#else
-static const uint32_t HELPER_STACK_SIZE = kDefaultHelperStackSize;
-static const uint32_t HELPER_STACK_QUOTA = kDefaultHelperStackQuota;
-#endif
-
 namespace js {
 
 class AutoLockHelperThreadState;
@@ -60,8 +34,6 @@ class InternalThreadPool {
   static bool IsInitialized() { return Instance; }
   static InternalThreadPool& Get();
 
-  static void DispatchTask();
-
   bool ensureThreadCount(size_t threadCount, AutoLockHelperThreadState& lock);
   size_t threadCount(const AutoLockHelperThreadState& lock);
 
@@ -69,6 +41,8 @@ class InternalThreadPool {
                              const AutoLockHelperThreadState& lock) const;
 
  private:
+  static void DispatchTask();
+
   void dispatchTask();
   void shutDown(AutoLockHelperThreadState& lock);
 
