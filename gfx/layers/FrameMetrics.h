@@ -579,6 +579,16 @@ struct FrameMetrics {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   LayoutDeviceToLayerScale2D mCumulativeResolution;
 
   

@@ -229,12 +229,6 @@ struct RepaintRequest {
   ParentLayerRect mCompositionBounds;
 
   
-  
-  
-  
-  
-  
-  
   LayoutDeviceToLayerScale2D mCumulativeResolution;
 
   
