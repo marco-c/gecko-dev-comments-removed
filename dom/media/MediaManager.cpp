@@ -81,14 +81,6 @@
 #endif
 
 
-template <>
-struct nsIMediaDevice::COMTypeInfo<mozilla::MediaDevice, void> {
-  static const nsIID kIID;
-};
-const nsIID nsIMediaDevice::COMTypeInfo<mozilla::MediaDevice, void>::kIID =
-    NS_IMEDIADEVICE_IID;
-
-
 
 
 
