@@ -33,6 +33,7 @@ class ia2AccessibleValue : public IAccessibleValue {
        VARIANT* minimumValue);
 
  private:
+  Accessible* Acc();
   AccessibleWrap* LocalAcc();
 };
 
