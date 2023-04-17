@@ -4,13 +4,36 @@
 
 "use strict";
 
-const TEST_URL =
-  "http://mochi.test:8888/browser/" +
-  "browser/components/sessionstore/test/browser_463206_sample.html";
+const MOCHI_ROOT = ROOT.replace(
+  "chrome://mochitests/content/",
+  "http://mochi.test:8888/"
+);
+if (gFissionBrowser) {
+  addCoopTask(
+    "browser_463206_sample.html",
+    test_restore_text_data_subframes,
+    HTTPSROOT
+  );
+}
+addNonCoopTask(
+  "browser_463206_sample.html",
+  test_restore_text_data_subframes,
+  HTTPSROOT
+);
+addNonCoopTask(
+  "browser_463206_sample.html",
+  test_restore_text_data_subframes,
+  HTTPROOT
+);
+addNonCoopTask(
+  "browser_463206_sample.html",
+  test_restore_text_data_subframes,
+  MOCHI_ROOT
+);
 
-add_task(async function() {
+async function test_restore_text_data_subframes(aURL) {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, aURL);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
@@ -22,13 +45,20 @@ add_task(async function() {
       event.initUIEvent("input", true, true, aTextField.ownerGlobal, 0);
       aTextField.dispatchEvent(event);
     }
-
     typeText(content.document.getElementById("out1"), Date.now().toString(16));
     typeText(content.document.getElementsByName("1|#out2")[0], Math.random());
-    typeText(
-      content.frames[0].frames[1].document.getElementById("in1"),
-      new Date()
-    );
+    await SpecialPowers.spawn(content.frames[0], [], async function() {
+      await SpecialPowers.spawn(content.frames[1], [], async function() {
+        function typeText2(aTextField, aValue) {
+          aTextField.value = aValue;
+
+          let event = aTextField.ownerDocument.createEvent("UIEvents");
+          event.initUIEvent("input", true, true, aTextField.ownerGlobal, 0);
+          aTextField.dispatchEvent(event);
+        }
+        typeText2(content.document.getElementById("in1"), new Date());
+      });
+    });
   });
 
   
@@ -37,9 +67,16 @@ add_task(async function() {
 
   
   await SpecialPowers.spawn(tab2.linkedBrowser, [], async function() {
+    let out1Val = await SpecialPowers.spawn(
+      content.frames[1],
+      [],
+      async function() {
+        return content.document.getElementById("out1").value;
+      }
+    );
     Assert.notEqual(
       content.document.getElementById("out1").value,
-      content.frames[1].document.getElementById("out1").value,
+      out1Val,
       "text isn't reused for frames"
     );
     Assert.notEqual(
@@ -47,22 +84,39 @@ add_task(async function() {
       "",
       "text containing | and # is correctly restored"
     );
-    Assert.equal(
-      content.frames[1].document.getElementById("out2").value,
-      "",
-      "id prefixes can't be faked"
+    let out2Val = await SpecialPowers.spawn(
+      content.frames[1],
+      [],
+      async function() {
+        return content.document.getElementById("out2").value;
+      }
+    );
+    Assert.equal(out2Val, "", "id prefixes can't be faked");
+    let in1ValFrame0_1 = await SpecialPowers.spawn(
+      content.frames[0],
+      [],
+      async function() {
+        return SpecialPowers.spawn(content.frames[1], [], async function() {
+          return content.document.getElementById("in1").value;
+        });
+      }
     );
     
-    
-    
-    Assert.equal(
-      content.frames[1].frames[0].document.getElementById("in1").value,
-      "",
-      "id prefixes aren't mixed up"
+    todo_is(in1ValFrame0_1, "", "id prefixes aren't mixed up");
+
+    let in1ValFrame1_0 = await SpecialPowers.spawn(
+      content.frames[1],
+      [],
+      async function() {
+        return SpecialPowers.spawn(content.frames[0], [], async function() {
+          return content.document.getElementById("in1").value;
+        });
+      }
     );
+    Assert.equal(in1ValFrame1_0, "", "id prefixes aren't mixed up");
   });
 
   
   gBrowser.removeTab(tab2);
   gBrowser.removeTab(tab);
-});
+}

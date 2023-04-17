@@ -4,7 +4,6 @@
 "use strict";
 
 const BASE = "http://example.com/browser/browser/components/sessionstore/test/";
-const URL = BASE + "browser_scrollPositions_sample.html";
 const URL2 = BASE + "browser_scrollPositions_sample2.html";
 const URL_FRAMESET = BASE + "browser_scrollPositions_sample_frameset.html";
 
@@ -17,7 +16,30 @@ const SCROLL2_X = Math.round(300 * (1 + Math.random()));
 const SCROLL2_Y = Math.round(400 * (1 + Math.random()));
 const SCROLL2_STR = SCROLL2_X + "," + SCROLL2_Y;
 
-requestLongerTimeout(2);
+requestLongerTimeout(10);
+
+add_task(test_scroll_nested);
+
+if (gFissionBrowser) {
+  addCoopTask("browser_scrollPositions_sample.html", test_scroll, HTTPSROOT);
+}
+addNonCoopTask("browser_scrollPositions_sample.html", test_scroll, HTTPROOT);
+addNonCoopTask("browser_scrollPositions_sample.html", test_scroll, HTTPSROOT);
+
+addCoopTask(
+  "browser_scrollPositions_sample.html",
+  test_scroll_background_tabs,
+  HTTPSROOT
+);
+addNonCoopTask(
+  "browser_scrollPositions_sample.html",
+  test_scroll_background_tabs,
+  HTTPROOT
+);
+
+
+
+
 
 function getScrollPosition(bc) {
   return SpecialPowers.spawn(bc, [], () => {
@@ -32,11 +54,11 @@ function getScrollPosition(bc) {
 
 
 
-add_task(async function test_scroll() {
+async function test_scroll(aURL) {
   
   await pushPrefs(["dom.visualviewport.enabled", true]);
 
-  let tab = BrowserTestUtils.addTab(gBrowser, URL);
+  let tab = BrowserTestUtils.addTab(gBrowser, aURL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
@@ -79,13 +101,13 @@ add_task(async function test_scroll() {
   
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);
-});
+}
 
 
 
 
 
-add_task(async function test_scroll_nested() {
+async function test_scroll_nested() {
   
   await pushPrefs(["dom.visualviewport.enabled", true]);
 
@@ -152,7 +174,7 @@ add_task(async function test_scroll_nested() {
   
   BrowserTestUtils.removeTab(tab);
   BrowserTestUtils.removeTab(tab2);
-});
+}
 
 
 
@@ -160,7 +182,7 @@ add_task(async function test_scroll_nested() {
 
 
 
-add_task(async function test_scroll_background_tabs() {
+async function test_scroll_background_tabs(aURL) {
   await pushPrefs(
     ["browser.sessionstore.restore_on_demand", true],
     
@@ -168,7 +190,7 @@ add_task(async function test_scroll_background_tabs() {
   );
 
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
-  let tab = BrowserTestUtils.addTab(newWin.gBrowser, URL);
+  let tab = BrowserTestUtils.addTab(newWin.gBrowser, aURL);
   let browser = tab.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser);
 
@@ -236,4 +258,4 @@ add_task(async function test_scroll_background_tabs() {
   );
 
   await BrowserTestUtils.closeWindow(newWin);
-});
+}
