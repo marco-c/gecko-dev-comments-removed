@@ -4052,9 +4052,8 @@ nsresult HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
   
   
 
-  nsCOMPtr<nsIContent> child = GetFirstEditableChild(aElement);
-
-  if (child) {
+  if (nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstChild(
+          aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
     
     
     
@@ -4938,7 +4937,8 @@ bool HTMLEditor::IsFirstEditableChild(nsINode* aNode) const {
   if (NS_WARN_IF(!parentNode)) {
     return false;
   }
-  return GetFirstEditableChild(*parentNode) == aNode;
+  return HTMLEditUtils::GetFirstChild(
+             *parentNode, {WalkTreeOption::IgnoreNonEditableNode}) == aNode;
 }
 
 bool HTMLEditor::IsLastEditableChild(nsINode* aNode) const {
@@ -4950,14 +4950,6 @@ bool HTMLEditor::IsLastEditableChild(nsINode* aNode) const {
   }
   return HTMLEditUtils::GetLastChild(
              *parentNode, {WalkTreeOption::IgnoreNonEditableNode}) == aNode;
-}
-
-nsIContent* HTMLEditor::GetFirstEditableChild(nsINode& aNode) const {
-  nsIContent* child = aNode.GetFirstChild();
-  while (child && !EditorUtils::IsEditableContent(*child, EditorType::HTML)) {
-    child = child->GetNextSibling();
-  }
-  return child;
 }
 
 nsIContent* HTMLEditor::GetFirstEditableLeaf(nsINode& aNode) const {
