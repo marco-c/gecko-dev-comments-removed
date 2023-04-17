@@ -21,6 +21,11 @@ DocAccessible* MsaaDocAccessible::DocAcc() {
   return static_cast<DocAccessible*>(acc);
 }
 
+
+MsaaDocAccessible* MsaaDocAccessible::GetFrom(DocAccessible* aDoc) {
+  return static_cast<MsaaDocAccessible*>(MsaaAccessible::GetFrom(aDoc));
+}
+
 STDMETHODIMP
 MsaaDocAccessible::get_accParent(
      IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
