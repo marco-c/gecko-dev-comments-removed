@@ -2273,6 +2273,13 @@ class Document : public nsINode,
 
 
 
+  static bool CallerCanAccessPrivilegeSSA(JSContext* aCx, JSObject* aObject);
+
+  
+
+
+
+
   void GetFailedCertSecurityInfo(mozilla::dom::FailedCertSecurityInfo& aInfo,
                                  ErrorResult& aRv);
 
