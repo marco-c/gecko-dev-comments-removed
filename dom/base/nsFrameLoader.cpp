@@ -3745,34 +3745,16 @@ void nsFrameLoader::SetWillChangeProcess() {
   mWillChangeProcess = true;
 
   if (IsRemoteFrame()) {
-    
     if (auto* browserParent = GetBrowserParent()) {
+      if (auto* bc = CanonicalBrowsingContext::Cast(mPendingBrowsingContext);
+          bc && bc->EverAttached()) {
+        bc->StartUnloadingHost(browserParent->Manager()->ChildID());
+        bc->SetCurrentBrowserParent(nullptr);
+      }
       
+      Unused << browserParent->SendWillChangeProcess();
+    } else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext == GetBrowsingContext());
-      RefPtr<CanonicalBrowsingContext> bc(mPendingBrowsingContext->Canonical());
-      uint64_t targetProcessId = browserParent->Manager()->ChildID();
-      bc->SetInFlightProcessId(targetProcessId);
-      auto callback = [bc, targetProcessId](auto) {
-        bc->ClearInFlightProcessId(targetProcessId);
-      };
-      browserParent->SendWillChangeProcess(callback, callback);
-    }
-    
-    else if (auto* browserBridgeChild = GetBrowserBridgeChild()) {
       Unused << browserBridgeChild->SendWillChangeProcess();
     }
     return;
