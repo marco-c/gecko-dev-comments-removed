@@ -17,7 +17,12 @@ this.takeshot = (function() {
     }
   );
 
+  communication.register("getZoomFactor", sender => {
+    return getZoomFactor();
+  });
+
   function screenshotPage(pos, isFullPage, devicePixelRatio) {
+    let zoomFactor = getZoomFactor();
     pos.width = Math.min(pos.right - pos.left, MAX_CANVAS_DIMENSION);
     pos.height = Math.min(pos.bottom - pos.top, MAX_CANVAS_DIMENSION);
 
@@ -35,7 +40,8 @@ this.takeshot = (function() {
 
       
       
-      devicePixelRatio = options.scale = 1;
+      devicePixelRatio = 1;
+      options.scale = 1 / zoomFactor;
     } else {
       let rectangle = {
         x: pos.left,
