@@ -7104,8 +7104,19 @@ RefPtr<VsyncSource> nsWindow::GetVsyncSource() {
     return mWaylandVsyncSource;
   }
 #endif
-
   return nullptr;
+}
+
+bool nsWindow::SynchronouslyRepaintOnResize() {
+  if (GdkIsWaylandDisplay()) {
+    
+    
+    
+    return false;
+  }
+
+  
+  return true;
 }
 
 static bool IsFullscreenSupported(GtkWidget* aShell) {
