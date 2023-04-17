@@ -4356,6 +4356,8 @@ gboolean nsWindow::OnTouchpadPinchEvent(GdkEventTouchpadPinch* aEvent) {
 }
 
 gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
+  LOG(("OnTouchEvent: x=%f y=%f type=%d\n", aEvent->x, aEvent->y,
+       aEvent->type));
   if (!mHandleTouchEvent) {
     
     
@@ -4378,9 +4380,25 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       break;
     case GDK_TOUCH_UPDATE:
       msg = eTouchMove;
+      
+      if (mWindowShouldStartDragging) {
+        mWindowShouldStartDragging = false;
+        GdkWindow* gdk_window = gdk_window_get_toplevel(mGdkWindow);
+        MOZ_ASSERT(gdk_window,
+                   "gdk_window_get_toplevel should not return null");
+
+        LOG(("  start window dragging window\n"));
+        gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root,
+                                   aEvent->y_root, aEvent->time);
+        return TRUE;
+      }
       break;
     case GDK_TOUCH_END:
       msg = eTouchEnd;
+      if (mWindowShouldStartDragging) {
+        LOG(("  end of window dragging window\n"));
+        mWindowShouldStartDragging = false;
+      }
       break;
     case GDK_TOUCH_CANCEL:
       msg = eTouchCancel;
@@ -4417,7 +4435,17 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
     *event.mTouches.AppendElement() = std::move(touch);
   }
 
-  DispatchInputEvent(&event);
+  nsIWidget::ContentAndAPZEventStatus eventStatus = DispatchInputEvent(&event);
+
+  
+  
+  LayoutDeviceIntPoint refPoint =
+      GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
+  if (aEvent->type == GDK_TOUCH_BEGIN &&
+      mDraggableRegion.Contains(refPoint.x, refPoint.y) &&
+      eventStatus.mApzStatus != nsEventStatus_eConsumeNoDefault) {
+    mWindowShouldStartDragging = true;
+  }
   return TRUE;
 }
 
