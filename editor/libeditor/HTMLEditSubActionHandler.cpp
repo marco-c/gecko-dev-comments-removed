@@ -5666,6 +5666,14 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
     return EditorDOMPoint();
   }
 
+  Element* editingHost = GetActiveEditingHost();
+  if (!editingHost) {
+    NS_WARNING(
+        "No editing host, HTMLEditor::GetCurrentHardLineStartPoint() returned "
+        "given point");
+    return EditorDOMPoint(aPoint);
+  }
+
   EditorDOMPoint point(aPoint);
   
   
@@ -5675,15 +5683,15 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
       
       return point;
     }
+    
+    
+    EditorDOMPoint atLastPreformattedNewLine =
+        HTMLEditUtils::GetPreviousPreformattedNewLineInTextNode<EditorDOMPoint>(
+            point);
+    if (atLastPreformattedNewLine.IsSet()) {
+      return atLastPreformattedNewLine.NextPoint();
+    }
     point.Set(point.GetContainer());
-  }
-
-  Element* editingHost = GetActiveEditingHost();
-  if (!editingHost) {
-    NS_WARNING(
-        "No editing host, HTMLEditor::GetCurrentHardLineStartPoint() returned "
-        "given point");
-    return point;
   }
 
   
@@ -5700,8 +5708,13 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
        !HTMLEditUtils::IsBlockElement(*previousEditableContent);
        previousEditableContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
+    EditorDOMPoint atLastPreformattedNewLine =
+        HTMLEditUtils::GetPreviousPreformattedNewLineInTextNode<EditorDOMPoint>(
+            EditorRawDOMPoint::AtEndOf(*previousEditableContent));
+    if (atLastPreformattedNewLine.IsSet()) {
+      return atLastPreformattedNewLine.NextPoint();
+    }
     point.Set(previousEditableContent);
-    
   }
 
   
@@ -5754,26 +5767,56 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
     return EditorDOMPoint();
   }
 
-  EditorDOMPoint point(aPoint);
-  
-  
-  if (point.IsInTextNode()) {
-    if (!point.GetContainer()->GetParentNode()) {
-      
-      
-      return point;
-    }
-    
-    point.SetAfter(point.GetContainer());
-    NS_WARNING_ASSERTION(point.IsSet(), "Failed to set to after the text node");
-  }
-
   Element* editingHost = GetActiveEditingHost();
   if (!editingHost) {
     NS_WARNING(
         "No editing host, HTMLEditor::GetCurrentHardLineEndPoint() returned "
         "given point");
-    return point;
+    return EditorDOMPoint(aPoint);
+  }
+
+  EditorDOMPoint point(aPoint);
+  
+  
+  if (point.IsInTextNode()) {
+    if (NS_WARN_IF(!point.GetContainer()->GetParentNode())) {
+      
+      
+      return point;
+    }
+    EditorDOMPoint atNextPreformattedNewLine =
+        HTMLEditUtils::GetInclusiveNextPreformattedNewLineInTextNode<
+            EditorDOMPoint>(point);
+    if (atNextPreformattedNewLine.IsSet()) {
+      
+      
+      
+      Element* maybeNonEditableBlockElement = nullptr;
+      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
+              atNextPreformattedNewLine, &maybeNonEditableBlockElement) &&
+          maybeNonEditableBlockElement) {
+        
+        
+        if (maybeNonEditableBlockElement == editingHost ||
+            !maybeNonEditableBlockElement->IsInclusiveDescendantOf(
+                editingHost)) {
+          return EditorDOMPoint::AtEndOf(*maybeNonEditableBlockElement);
+        }
+        
+        
+        
+        if (atNextPreformattedNewLine.ContainerAsText()
+                ->IsInclusiveDescendantOf(maybeNonEditableBlockElement)) {
+          return EditorDOMPoint::AtEndOf(*maybeNonEditableBlockElement);
+        }
+        return EditorDOMPoint(maybeNonEditableBlockElement);
+      }
+      
+      return atNextPreformattedNewLine.NextPoint();
+    }
+    
+    point.SetAfter(point.GetContainer());
+    NS_WARNING_ASSERTION(point.IsSet(), "Failed to set to after the text node");
   }
 
   
@@ -5801,27 +5844,42 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
        nextEditableContent->GetParent();
        nextEditableContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
+    EditorDOMPoint atFirstPreformattedNewLine =
+        HTMLEditUtils::GetInclusiveNextPreformattedNewLineInTextNode<
+            EditorDOMPoint>(EditorRawDOMPoint(nextEditableContent, 0));
+    if (atFirstPreformattedNewLine.IsSet()) {
+      
+      
+      
+      Element* maybeNonEditableBlockElement = nullptr;
+      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
+              atFirstPreformattedNewLine, &maybeNonEditableBlockElement) &&
+          maybeNonEditableBlockElement) {
+        
+        
+        if (maybeNonEditableBlockElement == editingHost ||
+            !maybeNonEditableBlockElement->IsInclusiveDescendantOf(
+                editingHost)) {
+          return EditorDOMPoint::AtEndOf(*maybeNonEditableBlockElement);
+        }
+        
+        
+        
+        if (atFirstPreformattedNewLine.ContainerAsText()
+                ->IsInclusiveDescendantOf(maybeNonEditableBlockElement)) {
+          return EditorDOMPoint::AtEndOf(*maybeNonEditableBlockElement);
+        }
+        return EditorDOMPoint(maybeNonEditableBlockElement);
+      }
+      
+      return atFirstPreformattedNewLine.NextPoint();
+    }
     point.SetAfter(nextEditableContent);
     if (NS_WARN_IF(!point.IsSet())) {
       break;
     }
     if (HTMLEditUtils::IsVisibleBRElement(*nextEditableContent)) {
       break;
-    }
-
-    
-    if (nextEditableContent->IsText() &&
-        EditorUtils::IsWhiteSpacePreformatted(*nextEditableContent)) {
-      nsAutoString textContent;
-      nextEditableContent->GetAsText()->GetData(textContent);
-      int32_t newlinePos = textContent.FindChar(nsCRT::LF);
-      if (newlinePos >= 0) {
-        if (AssertedCast<uint32_t>(newlinePos) + 1 == textContent.Length()) {
-          
-          break;
-        }
-        return EditorDOMPoint(nextEditableContent, newlinePos + 1);
-      }
     }
   }
 

@@ -1276,8 +1276,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
   template <typename PT, typename RT>
   EditorDOMPoint GetCurrentHardLineEndPoint(
       const RangeBoundaryBase<PT, RT>& aPoint) const;

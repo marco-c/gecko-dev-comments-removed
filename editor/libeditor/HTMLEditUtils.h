@@ -328,8 +328,17 @@ class HTMLEditUtils final {
 
 
 
+
+
+
+
   template <typename EditorDOMPointType>
-  static bool IsVisiblePreformattedNewLine(const EditorDOMPointType& aPoint) {
+  static bool IsVisiblePreformattedNewLine(
+      const EditorDOMPointType& aPoint,
+      Element** aFollowingBlockElement = nullptr) {
+    if (aFollowingBlockElement) {
+      *aFollowingBlockElement = nullptr;
+    }
     if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
         !aPoint.IsCharPreformattedNewLine()) {
       return false;
@@ -353,16 +362,26 @@ class HTMLEditUtils final {
     }
     
     
-    return !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
-        *aPoint.ContainerAsText(), WalkTreeDirection::Forward);
+    Element* followingBlockElement =
+        HTMLEditUtils::GetElementOfImmediateBlockBoundary(
+            *aPoint.ContainerAsText(), WalkTreeDirection::Forward);
+    if (aFollowingBlockElement) {
+      *aFollowingBlockElement = followingBlockElement;
+    }
+    return !followingBlockElement;
   }
   template <typename EditorDOMPointType>
-  static bool IsInvisiblePreformattedNewLine(const EditorDOMPointType& aPoint) {
+  static bool IsInvisiblePreformattedNewLine(
+      const EditorDOMPointType& aPoint,
+      Element** aFollowingBlockElement = nullptr) {
     if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
         !aPoint.IsCharPreformattedNewLine()) {
+      if (aFollowingBlockElement) {
+        *aFollowingBlockElement = nullptr;
+      }
       return false;
     }
-    return !IsVisiblePreformattedNewLine(aPoint);
+    return !IsVisiblePreformattedNewLine(aPoint, aFollowingBlockElement);
   }
 
   
