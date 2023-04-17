@@ -2583,6 +2583,7 @@
       document
         .getElementById("History:UndoCloseTab")
         .setAttribute("data-l10n-args", JSON.stringify({ tabCount: 1 }));
+      SessionStore.setLastClosedTabCount(window, 1);
 
       
       if (this.selectedTab.owner) {
@@ -3424,7 +3425,7 @@
         return;
       }
 
-      SessionStore.resetLastClosedTabCount(window);
+      let initialTabCount = tabs.length;
       this._clearMultiSelectionLocked = true;
 
       
@@ -3436,7 +3437,6 @@
         let aParams = { animate, prewarmed: true };
 
         for (let tab of tabs) {
-          tab._closedInGroup = true;
           if (tab.selected) {
             lastToClose = tab;
             let toBlurTo = this._findTabToBlurTo(lastToClose, tabs);
@@ -3516,10 +3516,6 @@
         
         for (let tab of tabsWithBeforeUnloadPrompt) {
           this.removeTab(tab, aParams);
-          if (!tab.closing) {
-            
-            tab._closedInGroup = false;
-          }
         }
 
         
@@ -3533,14 +3529,17 @@
 
       this._clearMultiSelectionLocked = false;
       this.avoidSingleSelectedTab();
+      let closedTabsCount =
+        initialTabCount - tabs.filter(t => t.isConnected && !t.closing).length;
       
       
-      document.getElementById("History:UndoCloseTab").setAttribute(
-        "data-l10n-args",
-        JSON.stringify({
-          tabCount: SessionStore.getLastClosedTabCount(window),
-        })
-      );
+      document
+        .getElementById("History:UndoCloseTab")
+        .setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ tabCount: closedTabsCount })
+        );
+      SessionStore.setLastClosedTabCount(window, closedTabsCount);
     },
 
     removeCurrentTab(aParams) {
