@@ -492,14 +492,14 @@ nsresult ContentEventHandler::QueryContentRect(
 
 
 
-static bool IsContentBR(nsIContent* aContent) {
-  HTMLBRElement* brElement = HTMLBRElement::FromNode(aContent);
+static bool IsContentBR(const nsIContent& aContent) {
+  const HTMLBRElement* brElement = HTMLBRElement::FromNode(aContent);
   return brElement && !brElement->IsPaddingForEmptyLastLine() &&
          !brElement->IsPaddingForEmptyEditor();
 }
 
-static bool IsPaddingBR(nsIContent* aContent) {
-  return aContent->IsHTMLElement(nsGkAtoms::br) && !IsContentBR(aContent);
+static bool IsPaddingBR(const nsIContent& aContent) {
+  return aContent.IsHTMLElement(nsGkAtoms::br) && !IsContentBR(aContent);
 }
 
 static void ConvertToNativeNewlines(nsString& aString) {
@@ -671,7 +671,7 @@ bool ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
   
   
   if (aContent->IsHTMLElement(nsGkAtoms::br)) {
-    return IsContentBR(aContent);
+    return IsContentBR(*aContent);
   }
 
   
@@ -1524,7 +1524,7 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
     
     
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
-        IsPaddingBR(node->AsContent())) {
+        IsPaddingBR(*node->AsContent())) {
       nodePosition = {node, 0};
     }
   }
@@ -1617,7 +1617,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
     }
 
     if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
-        IsPaddingBR(node->AsContent())) {
+        IsPaddingBR(*node->AsContent())) {
       nodePosition = {node, 0};
       break;
     }
@@ -1678,7 +1678,7 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   
   
   MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent) ||
-             IsPaddingBR(aFrame->GetContent()));
+             (aFrame->GetContent() && IsPaddingBR(*aFrame->GetContent())));
 
   nsIFrame* frameForFontMetrics = aFrame;
 
@@ -1940,7 +1940,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     
     
     else if (ShouldBreakLineBefore(firstContent, mRootContent) ||
-             IsPaddingBR(firstContent)) {
+             IsPaddingBR(*firstContent)) {
       nsRect brRect;
       
       
