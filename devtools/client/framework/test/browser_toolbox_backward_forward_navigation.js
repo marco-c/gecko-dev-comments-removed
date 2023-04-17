@@ -20,17 +20,33 @@ Services.scriptloader.loadSubScript(
 
 add_task(async function() {
   
-  const tab = await addTab(`data:text/html,<meta charset=utf8>`);
+  await pushPref("devtools.inspector.three-pane-enabled", false);
+  await pushPref("devtools.inspector.activeSidebar", "ruleview");
+  const DATA_URL = `data:text/html,<meta charset=utf8>`;
+  const tab = await addTab(DATA_URL);
 
   
   const toolbox = await openToolboxForTab(tab, "jsdebugger");
   const inspector = await toolbox.selectTool("inspector");
 
   info("Navigate to the ORG test page");
-  await navigateTo(TEST_URI_ORG);
+  
+  
+  
+  let onLocationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    TEST_URI_ORG
+  );
+  BrowserTestUtils.loadURI(gBrowser, TEST_URI_ORG);
+  await onLocationChange;
 
   info("And then navigate to a different origin");
-  await navigateTo(TEST_URI_COM);
+  onLocationChange = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    TEST_URI_COM
+  );
+  BrowserTestUtils.loadURI(gBrowser, TEST_URI_COM);
+  await onLocationChange;
 
   info(
     "Navigate backward and forward multiple times between the two origins, with different delays"
@@ -40,12 +56,18 @@ add_task(async function() {
   
   
   const onInspectorReloaded = inspector.once("reloaded");
+  info("Navigate to final document");
   await navigateTo(`${TEST_URI_ORG}?no-mutation`);
+  info("Waiting for inspector to reload…");
   await onInspectorReloaded;
+  info("-> inspector reloaded");
   await checkToolboxState(toolbox);
 });
 
 add_task(async function() {
+  
+  await pushPref("devtools.inspector.three-pane-enabled", false);
+  await pushPref("devtools.inspector.activeSidebar", "ruleview");
   const DATA_URL = `data:text/html,<meta charset=utf8>`;
   const tab = await addTab(DATA_URL);
 
@@ -65,8 +87,11 @@ add_task(async function() {
   
   
   const onInspectorReloaded = inspector.once("reloaded");
+  info("Navigate to final document");
   await navigateTo(`${TEST_URI_ORG}?no-mutation`);
+  info("Waiting for inspector to reload…");
   await onInspectorReloaded;
+  info("-> inspector reloaded");
   await checkToolboxState(toolbox);
 });
 
