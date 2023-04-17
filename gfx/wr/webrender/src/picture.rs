@@ -486,11 +486,6 @@ struct TilePreUpdateContext {
     pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
 
     
-    
-    fract_offset: PictureVector2D,
-    device_fract_offset: DeviceVector2D,
-
-    
     background_color: Option<ColorF>,
 
     
@@ -776,11 +771,6 @@ pub enum PrimitiveCompareResultDetail {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum InvalidationReason {
     
-    FractionalOffset {
-        old: DeviceVector2D,
-        new: DeviceVector2D,
-    },
-    
     BackgroundColor {
         old: Option<ColorF>,
         new: Option<ColorF>,
@@ -818,7 +808,6 @@ pub enum InvalidationReason {
 pub struct TileSerializer {
     pub rect: PictureRect,
     pub current_descriptor: TileDescriptor,
-    pub device_fract_offset: DeviceVector2D,
     pub id: TileId,
     pub root: TileNode,
     pub background_color: Option<ColorF>,
@@ -832,7 +821,6 @@ pub struct TileCacheInstanceSerializer {
     pub slice: usize,
     pub tiles: FastHashMap<TileOffset, TileSerializer>,
     pub background_color: Option<ColorF>,
-    pub fract_offset: PictureVector2D,
 }
 
 
@@ -869,10 +857,6 @@ pub struct Tile {
     
     
     pub is_visible: bool,
-    
-    
-    
-    device_fract_offset: DeviceVector2D,
     
     
     pub id: TileId,
@@ -913,7 +897,6 @@ impl Tile {
             prev_descriptor: TileDescriptor::new(),
             is_valid: false,
             is_visible: false,
-            device_fract_offset: DeviceVector2D::zero(),
             id,
             is_opaque: false,
             root: TileNode::new_leaf(Vec::new()),
@@ -929,7 +912,6 @@ impl Tile {
     fn print(&self, pt: &mut dyn PrintTreePrinter) {
         pt.new_level(format!("Tile {:?}", self.id));
         pt.add_item(format!("local_tile_rect: {:?}", self.local_tile_rect));
-        pt.add_item(format!("device_fract_offset: {:?}", self.device_fract_offset));
         pt.add_item(format!("background_color: {:?}", self.background_color));
         pt.add_item(format!("invalidation_reason: {:?}", self.invalidation_reason));
         self.current_descriptor.print(pt);
@@ -1033,13 +1015,10 @@ impl Tile {
         &mut self,
         ctx: &TilePreUpdateContext,
     ) {
-        
-        
-        
         self.local_tile_rect = PictureRect::new(
             PicturePoint::new(
-                self.tile_offset.x as f32 * ctx.tile_size.width + ctx.fract_offset.x,
-                self.tile_offset.y as f32 * ctx.tile_size.height + ctx.fract_offset.y,
+                self.tile_offset.x as f32 * ctx.tile_size.width,
+                self.tile_offset.y as f32 * ctx.tile_size.height,
             ),
             ctx.tile_size,
         );
@@ -1069,18 +1048,6 @@ impl Tile {
         
         if !self.is_visible {
             return;
-        }
-
-        
-        
-        
-        
-        let fract_delta = self.device_fract_offset - ctx.device_fract_offset;
-        let fract_changed = fract_delta.x.abs() > 0.01 || fract_delta.y.abs() > 0.01;
-        if fract_changed {
-            self.invalidate(None, InvalidationReason::FractionalOffset {
-                                    old: self.device_fract_offset,
-                                    new: ctx.device_fract_offset });
         }
 
         if ctx.background_color != self.background_color {
@@ -2323,10 +2290,6 @@ pub struct TileCacheInstance {
     
     frames_until_size_eval: usize,
     
-    fract_offset: PictureVector2D,
-    
-    device_fract_offset: DeviceVector2D,
-    
     
     
     
@@ -2338,9 +2301,6 @@ pub struct TileCacheInstance {
     compare_cache: FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
     
     
-    pub device_position: DevicePoint,
-    
-    
     tile_size_override: Option<DeviceIntSize>,
     
     pub external_native_surface_cache: FastHashMap<ExternalNativeSurfaceKey, ExternalNativeSurface>,
@@ -2348,6 +2308,10 @@ pub struct TileCacheInstance {
     frame_id: FrameId,
     
     pub transform_index: CompositorTransformIndex,
+    
+    local_to_surface: ScaleOffset,
+    
+    surface_to_device: ScaleOffset,
 }
 
 enum SurfacePromotionResult {
@@ -2394,19 +2358,18 @@ impl TileCacheInstance {
             shared_clip_chain: params.shared_clip_chain,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
-            fract_offset: PictureVector2D::zero(),
-            device_fract_offset: DeviceVector2D::zero(),
             
             virtual_offset: DeviceIntPoint::new(
                 params.virtual_surface_size / 2,
                 params.virtual_surface_size / 2,
             ),
             compare_cache: FastHashMap::default(),
-            device_position: DevicePoint::zero(),
             tile_size_override: None,
             external_native_surface_cache: FastHashMap::default(),
             frame_id: FrameId::INVALID,
             transform_index: CompositorTransformIndex::INVALID,
+            surface_to_device: ScaleOffset::identity(),
+            local_to_surface: ScaleOffset::identity(),
         }
     }
 
@@ -2659,31 +2622,18 @@ impl TileCacheInstance {
         
         
         
-        
-        let world_origin = pic_to_world_mapper
-            .map(&PictureRect::new(PicturePoint::zero(), PictureSize::new(1.0, 1.0)))
-            .expect("bug: unable to map origin to world space")
-            .origin;
-
-        
-        let device_origin = world_origin * frame_context.global_device_pixel_scale;
-        let desired_device_origin = device_origin.round();
-        self.device_position = desired_device_origin;
-        self.device_fract_offset = desired_device_origin - device_origin;
-
-        
-        let ref_world_rect = WorldRect::from_origin_and_size(
-            desired_device_origin / frame_context.global_device_pixel_scale,
-            WorldSize::new(1.0, 1.0),
+        self.surface_to_device = get_relative_scale_offset(
+            self.spatial_node_index,
+            ROOT_SPATIAL_NODE_INDEX,
+            frame_context.spatial_tree,
         );
+        self.surface_to_device.scale = Vector2D::new(1.0, 1.0);
 
-        
-        
-        self.fract_offset = pic_to_world_mapper
-            .unmap(&ref_world_rect.to_rect())
-            .expect("bug: unable to unmap ref world rect")
-            .origin
-            .to_vector();
+        self.local_to_surface = get_relative_scale_offset(
+            self.spatial_node_index,
+            ROOT_SPATIAL_NODE_INDEX,
+            frame_context.spatial_tree,
+        ).accumulate(&self.surface_to_device.inverse());
 
         
         
@@ -2724,13 +2674,10 @@ impl TileCacheInstance {
             self.current_tile_size.height as f32 / frame_context.global_device_pixel_scale.0,
         );
 
-        
-        
-        let local_tile_rect = pic_to_world_mapper
-            .unmap(&WorldRect::from_origin_and_size(WorldPoint::zero(), world_tile_size).to_rect())
-            .expect("bug: unable to get local tile rect");
-
-        self.tile_size = local_tile_rect.size;
+        self.tile_size = PictureSize::new(
+            world_tile_size.width / self.local_to_surface.scale.x,
+            world_tile_size.height / self.local_to_surface.scale.y,
+        );
 
         let screen_rect_in_pic_space = pic_to_world_mapper
             .unmap(&frame_context.global_screen_world_rect.to_rect())
@@ -2750,11 +2697,11 @@ impl TileCacheInstance {
         let p0 = needed_rect_in_pic_space.origin;
         let p1 = needed_rect_in_pic_space.bottom_right();
 
-        let x0 = (p0.x / local_tile_rect.width()).floor() as i32;
-        let x1 = (p1.x / local_tile_rect.width()).ceil() as i32;
+        let x0 = (p0.x / self.tile_size.width).floor() as i32;
+        let x1 = (p1.x / self.tile_size.width).ceil() as i32;
 
-        let y0 = (p0.y / local_tile_rect.height()).floor() as i32;
-        let y1 = (p1.y / local_tile_rect.height()).ceil() as i32;
+        let y0 = (p0.y / self.tile_size.height).floor() as i32;
+        let y1 = (p1.y / self.tile_size.height).ceil() as i32;
 
         let x_tiles = x1 - x0;
         let y_tiles = y1 - y0;
@@ -2848,8 +2795,6 @@ impl TileCacheInstance {
 
         let mut ctx = TilePreUpdateContext {
             pic_to_world_mapper,
-            fract_offset: self.fract_offset,
-            device_fract_offset: self.device_fract_offset,
             background_color: self.background_color,
             global_screen_world_rect: frame_context.global_screen_world_rect,
             tile_size: self.tile_size,
@@ -3794,7 +3739,6 @@ impl TileCacheInstance {
 
         pt.new_level(format!("Slice {:?}", self.slice));
 
-        pt.add_item(format!("fract_offset: {:?}", self.fract_offset));
         pt.add_item(format!("background_color: {:?}", self.background_color));
 
         for (sub_slice_index, sub_slice) in self.sub_slices.iter().enumerate() {
@@ -3857,20 +3801,11 @@ impl TileCacheInstance {
         self.dirty_region.reset(self.spatial_node_index);
         self.subpixel_mode = self.calculate_subpixel_mode();
 
-        
-        let surface_to_device = ScaleOffset::from_offset(self.device_position.to_vector().cast_unit());
-
-        let local_to_surface = get_relative_scale_offset(
-            self.spatial_node_index,
-            ROOT_SPATIAL_NODE_INDEX,
-            frame_context.spatial_tree,
-        ).accumulate(&surface_to_device.inverse());
-
         self.transform_index = frame_state.composite_state.register_transform(
-            local_to_surface,
+            self.local_to_surface,
             
             
-            surface_to_device,
+            self.surface_to_device,
         );
 
         let map_pic_to_world = SpaceMapper::new_with_target(
@@ -5194,12 +5129,6 @@ impl PicturePrimitive {
                                     }),
                                 );
                             }
-
-                            
-                            
-                            if tile.device_dirty_rect.contains_box(&tile.device_valid_rect) {
-                                tile.device_fract_offset = tile_cache.device_fract_offset;
-                            }
                         }
 
                         let surface = tile.surface.as_ref().expect("no tile surface set!");
@@ -5937,14 +5866,12 @@ impl PicturePrimitive {
                             slice: tile_cache.slice,
                             tiles: FastHashMap::default(),
                             background_color: tile_cache.background_color,
-                            fract_offset: tile_cache.fract_offset
                         };
                         
                         for (key, tile) in &tile_cache.sub_slices.first().unwrap().tiles {
                             tile_cache_tiny.tiles.insert(*key, TileSerializer {
                                 rect: tile.local_tile_rect,
                                 current_descriptor: tile.current_descriptor.clone(),
-                                device_fract_offset: tile.device_fract_offset,
                                 id: tile.id,
                                 root: tile.root.clone(),
                                 background_color: tile.background_color,
