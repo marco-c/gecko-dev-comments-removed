@@ -2500,7 +2500,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
 
 
 
-static bool AllowDoubleForUint32Array(TypedArrayObject* tarr, uint64_t index) {
+static bool ForceDoubleForUint32Array(TypedArrayObject* tarr, uint64_t index) {
   MOZ_ASSERT(index < tarr->length());
 
   if (tarr->type() != Scalar::Type::Uint32) {
@@ -2535,10 +2535,10 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayElement(
 
   
   
-  bool allowDoubleForUint32 = false;
+  bool forceDoubleForUint32 = false;
   if (!handleOOB) {
     uint64_t index = uint64_t(indexInt64);
-    allowDoubleForUint32 = AllowDoubleForUint32Array(tarr, index);
+    forceDoubleForUint32 = ForceDoubleForUint32Array(tarr, index);
   }
 
   writer.guardShapeForClass(objId, tarr->shape());
@@ -2547,7 +2547,7 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayElement(
   IntPtrOperandId intPtrIndexId = guardToIntPtrIndex(idVal_, keyId, handleOOB);
 
   writer.loadTypedArrayElementResult(objId, intPtrIndexId, tarr->type(),
-                                     handleOOB, allowDoubleForUint32);
+                                     handleOOB, forceDoubleForUint32);
   writer.returnFromIC();
 
   trackAttached("TypedElement");
@@ -5329,11 +5329,11 @@ AttachDecision CallIRGenerator::tryAttachDataViewGet(HandleFunction callee,
 
   
   
-  bool allowDoubleForUint32 = false;
+  bool forceDoubleForUint32 = false;
   if (type == Scalar::Uint32) {
     bool isLittleEndian = argc_ > 1 && args_[1].toBoolean();
     uint32_t res = dv->read<uint32_t>(offsetInt64, isLittleEndian);
-    allowDoubleForUint32 = res >= INT32_MAX;
+    forceDoubleForUint32 = res >= INT32_MAX;
   }
 
   
@@ -5364,7 +5364,7 @@ AttachDecision CallIRGenerator::tryAttachDataViewGet(HandleFunction callee,
   }
 
   writer.loadDataViewValueResult(objId, intPtrOffsetId, boolLittleEndianId,
-                                 type, allowDoubleForUint32);
+                                 type, forceDoubleForUint32);
   writer.returnFromIC();
 
   trackAttached("DataViewGet");
