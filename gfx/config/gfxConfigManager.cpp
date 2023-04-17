@@ -426,8 +426,7 @@ void gfxConfigManager::ConfigureWebRender() {
       
       
       
-      if (adapter.Find("Mali-T6",  true) >= 0 ||
-          adapter.Find("Mali-T7",  true) >= 0 ||
+      if (adapter.Find("Mali-T",  true) >= 0 ||
           adapter.Find("Adreno (TM) 3",  true) >= 0) {
         mFeatureWrPartial->Disable(
             FeatureStatus::Blocked, "Partial present blocked",
