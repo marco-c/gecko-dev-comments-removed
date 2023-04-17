@@ -24,11 +24,18 @@ async function run_test() {
     case "WINNT":
       gfxInfo.spoofVendorID("0xdcdc");
       gfxInfo.spoofDeviceID("0x1234");
+      
+      
+      
       gfxInfo.spoofDriverVersion("8.52.322.1112");
       
       gfxInfo.spoofOSVersion(0x60001);
       break;
     case "Linux":
+      
+      
+      
+      
       
       do_test_finished();
       return;
