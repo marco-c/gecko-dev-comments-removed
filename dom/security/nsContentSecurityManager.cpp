@@ -957,24 +957,34 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
 
 nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     nsIChannel* aChannel) {
-  
-  
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  
-  
-  if (!loadInfo->GetLoadingPrincipal() ||
-      !loadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) {
-    return NS_OK;
-  }
   
   
   if (loadInfo->GetAllowDeprecatedSystemRequests()) {
     return NS_OK;
   }
-
   ExtContentPolicyType contentPolicyType =
       loadInfo->GetExternalContentPolicyType();
+
+  
+  if (contentPolicyType == ExtContentPolicy::TYPE_DOCUMENT) {
+    return NS_OK;
+  }
+
+  
+  
+  nsCOMPtr<nsIPrincipal> inspectedPrincipal;
+  if (contentPolicyType != ExtContentPolicy::TYPE_DOCUMENT) {
+    inspectedPrincipal = loadInfo->GetLoadingPrincipal();
+  } else {
+    inspectedPrincipal = loadInfo->TriggeringPrincipal();
+  }
+
+  
+  if (!inspectedPrincipal || !inspectedPrincipal->IsSystemPrincipal()) {
+    return NS_OK;
+  }
 
   
   
@@ -1047,9 +1057,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   }
   
   
-  if (finalURI) {
-    MeasureUnexpectedPrivilegedLoads(loadInfo, finalURI, remoteType);
-  }
+  MeasureUnexpectedPrivilegedLoads(loadInfo, finalURI, remoteType);
 
   
   
@@ -1073,8 +1081,33 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   nsAutoCString requestedURL;
   finalURI->GetAsciiSpec(requestedURL);
   MOZ_LOG(sCSMLog, LogLevel::Warning,
-          ("SystemPrincipal must not load remote documents. URL: %s, type %d",
+          ("SystemPrincipal should not load remote resources. URL: %s, type %d",
            requestedURL.get(), int(contentPolicyType)));
+
+  
+  
+  
+  
+  
+  if (contentPolicyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    if (StaticPrefs::security_disallow_privileged_https_subdocuments_loads() &&
+        (finalURI->SchemeIs("http") || finalURI->SchemeIs("https"))) {
+#ifdef DEBUG
+      MOZ_CRASH("Disallowing SystemPrincipal load of subdocuments on HTTP(S).");
+#endif
+      aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
+      return NS_ERROR_CONTENT_BLOCKED;
+    }
+    if ((StaticPrefs::security_disallow_privileged_data_subdocuments_loads()) &&
+        (finalURI->SchemeIs("data"))) {
+#ifdef DEBUG
+      MOZ_CRASH(
+          "Disallowing SystemPrincipal load of subdocuments on data URL.");
+#endif
+      aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
+      return NS_ERROR_CONTENT_BLOCKED;
+    }
+  }
 
   if (cancelNonLocalSystemPrincipal) {
     MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
