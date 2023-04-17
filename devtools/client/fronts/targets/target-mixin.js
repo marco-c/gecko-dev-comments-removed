@@ -75,7 +75,7 @@ function TargetMixin(parentClass) {
     }
 
     on(eventName, listener) {
-      if (this._offResourceEvent.has(eventName)) {
+      if (this._offResourceEvent && this._offResourceEvent.has(eventName)) {
         
 
         
