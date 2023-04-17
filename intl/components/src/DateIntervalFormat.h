@@ -4,6 +4,7 @@
 #ifndef intl_components_DateIntervalFormat_h_
 #define intl_components_DateIntervalFormat_h_
 
+#include "mozilla/intl/DateTimePart.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
 #include "mozilla/Result.h"
@@ -77,6 +78,19 @@ class DateIntervalFormat final {
                               AutoFormattedDateInterval& aFormatted,
                               bool* aPracticallyEqual) const;
 
+  
+
+
+
+
+
+
+
+
+
+  ICUResult TryFormattedToParts(const AutoFormattedDateInterval& aFormatted,
+                                DateTimePartVector& aParts) const;
+
  private:
   DateIntervalFormat() = delete;
   explicit DateIntervalFormat(UDateIntervalFormat* aDif)
@@ -129,14 +143,13 @@ class MOZ_RAII AutoFormattedDateInterval {
 
   Result<Span<const char16_t>, ICUError> ToSpan() const;
 
-  
-  const UFormattedValue* Value() const;
-
  private:
   friend class DateIntervalFormat;
   UFormattedDateInterval* GetUFormattedDateInterval() const {
     return mFormatted;
   }
+
+  const UFormattedValue* Value() const;
 
   UFormattedDateInterval* mFormatted = nullptr;
   UErrorCode mError = U_ZERO_ERROR;

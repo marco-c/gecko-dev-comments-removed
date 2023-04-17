@@ -9,6 +9,8 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
+
+#include "mozilla/intl/DateTimePart.h"
 #include "mozilla/intl/DateTimePatternGenerator.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
@@ -359,6 +361,44 @@ class DateTimeFormat final {
 
 
 
+
+
+
+
+
+
+  template <typename B>
+  ICUResult TryFormatToParts(double aUnixEpoch, B& aBuffer,
+                             DateTimePartVector& aParts) const {
+    static_assert(std::is_same<typename B::CharType, char16_t>::value,
+                  "Only char16_t is supported (for UTF-16 support) now.");
+
+    UErrorCode status = U_ZERO_ERROR;
+    UFieldPositionIterator* fpositer = ufieldpositer_open(&status);
+    if (U_FAILURE(status)) {
+      return Err(ToICUError(status));
+    }
+
+    auto result = FillBufferWithICUCall(
+        aBuffer, [this, aUnixEpoch, fpositer](UChar* chars, int32_t size,
+                                              UErrorCode* status) {
+          return udat_formatForFields(mDateFormat, aUnixEpoch, chars, size,
+                                      fpositer, status);
+        });
+    if (result.isErr()) {
+      ufieldpositer_close(fpositer);
+      return result.propagateErr();
+    }
+
+    return TryFormatToParts(fpositer, aBuffer.length(), aParts);
+  }
+
+  
+
+
+
+
+
   template <typename B>
   ICUResult GetPattern(B& aBuffer) const {
     return FillBufferWithICUCall(
@@ -427,13 +467,6 @@ class DateTimeFormat final {
 
 
 
-
-  UDateFormat* UnsafeGetUDateFormat() const { return mDateFormat; }
-
-  
-
-
-
   Result<UniquePtr<Calendar>, ICUError> CloneCalendar(double aUnixEpoch) const;
 
   
@@ -474,6 +507,9 @@ class DateTimeFormat final {
 
   ICUResult CacheSkeleton(Span<const char16_t> aSkeleton);
 
+  ICUResult TryFormatToParts(UFieldPositionIterator* aFieldPositionIterator,
+                             size_t aSpanSize,
+                             DateTimePartVector& aParts) const;
   
 
 

@@ -1,0 +1,14 @@
+
+
+
+#ifndef intl_components_DateTimeFormatUtils_h_
+#define intl_components_DateTimeFormatUtils_h_
+#include "unicode/udat.h"
+
+#include "mozilla/intl/DateTimePart.h"
+
+namespace mozilla::intl {
+DateTimePartType ConvertUFormatFieldToPartType(UDateFormatField fieldName);
+}  
+
+#endif
