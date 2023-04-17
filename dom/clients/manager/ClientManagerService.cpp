@@ -337,6 +337,16 @@ void ClientManagerService::ForgetFutureSource(
       return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (!XRE_IsE10sParentProcess() &&
         entry.Data().as<FutureClientSourceParent>().IsAssociated()) {
       return;
