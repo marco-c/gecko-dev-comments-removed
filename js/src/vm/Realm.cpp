@@ -600,6 +600,40 @@ void Realm::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
   }
 }
 
+bool Realm::shouldCaptureStackForThrow() {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  if (isDebuggee()) {
+    return true;
+  }
+
+  
+  
+  if (principals() &&
+      principals() == runtimeFromMainThread()->trustedPrincipals()) {
+    return true;
+  }
+
+  
+  
+  
+  static constexpr uint16_t MaxStacksCapturedForThrow = 50;
+  if (numStacksCapturedForThrow_ > MaxStacksCapturedForThrow) {
+    return false;
+  }
+  numStacksCapturedForThrow_++;
+  return true;
+}
+
 mozilla::HashCodeScrambler Realm::randomHashCodeScrambler() {
   return mozilla::HashCodeScrambler(randomKeyGenerator_.next(),
                                     randomKeyGenerator_.next());

@@ -418,6 +418,9 @@ class JS::Realm : public JS::shadow::Realm {
 
   uint32_t globalWriteBarriered = 0;
 
+  
+  uint16_t numStacksCapturedForThrow_ = 0;
+
 #ifdef DEBUG
   bool firedOnNewGlobalObject = false;
 #endif
@@ -687,6 +690,8 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   js::coverage::LCovRealm* lcovRealm();
+
+  bool shouldCaptureStackForThrow();
 
   
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
