@@ -22,11 +22,12 @@
 #include "frontend/SourceNotes.h"  
 #include "frontend/TypedIndex.h"   
 
-#include "js/AllocPolicy.h"      
-#include "js/TypeDecls.h"        
-#include "js/UniquePtr.h"        
-#include "util/EnumFlags.h"      
-#include "util/TrailingArray.h"  
+#include "js/AllocPolicy.h"            
+#include "js/TypeDecls.h"              
+#include "js/UniquePtr.h"              
+#include "util/EnumFlags.h"            
+#include "util/TrailingArray.h"        
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/StencilEnums.h"  
 
 
@@ -290,6 +291,30 @@ struct ImmutableScriptFlagsAccessors {
 
 #undef IMMUTABLE_FLAG_GETTER
 #undef FLAG_GETTER
+
+  GeneratorKind generatorKind() const {
+    return isGenerator() ? GeneratorKind::Generator
+                         : GeneratorKind::NotGenerator;
+  }
+
+  FunctionAsyncKind asyncKind() const {
+    return isAsync() ? FunctionAsyncKind::AsyncFunction
+                     : FunctionAsyncKind::SyncFunction;
+  }
+
+  bool isRelazifiable() const {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
+           !isAsync() && !hasCallSiteObj();
+  }
 };
 
 template <typename Holder>
