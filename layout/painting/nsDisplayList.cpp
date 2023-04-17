@@ -2192,14 +2192,6 @@ void nsDisplayListSet::MoveTo(const nsDisplayListSet& aDestination) const {
   aDestination.Outlines()->AppendToTop(Outlines());
 }
 
-static void MoveListTo(nsDisplayList* aList,
-                       nsTArray<nsDisplayItem*>* aElements) {
-  nsDisplayItem* item;
-  while ((item = aList->RemoveBottom()) != nullptr) {
-    aElements->AppendElement(item);
-  }
-}
-
 nsRect nsDisplayList::GetClippedBounds(nsDisplayListBuilder* aBuilder) const {
   nsRect bounds;
   for (nsDisplayItem* i : *this) {
@@ -2233,78 +2225,6 @@ nsRect nsDisplayList::GetBuildingRect() const {
     result.UnionRect(result, i->GetBuildingRect());
   }
   return result;
-}
-
-bool nsDisplayList::ComputeVisibilityForRoot(nsDisplayListBuilder* aBuilder,
-                                             nsRegion* aVisibleRegion) {
-  AUTO_PROFILER_LABEL("nsDisplayList::ComputeVisibilityForRoot", GRAPHICS);
-
-  nsRegion r;
-  const ActiveScrolledRoot* rootASR = nullptr;
-  r.And(*aVisibleRegion, GetClippedBoundsWithRespectToASR(aBuilder, rootASR));
-  return ComputeVisibilityForSublist(aBuilder, aVisibleRegion, r.GetBounds());
-}
-
-static nsRegion TreatAsOpaque(nsDisplayItem* aItem,
-                              nsDisplayListBuilder* aBuilder) {
-  bool snap;
-  nsRegion opaque = aItem->GetOpaqueRegion(aBuilder, &snap);
-  MOZ_ASSERT(
-      (aBuilder->IsForEventDelivery() && aBuilder->HitTestIsForVisibility()) ||
-      !opaque.IsComplex());
-  if (opaque.IsEmpty()) {
-    return opaque;
-  }
-  nsRegion opaqueClipped;
-  for (auto iter = opaque.RectIter(); !iter.Done(); iter.Next()) {
-    opaqueClipped.Or(opaqueClipped,
-                     aItem->GetClip().ApproximateIntersectInward(iter.Get()));
-  }
-  return opaqueClipped;
-}
-
-bool nsDisplayList::ComputeVisibilityForSublist(
-    nsDisplayListBuilder* aBuilder, nsRegion* aVisibleRegion,
-    const nsRect& aListVisibleBounds) {
-#ifdef DEBUG
-  nsRegion r;
-  r.And(*aVisibleRegion, GetClippedBounds(aBuilder));
-  
-  NS_WARNING_ASSERTION(r.GetBounds().IsEqualInterior(aListVisibleBounds),
-                       "bad aListVisibleBounds");
-#endif
-
-  bool anyVisible = false;
-
-  AutoTArray<nsDisplayItem*, 512> elements;
-  MoveListTo(this, &elements);
-
-  for (int32_t i = elements.Length() - 1; i >= 0; --i) {
-    nsDisplayItem* item = elements[i];
-
-    if (item->ForceNotVisible() && !item->GetSameCoordinateSystemChildren()) {
-      NS_ASSERTION(item->GetBuildingRect().IsEmpty(),
-                   "invisible items should have empty vis rect");
-      item->SetPaintRect(nsRect());
-    } else {
-      nsRect bounds = item->GetClippedBounds(aBuilder);
-
-      nsRegion itemVisible;
-      itemVisible.And(*aVisibleRegion, bounds);
-      item->SetPaintRect(itemVisible.GetBounds());
-    }
-
-    if (item->ComputeVisibility(aBuilder, aVisibleRegion)) {
-      anyVisible = true;
-
-      nsRegion opaque = TreatAsOpaque(item, aBuilder);
-      
-      aBuilder->SubtractFromVisibleRegion(aVisibleRegion, opaque);
-    }
-    AppendToBottom(item);
-  }
-
-  return anyVisible;
 }
 
 static void TriggerPendingAnimations(Document& aDoc,
@@ -2919,12 +2839,6 @@ bool nsDisplayItem::ForceActiveLayers() {
 
 int32_t nsDisplayItem::ZIndex() const { return mFrame->ZIndex().valueOr(0); }
 
-bool nsDisplayItem::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                      nsRegion* aVisibleRegion) {
-  return !GetPaintRect().IsEmpty() &&
-         !IsInvisibleInRect(aVisibleRegion->GetBounds());
-}
-
 void nsDisplayItem::SetClipChain(const DisplayItemClipChain* aClipChain,
                                  bool aStore) {
   mClipChain = aClipChain;
@@ -3029,36 +2943,6 @@ bool nsDisplayContainer::CreateWebRenderCommands(
   aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
       GetChildren(), this, aDisplayListBuilder, aSc, aBuilder, aResources);
   return true;
-}
-
-
-
-
-
-static bool ComputeClippedVisibilityForSubList(nsDisplayListBuilder* aBuilder,
-                                               nsRegion* aVisibleRegion,
-                                               nsDisplayList* aList,
-                                               const nsRect& aBounds) {
-  nsRegion visibleRegion;
-  visibleRegion.And(*aVisibleRegion, aBounds);
-  nsRegion originalVisibleRegion = visibleRegion;
-
-  const bool anyItemVisible =
-      aList->ComputeVisibilityForSublist(aBuilder, &visibleRegion, aBounds);
-  nsRegion removed;
-  
-  removed.Sub(originalVisibleRegion, visibleRegion);
-  
-  
-  aBuilder->SubtractFromVisibleRegion(aVisibleRegion, removed);
-
-  return anyItemVisible;
-}
-
-bool nsDisplayContainer::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                           nsRegion* aVisibleRegion) {
-  return ComputeClippedVisibilityForSubList(aBuilder, aVisibleRegion,
-                                            GetChildren(), GetPaintRect());
 }
 
 nsRect nsDisplayContainer::GetBounds(nsDisplayListBuilder* aBuilder,
@@ -3856,18 +3740,6 @@ void nsDisplayBackgroundImage::HitTest(nsDisplayListBuilder* aBuilder,
   if (RoundedBorderIntersectsRect(mFrame, ToReferenceFrame(), aRect)) {
     aOutFrames->AppendElement(mFrame);
   }
-}
-
-bool nsDisplayBackgroundImage::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                                 nsRegion* aVisibleRegion) {
-  if (!nsDisplayImageContainer::ComputeVisibility(aBuilder, aVisibleRegion)) {
-    return false;
-  }
-
-  
-  
-  
-  return mBackgroundStyle;
 }
 
 static nsRect GetInsideClipRect(const nsDisplayItem* aItem,
@@ -5159,12 +5031,6 @@ nsRect nsDisplayWrapList::GetBounds(nsDisplayListBuilder* aBuilder,
   return mBounds;
 }
 
-bool nsDisplayWrapList::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                          nsRegion* aVisibleRegion) {
-  return ComputeClippedVisibilityForSubList(aBuilder, aVisibleRegion,
-                                            GetChildren(), GetPaintRect());
-}
-
 nsRegion nsDisplayWrapList::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                             bool* aSnap) const {
   *aSnap = false;
@@ -5532,19 +5398,6 @@ bool nsDisplayOpacity::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
   return ApplyToChildren(aBuilder);
 }
 
-bool nsDisplayOpacity::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                         nsRegion* aVisibleRegion) {
-  
-  
-  
-  
-  
-  nsRect bounds = GetClippedBounds(aBuilder);
-  nsRegion visibleUnderChildren;
-  visibleUnderChildren.And(*aVisibleRegion, bounds);
-  return nsDisplayWrapList::ComputeVisibility(aBuilder, &visibleUnderChildren);
-}
-
 void nsDisplayOpacity::ComputeInvalidationRegion(
     nsDisplayListBuilder* aBuilder, const nsDisplayItemGeometry* aGeometry,
     nsRegion* aInvalidRegion) const {
@@ -5673,19 +5526,6 @@ void nsDisplayBlendMode::Paint(nsDisplayListBuilder* aBuilder,
 
 gfx::CompositionOp nsDisplayBlendMode::BlendMode() {
   return nsCSSRendering::GetGFXBlendMode(mBlendMode);
-}
-
-bool nsDisplayBlendMode::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                           nsRegion* aVisibleRegion) {
-  
-  
-  
-  
-  
-  nsRect bounds = GetClippedBounds(aBuilder);
-  nsRegion visibleUnderChildren;
-  visibleUnderChildren.And(*aVisibleRegion, bounds);
-  return nsDisplayWrapList::ComputeVisibility(aBuilder, &visibleUnderChildren);
 }
 
 bool nsDisplayBlendMode::CanMerge(const nsDisplayItem* aItem) const {
@@ -6006,49 +5846,6 @@ nsRect nsDisplaySubDocument::GetBounds(nsDisplayListBuilder* aBuilder,
   }
 
   return nsDisplayOwnLayer::GetBounds(aBuilder, aSnap);
-}
-
-bool nsDisplaySubDocument::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                             nsRegion* aVisibleRegion) {
-  bool usingDisplayPort = UseDisplayPortForViewport(aBuilder, mFrame);
-
-  if (!(mFlags & nsDisplayOwnLayerFlags::GenerateScrollableLayer) ||
-      !usingDisplayPort) {
-    return nsDisplayWrapList::ComputeVisibility(aBuilder, aVisibleRegion);
-  }
-
-  nsRect displayport;
-  nsIFrame* rootScrollFrame = mFrame->PresShell()->GetRootScrollFrame();
-  MOZ_ASSERT(rootScrollFrame);
-  Unused << DisplayPortUtils::GetDisplayPort(
-      rootScrollFrame->GetContent(), &displayport,
-      DisplayPortOptions().With(DisplayportRelativeTo::ScrollFrame));
-
-  nsRegion childVisibleRegion;
-  
-  
-  
-  childVisibleRegion =
-      displayport + mFrame->GetOffsetToCrossDoc(ReferenceFrame());
-
-  nsRect boundedRect = childVisibleRegion.GetBounds().Intersect(
-      mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot));
-  bool visible = mList.ComputeVisibilityForSublist(
-      aBuilder, &childVisibleRegion, boundedRect);
-
-  
-  
-  
-  if (!nsLayoutUtils::UsesAsyncScrolling(mFrame)) {
-    bool snap;
-    nsRect bounds = GetBounds(aBuilder, &snap);
-    nsRegion removed;
-    removed.Sub(bounds, childVisibleRegion);
-
-    aBuilder->SubtractFromVisibleRegion(aVisibleRegion, removed);
-  }
-
-  return visible;
 }
 
 nsRegion nsDisplaySubDocument::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
@@ -6608,42 +6405,6 @@ void nsDisplayZoom::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
     rect = aRect.ScaleToOtherAppUnitsRoundOut(mParentAPD, mAPD);
   }
   mList.HitTest(aBuilder, rect, aState, aOutFrames);
-}
-
-bool nsDisplayZoom::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                      nsRegion* aVisibleRegion) {
-  
-  nsRegion visibleRegion;
-  
-  visibleRegion.And(*aVisibleRegion, GetPaintRect());
-  visibleRegion = visibleRegion.ScaleToOtherAppUnitsRoundOut(mParentAPD, mAPD);
-  nsRegion originalVisibleRegion = visibleRegion;
-
-  nsRect transformedVisibleRect =
-      GetPaintRect().ScaleToOtherAppUnitsRoundOut(mParentAPD, mAPD);
-  bool retval;
-  
-  
-  
-  bool usingDisplayPort = UseDisplayPortForViewport(aBuilder, mFrame);
-  if (!(mFlags & nsDisplayOwnLayerFlags::GenerateScrollableLayer) ||
-      !usingDisplayPort) {
-    retval = mList.ComputeVisibilityForSublist(aBuilder, &visibleRegion,
-                                               transformedVisibleRect);
-  } else {
-    retval = nsDisplaySubDocument::ComputeVisibility(aBuilder, &visibleRegion);
-  }
-
-  nsRegion removed;
-  
-  removed.Sub(originalVisibleRegion, visibleRegion);
-  
-  removed = removed.ScaleToOtherAppUnitsRoundIn(mAPD, mParentAPD);
-  
-  
-  aBuilder->SubtractFromVisibleRegion(aVisibleRegion, removed);
-
-  return retval;
 }
 
 nsDisplayAsyncZoom::nsDisplayAsyncZoom(
@@ -7648,35 +7409,6 @@ bool nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder,
           !(aEnforceMinimumSize && IsItemTooSmallForActiveLayer(mFrame)));
 }
 
-bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                           nsRegion* aVisibleRegion) {
-  
-  
-  
-  
-  if (mFrame->Extend3DContext() || Combines3DTransformWithAncestors()) {
-    return true;
-  }
-
-  
-
-
-
-  nsRect untransformedVisibleRect;
-  if (!UntransformPaintRect(aBuilder, &untransformedVisibleRect)) {
-    untransformedVisibleRect = mFrame->InkOverflowRectRelativeToSelf();
-  }
-
-  bool snap;
-  const nsRect bounds = GetUntransformedBounds(aBuilder, &snap);
-  nsRegion visibleRegion;
-  visibleRegion.And(bounds, untransformedVisibleRect);
-  GetChildren()->ComputeVisibilityForSublist(aBuilder, &visibleRegion,
-                                             visibleRegion.GetBounds());
-
-  return true;
-}
-
 nsRect nsDisplayTransform::TransformUntransformedBounds(
     nsDisplayListBuilder* aBuilder, const Matrix4x4Flagged& aMatrix) const {
   bool snap;
@@ -8204,12 +7936,6 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
   return true;
 }
 
-bool nsDisplayPerspective::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                             nsRegion* aVisibleRegion) {
-  return mList.ComputeVisibilityForSublist(aBuilder, aVisibleRegion,
-                                           GetPaintRect());
-}
-
 nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder,
                              nsTextFrame* aFrame)
     : nsPaintedDisplayItem(aBuilder, aFrame),
@@ -8718,16 +8444,6 @@ bool nsDisplayMasksAndClipPaths::CanPaintOnMaskLayer(LayerManager* aManager) {
   return true;
 }
 
-bool nsDisplayMasksAndClipPaths::ComputeVisibility(
-    nsDisplayListBuilder* aBuilder, nsRegion* aVisibleRegion) {
-  
-  
-  nsRegion childrenVisible(GetPaintRect());
-  nsRect r = GetPaintRect().Intersect(mList.GetClippedBounds(aBuilder));
-  mList.ComputeVisibilityForSublist(aBuilder, &childrenVisible, r);
-  return true;
-}
-
 void nsDisplayMasksAndClipPaths::ComputeInvalidationRegion(
     nsDisplayListBuilder* aBuilder, const nsDisplayItemGeometry* aGeometry,
     nsRegion* aInvalidRegion) const {
@@ -9149,22 +8865,6 @@ void nsDisplayFilters::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
     GetChildren()->Paint(aBuilder, aContext,
                          mFrame->PresContext()->AppUnitsPerDevPixel());
   });
-}
-
-bool nsDisplayFilters::ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                         nsRegion* aVisibleRegion) {
-  nsPoint offset = ToReferenceFrame();
-  nsRect dirtyRect = SVGIntegrationUtils::GetRequiredSourceForInvalidArea(
-                         mFrame, GetPaintRect() - offset) +
-                     offset;
-
-  
-  
-  nsRegion childrenVisible(dirtyRect);
-  nsRect r = dirtyRect.Intersect(
-      mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot));
-  mList.ComputeVisibilityForSublist(aBuilder, &childrenVisible, r);
-  return true;
 }
 
 void nsDisplayFilters::ComputeInvalidationRegion(

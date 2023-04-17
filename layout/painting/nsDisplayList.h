@@ -2760,26 +2760,6 @@ class nsDisplayItem : public nsDisplayItemLink {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                                 nsRegion* aVisibleRegion);
-
-  
-
-
-
   virtual bool NeedsGeometryUpdates() const { return false; }
 
   
@@ -3023,9 +3003,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   
   nsRect mBuildingRect;
 
-  
-  
-  
   
   nsRect mPaintRect;
 
@@ -3459,39 +3436,6 @@ class nsDisplayList {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool ComputeVisibilityForSublist(nsDisplayListBuilder* aBuilder,
-                                   nsRegion* aVisibleRegion,
-                                   const nsRect& aListVisibleBounds);
-
-  
-
-
-
-
-
-
-  bool ComputeVisibilityForRoot(nsDisplayListBuilder* aBuilder,
-                                nsRegion* aVisibleRegion);
-
-  
-
-
   bool NeedsTransparentSurface() const { return mForceTransparentSurface; }
   
 
@@ -3814,9 +3758,6 @@ class nsDisplayContainer final : public nsDisplayItem {
     mChildren.DeleteAll(aBuilder);
     nsDisplayItem::Destroy(aBuilder);
   }
-
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
@@ -4375,8 +4316,6 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
       nsDisplayListBuilder* aDisplayListBuilder) override;
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
   nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override;
   Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) const override;
@@ -5147,8 +5086,6 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
   nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override;
   Maybe<nscolor> IsUniform(nsDisplayListBuilder* aBuilder) const override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   
 
@@ -5368,8 +5305,6 @@ class nsDisplayOpacity : public nsDisplayWrapList {
   nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override;
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   bool CanMerge(const nsDisplayItem* aItem) const override {
     
@@ -5492,8 +5427,6 @@ class nsDisplayBlendMode : public nsDisplayWrapList {
       layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   bool CanMerge(const nsDisplayItem* aItem) const override;
 
@@ -5790,8 +5723,6 @@ class nsDisplaySubDocument : public nsDisplayOwnLayer {
 
   virtual nsSubDocumentFrame* SubDocumentFrame() { return mSubDocFrame; }
 
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
   bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override {
     return mShouldFlatten;
   }
@@ -6062,8 +5993,6 @@ class nsDisplayZoom : public nsDisplaySubDocument {
   nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override;
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
   
   int32_t GetChildAppUnitsPerDevPixel() { return mAPD; }
   
@@ -6209,8 +6138,6 @@ class nsDisplayMasksAndClipPaths : public nsDisplayEffectsBase {
   }
 
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   nsDisplayItemGeometry* AllocateGeometry(
       nsDisplayListBuilder* aBuilder) override {
@@ -6371,9 +6298,6 @@ class nsDisplayFilters : public nsDisplayEffectsBase {
     return mEffectsBounds + ToReferenceFrame();
   }
 
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
-
   nsDisplayItemGeometry* AllocateGeometry(
       nsDisplayListBuilder* aBuilder) override {
     return new nsDisplayFiltersGeometry(this, aBuilder);
@@ -6504,8 +6428,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
       nsDisplayListBuilder* aDisplayListBuilder) override;
   bool UpdateScrollData(layers::WebRenderScrollData* aData,
                         layers::WebRenderLayerScrollData* aLayerData) override;
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   nsDisplayItemGeometry* AllocateGeometry(
       nsDisplayListBuilder* aBuilder) override {
@@ -6830,9 +6752,6 @@ class nsDisplayPerspective : public nsPaintedDisplayItem {
     return GetChildren()->GetClippedBoundsWithRespectToASR(aBuilder,
                                                            mActiveScrolledRoot);
   }
-
-  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
-                         nsRegion* aVisibleRegion) override;
 
   void ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayItemGeometry* aGeometry,
