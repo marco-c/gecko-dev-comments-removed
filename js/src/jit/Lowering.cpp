@@ -2499,9 +2499,6 @@ void LIRGenerator::visitNonNegativeIntPtrToInt32(
 
 void LIRGenerator::visitWasmExtendU32Index(MWasmExtendU32Index* ins) {
 #ifdef JS_64BIT
-  
-  
-
   MDefinition* input = ins->input();
   MOZ_ASSERT(input->type() == MIRType::Int32);
   MOZ_ASSERT(ins->type() == MIRType::Int64);
@@ -2516,22 +2513,18 @@ void LIRGenerator::visitWasmExtendU32Index(MWasmExtendU32Index* ins) {
 }
 
 void LIRGenerator::visitWasmWrapU32Index(MWasmWrapU32Index* ins) {
+#ifdef JS_64BIT
   MDefinition* input = ins->input();
   MOZ_ASSERT(input->type() == MIRType::Int64);
   MOZ_ASSERT(ins->type() == MIRType::Int32);
 
   
   
-  
-
-  
-  
-#if defined(JS_NUNBOX32)
-  static_assert(INT64LOW_INDEX == 0);
-#endif
-
   auto* lir = new (alloc()) LWasmWrapU32Index(useRegisterAtStart(input));
   defineReuseInput(lir, ins, 0);
+#else
+  MOZ_CRASH("64-bit only");
+#endif
 }
 
 void LIRGenerator::visitIntPtrToDouble(MIntPtrToDouble* ins) {
@@ -4804,23 +4797,10 @@ void LIRGenerator::visitObjectClassToString(MObjectClassToString* ins) {
 }
 
 void LIRGenerator::visitWasmAddOffset(MWasmAddOffset* ins) {
+  MOZ_ASSERT(ins->base()->type() == MIRType::Int32);
+  MOZ_ASSERT(ins->type() == MIRType::Int32);
   MOZ_ASSERT(ins->offset());
-  if (ins->base()->type() == MIRType::Int32) {
-    MOZ_ASSERT(ins->type() == MIRType::Int32);
-    define(new (alloc()) LWasmAddOffset(useRegisterAtStart(ins->base())), ins);
-  } else {
-    MOZ_ASSERT(ins->type() == MIRType::Int64);
-#ifdef JS_64BIT
-    defineInt64(new (alloc())
-                    LWasmAddOffset64(useInt64RegisterAtStart(ins->base())),
-                ins);
-#else
-    
-    defineInt64ReuseInput(
-        new (alloc()) LWasmAddOffset64(useInt64RegisterAtStart(ins->base())),
-        ins, 0);
-#endif
-  }
+  define(new (alloc()) LWasmAddOffset(useRegisterAtStart(ins->base())), ins);
 }
 
 void LIRGenerator::visitWasmLoadTls(MWasmLoadTls* ins) {
@@ -4876,14 +4856,10 @@ void LIRGenerator::visitWasmBoundsCheck(MWasmBoundsCheck* ins) {
 
 void LIRGenerator::visitWasmAlignmentCheck(MWasmAlignmentCheck* ins) {
   MDefinition* index = ins->index();
-  if (index->type() == MIRType::Int64) {
-    auto* lir =
-        new (alloc()) LWasmAlignmentCheck64(useInt64RegisterAtStart(index));
-    add(lir, ins);
-  } else {
-    auto* lir = new (alloc()) LWasmAlignmentCheck(useRegisterAtStart(index));
-    add(lir, ins);
-  }
+  MOZ_ASSERT(index->type() == MIRType::Int32);
+
+  auto* lir = new (alloc()) LWasmAlignmentCheck(useRegisterAtStart(index));
+  add(lir, ins);
 }
 
 void LIRGenerator::visitWasmLoadGlobalVar(MWasmLoadGlobalVar* ins) {

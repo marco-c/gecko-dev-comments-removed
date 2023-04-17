@@ -1476,13 +1476,6 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
 
 void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
-  
-  
-  
-  
-#  ifndef JS_64BIT
-  MOZ_ASSERT(ins->base()->type() == MIRType::Int32);
-#  endif
   LUse base = useRegisterAtStart(ins->base());
   LUse inputUse = useRegisterAtStart(ins->value());
   LAllocation memoryBase = ins->hasMemoryBase()
@@ -1498,10 +1491,6 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 
 void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
-  
-#  ifndef JS_64BIT
-  MOZ_ASSERT(ins->base()->type() == MIRType::Int32);
-#  endif
   LUse base = useRegisterAtStart(ins->base());
   LUse input = useRegisterAtStart(ins->value());
   LAllocation memoryBase = ins->hasMemoryBase()

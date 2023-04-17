@@ -34,8 +34,7 @@ struct MemoryDesc;
 
 
 
-void* MapBufferMemory(wasm::IndexType, size_t mappedSize,
-                      size_t initialCommittedSize);
+void* MapBufferMemory(size_t mappedSize, size_t initialCommittedSize);
 
 
 
@@ -53,7 +52,7 @@ bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
 
 
 
-void UnmapBufferMemory(wasm::IndexType t, void* dataStart, size_t mappedSize);
+void UnmapBufferMemory(void* dataStart, size_t mappedSize);
 
 
 int32_t LiveMappedBufferCount();
@@ -467,12 +466,10 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   mozilla::Maybe<wasm::Pages> wasmSourceMaxPages() const;
 
   [[nodiscard]] static bool wasmGrowToPagesInPlace(
-      wasm::IndexType t, wasm::Pages newPages,
-      Handle<ArrayBufferObject*> oldBuf,
+      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
   [[nodiscard]] static bool wasmMovingGrowToPages(
-      wasm::IndexType t, wasm::Pages newPages,
-      Handle<ArrayBufferObject*> oldBuf,
+      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
 
   static void finalize(JSFreeOp* fop, JSObject* obj);
@@ -517,9 +514,8 @@ using HandleArrayBufferObject = Handle<ArrayBufferObject*>;
 using MutableHandleArrayBufferObject = MutableHandle<ArrayBufferObject*>;
 
 
-
-bool CreateWasmBuffer(JSContext* cx, const wasm::MemoryDesc& memory,
-                      MutableHandleArrayBufferObjectMaybeShared buffer);
+bool CreateWasmBuffer32(JSContext* cx, const wasm::MemoryDesc& memory,
+                        MutableHandleArrayBufferObjectMaybeShared buffer);
 
 
 

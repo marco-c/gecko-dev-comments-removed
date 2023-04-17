@@ -104,10 +104,6 @@ struct TlsData {
 
   
   
-  uint32_t baselineScratch[2];
-
-  
-  
   
   MOZ_ALIGNED_DECL(16, char globalArea);
 };

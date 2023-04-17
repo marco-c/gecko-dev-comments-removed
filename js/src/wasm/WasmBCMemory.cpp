@@ -96,9 +96,6 @@ void BaseCompiler::bceCheckLocal(MemoryAccessDesc* access, AccessCheck* check,
   uint32_t offsetGuardLimit =
       GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
 
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
-
   if ((bceSafe_ & (BCESet(1) << local)) &&
       access->offset() < offsetGuardLimit) {
     check->omitBoundsCheck = true;
@@ -126,87 +123,43 @@ void BaseCompiler::bceLocalIsUpdated(uint32_t local) {
 
 
 
-template <>
-RegI32 BaseCompiler::popConstMemoryAccess<RegI32>(MemoryAccessDesc* access,
-                                                  AccessCheck* check) {
+RegI32 BaseCompiler::popMemory32Access(MemoryAccessDesc* access,
+                                       AccessCheck* check) {
+  check->onlyPointerAlignment =
+      (access->offset() & (access->byteSize() - 1)) == 0;
+
   int32_t addrTemp;
-  MOZ_ALWAYS_TRUE(popConst(&addrTemp));
-  uint32_t addr = addrTemp;
+  if (popConst(&addrTemp)) {
+    uint32_t addr = addrTemp;
 
-  uint32_t offsetGuardLimit =
-      GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
+    uint32_t offsetGuardLimit =
+        GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
 
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
+    uint64_t ea = uint64_t(addr) + uint64_t(access->offset());
+    uint64_t limit = moduleEnv_.memory->initialLength32() + offsetGuardLimit;
 
-  uint64_t ea = uint64_t(addr) + uint64_t(access->offset());
-  uint64_t limit = moduleEnv_.memory->initialLength32() + offsetGuardLimit;
-
-  check->omitBoundsCheck = ea < limit;
-  check->omitAlignmentCheck = (ea & (access->byteSize() - 1)) == 0;
-
-  
-  
-  if (ea <= UINT32_MAX) {
-    addr = uint32_t(ea);
-    access->clearOffset();
-  }
-
-  RegI32 r = needI32();
-  moveImm32(int32_t(addr), r);
-  return r;
-}
-
-template <>
-RegI64 BaseCompiler::popConstMemoryAccess<RegI64>(MemoryAccessDesc* access,
-                                                  AccessCheck* check) {
-  int64_t addrTemp;
-  MOZ_ALWAYS_TRUE(popConst(&addrTemp));
-  uint64_t addr = addrTemp;
-
-  uint32_t offsetGuardLimit =
-      GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
-
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
-
-  uint64_t ea = addr + uint64_t(access->offset());
-  bool overflow = ea < addr;
-  uint64_t limit = moduleEnv_.memory->initialLength64() + offsetGuardLimit;
-
-  if (!overflow) {
     check->omitBoundsCheck = ea < limit;
     check->omitAlignmentCheck = (ea & (access->byteSize() - 1)) == 0;
 
     
     
-    addr = uint64_t(ea);
-    access->clearOffset();
+
+    if (ea <= UINT32_MAX) {
+      addr = uint32_t(ea);
+      access->clearOffset();
+    }
+
+    RegI32 r = needI32();
+    moveImm32(int32_t(addr), r);
+    return r;
   }
 
-  RegI64 r = needI64();
-  moveImm64(int64_t(addr), r);
-  return r;
-}
-
-template <typename RegType>
-RegType BaseCompiler::popMemoryAccess(MemoryAccessDesc* access,
-                                      AccessCheck* check) {
-  check->onlyPointerAlignment =
-      (access->offset() & (access->byteSize() - 1)) == 0;
-
-  
-  if (hasConst()) {
-    return popConstMemoryAccess<RegType>(access, check);
-  }
-
-  
   uint32_t local;
-  if (peekLocal(&local)) {
+  if (peekLocalI32(&local)) {
     bceCheckLocal(access, check, local);
   }
 
-  return pop<RegType>();
+  return popI32();
 }
 
 #ifdef JS_64BIT
@@ -242,105 +195,18 @@ void BaseCompiler::pushHeapBase() {
 }
 #endif
 
-void BaseCompiler::branchAddNoOverflow(Imm32 offset, RegI32 ptr, Label* ok) {
-  masm.branchAdd32(Assembler::CarryClear, offset, ptr, ok);
-}
-
-void BaseCompiler::branchAddNoOverflow(Imm32 offset, RegI64 ptr, Label* ok) {
-#if defined(JS_64BIT)
-  masm.branchAddPtr(Assembler::CarryClear, offset, Register64(ptr).reg, ok);
-#else
-  masm.branchAdd64(Assembler::CarryClear, offset, ptr, ok);
-#endif
-}
-
-void BaseCompiler::branchTestLowZero(RegI32 ptr, Imm32 mask, Label* ok) {
-  masm.branchTest32(Assembler::Zero, ptr, mask, ok);
-}
-
-void BaseCompiler::branchTestLowZero(RegI64 ptr, Imm32 mask, Label* ok) {
-#ifdef JS_64BIT
-  masm.branchTestPtr(Assembler::Zero, Register64(ptr).reg, mask, ok);
-#else
-  masm.branchTestPtr(Assembler::Zero, ptr.low, mask, ok);
-#endif
-}
-
-void BaseCompiler::boundsCheck4GBOrLargerAccess(RegPtr tls, RegI32 ptr,
-                                                Label* ok) {
-#ifdef JS_64BIT
-  
-  
-  
-  
-
-  
-  RegI64 ptr64 = fromI32(ptr);
-
-  
-  
-#  ifdef RABALDR_ZERO_EXTENDS
-  masm.assertCanonicalInt32(ptr);
-#  else
-  MOZ_CRASH("Platform code needed here");
-#  endif
-
-  boundsCheck4GBOrLargerAccess(tls, ptr64, ok);
-
-  
-  
-  
-#  ifdef RABALDR_ZERO_EXTENDS
-  
-#  else
-  MOZ_CRASH("Platform code needed here");
-#  endif
-#else
-  
-  MOZ_CRASH("No 32-bit support");
-#endif
-}
-
-void BaseCompiler::boundsCheckBelow4GBAccess(RegPtr tls, RegI32 ptr,
-                                             Label* ok) {
-  
-  
-  masm.wasmBoundsCheck32(Assembler::Below, ptr,
-                         Address(tls, offsetof(TlsData, boundsCheckLimit)), ok);
-}
-
-void BaseCompiler::boundsCheck4GBOrLargerAccess(RegPtr tls, RegI64 ptr,
-                                                Label* ok) {
-  
-  masm.wasmBoundsCheck64(Assembler::Below, ptr,
-                         Address(tls, offsetof(TlsData, boundsCheckLimit)), ok);
-}
-
-void BaseCompiler::boundsCheckBelow4GBAccess(RegPtr tls, RegI64 ptr,
-                                             Label* ok) {
-  
-  
-  
-  boundsCheck4GBOrLargerAccess(tls, ptr, ok);
-}
-
-
-template <typename RegIndexType>
 void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
                                        AccessCheck* check, RegPtr tls,
-                                       RegIndexType ptr) {
+                                       RegI32 ptr) {
   uint32_t offsetGuardLimit =
       GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
-
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
 
   
   if (access->offset() >= offsetGuardLimit ||
       (access->isAtomic() && !check->omitAlignmentCheck &&
        !check->onlyPointerAlignment)) {
     Label ok;
-    branchAddNoOverflow(Imm32(access->offset()), ptr, &ok);
+    masm.branchAdd32(Assembler::CarryClear, Imm32(access->offset()), ptr, &ok);
     masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
     masm.bind(&ok);
     access->clearOffset();
@@ -353,7 +219,7 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
     MOZ_ASSERT(check->onlyPointerAlignment);
     
     Label ok;
-    branchTestLowZero(ptr, Imm32(access->byteSize() - 1), &ok);
+    masm.branchTest32(Assembler::Zero, ptr, Imm32(access->byteSize() - 1), &ok);
     masm.wasmTrap(Trap::UnalignedAccess, bytecodeOffset());
     masm.bind(&ok);
   }
@@ -377,33 +243,61 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
 #ifdef JS_64BIT
     
     
+    
+    
+    
+    
+    
     if (!moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
         ArrayBufferObject::maxBufferByteLength() >= 0x100000000) {
-      boundsCheck4GBOrLargerAccess(tls, ptr, &ok);
+      
+      RegI64 ptr64 = fromI32(ptr);
+
+      
+      
+#  ifdef RABALDR_ZERO_EXTENDS
+      masm.assertCanonicalInt32(ptr);
+#  else
+      MOZ_CRASH("Platform code needed here");
+#  endif
+
+      
+      masm.wasmBoundsCheck64(Assembler::Below, ptr64,
+                             Address(tls, offsetof(TlsData, boundsCheckLimit)),
+                             &ok);
+
+      
+      
+      
+#  ifdef RABALDR_ZERO_EXTENDS
+      
+#  else
+      MOZ_CRASH("Platform code needed here");
+#  endif
     } else {
-      boundsCheckBelow4GBAccess(tls, ptr, &ok);
+      masm.wasmBoundsCheck32(Assembler::Below, ptr,
+                             Address(tls, offsetof(TlsData, boundsCheckLimit)),
+                             &ok);
     }
 #else
-    boundsCheckBelow4GBAccess(tls, ptr, &ok);
+    masm.wasmBoundsCheck32(Assembler::Below, ptr,
+                           Address(tls, offsetof(TlsData, boundsCheckLimit)),
+                           &ok);
 #endif
     masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
     masm.bind(&ok);
   }
 }
 
-template <typename RegIndexType>
 void BaseCompiler::computeEffectiveAddress(MemoryAccessDesc* access) {
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
-
   if (access->offset()) {
     Label ok;
-    RegIndexType ptr = pop<RegIndexType>();
-    branchAddNoOverflow(Imm32(access->offset()), ptr, &ok);
+    RegI32 ptr = popI32();
+    masm.branchAdd32(Assembler::CarryClear, Imm32(access->offset()), ptr, &ok);
     masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
     masm.bind(&ok);
     access->clearOffset();
-    push(ptr);
+    pushI32(ptr);
   }
 }
 
@@ -438,11 +332,11 @@ RegPtr BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check,
 
 
 
-void BaseCompiler::executeLoad(MemoryAccessDesc* access, AccessCheck* check,
-                               RegPtr tls, RegI32 ptr, AnyReg dest,
-                               RegI32 temp) {
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
+
+
+void BaseCompiler::load(MemoryAccessDesc* access, AccessCheck* check,
+                        RegPtr tls, RegI32 ptr, AnyReg dest, RegI32 temp) {
+  prepareMemoryAccess(access, check, tls, ptr);
 
 #if defined(JS_CODEGEN_X64)
   MOZ_ASSERT(temp.isInvalid());
@@ -512,39 +406,9 @@ void BaseCompiler::executeLoad(MemoryAccessDesc* access, AccessCheck* check,
 
 
 
-void BaseCompiler::load(MemoryAccessDesc* access, AccessCheck* check,
-                        RegPtr tls, RegI32 ptr, AnyReg dest, RegI32 temp) {
+void BaseCompiler::store(MemoryAccessDesc* access, AccessCheck* check,
+                         RegPtr tls, RegI32 ptr, AnyReg src, RegI32 temp) {
   prepareMemoryAccess(access, check, tls, ptr);
-  executeLoad(access, check, tls, ptr, dest, temp);
-}
-
-#ifdef ENABLE_WASM_MEMORY64
-void BaseCompiler::load(MemoryAccessDesc* access, AccessCheck* check,
-                        RegPtr tls, RegI64 ptr, AnyReg dest, RegI64 temp) {
-  prepareMemoryAccess(access, check, tls, ptr);
-
-#  if !defined(JS_64BIT)
-  
-  
-  return executeLoad(access, check, tls, RegI32(ptr.low), dest,
-                     maybeFromI64(temp));
-#  elif defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
-  
-  
-  
-  return executeLoad(access, check, tls, RegI32(ptr.reg), dest,
-                     maybeFromI64(temp));
-#  else
-  MOZ_CRASH("Missing platform hook");
-#  endif
-}
-#endif
-
-void BaseCompiler::executeStore(MemoryAccessDesc* access, AccessCheck* check,
-                                RegPtr tls, RegI32 ptr, AnyReg src,
-                                RegI32 temp) {
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
 
   
 #if defined(JS_CODEGEN_X64)
@@ -624,93 +488,65 @@ void BaseCompiler::executeStore(MemoryAccessDesc* access, AccessCheck* check,
 #endif
 }
 
-
-
-void BaseCompiler::store(MemoryAccessDesc* access, AccessCheck* check,
-                         RegPtr tls, RegI32 ptr, AnyReg src, RegI32 temp) {
-  prepareMemoryAccess(access, check, tls, ptr);
-  executeStore(access, check, tls, ptr, src, temp);
-}
-
-#ifdef ENABLE_WASM_MEMORY64
-void BaseCompiler::store(MemoryAccessDesc* access, AccessCheck* check,
-                         RegPtr tls, RegI64 ptr, AnyReg src, RegI64 temp) {
-  prepareMemoryAccess(access, check, tls, ptr);
-  
-#  if !defined(JS_64BIT)
-  return executeStore(access, check, tls, RegI32(ptr.low), src,
-                      maybeFromI64(temp));
-#  elif defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
-  return executeStore(access, check, tls, RegI32(ptr.reg), src,
-                      maybeFromI64(temp));
-#  else
-  MOZ_CRASH("Missing platform hook");
-#  endif
-}
-#endif
-
-template <typename RegType>
-void BaseCompiler::doLoadCommon(MemoryAccessDesc* access, AccessCheck check,
-                                ValType type) {
+void BaseCompiler::loadCommon(MemoryAccessDesc* access, AccessCheck check,
+                              ValType type) {
   RegPtr tls;
-  RegType temp;
+  RegI32 temp;
 #if defined(JS_CODEGEN_MIPS64)
-  temp = need<RegType>();
+  temp = needI32();
 #endif
 
   switch (type.kind()) {
     case ValType::I32: {
-      RegType rp = popMemoryAccess<RegType>(access, &check);
-      RegI32 rv = needI32();
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
-      load(access, &check, tls, rp, AnyReg(rv), temp);
-      push(rv);
-      free(rp);
+      load(access, &check, tls, rp, AnyReg(rp), temp);
+      pushI32(rp);
       break;
     }
     case ValType::I64: {
       RegI64 rv;
-      RegType rp;
+      RegI32 rp;
 #ifdef JS_CODEGEN_X86
       rv = specific_.abiReturnRegI64;
       needI64(rv);
-      rp = popMemoryAccess<RegType>(access, &check);
+      rp = popMemory32Access(access, &check);
 #else
-      rp = popMemoryAccess<RegType>(access, &check);
+      rp = popMemory32Access(access, &check);
       rv = needI64();
 #endif
       tls = maybeLoadTlsForAccess(check);
       load(access, &check, tls, rp, AnyReg(rv), temp);
-      push(rv);
-      free(rp);
+      pushI64(rv);
+      freeI32(rp);
       break;
     }
     case ValType::F32: {
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       RegF32 rv = needF32();
       tls = maybeLoadTlsForAccess(check);
       load(access, &check, tls, rp, AnyReg(rv), temp);
-      push(rv);
-      free(rp);
+      pushF32(rv);
+      freeI32(rp);
       break;
     }
     case ValType::F64: {
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       RegF64 rv = needF64();
       tls = maybeLoadTlsForAccess(check);
       load(access, &check, tls, rp, AnyReg(rv), temp);
-      push(rv);
-      free(rp);
+      pushF64(rv);
+      freeI32(rp);
       break;
     }
 #ifdef ENABLE_WASM_SIMD
     case ValType::V128: {
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       RegV128 rv = needV128();
       tls = maybeLoadTlsForAccess(check);
       load(access, &check, tls, rp, AnyReg(rv), temp);
-      push(rv);
-      free(rp);
+      pushV128(rv);
+      freeI32(rp);
       break;
     }
 #endif
@@ -723,73 +559,59 @@ void BaseCompiler::doLoadCommon(MemoryAccessDesc* access, AccessCheck check,
   maybeFree(temp);
 }
 
-void BaseCompiler::loadCommon(MemoryAccessDesc* access, AccessCheck check,
-                              ValType type) {
-  if (isMem32()) {
-    doLoadCommon<RegI32>(access, check, type);
-  } else {
-#ifdef ENABLE_WASM_MEMORY64
-    doLoadCommon<RegI64>(access, check, type);
-#else
-    MOZ_CRASH("Memory64 not enabled / supported on this platform");
-#endif
-  }
-}
-
-template <typename RegType>
-void BaseCompiler::doStoreCommon(MemoryAccessDesc* access, AccessCheck check,
-                                 ValType resultType) {
+void BaseCompiler::storeCommon(MemoryAccessDesc* access, AccessCheck check,
+                               ValType resultType) {
   RegPtr tls;
-  RegType temp;
+  RegI32 temp;
 #if defined(JS_CODEGEN_MIPS64)
-  temp = need<RegType>();
+  temp = needI32();
 #endif
 
   switch (resultType.kind()) {
     case ValType::I32: {
       RegI32 rv = popI32();
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
       store(access, &check, tls, rp, AnyReg(rv), temp);
-      free(rp);
-      free(rv);
+      freeI32(rp);
+      freeI32(rv);
       break;
     }
     case ValType::I64: {
       RegI64 rv = popI64();
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
       store(access, &check, tls, rp, AnyReg(rv), temp);
-      free(rp);
-      free(rv);
+      freeI32(rp);
+      freeI64(rv);
       break;
     }
     case ValType::F32: {
       RegF32 rv = popF32();
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
       store(access, &check, tls, rp, AnyReg(rv), temp);
-      free(rp);
-      free(rv);
+      freeI32(rp);
+      freeF32(rv);
       break;
     }
     case ValType::F64: {
       RegF64 rv = popF64();
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
       store(access, &check, tls, rp, AnyReg(rv), temp);
-      free(rp);
-      free(rv);
+      freeI32(rp);
+      freeF64(rv);
       break;
     }
 #ifdef ENABLE_WASM_SIMD
     case ValType::V128: {
       RegV128 rv = popV128();
-      RegType rp = popMemoryAccess<RegType>(access, &check);
+      RegI32 rp = popMemory32Access(access, &check);
       tls = maybeLoadTlsForAccess(check);
       store(access, &check, tls, rp, AnyReg(rv), temp);
-      free(rp);
-      free(rv);
+      freeI32(rp);
+      freeV128(rv);
       break;
     }
 #endif
@@ -801,29 +623,6 @@ void BaseCompiler::doStoreCommon(MemoryAccessDesc* access, AccessCheck check,
   maybeFree(tls);
   maybeFree(temp);
 }
-
-void BaseCompiler::storeCommon(MemoryAccessDesc* access, AccessCheck check,
-                               ValType type) {
-  if (isMem32()) {
-    doStoreCommon<RegI32>(access, check, type);
-  } else {
-#ifdef ENABLE_WASM_MEMORY64
-    doStoreCommon<RegI64>(access, check, type);
-#else
-    MOZ_CRASH("Memory64 not enabled / supported on this platform");
-#endif
-  }
-}
-
-
-
-
-static inline Register ToRegister(RegI32 r) { return Register(r); }
-#ifdef JS_PUNBOX64
-static inline Register ToRegister(RegI64 r) { return r.reg; }
-#else
-static inline Register ToRegister(RegI64 r) { return r.low; }
-#endif
 
 
 
@@ -839,37 +638,25 @@ static inline Register ToRegister(RegI64 r) { return r.low; }
 
 #ifdef RABALDR_HAS_HEAPREG
 
-
-template <typename RegIndexType>
 BaseIndex BaseCompiler::prepareAtomicMemoryAccess(MemoryAccessDesc* access,
                                                   AccessCheck* check,
-                                                  RegPtr tls,
-                                                  RegIndexType ptr) {
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
-
+                                                  RegPtr tls, RegI32 ptr) {
   MOZ_ASSERT(needTlsForAccess(*check) == tls.isValid());
   prepareMemoryAccess(access, check, tls, ptr);
-  return BaseIndex(HeapReg, ToRegister(ptr), TimesOne, access->offset());
+  return BaseIndex(HeapReg, ptr, TimesOne, access->offset());
 }
 
 #else
 
 
 
-
-
-template <typename RegIndexType>
 Address BaseCompiler::prepareAtomicMemoryAccess(MemoryAccessDesc* access,
                                                 AccessCheck* check, RegPtr tls,
-                                                RegIndexType ptr) {
-  
-  static_assert(sizeof(access->offset()) == sizeof(uint32_t));
-
+                                                RegI32 ptr) {
   MOZ_ASSERT(needTlsForAccess(*check) == tls.isValid());
   prepareMemoryAccess(access, check, tls, ptr);
-  masm.addPtr(Address(tls, offsetof(TlsData, memoryBase)), ToRegister(ptr));
-  return Address(ToRegister(ptr), access->offset());
+  masm.addPtr(Address(tls, offsetof(TlsData, memoryBase)), ptr);
+  return Address(ptr, access->offset());
 }
 
 #endif
@@ -922,14 +709,21 @@ static void Deallocate(BaseCompiler*, RegI64) {}
 
 }  
 
+void BaseCompiler::atomicLoad(MemoryAccessDesc* access, ValType type) {
+  Scalar::Type viewType = access->type();
+  if (Scalar::byteSize(viewType) <= sizeof(void*)) {
+    loadCommon(access, AccessCheck(), type);
+    return;
+  }
+
+  MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
+
 #if !defined(JS_64BIT)
-template <typename RegIndexType>
-void BaseCompiler::atomicLoad64(MemoryAccessDesc* access) {
   RegI64 rd, temp;
   atomic_load64::Allocate(this, &rd, &temp);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
 
 #  ifdef RABALDR_HAS_HEAPREG
   RegPtr tls = maybeLoadTlsForAccess(check);
@@ -944,30 +738,10 @@ void BaseCompiler::atomicLoad64(MemoryAccessDesc* access) {
   MOZ_ASSERT(tls == scratch);
 #  endif
 
-  free(rp);
+  freeI32(rp);
   atomic_load64::Deallocate(this, temp);
   pushI64(rd);
-}
-#endif
-
-void BaseCompiler::atomicLoad(MemoryAccessDesc* access, ValType type) {
-  Scalar::Type viewType = access->type();
-  if (Scalar::byteSize(viewType) <= sizeof(void*)) {
-    loadCommon(access, AccessCheck(), type);
-    return;
-  }
-
-  MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
-
-#if !defined(JS_64BIT)
-  if (isMem32()) {
-    atomicLoad64<RegI32>(access);
-  } else {
-    atomicLoad64<RegI64>(access);
-  }
-#else
-  MOZ_CRASH("Should not happen");
-#endif
+#endif  
 }
 
 void BaseCompiler::atomicStore(MemoryAccessDesc* access, ValType type) {
@@ -980,14 +754,10 @@ void BaseCompiler::atomicStore(MemoryAccessDesc* access, ValType type) {
 
   MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
 
-#if !defined(JS_64BIT)
-  if (isMem32()) {
-    atomicXchg64<RegI32>(access, WantResult(false));
-  } else {
-    atomicXchg64<RegI64>(access, WantResult(false));
-  }
-#else
+#ifdef JS_64BIT
   MOZ_CRASH("Should not happen");
+#else
+  atomicXchg64(access, WantResult(false));
 #endif
 }
 
@@ -999,18 +769,10 @@ void BaseCompiler::atomicRMW(MemoryAccessDesc* access, ValType type,
                              AtomicOp op) {
   Scalar::Type viewType = access->type();
   if (Scalar::byteSize(viewType) <= 4) {
-    if (isMem32()) {
-      atomicRMW32<RegI32>(access, type, op);
-    } else {
-      atomicRMW32<RegI64>(access, type, op);
-    }
+    atomicRMW32(access, type, op);
   } else {
     MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
-    if (isMem32()) {
-      atomicRMW64<RegI32>(access, type, op);
-    } else {
-      atomicRMW64<RegI64>(access, type, op);
-    }
+    atomicRMW64(access, type, op);
   }
 }
 
@@ -1019,11 +781,7 @@ namespace atomic_rmw32 {
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
 
 struct Temps {
-  
-  
-#  if defined(JS_CODEGEN_X64)
   RegI32 t0;
-#  endif
 };
 
 static void PopAndAllocate(BaseCompiler* bc, ValType type,
@@ -1050,7 +808,13 @@ static void PopAndAllocate(BaseCompiler* bc, ValType type,
       *rv = bc->popI32();
     }
     *rd = bc->specific_.eax;
-#  ifdef JS_CODEGEN_X64
+#  if defined(JS_CODEGEN_X86)
+    
+    
+    if (Scalar::byteSize(viewType) > 1) {
+      temps->t0 = bc->needI32();
+    }
+#  else
     temps->t0 = bc->needI32();
 #  endif
   }
@@ -1059,13 +823,15 @@ static void PopAndAllocate(BaseCompiler* bc, ValType type,
 template <typename T>
 static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access, T srcAddr,
                     AtomicOp op, RegI32 rv, RegI32 rd, const Temps& temps) {
-#  ifdef JS_CODEGEN_X64
   RegI32 temp = temps.t0;
-#  else
-  RegI32 temp;
-  ScratchI32 scratch(*bc);
-  if (op != AtomicFetchAddOp && op != AtomicFetchSubOp) {
-    temp = scratch;
+#  ifdef JS_CODEGEN_X86
+  ScratchI8 scratch(*bc);
+  if (access.type() == Scalar::Uint8) {
+    
+    MOZ_ASSERT(temp.isInvalid());
+    if (op != AtomicFetchAddOp && op != AtomicFetchSubOp) {
+      temp = scratch;
+    }
   }
 #  endif
   bc->masm.wasmAtomicFetchOp(access, op, rv, srcAddr, temp, rd);
@@ -1075,9 +841,7 @@ static void Deallocate(BaseCompiler* bc, RegI32 rv, const Temps& temps) {
   if (rv != bc->specific_.eax) {
     bc->freeI32(rv);
   }
-#  ifdef JS_CODEGEN_X64
   bc->maybeFree(temps.t0);
-#  endif
 }
 
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
@@ -1153,7 +917,6 @@ static void Deallocate(BaseCompiler*, RegI32, const Temps&) {}
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicRMW32(MemoryAccessDesc* access, ValType type,
                                AtomicOp op) {
   Scalar::Type viewType = access->type();
@@ -1162,7 +925,7 @@ void BaseCompiler::atomicRMW32(MemoryAccessDesc* access, ValType type,
   atomic_rmw32::PopAndAllocate(this, type, viewType, op, &rd, &rv, &temps);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
   RegPtr tls = maybeLoadTlsForAccess(check);
 
   auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
@@ -1170,7 +933,7 @@ void BaseCompiler::atomicRMW32(MemoryAccessDesc* access, ValType type,
 
   maybeFree(tls);
   atomic_rmw32::Deallocate(this, rv, temps);
-  free(rp);
+  freeI32(rp);
 
   if (type == ValType::I64) {
     pushU32AsI64(rd);
@@ -1218,20 +981,16 @@ static void Deallocate(BaseCompiler* bc, AtomicOp op, RegI64 rv, RegI64 temp) {
 
 
 
-
-
-
-
 static void PopAndAllocate(BaseCompiler* bc, AtomicOp op, RegI64* rd,
                            RegI64* rv, RegI64*) {
-  bc->needI32(bc->specific_.eax);
+  bc->needI64(bc->specific_.edx_eax);
+  *rd = bc->specific_.edx_eax;
+
   bc->needI32(bc->specific_.ecx);
-  bc->needI32(bc->specific_.edx);
-  *rv = RegI64(Register64(bc->specific_.ecx, bc->specific_.edx));
+  RegI32 rvLow = bc->needI32();
+  *rv = RegI64(Register64(bc->specific_.ecx, rvLow));
   bc->popI64ToSpecific(*rv);
 }
-
-static void Setup(BaseCompiler* bc, RegI64* rd) { *rd = bc->specific_.edx_eax; }
 
 static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
                     Address srcAddr, AtomicOp op, RegI64 rv, RegI64, RegI64 rd,
@@ -1249,8 +1008,8 @@ static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
   bc->fr.popBytes(8);
 }
 
-static void Deallocate(BaseCompiler* bc, AtomicOp, RegI64, RegI64) {
-  bc->freeI32(bc->specific_.ecx);
+static void Deallocate(BaseCompiler* bc, AtomicOp op, RegI64 rv, RegI64) {
+  bc->freeI64(rv);
 }
 
 #elif defined(JS_CODEGEN_ARM)
@@ -1309,14 +1068,13 @@ static void Deallocate(BaseCompiler*, AtomicOp, RegI64, RegI64) {}
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicRMW64(MemoryAccessDesc* access, ValType type,
                                AtomicOp op) {
   RegI64 rd, rv, temp;
   atomic_rmw64::PopAndAllocate(this, op, &rd, &rv, &temp);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
 
 #if defined(RABALDR_HAS_HEAPREG)
   RegPtr tls = maybeLoadTlsForAccess(check);
@@ -1327,12 +1085,11 @@ void BaseCompiler::atomicRMW64(MemoryAccessDesc* access, ValType type,
   ScratchAtomicNoHeapReg scratch(*this);
   RegPtr tls = maybeLoadTlsForAccess(check, RegIntptrToRegPtr(scratch));
   auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
-  atomic_rmw64::Setup(this, &rd);
   atomic_rmw64::Perform(this, *access, memaddr, op, rv, temp, rd, scratch);
   MOZ_ASSERT(tls == scratch);
 #endif
 
-  free(rp);
+  freeI32(rp);
   atomic_rmw64::Deallocate(this, op, rv, temp);
 
   pushI64(rd);
@@ -1345,18 +1102,10 @@ void BaseCompiler::atomicRMW64(MemoryAccessDesc* access, ValType type,
 void BaseCompiler::atomicXchg(MemoryAccessDesc* access, ValType type) {
   Scalar::Type viewType = access->type();
   if (Scalar::byteSize(viewType) <= 4) {
-    if (isMem32()) {
-      atomicXchg32<RegI32>(access, type);
-    } else {
-      atomicXchg32<RegI64>(access, type);
-    }
+    atomicXchg32(access, type);
   } else {
     MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
-    if (isMem32()) {
-      atomicXchg64<RegI32>(access, WantResult(true));
-    } else {
-      atomicXchg64<RegI64>(access, WantResult(true));
-    }
+    atomicXchg64(access, WantResult(true));
   }
 }
 
@@ -1473,7 +1222,6 @@ static void Deallocate(BaseCompiler*, RegI32, const Temps&) {}
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicXchg32(MemoryAccessDesc* access, ValType type) {
   Scalar::Type viewType = access->type();
 
@@ -1483,14 +1231,14 @@ void BaseCompiler::atomicXchg32(MemoryAccessDesc* access, ValType type) {
 
   AccessCheck check;
 
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
   RegPtr tls = maybeLoadTlsForAccess(check);
 
   auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
   atomic_xchg32::Perform(this, *access, memaddr, rv, rd, temps);
 
   maybeFree(tls);
-  free(rp);
+  freeI32(rp);
   atomic_xchg32::Deallocate(this, rv, temps);
 
   if (type == ValType::I64) {
@@ -1518,42 +1266,26 @@ static void Deallocate(BaseCompiler* bc, RegI64 rd, RegI64) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rd, RegI64* rv) {
   bc->needI32(bc->specific_.ecx);
-  bc->needI32(bc->specific_.edx);
-  bc->needI32(bc->specific_.eax);
-  *rv = RegI64(Register64(bc->specific_.ecx, bc->specific_.edx));
+  bc->needI64(bc->specific_.edx_eax);
+  RegI32 tmp = bc->needI32();
+  *rv = RegI64(Register64(bc->specific_.ecx, tmp));
   bc->popI64ToSpecific(*rv);
-}
-
-static void Setup(BaseCompiler* bc, RegI64* rv, RegI64* rd,
-                  const ScratchAtomicNoHeapReg& scratch) {
-  MOZ_ASSERT(rv->high == bc->specific_.ecx);
-  MOZ_ASSERT(Register(scratch) == js::jit::ebx);
-  bc->masm.move32(rv->low, scratch);
-  *rv = bc->specific_.ecx_ebx;
   *rd = bc->specific_.edx_eax;
 }
 
+static RegI64 Setup(BaseCompiler* bc, RegI64 rv,
+                    const ScratchAtomicNoHeapReg& scratch) {
+  MOZ_ASSERT(rv.high == bc->specific_.ecx);
+  MOZ_ASSERT(Register(scratch) == js::jit::ebx);
+  bc->masm.move32(rv.low, scratch);
+  return bc->specific_.ecx_ebx;
+}
+
 static void Deallocate(BaseCompiler* bc, RegI64 rd, RegI64 rv) {
-  MOZ_ASSERT(rd == bc->specific_.edx_eax || rd == RegI64::Invalid());
+  bc->freeI64(rv);
   bc->maybeFree(rd);
-  bc->freeI32(bc->specific_.ecx);
 }
 
 #elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64)
@@ -1590,31 +1322,29 @@ static void Deallocate(BaseCompiler*, RegI64, RegI64) {}
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicXchg64(MemoryAccessDesc* access,
                                 WantResult wantResult) {
   RegI64 rd, rv;
   atomic_xchg64::PopAndAllocate(this, &rd, &rv);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
 
 #ifdef RABALDR_HAS_HEAPREG
   RegPtr tls = maybeLoadTlsForAccess(check);
-  auto memaddr =
-      prepareAtomicMemoryAccess<RegIndexType>(access, &check, tls, rp);
+  auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
   masm.wasmAtomicExchange64(*access, memaddr, rv, rd);
   maybeFree(tls);
 #else
   ScratchAtomicNoHeapReg scratch(*this);
   RegPtr tls = maybeLoadTlsForAccess(check, RegIntptrToRegPtr(scratch));
-  Address memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
-  atomic_xchg64::Setup(this, &rv, &rd, scratch);
-  masm.wasmAtomicExchange64(*access, memaddr, rv, rd);
+  auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
+  RegI64 rvNew = atomic_xchg64::Setup(this, rv, scratch);
+  masm.wasmAtomicExchange64(*access, memaddr, rvNew, rd);
   MOZ_ASSERT(tls == scratch);
 #endif
 
-  free(rp);
+  freeI32(rp);
   if (wantResult) {
     pushI64(rd);
     rd = RegI64::Invalid();
@@ -1629,18 +1359,10 @@ void BaseCompiler::atomicXchg64(MemoryAccessDesc* access,
 void BaseCompiler::atomicCmpXchg(MemoryAccessDesc* access, ValType type) {
   Scalar::Type viewType = access->type();
   if (Scalar::byteSize(viewType) <= 4) {
-    if (isMem32()) {
-      atomicCmpXchg32<RegI32>(access, type);
-    } else {
-      atomicCmpXchg32<RegI64>(access, type);
-    }
+    atomicCmpXchg32(access, type);
   } else {
     MOZ_ASSERT(type == ValType::I64 && Scalar::byteSize(viewType) == 8);
-    if (isMem32()) {
-      atomicCmpXchg64<RegI32>(access, type);
-    } else {
-      atomicCmpXchg64<RegI64>(access, type);
-    }
+    atomicCmpXchg64(access, type);
   }
 }
 
@@ -1771,7 +1493,6 @@ static void Deallocate(BaseCompiler*, RegI32, RegI32, const Temps&) {}
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicCmpXchg32(MemoryAccessDesc* access, ValType type) {
   Scalar::Type viewType = access->type();
   RegI32 rexpect, rnew, rd;
@@ -1780,14 +1501,14 @@ void BaseCompiler::atomicCmpXchg32(MemoryAccessDesc* access, ValType type) {
                                    &temps);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
   RegPtr tls = maybeLoadTlsForAccess(check);
 
   auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
   atomic_cmpxchg32::Perform(this, *access, memaddr, rexpect, rnew, rd, temps);
 
   maybeFree(tls);
-  free(rp);
+  freeI32(rp);
   atomic_cmpxchg32::Deallocate(this, rexpect, rnew, temps);
 
   if (type == ValType::I64) {
@@ -1799,19 +1520,8 @@ void BaseCompiler::atomicCmpXchg32(MemoryAccessDesc* access, ValType type) {
 
 namespace atomic_cmpxchg64 {
 
-
-
-
-template <typename RegIndexType>
-static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
-                           RegI64* rd);
-
-template <typename RegIndexType>
-static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew);
-
 #if defined(JS_CODEGEN_X64)
 
-template <typename RegIndexType>
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
                            RegI64* rd) {
   
@@ -1826,38 +1536,30 @@ static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
   bc->masm.wasmCompareExchange64(access, srcAddr, rexpect, rnew, rd);
 }
 
-template <typename RegIndexType>
 static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
   bc->freeI64(rnew);
 }
 
 #elif defined(JS_CODEGEN_X86)
 
-template <typename RegIndexType>
-static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
-                    Address srcAddr, RegI64 rexpect, RegI64 rnew, RegI64 rd,
-                    ScratchAtomicNoHeapReg& scratch);
-
-
-
-
-
-
-template <>
-void PopAndAllocate<RegI32>(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
-                            RegI64* rd) {
+static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
+                           RegI64* rd) {
+  
+  
+  
+  
   bc->needI64(bc->specific_.edx_eax);
   bc->needI32(bc->specific_.ecx);
+
   RegI32 tmp = bc->needI32();
   *rnew = bc->popI64ToSpecific(RegI64(Register64(bc->specific_.ecx, tmp)));
   *rexpect = bc->popI64ToSpecific(bc->specific_.edx_eax);
   *rd = *rexpect;
 }
 
-template <>
-void Perform<RegI32>(BaseCompiler* bc, const MemoryAccessDesc& access,
-                     Address srcAddr, RegI64 rexpect, RegI64 rnew, RegI64 rd,
-                     ScratchAtomicNoHeapReg& scratch) {
+static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
+                    Address srcAddr, RegI64 rexpect, RegI64 rnew, RegI64 rd,
+                    ScratchAtomicNoHeapReg& scratch) {
   MOZ_ASSERT(Register(scratch) == js::jit::ebx);
   MOZ_ASSERT(rnew.high == bc->specific_.ecx);
   bc->masm.move32(rnew.low, ebx);
@@ -1865,62 +1567,12 @@ void Perform<RegI32>(BaseCompiler* bc, const MemoryAccessDesc& access,
                                  bc->specific_.ecx_ebx, rd);
 }
 
-template <>
-void Deallocate<RegI32>(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
+static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
   bc->freeI64(rnew);
-}
-
-
-
-
-
-
-
-
-
-
-template <>
-void PopAndAllocate<RegI64>(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
-                            RegI64* rd) {
-  
-  bc->needI32(bc->specific_.eax);
-  bc->needI32(bc->specific_.ecx);
-  bc->needI32(bc->specific_.edx);
-
-  
-  
-  RegI64 tmp(Register64(bc->specific_.ecx, bc->specific_.edx));
-  bc->popI64ToSpecific(tmp);
-  {
-    ScratchPtr tlsScratch(*bc);
-    bc->stashI64(tlsScratch, tmp);
-  }
-
-  *rexpect = bc->popI64ToSpecific(bc->specific_.edx_eax);
-  *rd = *rexpect;
-}
-
-template <>
-void Perform<RegI64>(BaseCompiler* bc, const MemoryAccessDesc& access,
-                     Address srcAddr, RegI64 rexpect, RegI64 rnew, RegI64 rd,
-                     ScratchAtomicNoHeapReg& scratch) {
-  MOZ_ASSERT(rnew.isInvalid());
-  rnew = bc->specific_.ecx_ebx;
-
-  bc->unstashI64(RegPtr(Register(bc->specific_.ecx)), rnew);
-  bc->masm.wasmCompareExchange64(access, srcAddr, rexpect, rnew, rd);
-}
-
-template <>
-void Deallocate<RegI64>(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
-  
-  
-  bc->free(bc->specific_.ecx);
 }
 
 #elif defined(JS_CODEGEN_ARM)
 
-template <typename RegIndexType>
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
                            RegI64* rd) {
   
@@ -1934,7 +1586,6 @@ static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
   bc->masm.wasmCompareExchange64(access, srcAddr, rexpect, rnew, rd);
 }
 
-template <typename RegIndexType>
 static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
   bc->freeI64(rexpect);
   bc->freeI64(rnew);
@@ -1942,7 +1593,6 @@ static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
 
 #elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64)
 
-template <typename RegIndexType>
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
                            RegI64* rd) {
   *rnew = bc->popI64();
@@ -1955,7 +1605,6 @@ static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
   bc->masm.wasmCompareExchange64(access, srcAddr, rexpect, rnew, rd);
 }
 
-template <typename RegIndexType>
 static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
   bc->freeI64(rexpect);
   bc->freeI64(rnew);
@@ -1963,26 +1612,23 @@ static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
 
 #elif defined(JS_CODEGEN_NONE)
 
-template <typename RegIndexType>
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
                            RegI64* rd) {}
 static void Perform(BaseCompiler* bc, const MemoryAccessDesc& access,
                     BaseIndex srcAddr, RegI64 rexpect, RegI64 rnew, RegI64 rd) {
 }
-template <typename RegIndexType>
 static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {}
 
 #endif
 
 }  
 
-template <typename RegIndexType>
 void BaseCompiler::atomicCmpXchg64(MemoryAccessDesc* access, ValType type) {
   RegI64 rexpect, rnew, rd;
-  atomic_cmpxchg64::PopAndAllocate<RegIndexType>(this, &rexpect, &rnew, &rd);
+  atomic_cmpxchg64::PopAndAllocate(this, &rexpect, &rnew, &rd);
 
   AccessCheck check;
-  RegIndexType rp = popMemoryAccess<RegIndexType>(access, &check);
+  RegI32 rp = popMemory32Access(access, &check);
 
 #ifdef RABALDR_HAS_HEAPREG
   RegPtr tls = maybeLoadTlsForAccess(check);
@@ -1992,14 +1638,13 @@ void BaseCompiler::atomicCmpXchg64(MemoryAccessDesc* access, ValType type) {
 #else
   ScratchAtomicNoHeapReg scratch(*this);
   RegPtr tls = maybeLoadTlsForAccess(check, RegIntptrToRegPtr(scratch));
-  Address memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
-  atomic_cmpxchg64::Perform<RegIndexType>(this, *access, memaddr, rexpect, rnew,
-                                          rd, scratch);
+  auto memaddr = prepareAtomicMemoryAccess(access, &check, tls, rp);
+  atomic_cmpxchg64::Perform(this, *access, memaddr, rexpect, rnew, rd, scratch);
   MOZ_ASSERT(tls == scratch);
 #endif
 
-  free(rp);
-  atomic_cmpxchg64::Deallocate<RegIndexType>(this, rexpect, rnew);
+  freeI32(rp);
+  atomic_cmpxchg64::Deallocate(this, rexpect, rnew);
 
   pushI64(rd);
 }
@@ -2015,17 +1660,12 @@ bool BaseCompiler::atomicWait(ValType type, MemoryAccessDesc* access,
       RegI64 timeout = popI64();
       RegI32 val = popI32();
 
-      if (isMem32()) {
-        computeEffectiveAddress<RegI32>(access);
-      } else {
-        computeEffectiveAddress<RegI64>(access);
-      }
+      computeEffectiveAddress(access);
 
       pushI32(val);
       pushI64(timeout);
 
-      if (!emitInstanceCall(lineOrBytecode,
-                            isMem32() ? SASigWaitI32M32 : SASigWaitI32M64)) {
+      if (!emitInstanceCall(lineOrBytecode, SASigWaitI32)) {
         return false;
       }
       break;
@@ -2034,31 +1674,12 @@ bool BaseCompiler::atomicWait(ValType type, MemoryAccessDesc* access,
       RegI64 timeout = popI64();
       RegI64 val = popI64();
 
-      if (isMem32()) {
-        computeEffectiveAddress<RegI32>(access);
-      } else {
-#ifdef JS_CODEGEN_X86
-        {
-          ScratchPtr scratch(*this);
-          stashI64(scratch, val);
-          freeI64(val);
-        }
-#endif
-        computeEffectiveAddress<RegI64>(access);
-#ifdef JS_CODEGEN_X86
-        {
-          ScratchPtr scratch(*this);
-          val = needI64();
-          unstashI64(scratch, val);
-        }
-#endif
-      }
+      computeEffectiveAddress(access);
 
       pushI64(val);
       pushI64(timeout);
 
-      if (!emitInstanceCall(lineOrBytecode,
-                            isMem32() ? SASigWaitI64M32 : SASigWaitI64M64)) {
+      if (!emitInstanceCall(lineOrBytecode, SASigWaitI64)) {
         return false;
       }
       break;
@@ -2074,22 +1695,17 @@ bool BaseCompiler::atomicWake(MemoryAccessDesc* access,
                               uint32_t lineOrBytecode) {
   RegI32 count = popI32();
 
-  if (isMem32()) {
-    computeEffectiveAddress<RegI32>(access);
-  } else {
-    computeEffectiveAddress<RegI64>(access);
-  }
+  computeEffectiveAddress(access);
 
   pushI32(count);
-  return emitInstanceCall(lineOrBytecode,
-                          isMem32() ? SASigWakeM32 : SASigWakeM64);
+  return emitInstanceCall(lineOrBytecode, SASigWake);
 }
 
 
 
 
 
-void BaseCompiler::memCopyInlineM32() {
+void BaseCompiler::emitMemCopyInline() {
   MOZ_ASSERT(MaxInlineMemoryCopyLength != 0);
 
   int32_t signedLength;
@@ -2294,7 +1910,7 @@ void BaseCompiler::memCopyInlineM32() {
   freeI32(src);
 }
 
-void BaseCompiler::memFillInlineM32() {
+void BaseCompiler::emitMemFillInline() {
   MOZ_ASSERT(MaxInlineMemoryFillLength != 0);
 
   int32_t signedLength;

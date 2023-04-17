@@ -74,8 +74,7 @@ SharedArrayRawBuffer* SharedArrayRawBuffer::AllocateInternal(
   uint64_t mappedSizeWithHeader = computedMappedSize + gc::SystemPageSize();
   uint64_t accessibleSizeWithHeader = accessibleSize + gc::SystemPageSize();
 
-  void* p = MapBufferMemory(wasmIndexType, mappedSizeWithHeader,
-                            accessibleSizeWithHeader);
+  void* p = MapBufferMemory(mappedSizeWithHeader, accessibleSizeWithHeader);
   if (!p) {
     return nullptr;
   }
@@ -130,7 +129,6 @@ void SharedArrayRawBuffer::tryGrowMaxPagesInPlace(Pages deltaMaxPages) {
 }
 
 bool SharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
-                                                  wasm::IndexType t,
                                                   wasm::Pages newPages) {
   
   
@@ -138,7 +136,7 @@ bool SharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
   if (newPages > wasmClampedMaxPages_) {
     return false;
   }
-  MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
+  MOZ_ASSERT(newPages <= wasm::MaxMemoryPages() &&
              newPages.byteLength() < ArrayBufferObject::maxBufferByteLength());
 
   
@@ -200,7 +198,7 @@ void SharedArrayRawBuffer::dropReference() {
   size_t mappedSizeWithHeader = mappedSize_ + gc::SystemPageSize();
 
   
-  UnmapBufferMemory(wasmIndexType(), basePointer(), mappedSizeWithHeader);
+  UnmapBufferMemory(basePointer(), mappedSizeWithHeader);
 }
 
 static bool IsSharedArrayBuffer(HandleValue v) {

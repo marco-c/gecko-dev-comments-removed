@@ -661,8 +661,7 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
 
 void LIRGenerator::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins) {
   MDefinition* base = ins->base();
-  
-  MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
+  MOZ_ASSERT(base->type() == MIRType::Int32);
 
   
 
@@ -675,8 +674,7 @@ void LIRGenerator::visitWasmCompareExchangeHeap(MWasmCompareExchangeHeap* ins) {
 
 void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
   MDefinition* base = ins->base();
-  
-  MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
+  MOZ_ASSERT(base->type() == MIRType::Int32);
 
   
 
@@ -687,8 +685,7 @@ void LIRGenerator::visitWasmAtomicExchangeHeap(MWasmAtomicExchangeHeap* ins) {
 
 void LIRGenerator::visitWasmAtomicBinopHeap(MWasmAtomicBinopHeap* ins) {
   MDefinition* base = ins->base();
-  
-  MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
+  MOZ_ASSERT(base->type() == MIRType::Int32);
 
   
 
@@ -909,9 +906,7 @@ void LIRGenerator::visitWasmHeapBase(MWasmHeapBase* ins) {
 
 void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
   MDefinition* base = ins->base();
-  
-  
-  MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
+  MOZ_ASSERT(base->type() == MIRType::Int32);
 
   LAllocation ptr = useRegisterOrConstantAtStart(base);
 
@@ -926,8 +921,7 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
 
 void LIRGenerator::visitWasmStore(MWasmStore* ins) {
   MDefinition* base = ins->base();
-  
-  MOZ_ASSERT(base->type() == MIRType::Int32 || base->type() == MIRType::Int64);
+  MOZ_ASSERT(base->type() == MIRType::Int32);
 
   MDefinition* value = ins->value();
 
@@ -1376,9 +1370,6 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
   
   
-
-  
-  
   
   
   LUse base = useRegisterAtStart(ins->base());
@@ -1394,8 +1385,6 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
 
 void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
-  
-
   LUse base = useRegisterAtStart(ins->base());
   LUse input = useRegisterAtStart(ins->value());
   MOZ_ASSERT(!ins->hasMemoryBase());

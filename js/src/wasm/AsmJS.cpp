@@ -6918,8 +6918,7 @@ static bool TryInstantiate(JSContext* cx, CallArgs args, const Module& module,
       return false;
     }
 
-    imports.get().memory =
-        WasmMemoryObject::create(cx, buffer,  false, nullptr);
+    imports.get().memory = WasmMemoryObject::create(cx, buffer, nullptr);
     if (!imports.get().memory) {
       return false;
     }
@@ -7352,7 +7351,7 @@ bool js::IsValidAsmJSHeapLength(size_t length) {
   }
 
   
-  if (length > MaxMemoryBytes(IndexType::I32)) {
+  if (length > MaxMemoryBytes()) {
     return false;
   }
 

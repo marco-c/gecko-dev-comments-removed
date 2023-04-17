@@ -182,68 +182,6 @@ bool wasm::ToIndexType(JSContext* cx, HandleValue value, IndexType* indexType) {
 
 
 
-
-
-
-
-
-
-
-
-
-static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
-
-
-
-
-static_assert(MaxMemoryAccessSize >= 8, "MaxMemoryAccessSize too low");
-static_assert(MaxMemoryAccessSize <= 64, "MaxMemoryAccessSize too high");
-static_assert((MaxMemoryAccessSize & (MaxMemoryAccessSize - 1)) == 0,
-              "MaxMemoryAccessSize is not a power of two");
-
-#ifdef WASM_SUPPORTS_HUGE_MEMORY
-
-static_assert(MaxMemoryAccessSize <= HugeUnalignedGuardPage,
-              "rounded up to static page size");
-static_assert(HugeOffsetGuardLimit < UINT32_MAX,
-              "checking for overflow against OffsetGuardLimit is enough.");
-
-
-#  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64))
-#    error "Not an expected configuration"
-#  endif
-
-#endif
-
-
-
-
-
-
-
-
-
-static const size_t OffsetGuardLimit = PageSize - MaxMemoryAccessSize;
-
-static_assert(MaxMemoryAccessSize < GuardSize,
-              "Guard page handles partial out-of-bounds");
-static_assert(OffsetGuardLimit < UINT32_MAX,
-              "checking for overflow against OffsetGuardLimit is enough.");
-
-size_t wasm::GetMaxOffsetGuardLimit(bool hugeMemory) {
-#ifdef WASM_SUPPORTS_HUGE_MEMORY
-  return hugeMemory ? HugeOffsetGuardLimit : OffsetGuardLimit;
-#else
-  return OffsetGuardLimit;
-#endif
-}
-
-
-
-static const size_t MinOffsetGuardLimit = OffsetGuardLimit;
-static_assert(MaxInlineMemoryCopyLength < MinOffsetGuardLimit, "precondition");
-static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
-
 #ifdef JS_64BIT
 #  ifdef ENABLE_WASM_CRANELIFT
 
@@ -253,41 +191,29 @@ static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
 
 
 
-wasm::Pages wasm::MaxMemoryPages(IndexType) {
+wasm::Pages wasm::MaxMemoryPages() {
   size_t desired = MaxMemory32LimitField - 2;
   size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
   return wasm::Pages(std::min(desired, actual));
 }
-#  else
-wasm::Pages wasm::MaxMemoryPages(IndexType t) {
-  size_t offsetGuardAllowance = 0;
-  if (t == IndexType::I64) {
-    
-    
-    
-    
-    MOZ_ASSERT(!IsHugeMemoryEnabled(t));
-    offsetGuardAllowance = OffsetGuardLimit;
-  }
 
-  size_t desired =
-      t == IndexType::I64 ? MaxMemory64LimitField : MaxMemory32LimitField;
-  size_t actual =
-      (ArrayBufferObject::maxBufferByteLength() - offsetGuardAllowance) /
-      PageSize;
+size_t wasm::MaxMemoryBoundsCheckLimit() {
+  return UINT32_MAX - 2 * PageSize + 1;
+}
+#  else
+wasm::Pages wasm::MaxMemoryPages() {
+  size_t desired = MaxMemory32LimitField;
+  size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
   return wasm::Pages(std::min(desired, actual));
 }
+
+size_t wasm::MaxMemoryBoundsCheckLimit() { return size_t(UINT32_MAX) + 1; }
 #  endif
-
-size_t wasm::MaxMemoryBoundsCheckLimit(IndexType t) {
-  return MaxMemoryPages(t).byteLength();
-}
-
 #else
 
 
 
-wasm::Pages wasm::MaxMemoryPages(IndexType t) {
+wasm::Pages wasm::MaxMemoryPages() {
   MOZ_ASSERT(ArrayBufferObject::maxBufferByteLength() >= INT32_MAX / PageSize);
   return wasm::Pages(INT32_MAX / PageSize);
 }
@@ -295,7 +221,7 @@ wasm::Pages wasm::MaxMemoryPages(IndexType t) {
 
 
 
-size_t wasm::MaxMemoryBoundsCheckLimit(IndexType t) {
+size_t wasm::MaxMemoryBoundsCheckLimit() {
   size_t boundsCheckLimit = size_t(INT32_MAX) + 1;
   MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
   return boundsCheckLimit;
@@ -336,7 +262,7 @@ uint64_t wasm::RoundUpToNextValidARMImmediate(uint64_t i) {
   return i;
 }
 
-Pages wasm::ClampedMaxPages(IndexType t, Pages initialPages,
+Pages wasm::ClampedMaxPages(Pages initialPages,
                             const Maybe<Pages>& sourceMaxPages,
                             bool useHugeMemory) {
   Pages clampedMaxPages;
@@ -344,7 +270,7 @@ Pages wasm::ClampedMaxPages(IndexType t, Pages initialPages,
   if (sourceMaxPages.isSome()) {
     
     
-    clampedMaxPages = std::min(*sourceMaxPages, wasm::MaxMemoryPages(t));
+    clampedMaxPages = std::min(*sourceMaxPages, wasm::MaxMemoryPages());
 
 #if defined(JS_64BIT) && defined(ENABLE_WASM_CRANELIFT)
     
@@ -374,13 +300,13 @@ Pages wasm::ClampedMaxPages(IndexType t, Pages initialPages,
   } else {
     
     
-    clampedMaxPages = wasm::MaxMemoryPages(t);
+    clampedMaxPages = wasm::MaxMemoryPages();
   }
 
   
   MOZ_RELEASE_ASSERT(sourceMaxPages.isNothing() ||
                      clampedMaxPages <= *sourceMaxPages);
-  MOZ_RELEASE_ASSERT(clampedMaxPages <= wasm::MaxMemoryPages(t));
+  MOZ_RELEASE_ASSERT(clampedMaxPages <= wasm::MaxMemoryPages());
   MOZ_RELEASE_ASSERT(initialPages <= clampedMaxPages);
 
   return clampedMaxPages;
@@ -419,3 +345,73 @@ uint64_t wasm::RoundUpToNextValidBoundsCheckImmediate(uint64_t i) {
   return i;
 #endif
 }
+
+
+
+
+
+
+
+
+
+
+static const unsigned MaxMemoryAccessSize = LitVal::sizeofLargestValue();
+
+
+
+
+static_assert(MaxMemoryAccessSize >= 8, "MaxMemoryAccessSize too low");
+static_assert(MaxMemoryAccessSize <= 64, "MaxMemoryAccessSize too high");
+static_assert((MaxMemoryAccessSize & (MaxMemoryAccessSize - 1)) == 0,
+              "MaxMemoryAccessSize is not a power of two");
+
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+
+static_assert(MaxMemoryAccessSize <= HugeUnalignedGuardPage,
+              "rounded up to static page size");
+static_assert(HugeOffsetGuardLimit < UINT32_MAX,
+              "checking for overflow against OffsetGuardLimit is enough.");
+
+
+#  if !(defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64))
+#    error "Not an expected configuration"
+#  endif
+
+
+
+
+
+
+
+
+
+#endif
+
+
+
+
+
+
+
+
+
+static const size_t OffsetGuardLimit = PageSize - MaxMemoryAccessSize;
+
+static_assert(MaxMemoryAccessSize < GuardSize,
+              "Guard page handles partial out-of-bounds");
+static_assert(OffsetGuardLimit < UINT32_MAX,
+              "checking for overflow against OffsetGuardLimit is enough.");
+
+size_t wasm::GetMaxOffsetGuardLimit(bool hugeMemory) {
+#ifdef WASM_SUPPORTS_HUGE_MEMORY
+  return hugeMemory ? HugeOffsetGuardLimit : OffsetGuardLimit;
+#else
+  return OffsetGuardLimit;
+#endif
+}
+
+
+
+static const size_t MinOffsetGuardLimit = OffsetGuardLimit;
+static_assert(MaxInlineMemoryCopyLength < MinOffsetGuardLimit, "precondition");
+static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
