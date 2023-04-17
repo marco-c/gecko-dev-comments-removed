@@ -2084,6 +2084,41 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
     loadState->SetIsExemptFromHTTPSOnlyMode(true);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  if (httpChannel) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+    if (referrerInfo) {
+      ReferrerPolicy referrerPolicy = referrerInfo->ReferrerPolicy();
+      nsCOMPtr<nsIURI> originalReferrer = referrerInfo->GetOriginalReferrer();
+      if (originalReferrer) {
+        
+        
+        nsCOMPtr<nsIReferrerInfo> newReferrerInfo =
+            new ReferrerInfo(originalReferrer, referrerPolicy);
+        loadState->SetReferrerInfo(newReferrerInfo);
+      }
+    }
+  }
+
   bc->LoadURI(loadState, false);
   return true;
 }
