@@ -2097,21 +2097,21 @@ impl<'a> Neg for &'a BigInt {
 impl CheckedAdd for BigInt {
     #[inline]
     fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 }
 
 impl CheckedSub for BigInt {
     #[inline]
     fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 }
 
 impl CheckedMul for BigInt {
     #[inline]
     fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 }
 
@@ -2121,7 +2121,7 @@ impl CheckedDiv for BigInt {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 }
 
@@ -2195,7 +2195,7 @@ impl Integer for BigInt {
     
     #[inline]
     fn divides(&self, other: &BigInt) -> bool {
-        return self.is_multiple_of(other);
+        self.is_multiple_of(other)
     }
 
     
@@ -2596,11 +2596,15 @@ impl BigInt {
     }
 
     
+    
+    
     #[inline]
     pub fn from_slice(sign: Sign, slice: &[u32]) -> BigInt {
         BigInt::from_biguint(sign, BigUint::from_slice(slice))
     }
 
+    
+    
     
     #[inline]
     pub fn assign_from_slice(&mut self, sign: Sign, slice: &[u32]) {
@@ -2788,10 +2792,29 @@ impl BigInt {
     
     
     
+    
+    
+    
+    
+    #[inline]
+    pub fn to_u32_digits(&self) -> (Sign, Vec<u32>) {
+        (self.sign, self.data.to_u32_digits())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn to_signed_bytes_be(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_be();
-        let first_byte = bytes.first().map(|v| *v).unwrap_or(0);
+        let first_byte = bytes.first().cloned().unwrap_or(0);
         if first_byte > 0x7f
             && !(first_byte == 0x80
                 && bytes.iter().skip(1).all(Zero::is_zero)
@@ -2819,7 +2842,7 @@ impl BigInt {
     #[inline]
     pub fn to_signed_bytes_le(&self) -> Vec<u8> {
         let mut bytes = self.data.to_bytes_le();
-        let last_byte = bytes.last().map(|v| *v).unwrap_or(0);
+        let last_byte = bytes.last().cloned().unwrap_or(0);
         if last_byte > 0x7f
             && !(last_byte == 0x80
                 && bytes.iter().rev().skip(1).all(Zero::is_zero)
@@ -2930,17 +2953,17 @@ impl BigInt {
 
     #[inline]
     pub fn checked_add(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.add(v));
+        Some(self.add(v))
     }
 
     #[inline]
     pub fn checked_sub(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.sub(v));
+        Some(self.sub(v))
     }
 
     #[inline]
     pub fn checked_mul(&self, v: &BigInt) -> Option<BigInt> {
-        return Some(self.mul(v));
+        Some(self.mul(v))
     }
 
     #[inline]
@@ -2948,7 +2971,7 @@ impl BigInt {
         if v.is_zero() {
             return None;
         }
-        return Some(self.div(v));
+        Some(self.div(v))
     }
 
     
@@ -2972,7 +2995,10 @@ impl BigInt {
         }
 
         
-        let (sign, mag) = match (self.is_negative(), modulus.is_negative()) {
+        let (sign, mag) = match (
+            self.is_negative() && exponent.is_odd(),
+            modulus.is_negative(),
+        ) {
             (false, false) => (Plus, result),
             (true, false) => (Plus, &modulus.data - result),
             (false, true) => (Minus, &modulus.data - result),

@@ -14,6 +14,9 @@ use bigint::{into_magnitude, magnitude};
 use integer::Integer;
 use traits::Zero;
 
+
+
+
 pub trait RandBigInt {
     
     fn gen_biguint(&mut self, bit_size: usize) -> BigUint;
@@ -189,6 +192,8 @@ impl UniformSampler for UniformBigInt {
 impl SampleUniform for BigInt {
     type Sampler = UniformBigInt;
 }
+
+
 
 
 #[derive(Clone, Copy, Debug)]
