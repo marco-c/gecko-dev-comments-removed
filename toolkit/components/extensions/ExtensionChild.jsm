@@ -55,6 +55,7 @@ const { ExtensionUtils } = ChromeUtils.import(
 const { DefaultMap, ExtensionError, LimitedSet, getUniqueId } = ExtensionUtils;
 
 const {
+  defineLazyGetter,
   EventEmitter,
   EventManager,
   LocalAPIImplementation,
@@ -250,8 +251,9 @@ class Port {
 
   constructor(context, portId, name, native, sender) {
     this.context = context;
+    this.name = name;
+    this.sender = sender;
     this.holdMessage = native ? data => holdMessage(data, this) : holdMessage;
-
     this.conduit = context.openConduit(this, {
       portId,
       native,
@@ -259,21 +261,26 @@ class Port {
       recv: ["PortMessage", "PortDisconnect"],
       send: ["PortMessage"],
     });
+    this.initEventManagers();
+  }
 
+  initEventManagers() {
+    const { context } = this;
     this.onMessage = new SimpleEventAPI(context, "Port.onMessage");
     this.onDisconnect = new SimpleEventAPI(context, "Port.onDisconnect");
+  }
 
+  getAPI() {
     
-    let api = {
-      name,
-      sender,
+    return {
+      name: this.name,
+      sender: this.sender,
       error: null,
       onMessage: this.onMessage.api(),
       onDisconnect: this.onDisconnect.api(),
       postMessage: this.sendPortMessage.bind(this),
       disconnect: () => this.conduit.close(),
     };
-    this.api = Cu.cloneInto(api, context.cloneScope, { cloneFunctions: true });
   }
 
   recvPortMessage({ holder }) {
@@ -295,6 +302,11 @@ class Port {
     throw new this.context.Error("Attempt to postMessage on disconnected port");
   }
 }
+
+defineLazyGetter(Port.prototype, "api", function() {
+  let api = this.getAPI();
+  return Cu.cloneInto(api, this.context.cloneScope, { cloneFunctions: true });
+});
 
 
 
@@ -1027,6 +1039,86 @@ class WorkerMessageEvent extends MessageEvent {
 
 
 
+
+class WorkerPortEvent extends SimpleEventAPI {
+  api() {
+    return {
+      ...super.api(),
+      createListenerForAPIRequest: (...args) =>
+        this.createListenerForAPIRequest(...args),
+    };
+  }
+
+  createListenerForAPIRequest(request) {
+    const { eventListener } = request;
+    switch (this.name) {
+      case "Port.onDisconnect":
+        return function(port) {
+          eventListener.callListener([], {
+            apiObjectType: Ci.mozIExtensionListenerCallOptions.RUNTIME_PORT,
+            apiObjectDescriptor: {
+              portId: port.portId,
+              name: port.name,
+            },
+          });
+        };
+      case "Port.onMessage":
+        return function(message, port) {
+          eventListener.callListener([message], {
+            apiObjectType: Ci.mozIExtensionListenerCallOptions.RUNTIME_PORT,
+            apiObjectDescriptor: {
+              portId: port.portId,
+              name: port.name,
+            },
+          });
+        };
+    }
+    return undefined;
+  }
+}
+
+
+
+
+class WorkerPort extends Port {
+  constructor(context, portId, name, native, sender) {
+    const { viewType, contextId } = context;
+    if (viewType !== "background_worker") {
+      throw new Error(
+        `Unexpected viewType "${viewType}" on context ${contextId}`
+      );
+    }
+
+    super(context, portId, name, native, sender);
+    this.portId = portId;
+  }
+
+  initEventManagers() {
+    const { context } = this;
+    this.onMessage = new WorkerPortEvent(context, "Port.onMessage");
+    this.onDisconnect = new WorkerPortEvent(context, "Port.onDisconnect");
+  }
+
+  getAPI() {
+    const api = super.getAPI();
+    
+    
+    
+    api.portId = this.portId;
+    return api;
+  }
+}
+
+defineLazyGetter(WorkerPort.prototype, "api", function() {
+  
+  
+  
+  return this.getAPI();
+});
+
+
+
+
 class WorkerMessenger extends Messenger {
   constructor(context) {
     const { viewType, contextId } = context;
@@ -1069,8 +1161,7 @@ class WorkerMessenger extends Messenger {
 
   connect({ name, native, ...args }) {
     let portId = getUniqueId();
-    
-    let port = new Port(this.context, portId, name, !!native);
+    let port = new WorkerPort(this.context, portId, name, !!native);
     this.conduit
       .queryPortConnect({ portId, name, native, ...args })
       .catch(error => port.recvPortDisconnect({ error }));
@@ -1085,8 +1176,7 @@ class WorkerMessenger extends Messenger {
   recvPortConnect({ extensionId, portId, name, sender }) {
     let event = sender.id === extensionId ? this.onConnect : this.onConnectEx;
     if (this.context.active && event.fires.size) {
-      
-      let port = new Port(this.context, portId, name, false, sender);
+      let port = new WorkerPort(this.context, portId, name, false, sender);
       this.portsById.set(`${port.portId}`, port);
       return event.emit(port).length;
     }
