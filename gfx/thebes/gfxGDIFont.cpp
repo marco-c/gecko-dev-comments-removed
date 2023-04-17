@@ -119,67 +119,29 @@ void gfxGDIFont::Initialize() {
 
   if (mAdjustedSize == 0.0) {
     mAdjustedSize = GetAdjustedSize();
-    if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
-        FontSizeAdjust::Tag::None) {
-      if (mStyle.sizeAdjust > 0.0 && mAdjustedSize > 0.0) {
-        
-        FillLogFont(logFont, mAdjustedSize);
-        mFont = ::CreateFontIndirectW(&logFont);
+    if (mStyle.sizeAdjust > 0.0 && mAdjustedSize > 0.0) {
+      
+      FillLogFont(logFont, mAdjustedSize);
+      mFont = ::CreateFontIndirectW(&logFont);
 
-        
-        Initialize();
+      
+      Initialize();
 
-        
-        
-        
-        if (mMetrics->emHeight > 0.0) {
-          gfxFloat aspect;
-          switch (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis)) {
-            default:
-              MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
-              aspect = 0.0;
-              break;
-            case FontSizeAdjust::Tag::Ex:
-              aspect = mMetrics->xHeight / mMetrics->emHeight;
-              break;
-            case FontSizeAdjust::Tag::Cap:
-              aspect = mMetrics->capHeight / mMetrics->emHeight;
-              break;
-            case FontSizeAdjust::Tag::Ch:
-              aspect = GetCharAdvance('0');
-              if (aspect < 0.0) {
-                
-                aspect = 0.5;
-              } else {
-                aspect /= mMetrics->emHeight;
-              }
-              break;
-            case FontSizeAdjust::Tag::Ic:
-              
-              
-              
-              aspect = GetCharAdvance(0x6C34);
-              if (aspect < 0.0) {
-                
-                aspect = 1.0;
-              } else {
-                aspect /= mMetrics->emHeight;
-              }
-              break;
-          }
-          if (aspect > 0.0) {
-            mAdjustedSize = mStyle.GetAdjustedSize(aspect);
-          }
-        }
-
-        
-        ::DeleteObject(mFont);
-        mFont = nullptr;
-        delete mMetrics;
-        mMetrics = nullptr;
-      } else {
-        mAdjustedSize = 0.0;
+      
+      
+      
+      if (mMetrics->xHeight > 0.0 && mMetrics->emHeight > 0.0) {
+        gfxFloat aspect = mMetrics->xHeight / mMetrics->emHeight;
+        mAdjustedSize = mStyle.GetAdjustedSize(aspect);
       }
+
+      
+      ::DeleteObject(mFont);
+      mFont = nullptr;
+      delete mMetrics;
+      mMetrics = nullptr;
+    } else if (mStyle.sizeAdjust == 0.0) {
+      mAdjustedSize = 0.0;
     }
   }
 

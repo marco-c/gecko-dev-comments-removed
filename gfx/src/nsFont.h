@@ -41,8 +41,8 @@ struct nsFont final {
   
   
   
-  mozilla::StyleFontSizeAdjust sizeAdjust =
-      mozilla::StyleFontSizeAdjust::None();
+  
+  float sizeAdjust = -1.0f;
 
   
   
