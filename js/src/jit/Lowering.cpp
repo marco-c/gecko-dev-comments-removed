@@ -1378,6 +1378,8 @@ void LIRGenerator::visitMinMax(MMinMax* ins) {
       MOZ_CRASH();
   }
 
+  
+  
   defineReuseInput(lir, ins, 0);
 }
 
@@ -2419,6 +2421,8 @@ void LIRGenerator::visitWasmExtendU32Index(MWasmExtendU32Index* ins) {
   MOZ_ASSERT(input->type() == MIRType::Int32);
   MOZ_ASSERT(ins->type() == MIRType::Int64);
 
+  
+  
   auto* lir = new (alloc()) LWasmExtendU32Index(useRegisterAtStart(input));
   defineReuseInput(lir, ins, 0);
 #else
@@ -2432,6 +2436,8 @@ void LIRGenerator::visitWasmWrapU32Index(MWasmWrapU32Index* ins) {
   MOZ_ASSERT(input->type() == MIRType::Int64);
   MOZ_ASSERT(ins->type() == MIRType::Int32);
 
+  
+  
   auto* lir = new (alloc()) LWasmWrapU32Index(useRegisterAtStart(input));
   defineReuseInput(lir, ins, 0);
 #else
