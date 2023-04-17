@@ -358,6 +358,20 @@ function getPropNamesFromObject(obj, rawObj) {
 
 
 
+function getSafePrivatePropertiesSymbols(obj) {
+  try {
+    return obj.getOwnPrivateProperties();
+  } catch (ex) {
+    return [];
+  }
+}
+
+
+
+
+
+
+
 function getSafeOwnPropertySymbols(obj) {
   try {
     return obj.getOwnPropertySymbols();
@@ -533,6 +547,7 @@ module.exports = {
   getPropsForEvent,
   getPropNamesFromObject,
   getSafeOwnPropertySymbols,
+  getSafePrivatePropertiesSymbols,
   getModifiersForEvent,
   isObjectOrFunction,
   createStringGrip,
