@@ -44,7 +44,7 @@ class MediaEngineWebRTC : public MediaEngine {
   typedef MediaEngine Super;
 
  public:
-  explicit MediaEngineWebRTC(MediaEnginePrefs& aPrefs);
+  MediaEngineWebRTC();
 
   
   
@@ -75,8 +75,6 @@ class MediaEngineWebRTC : public MediaEngine {
 
   static void FakeDeviceChangeEventTimerTick(nsITimer* aTimer, void* aClosure);
 
-  const bool mDelayAgnostic;
-  const bool mExtendedFilter;
   
   
   bool mHasTabVideoSource;

@@ -33,8 +33,7 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
                                     const nsString& aDeviceName,
                                     const nsCString& aDeviceUUID,
                                     const nsString& aDeviceGroup,
-                                    uint32_t aMaxChannelCount,
-                                    bool aDelayAgnostic, bool aExtendedFilter);
+                                    uint32_t aMaxChannelCount);
 
   nsString GetName() const override;
   nsCString GetUUID() const override;
@@ -87,24 +86,9 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   void ApplySettings(const MediaEnginePrefs& aPrefs);
 
-  
-
-
-  void UpdateAECSettings(bool aEnable, bool aUseAecMobile);
-  void UpdateAGCSettings(
-      bool aEnable,
-      webrtc::AudioProcessing::Config::GainController1::Mode aMode);
-  void UpdateHPFSettings(bool aEnable);
-  void UpdateNSSettings(
-      bool aEnable,
-      webrtc::AudioProcessing::Config::NoiseSuppression::Level aLevel);
-  void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
-
   PrincipalHandle mPrincipal = PRINCIPAL_HANDLE_NONE;
 
   const RefPtr<AudioDeviceInfo> mDeviceInfo;
-  const bool mDelayAgnostic;
-  const bool mExtendedFilter;
   const nsString mDeviceName;
   const nsCString mDeviceUUID;
   const nsString mDeviceGroup;
@@ -129,6 +113,10 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
+
+  
+  
+  webrtc::AudioProcessing::Config mAudioProcessingConfig;
 };
 
 
@@ -186,15 +174,9 @@ class AudioInputProcessing : public AudioDataListener {
 
   
   
-  void UpdateAECSettings(bool aEnable, bool aUseAecMobile);
-  void UpdateAGCSettings(
-      bool aEnable,
-      webrtc::AudioProcessing::Config::GainController1::Mode aMode);
-  void UpdateHPFSettings(bool aEnable);
-  void UpdateNSSettings(
-      bool aEnable,
-      webrtc::AudioProcessing::Config::NoiseSuppression::Level aLevel);
-  void UpdateAPMExtraOptions(bool aExtendedFilter, bool aDelayAgnostic);
+  
+  void ApplyConfig(MediaTrackGraphImpl* aGraph,
+                   const webrtc::AudioProcessing::Config& aConfig);
 
   void End();
 
