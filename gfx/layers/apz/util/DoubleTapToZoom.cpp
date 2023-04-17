@@ -29,6 +29,13 @@ namespace {
 
 using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
+static bool IsGeneratedContent(nsIContent* aContent) {
+  
+  
+  return aContent->IsGeneratedContentContainerForBefore() ||
+         aContent->IsGeneratedContentContainerForAfter();
+}
+
 
 
 
@@ -46,7 +53,8 @@ static already_AddRefed<dom::Element> ElementFromPoint(
       RelativeTo{rootFrame, ViewportType::Visual}, CSSPoint::ToAppUnits(aPoint),
       {{FrameForPointOption::IgnorePaintSuppression}});
   while (frame && (!frame->GetContent() ||
-                   frame->GetContent()->IsInNativeAnonymousSubtree())) {
+                   (frame->GetContent()->IsInNativeAnonymousSubtree() &&
+                    !IsGeneratedContent(frame->GetContent())))) {
     frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
   }
   if (!frame) {
