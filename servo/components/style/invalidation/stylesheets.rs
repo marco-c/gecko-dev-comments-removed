@@ -543,6 +543,7 @@ impl StylesheetInvalidationSet {
             FontFeatureValues(..) |
             FontFace(..) |
             Keyframes(..) |
+            ScrollTimeline(..) |
             Style(..) => {
                 if is_generic_change {
                     
@@ -617,6 +618,10 @@ impl StylesheetInvalidationSet {
                     
                     
                 }
+            },
+            ScrollTimeline(..) => {
+                
+                
             },
             CounterStyle(..) | Page(..) | Viewport(..) | FontFeatureValues(..) => {
                 debug!(
