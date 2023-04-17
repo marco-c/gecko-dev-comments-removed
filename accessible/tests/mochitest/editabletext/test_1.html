@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=452161
+-->
 <head>
   <title>nsIAccessibleEditableText chrome tests</title>
   <link rel="stylesheet" type="text/css"
@@ -29,7 +29,7 @@
       // ////////////////////////////////////////////////////////////////////////
       // setTextContents
       et.scheduleTest(et.setTextContents, "hello", startOffset);
-      et.scheduleTest(et.setTextContents, "olleh", startOffset);
+      et.scheduleTest(et.setTextContents, "katze", startOffset);
       et.scheduleTest(et.setTextContents, "", startOffset);
 
       // ////////////////////////////////////////////////////////////////////////
