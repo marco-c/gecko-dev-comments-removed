@@ -180,8 +180,7 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIWidget* aWidget,
 
     
     
-    if ((XRE_IsContentProcess() &&
-         Preferences::GetBool("print.print_via_parent")) ||
+    if ((XRE_IsContentProcess() && StaticPrefs::print_print_via_parent()) ||
         mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
       return NS_OK;
     }

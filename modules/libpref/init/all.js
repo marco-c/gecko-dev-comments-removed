@@ -976,13 +976,6 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-#if !defined(MOZ_WIDGET_ANDROID)
-  pref("print.print_via_parent", true);
-#else
-  pref("print.print_via_parent", false);
-#endif
-
-
 #if defined(ANDROID) || defined(XP_UNIX) && !defined(XP_MACOSX)
   pref("print.print_reversed", false);
   
