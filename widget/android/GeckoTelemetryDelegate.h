@@ -50,9 +50,8 @@ class GeckoTelemetryDelegate final
     }
 
     
-    mProxy->DispatchHistogram(
-        aIsCategorical, aName,
-        mozilla::jni::LongArray::New(samples.Elements(), samples.Length()));
+    mProxy->DispatchHistogram(aIsCategorical, aName,
+                              mozilla::jni::LongArray::From(samples));
   }
 
   
