@@ -224,7 +224,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   }
 
   bool needToSaveCallerArgs() const {
-    return op_ == JSOp::FunApply || IsIonInlinableGetterOrSetterOp(op_);
+    return IsIonInlinableGetterOrSetterOp(op_);
   }
 
   [[nodiscard]] bool enlarge() {
@@ -763,11 +763,6 @@ bool BaselineStackBuilder::fixUpCallerArgs(
     
     
     inlinedArgs += GET_ARGC(pc_) > 0 ? GET_ARGC(pc_) - 1 : 0;
-  } else if (op_ == JSOp::FunApply) {
-    
-    
-    
-    inlinedArgs += blFrame()->numActualArgs();
   } else {
     MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op_));
     
@@ -825,19 +820,6 @@ bool BaselineStackBuilder::fixUpCallerArgs(
       }
       
       iter_.skip();
-    }
-  } else if (op_ == JSOp::FunApply) {
-    
-    
-    
-    
-    JitSpew(JitSpew_BaselineBailouts,
-            "      pushing 4x undefined to fixup funapply");
-    if (!writeValue(UndefinedValue(), "StackValue") ||
-        !writeValue(UndefinedValue(), "StackValue") ||
-        !writeValue(UndefinedValue(), "StackValue") ||
-        !writeValue(UndefinedValue(), "StackValue")) {
-      return false;
     }
   }
 
@@ -990,12 +972,8 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   if (needToSaveCallerArgs()) {
     
     
-    if (op_ == JSOp::FunApply) {
-      actualArgc = blFrame()->numActualArgs();
-    } else {
-      actualArgc = IsSetPropOp(op_);
-    }
     callee = savedCallerArgs[0];
+    actualArgc = IsSetPropOp(op_) ? 1 : 0;
 
     
     size_t afterFrameSize =
@@ -1317,13 +1295,6 @@ bool BaselineStackBuilder::validateFrame() {
     return true;
   }
 
-  
-  
-  
-  
-  if (op_ == JSOp::FunApply && iter_.moreFrames() && !resumeAfter()) {
-    return true;
-  }
   if (op_ == JSOp::FunCall) {
     
     

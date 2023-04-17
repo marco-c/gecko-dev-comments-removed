@@ -90,19 +90,14 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
         
         
         MOZ_ASSERT(stackDepth - exprStack <= 1);
-      } else if (bailOp != JSOp::FunApply &&
-                 !IsIonInlinableGetterOrSetterOp(bailOp)) {
-        
-        
-        
-        
-
+      } else {
         
         
         
         
         
-        MOZ_ASSERT(exprStack == stackDepth);
+        MOZ_ASSERT_IF(!IsIonInlinableGetterOrSetterOp(bailOp),
+                      exprStack == stackDepth);
       }
     }
   }
