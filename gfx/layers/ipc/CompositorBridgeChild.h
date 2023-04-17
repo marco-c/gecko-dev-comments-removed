@@ -208,11 +208,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   bool NotifyBeginAsyncEndLayerTransaction(SyncObjectClient* aSyncObject);
 
-  
-  
-  
-  void NotifyFinishedAsyncEndLayerTransaction();
-
  private:
   
   virtual ~CompositorBridgeChild();
