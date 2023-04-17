@@ -18,6 +18,9 @@ loader.lazyRequireGetter(
   true
 );
 
+
+
+
 class NetworkEventWatcher {
   
 
@@ -45,6 +48,14 @@ class NetworkEventWatcher {
     );
 
     this.listener.init();
+  }
+
+  get conn() {
+    return this.watcherActor.conn;
+  }
+
+  get browserId() {
+    return this.watcherActor.browserId;
   }
 
   

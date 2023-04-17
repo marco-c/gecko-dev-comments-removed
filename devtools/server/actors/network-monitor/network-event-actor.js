@@ -29,15 +29,15 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     { onNetworkEventUpdate, onNetworkEventDestroy },
     networkEvent
   ) {
-    this.networkEventWatcher = networkEventWatcher;
-    this.conn = this.networkEventWatcher.watcherActor.conn;
-    this.onNetworkEventUpdate = onNetworkEventUpdate;
-    this.onNetworkEventDestroy = onNetworkEventDestroy;
+    this._networkEventWatcher = networkEventWatcher;
+    this._conn = networkEventWatcher.conn;
+    this._onNetworkEventUpdate = onNetworkEventUpdate;
+    this._onNetworkEventDestroy = onNetworkEventDestroy;
 
     this.asResource = this.asResource.bind(this);
 
     
-    protocol.Actor.prototype.initialize.call(this, this.conn);
+    protocol.Actor.prototype.initialize.call(this, this._conn);
 
     this._request = {
       method: networkEvent.method || null,
@@ -104,10 +104,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
     
     
-    if (
-      !this._browsingContextID &&
-      this.networkEventWatcher.watcherActor.browserId
-    ) {
+    if (!this._browsingContextID && this._networkEventWatcher.browserId) {
       throw new Error(
         `Got a request ${this._request.url} without a browsingContextID set`
       );
@@ -141,14 +138,13 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   destroy(conn) {
-    if (!this.networkEventWatcher) {
+    if (!this._networkEventWatcher) {
       return;
     }
     if (this._channelId) {
-      this.onNetworkEventDestroy(this._channelId);
+      this._onNetworkEventDestroy(this._channelId);
     }
-
-    this.networkEventWatcher = null;
+    this._networkEventWatcher = null;
     protocol.Actor.prototype.destroy.call(this, conn);
   },
 
@@ -295,7 +291,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._prepareHeaders(headers);
 
     if (rawHeaders) {
-      rawHeaders = new LongStringActor(this.conn, rawHeaders);
+      rawHeaders = new LongStringActor(this._conn, rawHeaders);
       
       
       this.manage(rawHeaders);
@@ -340,7 +336,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     }
 
     this._request.postData = postData;
-    postData.text = new LongStringActor(this.conn, postData.text);
+    postData.text = new LongStringActor(this._conn, postData.text);
     
     
     this.manage(postData.text);
@@ -363,7 +359,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       return;
     }
 
-    rawHeaders = new LongStringActor(this.conn, rawHeaders);
+    rawHeaders = new LongStringActor(this._conn, rawHeaders);
     
     
     this.manage(rawHeaders);
@@ -461,7 +457,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
     this._truncated = truncated;
     this._response.content = content;
-    content.text = new LongStringActor(this.conn, content.text);
+    content.text = new LongStringActor(this._conn, content.text);
     
     
     this.manage(content.text);
@@ -537,7 +533,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
   _prepareHeaders(headers) {
     for (const header of headers) {
-      header.value = new LongStringActor(this.conn, header.value);
+      header.value = new LongStringActor(this._conn, header.value);
       
       
       this.manage(header.value);
@@ -553,7 +549,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   _onEventUpdate(updateType, data) {
-    this.onNetworkEventUpdate({
+    this._onNetworkEventUpdate({
       resourceId: this._channelId,
       updateType,
       ...data,
