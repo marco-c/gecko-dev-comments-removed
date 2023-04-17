@@ -5907,16 +5907,21 @@ bool nsContentUtils::CheckForSubFrameDrop(nsIDragSession* aDragSession,
     return false;
   }
 
+  WindowContext* targetWC = target->OwnerDoc()->GetWindowContext();
+
   
   
-  RefPtr<Document> doc(aDragSession->GetSourceDocument());
-  if (doc && doc->GetBrowsingContext()) {
+  RefPtr<WindowContext> sourceWC;
+  aDragSession->GetSourceWindowContext(getter_AddRefs(sourceWC));
+  if (sourceWC) {
     
     
-    for (BrowsingContext* bc = doc->GetBrowsingContext()->GetParent(); bc;
-         bc = bc->GetParent()) {
-      if (bc == targetBC) {
-        
+    for (sourceWC = sourceWC->GetParentWindowContext(); sourceWC;
+         sourceWC = sourceWC->GetParentWindowContext()) {
+      
+      
+      
+      if (sourceWC == targetWC || sourceWC->IsDiscarded()) {
         return true;
       }
     }

@@ -3840,9 +3840,9 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         if (nsCOMPtr<nsIDragSession> dragSession =
                 nsContentUtils::GetDragSession()) {
           MOZ_ASSERT(dragSession->IsSynthesizedForTests());
-          RefPtr<Document> sourceDocument;
+          RefPtr<WindowContext> sourceWC;
           DebugOnly<nsresult> rvIgnored =
-              dragSession->GetSourceDocument(getter_AddRefs(sourceDocument));
+              dragSession->GetSourceWindowContext(getter_AddRefs(sourceWC));
           NS_WARNING_ASSERTION(
               NS_SUCCEEDED(rvIgnored),
               "nsIDragSession::GetSourceDocument() failed, but ignored");
@@ -3851,7 +3851,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           
           
-          if (sourceDocument) {
+          if (sourceWC) {
             CSSIntPoint dropPointInScreen =
                 Event::GetScreenCoords(aPresContext, aEvent, aEvent->mRefPoint);
             dragSession->SetDragEndPointForTests(dropPointInScreen.x,

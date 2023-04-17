@@ -175,6 +175,8 @@ class nsBaseDragService : public nsIDragService, public nsIDragSession {
   
   RefPtr<mozilla::dom::Document> mSourceDocument;
 
+  RefPtr<mozilla::dom::WindowContext> mSourceWindowContext;
+
   
   
   nsContentPolicyType mContentPolicyType;
