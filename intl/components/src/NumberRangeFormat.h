@@ -4,6 +4,7 @@
 #ifndef intl_components_NumberRangeFormat_h_
 #define intl_components_NumberRangeFormat_h_
 
+#include "mozilla/FloatingPoint.h"
 #include "mozilla/intl/NumberFormat.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -138,6 +139,84 @@ class NumberRangeFormat final {
 
 
 
+  Result<std::u16string_view, FormatError> formatToParts(
+      double start, double end, NumberPartVector& parts) const {
+    if (!formatInternal(start, end)) {
+      return Err(FormatError::InternalError);
+    }
+
+    bool isNegativeStart = !IsNaN(start) && IsNegative(start);
+    bool isNegativeEnd = !IsNaN(end) && IsNegative(end);
+
+    return formatResultToParts(Some(start), isNegativeStart, Some(end),
+                               isNegativeEnd, parts);
+  }
+
+  
+
+
+
+
+
+
+  Result<std::u16string_view, FormatError> format(std::string_view start,
+                                                  std::string_view end) const {
+    if (!formatInternal(start, end)) {
+      return Err(FormatError::InternalError);
+    }
+
+    return formatResult();
+  }
+
+  
+
+
+
+
+
+
+
+  Result<std::u16string_view, FormatError> formatToParts(
+      std::string_view start, std::string_view end,
+      NumberPartVector& parts) const {
+    if (!formatInternal(start, end)) {
+      return Err(FormatError::InternalError);
+    }
+
+    Maybe<double> numStart = Nothing();
+    if (start == "Infinity" || start == "+Infinity") {
+      numStart.emplace(PositiveInfinity<double>());
+    } else if (start == "-Infinity") {
+      numStart.emplace(NegativeInfinity<double>());
+    } else {
+      
+      MOZ_ASSERT(start != "NaN");
+    }
+
+    Maybe<double> numEnd = Nothing();
+    if (end == "Infinity" || end == "+Infinity") {
+      numEnd.emplace(PositiveInfinity<double>());
+    } else if (end == "-Infinity") {
+      numEnd.emplace(NegativeInfinity<double>());
+    } else {
+      
+      MOZ_ASSERT(end != "NaN");
+    }
+
+    bool isNegativeStart = !start.empty() && start[0] == '-';
+    bool isNegativeEnd = !end.empty() && end[0] == '-';
+
+    return formatResultToParts(numStart, isNegativeStart, numEnd, isNegativeEnd,
+                               parts);
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -151,13 +230,23 @@ class NumberRangeFormat final {
  private:
   UNumberRangeFormatter* mNumberRangeFormatter = nullptr;
   UFormattedNumberRange* mFormattedNumberRange = nullptr;
+  bool mFormatForUnit = false;
+  bool mFormatWithApprox = false;
 
   Result<Ok, FormatError> initialize(std::string_view aLocale,
                                      const NumberRangeFormatOptions& aOptions);
 
   [[nodiscard]] bool formatInternal(double start, double end) const;
 
+  [[nodiscard]] bool formatInternal(std::string_view start,
+                                    std::string_view end) const;
+
   Result<std::u16string_view, FormatError> formatResult() const;
+
+  Result<std::u16string_view, NumberRangeFormat::FormatError>
+  formatResultToParts(Maybe<double> start, bool startIsNegative,
+                      Maybe<double> end, bool endIsNegative,
+                      NumberPartVector& parts) const;
 #endif
 };
 
