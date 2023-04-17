@@ -1741,7 +1741,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       sScheduler.NoteGCSliceEnd(aDesc.lastSliceEnd(aCx) -
                                 aDesc.lastSliceStart(aCx));
 
-      if (sShuttingDown || aDesc.isComplete_) {
+      if (sShuttingDown) {
         sScheduler.KillGCRunner();
       } else {
         

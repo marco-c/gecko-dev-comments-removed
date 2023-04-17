@@ -34,6 +34,14 @@ void CCGCScheduler::NoteGCEnd() {
   mLikelyShortLivingObjectsNeedingGC = 0;
 }
 
+void CCGCScheduler::NoteWontGC() {
+  mReadyForMajorGC = false;
+  mMajorGCReason = JS::GCReason::NO_REASON;
+  mWantAtLeastRegularGC = false;
+  
+  
+}
+
 bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
   MOZ_ASSERT(!mDidShutdown, "GCRunner still alive during shutdown");
 
@@ -45,25 +53,61 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
     case GCRunnerAction::WaitToMajorGC: {
       RefPtr<CCGCScheduler::MayGCPromise> mbPromise =
           CCGCScheduler::MayGCNow(step.mReason);
-      if (!mbPromise || mbPromise->IsResolved()) {
-        
+      if (!mbPromise) {
         
         break;
+      }
+
+      if (mbPromise->IsResolved()) {
+        
+        
+        mbPromise->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [this, aDeadline, step](bool aMayGC) {
+              MOZ_ASSERT(!InIncrementalGC());
+              if (aMayGC) {
+                MOZ_ALWAYS_TRUE(NoteReadyForMajorGC());
+                GCRunnerFiredDoGC(aDeadline, step);
+              } else {
+                KillGCRunner();
+                NoteWontGC();
+              }
+            },
+            [this](mozilla::ipc::ResponseRejectReason r) {
+              if (!InIncrementalGC()) {
+                KillGCRunner();
+                NoteWontGC();
+              }
+            });
+        return true;
       }
 
       KillGCRunner();
       mbPromise->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [this](bool aIgnored) {
-            if (!NoteReadyForMajorGC()) {
-              return;  
+          [this](bool aMayGC) {
+            if (aMayGC) {
+              if (!NoteReadyForMajorGC()) {
+                
+                return;
+              }
+              
+              
+              KillGCRunner();
+              EnsureGCRunner(0);
+            } else if (!InIncrementalGC()) {
+              
+              
+              KillGCRunner();
+              NoteWontGC();
             }
-            
-            
-            KillGCRunner();
-            EnsureGCRunner(0);
           },
-          [](mozilla::ipc::ResponseRejectReason r) {});
+          [this](mozilla::ipc::ResponseRejectReason r) {
+            if (!InIncrementalGC()) {
+              KillGCRunner();
+              NoteWontGC();
+            }
+          });
 
       return true;
     }
@@ -73,9 +117,14 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
       break;
   }
 
+  return GCRunnerFiredDoGC(aDeadline, step);
+}
+
+bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
+                                      const GCRunnerStep& aStep) {
   
   nsJSContext::IsShrinking is_shrinking = nsJSContext::NonShrinkingGC;
-  if (!InIncrementalGC() && step.mReason == JS::GCReason::USER_INACTIVE) {
+  if (!InIncrementalGC() && aStep.mReason == JS::GCReason::USER_INACTIVE) {
     if (!mUserIsActive) {
       mIsCompactingOnUserInactive = true;
       is_shrinking = nsJSContext::ShrinkingGC;
@@ -87,6 +136,7 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
       if (child) {
         child->DoneGC();
       }
+      NoteWontGC();
       return true;
     }
   }
@@ -95,7 +145,7 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
   TimeStamp startTimeStamp = TimeStamp::Now();
   TimeDuration budget = ComputeInterSliceGCBudget(aDeadline, startTimeStamp);
   TimeDuration duration = mGCUnnotifiedTotalTime;
-  nsJSContext::GarbageCollectNow(step.mReason, nsJSContext::IncrementalGC,
+  nsJSContext::GarbageCollectNow(aStep.mReason, nsJSContext::IncrementalGC,
                                  is_shrinking, budget.ToMilliseconds());
 
   mGCUnnotifiedTotalTime = TimeDuration();
@@ -206,6 +256,9 @@ void CCGCScheduler::PokeFullGC() {
         [](nsITimer* aTimer, void* aClosure) {
           CCGCScheduler* s = static_cast<CCGCScheduler*>(aClosure);
           s->KillFullGCTimer();
+
+          
+          
           s->SetNeedsFullGC();
           s->SetWantMajorGC(JS::GCReason::FULL_GC_TIMER);
           s->EnsureGCRunner(0);
@@ -304,6 +357,7 @@ void CCGCScheduler::KillFullGCTimer() {
 }
 
 void CCGCScheduler::KillGCRunner() {
+  MOZ_ASSERT(!(InIncrementalGC() && !mDidShutdown));
   if (mGCRunner) {
     mGCRunner->Cancel();
     mGCRunner = nullptr;

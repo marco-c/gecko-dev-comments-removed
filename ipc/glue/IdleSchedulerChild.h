@@ -37,8 +37,7 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
   
   bool SetPaused();
 
-  typedef MozPromise<bool , ResponseRejectReason, true>
-      MayGCPromise;
+  typedef MozPromise<bool, ResponseRejectReason, true> MayGCPromise;
 
   
   RefPtr<MayGCPromise> MayGCNow();
