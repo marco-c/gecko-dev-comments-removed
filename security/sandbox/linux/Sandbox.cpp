@@ -654,7 +654,7 @@ void SetMediaPluginSandbox(const char* aFilePath) {
 
   auto files = new SandboxOpenedFiles();
   files->Add(std::move(plugin));
-  files->Add("/dev/urandom", true);
+  files->Add("/dev/urandom", SandboxOpenedFile::Dup::YES);
   files->Add("/etc/ld.so.cache");  
   files->Add("/sys/devices/system/cpu/cpu0/tsc_freq_khz");
   files->Add("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
@@ -663,6 +663,12 @@ void SetMediaPluginSandbox(const char* aFilePath) {
 #ifdef __i386__
   files->Add("/proc/self/auxv");  
 #endif
+  
+  
+  files->Add("/sys/devices/system/cpu/online", SandboxOpenedFile::Error{});
+  files->Add("/proc/stat", SandboxOpenedFile::Error{});
+  files->Add("/proc/net/unix", SandboxOpenedFile::Error{});
+  files->Add("/proc/self/maps", SandboxOpenedFile::Error{});
 
   
   SetCurrentProcessSandbox(GetMediaSandboxPolicy(files));

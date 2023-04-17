@@ -29,13 +29,21 @@ namespace mozilla {
 
 class SandboxOpenedFile final {
  public:
+  enum class Dup { NO, YES };
+  struct Error {};
+
   
   
   
   
   
   
-  explicit SandboxOpenedFile(const char* aPath, bool aDup = false);
+  explicit SandboxOpenedFile(const char* aPath, Dup aDup = Dup::NO);
+
+  
+  
+  
+  SandboxOpenedFile(const char* aPath, Error);
 
   
   
