@@ -143,6 +143,10 @@
 
 
 
+
+
+
+
     appendNotification(aType, aNotification, aButtons) {
       if (
         aNotification.priority < this.PRIORITY_SYSTEM ||
@@ -206,6 +210,9 @@
 
       if (aNotification.telemetry) {
         newitem.telemetry = aNotification.telemetry;
+        if (aNotification.telemetryFilter) {
+          newitem.telemetryFilter = aNotification.telemetryFilter;
+        }
       }
 
       newitem.priority = aNotification.priority;
@@ -532,7 +539,10 @@
     }
 
     _doTelemetry(type) {
-      if (this.telemetry) {
+      if (
+        this.telemetry &&
+        (!this.telemetryFilter || this.telemetryFilter.includes(type))
+      ) {
         Services.telemetry.keyedScalarAdd(this.telemetry, type, 1);
       }
     }
@@ -621,7 +631,10 @@
       }
 
       _doTelemetry(type) {
-        if (this.telemetry) {
+        if (
+          this.telemetry &&
+          (!this.telemetryFilter || this.telemetryFilter.includes(type))
+        ) {
           Services.telemetry.keyedScalarAdd(this.telemetry, type, 1);
         }
       }
