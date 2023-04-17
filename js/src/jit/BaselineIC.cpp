@@ -199,12 +199,17 @@ void ICEntry::trace(JSTracer* trc) {
   
   MOZ_DIAGNOSTIC_ASSERT(traceMagic_ == EXPECTED_TRACE_MAGIC);
 #endif
+
   ICStub* stub = firstStub();
+
+  
   while (!stub->isFallback()) {
     stub->toCacheIRStub()->trace(trc);
     stub = stub->toCacheIRStub()->next();
   }
-  stub->toFallbackStub()->trace(trc);
+
+  
+  MOZ_ASSERT(stub->usesTrampolineCode());
 }
 
 
@@ -593,11 +598,6 @@ void ICCacheIRStub::trace(JSTracer* trc) {
   TraceManuallyBarrieredEdge(trc, &stubJitCode, "baseline-ic-stub-code");
 
   TraceCacheIRStub(trc, this, stubInfo());
-}
-
-void ICFallbackStub::trace(JSTracer* trc) {
-  
-  MOZ_ASSERT(usesTrampolineCode());
 }
 
 static void MaybeTransition(JSContext* cx, BaselineFrame* frame,
