@@ -138,6 +138,11 @@ class Collator final {
   
 
 
+  Result<CaseFirst, ICUError> GetCaseFirst() const;
+
+  
+
+
   static SpanResult<char> KeywordValueToBcp47Extension(const char* aKeyword,
                                                        int32_t aLength);
 
