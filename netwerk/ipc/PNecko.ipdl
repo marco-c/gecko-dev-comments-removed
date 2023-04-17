@@ -124,15 +124,6 @@ parent:
                                 nsresult aTopWindowURIResult,
                                 LoadInfoArgs? loadInfo);
 
-  
-
-
-
-
-  async OnAuthAvailable(uint64_t callbackId, nsString user,
-                        nsString password, nsString domain);
-  async OnAuthCancelled(uint64_t callbackId, bool userCancel);
-
   async RequestContextLoadBegin(uint64_t rcid);
   async RequestContextAfterDOMContentLoaded(uint64_t rcid);
   async RemoveRequestContext(uint64_t rcid);
@@ -163,14 +154,6 @@ parent:
   async GetPageThumbStream(nsIURI uri) returns (nsIInputStream stream);
 
 child:
-  
-
-
-
-
-  async AsyncAuthPromptForNestedFrame(TabId nestedFrameId, nsCString uri,
-                                      nsString realm, uint64_t callbackId);
-
   
   async PredOnPredictPrefetch(nsIURI uri, uint32_t httpStatus);
   async PredOnPredictPreconnect(nsIURI uri);
