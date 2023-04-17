@@ -463,12 +463,20 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         PREF_COLLECTIONS_ENABLED
       ];
 
+      const compactLayout = this.store.getState().Prefs.values?.pocketConfig
+        ?.compactLayout;
+      let items = isBasicLayout ? 3 : 21;
+      if (compactLayout) {
+        items = isBasicLayout ? 4 : 24;
+      }
+
       
       
       layoutResp = getHardcodedLayout({
-        isBasicLayout,
+        items,
         spocPositions: this.parseSpocPositions(spocPositions),
         sponsoredCollectionsEnabled,
+        compactLayout,
       });
     }
 
@@ -1841,10 +1849,14 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
+
+
+
 getHardcodedLayout = ({
-  isBasicLayout,
+  items = 21,
   spocPositions = [2, 4, 11, 20],
   sponsoredCollectionsEnabled = false,
+  compactLayout = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -1917,7 +1929,8 @@ getHardcodedLayout = ({
         {
           type: "CardGrid",
           properties: {
-            items: isBasicLayout ? 3 : 21,
+            items,
+            compact: compactLayout,
           },
           cta_variant: "link",
           header: {

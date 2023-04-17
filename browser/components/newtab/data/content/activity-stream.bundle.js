@@ -3287,6 +3287,8 @@ class _DiscoveryStreamBase extends react__WEBPACK_IMPORTED_MODULE_13___default.a
           type: component.type,
           dispatch: this.props.dispatch,
           items: component.properties.items,
+          compact: component.properties.compact,
+          include_descriptions: !component.properties.compact,
           cta_variant: component.cta_variant,
           display_engagement_labels: ENGAGEMENT_LABEL_ENABLED
         });
@@ -3487,6 +3489,8 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponen
         flightId: rec.flight_id,
         image_src: rec.image_src,
         raw_image_src: rec.raw_image_src,
+        word_count: rec.word_count,
+        time_to_read: rec.time_to_read,
         title: rec.title,
         excerpt: rec.excerpt,
         url: rec.url,
@@ -3494,6 +3498,7 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponen
         shim: rec.shim,
         type: this.props.type,
         context: rec.context,
+        compact: this.props.compact,
         sponsor: rec.sponsor,
         sponsored_by_override: rec.sponsored_by_override,
         dispatch: this.props.dispatch,
@@ -3503,6 +3508,7 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponen
         bookmarkGuid: rec.bookmarkGuid,
         engagement: rec.engagement,
         display_engagement_labels: this.props.display_engagement_labels,
+        include_descriptions: this.props.include_descriptions,
         cta: rec.cta,
         cta_variant: this.props.cta_variant,
         is_video: this.props.enable_video_playheads && rec.is_video,
@@ -3512,8 +3518,10 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponen
 
 
     const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
+    const compactClass = this.props.compact ? `ds-card-grid-compact-variant` : ``;
+    const includeDescriptions = this.props.include_descriptions ? `ds-card-grid-include-descriptions` : ``;
     return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
-      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass}`
+      className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass} ${compactClass} ${includeDescriptions}`
     }, cards);
   }
 
@@ -3559,6 +3567,8 @@ CardGrid.defaultProps = {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "readTimeFromWordCount", function() { return readTimeFromWordCount; });
+ __webpack_require__.d(__webpack_exports__, "DSSource", function() { return DSSource; });
  __webpack_require__.d(__webpack_exports__, "DefaultMeta", function() { return DefaultMeta; });
  __webpack_require__.d(__webpack_exports__, "CTAButtonMeta", function() { return CTAButtonMeta; });
  __webpack_require__.d(__webpack_exports__, "_DSCard", function() { return _DSCard; });
@@ -3586,13 +3596,66 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
- 
+
+const READING_WPM = 220;
+
+
+
+
+
+
+function readTimeFromWordCount(wordCount) {
+  if (!wordCount) return false;
+  return Math.ceil(parseInt(wordCount, 10) / READING_WPM);
+}
+const DSSource = ({
+  source,
+  timeToRead,
+  compact,
+  context,
+  sponsor,
+  sponsored_by_override
+}) => {
+  
+  if (compact) {
+    
+    if (sponsored_by_override || sponsor || context) {
+      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["SponsorLabel"], {
+        context: context,
+        sponsor: sponsor,
+        sponsored_by_override: sponsored_by_override
+      });
+    } 
+
+
+    if (timeToRead) {
+      return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+        className: "source clamp time-to-read"
+      }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_7__["FluentOrText"], {
+        message: {
+          id: `newtab-label-source-read-time`,
+          values: {
+            source,
+            timeToRead
+          }
+        }
+      }));
+    }
+  } 
+
+
+  return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
+    className: "source clamp"
+  }, source);
+}; 
 
 const DefaultMeta = ({
   display_engagement_labels,
   source,
   title,
   excerpt,
+  timeToRead,
+  compact,
   context,
   context_type,
   cta,
@@ -3604,9 +3667,15 @@ const DefaultMeta = ({
   className: "meta"
 }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
   className: "info-wrap"
-}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
-  className: "source clamp"
-}, source), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
+}, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSSource, {
+  source: source,
+  compact: compact,
+  timeToRead: timeToRead,
+  context: context,
+  sponsor: sponsor,
+  sponsored_by_override: sponsored_by_override
+}), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
+  title: title,
   className: "title clamp"
 }, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
   className: "excerpt clamp"
@@ -3614,7 +3683,7 @@ const DefaultMeta = ({
   role: "link",
   className: "cta-link icon icon-arrow",
   tabIndex: "0"
-}, cta)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
+}, cta)), !compact && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__["DSContextFooter"], {
   context_type: context_type,
   context: context,
   sponsor: sponsor,
@@ -3647,6 +3716,7 @@ const CTAButtonMeta = ({
     }
   }
 }), !context && (sponsor ? sponsor : source)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("header", {
+  title: title,
   className: "title clamp"
 }, title), excerpt && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("p", {
   className: "excerpt clamp"
@@ -3783,7 +3853,10 @@ class _DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent
     }
 
     const isButtonCTA = this.props.cta_variant === "button";
+    const includeDescriptions = this.props.include_descriptions;
     const baseClass = `ds-card ${this.props.is_video ? `video-card` : ``}`;
+    const excerpt = includeDescriptions ? this.props.excerpt : "";
+    const timeToRead = this.props.time_to_read || readTimeFromWordCount(this.props.word_count);
     return react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
       className: baseClass
     }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__["SafeAnchor"], {
@@ -3804,9 +3877,11 @@ class _DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent
       display_engagement_labels: this.props.display_engagement_labels,
       source: this.props.source,
       title: this.props.title,
-      excerpt: this.props.excerpt,
+      excerpt: excerpt,
+      timeToRead: timeToRead,
       context: this.props.context,
       context_type: this.props.context_type,
+      compact: this.props.compact,
       engagement: this.props.engagement,
       cta: this.props.cta,
       sponsor: this.props.sponsor,
@@ -3815,10 +3890,12 @@ class _DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent
       display_engagement_labels: this.props.display_engagement_labels,
       source: this.props.source,
       title: this.props.title,
-      excerpt: this.props.excerpt,
+      excerpt: excerpt,
+      timeToRead: timeToRead,
       context: this.props.context,
       engagement: this.props.engagement,
       context_type: this.props.context_type,
+      compact: this.props.compact,
       cta: this.props.cta,
       cta_variant: this.props.cta_variant,
       sponsor: this.props.sponsor,
