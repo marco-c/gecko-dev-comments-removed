@@ -599,6 +599,13 @@ nsresult SessionStorageManager::Observe(
     return NS_OK;
   }
 
+  
+  if (!strcmp(aTopic, "dom-storage:clear-origin-attributes-data") ||
+      !strcmp(aTopic, "session-storage:clear-origin-attributes-data")) {
+    ClearStorages(pattern, aOriginScope);
+    return NS_OK;
+  }
+
   if (!strcmp(aTopic, "profile-change")) {
     
     ClearStorages(pattern, ""_ns);

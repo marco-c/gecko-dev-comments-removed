@@ -582,8 +582,6 @@ const QuotaCleaner = {
     
     
     
-    
-    
     Services.obs.notifyObservers(
       null,
       "extension:purge-localStorage",
@@ -595,6 +593,18 @@ const QuotaCleaner = {
       null,
       "browser:purge-sessionStorage",
       aBaseDomain
+    );
+
+    
+    
+    
+    
+    
+    
+    Services.obs.notifyObservers(
+      null,
+      "dom-storage:clear-origin-attributes-data",
+      JSON.stringify({ partitionKeyPattern: { baseDomain: aBaseDomain } })
     );
 
     

@@ -383,7 +383,8 @@ nsresult LocalStorageManager::Observe(const char* aTopic,
   }
 
   
-  if (!strcmp(aTopic, "origin-attr-pattern-cleared")) {
+  if (!strcmp(aTopic, "clear-origin-attributes-data") ||
+      !strcmp(aTopic, "dom-storage:clear-origin-attributes-data")) {
     ClearCaches(LocalStorageCache::kUnloadComplete, pattern, ""_ns);
     return NS_OK;
   }

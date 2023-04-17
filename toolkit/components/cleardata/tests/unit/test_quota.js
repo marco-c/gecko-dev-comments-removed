@@ -279,11 +279,6 @@ async function runTestHost(storageType) {
 add_task(function setup() {
   
   Services.prefs.setBoolPref("dom.storage.client_validation", false);
-
-  
-  
-  
-  Services.prefs.setBoolPref("dom.storage.next_gen", true);
 });
 
 
