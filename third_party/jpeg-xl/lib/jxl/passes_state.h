@@ -90,7 +90,7 @@ struct PassesSharedState {
     
     ImageBundle* JXL_RESTRICT frame = &storage;
     
-    bool ib_is_in_xyb = true;
+    bool ib_is_in_xyb = false;
   } reference_frames[4] = {};
 
   

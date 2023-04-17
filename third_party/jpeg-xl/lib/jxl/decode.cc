@@ -1020,8 +1020,14 @@ JxlDecoderStatus JxlDecoderProcessInternal(JxlDecoder* dec, const uint8_t* in,
           new Sections(dec->frame_dec.get(), dec->frame_size, sections_begin));
       JXL_API_RETURN_IF_ERROR(dec->sections->Init());
 
-      dec->frame_dec_in_progress = true;
-      dec->frame_stage = FrameStage::kDC;
+      
+      
+      
+      
+      if (dec->events_wanted & (JXL_DEC_DC_IMAGE | JXL_DEC_FULL_IMAGE)) {
+        dec->frame_dec_in_progress = true;
+        dec->frame_stage = FrameStage::kDC;
+      }
     }
 
     if (dec->frame_stage == FrameStage::kDC) {
