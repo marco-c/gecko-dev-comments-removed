@@ -419,7 +419,6 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 }  
 
-
 LRESULT CALLBACK NeuteredWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
                                     LPARAM lParam) {
   WNDPROC oldWndProc = (WNDPROC)GetProp(hwnd, kOldWndProcProp);
