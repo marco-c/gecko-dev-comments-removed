@@ -198,7 +198,7 @@ class nsAccUtils {
   
 
 
-  static uint32_t TextLength(LocalAccessible* aAccessible);
+  static uint32_t TextLength(Accessible* aAccessible);
 
   
 
