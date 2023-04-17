@@ -51,6 +51,8 @@ class BookmarksObserver extends Observer {
   }
 
   
+  onItemMoved() {}
+
   
   
   onItemChanged() {}

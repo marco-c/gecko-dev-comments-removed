@@ -664,9 +664,7 @@ var Bookmarks = Object.freeze({
         insertInfos[i] = Object.assign({}, item);
       }
 
-      if (notifications.length) {
-        PlacesObservers.notifyListeners(notifications);
-      }
+      PlacesObservers.notifyListeners(notifications);
 
       return insertInfos;
     })();
@@ -850,8 +848,6 @@ var Bookmarks = Object.freeze({
             );
           }
 
-          const notifications = [];
-
           
           let observers = PlacesUtils.bookmarks.getObservers();
           
@@ -962,26 +958,19 @@ var Bookmarks = Object.freeze({
             item.parentGuid != updatedItem.parentGuid ||
             item.index != updatedItem.index
           ) {
-            notifications.push(
-              new PlacesBookmarkMoved({
-                id: updatedItem._id,
-                itemType: updatedItem.type,
-                url: updatedItem.url && updatedItem.url.href,
-                guid: updatedItem.guid,
-                parentGuid: updatedItem.parentGuid,
-                source: updatedItem.source,
-                index: updatedItem.index,
-                oldParentGuid: item.parentGuid,
-                oldIndex: item.index,
-                isTagging:
-                  updatedItem.parentGuid === Bookmarks.tagsGuid ||
-                  parent.parentGuid === Bookmarks.tagsGuid,
-              })
-            );
-          }
-
-          if (notifications.length) {
-            PlacesObservers.notifyListeners(notifications);
+            notify(observers, "onItemMoved", [
+              updatedItem._id,
+              item._parentId,
+              item.index,
+              updatedItem._parentId,
+              updatedItem.index,
+              updatedItem.type,
+              updatedItem.guid,
+              item.parentGuid,
+              updatedItem.parentGuid,
+              updatedItem.source,
+              updatedItem.url && updatedItem.url.href,
+            ]);
           }
 
           
@@ -1146,7 +1135,6 @@ var Bookmarks = Object.freeze({
                 newParent,
                 syncChangeDelta
               );
-              info.newParent = newParent;
 
               
               
@@ -1187,10 +1175,10 @@ var Bookmarks = Object.freeze({
         }
       );
 
-      const notifications = [];
-
       
-      for (let { updatedItem, existingItem, newParent } of updateInfos) {
+      for (let { updatedItem, existingItem } of updateInfos) {
+        
+        let observers = PlacesUtils.bookmarks.getObservers();
         
         
         
@@ -1199,29 +1187,22 @@ var Bookmarks = Object.freeze({
           existingItem.parentGuid != updatedItem.parentGuid ||
           existingItem.index != updatedItem.index
         ) {
-          notifications.push(
-            new PlacesBookmarkMoved({
-              id: updatedItem._id,
-              itemType: updatedItem.type,
-              url: existingItem.url,
-              guid: updatedItem.guid,
-              parentGuid: updatedItem.parentGuid,
-              source,
-              index: updatedItem.index,
-              oldParentGuid: existingItem.parentGuid,
-              oldIndex: existingItem.index,
-              isTagging:
-                updatedItem.parentGuid === Bookmarks.tagsGuid ||
-                newParent.parentGuid === Bookmarks.tagsGuid,
-            })
-          );
+          notify(observers, "onItemMoved", [
+            updatedItem._id,
+            existingItem._parentId,
+            existingItem.index,
+            updatedItem._parentId,
+            updatedItem.index,
+            updatedItem.type,
+            updatedItem.guid,
+            existingItem.parentGuid,
+            updatedItem.parentGuid,
+            source,
+            existingItem.url,
+          ]);
         }
         
         delete updatedItem.source;
-      }
-
-      if (notifications.length) {
-        PlacesObservers.notifyListeners(notifications);
       }
 
       return updateInfos.map(updateInfo =>
@@ -1763,31 +1744,23 @@ var Bookmarks = Object.freeze({
         options
       );
 
-      const notifications = [];
-
+      let observers = PlacesUtils.bookmarks.getObservers();
       
       for (let i = 0; i < sortedChildren.length; ++i) {
         let child = sortedChildren[i];
-        notifications.push(
-          new PlacesBookmarkMoved({
-            id: child._id,
-            itemType: child.type,
-            url: child.url && child.url.href,
-            guid: child.guid,
-            parentGuid: child.parentGuid,
-            source: options.source,
-            index: i,
-            oldParentGuid: child.parentGuid,
-            oldIndex: child.index,
-            isTagging:
-              child.parentGuid === Bookmarks.tagsGuid ||
-              parent.parentGuid === Bookmarks.tagsGuid,
-          })
-        );
-      }
-
-      if (notifications.length) {
-        PlacesObservers.notifyListeners(notifications);
+        notify(observers, "onItemMoved", [
+          child._id,
+          child._parentId,
+          child.index,
+          child._parentId,
+          i,
+          child.type,
+          child.guid,
+          child.parentGuid,
+          child.parentGuid,
+          options.source,
+          child.url && child.url.href,
+        ]);
       }
     })();
   },
