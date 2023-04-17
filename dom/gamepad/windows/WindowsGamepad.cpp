@@ -151,7 +151,7 @@ class Gamepad {
 };
 
 
-typedef void(WINAPI* XInputEnable_func)(BOOL);
+using XInputEnable_func = void(WINAPI*)(BOOL);
 
 
 class XInputLoader {
