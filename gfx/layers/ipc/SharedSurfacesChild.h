@@ -44,7 +44,6 @@ class IpcResourceUpdateQueue;
 namespace layers {
 
 class CompositorManagerChild;
-class ImageContainer;
 class RenderRootStateManager;
 
 class SharedSurfacesChild {
@@ -89,23 +88,6 @@ class SharedSurfacesChild {
 
 
 
-
-
-
-  static nsresult Share(ImageContainer* aContainer,
-                        RenderRootStateManager* aManager,
-                        wr::IpcResourceUpdateQueue& aResources,
-                        wr::ImageKey& aKey, ContainerProducerID aProducerId);
-
-  static nsresult ShareBlob(ImageContainer* aContainer,
-                            RenderRootStateManager* aManager,
-                            wr::IpcResourceUpdateQueue& aResources,
-                            wr::BlobImageKey& aKey);
-
-  
-
-
-
   static Maybe<wr::ExternalImageId> GetExternalId(
       const gfx::SourceSurfaceSharedData* aSurface);
 
@@ -115,10 +97,6 @@ class SharedSurfacesChild {
 
   static gfx::SourceSurfaceSharedData* AsSourceSurfaceSharedData(
       gfx::SourceSurface* aSurface);
-
-  static nsresult UpdateAnimation(ImageContainer* aContainer,
-                                  gfx::SourceSurface* aSurface,
-                                  const gfx::IntRect& aDirtyRect);
 
   class ImageKeyData {
    public:

@@ -156,26 +156,6 @@ OrientedImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
-OrientedImage::GetImageContainerAtSize(
-    WindowRenderer* aRenderer, const gfx::IntSize& aSize,
-    const Maybe<SVGImageContext>& aSVGContext,
-    const Maybe<ImageIntRegion>& aRegion, uint32_t aFlags,
-    layers::ImageContainer** aOutContainer) {
-  
-  
-  
-  
-  
-
-  if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetImageContainerAtSize(
-        aRenderer, aSize, aSVGContext, aRegion, aFlags, aOutContainer);
-  }
-
-  return ImgDrawResult::NOT_SUPPORTED;
-}
-
-NS_IMETHODIMP_(ImgDrawResult)
 OrientedImage::GetImageProvider(WindowRenderer* aRenderer,
                                 const gfx::IntSize& aSize,
                                 const Maybe<SVGImageContext>& aSVGContext,
