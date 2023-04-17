@@ -24,6 +24,9 @@ class ClientLayerManager;
 class FrameUniformityData;
 class PersistentBufferProvider;
 }  
+class FallbackRenderer;
+class nsDisplayListBuilder;
+class nsDisplayList;
 
 class FrameRecorder {
  public:
@@ -100,6 +103,7 @@ class WindowRenderer : public FrameRecorder {
   
   virtual layers::LayerManager* AsLayerManager() { return nullptr; }
   virtual layers::WebRenderLayerManager* AsWebRender() { return nullptr; }
+  virtual FallbackRenderer* AsFallback() { return nullptr; }
 
   
 
@@ -229,6 +233,49 @@ class WindowRenderer : public FrameRecorder {
   
   
   TimeStamp mAnimationReadyTime;
+};
+
+
+
+
+
+
+
+
+
+
+
+class FallbackRenderer : public WindowRenderer {
+ public:
+  FallbackRenderer* AsFallback() override { return this; }
+
+  void SetTarget(gfxContext* aContext, layers::BufferMode aDoubleBuffering);
+
+  bool BeginTransaction(const nsCString& aURL = nsCString()) override;
+
+  bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override {
+    return false;
+  }
+
+  layers::LayersBackend GetBackendType() override {
+    return layers::LayersBackend::LAYERS_NONE;
+  }
+
+  virtual void GetBackendName(nsAString& name) override {
+    name.AssignLiteral("Fallback");
+  }
+
+  bool IsCompositingCheap() override { return false; }
+
+  void EndTransactionWithColor(const nsIntRect& aRect,
+                               const gfx::DeviceColor& aColor);
+  void EndTransactionWithList(nsDisplayListBuilder* aBuilder,
+                              nsDisplayList* aList,
+                              int32_t aAppUnitsPerDevPixel,
+                              EndTransactionFlags aFlags);
+
+  RefPtr<gfxContext> mTarget;
+  layers::BufferMode mBufferMode;
 };
 
 }  
