@@ -1905,15 +1905,6 @@ JS_PUBLIC_API void JS::AssertObjectBelongsToCurrentThread(JSObject* obj) {
   MOZ_RELEASE_ASSERT(CurrentThreadCanAccessRuntime(rt));
 }
 
-
-
-
-
-JS_PUBLIC_API MOZ_NEVER_INLINE void SetHelperThreadTaskCallback(
-    void (*callback)()) {
-  HelperThreadTaskCallback = callback;
-}
-
 JS_PUBLIC_API void JS::SetFilenameValidationCallback(
     JS::FilenameValidationCallback cb) {
   js::gFilenameValidationCallback = cb;

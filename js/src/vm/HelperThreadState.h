@@ -22,6 +22,7 @@
 #include "ds/Fifo.h"
 #include "frontend/CompilationStencil.h"  
 #include "js/CompileOptions.h"
+#include "js/HelperThreadAPI.h"
 #include "js/TypeDecls.h"
 #include "threading/ConditionVariable.h"
 #include "threading/Thread.h"
@@ -160,6 +161,11 @@ class GlobalHelperThreadState {
   
   HelperThreadTaskVector helperTasks_;
 
+  
+  
+  
+  JS::HelperThreadTaskCallback dispatchTaskCallback = nullptr;
+
   bool isInitialized_ = false;
 
   bool useInternalThreadPool_;
@@ -198,6 +204,8 @@ class GlobalHelperThreadState {
                                        const AutoLockHelperThreadState& lock);
   void finish();
   void finishThreads();
+
+  void setExternalTaskCallback(JS::HelperThreadTaskCallback callback);
 
   [[nodiscard]] bool ensureContextList(size_t count,
                                        const AutoLockHelperThreadState& lock);

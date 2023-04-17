@@ -193,16 +193,6 @@ extern JS_PUBLIC_API bool JS_IsBuiltinEvalFunction(JSFunction* fun);
 
 extern JS_PUBLIC_API bool JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
-
-
-
-JS_PUBLIC_API void SetHelperThreadTaskCallback(void (*callback)());
-
-namespace JS {
-
-extern JS_PUBLIC_API void RunHelperThreadTask();
-}  
-
 extern JS_PUBLIC_API const char* JS_GetImplementationVersion(void);
 
 extern JS_PUBLIC_API void JS_SetWrapObjectCallbacks(
