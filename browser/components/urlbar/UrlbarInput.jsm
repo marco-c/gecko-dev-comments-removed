@@ -328,7 +328,8 @@ class UrlbarInput {
     
     
     
-    if (value === null) {
+    
+    if (value === null || (!value && dueToTabSwitch)) {
       uri = uri || this.window.gBrowser.currentURI;
       
       try {
