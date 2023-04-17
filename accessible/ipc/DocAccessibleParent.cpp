@@ -140,7 +140,9 @@ uint32_t DocAccessibleParent::AddSubtree(
   ProxyCreated(newProxy);
 
 #if defined(XP_WIN)
-  WrapperFor(newProxy)->GetMsaa()->SetID(newChild.MsaaID());
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    WrapperFor(newProxy)->GetMsaa()->SetID(newChild.MsaaID());
+  }
 #endif
 
   for (uint32_t index = 0, len = mPendingChildDocs.Length(); index < len;
@@ -633,61 +635,65 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         embeddedBrowser->GetBrowserBridgeParent();
     if (bridge) {
 #if defined(XP_WIN)
-      
-      
-      
-      RefPtr<IDispatch> docAcc;
-      aChildDoc->GetCOMInterface((void**)getter_AddRefs(docAcc));
-      MOZ_ASSERT(docAcc);
-      if (docAcc) {
-        RefPtr<IDispatch> docWrapped(
-            mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(docAcc)));
-        IDispatchHolder::COMPtrType docPtr(
-            mscom::ToProxyUniquePtr(std::move(docWrapped)));
-        IDispatchHolder docHolder(std::move(docPtr));
-        if (bridge->SendSetEmbeddedDocAccessibleCOMProxy(docHolder)) {
+      if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+        
+        
+        
+        RefPtr<IDispatch> docAcc;
+        aChildDoc->GetCOMInterface((void**)getter_AddRefs(docAcc));
+        MOZ_ASSERT(docAcc);
+        if (docAcc) {
+          RefPtr<IDispatch> docWrapped(
+              mscom::PassthruProxy::Wrap<IDispatch>(WrapNotNull(docAcc)));
+          IDispatchHolder::COMPtrType docPtr(
+              mscom::ToProxyUniquePtr(std::move(docWrapped)));
+          IDispatchHolder docHolder(std::move(docPtr));
+          if (bridge->SendSetEmbeddedDocAccessibleCOMProxy(docHolder)) {
 #  if defined(MOZ_SANDBOX)
-          aChildDoc->mDocProxyStream = docHolder.GetPreservedStream();
+            aChildDoc->mDocProxyStream = docHolder.GetPreservedStream();
 #  endif  
+          }
+        }
+        
+        
+        
+        aChildDoc->SendParentCOMProxy(WrapperFor(outerDoc));
+        if (nsWinUtils::IsWindowEmulationStarted()) {
+          
+          
+          
+          
+          Unused << aChildDoc->SendEmulatedWindow(
+              reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
+        }
+        
+        
+        
+        
+        DocAccessibleParent* topDoc = this;
+        while (DocAccessibleParent* parentDoc = topDoc->ParentDoc()) {
+          topDoc = parentDoc;
+        }
+        MOZ_ASSERT(topDoc && topDoc->IsTopLevel());
+        RefPtr<IAccessible> topDocAcc;
+        topDoc->GetCOMInterface((void**)getter_AddRefs(topDocAcc));
+        MOZ_ASSERT(topDocAcc);
+        if (topDocAcc) {
+          RefPtr<IAccessible> topDocWrapped(
+              mscom::PassthruProxy::Wrap<IAccessible>(WrapNotNull(topDocAcc)));
+          IAccessibleHolder::COMPtrType topDocPtr(
+              mscom::ToProxyUniquePtr(std::move(topDocWrapped)));
+          IAccessibleHolder topDocHolder(std::move(topDocPtr));
+          if (aChildDoc->SendTopLevelDocCOMProxy(topDocHolder)) {
+#  if defined(MOZ_SANDBOX)
+            aChildDoc->mTopLevelDocProxyStream =
+                topDocHolder.GetPreservedStream();
+#  endif  
+          }
         }
       }
-      
-      
-      
-      aChildDoc->SendParentCOMProxy(WrapperFor(outerDoc));
       if (nsWinUtils::IsWindowEmulationStarted()) {
-        
-        
-        
-        
         aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
-        Unused << aChildDoc->SendEmulatedWindow(
-            reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
-      }
-      
-      
-      
-      
-      DocAccessibleParent* topDoc = this;
-      while (DocAccessibleParent* parentDoc = topDoc->ParentDoc()) {
-        topDoc = parentDoc;
-      }
-      MOZ_ASSERT(topDoc && topDoc->IsTopLevel());
-      RefPtr<IAccessible> topDocAcc;
-      topDoc->GetCOMInterface((void**)getter_AddRefs(topDocAcc));
-      MOZ_ASSERT(topDocAcc);
-      if (topDocAcc) {
-        RefPtr<IAccessible> topDocWrapped(
-            mscom::PassthruProxy::Wrap<IAccessible>(WrapNotNull(topDocAcc)));
-        IAccessibleHolder::COMPtrType topDocPtr(
-            mscom::ToProxyUniquePtr(std::move(topDocWrapped)));
-        IAccessibleHolder topDocHolder(std::move(topDocPtr));
-        if (aChildDoc->SendTopLevelDocCOMProxy(topDocHolder)) {
-#  if defined(MOZ_SANDBOX)
-          aChildDoc->mTopLevelDocProxyStream =
-              topDocHolder.GetPreservedStream();
-#  endif  
-        }
       }
 #endif  
       

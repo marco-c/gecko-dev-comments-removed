@@ -236,10 +236,12 @@ uint32_t OuterDocAccessible::ChildCount() const {
   uint32_t result = mChildren.Length();
   if (!result &&
 #if defined(XP_WIN)
-      
-      
-      
-      RemoteChildDocAccessible()
+      ((StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+        RemoteChildDoc()) ||
+       
+       
+       
+       RemoteChildDocAccessible())
 #else
       RemoteChildDoc()
 #endif
