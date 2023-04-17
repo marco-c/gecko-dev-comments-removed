@@ -152,7 +152,20 @@ class InterceptedHttpChannel final
     TimeStamp mInterceptionFinish;
 
     
-    enum Stage { InterceptionStart, InterceptionFinish } mStage;
+    
+    TimeStamp mFetchHandlerStart;
+
+    
+    
+    TimeStamp mFetchHandlerFinish;
+
+    
+    enum Stage {
+      InterceptionStart,
+      FetchHandlerStart,
+      FetchHandlerFinish,
+      InterceptionFinish
+    } mStage;
 
     
     Status mStatus;
