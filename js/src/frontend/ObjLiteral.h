@@ -17,6 +17,7 @@
 #include "js/GCPolicyAPI.h"
 #include "js/Value.h"
 #include "js/Vector.h"
+#include "util/EnumFlags.h"
 
 
 
@@ -134,19 +135,19 @@ enum class ObjLiteralOpcode : uint8_t {
 
 enum class ObjLiteralFlag : uint8_t {
   
-  Array = 1,
+  Array = 1 << 0,
 
   
   
-  Singleton = 2,
+  Singleton = 1 << 1,
 
   
   
   
-  HasIndexOrDuplicatePropName = 3,
+  HasIndexOrDuplicatePropName = 1 << 2,
 };
 
-using ObjLiteralFlags = mozilla::EnumSet<ObjLiteralFlag>;
+using ObjLiteralFlags = EnumFlags<ObjLiteralFlag>;
 
 inline bool ObjLiteralOpcodeHasValueArg(ObjLiteralOpcode op) {
   return op == ObjLiteralOpcode::ConstValue;
@@ -299,7 +300,7 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
     
     setPropNameNoDuplicateCheck(parserAtoms, propName);
 
-    if (flags_.contains(ObjLiteralFlag::HasIndexOrDuplicatePropName)) {
+    if (flags_.hasFlag(ObjLiteralFlag::HasIndexOrDuplicatePropName)) {
       return true;
     }
 
@@ -320,20 +321,20 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
       frontend::ParserAtomsTable& parserAtoms,
       const frontend::TaggedParserAtomIndex propName) {
     
-    MOZ_ASSERT(!flags_.contains(ObjLiteralFlag::Array));
+    MOZ_ASSERT(!flags_.hasFlag(ObjLiteralFlag::Array));
     parserAtoms.markUsedByStencil(propName);
     nextKey_ = ObjLiteralKey::fromPropName(propName);
   }
   void setPropIndex(uint32_t propIndex) {
     
-    MOZ_ASSERT(!flags_.contains(ObjLiteralFlag::Array));
+    MOZ_ASSERT(!flags_.hasFlag(ObjLiteralFlag::Array));
     MOZ_ASSERT(propIndex <= ATOM_INDEX_MASK);
     nextKey_ = ObjLiteralKey::fromArrayIndex(propIndex);
-    flags_ += ObjLiteralFlag::HasIndexOrDuplicatePropName;
+    flags_.setFlag(ObjLiteralFlag::HasIndexOrDuplicatePropName);
   }
   void beginDenseArrayElements() {
     
-    MOZ_ASSERT(flags_.contains(ObjLiteralFlag::Array));
+    MOZ_ASSERT(flags_.hasFlag(ObjLiteralFlag::Array));
     
     
     nextKey_ = ObjLiteralKey::none();
