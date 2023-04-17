@@ -548,7 +548,17 @@ import java.lang.reflect.Proxy;
 
     @Override 
     public void closeConnection() {
-        
+        if (mBatchEditCount != 0) {
+            
+            
+            
+            if (DEBUG) {
+                Log.d(LOGTAG, "resetting with mBatchEditCount = " + mBatchEditCount);
+            }
+            mBatchEditCount = 0;
+            
+            mEditableClient.setBatchMode(false);
+        }
         super.closeConnection();
     }
 
