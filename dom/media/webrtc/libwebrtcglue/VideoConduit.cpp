@@ -94,8 +94,6 @@ static const char* kRedPayloadName = "red";
 #define SIMULCAST_RESOLUTION_ALIGNMENT 16
 
 
-const unsigned int WebrtcVideoConduit::CODEC_PLNAME_SIZE = 32;
-
 template <class t>
 static void ConstrainPreservingAspectRatioExact(uint32_t max_fs, t* width,
                                                 t* height) {
@@ -174,9 +172,8 @@ static MediaConduitErrorCode ValidateCodecConfig(
     return kMediaConduitMalformedArgument;
   }
 
-  if ((codecInfo->mName.empty()) ||
-      (codecInfo->mName.length() >= WebrtcVideoConduit::CODEC_PLNAME_SIZE)) {
-    CSFLogError(LOGTAG, "%s Invalid Payload Name Length ", __FUNCTION__);
+  if (codecInfo->mName.empty()) {
+    CSFLogError(LOGTAG, "%s Empty Payload Name ", __FUNCTION__);
     return kMediaConduitMalformedArgument;
   }
 

@@ -33,9 +33,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                            public webrtc::Transport {
  public:
   
-  static const unsigned int CODEC_PLNAME_SIZE;
-
-  
 
 
 
