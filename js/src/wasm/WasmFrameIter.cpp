@@ -21,6 +21,7 @@
 #include "jit/JitFrames.h"
 #include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
+#include "wasm/WasmDebugFrame.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmTlsData.h"

@@ -16,20 +16,14 @@
 
 
 
-#include "wasm/WasmFrame.h"
+#include "wasm/WasmDebugFrame.h"
 
-#include "jsmath.h"
-#include "jit/JitFrames.h"
-#include "jit/MacroAssembler.h"
-#include "js/friend/ErrorMessages.h"  
 #include "vm/EnvironmentObject.h"
-#include "vm/JSObject.h"
 #include "wasm/WasmBaselineCompile.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmTlsData.h"
 
-#include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
 using namespace js;

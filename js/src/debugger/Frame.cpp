@@ -69,7 +69,7 @@
 #include "vm/Stack.h"                      
 #include "vm/StringType.h"                 
 #include "wasm/WasmDebug.h"                
-#include "wasm/WasmFrame.h"                
+#include "wasm/WasmDebugFrame.h"           
 #include "wasm/WasmInstance.h"             
 #include "wasm/WasmJS.h"                   
 
