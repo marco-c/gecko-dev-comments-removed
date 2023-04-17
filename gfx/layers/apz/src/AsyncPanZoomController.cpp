@@ -2669,14 +2669,29 @@ nsEventStatus AsyncPanZoomController::OnPan(
     return OnPanBegin(aEvent);
   }
 
-  if (mState == OVERSCROLL_ANIMATION &&
-      aFingersOnTouchpad == FingersOnTouchpad::No) {
-    return nsEventStatus_eConsumeNoDefault;
-  }
-
   auto [logicalPanDisplacement, physicalPanDisplacement] =
       GetDisplacementsForPanGesture(aEvent);
 
+  if (mState == OVERSCROLL_ANIMATION &&
+      aFingersOnTouchpad == FingersOnTouchpad::No) {
+    
+    
+    OverscrollAnimation* overscrollAnimation =
+        mAnimation->AsOverscrollAnimation();
+    overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
+    
+    
+    
+    if (overscrollAnimation->IsManagingXAxis()) {
+      logicalPanDisplacement.x = 0;
+      physicalPanDisplacement.x = 0;
+    }
+    if (overscrollAnimation->IsManagingYAxis()) {
+      logicalPanDisplacement.y = 0;
+      physicalPanDisplacement.y = 0;
+    }
+  }
+
   
   
   
@@ -2687,10 +2702,17 @@ nsEventStatus AsyncPanZoomController::OnPan(
   
   
   
-  mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
-                                  aEvent.mTimeStamp);
-  mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
-                                  aEvent.mTimeStamp);
+  
+  
+  
+  if (logicalPanDisplacement.x != 0) {
+    mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
+                                    aEvent.mTimeStamp);
+  }
+  if (logicalPanDisplacement.y != 0) {
+    mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
+                                    aEvent.mTimeStamp);
+  }
 
   HandlePanningUpdate(physicalPanDisplacement);
 
