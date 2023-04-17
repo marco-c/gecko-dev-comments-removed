@@ -14,7 +14,6 @@
 #include "mozilla/dom/FormData.h"
 
 #define WASM_CONTENT_TYPE "application/wasm"
-#define WASM_ALT_DATA_TYPE_V1 "wasm/machine-code/1"
 
 class nsIPrincipal;
 class nsIHttpChannel;
@@ -51,6 +50,15 @@ class FetchUtil final {
   static nsresult SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
                                      nsIHttpChannel* aChannel,
                                      InternalRequest& aRequest);
+
+  
+
+
+
+
+
+  static const nsCString WasmAltDataType;
+  static void InitWasmAltDataType();
 
   
 
