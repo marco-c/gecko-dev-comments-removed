@@ -336,10 +336,10 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
 }
 
 template <class K, class V>
-void WeakMap<K, V>::sweep() {
+void WeakMap<K, V>::traceWeakEdges(JSTracer* trc) {
   
   for (Enum e(*this); !e.empty(); e.popFront()) {
-    if (gc::IsAboutToBeFinalized(&e.front().mutableKey())) {
+    if (!TraceWeakEdge(trc, &e.front().mutableKey(), "WeakMap key")) {
       e.removeFront();
     }
   }

@@ -480,8 +480,14 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void sweepAfterMinorGC(JSTracer* trc);
   void sweepUniqueIds();
-  void sweepWeakMaps();
   void sweepCompartments(JSFreeOp* fop, bool keepAtleastOne, bool lastGC);
+
+  
+  
+  void sweepWeakMaps(JSTracer* trc);
+
+  
+  void traceWeakMaps(JSTracer* trc);
 
   js::gc::UniqueIdMap& uniqueIds() { return uniqueIds_.ref(); }
 

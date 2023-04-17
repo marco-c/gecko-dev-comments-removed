@@ -392,11 +392,6 @@ void Zone::checkStringWrappersAfterMovingGC() {
 }
 #endif
 
-void Zone::sweepWeakMaps() {
-  
-  WeakMapBase::sweepZone(this);
-}
-
 void Zone::discardJitCode(JSFreeOp* fop, const DiscardOptions& options) {
   if (!jitZone()) {
     return;

@@ -1237,6 +1237,7 @@ void GCRuntime::sweepCompressionTasks() {
 }
 
 void GCRuntime::sweepWeakMaps() {
+  SweepingTracer trc(rt);
   AutoSetThreadIsSweeping threadIsSweeping;  
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
     
@@ -1248,7 +1249,7 @@ void GCRuntime::sweepWeakMaps() {
     
     
     AutoLockStoreBuffer lock(&storeBuffer());
-    zone->sweepWeakMaps();
+    zone->sweepWeakMaps(&trc);
   }
 }
 
