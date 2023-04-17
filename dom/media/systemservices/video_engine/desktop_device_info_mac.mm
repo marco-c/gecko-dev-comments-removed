@@ -2,7 +2,8 @@
 
 
 
-#include "modules/desktop_capture/mac/desktop_device_info_mac.h"
+#include "desktop_device_info_mac.h"
+#include "mozilla/Sprintf.h"
 #include <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
 #include <unistd.h>
