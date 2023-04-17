@@ -10,8 +10,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Region: "resource://gre/modules/Region.jsm",
   EveryWindow: "resource:///modules/EveryWindow.jsm",
   AboutReaderParent: "resource:///actors/AboutReaderParent.jsm",
+  ASRouterPreferences: "resource://activity-stream/lib/ASRouterPreferences.jsm",
 });
 
 const FEW_MINUTES = 15 * 60 * 1000; 
@@ -593,6 +595,27 @@ this.ASRouterTriggerListeners = new Map([
       _initialized: false,
       _triggerHandler: null,
 
+      
+      
+      
+      
+      
+      
+      
+      
+      _shouldShowCaptivePortalVPNPromo() {
+        const disablePromoPref =
+          ASRouterPreferences.disableCaptivePortalVPNPromo;
+        const homeRegion = Region.home || "";
+        const currentRegion = Region.current || "";
+
+        return (
+          !disablePromoPref &&
+          homeRegion.toLowerCase() !== "cn" &&
+          currentRegion.toLowerCase() !== "cn"
+        );
+      },
+
       init(triggerHandler) {
         if (!this._initialized) {
           Services.obs.addObserver(this, "captive-portal-login-success");
@@ -605,7 +628,12 @@ this.ASRouterTriggerListeners = new Map([
         switch (aTopic) {
           case "captive-portal-login-success":
             const browser = Services.wm.getMostRecentBrowserWindow();
-            if (browser) {
+            
+            
+            
+            
+            
+            if (browser && this._shouldShowCaptivePortalVPNPromo()) {
               this._triggerHandler(browser.gBrowser.selectedBrowser, {
                 id: this.id,
               });

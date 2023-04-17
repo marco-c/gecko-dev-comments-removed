@@ -1463,6 +1463,11 @@ pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", true)
 
 
 
+
+pref("browser.newtabpage.activity-stream.asrouter.disable-captive-portal-vpn-promo", false);
+
+
+
 pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
 
 
