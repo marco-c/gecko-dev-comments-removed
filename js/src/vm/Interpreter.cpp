@@ -1220,7 +1220,7 @@ again:
     UnwindIteratorsForUncatchableException(cx, regs);
 
     
-    if (MOZ_UNLIKELY(cx->isPropagatingForcedReturn())) {
+    if (cx->isPropagatingForcedReturn()) {
       cx->clearPropagatingForcedReturn();
       ok = true;
     }

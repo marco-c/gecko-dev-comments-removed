@@ -799,6 +799,18 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return JS::IsCatchableExceptionStatus(status);
   }
 
+  void setInterrupting() {
+    MOZ_ASSERT(status == JS::ExceptionStatus::None);
+    status = JS::ExceptionStatus::Interrupt;
+  }
+  void clearInterrupt() {
+    
+    
+    MOZ_ASSERT(status == JS::ExceptionStatus::None ||
+               status == JS::ExceptionStatus::Interrupt);
+    status = JS::ExceptionStatus::None;
+  }
+
   [[nodiscard]] bool getPendingException(JS::MutableHandleValue rval);
 
   js::SavedFrame* getPendingExceptionStack();

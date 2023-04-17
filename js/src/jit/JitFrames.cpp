@@ -524,7 +524,7 @@ again:
     }
 
     
-    if (MOZ_UNLIKELY(cx->isPropagatingForcedReturn())) {
+    if (cx->isPropagatingForcedReturn()) {
       cx->clearPropagatingForcedReturn();
       frameOk = true;
     }

@@ -39,6 +39,12 @@ extern JS_PUBLIC_API void JS_SetPendingException(
     JSContext* cx, JS::HandleValue v,
     JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
 
+
+
+
+
+extern JS_PUBLIC_API void JS_SetPendingInterrupt(JSContext* cx);
+
 extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
 
 
@@ -57,6 +63,8 @@ namespace JS {
 
 
 
+
+
 enum class ExceptionStatus {
   
   None,
@@ -65,6 +73,12 @@ enum class ExceptionStatus {
   
   
   ForcedReturn,
+
+  
+  
+  
+  
+  Interrupt,
 
   
   
