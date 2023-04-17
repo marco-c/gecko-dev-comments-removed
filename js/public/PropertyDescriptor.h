@@ -9,6 +9,7 @@
 #define js_PropertyDescriptor_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
 
 #include <stdint.h>  
 
@@ -125,6 +126,7 @@ struct JS_PUBLIC_API PropertyDescriptor {
   unsigned attrs = 0;
   JSObject* getter = nullptr;
   JSObject* setter = nullptr;
+
  private:
   Value value_;
 
@@ -202,7 +204,9 @@ struct JS_PUBLIC_API PropertyDescriptor {
 
   bool hasGetterOrSetter() const { return getter || setter; }
 
-  
+  JS::Handle<JSObject*> objectDoNotUse() const {
+    return JS::Handle<JSObject*>::fromMarkedLocation(&obj);
+  }
   unsigned attributes() const { return attrs; }
 
   void assertValid() const {
@@ -287,9 +291,7 @@ class WrappedPtrOperations<JS::PropertyDescriptor, Wrapper> {
 
   bool hasGetterOrSetter() const { return desc().hasGetterObject(); }
 
-  JS::Handle<JSObject*> object() const {
-    return JS::Handle<JSObject*>::fromMarkedLocation(&desc().obj);
-  }
+  JS::Handle<JSObject*> object() const { return desc().objectDoNotUse(); }
   unsigned attributes() const { return desc().attributes(); }
 
   void assertValid() const { desc().assertValid(); }
@@ -409,7 +411,8 @@ extern JS_PUBLIC_API bool ObjectToCompletePropertyDescriptor(
 
 
 extern JS_PUBLIC_API bool FromPropertyDescriptor(
-    JSContext* cx, Handle<PropertyDescriptor> desc, MutableHandle<Value> vp);
+    JSContext* cx, Handle<mozilla::Maybe<PropertyDescriptor>> desc,
+    MutableHandle<Value> vp);
 
 }  
 
