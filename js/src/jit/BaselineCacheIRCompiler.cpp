@@ -133,6 +133,8 @@ void BaselineCacheIRCompiler::tailCallVMInternal(MacroAssembler& masm,
 }
 
 JitCode* BaselineCacheIRCompiler::compile() {
+  AutoCreatedBy acb(masm, "BaselineCacheIRCompiler::compile");
+
 #ifndef JS_USE_LINK_REGISTER
   
   

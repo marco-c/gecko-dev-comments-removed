@@ -140,6 +140,8 @@ void Assembler::finish() {
     return;
   }
 
+  AutoCreatedBy acb(*this, "Assembler::finish");
+
   if (!extendedJumps_.length()) {
     
     
@@ -157,6 +159,7 @@ void Assembler::finish() {
 #ifdef DEBUG
     size_t oldSize = masm.size();
 #endif
+    MOZ_ASSERT(hasCreator());
     masm.jmp_rip(2);
     MOZ_ASSERT_IF(!masm.oom(), masm.size() - oldSize == 6);
     
