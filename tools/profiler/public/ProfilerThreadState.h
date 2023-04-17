@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+#ifndef ProfilerThreadState_h
+#define ProfilerThreadState_h
+
+#include "mozilla/ProfilerState.h"
+#include "mozilla/ProfilerThreadRegistration.h"
+#include "mozilla/ProfilerThreadRegistry.h"
+
+#endif  
