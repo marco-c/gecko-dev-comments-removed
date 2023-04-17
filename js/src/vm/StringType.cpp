@@ -599,6 +599,28 @@ static constexpr uint32_t StringFlagsForCharType(uint32_t baseFlags) {
   return baseFlags | JSString::LATIN1_CHARS_BIT;
 }
 
+static bool UpdateNurseryBuffersOnTransfer(js::Nursery& nursery, JSString* from,
+                                           JSString* to, void* buffer,
+                                           size_t size) {
+  
+  
+  
+
+  if (from->isTenured() && !to->isTenured()) {
+    
+    
+    if (!nursery.registerMallocedBuffer(buffer, size)) {
+      return false;
+    }
+  } else if (!from->isTenured() && to->isTenured()) {
+    
+    
+    nursery.removeMallocedBuffer(buffer, size);
+  }
+
+  return true;
+}
+
 JSLinearString* JSRope::flatten(JSContext* maybecx) {
   mozilla::Maybe<AutoGeckoProfilerEntry> entry;
   if (maybecx && !maybecx->isHelperThreadContext()) {
@@ -699,6 +721,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
   AutoCheckCannotGC nogc;
 
+  Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
   gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
 
   
@@ -717,21 +740,9 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
 
       
       
-      Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
-      bool inTenured = !bufferIfNursery;
-      if (!inTenured && left.isTenured()) {
-        
-        
-        if (!nursery.registerMallocedBuffer(wholeChars,
-                                            wholeCapacity * sizeof(CharT))) {
-          return nullptr;
-        }
-        
-        bufferIfNursery->putWholeCell(&left);
-      } else if (inTenured && !left.isTenured()) {
-        
-        
-        nursery.removeMallocedBuffer(wholeChars, wholeCapacity * sizeof(CharT));
+      if (!UpdateNurseryBuffersOnTransfer(nursery, &left, root, wholeChars,
+                                          wholeCapacity * sizeof(CharT))) {
+        return nullptr;
       }
 
       
@@ -765,6 +776,10 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
       }
       left.setLengthAndFlags(left_len, StringFlagsForCharType<CharT>(flags));
       left.d.s.u3.base = (JSLinearString*)root; 
+      if (left.isTenured() && !root->isTenured()) {
+        
+        bufferIfNursery->putWholeCell(&left);
+      }
       goto visit_right_child;
     }
   }
@@ -774,7 +789,6 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   }
 
   if (!root->isTenured()) {
-    Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
     if (!nursery.registerMallocedBuffer(wholeChars,
                                         wholeCapacity * sizeof(CharT))) {
       js_free(wholeChars);
@@ -839,7 +853,6 @@ finish_node : {
   
   
   
-  gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
   if (bufferIfNursery && str->isTenured()) {
     bufferIfNursery->putWholeCell(str);
   }
