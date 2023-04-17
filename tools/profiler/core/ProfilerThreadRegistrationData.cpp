@@ -108,8 +108,16 @@ void ThreadRegistrationLockedRWFromAnyThread::
   MOZ_ASSERT(aProfiledThreadData);
   mProfiledThreadData = aProfiledThreadData;
 
+  if (mJSContext) {
+    
+    
+    MOZ_ASSERT(!mJsFrameBuffer);
+    mJsFrameBuffer = new JsFrame[MAX_JS_FRAMES];
+  }
+
   
   MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
+  MOZ_ASSERT((mJSContext && mIsBeingProfiled) == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWFromAnyThread::
@@ -117,8 +125,14 @@ void ThreadRegistrationLockedRWFromAnyThread::
   mIsBeingProfiled = false;
   mProfiledThreadData = nullptr;
 
+  if (mJsFrameBuffer) {
+    delete[] mJsFrameBuffer;
+    mJsFrameBuffer = nullptr;
+  }
+
   
   MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
+  MOZ_ASSERT((mJSContext && mIsBeingProfiled) == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::SetJSContext(JSContext* aJSContext) {
@@ -126,17 +140,20 @@ void ThreadRegistrationLockedRWOnThread::SetJSContext(JSContext* aJSContext) {
 
   mJSContext = aJSContext;
 
-  
-  
-  MOZ_ASSERT(!mJsFrameBuffer);
-  mJsFrameBuffer = new JsFrame[MAX_JS_FRAMES];
+  if (mProfiledThreadData) {
+    MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
+    
+    
+    MOZ_ASSERT(!mJsFrameBuffer);
+    mJsFrameBuffer = new JsFrame[MAX_JS_FRAMES];
+  }
 
   
   
   js::SetContextProfilingStack(aJSContext, &ProfilingStackRef());
 
   
-  MOZ_ASSERT(!!mJSContext == !!mJsFrameBuffer);
+  MOZ_ASSERT((mJSContext && mIsBeingProfiled) == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::ClearJSContext() {
@@ -148,7 +165,7 @@ void ThreadRegistrationLockedRWOnThread::ClearJSContext() {
   }
 
   
-  MOZ_ASSERT(!!mJSContext == !!mJsFrameBuffer);
+  MOZ_ASSERT((mJSContext && mIsBeingProfiled) == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::PollJSSampling() {

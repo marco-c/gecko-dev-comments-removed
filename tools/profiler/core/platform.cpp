@@ -2339,9 +2339,25 @@ static void DoSyncSample(
   TimeDuration delta = aNow - CorePS::ProcessStartTime();
   aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  DoSharedSample( true, aFeatures, aThreadData,
-                 aThreadData.GetJsFrameBuffer(), aRegs, samplePos,
-                 bufferRangeStart, aBuffer, aCaptureOptions);
+  if (!aThreadData.GetJSContext()) {
+    
+    DoSharedSample( true, aFeatures, aThreadData,
+                    nullptr, aRegs, samplePos,
+                   bufferRangeStart, aBuffer, aCaptureOptions);
+  } else {
+    
+    
+    ThreadRegistration::WithOnThreadRef([&](ThreadRegistration::OnThreadRef
+                                                aOnThreadRef) {
+      aOnThreadRef.WithConstLockedRWOnThread(
+          [&](const ThreadRegistration::LockedRWOnThread& aLockedThreadData) {
+            DoSharedSample( true, aFeatures, aThreadData,
+                           aLockedThreadData.GetJsFrameBuffer(), aRegs,
+                           samplePos, bufferRangeStart, aBuffer,
+                           aCaptureOptions);
+          });
+    });
+  }
 }
 
 
@@ -5773,9 +5789,26 @@ void profiler_suspend_and_sample_thread(ProfilerThreadId aThreadId,
                 
                 
                 PSAutoLock lock;
-                profiler_suspend_and_sample_thread(
-                    lock, aThreadData, aThreadData.GetJsFrameBuffer(), true,
-                    aFeatures, aCollector, aSampleNative);
+                if (!aThreadData.GetJSContext()) {
+                  
+                  
+                  profiler_suspend_and_sample_thread(
+                      lock, aThreadData,  nullptr,
+                       true, aFeatures, aCollector,
+                      aSampleNative);
+                } else {
+                  
+                  
+                  aOnThreadRef.WithConstLockedRWOnThread(
+                      [&](const ThreadRegistration::LockedRWOnThread&
+                              aLockedThreadData) {
+                        profiler_suspend_and_sample_thread(
+                            lock, aThreadData,
+                            aLockedThreadData.GetJsFrameBuffer(),
+                             true, aFeatures, aCollector,
+                            aSampleNative);
+                      });
+                }
               });
         });
   } else {
@@ -5788,7 +5821,8 @@ void profiler_suspend_and_sample_thread(ProfilerThreadId aThreadId,
                       aThreadData) {
                 JsFrameBuffer& jsFrames = CorePS::JsFrames(lock);
                 profiler_suspend_and_sample_thread(lock, aThreadData, jsFrames,
-                                                   false, aFeatures, aCollector,
+                                                    false,
+                                                   aFeatures, aCollector,
                                                    aSampleNative);
               });
         });

@@ -362,9 +362,6 @@ class ThreadRegistrationUnlockedReaderAndAtomicRWOnThread
 
   [[nodiscard]] JSContext* GetJSContext() const { return mJSContext; }
 
-  
-  [[nodiscard]] JsFrame* GetJsFrameBuffer() const { return mJsFrameBuffer; }
-
  protected:
   ThreadRegistrationUnlockedReaderAndAtomicRWOnThread(const char* aName,
                                                       const void* aStackTop)
@@ -381,6 +378,10 @@ class ThreadRegistrationLockedRWFromAnyThread
   void SetIsBeingProfiledWithProfiledThreadData(
       ProfiledThreadData* aProfiledThreadData, const PSAutoLock&);
   void ClearIsBeingProfiledAndProfiledThreadData(const PSAutoLock&);
+
+  
+  
+  [[nodiscard]] JsFrame* GetJsFrameBuffer() const { return mJsFrameBuffer; }
 
   [[nodiscard]] const nsCOMPtr<nsIEventTarget> GetEventTarget() const {
     return mThread;
