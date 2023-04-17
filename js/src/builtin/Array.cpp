@@ -4045,11 +4045,9 @@ void js::ArraySpeciesLookup::initialize(JSContext* cx) {
   }
 
   
-  const Value& arrayCtorValue = cx->global()->getConstructor(JSProto_Array);
-  MOZ_ASSERT(arrayCtorValue.isObject(),
-             "The Array constructor is initialized iff Array.prototype is "
-             "initialized");
-  JSFunction* arrayCtor = &arrayCtorValue.toObject().as<JSFunction>();
+  
+  JSObject& arrayCtorObject = cx->global()->getConstructor(JSProto_Array);
+  JSFunction* arrayCtor = &arrayCtorObject.as<JSFunction>();
 
   
   

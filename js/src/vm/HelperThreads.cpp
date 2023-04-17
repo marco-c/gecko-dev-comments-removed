@@ -1044,7 +1044,7 @@ static bool EnsureConstructor(JSContext* cx, Handle<GlobalObject*> global,
   }
 
   
-  RootedObject proto(cx, &global->getPrototype(key).toObject());
+  RootedObject proto(cx, &global->getPrototype(key));
   return JSObject::setIsUsedAsPrototype(cx, proto);
 }
 

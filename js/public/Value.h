@@ -242,9 +242,6 @@ enum JSWhyMagic {
   JS_MISSING_ARGUMENTS,
 
   
-  JS_OFF_THREAD_CONSTRUCTOR,
-
-  
   JS_GENERIC_MAGIC,
 
   
