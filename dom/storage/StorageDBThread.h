@@ -34,7 +34,7 @@ class LocalStorageCacheBridge;
 class StorageUsageBridge;
 class StorageUsage;
 
-typedef mozilla::storage::StatementCache<mozIStorageStatement> StatementCache;
+using StatementCache = mozilla::storage::StatementCache<mozIStorageStatement>;
 
 
 
@@ -129,7 +129,7 @@ class StorageDBThread final {
   
   class DBOperation {
    public:
-    typedef enum {
+    enum OperationType {
       
       opPreload,
       
@@ -155,7 +155,7 @@ class StorageDBThread final {
       opClearMatchingOrigin,
       
       opClearMatchingOriginAttributes,
-    } OperationType;
+    };
 
     explicit DBOperation(const OperationType aType,
                          LocalStorageCacheBridge* aCache = nullptr,

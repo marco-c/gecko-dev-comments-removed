@@ -109,7 +109,7 @@ class LocalStorageManager final : public nsIDOMStorageManager,
                               Storage** aRetval);
 
   
-  typedef nsTHashtable<LocalStorageCacheHashKey> CacheOriginHashtable;
+  using CacheOriginHashtable = nsTHashtable<LocalStorageCacheHashKey>;
   nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
 
   void ClearCaches(uint32_t aUnloadFlags,
