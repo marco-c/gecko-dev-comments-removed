@@ -20,9 +20,12 @@
 #ifndef UMUTEX_H
 #define UMUTEX_H
 
+#ifndef __wasi__
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#endif
+
 #include <type_traits>
 
 #include "unicode/utypes.h"
@@ -36,6 +39,8 @@
 
 #error U_USER_ATOMICS and U_USER_MUTEX_H are not supported
 #endif
+
+#ifndef __wasi__
 
 
 
@@ -61,6 +66,7 @@ template struct std::atomic<std::mutex *>;
 #endif
 #endif
 
+#endif
 
 U_NAMESPACE_BEGIN
 
@@ -69,6 +75,8 @@ U_NAMESPACE_BEGIN
 
 
 
+
+#ifndef __wasi__
 
 typedef std::atomic<int32_t> u_atomic_int32_t;
 #define ATOMIC_INT32_T_INITIALIZER(val) ATOMIC_VAR_INIT(val)
@@ -89,6 +97,28 @@ inline int32_t umtx_atomic_dec(u_atomic_int32_t *var) {
     return var->fetch_sub(1) - 1;
 }
 
+#else
+
+typedef int32_t u_atomic_int32_t;
+#define ATOMIC_INT32_T_INITIALIZER(val) val
+
+inline int32_t umtx_loadAcquire(u_atomic_int32_t &var) {
+    return var;
+}
+
+inline void umtx_storeRelease(u_atomic_int32_t &var, int32_t val) {
+    var = val;
+}
+
+inline int32_t umtx_atomic_inc(u_atomic_int32_t *var) {
+    return ++(*var);
+}
+
+inline int32_t umtx_atomic_dec(u_atomic_int32_t *var) {
+    return --(*var);
+}
+
+#endif
 
 
 
@@ -231,17 +261,25 @@ public:
 
     
     void lock() {
+#ifndef __wasi__
         std::mutex *m = fMutex.load(std::memory_order_acquire);
         if (m == nullptr) { m = getMutex(); }
         m->lock();
+#endif
     }
-    void unlock() { fMutex.load(std::memory_order_relaxed)->unlock(); }
+    void unlock() {
+#ifndef __wasi__
+        fMutex.load(std::memory_order_relaxed)->unlock();
+#endif
+    }
 
     static void cleanup();
 
 private:
+#ifndef __wasi__
     alignas(std::mutex) char fStorage[sizeof(std::mutex)] {};
     std::atomic<std::mutex *> fMutex { nullptr };
+#endif
 
     
 
@@ -253,7 +291,9 @@ private:
 
 
 
+#ifndef __wasi__
     std::mutex *getMutex();
+#endif
 };
 
 

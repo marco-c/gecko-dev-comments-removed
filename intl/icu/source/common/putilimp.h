@@ -103,6 +103,8 @@ typedef size_t uintptr_t;
 #endif
 #elif U_PLATFORM == U_PF_OS400
    
+#elif defined(__wasi__)
+   
 #else
 #   define U_TZSET tzset
 #endif
@@ -128,6 +130,8 @@ typedef size_t uintptr_t;
    
 #elif U_PLATFORM == U_PF_IPHONE
    
+#elif defined(__wasi__)
+   
 #else
 #   define U_TIMEZONE timezone
 #endif
@@ -140,6 +144,8 @@ typedef size_t uintptr_t;
 #   define U_TZNAME _tzname
 #endif
 #elif U_PLATFORM == U_PF_OS400
+   
+#elif defined(__wasi__)
    
 #else
 #   define U_TZNAME tzname

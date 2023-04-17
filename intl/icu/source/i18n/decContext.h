@@ -61,7 +61,9 @@
          
   #endif
   #include <stdio.h>               
+#ifndef __wasi__
   #include <signal.h>              
+#endif
 
   
   #if !defined(DECEXTFLAG)

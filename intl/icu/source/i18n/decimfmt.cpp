@@ -480,8 +480,13 @@ DecimalFormat& DecimalFormat::operator=(const DecimalFormat& rhs) {
 DecimalFormat::~DecimalFormat() {
     if (fields == nullptr) { return; }
 
+#ifndef __wasi__
     delete fields->atomicParser.exchange(nullptr);
     delete fields->atomicCurrencyParser.exchange(nullptr);
+#else
+    delete fields->atomicParser;
+    delete fields->atomicCurrencyParser;
+#endif
     delete fields;
 }
 
@@ -1626,8 +1631,13 @@ void DecimalFormat::touch(UErrorCode& status) {
     setupFastFormat();
 
     
+#ifndef __wasi__
     delete fields->atomicParser.exchange(nullptr);
     delete fields->atomicCurrencyParser.exchange(nullptr);
+#else
+    delete fields->atomicParser;
+    delete fields->atomicCurrencyParser;
+#endif
 
     
     NumberFormat::setCurrency(fields->exportedProperties.currency.get(status).getISOCurrency(), status);
@@ -1662,7 +1672,11 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getParser(UErrorCode& sta
     }
 
     
+#ifndef __wasi__
     auto* ptr = fields->atomicParser.load();
+#else
+    auto* ptr = fields->atomicParser;
+#endif
     if (ptr != nullptr) {
         return ptr;
     }
@@ -1681,6 +1695,7 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getParser(UErrorCode& sta
     
     
     auto* nonConstThis = const_cast<DecimalFormat*>(this);
+#ifndef __wasi__
     if (!nonConstThis->fields->atomicParser.compare_exchange_strong(ptr, temp)) {
         
         delete temp;
@@ -1689,13 +1704,21 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getParser(UErrorCode& sta
         
         return temp;
     }
+#else
+    nonConstThis->fields->atomicParser = temp;
+    return temp;
+#endif
 }
 
 const numparse::impl::NumberParserImpl* DecimalFormat::getCurrencyParser(UErrorCode& status) const {
     if (U_FAILURE(status)) { return nullptr; }
 
     
+#ifndef __wasi__
     auto* ptr = fields->atomicCurrencyParser.load();
+#else
+    auto* ptr = fields->atomicCurrencyParser;
+#endif
     if (ptr != nullptr) {
         return ptr;
     }
@@ -1710,6 +1733,7 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getCurrencyParser(UErrorC
     
     
     auto* nonConstThis = const_cast<DecimalFormat*>(this);
+#ifndef __wasi__
     if (!nonConstThis->fields->atomicCurrencyParser.compare_exchange_strong(ptr, temp)) {
         
         delete temp;
@@ -1718,6 +1742,10 @@ const numparse::impl::NumberParserImpl* DecimalFormat::getCurrencyParser(UErrorC
         
         return temp;
     }
+#else
+    nonConstThis->fields->atomicCurrencyParser = temp;
+    return temp;
+#endif
 }
 
 void
