@@ -11,7 +11,6 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/SanitizerBinding.h"
 #include "nsString.h"
-#include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
 #include "nsTreeSanitizer.h"
 
@@ -32,7 +31,7 @@ class GlobalObject;
 class Sanitizer final : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Sanitizer);
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Sanitizer)
 
   explicit Sanitizer(nsIGlobalObject* aGlobal, const SanitizerConfig& aOptions)
       : mGlobal(aGlobal),
@@ -69,21 +68,8 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
 
-
-  already_AddRefed<Element> SanitizeFor(const nsAString& aElement,
-                                        const nsAString& aInput,
-                                        ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-  RefPtr<DocumentFragment> SanitizeFragment(RefPtr<DocumentFragment> aFragment,
-                                            ErrorResult& aRv);
+  void SanitizeToString(const StringOrDocumentFragmentOrDocument& aInput,
+                        nsAString& outSanitized, ErrorResult& aRv);
 
   
 
@@ -109,7 +95,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
                          uint64_t aInnerWindowID, bool aFromPrivateWindow);
 
-  RefPtr<nsIGlobalObject> mGlobal;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
   SanitizerConfig mOptions;
   nsTreeSanitizer mTreeSanitizer;
 };
