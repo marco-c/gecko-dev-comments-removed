@@ -33,14 +33,15 @@ class MediaStreamTrack;
 
 namespace mozilla {
 
-class PeerConnectionImpl;
-class PeerConnectionMedia;
-class PCUuidGenerator;
+class JsepSession;
 class MediaPipeline;
+class MediaPipelineFilter;
 class MediaPipelineReceive;
 class MediaPipelineTransmit;
-class MediaPipelineFilter;
-class JsepSession;
+class PCUuidGenerator;
+class PeerConnectionImpl;
+class PeerConnectionMedia;
+class SharedWebrtcState;
 
 
 
