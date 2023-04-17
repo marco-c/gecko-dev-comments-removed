@@ -8,7 +8,6 @@ function sync_access_handle_test(test, description) {
   promise_test(async t => {
     
     await cleanupSandboxedFileSystem();
-
     const dir = await navigator.storage.getDirectory();
     const fileHandle = await dir.getFileHandle('OPFS.test', {create: true});
     const syncHandle = await fileHandle.createSyncAccessHandle();
