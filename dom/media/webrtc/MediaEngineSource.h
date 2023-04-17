@@ -180,6 +180,12 @@ class MediaEngineSourceInterface {
 
 
 
+  virtual void Shutdown() = 0;
+
+  
+
+
+
 
   virtual nsresult TakePhoto(MediaEnginePhotoCallback* aCallback) = 0;
 
@@ -228,12 +234,6 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   static bool IsVideo(dom::MediaSourceEnum aSource);
 
-  
-
-
-
-  static bool IsAudio(dom::MediaSourceEnum aSource);
-
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEngineSource)
   NS_DECL_OWNINGEVENTTARGET
 
@@ -249,6 +249,9 @@ class MediaEngineSource : public MediaEngineSourceInterface {
 
   
   nsresult FocusOnSelectedSource() override;
+
+  
+  void Shutdown() override;
 
   
   

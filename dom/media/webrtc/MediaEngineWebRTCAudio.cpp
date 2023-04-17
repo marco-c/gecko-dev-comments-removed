@@ -633,6 +633,19 @@ void AudioInputProcessing::Disconnect(MediaTrackGraphImpl* aGraph) {
   MOZ_ASSERT(aGraph->OnGraphThread());
 }
 
+void MediaEngineWebRTCMicrophoneSource::Shutdown() {
+  AssertIsOnOwningThread();
+
+  if (mState == kStarted) {
+    Stop();
+    MOZ_ASSERT(mState == kStopped);
+  }
+
+  MOZ_ASSERT(mState == kAllocated || mState == kStopped);
+  Deallocate();
+  MOZ_ASSERT(mState == kReleased);
+}
+
 bool AudioInputProcessing::PassThrough(MediaTrackGraphImpl* aGraph) const {
   MOZ_ASSERT(aGraph->OnGraphThread());
   return mSkipProcessing;

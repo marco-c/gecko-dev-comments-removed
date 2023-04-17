@@ -128,6 +128,8 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   void Refresh(int aIndex);
 
+  void Shutdown() override;
+
   nsString GetName() const override;
   void SetName(nsString aName);
 
@@ -243,6 +245,11 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   nsString mDeviceName;
   nsCString mUniqueId;
   Maybe<nsString> mFacingMode;
+
+  
+  
+  
+  bool mInitDone = false;
 };
 
 }  
