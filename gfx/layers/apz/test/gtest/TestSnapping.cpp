@@ -11,12 +11,12 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_mousewheel.h"
 
-class APZCSnappingTesterInternal : public APZCTreeManagerTester {
+class APZCSnappingTesterMock : public APZCTreeManagerTester {
  public:
-  APZCSnappingTesterInternal() { mHitTester = MakeUnique<InternalHitTester>(); }
+  APZCSnappingTesterMock() { CreateMockHitTester(); }
 };
 
-TEST_F(APZCSnappingTesterInternal, Bug1265510) {
+TEST_F(APZCSnappingTesterMock, Bug1265510) {
   const char* treeShape = "x(x)";
   nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
                                       nsIntRegion(IntRect(0, 100, 100, 100))};
@@ -47,6 +47,7 @@ TEST_F(APZCSnappingTesterInternal, Bug1265510) {
   
   
   TimeStamp now = mcc->Time();
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), now);
   
   
@@ -63,6 +64,7 @@ TEST_F(APZCSnappingTesterInternal, Bug1265510) {
   TimeStamp newTransactionTime =
       now + TimeDuration::FromMilliseconds(
                 StaticPrefs::mousewheel_transaction_timeout() + 100);
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6),
               newTransactionTime);
   inner->AdvanceAnimationsUntilEnd();
@@ -85,7 +87,7 @@ TEST_F(APZCSnappingTesterInternal, Bug1265510) {
           .y);
 }
 
-TEST_F(APZCSnappingTesterInternal, Snap_After_Pinch) {
+TEST_F(APZCSnappingTesterMock, Snap_After_Pinch) {
   const char* treeShape = "x";
   nsIntRegion layerVisibleRegion[] = {
       nsIntRegion(IntRect(0, 0, 100, 100)),
