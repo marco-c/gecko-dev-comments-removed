@@ -224,6 +224,14 @@ namespace js {
 
 extern JS_PUBLIC_API bool UseInternalJobQueues(JSContext* cx);
 
+#ifdef DEBUG
+
+
+
+
+extern JS_PUBLIC_API JSObject* GetJobsInInternalJobQueue(JSContext* cx);
+#endif
+
 
 
 
