@@ -51,7 +51,7 @@ add_task(async function testSyncRemoteTabsButtonFunctionality() {
   syncNowButton.click();
   info("The sync now button was clicked");
 
-  await waitForCondition(() => syncWasCalled);
+  await TestUtils.waitForCondition(() => syncWasCalled);
 
   
   
