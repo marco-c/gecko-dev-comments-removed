@@ -204,7 +204,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   
   
   
-  nsAHttpSegmentReader* mSegmentReader;
+  RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
 
   nsCString mOrigin;
