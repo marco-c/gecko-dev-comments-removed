@@ -849,10 +849,13 @@ class OriginInfo final {
 
   void LockedPersist();
 
+  bool IsExtensionOrigin() { return mIsExtension; }
+
   nsTHashMap<nsStringHashKey, NotNull<QuotaObject*>> mQuotaObjects;
   ClientUsageArray mClientUsages;
   GroupInfo* mGroupInfo;
   const nsCString mOrigin;
+  bool mIsExtension;
   uint64_t mUsage;
   int64_t mAccessTime;
   bool mAccessed;
@@ -3419,6 +3422,22 @@ uint64_t QuotaManager::CollectOriginsForEviction(
                    PERSISTENCE_TYPE_PERSISTENT);
 
         if (originInfo->LockedPersisted()) {
+          continue;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (originInfo->mGroupInfo->mPersistenceType !=
+                PERSISTENCE_TYPE_TEMPORARY &&
+            originInfo->IsExtensionOrigin()) {
           continue;
         }
 
@@ -7145,6 +7164,14 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
   MOZ_ASSERT(aClientUsages.Length() == Client::TypeMax());
   MOZ_ASSERT_IF(aPersisted,
                 aGroupInfo->mPersistenceType == PERSISTENCE_TYPE_DEFAULT);
+
+  
+  
+  
+  
+  
+  
+  mIsExtension = StringBeginsWith(mOrigin, "moz-extension://"_ns);
 
 #ifdef DEBUG
   QuotaManager* quotaManager = QuotaManager::Get();

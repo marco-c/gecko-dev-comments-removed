@@ -49,11 +49,20 @@ async function testSteps() {
     );
 
     info(
-      "Step 1: Filling six separate origins to reach the global limit " +
+      "Step 0: Filling a moz-extension origin as the oldest origin with non-persisted data"
+    );
+
+    
+    let extUUID = "20445ca5-75f9-420e-a1d4-9cccccb5e891";
+    let spec = `moz-extension://${extUUID}`;
+    await fillOrigin(getPrincipal(spec), groupLimitKB * 1024);
+
+    info(
+      "Step 1: Filling five separate web origins to reach the global limit " +
         "and trigger eviction"
     );
 
-    for (let index = 1; index <= 6; index++) {
+    for (let index = 1; index <= 5; index++) {
       let spec = "http://example" + index + ".com";
       if (index == 1 && persistOldestOrigin) {
         request = persist(getPrincipal(spec));
@@ -64,7 +73,7 @@ async function testSteps() {
 
     info("Step 2: Verifying origin directories");
 
-    for (let index = 1; index <= 6; index++) {
+    for (let index = 1; index <= 5; index++) {
       let path = "storage/default/http+++example" + index + ".com";
       let file = getRelativeFile(path);
       if (index == (persistOldestOrigin ? 2 : 1)) {
@@ -73,6 +82,12 @@ async function testSteps() {
         ok(file.exists(), "The origin directory " + path + " does exist");
       }
     }
+
+    
+    
+    let path = `storage/default/moz-extension+++${extUUID}`;
+    let file = getRelativeFile(path);
+    ok(file.exists(), "The origin directory " + path + "does exist");
 
     request = clear();
     await requestFinished(request);
