@@ -3854,8 +3854,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    if (aBuilder->IsRelativeToLayoutViewport() &&
-        mOuter->PresContext()->IsRootContentDocument()) {
+    if (aBuilder->IsRelativeToLayoutViewport() && isRootContent) {
       clipRect = ViewportUtils::VisualToLayout(clipRect, mOuter->PresShell());
     }
   }
