@@ -186,6 +186,13 @@ function createHTML(options) {
   return scriptsReady.then(() => realCreateHTML(options));
 }
 
+async function runTest(testFunction) {
+  await scriptsReady;
+  await runTestWhenReady(async (...args) => {
+    await testFunction(...args);
+    await noGum();
+  });
+}
 
 
 
@@ -194,21 +201,17 @@ function createHTML(options) {
 
 
 
-var noGum = () =>
-  pushPrefs(
+async function noGum() {
+  await pushPrefs(
     ["media.navigator.permission.disabled", false],
-    ["media.navigator.permission.fake", true],
-    ["media.devices.insecure.enabled", true]
-  )
-    .then(() => navigator.mediaDevices.enumerateDevices())
-    .then(
-      ([device]) =>
-        device &&
-        is(device.label, "", "Test must leave no active gUM streams behind.")
-    );
-
-var runTest = testFunction =>
-  scriptsReady
-    .then(() => runTestWhenReady(testFunction))
-    .then(() => noGum())
-    .then(() => finish());
+    ["media.navigator.permission.fake", true]
+  );
+  if (!navigator.mediaDevices) {
+    
+    return;
+  }
+  const [device] = await navigator.mediaDevices.enumerateDevices();
+  if (device) {
+    is(device.label, "", "Test must leave no active gUM streams behind.");
+  }
+}

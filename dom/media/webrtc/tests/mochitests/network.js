@@ -8,13 +8,9 @@
 
 
 
-function startNetworkAndTest() {
-  return Promise.resolve();
-}
+async function startNetworkAndTest() {}
 
 
 
 
-function networkTestFinished() {
-  return Promise.resolve().then(() => finish());
-}
+async function networkTestFinished() {}
