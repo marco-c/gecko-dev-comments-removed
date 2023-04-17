@@ -2041,20 +2041,7 @@ void TextControlState::SetSelectionRange(
     aStart = aEnd;
   }
 
-  bool changed = false;
-  nsresult rv = NS_OK;  
-  if (IsSelectionCached()) {
-    SelectionProperties& props = GetSelectionProperties();
-    if (!props.HasMaxLength()) {
-      
-      nsAutoString value;
-      GetValue(value, false);
-      props.SetMaxLength(value.Length());
-    }
-    changed |= props.SetStart(aStart);
-    changed |= props.SetEnd(aEnd);
-    changed |= props.SetDirection(aDirection);
-  } else {
+  if (!IsSelectionCached()) {
     MOZ_ASSERT(mBoundFrame, "Our frame should still be valid");
     aRv = mBoundFrame->SetSelectionRange(aStart, aEnd, aDirection);
     if (aRv.Failed() ||
@@ -2066,36 +2053,38 @@ void TextControlState::SetSelectionRange(
       
       mBoundFrame->ScrollSelectionIntoViewAsync();
     }
-    
-    
-    
-    
-
-    
-    
-    
-    changed = true;
+    return;
   }
 
-  if (changed) {
+  SelectionProperties& props = GetSelectionProperties();
+  if (!props.HasMaxLength()) {
     
-    RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
-        mTextCtrlElement, eFormSelect, CanBubble::eYes);
+    nsAutoString value;
+    GetValue(value, false);
+    props.SetMaxLength(value.Length());
+  }
+
+  bool changed = props.SetStart(aStart);
+  changed |= props.SetEnd(aEnd);
+  changed |= props.SetDirection(aDirection);
+
+  if (!changed) {
+    return;
+  }
+
+  
+  RefPtr<AsyncEventDispatcher> asyncDispatcher =
+      new AsyncEventDispatcher(mTextCtrlElement, eFormSelect, CanBubble::eYes);
+  asyncDispatcher->PostDOMEvent();
+
+  
+  
+  
+  if (IsSelectionCached() &&
+      StaticPrefs::dom_select_events_textcontrols_enabled()) {
+    asyncDispatcher = new AsyncEventDispatcher(
+        mTextCtrlElement, eSelectionChange, CanBubble::eNo);
     asyncDispatcher->PostDOMEvent();
-
-    
-    
-    
-    if (IsSelectionCached() &&
-        StaticPrefs::dom_select_events_textcontrols_enabled()) {
-      asyncDispatcher = new AsyncEventDispatcher(
-          mTextCtrlElement, eSelectionChange, CanBubble::eNo);
-      asyncDispatcher->PostDOMEvent();
-    }
-  }
-
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
   }
 }
 
@@ -2277,7 +2266,8 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   
   Selection* selection =
       mSelCon ? mSelCon->GetSelection(SelectionType::eNormal) : nullptr;
-  SelectionBatcher selectionBatcher(selection);  
+  SelectionBatcher selectionBatcher(
+      selection, nsISelectionListener::JS_REASON);  
 
   MOZ_ASSERT(aStart <= aEnd);
   value.Replace(aStart, aEnd - aStart, aReplacement);
