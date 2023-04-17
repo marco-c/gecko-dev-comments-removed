@@ -6129,6 +6129,7 @@ class nsDisplayFilters : public nsDisplayEffectsBase {
 
   
   nsRect mEffectsBounds;
+  nsRect mVisibleRect;
 };
 
 
