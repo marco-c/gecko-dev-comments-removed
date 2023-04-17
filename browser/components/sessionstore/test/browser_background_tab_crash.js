@@ -141,7 +141,12 @@ function checkTelemetry(expectedCount, desc) {
 add_task(async function setup() {
   
   
-  await SpecialPowers.pushPrefEnv({ set: [["dom.ipc.processCount", 1]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["dom.ipc.processCount", 1],
+      ["dom.ipc.processCount.webIsolated", 1],
+    ],
+  });
 
   
   

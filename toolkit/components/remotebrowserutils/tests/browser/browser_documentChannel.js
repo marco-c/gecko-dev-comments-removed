@@ -202,6 +202,12 @@ async function testLoadAndRedirect(
 add_task(async function test_enabled() {
   
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.processCount.webIsolated", 1]],
+  });
+
+  
+  
   info("ENABLED -- FILE -- raw URI load");
   let resp = await postFrom(FILE_DUMMY, PRINT_POSTDATA);
   ok(E10SUtils.isWebRemoteType(resp.remoteType), "process switch");

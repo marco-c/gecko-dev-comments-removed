@@ -72,9 +72,6 @@ add_task(async function process_switch_in_sidebars_popups() {
 
   
   
-  if (Services.appinfo.fissionAutostart) {
-    is(cs1.pid, cs2.pid, "Both example.com CSs from the same process");
-  }
 
   await closeBrowserAction(extension);
   await extension.unload();

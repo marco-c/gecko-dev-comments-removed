@@ -16,6 +16,10 @@ async function test_navigation(nextPage, cancelContentJSPref, shouldCancel) {
     set: [
       ["dom.ipc.cancel_content_js_when_navigating", cancelContentJSPref],
       ["dom.max_script_run_time", 20],
+      
+      
+      ["dom.ipc.processCount", 1],
+      ["dom.ipc.processCount.webIsolated", 1],
     ],
   });
   let tab = await BrowserTestUtils.openNewForegroundTab({

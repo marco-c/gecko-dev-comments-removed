@@ -10,6 +10,7 @@ add_task(async function() {
     set: [
       ["dom.ipc.processPrelaunch.enabled", false],
       ["dom.ipc.processCount", 10],
+      ["dom.ipc.processCount.webIsolated", 10],
       ["dom.ipc.keepProcessesAlive.web", 10],
     ],
   });
@@ -59,8 +60,7 @@ add_task(async function() {
   
   
   
-  
-  expectedChildCount += gFissionBrowser ? 0 : 1;
+  expectedChildCount += 1;
   await BrowserTestUtils.switchTab(gBrowser, tabs[1]);
   await SpecialPowers.spawn(tabs[1].linkedBrowser, [TEST_URL], url => {
     content.location.href = url;
@@ -69,9 +69,7 @@ add_task(async function() {
   is(
     ppmm.childCount,
     expectedChildCount,
-    `Navigating away from the preloaded browser (child side, same-origin) should${
-      gFissionBrowser ? " not " : " "
-    }create a new content process.`
+    "Navigating away from the preloaded browser (child side, same-origin) should create a new content process."
   );
 
   

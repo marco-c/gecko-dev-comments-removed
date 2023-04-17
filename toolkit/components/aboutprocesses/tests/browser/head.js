@@ -381,12 +381,16 @@ async function setupTabWithOriginAndTitle(origin, title) {
 }
 
 async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
-  const isFission = Services.prefs.getBoolPref("fission.autostart");
-  Services.prefs.setBoolPref(
-    "toolkit.aboutProcesses.showAllSubframes",
-    showAllFrames
-  );
-  Services.prefs.setBoolPref("toolkit.aboutProcesses.showThreads", showThreads);
+  const isFission = gFissionBrowser;
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["toolkit.aboutProcesses.showAllSubframes", showAllFrames],
+      ["toolkit.aboutProcesses.showThreads", showThreads],
+      
+      
+      ["dom.ipc.processCount.webIsolated", 1],
+    ],
+  });
 
   
   
@@ -992,8 +996,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
   BrowserTestUtils.removeTab(tabCloseProcess1);
   BrowserTestUtils.removeTab(tabCloseProcess2);
 
-  Services.prefs.clearUserPref("toolkit.aboutProcesses.showAllSubframes");
-  Services.prefs.clearUserPref("toolkit.aboutProcesses.showThreads");
+  await SpecialPowers.popPrefEnv();
 
   await extension.unload();
 }

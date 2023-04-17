@@ -94,6 +94,10 @@ add_task(async function() {
       
       
       ["dom.storage.testing", true],
+      
+      
+      ["dom.ipc.processCount", 8],
+      ["dom.ipc.processCount.webIsolated", 4],
     ],
   });
 
