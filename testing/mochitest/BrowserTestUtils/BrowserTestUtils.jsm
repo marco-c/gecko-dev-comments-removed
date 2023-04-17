@@ -1036,7 +1036,8 @@ var BrowserTestUtils = {
 
 
   async openNewWindowWithFlushedXULCacheForMozSupports(options) {
-    
+    ChromeUtils.clearStyleSheetCache();
+
     Services.obs.notifyObservers(null, "chrome-flush-caches");
     await TestUtils.waitForTick();
 
