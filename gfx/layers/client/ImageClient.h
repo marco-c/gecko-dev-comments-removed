@@ -118,24 +118,6 @@ class ImageClientSingle : public ImageClient {
   nsTArray<Buffer> mBuffers;
 };
 
-
-
-
-
-
-class ImageClientBridge : public ImageClient {
- public:
-  ImageClientBridge(CompositableForwarder* aFwd, TextureFlags aFlags);
-
-  bool UpdateImage(ImageContainer* aContainer, uint32_t aContentFlags) override;
-  bool Connect(ImageContainer* aImageContainer) override { return false; }
-
-  TextureInfo GetTextureInfo() const override { return TextureInfo(mType); }
-
- protected:
-  CompositableHandle mAsyncContainerHandle;
-};
-
 }  
 }  
 

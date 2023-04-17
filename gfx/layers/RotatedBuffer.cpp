@@ -26,7 +26,6 @@
 #include "mozilla/gfx/Point.h"      
 #include "mozilla/gfx/Rect.h"       
 #include "mozilla/gfx/Types.h"      
-#include "mozilla/layers/ShadowLayers.h"   
 #include "mozilla/layers/TextureClient.h"  
 #include "nsLayoutUtils.h"                 
 
