@@ -3800,7 +3800,7 @@ Maybe<CSSIntSize> nsGlobalWindowOuter::GetRDMDeviceSize(
 
   
   const Document* topInProcessContentDoc =
-      aDocument.GetTopLevelContentDocument();
+      aDocument.GetTopLevelContentDocumentIfSameProcess();
   BrowsingContext* bc = topInProcessContentDoc
                             ? topInProcessContentDoc->GetBrowsingContext()
                             : nullptr;
