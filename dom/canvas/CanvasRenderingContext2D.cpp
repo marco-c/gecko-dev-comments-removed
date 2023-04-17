@@ -5364,49 +5364,6 @@ void CanvasRenderingContext2D::OnBeforePaintTransaction() {
 
 void CanvasRenderingContext2D::OnDidPaintTransaction() { MarkContextClean(); }
 
-already_AddRefed<Layer> CanvasRenderingContext2D::GetCanvasLayer(
-    nsDisplayListBuilder* aBuilder, Layer* aOldLayer, LayerManager* aManager) {
-  if (mOpaque) {
-    
-    
-    EnsureTarget();
-  }
-
-  
-  
-  
-  
-  if (!mBufferProvider && !IsTargetValid()) {
-    
-    
-    MarkContextClean();
-    return nullptr;
-  }
-
-  if (!mResetLayer && aOldLayer) {
-    RefPtr<Layer> ret = aOldLayer;
-    return ret.forget();
-  }
-
-  RefPtr<CanvasLayer> canvasLayer = aManager->CreateCanvasLayer();
-  if (!canvasLayer) {
-    NS_WARNING("CreateCanvasLayer returned null!");
-    
-    
-    MarkContextClean();
-    return nullptr;
-  }
-
-  const auto canvasRenderer = canvasLayer->CreateOrGetCanvasRenderer();
-  InitializeCanvasRenderer(aBuilder, canvasRenderer);
-  uint32_t flags = mOpaque ? Layer::CONTENT_OPAQUE : 0;
-  canvasLayer->SetContentFlags(flags);
-
-  mResetLayer = false;
-
-  return canvasLayer.forget();
-}
-
 bool CanvasRenderingContext2D::UpdateWebRenderCanvasData(
     nsDisplayListBuilder* aBuilder, WebRenderCanvasData* aCanvasData) {
   if (mOpaque) {
@@ -5489,11 +5446,6 @@ void CanvasRenderingContext2D::MarkContextCleanForFrameCapture() {
 
 bool CanvasRenderingContext2D::IsContextCleanForFrameCapture() {
   return !mIsCapturedFrameInvalid;
-}
-
-bool CanvasRenderingContext2D::ShouldForceInactiveLayer(
-    LayerManager* aManager) {
-  return !aManager->CanUseCanvasLayerForSize(GetSize());
 }
 
 void CanvasRenderingContext2D::GetAppUnitsValues(int32_t* aPerDevPixel,

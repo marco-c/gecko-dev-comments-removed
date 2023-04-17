@@ -49,7 +49,6 @@
 #include "gfx2DGlue.h"           
 #include "mozilla/Assertions.h"  
 #include "mozilla/DebugOnly.h"              
-#include "mozilla/layers/CanvasRenderer.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "nsDebug.h"  
 
@@ -67,10 +66,8 @@ class Animation;
 class AsyncPanZoomController;
 class PaintedLayer;
 class ContainerLayer;
-class ImageLayer;
 class ColorLayer;
 class CompositorAnimations;
-class CanvasLayer;
 class RefLayer;
 class SpecificLayerAttributes;
 class Compositor;
@@ -879,18 +876,6 @@ class Layer {
 
 
   virtual ColorLayer* AsColorLayer() { return nullptr; }
-
-  
-
-
-
-  virtual CanvasLayer* AsCanvasLayer() { return nullptr; }
-
-  
-
-
-
-  virtual ImageLayer* AsImageLayer() { return nullptr; }
 
   
   
@@ -1725,101 +1710,6 @@ class ColorLayer : public Layer {
 
   gfx::IntRect mBounds;
   gfx::DeviceColor mColor;
-};
-
-
-
-
-
-
-
-
-
-
-
-class CanvasLayer : public Layer {
- public:
-  void SetBounds(gfx::IntRect aBounds) { mBounds = aBounds; }
-
-  CanvasLayer* AsCanvasLayer() override { return this; }
-
-  
-
-
-
-  void Updated() {
-    mCanvasRenderer->SetDirty();
-    SetInvalidRectToVisibleRegion();
-  }
-
-  
-
-
-
-  void Painted() { mCanvasRenderer->ResetDirty(); }
-
-  
-
-
-
-  bool IsDirty() {
-    
-    
-    if (!mManager || !mManager->IsWidgetLayerManager()) {
-      return true;
-    }
-    return mCanvasRenderer->IsDirty();
-  }
-
-  const nsIntRect& GetBounds() const { return mBounds; }
-
-  RefPtr<CanvasRenderer> CreateOrGetCanvasRenderer();
-
- public:
-  
-
-
-
-  void SetSamplingFilter(gfx::SamplingFilter aSamplingFilter) {
-    if (mSamplingFilter != aSamplingFilter) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Filter", this));
-      mSamplingFilter = aSamplingFilter;
-      Mutated();
-    }
-  }
-  gfx::SamplingFilter GetSamplingFilter() const { return mSamplingFilter; }
-
-  MOZ_LAYER_DECL_NAME("CanvasLayer", TYPE_CANVAS)
-
-  void ComputeEffectiveTransforms(
-      const gfx::Matrix4x4& aTransformToSurface) override {
-    
-    
-    
-    
-    mEffectiveTransform =
-        SnapTransform(GetLocalTransform(),
-                      gfxRect(0, 0, mBounds.Width(), mBounds.Height()),
-                      nullptr) *
-        SnapTransformTranslation(aTransformToSurface, nullptr);
-    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
-  }
-
- protected:
-  CanvasLayer(LayerManager* aManager, void* aImplData);
-  virtual ~CanvasLayer();
-
-  void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  virtual RefPtr<CanvasRenderer> CreateCanvasRendererInternal() = 0;
-
-  RefPtr<CanvasRenderer> mCanvasRenderer;
-  gfx::SamplingFilter mSamplingFilter;
-
-  
-
-
-  gfx::IntRect mBounds;
 };
 
 
