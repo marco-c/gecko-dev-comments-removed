@@ -7,7 +7,7 @@ use std::cell::{Cell, UnsafeCell};
 use std::collections::{hash_map::HashMap, VecDeque};
 use std::ops::{Deref, DerefMut, Range};
 use std::ptr;
-use std::sync::atomic::{AtomicIsize, AtomicPtr, AtomicU32, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI8, AtomicIsize, AtomicPtr, AtomicU32, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use crate::{
@@ -206,11 +206,12 @@ struct SwCompositeJob {
 
 impl SwCompositeJob {
     
-    fn process(&self, band_index: u8) {
+    fn process(&self, band_index: i32) {
         
-        
-        let band_index = band_index as i32;
         let num_bands = self.num_bands as i32;
+        let band_index = num_bands - 1 - band_index;
+        
+        
         let band_offset = (self.clipped_dst.size.height * band_index) / num_bands;
         let band_height = (self.clipped_dst.size.height * (band_index + 1)) / num_bands - band_offset;
         
@@ -322,15 +323,13 @@ struct SwCompositeGraphNode {
     
     job: Option<SwCompositeJob>,
     
-    max_bands: AtomicU8,
-    
     
     
     
     
     remaining_bands: AtomicU8,
     
-    band_index: AtomicU8,
+    available_bands: AtomicI8,
     
     
     
@@ -345,9 +344,8 @@ impl SwCompositeGraphNode {
     fn new() -> SwCompositeGraphNodeRef {
         SwCompositeGraphNodeRef::new(SwCompositeGraphNode {
             job: None,
-            max_bands: AtomicU8::new(0),
             remaining_bands: AtomicU8::new(0),
-            band_index: AtomicU8::new(0),
+            available_bands: AtomicI8::new(0),
             parents: AtomicU32::new(0),
             children: Vec::new(),
         })
@@ -356,9 +354,8 @@ impl SwCompositeGraphNode {
     
     fn reset(&mut self) {
         self.job = None;
-        self.max_bands.store(0, Ordering::SeqCst);
         self.remaining_bands.store(0, Ordering::SeqCst);
-        self.band_index.store(0, Ordering::SeqCst);
+        self.available_bands.store(0, Ordering::SeqCst);
         
         
         self.parents.store(1, Ordering::SeqCst);
@@ -375,24 +372,26 @@ impl SwCompositeGraphNode {
     
     fn set_job(&mut self, job: SwCompositeJob, num_bands: u8) -> bool {
         self.job = Some(job);
-        self.max_bands.store(num_bands, Ordering::SeqCst);
         self.remaining_bands.store(num_bands, Ordering::SeqCst);
+        self.available_bands.store(num_bands as _, Ordering::SeqCst);
         
         
         self.parents.fetch_sub(1, Ordering::SeqCst) <= 1
     }
 
-    fn take_band(&self) -> Option<u8> {
-        let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
-        if band_index < self.max_bands.load(Ordering::SeqCst) {
-            Some(band_index)
+    
+    
+    fn take_band(&self) -> (Option<i32>, bool) {
+        let available = self.available_bands.fetch_sub(1, Ordering::SeqCst);
+        if available > 0 {
+            (Some(available as i32 - 1), available == 1)
         } else {
-            None
+            (None, true)
         }
     }
 
     
-    fn process_job(&self, band_index: u8) {
+    fn process_job(&self, band_index: i32) {
         if let Some(ref job) = self.job {
             job.process(band_index);
         }
@@ -438,6 +437,8 @@ struct SwCompositeThread {
     
     
     jobs_available: Condvar,
+    
+    jobs_completed: AtomicBool,
 }
 
 
@@ -459,6 +460,7 @@ impl SwCompositeThread {
             current_job: AtomicPtr::new(ptr::null_mut()),
             job_count: AtomicIsize::new(0),
             jobs_available: Condvar::new(),
+            jobs_completed: AtomicBool::new(false),
         });
         let result = info.clone();
         let thread_name = "SwComposite";
@@ -494,7 +496,7 @@ impl SwCompositeThread {
     
     
     
-    fn process_job(&self, graph_node: &mut SwCompositeGraphNode, band: u8) {
+    fn process_job(&self, graph_node: &mut SwCompositeGraphNode, band: i32) {
         
         graph_node.process_job(band);
         
@@ -551,7 +553,6 @@ impl SwCompositeThread {
         
         
         self.job_count.store(1, Ordering::SeqCst);
-        self.current_job.store(ptr::null_mut(), Ordering::SeqCst);
     }
 
     
@@ -564,6 +565,7 @@ impl SwCompositeThread {
     
     fn send_job(&self, queue: &mut SwCompositeJobQueue, job: SwCompositeGraphNodeRef) {
         if queue.is_empty() {
+            self.jobs_completed.store(false, Ordering::SeqCst);
             self.jobs_available.notify_all();
         }
         queue.push_back(job);
@@ -572,25 +574,28 @@ impl SwCompositeThread {
     
     
     
-    fn try_take_job(&self) -> Option<(&mut SwCompositeGraphNode, u8)> {
+    fn try_take_job(&self) -> Option<(&mut SwCompositeGraphNode, i32)> {
         let current_job_ptr = self.current_job.load(Ordering::SeqCst);
         if let Some(current_job) = unsafe { current_job_ptr.as_mut() } {
-            if let Some(band) = current_job.take_band() {
+            let (band, done) = current_job.take_band();
+            if done {
+                let _ = self.current_job.compare_exchange(
+                    current_job_ptr,
+                    ptr::null_mut(),
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
+                );
+            }
+            if let Some(band) = band {
                 return Some((current_job, band));
             }
-            let _ = self.current_job.compare_exchange(
-                current_job_ptr,
-                ptr::null_mut(),
-                Ordering::Relaxed,
-                Ordering::Relaxed,
-            );
         }
         return None;
     }
 
     
     
-    fn take_job(&self, wait: bool) -> Option<(&mut SwCompositeGraphNode, u8)> {
+    fn take_job(&self, wait: bool) -> Option<(&mut SwCompositeGraphNode, i32)> {
         
         
         
@@ -616,13 +621,15 @@ impl SwCompositeThread {
             
             
             
+            if wait {
+                self.jobs_completed.store(true, Ordering::SeqCst);
+            }
             match self.job_count.load(Ordering::SeqCst) {
                 
                 
                 
                 
                 0 => {
-                    self.current_job.store(ptr::null_mut(), Ordering::SeqCst);
                     self.jobs_available.notify_all();
                     if !wait {
                         return None;
@@ -666,7 +673,7 @@ impl SwCompositeThread {
         
         let mut jobs = self.lock();
         
-        while self.job_count.load(Ordering::SeqCst) > 0 {
+        while !self.jobs_completed.load(Ordering::SeqCst) {
             jobs = self.jobs_available.wait(jobs).unwrap();
         }
     }
