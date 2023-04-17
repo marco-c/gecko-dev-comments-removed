@@ -1307,6 +1307,10 @@ class MOZ_STACK_CLASS mozInlineSpellChecker::SpellCheckerTimeSlice {
 
 bool mozInlineSpellChecker::SpellCheckerTimeSlice::ShouldSpellCheckRange(
     const nsRange& aRange) const {
+  if (aRange.Collapsed()) {
+    return false;
+  }
+
   nsINode* beginNode = aRange.GetStartContainer();
   nsINode* endNode = aRange.GetEndContainer();
 
@@ -1367,7 +1371,8 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
     return NS_ERROR_FAILURE;
   }
 
-  if (mStatus->mRange->Collapsed()) {
+  if (!ShouldSpellCheckRange(*mStatus->mRange)) {
+    
     return NS_OK;
   }
 
@@ -1375,11 +1380,6 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
   
   
   int32_t originalRangeCount = mSpellCheckSelection.RangeCount();
-
-  if (!ShouldSpellCheckRange(*mStatus->mRange)) {
-    
-    return NS_OK;
-  }
 
   
   if (nsresult rv = mWordUtil.SetPositionAndEnd(
