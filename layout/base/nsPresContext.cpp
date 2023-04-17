@@ -335,12 +335,13 @@ static const char* gExactCallbackPrefs[] = {
     "nglayout.debug.paint_flashing_chrome",
     "nglayout.debug.paint_flashing",
     "privacy.resistFingerprinting",
+    "privacy.trackingprotection.enabled",
     nullptr,
 };
 
 static const char* gPrefixCallbackPrefs[] = {
-    "font.", "browser.display.",    "browser.viewport.",
-    "bidi.", "gfx.font_rendering.", "layout.css.font-visibility.",
+    "bidi.", "browser.display.",    "browser.viewport.",
+    "font.", "gfx.font_rendering.", "layout.css.font-visibility.",
     nullptr,
 };
 
@@ -800,14 +801,37 @@ nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
 
 bool nsPresContext::UpdateFontVisibility() {
   FontVisibility oldValue = mFontVisibility;
-  if (StaticPrefs::privacy_resistFingerprinting()) {
-    mFontVisibility = FontVisibility::Base;
-  } else {
-    mFontVisibility = FontVisibility(
-        std::min(int32_t(FontVisibility::User),
-                 std::max(int32_t(FontVisibility::Base),
-                          StaticPrefs::layout_css_font_visibility_level())));
+
+  
+  bool isPrivate = false;
+  if (nsCOMPtr<nsILoadContext> loadContext = mDocument->GetLoadContext()) {
+    isPrivate = loadContext->UsePrivateBrowsing();
   }
+
+  
+  
+  int32_t level;
+  if (StaticPrefs::privacy_resistFingerprinting()) {
+    level = StaticPrefs::layout_css_font_visibility_resistFingerprinting();
+  } else if (StaticPrefs::privacy_trackingprotection_enabled() ||
+             (isPrivate &&
+              StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
+    level = StaticPrefs::layout_css_font_visibility_trackingprotection();
+  } else {
+    level = StaticPrefs::layout_css_font_visibility_standard();
+  }
+
+  
+  if (isPrivate) {
+    int32_t priv = StaticPrefs::layout_css_font_visibility_private();
+    level = std::max(std::min(level, priv), int32_t(FontVisibility::Base));
+  }
+
+  
+  level = std::max(std::min(level, int32_t(FontVisibility::User)),
+                   int32_t(FontVisibility::Base));
+
+  mFontVisibility = FontVisibility(level);
   return mFontVisibility != oldValue;
 }
 
