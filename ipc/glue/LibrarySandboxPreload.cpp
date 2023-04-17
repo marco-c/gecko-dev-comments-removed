@@ -27,15 +27,10 @@ PathString GetSandboxedRLBoxPath() {
   return libFile->NativePath();
 }
 
-PRLibrary* PreloadLibrary(const PathString& path) {
+PRLibrary* PreloadLibrary(const nsCString& path) {
   PRLibSpec libSpec;
-#ifdef XP_WIN
-  libSpec.type = PR_LibSpec_PathnameU;
-  libSpec.value.pathname_u = path.get();
-#else
   libSpec.type = PR_LibSpec_Pathname;
   libSpec.value.pathname = path.get();
-#endif
   PRLibrary* ret = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY);
   return ret;
 }
@@ -45,7 +40,7 @@ void PreloadSandboxedDynamicLibrary() {
   
   
   
-#if defined(MOZ_USING_WASM_SANDBOXING)
+#if defined(XP_LINUX) && defined(MOZ_USING_WASM_SANDBOXING)
   if (!PreloadLibrary(GetSandboxedRLBoxPath())) {
     MOZ_CRASH("Library preload failure: Failed to load librlbox\n");
   }
