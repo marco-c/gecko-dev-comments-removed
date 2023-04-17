@@ -66,10 +66,6 @@ enum class PixelCastJustification : uint8_t {
   
   
   ContentProcessIsLayerInUiProcess,
-  
-  
-  
-  TransformToAncestorScaleIsStoredUntyped,
 };
 
 template <class TargetUnits, class SourceUnits>
