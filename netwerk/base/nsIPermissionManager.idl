@@ -111,6 +111,23 @@ interface nsIPermissionManager : nsISupports
 
 
 
+
+
+
+
+
+
+
+  void addFromPrincipalAndPersistInPrivateBrowsing(in nsIPrincipal principal,
+                                                   in ACString type,
+                                                   in uint32_t permission);
+
+  
+
+
+
+
+
   void removeFromPrincipal(in nsIPrincipal principal, in ACString type);
 
   

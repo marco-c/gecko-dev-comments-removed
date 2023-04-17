@@ -169,5 +169,21 @@ function* do_run_test() {
   );
   Assert.equal(perm.expireType, pm.EXPIRE_SESSION);
 
+  
+  
+  pm.addFromPrincipalAndPersistInPrivateBrowsing(
+    principalPB,
+    "test/expiration-session-pb",
+    pm.ALLOW_ACTION
+  );
+
+  
+  perm = pm.getPermissionObject(
+    principalPB,
+    "test/expiration-session-pb",
+    true
+  );
+  Assert.equal(perm.expireType, pm.EXPIRE_NEVER);
+
   do_finish_generator_test(test_generator);
 }
