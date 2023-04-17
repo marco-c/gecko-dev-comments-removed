@@ -199,9 +199,8 @@
 
 
 
-#![cfg_attr(const_generics, feature(const_generics))]
-#![cfg_attr(not(const_generics), feature(adt_const_params))]
 #![feature(
+    const_generics,
     repr_simd,
     rustc_attrs,
     platform_intrinsics,
