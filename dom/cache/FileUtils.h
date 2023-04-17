@@ -99,24 +99,25 @@ bool DirectoryPaddingFileExists(nsIFile& aBaseDir,
 
 
 
-Result<int64_t, nsresult> LockedDirectoryPaddingGet(nsIFile& aBaseDir);
+Result<int64_t, nsresult> DirectoryPaddingGet(nsIFile& aBaseDir);
 
-nsresult LockedDirectoryPaddingInit(nsIFile& aBaseDir);
+nsresult DirectoryPaddingInit(nsIFile& aBaseDir);
 
-nsresult LockedUpdateDirectoryPaddingFile(nsIFile& aBaseDir,
-                                          mozIStorageConnection& aConn,
-                                          int64_t aIncreaseSize,
-                                          int64_t aDecreaseSize,
-                                          bool aTemporaryFileExist);
+nsresult UpdateDirectoryPaddingFile(nsIFile& aBaseDir,
+                                    mozIStorageConnection& aConn,
+                                    int64_t aIncreaseSize,
+                                    int64_t aDecreaseSize,
+                                    bool aTemporaryFileExist);
 
-nsresult LockedDirectoryPaddingFinalizeWrite(nsIFile& aBaseDir);
+nsresult DirectoryPaddingFinalizeWrite(nsIFile& aBaseDir);
 
 
-Result<int64_t, nsresult> LockedDirectoryPaddingRestore(
-    nsIFile& aBaseDir, mozIStorageConnection& aConn, bool aMustRestore);
+Result<int64_t, nsresult> DirectoryPaddingRestore(nsIFile& aBaseDir,
+                                                  mozIStorageConnection& aConn,
+                                                  bool aMustRestore);
 
-nsresult LockedDirectoryPaddingDeleteFile(nsIFile& aBaseDir,
-                                          DirPaddingFile aPaddingFileType);
+nsresult DirectoryPaddingDeleteFile(nsIFile& aBaseDir,
+                                    DirPaddingFile aPaddingFileType);
 }  
 }  
 }  

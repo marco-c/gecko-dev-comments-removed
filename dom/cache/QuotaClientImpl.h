@@ -81,38 +81,33 @@ class CacheQuotaClient final : public quota::Client {
       return NS_OK;
     }
 
-    {
-      MutexAutoLock lock(mDirPaddingFileMutex);
+    
+    
+    CACHE_TRY(UpdateDirectoryPaddingFile(aBaseDir, aConn, aIncreaseSize,
+                                         aDecreaseSize,
+                                         temporaryPaddingFileExist));
 
-      
-      
-      CACHE_TRY(LockedUpdateDirectoryPaddingFile(aBaseDir, aConn, aIncreaseSize,
-                                                 aDecreaseSize,
-                                                 temporaryPaddingFileExist));
+    
+    
+    CACHE_TRY(aCommitHook());
 
-      
-      
-      CACHE_TRY(aCommitHook());
+    QM_TRY(QM_OR_ELSE_WARN(
+        ToResult(DirectoryPaddingFinalizeWrite(aBaseDir)),
+        ([&aBaseDir](const nsresult) -> Result<Ok, nsresult> {
+          
+          Unused << DirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::FILE);
 
-      QM_TRY(QM_OR_ELSE_WARN(
-          ToResult(LockedDirectoryPaddingFinalizeWrite(aBaseDir)),
-          ([&aBaseDir](const nsresult) -> Result<Ok, nsresult> {
-            
-            Unused << LockedDirectoryPaddingDeleteFile(aBaseDir,
-                                                       DirPaddingFile::FILE);
+          
+          
+          MOZ_ASSERT(
+              DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE));
 
-            
-            
-            MOZ_ASSERT(
-                DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE));
-
-            
-            
-            
-            
-            return Ok{};
-          })));
-    }
+          
+          
+          
+          
+          return Ok{};
+        })));
 
     return NS_OK;
   }
@@ -133,10 +128,6 @@ class CacheQuotaClient final : public quota::Client {
   void FinalizeShutdown() override;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheQuotaClient, override)
-
-  
-  
-  mozilla::Mutex mDirPaddingFileMutex;
 };
 
 }  
