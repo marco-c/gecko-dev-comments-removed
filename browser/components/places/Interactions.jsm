@@ -16,17 +16,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetters(this, {
-  idleService: ["@mozilla.org/widget/useridleservice;1", "nsIUserIdleService"],
-});
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "pageViewIdleTime",
-  "browser.places.interactions.pageViewIdleTime",
-  60
-);
-
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
 
 
@@ -71,13 +60,6 @@ class _Interactions {
 
 
   #activeWindow = undefined;
-
-  
-
-
-
-
-  #userIsIdle = false;
 
   
 
@@ -131,7 +113,6 @@ class _Interactions {
       }
     }
     Services.obs.addObserver(this, DOMWINDOW_OPENED_TOPIC, true);
-    idleService.addIdleObserver(this, pageViewIdleTime);
   }
 
   
@@ -198,16 +179,7 @@ class _Interactions {
       !this.#activeWindow ||
       (browser && browser.ownerGlobal != this.#activeWindow)
     ) {
-      this.logConsole.debug("No update due to no active window");
-      return;
-    }
-
-    
-    
-    
-    
-    if (this.#userIsIdle) {
-      this.logConsole.debug("No update due to user is idle");
+      this.logConsole.debug("No active window");
       return;
     }
 
@@ -303,18 +275,6 @@ class _Interactions {
       case DOMWINDOW_OPENED_TOPIC:
         this.#onWindowOpen(subject);
         break;
-      case "idle":
-        this.logConsole.debug("idle");
-        
-        
-        this.#updateInteraction();
-        this.#userIsIdle = true;
-        break;
-      case "active":
-        this.logConsole.debug("active");
-        this.#userIsIdle = false;
-        this._pageViewStartTime = Cu.now();
-        break;
     }
   }
 
@@ -381,9 +341,7 @@ class _Interactions {
 
 
 
-  async _updateDatabase(interactionInfo) {
-    this.logConsole.debug("Would update database: ", interactionInfo);
-  }
+  async _updateDatabase({ url, totalViewTime }) {}
 }
 
 const Interactions = new _Interactions();
