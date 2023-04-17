@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .sidebar-item {
   --sidebar-text-color: var(--category-text);
@@ -32,7 +32,7 @@
 
 .sidebar-item__link,
 .sidebar-item__link:hover {
-  color: inherit; 
+  color: inherit; /* do not apply usual link colors, but grab this element parent's */
 }
 
 .sidebar-item:not(.sidebar-item--selectable) {
@@ -50,4 +50,18 @@
 .sidebar-item--breathe {
   margin-block-start: calc(6 * var(--base-unit));
   margin-block-end: calc(2 * var(--base-unit));
+}
+
+@media (-moz-toolbar-prefers-color-scheme: dark) {
+  .sidebar-item--selectable:hover {
+    background-color: rgb(92, 92, 106);
+  }
+
+  .sidebar-item--selected {
+    color: var(--link-color);
+  }
+
+  .sidebar-item:not(.sidebar-item--selectable), .sidebar__label {
+    color: var(--category-text);
+  }
 }
