@@ -2261,7 +2261,7 @@ void HTMLInputElement::SetUserInput(const nsAString& aValue,
   
   
   
-  if (!ShouldBlur(this)) {
+  if (CreatesDateTimeWidget() || !ShouldBlur(this)) {
     FireChangeEventIfNeeded();
   }
 }
@@ -2963,39 +2963,6 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
   }
 }
 
-void HTMLInputElement::Blur(ErrorResult& aError) {
-  if (CreatesDateTimeWidget()) {
-    if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
-      
-      
-      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
-          dateTimeBoxElement, u"MozBlurInnerTextBox"_ns, CanBubble::eNo,
-          ChromeOnlyDispatch::eNo);
-      dispatcher->RunDOMEventWhenSafe();
-      return;
-    }
-  }
-
-  nsGenericHTMLElement::Blur(aError);
-}
-
-void HTMLInputElement::Focus(const FocusOptions& aOptions,
-                             CallerType aCallerType, ErrorResult& aError) {
-  if (CreatesDateTimeWidget()) {
-    if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
-      
-      
-      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
-          dateTimeBoxElement, u"MozFocusInnerTextBox"_ns, CanBubble::eNo,
-          ChromeOnlyDispatch::eNo);
-      dispatcher->RunDOMEventWhenSafe();
-      return;
-    }
-  }
-
-  nsGenericHTMLElement::Focus(aOptions, aCallerType, aError);
-}
-
 #if !defined(ANDROID) && !defined(XP_MACOSX)
 bool HTMLInputElement::IsNodeApzAwareInternal() const {
   
@@ -3229,18 +3196,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     nsIFrame* frame = GetPrimaryFrame();
     if (frame) {
       frame->InvalidateFrameSubtree();
-    }
-  }
-
-  if (CreatesDateTimeWidget() && aVisitor.mEvent->mMessage == eFocus &&
-      aVisitor.mEvent->mOriginalTarget == this) {
-    
-    
-    if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
-      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
-          dateTimeBoxElement, u"MozFocusInnerTextBox"_ns, CanBubble::eNo,
-          ChromeOnlyDispatch::eNo);
-      dispatcher->RunDOMEventWhenSafe();
     }
   }
 
@@ -4264,7 +4219,7 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   if (CreatesDateTimeWidget() && IsInComposedDoc()) {
     
-    AttachAndSetUAShadowRoot();
+    AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::Yes, DelegatesFocus::Yes);
   }
 
   if (mType == FormControlType::InputPassword) {
@@ -4536,7 +4491,7 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
       }
     } else if (CreatesDateTimeWidget()) {
       
-      AttachAndSetUAShadowRoot();
+      AttachAndSetUAShadowRoot(NotifyUAWidgetSetup::Yes, DelegatesFocus::Yes);
     }
   }
 }

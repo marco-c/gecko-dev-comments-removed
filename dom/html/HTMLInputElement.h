@@ -134,9 +134,6 @@ class HTMLInputElement final : public TextControlElement,
 
   int32_t TabIndexDefault() override;
   using nsGenericHTMLElement::Focus;
-  void Blur(ErrorResult& aError) override;
-  void Focus(const FocusOptions& aOptions, CallerType aCallerType,
-             ErrorResult& aError) override;
 
   
 #if !defined(ANDROID) && !defined(XP_MACOSX)
