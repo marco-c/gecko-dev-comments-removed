@@ -256,6 +256,11 @@ const observer = {
         );
         if (!docState.fieldModificationsByRootElement.get(formLikeRoot)) {
           log("Ignoring change event on form that hasn't been user-modified");
+          if (aEvent.composedTarget.hasBeenTypePassword) {
+            
+            
+            LoginManagerChild.forWindow(window)._ignorePasswordEdit();
+          }
           break;
         }
 
@@ -284,6 +289,10 @@ const observer = {
                 triggeredByFillingGenerated,
               }
             );
+          } else {
+            
+            
+            LoginManagerChild.forWindow(window)._ignorePasswordEdit();
           }
         }
         break;
@@ -2225,6 +2234,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     this._fillConfirmFieldWithGeneratedPassword(passwordField);
   }
 
+  
+
+
+
+
+  _ignorePasswordEdit() {
+    if (Cu.isInAutomation) {
+      this.sendAsyncMessage("PasswordManager:onIgnorePasswordEdit", {});
+    }
+  }
   
 
 
