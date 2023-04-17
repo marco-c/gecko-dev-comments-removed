@@ -314,7 +314,7 @@ class LinkedListElement {
 
   void setNextUnsafe(RawType aElem) {
     LinkedListElement* listElem = static_cast<LinkedListElement*>(aElem);
-    MOZ_ASSERT(!listElem->isInList());
+    MOZ_RELEASE_ASSERT(!listElem->isInList());
 
     listElem->mNext = this->mNext;
     listElem->mPrev = this;
@@ -330,7 +330,7 @@ class LinkedListElement {
 
   void setPreviousUnsafe(RawType aElem) {
     LinkedListElement<T>* listElem = static_cast<LinkedListElement<T>*>(aElem);
-    MOZ_ASSERT(!listElem->isInList());
+    MOZ_RELEASE_ASSERT(!listElem->isInList());
 
     listElem->mNext = this;
     listElem->mPrev = this->mPrev;
@@ -634,6 +634,26 @@ class LinkedList {
   LinkedList& operator=(const LinkedList<T>& aOther) = delete;
   LinkedList(const LinkedList<T>& aOther) = delete;
 };
+
+template <typename T>
+inline void ImplCycleCollectionUnlink(LinkedList<RefPtr<T>>& aField) {
+  aField.clear();
+}
+
+template <typename T>
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    LinkedList<RefPtr<T>>& aField, const char* aName, uint32_t aFlags = 0) {
+  typedef typename detail::LinkedListElementTraits<T> Traits;
+  typedef typename Traits::RawType RawType;
+  for (RawType element : aField) {
+    
+    
+    
+    
+    CycleCollectionNoteChild(aCallback, element, aName, aFlags);
+  }
+}
 
 template <typename T>
 class AutoCleanLinkedList : public LinkedList<T> {
