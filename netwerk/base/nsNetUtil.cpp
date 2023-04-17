@@ -3354,20 +3354,7 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
 
 #ifdef ANDROID
   
-  if (StringEndsWith(filePath, "/tooltip.css"_ns)) {
-    return;
-  }
-  
   if (StringEndsWith(filePath, "/app-extension-fields.properties"_ns)) {
-    return;
-  }
-  
-  if (StringEndsWith(filePath, "/SessionStore.jsm"_ns)) {
-    return;
-  }
-
-  
-  if (StringEndsWith(filePath, "/AttributionCode.jsm"_ns)) {
     return;
   }
 #endif
