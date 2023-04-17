@@ -142,31 +142,6 @@ let ShellServiceInternal = {
       .getHistogramById("BROWSER_SET_DEFAULT_ERROR")
       .add(setAsDefaultError);
   },
-
-  async doesAppNeedPin() {
-    
-    try {
-      
-      this.shellService
-        .QueryInterface(Ci.nsIWindowsShellService)
-        .checkPinCurrentAppToTaskbar();
-
-      
-      return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync());
-    } catch (ex) {
-      return false;
-    }
-  },
-
-  async pinToTaskbar() {
-    if (await this.doesAppNeedPin()) {
-      try {
-        this.shellService.pinCurrentAppToTaskbar();
-      } catch (ex) {
-        Cu.reportError(ex);
-      }
-    }
-  },
 };
 
 XPCOMUtils.defineLazyServiceGetter(
