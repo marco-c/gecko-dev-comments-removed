@@ -7555,40 +7555,47 @@ void nsGlobalWindowOuter::MaybeResetWindowName(Document* aNewDocument) {
     return;
   }
 
-  
-  
-  if (!GetBrowsingContext()->IsTopContent()) {
+  const LoadingSessionHistoryInfo* info =
+      nsDocShell::Cast(mDocShell)->GetLoadingSessionHistoryInfo();
+  if (!info || info->mForceMaybeResetName.isNothing()) {
+    
+    
+    if (!GetBrowsingContext()->IsTopContent()) {
+      return;
+    }
+
+    
+    
+    
+
+    
+    if (!GetBrowsingContext()->GetHasLoadedNonInitialDocument()) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mDoc && mDoc->NodePrincipal()->EqualsConsideringDomain(
+                    aNewDocument->NodePrincipal())) {
+      return;
+    }
+
+    
+    
+    
+    
+  } else if (!info->mForceMaybeResetName.ref()) {
     return;
   }
-
-  
-  
-  
-
-  
-  if (!GetBrowsingContext()->GetHasLoadedNonInitialDocument()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mDoc && mDoc->NodePrincipal()->EqualsConsideringDomain(
-                  aNewDocument->NodePrincipal())) {
-    return;
-  }
-
-  
-  
-  
 
   
   

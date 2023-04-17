@@ -14,13 +14,7 @@ const TEST_URI =
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.window.name.update.enabled", true],
-      
-      
-      
-      ["fission.bfcacheInParent", false],
-    ],
+    set: [["privacy.window.name.update.enabled", true]],
   });
 });
 
@@ -65,6 +59,18 @@ add_task(async function doTests() {
       } else {
         is(content.name, "Test", "The window.name shouldn't be reset.");
       }
+    });
+
+    let awaitPageShow = BrowserTestUtils.waitForContentEvent(
+      browser,
+      "pageshow"
+    );
+    browser.goBack();
+    await awaitPageShow;
+
+    
+    await SpecialPowers.spawn(browser, [], () => {
+      is(content.name, "Test", "The window.name is correct.");
     });
 
     BrowserTestUtils.removeTab(tab);

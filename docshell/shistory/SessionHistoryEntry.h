@@ -236,6 +236,13 @@ struct LoadingSessionHistoryInfo {
   
   
   bool mLoadingCurrentActiveEntry = false;
+  
+  
+  
+  
+  
+  
+  Maybe<bool> mForceMaybeResetName;
 };
 
 
