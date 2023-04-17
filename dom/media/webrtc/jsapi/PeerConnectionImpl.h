@@ -124,14 +124,16 @@ class PCUuidGenerator : public mozilla::JsepUuidGenerator {
 
 
 struct PeerConnectionAutoTimer {
-  PeerConnectionAutoTimer() : mRefCnt(0), mStart(TimeStamp::Now()){};
+  PeerConnectionAutoTimer()
+      : mRefCnt(0), mStart(TimeStamp::Now()), mUsedAV(false){};
   void RegisterConnection();
-  void UnregisterConnection();
+  void UnregisterConnection(bool aContainedAV);
   bool IsStopped();
 
  private:
   int64_t mRefCnt;
   TimeStamp mStart;
+  bool mUsedAV;
 };
 
 
