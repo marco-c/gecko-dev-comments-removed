@@ -83,7 +83,7 @@ EvalResult OpcodeEval<OP_ALWAYS_TRUE>(PolicyOpcode* opcode,
 
 
 PolicyOpcode* OpcodeFactory::MakeOpAction(EvalResult action, uint32_t options) {
-  PolicyOpcode* opcode = MakeBase(OP_ACTION, options, 0);
+  PolicyOpcode* opcode = MakeBase(OP_ACTION, options, -1);
   if (!opcode)
     return nullptr;
   opcode->SetArgument(0, action);

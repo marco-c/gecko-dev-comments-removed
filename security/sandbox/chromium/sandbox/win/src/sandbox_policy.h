@@ -32,7 +32,8 @@ class TargetPolicy {
     SUBSYS_SYNC,             
     SUBSYS_HANDLES,          
     SUBSYS_WIN32K_LOCKDOWN,  
-    SUBSYS_SIGNED_BINARY     
+    SUBSYS_SIGNED_BINARY,    
+    SUBSYS_LINE_BREAK        
   };
 
   
@@ -65,7 +66,8 @@ class TargetPolicy {
     IMPLEMENT_OPM_APIS,     
                             
                             
-    SIGNED_ALLOW_LOAD       
+    SIGNED_ALLOW_LOAD,      
+    LINE_BREAK_ALLOW        
   };
 
   

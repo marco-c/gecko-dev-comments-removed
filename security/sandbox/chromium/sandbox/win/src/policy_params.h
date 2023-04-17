@@ -61,6 +61,10 @@ POLPARAMS_BEGIN(HandleTarget)
   POLPARAM(TARGET)
 POLPARAMS_END(HandleTarget)
 
+
+POLPARAMS_BEGIN(EmptyParams)
+POLPARAMS_END(EmptyParams)
+
 }  
 
 #endif  

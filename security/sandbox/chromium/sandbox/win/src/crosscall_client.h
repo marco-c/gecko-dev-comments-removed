@@ -46,10 +46,6 @@ enum class IpcTag;
 
 
 
-const uint32_t kIPCChannelSize = 1024;
-
-
-
 
 
 
@@ -209,6 +205,32 @@ class InOutCountedBuffer : public CountedBuffer {
  public:
   InOutCountedBuffer(void* buffer, uint32_t size)
       : CountedBuffer(buffer, size) {}
+};
+
+
+
+template <>
+class CopyHelper<CountedBuffer> {
+ public:
+  CopyHelper(const CountedBuffer t) : t_(t) {}
+
+  
+  const void* GetStart() const { return t_.Buffer(); }
+
+  
+  bool Update(void* buffer) { return true; }
+
+  
+  
+  uint32_t GetSize() const { return t_.Size(); }
+
+  
+  bool IsInOut() { return false; }
+
+  ArgType GetType() { return INPTR_TYPE; }
+
+ private:
+  const CountedBuffer t_;
 };
 
 

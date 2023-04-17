@@ -47,6 +47,10 @@
 namespace sandbox {
 
 
+
+const uint32_t kIPCChannelSize = 1024;
+
+
 SANDBOX_INTERCEPT NtExports g_nt;
 
 namespace {
@@ -219,6 +223,11 @@ class ActualCallParams : public CrossCallParams {
       : CrossCallParams(tag, number_params) {
     param_info_[0].offset_ =
         static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
+  }
+
+  static constexpr size_t MaxParamsSize() {
+    return sizeof(
+        ActualCallParams<NUMBER_PARAMS, kIPCChannelSize>::parameters_);
   }
 
   
