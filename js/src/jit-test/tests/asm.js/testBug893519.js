@@ -1,4 +1,0 @@
-
-
-var g = newGlobal({newCompartment: true});
-cloneAndExecuteScript("function h() { function f() { 'use asm'; function g() { return 42 } return g } return f }", g);

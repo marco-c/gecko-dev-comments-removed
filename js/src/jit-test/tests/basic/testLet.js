@@ -19,11 +19,6 @@ function test(str, arg, result)
     
     Reflect.parse(got);
 
-    
-    var code = "(function (x) { " + str + " })";
-    var c = cloneAndExecuteScript(code, otherGlobal);
-    assertEq(c.toString(), eval(code).toString());
-
     var got = fun(arg);
     var expect = result;
     if (got !== expect) {
