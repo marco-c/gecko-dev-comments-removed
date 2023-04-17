@@ -1956,7 +1956,7 @@ nsITheme::Transparency nsNativeThemeGTK::GetWidgetTransparency(
       
       
       if (!(CheckBooleanAttr(aFrame, nsGkAtoms::root_) &&
-            aFrame->PresContext()->IsRootContentDocument() &&
+            aFrame->PresContext()->IsRootContentDocumentCrossProcess() &&
             IsFrameContentNodeInNamespace(aFrame, kNameSpaceID_XUL))) {
         return eTransparent;
       }
