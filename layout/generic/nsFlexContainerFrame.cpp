@@ -1608,7 +1608,8 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   if (const auto& aspectRatio = aFlexItem.GetAspectRatio();
-      aspectRatio && aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
+      aFlexItem.Frame()->IsFrameOfType(nsIFrame::eReplaced) && aspectRatio &&
+      aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
     nscoord transferredSizeSuggestion = aspectRatio.ComputeRatioDependentSize(
         aFlexItem.MainAxis(), cbWM, aFlexItem.CrossSize(), boxSizingAdjust);
