@@ -789,9 +789,9 @@ function createUserContextMenu(
       bundle.GetStringFromName("userContextNone.accesskey")
     );
 
-    
-    
-    
+    if (!isContextMenu) {
+      menuitem.setAttribute("command", "Browser:NewUserContextTab");
+    }
 
     docfrag.appendChild(menuitem);
 
