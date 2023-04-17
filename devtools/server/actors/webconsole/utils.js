@@ -587,6 +587,24 @@ WebConsoleCommands._registerOriginal("screenshot", function(owner, args = {}) {
 
 
 
+WebConsoleCommands._registerOriginal("history", function(owner, args = {}) {
+  owner.helperResult = (async () => {
+    
+    
+    return {
+      type: "historyOutput",
+      args,
+    };
+  })();
+});
+
+
+
+
+
+
+
+
 
 WebConsoleCommands._registerOriginal("block", function(owner, args = {}) {
   if (!args.url) {
