@@ -156,7 +156,8 @@ XPCOMUtils.defineLazyGetter(AboutPages, "aboutStudies", () => {
 
 
 
-    getStudiesEnabled() {
+    async getStudiesEnabled() {
+      await RecipeRunner.initializedPromise.promise;
       return RecipeRunner.enabled && gOptOutStudiesEnabled;
     },
 
