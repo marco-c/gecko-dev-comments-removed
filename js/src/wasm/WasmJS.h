@@ -156,11 +156,11 @@ void ReportSimdAnalysis(const char* data);
 
 bool ExceptionsAvailable(JSContext* cx);
 
-size_t MaxMemory32Pages();
+Pages MaxMemory32Pages();
 size_t MaxMemory32BoundsCheckLimit();
 
 static inline size_t MaxMemory32Bytes() {
-  return MaxMemory32Pages() * PageSize;
+  return MaxMemory32Pages().byteLength();
 }
 
 
@@ -407,6 +407,14 @@ class WasmMemoryObject : public NativeObject {
   
   
   size_t volatileMemoryLength() const;
+
+  
+  
+  wasm::Pages volatilePages() const;
+
+  
+  
+  mozilla::Maybe<wasm::Pages> maxPages() const;
 
   bool isShared() const;
   bool isHuge() const;

@@ -19,11 +19,16 @@
 #include "vm/JSObject.h"
 #include "vm/Runtime.h"
 #include "vm/SharedMem.h"
+#include "wasm/WasmPages.h"
 
 namespace js {
 
 class ArrayBufferViewObject;
 class WasmArrayRawBuffer;
+
+namespace wasm {
+struct MemoryDesc;
+}  
 
 
 
@@ -104,7 +109,8 @@ int32_t LiveMappedBufferCount();
 
 class ArrayBufferObjectMaybeShared;
 
-mozilla::Maybe<uint64_t> WasmArrayBufferMaxSize(
+wasm::Pages WasmArrayBufferPages(const ArrayBufferObjectMaybeShared* buf);
+mozilla::Maybe<wasm::Pages> WasmArrayBufferMaxPages(
     const ArrayBufferObjectMaybeShared* buf);
 size_t WasmArrayBufferMappedSize(const ArrayBufferObjectMaybeShared* buf);
 
@@ -118,8 +124,9 @@ class ArrayBufferObjectMaybeShared : public NativeObject {
   
   
 
-  mozilla::Maybe<uint64_t> wasmMaxSize() const {
-    return WasmArrayBufferMaxSize(this);
+  wasm::Pages wasmPages() const { return WasmArrayBufferPages(this); }
+  mozilla::Maybe<wasm::Pages> wasmMaxPages() const {
+    return WasmArrayBufferMaxPages(this);
   }
   size_t wasmMappedSize() const { return WasmArrayBufferMappedSize(this); }
 
@@ -441,12 +448,15 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   [[nodiscard]] bool prepareForAsmJS();
 
   size_t wasmMappedSize() const;
-  mozilla::Maybe<uint64_t> wasmMaxSize() const;
-  [[nodiscard]] static bool wasmGrowToSizeInPlace(
-      size_t newSize, Handle<ArrayBufferObject*> oldBuf,
+
+  wasm::Pages wasmPages() const;
+  mozilla::Maybe<wasm::Pages> wasmMaxPages() const;
+
+  [[nodiscard]] static bool wasmGrowToPagesInPlace(
+      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
-  [[nodiscard]] static bool wasmMovingGrowToSize(
-      size_t newSize, Handle<ArrayBufferObject*> oldBuf,
+  [[nodiscard]] static bool wasmMovingGrowToPages(
+      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
 
   static void finalize(JSFreeOp* fop, JSObject* obj);
@@ -491,11 +501,7 @@ using HandleArrayBufferObject = Handle<ArrayBufferObject*>;
 using MutableHandleArrayBufferObject = MutableHandle<ArrayBufferObject*>;
 
 
-
-
-bool CreateWasmBuffer32(JSContext* cx, uint64_t initialSize,
-                        const mozilla::Maybe<uint64_t>& maxSize,
-                        bool sharedMemory,
+bool CreateWasmBuffer32(JSContext* cx, const wasm::MemoryDesc& memory,
                         MutableHandleArrayBufferObjectMaybeShared buffer);
 
 
@@ -574,21 +580,22 @@ class MutableWrappedPtrOperations<InnerViewTable, Wrapper>
 };
 
 class WasmArrayRawBuffer {
-  mozilla::Maybe<uint64_t> maxSize_;
+  mozilla::Maybe<wasm::Pages> maxPages_;
   size_t mappedSize_;  
   size_t length_;
 
  protected:
-  WasmArrayRawBuffer(uint8_t* buffer, const mozilla::Maybe<uint64_t>& maxSize,
+  WasmArrayRawBuffer(uint8_t* buffer,
+                     const mozilla::Maybe<wasm::Pages>& maxPages,
                      size_t mappedSize, size_t length)
-      : maxSize_(maxSize), mappedSize_(mappedSize), length_(length) {
+      : maxPages_(maxPages), mappedSize_(mappedSize), length_(length) {
     MOZ_ASSERT(buffer == dataPointer());
   }
 
  public:
-  static WasmArrayRawBuffer* Allocate(size_t numBytes,
-                                      const mozilla::Maybe<uint64_t>& maxSize,
-                                      const mozilla::Maybe<size_t>& mappedSize);
+  static WasmArrayRawBuffer* AllocateWasm(
+      wasm::Pages initialPages, const mozilla::Maybe<wasm::Pages>& maxPages,
+      const mozilla::Maybe<size_t>& mappedSize);
   static void Release(void* mem);
 
   uint8_t* dataPointer() {
@@ -605,17 +612,21 @@ class WasmArrayRawBuffer {
 
   size_t mappedSize() const { return mappedSize_; }
 
-  mozilla::Maybe<uint64_t> maxSize() const { return maxSize_; }
-
   size_t byteLength() const { return length_; }
 
-  [[nodiscard]] bool growToSizeInPlace(size_t oldSize, size_t newSize);
+  wasm::Pages pages() const {
+    return wasm::Pages::fromByteLengthExact(length_);
+  }
 
-  [[nodiscard]] bool extendMappedSize(uint64_t maxSize);
+  mozilla::Maybe<wasm::Pages> maxPages() const { return maxPages_; }
+
+  [[nodiscard]] bool growToPagesInPlace(wasm::Pages newPages);
+
+  [[nodiscard]] bool extendMappedSize(wasm::Pages maxPages);
 
   
   
-  void tryGrowMaxSizeInPlace(uint64_t deltaMaxSize);
+  void tryGrowMaxPagesInPlace(wasm::Pages deltaMaxPages);
 };
 
 }  

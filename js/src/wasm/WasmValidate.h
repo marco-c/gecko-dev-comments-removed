@@ -239,8 +239,6 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 [[nodiscard]] bool DecodeModuleTail(Decoder& d, ModuleEnvironment* env);
 
-void ConvertMemoryPagesToBytes(Limits* memory);
-
 
 
 

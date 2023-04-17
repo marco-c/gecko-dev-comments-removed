@@ -531,8 +531,9 @@ bool wasm::IsValidBoundsCheckImmediate(uint32_t i) {
 #endif
 }
 
-size_t wasm::ComputeMappedSize(uint64_t maxSize) {
-  MOZ_ASSERT(maxSize % PageSize == 0);
+size_t wasm::ComputeMappedSize(wasm::Pages maxPages) {
+  
+  size_t maxSize = maxPages.byteLength();
 
   
   

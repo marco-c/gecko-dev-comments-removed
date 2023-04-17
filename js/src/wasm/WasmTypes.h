@@ -42,6 +42,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmInitExpr.h"
+#include "wasm/WasmPages.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmShareable.h"
 #include "wasm/WasmTlsData.h"
@@ -1357,6 +1358,14 @@ struct MemoryDesc {
   }
 
   
+  Pages initialPages() const { return Pages(limits.initial); }
+
+  
+  Maybe<Pages> maximumPages() const {
+    return limits.maximum.map([](uint64_t x) { return Pages(x); });
+  }
+
+  
   uint64_t initialLength32() const {
     MOZ_ASSERT(kind == MemoryKind::Memory32);
     
@@ -1605,7 +1614,7 @@ extern bool IsValidBoundsCheckImmediate(uint32_t i);
 
 
 
-extern size_t ComputeMappedSize(uint64_t maxSize);
+extern size_t ComputeMappedSize(Pages maxPages);
 
 
 
