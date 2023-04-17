@@ -37,7 +37,7 @@ async function testScript(toolbox) {
 add_task(async function() {
   const tab = await addTab(TEST_URL);
   const toolbox = await gDevTools.showToolboxForTab(tab, {
-    toolId: "inspector",
+    toolId: "webconsole",
   });
 
   
@@ -56,7 +56,7 @@ add_task(async function() {
     await testScript(toolbox);
   }
 
-  await stopRecordingAllocations("reload", {
+  await stopRecordingAllocations("reload-webconsole", {
     alsoRecordContentProcess: true,
   });
 
