@@ -76,18 +76,6 @@ class FirefoxDataProvider {
     this.onEventReceived = this.onEventReceived.bind(this);
     this.setEventStreamFlag = this.setEventStreamFlag.bind(this);
   }
-  
-
-
-
-
-
-  destroy() {
-    this.stackTraces.clear();
-    this.pendingRequests.clear();
-    this.lazyRequestData.clear();
-    this.stackTraceRequestInfoByActorID.clear();
-  }
 
   
 

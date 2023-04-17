@@ -154,8 +154,6 @@ class WebConsoleWrapper {
     );
 
     store?.dispatch(actions.messagesClear());
-    
-    this.webConsoleUI.networkDataProvider.destroy();
     this.webConsoleUI.emitForTests("messages-cleared");
   }
 
