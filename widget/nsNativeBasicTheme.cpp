@@ -1812,10 +1812,7 @@ bool nsNativeBasicTheme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
     }
   }
 
-  
-  
-  if (aDrawOverflow == DrawOverflow::No ||
-      !aFrame->StyleOutline()->mOutlineStyle.IsAuto()) {
+  if (aDrawOverflow == DrawOverflow::No) {
     eventState &= ~NS_EVENT_STATE_FOCUSRING;
   }
 
