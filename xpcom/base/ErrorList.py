@@ -744,6 +744,16 @@ with modules["DOM"]:
     
     
     
+    errors["NS_ERROR_DOM_COEP_FAILED"] = FAILURE(1040)
+
+    
+    
+    
+    errors["NS_ERROR_DOM_COOP_FAILED"] = FAILURE(1041)
+
+    
+    
+    
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
 
     
