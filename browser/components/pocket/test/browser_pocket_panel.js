@@ -32,24 +32,24 @@ add_task(async function() {
 
   let pocketFrame = pocketPanel.querySelector("browser");
 
+  const getReadyState = async frame =>
+    SpecialPowers.spawn(frame, [], () => content.document.readyState);
+
   
-  
-  const { readyState } = pocketFrame.contentDocument;
-  if (readyState !== "complete") {
-    info(
-      `Wait pocket frame to be fully loaded, current readyState ${readyState}`
-    );
-    await BrowserTestUtils.browserLoaded(pocketFrame);
-  }
+  await TestUtils.waitForCondition(
+    async () => (await getReadyState(pocketFrame)) == "complete"
+  );
 
   
   
-  pocketFrame.contentDocument.body.dispatchEvent(
-    new pocketFrame.contentWindow.MouseEvent("contextmenu", {
-      bubbles: true,
-      cancelable: true,
-      view: pocketFrame.contentWindow,
-    })
+  await pocketFrame.ownerGlobal.promiseDocumentFlushed(() => {});
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "body",
+    {
+      type: "contextmenu",
+      button: 2,
+    },
+    pocketFrame
   );
 
   await popupShown;
