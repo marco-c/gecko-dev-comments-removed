@@ -108,6 +108,11 @@ struct EatsAtLeastInfo final {
     }
   }
 
+  bool IsZero() const {
+    return eats_at_least_from_possibly_start == 0 &&
+           eats_at_least_from_not_start == 0;
+  }
+
   
   
   

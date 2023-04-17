@@ -131,6 +131,9 @@ class RegExpStack {
   
   void Reset();
 
+  
+  bool IsValid() const { return thread_local_.memory_ != nullptr; }
+
   ThreadLocal thread_local_;
   Isolate* isolate_;
 
