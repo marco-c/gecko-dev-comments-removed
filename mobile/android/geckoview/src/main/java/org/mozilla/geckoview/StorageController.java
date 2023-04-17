@@ -9,7 +9,6 @@ package org.mozilla.geckoview;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Locale;
 
@@ -17,8 +16,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.LongDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
@@ -30,7 +27,6 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission;
 
 
 public final class StorageController {
-    private static final String LOGTAG = "StorageController";
 
     
     
@@ -172,7 +168,7 @@ public final class StorageController {
             "GeckoView:ClearSessionContextData", bundle);
     }
 
-     static @Nullable String createSafeSessionContextId(
+     static @NonNull String createSafeSessionContextId(
             final @Nullable String contextId) {
         if (contextId == null) {
             return null;
@@ -186,18 +182,6 @@ public final class StorageController {
         
         return String.format("gvctx%x", new BigInteger(contextId.getBytes()))
                .toLowerCase(Locale.ROOT);
-    }
-
-     static @Nullable String retrieveUnsafeSessionContextId(
-            final @Nullable String contextId) {
-        if (contextId == null || contextId.isEmpty()) {
-            return null;
-        }
-        if ("gvctxempty".equals(contextId)) {
-            return "";
-        }
-        final byte[] bytes = new BigInteger(contextId.substring(5), 16).toByteArray();
-        return new String(bytes, Charset.forName("UTF-8"));
     }
 
     
@@ -224,87 +208,11 @@ public final class StorageController {
 
     @AnyThread
     public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri) {
-        return getPermissions(uri, null);
-    }
-
-    
-
-
-
-
-
-
-
-
-    @AnyThread
-    public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri, final @Nullable String contextId) {
-        final GeckoBundle msg = new GeckoBundle(2);
+        final GeckoBundle msg = new GeckoBundle(1);
         msg.putString("uri", uri);
-        msg.putString("contextId", createSafeSessionContextId(contextId));
         return EventDispatcher.getInstance().queryBundle("GeckoView:GetPermissionsByURI", msg).map(bundle -> {
             final GeckoBundle[] permsArray = bundle.getBundleArray("permissions");
             return ContentPermission.fromBundleArray(permsArray);
         });
-    }
-
-    
-
-
-
-
-
-    @AnyThread
-    public void setPermission(final @NonNull ContentPermission perm, final @ContentPermission.Value int value) {
-        if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_TRACKING &&
-                value == ContentPermission.VALUE_PROMPT) {
-            Log.w(LOGTAG, "Cannot set a tracking permission to VALUE_PROMPT, aborting.");
-            return;
-        }
-        final GeckoBundle msg = perm.toGeckoBundle();
-        msg.putInt("newValue", value);
-        EventDispatcher.getInstance().dispatch("GeckoView:SetPermission", msg);
-    }
-
-    
-
-
-
-
-
-
-
-    @AnyThread
-    @DeprecationSchedule(id = "setpermission-string", version = 93)
-    public void setPermission(final @NonNull String uri, final int type, final @ContentPermission.Value int value) {
-        setPermission(uri, null, false, type, value);
-    }
-
-    
-
-
-
-
-
-
-
-
-    @AnyThread
-    @DeprecationSchedule(id = "setpermission-string", version = 93)
-    public void setPermission(final @NonNull String uri, final @Nullable String contextId, final boolean privateMode, final int type, final @ContentPermission.Value int value) {
-        if (type < GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION || type > GeckoSession.PermissionDelegate.PERMISSION_TRACKING) {
-            Log.w(LOGTAG, "Invalid permission, aborting.");
-            return;
-        }
-        if (type == GeckoSession.PermissionDelegate.PERMISSION_TRACKING && value == ContentPermission.VALUE_PROMPT) {
-            Log.w(LOGTAG, "Cannot set a tracking permission to VALUE_PROMPT, aborting.");
-            return;
-        }
-        final GeckoBundle msg = new GeckoBundle(5);
-        msg.putString("uri", uri);
-        msg.putString("contextId", createSafeSessionContextId(contextId));
-        msg.putString("perm", GeckoSession.PermissionDelegate.ContentPermission.convertType(type, privateMode));
-        msg.putInt("newValue", value);
-        msg.putInt("privateId", privateMode ? 1 : 0);
-        EventDispatcher.getInstance().dispatch("GeckoView:SetPermissionByURI", msg);
     }
 }
