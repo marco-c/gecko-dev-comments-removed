@@ -1343,18 +1343,19 @@ Maybe<TimeUnit> MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold,
   }
 
   MOZ_ASSERT(aTimeThreshold >= TimeUnit::Zero());
+  const bool isNextKeyframeValid =
+      nextKeyframe.ToMicroseconds() >= 0 && !nextKeyframe.IsInfinite();
   
   
   
-  if (aRequestNextVideoKeyFrame && nextKeyframe > aTimeThreshold &&
-      !nextKeyframe.IsInfinite()) {
+  if (aRequestNextVideoKeyFrame && isNextKeyframeValid &&
+      nextKeyframe > aTimeThreshold) {
     return Some(nextKeyframe);
   }
 
   const bool isNextVideoBehindTheThreshold =
-      (nextKeyframe <= aTimeThreshold ||
-       GetInternalSeekTargetEndTime() < aTimeThreshold) &&
-      nextKeyframe.ToMicroseconds() >= 0 && !nextKeyframe.IsInfinite();
+      (isNextKeyframeValid && nextKeyframe <= aTimeThreshold) ||
+      GetInternalSeekTargetEndTime() < aTimeThreshold;
   return isNextVideoBehindTheThreshold ? Some(aTimeThreshold) : Nothing();
 }
 
