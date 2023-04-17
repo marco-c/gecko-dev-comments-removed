@@ -192,6 +192,10 @@ class StorageActorMock extends EventEmitter {
     return { document: { effectiveStoragePrincipal: principal } };
   }
 
+  get parentActor() {
+    return { isRootActor: !this.watcherActor.browserId };
+  }
+
   
 
 
