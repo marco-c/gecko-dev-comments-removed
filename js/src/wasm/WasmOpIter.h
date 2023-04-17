@@ -26,6 +26,7 @@
 
 #include "jit/AtomicOp.h"
 #include "js/Printf.h"
+#include "wasm/WasmIntrinsic.h"
 #include "wasm/WasmUtility.h"
 #include "wasm/WasmValidate.h"
 
@@ -209,6 +210,7 @@ enum class OpKind {
   Rethrow,
   Try,
 #  endif
+  Intrinsic,
 };
 
 
@@ -366,6 +368,8 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool popStackType(StackType* type, Value* value);
   [[nodiscard]] bool popWithType(ValType expected, Value* value);
   [[nodiscard]] bool popWithType(ResultType expected, ValueVector* values);
+  template <typename ValTypeSpanT>
+  [[nodiscard]] bool popWithTypes(ValTypeSpanT expected, ValueVector* values);
   [[nodiscard]] bool popWithRefType(Value* value, StackType* type);
   [[nodiscard]] bool popWithRttType(Value* rtt, uint32_t* rttTypeIndex,
                                     uint32_t* rttDepth);
@@ -652,6 +656,9 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                    uint32_t* laneIndex, Value* input);
 #endif
 
+  [[nodiscard]] bool readIntrinsic(const Intrinsic& intrinsic,
+                                   ValueVector* params);
+
   
   
   
@@ -825,11 +832,18 @@ inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
          checkIsSubtypeOf(stackType.valType(), expectedType);
 }
 
-
 template <typename Policy>
 inline bool OpIter<Policy>::popWithType(ResultType expected,
                                         ValueVector* values) {
-  size_t expectedLength = expected.length();
+  return popWithTypes(expected, values);
+}
+
+
+template <typename Policy>
+template <typename ValTypeSpanT>
+inline bool OpIter<Policy>::popWithTypes(ValTypeSpanT expected,
+                                         ValueVector* values) {
+  size_t expectedLength = expected.size();
   if (!values->resize(expectedLength)) {
     return false;
   }
@@ -3418,6 +3432,16 @@ inline bool OpIter<Policy>::readStoreLane(uint32_t byteSize,
 }
 
 #endif  
+
+template <typename Policy>
+inline bool OpIter<Policy>::readIntrinsic(const Intrinsic& intrinsic,
+                                          ValueVector* params) {
+  MOZ_ASSERT(Classify(op_) == OpKind::Intrinsic);
+  if (!env_.usesMemory()) {
+    return fail("can't touch memory without memory");
+  }
+  return popWithTypes(intrinsic.params, params);
+}
 
 }  
 }  

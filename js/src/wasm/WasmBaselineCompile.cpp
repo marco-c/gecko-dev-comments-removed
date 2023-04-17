@@ -8676,6 +8676,8 @@ class BaseCompiler final : public BaseCompilerInterface {
   [[nodiscard]] bool emitVectorShiftRightI64x2();
 #  endif
 #endif
+
+  [[nodiscard]] bool emitIntrinsic(IntrinsicOp op);
 };
 
 
@@ -15492,6 +15494,26 @@ bool BaseCompiler::emitVectorShiftRightI64x2() {
 #  endif
 #endif  
 
+bool BaseCompiler::emitIntrinsic(IntrinsicOp op) {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+  const Intrinsic& intrinsic = Intrinsic::getFromOp(op);
+
+  NothingVector params;
+  if (!iter_.readIntrinsic(intrinsic, &params)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  
+  pushHeapBase();
+
+  
+  return emitInstanceCall(lineOrBytecode, intrinsic.signature);
+}
+
 bool BaseCompiler::emitBody() {
   MOZ_ASSERT(stackMapGenerator_.framePushedAtEntryToBody.isSome());
 
@@ -17150,6 +17172,15 @@ bool BaseCompiler::emitBody() {
       
       case uint16_t(Op::MozPrefix):
         return iter_.unrecognizedOpcode(&op);
+
+      
+      case uint16_t(Op::IntrinsicPrefix): {
+        if (!moduleEnv_.intrinsicsEnabled() ||
+            op.b1 >= uint32_t(IntrinsicOp::Limit)) {
+          return iter_.unrecognizedOpcode(&op);
+        }
+        CHECK_NEXT(emitIntrinsic(IntrinsicOp(op.b1)));
+      }
 
       default:
         return iter_.unrecognizedOpcode(&op);

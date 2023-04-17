@@ -450,7 +450,8 @@ enum class Op {
   
   RefEq = 0xd5,
 
-  FirstPrefix = 0xfb,
+  FirstPrefix = 0xfa,
+  IntrinsicPrefix = 0xfa,
   GcPrefix = 0xfb,
   MiscPrefix = 0xfc,
   SimdPrefix = 0xfd,
@@ -933,6 +934,21 @@ enum class ThreadOp {
   I64AtomicCmpXchg8U = 0x4c,
   I64AtomicCmpXchg16U = 0x4d,
   I64AtomicCmpXchg32U = 0x4e,
+
+  Limit
+};
+
+enum class IntrinsicOp {
+  
+  
+  
+  
+
+  
+  
+  
+  
+  I8VecMul = 0x0,
 
   Limit
 };

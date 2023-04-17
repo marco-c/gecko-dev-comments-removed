@@ -330,6 +330,9 @@ class ResultType {
     }
   }
 
+  
+  size_t size() const { return length(); }
+
   ValType operator[](size_t i) const {
     switch (kind()) {
       case SingleKind:
@@ -1276,7 +1279,7 @@ struct Limits {
   Limits() = default;
   explicit Limits(uint64_t initial, const Maybe<uint64_t>& maximum = Nothing(),
                   Shareable shared = Shareable::False)
-      : initial(initial), maximum(maximum), shared(shared) {}
+      : indexType(IndexType::I32), initial(initial), maximum(maximum), shared(shared) {}
 };
 
 
