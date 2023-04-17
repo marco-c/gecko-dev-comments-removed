@@ -127,8 +127,10 @@ static PatternField ToPatternField(CharT aCh) {
 
 
 
-static void ReplaceHourSymbol(mozilla::Span<char16_t> aPatternOrSkeleton,
-                              DateTimeFormat::HourCycle aHourCycle) {
+
+void DateTimeFormat::ReplaceHourSymbol(
+    mozilla::Span<char16_t> aPatternOrSkeleton,
+    DateTimeFormat::HourCycle aHourCycle) {
   char16_t replacement = HourSymbol(aHourCycle);
   PatternIterator<char16_t> iter(aPatternOrSkeleton);
   while (auto* ptr = iter.next()) {
@@ -165,18 +167,20 @@ static void ReplaceHourSymbol(mozilla::Span<char16_t> aPatternOrSkeleton,
 
 
 
-static ICUResult FindPatternWithHourCycle(
+
+ICUResult DateTimeFormat::FindPatternWithHourCycle(
     DateTimePatternGenerator& aDateTimePatternGenerator,
-    DateTimeFormat::PatternVector& aPattern, bool aHour12) {
-  DateTimeFormat::PatternVector skeleton{};
-  MOZ_TRY(
-      mozilla::intl::DateTimePatternGenerator::GetSkeleton(aPattern, skeleton));
+    DateTimeFormat::PatternVector& aPattern, bool aHour12,
+    DateTimeFormat::SkeletonVector& aSkeleton) {
+  MOZ_TRY(mozilla::intl::DateTimePatternGenerator::GetSkeleton(aPattern,
+                                                               aSkeleton));
 
   
-  ReplaceHourSymbol(skeleton, aHour12 ? DateTimeFormat::HourCycle::H12
-                                      : DateTimeFormat::HourCycle::H23);
+  DateTimeFormat::ReplaceHourSymbol(aSkeleton,
+                                    aHour12 ? DateTimeFormat::HourCycle::H12
+                                            : DateTimeFormat::HourCycle::H23);
 
-  MOZ_TRY(aDateTimePatternGenerator.GetBestPattern(skeleton, aPattern));
+  MOZ_TRY(aDateTimePatternGenerator.GetBestPattern(aSkeleton, aPattern));
 
   return Ok();
 }
@@ -279,6 +283,8 @@ Result<UniquePtr<DateTimeFormat>, ICUError> DateTimeFormat::TryCreateFromStyle(
     MOZ_TRY(df->GetPattern(buffer));
 
     Maybe<DateTimeFormat::HourCycle> hcPattern = HourCycleFromPattern(pattern);
+    DateTimeFormat::SkeletonVector skeleton{};
+
     if (hcPattern) {
       bool wantHour12 =
           aStyleBag.hour12 ? *aStyleBag.hour12 : IsHour12(*aStyleBag.hourCycle);
@@ -290,18 +296,24 @@ Result<UniquePtr<DateTimeFormat>, ICUError> DateTimeFormat::TryCreateFromStyle(
         }
       } else {
         MOZ_ASSERT(aDateTimePatternGenerator);
-        MOZ_TRY(FindPatternWithHourCycle(*aDateTimePatternGenerator, pattern,
-                                         wantHour12));
+        MOZ_TRY(DateTimeFormat::FindPatternWithHourCycle(
+            *aDateTimePatternGenerator, pattern, wantHour12, skeleton));
       }
       
       
       
       if (!aStyleBag.hour12) {
-        ReplaceHourSymbol(pattern, *aStyleBag.hourCycle);
+        DateTimeFormat::ReplaceHourSymbol(pattern, *aStyleBag.hourCycle);
       }
 
-      return DateTimeFormat::TryCreateFromPattern(aLocale, pattern,
-                                                  aTimeZoneOverride);
+      auto result = DateTimeFormat::TryCreateFromPattern(aLocale, pattern,
+                                                         aTimeZoneOverride);
+      if (result.isErr()) {
+        return Err(result.unwrapErr());
+      }
+      auto dateTimeFormat = result.unwrap();
+      MOZ_TRY(dateTimeFormat->CacheSkeleton(skeleton));
+      return dateTimeFormat;
     }
   }
 
@@ -336,7 +348,7 @@ static ICUResult PushChar(V& aVec, char16_t aCh) {
 
 
 ICUResult ToICUSkeleton(const DateTimeFormat::ComponentsBag& aBag,
-                        DateTimeFormat::PatternVector& aSkeleton) {
+                        DateTimeFormat::SkeletonVector& aSkeleton) {
   
   if (aBag.weekday) {
     switch (*aBag.weekday) {
@@ -513,7 +525,7 @@ DateTimeFormat::TryCreateFromComponents(
     Span<const char> aLocale, const DateTimeFormat::ComponentsBag& aBag,
     DateTimePatternGenerator* aDateTimePatternGenerator,
     Maybe<Span<const char16_t>> aTimeZoneOverride) {
-  DateTimeFormat::PatternVector skeleton;
+  DateTimeFormat::SkeletonVector skeleton;
   MOZ_TRY(ToICUSkeleton(aBag, skeleton));
   return TryCreateFromSkeleton(aLocale, skeleton, aDateTimePatternGenerator,
                                aBag.hourCycle, aTimeZoneOverride);
@@ -567,11 +579,17 @@ DateTimeFormat::TryCreateFromSkeleton(
       aDateTimePatternGenerator->GetBestPattern(aSkeleton, pattern, options));
 
   if (aHourCycle) {
-    ReplaceHourSymbol(pattern, *aHourCycle);
+    DateTimeFormat::ReplaceHourSymbol(pattern, *aHourCycle);
   }
 
-  return DateTimeFormat::TryCreateFromPattern(aLocale, pattern,
-                                              aTimeZoneOverride);
+  auto result =
+      DateTimeFormat::TryCreateFromPattern(aLocale, pattern, aTimeZoneOverride);
+  if (result.isErr()) {
+    return Err(result.unwrapErr());
+  }
+  auto dateTimeFormat = result.unwrap();
+  MOZ_TRY(dateTimeFormat->CacheSkeleton(aSkeleton));
+  return dateTimeFormat;
 }
 
 
@@ -582,7 +600,7 @@ DateTimeFormat::TryCreateFromSkeleton(
     Maybe<DateTimeFormat::HourCycle> aHourCycle,
     Maybe<Span<const char>> aTimeZoneOverride) {
   
-  DateTimeFormat::PatternVector skeletonUtf16Buffer;
+  DateTimeFormat::SkeletonVector skeletonUtf16Buffer;
 
   if (!FillUTF16Vector(aSkeleton, skeletonUtf16Buffer)) {
     return Err(ICUError::OutOfMemory);
@@ -599,9 +617,22 @@ DateTimeFormat::TryCreateFromSkeleton(
         Some(Span<const char16_t>(tzUtf16Vec.begin(), tzUtf16Vec.length()));
   }
 
-  return DateTimeFormat::TryCreateFromSkeleton(aLocale, skeletonUtf16Buffer,
-                                               aDateTimePatternGenerator,
-                                               aHourCycle, timeZone);
+  auto result = DateTimeFormat::TryCreateFromSkeleton(
+      aLocale, skeletonUtf16Buffer, aDateTimePatternGenerator, aHourCycle,
+      timeZone);
+  if (result.isErr()) {
+    return result;
+  }
+  auto dateTimeFormat = result.unwrap();
+  MOZ_TRY(dateTimeFormat->CacheSkeleton(skeletonUtf16Buffer));
+  return dateTimeFormat;
+}
+
+ICUResult DateTimeFormat::CacheSkeleton(Span<const char16_t> aSkeleton) {
+  if (mOriginalSkeleton.append(aSkeleton.Elements(), aSkeleton.Length())) {
+    return Ok();
+  }
+  return Err(ICUError::OutOfMemory);
 }
 
 void DateTimeFormat::SetStartTimeIfGregorian(double aTime) {

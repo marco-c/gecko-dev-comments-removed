@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
+#include "mozilla/intl/DateTimePatternGenerator.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -20,7 +21,6 @@
 
 namespace mozilla::intl {
 
-class DateTimePatternGenerator;
 class Calendar;
 
 
@@ -233,6 +233,7 @@ class DateTimeFormat final {
 
   
   using PatternVector = Vector<char16_t, 128>;
+  using SkeletonVector = Vector<char16_t, 16>;
 
   
 
@@ -373,6 +374,40 @@ class DateTimeFormat final {
 
 
 
+
+
+
+
+
+  template <typename B>
+  ICUResult GetOriginalSkeleton(B& aBuffer,
+                                Maybe<HourCycle> aHourCycle = Nothing()) {
+    static_assert(std::is_same_v<typename B::CharType, char16_t>);
+    if (mOriginalSkeleton.length() == 0) {
+      
+      
+      PatternVector pattern{};
+      VectorToBufferAdaptor buffer(pattern);
+      MOZ_TRY(GetPattern(buffer));
+
+      VectorToBufferAdaptor skeleton(mOriginalSkeleton);
+      MOZ_TRY(DateTimePatternGenerator::GetSkeleton(pattern, skeleton));
+    }
+
+    if (!FillBuffer(mOriginalSkeleton, aBuffer)) {
+      return Err(ICUError::OutOfMemory);
+    }
+    if (aHourCycle) {
+      DateTimeFormat::ReplaceHourSymbol(Span(aBuffer.data(), aBuffer.length()),
+                                        *aHourCycle);
+    }
+    return Ok();
+  }
+  
+
+
+
+
   void SetStartTimeIfGregorian(double aTime);
 
   
@@ -413,7 +448,49 @@ class DateTimeFormat final {
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);
 
+  ICUResult CacheSkeleton(Span<const char16_t> aSkeleton);
+
+  
+
+
+
+  static void ReplaceHourSymbol(Span<char16_t> aPatternOrSkeleton,
+                                DateTimeFormat::HourCycle aHourCycle);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static ICUResult FindPatternWithHourCycle(
+      DateTimePatternGenerator& aDateTimePatternGenerator,
+      DateTimeFormat::PatternVector& aPattern, bool aHour12,
+      DateTimeFormat::SkeletonVector& aSkeleton);
+
   UDateFormat* mDateFormat = nullptr;
+
+  SkeletonVector mOriginalSkeleton;
 };
 
 }  
