@@ -1,8 +1,8 @@
 
 
 
-#ifndef intl_components_Locale_h_
-#define intl_components_Locale_h_
+#ifndef intl_components_LocaleCanonicalizer_h_
+#define intl_components_LocaleCanonicalizer_h_
 
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/Span.h"
