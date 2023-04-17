@@ -43,11 +43,11 @@ struct StructuredCloneReadInfoChild;
 }  
 
 class IDBObjectStore final : public nsISupports, public nsWrapperCache {
-  typedef indexedDB::IndexUpdateInfo IndexUpdateInfo;
-  typedef indexedDB::Key Key;
-  typedef indexedDB::KeyPath KeyPath;
-  typedef indexedDB::ObjectStoreSpec ObjectStoreSpec;
-  typedef indexedDB::StructuredCloneReadInfoChild StructuredCloneReadInfoChild;
+  using IndexUpdateInfo = indexedDB::IndexUpdateInfo;
+  using Key = indexedDB::Key;
+  using KeyPath = indexedDB::KeyPath;
+  using ObjectStoreSpec = indexedDB::ObjectStoreSpec;
+  using StructuredCloneReadInfoChild = indexedDB::StructuredCloneReadInfoChild;
 
   
   
