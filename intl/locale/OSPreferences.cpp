@@ -12,10 +12,11 @@
 #include "OSPreferences.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/intl/DateTimePatternGenerator.h"
+#include "mozilla/intl/DateTimeFormat.h"
+#include "mozilla/Result.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
-#include "unicode/udat.h"
-#include "unicode/udatpg.h"
 
 using namespace mozilla::intl;
 
@@ -99,57 +100,50 @@ bool OSPreferences::CanonicalizeLanguageTag(nsCString& aLoc) {
 
 
 
+
 bool OSPreferences::GetDateTimePatternForStyle(DateTimeFormatStyle aDateStyle,
                                                DateTimeFormatStyle aTimeStyle,
                                                const nsACString& aLocale,
                                                nsACString& aRetVal) {
-  UDateFormatStyle timeStyle = UDAT_NONE;
-  UDateFormatStyle dateStyle = UDAT_NONE;
+  DateTimeFormat::StyleBag style;
 
   switch (aTimeStyle) {
-    case DateTimeFormatStyle::None:
-      timeStyle = UDAT_NONE;
-      break;
     case DateTimeFormatStyle::Short:
-      timeStyle = UDAT_SHORT;
+      style.time = Some(DateTimeFormat::Style::Short);
       break;
     case DateTimeFormatStyle::Medium:
-      timeStyle = UDAT_MEDIUM;
+      style.time = Some(DateTimeFormat::Style::Medium);
       break;
     case DateTimeFormatStyle::Long:
-      timeStyle = UDAT_LONG;
+      style.time = Some(DateTimeFormat::Style::Long);
       break;
     case DateTimeFormatStyle::Full:
-      timeStyle = UDAT_FULL;
+      style.time = Some(DateTimeFormat::Style::Full);
       break;
+    case DateTimeFormatStyle::None:
     case DateTimeFormatStyle::Invalid:
-      timeStyle = UDAT_NONE;
+      
       break;
   }
 
   switch (aDateStyle) {
-    case DateTimeFormatStyle::None:
-      dateStyle = UDAT_NONE;
-      break;
     case DateTimeFormatStyle::Short:
-      dateStyle = UDAT_SHORT;
+      style.date = Some(DateTimeFormat::Style::Short);
       break;
     case DateTimeFormatStyle::Medium:
-      dateStyle = UDAT_MEDIUM;
+      style.date = Some(DateTimeFormat::Style::Medium);
       break;
     case DateTimeFormatStyle::Long:
-      dateStyle = UDAT_LONG;
+      style.date = Some(DateTimeFormat::Style::Long);
       break;
     case DateTimeFormatStyle::Full:
-      dateStyle = UDAT_FULL;
+      style.date = Some(DateTimeFormat::Style::Full);
       break;
+    case DateTimeFormatStyle::None:
     case DateTimeFormatStyle::Invalid:
-      dateStyle = UDAT_NONE;
+      
       break;
   }
-
-  const int32_t kPatternMax = 160;
-  UChar pattern[kPatternMax];
 
   nsAutoCString locale;
   if (aLocale.IsEmpty()) {
@@ -160,21 +154,30 @@ bool OSPreferences::GetDateTimePatternForStyle(DateTimeFormatStyle aDateStyle,
     locale.Assign(aLocale);
   }
 
-  UErrorCode status = U_ZERO_ERROR;
-  UDateFormat* df = udat_open(timeStyle, dateStyle, locale.get(), nullptr, -1,
-                              nullptr, -1, &status);
-  if (U_FAILURE(status)) {
+  auto genResult =
+      DateTimePatternGenerator::TryCreate(PromiseFlatCString(aLocale).get());
+  if (genResult.isErr()) {
+    return false;
+  }
+  auto generator = genResult.unwrap();
+
+  auto dfResult = DateTimeFormat::TryCreateFromStyle(
+      MakeStringSpan(locale.get()), style, generator.get(), Nothing());
+  if (dfResult.isErr()) {
+    return false;
+  }
+  auto df = dfResult.unwrap();
+
+  DateTimeFormat::PatternVector pattern;
+  auto patternResult = df->GetPattern(pattern);
+  if (patternResult.isErr()) {
     return false;
   }
 
-  int32_t patsize = udat_toPattern(df, false, pattern, kPatternMax, &status);
-  udat_close(df);
-  if (U_FAILURE(status)) {
-    return false;
-  }
-  aRetVal = NS_ConvertUTF16toUTF8(pattern, patsize);
+  aRetVal = NS_ConvertUTF16toUTF8(pattern.begin(), pattern.length());
   return true;
 }
+
 
 
 
@@ -193,20 +196,21 @@ bool OSPreferences::GetDateTimeSkeletonForStyle(DateTimeFormatStyle aDateStyle,
     return false;
   }
 
-  nsAutoString patternAsUtf16 = NS_ConvertUTF8toUTF16(pattern);
-
-  const int32_t kSkeletonMax = 160;
-  UChar skeleton[kSkeletonMax];
-
-  UErrorCode status = U_ZERO_ERROR;
-  int32_t skelsize = udatpg_getSkeleton(
-      nullptr, (const UChar*)patternAsUtf16.BeginReading(),
-      patternAsUtf16.Length(), skeleton, kSkeletonMax, &status);
-  if (U_FAILURE(status)) {
+  auto genResult =
+      DateTimePatternGenerator::TryCreate(PromiseFlatCString(aLocale).get());
+  if (genResult.isErr()) {
     return false;
   }
 
-  aRetVal = NS_ConvertUTF16toUTF8(skeleton, skelsize);
+  nsAutoString patternAsUtf16 = NS_ConvertUTF8toUTF16(pattern);
+  DateTimeFormat::SkeletonVector skeleton;
+  auto generator = genResult.unwrap();
+  auto skeletonResult = generator->GetSkeleton(patternAsUtf16, skeleton);
+  if (skeletonResult.isErr()) {
+    return false;
+  }
+
+  aRetVal = NS_ConvertUTF16toUTF8(skeleton.begin(), skeleton.length());
   return true;
 }
 
@@ -344,34 +348,22 @@ bool OSPreferences::GetPatternForSkeleton(const nsACString& aSkeleton,
                                           nsACString& aRetVal) {
   aRetVal.Truncate();
 
-  UErrorCode status = U_ZERO_ERROR;
-  UDateTimePatternGenerator* pg =
-      udatpg_open(PromiseFlatCString(aLocale).get(), &status);
-  if (U_FAILURE(status)) {
+  auto genResult =
+      DateTimePatternGenerator::TryCreate(PromiseFlatCString(aLocale).get());
+  if (genResult.isErr()) {
     return false;
   }
 
   nsAutoString skeletonAsUtf16 = NS_ConvertUTF8toUTF16(aSkeleton);
-  nsAutoString result;
-
-  int32_t len =
-      udatpg_getBestPattern(pg, (const UChar*)skeletonAsUtf16.BeginReading(),
-                            skeletonAsUtf16.Length(), nullptr, 0, &status);
-  if (status == U_BUFFER_OVERFLOW_ERROR) {  
-    result.SetLength(len);
-    status = U_ZERO_ERROR;
-    udatpg_getBestPattern(pg, (const UChar*)skeletonAsUtf16.BeginReading(),
-                          skeletonAsUtf16.Length(),
-                          (UChar*)result.BeginWriting(), len, &status);
+  DateTimeFormat::PatternVector pattern;
+  auto generator = genResult.unwrap();
+  auto patternResult = generator->GetBestPattern(skeletonAsUtf16, pattern);
+  if (patternResult.isErr()) {
+    return false;
   }
 
-  udatpg_close(pg);
-
-  if (U_SUCCESS(status)) {
-    aRetVal = NS_ConvertUTF16toUTF8(result);
-  }
-
-  return U_SUCCESS(status);
+  aRetVal = NS_ConvertUTF16toUTF8(pattern.begin(), pattern.length());
+  return true;
 }
 
 
@@ -385,8 +377,6 @@ bool OSPreferences::GetPatternForSkeleton(const nsACString& aSkeleton,
 
 bool OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
                                                 nsACString& aRetVal) {
-  bool result = false;
-
   
   nsAutoCString value;
   nsresult nr = Preferences::GetCString(
@@ -397,19 +387,16 @@ bool OSPreferences::GetDateTimeConnectorPattern(const nsACString& aLocale,
     return true;
   }
 
-  UErrorCode status = U_ZERO_ERROR;
-  UDateTimePatternGenerator* pg =
-      udatpg_open(PromiseFlatCString(aLocale).get(), &status);
-  if (U_SUCCESS(status)) {
-    int32_t resultSize;
-    const UChar* value = udatpg_getDateTimeFormat(pg, &resultSize);
-    MOZ_ASSERT(resultSize >= 0);
-
-    aRetVal = NS_ConvertUTF16toUTF8(value, resultSize);
-    result = true;
+  auto genResult =
+      DateTimePatternGenerator::TryCreate(PromiseFlatCString(aLocale).get());
+  if (genResult.isErr()) {
+    return false;
   }
-  udatpg_close(pg);
-  return result;
+
+  auto generator = genResult.unwrap();
+  Span<const char16_t> result = generator->GetPlaceholderPattern();
+  aRetVal = NS_ConvertUTF16toUTF8(result.data(), result.size());
+  return true;
 }
 
 
