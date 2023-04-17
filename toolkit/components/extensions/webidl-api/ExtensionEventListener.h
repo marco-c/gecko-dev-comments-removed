@@ -24,6 +24,11 @@ class Function;
 
 namespace extensions {
 
+#define SLOT_SEND_RESPONSE_CALLBACK_INSTANCE 0
+
+
+
+
 
 
 
@@ -38,6 +43,7 @@ class ExtensionEventListener final : public mozIExtensionEventListener {
   using CleanupCallback = std::function<void()>;
   using ListenerCallOptions = mozIExtensionListenerCallOptions;
   using APIObjectType = ListenerCallOptions::APIObjectType;
+  using CallbackType = ListenerCallOptions::CallbackType;
 
   static already_AddRefed<ExtensionEventListener> Create(
       nsIGlobalObject* aGlobal, dom::Function* aCallback,
@@ -106,6 +112,7 @@ class ExtensionListenerCallWorkerRunnable : public dom::WorkerRunnable {
  public:
   using ListenerCallOptions = mozIExtensionListenerCallOptions;
   using APIObjectType = ListenerCallOptions::APIObjectType;
+  using CallbackType = ListenerCallOptions::CallbackType;
 
   ExtensionListenerCallWorkerRunnable(
       const RefPtr<ExtensionEventListener>& aExtensionEventListener,
@@ -116,18 +123,24 @@ class ExtensionListenerCallWorkerRunnable : public dom::WorkerRunnable {
                        WorkerThreadUnchangedBusyCount),
         mListener(aExtensionEventListener),
         mArgsHolder(std::move(aArgsHolder)),
+        mPromiseResult(std::move(aPromiseRetval)),
         mAPIObjectType(APIObjectType::NONE),
-        mPromiseResult(std::move(aPromiseRetval)) {
+        mCallbackArgType(CallbackType::CALLBACK_NONE) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(aExtensionEventListener);
 
     if (aCallOptions) {
       aCallOptions->GetApiObjectType(&mAPIObjectType);
+      aCallOptions->GetCallbackType(&mCallbackArgType);
     }
   }
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool WorkerRun(JSContext* aCx, dom::WorkerPrivate* aWorkerPrivate) override;
+
+  bool IsCallResultCancelled() {
+    return mIsCallResultCancelled;
+  }
 
  private:
   ~ExtensionListenerCallWorkerRunnable() {
@@ -153,9 +166,15 @@ class ExtensionListenerCallWorkerRunnable : public dom::WorkerRunnable {
   RefPtr<ExtensionEventListener> mListener;
   UniquePtr<dom::StructuredCloneHolder> mArgsHolder;
   RefPtr<dom::Promise> mPromiseResult;
+  bool mIsCallResultCancelled = false;
   
   APIObjectType mAPIObjectType;
+  CallbackType mCallbackArgType;
 };
+
+
+
+
 
 class ExtensionListenerCallPromiseResultHandler
     : public dom::PromiseNativeHandler {
@@ -185,12 +204,10 @@ class ExtensionListenerCallPromiseResultHandler
                          PromiseCallbackType aCallbackType);
 
   
-  
-  RefPtr<dom::Promise> mOutPromise;
+  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
 
   
   
-  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
   RefPtr<ExtensionListenerCallWorkerRunnable> mWorkerRunnable;
 };
 
