@@ -144,6 +144,8 @@ class QuotaRequestChild final : public PQuotaRequestChild {
 
   void HandleResponse(const nsTArray<nsCString>& aResponse);
 
+  void HandleResponse(const GetFullOriginMetadataResponse& aResponse);
+
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
