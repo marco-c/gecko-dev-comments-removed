@@ -178,22 +178,45 @@ void NativeMenuMac::Dump() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void NativeMenuMac::OnMenuOpened() {
+void NativeMenuMac::OnMenuWillOpen(dom::Element* aPopupElement) {
+  if (aPopupElement == mElement) {
+    return;
+  }
+
   
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
   for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeMenuOpened();
+    observer->OnNativeSubMenuWillOpen(aPopupElement);
   }
 }
-void NativeMenuMac::OnMenuClosed() {
+
+void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
   
   
   RefPtr<NativeMenuMac> kungFuDeathGrip(this);
 
   for (NativeMenu::Observer* observer : mObservers.Clone()) {
-    observer->OnNativeMenuClosed();
+    if (aPopupElement == mElement) {
+      observer->OnNativeMenuOpened();
+    } else {
+      observer->OnNativeSubMenuDidOpen(aPopupElement);
+    }
+  }
+}
+
+void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
+  
+  
+  RefPtr<NativeMenuMac> kungFuDeathGrip(this);
+
+  for (NativeMenu::Observer* observer : mObservers.Clone()) {
+    if (aPopupElement == mElement) {
+      observer->OnNativeMenuClosed();
+    } else {
+      observer->OnNativeSubMenuClosed(aPopupElement);
+    }
   }
 }
 

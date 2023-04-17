@@ -34,13 +34,30 @@ class nsIWidget;
 @property BOOL menuIsInMenubar;
 @end
 
+class nsMenuXObserver {
+ public:
+  
+  
+  virtual void OnMenuWillOpen(mozilla::dom::Element* aPopupElement) = 0;
+
+  
+  
+  virtual void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) = 0;
+
+  
+  
+  virtual void OnMenuClosed(mozilla::dom::Element* aPopupElement) = 0;
+};
+
 
 
 class nsMenuX final : public nsMenuParentX,
                       public nsChangeObserver,
-                      public nsMenuItemIconX::Listener {
+                      public nsMenuItemIconX::Listener,
+                      public nsMenuXObserver {
  public:
   using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, RefPtr<nsMenuItemX>>;
+  using Observer = nsMenuXObserver;
 
   
   nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
@@ -56,6 +73,11 @@ class nsMenuX final : public nsMenuParentX,
 
   
   void IconUpdated() override;
+
+  
+  void OnMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
+  void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
+  void OnMenuClosed(mozilla::dom::Element* aPopupElement) override;
 
   
   
@@ -127,17 +149,6 @@ class nsMenuX final : public nsMenuParentX,
   void Dump(uint32_t aIndent) const;
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
-
-  class Observer {
-   public:
-    
-    
-    virtual void OnMenuOpened() = 0;
-
-    
-    
-    virtual void OnMenuClosed() = 0;
-  };
 
   
   

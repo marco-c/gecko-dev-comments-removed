@@ -64,6 +64,15 @@ class NativeMenu {
     
     
     virtual void OnNativeMenuClosed() = 0;
+
+    
+    virtual void OnNativeSubMenuWillOpen(dom::Element* aPopupElement) = 0;
+
+    
+    virtual void OnNativeSubMenuDidOpen(dom::Element* aPopupElement) = 0;
+
+    
+    virtual void OnNativeSubMenuClosed(dom::Element* aPopupElement) = 0;
   };
 
   
