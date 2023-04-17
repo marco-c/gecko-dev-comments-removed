@@ -626,6 +626,8 @@ class nsContentUtils {
 
 
   static bool IsAlphanumericOrSymbol(uint32_t aChar);
+  static bool IsAlphanumericOrSymbolAt(const nsTextFragment* aFrag,
+                                       uint32_t aOffset);
 
   
 
