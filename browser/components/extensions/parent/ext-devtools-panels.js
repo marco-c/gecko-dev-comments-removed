@@ -414,9 +414,6 @@ class ParentDevToolsInspectorSidebar extends BaseDevToolsPanel {
       this.containerEl = null;
     }
 
-    
-    this._updateLastExpressionResult(null);
-
     this.toolbox.off(
       `extension-sidebar-created-${this.id}`,
       this.onSidebarCreated
