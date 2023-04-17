@@ -790,8 +790,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
     let pseudos = this._getPseudoClasses(node).join("");
     if (pseudo) {
-      
-      pseudos += ":" + pseudo;
+      pseudos += pseudo;
     }
 
     

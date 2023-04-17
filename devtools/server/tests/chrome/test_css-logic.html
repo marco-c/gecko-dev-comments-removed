@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug </title>
@@ -49,13 +49,13 @@ addTest(function getBindingElementAndPseudo() {
   ({ bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(firstChild));
   is(bindingElement, node,
      "Binding element is the parent for a pseudo node");
-  is(pseudo, ":before", "Pseudo is correct for a ::before node");
+  is(pseudo, "::before", "Pseudo is correct for a ::before node");
 
   const lastChild = new _documentWalker(node, window).lastChild();
   ({ bindingElement, pseudo } = CssLogic.getBindingElementAndPseudo(lastChild));
   is(bindingElement, node,
      "Binding element is the parent for a pseudo node");
-  is(pseudo, ":after", "Pseudo is correct for a ::after node");
+  is(pseudo, "::after", "Pseudo is correct for a ::after node");
 
   runNextTest();
 });
