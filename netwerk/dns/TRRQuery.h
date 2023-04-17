@@ -76,6 +76,12 @@ class TRRQuery : public AHostResolver {
   RefPtr<mozilla::net::TRR> mTrrA;
   RefPtr<mozilla::net::TRR> mTrrAAAA;
   RefPtr<mozilla::net::TRR> mTrrByType;
+  
+  
+  
+  
+  
+  Atomic<uint32_t> mTRRRequestCounter{0};
 
   uint8_t mTRRSuccess = 0;  
 
