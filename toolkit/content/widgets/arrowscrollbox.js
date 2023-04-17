@@ -686,15 +686,25 @@
       }
 
       if (doScroll) {
+        let direction = scrollAmount < 0 ? -1 : 1;
+
         if (deltaMode == event.DOM_DELTA_PAGE) {
           scrollAmount *= this.scrollClientSize;
         } else if (deltaMode == event.DOM_DELTA_LINE) {
-          scrollAmount *= this.lineScrollAmount;
+          
+          
+          let lineAmount = this.lineScrollAmount;
+          let clientSize = this.scrollClientSize;
+          if (Math.abs(scrollAmount * lineAmount) > clientSize) {
+            
+            
+            scrollAmount =
+              Math.max(1, Math.floor(clientSize / lineAmount)) * direction;
+          }
+          scrollAmount *= lineAmount;
         } else {
           
         }
-
-        let direction = scrollAmount < 0 ? -1 : 1;
         let startPos = this.scrollPosition;
 
         if (!this._isScrolling || this._direction != direction) {
