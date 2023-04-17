@@ -200,10 +200,13 @@ def bootstrap(topsrcdir):
     if os.path.exists(deleted_dir):
         shutil.rmtree(deleted_dir, ignore_errors=True)
 
-    if sys.prefix == sys.base_prefix:
+    if major == 3 and sys.prefix == sys.base_prefix:
         
         
-        site_paths = {*site.getsitepackages(), site.getusersitepackages()}
+        
+        
+        
+        site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
         sys.path = [path for path in sys.path if path not in site_paths]
 
     
