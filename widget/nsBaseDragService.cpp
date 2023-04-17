@@ -264,7 +264,7 @@ nsBaseDragService::InvokeDragSession(
   
   
   
-  PresShell::ClearMouseCapture(nullptr);
+  PresShell::ClearMouseCapture();
 
   if (mSessionIsSynthesizedForTests) {
     mDoingDrag = true;
