@@ -184,7 +184,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   IsDerivedClassConstructor = 1 << 19,
 
   
-  IsFieldInitializer = 1 << 20,
+  
+  
+  
+  IsSyntheticFunction = 1 << 20,
 
   
   
@@ -234,19 +237,16 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  ArgumentsHasVarBinding = 1 << 26,
+  NeedsArgsObj = 1 << 26,
 
   
   
   
-  
-  
-  AlwaysNeedsArgsObj = 1 << 27,
+  HasMappedArgsObj = 1 << 27,
 
   
   
-  
-  HasMappedArgsObj = 1 << 28,
+  IsInlinableLargeFunction = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -267,8 +267,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   HasDebugScript = 1 << 11,
 
   
-  NeedsArgsAnalysis = 1 << 12,
-  NeedsArgsObj = 1 << 13,
+  
 
   
   
@@ -294,24 +293,27 @@ enum class MutableScriptFlagsEnum : uint32_t {
   IonDisabled = 1 << 18,
 
   
-  FailedBoundsCheck = 1 << 19,
+  
+  Uninlineable = 1 << 19,
 
   
-  FailedShapeGuard = 1 << 20,
-
-  
-  HadLICMInvalidation = 1 << 21,
 
   
   
-  HadEagerTruncationBailout = 1 << 22,
+  
+  
 
   
-  
-  Uninlineable = 1 << 23,
+  FailedBoundsCheck = 1 << 21,
 
   
-  InvalidatedIdempotentCache = 1 << 24,
+  HadLICMInvalidation = 1 << 22,
+
+  
+  HadReorderingBailout = 1 << 23,
+
+  
+  HadEagerTruncationBailout = 1 << 24,
 
   
   FailedLexicalCheck = 1 << 25,
@@ -321,10 +323,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   HadUnboxFoldingBailout = 1 << 27,
-
-  
-  
-  IsInlinableLargeFunction = 1 << 28,
 };
 
 }  

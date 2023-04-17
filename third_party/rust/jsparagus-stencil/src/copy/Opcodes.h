@@ -8,9 +8,10 @@
 #ifndef vm_Opcodes_h
 #define vm_Opcodes_h
 
-#include "mozilla/Attributes.h"
-
 #include <stddef.h>
+
+#include "vm/WellKnownAtom.h"  
+
 
 
 
@@ -1618,47 +1619,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
- \
-    MACRO(ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR) \
-    
-
-
-
-
-
-
-
-
-
  \
     MACRO(BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8) \
     
@@ -2286,7 +2246,7 @@
 
 
  \
-    MACRO(IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    MACRO(JumpIfFalse, jump_if_false, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     
 
 
@@ -2299,7 +2259,7 @@
 
 
  \
-    MACRO(IfNe, if_ne, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    MACRO(JumpIfTrue, jump_if_true, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     
 
 
@@ -2909,6 +2869,16 @@
 
 
 
+
+ \
+    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD|JOF_NAME) \
+    
+
+
+
+
+
+
  \
     MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME) \
     
@@ -3133,6 +3103,7 @@
 
 
 
+
  \
     MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
@@ -3188,12 +3159,23 @@
 
 
 
+ \
+    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
 
 
 
 
  \
-    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    MACRO(PushClassBodyEnv, push_class_body_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
@@ -3327,30 +3309,6 @@
  \
     MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY) \
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -3538,30 +3496,6 @@
 
 
 
- \
-    MACRO(InstrumentationActive, instrumentation_active, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
- \
-    MACRO(InstrumentationCallback, instrumentation_callback, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
- \
-    MACRO(InstrumentationScriptId, instrumentation_script_id, NULL, 1, 0, 1, JOF_BYTE) \
-    
-
-
-
-
-
 
 
 
@@ -3579,6 +3513,9 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(227)                                   \
+  MACRO(228)                                   \
+  MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \

@@ -3334,14 +3334,7 @@ impl ScopeDataMapBuilder {
             }
 
             if uses_arguments {
-                
-                
-                fun_stencil.set_arguments_has_var_binding();
-
-                
-                if bindings_accessed_dynamically {
-                    fun_stencil.set_always_needs_args_obj();
-                }
+                fun_stencil.set_needs_args_obj();
 
                 if has_used_this {
                     
