@@ -1886,10 +1886,11 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   if (NS_UNCONSTRAINEDSIZE != aReflowInput.ComputedBSize()) {
     
     
-    nscoord contentBSize = aState.mBCoord + nonCarriedOutBDirMargin;
-    finalSize.BSize(wm) =
-        ComputeFinalBSize(aReflowInput, aState.mReflowStatus, contentBSize,
-                          borderPadding, aState.mConsumedBSize);
+    const nscoord contentBSizeWithBStartBP =
+        aState.mBCoord + nonCarriedOutBDirMargin;
+    finalSize.BSize(wm) = ComputeFinalBSize(
+        aReflowInput, aState.mReflowStatus, contentBSizeWithBStartBP,
+        borderPadding, aState.mConsumedBSize);
 
     
     
@@ -1899,8 +1900,9 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                                                aReflowInput.mStylePosition)) {
       
       
-      finalSize.BSize(wm) = std::max(
-          finalSize.BSize(wm), contentBSize + borderPadding.BStartEnd(wm));
+      finalSize.BSize(wm) =
+          std::max(finalSize.BSize(wm),
+                   contentBSizeWithBStartBP + borderPadding.BEnd(wm));
     }
 
     
