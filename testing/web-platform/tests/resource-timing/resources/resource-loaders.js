@@ -54,10 +54,13 @@ const load = {
     document.head.removeChild(link);
   },
 
-  
-  
-  iframe: async (path, validator) => {
+  iframe_with_attrs: async (path, attribute_map, validator) => {
     const frame = document.createElement("iframe");
+    if (attribute_map instanceof Object) {
+      for (const [key, value] in Object.entries(attribute_map)) {
+        frame[key] = value;
+      }
+    }
     const loaded = new Promise(resolve => {
       frame.onload = frame.onerror = resolve;
     });
@@ -68,6 +71,12 @@ const load = {
       validator(frame);
     }
     document.body.removeChild(frame);
+  },
+
+  
+  
+  iframe: async (path, validator) => {
+    return load.iframe_with_attrs(path, undefined, validator);
   },
 
   
