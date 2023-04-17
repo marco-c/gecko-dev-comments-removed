@@ -82,6 +82,16 @@ function getAboutModule(aURL) {
   }
 }
 
+function getOriginalReaderModeURI(aURI) {
+  try {
+    let searchParams = new URLSearchParams(aURI.query);
+    if (searchParams.has("url")) {
+      return Services.io.newURI(searchParams.get("url"));
+    }
+  } catch (e) {}
+  return null;
+}
+
 const NOT_REMOTE = null;
 
 
@@ -474,6 +484,32 @@ var E10SUtils = {
           ) {
             return PRIVILEGEDABOUT_REMOTE_TYPE;
           }
+
+          
+          
+          if (aURI.filePath == "reader") {
+            let readerModeURI = getOriginalReaderModeURI(aURI);
+            if (readerModeURI) {
+              let innerRemoteType = this.getRemoteTypeForURIObject(
+                readerModeURI,
+                aMultiProcess,
+                aRemoteSubframes,
+                aPreferredRemoteType,
+                aCurrentUri,
+                null, 
+                aIsSubframe,
+                aIsWorker,
+                aOriginAttributes
+              );
+              if (
+                innerRemoteType &&
+                innerRemoteType.startsWith(WEB_REMOTE_TYPE)
+              ) {
+                return innerRemoteType;
+              }
+            }
+          }
+
           return DEFAULT_REMOTE_TYPE;
         }
 
