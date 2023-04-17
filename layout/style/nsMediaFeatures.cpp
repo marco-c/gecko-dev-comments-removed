@@ -257,14 +257,18 @@ StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
   return aDocument->PrefersColorScheme();
 }
 
+
+
+
 StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
     const Document* aDocument) {
   if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     return StylePrefersContrast::NoPreference;
   }
-  
-  
   if (!!LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme, 0)) {
+    return StylePrefersContrast::More;
+  }
+  if (!PreferenceSheet::PrefsFor(*aDocument).mUseDocumentColors) {
     return StylePrefersContrast::More;
   }
   return StylePrefersContrast::NoPreference;
