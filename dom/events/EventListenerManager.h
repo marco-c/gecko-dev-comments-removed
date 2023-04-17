@@ -409,8 +409,13 @@ class EventListenerManager final : public EventListenerManagerBase {
   
 
 
-
   bool HasUnloadListeners();
+
+  
+
+
+
+  bool HasBeforeUnloadListeners();
 
   
 
