@@ -33,6 +33,8 @@ const SUPPORTED_OPTIONS = {
   
   printSimulationEnabled: true,
   
+  rdmPaneMaxTouchPoints: true,
+  
   rdmPaneOrientation: true,
   
   restoreFocus: true,
@@ -179,6 +181,9 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
         case "printSimulationEnabled":
           this._setPrintSimulationEnabled(value);
           break;
+        case "rdmPaneMaxTouchPoints":
+          this._setRDMPaneMaxTouchPoints(value);
+          break;
         case "rdmPaneOrientation":
           this._setRDMPaneOrientation(value);
           break;
@@ -313,6 +318,17 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     if (flag !== undefined) {
       this._browsingContext.touchEventsOverride = flag;
     }
+  },
+
+  
+
+
+
+
+
+
+  _setRDMPaneMaxTouchPoints(maxTouchPoints) {
+    this._browsingContext.setRDMPaneMaxTouchPoints(maxTouchPoints);
   },
 
   

@@ -195,6 +195,7 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
         message,
         browser,
         preTaskValue,
+        tab,
       });
     } catch (err) {
       ok(false, "Got an error: " + DevToolsUtils.safeErrorString(err));
