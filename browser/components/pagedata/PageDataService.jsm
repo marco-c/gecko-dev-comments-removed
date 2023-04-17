@@ -45,6 +45,10 @@ const ALLOWED_SCHEMES = ["http", "https", "data", "blob"];
 
 
 
+
+
+
+
 const PageDataService = new (class PageDataService extends EventEmitter {
   
 
@@ -123,7 +127,7 @@ const PageDataService = new (class PageDataService extends EventEmitter {
     }
 
     let data = await actor.collectPageData();
-    this.pageDataDiscovered(url, data);
+    this.pageDataDiscovered(url, data, browser);
   }
 
   
@@ -135,13 +139,16 @@ const PageDataService = new (class PageDataService extends EventEmitter {
 
 
 
-  pageDataDiscovered(url, data) {
+
+
+  pageDataDiscovered(url, data, browser) {
     logConsole.debug("Discovered page data", url, data);
 
     let pageData = {
       url,
       date: Date.now(),
       data,
+      weakBrowser: Cu.getWeakReference(browser),
     };
 
     this.#pageDataCache.set(url, pageData);
@@ -181,6 +188,7 @@ const PageDataService = new (class PageDataService extends EventEmitter {
       url,
       date: Date.now(),
       data: [],
+      weakBrowser: null,
     };
 
     this.#pageDataCache.set(url, pageData);
