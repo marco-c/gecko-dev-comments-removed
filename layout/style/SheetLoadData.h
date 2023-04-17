@@ -58,13 +58,13 @@ class SheetLoadData final : public PreloaderBase,
                 IsAlternate aIsAlternate, MediaMatched aMediaMatched,
                 StylePreloadKind aPreloadKind, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
-                nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
+                nsIReferrerInfo* aReferrerInfo);
 
   
   SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
                 SheetLoadData* aParentData, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
-                nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
+                nsIReferrerInfo* aReferrerInfo);
 
   
   SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
@@ -72,7 +72,7 @@ class SheetLoadData final : public PreloaderBase,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
-                nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
+                nsIReferrerInfo* aReferrerInfo);
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 
@@ -209,11 +209,7 @@ class SheetLoadData final : public PreloaderBase,
   
   nsCOMPtr<nsINode> mOwningNodeBeforeLoadEvent;
 
-  
-  
-  
-  
-  nsCOMPtr<nsINode> mRequestingNodeBeforeComplete;
+  nsINode* GetRequestingNode() const;
 
   
   nsCOMPtr<nsICSSLoaderObserver> mObserver;
