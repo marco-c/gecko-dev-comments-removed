@@ -201,8 +201,7 @@ class nsWindow final : public nsBaseWidget {
   
   gboolean OnExposeEvent(cairo_t* cr);
   gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
-  void OnMap();
-  void OnUnrealize();
+  void OnContainerUnrealize();
   void OnSizeAllocate(GtkAllocation* aAllocation);
   void OnDeleteEvent();
   void OnEnterNotifyEvent(GdkEventCrossing* aEvent);
@@ -264,7 +263,6 @@ class nsWindow final : public nsBaseWidget {
   bool IsPopup() const;
   bool IsWaylandPopup() const;
   bool IsPIPWindow() const { return mIsPIPWindow; };
-  bool IsDragPopup() { return mIsDragPopup; };
 
   nsAutoCString GetDebugTag() const;
 
@@ -410,7 +408,7 @@ class nsWindow final : public nsBaseWidget {
     COMPOSITOR_PAUSED_INITIALLY,
     
     
-    COMPOSITOR_PAUSED_MISSING_WINDOW,
+    COMPOSITOR_PAUSED_MISSING_EGL_WINDOW,
     
     
     COMPOSITOR_PAUSED_FLICKERING
@@ -432,7 +430,11 @@ class nsWindow final : public nsBaseWidget {
 
   virtual void RegisterTouchWindow() override;
   virtual bool CompositorInitiallyPaused() override {
+#ifdef MOZ_WAYLAND
     return mCompositorState == COMPOSITOR_PAUSED_INITIALLY;
+#else
+    return false;
+#endif
   }
   nsCOMPtr<nsIWidget> mParent;
   
@@ -440,17 +442,8 @@ class nsWindow final : public nsBaseWidget {
   
   bool mNeedsDispatchResized;
   
-  
   bool mIsShown;
-  
-  
-  
-  
-  
   bool mNeedsShow;
-  
-  
-  bool mIsMapped;
   
   bool mEnabled;
   
@@ -570,8 +563,6 @@ class nsWindow final : public nsBaseWidget {
   
   bool mIsWaylandPanelWindow;
   bool mAlwaysOnTop;
-  bool mNoAutoHide;
-  bool mMouseTransparent;
 
   
   static GdkCursor* gsGtkCursorCache[eCursorCount];
@@ -608,12 +599,6 @@ class nsWindow final : public nsBaseWidget {
   static bool DragInProgress(void);
 
   void DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent);
-
-  
-  
-  
-  void ConfigureGdkWindow();
-  void ReleaseGdkWindow();
 
   
   virtual WindowRenderer* GetWindowRenderer() override;
@@ -813,6 +798,10 @@ class nsWindow final : public nsBaseWidget {
 
   static bool sTransparentMainWindow;
 
+  
+
+  mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
+
 #ifdef ACCESSIBILITY
   RefPtr<mozilla::a11y::LocalAccessible> mRootAccessible;
 
@@ -869,7 +858,6 @@ class nsWindow final : public nsBaseWidget {
   Window mXWindow;
   Visual* mXVisual;
   int mXDepth;
-  bool mIsShaped;
 #endif
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::gfx::VsyncSource> mWaylandVsyncSource;
@@ -877,7 +865,6 @@ class nsWindow final : public nsBaseWidget {
   zwp_locked_pointer_v1* mLockedPointer;
   zwp_relative_pointer_v1* mRelativePointer;
 #endif
-  mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
 };
 
 #endif 
