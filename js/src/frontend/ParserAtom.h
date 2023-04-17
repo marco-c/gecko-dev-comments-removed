@@ -7,11 +7,12 @@
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 
-#include "mozilla/DebugOnly.h"      
-#include "mozilla/HashFunctions.h"  
-#include "mozilla/Range.h"          
-#include "mozilla/Span.h"           
-#include "mozilla/Variant.h"        
+#include "mozilla/DebugOnly.h"        
+#include "mozilla/HashFunctions.h"    
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/Range.h"            
+#include "mozilla/Span.h"             
+#include "mozilla/Variant.h"          
 
 #include "ds/LifoAlloc.h"         
 #include "frontend/TypedIndex.h"  
@@ -544,6 +545,11 @@ class WellKnownParserAtoms {
 
     
     return TaggedParserAtomIndex::null();
+  }
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) +
+           wellKnownMap_.shallowSizeOfExcludingThis(mallocSizeOf);
   }
 };
 
