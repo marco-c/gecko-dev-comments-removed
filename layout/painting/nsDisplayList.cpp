@@ -6213,46 +6213,30 @@ void nsDisplayBlendMode::Paint(nsDisplayListBuilder* aBuilder,
                                gfxContext* aCtx) {
   
   
-  DrawTarget* dt = aCtx->GetDrawTarget();
   int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
   IntRect rect =
       IntRect::RoundOut(NSRectToRect(GetPaintRect(), appUnitsPerDevPixel));
-
-  
-  
-  Rect deviceRect = dt->GetTransform().TransformBounds(Rect(rect));
-  deviceRect = deviceRect.Intersect(Rect(Point(), Size(dt->GetSize())));
-  deviceRect.RoundOut();
-  IntRect deviceIntRect;
-  deviceRect.ToIntRect(&deviceIntRect);
-  if (deviceIntRect.IsEmpty()) {
+  if (rect.IsEmpty()) {
     return;
   }
 
-  RefPtr<DrawTarget> temp = dt->CreateSimilarDrawTarget(
-      deviceIntRect.Size(), SurfaceFormat::B8G8R8A8);
+  RefPtr<DrawTarget> dt = aCtx->GetDrawTarget()->CreateSimilarDrawTarget(
+      rect.Size(), SurfaceFormat::B8G8R8A8);
   if (!dt) {
     return;
   }
 
-  
-  
-  temp->SetTransform(dt->GetTransform() *
-                     Matrix::Translation(-deviceRect.x, -deviceRect.y));
-  RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(temp);
+  dt->SetTransform(Matrix::Translation(-rect.x, -rect.y));
+  RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(dt);
 
   GetChildren()->Paint(aBuilder, ctx,
                        mFrame->PresContext()->AppUnitsPerDevPixel());
 
-  
-  
-  temp->Flush();
-  RefPtr<SourceSurface> surface = temp->Snapshot();
-  gfxContextMatrixAutoSaveRestore saveMatrix(aCtx);
-  dt->SetTransform(Matrix());
-  dt->DrawSurface(
-      surface, deviceRect, Rect(Point(), deviceRect.Size()),
-      DrawSurfaceOptions(),
+  dt->Flush();
+  RefPtr<SourceSurface> surface = dt->Snapshot();
+  aCtx->GetDrawTarget()->DrawSurface(
+      surface, Rect(rect.x, rect.y, rect.width, rect.height),
+      Rect(0, 0, rect.width, rect.height), DrawSurfaceOptions(),
       DrawOptions(1.0f, nsCSSRendering::GetGFXBlendMode(mBlendMode)));
 }
 
