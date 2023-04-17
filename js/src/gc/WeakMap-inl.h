@@ -224,7 +224,7 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
 }
 
 bool WeakMapBase::addImplicitEdges(gc::Cell* key, gc::Cell* delegate,
-                                   gc::Cell* value) {
+                                   gc::TenuredCell* value) {
   if (delegate) {
     auto& edgeTable = delegate->zone()->gcEphemeronEdges(delegate);
     auto* p = edgeTable.get(delegate);
@@ -307,7 +307,22 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
       gc::Cell* value = gc::ToMarkable(e.front().value());
       gc::Cell* delegate = gc::detail::GetDelegate(e.front().key());
 
-      if (!addImplicitEdges(weakKey, delegate, value)) {
+      gc::TenuredCell* tenuredValue = nullptr;
+      if (value) {
+        if (value->isTenured()) {
+          tenuredValue = &value->asTenured();
+        } else {
+          
+          
+          
+          
+          
+          
+          TraceEdge(marker, &e.front().value(), "WeakMap entry value");
+        }
+      }
+
+      if (!addImplicitEdges(weakKey, delegate, tenuredValue)) {
         marker->abortLinearWeakMarking();
       }
     }

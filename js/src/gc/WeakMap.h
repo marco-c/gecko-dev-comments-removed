@@ -154,7 +154,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   inline bool addImplicitEdges(gc::Cell* key, gc::Cell* delegate,
-                               gc::Cell* value);
+                               gc::TenuredCell* value);
 
   
   
