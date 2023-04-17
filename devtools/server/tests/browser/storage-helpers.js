@@ -27,38 +27,15 @@ async function openTabAndSetupStorage(url) {
   const content = await addTab(url);
 
   
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-    
-
-
-
-
-
-
-
-
-    function getAllWindows(baseWindow) {
-      const windows = new Set();
-
-      const _getAllWindows = function(win) {
-        windows.add(win.wrappedJSObject);
-
-        for (let i = 0; i < win.length; i++) {
-          _getAllWindows(win[i]);
-        }
-      };
-      _getAllWindows(baseWindow);
-
-      return windows;
-    }
-
-    const windows = getAllWindows(content);
-    for (const win of windows) {
-      if (win.setup) {
-        await win.setup();
+  const browsingContexts = gBrowser.selectedBrowser.browsingContext.getAllBrowsingContextsInSubtree();
+  for (const browsingContext of browsingContexts) {
+    await SpecialPowers.spawn(browsingContext, [], async function() {
+      if (content.wrappedJSObject.setup) {
+        await content.wrappedJSObject.setup();
       }
-    }
-  });
+    });
+  }
+
   
   const target = await createAndAttachTargetForTab(gBrowser.selectedTab);
   const front = await target.getFront("storage");
@@ -66,36 +43,12 @@ async function openTabAndSetupStorage(url) {
 }
 
 async function clearStorage() {
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-    
-
-
-
-
-
-
-
-
-    function getAllWindows(baseWindow) {
-      const windows = new Set();
-
-      const _getAllWindows = function(win) {
-        windows.add(win.wrappedJSObject);
-
-        for (let i = 0; i < win.length; i++) {
-          _getAllWindows(win[i]);
-        }
-      };
-      _getAllWindows(baseWindow);
-
-      return windows;
-    }
-
-    const windows = getAllWindows(content);
-    for (const win of windows) {
-      if (win.clear) {
-        await win.clear();
+  const browsingContexts = gBrowser.selectedBrowser.browsingContext.getAllBrowsingContextsInSubtree();
+  for (const browsingContext of browsingContexts) {
+    await SpecialPowers.spawn(browsingContext, [], async function() {
+      if (content.wrappedJSObject.clear) {
+        await content.wrappedJSObject.clear();
       }
-    }
-  });
+    });
+  }
 }
