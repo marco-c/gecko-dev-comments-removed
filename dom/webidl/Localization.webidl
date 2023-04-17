@@ -92,16 +92,13 @@ interface Localization {
 
 
   [Throws]
-  constructor(sequence<DOMString> aResourceIds,
-              optional boolean aSync = false,
-              optional BundleGenerator aBundleGenerator = {});
+  constructor(sequence<UTF8String> aResourceIds,
+              optional boolean aSync = false);
 
   
 
 
-
-
-  unsigned long addResourceIds(sequence<DOMString> aResourceIds);
+  void addResourceIds(sequence<DOMString> aResourceIds);
 
   
 
