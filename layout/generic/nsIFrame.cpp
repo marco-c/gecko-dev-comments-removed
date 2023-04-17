@@ -17,6 +17,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DisplayPortUtils.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/Selection.h"
@@ -4578,34 +4579,8 @@ nsIFrame::HandlePress(nsPresContext* aPresContext, WidgetGUIEvent* aEvent,
     return NS_OK;
   }
 
-  
-  
-  
-  if (!aPresContext->EventStateManager()->EventStatusOK(aEvent)) return NS_OK;
-
-  mozilla::PresShell* presShell = aPresContext->GetPresShell();
-  if (!presShell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-
-  if (!mouseEvent->IsAlt()) {
-    for (nsIContent* content = mContent; content;
-         content = content->GetFlattenedTreeParent()) {
-      if (nsContentUtils::ContentIsDraggable(content) &&
-          !content->IsEditable()) {
-        
-        if ((mRect - GetPosition())
-                .Contains(nsLayoutUtils::GetEventCoordinatesRelativeTo(
-                    mouseEvent, RelativeTo{this}))) {
-          return NS_OK;
-        }
-      }
-    }
-  }
-
-  return MoveCaretToEventPoint(aPresContext, mouseEvent, aEventStatus);
+  return MoveCaretToEventPoint(aPresContext, aEvent->AsMouseEvent(),
+                               aEventStatus);
 }
 
 nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
@@ -4617,6 +4592,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   MOZ_ASSERT(aMouseEvent->mButton == MouseButton::ePrimary ||
              aMouseEvent->mButton == MouseButton::eMiddle);
   MOZ_ASSERT(aEventStatus);
+  MOZ_ASSERT(nsEventStatus_eConsumeNoDefault != *aEventStatus);
 
   mozilla::PresShell* presShell = aPresContext->GetPresShell();
   if (!presShell) {
@@ -4626,13 +4602,34 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
   
   
   
-  int16_t isEditor = presShell->GetSelectionFlags();
-  
-  
-  isEditor = isEditor == nsISelectionDisplay::DISPLAY_ALL;
+  if (!aPresContext->EventStateManager()->EventStatusOK(aMouseEvent)) {
+    return NS_OK;
+  }
+
+  if (!aMouseEvent->IsAlt()) {
+    for (nsIContent* content = mContent; content;
+         content = content->GetFlattenedTreeParent()) {
+      if (nsContentUtils::ContentIsDraggable(content) &&
+          !content->IsEditable()) {
+        
+        if ((mRect - GetPosition())
+                .Contains(nsLayoutUtils::GetEventCoordinatesRelativeTo(
+                    aMouseEvent, RelativeTo{this}))) {
+          return NS_OK;
+        }
+      }
+    }
+  }
 
   
-  bool isPrimaryButtonDown = aMouseEvent->mButton == MouseButton::ePrimary;
+  
+  
+  const bool isEditor =
+      presShell->GetSelectionFlags() == nsISelectionDisplay::DISPLAY_ALL;
+
+  
+  const bool isPrimaryButtonDown =
+      aMouseEvent->mButton == MouseButton::ePrimary;
 
   
   
@@ -4768,6 +4765,16 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     
     
     if (aMouseEvent->IsShift()) {
+      
+      
+      if (isEditor) {
+        nsCOMPtr<nsIURI> uri;
+        for (Element* element : mContent->InclusiveAncestorsOfType<Element>()) {
+          if (element->IsLink(getter_AddRefs(uri))) {
+            return nsFrameSelection::FocusMode::kCollapseToNewPoint;
+          }
+        }
+      }
       return nsFrameSelection::FocusMode::kExtendSelection;
     }
 
