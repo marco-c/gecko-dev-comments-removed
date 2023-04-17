@@ -1,3 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::borrow::Cow;
 use std::char;
 use std::fmt;
@@ -8,6 +53,17 @@ fn encode_unicode(s: Option<&str>) -> char {
     s.and_then(|s| u32::from_str_radix(s, 16).ok().and_then(char::from_u32))
         .unwrap_or(UNKNOWN_CHAR)
 }
+
+
+
+
+
+
+
+
+
+
+
 
 pub fn unescape_unicode<W>(w: &mut W, input: &str) -> fmt::Result
 where
@@ -49,6 +105,18 @@ where
     }
     Ok(())
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 pub fn unescape_unicode_to_string(input: &str) -> Cow<str> {
     let bytes = input.as_bytes();
