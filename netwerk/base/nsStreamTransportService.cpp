@@ -244,6 +244,12 @@ nsInputStreamTransport::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
 
 
+nsStreamTransportService::nsStreamTransportService()
+    : mScheduledDelayedRunnables(
+          "nsStreamTransportService.mScheduledDelayedRunnables"),
+      mShutdownLock("nsStreamTransportService.mShutdownLock"),
+      mIsShutdown(false) {}
+
 nsStreamTransportService::~nsStreamTransportService() {
   NS_ASSERTION(!mPool, "thread pool wasn't shutdown");
 }
@@ -263,8 +269,25 @@ nsresult nsStreamTransportService::Init() {
   return NS_OK;
 }
 
+void nsStreamTransportService::OnDelayedRunnableCreated(
+    DelayedRunnable* aRunnable) {}
+
+void nsStreamTransportService::OnDelayedRunnableScheduled(
+    DelayedRunnable* aRunnable) {
+  MOZ_ASSERT(IsOnCurrentThread());
+  auto delayedRunnables = mScheduledDelayedRunnables.Lock();
+  delayedRunnables->AppendElement(aRunnable);
+}
+
+void nsStreamTransportService::OnDelayedRunnableRan(
+    DelayedRunnable* aRunnable) {
+  MOZ_ASSERT(IsOnCurrentThread());
+  auto delayedRunnables = mScheduledDelayedRunnables.Lock();
+  MOZ_ALWAYS_TRUE(delayedRunnables->RemoveElement(aRunnable));
+}
+
 NS_IMPL_ISUPPORTS(nsStreamTransportService, nsIStreamTransportService,
-                  nsIEventTarget, nsIObserver)
+                  nsIEventTarget, nsIDelayedRunnableObserver, nsIObserver)
 
 NS_IMETHODIMP
 nsStreamTransportService::DispatchFromScript(nsIRunnable* task,
@@ -353,6 +376,31 @@ nsStreamTransportService::Observe(nsISupports* subject, const char* topic,
   if (mPool) {
     mPool->Shutdown();
     mPool = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<DelayedRunnable>> delayedRunnables;
+  {
+    auto sdrs = mScheduledDelayedRunnables.Lock();
+    std::swap(*sdrs, delayedRunnables);
+    MOZ_ASSERT(sdrs->IsEmpty());
+  }
+  if (!delayedRunnables.IsEmpty()) {
+    NS_DispatchBackgroundTask(
+        NS_NewRunnableFunction(
+            "nsStreamTransportService::mScheduledDelayedRunnables Cancel",
+            [delayedRunnables = std::move(delayedRunnables)] {
+              for (const auto& r : delayedRunnables) {
+                r->CancelTimer();
+              }
+            }),
+        NS_DISPATCH_SYNC);
   }
   return NS_OK;
 }
