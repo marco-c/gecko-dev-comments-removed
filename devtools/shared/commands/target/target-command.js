@@ -43,12 +43,9 @@ class TargetCommand extends EventEmitter {
 
 
 
-
-
-  constructor({ descriptorFront, commands }) {
+  constructor({ descriptorFront }) {
     super();
 
-    this.commands = commands;
     this.descriptorFront = descriptorFront;
     this.rootFront = descriptorFront.client.mainRoot;
 
@@ -657,64 +654,6 @@ class TargetCommand extends EventEmitter {
     }
 
     this.switchToTarget(newTarget);
-  }
-
-  
-
-
-
-
-
-
-  async reloadTopLevelTarget(bypassCache = false) {
-    if (!this.targetFront.isBrowsingContext) {
-      throw new Error(
-        "The top level target isn't a BrowsingContext and don't support being reloaded"
-      );
-    }
-
-    
-    let resolve = null;
-    const onReloaded = new Promise(r => (resolve = r));
-    const { resourceCommand } = this.commands;
-    const { DOCUMENT_EVENT } = resourceCommand.TYPES;
-    const onAvailable = resources => {
-      if (resources.find(resource => resource.name == "dom-complete")) {
-        resourceCommand.unwatchResources([DOCUMENT_EVENT], { onAvailable });
-        resolve();
-      }
-    };
-    
-    
-    await resourceCommand.watchResources([DOCUMENT_EVENT], {
-      onAvailable,
-      ignoreExistingResources: true,
-    });
-
-    const { targetFront } = this;
-    try {
-      
-      
-      
-      await targetFront.reload({ options: { force: bypassCache } });
-    } catch (e) {
-      dump(" target reload exception: " + e + " >>> " + e.message + " <<<\n");
-      
-      
-      
-      
-      
-      
-      const shouldSwallowReloadError =
-        targetFront.getTrait("supportsFollowWindowGlobalLifeCycleFlag") &&
-        targetFront.targetForm.followWindowGlobalLifeCycle;
-
-      if (!shouldSwallowReloadError) {
-        throw e;
-      }
-    }
-
-    await onReloaded;
   }
 
   

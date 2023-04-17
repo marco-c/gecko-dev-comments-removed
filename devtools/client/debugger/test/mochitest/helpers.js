@@ -782,9 +782,7 @@ function deleteExpression(dbg, input) {
 
 async function reload(dbg, ...sources) {
   const navigated = waitForDispatch(dbg.store, "NAVIGATE");
-  
-  
-  dbg.commands.targetCommand.reloadTopLevelTarget();
+  await dbg.client.reload();
   await navigated;
   return waitForSources(dbg, ...sources);
 }

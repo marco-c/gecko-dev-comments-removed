@@ -828,3 +828,13 @@ function addA11YPanelTask(msg, uri, task, options = {}) {
     await closeTabToolboxAccessibility(env.tab);
   });
 }
+
+
+
+
+
+
+function reload(target, waitForTargetEvent = "navigate") {
+  executeSoon(() => target.reload());
+  return once(target, waitForTargetEvent);
+}

@@ -162,6 +162,7 @@ exports.waitForOverviewRenderedWithMarkers = (
 
 
 
-exports.reload = async panel => {
-  await panel.commands.targetCommand.reloadTopLevelTarget();
+exports.reload = target => {
+  target.reload();
+  return once(target, "navigate");
 };

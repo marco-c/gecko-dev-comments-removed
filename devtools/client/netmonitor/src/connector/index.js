@@ -461,16 +461,24 @@ class Connector {
     };
 
     
-    const reconfigureTab = async options => {
-      await this.commands.targetConfigurationCommand.updateConfiguration(
+    const waitForNavigation = async () => {
+      await this.currentTarget.once("will-navigate");
+      await this.currentTarget.once("navigate");
+    };
+
+    
+    const reconfigureTab = options => {
+      return this.commands.targetConfigurationCommand.updateConfiguration(
         options
       );
     };
 
     
     const reconfigureTabAndReload = async options => {
+      const navigationFinished = waitForNavigation();
       await reconfigureTab(options);
-      await this.commands.targetCommand.reloadTopLevelTarget();
+      await this.toolbox.target.reload();
+      await navigationFinished;
     };
 
     switch (type) {
