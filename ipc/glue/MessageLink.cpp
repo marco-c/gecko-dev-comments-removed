@@ -49,95 +49,6 @@ MessageLink::~MessageLink() {
 #endif
 }
 
-ThreadLink::ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan)
-    : MessageLink(aChan), mTargetChan(aTargetChan) {}
-
-void ThreadLink::PrepareToDestroy() {
-  MOZ_ASSERT(mChan);
-  MOZ_ASSERT(mChan->mMonitor);
-  MonitorAutoLock lock(*mChan->mMonitor);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mTargetChan) {
-    MOZ_ASSERT(mTargetChan->mLink);
-    static_cast<ThreadLink*>(mTargetChan->mLink.get())->mTargetChan = nullptr;
-  }
-  mTargetChan = nullptr;
-}
-
-void ThreadLink::SendMessage(UniquePtr<Message> msg) {
-  if (!mChan->mIsPostponingSends) {
-    mChan->AssertWorkerThread();
-  }
-  mChan->mMonitor->AssertCurrentThreadOwns();
-
-  if (mTargetChan) mTargetChan->OnMessageReceivedFromLink(std::move(*msg));
-}
-
-void ThreadLink::SendClose() {
-  mChan->AssertWorkerThread();
-  mChan->mMonitor->AssertCurrentThreadOwns();
-
-  mChan->mChannelState = ChannelClosed;
-
-  
-  
-  
-  
-  
-  if (mTargetChan) mTargetChan->OnChannelErrorFromLink();
-}
-
-bool ThreadLink::Unsound_IsClosed() const {
-  MonitorAutoLock lock(*mChan->mMonitor);
-  return mChan->mChannelState == ChannelClosed;
-}
-
-uint32_t ThreadLink::Unsound_NumQueuedMessages() const {
-  
-  return 0;
-}
 class PortLink::PortObserverThunk : public NodeController::PortObserver {
  public:
   PortObserverThunk(RefCountedMonitor* aMonitor, PortLink* aLink)
@@ -171,8 +82,14 @@ PortLink::PortLink(MessageChannel* aChan, ScopedPort aPort)
   
   
   
-  XRE_GetIOMessageLoop()->PostTask(NewRunnableMethod(
-      "PortLink::Open", mObserver, &PortObserverThunk::OnPortStatusChanged));
+  
+  nsCOMPtr<nsIRunnable> openRunnable = NewRunnableMethod(
+      "PortLink::Open", mObserver, &PortObserverThunk::OnPortStatusChanged);
+  if (aChan->mIsSameThreadChannel) {
+    aChan->mWorkerThread->Dispatch(openRunnable.forget());
+  } else {
+    XRE_GetIOMessageLoop()->PostTask(openRunnable.forget());
+  }
 }
 
 PortLink::~PortLink() {

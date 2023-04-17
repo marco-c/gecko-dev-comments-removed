@@ -36,6 +36,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsPrintfCString.h"
+#include "nsThreadUtils.h"
 
 #ifdef OS_WIN
 #  include "mozilla/gfx/Logging.h"
@@ -799,116 +800,57 @@ bool MessageChannel::Open(ScopedPort aPort, Side aSide,
   return true;
 }
 
+static Side GetOppSide(Side aSide) {
+  switch (aSide) {
+    case ChildSide:
+      return ParentSide;
+    case ParentSide:
+      return ChildSide;
+    default:
+      return UnknownSide;
+  }
+}
+
 bool MessageChannel::Open(MessageChannel* aTargetChan,
                           nsISerialEventTarget* aEventTarget, Side aSide) {
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   MOZ_ASSERT(aTargetChan, "Need a target channel");
   MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
 
-  CommonThreadOpenInit(aTargetChan, GetCurrentSerialEventTarget(), aSide);
+  std::pair<ScopedPort, ScopedPort> ports =
+      NodeController::GetSingleton()->CreatePortPair();
 
-  Side oppSide = UnknownSide;
-  switch (aSide) {
-    case ChildSide:
-      oppSide = ParentSide;
-      break;
-    case ParentSide:
-      oppSide = ChildSide;
-      break;
-    case UnknownSide:
-      break;
-  }
-
-  mMonitor = new RefCountedMonitor();
-
-  MonitorAutoLock lock(*mMonitor);
-  mChannelState = ChannelOpening;
-  MOZ_ALWAYS_SUCCEEDS(aEventTarget->Dispatch(
-      NewNonOwningRunnableMethod<MessageChannel*, nsISerialEventTarget*, Side>(
-          "ipc::MessageChannel::OpenAsOtherThread", aTargetChan,
-          &MessageChannel::OpenAsOtherThread, this, aEventTarget, oppSide)));
-
-  while (ChannelOpening == mChannelState) mMonitor->Wait();
-  MOZ_RELEASE_ASSERT(ChannelConnected == mChannelState,
-                     "not connected when awoken");
-  return (ChannelConnected == mChannelState);
-}
-
-void MessageChannel::OpenAsOtherThread(MessageChannel* aTargetChan,
-                                       nsISerialEventTarget* aThread,
-                                       Side aSide) {
   
-  MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
-  MOZ_ASSERT(ChannelOpening == aTargetChan->mChannelState,
-             "Target channel not in the process of opening");
+  
+  
+  
+  base::WaitableEvent event( true,
+                             false);
+  MOZ_ALWAYS_SUCCEEDS(aEventTarget->Dispatch(NS_NewCancelableRunnableFunction(
+      "ipc::MessageChannel::OpenAsOtherThread", [&]() {
+        aTargetChan->Open(std::move(ports.second), GetOppSide(aSide),
+                          aEventTarget);
+        event.Signal();
+      })));
+  bool ok = event.Wait();
+  MOZ_RELEASE_ASSERT(ok);
 
-  CommonThreadOpenInit(aTargetChan, aThread, aSide);
-  mMonitor = aTargetChan->mMonitor;
-
-  MonitorAutoLock lock(*mMonitor);
-  MOZ_RELEASE_ASSERT(ChannelOpening == aTargetChan->mChannelState,
-                     "Target channel not in the process of opening");
-  mChannelState = ChannelConnected;
-  aTargetChan->mChannelState = ChannelConnected;
-  aTargetChan->mMonitor->Notify();
-}
-
-void MessageChannel::CommonThreadOpenInit(MessageChannel* aTargetChan,
-                                          nsISerialEventTarget* aThread,
-                                          Side aSide) {
-  MOZ_ASSERT(aThread);
-  mWorkerThread = aThread;
-  mListener->OnIPCChannelOpened();
-
-  mLink = MakeUnique<ThreadLink>(this, aTargetChan);
-  mSide = aSide;
+  
+  return Open(std::move(ports.first), aSide);
 }
 
 bool MessageChannel::OpenOnSameThread(MessageChannel* aTargetChan,
                                       mozilla::ipc::Side aSide) {
-  nsCOMPtr<nsISerialEventTarget> currentThread = GetCurrentSerialEventTarget();
-  CommonThreadOpenInit(aTargetChan, currentThread, aSide);
-
-  Side oppSide = UnknownSide;
-  switch (aSide) {
-    case ChildSide:
-      oppSide = ParentSide;
-      break;
-    case ParentSide:
-      oppSide = ChildSide;
-      break;
-    case UnknownSide:
-      break;
-  }
-  mIsSameThreadChannel = true;
-
-  
-  
-  mMonitor = new RefCountedMonitor();
-
-  mChannelState = ChannelOpening;
-  aTargetChan->CommonThreadOpenInit(this, currentThread, oppSide);
+  auto [porta, portb] = NodeController::GetSingleton()->CreatePortPair();
 
   aTargetChan->mIsSameThreadChannel = true;
-  aTargetChan->mMonitor = mMonitor;
+  mIsSameThreadChannel = true;
 
-  mChannelState = ChannelConnected;
-  aTargetChan->mChannelState = ChannelConnected;
-  return true;
+  auto* currentThread = GetCurrentSerialEventTarget();
+  return aTargetChan->Open(std::move(portb), GetOppSide(aSide),
+                           currentThread) &&
+         Open(std::move(porta), aSide, currentThread);
 }
 
 bool MessageChannel::Send(UniquePtr<Message> aMsg) {
