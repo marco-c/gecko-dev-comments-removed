@@ -17,6 +17,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/image/WebRenderImageProvider.h"
 
 #include "imgFrame.h"
 #include "SurfaceCache.h"
@@ -31,7 +32,7 @@ class DrawableSurface;
 
 
 
-class ISurfaceProvider {
+class ISurfaceProvider : public WebRenderImageProvider {
  public:
   
   
@@ -46,7 +47,7 @@ class ISurfaceProvider {
   const SurfaceKey& GetSurfaceKey() const { return mSurfaceKey; }
 
   
-  virtual DrawableSurface Surface();
+  DrawableSurface Surface();
 
   
   virtual bool IsFinished() const = 0;
@@ -92,7 +93,8 @@ class ISurfaceProvider {
  protected:
   ISurfaceProvider(const ImageKey aImageKey, const SurfaceKey& aSurfaceKey,
                    AvailabilityState aAvailability)
-      : mImageKey(aImageKey),
+      : WebRenderImageProvider(aImageKey),
+        mImageKey(aImageKey),
         mSurfaceKey(aSurfaceKey),
         mAvailability(aAvailability) {
     MOZ_ASSERT(aImageKey, "Must have a valid image key");
@@ -144,10 +146,6 @@ class ISurfaceProvider {
 class MOZ_STACK_CLASS DrawableSurface final {
  public:
   DrawableSurface() : mHaveSurface(false) {}
-
-  explicit DrawableSurface(DrawableFrameRef&& aDrawableRef)
-      : mDrawableRef(std::move(aDrawableRef)),
-        mHaveSurface(bool(mDrawableRef)) {}
 
   explicit DrawableSurface(NotNull<ISurfaceProvider*> aProvider)
       : mProvider(aProvider), mHaveSurface(true) {}
@@ -232,6 +230,10 @@ class MOZ_STACK_CLASS DrawableSurface final {
     return mProvider->IsFullyDecoded();
   }
 
+  void TakeProvider(WebRenderImageProvider** aOutProvider) {
+    mProvider.forget(aOutProvider);
+  }
+
   explicit operator bool() const { return mHaveSurface; }
   imgFrame* operator->() { return DrawableRef().get(); }
 
@@ -262,9 +264,8 @@ class MOZ_STACK_CLASS DrawableSurface final {
 
 
 
-
 inline DrawableSurface ISurfaceProvider::Surface() {
-  return DrawableSurface(DrawableRef( 0));
+  return DrawableSurface(WrapNotNull(this));
 }
 
 
@@ -288,6 +289,10 @@ class SimpleSurfaceProvider final : public ISurfaceProvider {
     gfx::IntSize size = mSurface->GetSize();
     return size.width * size.height * mSurface->GetBytesPerPixel();
   }
+
+  nsresult UpdateKey(layers::RenderRootStateManager* aManager,
+                     wr::IpcResourceUpdateQueue& aResources,
+                     wr::ImageKey& aKey) override;
 
  protected:
   DrawableFrameRef DrawableRef(size_t aFrame) override {
