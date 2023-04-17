@@ -86,9 +86,8 @@ class ArrayObject;
 
 
 
-
 extern bool ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj, HandleId id,
-                           unsigned attrs, HandleValue value,
+                           Handle<PropertyDescriptor> desc,
                            ObjectOpResult& result);
 
 
@@ -245,7 +244,7 @@ class ObjectElements {
                                     IntegrityLevel level);
 
   friend bool ArraySetLength(JSContext* cx, Handle<ArrayObject*> obj,
-                             HandleId id, unsigned attrs, HandleValue value,
+                             HandleId id, Handle<PropertyDescriptor> desc,
                              ObjectOpResult& result);
 
   
