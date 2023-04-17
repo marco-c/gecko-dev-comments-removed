@@ -1,5 +1,3 @@
-from six import PY3
-
 from wptserve.utils import isomorphic_encode
 
 def get_response(raw_headers, filter_value, filter_name):
@@ -9,24 +7,9 @@ def get_response(raw_headers, filter_value, filter_name):
     
     
     
-    
-    
-    if PY3:
-        header_list = []
-        for field in raw_headers.raw_items():
-            header = b"%s: %s\r\n" % (isomorphic_encode(field[0]), isomorphic_encode(field[1]))
-            header_list.append(header)
-    else:
-        header_list = raw_headers.headers
-    for line in header_list:
-        if line[-2:] != b'\r\n':
-            return b"Syntax error: missing CRLF: " + line
-        line = line[:-2]
-
-        if b': ' not in line:
-            return b"Syntax error: no colon and space found: " + line
-        name, value = line.split(b': ', 1)
-
+    for field in raw_headers.raw_items():
+        name = isomorphic_encode(field[0])
+        value = isomorphic_encode(field[1])
         if filter_value:
             if value == filter_value:
                 result += name + b","
