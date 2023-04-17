@@ -3066,10 +3066,9 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
     
     
     
-    
-    NS_ASSERTION((isUsingFlexGrow && availableFreeSpace >= 0) ||
-                     (!isUsingFlexGrow && availableFreeSpace <= 0),
-                 "availableFreeSpace's sign should match isUsingFlexGrow");
+    MOZ_ASSERT((isUsingFlexGrow && availableFreeSpace >= 0) ||
+                   (!isUsingFlexGrow && availableFreeSpace <= 0),
+               "availableFreeSpace's sign should match isUsingFlexGrow");
 
     
     
