@@ -2795,6 +2795,19 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  AppendContentToSelectionAsRange(nsIContent& aContent);
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ClearSelection();
+
+  
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT nsresult
@@ -2981,7 +2994,7 @@ class HTMLEditor final : public EditorBase,
   };
 
   struct MOZ_STACK_CLASS CellData final {
-    RefPtr<Element> mElement;
+    MOZ_KNOWN_LIVE RefPtr<Element> mElement;
     
     CellIndexes mCurrent;
     

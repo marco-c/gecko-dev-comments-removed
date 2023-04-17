@@ -2382,19 +2382,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  AppendNodeToSelectionAsRange(nsINode* aNode);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ClearSelection();
-
-  
-
-
-
 
   MOZ_CAN_RUN_SCRIPT nsresult InitializeSelection(nsINode& aFocusEventTarget);
 
