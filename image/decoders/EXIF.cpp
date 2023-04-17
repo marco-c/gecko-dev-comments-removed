@@ -6,18 +6,21 @@
 #include "EXIF.h"
 
 #include "mozilla/EndianUtils.h"
+#include "mozilla/StaticPrefs_image.h"
 
-namespace mozilla {
-namespace image {
-
-
+namespace mozilla::image {
 
 
 
 
 
-enum EXIFTag {
-  OrientationTag = 0x112,
+
+
+enum class EXIFTag : uint16_t {
+  Orientation = 0x112,
+  XResolution = 0x11a,
+  YResolution = 0x11b,
+  ResolutionUnit = 0x128,
 };
 
 
@@ -34,6 +37,26 @@ enum EXIFType {
 
 static const char* EXIFHeader = "Exif\0\0";
 static const uint32_t EXIFHeaderLength = 6;
+static const uint32_t TIFFHeaderStart = EXIFHeaderLength;
+
+struct ParsedEXIFData {
+  Orientation orientation;
+  float resolutionX = 72.0f;
+  float resolutionY = 72.0f;
+  ResolutionUnit resolutionUnit = ResolutionUnit::Dpi;
+};
+
+static float ToDppx(float aResolution, ResolutionUnit aUnit) {
+  constexpr float kPointsPerInch = 72.0f;
+  constexpr float kPointsPerCm = 1.0f / 2.54f;
+  switch (aUnit) {
+    case ResolutionUnit::Dpi:
+      return aResolution / kPointsPerInch;
+    case ResolutionUnit::Dpcm:
+      return aResolution / kPointsPerCm;
+  }
+  MOZ_CRASH("Unknown resolution unit?");
+}
 
 
 
@@ -54,14 +77,13 @@ EXIFData EXIFParser::ParseEXIF(const uint8_t* aData, const uint32_t aLength) {
 
   JumpTo(offsetIFD);
 
-  Orientation orientation;
-  if (!ParseIFD0(orientation)) {
-    return EXIFData();
-  }
-
   
   
-  return EXIFData(orientation);
+  ParsedEXIFData data;
+  ParseIFD0(data);
+  return EXIFData{data.orientation,
+                  Resolution(ToDppx(data.resolutionX, data.resolutionUnit),
+                             ToDppx(data.resolutionY, data.resolutionUnit))};
 }
 
 
@@ -94,55 +116,134 @@ bool EXIFParser::ParseTIFFHeader(uint32_t& aIFD0OffsetOut) {
   
   
   
-  aIFD0OffsetOut = ifd0Offset + EXIFHeaderLength;
+  aIFD0OffsetOut = ifd0Offset + TIFFHeaderStart;
   return true;
 }
 
 
 
 
-bool EXIFParser::ParseIFD0(Orientation& aOrientationOut) {
+void EXIFParser::ParseIFD0(ParsedEXIFData& aData) {
   uint16_t entryCount;
   if (!ReadUInt16(entryCount)) {
-    return false;
+    return;
   }
 
   for (uint16_t entry = 0; entry < entryCount; ++entry) {
     
     uint16_t tag;
     if (!ReadUInt16(tag)) {
-      return false;
-    }
-
-    
-    
-    if (tag != OrientationTag) {
-      Advance(10);
-      continue;
+      return;
     }
 
     uint16_t type;
     if (!ReadUInt16(type)) {
-      return false;
+      return;
     }
 
     uint32_t count;
     if (!ReadUInt32(count)) {
-      return false;
+      return;
     }
 
-    
-    if (!ParseOrientation(type, count, aOrientationOut)) {
-      return false;
+    switch (EXIFTag(tag)) {
+      case EXIFTag::Orientation:
+        
+        if (!ParseOrientation(type, count, aData.orientation)) {
+          return;
+        }
+        break;
+      case EXIFTag::ResolutionUnit:
+        if (!ParseResolutionUnit(type, count, aData.resolutionUnit)) {
+          return;
+        }
+        break;
+      case EXIFTag::XResolution:
+        if (!ParseResolution(type, count, aData.resolutionX)) {
+          return;
+        }
+        break;
+      case EXIFTag::YResolution:
+        if (!ParseResolution(type, count, aData.resolutionY)) {
+          return;
+        }
+        break;
+      default:
+        Advance(4);
+        break;
     }
+  }
+}
 
-    
+bool EXIFParser::ReadRational(float& aOut) {
+  
+  
+  uint32_t valueOffset;
+  if (!ReadUInt32(valueOffset)) {
+    return false;
+  }
+  ScopedJump jumpToHeader(*this, valueOffset + TIFFHeaderStart);
+  uint32_t numerator;
+  if (!ReadUInt32(numerator)) {
+    return false;
+  }
+  uint32_t denominator;
+  if (!ReadUInt32(denominator)) {
+    return false;
+  }
+  if (denominator == 0) {
+    return false;
+  }
+  aOut = float(numerator) / float(denominator);
+  return true;
+}
+
+bool EXIFParser::ParseResolution(uint16_t aType, uint32_t aCount, float& aOut) {
+  if (!StaticPrefs::image_exif_density_correction_enabled()) {
+    Advance(4);
     return true;
+  }
+  if (aType != RationalType || aCount != 1) {
+    return false;
+  }
+  float value;
+  if (!ReadRational(value)) {
+    return false;
+  }
+  if (value == 0.0f) {
+    return false;
+  }
+  aOut = value;
+  return true;
+}
+
+bool EXIFParser::ParseResolutionUnit(uint16_t aType, uint32_t aCount,
+                                     ResolutionUnit& aOut) {
+  if (!StaticPrefs::image_exif_density_correction_enabled()) {
+    Advance(4);
+    return true;
+  }
+  if (aType != ShortType || aCount != 1) {
+    return false;
+  }
+  uint16_t value;
+  if (!ReadUInt16(value)) {
+    return false;
+  }
+  switch (value) {
+    case 2:
+      aOut = ResolutionUnit::Dpi;
+      break;
+    case 3:
+      aOut = ResolutionUnit::Dpcm;
+      break;
+    default:
+      return false;
   }
 
   
   
-  aOrientationOut = Orientation();
+  Advance(2);
   return true;
 }
 
@@ -319,5 +420,4 @@ bool EXIFParser::ReadUInt32(uint32_t& aValue) {
   return matched;
 }
 
-}  
 }  

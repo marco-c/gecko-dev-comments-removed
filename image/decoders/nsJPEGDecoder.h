@@ -9,6 +9,7 @@
 
 #include "RasterImage.h"
 #include "SurfacePipe.h"
+#include "EXIF.h"
 
 
 
@@ -23,8 +24,7 @@ extern "C" {
 
 #include <setjmp.h>
 
-namespace mozilla {
-namespace image {
+namespace mozilla::image {
 
 typedef struct {
   struct jpeg_error_mgr pub;  
@@ -62,7 +62,7 @@ class nsJPEGDecoder : public Decoder {
   Maybe<Telemetry::HistogramID> SpeedHistogram() const override;
 
  protected:
-  Orientation ReadOrientationFromEXIF();
+  EXIFData ReadExifData() const;
   WriteState OutputScanlines();
 
  private:
@@ -107,7 +107,6 @@ class nsJPEGDecoder : public Decoder {
   SurfacePipe mPipe;
 };
 
-}  
 }  
 
 #endif  

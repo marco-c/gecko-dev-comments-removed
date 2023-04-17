@@ -15,6 +15,7 @@
 #include "DecoderFlags.h"
 #include "ImageMetadata.h"
 #include "Orientation.h"
+#include "Resolution.h"
 #include "SourceBuffer.h"
 #include "StreamingLexer.h"
 #include "SurfaceFlags.h"
@@ -473,8 +474,8 @@ class Decoder {
 
   
   
-  void PostSize(int32_t aWidth, int32_t aHeight,
-                Orientation aOrientation = Orientation());
+  void PostSize(int32_t aWidth, int32_t aHeight, Orientation = Orientation(),
+                Resolution = Resolution());
 
   
   
