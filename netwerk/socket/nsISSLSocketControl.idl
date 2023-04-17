@@ -166,10 +166,5 @@ interface nsISSLSocketControl : nsISupports {
 
 
     readonly attribute ACString retryEchConfig;
-
-    
-
-
-    [noscript] void disableEarlyData();
 };
 
