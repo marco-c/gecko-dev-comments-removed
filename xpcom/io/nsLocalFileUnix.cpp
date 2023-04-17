@@ -369,6 +369,8 @@ nsLocalFile::CreateAllAncestors(uint32_t aPermissions) {
   
   char* buffer = mPath.BeginWriting();
   char* slashp = buffer;
+  int mkdir_result = 0;
+  int mkdir_errno;
 
 #ifdef DEBUG_NSIFILE
   fprintf(stderr, "nsIFile: before: %s\n", buffer);
@@ -397,9 +399,9 @@ nsLocalFile::CreateAllAncestors(uint32_t aPermissions) {
 #ifdef DEBUG_NSIFILE
     fprintf(stderr, "nsIFile: mkdir(\"%s\")\n", buffer);
 #endif
-    int mkdir_result = mkdir(buffer, aPermissions);
-    int mkdir_errno = errno;
+    mkdir_result = mkdir(buffer, aPermissions);
     if (mkdir_result == -1) {
+      mkdir_errno = errno;
       
 
 
@@ -407,28 +409,26 @@ nsLocalFile::CreateAllAncestors(uint32_t aPermissions) {
 
 
 
-      if (access(buffer, F_OK) == 0) {
+      if (mkdir_errno != EEXIST && access(buffer, F_OK) == 0) {
         mkdir_errno = EEXIST;
       }
+#ifdef DEBUG_NSIFILE
+      fprintf(stderr, "nsIFile: errno: %d\n", mkdir_errno);
+#endif
     }
 
     
     *slashp = '/';
-
-    
-
-
-
-
-
-    if (mkdir_result == -1 && mkdir_errno != EEXIST) {
-      return nsresultForErrno(mkdir_errno);
-    }
   }
 
-#ifdef DEBUG_NSIFILE
-  fprintf(stderr, "nsIFile: after: %s\n", buffer);
-#endif
+  
+
+
+
+
+  if (mkdir_result == -1 && mkdir_errno != EEXIST) {
+    return NS_ERROR_FAILURE;
+  }
 
   return NS_OK;
 }
