@@ -59,15 +59,21 @@ const size_t MaxRealtimeFFTSize = 4096;
 ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
                                  size_t impulseResponseLength,
                                  size_t maxFFTSize, size_t convolverRenderPhase,
-                                 bool useBackgroundThreads)
+                                 bool useBackgroundThreads,
+                                 bool* aAllocationFailure)
     : m_impulseResponseLength(impulseResponseLength),
-      m_accumulationBuffer(impulseResponseLength + WEBAUDIO_BLOCK_SIZE),
+      m_accumulationBuffer(),
       m_inputBuffer(InputBufferSize),
       m_backgroundThread("ConvolverWorker"),
       m_backgroundThreadMonitor("ConvolverMonitor"),
       m_useBackgroundThreads(useBackgroundThreads),
       m_wantsToExit(false),
       m_moreInputBuffered(false) {
+  *aAllocationFailure = !m_accumulationBuffer.allocate(impulseResponseLength +
+                                                       WEBAUDIO_BLOCK_SIZE);
+  if (*aAllocationFailure) {
+    return;
+  }
   
   
   
