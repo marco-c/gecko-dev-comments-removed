@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Assertions.h"
 #include "mozilla/ScopeExit.h"
 
 #include "builtin/ModuleObject.h"
@@ -1804,6 +1805,8 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   
   UniquePtr<BaselineBailoutInfo> bailoutInfo(bailoutInfoArg);
   bailoutInfoArg = nullptr;
+
+  MOZ_DIAGNOSTIC_ASSERT(*bailoutInfo->bailoutKind != BailoutKind::Unreachable);
 
   JSContext* cx = TlsContext.get();
   BaselineFrame* topFrame = GetTopBaselineFrame(cx);

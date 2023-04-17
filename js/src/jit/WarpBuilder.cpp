@@ -2171,7 +2171,22 @@ bool WarpBuilder::build_Generator(BytecodeLocation loc) {
 
 bool WarpBuilder::build_AfterYield(BytecodeLocation loc) {
   
+  if (hasTerminatedBlock()) {
+    return true;
+  }
+
   
+  
+  
+  
+  
+  
+  
+  
+  
+  MBail* bail = MBail::New(alloc(), BailoutKind::Unreachable);
+  current->add(bail);
+
   return true;
 }
 
