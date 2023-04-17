@@ -1708,8 +1708,9 @@ bool IonCacheIRCompiler::emitGuardAndGetIterator(ObjOperandId objId,
 
   
   masm.movePtr(ImmGCPtr(iterobj), output);
-  masm.loadObjPrivate(output, PropertyIteratorObject::NUM_FIXED_SLOTS,
-                      niScratch);
+
+  Address slotAddr(output, PropertyIteratorObject::offsetOfIteratorSlot());
+  masm.loadPrivate(slotAddr, niScratch);
 
   
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());

@@ -1739,8 +1739,9 @@ bool BaselineCacheIRCompiler::emitGuardAndGetIterator(
 
   
   masm.loadPtr(iterAddr, output);
-  masm.loadObjPrivate(output, PropertyIteratorObject::NUM_FIXED_SLOTS,
-                      niScratch);
+
+  Address slotAddr(output, PropertyIteratorObject::offsetOfIteratorSlot());
+  masm.loadPrivate(slotAddr, niScratch);
 
   
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());
