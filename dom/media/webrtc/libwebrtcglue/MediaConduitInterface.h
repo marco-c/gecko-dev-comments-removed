@@ -213,9 +213,9 @@ class MediaSessionConduit {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSessionConduit)
 
-  void UpdateRtpSources(const std::vector<webrtc::RtpSource>& aSources);
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
 
+  
   
   void InsertAudioLevelForContributingSource(const uint32_t aCsrcSource,
                                              const int64_t aTimestamp,
@@ -223,7 +223,16 @@ class MediaSessionConduit {
                                              const bool aHasAudioLevel,
                                              const uint8_t aAudioLevel);
 
+ protected:
+  virtual std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const = 0;
+
  private:
+  void UpdateRtpSources(const std::vector<webrtc::RtpSource>& aSources) const;
+
+  
+  
+  void OnSourcesUpdated() const;
+
   
   
   
@@ -255,8 +264,13 @@ class MediaSessionConduit {
     uint32_t mLibwebrtcTimestamp;
     uint32_t mSrc;
   };
-  std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>
+  mutable std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>
       mSourcesCache;
+  
+  
+  
+  
+  mutable bool mSourcesUpdateNeeded = true;
 };
 
 
@@ -391,8 +405,6 @@ class VideoSessionConduit : public MediaSessionConduit {
 
   virtual bool AddFrameHistory(
       dom::Sequence<dom::RTCVideoFrameHistoryInternal>* outHistories) const = 0;
-
-  virtual void OnFrameDelivered() = 0;
 
  protected:
   
