@@ -72,7 +72,11 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
 
 
 
-function receiveProfile(profile, profilerViewMode, getSymbolTableCallback) {
+function openProfilerAndDisplayProfile(
+  profile,
+  profilerViewMode,
+  getSymbolTableCallback
+) {
   const Services = lazy.Services();
   
   
@@ -277,7 +281,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
 }
 
 module.exports = {
-  receiveProfile,
+  openProfilerAndDisplayProfile,
   createMultiModalGetSymbolTableFn,
   restartBrowserWithEnvironmentVariable,
   getEnvironmentVariable,
