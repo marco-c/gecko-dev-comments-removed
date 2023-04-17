@@ -914,8 +914,9 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
   
   
   if (mWindowType == eWindowType_popup) {
-    return mCompositedScreen;
+    return HasRemoteContent() && mCompositedScreen;
   }
+
   return true;
 }
 
