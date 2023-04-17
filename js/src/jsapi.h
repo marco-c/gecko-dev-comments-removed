@@ -99,8 +99,11 @@ class MOZ_RAII JS_PUBLIC_API CustomAutoRooter : private AutoGCRooter {
 
 
 
-using JSGetElementCallback = JSObject* (*)(JSContext* aCx,
-                                           JS::HandleValue privateValue);
+
+
+
+
+using JSSourceElementCallback = JSObject* (*)(JSContext*, JS::HandleValue);
 
 using JSInterruptCallback = bool (*)(JSContext*);
 

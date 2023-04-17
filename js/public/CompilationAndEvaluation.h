@@ -266,8 +266,13 @@ extern JS_PUBLIC_API bool UpdateDebugMetadata(
     HandleString elementAttributeName, HandleScript introScript,
     HandleScript scriptOrModule);
 
-extern JS_PUBLIC_API void SetGetElementCallback(JSContext* cx,
-                                                JSGetElementCallback callback);
+
+
+
+
+
+extern JS_PUBLIC_API void SetSourceElementCallback(
+    JSContext* cx, JSSourceElementCallback callback);
 
 } 
 

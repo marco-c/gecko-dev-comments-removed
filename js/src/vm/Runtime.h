@@ -307,7 +307,7 @@ struct JSRuntime {
   
   js::MainThreadData<JSSetUseCounterCallback> useCounterCallback;
 
-  js::MainThreadData<JSGetElementCallback> getElementCallback;
+  js::MainThreadData<JSSourceElementCallback> sourceElementCallback;
 
  public:
   
@@ -320,7 +320,8 @@ struct JSRuntime {
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
 
-  void setElementCallback(JSRuntime* rt, JSGetElementCallback callback);
+  void setSourceElementCallback(JSRuntime* rt,
+                                JSSourceElementCallback callback);
 
   
   
