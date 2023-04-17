@@ -69,12 +69,13 @@
 
 
 
+#[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
 #[macro_export]
 macro_rules! parse_quote {
     ($($tt:tt)*) => {
         $crate::parse_quote::parse(
-            $crate::export::From::from(
-                $crate::export::quote::quote!($($tt)*)
+            $crate::__private::From::from(
+                $crate::__private::quote::quote!($($tt)*)
             )
         )
     };

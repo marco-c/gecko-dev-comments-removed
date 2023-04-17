@@ -250,46 +250,49 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.40")]
-#![deny(clippy::all, clippy::pedantic)]
+#![doc(html_root_url = "https://docs.rs/syn/1.0.73")]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![allow(non_camel_case_types)]
 
 #![allow(
-    clippy::blocks_in_if_conditions,
-    clippy::cognitive_complexity,
     clippy::doc_markdown,
     clippy::eval_order_dependence,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
-    clippy::manual_non_exhaustive,
-    clippy::match_like_matches_macro,
+    clippy::manual_map, 
     clippy::match_on_vec_items,
+    clippy::missing_panics_doc,
     clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::never_loop,
-    clippy::suspicious_op_assign_impl,
     clippy::too_many_arguments,
     clippy::trivially_copy_pass_by_ref,
-    clippy::unnecessary_unwrap
+    clippy::unnecessary_unwrap,
+    
+    clippy::wrong_self_convention
 )]
 
 #![allow(
     clippy::cast_possible_truncation,
+    
+    clippy::cloned_instead_of_copied,
     clippy::default_trait_access,
     clippy::empty_enum,
     clippy::expl_impl_clone_on_copy,
     clippy::if_not_else,
-    clippy::items_after_statements,
     clippy::match_same_arms,
+    
+    clippy::match_wildcard_for_single_variants,
     clippy::missing_errors_doc,
     clippy::module_name_repetitions,
     clippy::must_use_candidate,
     clippy::option_if_let_else,
+    clippy::redundant_else,
     clippy::shadow_unrelated,
     clippy::similar_names,
     clippy::single_match_else,
     clippy::too_many_lines,
     clippy::unseparated_literal_suffix,
-    clippy::use_self,
     clippy::used_underscore_binding,
     clippy::wildcard_imports
 )]
@@ -434,8 +437,10 @@ pub use crate::path::{
 };
 
 #[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub mod buffer;
 #[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub mod ext;
 pub mod punctuated;
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "extra-traits"))]
@@ -456,6 +461,7 @@ pub mod parse_quote;
 pub mod parse_macro_input;
 
 #[cfg(all(feature = "parsing", feature = "printing"))]
+#[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
 pub mod spanned;
 
 #[cfg(all(feature = "parsing", feature = "full"))]
@@ -579,6 +585,7 @@ mod gen {
     
     
     #[cfg(feature = "visit")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "visit")))]
     #[rustfmt::skip]
     pub mod visit;
 
@@ -675,6 +682,7 @@ mod gen {
     
     
     #[cfg(feature = "visit-mut")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "visit-mut")))]
     #[rustfmt::skip]
     pub mod visit_mut;
 
@@ -761,6 +769,7 @@ mod gen {
     
     
     #[cfg(feature = "fold")]
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "fold")))]
     #[rustfmt::skip]
     pub mod fold;
 
@@ -788,7 +797,8 @@ pub use crate::gen::*;
 
 
 #[doc(hidden)]
-pub mod export;
+#[path = "export.rs"]
+pub mod __private;
 
 mod custom_keyword;
 mod custom_punctuation;
@@ -800,6 +810,7 @@ mod thread;
 mod lookahead;
 
 #[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub mod parse;
 
 #[cfg(feature = "full")]
@@ -811,10 +822,9 @@ mod verbatim;
 #[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 mod print;
 
+use crate::__private::private;
 
 
-#[allow(dead_code, non_camel_case_types)]
-struct private;
 
 
 #[cfg(feature = "parsing")]
@@ -873,6 +883,7 @@ pub use crate::error::{Error, Result};
     feature = "parsing",
     feature = "proc-macro"
 ))]
+#[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "proc-macro"))))]
 pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
     parse::Parser::parse(T::parse, tokens)
 }
@@ -889,6 +900,7 @@ pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
 
 
 #[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
     parse::Parser::parse2(T::parse, tokens)
 }
@@ -917,6 +929,7 @@ pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
 
 
 #[cfg(feature = "parsing")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
 pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
     parse::Parser::parse_str(T::parse, s)
 }
@@ -959,6 +972,7 @@ pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
 
 
 #[cfg(all(feature = "parsing", feature = "full"))]
+#[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "full"))))]
 pub fn parse_file(mut content: &str) -> Result<File> {
     
     const BOM: &str = "\u{feff}";

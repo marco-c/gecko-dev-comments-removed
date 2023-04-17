@@ -4,6 +4,7 @@ ast_struct! {
     /// A braced block containing Rust statements.
     ///
     /// *This type is available only if Syn is built with the `"full"` feature.*
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "full")))]
     pub struct Block {
         pub brace_token: token::Brace,
         /// Statements in a block
@@ -15,6 +16,7 @@ ast_enum! {
     /// A statement, usually ending in a semicolon.
     ///
     /// *This type is available only if Syn is built with the `"full"` feature.*
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "full")))]
     pub enum Stmt {
         /// A local (let) binding.
         Local(Local),
@@ -34,6 +36,7 @@ ast_struct! {
     /// A local `let` binding: `let x: u64 = s.parse()?`.
     ///
     /// *This type is available only if Syn is built with the `"full"` feature.*
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "full")))]
     pub struct Local {
         pub attrs: Vec<Attribute>,
         pub let_token: Token![let],
@@ -46,64 +49,64 @@ ast_struct! {
 #[cfg(feature = "parsing")]
 pub mod parsing {
     use super::*;
-
     use crate::parse::discouraged::Speculative;
     use crate::parse::{Parse, ParseStream, Result};
     use proc_macro2::TokenStream;
 
     impl Block {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        /// Parse the body of a block as zero or more statements, possibly
+        /// including one trailing expression.
+        ///
+        /// *This function is available only if Syn is built with the `"parsing"`
+        /// feature.*
+        ///
+        /// # Example
+        ///
+        /// ```
+        /// use syn::{braced, token, Attribute, Block, Ident, Result, Stmt, Token};
+        /// use syn::parse::{Parse, ParseStream};
+        ///
+        /// // Parse a function with no generics or parameter list.
+        /// //
+        /// //     fn playground {
+        /// //         let mut x = 1;
+        /// //         x += 1;
+        /// //         println!("{}", x);
+        /// //     }
+        /// struct MiniFunction {
+        ///     attrs: Vec<Attribute>,
+        ///     fn_token: Token![fn],
+        ///     name: Ident,
+        ///     brace_token: token::Brace,
+        ///     stmts: Vec<Stmt>,
+        /// }
+        ///
+        /// impl Parse for MiniFunction {
+        ///     fn parse(input: ParseStream) -> Result<Self> {
+        ///         let outer_attrs = input.call(Attribute::parse_outer)?;
+        ///         let fn_token: Token![fn] = input.parse()?;
+        ///         let name: Ident = input.parse()?;
+        ///
+        ///         let content;
+        ///         let brace_token = braced!(content in input);
+        ///         let inner_attrs = content.call(Attribute::parse_inner)?;
+        ///         let stmts = content.call(Block::parse_within)?;
+        ///
+        ///         Ok(MiniFunction {
+        ///             attrs: {
+        ///                 let mut attrs = outer_attrs;
+        ///                 attrs.extend(inner_attrs);
+        ///                 attrs
+        ///             },
+        ///             fn_token,
+        ///             name,
+        ///             brace_token,
+        ///             stmts,
+        ///         })
+        ///     }
+        /// }
+        /// ```
+        #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
         pub fn parse_within(input: ParseStream) -> Result<Vec<Stmt>> {
             let mut stmts = Vec::new();
             loop {
@@ -130,6 +133,7 @@ pub mod parsing {
         }
     }
 
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for Block {
         fn parse(input: ParseStream) -> Result<Self> {
             let content;
@@ -140,6 +144,7 @@ pub mod parsing {
         }
     }
 
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for Stmt {
         fn parse(input: ParseStream) -> Result<Self> {
             parse_stmt(input, false)
@@ -149,8 +154,8 @@ pub mod parsing {
     fn parse_stmt(input: ParseStream, allow_nosemi: bool) -> Result<Stmt> {
         let mut attrs = input.call(Attribute::parse_outer)?;
 
-        
-        
+        // brace-style macros; paren and bracket macros get parsed as
+        // expression statements.
         let ahead = input.fork();
         if let Ok(path) = ahead.call(Path::parse_mod_style) {
             if ahead.peek(Token![!]) && (ahead.peek2(token::Brace) || ahead.peek2(Ident)) {
@@ -166,7 +171,7 @@ pub mod parsing {
             || input.peek(Token![extern])
             || input.peek(Token![use])
             || input.peek(Token![static]) && (input.peek2(Token![mut]) || input.peek2(Ident))
-            || input.peek(Token![const])
+            || input.peek(Token![const]) && !input.peek2(token::Brace)
             || input.peek(Token![unsafe]) && !input.peek2(token::Brace)
             || input.peek(Token![async])
                 && (input.peek2(Token![unsafe])
@@ -274,10 +279,10 @@ pub mod parsing {
 #[cfg(feature = "printing")]
 mod printing {
     use super::*;
-
     use proc_macro2::TokenStream;
     use quote::{ToTokens, TokenStreamExt};
 
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "printing")))]
     impl ToTokens for Block {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             self.brace_token.surround(tokens, |tokens| {
@@ -286,6 +291,7 @@ mod printing {
         }
     }
 
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "printing")))]
     impl ToTokens for Stmt {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             match self {
@@ -300,6 +306,7 @@ mod printing {
         }
     }
 
+    #[cfg_attr(doc_cfg, doc(cfg(feature = "printing")))]
     impl ToTokens for Local {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             expr::printing::outer_attrs_to_tokens(&self.attrs, tokens);

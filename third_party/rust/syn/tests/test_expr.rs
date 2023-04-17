@@ -300,3 +300,21 @@ fn test_macro_variable_match_arm() {
     }
     "###);
 }
+
+
+#[test]
+fn test_closure_vs_rangefull() {
+    #[rustfmt::skip] 
+    let tokens = quote!(|| .. .method());
+    snapshot!(tokens as Expr, @r###"
+    Expr::MethodCall {
+        receiver: Expr::Closure {
+            output: Default,
+            body: Expr::Range {
+                limits: HalfOpen,
+            },
+        },
+        method: "method",
+    }
+    "###);
+}
