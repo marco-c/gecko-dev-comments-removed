@@ -19,8 +19,6 @@
 
 #define CV_SIGNATURE 0x53445352  // 'SDSR'
 
-namespace {
-
 struct CodeViewRecord70 {
   uint32_t signature;
   GUID pdbSignature;
@@ -29,13 +27,6 @@ struct CodeViewRecord70 {
   
   char pdbFileName[1];
 };
-
-struct HModuleFreer {
-  using pointer = HMODULE;
-  void operator()(pointer aModule) { ::FreeLibrary(aModule); }
-};
-
-}  
 
 static constexpr char digits[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -179,19 +170,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                               std::size(modulePath))) {
       continue;
     }
-
-    
-    
-    
-    
-    
-    
-    mozilla::UniquePtr<HMODULE, HModuleFreer> handleLock(
-        LoadLibraryExW(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE));
-    if (!handleLock) {
-      continue;
-    }
-
     mozilla::UniquePtr<char[]> utf8ModulePath(
         mozilla::glue::WideToUTF8(modulePath));
     if (!utf8ModulePath) {
@@ -201,10 +179,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     MODULEINFO module = {0};
     if (!GetModuleInformation(hProcess, hMods[i], &module,
                               sizeof(MODULEINFO))) {
-      
-      
-      
-      
       continue;
     }
 
@@ -251,12 +225,31 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
 #endif  
 
     std::string breakpadId;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HMODULE handleLock =
+        LoadLibraryExW(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
+    MEMORY_BASIC_INFORMATION vmemInfo = {0};
     std::string pdbSig;
     uint32_t pdbAge;
     std::string pdbPathStr;
     std::string pdbNameStr;
     char* pdbName = nullptr;
-    if (GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
+    if (handleLock &&
+        sizeof(vmemInfo) ==
+            VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
+        vmemInfo.State == MEM_COMMIT &&
+        GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
       MOZ_ASSERT(breakpadId.empty());
       breakpadId += pdbSig;
       AppendHex(pdbAge, breakpadId, WITHOUT_PADDING);
@@ -273,6 +266,8 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                         breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
                         pdbPathStr, GetVersion(modulePath), "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
+
+    FreeLibrary(handleLock);  
   }
 
   return sharedLibraryInfo;
