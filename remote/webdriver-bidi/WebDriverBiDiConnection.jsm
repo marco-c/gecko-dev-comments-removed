@@ -70,7 +70,16 @@ class WebDriverBiDiConnection extends WebSocketConnection {
 
 
 
-  sendError(id, error) {}
+  sendError(id, err) {
+    const webDriverError = error.wrap(err);
+
+    this.send({
+      id,
+      error: webDriverError.status,
+      message: webDriverError.message,
+      stacktrace: webDriverError.stack,
+    });
+  }
 
   
 
