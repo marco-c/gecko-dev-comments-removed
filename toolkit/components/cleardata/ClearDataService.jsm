@@ -920,13 +920,27 @@ const AuthCacheCleaner = {
 };
 
 const PermissionsCleaner = {
-  async deleteByHost(aHost, aOriginAttributes) {
+  
+
+
+
+
+
+
+
+
+  async _deleteInternal({ baseDomain, host }) {
     for (let perm of Services.perms.all) {
       let toBeRemoved;
-      try {
-        toBeRemoved = Services.eTLD.hasRootDomain(perm.principal.host, aHost);
-      } catch (ex) {
-        continue;
+
+      if (baseDomain) {
+        toBeRemoved = perm.principal.baseDomain == baseDomain;
+      } else {
+        try {
+          toBeRemoved = Services.eTLD.hasRootDomain(perm.principal.host, host);
+        } catch (ex) {
+          continue;
+        }
       }
 
       if (!toBeRemoved && perm.type.startsWith("3rdPartyStorage^")) {
@@ -938,7 +952,7 @@ const PermissionsCleaner = {
           continue;
         }
 
-        toBeRemoved = Services.eTLD.hasRootDomain(uri.host, aHost);
+        toBeRemoved = Services.eTLD.hasRootDomain(uri.host, baseDomain || host);
       }
 
       if (!toBeRemoved) {
@@ -953,13 +967,16 @@ const PermissionsCleaner = {
     }
   },
 
+  deleteByHost(aHost, aOriginAttributes) {
+    return this._deleteInternal({ host: aHost });
+  },
+
   deleteByPrincipal(aPrincipal) {
     return this.deleteByHost(aPrincipal.host, aPrincipal.originAttributes);
   },
 
   deleteByBaseDomain(aBaseDomain) {
-    
-    return this.deleteByHost(aBaseDomain, {});
+    return this._deleteInternal({ baseDomain: aBaseDomain });
   },
 
   async deleteByRange(aFrom, aTo) {
