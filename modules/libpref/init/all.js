@@ -337,7 +337,9 @@ pref("pdfjs.renderInteractiveForms", true);
 pref("pdfjs.enableScripting", true);
 
 
+#ifdef EARLY_BETA_OR_EARLIER
 pref("pdfjs.enableXfa", true);
+#endif
 
 
 pref("mathml.disabled",    false);
