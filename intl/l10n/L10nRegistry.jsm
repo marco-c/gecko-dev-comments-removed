@@ -108,7 +108,7 @@ class L10nRegistryService {
       let fileSources = [];
       for (let {entry, value} of Services.catMan.enumerateCategory("l10n-registry")) {
         if (!this.hasSource(entry)) {
-          fileSources.push(new L10nFileSource(entry, locales, value));
+          fileSources.push(new FileSource(entry, locales, value));
         }
       }
       this.registerSources(fileSources);
@@ -278,7 +278,7 @@ class L10nRegistryService {
   _synchronizeSharedData() {
     const sources = new Map();
     for (const [name, source] of this.sources.entries()) {
-      if (source.index !== null) {
+      if (source.indexed) {
         continue;
       }
       sources.set(name, {
@@ -302,7 +302,7 @@ class L10nRegistryService {
     let registerSourcesList = [];
     for (let [name, data] of sources.entries()) {
       if (!this.hasSource(name)) {
-        const source = new L10nFileSource(name, data.locales, data.prePath);
+        const source = new FileSource(name, data.locales, data.prePath);
         registerSourcesList.push(source);
       }
     }
@@ -374,7 +374,7 @@ async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds,
     
     for (let [idx, sourceName] of order.entries()) {
       const source = L10nRegistry.sources.get(sourceName);
-      if (!source || source.hasFile(locale, resourceIds[idx]) === "missing") {
+      if (!source || source.hasFile(locale, resourceIds[idx]) === false) {
         if (idx === order.length - 1) {
           continue;
         } else {
@@ -389,7 +389,7 @@ async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds,
       let dataSet = await generateResourceSet(locale, order, resourceIds);
       
       
-      if (!dataSet.includes(null)) {
+      if (!dataSet.includes(false)) {
         yield dataSet;
       }
     } else if (resolvedLength < resourcesLength) {
@@ -434,7 +434,7 @@ function* generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIds, r
     
     for (let [idx, sourceName] of order.entries()) {
       const source = L10nRegistry.sources.get(sourceName);
-      if (!source || source.hasFile(locale, resourceIds[idx]) === "missing") {
+      if (!source || source.hasFile(locale, resourceIds[idx]) === false) {
         if (idx === order.length - 1) {
           continue;
         } else {
@@ -449,7 +449,7 @@ function* generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIds, r
       let dataSet = generateResourceSetSync(locale, order, resourceIds);
       
       
-      if (!dataSet.includes(null)) {
+      if (!dataSet.includes(false)) {
         yield dataSet;
       }
     } else if (resolvedLength < resourcesLength) {
@@ -487,7 +487,7 @@ function generateResourceSet(locale, sourcesOrder, resourceIds) {
   return Promise.all(resourceIds.map((resourceId, i) => {
     const source = L10nRegistry.sources.get(sourcesOrder[i]);
     if (!source) {
-      return null;
+      return false;
     }
     return source.fetchFile(locale, resourceId);
   }));
@@ -507,12 +507,220 @@ function generateResourceSetSync(locale, sourcesOrder, resourceIds) {
   return resourceIds.map((resourceId, i) => {
     const source = L10nRegistry.sources.get(sourcesOrder[i]);
     if (!source) {
-      return null;
+      return false;
     }
-    return source.fetchFileSync(locale, resourceId);
+    return source.fetchFile(locale, resourceId, {sync: true});
   });
+}
+
+
+
+
+
+
+
+
+
+class FileSource {
+  
+
+
+
+
+
+
+  constructor(name, locales, prePath) {
+    this.name = name;
+    this.locales = locales;
+    this.prePath = prePath;
+    this.indexed = false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.cache = {};
+  }
+
+  getPath(locale, path) {
+    
+    
+    if (locale === "ja-JP-macos") {
+      locale = "ja-JP-mac";
+    }
+    return (this.prePath + path).replace(/\{locale\}/g, locale);
+  }
+
+  hasFile(locale, path) {
+    if (!this.locales.includes(locale)) {
+      return false;
+    }
+
+    const fullPath = this.getPath(locale, path);
+    if (!this.cache.hasOwnProperty(fullPath)) {
+      return this.indexed ? false : undefined;
+    }
+    if (this.cache[fullPath] === false) {
+      return false;
+    }
+    if (this.cache[fullPath].then) {
+      return undefined;
+    }
+    return true;
+  }
+
+  fetchFile(locale, path, options = {sync: false}) {
+    if (!this.locales.includes(locale)) {
+      return false;
+    }
+
+    const fullPath = this.getPath(locale, path);
+
+    if (this.cache.hasOwnProperty(fullPath)) {
+      if (this.cache[fullPath] === false) {
+        return false;
+      }
+      
+      
+      if (this.cache[fullPath] !== true) {
+        if (this.cache[fullPath] instanceof Promise && options.sync) {
+          console.warn(`[l10nregistry] Attempting to synchronously load file
+            ${fullPath} while it's being loaded asynchronously.`);
+        } else {
+          return this.cache[fullPath];
+        }
+      }
+    } else if (this.indexed) {
+      return false;
+    }
+    if (options.sync) {
+      let data = L10nRegistry.loadSync(fullPath);
+
+      if (data === false) {
+        this.cache[fullPath] = false;
+      } else {
+        this.cache[fullPath] = new FluentResource(data);
+      }
+
+      return this.cache[fullPath];
+    }
+
+    
+    return this.cache[fullPath] = L10nRegistry.load(fullPath).then(
+      data => {
+        return this.cache[fullPath] = new FluentResource(data);
+      },
+      err => {
+        this.cache[fullPath] = false;
+        return false;
+      }
+    );
+  }
+}
+
+
+
+
+
+
+
+
+class IndexedFileSource extends FileSource {
+  
+
+
+
+
+
+
+
+  constructor(name, locales, prePath, paths) {
+    super(name, locales, prePath);
+    this.indexed = true;
+    for (const path of paths) {
+      this.cache[path] = true;
+    }
+  }
 }
 
 this.L10nRegistry = new L10nRegistryService();
 
-var EXPORTED_SYMBOLS = ["L10nRegistry"];
+
+
+
+
+
+
+
+
+
+
+L10nRegistry.load = function(url) {
+  return fetch(url).then(response => {
+    if (!response.ok) {
+      return Promise.reject(response.statusText);
+    }
+    return response.text();
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+L10nRegistry.loadSync = function(uri) {
+  try {
+    let url = Services.io.newURI(uri);
+    let data = Cu.readUTF8URI(url);
+    return data;
+  } catch (e) {
+    if (
+      e.result == Cr.NS_ERROR_INVALID_ARG ||
+      e.result == Cr.NS_ERROR_NOT_INITIALIZED
+    ) {
+      try {
+        
+        
+        let stream = NetUtil.newChannel({
+          uri,
+          loadUsingSystemPrincipal: true,
+        }).open();
+
+        return NetUtil.readInputStreamToString(stream, stream.available(), {
+          charset: "UTF-8",
+        });
+      } catch (e) {
+        if (e.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
+          Cu.reportError(e);
+        }
+      }
+    } else if (e.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
+      Cu.reportError(e);
+    }
+  }
+
+  return false;
+};
+
+this.FileSource = FileSource;
+this.IndexedFileSource = IndexedFileSource;
+
+var EXPORTED_SYMBOLS = ["L10nRegistry", "FileSource", "IndexedFileSource"];

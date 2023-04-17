@@ -1,16 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
 mod number;
 mod plural;
 
@@ -110,14 +97,11 @@ impl<'source> FluentValue<'source> {
         }
     }
 
-    pub fn matches<R: Borrow<FluentResource>, M>(
+    pub fn matches<R: Borrow<FluentResource>, M: MemoizerKind>(
         &self,
         other: &FluentValue,
         scope: &Scope<R, M>,
-    ) -> bool
-    where
-        M: MemoizerKind,
-    {
+    ) -> bool {
         match (self, other) {
             (&FluentValue::String(ref a), &FluentValue::String(ref b)) => a == b,
             (&FluentValue::Number(ref a), &FluentValue::Number(ref b)) => a == b,
@@ -164,10 +148,10 @@ impl<'source> FluentValue<'source> {
         }
     }
 
-    pub fn as_string<R: Borrow<FluentResource>, M>(&self, scope: &Scope<R, M>) -> Cow<'source, str>
-    where
-        M: MemoizerKind,
-    {
+    pub fn as_string<R: Borrow<FluentResource>, M: MemoizerKind>(
+        &self,
+        scope: &Scope<R, M>,
+    ) -> Cow<'source, str> {
         if let Some(formatter) = &scope.bundle.formatter {
             if let Some(val) = formatter(self, &scope.bundle.intls) {
                 return val.into();

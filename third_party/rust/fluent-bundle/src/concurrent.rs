@@ -1,39 +1,14 @@
 use intl_memoizer::{concurrent::IntlLangMemoizer, Memoizable};
-use rustc_hash::FxHashMap;
 use unic_langid::LanguageIdentifier;
 
-use crate::bundle::FluentBundle;
+use crate::bundle::FluentBundleBase;
 use crate::memoizer::MemoizerKind;
 use crate::types::FluentType;
 
-impl<R> FluentBundle<R, IntlLangMemoizer> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new_concurrent(locales: Vec<LanguageIdentifier>) -> Self {
-        let first_locale = locales.get(0).cloned().unwrap_or_default();
-        Self {
-            locales,
-            resources: vec![],
-            entries: FxHashMap::default(),
-            intls: IntlLangMemoizer::new(first_locale),
-            use_isolating: true,
-            transform: None,
-            formatter: None,
-        }
-    }
-}
+
+
+
+pub type FluentBundle<R> = FluentBundleBase<R, IntlLangMemoizer>;
 
 impl MemoizerKind for IntlLangMemoizer {
     fn new(lang: LanguageIdentifier) -> Self

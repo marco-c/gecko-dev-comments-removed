@@ -1,4 +1,4 @@
-const { L10nRegistry } = ChromeUtils.import(
+const { L10nRegistry, FileSource } = ChromeUtils.import(
   "resource://gre/modules/L10nRegistry.jsm"
 );
 
@@ -18,11 +18,8 @@ protocol.setSubstitution("l10n-test", Services.io.newURI(uri));
 
 
 let locales = Services.locale.appLocalesAsBCP47;
-
-
-
-let source = new L10nFileSource("test", locales, `${uri}localization/`);
-L10nRegistry.registerSources([source]);
+let mockSource = new FileSource("test", locales, `${uri}localization/`);
+L10nRegistry.registerSources([mockSource]);
 
 registerCleanupFunction(() => {
   protocol.setSubstitution("l10n-test", null);

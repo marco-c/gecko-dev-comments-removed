@@ -1,5 +1,6 @@
 use fluent_syntax::ast;
-use fluent_syntax::parser::{parse_runtime, ParserError};
+use fluent_syntax::parser::Parser;
+use fluent_syntax::parser::ParserError;
 use ouroboros::self_referencing;
 
 #[self_referencing]
@@ -7,79 +8,20 @@ use ouroboros::self_referencing;
 pub struct InnerFluentResource {
     string: String,
     #[borrows(string)]
-    #[covariant]
     ast: ast::Resource<&'this str>,
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #[derive(Debug)]
 pub struct FluentResource(InnerFluentResource);
 
 impl FluentResource {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn try_new(source: String) -> Result<Self, (Self, Vec<ParserError>)> {
         let mut errors = None;
 
         let res = InnerFluentResourceBuilder {
             string: source,
-            ast_builder: |string: &str| match parse_runtime(string) {
+            ast_builder: |string: &str| match Parser::new(string).parse() {
                 Ok(ast) => ast,
                 Err((ast, err)) => {
                     errors = Some(err);
@@ -96,76 +38,7 @@ impl FluentResource {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn source(&self) -> &str {
-        &self.0.borrow_string()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn entries(&self) -> impl Iterator<Item = &ast::Entry<&str>> {
-        self.0.borrow_ast().body.iter()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get_entry(&self, idx: usize) -> Option<&ast::Entry<&str>> {
-        self.0.borrow_ast().body.get(idx)
+    pub fn ast(&self) -> &ast::Resource<&str> {
+        self.0.borrow_ast()
     }
 }

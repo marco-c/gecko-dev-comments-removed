@@ -3,8 +3,18 @@
 
 const {
   L10nRegistry,
+  FileSource,
+  IndexedFileSource,
 } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
 const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+
+let fs;
+L10nRegistry.load = async function(url) {
+  if (!fs.hasOwnProperty(url)) {
+    return Promise.reject("Resource unavailable");
+  }
+  return fs[url];
+};
 
 add_task(function test_methods_presence() {
   equal(typeof L10nRegistry.generateBundles, "function");
@@ -18,9 +28,9 @@ add_task(function test_methods_presence() {
 
 
 add_task(async function test_empty_resourceids() {
-  const fs = [];
+  fs = {};
 
-  const source = L10nFileSource.createMock("test", ["en-US"], "/localization/{locale}", fs);
+  const source = new FileSource("test", ["en-US"], "/localization/{locale}");
   L10nRegistry.registerSources([source]);
 
   const bundles = L10nRegistry.generateBundles(["en-US"], []);
@@ -37,8 +47,9 @@ add_task(async function test_empty_resourceids() {
 
 
 add_task(async function test_empty_sources() {
-  const fs = [];
-  const bundles = L10nRegistry.generateBundlesSync(["en-US"], fs);
+  fs = {};
+
+  const bundles = L10nRegistry.generateBundles(["en-US"], []);
 
   const done = (await bundles.next()).done;
 
@@ -53,10 +64,11 @@ add_task(async function test_empty_sources() {
 
 
 add_task(async function test_methods_calling() {
-  const fs = [
-    { path: "/localization/en-US/browser/menu.ftl", source: "key = Value" }
-  ];
-  const source = L10nFileSource.createMock("test", ["en-US"], "/localization/{locale}", fs);
+  fs = {
+    "/localization/en-US/browser/menu.ftl": "key = Value",
+  };
+
+  const source = new FileSource("test", ["en-US"], "/localization/{locale}");
   L10nRegistry.registerSources([source]);
 
   const bundles = L10nRegistry.generateBundles(["en-US"], ["/browser/menu.ftl"]);
@@ -74,10 +86,10 @@ add_task(async function test_methods_calling() {
 
 
 add_task(async function test_has_one_source() {
-  const fs = [
-    {path: "./app/data/locales/en-US/test.ftl", source: "key = value en-US"}
-  ];
-  let oneSource = L10nFileSource.createMock("app", ["en-US"], "./app/data/locales/{locale}/", fs);
+  let oneSource = new FileSource("app", ["en-US"], "./app/data/locales/{locale}/");
+  fs = {
+    "./app/data/locales/en-US/test.ftl": "key = value en-US",
+  };
   L10nRegistry.registerSources([oneSource]);
 
 
@@ -111,13 +123,14 @@ add_task(async function test_has_one_source() {
 
 
 add_task(async function test_has_two_sources() {
-  const fs = [
-    { path: "./platform/data/locales/en-US/test.ftl", source: "key = platform value" },
-    { path: "./app/data/locales/pl/test.ftl", source: "key = app value" }
-  ];
-  let oneSource = L10nFileSource.createMock("platform", ["en-US"], "./platform/data/locales/{locale}/", fs);
-  let secondSource = L10nFileSource.createMock("app", ["pl"], "./app/data/locales/{locale}/", fs);
+  let oneSource = new FileSource("platform", ["en-US"], "./platform/data/locales/{locale}/");
+  let secondSource = new FileSource("app", ["pl"], "./app/data/locales/{locale}/");
   L10nRegistry.registerSources([oneSource, secondSource]);
+  fs = {
+    "./platform/data/locales/en-US/test.ftl": "key = platform value",
+    "./app/data/locales/pl/test.ftl": "key = app value",
+  };
+
 
   
 
@@ -166,12 +179,24 @@ add_task(async function test_has_two_sources() {
 
 
 
-add_task(function test_indexed() {
-  let oneSource = new L10nFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
+add_task(async function test_indexed() {
+  let oneSource = new IndexedFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
     "/data/locales/pl/test.ftl",
   ]);
-  equal(oneSource.hasFile("pl", "test.ftl"), "present");
-  equal(oneSource.hasFile("pl", "missing.ftl"), "missing");
+  L10nRegistry.registerSources([oneSource]);
+  fs = {
+    "/data/locales/pl/test.ftl": "key = value",
+  };
+
+  equal(L10nRegistry.sources.size, 1);
+  equal(L10nRegistry.sources.has("langpack-pl"), true);
+
+  equal(oneSource.getPath("pl", "test.ftl"), "/data/locales/pl/test.ftl");
+  equal(oneSource.hasFile("pl", "test.ftl"), true);
+  equal(oneSource.hasFile("pl", "missing.ftl"), false);
+
+  
+  L10nRegistry.sources.clear();
 });
 
 
@@ -179,13 +204,16 @@ add_task(function test_indexed() {
 
 
 add_task(async function test_override() {
-  const fs = [
-    { path: "/app/data/locales/pl/test.ftl", source: "key = value" },
-    { path: "/data/locales/pl/test.ftl", source: "key = addon value"},
-  ];
-  let fileSource = L10nFileSource.createMock("app", ["pl"], "/app/data/locales/{locale}/", fs);
-  let oneSource = L10nFileSource.createMock("langpack-pl", ["pl"], "/data/locales/{locale}/", fs);
+  let fileSource = new FileSource("app", ["pl"], "/app/data/locales/{locale}/");
+  let oneSource = new IndexedFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
+    "/data/locales/pl/test.ftl",
+  ]);
   L10nRegistry.registerSources([fileSource, oneSource]);
+
+  fs = {
+    "/app/data/locales/pl/test.ftl": "key = value",
+    "/data/locales/pl/test.ftl": "key = addon value",
+  };
 
   equal(L10nRegistry.sources.size, 2);
   equal(L10nRegistry.sources.has("langpack-pl"), true);
@@ -214,11 +242,13 @@ add_task(async function test_override() {
 
 
 add_task(async function test_updating() {
-  const fs = [
-    { path: "/data/locales/pl/test.ftl", source: "key = value" }
-  ];
-  let oneSource = L10nFileSource.createMock("langpack-pl", ["pl"], "/data/locales/{locale}/", fs);
+  let oneSource = new IndexedFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
+    "/data/locales/pl/test.ftl",
+  ]);
   L10nRegistry.registerSources([oneSource]);
+  fs = {
+    "/data/locales/pl/test.ftl": "key = value",
+  };
 
   let bundles = L10nRegistry.generateBundles(["pl"], ["test.ftl"]);
   let bundle0 = (await bundles.next()).value;
@@ -228,9 +258,10 @@ add_task(async function test_updating() {
   equal(bundle0.formatPattern(msg0.value), "value");
 
 
-  const newSource = L10nFileSource.createMock("langpack-pl", ["pl"], "/data/locales/{locale}/", [
-    { path: "/data/locales/pl/test.ftl", source: "key = new value" }
+  const newSource = new IndexedFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
+    "/data/locales/pl/test.ftl",
   ]);
+  fs["/data/locales/pl/test.ftl"] = "key = new value";
   L10nRegistry.updateSources([newSource]);
 
   equal(L10nRegistry.sources.size, 1);
@@ -248,14 +279,16 @@ add_task(async function test_updating() {
 
 
 add_task(async function test_removing() {
-  const fs = [
-    { path: "/app/data/locales/pl/test.ftl", source: "key = value" },
-    { path: "/data/locales/pl/test.ftl", source: "key = addon value" },
-  ];
-
-  let fileSource = L10nFileSource.createMock("app", ["pl"], "/app/data/locales/{locale}/", fs);
-  let oneSource = L10nFileSource.createMock("langpack-pl", ["pl"], "/data/locales/{locale}/", fs);
+  let fileSource = new FileSource("app", ["pl"], "/app/data/locales/{locale}/");
+  let oneSource = new IndexedFileSource("langpack-pl", ["pl"], "/data/locales/{locale}/", [
+    "/data/locales/pl/test.ftl",
+  ]);
   L10nRegistry.registerSources([fileSource, oneSource]);
+
+  fs = {
+    "/app/data/locales/pl/test.ftl": "key = value",
+    "/data/locales/pl/test.ftl": "key = addon value",
+  };
 
   equal(L10nRegistry.sources.size, 2);
   equal(L10nRegistry.sources.has("langpack-pl"), true);
@@ -309,14 +342,16 @@ add_task(async function test_removing() {
 
 
 add_task(async function test_missing_file() {
-  const fs = [
-    { path: "./app/data/locales/en-US/test.ftl", source: "key = value en-US" },
-    { path: "./platform/data/locales/en-US/test.ftl", source: "key = value en-US" },
-    { path: "./platform/data/locales/en-US/test2.ftl", source: "key2 = value2 en-US" },
-  ];
-  let oneSource = L10nFileSource.createMock("app", ["en-US"], "./app/data/locales/{locale}/", fs);
-  let twoSource = L10nFileSource.createMock("platform", ["en-US"], "./platform/data/locales/{locale}/", fs);
+  let oneSource = new FileSource("app", ["en-US"], "./app/data/locales/{locale}/");
+  let twoSource = new FileSource("platform", ["en-US"], "./platform/data/locales/{locale}/");
   L10nRegistry.registerSources([oneSource, twoSource]);
+
+  fs = {
+    "./app/data/locales/en-US/test.ftl": "key = value en-US",
+    "./platform/data/locales/en-US/test.ftl": "key = value en-US",
+    "./platform/data/locales/en-US/test2.ftl": "key2 = value2 en-US",
+  };
+
 
   
 
@@ -349,10 +384,71 @@ add_task(async function test_missing_file() {
   L10nRegistry.sources.clear();
 });
 
+
+
+
+
+
+add_task(async function test_parallel_io() {
+  
+  let originalLoad = L10nRegistry.load;
+  let fetchIndex = new Map();
+
+  L10nRegistry.load = function(url) {
+    if (!fetchIndex.has(url)) {
+      fetchIndex.set(url, 0);
+    }
+    fetchIndex.set(url, fetchIndex.get(url) + 1);
+
+    if (url === "/en-US/slow-file.ftl") {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          
+          
+          
+          equal(fetchIndex.get("/en-US/test.ftl"), 1);
+          equal(fetchIndex.get("/en-US/test2.ftl"), 1);
+
+          resolve("");
+        }, 10);
+      });
+    }
+    return Promise.resolve("");
+  };
+  let oneSource = new FileSource("app", ["en-US"], "/{locale}/");
+  L10nRegistry.registerSources([oneSource]);
+
+  fs = {
+    "/en-US/test.ftl": "key = value en-US",
+    "/en-US/test2.ftl": "key2 = value2 en-US",
+    "/en-US/slow-file.ftl": "key-slow = value slow en-US",
+  };
+
+  
+
+  let bundles = L10nRegistry.generateBundles(["en-US"], ["slow-file.ftl", "test.ftl", "test2.ftl"]);
+
+  equal(fetchIndex.size, 0);
+
+  let bundle0 = await bundles.next();
+
+  equal(bundle0.done, false);
+
+  equal((await bundles.next()).done, true);
+
+  
+  
+  L10nRegistry.generateBundles(["en-US"], ["test.ftl", "test2.ftl", "slow-file.ftl"]);
+
+  
+  L10nRegistry.sources.clear();
+  L10nRegistry.load = originalLoad;
+});
+
 add_task(async function test_hasSource() {
   equal(L10nRegistry.hasSource("gobbledygook"), false, "Non-existing source doesn't exist");
   equal(L10nRegistry.hasSource("app"), false, "hasSource returns true before registering a source");
-  let oneSource = new L10nFileSource("app", ["en-US"], "/{locale}/");
+  let oneSource = new FileSource("app", ["en-US"], "/{locale}/");
   L10nRegistry.registerSources([oneSource]);
   equal(L10nRegistry.hasSource("app"), true, "hasSource returns true after registering a source");
   L10nRegistry.sources.clear();
@@ -363,13 +459,14 @@ add_task(async function test_hasSource() {
 
 
 add_task(async function test_remove_source_mid_iter_cycle() {
-  const fs = [
-    { path: "./platform/data/locales/en-US/test.ftl", source: "key = platform value" },
-    { path: "./app/data/locales/pl/test.ftl", source: "key = app value" },
-  ];
-  let oneSource = L10nFileSource.createMock("platform", ["en-US"], "./platform/data/locales/{locale}/", fs);
-  let secondSource = L10nFileSource.createMock("app", ["pl"], "./app/data/locales/{locale}/", fs);
+  let oneSource = new FileSource("platform", ["en-US"], "./platform/data/locales/{locale}/");
+  let secondSource = new FileSource("app", ["pl"], "./app/data/locales/{locale}/");
   L10nRegistry.registerSources([oneSource, secondSource]);
+
+  fs = {
+    "./platform/data/locales/en-US/test.ftl": "key = platform value",
+    "./app/data/locales/pl/test.ftl": "key = app value",
+  };
 
   let bundles = L10nRegistry.generateBundles(["en-US", "pl"], ["test.ftl"]);
 

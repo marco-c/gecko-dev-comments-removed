@@ -79,49 +79,143 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use intl_memoizer::{IntlLangMemoizer, Memoizable};
+use unic_langid::LanguageIdentifier;
 
 mod args;
 pub mod bundle;
-mod concurrent;
+pub mod concurrent;
 mod entry;
 mod errors;
-#[doc(hidden)]
 pub mod memoizer;
 mod message;
-#[doc(hidden)]
 pub mod resolver;
 mod resource;
 pub mod types;
 
 pub use args::FluentArgs;
-
-
-
-
-
-
-
-pub type FluentBundle<R> = bundle::FluentBundle<R, intl_memoizer::IntlLangMemoizer>;
 pub use errors::FluentError;
 pub use message::{FluentAttribute, FluentMessage};
 pub use resource::FluentResource;
-#[doc(inline)]
 pub use types::FluentValue;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub type FluentBundle<R> = bundle::FluentBundleBase<R, IntlLangMemoizer>;
+
+impl memoizer::MemoizerKind for IntlLangMemoizer {
+    fn new(lang: LanguageIdentifier) -> Self
+    where
+        Self: Sized,
+    {
+        Self::new(lang)
+    }
+
+    fn with_try_get_threadsafe<I, R, U>(&self, args: I::Args, cb: U) -> Result<R, I::Error>
+    where
+        Self: Sized,
+        I: Memoizable + Send + Sync + 'static,
+        I::Args: Send + Sync + 'static,
+        U: FnOnce(&I) -> R,
+    {
+        self.with_try_get(args, cb)
+    }
+
+    fn stringify_value(&self, value: &dyn types::FluentType) -> std::borrow::Cow<'static, str> {
+        value.as_string(self)
+    }
+}
