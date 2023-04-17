@@ -660,12 +660,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-
-  virtual bool ContentUsesTiling() const;
-
-  
-
-
   static mozilla::LogModule* GetLog(eGfxLog aWhichLog);
 
   int GetScreenDepth() const { return mScreenDepth; }
