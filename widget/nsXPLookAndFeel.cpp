@@ -1046,55 +1046,19 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
   return false;
 }
 
-static bool ShouldRespectSystemColorSchemeForChromeDoc() {
-#ifdef XP_MACOSX
-  
-  
-  
-  return false;
-#else
-  
-  
-  return true;
-#endif
-}
-
 LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForChrome() {
-  if (StaticPrefs::widget_color_scheme_follow_firefox_theme()) {
-    switch (StaticPrefs::browser_theme_toolbar_theme()) {
-      case 0:  
-        return ColorScheme::Dark;
-      case 1:  
-        return ColorScheme::Light;
-      case 2:  
-        return SystemColorScheme();
-      default:
-        break;
-    }
+  switch (StaticPrefs::browser_theme_toolbar_theme()) {
+    case 0:  
+      return ColorScheme::Dark;
+    case 1:  
+      return ColorScheme::Light;
+    default:
+      break;
   }
-  if (ShouldRespectSystemColorSchemeForChromeDoc()) {
-    return SystemColorScheme();
-  }
-  return ColorScheme::Light;
+  return SystemColorScheme();
 }
 
-static LookAndFeel::ColorScheme ColorSchemeForDocument(
-    const dom::Document& aDoc, bool aContentSupportsDark) {
-  if (nsContentUtils::IsChromeDoc(&aDoc)) {
-    return LookAndFeel::ColorSchemeForChrome();
-  }
-#ifdef MOZ_WIDGET_GTK
-  if (StaticPrefs::widget_content_allow_gtk_dark_theme()) {
-    
-    
-    return LookAndFeel::SystemColorScheme();
-  }
-#endif
-  return aContentSupportsDark ? LookAndFeel::SystemColorScheme()
-                              : LookAndFeel::ColorScheme::Light;
-}
-
-LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForStyle(
+ColorScheme LookAndFeel::ColorSchemeForStyle(
     const dom::Document& aDoc, const StyleColorSchemeFlags& aFlags) {
   StyleColorSchemeFlags style(aFlags);
   if (!style) {
@@ -1102,13 +1066,35 @@ LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForStyle(
   }
   const bool supportsDark = bool(style & StyleColorSchemeFlags::DARK);
   const bool supportsLight = bool(style & StyleColorSchemeFlags::LIGHT);
-  if (supportsDark && !supportsLight) {
-    return ColorScheme::Dark;
+  if (supportsLight && supportsDark) {
+    
+    return aDoc.PreferredColorScheme();
   }
-  if (supportsLight && !supportsDark) {
-    return ColorScheme::Light;
+  if (supportsDark || supportsLight) {
+    
+    
+    return supportsDark ? ColorScheme::Dark : ColorScheme::Light;
   }
-  return ColorSchemeForDocument(aDoc, supportsDark);
+  
+  
+  if (nsContentUtils::IsChromeDoc(&aDoc)) {
+    return ColorSchemeForChrome();
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef MOZ_WIDGET_GTK
+  if (StaticPrefs::widget_content_allow_gtk_dark_theme()) {
+    return SystemColorScheme();
+  }
+#endif
+  
+  return ColorScheme::Light;
 }
 
 LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForFrame(

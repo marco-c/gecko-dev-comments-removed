@@ -203,7 +203,7 @@ class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
 enum class StyleCursorKind : uint8_t;
-enum class StylePrefersColorScheme : uint8_t;
+enum class ColorScheme : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
 template <typename>
 class OwningNonNull;
@@ -4004,7 +4004,7 @@ class Document : public nsINode,
 
   
   enum class IgnoreRFP { No, Yes };
-  StylePrefersColorScheme PrefersColorScheme(IgnoreRFP = IgnoreRFP::No) const;
+  ColorScheme PreferredColorScheme(IgnoreRFP = IgnoreRFP::No) const;
 
   static bool HasRecentlyStartedForegroundLoads();
 
