@@ -187,17 +187,6 @@ class MarionetteBranch extends Branch {
 
 
 
-
-  get truncateLog() {
-    return this.get("log.truncate");
-  }
-
-  
-
-
-
-
-
   get setPermissionEnabled() {
     return this.get("setpermission.enabled", false);
   }

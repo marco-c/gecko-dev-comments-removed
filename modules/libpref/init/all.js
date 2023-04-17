@@ -4441,10 +4441,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("marionette.log.level", "Info");
 
   
-  
-  pref("marionette.log.truncate", true);
-
-  
   pref("marionette.port", 2828);
 
   
