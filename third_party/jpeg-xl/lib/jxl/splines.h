@@ -79,20 +79,6 @@ class QuantizedSpline {
   int sigma_dct_[32] = {};
 };
 
-
-
-
-
-struct SplineSegment {
-  ssize_t xbegin, xend;
-  float center_x, center_y;
-  float maximum_distance;
-  float sigma;
-  float inv_sigma;
-  float sigma_over_4_times_intensity;
-  float color[3];
-};
-
 class Splines {
  public:
   Splines() = default;
@@ -105,13 +91,11 @@ class Splines {
 
   bool HasAny() const { return !splines_.empty(); }
 
-  void Clear();
-
   Status Decode(BitReader* br, size_t num_pixels);
 
-  void AddTo(Image3F* opsin, const Rect& opsin_rect,
-             const Rect& image_rect) const;
-  void SubtractFrom(Image3F* opsin) const;
+  Status AddTo(Image3F* opsin, const Rect& opsin_rect, const Rect& image_rect,
+               const ColorCorrelationMap& cmap) const;
+  Status SubtractFrom(Image3F* opsin, const ColorCorrelationMap& cmap) const;
 
   const std::vector<QuantizedSpline>& QuantizedSplines() const {
     return splines_;
@@ -122,13 +106,10 @@ class Splines {
 
   int32_t GetQuantizationAdjustment() const { return quantization_adjustment_; }
 
-  Status InitializeDrawCache(size_t image_xsize, size_t image_ysize,
-                             const ColorCorrelationMap& cmap);
-
  private:
   template <bool>
-  void Apply(Image3F* opsin, const Rect& opsin_rect,
-             const Rect& image_rect) const;
+  Status Apply(Image3F* opsin, const Rect& opsin_rect, const Rect& image_rect,
+               const ColorCorrelationMap& cmap) const;
 
   
   
@@ -136,9 +117,6 @@ class Splines {
   int32_t quantization_adjustment_ = 0;
   std::vector<QuantizedSpline> splines_;
   std::vector<Spline::Point> starting_points_;
-  std::vector<SplineSegment> segments_;
-  std::vector<size_t> segment_indices_;
-  std::vector<size_t> segment_y_start_;
 };
 
 }  

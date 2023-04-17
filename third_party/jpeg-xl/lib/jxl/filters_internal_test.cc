@@ -15,36 +15,36 @@ class FiltersInternalTest : public ::testing::Test {};
 TEST(FiltersInternalTest, RowMapModTest) {
   RowMapMod<5> m;
   
-  EXPECT_EQ(0u, m(0));
-  EXPECT_EQ(4u, m(4));
+  EXPECT_EQ(0, m(0));
+  EXPECT_EQ(4, m(4));
 
   
-  EXPECT_EQ(0u, m(5));
-  EXPECT_EQ(1u, m(11));
+  EXPECT_EQ(0, m(5));
+  EXPECT_EQ(1, m(11));
 
   
-  EXPECT_EQ(4u, m(-1));
-  EXPECT_EQ(2u, m(-8));
+  EXPECT_EQ(4, m(-1));
+  EXPECT_EQ(2, m(-8));
 }
 
 
 TEST(FiltersInternalTest, RowMapMirrorTest) {
   RowMapMirror m(0, 10);  
 
-  EXPECT_EQ(2u, m(-3));
-  EXPECT_EQ(1u, m(-2));
-  EXPECT_EQ(0u, m(-1));
+  EXPECT_EQ(2, m(-3));
+  EXPECT_EQ(1, m(-2));
+  EXPECT_EQ(0, m(-1));
 
-  EXPECT_EQ(0u, m(0));
-  EXPECT_EQ(9u, m(9));
+  EXPECT_EQ(0, m(0));
+  EXPECT_EQ(9, m(9));
 
-  EXPECT_EQ(9u, m(10));
-  EXPECT_EQ(8u, m(11));
-  EXPECT_EQ(7u, m(12));
+  EXPECT_EQ(9, m(10));
+  EXPECT_EQ(8, m(11));
+  EXPECT_EQ(7, m(12));
 
   
-  EXPECT_EQ(1u, m(21));
-  EXPECT_EQ(1u, m(41));
+  EXPECT_EQ(1, m(21));
+  EXPECT_EQ(1, m(41));
 }
 
 }  

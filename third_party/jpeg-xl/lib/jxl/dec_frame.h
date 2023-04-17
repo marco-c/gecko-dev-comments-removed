@@ -106,20 +106,6 @@ class FrameDecoder {
 
   
   
-  
-  
-  int References() const;
-
-  
-  
-  
-  
-  
-  
-  static int SavedAs(const FrameHeader& header);
-
-  
-  
   const std::vector<uint64_t>& SectionOffsets() const {
     return section_offsets_;
   }
@@ -132,22 +118,30 @@ class FrameDecoder {
 
   
   
-  bool HasDecodedDC() const { return finalized_dc_; }
+  bool HasDecodedDC() const {
+    return frame_header_.encoding == FrameEncoding::kVarDCT && finalized_dc_;
+  }
 
   
   
   
   
   
-  
-  
-  
-  
-  
-  
   void MaybeSetRGB8OutputBuffer(uint8_t* rgb_output, size_t stride,
-                                bool is_rgba, bool undo_orientation) const {
-    if (!CanDoLowMemoryPath(undo_orientation)) return;
+                                bool is_rgba) const {
+    if (decoded_->metadata()->GetOrientation() != Orientation::kIdentity) {
+      return;
+    }
+    if (ImageBlender::NeedsBlending(dec_state_)) {
+      return;
+    }
+    if (frame_header_.CanBeReferenced()) {
+      return;
+    }
+    if (render_spotcolors_ &&
+        decoded_->metadata()->Find(ExtraChannel::kSpotColor)) {
+      return;
+    }
     dec_state_->rgb_output = rgb_output;
     dec_state_->rgb_output_is_rgba = is_rgba;
     dec_state_->rgb_stride = stride;
@@ -164,20 +158,24 @@ class FrameDecoder {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
   void MaybeSetFloatCallback(
       const std::function<void(const float* pixels, size_t x, size_t y,
                                size_t num_pixels)>& cb,
-      bool is_rgba, bool undo_orientation) const {
-    if (!CanDoLowMemoryPath(undo_orientation)) return;
+      bool is_rgba) const {
+    if (decoded_->metadata()->GetOrientation() != Orientation::kIdentity) {
+      return;
+    }
+    if (frame_header_.blending_info.mode != BlendMode::kReplace ||
+        frame_header_.custom_size_or_origin) {
+      return;
+    }
+    if (frame_header_.CanBeReferenced()) {
+      return;
+    }
+    if (render_spotcolors_ &&
+        decoded_->metadata()->Find(ExtraChannel::kSpotColor)) {
+      return;
+    }
     dec_state_->pixel_callback = cb;
     dec_state_->rgb_output_is_rgba = is_rgba;
     JXL_ASSERT(dec_state_->rgb_output == nullptr);
@@ -218,27 +216,6 @@ class FrameDecoder {
   size_t GetStorageLocation(size_t thread, size_t task) {
     if (use_task_id_) return task;
     return thread;
-  }
-
-  
-  
-  
-  
-  
-  
-  bool CanDoLowMemoryPath(bool undo_orientation) const {
-    if (undo_orientation &&
-        decoded_->metadata()->GetOrientation() != Orientation::kIdentity) {
-      return false;
-    }
-    if (ImageBlender::NeedsBlending(dec_state_)) return false;
-    if (frame_header_.CanBeReferenced()) return false;
-    if (render_spotcolors_ &&
-        decoded_->metadata()->Find(ExtraChannel::kSpotColor)) {
-      return false;
-    }
-    if (decoded_->AlphaIsPremultiplied()) return false;
-    return true;
   }
 
   PassesDecoderState* dec_state_;

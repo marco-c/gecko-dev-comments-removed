@@ -31,7 +31,6 @@
 #include "lib/jxl/luminance.h"
 
 namespace jxl {
-namespace extras {
 namespace {
 
 #define JXL_PNG_VERBOSE 0
@@ -124,40 +123,17 @@ class BlobsReaderPNG {
     if (type->length() > kMaxTypeLen) return false;  
 
     
-    
-    
-    
-    
-    
-    
-    const char* pos = encoded;
-
-    if (*(pos++) != '\n') return false;
-    while (pos < encoded_end && *pos != '\n') {
-      pos++;
-    }
-    if (pos == encoded_end) return false;
-    
-    
-    if (*(pos++) != '\n') return false;
     unsigned long bytes_to_decode;
-    const int fields = sscanf(pos, "%8lu", &bytes_to_decode);
-    if (fields != 1) return false;  
-    JXL_ASSERT(pos + 8 <= encoded_end);
-    pos += 8;  
-
-    
-    const unsigned long needed_bytes =
-        bytes_to_decode * 2 + 1 + DivCeil(bytes_to_decode, 36);
-    if (needed_bytes != static_cast<size_t>(encoded_end - pos)) {
-      return JXL_FAILURE("Not enough bytes to parse %lu bytes in hex",
-                         bytes_to_decode);
-    }
+    int header_len;
+    std::vector<char> description((encoded_end - encoded) + 1);
+    const int fields = sscanf(encoded, "\n%[^\n]\n%8lu%n", description.data(),
+                              &bytes_to_decode, &header_len);
+    if (fields != 2) return false;  
     JXL_ASSERT(bytes->empty());
     bytes->reserve(bytes_to_decode);
 
     
-    
+    const char* pos = encoded + header_len;
     for (size_t i = 0; i < bytes_to_decode; ++i) {
       if (i % 36 == 0) {
         if (pos + 1 >= encoded_end) return false;  
@@ -372,7 +348,6 @@ class ColorEncodingReaderPNG {
   Status DecodeSRGB(const unsigned char* payload, const size_t payload_size) {
     if (payload_size != 1) return JXL_FAILURE("Wrong sRGB size");
     
-    if (payload[0] >= 4) return JXL_FAILURE("Invalid Rendering Intent");
     rendering_intent_ = static_cast<RenderingIntent>(payload[0]);
     have_srgb_ = true;
     return true;
@@ -487,6 +462,45 @@ class ColorEncodingReaderPNG {
   PrimariesCIExy primaries_;
 };
 
+Status ApplyHints(const bool is_gray, CodecInOut* io) {
+  bool got_color_space = false;
+
+  JXL_RETURN_IF_ERROR(io->dec_hints.Foreach(
+      [is_gray, io, &got_color_space](const std::string& key,
+                                      const std::string& value) -> Status {
+        ColorEncoding* c_original = &io->metadata.m.color_encoding;
+        if (key == "color_space") {
+          if (!ParseDescription(value, c_original) ||
+              !c_original->CreateICC()) {
+            return JXL_FAILURE("PNG: Failed to apply color_space");
+          }
+
+          if (is_gray != io->metadata.m.color_encoding.IsGray()) {
+            return JXL_FAILURE(
+                "PNG: mismatch between file and color_space hint");
+          }
+
+          got_color_space = true;
+        } else if (key == "icc_pathname") {
+          PaddedBytes icc;
+          JXL_RETURN_IF_ERROR(ReadFile(value, &icc));
+          JXL_RETURN_IF_ERROR(c_original->SetICC(std::move(icc)));
+          got_color_space = true;
+        } else {
+          JXL_WARNING("PNG decoder ignoring %s hint", key.c_str());
+        }
+        return true;
+      }));
+
+  if (!got_color_space) {
+    JXL_WARNING("PNG: no color_space/icc_pathname given, assuming sRGB");
+    JXL_RETURN_IF_ERROR(io->metadata.m.color_encoding.SetSRGB(
+        is_gray ? ColorSpace::kGray : ColorSpace::kRGB));
+  }
+
+  return true;
+}
+
 
 class ColorEncodingWriterPNG {
  public:
@@ -495,9 +509,7 @@ class ColorEncodingWriterPNG {
     if (c.IsSRGB()) {
       JXL_RETURN_IF_ERROR(AddSRGB(c, info));
       
-    } else if (!c.HaveFields() || !c.tf.IsGamma()) {
-      
-      
+    } else {
       JXL_ASSERT(!c.ICC().empty());
       JXL_RETURN_IF_ERROR(AddICC(c.ICC(), info));
     }
@@ -556,16 +568,8 @@ class ColorEncodingWriterPNG {
 
   static Status MaybeAddGAMA(const ColorEncoding& c,
                              LodePNGInfo* JXL_RESTRICT info) {
-    double gamma;
-    if (c.tf.IsGamma()) {
-      gamma = c.tf.GetGamma();
-    } else if (c.tf.IsLinear()) {
-      gamma = 1;
-    } else if (c.tf.IsSRGB()) {
-      gamma = 0.45455;
-    } else {
-      return true;
-    }
+    if (!c.tf.IsGamma()) return true;
+    const double gamma = c.tf.GetGamma();
 
     PaddedBytes payload(4);
     StoreBE32(U32FromF64(gamma), payload.data());
@@ -574,30 +578,20 @@ class ColorEncodingWriterPNG {
 
   static Status MaybeAddCHRM(const ColorEncoding& c,
                              LodePNGInfo* JXL_RESTRICT info) {
-    CIExy white_point = c.GetWhitePoint();
     
-    
-    
-    
-    
-    PrimariesCIExy primaries =
-        c.IsGray() ? ColorEncoding().GetPrimaries() : c.GetPrimaries();
-
-    if (c.primaries == Primaries::kSRGB && c.white_point == WhitePoint::kD65) {
-      
-      
-      
-      
-      
-      white_point.x = 0.31270;
-      white_point.y = 0.32900;
-      primaries.r.x = 0.64000;
-      primaries.r.y = 0.33000;
-      primaries.g.x = 0.30000;
-      primaries.g.y = 0.60000;
-      primaries.b.x = 0.15000;
-      primaries.b.y = 0.06000;
+    if (c.white_point != WhitePoint::kCustom &&
+        c.primaries != Primaries::kCustom) {
+      return true;
     }
+
+    const CIExy white_point = c.GetWhitePoint();
+    
+    
+    
+    
+    
+    const PrimariesCIExy primaries =
+        c.IsGray() ? ColorEncoding().GetPrimaries() : c.GetPrimaries();
 
     PaddedBytes payload(32);
     StoreBE32(U32FromF64(white_point.x), &payload[0]);
@@ -717,8 +711,7 @@ Status InspectChunkType(const Span<const uint8_t> bytes,
 
 }  
 
-Status DecodeImagePNG(const Span<const uint8_t> bytes,
-                      const ColorHints& color_hints, ThreadPool* pool,
+Status DecodeImagePNG(const Span<const uint8_t> bytes, ThreadPool* pool,
                       CodecInOut* io) {
   unsigned w, h;
   PNGState state;
@@ -780,18 +773,25 @@ Status DecodeImagePNG(const Span<const uint8_t> bytes,
 
   const JxlEndianness endianness = JXL_BIG_ENDIAN;  
   const Span<const uint8_t> span(out, out_size);
-  const bool ok = ConvertFromExternal(
-      span, w, h, io->metadata.m.color_encoding, has_alpha,
-      false,
-      io->metadata.m.bit_depth.bits_per_sample, endianness,
-      false, pool, &io->Main(), false);
+  const bool ok =
+      ConvertFromExternal(span, w, h, io->metadata.m.color_encoding, has_alpha,
+                          false,
+                          io->metadata.m.bit_depth.bits_per_sample, endianness,
+                          false, pool, &io->Main());
   JXL_RETURN_IF_ERROR(ok);
   io->dec_pixels = w * h;
   io->metadata.m.bit_depth.bits_per_sample = io->Main().DetectRealBitdepth();
   io->metadata.m.xyb_encoded = false;
   SetIntensityTarget(io);
-  JXL_RETURN_IF_ERROR(
-      ApplyColorHints(color_hints, reader.HaveColorProfile(), is_gray, io));
+  if (!reader.HaveColorProfile()) {
+    JXL_RETURN_IF_ERROR(ApplyHints(is_gray, io));
+  } else {
+    (void)io->dec_hints.Foreach(
+        [](const std::string& key, const std::string& ) {
+          JXL_WARNING("PNG decoder ignoring %s hint", key.c_str());
+          return true;
+        });
+  }
   return true;
 }
 
@@ -848,5 +848,4 @@ Status EncodeImagePNG(const CodecInOut* io, const ColorEncoding& c_desired,
   return true;
 }
 
-}  
 }  

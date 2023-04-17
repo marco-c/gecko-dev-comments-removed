@@ -62,12 +62,6 @@ namespace jxl {
 
 
 
-#ifndef JXL_DEBUG_ON_ABORT
-#define JXL_DEBUG_ON_ABORT 1
-#endif  
-
-
-
 
 JXL_FORMAT(1, 2)
 bool Debug(const char* format, ...);
@@ -116,19 +110,19 @@ bool Debug(const char* format, ...);
 JXL_NORETURN bool Abort();
 
 
-#define JXL_ABORT(format, ...)                                              \
-  ((JXL_DEBUG_ON_ABORT) && ::jxl::Debug(("%s:%d: JXL_ABORT: " format "\n"), \
-                                        __FILE__, __LINE__, ##__VA_ARGS__), \
+#define JXL_ABORT(format, ...)                                          \
+  (::jxl::Debug(("%s:%d: JXL_ABORT: " format "\n"), __FILE__, __LINE__, \
+                ##__VA_ARGS__),                                         \
    ::jxl::Abort())
 
 
 #if JXL_ENABLE_ASSERT
-#define JXL_ASSERT(condition)                                      \
-  do {                                                             \
-    if (!(condition)) {                                            \
-      JXL_DEBUG(JXL_DEBUG_ON_ABORT, "JXL_ASSERT: %s", #condition); \
-      ::jxl::Abort();                                              \
-    }                                                              \
+#define JXL_ASSERT(condition)                        \
+  do {                                               \
+    if (!(condition)) {                              \
+      JXL_DEBUG(true, "JXL_ASSERT: %s", #condition); \
+      ::jxl::Abort();                                \
+    }                                                \
   } while (0)
 #else
 #define JXL_ASSERT(condition) \
@@ -138,7 +132,6 @@ JXL_NORETURN bool Abort();
 
 
 
-#ifndef JXL_IS_DEBUG_BUILD
 #if !defined(NDEBUG) || defined(ADDRESS_SANITIZER) ||         \
     defined(MEMORY_SANITIZER) || defined(THREAD_SANITIZER) || \
     defined(__clang_analyzer__)
@@ -146,19 +139,18 @@ JXL_NORETURN bool Abort();
 #else
 #define JXL_IS_DEBUG_BUILD 0
 #endif
-#endif  
 
 
 
 
 
 #if JXL_IS_DEBUG_BUILD
-#define JXL_DASSERT(condition)                                      \
-  do {                                                              \
-    if (!(condition)) {                                             \
-      JXL_DEBUG(JXL_DEBUG_ON_ABORT, "JXL_DASSERT: %s", #condition); \
-      ::jxl::Abort();                                               \
-    }                                                               \
+#define JXL_DASSERT(condition)                        \
+  do {                                                \
+    if (!(condition)) {                               \
+      JXL_DEBUG(true, "JXL_DASSERT: %s", #condition); \
+      ::jxl::Abort();                                 \
+    }                                                 \
   } while (0)
 #else
 #define JXL_DASSERT(condition) \
@@ -168,12 +160,12 @@ JXL_NORETURN bool Abort();
 
 
 #if JXL_ENABLE_CHECK
-#define JXL_CHECK(condition)                                      \
-  do {                                                            \
-    if (!(condition)) {                                           \
-      JXL_DEBUG(JXL_DEBUG_ON_ABORT, "JXL_CHECK: %s", #condition); \
-      ::jxl::Abort();                                             \
-    }                                                             \
+#define JXL_CHECK(condition)                        \
+  do {                                              \
+    if (!(condition)) {                             \
+      JXL_DEBUG(true, "JXL_CHECK: %s", #condition); \
+      ::jxl::Abort();                               \
+    }                                               \
   } while (0)
 #else
 #define JXL_CHECK(condition) \

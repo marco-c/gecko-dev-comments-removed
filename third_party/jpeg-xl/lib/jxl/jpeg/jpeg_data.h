@@ -14,7 +14,7 @@
 #include <array>
 #include <vector>
 
-#include "lib/jxl/common.h"  
+#include "lib/jxl/common.h"
 #include "lib/jxl/fields.h"
 
 namespace jxl {
@@ -216,16 +216,10 @@ struct JPEGData : public Fields {
         error(JPEGReadError::OK),
         has_zero_padding_bit(false) {}
 
-  JXL_FIELDS_NAME(JPEGData)
-#if JPEGXL_ENABLE_TRANSCODE_JPEG
+  const char* Name() const override { return "JPEGData"; }
   
   
   Status VisitFields(Visitor* visitor) override;
-#else
-  Status VisitFields(Visitor* ) override {
-    JXL_ABORT("JPEG transcoding support not enabled");
-  }
-#endif  
 
   void CalculateMcuSize(const JPEGScanInfo& scan, int* MCUs_per_row,
                         int* MCU_rows) const;
@@ -251,15 +245,8 @@ struct JPEGData : public Fields {
   std::vector<uint8_t> padding_bits;
 };
 
-#if JPEGXL_ENABLE_TRANSCODE_JPEG
 
 Status SetJPEGDataFromICC(const PaddedBytes& icc, jpeg::JPEGData* jpeg_data);
-#else
-static JXL_INLINE Status SetJPEGDataFromICC(const PaddedBytes& ,
-                                            jpeg::JPEGData* ) {
-  JXL_ABORT("JPEG transcoding support not enabled");
-}
-#endif  
 
 }  
 }  

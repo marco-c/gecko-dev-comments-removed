@@ -71,7 +71,7 @@ static inline constexpr uint64_t EnumBits(ExtraChannel ) {
 
 struct BitDepth : public Fields {
   BitDepth();
-  JXL_FIELDS_NAME(BitDepth)
+  const char* Name() const override { return "BitDepth"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -99,7 +99,7 @@ struct BitDepth : public Fields {
 
 struct ExtraChannelInfo : public Fields {
   ExtraChannelInfo();
-  JXL_FIELDS_NAME(ExtraChannelInfo)
+  const char* Name() const override { return "ExtraChannelInfo"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -119,7 +119,7 @@ struct ExtraChannelInfo : public Fields {
 
 struct OpsinInverseMatrix : public Fields {
   OpsinInverseMatrix();
-  JXL_FIELDS_NAME(OpsinInverseMatrix)
+  const char* Name() const override { return "OpsinInverseMatrix"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -133,7 +133,7 @@ struct OpsinInverseMatrix : public Fields {
 
 struct ToneMapping : public Fields {
   ToneMapping();
-  JXL_FIELDS_NAME(ToneMapping)
+  const char* Name() const override { return "ToneMapping"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -163,7 +163,7 @@ struct ToneMapping : public Fields {
 
 struct CustomTransformData : public Fields {
   CustomTransformData();
-  JXL_FIELDS_NAME(CustomTransformData)
+  const char* Name() const override { return "CustomTransformData"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -185,7 +185,7 @@ struct CustomTransformData : public Fields {
 
 struct ImageMetadata : public Fields {
   ImageMetadata();
-  JXL_FIELDS_NAME(ImageMetadata)
+  const char* Name() const override { return "ImageMetadata"; }
 
   Status VisitFields(Visitor* JXL_RESTRICT visitor) override;
 
@@ -218,12 +218,6 @@ struct ImageMetadata : public Fields {
     bit_depth.bits_per_sample = bits;
     bit_depth.exponent_bits_per_sample = 0;
     bit_depth.floating_point_sample = false;
-    
-    
-    
-    
-    
-    if (bits > 12) modular_16_bit_buffer_sufficient = false;
   }
   
   
@@ -232,14 +226,12 @@ struct ImageMetadata : public Fields {
     bit_depth.bits_per_sample = 32;
     bit_depth.exponent_bits_per_sample = 8;
     bit_depth.floating_point_sample = true;
-    modular_16_bit_buffer_sufficient = false;
   }
 
   void SetFloat16Samples() {
     bit_depth.bits_per_sample = 16;
     bit_depth.exponent_bits_per_sample = 5;
     bit_depth.floating_point_sample = true;
-    modular_16_bit_buffer_sufficient = false;
   }
 
   void SetIntensityTarget(float intensity_target) {
@@ -340,6 +332,8 @@ struct ImageMetadata : public Fields {
   uint32_t num_extra_channels;
   std::vector<ExtraChannelInfo> extra_channel_info;
 
+  CustomTransformData transform_data;  
+
   
   PreviewHeader preview_size;
   
@@ -375,34 +369,6 @@ struct CodecMetadata {
 
   size_t xsize() const { return size.xsize(); }
   size_t ysize() const { return size.ysize(); }
-  size_t oriented_xsize(bool keep_orientation) const {
-    if (static_cast<uint32_t>(m.GetOrientation()) > 4 && !keep_orientation) {
-      return ysize();
-    } else {
-      return xsize();
-    }
-  }
-  size_t oriented_preview_xsize(bool keep_orientation) const {
-    if (static_cast<uint32_t>(m.GetOrientation()) > 4 && !keep_orientation) {
-      return m.preview_size.ysize();
-    } else {
-      return m.preview_size.xsize();
-    }
-  }
-  size_t oriented_ysize(bool keep_orientation) const {
-    if (static_cast<uint32_t>(m.GetOrientation()) > 4 && !keep_orientation) {
-      return xsize();
-    } else {
-      return ysize();
-    }
-  }
-  size_t oriented_preview_ysize(bool keep_orientation) const {
-    if (static_cast<uint32_t>(m.GetOrientation()) > 4 && !keep_orientation) {
-      return m.preview_size.xsize();
-    } else {
-      return m.preview_size.ysize();
-    }
-  }
 };
 
 }  

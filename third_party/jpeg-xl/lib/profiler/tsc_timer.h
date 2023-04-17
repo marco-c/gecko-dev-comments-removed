@@ -15,10 +15,6 @@
 #include <hwy/base.h>
 #include <hwy/cache_control.h>  
 
-#if HWY_COMPILER_MSVC
-#include <chrono>
-#endif  
-
 namespace profiler {
 
 
@@ -95,12 +91,6 @@ static HWY_INLINE HWY_MAYBE_UNUSED uint64_t TicksBefore() {
       
       
       : "rdx", "memory", "cc");
-#elif HWY_COMPILER_MSVC
-  
-  t = std::chrono::time_point_cast<std::chrono::nanoseconds>(
-          std::chrono::steady_clock::now())
-          .time_since_epoch()
-          .count();
 #else
   
   timespec ts;

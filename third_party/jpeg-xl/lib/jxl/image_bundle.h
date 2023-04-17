@@ -172,10 +172,6 @@ class ImageBundle {
     const ExtraChannelInfo* eci = metadata_->Find(ExtraChannel::kAlpha);
     return (eci == nullptr) ? false : eci->alpha_associated;
   }
-  
-  void PremultiplyAlpha();
-  
-  void UnpremultiplyAlpha();
   const ImageF& alpha() const;
   ImageF* alpha();
 
@@ -205,13 +201,7 @@ class ImageBundle {
 
   
   
-  bool IsJPEG() const {
-#if JPEGXL_ENABLE_TRANSCODE_JPEG
-    return jpeg_data != nullptr;
-#else   
-    return false;
-#endif  
-  }
+  bool IsJPEG() const { return jpeg_data != nullptr; }
 
   std::unique_ptr<jpeg::JPEGData> jpeg_data;
   

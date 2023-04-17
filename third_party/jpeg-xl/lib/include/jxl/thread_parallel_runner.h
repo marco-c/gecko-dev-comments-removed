@@ -25,8 +25,6 @@
 
 
 
-
-
 #ifndef JXL_THREAD_PARALLEL_RUNNER_H_
 #define JXL_THREAD_PARALLEL_RUNNER_H_
 
@@ -69,5 +67,3 @@ JXL_THREADS_EXPORT size_t JxlThreadParallelRunnerDefaultNumWorkerThreads();
 #endif
 
 #endif 
-
-

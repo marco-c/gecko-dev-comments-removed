@@ -28,7 +28,7 @@ namespace hwy {
 
 #define HWY_MAJOR 0
 #define HWY_MINOR 12
-#define HWY_PATCH 2
+#define HWY_PATCH 1
 
 
 

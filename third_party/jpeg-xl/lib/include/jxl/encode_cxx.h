@@ -9,9 +9,6 @@
 
 
 
-
-
-
 #ifndef JXL_ENCODE_CXX_H_
 #define JXL_ENCODE_CXX_H_
 
@@ -53,5 +50,3 @@ static inline JxlEncoderPtr JxlEncoderMake(
 }
 
 #endif  
-
-

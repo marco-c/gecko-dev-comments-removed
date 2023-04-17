@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef JXL_DECODE_H_
 #define JXL_DECODE_H_
 
@@ -153,8 +151,6 @@ typedef enum {
 
 
 
-
-
   JXL_DEC_NEED_DC_OUT_BUFFER = 4,
 
   
@@ -169,13 +165,8 @@ typedef enum {
 
 
 
+
   JXL_DEC_JPEG_NEED_MORE_OUTPUT = 6,
-
-  
-
-
-
-  JXL_DEC_BOX_NEED_MORE_OUTPUT = 7,
 
   
 
@@ -224,8 +215,6 @@ typedef enum {
 
 
 
-
-
   JXL_DEC_DC_IMAGE = 0x800,
 
   
@@ -245,69 +234,7 @@ typedef enum {
 
 
   JXL_DEC_JPEG_RECONSTRUCTION = 0x2000,
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  JXL_DEC_BOX = 0x4000,
 } JxlDecoderStatus;
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT void JxlDecoderRewind(JxlDecoder* dec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT void JxlDecoderSkipFrames(JxlDecoder* dec, size_t amount);
 
 
 
@@ -369,8 +296,6 @@ JXL_EXPORT size_t JxlDecoderSizeHintBasicInfo(const JxlDecoder* dec);
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderSubscribeEvents(JxlDecoder* dec,
                                                       int events_wanted);
-
-
 
 
 
@@ -636,47 +561,6 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetColorAsICCProfile(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderSetPreferredColorProfile(
-    JxlDecoder* dec, const JxlColorEncoding* color_encoding);
-
-
-
-
-
-
-
-
-
-
-
-
 JXL_EXPORT JxlDecoderStatus JxlDecoderPreviewOutBufferSize(
     const JxlDecoder* dec, const JxlPixelFormat* format, size_t* size);
 
@@ -725,6 +609,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetFrameHeader(const JxlDecoder* dec,
 
 
 
+
 JXL_EXPORT JxlDecoderStatus JxlDecoderGetFrameName(const JxlDecoder* dec,
                                                    char* name, size_t size);
 
@@ -739,10 +624,7 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderGetFrameName(const JxlDecoder* dec,
 
 
 
-
-
-
-JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
+JXL_EXPORT JxlDecoderStatus JxlDecoderDCOutBufferSize(
     const JxlDecoder* dec, const JxlPixelFormat* format, size_t* size);
 
 
@@ -760,10 +642,7 @@ JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderDCOutBufferSize(
 
 
 
-
-
-
-JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderSetDCOutBuffer(
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetDCOutBuffer(
     JxlDecoder* dec, const JxlPixelFormat* format, void* buffer, size_t size);
 
 
@@ -779,6 +658,40 @@ JXL_EXPORT JXL_DEPRECATED JxlDecoderStatus JxlDecoderSetDCOutBuffer(
 
 JXL_EXPORT JxlDecoderStatus JxlDecoderImageOutBufferSize(
     const JxlDecoder* dec, const JxlPixelFormat* format, size_t* size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlDecoderStatus JxlDecoderSetJPEGBuffer(JxlDecoder* dec,
+                                                    uint8_t* data, size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT size_t JxlDecoderReleaseJPEGBuffer(JxlDecoder* dec);
 
 
 
@@ -879,191 +792,6 @@ JxlDecoderSetImageOutCallback(JxlDecoder* dec, const JxlPixelFormat* format,
 
 
 
-JXL_EXPORT JxlDecoderStatus JxlDecoderExtraChannelBufferSize(
-    const JxlDecoder* dec, const JxlPixelFormat* format, size_t* size,
-    uint32_t index);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus
-JxlDecoderSetExtraChannelBuffer(JxlDecoder* dec, const JxlPixelFormat* format,
-                                void* buffer, size_t size, uint32_t index);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderSetJPEGBuffer(JxlDecoder* dec,
-                                                    uint8_t* data, size_t size);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT size_t JxlDecoderReleaseJPEGBuffer(JxlDecoder* dec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderSetBoxBuffer(JxlDecoder* dec,
-                                                   uint8_t* data, size_t size);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT size_t JxlDecoderReleaseBoxBuffer(JxlDecoder* dec);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderSetDecompressBoxes(JxlDecoder* dec,
-                                                         JXL_BOOL decompress);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxType(JxlDecoder* dec,
-                                                 JxlBoxType* type,
-                                                 JXL_BOOL decompressed);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-JXL_EXPORT JxlDecoderStatus JxlDecoderGetBoxSizeRaw(const JxlDecoder* dec,
-                                                    uint64_t* size);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1074,5 +802,3 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderFlushImage(JxlDecoder* dec);
 #endif
 
 #endif 
-
-

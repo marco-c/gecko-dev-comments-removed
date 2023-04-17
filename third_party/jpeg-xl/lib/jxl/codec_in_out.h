@@ -62,6 +62,44 @@ Status VerifyDimensions(const SizeConstraints* constraints, T xs, T ys) {
 using CodecIntervals = std::array<CodecInterval, 4>;  
 
 
+class DecoderHints {
+ public:
+  
+  
+  
+  
+  
+  void Add(const std::string& key, const std::string& value) {
+    kv_.emplace_back(key, value);
+  }
+
+  
+  
+  template <class Func>
+  Status Foreach(const Func& func) const {
+    for (const KeyValue& kv : kv_) {
+      Status ok = func(kv.key, kv.value);
+      if (!ok) {
+        return JXL_FAILURE("DecoderHints::Foreach returned false");
+      }
+    }
+    return true;
+  }
+
+ private:
+  
+  struct KeyValue {
+    KeyValue(std::string key, std::string value)
+        : key(std::move(key)), value(std::move(value)) {}
+
+    std::string key;
+    std::string value;
+  };
+
+  std::vector<KeyValue> kv_;
+};
+
+
 struct Blobs {
   PaddedBytes exif;
   PaddedBytes iptc;
@@ -145,23 +183,12 @@ class CodecInOut {
     }
     return true;
   }
-  
-  void PremultiplyAlpha() {
-    ExtraChannelInfo* eci = metadata.m.Find(ExtraChannel::kAlpha);
-    if (eci == nullptr || eci->alpha_associated) return;  
-    if (metadata.m.have_preview) {
-      preview_frame.PremultiplyAlpha();
-    }
-    for (ImageBundle& ib : frames) {
-      ib.PremultiplyAlpha();
-    }
-    eci->alpha_associated = true;
-    return;
-  }
 
   
 
   SizeConstraints constraints;
+  
+  DecoderHints dec_hints;
   
   DecodeTarget dec_target = DecodeTarget::kPixels;
 

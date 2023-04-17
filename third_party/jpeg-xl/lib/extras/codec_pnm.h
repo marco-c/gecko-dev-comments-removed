@@ -14,7 +14,6 @@
 
 #include <hwy/highway.h>
 
-#include "lib/extras/color_hints.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/span.h"
@@ -23,12 +22,10 @@
 #include "lib/jxl/color_encoding_internal.h"
 
 namespace jxl {
-namespace extras {
 
 
 
-Status DecodeImagePNM(const Span<const uint8_t> bytes,
-                      const ColorHints& color_hints, ThreadPool* pool,
+Status DecodeImagePNM(const Span<const uint8_t> bytes, ThreadPool* pool,
                       CodecInOut* io);
 
 
@@ -38,7 +35,6 @@ Status EncodeImagePNM(const CodecInOut* io, const ColorEncoding& c_desired,
 
 void TestCodecPNM();
 
-}  
 }  
 
 #endif  

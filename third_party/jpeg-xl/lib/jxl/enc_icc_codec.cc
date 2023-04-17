@@ -241,7 +241,7 @@ Status PredictICC(const uint8_t* icc, size_t size, PaddedBytes* result) {
 
     
     if (pos > tagstart + tagsize) {
-      tag = {{0, 0, 0, 0}};  
+      tag = {0, 0, 0, 0};  
     }
 
     if (commands_add.empty() && data_add.empty() && tagmap.count(pos) &&

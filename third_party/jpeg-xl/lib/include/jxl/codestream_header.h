@@ -10,8 +10,6 @@
 
 
 
-
-
 #ifndef JXL_CODESTREAM_HEADER_H_
 #define JXL_CODESTREAM_HEADER_H_
 
@@ -94,7 +92,7 @@ typedef struct {
 
 
 
-typedef struct {
+typedef struct JxlBasicInfo {
   
 
 
@@ -206,19 +204,14 @@ typedef struct {
 
   
 
-
-
   uint32_t alpha_bits;
 
   
 
 
-
   uint32_t alpha_exponent_bits;
 
   
-
-
 
   JXL_BOOL alpha_premultiplied;
 
@@ -231,11 +224,6 @@ typedef struct {
 
 
   JxlAnimationHeader animation;
-
-  
-
-
-  uint8_t padding[108];
 } JxlBasicInfo;
 
 
@@ -269,7 +257,7 @@ typedef struct {
   
 
 
-  JXL_BOOL alpha_premultiplied;
+  JXL_BOOL alpha_associated;
 
   
 
@@ -321,5 +309,3 @@ typedef struct {
 #endif
 
 #endif 
-
-
