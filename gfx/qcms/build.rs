@@ -1,11 +1,9 @@
 fn main() {
-    if cfg!(feature = "neon") {
-        if std::env::var_os("RUSTC_BOOTSTRAP").is_none() {
-            
-            
-            
-            println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
-        }
+    if cfg!(feature = "neon") && std::env::var_os("RUSTC_BOOTSTRAP").is_none() {
+        
+        
+        
+        println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
     }
     let target = std::env::var("TARGET").expect("TARGET environment variable not defined");
     if target.contains("neon") {

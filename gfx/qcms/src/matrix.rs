@@ -20,7 +20,7 @@
 
 
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Matrix {
     pub m: [[f32; 3]; 3],
 }
@@ -101,7 +101,7 @@ impl Matrix {
         i
     }
     pub fn invalid() -> Option<Matrix> {
-        return None;
+        None
     }
     
     
