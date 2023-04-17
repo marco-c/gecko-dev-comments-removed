@@ -308,9 +308,8 @@ var SessionStore = {
   getLastClosedTabCount(aWindow) {
     return SessionStoreInternal.getLastClosedTabCount(aWindow);
   },
-
-  resetLastClosedTabCount(aWindow) {
-    SessionStoreInternal.resetLastClosedTabCount(aWindow);
+  setLastClosedTabCount(aWindow, aNumber) {
+    return SessionStoreInternal.setLastClosedTabCount(aWindow, aNumber);
   },
 
   getClosedTabCount: function ss_getClosedTabCount(aWindow) {
@@ -763,6 +762,7 @@ var SessionStoreInternal = {
 
     this._initPrefs();
     this._initialized = true;
+    this._closedTabCache = new WeakMap();
 
     Services.telemetry
       .getHistogramById("FX_SESSION_RESTORE_PRIVACY_LEVEL")
@@ -1197,7 +1197,7 @@ var SessionStoreInternal = {
       this._closedTabs.has(permanentKey) &&
       !this._crashedBrowsers.has(permanentKey)
     ) {
-      let { winData, tabData } = this._closedTabs.get(permanentKey);
+      let { closedTabs, tabData } = this._closedTabs.get(permanentKey);
 
       
       this._closedTabs.delete(permanentKey);
@@ -1207,19 +1207,19 @@ var SessionStoreInternal = {
 
       
       let shouldSave = this._shouldSaveTabState(tabData.state);
-      let index = winData._closedTabs.indexOf(tabData);
+      let index = closedTabs.indexOf(tabData);
 
       if (shouldSave && index == -1) {
         
         
         
         
-        this.saveClosedTabData(winData, tabData);
+        this.saveClosedTabData(closedTabs, tabData);
       } else if (!shouldSave && index > -1) {
         
         
         
-        this.removeClosedTabData(winData, index);
+        this.removeClosedTabData(closedTabs, index);
       }
     }
 
@@ -1476,7 +1476,6 @@ var SessionStoreInternal = {
       tabs: [],
       selected: 0,
       _closedTabs: [],
-      _lastClosedTabGroupCount: -1,
       busy: false,
     };
 
@@ -2254,8 +2253,6 @@ var SessionStoreInternal = {
 
     this._clearRestoringWindows();
     this._saveableClosedWindowData = new WeakSet();
-    
-    this._closedTabs = new WeakMap();
   },
 
   
@@ -2477,10 +2474,9 @@ var SessionStoreInternal = {
       image: aWindow.gBrowser.getIcon(aTab),
       pos: aTab._tPos,
       closedAt: Date.now(),
-      closedInGroup: aTab._closedInGroup,
     };
 
-    let winData = this._windows[aWindow.__SSi];
+    let closedTabs = this._windows[aWindow.__SSi]._closedTabs;
 
     
     
@@ -2491,12 +2487,12 @@ var SessionStoreInternal = {
       
       
       
-      this.saveClosedTabData(winData, tabData);
+      this.saveClosedTabData(closedTabs, tabData);
     }
 
     
     
-    this._closedTabs.set(permanentKey, { winData, tabData });
+    this._closedTabs.set(permanentKey, { closedTabs, tabData });
   },
 
   
@@ -2615,10 +2611,9 @@ var SessionStoreInternal = {
 
 
 
-  saveClosedTabData(winData, tabData) {
+  saveClosedTabData(closedTabs, tabData) {
     
     
-    let closedTabs = winData._closedTabs;
     let index = closedTabs.findIndex(tab => {
       return tab.closedAt < tabData.closedAt;
     });
@@ -2636,18 +2631,6 @@ var SessionStoreInternal = {
     closedTabs.splice(index, 0, tabData);
     this._closedObjectsChanged = true;
 
-    if (tabData.closedInGroup) {
-      if (winData._lastClosedTabGroupCount < this._max_tabs_undo) {
-        if (winData._lastClosedTabGroupCount < 0) {
-          winData._lastClosedTabGroupCount = 1;
-        } else {
-          winData._lastClosedTabGroupCount++;
-        }
-      }
-    } else {
-      winData._lastClosedTabGroupCount = -1;
-    }
-
     
     if (closedTabs.length > this._max_tabs_undo) {
       closedTabs.splice(this._max_tabs_undo, closedTabs.length);
@@ -2664,16 +2647,10 @@ var SessionStoreInternal = {
 
 
 
-  removeClosedTabData(winData, index) {
+  removeClosedTabData(closedTabs, index) {
     
-    let [closedTab] = winData._closedTabs.splice(index, 1);
+    let [closedTab] = closedTabs.splice(index, 1);
     this._closedObjectsChanged = true;
-
-    
-    
-    if (index < winData._lastClosedTabGroupCount) {
-      winData._lastClosedTabGroupCount--;
-    }
 
     
     
@@ -3103,21 +3080,24 @@ var SessionStoreInternal = {
 
   getLastClosedTabCount(aWindow) {
     if ("__SSi" in aWindow) {
+      
+      
+      
+      
       return Math.min(
-        Math.max(this._windows[aWindow.__SSi]._lastClosedTabGroupCount, 1),
+        this._closedTabCache.get(aWindow) || 1,
         this.getClosedTabCount(aWindow)
       );
     }
 
     throw (Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
   },
-
-  resetLastClosedTabCount(aWindow) {
+  setLastClosedTabCount(aWindow, aNumber) {
     if ("__SSi" in aWindow) {
-      this._windows[aWindow.__SSi]._lastClosedTabGroupCount = -1;
-    } else {
-      throw (Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
+      return this._closedTabCache.set(aWindow, aNumber);
     }
+
+    throw (Components.returnCode = Cr.NS_ERROR_INVALID_ARG);
   },
 
   getClosedTabCount: function ssi_getClosedTabCount(aWindow) {
@@ -3163,11 +3143,11 @@ var SessionStoreInternal = {
       );
     }
 
-    let winData = this._windows[aWindow.__SSi];
+    var closedTabs = this._windows[aWindow.__SSi]._closedTabs;
 
     
     aIndex = aIndex || 0;
-    if (!(aIndex in winData._closedTabs)) {
+    if (!(aIndex in closedTabs)) {
       throw Components.Exception(
         "Invalid index: not in the closed tabs",
         Cr.NS_ERROR_INVALID_ARG
@@ -3175,7 +3155,7 @@ var SessionStoreInternal = {
     }
 
     
-    let { state, pos } = this.removeClosedTabData(winData, aIndex);
+    let { state, pos } = this.removeClosedTabData(closedTabs, aIndex);
 
     
     let tabbrowser = aWindow.gBrowser;
@@ -3202,11 +3182,11 @@ var SessionStoreInternal = {
       );
     }
 
-    let winData = this._windows[aWindow.__SSi];
+    var closedTabs = this._windows[aWindow.__SSi]._closedTabs;
 
     
     aIndex = aIndex || 0;
-    if (!(aIndex in winData._closedTabs)) {
+    if (!(aIndex in closedTabs)) {
       throw Components.Exception(
         "Invalid index: not in the closed tabs",
         Cr.NS_ERROR_INVALID_ARG
@@ -3214,7 +3194,7 @@ var SessionStoreInternal = {
     }
 
     
-    this.removeClosedTabData(winData, aIndex);
+    this.removeClosedTabData(closedTabs, aIndex);
 
     
     this._notifyOfClosedObjectsChange();
@@ -3499,7 +3479,7 @@ var SessionStoreInternal = {
         });
 
         for (let index of indexes.reverse()) {
-          this.removeClosedTabData(windowState, index);
+          this.removeClosedTabData(windowState._closedTabs, index);
         }
       }
     }
