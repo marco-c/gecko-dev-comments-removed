@@ -7,6 +7,7 @@
 const Services = require("Services");
 
 const l10n = require("devtools/client/webconsole/utils/l10n");
+const { safeAsyncMethod } = require("devtools/shared/async-utils");
 
 const PREF_CONNECTION_TIMEOUT = "devtools.debugger.remote-timeout";
 
@@ -31,6 +32,12 @@ class WebConsoleConnectionProxy {
     this._onLastPrivateContextExited = this._onLastPrivateContextExited.bind(
       this
     );
+
+    
+    
+    this._asyncConnect = safeAsyncMethod(this._asyncConnect.bind(this), () =>
+      this.target.isDestroyed()
+    );
   }
 
   
@@ -49,34 +56,7 @@ class WebConsoleConnectionProxy {
       return Promise.reject("target was destroyed");
     }
 
-    const connection = (async () => {
-      this.webConsoleFront = await this.target.getFront("console");
-
-      
-      
-      
-      
-      
-      const { targetCommand, resourceCommand } = this.webConsoleUI.hud.commands;
-      const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
-        resourceCommand.TYPES.NETWORK_EVENT
-      );
-      const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport(
-        "saveRequestAndResponseBodies"
-      );
-      if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
-        
-        
-        const saveBodies =
-          !this.webConsoleUI.isBrowserConsole &&
-          Services.prefs.getBoolPref(
-            "devtools.netmonitor.saveRequestAndResponseBodies"
-          );
-        await this.setSaveRequestAndResponseBodies(saveBodies);
-      }
-
-      this._addWebConsoleFrontEventListeners();
-    })();
+    const connection = this._asyncConnect();
 
     let timeoutId;
     const connectionTimeout = new Promise((_, reject) => {
@@ -97,6 +77,35 @@ class WebConsoleConnectionProxy {
     connection.then(() => clearTimeout(timeoutId));
 
     return this._connecter;
+  }
+
+  async _asyncConnect() {
+    this.webConsoleFront = await this.target.getFront("console");
+
+    
+    
+    
+    
+    
+    const { targetCommand, resourceCommand } = this.webConsoleUI.hud.commands;
+    const hasNetworkResourceCommandSupport = resourceCommand.hasResourceCommandSupport(
+      resourceCommand.TYPES.NETWORK_EVENT
+    );
+    const supportsWatcherRequest = targetCommand.hasTargetWatcherSupport(
+      "saveRequestAndResponseBodies"
+    );
+    if (!hasNetworkResourceCommandSupport || !supportsWatcherRequest) {
+      
+      
+      const saveBodies =
+        !this.webConsoleUI.isBrowserConsole &&
+        Services.prefs.getBoolPref(
+          "devtools.netmonitor.saveRequestAndResponseBodies"
+        );
+      await this.setSaveRequestAndResponseBodies(saveBodies);
+    }
+
+    this._addWebConsoleFrontEventListeners();
   }
 
   getConnectionPromise() {
