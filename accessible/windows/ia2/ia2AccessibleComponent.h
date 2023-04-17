@@ -12,7 +12,6 @@
 
 namespace mozilla {
 namespace a11y {
-class AccessibleWrap;
 
 class ia2AccessibleComponent : public IAccessibleComponent {
  public:
@@ -29,9 +28,6 @@ class ia2AccessibleComponent : public IAccessibleComponent {
 
   virtual  HRESULT STDMETHODCALLTYPE get_background(
        IA2Color* background);
-
- private:
-  AccessibleWrap* LocalAcc();
 };
 
 }  

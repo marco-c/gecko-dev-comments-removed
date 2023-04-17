@@ -14,7 +14,6 @@
 
 namespace mozilla {
 namespace a11y {
-class AccessibleWrap;
 
 class ia2AccessibleAction : public IAccessibleAction {
  public:
@@ -45,9 +44,6 @@ class ia2AccessibleAction : public IAccessibleAction {
   virtual  HRESULT STDMETHODCALLTYPE get_localizedName(
        long actionIndex,
        BSTR* localizedName);
-
- private:
-  AccessibleWrap* LocalAcc();
 };
 
 }  
