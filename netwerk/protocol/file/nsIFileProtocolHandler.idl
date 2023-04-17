@@ -39,9 +39,19 @@ interface nsIFileProtocolHandler : nsIProtocolHandler
 
 
 
-    AUTF8String getURLSpecFromFile(in nsIFile file);
+
+
+
+
+    [noscript] AUTF8String getURLSpecFromFile(in nsIFile file);
 
     
+
+
+
+
+
+
 
 
 
@@ -50,6 +60,11 @@ interface nsIFileProtocolHandler : nsIProtocolHandler
     AUTF8String getURLSpecFromActualFile(in nsIFile file);
 
     
+
+
+
+
+
 
 
 
