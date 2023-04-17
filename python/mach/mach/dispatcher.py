@@ -470,18 +470,24 @@ class CommandAction(argparse.Action):
 
     def _suggest_command(self, command):
         names = [h.name for h in self._mach_registrar.command_handlers.values()]
-
+        
+        suggested_commands = difflib.get_close_matches(command, names, cutoff=0.8)
         
         
         
         
         
-        
-        
-        
-        suggested_commands = set(difflib.get_close_matches(command, names, cutoff=0.5))
-        suggested_commands |= {cmd for cmd in names if cmd.startswith(command)}
-        raise UnknownCommandError(command, "run", suggested_commands)
+        if len(suggested_commands) != 1:
+            suggested_commands = set(
+                difflib.get_close_matches(command, names, cutoff=0.5)
+            )
+            suggested_commands |= {cmd for cmd in names if cmd.startswith(command)}
+            raise UnknownCommandError(command, "run", suggested_commands)
+        sys.stderr.write(
+            "We're assuming the '%s' command is '%s' and we're "
+            "executing it for you.\n\n" % (command, suggested_commands[0])
+        )
+        return suggested_commands[0]
 
 
 class NoUsageFormatter(argparse.HelpFormatter):
