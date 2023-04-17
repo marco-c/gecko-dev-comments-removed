@@ -465,24 +465,28 @@ impl ToCss for CustomIdent {
 }
 
 
+
+
+
+
 #[derive(
     Clone, Debug, MallocSizeOf, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
 )]
-pub enum KeyframesName {
+pub enum TimelineOrKeyframesName {
     
     Ident(CustomIdent),
     
     QuotedString(Atom),
 }
 
-impl KeyframesName {
+impl TimelineOrKeyframesName {
     
     pub fn from_ident(value: &str) -> Self {
         let location = SourceLocation { line: 0, column: 0 };
         let custom_ident = CustomIdent::from_ident(location, &value.into(), &["none"]).ok();
         match custom_ident {
-            Some(ident) => KeyframesName::Ident(ident),
-            None => KeyframesName::QuotedString(value.into()),
+            Some(ident) => Self::Ident(ident),
+            None => Self::QuotedString(value.into()),
         }
     }
 
@@ -494,19 +498,19 @@ impl KeyframesName {
         
         
         
-        KeyframesName::Ident(CustomIdent(atom))
+        Self::Ident(CustomIdent(atom))
     }
 
     
     pub fn as_atom(&self) -> &Atom {
         match *self {
-            KeyframesName::Ident(ref ident) => &ident.0,
-            KeyframesName::QuotedString(ref atom) => atom,
+            Self::Ident(ref ident) => &ident.0,
+            Self::QuotedString(ref atom) => atom,
         }
     }
 }
 
-impl Eq for KeyframesName {}
+impl Eq for TimelineOrKeyframesName {}
 
 
 
@@ -515,13 +519,13 @@ pub trait IsAuto {
     fn is_auto(&self) -> bool;
 }
 
-impl PartialEq for KeyframesName {
+impl PartialEq for TimelineOrKeyframesName {
     fn eq(&self, other: &Self) -> bool {
         self.as_atom() == other.as_atom()
     }
 }
 
-impl hash::Hash for KeyframesName {
+impl hash::Hash for TimelineOrKeyframesName {
     fn hash<H>(&self, state: &mut H)
     where
         H: hash::Hasher,
@@ -530,32 +534,40 @@ impl hash::Hash for KeyframesName {
     }
 }
 
-impl Parse for KeyframesName {
+impl Parse for TimelineOrKeyframesName {
     fn parse<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
         match *input.next()? {
-            Token::Ident(ref s) => Ok(KeyframesName::Ident(CustomIdent::from_ident(
+            Token::Ident(ref s) => Ok(Self::Ident(CustomIdent::from_ident(
                 location,
                 s,
                 &["none"],
             )?)),
-            Token::QuotedString(ref s) => Ok(KeyframesName::QuotedString(Atom::from(s.as_ref()))),
+            Token::QuotedString(ref s) => {
+                Ok(Self::QuotedString(Atom::from(s.as_ref())))
+            },
             ref t => Err(location.new_unexpected_token_error(t.clone())),
         }
     }
 }
 
-impl ToCss for KeyframesName {
+impl ToCss for TimelineOrKeyframesName {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
         match *self {
-            KeyframesName::Ident(ref ident) => ident.to_css(dest),
-            KeyframesName::QuotedString(ref atom) => atom.to_string().to_css(dest),
+            Self::Ident(ref ident) => ident.to_css(dest),
+            Self::QuotedString(ref atom) => atom.to_string().to_css(dest),
         }
     }
 }
+
+
+pub type TimelineName = TimelineOrKeyframesName;
+
+
+pub type KeyframesName = TimelineOrKeyframesName;
