@@ -75,7 +75,7 @@ inline JSFunction* JSFunction::create(JSContext* cx, js::gc::AllocKind kind,
   MOZ_ASSERT(shape->slotSpan() == 0);
 
   JSFunction* fun = static_cast<JSFunction*>(nobj);
-  fun->nargs_ = 0;
+  fun->setArgCount(0);
 
   
   

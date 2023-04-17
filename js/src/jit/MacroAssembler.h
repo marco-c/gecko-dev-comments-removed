@@ -1602,8 +1602,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void loadFunctionLength(Register func, Register funFlags, Register output,
-                          Label* slowPath);
+  void loadFunctionLength(Register func, Register funFlagsAndArgCount,
+                          Register output, Label* slowPath);
 
   
   

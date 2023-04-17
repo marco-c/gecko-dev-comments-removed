@@ -3304,7 +3304,7 @@ bool CacheIRCompiler::emitLoadFunctionLengthResult(ObjOperandId objId) {
   }
 
   
-  masm.load16ZeroExtend(Address(obj, JSFunction::offsetOfFlags()), scratch);
+  masm.load32(Address(obj, JSFunction::offsetOfFlagsAndArgCount()), scratch);
 
   
   

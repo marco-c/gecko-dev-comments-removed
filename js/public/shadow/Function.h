@@ -25,8 +25,7 @@ namespace shadow {
 
 struct Function {
   shadow::Object base;
-  uint16_t nargs;
-  uint16_t flags;
+  uint32_t flagsAndArgCount;
   
   JSNative native;
   const JSJitInfo* jitinfo;
