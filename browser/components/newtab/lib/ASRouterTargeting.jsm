@@ -195,11 +195,13 @@ function CheckBrowserNeedsUpdate(
       return new Promise((resolve, reject) => {
         const now = Date.now();
         const updateServiceListener = {
-          onCheckComplete(request, updates) {
+          
+          async onCheckComplete(request, updates) {
             checker._value = !!updates.length;
             resolve(checker._value);
           },
-          onError(request, update) {
+          
+          async onError(request, update) {
             reject(request);
           },
 

@@ -231,7 +231,7 @@ class AppUpdater {
         
 
 
-        onCheckComplete: (aRequest, aUpdates) => {
+        onCheckComplete: async (aRequest, aUpdates) => {
           this.update = this.aus.selectUpdate(aUpdates);
           if (!this.update) {
             this._setStatus(AppUpdater.STATUS.NO_UPDATES_FOUND);
@@ -265,7 +265,7 @@ class AppUpdater {
         
 
 
-        onError: (aRequest, aUpdate) => {
+        onError: async (aRequest, aUpdate) => {
           
           
           
