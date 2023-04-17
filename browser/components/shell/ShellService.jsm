@@ -143,7 +143,21 @@ let ShellServiceInternal = {
       .add(setAsDefaultError);
   },
 
+  
+
+
+
+
   async doesAppNeedPin() {
+    if (
+      Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT
+    ) {
+      throw new Components.Exception(
+        "Can't determine pinned from child process",
+        Cr.NS_ERROR_NOT_AVAILABLE
+      );
+    }
+
     
     try {
       
@@ -153,15 +167,26 @@ let ShellServiceInternal = {
 
       
       return !(await this.shellService.isCurrentAppPinnedToTaskbarAsync());
-    } catch (ex) {
-      return false;
-    }
+    } catch (ex) {}
+
+    
+    try {
+      return !this.macDockSupport.isAppInDock;
+    } catch (ex) {}
+    return false;
   },
+
+  
+
 
   async pinToTaskbar() {
     if (await this.doesAppNeedPin()) {
       try {
-        this.shellService.pinCurrentAppToTaskbar();
+        if (AppConstants.platform == "win") {
+          this.shellService.pinCurrentAppToTaskbar();
+        } else {
+          this.macDockSupport.ensureAppIsPinnedToDock();
+        }
       } catch (ex) {
         Cu.reportError(ex);
       }
@@ -169,12 +194,10 @@ let ShellServiceInternal = {
   },
 };
 
-XPCOMUtils.defineLazyServiceGetter(
-  ShellServiceInternal,
-  "shellService",
-  "@mozilla.org/browser/shell-service;1",
-  Ci.nsIShellService
-);
+XPCOMUtils.defineLazyServiceGetters(ShellServiceInternal, {
+  shellService: ["@mozilla.org/browser/shell-service;1", "nsIShellService"],
+  macDockSupport: ["@mozilla.org/widget/macdocksupport;1", "nsIMacDockSupport"],
+});
 
 
 

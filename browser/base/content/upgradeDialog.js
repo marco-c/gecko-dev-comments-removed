@@ -13,49 +13,39 @@ const {
 
 
 
-const COMPACT_MODE_HEIGHT = 679;
+const COMPACT_MODE_HEIGHT = 649;
 
 const SHELL = getShellService();
 const IS_DEFAULT = SHELL.isDefaultBrowser();
 const NEED_PIN = SHELL.doesAppNeedPin();
 
 
-const PIN_OR_ALT_STRING = document.l10n.ready.then(async () => {
-  const ids = [
-    "upgrade-dialog-new-primary-pin-alt-button",
-    "upgrade-dialog-new-primary-pin-button",
-  ];
-  const [preferred, fallback] = await document.l10n.formatValues(ids);
-  
-  
-  
-  return preferred !== "Pin to taskbar" ||
-    fallback.match(/^Pin .+ to my taskbar$/)
-    ? ids[0]
-    : ids[1];
-});
-const THEME_OR_DEFAULT_STRING = IS_DEFAULT
-  ? "upgrade-dialog-new-primary-theme-button"
-  : "upgrade-dialog-new-primary-default-button";
 const SCREEN_STRINGS = [
+  NEED_PIN.then(pin =>
+    pin
+      ? {
+          title: "upgrade-dialog-pin-title",
+          subtitle: "upgrade-dialog-pin-subtitle",
+          primary: "upgrade-dialog-pin-primary-button",
+          secondary: "upgrade-dialog-pin-secondary-button",
+        }
+      : {
+          title: "upgrade-dialog-new-title",
+          subtitle: "upgrade-dialog-new-subtitle",
+          primary: IS_DEFAULT
+            ? "upgrade-dialog-new-primary-theme-button"
+            : "upgrade-dialog-new-primary-default-button",
+          secondary: "upgrade-dialog-new-secondary-button",
+        }
+  ),
   {
-    title: "upgrade-dialog-new-title",
-    subtitle: NEED_PIN.then(pin =>
-      pin ? "upgrade-dialog-new-alt-subtitle" : "upgrade-dialog-new-subtitle"
-    ),
-    primary: NEED_PIN.then(pin =>
-      pin ? PIN_OR_ALT_STRING : THEME_OR_DEFAULT_STRING
-    ),
-    secondary: "upgrade-dialog-new-secondary-button",
-  },
-  {
-    title: "upgrade-dialog-default-title",
-    subtitle: "upgrade-dialog-default-subtitle",
-    primary: "upgrade-dialog-default-primary-button",
+    title: "upgrade-dialog-default-title-2",
+    subtitle: "upgrade-dialog-default-subtitle-2",
+    primary: "upgrade-dialog-default-primary-button-2",
     secondary: "upgrade-dialog-default-secondary-button",
   },
   {
-    title: "upgrade-dialog-theme-title",
+    title: "upgrade-dialog-theme-title-2",
     primary: "upgrade-dialog-theme-primary-button",
     secondary: "upgrade-dialog-theme-secondary-button",
   },
@@ -135,7 +125,6 @@ function onLoad(ready) {
   const { body } = document;
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
-  const image = document.querySelector(".image");
   const items = document.querySelector(".items");
   const themes = document.querySelector(".themes");
   const primary = document.getElementById("primary");
@@ -151,7 +140,8 @@ function onLoad(ready) {
     }
 
     
-    switch (++current) {
+    const strings = await SCREEN_STRINGS[++current];
+    switch (current) {
       
       case 0:
         
@@ -169,8 +159,7 @@ function onLoad(ready) {
           steps.style.visibility = "hidden";
 
           if (IS_DEFAULT) {
-            SCREEN_STRINGS[current].primary =
-              "upgrade-dialog-new-primary-win7-button";
+            strings.primary = "upgrade-dialog-new-primary-win7-button";
             secondary.style.display = "none";
           }
         }
@@ -180,8 +169,6 @@ function onLoad(ready) {
         if (await NEED_PIN) {
           items.remove();
           removeDefaultScreen = IS_DEFAULT;
-        } else {
-          image.remove();
         }
 
         
@@ -206,11 +193,10 @@ function onLoad(ready) {
         if (target === primary) {
           switch (l10nId) {
             case "upgrade-dialog-new-primary-default-button":
-            case "upgrade-dialog-default-primary-button":
+            case "upgrade-dialog-default-primary-button-2":
               SHELL.setAsDefault();
               break;
-            case "upgrade-dialog-new-primary-pin-button":
-            case "upgrade-dialog-new-primary-pin-alt-button":
+            case "upgrade-dialog-pin-primary-button":
               SHELL.pinToTaskbar();
               break;
           }
@@ -266,7 +252,6 @@ function onLoad(ready) {
 
         
         subtitle.remove();
-        image.remove();
         items.remove();
         themes.classList.remove("hidden");
         adjustModalBackdrop();
@@ -284,15 +269,13 @@ function onLoad(ready) {
     }
 
     
-    image.setAttribute("screen", current);
     steps.prepend(steps.lastChild);
 
     
     await document.l10n.ready;
     const translatedElements = [];
-    const strings = SCREEN_STRINGS[current];
     for (let el of [title, subtitle, primary, secondary]) {
-      const stringId = await strings[el.id];
+      const stringId = strings[el.id];
       if (stringId) {
         document.l10n.setAttributes(el, stringId);
         translatedElements.push(el);
