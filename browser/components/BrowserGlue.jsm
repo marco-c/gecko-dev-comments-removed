@@ -210,21 +210,6 @@ let JSWINDOWACTORS = {
     matches: ["about:logins", "about:logins?*", "about:loginsimportreport"],
   },
 
-  AboutNewInstall: {
-    parent: {
-      moduleURI: "resource:///actors/AboutNewInstallParent.jsm",
-    },
-    child: {
-      moduleURI: "resource:///actors/AboutNewInstallChild.jsm",
-
-      events: {
-        DOMWindowCreated: { capture: true },
-      },
-    },
-
-    matches: ["about:newinstall"],
-  },
-
   AboutNewTab: {
     parent: {
       moduleURI: "resource:///actors/AboutNewTabParent.jsm",
@@ -2107,27 +2092,6 @@ BrowserGlue.prototype = {
     Services.wm.addListener(windowListener);
   },
 
-  _showNewInstallModal() {
-    
-    Services.tm.dispatchToMainThread(() => {
-      let win = BrowserWindowTracker.getTopWindow();
-
-      let stack = win.gBrowser.getPanel().querySelector(".browserStack");
-      let mask = win.document.createXULElement("box");
-      mask.setAttribute("id", "content-mask");
-      stack.appendChild(mask);
-
-      Services.ww.openWindow(
-        win,
-        "chrome://browser/content/newInstall.xhtml",
-        "_blank",
-        "chrome,modal,resizable=no,centerscreen",
-        null
-      );
-      mask.remove();
-    });
-  },
-
   
   _onWindowsRestored: function BG__onWindowsRestored() {
     if (this._windowsWereRestored) {
@@ -2199,13 +2163,6 @@ BrowserGlue.prototype = {
     this._monitorHTTPSOnlyPref();
     this._monitorIonPref();
     this._monitorIonStudies();
-
-    let pService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-      Ci.nsIToolkitProfileService
-    );
-    if (pService.createdAlternateProfile) {
-      this._showNewInstallModal();
-    }
 
     FirefoxMonitor.init();
   },

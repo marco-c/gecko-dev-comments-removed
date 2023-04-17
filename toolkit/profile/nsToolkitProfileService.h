@@ -151,9 +151,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool mUseDevEditionProfile;
   
   const bool mUseDedicatedProfile;
-  
-  
-  bool mCreatedAlternateProfile;
   nsString mStartupReason;
   bool mMaybeLockProfile;
   

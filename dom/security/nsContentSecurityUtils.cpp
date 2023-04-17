@@ -958,7 +958,6 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
                  StringBeginsWith(aboutSpec, "about:addons"_ns) ||
                  StringBeginsWith(aboutSpec, "about:newtab"_ns) ||
                  StringBeginsWith(aboutSpec, "about:debugging"_ns) ||
-                 StringBeginsWith(aboutSpec, "about:newinstall"_ns) ||
                  StringBeginsWith(aboutSpec, "about:ion"_ns) ||
                  StringBeginsWith(aboutSpec, "about:compat"_ns) ||
                  StringBeginsWith(aboutSpec, "about:logins"_ns) ||

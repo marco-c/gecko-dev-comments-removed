@@ -44,8 +44,6 @@ XPCOMUtils.defineLazyGetter(this, "gSystemPrincipal", () =>
 );
 XPCOMUtils.defineLazyGlobalGetters(this, [URL]);
 
-const NEWINSTALL_PAGE = "about:newinstall";
-
 
 const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
 const ONCE_PREF = "browser.startup.homepage_override.once";
@@ -99,7 +97,6 @@ const OVERRIDE_NONE = 0;
 const OVERRIDE_NEW_PROFILE = 1;
 const OVERRIDE_NEW_MSTONE = 2;
 const OVERRIDE_NEW_BUILD_ID = 3;
-const OVERRIDE_ALTERNATE_PROFILE = 4;
 
 
 
@@ -111,12 +108,6 @@ const OVERRIDE_ALTERNATE_PROFILE = 4;
 
 
 function needHomepageOverride(prefb) {
-  let pService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-    Ci.nsIToolkitProfileService
-  );
-  if (pService.createdAlternateProfile) {
-    return OVERRIDE_ALTERNATE_PROFILE;
-  }
   var savedmstone = prefb.getCharPref(
     "browser.startup.homepage_override.mstone",
     ""
@@ -236,59 +227,42 @@ function openBrowserWindow(
   if (!urlOrUrlList) {
     
     args = [gBrowserContentHandler.getArgs(isStartup)];
-  } else {
-    let pService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-      Ci.nsIToolkitProfileService
-    );
-    if (isStartup && pService.createdAlternateProfile) {
-      let url = NEWINSTALL_PAGE;
-      if (Array.isArray(urlOrUrlList)) {
-        urlOrUrlList.unshift(url);
-      } else {
-        urlOrUrlList = [url, urlOrUrlList];
-      }
-    }
-
-    if (Array.isArray(urlOrUrlList)) {
-      
-      
-      if (
-        !triggeringPrincipal ||
-        !triggeringPrincipal.equals(gSystemPrincipal)
-      ) {
-        throw new Error(
-          "Can't open multiple URLs with something other than system principal."
-        );
-      }
-      
-      let uriArray = Cc["@mozilla.org/array;1"].createInstance(
-        Ci.nsIMutableArray
+  } else if (Array.isArray(urlOrUrlList)) {
+    
+    
+    if (!triggeringPrincipal || !triggeringPrincipal.equals(gSystemPrincipal)) {
+      throw new Error(
+        "Can't open multiple URLs with something other than system principal."
       );
-      urlOrUrlList.forEach(function(uri) {
-        var sstring = Cc["@mozilla.org/supports-string;1"].createInstance(
-          Ci.nsISupportsString
-        );
-        sstring.data = uri;
-        uriArray.appendElement(sstring);
-      });
-      args = [uriArray];
-    } else {
-      
-      
-      
-      args = [
-        urlOrUrlList,
-        null, 
-        null, 
-        postData,
-        undefined, 
-        
-        undefined, 
-        null, 
-        null, 
-        triggeringPrincipal,
-      ];
     }
+    
+    let uriArray = Cc["@mozilla.org/array;1"].createInstance(
+      Ci.nsIMutableArray
+    );
+    urlOrUrlList.forEach(function(uri) {
+      var sstring = Cc["@mozilla.org/supports-string;1"].createInstance(
+        Ci.nsISupportsString
+      );
+      sstring.data = uri;
+      uriArray.appendElement(sstring);
+    });
+    args = [uriArray];
+  } else {
+    
+    
+    
+    args = [
+      urlOrUrlList,
+      null, 
+      null, 
+      postData,
+      undefined, 
+      
+      undefined, 
+      null, 
+      null, 
+      triggeringPrincipal,
+    ];
   }
 
   if (isStartup) {
@@ -653,12 +627,6 @@ nsBrowserContentHandler.prototype = {
       override = needHomepageOverride(prefb);
       if (override != OVERRIDE_NONE) {
         switch (override) {
-          case OVERRIDE_ALTERNATE_PROFILE:
-            
-            
-            
-            overridePage = NEWINSTALL_PAGE;
-            break;
           case OVERRIDE_NEW_PROFILE:
             
             overridePage = Services.urlFormatter.formatURLPref(
@@ -779,8 +747,7 @@ nsBrowserContentHandler.prototype = {
     }
 
     let skipStartPage =
-      (override == OVERRIDE_NEW_PROFILE ||
-        override == OVERRIDE_ALTERNATE_PROFILE) &&
+      override == OVERRIDE_NEW_PROFILE &&
       prefb.getBoolPref("browser.startup.firstrunSkipsHomepage");
     
     
