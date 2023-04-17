@@ -779,10 +779,8 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
       }
     });
 
-    
-    
-    if (IsContent() && !Canonical()->mWebProgress) {
-      Canonical()->mWebProgress = new BrowsingContextWebProgress(Canonical());
+    if (IsTopContent() && !Canonical()->GetWebProgress()) {
+      Canonical()->mWebProgress = new BrowsingContextWebProgress();
     }
   }
 
