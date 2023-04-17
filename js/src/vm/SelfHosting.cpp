@@ -10,7 +10,8 @@
 #include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/ScopeExit.h"  
+#include "mozilla/Utf8.h"       
 
 #include <algorithm>
 #include <iterator>
@@ -2866,29 +2867,52 @@ static bool GetComputedIntrinsic(JSContext* cx, HandlePropertyName name,
                                  MutableHandleValue vp) {
   
   
+  
+  
 
-  RootedScript script(
-      cx,
-      cx->runtime()->selfHostStencil().instantiateSelfHostedTopLevelForRealm(
-          cx, cx->runtime()->selfHostStencilInput()));
-  if (!script) {
-    return false;
+  RootedNativeObject computedIntrinsicsHolder(
+      cx, cx->global()->getComputedIntrinsicsHolder());
+  if (!computedIntrinsicsHolder) {
+    auto computedIntrinsicHolderGuard = mozilla::MakeScopeExit(
+        [cx]() { cx->global()->setComputedIntrinsicsHolder(nullptr); });
+
+    
+    JSRuntime* runtime = cx->runtime();
+    RootedScript script(
+        cx, runtime->selfHostStencil().instantiateSelfHostedTopLevelForRealm(
+                cx, runtime->selfHostStencilInput()));
+    if (!script) {
+      return false;
+    }
+
+    
+    
+    computedIntrinsicsHolder =
+        NewPlainObjectWithProto(cx, nullptr, TenuredObject);
+    if (!computedIntrinsicsHolder) {
+      return false;
+    }
+    cx->global()->setComputedIntrinsicsHolder(computedIntrinsicsHolder);
+
+    
+    
+    
+    if (!JS_ExecuteScript(cx, script)) {
+      return false;
+    }
+
+    
+    
+    computedIntrinsicHolderGuard.release();
   }
 
-  if (!JS_ExecuteScript(cx, script)) {
-    return false;
-  }
-
-  bool exists = false;
-  if (!GlobalObject::maybeGetIntrinsicValue(cx, cx->global(), name, vp,
-                                            &exists)) {
-    return false;
-  }
-  if (!exists) {
-    MOZ_CRASH("SelfHosted Intrinsic not found");
-  }
-
-  return true;
+  
+  
+  mozilla::Maybe<PropertyInfo> prop =
+      computedIntrinsicsHolder->lookup(cx, name);
+  MOZ_RELEASE_ASSERT(prop, "SelfHosted intrinsic not found");
+  RootedValue value(cx, computedIntrinsicsHolder->getSlot(prop->slot()));
+  return GlobalObject::addIntrinsicValue(cx, cx->global(), name, value);
 }
 
 bool JSRuntime::getSelfHostedValue(JSContext* cx, HandlePropertyName name,

@@ -162,7 +162,10 @@ class GlobalObjectData {
   HeapPtr<JSObject*> windowProxy;
 
   
+  
+  
   HeapPtr<NativeObject*> intrinsicsHolder;
+  HeapPtr<NativeObject*> computedIntrinsicsHolder;
 
   
   HeapPtr<NativeObject*> forOfPICChain;
@@ -858,6 +861,13 @@ class GlobalObject : public NativeObject {
 
   static NativeObject* getIntrinsicsHolder(JSContext* cx,
                                            Handle<GlobalObject*> global);
+
+  NativeObject* getComputedIntrinsicsHolder() {
+    return data().computedIntrinsicsHolder;
+  }
+  void setComputedIntrinsicsHolder(NativeObject* holder) {
+    data().computedIntrinsicsHolder = holder;
+  }
 
   bool maybeExistingIntrinsicValue(PropertyName* name, Value* vp) {
     NativeObject* holder = data().intrinsicsHolder;
