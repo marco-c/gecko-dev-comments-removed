@@ -67,6 +67,14 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
  protected:
   
   
+  static void LogOleGetClipboardResult(HRESULT aHres);
+
+  
+  
+  static void OleGetClipboardResultToString(HRESULT aHres, nsACString& aResult);
+
+  
+  
   static void LogOleSetClipboardResult(HRESULT aHres);
 
   
