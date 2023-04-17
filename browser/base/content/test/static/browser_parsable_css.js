@@ -61,6 +61,15 @@ let whitelist = [
   },
 ];
 
+if (!Services.prefs.getBoolPref("layout.css.color-mix.enabled")) {
+  
+  whitelist.push({
+    sourceName: /\b(autocomplete-item)\.css$/,
+    errorMessage: /Expected color but found \u2018color-mix\u2019./i,
+    isFromDevTools: false,
+  });
+}
+
 if (!Services.prefs.getBoolPref("layout.css.math-depth.enabled")) {
   
   whitelist.push({
