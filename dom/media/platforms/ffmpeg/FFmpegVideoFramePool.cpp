@@ -40,18 +40,32 @@ void VideoFrameSurfaceVAAPI::LockVAAPIData(AVCodecContext* aAVCodecContext,
   mHWAVBuffer = aLib->av_buffer_ref(aAVFrame->buf[0]);
 }
 
-void VideoFrameSurfaceVAAPI::ReleaseVAAPIData() {
+void VideoFrameSurfaceVAAPI::ReleaseVAAPIData(bool aForFrameRecycle) {
   FFMPEG_LOG("VideoFrameSurfaceVAAPI: VAAPI releasing dmabuf surface UID = %d",
              mSurface->GetUID());
+
+  
+  
+  
+  
+  
+  
   mLib->av_buffer_unref(&mHWAVBuffer);
   mLib->av_buffer_unref(&mAVHWFramesContext);
-  mSurface->ReleaseSurface();
+
+  if (aForFrameRecycle) {
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!IsUsed());
+    mSurface->ReleaseSurface();
+  }
 }
 
 VideoFrameSurfaceVAAPI::~VideoFrameSurfaceVAAPI() {
   FFMPEG_LOG("VideoFrameSurfaceVAAPI: deleting dmabuf surface UID = %d",
              mSurface->GetUID());
-  ReleaseVAAPIData();
+  
+  ReleaseVAAPIData( false);
 }
 
 VideoFramePool::VideoFramePool(bool aUseVAAPI) : mUseVAAPI(aUseVAAPI) {}
