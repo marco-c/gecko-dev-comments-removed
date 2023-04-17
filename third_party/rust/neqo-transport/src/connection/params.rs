@@ -4,7 +4,7 @@
 
 
 
-use crate::connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT};
+use crate::connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT, LOCAL_IDLE_TIMEOUT};
 use crate::recv_stream::RECV_BUFFER_SIZE;
 use crate::rtt::GRANULARITY;
 use crate::stream_id::StreamType;
@@ -12,7 +12,6 @@ use crate::tparams::{self, PreferredAddress, TransportParameter, TransportParame
 use crate::tracking::DEFAULT_ACK_DELAY;
 use crate::{CongestionControlAlgorithm, QuicVersion, Res};
 use std::convert::TryFrom;
-use std::time::Duration;
 
 const LOCAL_MAX_DATA: u64 = 0x3FFF_FFFF_FFFF_FFFF; 
 const LOCAL_STREAM_LIMIT_BIDI: u64 = 16;
@@ -22,8 +21,6 @@ pub const ACK_RATIO_SCALE: u8 = 10;
 
 
 const DEFAULT_ACK_RATIO: u8 = 4 * ACK_RATIO_SCALE;
-
-const DEFAULT_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
 
 #[derive(Debug, Clone)]
@@ -62,8 +59,6 @@ pub struct ConnectionParameters {
     
     
     ack_ratio: u8,
-    
-    idle_timeout: Duration,
     preferred_address: PreferredAddressConfig,
 }
 
@@ -79,7 +74,6 @@ impl Default for ConnectionParameters {
             max_streams_bidi: LOCAL_STREAM_LIMIT_BIDI,
             max_streams_uni: LOCAL_STREAM_LIMIT_UNI,
             ack_ratio: DEFAULT_ACK_RATIO,
-            idle_timeout: DEFAULT_IDLE_TIMEOUT,
             preferred_address: PreferredAddressConfig::Default,
         }
     }
@@ -120,8 +114,6 @@ impl ConnectionParameters {
         }
     }
 
-    
-    
     pub fn max_streams(mut self, stream_type: StreamType, v: u64) -> Self {
         assert!(v <= (1 << 60), "max_streams is too large");
         match stream_type {
@@ -137,7 +129,6 @@ impl ConnectionParameters {
 
     
     
-    
     pub fn get_max_stream_data(&self, stream_type: StreamType, remote: bool) -> u64 {
         match (stream_type, remote) {
             (StreamType::BiDi, false) => self.max_stream_data_bidi_local,
@@ -151,10 +142,7 @@ impl ConnectionParameters {
 
     
     
-    
-    
     pub fn max_stream_data(mut self, stream_type: StreamType, remote: bool, v: u64) -> Self {
-        assert!(v < (1 << 62), "max stream data is too large");
         match (stream_type, remote) {
             (StreamType::BiDi, false) => {
                 self.max_stream_data_bidi_local = v;
@@ -197,18 +185,6 @@ impl ConnectionParameters {
         self.ack_ratio
     }
 
-    
-    
-    pub fn idle_timeout(mut self, timeout: Duration) -> Self {
-        assert!(timeout.as_millis() < (1 << 62), "idle timeout is too long");
-        self.idle_timeout = timeout;
-        self
-    }
-
-    pub fn get_idle_timeout(&self) -> Duration {
-        self.idle_timeout
-    }
-
     pub fn create_transport_parameter(
         &self,
         role: Role,
@@ -216,6 +192,10 @@ impl ConnectionParameters {
     ) -> Res<TransportParametersHandler> {
         let mut tps = TransportParametersHandler::default();
         
+        tps.local.set_integer(
+            tparams::IDLE_TIMEOUT,
+            u64::try_from(LOCAL_IDLE_TIMEOUT.as_millis()).unwrap(),
+        );
         tps.local.set_integer(
             tparams::ACTIVE_CONNECTION_ID_LIMIT,
             u64::try_from(LOCAL_ACTIVE_CID_LIMIT).unwrap(),
@@ -250,10 +230,6 @@ impl ConnectionParameters {
             .set_integer(tparams::INITIAL_MAX_STREAMS_BIDI, self.max_streams_bidi);
         tps.local
             .set_integer(tparams::INITIAL_MAX_STREAMS_UNI, self.max_streams_uni);
-        tps.local.set_integer(
-            tparams::IDLE_TIMEOUT,
-            u64::try_from(self.idle_timeout.as_millis()).unwrap_or(0),
-        );
         if let PreferredAddressConfig::Address(preferred) = &self.preferred_address {
             if role == Role::Server {
                 let (cid, srt) = cid_manager.preferred_address_cid()?;
