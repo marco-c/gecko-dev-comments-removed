@@ -524,8 +524,8 @@ bool ArgumentsObject::obj_mayResolve(const JSAtomState& names, jsid id,
   return id.isInt() || id.isWellKnownSymbol(JS::SymbolCode::iterator);
 }
 
-static bool MappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
-                            MutableHandleValue vp) {
+bool js::MappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
+                         MutableHandleValue vp) {
   MappedArgumentsObject& argsobj = obj->as<MappedArgumentsObject>();
   if (JSID_IS_INT(id)) {
     
@@ -549,8 +549,8 @@ static bool MappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
-static bool MappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
-                            HandleValue v, ObjectOpResult& result) {
+bool js::MappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
+                         HandleValue v, ObjectOpResult& result) {
   Handle<MappedArgumentsObject*> argsobj = obj.as<MappedArgumentsObject>();
 
   Rooted<PropertyDescriptor> desc(cx);
@@ -633,7 +633,6 @@ bool ArgumentsObject::reifyIterator(JSContext* cx,
 
 static bool ResolveArgumentsProperty(JSContext* cx,
                                      Handle<ArgumentsObject*> obj, HandleId id,
-                                     GetterOp getter, SetterOp setter,
                                      unsigned attrs, bool* resolvedp) {
   
   
@@ -641,7 +640,9 @@ static bool ResolveArgumentsProperty(JSContext* cx,
   MOZ_ASSERT(id.isInt() || id.isAtom(cx->names().length) ||
              id.isAtom(cx->names().callee));
 
-  if (!NativeObject::addAccessorProperty(cx, obj, id, getter, setter, attrs)) {
+  attrs |= JSPROP_CUSTOM_DATA_PROP;
+  if (!NativeObject::addAccessorProperty(cx, obj, id, nullptr, nullptr,
+                                         attrs)) {
     return false;
   }
 
@@ -689,8 +690,7 @@ bool MappedArgumentsObject::obj_resolve(JSContext* cx, HandleObject obj,
     }
   }
 
-  return ResolveArgumentsProperty(cx, argsobj, id, MappedArgGetter,
-                                  MappedArgSetter, attrs, resolvedp);
+  return ResolveArgumentsProperty(cx, argsobj, id, attrs, resolvedp);
 }
 
 
@@ -760,8 +760,7 @@ static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
   Shape* shape = prop.shape();
   MOZ_ASSERT(shape);
   MOZ_ASSERT(shape->writable());
-  MOZ_ASSERT(shape->getter() == MappedArgGetter);
-  MOZ_ASSERT(shape->setter() == MappedArgSetter);
+  MOZ_ASSERT(shape->isCustomDataProperty());
 
   
   
@@ -785,15 +784,15 @@ static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
     }
   }
 
-  unsigned attrs = 0;
+  unsigned attrs = JSPROP_CUSTOM_DATA_PROP;
   if (!configurable) {
     attrs |= JSPROP_PERMANENT;
   }
   if (enumerable) {
     attrs |= JSPROP_ENUMERATE;
   }
-  if (!NativeObject::putAccessorProperty(cx, obj, id, MappedArgGetter,
-                                         MappedArgSetter, attrs)) {
+  if (!NativeObject::putAccessorProperty(cx, obj, id, nullptr, nullptr,
+                                         attrs)) {
     return false;
   }
 
@@ -876,8 +875,8 @@ bool MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj,
   return result.succeed();
 }
 
-static bool UnmappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
-                              MutableHandleValue vp) {
+bool js::UnmappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
+                           MutableHandleValue vp) {
   UnmappedArgumentsObject& argsobj = obj->as<UnmappedArgumentsObject>();
 
   if (JSID_IS_INT(id)) {
@@ -898,8 +897,8 @@ static bool UnmappedArgGetter(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
-static bool UnmappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
-                              HandleValue v, ObjectOpResult& result) {
+bool js::UnmappedArgSetter(JSContext* cx, HandleObject obj, HandleId id,
+                           HandleValue v, ObjectOpResult& result) {
   Handle<UnmappedArgumentsObject*> argsobj = obj.as<UnmappedArgumentsObject>();
 
   Rooted<PropertyDescriptor> desc(cx);
@@ -984,8 +983,7 @@ bool UnmappedArgumentsObject::obj_resolve(JSContext* cx, HandleObject obj,
     return true;
   }
 
-  return ResolveArgumentsProperty(cx, argsobj, id, UnmappedArgGetter,
-                                  UnmappedArgSetter, attrs, resolvedp);
+  return ResolveArgumentsProperty(cx, argsobj, id, attrs, resolvedp);
 }
 
 
