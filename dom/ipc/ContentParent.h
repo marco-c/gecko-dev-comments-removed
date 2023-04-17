@@ -154,7 +154,7 @@ class ContentParent final
   
 
 
-  static RefPtr<LaunchPromise> PreallocateProcess();
+  static already_AddRefed<ContentParent> MakePreallocProcess();
 
   
 
@@ -1444,7 +1444,7 @@ class ContentParent final
   
   static already_AddRefed<ContentParent> GetUsedBrowserProcess(
       const nsACString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed);
+      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority);
 
   void AddToPool(nsTArray<ContentParent*>&);
   void RemoveFromPool(nsTArray<ContentParent*>&);

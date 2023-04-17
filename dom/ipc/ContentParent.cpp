@@ -658,13 +658,10 @@ static const char* sObserverTopics[] = {
 
 
 
- RefPtr<ContentParent::LaunchPromise>
-ContentParent::PreallocateProcess() {
+ already_AddRefed<ContentParent>
+ContentParent::MakePreallocProcess() {
   RefPtr<ContentParent> process = new ContentParent(PREALLOC_REMOTE_TYPE);
-
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Preallocating process of type prealloc"));
-  return process->LaunchSubprocessAsync(PROCESS_PRIORITY_PREALLOC);
+  return process.forget();
 }
 
 
@@ -906,7 +903,7 @@ static already_AddRefed<nsIPrincipal> CreateRemoteTypeIsolationPrincipal(
 
 already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     const nsACString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-    uint32_t aMaxContentParents, bool aPreferUsed) {
+    uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   AutoRestore ar(sInProcessSelector);
   sInProcessSelector = true;
@@ -981,6 +978,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
   }
 
   
+  
   RefPtr<ContentParent> preallocated;
   if (aRemoteType != FILE_REMOTE_TYPE &&
       aRemoteType != EXTENSION_REMOTE_TYPE &&  
@@ -991,30 +989,40 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     preallocated->AssertAlive();
 
     if (profiler_thread_is_being_profiled()) {
-      nsPrintfCString marker("Assigned preallocated process %u",
-                             (unsigned int)preallocated->ChildID());
+      nsPrintfCString marker(
+          "Assigned preallocated process %u%s",
+          (unsigned int)preallocated->ChildID(),
+          preallocated->IsLaunching() ? " (still launching)" : "");
       PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
     }
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Adopted preallocated process %p for type %s", preallocated.get(),
-             PromiseFlatCString(aRemoteType).get()));
+            ("Adopted preallocated process %p for type %s%s",
+             preallocated.get(), PromiseFlatCString(aRemoteType).get(),
+             preallocated->IsLaunching() ? " (still launching)" : ""));
 
     
-    preallocated->mActivateTS = TimeStamp::Now();
-    preallocated->AddToPool(aContentParents);
-
+    
     preallocated->mRemoteType.Assign(aRemoteType);
     preallocated->mRemoteTypeIsolationPrincipal =
         CreateRemoteTypeIsolationPrincipal(aRemoteType);
-    Unused << preallocated->SendRemoteType(preallocated->mRemoteType);
+    preallocated->mActivateTS = TimeStamp::Now();
+    preallocated->AddToPool(aContentParents);
 
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      nsAutoString cpId;
-      cpId.AppendInt(static_cast<uint64_t>(preallocated->ChildID()));
-      obs->NotifyObservers(static_cast<nsIObserver*>(preallocated),
-                           "process-type-set", cpId.get());
-      preallocated->AssertAlive();
+    
+    if (!preallocated->IsLaunching()) {
+      
+      
+      Unused << preallocated->SendRemoteType(preallocated->mRemoteType);
+
+      nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService();
+      if (obs) {
+        nsAutoString cpId;
+        cpId.AppendInt(static_cast<uint64_t>(preallocated->ChildID()));
+        obs->NotifyObservers(static_cast<nsIObserver*>(preallocated),
+                             "process-type-set", cpId.get());
+        preallocated->AssertAlive();
+      }
     }
     return preallocated.forget();
   }
@@ -1060,47 +1068,38 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(
   }
 
   
-  contentParent = GetUsedBrowserProcess(aRemoteType, contentParents,
-                                        maxContentParents, aPreferUsed);
+  contentParent = GetUsedBrowserProcess(
+      aRemoteType, contentParents, maxContentParents, aPreferUsed, aPriority);
 
-  if (contentParent) {
+  if (!contentParent) {
     
     
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("GetNewOrUsedProcess: Used process %p (launching %d)",
-             contentParent.get(), contentParent->IsLaunching()));
-    contentParent->AssertAlive();
-    contentParent->StopRecycling();
-    if (aGroup) {
-      aGroup->EnsureHostProcess(contentParent);
+            ("Launching new process immediately for type %s",
+             PromiseFlatCString(aRemoteType).get()));
+
+    contentParent = new ContentParent(aRemoteType);
+    if (!contentParent->BeginSubprocessLaunch(aPriority)) {
+      
+      contentParent->LaunchSubprocessReject();
+      return nullptr;
     }
-    return contentParent.forget();
-  }
-
-  
-  
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("Launching new process immediately for type %s",
-           PromiseFlatCString(aRemoteType).get()));
-
-  contentParent = new ContentParent(aRemoteType);
-  if (!contentParent->BeginSubprocessLaunch(aPriority)) {
     
-    contentParent->LaunchSubprocessReject();
-    return nullptr;
+    
+    
+    contentParent->mIsAPreallocBlocker = true;
+    PreallocatedProcessManager::AddBlocker(aRemoteType, contentParent);
+
+    
+    contentParent->AddToPool(contentParents);
+
+    MOZ_LOG(
+        ContentParent::GetLog(), LogLevel::Debug,
+        ("GetNewOrUsedProcess: new immediate process %p", contentParent.get()));
   }
   
-  contentParent->AddToPool(contentParents);
+  
 
-  
-  
-  
-  contentParent->mIsAPreallocBlocker = true;
-  PreallocatedProcessManager::AddBlocker(aRemoteType, contentParent);
-
-  MOZ_ASSERT(contentParent->IsLaunching());
-  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-          ("GetNewOrUsedProcess: new process %p", contentParent.get()));
   contentParent->AssertAlive();
   contentParent->StopRecycling();
   if (aGroup) {
@@ -1142,6 +1141,8 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
     ProcessPriority aPriority) {
   MOZ_DIAGNOSTIC_ASSERT(!IsDead());
   if (!IsLaunching()) {
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+            ("WaitForLaunchAsync: launched"));
     return LaunchPromise::CreateAndResolve(this, __func__);
   }
 
@@ -1156,6 +1157,8 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr{this}, aPriority] {
         if (self->LaunchSubprocessResolve( false, aPriority)) {
+          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                  ("WaitForLaunchAsync: async, now launched"));
           self->mActivateTS = TimeStamp::Now();
           return LaunchPromise::CreateAndResolve(self, __func__);
         }
@@ -1164,6 +1167,8 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
         return LaunchPromise::CreateAndReject(LaunchError(), __func__);
       },
       [self = RefPtr{this}] {
+        MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                ("WaitForLaunchAsync: async, rejected"));
         self->LaunchSubprocessReject();
         return LaunchPromise::CreateAndReject(LaunchError(), __func__);
       });
@@ -1719,7 +1724,8 @@ void ContentParent::Init() {
 void ContentParent::MaybeBeginShutDown(uint32_t aExpectedBrowserCount,
                                        bool aSendShutDown) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
-          ("MaybeBeginShutdown %p", this));
+          ("MaybeBeginShutdown %p, %u vs %u", this,
+           ManagedPBrowserParent().Count(), aExpectedBrowserCount));
   MOZ_ASSERT(NS_IsMainThread());
 
   if (ManagedPBrowserParent().Count() != aExpectedBrowserCount ||
@@ -1769,6 +1775,8 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
 }
 
 void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("ShutDownProcess: %p", this));
   
   
   MarkAsDead();
@@ -2278,6 +2286,8 @@ bool ContentParent::ShouldKeepProcessAlive() {
 }
 
 void ContentParent::NotifyTabDestroying() {
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+          ("NotifyTabDestroying %p:", this));
   
   
   
@@ -2560,6 +2570,8 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
 
 void ContentParent::LaunchSubprocessReject() {
   NS_ERROR("failed to launch child in the parent");
+  MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
+          ("failed to launch child in the parent"));
   
   
   mPrefSerializer = nullptr;
@@ -3409,6 +3421,9 @@ mozilla::ipc::IPCResult ContentParent::RecvFirstIdle() {
   
   
   if (mIsAPreallocBlocker) {
+    MOZ_LOG(
+        ContentParent::GetLog(), LogLevel::Verbose,
+        ("RecvFirstIdle %p: Removing Blocker for %s", this, mRemoteType.get()));
     PreallocatedProcessManager::RemoveBlocker(mRemoteType, this);
     mIsAPreallocBlocker = false;
   }
@@ -4074,9 +4089,9 @@ void ContentParent::KillHard(const char* aReason) {
   if (mSubprocess) {
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Verbose,
-        ("KillHard Subprocess: ContentParent %p mSubprocess %p handle "
+        ("KillHard Subprocess(%s): ContentParent %p mSubprocess %p handle "
          "%" PRIuPTR,
-         this, mSubprocess,
+         aReason, this, mSubprocess,
          mSubprocess ? (uintptr_t)mSubprocess->GetChildProcessHandle() : -1));
     mSubprocess->SetAlreadyDead();
   }

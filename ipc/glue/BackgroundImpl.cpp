@@ -379,9 +379,14 @@ class ChildImpl final : public BackgroundChildImpl {
         nsIEventTarget* aMainEventTarget) {
       MOZ_ASSERT_IF(NS_IsMainThread(), !aMainEventTarget);
 
-      MOZ_ASSERT(mThreadLocalIndex != kBadThreadLocalIndex,
-                 "BackgroundChild::Startup() was never called!");
-
+      
+      
+      
+      if (mThreadLocalIndex == kBadThreadLocalIndex) {
+        NS_ERROR(
+            "BackgroundChild::Startup() was never called");
+        return nullptr;
+      }
       if (NS_IsMainThread() && ChildImpl::sShutdownHasStarted) {
         return nullptr;
       }

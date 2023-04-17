@@ -2189,10 +2189,13 @@ void ContentChild::ActorDestroy(ActorDestroyReason why) {
 
   mIdleObservers.Clear();
 
-  nsCOMPtr<nsIConsoleService> svc(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
-  if (svc) {
-    svc->UnregisterListener(mConsoleListener);
-    mConsoleListener->mChild = nullptr;
+  if (mConsoleListener) {
+    nsCOMPtr<nsIConsoleService> svc(
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+    if (svc) {
+      svc->UnregisterListener(mConsoleListener);
+      mConsoleListener->mChild = nullptr;
+    }
   }
   mIsAlive = false;
 
@@ -2591,6 +2594,12 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     const nsCString& aRemoteType) {
+  if (aRemoteType == mRemoteType) {
+    
+    
+    return IPC_OK();
+  }
+
   if (!mRemoteType.IsVoid()) {
     
     
@@ -2599,9 +2608,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
              mRemoteType.get(), aRemoteType.get()));
     
     MOZ_RELEASE_ASSERT(aRemoteType != FILE_REMOTE_TYPE &&
-                       (mRemoteType == PREALLOC_REMOTE_TYPE ||
-                        (mRemoteType == DEFAULT_REMOTE_TYPE &&
-                         aRemoteType == DEFAULT_REMOTE_TYPE)));
+                       mRemoteType == PREALLOC_REMOTE_TYPE);
   } else {
     
     
