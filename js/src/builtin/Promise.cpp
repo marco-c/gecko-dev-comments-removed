@@ -1180,14 +1180,30 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
-  mozilla::Maybe<AutoRealm> ar2;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<AutoFunctionOrCurrentRealm> ar2;
   if (handler.isObject()) {
-    
-    
-    
-    
-    JSObject* handlerObj = UncheckedUnwrap(&handler.toObject());
-    MOZ_ASSERT(handlerObj);
+    RootedObject handlerObj(cx, &handler.toObject());
     ar2.emplace(cx, handlerObj);
 
     
@@ -1949,7 +1965,6 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   RootedFunction job(cx, &args.callee().as<JSFunction>());
   RootedValue then(cx, job->getExtendedSlot(ThenableJobSlot_Handler));
   MOZ_ASSERT(then.isObject());
-  MOZ_ASSERT(!IsWrapper(&then.toObject()));
   RootedNativeObject jobArgs(cx, &job->getExtendedSlot(ThenableJobSlot_JobData)
                                       .toObject()
                                       .as<NativeObject>());
@@ -2066,8 +2081,22 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   
   
-  RootedObject then(cx, CheckedUnwrapStatic(&thenVal.toObject()));
-  AutoRealm ar(cx, then);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RootedObject then(cx, &thenVal.toObject());
+  AutoFunctionOrCurrentRealm ar(cx, then);
+  if (then->maybeCCWRealm() != cx->realm()) {
+    if (!cx->compartment()->wrap(cx, &then)) {
+      return false;
+    }
+  }
 
   
   if (!cx->compartment()->wrap(cx, &promiseToResolve)) {

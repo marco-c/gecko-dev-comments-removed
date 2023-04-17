@@ -874,6 +874,25 @@ class AutoRealmUnchecked : protected AutoRealm {
 
 
 
+
+class AutoFunctionOrCurrentRealm {
+  mozilla::Maybe<AutoRealmUnchecked> ar_;
+
+ public:
+  inline AutoFunctionOrCurrentRealm(JSContext* cx, js::HandleObject fun);
+  ~AutoFunctionOrCurrentRealm() = default;
+
+ private:
+  AutoFunctionOrCurrentRealm(const AutoFunctionOrCurrentRealm&) = delete;
+  AutoFunctionOrCurrentRealm& operator=(const AutoFunctionOrCurrentRealm&) =
+      delete;
+};
+
+
+
+
+
+
 class ErrorCopier {
   mozilla::Maybe<AutoRealm>& ar;
 
