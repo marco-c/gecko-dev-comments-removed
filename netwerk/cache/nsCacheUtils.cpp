@@ -4,9 +4,9 @@
 
 
 
-#include "nsCache.h"
 #include "nsCacheUtils.h"
 #include "nsThreadUtils.h"
+#include "nsIThread.h"
 
 using namespace mozilla;
 
