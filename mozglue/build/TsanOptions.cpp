@@ -77,6 +77,8 @@ extern "C" const char* __tsan_default_suppressions() {
          
          
          "race:fire_glxtest_process\n"
+         
+         "race:swrast_dri.so\n"
 
 
 
@@ -288,6 +290,13 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:image::ImageSurfaceCache::SuggestedSizeInternal\n"
          "race:image::RasterImage::SetMetadata\n"
+         "race:image::RasterImage::GetWidth\n"
+
+         
+         "race:webrender::profiler::register_thread\n"
+
+         
+         "race:scale_blit"
 
       
       ;  
