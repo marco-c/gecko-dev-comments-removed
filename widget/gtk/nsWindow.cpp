@@ -388,9 +388,12 @@ static void UpdateLastInputEventTime(void* aGdkEvent) {
 }
 
 void GetWindowOrigin(GdkWindow* aWindow, int* aX, int* aY) {
-  MOZ_RELEASE_ASSERT(aWindow);
+  *aX = 0;
+  *aY = 0;
 
-  gdk_window_get_origin(aWindow, aX, aY);
+  if (aWindow) {
+    gdk_window_get_origin(aWindow, aX, aY);
+  }
 
   
   
@@ -1553,7 +1556,7 @@ void nsWindow::NativeMoveResizeWaylandPopupCB(const GdkRectangle* aFinalSize,
     
     
     
-    gint x = 0, y = 0;
+    gint x, y;
     GetWindowOrigin(gtk_widget_get_window(GTK_WIDGET(mShell)), &x, &y);
     NotifyWindowMoved(GdkCoordToDevicePixels(x), GdkCoordToDevicePixels(y));
   }
@@ -2587,7 +2590,7 @@ void nsWindow::SetIcon(const nsAString& aIconSpec) {
 }
 
 LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
-  nsIntPoint origin(0, 0);
+  nsIntPoint origin;
   GetWindowOrigin(mGdkWindow, &origin.x, &origin.y);
 
   return GdkPointToDevicePixels({origin.x, origin.y});
