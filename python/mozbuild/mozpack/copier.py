@@ -15,7 +15,7 @@ import six
 
 import mozpack.path as mozpath
 from mozpack.errors import errors
-from mozpack.files import BaseFile, DeflatedFile, Dest, ManifestFile
+from mozpack.files import BaseFile, Dest
 
 
 class FileRegistry(object):
@@ -575,7 +575,7 @@ class Jarrer(FileRegistry, BaseFile):
             dest = Dest(dest)
         assert isinstance(dest, Dest)
 
-        from mozpack.mozjar import JarWriter, JarReader, JAR_BROTLI
+        from mozpack.mozjar import JarWriter, JarReader
 
         try:
             old_jar = JarReader(fileobj=dest)
@@ -587,27 +587,7 @@ class Jarrer(FileRegistry, BaseFile):
         with JarWriter(fileobj=dest, compress=self.compress) as jar:
             for path, file in self:
                 compress = self._compress_options.get(path, self.compress)
-                
-                
-                
-                if compress == JAR_BROTLI and (
-                    isinstance(file, ManifestFile)
-                    or mozpath.basename(path) == "install.rdf"
-                ):
-                    compress = True
-
-                
-                
-                if isinstance(file, DeflatedFile):
-                    jar.add(
-                        path, file.file, mode=file.mode, compress=file.file.compress
-                    )
-                    continue
-                
-                
-                
-                
-                elif path in old_contents and old_contents[path].compress != JAR_BROTLI:
+                if path in old_contents:
                     deflater = DeflaterDest(old_contents[path], compress)
                 else:
                     deflater = DeflaterDest(compress=compress)
