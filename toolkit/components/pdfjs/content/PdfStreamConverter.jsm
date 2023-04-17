@@ -1050,7 +1050,7 @@ PdfStreamConverter.prototype = {
     let { processType, PROCESS_TYPE_DEFAULT } = Services.appinfo;
     
     if (processType != PROCESS_TYPE_DEFAULT || PdfJs.cachedIsDefault()) {
-      return true;
+      return { shouldOpen: true };
     }
 
     
@@ -1063,24 +1063,27 @@ PdfStreamConverter.prototype = {
     if (!mime) {
       
       
-      return true;
+      return { shouldOpen: true };
     }
 
     const { saveToDisk, useHelperApp, useSystemDefault } = Ci.nsIHandlerInfo;
     let { preferredAction, alwaysAskBeforeHandling } = mime;
     
+    let rv = { alwaysAskBeforeHandling, shouldOpen: false };
+    
     
     if (alwaysAskBeforeHandling || preferredAction == saveToDisk) {
-      return false;
+      return rv;
     }
     
     if (preferredAction == useHelperApp && this._usableHandler(mime)) {
-      return false;
+      return rv;
     }
     
     if (preferredAction == useSystemDefault && !mime.isCurrentAppOSDefault()) {
-      return false;
+      return rv;
     }
+    rv.shouldOpen = true;
     
     
     Cu.reportError("Found unusable PDF preferences. Fixing back to PDF.js");
@@ -1117,17 +1120,33 @@ PdfStreamConverter.prototype = {
       
     }
 
-    if (this._validateAndMaybeUpdatePDFPrefs()) {
+    let {
+      alwaysAskBeforeHandling,
+      shouldOpen,
+    } = this._validateAndMaybeUpdatePDFPrefs();
+
+    if (shouldOpen) {
       return HTML;
     }
     
     
     if (channelURI?.schemeIs("file")) {
+      
+      
       let triggeringPrincipal = aChannel.loadInfo?.triggeringPrincipal;
-      if (
-        triggeringPrincipal?.isSystemPrincipal ||
-        triggeringPrincipal?.schemeIs("file")
-      ) {
+      if (triggeringPrincipal?.isSystemPrincipal) {
+        return HTML;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (triggeringPrincipal?.schemeIs("file") && alwaysAskBeforeHandling) {
         return HTML;
       }
     }
