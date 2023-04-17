@@ -16,6 +16,12 @@ function handler(e, reply) {
   c = new BroadcastChannel(e.data.channel);
   let messages = [];
   c.onmessage = e => {
+      if (e.data === 'ready') {
+        
+        
+        
+        return;
+      }
       messages.push(e.data);
       if (e.data == 'done')
         reply(messages);

@@ -9,6 +9,7 @@ bc3.onmessage = e => {
 };
 bc3.postMessage('from worker');
 
+
 self.addEventListener('install', evt => {
   evt.waitUntil(promise);
 });
