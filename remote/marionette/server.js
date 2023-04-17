@@ -126,7 +126,7 @@ class TCPListener {
     this.alive = false;
   }
 
-  onSocketAccepted(serverSocket, clientSocket) {
+  async onSocketAccepted(serverSocket, clientSocket) {
     let input = clientSocket.openInputStream(0, 0, 0);
     let output = clientSocket.openOutputStream(0, 0, 0);
     let transport = new DebuggerTransport(input, output);
@@ -143,7 +143,7 @@ class TCPListener {
       
       
       
-      transport.close();
+      await transport.close();
       return;
     }
 
@@ -205,8 +205,8 @@ class TCPConnection {
 
 
 
-  onClosed() {
-    this.driver.deleteSession();
+  async onClosed() {
+    await this.driver.deleteSession();
     if (this.onclose) {
       this.onclose(this);
     }

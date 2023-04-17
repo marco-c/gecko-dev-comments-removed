@@ -2083,7 +2083,7 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
 };
 
 
-GeckoDriver.prototype.deleteSession = function() {
+GeckoDriver.prototype.deleteSession = async function() {
   if (!this.currentSession) {
     return;
   }
@@ -2108,7 +2108,7 @@ GeckoDriver.prototype.deleteSession = function() {
   
   
   unregisterCommandsActor();
-  unregisterEventsActor();
+  await unregisterEventsActor(this.getBrowsingContext());
 
   if (RemoteAgent.webDriverBiDi) {
     RemoteAgent.webDriverBiDi.deleteSession();
@@ -2613,7 +2613,7 @@ GeckoDriver.prototype.quit = async function(cmd) {
   }
 
   this._server.acceptConnections = false;
-  this.deleteSession();
+  await this.deleteSession();
 
   
   const cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
