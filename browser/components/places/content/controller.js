@@ -552,6 +552,7 @@ PlacesController.prototype = {
 
 
 
+
   buildContextMenu: function PC_buildContextMenu(aPopup) {
     
     
