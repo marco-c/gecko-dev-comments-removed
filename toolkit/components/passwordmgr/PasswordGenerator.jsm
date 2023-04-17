@@ -26,9 +26,27 @@ const MAX_UINT32 = Math.pow(2, 32) - 1;
 const LOWER_CASE_ALPHA = "abcdefghijkmnpqrstuvwxyz"; 
 const UPPER_CASE_ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ"; 
 const DIGITS = "23456789"; 
-const ALL_CHARACTERS = LOWER_CASE_ALPHA + UPPER_CASE_ALPHA + DIGITS;
+const SPECIAL_CHARACTERS = " -~!@#$%^&*_+=`|(){}[:;\"'<>,.?]";
+const ALPHANUMERIC_CHARACTERS = LOWER_CASE_ALPHA + UPPER_CASE_ALPHA + DIGITS;
+const ALL_CHARACTERS = ALPHANUMERIC_CHARACTERS + SPECIAL_CHARACTERS;
 
 const REQUIRED_CHARACTER_CLASSES = [LOWER_CASE_ALPHA, UPPER_CASE_ALPHA, DIGITS];
+
+
+const REQUIRED = "required";
+const MAX_LENGTH = "maxlength";
+const MIN_LENGTH = "minlength";
+const MAX_CONSECUTIVE = "max-consecutive";
+const UPPER = "upper";
+const LOWER = "lower";
+const DIGIT = "digit";
+const SPECIAL = "special";
+
+
+const DEFAULT_RULES = new Map();
+DEFAULT_RULES.set(MIN_LENGTH, REQUIRED_CHARACTER_CLASSES.length);
+DEFAULT_RULES.set(MAX_LENGTH, MAX_UINT8);
+DEFAULT_RULES.set(REQUIRED, [UPPER, LOWER, DIGIT]);
 
 this.PasswordGenerator = {
   
@@ -38,32 +56,90 @@ this.PasswordGenerator = {
 
 
 
-  generatePassword(length = DEFAULT_PASSWORD_LENGTH) {
-    if (length < REQUIRED_CHARACTER_CLASSES.length) {
-      throw new Error("requested password length is too short");
+
+
+  generatePassword({
+    length = DEFAULT_PASSWORD_LENGTH,
+    rules = DEFAULT_RULES,
+  }) {
+    rules = new Map([...DEFAULT_RULES, ...rules]);
+    if (rules.get(MIN_LENGTH) > length) {
+      length = rules.get(MIN_LENGTH);
+    }
+    if (rules.get(MAX_LENGTH) < length) {
+      length = rules.get(MAX_LENGTH);
     }
 
-    if (length > MAX_UINT8) {
-      throw new Error("requested password length is too long");
-    }
     let password = "";
+    let requiredClasses = [];
+    let allRequiredCharacters = "";
 
     
-    for (const charClassString of REQUIRED_CHARACTER_CLASSES) {
+    this._addRequiredClassesAndCharacters(rules, requiredClasses);
+
+    
+    for (const charClassString of requiredClasses) {
       password +=
         charClassString[this._randomUInt8Index(charClassString.length)];
+      allRequiredCharacters += charClassString;
     }
 
     
     while (password.length < length) {
-      password += ALL_CHARACTERS[this._randomUInt8Index(ALL_CHARACTERS.length)];
+      password +=
+        allRequiredCharacters[
+          this._randomUInt8Index(allRequiredCharacters.length)
+        ];
     }
 
     
     
     password = this._shuffleString(password);
 
+    
+    if (rules.has(MAX_CONSECUTIVE)) {
+      
+      const DEFAULT_NUMBER_OF_SHUFFLES = 15;
+      let shuffleCount = 0;
+      let consecutiveFlag = this._checkConsecutiveCharacters(
+        password,
+        rules.get(MAX_CONSECUTIVE)
+      );
+      while (!consecutiveFlag) {
+        password = this._shuffleString(password);
+        consecutiveFlag = this._checkConsecutiveCharacters(
+          password,
+          rules.get(MAX_CONSECUTIVE)
+        );
+        ++shuffleCount;
+        if (shuffleCount === DEFAULT_NUMBER_OF_SHUFFLES) {
+          consecutiveFlag = true;
+        }
+      }
+    }
+
     return password;
+  },
+
+  
+
+
+
+
+  _addRequiredClassesAndCharacters(rules, requiredClasses) {
+    for (const charClass of rules.get(REQUIRED)) {
+      if (charClass === UPPER) {
+        requiredClasses.push(UPPER_CASE_ALPHA);
+      } else if (charClass === LOWER) {
+        requiredClasses.push(LOWER_CASE_ALPHA);
+      } else if (charClass === DIGIT) {
+        requiredClasses.push(DIGITS);
+      } else if (charClass === SPECIAL) {
+        requiredClasses.push(SPECIAL_CHARACTERS);
+      } else {
+        requiredClasses.push(charClass);
+      }
+    }
   },
 
   
@@ -108,5 +184,43 @@ this.PasswordGenerator = {
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr.join("");
+  },
+
+  
+
+
+
+
+
+
+
+  _checkConsecutiveCharacters(generatedPassword, value) {
+    let max = 0;
+    for (let start = 0, end = 1; end < generatedPassword.length; ) {
+      if (generatedPassword[end] === generatedPassword[start]) {
+        if (max < end - start + 1) {
+          max = end - start + 1;
+          if (max > value) {
+            return false;
+          }
+        }
+        end++;
+      } else {
+        start = end++;
+      }
+    }
+    return true;
+  },
+  _getUpperCaseCharacters() {
+    return UPPER_CASE_ALPHA;
+  },
+  _getLowerCaseCharacters() {
+    return LOWER_CASE_ALPHA;
+  },
+  _getDigits() {
+    return DIGITS;
+  },
+  _getSpecialCharacters() {
+    return SPECIAL_CHARACTERS;
   },
 };

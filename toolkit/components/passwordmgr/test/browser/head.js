@@ -203,8 +203,13 @@ async function getFormSubmitResponseResult(
       }, `Wait for form submission load (${resultURL})`);
       let username = content.document.querySelector(usernameSelector)
         .textContent;
-      let password = content.document.querySelector(passwordSelector)
-        .textContent;
+      
+      
+      
+      
+      let password = unescape(
+        content.document.querySelector(passwordSelector).textContent
+      );
       return {
         username,
         password,
