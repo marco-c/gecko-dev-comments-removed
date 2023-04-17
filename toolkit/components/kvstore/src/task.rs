@@ -199,7 +199,15 @@ impl Task for GetOrCreateTask {
                 
                 let path = Path::new(str::from_utf8(&self.path)?);
                 let rkv = manager.get_or_create(path, Rkv::new::<SafeMode>)?;
-                Migrator::easy_migrate_lmdb_to_safe_mode(path, rkv.read()?)?;
+
+                
+                
+                
+                
+                
+                
+                
+
                 {
                     let env = rkv.read()?;
                     let load_ratio = env.load_ratio()?.unwrap_or(0.0);
