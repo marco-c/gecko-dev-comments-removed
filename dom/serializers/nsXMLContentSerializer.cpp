@@ -1545,10 +1545,15 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
           if (wrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT) {
             foundWrapPosition = true;
           } else {
-            wrapPosition = lineBreaker->DeprecatedNext(aSequenceStart,
-                                                       (aEnd - aSequenceStart),
-                                                       (aPos - aSequenceStart));
-            if (wrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT) {
+            wrapPosition = lineBreaker->Next(aSequenceStart,
+                                             (aEnd - aSequenceStart),
+                                             (aPos - aSequenceStart));
+            MOZ_ASSERT(wrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT,
+                       "Next() always treats end-of-text as a break");
+            
+            
+            
+            if (wrapPosition < aEnd - aSequenceStart) {
               foundWrapPosition = true;
             }
           }
@@ -1570,6 +1575,14 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
           aPos = aSequenceStart + wrapPosition;
           aMayIgnoreStartOfLineWhitespaceSequence = true;
         } else {
+          
+          
+          
+
+          
+          
+          
+          
           
           
           
