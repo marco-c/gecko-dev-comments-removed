@@ -102,15 +102,6 @@ class RotatedBuffer : public BorrowDrawTarget {
 
 
 
-
-  void DrawTo(PaintedLayer* aLayer, gfx::DrawTarget* aTarget, float aOpacity,
-              gfx::CompositionOp aOp, gfx::SourceSurface* aMask,
-              const gfx::Matrix* aMaskTransform);
-
-  
-
-
-
   void UpdateDestinationFrom(const RotatedBuffer& aSource,
                              const gfx::IntRect& aUpdateRect);
 
