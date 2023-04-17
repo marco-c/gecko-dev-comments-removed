@@ -2331,6 +2331,12 @@ class EditorBase : public nsIEditor,
   
 
 
+  void HandleKeyPressEventInReadOnlyMode(
+      WidgetKeyboardEvent& aKeyboardEvent) const;
+
+  
+
+
   virtual already_AddRefed<Element> GetInputEventTargetElement() const = 0;
 
   
