@@ -1139,6 +1139,7 @@ function test41() {
       ok(true, "test 41a close");
 
       
+      
       var wsb = CreateTestWS(
         "wss://example.com/tests/dom/websocket/tests/file_websocket",
         "test-41b",
@@ -1163,25 +1164,14 @@ function test41() {
           ok(true, "test 41c open");
           is(
             wsc.url,
-            "wss://example.com/tests/dom/websocket/tests/file_websocket",
-            "test 41c ws should be redirected by hsts to wss"
+            "ws://example.com/tests/dom/websocket/tests/file_websocket",
+            "test 41c ws should not be redirected by hsts to wss"
           );
           wsc.close();
         };
 
         wsc.onclose = function() {
           ok(true, "test 41c close");
-
-          
-          const Ci = SpecialPowers.Ci;
-          var loadContext = SpecialPowers.wrap(window).docShell.QueryInterface(
-            Ci.nsILoadContext
-          );
-          var flags = 0;
-          if (loadContext.usePrivateBrowsing) {
-            flags |= Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
-          }
-          SpecialPowers.cleanUpSTSData("http://example.com", flags);
           resolve();
         };
       };

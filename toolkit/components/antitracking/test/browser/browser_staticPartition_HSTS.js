@@ -141,6 +141,7 @@ add_task(async function test_subresource() {
       );
 
       
+      
       await SpecialPowers.spawn(
         tab.linkedBrowser,
         [secureImgURL],
@@ -173,7 +174,7 @@ add_task(async function test_subresource() {
         }
       );
 
-      is(await finalURL, secureImgURL, "HSTS works for 3rd parties");
+      is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
 
       
       await promiseTabLoadEvent(
@@ -198,11 +199,7 @@ add_task(async function test_subresource() {
         }
       );
 
-      if (networkIsolation) {
-        is(await finalURL, unsecureImgURL, "HSTS doesn't work for 3rd parties");
-      } else {
-        is(await finalURL, secureImgURL, "HSTS works for 3rd parties");
-      }
+      is(await finalURL, unsecureImgURL, "HSTS isn't set for 3rd parties");
 
       gBrowser.removeCurrentTab();
       cleanupHSTS(networkIsolation, partitionPerSite);
