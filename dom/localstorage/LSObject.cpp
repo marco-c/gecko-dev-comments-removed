@@ -566,6 +566,16 @@ int64_t LSObject::GetOriginQuotaUsage() const {
   return 0;
 }
 
+void LSObject::Disconnect() {
+  
+  
+  
+  if (mInExplicitSnapshot) {
+    nsresult rv = EndExplicitSnapshotInternal();
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+  }
+}
+
 uint32_t LSObject::GetLength(nsIPrincipal& aSubjectPrincipal,
                              ErrorResult& aError) {
   AssertIsOnOwningThread();
@@ -961,11 +971,6 @@ nsresult LSObject::EnsureDatabase() {
 
 void LSObject::DropDatabase() {
   AssertIsOnOwningThread();
-
-  if (mInExplicitSnapshot) {
-    nsresult rv = EndExplicitSnapshotInternal();
-    Unused << NS_WARN_IF(NS_FAILED(rv));
-  }
 
   mDatabase = nullptr;
 }
