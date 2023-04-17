@@ -953,11 +953,11 @@ nsRect Element::GetClientAreaRect() {
   
   
   
+  
   bool overlayScrollbars =
       LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0;
-  bool rootContentDocument =
-      presContext && presContext->IsRootContentDocument();
-  if (overlayScrollbars && rootContentDocument &&
+  if (overlayScrollbars &&
+      !doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout() &&
       doc->IsScrollingElement(this)) {
     
     
