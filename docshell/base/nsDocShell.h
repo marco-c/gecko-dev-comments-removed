@@ -1177,8 +1177,10 @@ class nsDocShell final : public nsDocLoader,
 
   
   
+  
   nsCOMPtr<nsISHEntry> mOSHE;
 
+  
   
   
   
@@ -1300,6 +1302,7 @@ class nsDocShell final : public nsDocLoader,
 
   bool mIsExecutingOnLoadHandler : 1;
 
+  
   
   
   
