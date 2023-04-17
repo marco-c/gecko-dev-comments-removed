@@ -175,9 +175,17 @@ bool XRSession::IsImmersive() const {
   return mDisplayClient != nullptr;
 }
 
-XRVisibilityState XRSession::VisibilityState() {
+XRVisibilityState XRSession::VisibilityState() const {
   return XRVisibilityState::Visible;
   
+}
+
+
+
+
+
+bool XRSession::CanReportPoses() const {
+  return VisibilityState() == XRVisibilityState::Visible;
 }
 
 
