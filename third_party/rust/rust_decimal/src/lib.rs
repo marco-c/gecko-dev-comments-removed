@@ -34,23 +34,161 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![forbid(unsafe_code)]
+#![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
+
+mod constants;
 mod decimal;
 mod error;
+mod ops;
+mod str;
 
 #[cfg(any(feature = "postgres", feature = "diesel"))]
-mod postgres;
+mod db;
+#[cfg(feature = "rust-fuzz")]
+mod fuzz;
+#[cfg(feature = "maths")]
+mod maths;
 #[cfg(feature = "serde")]
-mod serde_types;
+mod serde;
 
 pub use decimal::{Decimal, RoundingStrategy};
 pub use error::Error;
+#[cfg(feature = "maths")]
+pub use maths::MathematicalOps;
+
 
 pub mod prelude {
+    #[cfg(feature = "maths")]
+    pub use crate::maths::MathematicalOps;
     pub use crate::{Decimal, RoundingStrategy};
+    pub use core::str::FromStr;
     pub use num_traits::{FromPrimitive, One, ToPrimitive, Zero};
-    pub use std::str::FromStr;
 }
 
 #[cfg(feature = "diesel")]
 #[macro_use]
 extern crate diesel;
+
+
+
+pub type Result<T> = core::result::Result<T, Error>;
