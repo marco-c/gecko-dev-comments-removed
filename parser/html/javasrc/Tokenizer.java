@@ -6119,7 +6119,7 @@ public class Tokenizer implements Locator, Locator2 {
         
         
         clearStrBufAfterUse();
-        doctypeName = "";
+        doctypeName = null;
         if (systemIdentifier != null) {
             Portability.releaseString(systemIdentifier);
             systemIdentifier = null;
@@ -6430,7 +6430,7 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
-                        doctypeName = "";
+                        doctypeName = null;
                         if (systemIdentifier != null) {
                             Portability.releaseString(systemIdentifier);
                             systemIdentifier = null;
