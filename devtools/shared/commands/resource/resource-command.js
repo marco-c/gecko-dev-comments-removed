@@ -528,6 +528,8 @@ class ResourceCommand {
 
 
   _onTargetDestroyed({ targetFront }) {
+    delete targetFront.resourceCommand;
+
     
     this._existingLegacyListeners.set(targetFront, []);
     this._offTargetFrontListeners.delete(targetFront);
