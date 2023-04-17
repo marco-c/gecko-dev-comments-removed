@@ -252,10 +252,7 @@ class TestNrSocketTest : public MtransportTest {
   int SendData_s(TestNrSocket* from, const nr_transport_addr& to) {
     
     const char buf[] = "foobajooba";
-    return from->sendto(
-        buf, sizeof(buf), 0,
-        
-        const_cast<nr_transport_addr*>(&to));
+    return from->sendto(buf, sizeof(buf), 0, &to);
   }
 
   int SendDataTcp_s(NrSocketBase* from) {
