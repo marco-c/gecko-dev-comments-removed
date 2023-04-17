@@ -977,6 +977,13 @@ done_date:
 
 
 
+    if (i >= length && !isStrict) {
+      goto done;
+    }
+    
+
+
+
     if (PEEK(':')) {
       ++i;
     }
