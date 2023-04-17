@@ -377,7 +377,6 @@ public class GeckoSession {
             "GeckoView:WebAppManifest",
             "GeckoView:FirstContentfulPaint",
             "GeckoView:PaintStatusReset",
-            "GeckoView:PreviewImage",
           }) {
         @Override
         public void handleMessage(
@@ -432,8 +431,6 @@ public class GeckoSession {
             delegate.onFirstContentfulPaint(GeckoSession.this);
           } else if ("GeckoView:PaintStatusReset".equals(event)) {
             delegate.onPaintStatusReset(GeckoSession.this);
-          } else if ("GeckoView:PreviewImage".equals(event)) {
-            delegate.onPreviewImage(GeckoSession.this, message.getString("previewImageUrl"));
           }
         }
       };
@@ -2861,16 +2858,6 @@ public class GeckoSession {
 
     @UiThread
     default void onTitleChange(@NonNull final GeckoSession session, @Nullable final String title) {}
-
-    
-
-
-
-
-
-    @UiThread
-    default void onPreviewImage(
-        @NonNull final GeckoSession session, @NonNull final String previewImageUrl) {}
 
     
 
