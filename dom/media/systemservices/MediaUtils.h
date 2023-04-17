@@ -155,6 +155,9 @@ class Refcountable<bool> : public RefcountableBase {
 
 nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
 
+
+nsCOMPtr<nsIAsyncShutdownClient> MustGetShutdownBarrier();
+
 class ShutdownBlocker : public nsIAsyncShutdownBlocker {
  public:
   ShutdownBlocker(const nsString& aName) : mName(aName) {}
