@@ -73,6 +73,13 @@ class IdlePeriodState {
   }
 
   
+  
+  
+  void RequestIdleDeadlineIfNeeded(const MutexAutoUnlock& aProofOfUnlock) {
+    GetIdleDeadlineInternal(false, aProofOfUnlock);
+  }
+
+  
   void ClearCachedIdleDeadline() { mCachedIdleDeadline = TimeStamp(); }
 
   
