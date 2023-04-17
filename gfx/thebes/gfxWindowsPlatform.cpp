@@ -1227,6 +1227,8 @@ void gfxWindowsPlatform::RecordStartupTelemetry() {
 
 
 void gfxWindowsPlatform::EnsureDevicesInitialized() {
+  MOZ_DIAGNOSTIC_ASSERT(!IsWin32kLockedDown());
+
   if (!mInitializedDevices) {
     mInitializedDevices = true;
     InitializeDevices();

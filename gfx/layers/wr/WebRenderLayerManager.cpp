@@ -27,6 +27,7 @@
 
 #ifdef XP_WIN
 #  include "gfxDWriteFonts.h"
+#  include "mozilla/WindowsProcessMitigations.h"
 #endif
 
 namespace mozilla {
@@ -737,10 +738,18 @@ void WebRenderLayerManager::ScheduleComposite() {
 already_AddRefed<PersistentBufferProvider>
 WebRenderLayerManager::CreatePersistentBufferProvider(
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat) {
-  
-  
   if (!gfxPlatform::UseRemoteCanvas()) {
+#ifdef XP_WIN
+    
+    
+    
+    
+    if (!IsWin32kLockedDown()) {
+      gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+    }
+#else
     gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+#endif
   }
 
   RefPtr<PersistentBufferProvider> provider =
