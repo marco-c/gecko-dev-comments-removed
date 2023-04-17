@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset=utf-8>
-
+<!-- WARNING: These tests are preliminary and probably partly incorrect.  -->
 <title>CSSOM automated IDL tests</title>
 <link rel="author" title="Ms2ger" href="mailto:Ms2ger@gmail.com">
 <link rel="help" href="https://drafts.csswg.org/cssom-1/#idl-index">
@@ -9,10 +9,10 @@
 <script src=/resources/testharnessreport.js></script>
 <script src=/resources/WebIDLParser.js></script>
 <script src=/resources/idlharness.js></script>
-
-
-
-
+<!--
+Provide some objects to test.
+Use a non-empty style attribute to get a non-empty CSSStyleDeclaration.
+-->
 <style id="styleElement" style="z-index: 0;">
 @import url("data:text/css,");
 @namespace x "y";
@@ -35,7 +35,7 @@ const waitForLoad = new Promise(r => { addEventListener('load', r); });
 
 idl_test(
   ['cssom'],
-  ['SVG', 'uievents', 'html', 'dom'],
+  ['SVG', 'uievents', 'html', 'dom', 'mathml-core'],
   async idlArray => {
     idlArray.add_objects({
       Document: ['document', 'new Document()'],
