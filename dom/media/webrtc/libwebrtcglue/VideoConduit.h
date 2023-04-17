@@ -211,7 +211,7 @@ class WebrtcVideoConduit
 
   void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
 
-  uint64_t CodecPluginID() override;
+  bool HasCodecPluginID(uint64_t aPluginID) override;
 
   void SetPCHandle(const std::string& aPCHandle) override {
     MOZ_ASSERT(NS_IsMainThread());
@@ -465,9 +465,9 @@ class WebrtcVideoConduit
   std::unique_ptr<webrtc::VideoEncoder> mEncoder;  
   std::vector<std::unique_ptr<webrtc::VideoDecoder>> mDecoders;
   
-  uint64_t mSendCodecPluginID = 0;
+  nsTArray<uint64_t> mSendCodecPluginIDs;
   
-  uint64_t mRecvCodecPluginID = 0;
+  nsTArray<uint64_t> mRecvCodecPluginIDs;
 
   
   std::string mPCHandle;
