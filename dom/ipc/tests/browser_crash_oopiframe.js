@@ -229,10 +229,6 @@ add_task(async function test_crashframe() {
     "This test only makes sense of we can use OOP iframes."
   );
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.security.enforceIPCBasedPrincipalVetting", false]],
-  });
-
   
   
   const uAppDataPath = Services.dirsvc.get("UAppData", Ci.nsIFile).path;
