@@ -499,7 +499,14 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
     },
     isErrorPage
   );
-  BrowserTestUtils.loadURI(browser, uri);
+
+  
+  
+  if (uri === browser.currentURI.spec) {
+    gBrowser.reloadTab(gBrowser.selectedTab);
+  } else {
+    BrowserTestUtils.loadURI(browser, uri);
+  }
 
   info(`Waiting for page to be loaded…`);
   await onBrowserLoaded;
