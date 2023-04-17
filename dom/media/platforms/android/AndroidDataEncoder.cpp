@@ -59,12 +59,6 @@ static const char* MimeTypeOf(MediaDataEncoder::CodecType aCodec) {
 using FormatResult = Result<java::sdk::MediaFormat::LocalRef, MediaResult>;
 
 FormatResult ToMediaFormat(const AndroidDataEncoder::Config& aConfig) {
-  if (!aConfig.mCodecSpecific) {
-    return FormatResult(
-        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                    "Android video encoder requires I-frame inverval"));
-  }
-
   nsresult rv = NS_OK;
   java::sdk::MediaFormat::LocalRef format;
   rv = java::sdk::MediaFormat::CreateVideoFormat(MimeTypeOf(aConfig.mCodecType),
@@ -98,8 +92,8 @@ FormatResult ToMediaFormat(const AndroidDataEncoder::Config& aConfig) {
   
   
   
-  int32_t intervalInSec = std::max<size_t>(
-      1, aConfig.mCodecSpecific.value().mKeyframeInterval / aConfig.mFramerate);
+  int32_t intervalInSec =
+      std::max<size_t>(1, aConfig.mKeyframeInterval / aConfig.mFramerate);
   rv = format->SetInteger(java::sdk::MediaFormat::KEY_I_FRAME_INTERVAL,
                           intervalInSec);
   NS_ENSURE_SUCCESS(rv,
