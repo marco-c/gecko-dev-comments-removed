@@ -14,7 +14,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  assert: "chrome://remote/content/marionette/assert.js",
   element: "chrome://remote/content/marionette/element.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
@@ -33,6 +32,26 @@ const FINISH = "finish";
 
 
 this.evaluate = {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+evaluate.assertAcyclic = function(obj, msg = "", err = error.JavaScriptError) {
+  if (evaluate.isCyclic(obj)) {
+    throw new err(msg || "Cyclic object value");
+  }
+};
 
 
 
@@ -300,7 +319,7 @@ evaluate.toJSON = function(obj, seenEls) {
 
     
   } else if (element.isCollection(obj)) {
-    assert.acyclic(obj);
+    evaluate.assertAcyclic(obj);
     return [...obj].map(el => evaluate.toJSON(el, seenEls));
 
     
@@ -336,7 +355,7 @@ evaluate.toJSON = function(obj, seenEls) {
   
   let rv = {};
   for (let prop in obj) {
-    assert.acyclic(obj[prop]);
+    evaluate.assertAcyclic(obj[prop]);
 
     try {
       rv[prop] = evaluate.toJSON(obj[prop], seenEls);

@@ -13,7 +13,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppInfo: "chrome://remote/content/marionette/appinfo.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
-  evaluate: "chrome://remote/content/marionette/evaluate.js",
   pprint: "chrome://remote/content/marionette/format.js",
 });
 
@@ -23,26 +22,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 this.assert = {};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-assert.acyclic = function(obj, msg = "", err = error.JavaScriptError) {
-  if (evaluate.isCyclic(obj)) {
-    throw new err(msg || "Cyclic object value");
-  }
-};
 
 
 
