@@ -27,6 +27,7 @@
 #include "Layers.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Components.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/gfx/2D.h"
@@ -4957,11 +4958,16 @@ bool nsWindow::ConfigureX11GLVisual(bool aUseAlpha) {
   int visualId = 0;
   bool haveVisual;
 
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  nsString adapterDriverVendor;
+  gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
+  bool isMesa = adapterDriverVendor.Find("mesa") != -1;
+
   
   
   
   
-  if ((true )) {
+  if (!gfxVars::UseEGL() || isMesa) {
     auto* display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
     int screenNumber = GDK_SCREEN_XNUMBER(screen);
     haveVisual = GLContextGLX::FindVisual(display, screenNumber, useWebRender,
