@@ -72,10 +72,18 @@ class WebDriverBiDi {
     this._session = new WebDriverSession(capabilities);
 
     
-    if (this.agent.listening) {
+    
+    let webSocketUrl = null;
+    if (this.agent.listening && this.session.capabilities.get("webSocketUrl")) {
       this.agent.server.registerPathHandler(this.session.path, this.session);
+      webSocketUrl = `${this.address}${this.session.path}`;
+
       logger.debug(`Registered session handler: ${this.session.path}`);
     }
+
+    
+    
+    this.session.capabilities.set("webSocketUrl", webSocketUrl);
 
     return {
       sessionId: this.session.id,
@@ -92,7 +100,8 @@ class WebDriverBiDi {
     }
 
     
-    if (this.agent.listening) {
+    
+    if (this.agent.listening && this.session.capabilities.get("webSocketUrl")) {
       this.agent.server.registerPathHandler(this.session.path, null);
       logger.debug(`Unregistered session handler: ${this.session.path}`);
     }

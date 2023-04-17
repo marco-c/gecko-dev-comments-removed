@@ -426,10 +426,12 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     
     
     
+    
     if (RemoteAgent.webdriverBiDi) {
       RemoteAgent.webdriverBiDi.createSession(capabilities);
     } else {
       this._currentSession = new WebDriverSession(capabilities);
+      this._currentSession.capabilities.delete("webSocketUrl");
     }
 
     registerCommandsActor();
