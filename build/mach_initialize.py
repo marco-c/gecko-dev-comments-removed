@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import site
+import subprocess
 import sys
 
 if sys.version_info[0] < 3:
@@ -167,6 +168,11 @@ install a recent enough Python 3.
 """.strip()
 
 
+def _scrub_system_site_packages():
+    site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
+    sys.path = [path for path in sys.path if path not in site_paths]
+
+
 def _activate_python_environment(topsrcdir):
     
     
@@ -193,6 +199,65 @@ def _activate_python_environment(topsrcdir):
         True,
         os.path.join(topsrcdir, "build", "mach_virtualenv_packages.txt"),
     )
+
+    if os.environ.get("MACH_USE_SYSTEM_PYTHON") or os.environ.get("MOZ_AUTOMATION"):
+        env_var = (
+            "MOZ_AUTOMATION"
+            if os.environ.get("MOZ_AUTOMATION")
+            else "MACH_USE_SYSTEM_PYTHON"
+        )
+
+        has_pip = (
+            subprocess.run(
+                [sys.executable, "-c", "import pip"], stderr=subprocess.DEVNULL
+            ).returncode
+            == 0
+        )
+        
+        
+        
+        assert (
+            not requirements.pypi_requirements
+        ), "Mach pip package requirements must be optional."
+        if has_pip:
+            pip = [sys.executable, "-m", "pip"]
+            check_result = subprocess.run(
+                pip + ["check"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+            )
+            if check_result.returncode:
+                print(check_result.stdout, file=sys.stderr)
+                subprocess.check_call(pip + ["list", "-v"], stdout=sys.stderr)
+                raise Exception(
+                    'According to "pip check", the current Python '
+                    "environment has package-compatibility issues."
+                )
+
+            package_result = requirements.validate_environment_packages(pip)
+            if not package_result.has_all_packages:
+                print(
+                    "Skipping automatic management of Python dependencies since "
+                    f"the '{env_var}' environment variable is set.\n"
+                    "The following issues were found while validating your Python "
+                    "environment:"
+                )
+                print(package_result.report())
+                sys.exit(1)
+        else:
+            
+            
+            
+            
+            _scrub_system_site_packages()
+
+    elif sys.prefix == sys.base_prefix:
+        
+        
+        
+        _scrub_system_site_packages()
+
     sys.path[0:0] = [
         os.path.join(topsrcdir, pth.path)
         for pth in requirements.pth_requirements + requirements.vendored_requirements
@@ -221,12 +286,6 @@ def initialize(topsrcdir):
     deleted_dir = os.path.join(topsrcdir, "third_party", "python", "psutil")
     if os.path.exists(deleted_dir):
         shutil.rmtree(deleted_dir, ignore_errors=True)
-
-    if sys.prefix == sys.base_prefix:
-        
-        
-        site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
-        sys.path = [path for path in sys.path if path not in site_paths]
 
     state_dir = _create_state_dir()
     _activate_python_environment(topsrcdir)
