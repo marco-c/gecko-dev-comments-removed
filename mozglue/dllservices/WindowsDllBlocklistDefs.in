@@ -236,6 +236,10 @@ ALL_PROCESSES += [
 
     
     DllBlocklistEntry("PavLspHook64.dll", (9, 2, 2, 1), BLOCK_WIN7_AND_OLDER),
+
+    
+    DllBlocklistEntry("WRDll.x64.dll", (1, 1, 0, 227)),
+    DllBlocklistEntry("WRDll.x86.dll", (1, 1, 0, 227)),
 ]
 
 ALL_PROCESSES_TESTS += [
