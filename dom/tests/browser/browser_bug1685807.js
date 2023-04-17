@@ -14,13 +14,7 @@ const TEST_URI =
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.window.name.update.enabled", true],
-      
-      
-      
-      ["fission.bfcacheInParent", false],
-    ],
+    set: [["privacy.window.name.update.enabled", true]],
   });
 });
 
