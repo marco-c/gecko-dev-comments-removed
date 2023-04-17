@@ -1714,7 +1714,7 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Clear() {
   
   
   if (mContentParent) {
-    mContentParent->RemoveKeepAlive(mTarget->BrowserId());
+    mContentParent->RemoveKeepAlive();
     mContentParent = nullptr;
   }
 
@@ -1870,7 +1870,7 @@ CanonicalBrowsingContext::ChangeRemoteness(
     
     
     change->mContentParent = embedderBrowser->Manager();
-    change->mContentParent->AddKeepAlive(BrowserId());
+    change->mContentParent->AddKeepAlive();
     change->ProcessLaunched();
     return promise.forget();
   }
@@ -1898,7 +1898,6 @@ CanonicalBrowsingContext::ChangeRemoteness(
   change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
        aOptions.mRemoteType,
        finalGroup,
-       BrowserId(),
        hal::PROCESS_PRIORITY_FOREGROUND,
        preferUsed);
   if (!change->mContentParent) {
@@ -1909,7 +1908,7 @@ CanonicalBrowsingContext::ChangeRemoteness(
   
   
   
-  change->mContentParent->AddKeepAlive(BrowserId());
+  change->mContentParent->AddKeepAlive();
   if (change->mContentParent->IsLaunching()) {
     change->mContentParent->WaitForLaunchAsync()->Then(
         GetMainThreadSerialEventTarget(), __func__,
