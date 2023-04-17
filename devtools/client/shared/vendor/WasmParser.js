@@ -1,20 +1,20 @@
 "use strict";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bytesToString = exports.isTypeIndex = exports.BinaryReader = exports.Int64 = exports.NULL_FUNCTION_INDEX = exports.SegmentFlags = exports.BinaryReaderState = exports.NameType = exports.LinkingType = exports.RelocType = exports.Type = exports.ExternalKind = exports.OperatorCodeNames = exports.OperatorCode = exports.SectionCode = void 0;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+exports.bytesToString = exports.BinaryReader = exports.Int64 = exports.ElementMode = exports.DataMode = exports.BinaryReaderState = exports.NameType = exports.LinkingType = exports.RelocType = exports.Type = exports.TypeKind = exports.ExternalKind = exports.OperatorCodeNames = exports.OperatorCode = exports.SectionCode = void 0;
 
 var WASM_MAGIC_NUMBER = 0x6d736100;
 var WASM_SUPPORTED_EXPERIMENTAL_VERSION = 0xd;
@@ -34,6 +34,7 @@ var SectionCode;
     SectionCode[SectionCode["Element"] = 9] = "Element";
     SectionCode[SectionCode["Code"] = 10] = "Code";
     SectionCode[SectionCode["Data"] = 11] = "Data";
+    SectionCode[SectionCode["Event"] = 13] = "Event";
 })(SectionCode = exports.SectionCode || (exports.SectionCode = {}));
 var OperatorCode;
 (function (OperatorCode) {
@@ -43,6 +44,11 @@ var OperatorCode;
     OperatorCode[OperatorCode["loop"] = 3] = "loop";
     OperatorCode[OperatorCode["if"] = 4] = "if";
     OperatorCode[OperatorCode["else"] = 5] = "else";
+    OperatorCode[OperatorCode["try"] = 6] = "try";
+    OperatorCode[OperatorCode["catch"] = 7] = "catch";
+    OperatorCode[OperatorCode["throw"] = 8] = "throw";
+    OperatorCode[OperatorCode["rethrow"] = 9] = "rethrow";
+    OperatorCode[OperatorCode["unwind"] = 10] = "unwind";
     OperatorCode[OperatorCode["end"] = 11] = "end";
     OperatorCode[OperatorCode["br"] = 12] = "br";
     OperatorCode[OperatorCode["br_if"] = 13] = "br_if";
@@ -52,6 +58,11 @@ var OperatorCode;
     OperatorCode[OperatorCode["call_indirect"] = 17] = "call_indirect";
     OperatorCode[OperatorCode["return_call"] = 18] = "return_call";
     OperatorCode[OperatorCode["return_call_indirect"] = 19] = "return_call_indirect";
+    OperatorCode[OperatorCode["call_ref"] = 20] = "call_ref";
+    OperatorCode[OperatorCode["return_call_ref"] = 21] = "return_call_ref";
+    OperatorCode[OperatorCode["let"] = 23] = "let";
+    OperatorCode[OperatorCode["delegate"] = 24] = "delegate";
+    OperatorCode[OperatorCode["catch_all"] = 25] = "catch_all";
     OperatorCode[OperatorCode["drop"] = 26] = "drop";
     OperatorCode[OperatorCode["select"] = 27] = "select";
     OperatorCode[OperatorCode["local_get"] = 32] = "local_get";
@@ -216,6 +227,7 @@ var OperatorCode;
     OperatorCode[OperatorCode["i64_extend8_s"] = 194] = "i64_extend8_s";
     OperatorCode[OperatorCode["i64_extend16_s"] = 195] = "i64_extend16_s";
     OperatorCode[OperatorCode["i64_extend32_s"] = 196] = "i64_extend32_s";
+    OperatorCode[OperatorCode["prefix_0xfb"] = 251] = "prefix_0xfb";
     OperatorCode[OperatorCode["prefix_0xfc"] = 252] = "prefix_0xfc";
     OperatorCode[OperatorCode["prefix_0xfd"] = 253] = "prefix_0xfd";
     OperatorCode[OperatorCode["prefix_0xfe"] = 254] = "prefix_0xfe";
@@ -242,6 +254,9 @@ var OperatorCode;
     OperatorCode[OperatorCode["ref_null"] = 208] = "ref_null";
     OperatorCode[OperatorCode["ref_is_null"] = 209] = "ref_is_null";
     OperatorCode[OperatorCode["ref_func"] = 210] = "ref_func";
+    OperatorCode[OperatorCode["ref_as_non_null"] = 211] = "ref_as_non_null";
+    OperatorCode[OperatorCode["br_on_null"] = 212] = "br_on_null";
+    OperatorCode[OperatorCode["ref_eq"] = 213] = "ref_eq";
     OperatorCode[OperatorCode["atomic_notify"] = 65024] = "atomic_notify";
     OperatorCode[OperatorCode["i32_atomic_wait"] = 65025] = "i32_atomic_wait";
     OperatorCode[OperatorCode["i64_atomic_wait"] = 65026] = "i64_atomic_wait";
@@ -322,8 +337,8 @@ var OperatorCode;
     OperatorCode[OperatorCode["v64x2_load_splat"] = 64778] = "v64x2_load_splat";
     OperatorCode[OperatorCode["v128_store"] = 64779] = "v128_store";
     OperatorCode[OperatorCode["v128_const"] = 64780] = "v128_const";
-    OperatorCode[OperatorCode["v8x16_shuffle"] = 64781] = "v8x16_shuffle";
-    OperatorCode[OperatorCode["v8x16_swizzle"] = 64782] = "v8x16_swizzle";
+    OperatorCode[OperatorCode["i8x16_shuffle"] = 64781] = "i8x16_shuffle";
+    OperatorCode[OperatorCode["i8x16_swizzle"] = 64782] = "i8x16_swizzle";
     OperatorCode[OperatorCode["i8x16_splat"] = 64783] = "i8x16_splat";
     OperatorCode[OperatorCode["i16x8_splat"] = 64784] = "i16x8_splat";
     OperatorCode[OperatorCode["i32x4_splat"] = 64785] = "i32x4_splat";
@@ -392,59 +407,90 @@ var OperatorCode;
     OperatorCode[OperatorCode["v128_or"] = 64848] = "v128_or";
     OperatorCode[OperatorCode["v128_xor"] = 64849] = "v128_xor";
     OperatorCode[OperatorCode["v128_bitselect"] = 64850] = "v128_bitselect";
+    OperatorCode[OperatorCode["v128_any_true"] = 64851] = "v128_any_true";
+    OperatorCode[OperatorCode["v128_load8_lane"] = 64852] = "v128_load8_lane";
+    OperatorCode[OperatorCode["v128_load16_lane"] = 64853] = "v128_load16_lane";
+    OperatorCode[OperatorCode["v128_load32_lane"] = 64854] = "v128_load32_lane";
+    OperatorCode[OperatorCode["v128_load64_lane"] = 64855] = "v128_load64_lane";
+    OperatorCode[OperatorCode["v128_store8_lane"] = 64856] = "v128_store8_lane";
+    OperatorCode[OperatorCode["v128_store16_lane"] = 64857] = "v128_store16_lane";
+    OperatorCode[OperatorCode["v128_store32_lane"] = 64858] = "v128_store32_lane";
+    OperatorCode[OperatorCode["v128_store64_lane"] = 64859] = "v128_store64_lane";
+    OperatorCode[OperatorCode["v128_load32_zero"] = 64860] = "v128_load32_zero";
+    OperatorCode[OperatorCode["v128_load64_zero"] = 64861] = "v128_load64_zero";
+    OperatorCode[OperatorCode["f32x4_demote_f64x2_zero"] = 64862] = "f32x4_demote_f64x2_zero";
+    OperatorCode[OperatorCode["f64x2_promote_low_f32x4"] = 64863] = "f64x2_promote_low_f32x4";
     OperatorCode[OperatorCode["i8x16_abs"] = 64864] = "i8x16_abs";
     OperatorCode[OperatorCode["i8x16_neg"] = 64865] = "i8x16_neg";
-    OperatorCode[OperatorCode["i8x16_any_true"] = 64866] = "i8x16_any_true";
+    OperatorCode[OperatorCode["i8x16_popcnt"] = 64866] = "i8x16_popcnt";
     OperatorCode[OperatorCode["i8x16_all_true"] = 64867] = "i8x16_all_true";
+    OperatorCode[OperatorCode["i8x16_bitmask"] = 64868] = "i8x16_bitmask";
     OperatorCode[OperatorCode["i8x16_narrow_i16x8_s"] = 64869] = "i8x16_narrow_i16x8_s";
     OperatorCode[OperatorCode["i8x16_narrow_i16x8_u"] = 64870] = "i8x16_narrow_i16x8_u";
+    OperatorCode[OperatorCode["f32x4_ceil"] = 103] = "f32x4_ceil";
+    OperatorCode[OperatorCode["f32x4_floor"] = 104] = "f32x4_floor";
+    OperatorCode[OperatorCode["f32x4_trunc"] = 105] = "f32x4_trunc";
+    OperatorCode[OperatorCode["f32x4_nearest"] = 106] = "f32x4_nearest";
     OperatorCode[OperatorCode["i8x16_shl"] = 64875] = "i8x16_shl";
     OperatorCode[OperatorCode["i8x16_shr_s"] = 64876] = "i8x16_shr_s";
     OperatorCode[OperatorCode["i8x16_shr_u"] = 64877] = "i8x16_shr_u";
     OperatorCode[OperatorCode["i8x16_add"] = 64878] = "i8x16_add";
-    OperatorCode[OperatorCode["i8x16_add_saturate_s"] = 64879] = "i8x16_add_saturate_s";
-    OperatorCode[OperatorCode["i8x16_add_saturate_u"] = 64880] = "i8x16_add_saturate_u";
+    OperatorCode[OperatorCode["i8x16_add_sat_s"] = 64879] = "i8x16_add_sat_s";
+    OperatorCode[OperatorCode["i8x16_add_sat_u"] = 64880] = "i8x16_add_sat_u";
     OperatorCode[OperatorCode["i8x16_sub"] = 64881] = "i8x16_sub";
-    OperatorCode[OperatorCode["i8x16_sub_saturate_s"] = 64882] = "i8x16_sub_saturate_s";
-    OperatorCode[OperatorCode["i8x16_sub_saturate_u"] = 64883] = "i8x16_sub_saturate_u";
+    OperatorCode[OperatorCode["i8x16_sub_sat_s"] = 64882] = "i8x16_sub_sat_s";
+    OperatorCode[OperatorCode["i8x16_sub_sat_u"] = 64883] = "i8x16_sub_sat_u";
+    OperatorCode[OperatorCode["f64x2_ceil"] = 64884] = "f64x2_ceil";
+    OperatorCode[OperatorCode["f64x2_floor"] = 64885] = "f64x2_floor";
     OperatorCode[OperatorCode["i8x16_min_s"] = 64886] = "i8x16_min_s";
     OperatorCode[OperatorCode["i8x16_min_u"] = 64887] = "i8x16_min_u";
     OperatorCode[OperatorCode["i8x16_max_s"] = 64888] = "i8x16_max_s";
     OperatorCode[OperatorCode["i8x16_max_u"] = 64889] = "i8x16_max_u";
+    OperatorCode[OperatorCode["f64x2_trunc"] = 64890] = "f64x2_trunc";
     OperatorCode[OperatorCode["i8x16_avgr_u"] = 64891] = "i8x16_avgr_u";
+    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_s"] = 64892] = "i16x8_extadd_pairwise_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extadd_pairwise_i8x16_u"] = 64893] = "i16x8_extadd_pairwise_i8x16_u";
+    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_s"] = 64894] = "i32x4_extadd_pairwise_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extadd_pairwise_i16x8_u"] = 64895] = "i32x4_extadd_pairwise_i16x8_u";
     OperatorCode[OperatorCode["i16x8_abs"] = 64896] = "i16x8_abs";
     OperatorCode[OperatorCode["i16x8_neg"] = 64897] = "i16x8_neg";
-    OperatorCode[OperatorCode["i16x8_any_true"] = 64898] = "i16x8_any_true";
+    OperatorCode[OperatorCode["i16x8_q15mulr_sat_s"] = 64898] = "i16x8_q15mulr_sat_s";
     OperatorCode[OperatorCode["i16x8_all_true"] = 64899] = "i16x8_all_true";
+    OperatorCode[OperatorCode["i16x8_bitmask"] = 64900] = "i16x8_bitmask";
     OperatorCode[OperatorCode["i16x8_narrow_i32x4_s"] = 64901] = "i16x8_narrow_i32x4_s";
     OperatorCode[OperatorCode["i16x8_narrow_i32x4_u"] = 64902] = "i16x8_narrow_i32x4_u";
-    OperatorCode[OperatorCode["i16x8_widen_low_i8x16_s"] = 64903] = "i16x8_widen_low_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_widen_high_i8x16_s"] = 64904] = "i16x8_widen_high_i8x16_s";
-    OperatorCode[OperatorCode["i16x8_widen_low_i8x16_u"] = 64905] = "i16x8_widen_low_i8x16_u";
-    OperatorCode[OperatorCode["i16x8_widen_high_i8x16_u"] = 64906] = "i16x8_widen_high_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_s"] = 64903] = "i16x8_extend_low_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_s"] = 64904] = "i16x8_extend_high_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extend_low_i8x16_u"] = 64905] = "i16x8_extend_low_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_extend_high_i8x16_u"] = 64906] = "i16x8_extend_high_i8x16_u";
     OperatorCode[OperatorCode["i16x8_shl"] = 64907] = "i16x8_shl";
     OperatorCode[OperatorCode["i16x8_shr_s"] = 64908] = "i16x8_shr_s";
     OperatorCode[OperatorCode["i16x8_shr_u"] = 64909] = "i16x8_shr_u";
     OperatorCode[OperatorCode["i16x8_add"] = 64910] = "i16x8_add";
-    OperatorCode[OperatorCode["i16x8_add_saturate_s"] = 64911] = "i16x8_add_saturate_s";
-    OperatorCode[OperatorCode["i16x8_add_saturate_u"] = 64912] = "i16x8_add_saturate_u";
+    OperatorCode[OperatorCode["i16x8_add_sat_s"] = 64911] = "i16x8_add_sat_s";
+    OperatorCode[OperatorCode["i16x8_add_sat_u"] = 64912] = "i16x8_add_sat_u";
     OperatorCode[OperatorCode["i16x8_sub"] = 64913] = "i16x8_sub";
-    OperatorCode[OperatorCode["i16x8_sub_saturate_s"] = 64914] = "i16x8_sub_saturate_s";
-    OperatorCode[OperatorCode["i16x8_sub_saturate_u"] = 64915] = "i16x8_sub_saturate_u";
+    OperatorCode[OperatorCode["i16x8_sub_sat_s"] = 64914] = "i16x8_sub_sat_s";
+    OperatorCode[OperatorCode["i16x8_sub_sat_u"] = 64915] = "i16x8_sub_sat_u";
+    OperatorCode[OperatorCode["f64x2_nearest"] = 64916] = "f64x2_nearest";
     OperatorCode[OperatorCode["i16x8_mul"] = 64917] = "i16x8_mul";
     OperatorCode[OperatorCode["i16x8_min_s"] = 64918] = "i16x8_min_s";
     OperatorCode[OperatorCode["i16x8_min_u"] = 64919] = "i16x8_min_u";
     OperatorCode[OperatorCode["i16x8_max_s"] = 64920] = "i16x8_max_s";
     OperatorCode[OperatorCode["i16x8_max_u"] = 64921] = "i16x8_max_u";
     OperatorCode[OperatorCode["i16x8_avgr_u"] = 64923] = "i16x8_avgr_u";
+    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_s"] = 64924] = "i16x8_extmul_low_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_s"] = 64925] = "i16x8_extmul_high_i8x16_s";
+    OperatorCode[OperatorCode["i16x8_extmul_low_i8x16_u"] = 64926] = "i16x8_extmul_low_i8x16_u";
+    OperatorCode[OperatorCode["i16x8_extmul_high_i8x16_u"] = 64927] = "i16x8_extmul_high_i8x16_u";
     OperatorCode[OperatorCode["i32x4_abs"] = 64928] = "i32x4_abs";
     OperatorCode[OperatorCode["i32x4_neg"] = 64929] = "i32x4_neg";
-    OperatorCode[OperatorCode["i32x4_any_true"] = 64930] = "i32x4_any_true";
     OperatorCode[OperatorCode["i32x4_all_true"] = 64931] = "i32x4_all_true";
-    OperatorCode[OperatorCode["i32x4_widen_low_i16x8_s"] = 64935] = "i32x4_widen_low_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_widen_high_i16x8_s"] = 64936] = "i32x4_widen_high_i16x8_s";
-    OperatorCode[OperatorCode["i32x4_widen_low_i16x8_u"] = 64937] = "i32x4_widen_low_i16x8_u";
-    OperatorCode[OperatorCode["i32x4_widen_high_i16x8_u"] = 64938] = "i32x4_widen_high_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_bitmask"] = 64932] = "i32x4_bitmask";
+    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_s"] = 64935] = "i32x4_extend_low_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_s"] = 64936] = "i32x4_extend_high_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extend_low_i16x8_u"] = 64937] = "i32x4_extend_low_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_extend_high_i16x8_u"] = 64938] = "i32x4_extend_high_i16x8_u";
     OperatorCode[OperatorCode["i32x4_shl"] = 64939] = "i32x4_shl";
     OperatorCode[OperatorCode["i32x4_shr_s"] = 64940] = "i32x4_shr_s";
     OperatorCode[OperatorCode["i32x4_shr_u"] = 64941] = "i32x4_shr_u";
@@ -455,13 +501,35 @@ var OperatorCode;
     OperatorCode[OperatorCode["i32x4_min_u"] = 64951] = "i32x4_min_u";
     OperatorCode[OperatorCode["i32x4_max_s"] = 64952] = "i32x4_max_s";
     OperatorCode[OperatorCode["i32x4_max_u"] = 64953] = "i32x4_max_u";
+    OperatorCode[OperatorCode["i32x4_dot_i16x8_s"] = 64954] = "i32x4_dot_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_s"] = 64956] = "i32x4_extmul_low_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_s"] = 64957] = "i32x4_extmul_high_i16x8_s";
+    OperatorCode[OperatorCode["i32x4_extmul_low_i16x8_u"] = 64958] = "i32x4_extmul_low_i16x8_u";
+    OperatorCode[OperatorCode["i32x4_extmul_high_i16x8_u"] = 64959] = "i32x4_extmul_high_i16x8_u";
+    OperatorCode[OperatorCode["i64x2_abs"] = 64960] = "i64x2_abs";
     OperatorCode[OperatorCode["i64x2_neg"] = 64961] = "i64x2_neg";
+    OperatorCode[OperatorCode["i64x2_all_true"] = 64963] = "i64x2_all_true";
+    OperatorCode[OperatorCode["i64x2_bitmask"] = 64964] = "i64x2_bitmask";
+    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_s"] = 64967] = "i64x2_extend_low_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_s"] = 64968] = "i64x2_extend_high_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extend_low_i32x4_u"] = 64969] = "i64x2_extend_low_i32x4_u";
+    OperatorCode[OperatorCode["i64x2_extend_high_i32x4_u"] = 64970] = "i64x2_extend_high_i32x4_u";
     OperatorCode[OperatorCode["i64x2_shl"] = 64971] = "i64x2_shl";
     OperatorCode[OperatorCode["i64x2_shr_s"] = 64972] = "i64x2_shr_s";
     OperatorCode[OperatorCode["i64x2_shr_u"] = 64973] = "i64x2_shr_u";
     OperatorCode[OperatorCode["i64x2_add"] = 64974] = "i64x2_add";
     OperatorCode[OperatorCode["i64x2_sub"] = 64977] = "i64x2_sub";
     OperatorCode[OperatorCode["i64x2_mul"] = 64981] = "i64x2_mul";
+    OperatorCode[OperatorCode["i64x2_eq"] = 64982] = "i64x2_eq";
+    OperatorCode[OperatorCode["i64x2_ne"] = 64983] = "i64x2_ne";
+    OperatorCode[OperatorCode["i64x2_lt_s"] = 64984] = "i64x2_lt_s";
+    OperatorCode[OperatorCode["i64x2_gt_s"] = 64985] = "i64x2_gt_s";
+    OperatorCode[OperatorCode["i64x2_le_s"] = 64986] = "i64x2_le_s";
+    OperatorCode[OperatorCode["i64x2_ge_s"] = 64987] = "i64x2_ge_s";
+    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_s"] = 64988] = "i64x2_extmul_low_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_s"] = 64989] = "i64x2_extmul_high_i32x4_s";
+    OperatorCode[OperatorCode["i64x2_extmul_low_i32x4_u"] = 64990] = "i64x2_extmul_low_i32x4_u";
+    OperatorCode[OperatorCode["i64x2_extmul_high_i32x4_u"] = 64991] = "i64x2_extmul_high_i32x4_u";
     OperatorCode[OperatorCode["f32x4_abs"] = 64992] = "f32x4_abs";
     OperatorCode[OperatorCode["f32x4_neg"] = 64993] = "f32x4_neg";
     OperatorCode[OperatorCode["f32x4_sqrt"] = 64995] = "f32x4_sqrt";
@@ -471,6 +539,8 @@ var OperatorCode;
     OperatorCode[OperatorCode["f32x4_div"] = 64999] = "f32x4_div";
     OperatorCode[OperatorCode["f32x4_min"] = 65000] = "f32x4_min";
     OperatorCode[OperatorCode["f32x4_max"] = 65001] = "f32x4_max";
+    OperatorCode[OperatorCode["f32x4_pmin"] = 65002] = "f32x4_pmin";
+    OperatorCode[OperatorCode["f32x4_pmax"] = 65003] = "f32x4_pmax";
     OperatorCode[OperatorCode["f64x2_abs"] = 65004] = "f64x2_abs";
     OperatorCode[OperatorCode["f64x2_neg"] = 65005] = "f64x2_neg";
     OperatorCode[OperatorCode["f64x2_sqrt"] = 65007] = "f64x2_sqrt";
@@ -480,10 +550,47 @@ var OperatorCode;
     OperatorCode[OperatorCode["f64x2_div"] = 65011] = "f64x2_div";
     OperatorCode[OperatorCode["f64x2_min"] = 65012] = "f64x2_min";
     OperatorCode[OperatorCode["f64x2_max"] = 65013] = "f64x2_max";
+    OperatorCode[OperatorCode["f64x2_pmin"] = 65014] = "f64x2_pmin";
+    OperatorCode[OperatorCode["f64x2_pmax"] = 65015] = "f64x2_pmax";
     OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_s"] = 65016] = "i32x4_trunc_sat_f32x4_s";
     OperatorCode[OperatorCode["i32x4_trunc_sat_f32x4_u"] = 65017] = "i32x4_trunc_sat_f32x4_u";
     OperatorCode[OperatorCode["f32x4_convert_i32x4_s"] = 65018] = "f32x4_convert_i32x4_s";
     OperatorCode[OperatorCode["f32x4_convert_i32x4_u"] = 65019] = "f32x4_convert_i32x4_u";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_s_zero"] = 65020] = "i32x4_trunc_sat_f64x2_s_zero";
+    OperatorCode[OperatorCode["i32x4_trunc_sat_f64x2_u_zero"] = 65021] = "i32x4_trunc_sat_f64x2_u_zero";
+    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_s"] = 65022] = "f64x2_convert_low_i32x4_s";
+    OperatorCode[OperatorCode["f64x2_convert_low_i32x4_u"] = 65023] = "f64x2_convert_low_i32x4_u";
+    
+    OperatorCode[OperatorCode["struct_new_with_rtt"] = 64257] = "struct_new_with_rtt";
+    OperatorCode[OperatorCode["struct_new_default_with_rtt"] = 64258] = "struct_new_default_with_rtt";
+    OperatorCode[OperatorCode["struct_get"] = 64259] = "struct_get";
+    OperatorCode[OperatorCode["struct_get_s"] = 64260] = "struct_get_s";
+    OperatorCode[OperatorCode["struct_get_u"] = 64261] = "struct_get_u";
+    OperatorCode[OperatorCode["struct_set"] = 64262] = "struct_set";
+    OperatorCode[OperatorCode["array_new_with_rtt"] = 64273] = "array_new_with_rtt";
+    OperatorCode[OperatorCode["array_new_default_with_rtt"] = 64274] = "array_new_default_with_rtt";
+    OperatorCode[OperatorCode["array_get"] = 64275] = "array_get";
+    OperatorCode[OperatorCode["array_get_s"] = 64276] = "array_get_s";
+    OperatorCode[OperatorCode["array_get_u"] = 64277] = "array_get_u";
+    OperatorCode[OperatorCode["array_set"] = 64278] = "array_set";
+    OperatorCode[OperatorCode["array_len"] = 64279] = "array_len";
+    OperatorCode[OperatorCode["i31_new"] = 64288] = "i31_new";
+    OperatorCode[OperatorCode["i31_get_s"] = 64289] = "i31_get_s";
+    OperatorCode[OperatorCode["i31_get_u"] = 64290] = "i31_get_u";
+    OperatorCode[OperatorCode["rtt_canon"] = 64304] = "rtt_canon";
+    OperatorCode[OperatorCode["rtt_sub"] = 64305] = "rtt_sub";
+    OperatorCode[OperatorCode["ref_test"] = 64320] = "ref_test";
+    OperatorCode[OperatorCode["ref_cast"] = 64321] = "ref_cast";
+    OperatorCode[OperatorCode["br_on_cast"] = 64322] = "br_on_cast";
+    OperatorCode[OperatorCode["ref_is_func"] = 64336] = "ref_is_func";
+    OperatorCode[OperatorCode["ref_is_data"] = 64337] = "ref_is_data";
+    OperatorCode[OperatorCode["ref_is_i31"] = 64338] = "ref_is_i31";
+    OperatorCode[OperatorCode["ref_as_func"] = 64344] = "ref_as_func";
+    OperatorCode[OperatorCode["ref_as_data"] = 64345] = "ref_as_data";
+    OperatorCode[OperatorCode["ref_as_i31"] = 64346] = "ref_as_i31";
+    OperatorCode[OperatorCode["br_on_func"] = 64352] = "br_on_func";
+    OperatorCode[OperatorCode["br_on_data"] = 64353] = "br_on_data";
+    OperatorCode[OperatorCode["br_on_i31"] = 64354] = "br_on_i31";
 })(OperatorCode = exports.OperatorCode || (exports.OperatorCode = {}));
 exports.OperatorCodeNames = [
     "unreachable",
@@ -492,11 +599,11 @@ exports.OperatorCodeNames = [
     "loop",
     "if",
     "else",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "try",
+    "catch",
+    "throw",
+    "rethrow",
+    "unwind",
     "end",
     "br",
     "br_if",
@@ -506,12 +613,12 @@ exports.OperatorCodeNames = [
     "call_indirect",
     "return_call",
     "return_call_indirect",
+    "call_ref",
+    "return_call_ref",
     undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "let",
+    "delegate",
+    "catch_all",
     "drop",
     "select",
     undefined,
@@ -697,9 +804,9 @@ exports.OperatorCodeNames = [
     "ref.null",
     "ref.is_null",
     "ref.func",
-    undefined,
-    undefined,
-    undefined,
+    "ref.as_non_null",
+    "br_on_null",
+    "ref.eq",
     undefined,
     undefined,
     undefined,
@@ -779,8 +886,8 @@ exports.OperatorCodeNames = [
     "v64x2.load_splat",
     "v128.store",
     "v128.const",
-    "v8x16.shuffle",
-    "v8x16.swizzle",
+    "i8x16.shuffle",
+    "i8x16.swizzle",
     "i8x16.splat",
     "i16x8.splat",
     "i32x4.splat",
@@ -849,72 +956,72 @@ exports.OperatorCodeNames = [
     "v128.or",
     "v128.xor",
     "v128.bitselect",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "v128.any_true",
+    "v128.load8_lane",
+    "v128.load16_lane",
+    "v128.load32_lane",
+    "v128.load64_lane",
+    "v128.store8_lane",
+    "v128.store16_lane",
+    "v128.store32_lane",
+    "v128.store64_lane",
+    "v128.load32_zero",
+    "v128.load64_zero",
+    "f32x4.demote_f64x2_zero",
+    "f64x2.promote_low_f32x4",
     "i8x16.abs",
     "i8x16.neg",
-    "i8x16.any_true",
+    "i8x16_popcnt",
     "i8x16.all_true",
-    undefined,
+    "i8x16.bitmask",
     "i8x16.narrow_i16x8_s",
     "i8x16.narrow_i16x8_u",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "f32x4.ceil",
+    "f32x4.floor",
+    "f32x4.trunc",
+    "f32x4.nearest",
     "i8x16.shl",
     "i8x16.shr_s",
     "i8x16.shr_u",
     "i8x16.add",
-    "i8x16.add_saturate_s",
-    "i8x16.add_saturate_u",
+    "i8x16.add_sat_s",
+    "i8x16.add_sat_u",
     "i8x16.sub",
-    "i8x16.sub_saturate_s",
-    "i8x16.sub_saturate_u",
-    undefined,
-    undefined,
+    "i8x16.sub_sat_s",
+    "i8x16.sub_sat_u",
+    "f64x2.ceil",
+    "f64x2.floor",
     "i8x16.min_s",
     "i8x16.min_u",
     "i8x16.max_s",
     "i8x16.max_u",
-    undefined,
+    "f64x2.trunc",
     "i8x16.avgr_u",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "i16x8.extadd_pairwise_i8x16_s",
+    "i16x8.extadd_pairwise_i8x16_u",
+    "i32x4.extadd_pairwise_i16x8_s",
+    "i32x4.extadd_pairwise_i16x8_u",
     "i16x8.abs",
     "i16x8.neg",
-    "i16x8.any_true",
+    "i16x8.q15mulr_sat_s",
     "i16x8.all_true",
-    undefined,
+    "i16x8.bitmask",
     "i16x8.narrow_i32x4_s",
     "i16x8.narrow_i32x4_u",
-    "i16x8.widen_low_i8x16_s",
-    "i16x8.widen_high_i8x16_s",
-    "i16x8.widen_low_i8x16_u",
-    "i16x8.widen_high_i8x16_u",
+    "i16x8.extend_low_i8x16_s",
+    "i16x8.extend_high_i8x16_s",
+    "i16x8.extend_low_i8x16_u",
+    "i16x8.extend_high_i8x16_u",
     "i16x8.shl",
     "i16x8.shr_s",
     "i16x8.shr_u",
     "i16x8.add",
-    "i16x8.add_saturate_s",
-    "i16x8.add_saturate_u",
+    "i16x8.add_sat_s",
+    "i16x8.add_sat_u",
     "i16x8.sub",
-    "i16x8.sub_saturate_s",
-    "i16x8.sub_saturate_u",
-    undefined,
+    "i16x8.sub_sat_s",
+    "i16x8.sub_sat_u",
+    "f64x2.nearest",
     "i16x8.mul",
     "i16x8.min_s",
     "i16x8.min_u",
@@ -922,21 +1029,21 @@ exports.OperatorCodeNames = [
     "i16x8.max_u",
     undefined,
     "i16x8.avgr_u",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "i16x8.extmul_low_i8x16_s",
+    "i16x8.extmul_high_i8x16_s",
+    "i16x8.extmul_low_i8x16_u",
+    "i16x8.extmul_high_i8x16_u",
     "i32x4.abs",
     "i32x4.neg",
-    "i32x4.any_true",
+    undefined,
     "i32x4.all_true",
+    "i32x4.bitmask",
     undefined,
     undefined,
-    undefined,
-    "i32x4.widen_low_i16x8_s",
-    "i32x4.widen_high_i16x8_s",
-    "i32x4.widen_low_i16x8_u",
-    "i32x4.widen_high_i16x8_u",
+    "i32x4.extend_low_i16x8_s",
+    "i32x4.extend_high_i16x8_s",
+    "i32x4.extend_low_i16x8_u",
+    "i32x4.extend_high_i16x8_u",
     "i32x4.shl",
     "i32x4.shr_s",
     "i32x4.shr_u",
@@ -952,23 +1059,23 @@ exports.OperatorCodeNames = [
     "i32x4.min_u",
     "i32x4.max_s",
     "i32x4.max_u",
+    "i32x4.dot_i16x8_s",
     undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "i32x4.extmul_low_i16x8_s",
+    "i32x4.extmul_high_i16x8_s",
+    "i32x4.extmul_low_i16x8_u",
+    "i32x4.extmul_high_i16x8_u",
+    "i64x2.abs",
     "i64x2.neg",
     undefined,
+    "i64x2.all_true",
+    "i64x2.bitmask",
     undefined,
     undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "i64x2.extend_low_i32x4_s",
+    "i64x2.extend_high_i32x4_s",
+    "i64x2.extend_low_i32x4_u",
+    "i64x2.extend_high_i32x4_u",
     "i64x2.shl",
     "i64x2.shr_s",
     "i64x2.shr_u",
@@ -980,16 +1087,16 @@ exports.OperatorCodeNames = [
     undefined,
     undefined,
     "i64x2.mul",
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    "i64x2.eq",
+    "i64x2.ne",
+    "i64x2.lt_s",
+    "i64x2.gt_s",
+    "i64x2.le_s",
+    "i64x2.ge_s",
+    "i64x2.extmul_low_i32x4_s",
+    "i64x2.extmul_high_i32x4_s",
+    "i64x2.extmul_low_i32x4_u",
+    "i64x2.extmul_high_i32x4_u",
     "f32x4.abs",
     "f32x4.neg",
     undefined,
@@ -1000,8 +1107,8 @@ exports.OperatorCodeNames = [
     "f32x4.div",
     "f32x4.min",
     "f32x4.max",
-    undefined,
-    undefined,
+    "f32x4.pmin",
+    "f32x4.pmax",
     "f64x2.abs",
     "f64x2.neg",
     undefined,
@@ -1012,19 +1119,23 @@ exports.OperatorCodeNames = [
     "f64x2.div",
     "f64x2.min",
     "f64x2.max",
-    undefined,
-    undefined,
+    "f64x2.pmin",
+    "f64x2.pmax",
     "i32x4.trunc_sat_f32x4_s",
     "i32x4.trunc_sat_f32x4_u",
     "f32x4.convert_i32x4_s",
     "f32x4.convert_i32x4_u",
+    "i32x4.trunc_sat_f64x2_s_zero",
+    "i32x4.trunc_sat_f64x2_u_zero",
+    "f64x2.convert_low_i32x4_s",
+    "f64x2.convert_low_i32x4_u",
 ].forEach(function (s, i) {
     exports.OperatorCodeNames[0xfd00 | i] = s;
 });
 [
-    "memory.atomic.notify",
-    "memory.atomic.wait32",
-    "memory.atomic.wait64",
+    "atomic.notify",
+    "i32.atomic.wait",
+    "i64.atomic.wait",
     "atomic.fence",
     undefined,
     undefined,
@@ -1104,26 +1215,99 @@ exports.OperatorCodeNames = [
 ].forEach(function (s, i) {
     exports.OperatorCodeNames[0xfe00 | i] = s;
 });
+exports.OperatorCodeNames[0xfb01] = "struct.new_with_rtt";
+exports.OperatorCodeNames[0xfb02] = "struct.new_default_with_rtt";
+exports.OperatorCodeNames[0xfb03] = "struct.get";
+exports.OperatorCodeNames[0xfb04] = "struct.get_s";
+exports.OperatorCodeNames[0xfb05] = "struct.get_u";
+exports.OperatorCodeNames[0xfb06] = "struct.set";
+exports.OperatorCodeNames[0xfb11] = "array.new_with_rtt";
+exports.OperatorCodeNames[0xfb12] = "array.new_default_with_rtt";
+exports.OperatorCodeNames[0xfb13] = "array.get";
+exports.OperatorCodeNames[0xfb14] = "array.get_s";
+exports.OperatorCodeNames[0xfb15] = "array.get_u";
+exports.OperatorCodeNames[0xfb16] = "array.set";
+exports.OperatorCodeNames[0xfb17] = "array.len";
+exports.OperatorCodeNames[0xfb20] = "i31.new";
+exports.OperatorCodeNames[0xfb21] = "i31.get_s";
+exports.OperatorCodeNames[0xfb22] = "i31.get_u";
+exports.OperatorCodeNames[0xfb30] = "rtt.canon";
+exports.OperatorCodeNames[0xfb31] = "rtt.sub";
+exports.OperatorCodeNames[0xfb40] = "ref.test";
+exports.OperatorCodeNames[0xfb41] = "ref.cast";
+exports.OperatorCodeNames[0xfb42] = "br_on_cast";
+exports.OperatorCodeNames[0xfb50] = "ref.is_func";
+exports.OperatorCodeNames[0xfb51] = "ref.is_data";
+exports.OperatorCodeNames[0xfb52] = "ref.is_i31";
+exports.OperatorCodeNames[0xfb58] = "ref.as_func";
+exports.OperatorCodeNames[0xfb59] = "ref.as_data";
+exports.OperatorCodeNames[0xfb5a] = "ref.as_i31";
+exports.OperatorCodeNames[0xfb60] = "br_on_func";
+exports.OperatorCodeNames[0xfb61] = "br_on_data";
+exports.OperatorCodeNames[0xfb62] = "br_on_i31";
 var ExternalKind;
 (function (ExternalKind) {
     ExternalKind[ExternalKind["Function"] = 0] = "Function";
     ExternalKind[ExternalKind["Table"] = 1] = "Table";
     ExternalKind[ExternalKind["Memory"] = 2] = "Memory";
     ExternalKind[ExternalKind["Global"] = 3] = "Global";
+    ExternalKind[ExternalKind["Event"] = 4] = "Event";
 })(ExternalKind = exports.ExternalKind || (exports.ExternalKind = {}));
-var Type;
-(function (Type) {
-    Type[Type["unspecified"] = 0] = "unspecified";
-    Type[Type["i32"] = -1] = "i32";
-    Type[Type["i64"] = -2] = "i64";
-    Type[Type["f32"] = -3] = "f32";
-    Type[Type["f64"] = -4] = "f64";
-    Type[Type["v128"] = -5] = "v128";
-    Type[Type["anyfunc"] = -16] = "anyfunc";
-    Type[Type["anyref"] = -17] = "anyref";
-    Type[Type["func"] = -32] = "func";
-    Type[Type["empty_block_type"] = -64] = "empty_block_type";
-})(Type = exports.Type || (exports.Type = {}));
+var TypeKind;
+(function (TypeKind) {
+    TypeKind[TypeKind["unspecified"] = 0] = "unspecified";
+    TypeKind[TypeKind["i32"] = -1] = "i32";
+    TypeKind[TypeKind["i64"] = -2] = "i64";
+    TypeKind[TypeKind["f32"] = -3] = "f32";
+    TypeKind[TypeKind["f64"] = -4] = "f64";
+    TypeKind[TypeKind["v128"] = -5] = "v128";
+    TypeKind[TypeKind["i8"] = -6] = "i8";
+    TypeKind[TypeKind["i16"] = -7] = "i16";
+    TypeKind[TypeKind["funcref"] = -16] = "funcref";
+    TypeKind[TypeKind["externref"] = -17] = "externref";
+    TypeKind[TypeKind["anyref"] = -18] = "anyref";
+    TypeKind[TypeKind["eqref"] = -19] = "eqref";
+    TypeKind[TypeKind["optref"] = -20] = "optref";
+    TypeKind[TypeKind["ref"] = -21] = "ref";
+    TypeKind[TypeKind["i31ref"] = -22] = "i31ref";
+    TypeKind[TypeKind["rtt_d"] = -23] = "rtt_d";
+    TypeKind[TypeKind["rtt"] = -24] = "rtt";
+    TypeKind[TypeKind["dataref"] = -25] = "dataref";
+    TypeKind[TypeKind["func"] = -32] = "func";
+    TypeKind[TypeKind["struct"] = -33] = "struct";
+    TypeKind[TypeKind["array"] = -34] = "array";
+    TypeKind[TypeKind["empty_block_type"] = -64] = "empty_block_type";
+})(TypeKind = exports.TypeKind || (exports.TypeKind = {}));
+var Type =  (function () {
+    function Type(kind, index, depth) {
+        if (index === void 0) { index = -1; }
+        if (depth === void 0) { depth = -1; }
+        if (kind < 0 || (kind === 0 && index >= 0)) {
+            
+        }
+        else {
+            throw new Error("invalid type: " + kind + "/" + index + "/" + depth);
+        }
+        this.kind = kind;
+        this.index = index;
+        this.depth = depth;
+        
+        if ((index === -16  && kind === -20 ) ||
+            (index === -17  && kind === -20 ) ||
+            (index === -18  && kind === -20 ) ||
+            (index === -19  && kind === -20 ) ||
+            (index === -22  && kind === -21 ) ||
+            (index === -25  && kind === -21 )) {
+            this.kind = index;
+            this.index = -1;
+        }
+    }
+    
+    Type.funcref = new Type(-16 );
+    Type.externref = new Type(-17 );
+    return Type;
+}());
+exports.Type = Type;
 var RelocType;
 (function (RelocType) {
     RelocType[RelocType["FunctionIndex_LEB"] = 0] = "FunctionIndex_LEB";
@@ -1144,6 +1328,12 @@ var NameType;
     NameType[NameType["Module"] = 0] = "Module";
     NameType[NameType["Function"] = 1] = "Function";
     NameType[NameType["Local"] = 2] = "Local";
+    NameType[NameType["Event"] = 3] = "Event";
+    NameType[NameType["Type"] = 4] = "Type";
+    NameType[NameType["Table"] = 5] = "Table";
+    NameType[NameType["Memory"] = 6] = "Memory";
+    NameType[NameType["Global"] = 7] = "Global";
+    NameType[NameType["Field"] = 10] = "Field";
 })(NameType = exports.NameType || (exports.NameType = {}));
 var BinaryReaderState;
 (function (BinaryReaderState) {
@@ -1168,6 +1358,7 @@ var BinaryReaderState;
     BinaryReaderState[BinaryReaderState["ELEMENT_SECTION_ENTRY"] = 20] = "ELEMENT_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["LINKING_SECTION_ENTRY"] = 21] = "LINKING_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["START_SECTION_ENTRY"] = 22] = "START_SECTION_ENTRY";
+    BinaryReaderState[BinaryReaderState["EVENT_SECTION_ENTRY"] = 23] = "EVENT_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["BEGIN_INIT_EXPRESSION_BODY"] = 25] = "BEGIN_INIT_EXPRESSION_BODY";
     BinaryReaderState[BinaryReaderState["INIT_EXPRESSION_OPERATOR"] = 26] = "INIT_EXPRESSION_OPERATOR";
     BinaryReaderState[BinaryReaderState["END_INIT_EXPRESSION_BODY"] = 27] = "END_INIT_EXPRESSION_BODY";
@@ -1187,14 +1378,69 @@ var BinaryReaderState;
     BinaryReaderState[BinaryReaderState["RELOC_SECTION_HEADER"] = 41] = "RELOC_SECTION_HEADER";
     BinaryReaderState[BinaryReaderState["RELOC_SECTION_ENTRY"] = 42] = "RELOC_SECTION_ENTRY";
     BinaryReaderState[BinaryReaderState["SOURCE_MAPPING_URL"] = 43] = "SOURCE_MAPPING_URL";
+    BinaryReaderState[BinaryReaderState["BEGIN_OFFSET_EXPRESSION_BODY"] = 44] = "BEGIN_OFFSET_EXPRESSION_BODY";
+    BinaryReaderState[BinaryReaderState["OFFSET_EXPRESSION_OPERATOR"] = 45] = "OFFSET_EXPRESSION_OPERATOR";
+    BinaryReaderState[BinaryReaderState["END_OFFSET_EXPRESSION_BODY"] = 46] = "END_OFFSET_EXPRESSION_BODY";
 })(BinaryReaderState = exports.BinaryReaderState || (exports.BinaryReaderState = {}));
-var SegmentFlags;
-(function (SegmentFlags) {
-    SegmentFlags[SegmentFlags["IsPassive"] = 1] = "IsPassive";
-    SegmentFlags[SegmentFlags["HasTableIndex"] = 2] = "HasTableIndex";
-    SegmentFlags[SegmentFlags["FunctionsAsElements"] = 4] = "FunctionsAsElements";
-})(SegmentFlags = exports.SegmentFlags || (exports.SegmentFlags = {}));
-exports.NULL_FUNCTION_INDEX = 0xffffffff;
+var DataSegmentType;
+(function (DataSegmentType) {
+    DataSegmentType[DataSegmentType["Active"] = 0] = "Active";
+    DataSegmentType[DataSegmentType["Passive"] = 1] = "Passive";
+    DataSegmentType[DataSegmentType["ActiveWithMemoryIndex"] = 2] = "ActiveWithMemoryIndex";
+})(DataSegmentType || (DataSegmentType = {}));
+function isActiveDataSegmentType(segmentType) {
+    switch (segmentType) {
+        case 0 :
+        case 2 :
+            return true;
+        default:
+            return false;
+    }
+}
+var DataMode;
+(function (DataMode) {
+    DataMode[DataMode["Active"] = 0] = "Active";
+    DataMode[DataMode["Passive"] = 1] = "Passive";
+})(DataMode = exports.DataMode || (exports.DataMode = {}));
+var ElementSegmentType;
+(function (ElementSegmentType) {
+    ElementSegmentType[ElementSegmentType["LegacyActiveFuncrefExternval"] = 0] = "LegacyActiveFuncrefExternval";
+    ElementSegmentType[ElementSegmentType["PassiveExternval"] = 1] = "PassiveExternval";
+    ElementSegmentType[ElementSegmentType["ActiveExternval"] = 2] = "ActiveExternval";
+    ElementSegmentType[ElementSegmentType["DeclaredExternval"] = 3] = "DeclaredExternval";
+    ElementSegmentType[ElementSegmentType["LegacyActiveFuncrefElemexpr"] = 4] = "LegacyActiveFuncrefElemexpr";
+    ElementSegmentType[ElementSegmentType["PassiveElemexpr"] = 5] = "PassiveElemexpr";
+    ElementSegmentType[ElementSegmentType["ActiveElemexpr"] = 6] = "ActiveElemexpr";
+    ElementSegmentType[ElementSegmentType["DeclaredElemexpr"] = 7] = "DeclaredElemexpr";
+})(ElementSegmentType || (ElementSegmentType = {}));
+function isActiveElementSegmentType(segmentType) {
+    switch (segmentType) {
+        case 0 :
+        case 2 :
+        case 4 :
+        case 6 :
+            return true;
+        default:
+            return false;
+    }
+}
+function isExternvalElementSegmentType(segmentType) {
+    switch (segmentType) {
+        case 0 :
+        case 1 :
+        case 2 :
+        case 3 :
+            return true;
+        default:
+            return false;
+    }
+}
+var ElementMode;
+(function (ElementMode) {
+    ElementMode[ElementMode["Active"] = 0] = "Active";
+    ElementMode[ElementMode["Passive"] = 1] = "Passive";
+    ElementMode[ElementMode["Declarative"] = 2] = "Declarative";
+})(ElementMode = exports.ElementMode || (exports.ElementMode = {}));
 var DataRange =  (function () {
     function DataRange(start, end) {
         this.start = start;
@@ -1292,21 +1538,9 @@ var BinaryReader =  (function () {
         this._sectionId = -1 ;
         this._sectionRange = null;
         this._functionRange = null;
+        this._segmentType = 0;
+        this._segmentEntriesLeft = 0;
     }
-    Object.defineProperty(BinaryReader.prototype, "currentSection", {
-        get: function () {
-            return this.result; 
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(BinaryReader.prototype, "currentFunction", {
-        get: function () {
-            return this.result; 
-        },
-        enumerable: false,
-        configurable: true
-    });
     Object.defineProperty(BinaryReader.prototype, "data", {
         get: function () {
             return this._data;
@@ -1348,11 +1582,6 @@ var BinaryReader =  (function () {
     BinaryReader.prototype.readUint8 = function () {
         return this._data[this._pos++];
     };
-    BinaryReader.prototype.readUint16 = function () {
-        var b1 = this._data[this._pos++];
-        var b2 = this._data[this._pos++];
-        return b1 | (b2 << 8);
-    };
     BinaryReader.prototype.readInt32 = function () {
         var b1 = this._data[this._pos++];
         var b2 = this._data[this._pos++];
@@ -1369,9 +1598,6 @@ var BinaryReader =  (function () {
         var b3 = this._data[this._pos + 2];
         var b4 = this._data[this._pos + 3];
         return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
-    };
-    BinaryReader.prototype.peekUint32 = function () {
-        return this.peekInt32();
     };
     BinaryReader.prototype.hasVarIntBytes = function () {
         var pos = this._pos;
@@ -1442,6 +1668,52 @@ var BinaryReader =  (function () {
         }
         return new Int64(result);
     };
+    
+    
+    BinaryReader.prototype.readHeapType = function () {
+        var result = 0;
+        var shift = 0;
+        var byte;
+        while (true) {
+            byte = this.readUint8();
+            if (shift === 28) {
+                var signed = (byte << 25) >> 25;
+                return signed * Math.pow(2, 28) + result;
+            }
+            result |= (byte & 0x7f) << shift;
+            shift += 7;
+            if ((byte & 0x80) === 0)
+                break;
+        }
+        shift = 32 - shift;
+        return (result << shift) >> shift;
+    };
+    BinaryReader.prototype.readTypeInternal = function (kind) {
+        if (kind === -21  ||
+            kind === -20  ||
+            kind === -24 ) {
+            var index = this.readHeapType();
+            return new Type(kind, index);
+        }
+        if (kind === -23 ) {
+            var index = this.readHeapType();
+            var depth = this.readVarUint32();
+            return new Type(kind, index, depth);
+        }
+        return new Type(kind);
+    };
+    BinaryReader.prototype.readType = function () {
+        var kind = this.readVarInt7();
+        return this.readTypeInternal(kind);
+    };
+    BinaryReader.prototype.readBlockType = function () {
+        var block_type = this.readHeapType();
+        if (block_type < 0) {
+            return this.readTypeInternal(block_type);
+        }
+        var func_index = block_type;
+        return new Type(0 , func_index);
+    };
     BinaryReader.prototype.readStringBytes = function () {
         var length = this.readVarUint32() >>> 0;
         return this.readBytes(length);
@@ -1450,6 +1722,9 @@ var BinaryReader =  (function () {
         var result = this._data.subarray(this._pos, this._pos + length);
         this._pos += length;
         return new Uint8Array(result); 
+    };
+    BinaryReader.prototype.skipBytes = function (length) {
+        this._pos += length;
     };
     BinaryReader.prototype.hasStringBytes = function () {
         if (!this.hasVarIntBytes())
@@ -1464,19 +1739,41 @@ var BinaryReader =  (function () {
         return this.hasBytes(this._sectionRange.end - this._pos);
     };
     BinaryReader.prototype.readFuncType = function () {
-        var form = this.readVarInt7();
         var paramCount = this.readVarUint32() >>> 0;
-        var paramTypes = new Int8Array(paramCount);
+        var paramTypes = new Array(paramCount);
         for (var i = 0; i < paramCount; i++)
-            paramTypes[i] = this.readVarInt7();
+            paramTypes[i] = this.readType();
         var returnCount = this.readVarUint1();
-        var returnTypes = new Int8Array(returnCount);
+        var returnTypes = new Array(returnCount);
         for (var i = 0; i < returnCount; i++)
-            returnTypes[i] = this.readVarInt7();
+            returnTypes[i] = this.readType();
         return {
-            form: form,
+            form: -32 ,
             params: paramTypes,
             returns: returnTypes,
+        };
+    };
+    BinaryReader.prototype.readStructType = function () {
+        var fieldCount = this.readVarUint32() >>> 0;
+        var fieldTypes = new Array(fieldCount);
+        var fieldMutabilities = new Array(fieldCount);
+        for (var i = 0; i < fieldCount; i++) {
+            fieldTypes[i] = this.readType();
+            fieldMutabilities[i] = !!this.readVarUint1();
+        }
+        return {
+            form: -33 ,
+            fields: fieldTypes,
+            mutabilities: fieldMutabilities,
+        };
+    };
+    BinaryReader.prototype.readArrayType = function () {
+        var elementType = this.readType();
+        var mutability = !!this.readVarUint1();
+        return {
+            form: -34 ,
+            elementType: elementType,
+            mutability: mutability,
         };
     };
     BinaryReader.prototype.readResizableLimits = function (maxPresent) {
@@ -1488,7 +1785,7 @@ var BinaryReader =  (function () {
         return { initial: initial, maximum: maximum };
     };
     BinaryReader.prototype.readTableType = function () {
-        var elementType = this.readVarInt7();
+        var elementType = this.readType();
         var flags = this.readVarUint32() >>> 0;
         var limits = this.readResizableLimits(!!(flags & 0x01));
         return { elementType: elementType, limits: limits };
@@ -1506,7 +1803,7 @@ var BinaryReader =  (function () {
             return null;
         }
         var pos = this._pos;
-        var contentType = this.readVarInt7();
+        var contentType = this.readType();
         if (!this.hasVarIntBytes()) {
             this._pos = pos;
             return null;
@@ -1514,13 +1811,34 @@ var BinaryReader =  (function () {
         var mutability = this.readVarUint1();
         return { contentType: contentType, mutability: mutability };
     };
+    BinaryReader.prototype.readEventType = function () {
+        var attribute = this.readVarUint32() >>> 0;
+        var typeIndex = this.readVarUint32() >>> 0;
+        return {
+            attribute: attribute,
+            typeIndex: typeIndex,
+        };
+    };
     BinaryReader.prototype.readTypeEntry = function () {
         if (this._sectionEntriesLeft === 0) {
             this.skipSection();
             return this.read();
         }
         this.state = 11 ;
-        this.result = this.readFuncType();
+        var form = this.readVarInt7();
+        switch (form) {
+            case -32 :
+                this.result = this.readFuncType();
+                break;
+            case -33 :
+                this.result = this.readStructType();
+                break;
+            case -34 :
+                this.result = this.readArrayType();
+                break;
+            default:
+                throw new Error("Unknown type kind: " + form);
+        }
         this._sectionEntriesLeft--;
         return true;
     };
@@ -1547,6 +1865,9 @@ var BinaryReader =  (function () {
                 break;
             case 3 :
                 type = this.readGlobalType();
+                break;
+            case 4 :
+                type = this.readEventType();
                 break;
         }
         this.result = {
@@ -1603,6 +1924,16 @@ var BinaryReader =  (function () {
         this._sectionEntriesLeft--;
         return true;
     };
+    BinaryReader.prototype.readEventEntry = function () {
+        if (this._sectionEntriesLeft === 0) {
+            this.skipSection();
+            return this.read();
+        }
+        this.state = 23 ;
+        this.result = this.readEventType();
+        this._sectionEntriesLeft--;
+        return true;
+    };
     BinaryReader.prototype.readGlobalEntry = function () {
         if (this._sectionEntriesLeft === 0) {
             this.skipSection();
@@ -1625,82 +1956,74 @@ var BinaryReader =  (function () {
             this.skipSection();
             return this.read();
         }
-        if (!this.hasVarIntBytes()) {
+        var pos = this._pos;
+        if (!this.hasMoreBytes()) {
             this.state = 20 ;
             return false;
         }
-        var flags = this.readVarUint7();
-        var tableIndex = 0;
-        if (flags & 2 ) {
-            tableIndex = this.readVarUint32();
+        var segmentType = this.readUint8();
+        var mode, tableIndex;
+        switch (segmentType) {
+            case 0 :
+            case 4 :
+                mode = 0 ;
+                tableIndex = 0;
+                break;
+            case 1 :
+            case 5 :
+                mode = 1 ;
+                break;
+            case 2 :
+            case 6 :
+                mode = 0 ;
+                if (!this.hasVarIntBytes()) {
+                    this.state = 20 ;
+                    this._pos = pos;
+                    return false;
+                }
+                tableIndex = this.readVarUint32();
+                break;
+            case 3 :
+            case 7 :
+                mode = 2 ;
+                break;
+            default:
+                throw new Error("Unsupported element segment type " + segmentType);
         }
         this.state = 33 ;
-        this.result = { index: tableIndex };
+        this.result = { mode: mode, tableIndex: tableIndex };
         this._sectionEntriesLeft--;
-        this._segmentFlags = flags;
+        this._segmentType = segmentType;
         return true;
     };
     BinaryReader.prototype.readElementEntryBody = function () {
-        var funcType = 0 ;
-        var pos = this._pos;
-        if (this._segmentFlags &
-            (1  | 2 )) {
-            if (!this.hasMoreBytes())
-                return false;
-            funcType = this.readVarInt7();
-        }
-        if (!this.hasVarIntBytes()) {
-            this._pos = pos;
-            return false;
-        }
-        var numElemements = this.readVarUint32();
-        var elements = new Uint32Array(numElemements);
-        for (var i = 0; i < numElemements; i++) {
-            if (this._segmentFlags & 4 ) {
-                if (!this.hasMoreBytes()) {
-                    this._pos = pos;
+        var elementType = Type.funcref;
+        switch (this._segmentType) {
+            case 1 :
+            case 2 :
+            case 3 :
+                if (!this.hasMoreBytes())
                     return false;
-                }
                 
-                var operator = this.readUint8();
-                if (operator == 208 ) {
-                    elements[i] = exports.NULL_FUNCTION_INDEX;
-                }
-                else if (operator == 210 ) {
-                    if (!this.hasVarIntBytes()) {
-                        this._pos = pos;
-                        return false;
-                    }
-                    elements[i] = this.readVarInt32();
-                }
-                else {
-                    this.error = new Error("Invalid initializer expression for element");
-                    return true;
-                }
-                if (!this.hasMoreBytes()) {
-                    this._pos = pos;
+                
+                this.skipBytes(1);
+                break;
+            case 5 :
+            case 6 :
+            case 7 :
+                if (!this.hasMoreBytes())
                     return false;
-                }
-                operator = this.readUint8();
-                if (operator != 11 ) {
-                    this.error = new Error("Expected end of initializer expression for element");
-                    return true;
-                }
-            }
-            else {
-                if (!this.hasVarIntBytes()) {
-                    this._pos = pos;
-                    return false;
-                }
-                elements[i] = this.readVarUint32();
-            }
+                elementType = this.readType();
+                break;
+            case 0 :
+            case 4 :
+                
+                break;
+            default:
+                throw new Error("Unsupported element segment type " + this._segmentType);
         }
         this.state = 34 ;
-        this.result = {
-            elements: elements,
-            elementType: funcType,
-            asElements: !!(this._segmentFlags & 4 ),
-        };
+        this.result = { elementType: elementType };
         return true;
     };
     BinaryReader.prototype.readDataEntry = function () {
@@ -1708,19 +2031,37 @@ var BinaryReader =  (function () {
             this.skipSection();
             return this.read();
         }
+        var pos = this._pos;
         if (!this.hasVarIntBytes()) {
+            this.state = 18 ;
             return false;
         }
-        this._segmentFlags = this.readVarUint32();
-        var index = 0;
-        if (this._segmentFlags == 2 ) {
-            index = this.readVarUint32();
+        var segmentType = this.readVarUint32();
+        var mode, memoryIndex;
+        switch (segmentType) {
+            case 0 :
+                mode = 0 ;
+                memoryIndex = 0;
+                break;
+            case 1 :
+                mode = 1 ;
+                break;
+            case 2 :
+                mode = 0 ;
+                if (!this.hasVarIntBytes()) {
+                    this._pos = pos;
+                    this.state = 18 ;
+                    return false;
+                }
+                memoryIndex = this.readVarUint32();
+                break;
+            default:
+                throw new Error("Unsupported data segment type " + segmentType);
         }
         this.state = 36 ;
-        this.result = {
-            index: index,
-        };
+        this.result = { mode: mode, memoryIndex: memoryIndex };
         this._sectionEntriesLeft--;
+        this._segmentType = segmentType;
         return true;
     };
     BinaryReader.prototype.readDataEntryBody = function () {
@@ -1738,14 +2079,15 @@ var BinaryReader =  (function () {
         this.result = null;
         return true;
     };
+    BinaryReader.prototype.readOffsetExpressionBody = function () {
+        this.state = 44 ;
+        this.result = null;
+        return true;
+    };
     BinaryReader.prototype.readMemoryImmediate = function () {
         var flags = this.readVarUint32() >>> 0;
         var offset = this.readVarUint32() >>> 0;
         return { flags: flags, offset: offset };
-    };
-    BinaryReader.prototype.readLineIndex = function (max) {
-        var index = this.readUint8();
-        return index;
     };
     BinaryReader.prototype.readNameMap = function () {
         var count = this.readVarUint32();
@@ -1784,6 +2126,11 @@ var BinaryReader =  (function () {
                 };
                 break;
             case 1 :
+            case 3 :
+            case 4 :
+            case 5 :
+            case 6 :
+            case 7 :
                 result = {
                     type: type,
                     names: this.readNameMap(),
@@ -1804,10 +2151,26 @@ var BinaryReader =  (function () {
                     funcs: funcs,
                 };
                 break;
+            case 10 :
+                var typesLength = this.readVarUint32();
+                var types = [];
+                for (var i = 0; i < typesLength; i++) {
+                    var fieldIndex = this.readVarUint32();
+                    types.push({
+                        index: fieldIndex,
+                        fields: this.readNameMap(),
+                    });
+                }
+                result = {
+                    type: type,
+                    types: types,
+                };
+                break;
             default:
-                this.error = new Error("Bad name entry type: " + type);
-                this.state = -1 ;
-                return true;
+                
+                
+                this.skipBytes(payloadLength);
+                return this.read();
         }
         this.state = 19 ;
         this.result = result;
@@ -1922,8 +2285,85 @@ var BinaryReader =  (function () {
         this._sectionEntriesLeft--;
         return true;
     };
+    BinaryReader.prototype.readCodeOperator_0xfb = function () {
+        
+        
+        var MAX_CODE_OPERATOR_0XFB_SIZE = 12;
+        if (!this._eof && !this.hasBytes(MAX_CODE_OPERATOR_0XFB_SIZE)) {
+            return false;
+        }
+        var code, brDepth, refType, fieldIndex;
+        code = this._data[this._pos++] | 0xfb00;
+        switch (code) {
+            case 64322 :
+            case 64352 :
+            case 64353 :
+            case 64354 :
+                brDepth = this.readVarUint32() >>> 0;
+                break;
+            case 64275 :
+            case 64276 :
+            case 64277 :
+            case 64279 :
+            case 64278 :
+            case 64273 :
+            case 64274 :
+            case 64257 :
+            case 64258 :
+            case 64304 :
+            case 64305 :
+                refType = this.readHeapType();
+                break;
+            case 64259 :
+            case 64260 :
+            case 64261 :
+            case 64262 :
+                refType = this.readHeapType();
+                fieldIndex = this.readVarUint32();
+                break;
+            case 64336 :
+            case 64337 :
+            case 64338 :
+            case 64344 :
+            case 64345 :
+            case 64346 :
+            case 64320 :
+            case 64321 :
+            case 64288 :
+            case 64289 :
+            case 64290 :
+                break;
+            default:
+                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
+                this.state = -1 ;
+                return true;
+        }
+        this.result = {
+            code: code,
+            blockType: undefined,
+            refType: refType,
+            brDepth: brDepth,
+            brTable: undefined,
+            tableIndex: undefined,
+            funcIndex: undefined,
+            typeIndex: undefined,
+            localIndex: undefined,
+            globalIndex: undefined,
+            fieldIndex: fieldIndex,
+            memoryAddress: undefined,
+            literal: undefined,
+            segmentIndex: undefined,
+            destinationIndex: undefined,
+            lines: undefined,
+            lineIndex: undefined,
+        };
+        return true;
+    };
     BinaryReader.prototype.readCodeOperator_0xfc = function () {
-        var code = this._data[this._pos++] | 0xfc00;
+        if (!this.hasVarIntBytes()) {
+            return false;
+        }
+        var code = this.readVarUint32() | 0xfc00;
         var reserved, segmentIndex, destinationIndex, tableIndex;
         switch (code) {
             case 64512 :
@@ -1965,13 +2405,14 @@ var BinaryReader =  (function () {
                 segmentIndex = this.readVarUint32() >>> 0;
                 break;
             default:
-                this.error = new Error("Unknown operator: " + code);
+                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
                 this.state = -1 ;
                 return true;
         }
         this.result = {
             code: code,
             blockType: undefined,
+            refType: undefined,
             brDepth: undefined,
             brTable: undefined,
             funcIndex: undefined,
@@ -1979,6 +2420,7 @@ var BinaryReader =  (function () {
             tableIndex: tableIndex,
             localIndex: undefined,
             globalIndex: undefined,
+            fieldIndex: undefined,
             memoryAddress: undefined,
             literal: undefined,
             segmentIndex: segmentIndex,
@@ -1994,6 +2436,9 @@ var BinaryReader =  (function () {
         if (!this._eof && pos + MAX_CODE_OPERATOR_0XFD_SIZE > this._length) {
             return false;
         }
+        if (!this.hasVarIntBytes()) {
+            return false;
+        }
         var code = this.readVarUint32() | 0xfd00;
         var memoryAddress;
         var literal;
@@ -2001,7 +2446,19 @@ var BinaryReader =  (function () {
         var lines;
         switch (code) {
             case 64768 :
+            case 64769 :
+            case 64770 :
+            case 64771 :
+            case 64772 :
+            case 64773 :
+            case 64774 :
+            case 64775 :
+            case 64776 :
+            case 64777 :
+            case 64778 :
             case 64779 :
+            case 64860 :
+            case 64861 :
                 memoryAddress = this.readMemoryImmediate();
                 break;
             case 64780 :
@@ -2009,31 +2466,27 @@ var BinaryReader =  (function () {
                 break;
             case 64781 :
                 lines = new Uint8Array(16);
-                for (var i = 0; i < lines.length; i++)
-                    lines[i] = this.readLineIndex(32);
+                for (var i = 0; i < lines.length; i++) {
+                    lines[i] = this.readUint8();
+                }
                 break;
             case 64789 :
             case 64790 :
             case 64791 :
-                lineIndex = this.readLineIndex(16);
-                break;
             case 64792 :
             case 64793 :
             case 64794 :
-                lineIndex = this.readLineIndex(8);
-                break;
             case 64795 :
             case 64796 :
-            case 64799 :
-            case 64800 :
-                lineIndex = this.readLineIndex(4);
-                break;
             case 64797 :
             case 64798 :
+            case 64799 :
+            case 64800 :
             case 64801 :
             case 64802 :
-                lineIndex = this.readLineIndex(2);
+                lineIndex = this.readUint8();
                 break;
+            case 64782 :
             case 64783 :
             case 64784 :
             case 64785 :
@@ -2084,12 +2537,24 @@ var BinaryReader =  (function () {
             case 64844 :
             case 64845 :
             case 64846 :
+            case 64847 :
             case 64848 :
             case 64849 :
             case 64850 :
+            case 64851 :
+            case 64862 :
+            case 64863 :
+            case 64864 :
             case 64865 :
             case 64866 :
             case 64867 :
+            case 64868 :
+            case 64869 :
+            case 64870 :
+            case 103 :
+            case 104 :
+            case 105 :
+            case 106 :
             case 64875 :
             case 64876 :
             case 64877 :
@@ -2099,9 +2564,29 @@ var BinaryReader =  (function () {
             case 64881 :
             case 64882 :
             case 64883 :
+            case 64884 :
+            case 64885 :
+            case 64886 :
+            case 64887 :
+            case 64888 :
+            case 64889 :
+            case 64890 :
+            case 64891 :
+            case 64892 :
+            case 64893 :
+            case 64894 :
+            case 64895 :
+            case 64896 :
             case 64897 :
             case 64898 :
             case 64899 :
+            case 64900 :
+            case 64901 :
+            case 64902 :
+            case 64903 :
+            case 64904 :
+            case 64905 :
+            case 64906 :
             case 64907 :
             case 64908 :
             case 64909 :
@@ -2111,22 +2596,65 @@ var BinaryReader =  (function () {
             case 64913 :
             case 64914 :
             case 64915 :
+            case 64916 :
             case 64917 :
+            case 64918 :
+            case 64919 :
+            case 64920 :
+            case 64921 :
+            case 64923 :
+            case 64924 :
+            case 64925 :
+            case 64926 :
+            case 64927 :
+            case 64928 :
             case 64929 :
-            case 64930 :
             case 64931 :
+            case 64932 :
+            case 64935 :
+            case 64936 :
+            case 64937 :
+            case 64938 :
             case 64939 :
             case 64940 :
             case 64941 :
             case 64942 :
             case 64945 :
             case 64949 :
+            case 64950 :
+            case 64951 :
+            case 64952 :
+            case 64953 :
+            case 64954 :
+            case 64956 :
+            case 64957 :
+            case 64958 :
+            case 64959 :
+            case 64960 :
             case 64961 :
+            case 64963 :
+            case 64964 :
+            case 64967 :
+            case 64968 :
+            case 64969 :
+            case 64970 :
             case 64971 :
             case 64972 :
             case 64973 :
             case 64974 :
             case 64977 :
+            case 64981 :
+            case 64982 :
+            case 64983 :
+            case 64984 :
+            case 64985 :
+            case 64986 :
+            case 64987 :
+            case 64988 :
+            case 64989 :
+            case 64988 :
+            case 64989 :
+            case 64992 :
             case 64992 :
             case 64993 :
             case 64995 :
@@ -2136,6 +2664,8 @@ var BinaryReader =  (function () {
             case 64999 :
             case 65000 :
             case 65001 :
+            case 65002 :
+            case 65003 :
             case 65004 :
             case 65005 :
             case 65007 :
@@ -2145,25 +2675,33 @@ var BinaryReader =  (function () {
             case 65011 :
             case 65012 :
             case 65013 :
+            case 65014 :
+            case 65015 :
             case 65016 :
             case 65017 :
             case 65018 :
             case 65019 :
+            case 65020 :
+            case 65021 :
+            case 65022 :
+            case 65023 :
                 break;
             default:
-                this.error = new Error("Unknown operator: " + code);
+                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
                 this.state = -1 ;
                 return true;
         }
         this.result = {
             code: code,
             blockType: undefined,
+            refType: undefined,
             brDepth: undefined,
             brTable: undefined,
             funcIndex: undefined,
             typeIndex: undefined,
             localIndex: undefined,
             globalIndex: undefined,
+            fieldIndex: undefined,
             memoryAddress: memoryAddress,
             literal: literal,
             segmentIndex: undefined,
@@ -2179,7 +2717,10 @@ var BinaryReader =  (function () {
         if (!this._eof && pos + MAX_CODE_OPERATOR_0XFE_SIZE > this._length) {
             return false;
         }
-        var code = this._data[this._pos++] | 0xfe00;
+        if (!this.hasVarIntBytes()) {
+            return false;
+        }
+        var code = this.readVarUint32() | 0xfe00;
         var memoryAddress;
         switch (code) {
             case 65024 :
@@ -2260,19 +2801,21 @@ var BinaryReader =  (function () {
                 break;
             }
             default:
-                this.error = new Error("Unknown operator: " + code);
+                this.error = new Error("Unknown operator: 0x" + code.toString(16).padStart(4, "0"));
                 this.state = -1 ;
                 return true;
         }
         this.result = {
             code: code,
             blockType: undefined,
+            refType: undefined,
             brDepth: undefined,
             brTable: undefined,
             funcIndex: undefined,
             typeIndex: undefined,
             localIndex: undefined,
             globalIndex: undefined,
+            fieldIndex: undefined,
             memoryAddress: memoryAddress,
             literal: undefined,
             segmentIndex: undefined,
@@ -2283,289 +2826,347 @@ var BinaryReader =  (function () {
         return true;
     };
     BinaryReader.prototype.readCodeOperator = function () {
-        if (this.state === 30  &&
-            this._pos >= this._functionRange.end) {
-            this.skipFunctionBody();
-            return this.read();
-        }
-        else if (this.state === 26  &&
-            this.result &&
-            this.result.code === 11 ) {
-            this.state = 27 ;
-            this.result = null;
-            return true;
-        }
-        var MAX_CODE_OPERATOR_SIZE = 11; 
-        var pos = this._pos;
-        if (!this._eof && pos + MAX_CODE_OPERATOR_SIZE > this._length) {
-            return false;
-        }
-        var code = this._data[this._pos++];
-        var blockType, brDepth, brTable, funcIndex, typeIndex, tableIndex, localIndex, globalIndex, memoryAddress, literal, reserved;
-        switch (code) {
-            case 2 :
-            case 3 :
-            case 4 :
-                blockType = this.readVarInt7();
-                break;
-            case 12 :
-            case 13 :
-                brDepth = this.readVarUint32() >>> 0;
-                break;
-            case 14 :
-                var tableCount = this.readVarUint32() >>> 0;
-                if (!this.hasBytes(tableCount + 1)) {
-                    
-                    this._pos = pos;
-                    return false;
+        switch (this.state) {
+            case 30 :
+                if (this._pos >= this._functionRange.end) {
+                    this.skipFunctionBody();
+                    return this.read();
                 }
-                brTable = [];
-                for (var i = 0; i <= tableCount; i++) {
-                    
-                    if (!this.hasVarIntBytes()) {
+                break;
+            case 26 :
+                if (this.result &&
+                    this.result.code === 11 ) {
+                    this.state = 27 ;
+                    this.result = null;
+                    return true;
+                }
+                break;
+            case 45 :
+                if (this.result &&
+                    this.result.code === 11 ) {
+                    this.state = 46 ;
+                    this.result = null;
+                    return true;
+                }
+                break;
+        }
+        var code, blockType, refType, brDepth, brTable, relativeDepth, funcIndex, typeIndex, tableIndex, localIndex, globalIndex, eventIndex, memoryAddress, literal, reserved;
+        if (this.state === 26  &&
+            this._sectionId === 9  &&
+            isExternvalElementSegmentType(this._segmentType)) {
+            
+            
+            if (this.result &&
+                this.result.code === 210 ) {
+                code = 11 ;
+            }
+            else {
+                if (!this.hasVarIntBytes())
+                    return false;
+                code = 210 ;
+                funcIndex = this.readVarUint32();
+            }
+        }
+        else {
+            var MAX_CODE_OPERATOR_SIZE = 11; 
+            var pos = this._pos;
+            if (!this._eof && pos + MAX_CODE_OPERATOR_SIZE > this._length) {
+                return false;
+            }
+            code = this._data[this._pos++];
+            switch (code) {
+                case 2 :
+                case 3 :
+                case 4 :
+                case 6 :
+                    blockType = this.readBlockType();
+                    break;
+                case 12 :
+                case 13 :
+                case 212 :
+                    brDepth = this.readVarUint32() >>> 0;
+                    break;
+                case 14 :
+                    var tableCount = this.readVarUint32() >>> 0;
+                    if (!this.hasBytes(tableCount + 1)) {
+                        
                         this._pos = pos;
                         return false;
                     }
-                    brTable.push(this.readVarUint32() >>> 0);
-                }
-                break;
-            case 16 :
-            case 18 :
-            case 210 :
-                funcIndex = this.readVarUint32() >>> 0;
-                break;
-            case 17 :
-            case 19 :
-                typeIndex = this.readVarUint32() >>> 0;
-                reserved = this.readVarUint1();
-                break;
-            case 32 :
-            case 33 :
-            case 34 :
-                localIndex = this.readVarUint32() >>> 0;
-                break;
-            case 35 :
-            case 36 :
-                globalIndex = this.readVarUint32() >>> 0;
-                break;
-            case 37 :
-            case 38 :
-                tableIndex = this.readVarUint32() >>> 0;
-                break;
-            case 40 :
-            case 41 :
-            case 42 :
-            case 43 :
-            case 44 :
-            case 45 :
-            case 46 :
-            case 47 :
-            case 48 :
-            case 49 :
-            case 50 :
-            case 51 :
-            case 52 :
-            case 53 :
-            case 54 :
-            case 55 :
-            case 56 :
-            case 57 :
-            case 58 :
-            case 59 :
-            case 60 :
-            case 61 :
-            case 62 :
-                memoryAddress = this.readMemoryImmediate();
-                break;
-            case 63 :
-            case 64 :
-                reserved = this.readVarUint1();
-                break;
-            case 65 :
-                literal = this.readVarInt32();
-                break;
-            case 66 :
-                literal = this.readVarInt64();
-                break;
-            case 67 :
-                literal = new DataView(this._data.buffer, this._data.byteOffset).getFloat32(this._pos, true);
-                this._pos += 4;
-                break;
-            case 68 :
-                literal = new DataView(this._data.buffer, this._data.byteOffset).getFloat64(this._pos, true);
-                this._pos += 8;
-                break;
-            case 252 :
-                if (this.readCodeOperator_0xfc()) {
+                    brTable = [];
+                    for (var i = 0; i <= tableCount; i++) {
+                        
+                        if (!this.hasVarIntBytes()) {
+                            this._pos = pos;
+                            return false;
+                        }
+                        brTable.push(this.readVarUint32() >>> 0);
+                    }
+                    break;
+                case 9 :
+                case 24 :
+                    relativeDepth = this.readVarUint32() >>> 0;
+                    break;
+                case 7 :
+                case 8 :
+                    eventIndex = this.readVarInt32();
+                    break;
+                case 208 :
+                    refType = this.readHeapType();
+                    break;
+                case 16 :
+                case 18 :
+                case 210 :
+                    funcIndex = this.readVarUint32() >>> 0;
+                    break;
+                case 17 :
+                case 19 :
+                    typeIndex = this.readVarUint32() >>> 0;
+                    reserved = this.readVarUint1();
+                    break;
+                case 32 :
+                case 33 :
+                case 34 :
+                    localIndex = this.readVarUint32() >>> 0;
+                    break;
+                case 35 :
+                case 36 :
+                    globalIndex = this.readVarUint32() >>> 0;
+                    break;
+                case 37 :
+                case 38 :
+                    tableIndex = this.readVarUint32() >>> 0;
+                    break;
+                case 40 :
+                case 41 :
+                case 42 :
+                case 43 :
+                case 44 :
+                case 45 :
+                case 46 :
+                case 47 :
+                case 48 :
+                case 49 :
+                case 50 :
+                case 51 :
+                case 52 :
+                case 53 :
+                case 54 :
+                case 55 :
+                case 56 :
+                case 57 :
+                case 58 :
+                case 59 :
+                case 60 :
+                case 61 :
+                case 62 :
+                    memoryAddress = this.readMemoryImmediate();
+                    break;
+                case 63 :
+                case 64 :
+                    reserved = this.readVarUint1();
+                    break;
+                case 65 :
+                    literal = this.readVarInt32();
+                    break;
+                case 66 :
+                    literal = this.readVarInt64();
+                    break;
+                case 67 :
+                    literal = new DataView(this._data.buffer, this._data.byteOffset).getFloat32(this._pos, true);
+                    this._pos += 4;
+                    break;
+                case 68 :
+                    literal = new DataView(this._data.buffer, this._data.byteOffset).getFloat64(this._pos, true);
+                    this._pos += 8;
+                    break;
+                case 251 :
+                    if (this.readCodeOperator_0xfb()) {
+                        return true;
+                    }
+                    this._pos = pos;
+                    return false;
+                case 252 :
+                    if (this.readCodeOperator_0xfc()) {
+                        return true;
+                    }
+                    this._pos = pos;
+                    return false;
+                case 253 :
+                    if (this.readCodeOperator_0xfd()) {
+                        return true;
+                    }
+                    this._pos = pos;
+                    return false;
+                case 254 :
+                    if (this.readCodeOperator_0xfe()) {
+                        return true;
+                    }
+                    this._pos = pos;
+                    return false;
+                case 0 :
+                case 1 :
+                case 5 :
+                case 10 :
+                case 11 :
+                case 15 :
+                case 25 :
+                case 26 :
+                case 27 :
+                case 69 :
+                case 70 :
+                case 71 :
+                case 72 :
+                case 73 :
+                case 74 :
+                case 75 :
+                case 76 :
+                case 77 :
+                case 78 :
+                case 79 :
+                case 80 :
+                case 81 :
+                case 82 :
+                case 83 :
+                case 84 :
+                case 85 :
+                case 86 :
+                case 87 :
+                case 88 :
+                case 89 :
+                case 90 :
+                case 91 :
+                case 92 :
+                case 93 :
+                case 94 :
+                case 95 :
+                case 96 :
+                case 97 :
+                case 98 :
+                case 99 :
+                case 100 :
+                case 101 :
+                case 102 :
+                case 103 :
+                case 104 :
+                case 105 :
+                case 106 :
+                case 107 :
+                case 108 :
+                case 109 :
+                case 110 :
+                case 111 :
+                case 112 :
+                case 113 :
+                case 114 :
+                case 115 :
+                case 116 :
+                case 117 :
+                case 118 :
+                case 119 :
+                case 120 :
+                case 121 :
+                case 122 :
+                case 123 :
+                case 124 :
+                case 125 :
+                case 126 :
+                case 127 :
+                case 128 :
+                case 129 :
+                case 130 :
+                case 131 :
+                case 132 :
+                case 133 :
+                case 134 :
+                case 135 :
+                case 136 :
+                case 137 :
+                case 138 :
+                case 139 :
+                case 140 :
+                case 141 :
+                case 142 :
+                case 143 :
+                case 144 :
+                case 145 :
+                case 146 :
+                case 147 :
+                case 148 :
+                case 149 :
+                case 150 :
+                case 151 :
+                case 152 :
+                case 153 :
+                case 154 :
+                case 155 :
+                case 156 :
+                case 157 :
+                case 158 :
+                case 159 :
+                case 160 :
+                case 161 :
+                case 162 :
+                case 163 :
+                case 164 :
+                case 165 :
+                case 166 :
+                case 167 :
+                case 168 :
+                case 169 :
+                case 170 :
+                case 171 :
+                case 172 :
+                case 173 :
+                case 174 :
+                case 175 :
+                case 176 :
+                case 177 :
+                case 178 :
+                case 179 :
+                case 180 :
+                case 181 :
+                case 182 :
+                case 183 :
+                case 184 :
+                case 185 :
+                case 186 :
+                case 187 :
+                case 188 :
+                case 189 :
+                case 190 :
+                case 191 :
+                case 192 :
+                case 193 :
+                case 194 :
+                case 195 :
+                case 196 :
+                case 20 :
+                case 21 :
+                case 209 :
+                case 211 :
+                case 213 :
+                    break;
+                default:
+                    this.error = new Error("Unknown operator: " + code);
+                    this.state = -1 ;
                     return true;
-                }
-                this._pos = pos;
-                return false;
-            case 253 :
-                if (this.readCodeOperator_0xfd()) {
-                    return true;
-                }
-                this._pos = pos;
-                return false;
-            case 254 :
-                if (this.readCodeOperator_0xfe()) {
-                    return true;
-                }
-                this._pos = pos;
-                return false;
-            case 0 :
-            case 1 :
-            case 5 :
-            case 11 :
-            case 15 :
-            case 26 :
-            case 27 :
-            case 69 :
-            case 70 :
-            case 71 :
-            case 72 :
-            case 73 :
-            case 74 :
-            case 75 :
-            case 76 :
-            case 77 :
-            case 78 :
-            case 79 :
-            case 80 :
-            case 81 :
-            case 82 :
-            case 83 :
-            case 84 :
-            case 85 :
-            case 86 :
-            case 87 :
-            case 88 :
-            case 89 :
-            case 90 :
-            case 91 :
-            case 92 :
-            case 93 :
-            case 94 :
-            case 95 :
-            case 96 :
-            case 97 :
-            case 98 :
-            case 99 :
-            case 100 :
-            case 101 :
-            case 102 :
-            case 103 :
-            case 104 :
-            case 105 :
-            case 106 :
-            case 107 :
-            case 108 :
-            case 109 :
-            case 110 :
-            case 111 :
-            case 112 :
-            case 113 :
-            case 114 :
-            case 115 :
-            case 116 :
-            case 117 :
-            case 118 :
-            case 119 :
-            case 120 :
-            case 121 :
-            case 122 :
-            case 123 :
-            case 124 :
-            case 125 :
-            case 126 :
-            case 127 :
-            case 128 :
-            case 129 :
-            case 130 :
-            case 131 :
-            case 132 :
-            case 133 :
-            case 134 :
-            case 135 :
-            case 136 :
-            case 137 :
-            case 138 :
-            case 139 :
-            case 140 :
-            case 141 :
-            case 142 :
-            case 143 :
-            case 144 :
-            case 145 :
-            case 146 :
-            case 147 :
-            case 148 :
-            case 149 :
-            case 150 :
-            case 151 :
-            case 152 :
-            case 153 :
-            case 154 :
-            case 155 :
-            case 156 :
-            case 157 :
-            case 158 :
-            case 159 :
-            case 160 :
-            case 161 :
-            case 162 :
-            case 163 :
-            case 164 :
-            case 165 :
-            case 166 :
-            case 167 :
-            case 168 :
-            case 169 :
-            case 170 :
-            case 171 :
-            case 172 :
-            case 173 :
-            case 174 :
-            case 175 :
-            case 176 :
-            case 177 :
-            case 178 :
-            case 179 :
-            case 180 :
-            case 181 :
-            case 182 :
-            case 183 :
-            case 184 :
-            case 185 :
-            case 186 :
-            case 187 :
-            case 188 :
-            case 189 :
-            case 190 :
-            case 191 :
-            case 192 :
-            case 193 :
-            case 194 :
-            case 195 :
-            case 196 :
-            case 208 :
-            case 209 :
-                break;
-            default:
-                this.error = new Error("Unknown operator: " + code);
-                this.state = -1 ;
-                return true;
+            }
         }
         this.result = {
             code: code,
             blockType: blockType,
+            refType: refType,
             brDepth: brDepth,
             brTable: brTable,
+            relativeDepth: relativeDepth,
             tableIndex: tableIndex,
             funcIndex: funcIndex,
             typeIndex: typeIndex,
             localIndex: localIndex,
             globalIndex: globalIndex,
+            fieldIndex: undefined,
+            eventIndex: eventIndex,
             memoryAddress: memoryAddress,
             literal: literal,
             segmentIndex: undefined,
@@ -2601,7 +3202,7 @@ var BinaryReader =  (function () {
                 this._pos = pos;
                 return false;
             }
-            var type = this.readVarInt7();
+            var type = this.readType();
             locals.push({ count: count, type: type });
         }
         var bodyStart = this._pos;
@@ -2731,8 +3332,12 @@ var BinaryReader =  (function () {
                 if (!this.hasVarIntBytes())
                     return false;
                 this._sectionEntriesLeft = this.readVarUint32() >>> 0;
-                this.state = 18 ;
                 return this.readDataEntry();
+            case 13 :
+                if (!this.hasVarIntBytes())
+                    return false;
+                this._sectionEntriesLeft = this.readVarUint32() >>> 0;
+                return this.readEventEntry();
             case 0 :
                 var customSectionName = exports.bytesToString(currentSection.name);
                 if (customSectionName === "name") {
@@ -2821,6 +3426,8 @@ var BinaryReader =  (function () {
                 return this.readTableEntry();
             case 15 :
                 return this.readMemoryEntry();
+            case 23 :
+                return this.readEventEntry();
             case 16 :
             case 40 :
                 return this.readGlobalEntry();
@@ -2830,25 +3437,33 @@ var BinaryReader =  (function () {
             case 35 :
                 return this.readElementEntry();
             case 33 :
-                if (this._segmentFlags & 1 ) {
-                    return this.readElementEntryBody();
+                if (isActiveElementSegmentType(this._segmentType)) {
+                    return this.readOffsetExpressionBody();
                 }
                 else {
-                    return this.readInitExpressionBody();
+                    
+                    return this.readElementEntryBody();
                 }
             case 34 :
-                this.state = 35 ;
-                this.result = null;
-                return true;
+                if (!this.hasVarIntBytes())
+                    return false;
+                this._segmentEntriesLeft = this.readVarUint32();
+                if (this._segmentEntriesLeft === 0) {
+                    this.state = 35 ;
+                    this.result = null;
+                    return true;
+                }
+                return this.readInitExpressionBody();
             case 18 :
             case 38 :
                 return this.readDataEntry();
             case 36 :
-                if (this._segmentFlags & 1 ) {
-                    return this.readDataEntryBody();
+                if (isActiveDataSegmentType(this._segmentType)) {
+                    return this.readOffsetExpressionBody();
                 }
                 else {
-                    return this.readInitExpressionBody();
+                    
+                    return this.readDataEntryBody();
                 }
             case 37 :
                 this.state = 38 ;
@@ -2859,14 +3474,24 @@ var BinaryReader =  (function () {
                     case 6 :
                         this.state = 40 ;
                         return true;
-                    case 11 :
-                        return this.readDataEntryBody();
                     case 9 :
-                        return this.readElementEntryBody();
+                        if (--this._segmentEntriesLeft > 0) {
+                            return this.readInitExpressionBody();
+                        }
+                        this.state = 35 ;
+                        this.result = null;
+                        return true;
                 }
                 this.error = new Error("Unexpected section type: " + this._sectionId);
                 this.state = -1 ;
                 return true;
+            case 46 :
+                if (this._sectionId === 11 ) {
+                    return this.readDataEntryBody();
+                }
+                else {
+                    return this.readElementEntryBody();
+                }
             case 19 :
                 return this.readNameEntry();
             case 41 :
@@ -2891,8 +3516,12 @@ var BinaryReader =  (function () {
             case 25 :
                 this.state = 26 ;
                 return this.readCodeOperator();
+            case 44 :
+                this.state = 45 ;
+                return this.readCodeOperator();
             case 30 :
             case 26 :
+            case 45 :
                 return this.readCodeOperator();
             case 6 :
                 return this.readSectionRawData();
@@ -2937,10 +3566,6 @@ var BinaryReader =  (function () {
     return BinaryReader;
 }());
 exports.BinaryReader = BinaryReader;
-function isTypeIndex(type) {
-    return type >= 0;
-}
-exports.isTypeIndex = isTypeIndex;
 if (typeof TextDecoder !== "undefined") {
     try {
         exports.bytesToString = (function () {
