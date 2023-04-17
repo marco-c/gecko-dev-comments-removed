@@ -3043,7 +3043,8 @@ GeckoDriver.prototype.commands = {
 
   
   "WebDriver:AcceptAlert": GeckoDriver.prototype.acceptDialog,
-  "WebDriver:AcceptDialog": GeckoDriver.prototype.acceptDialog, 
+  
+  "WebDriver:AcceptDialog": GeckoDriver.prototype.acceptDialog,
   "WebDriver:AddCookie": GeckoDriver.prototype.addCookie,
   "WebDriver:Back": GeckoDriver.prototype.goBack,
   "WebDriver:CloseChromeWindow": GeckoDriver.prototype.closeChromeWindow,

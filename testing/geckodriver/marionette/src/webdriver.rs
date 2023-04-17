@@ -149,8 +149,7 @@ pub struct Script {
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Command {
-    
-    #[serde(rename = "WebDriver:AcceptDialog")]
+    #[serde(rename = "WebDriver:AcceptAlert")]
     AcceptAlert,
     #[serde(
         rename = "WebDriver:AddCookie",
