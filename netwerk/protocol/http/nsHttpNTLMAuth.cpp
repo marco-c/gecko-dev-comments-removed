@@ -284,8 +284,7 @@ nsHttpNTLMAuth::GenerateCredentials(
   Maybe<nsTArray<uint8_t>> certArray;
 
   
-  if (aChallenge.Equals("NTLM"_ns,
-                       nsCaseInsensitiveCStringComparator)) {
+  if (aChallenge.Equals("NTLM"_ns, nsCaseInsensitiveCStringComparator)) {
     
     nsCOMPtr<nsIURI> uri;
     rv = authChannel->GetURI(getter_AddRefs(uri));

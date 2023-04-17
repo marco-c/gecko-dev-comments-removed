@@ -7,7 +7,7 @@
 #ifndef frontend_BytecodeCompilation_h
 #define frontend_BytecodeCompilation_h
 
-#include "mozilla/Utf8.h"   
+#include "mozilla/Utf8.h"  
 
 #include "js/CompileOptions.h"  
 #include "js/SourceText.h"      

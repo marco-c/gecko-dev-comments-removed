@@ -2564,7 +2564,7 @@ void CanvasRenderingContext2D::FillRect(double aX, double aY, double aW,
       
       
       gfx::Rect patternBounds(style->mSurface->GetRect());
-        patternBounds = style->mTransform.TransformBounds(patternBounds);
+      patternBounds = style->mTransform.TransformBounds(patternBounds);
       gfx::Rect bounds(aX, aY, aW, aH);
       
       
