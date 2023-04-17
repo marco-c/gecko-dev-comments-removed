@@ -397,9 +397,6 @@ struct TraversalTracer : public JS::CallbackTracer {
 
 void TraversalTracer::onChild(const JS::GCCellPtr& aThing) {
   
-  JS::AutoClearTracingContext actc(this);
-
-  
   
   if (aThing.is<JSString>() || aThing.is<JS::Symbol>()) {
     return;
@@ -424,7 +421,13 @@ void TraversalTracer::onChild(const JS::GCCellPtr& aThing) {
       mCb.NoteNextEdgeName(buffer);
     }
     mCb.NoteJSChild(aThing);
-  } else if (aThing.is<js::Shape>()) {
+    return;
+  }
+
+  
+  JS::AutoClearTracingContext actc(this);
+
+  if (aThing.is<js::Shape>()) {
     
     
     JS_TraceShapeCycleCollectorChildren(this, aThing);
