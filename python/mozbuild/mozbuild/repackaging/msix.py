@@ -112,46 +112,72 @@ def find_sdk_tool(binary, log=None):
 
 
 def get_embedded_version(version, buildid):
-    r"""Turn a display version into "dotted quad" notation."""
+    r"""Turn a display version into "dotted quad" notation.
+
+    N.b.: some parts of the MSIX packaging ecosystem require the final part of
+    the dotted quad to be identically 0, so we enforce that here.
+    """
 
     
     
     version = version.rsplit("esr", 1)[0]
     alpha = "a" in version
 
+    tail = None
     if "a" in version:
         head, tail = version.rsplit("a", 1)
+        if tail != "1":
+            
+            raise ValueError(
+                f"Alpha version not of the form X.0a1 is not supported: {version}"
+            )
         tail = buildid
     elif "b" in version:
         head, tail = version.rsplit("b", 1)
+        if len(head.split(".")) > 2:
+            raise ValueError(
+                f"Beta version not of the form X.YbZ is not supported: {version}"
+            )
     elif "rc" in version:
         head, tail = version.rsplit("rc", 1)
+        if len(head.split(".")) > 2:
+            raise ValueError(
+                f"Release candidate version not of the form X.YrcZ is not supported: {version}"
+            )
     else:
         head = version
-        tail = "0"
 
-    components = (head.split(".") + ["0", "0", "0"])[:4]
-    components[3] = tail
+    components = (head.split(".") + ["0", "0", "0"])[:3]
+    if tail:
+        components[2] = tail
 
     if alpha:
         
         
         
-        year = buildid[0:4]
+        if components[1] != "0":
+            
+            raise ValueError(
+                f"Alpha version not of the form X.0a1 is not supported: {version}"
+            )
+
+        
+        
+        year = buildid[2:4]
+        if year[0] == "0":
+            
+            year = year[1:]
         month = buildid[4:6]
-        if month[0] == "0":
-            month = month[1]
         day = buildid[6:8]
+        if day[0] == "0":
+            
+            day = day[1:]
         hour = buildid[8:10]
-        if hour[0] == "0":
-            hour = hour[1]
-        minute = buildid[10:12]
 
-        components[1] = year
-        components[2] = "".join((month, day))
-        components[3] = "".join((hour, minute))
+        components[1] = "".join((year, month))
+        components[2] = "".join((day, hour))
 
-    version = "{}.{}.{}.{}".format(*components)
+    version = "{}.{}.{}.0".format(*components)
 
     return version
 
