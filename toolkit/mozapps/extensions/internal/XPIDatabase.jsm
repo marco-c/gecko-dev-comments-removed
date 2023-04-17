@@ -1419,12 +1419,6 @@ defineAddonWrapperProperty("signedDate", function() {
   });
 });
 
-
-
-const updatedAddonFluentIds = new Map([
-  ["extension-default-theme-name", "extension-default-theme-name-auto"],
-]);
-
 ["name", "description", "creator", "homepageURL"].forEach(function(aProp) {
   defineAddonWrapperProperty(aProp, function() {
     let addon = addonFor(this);
@@ -1440,10 +1434,9 @@ const updatedAddonFluentIds = new Map([
     ) {
       
       let addonIdPrefix = addon.id.replace("@mozilla.org", "");
-      let defaultFluentId = `extension-${addonIdPrefix}-${aProp}`;
-      let fluentId =
-        updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
-      let [formattedMessage] = l10n.formatMessagesSync([{ id: fluentId }]);
+      let [formattedMessage] = l10n.formatMessagesSync([
+        { id: `extension-${addonIdPrefix}-${aProp}` },
+      ]);
 
       return formattedMessage.value;
     }
