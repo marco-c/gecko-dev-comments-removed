@@ -61,18 +61,6 @@ function loadHelperScript(filePath) {
 
 
 
-function reloadPage(inspector, testActor) {
-  info("Reloading the page");
-  const newRoot = inspector.once("new-root");
-  testActor.reload();
-  return newRoot;
-}
-
-
-
-
-
-
 
 
 

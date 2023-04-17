@@ -146,10 +146,6 @@ var testSpec = protocol.generateActorSpec({
         value: RetVal("json"),
       },
     },
-    reload: {
-      request: {},
-      response: {},
-    },
     reloadFrame: {
       request: {
         selector: Arg(0, "string"),
@@ -460,13 +456,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
       bottom: rect.bottom,
       left: rect.left,
     };
-  },
-
-  
-
-
-  reload: function() {
-    this.content.location.reload();
   },
 
   

@@ -452,22 +452,6 @@ var togglePropStatus = async function(view, textProp) {
 
 
 
-async function reloadPage(inspector, testActor) {
-  const onNewRoot = inspector.once("new-root");
-  await testActor.reload();
-  await onNewRoot;
-  await inspector.markup._waitForChildren();
-}
-
-
-
-
-
-
-
-
-
-
 
 async function addNewRule(inspector, view) {
   info("Adding the new rule using the button");
