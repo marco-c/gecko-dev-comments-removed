@@ -193,10 +193,7 @@ struct FrameMetrics {
   }
 
   CSSSize CalculateCompositedSizeInCssPixels() const {
-    if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
-      return CSSSize();  
-    }
-    return mCompositionBounds.Size() / GetZoom();
+    return CalculateCompositedSizeInCssPixels(mCompositionBounds, mZoom);
   }
 
   
@@ -227,13 +224,7 @@ struct FrameMetrics {
   }
 
   CSSRect CalculateScrollRange() const {
-    CSSSize scrollPortSize = CalculateCompositedSizeInCssPixels();
-    CSSRect scrollRange = mScrollableRect;
-    scrollRange.SetWidth(
-        std::max(scrollRange.Width() - scrollPortSize.width, 0.0f));
-    scrollRange.SetHeight(
-        std::max(scrollRange.Height() - scrollPortSize.height, 0.0f));
-    return scrollRange;
+    return CalculateScrollRange(mScrollableRect, mCompositionBounds, mZoom);
   }
 
   void ScrollBy(const CSSPoint& aPoint) {
@@ -477,6 +468,15 @@ struct FrameMetrics {
   static void KeepLayoutViewportEnclosingVisualViewport(
       const CSSRect& aVisualViewport, const CSSRect& aScrollableRect,
       CSSRect& aLayoutViewport);
+
+  
+  
+  static CSSRect CalculateScrollRange(const CSSRect& aScrollableRect,
+                                      const ParentLayerRect& aCompositionBounds,
+                                      const CSSToParentLayerScale2D& aZoom);
+  static CSSSize CalculateCompositedSizeInCssPixels(
+      const ParentLayerRect& aCompositionBounds,
+      const CSSToParentLayerScale2D& aZoom);
 
  private:
   
