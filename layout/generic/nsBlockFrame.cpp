@@ -228,7 +228,7 @@ static Maybe<nscolor> GetBackplateColor(nsIFrame* aFrame) {
       continue;
     }
     nscolor backgroundColor = bg->BackgroundColor(frame);
-    if (NS_GET_A(backgroundColor) != 0) {
+    if (NS_GET_A(backgroundColor) != 0 && frame->ComputeShouldPaintBackground().mColor) {
       
       
       return Some(NS_RGB(NS_GET_R(backgroundColor), NS_GET_G(backgroundColor),
