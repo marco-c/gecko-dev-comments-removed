@@ -290,6 +290,7 @@ class ScriptLoadRequest
   bool mIsNonAsyncScriptInserted;  
                                    
   bool mIsXSLT;                    
+  bool mInCompilingList;  
   bool mIsCanceled;                
   bool mWasCompiledOMT;  
                          
