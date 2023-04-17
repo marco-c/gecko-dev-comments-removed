@@ -881,16 +881,17 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
 
         
         
-        if (mWordBreaker) {
+        if (mWordBreaker || inWhitespace) {
           int32_t nextfindex = findex + incr;
 
           char16_t nextChar;
           
           if (mFindBackward ? (nextfindex >= 0) : (nextfindex < fragLen)) {
-            if (t2b)
+            if (t2b) {
               nextChar = DecodeChar(t2b, &nextfindex);
-            else
+            } else {
               nextChar = CHAR_TO_UNICHAR(t1b[nextfindex]);
+            }
           } else {
             
             nextChar = PeekNextChar(state, !!matchAnchorNode);
@@ -901,8 +902,14 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
           }
 
           
-          if (!BreakInBetween(c, nextChar)) {
+          if (mWordBreaker && !BreakInBetween(c, nextChar)) {
             matchAnchorNode = nullptr;
+            continue;
+          }
+
+          if (inWhitespace && IsSpace(nextChar)) {
+            
+            
             continue;
           }
         }
