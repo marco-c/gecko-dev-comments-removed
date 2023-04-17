@@ -124,30 +124,11 @@ class BrowsingContextTargetFront extends TargetMixin(
 
       
       
-      if (!this.traits.javascriptEnabledHandledInParent) {
-        this._javascriptEnabled = response.javascriptEnabled;
-      }
-
-      
-      
       if (this.targetForm.consoleActor) {
         await this.attachConsole();
       }
     })();
     return this._attach;
-  }
-
-  async reconfigure({ options }) {
-    const response = await super.reconfigure({ options });
-
-    if (
-      !this.traits.javascriptEnabledHandledInParent &&
-      typeof options.javascriptEnabled != "undefined"
-    ) {
-      this._javascriptEnabled = options.javascriptEnabled;
-    }
-
-    return response;
   }
 
   async detach() {

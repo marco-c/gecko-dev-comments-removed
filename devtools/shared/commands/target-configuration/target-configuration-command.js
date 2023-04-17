@@ -68,20 +68,6 @@ class TargetConfigurationCommand {
       return true;
     }
 
-    
-    
-    const { targetFront } = this._commands.targetCommand;
-    if (!targetFront.traits.javascriptEnabledHandledInParent) {
-      
-      if (typeof this.configuration.javascriptEnabled !== "undefined") {
-        return this.configuration.javascriptEnabled;
-      }
-
-      
-      
-      return targetFront._javascriptEnabled;
-    }
-
     const front = await this.getFront();
     return front.isJavascriptEnabled();
   }

@@ -314,10 +314,6 @@ const browsingContextTargetPrototype = {
       watchpoints: true,
       
       navigation: true,
-      
-      
-      
-      javascriptEnabledHandledInParent: true,
     };
 
     this._workerDescriptorActorList = null;

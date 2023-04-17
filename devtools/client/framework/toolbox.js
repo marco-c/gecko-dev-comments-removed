@@ -846,7 +846,6 @@ Toolbox.prototype = {
       this._buildTabs();
       this._applyCacheSettings();
       this._applyServiceWorkersTestingSettings();
-      this._forwardJavascriptEnabledToTargetConfiguration();
       this._addWindowListeners();
       this._addChromeEventHandlerEvents();
 
@@ -2095,28 +2094,6 @@ Toolbox.prototype = {
     this.commands.targetConfigurationCommand.updateConfiguration({
       serviceWorkersTestingEnabled,
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _forwardJavascriptEnabledToTargetConfiguration: function() {
-    if (!this.target.traits.javascriptEnabledHandledInParent) {
-      const javascriptEnabled = this.target._javascriptEnabled;
-      this.commands.targetConfigurationCommand.updateConfiguration({
-        javascriptEnabled,
-      });
-    }
   },
 
   
