@@ -51,8 +51,6 @@ const MIF1_BRAND: FourCC = FourCC { value: *b"mif1" };
 
 
 trait ToU64 {
-    
-    #[allow(clippy::wrong_self_convention)]
     fn to_u64(self) -> u64;
 }
 
@@ -224,6 +222,12 @@ impl From<Result<(), Status>> for Status {
 impl From<fallible_collections::TryReserveError> for Status {
     fn from(_: fallible_collections::TryReserveError) -> Self {
         Status::Oom
+    }
+}
+
+impl From<std::io::Error> for Status {
+    fn from(_: std::io::Error) -> Self {
+        Status::Io
     }
 }
 
@@ -1723,7 +1727,7 @@ pub fn read_avif<T: Read>(f: &mut T, strictness: ParseStrictness) -> Result<Avif
             BoxType::MetadataBox => {
                 if meta.is_some() {
                     return Err(Error::InvalidData(
-                        "There should be zero or one meta boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.1.1",
+                        "There should be zero or one meta boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.1.1",
                     ));
                 }
                 meta = Some(read_avif_meta(&mut b, strictness)?);
@@ -1930,7 +1934,7 @@ fn read_avif_meta<T: Read + Offset>(
             BoxType::HandlerBox => {
                 if read_handler_box {
                     return Err(Error::InvalidData(
-                        "There shall be exactly one hdlr box per ISOBMFF (ISO 14496-12:2015) § 8.4.3.1",
+                        "There shall be exactly one hdlr box per ISOBMFF (ISO 14496-12:2020) § 8.4.3.1",
                     ));
                 }
                 let HandlerBox { handler_type } = read_hdlr(&mut b, strictness)?;
@@ -1946,7 +1950,7 @@ fn read_avif_meta<T: Read + Offset>(
             BoxType::ItemInfoBox => {
                 if item_infos.is_some() {
                     return Err(Error::InvalidData(
-                        "There shall be zero or one iinf boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.6.1",
+                        "There shall be zero or one iinf boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.6.1",
                     ));
                 }
                 item_infos = Some(read_iinf(&mut b, strictness)?);
@@ -1954,7 +1958,7 @@ fn read_avif_meta<T: Read + Offset>(
             BoxType::ItemLocationBox => {
                 if iloc_items.is_some() {
                     return Err(Error::InvalidData(
-                        "There shall be zero or one iloc boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.3.1",
+                        "There shall be zero or one iloc boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.3.1",
                     ));
                 }
                 iloc_items = Some(read_iloc(&mut b)?);
@@ -1962,14 +1966,14 @@ fn read_avif_meta<T: Read + Offset>(
             BoxType::PrimaryItemBox => {
                 if primary_item_id.is_some() {
                     return Err(Error::InvalidData(
-                        "There shall be zero or one pitm boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.4.1",
+                        "There shall be zero or one pitm boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.4.1",
                     ));
                 }
                 primary_item_id = Some(read_pitm(&mut b)?);
             }
             BoxType::ItemReferenceBox => {
                 if item_references.is_some() {
-                    return Err(Error::InvalidData("There shall be zero or one iref boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.12.1"));
+                    return Err(Error::InvalidData("There shall be zero or one iref boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.12.1"));
                 }
                 item_references = Some(read_iref(&mut b)?);
             }
@@ -2054,7 +2058,7 @@ fn read_iinf<T: Read>(
     while let Some(mut b) = iter.next_box()? {
         if b.head.name != BoxType::ItemInfoEntry {
             return Err(Error::InvalidData(
-                "iinf box shall contain only infe boxes per ISOBMFF (ISO 14496-12:2015) § 8.11.6.2",
+                "iinf box shall contain only infe boxes per ISOBMFF (ISO 14496-12:2020) § 8.11.6.2",
             ));
         }
 
@@ -2091,7 +2095,7 @@ fn read_infe<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Resu
         fail_if(
             strictness == ParseStrictness::Strict,
             "'infe' flags field shall be 0 \
-             per ISOBMFF (ISO 14496-12:2015) § 8.11.6.2",
+             per ISOBMFF (ISO 14496-12:2020) § 8.11.6.2",
         )?;
     }
 
@@ -3086,7 +3090,7 @@ fn read_iloc<T: Read>(src: &mut BMFFBox<T>) -> Result<TryHashMap<ItemId, ItemLoc
                     0 => ConstructionMethod::File,
                     1 => ConstructionMethod::Idat,
                     2 => return Err(Error::Unsupported("construction_method 'item_offset' is not supported")),
-                    _ => return Err(Error::InvalidData("construction_method is taken from the set 0, 1 or 2 per ISOBMFF (ISO 14496-12:2015) § 8.11.3.3"))
+                    _ => return Err(Error::InvalidData("construction_method is taken from the set 0, 1 or 2 per ISOBMFF (ISO 14496-12:2020) § 8.11.3.3"))
                 }
             }
         };
@@ -3104,7 +3108,7 @@ fn read_iloc<T: Read>(src: &mut BMFFBox<T>) -> Result<TryHashMap<ItemId, ItemLoc
 
         if extent_count < 1 {
             return Err(Error::InvalidData(
-                "extent_count must have a value 1 or greater per ISOBMFF (ISO 14496-12:2015) § 8.11.3.3",
+                "extent_count must have a value 1 or greater per ISOBMFF (ISO 14496-12:2020) § 8.11.3.3",
             ));
         }
 
@@ -3114,7 +3118,7 @@ fn read_iloc<T: Read>(src: &mut BMFFBox<T>) -> Result<TryHashMap<ItemId, ItemLoc
             && (offset_size == IlocFieldSize::Zero || length_size == IlocFieldSize::Zero)
         {
             return Err(Error::InvalidData(
-                "extent_count != 1 requires explicit offset and length per ISOBMFF (ISO 14496-12:2015) § 8.11.3.3",
+                "extent_count != 1 requires explicit offset and length per ISOBMFF (ISO 14496-12:2020) § 8.11.3.3",
             ));
         }
 
@@ -4286,7 +4290,7 @@ fn read_dc_descriptor(data: &[u8], esds: &mut ES_Descriptor) -> Result<()> {
     }
 
     esds.audio_codec = match object_profile {
-        0x40 | 0x41 => CodecType::AAC,
+        0x40 | 0x66 | 0x67 => CodecType::AAC,
         0x69 | 0x6B => CodecType::MP3,
         _ => CodecType::Unknown,
     };
@@ -4514,12 +4518,23 @@ fn read_hdlr<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Resu
 
     match std::str::from_utf8(src.read_into_try_vec()?.as_slice()) {
         Ok(name) => {
-            if name.bytes().last() != Some(b'\0') {
-                fail_if(
+            match name.bytes().filter(|&b| b == b'\0').count() {
+                0 => fail_if(
                     strictness != ParseStrictness::Permissive,
                     "The HandlerBox 'name' field shall be null-terminated \
                      per ISOBMFF (ISO 14496-12:2020) § 8.4.3.2",
-                )?
+                )?,
+                1 => (),
+                _ =>
+                
+                {
+                    fail_if(
+                        strictness == ParseStrictness::Strict,
+                        "The HandlerBox 'name' field shall have a NUL byte \
+                         only in the final position \
+                         per ISOBMFF (ISO 14496-12:2020) § 8.4.3.2",
+                    )?
+                }
             }
         }
         Err(_) => fail_if(
