@@ -54,7 +54,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "EventLoopStack",
+  "EventLoop",
   "devtools/server/actors/utils/event-loop",
   true
 );
@@ -190,28 +190,25 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   initialize(parent, global) {
     Actor.prototype.initialize.call(this, parent.conn);
     this._state = STATES.DETACHED;
-    this._frameActors = [];
     this._parent = parent;
-    this._dbg = null;
-    this._gripDepth = 0;
-    this._threadLifetimePool = null;
-    this._parentClosed = false;
-    this._xhrBreakpoints = [];
-    this._observingNetwork = false;
-    this._activeEventBreakpoints = new Set();
-    this._activeEventPause = null;
-    this._pauseOverlay = null;
-    this._priorPause = null;
-    this._frameActorMap = new WeakMap();
-
-    this._watchpointsMap = new WatchpointMap(this);
-
+    this.global = global;
     this._options = {
       skipBreakpoints: false,
     };
+    this._gripDepth = 0;
+    this._parentClosed = false;
+    this._observingNetwork = false;
+    this._frameActors = [];
+    this._xhrBreakpoints = [];
 
-    this.breakpointActorMap = new BreakpointActorMap(this);
+    this._dbg = null;
+    this._threadLifetimePool = null;
+    this._activeEventPause = null;
+    this._pauseOverlay = null;
+    this._priorPause = null;
 
+    this._activeEventBreakpoints = new Set();
+    this._frameActorMap = new WeakMap();
     this._debuggerSourcesSeen = new WeakSet();
 
     
@@ -224,7 +221,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     this._handledFrameExceptions = new WeakMap();
 
-    this.global = global;
+    this._watchpointsMap = new WatchpointMap(this);
+
+    this.breakpointActorMap = new BreakpointActorMap(this);
+
+    this._nestedEventLoop = new EventLoop({
+      thread: this,
+    });
 
     this.onNewSourceEvent = this.onNewSourceEvent.bind(this);
 
@@ -316,27 +319,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this._options.skipBreakpoints ||
       (this.insideClientEvaluation && this.insideClientEvaluation.eager)
     );
-  },
-
-  
-
-
-
-
-
-  _threadPauseEventLoops: null,
-  _pushThreadPause() {
-    if (!this._threadPauseEventLoops) {
-      this._threadPauseEventLoops = [];
-    }
-    const eventLoop = this._nestedEventLoops.push();
-    this._threadPauseEventLoops.push(eventLoop);
-    eventLoop.enter();
-  },
-  _popThreadPause() {
-    const eventLoop = this._threadPauseEventLoops.pop();
-    assert(eventLoop, "Should have an event loop.");
-    eventLoop.resolve();
   },
 
   isPaused() {
@@ -434,12 +416,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.onNewDebuggee = this._onNewDebuggee;
 
     this.sourcesManager.on("newSource", this.onNewSourceEvent);
-
-    
-    
-    this._nestedEventLoops = new EventLoopStack({
-      thread: this,
-    });
 
     this.reconfigure(options);
 
@@ -953,7 +929,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     try {
-      this._pushThreadPause();
+      this._nestedEventLoop.enter();
     } catch (e) {
       reportException("TA__pauseAndRespond", e);
     }
@@ -1286,11 +1262,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     
     
-    if (
-      this._nestedEventLoops.size &&
-      this._nestedEventLoops.lastPausedThreadActor &&
-      this._nestedEventLoops.lastPausedThreadActor !== this
-    ) {
+    if (!this._nestedEventLoop.isTheLastPausedThreadActor()) {
       return {
         error: "wrongOrder",
         message: "trying to resume in the wrong order.",
@@ -1331,7 +1303,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._pausePool = null;
 
     this._pauseActor = null;
-    this._popThreadPause();
+    this._nestedEventLoop.exit();
 
     
     
@@ -1567,7 +1539,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       this.emit("paused", packet);
 
       
-      this._pushThreadPause();
+      this._nestedEventLoop.enter();
 
       
       
@@ -1992,7 +1964,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       };
       this.emit("paused", packet);
 
-      this._pushThreadPause();
+      this._nestedEventLoop.enter();
     } catch (e) {
       reportException("TA_onExceptionUnwind", e);
     }

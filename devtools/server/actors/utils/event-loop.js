@@ -14,70 +14,80 @@ const { Cu } = require("chrome");
 
 
 
-function EventLoopStack({ thread }) {
-  this._thread = thread;
-}
+class EventLoop {
+  constructor({ thread }) {
+    this._thread = thread;
 
-EventLoopStack.prototype = {
-  
-
-
-  get size() {
-    return xpcInspector.eventLoopNestLevel;
-  },
-
-  
-
-
-  get lastPausedThreadActor() {
-    if (this.size > 0) {
-      return xpcInspector.lastNestRequestor.thread;
-    }
-    return null;
-  },
+    
+    this._entered = false;
+    
+    
+    
+    this._resolved = false;
+  }
 
   
 
 
 
-
-  push: function() {
-    return new EventLoop({
-      thread: this._thread,
-    });
-  },
-};
-
-
-
-
-
-
-
-
-function EventLoop({ thread }) {
-  this._thread = thread;
-
-  this.enter = this.enter.bind(this);
-  this.resolve = this.resolve.bind(this);
-}
-
-EventLoop.prototype = {
-  entered: false,
-  resolved: false,
   get thread() {
     return this._thread;
-  },
+  }
+  
+
+
+  get resolved() {
+    return this._resolved;
+  }
 
   
 
 
-  enter: function() {
-    const preNestData = this.preNest();
 
-    this.entered = true;
+
+
+
+
+
+
+
+  isTheLastPausedThreadActor() {
+    if (xpcInspector.eventLoopNestLevel > 0) {
+      return xpcInspector.lastNestRequestor.thread === this._thread;
+    }
+    return true;
+  }
+
+  
+
+
+  enter() {
+    if (this._entered) {
+      throw new Error(
+        "Can't enter an event loop that has already been entered!"
+      );
+    }
+
+    const preEnterData = this.preEnter();
+
+    this._entered = true;
+    
+    
+    
+    
+    
+    
+    
+    
+    
     xpcInspector.enterNestedEventLoop(this);
 
+    
+    
+    
+    
+    
+    
     
     if (xpcInspector.eventLoopNestLevel > 0) {
       const { resolved } = xpcInspector.lastNestRequestor;
@@ -86,8 +96,8 @@ EventLoop.prototype = {
       }
     }
 
-    this.postNest(preNestData);
-  },
+    this.postExit(preEnterData);
+  }
 
   
 
@@ -97,22 +107,27 @@ EventLoop.prototype = {
 
 
 
-  resolve: function() {
-    if (!this.entered) {
-      throw new Error(
-        "Can't resolve an event loop before it has been entered!"
-      );
+  exit() {
+    if (!this._entered) {
+      throw new Error("Can't exit an event loop before it has been entered!");
     }
-    if (this.resolved) {
-      throw new Error("Already resolved this nested event loop!");
-    }
-    this.resolved = true;
+    this._entered = false;
+    this._resolved = true;
+
+    
+    
+    
+    
+    
+    
+    
+    
     if (this === xpcInspector.lastNestRequestor) {
       xpcInspector.exitNestedEventLoop();
       return true;
     }
     return false;
-  },
+  }
 
   
 
@@ -163,12 +178,12 @@ EventLoop.prototype = {
           return false;
         }
       });
-  },
+  }
 
   
 
 
-  preNest() {
+  preEnter() {
     const docShells = [];
     
     for (const window of this.getAllWindowDebuggees()) {
@@ -178,12 +193,12 @@ EventLoop.prototype = {
       docShells.push(window.docShell);
     }
     return docShells;
-  },
+  }
 
   
 
 
-  postNest(pausedDocShells) {
+  postExit(pausedDocShells) {
     
     for (const docShell of pausedDocShells) {
       
@@ -195,7 +210,7 @@ EventLoop.prototype = {
       windowUtils.resumeTimeouts();
       windowUtils.suppressEventHandling(false);
     }
-  },
-};
+  }
+}
 
-exports.EventLoopStack = EventLoopStack;
+exports.EventLoop = EventLoop;
