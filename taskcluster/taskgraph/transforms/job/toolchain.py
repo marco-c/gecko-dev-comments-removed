@@ -123,7 +123,7 @@ def docker_worker_toolchain(config, job, taskdesc):
     worker["chain-of-trust"] = True
 
     
-    worker.setdefault("docker-image", {"in-tree": "deb10-toolchain-build"})
+    worker.setdefault("docker-image", {"in-tree": "deb11-toolchain-build"})
 
     
     
