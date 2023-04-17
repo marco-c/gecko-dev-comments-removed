@@ -12,6 +12,10 @@ pub extern crate uuid;
 
 pub use private::{DistributionData, ErrorType, RecordedEvent};
 
+
+#[macro_use]
+mod ffi;
+
 pub mod metrics;
 pub mod pings;
 pub mod private;
@@ -20,4 +24,3 @@ pub mod ipc;
 
 #[cfg(test)]
 mod common_test;
-mod ffi;

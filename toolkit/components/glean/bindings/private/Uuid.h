@@ -8,6 +8,7 @@
 #define mozilla_glean_GleanUuid_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 
@@ -48,7 +49,7 @@ class UuidMetric {
 
 
 
-  Maybe<nsCString> TestGetValue(
+  Result<Maybe<nsCString>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:
