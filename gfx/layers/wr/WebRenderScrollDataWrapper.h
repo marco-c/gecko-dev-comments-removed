@@ -296,7 +296,17 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
   }
 
   Maybe<ParentLayerIntRect> GetClipRect() const {
+    MOZ_ASSERT(IsValid());
+
     
+    
+    
+    if (AtBottomLayer()) {
+      auto localTransform = GetTransformTyped() * AsyncTransformMatrix();
+      return Some(RoundedToInt(localTransform.TransformBounds(
+          LayerRect(mLayer->GetVisibleRegion().GetBounds()))));
+    }
+
     return Nothing();
   }
 

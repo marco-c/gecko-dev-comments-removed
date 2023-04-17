@@ -220,7 +220,6 @@ class APZCTreeManagerTester : public APZCTesterBase {
     ScrollMetadata metadata = BuildScrollMetadata(
         aScrollId, aScrollableRect, ParentLayerRect(compositionBounds));
     SetScrollMetadata(aLayer, metadata);
-    
     SetEventRegionsBasedOnBottommostMetrics(aLayer);
   }
 
