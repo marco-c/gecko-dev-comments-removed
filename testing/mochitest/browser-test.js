@@ -798,13 +798,6 @@ Tester.prototype = {
       );
       let time = Date.now() - this.lastStartTime;
 
-      
-      
-      
-      if (this.currentTest.https_first_disabled) {
-        window.SpecialPowers.popPrefEnv();
-      }
-
       this.structuredLogger.testEnd(
         this.currentTest.path,
         "OK",
