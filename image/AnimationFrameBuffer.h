@@ -107,14 +107,6 @@ class AnimationFrameBuffer {
 
 
 
-  const gfx::IntRect& FirstFrameRefreshArea() const {
-    return mFirstFrameRefreshArea;
-  }
-
-  
-
-
-
   bool HasRedecodeError() const { return mRedecodeError; }
 
   
@@ -296,10 +288,6 @@ class AnimationFrameBuffer {
 
   
   
-  gfx::IntRect mFirstFrameRefreshArea;
-
-  
-  
   
   size_t mSize;
 
@@ -432,6 +420,7 @@ class AnimationFrameRecyclingQueue final
  public:
   explicit AnimationFrameRecyclingQueue(AnimationFrameRetainedBuffer&& aQueue);
 
+  bool MarkComplete(const gfx::IntRect& aFirstFrameRefreshArea) override;
   void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                               const AddSizeOfCb& aCallback) override;
 
@@ -458,6 +447,9 @@ class AnimationFrameRecyclingQueue final
   };
 
   const std::deque<RecycleEntry>& Recycle() const { return mRecycle; }
+  const gfx::IntRect& FirstFrameRefreshArea() const {
+    return mFirstFrameRefreshArea;
+  }
 
  protected:
   void AdvanceInternal() override;
@@ -467,6 +459,10 @@ class AnimationFrameRecyclingQueue final
   
   
   std::deque<RecycleEntry> mRecycle;
+
+  
+  
+  gfx::IntRect mFirstFrameRefreshArea;
 
   
   

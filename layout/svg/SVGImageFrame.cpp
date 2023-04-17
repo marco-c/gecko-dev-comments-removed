@@ -10,7 +10,6 @@
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "imgIContainer.h"
@@ -621,10 +620,10 @@ bool SVGImageFrame::CreateWebRenderCommands(
       mImageContainer, this, destRect, clipRect, aSc, flags, svgContext,
       region);
 
-  RefPtr<image::WebRenderImageProvider> provider;
-  ImgDrawResult drawResult = mImageContainer->GetImageProvider(
+  RefPtr<layers::ImageContainer> container;
+  ImgDrawResult drawResult = mImageContainer->GetImageContainerAtSize(
       aManager->LayerManager(), decodeSize, svgContext, region, flags,
-      getter_AddRefs(provider));
+      getter_AddRefs(container));
 
   
   
@@ -648,9 +647,14 @@ bool SVGImageFrame::CreateWebRenderCommands(
     
     
     
-    if (provider) {
-      aManager->CommandBuilder().PushImageProvider(
-          aItem, provider, aBuilder, aResources, destRect, clipRect);
+    if (container) {
+      if (flags & imgIContainer::FLAG_RECORD_BLOB) {
+        aManager->CommandBuilder().PushBlobImage(
+            aItem, container, aBuilder, aResources, destRect, clipRect);
+      } else {
+        aManager->CommandBuilder().PushImage(
+            aItem, container, aBuilder, aResources, aSc, destRect, clipRect);
+      }
     }
 
     nsDisplayItemGenericImageGeometry::UpdateDrawResult(aItem, drawResult);

@@ -298,12 +298,12 @@ ClippedImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
-ClippedImage::GetImageProvider(WindowRenderer* aRenderer,
-                               const gfx::IntSize& aSize,
-                               const Maybe<SVGImageContext>& aSVGContext,
-                               const Maybe<ImageIntRegion>& aRegion,
-                               uint32_t aFlags,
-                               WebRenderImageProvider** aProvider) {
+ClippedImage::GetImageContainerAtSize(WindowRenderer* aRenderer,
+                                      const gfx::IntSize& aSize,
+                                      const Maybe<SVGImageContext>& aSVGContext,
+                                      const Maybe<ImageIntRegion>& aRegion,
+                                      uint32_t aFlags,
+                                      layers::ImageContainer** aOutContainer) {
   
   
   
@@ -311,8 +311,8 @@ ClippedImage::GetImageProvider(WindowRenderer* aRenderer,
   
 
   if (!ShouldClip()) {
-    return InnerImage()->GetImageProvider(aRenderer, aSize, aSVGContext,
-                                          aRegion, aFlags, aProvider);
+    return InnerImage()->GetImageContainerAtSize(
+        aRenderer, aSize, aSVGContext, aRegion, aFlags, aOutContainer);
   }
 
   return ImgDrawResult::NOT_SUPPORTED;

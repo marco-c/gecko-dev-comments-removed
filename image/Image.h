@@ -22,7 +22,6 @@
 #include "nsStringFwd.h"
 #include "ProgressTracker.h"
 #include "SurfaceCache.h"
-#include "WebRenderImageProvider.h"
 
 class imgRequest;
 class nsIRequest;
@@ -90,10 +89,11 @@ enum class SurfaceMemoryCounterType { NORMAL, CONTAINER };
 
 struct SurfaceMemoryCounter {
   SurfaceMemoryCounter(
-      const SurfaceKey& aKey, bool aIsLocked, bool aCannotSubstitute,
-      bool aIsFactor2, bool aFinished,
+      const SurfaceKey& aKey, const gfx::SourceSurface* aSurface,
+      bool aIsLocked, bool aCannotSubstitute, bool aIsFactor2, bool aFinished,
       SurfaceMemoryCounterType aType = SurfaceMemoryCounterType::NORMAL)
       : mKey(aKey),
+        mSurface(aSurface),
         mType(aType),
         mIsLocked(aIsLocked),
         mCannotSubstitute(aCannotSubstitute),
@@ -101,6 +101,7 @@ struct SurfaceMemoryCounter {
         mFinished(aFinished) {}
 
   const SurfaceKey& Key() const { return mKey; }
+  const gfx::SourceSurface* Surface() const { return mSurface; }
   MemoryCounter& Values() { return mValues; }
   const MemoryCounter& Values() const { return mValues; }
   SurfaceMemoryCounterType Type() const { return mType; }
@@ -111,6 +112,7 @@ struct SurfaceMemoryCounter {
 
  private:
   const SurfaceKey mKey;
+  const gfx::SourceSurface* MOZ_NON_OWNING_REF mSurface;
   MemoryCounter mValues;
   const SurfaceMemoryCounterType mType;
   const bool mIsLocked;
@@ -329,11 +331,13 @@ class ImageResource : public Image {
   void CollectSizeOfSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
                              MallocSizeOf aMallocSizeOf) const override;
 
-  ImageProviderId GetImageProviderId() const { return mProviderId; }
-
  protected:
   explicit ImageResource(nsIURI* aURI);
   ~ImageResource();
+
+  layers::ContainerProducerID GetImageProducerId() const {
+    return mImageProducerID;
+  }
 
   bool GetSpecTruncatedTo1k(nsCString& aSpec) const;
 
@@ -388,6 +392,60 @@ class ImageResource : public Image {
   bool mAnimating : 1;      
   bool mError : 1;          
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual Tuple<ImgDrawResult, gfx::IntSize, RefPtr<gfx::SourceSurface>>
+  GetFrameInternal(const gfx::IntSize& aSize,
+                   const Maybe<SVGImageContext>& aSVGContext,
+                   const Maybe<ImageIntRegion>& aRegion, uint32_t aWhichFrame,
+                   uint32_t aFlags) {
+    return MakeTuple(ImgDrawResult::BAD_IMAGE, aSize,
+                     RefPtr<gfx::SourceSurface>());
+  }
+
+  
+
+
+
+
+
+  virtual Tuple<ImgDrawResult, gfx::IntSize> GetImageContainerSize(
+      WindowRenderer* aRenderer, const gfx::IntSize& aSize, uint32_t aFlags) {
+    return MakeTuple(ImgDrawResult::NOT_SUPPORTED, gfx::IntSize(0, 0));
+  }
+
+  ImgDrawResult GetImageContainerImpl(WindowRenderer* aRenderer,
+                                      const gfx::IntSize& aSize,
+                                      const Maybe<SVGImageContext>& aSVGContext,
+                                      const Maybe<ImageIntRegion>& aRegion,
+                                      uint32_t aFlags,
+                                      layers::ImageContainer** aContainer);
+
+  
+
+
+
+
+  bool UpdateImageContainer(const Maybe<gfx::IntRect>& aDirtyRect);
+
+  void ReleaseImageContainer();
+
   class MOZ_RAII AutoProfilerImagePaintMarker {
    public:
     explicit AutoProfilerImagePaintMarker(ImageResource* self)
@@ -416,7 +474,39 @@ class ImageResource : public Image {
   };
 
  private:
-  ImageProviderId mProviderId;
+  void SetCurrentImage(layers::ImageContainer* aContainer,
+                       gfx::SourceSurface* aSurface,
+                       const Maybe<gfx::IntRect>& aDirtyRect);
+
+  struct ImageContainerEntry {
+    ImageContainerEntry(const gfx::IntSize& aSize,
+                        const Maybe<SVGImageContext>& aSVGContext,
+                        const Maybe<ImageIntRegion>& aRegion,
+                        layers::ImageContainer* aContainer, uint32_t aFlags)
+        : mSize(aSize),
+          mSVGContext(aSVGContext),
+          mRegion(aRegion),
+          mContainer(aContainer),
+          mLastDrawResult(ImgDrawResult::NOT_READY),
+          mFlags(aFlags) {}
+
+    gfx::IntSize mSize;
+    Maybe<SVGImageContext> mSVGContext;
+    Maybe<ImageIntRegion> mRegion;
+    
+    
+    ThreadSafeWeakPtr<layers::ImageContainer> mContainer;
+    
+    
+    ImgDrawResult mLastDrawResult;
+    
+    
+    uint32_t mFlags;
+  };
+
+  AutoTArray<ImageContainerEntry, 1> mImageContainers;
+  layers::ImageContainer::ProducerID mImageProducerID;
+  layers::ImageContainer::FrameID mLastFrameID;
 };
 
 }  
