@@ -759,22 +759,14 @@ pub enum GlyphFormat {
 }
 
 impl GlyphFormat {
-    pub fn ignore_color(self) -> Self {
-        match self {
-            GlyphFormat::ColorBitmap => GlyphFormat::Bitmap,
-            _ => self,
-        }
-    }
-
     
     
     
     pub fn image_format(&self, can_use_r8_format: bool) -> ImageFormat {
         match *self {
-            
-            
-            
-            GlyphFormat::Alpha | GlyphFormat::TransformedAlpha => {
+            GlyphFormat::Alpha |
+            GlyphFormat::TransformedAlpha |
+            GlyphFormat::Bitmap => {
                 if can_use_r8_format {
                     ImageFormat::R8
                 } else {
@@ -783,7 +775,6 @@ impl GlyphFormat {
             }
             GlyphFormat::Subpixel |
             GlyphFormat::TransformedSubpixel |
-            GlyphFormat::Bitmap |
             GlyphFormat::ColorBitmap => ImageFormat::BGRA8,
         }
     }
