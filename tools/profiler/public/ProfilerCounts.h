@@ -110,6 +110,14 @@ class BaseProfilerCount {
 #  endif
   }
 
+  void Clear() {
+    *mCounter = 0;
+    
+    
+    
+    
+  }
+
   
   
   
