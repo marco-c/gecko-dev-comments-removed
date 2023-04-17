@@ -309,11 +309,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::ZoneData<js::InitialShapeSet> initialShapes_;
 
   
-  using NurseryShapeVector =
-      js::Vector<js::AccessorShape*, 0, js::SystemAllocPolicy>;
-  js::ZoneData<NurseryShapeVector> nurseryShapes_;
-
-  
   using FinalizationRegistrySet =
       GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
                 js::ZoneAllocPolicy>;
@@ -598,8 +593,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::BaseShapeSet& baseShapes() { return baseShapes_.ref(); }
 
   js::InitialShapeSet& initialShapes() { return initialShapes_.ref(); }
-
-  NurseryShapeVector& nurseryShapes() { return nurseryShapes_.ref(); }
 
   void fixupInitialShapeTable();
   void fixupAfterMovingGC();

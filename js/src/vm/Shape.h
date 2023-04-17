@@ -111,9 +111,6 @@
 
 
 
-
-
-
 MOZ_ALWAYS_INLINE size_t JSSLOT_FREE(const JSClass* clasp) {
   
   
@@ -631,7 +628,6 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 
-class AccessorShape;
 class Shape;
 struct StackBaseShape;
 
@@ -853,10 +849,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 
     
     IN_DICTIONARY = 1 << 29,
-
-    
-    
-    ACCESSOR_SHAPE = 1 << 30,
   };
 
   
@@ -1018,16 +1010,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
       info->shapesMallocHeapTreeChildren +=
           children.toShapeSet()->shallowSizeOfIncludingThis(mallocSizeOf);
     }
-  }
-
-  bool isAccessorShape() const {
-    MOZ_ASSERT_IF(immutableFlags & ACCESSOR_SHAPE,
-                  getAllocKind() == gc::AllocKind::ACCESSOR_SHAPE);
-    return immutableFlags & ACCESSOR_SHAPE;
-  }
-  AccessorShape& asAccessorShape() const {
-    MOZ_ASSERT(isAccessorShape());
-    return *(AccessorShape*)this;
   }
 
   const GCPtrShape& previous() const { return parent; }
@@ -1324,9 +1306,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 #endif
   }
 };
-
-
-class AccessorShape : public Shape {};
 
 struct EmptyShape : public js::Shape {
   EmptyShape(BaseShape* base, ObjectFlags objectFlags, uint32_t nfixed)
