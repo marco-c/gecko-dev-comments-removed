@@ -257,25 +257,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1566253",
-    platform: "android",
-    domain: "posts.google.com",
-    bug: "1566253",
-    config: {
-      matches: ["*://posts.google.com/*"],
-      uaTransformer: _ => {
-        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G900M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.101 Mobile Safari/537.36";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
 
     id: "bug1574522",
     platform: "android",
@@ -649,25 +630,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1719841",
     config: {
       matches: ["*://appmedia.jp/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1719842",
-    platform: "android",
-    domain: "gouletpens.com",
-    bug: "1719842",
-    config: {
-      matches: ["*://*.gouletpens.com/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
