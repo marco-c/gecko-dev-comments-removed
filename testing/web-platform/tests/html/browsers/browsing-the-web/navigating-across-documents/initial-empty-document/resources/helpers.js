@@ -1,0 +1,11 @@
+
+
+function assertNoLoadAndPageshowEvent(t, target) {
+  target.addEventListener("load", t.unreached_func("load should not be fired"));
+  target.addEventListener("pageshow", t.unreached_func("pageshow should not be fired"));
+  return new Promise(resolve => {
+    
+    
+    setTimeout(resolve, 50);
+  });
+}
