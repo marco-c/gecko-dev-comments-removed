@@ -664,7 +664,6 @@ enum YieldHandling { YieldIsName, YieldIsKeyword };
 enum InHandling { InAllowed, InProhibited };
 enum DefaultHandling { NameRequired, AllowDefaultName };
 enum TripledotHandling { TripledotAllowed, TripledotProhibited };
-enum class FieldPlacement { Instance, Static };
 
 
 enum PrivateNameHandling { PrivateNameProhibited, PrivateNameAllowed };
