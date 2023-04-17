@@ -120,40 +120,19 @@ void FallbackICSpew(JSContext* cx, ICFallbackStub* stub, const char* fmt, ...)
 #endif
 
 
-
 class ICEntry {
   
   ICStub* firstStub_;
 
-  
-  uint32_t pcOffset_;
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-#  ifdef JS_64BIT
-  
-  
-  static const uint32_t EXPECTED_TRACE_MAGIC = 0xdeaddead;
-  uint32_t traceMagic_ = EXPECTED_TRACE_MAGIC;
-#  endif
-#endif
-
  public:
-  ICEntry(ICStub* firstStub, uint32_t pcOffset)
-      : firstStub_(firstStub), pcOffset_(pcOffset) {}
+  explicit ICEntry(ICStub* firstStub) : firstStub_(firstStub) {}
 
   ICStub* firstStub() const {
     MOZ_ASSERT(firstStub_);
     return firstStub_;
   }
 
-  ICFallbackStub* fallbackStub() const;
-
   void setFirstStub(ICStub* stub) { firstStub_ = stub; }
-
-  uint32_t pcOffset() const { return pcOffset_; }
-  jsbytecode* pc(JSScript* script) const {
-    return script->offsetToPC(pcOffset());
-  }
 
   static constexpr size_t offsetOfFirstStub() {
     return offsetof(ICEntry, firstStub_);
@@ -224,8 +203,6 @@ class ICStub {
   inline void incrementEnteredCount() { enteredCount_++; }
   void resetEnteredCount() { enteredCount_ = 0; }
 
-  inline ICFallbackStub* getChainFallback();
-
   static constexpr size_t offsetOfStubCode() {
     return offsetof(ICStub, stubCode_);
   }
@@ -239,19 +216,14 @@ class ICFallbackStub final : public ICStub {
 
  protected:
   
-  
-
-  
-  ICEntry* icEntry_ = nullptr;
+  uint32_t pcOffset_;
 
   
   ICState state_{};
 
  public:
-  explicit ICFallbackStub(ICEntry* icEntry, TrampolinePtr stubCode)
-      : ICStub(stubCode.value,  true), icEntry_(icEntry) {}
-
-  inline ICEntry* icEntry() const { return icEntry_; }
+  explicit ICFallbackStub(uint32_t pcOffset, TrampolinePtr stubCode)
+      : ICStub(stubCode.value,  true), pcOffset_(pcOffset) {}
 
   inline size_t numOptimizedStubs() const { return state_.numOptimizedStubs(); }
 
@@ -259,10 +231,15 @@ class ICFallbackStub final : public ICStub {
 
   ICState& state() { return state_; }
 
-  
-  inline void addNewStub(ICCacheIRStub* stub);
+  uint32_t pcOffset() const { return pcOffset_; }
+  jsbytecode* pc(JSScript* script) const {
+    return script->offsetToPC(pcOffset_);
+  }
 
-  void discardStubs(JSContext* cx);
+  
+  inline void addNewStub(ICEntry* icEntry, ICCacheIRStub* stub);
+
+  void discardStubs(JSContext* cx, ICEntry* icEntry);
 
   void clearUsedByTranspiler() { state_.clearUsedByTranspiler(); }
   void setUsedByTranspiler() { state_.setUsedByTranspiler(); }
@@ -276,7 +253,8 @@ class ICFallbackStub final : public ICStub {
 
   void trackNotAttached();
 
-  void unlinkStub(Zone* zone, ICCacheIRStub* prev, ICCacheIRStub* stub);
+  void unlinkStub(Zone* zone, ICEntry* icEntry, ICCacheIRStub* prev,
+                  ICCacheIRStub* stub);
 };
 
 class ICCacheIRStub final : public ICStub {
@@ -317,7 +295,7 @@ class ICCacheIRStub final : public ICStub {
 
 
 #ifdef JS_64BIT
-static_assert(sizeof(ICFallbackStub) == 4 * sizeof(uintptr_t));
+static_assert(sizeof(ICFallbackStub) == 3 * sizeof(uintptr_t));
 static_assert(sizeof(ICCacheIRStub) == 4 * sizeof(uintptr_t));
 #else
 static_assert(sizeof(ICFallbackStub) == 5 * sizeof(uintptr_t));
@@ -328,19 +306,11 @@ inline ICStub* ICStub::maybeNext() const {
   return isFallback() ? nullptr : toCacheIRStub()->next();
 }
 
-inline void ICFallbackStub::addNewStub(ICCacheIRStub* stub) {
+inline void ICFallbackStub::addNewStub(ICEntry* icEntry, ICCacheIRStub* stub) {
   MOZ_ASSERT(stub->next() == nullptr);
-  stub->setNext(icEntry_->firstStub());
-  icEntry_->setFirstStub(stub);
+  stub->setNext(icEntry->firstStub());
+  icEntry->setFirstStub(stub);
   state_.trackAttached();
-}
-
-inline ICFallbackStub* ICStub::getChainFallback() {
-  ICStub* lastStub = this;
-  while (!lastStub->isFallback()) {
-    lastStub = lastStub->toCacheIRStub()->next();
-  }
-  return lastStub->toFallbackStub();
 }
 
 AllocatableGeneralRegisterSet BaselineICAvailableGeneralRegs(size_t numInputs);

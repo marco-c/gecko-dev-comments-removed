@@ -19,6 +19,7 @@ namespace jit {
 class ICEntry;
 class ICStub;
 class ICCacheIRStub;
+class ICFallbackStub;
 
 
 
@@ -68,8 +69,8 @@ class CacheIRHealth {
                                     Happiness* entryHappiness);
   
   bool spewICEntryHealth(AutoStructuredSpewer& spew, HandleScript script,
-                         ICEntry* entry, jsbytecode* pc, JSOp op,
-                         Happiness* entryHappiness);
+                         ICEntry* entry, ICFallbackStub* fallback,
+                         jsbytecode* pc, JSOp op, Happiness* entryHappiness);
 
  public:
   
@@ -77,7 +78,8 @@ class CacheIRHealth {
   void spewScriptFinalWarmUpCount(JSContext* cx, const char* filename,
                                   JSScript* script, uint32_t warmUpCount);
   
-  void healthReportForIC(JSContext* cx, ICEntry* entry, HandleScript script,
+  void healthReportForIC(JSContext* cx, ICEntry* entry,
+                         ICFallbackStub* fallback, HandleScript script,
                          SpewContext context);
   
   

@@ -1920,8 +1920,8 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
   return true;
 }
 
-static void ResetEnteredCounts(ICFallbackStub* fallback) {
-  ICStub* stub = fallback->icEntry()->firstStub();
+static void ResetEnteredCounts(const ICEntry* icEntry) {
+  ICStub* stub = icEntry->firstStub();
   while (true) {
     stub->resetEnteredCount();
     if (stub->isFallback()) {
@@ -2006,10 +2006,12 @@ ICCacheIRStub* js::jit::AttachBaselineCacheIRStub(
   MOZ_ASSERT(stubInfo);
   MOZ_ASSERT(stubInfo->stubDataSize() == writer.stubDataSize());
 
+  ICEntry* icEntry = icScript->icEntryForStub(stub);
+
   
   
   
-  for (ICStub* iter = stub->icEntry()->firstStub(); iter != stub;
+  for (ICStub* iter = icEntry->firstStub(); iter != stub;
        iter = iter->toCacheIRStub()->next()) {
     auto otherStub = iter->toCacheIRStub();
     if (otherStub->stubInfo() != stubInfo) {
@@ -2042,7 +2044,7 @@ ICCacheIRStub* js::jit::AttachBaselineCacheIRStub(
 
   
   
-  ResetEnteredCounts(stub);
+  ResetEnteredCounts(icEntry);
 
   switch (stub->trialInliningState()) {
     case TrialInliningState::Initial:
@@ -2058,7 +2060,7 @@ ICCacheIRStub* js::jit::AttachBaselineCacheIRStub(
 
   auto newStub = new (newStubMem) ICCacheIRStub(code, stubInfo);
   writer.copyStubData(newStub->stubDataStart());
-  stub->addNewStub(newStub);
+  stub->addNewStub(icEntry, newStub);
   *attached = true;
   return newStub;
 }

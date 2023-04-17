@@ -552,15 +552,15 @@ bool BaselineCompilerCodeGen::emitNextIC() {
 
   
   
-  const ICEntry* entry;
+  const ICFallbackStub* stub;
   uint32_t entryIndex;
   do {
-    entry = &script->jitScript()->icEntry(handler.icEntryIndex());
+    stub = script->jitScript()->fallbackStub(handler.icEntryIndex());
     entryIndex = handler.icEntryIndex();
     handler.moveToNextICEntry();
-  } while (entry->pcOffset() < pcOffset);
+  } while (stub->pcOffset() < pcOffset);
 
-  MOZ_RELEASE_ASSERT(entry->pcOffset() == pcOffset);
+  MOZ_ASSERT(stub->pcOffset() == pcOffset);
   MOZ_ASSERT(BytecodeOpHasIC(JSOp(*handler.pc())));
 
   
@@ -6158,16 +6158,11 @@ bool BaselineInterpreterCodeGen::emit_JumpTarget() {
   LoadInt32Operand(masm, scratch1);
 
   
-  static_assert(sizeof(ICEntry) == 8 || sizeof(ICEntry) == 16,
-                "shift below depends on ICEntry size");
-  uint32_t shift = (sizeof(ICEntry) == 16) ? 4 : 3;
-  masm.lshiftPtr(Imm32(shift), scratch1);
-
-  
   masm.loadPtr(frame.addressOfICScript(), scratch2);
-  masm.computeEffectiveAddress(
-      BaseIndex(scratch2, scratch1, TimesOne, ICScript::offsetOfICEntries()),
-      scratch2);
+  static_assert(sizeof(ICEntry) == sizeof(uintptr_t));
+  masm.computeEffectiveAddress(BaseIndex(scratch2, scratch1, ScalePointer,
+                                         ICScript::offsetOfICEntries()),
+                               scratch2);
   masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
   return true;
 }
