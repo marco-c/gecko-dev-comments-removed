@@ -13,9 +13,7 @@
 #include "nsString.h"
 
 
-
-
-#undef ACTIVATE_GTK3_COLOR_PICKER
+#define ACTIVATE_GTK3_COLOR_PICKER 1
 
 class nsIWidget;
 
