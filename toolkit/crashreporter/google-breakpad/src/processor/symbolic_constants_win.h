@@ -46,6 +46,9 @@ namespace google_breakpad {
 
 string NTStatusToString(uint32_t ntstatus);
 
+
+string FastFailToString(uint32_t fast_fail_code);
+
 }  
 
 #endif  
