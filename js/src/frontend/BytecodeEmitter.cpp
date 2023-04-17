@@ -1531,6 +1531,7 @@ restart:
     case ParseNodeKind::ForOf:                
     case ParseNodeKind::ForHead:              
     case ParseNodeKind::DefaultConstructor:   
+    case ParseNodeKind::ClassBodyScope:       
     case ParseNodeKind::ClassMethod:          
     case ParseNodeKind::ClassField:           
     case ParseNodeKind::ClassNames:           
@@ -10420,7 +10421,7 @@ bool BytecodeEmitter::emitClass(
   
   
   
-  if (LexicalScopeNode* bodyScopeBindings = classNode->bodyScopeBindings()) {
+  if (ClassBodyScopeNode* bodyScopeBindings = classNode->bodyScopeBindings()) {
     if (!ce.emitBodyScope(bodyScopeBindings->scopeBindings())) {
       
       return false;

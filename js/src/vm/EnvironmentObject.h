@@ -573,6 +573,10 @@ class BlockLexicalEnvironmentObject : public LexicalEnvironmentObject {
   static BlockLexicalEnvironmentObject* createHollowForDebug(
       JSContext* cx, Handle<LexicalScope*> scope);
 
+  static LexicalEnvironmentObject* createForClassBody(
+      JSContext* cx, Handle<ClassBodyScope*> scope, HandleObject enclosing,
+      gc::InitialHeap heap);
+
   
   
   static BlockLexicalEnvironmentObject* clone(
